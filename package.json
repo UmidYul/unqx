@@ -8,6 +8,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:vercel": "prisma generate && prisma migrate deploy && next build",
     "postbuild": "node scripts/sync-prisma-standalone.cjs",
     "start": "next start",
     "lint": "next lint",

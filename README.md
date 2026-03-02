@@ -42,9 +42,11 @@ Full-stack web app on Next.js 14 (App Router) + TypeScript + Prisma + PostgreSQL
 Copy `.env.example` to `.env` and set your hosting values:
 
 ```env
-# Format: postgresql://USER:PASSWORD@HOST:PORT/DB_NAME?schema=public
-# If hosting requires SSL, add: &sslmode=require
-DATABASE_URL="postgresql://db_user:db_password@db_host:5432/unqplus?schema=public"
+# Neon/Vercel recommended:
+# DATABASE_URL - pooled connection for runtime
+# DIRECT_URL - direct connection for migrations
+DATABASE_URL="postgresql://user:password@ep-xxx-pooler.us-east-1.aws.neon.tech/unqplus?sslmode=require&pgbouncer=true&connect_timeout=15"
+DIRECT_URL="postgresql://user:password@ep-xxx.us-east-1.aws.neon.tech/unqplus?sslmode=require"
 
 NEXTAUTH_URL="https://your-domain.com"
 NEXTAUTH_SECRET="change-me-in-production"
@@ -128,3 +130,25 @@ Command to run app:
 ```bash
 npm run build && npm run start
 ```
+
+## Deploy to Vercel + Neon (recommended)
+
+1. Create a free Neon project and database (`unqplus`).
+2. In Neon connection details, copy:
+   - pooled connection string -> set as `DATABASE_URL`
+   - direct connection string -> set as `DIRECT_URL`
+3. In Vercel Project Settings -> Environment Variables add:
+   - `DATABASE_URL`
+   - `DIRECT_URL`
+   - `NEXTAUTH_URL` (your Vercel domain, e.g. `https://project.vercel.app`)
+   - `NEXTAUTH_SECRET` (long random string)
+   - `NEXT_PUBLIC_APP_URL` (same public domain)
+   - `ADMIN_LOGIN`
+   - `ADMIN_PASSWORD_HASH`
+4. In Vercel Build & Development Settings set Build Command:
+
+```bash
+npm run build:vercel
+```
+
+5. Deploy. Migrations will run automatically during build via `prisma migrate deploy`.

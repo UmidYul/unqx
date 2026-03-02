@@ -11,10 +11,6 @@
 
 # next.js
 /.next/*
-!/.next/standalone/
-!/.next/standalone/**
-!/.next/static/
-!/.next/static/**
 /out/
 /deploy_*/
 deploy_*.zip
