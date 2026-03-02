@@ -7,6 +7,7 @@ const env = {
   // Keep Rust/SWC thread usage low on constrained shared hosting.
   RAYON_NUM_THREADS: process.env.RAYON_NUM_THREADS || "1",
   UV_THREADPOOL_SIZE: process.env.UV_THREADPOOL_SIZE || "1",
+  TOKIO_WORKER_THREADS: process.env.TOKIO_WORKER_THREADS || "1",
 };
 
 const prismaBin = path.join(
@@ -40,4 +41,3 @@ function run(bin, args) {
 
 run(prismaBin, ["generate", "--schema", schemaPath]);
 run(nextBin, ["build"]);
-
