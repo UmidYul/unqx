@@ -1,17 +1,33 @@
 const fs = require("fs");
 const path = require("path");
 
-const src = path.join(process.cwd(), "node_modules", ".prisma", "client");
-const dst = path.join(process.cwd(), ".next", "standalone", "node_modules", ".prisma", "client");
+const projectRoot = process.cwd();
+const standaloneRoot = path.join(projectRoot, ".next", "standalone");
 
-if (!fs.existsSync(src)) {
-  console.warn("[sync-prisma-standalone] source .prisma/client not found, skipping");
-  process.exit(0);
-}
-
-if (!fs.existsSync(path.dirname(dst))) {
+function copyDirIfExists(src, dst, label) {
+  if (!fs.existsSync(src)) {
+    console.warn(`[sync-prisma-standalone] ${label} not found, skipping`);
+    return;
+  }
   fs.mkdirSync(path.dirname(dst), { recursive: true });
+  fs.cpSync(src, dst, { recursive: true, force: true });
+  console.log(`[sync-prisma-standalone] copied ${label} from ${src} to ${dst}`);
 }
 
-fs.cpSync(src, dst, { recursive: true, force: true });
-console.log(`[sync-prisma-standalone] copied Prisma client from ${src} to ${dst}`);
+copyDirIfExists(
+  path.join(projectRoot, "node_modules", ".prisma", "client"),
+  path.join(standaloneRoot, "node_modules", ".prisma", "client"),
+  ".prisma/client"
+);
+
+copyDirIfExists(
+  path.join(projectRoot, ".next", "static"),
+  path.join(standaloneRoot, ".next", "static"),
+  ".next/static"
+);
+
+copyDirIfExists(
+  path.join(projectRoot, "public"),
+  path.join(standaloneRoot, "public"),
+  "public"
+);
