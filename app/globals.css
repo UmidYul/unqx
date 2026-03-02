@@ -28,8 +28,8 @@ body {
     content: "";
     position: absolute;
     top: -20%;
-    left: -50%;
-    width: 28%;
+    left: -60%;
+    width: 40%;
     height: 140%;
     background: linear-gradient(
       90deg,
@@ -37,25 +37,25 @@ body {
       rgba(255, 255, 255, 0.18) 50%,
       transparent 100%
     );
-    transform: translateX(-140%) skewX(-20deg);
+    transform: translateX(-160%) skewX(-20deg);
     animation: shimmer 3.5s ease-in-out infinite;
   }
 }
 
 @keyframes shimmer {
   0% {
-    transform: translateX(-140%) skewX(-20deg);
+    transform: translateX(-160%) skewX(-20deg);
     opacity: 0;
   }
   12% {
     opacity: 1;
   }
   72% {
-    transform: translateX(360%) skewX(-20deg);
+    transform: translateX(420%) skewX(-20deg);
     opacity: 1;
   }
   100% {
-    transform: translateX(360%) skewX(-20deg);
+    transform: translateX(420%) skewX(-20deg);
     opacity: 0;
   }
 }
