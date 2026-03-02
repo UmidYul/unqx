@@ -1,0 +1,77 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #e4e4e4;
+  --foreground: #111111;
+  --muted: #676767;
+  --card-button: #313236;
+  --card-button-hover: #25262a;
+  --tag-link: #1d3ecc;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  min-height: 100vh;
+  font-family: var(--font-inter), "Segoe UI", sans-serif;
+}
+
+@layer utilities {
+  .btn-shimmer {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-shimmer::after {
+    content: "";
+    position: absolute;
+    top: -20%;
+    left: -50%;
+    width: 28%;
+    height: 140%;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.18) 50%,
+      transparent 100%
+    );
+    transform: translateX(-140%) skewX(-20deg);
+    animation: shimmer 3.5s ease-in-out infinite;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-140%) skewX(-20deg);
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  72% {
+    transform: translateX(360%) skewX(-20deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(360%) skewX(-20deg);
+    opacity: 0;
+  }
+}
+
+@keyframes fadeSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-in {
+  opacity: 0;
+  animation: fadeSlideUp 0.5s ease forwards;
+}

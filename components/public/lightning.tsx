@@ -1,0 +1,24 @@
+import { cn } from "@/lib/utils";
+
+interface LightningProps {
+  className?: string;
+}
+
+export function Lightning({ className }: LightningProps) {
+  return (
+    <svg
+      viewBox="0 0 55 75.5"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={cn("h-24 w-14 text-black", className)}
+      aria-hidden
+    >
+      <path
+        d="M25.5 1C25.5 1 1 38.5 1 38.5C1 38.5 33 38.5 33 38.5C33 38.5 11.5 74.5 11.5 74.5C11.5 74.5 54 29.5 54 29.5C54 29.5 25.5 29.5 25.5 29.5C25.5 29.5 46 1 46 1C46 1 25.5 1 25.5 1"
+        stroke="currentColor"
+        fill="transparent"
+        strokeWidth="1"
+      />
+    </svg>
+  );
+}
