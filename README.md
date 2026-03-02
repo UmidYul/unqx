@@ -96,6 +96,12 @@ npm run build
 npm run start
 ```
 
+For hosting panels that cannot choose hidden `.next/*` paths, use startup file:
+
+```text
+server-launcher.cjs
+```
+
 ## Scripts
 
 - `npm run dev` - start dev server

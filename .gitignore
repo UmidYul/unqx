@@ -12,6 +12,9 @@
 # next.js
 /.next/
 /out/
+/deploy_*/
+deploy_*.zip
+deploy_db_init_*.sql
 
 # production
 /build
