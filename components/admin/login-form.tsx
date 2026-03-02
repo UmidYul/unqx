@@ -16,20 +16,30 @@ export function LoginForm() {
     setPending(true);
     setError("");
 
-    const result = await signIn("credentials", {
-      login,
-      password,
-      redirect: false,
-    });
+    try {
+      const result = await Promise.race([
+        signIn("credentials", {
+          login,
+          password,
+          redirect: false,
+        }),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error("AUTH_TIMEOUT")), 15000),
+        ),
+      ]);
 
-    if (result?.error) {
-      setError("Неверный логин или пароль");
+      if (result?.error) {
+        setError("Неверный логин или пароль");
+        return;
+      }
+
+      router.push("/admin/dashboard");
+      router.refresh();
+    } catch {
+      setError("Ошибка авторизации на сервере. Попробуйте снова.");
+    } finally {
       setPending(false);
-      return;
     }
-
-    router.push("/admin/dashboard");
-    router.refresh();
   };
 
   return (
