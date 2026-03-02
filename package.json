@@ -3,14 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "prisma": {
-    "seed": "tsx prisma/seed.ts"
+    "seed": "tsx prisma/seed.ts",
+    "schema": "prisma/schema.prisma"
   },
   "scripts": {
     "dev": "next dev",
     "build": "prisma generate && next build",
     "build:vercel": "prisma generate && prisma migrate deploy && next build",
     "postbuild": "node scripts/sync-prisma-standalone.cjs",
-    "postinstall": "prisma generate",
     "start": "next start",
     "lint": "next lint",
     "prisma:generate": "prisma generate",
