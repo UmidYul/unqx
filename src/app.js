@@ -51,10 +51,11 @@ function createApp() {
           imgSrc: ["'self'", "data:", "blob:"],
           connectSrc: ["'self'"],
           formAction: ["'self'"],
-          ...(env.NODE_ENV === "production" ? { upgradeInsecureRequests: [] } : {}),
         },
       },
       crossOriginEmbedderPolicy: false,
+      crossOriginOpenerPolicy: false,
+      originAgentCluster: false,
     }),
   );
 
