@@ -45,6 +45,58 @@
   };
   const pageButtonsCount = pageCard.buttons.length;
   const pageBottomBlockSpacingClass = pageButtonsCount <= 1 ? "mt-5" : pageButtonsCount <= 3 ? "mt-7" : "mt-9";
+  const mobileLightnings = [
+    "left-[2%] top-[2%] h-[116px] w-[84px] -rotate-6",
+    "right-[2%] top-[3%] h-[120px] w-[86px] rotate-6",
+    "left-[6%] top-[14%] h-[110px] w-[80px] rotate-4",
+    "right-[7%] top-[18%] h-[112px] w-[80px] -rotate-5",
+    "left-[3%] top-[30%] h-[114px] w-[82px] -rotate-4",
+    "right-[4%] top-[35%] h-[110px] w-[80px] rotate-5",
+    "left-[8%] top-[48%] h-[112px] w-[80px] rotate-6",
+    "right-[3%] top-[54%] h-[114px] w-[82px] -rotate-6",
+    "left-[3%] top-[66%] h-[118px] w-[84px] -rotate-5",
+    "right-[8%] top-[71%] h-[112px] w-[80px] rotate-4",
+    "left-[4%] top-[83%] h-[114px] w-[82px] rotate-5",
+    "right-[3%] top-[88%] h-[116px] w-[84px] -rotate-4"
+  ];
+  const desktopLightnings = [
+    "left-[1%] top-[1%] h-[96px] w-[70px] -rotate-6",
+    "left-[7%] top-[5%] h-[90px] w-[64px] rotate-2",
+    "left-[14%] top-[10%] h-[96px] w-[70px] -rotate-2",
+    "right-[1%] top-[2%] h-[96px] w-[70px] rotate-5",
+    "right-[8%] top-[6%] h-[96px] w-[70px] -rotate-4",
+    "right-[15%] top-[12%] h-[92px] w-[66px] rotate-3",
+    "left-[3%] top-[18%] h-[98px] w-[70px] -rotate-4",
+    "left-[10%] top-[23%] h-[96px] w-[70px] rotate-4",
+    "right-[2%] top-[22%] h-[96px] w-[70px] -rotate-3",
+    "right-[11%] top-[28%] h-[94px] w-[68px] rotate-5",
+    "left-[2%] top-[35%] h-[96px] w-[70px] rotate-3",
+    "left-[12%] top-[41%] h-[94px] w-[68px] -rotate-5",
+    "right-[3%] top-[38%] h-[98px] w-[70px] -rotate-4",
+    "right-[13%] top-[45%] h-[96px] w-[70px] rotate-4",
+    "left-[4%] top-[53%] h-[96px] w-[70px] rotate-6",
+    "left-[13%] top-[59%] h-[98px] w-[70px] -rotate-3",
+    "right-[4%] top-[55%] h-[100px] w-[72px] rotate-5",
+    "right-[14%] top-[62%] h-[96px] w-[70px] -rotate-6",
+    "left-[3%] top-[70%] h-[98px] w-[70px] -rotate-4",
+    "left-[11%] top-[76%] h-[94px] w-[68px] rotate-4",
+    "right-[3%] top-[72%] h-[100px] w-[72px] rotate-4",
+    "right-[11%] top-[79%] h-[98px] w-[70px] -rotate-2",
+    "left-[4%] top-[87%] h-[102px] w-[74px] rotate-5",
+    "left-[15%] top-[92%] h-[96px] w-[70px] -rotate-4",
+    "right-[4%] top-[88%] h-[102px] w-[74px] -rotate-3",
+    "right-[14%] top-[93%] h-[96px] w-[70px] rotate-5",
+    "left-[28%] top-[3%] h-[92px] w-[66px] -rotate-2",
+    "right-[28%] top-[4%] h-[92px] w-[66px] rotate-2",
+    "left-[30%] top-[22%] h-[96px] w-[70px] rotate-4",
+    "right-[30%] top-[24%] h-[96px] w-[70px] -rotate-4",
+    "left-[31%] top-[44%] h-[96px] w-[70px] -rotate-3",
+    "right-[31%] top-[46%] h-[96px] w-[70px] rotate-3",
+    "left-[30%] top-[66%] h-[96px] w-[70px] rotate-4",
+    "right-[30%] top-[68%] h-[96px] w-[70px] -rotate-4",
+    "left-[29%] top-[88%] h-[96px] w-[70px] -rotate-3",
+    "right-[29%] top-[90%] h-[96px] w-[70px] rotate-3"
+  ];
 
   const initials = (pageCard.name || "")
     .split(" ")
@@ -61,44 +113,15 @@
 <body class="antialiased">
   <div class="relative min-h-screen overflow-hidden bg-white pb-20 pt-6 text-black">
     <div class="pointer-events-none absolute inset-0 z-0">
-      <%- include('../partials/lightning', { className: 'absolute left-8 top-1 h-[114px] w-[84px] md:hidden' }) %>
-      <%- include('../partials/lightning', { className: 'absolute right-1 top-1 h-[130px] w-[92px] md:hidden' }) %>
-      <%- include('../partials/lightning', { className: 'absolute left-4 top-[194px] h-[126px] w-[90px] md:hidden' }) %>
-      <%- include('../partials/lightning', { className: 'absolute right-1 top-[350px] h-[128px] w-[92px] md:hidden' }) %>
-      <%- include('../partials/lightning', { className: 'absolute left-4 top-[510px] h-[126px] w-[90px] md:hidden' }) %>
-      <%- include('../partials/lightning', { className: 'absolute right-8 top-[560px] h-[118px] w-[84px] md:hidden' }) %>
-
-      <%- include('../partials/lightning', { className: 'absolute left-[1%] top-[1%] hidden h-[96px] w-[70px] -rotate-6 text-black/60 md:block' }) %>
-      <%- include('../partials/lightning', { className: 'absolute left-[5%] top-[8%] hidden h-[92px] w-[66px] rotate-2 text-black/60 md:block' }) %>
-      <%- include('../partials/lightning', { className: 'absolute left-[10%] top-[8%] hidden h-[94px] w-[68px] -rotate-2 text-black/60 md:block' }) %>
-      <%- include('../partials/lightning', { className: 'absolute left-[15%] top-[7%] hidden h-[92px] w-[66px] rotate-3 text-black/60 md:block' }) %>
-      <%- include('../partials/lightning', { className: 'absolute left-[1%] top-[18%] hidden h-[98px] w-[70px] -rotate-4 text-black/60 md:block' }) %>
-      <%- include('../partials/lightning', { className: 'absolute left-[8%] top-[23%] hidden h-[96px] w-[70px] rotate-4 text-black/60 md:block' }) %>
-      <%- include('../partials/lightning', { className: 'absolute left-[13%] top-[31%] hidden h-[90px] w-[64px] -rotate-5 text-black/60 md:block' }) %>
-      <%- include('../partials/lightning', { className: 'absolute left-[3%] top-[56%] hidden h-[98px] w-[70px] rotate-6 text-black/60 md:block' }) %>
-      <%- include('../partials/lightning', { className: 'absolute left-[9%] top-[63%] hidden h-[94px] w-[68px] -rotate-3 text-black/60 md:block' }) %>
-      <%- include('../partials/lightning', { className: 'absolute left-[14%] top-[83%] hidden h-[104px] w-[74px] rotate-5 text-black/60 md:block' }) %>
-      <%- include('../partials/lightning', { className: 'absolute left-[27%] top-[74%] hidden h-[100px] w-[72px] -rotate-2 text-black/60 md:block' }) %>
-
-      <%- include('../partials/lightning', { className: 'absolute right-[1%] top-[1%] hidden h-[96px] w-[70px] rotate-5 text-black/60 md:block' }) %>
-      <%- include('../partials/lightning', { className: 'absolute right-[7%] top-[10%] hidden h-[98px] w-[70px] -rotate-4 text-black/60 md:block' }) %>
-      <%- include('../partials/lightning', { className: 'absolute right-[13%] top-[18%] hidden h-[98px] w-[70px] rotate-3 text-black/60 md:block' }) %>
-      <%- include('../partials/lightning', { className: 'absolute right-[2%] top-[33%] hidden h-[96px] w-[70px] -rotate-3 text-black/60 md:block' }) %>
-      <%- include('../partials/lightning', { className: 'absolute right-[9%] top-[49%] hidden h-[96px] w-[70px] rotate-5 text-black/60 md:block' }) %>
-      <%- include('../partials/lightning', { className: 'absolute right-[15%] top-[68%] hidden h-[98px] w-[70px] -rotate-6 text-black/60 md:block' }) %>
-      <%- include('../partials/lightning', { className: 'absolute right-[4%] top-[75%] hidden h-[100px] w-[72px] rotate-4 text-black/60 md:block' }) %>
-      <%- include('../partials/lightning', { className: 'absolute right-[12%] top-[85%] hidden h-[102px] w-[74px] -rotate-2 text-black/60 md:block' }) %>
-      <%- include('../partials/lightning', { className: 'absolute right-[26%] top-[85%] hidden h-[102px] w-[74px] rotate-4 text-black/60 md:block' }) %>
-
-      <%- include('../partials/lightning', { className: 'absolute left-[30%] top-[2%] hidden h-[92px] w-[66px] -rotate-2 text-black/60 md:block' }) %>
-      <%- include('../partials/lightning', { className: 'absolute right-[30%] top-[2%] hidden h-[92px] w-[66px] rotate-2 text-black/60 md:block' }) %>
-      <%- include('../partials/lightning', { className: 'absolute left-[31%] top-[24%] hidden h-[96px] w-[70px] rotate-4 text-black/60 md:block' }) %>
-      <%- include('../partials/lightning', { className: 'absolute right-[31%] top-[27%] hidden h-[96px] w-[70px] -rotate-4 text-black/60 md:block' }) %>
-      <%- include('../partials/lightning', { className: 'absolute left-[31%] top-[56%] hidden h-[96px] w-[70px] -rotate-3 text-black/60 md:block' }) %>
-      <%- include('../partials/lightning', { className: 'absolute right-[31%] top-[58%] hidden h-[96px] w-[70px] rotate-3 text-black/60 md:block' }) %>
+      <% mobileLightnings.forEach((item) => { %>
+      <%- include('../partials/lightning', { className: `absolute ${item} text-black/[0.82] md:hidden` }) %>
+      <% }); %>
+      <% desktopLightnings.forEach((item) => { %>
+      <%- include('../partials/lightning', { className: `absolute hidden ${item} text-black/[0.72] md:block` }) %>
+      <% }); %>
     </div>
 
-    <main class="relative z-10 mx-auto flex min-h-[820px] w-full max-w-[414px] flex-col items-center rounded-[32px] bg-transparent px-7 py-6 md:min-h-[900px]" data-slug="<%= pageCard.slug %>">
+    <main class="public-card-shell relative z-10 mx-auto flex w-full max-w-[414px] flex-col items-center rounded-[32px] px-7 py-6" data-slug="<%= pageCard.slug %>">
       <p class="text-base font-normal leading-none text-[#2d2d2d]">#<%= pageCard.slug %></p>
 
       <div class="mt-2 text-center">
@@ -162,7 +185,7 @@
       </div>
       <% } %>
 
-      <div class="mt-[12px] flex w-full max-w-[171px] flex-col gap-[9px]">
+      <div class="public-card-buttons mt-[12px] flex w-full max-w-[171px] flex-col gap-[9px]">
         <% pageCard.buttons.forEach((button, idx) => { %>
         <a
           href="<%= button.url %>"
@@ -184,9 +207,9 @@
         <% } %>
 
         <% if (pageCard.address || pageCard.postcode || pageCard.email || pageCard.extraPhone) { %>
-        <section class="animate-in mx-auto mt-5 w-full max-w-[275px]" style="animation-delay: <%= 300 + pageCard.buttons.length * 80 + 160 %>ms;">
+        <section class="public-card-info-card animate-in mx-auto mt-5 w-full max-w-[275px]" style="animation-delay: <%= 300 + pageCard.buttons.length * 80 + 160 %>ms;">
           <h2 class="text-base font-normal">About info</h2>
-          <div class="mt-2 space-y-1 text-base leading-[1.15]">
+          <div class="public-card-info-body mt-2 space-y-1 text-base leading-[1.15]">
             <% if (pageCard.address) { %><p>Address: <%= pageCard.address %></p><% } %>
             <% if (pageCard.postcode) { %><p>Postcode: <%= pageCard.postcode %></p><% } %>
             <% if (pageCard.email) { %><p>Email: <%= pageCard.email %></p><% } %>

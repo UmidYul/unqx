@@ -2,3 +2,51 @@
   outline: 2px solid #111111;
   outline-offset: -2px;
 }
+
+.public-card-shell {
+  width: min(100% - 1.25rem, 42rem);
+  min-height: clamp(38rem, 88vh, 64rem);
+  padding-inline: clamp(1rem, 3.2vw, 1.75rem);
+  backdrop-filter: blur(4px);
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.52), rgba(255, 255, 255, 0.28));
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  box-shadow: 0 16px 50px rgba(0, 0, 0, 0.14);
+}
+
+.public-card-buttons {
+  width: min(100%, 18rem);
+  max-width: 18rem;
+}
+
+.public-card-buttons > a {
+  width: 100%;
+  min-height: 3rem;
+  padding-inline: 0.9rem;
+  white-space: normal;
+  line-height: 1.2;
+}
+
+.public-card-info-card {
+  width: min(100%, 28rem);
+  padding: 0.9rem 1rem 1rem;
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.68);
+  border: 1px solid rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(6px);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.12);
+}
+
+.public-card-info-body p {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 640px) {
+  .public-card-shell {
+    min-height: calc(100vh - 2rem);
+    border-radius: 1.4rem;
+  }
+
+  .public-card-info-card {
+    padding: 0.8rem 0.9rem 0.9rem;
+  }
+}

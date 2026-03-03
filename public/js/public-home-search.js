@@ -76,20 +76,24 @@
       const row = document.createElement("button");
       row.type = "button";
       row.className =
-        "home-search-result-item flex w-full items-center justify-between border-b border-black/5 px-4 py-3 text-left text-sm transition last:border-b-0 hover:bg-black hover:text-white";
+        "home-search-result-item flex w-full items-start border-b border-black/5 px-4 py-3 text-left text-sm transition last:border-b-0 hover:bg-black hover:text-white";
       row.setAttribute("data-result-index", String(index));
       row.setAttribute("data-result-slug", String(item.slug || ""));
 
+      const textWrap = document.createElement("div");
+      textWrap.className = "min-w-0";
+
       const slugNode = document.createElement("span");
-      slugNode.className = "font-semibold tracking-[0.08em]";
+      slugNode.className = "block font-semibold tracking-[0.08em]";
       slugNode.textContent = `#${item.slug || ""}`;
 
       const nameNode = document.createElement("span");
-      nameNode.className = "ml-3 truncate text-xs opacity-80";
+      nameNode.className = "mt-0.5 block truncate text-xs opacity-80";
       nameNode.textContent = item.name || "";
 
-      row.appendChild(slugNode);
-      row.appendChild(nameNode);
+      textWrap.appendChild(slugNode);
+      textWrap.appendChild(nameNode);
+      row.appendChild(textWrap);
       resultsWrap.appendChild(row);
     });
 

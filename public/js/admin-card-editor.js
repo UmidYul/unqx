@@ -801,7 +801,7 @@
           resetPendingAvatarPreviewUrl();
           pendingAvatarPreviewUrl = URL.createObjectURL(blob);
           showAvatarPreview(pendingAvatarPreviewUrl);
-          setFormError("Аватар подготовлен. Сохраните визитку — он загрузится автоматически.");
+          setFormError("");
 
           destroyCropper();
           avatarCropWrap.hidden = true;
