@@ -2,7 +2,24 @@ module.exports = {
   id: "001_init",
   async up(client) {
     await client.query(`
-      CREATE EXTENSION IF NOT EXISTS pgcrypto;
+      CREATE OR REPLACE FUNCTION app_uuid_v4()
+      RETURNS UUID
+      LANGUAGE plpgsql
+      AS $$
+      DECLARE
+        hex TEXT;
+      BEGIN
+        -- Extension-free UUID v4-style generator for managed Postgres hosts.
+        hex := md5(random()::text || clock_timestamp()::text || txid_current()::text);
+        RETURN (
+          substr(hex, 1, 8) || '-' ||
+          substr(hex, 9, 4) || '-' ||
+          '4' || substr(hex, 14, 3) || '-' ||
+          substr('89ab', 1 + floor(random() * 4)::int, 1) || substr(hex, 18, 3) || '-' ||
+          substr(hex, 21, 12)
+        )::uuid;
+      END;
+      $$;
 
       DO $$
       BEGIN
@@ -75,7 +92,7 @@ module.exports = {
       END $$;
 
       CREATE TABLE IF NOT EXISTS cards (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        id UUID PRIMARY KEY DEFAULT app_uuid_v4(),
         slug VARCHAR(20) NOT NULL UNIQUE,
         is_active BOOLEAN NOT NULL DEFAULT TRUE,
         tariff tariff NOT NULL DEFAULT 'basic',
@@ -99,7 +116,7 @@ module.exports = {
       CREATE INDEX IF NOT EXISTS cards_created_at_idx ON cards (created_at);
 
       CREATE TABLE IF NOT EXISTS tags (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        id UUID PRIMARY KEY DEFAULT app_uuid_v4(),
         card_id UUID NOT NULL REFERENCES cards(id) ON DELETE CASCADE,
         label VARCHAR(50) NOT NULL,
         url TEXT,
@@ -109,7 +126,7 @@ module.exports = {
       CREATE INDEX IF NOT EXISTS tags_card_id_sort_order_idx ON tags (card_id, sort_order);
 
       CREATE TABLE IF NOT EXISTS buttons (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        id UUID PRIMARY KEY DEFAULT app_uuid_v4(),
         card_id UUID NOT NULL REFERENCES cards(id) ON DELETE CASCADE,
         label VARCHAR(50) NOT NULL,
         url TEXT NOT NULL,
@@ -120,7 +137,7 @@ module.exports = {
       CREATE INDEX IF NOT EXISTS buttons_card_id_sort_order_idx ON buttons (card_id, sort_order);
 
       CREATE TABLE IF NOT EXISTS views_log (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        id UUID PRIMARY KEY DEFAULT app_uuid_v4(),
         card_id UUID NOT NULL REFERENCES cards(id) ON DELETE CASCADE,
         viewed_at TIMESTAMPTZ NOT NULL DEFAULT now(),
         device VARCHAR(20),
@@ -133,7 +150,7 @@ module.exports = {
       CREATE INDEX IF NOT EXISTS views_log_viewed_at_idx ON views_log (viewed_at);
 
       CREATE TABLE IF NOT EXISTS error_logs (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        id UUID PRIMARY KEY DEFAULT app_uuid_v4(),
         type VARCHAR(30) NOT NULL,
         path TEXT NOT NULL,
         message TEXT,
@@ -145,7 +162,7 @@ module.exports = {
       CREATE INDEX IF NOT EXISTS error_logs_occurred_at_idx ON error_logs (occurred_at);
 
       CREATE TABLE IF NOT EXISTS order_requests (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        id UUID PRIMARY KEY DEFAULT app_uuid_v4(),
         name VARCHAR(100) NOT NULL,
         slug VARCHAR(20) NOT NULL,
         slug_price INTEGER NOT NULL,
@@ -164,7 +181,7 @@ module.exports = {
       CREATE INDEX IF NOT EXISTS order_requests_card_id_idx ON order_requests (card_id);
 
       CREATE TABLE IF NOT EXISTS bracelet_orders (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        id UUID PRIMARY KEY DEFAULT app_uuid_v4(),
         order_id UUID NOT NULL UNIQUE REFERENCES order_requests(id) ON DELETE CASCADE,
         name VARCHAR(100) NOT NULL,
         slug VARCHAR(20) NOT NULL,
@@ -177,7 +194,7 @@ module.exports = {
       CREATE INDEX IF NOT EXISTS bracelet_orders_delivery_status_created_at_idx ON bracelet_orders (delivery_status, created_at);
 
       CREATE TABLE IF NOT EXISTS slug_records (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        id UUID PRIMARY KEY DEFAULT app_uuid_v4(),
         slug VARCHAR(20) NOT NULL UNIQUE,
         state slugstate NOT NULL DEFAULT 'TAKEN',
         owner_name VARCHAR(100),
@@ -192,7 +209,7 @@ module.exports = {
       CREATE INDEX IF NOT EXISTS slug_records_activation_date_idx ON slug_records (activation_date);
 
       CREATE TABLE IF NOT EXISTS slug_checker_logs (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        id UUID PRIMARY KEY DEFAULT app_uuid_v4(),
         slug VARCHAR(20),
         pattern VARCHAR(20) NOT NULL,
         source VARCHAR(20) NOT NULL,
@@ -205,7 +222,7 @@ module.exports = {
       CREATE INDEX IF NOT EXISTS slug_checker_logs_source_checked_at_idx ON slug_checker_logs (source, checked_at);
 
       CREATE TABLE IF NOT EXISTS testimonials (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        id UUID PRIMARY KEY DEFAULT app_uuid_v4(),
         name VARCHAR(100) NOT NULL,
         slug VARCHAR(20) NOT NULL,
         tariff tariff NOT NULL,
@@ -219,7 +236,7 @@ module.exports = {
       CREATE INDEX IF NOT EXISTS testimonials_is_visible_sort_order_idx ON testimonials (is_visible, sort_order);
 
       CREATE TABLE IF NOT EXISTS users (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        id UUID PRIMARY KEY DEFAULT app_uuid_v4(),
         telegram_id VARCHAR(40) NOT NULL UNIQUE,
         first_name VARCHAR(120) NOT NULL,
         last_name VARCHAR(120),
@@ -238,7 +255,7 @@ module.exports = {
       CREATE INDEX IF NOT EXISTS users_status_idx ON users (status);
 
       CREATE TABLE IF NOT EXISTS slugs (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        id UUID PRIMARY KEY DEFAULT app_uuid_v4(),
         letters VARCHAR(3) NOT NULL,
         digits VARCHAR(3) NOT NULL,
         full_slug VARCHAR(20) NOT NULL UNIQUE,
@@ -259,7 +276,7 @@ module.exports = {
       CREATE INDEX IF NOT EXISTS slugs_status_updated_at_idx ON slugs (status, updated_at);
 
       CREATE TABLE IF NOT EXISTS slug_waitlist (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        id UUID PRIMARY KEY DEFAULT app_uuid_v4(),
         full_slug VARCHAR(20) NOT NULL,
         telegram_id VARCHAR(40),
         ip_hash VARCHAR(64),
@@ -271,7 +288,7 @@ module.exports = {
       CREATE INDEX IF NOT EXISTS slug_waitlist_telegram_id_created_at_idx ON slug_waitlist (telegram_id, created_at);
 
       CREATE TABLE IF NOT EXISTS profile_cards (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        id UUID PRIMARY KEY DEFAULT app_uuid_v4(),
         owner_telegram_id VARCHAR(40) NOT NULL UNIQUE REFERENCES users(telegram_id) ON DELETE CASCADE,
         name VARCHAR(120) NOT NULL,
         role VARCHAR(120),
@@ -287,7 +304,7 @@ module.exports = {
       );
 
       CREATE TABLE IF NOT EXISTS slug_requests (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        id UUID PRIMARY KEY DEFAULT app_uuid_v4(),
         telegram_id VARCHAR(40) NOT NULL REFERENCES users(telegram_id) ON DELETE CASCADE,
         slug VARCHAR(20) NOT NULL,
         slug_price INTEGER NOT NULL,
@@ -305,7 +322,7 @@ module.exports = {
       CREATE INDEX IF NOT EXISTS slug_requests_slug_idx ON slug_requests (slug);
 
       CREATE TABLE IF NOT EXISTS slug_views (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        id UUID PRIMARY KEY DEFAULT app_uuid_v4(),
         full_slug VARCHAR(20) NOT NULL,
         viewed_at TIMESTAMPTZ NOT NULL DEFAULT now(),
         device VARCHAR(20),
