@@ -313,8 +313,17 @@
 
       <section id="slug-counter-wrap" class="hidden px-6 pb-4">
         <div class="mx-auto max-w-3xl">
-          <div id="slug-counter" class="hidden rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-700">
-            🔥 Занято <span id="slug-counter-value">0</span> UNQ из <span id="slug-counter-total"><%= pageSlugTotalLimit.toLocaleString("ru-RU") %></span>
+          <div id="slug-counter" class="home-slug-counter hidden">
+            <p class="home-slug-counter-title">Статус UNQ</p>
+            <p class="home-slug-counter-main">
+              Занято
+              <span id="slug-counter-value" class="home-slug-counter-value">0</span>
+              из
+              <span id="slug-counter-total" class="home-slug-counter-total"><%= pageSlugTotalLimit.toLocaleString("ru-RU") %></span>
+            </p>
+            <div class="home-slug-counter-track" aria-hidden="true">
+              <div id="slug-counter-fill" class="home-slug-counter-fill"></div>
+            </div>
           </div>
         </div>
       </section>
