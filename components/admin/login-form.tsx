@@ -29,7 +29,11 @@ export function LoginForm() {
       ]);
 
       if (result?.error) {
-        setError("Неверный логин или пароль");
+        if (result.error === "CredentialsSignin") {
+          setError("Неверный логин или пароль");
+        } else {
+          setError(`Ошибка входа: ${result.error}`);
+        }
         return;
       }
 
