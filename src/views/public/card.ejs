@@ -43,9 +43,6 @@
       sameAs: pageCard.buttons.map((button) => button.url),
     },
   };
-  const pageButtonsCount = pageCard.buttons.length;
-  const pageBottomBlockSpacingClass = pageButtonsCount <= 1 ? "mt-5" : pageButtonsCount <= 3 ? "mt-7" : "mt-9";
-
   const initials = (pageCard.name || "")
     .split(" ")
     .filter(Boolean)
@@ -139,7 +136,7 @@
         <% }); %>
       </div>
 
-      <div class="<%= pageBottomBlockSpacingClass %> w-full">
+      <div class="public-card-bottom w-full">
         <% if (pageCard.hashtag) { %>
         <p class="animate-in text-center text-base font-normal" style="animation-delay: <%= 300 + pageCard.buttons.length * 80 + 80 %>ms;">
           <%= pageCard.hashtag %>
@@ -147,7 +144,7 @@
         <% } %>
 
         <% if (pageCard.address || pageCard.postcode || pageCard.email || pageCard.extraPhone) { %>
-        <section class="public-card-info-card animate-in mx-auto mt-5 w-full max-w-[275px]" style="animation-delay: <%= 300 + pageCard.buttons.length * 80 + 160 %>ms;">
+        <section class="public-card-info animate-in mx-auto mt-5 w-full max-w-[275px]" style="animation-delay: <%= 300 + pageCard.buttons.length * 80 + 160 %>ms;">
           <h2 class="text-base font-normal">About info</h2>
           <div class="public-card-info-body mt-2 space-y-1 text-base leading-[1.15]">
             <% if (pageCard.address) { %><p>Address: <%= pageCard.address %></p><% } %>
