@@ -386,14 +386,45 @@ function initSlugCounter() {
   const wrap = document.getElementById("slug-counter");
   const valueNode = document.getElementById("slug-counter-value");
   const totalNode = document.getElementById("slug-counter-total");
+  const fillNode = document.getElementById("slug-counter-fill");
 
   if (
     !(section instanceof HTMLElement) ||
     !(wrap instanceof HTMLElement) ||
     !(valueNode instanceof HTMLElement) ||
-    !(totalNode instanceof HTMLElement)
+    !(totalNode instanceof HTMLElement) ||
+    !(fillNode instanceof HTMLElement)
   ) {
     return;
+  }
+
+  function animateCounter(toValue, toTotal) {
+    const safeValue = Math.max(0, Number(toValue) || 0);
+    const safeTotal = Math.max(1, Number(toTotal) || 1);
+    const durationMs = 1200;
+    const startAt = performance.now();
+    const startValue = 0;
+
+    const easeOutCubic = (t) => 1 - (1 - t) ** 3;
+
+    function frame(now) {
+      const progress = Math.min((now - startAt) / durationMs, 1);
+      const eased = easeOutCubic(progress);
+      const current = Math.round(startValue + (safeValue - startValue) * eased);
+      const ratio = Math.max(0, Math.min(1, current / safeTotal));
+
+      valueNode.textContent = Number(current).toLocaleString("ru-RU");
+      fillNode.style.width = `${(ratio * 100).toFixed(2)}%`;
+
+      if (progress < 1) {
+        requestAnimationFrame(frame);
+      } else {
+        valueNode.textContent = Number(safeValue).toLocaleString("ru-RU");
+        fillNode.style.width = `${(Math.max(0, Math.min(1, safeValue / safeTotal)) * 100).toFixed(2)}%`;
+      }
+    }
+
+    requestAnimationFrame(frame);
   }
 
   (async () => {
@@ -412,10 +443,10 @@ function initSlugCounter() {
         return;
       }
 
-      valueNode.textContent = Number(payload.taken).toLocaleString("ru-RU");
       totalNode.textContent = Number(payload.total).toLocaleString("ru-RU");
       section.classList.remove("hidden");
       wrap.classList.remove("hidden");
+      animateCounter(payload.taken, payload.total);
     } catch {
       // keep hidden on failure
     }

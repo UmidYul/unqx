@@ -5,7 +5,7 @@ Express-only implementation of UNQ+ without Next.js and without frontend build t
 ## Stack
 
 - Express + EJS (SSR HTML)
-- Prisma + PostgreSQL
+- PostgreSQL + JS migrations
 - express-session + connect-pg-simple
 - Vanilla HTML/CSS/JS + local vendor bundles (SortableJS, CropperJS, Chart.js, qrcode)
 
@@ -13,7 +13,7 @@ Express-only implementation of UNQ+ without Next.js and without frontend build t
 
 ```bash
 npm install
-npm run prisma:deploy
+npm run migrate
 npm run dev
 ```
 

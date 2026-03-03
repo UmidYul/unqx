@@ -48,7 +48,7 @@ function buildPublicCardFromProfile({ slug, user, profileCard, viewsCount }) {
   const plan = getEffectivePlan(user).plan;
   return {
     slug,
-    avatarUrl: profileCard.avatarUrl || null,
+    avatarUrl: profileCard.avatarUrl || user?.photoUrl || null,
     name: profileCard.name,
     verified: false,
     tariff: plan,
