@@ -23,6 +23,25 @@ const TARIFF_MONTHLY = {
 const BRACELET_PRICE = 300_000;
 const THEMES = new Set(["default_dark", "light_minimal", "gradient", "neon", "corporate"]);
 
+function isMissingModelTable(error, modelName) {
+  return (
+    Boolean(error) &&
+    error.code === "P2021" &&
+    (!modelName || String(error?.meta?.modelName || "") === modelName)
+  );
+}
+
+async function withMissingTableFallback(modelName, fallbackValue, callback) {
+  try {
+    return await callback();
+  } catch (error) {
+    if (isMissingModelTable(error, modelName)) {
+      return fallbackValue;
+    }
+    throw error;
+  }
+}
+
 function toOrderStatusLabel(status) {
   switch (status) {
     case "NEW":
@@ -134,10 +153,12 @@ async function getSlugState(slug) {
       where: { slug },
       select: { id: true },
     }),
-    prisma.slugRecord.findUnique({
-      where: { slug },
-      select: { state: true, priceOverride: true },
-    }),
+    withMissingTableFallback("SlugRecord", null, () =>
+      prisma.slugRecord.findUnique({
+        where: { slug },
+        select: { state: true, priceOverride: true },
+      }),
+    ),
   ]);
 
   if (record?.state === "BLOCKED") {
@@ -156,10 +177,12 @@ async function getTakenSlugsSet() {
     prisma.card.findMany({
       select: { slug: true },
     }),
-    prisma.slugRecord.findMany({
-      where: { state: { in: ["TAKEN", "BLOCKED"] } },
-      select: { slug: true },
-    }),
+    withMissingTableFallback("SlugRecord", [], () =>
+      prisma.slugRecord.findMany({
+        where: { state: { in: ["TAKEN", "BLOCKED"] } },
+        select: { slug: true },
+      }),
+    ),
   ]);
 
   const taken = new Set();
@@ -381,10 +404,12 @@ router.get(
       return;
     }
 
-    const record = await prisma.slugRecord.findUnique({
-      where: { slug },
-      select: { priceOverride: true },
-    });
+    const record = await withMissingTableFallback("SlugRecord", null, () =>
+      prisma.slugRecord.findUnique({
+        where: { slug },
+        select: { priceOverride: true },
+      }),
+    );
 
     if (record && typeof record.priceOverride === "number") {
       res.json({
