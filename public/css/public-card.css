@@ -43,10 +43,11 @@ html {
   width: 100%;
   max-width: 30rem;
   margin: 0 auto;
-  padding: 2.5rem 1.25rem 5.75rem;
+  min-height: 100svh;
+  padding: 2.5rem 1.25rem 3.75rem;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.875rem;
 }
 
 .public-card-header {
@@ -54,7 +55,7 @@ html {
   flex-direction: column;
   align-items: center;
   text-align: center;
-  gap: 0.75rem;
+  gap: 0.8rem;
 }
 
 .public-avatar {
@@ -97,6 +98,7 @@ html {
   line-height: 1.15;
   white-space: normal;
   word-break: break-word;
+  text-wrap: balance;
 }
 
 .public-card-verified {
@@ -157,7 +159,7 @@ html {
 .public-media-link {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.7rem;
 }
 
 .public-links-placeholder {
@@ -181,8 +183,8 @@ html {
   background: var(--pc-button);
   border: 1px solid transparent;
   border-radius: 0.625rem;
-  min-height: 3rem;
-  padding: 0.9rem 1.25rem;
+  min-height: 3.05rem;
+  padding: 0.86rem 1.25rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -205,6 +207,7 @@ html {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  word-break: keep-all;
 }
 
 .public-link-icon {
@@ -215,8 +218,8 @@ html {
 
 .public-link-button-compact {
   min-height: 2.75rem;
-  padding-top: 0.72rem;
-  padding-bottom: 0.72rem;
+  padding-top: 0.68rem;
+  padding-bottom: 0.68rem;
 }
 
 .public-link-button-media {
@@ -246,7 +249,7 @@ html {
 }
 
 .public-powered {
-  margin-top: 0.4rem;
+  margin-top: 0.55rem;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -298,7 +301,7 @@ html {
 .public-about,
 .public-extra-photo,
 .public-card-footer {
-  margin-top: 0.35rem;
+  margin-top: 0.5rem;
 }
 
 .public-contact h2,
@@ -326,7 +329,7 @@ html {
   display: flex;
   flex-direction: column;
   gap: 0.14rem;
-  font-size: 0.93rem;
+  font-size: 0.94rem;
   line-height: 1.5;
 }
 
@@ -361,7 +364,7 @@ html {
 
 .public-extra-photo {
   width: 100%;
-  min-height: 8.75rem;
+  min-height: 9rem;
   border-radius: 0.75rem;
   overflow: hidden;
   border: 1px solid var(--pc-border);
@@ -372,12 +375,12 @@ html {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  min-height: 8.75rem;
+  min-height: 9rem;
 }
 
 .public-extra-photo-placeholder {
   width: 100%;
-  min-height: 8.75rem;
+  min-height: 9rem;
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
   opacity: 0.3;
 }
@@ -399,15 +402,15 @@ html {
   left: 1rem;
   right: 1rem;
   bottom: max(1rem, env(safe-area-inset-bottom));
-  max-width: 28rem;
+  max-width: 30rem;
   margin: 0 auto;
   text-decoration: none;
   color: var(--pc-text);
   background: #ffffff;
   color: #0a0a0a;
   border-radius: 0.625rem;
-  min-height: 3rem;
-  padding: 0.9rem 1.15rem;
+  min-height: 3.05rem;
+  padding: 0.86rem 1.15rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -443,6 +446,41 @@ html {
   text-align: right;
 }
 
+.public-card-shell > * {
+  animation: pc-fade-up 420ms ease both;
+}
+
+.public-card-shell > *:nth-child(1) {
+  animation-delay: 40ms;
+}
+
+.public-card-shell > *:nth-child(2) {
+  animation-delay: 90ms;
+}
+
+.public-card-shell > *:nth-child(3) {
+  animation-delay: 140ms;
+}
+
+.public-card-shell > *:nth-child(4) {
+  animation-delay: 180ms;
+}
+
+.public-card-shell > *:nth-child(5) {
+  animation-delay: 220ms;
+}
+
+@keyframes pc-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @media (hover: hover) {
   .public-link-button:hover {
     background: var(--pc-button-hover);
@@ -462,6 +500,8 @@ html {
 @media (max-width: 20rem) {
   .public-card-shell {
     padding-inline: 1rem;
+    padding-top: 2rem;
+    gap: 0.75rem;
   }
 
   .public-avatar {
@@ -470,7 +510,7 @@ html {
   }
 
   .public-card-name {
-    font-size: 1.25rem;
+    font-size: 1.125rem;
   }
 
   .public-link-button {
@@ -480,11 +520,33 @@ html {
   .public-hashtags p {
     font-size: 0.625rem;
   }
+
+  .public-sticky-cta {
+    left: 0.75rem;
+    right: 0.75rem;
+  }
 }
 
 @media (min-width: 48rem) {
   .public-card-shell {
     padding-top: 3rem;
+    padding-bottom: 4.25rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .public-card-shell > * {
+    animation: none;
+  }
+
+  .public-link-button,
+  .public-copy-phone,
+  .public-sticky-cta {
+    transition: none;
   }
 }
 
