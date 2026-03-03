@@ -39,24 +39,22 @@ async function listCards(options = {}) {
     ];
   }
 
-  const [total, items] = await Promise.all([
-    prisma.card.count({ where }),
-    prisma.card.findMany({
-      where,
-      orderBy: { createdAt: "desc" },
-      skip: (page - 1) * pageSize,
-      take: pageSize,
-      select: {
-        id: true,
-        slug: true,
-        name: true,
-        isActive: true,
-        viewsCount: true,
-        uniqueViewsCount: true,
-        createdAt: true,
-      },
-    }),
-  ]);
+  const total = await prisma.card.count({ where });
+  const items = await prisma.card.findMany({
+    where,
+    orderBy: { createdAt: "desc" },
+    skip: (page - 1) * pageSize,
+    take: pageSize,
+    select: {
+      id: true,
+      slug: true,
+      name: true,
+      isActive: true,
+      viewsCount: true,
+      uniqueViewsCount: true,
+      createdAt: true,
+    },
+  });
 
   return {
     items,

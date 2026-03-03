@@ -1,6 +1,30 @@
 const { prisma } = require("../db/prisma");
 
 let dbErrorLoggingDisabled = false;
+let panicShutdownScheduled = false;
+
+function isPrismaPanic(error) {
+  return Boolean(
+    error &&
+      typeof error === "object" &&
+      (error.name === "PrismaClientRustPanicError" ||
+        (typeof error.message === "string" &&
+          (error.message.includes("PANIC:") || error.message.includes("timer has gone away")))),
+  );
+}
+
+function schedulePanicShutdown() {
+  if (panicShutdownScheduled) {
+    return;
+  }
+
+  panicShutdownScheduled = true;
+  console.error("[express-app] prisma panic detected; process will exit to allow clean restart");
+
+  setTimeout(() => {
+    process.exit(1);
+  }, 300).unref();
+}
 
 async function logServerError(req, error) {
   if (dbErrorLoggingDisabled) {
@@ -17,19 +41,13 @@ async function logServerError(req, error) {
       },
     });
   } catch (loggingError) {
-    const isPanic =
-      loggingError &&
-      typeof loggingError === "object" &&
-      (loggingError.name === "PrismaClientRustPanicError" ||
-        (typeof loggingError.message === "string" &&
-          (loggingError.message.includes("PANIC:") || loggingError.message.includes("timer has gone away"))));
-
-    if (isPanic) {
+    if (isPrismaPanic(loggingError)) {
       dbErrorLoggingDisabled = true;
       console.error("[express-app] prisma panic while persisting server error; DB error logging disabled until restart");
       try {
         await prisma.$disconnect();
       } catch {}
+      schedulePanicShutdown();
       return;
     }
 
@@ -39,6 +57,12 @@ async function logServerError(req, error) {
 
 async function errorHandler(error, req, res, next) {
   console.error("[express-app] unhandled error", error);
+
+  if (isPrismaPanic(error)) {
+    dbErrorLoggingDisabled = true;
+    schedulePanicShutdown();
+  }
+
   await logServerError(req, error);
 
   if (res.headersSent) {
