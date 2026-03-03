@@ -20,6 +20,7 @@
   let currentSvg = "";
   const qrLogoUrl = "/brand/unq-mark.svg";
   let qrLogoDataUrl = "";
+  let qrLogoSvgMarkup = "";
 
   if (!modal || !qrSvgWrap || !qrCanvas) {
     return;
@@ -74,17 +75,51 @@
     }
   }
 
-  function injectLogoToSvg(svg, size, logoSize, logoSrc) {
+  async function resolveQrLogoSvgMarkup() {
+    if (qrLogoSvgMarkup) {
+      return qrLogoSvgMarkup;
+    }
+
+    try {
+      const response = await fetch(qrLogoUrl, { cache: "force-cache" });
+      if (!response.ok) {
+        return "";
+      }
+
+      const svgText = await response.text();
+      const cleaned = svgText
+        .replace(/<\?xml[\s\S]*?\?>/gi, "")
+        .replace(/<!doctype[\s\S]*?>/gi, "")
+        .replace(/<!DOCTYPE[\s\S]*?>/gi, "")
+        .trim();
+      const inner = cleaned
+        .replace(/^[\s\S]*?<svg[^>]*>/i, "")
+        .replace(/<\/svg>\s*$/i, "")
+        .trim();
+      const viewBoxMatch = cleaned.match(/viewBox="([^"]+)"/i);
+      const viewBox = viewBoxMatch ? viewBoxMatch[1] : "0 0 120 120";
+
+      qrLogoSvgMarkup = `<svg x="0" y="0" width="100%" height="100%" viewBox="${viewBox}" preserveAspectRatio="xMidYMid meet">${inner}</svg>`;
+      return qrLogoSvgMarkup;
+    } catch {
+      return "";
+    }
+  }
+
+  function injectLogoToSvg(svg, size, logoSize, logoSrc, logoSvgMarkup = "") {
     const x = Math.round((size - logoSize) / 2);
     const y = Math.round((size - logoSize) / 2);
     const whitePad = Math.round(logoSize * 0.2);
     const rectX = x - whitePad;
     const rectY = y - whitePad;
     const rectSize = logoSize + whitePad * 2;
+    const logoBody = logoSvgMarkup
+      ? `<g transform="translate(${x},${y})"><svg x="0" y="0" width="${logoSize}" height="${logoSize}" viewBox="0 0 120 120" preserveAspectRatio="xMidYMid meet">${logoSvgMarkup.replace(/^[\s\S]*?<svg[^>]*>/i, "").replace(/<\/svg>\s*$/i, "")}</svg></g>`
+      : `<image href="${logoSrc}" xlink:href="${logoSrc}" x="${x}" y="${y}" width="${logoSize}" height="${logoSize}" preserveAspectRatio="xMidYMid meet" />`;
 
     const logo = [
       `<rect x="${rectX}" y="${rectY}" width="${rectSize}" height="${rectSize}" fill="white" rx="12" ry="12" />`,
-      `<image href="${logoSrc}" xlink:href="${logoSrc}" x="${x}" y="${y}" width="${logoSize}" height="${logoSize}" preserveAspectRatio="xMidYMid meet" />`,
+      logoBody,
     ].join("");
 
     return svg.replace("</svg>", `${logo}</svg>`);
@@ -165,9 +200,9 @@
         errorCorrectionLevel: "H",
       });
 
-      const logoSrc = await resolveQrLogoSrc();
-      const displaySvg = injectLogoToSvg(displaySvgRaw, 240, 44, logoSrc);
-      currentSvg = injectLogoToSvg(downloadSvgRaw, 1000, 180, logoSrc);
+      const [logoSrc, logoSvgMarkup] = await Promise.all([resolveQrLogoSrc(), resolveQrLogoSvgMarkup()]);
+      const displaySvg = injectLogoToSvg(displaySvgRaw, 240, 44, logoSrc, logoSvgMarkup);
+      currentSvg = injectLogoToSvg(downloadSvgRaw, 1000, 180, logoSrc, logoSvgMarkup);
 
       qrSvgWrap.innerHTML = displaySvg;
 
