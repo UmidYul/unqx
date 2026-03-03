@@ -2,6 +2,14 @@ const { prisma } = require("../db/prisma");
 
 let started = false;
 
+function isMissingModelTable(error, modelName) {
+  return (
+    Boolean(error) &&
+    error.code === "P2021" &&
+    (!modelName || String(error?.meta?.modelName || "") === modelName)
+  );
+}
+
 const DEFAULT_TESTIMONIALS = [
   {
     name: "Алишер",
@@ -27,56 +35,72 @@ const DEFAULT_TESTIMONIALS = [
 ];
 
 async function seedTestimonials() {
-  for (const item of DEFAULT_TESTIMONIALS) {
-    const existing = await prisma.testimonial.findFirst({
-      where: { slug: item.slug, name: item.name },
-      select: { id: true },
-    });
+  try {
+    for (const item of DEFAULT_TESTIMONIALS) {
+      const existing = await prisma.testimonial.findFirst({
+        where: { slug: item.slug, name: item.name },
+        select: { id: true },
+      });
 
-    if (existing) {
-      continue;
+      if (existing) {
+        continue;
+      }
+
+      await prisma.testimonial.create({
+        data: {
+          name: item.name,
+          slug: item.slug,
+          tariff: item.tariff,
+          text: item.text,
+          isVisible: true,
+          sortOrder: item.sortOrder,
+        },
+      });
     }
-
-    await prisma.testimonial.create({
-      data: {
-        name: item.name,
-        slug: item.slug,
-        tariff: item.tariff,
-        text: item.text,
-        isVisible: true,
-        sortOrder: item.sortOrder,
-      },
-    });
+  } catch (error) {
+    if (isMissingModelTable(error, "Testimonial")) {
+      console.warn("[express-app] skip testimonial seed: testimonials table is not migrated yet");
+      return;
+    }
+    throw error;
   }
 }
 
 async function backfillSlugRecords() {
-  const cards = await prisma.card.findMany({
-    select: {
-      id: true,
-      slug: true,
-      name: true,
-      createdAt: true,
-    },
-  });
-
-  for (const card of cards) {
-    await prisma.slugRecord.upsert({
-      where: { slug: card.slug },
-      create: {
-        slug: card.slug,
-        state: "TAKEN",
-        ownerName: card.name,
-        cardId: card.id,
-        activationDate: card.createdAt,
-      },
-      update: {
-        state: "TAKEN",
-        ownerName: card.name,
-        cardId: card.id,
-        activationDate: card.createdAt,
+  try {
+    const cards = await prisma.card.findMany({
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+        createdAt: true,
       },
     });
+
+    for (const card of cards) {
+      await prisma.slugRecord.upsert({
+        where: { slug: card.slug },
+        create: {
+          slug: card.slug,
+          state: "TAKEN",
+          ownerName: card.name,
+          cardId: card.id,
+          activationDate: card.createdAt,
+        },
+        update: {
+          state: "TAKEN",
+          ownerName: card.name,
+          cardId: card.id,
+          activationDate: card.createdAt,
+        },
+      });
+    }
+  } catch (error) {
+    if (isMissingModelTable(error, "SlugRecord")) {
+      console.warn("[express-app] skip slug backfill: slug_records table is not migrated yet");
+      return;
+    }
+    throw error;
   }
 }
 
