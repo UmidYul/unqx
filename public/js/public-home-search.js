@@ -17,6 +17,7 @@ const TARIFFS = {
   initSlugCounter();
   initSlugAvailability(orderApi);
   initSlugCalculator(orderApi);
+  initOrderLinks(orderApi);
 })();
 
 function formatPrice(number) {
@@ -708,5 +709,29 @@ function initOrderModalBridge() {
       }
     },
   };
+}
+
+function initOrderLinks(orderApi) {
+  if (!orderApi || typeof orderApi.open !== "function") {
+    return;
+  }
+  document.querySelectorAll("[data-order-link]").forEach((node) => {
+    if (!(node instanceof HTMLElement) || node.dataset.orderLinkHomeBound === "1") {
+      return;
+    }
+    node.dataset.orderLinkHomeBound = "1";
+    node.addEventListener("click", (event) => {
+      if (node.getAttribute("data-waitlist-slug")) {
+        return;
+      }
+      event.preventDefault();
+      orderApi.open({
+        slug: node.getAttribute("data-order-prefill") || "",
+        plan: node.getAttribute("data-order-plan") || "",
+        theme: node.getAttribute("data-order-theme") || "",
+        bracelet: node.getAttribute("data-order-bracelet") === "true",
+      });
+    });
+  });
 }
 
