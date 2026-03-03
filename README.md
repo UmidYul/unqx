@@ -2,6 +2,14 @@
 
 Full-stack web app on Next.js 14 (App Router) + TypeScript + Prisma + PostgreSQL + Tailwind CSS.
 
+## Express migration preview
+
+For a build-free alternative, a full Express + EJS + vanilla JS migration preview is available in:
+
+- `express-app/`
+
+This version keeps the same business routes and API contracts, but removes Next.js and frontend build tooling.
+
 ## Stack
 
 - Next.js 14, React 18, TypeScript

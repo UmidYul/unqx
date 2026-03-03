@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <%- include('../partials/head', { title, styles: ['/css/admin.css'] }) %>
+</head>
+<body class="admin-login-body">
+  <main class="admin-login-main">
+    <form method="post" action="/admin/login" class="admin-login-form">
+      <h1>Вход в админ-панель</h1>
+
+      <label>
+        <span>Логин</span>
+        <input type="text" name="login" autocomplete="username" required />
+      </label>
+
+      <label>
+        <span>Пароль</span>
+        <input type="password" name="password" autocomplete="current-password" required />
+      </label>
+
+      <% if (error) { %>
+      <p class="error-text"><%= error %></p>
+      <% } %>
+
+      <button type="submit" class="btn btn-dark">Войти</button>
+    </form>
+  </main>
+</body>
+</html>

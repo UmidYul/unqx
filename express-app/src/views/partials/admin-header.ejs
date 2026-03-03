@@ -1,0 +1,16 @@
+<header class="admin-header">
+  <div class="container admin-header-inner">
+    <div class="admin-brand-wrap">
+      <a class="admin-brand" href="/admin/dashboard">UNQ+ Admin</a>
+      <nav class="admin-nav">
+        <a href="/admin/dashboard" class="<%= currentPath.startsWith('/admin/dashboard') ? 'is-active' : '' %>">Дашборд</a>
+        <a href="/admin/cards/new" class="<%= currentPath.startsWith('/admin/cards/new') ? 'is-active' : '' %>">Создать</a>
+        <a href="/admin/stats" class="<%= currentPath.startsWith('/admin/stats') ? 'is-active' : '' %>">Статистика</a>
+        <a href="/admin/logs" class="<%= currentPath.startsWith('/admin/logs') ? 'is-active' : '' %>">Логи</a>
+      </nav>
+    </div>
+    <form method="post" action="/admin/logout">
+      <button type="submit" class="btn btn-outline">Выйти</button>
+    </form>
+  </div>
+</header>

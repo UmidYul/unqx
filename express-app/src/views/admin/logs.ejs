@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <%- include('../partials/head', { title, styles: ['/css/admin.css'] }) %>
+</head>
+<body class="admin-body">
+  <%- include('../partials/admin-header') %>
+
+  <main class="container admin-main">
+    <section class="admin-heading-row">
+      <h1>Логи ошибок</h1>
+      <div class="action-row">
+        <button type="button" class="btn btn-outline" id="cleanup-logs-btn">Очистить старше 30 дней</button>
+        <span id="cleanup-message" class="helper-text"></span>
+      </div>
+    </section>
+
+    <form action="/admin/logs" method="get" class="filter-grid short-grid">
+      <select name="type">
+        <option value="all" <%= type === 'all' ? 'selected' : '' %>>Все типы</option>
+        <option value="not_found" <%= type === 'not_found' ? 'selected' : '' %>>404 (not_found)</option>
+        <option value="server_error" <%= type === 'server_error' ? 'selected' : '' %>>500 (server_error)</option>
+      </select>
+      <button type="submit" class="btn btn-outline">Применить</button>
+    </form>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Тип</th>
+            <th>Путь</th>
+            <th>Сообщение</th>
+            <th>Браузер</th>
+            <th>Время</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (!logs.length) { %>
+          <tr>
+            <td colspan="5" class="empty-cell">Логи не найдены</td>
+          </tr>
+          <% } %>
+          <% logs.forEach((log) => { %>
+          <tr>
+            <td><%= log.type %></td>
+            <td class="mono"><%= log.path %></td>
+            <td><%= log.message || '-' %></td>
+            <td><%= log.userAgent || '-' %></td>
+            <td><%= new Date(log.occurredAt).toLocaleString('ru-RU') %></td>
+          </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+
+    <footer class="pager-row">
+      <span>Страница <%= page %> из <%= totalPages %> (всего <%= total %>)</span>
+      <div class="action-row">
+        <a href="<%= buildLogsUrl(Math.max(1, page - 1)) %>" class="btn btn-outline btn-sm">Назад</a>
+        <a href="<%= buildLogsUrl(Math.min(totalPages, page + 1)) %>" class="btn btn-outline btn-sm">Вперёд</a>
+      </div>
+    </footer>
+  </main>
+
+  <script src="/js/admin-logs.js"></script>
+</body>
+</html>

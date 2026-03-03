@@ -2,12 +2,16 @@
 
 # dependencies
 /node_modules
+/express-app/node_modules
 /.pnp
 .pnp.js
 .yarn/install-state.gz
 
 # testing
 /coverage
+/express-app/coverage
+/express-app/playwright-report
+/express-app/test-results
 
 # next.js
 /.next/*

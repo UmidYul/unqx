@@ -1,0 +1,16 @@
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title><%= title || "UNQ+" %></title>
+<meta name="description" content="<%= description || 'UNQ+ platform for digital business cards' %>" />
+<link rel="icon" href="/favicon.ico" />
+<link rel="stylesheet" href="/css/base.css" />
+<% if (Array.isArray(styles)) { %>
+  <% styles.forEach((styleHref) => { %>
+<link rel="stylesheet" href="<%= styleHref %>" />
+  <% }); %>
+<% } %>
+<% if (image) { %>
+<meta property="og:image" content="<%= image %>" />
+<% } %>
+<meta property="og:title" content="<%= title || 'UNQ+' %>" />
+<meta property="og:description" content="<%= description || 'UNQ+ platform for digital business cards' %>" />

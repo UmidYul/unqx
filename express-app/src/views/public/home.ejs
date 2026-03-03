@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <%- include('../partials/head', { title, styles: ['/css/public-card.css'] }) %>
+</head>
+<body>
+  <main class="home-shell">
+    <section class="hero container">
+      <p class="hero-kicker">UNQ+ Platform</p>
+      <h1>Цифровые визитки для команд, экспертов и брендов, которые работают 24/7</h1>
+      <p class="hero-subtitle">UNQ+ объединяет персональный профиль, контакты, ссылки и аналитику в одном аккуратном публичном пространстве.</p>
+      <div class="hero-metrics">
+        <article><strong>1 мин</strong><span>на публикацию карточки</span></article>
+        <article><strong>100%</strong><span>контроль актуальности данных</span></article>
+        <article><strong>24/7</strong><span>доступ к профилю по одной ссылке</span></article>
+      </div>
+      <div class="hero-actions">
+        <a href="/admin" class="btn btn-dark">Войти в админ-панель</a>
+      </div>
+    </section>
+
+    <section class="container panel-grid">
+      <article class="panel">
+        <h2>Почему выбирают UNQ+</h2>
+        <ul>
+          <li>Быстрый запуск и публикация визитки без сборки и сложных сервисов.</li>
+          <li>Админ-панель с CRUD, тегами, кнопками, аватарами и аналитикой.</li>
+          <li>Отслеживание просмотров, уникальных визитов и устройства клиента.</li>
+        </ul>
+      </article>
+      <article class="panel panel-dark">
+        <h3>Подходит для</h3>
+        <ul>
+          <li>Агентств и sales-команд</li>
+          <li>Экспертов и консультантов</li>
+          <li>Предпринимателей и руководителей</li>
+          <li>Оффлайн-нетворкинга и мероприятий</li>
+        </ul>
+      </article>
+    </section>
+
+    <footer class="container home-footer">UNQ+ • Digital Business Cards Platform • <%= new Date().getFullYear() %></footer>
+  </main>
+</body>
+</html>

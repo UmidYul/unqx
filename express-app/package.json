@@ -1,0 +1,37 @@
+{
+  "name": "unqx-express-app",
+  "version": "0.1.0",
+  "private": true,
+  "main": "server.js",
+  "scripts": {
+    "dev": "node --watch server.js",
+    "start": "node server.js",
+    "prisma:generate": "prisma generate --schema ../prisma/schema.prisma",
+    "prisma:deploy": "prisma migrate deploy --schema ../prisma/schema.prisma",
+    "test": "vitest run",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "@prisma/adapter-pg": "^6.8.2",
+    "@prisma/client": "6.8.2",
+    "bcryptjs": "^3.0.3",
+    "connect-pg-simple": "^10.0.0",
+    "date-fns": "^4.1.0",
+    "date-fns-tz": "^3.2.0",
+    "dotenv": "^17.3.1",
+    "ejs": "^3.1.10",
+    "express": "^4.21.2",
+    "express-session": "^1.18.1",
+    "multer": "^2.0.2",
+    "pg": "^8.19.0",
+    "sharp": "^0.34.5",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.58.2",
+    "playwright": "^1.58.2",
+    "prisma": "6.8.2",
+    "supertest": "^7.1.4",
+    "vitest": "^4.0.18"
+  }
+}

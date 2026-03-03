@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <%- include('../partials/head', { title, description, image, styles: ['/css/public-card.css'] }) %>
+</head>
+<body>
+  <% const initials = (card.name || '').split(' ').filter(Boolean).slice(0, 2).map((part) => part[0] ? part[0].toUpperCase() : '').join(''); %>
+  <div class="public-bg-decor" aria-hidden="true">
+    <span class="bolt bolt-a"></span>
+    <span class="bolt bolt-b"></span>
+    <span class="bolt bolt-c"></span>
+    <span class="bolt bolt-d"></span>
+  </div>
+
+  <main class="card-page" data-slug="<%= card.slug %>">
+    <article class="card-root">
+      <p class="card-slug">#<%= card.slug %></p>
+
+      <div class="card-brand">
+        <div class="brand-title">UNQ+</div>
+        <div class="brand-subtitle">powered by scxr</div>
+      </div>
+
+      <div class="avatar-wrap">
+        <% if (card.avatarUrl) { %>
+        <img src="<%= card.avatarUrl %>" alt="<%= card.name %>" class="avatar-img" />
+        <% } else { %>
+        <span class="avatar-fallback"><%= initials %></span>
+        <% } %>
+      </div>
+
+      <div class="identity-row">
+        <h1><%= card.name %></h1>
+        <% if (card.verified) { %>
+        <span class="verified-mark" aria-label="verified">✓</span>
+        <% } %>
+      </div>
+
+      <p class="phone-row">
+        <span><%= card.phone %></span>
+        <button type="button" class="icon-btn" data-copy-phone="<%= card.phone %>" title="Скопировать телефон">⧉</button>
+      </p>
+
+      <% if (card.tags && card.tags.length > 0) { %>
+      <div class="tag-row">
+        <% card.tags.forEach((tag, index) => { %>
+          <% if (index > 0) { %><span class="tag-sep">·</span><% } %>
+          <% if (tag.url) { %>
+          <a href="<%= tag.url %>" target="_blank" rel="noopener noreferrer"><%= tag.label %></a>
+          <% } else { %>
+          <span><%= tag.label %></span>
+          <% } %>
+        <% }); %>
+      </div>
+      <% } %>
+
+      <div class="button-col">
+        <% card.buttons.forEach((button) => { %>
+        <a href="<%= button.url %>" target="_blank" rel="noopener noreferrer" class="btn-shimmer card-cta"><%= button.label %></a>
+        <% }); %>
+      </div>
+
+      <div class="public-actions" data-share-url="<%= card.slug %>">
+        <a href="/api/cards/<%= card.slug %>/vcf" class="btn btn-light">Сохранить контакт</a>
+        <button type="button" class="btn btn-outline" data-share-button>Поделиться</button>
+        <span class="hint" data-share-hint></span>
+      </div>
+
+      <div class="card-footer">
+        <% if (card.hashtag) { %>
+        <p class="hashtag"><%= card.hashtag %></p>
+        <% } %>
+
+        <% if (card.address || card.postcode || card.email || card.extraPhone) { %>
+        <section class="about-info">
+          <h2>About info</h2>
+          <div>
+            <% if (card.address) { %><p>Address: <%= card.address %></p><% } %>
+            <% if (card.postcode) { %><p>Postcode: <%= card.postcode %></p><% } %>
+            <% if (card.email) { %><p>Email: <%= card.email %></p><% } %>
+            <% if (card.extraPhone) { %><p>Phone: <%= card.extraPhone %></p><% } %>
+          </div>
+        </section>
+        <% } %>
+      </div>
+    </article>
+  </main>
+
+  <script src="/js/public-card.js"></script>
+</body>
+</html>
