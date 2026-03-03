@@ -10,6 +10,26 @@ const { getEffectivePlan, normalizeDisplayName } = require("../../services/profi
 
 const router = express.Router();
 
+function getUserDelegate() {
+  const delegate = prisma.user;
+  return delegate && typeof delegate === "object" ? delegate : null;
+}
+
+function ensureUserModelReady(res) {
+  if (!getUserDelegate()) {
+    res.status(503).json({
+      error: "Authentication is temporarily unavailable",
+      code: "AUTH_STORAGE_UNAVAILABLE",
+    });
+    return false;
+  }
+  return true;
+}
+
+function isUserStorageMissing(error) {
+  return Boolean(error) && error.code === "P2021" && String(error?.meta?.modelName || "") === "User";
+}
+
 function userToSessionPayload(user) {
   const displayName = normalizeDisplayName(user.displayName, user.firstName);
   return {
@@ -47,6 +67,10 @@ router.post(
   requireSameOrigin,
   requireCsrfToken,
   asyncHandler(async (req, res) => {
+    if (!ensureUserModelReady(res)) {
+      return;
+    }
+
     let parsed;
     try {
       parsed = verifyTelegramLoginPayload(req.body || {});
@@ -58,25 +82,37 @@ router.post(
       throw error;
     }
 
-    const user = await prisma.user.upsert({
-      where: { telegramId: parsed.telegramId },
-      create: {
-        telegramId: parsed.telegramId,
-        firstName: parsed.firstName,
-        lastName: parsed.lastName,
-        username: parsed.username,
-        photoUrl: parsed.photoUrl,
-        displayName: parsed.firstName,
-        plan: "basic",
-        status: "active",
-      },
-      update: {
-        firstName: parsed.firstName,
-        lastName: parsed.lastName,
-        username: parsed.username,
-        photoUrl: parsed.photoUrl,
-      },
-    });
+    let user;
+    try {
+      user = await prisma.user.upsert({
+        where: { telegramId: parsed.telegramId },
+        create: {
+          telegramId: parsed.telegramId,
+          firstName: parsed.firstName,
+          lastName: parsed.lastName,
+          username: parsed.username,
+          photoUrl: parsed.photoUrl,
+          displayName: parsed.firstName,
+          plan: "basic",
+          status: "active",
+        },
+        update: {
+          firstName: parsed.firstName,
+          lastName: parsed.lastName,
+          username: parsed.username,
+          photoUrl: parsed.photoUrl,
+        },
+      });
+    } catch (error) {
+      if (isUserStorageMissing(error)) {
+        res.status(503).json({
+          error: "Authentication is temporarily unavailable",
+          code: "AUTH_STORAGE_UNAVAILABLE",
+        });
+        return;
+      }
+      throw error;
+    }
 
     await loginUserSession(req, userToSessionPayload(user));
     const csrfToken = ensureCsrfToken(req);
@@ -93,15 +129,32 @@ router.post(
 router.get(
   "/me",
   asyncHandler(async (req, res) => {
+    if (!ensureUserModelReady(res)) {
+      return;
+    }
+
     const sessionUser = getUserSession(req);
     if (!sessionUser || !sessionUser.telegramId) {
       res.json({ authenticated: false });
       return;
     }
 
-    const user = await prisma.user.findUnique({
-      where: { telegramId: sessionUser.telegramId },
-    });
+    let user;
+    try {
+      user = await prisma.user.findUnique({
+        where: { telegramId: sessionUser.telegramId },
+      });
+    } catch (error) {
+      if (isUserStorageMissing(error)) {
+        res.status(503).json({
+          authenticated: false,
+          error: "Authentication is temporarily unavailable",
+          code: "AUTH_STORAGE_UNAVAILABLE",
+        });
+        return;
+      }
+      throw error;
+    }
 
     if (!user) {
       res.json({ authenticated: false });

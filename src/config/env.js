@@ -74,6 +74,20 @@ function normalizeBcryptHash(value) {
   return value.trim().replace(/^['\"]|['\"]$/g, "").replace(/\\\$/g, "$");
 }
 
+function normalizeTelegramBotUsername(value) {
+  if (typeof value !== "string") {
+    return value;
+  }
+
+  const raw = value.trim();
+  if (!raw) {
+    return raw;
+  }
+
+  const withoutUrl = raw.replace(/^https?:\/\/t\.me\//i, "");
+  return withoutUrl.replace(/^@+/, "").trim();
+}
+
 const rootDirDefault = path.resolve(__dirname, "../../..");
 const expressAppDirDefault = path.resolve(__dirname, "../..");
 
@@ -127,7 +141,7 @@ const parsed = schema.parse({
   ADMIN_LOGIN: process.env.ADMIN_LOGIN,
   ADMIN_PASSWORD_HASH: decodeB64(process.env.ADMIN_PASSWORD_HASH_B64) ?? process.env.ADMIN_PASSWORD_HASH,
   TELEGRAM_BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN,
-  TELEGRAM_BOT_USERNAME: process.env.TELEGRAM_BOT_USERNAME,
+  TELEGRAM_BOT_USERNAME: normalizeTelegramBotUsername(process.env.TELEGRAM_BOT_USERNAME),
   TELEGRAM_CHAT_ID: process.env.TELEGRAM_CHAT_ID,
   TELEGRAM_AUTH_MAX_AGE_SECONDS: process.env.TELEGRAM_AUTH_MAX_AGE_SECONDS,
   SLUG_TOTAL_LIMIT: process.env.SLUG_TOTAL_LIMIT,
