@@ -7,7 +7,8 @@
   const pageCanonical = typeof canonical === "string" && canonical ? canonical : (typeof canonicalUrl === "string" ? canonicalUrl : "");
   const pageNoindex = typeof noindex === "boolean" ? noindex : false;
   const pageOgType = typeof ogType === "string" && ogType ? ogType : "website";
-  const pageJsonLd = Array.isArray(jsonLd) ? jsonLd : jsonLd ? [jsonLd] : [];
+  const rawJsonLd = typeof jsonLd !== "undefined" ? jsonLd : undefined;
+  const pageJsonLd = Array.isArray(rawJsonLd) ? rawJsonLd : rawJsonLd ? [rawJsonLd] : [];
   const pageCsrfToken = typeof csrfToken === "string" ? csrfToken : "";
   const pageCspNonce = typeof cspNonce === "string" ? cspNonce : "";
 %>
