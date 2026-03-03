@@ -16,6 +16,7 @@ const { listCards, createCard, getCardDetailsById, updateCard, generateNextSlug 
 const { getCardStats, getGlobalStats } = require("../../services/stats");
 const { calculateSlugPrice } = require("../../services/slug-pricing");
 const { cleanupOrphanAvatars, deleteAvatarByPublicPath, isSupportedAvatarBuffer, renameAvatarBySlug, saveAvatarFromBuffer } = require("../../services/avatar");
+const { sendSlugApprovedToUser, sendSlugRejectedToUser } = require("../../services/telegram");
 
 const router = express.Router();
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
@@ -35,14 +36,20 @@ function normalizeTheme(value) {
 }
 
 function toOrderStatus(value) {
-  switch (value) {
-    case "CONTACTED":
-    case "PAID":
-    case "ACTIVATED":
-    case "REJECTED":
-      return value;
+  const normalized = String(value || "").trim().toLowerCase();
+  switch (normalized) {
+    case "new":
+      return "new";
+    case "contacted":
+      return "contacted";
+    case "paid":
+      return "paid";
+    case "approved":
+      return "approved";
+    case "rejected":
+      return "rejected";
     default:
-      return "NEW";
+      return "new";
   }
 }
 
@@ -71,15 +78,15 @@ function toDeliveryStatus(value) {
 
 function formatOrderStatusLabel(status) {
   switch (status) {
-    case "NEW":
+    case "new":
       return "🆕 Новая";
-    case "CONTACTED":
+    case "contacted":
       return "💬 Связались";
-    case "PAID":
-      return "💳 Оплачено";
-    case "ACTIVATED":
-      return "✅ Активировано";
-    case "REJECTED":
+    case "paid":
+      return "💳 Ожидает оплаты";
+    case "approved":
+      return "✅ Одобрено";
+    case "rejected":
       return "❌ Отклонено";
     default:
       return status;
@@ -443,7 +450,7 @@ function buildOrdersWhere(query) {
     where.status = toOrderStatus(query.status);
   }
   if (query.tariff && query.tariff !== "all") {
-    where.tariff = normalizeTariff(query.tariff);
+    where.requestedPlan = normalizeTariff(query.tariff);
   }
   if (query.bracelet === "yes") {
     where.bracelet = true;
@@ -477,30 +484,40 @@ router.get(
     const pageSizeRaw = Number(req.query.pageSize || "20") || 20;
     const pageSize = Math.max(1, Math.min(200, pageSizeRaw));
     const [total, rows] = await Promise.all([
-      prisma.orderRequest.count({ where }),
-      prisma.orderRequest.findMany({
+      prisma.slugRequest.count({ where }),
+      prisma.slugRequest.findMany({
         where,
         orderBy: { createdAt: "desc" },
         skip: (page - 1) * pageSize,
         take: pageSize,
-        select: {
-          id: true,
-          name: true,
-          slug: true,
-          slugPrice: true,
-          tariff: true,
-          theme: true,
-          bracelet: true,
-          contact: true,
-          status: true,
-          createdAt: true,
+        include: {
+          user: {
+            select: {
+              telegramId: true,
+              firstName: true,
+              displayName: true,
+              username: true,
+            },
+          },
         },
       }),
     ]);
 
     res.json({
       items: rows.map((row) => ({
-        ...row,
+        id: row.id,
+        name: row.user?.displayName || row.user?.firstName || "UNQ+ User",
+        slug: row.slug,
+        slugPrice: row.slugPrice,
+        tariff: row.requestedPlan,
+        theme: null,
+        bracelet: row.bracelet,
+        contact: row.contact,
+        telegramId: row.telegramId,
+        username: row.user?.username || null,
+        status: row.status,
+        adminNote: row.adminNote || null,
+        createdAt: row.createdAt,
         statusLabel: formatOrderStatusLabel(row.status),
       })),
       pagination: {
@@ -517,12 +534,142 @@ router.patch(
   "/orders/:id/status",
   asyncHandler(async (req, res) => {
     const status = toOrderStatus(req.body.status);
-    const updated = await prisma.orderRequest.update({
+    const adminNote = String(req.body.adminNote || "").trim();
+
+    const order = await prisma.slugRequest.findUnique({
       where: { id: req.params.id },
-      data: { status },
-      select: { id: true, status: true },
+      include: {
+        user: {
+          select: { telegramId: true },
+        },
+      },
     });
-    res.json(updated);
+    if (!order) {
+      res.status(404).json({ error: "Order not found" });
+      return;
+    }
+
+    const updated = await prisma.$transaction(async (tx) => {
+      const row = await tx.slugRequest.update({
+        where: { id: order.id },
+        data: {
+          status,
+          adminNote: adminNote || null,
+        },
+        select: {
+          id: true,
+          status: true,
+          telegramId: true,
+          slug: true,
+          adminNote: true,
+        },
+      });
+
+      const legacyStatus =
+        status === "new"
+          ? "NEW"
+          : status === "contacted"
+            ? "CONTACTED"
+            : status === "paid"
+              ? "PAID"
+              : status === "approved"
+                ? "ACTIVATED"
+                : "REJECTED";
+      await tx.orderRequest.updateMany({
+        where: {
+          slug: row.slug,
+          contact: order.contact,
+        },
+        data: {
+          status: legacyStatus,
+        },
+      });
+
+      if (status === "approved") {
+        await tx.slug.upsert({
+          where: { fullSlug: row.slug },
+          create: {
+            letters: row.slug.slice(0, 3),
+            digits: row.slug.slice(3),
+            fullSlug: row.slug,
+            ownerTelegramId: row.telegramId,
+            status: "approved",
+            approvedAt: new Date(),
+            requestedAt: order.createdAt,
+            isPrimary: false,
+            price: order.slugPrice,
+          },
+          update: {
+            ownerTelegramId: row.telegramId,
+            status: "approved",
+            approvedAt: new Date(),
+            price: order.slugPrice,
+          },
+        });
+
+        const hasPrimary = await tx.slug.count({
+          where: {
+            ownerTelegramId: row.telegramId,
+            isPrimary: true,
+            status: { in: ["approved", "active", "paused", "private"] },
+          },
+        });
+        if (!hasPrimary) {
+          await tx.slug.update({
+            where: { fullSlug: row.slug },
+            data: { isPrimary: true },
+          });
+        }
+      }
+
+      if (status === "rejected") {
+        await tx.slug.upsert({
+          where: { fullSlug: row.slug },
+          create: {
+            letters: row.slug.slice(0, 3),
+            digits: row.slug.slice(3),
+            fullSlug: row.slug,
+            status: "free",
+            ownerTelegramId: null,
+            isPrimary: false,
+            price: order.slugPrice,
+          },
+          update: {
+            ownerTelegramId: null,
+            status: "free",
+            isPrimary: false,
+            pauseMessage: null,
+          },
+        });
+      }
+
+      return row;
+    });
+
+    if (status === "approved") {
+      try {
+        await sendSlugApprovedToUser({
+          telegramId: updated.telegramId,
+          slug: updated.slug,
+        });
+      } catch (error) {
+        console.error("[express-app] failed to send approval notification", error);
+      }
+    }
+
+    if (status === "rejected") {
+      try {
+        await sendSlugRejectedToUser({
+          telegramId: updated.telegramId,
+          slug: updated.slug,
+          adminNote: updated.adminNote,
+        });
+      } catch (error) {
+        console.error("[express-app] failed to send rejection notification", error);
+      }
+    }
+
+    res.json({ id: updated.id, status: updated.status });
   }),
 );
 
@@ -628,9 +775,159 @@ router.post(
 router.delete(
   "/orders/:id",
   asyncHandler(async (req, res) => {
-    await prisma.orderRequest.delete({
+    const row = await prisma.slugRequest.findUnique({
       where: { id: req.params.id },
+      select: { slug: true, contact: true },
     });
+    await prisma.slugRequest.delete({ where: { id: req.params.id } });
+    if (row) {
+      await prisma.orderRequest.deleteMany({
+        where: {
+          slug: row.slug,
+          contact: row.contact,
+        },
+      });
+    }
+    res.json({ ok: true });
+  }),
+);
+
+router.get(
+  "/users",
+  asyncHandler(async (req, res) => {
+    const page = Math.max(1, Number(req.query.page || "1") || 1);
+    const pageSizeRaw = Number(req.query.pageSize || "20") || 20;
+    const pageSize = Math.max(1, Math.min(200, pageSizeRaw));
+    const q = typeof req.query.q === "string" ? req.query.q.trim() : "";
+
+    const where = q
+      ? {
+          OR: [
+            { telegramId: { contains: q, mode: "insensitive" } },
+            { firstName: { contains: q, mode: "insensitive" } },
+            { username: { contains: q, mode: "insensitive" } },
+            { displayName: { contains: q, mode: "insensitive" } },
+          ],
+        }
+      : {};
+
+    const [total, users] = await Promise.all([
+      prisma.user.count({ where }),
+      prisma.user.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+        select: {
+          telegramId: true,
+          firstName: true,
+          displayName: true,
+          username: true,
+          plan: true,
+          planExpiresAt: true,
+          status: true,
+          createdAt: true,
+        },
+      }),
+    ]);
+
+    const telegramIds = users.map((item) => item.telegramId);
+    const [slugs, cards] = await Promise.all([
+      prisma.slug.findMany({
+        where: { ownerTelegramId: { in: telegramIds } },
+        select: {
+          ownerTelegramId: true,
+          fullSlug: true,
+          status: true,
+        },
+      }),
+      prisma.profileCard.findMany({
+        where: { ownerTelegramId: { in: telegramIds } },
+        select: { ownerTelegramId: true, id: true },
+      }),
+    ]);
+
+    const slugsByUser = new Map();
+    for (const row of slugs) {
+      if (!slugsByUser.has(row.ownerTelegramId)) {
+        slugsByUser.set(row.ownerTelegramId, []);
+      }
+      slugsByUser.get(row.ownerTelegramId).push({
+        fullSlug: row.fullSlug,
+        status: row.status,
+      });
+    }
+    const cardsSet = new Set(cards.map((item) => item.ownerTelegramId));
+
+    res.json({
+      items: users.map((user) => ({
+        telegramId: user.telegramId,
+        name: user.displayName || user.firstName,
+        username: user.username || null,
+        plan: user.plan,
+        planExpiresAt: user.planExpiresAt,
+        slugs: slugsByUser.get(user.telegramId) || [],
+        hasCard: cardsSet.has(user.telegramId),
+        status: user.status,
+        createdAt: user.createdAt,
+      })),
+      pagination: {
+        page,
+        pageSize,
+        total,
+        totalPages: Math.max(1, Math.ceil(total / pageSize)),
+      },
+    });
+  }),
+);
+
+router.patch(
+  "/users/:telegramId/plan",
+  asyncHandler(async (req, res) => {
+    const telegramId = String(req.params.telegramId || "");
+    const plan = normalizeTariff(req.body.plan);
+    const updated = await prisma.user.update({
+      where: { telegramId },
+      data: { plan },
+      select: { telegramId: true, plan: true },
+    });
+    res.json(updated);
+  }),
+);
+
+router.patch(
+  "/users/:telegramId/plan-expiry",
+  asyncHandler(async (req, res) => {
+    const telegramId = String(req.params.telegramId || "");
+    const rawDate = String(req.body.planExpiresAt || "").trim();
+    const parsedDate = rawDate ? new Date(rawDate) : null;
+    if (rawDate && (!parsedDate || Number.isNaN(parsedDate.getTime()))) {
+      res.status(400).json({ error: "Invalid date" });
+      return;
+    }
+    const updated = await prisma.user.update({
+      where: { telegramId },
+      data: { planExpiresAt: parsedDate },
+      select: { telegramId: true, planExpiresAt: true },
+    });
+    res.json(updated);
+  }),
+);
+
+router.patch(
+  "/users/:telegramId/block",
+  asyncHandler(async (req, res) => {
+    const telegramId = String(req.params.telegramId || "");
+    await prisma.$transaction([
+      prisma.user.update({
+        where: { telegramId },
+        data: { status: "blocked" },
+      }),
+      prisma.slug.updateMany({
+        where: { ownerTelegramId: telegramId },
+        data: { status: "blocked", isPrimary: false },
+      }),
+    ]);
     res.json({ ok: true });
   }),
 );
@@ -639,18 +936,16 @@ router.get(
   "/orders/export.csv",
   asyncHandler(async (req, res) => {
     const where = buildOrdersWhere(req.query);
-    const rows = await prisma.orderRequest.findMany({
+    const rows = await prisma.slugRequest.findMany({
       where,
       orderBy: { createdAt: "desc" },
-      select: {
-        createdAt: true,
-        name: true,
-        slug: true,
-        slugPrice: true,
-        tariff: true,
-        bracelet: true,
-        contact: true,
-        status: true,
+      include: {
+        user: {
+          select: {
+            firstName: true,
+            displayName: true,
+          },
+        },
       },
     });
 
@@ -659,10 +954,10 @@ router.get(
       ...rows.map((row) =>
         [
           `"${new Date(row.createdAt).toLocaleString("ru-RU")}"`,
-          `"${String(row.name).replace(/"/g, '""')}"`,
+          `"${String(row.user?.displayName || row.user?.firstName || "UNQ+ User").replace(/"/g, '""')}"`,
           `"${row.slug}"`,
           row.slugPrice,
-          `"${row.tariff === "premium" ? "Премиум" : "Базовый"}"`,
+          `"${row.requestedPlan === "premium" ? "Премиум" : "Базовый"}"`,
           `"${row.bracelet ? "Да" : "Нет"}"`,
           `"${String(row.contact).replace(/"/g, '""')}"`,
           `"${formatOrderStatusLabel(row.status)}"`,

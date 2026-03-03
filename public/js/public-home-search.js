@@ -11,7 +11,8 @@ const TARIFFS = {
     return;
   }
 
-  const orderApi = initOrderForm();
+  const authApi = initTelegramAuth(pageNode);
+  const orderApi = initOrderForm(authApi);
   initMobileMenu();
   initSlugCounter();
   initSlugAvailability(orderApi);
@@ -145,6 +146,191 @@ function getRarityBadge(total) {
     return { label: "UNCOMMON", color: "bg-emerald-100 text-emerald-800 border-emerald-200" };
   }
   return { label: "COMMON", color: "bg-neutral-100 text-neutral-600 border-neutral-200" };
+}
+
+function initTelegramAuth(pageNode) {
+  const botUsername = pageNode.getAttribute("data-telegram-bot-username") || "";
+  const loginButtons = Array.from(document.querySelectorAll("[data-auth-login]"));
+  const profileLinks = Array.from(document.querySelectorAll("[data-auth-profile]"));
+  const profileNames = Array.from(document.querySelectorAll("[data-auth-name]"));
+  const profileAvatars = Array.from(document.querySelectorAll("[data-auth-avatar]"));
+  const orderAuthBadge = document.getElementById("order-auth-badge");
+  const orderAuthUser = document.getElementById("order-auth-user");
+  const orderAuthAvatar = document.getElementById("order-auth-avatar");
+  const orderAuthLogout = document.getElementById("order-auth-logout");
+  const inlineWrap = document.getElementById("order-auth-inline");
+  const inlineWidget = document.getElementById("order-auth-inline-widget");
+  let csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "";
+  let currentUser = null;
+  let widgetCallback = null;
+
+  async function postJson(url, body) {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
+      },
+      body: JSON.stringify(body),
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(payload.error || `HTTP ${response.status}`);
+    }
+    if (payload && typeof payload.csrfToken === "string") {
+      csrfToken = payload.csrfToken;
+      document.querySelector('meta[name="csrf-token"]')?.setAttribute("content", csrfToken);
+    }
+    return payload;
+  }
+
+  function renderAuthUi() {
+    for (const node of loginButtons) {
+      node.classList.toggle("hidden", Boolean(currentUser));
+    }
+    for (const node of profileLinks) {
+      node.classList.toggle("hidden", !currentUser);
+      node.classList.toggle("inline-flex", Boolean(currentUser));
+    }
+    if (orderAuthBadge instanceof HTMLElement) {
+      orderAuthBadge.classList.toggle("hidden", !currentUser);
+    }
+    if (inlineWrap instanceof HTMLElement && currentUser) {
+      inlineWrap.classList.add("hidden");
+    }
+    if (currentUser) {
+      for (const node of profileNames) {
+        node.textContent = `${currentUser.firstName || currentUser.displayName || "Мой профиль"} · Мой профиль`;
+      }
+      for (const node of profileAvatars) {
+        if (node instanceof HTMLImageElement) {
+          node.src = currentUser.photoUrl || "/brand/unq-mark.svg";
+        }
+      }
+      if (orderAuthUser instanceof HTMLElement) {
+        const username = currentUser.username ? ` · @${currentUser.username}` : "";
+        orderAuthUser.textContent = `${currentUser.firstName || currentUser.displayName || "Пользователь"}${username}`;
+      }
+      if (orderAuthAvatar instanceof HTMLImageElement) {
+        orderAuthAvatar.src = currentUser.photoUrl || "/brand/unq-mark.svg";
+      }
+    }
+  }
+
+  async function handleWidgetAuth(telegramUser) {
+    const payload = await postJson("/api/auth/telegram/callback", telegramUser);
+    currentUser = payload.user || null;
+    renderAuthUi();
+    window.dispatchEvent(
+      new CustomEvent("unqx:auth:success", {
+        detail: currentUser,
+      }),
+    );
+    if (typeof widgetCallback === "function") {
+      const callback = widgetCallback;
+      widgetCallback = null;
+      callback(currentUser);
+    }
+  }
+
+  window.unqxTelegramAuth = (user) => {
+    void handleWidgetAuth(user).catch((error) => {
+      console.error("[unqx] telegram auth failed", error);
+    });
+  };
+
+  function mountWidget(container, onSuccess) {
+    if (!(container instanceof HTMLElement)) {
+      return;
+    }
+    if (!botUsername) {
+      console.error("[unqx] TELEGRAM_BOT_USERNAME is missing");
+      return;
+    }
+    widgetCallback = onSuccess || null;
+    container.innerHTML = "";
+    const script = document.createElement("script");
+    script.async = true;
+    script.src = "https://telegram.org/js/telegram-widget.js?22";
+    script.setAttribute("data-telegram-login", botUsername);
+    script.setAttribute("data-size", "large");
+    script.setAttribute("data-userpic", "false");
+    script.setAttribute("data-request-access", "write");
+    script.setAttribute("data-onauth", "unqxTelegramAuth(user)");
+    container.appendChild(script);
+  }
+
+  async function refreshUser() {
+    try {
+      const response = await fetch("/api/auth/me", {
+        method: "GET",
+        headers: { Accept: "application/json" },
+      });
+      const payload = await response.json().catch(() => ({}));
+      currentUser = payload && payload.authenticated ? payload.user : null;
+    } catch {
+      currentUser = null;
+    }
+    renderAuthUi();
+    window.dispatchEvent(
+      new CustomEvent("unqx:auth:ready", {
+        detail: currentUser,
+      }),
+    );
+    return currentUser;
+  }
+
+  async function logout() {
+    await postJson("/api/auth/logout", {});
+    currentUser = null;
+    renderAuthUi();
+    window.dispatchEvent(new CustomEvent("unqx:auth:logout"));
+  }
+
+  function ensureAuthInline(onSuccess) {
+    if (currentUser) {
+      if (typeof onSuccess === "function") {
+        onSuccess(currentUser);
+      }
+      return;
+    }
+    if (inlineWrap instanceof HTMLElement) {
+      inlineWrap.classList.remove("hidden");
+    }
+    mountWidget(inlineWidget, onSuccess || null);
+  }
+
+  loginButtons.forEach((node) => {
+    node.addEventListener("click", () => {
+      if (currentUser) {
+        window.location.href = "/profile";
+        return;
+      }
+      ensureAuthInline((user) => {
+        if (user) {
+          window.location.href = "/profile";
+        }
+      });
+      const section = document.getElementById("order");
+      section?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  });
+
+  orderAuthLogout?.addEventListener("click", () => {
+    void logout().catch((error) => {
+      console.error("[unqx] logout failed", error);
+    });
+  });
+
+  void refreshUser();
+
+  return {
+    getUser() {
+      return currentUser;
+    },
+    ensureAuthInline,
+    refreshUser,
+  };
 }
 
 function initMobileMenu() {
@@ -527,12 +713,11 @@ function initSlugCalculator(orderApi) {
   updatePreview("", "");
 }
 
-function initOrderForm() {
+function initOrderForm(authApi) {
   const form = document.getElementById("order-form");
   const nameInput = document.getElementById("order-name");
   const lettersInput = document.getElementById("order-letters");
   const digitsInput = document.getElementById("order-digits");
-  const contactInput = document.getElementById("order-contact");
   const themeInput = document.getElementById("order-theme");
   const themePreview = document.getElementById("order-theme-preview");
   const slugPreview = document.getElementById("order-slug-preview");
@@ -548,14 +733,13 @@ function initOrderForm() {
   const submitStatus = document.getElementById("order-submit-status");
   const errorName = document.getElementById("order-error-name");
   const errorSlug = document.getElementById("order-error-slug");
-  const errorContact = document.getElementById("order-error-contact");
+  const orderAuthInline = document.getElementById("order-auth-inline");
 
   if (
     !(form instanceof HTMLFormElement) ||
     !(nameInput instanceof HTMLInputElement) ||
     !(lettersInput instanceof HTMLInputElement) ||
     !(digitsInput instanceof HTMLInputElement) ||
-    !(contactInput instanceof HTMLInputElement) ||
     !(themeInput instanceof HTMLInputElement) ||
     !(themePreview instanceof HTMLElement) ||
     !(slugPreview instanceof HTMLElement) ||
@@ -570,14 +754,13 @@ function initOrderForm() {
     !(submitButton instanceof HTMLButtonElement) ||
     !(submitStatus instanceof HTMLElement) ||
     !(errorName instanceof HTMLElement) ||
-    !(errorSlug instanceof HTMLElement) ||
-    !(errorContact instanceof HTMLElement)
+    !(errorSlug instanceof HTMLElement)
   ) {
     return null;
   }
 
-  const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "";
   const submitDefaultHtml = submitButton.innerHTML;
+  let pendingAutoSubmit = false;
 
   function selectedTariff() {
     const selected = form.querySelector('input[name="order-tariff"]:checked');
@@ -639,7 +822,6 @@ function initOrderForm() {
   function clearErrors() {
     setError(errorName, "");
     setError(errorSlug, "");
-    setError(errorContact, "");
   }
 
   function setStatus(text, tone) {
@@ -706,10 +888,6 @@ function initOrderForm() {
       errors.slug = "Slug должен быть в формате AAA000";
     }
 
-    if (!contactInput.value.trim()) {
-      errors.contact = "Контакт обязателен";
-    }
-
     return {
       errors,
       pricing,
@@ -748,15 +926,30 @@ function initOrderForm() {
     clearErrors();
     setStatus("", "neutral");
 
+    const user = authApi && typeof authApi.getUser === "function" ? authApi.getUser() : null;
+    if (!user) {
+      pendingAutoSubmit = true;
+      setStatus("Войди через Telegram чтобы оставить заявку", "error");
+      if (orderAuthInline instanceof HTMLElement) {
+        orderAuthInline.classList.remove("hidden");
+      }
+      if (authApi && typeof authApi.ensureAuthInline === "function") {
+        authApi.ensureAuthInline(() => {
+          if (pendingAutoSubmit) {
+            pendingAutoSubmit = false;
+            form.requestSubmit();
+          }
+        });
+      }
+      return;
+    }
+
     const { errors, pricing } = validate();
     if (errors.name) {
       setError(errorName, errors.name);
     }
     if (errors.slug) {
       setError(errorSlug, errors.slug);
-    }
-    if (errors.contact) {
-      setError(errorContact, errors.contact);
     }
 
     if (Object.keys(errors).length > 0 || !pricing) {
@@ -775,7 +968,7 @@ function initOrderForm() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-csrf-token": csrfToken,
+          "x-csrf-token": document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "",
         },
         body: JSON.stringify({
           name: nameInput.value.trim(),
@@ -784,7 +977,6 @@ function initOrderForm() {
           tariff,
           theme: tariff === "premium" ? normalizeTheme(themeInput.value) : undefined,
           products,
-          contact: contactInput.value.trim(),
         }),
       });
 
@@ -795,6 +987,10 @@ function initOrderForm() {
         form.reset();
         clearErrors();
         applyQueryPrefill();
+        const currentUser = authApi && typeof authApi.getUser === "function" ? authApi.getUser() : null;
+        if (currentUser && !nameInput.value.trim()) {
+          nameInput.value = currentUser.firstName || currentUser.displayName || "";
+        }
         updateOrderTotals();
         return;
       }
@@ -802,7 +998,30 @@ function initOrderForm() {
       if (response.status === 400 && payload && payload.issues) {
         setError(errorName, payload.issues.name || "");
         setError(errorSlug, payload.issues.slug || "");
-        setError(errorContact, payload.issues.contact || "");
+      }
+
+      if (response.status === 401 && payload && payload.code === "AUTH_REQUIRED") {
+        pendingAutoSubmit = true;
+        setStatus("Войди через Telegram чтобы оставить заявку", "error");
+        if (authApi && typeof authApi.ensureAuthInline === "function") {
+          authApi.ensureAuthInline(() => {
+            if (pendingAutoSubmit) {
+              pendingAutoSubmit = false;
+              form.requestSubmit();
+            }
+          });
+        }
+        return;
+      }
+
+      if (response.status === 403 && payload && payload.code === "BASIC_SLUG_LIMIT_REACHED") {
+        setStatus("Перейди на Премиум чтобы добавить до 3 slug", "error");
+        return;
+      }
+
+      if (response.status === 403 && payload && payload.code === "PREMIUM_SLUG_LIMIT_REACHED") {
+        setStatus("Достигнут лимит 3 slug для Премиум тарифа", "error");
+        return;
       }
 
       setStatus("❌ Ошибка отправки. Напиши нам напрямую: @unqx_uz", "error");
@@ -817,6 +1036,22 @@ function initOrderForm() {
 
   applyQueryPrefill();
   updateOrderTotals();
+  const initialUser = authApi && typeof authApi.getUser === "function" ? authApi.getUser() : null;
+  if (initialUser && !nameInput.value.trim()) {
+    nameInput.value = initialUser.firstName || initialUser.displayName || "";
+  }
+  function handleAuthPrefill(event) {
+    const user = event && event.detail ? event.detail : null;
+    if (user && !nameInput.value.trim()) {
+      nameInput.value = user.firstName || user.displayName || "";
+    }
+    if (pendingAutoSubmit) {
+      pendingAutoSubmit = false;
+      form.requestSubmit();
+    }
+  }
+  window.addEventListener("unqx:auth:success", handleAuthPrefill);
+  window.addEventListener("unqx:auth:ready", handleAuthPrefill);
 
   return {
     prefillSlug,

@@ -20,4 +20,12 @@ describeIntegration("integration auth smoke", () => {
     expect(response.status).toBe(401);
     expect(response.body).toEqual({ error: "Unauthorized" });
   });
+
+  test("redirects /profile to home when user is not authenticated", async () => {
+    const app = createApp();
+    const response = await request(app).get("/profile");
+
+    expect(response.status).toBe(302);
+    expect(response.headers.location).toBe("/");
+  });
 });

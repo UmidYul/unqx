@@ -12,6 +12,7 @@ const { asyncHandler } = require("../../middleware/async");
 const { requireSameOrigin } = require("../../middleware/same-origin");
 const { requireCsrfToken } = require("../../middleware/csrf");
 const { publicOrderRateLimit } = require("../../middleware/rate-limit");
+const { getUserSession } = require("../../middleware/auth");
 const { OrderRequestSchema } = require("../../validation/order-request");
 
 const router = express.Router();
@@ -121,10 +122,6 @@ function mapOrderValidationIssues(error) {
       continue;
     }
 
-    if (field === "contact") {
-      issues.contact = issue.message || "Контакт обязателен";
-      continue;
-    }
   }
 
   return issues;
@@ -140,6 +137,13 @@ function splitSlug(slug) {
   };
 }
 
+function sanitizeSlug(value) {
+  return String(value || "")
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "")
+    .slice(0, 20);
+}
+
 function normalizeTheme(value) {
   if (typeof value !== "string") {
     return undefined;
@@ -148,7 +152,7 @@ function normalizeTheme(value) {
 }
 
 async function getSlugState(slug) {
-  const [card, record] = await Promise.all([
+  const [card, record, slugRow] = await Promise.all([
     prisma.card.findUnique({
       where: { slug },
       select: { id: true },
@@ -159,7 +163,23 @@ async function getSlugState(slug) {
         select: { state: true, priceOverride: true },
       }),
     ),
+    withMissingTableFallback("Slug", null, () =>
+      prisma.slug.findUnique({
+        where: { fullSlug: slug },
+        select: { status: true, price: true },
+      }),
+    ),
   ]);
+
+  if (slugRow) {
+    if (slugRow.status === "blocked") {
+      return { available: false, reason: "blocked", priceOverride: slugRow.price ?? null };
+    }
+    if (slugRow.status === "free") {
+      return { available: true, reason: "available", priceOverride: slugRow.price ?? null };
+    }
+    return { available: false, reason: slugRow.status, priceOverride: slugRow.price ?? null };
+  }
 
   if (record?.state === "BLOCKED") {
     return { available: false, reason: "blocked", priceOverride: record.priceOverride };
@@ -173,7 +193,7 @@ async function getSlugState(slug) {
 }
 
 async function getTakenSlugsSet() {
-  const [cardRows, recordRows] = await Promise.all([
+  const [cardRows, recordRows, slugRows] = await Promise.all([
     prisma.card.findMany({
       select: { slug: true },
     }),
@@ -181,6 +201,12 @@ async function getTakenSlugsSet() {
       prisma.slugRecord.findMany({
         where: { state: { in: ["TAKEN", "BLOCKED"] } },
         select: { slug: true },
+      }),
+    ),
+    withMissingTableFallback("Slug", [], () =>
+      prisma.slug.findMany({
+        where: { status: { not: "free" } },
+        select: { fullSlug: true },
       }),
     ),
   ]);
@@ -191,6 +217,9 @@ async function getTakenSlugsSet() {
   }
   for (const row of recordRows) {
     taken.add(row.slug);
+  }
+  for (const row of slugRows) {
+    taken.add(row.fullSlug);
   }
   return taken;
 }
@@ -293,23 +322,71 @@ router.get(
       return;
     }
 
-    const items = await prisma.card.findMany({
-      where: {
-        isActive: true,
-        slug: {
-          startsWith: query,
-          mode: "insensitive",
+    const [legacyItems, newItems] = await Promise.all([
+      prisma.card.findMany({
+        where: {
+          isActive: true,
+          slug: {
+            startsWith: query,
+            mode: "insensitive",
+          },
         },
-      },
-      select: {
-        slug: true,
-        name: true,
-      },
-      orderBy: {
-        slug: "asc",
-      },
-      take: 8,
-    });
+        select: {
+          slug: true,
+          name: true,
+        },
+        orderBy: {
+          slug: "asc",
+        },
+        take: 8,
+      }),
+      withMissingTableFallback("Slug", [], () =>
+        prisma.slug.findMany({
+          where: {
+            status: { in: ["active", "private"] },
+            fullSlug: {
+              startsWith: query,
+              mode: "insensitive",
+            },
+          },
+          select: {
+            fullSlug: true,
+            owner: {
+              select: {
+                firstName: true,
+                profileCard: {
+                  select: {
+                    name: true,
+                  },
+                },
+              },
+            },
+          },
+          orderBy: {
+            fullSlug: "asc",
+          },
+          take: 8,
+        }),
+      ),
+    ]);
+
+    const itemsMap = new Map();
+    for (const row of legacyItems) {
+      itemsMap.set(row.slug, {
+        slug: row.slug,
+        name: row.name,
+      });
+    }
+    for (const row of newItems) {
+      itemsMap.set(row.fullSlug, {
+        slug: row.fullSlug,
+        name: row.owner?.profileCard?.name || row.owner?.firstName || "UNQ+ User",
+      });
+    }
+
+    const items = Array.from(itemsMap.values())
+      .sort((a, b) => (a.slug > b.slug ? 1 : -1))
+      .slice(0, 8);
 
     res.json({ items });
   }),
@@ -441,6 +518,48 @@ router.post(
   requireSameOrigin,
   requireCsrfToken,
   asyncHandler(async (req, res) => {
+    const userSession = getUserSession(req);
+    if (!userSession || !userSession.telegramId) {
+      res.status(401).json({ error: "Unauthorized", code: "AUTH_REQUIRED" });
+      return;
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { telegramId: userSession.telegramId },
+      select: {
+        telegramId: true,
+        firstName: true,
+        username: true,
+        plan: true,
+        planExpiresAt: true,
+        status: true,
+      },
+    });
+
+    if (!user || user.status === "blocked" || user.status === "deactivated") {
+      res.status(403).json({ error: "Account is disabled", code: "ACCOUNT_DISABLED" });
+      return;
+    }
+
+    const hasActivePremium = user.plan === "premium" && user.planExpiresAt && new Date(user.planExpiresAt).getTime() > Date.now();
+    const effectivePlan = hasActivePremium ? "premium" : "basic";
+    const slugLimit = effectivePlan === "premium" ? 3 : 1;
+    const userSlugsCount = await withMissingTableFallback("Slug", 0, () =>
+      prisma.slug.count({
+        where: {
+          ownerTelegramId: user.telegramId,
+          status: { in: ["approved", "active", "paused", "private"] },
+        },
+      }),
+    );
+    if (userSlugsCount >= slugLimit) {
+      res.status(403).json({
+        error: effectivePlan === "premium" ? "Premium slug limit reached" : "Upgrade required",
+        code: effectivePlan === "premium" ? "PREMIUM_SLUG_LIMIT_REACHED" : "BASIC_SLUG_LIMIT_REACHED",
+      });
+      return;
+    }
+
     const parsed = OrderRequestSchema.safeParse(req.body);
 
     if (!parsed.success) {
@@ -472,46 +591,110 @@ router.post(
     const braceletPrice = payload.products.bracelet ? BRACELET_PRICE : 0;
     const totalOneTime = pricing.total + braceletPrice;
     const theme = payload.tariff === "premium" ? normalizeTheme(payload.theme) : undefined;
+    const contact = user.username ? `@${user.username}` : `${user.firstName}`;
 
-    const order = await prisma.orderRequest.create({
-      data: {
-        name: payload.name,
-        slug,
-        slugPrice: pricing.total,
-        tariff: payload.tariff,
-        theme: theme || null,
-        bracelet: Boolean(payload.products.bracelet),
-        contact: payload.contact,
-        status: "NEW",
-        ...(payload.products.bracelet
-          ? {
-              braceletOrder: {
-                create: {
-                  name: payload.name,
-                  slug,
-                  contact: payload.contact,
-                  deliveryStatus: "ORDERED",
-                },
-              },
-            }
-          : {}),
-      },
-      select: { id: true, status: true },
-    });
+    let order = null;
+    try {
+      order = await prisma.$transaction(async (tx) => {
+        const existingSlug = await withMissingTableFallback("Slug", null, () =>
+          tx.slug.findUnique({
+            where: { fullSlug: slug },
+            select: { fullSlug: true, status: true },
+          }),
+        );
+        if (existingSlug && existingSlug.status !== "free") {
+          const conflictError = new Error("Slug is not available");
+          conflictError.code = "SLUG_NOT_AVAILABLE";
+          conflictError.reason = existingSlug.status;
+          throw conflictError;
+        }
+
+        await withMissingTableFallback("Slug", null, () =>
+          tx.slug.upsert({
+            where: { fullSlug: slug },
+            create: {
+              letters: payload.letters,
+              digits: payload.digits,
+              fullSlug: slug,
+              status: "pending",
+              requestedAt: new Date(),
+              price: pricing.total,
+            },
+            update: {
+              status: "pending",
+              requestedAt: new Date(),
+              price: pricing.total,
+            },
+          }),
+        );
+
+        const slugRequest = await tx.slugRequest.create({
+          data: {
+            telegramId: user.telegramId,
+            slug,
+            slugPrice: pricing.total,
+            requestedPlan: payload.tariff,
+            bracelet: Boolean(payload.products.bracelet),
+            contact,
+            status: "new",
+          },
+          select: { id: true, status: true },
+        });
+
+        await tx.orderRequest.create({
+          data: {
+            name: payload.name,
+            slug,
+            slugPrice: pricing.total,
+            tariff: payload.tariff,
+            theme: theme || null,
+            bracelet: Boolean(payload.products.bracelet),
+            contact,
+            status: "NEW",
+            ...(payload.products.bracelet
+              ? {
+                  braceletOrder: {
+                    create: {
+                      name: payload.name,
+                      slug,
+                      contact,
+                      deliveryStatus: "ORDERED",
+                    },
+                  },
+                }
+              : {}),
+          },
+          select: { id: true },
+        });
+
+        return slugRequest;
+      });
+    } catch (error) {
+      if (error && error.code === "SLUG_NOT_AVAILABLE") {
+        res.status(409).json({
+          error: "Slug is not available",
+          reason: error.reason || "taken",
+        });
+        return;
+      }
+      throw error;
+    }
 
     let telegramDelivered = true;
     let telegramError = null;
     try {
       await sendOrderRequestToTelegram({
         name: payload.name,
+        telegramId: user.telegramId,
+        username: user.username || "",
         slug,
         slugPriceLabel: formatPrice(pricing.total),
         tariff: payload.tariff,
         tariffPriceLabel: formatPrice(tariffPrice),
         bracelet: payload.products.bracelet,
-        contact: payload.contact,
+        contact,
         totalOneTimeLabel: formatPrice(totalOneTime),
-        statusLabel: toOrderStatusLabel(order.status),
+        statusLabel: toOrderStatusLabel("NEW"),
         themeLabel: theme || "default_dark",
       });
     } catch (error) {
@@ -540,6 +723,55 @@ router.post(
 router.post(
   "/:slug/view",
   asyncHandler(async (req, res) => {
+    const requestedSlug = sanitizeSlug(req.params.slug);
+    const device = detectDevice(req.get("user-agent"));
+    const dateKey = new Date().toISOString().slice(0, 10);
+    const identity = pickClientIdentity(req);
+    const ipHash = identity ? createHash("sha256").update(`${identity}|${requestedSlug || req.params.slug}|${dateKey}`).digest("hex") : null;
+    const dayStart = new Date(`${dateKey}T00:00:00.000Z`);
+
+    const slugRow = await withMissingTableFallback("Slug", null, () =>
+      prisma.slug.findUnique({
+        where: { fullSlug: requestedSlug },
+        select: { fullSlug: true, status: true },
+      }),
+    );
+
+    if (slugRow) {
+      if (!["active", "private"].includes(slugRow.status)) {
+        res.status(404).json({ error: "Card not found" });
+        return;
+      }
+
+      await withMissingTableFallback("SlugView", null, () =>
+        prisma.$transaction(async (tx) => {
+          let isUnique = false;
+          if (ipHash) {
+            const existing = await tx.slugView.findFirst({
+              where: {
+                fullSlug: slugRow.fullSlug,
+                ipHash,
+                viewedAt: { gte: dayStart },
+              },
+              select: { id: true },
+            });
+            isUnique = !existing;
+          }
+
+          await tx.slugView.create({
+            data: {
+              fullSlug: slugRow.fullSlug,
+              device,
+              ipHash,
+              isUnique,
+            },
+          });
+        }),
+      );
+      res.json({ ok: true });
+      return;
+    }
+
     const card = await prisma.card.findUnique({
       where: { slug: req.params.slug },
       select: { id: true, isActive: true },
@@ -549,12 +781,6 @@ router.post(
       res.status(404).json({ error: "Card not found" });
       return;
     }
-
-    const device = detectDevice(req.get("user-agent"));
-    const dateKey = new Date().toISOString().slice(0, 10);
-    const identity = pickClientIdentity(req);
-    const ipHash = identity ? createHash("sha256").update(`${identity}|${req.params.slug}|${dateKey}`).digest("hex") : null;
-    const dayStart = new Date(`${dateKey}T00:00:00.000Z`);
 
     await prisma.$transaction(async (tx) => {
       let isUnique = false;
@@ -597,6 +823,61 @@ router.post(
 router.get(
   "/:slug/vcf",
   asyncHandler(async (req, res) => {
+    const requestedSlug = sanitizeSlug(req.params.slug);
+    const slugRow = await withMissingTableFallback("Slug", null, () =>
+      prisma.slug.findUnique({
+        where: { fullSlug: requestedSlug },
+        select: { fullSlug: true, status: true, ownerTelegramId: true },
+      }),
+    );
+
+    if (slugRow && ["active", "private"].includes(slugRow.status) && slugRow.ownerTelegramId) {
+      const [user, profileCard] = await Promise.all([
+        prisma.user.findUnique({
+          where: { telegramId: slugRow.ownerTelegramId },
+          select: { firstName: true, username: true },
+        }),
+        prisma.profileCard.findUnique({
+          where: { ownerTelegramId: slugRow.ownerTelegramId },
+          select: { name: true, buttons: true, bio: true },
+        }),
+      ]);
+
+      if (profileCard) {
+        const buttons = Array.isArray(profileCard.buttons) ? profileCard.buttons : [];
+        const firstPhone = buttons.find((item) => {
+          const type = String(item?.type || "").toLowerCase();
+          const href = String(item?.href || item?.value || "").toLowerCase();
+          return type === "phone" || href.startsWith("tel:");
+        });
+        const firstEmail = buttons.find((item) => {
+          const type = String(item?.type || "").toLowerCase();
+          const href = String(item?.href || item?.value || "").toLowerCase();
+          return type === "email" || href.startsWith("mailto:");
+        });
+
+        const phoneRaw = String(firstPhone?.value || firstPhone?.href || "").replace(/^tel:/i, "");
+        const emailRaw = String(firstEmail?.value || firstEmail?.href || "").replace(/^mailto:/i, "");
+        const payload = generateVCard({
+          slug: slugRow.fullSlug,
+          isActive: true,
+          name: profileCard.name || user?.firstName || user?.username || slugRow.fullSlug,
+          phone: phoneRaw || "+998000000000",
+          email: emailRaw || undefined,
+          extraPhone: undefined,
+          address: "",
+          postcode: "",
+          hashtag: profileCard.bio || "",
+        });
+
+        res.setHeader("Content-Type", "text/vcard; charset=utf-8");
+        res.setHeader("Content-Disposition", `attachment; filename="${slugRow.fullSlug}.vcf"`);
+        res.setHeader("Cache-Control", "no-store");
+        res.send(payload);
+        return;
+      }
+    }
+
     const card = await prisma.card.findUnique({
       where: { slug: req.params.slug },
       select: {

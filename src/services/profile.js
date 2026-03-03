@@ -1,0 +1,141 @@
+const PROFILE_THEMES = new Set(["default_dark", "light_minimal", "gradient", "neon", "corporate"]);
+const BUTTON_TYPES = new Set([
+  "phone",
+  "telegram",
+  "instagram",
+  "tiktok",
+  "youtube",
+  "website",
+  "whatsapp",
+  "email",
+  "other",
+]);
+
+function isFutureDate(dateValue) {
+  if (!dateValue) {
+    return false;
+  }
+  const date = new Date(dateValue);
+  if (Number.isNaN(date.getTime())) {
+    return false;
+  }
+  return date.getTime() > Date.now();
+}
+
+function getEffectivePlan(user) {
+  const plan = user && user.plan === "premium" ? "premium" : "basic";
+  const hasPremiumWindow = plan === "premium" && isFutureDate(user && user.planExpiresAt);
+  return {
+    plan: hasPremiumWindow ? "premium" : "basic",
+    isPremium: hasPremiumWindow,
+    isExpiredPremium: plan === "premium" && !hasPremiumWindow,
+  };
+}
+
+function getSlugLimit(plan) {
+  return plan === "premium" ? 3 : 1;
+}
+
+function getTagLimit(plan) {
+  return plan === "premium" ? 5 : 3;
+}
+
+function getButtonLimit(plan) {
+  return plan === "premium" ? null : 3;
+}
+
+function normalizeThemeByPlan(theme, effectivePlan) {
+  if (effectivePlan !== "premium") {
+    return "default_dark";
+  }
+  if (typeof theme !== "string" || !PROFILE_THEMES.has(theme)) {
+    return "default_dark";
+  }
+  return theme;
+}
+
+function normalizeColor(value) {
+  const raw = String(value || "").trim();
+  if (!raw) {
+    return null;
+  }
+  return /^#[0-9a-f]{6}$/i.test(raw) ? raw.toLowerCase() : null;
+}
+
+function normalizeTags(rawTags, effectivePlan) {
+  const max = getTagLimit(effectivePlan);
+  const source = Array.isArray(rawTags) ? rawTags : [];
+  const out = [];
+
+  for (const item of source) {
+    if (out.length >= max) {
+      break;
+    }
+    const label = String(item || "").trim().replace(/^#+/, "");
+    if (!label) {
+      continue;
+    }
+    out.push(`#${label.slice(0, 30)}`);
+  }
+
+  return out;
+}
+
+function normalizeButtons(rawButtons, effectivePlan) {
+  const source = Array.isArray(rawButtons) ? rawButtons : [];
+  const max = getButtonLimit(effectivePlan);
+  const out = [];
+
+  for (const item of source) {
+    if (Number.isFinite(max) && out.length >= max) {
+      break;
+    }
+    const obj = item && typeof item === "object" ? item : {};
+    const typeRaw = String(obj.type || "other").trim().toLowerCase();
+    const type = BUTTON_TYPES.has(typeRaw) ? typeRaw : "other";
+    const label = String(obj.label || "").trim().slice(0, 40);
+    const value = String(obj.value || obj.url || "").trim().slice(0, 300);
+    const href = String(obj.href || obj.url || "").trim().slice(0, 400);
+
+    if (!label || (!value && !href)) {
+      continue;
+    }
+
+    out.push({
+      id: String(obj.id || `${Date.now()}_${Math.random()}`).slice(0, 60),
+      type,
+      label,
+      value,
+      href,
+    });
+  }
+
+  return out;
+}
+
+function normalizeDisplayName(value, fallback) {
+  const next = String(value || "").trim().slice(0, 120);
+  if (next) {
+    return next;
+  }
+  return String(fallback || "").trim().slice(0, 120) || "UNQ+ User";
+}
+
+function getPlanBadgeLabel(plan) {
+  return plan === "premium" ? "ПРЕМИУМ" : "БАЗОВЫЙ";
+}
+
+module.exports = {
+  PROFILE_THEMES,
+  BUTTON_TYPES,
+  getEffectivePlan,
+  getSlugLimit,
+  getTagLimit,
+  getButtonLimit,
+  normalizeThemeByPlan,
+  normalizeColor,
+  normalizeTags,
+  normalizeButtons,
+  normalizeDisplayName,
+  getPlanBadgeLabel,
+};

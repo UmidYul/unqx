@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <%- include('../partials/head', { title: title || "Мой профиль | UNQ+", styles: ['/css/public-card.css'], noindex: true }) %>
+  <link rel="stylesheet" href="/vendor/cropperjs/cropper.min.css" />
+</head>
+<body class="antialiased" data-page="profile-page" data-telegram-bot-username="<%= telegramBotUsername || '' %>">
+  <main class="min-h-screen bg-neutral-50 px-4 py-6 md:px-6">
+    <div class="mx-auto grid w-full max-w-6xl gap-6 lg:grid-cols-[300px_1fr]">
+      <aside class="rounded-2xl border border-neutral-200 bg-white p-5">
+        <div class="flex items-center gap-3">
+          <img id="profile-sidebar-avatar" src="/brand/unq-mark.svg" alt="avatar" class="h-14 w-14 rounded-full border border-neutral-200 object-cover" />
+          <div>
+            <p id="profile-sidebar-name" class="text-base font-semibold text-neutral-900">...</p>
+            <p id="profile-sidebar-username" class="text-sm text-neutral-500">@...</p>
+          </div>
+        </div>
+        <div class="mt-4 space-y-2 rounded-xl border border-neutral-200 bg-neutral-50 p-3">
+          <p id="profile-sidebar-plan" class="inline-flex rounded-full border border-neutral-300 px-2.5 py-1 text-xs font-semibold">БАЗОВЫЙ</p>
+          <p id="profile-sidebar-expiry" class="text-xs text-neutral-500">до —</p>
+        </div>
+        <nav class="mt-5 grid gap-2">
+          <button type="button" data-tab-target="slugs" class="profile-tab-btn rounded-xl border border-neutral-200 px-3 py-2 text-left text-sm font-medium">Мои slug</button>
+          <button type="button" data-tab-target="card" class="profile-tab-btn rounded-xl border border-neutral-200 px-3 py-2 text-left text-sm font-medium">Моя визитка</button>
+          <button type="button" data-tab-target="requests" class="profile-tab-btn rounded-xl border border-neutral-200 px-3 py-2 text-left text-sm font-medium">Заявки</button>
+          <button type="button" data-tab-target="settings" class="profile-tab-btn rounded-xl border border-neutral-200 px-3 py-2 text-left text-sm font-medium">Настройки</button>
+        </nav>
+      </aside>
+
+      <section class="space-y-4">
+        <div id="profile-upgrade-banner" class="hidden rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          Твой Премиум истёк. Сейчас ограничения Базового тарифа.
+          <a href="/#order" class="ml-1 underline">Улучшить тариф →</a>
+        </div>
+
+        <article data-tab-panel="slugs" class="profile-tab-panel rounded-2xl border border-neutral-200 bg-white p-5">
+          <div class="flex items-center justify-between gap-2">
+            <h2 class="text-lg font-bold">Мои slug</h2>
+            <button id="profile-add-slug-btn" type="button" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm font-semibold">+ Добавить slug</button>
+          </div>
+          <p id="profile-add-slug-note" class="mt-2 text-xs text-neutral-500"></p>
+          <div id="profile-slugs-list" class="mt-4 space-y-3"></div>
+        </article>
+
+        <article data-tab-panel="card" class="profile-tab-panel hidden rounded-2xl border border-neutral-200 bg-white p-5">
+          <h2 class="text-lg font-bold">Моя визитка</h2>
+          <div class="mt-4 grid gap-4 xl:grid-cols-[1fr_340px]">
+            <div class="space-y-4">
+              <div>
+                <label class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Аватар</label>
+                <div class="flex items-center gap-3">
+                  <img id="profile-card-avatar-preview" src="/brand/unq-mark.svg" alt="avatar" class="h-16 w-16 rounded-full border border-neutral-200 object-cover" />
+                  <div class="flex flex-wrap gap-2">
+                    <label for="profile-card-avatar-file" class="cursor-pointer rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold">Загрузить</label>
+                    <input id="profile-card-avatar-file" type="file" accept="image/png,image/jpeg,image/webp" class="hidden" />
+                    <button id="profile-card-avatar-remove" type="button" class="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-700">Удалить</button>
+                  </div>
+                </div>
+                <div id="profile-card-avatar-crop-wrap" class="mt-3 hidden rounded-xl border border-neutral-200 bg-neutral-50 p-3">
+                  <img id="profile-card-avatar-crop-image" alt="crop" class="max-h-[320px] w-full object-contain" />
+                  <button id="profile-card-avatar-crop-save" type="button" class="mt-2 rounded-lg bg-neutral-900 px-3 py-1.5 text-xs font-semibold text-white">Сохранить обрезку</button>
+                </div>
+              </div>
+
+              <div>
+                <label class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Имя</label>
+                <input id="profile-card-name" type="text" class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm" />
+              </div>
+              <div>
+                <label class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Должность / роль</label>
+                <input id="profile-card-role" type="text" class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm" />
+              </div>
+              <div>
+                <label class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Bio</label>
+                <textarea id="profile-card-bio" maxlength="120" rows="3" class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm"></textarea>
+                <p id="profile-card-bio-counter" class="mt-1 text-xs text-neutral-500">0/120</p>
+              </div>
+              <div>
+                <label class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Теги</label>
+                <div class="flex gap-2">
+                  <input id="profile-card-tag-input" type="text" placeholder="#Дизайнер" class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm" />
+                  <button id="profile-card-tag-add" type="button" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">Добавить</button>
+                </div>
+                <div id="profile-card-tags-list" class="mt-2 flex flex-wrap gap-2"></div>
+              </div>
+
+              <div>
+                <div class="mb-2 flex items-center justify-between">
+                  <label class="block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Кнопки</label>
+                  <button id="profile-card-button-add" type="button" class="rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold">+ Добавить кнопку</button>
+                </div>
+                <div id="profile-card-buttons-list" class="space-y-2"></div>
+              </div>
+
+              <div id="profile-card-theme-wrap">
+                <label class="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Тема</label>
+                <div id="profile-card-theme-options" class="grid grid-cols-2 gap-2 sm:grid-cols-5">
+                  <button type="button" data-theme="default_dark" class="profile-theme-btn rounded-lg border border-neutral-200 px-2 py-1.5 text-xs">Default Dark</button>
+                  <button type="button" data-theme="light_minimal" class="profile-theme-btn rounded-lg border border-neutral-200 px-2 py-1.5 text-xs">Light</button>
+                  <button type="button" data-theme="gradient" class="profile-theme-btn rounded-lg border border-neutral-200 px-2 py-1.5 text-xs">Gradient</button>
+                  <button type="button" data-theme="neon" class="profile-theme-btn rounded-lg border border-neutral-200 px-2 py-1.5 text-xs">Neon</button>
+                  <button type="button" data-theme="corporate" class="profile-theme-btn rounded-lg border border-neutral-200 px-2 py-1.5 text-xs">Corporate</button>
+                </div>
+                <p id="profile-card-theme-lock-note" class="mt-1 hidden text-xs text-neutral-500">Доступно на Премиум</p>
+              </div>
+
+              <div>
+                <label class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Кастомный цвет акцента</label>
+                <input id="profile-card-custom-color" type="color" value="#111111" class="h-10 w-14 rounded-lg border border-neutral-200 p-1" />
+              </div>
+
+              <label class="inline-flex items-center gap-2 text-sm">
+                <input id="profile-card-show-branding" type="checkbox" checked />
+                Скрыть брендинг UNQ+
+              </label>
+
+              <button id="profile-card-save" type="button" class="rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white">Сохранить визитку</button>
+              <p id="profile-card-save-status" class="text-sm"></p>
+              <p id="profile-card-slug-note" class="text-xs text-neutral-500"></p>
+            </div>
+
+            <div>
+              <p class="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Live preview</p>
+              <div id="profile-card-live-preview" class="rounded-2xl border border-neutral-200 bg-white p-4"></div>
+            </div>
+          </div>
+        </article>
+
+        <article data-tab-panel="requests" class="profile-tab-panel hidden rounded-2xl border border-neutral-200 bg-white p-5">
+          <h2 class="text-lg font-bold">Заявки</h2>
+          <div id="profile-requests-banner" class="hidden mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800"></div>
+          <div class="mt-4 overflow-auto rounded-xl border border-neutral-200">
+            <table class="min-w-full text-left text-sm">
+              <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
+                <tr>
+                  <th class="px-3 py-2">Дата</th>
+                  <th class="px-3 py-2">Slug</th>
+                  <th class="px-3 py-2">Цена</th>
+                  <th class="px-3 py-2">Тариф</th>
+                  <th class="px-3 py-2">Браслет</th>
+                  <th class="px-3 py-2">Статус</th>
+                  <th class="px-3 py-2">Примечание</th>
+                </tr>
+              </thead>
+              <tbody id="profile-requests-table"></tbody>
+            </table>
+          </div>
+        </article>
+
+        <article data-tab-panel="settings" class="profile-tab-panel hidden rounded-2xl border border-neutral-200 bg-white p-5">
+          <h2 class="text-lg font-bold">Настройки</h2>
+          <div class="mt-4 space-y-4">
+            <div>
+              <label class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Имя отображения</label>
+              <input id="profile-settings-display-name" type="text" class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm" />
+            </div>
+            <div>
+              <label class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Telegram</label>
+              <input id="profile-settings-telegram" type="text" readonly class="w-full rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm" />
+            </div>
+            <label class="inline-flex items-center gap-2 text-sm">
+              <input id="profile-settings-notifications" type="checkbox" />
+              Получать уведомления от бота
+            </label>
+            <button id="profile-settings-save" type="button" class="rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold">Сохранить настройки</button>
+            <p id="profile-settings-status" class="text-sm"></p>
+          </div>
+          <div class="mt-8 rounded-xl border border-red-200 bg-red-50 p-4">
+            <h3 class="text-sm font-semibold text-red-800">Danger zone</h3>
+            <p class="mt-1 text-xs text-red-700">Все твои slug станут недоступны</p>
+            <button id="profile-settings-deactivate" type="button" class="mt-3 rounded-lg border border-red-300 px-3 py-1.5 text-xs font-semibold text-red-700">Деактивировать аккаунт</button>
+          </div>
+        </article>
+      </section>
+    </div>
+  </main>
+
+  <div id="profile-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 p-4">
+    <div class="w-full max-w-md rounded-2xl bg-white p-5">
+      <h3 id="profile-modal-title" class="text-lg font-bold text-neutral-900"></h3>
+      <p id="profile-modal-text" class="mt-2 text-sm text-neutral-600"></p>
+      <div class="mt-4 flex gap-2">
+        <button id="profile-modal-confirm" type="button" class="rounded-lg bg-neutral-900 px-3 py-1.5 text-sm font-semibold text-white">Ок</button>
+        <button id="profile-modal-close" type="button" class="rounded-lg border border-neutral-300 px-3 py-1.5 text-sm font-semibold">Закрыть</button>
+      </div>
+    </div>
+  </div>
+
+  <script nonce="<%= cspNonce %>" src="/vendor/sortablejs/Sortable.min.js"></script>
+  <script nonce="<%= cspNonce %>" src="/vendor/cropperjs/cropper.min.js"></script>
+  <script nonce="<%= cspNonce %>" src="/js/profile.js"></script>
+</body>
+</html>

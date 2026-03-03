@@ -167,11 +167,44 @@
       const chatBtn = username
         ? `<a href="tg://resolve?domain=${encodeURIComponent(username)}" target="_blank" rel="noopener noreferrer" class="rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100">Написать</a>`
         : '<button type="button" disabled title="Нужен username в Telegram" class="cursor-not-allowed rounded-lg border border-neutral-200 px-2.5 py-1 text-xs font-semibold text-neutral-400">Написать</button>';
-      return `<tr class="border-t border-neutral-100"><td class="px-4 py-3">${D(x.createdAt)}</td><td class="px-4 py-3">${X(x.name)}</td><td class="px-4 py-3 font-mono">${X(x.slug)}</td><td class="px-4 py-3">${P(x.slugPrice)}</td><td class="px-4 py-3">${x.tariff === "premium" ? "Премиум" : "Базовый"}</td><td class="px-4 py-3">${x.bracelet ? "Да" : "Нет"}</td><td class="px-4 py-3">${X(x.contact)}</td><td class="px-4 py-3"><select data-act="os" data-id="${x.id}" class="rounded-lg border border-neutral-300 px-2 py-1 text-xs"><option value="NEW" ${x.status === "NEW" ? "selected" : ""}>🆕 Новая</option><option value="CONTACTED" ${x.status === "CONTACTED" ? "selected" : ""}>💬 Связались</option><option value="PAID" ${x.status === "PAID" ? "selected" : ""}>💳 Оплачено</option><option value="ACTIVATED" ${x.status === "ACTIVATED" ? "selected" : ""}>✅ Активировано</option><option value="REJECTED" ${x.status === "REJECTED" ? "selected" : ""}>❌ Отклонено</option></select></td><td class="px-4 py-3"><div class="flex flex-wrap gap-2"><button data-act="oa" data-id="${x.id}" data-t="${x.tariff}" data-th="${x.theme || "default_dark"}" class="rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100">Активировать</button>${chatBtn}<button data-act="od" data-id="${x.id}" class="rounded-lg border border-red-200 px-2.5 py-1 text-xs font-semibold text-red-700 transition hover:bg-red-50">Удалить</button></div></td></tr>`;
+      return `<tr class="border-t border-neutral-100"><td class="px-4 py-3">${D(x.createdAt)}</td><td class="px-4 py-3">${X(x.name)}</td><td class="px-4 py-3 font-mono">${X(x.slug)}</td><td class="px-4 py-3">${P(x.slugPrice)}</td><td class="px-4 py-3">${x.tariff === "premium" ? "Премиум" : "Базовый"}</td><td class="px-4 py-3">${x.bracelet ? "Да" : "Нет"}</td><td class="px-4 py-3">${X(x.contact)}</td><td class="px-4 py-3"><select data-act="os" data-id="${x.id}" data-note="${X(x.adminNote || "")}" class="rounded-lg border border-neutral-300 px-2 py-1 text-xs"><option value="new" ${x.status === "new" ? "selected" : ""}>🆕 Новая</option><option value="contacted" ${x.status === "contacted" ? "selected" : ""}>💬 Связались</option><option value="paid" ${x.status === "paid" ? "selected" : ""}>💳 Ожидает оплаты</option><option value="approved" ${x.status === "approved" ? "selected" : ""}>✅ Одобрено</option><option value="rejected" ${x.status === "rejected" ? "selected" : ""}>❌ Отклонено</option></select></td><td class="px-4 py-3"><div class="flex flex-wrap gap-2">${chatBtn}<button data-act="od" data-id="${x.id}" class="rounded-lg border border-red-200 px-2.5 py-1 text-xs font-semibold text-red-700 transition hover:bg-red-50">Удалить</button></div></td></tr>`;
     }).join("") : '<tr><td colspan="9" class="px-3 py-8 text-center text-neutral-500">Нет заявок</td></tr>';
     renderPager("orders-pagination", payload.pagination, (nextPage) => {
       setFormValue(form, "page", String(nextPage));
       void loadOrders();
+    });
+  }
+
+  async function loadUsers() {
+    const form = document.getElementById("users-filters");
+    const table = document.getElementById("users-table");
+    if (!(form instanceof HTMLFormElement) || !(table instanceof HTMLElement)) return;
+    const q = {
+      q: getFormValue(form, "q", ""),
+      page: getFormValue(form, "page", "1"),
+    };
+    setDashboardQuery({ u_q: q.q, u_page: q.page });
+    const r = await fetch(`/api/admin/users?${Q(q)}`);
+    if (!r.ok) return;
+    const payload = await r.json();
+    const rows = payload.items || [];
+    table.innerHTML = rows.length
+      ? rows
+          .map((x) => {
+            const slugText = Array.isArray(x.slugs) && x.slugs.length ? x.slugs.map((s) => `${s.fullSlug} (${s.status})`).join(", ") : "—";
+            const primarySlug =
+              Array.isArray(x.slugs) && x.slugs.length
+                ? x.slugs.find((s) => ["active", "private", "paused", "approved"].includes(s.status))?.fullSlug || x.slugs[0].fullSlug
+                : null;
+            const profileLink = primarySlug ? `/${encodeURIComponent(primarySlug)}` : x.username ? `https://t.me/${encodeURIComponent(x.username)}` : null;
+            const statusLabel = x.status === "blocked" ? "Заблокирован" : x.status === "deactivated" ? "Деактивирован" : "Активен";
+            return `<tr class="border-t border-neutral-100"><td class="px-4 py-3">${X(x.username ? `@${x.username}` : x.telegramId)}</td><td class="px-4 py-3">${X(x.name)}</td><td class="px-4 py-3"><select data-act="up" data-id="${X(x.telegramId)}" class="rounded-lg border border-neutral-300 px-2 py-1 text-xs"><option value="basic" ${x.plan === "basic" ? "selected" : ""}>Базовый</option><option value="premium" ${x.plan === "premium" ? "selected" : ""}>Премиум</option></select><div class="mt-1 text-[11px] text-neutral-500">до ${x.planExpiresAt ? D(x.planExpiresAt) : "—"}</div></td><td class="px-4 py-3 text-xs">${X(slugText)}</td><td class="px-4 py-3">${x.hasCard ? "Есть" : "Нет"}</td><td class="px-4 py-3">${X(statusLabel)}</td><td class="px-4 py-3">${D(x.createdAt)}</td><td class="px-4 py-3"><div class="flex flex-wrap gap-2"><button data-act="ux" data-id="${X(x.telegramId)}" class="rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100">Срок</button><button data-act="ub" data-id="${X(x.telegramId)}" class="rounded-lg border border-red-200 px-2.5 py-1 text-xs font-semibold text-red-700 transition hover:bg-red-50">Блок</button>${profileLink ? `<a href="${profileLink}" target="_blank" rel="noopener noreferrer" class="rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100">Открыть профиль →</a>` : ""}</div></td></tr>`;
+          })
+          .join("")
+      : '<tr><td colspan="8" class="px-3 py-8 text-center text-neutral-500">Нет пользователей</td></tr>';
+    renderPager("users-pagination", payload.pagination, (nextPage) => {
+      setFormValue(form, "page", String(nextPage));
+      void loadUsers();
     });
   }
   async function loadSlugs() {
@@ -415,8 +448,16 @@
     if (t.matches('[data-act="os"]') && t instanceof HTMLSelectElement) {
       const id = t.getAttribute("data-id");
       if (!id) return;
-      const r = await fetch(`/api/admin/orders/${id}/status`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({ status: t.value }) });
+      const previousNote = t.getAttribute("data-note") || "";
+      let adminNote = previousNote;
+      if (t.value === "rejected") {
+        const entered = prompt("Причина отклонения (будет отправлена в Telegram)", previousNote);
+        if (entered === null) return;
+        adminNote = entered;
+      }
+      const r = await fetch(`/api/admin/orders/${id}/status`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({ status: t.value, adminNote }) });
       if (!r.ok) alert(await E(r));
+      else void loadOrders();
     }
     if (t.matches('[data-act="bs"]') && t instanceof HTMLSelectElement) {
       const id = t.getAttribute("data-id");
@@ -430,6 +471,13 @@
       const r = await fetch(`/api/admin/cards/${id}/tariff`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({ tariff: t.value }) });
       if (!r.ok) alert(await E(r));
     }
+    if (t.matches('[data-act="up"]') && t instanceof HTMLSelectElement) {
+      const telegramId = t.getAttribute("data-id");
+      if (!telegramId) return;
+      const r = await fetch(`/api/admin/users/${encodeURIComponent(telegramId)}/plan`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({ plan: t.value }) });
+      if (!r.ok) alert(await E(r));
+      else void loadUsers();
+    }
   });
 
   document.addEventListener("click", async (e) => {
@@ -438,6 +486,8 @@
     const a = n.getAttribute("data-act");
     if (a === "oa") openA(n.getAttribute("data-id") || "", n.getAttribute("data-t") || "basic", n.getAttribute("data-th") || "default_dark");
     if (a === "od") { const id = n.getAttribute("data-id"); if (!id || !confirm("Удалить заявку?")) return; const r = await fetch(`/api/admin/orders/${id}`, { method: "DELETE", headers: H() }); if (!r.ok) alert(await E(r)); else void loadOrders(); }
+    if (a === "ux") { const telegramId = n.getAttribute("data-id"); if (!telegramId) return; const input = prompt("Новая дата окончания (YYYY-MM-DD) или пусто для сброса", ""); if (input === null) return; const r = await fetch(`/api/admin/users/${encodeURIComponent(telegramId)}/plan-expiry`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({ planExpiresAt: input.trim() ? `${input.trim()}T23:59:59.000Z` : null }) }); if (!r.ok) alert(await E(r)); else void loadUsers(); }
+    if (a === "ub") { const telegramId = n.getAttribute("data-id"); if (!telegramId || !confirm("Заблокировать пользователя и деактивировать его slug?")) return; const r = await fetch(`/api/admin/users/${encodeURIComponent(telegramId)}/block`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({}) }); if (!r.ok) alert(await E(r)); else void loadUsers(); }
     if (a === "st") { const slug = n.getAttribute("data-slug"), state = n.getAttribute("data-ns"); if (!slug || !state) return; const r = await fetch(`/api/admin/slugs/${encodeURIComponent(slug)}/state`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({ state }) }); if (!r.ok) alert(await E(r)); else void loadSlugs(); }
     if (a === "sp") { const slug = n.getAttribute("data-slug"), cur = n.getAttribute("data-p") || ""; if (!slug) return; const x = prompt("Новая цена slug (пусто = убрать override)", cur); if (x === null) return; const r = await fetch(`/api/admin/slugs/${encodeURIComponent(slug)}/price-override`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({ priceOverride: x.trim() ? Number(x.trim()) : null }) }); if (!r.ok) alert(await E(r)); else void loadSlugs(); }
     if (a === "cg") { const id = n.getAttribute("data-id"), isActive = n.getAttribute("data-n") === "1"; if (!id) return; const r = await fetch(`/api/admin/cards/${id}/toggle-active`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({ isActive }) }); if (!r.ok) alert(await E(r)); else void loadCards(); }
@@ -448,6 +498,7 @@
   });
 
   document.getElementById("orders-filters")?.addEventListener("submit", (e) => { e.preventDefault(); const f = e.currentTarget; if (f instanceof HTMLFormElement) setFormValue(f, "page", "1"); void loadOrders(); });
+  document.getElementById("users-filters")?.addEventListener("submit", (e) => { e.preventDefault(); const f = e.currentTarget; if (f instanceof HTMLFormElement) setFormValue(f, "page", "1"); void loadUsers(); });
   document.getElementById("slugs-filters")?.addEventListener("submit", (e) => { e.preventDefault(); const f = e.currentTarget; if (f instanceof HTMLFormElement) setFormValue(f, "page", "1"); void loadSlugs(); });
   document.getElementById("cards-filters")?.addEventListener("submit", (e) => { e.preventDefault(); const f = e.currentTarget; if (f instanceof HTMLFormElement) setFormValue(f, "page", "1"); void loadCards(); });
   document.getElementById("bracelets-filters")?.addEventListener("submit", (e) => { e.preventDefault(); const f = e.currentTarget; if (f instanceof HTMLFormElement) setFormValue(f, "page", "1"); void loadBracelets(); });
@@ -485,6 +536,13 @@
       setFormValue(form, "page", getInitial("s_page", "page") || "1");
     }
   }
+  if (tab === "users") {
+    const form = document.getElementById("users-filters");
+    if (form instanceof HTMLFormElement) {
+      setFormValue(form, "q", getInitial("u_q", "q") || "");
+      setFormValue(form, "page", getInitial("u_page", "page") || "1");
+    }
+  }
   if (tab === "cards") {
     const form = document.getElementById("cards-filters");
     if (form instanceof HTMLFormElement) {
@@ -510,6 +568,7 @@
 
   if (tab === "analytics") void loadAnalytics();
   if (tab === "orders") void loadOrders();
+  if (tab === "users") void loadUsers();
   if (tab === "slugs") void loadSlugs();
   if (tab === "cards") void loadCards();
   if (tab === "bracelets") void loadBracelets();

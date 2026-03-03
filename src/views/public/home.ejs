@@ -134,7 +134,7 @@
   <%- include('../partials/head', { title: pageTitle, description: pageDescription, styles: ['/css/public-card.css'], ogType: 'website', jsonLd: pageJsonLd }) %>
 </head>
 <body class="antialiased">
-  <main class="relative min-h-screen overflow-hidden bg-neutral-50" data-page="public-home">
+  <main class="relative min-h-screen overflow-hidden bg-neutral-50" data-page="public-home" data-telegram-bot-username="<%= telegramBotUsername || '' %>">
     <div
       class="pointer-events-none fixed inset-0 opacity-[0.3]"
       style="
@@ -154,7 +154,13 @@
             <a href="#cards" class="text-sm text-neutral-500 transition-colors hover:text-neutral-900">Визитки</a>
             <a href="#wristband" class="text-sm text-neutral-500 transition-colors hover:text-neutral-900">Браслет</a>
             <a href="#pricing" class="text-sm text-neutral-500 transition-colors hover:text-neutral-900">Тарифы</a>
-            <a href="/admin" class="text-sm text-neutral-500 transition-colors hover:text-neutral-900">Войти</a>
+            <div id="home-auth-nav-desktop" class="flex items-center gap-2">
+              <button type="button" data-auth-login class="rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100">Войти через Telegram</button>
+              <a href="/profile" data-auth-profile class="hidden items-center gap-2 rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100">
+                <img data-auth-avatar src="/brand/unq-mark.svg" alt="avatar" class="h-4 w-4 rounded-full border border-neutral-200 object-cover" />
+                <span data-auth-name>Мой профиль</span>
+              </a>
+            </div>
           </div>
 
           <a
@@ -190,7 +196,13 @@
             <a href="#cards" class="text-sm text-neutral-500">Визитки</a>
             <a href="#wristband" class="text-sm text-neutral-500">Браслет</a>
             <a href="#pricing" class="text-sm text-neutral-500">Тарифы</a>
-            <a href="/admin" class="text-sm text-neutral-500">Войти</a>
+            <div id="home-auth-nav-mobile" class="flex items-center gap-2">
+              <button type="button" data-auth-login class="rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100">Войти через Telegram</button>
+              <a href="/profile" data-auth-profile class="hidden items-center gap-2 rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100">
+                <img data-auth-avatar src="/brand/unq-mark.svg" alt="avatar" class="h-4 w-4 rounded-full border border-neutral-200 object-cover" />
+                <span data-auth-name>Мой профиль</span>
+              </a>
+            </div>
             <a
               href="#order"
               data-order-link
@@ -779,19 +791,20 @@
                   </div>
                 </div>
 
-                <div>
-                  <label for="order-contact" class="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">
-                    Telegram или телефон
-                  </label>
-                  <input
-                    id="order-contact"
-                    name="contact"
-                    type="text"
-                    placeholder="@username или +998..."
-                    autocomplete="tel"
-                    class="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-900 outline-none transition-colors placeholder:text-neutral-300 focus:border-neutral-400"
-                  />
-                  <p id="order-error-contact" class="mt-1 hidden text-xs text-red-600"></p>
+                <div id="order-auth-badge" class="hidden rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-700">
+                  <p class="flex items-center gap-2">
+                    Заявка будет отправлена от
+                    <img id="order-auth-avatar" src="/brand/unq-mark.svg" alt="avatar" class="h-5 w-5 rounded-full border border-neutral-200 object-cover" />
+                    <span id="order-auth-user" class="font-semibold text-neutral-900"></span>
+                  </p>
+                  <button id="order-auth-logout" type="button" class="mt-2 text-xs font-semibold text-neutral-600 underline">
+                    Не ты? Выйти →
+                  </button>
+                </div>
+
+                <div id="order-auth-inline" class="hidden rounded-xl border border-neutral-200 bg-white px-4 py-3">
+                  <p class="text-sm text-neutral-700">Войди через Telegram чтобы оставить заявку</p>
+                  <div id="order-auth-inline-widget" class="mt-2"></div>
                 </div>
 
                 <div>

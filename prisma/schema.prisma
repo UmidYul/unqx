@@ -48,6 +48,35 @@ enum BraceletDeliveryStatus {
   DELIVERED
 }
 
+enum UserPlan {
+  basic
+  premium
+}
+
+enum UserStatus {
+  active
+  blocked
+  deactivated
+}
+
+enum SlugStatus {
+  free
+  pending
+  approved
+  active
+  paused
+  private
+  blocked
+}
+
+enum SlugRequestStatus {
+  new
+  contacted
+  paid
+  approved
+  rejected
+}
+
 model Card {
   id         String    @id @default(uuid())
   slug       String    @unique @db.VarChar(20)
@@ -212,4 +241,101 @@ model Testimonial {
 
   @@index([isVisible, sortOrder])
   @@map("testimonials")
+}
+
+model User {
+  id                   String        @id @default(uuid())
+  telegramId           String        @unique @map("telegram_id") @db.VarChar(40)
+  firstName            String        @map("first_name") @db.VarChar(120)
+  lastName             String?       @map("last_name") @db.VarChar(120)
+  username             String?       @db.VarChar(120)
+  photoUrl             String?       @map("photo_url")
+  displayName          String?       @map("display_name") @db.VarChar(120)
+  plan                 UserPlan      @default(basic)
+  planExpiresAt        DateTime?     @map("plan_expires_at")
+  notificationsEnabled Boolean       @default(true) @map("notifications_enabled")
+  status               UserStatus    @default(active)
+  createdAt            DateTime      @default(now()) @map("created_at")
+  updatedAt            DateTime      @updatedAt @map("updated_at")
+  slugs                Slug[]
+  profileCard          ProfileCard?
+  slugRequests         SlugRequest[]
+
+  @@index([plan, planExpiresAt])
+  @@index([status])
+  @@map("users")
+}
+
+model Slug {
+  id              String      @id @default(uuid())
+  letters         String      @db.VarChar(3)
+  digits          String      @db.VarChar(3)
+  fullSlug        String      @unique @map("full_slug") @db.VarChar(20)
+  ownerTelegramId String?     @map("owner_telegram_id") @db.VarChar(40)
+  owner           User?       @relation(fields: [ownerTelegramId], references: [telegramId], onDelete: SetNull)
+  status          SlugStatus  @default(free)
+  isPrimary       Boolean     @default(false) @map("is_primary")
+  price           Int?
+  pauseMessage    String?     @map("pause_message") @db.VarChar(220)
+  requestedAt     DateTime?   @map("requested_at")
+  approvedAt      DateTime?   @map("approved_at")
+  activatedAt     DateTime?   @map("activated_at")
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+
+  @@index([ownerTelegramId, status])
+  @@index([status, updatedAt])
+  @@map("slugs")
+}
+
+model ProfileCard {
+  id              String    @id @default(uuid())
+  ownerTelegramId String    @unique @map("owner_telegram_id") @db.VarChar(40)
+  owner           User      @relation(fields: [ownerTelegramId], references: [telegramId], onDelete: Cascade)
+  name            String    @db.VarChar(120)
+  role            String?   @db.VarChar(120)
+  bio             String?   @db.VarChar(120)
+  avatarUrl       String?   @map("avatar_url")
+  tags            Json      @default("[]")
+  buttons         Json      @default("[]")
+  theme           CardTheme @default(default_dark)
+  customColor     String?   @map("custom_color") @db.VarChar(20)
+  showBranding    Boolean   @default(true) @map("show_branding")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  @@map("profile_cards")
+}
+
+model SlugRequest {
+  id            String            @id @default(uuid())
+  telegramId    String            @map("telegram_id") @db.VarChar(40)
+  user          User              @relation(fields: [telegramId], references: [telegramId], onDelete: Cascade)
+  slug          String            @db.VarChar(20)
+  slugPrice     Int               @map("slug_price")
+  requestedPlan UserPlan          @map("requested_plan")
+  bracelet      Boolean           @default(false)
+  contact       String            @db.VarChar(140)
+  status        SlugRequestStatus @default(new)
+  adminNote     String?           @map("admin_note")
+  createdAt     DateTime          @default(now()) @map("created_at")
+  updatedAt     DateTime          @updatedAt @map("updated_at")
+
+  @@index([telegramId, createdAt])
+  @@index([status, createdAt])
+  @@index([slug])
+  @@map("slug_requests")
+}
+
+model SlugView {
+  id       String   @id @default(uuid())
+  fullSlug String   @map("full_slug") @db.VarChar(20)
+  viewedAt DateTime @default(now()) @map("viewed_at")
+  device   String?  @db.VarChar(20)
+  ipHash   String?  @map("ip_hash") @db.VarChar(64)
+  isUnique Boolean  @default(false) @map("is_unique")
+
+  @@index([fullSlug, viewedAt])
+  @@index([fullSlug, ipHash, viewedAt])
+  @@map("slug_views")
 }

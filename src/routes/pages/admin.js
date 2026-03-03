@@ -78,7 +78,7 @@ router.get(
   "/admin/dashboard",
   requireAdminPage,
   asyncHandler(async (req, res) => {
-    const allowedTabs = new Set(["analytics", "orders", "slugs", "cards", "bracelets", "testimonials", "logs"]);
+    const allowedTabs = new Set(["analytics", "orders", "users", "slugs", "cards", "bracelets", "testimonials", "logs"]);
     const tab = typeof req.query.tab === "string" && allowedTabs.has(req.query.tab) ? req.query.tab : "analytics";
 
     res.render("admin/dashboard", {

@@ -10,7 +10,6 @@ describe("order request validation", () => {
       digitalCard: true,
       bracelet: false,
     },
-    contact: "@test_user",
   };
 
   it("validates a correct payload", () => {
@@ -22,7 +21,6 @@ describe("order request validation", () => {
     const result = OrderRequestSchema.safeParse({
       ...validPayload,
       name: "",
-      contact: "",
     });
 
     expect(result.success).toBe(false);

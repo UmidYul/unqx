@@ -17,7 +17,6 @@ const OrderRequestSchema = z.object({
     digitalCard: z.boolean(),
     bracelet: z.boolean(),
   }),
-  contact: z.string().trim().min(1, "Контакт обязателен").max(120, "Контакт слишком длинный"),
 });
 
 module.exports = {

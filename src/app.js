@@ -11,8 +11,11 @@ const pgSession = require("connect-pg-simple")(session);
 const { env } = require("./config/env");
 const { errorHandler } = require("./middleware/error");
 const { getAdminSession } = require("./middleware/auth");
+const { getUserSession } = require("./middleware/auth");
 const { adminApiRouter } = require("./routes/api/admin");
+const { authApiRouter } = require("./routes/api/auth");
 const { publicApiRouter } = require("./routes/api/cards");
+const { profileApiRouter } = require("./routes/api/profile");
 const { adminPagesRouter } = require("./routes/pages/admin");
 const { publicPagesRouter } = require("./routes/pages/public");
 const { systemRouter } = require("./routes/system");
@@ -47,11 +50,12 @@ function createApp() {
           baseUri: ["'self'"],
           frameAncestors: ["'self'"],
           objectSrc: ["'none'"],
-          scriptSrc: ["'self'", (req, res) => `'nonce-${res.locals.cspNonce}'`],
+          scriptSrc: ["'self'", "https://telegram.org", "https://*.telegram.org", (req, res) => `'nonce-${res.locals.cspNonce}'`],
           styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
           fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
-          imgSrc: ["'self'", "data:", "blob:"],
+          imgSrc: ["'self'", "data:", "blob:", "https://t.me", "https://*.telegram.org", "https://telegram.org"],
           connectSrc: ["'self'"],
+          frameSrc: ["'self'", "https://oauth.telegram.org", "https://*.telegram.org", "https://telegram.org"],
           formAction: ["'self'"],
           ...(disableHttpsEnforcement ? { upgradeInsecureRequests: null } : {}),
         },
@@ -130,6 +134,8 @@ function createApp() {
     const csrfToken = ensureCsrfToken(req);
 
     res.locals.adminSession = getAdminSession(req);
+    res.locals.userSession = getUserSession(req);
+    res.locals.telegramBotUsername = env.TELEGRAM_BOT_USERNAME || "";
     res.locals.currentPath = req.path;
     res.locals.baseUrl = baseUrl;
     res.locals.canonicalUrl = canonicalUrl;
@@ -149,6 +155,8 @@ function createApp() {
   });
 
   app.use("/api/admin", adminApiRouter);
+  app.use("/api/auth", authApiRouter);
+  app.use("/api/profile", profileApiRouter);
   app.use("/api/cards", publicApiRouter);
 
   app.use(systemRouter);
