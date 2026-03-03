@@ -71,8 +71,24 @@
   <%- include('../partials/head', { title: pageTitle, description: pageDescription, image: pageImage, styles: ['/css/public-card.css'], ogType: 'profile', jsonLd: pageJsonLd }) %>
 </head>
 <body class="public-card-body antialiased">
+  <div class="public-card-decor" aria-hidden="true">
+    <svg class="bolt bolt-a" viewBox="0 0 50 85"><polygon points="34,0 8,45 26,45 16,85 44,36 24,36 42,0"></polygon></svg>
+    <svg class="bolt bolt-b" viewBox="0 0 50 85"><polygon points="34,0 8,45 26,45 16,85 44,36 24,36 42,0"></polygon></svg>
+    <svg class="bolt bolt-c" viewBox="0 0 50 85"><polygon points="34,0 8,45 26,45 16,85 44,36 24,36 42,0"></polygon></svg>
+    <svg class="bolt bolt-d" viewBox="0 0 50 85"><polygon points="34,0 8,45 26,45 16,85 44,36 24,36 42,0"></polygon></svg>
+    <svg class="bolt bolt-e" viewBox="0 0 50 85"><polygon points="34,0 8,45 26,45 16,85 44,36 24,36 42,0"></polygon></svg>
+    <svg class="bolt bolt-f" viewBox="0 0 50 85"><polygon points="34,0 8,45 26,45 16,85 44,36 24,36 42,0"></polygon></svg>
+  </div>
+
   <main class="public-card-shell" data-slug="<%= pageCard.slug %>" data-dir="<%= documentDir %>">
-    <header class="public-card-header">
+    <p class="public-top-slug">#<%= pageCard.slug %></p>
+
+    <header class="public-brand-head">
+      <p class="public-brand-logo">UNQ+</p>
+      <p class="public-brand-powered">powered by scxr</p>
+    </header>
+
+    <section class="public-profile">
       <div class="public-avatar" data-avatar-wrapper>
         <% if (pageCard.avatarUrl) { %>
         <img src="<%= pageCard.avatarUrl %>" alt="<%= pageCard.name %>" class="public-avatar-image" data-avatar-image />
@@ -95,123 +111,49 @@
 
       <p class="public-card-phone">
         <span class="public-card-phone-value"><%= pageCard.phone %></span>
-        <button
-          type="button"
-          data-copy-phone="<%= pageCard.phone %>"
-          class="public-copy-phone"
-          aria-label="Скопировать телефон"
-          title="Скопировать телефон"
-        >
+        <button type="button" data-copy-phone="<%= pageCard.phone %>" class="public-copy-phone" aria-label="Скопировать телефон" title="Скопировать телефон">
           <span data-copy-default>
             <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
               <path d="M16 1H6a2 2 0 0 0-2 2v12h2V3h10V1zm3 4H10a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2zm0 16H10V7h9v14z"></path>
             </svg>
           </span>
-          <span class="is-hidden" data-copy-success>copied</span>
+          <span class="is-hidden" data-copy-success>ok</span>
         </button>
       </p>
-    </header>
+
+      <% if (pageCard.tags.length > 0) { %>
+      <p class="public-tags">
+        <% pageCard.tags.forEach((tag, idx) => { %><span><%= idx === 0 ? "*" : "·" %> <%= tag.label %></span><% }); %>
+      </p>
+      <% } %>
+    </section>
 
     <section class="public-links" aria-label="Social links">
       <% if (primaryButtons.length === 0 && !mediaButton && extraButtons.length === 0) { %>
       <p class="public-links-placeholder">Coming soon</p>
       <% } %>
 
-      <% primaryButtons.forEach((button) => { %>
+      <% primaryButtons.concat(mediaButton ? [mediaButton] : []).slice(0, 8).forEach((button) => { %>
       <a href="<%= button.url %>" target="_blank" rel="noopener noreferrer" class="public-link-button">
         <span class="public-link-label"><%= button.label %></span>
-        <span class="public-link-icon" aria-hidden="true">↗</span>
       </a>
       <% }); %>
-
-      <% if (extraButtons.length > 0) { %>
-      <details class="public-links-more">
-        <summary>Show more</summary>
-        <div class="public-links-more-list">
-          <% extraButtons.forEach((button) => { %>
-          <a href="<%= button.url %>" target="_blank" rel="noopener noreferrer" class="public-link-button public-link-button-compact">
-            <span class="public-link-label"><%= button.label %></span>
-            <span class="public-link-icon" aria-hidden="true">↗</span>
-          </a>
-          <% }); %>
-        </div>
-      </details>
-      <% } %>
     </section>
 
-    <% if (mediaButton) { %>
-    <section class="public-media-link" aria-label="Media link">
-      <a href="<%= mediaButton.url %>" target="_blank" rel="noopener noreferrer" class="public-link-button public-link-button-media">
-        <span class="public-link-label">* <%= mediaButton.label %></span>
-        <span class="public-link-icon" aria-hidden="true">▶</span>
-      </a>
-    </section>
-    <% } %>
-
-    <section class="public-powered">
-      <p>powered by <span><%= poweredByNick %></span></p>
-      <div class="public-brand-mark">
-        <img src="/brand/unq-mark.svg" alt="UNQ mark" data-brand-image />
-      </div>
-    </section>
-
-    <section class="public-hashtags" aria-label="Hashtags">
-      <% hashtags.forEach((item) => { %>
-      <p><%= item %></p>
-      <% }); %>
-    </section>
-
-    <section class="public-contact" aria-label="Contact info">
-      <h2>Contact</h2>
-      <div class="public-contact-grid">
-        <% if (pageCard.email) { %><p><span>Email</span><a href="mailto:<%= pageCard.email %>"><%= pageCard.email %></a></p><% } %>
-        <% if (pageCard.extraPhone || pageCard.phone) { %><p><span>Phone</span><span><%= pageCard.extraPhone || pageCard.phone %></span></p><% } %>
-        <% if (pageCard.postcode) { %><p><span>Postcode</span><span><%= pageCard.postcode %></span></p><% } %>
-        <% if (pageCard.address) { %><p><span>Address</span><span><%= pageCard.address %></span></p><% } %>
-        <% if (!pageCard.email && !pageCard.extraPhone && !pageCard.phone && !pageCard.postcode && !pageCard.address) { %>
-        <p class="public-empty">Contact details will appear here.</p>
-        <% } %>
-      </div>
-    </section>
+    <p class="public-main-hashtag"><%= hashtags[0] || "#UnqPower2026" %></p>
 
     <section class="public-about" aria-label="About info">
       <h2>About info</h2>
-      <% if (pageCard.tags.length > 0) { %>
-      <ul>
-        <% pageCard.tags.forEach((tag) => { %>
-        <li>
-          <% if (tag.url) { %>
-          <a href="<%= tag.url %>" target="_blank" rel="noopener noreferrer"><%= tag.label %></a>
-          <% } else { %>
-          <span><%= tag.label %></span>
-          <% } %>
-        </li>
-        <% }); %>
-      </ul>
-      <% } else { %>
-      <p class="public-empty">Profile details are being updated.</p>
-      <% } %>
+      <div class="public-about-lines">
+        <p><span>Adress:</span> <span><%= pageCard.address || "Farghona, Mustaqillik 13" %></span></p>
+        <p><span>Postcode:</span> <span><%= pageCard.postcode || "150100" %></span></p>
+        <p class="public-about-row">
+          <span class="public-about-email"><%= pageCard.email || "unq@uz.com" %></span>
+          <span class="public-about-phone"><%= pageCard.extraPhone || pageCard.phone %></span>
+        </p>
+      </div>
     </section>
-
-    <section class="public-extra-photo" aria-label="Additional photo">
-      <% if (pageCard.avatarUrl) { %>
-      <img src="<%= pageCard.avatarUrl %>" alt="Additional profile view" data-extra-photo />
-      <% } else { %>
-      <div class="public-extra-photo-placeholder" aria-hidden="true"></div>
-      <% } %>
-    </section>
-
-    <footer class="public-card-footer">
-      <a href="https://tilda.cc/" target="_blank" rel="noopener noreferrer">Made on Tilda</a>
-    </footer>
   </main>
-
-  <% if (stickyCta) { %>
-  <a href="<%= stickyCta.url %>" target="_blank" rel="noopener noreferrer" class="public-sticky-cta">
-    <span><%= stickyCta.label %></span>
-    <span aria-hidden="true">↗</span>
-  </a>
-  <% } %>
 
   <script nonce="<%= cspNonce %>" src="/js/public-card.js"></script>
 </body>
