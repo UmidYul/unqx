@@ -169,7 +169,7 @@ router.get(
         return;
       }
 
-      if (slugRow.status === "free" || slugRow.status === "pending") {
+      if (slugRow.status === "free") {
         res.status(200).render("public/slug-state", {
           title: "UNQ свободен",
           slug,
@@ -185,14 +185,15 @@ router.get(
         return;
       }
 
-      if (slugRow.status === "approved") {
+      if (slugRow.status === "pending") {
         res.status(200).render("public/slug-state", {
-          title: `Скоро: ${slug}`,
+          title: `UNQ занят: ${slug}`,
           slug,
-          heading: "Скоро появится",
-          message: "Владелец уже получил доступ к UNQ и скоро опубликует визитку.",
-          ctaLabel: "",
-          ctaHref: "",
+          heading: "Этот UNQ уже занят",
+          message: "Сейчас он на рассмотрении. Встань в wishlist и мы сообщим, если он освободится.",
+          ctaLabel: "Встать в wishlist →",
+          ctaHref: "#",
+          ctaWaitlistSlug: slug,
           noindex: true,
           adminSession: getAdminSession(req),
         });
@@ -240,7 +241,7 @@ router.get(
         return;
       }
 
-      if (slugRow.status === "active" || slugRow.status === "private") {
+      if (slugRow.status === "approved" || slugRow.status === "active" || slugRow.status === "private") {
         if (!slugRow.ownerTelegramId) {
           res.status(200).render("public/slug-state", {
             title: "Скоро",

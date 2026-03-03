@@ -58,14 +58,32 @@
   function showAvatarFallback() {
     if (avatarImage instanceof HTMLElement) {
       avatarImage.classList.add("hidden");
+      avatarImage.style.display = "none";
     }
     if (avatarFallback instanceof HTMLElement) {
       avatarFallback.classList.remove("hidden");
+      avatarFallback.style.display = "flex";
       avatarFallback.setAttribute("aria-hidden", "false");
     }
   }
 
+  function hideAvatarFallback() {
+    if (avatarFallback instanceof HTMLElement) {
+      avatarFallback.classList.add("hidden");
+      avatarFallback.style.display = "none";
+      avatarFallback.setAttribute("aria-hidden", "true");
+    }
+    if (avatarImage instanceof HTMLElement) {
+      avatarImage.classList.remove("hidden");
+      avatarImage.style.display = "";
+    }
+  }
+
   if (avatarImage instanceof HTMLElement) {
+    if (avatarImage instanceof HTMLImageElement && avatarImage.complete && avatarImage.naturalWidth > 0) {
+      hideAvatarFallback();
+    }
+    avatarImage.addEventListener("load", hideAvatarFallback, { once: true });
     avatarImage.addEventListener("error", showAvatarFallback, { once: true });
   }
 

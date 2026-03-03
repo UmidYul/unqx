@@ -6,6 +6,7 @@
   const pageCtaHref = typeof ctaHref === "string" ? ctaHref : "";
   const pageCtaOrderLink = Boolean(ctaOrderLink);
   const pageCtaOrderPrefill = typeof ctaOrderPrefill === "string" ? ctaOrderPrefill : "";
+  const pageCtaWaitlistSlug = typeof ctaWaitlistSlug === "string" ? ctaWaitlistSlug : "";
 %>
 <!doctype html>
 <html lang="ru">
@@ -24,6 +25,7 @@
         class="mt-5 inline-flex items-center gap-1.5 rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white"
         <%= pageCtaOrderLink ? 'data-order-link' : '' %>
         <%= pageCtaOrderPrefill ? `data-order-prefill="${pageCtaOrderPrefill}"` : '' %>
+        <%= pageCtaWaitlistSlug ? `data-waitlist-slug="${pageCtaWaitlistSlug}"` : '' %>
       >
         <%= pageCtaLabel %>
       </a>

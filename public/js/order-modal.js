@@ -333,6 +333,29 @@ const UNQ_TARIFFS = {
     script.setAttribute("data-request-access", "write");
     script.setAttribute("data-onauth", "unqxOrderModalTelegramAuth(user)");
     dom.widgetWrap.appendChild(script);
+    decorateWidget(dom.widgetWrap);
+  }
+
+  function decorateWidget(container) {
+    if (!(container instanceof HTMLElement)) {
+      return;
+    }
+    if (!container.querySelector(".order-modal-tg-fake")) {
+      const fake = document.createElement("div");
+      fake.className = "order-modal-tg-fake";
+      fake.innerHTML = '<span>Войти через Telegram</span>';
+      container.appendChild(fake);
+    }
+    const apply = () => {
+      const iframe = container.querySelector("iframe");
+      if (iframe instanceof HTMLIFrameElement) {
+        iframe.classList.add("order-modal-tg-iframe");
+      }
+    };
+    apply();
+    window.setTimeout(apply, 150);
+    window.setTimeout(apply, 500);
+    window.setTimeout(apply, 1200);
   }
 
   async function refreshUser() {
@@ -544,6 +567,39 @@ const UNQ_TARIFFS = {
           bracelet: node.getAttribute("data-order-bracelet") === "true",
         };
         void open(options);
+      });
+    });
+
+    document.querySelectorAll("[data-waitlist-slug]").forEach((node) => {
+      if (!(node instanceof HTMLElement) || node.dataset.waitlistBound === "1") {
+        return;
+      }
+      node.dataset.waitlistBound = "1";
+      node.addEventListener("click", async (event) => {
+        event.preventDefault();
+        const slug = node.getAttribute("data-waitlist-slug");
+        if (!slug) {
+          return;
+        }
+        try {
+          const response = await fetch("/api/cards/waitlist", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
+            },
+            body: JSON.stringify({ slug }),
+          });
+          if (!response.ok) {
+            throw new Error("waitlist_failed");
+          }
+          if (node instanceof HTMLButtonElement) {
+            node.disabled = true;
+          }
+          node.textContent = "Добавлено в wishlist ✓";
+        } catch {
+          node.textContent = "Не удалось. Повтори";
+        }
       });
     });
   }

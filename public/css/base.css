@@ -137,3 +137,33 @@ body {
     padding: 0.75rem;
   }
 }
+
+#order-modal-telegram-widget {
+  position: relative;
+  width: 260px;
+  height: 46px;
+}
+
+.order-modal-tg-fake {
+  position: absolute;
+  inset: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 9999px;
+  background: #111111;
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.order-modal-tg-iframe {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  opacity: 0 !important;
+  z-index: 2 !important;
+}

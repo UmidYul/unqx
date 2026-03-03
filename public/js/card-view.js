@@ -106,9 +106,7 @@
 
   function renderSocialLink(link) {
     const active = /^https?:\/\//i.test(link.url);
-    if (!active) {
-      return `<span class="unq-ref-social-link is-disabled" aria-hidden="true">${iconSvg(link.icon)}</span>`;
-    }
+    if (!active) return "";
 
     return `<a href="${esc(link.url)}" target="_blank" rel="noopener noreferrer" class="unq-ref-social-link" aria-label="${esc(link.label)}">${iconSvg(link.icon)}</a>`;
   }
@@ -141,6 +139,7 @@
       { label: "TikTok", url: findSocialUrl(card.buttons, [/tiktok/i, /tik tok/i]), icon: "tiktok" },
       { label: "YouTube", url: findSocialUrl(card.buttons, [/youtube/i, /youtu\.be/i]), icon: "youtube" },
     ];
+    const activeSocialLinks = socialLinks.filter((link) => /^https?:\/\//i.test(link.url));
 
     const mainHashtag = card.hashtag ? (card.hashtag.startsWith("#") ? card.hashtag : `#${card.hashtag}`) : "#UnqPower2026";
     const aboutAddress = card.address || "Farghona, Mustaqillik 13";
@@ -159,14 +158,18 @@
           </button>
         </div>
         <div class="public-card-shell unq-ref-shell">
-          <div class="unq-ref-brand">
+          ${
+            card.showBranding
+              ? `<div class="unq-ref-brand">
             <h2>UNQ+</h2>
             <p>POWERED BY SCXR</p>
-          </div>
+          </div>`
+              : ""
+          }
           <div class="unq-ref-profile">
             <div class="unq-ref-avatar-wrap">
               ${card.avatarUrl ? `<img src="${esc(card.avatarUrl)}" alt="${esc(card.name)}" class="unq-ref-avatar-img" data-avatar-image />` : ""}
-              <div class="unq-ref-avatar-fallback ${card.avatarUrl ? "hidden" : ""}" data-avatar-fallback aria-hidden="${card.avatarUrl ? "true" : "false"}">${esc(card.initials)}</div>
+              <div class="unq-ref-avatar-fallback ${card.avatarUrl ? "hidden" : ""}" data-avatar-fallback aria-hidden="${card.avatarUrl ? "true" : "false"}" style="${card.avatarUrl ? "display:none;" : ""}">${esc(card.initials)}</div>
             </div>
             <div class="unq-ref-name-wrap">
               <h1 class="unq-ref-name">${esc(card.name)} ${card.verified ? iconSvg("verified") : ""}</h1>
@@ -185,7 +188,7 @@
             <p>${iconSvg("phone")}<span>${esc(aboutPhone)}</span></p>
             <p>${iconSvg("hashtag")}<span>Postcode: ${esc(aboutPostcode)}</span></p>
           </div>
-          <div class="unq-ref-social">${socialLinks.map(renderSocialLink).join("")}</div>
+          ${activeSocialLinks.length ? `<div class="unq-ref-social">${activeSocialLinks.map(renderSocialLink).join("")}</div>` : ""}
           <button type="button" class="unq-ref-save" data-save-contact>${iconSvg("save")}<span>Save contact (.vcf)</span></button>
         </div>
         <div class="unq-ref-footline">

@@ -253,6 +253,10 @@ body[data-card-theme] #card-view-root {
   font-weight: 700;
 }
 
+.unq-ref-avatar-fallback.hidden {
+  display: none !important;
+}
+
 .unq-ref-name-wrap {
   margin-top: 14px;
 }
