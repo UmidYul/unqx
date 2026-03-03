@@ -14,4 +14,5 @@ const app = createApp();
 
 app.listen(env.PORT, () => {
   console.log(`[express-app] listening on http://127.0.0.1:${env.PORT}`);
+  console.log(`[express-app] trust proxy=${String(env.TRUST_PROXY)}, session cookie secure=${String(env.SESSION_COOKIE_SECURE)}`);
 });

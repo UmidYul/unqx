@@ -3,6 +3,61 @@ const dotenv = require("dotenv");
 const { z } = require("zod");
 const bcrypt = require("bcryptjs");
 
+function parseBoolean(value) {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+
+  const normalized = value.trim().toLowerCase();
+
+  if (["1", "true", "yes", "on"].includes(normalized)) {
+    return true;
+  }
+
+  if (["0", "false", "no", "off"].includes(normalized)) {
+    return false;
+  }
+
+  return undefined;
+}
+
+function parseTrustProxy(value) {
+  if (typeof value !== "string" || !value.trim()) {
+    return 1;
+  }
+
+  const booleanValue = parseBoolean(value);
+  if (typeof booleanValue === "boolean") {
+    return booleanValue;
+  }
+
+  const numericValue = Number(value);
+  if (Number.isInteger(numericValue) && numericValue >= 0) {
+    return numericValue;
+  }
+
+  return value;
+}
+
+function parseSessionCookieSecure(value, nodeEnv) {
+  if (typeof value !== "string" || !value.trim()) {
+    return nodeEnv === "production" ? "auto" : false;
+  }
+
+  const normalized = value.trim().toLowerCase();
+
+  if (normalized === "auto") {
+    return "auto";
+  }
+
+  const booleanValue = parseBoolean(value);
+  if (typeof booleanValue === "boolean") {
+    return booleanValue;
+  }
+
+  return nodeEnv === "production" ? "auto" : false;
+}
+
 function decodeB64(value) {
   if (!value) {
     return undefined;
@@ -49,6 +104,8 @@ const schema = z.object({
     }, "ADMIN_PASSWORD_HASH must be a bcrypt hash"),
   TIMEZONE: z.string().min(1).default("Asia/Tashkent"),
   ROOT_DIR: z.string().optional(),
+  TRUST_PROXY: z.string().optional(),
+  SESSION_COOKIE_SECURE: z.string().optional(),
 });
 
 const parsed = schema.parse({
@@ -65,6 +122,8 @@ const parsed = schema.parse({
   ADMIN_PASSWORD_HASH: decodeB64(process.env.ADMIN_PASSWORD_HASH_B64) ?? process.env.ADMIN_PASSWORD_HASH,
   TIMEZONE: process.env.TIMEZONE,
   ROOT_DIR: process.env.ROOT_DIR,
+  TRUST_PROXY: process.env.TRUST_PROXY,
+  SESSION_COOKIE_SECURE: process.env.SESSION_COOKIE_SECURE,
 });
 
 const ROOT_DIR = parsed.ROOT_DIR ? path.resolve(parsed.ROOT_DIR) : rootDirDefault;
@@ -72,6 +131,8 @@ const EXPRESS_APP_DIR = expressAppDirDefault;
 const PUBLIC_DIR = path.join(ROOT_DIR, "public");
 const APP_URL = (parsed.APP_URL ?? parsed.NEXT_PUBLIC_APP_URL ?? parsed.NEXTAUTH_URL ?? `http://127.0.0.1:${parsed.PORT}`).replace(/\/$/, "");
 const SESSION_SECRET = parsed.SESSION_SECRET ?? parsed.NEXTAUTH_SECRET ?? "change-me-dev-secret";
+const TRUST_PROXY = parseTrustProxy(parsed.TRUST_PROXY);
+const SESSION_COOKIE_SECURE = parseSessionCookieSecure(parsed.SESSION_COOKIE_SECURE, parsed.NODE_ENV);
 
 const env = {
   ...parsed,
@@ -80,6 +141,8 @@ const env = {
   PUBLIC_DIR,
   APP_URL,
   SESSION_SECRET,
+  TRUST_PROXY,
+  SESSION_COOKIE_SECURE,
 };
 
 module.exports = { env };

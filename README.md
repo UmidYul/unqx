@@ -54,7 +54,14 @@ NEXTAUTH_SECRET="change-me"
 SESSION_SECRET="change-me-better"
 TIMEZONE="Asia/Tashkent"
 PORT=3100
+TRUST_PROXY=1
+SESSION_COOKIE_SECURE="auto"
 ```
+
+Notes for hosting:
+
+- If admin login refreshes without entering dashboard, usually the session cookie is not being set behind reverse proxy.
+- Keep `SESSION_COOKIE_SECURE=auto` and set `TRUST_PROXY` according to your host (often `1` or `true`).
 
 ## Endpoints
 

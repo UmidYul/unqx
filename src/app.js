@@ -18,7 +18,7 @@ function createApp() {
   const app = express();
   const pgPool = new pg.Pool({ connectionString: env.DATABASE_URL });
 
-  app.set("trust proxy", 1);
+  app.set("trust proxy", env.TRUST_PROXY);
   app.set("view engine", "ejs");
   app.set("views", path.join(__dirname, "views"));
 
@@ -32,6 +32,7 @@ function createApp() {
         tableName: "user_sessions",
         createTableIfMissing: true,
       }),
+      proxy: env.TRUST_PROXY !== false,
       name: "unqx.sid",
       secret: env.SESSION_SECRET,
       resave: false,
@@ -39,7 +40,7 @@ function createApp() {
       cookie: {
         httpOnly: true,
         sameSite: "lax",
-        secure: env.NODE_ENV === "production",
+        secure: env.SESSION_COOKIE_SECURE,
         maxAge: 1000 * 60 * 60 * 24 * 7,
       },
     }),
