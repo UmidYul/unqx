@@ -24,6 +24,7 @@ function createApp() {
   const pgPool = new pg.Pool({ connectionString: env.DATABASE_URL });
   const expressPublicDir = path.join(env.EXPRESS_APP_DIR, "public");
   const rootPublicDir = env.PUBLIC_DIR;
+  const disableHttpsEnforcement = env.DISABLE_HTTPS_ENFORCEMENT === true;
 
   app.set("trust proxy", env.TRUST_PROXY);
   app.set("view engine", "ejs");
@@ -51,11 +52,13 @@ function createApp() {
           imgSrc: ["'self'", "data:", "blob:"],
           connectSrc: ["'self'"],
           formAction: ["'self'"],
+          ...(disableHttpsEnforcement ? { upgradeInsecureRequests: null } : {}),
         },
       },
       crossOriginEmbedderPolicy: false,
       crossOriginOpenerPolicy: false,
       originAgentCluster: false,
+      ...(disableHttpsEnforcement ? { hsts: false } : {}),
     }),
   );
 
