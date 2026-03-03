@@ -105,6 +105,7 @@
 
     reqBanner: $("#profile-requests-banner"),
     reqTable: $("#profile-requests-table"),
+    reqNewBtn: $("#profile-new-request-btn"),
 
     stName: $("#profile-settings-display-name"),
     stTg: $("#profile-settings-telegram"),
@@ -426,6 +427,20 @@
 
     const approved = s.requests.find((item) => item.status === "approved");
     const paid = s.requests.find((item) => item.status === "paid");
+    const plan = s.user?.effectivePlan || "basic";
+    const count = s.slugs.length;
+    if (el.reqNewBtn instanceof HTMLButtonElement) {
+      if (plan !== "premium" && count >= 1) {
+        el.reqNewBtn.disabled = false;
+        el.reqNewBtn.title = "Перейди на Премиум чтобы добавить slug";
+      } else if (plan === "premium" && count >= 3) {
+        el.reqNewBtn.disabled = true;
+        el.reqNewBtn.title = "Достигнут лимит 3 slug";
+      } else {
+        el.reqNewBtn.disabled = false;
+        el.reqNewBtn.title = "";
+      }
+    }
 
     if (!el.reqBanner) return;
 
@@ -619,13 +634,32 @@
         "Перейди на Премиум чтобы добавить до 3 UNQ",
         "Улучшить тариф →",
         () => {
-          location.href = "/#order";
+          if (window.UNQOrderModal && typeof window.UNQOrderModal.open === "function") {
+            window.UNQOrderModal.open({ plan: "premium" });
+          }
         },
       );
       return;
     }
+    if (window.UNQOrderModal && typeof window.UNQOrderModal.open === "function") {
+      window.UNQOrderModal.open({});
+    }
+  });
 
-    location.href = "/?tariff=premium#order";
+  el.reqNewBtn?.addEventListener("click", () => {
+    const plan = s.user?.effectivePlan || "basic";
+    const count = s.slugs.length;
+    if (plan !== "premium" && count >= 1) {
+      showModal("Нужен Премиум", "Перейди на Премиум чтобы добавить slug");
+      return;
+    }
+    if (plan === "premium" && count >= 3) {
+      showModal("Лимит достигнут", "Достигнут лимит 3 slug");
+      return;
+    }
+    if (window.UNQOrderModal && typeof window.UNQOrderModal.open === "function") {
+      window.UNQOrderModal.open({});
+    }
   });
 
   el.cBio?.addEventListener("input", () => {

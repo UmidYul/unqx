@@ -12,12 +12,11 @@ const TARIFFS = {
   }
 
   const authApi = initTelegramAuth(pageNode);
-  const orderApi = initOrderForm(authApi);
+  const orderApi = initOrderModalBridge();
   initMobileMenu();
   initSlugCounter();
   initSlugAvailability(orderApi);
   initSlugCalculator(orderApi);
-  initOrderLinks(orderApi);
 })();
 
 function formatPrice(number) {
@@ -149,40 +148,11 @@ function getRarityBadge(total) {
 }
 
 function initTelegramAuth(pageNode) {
-  const botUsername = pageNode.getAttribute("data-telegram-bot-username") || "";
   const loginButtons = Array.from(document.querySelectorAll("[data-auth-login]"));
   const profileLinks = Array.from(document.querySelectorAll("[data-auth-profile]"));
   const profileNames = Array.from(document.querySelectorAll("[data-auth-name]"));
   const profileAvatars = Array.from(document.querySelectorAll("[data-auth-avatar]"));
-  const orderAuthBadge = document.getElementById("order-auth-badge");
-  const orderAuthUser = document.getElementById("order-auth-user");
-  const orderAuthAvatar = document.getElementById("order-auth-avatar");
-  const orderAuthLogout = document.getElementById("order-auth-logout");
-  const inlineWrap = document.getElementById("order-auth-inline");
-  const inlineWidget = document.getElementById("order-auth-inline-widget");
-  let csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "";
   let currentUser = null;
-  let widgetCallback = null;
-
-  async function postJson(url, body) {
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
-      },
-      body: JSON.stringify(body),
-    });
-    const payload = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      throw new Error(payload.error || `HTTP ${response.status}`);
-    }
-    if (payload && typeof payload.csrfToken === "string") {
-      csrfToken = payload.csrfToken;
-      document.querySelector('meta[name="csrf-token"]')?.setAttribute("content", csrfToken);
-    }
-    return payload;
-  }
 
   function renderAuthUi() {
     for (const node of loginButtons) {
@@ -191,12 +161,6 @@ function initTelegramAuth(pageNode) {
     for (const node of profileLinks) {
       node.classList.toggle("hidden", !currentUser);
       node.classList.toggle("inline-flex", Boolean(currentUser));
-    }
-    if (orderAuthBadge instanceof HTMLElement) {
-      orderAuthBadge.classList.toggle("hidden", !currentUser);
-    }
-    if (inlineWrap instanceof HTMLElement && currentUser) {
-      inlineWrap.classList.add("hidden");
     }
     if (currentUser) {
       for (const node of profileNames) {
@@ -207,57 +171,7 @@ function initTelegramAuth(pageNode) {
           node.src = currentUser.photoUrl || "/brand/unq-mark.svg";
         }
       }
-      if (orderAuthUser instanceof HTMLElement) {
-        const username = currentUser.username ? ` · @${currentUser.username}` : "";
-        orderAuthUser.textContent = `${currentUser.firstName || currentUser.displayName || "Пользователь"}${username}`;
-      }
-      if (orderAuthAvatar instanceof HTMLImageElement) {
-        orderAuthAvatar.src = currentUser.photoUrl || "/brand/unq-mark.svg";
-      }
     }
-  }
-
-  async function handleWidgetAuth(telegramUser) {
-    const payload = await postJson("/api/auth/telegram/callback", telegramUser);
-    currentUser = payload.user || null;
-    renderAuthUi();
-    window.dispatchEvent(
-      new CustomEvent("unqx:auth:success", {
-        detail: currentUser,
-      }),
-    );
-    if (typeof widgetCallback === "function") {
-      const callback = widgetCallback;
-      widgetCallback = null;
-      callback(currentUser);
-    }
-  }
-
-  window.unqxTelegramAuth = (user) => {
-    void handleWidgetAuth(user).catch((error) => {
-      console.error("[unqx] telegram auth failed", error);
-    });
-  };
-
-  function mountWidget(container, onSuccess) {
-    if (!(container instanceof HTMLElement)) {
-      return;
-    }
-    if (!botUsername) {
-      console.error("[unqx] TELEGRAM_BOT_USERNAME is missing");
-      return;
-    }
-    widgetCallback = onSuccess || null;
-    container.innerHTML = "";
-    const script = document.createElement("script");
-    script.async = true;
-    script.src = "https://telegram.org/js/telegram-widget.js?22";
-    script.setAttribute("data-telegram-login", botUsername);
-    script.setAttribute("data-size", "large");
-    script.setAttribute("data-userpic", "false");
-    script.setAttribute("data-request-access", "write");
-    script.setAttribute("data-onauth", "unqxTelegramAuth(user)");
-    container.appendChild(script);
   }
 
   async function refreshUser() {
@@ -280,46 +194,29 @@ function initTelegramAuth(pageNode) {
     return currentUser;
   }
 
-  async function logout() {
-    await postJson("/api/auth/logout", {});
-    currentUser = null;
-    renderAuthUi();
-    window.dispatchEvent(new CustomEvent("unqx:auth:logout"));
-  }
-
-  function ensureAuthInline(onSuccess) {
-    if (currentUser) {
-      if (typeof onSuccess === "function") {
-        onSuccess(currentUser);
-      }
-      return;
-    }
-    if (inlineWrap instanceof HTMLElement) {
-      inlineWrap.classList.remove("hidden");
-    }
-    mountWidget(inlineWidget, onSuccess || null);
-  }
-
   loginButtons.forEach((node) => {
     node.addEventListener("click", () => {
       if (currentUser) {
         window.location.href = "/profile";
         return;
       }
-      ensureAuthInline((user) => {
-        if (user) {
-          window.location.href = "/profile";
-        }
-      });
-      const section = document.getElementById("order");
-      section?.scrollIntoView({ behavior: "smooth", block: "start" });
+      if (window.UNQOrderModal && typeof window.UNQOrderModal.ensureAuth === "function") {
+        window.UNQOrderModal.ensureAuth((user) => {
+          if (user) {
+            window.location.href = "/profile";
+          }
+        });
+      }
     });
   });
 
-  orderAuthLogout?.addEventListener("click", () => {
-    void logout().catch((error) => {
-      console.error("[unqx] logout failed", error);
-    });
+  window.addEventListener("unqx:auth:success", (event) => {
+    currentUser = event?.detail || null;
+    renderAuthUi();
+  });
+  window.addEventListener("unqx:auth:logout", () => {
+    currentUser = null;
+    renderAuthUi();
   });
 
   void refreshUser();
@@ -328,7 +225,6 @@ function initTelegramAuth(pageNode) {
     getUser() {
       return currentUser;
     },
-    ensureAuthInline,
     refreshUser,
   };
 }
@@ -362,21 +258,6 @@ function initMobileMenu() {
   menu.querySelectorAll("a").forEach((link) => {
     link.addEventListener("click", () => {
       setOpen(false);
-    });
-  });
-}
-
-function initOrderLinks(orderApi) {
-  document.querySelectorAll("[data-order-link]").forEach((node) => {
-    node.addEventListener("click", () => {
-      if (!orderApi) {
-        return;
-      }
-
-      const slug = node.getAttribute("data-order-prefill");
-      if (slug) {
-        orderApi.prefillSlug(slug);
-      }
     });
   });
 }
@@ -507,7 +388,7 @@ function initSlugAvailability(orderApi) {
       button.addEventListener("click", () => {
         slugInput.value = item;
         if (orderApi) {
-          orderApi.prefillSlug(item);
+          orderApi.open({ slug: item });
         }
       });
       suggestionsNode.appendChild(button);
@@ -528,7 +409,7 @@ function initSlugAvailability(orderApi) {
       }
 
       primaryAction.classList.remove("hidden");
-      primaryAction.href = options.href || "#order";
+      primaryAction.href = options.href || "#";
       if (options.mode === "waitlist") {
         primaryAction.removeAttribute("data-order-prefill");
         primaryAction.setAttribute("data-waitlist-slug", options.slug);
@@ -649,9 +530,6 @@ function initSlugAvailability(orderApi) {
             ? "pending"
             : "taken";
       setFeedback(state, slug, Array.isArray(payload.suggestions) ? payload.suggestions : []);
-      if (orderApi) {
-        orderApi.prefillSlug(slug);
-      }
     } catch {
       setFeedback("error", slug);
     } finally {
@@ -790,7 +668,7 @@ function initSlugCalculator(orderApi) {
     resultFormula.textContent = `${formatPrice(BASE_PRICE)} x ${pricing.letterData.multiplier} x ${pricing.digitData.multiplier} = ${formatPrice(pricing.total)} сум`;
     letterMeta.textContent = `${pricing.letterData.label} x${pricing.letterData.multiplier}`;
     digitMeta.textContent = `${pricing.digitData.label} x${pricing.digitData.multiplier}`;
-    reserveLink.href = "#order";
+    reserveLink.href = "#";
     reserveLink.setAttribute("data-order-prefill", pricing.slug);
     reserveLink.innerHTML = `Занять ${pricing.slug}${RESERVE_ICON}`;
   }
@@ -814,7 +692,7 @@ function initSlugCalculator(orderApi) {
       updateResult();
 
       if (orderApi) {
-        orderApi.prefillSlug(`${lettersInput.value}${digitsInput.value}`);
+        orderApi.open({ slug: `${lettersInput.value}${digitsInput.value}` });
       }
     });
   });
@@ -822,352 +700,13 @@ function initSlugCalculator(orderApi) {
   updatePreview("", "");
 }
 
-function initOrderForm(authApi) {
-  const form = document.getElementById("order-form");
-  const nameInput = document.getElementById("order-name");
-  const lettersInput = document.getElementById("order-letters");
-  const digitsInput = document.getElementById("order-digits");
-  const themeInput = document.getElementById("order-theme");
-  const themePreview = document.getElementById("order-theme-preview");
-  const slugPreview = document.getElementById("order-slug-preview");
-  const slugPriceCard = document.getElementById("order-slug-price-card");
-  const slugPriceValue = document.getElementById("order-slug-price-value");
-  const totalSlug = document.getElementById("order-total-slug");
-  const totalTariff = document.getElementById("order-total-tariff");
-  const totalBraceletRow = document.getElementById("order-total-bracelet-row");
-  const totalBracelet = document.getElementById("order-total-bracelet");
-  const totalNow = document.getElementById("order-total-now");
-  const totalMonthly = document.getElementById("order-total-monthly");
-  const submitButton = document.getElementById("order-submit");
-  const submitStatus = document.getElementById("order-submit-status");
-  const errorName = document.getElementById("order-error-name");
-  const errorSlug = document.getElementById("order-error-slug");
-  const orderAuthInline = document.getElementById("order-auth-inline");
-
-  if (
-    !(form instanceof HTMLFormElement) ||
-    !(nameInput instanceof HTMLInputElement) ||
-    !(lettersInput instanceof HTMLInputElement) ||
-    !(digitsInput instanceof HTMLInputElement) ||
-    !(themeInput instanceof HTMLInputElement) ||
-    !(themePreview instanceof HTMLElement) ||
-    !(slugPreview instanceof HTMLElement) ||
-    !(slugPriceCard instanceof HTMLElement) ||
-    !(slugPriceValue instanceof HTMLElement) ||
-    !(totalSlug instanceof HTMLElement) ||
-    !(totalTariff instanceof HTMLElement) ||
-    !(totalBraceletRow instanceof HTMLElement) ||
-    !(totalBracelet instanceof HTMLElement) ||
-    !(totalNow instanceof HTMLElement) ||
-    !(totalMonthly instanceof HTMLElement) ||
-    !(submitButton instanceof HTMLButtonElement) ||
-    !(submitStatus instanceof HTMLElement) ||
-    !(errorName instanceof HTMLElement) ||
-    !(errorSlug instanceof HTMLElement)
-  ) {
-    return null;
-  }
-
-  const submitDefaultHtml = submitButton.innerHTML;
-  let pendingAutoSubmit = false;
-
-  function selectedTariff() {
-    const selected = form.querySelector('input[name="order-tariff"]:checked');
-    if (!(selected instanceof HTMLInputElement)) {
-      return "basic";
-    }
-
-    return selected.value === "premium" ? "premium" : "basic";
-  }
-
-  function normalizeTheme(theme) {
-    const value = String(theme || "").trim();
-    const allowed = ["default_dark", "light_minimal", "gradient", "neon", "corporate"];
-    if (!allowed.includes(value)) {
-      return "default_dark";
-    }
-    return value;
-  }
-
-  function applyTheme(theme) {
-    const normalized = normalizeTheme(theme);
-    themeInput.value = normalized;
-    themePreview.textContent = normalized;
-  }
-
-  function applyQueryPrefill() {
-    const params = new URLSearchParams(window.location.search);
-    const tariff = params.get("tariff");
-    if (tariff === "premium" || tariff === "basic") {
-      const target = form.querySelector(`input[name="order-tariff"][value="${tariff}"]`);
-      if (target instanceof HTMLInputElement) {
-        target.checked = true;
-      }
-    }
-
-    applyTheme(params.get("theme"));
-  }
-
-  function productFlags() {
-    const digitalCard = form.querySelector("#order-product-card");
-    const bracelet = form.querySelector("#order-product-bracelet");
-    return {
-      digitalCard: digitalCard instanceof HTMLInputElement ? digitalCard.checked : false,
-      bracelet: bracelet instanceof HTMLInputElement ? bracelet.checked : false,
-    };
-  }
-
-  function setError(node, message) {
-    if (!message) {
-      node.textContent = "";
-      node.classList.add("hidden");
-      return;
-    }
-
-    node.textContent = message;
-    node.classList.remove("hidden");
-  }
-
-  function clearErrors() {
-    setError(errorName, "");
-    setError(errorSlug, "");
-  }
-
-  function setStatus(text, tone) {
-    submitStatus.textContent = text;
-    submitStatus.className = "mt-2 text-sm";
-
-    if (tone === "success") {
-      submitStatus.classList.add("text-emerald-700");
-    } else if (tone === "error") {
-      submitStatus.classList.add("text-red-700");
-    } else {
-      submitStatus.classList.add("text-neutral-500");
-    }
-  }
-
-  function getSlugPricing() {
-    lettersInput.value = normalizeLetters(lettersInput.value);
-    digitsInput.value = normalizeDigits(digitsInput.value);
-    return calculateSlugPricing(lettersInput.value, digitsInput.value);
-  }
-
-  function updateOrderTotals() {
-    const pricing = getSlugPricing();
-    const tariff = selectedTariff();
-    const tariffPrice = TARIFFS[tariff] ?? TARIFFS.basic;
-    const products = productFlags();
-    const braceletValue = products.bracelet ? BRACELET_PRICE : 0;
-    const slugValue = pricing ? pricing.total : 0;
-    const oneTime = slugValue + braceletValue;
-
-    slugPreview.textContent = `unqx.uz/${lettersInput.value || "___"}${digitsInput.value || "___"}`;
-    slugPriceCard.classList.toggle("hidden", !pricing);
-    slugPriceValue.textContent = formatPrice(slugValue);
-
-    totalSlug.textContent = `${formatPrice(slugValue)} сум (разово)`;
-    totalTariff.textContent = `${formatPrice(tariffPrice)} сум/мес`;
-    totalBracelet.textContent = `${formatPrice(BRACELET_PRICE)} сум`;
-    totalBraceletRow.classList.toggle("hidden", !products.bracelet);
-    totalBraceletRow.classList.toggle("flex", products.bracelet);
-    totalNow.textContent = `${formatPrice(oneTime)} сум`;
-    totalMonthly.textContent = `${formatPrice(tariffPrice)} сум/мес`;
-  }
-
-  function prefillSlug(slug) {
-    const parsed = splitSlug(slug);
-    if (!parsed) {
-      return;
-    }
-
-    lettersInput.value = parsed.letters;
-    digitsInput.value = parsed.digits;
-    updateOrderTotals();
-  }
-
-  function validate() {
-    const errors = {};
-    const pricing = getSlugPricing();
-
-    if (!nameInput.value.trim()) {
-      errors.name = "Имя обязательно";
-    }
-
-    if (!pricing) {
-      errors.slug = "UNQ должен быть в формате AAA000";
-    }
-
-    return {
-      errors,
-      pricing,
-    };
-  }
-
-  lettersInput.addEventListener("input", () => {
-    updateOrderTotals();
-  });
-
-  digitsInput.addEventListener("input", () => {
-    updateOrderTotals();
-  });
-
-  form.querySelectorAll('input[name="order-tariff"]').forEach((input) => {
-    input.addEventListener("change", () => {
-      updateOrderTotals();
-    });
-  });
-
-  const productCard = form.querySelector("#order-product-card");
-  const productBracelet = form.querySelector("#order-product-bracelet");
-  if (productCard instanceof HTMLInputElement) {
-    productCard.addEventListener("change", () => {
-      updateOrderTotals();
-    });
-  }
-  if (productBracelet instanceof HTMLInputElement) {
-    productBracelet.addEventListener("change", () => {
-      updateOrderTotals();
-    });
-  }
-
-  form.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    clearErrors();
-    setStatus("", "neutral");
-
-    const user = authApi && typeof authApi.getUser === "function" ? authApi.getUser() : null;
-    if (!user) {
-      pendingAutoSubmit = true;
-      setStatus("Войди через Telegram чтобы оставить заявку", "error");
-      if (orderAuthInline instanceof HTMLElement) {
-        orderAuthInline.classList.remove("hidden");
-      }
-      if (authApi && typeof authApi.ensureAuthInline === "function") {
-        authApi.ensureAuthInline(() => {
-          if (pendingAutoSubmit) {
-            pendingAutoSubmit = false;
-            form.requestSubmit();
-          }
-        });
-      }
-      return;
-    }
-
-    const { errors, pricing } = validate();
-    if (errors.name) {
-      setError(errorName, errors.name);
-    }
-    if (errors.slug) {
-      setError(errorSlug, errors.slug);
-    }
-
-    if (Object.keys(errors).length > 0 || !pricing) {
-      return;
-    }
-
-    const tariff = selectedTariff();
-    const products = productFlags();
-
-    submitButton.disabled = true;
-    submitButton.classList.add("opacity-70", "cursor-not-allowed");
-    submitButton.textContent = "Отправка...";
-
-    try {
-      const response = await fetch("/api/cards/order-request", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-csrf-token": document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "",
-        },
-        body: JSON.stringify({
-          name: nameInput.value.trim(),
-          letters: pricing.letters,
-          digits: pricing.digits,
-          tariff,
-          theme: tariff === "premium" ? normalizeTheme(themeInput.value) : undefined,
-          products,
-        }),
-      });
-
-      const payload = await response.json().catch(() => ({}));
-
-      if (response.ok && payload && payload.ok === true) {
-        setStatus("✅ Заявка принята! Ожидай сообщения в Telegram.", "success");
-        form.reset();
-        clearErrors();
-        applyQueryPrefill();
-        const currentUser = authApi && typeof authApi.getUser === "function" ? authApi.getUser() : null;
-        if (currentUser && !nameInput.value.trim()) {
-          nameInput.value = currentUser.firstName || currentUser.displayName || "";
-        }
-        updateOrderTotals();
-        return;
-      }
-
-      if (response.status === 400 && payload && payload.issues) {
-        setError(errorName, payload.issues.name || "");
-        setError(errorSlug, payload.issues.slug || "");
-      }
-
-      if (response.status === 401 && payload && payload.code === "AUTH_REQUIRED") {
-        pendingAutoSubmit = true;
-        setStatus("Войди через Telegram чтобы оставить заявку", "error");
-        if (authApi && typeof authApi.ensureAuthInline === "function") {
-          authApi.ensureAuthInline(() => {
-            if (pendingAutoSubmit) {
-              pendingAutoSubmit = false;
-              form.requestSubmit();
-            }
-          });
-        }
-        return;
-      }
-
-      if (response.status === 403 && payload && payload.code === "BASIC_SLUG_LIMIT_REACHED") {
-        setStatus("Перейди на Премиум чтобы добавить до 3 UNQ", "error");
-        return;
-      }
-
-      if (response.status === 403 && payload && payload.code === "PREMIUM_SLUG_LIMIT_REACHED") {
-        setStatus("Достигнут лимит 3 UNQ для Премиум тарифа", "error");
-        return;
-      }
-      if (response.status === 409 && payload && payload.code === "SLUG_NOT_AVAILABLE") {
-        setStatus(payload.error || "Этот UNQ только что заняли. Выбери другой.", "error");
-        return;
-      }
-
-      setStatus("❌ Ошибка отправки. Напиши нам напрямую: @unqx_uz", "error");
-    } catch {
-      setStatus("❌ Ошибка отправки. Напиши нам напрямую: @unqx_uz", "error");
-    } finally {
-      submitButton.disabled = false;
-      submitButton.classList.remove("opacity-70", "cursor-not-allowed");
-      submitButton.innerHTML = submitDefaultHtml;
-    }
-  });
-
-  applyQueryPrefill();
-  updateOrderTotals();
-  const initialUser = authApi && typeof authApi.getUser === "function" ? authApi.getUser() : null;
-  if (initialUser && !nameInput.value.trim()) {
-    nameInput.value = initialUser.firstName || initialUser.displayName || "";
-  }
-  function handleAuthPrefill(event) {
-    const user = event && event.detail ? event.detail : null;
-    if (user && !nameInput.value.trim()) {
-      nameInput.value = user.firstName || user.displayName || "";
-    }
-    if (pendingAutoSubmit) {
-      pendingAutoSubmit = false;
-      form.requestSubmit();
-    }
-  }
-  window.addEventListener("unqx:auth:success", handleAuthPrefill);
-  window.addEventListener("unqx:auth:ready", handleAuthPrefill);
-
+function initOrderModalBridge() {
   return {
-    prefillSlug,
+    open(options = {}) {
+      if (window.UNQOrderModal && typeof window.UNQOrderModal.open === "function") {
+        window.UNQOrderModal.open(options);
+      }
+    },
   };
 }
 

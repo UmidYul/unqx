@@ -1,0 +1,169 @@
+<div id="order-modal-root" class="fixed inset-0 z-[70] hidden">
+  <div id="order-modal-backdrop" class="absolute inset-0 bg-black/50"></div>
+  <div class="relative flex min-h-full items-end justify-center p-0 sm:items-center sm:p-4">
+    <section
+      id="order-modal-dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="order-modal-title"
+      class="flex h-screen w-full flex-col overflow-hidden bg-white sm:h-auto sm:max-h-[92vh] sm:max-w-2xl sm:rounded-2xl sm:border sm:border-neutral-200 sm:shadow-xl"
+    >
+      <div class="border-b border-neutral-200 px-4 py-3 sm:px-6">
+        <div id="order-modal-progress-auth" class="text-xs font-semibold text-neutral-500">① Вход → ② Заявка → ③ Готово</div>
+        <div id="order-modal-progress-no-auth" class="hidden text-xs font-semibold text-neutral-500">② Заявка → ③ Готово</div>
+      </div>
+
+      <div id="order-modal-step-auth" class="flex-1 overflow-auto px-4 py-6 sm:px-6">
+        <h3 id="order-modal-title" class="text-xl font-bold text-neutral-900">Сначала войди через Telegram</h3>
+        <p class="mt-2 text-sm text-neutral-600">Нужно чтобы привязать slug к твоему аккаунту</p>
+        <div class="mt-6 flex justify-center">
+          <div id="order-modal-telegram-widget"></div>
+        </div>
+      </div>
+
+      <form id="order-modal-step-form" class="hidden flex-1 overflow-auto px-4 py-6 sm:px-6" novalidate>
+        <div class="rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm text-neutral-700">
+          <div class="flex items-center justify-between gap-3">
+            <div class="flex min-w-0 items-center gap-2">
+              <img id="order-modal-user-avatar" src="/brand/unq-mark.svg" alt="avatar" class="h-6 w-6 rounded-full border border-neutral-200 object-cover" />
+              <span id="order-modal-user-name" class="truncate">Пользователь</span>
+            </div>
+            <button id="order-modal-logout" type="button" class="text-xs font-semibold text-neutral-600 underline">Не ты? Выйти →</button>
+          </div>
+        </div>
+
+        <div class="mt-5 space-y-5">
+          <div id="order-modal-slug-readonly-wrap" class="hidden rounded-xl border border-neutral-200 bg-white p-4">
+            <p id="order-modal-slug-readonly" class="font-mono text-3xl font-bold tracking-wider text-neutral-900">AAA000</p>
+            <p id="order-modal-slug-preview" class="mt-1 text-sm text-neutral-500">unqx.uz/AAA000</p>
+          </div>
+
+          <div id="order-modal-slug-inputs-wrap" class="hidden">
+            <label class="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">UNQ</label>
+            <div class="flex items-center gap-3">
+              <input
+                id="order-modal-letters"
+                type="text"
+                maxlength="3"
+                placeholder="AAA"
+                autocomplete="off"
+                class="w-28 rounded-xl border border-neutral-200 bg-white px-4 py-3 text-center font-mono text-lg uppercase text-neutral-900 outline-none transition-colors placeholder:text-neutral-300 focus:border-neutral-400"
+              />
+              <span class="text-neutral-300">–</span>
+              <input
+                id="order-modal-digits"
+                type="text"
+                maxlength="3"
+                placeholder="000"
+                autocomplete="off"
+                class="w-28 rounded-xl border border-neutral-200 bg-white px-4 py-3 text-center font-mono text-lg text-neutral-900 outline-none transition-colors placeholder:text-neutral-300 focus:border-neutral-400"
+              />
+            </div>
+          </div>
+
+          <div class="rounded-xl border border-neutral-200 bg-neutral-50 p-4">
+            <div class="flex items-center justify-between gap-3">
+              <span id="order-modal-rarity" class="inline-flex rounded-full border border-neutral-200 bg-white px-2.5 py-1 text-[11px] font-semibold tracking-wider text-neutral-600">COMMON</span>
+              <span class="text-xs text-neutral-500">разово</span>
+            </div>
+            <p class="mt-2 text-sm font-semibold text-neutral-900">Стоимость slug: <span id="order-modal-slug-price">0</span> сум</p>
+            <p id="order-modal-formula" class="mt-1 text-xs text-neutral-500">100 000 × 1 = 100 000 сум</p>
+          </div>
+
+          <div>
+            <p class="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Тариф</p>
+            <div class="grid gap-3 sm:grid-cols-2">
+              <label class="block cursor-pointer">
+                <input id="order-modal-plan-basic" type="radio" name="order-modal-plan" value="basic" class="peer sr-only" />
+                <span class="block rounded-xl border border-neutral-200 bg-white p-4 transition peer-checked:border-neutral-900 peer-checked:bg-neutral-900 peer-checked:text-white">
+                  <span class="block text-[11px] font-mono uppercase tracking-wider text-neutral-400 peer-checked:text-neutral-400">БАЗОВЫЙ</span>
+                  <span class="mt-1 block text-sm font-semibold">29 000 сум/мес</span>
+                  <span class="mt-2 block text-xs">· 1 визитка</span>
+                  <span class="block text-xs">· До 3 кнопок</span>
+                  <span class="block text-xs">· Стандартный шаблон</span>
+                  <span class="block text-xs">· QR-код</span>
+                </span>
+              </label>
+
+              <label class="block cursor-pointer">
+                <input id="order-modal-plan-premium" type="radio" name="order-modal-plan" value="premium" class="peer sr-only" />
+                <span class="block rounded-xl border border-neutral-200 bg-white p-4 transition peer-checked:border-neutral-900 peer-checked:bg-neutral-900 peer-checked:text-white">
+                  <span class="inline-flex rounded-full border border-neutral-200 px-2 py-0.5 text-[10px] font-semibold tracking-wider">ПОПУЛЯРНЫЙ</span>
+                  <span class="mt-2 block text-[11px] font-mono uppercase tracking-wider text-neutral-400 peer-checked:text-neutral-400">ПРЕМИУМ</span>
+                  <span class="mt-1 block text-sm font-semibold">79 000 сум/мес</span>
+                  <span class="mt-2 block text-xs">· До 3 slug</span>
+                  <span class="block text-xs">· Любые темы</span>
+                  <span class="block text-xs">· Без ограничений</span>
+                  <span class="block text-xs">· Скрыть брендинг</span>
+                </span>
+              </label>
+            </div>
+          </div>
+
+          <label class="flex cursor-pointer items-start gap-3 rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-700">
+            <input id="order-modal-bracelet" type="checkbox" class="mt-0.5 h-4 w-4 rounded border-neutral-300 text-neutral-900 focus:ring-neutral-400" />
+            <span>
+              <span class="block">Добавить NFC-браслет (+300 000 сум)</span>
+              <span class="mt-0.5 block text-xs text-neutral-500">Тканевый браслет · Тап → открывается визитка</span>
+            </span>
+          </label>
+
+          <div>
+            <label for="order-modal-name" class="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Имя для визитки</label>
+            <input
+              id="order-modal-name"
+              type="text"
+              class="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-900 outline-none transition-colors placeholder:text-neutral-300 focus:border-neutral-400"
+              placeholder="Имя для визитки"
+            />
+          </div>
+
+          <div class="rounded-xl border border-neutral-200 bg-neutral-50 p-4 text-sm">
+            <div class="flex items-center justify-between gap-3">
+              <span id="order-modal-total-slug-title">Slug AAA000</span>
+              <span id="order-modal-total-slug-value">0 сум</span>
+            </div>
+            <div class="mt-1 flex items-center justify-between gap-3">
+              <span id="order-modal-total-plan-title">Тариф Базовый</span>
+              <span id="order-modal-total-plan-value">29 000/мес</span>
+            </div>
+            <div id="order-modal-total-bracelet-row" class="mt-1 hidden items-center justify-between gap-3">
+              <span>Браслет</span>
+              <span>300 000 сум</span>
+            </div>
+            <div class="my-3 h-px bg-neutral-200"></div>
+            <div class="flex items-center justify-between gap-3 font-semibold text-neutral-900">
+              <span>Сейчас к оплате:</span>
+              <span id="order-modal-total-now">0 сум</span>
+            </div>
+            <div class="mt-1 flex items-center justify-between gap-3 font-semibold text-neutral-900">
+              <span>Далее ежемесячно:</span>
+              <span id="order-modal-total-monthly">29 000 сум/мес</span>
+            </div>
+          </div>
+        </div>
+
+        <p id="order-modal-status" class="mt-3 text-sm text-red-700"></p>
+        <div class="mt-5 flex items-center gap-3">
+          <button id="order-modal-submit" type="submit" class="inline-flex items-center gap-2 rounded-xl bg-neutral-900 px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-neutral-800">
+            Отправить заявку →
+          </button>
+          <button id="order-modal-close-form" type="button" class="text-sm font-semibold text-neutral-600 underline">Закрыть</button>
+        </div>
+      </form>
+
+      <div id="order-modal-step-success" class="hidden flex-1 overflow-auto px-4 py-6 sm:px-6">
+        <h3 class="text-2xl font-bold text-neutral-900">✅ Заявка принята!</h3>
+        <p id="order-modal-success-slug" class="mt-3 font-mono text-lg text-neutral-900">AAA000 зарезервирован на 24 часа</p>
+        <p id="order-modal-countdown" class="mt-2 text-base font-semibold text-neutral-700">⏰ 24:00:00</p>
+        <p class="mt-4 text-sm text-neutral-600">Мы напишем тебе в Telegram как только проверим заявку. Обычно это занимает до 15 минут.</p>
+        <div class="mt-6 flex items-center gap-3">
+          <button id="order-modal-go-profile" type="button" class="inline-flex items-center gap-2 rounded-xl bg-neutral-900 px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-neutral-800">
+            Перейти в профиль →
+          </button>
+          <button id="order-modal-close-success" type="button" class="text-sm font-semibold text-neutral-600 underline">Закрыть</button>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>

@@ -13,7 +13,7 @@
 <head>
   <%- include('../partials/head', { title: pageTitle, styles: ['/css/public-card.css'] }) %>
 </head>
-<body class="antialiased">
+<body class="antialiased" data-telegram-bot-username="<%= telegramBotUsername || '' %>">
   <main class="min-h-screen bg-neutral-50 px-6 py-16">
     <div class="mx-auto max-w-6xl">
       <div class="mb-10">
@@ -35,7 +35,10 @@
           <div class="flex items-center justify-between gap-3 p-4">
             <p class="text-sm font-medium text-neutral-900"><%= theme.name %></p>
             <a
-              href="/?tariff=premium&theme=<%= theme.id %>#order"
+              href="#"
+              data-order-link
+              data-order-plan="premium"
+              data-order-theme="<%= theme.id %>"
               class="btn-shimmer inline-flex items-center gap-2 rounded-xl bg-neutral-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-neutral-800"
             >
               Выбрать
@@ -50,7 +53,9 @@
 
       <p class="mt-8 text-sm text-neutral-500">Темы доступны только на тарифе Премиум</p>
       <a
-        href="/#order"
+        href="#"
+        data-order-link
+        data-order-plan="premium"
         class="btn-shimmer mt-4 inline-flex items-center gap-2 rounded-xl bg-neutral-900 px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-neutral-800"
       >
         Перейти на Премиум
@@ -60,5 +65,7 @@
       </a>
     </div>
   </main>
+  <%- include('../partials/order-modal') %>
+  <script nonce="<%= cspNonce %>" src="/js/order-modal.js"></script>
 </body>
 </html>

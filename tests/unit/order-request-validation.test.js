@@ -17,6 +17,19 @@ describe("order request validation", () => {
     expect(result.success).toBe(true);
   });
 
+  it("validates payload with bracelet and optional theme", () => {
+    const result = OrderRequestSchema.safeParse({
+      ...validPayload,
+      tariff: "premium",
+      theme: "gradient",
+      products: {
+        digitalCard: true,
+        bracelet: true,
+      },
+    });
+    expect(result.success).toBe(true);
+  });
+
   it("fails when required fields are missing", () => {
     const result = OrderRequestSchema.safeParse({
       ...validPayload,

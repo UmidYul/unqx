@@ -30,24 +30,21 @@ async function sendOrderRequestToTelegram(payload) {
 
   const tariffLabel = payload.tariff === "premium" ? "ПРЕМИУМ" : "БАЗОВЫЙ";
   const braceletLabel = payload.bracelet ? "Да (+300 000 сум)" : "Нет";
-  const themeLabel = payload.themeLabel || "default_dark";
-  const statusLabel = payload.statusLabel || "🆕 Новая";
+  const usernameLabel = payload.username ? `@${escapeHtml(payload.username.replace(/^@/, ""))}` : "@—";
+  const telegramLink = payload.telegramId ? `tg://user?id=${escapeHtml(payload.telegramId)}` : "—";
   const text = [
     "🆕 <b>НОВАЯ ЗАЯВКА UNQ+</b>",
     "",
-    `👤 <b>Имя:</b> ${escapeHtml(payload.name)}`,
-    payload.telegramId ? `🆔 <b>Telegram ID:</b> ${escapeHtml(payload.telegramId)}` : null,
-    payload.username ? `💬 <b>Username:</b> @${escapeHtml(payload.username.replace(/^@/, ""))}` : null,
-    `🔗 <b>UNQ:</b> ${escapeHtml(payload.slug)} (unqx.uz/${escapeHtml(payload.slug)})`,
-    `💰 <b>Цена UNQ:</b> ${escapeHtml(payload.slugPriceLabel)} сум`,
-    `📦 <b>Тариф:</b> ${tariffLabel} — ${escapeHtml(payload.tariffPriceLabel)} сум/мес`,
-    `🎨 <b>Тема:</b> ${escapeHtml(themeLabel)}`,
+    `👤 ${escapeHtml(payload.name)} · ${usernameLabel} · ${telegramLink}`,
+    `🔗 <b>Slug:</b> ${escapeHtml(payload.slug)} · unqx.uz/${escapeHtml(payload.slug)}`,
+    `💰 <b>Цена slug:</b> ${escapeHtml(payload.slugPriceLabel)} сум`,
+    `⭐ <b>Тариф:</b> ${tariffLabel} · ${escapeHtml(payload.tariffPriceLabel)} сум/мес`,
     `📿 <b>Браслет:</b> ${braceletLabel}`,
-    `📱 <b>Контакт:</b> ${escapeHtml(payload.contact)}`,
-    `🧾 <b>Статус:</b> ${escapeHtml(statusLabel)}`,
     "",
     `💵 <b>Итого разово:</b> ${escapeHtml(payload.totalOneTimeLabel)} сум`,
     `🔄 <b>Ежемесячно:</b> ${escapeHtml(payload.tariffPriceLabel)} сум/мес`,
+    "",
+    "⏰ Заявка истекает через 24 часа",
   ]
     .filter(Boolean)
     .join("\n");

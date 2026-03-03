@@ -698,16 +698,24 @@ router.post(
     const totalOneTime = pricing.total + braceletPrice;
     const theme = payload.tariff === "premium" ? normalizeTheme(payload.theme) : undefined;
     const contact = user.username ? `@${user.username}` : `${user.firstName}`;
+    const requestedAt = new Date();
+    const pendingExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    const canUseSlugTable = await withMissingTableFallback("Slug", false, async () => {
+      await prisma.slug.findFirst({
+        select: { id: true },
+      });
+      return true;
+    });
 
     let order = null;
     try {
       order = await prisma.$transaction(async (tx) => {
-        const existingSlug = await withMissingTableFallback("Slug", null, () =>
-          tx.slug.findUnique({
-            where: { fullSlug: slug },
-            select: { fullSlug: true, status: true },
-          }),
-        );
+        const existingSlug = canUseSlugTable
+          ? await tx.slug.findUnique({
+              where: { fullSlug: slug },
+              select: { fullSlug: true, status: true },
+            })
+          : null;
         if (existingSlug && existingSlug.status !== "free") {
           const conflictError = new Error("Slug is not available");
           conflictError.code = "SLUG_NOT_AVAILABLE";
@@ -715,26 +723,26 @@ router.post(
           throw conflictError;
         }
 
-        await withMissingTableFallback("Slug", null, () =>
-          tx.slug.upsert({
+        if (canUseSlugTable) {
+          await tx.slug.upsert({
             where: { fullSlug: slug },
             create: {
               letters: payload.letters,
               digits: payload.digits,
               fullSlug: slug,
               status: "pending",
-              requestedAt: new Date(),
-              pendingExpiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+              requestedAt,
+              pendingExpiresAt,
               price: pricing.total,
             },
             update: {
               status: "pending",
-              requestedAt: new Date(),
-              pendingExpiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+              requestedAt,
+              pendingExpiresAt,
               price: pricing.total,
             },
-          }),
-        );
+          });
+        }
 
         const slugRequest = await tx.slugRequest.create({
           data: {
@@ -823,6 +831,7 @@ router.post(
     res.json({
       ok: true,
       orderId: order.id,
+      pendingExpiresAt,
       telegramDelivered,
       ...(telegramDelivered ? {} : { warning: telegramError }),
     });

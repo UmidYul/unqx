@@ -30,7 +30,7 @@
       <section class="space-y-4">
         <div id="profile-upgrade-banner" class="hidden rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
           Твой Премиум истёк. Некоторые функции недоступны.
-          <a href="/#order" class="ml-1 underline">Улучшить тариф →</a>
+          <a href="#" data-order-link data-order-plan="premium" class="ml-1 underline">Улучшить тариф →</a>
         </div>
 
         <article data-tab-panel="slugs" class="profile-tab-panel rounded-2xl border border-neutral-200 bg-white p-5">
@@ -130,7 +130,10 @@
         </article>
 
         <article data-tab-panel="requests" class="profile-tab-panel hidden rounded-2xl border border-neutral-200 bg-white p-5">
-          <h2 class="text-lg font-bold">ЗАЯВКИ</h2>
+          <div class="flex items-center justify-between gap-2">
+            <h2 class="text-lg font-bold">ЗАЯВКИ</h2>
+            <button id="profile-new-request-btn" type="button" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm font-semibold">Подать новую заявку +</button>
+          </div>
           <div id="profile-requests-banner" class="hidden mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800"></div>
           <div class="mt-4 overflow-auto rounded-xl border border-neutral-200">
             <table class="min-w-full text-left text-sm">
@@ -189,8 +192,11 @@
     </div>
   </div>
 
+  <%- include('../partials/order-modal') %>
+
   <script nonce="<%= cspNonce %>" src="/vendor/sortablejs/Sortable.min.js"></script>
   <script nonce="<%= cspNonce %>" src="/vendor/cropperjs/cropper.min.js"></script>
+  <script nonce="<%= cspNonce %>" src="/js/order-modal.js"></script>
   <script nonce="<%= cspNonce %>" src="/js/card-view.js"></script>
   <script nonce="<%= cspNonce %>" src="/js/profile.js"></script>
 </body>

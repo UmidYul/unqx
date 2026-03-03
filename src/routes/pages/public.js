@@ -174,9 +174,11 @@ router.get(
           title: "UNQ свободен",
           slug,
           heading: "Этот UNQ пока свободен",
-          message: "Ты можешь занять его через форму на главной странице.",
+          message: "Ты можешь занять его прямо сейчас.",
           ctaLabel: "Занять →",
-          ctaHref: `/#order`,
+          ctaHref: "#",
+          ctaOrderLink: true,
+          ctaOrderPrefill: slug,
           noindex: true,
           adminSession: getAdminSession(req),
         });
