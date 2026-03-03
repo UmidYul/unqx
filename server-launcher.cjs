@@ -4,15 +4,29 @@ const fs = require('fs');
 const path = require('path');
 const dotenv = require('dotenv');
 
+function logEnvState(stage) {
+  const raw = process.env.ADMIN_PASSWORD_HASH || '';
+  const prefix = raw.slice(0, 12);
+  console.log(
+    `[launcher] ${stage} ADMIN_PASSWORD_HASH len=${raw.length} prefix=${JSON.stringify(prefix)}`
+  );
+}
+
+logEnvState('before-dotenv');
+
 const standaloneEnv = path.join(__dirname, '.next', 'standalone', '.env');
 if (fs.existsSync(standaloneEnv)) {
-  dotenv.config({ path: standaloneEnv, override: true });
+  dotenv.config({ path: standaloneEnv, override: true, quiet: true });
+  console.log(`[launcher] loaded env from ${standaloneEnv}`);
 } else {
   const rootEnv = path.join(__dirname, '.env');
   if (fs.existsSync(rootEnv)) {
-    dotenv.config({ path: rootEnv, override: true });
+    dotenv.config({ path: rootEnv, override: true, quiet: true });
+    console.log(`[launcher] loaded env from ${rootEnv}`);
   }
 }
+
+logEnvState('after-dotenv');
 
 const entry = path.join(__dirname, '.next', 'standalone', 'server.js');
 

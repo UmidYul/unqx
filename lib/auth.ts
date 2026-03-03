@@ -27,6 +27,10 @@ export const authOptions: NextAuthOptions = {
         authLog("authorize:start", {
           hasCredentials: Boolean(credentials),
           keys: credentials ? Object.keys(credentials) : [],
+          processEnvHashLen: (process.env.ADMIN_PASSWORD_HASH || "").length,
+          processEnvHashPrefix: (process.env.ADMIN_PASSWORD_HASH || "").slice(0, 12),
+          envHashLen: env.ADMIN_PASSWORD_HASH.length,
+          envHashPrefix: env.ADMIN_PASSWORD_HASH.slice(0, 12),
         });
 
         const loginRaw = credentials?.login;
