@@ -227,12 +227,17 @@ body[data-card-theme] #card-view-root {
 }
 
 .unq-ref-avatar-wrap {
+  position: relative;
   width: 104px;
   height: 104px;
+  border-radius: 9999px;
+  overflow: hidden;
 }
 
 .unq-ref-avatar-img,
 .unq-ref-avatar-fallback {
+  position: absolute;
+  inset: 0;
   width: 104px;
   height: 104px;
   border-radius: 9999px;

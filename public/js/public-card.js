@@ -80,6 +80,7 @@
   }
 
   if (avatarImage instanceof HTMLElement) {
+    hideAvatarFallback();
     if (avatarImage instanceof HTMLImageElement && avatarImage.complete && avatarImage.naturalWidth > 0) {
       hideAvatarFallback();
     }

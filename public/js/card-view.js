@@ -169,7 +169,7 @@
           <div class="unq-ref-profile">
             <div class="unq-ref-avatar-wrap">
               ${card.avatarUrl ? `<img src="${esc(card.avatarUrl)}" alt="${esc(card.name)}" class="unq-ref-avatar-img" data-avatar-image />` : ""}
-              <div class="unq-ref-avatar-fallback ${card.avatarUrl ? "hidden" : ""}" data-avatar-fallback aria-hidden="${card.avatarUrl ? "true" : "false"}" style="${card.avatarUrl ? "display:none;" : ""}">${esc(card.initials)}</div>
+              <div class="unq-ref-avatar-fallback ${card.avatarUrl ? "hidden" : ""}" data-avatar-fallback aria-hidden="${card.avatarUrl ? "true" : "false"}" ${card.avatarUrl ? "hidden" : ""} style="${card.avatarUrl ? "display:none;" : ""}">${esc(card.initials)}</div>
             </div>
             <div class="unq-ref-name-wrap">
               <h1 class="unq-ref-name">${esc(card.name)} ${card.verified ? iconSvg("verified") : ""}</h1>
