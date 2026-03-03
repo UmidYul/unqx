@@ -141,7 +141,7 @@ function mapOrderValidationIssues(error) {
     }
 
     if (field === "letters" || field === "digits") {
-      issues.slug = "Slug должен быть в формате AAA000";
+      issues.slug = "UNQ должен быть в формате AAA000";
       continue;
     }
 
@@ -577,7 +577,7 @@ router.post(
     );
     if (userSlugsCount >= slugLimit) {
       res.status(403).json({
-        error: effectivePlan === "premium" ? "Premium slug limit reached" : "Upgrade required",
+        error: effectivePlan === "premium" ? "Premium UNQ limit reached" : "Upgrade required",
         code: effectivePlan === "premium" ? "PREMIUM_SLUG_LIMIT_REACHED" : "BASIC_SLUG_LIMIT_REACHED",
       });
       return;
@@ -598,8 +598,9 @@ router.post(
     const state = await getSlugState(slug);
     if (!state.available) {
       res.status(409).json({
-        error: "Slug is not available",
+        error: "Этот UNQ только что заняли. Выбери другой.",
         reason: state.reason,
+        code: "SLUG_NOT_AVAILABLE",
       });
       return;
     }
@@ -695,8 +696,9 @@ router.post(
     } catch (error) {
       if (error && error.code === "SLUG_NOT_AVAILABLE") {
         res.status(409).json({
-          error: "Slug is not available",
+          error: "Этот UNQ только что заняли. Выбери другой.",
           reason: error.reason || "taken",
+          code: "SLUG_NOT_AVAILABLE",
         });
         return;
       }
@@ -933,3 +935,4 @@ router.get(
 module.exports = {
   publicApiRouter: router,
 };
+

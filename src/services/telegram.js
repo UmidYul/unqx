@@ -38,8 +38,8 @@ async function sendOrderRequestToTelegram(payload) {
     `👤 <b>Имя:</b> ${escapeHtml(payload.name)}`,
     payload.telegramId ? `🆔 <b>Telegram ID:</b> ${escapeHtml(payload.telegramId)}` : null,
     payload.username ? `💬 <b>Username:</b> @${escapeHtml(payload.username.replace(/^@/, ""))}` : null,
-    `🔗 <b>Slug:</b> ${escapeHtml(payload.slug)} (unqx.uz/${escapeHtml(payload.slug)})`,
-    `💰 <b>Цена slug:</b> ${escapeHtml(payload.slugPriceLabel)} сум`,
+    `🔗 <b>UNQ:</b> ${escapeHtml(payload.slug)} (unqx.uz/${escapeHtml(payload.slug)})`,
+    `💰 <b>Цена UNQ:</b> ${escapeHtml(payload.slugPriceLabel)} сум`,
     `📦 <b>Тариф:</b> ${tariffLabel} — ${escapeHtml(payload.tariffPriceLabel)} сум/мес`,
     `🎨 <b>Тема:</b> ${escapeHtml(themeLabel)}`,
     `📿 <b>Браслет:</b> ${braceletLabel}`,
@@ -91,7 +91,12 @@ async function sendTelegramMessage({ chatId, text, parseMode = "HTML" }) {
 }
 
 async function sendSlugApprovedToUser({ telegramId, slug }) {
-  const text = `✅ Твой slug ${slug} одобрен!\nВойди на unqx.uz и создай свою визитку.`;
+  const text = `✅ Твой UNQ ${slug} одобрен!\nВойди на unqx.uz и создай свою визитку.`;
+  return sendTelegramMessage({ chatId: telegramId, text, parseMode: "HTML" });
+}
+
+async function sendSlugAwaitingPaymentToUser({ telegramId, slug }) {
+  const text = `💳 Заявка на ${slug} ожидает оплаты.\nПосле подтверждения оплаты мы сразу активируем UNQ.`;
   return sendTelegramMessage({ chatId: telegramId, text, parseMode: "HTML" });
 }
 
@@ -107,5 +112,7 @@ module.exports = {
   sendOrderRequestToTelegram,
   sendTelegramMessage,
   sendSlugApprovedToUser,
+  sendSlugAwaitingPaymentToUser,
   sendSlugRejectedToUser,
 };
+

@@ -432,6 +432,7 @@ function initSlugAvailability(orderApi) {
   const suggestionsWrap = document.getElementById("home-slug-suggestions-wrap");
   const suggestionsNode = document.getElementById("home-slug-suggestions");
   const primaryAction = document.getElementById("home-slug-primary-action");
+  const calculatorAction = document.getElementById("home-slug-calculator-action");
 
   if (
     !(slugInput instanceof HTMLInputElement) ||
@@ -502,7 +503,7 @@ function initSlugAvailability(orderApi) {
 
     if (state === "loading") {
       statusIcon.innerHTML = ICON_LOADING;
-      statusText.textContent = "Проверяем slug...";
+      statusText.textContent = "Проверяем UNQ...";
       statusNote.textContent = "";
       renderSuggestions([]);
       setPrimaryAction({ visible: false });
@@ -511,7 +512,7 @@ function initSlugAvailability(orderApi) {
 
     if (state === "invalid") {
       statusIcon.innerHTML = ICON_BAD;
-      statusText.textContent = "Формат slug должен быть AAA001";
+      statusText.textContent = "Формат UNQ должен быть AAA001";
       statusNote.textContent = "Используйте 3 латинские буквы и 3 цифры.";
       renderSuggestions([]);
       setPrimaryAction({ visible: false });
@@ -521,12 +522,12 @@ function initSlugAvailability(orderApi) {
     if (state === "available") {
       statusIcon.innerHTML = ICON_OK;
       statusText.textContent = `unqx.uz/${slug} доступен`;
-      statusNote.textContent = "Slug свободен. Оставь заявку и мы активируем его для тебя.";
+      statusNote.textContent = "UNQ свободен. Оставь заявку и мы активируем его для тебя.";
       renderSuggestions([]);
       setPrimaryAction({
         visible: true,
         slug,
-        label: "Занять slug",
+        label: "Занять UNQ",
       });
       return;
     }
@@ -534,18 +535,18 @@ function initSlugAvailability(orderApi) {
     if (state === "taken") {
       statusIcon.innerHTML = ICON_BAD;
       statusText.textContent = `❌ ${slug} занят`;
-      statusNote.textContent = "Этот slug занят, выбери похожий свободный вариант.";
+      statusNote.textContent = "Этот UNQ занят, выбери похожий свободный вариант.";
       renderSuggestions(suggestions);
       setPrimaryAction({
         visible: true,
         slug,
-        label: "Занять slug",
+        label: "Занять UNQ",
       });
       return;
     }
 
     statusIcon.innerHTML = ICON_BAD;
-    statusText.textContent = "Не удалось проверить slug";
+    statusText.textContent = "Не удалось проверить UNQ";
     statusNote.textContent = "Повторите попытку через несколько секунд.";
     renderSuggestions([]);
     setPrimaryAction({ visible: false });
@@ -614,6 +615,25 @@ function initSlugAvailability(orderApi) {
   checkButton.addEventListener("click", () => {
     void verifySlug();
   });
+
+  if (calculatorAction instanceof HTMLAnchorElement) {
+    calculatorAction.addEventListener("click", () => {
+      const parsed = splitSlug(slugInput.value);
+      if (!parsed) {
+        return;
+      }
+
+      const calcLettersInput = document.getElementById("calc-letters");
+      const calcDigitsInput = document.getElementById("calc-digits");
+      if (!(calcLettersInput instanceof HTMLInputElement) || !(calcDigitsInput instanceof HTMLInputElement)) {
+        return;
+      }
+
+      calcLettersInput.value = parsed.letters;
+      calcDigitsInput.value = parsed.digits;
+      calcLettersInput.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+  }
 }
 
 function initSlugCalculator(orderApi) {
@@ -885,7 +905,7 @@ function initOrderForm(authApi) {
     }
 
     if (!pricing) {
-      errors.slug = "Slug должен быть в формате AAA000";
+      errors.slug = "UNQ должен быть в формате AAA000";
     }
 
     return {
@@ -1015,12 +1035,16 @@ function initOrderForm(authApi) {
       }
 
       if (response.status === 403 && payload && payload.code === "BASIC_SLUG_LIMIT_REACHED") {
-        setStatus("Перейди на Премиум чтобы добавить до 3 slug", "error");
+        setStatus("Перейди на Премиум чтобы добавить до 3 UNQ", "error");
         return;
       }
 
       if (response.status === 403 && payload && payload.code === "PREMIUM_SLUG_LIMIT_REACHED") {
-        setStatus("Достигнут лимит 3 slug для Премиум тарифа", "error");
+        setStatus("Достигнут лимит 3 UNQ для Премиум тарифа", "error");
+        return;
+      }
+      if (response.status === 409 && payload && payload.code === "SLUG_NOT_AVAILABLE") {
+        setStatus(payload.error || "Этот UNQ только что заняли. Выбери другой.", "error");
         return;
       }
 
@@ -1057,3 +1081,4 @@ function initOrderForm(authApi) {
     prefillSlug,
   };
 }
+

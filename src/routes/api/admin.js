@@ -16,7 +16,7 @@ const { listCards, createCard, getCardDetailsById, updateCard, generateNextSlug 
 const { getCardStats, getGlobalStats } = require("../../services/stats");
 const { calculateSlugPrice } = require("../../services/slug-pricing");
 const { cleanupOrphanAvatars, deleteAvatarByPublicPath, isSupportedAvatarBuffer, renameAvatarBySlug, saveAvatarFromBuffer } = require("../../services/avatar");
-const { sendSlugApprovedToUser, sendSlugRejectedToUser } = require("../../services/telegram");
+const { sendSlugApprovedToUser, sendSlugAwaitingPaymentToUser, sendSlugRejectedToUser, sendTelegramMessage } = require("../../services/telegram");
 
 const router = express.Router();
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
@@ -140,6 +140,29 @@ function normalizePhoneFromContact(contact) {
     return `+998${digits.slice(1)}`;
   }
   return "+998000000000";
+}
+
+function encodeBlockedPauseMessage(previousStatus, originalPauseMessage) {
+  const prev = String(previousStatus || "paused").toLowerCase();
+  const safePrev = ["approved", "active", "paused", "private"].includes(prev) ? prev : "paused";
+  const base = String(originalPauseMessage || "").trim();
+  return base
+    ? `[blocked_prev:${safePrev}] ${base}`
+    : `[blocked_prev:${safePrev}]`;
+}
+
+function parseBlockedPauseMessage(value) {
+  const raw = String(value || "");
+  const match = raw.match(/^\[blocked_prev:(approved|active|paused|private)\]\s*/i);
+  if (!match) {
+    return null;
+  }
+  const previousStatus = String(match[1] || "paused").toLowerCase();
+  const pauseMessage = raw.replace(match[0], "").trim();
+  return {
+    previousStatus,
+    pauseMessage: pauseMessage || null,
+  };
 }
 
 async function getTakenSlugSet() {
@@ -532,6 +555,7 @@ router.get(
         contact: row.contact,
         telegramId: row.telegramId,
         username: row.user?.username || null,
+        tMeLink: row.user?.username ? `https://t.me/${row.user.username}` : null,
         status: row.status,
         adminNote: row.adminNote || null,
         createdAt: row.createdAt,
@@ -557,7 +581,7 @@ router.patch(
       where: { id: req.params.id },
       include: {
         user: {
-          select: { telegramId: true },
+          select: { telegramId: true, firstName: true },
         },
       },
     });
@@ -603,6 +627,7 @@ router.patch(
       });
 
       if (status === "approved") {
+        const now = new Date();
         await tx.slug.upsert({
           where: { fullSlug: row.slug },
           create: {
@@ -611,7 +636,7 @@ router.patch(
             fullSlug: row.slug,
             ownerTelegramId: row.telegramId,
             status: "approved",
-            approvedAt: new Date(),
+            approvedAt: now,
             requestedAt: order.createdAt,
             isPrimary: false,
             price: order.slugPrice,
@@ -619,8 +644,16 @@ router.patch(
           update: {
             ownerTelegramId: row.telegramId,
             status: "approved",
-            approvedAt: new Date(),
+            approvedAt: now,
             price: order.slugPrice,
+          },
+        });
+
+        await tx.user.update({
+          where: { telegramId: row.telegramId },
+          data: {
+            plan: order.requestedPlan,
+            planExpiresAt: addDays(now, 30),
           },
         });
 
@@ -636,6 +669,33 @@ router.patch(
             where: { fullSlug: row.slug },
             data: { isPrimary: true },
           });
+        }
+
+        if (order.bracelet) {
+          const legacyOrder = await tx.orderRequest.findFirst({
+            where: {
+              slug: row.slug,
+              contact: order.contact,
+            },
+            select: { id: true },
+          });
+          if (legacyOrder) {
+            const legacyBracelet = await tx.braceletOrder.findUnique({
+              where: { orderId: legacyOrder.id },
+              select: { id: true },
+            });
+            if (!legacyBracelet) {
+              await tx.braceletOrder.create({
+                data: {
+                  orderId: legacyOrder.id,
+                  name: order.user?.firstName || "UNQ+ User",
+                  slug: row.slug,
+                  contact: order.contact,
+                  deliveryStatus: "ORDERED",
+                },
+              });
+            }
+          }
         }
       }
 
@@ -656,6 +716,9 @@ router.patch(
             status: "free",
             isPrimary: false,
             pauseMessage: null,
+            approvedAt: null,
+            requestedAt: null,
+            activatedAt: null,
           },
         });
       }
@@ -671,6 +734,17 @@ router.patch(
         });
       } catch (error) {
         console.error("[express-app] failed to send approval notification", error);
+      }
+    }
+
+    if (status === "paid") {
+      try {
+        await sendSlugAwaitingPaymentToUser({
+          telegramId: updated.telegramId,
+          slug: updated.slug,
+        });
+      } catch (error) {
+        console.error("[express-app] failed to send payment-pending notification", error);
       }
     }
 
@@ -863,18 +937,28 @@ router.get(
     }
 
     const telegramIds = users.map((item) => item.telegramId);
-    const [slugs, cards] = await Promise.all([
+    const [slugs, cards, braceletRequests] = await Promise.all([
       prisma.slug.findMany({
         where: { ownerTelegramId: { in: telegramIds } },
         select: {
           ownerTelegramId: true,
           fullSlug: true,
           status: true,
+          isPrimary: true,
+          pauseMessage: true,
         },
       }),
       prisma.profileCard.findMany({
         where: { ownerTelegramId: { in: telegramIds } },
         select: { ownerTelegramId: true, id: true },
+      }),
+      prisma.slugRequest.findMany({
+        where: {
+          telegramId: { in: telegramIds },
+          bracelet: true,
+          status: "approved",
+        },
+        select: { telegramId: true, slug: true },
       }),
     ]);
 
@@ -886,9 +970,18 @@ router.get(
       slugsByUser.get(row.ownerTelegramId).push({
         fullSlug: row.fullSlug,
         status: row.status,
+        isPrimary: row.isPrimary,
+        pauseMessage: row.pauseMessage || null,
       });
     }
     const cardsSet = new Set(cards.map((item) => item.ownerTelegramId));
+    const braceletByUser = new Map();
+    for (const row of braceletRequests) {
+      if (!braceletByUser.has(row.telegramId)) {
+        braceletByUser.set(row.telegramId, new Set());
+      }
+      braceletByUser.get(row.telegramId).add(row.slug);
+    }
 
     res.json({
       items: users.map((user) => ({
@@ -897,7 +990,14 @@ router.get(
         username: user.username || null,
         plan: user.plan,
         planExpiresAt: user.planExpiresAt,
-        slugs: slugsByUser.get(user.telegramId) || [],
+        slugs: (slugsByUser.get(user.telegramId) || []).map((slug) => ({
+          ...slug,
+          hasBracelet: Boolean(braceletByUser.get(user.telegramId)?.has(slug.fullSlug)),
+        })),
+        activeSlugCount: (slugsByUser.get(user.telegramId) || []).filter((slug) =>
+          ["approved", "active", "paused", "private"].includes(slug.status),
+        ).length,
+        isExpiredPlan: Boolean(user.planExpiresAt && user.planExpiresAt.getTime() <= Date.now()),
         hasCard: cardsSet.has(user.telegramId),
         status: user.status,
         createdAt: user.createdAt,
@@ -920,12 +1020,97 @@ router.patch(
     }
     const telegramId = String(req.params.telegramId || "");
     const plan = normalizeTariff(req.body.plan);
-    const updated = await prisma.user.update({
-      where: { telegramId },
-      data: { plan },
-      select: { telegramId: true, plan: true },
+    const force = Boolean(req.body.force);
+    const now = new Date();
+
+    const result = await prisma.$transaction(async (tx) => {
+      const user = await tx.user.findUnique({
+        where: { telegramId },
+        select: {
+          telegramId: true,
+          plan: true,
+          planExpiresAt: true,
+        },
+      });
+      if (!user) {
+        return null;
+      }
+
+      const owned = await tx.slug.findMany({
+        where: {
+          ownerTelegramId: telegramId,
+          status: { in: ["approved", "active", "paused", "private"] },
+        },
+        orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
+        select: {
+          fullSlug: true,
+          status: true,
+          isPrimary: true,
+        },
+      });
+
+      if (plan === "basic" && owned.length > 1 && !force) {
+        return {
+          requiresConfirmation: true,
+          activeSlugCount: owned.length,
+        };
+      }
+
+      const nextPlanExpiresAt =
+        plan === "premium"
+          ? user.planExpiresAt && user.planExpiresAt.getTime() > now.getTime()
+            ? user.planExpiresAt
+            : addDays(now, 30)
+          : user.planExpiresAt;
+
+      const updatedUser = await tx.user.update({
+        where: { telegramId },
+        data: {
+          plan,
+          planExpiresAt: nextPlanExpiresAt,
+        },
+        select: { telegramId: true, plan: true, planExpiresAt: true },
+      });
+
+      if (plan === "basic" && owned.length > 1) {
+        const primary = owned.find((row) => row.isPrimary) || owned[0];
+        const toPause = owned.filter((row) => row.fullSlug !== primary.fullSlug);
+        if (toPause.length > 0) {
+          await tx.slug.updateMany({
+            where: {
+              fullSlug: { in: toPause.map((row) => row.fullSlug) },
+            },
+            data: {
+              status: "paused",
+            },
+          });
+        }
+      }
+
+      return {
+        ...updatedUser,
+        requiresConfirmation: false,
+      };
     });
-    res.json(updated);
+
+    if (!result) {
+      res.status(404).json({ error: "User not found" });
+      return;
+    }
+    if (result.requiresConfirmation) {
+      res.status(409).json({
+        error: "PLAN_DOWNGRADE_CONFIRMATION_REQUIRED",
+        code: "PLAN_DOWNGRADE_CONFIRMATION_REQUIRED",
+        activeSlugCount: result.activeSlugCount,
+      });
+      return;
+    }
+
+    res.json({
+      telegramId: result.telegramId,
+      plan: result.plan,
+      planExpiresAt: result.planExpiresAt,
+    });
   }),
 );
 
@@ -958,16 +1143,72 @@ router.patch(
       return;
     }
     const telegramId = String(req.params.telegramId || "");
-    await prisma.$transaction([
-      prisma.user.update({
+    await prisma.$transaction(async (tx) => {
+      const owned = await tx.slug.findMany({
+        where: { ownerTelegramId: telegramId },
+        select: {
+          fullSlug: true,
+          status: true,
+          pauseMessage: true,
+        },
+      });
+      for (const row of owned) {
+        if (row.status === "blocked") {
+          continue;
+        }
+        await tx.slug.update({
+          where: { fullSlug: row.fullSlug },
+          data: {
+            status: "blocked",
+            pauseMessage: encodeBlockedPauseMessage(row.status, row.pauseMessage),
+          },
+        });
+      }
+      await tx.user.update({
         where: { telegramId },
         data: { status: "blocked" },
-      }),
-      prisma.slug.updateMany({
-        where: { ownerTelegramId: telegramId },
-        data: { status: "blocked", isPrimary: false },
-      }),
-    ]);
+      });
+    });
+    res.json({ ok: true });
+  }),
+);
+
+router.patch(
+  "/users/:telegramId/unblock",
+  asyncHandler(async (req, res) => {
+    if (!ensureUsersStorageReady(res)) {
+      return;
+    }
+    const telegramId = String(req.params.telegramId || "");
+    await prisma.$transaction(async (tx) => {
+      const blocked = await tx.slug.findMany({
+        where: {
+          ownerTelegramId: telegramId,
+          status: "blocked",
+        },
+        select: {
+          fullSlug: true,
+          pauseMessage: true,
+        },
+      });
+
+      for (const row of blocked) {
+        const parsed = parseBlockedPauseMessage(row.pauseMessage);
+        await tx.slug.update({
+          where: { fullSlug: row.fullSlug },
+          data: {
+            status: parsed?.previousStatus || "paused",
+            pauseMessage: parsed?.pauseMessage || null,
+          },
+        });
+      }
+
+      await tx.user.update({
+        where: { telegramId },
+        data: { status: "active" },
+      });
+    });
+
     res.json({ ok: true });
   }),
 );
@@ -1015,26 +1256,16 @@ router.get(
 router.get(
   "/slugs/stats",
   asyncHandler(async (_req, res) => {
-    const [cards, records] = await Promise.all([
-      prisma.card.findMany({ select: { slug: true } }),
-      prisma.slugRecord.findMany({ select: { slug: true, state: true } }),
+    const [free, blocked, taken] = await Promise.all([
+      prisma.slug.count({ where: { status: "free" } }),
+      prisma.slug.count({ where: { status: "blocked" } }),
+      prisma.slug.count({ where: { status: { not: "free" } } }),
     ]);
-    const taken = new Set(cards.map((row) => row.slug));
-    let blockedCount = 0;
-    for (const row of records) {
-      if (row.state === "BLOCKED") {
-        blockedCount += 1;
-      } else if (row.state === "TAKEN") {
-        taken.add(row.slug);
-      }
-    }
-
-    const total = env.SLUG_TOTAL_LIMIT;
-    const free = Math.max(total - taken.size - blockedCount, 0);
+    const total = free + taken;
     res.json({
       total,
-      taken: taken.size,
-      blocked: blockedCount,
+      taken,
+      blocked,
       free,
     });
   }),
@@ -1046,85 +1277,71 @@ router.get(
     const page = Math.max(1, Number(req.query.page || "1") || 1);
     const pageSizeRaw = Number(req.query.pageSize || "20") || 20;
     const pageSize = Math.max(1, Math.min(500, pageSizeRaw));
-    const stateFilter = toSlugState(req.query.state, "filter");
+    const stateRaw = String(req.query.state || "all");
     const qRaw = typeof req.query.q === "string" ? req.query.q : "";
     const qUpper = qRaw.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 20);
+    const where = {};
+    if (qUpper) {
+      where.fullSlug = { contains: qUpper };
+    }
+    if (stateRaw === "free") {
+      where.status = "free";
+    } else if (stateRaw === "blocked") {
+      where.status = "blocked";
+    } else if (stateRaw === "taken") {
+      where.status = { not: "free" };
+    }
 
-    const [cards, records] = await Promise.all([
-      prisma.card.findMany({
-        select: {
-          slug: true,
-          name: true,
-          createdAt: true,
-        },
-      }),
-      prisma.slugRecord.findMany({
-        select: {
-          slug: true,
-          state: true,
-          ownerName: true,
-          priceOverride: true,
-          activationDate: true,
-          cardId: true,
+    const [total, rows] = await Promise.all([
+      prisma.slug.count({ where }),
+      prisma.slug.findMany({
+        where,
+        orderBy: { fullSlug: "asc" },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+        include: {
+          owner: {
+            select: {
+              firstName: true,
+              displayName: true,
+              username: true,
+              telegramId: true,
+            },
+          },
         },
       }),
     ]);
 
-    const cardBySlug = new Map(cards.map((row) => [row.slug, row]));
-    const recordBySlug = new Map(records.map((row) => [row.slug, row]));
-    const slugSet = new Set([...cardBySlug.keys(), ...recordBySlug.keys()]);
-
-    const rows = Array.from(slugSet).map((slug) => {
-      const card = cardBySlug.get(slug);
-      const record = recordBySlug.get(slug);
-      const state = record?.state === "BLOCKED" ? "BLOCKED" : "TAKEN";
-      const pricing = /^[A-Z]{3}[0-9]{3}$/.test(slug)
-        ? calculateSlugPrice({ letters: slug.slice(0, 3), digits: slug.slice(3) })
-        : null;
-      const effectivePrice = typeof record?.priceOverride === "number" ? record.priceOverride : pricing ? pricing.total : null;
+    const items = rows.map((row) => {
+      const calcPrice =
+        /^[A-Z]{3}[0-9]{3}$/.test(row.fullSlug) &&
+        (row.price === null || row.price === undefined)
+          ? calculateSlugPrice({ letters: row.fullSlug.slice(0, 3), digits: row.fullSlug.slice(3) }).total
+          : null;
+      const effectivePrice = typeof row.price === "number" ? row.price : calcPrice;
       return {
-        slug,
-        state,
-        stateLabel: state === "BLOCKED" ? "Заблокирован" : "Занят",
-        ownerName: card?.name || record?.ownerName || "",
-        priceOverride: record?.priceOverride ?? null,
+        slug: row.fullSlug,
+        state: row.status.toUpperCase(),
+        stateLabel:
+          row.status === "free"
+            ? "Свободен"
+            : row.status === "blocked"
+              ? "Заблокирован"
+              : "Занят",
+        ownerName: row.owner?.displayName || row.owner?.firstName || "",
+        ownerTelegramId: row.ownerTelegramId || null,
+        ownerUsername: row.owner?.username || null,
         effectivePrice,
-        activationDate: record?.activationDate || card?.createdAt || null,
+        priceOverride: typeof row.price === "number" ? row.price : null,
+        requestedAt: row.requestedAt,
+        approvedAt: row.approvedAt,
+        activatedAt: row.activatedAt,
+        isPrimary: Boolean(row.isPrimary),
       };
     });
 
-    let filtered = rows;
-    if (qUpper) {
-      filtered = filtered.filter((row) => String(row.slug || "").toUpperCase().includes(qUpper));
-    }
-    if (stateFilter === "TAKEN") {
-      filtered = filtered.filter((row) => row.state === "TAKEN");
-    } else if (stateFilter === "BLOCKED") {
-      filtered = filtered.filter((row) => row.state === "BLOCKED");
-    } else if (stateFilter === "FREE") {
-      filtered = [];
-      if (/^[A-Z]{3}[0-9]{3}$/.test(qUpper)) {
-        const takenSet = await getTakenSlugSet();
-        if (!takenSet.has(qUpper)) {
-          const pricing = calculateSlugPrice({ letters: qUpper.slice(0, 3), digits: qUpper.slice(3) });
-          filtered.push({
-            slug: qUpper,
-            state: "FREE",
-            stateLabel: "Свободен",
-            ownerName: "",
-            priceOverride: null,
-            effectivePrice: pricing.total,
-            activationDate: null,
-          });
-        }
-      }
-    }
-
-    filtered.sort((a, b) => (a.slug > b.slug ? 1 : -1));
-    const total = filtered.length;
-    const start = (page - 1) * pageSize;
     res.json({
-      items: filtered.slice(start, start + pageSize),
+      items,
       pagination: {
         page,
         pageSize,
@@ -1139,71 +1356,84 @@ router.patch(
   "/slugs/:slug/state",
   asyncHandler(async (req, res) => {
     const slug = String(req.params.slug || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 20);
-    const nextState = toSlugState(req.body.state, "action");
-    const card = await prisma.card.findUnique({
-      where: { slug },
-      select: { id: true, name: true },
+    const next = String(req.body.state || "").trim().toLowerCase();
+    if (!["blocked", "free", "active", "paused", "private", "approved"].includes(next)) {
+      res.status(400).json({ error: "Invalid state" });
+      return;
+    }
+
+    const existing = await prisma.slug.findUnique({
+      where: { fullSlug: slug },
+      select: { fullSlug: true, ownerTelegramId: true, status: true, pauseMessage: true },
+    });
+    if (!existing) {
+      res.status(404).json({ error: "Slug not found" });
+      return;
+    }
+
+    const data = { status: next };
+    if (next === "free") {
+      data.ownerTelegramId = null;
+      data.isPrimary = false;
+      data.pauseMessage = null;
+      data.requestedAt = null;
+      data.approvedAt = null;
+      data.activatedAt = null;
+    }
+    if (next === "blocked") {
+      data.pauseMessage = encodeBlockedPauseMessage(existing.status, existing.pauseMessage);
+    }
+    const updated = await prisma.slug.update({
+      where: { fullSlug: slug },
+      data,
     });
 
-    if (nextState === "BLOCKED") {
-      const row = await prisma.slugRecord.upsert({
-        where: { slug },
-        create: {
-          slug,
-          state: "BLOCKED",
-          ownerName: card?.name || null,
-          cardId: card?.id || null,
-        },
-        update: {
-          state: "BLOCKED",
-          ownerName: card?.name || undefined,
-          cardId: card?.id || undefined,
-        },
-      });
-      res.json(row);
+    if (next === "blocked" && updated.ownerTelegramId) {
+      try {
+        await sendTelegramMessage({
+          chatId: updated.ownerTelegramId,
+          text: `⛔ Твой slug ${updated.fullSlug} был временно заблокирован администратором.`,
+        });
+      } catch (error) {
+        console.error("[express-app] failed to send slug blocked notification", error);
+      }
+    }
+
+    res.json({
+      slug: updated.fullSlug,
+      status: updated.status,
+      ownerTelegramId: updated.ownerTelegramId,
+      isPrimary: updated.isPrimary,
+      requestedAt: updated.requestedAt,
+      approvedAt: updated.approvedAt,
+      activatedAt: updated.activatedAt,
+      pauseMessage: updated.pauseMessage,
+    });
+  }),
+);
+
+router.patch(
+  "/slugs/:slug/activate",
+  asyncHandler(async (req, res) => {
+    const slug = String(req.params.slug || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 20);
+    const existing = await prisma.slug.findUnique({
+      where: { fullSlug: slug },
+      select: { fullSlug: true },
+    });
+    if (!existing) {
+      res.status(404).json({ error: "Slug not found" });
       return;
     }
 
-    if (nextState === "TAKEN") {
-      const row = await prisma.slugRecord.upsert({
-        where: { slug },
-        create: {
-          slug,
-          state: "TAKEN",
-          ownerName: card?.name || null,
-          cardId: card?.id || null,
-        },
-        update: {
-          state: "TAKEN",
-          ownerName: card?.name || undefined,
-          cardId: card?.id || undefined,
-        },
-      });
-      res.json(row);
-      return;
-    }
-
-    if (card) {
-      const row = await prisma.slugRecord.upsert({
-        where: { slug },
-        create: {
-          slug,
-          state: "TAKEN",
-          ownerName: card.name,
-          cardId: card.id,
-        },
-        update: {
-          state: "TAKEN",
-          ownerName: card.name,
-          cardId: card.id,
-        },
-      });
-      res.json(row);
-      return;
-    }
-
-    await prisma.slugRecord.deleteMany({ where: { slug } });
-    res.json({ ok: true, slug, state: "FREE" });
+    const updated = await prisma.slug.update({
+      where: { fullSlug: slug },
+      data: {
+        status: "active",
+        activatedAt: new Date(),
+      },
+      select: { fullSlug: true, status: true, activatedAt: true },
+    });
+    res.json({ ok: true, slug: updated.fullSlug, status: updated.status, activatedAt: updated.activatedAt });
   }),
 );
 
@@ -1213,27 +1443,27 @@ router.patch(
     const slug = String(req.params.slug || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 20);
     const value = req.body.priceOverride;
     const priceOverride = value === null || value === "" || Number.isNaN(Number(value)) ? null : Math.max(0, Math.round(Number(value)));
-
-    const card = await prisma.card.findUnique({
-      where: { slug },
-      select: { id: true, name: true },
+    const existing = await prisma.slug.findUnique({
+      where: { fullSlug: slug },
+      select: { fullSlug: true },
     });
-
-    const row = await prisma.slugRecord.upsert({
-      where: { slug },
-      create: {
-        slug,
-        state: card ? "TAKEN" : "BLOCKED",
-        ownerName: card?.name || null,
-        cardId: card?.id || null,
-        priceOverride,
-      },
-      update: {
-        priceOverride,
+    if (!existing) {
+      res.status(404).json({ error: "Slug not found" });
+      return;
+    }
+    const row = await prisma.slug.update({
+      where: { fullSlug: slug },
+      data: { price: priceOverride },
+      select: {
+        fullSlug: true,
+        price: true,
       },
     });
 
-    res.json(row);
+    res.json({
+      slug: row.fullSlug,
+      priceOverride: row.price,
+    });
   }),
 );
 
@@ -1377,23 +1607,22 @@ router.get(
     const weekStart = subDays(todayStart, 6);
     const monthStart = subDays(todayStart, 29);
 
-    const [orders, activeCards, dailyOrders, checkerLogs] = await Promise.all([
-      prisma.orderRequest.findMany({
+    const [approvedOrders, braceletOrders, activePlans, dailyOrders, checkerLogs] = await Promise.all([
+      prisma.slugRequest.findMany({
+        where: { status: "approved" },
+        select: { slug: true, createdAt: true, slugPrice: true },
+      }),
+      prisma.braceletOrder.findMany({
+        select: { createdAt: true },
+      }),
+      prisma.user.findMany({
         where: {
-          status: { in: ["PAID", "ACTIVATED"] },
+          status: { in: ["active", "blocked"] },
+          planExpiresAt: { gt: now },
         },
-        select: {
-          slug: true,
-          createdAt: true,
-          slugPrice: true,
-          bracelet: true,
-        },
+        select: { plan: true },
       }),
-      prisma.card.findMany({
-        where: { isActive: true },
-        select: { tariff: true },
-      }),
-      prisma.orderRequest.findMany({
+      prisma.slugRequest.findMany({
         where: { createdAt: { gte: monthStart } },
         select: { createdAt: true },
       }),
@@ -1406,10 +1635,10 @@ router.get(
     ]);
 
     const [newOrdersToday, allOrdersForChecks] = await Promise.all([
-      prisma.orderRequest.count({
+      prisma.slugRequest.count({
         where: { createdAt: { gte: todayStart } },
       }),
-      prisma.orderRequest.findMany({
+      prisma.slugRequest.findMany({
         where: { createdAt: { gte: monthStart } },
         select: { slug: true, createdAt: true },
       }),
@@ -1420,8 +1649,8 @@ router.get(
       week: 0,
       month: 0,
     };
-    for (const row of orders) {
-      const total = row.slugPrice + (row.bracelet ? 300_000 : 0);
+    for (const row of approvedOrders) {
+      const total = row.slugPrice;
       if (row.createdAt >= monthStart) {
         oneTimeRevenue.month += total;
       }
@@ -1432,15 +1661,26 @@ router.get(
         oneTimeRevenue.today += total;
       }
     }
+    for (const row of braceletOrders) {
+      if (row.createdAt >= monthStart) {
+        oneTimeRevenue.month += 300_000;
+      }
+      if (row.createdAt >= weekStart) {
+        oneTimeRevenue.week += 300_000;
+      }
+      if (row.createdAt >= todayStart) {
+        oneTimeRevenue.today += 300_000;
+      }
+    }
 
-    const recurring = activeCards.reduce(
-      (acc, row) => acc + (row.tariff === "premium" ? 79_000 : 29_000),
+    const recurring = activePlans.reduce(
+      (acc, row) => acc + (row.plan === "premium" ? 79_000 : 29_000),
       0,
     );
 
-    const tariffSplit = activeCards.reduce(
+    const tariffSplit = activePlans.reduce(
       (acc, row) => {
-        if (row.tariff === "premium") {
+        if (row.plan === "premium") {
           acc.premium += 1;
         } else {
           acc.basic += 1;
@@ -1492,7 +1732,7 @@ router.get(
         newOrdersToday,
         oneTimeRevenue,
         monthlyRecurringRevenue: recurring,
-        activeCards: activeCards.length,
+        activeCards: activePlans.length,
       },
       ordersDaily,
       tariffSplit,

@@ -260,7 +260,7 @@ router.patch(
       where: { fullSlug, ownerTelegramId: user.telegramId },
     });
     if (!existing) {
-      res.status(404).json({ error: "Slug not found" });
+      res.status(404).json({ error: "UNQ not found" });
       return;
     }
 
@@ -286,7 +286,7 @@ router.patch(
       where: { fullSlug, ownerTelegramId: user.telegramId },
     });
     if (!existing) {
-      res.status(404).json({ error: "Slug not found" });
+      res.status(404).json({ error: "UNQ not found" });
       return;
     }
 
@@ -319,7 +319,7 @@ router.patch(
       where: { fullSlug, ownerTelegramId: user.telegramId },
     });
     if (!existing) {
-      res.status(404).json({ error: "Slug not found" });
+      res.status(404).json({ error: "UNQ not found" });
       return;
     }
 
@@ -576,7 +576,7 @@ router.post(
       }),
       prisma.slug.updateMany({
         where: { ownerTelegramId: user.telegramId },
-        data: { status: "blocked", isPrimary: false },
+        data: { status: "paused" },
       }),
     ]);
 
@@ -587,3 +587,4 @@ router.post(
 module.exports = {
   profileApiRouter: router,
 };
+

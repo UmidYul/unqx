@@ -100,6 +100,8 @@
     cSaveStatus: $("#profile-card-save-status"),
     cSlugNote: $("#profile-card-slug-note"),
     cPrev: $("#profile-card-live-preview"),
+    cPrevLabel: $("#profile-preview-slug-label"),
+    cPrevLink: $("#profile-preview-open-link"),
 
     reqBanner: $("#profile-requests-banner"),
     reqTable: $("#profile-requests-table"),
@@ -207,7 +209,7 @@
     if (!el.slugs) return;
 
     if (!s.slugs.length) {
-      el.slugs.innerHTML = '<div class="rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-6 text-sm text-neutral-500">Пока нет slug. Оставь заявку на главной.</div>';
+      el.slugs.innerHTML = '<div class="rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-6 text-sm text-neutral-500">Пока нет UNQ. Оставь заявку на главной.</div>';
     } else {
       el.slugs.innerHTML = s.slugs
         .map((slugItem) => {
@@ -253,14 +255,14 @@
       if (plan !== "premium" && count >= 1) {
         el.addSlug.disabled = true;
         el.addSlug.textContent = "Доступно только на Премиум";
-        el.addSlugNote.textContent = "Перейди на Премиум чтобы добавить до 3 slug";
+        el.addSlugNote.textContent = "Перейди на Премиум чтобы добавить до 3 UNQ";
       } else if (plan === "premium" && count >= 3) {
-        el.addSlug.disabled = false;
-        el.addSlug.textContent = "+ Добавить slug";
-        el.addSlugNote.textContent = "Достигнут лимит 3 slug для Премиум тарифа";
+        el.addSlug.disabled = true;
+        el.addSlug.textContent = "+ Добавить UNQ";
+        el.addSlugNote.textContent = "Достигнут лимит 3 UNQ для Премиум тарифа";
       } else {
         el.addSlug.disabled = false;
-        el.addSlug.textContent = "+ Добавить slug";
+        el.addSlug.textContent = "+ Добавить UNQ";
         el.addSlugNote.textContent = "";
       }
     }
@@ -335,21 +337,51 @@
     if (el.cBranding) el.cBranding.disabled = !premium;
   };
 
+  function buildPreviewCardData() {
+    const avatarUrl = String(el.cAv?.getAttribute("src") || "").trim();
+    const primarySlug =
+      s.slugs.find((item) => item.isPrimary) ||
+      s.slugs.find((item) => ["active", "approved", "paused", "private"].includes(item.status)) ||
+      s.slugs[0] ||
+      null;
+    const effectivePlan = s.user?.effectivePlan === "premium" ? "premium" : "basic";
+    return {
+      card: {
+        slug: primarySlug?.fullSlug || "UNQ",
+        name: el.cName?.value || s.user?.displayName || s.user?.firstName || "UNQ+ User",
+        phone: "",
+        avatarUrl: avatarUrl && !avatarUrl.includes("/brand/unq-mark.svg") ? avatarUrl : null,
+        tags: (s.tags || []).map((tag) => ({ label: String(tag || "") })),
+        buttons: (s.buttons || []).map((button) => ({
+          label: button?.label || "",
+          url: String(button?.href || button?.value || "").trim(),
+        })),
+        tariff: effectivePlan,
+        showBranding: el.cBranding ? !el.cBranding.checked : true,
+      },
+      primarySlug,
+    };
+  }
+
   const renderPreview = () => {
-    if (!el.cPrev || !el.cName) return;
-    const previewButtons = s.buttons.slice(0, 6);
-    el.cPrev.innerHTML = `<div class="rounded-xl border border-neutral-200 bg-white p-4">
-      <div class="flex items-center gap-3">
-        <img src="${esc(el.cAv?.getAttribute("src") || "/brand/unq-mark.svg")}" class="h-12 w-12 rounded-full border border-neutral-200 object-cover">
-        <div>
-          <p class="text-sm font-semibold text-neutral-900">${esc(el.cName.value || s.user?.displayName || "Имя")}</p>
-          <p class="text-xs text-neutral-500">${esc(el.cRole?.value || "")}</p>
-        </div>
-      </div>
-      <p class="mt-3 text-xs text-neutral-600">${esc(el.cBio?.value || "")}</p>
-      <div class="mt-3 flex flex-wrap gap-1.5">${s.tags.map((tag) => `<span class="rounded-full bg-neutral-100 px-2 py-0.5 text-[11px]">${esc(tag)}</span>`).join("")}</div>
-      <div class="mt-3 space-y-1.5">${previewButtons.map((btn) => `<div class="rounded-lg bg-neutral-900 px-3 py-1.5 text-center text-xs font-semibold text-white">${esc(btn.label || "Кнопка")}</div>`).join("")}</div>
-    </div>`;
+    if (!(el.cPrev instanceof HTMLElement) || typeof window.CardView === "undefined") return;
+    const { card, primarySlug } = buildPreviewCardData();
+    const slugLabel = primarySlug?.fullSlug || "[UNQ]";
+    if (el.cPrevLabel) {
+      el.cPrevLabel.textContent = `unqx.uz/${slugLabel}`;
+    }
+    if (el.cPrevLink) {
+      el.cPrevLink.href = primarySlug ? `/${encodeURIComponent(primarySlug.fullSlug)}` : "#";
+      el.cPrevLink.classList.toggle("pointer-events-none", !primarySlug);
+      el.cPrevLink.classList.toggle("opacity-50", !primarySlug);
+    }
+
+    window.CardView.mountCardView(el.cPrev, card, {
+      shareUrl: primarySlug ? `${location.origin}/${encodeURIComponent(primarySlug.fullSlug)}` : location.href,
+      showPausedBanner: primarySlug?.status === "paused",
+      pausedText: "Визитка на паузе — посетители видят заглушку",
+      viewsLabel: `${Number(primarySlug?.stats?.views || 0).toLocaleString("ru-RU")} views`,
+    });
   };
 
   const renderCard = () => {
@@ -376,8 +408,8 @@
     if (el.cSlugNote) {
       const slugNames = s.slugs.map((item) => item.fullSlug).join(", ");
       el.cSlugNote.textContent = slugNames
-        ? `Все твои slug (${slugNames}) показывают эту визитку`
-        : "Все твои slug будут показывать эту визитку";
+        ? `Все твои UNQ (${slugNames}) показывают эту визитку`
+        : "Все твои UNQ будут показывать эту визитку";
     }
   };
 
@@ -397,10 +429,10 @@
 
     if (!el.reqBanner) return;
 
-    if (approved) {
+    if (approved && !s.card) {
       el.reqBanner.classList.remove("hidden");
       el.reqBanner.className = "mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800";
-      el.reqBanner.innerHTML = `Твой slug ${esc(approved.slug)} одобрен! Перейди во вкладку 'Моя визитка' чтобы создать карточку. <button data-a="goto-card" class="underline">Создать визитку →</button>`;
+      el.reqBanner.innerHTML = `Твой UNQ ${esc(approved.slug)} одобрен! Перейди во вкладку 'Моя визитка' чтобы создать карточку. <button data-a="goto-card" class="underline">Создать визитку →</button>`;
       return;
     }
 
@@ -577,14 +609,14 @@
     const count = s.slugs.length;
 
     if (plan === "premium" && count >= 3) {
-      showModal("Лимит достигнут", "Достигнут лимит 3 slug для Премиум тарифа");
+      showModal("Лимит достигнут", "Достигнут лимит 3 UNQ для Премиум тарифа");
       return;
     }
 
     if (plan !== "premium" && count >= 1) {
       showModal(
         "Нужен Премиум",
-        "Перейди на Премиум чтобы добавить до 3 slug",
+        "Перейди на Премиум чтобы добавить до 3 UNQ",
         "Улучшить тариф →",
         () => {
           location.href = "/#order";
@@ -799,7 +831,7 @@
   });
 
   el.stDeact?.addEventListener("click", () => {
-    showModal("Деактивировать аккаунт?", "Все твои slug станут недоступны", "Подтвердить", async () => {
+    showModal("Деактивировать аккаунт?", "Все твои UNQ станут недоступны", "Подтвердить", async () => {
       try {
         await api("/api/profile/deactivate", {
           method: "POST",
@@ -818,3 +850,4 @@
 
   load().catch((error) => showModal("Ошибка", error.message || "Не удалось загрузить профиль"));
 })();
+

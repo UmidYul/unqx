@@ -163,9 +163,9 @@
     const payload = await r.json();
     const rows = payload.items || [];
     table.innerHTML = rows.length ? rows.map((x) => {
-      const username = tgUsername(x.contact);
+      const username = x.username || "";
       const chatBtn = username
-        ? `<a href="tg://resolve?domain=${encodeURIComponent(username)}" target="_blank" rel="noopener noreferrer" class="rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100">Написать</a>`
+        ? `<a href="https://t.me/${encodeURIComponent(username)}" target="_blank" rel="noopener noreferrer" class="rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100">Написать</a>`
         : '<button type="button" disabled title="Нужен username в Telegram" class="cursor-not-allowed rounded-lg border border-neutral-200 px-2.5 py-1 text-xs font-semibold text-neutral-400">Написать</button>';
       return `<tr class="border-t border-neutral-100"><td class="px-4 py-3">${D(x.createdAt)}</td><td class="px-4 py-3">${X(x.name)}</td><td class="px-4 py-3 font-mono">${X(x.slug)}</td><td class="px-4 py-3">${P(x.slugPrice)}</td><td class="px-4 py-3">${x.tariff === "premium" ? "Премиум" : "Базовый"}</td><td class="px-4 py-3">${x.bracelet ? "Да" : "Нет"}</td><td class="px-4 py-3">${X(x.contact)}</td><td class="px-4 py-3"><select data-act="os" data-id="${x.id}" data-note="${X(x.adminNote || "")}" class="rounded-lg border border-neutral-300 px-2 py-1 text-xs"><option value="new" ${x.status === "new" ? "selected" : ""}>🆕 Новая</option><option value="contacted" ${x.status === "contacted" ? "selected" : ""}>💬 Связались</option><option value="paid" ${x.status === "paid" ? "selected" : ""}>💳 Ожидает оплаты</option><option value="approved" ${x.status === "approved" ? "selected" : ""}>✅ Одобрено</option><option value="rejected" ${x.status === "rejected" ? "selected" : ""}>❌ Отклонено</option></select></td><td class="px-4 py-3"><div class="flex flex-wrap gap-2">${chatBtn}<button data-act="od" data-id="${x.id}" class="rounded-lg border border-red-200 px-2.5 py-1 text-xs font-semibold text-red-700 transition hover:bg-red-50">Удалить</button></div></td></tr>`;
     }).join("") : '<tr><td colspan="9" class="px-3 py-8 text-center text-neutral-500">Нет заявок</td></tr>';
@@ -195,14 +195,16 @@
     table.innerHTML = rows.length
       ? rows
           .map((x) => {
-            const slugText = Array.isArray(x.slugs) && x.slugs.length ? x.slugs.map((s) => `${s.fullSlug} (${s.status})`).join(", ") : "—";
+            const slugText = Array.isArray(x.slugs) && x.slugs.length ? x.slugs.map((s) => `${s.fullSlug} (${s.status}${s.hasBracelet ? ", bracelet" : ""})`).join(", ") : "—";
             const primarySlug =
               Array.isArray(x.slugs) && x.slugs.length
                 ? x.slugs.find((s) => ["active", "private", "paused", "approved"].includes(s.status))?.fullSlug || x.slugs[0].fullSlug
                 : null;
             const profileLink = primarySlug ? `/${encodeURIComponent(primarySlug)}` : x.username ? `https://t.me/${encodeURIComponent(x.username)}` : null;
             const statusLabel = x.status === "blocked" ? "Заблокирован" : x.status === "deactivated" ? "Деактивирован" : "Активен";
-            return `<tr class="border-t border-neutral-100"><td class="px-4 py-3">${X(x.username ? `@${x.username}` : x.telegramId)}</td><td class="px-4 py-3">${X(x.name)}</td><td class="px-4 py-3"><select data-act="up" data-id="${X(x.telegramId)}" class="rounded-lg border border-neutral-300 px-2 py-1 text-xs"><option value="basic" ${x.plan === "basic" ? "selected" : ""}>Базовый</option><option value="premium" ${x.plan === "premium" ? "selected" : ""}>Премиум</option></select><div class="mt-1 text-[11px] text-neutral-500">до ${x.planExpiresAt ? D(x.planExpiresAt) : "—"}</div></td><td class="px-4 py-3 text-xs">${X(slugText)}</td><td class="px-4 py-3">${x.hasCard ? "Есть" : "Нет"}</td><td class="px-4 py-3">${X(statusLabel)}</td><td class="px-4 py-3">${D(x.createdAt)}</td><td class="px-4 py-3"><div class="flex flex-wrap gap-2"><button data-act="ux" data-id="${X(x.telegramId)}" class="rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100">Срок</button><button data-act="ub" data-id="${X(x.telegramId)}" class="rounded-lg border border-red-200 px-2.5 py-1 text-xs font-semibold text-red-700 transition hover:bg-red-50">Блок</button>${profileLink ? `<a href="${profileLink}" target="_blank" rel="noopener noreferrer" class="rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100">Открыть профиль →</a>` : ""}</div></td></tr>`;
+            const braceletSlugs = Array.isArray(x.slugs) ? x.slugs.filter((s) => s.hasBracelet).map((s) => s.fullSlug).join(",") : "";
+            const expiryBadge = x.isExpiredPlan ? '<span class="ml-1 inline-flex rounded-full bg-red-100 px-1.5 py-0.5 text-[10px] font-semibold text-red-700">Истёк</span>' : "";
+            return `<tr class="border-t border-neutral-100"><td class="px-4 py-3">${X(x.username ? `@${x.username}` : x.telegramId)}</td><td class="px-4 py-3">${X(x.name)}</td><td class="px-4 py-3"><select data-act="up" data-id="${X(x.telegramId)}" data-active-slugs="${Number(x.activeSlugCount || 0)}" data-current-plan="${X(x.plan)}" data-bracelet-slugs="${X(braceletSlugs)}" class="rounded-lg border border-neutral-300 px-2 py-1 text-xs"><option value="basic" ${x.plan === "basic" ? "selected" : ""}>Базовый</option><option value="premium" ${x.plan === "premium" ? "selected" : ""}>Премиум</option></select><div class="mt-1 text-[11px] text-neutral-500">до ${x.planExpiresAt ? D(x.planExpiresAt) : "—"} ${expiryBadge}</div></td><td class="px-4 py-3 text-xs">${X(slugText)}</td><td class="px-4 py-3">${x.hasCard ? "Есть" : "Нет"}</td><td class="px-4 py-3">${X(statusLabel)}</td><td class="px-4 py-3">${D(x.createdAt)}</td><td class="px-4 py-3"><div class="flex flex-wrap gap-2"><button data-act="ux" data-id="${X(x.telegramId)}" class="rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100">Срок</button><button data-act="ub" data-id="${X(x.telegramId)}" data-status="${X(x.status)}" class="rounded-lg border ${x.status === "blocked" ? "border-emerald-200 text-emerald-700 hover:bg-emerald-50" : "border-red-200 text-red-700 hover:bg-red-50"} px-2.5 py-1 text-xs font-semibold transition">${x.status === "blocked" ? "Разблок" : "Блок"}</button>${profileLink ? `<a href="${profileLink}" target="_blank" rel="noopener noreferrer" class="rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100">Открыть профиль →</a>` : ""}</div></td></tr>`;
           })
           .join("")
       : '<tr><td colspan="8" class="px-3 py-8 text-center text-neutral-500">Нет пользователей</td></tr>';
@@ -230,8 +232,8 @@
     const payload = await r.json();
     const rows = payload.items || [];
     table.innerHTML = rows.length
-      ? rows.map((x) => `<tr class="border-t border-neutral-100"><td class="px-4 py-3 font-mono">${X(x.slug)}</td><td class="px-4 py-3">${x.stateLabel}</td><td class="px-4 py-3">${X(x.ownerName || "-")}</td><td class="px-4 py-3">${typeof x.effectivePrice === "number" ? P(x.effectivePrice) : "-"}</td><td class="px-4 py-3">${x.activationDate ? D(x.activationDate) : "-"}</td><td class="px-4 py-3"><div class="flex flex-wrap gap-2"><button data-act="st" data-slug="${x.slug}" data-ns="${x.state === "BLOCKED" ? "free" : "blocked"}" class="rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100">${x.state === "BLOCKED" ? "Разблокировать" : "Заблокировать"}</button><button data-act="sp" data-slug="${x.slug}" data-p="${x.priceOverride ?? ""}" class="rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100">Цена</button><a href="/${encodeURIComponent(x.slug)}" target="_blank" rel="noopener noreferrer" class="rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100">Открыть →</a></div></td></tr>`).join("")
-      : '<tr><td colspan="6" class="px-3 py-8 text-center text-neutral-500">Нет данных</td></tr>';
+      ? rows.map((x) => `<tr class="border-t border-neutral-100"><td class="px-4 py-3 font-mono">${X(x.slug)}</td><td class="px-4 py-3">${x.stateLabel}</td><td class="px-4 py-3">${X(x.ownerName || "-")}</td><td class="px-4 py-3">${x.isPrimary ? "Да" : "Нет"}</td><td class="px-4 py-3">${typeof x.effectivePrice === "number" ? P(x.effectivePrice) : "-"}</td><td class="px-4 py-3">${x.requestedAt ? D(x.requestedAt) : "-"}</td><td class="px-4 py-3">${x.approvedAt ? D(x.approvedAt) : "-"}</td><td class="px-4 py-3">${x.activatedAt ? D(x.activatedAt) : "-"}</td><td class="px-4 py-3"><div class="flex flex-wrap gap-2"><button data-act="st" data-slug="${x.slug}" data-ns="${x.state === "BLOCKED" ? "free" : "blocked"}" class="rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100">${x.state === "BLOCKED" ? "Разблокировать" : "Заблокировать"}</button><button data-act="sa" data-slug="${x.slug}" class="rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100">Активировать визитку</button><button data-act="sp" data-slug="${x.slug}" data-p="${x.priceOverride ?? ""}" class="rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100">Цена</button><a href="/${encodeURIComponent(x.slug)}" target="_blank" rel="noopener noreferrer" class="rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100">Открыть →</a></div></td></tr>`).join("")
+      : '<tr><td colspan="9" class="px-3 py-8 text-center text-neutral-500">Нет данных</td></tr>';
     renderPager("slugs-pagination", payload.pagination, (nextPage) => {
       setFormValue(form, "page", String(nextPage));
       void loadSlugs();
@@ -478,9 +480,41 @@
     if (t.matches('[data-act="up"]') && t instanceof HTMLSelectElement) {
       const telegramId = t.getAttribute("data-id");
       if (!telegramId) return;
-      const r = await fetch(`/api/admin/users/${encodeURIComponent(telegramId)}/plan`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({ plan: t.value }) });
-      if (!r.ok) alert(await E(r));
-      else void loadUsers();
+      const prevPlan = t.getAttribute("data-current-plan") || "basic";
+      const activeSlugs = Number(t.getAttribute("data-active-slugs") || "0");
+      const braceletSlugs = String(t.getAttribute("data-bracelet-slugs") || "")
+        .split(",")
+        .map((x) => x.trim())
+        .filter(Boolean);
+      const downgradeToBasic = prevPlan === "premium" && t.value === "basic" && activeSlugs > 1;
+      if (downgradeToBasic) {
+        const braceletNote = braceletSlugs.length ? `\nБраслет привязан к: ${braceletSlugs.join(", ")}.` : "";
+        const ok = confirm(`У пользователя ${activeSlugs} slug. При переходе на Базовый будет активен только основной. Продолжить?${braceletNote}`);
+        if (!ok) {
+          t.value = prevPlan;
+          return;
+        }
+      }
+      let r = await fetch(`/api/admin/users/${encodeURIComponent(telegramId)}/plan`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({ plan: t.value, force: downgradeToBasic }) });
+      if (r.status === 409 && !downgradeToBasic) {
+        const payload = await r.json().catch(() => ({}));
+        if (payload.code === "PLAN_DOWNGRADE_CONFIRMATION_REQUIRED") {
+          const cnt = Number(payload.activeSlugCount || activeSlugs || 2);
+          const braceletNote = braceletSlugs.length ? `\nБраслет привязан к: ${braceletSlugs.join(", ")}.` : "";
+          const ok = confirm(`У пользователя ${cnt} slug. При переходе на Базовый будет активен только основной. Продолжить?${braceletNote}`);
+          if (!ok) {
+            t.value = prevPlan;
+            return;
+          }
+          r = await fetch(`/api/admin/users/${encodeURIComponent(telegramId)}/plan`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({ plan: "basic", force: true }) });
+        }
+      }
+      if (!r.ok) {
+        alert(await E(r));
+        t.value = prevPlan;
+      } else {
+        void loadUsers();
+      }
     }
   });
 
@@ -491,8 +525,9 @@
     if (a === "oa") openA(n.getAttribute("data-id") || "", n.getAttribute("data-t") || "basic", n.getAttribute("data-th") || "default_dark");
     if (a === "od") { const id = n.getAttribute("data-id"); if (!id || !confirm("Удалить заявку?")) return; const r = await fetch(`/api/admin/orders/${id}`, { method: "DELETE", headers: H() }); if (!r.ok) alert(await E(r)); else void loadOrders(); }
     if (a === "ux") { const telegramId = n.getAttribute("data-id"); if (!telegramId) return; const input = prompt("Новая дата окончания (YYYY-MM-DD) или пусто для сброса", ""); if (input === null) return; const r = await fetch(`/api/admin/users/${encodeURIComponent(telegramId)}/plan-expiry`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({ planExpiresAt: input.trim() ? `${input.trim()}T23:59:59.000Z` : null }) }); if (!r.ok) alert(await E(r)); else void loadUsers(); }
-    if (a === "ub") { const telegramId = n.getAttribute("data-id"); if (!telegramId || !confirm("Заблокировать пользователя и деактивировать его slug?")) return; const r = await fetch(`/api/admin/users/${encodeURIComponent(telegramId)}/block`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({}) }); if (!r.ok) alert(await E(r)); else void loadUsers(); }
+    if (a === "ub") { const telegramId = n.getAttribute("data-id"); const status = n.getAttribute("data-status"); if (!telegramId) return; const isBlocked = status === "blocked"; if (!isBlocked && !confirm("Заблокировать пользователя и деактивировать его slug?")) return; if (isBlocked && !confirm("Разблокировать пользователя и восстановить статусы slug?")) return; const r = await fetch(`/api/admin/users/${encodeURIComponent(telegramId)}/${isBlocked ? "unblock" : "block"}`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({}) }); if (!r.ok) alert(await E(r)); else void loadUsers(); }
     if (a === "st") { const slug = n.getAttribute("data-slug"), state = n.getAttribute("data-ns"); if (!slug || !state) return; const r = await fetch(`/api/admin/slugs/${encodeURIComponent(slug)}/state`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({ state }) }); if (!r.ok) alert(await E(r)); else void loadSlugs(); }
+    if (a === "sa") { const slug = n.getAttribute("data-slug"); if (!slug) return; const r = await fetch(`/api/admin/slugs/${encodeURIComponent(slug)}/activate`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({}) }); if (!r.ok) alert(await E(r)); else void loadSlugs(); }
     if (a === "sp") { const slug = n.getAttribute("data-slug"), cur = n.getAttribute("data-p") || ""; if (!slug) return; const x = prompt("Новая цена slug (пусто = убрать override)", cur); if (x === null) return; const r = await fetch(`/api/admin/slugs/${encodeURIComponent(slug)}/price-override`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({ priceOverride: x.trim() ? Number(x.trim()) : null }) }); if (!r.ok) alert(await E(r)); else void loadSlugs(); }
     if (a === "cg") { const id = n.getAttribute("data-id"), isActive = n.getAttribute("data-n") === "1"; if (!id) return; const r = await fetch(`/api/admin/cards/${id}/toggle-active`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({ isActive }) }); if (!r.ok) alert(await E(r)); else void loadCards(); }
     if (a === "qr") { const slug = n.getAttribute("data-slug"); if (slug) await openQ(slug); }

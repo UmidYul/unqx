@@ -160,7 +160,7 @@ router.get(
           title: "Недоступно",
           slug,
           heading: "Недоступно",
-          message: "Этот slug сейчас недоступен.",
+          message: "Этот UNQ сейчас недоступен.",
           ctaLabel: "",
           ctaHref: "",
           noindex: true,
@@ -171,9 +171,9 @@ router.get(
 
       if (slugRow.status === "free" || slugRow.status === "pending") {
         res.status(200).render("public/slug-state", {
-          title: "Slug свободен",
+          title: "UNQ свободен",
           slug,
-          heading: "Этот slug пока свободен",
+          heading: "Этот UNQ пока свободен",
           message: "Ты можешь занять его через форму на главной странице.",
           ctaLabel: "Занять →",
           ctaHref: `/#order`,
@@ -188,7 +188,7 @@ router.get(
           title: `Скоро: ${slug}`,
           slug,
           heading: "Скоро появится",
-          message: "Владелец уже получил доступ к slug и скоро опубликует визитку.",
+          message: "Владелец уже получил доступ к UNQ и скоро опубликует визитку.",
           ctaLabel: "",
           ctaHref: "",
           noindex: true,
@@ -203,6 +203,19 @@ router.get(
           : slugRow.ownerTelegramId
             ? await prisma.user.findUnique({ where: { telegramId: slugRow.ownerTelegramId } })
             : null;
+        if (owner && (owner.status === "blocked" || owner.status === "deactivated")) {
+          res.status(200).render("public/slug-state", {
+            title: "Недоступно",
+            slug,
+            heading: "Недоступно",
+            message: "Эта визитка временно недоступна.",
+            ctaLabel: "",
+            ctaHref: "",
+            noindex: true,
+            adminSession: getAdminSession(req),
+          });
+          return;
+        }
         const profileCard = slugRow.ownerTelegramId
           ? await prisma.profileCard.findUnique({ where: { ownerTelegramId: slugRow.ownerTelegramId } })
           : null;
@@ -231,7 +244,7 @@ router.get(
             title: "Скоро",
             slug,
             heading: "Скоро появится",
-            message: "Визитка для этого slug ещё не опубликована.",
+            message: "Визитка для этого UNQ ещё не опубликована.",
             ctaLabel: "",
             ctaHref: "",
             noindex: true,
@@ -243,7 +256,12 @@ router.get(
         const [owner, profileCard, views] = await Promise.all([
           prisma.user.findUnique({ where: { telegramId: slugRow.ownerTelegramId } }),
           prisma.profileCard.findUnique({ where: { ownerTelegramId: slugRow.ownerTelegramId } }),
-          prisma.slugView.count({ where: { fullSlug: slug } }),
+          prisma.slugView.count({
+            where: {
+              fullSlug: slug,
+              isUnique: true,
+            },
+          }),
         ]);
 
         if (!owner || !profileCard) {
@@ -251,7 +269,21 @@ router.get(
             title: "Скоро",
             slug,
             heading: "Скоро появится",
-            message: "Визитка для этого slug ещё не опубликована.",
+            message: "Визитка для этого UNQ ещё не опубликована.",
+            ctaLabel: "",
+            ctaHref: "",
+            noindex: true,
+            adminSession: getAdminSession(req),
+          });
+          return;
+        }
+
+        if (owner.status === "blocked" || owner.status === "deactivated") {
+          res.status(200).render("public/slug-state", {
+            title: "Недоступно",
+            slug,
+            heading: "Недоступно",
+            message: "Эта визитка временно недоступна.",
             ctaLabel: "",
             ctaHref: "",
             noindex: true,
@@ -327,3 +359,4 @@ router.get(
 module.exports = {
   publicPagesRouter: router,
 };
+

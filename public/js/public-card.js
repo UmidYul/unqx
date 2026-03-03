@@ -1,15 +1,31 @@
 (function initPublicCardPage() {
-  const root = document.querySelector("[data-slug]");
+  const host = document.getElementById("card-view-root");
+  const payloadNode = document.getElementById("card-view-data");
+  if (!(host instanceof HTMLElement) || !(payloadNode instanceof HTMLScriptElement) || typeof window.CardView === "undefined") {
+    return;
+  }
+
+  let payload = {};
+  try {
+    payload = JSON.parse(payloadNode.textContent || "{}") || {};
+  } catch {
+    payload = {};
+  }
+
+  const root = window.CardView.mountCardView(host, payload.card || {}, {
+    shareUrl: payload.shareUrl || window.location.href,
+    viewsLabel: payload.viewsLabel || "",
+  });
   if (!(root instanceof HTMLElement)) {
     return;
   }
 
-  const slug = root.getAttribute("data-slug") || "";
+  const slug = String(payload.slug || root.getAttribute("data-slug") || "");
   const shareUrl = root.getAttribute("data-share-url") || window.location.href;
-  const shareButton = document.querySelector("[data-share-card]");
-  const shareLabel = document.querySelector("[data-share-label]");
-  const avatarImage = document.querySelector("[data-avatar-image]");
-  const avatarFallback = document.querySelector("[data-avatar-fallback]");
+  const shareButton = root.querySelector("[data-share-card]");
+  const shareLabel = root.querySelector("[data-share-label]");
+  const avatarImage = root.querySelector("[data-avatar-image]");
+  const avatarFallback = root.querySelector("[data-avatar-fallback]");
 
   function copyWithFallback(value) {
     const textarea = document.createElement("textarea");
