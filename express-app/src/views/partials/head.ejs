@@ -1,16 +1,21 @@
+<%
+  const pageTitle = typeof title !== "undefined" && title ? title : "UNQ+";
+  const pageDescription =
+    typeof description !== "undefined" && description ? description : "UNQ+ platform for digital business cards";
+  const pageStyles = typeof styles !== "undefined" && Array.isArray(styles) ? styles : [];
+  const pageImage = typeof image !== "undefined" && image ? image : null;
+%>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title><%= title || "UNQ+" %></title>
-<meta name="description" content="<%= description || 'UNQ+ platform for digital business cards' %>" />
+<title><%= pageTitle %></title>
+<meta name="description" content="<%= pageDescription %>" />
 <link rel="icon" href="/favicon.ico" />
 <link rel="stylesheet" href="/css/base.css" />
-<% if (Array.isArray(styles)) { %>
-  <% styles.forEach((styleHref) => { %>
+<% pageStyles.forEach((styleHref) => { %>
 <link rel="stylesheet" href="<%= styleHref %>" />
-  <% }); %>
+<% }); %>
+<% if (pageImage) { %>
+<meta property="og:image" content="<%= pageImage %>" />
 <% } %>
-<% if (image) { %>
-<meta property="og:image" content="<%= image %>" />
-<% } %>
-<meta property="og:title" content="<%= title || 'UNQ+' %>" />
-<meta property="og:description" content="<%= description || 'UNQ+ platform for digital business cards' %>" />
+<meta property="og:title" content="<%= pageTitle %>" />
+<meta property="og:description" content="<%= pageDescription %>" />
