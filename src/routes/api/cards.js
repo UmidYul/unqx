@@ -32,6 +32,23 @@ function isMissingModelTable(error, modelName) {
   );
 }
 
+function isMissingModelColumn(error, modelName) {
+  if (!error || error.code !== "P2022") {
+    return false;
+  }
+
+  if (!modelName) {
+    return true;
+  }
+
+  const targetModel = String(error?.meta?.modelName || "");
+  if (!targetModel) {
+    return true;
+  }
+
+  return targetModel === modelName;
+}
+
 function getModelDelegate(modelName) {
   if (!modelName || typeof modelName !== "string") {
     return null;
@@ -59,7 +76,7 @@ async function withMissingTableFallback(modelName, fallbackValue, callback) {
   try {
     return await callback();
   } catch (error) {
-    if (isMissingModelTable(error, modelName) || isMissingModelDelegateError(error)) {
+    if (isMissingModelTable(error, modelName) || isMissingModelColumn(error, modelName) || isMissingModelDelegateError(error)) {
       return fallbackValue;
     }
     throw error;

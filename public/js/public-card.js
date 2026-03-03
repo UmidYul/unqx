@@ -26,6 +26,7 @@
   const shareLabel = root.querySelector("[data-share-label]");
   const avatarImage = root.querySelector("[data-avatar-image]");
   const avatarFallback = root.querySelector("[data-avatar-fallback]");
+  const saveContactButton = root.querySelector("[data-save-contact]");
 
   function copyWithFallback(value) {
     const textarea = document.createElement("textarea");
@@ -106,6 +107,40 @@
       resetTimer = window.setTimeout(() => {
         setShareLabel("Share");
       }, 1600);
+    });
+  }
+
+  if (saveContactButton instanceof HTMLButtonElement) {
+    saveContactButton.addEventListener("click", () => {
+      const card = payload && typeof payload.card === "object" && payload.card ? payload.card : {};
+      const fullName = String(card.name || "UNQ+ User").trim();
+      const phone = String(card.phone || card.extraPhone || "").trim();
+      const email = String(card.email || "").trim();
+      const url = String(payload.shareUrl || shareUrl || window.location.href).trim();
+
+      const safeName = fullName || "UNQ User";
+      const lines = ["BEGIN:VCARD", "VERSION:3.0", `FN:${safeName}`];
+      if (phone) {
+        lines.push(`TEL;TYPE=CELL:${phone}`);
+      }
+      if (email) {
+        lines.push(`EMAIL;TYPE=INTERNET:${email}`);
+      }
+      if (url) {
+        lines.push(`URL:${url}`);
+      }
+      lines.push("END:VCARD");
+
+      const blob = new Blob([`${lines.join("\r\n")}\r\n`], { type: "text/vcard;charset=utf-8" });
+      const downloadUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      const filename = (slug || "unq-card").toLowerCase().replace(/[^a-z0-9_-]/g, "");
+      link.href = downloadUrl;
+      link.download = `${filename || "contact"}.vcf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(downloadUrl);
     });
   }
 
