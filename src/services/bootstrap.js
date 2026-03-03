@@ -13,7 +13,7 @@ function isMissingModelTable(error, modelName) {
 async function hasTable(tableName) {
   try {
     const rows = await prisma.$queryRawUnsafe(
-      "SELECT to_regclass($1) AS table_ref",
+      "SELECT to_regclass($1)::text AS table_ref",
       `public.${tableName}`,
     );
     const value = Array.isArray(rows) && rows.length > 0 ? rows[0].table_ref : null;
