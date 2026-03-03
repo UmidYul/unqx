@@ -14,17 +14,23 @@
 
   const fd = (v) => {
     try {
-      return v ? new Date(v).toLocaleDateString("ru-RU") : "-";
+      if (!v) return "—";
+      const d = new Date(v);
+      if (Number.isNaN(d.getTime())) return "—";
+      const day = d.toLocaleString("ru-RU", { day: "numeric" });
+      const month = d.toLocaleString("ru-RU", { month: "long" });
+      const year = d.toLocaleString("ru-RU", { year: "numeric" });
+      return `${day} ${month} ${year}`;
     } catch {
-      return "-";
+      return "—";
     }
   };
 
   const fdt = (v) => {
     try {
-      return v ? new Date(v).toLocaleString("ru-RU") : "-";
+      return v ? new Date(v).toLocaleString("ru-RU") : "—";
     } catch {
-      return "-";
+      return "—";
     }
   };
 
@@ -191,9 +197,9 @@
     if (!s.user) return;
     if (el.av) el.av.src = s.user.photoUrl || "/brand/unq-mark.svg";
     if (el.nm) el.nm.textContent = s.user.displayName || s.user.firstName || "UNQ+ User";
-    if (el.un) el.un.textContent = s.user.username ? `@${s.user.username}` : "@-";
+    if (el.un) el.un.textContent = s.user.username ? `@${s.user.username}` : "@—";
     if (el.pl) el.pl.textContent = s.user.effectivePlan === "premium" ? "ПРЕМИУМ" : "БАЗОВЫЙ";
-    if (el.ex) el.ex.textContent = s.user.planExpiresAt ? `до ${fd(s.user.planExpiresAt)}` : "до -";
+    if (el.ex) el.ex.textContent = s.user.planExpiresAt ? `до ${fd(s.user.planExpiresAt)}` : "до —";
     if (el.upg) el.upg.classList.toggle("hidden", !s.user.isExpiredPremium);
   };
 
@@ -381,7 +387,7 @@
     el.reqTable.innerHTML = s.requests.length
       ? s.requests
           .map(
-            (requestItem) => `<tr class="border-t border-neutral-100"><td class="px-3 py-2">${fdt(requestItem.createdAt)}</td><td class="px-3 py-2 font-mono">${esc(requestItem.slug)}</td><td class="px-3 py-2">${fp(requestItem.slugPrice)}</td><td class="px-3 py-2">${requestItem.requestedPlan === "premium" ? "Премиум" : "Базовый"}</td><td class="px-3 py-2">${requestItem.bracelet ? "Да" : "Нет"}</td><td class="px-3 py-2">${esc(requestItem.statusBadge || requestItem.status)}</td><td class="px-3 py-2">${esc(requestItem.adminNote || "-")}</td></tr>`,
+            (requestItem) => `<tr class="border-t border-neutral-100"><td class="px-3 py-2">${fdt(requestItem.createdAt)}</td><td class="px-3 py-2 font-mono">${esc(requestItem.slug)}</td><td class="px-3 py-2">${fp(requestItem.slugPrice)}</td><td class="px-3 py-2">${requestItem.requestedPlan === "premium" ? "Премиум" : "Базовый"}</td><td class="px-3 py-2">${requestItem.bracelet ? "Да" : "Нет"}</td><td class="px-3 py-2">${esc(requestItem.statusBadge || requestItem.status)}</td><td class="px-3 py-2">${esc(requestItem.adminNote || "—")}</td></tr>`,
           )
           .join("")
       : '<tr><td colspan="7" class="px-3 py-8 text-center text-neutral-500">Заявок пока нет</td></tr>';
@@ -394,7 +400,7 @@
     if (approved) {
       el.reqBanner.classList.remove("hidden");
       el.reqBanner.className = "mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800";
-      el.reqBanner.innerHTML = `Твой slug ${esc(approved.slug)} одобрен! Перейди во вкладку \"Моя визитка\" чтобы создать карточку. <button data-a="goto-card" class="underline">Создать визитку →</button>`;
+      el.reqBanner.innerHTML = `Твой slug ${esc(approved.slug)} одобрен! Перейди во вкладку 'Моя визитка' чтобы создать карточку. <button data-a="goto-card" class="underline">Создать визитку →</button>`;
       return;
     }
 
@@ -411,7 +417,7 @@
   const renderSettings = () => {
     if (!s.user) return;
     if (el.stName) el.stName.value = s.user.displayName || s.user.firstName || "";
-    if (el.stTg) el.stTg.value = s.user.username ? `@${s.user.username}` : "@-";
+    if (el.stTg) el.stTg.value = s.user.username ? `@${s.user.username}` : "@—";
     if (el.stNotif) el.stNotif.checked = Boolean(s.user.notificationsEnabled);
   };
 

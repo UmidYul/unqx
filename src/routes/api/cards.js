@@ -32,11 +32,34 @@ function isMissingModelTable(error, modelName) {
   );
 }
 
+function getModelDelegate(modelName) {
+  if (!modelName || typeof modelName !== "string") {
+    return null;
+  }
+  const key = `${modelName.slice(0, 1).toLowerCase()}${modelName.slice(1)}`;
+  const delegate = prisma[key];
+  return delegate && typeof delegate === "object" ? delegate : null;
+}
+
+function isMissingModelDelegateError(error) {
+  if (!error || error.name !== "TypeError") {
+    return false;
+  }
+  const message = String(error.message || "");
+  return (
+    message.includes("Cannot read properties of undefined") &&
+    (message.includes("findMany") || message.includes("findUnique") || message.includes("count") || message.includes("upsert"))
+  );
+}
+
 async function withMissingTableFallback(modelName, fallbackValue, callback) {
+  if (!getModelDelegate(modelName)) {
+    return fallbackValue;
+  }
   try {
     return await callback();
   } catch (error) {
-    if (isMissingModelTable(error, modelName)) {
+    if (isMissingModelTable(error, modelName) || isMissingModelDelegateError(error)) {
       return fallbackValue;
     }
     throw error;
