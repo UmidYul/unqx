@@ -7,7 +7,7 @@
     "dev": "node --watch server.js",
     "start": "node server.js",
     "prisma:generate": "node scripts/prisma-generate.cjs",
-    "prisma:deploy": "prisma migrate deploy --schema prisma/schema.prisma",
+    "prisma:deploy": "node scripts/prisma-migrate-deploy.cjs",
     "build:vendor": "node scripts/copy-vendor-assets.cjs",
     "build:css": "tailwindcss -i ./src/styles/tailwind.input.css -o ./public/css/tailwind.generated.css --minify",
     "seed:visual": "node scripts/seed-visual-fixture.cjs",
