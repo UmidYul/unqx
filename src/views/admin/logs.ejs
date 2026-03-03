@@ -21,7 +21,7 @@
       <div class="space-y-4">
         <div class="flex flex-wrap items-center justify-between gap-3">
           <h1 class="text-2xl font-black">Логи ошибок</h1>
-          <div class="flex items-center gap-2">
+          <div class="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
             <button
               type="button"
               id="cleanup-logs-btn"
@@ -51,7 +51,8 @@
         </form>
 
         <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white">
-          <table class="w-full text-left text-sm">
+          <div class="overflow-x-auto">
+          <table class="min-w-[860px] w-full text-left text-sm">
             <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
               <tr>
                 <th class="px-4 py-3">Тип</th>
@@ -79,9 +80,10 @@
               <% } %>
             </tbody>
           </table>
+          </div>
         </div>
 
-        <div class="flex items-center justify-between text-sm text-neutral-600">
+        <div class="flex flex-col gap-3 text-sm text-neutral-600 sm:flex-row sm:items-center sm:justify-between">
           <span>Страница <%= pageNumber %> из <%= pageTotalPages %> (всего <%= pageTotal %>)</span>
           <div class="flex gap-2">
             <a
@@ -102,6 +104,6 @@
     </div>
   </div>
 
-  <script src="/js/admin-logs.js"></script>
+  <script nonce="<%= cspNonce %>" src="/js/admin-logs.js"></script>
 </body>
 </html>

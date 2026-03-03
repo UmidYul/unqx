@@ -42,6 +42,16 @@ async function verifyAdminCredentials(login, password) {
 }
 
 async function loginAdmin(req) {
+  await new Promise((resolve, reject) => {
+    req.session.regenerate((error) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+      resolve();
+    });
+  });
+
   req.session.admin = {
     id: "admin",
     login: env.ADMIN_LOGIN.trim(),

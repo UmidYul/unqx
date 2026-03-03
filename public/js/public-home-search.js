@@ -30,7 +30,11 @@
   function renderEmpty(message) {
     items = [];
     activeIndex = -1;
-    resultsWrap.innerHTML = `<p class="px-4 py-3 text-sm text-neutral-600">${message}</p>`;
+    resultsWrap.replaceChildren();
+    const messageNode = document.createElement("p");
+    messageNode.className = "px-4 py-3 text-sm text-neutral-600";
+    messageNode.textContent = message;
+    resultsWrap.appendChild(messageNode);
     resultsWrap.classList.remove("hidden");
   }
 
@@ -66,21 +70,28 @@
       return;
     }
 
-    resultsWrap.innerHTML = items
-      .map(
-        (item, index) => `
-          <button
-            type="button"
-            class="home-search-result-item flex w-full items-center justify-between border-b border-black/5 px-4 py-3 text-left text-sm transition last:border-b-0 hover:bg-black hover:text-white"
-            data-result-index="${index}"
-            data-result-slug="${item.slug}"
-          >
-            <span class="font-semibold tracking-[0.08em]">#${item.slug}</span>
-            <span class="ml-3 truncate text-xs opacity-80">${item.name || ""}</span>
-          </button>
-        `,
-      )
-      .join("");
+    resultsWrap.replaceChildren();
+
+    items.forEach((item, index) => {
+      const row = document.createElement("button");
+      row.type = "button";
+      row.className =
+        "home-search-result-item flex w-full items-center justify-between border-b border-black/5 px-4 py-3 text-left text-sm transition last:border-b-0 hover:bg-black hover:text-white";
+      row.setAttribute("data-result-index", String(index));
+      row.setAttribute("data-result-slug", String(item.slug || ""));
+
+      const slugNode = document.createElement("span");
+      slugNode.className = "font-semibold tracking-[0.08em]";
+      slugNode.textContent = `#${item.slug || ""}`;
+
+      const nameNode = document.createElement("span");
+      nameNode.className = "ml-3 truncate text-xs opacity-80";
+      nameNode.textContent = item.name || "";
+
+      row.appendChild(slugNode);
+      row.appendChild(nameNode);
+      resultsWrap.appendChild(row);
+    });
 
     resultsWrap.classList.remove("hidden");
     setActive(activeIndex);

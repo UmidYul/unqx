@@ -10,6 +10,7 @@
 <body class="antialiased">
   <main class="flex min-h-screen items-center justify-center px-6">
     <form method="post" action="/admin/login" class="w-full max-w-sm space-y-4 rounded-3xl border border-neutral-300 bg-white p-6 shadow-sm">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
       <h1 class="text-xl font-bold">Вход в админ-панель</h1>
 
       <label class="block text-sm font-medium text-neutral-700">

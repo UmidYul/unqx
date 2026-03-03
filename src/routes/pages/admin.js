@@ -4,6 +4,8 @@ const { prisma } = require("../../db/prisma");
 const { env } = require("../../config/env");
 const { asyncHandler } = require("../../middleware/async");
 const { getAdminSession, loginAdmin, logoutAdmin, requireAdminPage, verifyAdminCredentials } = require("../../middleware/auth");
+const { loginRateLimit } = require("../../middleware/rate-limit");
+const { requireCsrfToken } = require("../../middleware/csrf");
 const { listCards, getCardDetailsById } = require("../../services/cards");
 const { getCardStats, getGlobalStats } = require("../../services/stats");
 const { getBaseUrl } = require("../../utils/url");
@@ -41,6 +43,8 @@ router.get(
 
 router.post(
   "/admin/login",
+  loginRateLimit,
+  requireCsrfToken,
   asyncHandler(async (req, res) => {
     const ok = await verifyAdminCredentials(req.body.login, req.body.password);
 
@@ -60,6 +64,7 @@ router.post(
 
 router.post(
   "/admin/logout",
+  requireCsrfToken,
   asyncHandler(async (req, res) => {
     if (req.session) {
       await logoutAdmin(req);

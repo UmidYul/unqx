@@ -6,11 +6,14 @@ const { prisma } = require("../../db/prisma");
 const { env } = require("../../config/env");
 const { requireAdminApi } = require("../../middleware/auth");
 const { asyncHandler } = require("../../middleware/async");
+const { adminApiRateLimit } = require("../../middleware/rate-limit");
+const { requireSameOrigin } = require("../../middleware/same-origin");
+const { requireCsrfToken } = require("../../middleware/csrf");
 const { CardUpsertSchema } = require("../../validation/card");
 const { parsePositiveInt } = require("../../utils/http");
 const { listCards, createCard, getCardDetailsById, updateCard, generateNextSlug } = require("../../services/cards");
 const { getCardStats, getGlobalStats } = require("../../services/stats");
-const { cleanupOrphanAvatars, deleteAvatarByPublicPath, renameAvatarBySlug, saveAvatarFromBuffer } = require("../../services/avatar");
+const { cleanupOrphanAvatars, deleteAvatarByPublicPath, isSupportedAvatarBuffer, renameAvatarBySlug, saveAvatarFromBuffer } = require("../../services/avatar");
 
 const router = express.Router();
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
@@ -45,7 +48,10 @@ async function cleanupOrphanAvatarsFromDb() {
   await cleanupOrphanAvatars(rows.map((row) => row.avatarUrl).filter(Boolean));
 }
 
+router.use(adminApiRateLimit);
 router.use(requireAdminApi);
+router.use(requireSameOrigin);
+router.use(requireCsrfToken);
 
 router.get(
   "/cards",
@@ -240,6 +246,12 @@ router.post(
 
     if (!ALLOWED_MIME.has(file.mimetype)) {
       res.status(400).json({ error: "Unsupported file type" });
+      return;
+    }
+
+    const hasSupportedSignature = await isSupportedAvatarBuffer(file.buffer);
+    if (!hasSupportedSignature) {
+      res.status(400).json({ error: "Invalid image payload" });
       return;
     }
 

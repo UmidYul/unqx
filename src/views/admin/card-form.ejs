@@ -121,7 +121,7 @@
                   id="avatar-file-input"
                   type="file"
                   accept="image/png,image/jpeg,image/webp"
-                  class="sr-only"
+                  class="hidden"
                 />
               </div>
 
@@ -163,12 +163,12 @@
           </section>
 
           <section class="rounded-2xl border border-neutral-200 bg-white p-4">
-            <div class="flex items-center justify-between">
+            <div class="flex flex-wrap items-center justify-between gap-2">
               <h2 class="text-lg font-bold">Теги-ссылки</h2>
               <button
                 type="button"
                 id="add-tag-btn"
-                class="rounded-xl border border-neutral-300 px-3 py-1.5 text-xs font-semibold transition hover:bg-neutral-100"
+                class="w-full rounded-xl border border-neutral-300 px-3 py-1.5 text-xs font-semibold transition hover:bg-neutral-100 sm:w-auto"
               >
                 + Добавить тег
               </button>
@@ -214,12 +214,12 @@
           </section>
 
           <section class="rounded-2xl border border-neutral-200 bg-white p-4">
-            <div class="flex items-center justify-between">
+            <div class="flex flex-wrap items-center justify-between gap-2">
               <h2 class="text-lg font-bold">Кнопки</h2>
               <button
                 type="button"
                 id="add-button-btn"
-                class="rounded-xl border border-neutral-300 px-3 py-1.5 text-xs font-semibold transition hover:bg-neutral-100"
+                class="w-full rounded-xl border border-neutral-300 px-3 py-1.5 text-xs font-semibold transition hover:bg-neutral-100 sm:w-auto"
               >
                 + Добавить кнопку
               </button>
@@ -327,11 +327,11 @@
 
           <p id="card-form-error" class="hidden text-sm text-red-600"></p>
 
-          <div class="flex flex-wrap gap-2">
+          <div class="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
             <button
               type="submit"
               id="save-card-btn"
-              class="rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-neutral-700 disabled:opacity-60"
+              class="w-full rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-neutral-700 disabled:opacity-60 sm:w-auto"
             >
               Сохранить
             </button>
@@ -339,14 +339,14 @@
             <button
               type="button"
               id="preview-card-btn"
-              class="rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-800 transition hover:bg-neutral-100"
+              class="w-full rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-800 transition hover:bg-neutral-100 sm:w-auto"
             >
               Предпросмотр
             </button>
 
             <a
               href="/admin/dashboard"
-              class="rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-800 transition hover:bg-neutral-100"
+              class="w-full rounded-xl border border-neutral-300 px-4 py-2 text-center text-sm font-semibold text-neutral-800 transition hover:bg-neutral-100 sm:w-auto"
             >
               Отмена
             </a>
@@ -356,11 +356,11 @@
     </div>
   </div>
 
-  <script id="card-editor-initial" type="application/json"><%- JSON.stringify(pageInitialValues) %></script>
-  <script id="card-editor-stats" type="application/json"><%- JSON.stringify(pageStats) %></script>
-  <script src="/vendor/sortablejs/Sortable.min.js"></script>
-  <script src="/vendor/cropperjs/cropper.min.js"></script>
-  <script src="/vendor/chartjs/chart.umd.min.js"></script>
-  <script src="/js/admin-card-editor.js"></script>
+  <script nonce="<%= cspNonce %>" id="card-editor-initial" type="application/json"><%- JSON.stringify(pageInitialValues) %></script>
+  <script nonce="<%= cspNonce %>" id="card-editor-stats" type="application/json"><%- JSON.stringify(pageStats) %></script>
+  <script nonce="<%= cspNonce %>" src="/vendor/sortablejs/Sortable.min.js"></script>
+  <script nonce="<%= cspNonce %>" src="/vendor/cropperjs/cropper.min.js"></script>
+  <script nonce="<%= cspNonce %>" src="/vendor/chartjs/chart.umd.min.js"></script>
+  <script nonce="<%= cspNonce %>" src="/js/admin-card-editor.js"></script>
 </body>
 </html>

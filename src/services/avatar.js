@@ -27,6 +27,15 @@ async function processAvatarBuffer(input) {
   return sharp(input).resize(400, 400, { fit: "cover", position: "center" }).webp({ quality: 86 }).toBuffer();
 }
 
+async function isSupportedAvatarBuffer(input) {
+  try {
+    const metadata = await sharp(input).metadata();
+    return ["jpeg", "png", "webp"].includes(String(metadata.format || "").toLowerCase());
+  } catch {
+    return false;
+  }
+}
+
 async function saveAvatarFromBuffer(slug, input) {
   await ensureAvatarDir();
   const output = await processAvatarBuffer(input);
@@ -109,6 +118,7 @@ async function cleanupOrphanAvatars(referencedPublicPaths = []) {
 module.exports = {
   ensureAvatarDir,
   getAvatarPublicPath,
+  isSupportedAvatarBuffer,
   saveAvatarFromBuffer,
   deleteAvatarByPublicPath,
   renameAvatarBySlug,

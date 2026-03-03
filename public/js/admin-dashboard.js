@@ -5,6 +5,7 @@
   }
 
   const publicBaseUrl = (body.getAttribute("data-public-base-url") || window.location.origin).replace(/\/$/, "");
+  const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "";
   const modal = document.getElementById("qr-modal");
   const qrSvgWrap = document.getElementById("qr-svg-wrap");
   const qrCanvas = document.getElementById("qr-canvas");
@@ -18,9 +19,21 @@
   let currentUrl = "";
   let currentSvg = "";
   const qrLogoUrl = "/brand/unq-mark.svg";
+  let qrLogoDataUrl = "";
 
   if (!modal || !qrSvgWrap || !qrCanvas) {
     return;
+  }
+
+  function withCsrfHeaders(headers = {}) {
+    if (!csrfToken) {
+      return headers;
+    }
+
+    return {
+      ...headers,
+      "X-CSRF-Token": csrfToken,
+    };
   }
 
   function setQrError(message) {
@@ -38,7 +51,30 @@
     qrErrorNode.classList.remove("hidden");
   }
 
-  function injectLogoToSvg(svg, size, logoSize) {
+  async function resolveQrLogoSrc() {
+    if (qrLogoDataUrl) {
+      return qrLogoDataUrl;
+    }
+
+    try {
+      const response = await fetch(qrLogoUrl, { cache: "force-cache" });
+      if (!response.ok) {
+        return qrLogoUrl;
+      }
+
+      const svgText = await response.text();
+      const encodedSvg = encodeURIComponent(svgText)
+        .replace(/'/g, "%27")
+        .replace(/"/g, "%22");
+
+      qrLogoDataUrl = `data:image/svg+xml;charset=utf-8,${encodedSvg}`;
+      return qrLogoDataUrl;
+    } catch {
+      return qrLogoUrl;
+    }
+  }
+
+  function injectLogoToSvg(svg, size, logoSize, logoSrc) {
     const x = Math.round((size - logoSize) / 2);
     const y = Math.round((size - logoSize) / 2);
     const whitePad = Math.round(logoSize * 0.2);
@@ -48,7 +84,7 @@
 
     const logo = [
       `<rect x="${rectX}" y="${rectY}" width="${rectSize}" height="${rectSize}" fill="white" rx="12" ry="12" />`,
-      `<image href="${qrLogoUrl}" xlink:href="${qrLogoUrl}" x="${x}" y="${y}" width="${logoSize}" height="${logoSize}" preserveAspectRatio="xMidYMid meet" />`,
+      `<image href="${logoSrc}" xlink:href="${logoSrc}" x="${x}" y="${y}" width="${logoSize}" height="${logoSize}" preserveAspectRatio="xMidYMid meet" />`,
     ].join("");
 
     return svg.replace("</svg>", `${logo}</svg>`);
@@ -63,7 +99,7 @@
     URL.revokeObjectURL(link.href);
   }
 
-  function drawLogoOnCanvas(canvas, size, logoSize) {
+  function drawLogoOnCanvas(canvas, size, logoSize, logoSrc) {
     return new Promise((resolve) => {
       const context = canvas.getContext("2d");
       if (!context) {
@@ -86,7 +122,7 @@
         resolve();
       };
       image.onerror = () => resolve();
-      image.src = qrLogoUrl;
+      image.src = logoSrc;
     });
   }
 
@@ -129,8 +165,9 @@
         errorCorrectionLevel: "H",
       });
 
-      const displaySvg = injectLogoToSvg(displaySvgRaw, 240, 44);
-      currentSvg = injectLogoToSvg(downloadSvgRaw, 1000, 180);
+      const logoSrc = await resolveQrLogoSrc();
+      const displaySvg = injectLogoToSvg(displaySvgRaw, 240, 44, logoSrc);
+      currentSvg = injectLogoToSvg(downloadSvgRaw, 1000, 180, logoSrc);
 
       qrSvgWrap.innerHTML = displaySvg;
 
@@ -144,7 +181,7 @@
         },
       });
 
-      await drawLogoOnCanvas(qrCanvas, 1000, 180);
+      await drawLogoOnCanvas(qrCanvas, 1000, 180, logoSrc);
 
       modal.classList.remove("hidden");
       modal.classList.add("flex");
@@ -220,9 +257,9 @@
       try {
         await fetch(`/api/admin/cards/${id}/toggle-active`, {
           method: "PATCH",
-          headers: {
+          headers: withCsrfHeaders({
             "Content-Type": "application/json",
-          },
+          }),
           body: JSON.stringify({ isActive: !isActive }),
         });
         window.location.reload();
@@ -246,7 +283,10 @@
 
       actionNode.setAttribute("disabled", "disabled");
       try {
-        await fetch(`/api/admin/cards/${id}`, { method: "DELETE" });
+        await fetch(`/api/admin/cards/${id}`, {
+          method: "DELETE",
+          headers: withCsrfHeaders(),
+        });
         window.location.reload();
       } finally {
         actionNode.removeAttribute("disabled");

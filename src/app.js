@@ -1,6 +1,9 @@
 const path = require("node:path");
+const { randomBytes } = require("node:crypto");
 
 const express = require("express");
+const compression = require("compression");
+const helmet = require("helmet");
 const session = require("express-session");
 const pg = require("pg");
 const pgSession = require("connect-pg-simple")(session);
@@ -13,6 +16,8 @@ const { publicApiRouter } = require("./routes/api/cards");
 const { adminPagesRouter } = require("./routes/pages/admin");
 const { publicPagesRouter } = require("./routes/pages/public");
 const { systemRouter } = require("./routes/system");
+const { getBaseUrl } = require("./utils/url");
+const { ensureCsrfToken } = require("./middleware/csrf");
 
 function createApp() {
   const app = express();
@@ -26,6 +31,32 @@ function createApp() {
 
   app.use(express.urlencoded({ extended: true }));
   app.use(express.json());
+  app.use(compression());
+  app.use((req, res, next) => {
+    res.locals.cspNonce = randomBytes(16).toString("base64");
+    next();
+  });
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        useDefaults: true,
+        directives: {
+          defaultSrc: ["'self'"],
+          baseUri: ["'self'"],
+          frameAncestors: ["'self'"],
+          objectSrc: ["'none'"],
+          scriptSrc: ["'self'", (req, res) => `'nonce-${res.locals.cspNonce}'`],
+          styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+          fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
+          imgSrc: ["'self'", "data:", "blob:"],
+          connectSrc: ["'self'"],
+          formAction: ["'self'"],
+          ...(env.NODE_ENV === "production" ? { upgradeInsecureRequests: [] } : {}),
+        },
+      },
+      crossOriginEmbedderPolicy: false,
+    }),
+  );
 
   app.use(
     express.static(expressPublicDir, {
@@ -87,8 +118,28 @@ function createApp() {
   );
 
   app.use((req, res, next) => {
+    const baseUrl = getBaseUrl();
+    const path = req.path && req.path.startsWith("/") ? req.path : "/";
+    const canonicalPath = path === "/" ? "/" : path.replace(/\/+$/, "");
+    const canonicalUrl = `${baseUrl}${canonicalPath}`;
+    const csrfToken = ensureCsrfToken(req);
+
     res.locals.adminSession = getAdminSession(req);
     res.locals.currentPath = req.path;
+    res.locals.baseUrl = baseUrl;
+    res.locals.canonicalUrl = canonicalUrl;
+    res.locals.noindex = req.path.startsWith("/admin");
+    res.locals.csrfToken = csrfToken;
+
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+    res.setHeader("X-Frame-Options", "SAMEORIGIN");
+    res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+
+    if (req.path.startsWith("/admin")) {
+      res.setHeader("X-Robots-Tag", "noindex, nofollow, noarchive");
+    }
+
     next();
   });
 

@@ -1,13 +1,26 @@
 <%
   const pageTitle = typeof title === "string" && title ? title : "UNQ+ Digital Business Cards";
+  const pageBaseUrl = typeof baseUrl === "string" && baseUrl ? baseUrl : "";
+  const pageCanonicalUrl = typeof canonicalUrl === "string" && canonicalUrl ? canonicalUrl : `${pageBaseUrl}/`;
+  const pageJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "UNQ+",
+    url: pageCanonicalUrl,
+    potentialAction: {
+      "@type": "SearchAction",
+      target: `${pageBaseUrl}/{id}`,
+      "query-input": "required name=id",
+    },
+  };
   const highlights = [
     {
       title: "Быстрый запуск",
       description: "Публикация цифровой визитки за несколько минут без разработки и сложной настройки.",
     },
     {
-      title: "Управление из админ-панели",
-      description: "Редактирование контента, ссылок, аватаров и активности карточек в одном месте.",
+      title: "Гибкое управление профилем",
+      description: "Обновление контента, ссылок, аватара и активности визитки в одном месте.",
     },
     {
       title: "Аналитика просмотров",
@@ -23,7 +36,7 @@
 <!doctype html>
 <html lang="ru">
 <head>
-  <%- include('../partials/head', { title: pageTitle, styles: ['/css/public-card.css'] }) %>
+  <%- include('../partials/head', { title: pageTitle, styles: ['/css/public-card.css'], ogType: 'website', jsonLd: pageJsonLd }) %>
 </head>
 <body class="min-h-screen antialiased">
   <main class="relative isolate flex min-h-screen flex-col overflow-hidden">
@@ -126,6 +139,6 @@
       </div>
     </footer>
   </main>
-  <script src="/js/public-home-search.js"></script>
+  <script nonce="<%= cspNonce %>" src="/js/public-home-search.js"></script>
 </body>
 </html>

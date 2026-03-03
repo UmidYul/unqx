@@ -6,6 +6,7 @@
 
   const button = document.getElementById("cleanup-logs-btn");
   const message = document.getElementById("cleanup-message");
+  const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "";
 
   if (!(button instanceof HTMLButtonElement) || !(message instanceof HTMLElement)) {
     return;
@@ -16,7 +17,10 @@
     message.textContent = "";
 
     try {
-      const response = await fetch("/api/admin/logs/cleanup", { method: "POST" });
+      const response = await fetch("/api/admin/logs/cleanup", {
+        method: "POST",
+        headers: csrfToken ? { "X-CSRF-Token": csrfToken } : {},
+      });
       const payload = await response.json().catch(() => ({}));
 
       if (!response.ok) {

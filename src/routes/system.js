@@ -7,7 +7,15 @@ const { asyncHandler } = require("../middleware/async");
 const router = express.Router();
 
 router.get("/robots.txt", (_req, res) => {
-  const content = ["User-agent: *", "Allow: /", `Sitemap: ${getBaseUrl()}/sitemap.xml`, ""].join("\n");
+  const content = [
+    "User-agent: *",
+    "Allow: /",
+    "Disallow: /admin",
+    "Disallow: /api/admin",
+    "Disallow: /api/cards",
+    `Sitemap: ${getBaseUrl()}/sitemap.xml`,
+    "",
+  ].join("\n");
   res.type("text/plain").send(content);
 });
 
@@ -21,13 +29,14 @@ router.get(
     });
 
     const base = getBaseUrl();
-    const urls = cards
+    const homeUrl = `<url><loc>${base}/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>`;
+    const cardUrls = cards
       .map(
         (card) => `<url><loc>${base}/${card.slug}</loc><lastmod>${card.updatedAt.toISOString()}</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>`,
       )
       .join("");
 
-    const xml = `<?xml version=\"1.0\" encoding=\"UTF-8\"?><urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">${urls}</urlset>`;
+    const xml = `<?xml version=\"1.0\" encoding=\"UTF-8\"?><urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">${homeUrl}${cardUrls}</urlset>`;
 
     res.type("application/xml").send(xml);
   }),

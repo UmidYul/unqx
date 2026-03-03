@@ -13,6 +13,9 @@
 /express-app/playwright-report
 /express-app/test-results
 /express-app/artifacts
+/test-results
+/playwright-report
+/artifacts
 /legacy
 
 # next.js

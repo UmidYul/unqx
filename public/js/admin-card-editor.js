@@ -11,6 +11,18 @@
 
   const mode = body.getAttribute("data-mode") || "create";
   const cardId = body.getAttribute("data-card-id") || "";
+  const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "";
+
+  function withCsrfHeaders(headers = {}) {
+    if (!csrfToken) {
+      return headers;
+    }
+
+    return {
+      ...headers,
+      "X-CSRF-Token": csrfToken,
+    };
+  }
 
   const slugInput = document.getElementById("field-slug");
   const activeInput = document.getElementById("field-is-active");
@@ -462,7 +474,10 @@
     generateSlugBtn.addEventListener("click", async () => {
       setFormError("");
       try {
-        const response = await fetch("/api/admin/slug/next", { method: "POST" });
+        const response = await fetch("/api/admin/slug/next", {
+          method: "POST",
+          headers: withCsrfHeaders(),
+        });
         if (!response.ok) {
           setFormError("Не удалось сгенерировать slug");
           return;
@@ -587,9 +602,9 @@
 
       const response = await fetch(endpoint, {
         method,
-        headers: {
+        headers: withCsrfHeaders({
           "Content-Type": "application/json",
-        },
+        }),
         body: JSON.stringify(payload),
       });
 
@@ -625,22 +640,6 @@
 
     URL.revokeObjectURL(sourceObjectUrl);
     sourceObjectUrl = "";
-  }
-
-  if (pickAvatarBtn instanceof HTMLElement && avatarFileInput instanceof HTMLInputElement) {
-    pickAvatarBtn.addEventListener("click", (event) => {
-      event.preventDefault();
-      if (avatarFileInput.disabled) {
-        return;
-      }
-
-      if (typeof avatarFileInput.showPicker === "function") {
-        avatarFileInput.showPicker();
-        return;
-      }
-
-      avatarFileInput.click();
-    });
   }
 
   if (avatarFileInput instanceof HTMLInputElement && avatarCropWrap instanceof HTMLElement && avatarCropImage instanceof HTMLImageElement) {
@@ -727,6 +726,7 @@
 
         const response = await fetch(`/api/admin/cards/${cardId}/avatar`, {
           method: "POST",
+          headers: withCsrfHeaders(),
           body: formData,
         });
 
@@ -773,6 +773,7 @@
       try {
         const response = await fetch(`/api/admin/cards/${cardId}/avatar`, {
           method: "DELETE",
+          headers: withCsrfHeaders(),
         });
 
         const payload = await response.json().catch(() => ({}));

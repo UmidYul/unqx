@@ -18,10 +18,10 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
-    "@prisma/adapter-pg": "6.19.2",
     "@prisma/client": "6.19.2",
     "bcryptjs": "^3.0.3",
     "chart.js": "^4.5.0",
+    "compression": "^1.8.1",
     "connect-pg-simple": "^10.0.0",
     "cropperjs": "^1.6.2",
     "date-fns": "^4.1.0",
@@ -29,7 +29,9 @@
     "dotenv": "^17.3.1",
     "ejs": "^3.1.10",
     "express": "^4.21.2",
+    "express-rate-limit": "^8.2.1",
     "express-session": "^1.18.1",
+    "helmet": "^8.1.0",
     "multer": "^2.0.2",
     "pg": "^8.19.0",
     "qrcode": "^1.5.4",
