@@ -1,7 +1,5 @@
 import { z } from "zod";
 
-const BCRYPT_HASH_REGEX = /^\$2[aby]\$\d{2}\$[./A-Za-z0-9]{53}$/;
-
 const schema = z.object({
   DATABASE_URL: z.string().min(1).default("postgresql://postgres:postgres@localhost:55432/unqplus"),
   NEXTAUTH_URL: z.string().url().default("http://localhost:3000"),
@@ -10,10 +8,11 @@ const schema = z.object({
   ADMIN_LOGIN: z.string().min(1).default("admin"),
   ADMIN_PASSWORD_HASH: z
     .string()
-    .regex(BCRYPT_HASH_REGEX, "ADMIN_PASSWORD_HASH must be a valid bcrypt hash"),
+    .transform((value) => value.trim())
+    .refine((value) => /^\$2[aby]\$\d{2}\$/.test(value), "ADMIN_PASSWORD_HASH must be a bcrypt hash"),
 });
 
-export const env = schema.parse({
+const parsed = schema.parse({
   DATABASE_URL: process.env.DATABASE_URL ?? process.env.DIRECT_URL,
   NEXTAUTH_URL: process.env.NEXTAUTH_URL,
   NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
@@ -21,3 +20,5 @@ export const env = schema.parse({
   ADMIN_LOGIN: process.env.ADMIN_LOGIN,
   ADMIN_PASSWORD_HASH: process.env.ADMIN_PASSWORD_HASH,
 });
+
+export const env = parsed;
