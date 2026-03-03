@@ -16,8 +16,16 @@ const adminApiRateLimit = rateLimit({
   message: { error: "Too many requests" },
 });
 
+const publicOrderRateLimit = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many requests" },
+});
+
 module.exports = {
   loginRateLimit,
   adminApiRateLimit,
+  publicOrderRateLimit,
 };
-

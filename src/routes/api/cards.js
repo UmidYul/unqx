@@ -5,10 +5,21 @@ const express = require("express");
 const { prisma } = require("../../db/prisma");
 const { detectDevice } = require("../../services/ua");
 const { generateVCard } = require("../../services/vcard");
+const { calculateSlugPrice } = require("../../services/slug-pricing");
+const { sendOrderRequestToTelegram, TelegramConfigError, TelegramDeliveryError } = require("../../services/telegram");
 const { asyncHandler } = require("../../middleware/async");
+const { requireSameOrigin } = require("../../middleware/same-origin");
+const { requireCsrfToken } = require("../../middleware/csrf");
+const { publicOrderRateLimit } = require("../../middleware/rate-limit");
+const { OrderRequestSchema } = require("../../validation/order-request");
 
 const router = express.Router();
 const SLUG_REGEX = /^[A-Z]{3}[0-9]{3}$/;
+const TARIFF_MONTHLY = {
+  basic: 29_000,
+  premium: 79_000,
+};
+const BRACELET_PRICE = 300_000;
 
 function normalizeIp(value) {
   if (!value || typeof value !== "string") {
@@ -50,6 +61,35 @@ function pickClientIdentity(req) {
   }
 
   return `fp:${userAgent}|${acceptLanguage}`;
+}
+
+function formatPrice(value) {
+  return Number(value).toLocaleString("ru-RU").replace(/,/g, " ");
+}
+
+function mapOrderValidationIssues(error) {
+  const issues = {};
+
+  for (const issue of error.issues || []) {
+    const field = issue.path && issue.path[0];
+
+    if (field === "name") {
+      issues.name = issue.message || "Имя обязательно";
+      continue;
+    }
+
+    if (field === "letters" || field === "digits") {
+      issues.slug = "Slug должен быть в формате AAA000";
+      continue;
+    }
+
+    if (field === "contact") {
+      issues.contact = issue.message || "Контакт обязателен";
+      continue;
+    }
+  }
+
+  return issues;
 }
 
 router.get(
@@ -112,6 +152,60 @@ router.get(
       validFormat: true,
       available: !existing,
     });
+  }),
+);
+
+router.post(
+  "/order-request",
+  publicOrderRateLimit,
+  requireSameOrigin,
+  requireCsrfToken,
+  asyncHandler(async (req, res) => {
+    const parsed = OrderRequestSchema.safeParse(req.body);
+
+    if (!parsed.success) {
+      res.status(400).json({
+        error: "Validation failed",
+        issues: mapOrderValidationIssues(parsed.error),
+      });
+      return;
+    }
+
+    const payload = parsed.data;
+    const slug = `${payload.letters}${payload.digits}`;
+    const pricing = calculateSlugPrice({ letters: payload.letters, digits: payload.digits });
+    const tariffPrice = TARIFF_MONTHLY[payload.tariff] ?? TARIFF_MONTHLY.basic;
+    const braceletPrice = payload.products.bracelet ? BRACELET_PRICE : 0;
+    const totalOneTime = pricing.total + braceletPrice;
+
+    try {
+      await sendOrderRequestToTelegram({
+        name: payload.name,
+        slug,
+        slugPriceLabel: formatPrice(pricing.total),
+        tariff: payload.tariff,
+        tariffPriceLabel: formatPrice(tariffPrice),
+        bracelet: payload.products.bracelet,
+        contact: payload.contact,
+        totalOneTimeLabel: formatPrice(totalOneTime),
+      });
+    } catch (error) {
+      if (error instanceof TelegramConfigError) {
+        console.error("[express-app] telegram config missing for order-request");
+        res.status(503).json({ error: "Telegram is not configured" });
+        return;
+      }
+
+      if (error instanceof TelegramDeliveryError) {
+        console.error("[express-app] telegram delivery failed", error.message);
+        res.status(502).json({ error: "Failed to deliver request" });
+        return;
+      }
+
+      throw error;
+    }
+
+    res.json({ ok: true });
   }),
 );
 

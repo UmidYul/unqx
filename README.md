@@ -54,6 +54,8 @@ TIMEZONE="Asia/Tashkent"
 PORT=3100
 TRUST_PROXY=1
 SESSION_COOKIE_SECURE="auto"
+TELEGRAM_BOT_TOKEN="123456:replace_me"
+TELEGRAM_CHAT_ID="-1001234567890"
 ```
 
 Notes for hosting:
@@ -90,6 +92,7 @@ API:
 - `POST /api/cards/:slug/view`
 - `GET /api/cards/:slug/vcf`
 - `GET /api/cards/search?q=AAA`
+- `POST /api/cards/order-request`
 
 ## Visual Compare (Next vs Express)
 

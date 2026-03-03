@@ -1,13 +1,150 @@
+const BASE_PRICE = 100_000;
+const BRACELET_PRICE = 300_000;
+const TARIFFS = {
+  basic: 29_000,
+  premium: 79_000,
+};
+
 (function initPublicHomePage() {
   const pageNode = document.querySelector('[data-page="public-home"]');
   if (!(pageNode instanceof HTMLElement)) {
     return;
   }
 
+  const orderApi = initOrderForm();
   initMobileMenu();
-  initSlugAvailability();
-  initSlugCalculator();
+  initSlugAvailability(orderApi);
+  initSlugCalculator(orderApi);
+  initOrderLinks(orderApi);
 })();
+
+function formatPrice(number) {
+  return Number(number).toLocaleString("ru-RU").replace(/,/g, " ");
+}
+
+function normalizeLetters(value) {
+  return (value || "").replace(/[^a-zA-Z]/g, "").toUpperCase().slice(0, 3);
+}
+
+function normalizeDigits(value) {
+  return (value || "").replace(/[^0-9]/g, "").slice(0, 3);
+}
+
+function normalizeSlug(value) {
+  return (value || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6);
+}
+
+function splitSlug(value) {
+  const normalized = normalizeSlug(value);
+  if (!/^[A-Z]{3}[0-9]{3}$/.test(normalized)) {
+    return null;
+  }
+
+  return {
+    letters: normalized.slice(0, 3),
+    digits: normalized.slice(3),
+  };
+}
+
+function getLetterMultiplier(letters) {
+  const upper = normalizeLetters(letters);
+  if (upper.length !== 3) {
+    return { multiplier: 1, label: "..." };
+  }
+
+  const [a, b, c] = upper.split("");
+
+  if (a === b && b === c) {
+    return { multiplier: 5, label: "Все одинаковые" };
+  }
+
+  const ca = a.charCodeAt(0);
+  const cb = b.charCodeAt(0);
+  const cc = c.charCodeAt(0);
+  if (cb - ca === 1 && cc - cb === 1) {
+    return { multiplier: 3, label: "По порядку" };
+  }
+
+  if (a === c && a !== b) {
+    return { multiplier: 2, label: "Палиндром" };
+  }
+
+  return { multiplier: 1, label: "Обычные" };
+}
+
+function getDigitMultiplier(digits) {
+  const normalized = normalizeDigits(digits);
+  if (normalized.length !== 3) {
+    return { multiplier: 1, label: "..." };
+  }
+
+  const num = Number.parseInt(normalized, 10);
+  const [d1, d2, d3] = normalized.split("");
+
+  if (normalized === "000") {
+    return { multiplier: 6, label: "Тройной ноль" };
+  }
+  if (num >= 1 && num <= 9 && normalized.startsWith("00")) {
+    return { multiplier: 4, label: "Первые девять" };
+  }
+  if (d1 === d2 && d2 === d3) {
+    return { multiplier: 4, label: "Все одинаковые" };
+  }
+
+  const n1 = Number.parseInt(d1, 10);
+  const n2 = Number.parseInt(d2, 10);
+  const n3 = Number.parseInt(d3, 10);
+  if (n2 - n1 === 1 && n3 - n2 === 1) {
+    return { multiplier: 3, label: "По порядку" };
+  }
+  if (num % 100 === 0 && num > 0) {
+    return { multiplier: 2, label: "Круглое" };
+  }
+  if (d1 === d3 && d1 !== d2) {
+    return { multiplier: 1.5, label: "Палиндром" };
+  }
+
+  return { multiplier: 1, label: "Обычные" };
+}
+
+function calculateSlugPricing(letters, digits) {
+  const normalizedLetters = normalizeLetters(letters);
+  const normalizedDigits = normalizeDigits(digits);
+  const isComplete = normalizedLetters.length === 3 && normalizedDigits.length === 3;
+
+  if (!isComplete) {
+    return null;
+  }
+
+  const letterData = getLetterMultiplier(normalizedLetters);
+  const digitData = getDigitMultiplier(normalizedDigits);
+  const total = BASE_PRICE * letterData.multiplier * digitData.multiplier;
+
+  return {
+    letters: normalizedLetters,
+    digits: normalizedDigits,
+    slug: `${normalizedLetters}${normalizedDigits}`,
+    letterData,
+    digitData,
+    total,
+  };
+}
+
+function getRarityBadge(total) {
+  if (total >= 2_000_000) {
+    return { label: "LEGENDARY", color: "bg-amber-100 text-amber-800 border-amber-200" };
+  }
+  if (total >= 1_000_000) {
+    return { label: "EPIC", color: "bg-violet-100 text-violet-800 border-violet-200" };
+  }
+  if (total >= 400_000) {
+    return { label: "RARE", color: "bg-sky-100 text-sky-800 border-sky-200" };
+  }
+  if (total >= 200_000) {
+    return { label: "UNCOMMON", color: "bg-emerald-100 text-emerald-800 border-emerald-200" };
+  }
+  return { label: "COMMON", color: "bg-neutral-100 text-neutral-600 border-neutral-200" };
+}
 
 function initMobileMenu() {
   const toggle = document.querySelector("[data-menu-toggle]");
@@ -42,7 +179,22 @@ function initMobileMenu() {
   });
 }
 
-function initSlugAvailability() {
+function initOrderLinks(orderApi) {
+  document.querySelectorAll("[data-order-link]").forEach((node) => {
+    node.addEventListener("click", () => {
+      if (!orderApi) {
+        return;
+      }
+
+      const slug = node.getAttribute("data-order-prefill");
+      if (slug) {
+        orderApi.prefillSlug(slug);
+      }
+    });
+  });
+}
+
+function initSlugAvailability(orderApi) {
   const slugInput = document.getElementById("home-slug-input");
   const checkButton = document.getElementById("home-slug-check");
   const feedback = document.getElementById("home-slug-feedback");
@@ -75,21 +227,19 @@ function initSlugAvailability() {
   const ARROW_ICON =
     '<svg class="icon-stroke h-3.5 w-3.5" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"></path></svg>';
 
-  function normalizeSlug(value) {
-    return (value || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6);
-  }
-
   function setFeedback(state, slug) {
     feedback.classList.remove("hidden");
 
     function setPrimaryAction(options) {
       if (!options.visible) {
         primaryAction.classList.add("hidden");
+        primaryAction.removeAttribute("data-order-prefill");
         return;
       }
 
       primaryAction.classList.remove("hidden");
-      primaryAction.href = options.href;
+      primaryAction.href = "#order";
+      primaryAction.setAttribute("data-order-prefill", options.slug);
       primaryAction.innerHTML = `${options.label}${ARROW_ICON}`;
     }
 
@@ -112,11 +262,11 @@ function initSlugAvailability() {
     if (state === "available") {
       statusIcon.innerHTML = ICON_OK;
       statusText.textContent = `unqx.uz/${slug} доступен`;
-      statusNote.textContent = "Slug свободен. Можно занимать и публиковать визитку.";
+      statusNote.textContent = "Slug свободен. Оставь заявку и мы активируем его для тебя.";
       setPrimaryAction({
         visible: true,
-        href: `/admin/cards/new?slug=${encodeURIComponent(slug)}`,
-        label: `Занять ${slug}`,
+        slug,
+        label: "Занять slug",
       });
       return;
     }
@@ -124,11 +274,11 @@ function initSlugAvailability() {
     if (state === "taken") {
       statusIcon.innerHTML = ICON_INFO;
       statusText.textContent = `unqx.uz/${slug} уже занят`;
-      statusNote.textContent = "Этот slug уже используется. Открой карточку или проверь другой.";
+      statusNote.textContent = "Этот slug занят, но ты можешь оставить заявку на другой внизу страницы.";
       setPrimaryAction({
         visible: true,
-        href: `/${encodeURIComponent(slug)}`,
-        label: `Открыть ${slug}`,
+        slug,
+        label: "Занять slug",
       });
       return;
     }
@@ -177,6 +327,9 @@ function initSlugAvailability() {
       }
 
       setFeedback(payload.available ? "available" : "taken", slug);
+      if (orderApi) {
+        orderApi.prefillSlug(slug);
+      }
     } catch {
       setFeedback("error", slug);
     } finally {
@@ -201,7 +354,7 @@ function initSlugAvailability() {
   });
 }
 
-function initSlugCalculator() {
+function initSlugCalculator(orderApi) {
   const lettersInput = document.getElementById("calc-letters");
   const digitsInput = document.getElementById("calc-digits");
   const preview = document.getElementById("calc-preview");
@@ -232,107 +385,22 @@ function initSlugCalculator() {
     return;
   }
 
-  const BASE_PRICE = 100_000;
+  const RESERVE_ICON =
+    '<svg class="icon-stroke h-3.5 w-3.5" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"></path></svg>';
   let hasRevealed = false;
-
-  function formatPrice(number) {
-    return Number(number).toLocaleString("ru-RU").replace(/,/g, " ");
-  }
-
-  function getLetterMultiplier(letters) {
-    const upper = letters.toUpperCase();
-    if (upper.length !== 3) {
-      return { multiplier: 1, label: "..." };
-    }
-
-    const [a, b, c] = upper.split("");
-
-    if (a === b && b === c) {
-      return { multiplier: 5, label: "Все одинаковые" };
-    }
-
-    const ca = a.charCodeAt(0);
-    const cb = b.charCodeAt(0);
-    const cc = c.charCodeAt(0);
-
-    if (cb - ca === 1 && cc - cb === 1) {
-      return { multiplier: 3, label: "По порядку" };
-    }
-
-    if (a === c && a !== b) {
-      return { multiplier: 2, label: "Палиндром" };
-    }
-
-    return { multiplier: 1, label: "Обычные" };
-  }
-
-  function getDigitMultiplier(digits) {
-    if (digits.length !== 3) {
-      return { multiplier: 1, label: "..." };
-    }
-
-    const num = Number.parseInt(digits, 10);
-    const [d1, d2, d3] = digits.split("");
-
-    if (digits === "000") {
-      return { multiplier: 6, label: "Тройной ноль" };
-    }
-
-    if (num >= 1 && num <= 9 && digits.startsWith("00")) {
-      return { multiplier: 4, label: "Первые девять" };
-    }
-
-    if (d1 === d2 && d2 === d3) {
-      return { multiplier: 4, label: "Все одинаковые" };
-    }
-
-    const n1 = Number.parseInt(d1, 10);
-    const n2 = Number.parseInt(d2, 10);
-    const n3 = Number.parseInt(d3, 10);
-
-    if (n2 - n1 === 1 && n3 - n2 === 1) {
-      return { multiplier: 3, label: "По порядку" };
-    }
-
-    if (num % 100 === 0 && num > 0) {
-      return { multiplier: 2, label: "Круглое" };
-    }
-
-    if (d1 === d3 && d1 !== d2) {
-      return { multiplier: 1.5, label: "Палиндром" };
-    }
-
-    return { multiplier: 1, label: "Обычные" };
-  }
-
-  function getRarityBadge(total) {
-    if (total >= 2_000_000) {
-      return { label: "LEGENDARY", color: "bg-amber-100 text-amber-800 border-amber-200" };
-    }
-    if (total >= 1_000_000) {
-      return { label: "EPIC", color: "bg-violet-100 text-violet-800 border-violet-200" };
-    }
-    if (total >= 400_000) {
-      return { label: "RARE", color: "bg-sky-100 text-sky-800 border-sky-200" };
-    }
-    if (total >= 200_000) {
-      return { label: "UNCOMMON", color: "bg-emerald-100 text-emerald-800 border-emerald-200" };
-    }
-    return { label: "COMMON", color: "bg-neutral-100 text-neutral-600 border-neutral-200" };
-  }
 
   function updatePreview(letters, digits) {
     preview.textContent = `unqx.uz/${letters || "___"}${digits || "___"}`;
   }
 
   function updateResult() {
-    const letters = lettersInput.value;
-    const digits = digitsInput.value;
-    const isFilled = letters.length === 3 && digits.length === 3;
+    lettersInput.value = normalizeLetters(lettersInput.value);
+    digitsInput.value = normalizeDigits(digitsInput.value);
 
-    updatePreview(letters, digits);
+    const pricing = calculateSlugPricing(lettersInput.value, digitsInput.value);
+    updatePreview(lettersInput.value, digitsInput.value);
 
-    if (!isFilled) {
+    if (!pricing) {
       return;
     }
 
@@ -342,30 +410,25 @@ function initSlugCalculator() {
       resultWrap.classList.add("animate-fade-up");
     }
 
-    const letterData = getLetterMultiplier(letters);
-    const digitData = getDigitMultiplier(digits);
-    const total = BASE_PRICE * letterData.multiplier * digitData.multiplier;
-    const rarity = getRarityBadge(total);
-    const slug = `${letters}${digits}`;
+    const rarity = getRarityBadge(pricing.total);
 
     rarityBadge.className = `inline-flex items-center gap-1 rounded-full border px-3 py-1 font-mono text-[11px] font-medium tracking-wider ${rarity.color}`;
     rarityText.textContent = rarity.label;
-    resultSlug.textContent = slug;
-    resultPrice.textContent = formatPrice(total);
-    resultFormula.textContent = `${formatPrice(BASE_PRICE)} x ${letterData.multiplier} x ${digitData.multiplier} = ${formatPrice(total)} сум`;
-    letterMeta.textContent = `${letterData.label} x${letterData.multiplier}`;
-    digitMeta.textContent = `${digitData.label} x${digitData.multiplier}`;
-    reserveLink.href = `/admin/cards/new?slug=${encodeURIComponent(slug)}`;
-    reserveLink.innerHTML = `Занять ${slug}<svg class="icon-stroke h-3.5 w-3.5" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"></path></svg>`;
+    resultSlug.textContent = pricing.slug;
+    resultPrice.textContent = formatPrice(pricing.total);
+    resultFormula.textContent = `${formatPrice(BASE_PRICE)} x ${pricing.letterData.multiplier} x ${pricing.digitData.multiplier} = ${formatPrice(pricing.total)} сум`;
+    letterMeta.textContent = `${pricing.letterData.label} x${pricing.letterData.multiplier}`;
+    digitMeta.textContent = `${pricing.digitData.label} x${pricing.digitData.multiplier}`;
+    reserveLink.href = "#order";
+    reserveLink.setAttribute("data-order-prefill", pricing.slug);
+    reserveLink.innerHTML = `Занять ${pricing.slug}${RESERVE_ICON}`;
   }
 
   lettersInput.addEventListener("input", () => {
-    lettersInput.value = lettersInput.value.replace(/[^a-zA-Z]/g, "").toUpperCase().slice(0, 3);
     updateResult();
   });
 
   digitsInput.addEventListener("input", () => {
-    digitsInput.value = digitsInput.value.replace(/[^0-9]/g, "").slice(0, 3);
     updateResult();
   });
 
@@ -378,8 +441,273 @@ function initSlugCalculator() {
       lettersInput.value = (button.getAttribute("data-letters") || "").slice(0, 3);
       digitsInput.value = (button.getAttribute("data-digits") || "").slice(0, 3);
       updateResult();
+
+      if (orderApi) {
+        orderApi.prefillSlug(`${lettersInput.value}${digitsInput.value}`);
+      }
     });
   });
 
   updatePreview("", "");
+}
+
+function initOrderForm() {
+  const form = document.getElementById("order-form");
+  const nameInput = document.getElementById("order-name");
+  const lettersInput = document.getElementById("order-letters");
+  const digitsInput = document.getElementById("order-digits");
+  const contactInput = document.getElementById("order-contact");
+  const slugPreview = document.getElementById("order-slug-preview");
+  const slugPriceCard = document.getElementById("order-slug-price-card");
+  const slugPriceValue = document.getElementById("order-slug-price-value");
+  const totalSlug = document.getElementById("order-total-slug");
+  const totalTariff = document.getElementById("order-total-tariff");
+  const totalBraceletRow = document.getElementById("order-total-bracelet-row");
+  const totalBracelet = document.getElementById("order-total-bracelet");
+  const totalNow = document.getElementById("order-total-now");
+  const totalMonthly = document.getElementById("order-total-monthly");
+  const submitButton = document.getElementById("order-submit");
+  const submitStatus = document.getElementById("order-submit-status");
+  const errorName = document.getElementById("order-error-name");
+  const errorSlug = document.getElementById("order-error-slug");
+  const errorContact = document.getElementById("order-error-contact");
+
+  if (
+    !(form instanceof HTMLFormElement) ||
+    !(nameInput instanceof HTMLInputElement) ||
+    !(lettersInput instanceof HTMLInputElement) ||
+    !(digitsInput instanceof HTMLInputElement) ||
+    !(contactInput instanceof HTMLInputElement) ||
+    !(slugPreview instanceof HTMLElement) ||
+    !(slugPriceCard instanceof HTMLElement) ||
+    !(slugPriceValue instanceof HTMLElement) ||
+    !(totalSlug instanceof HTMLElement) ||
+    !(totalTariff instanceof HTMLElement) ||
+    !(totalBraceletRow instanceof HTMLElement) ||
+    !(totalBracelet instanceof HTMLElement) ||
+    !(totalNow instanceof HTMLElement) ||
+    !(totalMonthly instanceof HTMLElement) ||
+    !(submitButton instanceof HTMLButtonElement) ||
+    !(submitStatus instanceof HTMLElement) ||
+    !(errorName instanceof HTMLElement) ||
+    !(errorSlug instanceof HTMLElement) ||
+    !(errorContact instanceof HTMLElement)
+  ) {
+    return null;
+  }
+
+  const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "";
+  const submitDefaultHtml = submitButton.innerHTML;
+
+  function selectedTariff() {
+    const selected = form.querySelector('input[name="order-tariff"]:checked');
+    if (!(selected instanceof HTMLInputElement)) {
+      return "basic";
+    }
+
+    return selected.value === "premium" ? "premium" : "basic";
+  }
+
+  function productFlags() {
+    const digitalCard = form.querySelector("#order-product-card");
+    const bracelet = form.querySelector("#order-product-bracelet");
+    return {
+      digitalCard: digitalCard instanceof HTMLInputElement ? digitalCard.checked : false,
+      bracelet: bracelet instanceof HTMLInputElement ? bracelet.checked : false,
+    };
+  }
+
+  function setError(node, message) {
+    if (!message) {
+      node.textContent = "";
+      node.classList.add("hidden");
+      return;
+    }
+
+    node.textContent = message;
+    node.classList.remove("hidden");
+  }
+
+  function clearErrors() {
+    setError(errorName, "");
+    setError(errorSlug, "");
+    setError(errorContact, "");
+  }
+
+  function setStatus(text, tone) {
+    submitStatus.textContent = text;
+    submitStatus.className = "mt-2 text-sm";
+
+    if (tone === "success") {
+      submitStatus.classList.add("text-emerald-700");
+    } else if (tone === "error") {
+      submitStatus.classList.add("text-red-700");
+    } else {
+      submitStatus.classList.add("text-neutral-500");
+    }
+  }
+
+  function getSlugPricing() {
+    lettersInput.value = normalizeLetters(lettersInput.value);
+    digitsInput.value = normalizeDigits(digitsInput.value);
+    return calculateSlugPricing(lettersInput.value, digitsInput.value);
+  }
+
+  function updateOrderTotals() {
+    const pricing = getSlugPricing();
+    const tariff = selectedTariff();
+    const tariffPrice = TARIFFS[tariff] ?? TARIFFS.basic;
+    const products = productFlags();
+    const braceletValue = products.bracelet ? BRACELET_PRICE : 0;
+    const slugValue = pricing ? pricing.total : 0;
+    const oneTime = slugValue + braceletValue;
+
+    slugPreview.textContent = `unqx.uz/${lettersInput.value || "___"}${digitsInput.value || "___"}`;
+    slugPriceCard.classList.toggle("hidden", !pricing);
+    slugPriceValue.textContent = formatPrice(slugValue);
+
+    totalSlug.textContent = `${formatPrice(slugValue)} сум (разово)`;
+    totalTariff.textContent = `${formatPrice(tariffPrice)} сум/мес`;
+    totalBracelet.textContent = `${formatPrice(BRACELET_PRICE)} сум`;
+    totalBraceletRow.classList.toggle("hidden", !products.bracelet);
+    totalBraceletRow.classList.toggle("flex", products.bracelet);
+    totalNow.textContent = `${formatPrice(oneTime)} сум`;
+    totalMonthly.textContent = `${formatPrice(tariffPrice)} сум/мес`;
+  }
+
+  function prefillSlug(slug) {
+    const parsed = splitSlug(slug);
+    if (!parsed) {
+      return;
+    }
+
+    lettersInput.value = parsed.letters;
+    digitsInput.value = parsed.digits;
+    updateOrderTotals();
+  }
+
+  function validate() {
+    const errors = {};
+    const pricing = getSlugPricing();
+
+    if (!nameInput.value.trim()) {
+      errors.name = "Имя обязательно";
+    }
+
+    if (!pricing) {
+      errors.slug = "Slug должен быть в формате AAA000";
+    }
+
+    if (!contactInput.value.trim()) {
+      errors.contact = "Контакт обязателен";
+    }
+
+    return {
+      errors,
+      pricing,
+    };
+  }
+
+  lettersInput.addEventListener("input", () => {
+    updateOrderTotals();
+  });
+
+  digitsInput.addEventListener("input", () => {
+    updateOrderTotals();
+  });
+
+  form.querySelectorAll('input[name="order-tariff"]').forEach((input) => {
+    input.addEventListener("change", () => {
+      updateOrderTotals();
+    });
+  });
+
+  const productCard = form.querySelector("#order-product-card");
+  const productBracelet = form.querySelector("#order-product-bracelet");
+  if (productCard instanceof HTMLInputElement) {
+    productCard.addEventListener("change", () => {
+      updateOrderTotals();
+    });
+  }
+  if (productBracelet instanceof HTMLInputElement) {
+    productBracelet.addEventListener("change", () => {
+      updateOrderTotals();
+    });
+  }
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    clearErrors();
+    setStatus("", "neutral");
+
+    const { errors, pricing } = validate();
+    if (errors.name) {
+      setError(errorName, errors.name);
+    }
+    if (errors.slug) {
+      setError(errorSlug, errors.slug);
+    }
+    if (errors.contact) {
+      setError(errorContact, errors.contact);
+    }
+
+    if (Object.keys(errors).length > 0 || !pricing) {
+      return;
+    }
+
+    const tariff = selectedTariff();
+    const products = productFlags();
+
+    submitButton.disabled = true;
+    submitButton.classList.add("opacity-70", "cursor-not-allowed");
+    submitButton.textContent = "Отправка...";
+
+    try {
+      const response = await fetch("/api/cards/order-request", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-csrf-token": csrfToken,
+        },
+        body: JSON.stringify({
+          name: nameInput.value.trim(),
+          letters: pricing.letters,
+          digits: pricing.digits,
+          tariff,
+          products,
+          contact: contactInput.value.trim(),
+        }),
+      });
+
+      const payload = await response.json().catch(() => ({}));
+
+      if (response.ok && payload && payload.ok === true) {
+        setStatus("✅ Заявка принята! Ожидай сообщения в Telegram.", "success");
+        form.reset();
+        clearErrors();
+        updateOrderTotals();
+        return;
+      }
+
+      if (response.status === 400 && payload && payload.issues) {
+        setError(errorName, payload.issues.name || "");
+        setError(errorSlug, payload.issues.slug || "");
+        setError(errorContact, payload.issues.contact || "");
+      }
+
+      setStatus("❌ Ошибка отправки. Напиши нам напрямую: @unqx_uz", "error");
+    } catch {
+      setStatus("❌ Ошибка отправки. Напиши нам напрямую: @unqx_uz", "error");
+    } finally {
+      submitButton.disabled = false;
+      submitButton.classList.remove("opacity-70", "cursor-not-allowed");
+      submitButton.innerHTML = submitDefaultHtml;
+    }
+  });
+
+  updateOrderTotals();
+
+  return {
+    prefillSlug,
+  };
 }

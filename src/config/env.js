@@ -102,6 +102,8 @@ const schema = z.object({
         return false;
       }
     }, "ADMIN_PASSWORD_HASH must be a bcrypt hash"),
+  TELEGRAM_BOT_TOKEN: z.string().min(1).optional(),
+  TELEGRAM_CHAT_ID: z.string().min(1).optional(),
   TIMEZONE: z.string().min(1).default("Asia/Tashkent"),
   ROOT_DIR: z.string().optional(),
   TRUST_PROXY: z.string().optional(),
@@ -121,6 +123,8 @@ const parsed = schema.parse({
   SESSION_SECRET: process.env.SESSION_SECRET,
   ADMIN_LOGIN: process.env.ADMIN_LOGIN,
   ADMIN_PASSWORD_HASH: decodeB64(process.env.ADMIN_PASSWORD_HASH_B64) ?? process.env.ADMIN_PASSWORD_HASH,
+  TELEGRAM_BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN,
+  TELEGRAM_CHAT_ID: process.env.TELEGRAM_CHAT_ID,
   TIMEZONE: process.env.TIMEZONE,
   ROOT_DIR: process.env.ROOT_DIR,
   TRUST_PROXY: process.env.TRUST_PROXY,
