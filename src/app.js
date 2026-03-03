@@ -37,30 +37,30 @@ function createApp() {
     res.locals.cspNonce = randomBytes(16).toString("base64");
     next();
   });
-  if (!disableHttpsEnforcement) {
-    app.use(
-      helmet({
-        contentSecurityPolicy: {
-          useDefaults: true,
-          directives: {
-            defaultSrc: ["'self'"],
-            baseUri: ["'self'"],
-            frameAncestors: ["'self'"],
-            objectSrc: ["'none'"],
-            scriptSrc: ["'self'", (req, res) => `'nonce-${res.locals.cspNonce}'`],
-            styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-            fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
-            imgSrc: ["'self'", "data:", "blob:"],
-            connectSrc: ["'self'"],
-            formAction: ["'self'"],
-          },
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        useDefaults: true,
+        directives: {
+          defaultSrc: ["'self'"],
+          baseUri: ["'self'"],
+          frameAncestors: ["'self'"],
+          objectSrc: ["'none'"],
+          scriptSrc: ["'self'", (req, res) => `'nonce-${res.locals.cspNonce}'`],
+          styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+          fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
+          imgSrc: ["'self'", "data:", "blob:"],
+          connectSrc: ["'self'"],
+          formAction: ["'self'"],
+          ...(disableHttpsEnforcement ? { upgradeInsecureRequests: null } : {}),
         },
-        crossOriginEmbedderPolicy: false,
-        crossOriginOpenerPolicy: false,
-        originAgentCluster: false,
-      }),
-    );
-  }
+      },
+      crossOriginEmbedderPolicy: false,
+      crossOriginOpenerPolicy: false,
+      originAgentCluster: false,
+      ...(disableHttpsEnforcement ? { hsts: false } : {}),
+    }),
+  );
 
   app.use(
     express.static(expressPublicDir, {
