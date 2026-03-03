@@ -1,4 +1,12 @@
 import { z } from "zod";
+import bcrypt from "bcryptjs";
+
+function normalizeBcryptHash(value: string) {
+  return value
+    .trim()
+    .replace(/^['"]|['"]$/g, "")
+    .replace(/\\\$/g, "$");
+}
 
 const schema = z.object({
   DATABASE_URL: z.string().min(1).default("postgresql://postgres:postgres@localhost:55432/unqplus"),
@@ -8,8 +16,15 @@ const schema = z.object({
   ADMIN_LOGIN: z.string().min(1).default("admin"),
   ADMIN_PASSWORD_HASH: z
     .string()
-    .transform((value) => value.trim())
-    .refine((value) => /^\$2[aby]\$\d{2}\$/.test(value), "ADMIN_PASSWORD_HASH must be a bcrypt hash"),
+    .transform(normalizeBcryptHash)
+    .refine((value) => {
+      try {
+        bcrypt.getRounds(value);
+        return true;
+      } catch {
+        return false;
+      }
+    }, "ADMIN_PASSWORD_HASH must be a bcrypt hash"),
 });
 
 const parsed = schema.parse({
