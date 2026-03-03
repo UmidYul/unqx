@@ -101,11 +101,13 @@ body {
 #order-modal-backdrop {
   position: absolute;
   inset: 0;
+  z-index: 0;
   background: rgba(0, 0, 0, 0.5);
 }
 
-#order-modal-root > div {
+#order-modal-wrap {
   position: relative;
+  z-index: 1;
   min-height: 100%;
   display: flex;
   align-items: center;
@@ -114,6 +116,8 @@ body {
 }
 
 #order-modal-dialog {
+  position: relative;
+  z-index: 2;
   width: 100%;
   max-width: 42rem;
   max-height: 88vh;
@@ -129,7 +133,7 @@ body {
 }
 
 @media (max-width: 640px) {
-  #order-modal-root > div {
+  #order-modal-wrap {
     padding: 0.75rem;
   }
 }
