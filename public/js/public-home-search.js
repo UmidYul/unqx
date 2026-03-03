@@ -14,7 +14,6 @@ const TARIFFS = {
   const orderApi = initOrderForm();
   initMobileMenu();
   initSlugCounter();
-  initLiveDemo();
   initSlugAvailability(orderApi);
   initSlugCalculator(orderApi);
   initOrderLinks(orderApi);
@@ -235,37 +234,6 @@ function initSlugCounter() {
       // keep hidden on failure
     }
   })();
-}
-
-function initLiveDemo() {
-  const frame = document.getElementById("live-demo-frame");
-  const toggle = document.getElementById("live-demo-toggle");
-  const note = document.getElementById("live-demo-note");
-
-  if (!(frame instanceof HTMLIFrameElement) || !(toggle instanceof HTMLButtonElement) || !(note instanceof HTMLElement)) {
-    return;
-  }
-
-  let premium = false;
-
-  function sync() {
-    if (premium) {
-      frame.src = "/demo?embed=1&theme=gradient";
-      note.textContent = "Так выглядит Премиум тариф";
-      toggle.textContent = "Посмотреть Базовый →";
-    } else {
-      frame.src = "/demo?embed=1&theme=default_dark";
-      note.textContent = "Так выглядит Базовый тариф";
-      toggle.textContent = "Посмотреть Премиум →";
-    }
-  }
-
-  toggle.addEventListener("click", () => {
-    premium = !premium;
-    sync();
-  });
-
-  sync();
 }
 
 function initSlugAvailability(orderApi) {
@@ -567,8 +535,6 @@ function initOrderForm() {
   const contactInput = document.getElementById("order-contact");
   const themeInput = document.getElementById("order-theme");
   const themePreview = document.getElementById("order-theme-preview");
-  const slugSuggestionsWrap = document.getElementById("order-slug-suggestions");
-  const slugSuggestionsRefresh = document.getElementById("order-slug-refresh");
   const slugPreview = document.getElementById("order-slug-preview");
   const slugPriceCard = document.getElementById("order-slug-price-card");
   const slugPriceValue = document.getElementById("order-slug-price-value");
@@ -592,8 +558,6 @@ function initOrderForm() {
     !(contactInput instanceof HTMLInputElement) ||
     !(themeInput instanceof HTMLInputElement) ||
     !(themePreview instanceof HTMLElement) ||
-    !(slugSuggestionsWrap instanceof HTMLElement) ||
-    !(slugSuggestionsRefresh instanceof HTMLButtonElement) ||
     !(slugPreview instanceof HTMLElement) ||
     !(slugPriceCard instanceof HTMLElement) ||
     !(slugPriceValue instanceof HTMLElement) ||
@@ -730,45 +694,6 @@ function initOrderForm() {
     updateOrderTotals();
   }
 
-  function renderSlugSuggestions(items) {
-    slugSuggestionsWrap.innerHTML = "";
-    if (!Array.isArray(items) || items.length === 0) {
-      return;
-    }
-
-    items.forEach((slug) => {
-      const button = document.createElement("button");
-      button.type = "button";
-      button.className =
-        "rounded-full border border-neutral-200 bg-white px-3 py-1 font-mono text-xs text-neutral-700 transition-colors hover:bg-neutral-100";
-      button.textContent = slug;
-      button.addEventListener("click", () => {
-        prefillSlug(slug);
-      });
-      slugSuggestionsWrap.appendChild(button);
-    });
-  }
-
-  async function refreshSlugSuggestions() {
-    const base = `${lettersInput.value || "AAA"}${digitsInput.value || "000"}`;
-    slugSuggestionsRefresh.disabled = true;
-    try {
-      const response = await fetch(`/api/cards/slug-suggestions?count=5&base=${encodeURIComponent(base)}`, {
-        method: "GET",
-        headers: { Accept: "application/json" },
-      });
-      if (!response.ok) {
-        throw new Error("request failed");
-      }
-      const payload = await response.json();
-      renderSlugSuggestions(Array.isArray(payload.suggestions) ? payload.suggestions : []);
-    } catch {
-      renderSlugSuggestions([]);
-    } finally {
-      slugSuggestionsRefresh.disabled = false;
-    }
-  }
-
   function validate() {
     const errors = {};
     const pricing = getSlugPricing();
@@ -817,10 +742,6 @@ function initOrderForm() {
       updateOrderTotals();
     });
   }
-
-  slugSuggestionsRefresh.addEventListener("click", () => {
-    void refreshSlugSuggestions();
-  });
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -875,7 +796,6 @@ function initOrderForm() {
         clearErrors();
         applyQueryPrefill();
         updateOrderTotals();
-        void refreshSlugSuggestions();
         return;
       }
 
@@ -897,7 +817,6 @@ function initOrderForm() {
 
   applyQueryPrefill();
   updateOrderTotals();
-  void refreshSlugSuggestions();
 
   return {
     prefillSlug,

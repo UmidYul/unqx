@@ -30,6 +30,11 @@ function getSubmittedToken(req) {
 }
 
 function requireCsrfToken(req, res, next) {
+  const method = (req.method || "").toUpperCase();
+  if (method === "GET" || method === "HEAD" || method === "OPTIONS") {
+    return next();
+  }
+
   const expected = ensureCsrfToken(req);
   const submitted = getSubmittedToken(req);
 

@@ -760,7 +760,7 @@ router.get(
 
     let filtered = rows;
     if (qUpper) {
-      filtered = filtered.filter((row) => row.slug.includes(qUpper));
+      filtered = filtered.filter((row) => String(row.slug || "").toUpperCase().includes(qUpper));
     }
     if (stateFilter === "TAKEN") {
       filtered = filtered.filter((row) => row.state === "TAKEN");
