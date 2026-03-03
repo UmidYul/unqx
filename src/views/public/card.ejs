@@ -144,13 +144,11 @@
 
     <section class="public-about" aria-label="About info">
       <h2>About info</h2>
-      <div class="public-about-lines">
-        <p><span>Adress:</span> <span><%= pageCard.address || "Farghona, Mustaqillik 13" %></span></p>
-        <p><span>Postcode:</span> <span><%= pageCard.postcode || "150100" %></span></p>
-        <p class="public-about-row">
-          <span class="public-about-email"><%= pageCard.email || "unq@uz.com" %></span>
-          <span class="public-about-phone"><%= pageCard.extraPhone || pageCard.phone %></span>
-        </p>
+      <div class="public-about-list">
+        <p><span>Адресс</span><span><%= pageCard.address || "Farghona, Mustaqillik 13" %></span></p>
+        <p><span>Пост код</span><span><%= pageCard.postcode || "150100" %></span></p>
+        <p><span>Почта</span><span><%= pageCard.email || "unq@uz.com" %></span></p>
+        <p><span>Номер телефона</span><span><%= pageCard.extraPhone || pageCard.phone %></span></p>
       </div>
     </section>
   </main>

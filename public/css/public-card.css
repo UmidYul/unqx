@@ -1,3 +1,5 @@
+@import url("https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Space+Mono:wght@400;700&display=swap");
+
 .home-search-result-item:focus-visible {
   outline: 2px solid #111111;
   outline-offset: -2px;
@@ -16,9 +18,9 @@ html {
 .public-card-body {
   margin: 0;
   min-height: 100vh;
-  background: #e6e6e6;
+  background: #f1f1f1;
   color: #000000;
-  font-family: "Inter", "SF Pro", system-ui, -apple-system, sans-serif;
+  font-family: "Space Mono", "Courier New", Courier, monospace;
   overflow-x: hidden;
   position: relative;
   -webkit-tap-highlight-color: transparent;
@@ -85,7 +87,7 @@ html {
   width: 100%;
   max-width: 480px;
   margin: 0 auto;
-  padding: 44px 20px 62px;
+  padding: 46px 24px 74px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -93,32 +95,37 @@ html {
 
 .public-top-slug {
   margin: 0;
-  font-size: 24px;
+  font-size: 18px;
   line-height: 1;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .public-brand-head {
-  margin-top: 24px;
+  margin-top: 26px;
   text-align: center;
 }
 
 .public-brand-logo {
   margin: 0;
-  font-weight: 800;
-  font-size: 62px;
-  letter-spacing: -0.03em;
-  line-height: 0.95;
+  font-family: "Black Ops One", "Impact", fantasy;
+  font-weight: 400;
+  font-size: 68px;
+  letter-spacing: 0.01em;
+  line-height: 0.9;
 }
 
 .public-brand-powered {
-  margin: 6px 0 0;
-  font-size: 33px;
+  margin: 8px 0 0;
+  font-size: 15px;
   line-height: 1;
+  letter-spacing: 0.06em;
+  text-transform: lowercase;
+  opacity: 0.88;
 }
 
 .public-profile {
-  margin-top: 34px;
+  margin-top: 28px;
   text-align: center;
 }
 
@@ -150,10 +157,11 @@ html {
 
 .public-card-name {
   margin: 0;
-  font-size: clamp(29px, 5.4vw, 39px);
-  font-weight: 500;
+  font-family: "Black Ops One", "Impact", fantasy;
+  font-size: clamp(24px, 5.4vw, 34px);
+  font-weight: 400;
   line-height: 1.15;
-  letter-spacing: 0.01em;
+  letter-spacing: 0.02em;
   word-break: break-word;
 }
 
@@ -172,13 +180,14 @@ html {
 }
 
 .public-card-phone {
-  margin: 4px 0 0;
+  margin: 6px 0 0;
   display: flex;
   justify-content: center;
   align-items: center;
   gap: 6px;
-  font-size: clamp(24px, 4.6vw, 34px);
+  font-size: clamp(15px, 3.3vw, 20px);
   line-height: 1.15;
+  letter-spacing: 0.04em;
 }
 
 .public-card-phone-value {
@@ -212,10 +221,11 @@ html {
 }
 
 .public-tags {
-  margin: 8px 0 0;
+  margin: 10px 0 0;
   color: #1d2bec;
-  font-size: clamp(17px, 3.2vw, 24px);
+  font-size: clamp(12px, 2.7vw, 15px);
   line-height: 1.35;
+  letter-spacing: 0.02em;
 }
 
 .public-tags span + span {
@@ -223,17 +233,17 @@ html {
 }
 
 .public-links {
-  margin-top: 18px;
+  margin-top: 22px;
   width: 100%;
   display: grid;
-  gap: 10px;
+  gap: 12px;
   justify-items: center;
 }
 
 .public-link-button {
   width: 172px;
-  min-height: 50px;
-  padding: 12px 16px;
+  min-height: 52px;
+  padding: 12px 18px;
   border-radius: 999px;
   background: #111218;
   color: #ffffff;
@@ -241,11 +251,12 @@ html {
   text-align: center;
   display: grid;
   place-items: center;
-  font-size: 32px;
+  font-family: "Black Ops One", "Impact", fantasy;
+  font-size: 19px;
   line-height: 1;
-  font-weight: 700;
+  font-weight: 400;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.04em;
   transition: transform 100ms ease, background-color 120ms ease;
 }
 
@@ -263,53 +274,56 @@ html {
 
 .public-links-placeholder {
   margin: 6px 0 0;
-  font-size: 16px;
+  font-size: 13px;
   opacity: 0.35;
 }
 
 .public-main-hashtag {
-  margin: 20px 0 0;
-  font-size: clamp(26px, 4.2vw, 30px);
-  letter-spacing: 0.02em;
+  margin: 24px 0 0;
+  font-size: clamp(18px, 3.2vw, 24px);
+  letter-spacing: 0.07em;
   line-height: 1.1;
+  text-transform: uppercase;
 }
 
 .public-about {
-  margin-top: 14px;
+  margin-top: 16px;
   width: min(100%, 262px);
   text-align: left;
 }
 
 .public-about h2 {
-  margin: 0 0 2px;
-  font-size: 30px;
+  margin: 0 0 10px;
+  font-size: 24px;
   line-height: 1.2;
-  font-weight: 500;
+  font-weight: 700;
+  letter-spacing: 0.02em;
 }
 
-.public-about-lines p {
+.public-about-list {
+  display: grid;
+  gap: 9px;
+}
+
+.public-about-list p {
   margin: 0;
-  font-size: clamp(23px, 4vw, 30px);
-  line-height: 1.2;
-}
-
-.public-about-lines p span:last-child {
-  overflow-wrap: anywhere;
-}
-
-.public-about-row {
-  margin-top: 2px;
   display: flex;
-  justify-content: space-between;
-  gap: 10px;
+  flex-direction: column;
+  gap: 3px;
+  font-size: clamp(13px, 3vw, 15px);
+  line-height: 1.35;
 }
 
-.public-about-email {
+.public-about-list p span:first-child {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.62;
+}
+
+.public-about-list p span:last-child {
   overflow-wrap: anywhere;
-}
-
-.public-about-phone {
-  text-align: right;
+  word-break: break-word;
 }
 
 .is-hidden {
@@ -341,15 +355,15 @@ html {
   }
 
   .public-top-slug {
-    font-size: 20px;
+    font-size: 16px;
   }
 
   .public-brand-logo {
-    font-size: 52px;
+    font-size: 54px;
   }
 
   .public-brand-powered {
-    font-size: 29px;
+    font-size: 14px;
   }
 
   .public-avatar {
@@ -358,33 +372,33 @@ html {
   }
 
   .public-card-name {
-    font-size: 27px;
+    font-size: 24px;
   }
 
   .public-card-phone {
-    font-size: 21px;
+    font-size: 14px;
   }
 
   .public-tags {
-    font-size: 15px;
+    font-size: 11px;
   }
 
   .public-link-button {
     width: 164px;
     min-height: 44px;
-    font-size: 26px;
+    font-size: 17px;
   }
 
   .public-main-hashtag {
-    font-size: 22px;
+    font-size: 16px;
   }
 
   .public-about h2 {
-    font-size: 26px;
+    font-size: 20px;
   }
 
-  .public-about-lines p {
-    font-size: 20px;
+  .public-about-list p {
+    font-size: 12px;
   }
 }
 
