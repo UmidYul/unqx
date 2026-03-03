@@ -33,10 +33,7 @@ const result = spawnSync(prismaBin, ["generate", "--schema", localSchema], {
   cwd: appDir,
   stdio: "inherit",
   shell: process.platform === "win32",
-  env: {
-    ...process.env,
-    PRISMA_CLIENT_ENGINE_TYPE: "library",
-  },
+  env: process.env,
 });
 
 if (result.error) {
