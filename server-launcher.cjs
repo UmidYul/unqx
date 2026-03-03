@@ -28,6 +28,11 @@ if (fs.existsSync(standaloneEnv)) {
 
 logEnvState('after-dotenv');
 
+if (process.env.ADMIN_PASSWORD_HASH) {
+  process.env.ADMIN_PASSWORD_HASH_B64 = Buffer.from(process.env.ADMIN_PASSWORD_HASH, 'utf8').toString('base64');
+  console.log('[launcher] prepared ADMIN_PASSWORD_HASH_B64');
+}
+
 const entry = path.join(__dirname, '.next', 'standalone', 'server.js');
 
 if (!fs.existsSync(entry)) {

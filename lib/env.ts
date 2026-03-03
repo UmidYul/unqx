@@ -1,6 +1,17 @@
 import { z } from "zod";
 import bcrypt from "bcryptjs";
 
+function decodeB64(value?: string) {
+  if (!value) {
+    return undefined;
+  }
+  try {
+    return Buffer.from(value, "base64").toString("utf8");
+  } catch {
+    return undefined;
+  }
+}
+
 function normalizeBcryptHash(value: string) {
   return value
     .trim()
@@ -33,7 +44,7 @@ const parsed = schema.parse({
   NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
   NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
   ADMIN_LOGIN: process.env.ADMIN_LOGIN,
-  ADMIN_PASSWORD_HASH: process.env.ADMIN_PASSWORD_HASH,
+  ADMIN_PASSWORD_HASH: decodeB64(process.env.ADMIN_PASSWORD_HASH_B64) ?? process.env.ADMIN_PASSWORD_HASH,
 });
 
 export const env = parsed;
