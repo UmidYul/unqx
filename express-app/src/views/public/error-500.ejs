@@ -1,7 +1,10 @@
+<%
+  const pageTitle = typeof title !== "undefined" ? title : "Ошибка сервера";
+%>
 <!doctype html>
 <html lang="ru">
 <head>
-  <%- include('../partials/head', { title, styles: ['/css/public-card.css'] }) %>
+  <%- include('../partials/head', { title: pageTitle, styles: ['/css/public-card.css'] }) %>
 </head>
 <body>
   <main class="center-page">

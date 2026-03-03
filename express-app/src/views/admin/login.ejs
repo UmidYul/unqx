@@ -1,7 +1,11 @@
+<%
+  const pageTitle = typeof title !== "undefined" ? title : "Вход в админ-панель";
+  const pageError = typeof error !== "undefined" && error ? error : "";
+%>
 <!doctype html>
 <html lang="ru">
 <head>
-  <%- include('../partials/head', { title, styles: ['/css/admin.css'] }) %>
+  <%- include('../partials/head', { title: pageTitle, styles: ['/css/admin.css'] }) %>
 </head>
 <body class="admin-login-body">
   <main class="admin-login-main">
@@ -18,8 +22,8 @@
         <input type="password" name="password" autocomplete="current-password" required />
       </label>
 
-      <% if (error) { %>
-      <p class="error-text"><%= error %></p>
+      <% if (pageError) { %>
+      <p class="error-text"><%= pageError %></p>
       <% } %>
 
       <button type="submit" class="btn btn-dark">Войти</button>

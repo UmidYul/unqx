@@ -6,8 +6,9 @@
   "scripts": {
     "dev": "node --watch server.js",
     "start": "node server.js",
-    "prisma:generate": "prisma generate --schema ../prisma/schema.prisma",
+    "prisma:generate": "node scripts/prisma-generate.cjs",
     "prisma:deploy": "prisma migrate deploy --schema ../prisma/schema.prisma",
+    "postinstall": "npm run prisma:generate",
     "test": "vitest run",
     "test:e2e": "playwright test"
   },

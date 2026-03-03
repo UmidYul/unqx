@@ -14,9 +14,15 @@ Express-only implementation of UNQ+ without Next.js and without frontend build t
 ```bash
 cd express-app
 npm install
-npm run prisma:generate
 npm run prisma:deploy
 npm run dev
+```
+
+`npm install` now runs `postinstall` and generates a local Prisma Client automatically.
+If you need to regenerate manually, run:
+
+```bash
+npm run prisma:generate
 ```
 
 Production:

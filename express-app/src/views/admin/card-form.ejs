@@ -1,14 +1,50 @@
+<%
+  const pageTitle = typeof title !== "undefined" ? title : "Форма визитки";
+  const pageMode = typeof mode !== "undefined" && mode ? mode : "create";
+  const pageCardId = typeof cardId !== "undefined" && cardId ? cardId : null;
+  const pageInitialAvatarUrl =
+    typeof initialAvatarUrl !== "undefined" && initialAvatarUrl ? initialAvatarUrl : null;
+  const pageInitialValuesRaw =
+    typeof initialValues !== "undefined" && initialValues ? initialValues : {};
+  const pageInitialValues = {
+    slug: pageInitialValuesRaw.slug || "",
+    isActive: typeof pageInitialValuesRaw.isActive === "boolean" ? pageInitialValuesRaw.isActive : true,
+    name: pageInitialValuesRaw.name || "",
+    phone: pageInitialValuesRaw.phone || "",
+    verified: typeof pageInitialValuesRaw.verified === "boolean" ? pageInitialValuesRaw.verified : false,
+    hashtag: pageInitialValuesRaw.hashtag || "",
+    address: pageInitialValuesRaw.address || "",
+    postcode: pageInitialValuesRaw.postcode || "",
+    email: pageInitialValuesRaw.email || "",
+    extraPhone: pageInitialValuesRaw.extraPhone || "",
+    tags: Array.isArray(pageInitialValuesRaw.tags) ? pageInitialValuesRaw.tags : [],
+    buttons: Array.isArray(pageInitialValuesRaw.buttons) ? pageInitialValuesRaw.buttons : [],
+  };
+  const pageStatsRaw = typeof stats !== "undefined" && stats ? stats : null;
+  const pageStats = pageStatsRaw
+    ? {
+        totalViews: pageStatsRaw.totalViews || 0,
+        totalUniqueViews: pageStatsRaw.totalUniqueViews || 0,
+        series7d: Array.isArray(pageStatsRaw.series7d) ? pageStatsRaw.series7d : [],
+        lastViewAt: pageStatsRaw.lastViewAt || null,
+        deviceSplit: {
+          mobile: pageStatsRaw.deviceSplit && pageStatsRaw.deviceSplit.mobile ? pageStatsRaw.deviceSplit.mobile : 0,
+          desktop: pageStatsRaw.deviceSplit && pageStatsRaw.deviceSplit.desktop ? pageStatsRaw.deviceSplit.desktop : 0,
+        },
+      }
+    : null;
+%>
 <!doctype html>
 <html lang="ru">
 <head>
-  <%- include('../partials/head', { title, styles: ['/css/admin.css'] }) %>
+  <%- include('../partials/head', { title: pageTitle, styles: ['/css/admin.css'] }) %>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.css" />
 </head>
-<body class="admin-body card-form-body" data-mode="<%= mode %>" data-card-id="<%= cardId || '' %>">
+<body class="admin-body card-form-body" data-mode="<%= pageMode %>" data-card-id="<%= pageCardId || '' %>">
   <%- include('../partials/admin-header') %>
 
   <main class="container admin-main">
-    <h1><%= mode === 'create' ? 'Создать визитку' : `Редактирование #${initialValues.slug}` %></h1>
+    <h1><%= pageMode === 'create' ? 'Создать визитку' : `Редактирование #${pageInitialValues.slug}` %></h1>
 
     <form id="card-editor-form" class="editor-grid" novalidate>
       <section class="panel">
@@ -20,33 +56,33 @@
           <label>
             <span>Slug</span>
             <div class="input-row">
-              <input id="field-slug" type="text" value="<%= initialValues.slug %>" placeholder="AAA001" maxlength="6" required />
+              <input id="field-slug" type="text" value="<%= pageInitialValues.slug %>" placeholder="AAA001" maxlength="6" required />
               <button type="button" class="btn btn-outline btn-sm" id="generate-slug-btn">Авто</button>
             </div>
           </label>
 
           <label class="checkbox-row">
-            <input id="field-is-active" type="checkbox" <%= initialValues.isActive ? 'checked' : '' %> />
+            <input id="field-is-active" type="checkbox" <%= pageInitialValues.isActive ? 'checked' : '' %> />
             <span>Активна</span>
           </label>
 
           <label>
             <span>Имя клиента</span>
-            <input id="field-name" type="text" value="<%= initialValues.name %>" maxlength="100" required />
+            <input id="field-name" type="text" value="<%= pageInitialValues.name %>" maxlength="100" required />
           </label>
 
           <label>
             <span>Телефон</span>
-            <input id="field-phone" type="text" value="<%= initialValues.phone %>" maxlength="30" required />
+            <input id="field-phone" type="text" value="<%= pageInitialValues.phone %>" maxlength="30" required />
           </label>
 
           <label>
             <span>Нижний хэштег</span>
-            <input id="field-hashtag" type="text" value="<%= initialValues.hashtag %>" maxlength="50" />
+            <input id="field-hashtag" type="text" value="<%= pageInitialValues.hashtag %>" maxlength="50" />
           </label>
 
           <label class="checkbox-row">
-            <input id="field-verified" type="checkbox" <%= initialValues.verified ? 'checked' : '' %> />
+            <input id="field-verified" type="checkbox" <%= pageInitialValues.verified ? 'checked' : '' %> />
             <span>Верифицирован</span>
           </label>
         </div>
@@ -57,14 +93,14 @@
           <h2>Аватар</h2>
         </div>
 
-        <% if (!cardId) { %>
+        <% if (!pageCardId) { %>
         <p class="helper-text">Для загрузки аватара сначала сохраните визитку.</p>
         <% } %>
 
         <div class="field-grid">
           <label>
             <span>Файл (JPG/PNG/WEBP, до 5MB)</span>
-            <input id="avatar-file-input" type="file" accept="image/png,image/jpeg,image/webp" <%= !cardId ? 'disabled' : '' %> />
+            <input id="avatar-file-input" type="file" accept="image/png,image/jpeg,image/webp" <%= !pageCardId ? 'disabled' : '' %> />
           </label>
 
           <div id="avatar-crop-wrap" class="crop-wrap" hidden>
@@ -73,10 +109,10 @@
 
           <div class="avatar-preview-row">
             <div class="avatar-preview">
-              <img id="avatar-current-image" src="<%= initialAvatarUrl || '' %>" alt="Avatar" <%= initialAvatarUrl ? '' : 'hidden' %> />
-              <span id="avatar-fallback" <%= initialAvatarUrl ? 'hidden' : '' %>>Нет аватара</span>
+              <img id="avatar-current-image" src="<%= pageInitialAvatarUrl || '' %>" alt="Avatar" <%= pageInitialAvatarUrl ? '' : 'hidden' %> />
+              <span id="avatar-fallback" <%= pageInitialAvatarUrl ? 'hidden' : '' %>>Нет аватара</span>
             </div>
-            <button type="button" class="btn btn-dark btn-sm" id="upload-avatar-btn" <%= !cardId ? 'disabled' : '' %>>Сохранить обрезку</button>
+            <button type="button" class="btn btn-dark btn-sm" id="upload-avatar-btn" <%= !pageCardId ? 'disabled' : '' %>>Сохранить обрезку</button>
           </div>
         </div>
       </section>
@@ -88,7 +124,7 @@
         </div>
 
         <div id="tags-list" class="sortable-list">
-          <% initialValues.tags.forEach((tag) => { %>
+          <% pageInitialValues.tags.forEach((tag) => { %>
           <div class="editor-row" data-item="tag">
             <button type="button" class="drag-btn" data-drag-handle>≡</button>
             <label>
@@ -114,7 +150,7 @@
         </div>
 
         <div id="buttons-list" class="sortable-list">
-          <% initialValues.buttons.forEach((button) => { %>
+          <% pageInitialValues.buttons.forEach((button) => { %>
           <div class="editor-row" data-item="button">
             <button type="button" class="drag-btn" data-drag-handle>≡</button>
             <label>
@@ -143,34 +179,34 @@
         <div class="field-grid two-col">
           <label>
             <span>Адрес</span>
-            <input id="field-address" type="text" value="<%= initialValues.address %>" maxlength="300" />
+            <input id="field-address" type="text" value="<%= pageInitialValues.address %>" maxlength="300" />
           </label>
           <label>
             <span>Индекс</span>
-            <input id="field-postcode" type="text" value="<%= initialValues.postcode %>" maxlength="20" />
+            <input id="field-postcode" type="text" value="<%= pageInitialValues.postcode %>" maxlength="20" />
           </label>
           <label>
             <span>Email</span>
-            <input id="field-email" type="email" value="<%= initialValues.email %>" maxlength="100" />
+            <input id="field-email" type="email" value="<%= pageInitialValues.email %>" maxlength="100" />
           </label>
           <label>
             <span>Дополнительный телефон</span>
-            <input id="field-extra-phone" type="text" value="<%= initialValues.extraPhone %>" maxlength="30" />
+            <input id="field-extra-phone" type="text" value="<%= pageInitialValues.extraPhone %>" maxlength="30" />
           </label>
         </div>
       </section>
 
-      <% if (mode === 'edit' && stats) { %>
+      <% if (pageMode === 'edit' && pageStats) { %>
       <section class="panel">
         <div class="panel-head">
           <h2>Статистика</h2>
         </div>
 
         <div class="stat-grid compact">
-          <article><p>Всего просмотров</p><strong><%= stats.totalViews %></strong></article>
-          <article><p>Уникальные</p><strong><%= stats.totalUniqueViews %></strong></article>
-          <article><p>Mobile/Desktop</p><strong><%= stats.deviceSplit.mobile %>/<%= stats.deviceSplit.desktop %></strong></article>
-          <article><p>Последний просмотр</p><strong><%= stats.lastViewAt ? new Date(stats.lastViewAt).toLocaleString('ru-RU') : 'Нет данных' %></strong></article>
+          <article><p>Всего просмотров</p><strong><%= pageStats.totalViews %></strong></article>
+          <article><p>Уникальные</p><strong><%= pageStats.totalUniqueViews %></strong></article>
+          <article><p>Mobile/Desktop</p><strong><%= pageStats.deviceSplit.mobile %>/<%= pageStats.deviceSplit.desktop %></strong></article>
+          <article><p>Последний просмотр</p><strong><%= pageStats.lastViewAt ? new Date(pageStats.lastViewAt).toLocaleString('ru-RU') : 'Нет данных' %></strong></article>
         </div>
 
         <canvas id="card-stats-chart" height="130"></canvas>
@@ -189,8 +225,8 @@
     </form>
   </main>
 
-  <script id="card-editor-initial" type="application/json"><%- JSON.stringify(initialValues) %></script>
-  <script id="card-editor-stats" type="application/json"><%- JSON.stringify(stats) %></script>
+  <script id="card-editor-initial" type="application/json"><%- JSON.stringify(pageInitialValues) %></script>
+  <script id="card-editor-stats" type="application/json"><%- JSON.stringify(pageStats) %></script>
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.min.js"></script>

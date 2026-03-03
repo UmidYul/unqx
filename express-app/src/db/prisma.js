@@ -1,11 +1,7 @@
-const path = require("node:path");
-const { createRequire } = require("node:module");
+const { PrismaClient } = require("@prisma/client");
+const { PrismaPg } = require("@prisma/adapter-pg");
 
 const { env } = require("../config/env");
-
-const rootRequire = createRequire(path.join(env.ROOT_DIR, "package.json"));
-const { PrismaClient } = rootRequire("@prisma/client");
-const { PrismaPg } = rootRequire("@prisma/adapter-pg");
 
 const adapter = new PrismaPg({ connectionString: env.DATABASE_URL });
 

@@ -1,7 +1,21 @@
+<%
+  const pageTitle = typeof title !== "undefined" ? title : "Общая статистика";
+  const pageStats =
+    typeof stats !== "undefined" && stats
+      ? stats
+      : {
+          totalCards: 0,
+          activeCards: 0,
+          totalViews: 0,
+          totalUniqueViews: 0,
+          topCards: [],
+          dailySeries: [],
+        };
+%>
 <!doctype html>
 <html lang="ru">
 <head>
-  <%- include('../partials/head', { title, styles: ['/css/admin.css'] }) %>
+  <%- include('../partials/head', { title: pageTitle, styles: ['/css/admin.css'] }) %>
 </head>
 <body class="admin-body">
   <%- include('../partials/admin-header') %>
@@ -10,10 +24,10 @@
     <h1>Общая статистика</h1>
 
     <section class="stat-grid">
-      <article><p>Всего карточек</p><strong><%= stats.totalCards %></strong></article>
-      <article><p>Активные</p><strong><%= stats.activeCards %></strong></article>
-      <article><p>Всего просмотров</p><strong><%= stats.totalViews %></strong></article>
-      <article><p>Уникальные просмотры</p><strong><%= stats.totalUniqueViews %></strong></article>
+      <article><p>Всего карточек</p><strong><%= pageStats.totalCards %></strong></article>
+      <article><p>Активные</p><strong><%= pageStats.activeCards %></strong></article>
+      <article><p>Всего просмотров</p><strong><%= pageStats.totalViews %></strong></article>
+      <article><p>Уникальные просмотры</p><strong><%= pageStats.totalUniqueViews %></strong></article>
     </section>
 
     <section class="panel">
@@ -34,7 +48,7 @@
             </tr>
           </thead>
           <tbody>
-            <% stats.topCards.forEach((card) => { %>
+            <% pageStats.topCards.forEach((card) => { %>
             <tr>
               <td><a href="/admin/cards/<%= card.id %>/edit">#<%= card.slug %></a></td>
               <td><%= card.name %></td>
@@ -48,7 +62,7 @@
     </section>
   </main>
 
-  <script id="global-stats-data" type="application/json"><%- JSON.stringify(stats.dailySeries) %></script>
+  <script id="global-stats-data" type="application/json"><%- JSON.stringify(pageStats.dailySeries) %></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.min.js"></script>
   <script src="/js/admin-stats.js"></script>
 </body>

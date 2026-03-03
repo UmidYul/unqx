@@ -1,9 +1,24 @@
+<%
+  const pageTitle = typeof title !== "undefined" ? title : "Дашборд";
+  const pageRows = typeof rows !== "undefined" && Array.isArray(rows) ? rows : [];
+  const pageFilters = typeof filters !== "undefined" && filters ? filters : { q: "", status: "all" };
+  const pagePagination =
+    typeof pagination !== "undefined" && pagination
+      ? pagination
+      : { page: 1, totalPages: 1, total: 0 };
+  const pagePublicBaseUrl =
+    typeof publicBaseUrl !== "undefined" && publicBaseUrl ? publicBaseUrl : "";
+  const pageBuildDashboardUrl =
+    typeof buildDashboardUrl !== "undefined" && typeof buildDashboardUrl === "function"
+      ? buildDashboardUrl
+      : () => "/admin/dashboard";
+%>
 <!doctype html>
 <html lang="ru">
 <head>
-  <%- include('../partials/head', { title, styles: ['/css/admin.css'] }) %>
+  <%- include('../partials/head', { title: pageTitle, styles: ['/css/admin.css'] }) %>
 </head>
-<body class="admin-body" data-public-base-url="<%= publicBaseUrl %>">
+<body class="admin-body" data-public-base-url="<%= pagePublicBaseUrl %>">
   <%- include('../partials/admin-header') %>
 
   <main class="container admin-main">
@@ -13,11 +28,11 @@
     </section>
 
     <form action="/admin/dashboard" method="get" class="filter-grid">
-      <input type="text" name="q" value="<%= filters.q %>" placeholder="Поиск по slug или имени" />
+      <input type="text" name="q" value="<%= pageFilters.q %>" placeholder="Поиск по slug или имени" />
       <select name="status">
-        <option value="all" <%= filters.status === 'all' ? 'selected' : '' %>>Все</option>
-        <option value="active" <%= filters.status === 'active' ? 'selected' : '' %>>Активные</option>
-        <option value="inactive" <%= filters.status === 'inactive' ? 'selected' : '' %>>Неактивные</option>
+        <option value="all" <%= pageFilters.status === 'all' ? 'selected' : '' %>>Все</option>
+        <option value="active" <%= pageFilters.status === 'active' ? 'selected' : '' %>>Активные</option>
+        <option value="inactive" <%= pageFilters.status === 'inactive' ? 'selected' : '' %>>Неактивные</option>
       </select>
       <button type="submit" class="btn btn-outline">Применить</button>
     </form>
@@ -36,12 +51,12 @@
           </tr>
         </thead>
         <tbody>
-          <% if (!rows.length) { %>
+          <% if (!pageRows.length) { %>
           <tr>
             <td colspan="7" class="empty-cell">Ничего не найдено</td>
           </tr>
           <% } %>
-          <% rows.forEach((row) => { %>
+          <% pageRows.forEach((row) => { %>
           <tr>
             <td><a href="/<%= row.slug %>" target="_blank" rel="noopener noreferrer">#<%= row.slug %></a></td>
             <td><%= row.name %></td>
@@ -73,10 +88,10 @@
     </div>
 
     <footer class="pager-row">
-      <span>Страница <%= pagination.page %> из <%= pagination.totalPages %> (всего <%= pagination.total %>)</span>
+      <span>Страница <%= pagePagination.page %> из <%= pagePagination.totalPages %> (всего <%= pagePagination.total %>)</span>
       <div class="action-row">
-        <a href="<%= buildDashboardUrl(Math.max(1, pagination.page - 1)) %>" class="btn btn-outline btn-sm">Назад</a>
-        <a href="<%= buildDashboardUrl(Math.min(pagination.totalPages, pagination.page + 1)) %>" class="btn btn-outline btn-sm">Вперёд</a>
+        <a href="<%= pageBuildDashboardUrl(Math.max(1, pagePagination.page - 1)) %>" class="btn btn-outline btn-sm">Назад</a>
+        <a href="<%= pageBuildDashboardUrl(Math.min(pagePagination.totalPages, pagePagination.page + 1)) %>" class="btn btn-outline btn-sm">Вперёд</a>
       </div>
     </footer>
   </main>

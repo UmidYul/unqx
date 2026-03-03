@@ -1,12 +1,16 @@
+<%
+  const pageTitle = typeof title !== "undefined" ? title : "Визитка не найдена";
+  const pageSlug = typeof slug !== "undefined" && slug ? slug : "unknown";
+%>
 <!doctype html>
 <html lang="ru">
 <head>
-  <%- include('../partials/head', { title, styles: ['/css/public-card.css'] }) %>
+  <%- include('../partials/head', { title: pageTitle, styles: ['/css/public-card.css'] }) %>
 </head>
 <body>
   <main class="center-page">
     <section class="center-card">
-      <p class="muted-code">#<%= slug %></p>
+      <p class="muted-code">#<%= pageSlug %></p>
       <h1>Визитка не найдена</h1>
       <p>Запрошенная визитка отсутствует или была удалена.</p>
       <a href="/" class="btn btn-outline">На главную</a>
