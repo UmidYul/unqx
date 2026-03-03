@@ -3,6 +3,14 @@
   outline-offset: -2px;
 }
 
+.public-card-bg {
+  background-color: #fdfaf5;
+  background-image: url("/lightning_pattern.svg");
+  background-position: center center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
 .public-card-shell {
   width: min(100% - 1.25rem, 42rem);
   min-height: clamp(38rem, 88vh, 64rem);
