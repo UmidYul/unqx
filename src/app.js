@@ -50,7 +50,7 @@ function createApp() {
           baseUri: ["'self'"],
           frameAncestors: ["'self'"],
           objectSrc: ["'none'"],
-          scriptSrc: ["'self'", "https://telegram.org", "https://*.telegram.org", (req, res) => `'nonce-${res.locals.cspNonce}'`],
+          scriptSrc: ["'self'", "'unsafe-eval'", "https://telegram.org", "https://*.telegram.org", (req, res) => `'nonce-${res.locals.cspNonce}'`],
           styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
           fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
           imgSrc: ["'self'", "data:", "blob:", "https://t.me", "https://*.telegram.org", "https://telegram.org"],
