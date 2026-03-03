@@ -37,6 +37,19 @@
     };
   }
 
+  async function parseApiError(response) {
+    try {
+      const data = await response.json();
+      if (data && typeof data.error === "string" && data.error) {
+        return data.error;
+      }
+    } catch {
+      // ignore parse error
+    }
+
+    return `HTTP ${response.status}`;
+  }
+
   function setQrError(message) {
     if (!(qrErrorNode instanceof HTMLElement)) {
       return;
@@ -344,13 +357,20 @@
 
       actionNode.setAttribute("disabled", "disabled");
       try {
-        await fetch(`/api/admin/cards/${id}/toggle-active`, {
+        const response = await fetch(`/api/admin/cards/${id}/toggle-active`, {
           method: "PATCH",
           headers: withCsrfHeaders({
             "Content-Type": "application/json",
           }),
           body: JSON.stringify({ isActive: !isActive }),
         });
+
+        if (!response.ok) {
+          const errorText = await parseApiError(response);
+          window.alert(`Не удалось обновить статус: ${errorText}`);
+          return;
+        }
+
         window.location.reload();
       } finally {
         actionNode.removeAttribute("disabled");
@@ -372,10 +392,17 @@
 
       actionNode.setAttribute("disabled", "disabled");
       try {
-        await fetch(`/api/admin/cards/${id}`, {
+        const response = await fetch(`/api/admin/cards/${id}`, {
           method: "DELETE",
           headers: withCsrfHeaders(),
         });
+
+        if (!response.ok) {
+          const errorText = await parseApiError(response);
+          window.alert(`Не удалось удалить визитку: ${errorText}`);
+          return;
+        }
+
         window.location.reload();
       } finally {
         actionNode.removeAttribute("disabled");
