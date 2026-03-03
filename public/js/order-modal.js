@@ -380,6 +380,7 @@ const UNQ_TARIFFS = {
   async function open(options = {}) {
     isOpen = true;
     stopCountdown();
+    dom.root.style.display = "block";
     dom.root.classList.remove("hidden");
     dom.root.classList.add("block");
     await refreshUser();
@@ -403,6 +404,7 @@ const UNQ_TARIFFS = {
     }
     isOpen = false;
     stopCountdown();
+    dom.root.style.display = "none";
     dom.root.classList.remove("block");
     dom.root.classList.add("hidden");
     setStatus("", "neutral");
@@ -595,6 +597,7 @@ const UNQ_TARIFFS = {
     },
   };
 
+  dom.root.style.display = "none";
   void refreshUser();
   bindCtas();
 })();
