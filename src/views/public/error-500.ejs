@@ -1,0 +1,17 @@
+<%
+  const pageTitle = typeof title === "string" && title ? title : "500: Internal Server Error.";
+%>
+<!doctype html>
+<html lang="ru">
+<head>
+  <%- include('../partials/head', { title: pageTitle, styles: ['/css/public-card.css'] }) %>
+</head>
+<body class="antialiased">
+  <main class="flex min-h-screen items-center justify-center px-4">
+    <div class="flex items-center">
+      <h1 class="mr-5 border-r border-black/30 pr-6 text-2xl font-medium leading-[49px]">500</h1>
+      <h2 class="text-sm font-normal leading-[49px]">Internal Server Error.</h2>
+    </div>
+  </main>
+</body>
+</html>

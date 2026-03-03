@@ -1,0 +1,176 @@
+<%
+  const pageTitle = typeof title === "string" && title ? title : "UNQ+";
+  const pageDescription =
+    typeof description === "string" && description ? description : "UNQ+ platform for digital business cards";
+  const pageImage = typeof image === "string" && image ? image : null;
+  const pageCardRaw = typeof card === "object" && card ? card : {};
+  const pageCard = {
+    slug: pageCardRaw.slug || "UNKNOWN",
+    avatarUrl: pageCardRaw.avatarUrl || null,
+    name: pageCardRaw.name || "Unknown",
+    verified: Boolean(pageCardRaw.verified),
+    phone: pageCardRaw.phone || "",
+    tags: Array.isArray(pageCardRaw.tags) ? pageCardRaw.tags : [],
+    buttons: Array.isArray(pageCardRaw.buttons) ? pageCardRaw.buttons : [],
+    hashtag: pageCardRaw.hashtag || "",
+    address: pageCardRaw.address || "",
+    postcode: pageCardRaw.postcode || "",
+    email: pageCardRaw.email || "",
+    extraPhone: pageCardRaw.extraPhone || "",
+  };
+
+  const initials = (pageCard.name || "")
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => (part[0] ? part[0].toUpperCase() : ""))
+    .join("");
+%>
+<!doctype html>
+<html lang="ru">
+<head>
+  <%- include('../partials/head', { title: pageTitle, description: pageDescription, image: pageImage, styles: ['/css/public-card.css'] }) %>
+</head>
+<body class="antialiased">
+  <div class="relative min-h-screen overflow-hidden bg-white pb-20 pt-6 text-black">
+    <div class="pointer-events-none absolute inset-0 z-0">
+      <%- include('../partials/lightning', { className: 'absolute left-8 top-1 h-[114px] w-[84px] md:hidden' }) %>
+      <%- include('../partials/lightning', { className: 'absolute right-1 top-1 h-[130px] w-[92px] md:hidden' }) %>
+      <%- include('../partials/lightning', { className: 'absolute left-4 top-[194px] h-[126px] w-[90px] md:hidden' }) %>
+      <%- include('../partials/lightning', { className: 'absolute right-1 top-[350px] h-[128px] w-[92px] md:hidden' }) %>
+      <%- include('../partials/lightning', { className: 'absolute left-4 top-[510px] h-[126px] w-[90px] md:hidden' }) %>
+      <%- include('../partials/lightning', { className: 'absolute right-8 top-[560px] h-[118px] w-[84px] md:hidden' }) %>
+
+      <%- include('../partials/lightning', { className: 'absolute left-[1%] top-[1%] hidden h-[96px] w-[70px] -rotate-6 text-black/60 md:block' }) %>
+      <%- include('../partials/lightning', { className: 'absolute left-[5%] top-[8%] hidden h-[92px] w-[66px] rotate-2 text-black/60 md:block' }) %>
+      <%- include('../partials/lightning', { className: 'absolute left-[10%] top-[8%] hidden h-[94px] w-[68px] -rotate-2 text-black/60 md:block' }) %>
+      <%- include('../partials/lightning', { className: 'absolute left-[15%] top-[7%] hidden h-[92px] w-[66px] rotate-3 text-black/60 md:block' }) %>
+      <%- include('../partials/lightning', { className: 'absolute left-[1%] top-[18%] hidden h-[98px] w-[70px] -rotate-4 text-black/60 md:block' }) %>
+      <%- include('../partials/lightning', { className: 'absolute left-[8%] top-[23%] hidden h-[96px] w-[70px] rotate-4 text-black/60 md:block' }) %>
+      <%- include('../partials/lightning', { className: 'absolute left-[13%] top-[31%] hidden h-[90px] w-[64px] -rotate-5 text-black/60 md:block' }) %>
+      <%- include('../partials/lightning', { className: 'absolute left-[3%] top-[56%] hidden h-[98px] w-[70px] rotate-6 text-black/60 md:block' }) %>
+      <%- include('../partials/lightning', { className: 'absolute left-[9%] top-[63%] hidden h-[94px] w-[68px] -rotate-3 text-black/60 md:block' }) %>
+      <%- include('../partials/lightning', { className: 'absolute left-[14%] top-[83%] hidden h-[104px] w-[74px] rotate-5 text-black/60 md:block' }) %>
+      <%- include('../partials/lightning', { className: 'absolute left-[27%] top-[74%] hidden h-[100px] w-[72px] -rotate-2 text-black/60 md:block' }) %>
+
+      <%- include('../partials/lightning', { className: 'absolute right-[1%] top-[1%] hidden h-[96px] w-[70px] rotate-5 text-black/60 md:block' }) %>
+      <%- include('../partials/lightning', { className: 'absolute right-[7%] top-[10%] hidden h-[98px] w-[70px] -rotate-4 text-black/60 md:block' }) %>
+      <%- include('../partials/lightning', { className: 'absolute right-[13%] top-[18%] hidden h-[98px] w-[70px] rotate-3 text-black/60 md:block' }) %>
+      <%- include('../partials/lightning', { className: 'absolute right-[2%] top-[33%] hidden h-[96px] w-[70px] -rotate-3 text-black/60 md:block' }) %>
+      <%- include('../partials/lightning', { className: 'absolute right-[9%] top-[49%] hidden h-[96px] w-[70px] rotate-5 text-black/60 md:block' }) %>
+      <%- include('../partials/lightning', { className: 'absolute right-[15%] top-[68%] hidden h-[98px] w-[70px] -rotate-6 text-black/60 md:block' }) %>
+      <%- include('../partials/lightning', { className: 'absolute right-[4%] top-[75%] hidden h-[100px] w-[72px] rotate-4 text-black/60 md:block' }) %>
+      <%- include('../partials/lightning', { className: 'absolute right-[12%] top-[85%] hidden h-[102px] w-[74px] -rotate-2 text-black/60 md:block' }) %>
+      <%- include('../partials/lightning', { className: 'absolute right-[26%] top-[85%] hidden h-[102px] w-[74px] rotate-4 text-black/60 md:block' }) %>
+
+      <%- include('../partials/lightning', { className: 'absolute left-[30%] top-[2%] hidden h-[92px] w-[66px] -rotate-2 text-black/60 md:block' }) %>
+      <%- include('../partials/lightning', { className: 'absolute right-[30%] top-[2%] hidden h-[92px] w-[66px] rotate-2 text-black/60 md:block' }) %>
+      <%- include('../partials/lightning', { className: 'absolute left-[31%] top-[24%] hidden h-[96px] w-[70px] rotate-4 text-black/60 md:block' }) %>
+      <%- include('../partials/lightning', { className: 'absolute right-[31%] top-[27%] hidden h-[96px] w-[70px] -rotate-4 text-black/60 md:block' }) %>
+      <%- include('../partials/lightning', { className: 'absolute left-[31%] top-[56%] hidden h-[96px] w-[70px] -rotate-3 text-black/60 md:block' }) %>
+      <%- include('../partials/lightning', { className: 'absolute right-[31%] top-[58%] hidden h-[96px] w-[70px] rotate-3 text-black/60 md:block' }) %>
+    </div>
+
+    <main class="relative z-10 mx-auto flex min-h-[820px] w-full max-w-[414px] flex-col items-center rounded-[32px] bg-white/85 px-7 py-6 md:min-h-[900px]" data-slug="<%= pageCard.slug %>">
+      <p class="text-base font-normal leading-none text-[#2d2d2d]">#<%= pageCard.slug %></p>
+
+      <div class="mt-2 text-center">
+        <div class="inline-flex flex-col items-center">
+          <div class="text-[56px] font-black leading-[0.88] tracking-[-0.04em] text-black">UNQ+</div>
+          <div class="mt-[3px] text-[19px] font-normal leading-none text-[#1b1b1b]">powered by scxr</div>
+        </div>
+      </div>
+
+      <div class="animate-in relative mt-[22px] h-[54px] w-[54px]" style="animation-delay: 0ms;">
+        <div class="relative flex h-[54px] w-[54px] items-center justify-center overflow-hidden rounded-full bg-neutral-300 shadow-sm">
+          <% if (pageCard.avatarUrl) { %>
+          <img src="<%= pageCard.avatarUrl %>" alt="<%= pageCard.name %>" class="h-full w-full object-cover" />
+          <% } else { %>
+          <span class="text-base font-bold text-neutral-700"><%= initials %></span>
+          <% } %>
+        </div>
+      </div>
+
+      <div class="animate-in mt-2 flex items-center gap-1.5" style="animation-delay: 100ms;">
+        <h1 class="text-base font-normal leading-none"><%= pageCard.name %></h1>
+        <% if (pageCard.verified) { %>
+        <span class="inline-flex h-[14px] w-[14px] items-center justify-center text-[#5f6368]" aria-label="verified">
+          <svg viewBox="0 0 24 24" class="h-[14px] w-[14px]" fill="currentColor" aria-hidden="true">
+            <path d="M12 2.4l2.1 1.7 2.7-.3 1.1 2.5 2.5 1.1-.3 2.7L21.6 12l-1.7 2.1.3 2.7-2.5 1.1-1.1 2.5-2.7-.3L12 21.6l-2.1-1.7-2.7.3-1.1-2.5-2.5-1.1.3-2.7L2.4 12l1.7-2.1-.3-2.7 2.5-1.1 1.1-2.5 2.7.3L12 2.4zm-1.1 13.2l5.1-5.1-1.2-1.2-3.9 3.9-1.8-1.8-1.2 1.2 3 3z"></path>
+          </svg>
+        </span>
+        <% } %>
+      </div>
+
+      <p class="animate-in mt-1 flex items-center gap-2 text-base font-normal leading-none" style="animation-delay: 100ms;">
+        <span><%= pageCard.phone %></span>
+        <button
+          type="button"
+          data-copy-phone="<%= pageCard.phone %>"
+          class="inline-flex h-[18px] w-[18px] items-center justify-center rounded-full border border-current/30 text-current transition hover:opacity-80"
+          aria-label="Скопировать телефон"
+          title="Скопировать телефон"
+        >
+          <span data-copy-default>
+            <svg viewBox="0 0 24 24" class="h-3.5 w-3.5" fill="currentColor" aria-hidden="true">
+              <path d="M16 1H6a2 2 0 0 0-2 2v12h2V3h10V1zm3 4H10a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2zm0 16H10V7h9v14z"></path>
+            </svg>
+          </span>
+          <span class="hidden text-[11px] leading-none" data-copy-success>✓</span>
+        </button>
+      </p>
+
+      <% if (pageCard.tags.length > 0) { %>
+      <div class="animate-in mt-[8px] text-center text-xs leading-[1.58] text-[rgb(15,20,194)]" style="animation-delay: 200ms;">
+        <% pageCard.tags.forEach((tag, idx) => { %>
+        <span>
+          <%= idx > 0 ? ' · ' : '' %>
+          <% if (tag.url) { %>
+          <a href="<%= tag.url %>" target="_blank" rel="noopener noreferrer" class="underline-offset-2 hover:underline"><%= tag.label %></a>
+          <% } else { %>
+          <span><%= tag.label %></span>
+          <% } %>
+        </span>
+        <% }); %>
+      </div>
+      <% } %>
+
+      <div class="mt-[12px] flex w-full max-w-[171px] flex-col gap-[9px]">
+        <% pageCard.buttons.forEach((button, idx) => { %>
+        <a
+          href="<%= button.url %>"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="animate-in btn-shimmer flex h-[50px] w-[171px] items-center justify-center rounded-[22px] bg-black text-center text-sm font-semibold leading-[21.7px] text-white transition hover:bg-black"
+          style="animation-delay: <%= 300 + idx * 80 %>ms;"
+        >
+          <%= button.label %>
+        </a>
+        <% }); %>
+      </div>
+
+      <div class="mt-auto w-full pt-10">
+        <% if (pageCard.hashtag) { %>
+        <p class="animate-in text-center text-base font-normal" style="animation-delay: <%= 300 + pageCard.buttons.length * 80 + 80 %>ms;">
+          <%= pageCard.hashtag %>
+        </p>
+        <% } %>
+
+        <% if (pageCard.address || pageCard.postcode || pageCard.email || pageCard.extraPhone) { %>
+        <section class="animate-in mx-auto mt-5 w-full max-w-[275px]" style="animation-delay: <%= 300 + pageCard.buttons.length * 80 + 160 %>ms;">
+          <h2 class="text-base font-normal">About info</h2>
+          <div class="mt-2 space-y-1 text-base leading-[1.15]">
+            <% if (pageCard.address) { %><p>Address: <%= pageCard.address %></p><% } %>
+            <% if (pageCard.postcode) { %><p>Postcode: <%= pageCard.postcode %></p><% } %>
+            <% if (pageCard.email) { %><p>Email: <%= pageCard.email %></p><% } %>
+            <% if (pageCard.extraPhone) { %><p>Phone: <%= pageCard.extraPhone %></p><% } %>
+          </div>
+        </section>
+        <% } %>
+      </div>
+    </main>
+  </div>
+
+  <script src="/js/public-card.js"></script>
+</body>
+</html>

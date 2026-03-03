@@ -1,0 +1,22 @@
+<header class="border-b border-neutral-200 bg-white">
+  <div class="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-4">
+    <div class="flex items-center gap-6">
+      <a href="/admin/dashboard" class="text-lg font-black tracking-tight">UNQ+ Admin</a>
+      <nav class="flex items-center gap-3 text-sm font-medium text-neutral-700">
+        <a href="/admin/dashboard" class="rounded-full px-3 py-1.5 transition hover:bg-neutral-100">Дашборд</a>
+        <a href="/admin/cards/new" class="rounded-full px-3 py-1.5 transition hover:bg-neutral-100">Создать</a>
+        <a href="/admin/stats" class="rounded-full px-3 py-1.5 transition hover:bg-neutral-100">Статистика</a>
+        <a href="/admin/logs" class="rounded-full px-3 py-1.5 transition hover:bg-neutral-100">Логи</a>
+      </nav>
+    </div>
+
+    <form method="post" action="/admin/logout">
+      <button
+        type="submit"
+        class="rounded-full border border-neutral-400 px-4 py-1.5 text-sm font-medium text-neutral-700 transition hover:bg-neutral-100"
+      >
+        Выйти
+      </button>
+    </form>
+  </div>
+</header>

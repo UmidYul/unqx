@@ -1,0 +1,195 @@
+<%
+  const pageTitle = typeof title === "string" && title ? title : "Дашборд";
+  const pageRows = Array.isArray(rows) ? rows : [];
+  const pageFilters = typeof filters === "object" && filters ? filters : { q: "", status: "all" };
+  const pagePagination =
+    typeof pagination === "object" && pagination
+      ? pagination
+      : {
+          page: 1,
+          totalPages: 1,
+          total: 0,
+        };
+  const pagePublicBaseUrl = typeof publicBaseUrl === "string" && publicBaseUrl ? publicBaseUrl : "";
+  const pageBuildDashboardUrl =
+    typeof buildDashboardUrl === "function" ? buildDashboardUrl : (nextPage) => `/admin/dashboard?page=${nextPage}`;
+%>
+<!doctype html>
+<html lang="ru">
+<head>
+  <%- include('../partials/head', { title: pageTitle, styles: ['/css/admin.css'] }) %>
+</head>
+<body class="antialiased" data-page="admin-dashboard" data-public-base-url="<%= pagePublicBaseUrl %>">
+  <div class="min-h-screen bg-neutral-100">
+    <%- include('../partials/admin-header') %>
+
+    <div class="mx-auto w-full max-w-6xl px-4 py-6">
+      <div class="space-y-5">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <h1 class="text-2xl font-black">Визитки</h1>
+          <a
+            href="/admin/cards/new"
+            class="rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-neutral-700"
+          >
+            + Создать визитку
+          </a>
+        </div>
+
+        <form action="/admin/dashboard" class="grid gap-3 rounded-2xl border border-neutral-200 bg-white p-4 md:grid-cols-[1fr_180px_auto]">
+          <input
+            type="text"
+            name="q"
+            value="<%= pageFilters.q %>"
+            placeholder="Поиск по slug или имени"
+            class="rounded-xl border border-neutral-300 px-3 py-2 text-sm outline-none transition focus:border-neutral-500"
+          />
+          <select
+            name="status"
+            class="rounded-xl border border-neutral-300 px-3 py-2 text-sm outline-none transition focus:border-neutral-500"
+          >
+            <option value="all" <%= pageFilters.status === 'all' ? 'selected' : '' %>>Все</option>
+            <option value="active" <%= pageFilters.status === 'active' ? 'selected' : '' %>>Активные</option>
+            <option value="inactive" <%= pageFilters.status === 'inactive' ? 'selected' : '' %>>Неактивные</option>
+          </select>
+          <button
+            type="submit"
+            class="rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100"
+          >
+            Применить
+          </button>
+        </form>
+
+        <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
+          <table class="w-full text-left text-sm">
+            <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
+              <tr>
+                <th class="px-4 py-3">Slug</th>
+                <th class="px-4 py-3">Имя</th>
+                <th class="px-4 py-3">Статус</th>
+                <th class="px-4 py-3">Просмотры</th>
+                <th class="px-4 py-3">Уникальные</th>
+                <th class="px-4 py-3">Создана</th>
+                <th class="px-4 py-3">Действия</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% pageRows.forEach((row) => { %>
+              <tr class="border-t border-neutral-100 align-top" data-row-id="<%= row.id %>">
+                <td class="px-4 py-3 font-semibold text-blue-700">
+                  <a href="/<%= row.slug %>" target="_blank" rel="noopener noreferrer" class="hover:underline">#<%= row.slug %></a>
+                </td>
+                <td class="px-4 py-3"><%= row.name %></td>
+                <td class="px-4 py-3">
+                  <button
+                    type="button"
+                    data-action="toggle"
+                    data-id="<%= row.id %>"
+                    data-active="<%= row.isActive ? '1' : '0' %>"
+                    class="rounded-full px-3 py-1 text-xs font-semibold <%= row.isActive ? 'bg-green-100 text-green-700' : 'bg-neutral-200 text-neutral-700' %>"
+                  >
+                    <%= row.isActive ? 'Активна' : 'Неактивна' %>
+                  </button>
+                </td>
+                <td class="px-4 py-3"><%= row.viewsCount %></td>
+                <td class="px-4 py-3"><%= row.uniqueViewsCount %></td>
+                <td class="px-4 py-3"><%= new Date(row.createdAt).toLocaleDateString('ru-RU') %></td>
+                <td class="px-4 py-3">
+                  <div class="flex flex-wrap gap-2">
+                    <a
+                      href="/admin/cards/<%= row.id %>/edit"
+                      class="rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100"
+                    >
+                      Редактировать
+                    </a>
+                    <button
+                      type="button"
+                      data-action="qr"
+                      data-slug="<%= row.slug %>"
+                      class="rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100"
+                    >
+                      QR
+                    </button>
+                    <button
+                      type="button"
+                      data-action="delete"
+                      data-id="<%= row.id %>"
+                      data-slug="<%= row.slug %>"
+                      class="rounded-lg border border-red-200 px-2.5 py-1 text-xs font-semibold text-red-700 transition hover:bg-red-50"
+                    >
+                      Удалить
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              <% }); %>
+
+              <% if (!pageRows.length) { %>
+              <tr>
+                <td colspan="7" class="px-4 py-8 text-center text-neutral-500">Ничего не найдено</td>
+              </tr>
+              <% } %>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="flex items-center justify-between text-sm text-neutral-600">
+          <span>
+            Страница <%= pagePagination.page %> из <%= pagePagination.totalPages %> (всего <%= pagePagination.total %>)
+          </span>
+          <div class="flex gap-2">
+            <a
+              href="<%= pageBuildDashboardUrl(Math.max(1, pagePagination.page - 1)) %>"
+              class="rounded-lg border border-neutral-300 px-3 py-1.5 transition hover:bg-neutral-100"
+            >
+              Назад
+            </a>
+            <a
+              href="<%= pageBuildDashboardUrl(Math.min(pagePagination.totalPages, pagePagination.page + 1)) %>"
+              class="rounded-lg border border-neutral-300 px-3 py-1.5 transition hover:bg-neutral-100"
+            >
+              Вперёд
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="qr-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 px-4" aria-hidden="true">
+    <div class="w-full max-w-md rounded-2xl bg-white p-5" role="dialog" aria-modal="true">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-bold">QR-код <span id="qr-title-slug"></span></h3>
+        <button type="button" class="text-sm text-neutral-500 hover:text-neutral-900" data-close-modal>Закрыть</button>
+      </div>
+
+      <div class="mt-4 flex justify-center">
+        <div class="rounded-xl border border-neutral-200 p-3" id="qr-svg-wrap"></div>
+      </div>
+
+      <div class="mt-4 flex gap-2">
+        <button
+          type="button"
+          id="download-qr-png"
+          class="w-full rounded-xl bg-neutral-900 px-3 py-2 text-sm font-semibold text-white transition hover:bg-neutral-700"
+        >
+          Скачать PNG 1000x1000
+        </button>
+        <button
+          type="button"
+          id="download-qr-svg"
+          class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm font-semibold text-neutral-800 transition hover:bg-neutral-100"
+        >
+          Скачать SVG
+        </button>
+      </div>
+
+      <div class="hidden">
+        <canvas id="qr-canvas" width="1000" height="1000"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
+  <script src="/js/admin-dashboard.js"></script>
+</body>
+</html>

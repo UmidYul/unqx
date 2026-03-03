@@ -1,0 +1,50 @@
+<%
+  const pageTitle = typeof title === "string" && title ? title : "Вход в админ-панель";
+  const pageError = typeof error === "string" ? error : "";
+%>
+<!doctype html>
+<html lang="ru">
+<head>
+  <%- include('../partials/head', { title: pageTitle, styles: ['/css/admin.css'] }) %>
+</head>
+<body class="antialiased">
+  <main class="flex min-h-screen items-center justify-center px-6">
+    <form method="post" action="/admin/login" class="w-full max-w-sm space-y-4 rounded-3xl border border-neutral-300 bg-white p-6 shadow-sm">
+      <h1 class="text-xl font-bold">Вход в админ-панель</h1>
+
+      <label class="block text-sm font-medium text-neutral-700">
+        Логин
+        <input
+          type="text"
+          name="login"
+          class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2 outline-none transition focus:border-neutral-500"
+          autocomplete="username"
+          required
+        />
+      </label>
+
+      <label class="block text-sm font-medium text-neutral-700">
+        Пароль
+        <input
+          type="password"
+          name="password"
+          class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2 outline-none transition focus:border-neutral-500"
+          autocomplete="current-password"
+          required
+        />
+      </label>
+
+      <% if (pageError) { %>
+      <p class="text-sm text-red-600"><%= pageError %></p>
+      <% } %>
+
+      <button
+        type="submit"
+        class="w-full rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-neutral-700"
+      >
+        Войти
+      </button>
+    </form>
+  </main>
+</body>
+</html>

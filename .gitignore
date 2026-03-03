@@ -12,6 +12,8 @@
 /express-app/coverage
 /express-app/playwright-report
 /express-app/test-results
+/express-app/artifacts
+/legacy
 
 # next.js
 /.next/*

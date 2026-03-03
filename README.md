@@ -1,186 +1,146 @@
-# UNQ+ Digital Business Cards
+# Express Migration Preview
 
-Full-stack web app on Next.js 14 (App Router) + TypeScript + Prisma + PostgreSQL + Tailwind CSS.
-
-## Express migration preview
-
-For a build-free alternative, a full Express + EJS + vanilla JS migration preview is available in:
-
-- `express-app/`
-
-This version keeps the same business routes and API contracts, but removes Next.js and frontend build tooling.
+Express-only implementation of UNQ+ without Next.js and without frontend build tools.
 
 ## Stack
 
-- Next.js 14, React 18, TypeScript
-- Prisma ORM + PostgreSQL
-- NextAuth Credentials (single admin)
-- Tailwind CSS
-- DnD Kit (tag/button sorting)
-- react-image-crop + sharp (avatar crop + processing)
-- qrcode.react (QR modal)
-- Recharts (charts)
+- Express + EJS (SSR HTML)
+- Prisma + PostgreSQL
+- express-session + connect-pg-simple
+- Vanilla HTML/CSS/JS + CDN libs (SortableJS, CropperJS, Chart.js, qrcode)
 
-## Features
-
-- Public card page `/:slug` (SSR)
-- View tracking (`viewsCount` + `uniqueViewsCount`) with device detection (`mobile`/`desktop`)
-- VCF contact download and Web Share API button
-- OG metadata from card data
-- Admin login `/admin` (Credentials)
-- Protected admin routes (`/admin/dashboard`, `/admin/cards/*`, `/admin/stats`, `/admin/logs`)
-- Card CRUD with tags/buttons and drag-and-drop sorting
-- Avatar upload/crop and local storage in `/public/uploads/avatars`
-- Card stats and global stats
-- Error logs page and cleanup API
-
-## Project structure
-
-- `app/[slug]` public card page
-- `app/admin` admin auth page
-- `app/admin/(protected)` dashboard/cards/stats/logs
-- `app/api` route handlers
-- `prisma/schema.prisma` data model
-- `prisma/seed.ts` demo data
-- `lib/` server and domain utilities
-- `components/` UI components
-
-## Environment
-
-Copy `.env.example` to `.env` and set your hosting values:
-
-```env
-# Neon/Vercel recommended:
-# DATABASE_URL - pooled connection for runtime
-# DIRECT_URL - direct connection for migrations
-DATABASE_URL="postgresql://user:password@ep-xxx-pooler.us-east-1.aws.neon.tech/unqplus?sslmode=require&pgbouncer=true&connect_timeout=15"
-DIRECT_URL="postgresql://user:password@ep-xxx.us-east-1.aws.neon.tech/unqplus?sslmode=require"
-
-NEXTAUTH_URL="https://your-domain.com"
-NEXTAUTH_SECRET="change-me-in-production"
-NEXT_PUBLIC_APP_URL="https://your-domain.com"
-
-ADMIN_LOGIN="admin"
-ADMIN_PASSWORD_HASH='$2b$10$...'
-BACKUP_DIR="/backups"
-```
-
-## Setup on shared hosting (No Docker)
-
-1. Install dependencies:
+## Run
 
 ```bash
+cd express-app
 npm install
-```
-
-2. Generate Prisma client:
-
-```bash
-npm run prisma:generate
-```
-
-3. Create all required DB tables (apply migrations):
-
-```bash
 npm run prisma:deploy
-```
-
-4. Optional demo data:
-
-```bash
-npm run prisma:seed
-```
-
-## Run application
-
-Development:
-
-```bash
 npm run dev
 ```
+
+`npm install` runs `postinstall` and generates Prisma Client automatically.
 
 Production:
 
 ```bash
-npm run build
+cd express-app
 npm run start
 ```
 
-For hosting panels that cannot choose hidden `.next/*` paths, use startup file:
+Default URL: `http://127.0.0.1:3100`
 
-```text
-server-launcher.cjs
+## Environment
+
+Env is read from:
+
+1. `express-app/.env` (if exists)
+2. root `.env` (fallback)
+
+Required:
+
+```env
+DATABASE_URL="postgresql://..."
+ADMIN_LOGIN="admin"
+ADMIN_PASSWORD_HASH="$2b$10$..."
 ```
 
-## Scripts
+Optional compatibility/fallback:
 
-- `npm run dev` - start dev server
-- `npm run build` - production build
-- `npm run build:pack` - build + package standalone deploy archive (`artifacts/*.tar.gz`)
-- `npm run pack:deploy` - package current standalone build into deploy archive
-- `npm run start` - start production server
-- `npm run lint` - ESLint
-- `npm run prisma:generate` - Prisma client generation
-- `npm run prisma:migrate` - create/apply migrations (dev)
-- `npm run prisma:deploy` - apply migrations in production/shared hosting
-- `npm run prisma:seed` - seed database
-- `npm run test` - unit tests (Vitest)
-- `npm run test:e2e` - Playwright smoke tests
+```env
+DIRECT_URL="postgresql://..."
+NEXTAUTH_URL="http://localhost:3100"
+NEXT_PUBLIC_APP_URL="http://localhost:3100"
+NEXTAUTH_SECRET="change-me"
+SESSION_SECRET="change-me-better"
+TIMEZONE="Asia/Tashkent"
+PORT=3100
+```
 
-## Quick answer
+## Endpoints
 
-Command to fill DB with required tables:
+Pages:
+
+- `/`
+- `/:slug`
+- `/admin`
+- `/admin/dashboard`
+- `/admin/cards/new`
+- `/admin/cards/:id/edit`
+- `/admin/stats`
+- `/admin/logs`
+- `/robots.txt`
+- `/sitemap.xml`
+
+API:
+
+- `GET/POST /api/admin/cards`
+- `GET/PATCH/DELETE /api/admin/cards/:id`
+- `PATCH /api/admin/cards/:id/toggle-active`
+- `POST /api/admin/cards/:id/avatar`
+- `GET /api/admin/cards/:id/stats`
+- `GET /api/admin/stats`
+- `POST /api/admin/slug/next`
+- `POST /api/admin/logs/cleanup`
+- `POST /api/cards/:slug/view`
+- `GET /api/cards/:slug/vcf`
+
+## Visual Compare (Next vs Express)
+
+Artifacts are written to `express-app/artifacts/visual`:
+
+- `next/<route>/<state>/<viewport>.png`
+- `express/<route>/<state>/<viewport>.png`
+- `diff/<route>/<state>/<viewport>.png`
+
+### 1) Seed deterministic fixture
 
 ```bash
-npm run prisma:deploy
+cd express-app
+npm run seed:visual
 ```
 
-Command to run app:
+Creates/updates visual fixture cards (`AAA001` active, `AAA002` inactive), demo cards, view logs, and sample error logs.
+
+### 2) Run screenshot diff
+
+Start both apps first (in separate terminals):
+
+- Next reference (root project): `npm run dev`
+- Express candidate (`express-app`): `npm run dev`
+
+Then run:
 
 ```bash
-npm run build && npm run start
+cd express-app
+VISUAL_ADMIN_PASSWORD="your_admin_plain_password" npm run test:visual
 ```
 
-## Standalone deploy automation (shared hosting)
+Optional env:
 
-Local machine:
+- `NEXT_BASE_URL` (default `http://127.0.0.1:3000`)
+- `EXPRESS_BASE_URL` (default `http://127.0.0.1:3100`)
+- `VISUAL_ACTIVE_SLUG` (default `AAA001`)
+- `VISUAL_UNAVAILABLE_SLUG` (default `AAA002`)
+- `VISUAL_NOT_FOUND_SLUG` (default `ZZZ404`)
+- `VISUAL_DIFF_THRESHOLD` (default `0.002` i.e. `0.2%`)
+- `VISUAL_ERROR_500_PATH` (optional route to capture 500 page)
+
+Combined helper:
 
 ```bash
-npm run build:pack
+npm run test:visual:seed
 ```
 
-This creates an archive in `artifacts/` with:
-- `.next/standalone` (including `.next/static`, `public`, Prisma engines, `prisma/schema.prisma`)
-- `server-launcher.cjs`
-
-Hosting server (from app root):
+## Tests
 
 ```bash
-chmod +x scripts/deploy-host.sh
-./scripts/deploy-host.sh /path/to/unqx-standalone-YYYYMMDD-HHMMSS.tar.gz --delete-archive
+cd express-app
+npm test
 ```
 
-Optional:
-- keep previous build as rollback: `KEEP_PREVIOUS_STANDALONE=1 ./scripts/deploy-host.sh <archive>`
-
-## Deploy to Vercel + Neon (recommended)
-
-1. Create a free Neon project and database (`unqplus`).
-2. In Neon connection details, copy:
-   - pooled connection string -> set as `DATABASE_URL`
-   - direct connection string -> set as `DIRECT_URL`
-3. In Vercel Project Settings -> Environment Variables add:
-   - `DATABASE_URL`
-   - `DIRECT_URL`
-   - `NEXTAUTH_URL` (your Vercel domain, e.g. `https://project.vercel.app`)
-   - `NEXTAUTH_SECRET` (long random string)
-   - `NEXT_PUBLIC_APP_URL` (same public domain)
-   - `ADMIN_LOGIN`
-   - `ADMIN_PASSWORD_HASH`
-4. In Vercel Build & Development Settings set Build Command:
+Integration/e2e are opt-in:
 
 ```bash
-npm run build:vercel
+INTEGRATION_RUN=1 npm test
+E2E_RUN=1 npm run test:e2e
 ```
-
-5. Deploy. Migrations will run automatically during build via `prisma migrate deploy`.
