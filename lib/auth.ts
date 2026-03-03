@@ -4,6 +4,11 @@ import CredentialsProvider from "next-auth/providers/credentials";
 
 import { env } from "@/lib/env";
 
+function authLog(message: string, meta?: Record<string, unknown>) {
+  const payload = meta ? ` ${JSON.stringify(meta)}` : "";
+  console.log(`[auth] ${message}${payload}`);
+}
+
 export const authOptions: NextAuthOptions = {
   session: {
     strategy: "jwt",
@@ -19,6 +24,11 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
+        authLog("authorize:start", {
+          hasCredentials: Boolean(credentials),
+          keys: credentials ? Object.keys(credentials) : [],
+        });
+
         const loginRaw = credentials?.login;
         const passwordRaw = credentials?.password;
 
@@ -26,18 +36,41 @@ export const authOptions: NextAuthOptions = {
         const password = typeof passwordRaw === "string" ? passwordRaw : "";
 
         if (!login || !password) {
+          authLog("authorize:missing-fields", {
+            hasLogin: Boolean(login),
+            hasPassword: Boolean(password),
+          });
           return null;
         }
 
-        if (login !== env.ADMIN_LOGIN.trim()) {
+        const expectedLogin = env.ADMIN_LOGIN.trim();
+        if (login !== expectedLogin) {
+          authLog("authorize:login-mismatch", {
+            login,
+            expectedLogin,
+          });
           return null;
         }
 
-        const ok = await bcrypt.compare(password, env.ADMIN_PASSWORD_HASH);
-        if (!ok) {
+        try {
+          const ok = await bcrypt.compare(password, env.ADMIN_PASSWORD_HASH);
+          if (!ok) {
+            authLog("authorize:password-mismatch", {
+              login,
+              hashPrefix: env.ADMIN_PASSWORD_HASH.slice(0, 7),
+              hashLength: env.ADMIN_PASSWORD_HASH.length,
+            });
+            return null;
+          }
+        } catch (error) {
+          authLog("authorize:bcrypt-error", {
+            login,
+            error: error instanceof Error ? error.message : String(error),
+          });
           return null;
         }
 
+        authLog("authorize:success", { login });
         return {
           id: "admin",
           name: "Администратор",
