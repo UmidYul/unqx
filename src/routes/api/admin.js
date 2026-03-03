@@ -31,6 +31,23 @@ function normalizeTariff(value) {
   return value === "premium" ? "premium" : "basic";
 }
 
+function modelDelegateExists(name) {
+  const key = `${name.slice(0, 1).toLowerCase()}${name.slice(1)}`;
+  return Boolean(prisma[key] && typeof prisma[key] === "object");
+}
+
+function isMissingModelError(error, modelName) {
+  return Boolean(error) && error.code === "P2021" && String(error?.meta?.modelName || "") === modelName;
+}
+
+function ensureUsersStorageReady(res) {
+  if (!modelDelegateExists("User")) {
+    res.status(503).json({ error: "Users storage unavailable", code: "USERS_STORAGE_UNAVAILABLE" });
+    return false;
+  }
+  return true;
+}
+
 function normalizeTheme(value) {
   return ["default_dark", "light_minimal", "gradient", "neon", "corporate"].includes(value) ? value : "default_dark";
 }
@@ -795,6 +812,10 @@ router.delete(
 router.get(
   "/users",
   asyncHandler(async (req, res) => {
+    if (!ensureUsersStorageReady(res)) {
+      return;
+    }
+
     const page = Math.max(1, Number(req.query.page || "1") || 1);
     const pageSizeRaw = Number(req.query.pageSize || "20") || 20;
     const pageSize = Math.max(1, Math.min(200, pageSizeRaw));
@@ -811,25 +832,35 @@ router.get(
         }
       : {};
 
-    const [total, users] = await Promise.all([
-      prisma.user.count({ where }),
-      prisma.user.findMany({
-        where,
-        orderBy: { createdAt: "desc" },
-        skip: (page - 1) * pageSize,
-        take: pageSize,
-        select: {
-          telegramId: true,
-          firstName: true,
-          displayName: true,
-          username: true,
-          plan: true,
-          planExpiresAt: true,
-          status: true,
-          createdAt: true,
-        },
-      }),
-    ]);
+    let total;
+    let users;
+    try {
+      [total, users] = await Promise.all([
+        prisma.user.count({ where }),
+        prisma.user.findMany({
+          where,
+          orderBy: { createdAt: "desc" },
+          skip: (page - 1) * pageSize,
+          take: pageSize,
+          select: {
+            telegramId: true,
+            firstName: true,
+            displayName: true,
+            username: true,
+            plan: true,
+            planExpiresAt: true,
+            status: true,
+            createdAt: true,
+          },
+        }),
+      ]);
+    } catch (error) {
+      if (isMissingModelError(error, "User")) {
+        res.status(503).json({ error: "Users storage unavailable", code: "USERS_STORAGE_UNAVAILABLE" });
+        return;
+      }
+      throw error;
+    }
 
     const telegramIds = users.map((item) => item.telegramId);
     const [slugs, cards] = await Promise.all([
@@ -884,6 +915,9 @@ router.get(
 router.patch(
   "/users/:telegramId/plan",
   asyncHandler(async (req, res) => {
+    if (!ensureUsersStorageReady(res)) {
+      return;
+    }
     const telegramId = String(req.params.telegramId || "");
     const plan = normalizeTariff(req.body.plan);
     const updated = await prisma.user.update({
@@ -898,6 +932,9 @@ router.patch(
 router.patch(
   "/users/:telegramId/plan-expiry",
   asyncHandler(async (req, res) => {
+    if (!ensureUsersStorageReady(res)) {
+      return;
+    }
     const telegramId = String(req.params.telegramId || "");
     const rawDate = String(req.body.planExpiresAt || "").trim();
     const parsedDate = rawDate ? new Date(rawDate) : null;
@@ -917,6 +954,9 @@ router.patch(
 router.patch(
   "/users/:telegramId/block",
   asyncHandler(async (req, res) => {
+    if (!ensureUsersStorageReady(res)) {
+      return;
+    }
     const telegramId = String(req.params.telegramId || "");
     await prisma.$transaction([
       prisma.user.update({

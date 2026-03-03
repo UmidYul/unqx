@@ -185,7 +185,11 @@
     };
     setDashboardQuery({ u_q: q.q, u_page: q.page });
     const r = await fetch(`/api/admin/users?${Q(q)}`);
-    if (!r.ok) return;
+    if (!r.ok) {
+      const msg = await E(r);
+      table.innerHTML = `<tr><td colspan="8" class="px-3 py-8 text-center text-red-700">Не удалось загрузить пользователей: ${X(msg)}</td></tr>`;
+      return;
+    }
     const payload = await r.json();
     const rows = payload.items || [];
     table.innerHTML = rows.length
