@@ -18,7 +18,8 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
-    "@prisma/client": "6.8.2",
+    "@prisma/adapter-pg": "6.19.2",
+    "@prisma/client": "6.19.2",
     "bcryptjs": "^3.0.3",
     "chart.js": "^4.5.0",
     "connect-pg-simple": "^10.0.0",
@@ -42,7 +43,7 @@
     "pixelmatch": "^7.1.0",
     "playwright": "^1.58.2",
     "pngjs": "^7.0.0",
-    "prisma": "6.8.2",
+    "prisma": "6.19.2",
     "supertest": "^7.1.4",
     "tailwindcss": "^3.4.17",
     "vitest": "^4.0.18"
