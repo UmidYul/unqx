@@ -110,20 +110,18 @@
 
               <div class="rounded-xl border border-dashed border-neutral-300 bg-neutral-50 p-4 text-center text-sm text-neutral-600">
                 <p>Перетащите файл сюда или выберите вручную</p>
-                <button
-                  type="button"
+                <label
+                  for="avatar-file-input"
                   id="pick-avatar-btn"
-                  class="mt-2 rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold transition hover:bg-neutral-100"
-                  <%= !pageCardId ? 'disabled' : '' %>
+                  class="mt-2 inline-flex cursor-pointer rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold transition hover:bg-neutral-100"
                 >
                   Выбрать файл
-                </button>
+                </label>
                 <input
                   id="avatar-file-input"
                   type="file"
                   accept="image/png,image/jpeg,image/webp"
-                  class="hidden"
-                  <%= !pageCardId ? 'disabled' : '' %>
+                  class="sr-only"
                 />
               </div>
 

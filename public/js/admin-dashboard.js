@@ -17,6 +17,7 @@
   let currentSlug = "";
   let currentUrl = "";
   let currentSvg = "";
+  const qrLogoUrl = "/brand/unq-mark.svg";
 
   if (!modal || !qrSvgWrap || !qrCanvas) {
     return;
@@ -47,7 +48,7 @@
 
     const logo = [
       `<rect x="${rectX}" y="${rectY}" width="${rectSize}" height="${rectSize}" fill="white" rx="12" ry="12" />`,
-      `<image href="/brand/unq-mark.svg" x="${x}" y="${y}" width="${logoSize}" height="${logoSize}" />`,
+      `<image href="${qrLogoUrl}" xlink:href="${qrLogoUrl}" x="${x}" y="${y}" width="${logoSize}" height="${logoSize}" preserveAspectRatio="xMidYMid meet" />`,
     ].join("");
 
     return svg.replace("</svg>", `${logo}</svg>`);
@@ -85,7 +86,7 @@
         resolve();
       };
       image.onerror = () => resolve();
-      image.src = "/brand/unq-mark.svg";
+      image.src = qrLogoUrl;
     });
   }
 
@@ -118,14 +119,14 @@
         type: "svg",
         width: 240,
         margin: 2,
-        errorCorrectionLevel: "M",
+        errorCorrectionLevel: "H",
       });
 
       const downloadSvgRaw = await QRCode.toString(currentUrl, {
         type: "svg",
         width: 1000,
         margin: 2,
-        errorCorrectionLevel: "M",
+        errorCorrectionLevel: "H",
       });
 
       const displaySvg = injectLogoToSvg(displaySvgRaw, 240, 44);
@@ -136,7 +137,7 @@
       await QRCode.toCanvas(qrCanvas, currentUrl, {
         width: 1000,
         margin: 2,
-        errorCorrectionLevel: "M",
+        errorCorrectionLevel: "H",
         color: {
           dark: "#000000",
           light: "#ffffff",

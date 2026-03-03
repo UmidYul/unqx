@@ -628,7 +628,17 @@
   }
 
   if (pickAvatarBtn instanceof HTMLElement && avatarFileInput instanceof HTMLInputElement) {
-    pickAvatarBtn.addEventListener("click", () => {
+    pickAvatarBtn.addEventListener("click", (event) => {
+      event.preventDefault();
+      if (avatarFileInput.disabled) {
+        return;
+      }
+
+      if (typeof avatarFileInput.showPicker === "function") {
+        avatarFileInput.showPicker();
+        return;
+      }
+
       avatarFileInput.click();
     });
   }
