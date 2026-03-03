@@ -1,32 +1,34 @@
 <%
   const pageTitle = typeof title === "string" && title ? title : "Дашборд";
-  const pageRows = Array.isArray(rows) ? rows : [];
-  const pageFilters = typeof filters === "object" && filters ? filters : { q: "", status: "all" };
-  const pagePagination =
-    typeof pagination === "object" && pagination
-      ? pagination
-      : {
-          page: 1,
-          totalPages: 1,
-          total: 0,
-        };
+  const pageActiveTab =
+    typeof activeTab === "string" && activeTab
+      ? activeTab
+      : "analytics";
   const pagePublicBaseUrl = typeof publicBaseUrl === "string" && publicBaseUrl ? publicBaseUrl : "";
-  const pageBuildDashboardUrl =
-    typeof buildDashboardUrl === "function" ? buildDashboardUrl : (nextPage) => `/admin/dashboard?page=${nextPage}`;
+  const pageQuery = typeof query === "object" && query ? query : {};
+  const tabs = [
+    { id: "analytics", label: "Аналитика" },
+    { id: "orders", label: "Заявки" },
+    { id: "slugs", label: "Slug" },
+    { id: "cards", label: "Визитки" },
+    { id: "bracelets", label: "Браслеты" },
+    { id: "testimonials", label: "Отзывы" },
+    { id: "logs", label: "Логи" },
+  ];
 %>
 <!doctype html>
 <html lang="ru">
 <head>
   <%- include('../partials/head', { title: pageTitle, styles: ['/css/admin.css'] }) %>
 </head>
-<body class="antialiased" data-page="admin-dashboard" data-public-base-url="<%= pagePublicBaseUrl %>">
+<body class="antialiased" data-page="admin-dashboard" data-public-base-url="<%= pagePublicBaseUrl %>" data-active-tab="<%= pageActiveTab %>">
   <div class="min-h-screen bg-neutral-100">
     <%- include('../partials/admin-header') %>
 
     <div class="mx-auto w-full max-w-6xl px-4 py-6">
       <div class="space-y-5">
         <div class="flex flex-wrap items-center justify-between gap-3">
-          <h1 class="text-2xl font-black">Визитки</h1>
+          <h1 class="text-2xl font-black">Управление платформой</h1>
           <a
             href="/admin/cards/new"
             class="w-full rounded-xl bg-neutral-900 px-4 py-2 text-center text-sm font-semibold text-white transition hover:bg-neutral-700 sm:w-auto"
@@ -35,125 +37,292 @@
           </a>
         </div>
 
-        <form action="/admin/dashboard" class="grid gap-3 rounded-2xl border border-neutral-200 bg-white p-4 md:grid-cols-[1fr_180px_auto]">
-          <input
-            type="text"
-            name="q"
-            value="<%= pageFilters.q %>"
-            placeholder="Поиск по slug или имени"
-            class="rounded-xl border border-neutral-300 px-3 py-2 text-sm outline-none transition focus:border-neutral-500"
-          />
-          <select
-            name="status"
-            class="rounded-xl border border-neutral-300 px-3 py-2 text-sm outline-none transition focus:border-neutral-500"
-          >
-            <option value="all" <%= pageFilters.status === 'all' ? 'selected' : '' %>>Все</option>
-            <option value="active" <%= pageFilters.status === 'active' ? 'selected' : '' %>>Активные</option>
-            <option value="inactive" <%= pageFilters.status === 'inactive' ? 'selected' : '' %>>Неактивные</option>
-          </select>
-          <button
-            type="submit"
-            class="rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100"
-          >
-            Применить
-          </button>
-        </form>
-
-        <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
-          <div class="overflow-x-auto">
-          <table class="min-w-[860px] w-full text-left text-sm">
-            <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
-              <tr>
-                <th class="px-4 py-3">Slug</th>
-                <th class="px-4 py-3">Имя</th>
-                <th class="px-4 py-3">Статус</th>
-                <th class="px-4 py-3">Просмотры</th>
-                <th class="px-4 py-3">Уникальные</th>
-                <th class="px-4 py-3">Создана</th>
-                <th class="px-4 py-3">Действия</th>
-              </tr>
-            </thead>
-            <tbody>
-              <% pageRows.forEach((row) => { %>
-              <tr class="border-t border-neutral-100 align-top" data-row-id="<%= row.id %>">
-                <td class="px-4 py-3 font-semibold text-blue-700">
-                  <a href="/<%= row.slug %>" target="_blank" rel="noopener noreferrer" class="hover:underline">#<%= row.slug %></a>
-                </td>
-                <td class="px-4 py-3"><%= row.name %></td>
-                <td class="px-4 py-3">
-                  <button
-                    type="button"
-                    data-action="toggle"
-                    data-id="<%= row.id %>"
-                    data-active="<%= row.isActive ? '1' : '0' %>"
-                    class="rounded-full px-3 py-1 text-xs font-semibold <%= row.isActive ? 'bg-green-100 text-green-700' : 'bg-neutral-200 text-neutral-700' %>"
-                  >
-                    <%= row.isActive ? 'Активна' : 'Неактивна' %>
-                  </button>
-                </td>
-                <td class="px-4 py-3"><%= row.viewsCount %></td>
-                <td class="px-4 py-3"><%= row.uniqueViewsCount %></td>
-                <td class="px-4 py-3"><%= new Date(row.createdAt).toLocaleDateString('ru-RU') %></td>
-                <td class="px-4 py-3">
-                  <div class="flex flex-wrap gap-2">
-                    <a
-                      href="/admin/cards/<%= row.id %>/edit"
-                      class="rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100"
-                    >
-                      Редактировать
-                    </a>
-                    <button
-                      type="button"
-                      data-action="qr"
-                      data-slug="<%= row.slug %>"
-                      class="rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100"
-                    >
-                      QR
-                    </button>
-                    <button
-                      type="button"
-                      data-action="delete"
-                      data-id="<%= row.id %>"
-                      data-slug="<%= row.slug %>"
-                      class="rounded-lg border border-red-200 px-2.5 py-1 text-xs font-semibold text-red-700 transition hover:bg-red-50"
-                    >
-                      Удалить
-                    </button>
-                  </div>
-                </td>
-              </tr>
-              <% }); %>
-
-              <% if (!pageRows.length) { %>
-              <tr>
-                <td colspan="7" class="px-4 py-8 text-center text-neutral-500">Ничего не найдено</td>
-              </tr>
-              <% } %>
-            </tbody>
-          </table>
-          </div>
-        </div>
-
-        <div class="flex flex-col gap-3 text-sm text-neutral-600 sm:flex-row sm:items-center sm:justify-between">
-          <span>
-            Страница <%= pagePagination.page %> из <%= pagePagination.totalPages %> (всего <%= pagePagination.total %>)
-          </span>
-          <div class="flex gap-2">
+        <nav class="overflow-x-auto rounded-2xl border border-neutral-200 bg-white p-2">
+          <div class="flex min-w-max gap-2">
+            <% tabs.forEach((tab) => { %>
             <a
-              href="<%= pageBuildDashboardUrl(Math.max(1, pagePagination.page - 1)) %>"
-              class="rounded-lg border border-neutral-300 px-3 py-1.5 transition hover:bg-neutral-100"
+              href="/admin/dashboard?tab=<%= tab.id %>"
+              class="rounded-xl px-3 py-2 text-sm font-medium transition <%= pageActiveTab === tab.id ? 'bg-neutral-900 text-white' : 'text-neutral-700 hover:bg-neutral-100' %>"
             >
-              Назад
+              <%= tab.label %>
             </a>
-            <a
-              href="<%= pageBuildDashboardUrl(Math.min(pagePagination.totalPages, pagePagination.page + 1)) %>"
-              class="rounded-lg border border-neutral-300 px-3 py-1.5 transition hover:bg-neutral-100"
-            >
-              Вперёд
+            <% }); %>
+          </div>
+        </nav>
+
+        <section id="tab-analytics" class="<%= pageActiveTab === 'analytics' ? '' : 'hidden' %> space-y-4">
+          <div id="analytics-kpis" class="grid gap-3 md:grid-cols-4"></div>
+          <div class="grid gap-4 lg:grid-cols-2">
+            <article class="rounded-2xl border border-neutral-200 bg-white p-4">
+              <h2 class="text-sm font-semibold text-neutral-900">Заявки по дням (30 дней)</h2>
+              <div class="mt-3 h-[280px]"><canvas id="analytics-orders-chart"></canvas></div>
+            </article>
+            <article class="rounded-2xl border border-neutral-200 bg-white p-4">
+              <h2 class="text-sm font-semibold text-neutral-900">Разбивка по тарифам</h2>
+              <div class="mt-3 h-[280px]"><canvas id="analytics-tariff-chart"></canvas></div>
+            </article>
+          </div>
+          <article class="rounded-2xl border border-neutral-200 bg-white p-4">
+            <h2 class="text-sm font-semibold text-neutral-900">Топ-10 паттернов ищут, но не покупают</h2>
+            <div class="mt-3 overflow-hidden rounded-xl border border-neutral-200">
+              <table class="min-w-full text-left text-sm">
+                <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
+                  <tr>
+                    <th class="px-3 py-2">Паттерн</th>
+                    <th class="px-3 py-2">Проверок</th>
+                  </tr>
+                </thead>
+                <tbody id="analytics-checker-table"></tbody>
+              </table>
+            </div>
+          </article>
+        </section>
+
+        <section id="tab-orders" class="<%= pageActiveTab === 'orders' ? '' : 'hidden' %> space-y-4">
+          <form id="orders-filters" class="grid gap-3 rounded-2xl border border-neutral-200 bg-white p-4 md:grid-cols-6">
+            <select name="status" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">
+              <option value="all">Все статусы</option>
+              <option value="NEW">🆕 Новая</option>
+              <option value="CONTACTED">💬 Связались</option>
+              <option value="PAID">💳 Оплачено</option>
+              <option value="ACTIVATED">✅ Активировано</option>
+              <option value="REJECTED">❌ Отклонено</option>
+            </select>
+            <select name="tariff" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">
+              <option value="all">Все тарифы</option>
+              <option value="basic">Базовый</option>
+              <option value="premium">Премиум</option>
+            </select>
+            <select name="bracelet" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">
+              <option value="all">Браслет: все</option>
+              <option value="yes">С браслетом</option>
+              <option value="no">Без браслета</option>
+            </select>
+            <input type="date" name="dateFrom" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+            <input type="date" name="dateTo" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+            <input type="hidden" name="page" value="1" />
+            <button type="submit" class="rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">Применить</button>
+          </form>
+          <div class="flex justify-end">
+            <a id="orders-export-link" href="/api/admin/orders/export.csv" class="rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">
+              Скачать CSV
             </a>
           </div>
-        </div>
+          <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
+            <div class="overflow-x-auto">
+              <table class="min-w-[980px] w-full text-left text-sm">
+                <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
+                  <tr>
+                    <th class="px-4 py-3">Дата</th>
+                    <th class="px-4 py-3">Имя</th>
+                    <th class="px-4 py-3">Slug</th>
+                    <th class="px-4 py-3">Цена slug</th>
+                    <th class="px-4 py-3">Тариф</th>
+                    <th class="px-4 py-3">Браслет</th>
+                    <th class="px-4 py-3">Контакт</th>
+                    <th class="px-4 py-3">Статус</th>
+                    <th class="px-4 py-3">Действия</th>
+                  </tr>
+                </thead>
+                <tbody id="orders-table"></tbody>
+              </table>
+            </div>
+          </div>
+          <div id="orders-pagination" class="flex items-center justify-end gap-2 text-sm text-neutral-600"></div>
+        </section>
+
+        <section id="tab-slugs" class="<%= pageActiveTab === 'slugs' ? '' : 'hidden' %> space-y-4">
+          <div id="slugs-stats" class="grid gap-3 md:grid-cols-4"></div>
+          <form id="slugs-filters" class="grid gap-3 rounded-2xl border border-neutral-200 bg-white p-4 md:grid-cols-4">
+            <input type="text" name="q" placeholder="Поиск slug" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+            <select name="state" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">
+              <option value="all">Все статусы</option>
+              <option value="free">Свободен</option>
+              <option value="taken">Занят</option>
+              <option value="blocked">Заблокирован</option>
+            </select>
+            <input type="hidden" name="page" value="1" />
+            <button type="submit" class="rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">Применить</button>
+          </form>
+          <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
+            <div class="overflow-x-auto">
+              <table class="min-w-[980px] w-full text-left text-sm">
+                <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
+                  <tr>
+                    <th class="px-4 py-3">Slug</th>
+                    <th class="px-4 py-3">Статус</th>
+                    <th class="px-4 py-3">Владелец</th>
+                    <th class="px-4 py-3">Цена</th>
+                    <th class="px-4 py-3">Дата активации</th>
+                    <th class="px-4 py-3">Действия</th>
+                  </tr>
+                </thead>
+                <tbody id="slugs-table"></tbody>
+              </table>
+            </div>
+          </div>
+          <div id="slugs-pagination" class="flex items-center justify-end gap-2 text-sm text-neutral-600"></div>
+        </section>
+
+        <section id="tab-cards" class="<%= pageActiveTab === 'cards' ? '' : 'hidden' %> space-y-4">
+          <form id="cards-filters" class="grid gap-3 rounded-2xl border border-neutral-200 bg-white p-4 md:grid-cols-[1fr_180px_auto]">
+            <input type="text" name="q" placeholder="Поиск по slug или имени" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+            <select name="status" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">
+              <option value="all">Все</option>
+              <option value="active">Активные</option>
+              <option value="inactive">Выключенные</option>
+            </select>
+            <input type="hidden" name="page" value="1" />
+            <button type="submit" class="rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">Применить</button>
+          </form>
+          <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
+            <div class="overflow-x-auto">
+              <table class="min-w-[980px] w-full text-left text-sm">
+                <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
+                  <tr>
+                    <th class="px-4 py-3">Slug</th>
+                    <th class="px-4 py-3">Имя владельца</th>
+                    <th class="px-4 py-3">Тариф</th>
+                    <th class="px-4 py-3">Статус</th>
+                    <th class="px-4 py-3">Просмотры</th>
+                    <th class="px-4 py-3">Дата создания</th>
+                    <th class="px-4 py-3">Действия</th>
+                  </tr>
+                </thead>
+                <tbody id="cards-table"></tbody>
+              </table>
+            </div>
+          </div>
+          <div id="cards-pagination" class="flex items-center justify-end gap-2 text-sm text-neutral-600"></div>
+        </section>
+
+        <section id="tab-bracelets" class="<%= pageActiveTab === 'bracelets' ? '' : 'hidden' %> space-y-4">
+          <form id="bracelets-filters" class="grid gap-3 rounded-2xl border border-neutral-200 bg-white p-4 md:grid-cols-[220px_auto]">
+            <select name="status" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">
+              <option value="all">Все статусы</option>
+              <option value="ORDERED">📦 Заказан</option>
+              <option value="SHIPPED">🚚 Отправлен</option>
+              <option value="DELIVERED">✅ Доставлен</option>
+            </select>
+            <input type="hidden" name="page" value="1" />
+            <button type="submit" class="rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">Применить</button>
+          </form>
+          <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
+            <div class="overflow-x-auto">
+              <table class="min-w-[860px] w-full text-left text-sm">
+                <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
+                  <tr>
+                    <th class="px-4 py-3">Дата</th>
+                    <th class="px-4 py-3">Имя</th>
+                    <th class="px-4 py-3">Slug</th>
+                    <th class="px-4 py-3">Контакт</th>
+                    <th class="px-4 py-3">Статус доставки</th>
+                  </tr>
+                </thead>
+                <tbody id="bracelets-table"></tbody>
+              </table>
+            </div>
+          </div>
+          <div id="bracelets-pagination" class="flex items-center justify-end gap-2 text-sm text-neutral-600"></div>
+        </section>
+
+        <section id="tab-testimonials" class="<%= pageActiveTab === 'testimonials' ? '' : 'hidden' %> space-y-4">
+          <form id="testimonial-create-form" class="rounded-2xl border border-neutral-200 bg-white p-4">
+            <h2 class="text-sm font-semibold text-neutral-900">Добавить отзыв</h2>
+            <div class="mt-3 grid gap-3 md:grid-cols-4">
+              <input name="name" type="text" placeholder="Имя" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" required />
+              <input name="slug" type="text" placeholder="Slug" maxlength="6" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" required />
+              <select name="tariff" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">
+                <option value="basic">Базовый</option>
+                <option value="premium">Премиум</option>
+              </select>
+              <button type="submit" class="rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-neutral-700">Добавить</button>
+            </div>
+            <textarea name="text" rows="3" placeholder="Текст отзыва" class="mt-3 w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" required></textarea>
+          </form>
+          <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
+            <div class="overflow-x-auto">
+              <table class="min-w-[860px] w-full text-left text-sm">
+                <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
+                  <tr>
+                    <th class="px-4 py-3">Имя</th>
+                    <th class="px-4 py-3">Slug</th>
+                    <th class="px-4 py-3">Тариф</th>
+                    <th class="px-4 py-3">Текст</th>
+                    <th class="px-4 py-3">Видимость</th>
+                    <th class="px-4 py-3">Действия</th>
+                  </tr>
+                </thead>
+                <tbody id="testimonials-table"></tbody>
+              </table>
+            </div>
+          </div>
+          <div id="testimonials-pagination" class="flex items-center justify-end gap-2 text-sm text-neutral-600"></div>
+        </section>
+
+        <section id="tab-logs" class="<%= pageActiveTab === 'logs' ? '' : 'hidden' %> space-y-4">
+          <div class="flex items-center justify-between gap-3">
+            <h2 class="text-lg font-bold">Логи ошибок</h2>
+            <button id="cleanup-logs-btn" type="button" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">Очистить старше 30 дней</button>
+          </div>
+          <form id="logs-filters" class="grid gap-3 rounded-2xl border border-neutral-200 bg-white p-4 md:grid-cols-[220px_auto]">
+            <select name="type" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">
+              <option value="all">Все типы</option>
+              <option value="not_found">Not found</option>
+              <option value="server_error">Server error</option>
+            </select>
+            <input type="hidden" name="page" value="1" />
+            <button type="submit" class="rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">Применить</button>
+          </form>
+          <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
+            <div class="overflow-x-auto">
+              <table class="min-w-[860px] w-full text-left text-sm">
+                <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
+                  <tr>
+                    <th class="px-4 py-3">Тип</th>
+                    <th class="px-4 py-3">Путь</th>
+                    <th class="px-4 py-3">Сообщение</th>
+                    <th class="px-4 py-3">Браузер</th>
+                    <th class="px-4 py-3">Время</th>
+                  </tr>
+                </thead>
+                <tbody id="logs-table"></tbody>
+              </table>
+            </div>
+          </div>
+          <div id="logs-pagination" class="flex items-center justify-end gap-2 text-sm text-neutral-600"></div>
+        </section>
       </div>
+    </div>
+  </div>
+
+  <div id="activation-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 p-4" aria-hidden="true">
+    <div class="w-full max-w-md rounded-2xl bg-white p-5" role="dialog" aria-modal="true">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-bold">Активация заявки</h3>
+        <button type="button" id="activation-close-btn" class="text-sm text-neutral-500 hover:text-neutral-900">Закрыть</button>
+      </div>
+      <form id="activation-form" class="mt-4 space-y-3">
+        <input type="hidden" name="orderId" />
+        <label class="block text-sm font-medium text-neutral-700">
+          Тариф
+          <select name="tariff" class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm">
+            <option value="basic">Базовый</option>
+            <option value="premium">Премиум</option>
+          </select>
+        </label>
+        <label class="block text-sm font-medium text-neutral-700">
+          Тема
+          <select name="theme" class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm">
+            <option value="default_dark">Default Dark</option>
+            <option value="light_minimal">Light Minimal</option>
+            <option value="gradient">Gradient</option>
+            <option value="neon">Neon</option>
+            <option value="corporate">Corporate</option>
+          </select>
+        </label>
+        <button type="submit" class="w-full rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-neutral-700">Активировать</button>
+      </form>
     </div>
   </div>
 
@@ -174,18 +343,10 @@
       <p id="qr-error" class="mt-3 hidden rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700"></p>
 
       <div class="mt-4 flex flex-col gap-2 sm:flex-row">
-        <button
-          type="button"
-          id="download-qr-png"
-          class="w-full rounded-xl bg-neutral-900 px-3 py-2 text-sm font-semibold text-white transition hover:bg-neutral-700"
-        >
+        <button type="button" id="download-qr-png" class="w-full rounded-xl bg-neutral-900 px-3 py-2 text-sm font-semibold text-white transition hover:bg-neutral-700">
           Скачать PNG 1000x1000
         </button>
-        <button
-          type="button"
-          id="download-qr-svg"
-          class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm font-semibold text-neutral-800 transition hover:bg-neutral-100"
-        >
+        <button type="button" id="download-qr-svg" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm font-semibold text-neutral-800 transition hover:bg-neutral-100">
           Скачать SVG
         </button>
       </div>
@@ -196,7 +357,41 @@
     </div>
   </div>
 
+  <div id="testimonial-edit-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 p-4" aria-hidden="true">
+    <div class="w-full max-w-lg rounded-2xl bg-white p-5" role="dialog" aria-modal="true">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-bold">Редактировать отзыв</h3>
+        <button type="button" id="testimonial-edit-close-btn" class="text-sm text-neutral-500 hover:text-neutral-900">Закрыть</button>
+      </div>
+      <form id="testimonial-edit-form" class="mt-4 space-y-3">
+        <input type="hidden" name="id" />
+        <label class="block text-sm font-medium text-neutral-700">
+          Имя
+          <input name="name" type="text" class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" required />
+        </label>
+        <label class="block text-sm font-medium text-neutral-700">
+          Slug
+          <input name="slug" type="text" maxlength="6" class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm font-mono uppercase" required />
+        </label>
+        <label class="block text-sm font-medium text-neutral-700">
+          Тариф
+          <select name="tariff" class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm">
+            <option value="basic">Базовый</option>
+            <option value="premium">Премиум</option>
+          </select>
+        </label>
+        <label class="block text-sm font-medium text-neutral-700">
+          Текст
+          <textarea name="text" rows="3" class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" required></textarea>
+        </label>
+        <button type="submit" class="w-full rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-neutral-700">Сохранить</button>
+      </form>
+    </div>
+  </div>
+
+  <script nonce="<%= cspNonce %>" id="admin-dashboard-query" type="application/json"><%- JSON.stringify(pageQuery) %></script>
   <script nonce="<%= cspNonce %>" src="/vendor/qrcode/qrcode.min.js"></script>
+  <script nonce="<%= cspNonce %>" src="/vendor/chartjs/chart.umd.min.js"></script>
   <script nonce="<%= cspNonce %>" src="/js/admin-dashboard.js"></script>
 </body>
 </html>

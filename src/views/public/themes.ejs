@@ -1,0 +1,64 @@
+<%
+  const pageTitle = typeof title === "string" && title ? title : "Темы Премиум";
+  const themeCards = [
+    { id: "default_dark", name: "Default Dark" },
+    { id: "light_minimal", name: "Light Minimal" },
+    { id: "gradient", name: "Gradient" },
+    { id: "neon", name: "Neon" },
+    { id: "corporate", name: "Corporate" },
+  ];
+%>
+<!doctype html>
+<html lang="ru">
+<head>
+  <%- include('../partials/head', { title: pageTitle, styles: ['/css/public-card.css'] }) %>
+</head>
+<body class="antialiased">
+  <main class="min-h-screen bg-neutral-50 px-6 py-16">
+    <div class="mx-auto max-w-6xl">
+      <div class="mb-10">
+        <p class="font-mono text-xs uppercase tracking-[0.18em] text-neutral-400">ПРЕМИУМ</p>
+        <h1 class="mt-3 text-3xl font-bold tracking-tight text-neutral-900 md:text-4xl">Выбери тему для Премиум визитки</h1>
+      </div>
+
+      <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <% themeCards.forEach((theme) => { %>
+        <article class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
+          <div class="aspect-[4/3] w-full border-b border-neutral-200 bg-neutral-100">
+            <iframe
+              src="/demo?embed=1&theme=<%= theme.id %>"
+              title="Theme preview <%= theme.name %>"
+              class="h-full w-full border-0"
+              loading="lazy"
+            ></iframe>
+          </div>
+          <div class="flex items-center justify-between gap-3 p-4">
+            <p class="text-sm font-medium text-neutral-900"><%= theme.name %></p>
+            <a
+              href="/?tariff=premium&theme=<%= theme.id %>#order"
+              class="btn-shimmer inline-flex items-center gap-2 rounded-xl bg-neutral-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-neutral-800"
+            >
+              Выбрать
+              <svg class="icon-stroke h-3.5 w-3.5" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M5 12h14M13 5l7 7-7 7"></path>
+              </svg>
+            </a>
+          </div>
+        </article>
+        <% }) %>
+      </div>
+
+      <p class="mt-8 text-sm text-neutral-500">Темы доступны только на тарифе Премиум</p>
+      <a
+        href="/#order"
+        class="btn-shimmer mt-4 inline-flex items-center gap-2 rounded-xl bg-neutral-900 px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-neutral-800"
+      >
+        Перейти на Премиум
+        <svg class="icon-stroke h-3.5 w-3.5" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M5 12h14M13 5l7 7-7 7"></path>
+        </svg>
+      </a>
+    </div>
+  </main>
+</body>
+</html>

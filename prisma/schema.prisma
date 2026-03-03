@@ -9,10 +9,51 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+enum Tariff {
+  basic
+  premium
+}
+
+enum CardTheme {
+  default_dark
+  light_minimal
+  gradient
+  neon
+  corporate
+}
+
+enum OrderStatus {
+  NEW
+  CONTACTED
+  PAID
+  ACTIVATED
+  REJECTED
+}
+
+enum SlugState {
+  TAKEN
+  BLOCKED
+}
+
+enum CheckerResult {
+  AVAILABLE
+  TAKEN
+  BLOCKED
+  INVALID
+}
+
+enum BraceletDeliveryStatus {
+  ORDERED
+  SHIPPED
+  DELIVERED
+}
+
 model Card {
   id         String    @id @default(uuid())
   slug       String    @unique @db.VarChar(20)
   isActive   Boolean   @default(true) @map("is_active")
+  tariff     Tariff    @default(basic)
+  theme      CardTheme @default(default_dark)
   avatarUrl  String?   @map("avatar_url")
   name       String    @db.VarChar(100)
   phone      String    @db.VarChar(30)
@@ -29,6 +70,8 @@ model Card {
   buttons    Button[]
   tags       Tag[]
   viewsLog   ViewLog[]
+  orderRequests OrderRequest[]
+  slugRecord SlugRecord?
 
   @@index([isActive])
   @@index([createdAt])
@@ -86,4 +129,87 @@ model ErrorLog {
   @@index([type, occurredAt])
   @@index([occurredAt])
   @@map("error_logs")
+}
+
+model OrderRequest {
+  id        String      @id @default(uuid())
+  name      String      @db.VarChar(100)
+  slug      String      @db.VarChar(20)
+  slugPrice Int         @map("slug_price")
+  tariff    Tariff
+  theme     CardTheme?
+  bracelet  Boolean     @default(false)
+  contact   String      @db.VarChar(120)
+  status    OrderStatus @default(NEW)
+  cardId    String?     @map("card_id")
+  card      Card?       @relation(fields: [cardId], references: [id], onDelete: SetNull)
+  createdAt DateTime    @default(now()) @map("created_at")
+  updatedAt DateTime    @updatedAt @map("updated_at")
+  braceletOrder BraceletOrder?
+
+  @@index([slug, createdAt])
+  @@index([status, createdAt])
+  @@index([cardId])
+  @@map("order_requests")
+}
+
+model BraceletOrder {
+  id            String                 @id @default(uuid())
+  orderId       String                 @unique @map("order_id")
+  order         OrderRequest           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  name          String                 @db.VarChar(100)
+  slug          String                 @db.VarChar(20)
+  contact       String                 @db.VarChar(120)
+  deliveryStatus BraceletDeliveryStatus @default(ORDERED) @map("delivery_status")
+  createdAt     DateTime               @default(now()) @map("created_at")
+  updatedAt     DateTime               @updatedAt @map("updated_at")
+
+  @@index([deliveryStatus, createdAt])
+  @@map("bracelet_orders")
+}
+
+model SlugRecord {
+  id             String    @id @default(uuid())
+  slug           String    @unique @db.VarChar(20)
+  state          SlugState @default(TAKEN)
+  ownerName      String?   @map("owner_name") @db.VarChar(100)
+  priceOverride  Int?      @map("price_override")
+  activationDate DateTime? @map("activation_date")
+  cardId         String?   @unique @map("card_id")
+  card           Card?     @relation(fields: [cardId], references: [id], onDelete: SetNull)
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  @@index([state])
+  @@index([activationDate])
+  @@map("slug_records")
+}
+
+model SlugCheckerLog {
+  id       String        @id @default(uuid())
+  slug     String?       @db.VarChar(20)
+  pattern  String        @db.VarChar(20)
+  source   String        @db.VarChar(20)
+  result   CheckerResult
+  checkedAt DateTime     @default(now()) @map("checked_at")
+
+  @@index([checkedAt])
+  @@index([pattern, checkedAt])
+  @@index([source, checkedAt])
+  @@map("slug_checker_logs")
+}
+
+model Testimonial {
+  id        String   @id @default(uuid())
+  name      String   @db.VarChar(100)
+  slug      String   @db.VarChar(20)
+  tariff    Tariff
+  text      String
+  isVisible Boolean  @default(true) @map("is_visible")
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([isVisible, sortOrder])
+  @@map("testimonials")
 }

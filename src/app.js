@@ -18,6 +18,7 @@ const { publicPagesRouter } = require("./routes/pages/public");
 const { systemRouter } = require("./routes/system");
 const { getBaseUrl } = require("./utils/url");
 const { ensureCsrfToken } = require("./middleware/csrf");
+const { runBootstrapTasks } = require("./services/bootstrap");
 
 function createApp() {
   const app = express();
@@ -168,6 +169,8 @@ function createApp() {
   });
 
   app.use(errorHandler);
+
+  void runBootstrapTasks();
 
   return app;
 }

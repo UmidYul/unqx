@@ -1,6 +1,7 @@
 const express = require("express");
 const multer = require("multer");
-const { subDays } = require("date-fns");
+const { addDays, format, startOfDay, subDays } = require("date-fns");
+const { fromZonedTime, toZonedTime } = require("date-fns-tz");
 
 const { prisma } = require("../../db/prisma");
 const { env } = require("../../config/env");
@@ -13,6 +14,7 @@ const { CardUpsertSchema } = require("../../validation/card");
 const { parsePositiveInt } = require("../../utils/http");
 const { listCards, createCard, getCardDetailsById, updateCard, generateNextSlug } = require("../../services/cards");
 const { getCardStats, getGlobalStats } = require("../../services/stats");
+const { calculateSlugPrice } = require("../../services/slug-pricing");
 const { cleanupOrphanAvatars, deleteAvatarByPublicPath, isSupportedAvatarBuffer, renameAvatarBySlug, saveAvatarFromBuffer } = require("../../services/avatar");
 
 const router = express.Router();
@@ -23,6 +25,113 @@ const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: MAX_FILE_SIZE },
 });
+
+function normalizeTariff(value) {
+  return value === "premium" ? "premium" : "basic";
+}
+
+function normalizeTheme(value) {
+  return ["default_dark", "light_minimal", "gradient", "neon", "corporate"].includes(value) ? value : "default_dark";
+}
+
+function toOrderStatus(value) {
+  switch (value) {
+    case "CONTACTED":
+    case "PAID":
+    case "ACTIVATED":
+    case "REJECTED":
+      return value;
+    default:
+      return "NEW";
+  }
+}
+
+function toSlugState(value, mode = "filter") {
+  if (value === "blocked") {
+    return "BLOCKED";
+  }
+  if (value === "taken") {
+    return "TAKEN";
+  }
+  if (value === "free") {
+    return "FREE";
+  }
+  return mode === "action" ? "FREE" : "ALL";
+}
+
+function toDeliveryStatus(value) {
+  switch (value) {
+    case "SHIPPED":
+    case "DELIVERED":
+      return value;
+    default:
+      return "ORDERED";
+  }
+}
+
+function formatOrderStatusLabel(status) {
+  switch (status) {
+    case "NEW":
+      return "🆕 Новая";
+    case "CONTACTED":
+      return "💬 Связались";
+    case "PAID":
+      return "💳 Оплачено";
+    case "ACTIVATED":
+      return "✅ Активировано";
+    case "REJECTED":
+      return "❌ Отклонено";
+    default:
+      return status;
+  }
+}
+
+function computeDateRangeKey(timezone, days) {
+  const nowInZone = toZonedTime(new Date(), timezone);
+  const end = startOfDay(nowInZone);
+  const start = subDays(end, days - 1);
+  const keys = [];
+  for (let i = 0; i < days; i += 1) {
+    keys.push(format(addDays(start, i), "yyyy-MM-dd"));
+  }
+  return {
+    keys,
+    startUtc: fromZonedTime(start, timezone),
+  };
+}
+
+function normalizePhoneFromContact(contact) {
+  const raw = String(contact || "").trim();
+  if (!raw) {
+    return "+998000000000";
+  }
+  const digits = raw.replace(/\D/g, "");
+  if (digits.startsWith("998") && digits.length >= 12) {
+    return `+${digits.slice(0, 12)}`;
+  }
+  if (digits.length === 9) {
+    return `+998${digits}`;
+  }
+  if (digits.length === 10 && digits.startsWith("0")) {
+    return `+998${digits.slice(1)}`;
+  }
+  return "+998000000000";
+}
+
+async function getTakenSlugSet() {
+  const [cards, records] = await Promise.all([
+    prisma.card.findMany({ select: { slug: true } }),
+    prisma.slugRecord.findMany({
+      where: { state: { in: ["TAKEN", "BLOCKED"] } },
+      select: { slug: true },
+    }),
+  ]);
+
+  const set = new Set();
+  cards.forEach((row) => set.add(row.slug));
+  records.forEach((row) => set.add(row.slug));
+  return set;
+}
 
 function avatarUploadMiddleware(req, res, next) {
   upload.single("file")(req, res, (error) => {
@@ -219,6 +328,29 @@ router.patch(
   }),
 );
 
+router.patch(
+  "/cards/:id/tariff",
+  asyncHandler(async (req, res) => {
+    const tariff = normalizeTariff(req.body.tariff);
+    const theme = normalizeTheme(req.body.theme);
+
+    const updated = await prisma.card.update({
+      where: { id: req.params.id },
+      data: {
+        tariff,
+        ...(tariff === "premium" ? { theme } : { theme: "default_dark" }),
+      },
+      select: {
+        id: true,
+        tariff: true,
+        theme: true,
+      },
+    });
+
+    res.json(updated);
+  }),
+);
+
 router.post(
   "/cards/:id/avatar",
   avatarUploadMiddleware,
@@ -302,6 +434,764 @@ router.delete(
     await cleanupOrphanAvatarsFromDb();
 
     res.json({ ok: true, avatarUrl: null });
+  }),
+);
+
+function buildOrdersWhere(query) {
+  const where = {};
+  if (query.status && query.status !== "all") {
+    where.status = toOrderStatus(query.status);
+  }
+  if (query.tariff && query.tariff !== "all") {
+    where.tariff = normalizeTariff(query.tariff);
+  }
+  if (query.bracelet === "yes") {
+    where.bracelet = true;
+  }
+  if (query.bracelet === "no") {
+    where.bracelet = false;
+  }
+  if (typeof query.dateFrom === "string" && query.dateFrom) {
+    const from = new Date(`${query.dateFrom}T00:00:00.000Z`);
+    if (!Number.isNaN(from.getTime())) {
+      where.createdAt = { gte: from };
+    }
+  }
+  if (typeof query.dateTo === "string" && query.dateTo) {
+    const to = new Date(`${query.dateTo}T23:59:59.999Z`);
+    if (!Number.isNaN(to.getTime())) {
+      where.createdAt = {
+        ...(where.createdAt || {}),
+        lte: to,
+      };
+    }
+  }
+  return where;
+}
+
+router.get(
+  "/orders",
+  asyncHandler(async (req, res) => {
+    const where = buildOrdersWhere(req.query);
+    const page = Math.max(1, Number(req.query.page || "1") || 1);
+    const pageSizeRaw = Number(req.query.pageSize || "20") || 20;
+    const pageSize = Math.max(1, Math.min(200, pageSizeRaw));
+    const [total, rows] = await Promise.all([
+      prisma.orderRequest.count({ where }),
+      prisma.orderRequest.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          slugPrice: true,
+          tariff: true,
+          theme: true,
+          bracelet: true,
+          contact: true,
+          status: true,
+          createdAt: true,
+        },
+      }),
+    ]);
+
+    res.json({
+      items: rows.map((row) => ({
+        ...row,
+        statusLabel: formatOrderStatusLabel(row.status),
+      })),
+      pagination: {
+        page,
+        pageSize,
+        total,
+        totalPages: Math.max(1, Math.ceil(total / pageSize)),
+      },
+    });
+  }),
+);
+
+router.patch(
+  "/orders/:id/status",
+  asyncHandler(async (req, res) => {
+    const status = toOrderStatus(req.body.status);
+    const updated = await prisma.orderRequest.update({
+      where: { id: req.params.id },
+      data: { status },
+      select: { id: true, status: true },
+    });
+    res.json(updated);
+  }),
+);
+
+router.post(
+  "/orders/:id/activate",
+  asyncHandler(async (req, res) => {
+    const order = await prisma.orderRequest.findUnique({
+      where: { id: req.params.id },
+      include: { braceletOrder: true },
+    });
+    if (!order) {
+      res.status(404).json({ error: "Order not found" });
+      return;
+    }
+
+    const tariff = normalizeTariff(req.body.tariff || order.tariff);
+    const theme = tariff === "premium" ? normalizeTheme(req.body.theme || order.theme || "default_dark") : "default_dark";
+
+    const existingBySlug = await prisma.card.findUnique({
+      where: { slug: order.slug },
+      select: { id: true },
+    });
+
+    if (existingBySlug && order.cardId && existingBySlug.id !== order.cardId) {
+      res.status(409).json({ error: "Slug already linked to another card" });
+      return;
+    }
+
+    const card =
+      existingBySlug ||
+      (await prisma.card.create({
+        data: {
+          slug: order.slug,
+          isActive: true,
+          tariff,
+          theme,
+          name: order.name,
+          phone: normalizePhoneFromContact(order.contact),
+          verified: false,
+          hashtag: null,
+          address: null,
+          postcode: null,
+          email: null,
+          extraPhone: null,
+        },
+        select: { id: true },
+      }));
+
+    await prisma.$transaction(async (tx) => {
+      await tx.card.update({
+        where: { id: card.id },
+        data: {
+          isActive: true,
+          tariff,
+          theme,
+        },
+      });
+
+      await tx.slugRecord.upsert({
+        where: { slug: order.slug },
+        create: {
+          slug: order.slug,
+          state: "TAKEN",
+          ownerName: order.name,
+          cardId: card.id,
+          activationDate: new Date(),
+        },
+        update: {
+          state: "TAKEN",
+          ownerName: order.name,
+          cardId: card.id,
+          activationDate: new Date(),
+        },
+      });
+
+      await tx.orderRequest.update({
+        where: { id: order.id },
+        data: {
+          status: "ACTIVATED",
+          tariff,
+          theme,
+          cardId: card.id,
+        },
+      });
+
+      if (order.bracelet && !order.braceletOrder) {
+        await tx.braceletOrder.create({
+          data: {
+            orderId: order.id,
+            name: order.name,
+            slug: order.slug,
+            contact: order.contact,
+            deliveryStatus: "ORDERED",
+          },
+        });
+      }
+    });
+
+    res.json({ ok: true, cardId: card.id });
+  }),
+);
+
+router.delete(
+  "/orders/:id",
+  asyncHandler(async (req, res) => {
+    await prisma.orderRequest.delete({
+      where: { id: req.params.id },
+    });
+    res.json({ ok: true });
+  }),
+);
+
+router.get(
+  "/orders/export.csv",
+  asyncHandler(async (req, res) => {
+    const where = buildOrdersWhere(req.query);
+    const rows = await prisma.orderRequest.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      select: {
+        createdAt: true,
+        name: true,
+        slug: true,
+        slugPrice: true,
+        tariff: true,
+        bracelet: true,
+        contact: true,
+        status: true,
+      },
+    });
+
+    const lines = [
+      "Дата,Имя,Slug,Цена slug,Тариф,Браслет,Контакт,Статус",
+      ...rows.map((row) =>
+        [
+          `"${new Date(row.createdAt).toLocaleString("ru-RU")}"`,
+          `"${String(row.name).replace(/"/g, '""')}"`,
+          `"${row.slug}"`,
+          row.slugPrice,
+          `"${row.tariff === "premium" ? "Премиум" : "Базовый"}"`,
+          `"${row.bracelet ? "Да" : "Нет"}"`,
+          `"${String(row.contact).replace(/"/g, '""')}"`,
+          `"${formatOrderStatusLabel(row.status)}"`,
+        ].join(","),
+      ),
+    ];
+
+    const csv = `\uFEFF${lines.join("\n")}`;
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    res.setHeader("Content-Disposition", "attachment; filename=orders.csv");
+    res.send(csv);
+  }),
+);
+
+router.get(
+  "/slugs/stats",
+  asyncHandler(async (_req, res) => {
+    const [cards, records] = await Promise.all([
+      prisma.card.findMany({ select: { slug: true } }),
+      prisma.slugRecord.findMany({ select: { slug: true, state: true } }),
+    ]);
+    const taken = new Set(cards.map((row) => row.slug));
+    let blockedCount = 0;
+    for (const row of records) {
+      if (row.state === "BLOCKED") {
+        blockedCount += 1;
+      } else if (row.state === "TAKEN") {
+        taken.add(row.slug);
+      }
+    }
+
+    const total = env.SLUG_TOTAL_LIMIT;
+    const free = Math.max(total - taken.size - blockedCount, 0);
+    res.json({
+      total,
+      taken: taken.size,
+      blocked: blockedCount,
+      free,
+    });
+  }),
+);
+
+router.get(
+  "/slugs",
+  asyncHandler(async (req, res) => {
+    const page = Math.max(1, Number(req.query.page || "1") || 1);
+    const pageSizeRaw = Number(req.query.pageSize || "20") || 20;
+    const pageSize = Math.max(1, Math.min(500, pageSizeRaw));
+    const stateFilter = toSlugState(req.query.state, "filter");
+    const qRaw = typeof req.query.q === "string" ? req.query.q : "";
+    const qUpper = qRaw.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 20);
+
+    const [cards, records] = await Promise.all([
+      prisma.card.findMany({
+        select: {
+          slug: true,
+          name: true,
+          createdAt: true,
+        },
+      }),
+      prisma.slugRecord.findMany({
+        select: {
+          slug: true,
+          state: true,
+          ownerName: true,
+          priceOverride: true,
+          activationDate: true,
+          cardId: true,
+        },
+      }),
+    ]);
+
+    const cardBySlug = new Map(cards.map((row) => [row.slug, row]));
+    const recordBySlug = new Map(records.map((row) => [row.slug, row]));
+    const slugSet = new Set([...cardBySlug.keys(), ...recordBySlug.keys()]);
+
+    const rows = Array.from(slugSet).map((slug) => {
+      const card = cardBySlug.get(slug);
+      const record = recordBySlug.get(slug);
+      const state = record?.state === "BLOCKED" ? "BLOCKED" : "TAKEN";
+      const pricing = /^[A-Z]{3}[0-9]{3}$/.test(slug)
+        ? calculateSlugPrice({ letters: slug.slice(0, 3), digits: slug.slice(3) })
+        : null;
+      const effectivePrice = typeof record?.priceOverride === "number" ? record.priceOverride : pricing ? pricing.total : null;
+      return {
+        slug,
+        state,
+        stateLabel: state === "BLOCKED" ? "Заблокирован" : "Занят",
+        ownerName: card?.name || record?.ownerName || "",
+        priceOverride: record?.priceOverride ?? null,
+        effectivePrice,
+        activationDate: record?.activationDate || card?.createdAt || null,
+      };
+    });
+
+    let filtered = rows;
+    if (qUpper) {
+      filtered = filtered.filter((row) => row.slug.includes(qUpper));
+    }
+    if (stateFilter === "TAKEN") {
+      filtered = filtered.filter((row) => row.state === "TAKEN");
+    } else if (stateFilter === "BLOCKED") {
+      filtered = filtered.filter((row) => row.state === "BLOCKED");
+    } else if (stateFilter === "FREE") {
+      filtered = [];
+      if (/^[A-Z]{3}[0-9]{3}$/.test(qUpper)) {
+        const takenSet = await getTakenSlugSet();
+        if (!takenSet.has(qUpper)) {
+          const pricing = calculateSlugPrice({ letters: qUpper.slice(0, 3), digits: qUpper.slice(3) });
+          filtered.push({
+            slug: qUpper,
+            state: "FREE",
+            stateLabel: "Свободен",
+            ownerName: "",
+            priceOverride: null,
+            effectivePrice: pricing.total,
+            activationDate: null,
+          });
+        }
+      }
+    }
+
+    filtered.sort((a, b) => (a.slug > b.slug ? 1 : -1));
+    const total = filtered.length;
+    const start = (page - 1) * pageSize;
+    res.json({
+      items: filtered.slice(start, start + pageSize),
+      pagination: {
+        page,
+        pageSize,
+        total,
+        totalPages: Math.max(1, Math.ceil(total / pageSize)),
+      },
+    });
+  }),
+);
+
+router.patch(
+  "/slugs/:slug/state",
+  asyncHandler(async (req, res) => {
+    const slug = String(req.params.slug || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 20);
+    const nextState = toSlugState(req.body.state, "action");
+    const card = await prisma.card.findUnique({
+      where: { slug },
+      select: { id: true, name: true },
+    });
+
+    if (nextState === "BLOCKED") {
+      const row = await prisma.slugRecord.upsert({
+        where: { slug },
+        create: {
+          slug,
+          state: "BLOCKED",
+          ownerName: card?.name || null,
+          cardId: card?.id || null,
+        },
+        update: {
+          state: "BLOCKED",
+          ownerName: card?.name || undefined,
+          cardId: card?.id || undefined,
+        },
+      });
+      res.json(row);
+      return;
+    }
+
+    if (nextState === "TAKEN") {
+      const row = await prisma.slugRecord.upsert({
+        where: { slug },
+        create: {
+          slug,
+          state: "TAKEN",
+          ownerName: card?.name || null,
+          cardId: card?.id || null,
+        },
+        update: {
+          state: "TAKEN",
+          ownerName: card?.name || undefined,
+          cardId: card?.id || undefined,
+        },
+      });
+      res.json(row);
+      return;
+    }
+
+    if (card) {
+      const row = await prisma.slugRecord.upsert({
+        where: { slug },
+        create: {
+          slug,
+          state: "TAKEN",
+          ownerName: card.name,
+          cardId: card.id,
+        },
+        update: {
+          state: "TAKEN",
+          ownerName: card.name,
+          cardId: card.id,
+        },
+      });
+      res.json(row);
+      return;
+    }
+
+    await prisma.slugRecord.deleteMany({ where: { slug } });
+    res.json({ ok: true, slug, state: "FREE" });
+  }),
+);
+
+router.patch(
+  "/slugs/:slug/price-override",
+  asyncHandler(async (req, res) => {
+    const slug = String(req.params.slug || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 20);
+    const value = req.body.priceOverride;
+    const priceOverride = value === null || value === "" || Number.isNaN(Number(value)) ? null : Math.max(0, Math.round(Number(value)));
+
+    const card = await prisma.card.findUnique({
+      where: { slug },
+      select: { id: true, name: true },
+    });
+
+    const row = await prisma.slugRecord.upsert({
+      where: { slug },
+      create: {
+        slug,
+        state: card ? "TAKEN" : "BLOCKED",
+        ownerName: card?.name || null,
+        cardId: card?.id || null,
+        priceOverride,
+      },
+      update: {
+        priceOverride,
+      },
+    });
+
+    res.json(row);
+  }),
+);
+
+router.get(
+  "/bracelet-orders",
+  asyncHandler(async (req, res) => {
+    const page = Math.max(1, Number(req.query.page || "1") || 1);
+    const pageSizeRaw = Number(req.query.pageSize || "20") || 20;
+    const pageSize = Math.max(1, Math.min(200, pageSizeRaw));
+    const where = {};
+    if (req.query.status === "ORDERED" || req.query.status === "SHIPPED" || req.query.status === "DELIVERED") {
+      where.deliveryStatus = req.query.status;
+    }
+    const [total, rows] = await Promise.all([
+      prisma.braceletOrder.count({ where }),
+      prisma.braceletOrder.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+        select: {
+          id: true,
+          createdAt: true,
+          name: true,
+          slug: true,
+          contact: true,
+          deliveryStatus: true,
+        },
+      }),
+    ]);
+    res.json({
+      items: rows,
+      pagination: {
+        page,
+        pageSize,
+        total,
+        totalPages: Math.max(1, Math.ceil(total / pageSize)),
+      },
+    });
+  }),
+);
+
+router.patch(
+  "/bracelet-orders/:id/status",
+  asyncHandler(async (req, res) => {
+    const updated = await prisma.braceletOrder.update({
+      where: { id: req.params.id },
+      data: { deliveryStatus: toDeliveryStatus(req.body.deliveryStatus) },
+      select: { id: true, deliveryStatus: true },
+    });
+    res.json(updated);
+  }),
+);
+
+router.get(
+  "/testimonials",
+  asyncHandler(async (req, res) => {
+    const page = Math.max(1, Number(req.query.page || "1") || 1);
+    const pageSizeRaw = Number(req.query.pageSize || "20") || 20;
+    const pageSize = Math.max(1, Math.min(200, pageSizeRaw));
+    const [total, rows] = await Promise.all([
+      prisma.testimonial.count(),
+      prisma.testimonial.findMany({
+        orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+    ]);
+    res.json({
+      items: rows,
+      pagination: {
+        page,
+        pageSize,
+        total,
+        totalPages: Math.max(1, Math.ceil(total / pageSize)),
+      },
+    });
+  }),
+);
+
+router.post(
+  "/testimonials",
+  asyncHandler(async (req, res) => {
+    const created = await prisma.testimonial.create({
+      data: {
+        name: String(req.body.name || "").trim(),
+        slug: String(req.body.slug || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 20),
+        tariff: normalizeTariff(req.body.tariff),
+        text: String(req.body.text || "").trim(),
+        isVisible: true,
+        sortOrder: Number(req.body.sortOrder || 0) || 0,
+      },
+    });
+    res.status(201).json(created);
+  }),
+);
+
+router.patch(
+  "/testimonials/:id",
+  asyncHandler(async (req, res) => {
+    const updated = await prisma.testimonial.update({
+      where: { id: req.params.id },
+      data: {
+        name: String(req.body.name || "").trim(),
+        slug: String(req.body.slug || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 20),
+        tariff: normalizeTariff(req.body.tariff),
+        text: String(req.body.text || "").trim(),
+      },
+    });
+    res.json(updated);
+  }),
+);
+
+router.patch(
+  "/testimonials/:id/visibility",
+  asyncHandler(async (req, res) => {
+    const updated = await prisma.testimonial.update({
+      where: { id: req.params.id },
+      data: { isVisible: Boolean(req.body.isVisible) },
+      select: { id: true, isVisible: true },
+    });
+    res.json(updated);
+  }),
+);
+
+router.delete(
+  "/testimonials/:id",
+  asyncHandler(async (req, res) => {
+    await prisma.testimonial.delete({ where: { id: req.params.id } });
+    res.json({ ok: true });
+  }),
+);
+
+router.get(
+  "/analytics",
+  asyncHandler(async (_req, res) => {
+    const timezone = env.TIMEZONE;
+    const now = new Date();
+    const nowInZone = toZonedTime(now, timezone);
+    const todayStart = fromZonedTime(startOfDay(nowInZone), timezone);
+    const weekStart = subDays(todayStart, 6);
+    const monthStart = subDays(todayStart, 29);
+
+    const [orders, activeCards, dailyOrders, checkerLogs] = await Promise.all([
+      prisma.orderRequest.findMany({
+        where: {
+          status: { in: ["PAID", "ACTIVATED"] },
+        },
+        select: {
+          slug: true,
+          createdAt: true,
+          slugPrice: true,
+          bracelet: true,
+        },
+      }),
+      prisma.card.findMany({
+        where: { isActive: true },
+        select: { tariff: true },
+      }),
+      prisma.orderRequest.findMany({
+        where: { createdAt: { gte: monthStart } },
+        select: { createdAt: true },
+      }),
+      prisma.slugCheckerLog.findMany({
+        where: { source: "hero", checkedAt: { gte: monthStart } },
+        orderBy: { checkedAt: "desc" },
+        take: 1000,
+        select: { slug: true, pattern: true, checkedAt: true },
+      }),
+    ]);
+
+    const [newOrdersToday, allOrdersForChecks] = await Promise.all([
+      prisma.orderRequest.count({
+        where: { createdAt: { gte: todayStart } },
+      }),
+      prisma.orderRequest.findMany({
+        where: { createdAt: { gte: monthStart } },
+        select: { slug: true, createdAt: true },
+      }),
+    ]);
+
+    const oneTimeRevenue = {
+      today: 0,
+      week: 0,
+      month: 0,
+    };
+    for (const row of orders) {
+      const total = row.slugPrice + (row.bracelet ? 300_000 : 0);
+      if (row.createdAt >= monthStart) {
+        oneTimeRevenue.month += total;
+      }
+      if (row.createdAt >= weekStart) {
+        oneTimeRevenue.week += total;
+      }
+      if (row.createdAt >= todayStart) {
+        oneTimeRevenue.today += total;
+      }
+    }
+
+    const recurring = activeCards.reduce(
+      (acc, row) => acc + (row.tariff === "premium" ? 79_000 : 29_000),
+      0,
+    );
+
+    const tariffSplit = activeCards.reduce(
+      (acc, row) => {
+        if (row.tariff === "premium") {
+          acc.premium += 1;
+        } else {
+          acc.basic += 1;
+        }
+        return acc;
+      },
+      { basic: 0, premium: 0 },
+    );
+
+    const { keys } = computeDateRangeKey(timezone, 30);
+    const orderBuckets = new Map(keys.map((key) => [key, 0]));
+    for (const row of dailyOrders) {
+      const key = format(toZonedTime(row.createdAt, timezone), "yyyy-MM-dd");
+      if (orderBuckets.has(key)) {
+        orderBuckets.set(key, (orderBuckets.get(key) || 0) + 1);
+      }
+    }
+    const ordersDaily = keys.map((date) => ({ date, count: orderBuckets.get(date) || 0 }));
+
+    const bySlugOrders = new Map();
+    for (const row of allOrdersForChecks) {
+      if (!bySlugOrders.has(row.slug)) {
+        bySlugOrders.set(row.slug, []);
+      }
+      bySlugOrders.get(row.slug).push(row.createdAt);
+    }
+    for (const times of bySlugOrders.values()) {
+      times.sort((a, b) => a.getTime() - b.getTime());
+    }
+
+    const patternCounts = new Map();
+    for (const log of checkerLogs) {
+      const slug = log.slug || "";
+      const candidateOrders = bySlugOrders.get(slug) || [];
+      const deadline = addDays(log.checkedAt, 1);
+      const bought = candidateOrders.some((time) => time >= log.checkedAt && time <= deadline);
+      if (bought) {
+        continue;
+      }
+      patternCounts.set(log.pattern, (patternCounts.get(log.pattern) || 0) + 1);
+    }
+    const topUnboughtPatterns = Array.from(patternCounts.entries())
+      .map(([pattern, count]) => ({ pattern, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10);
+
+    res.json({
+      kpis: {
+        newOrdersToday,
+        oneTimeRevenue,
+        monthlyRecurringRevenue: recurring,
+        activeCards: activeCards.length,
+      },
+      ordersDaily,
+      tariffSplit,
+      topUnboughtPatterns,
+    });
+  }),
+);
+
+router.get(
+  "/logs",
+  asyncHandler(async (req, res) => {
+    const rawType = req.query.type || "all";
+    const type = rawType === "not_found" || rawType === "server_error" ? rawType : "all";
+    const page = Math.max(1, Number(req.query.page || "1") || 1);
+    const pageSize = 50;
+    const where = type === "all" ? {} : { type };
+    const [total, logs] = await Promise.all([
+      prisma.errorLog.count({ where }),
+      prisma.errorLog.findMany({
+        where,
+        orderBy: { occurredAt: "desc" },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+    ]);
+    res.json({
+      items: logs,
+      pagination: {
+        page,
+        pageSize,
+        total,
+        totalPages: Math.max(1, Math.ceil(total / pageSize)),
+      },
+    });
   }),
 );
 

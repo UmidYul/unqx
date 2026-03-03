@@ -30,6 +30,8 @@ async function sendOrderRequestToTelegram(payload) {
 
   const tariffLabel = payload.tariff === "premium" ? "ПРЕМИУМ" : "БАЗОВЫЙ";
   const braceletLabel = payload.bracelet ? "Да (+300 000 сум)" : "Нет";
+  const themeLabel = payload.themeLabel || "default_dark";
+  const statusLabel = payload.statusLabel || "🆕 Новая";
   const text = [
     "🆕 <b>НОВАЯ ЗАЯВКА UNQ+</b>",
     "",
@@ -37,8 +39,10 @@ async function sendOrderRequestToTelegram(payload) {
     `🔗 <b>Slug:</b> ${escapeHtml(payload.slug)} (unqx.uz/${escapeHtml(payload.slug)})`,
     `💰 <b>Цена slug:</b> ${escapeHtml(payload.slugPriceLabel)} сум`,
     `📦 <b>Тариф:</b> ${tariffLabel} — ${escapeHtml(payload.tariffPriceLabel)} сум/мес`,
+    `🎨 <b>Тема:</b> ${escapeHtml(themeLabel)}`,
     `📿 <b>Браслет:</b> ${braceletLabel}`,
     `📱 <b>Контакт:</b> ${escapeHtml(payload.contact)}`,
+    `🧾 <b>Статус:</b> ${escapeHtml(statusLabel)}`,
     "",
     `💵 <b>Итого разово:</b> ${escapeHtml(payload.totalOneTimeLabel)} сум`,
     `🔄 <b>Ежемесячно:</b> ${escapeHtml(payload.tariffPriceLabel)} сум/мес`,

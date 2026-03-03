@@ -21,6 +21,30 @@
     { name: "Temur A.", role: "Founder, CEO", slug: "temur" },
   ];
 
+  const testimonialsList =
+    Array.isArray(testimonials) && testimonials.length > 0
+      ? testimonials
+      : [
+          {
+            name: "Алишер",
+            slug: "ALI001",
+            tariff: "premium",
+            text: "Раздаю браслет на каждой встрече — люди реагируют как на магию. Визитку обновил уже три раза, браслет работает как часы.",
+          },
+          {
+            name: "Малика",
+            slug: "MLK007",
+            tariff: "basic",
+            text: "Поставила ссылку в Instagram bio и на визитке. Очень удобно что всё в одном месте и можно менять.",
+          },
+          {
+            name: "Тимур",
+            slug: "TMR000",
+            tariff: "premium",
+            text: "Взял для всей команды. Отдельный slug каждому сотруднику — выглядит профессионально на переговорах.",
+          },
+        ];
+
   const steps = [
     { title: "Выбери slug", description: "Найди свой уникальный адрес" },
     { title: "Заполни карточку", description: "Фото, контакты, ссылки за 2 минуты" },
@@ -72,6 +96,35 @@
       excluded: [],
     },
   ];
+
+  const faqItems = [
+    {
+      q: "Можно ли сменить slug после покупки?",
+      a: "Нет — slug покупается навсегда и привязывается к тебе. Ты можешь обновлять содержимое визитки сколько угодно раз.",
+    },
+    {
+      q: "Что если я потеряю браслет?",
+      a: "Закажи новый — slug остаётся твоим. Достаточно повторно заказать браслет и привязать к тому же slug.",
+    },
+    {
+      q: "Работает ли браслет без интернета у владельца?",
+      a: "Да. NFC на браслете не требует интернета с твоей стороны. Телефон того, кто тапнул, просто открывает ссылку.",
+    },
+    {
+      q: "Чем отличается Базовый от Премиум?",
+      a: "Базовый — стандартный шаблон, до 3 кнопок. Премиум — выбор тем, кастомные цвета, без ограничений.",
+    },
+    {
+      q: "Как происходит оплата?",
+      a: "После заявки мы пишем тебе в Telegram и высылаем реквизиты Payme или Click. Активируем после оплаты.",
+    },
+    {
+      q: "Есть ли возврат?",
+      a: "Браслет возврату не подлежит. Подписку можно отменить в любой момент — следующий месяц не спишется.",
+    },
+  ];
+
+  const pageSlugTotalLimit = Number(slugTotalLimit) || 17576;
 %>
 <!doctype html>
 <html lang="ru">
@@ -198,6 +251,13 @@
               <span id="home-slug-status-text"></span>
             </div>
 
+            <div id="home-slug-suggestions-wrap" class="mt-3 hidden">
+              <p class="text-xs text-neutral-500">
+                Попробуй:
+                <span id="home-slug-suggestions" class="ml-1 inline-flex flex-wrap items-center gap-2"></span>
+              </p>
+            </div>
+
             <div class="mt-4 flex items-center justify-center gap-3">
               <a
                 id="home-slug-primary-action"
@@ -233,6 +293,113 @@
             </svg>
             <span>1,200+ человек уже заняли свой slug</span>
           </div>
+        </div>
+      </section>
+
+      <section id="slug-counter-wrap" class="hidden px-6 pb-4">
+        <div class="mx-auto max-w-3xl">
+          <div id="slug-counter" class="hidden rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-700">
+            🔥 Занято <span id="slug-counter-value">0</span> slugов из <span id="slug-counter-total"><%= pageSlugTotalLimit.toLocaleString("ru-RU") %></span>
+          </div>
+        </div>
+      </section>
+
+      <section id="live-demo" class="px-6 py-16">
+        <div class="mx-auto max-w-5xl">
+          <p class="font-mono text-xs uppercase tracking-[0.18em] text-neutral-400">ЖИВОЙ ПРИМЕР</p>
+          <h2 class="mt-3 text-3xl font-bold tracking-tight text-neutral-900 md:text-4xl">Вот как выглядит твоя визитка</h2>
+
+          <div class="mt-8 overflow-hidden rounded-2xl border border-neutral-200 bg-white">
+            <iframe
+              id="live-demo-frame"
+              src="/demo?embed=1&theme=default_dark"
+              title="UNQ+ live demo"
+              class="h-[420px] w-full border-0"
+              loading="lazy"
+            ></iframe>
+          </div>
+
+          <p id="live-demo-note" class="mt-3 text-sm text-neutral-500">Так выглядит Базовый тариф</p>
+
+          <button
+            type="button"
+            id="live-demo-toggle"
+            class="mt-3 inline-flex items-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50"
+          >
+            Посмотреть Премиум →
+          </button>
+
+          <div class="mt-5">
+            <a
+              href="#order"
+              data-order-link
+              class="btn-shimmer inline-flex items-center gap-2 rounded-xl bg-neutral-900 px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-neutral-800"
+            >
+              Создать такую же →
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <section id="testimonials" class="px-6 py-16">
+        <div class="mx-auto max-w-6xl">
+          <p class="font-mono text-xs uppercase tracking-[0.18em] text-neutral-400">ОТЗЫВЫ</p>
+          <h2 class="mt-3 text-3xl font-bold tracking-tight text-neutral-900 md:text-4xl">Что говорят первые клиенты</h2>
+
+          <div class="mt-8 grid gap-4 md:grid-cols-3">
+            <% testimonialsList.forEach((item) => { %>
+            <article class="rounded-2xl border border-neutral-200 bg-white p-5">
+              <div class="flex items-center justify-between gap-3">
+                <div class="flex items-center gap-3">
+                  <div class="flex h-10 w-10 items-center justify-center rounded-full bg-neutral-100 text-xs font-semibold text-neutral-700">
+                    <%= (item.name || "UN").split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase() %>
+                  </div>
+                  <div>
+                    <p class="text-sm font-semibold text-neutral-900"><%= item.name %> · unqx.uz/<%= item.slug %></p>
+                  </div>
+                </div>
+                <span class="rounded-full border border-neutral-200 px-2.5 py-1 text-[11px] font-medium text-neutral-600">
+                  <%= item.tariff === 'premium' ? 'Премиум' : 'Базовый' %>
+                </span>
+              </div>
+              <p class="mt-4 text-sm leading-relaxed text-neutral-600"><%= item.text %></p>
+            </article>
+            <% }) %>
+          </div>
+        </div>
+      </section>
+
+      <section id="b2b" class="px-6 py-16">
+        <div class="mx-auto max-w-6xl">
+          <p class="font-mono text-xs uppercase tracking-[0.18em] text-neutral-400">ДЛЯ БИЗНЕСА</p>
+          <h2 class="mt-3 text-3xl font-bold tracking-tight text-neutral-900 md:text-4xl">Для команд и агентств</h2>
+          <p class="mt-3 max-w-2xl text-base text-neutral-500">
+            Дай каждому сотруднику свой slug — один раз настроил, обновляете когда угодно.
+          </p>
+
+          <div class="mt-8 grid gap-4 md:grid-cols-3">
+            <article class="rounded-2xl border border-neutral-200 bg-white p-5">
+              <h3 class="text-base font-semibold text-neutral-900">Единый стиль</h3>
+              <p class="mt-2 text-sm text-neutral-600">все визитки команды в одном бренде</p>
+            </article>
+            <article class="rounded-2xl border border-neutral-200 bg-white p-5">
+              <h3 class="text-base font-semibold text-neutral-900">Централизованное управление</h3>
+              <p class="mt-2 text-sm text-neutral-600">меняй данные сотрудников из одного кабинета</p>
+            </article>
+            <article class="rounded-2xl border border-neutral-200 bg-white p-5">
+              <h3 class="text-base font-semibold text-neutral-900">Оптовая цена</h3>
+              <p class="mt-2 text-sm text-neutral-600">скидка от 5 slugов</p>
+            </article>
+          </div>
+
+          <a
+            href="https://t.me/unqx_uz"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="btn-shimmer mt-6 inline-flex items-center gap-2 rounded-xl bg-neutral-900 px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-neutral-800"
+          >
+            Обсудить условия →
+          </a>
         </div>
       </section>
 
@@ -529,6 +696,25 @@
         </div>
       </section>
 
+      <section id="faq" class="px-6 py-24">
+        <div class="mx-auto max-w-4xl">
+          <p class="font-mono text-xs uppercase tracking-[0.18em] text-neutral-400">ВОПРОСЫ</p>
+          <h2 class="mt-3 text-3xl font-bold tracking-tight text-neutral-900 md:text-4xl">Часто спрашивают</h2>
+
+          <div class="mt-8 space-y-3">
+            <% faqItems.forEach((item) => { %>
+            <details class="group rounded-2xl border border-neutral-200 bg-white p-4">
+              <summary class="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-medium text-neutral-900">
+                <span><%= item.q %></span>
+                <span class="text-neutral-400 transition-transform group-open:rotate-45">+</span>
+              </summary>
+              <p class="mt-3 text-sm leading-relaxed text-neutral-600"><%= item.a %></p>
+            </details>
+            <% }) %>
+          </div>
+        </div>
+      </section>
+
       <section id="order" class="px-6 pb-24">
         <div class="mx-auto max-w-5xl">
           <div class="rounded-3xl border border-neutral-200 bg-white p-6 shadow-sm sm:p-8">
@@ -585,6 +771,18 @@
                     </p>
                     <p class="mt-1 text-xs text-neutral-500">Разовая оплата при активации</p>
                   </div>
+
+                  <div id="order-slug-generator" class="mt-4 rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3">
+                    <p class="text-xs text-neutral-600">Не можешь придумать? Попробуй свободные:</p>
+                    <div id="order-slug-suggestions" class="mt-2 flex flex-wrap gap-2"></div>
+                    <button
+                      type="button"
+                      id="order-slug-refresh"
+                      class="mt-2 inline-flex items-center gap-2 rounded-lg border border-neutral-200 bg-white px-3 py-1.5 text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-100"
+                    >
+                      🔄 Ещё варианты
+                    </button>
+                  </div>
                 </div>
 
                 <div>
@@ -605,6 +803,16 @@
                       </span>
                     </label>
                   </div>
+                  <div class="mt-3 flex items-center justify-between gap-3 rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3">
+                    <div>
+                      <p class="text-xs font-medium text-neutral-700">Тема Премиум</p>
+                      <p id="order-theme-preview" class="text-xs text-neutral-500">default_dark</p>
+                    </div>
+                    <a href="/themes" class="rounded-lg border border-neutral-200 bg-white px-3 py-1.5 text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-100">
+                      Выбрать тему
+                    </a>
+                  </div>
+                  <input id="order-theme" name="theme" type="hidden" value="default_dark" />
                 </div>
 
                 <div>

@@ -13,6 +13,8 @@ const TARIFFS = {
 
   const orderApi = initOrderForm();
   initMobileMenu();
+  initSlugCounter();
+  initLiveDemo();
   initSlugAvailability(orderApi);
   initSlugCalculator(orderApi);
   initOrderLinks(orderApi);
@@ -194,6 +196,78 @@ function initOrderLinks(orderApi) {
   });
 }
 
+function initSlugCounter() {
+  const section = document.getElementById("slug-counter-wrap");
+  const wrap = document.getElementById("slug-counter");
+  const valueNode = document.getElementById("slug-counter-value");
+  const totalNode = document.getElementById("slug-counter-total");
+
+  if (
+    !(section instanceof HTMLElement) ||
+    !(wrap instanceof HTMLElement) ||
+    !(valueNode instanceof HTMLElement) ||
+    !(totalNode instanceof HTMLElement)
+  ) {
+    return;
+  }
+
+  (async () => {
+    try {
+      const response = await fetch("/api/cards/slug-counter", {
+        method: "GET",
+        headers: { Accept: "application/json" },
+      });
+
+      if (!response.ok) {
+        return;
+      }
+
+      const payload = await response.json();
+      if (!payload || typeof payload.taken !== "number" || typeof payload.total !== "number") {
+        return;
+      }
+
+      valueNode.textContent = Number(payload.taken).toLocaleString("ru-RU");
+      totalNode.textContent = Number(payload.total).toLocaleString("ru-RU");
+      section.classList.remove("hidden");
+      wrap.classList.remove("hidden");
+    } catch {
+      // keep hidden on failure
+    }
+  })();
+}
+
+function initLiveDemo() {
+  const frame = document.getElementById("live-demo-frame");
+  const toggle = document.getElementById("live-demo-toggle");
+  const note = document.getElementById("live-demo-note");
+
+  if (!(frame instanceof HTMLIFrameElement) || !(toggle instanceof HTMLButtonElement) || !(note instanceof HTMLElement)) {
+    return;
+  }
+
+  let premium = false;
+
+  function sync() {
+    if (premium) {
+      frame.src = "/demo?embed=1&theme=gradient";
+      note.textContent = "Так выглядит Премиум тариф";
+      toggle.textContent = "Посмотреть Базовый →";
+    } else {
+      frame.src = "/demo?embed=1&theme=default_dark";
+      note.textContent = "Так выглядит Базовый тариф";
+      toggle.textContent = "Посмотреть Премиум →";
+    }
+  }
+
+  toggle.addEventListener("click", () => {
+    premium = !premium;
+    sync();
+  });
+
+  sync();
+}
+
 function initSlugAvailability(orderApi) {
   const slugInput = document.getElementById("home-slug-input");
   const checkButton = document.getElementById("home-slug-check");
@@ -201,6 +275,8 @@ function initSlugAvailability(orderApi) {
   const statusIcon = document.getElementById("home-slug-status-icon");
   const statusText = document.getElementById("home-slug-status-text");
   const statusNote = document.getElementById("home-slug-note");
+  const suggestionsWrap = document.getElementById("home-slug-suggestions-wrap");
+  const suggestionsNode = document.getElementById("home-slug-suggestions");
   const primaryAction = document.getElementById("home-slug-primary-action");
 
   if (
@@ -210,6 +286,8 @@ function initSlugAvailability(orderApi) {
     !(statusIcon instanceof HTMLElement) ||
     !(statusText instanceof HTMLElement) ||
     !(statusNote instanceof HTMLElement) ||
+    !(suggestionsWrap instanceof HTMLElement) ||
+    !(suggestionsNode instanceof HTMLElement) ||
     !(primaryAction instanceof HTMLAnchorElement)
   ) {
     return;
@@ -227,7 +305,32 @@ function initSlugAvailability(orderApi) {
   const ARROW_ICON =
     '<svg class="icon-stroke h-3.5 w-3.5" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"></path></svg>';
 
-  function setFeedback(state, slug) {
+  function renderSuggestions(items) {
+    suggestionsNode.innerHTML = "";
+    if (!Array.isArray(items) || items.length === 0) {
+      suggestionsWrap.classList.add("hidden");
+      return;
+    }
+
+    items.slice(0, 3).forEach((item) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className =
+        "inline-flex items-center rounded-full border border-neutral-200 bg-white px-2.5 py-1 font-mono text-[11px] text-neutral-700 transition-colors hover:bg-neutral-50";
+      button.textContent = item;
+      button.addEventListener("click", () => {
+        slugInput.value = item;
+        if (orderApi) {
+          orderApi.prefillSlug(item);
+        }
+      });
+      suggestionsNode.appendChild(button);
+    });
+
+    suggestionsWrap.classList.remove("hidden");
+  }
+
+  function setFeedback(state, slug, suggestions = []) {
     feedback.classList.remove("hidden");
 
     function setPrimaryAction(options) {
@@ -247,6 +350,7 @@ function initSlugAvailability(orderApi) {
       statusIcon.innerHTML = ICON_LOADING;
       statusText.textContent = "Проверяем slug...";
       statusNote.textContent = "";
+      renderSuggestions([]);
       setPrimaryAction({ visible: false });
       return;
     }
@@ -255,6 +359,7 @@ function initSlugAvailability(orderApi) {
       statusIcon.innerHTML = ICON_BAD;
       statusText.textContent = "Формат slug должен быть AAA001";
       statusNote.textContent = "Используйте 3 латинские буквы и 3 цифры.";
+      renderSuggestions([]);
       setPrimaryAction({ visible: false });
       return;
     }
@@ -263,6 +368,7 @@ function initSlugAvailability(orderApi) {
       statusIcon.innerHTML = ICON_OK;
       statusText.textContent = `unqx.uz/${slug} доступен`;
       statusNote.textContent = "Slug свободен. Оставь заявку и мы активируем его для тебя.";
+      renderSuggestions([]);
       setPrimaryAction({
         visible: true,
         slug,
@@ -272,9 +378,10 @@ function initSlugAvailability(orderApi) {
     }
 
     if (state === "taken") {
-      statusIcon.innerHTML = ICON_INFO;
-      statusText.textContent = `unqx.uz/${slug} уже занят`;
-      statusNote.textContent = "Этот slug занят, но ты можешь оставить заявку на другой внизу страницы.";
+      statusIcon.innerHTML = ICON_BAD;
+      statusText.textContent = `❌ ${slug} занят`;
+      statusNote.textContent = "Этот slug занят, выбери похожий свободный вариант.";
+      renderSuggestions(suggestions);
       setPrimaryAction({
         visible: true,
         slug,
@@ -286,6 +393,7 @@ function initSlugAvailability(orderApi) {
     statusIcon.innerHTML = ICON_BAD;
     statusText.textContent = "Не удалось проверить slug";
     statusNote.textContent = "Повторите попытку через несколько секунд.";
+    renderSuggestions([]);
     setPrimaryAction({ visible: false });
   }
 
@@ -308,7 +416,7 @@ function initSlugAvailability(orderApi) {
     setFeedback("loading", slug);
 
     try {
-      const response = await fetch(`/api/cards/availability?slug=${encodeURIComponent(slug)}`, {
+      const response = await fetch(`/api/cards/availability?slug=${encodeURIComponent(slug)}&source=hero`, {
         method: "GET",
         headers: {
           Accept: "application/json",
@@ -326,7 +434,7 @@ function initSlugAvailability(orderApi) {
         return;
       }
 
-      setFeedback(payload.available ? "available" : "taken", slug);
+      setFeedback(payload.available ? "available" : "taken", slug, Array.isArray(payload.suggestions) ? payload.suggestions : []);
       if (orderApi) {
         orderApi.prefillSlug(slug);
       }
@@ -457,6 +565,10 @@ function initOrderForm() {
   const lettersInput = document.getElementById("order-letters");
   const digitsInput = document.getElementById("order-digits");
   const contactInput = document.getElementById("order-contact");
+  const themeInput = document.getElementById("order-theme");
+  const themePreview = document.getElementById("order-theme-preview");
+  const slugSuggestionsWrap = document.getElementById("order-slug-suggestions");
+  const slugSuggestionsRefresh = document.getElementById("order-slug-refresh");
   const slugPreview = document.getElementById("order-slug-preview");
   const slugPriceCard = document.getElementById("order-slug-price-card");
   const slugPriceValue = document.getElementById("order-slug-price-value");
@@ -478,6 +590,10 @@ function initOrderForm() {
     !(lettersInput instanceof HTMLInputElement) ||
     !(digitsInput instanceof HTMLInputElement) ||
     !(contactInput instanceof HTMLInputElement) ||
+    !(themeInput instanceof HTMLInputElement) ||
+    !(themePreview instanceof HTMLElement) ||
+    !(slugSuggestionsWrap instanceof HTMLElement) ||
+    !(slugSuggestionsRefresh instanceof HTMLButtonElement) ||
     !(slugPreview instanceof HTMLElement) ||
     !(slugPriceCard instanceof HTMLElement) ||
     !(slugPriceValue instanceof HTMLElement) ||
@@ -506,6 +622,34 @@ function initOrderForm() {
     }
 
     return selected.value === "premium" ? "premium" : "basic";
+  }
+
+  function normalizeTheme(theme) {
+    const value = String(theme || "").trim();
+    const allowed = ["default_dark", "light_minimal", "gradient", "neon", "corporate"];
+    if (!allowed.includes(value)) {
+      return "default_dark";
+    }
+    return value;
+  }
+
+  function applyTheme(theme) {
+    const normalized = normalizeTheme(theme);
+    themeInput.value = normalized;
+    themePreview.textContent = normalized;
+  }
+
+  function applyQueryPrefill() {
+    const params = new URLSearchParams(window.location.search);
+    const tariff = params.get("tariff");
+    if (tariff === "premium" || tariff === "basic") {
+      const target = form.querySelector(`input[name="order-tariff"][value="${tariff}"]`);
+      if (target instanceof HTMLInputElement) {
+        target.checked = true;
+      }
+    }
+
+    applyTheme(params.get("theme"));
   }
 
   function productFlags() {
@@ -586,6 +730,45 @@ function initOrderForm() {
     updateOrderTotals();
   }
 
+  function renderSlugSuggestions(items) {
+    slugSuggestionsWrap.innerHTML = "";
+    if (!Array.isArray(items) || items.length === 0) {
+      return;
+    }
+
+    items.forEach((slug) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className =
+        "rounded-full border border-neutral-200 bg-white px-3 py-1 font-mono text-xs text-neutral-700 transition-colors hover:bg-neutral-100";
+      button.textContent = slug;
+      button.addEventListener("click", () => {
+        prefillSlug(slug);
+      });
+      slugSuggestionsWrap.appendChild(button);
+    });
+  }
+
+  async function refreshSlugSuggestions() {
+    const base = `${lettersInput.value || "AAA"}${digitsInput.value || "000"}`;
+    slugSuggestionsRefresh.disabled = true;
+    try {
+      const response = await fetch(`/api/cards/slug-suggestions?count=5&base=${encodeURIComponent(base)}`, {
+        method: "GET",
+        headers: { Accept: "application/json" },
+      });
+      if (!response.ok) {
+        throw new Error("request failed");
+      }
+      const payload = await response.json();
+      renderSlugSuggestions(Array.isArray(payload.suggestions) ? payload.suggestions : []);
+    } catch {
+      renderSlugSuggestions([]);
+    } finally {
+      slugSuggestionsRefresh.disabled = false;
+    }
+  }
+
   function validate() {
     const errors = {};
     const pricing = getSlugPricing();
@@ -635,6 +818,10 @@ function initOrderForm() {
     });
   }
 
+  slugSuggestionsRefresh.addEventListener("click", () => {
+    void refreshSlugSuggestions();
+  });
+
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
     clearErrors();
@@ -674,6 +861,7 @@ function initOrderForm() {
           letters: pricing.letters,
           digits: pricing.digits,
           tariff,
+          theme: tariff === "premium" ? normalizeTheme(themeInput.value) : undefined,
           products,
           contact: contactInput.value.trim(),
         }),
@@ -685,7 +873,9 @@ function initOrderForm() {
         setStatus("✅ Заявка принята! Ожидай сообщения в Telegram.", "success");
         form.reset();
         clearErrors();
+        applyQueryPrefill();
         updateOrderTotals();
+        void refreshSlugSuggestions();
         return;
       }
 
@@ -705,7 +895,9 @@ function initOrderForm() {
     }
   });
 
+  applyQueryPrefill();
   updateOrderTotals();
+  void refreshSlugSuggestions();
 
   return {
     prefillSlug,

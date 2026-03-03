@@ -115,6 +115,8 @@ const ButtonInputSchema = z.object({
 const CardUpsertSchema = z.object({
   slug: SlugSchema,
   isActive: z.boolean().default(true),
+  tariff: z.enum(["basic", "premium"]).optional(),
+  theme: z.enum(["default_dark", "light_minimal", "gradient", "neon", "corporate"]).optional(),
   name: z.string().trim().min(1).max(100),
   phone: requiredUzPhone,
   verified: z.boolean().default(false),

@@ -1,13 +1,12 @@
 const express = require("express");
 
-const { prisma } = require("../../db/prisma");
 const { env } = require("../../config/env");
 const { asyncHandler } = require("../../middleware/async");
 const { getAdminSession, loginAdmin, logoutAdmin, requireAdminPage, verifyAdminCredentials } = require("../../middleware/auth");
 const { loginRateLimit } = require("../../middleware/rate-limit");
 const { requireCsrfToken } = require("../../middleware/csrf");
-const { listCards, getCardDetailsById } = require("../../services/cards");
-const { getCardStats, getGlobalStats } = require("../../services/stats");
+const { getCardDetailsById } = require("../../services/cards");
+const { getCardStats } = require("../../services/stats");
 const { getBaseUrl } = require("../../utils/url");
 
 const router = express.Router();
@@ -79,25 +78,16 @@ router.get(
   "/admin/dashboard",
   requireAdminPage,
   asyncHandler(async (req, res) => {
-    const q = req.query.q || "";
-    const status = req.query.status === "active" || req.query.status === "inactive" ? req.query.status : "all";
-    const page = Math.max(1, Number(req.query.page || "1") || 1);
-
-    const result = await listCards({
-      query: q,
-      status,
-      page,
-      pageSize: 20,
-    });
+    const allowedTabs = new Set(["analytics", "orders", "slugs", "cards", "bracelets", "testimonials", "logs"]);
+    const tab = typeof req.query.tab === "string" && allowedTabs.has(req.query.tab) ? req.query.tab : "analytics";
 
     res.render("admin/dashboard", {
       title: "Дашборд",
       adminSession: getAdminSession(req),
-      rows: result.items,
-      pagination: result.pagination,
-      filters: { q, status },
       publicBaseUrl: getBaseUrl(),
-      buildDashboardUrl: (nextPage) => buildQuery("/admin/dashboard", { q, status, page: nextPage }),
+      activeTab: tab,
+      query: req.query || {},
+      buildDashboardUrl: (next) => buildQuery("/admin/dashboard", next),
     });
   }),
 );
@@ -184,56 +174,6 @@ router.get(
         lastViewAt: stats.lastViewAt ? stats.lastViewAt.toISOString() : null,
         deviceSplit: stats.deviceSplit,
       },
-    });
-  }),
-);
-
-router.get(
-  "/admin/stats",
-  requireAdminPage,
-  asyncHandler(async (req, res) => {
-    const stats = await getGlobalStats(env.TIMEZONE);
-
-    res.render("admin/stats", {
-      title: "Общая статистика",
-      adminSession: getAdminSession(req),
-      stats,
-    });
-  }),
-);
-
-router.get(
-  "/admin/logs",
-  requireAdminPage,
-  asyncHandler(async (req, res) => {
-    const rawType = req.query.type || "all";
-    const type = rawType === "not_found" || rawType === "server_error" ? rawType : "all";
-    const page = Math.max(1, Number(req.query.page || "1") || 1);
-    const pageSize = 50;
-
-    const where = type === "all" ? {} : { type };
-
-    const [total, logs] = await Promise.all([
-      prisma.errorLog.count({ where }),
-      prisma.errorLog.findMany({
-        where,
-        orderBy: { occurredAt: "desc" },
-        skip: (page - 1) * pageSize,
-        take: pageSize,
-      }),
-    ]);
-
-    const totalPages = Math.max(1, Math.ceil(total / pageSize));
-
-    res.render("admin/logs", {
-      title: "Логи ошибок",
-      adminSession: getAdminSession(req),
-      logs,
-      type,
-      page,
-      total,
-      totalPages,
-      buildLogsUrl: (nextPage) => buildQuery("/admin/logs", { type: type === "all" ? undefined : type, page: nextPage }),
     });
   }),
 );

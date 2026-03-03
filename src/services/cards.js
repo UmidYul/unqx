@@ -50,6 +50,8 @@ async function listCards(options = {}) {
       slug: true,
       name: true,
       isActive: true,
+      tariff: true,
+      theme: true,
       viewsCount: true,
       uniqueViewsCount: true,
       createdAt: true,
@@ -102,6 +104,8 @@ async function createCard(input) {
     data: {
       slug: input.slug,
       isActive: input.isActive,
+      tariff: input.tariff || "basic",
+      theme: input.theme || "default_dark",
       name: input.name,
       phone: input.phone,
       verified: input.verified,
@@ -133,11 +137,18 @@ async function updateCard(id, input) {
   const buttons = normalizeButtons(input);
 
   return prisma.$transaction(async (tx) => {
+    const existing = await tx.card.findUnique({
+      where: { id },
+      select: { tariff: true, theme: true },
+    });
+
     const updated = await tx.card.update({
       where: { id },
       data: {
         slug: input.slug,
         isActive: input.isActive,
+        tariff: input.tariff || existing?.tariff || "basic",
+        theme: input.theme || existing?.theme || "default_dark",
         name: input.name,
         phone: input.phone,
         verified: input.verified,
