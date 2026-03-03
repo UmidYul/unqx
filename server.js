@@ -25,8 +25,14 @@ async function bootstrap() {
     console.log(`[express-app] listening on http://127.0.0.1:${env.PORT}`);
     console.log(`[express-app] trust proxy=${String(env.TRUST_PROXY)}, session cookie secure=${String(env.SESSION_COOKIE_SECURE)}`);
   });
+  let isShuttingDown = false;
 
   async function shutdown(signal) {
+    if (isShuttingDown) {
+      return;
+    }
+
+    isShuttingDown = true;
     console.log(`[express-app] received ${signal}, shutting down`);
     server.close(async () => {
       try {
@@ -37,10 +43,10 @@ async function bootstrap() {
     });
   }
 
-  process.on("SIGINT", () => {
+  process.once("SIGINT", () => {
     void shutdown("SIGINT");
   });
-  process.on("SIGTERM", () => {
+  process.once("SIGTERM", () => {
     void shutdown("SIGTERM");
   });
 }
