@@ -6,9 +6,9 @@
 .public-card-bg {
   background-color: #f4f1ec;
   background-image: url("/lightning_pattern.svg");
-  background-position: center top;
-  background-repeat: repeat;
-  background-size: 560px auto;
+  background-position: center center;
+  background-repeat: no-repeat;
+  background-size: cover;
 }
 
 .public-card-shell {
@@ -55,6 +55,6 @@
   }
 
   .public-card-bg {
-    background-size: 420px auto;
+    background-size: cover;
   }
 }
