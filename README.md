@@ -12,7 +12,6 @@ Express-only implementation of UNQ+ without Next.js and without frontend build t
 ## Run
 
 ```bash
-cd express-app
 npm install
 npm run prisma:deploy
 npm run dev
@@ -23,7 +22,6 @@ npm run dev
 Production:
 
 ```bash
-cd express-app
 npm run start
 ```
 
@@ -33,7 +31,7 @@ Default URL: `http://127.0.0.1:3100`
 
 Env is read from:
 
-1. `express-app/.env` (if exists)
+1. `.env` in project root (if exists)
 2. root `.env` (fallback)
 
 Required:
@@ -95,7 +93,7 @@ API:
 
 ## Visual Compare (Next vs Express)
 
-Artifacts are written to `express-app/artifacts/visual`:
+Artifacts are written to `artifacts/visual`:
 
 - `next/<route>/<state>/<viewport>.png`
 - `express/<route>/<state>/<viewport>.png`
@@ -104,7 +102,6 @@ Artifacts are written to `express-app/artifacts/visual`:
 ### 1) Seed deterministic fixture
 
 ```bash
-cd express-app
 npm run seed:visual
 ```
 
@@ -115,12 +112,11 @@ Creates/updates visual fixture cards (`AAA001` active, `AAA002` inactive), demo 
 Start both apps first (in separate terminals):
 
 - Next reference (root project): `npm run dev`
-- Express candidate (`express-app`): `npm run dev`
+- Express candidate (this project): `npm run dev`
 
 Then run:
 
 ```bash
-cd express-app
 VISUAL_ADMIN_PASSWORD="your_admin_plain_password" npm run test:visual
 ```
 
@@ -143,7 +139,6 @@ npm run test:visual:seed
 ## Tests
 
 ```bash
-cd express-app
 npm test
 ```
 
