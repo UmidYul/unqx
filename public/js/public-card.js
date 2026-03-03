@@ -6,6 +6,10 @@
 
   const slug = root.getAttribute("data-slug");
   const copyButton = document.querySelector("[data-copy-phone]");
+  const avatarImage = document.querySelector("[data-avatar-image]");
+  const avatarFallback = document.querySelector("[data-avatar-fallback]");
+  const brandImage = document.querySelector("[data-brand-image]");
+  const extraPhoto = document.querySelector("[data-extra-photo]");
 
   function copyWithFallback(value) {
     const textarea = document.createElement("textarea");
@@ -40,6 +44,52 @@
     return ok;
   }
 
+  function showAvatarFallback() {
+    if (avatarImage) {
+      avatarImage.classList.add("is-hidden");
+    }
+    if (avatarFallback) {
+      avatarFallback.classList.remove("is-hidden");
+      avatarFallback.setAttribute("aria-hidden", "false");
+    }
+  }
+
+  if (avatarImage) {
+    avatarImage.addEventListener("error", showAvatarFallback, { once: true });
+  }
+
+  if (brandImage) {
+    brandImage.addEventListener(
+      "error",
+      () => {
+        const wrapper = brandImage.closest(".public-brand-mark");
+        if (wrapper) {
+          wrapper.classList.add("is-hidden");
+        }
+      },
+      { once: true },
+    );
+  }
+
+  if (extraPhoto) {
+    extraPhoto.addEventListener(
+      "error",
+      () => {
+        const wrapper = extraPhoto.closest(".public-extra-photo");
+        if (!wrapper) {
+          return;
+        }
+
+        extraPhoto.remove();
+        const placeholder = document.createElement("div");
+        placeholder.className = "public-extra-photo-placeholder";
+        placeholder.setAttribute("aria-hidden", "true");
+        wrapper.appendChild(placeholder);
+      },
+      { once: true },
+    );
+  }
+
   if (copyButton) {
     const defaultIcon = copyButton.querySelector("[data-copy-default]");
     const successIcon = copyButton.querySelector("[data-copy-success]");
@@ -53,16 +103,16 @@
         return;
       }
 
-      defaultIcon.classList.add("hidden");
-      successIcon.classList.remove("hidden");
+      defaultIcon.classList.add("is-hidden");
+      successIcon.classList.remove("is-hidden");
 
       if (resetTimer) {
         window.clearTimeout(resetTimer);
       }
 
       resetTimer = window.setTimeout(() => {
-        successIcon.classList.add("hidden");
-        defaultIcon.classList.remove("hidden");
+        successIcon.classList.add("is-hidden");
+        defaultIcon.classList.remove("is-hidden");
       }, 2000);
     });
   }
