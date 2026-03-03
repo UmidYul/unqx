@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-const DEFAULT_ADMIN_HASH = "$2b$10$nXEG5Nb9BeOLV1OkQPFqyOXI73zc/JFsd2wXmuU.5wlqjVwrrRPOu";
+const BCRYPT_HASH_REGEX = /^\$2[aby]\$\d{2}\$[./A-Za-z0-9]{53}$/;
 
 const schema = z.object({
   DATABASE_URL: z.string().min(1).default("postgresql://postgres:postgres@localhost:55432/unqplus"),
@@ -10,8 +10,7 @@ const schema = z.object({
   ADMIN_LOGIN: z.string().min(1).default("admin"),
   ADMIN_PASSWORD_HASH: z
     .string()
-    .optional()
-    .transform((value) => (value && value.length >= 20 ? value : DEFAULT_ADMIN_HASH)),
+    .regex(BCRYPT_HASH_REGEX, "ADMIN_PASSWORD_HASH must be a valid bcrypt hash"),
 });
 
 export const env = schema.parse({
