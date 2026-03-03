@@ -1,5 +1,7 @@
 const { z } = require("zod");
 
+const UZ_PHONE_REGEX = /^\+998\d{9}$/;
+
 const optionalString = (max) =>
   z
     .string()
@@ -11,6 +13,64 @@ const optionalString = (max) =>
       const normalized = typeof value === "string" ? value.trim() : "";
       return normalized.length > 0 ? normalized : undefined;
     });
+
+function normalizeUzPhone(value) {
+  const raw = String(value || "").trim();
+  if (!raw) {
+    return null;
+  }
+
+  if (raw.startsWith("+") && !raw.startsWith("+998")) {
+    return null;
+  }
+
+  const digits = raw.replace(/\D/g, "");
+  let tail = "";
+
+  if (digits.startsWith("998")) {
+    tail = digits.slice(3);
+  } else if (digits.length === 10 && digits.startsWith("0")) {
+    tail = digits.slice(1);
+  } else if (digits.length === 9) {
+    tail = digits;
+  } else {
+    return null;
+  }
+
+  const normalizedTail = tail.slice(0, 9);
+
+  if (normalizedTail.length !== 9) {
+    return null;
+  }
+
+  return `+998${normalizedTail}`;
+}
+
+const requiredUzPhone = z
+  .string()
+  .trim()
+  .transform((value) => normalizeUzPhone(value))
+  .refine((value) => Boolean(value && UZ_PHONE_REGEX.test(value)), {
+    message: "Phone must match +998XXXXXXXXX",
+  })
+  .transform((value) => value);
+
+const optionalUzPhone = z
+  .string()
+  .trim()
+  .optional()
+  .or(z.literal(""))
+  .transform((value) => {
+    const normalized = typeof value === "string" ? value.trim() : "";
+    if (!normalized) {
+      return undefined;
+    }
+
+    return normalizeUzPhone(normalized);
+  })
+  .refine((value) => value === undefined || UZ_PHONE_REGEX.test(value), {
+    message: "Phone must match +998XXXXXXXXX",
+  });
 
 const urlParser = z.string().url();
 const optionalUrl = z
@@ -56,7 +116,7 @@ const CardUpsertSchema = z.object({
   slug: SlugSchema,
   isActive: z.boolean().default(true),
   name: z.string().trim().min(1).max(100),
-  phone: z.string().trim().min(5).max(30),
+  phone: requiredUzPhone,
   verified: z.boolean().default(false),
   hashtag: optionalString(50),
   address: optionalString(300),
@@ -73,7 +133,7 @@ const CardUpsertSchema = z.object({
     .refine((value) => !value || z.string().email().max(100).safeParse(value).success, {
       message: "Invalid email",
     }),
-  extraPhone: optionalString(30),
+  extraPhone: optionalUzPhone,
   tags: z.array(TagInputSchema).default([]),
   buttons: z.array(ButtonInputSchema).default([]),
 });

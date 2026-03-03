@@ -11,7 +11,15 @@
     verified: Boolean(pageCardRaw.verified),
     phone: pageCardRaw.phone || "",
     tags: Array.isArray(pageCardRaw.tags) ? pageCardRaw.tags : [],
-    buttons: Array.isArray(pageCardRaw.buttons) ? pageCardRaw.buttons : [],
+    buttons: Array.isArray(pageCardRaw.buttons)
+      ? pageCardRaw.buttons
+          .map((button) => ({
+            label: typeof button.label === "string" ? button.label.trim() : "",
+            url: typeof button.url === "string" ? button.url.trim() : "",
+            isActive: Boolean(button.isActive),
+          }))
+          .filter((button) => button.isActive && button.label.length > 0 && /^https?:\/\//i.test(button.url))
+      : [],
     hashtag: pageCardRaw.hashtag || "",
     address: pageCardRaw.address || "",
     postcode: pageCardRaw.postcode || "",

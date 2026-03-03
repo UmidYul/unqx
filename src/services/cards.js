@@ -2,33 +2,18 @@ const { prisma } = require("../db/prisma");
 const { compareSlugs, getNextSlug, isValidSlug } = require("./slug");
 
 async function getPublicCardBySlug(slug) {
-  const card = await prisma.card.findUnique({
+  return prisma.card.findUnique({
     where: { slug },
-  });
-
-  if (!card) {
-    return null;
-  }
-
-  const [tags, buttons] = await Promise.all([
-    prisma.tag.findMany({
-      where: { cardId: card.id },
-      orderBy: { sortOrder: "asc" },
-    }),
-    prisma.button.findMany({
-      where: {
-        cardId: card.id,
-        isActive: true,
+    include: {
+      tags: {
+        orderBy: { sortOrder: "asc" },
       },
-      orderBy: { sortOrder: "asc" },
-    }),
-  ]);
-
-  return {
-    ...card,
-    tags,
-    buttons,
-  };
+      buttons: {
+        where: { isActive: true },
+        orderBy: { sortOrder: "asc" },
+      },
+    },
+  });
 }
 
 async function listCards(options = {}) {

@@ -9,6 +9,81 @@ const { asyncHandler } = require("../../middleware/async");
 
 const router = express.Router();
 
+function normalizeIp(value) {
+  if (!value || typeof value !== "string") {
+    return null;
+  }
+
+  const raw = value.trim().toLowerCase();
+  if (!raw) {
+    return null;
+  }
+
+  if (raw.startsWith("::ffff:")) {
+    return raw.slice(7);
+  }
+
+  if (raw === "::1") {
+    return "127.0.0.1";
+  }
+
+  return raw;
+}
+
+function pickClientIdentity(req) {
+  const forwardedFor = req.get("x-forwarded-for");
+  const realIp = req.get("x-real-ip");
+
+  const forwardedIp = forwardedFor ? forwardedFor.split(",")[0].trim() : null;
+  const directIp = normalizeIp(forwardedIp) || normalizeIp(realIp) || normalizeIp(req.ip);
+
+  if (directIp) {
+    return `ip:${directIp}`;
+  }
+
+  const userAgent = (req.get("user-agent") || "").trim();
+  const acceptLanguage = (req.get("accept-language") || "").trim();
+
+  if (!userAgent && !acceptLanguage) {
+    return null;
+  }
+
+  return `fp:${userAgent}|${acceptLanguage}`;
+}
+
+router.get(
+  "/search",
+  asyncHandler(async (req, res) => {
+    const raw = typeof req.query.q === "string" ? req.query.q : "";
+    const query = raw.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6);
+
+    if (!query) {
+      res.json({ items: [] });
+      return;
+    }
+
+    const items = await prisma.card.findMany({
+      where: {
+        isActive: true,
+        slug: {
+          startsWith: query,
+          mode: "insensitive",
+        },
+      },
+      select: {
+        slug: true,
+        name: true,
+      },
+      orderBy: {
+        slug: "asc",
+      },
+      take: 8,
+    });
+
+    res.json({ items });
+  }),
+);
+
 router.post(
   "/:slug/view",
   asyncHandler(async (req, res) => {
@@ -23,11 +98,9 @@ router.post(
     }
 
     const device = detectDevice(req.get("user-agent"));
-    const forwardedFor = req.get("x-forwarded-for");
-    const realIp = req.get("x-real-ip");
-    const ip = (forwardedFor ? forwardedFor.split(",")[0].trim() : null) || (realIp ? realIp.trim() : null);
     const dateKey = new Date().toISOString().slice(0, 10);
-    const ipHash = ip ? createHash("sha256").update(`${ip}|${req.params.slug}|${dateKey}`).digest("hex") : null;
+    const identity = pickClientIdentity(req);
+    const ipHash = identity ? createHash("sha256").update(`${identity}|${req.params.slug}|${dateKey}`).digest("hex") : null;
     const dayStart = new Date(`${dateKey}T00:00:00.000Z`);
 
     await prisma.$transaction(async (tx) => {

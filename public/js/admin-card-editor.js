@@ -44,6 +44,7 @@
   const avatarCropWrap = document.getElementById("avatar-crop-wrap");
   const avatarCropImage = document.getElementById("avatar-crop-image");
   const uploadAvatarBtn = document.getElementById("upload-avatar-btn");
+  const removeAvatarBtn = document.getElementById("remove-avatar-btn");
   const avatarCurrentImage = document.getElementById("avatar-current-image");
   const avatarFallback = document.getElementById("avatar-fallback");
 
@@ -95,6 +96,111 @@
 
   function sanitizeSlug(value) {
     return (value || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6);
+  }
+
+  function extractDigits(value) {
+    return (value || "").replace(/\D/g, "");
+  }
+
+  function normalizeUzPhone(value) {
+    const raw = String(value || "").trim();
+    if (!raw) {
+      return null;
+    }
+
+    if (raw.startsWith("+") && !raw.startsWith("+998")) {
+      return null;
+    }
+
+    const digits = extractDigits(raw);
+    let tail = "";
+
+    if (digits.startsWith("998")) {
+      tail = digits.slice(3);
+    } else if (digits.length === 10 && digits.startsWith("0")) {
+      tail = digits.slice(1);
+    } else if (digits.length === 9) {
+      tail = digits;
+    } else {
+      return null;
+    }
+
+    const normalizedTail = tail.slice(0, 9);
+
+    if (normalizedTail.length !== 9) {
+      return null;
+    }
+
+    return `+998${normalizedTail}`;
+  }
+
+  function formatUzPhone(value) {
+    const digits = extractDigits(value);
+    let tail = "";
+
+    if (digits.startsWith("998")) {
+      tail = digits.slice(3);
+    } else if (digits.length > 0 && digits[0] === "0") {
+      tail = digits.slice(1);
+    } else {
+      tail = digits;
+    }
+
+    const normalizedTail = tail.slice(0, 9);
+
+    if (!normalizedTail) {
+      return "";
+    }
+
+    const p1 = normalizedTail.slice(0, 2);
+    const p2 = normalizedTail.slice(2, 5);
+    const p3 = normalizedTail.slice(5, 7);
+    const p4 = normalizedTail.slice(7, 9);
+
+    let result = "+998";
+    if (p1) {
+      result += ` (${p1}`;
+      if (p1.length === 2) {
+        result += ")";
+      }
+    }
+    if (p2) {
+      result += ` ${p2}`;
+    }
+    if (p3) {
+      result += `-${p3}`;
+    }
+    if (p4) {
+      result += `-${p4}`;
+    }
+
+    return result;
+  }
+
+  function normalizeUrl(value) {
+    const raw = (value || "").trim();
+    if (!raw) {
+      return "";
+    }
+
+    if (/^https?:\/\//i.test(raw)) {
+      return raw;
+    }
+
+    return `https://${raw}`;
+  }
+
+  function isValidHttpUrl(value) {
+    if (!value || !/^https?:\/\//i.test(value)) {
+      return false;
+    }
+
+    try {
+      const parsed = new URL(value);
+      return parsed.protocol === "http:" || parsed.protocol === "https:";
+    } catch {
+      return false;
+    }
   }
 
   function createTagRow(data) {
@@ -160,6 +266,8 @@
       <button type="button" data-remove-row class="mt-6 rounded-lg border border-red-200 px-3 py-2 text-xs font-semibold text-red-700 transition hover:bg-red-50">
         Удалить
       </button>
+
+      <p class="button-row-error hidden text-xs text-red-600 md:col-span-5"></p>
     `;
 
     const labelInput = row.querySelector(".button-label");
@@ -219,12 +327,68 @@
         const activeNode = row.querySelector(".button-active");
 
         const label = labelInput instanceof HTMLInputElement ? labelInput.value.trim() : "";
-        const url = urlInput instanceof HTMLInputElement ? urlInput.value.trim() : "";
+        const url = urlInput instanceof HTMLInputElement ? normalizeUrl(urlInput.value) : "";
         const isActive = activeNode instanceof HTMLInputElement ? activeNode.checked : true;
 
         return { label, url, isActive };
       })
-      .filter((item) => item.label.length > 0 || (item.url.length > 0 && item.url !== "https://"));
+      .filter((item) => item.label.length > 0 && item.url.length > 0 && isValidHttpUrl(item.url));
+  }
+
+  function clearButtonRowErrors() {
+    Array.from(buttonsList.querySelectorAll('[data-item="button"]')).forEach((row) => {
+      const errorNode = row.querySelector(".button-row-error");
+      if (errorNode instanceof HTMLElement) {
+        errorNode.textContent = "";
+        errorNode.classList.add("hidden");
+      }
+    });
+  }
+
+  function setButtonRowError(row, message) {
+    const errorNode = row.querySelector(".button-row-error");
+    if (!(errorNode instanceof HTMLElement)) {
+      return;
+    }
+
+    errorNode.textContent = message;
+    errorNode.classList.remove("hidden");
+  }
+
+  function validateButtonsRows() {
+    let ok = true;
+    clearButtonRowErrors();
+
+    Array.from(buttonsList.querySelectorAll('[data-item="button"]')).forEach((row) => {
+      const labelInput = row.querySelector(".button-label");
+      const urlInput = row.querySelector(".button-url");
+
+      const label = labelInput instanceof HTMLInputElement ? labelInput.value.trim() : "";
+      const url = urlInput instanceof HTMLInputElement ? normalizeUrl(urlInput.value) : "";
+      const hasLabel = Boolean(label);
+      const hasUrl = Boolean(url);
+
+      if (urlInput instanceof HTMLInputElement && hasUrl) {
+        urlInput.value = url;
+      }
+
+      if (!hasLabel && !hasUrl) {
+        return;
+      }
+
+      if (!hasLabel || !hasUrl) {
+        setButtonRowError(row, "Заполните и текст кнопки, и ссылку.");
+        ok = false;
+        return;
+      }
+
+      if (!isValidHttpUrl(url)) {
+        setButtonRowError(row, "Введите корректную ссылку (http:// или https://)");
+        ok = false;
+      }
+    });
+
+    return ok;
   }
 
   function collectPayload() {
@@ -232,13 +396,13 @@
       slug: sanitizeSlug(slugInput.value),
       isActive: Boolean(activeInput.checked),
       name: nameInput.value.trim(),
-      phone: phoneInput.value.trim(),
+      phone: normalizeUzPhone(phoneInput.value) || phoneInput.value.trim(),
       verified: Boolean(verifiedInput.checked),
       hashtag: hashtagInput.value.trim() || undefined,
       address: addressInput.value.trim() || undefined,
       postcode: postcodeInput.value.trim() || undefined,
       email: emailInput.value.trim() || undefined,
-      extraPhone: extraPhoneInput.value.trim() || undefined,
+      extraPhone: (normalizeUzPhone(extraPhoneInput.value) || extraPhoneInput.value.trim()) || undefined,
       tags: readTagRows(),
       buttons: readButtonRows(),
     };
@@ -271,8 +435,23 @@
       return false;
     }
 
+    if (!/^\+998\d{9}$/.test(payload.phone)) {
+      setNodeMessage(phoneErrorNode, "Номер должен быть в формате +998XXXXXXXXX");
+      return false;
+    }
+
     if (payload.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.email)) {
       setNodeMessage(emailErrorNode, "Введите корректный email");
+      return false;
+    }
+
+    if (payload.extraPhone && !/^\+998\d{9}$/.test(payload.extraPhone)) {
+      setFormError("Дополнительный телефон должен быть в формате +998XXXXXXXXX");
+      return false;
+    }
+
+    if (!validateButtonsRows()) {
+      setFormError("Проверьте заполнение кнопок: текст и ссылка обязательны.");
       return false;
     }
 
@@ -314,6 +493,17 @@
     clearFieldErrors();
   });
 
+  [phoneInput, extraPhoneInput].forEach((inputNode) => {
+    inputNode.addEventListener("input", () => {
+      inputNode.value = formatUzPhone(inputNode.value);
+      if (inputNode === phoneInput) {
+        setNodeMessage(phoneErrorNode, "");
+      }
+    });
+
+    inputNode.value = inputNode.value ? formatUzPhone(inputNode.value) : "";
+  });
+
   if (addTagBtn instanceof HTMLElement) {
     addTagBtn.addEventListener("click", () => {
       tagsList.appendChild(createTagRow({ label: "", url: "" }));
@@ -349,6 +539,23 @@
 
     listNode.addEventListener("input", () => {
       refreshTagsPreview();
+      if (listNode === buttonsList) {
+        clearButtonRowErrors();
+      }
+    });
+
+    listNode.addEventListener("focusout", (event) => {
+      if (listNode !== buttonsList) {
+        return;
+      }
+
+      const target = event.target;
+      if (!(target instanceof HTMLInputElement) || !target.classList.contains("button-url")) {
+        return;
+      }
+
+      const normalized = normalizeUrl(target.value);
+      target.value = normalized;
     });
   });
 
@@ -460,9 +667,12 @@
         destroyCropper();
         cropper = new Cropper(avatarCropImage, {
           aspectRatio: 1,
-          viewMode: 1,
+          viewMode: 2,
           dragMode: "move",
-          autoCropArea: 0.9,
+          autoCropArea: 1,
+          guides: false,
+          center: false,
+          highlight: false,
           background: false,
         });
       };
@@ -526,6 +736,10 @@
           avatarFallback.hidden = true;
         }
 
+        if (removeAvatarBtn instanceof HTMLButtonElement) {
+          removeAvatarBtn.disabled = false;
+        }
+
         destroyCropper();
         avatarCropWrap.hidden = true;
         avatarCropImage.removeAttribute("src");
@@ -534,6 +748,55 @@
       } finally {
         uploadAvatarBtn.disabled = false;
         uploadAvatarBtn.textContent = "Сохранить обрезку";
+      }
+    });
+  }
+
+  if (removeAvatarBtn instanceof HTMLButtonElement) {
+    removeAvatarBtn.addEventListener("click", async () => {
+      if (!cardId) {
+        return;
+      }
+
+      removeAvatarBtn.disabled = true;
+      setFormError("");
+      try {
+        const response = await fetch(`/api/admin/cards/${cardId}/avatar`, {
+          method: "DELETE",
+        });
+
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          setFormError(payload.error || "Не удалось удалить аватар");
+          return;
+        }
+
+        if (avatarCurrentImage instanceof HTMLImageElement) {
+          avatarCurrentImage.hidden = true;
+          avatarCurrentImage.removeAttribute("src");
+        }
+
+        if (avatarFallback instanceof HTMLElement) {
+          avatarFallback.hidden = false;
+        }
+
+        removeAvatarBtn.disabled = true;
+
+        destroyCropper();
+        if (avatarCropWrap instanceof HTMLElement) {
+          avatarCropWrap.hidden = true;
+        }
+        if (avatarCropImage instanceof HTMLImageElement) {
+          avatarCropImage.removeAttribute("src");
+        }
+        resetSourceObjectUrl();
+        if (avatarFileInput instanceof HTMLInputElement) {
+          avatarFileInput.value = "";
+        }
+      } finally {
+        if (avatarCurrentImage instanceof HTMLImageElement && !avatarCurrentImage.hidden) {
+          removeAvatarBtn.disabled = false;
+        }
       }
     });
   }

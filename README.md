@@ -7,7 +7,7 @@ Express-only implementation of UNQ+ without Next.js and without frontend build t
 - Express + EJS (SSR HTML)
 - Prisma + PostgreSQL
 - express-session + connect-pg-simple
-- Vanilla HTML/CSS/JS + CDN libs (SortableJS, CropperJS, Chart.js, qrcode)
+- Vanilla HTML/CSS/JS + local vendor bundles (SortableJS, CropperJS, Chart.js, qrcode)
 
 ## Run
 
@@ -84,12 +84,14 @@ API:
 - `GET/PATCH/DELETE /api/admin/cards/:id`
 - `PATCH /api/admin/cards/:id/toggle-active`
 - `POST /api/admin/cards/:id/avatar`
+- `DELETE /api/admin/cards/:id/avatar`
 - `GET /api/admin/cards/:id/stats`
 - `GET /api/admin/stats`
 - `POST /api/admin/slug/next`
 - `POST /api/admin/logs/cleanup`
 - `POST /api/cards/:slug/view`
 - `GET /api/cards/:slug/vcf`
+- `GET /api/cards/search?q=AAA`
 
 ## Visual Compare (Next vs Express)
 

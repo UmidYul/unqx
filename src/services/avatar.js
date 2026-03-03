@@ -71,10 +71,46 @@ async function renameAvatarBySlug(oldSlug, newSlug) {
   }
 }
 
+function getAvatarFileNameFromPublicPath(publicPath) {
+  if (typeof publicPath !== "string" || !publicPath.startsWith("/uploads/avatars/")) {
+    return null;
+  }
+
+  const basename = path.basename(publicPath);
+  if (!basename.endsWith(".webp")) {
+    return null;
+  }
+
+  return basename;
+}
+
+async function cleanupOrphanAvatars(referencedPublicPaths = []) {
+  await ensureAvatarDir();
+
+  const referenced = new Set(
+    referencedPublicPaths
+      .map((publicPath) => getAvatarFileNameFromPublicPath(publicPath))
+      .filter(Boolean),
+  );
+
+  const entries = await fs.readdir(AVATAR_DIR, { withFileTypes: true });
+
+  for (const entry of entries) {
+    if (!entry.isFile() || !entry.name.endsWith(".webp")) {
+      continue;
+    }
+
+    if (!referenced.has(entry.name)) {
+      await deleteAvatarByPublicPath(`/uploads/avatars/${entry.name}`);
+    }
+  }
+}
+
 module.exports = {
   ensureAvatarDir,
   getAvatarPublicPath,
   saveAvatarFromBuffer,
   deleteAvatarByPublicPath,
   renameAvatarBySlug,
+  cleanupOrphanAvatars,
 };

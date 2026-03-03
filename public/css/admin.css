@@ -1,1 +1,29 @@
-/* Intentionally left minimal: admin pages use Tailwind utility classes from CDN. */
+/* Admin page custom tweaks */
+.avatar-crop-stage {
+  position: relative;
+  width: min(100%, 320px);
+  height: min(80vw, 320px);
+  max-height: 320px;
+  overflow: hidden;
+  border-radius: 16px;
+  background: #f5f5f5;
+}
+
+.avatar-crop-image {
+  display: block;
+  max-width: 100%;
+}
+
+.avatar-crop-wrap .cropper-view-box,
+.avatar-crop-wrap .cropper-face {
+  border-radius: 50%;
+}
+
+.avatar-crop-wrap .cropper-line,
+.avatar-crop-wrap .cropper-point {
+  background-color: #111827;
+}
+
+.avatar-crop-wrap .cropper-dashed {
+  border-color: rgba(17, 24, 39, 0.35);
+}

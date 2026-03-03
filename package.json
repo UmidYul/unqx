@@ -8,18 +8,21 @@
     "start": "node server.js",
     "prisma:generate": "node scripts/prisma-generate.cjs",
     "prisma:deploy": "prisma migrate deploy --schema ../prisma/schema.prisma",
+    "build:vendor": "node scripts/copy-vendor-assets.cjs",
+    "build:css": "tailwindcss -i ./src/styles/tailwind.input.css -o ./public/css/tailwind.generated.css --minify",
     "seed:visual": "node scripts/seed-visual-fixture.cjs",
     "test:visual": "node scripts/visual-compare.mjs",
     "test:visual:seed": "npm run seed:visual && npm run test:visual",
-    "postinstall": "npm run prisma:generate",
+    "postinstall": "npm run prisma:generate && npm run build:vendor && npm run build:css",
     "test": "vitest run",
     "test:e2e": "playwright test"
   },
   "dependencies": {
-    "@prisma/adapter-pg": "^6.8.2",
     "@prisma/client": "6.8.2",
     "bcryptjs": "^3.0.3",
+    "chart.js": "^4.5.0",
     "connect-pg-simple": "^10.0.0",
+    "cropperjs": "^1.6.2",
     "date-fns": "^4.1.0",
     "date-fns-tz": "^3.2.0",
     "dotenv": "^17.3.1",
@@ -28,16 +31,20 @@
     "express-session": "^1.18.1",
     "multer": "^2.0.2",
     "pg": "^8.19.0",
+    "qrcode": "^1.5.4",
     "sharp": "^0.34.5",
+    "sortablejs": "^1.15.6",
     "zod": "^4.3.6"
   },
   "devDependencies": {
     "@playwright/test": "^1.58.2",
+    "esbuild": "^0.25.10",
     "pixelmatch": "^7.1.0",
     "playwright": "^1.58.2",
     "pngjs": "^7.0.0",
     "prisma": "6.8.2",
     "supertest": "^7.1.4",
+    "tailwindcss": "^3.4.17",
     "vitest": "^4.0.18"
   }
 }

@@ -17,6 +17,8 @@ const { systemRouter } = require("./routes/system");
 function createApp() {
   const app = express();
   const pgPool = new pg.Pool({ connectionString: env.DATABASE_URL });
+  const expressPublicDir = path.join(env.EXPRESS_APP_DIR, "public");
+  const rootPublicDir = env.PUBLIC_DIR;
 
   app.set("trust proxy", env.TRUST_PROXY);
   app.set("view engine", "ejs");
@@ -24,6 +26,44 @@ function createApp() {
 
   app.use(express.urlencoded({ extended: true }));
   app.use(express.json());
+
+  app.use(
+    express.static(expressPublicDir, {
+      etag: true,
+      maxAge: "7d",
+      fallthrough: true,
+      index: false,
+    }),
+  );
+
+  app.use(
+    "/brand",
+    express.static(path.join(rootPublicDir, "brand"), {
+      etag: true,
+      maxAge: "30d",
+      fallthrough: true,
+      index: false,
+    }),
+  );
+
+  app.use(
+    "/uploads",
+    express.static(path.join(rootPublicDir, "uploads"), {
+      etag: true,
+      maxAge: 0,
+      fallthrough: true,
+      index: false,
+    }),
+  );
+
+  app.use(
+    express.static(rootPublicDir, {
+      etag: true,
+      maxAge: "7d",
+      fallthrough: true,
+      index: false,
+    }),
+  );
 
   app.use(
     session({
@@ -51,9 +91,6 @@ function createApp() {
     res.locals.currentPath = req.path;
     next();
   });
-
-  app.use(express.static(path.join(env.EXPRESS_APP_DIR, "public")));
-  app.use(express.static(env.PUBLIC_DIR));
 
   app.use("/api/admin", adminApiRouter);
   app.use("/api/cards", publicApiRouter);

@@ -10,7 +10,7 @@ const { CardUpsertSchema } = require("../../validation/card");
 const { parsePositiveInt } = require("../../utils/http");
 const { listCards, createCard, getCardDetailsById, updateCard, generateNextSlug } = require("../../services/cards");
 const { getCardStats, getGlobalStats } = require("../../services/stats");
-const { deleteAvatarByPublicPath, renameAvatarBySlug, saveAvatarFromBuffer } = require("../../services/avatar");
+const { cleanupOrphanAvatars, deleteAvatarByPublicPath, renameAvatarBySlug, saveAvatarFromBuffer } = require("../../services/avatar");
 
 const router = express.Router();
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
@@ -35,6 +35,14 @@ function avatarUploadMiddleware(req, res, next) {
 
     next(error);
   });
+}
+
+async function cleanupOrphanAvatarsFromDb() {
+  const rows = await prisma.card.findMany({
+    select: { avatarUrl: true },
+  });
+
+  await cleanupOrphanAvatars(rows.map((row) => row.avatarUrl).filter(Boolean));
 }
 
 router.use(requireAdminApi);
@@ -144,6 +152,8 @@ router.patch(
         }
       }
 
+      await cleanupOrphanAvatarsFromDb();
+
       res.json({ id: updated.id, slug: parsed.data.slug });
     } catch (error) {
       if (error && error.code === "P2002") {
@@ -174,6 +184,7 @@ router.delete(
 
     await prisma.card.delete({ where: { id: req.params.id } });
     await deleteAvatarByPublicPath(card.avatarUrl);
+    await cleanupOrphanAvatarsFromDb();
 
     res.json({ ok: true });
   }),
@@ -245,7 +256,40 @@ router.post(
       },
     });
 
+    await cleanupOrphanAvatarsFromDb();
+
     res.json({ avatarUrl });
+  }),
+);
+
+router.delete(
+  "/cards/:id/avatar",
+  asyncHandler(async (req, res) => {
+    const card = await prisma.card.findUnique({
+      where: { id: req.params.id },
+      select: {
+        id: true,
+        avatarUrl: true,
+      },
+    });
+
+    if (!card) {
+      res.status(404).json({ error: "Card not found" });
+      return;
+    }
+
+    await deleteAvatarByPublicPath(card.avatarUrl);
+
+    await prisma.card.update({
+      where: { id: card.id },
+      data: {
+        avatarUrl: null,
+      },
+    });
+
+    await cleanupOrphanAvatarsFromDb();
+
+    res.json({ ok: true, avatarUrl: null });
   }),
 );
 

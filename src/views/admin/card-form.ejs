@@ -26,7 +26,7 @@
 <html lang="ru">
 <head>
   <%- include('../partials/head', { title: pageTitle, styles: ['/css/admin.css'] }) %>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.css" />
+  <link rel="stylesheet" href="/vendor/cropperjs/cropper.min.css" />
 </head>
 <body class="antialiased" data-page="admin-card-editor" data-mode="<%= pageMode %>" data-card-id="<%= pageCardId %>">
   <div class="min-h-screen bg-neutral-100">
@@ -77,7 +77,16 @@
 
               <label class="text-sm font-medium text-neutral-700">
                 Телефон
-                <input id="field-phone" type="text" value="<%= pageInitialValues.phone %>" class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2" required />
+                <input
+                  id="field-phone"
+                  type="text"
+                  value="<%= pageInitialValues.phone %>"
+                  class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2"
+                  inputmode="numeric"
+                  autocomplete="tel"
+                  placeholder="+998 (90) 123-45-67"
+                  required
+                />
                 <p class="mt-1 hidden text-xs text-red-600" id="field-phone-error"></p>
               </label>
 
@@ -118,8 +127,10 @@
                 />
               </div>
 
-              <div id="avatar-crop-wrap" class="rounded-xl border border-neutral-200 bg-neutral-50 p-3" hidden>
-                <img id="avatar-crop-image" alt="Crop preview" class="max-h-[260px] w-auto" />
+              <div id="avatar-crop-wrap" class="avatar-crop-wrap rounded-xl border border-neutral-200 bg-neutral-50 p-3" hidden>
+                <div class="avatar-crop-stage mx-auto">
+                  <img id="avatar-crop-image" alt="Crop preview" class="avatar-crop-image" />
+                </div>
               </div>
 
               <div class="rounded-xl border border-neutral-200 bg-neutral-50 p-3">
@@ -140,6 +151,15 @@
                 <%= !pageCardId ? 'disabled' : '' %>
               >
                 Сохранить обрезку
+              </button>
+
+              <button
+                type="button"
+                id="remove-avatar-btn"
+                class="rounded-xl border border-red-200 px-4 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-50 disabled:opacity-60"
+                <%= !pageCardId || !pageInitialAvatarUrl ? 'disabled' : '' %>
+              >
+                Удалить аватар
               </button>
             </div>
           </section>
@@ -244,6 +264,8 @@
                 >
                   Удалить
                 </button>
+
+                <p class="button-row-error hidden text-xs text-red-600 md:col-span-5"></p>
               </div>
               <% }); %>
             </div>
@@ -270,7 +292,15 @@
 
               <label class="text-sm font-medium text-neutral-700">
                 Дополнительный телефон
-                <input id="field-extra-phone" type="text" value="<%= pageInitialValues.extraPhone %>" class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2" />
+                <input
+                  id="field-extra-phone"
+                  type="text"
+                  value="<%= pageInitialValues.extraPhone %>"
+                  class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2"
+                  inputmode="numeric"
+                  autocomplete="tel"
+                  placeholder="+998 (90) 123-45-67"
+                />
               </label>
             </div>
           </section>
@@ -330,9 +360,9 @@
 
   <script id="card-editor-initial" type="application/json"><%- JSON.stringify(pageInitialValues) %></script>
   <script id="card-editor-stats" type="application/json"><%- JSON.stringify(pageStats) %></script>
-  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.min.js"></script>
+  <script src="/vendor/sortablejs/Sortable.min.js"></script>
+  <script src="/vendor/cropperjs/cropper.min.js"></script>
+  <script src="/vendor/chartjs/chart.umd.min.js"></script>
   <script src="/js/admin-card-editor.js"></script>
 </body>
 </html>

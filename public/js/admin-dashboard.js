@@ -9,6 +9,7 @@
   const qrSvgWrap = document.getElementById("qr-svg-wrap");
   const qrCanvas = document.getElementById("qr-canvas");
   const qrTitleSlug = document.getElementById("qr-title-slug");
+  const qrErrorNode = document.getElementById("qr-error");
   const downloadPngBtn = document.getElementById("download-qr-png");
   const downloadSvgBtn = document.getElementById("download-qr-svg");
   const closeModalNodes = Array.from(document.querySelectorAll("[data-close-modal]"));
@@ -19,6 +20,21 @@
 
   if (!modal || !qrSvgWrap || !qrCanvas) {
     return;
+  }
+
+  function setQrError(message) {
+    if (!(qrErrorNode instanceof HTMLElement)) {
+      return;
+    }
+
+    if (!message) {
+      qrErrorNode.textContent = "";
+      qrErrorNode.classList.add("hidden");
+      return;
+    }
+
+    qrErrorNode.textContent = message;
+    qrErrorNode.classList.remove("hidden");
   }
 
   function injectLogoToSvg(svg, size, logoSize) {
@@ -77,54 +93,67 @@
     modal.classList.add("hidden");
     modal.classList.remove("flex");
     modal.setAttribute("aria-hidden", "true");
+    setQrError("");
   }
 
   async function openQrModal(slug) {
     if (typeof QRCode === "undefined") {
+      setQrError("QR библиотека не загружена. Обновите страницу.");
+      modal.classList.remove("hidden");
+      modal.classList.add("flex");
+      modal.setAttribute("aria-hidden", "false");
       return;
     }
 
-    currentSlug = slug;
-    currentUrl = `${publicBaseUrl}/${slug}`;
+    try {
+      setQrError("");
+      currentSlug = slug;
+      currentUrl = `${publicBaseUrl}/${slug}`;
 
-    if (qrTitleSlug) {
-      qrTitleSlug.textContent = `#${slug}`;
+      if (qrTitleSlug) {
+        qrTitleSlug.textContent = `#${slug}`;
+      }
+
+      const displaySvgRaw = await QRCode.toString(currentUrl, {
+        type: "svg",
+        width: 240,
+        margin: 2,
+        errorCorrectionLevel: "M",
+      });
+
+      const downloadSvgRaw = await QRCode.toString(currentUrl, {
+        type: "svg",
+        width: 1000,
+        margin: 2,
+        errorCorrectionLevel: "M",
+      });
+
+      const displaySvg = injectLogoToSvg(displaySvgRaw, 240, 44);
+      currentSvg = injectLogoToSvg(downloadSvgRaw, 1000, 180);
+
+      qrSvgWrap.innerHTML = displaySvg;
+
+      await QRCode.toCanvas(qrCanvas, currentUrl, {
+        width: 1000,
+        margin: 2,
+        errorCorrectionLevel: "M",
+        color: {
+          dark: "#000000",
+          light: "#ffffff",
+        },
+      });
+
+      await drawLogoOnCanvas(qrCanvas, 1000, 180);
+
+      modal.classList.remove("hidden");
+      modal.classList.add("flex");
+      modal.setAttribute("aria-hidden", "false");
+    } catch {
+      setQrError("Не удалось сгенерировать QR-код. Попробуйте еще раз.");
+      modal.classList.remove("hidden");
+      modal.classList.add("flex");
+      modal.setAttribute("aria-hidden", "false");
     }
-
-    const displaySvgRaw = await QRCode.toString(currentUrl, {
-      type: "svg",
-      width: 240,
-      margin: 2,
-      errorCorrectionLevel: "M",
-    });
-
-    const downloadSvgRaw = await QRCode.toString(currentUrl, {
-      type: "svg",
-      width: 1000,
-      margin: 2,
-      errorCorrectionLevel: "M",
-    });
-
-    const displaySvg = injectLogoToSvg(displaySvgRaw, 240, 44);
-    currentSvg = injectLogoToSvg(downloadSvgRaw, 1000, 180);
-
-    qrSvgWrap.innerHTML = displaySvg;
-
-    await QRCode.toCanvas(qrCanvas, currentUrl, {
-      width: 1000,
-      margin: 2,
-      errorCorrectionLevel: "M",
-      color: {
-        dark: "#000000",
-        light: "#ffffff",
-      },
-    });
-
-    await drawLogoOnCanvas(qrCanvas, 1000, 180);
-
-    modal.classList.remove("hidden");
-    modal.classList.add("flex");
-    modal.setAttribute("aria-hidden", "false");
   }
 
   closeModalNodes.forEach((node) => {
