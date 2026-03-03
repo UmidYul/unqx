@@ -3,7 +3,6 @@ import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 
 import { env } from "@/lib/env";
-import { LoginSchema } from "@/lib/validation";
 
 export const authOptions: NextAuthOptions = {
   session: {
@@ -20,16 +19,21 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        const parsed = LoginSchema.safeParse(credentials);
-        if (!parsed.success) {
+        const loginRaw = credentials?.login;
+        const passwordRaw = credentials?.password;
+
+        const login = typeof loginRaw === "string" ? loginRaw.trim() : "";
+        const password = typeof passwordRaw === "string" ? passwordRaw : "";
+
+        if (!login || !password) {
           return null;
         }
 
-        if (parsed.data.login !== env.ADMIN_LOGIN) {
+        if (login !== env.ADMIN_LOGIN.trim()) {
           return null;
         }
 
-        const ok = await bcrypt.compare(parsed.data.password, env.ADMIN_PASSWORD_HASH);
+        const ok = await bcrypt.compare(password, env.ADMIN_PASSWORD_HASH);
         if (!ok) {
           return null;
         }
