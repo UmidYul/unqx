@@ -3,12 +3,19 @@ const path = require("node:path");
 const { spawnSync } = require("node:child_process");
 
 const appDir = path.resolve(__dirname, "..");
-const sourceSchema = path.resolve(appDir, "..", "prisma", "schema.prisma");
+const schemaCandidates = [
+  path.resolve(appDir, "..", "prisma", "schema.prisma"),
+  path.resolve(appDir, "prisma", "schema.prisma"),
+];
+const sourceSchema = schemaCandidates.find((candidate) => fs.existsSync(candidate));
 const localPrismaDir = path.join(appDir, "prisma");
 const localSchema = path.join(localPrismaDir, "schema.prisma");
 
-if (!fs.existsSync(sourceSchema)) {
-  console.error(`[prisma:generate] source schema not found: ${sourceSchema}`);
+if (!sourceSchema) {
+  console.error("[prisma:generate] source schema not found. Checked:");
+  for (const candidate of schemaCandidates) {
+    console.error(`- ${candidate}`);
+  }
   process.exit(1);
 }
 
