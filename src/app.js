@@ -22,6 +22,7 @@ const { systemRouter } = require("./routes/system");
 const { getBaseUrl } = require("./utils/url");
 const { ensureCsrfToken } = require("./middleware/csrf");
 const { runBootstrapTasks } = require("./services/bootstrap");
+const { startPendingExpiryJob } = require("./services/pending-expiry");
 
 function createApp() {
   const app = express();
@@ -179,6 +180,7 @@ function createApp() {
   app.use(errorHandler);
 
   void runBootstrapTasks();
+  startPendingExpiryJob();
 
   return app;
 }

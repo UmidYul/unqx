@@ -65,6 +65,8 @@ function toOrderStatus(value) {
       return "approved";
     case "rejected":
       return "rejected";
+    case "expired":
+      return "expired";
     default:
       return "new";
   }
@@ -105,6 +107,8 @@ function formatOrderStatusLabel(status) {
       return "✅ Одобрено";
     case "rejected":
       return "❌ Отклонено";
+    case "expired":
+      return "⬜ ИСТЕКЛА";
     default:
       return status;
   }
@@ -543,8 +547,19 @@ router.get(
       }),
     ]);
 
+    const slugSet = new Set(rows.map((row) => row.slug));
+    const slugMetaRows = slugSet.size
+      ? await prisma.slug.findMany({
+          where: { fullSlug: { in: Array.from(slugSet) } },
+          select: { fullSlug: true, status: true, pendingExpiresAt: true },
+        })
+      : [];
+    const slugMetaBySlug = new Map(slugMetaRows.map((row) => [row.fullSlug, row]));
+
     res.json({
       items: rows.map((row) => ({
+        slugState: slugMetaBySlug.get(row.slug)?.status || null,
+        pendingExpiresAt: slugMetaBySlug.get(row.slug)?.pendingExpiresAt || null,
         id: row.id,
         name: row.user?.displayName || row.user?.firstName || "UNQ+ User",
         slug: row.slug,
@@ -638,6 +653,7 @@ router.patch(
             status: "approved",
             approvedAt: now,
             requestedAt: order.createdAt,
+            pendingExpiresAt: null,
             isPrimary: false,
             price: order.slugPrice,
           },
@@ -645,6 +661,7 @@ router.patch(
             ownerTelegramId: row.telegramId,
             status: "approved",
             approvedAt: now,
+            pendingExpiresAt: null,
             price: order.slugPrice,
           },
         });
@@ -709,6 +726,7 @@ router.patch(
             status: "free",
             ownerTelegramId: null,
             isPrimary: false,
+            pendingExpiresAt: null,
             price: order.slugPrice,
           },
           update: {
@@ -716,6 +734,7 @@ router.patch(
             status: "free",
             isPrimary: false,
             pauseMessage: null,
+            pendingExpiresAt: null,
             approvedAt: null,
             requestedAt: null,
             activatedAt: null,
@@ -761,6 +780,51 @@ router.patch(
     }
 
     res.json({ id: updated.id, status: updated.status });
+  }),
+);
+
+router.post(
+  "/orders/:id/extend-pending",
+  asyncHandler(async (req, res) => {
+    const order = await prisma.slugRequest.findUnique({
+      where: { id: req.params.id },
+      select: { id: true, slug: true, status: true },
+    });
+
+    if (!order) {
+      res.status(404).json({ error: "Order not found" });
+      return;
+    }
+
+    if (order.status === "expired") {
+      res.status(409).json({ error: "Expired order cannot be extended" });
+      return;
+    }
+
+    const slugRow = await prisma.slug.findUnique({
+      where: { fullSlug: order.slug },
+      select: { fullSlug: true, status: true, pendingExpiresAt: true },
+    });
+
+    if (!slugRow || slugRow.status !== "pending") {
+      res.status(409).json({ error: "UNQ is not pending" });
+      return;
+    }
+
+    const base = slugRow.pendingExpiresAt && slugRow.pendingExpiresAt.getTime() > Date.now() ? slugRow.pendingExpiresAt : new Date();
+    const nextExpiry = addDays(base, 1);
+
+    const updated = await prisma.slug.update({
+      where: { fullSlug: slugRow.fullSlug },
+      data: { pendingExpiresAt: nextExpiry },
+      select: { fullSlug: true, pendingExpiresAt: true },
+    });
+
+    res.json({
+      ok: true,
+      slug: updated.fullSlug,
+      pendingExpiresAt: updated.pendingExpiresAt,
+    });
   }),
 );
 
@@ -1379,9 +1443,14 @@ router.patch(
       data.requestedAt = null;
       data.approvedAt = null;
       data.activatedAt = null;
+      data.pendingExpiresAt = null;
     }
     if (next === "blocked") {
       data.pauseMessage = encodeBlockedPauseMessage(existing.status, existing.pauseMessage);
+      data.pendingExpiresAt = null;
+    }
+    if (next === "approved" || next === "active" || next === "paused" || next === "private") {
+      data.pendingExpiresAt = null;
     }
     const updated = await prisma.slug.update({
       where: { fullSlug: slug },
@@ -1430,6 +1499,7 @@ router.patch(
       data: {
         status: "active",
         activatedAt: new Date(),
+        pendingExpiresAt: null,
       },
       select: { fullSlug: true, status: true, activatedAt: true },
     });

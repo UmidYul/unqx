@@ -492,12 +492,19 @@ function initSlugAvailability(orderApi) {
       if (!options.visible) {
         primaryAction.classList.add("hidden");
         primaryAction.removeAttribute("data-order-prefill");
+        primaryAction.removeAttribute("data-waitlist-slug");
         return;
       }
 
       primaryAction.classList.remove("hidden");
-      primaryAction.href = "#order";
-      primaryAction.setAttribute("data-order-prefill", options.slug);
+      primaryAction.href = options.href || "#order";
+      if (options.mode === "waitlist") {
+        primaryAction.removeAttribute("data-order-prefill");
+        primaryAction.setAttribute("data-waitlist-slug", options.slug);
+      } else {
+        primaryAction.removeAttribute("data-waitlist-slug");
+        primaryAction.setAttribute("data-order-prefill", options.slug);
+      }
       primaryAction.innerHTML = `${options.label}${ARROW_ICON}`;
     }
 
@@ -541,6 +548,21 @@ function initSlugAvailability(orderApi) {
         visible: true,
         slug,
         label: "Занять UNQ",
+      });
+      return;
+    }
+
+    if (state === "pending") {
+      statusIcon.innerHTML = ICON_INFO;
+      statusText.textContent = `${slug} на рассмотрении — скоро освободится`;
+      statusNote.textContent = "Добавь UNQ в лист ожидания, и мы сообщим в Telegram.";
+      renderSuggestions([]);
+      setPrimaryAction({
+        visible: true,
+        slug,
+        mode: "waitlist",
+        href: "#hero-check",
+        label: "Уведомить меня",
       });
       return;
     }
@@ -589,7 +611,13 @@ function initSlugAvailability(orderApi) {
         return;
       }
 
-      setFeedback(payload.available ? "available" : "taken", slug, Array.isArray(payload.suggestions) ? payload.suggestions : []);
+      const state =
+        payload.available === true
+          ? "available"
+          : payload.reason === "pending"
+            ? "pending"
+            : "taken";
+      setFeedback(state, slug, Array.isArray(payload.suggestions) ? payload.suggestions : []);
       if (orderApi) {
         orderApi.prefillSlug(slug);
       }
@@ -614,6 +642,36 @@ function initSlugAvailability(orderApi) {
 
   checkButton.addEventListener("click", () => {
     void verifySlug();
+  });
+
+  primaryAction.addEventListener("click", async (event) => {
+    const waitlistSlug = primaryAction.getAttribute("data-waitlist-slug");
+    if (!waitlistSlug) {
+      return;
+    }
+
+    event.preventDefault();
+
+    try {
+      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "";
+      const response = await fetch("/api/cards/waitlist", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRF-Token": csrfToken,
+        },
+        body: JSON.stringify({ slug: waitlistSlug }),
+      });
+
+      if (!response.ok) {
+        throw new Error("waitlist_failed");
+      }
+
+      statusNote.textContent = "Готово. Добавили в лист ожидания и уведомим, когда UNQ освободится.";
+      primaryAction.classList.add("hidden");
+    } catch {
+      statusNote.textContent = "Не удалось добавить в лист ожидания. Попробуй ещё раз.";
+    }
   });
 
   if (calculatorAction instanceof HTMLAnchorElement) {

@@ -189,7 +189,7 @@ async function getSlugState(slug) {
     withMissingTableFallback("Slug", null, () =>
       prisma.slug.findUnique({
         where: { fullSlug: slug },
-        select: { status: true, price: true },
+        select: { status: true, price: true, pendingExpiresAt: true },
       }),
     ),
   ]);
@@ -201,7 +201,12 @@ async function getSlugState(slug) {
     if (slugRow.status === "free") {
       return { available: true, reason: "available", priceOverride: slugRow.price ?? null };
     }
-    return { available: false, reason: slugRow.status, priceOverride: slugRow.price ?? null };
+    return {
+      available: false,
+      reason: slugRow.status,
+      priceOverride: slugRow.price ?? null,
+      pendingExpiresAt: slugRow.pendingExpiresAt || null,
+    };
   }
 
   if (record?.state === "BLOCKED") {
@@ -459,8 +464,68 @@ router.get(
       validFormat: true,
       available: state.available,
       reason: state.reason,
+      pendingExpiresAt: state.pendingExpiresAt || null,
       suggestions,
     });
+  }),
+);
+
+router.post(
+  "/waitlist",
+  requireSameOrigin,
+  requireCsrfToken,
+  asyncHandler(async (req, res) => {
+    const requested = sanitizeSlug(req.body?.slug || "");
+    if (!SLUG_REGEX.test(requested)) {
+      res.status(400).json({ error: "Invalid UNQ format", code: "INVALID_SLUG" });
+      return;
+    }
+
+    const state = await getSlugState(requested);
+    if (state.reason !== "pending") {
+      res.status(409).json({ error: "UNQ is not pending", code: "SLUG_NOT_PENDING" });
+      return;
+    }
+
+    const sessionUser = getUserSession(req);
+    const telegramId = sessionUser?.telegramId ? String(sessionUser.telegramId) : null;
+    const identity = pickClientIdentity(req);
+    const ipHash = identity ? createHash("sha256").update(`${identity}|${requested}`).digest("hex") : null;
+    const userAgent = String(req.get("user-agent") || "").slice(0, 400);
+
+    const dedupeFilters = [
+      ...(telegramId ? [{ telegramId }] : []),
+      ...(ipHash ? [{ ipHash }] : []),
+    ];
+    const existing = dedupeFilters.length
+      ? await withMissingTableFallback("SlugWaitlist", null, () =>
+          prisma.slugWaitlist.findFirst({
+            where: {
+              fullSlug: requested,
+              OR: dedupeFilters,
+            },
+            select: { id: true },
+          }),
+        )
+      : null;
+
+    if (existing) {
+      res.json({ ok: true, queued: false });
+      return;
+    }
+
+    await withMissingTableFallback("SlugWaitlist", null, () =>
+      prisma.slugWaitlist.create({
+        data: {
+          fullSlug: requested,
+          telegramId,
+          ipHash,
+          userAgent,
+        },
+      }),
+    );
+
+    res.json({ ok: true, queued: true });
   }),
 );
 
@@ -642,11 +707,13 @@ router.post(
               fullSlug: slug,
               status: "pending",
               requestedAt: new Date(),
+              pendingExpiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
               price: pricing.total,
             },
             update: {
               status: "pending",
               requestedAt: new Date(),
+              pendingExpiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
               price: pricing.total,
             },
           }),

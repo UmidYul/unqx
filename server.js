@@ -10,6 +10,7 @@ dotenv.config({ path: rootEnvPath, override: false, quiet: true });
 const { createApp } = require("./src/app");
 const { env } = require("./src/config/env");
 const { prisma } = require("./src/db/prisma");
+const { stopPendingExpiryJob } = require("./src/services/pending-expiry");
 
 const app = createApp();
 
@@ -36,6 +37,7 @@ async function bootstrap() {
     console.log(`[express-app] received ${signal}, shutting down`);
     server.close(async () => {
       try {
+        stopPendingExpiryJob();
         await prisma.$disconnect();
       } finally {
         process.exit(0);

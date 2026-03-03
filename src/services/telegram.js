@@ -106,6 +106,11 @@ async function sendSlugRejectedToUser({ telegramId, slug, adminNote }) {
   return sendTelegramMessage({ chatId: telegramId, text, parseMode: "HTML" });
 }
 
+async function sendSlugExpiredToUser({ telegramId, slug }) {
+  const text = `⌛ Заявка на ${slug} истекла — не успели связаться.\nSlug снова доступен. Подай заявку повторно: unqx.uz`;
+  return sendTelegramMessage({ chatId: telegramId, text, parseMode: "HTML" });
+}
+
 module.exports = {
   TelegramConfigError,
   TelegramDeliveryError,
@@ -114,5 +119,6 @@ module.exports = {
   sendSlugApprovedToUser,
   sendSlugAwaitingPaymentToUser,
   sendSlugRejectedToUser,
+  sendSlugExpiredToUser,
 };
 

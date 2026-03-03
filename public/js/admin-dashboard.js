@@ -19,6 +19,17 @@
   const H = (h = {}) => (csrf ? { ...h, "X-CSRF-Token": csrf } : h);
   const D = (v) => (v ? new Date(v).toLocaleString("ru-RU") : "-");
   const P = (v) => `${Number(v || 0).toLocaleString("ru-RU")} сум`;
+  const formatPendingCountdown = (iso) => {
+    if (!iso) return "";
+    const target = new Date(iso);
+    if (Number.isNaN(target.getTime())) return "";
+    const diffMs = target.getTime() - Date.now();
+    if (diffMs <= 0) return "истекает сейчас";
+    const totalMinutes = Math.floor(diffMs / 60000);
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    return `истекает через ${hours}ч ${minutes}мин`;
+  };
   const X = (v) => String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\"/g, "&quot;").replace(/'/g, "&#39;");
   const Q = (o) => {
     const s = new URLSearchParams();
@@ -167,7 +178,18 @@
       const chatBtn = username
         ? `<a href="https://t.me/${encodeURIComponent(username)}" target="_blank" rel="noopener noreferrer" class="rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100">Написать</a>`
         : '<button type="button" disabled title="Нужен username в Telegram" class="cursor-not-allowed rounded-lg border border-neutral-200 px-2.5 py-1 text-xs font-semibold text-neutral-400">Написать</button>';
-      return `<tr class="border-t border-neutral-100"><td class="px-4 py-3">${D(x.createdAt)}</td><td class="px-4 py-3">${X(x.name)}</td><td class="px-4 py-3 font-mono">${X(x.slug)}</td><td class="px-4 py-3">${P(x.slugPrice)}</td><td class="px-4 py-3">${x.tariff === "premium" ? "Премиум" : "Базовый"}</td><td class="px-4 py-3">${x.bracelet ? "Да" : "Нет"}</td><td class="px-4 py-3">${X(x.contact)}</td><td class="px-4 py-3"><select data-act="os" data-id="${x.id}" data-note="${X(x.adminNote || "")}" class="rounded-lg border border-neutral-300 px-2 py-1 text-xs"><option value="new" ${x.status === "new" ? "selected" : ""}>🆕 Новая</option><option value="contacted" ${x.status === "contacted" ? "selected" : ""}>💬 Связались</option><option value="paid" ${x.status === "paid" ? "selected" : ""}>💳 Ожидает оплаты</option><option value="approved" ${x.status === "approved" ? "selected" : ""}>✅ Одобрено</option><option value="rejected" ${x.status === "rejected" ? "selected" : ""}>❌ Отклонено</option></select></td><td class="px-4 py-3"><div class="flex flex-wrap gap-2">${chatBtn}<button data-act="od" data-id="${x.id}" class="rounded-lg border border-red-200 px-2.5 py-1 text-xs font-semibold text-red-700 transition hover:bg-red-50">Удалить</button></div></td></tr>`;
+      const countdown = x.slugState === "pending" ? formatPendingCountdown(x.pendingExpiresAt) : "";
+      const statusExtra =
+        x.status === "expired"
+          ? '<div class="mt-1 inline-flex rounded-full bg-neutral-100 px-2 py-0.5 text-[11px] font-semibold text-neutral-600">ИСТЕКЛА</div>'
+          : countdown
+            ? `<div class="mt-1 text-[11px] text-amber-700">${X(countdown)}</div>`
+            : "";
+      const extendBtn =
+        x.slugState === "pending" && x.status !== "expired"
+          ? `<button data-act="ope" data-id="${x.id}" class="rounded-lg border border-amber-300 px-2.5 py-1 text-xs font-semibold text-amber-800 transition hover:bg-amber-50">Продлить на 24 часа</button>`
+          : "";
+      return `<tr class="border-t border-neutral-100"><td class="px-4 py-3">${D(x.createdAt)}</td><td class="px-4 py-3">${X(x.name)}</td><td class="px-4 py-3 font-mono">${X(x.slug)}</td><td class="px-4 py-3">${P(x.slugPrice)}</td><td class="px-4 py-3">${x.tariff === "premium" ? "Премиум" : "Базовый"}</td><td class="px-4 py-3">${x.bracelet ? "Да" : "Нет"}</td><td class="px-4 py-3">${X(x.contact)}</td><td class="px-4 py-3"><select data-act="os" data-id="${x.id}" data-note="${X(x.adminNote || "")}" class="rounded-lg border border-neutral-300 px-2 py-1 text-xs"><option value="new" ${x.status === "new" ? "selected" : ""}>🆕 Новая</option><option value="contacted" ${x.status === "contacted" ? "selected" : ""}>💬 Связались</option><option value="paid" ${x.status === "paid" ? "selected" : ""}>💳 Ожидает оплаты</option><option value="approved" ${x.status === "approved" ? "selected" : ""}>✅ Одобрено</option><option value="rejected" ${x.status === "rejected" ? "selected" : ""}>❌ Отклонено</option><option value="expired" ${x.status === "expired" ? "selected" : ""}>⬜ ИСТЕКЛА</option></select>${statusExtra}</td><td class="px-4 py-3"><div class="flex flex-wrap gap-2">${chatBtn}${extendBtn}<button data-act="od" data-id="${x.id}" class="rounded-lg border border-red-200 px-2.5 py-1 text-xs font-semibold text-red-700 transition hover:bg-red-50">Удалить</button></div></td></tr>`;
     }).join("") : '<tr><td colspan="9" class="px-3 py-8 text-center text-neutral-500">Нет заявок</td></tr>';
     renderPager("orders-pagination", payload.pagination, (nextPage) => {
       setFormValue(form, "page", String(nextPage));
@@ -524,6 +546,7 @@
     const a = n.getAttribute("data-act");
     if (a === "oa") openA(n.getAttribute("data-id") || "", n.getAttribute("data-t") || "basic", n.getAttribute("data-th") || "default_dark");
     if (a === "od") { const id = n.getAttribute("data-id"); if (!id || !confirm("Удалить заявку?")) return; const r = await fetch(`/api/admin/orders/${id}`, { method: "DELETE", headers: H() }); if (!r.ok) alert(await E(r)); else void loadOrders(); }
+    if (a === "ope") { const id = n.getAttribute("data-id"); if (!id) return; const r = await fetch(`/api/admin/orders/${id}/extend-pending`, { method: "POST", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({}) }); if (!r.ok) alert(await E(r)); else void loadOrders(); }
     if (a === "ux") { const telegramId = n.getAttribute("data-id"); if (!telegramId) return; const input = prompt("Новая дата окончания (YYYY-MM-DD) или пусто для сброса", ""); if (input === null) return; const r = await fetch(`/api/admin/users/${encodeURIComponent(telegramId)}/plan-expiry`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({ planExpiresAt: input.trim() ? `${input.trim()}T23:59:59.000Z` : null }) }); if (!r.ok) alert(await E(r)); else void loadUsers(); }
     if (a === "ub") { const telegramId = n.getAttribute("data-id"); const status = n.getAttribute("data-status"); if (!telegramId) return; const isBlocked = status === "blocked"; if (!isBlocked && !confirm("Заблокировать пользователя и деактивировать его slug?")) return; if (isBlocked && !confirm("Разблокировать пользователя и восстановить статусы slug?")) return; const r = await fetch(`/api/admin/users/${encodeURIComponent(telegramId)}/${isBlocked ? "unblock" : "block"}`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({}) }); if (!r.ok) alert(await E(r)); else void loadUsers(); }
     if (a === "st") { const slug = n.getAttribute("data-slug"), state = n.getAttribute("data-ns"); if (!slug || !state) return; const r = await fetch(`/api/admin/slugs/${encodeURIComponent(slug)}/state`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({ state }) }); if (!r.ok) alert(await E(r)); else void loadSlugs(); }

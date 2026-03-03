@@ -60,6 +60,8 @@ function toRequestStatusBadge(status) {
       return "✅ Одобрено";
     case "rejected":
       return "❌ Отклонено";
+    case "expired":
+      return "⬜ ИСТЕКЛА";
     default:
       return status;
   }

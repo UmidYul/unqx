@@ -75,6 +75,7 @@ enum SlugRequestStatus {
   paid
   approved
   rejected
+  expired
 }
 
 model Card {
@@ -278,6 +279,7 @@ model Slug {
   price           Int?
   pauseMessage    String?     @map("pause_message") @db.VarChar(220)
   requestedAt     DateTime?   @map("requested_at")
+  pendingExpiresAt DateTime?  @map("pending_expires_at")
   approvedAt      DateTime?   @map("approved_at")
   activatedAt     DateTime?   @map("activated_at")
   createdAt       DateTime    @default(now()) @map("created_at")
@@ -286,6 +288,19 @@ model Slug {
   @@index([ownerTelegramId, status])
   @@index([status, updatedAt])
   @@map("slugs")
+}
+
+model SlugWaitlist {
+  id         String   @id @default(uuid())
+  fullSlug   String   @map("full_slug") @db.VarChar(20)
+  telegramId String?  @map("telegram_id") @db.VarChar(40)
+  ipHash     String?  @map("ip_hash") @db.VarChar(64)
+  userAgent  String?  @map("user_agent")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([fullSlug, createdAt])
+  @@index([telegramId, createdAt])
+  @@map("slug_waitlist")
 }
 
 model ProfileCard {
