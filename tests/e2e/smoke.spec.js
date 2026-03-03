@@ -7,7 +7,7 @@ test.describe("smoke", () => {
 
   test("public home and admin login open", async ({ page }) => {
     await page.goto("/");
-    await expect(page.getByText("UNQ+ Platform")).toBeVisible();
+    await expect(page.getByText("Твой slug.")).toBeVisible();
 
     await page.goto("/admin");
     await expect(page.getByRole("heading", { name: "Вход в админ-панель" })).toBeVisible();

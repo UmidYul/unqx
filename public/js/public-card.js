@@ -1,15 +1,15 @@
-(function initPublicCard() {
+(function initPublicCardPage() {
   const root = document.querySelector("[data-slug]");
-  if (!root) {
+  if (!(root instanceof HTMLElement)) {
     return;
   }
 
-  const slug = root.getAttribute("data-slug");
-  const copyButton = document.querySelector("[data-copy-phone]");
+  const slug = root.getAttribute("data-slug") || "";
+  const shareUrl = root.getAttribute("data-share-url") || window.location.href;
+  const shareButton = document.querySelector("[data-share-card]");
+  const shareLabel = document.querySelector("[data-share-label]");
   const avatarImage = document.querySelector("[data-avatar-image]");
   const avatarFallback = document.querySelector("[data-avatar-fallback]");
-  const brandImage = document.querySelector("[data-brand-image]");
-  const extraPhoto = document.querySelector("[data-extra-photo]");
 
   function copyWithFallback(value) {
     const textarea = document.createElement("textarea");
@@ -25,95 +25,71 @@
     return success;
   }
 
-  async function copyPhone(value) {
-    let ok = false;
-
+  async function copyText(value) {
     try {
       if (navigator.clipboard && navigator.clipboard.writeText) {
         await navigator.clipboard.writeText(value);
-        ok = true;
+        return true;
       }
     } catch {
-      ok = false;
+      return copyWithFallback(value);
     }
 
-    if (!ok) {
-      ok = copyWithFallback(value);
-    }
-
-    return ok;
+    return copyWithFallback(value);
   }
 
   function showAvatarFallback() {
-    if (avatarImage) {
-      avatarImage.classList.add("is-hidden");
+    if (avatarImage instanceof HTMLElement) {
+      avatarImage.classList.add("hidden");
     }
-    if (avatarFallback) {
-      avatarFallback.classList.remove("is-hidden");
+    if (avatarFallback instanceof HTMLElement) {
+      avatarFallback.classList.remove("hidden");
       avatarFallback.setAttribute("aria-hidden", "false");
     }
   }
 
-  if (avatarImage) {
+  if (avatarImage instanceof HTMLElement) {
     avatarImage.addEventListener("error", showAvatarFallback, { once: true });
   }
 
-  if (brandImage) {
-    brandImage.addEventListener(
-      "error",
-      () => {
-        const wrapper = brandImage.closest(".public-brand-mark");
-        if (wrapper) {
-          wrapper.classList.add("is-hidden");
-        }
-      },
-      { once: true },
-    );
-  }
-
-  if (extraPhoto) {
-    extraPhoto.addEventListener(
-      "error",
-      () => {
-        const wrapper = extraPhoto.closest(".public-extra-photo");
-        if (!wrapper) {
-          return;
-        }
-
-        extraPhoto.remove();
-        const placeholder = document.createElement("div");
-        placeholder.className = "public-extra-photo-placeholder";
-        placeholder.setAttribute("aria-hidden", "true");
-        wrapper.appendChild(placeholder);
-      },
-      { once: true },
-    );
-  }
-
-  if (copyButton) {
-    const defaultIcon = copyButton.querySelector("[data-copy-default]");
-    const successIcon = copyButton.querySelector("[data-copy-success]");
+  if (shareButton instanceof HTMLButtonElement) {
     let resetTimer = null;
 
-    copyButton.addEventListener("click", async () => {
-      const phone = copyButton.getAttribute("data-copy-phone") || "";
-      const ok = await copyPhone(phone);
-
-      if (!ok || !defaultIcon || !successIcon) {
+    function setShareLabel(value) {
+      if (!(shareLabel instanceof HTMLElement)) {
         return;
       }
+      shareLabel.textContent = value;
+    }
 
-      defaultIcon.classList.add("is-hidden");
-      successIcon.classList.remove("is-hidden");
+    shareButton.addEventListener("click", async () => {
+      let shared = false;
+
+      try {
+        if (navigator.share) {
+          await navigator.share({
+            title: document.title,
+            url: shareUrl,
+          });
+          shared = true;
+          setShareLabel("Shared");
+        }
+      } catch {
+        shared = false;
+      }
+
+      if (!shared) {
+        const copied = await copyText(shareUrl);
+        setShareLabel(copied ? "Copied" : "Error");
+      }
 
       if (resetTimer) {
         window.clearTimeout(resetTimer);
       }
 
       resetTimer = window.setTimeout(() => {
-        successIcon.classList.add("is-hidden");
-        defaultIcon.classList.remove("is-hidden");
-      }, 2000);
+        setShareLabel("Share");
+      }, 1600);
     });
   }
 
@@ -121,14 +97,15 @@
     return;
   }
 
-  const url = `/api/cards/${slug}/view`;
+  const viewUrl = `/api/cards/${encodeURIComponent(slug)}/view`;
+
   if (navigator.sendBeacon) {
     const payload = new Blob(["{}"], { type: "application/json" });
-    navigator.sendBeacon(url, payload);
+    navigator.sendBeacon(viewUrl, payload);
     return;
   }
 
-  void fetch(url, {
+  void fetch(viewUrl, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

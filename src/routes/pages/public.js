@@ -12,7 +12,8 @@ router.get(
   "/",
   asyncHandler(async (req, res) => {
     res.render("public/home", {
-      title: "UNQ+ Digital Business Cards",
+      title: "UNQ+ | Цифровая визитка за 1 минуту",
+      description: "Одна ссылка вместо тысячи слов. Создай свою цифровую визитку на unqx.uz",
       adminSession: getAdminSession(req),
     });
   }),

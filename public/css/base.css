@@ -1,13 +1,11 @@
 :root {
-  --background: #e4e4e4;
-  --foreground: #111111;
-  --muted: #676767;
-  --card-button: #313236;
-  --card-button-hover: #25262a;
-  --tag-link: #1d3ecc;
+  --background: #fafafa;
+  --foreground: #0a0a0a;
 }
 
-* {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
@@ -17,10 +15,14 @@ body {
   padding: 0;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
-  color: var(--foreground);
-  background: var(--background);
   min-height: 100vh;
+  background: var(--background);
+  color: var(--foreground);
   font-family: "Inter", "Segoe UI", sans-serif;
 }
 
@@ -32,49 +34,60 @@ body {
 .btn-shimmer::after {
   content: "";
   position: absolute;
-  top: -20%;
-  left: -60%;
-  width: 40%;
-  height: 140%;
-  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.18) 50%, transparent 100%);
-  transform: translateX(-160%) skewX(-20deg);
-  animation: shimmer 3.5s ease-in-out infinite;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 40%,
+    rgba(255, 255, 255, 0.15) 45%,
+    rgba(255, 255, 255, 0.25) 50%,
+    rgba(255, 255, 255, 0.15) 55%,
+    transparent 60%
+  );
+  animation: shimmer 3s ease-in-out infinite;
 }
 
 @keyframes shimmer {
   0% {
-    transform: translateX(-160%) skewX(-20deg);
-    opacity: 0;
-  }
-
-  12% {
-    opacity: 1;
-  }
-
-  72% {
-    transform: translateX(420%) skewX(-20deg);
-    opacity: 1;
+    transform: translateX(-100%);
   }
 
   100% {
-    transform: translateX(420%) skewX(-20deg);
-    opacity: 0;
+    transform: translateX(100%);
   }
 }
 
-@keyframes fadeSlideUp {
-  from {
+@keyframes card-enter {
+  0% {
     opacity: 0;
-    transform: translateY(24px);
+    transform: translateY(24px) scale(0.98);
   }
 
-  to {
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes fade-up {
+  0% {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+
+  100% {
     opacity: 1;
     transform: translateY(0);
   }
 }
 
-.animate-in {
-  opacity: 0;
-  animation: fadeSlideUp 0.5s ease forwards;
+.animate-card-enter {
+  animation: card-enter 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-fade-up {
+  animation: fade-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-fade-up-once {
+  animation: fade-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
 }

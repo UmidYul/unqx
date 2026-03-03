@@ -8,6 +8,7 @@ const { generateVCard } = require("../../services/vcard");
 const { asyncHandler } = require("../../middleware/async");
 
 const router = express.Router();
+const SLUG_REGEX = /^[A-Z]{3}[0-9]{3}$/;
 
 function normalizeIp(value) {
   if (!value || typeof value !== "string") {
@@ -81,6 +82,36 @@ router.get(
     });
 
     res.json({ items });
+  }),
+);
+
+router.get(
+  "/availability",
+  asyncHandler(async (req, res) => {
+    const raw = typeof req.query.slug === "string" ? req.query.slug : "";
+    const slug = raw.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6);
+    const validFormat = SLUG_REGEX.test(slug);
+
+    if (!validFormat) {
+      res.json({
+        slug,
+        validFormat: false,
+        available: false,
+        reason: "invalid_format",
+      });
+      return;
+    }
+
+    const existing = await prisma.card.findUnique({
+      where: { slug },
+      select: { id: true },
+    });
+
+    res.json({
+      slug,
+      validFormat: true,
+      available: !existing,
+    });
   }),
 );
 

@@ -1,5 +1,9 @@
 <%
-  const pageTitle = typeof title === "string" && title ? title : "UNQ+ Digital Business Cards";
+  const pageTitle = typeof title === "string" && title ? title : "UNQ+ | Цифровая визитка за 1 минуту";
+  const pageDescription =
+    typeof description === "string" && description
+      ? description
+      : "Одна ссылка вместо тысячи слов. Создай свою цифровую визитку на unqx.uz";
   const pageBaseUrl = typeof baseUrl === "string" && baseUrl ? baseUrl : "";
   const pageCanonicalUrl = typeof canonicalUrl === "string" && canonicalUrl ? canonicalUrl : `${pageBaseUrl}/`;
   const pageJsonLd = {
@@ -7,138 +11,545 @@
     "@type": "WebSite",
     name: "UNQ+",
     url: pageCanonicalUrl,
-    potentialAction: {
-      "@type": "SearchAction",
-      target: `${pageBaseUrl}/{id}`,
-      "query-input": "required name=id",
-    },
   };
-  const highlights = [
-    {
-      title: "Быстрый запуск",
-      description: "Публикация цифровой визитки за несколько минут без разработки и сложной настройки.",
-    },
-    {
-      title: "Гибкое управление профилем",
-      description: "Обновление контента, ссылок, аватара и активности визитки в одном месте.",
-    },
-    {
-      title: "Аналитика просмотров",
-      description: "Отслеживание вовлеченности и эффективности карточек по дням и периодам.",
-    },
+
+  const demos = [
+    { name: "Alex Karimov", role: "Product Designer", slug: "alex" },
+    { name: "Dilnoza R.", role: "Marketing Lead", slug: "dilnoza" },
+    { name: "Sardor M.", role: "Full-Stack Dev", slug: "sardor" },
+    { name: "Nodira K.", role: "Brand Strategist", slug: "nodira" },
+    { name: "Temur A.", role: "Founder, CEO", slug: "temur" },
   ];
-  const flow = [
-    "Создаете карточку с данными профиля, тегами и кнопками связи.",
-    "Публикуете короткую ссылку и делитесь ей в соцсетях, мессенджерах и QR.",
-    "Получаете просмотры и обновляете карточку в реальном времени.",
+
+  const steps = [
+    { title: "Выбери slug", description: "Найди свой уникальный адрес" },
+    { title: "Заполни карточку", description: "Фото, контакты, ссылки за 2 минуты" },
+    { title: "Делись везде", description: "QR, ссылка, NFC — где угодно" },
+  ];
+
+  const whoopFeatures = [
+    "Непрерывный мониторинг здоровья",
+    "Аналитика сна и восстановления",
+    "Без экрана — только данные",
+    "Официальная гарантия",
+  ];
+
+  const plans = [
+    {
+      name: "Базовый",
+      price: "29 000",
+      highlighted: false,
+      badge: null,
+      included: [
+        "1 цифровая визитка",
+        "Стандартный шаблон",
+        "До 3 кнопок (звонок, telegram, сайт)",
+        "QR-код",
+        "Базовая аналитика",
+      ],
+      excluded: [
+        "Выбор темы",
+        "Кастомные цвета",
+        "Скрыть брендинг UNQ+",
+        "Больше 3 кнопок",
+      ],
+    },
+    {
+      name: "Премиум",
+      price: "79 000",
+      highlighted: true,
+      badge: "Популярный",
+      included: [
+        "1 цифровая визитка",
+        "Выбор темы (5+ тем)",
+        "Кастомные цвета и фон",
+        "Неограниченное кол-во кнопок",
+        "Расширенная аналитика (динамика по дням)",
+        "Скрыть брендинг UNQ+",
+        "QR-код + NFC поддержка",
+        "Приоритетная поддержка",
+      ],
+      excluded: [],
+    },
   ];
 %>
 <!doctype html>
 <html lang="ru">
 <head>
-  <%- include('../partials/head', { title: pageTitle, styles: ['/css/public-card.css'], ogType: 'website', jsonLd: pageJsonLd }) %>
+  <%- include('../partials/head', { title: pageTitle, description: pageDescription, styles: ['/css/public-card.css'], ogType: 'website', jsonLd: pageJsonLd }) %>
 </head>
-<body class="min-h-screen antialiased">
-  <main class="relative isolate flex min-h-screen flex-col overflow-hidden">
-    <div class="pointer-events-none absolute inset-0 -z-10">
-      <div class="absolute left-1/2 top-[-180px] h-[420px] w-[800px] -translate-x-1/2 rounded-full bg-white/40 blur-3xl"></div>
-      <div class="absolute bottom-0 left-1/2 h-[320px] w-[960px] -translate-x-1/2 rounded-full bg-black/5 blur-3xl"></div>
-    </div>
+<body class="antialiased">
+  <main class="relative min-h-screen overflow-hidden bg-neutral-50" data-page="public-home">
+    <div
+      class="pointer-events-none fixed inset-0 opacity-[0.3]"
+      style="
+        background-image:
+          linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(0,0,0,0.03) 1px, transparent 1px);
+        background-size: 40px 40px;
+      "
+    ></div>
 
-    <section class="mx-auto flex min-h-screen w-full max-w-6xl flex-col justify-center px-6 pb-14 pt-20 sm:px-8 lg:pt-24">
-      <p class="animate-in text-sm font-semibold uppercase tracking-[0.24em] text-neutral-600">UNQ+ Platform</p>
-      <h1 class="animate-in mt-4 max-w-4xl text-4xl font-black leading-tight tracking-tight sm:text-5xl lg:text-6xl" style="animation-delay: 80ms;">
-        Цифровые визитки для команд, экспертов и брендов, которые работают 24/7
-      </h1>
-      <p class="animate-in mt-6 max-w-2xl text-base leading-relaxed text-neutral-700 sm:text-lg" style="animation-delay: 160ms;">
-        UNQ+ объединяет персональный профиль, контакты, ссылки и аналитику в одном аккуратном публичном пространстве. Без бумаги,
-        без потерь и без устаревших данных.
-      </p>
-      <div class="animate-in mt-8 w-full max-w-xl" style="animation-delay: 200ms;" data-page="public-home-search">
-        <label for="home-search-input" class="mb-2 block text-xs font-semibold uppercase tracking-[0.2em] text-neutral-600">
-          Поиск визитки по ID
-        </label>
-        <div class="relative">
-          <input
-            id="home-search-input"
-            type="text"
-            class="w-full rounded-2xl border border-black/15 bg-white/80 px-4 py-3 text-sm font-medium tracking-[0.08em] text-neutral-900 outline-none backdrop-blur transition focus:border-black/40 focus:bg-white"
-            placeholder="Например: AAA001"
-            autocomplete="off"
-            spellcheck="false"
-            maxlength="6"
-          />
-          <div
-            id="home-search-results"
-            class="absolute left-0 top-[calc(100%+8px)] z-20 hidden w-full overflow-hidden rounded-2xl border border-black/10 bg-white/95 shadow-lg backdrop-blur"
-          ></div>
-        </div>
-        <p id="home-search-hint" class="mt-2 text-xs text-neutral-600">Введите ID и нажмите Enter для перехода.</p>
-      </div>
-      <div class="animate-in mt-10 grid max-w-3xl grid-cols-1 gap-4 text-sm text-neutral-700 sm:grid-cols-3" style="animation-delay: 240ms;">
-        <div class="rounded-2xl border border-black/10 bg-white/55 px-4 py-4 backdrop-blur">
-          <p class="text-2xl font-black text-neutral-900">1 мин</p>
-          <p class="mt-1">на публикацию карточки</p>
-        </div>
-        <div class="rounded-2xl border border-black/10 bg-white/55 px-4 py-4 backdrop-blur">
-          <p class="text-2xl font-black text-neutral-900">100%</p>
-          <p class="mt-1">контроль актуальности данных</p>
-        </div>
-        <div class="rounded-2xl border border-black/10 bg-white/55 px-4 py-4 backdrop-blur">
-          <p class="text-2xl font-black text-neutral-900">24/7</p>
-          <p class="mt-1">доступ к профилю по одной ссылке</p>
-        </div>
-      </div>
-    </section>
+    <div class="relative z-10">
+      <nav class="fixed left-0 right-0 top-0 z-50 border-b border-neutral-200 bg-white/80 backdrop-blur-md">
+        <div class="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-4">
+          <a href="/" class="text-xl font-black tracking-tight text-neutral-900">UNQ+</a>
 
-    <section class="mx-auto w-full max-w-6xl px-6 pb-6 sm:px-8">
-      <div class="rounded-3xl border border-black/10 bg-white/65 p-6 backdrop-blur sm:p-8">
-        <h2 class="text-2xl font-black tracking-tight sm:text-3xl">Почему выбирают UNQ+</h2>
-        <div class="mt-6 grid gap-4 md:grid-cols-3">
-          <% highlights.forEach((item) => { %>
-          <article class="rounded-2xl bg-neutral-900 px-5 py-6 text-white">
-            <h3 class="text-lg font-bold"><%= item.title %></h3>
-            <p class="mt-3 text-sm leading-relaxed text-neutral-300"><%= item.description %></p>
-          </article>
-          <% }); %>
-        </div>
-      </div>
-    </section>
+          <div class="hidden items-center gap-8 md:flex">
+            <a href="#cards" class="text-sm text-neutral-500 transition-colors hover:text-neutral-900">Визитки</a>
+            <a href="#whoop" class="text-sm text-neutral-500 transition-colors hover:text-neutral-900">WHOOP</a>
+            <a href="#pricing" class="text-sm text-neutral-500 transition-colors hover:text-neutral-900">Тарифы</a>
+            <a href="/admin" class="text-sm text-neutral-500 transition-colors hover:text-neutral-900">Войти</a>
+          </div>
 
-    <section class="mx-auto w-full max-w-6xl px-6 py-8 sm:px-8 sm:py-10">
-      <div class="grid gap-6 rounded-3xl border border-black/10 bg-white/55 p-6 backdrop-blur md:grid-cols-[1.1fr_0.9fr] md:gap-8 sm:p-8">
-        <div>
-          <h2 class="text-2xl font-black tracking-tight sm:text-3xl">Как это работает</h2>
-          <ol class="mt-5 space-y-3 text-sm leading-relaxed text-neutral-700 sm:text-base">
-            <% flow.forEach((step, index) => { %>
-            <li class="flex gap-3">
-              <span class="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-neutral-900 text-xs font-bold text-white">
-                <%= index + 1 %>
-              </span>
-              <span><%= step %></span>
-            </li>
+          <a
+            href="#hero-check"
+            class="btn-shimmer hidden items-center gap-2 rounded-xl bg-neutral-900 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-neutral-800 md:flex"
+          >
+            Занять slug
+            <svg class="icon-stroke h-3.5 w-3.5" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M5 12h14M13 5l7 7-7 7"></path>
+            </svg>
+          </a>
+
+          <button
+            type="button"
+            class="text-neutral-900 md:hidden"
+            data-menu-toggle
+            aria-expanded="false"
+            aria-controls="mobile-menu"
+            aria-label="Открыть меню"
+          >
+            <svg data-menu-open-icon class="icon-stroke h-5 w-5" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 6h16M4 12h16M4 18h16"></path>
+            </svg>
+            <svg data-menu-close-icon class="icon-stroke hidden h-5 w-5" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="m6 6 12 12M18 6 6 18"></path>
+            </svg>
+          </button>
+        </div>
+
+        <div id="mobile-menu" class="hidden border-t border-neutral-200 bg-white px-6 pb-6 pt-4 md:hidden" data-mobile-menu>
+          <div class="flex flex-col gap-4">
+            <a href="#cards" class="text-sm text-neutral-500">Визитки</a>
+            <a href="#whoop" class="text-sm text-neutral-500">WHOOP</a>
+            <a href="#pricing" class="text-sm text-neutral-500">Тарифы</a>
+            <a href="/admin" class="text-sm text-neutral-500">Войти</a>
+            <a
+              href="#hero-check"
+              class="btn-shimmer mt-2 flex items-center justify-center gap-2 rounded-xl bg-neutral-900 px-4 py-2.5 text-sm font-medium text-white"
+            >
+              Занять slug
+              <svg class="icon-stroke h-3.5 w-3.5" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M5 12h14M13 5l7 7-7 7"></path>
+              </svg>
+            </a>
+          </div>
+        </div>
+      </nav>
+
+      <section class="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 pt-20">
+        <div class="pointer-events-none absolute -left-40 -top-40 h-[500px] w-[500px] rounded-full bg-neutral-200/40 blur-3xl"></div>
+        <div class="pointer-events-none absolute -bottom-40 -right-40 h-[500px] w-[500px] rounded-full bg-neutral-200/40 blur-3xl"></div>
+
+        <div class="relative z-10 mx-auto max-w-3xl text-center">
+          <h1 class="text-balance text-5xl font-bold leading-[1.1] tracking-tight text-neutral-900 md:text-7xl">
+            Твой slug.
+            <br />
+            Твой бренд.
+            <br />
+            Навсегда.
+          </h1>
+
+          <p class="mx-auto mt-6 max-w-md text-lg text-neutral-500">
+            Цифровая визитка за 1 минуту — одна ссылка вместо тысячи слов.
+          </p>
+
+          <div id="hero-check" class="mx-auto mt-10 flex max-w-md flex-col gap-3 sm:flex-row" data-page="public-home-search">
+            <div class="flex flex-1 items-center rounded-xl border border-neutral-200 bg-white px-4 py-3 focus-within:border-neutral-400">
+              <span class="mr-2 text-sm text-neutral-400">unqx.uz/</span>
+              <input
+                id="home-slug-input"
+                type="text"
+                placeholder="AAA001"
+                class="w-full bg-transparent text-sm uppercase text-neutral-900 outline-none placeholder:text-neutral-300"
+                autocomplete="off"
+                spellcheck="false"
+                maxlength="6"
+              />
+            </div>
+            <button
+              id="home-slug-check"
+              type="button"
+              class="btn-shimmer flex items-center justify-center gap-2 rounded-xl bg-neutral-900 px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-neutral-800"
+            >
+              Проверить
+              <svg class="icon-stroke h-3.5 w-3.5" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M5 12h14M13 5l7 7-7 7"></path>
+              </svg>
+            </button>
+          </div>
+
+          <div id="home-slug-feedback" class="mt-6 hidden">
+            <div class="flex items-center justify-center gap-2 text-sm text-neutral-900">
+              <span id="home-slug-status-icon" class="inline-flex h-4 w-4 items-center justify-center"></span>
+              <span id="home-slug-status-text"></span>
+            </div>
+
+            <div class="mt-4 flex items-center justify-center gap-3">
+              <a
+                id="home-slug-primary-action"
+                href="#"
+                class="btn-shimmer inline-flex items-center gap-2 rounded-xl bg-neutral-900 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-neutral-800"
+              >
+                Занять slug
+                <svg class="icon-stroke h-3.5 w-3.5" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M5 12h14M13 5l7 7-7 7"></path>
+                </svg>
+              </a>
+              <a
+                href="#calculator"
+                class="inline-flex items-center gap-2 rounded-xl border border-neutral-200 bg-white px-5 py-2.5 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50"
+              >
+                <svg class="icon-stroke h-3.5 w-3.5" viewBox="0 0 24 24" aria-hidden="true">
+                  <rect x="4" y="3" width="16" height="18" rx="2"></rect>
+                  <path d="M8 7h8M8 11h2M12 11h2M16 11h0M8 15h2M12 15h2M16 15h0"></path>
+                </svg>
+                Узнать цену
+              </a>
+            </div>
+
+            <p id="home-slug-note" class="mt-3 text-xs text-neutral-400"></p>
+          </div>
+
+          <div class="mt-8 flex items-center justify-center gap-2 text-sm text-neutral-400">
+            <svg class="icon-stroke h-3.5 w-3.5" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+              <circle cx="8.5" cy="7" r="4"></circle>
+              <path d="M20 8v6M23 11h-6"></path>
+            </svg>
+            <span>1,200+ человек уже заняли свой slug</span>
+          </div>
+        </div>
+      </section>
+
+      <section id="cards" class="px-6 py-24">
+        <div class="mx-auto max-w-6xl">
+          <div class="mb-10 flex items-center gap-2 text-sm text-neutral-400">
+            <span>Живые примеры</span>
+            <svg class="icon-stroke h-3.5 w-3.5" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M5 12h14M13 5l7 7-7 7"></path>
+            </svg>
+          </div>
+
+          <div class="scrollbar-hide flex gap-4 overflow-x-auto pb-4">
+            <% demos.forEach((demo) => { %>
+            <a
+              href="/<%= demo.slug %>"
+              class="flex min-w-[220px] flex-col items-center rounded-2xl border border-neutral-200 bg-white p-6 transition-all hover:border-neutral-400 hover:shadow-sm"
+            >
+              <div class="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-neutral-100 text-sm font-semibold text-neutral-600">
+                <%= demo.name.charAt(0) %>
+              </div>
+              <p class="text-sm font-medium text-neutral-900"><%= demo.name %></p>
+              <p class="mt-1 text-xs text-neutral-400"><%= demo.role %></p>
+              <div class="mt-4 flex items-center gap-3">
+                <svg class="icon-stroke h-3.5 w-3.5 text-neutral-400" viewBox="0 0 24 24" aria-hidden="true">
+                  <rect x="2" y="2" width="20" height="20" rx="5"></rect>
+                  <circle cx="12" cy="12" r="4.5"></circle>
+                  <circle cx="17.5" cy="6.5" r="1"></circle>
+                </svg>
+                <svg class="icon-stroke h-3.5 w-3.5 text-neutral-400" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 1 0-4 0v7h-4v-7a6 6 0 0 1 6-6z"></path>
+                  <rect x="2" y="9" width="4" height="12"></rect>
+                  <circle cx="4" cy="4" r="2"></circle>
+                </svg>
+                <svg class="icon-stroke h-3.5 w-3.5 text-neutral-400" viewBox="0 0 24 24" aria-hidden="true">
+                  <circle cx="12" cy="12" r="9"></circle>
+                  <path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"></path>
+                </svg>
+              </div>
+            </a>
             <% }); %>
-          </ol>
+          </div>
         </div>
+      </section>
 
-        <div class="rounded-2xl border border-black/10 bg-black px-6 py-7 text-white">
-          <p class="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-400">Подходит для</p>
-          <ul class="mt-4 space-y-2 text-sm text-neutral-200 sm:text-base">
-            <li>Агентств и sales-команд</li>
-            <li>Экспертов и консультантов</li>
-            <li>Руководителей и предпринимателей</li>
-            <li>Событий и офлайн-нетворкинга</li>
-          </ul>
+      <section class="px-6 py-24">
+        <div class="mx-auto max-w-6xl">
+          <h2 class="mb-16 text-2xl font-bold tracking-tight text-neutral-900">Как это работает</h2>
+
+          <div class="grid gap-6 md:grid-cols-3">
+            <% steps.forEach((step, index) => { %>
+            <div class="flex flex-col gap-4 rounded-2xl border border-neutral-200 bg-white p-8">
+              <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-neutral-100">
+                <% if (index === 0) { %>
+                <svg class="icon-stroke h-4 w-4 text-neutral-900" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M10 13a5 5 0 0 1 0-7l1.5-1.5a5 5 0 0 1 7 7L17 13"></path>
+                  <path d="M14 11a5 5 0 0 1 0 7L12.5 19.5a5 5 0 0 1-7-7L7 11"></path>
+                </svg>
+                <% } else if (index === 1) { %>
+                <svg class="icon-stroke h-4 w-4 text-neutral-900" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M12 20h9"></path>
+                  <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"></path>
+                </svg>
+                <% } else { %>
+                <svg class="icon-stroke h-4 w-4 text-neutral-900" viewBox="0 0 24 24" aria-hidden="true">
+                  <circle cx="18" cy="5" r="3"></circle>
+                  <circle cx="6" cy="12" r="3"></circle>
+                  <circle cx="18" cy="19" r="3"></circle>
+                  <path d="M8.8 10.8 15.2 6.2M8.8 13.2l6.4 4.6"></path>
+                </svg>
+                <% } %>
+              </div>
+              <div>
+                <span class="mb-1 block font-mono text-xs text-neutral-400">0<%= index + 1 %></span>
+                <h3 class="text-base font-medium text-neutral-900"><%= step.title %></h3>
+                <p class="mt-2 text-sm leading-relaxed text-neutral-500"><%= step.description %></p>
+              </div>
+            </div>
+            <% }); %>
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
 
-    <footer class="mx-auto w-full max-w-6xl px-6 pb-12 pt-2 text-sm text-neutral-600 sm:px-8">
-      <div class="rounded-2xl border border-black/10 bg-white/45 px-5 py-4 backdrop-blur">
-        UNQ+ • Digital Business Cards Platform • <%= new Date().getFullYear() %>
-      </div>
-    </footer>
+      <section id="calculator" class="px-6 py-24">
+        <div class="mx-auto max-w-3xl">
+          <p class="mb-3 font-mono text-xs uppercase tracking-widest text-neutral-400">Slug Pricing Engine</p>
+          <h2 class="text-3xl font-bold tracking-tight text-neutral-900 md:text-4xl">Узнай цену своего slug</h2>
+          <p class="mt-3 text-base text-neutral-500">Формат: AAA000 — 3 буквы + 3 цифры. Цена считается автоматически.</p>
+
+          <div class="mt-10 flex items-center gap-3">
+            <input
+              id="calc-letters"
+              type="text"
+              maxlength="3"
+              placeholder="AAA"
+              class="w-28 rounded-xl border border-neutral-200 bg-white px-4 py-3 text-center font-mono text-lg uppercase text-neutral-900 outline-none transition-colors placeholder:text-neutral-300 focus:border-neutral-400"
+              autocomplete="off"
+            />
+            <span class="text-neutral-300">-</span>
+            <input
+              id="calc-digits"
+              type="text"
+              maxlength="3"
+              placeholder="000"
+              class="w-28 rounded-xl border border-neutral-200 bg-white px-4 py-3 text-center font-mono text-lg text-neutral-900 outline-none transition-colors placeholder:text-neutral-300 focus:border-neutral-400"
+              autocomplete="off"
+            />
+          </div>
+
+          <p id="calc-preview" class="mt-3 font-mono text-sm text-neutral-400">unqx.uz/______</p>
+
+          <div class="mt-5 flex flex-wrap gap-2">
+            <button type="button" class="calc-example-btn rounded-lg border border-neutral-200 bg-white px-3 py-1.5 font-mono text-xs text-neutral-500 transition-colors hover:border-neutral-300 hover:text-neutral-700" data-letters="AAA" data-digits="000">AAA000</button>
+            <button type="button" class="calc-example-btn rounded-lg border border-neutral-200 bg-white px-3 py-1.5 font-mono text-xs text-neutral-500 transition-colors hover:border-neutral-300 hover:text-neutral-700" data-letters="ZZZ" data-digits="999">ZZZ999</button>
+            <button type="button" class="calc-example-btn rounded-lg border border-neutral-200 bg-white px-3 py-1.5 font-mono text-xs text-neutral-500 transition-colors hover:border-neutral-300 hover:text-neutral-700" data-letters="ABC" data-digits="123">ABC123</button>
+            <button type="button" class="calc-example-btn rounded-lg border border-neutral-200 bg-white px-3 py-1.5 font-mono text-xs text-neutral-500 transition-colors hover:border-neutral-300 hover:text-neutral-700" data-letters="ABA" data-digits="001">ABA001</button>
+            <button type="button" class="calc-example-btn rounded-lg border border-neutral-200 bg-white px-3 py-1.5 font-mono text-xs text-neutral-500 transition-colors hover:border-neutral-300 hover:text-neutral-700" data-letters="XYZ" data-digits="500">XYZ500</button>
+            <button type="button" class="calc-example-btn rounded-lg border border-neutral-200 bg-white px-3 py-1.5 font-mono text-xs text-neutral-500 transition-colors hover:border-neutral-300 hover:text-neutral-700" data-letters="ABX" data-digits="374">ABX374</button>
+          </div>
+
+          <div id="calc-result" class="mt-8 hidden rounded-2xl border border-neutral-200 bg-white p-8">
+            <div class="flex items-center gap-3">
+              <span id="calc-rarity-badge" class="inline-flex items-center gap-1 rounded-full border px-3 py-1 font-mono text-[11px] font-medium tracking-wider">
+                <svg class="icon-stroke h-3 w-3" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="m12 3 2.5 5.5L20 10l-4 4 .9 6L12 17l-4.9 3 .9-6-4-4 5.5-1.5L12 3Z"></path>
+                </svg>
+                <span id="calc-rarity-text">COMMON</span>
+              </span>
+            </div>
+
+            <p id="calc-result-slug" class="mt-5 font-mono text-2xl font-bold tracking-wider text-neutral-900">AAA000</p>
+
+            <div class="mt-4 flex items-baseline gap-2">
+              <span id="calc-result-price" class="text-3xl font-bold text-neutral-900">0</span>
+              <span class="text-sm text-neutral-400">сум</span>
+            </div>
+
+            <p id="calc-result-formula" class="mt-2 font-mono text-xs text-neutral-400">100 000 x 1 x 1 = 100 000 сум</p>
+
+            <div class="mt-6 flex gap-6">
+              <div>
+                <p class="text-xs text-neutral-400">Буквы</p>
+                <p id="calc-letter-meta" class="mt-1 text-sm font-medium text-neutral-700">Обычные x1</p>
+              </div>
+              <div>
+                <p class="text-xs text-neutral-400">Цифры</p>
+                <p id="calc-digit-meta" class="mt-1 text-sm font-medium text-neutral-700">Обычные x1</p>
+              </div>
+            </div>
+
+            <a
+              id="calc-reserve-link"
+              href="#"
+              class="btn-shimmer mt-8 inline-flex items-center gap-2 rounded-xl bg-neutral-900 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-neutral-800"
+            >
+              Занять AAA000
+              <svg class="icon-stroke h-3.5 w-3.5" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M5 12h14M13 5l7 7-7 7"></path>
+              </svg>
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <section id="whoop" class="px-6 py-24">
+        <div class="mx-auto max-w-6xl">
+          <div class="grid items-center gap-16 md:grid-cols-2">
+            <div>
+              <p class="mb-3 font-mono text-xs uppercase tracking-widest text-neutral-400">Также продаём</p>
+              <h2 class="text-3xl font-bold tracking-tight text-neutral-900 md:text-4xl">WHOOP</h2>
+              <p class="mt-4 text-base leading-relaxed text-neutral-500">
+                Фитнес-браслет нового поколения. Официально в Узбекистане.
+              </p>
+
+              <div class="mt-6 flex items-baseline gap-2">
+                <span class="text-3xl font-bold text-neutral-900">300 000</span>
+                <span class="text-sm text-neutral-400">сум</span>
+              </div>
+
+              <p class="mt-2 text-sm text-neutral-400">Официальная поставка · Гарантия · Ташкент</p>
+
+              <ul class="mt-8 flex flex-col gap-3">
+                <% whoopFeatures.forEach((feature) => { %>
+                <li class="flex items-center gap-3 text-sm text-neutral-600">
+                  <svg class="icon-stroke h-4 w-4 shrink-0 text-neutral-900" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="m20 6-11 11-5-5"></path>
+                  </svg>
+                  <%= feature %>
+                </li>
+                <% }); %>
+              </ul>
+
+              <div class="mt-8 flex flex-wrap items-center gap-3">
+                <a
+                  href="#"
+                  class="btn-shimmer inline-flex items-center gap-2 rounded-xl bg-neutral-900 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-neutral-800"
+                >
+                  Заказать WHOOP
+                  <svg class="icon-stroke h-3.5 w-3.5" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M5 12h14M13 5l7 7-7 7"></path>
+                  </svg>
+                </a>
+
+                <span class="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-xs font-medium text-neutral-600">
+                  <svg class="icon-stroke h-3 w-3" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M16 3h-8a2 2 0 0 0-2 2v1h12V5a2 2 0 0 0-2-2Z"></path>
+                    <path d="M4 8h16v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"></path>
+                  </svg>
+                  В наличии
+                </span>
+              </div>
+            </div>
+
+            <div class="relative flex items-center justify-center">
+              <div class="w-full overflow-hidden rounded-2xl border border-neutral-200 bg-white p-8">
+                <div class="absolute right-8 top-8 rounded-full bg-neutral-100 px-3 py-1 font-mono text-[10px] uppercase tracking-wider text-neutral-500">
+                  WHOOP 4.0
+                </div>
+                <img
+                  src="/images/whoop.jpg"
+                  alt="WHOOP 4.0 fitness bracelet"
+                  class="h-auto w-full object-contain"
+                  loading="lazy"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="pricing" class="px-6 py-24">
+        <div class="mx-auto max-w-4xl">
+          <h2 class="mb-16 text-2xl font-bold tracking-tight text-neutral-900">Тарифы</h2>
+
+          <div class="grid gap-6 md:grid-cols-2">
+            <% plans.forEach((plan) => { %>
+            <div
+              class="relative flex flex-col rounded-2xl border p-8 <%= plan.highlighted ? 'border-neutral-900 bg-neutral-900 text-white' : 'border-neutral-200 bg-white text-neutral-900' %>"
+            >
+              <% if (plan.badge) { %>
+              <span class="absolute -top-3 right-6 rounded-full bg-neutral-900 px-3 py-1 text-[11px] font-medium tracking-wide text-white ring-4 ring-neutral-50">
+                <%= plan.badge %>
+              </span>
+              <% } %>
+
+              <p class="font-mono text-xs uppercase tracking-widest text-neutral-400"><%= plan.name %></p>
+
+              <div class="mt-4 flex items-baseline gap-1">
+                <span class="text-3xl font-bold"><%= plan.price %></span>
+                <span class="text-sm text-neutral-400">сум/мес</span>
+              </div>
+
+              <p class="mt-1 text-xs <%= plan.highlighted ? 'text-neutral-500' : 'text-neutral-400' %>">
+                + стоимость slug по калькулятору
+              </p>
+
+              <ul class="mt-8 flex flex-1 flex-col gap-2.5">
+                <% plan.included.forEach((feature) => { %>
+                <li class="flex items-start gap-2.5 text-sm <%= plan.highlighted ? 'text-neutral-300' : 'text-neutral-600' %>">
+                  <svg class="icon-stroke mt-0.5 h-3.5 w-3.5 shrink-0 <%= plan.highlighted ? 'text-white' : 'text-neutral-900' %>" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="m20 6-11 11-5-5"></path>
+                  </svg>
+                  <%= feature %>
+                </li>
+                <% }); %>
+                <% plan.excluded.forEach((feature) => { %>
+                <li class="flex items-start gap-2.5 text-sm <%= plan.highlighted ? 'text-neutral-600' : 'text-neutral-300' %>">
+                  <svg class="icon-stroke mt-0.5 h-3.5 w-3.5 shrink-0 text-neutral-300" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="m18 6-12 12M6 6l12 12"></path>
+                  </svg>
+                  <%= feature %>
+                </li>
+                <% }); %>
+              </ul>
+
+              <a
+                href="#"
+                class="btn-shimmer mt-8 flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-medium transition-colors <%= plan.highlighted ? 'bg-white text-neutral-900 hover:bg-neutral-100' : 'bg-neutral-900 text-white hover:bg-neutral-800' %>"
+              >
+                Начать
+                <svg class="icon-stroke h-3.5 w-3.5" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M5 12h14M13 5l7 7-7 7"></path>
+                </svg>
+              </a>
+            </div>
+            <% }); %>
+          </div>
+
+          <p class="mt-8 text-center text-xs text-neutral-400">
+            * Стоимость slug оплачивается единоразово при регистрации.
+            <a href="#calculator" class="underline transition-colors hover:text-neutral-600">Узнать цену своего slug</a>
+          </p>
+        </div>
+      </section>
+
+      <footer class="border-t border-neutral-200 px-6 py-16">
+        <div class="mx-auto max-w-6xl">
+          <div class="flex flex-col items-start justify-between gap-10 md:flex-row md:items-end">
+            <div>
+              <a href="/" class="text-xl font-black text-neutral-900">UNQ+</a>
+              <p class="mt-2 text-sm text-neutral-400">Цифровая визитка нового поколения</p>
+            </div>
+
+            <div class="flex flex-wrap gap-8 text-sm text-neutral-400">
+              <a href="#cards" class="transition-colors hover:text-neutral-900">Визитки</a>
+              <a href="#whoop" class="transition-colors hover:text-neutral-900">WHOOP</a>
+              <a href="#pricing" class="transition-colors hover:text-neutral-900">Тарифы</a>
+            </div>
+
+            <p class="hidden text-4xl font-bold tracking-tight text-neutral-200 md:block">unqx.uz</p>
+          </div>
+
+          <div class="mt-12 border-t border-neutral-200 pt-6">
+            <p class="text-xs text-neutral-400">&copy; 2026 UNQ+ · Ташкент, Узбекистан</p>
+          </div>
+        </div>
+      </footer>
+    </div>
   </main>
+
   <script nonce="<%= cspNonce %>" src="/js/public-home-search.js"></script>
 </body>
 </html>
