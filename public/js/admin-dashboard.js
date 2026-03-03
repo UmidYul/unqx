@@ -107,22 +107,76 @@
   }
 
   function injectLogoToSvg(svg, size, logoSize, logoSrc, logoSvgMarkup = "") {
-    const x = Math.round((size - logoSize) / 2);
-    const y = Math.round((size - logoSize) / 2);
-    const whitePad = Math.round(logoSize * 0.2);
-    const rectX = x - whitePad;
-    const rectY = y - whitePad;
-    const rectSize = logoSize + whitePad * 2;
-    const logoBody = logoSvgMarkup
-      ? `<g transform="translate(${x},${y})"><svg x="0" y="0" width="${logoSize}" height="${logoSize}" viewBox="0 0 120 120" preserveAspectRatio="xMidYMid meet">${logoSvgMarkup.replace(/^[\s\S]*?<svg[^>]*>/i, "").replace(/<\/svg>\s*$/i, "")}</svg></g>`
-      : `<image href="${logoSrc}" xlink:href="${logoSrc}" x="${x}" y="${y}" width="${logoSize}" height="${logoSize}" preserveAspectRatio="xMidYMid meet" />`;
+    try {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(svg, "image/svg+xml");
+      const root = doc.documentElement;
+      if (!root || root.nodeName.toLowerCase() !== "svg") {
+        return svg;
+      }
 
-    const logo = [
-      `<rect x="${rectX}" y="${rectY}" width="${rectSize}" height="${rectSize}" fill="white" rx="12" ry="12" />`,
-      logoBody,
-    ].join("");
+      const viewBox = root.getAttribute("viewBox");
+      let vbX = 0;
+      let vbY = 0;
+      let vbW = Number(root.getAttribute("width")) || size;
+      let vbH = Number(root.getAttribute("height")) || size;
 
-    return svg.replace("</svg>", `${logo}</svg>`);
+      if (viewBox) {
+        const parts = viewBox.trim().split(/\s+/).map(Number);
+        if (parts.length === 4 && parts.every(Number.isFinite)) {
+          [vbX, vbY, vbW, vbH] = parts;
+        }
+      }
+
+      const scaleRatio = size > 0 ? logoSize / size : 0.18;
+      const logoUnit = Math.min(vbW, vbH) * scaleRatio;
+      const x = vbX + (vbW - logoUnit) / 2;
+      const y = vbY + (vbH - logoUnit) / 2;
+      const whitePad = logoUnit * 0.2;
+      const rectX = x - whitePad;
+      const rectY = y - whitePad;
+      const rectSize = logoUnit + whitePad * 2;
+      const corner = Math.max(rectSize * 0.22, 1);
+      const svgNs = "http://www.w3.org/2000/svg";
+
+      const bg = doc.createElementNS(svgNs, "rect");
+      bg.setAttribute("x", rectX.toString());
+      bg.setAttribute("y", rectY.toString());
+      bg.setAttribute("width", rectSize.toString());
+      bg.setAttribute("height", rectSize.toString());
+      bg.setAttribute("fill", "white");
+      bg.setAttribute("rx", corner.toString());
+      bg.setAttribute("ry", corner.toString());
+      root.appendChild(bg);
+
+      if (logoSvgMarkup) {
+        const logoDoc = parser.parseFromString(logoSvgMarkup, "image/svg+xml");
+        const logoRoot = logoDoc.documentElement;
+        if (logoRoot && logoRoot.nodeName.toLowerCase() === "svg") {
+          const imported = doc.importNode(logoRoot, true);
+          imported.setAttribute("x", x.toString());
+          imported.setAttribute("y", y.toString());
+          imported.setAttribute("width", logoUnit.toString());
+          imported.setAttribute("height", logoUnit.toString());
+          imported.setAttribute("preserveAspectRatio", "xMidYMid meet");
+          root.appendChild(imported);
+        }
+      } else {
+        const image = doc.createElementNS(svgNs, "image");
+        image.setAttribute("href", logoSrc);
+        image.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", logoSrc);
+        image.setAttribute("x", x.toString());
+        image.setAttribute("y", y.toString());
+        image.setAttribute("width", logoUnit.toString());
+        image.setAttribute("height", logoUnit.toString());
+        image.setAttribute("preserveAspectRatio", "xMidYMid meet");
+        root.appendChild(image);
+      }
+
+      return new XMLSerializer().serializeToString(root);
+    } catch {
+      return svg;
+    }
   }
 
   function downloadBlob(content, type, filename) {

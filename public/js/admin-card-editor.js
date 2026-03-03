@@ -10,7 +10,7 @@
   }
 
   const mode = body.getAttribute("data-mode") || "create";
-  const cardId = body.getAttribute("data-card-id") || "";
+  let cardId = body.getAttribute("data-card-id") || "";
   const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "";
 
   function withCsrfHeaders(headers = {}) {
@@ -79,6 +79,8 @@
 
   let cropper = null;
   let sourceObjectUrl = "";
+  let pendingAvatarBlob = null;
+  let pendingAvatarPreviewUrl = "";
 
   function setNodeMessage(node, message) {
     if (!(node instanceof HTMLElement)) {
@@ -104,6 +106,15 @@
 
   function setFormError(message) {
     setNodeMessage(formErrorNode, message || "");
+  }
+
+  function setUploadAvatarButtonIdleState() {
+    if (!(uploadAvatarBtn instanceof HTMLButtonElement)) {
+      return;
+    }
+
+    uploadAvatarBtn.disabled = false;
+    uploadAvatarBtn.textContent = cardId ? "Сохранить обрезку" : "Подготовить аватар";
   }
 
   function sanitizeSlug(value) {
@@ -616,6 +627,23 @@
       }
 
       if (mode === "create") {
+        cardId = data.id || "";
+
+        if (pendingAvatarBlob && cardId) {
+          try {
+            await uploadAvatarBlob(cardId, pendingAvatarBlob);
+          } catch (error) {
+            sessionStorage.setItem(
+              "card-editor-notice",
+              error instanceof Error && error.message
+                ? `Визитка сохранена, но аватар не загружен: ${error.message}`
+                : "Визитка сохранена, но аватар не загружен",
+            );
+          }
+          pendingAvatarBlob = null;
+          resetPendingAvatarPreviewUrl();
+        }
+
         window.location.href = `/admin/cards/${data.id}/edit`;
         return;
       }
@@ -640,6 +668,67 @@
 
     URL.revokeObjectURL(sourceObjectUrl);
     sourceObjectUrl = "";
+  }
+
+  function resetPendingAvatarPreviewUrl() {
+    if (!pendingAvatarPreviewUrl) {
+      return;
+    }
+
+    URL.revokeObjectURL(pendingAvatarPreviewUrl);
+    pendingAvatarPreviewUrl = "";
+  }
+
+  function showAvatarPreview(previewUrl) {
+    if (avatarCurrentImage instanceof HTMLImageElement) {
+      avatarCurrentImage.src = previewUrl;
+      avatarCurrentImage.hidden = false;
+    }
+
+    if (avatarFallback instanceof HTMLElement) {
+      avatarFallback.hidden = true;
+    }
+
+    if (removeAvatarBtn instanceof HTMLButtonElement) {
+      removeAvatarBtn.disabled = false;
+    }
+  }
+
+  async function buildCroppedAvatarBlob() {
+    if (!cropper) {
+      return null;
+    }
+
+    const canvas = cropper.getCroppedCanvas({
+      width: 400,
+      height: 400,
+      imageSmoothingQuality: "high",
+    });
+
+    const blob = await new Promise((resolve) => {
+      canvas.toBlob(resolve, "image/webp", 0.9);
+    });
+
+    return blob || null;
+  }
+
+  async function uploadAvatarBlob(targetCardId, blob) {
+    const file = new File([blob], "avatar.webp", { type: "image/webp" });
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await fetch(`/api/admin/cards/${targetCardId}/avatar`, {
+      method: "POST",
+      headers: withCsrfHeaders(),
+      body: formData,
+    });
+
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(payload.error || "Не удалось загрузить аватар");
+    }
+
+    return payload;
   }
 
   if (avatarFileInput instanceof HTMLInputElement && avatarCropWrap instanceof HTMLElement && avatarCropImage instanceof HTMLImageElement) {
@@ -690,11 +779,6 @@
 
   if (uploadAvatarBtn instanceof HTMLButtonElement) {
     uploadAvatarBtn.addEventListener("click", async () => {
-      if (!cardId) {
-        setFormError("Сначала сохраните визитку");
-        return;
-      }
-
       if (!cropper) {
         setFormError("Выберите изображение и выполните обрезку");
         return;
@@ -705,50 +789,32 @@
       uploadAvatarBtn.textContent = "Загрузка...";
 
       try {
-        const canvas = cropper.getCroppedCanvas({
-          width: 400,
-          height: 400,
-          imageSmoothingQuality: "high",
-        });
-
-        const blob = await new Promise((resolve) => {
-          canvas.toBlob(resolve, "image/webp", 0.9);
-        });
+        const blob = await buildCroppedAvatarBlob();
 
         if (!blob) {
           setFormError("Не удалось подготовить изображение");
           return;
         }
 
-        const file = new File([blob], "avatar.webp", { type: "image/webp" });
-        const formData = new FormData();
-        formData.append("file", file);
+        if (!cardId) {
+          pendingAvatarBlob = blob;
+          resetPendingAvatarPreviewUrl();
+          pendingAvatarPreviewUrl = URL.createObjectURL(blob);
+          showAvatarPreview(pendingAvatarPreviewUrl);
+          setFormError("Аватар подготовлен. Сохраните визитку — он загрузится автоматически.");
 
-        const response = await fetch(`/api/admin/cards/${cardId}/avatar`, {
-          method: "POST",
-          headers: withCsrfHeaders(),
-          body: formData,
-        });
-
-        const payload = await response.json().catch(() => ({}));
-
-        if (!response.ok) {
-          setFormError(payload.error || "Не удалось загрузить аватар");
+          destroyCropper();
+          avatarCropWrap.hidden = true;
+          avatarCropImage.removeAttribute("src");
+          resetSourceObjectUrl();
+          avatarFileInput.value = "";
           return;
         }
 
-        if (avatarCurrentImage instanceof HTMLImageElement) {
-          avatarCurrentImage.src = payload.avatarUrl;
-          avatarCurrentImage.hidden = false;
-        }
-
-        if (avatarFallback instanceof HTMLElement) {
-          avatarFallback.hidden = true;
-        }
-
-        if (removeAvatarBtn instanceof HTMLButtonElement) {
-          removeAvatarBtn.disabled = false;
-        }
+        const payload = await uploadAvatarBlob(cardId, blob);
+        pendingAvatarBlob = null;
+        resetPendingAvatarPreviewUrl();
+        showAvatarPreview(payload.avatarUrl);
 
         destroyCropper();
         avatarCropWrap.hidden = true;
@@ -756,8 +822,7 @@
         resetSourceObjectUrl();
         avatarFileInput.value = "";
       } finally {
-        uploadAvatarBtn.disabled = false;
-        uploadAvatarBtn.textContent = "Сохранить обрезку";
+        setUploadAvatarButtonIdleState();
       }
     });
   }
@@ -765,6 +830,30 @@
   if (removeAvatarBtn instanceof HTMLButtonElement) {
     removeAvatarBtn.addEventListener("click", async () => {
       if (!cardId) {
+        pendingAvatarBlob = null;
+        resetPendingAvatarPreviewUrl();
+
+        destroyCropper();
+        if (avatarCropWrap instanceof HTMLElement) {
+          avatarCropWrap.hidden = true;
+        }
+        if (avatarCropImage instanceof HTMLImageElement) {
+          avatarCropImage.removeAttribute("src");
+        }
+        resetSourceObjectUrl();
+        if (avatarFileInput instanceof HTMLInputElement) {
+          avatarFileInput.value = "";
+        }
+
+        if (avatarCurrentImage instanceof HTMLImageElement) {
+          avatarCurrentImage.hidden = true;
+          avatarCurrentImage.removeAttribute("src");
+        }
+        if (avatarFallback instanceof HTMLElement) {
+          avatarFallback.hidden = false;
+        }
+
+        removeAvatarBtn.disabled = true;
         return;
       }
 
@@ -811,6 +900,8 @@
       }
     });
   }
+
+  setUploadAvatarButtonIdleState();
 
   const statsNode = document.getElementById("card-editor-stats");
   const statsCanvas = document.getElementById("card-stats-chart");
@@ -859,6 +950,12 @@
         },
       });
     }
+  }
+
+  const persistedNotice = sessionStorage.getItem("card-editor-notice");
+  if (persistedNotice) {
+    setFormError(persistedNotice);
+    sessionStorage.removeItem("card-editor-notice");
   }
 
   refreshTagsPreview();
