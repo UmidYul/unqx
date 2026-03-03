@@ -193,6 +193,10 @@ function quoteIdent(name) {
   return `"${String(name).replace(/"/g, "\"\"")}"`;
 }
 
+function quoteLiteral(value) {
+  return `'${String(value).replace(/'/g, "''")}'`;
+}
+
 async function hasTable(client, tableName) {
   const { rows } = await client.query(
     `
@@ -221,27 +225,25 @@ async function hasColumn(client, tableName, columnName) {
 
 async function ensureEnums(client) {
   for (const [typeName, labels] of Object.entries(REQUIRED_ENUMS)) {
-    const listSql = labels.map((label) => `'${label.replace(/'/g, "''")}'`).join(", ");
-    await client.query(`
-      DO $$
-      BEGIN
-        IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = '${typeName}') THEN
-          EXECUTE 'CREATE TYPE ${typeName} AS ENUM (${listSql})';
-        END IF;
-      END $$;
-    `);
+    const { rows } = await client.query(
+      `
+        SELECT 1
+        FROM pg_type
+        WHERE typname = $1
+        LIMIT 1
+      `,
+      [typeName],
+    );
+
+    if (rows.length === 0) {
+      const listSql = labels.map((label) => quoteLiteral(label)).join(", ");
+      await client.query(`CREATE TYPE ${quoteIdent(typeName)} AS ENUM (${listSql})`);
+    }
 
     for (const label of labels) {
-      await client.query(`
-        DO $$
-        BEGIN
-          IF EXISTS (SELECT 1 FROM pg_type WHERE typname = '${typeName}') THEN
-            ALTER TYPE ${typeName} ADD VALUE IF NOT EXISTS '${label.replace(/'/g, "''")}';
-          END IF;
-        EXCEPTION
-          WHEN duplicate_object THEN NULL;
-        END $$;
-      `);
+      await client.query(
+        `ALTER TYPE ${quoteIdent(typeName)} ADD VALUE IF NOT EXISTS ${quoteLiteral(label)}`,
+      );
     }
   }
 }
