@@ -108,6 +108,8 @@ server-launcher.cjs
 
 - `npm run dev` - start dev server
 - `npm run build` - production build
+- `npm run build:pack` - build + package standalone deploy archive (`artifacts/*.tar.gz`)
+- `npm run pack:deploy` - package current standalone build into deploy archive
 - `npm run start` - start production server
 - `npm run lint` - ESLint
 - `npm run prisma:generate` - Prisma client generation
@@ -130,6 +132,28 @@ Command to run app:
 ```bash
 npm run build && npm run start
 ```
+
+## Standalone deploy automation (shared hosting)
+
+Local machine:
+
+```bash
+npm run build:pack
+```
+
+This creates an archive in `artifacts/` with:
+- `.next/standalone` (including `.next/static`, `public`, Prisma engines, `prisma/schema.prisma`)
+- `server-launcher.cjs`
+
+Hosting server (from app root):
+
+```bash
+chmod +x scripts/deploy-host.sh
+./scripts/deploy-host.sh /path/to/unqx-standalone-YYYYMMDD-HHMMSS.tar.gz --delete-archive
+```
+
+Optional:
+- keep previous build as rollback: `KEEP_PREVIOUS_STANDALONE=1 ./scripts/deploy-host.sh <archive>`
 
 ## Deploy to Vercel + Neon (recommended)
 

@@ -14,6 +14,16 @@ function copyDirIfExists(src, dst, label) {
   console.log(`[sync-prisma-standalone] copied ${label} from ${src} to ${dst}`);
 }
 
+function copyFileIfExists(src, dst, label) {
+  if (!fs.existsSync(src)) {
+    console.warn(`[sync-prisma-standalone] ${label} not found, skipping`);
+    return;
+  }
+  fs.mkdirSync(path.dirname(dst), { recursive: true });
+  fs.copyFileSync(src, dst);
+  console.log(`[sync-prisma-standalone] copied ${label} from ${src} to ${dst}`);
+}
+
 copyDirIfExists(
   path.join(projectRoot, "node_modules", ".prisma", "client"),
   path.join(standaloneRoot, "node_modules", ".prisma", "client"),
@@ -30,4 +40,10 @@ copyDirIfExists(
   path.join(projectRoot, "public"),
   path.join(standaloneRoot, "public"),
   "public"
+);
+
+copyFileIfExists(
+  path.join(projectRoot, "prisma", "schema.prisma"),
+  path.join(standaloneRoot, "prisma", "schema.prisma"),
+  "prisma/schema.prisma"
 );

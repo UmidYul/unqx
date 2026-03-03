@@ -19,6 +19,7 @@ deploy_db_init_*.sql
 # production
 /build
 release
+.deploy-stage/
 # misc
 .DS_Store
 *.pem
