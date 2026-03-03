@@ -35,12 +35,12 @@ html {
 
 .bolt {
   position: absolute;
-  width: 84px;
-  height: 144px;
+  width: 86px;
+  height: 118px;
   fill: none;
   stroke: #111111;
-  stroke-width: 1.45;
-  stroke-linejoin: bevel;
+  stroke-width: 1.1;
+  stroke-linejoin: miter;
   opacity: 1;
 }
 
@@ -307,23 +307,22 @@ html {
 
 .public-about-list p {
   margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
   font-size: clamp(13px, 3vw, 15px);
-  line-height: 1.35;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .public-about-list p span:first-child {
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  opacity: 0.62;
+  font-size: inherit;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  opacity: 0.9;
+  font-weight: 700;
 }
 
 .public-about-list p span:last-child {
-  overflow-wrap: anywhere;
-  word-break: break-word;
+  opacity: 0.95;
 }
 
 .is-hidden {
@@ -350,8 +349,8 @@ html {
   }
 
   .bolt {
-    width: 72px;
-    height: 122px;
+    width: 74px;
+    height: 102px;
   }
 
   .public-top-slug {
