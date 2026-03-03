@@ -10,6 +10,20 @@ function isMissingModelTable(error, modelName) {
   );
 }
 
+async function hasTable(tableName) {
+  try {
+    const rows = await prisma.$queryRawUnsafe(
+      "SELECT to_regclass($1) AS table_ref",
+      `public.${tableName}`,
+    );
+    const value = Array.isArray(rows) && rows.length > 0 ? rows[0].table_ref : null;
+    return Boolean(value);
+  } catch (error) {
+    console.warn(`[express-app] failed to check table existence for ${tableName}`, error);
+    return false;
+  }
+}
+
 const DEFAULT_TESTIMONIALS = [
   {
     name: "Алишер",
@@ -111,8 +125,22 @@ async function runBootstrapTasks() {
   started = true;
 
   try {
-    await seedTestimonials();
-    await backfillSlugRecords();
+    const [testimonialsReady, slugRecordsReady] = await Promise.all([
+      hasTable("testimonials"),
+      hasTable("slug_records"),
+    ]);
+
+    if (testimonialsReady) {
+      await seedTestimonials();
+    } else {
+      console.warn("[express-app] skip testimonial seed: testimonials table is not migrated yet");
+    }
+
+    if (slugRecordsReady) {
+      await backfillSlugRecords();
+    } else {
+      console.warn("[express-app] skip slug backfill: slug_records table is not migrated yet");
+    }
   } catch (error) {
     console.error("[express-app] bootstrap tasks failed", error);
   }
