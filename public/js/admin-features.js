@@ -3,6 +3,15 @@
   if (!body || body.getAttribute("data-page") !== "admin-dashboard") return;
   const tab = body.getAttribute("data-active-tab") || "";
   const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "";
+  const showAlert = (message) => {
+    if (window.UNQAdminDialog?.alert) {
+      return window.UNQAdminDialog.alert(message);
+    }
+    if (typeof window.alert === "function") {
+      window.alert(message);
+    }
+    return Promise.resolve();
+  };
 
   const headers = (extra = {}) => ({ ...(csrf ? { "X-CSRF-Token": csrf } : {}), ...extra });
   const P = (v) => `${Number(v || 0).toLocaleString("ru-RU")} сум`;
@@ -308,7 +317,7 @@
         });
       }
     } catch (error) {
-      alert(error.message || "Ошибка");
+      showAlert(error.message || "Ошибка");
     } finally {
       closeAllRowMenus();
     }
@@ -319,3 +328,4 @@
   if (tab === "flash-sales") void loadFlashSalesAdmin();
   if (tab === "drops") void loadDropsAdmin();
 })();
+

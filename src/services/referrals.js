@@ -199,7 +199,7 @@ async function getReferralBootstrap(telegramId) {
 
   return {
     refCode,
-    refLink: `unqx.uz/?ref=${encodeURIComponent(refCode)}`,
+    refLink: `unqx.uz/ref/${encodeURIComponent(refCode)}`,
     stats: {
       invited,
       paid,

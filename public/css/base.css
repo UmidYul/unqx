@@ -269,6 +269,92 @@ body.motion-ready [data-observe-reveal].is-visible {
   z-index: 2 !important;
 }
 
+.unqx-dialog-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 95;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.unqx-dialog-layer.is-hidden {
+  display: none;
+}
+
+.unqx-dialog-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(17, 17, 17, 0.56);
+  backdrop-filter: blur(2px);
+}
+
+.unqx-dialog {
+  position: relative;
+  width: min(100%, 430px);
+  border: 1px solid #e5e5e5;
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 24px 40px -24px rgba(17, 17, 17, 0.55);
+  padding: 20px;
+}
+
+.unqx-dialog-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.unqx-dialog-mark {
+  width: 22px;
+  height: 22px;
+  border: 1px solid #e5e5e5;
+  border-radius: 6px;
+  padding: 2px;
+  background: #ffffff;
+}
+
+.unqx-dialog-title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 800;
+  color: #111111;
+}
+
+.unqx-dialog-message {
+  margin: 12px 0 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: #404040;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.unqx-dialog-actions {
+  margin-top: 18px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.unqx-dialog-btn {
+  min-height: 44px;
+  border: 1px solid #111111;
+  border-radius: 10px;
+  background: #111111;
+  color: #ffffff;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.unqx-dialog-btn.is-secondary {
+  border-color: #d4d4d4;
+  background: #ffffff;
+  color: #404040;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

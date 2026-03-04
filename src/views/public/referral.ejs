@@ -1,0 +1,61 @@
+<%
+  const pageTitle = typeof title === "string" && title ? title : "Вас пригласили в UNQ+";
+  const pageDescription =
+    typeof description === "string" && description
+      ? description
+      : "Вас пригласили в UNQ+. Зарегистрируйтесь через Telegram и создайте свою цифровую визитку.";
+  const inviterLine = referrerName
+    ? `${referrerName}${referrerUsername ? ` (${referrerUsername})` : ""}`
+    : referrerUsername || "ваш контакт";
+%>
+<!doctype html>
+<html lang="ru">
+<head>
+  <%- include('../partials/head', { title: pageTitle, description: pageDescription, ogType: 'website' }) %>
+</head>
+<body class="antialiased" data-telegram-bot-username="<%= telegramBotUsername || '' %>">
+  <main class="relative flex min-h-screen items-center justify-center overflow-hidden bg-neutral-50 px-6 py-16" data-page="public-referral">
+    <div class="pointer-events-none absolute -left-24 -top-24 h-72 w-72 rounded-full bg-neutral-200/70 blur-3xl"></div>
+    <div class="pointer-events-none absolute -bottom-24 -right-24 h-72 w-72 rounded-full bg-neutral-200/70 blur-3xl"></div>
+
+    <section class="relative z-10 w-full max-w-xl rounded-3xl border border-neutral-200 bg-white/95 p-8 shadow-sm md:p-10">
+      <a href="/" class="interactive-btn inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-neutral-200 bg-white px-3 py-1.5 text-xs font-semibold text-neutral-700">
+        ← На главную
+      </a>
+
+      <p class="mt-6 font-mono text-xs uppercase tracking-[0.16em] text-neutral-500">Приглашение</p>
+      <h1 class="mt-3 text-3xl font-black tracking-tight text-neutral-900 md:text-4xl">Вас пригласили в UNQ+</h1>
+
+      <p class="mt-4 text-sm leading-relaxed text-neutral-600">
+        Вы перешли по реферальной ссылке от <strong class="text-neutral-900"><%= inviterLine %></strong>.
+        После регистрации через Telegram приглашение сохранится автоматически.
+      </p>
+
+      <div class="mt-6 rounded-2xl border border-neutral-200 bg-neutral-50 p-4 text-sm text-neutral-700">
+        <p><strong>Что дальше:</strong></p>
+        <p class="mt-1">1) Войти через Telegram</p>
+        <p>2) Заполнить визитку</p>
+        <p>3) Получить свой UNQ и поделиться ссылкой</p>
+      </div>
+
+      <div class="mt-7 flex flex-col gap-3 sm:flex-row">
+        <button type="button" data-auth-login class="interactive-btn btn-shimmer min-h-11 rounded-xl bg-neutral-900 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-neutral-800">
+          Зарегистрироваться через Telegram
+        </button>
+        <a href="/#pricing" class="interactive-btn min-h-11 rounded-xl border border-neutral-300 px-5 py-3 text-center text-sm font-semibold text-neutral-700 transition-colors hover:bg-neutral-100">
+          Посмотреть тарифы
+        </a>
+      </div>
+
+      <p class="mt-4 text-xs text-neutral-400">
+        Код приглашения: <span class="font-mono text-neutral-700"><%= refCode %></span>
+      </p>
+    </section>
+  </main>
+
+  <%- include('../partials/order-modal') %>
+
+  <script nonce="<%= cspNonce %>" src="/js/order-modal.js"></script>
+  <script nonce="<%= cspNonce %>" src="/js/public-referral.js"></script>
+</body>
+</html>

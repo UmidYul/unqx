@@ -79,6 +79,7 @@ const UNQ_TARIFFS = {
   let pendingAuthCallback = null;
   let priceRequestSeq = 0;
   let lastFocusedElement = null;
+  let isCloseConfirming = false;
   let state = {
     slugLocked: false,
     lockedSlug: "",
@@ -257,6 +258,20 @@ const UNQ_TARIFFS = {
     if (tone === "error") dom.status.classList.add("text-red-700");
     else if (tone === "success") dom.status.classList.add("text-emerald-700");
     else dom.status.classList.add("text-neutral-600");
+  }
+
+  function showConfirm(message) {
+    if (window.UNQSiteDialog?.confirm) {
+      return window.UNQSiteDialog.confirm(message, {
+        title: "Подтверждение",
+        confirmText: "Закрыть",
+        cancelText: "Остаться",
+      });
+    }
+    if (typeof window.confirm === "function") {
+      return Promise.resolve(window.confirm(message));
+    }
+    return Promise.resolve(false);
   }
 
   function setSlugMode(pricing) {
@@ -468,12 +483,15 @@ const UNQ_TARIFFS = {
     }
   }
 
-  function close(force = false) {
-    if (!isOpen || isClosing) {
+  async function close(force = false) {
+    if (!isOpen || isClosing || isCloseConfirming) {
       return;
     }
     if (!force && dom.stepForm && !dom.stepForm.classList.contains("hidden") && isFormDirty()) {
-      if (!window.confirm("Закрыть? Данные не сохранятся")) {
+      isCloseConfirming = true;
+      const ok = await showConfirm("Закрыть? Данные не сохранятся");
+      isCloseConfirming = false;
+      if (!ok || !isOpen || isClosing) {
         return;
       }
     }

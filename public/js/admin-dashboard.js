@@ -6,6 +6,33 @@
   const tab = body.getAttribute("data-active-tab") || "analytics";
   const base = (body.getAttribute("data-public-base-url") || location.origin).replace(/\/$/, "");
   const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "";
+  const showAlert = (message) => {
+    if (window.UNQAdminDialog?.alert) {
+      return window.UNQAdminDialog.alert(message);
+    }
+    if (typeof window.alert === "function") {
+      window.alert(message);
+    }
+    return Promise.resolve();
+  };
+  const showConfirm = (message) => {
+    if (window.UNQAdminDialog?.confirm) {
+      return window.UNQAdminDialog.confirm(message);
+    }
+    if (typeof window.confirm === "function") {
+      return Promise.resolve(window.confirm(message));
+    }
+    return Promise.resolve(false);
+  };
+  const showPrompt = (message, defaultValue = "") => {
+    if (window.UNQAdminDialog?.prompt) {
+      return window.UNQAdminDialog.prompt(message, defaultValue);
+    }
+    if (typeof window.prompt === "function") {
+      return Promise.resolve(window.prompt(message, defaultValue));
+    }
+    return Promise.resolve(null);
+  };
   const queryNode = document.getElementById("admin-dashboard-query");
   const initialQuery = (() => {
     if (!(queryNode instanceof HTMLScriptElement)) return {};
@@ -563,7 +590,7 @@
     const theme = af.elements.namedItem("theme");
     if (!(id instanceof HTMLInputElement) || !(tariff instanceof HTMLSelectElement) || !(theme instanceof HTMLSelectElement)) return;
     const r = await fetch(`/api/admin/orders/${id.value}/activate`, { method: "POST", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({ tariff: tariff.value, theme: theme.value }) });
-    if (!r.ok) return alert(await E(r));
+    if (!r.ok) return showAlert(await E(r));
     closeA();
     void loadOrders();
   });
@@ -653,7 +680,7 @@
     const text = tef.elements.namedItem("text");
     if (!(id instanceof HTMLInputElement) || !(name instanceof HTMLInputElement) || !(slug instanceof HTMLInputElement) || !(tariff instanceof HTMLSelectElement) || !(text instanceof HTMLTextAreaElement)) return;
     const r = await fetch(`/api/admin/testimonials/${id.value}`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({ name: name.value.trim(), slug: slug.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6), tariff: tariff.value === "premium" ? "premium" : "basic", text: text.value.trim() }) });
-    if (!r.ok) return alert(await E(r));
+    if (!r.ok) return showAlert(await E(r));
     closeTe();
     void loadTestimonials();
   });
@@ -702,25 +729,25 @@
       const previousNote = t.getAttribute("data-note") || "";
       let adminNote = previousNote;
       if (t.value === "rejected") {
-        const entered = prompt("Причина отклонения (будет отправлена в Telegram)", previousNote);
+        const entered = await showPrompt("Причина отклонения (будет отправлена в Telegram)", previousNote);
         if (entered === null) return;
         adminNote = entered;
       }
       const r = await fetch(`/api/admin/orders/${id}/status`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({ status: t.value, adminNote }) });
-      if (!r.ok) alert(await E(r));
+      if (!r.ok) showAlert(await E(r));
       else void loadOrders();
     }
     if (t.matches('[data-act="bs"]') && t instanceof HTMLSelectElement) {
       const id = t.getAttribute("data-id");
       if (!id) return;
       const r = await fetch(`/api/admin/bracelet-orders/${id}/status`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({ deliveryStatus: t.value }) });
-      if (!r.ok) alert(await E(r));
+      if (!r.ok) showAlert(await E(r));
     }
     if (t.matches('[data-act="ct"]') && t instanceof HTMLSelectElement) {
       const id = t.getAttribute("data-id");
       if (!id) return;
       const r = await fetch(`/api/admin/cards/${id}/tariff`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({ tariff: t.value }) });
-      if (!r.ok) alert(await E(r));
+      if (!r.ok) showAlert(await E(r));
     }
     if (t.matches('[data-act="up"]') && t instanceof HTMLSelectElement) {
       const telegramId = t.getAttribute("data-id");
@@ -734,7 +761,7 @@
       const downgradeToBasic = prevPlan === "premium" && t.value === "basic" && activeSlugs > 1;
       if (downgradeToBasic) {
         const braceletNote = braceletSlugs.length ? `\nБраслет привязан к: ${braceletSlugs.join(", ")}.` : "";
-        const ok = confirm(`У пользователя ${activeSlugs} slug. При переходе на Базовый будет активен только основной. Продолжить?${braceletNote}`);
+        const ok = await showConfirm(`У пользователя ${activeSlugs} slug. При переходе на Базовый будет активен только основной. Продолжить?${braceletNote}`);
         if (!ok) {
           t.value = prevPlan;
           return;
@@ -746,7 +773,7 @@
         if (payload.code === "PLAN_DOWNGRADE_CONFIRMATION_REQUIRED") {
           const cnt = Number(payload.activeSlugCount || activeSlugs || 2);
           const braceletNote = braceletSlugs.length ? `\nБраслет привязан к: ${braceletSlugs.join(", ")}.` : "";
-          const ok = confirm(`У пользователя ${cnt} slug. При переходе на Базовый будет активен только основной. Продолжить?${braceletNote}`);
+          const ok = await showConfirm(`У пользователя ${cnt} slug. При переходе на Базовый будет активен только основной. Продолжить?${braceletNote}`);
           if (!ok) {
             t.value = prevPlan;
             return;
@@ -755,7 +782,7 @@
         }
       }
       if (!r.ok) {
-        alert(await E(r));
+        showAlert(await E(r));
         t.value = prevPlan;
       } else {
         void loadUsers();
@@ -782,12 +809,12 @@
       if (!id || !status) return;
       let adminNote = previousNote;
       if (status === "rejected") {
-        const entered = prompt("Причина отклонения (будет отправлена в Telegram)", previousNote);
+        const entered = await showPrompt("Причина отклонения (будет отправлена в Telegram)", previousNote);
         if (entered === null) return;
         adminNote = entered;
       }
       const r = await fetch(`/api/admin/orders/${id}/status`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({ status, adminNote }) });
-      if (!r.ok) alert(await E(r));
+      if (!r.ok) showAlert(await E(r));
       else void loadOrders();
       closeAllRowMenus();
       return;
@@ -797,7 +824,7 @@
       const deliveryStatus = n.getAttribute("data-status");
       if (!id || !deliveryStatus) return;
       const r = await fetch(`/api/admin/bracelet-orders/${id}/status`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({ deliveryStatus }) });
-      if (!r.ok) alert(await E(r));
+      if (!r.ok) showAlert(await E(r));
       else void loadBracelets();
       closeAllRowMenus();
       return;
@@ -805,10 +832,10 @@
     if (a === "ct") {
       const id = n.getAttribute("data-id");
       if (!id) return;
-      const tariff = String(prompt("Новый тариф: basic или premium", "basic") || "").trim().toLowerCase();
+      const tariff = String(await showPrompt("Новый тариф: basic или premium", "basic") || "").trim().toLowerCase();
       if (!["basic", "premium"].includes(tariff)) return;
       const r = await fetch(`/api/admin/cards/${id}/tariff`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({ tariff }) });
-      if (!r.ok) alert(await E(r));
+      if (!r.ok) showAlert(await E(r));
       else void loadCards();
       closeAllRowMenus();
       return;
@@ -819,32 +846,32 @@
       const prevPlan = n.getAttribute("data-current-plan") || "basic";
       const activeSlugs = Number(n.getAttribute("data-active-slugs") || "0");
       const braceletSlugs = String(n.getAttribute("data-bracelet-slugs") || "").split(",").map((x) => x.trim()).filter(Boolean);
-      const entered = String(prompt("Новый тариф: basic или premium", prevPlan) || "").trim().toLowerCase();
+      const entered = String(await showPrompt("Новый тариф: basic или premium", prevPlan) || "").trim().toLowerCase();
       if (!["basic", "premium"].includes(entered) || entered === prevPlan) return;
       const downgradeToBasic = prevPlan === "premium" && entered === "basic" && activeSlugs > 1;
       if (downgradeToBasic) {
         const braceletNote = braceletSlugs.length ? `\nБраслет привязан к: ${braceletSlugs.join(", ")}.` : "";
-        const ok = confirm(`У пользователя ${activeSlugs} slug. При переходе на Базовый будет активен только основной. Продолжить?${braceletNote}`);
+        const ok = await showConfirm(`У пользователя ${activeSlugs} slug. При переходе на Базовый будет активен только основной. Продолжить?${braceletNote}`);
         if (!ok) return;
       }
       const r = await fetch(`/api/admin/users/${encodeURIComponent(telegramId)}/plan`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({ plan: entered, force: downgradeToBasic }) });
-      if (!r.ok) alert(await E(r));
+      if (!r.ok) showAlert(await E(r));
       else void loadUsers();
       closeAllRowMenus();
       return;
     }
     if (a === "oa") openA(n.getAttribute("data-id") || "", n.getAttribute("data-t") || "basic", n.getAttribute("data-th") || "default_dark");
-    if (a === "od") { const id = n.getAttribute("data-id"); if (!id || !confirm("Удалить заявку?")) return; const r = await fetch(`/api/admin/orders/${id}`, { method: "DELETE", headers: H() }); if (!r.ok) alert(await E(r)); else void loadOrders(); }
-    if (a === "ope") { const id = n.getAttribute("data-id"); if (!id) return; const r = await fetch(`/api/admin/orders/${id}/extend-pending`, { method: "POST", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({}) }); if (!r.ok) alert(await E(r)); else void loadOrders(); }
-    if (a === "ux") { const telegramId = n.getAttribute("data-id"); if (!telegramId) return; const input = prompt("Новая дата окончания (YYYY-MM-DD) или пусто для сброса", ""); if (input === null) return; const r = await fetch(`/api/admin/users/${encodeURIComponent(telegramId)}/plan-expiry`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({ planExpiresAt: input.trim() ? `${input.trim()}T23:59:59.000Z` : null }) }); if (!r.ok) alert(await E(r)); else void loadUsers(); }
-    if (a === "ub") { const telegramId = n.getAttribute("data-id"); const status = n.getAttribute("data-status"); if (!telegramId) return; const isBlocked = status === "blocked"; if (!isBlocked && !confirm("Заблокировать пользователя и деактивировать его slug?")) return; if (isBlocked && !confirm("Разблокировать пользователя и восстановить статусы slug?")) return; const r = await fetch(`/api/admin/users/${encodeURIComponent(telegramId)}/${isBlocked ? "unblock" : "block"}`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({}) }); if (!r.ok) alert(await E(r)); else void loadUsers(); }
-    if (a === "st") { const slug = n.getAttribute("data-slug"), state = n.getAttribute("data-ns"); if (!slug || !state) return; const r = await fetch(`/api/admin/slugs/${encodeURIComponent(slug)}/state`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({ state }) }); if (!r.ok) alert(await E(r)); else void loadSlugs(); }
-    if (a === "sa") { const slug = n.getAttribute("data-slug"); if (!slug) return; const r = await fetch(`/api/admin/slugs/${encodeURIComponent(slug)}/activate`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({}) }); if (!r.ok) alert(await E(r)); else void loadSlugs(); }
-    if (a === "sp") { const slug = n.getAttribute("data-slug"), cur = n.getAttribute("data-p") || ""; if (!slug) return; const x = prompt("Новая цена slug (пусто = убрать override)", cur); if (x === null) return; const r = await fetch(`/api/admin/slugs/${encodeURIComponent(slug)}/price-override`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({ priceOverride: x.trim() ? Number(x.trim()) : null }) }); if (!r.ok) alert(await E(r)); else void loadSlugs(); }
-    if (a === "cg") { const id = n.getAttribute("data-id"), isActive = n.getAttribute("data-n") === "1"; if (!id) return; const r = await fetch(`/api/admin/cards/${id}/toggle-active`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({ isActive }) }); if (!r.ok) alert(await E(r)); else void loadCards(); }
+    if (a === "od") { const id = n.getAttribute("data-id"); if (!id || !await showConfirm("Удалить заявку?")) return; const r = await fetch(`/api/admin/orders/${id}`, { method: "DELETE", headers: H() }); if (!r.ok) showAlert(await E(r)); else void loadOrders(); }
+    if (a === "ope") { const id = n.getAttribute("data-id"); if (!id) return; const r = await fetch(`/api/admin/orders/${id}/extend-pending`, { method: "POST", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({}) }); if (!r.ok) showAlert(await E(r)); else void loadOrders(); }
+    if (a === "ux") { const telegramId = n.getAttribute("data-id"); if (!telegramId) return; const input = await showPrompt("Новая дата окончания (YYYY-MM-DD) или пусто для сброса", ""); if (input === null) return; const r = await fetch(`/api/admin/users/${encodeURIComponent(telegramId)}/plan-expiry`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({ planExpiresAt: input.trim() ? `${input.trim()}T23:59:59.000Z` : null }) }); if (!r.ok) showAlert(await E(r)); else void loadUsers(); }
+    if (a === "ub") { const telegramId = n.getAttribute("data-id"); const status = n.getAttribute("data-status"); if (!telegramId) return; const isBlocked = status === "blocked"; if (!isBlocked && !await showConfirm("Заблокировать пользователя и деактивировать его slug?")) return; if (isBlocked && !await showConfirm("Разблокировать пользователя и восстановить статусы slug?")) return; const r = await fetch(`/api/admin/users/${encodeURIComponent(telegramId)}/${isBlocked ? "unblock" : "block"}`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({}) }); if (!r.ok) showAlert(await E(r)); else void loadUsers(); }
+    if (a === "st") { const slug = n.getAttribute("data-slug"), state = n.getAttribute("data-ns"); if (!slug || !state) return; const r = await fetch(`/api/admin/slugs/${encodeURIComponent(slug)}/state`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({ state }) }); if (!r.ok) showAlert(await E(r)); else void loadSlugs(); }
+    if (a === "sa") { const slug = n.getAttribute("data-slug"); if (!slug) return; const r = await fetch(`/api/admin/slugs/${encodeURIComponent(slug)}/activate`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({}) }); if (!r.ok) showAlert(await E(r)); else void loadSlugs(); }
+    if (a === "sp") { const slug = n.getAttribute("data-slug"), cur = n.getAttribute("data-p") || ""; if (!slug) return; const x = await showPrompt("Новая цена slug (пусто = убрать override)", cur); if (x === null) return; const r = await fetch(`/api/admin/slugs/${encodeURIComponent(slug)}/price-override`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({ priceOverride: x.trim() ? Number(x.trim()) : null }) }); if (!r.ok) showAlert(await E(r)); else void loadSlugs(); }
+    if (a === "cg") { const id = n.getAttribute("data-id"), isActive = n.getAttribute("data-n") === "1"; if (!id) return; const r = await fetch(`/api/admin/cards/${id}/toggle-active`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({ isActive }) }); if (!r.ok) showAlert(await E(r)); else void loadCards(); }
     if (a === "qr") { const slug = n.getAttribute("data-slug"); if (slug) await openQ(slug); }
-    if (a === "tv") { const id = n.getAttribute("data-id"), isVisible = n.getAttribute("data-n") === "1"; if (!id) return; const r = await fetch(`/api/admin/testimonials/${id}/visibility`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({ isVisible }) }); if (!r.ok) alert(await E(r)); else void loadTestimonials(); }
-    if (a === "td") { const id = n.getAttribute("data-id"); if (!id || !confirm("Удалить отзыв?")) return; const r = await fetch(`/api/admin/testimonials/${id}`, { method: "DELETE", headers: H() }); if (!r.ok) alert(await E(r)); else void loadTestimonials(); }
+    if (a === "tv") { const id = n.getAttribute("data-id"), isVisible = n.getAttribute("data-n") === "1"; if (!id) return; const r = await fetch(`/api/admin/testimonials/${id}/visibility`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({ isVisible }) }); if (!r.ok) showAlert(await E(r)); else void loadTestimonials(); }
+    if (a === "td") { const id = n.getAttribute("data-id"); if (!id || !await showConfirm("Удалить отзыв?")) return; const r = await fetch(`/api/admin/testimonials/${id}`, { method: "DELETE", headers: H() }); if (!r.ok) showAlert(await E(r)); else void loadTestimonials(); }
     if (a === "te") { const encoded = n.getAttribute("data-json"); if (!encoded) return; try { openTe(JSON.parse(decodeURIComponent(encoded))); } catch {} }
     if (a === "toggle-score") {
       const id = n.getAttribute("data-id");
@@ -863,7 +890,7 @@
         headers: H({ "Content-Type": "application/json" }),
         body: JSON.stringify({}),
       });
-      if (!r.ok) alert(await E(r));
+      if (!r.ok) showAlert(await E(r));
       else {
         if (tab === "score") void loadScoreManagement();
         if (tab === "users") void loadUsers();
@@ -885,15 +912,15 @@
     const d = new FormData(f);
     const p = { name: String(d.get("name") || "").trim(), slug: String(d.get("slug") || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6), tariff: String(d.get("tariff") || "basic"), text: String(d.get("text") || "").trim() };
     const r = await fetch("/api/admin/testimonials", { method: "POST", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify(p) });
-    if (!r.ok) alert(await E(r)); else { f.reset(); initialQuery.t_page = "1"; void loadTestimonials(); }
+    if (!r.ok) showAlert(await E(r)); else { f.reset(); initialQuery.t_page = "1"; void loadTestimonials(); }
   });
   document.getElementById("cleanup-logs-btn")?.addEventListener("click", async () => {
     const r = await fetch("/api/admin/logs/cleanup", { method: "POST", headers: H() });
-    if (!r.ok) alert(await E(r)); else void loadLogs();
+    if (!r.ok) showAlert(await E(r)); else void loadLogs();
   });
   document.getElementById("score-recalculate-all-btn")?.addEventListener("click", async () => {
     const r = await fetch("/api/admin/score/recalculate-all", { method: "POST", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({}) });
-    if (!r.ok) alert(await E(r));
+    if (!r.ok) showAlert(await E(r));
     else void loadScoreManagement();
   });
   document.getElementById("score-visibility-toggle")?.addEventListener("change", async (event) => {
@@ -904,7 +931,7 @@
       headers: H({ "Content-Type": "application/json" }),
       body: JSON.stringify({ enabledOnCards: target.checked }),
     });
-    if (!r.ok) alert(await E(r));
+    if (!r.ok) showAlert(await E(r));
   });
 
   if (tab === "orders") {
@@ -967,3 +994,5 @@
   if (tab === "logs") void loadLogs();
   if (tab === "score") void loadScoreManagement();
 })();
+
+

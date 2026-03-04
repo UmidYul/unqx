@@ -132,10 +132,41 @@ function createApp() {
 
   app.use((req, _res, next) => {
     const refCode = typeof req.query?.ref === "string" ? req.query.ref.trim().toUpperCase() : "";
-    if (refCode && req.session) {
-      req.session.pendingRefCode = refCode.replace(/[^A-Z0-9_]/g, "").slice(0, 40);
+    const normalizedRefCode = refCode.replace(/[^A-Z0-9_]/g, "").slice(0, 40);
+    if (normalizedRefCode && req.session) {
+      req.session.pendingRefCode = normalizedRefCode;
     }
     next();
+  });
+
+  app.use((req, res, next) => {
+    const refCode = typeof req.query?.ref === "string" ? req.query.ref.trim().toUpperCase() : "";
+    const normalizedRefCode = refCode.replace(/[^A-Z0-9_]/g, "").slice(0, 40);
+    if (!normalizedRefCode || req.path !== "/" || req.method !== "GET") {
+      next();
+      return;
+    }
+
+    const params = new URLSearchParams();
+    Object.entries(req.query || {}).forEach(([key, value]) => {
+      if (key === "ref") {
+        return;
+      }
+      if (Array.isArray(value)) {
+        value
+          .filter((item) => typeof item === "string")
+          .forEach((item) => {
+            params.append(key, item);
+          });
+        return;
+      }
+      if (typeof value === "string") {
+        params.set(key, value);
+      }
+    });
+
+    const nextPath = `/ref/${encodeURIComponent(normalizedRefCode)}${params.toString() ? `?${params.toString()}` : ""}`;
+    res.redirect(nextPath);
   });
 
   app.use((req, res, next) => {

@@ -11,6 +11,7 @@ const { buildLeaderboard, normalizePeriod, getSlugTopBadge, getUserLeaderboardSu
 const { getFeatureSetting } = require("../../services/feature-settings");
 const { getActiveFlashSale, resolveConditionLabel } = require("../../services/flash-sales");
 const { getPublicScoreForSlug } = require("../../services/unq-score");
+const { normalizeRefCode } = require("../../services/referrals");
 
 const router = express.Router();
 
@@ -120,6 +121,43 @@ router.get(
             slugCount: nextDrop.slugCount,
           }
         : null,
+      adminSession: getAdminSession(req),
+    });
+  }),
+);
+
+router.get(
+  "/ref/:refCode",
+  asyncHandler(async (req, res) => {
+    const refCode = normalizeRefCode(req.params.refCode);
+    if (!refCode) {
+      res.redirect("/");
+      return;
+    }
+
+    if (req.session) {
+      req.session.pendingRefCode = refCode;
+    }
+
+    const referrer = await prisma.user.findFirst({
+      where: { refCode },
+      select: {
+        firstName: true,
+        displayName: true,
+        username: true,
+      },
+    });
+
+    const referrerName = (referrer?.displayName || referrer?.firstName || "").trim();
+    const referrerUsername = referrer?.username ? `@${referrer.username}` : "";
+
+    res.render("public/referral", {
+      title: "Вас пригласили в UNQ+",
+      description: "Зарегистрируйтесь в UNQ+ и получите доступ к цифровой визитке по приглашению.",
+      refCode,
+      referrerName,
+      referrerUsername,
+      noindex: true,
       adminSession: getAdminSession(req),
     });
   }),
