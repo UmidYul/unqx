@@ -403,17 +403,17 @@ const UNQ_TARIFFS = {
       const fake = document.createElement("div");
       fake.className = "order-modal-tg-fake";
       fake.innerHTML = '<span>Войти через Telegram</span>';
-      fake.addEventListener("click", () => {
-        const iframe = container.querySelector("iframe");
-        if (iframe instanceof HTMLIFrameElement) {
-          iframe.click();
-          return;
-        }
-
-        // Re-mount widget when iframe failed to initialize, so button never stays dead.
-        mountWidget();
-      });
       container.appendChild(fake);
+    }
+    if (container.dataset.tgFallbackBound !== "1") {
+      container.dataset.tgFallbackBound = "1";
+      container.addEventListener("click", () => {
+        const iframe = container.querySelector("iframe");
+        if (!(iframe instanceof HTMLIFrameElement)) {
+          // Re-mount widget only when iframe failed to initialize.
+          mountWidget();
+        }
+      });
     }
     const apply = () => {
       const iframe = container.querySelector("iframe");

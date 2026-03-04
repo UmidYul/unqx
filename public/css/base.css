@@ -258,8 +258,8 @@ body.motion-ready [data-observe-reveal].is-visible {
   color: #ffffff;
   font-size: 16px;
   font-weight: 600;
-  pointer-events: auto;
-  cursor: pointer;
+  pointer-events: none;
+  cursor: default;
   z-index: 3;
 }
 
