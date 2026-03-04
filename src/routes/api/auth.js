@@ -117,8 +117,6 @@ router.post(
           username: parsed.username,
           photoUrl: parsed.photoUrl,
           displayName: parsed.firstName,
-          plan: "none",
-          planPurchasedAt: null,
           status: "active",
         },
         update: {

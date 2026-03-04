@@ -836,7 +836,7 @@
     if (t.matches('[data-act="up"]') && t instanceof HTMLSelectElement) {
       const telegramId = t.getAttribute("data-id");
       if (!telegramId) return;
-      const prevPlan = t.getAttribute("data-current-plan") || "basic";
+      const prevPlan = t.getAttribute("data-current-plan") || "none";
       if (t.value === prevPlan) return;
       const manualWarningOk = await showConfirm("Ручная смена тарифа без оплаты. Использовать только для корректировок. Продолжить?");
       if (!manualWarningOk) {
@@ -951,7 +951,7 @@
     if (a === "up") {
       const telegramId = n.getAttribute("data-id");
       if (!telegramId) return;
-      const prevPlan = n.getAttribute("data-current-plan") || "basic";
+      const prevPlan = n.getAttribute("data-current-plan") || "none";
       const activeSlugs = Number(n.getAttribute("data-active-slugs") || "0");
       const braceletSlugs = String(n.getAttribute("data-bracelet-slugs") || "").split(",").map((x) => x.trim()).filter(Boolean);
       const entered = String(await showPrompt("Новый тариф: none, basic или premium", prevPlan) || "").trim().toLowerCase();

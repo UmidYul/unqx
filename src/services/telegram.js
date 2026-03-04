@@ -33,18 +33,18 @@ async function sendOrderRequestToTelegram(payload) {
   const usernameLabel = payload.username ? `@${escapeHtml(payload.username.replace(/^@/, ""))}` : "@—";
   const telegramLink = payload.telegramId ? `tg://user?id=${escapeHtml(payload.telegramId)}` : "—";
   const text = [
-    "🆕 <b>НОВАЯ ЗАЯВКА UNQ+</b>",
+    "<b>НОВАЯ ЗАЯВКА UNQ+</b>",
     "",
-    `👤 ${escapeHtml(payload.name)} · ${usernameLabel} · ${telegramLink}`,
-    `🔗 <b>Slug:</b> ${escapeHtml(payload.slug)} · unqx.uz/${escapeHtml(payload.slug)}`,
-    `💰 <b>Цена slug:</b> ${escapeHtml(payload.slugPriceLabel)} сум`,
-    `⭐ <b>Тариф:</b> ${tariffLabel} · ${escapeHtml(payload.tariffPriceLabel)} сум`,
-    `📿 <b>Браслет:</b> ${braceletLabel}`,
+    `${escapeHtml(payload.name)} · ${usernameLabel} · ${telegramLink}`,
+    `<b>Slug:</b> ${escapeHtml(payload.slug)} · unqx.uz/${escapeHtml(payload.slug)}`,
+    `<b>Цена slug:</b> ${escapeHtml(payload.slugPriceLabel)} сум`,
+    `<b>Тариф:</b> ${tariffLabel} · ${escapeHtml(payload.tariffPriceLabel)} сум`,
+    `<b>Браслет:</b> ${braceletLabel}`,
     "",
-    `💵 <b>Итого разово:</b> ${escapeHtml(payload.totalOneTimeLabel)} сум`,
+    `<b>Итого разово:</b> ${escapeHtml(payload.totalOneTimeLabel)} сум`,
     "Единоразовая покупка",
     "",
-    "⏰ Срок резерва заявки: 24 часа",
+    "Срок резерва заявки: 24 часа",
   ]
     .filter(Boolean)
     .join("\n");
@@ -104,18 +104,18 @@ async function sendSlugApprovedToUser({ telegramId, slug, plan, hasBracelet = fa
 }
 
 async function sendSlugAwaitingPaymentToUser({ telegramId, slug }) {
-  const text = `💳 Оплата по заявке ${slug} подтверждена.\nСкоро активируем UNQ.`;
+  const text = `Оплата по заявке ${slug} подтверждена.\nСкоро активируем UNQ.`;
   return sendTelegramMessage({ chatId: telegramId, text, parseMode: "HTML" });
 }
 
 async function sendSlugRejectedToUser({ telegramId, slug, adminNote }) {
   const reason = String(adminNote || "").trim() || "Без указания причины";
-  const text = `❌ Заявка на ${slug} отклонена.\nПричина: ${escapeHtml(reason)}.\nНапиши нам если есть вопросы.`;
+  const text = `Заявка на ${slug} отклонена.\nПричина: ${escapeHtml(reason)}.\nНапиши нам если есть вопросы.`;
   return sendTelegramMessage({ chatId: telegramId, text, parseMode: "HTML" });
 }
 
 async function sendSlugExpiredToUser({ telegramId, slug }) {
-  const text = `⌛ Заявка на ${slug} истекла — не успели связаться.\nSlug снова доступен. Подай заявку повторно: unqx.uz`;
+  const text = `Заявка на ${slug} истекла — не успели связаться.\nSlug снова доступен. Подай заявку повторно: unqx.uz`;
   return sendTelegramMessage({ chatId: telegramId, text, parseMode: "HTML" });
 }
 

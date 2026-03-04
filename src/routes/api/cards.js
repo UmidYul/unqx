@@ -89,15 +89,15 @@ async function withMissingTableFallback(modelName, fallbackValue, callback) {
 function toOrderStatusLabel(status) {
   switch (status) {
     case "NEW":
-      return "🆕 Новая";
+      return "Новая";
     case "CONTACTED":
-      return "💬 Связались";
+      return "Связались";
     case "PAID":
-      return "💳 Оплачено";
+      return "Оплачено";
     case "ACTIVATED":
-      return "✅ Активировано";
+      return "Активировано";
     case "REJECTED":
-      return "❌ Отклонено";
+      return "Отклонено";
     default:
       return status;
   }

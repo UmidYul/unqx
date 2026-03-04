@@ -307,7 +307,7 @@ router.get(
         buttons: getButtonLimit(effective.plan),
       },
       slugs: effective.plan === "none" ? [] : slugs,
-      card: parseProfileCardRow(card),
+      card: effective.plan === "none" ? null : parseProfileCardRow(card),
       requests: requests.map((item) => ({
         id: item.id,
         slug: item.slug,
@@ -337,6 +337,10 @@ router.get(
   asyncHandler(async (req, res) => {
     const user = await getCurrentUser(req);
     if (!assertUserActive(user, res)) {
+      return;
+    }
+    if (getEffectivePlan(user).plan === "none") {
+      res.json({ items: [] });
       return;
     }
 
@@ -452,6 +456,10 @@ router.get(
   asyncHandler(async (req, res) => {
     const user = await getCurrentUser(req);
     if (!assertUserActive(user, res)) {
+      return;
+    }
+    if (!canCreateCard(user)) {
+      res.json({ card: null });
       return;
     }
     const row = await prisma.profileCard.findUnique({
