@@ -15,9 +15,6 @@ module.exports = {
         ADD COLUMN IF NOT EXISTS plan_purchased_at TIMESTAMPTZ,
         ADD COLUMN IF NOT EXISTS plan_upgraded_at TIMESTAMPTZ;
 
-      ALTER TABLE users
-        ALTER COLUMN plan SET DEFAULT 'none';
-
       ALTER TABLE slug_requests
         ADD COLUMN IF NOT EXISTS plan_price INTEGER NOT NULL DEFAULT 0;
 
@@ -58,7 +55,7 @@ module.exports = {
           WHEN n.latest_plan = 'premium' THEN 'premium'
           WHEN n.latest_plan = 'basic' THEN 'basic'
           WHEN n.current_plan = 'premium' THEN 'premium'
-          ELSE 'none'
+          ELSE 'basic'
         END,
         plan_purchased_at = COALESCE(
           u.plan_purchased_at,
