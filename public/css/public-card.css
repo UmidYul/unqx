@@ -169,6 +169,26 @@
   transform: translateY(0);
 }
 
+body[data-page="profile-page"] {
+  overflow-x: hidden;
+}
+
+#profile-card-live-preview {
+  overflow: hidden;
+}
+
+#profile-card-live-preview [data-card-view] {
+  max-width: 420px;
+  margin: 0 auto;
+}
+
+#profile-card-live-preview .unq-ref-name,
+#profile-card-live-preview .unq-ref-phone,
+#profile-card-live-preview .unq-ref-about p span,
+#profile-card-live-preview .unq-ref-action-btn span {
+  overflow-wrap: anywhere;
+}
+
 .sr-only {
   position: absolute;
   width: 1px;
@@ -182,6 +202,15 @@
 }
 
 @media (max-width: 640px) {
+  #profile-card-live-preview [data-card-view] {
+    max-width: 100%;
+  }
+
+  #profile-card-live-preview .unq-ref-footline {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
   .home-slug-counter-main {
     font-size: 19px;
   }

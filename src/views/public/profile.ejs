@@ -5,8 +5,8 @@
   <link rel="stylesheet" href="/vendor/cropperjs/cropper.min.css" />
 </head>
 <body class="antialiased" data-page="profile-page" data-telegram-bot-username="<%= telegramBotUsername || '' %>">
-  <main class="min-h-screen bg-neutral-50 px-4 py-6 md:px-6">
-    <div class="mx-auto mb-4 w-full max-w-6xl">
+  <main class="min-h-screen bg-neutral-50 px-3 py-4 sm:px-4 sm:py-6 md:px-6">
+    <div class="mx-auto mb-3 w-full max-w-6xl sm:mb-4">
       <a href="/" class="interactive-btn inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-neutral-200 bg-white px-3 py-1.5 text-xs font-semibold text-neutral-700">
         <svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
           <path d="M15 18 9 12l6-6"></path>
@@ -14,8 +14,8 @@
         На главную
       </a>
     </div>
-    <div class="mx-auto grid w-full max-w-6xl gap-6 lg:grid-cols-[300px_1fr]">
-      <aside class="rounded-2xl border border-neutral-200 bg-white p-5">
+    <div class="mx-auto grid min-w-0 w-full max-w-6xl gap-4 md:gap-6 lg:grid-cols-[300px_1fr]">
+      <aside class="min-w-0 rounded-2xl border border-neutral-200 bg-white p-4 sm:p-5">
         <div class="flex items-center gap-3">
           <img id="profile-sidebar-avatar" src="/brand/unq-mark.svg" alt="avatar" class="h-14 w-14 rounded-full border border-neutral-200 object-cover" />
           <div>
@@ -27,31 +27,31 @@
           <p id="profile-sidebar-plan" class="inline-flex rounded-full border border-neutral-300 px-2.5 py-1 text-xs font-semibold">БАЗОВЫЙ</p>
           <p id="profile-sidebar-expiry" class="text-xs text-neutral-500">до —</p>
         </div>
-        <nav class="mt-5 grid gap-2">
-          <button type="button" data-tab-target="slugs" class="profile-tab-btn interactive-btn min-h-11 rounded-xl border border-neutral-200 px-3 py-2 text-left text-sm font-medium">МОИ UNQ</button>
-          <button type="button" data-tab-target="card" class="profile-tab-btn interactive-btn min-h-11 rounded-xl border border-neutral-200 px-3 py-2 text-left text-sm font-medium">МОЯ ВИЗИТКА</button>
-          <button type="button" data-tab-target="requests" class="profile-tab-btn interactive-btn min-h-11 rounded-xl border border-neutral-200 px-3 py-2 text-left text-sm font-medium">ЗАЯВКИ</button>
-          <button type="button" data-tab-target="referrals" class="profile-tab-btn interactive-btn min-h-11 rounded-xl border border-neutral-200 px-3 py-2 text-left text-sm font-medium">РЕФЕРАЛЫ</button>
-          <button type="button" data-tab-target="settings" class="profile-tab-btn interactive-btn min-h-11 rounded-xl border border-neutral-200 px-3 py-2 text-left text-sm font-medium">НАСТРОЙКИ</button>
+        <nav class="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:mt-5 lg:grid-cols-1">
+          <button type="button" data-tab-target="slugs" class="profile-tab-btn interactive-btn min-h-11 rounded-xl border border-neutral-200 px-3 py-2 text-center text-xs font-medium sm:text-sm lg:text-left">МОИ UNQ</button>
+          <button type="button" data-tab-target="card" class="profile-tab-btn interactive-btn min-h-11 rounded-xl border border-neutral-200 px-3 py-2 text-center text-xs font-medium sm:text-sm lg:text-left">МОЯ ВИЗИТКА</button>
+          <button type="button" data-tab-target="requests" class="profile-tab-btn interactive-btn min-h-11 rounded-xl border border-neutral-200 px-3 py-2 text-center text-xs font-medium sm:text-sm lg:text-left">ЗАЯВКИ</button>
+          <button type="button" data-tab-target="referrals" class="profile-tab-btn interactive-btn min-h-11 rounded-xl border border-neutral-200 px-3 py-2 text-center text-xs font-medium sm:text-sm lg:text-left">РЕФЕРАЛЫ</button>
+          <button type="button" data-tab-target="settings" class="profile-tab-btn interactive-btn min-h-11 rounded-xl border border-neutral-200 px-3 py-2 text-center text-xs font-medium sm:text-sm lg:text-left">НАСТРОЙКИ</button>
         </nav>
       </aside>
 
-      <section class="space-y-4">
+      <section class="min-w-0 space-y-4">
         <div id="profile-upgrade-banner" class="hidden rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
           Твой Премиум истёк. Некоторые функции недоступны.
           <a href="#" data-order-link data-order-plan="premium" class="ml-1 underline">Улучшить тариф →</a>
         </div>
 
-        <article data-tab-panel="slugs" class="profile-tab-panel rounded-2xl border border-neutral-200 bg-white p-5">
-          <div class="flex items-center justify-between gap-2">
+        <article data-tab-panel="slugs" class="profile-tab-panel min-w-0 rounded-2xl border border-neutral-200 bg-white p-4 sm:p-5">
+          <div class="flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center">
             <h2 class="text-lg font-bold">МОИ UNQ</h2>
-            <button id="profile-add-slug-btn" type="button" class="interactive-btn min-h-11 rounded-xl border border-neutral-300 px-3 py-2 text-sm font-semibold">Добавить UNQ</button>
+            <button id="profile-add-slug-btn" type="button" class="interactive-btn min-h-11 w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm font-semibold sm:w-auto">Добавить UNQ</button>
           </div>
           <p id="profile-add-slug-note" class="mt-2 text-xs text-neutral-500"></p>
           <div id="profile-slugs-list" class="mt-4 space-y-3"></div>
         </article>
 
-        <article data-tab-panel="card" class="profile-tab-panel hidden rounded-2xl border border-neutral-200 bg-white p-5">
+        <article data-tab-panel="card" class="profile-tab-panel hidden min-w-0 rounded-2xl border border-neutral-200 bg-white p-4 sm:p-5">
           <h2 class="text-lg font-bold">МОЯ ВИЗИТКА</h2>
           <section id="profile-score-panel" class="mt-4 rounded-xl border border-neutral-200 bg-neutral-50 p-4">
             <div class="grid gap-4 xl:grid-cols-[280px_1fr]">
@@ -81,7 +81,7 @@
             <div class="space-y-4">
               <div>
                 <label class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Аватар</label>
-                <div class="flex items-center gap-3">
+                <div class="flex flex-wrap items-center gap-3">
                   <img id="profile-card-avatar-preview" src="/brand/unq-mark.svg" alt="avatar" class="h-16 w-16 rounded-full border border-neutral-200 object-cover" />
                   <div class="flex flex-wrap gap-2">
                     <label for="profile-card-avatar-file" class="cursor-pointer rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold">Загрузить</label>
@@ -133,9 +133,9 @@
               </div>
               <div>
                 <label class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Теги</label>
-                <div class="flex gap-2">
+                <div class="flex flex-col gap-2 sm:flex-row">
                   <input id="profile-card-tag-input" type="text" placeholder="#Дизайнер" class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm" />
-                  <button id="profile-card-tag-add" type="button" class="interactive-btn min-h-11 rounded-xl border border-neutral-300 px-3 py-2 text-sm">Добавить</button>
+                  <button id="profile-card-tag-add" type="button" class="interactive-btn min-h-11 rounded-xl border border-neutral-300 px-3 py-2 text-sm sm:w-auto">Добавить</button>
                 </div>
                 <div id="profile-card-tags-list" class="mt-2 flex flex-wrap gap-2"></div>
               </div>
@@ -176,19 +176,19 @@
             </div>
 
             <div>
-              <div class="mb-2 flex items-center justify-between gap-2">
+              <div class="mb-2 flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center">
                 <p class="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Так выглядит твоя визитка на <span id="profile-preview-slug-label">unqx.uz/[UNQ]</span></p>
                 <a id="profile-preview-open-link" href="#" target="_blank" rel="noopener noreferrer" class="text-xs font-semibold text-neutral-700 hover:underline">Открыть →</a>
               </div>
-              <div id="profile-card-live-preview" class="rounded-2xl border border-neutral-200 bg-white p-4"></div>
+              <div id="profile-card-live-preview" class="rounded-2xl border border-neutral-200 bg-white p-3 sm:p-4"></div>
             </div>
           </div>
         </article>
 
-        <article data-tab-panel="requests" class="profile-tab-panel hidden rounded-2xl border border-neutral-200 bg-white p-5">
-          <div class="flex items-center justify-between gap-2">
+        <article data-tab-panel="requests" class="profile-tab-panel hidden min-w-0 rounded-2xl border border-neutral-200 bg-white p-4 sm:p-5">
+          <div class="flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center">
             <h2 class="text-lg font-bold">ЗАЯВКИ</h2>
-            <button id="profile-new-request-btn" type="button" class="interactive-btn min-h-11 rounded-xl border border-neutral-300 px-3 py-2 text-sm font-semibold">Подать новую заявку</button>
+            <button id="profile-new-request-btn" type="button" class="interactive-btn min-h-11 w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm font-semibold sm:w-auto">Подать новую заявку</button>
           </div>
           <div id="profile-requests-banner" class="hidden mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800"></div>
           <div class="mt-4 overflow-auto rounded-xl border border-neutral-200">
@@ -209,10 +209,10 @@
           </div>
         </article>
 
-        <article data-tab-panel="referrals" class="profile-tab-panel hidden rounded-2xl border border-neutral-200 bg-white p-5">
+        <article data-tab-panel="referrals" class="profile-tab-panel hidden min-w-0 rounded-2xl border border-neutral-200 bg-white p-4 sm:p-5">
           <h2 class="text-lg font-bold">РЕФЕРАЛЫ</h2>
-          <div class="mt-4 grid gap-3 rounded-xl border border-neutral-200 bg-neutral-50 p-4 md:grid-cols-[1fr_auto_auto]">
-            <input id="profile-ref-link" type="text" readonly class="rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm" />
+          <div class="mt-4 grid gap-3 rounded-xl border border-neutral-200 bg-neutral-50 p-3 sm:p-4 md:grid-cols-[1fr_auto_auto]">
+            <input id="profile-ref-link" type="text" readonly class="min-w-0 rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm" />
             <button id="profile-ref-copy" type="button" class="interactive-btn min-h-11 rounded-xl border border-neutral-300 px-3 py-2 text-sm font-semibold">Скопировать ссылку</button>
             <a id="profile-ref-tg" href="#" class="interactive-btn min-h-11 rounded-xl border border-neutral-300 px-3 py-2 text-sm font-semibold text-center">Поделиться в Telegram</a>
           </div>
@@ -240,7 +240,7 @@
           <div id="profile-ref-rewards" class="mt-4 grid gap-3 md:grid-cols-3"></div>
         </article>
 
-        <article data-tab-panel="settings" class="profile-tab-panel hidden rounded-2xl border border-neutral-200 bg-white p-5">
+        <article data-tab-panel="settings" class="profile-tab-panel hidden min-w-0 rounded-2xl border border-neutral-200 bg-white p-4 sm:p-5">
           <h2 class="text-lg font-bold">НАСТРОЙКИ</h2>
           <div class="mt-4 space-y-4">
             <div>
@@ -277,9 +277,9 @@
       </button>
       <h3 id="profile-modal-title" class="text-lg font-bold text-neutral-900"></h3>
       <p id="profile-modal-text" class="mt-2 text-sm text-neutral-600"></p>
-      <div class="mt-4 flex gap-2">
-        <button id="profile-modal-confirm" type="button" class="interactive-btn min-h-11 rounded-lg bg-neutral-900 px-3 py-1.5 text-sm font-semibold text-white">Ок</button>
-        <button id="profile-modal-close" type="button" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-3 py-1.5 text-sm font-semibold">Закрыть</button>
+      <div class="mt-4 flex flex-col gap-2 sm:flex-row">
+        <button id="profile-modal-confirm" type="button" class="interactive-btn min-h-11 rounded-lg bg-neutral-900 px-3 py-1.5 text-sm font-semibold text-white sm:min-w-[120px]">Ок</button>
+        <button id="profile-modal-close" type="button" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-3 py-1.5 text-sm font-semibold sm:min-w-[120px]">Закрыть</button>
       </div>
     </div>
   </div>
