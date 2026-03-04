@@ -81,7 +81,7 @@
     return `<span class="admin-status-chip is-${m.tone}"><span class="admin-status-dot"></span>${X(m.label)}</span>`;
   }
   function kebabButton() {
-    return `<button type="button" class="admin-kebab-btn" data-kebab-toggle aria-label="Действия">${I("more", 16)}</button>`;
+    return '<button type="button" class="admin-kebab-btn" data-kebab-toggle aria-label="Действия" aria-haspopup="menu" aria-expanded="false"><span class="admin-kebab-label">ДЕЙСТВИЯ</span></button>';
   }
   function menuItem({ label, icon, attrs = "", danger = false }) {
     return `<button type="button" class="admin-menu-item${danger ? " is-danger" : ""}" ${attrs}>${I(icon, 16)}<span>${X(label)}</span></button>`;
@@ -294,7 +294,7 @@
               menuSeparator(),
               menuItem({ label: x.status === "blocked" ? "Разблокировать" : "Заблокировать", icon: "shieldOff", attrs: `data-act="ub" data-id="${X(x.telegramId)}" data-status="${X(x.status)}"`, danger: x.status !== "blocked" }),
             ].join(""));
-            return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3">${X(x.username ? `@${x.username}` : x.telegramId)}</td><td class="px-4 py-3">${X(x.name)}</td><td class="px-4 py-3"><span class="inline-flex rounded-full border border-neutral-200 px-2 py-1 text-xs font-medium">${x.plan === "premium" ? "Премиум" : "Базовый"}</span><div class="mt-1 text-[11px] text-neutral-500">до ${x.planExpiresAt ? D(x.planExpiresAt) : "—"} ${expiryBadge}</div></td><td class="px-4 py-3 text-xs">${X(slugText)}</td><td class="px-4 py-3">${x.hasCard ? "Есть" : "Нет"}</td><td class="px-4 py-3">${statusChip(x.status === "blocked" ? "rejected" : "approved")}</td><td class="px-4 py-3">${D(x.createdAt)}</td><td class="px-4 py-3"><div class="admin-row-actions">${menu}</div></td></tr>`;
+            return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3">${X(x.username ? `@${x.username}` : x.telegramId)}</td><td class="px-4 py-3">${X(x.name)}</td><td class="px-4 py-3"><span class="inline-flex rounded-full border border-neutral-200 px-2 py-1 text-xs font-medium">${x.plan === "premium" ? "Премиум" : "Базовый"}</span></td><td class="px-4 py-3 text-xs text-neutral-600">${x.planExpiresAt ? D(x.planExpiresAt) : "—"} ${expiryBadge}</td><td class="px-4 py-3 text-xs">${X(slugText)}</td><td class="px-4 py-3">${x.hasCard ? "Есть" : "Нет"}</td><td class="px-4 py-3">${statusChip(x.status === "blocked" ? "rejected" : "approved")}</td><td class="px-4 py-3">${D(x.createdAt)}</td><td class="px-4 py-3"><div class="admin-row-actions">${menu}</div></td></tr>`;
           })
           .join("")
       : `<tr><td colspan="8" class="px-3 py-10 text-center text-neutral-500"><div class="inline-flex flex-col items-center gap-2">${I("userCheck", 48)}<span>Нет пользователей</span></div></td></tr>`;
@@ -330,7 +330,7 @@
           menuSeparator(),
           menuItem({ label: "Открыть визитку", icon: "external", attrs: `data-act="open-url" data-url="/${encodeURIComponent(x.slug)}"` }),
         ].join(""));
-        return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3 font-mono">${X(x.slug)} <a href="/${encodeURIComponent(x.slug)}" target="_blank" rel="noopener noreferrer" aria-label="Открыть slug ${X(x.slug)}" title="Открыть slug" class="ml-1 inline-flex align-middle text-neutral-500">${I("external", 14)}</a></td><td class="px-4 py-3">${statusChip(x.state === "BLOCKED" ? "rejected" : x.state === "TAKEN" ? "approved" : "new")}</td><td class="px-4 py-3">${X(x.ownerName || "-")}</td><td class="px-4 py-3">${x.isPrimary ? "Да" : "Нет"}</td><td class="px-4 py-3">${typeof x.effectivePrice === "number" ? P(x.effectivePrice) : "-"}</td><td class="px-4 py-3">${x.requestedAt ? D(x.requestedAt) : "-"}</td><td class="px-4 py-3">${x.approvedAt ? D(x.approvedAt) : "-"}</td><td class="px-4 py-3">${x.activatedAt ? D(x.activatedAt) : "-"}</td><td class="px-4 py-3"><div class="admin-row-actions">${menu}</div></td></tr>`;
+        return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3 font-mono">${X(x.slug)}</td><td class="px-4 py-3">${statusChip(x.state === "BLOCKED" ? "rejected" : x.state === "TAKEN" ? "approved" : "new")}</td><td class="px-4 py-3">${X(x.ownerName || "-")}</td><td class="px-4 py-3">${x.isPrimary ? "Да" : "Нет"}</td><td class="px-4 py-3">${typeof x.effectivePrice === "number" ? P(x.effectivePrice) : "-"}</td><td class="px-4 py-3">${x.requestedAt ? D(x.requestedAt) : "-"}</td><td class="px-4 py-3">${x.approvedAt ? D(x.approvedAt) : "-"}</td><td class="px-4 py-3">${x.activatedAt ? D(x.activatedAt) : "-"}</td><td class="px-4 py-3"><div class="admin-row-actions">${menu}</div></td></tr>`;
       }).join("")
       : `<tr><td colspan="9" class="px-3 py-10 text-center text-neutral-500"><div class="inline-flex flex-col items-center gap-2">${I("link2", 48)}<span>Нет данных</span></div></td></tr>`;
     renderPager("slugs-pagination", payload.pagination, (nextPage) => {

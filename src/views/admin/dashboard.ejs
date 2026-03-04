@@ -81,7 +81,7 @@
             <input type="date" name="dateFrom" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
             <input type="date" name="dateTo" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
             <input type="hidden" name="page" value="1" />
-            <button type="submit" class="rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">Применить</button>
+            <button type="submit" class="inline-flex min-h-11 w-full items-center justify-center justify-self-start rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100 md:w-auto">Применить</button>
           </form>
           <div class="flex justify-end">
             <a id="orders-export-link" href="/api/admin/orders/export.csv" class="rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">
@@ -115,7 +115,7 @@
           <form id="users-filters" class="grid gap-3 rounded-2xl border border-neutral-200 bg-white p-4 md:grid-cols-[1fr_auto]">
             <input type="text" name="q" placeholder="Поиск по Telegram или имени" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
             <input type="hidden" name="page" value="1" />
-            <button type="submit" class="rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">Применить</button>
+            <button type="submit" class="inline-flex min-h-11 w-full items-center justify-center justify-self-start rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100 md:w-auto">Применить</button>
           </form>
           <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
             <div class="overflow-x-auto">
@@ -125,6 +125,7 @@
                     <th class="px-4 py-3">Telegram</th>
                     <th class="px-4 py-3">Имя</th>
                     <th class="px-4 py-3">Тариф</th>
+                    <th class="px-4 py-3">До тарифа</th>
                     <th class="px-4 py-3">Slug(и)</th>
                     <th class="px-4 py-3">Визитка</th>
                     <th class="px-4 py-3">Статус</th>
@@ -150,7 +151,7 @@
               <option value="blocked">Заблокирован</option>
             </select>
             <input type="hidden" name="page" value="1" />
-            <button type="submit" class="rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">Применить</button>
+            <button type="submit" class="inline-flex min-h-11 w-full items-center justify-center justify-self-start rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100 md:w-auto">Применить</button>
           </form>
           <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
             <div class="overflow-x-auto">
@@ -184,7 +185,7 @@
               <option value="inactive">Выключенные</option>
             </select>
             <input type="hidden" name="page" value="1" />
-            <button type="submit" class="rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">Применить</button>
+            <button type="submit" class="inline-flex min-h-11 w-full items-center justify-center justify-self-start rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100 md:w-auto">Применить</button>
           </form>
           <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
             <div class="overflow-x-auto">
@@ -216,7 +217,7 @@
               <option value="DELIVERED">Доставлен</option>
             </select>
             <input type="hidden" name="page" value="1" />
-            <button type="submit" class="rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">Применить</button>
+            <button type="submit" class="inline-flex min-h-11 w-full items-center justify-center justify-self-start rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100 md:w-auto">Применить</button>
           </form>
           <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
             <div class="overflow-x-auto">
@@ -414,7 +415,7 @@
               <option value="server_error">Server error</option>
             </select>
             <input type="hidden" name="page" value="1" />
-            <button type="submit" class="inline-flex min-h-11 items-center justify-center rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100 md:w-auto">
+            <button type="submit" class="inline-flex min-h-11 w-full items-center justify-center justify-self-start rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100 md:w-auto">
               Применить
             </button>
           </form>
