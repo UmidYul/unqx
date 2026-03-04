@@ -1127,21 +1127,23 @@ router.get(
         },
         select: { telegramId: true, slug: true },
       }),
-      prisma.unqScore.findMany({
-        where: { telegramId: { in: telegramIds } },
-        select: {
-          telegramId: true,
-          score: true,
-          percentile: true,
-          calculatedAt: true,
-          scoreViews: true,
-          scoreSlugRarity: true,
-          scoreTenure: true,
-          scoreCtr: true,
-          scoreBracelet: true,
-          scorePlan: true,
-        },
-      }),
+      modelDelegateExists("UnqScore")
+        ? prisma.unqScore.findMany({
+            where: { telegramId: { in: telegramIds } },
+            select: {
+              telegramId: true,
+              score: true,
+              percentile: true,
+              calculatedAt: true,
+              scoreViews: true,
+              scoreSlugRarity: true,
+              scoreTenure: true,
+              scoreCtr: true,
+              scoreBracelet: true,
+              scorePlan: true,
+            },
+          })
+        : Promise.resolve([]),
     ]);
 
     const slugsByUser = new Map();
@@ -1888,14 +1890,16 @@ router.get(
         take: 1000,
         select: { slug: true, pattern: true, checkedAt: true },
       }),
-      prisma.unqScore.findMany({
-        where: {
-          user: {
-            status: "active",
-          },
-        },
-        select: { score: true },
-      }),
+      modelDelegateExists("UnqScore")
+        ? prisma.unqScore.findMany({
+            where: {
+              user: {
+                status: "active",
+              },
+            },
+            select: { score: true },
+          })
+        : Promise.resolve([]),
     ]);
 
     const [newOrdersToday, allOrdersForChecks] = await Promise.all([

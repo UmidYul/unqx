@@ -117,6 +117,10 @@ router.patch(
 router.get(
   "/score/overview",
   asyncHandler(async (_req, res) => {
+    if (!prisma.unqScore) {
+      res.json({ items: [] });
+      return;
+    }
     const rows = await prisma.unqScore.findMany({
       orderBy: [{ score: "desc" }, { percentile: "desc" }],
       take: 500,
@@ -182,6 +186,10 @@ router.post(
 router.get(
   "/score/runs",
   asyncHandler(async (_req, res) => {
+    if (!prisma.scoreRecalculationRun) {
+      res.json({ items: [] });
+      return;
+    }
     const rows = await prisma.scoreRecalculationRun.findMany({
       orderBy: { startedAt: "desc" },
       take: 10,
