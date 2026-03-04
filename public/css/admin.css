@@ -438,12 +438,24 @@
 
 /* Keep table controls above horizontal scrollbar hit area */
 .admin-main .overflow-x-auto {
+  position: relative;
   overflow-y: visible;
+  scrollbar-gutter: stable both-edges;
   padding-bottom: 14px;
 }
 
 .admin-main .overflow-x-auto > table {
   margin-bottom: 2px;
+}
+
+.admin-main .overflow-x-auto .admin-row-actions,
+.admin-main .overflow-x-auto .admin-kebab-btn {
+  position: relative;
+  z-index: 2;
+}
+
+.admin-main .overflow-x-auto .admin-kebab-btn {
+  margin-bottom: 6px;
 }
 
 .admin-kpi-card {
