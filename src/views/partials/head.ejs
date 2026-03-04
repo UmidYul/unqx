@@ -2,7 +2,7 @@
   const pageTitle = typeof title === "string" && title ? title : "UNQ+";
   const pageDescription =
     typeof description === "string" && description ? description : "UNQ+ platform for digital business cards";
-  const pageStyles = Array.isArray(styles) ? styles : [];
+  const pageStyles = typeof styles !== "undefined" && Array.isArray(styles) ? styles : [];
   const pageImage = typeof image === "string" && image ? image : null;
   const pageCanonical = typeof canonical === "string" && canonical ? canonical : (typeof canonicalUrl === "string" ? canonicalUrl : "");
   const pageNoindex = typeof noindex === "boolean" ? noindex : false;
