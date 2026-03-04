@@ -51,12 +51,6 @@ module.exports = {
       )
       UPDATE users u
       SET
-        plan = CASE
-          WHEN n.latest_plan = 'premium' THEN 'premium'
-          WHEN n.latest_plan = 'basic' THEN 'basic'
-          WHEN n.current_plan = 'premium' THEN 'premium'
-          ELSE 'basic'
-        END,
         plan_purchased_at = COALESCE(
           u.plan_purchased_at,
           n.first_purchase_at,

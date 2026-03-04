@@ -60,11 +60,6 @@ module.exports = {
       )
       UPDATE users u
       SET
-        plan = CASE
-          WHEN t.target_plan = 'premium' THEN 'premium'
-          WHEN t.target_plan = 'basic' THEN 'basic'
-          ELSE 'none'
-        END,
         plan_purchased_at = CASE
           WHEN t.target_plan = 'none' THEN NULL
           ELSE COALESCE(u.plan_purchased_at, t.first_purchase_at)
@@ -81,6 +76,84 @@ module.exports = {
         )
       FROM targets t
       WHERE u.telegram_id = t.telegram_id;
+
+      WITH approved_orders AS (
+        SELECT
+          telegram_id,
+          (ARRAY_AGG(requested_plan::text ORDER BY created_at DESC))[1] AS latest_plan
+        FROM slug_requests
+        WHERE status = 'approved'
+        GROUP BY telegram_id
+      ),
+      targets AS (
+        SELECT
+          u.telegram_id,
+          CASE
+            WHEN ao.latest_plan = 'premium' THEN 'premium'
+            WHEN ao.latest_plan = 'basic' THEN 'basic'
+            WHEN u.plan::text = 'premium' THEN 'premium'
+            ELSE 'none'
+          END AS target_plan
+        FROM users u
+        LEFT JOIN approved_orders ao ON ao.telegram_id = u.telegram_id
+      )
+      UPDATE users u
+      SET plan = 'premium'
+      FROM targets t
+      WHERE u.telegram_id = t.telegram_id
+        AND t.target_plan = 'premium';
+
+      WITH approved_orders AS (
+        SELECT
+          telegram_id,
+          (ARRAY_AGG(requested_plan::text ORDER BY created_at DESC))[1] AS latest_plan
+        FROM slug_requests
+        WHERE status = 'approved'
+        GROUP BY telegram_id
+      ),
+      targets AS (
+        SELECT
+          u.telegram_id,
+          CASE
+            WHEN ao.latest_plan = 'premium' THEN 'premium'
+            WHEN ao.latest_plan = 'basic' THEN 'basic'
+            WHEN u.plan::text = 'premium' THEN 'premium'
+            ELSE 'none'
+          END AS target_plan
+        FROM users u
+        LEFT JOIN approved_orders ao ON ao.telegram_id = u.telegram_id
+      )
+      UPDATE users u
+      SET plan = 'basic'
+      FROM targets t
+      WHERE u.telegram_id = t.telegram_id
+        AND t.target_plan = 'basic';
+
+      WITH approved_orders AS (
+        SELECT
+          telegram_id,
+          (ARRAY_AGG(requested_plan::text ORDER BY created_at DESC))[1] AS latest_plan
+        FROM slug_requests
+        WHERE status = 'approved'
+        GROUP BY telegram_id
+      ),
+      targets AS (
+        SELECT
+          u.telegram_id,
+          CASE
+            WHEN ao.latest_plan = 'premium' THEN 'premium'
+            WHEN ao.latest_plan = 'basic' THEN 'basic'
+            WHEN u.plan::text = 'premium' THEN 'premium'
+            ELSE 'none'
+          END AS target_plan
+        FROM users u
+        LEFT JOIN approved_orders ao ON ao.telegram_id = u.telegram_id
+      )
+      UPDATE users u
+      SET plan = 'none'
+      FROM targets t
+      WHERE u.telegram_id = t.telegram_id
+        AND t.target_plan = 'none';
     `);
   },
 };
