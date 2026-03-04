@@ -419,7 +419,10 @@ const UNQ_TARIFFS = {
 
   async function refreshUser() {
     try {
-      const response = await fetch("/api/auth/me", { headers: { Accept: "application/json" } });
+      const response = await fetch("/api/auth/me", {
+        headers: { Accept: "application/json" },
+        cache: "no-store",
+      });
       const payload = await response.json().catch(() => ({}));
       currentUser = payload && payload.authenticated ? payload.user : null;
     } catch {

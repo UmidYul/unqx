@@ -206,6 +206,7 @@ function initTelegramAuth(pageNode) {
       const response = await fetch("/api/auth/me", {
         method: "GET",
         headers: { Accept: "application/json" },
+        cache: "no-store",
       });
       const payload = await response.json().catch(() => ({}));
       currentUser = payload && payload.authenticated ? payload.user : null;
@@ -222,7 +223,8 @@ function initTelegramAuth(pageNode) {
   }
 
   loginButtons.forEach((node) => {
-    node.addEventListener("click", () => {
+    node.addEventListener("click", async () => {
+      await refreshUser();
       if (currentUser) {
         window.location.href = "/profile";
         return;
@@ -244,6 +246,14 @@ function initTelegramAuth(pageNode) {
   window.addEventListener("unqx:auth:logout", () => {
     currentUser = null;
     renderAuthUi();
+  });
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") {
+      void refreshUser();
+    }
+  });
+  window.addEventListener("focus", () => {
+    void refreshUser();
   });
 
   void refreshUser();

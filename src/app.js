@@ -194,6 +194,16 @@ function createApp() {
       res.setHeader("X-Robots-Tag", "noindex, nofollow, noarchive");
     }
 
+    if (
+      req.path === "/profile" ||
+      req.path.startsWith("/api/profile") ||
+      req.path.startsWith("/api/auth")
+    ) {
+      res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, private");
+      res.setHeader("Pragma", "no-cache");
+      res.setHeader("Expires", "0");
+    }
+
     next();
   });
 

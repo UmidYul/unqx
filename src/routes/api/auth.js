@@ -4,7 +4,7 @@ const { prisma } = require("../../db/prisma");
 const { asyncHandler } = require("../../middleware/async");
 const { requireCsrfToken, ensureCsrfToken } = require("../../middleware/csrf");
 const { requireSameOrigin } = require("../../middleware/same-origin");
-const { getUserSession, loginUserSession, logoutUserSession } = require("../../middleware/auth");
+const { getUserSession, loginUserSession } = require("../../middleware/auth");
 const { verifyTelegramLoginPayload, TelegramAuthError } = require("../../services/telegram-auth");
 const { getEffectivePlan, normalizeDisplayName } = require("../../services/profile");
 const { ensureUserRefCode, linkReferralOnRegistration } = require("../../services/referrals");
@@ -186,7 +186,20 @@ router.post(
   requireSameOrigin,
   requireCsrfToken,
   asyncHandler(async (req, res) => {
-    await logoutUserSession(req);
+    await new Promise((resolve, reject) => {
+      if (!req.session) {
+        resolve();
+        return;
+      }
+      req.session.destroy((error) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+        resolve();
+      });
+    });
+    res.clearCookie("unqx.sid");
     const csrfToken = ensureCsrfToken(req);
     res.json({ ok: true, csrfToken });
   }),

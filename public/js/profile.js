@@ -676,6 +676,12 @@
         s.referrals = null;
       }
       renderAll();
+    } catch (error) {
+      if (error?.code === "AUTH_REQUIRED" || error?.code === "ACCOUNT_DISABLED") {
+        location.replace("/");
+        return;
+      }
+      throw error;
     } finally {
       setLoading(false);
     }
