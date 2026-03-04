@@ -37,6 +37,31 @@ function normalizeSlug(value) {
   return (value || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6);
 }
 
+function normalizeStrictSlug(value) {
+  const raw = String(value || "").toUpperCase();
+  let letters = "";
+  let digits = "";
+
+  for (const char of raw) {
+    if (letters.length < 3) {
+      if (/[A-Z]/.test(char)) {
+        letters += char;
+      }
+      continue;
+    }
+
+    if (digits.length < 3 && /[0-9]/.test(char)) {
+      digits += char;
+    }
+
+    if (digits.length >= 3) {
+      break;
+    }
+  }
+
+  return `${letters}${digits}`;
+}
+
 function splitSlug(value) {
   const normalized = normalizeSlug(value);
   if (!/^[A-Z]{3}[0-9]{3}$/.test(normalized)) {
@@ -488,7 +513,7 @@ function initSlugAvailability(orderApi) {
   }
 
   async function verifySlug() {
-    const slug = normalizeSlug(slugInput.value);
+    const slug = normalizeStrictSlug(slugInput.value);
     slugInput.value = slug;
 
     if (!slug) {
@@ -548,7 +573,7 @@ function initSlugAvailability(orderApi) {
   }
 
   slugInput.addEventListener("input", () => {
-    slugInput.value = normalizeSlug(slugInput.value);
+    slugInput.value = normalizeStrictSlug(slugInput.value);
   });
 
   slugInput.addEventListener("keydown", (event) => {

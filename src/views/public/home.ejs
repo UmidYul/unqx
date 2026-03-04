@@ -261,6 +261,8 @@
                 autocomplete="off"
                 spellcheck="false"
                 maxlength="6"
+                pattern="[A-Za-z]{3}[0-9]{3}"
+                title="Формат: 3 латинские буквы и 3 цифры (например AAA001)"
               />
             </div>
             <button
@@ -424,48 +426,6 @@
           >
             Обсудить условия →
           </a>
-        </div>
-      </section>
-
-      <section id="cards" class="px-6 py-24" data-observe-reveal>
-        <div class="mx-auto max-w-6xl">
-          <div class="mb-10 flex items-center gap-2 text-sm text-neutral-400">
-            <span>Живые примеры</span>
-            <svg class="icon-stroke h-3.5 w-3.5" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M5 12h14M13 5l7 7-7 7"></path>
-            </svg>
-          </div>
-
-          <div class="scrollbar-hide flex gap-4 overflow-x-auto pb-4">
-            <% demos.forEach((demo) => { %>
-            <a
-              href="/<%= demo.slug %>"
-              class="interactive-card flex min-w-[220px] flex-col items-center rounded-2xl border border-neutral-200 bg-white p-6 transition-all hover:border-neutral-400 hover:shadow-sm"
-            >
-              <div class="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-neutral-100 text-sm font-semibold text-neutral-600">
-                <%= demo.name.charAt(0) %>
-              </div>
-              <p class="text-sm font-medium text-neutral-900"><%= demo.name %></p>
-              <p class="mt-1 text-xs text-neutral-400"><%= demo.role %></p>
-              <div class="mt-4 flex items-center gap-3">
-                <svg class="icon-stroke h-3.5 w-3.5 text-neutral-400" viewBox="0 0 24 24" aria-hidden="true">
-                  <rect x="2" y="2" width="20" height="20" rx="5"></rect>
-                  <circle cx="12" cy="12" r="4.5"></circle>
-                  <circle cx="17.5" cy="6.5" r="1"></circle>
-                </svg>
-                <svg class="icon-stroke h-3.5 w-3.5 text-neutral-400" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 1 0-4 0v7h-4v-7a6 6 0 0 1 6-6z"></path>
-                  <rect x="2" y="9" width="4" height="12"></rect>
-                  <circle cx="4" cy="4" r="2"></circle>
-                </svg>
-                <svg class="icon-stroke h-3.5 w-3.5 text-neutral-400" viewBox="0 0 24 24" aria-hidden="true">
-                  <circle cx="12" cy="12" r="9"></circle>
-                  <path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"></path>
-                </svg>
-              </div>
-            </a>
-            <% }); %>
-          </div>
         </div>
       </section>
 
