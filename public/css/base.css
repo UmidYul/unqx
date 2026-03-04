@@ -243,6 +243,7 @@ body.motion-ready [data-observe-reveal].is-visible {
   position: relative;
   width: 260px;
   height: 46px;
+  cursor: pointer;
 }
 
 .order-modal-tg-fake {
@@ -257,7 +258,9 @@ body.motion-ready [data-observe-reveal].is-visible {
   color: #ffffff;
   font-size: 16px;
   font-weight: 600;
-  pointer-events: none;
+  pointer-events: auto;
+  cursor: pointer;
+  z-index: 3;
 }
 
 .order-modal-tg-iframe {
@@ -265,7 +268,7 @@ body.motion-ready [data-observe-reveal].is-visible {
   inset: 0 !important;
   width: 100% !important;
   height: 100% !important;
-  opacity: 0 !important;
+  opacity: 0.001 !important;
   z-index: 2 !important;
 }
 
