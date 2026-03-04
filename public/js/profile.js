@@ -48,6 +48,9 @@
     theme: "default_dark",
     referrals: null,
   };
+  let modalLastFocused = null;
+  let modalIsOpen = false;
+  let modalConfirmHandler = null;
 
   const buttonTypeLabels = {
     phone: "Позвонить",
@@ -124,10 +127,13 @@
     stDeact: $("#profile-settings-deactivate"),
 
     modal: $("#profile-modal"),
+    modalDialog: $("#profile-modal-dialog"),
     modalTitle: $("#profile-modal-title"),
     modalText: $("#profile-modal-text"),
     modalOk: $("#profile-modal-confirm"),
     modalClose: $("#profile-modal-close"),
+    modalCloseTop: $("#profile-modal-close-top"),
+    cardNameError: $("#profile-card-name-error"),
   };
 
   let avatarCropper = null;
@@ -157,6 +163,15 @@
     if (!el.modal) return;
     el.modal.classList.add("hidden");
     el.modal.classList.remove("flex");
+    document.body.classList.remove("modal-open");
+    modalIsOpen = false;
+    if (modalLastFocused instanceof HTMLElement) {
+      modalLastFocused.focus();
+    }
+    if (el.modalOk && modalConfirmHandler) {
+      el.modalOk.removeEventListener("click", modalConfirmHandler);
+      modalConfirmHandler = null;
+    }
   };
 
   const showModal = (title, text, confirmLabel, onConfirm) => {
@@ -164,15 +179,26 @@
     el.modalTitle.textContent = title;
     el.modalText.textContent = text;
     el.modalOk.textContent = confirmLabel || "Ок";
+    modalLastFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     el.modal.classList.remove("hidden");
     el.modal.classList.add("flex");
+    document.body.classList.add("modal-open");
+    modalIsOpen = true;
+    requestAnimationFrame(() => {
+      el.modalDialog?.focus();
+    });
+
+    if (el.modalOk && modalConfirmHandler) {
+      el.modalOk.removeEventListener("click", modalConfirmHandler);
+    }
 
     const once = () => {
       if (typeof onConfirm === "function") onConfirm();
       closeModal();
-      el.modalOk.removeEventListener("click", once);
+      modalConfirmHandler = null;
     };
 
+    modalConfirmHandler = once;
     el.modalOk.addEventListener("click", once);
   };
 
@@ -223,16 +249,17 @@
     } else {
       el.slugs.innerHTML = s.slugs
         .map((slugItem) => {
-          const statusLabel =
+          const statusLabel = slugItem.statusLabel || slugItem.status;
+          const statusTone =
             slugItem.status === "active"
-              ? "🟢 Активен"
+              ? "is-active"
               : slugItem.status === "paused"
-                ? "🟡 Пауза"
+                ? "is-paused"
                 : slugItem.status === "private"
-                  ? "🔴 Приватный"
-                  : slugItem.statusLabel;
+                  ? "is-private"
+                  : "";
 
-          return `<article class="rounded-xl border border-neutral-200 p-4">
+          return `<article class="interactive-card rounded-xl border border-neutral-200 p-4">
             <div class="flex flex-wrap items-center justify-between gap-2">
               <div>
                 <p class="text-xl font-black">${esc(slugItem.fullSlug)}</p>
@@ -240,18 +267,18 @@
               </div>
               <div class="flex items-center gap-2">
                 ${slugItem.isPrimary ? '<span class="rounded-full border border-neutral-300 px-2 py-1 text-xs font-semibold">Основной</span>' : ""}
-                <button data-a="cycle" data-slug="${esc(slugItem.fullSlug)}" data-st="${esc(slugItem.status)}" class="rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold">${statusLabel}</button>
+                <button data-a="cycle" data-slug="${esc(slugItem.fullSlug)}" data-st="${esc(slugItem.status)}" class="interactive-btn inline-flex min-h-11 items-center gap-2 rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold"><span class="status-dot ${statusTone}" aria-hidden="true"></span>${statusLabel}</button>
               </div>
             </div>
             ${
               slugItem.status === "paused"
-                ? `<div class="mt-3 flex gap-2"><input data-pm="${esc(slugItem.fullSlug)}" value="${esc(slugItem.pauseMessage || "")}" placeholder="Скоро вернусь · Пишите в Telegram" class="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm"><button data-a="save-pm" data-slug="${esc(slugItem.fullSlug)}" class="rounded-lg border border-neutral-300 px-3 py-2 text-sm">Сохранить</button></div>`
+                ? `<div class="mt-3 flex gap-2"><input data-pm="${esc(slugItem.fullSlug)}" value="${esc(slugItem.pauseMessage || "")}" placeholder="Скоро вернусь · Пишите в Telegram" class="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm"><button data-a="save-pm" data-slug="${esc(slugItem.fullSlug)}" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-3 py-2 text-sm">Сохранить</button></div>`
                 : ""
             }
             <div class="mt-3 flex flex-wrap gap-3 text-xs text-neutral-500">
-              ${slugItem.isPrimary ? "" : `<button data-a="primary" data-slug="${esc(slugItem.fullSlug)}" class="rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold">Сделать основным</button>`}
-              <span>👁 ${Number(slugItem.stats?.views || 0).toLocaleString("ru-RU")} просмотров</span>
-              <span>📅 с ${fd(slugItem.stats?.since || slugItem.createdAt)}</span>
+              ${slugItem.isPrimary ? "" : `<button data-a="primary" data-slug="${esc(slugItem.fullSlug)}" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold">Сделать основным</button>`}
+              <span>${Number(slugItem.stats?.views || 0).toLocaleString("ru-RU")} просмотров</span>
+              <span>с ${fd(slugItem.stats?.since || slugItem.createdAt)}</span>
             </div>
           </article>`;
         })
@@ -268,11 +295,11 @@
         el.addSlugNote.textContent = "Перейди на Премиум чтобы добавить до 3 UNQ";
       } else if (plan === "premium" && count >= 3) {
         el.addSlug.disabled = true;
-        el.addSlug.textContent = "+ Добавить UNQ";
+        el.addSlug.textContent = "Добавить UNQ";
         el.addSlugNote.textContent = "Достигнут лимит 3 UNQ для Премиум тарифа";
       } else {
         el.addSlug.disabled = false;
-        el.addSlug.textContent = "+ Добавить UNQ";
+        el.addSlug.textContent = "Добавить UNQ";
         el.addSlugNote.textContent = "";
       }
     }
@@ -390,7 +417,7 @@
       shareUrl: primarySlug ? `${location.origin}/${encodeURIComponent(primarySlug.fullSlug)}` : location.href,
       showPausedBanner: primarySlug?.status === "paused",
       pausedText: "Визитка на паузе — посетители видят заглушку",
-      viewsLabel: `${Number(primarySlug?.stats?.views || 0).toLocaleString("ru-RU")} views`,
+      viewsLabel: `${Number(primarySlug?.stats?.views || 0).toLocaleString("ru-RU")} просмотров`,
     });
   };
 
@@ -509,13 +536,13 @@
         .map((rule) => {
           const statusLabel =
             rule.status === "received"
-              ? "Получено ✅"
+              ? "Получено"
               : rule.status === "available"
-                ? "Доступно к получению 🎁"
-                : "Ожидает 🕐";
+                ? "Доступно к получению"
+                : "Ожидает";
           const claimButton =
             rule.status === "available"
-              ? `<button data-a="claim-reward" data-rule="${rule.id}" class="mt-2 rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold">Забрать награду</button>`
+              ? `<button data-a="claim-reward" data-rule="${rule.id}" class="interactive-btn mt-2 min-h-11 rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold">Забрать награду</button>`
               : "";
           return `<article class="rounded-xl border border-neutral-200 p-3"><p class="text-sm font-semibold">За ${rule.threshold} оплативших</p><p class="mt-1 text-sm text-neutral-600">${esc(rule.rewardLabel || "")}</p><p class="mt-2 text-xs text-neutral-500">${statusLabel}</p>${claimButton}</article>`;
         })
@@ -532,23 +559,48 @@
     renderReferrals();
   };
 
-  const load = async () => {
-    const payload = await api("/api/profile/bootstrap");
-    s.user = payload.user || null;
-    s.limits = payload.limits || {};
-    s.slugs = payload.slugs || [];
-    s.card = payload.card || null;
-    s.requests = payload.requests || [];
-    try {
-      s.referrals = await api("/api/referrals/bootstrap");
-    } catch {
-      s.referrals = null;
+  const setLoading = (loading) => {
+    el.panels.forEach((panel) => {
+      panel.classList.toggle("opacity-60", loading);
+      panel.classList.toggle("pointer-events-none", loading);
+    });
+    if (loading && el.slugs) {
+      el.slugs.innerHTML = '<div class="rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-6 text-sm text-neutral-500">Загрузка данных профиля...</div>';
     }
-    renderAll();
+  };
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const payload = await api("/api/profile/bootstrap");
+      s.user = payload.user || null;
+      s.limits = payload.limits || {};
+      s.slugs = payload.slugs || [];
+      s.card = payload.card || null;
+      s.requests = payload.requests || [];
+      try {
+        s.referrals = await api("/api/referrals/bootstrap");
+      } catch {
+        s.referrals = null;
+      }
+      renderAll();
+    } finally {
+      setLoading(false);
+    }
   };
 
   const saveCard = async () => {
     if (!el.cSaveStatus) return;
+    if ((el.cName?.value || "").trim().length === 0) {
+      if (el.cardNameError) {
+        el.cardNameError.classList.remove("hidden");
+      }
+      showModal("Проверь поля", "Имя для визитки обязательно.");
+      return;
+    }
+    if (el.cardNameError) {
+      el.cardNameError.classList.add("hidden");
+    }
     el.cSaveStatus.textContent = "";
 
     try {
@@ -567,11 +619,11 @@
         }),
       });
 
-      el.cSaveStatus.textContent = "✅ Визитка обновлена";
+      el.cSaveStatus.textContent = "Визитка обновлена";
       el.cSaveStatus.className = "text-sm text-emerald-700";
       await load();
     } catch (error) {
-      el.cSaveStatus.textContent = "❌ Ошибка. Попробуй ещё раз";
+      el.cSaveStatus.textContent = "Ошибка. Попробуй ещё раз";
       el.cSaveStatus.className = "text-sm text-red-700";
       if (error.code === "UPGRADE_REQUIRED") {
         showModal("Доступно на Премиум", "Эта функция доступна только для Премиум тарифа.");
@@ -705,8 +757,39 @@
   setTab();
 
   el.modalClose?.addEventListener("click", closeModal);
+  el.modalCloseTop?.addEventListener("click", closeModal);
   el.modal?.addEventListener("click", (event) => {
     if (event.target === el.modal) closeModal();
+  });
+  document.addEventListener("keydown", (event) => {
+    if (!modalIsOpen) return;
+    if (event.key === "Escape") {
+      closeModal();
+      return;
+    }
+    if (event.key !== "Tab" || !(el.modalDialog instanceof HTMLElement)) return;
+    const focusable = Array.from(
+      el.modalDialog.querySelectorAll(
+        'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      ),
+    ).filter((item) => item instanceof HTMLElement && item.offsetParent !== null);
+    if (!focusable.length) {
+      event.preventDefault();
+      el.modalDialog.focus();
+      return;
+    }
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    const current = document.activeElement;
+    if (event.shiftKey && current === first) {
+      event.preventDefault();
+      last.focus();
+      return;
+    }
+    if (!event.shiftKey && current === last) {
+      event.preventDefault();
+      first.focus();
+    }
   });
 
   el.addSlug?.addEventListener("click", () => {
@@ -757,7 +840,12 @@
     renderPreview();
   });
 
-  el.cName?.addEventListener("input", renderPreview);
+  el.cName?.addEventListener("input", () => {
+    if (el.cardNameError && (el.cName?.value || "").trim().length > 0) {
+      el.cardNameError.classList.add("hidden");
+    }
+    renderPreview();
+  });
   el.cRole?.addEventListener("input", renderPreview);
   el.cColor?.addEventListener("input", renderPreview);
   el.cBranding?.addEventListener("change", renderPreview);
@@ -946,10 +1034,10 @@
       }
 
       renderSidebar();
-      el.stStatus.textContent = "✅ Сохранено";
+      el.stStatus.textContent = "Сохранено";
       el.stStatus.className = "text-sm text-emerald-700";
     } catch (error) {
-      el.stStatus.textContent = `❌ ${error.message}`;
+      el.stStatus.textContent = `${error.message}`;
       el.stStatus.className = "text-sm text-red-700";
     }
   });
@@ -965,7 +1053,7 @@
         location.href = "/";
       } catch (error) {
         if (el.stStatus) {
-          el.stStatus.textContent = `❌ ${error.message}`;
+          el.stStatus.textContent = `${error.message}`;
           el.stStatus.className = "text-sm text-red-700";
         }
       }

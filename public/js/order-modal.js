@@ -46,6 +46,7 @@ const UNQ_TARIFFS = {
     totalMonthly: document.getElementById("order-modal-total-monthly"),
     status: document.getElementById("order-modal-status"),
     submit: document.getElementById("order-modal-submit"),
+    closeTop: document.getElementById("order-modal-close-top"),
     closeForm: document.getElementById("order-modal-close-form"),
     successSlug: document.getElementById("order-modal-success-slug"),
     countdown: document.getElementById("order-modal-countdown"),
@@ -73,9 +74,11 @@ const UNQ_TARIFFS = {
   let csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "";
   let currentUser = null;
   let isOpen = false;
+  let isClosing = false;
   let countdownTimer = null;
   let pendingAuthCallback = null;
   let priceRequestSeq = 0;
+  let lastFocusedElement = null;
   let state = {
     slugLocked: false,
     lockedSlug: "",
@@ -322,7 +325,7 @@ const UNQ_TARIFFS = {
     }
     if (dom.formula instanceof HTMLElement) {
       if (server?.flash) {
-        dom.formula.textContent = `⚡ Flash sale применён (-${server.flash.discountPercent}%)`;
+        dom.formula.textContent = `Flash sale применён (-${server.flash.discountPercent}%)`;
       } else {
         const m = pricing ? pricing.letterData.multiplier * pricing.digitData.multiplier : 1;
         dom.formula.textContent = `${formatPrice(UNQ_BASE_PRICE)} × ${m} = ${formatPrice(slugPrice)} сум`;
@@ -443,11 +446,18 @@ const UNQ_TARIFFS = {
   }
 
   async function open(options = {}) {
+    lastFocusedElement = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     isOpen = true;
+    isClosing = false;
     stopCountdown();
     dom.root.style.display = "block";
     dom.root.classList.remove("hidden");
     dom.root.classList.add("block");
+    document.body.classList.add("modal-open");
+    requestAnimationFrame(() => {
+      dom.root.classList.add("is-open");
+      dom.dialog?.focus();
+    });
     await refreshUser();
     prefillFromOpenOptions(options);
     if (currentUser) {
@@ -459,7 +469,7 @@ const UNQ_TARIFFS = {
   }
 
   function close(force = false) {
-    if (!isOpen) {
+    if (!isOpen || isClosing) {
       return;
     }
     if (!force && dom.stepForm && !dom.stepForm.classList.contains("hidden") && isFormDirty()) {
@@ -468,11 +478,20 @@ const UNQ_TARIFFS = {
       }
     }
     isOpen = false;
+    isClosing = true;
     stopCountdown();
-    dom.root.style.display = "none";
-    dom.root.classList.remove("block");
-    dom.root.classList.add("hidden");
+    dom.root.classList.remove("is-open");
+    document.body.classList.remove("modal-open");
     setStatus("", "neutral");
+    window.setTimeout(() => {
+      dom.root.style.display = "none";
+      dom.root.classList.remove("block");
+      dom.root.classList.add("hidden");
+      isClosing = false;
+      if (lastFocusedElement instanceof HTMLElement) {
+        lastFocusedElement.focus();
+      }
+    }, 200);
   }
 
   function startCountdown(expiresAt) {
@@ -480,7 +499,7 @@ const UNQ_TARIFFS = {
     const targetTs = new Date(expiresAt).getTime();
     if (!Number.isFinite(targetTs)) {
       if (dom.countdown instanceof HTMLElement) {
-        dom.countdown.textContent = "⏰ 24:00:00";
+        dom.countdown.textContent = "24:00:00";
       }
       return;
     }
@@ -490,7 +509,7 @@ const UNQ_TARIFFS = {
       const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
       const seconds = Math.floor((diff % (1000 * 60)) / 1000);
       if (dom.countdown instanceof HTMLElement) {
-        dom.countdown.textContent = `⏰ ${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+        dom.countdown.textContent = `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
       }
     };
     tick();
@@ -640,7 +659,7 @@ const UNQ_TARIFFS = {
           if (node instanceof HTMLButtonElement) {
             node.disabled = true;
           }
-          node.textContent = "Добавлено в wishlist ✓";
+          node.textContent = "Добавлено в wishlist";
         } catch {
           node.textContent = "Не удалось. Повтори";
         }
@@ -668,6 +687,7 @@ const UNQ_TARIFFS = {
       });
   });
   dom.backdrop.addEventListener("click", () => close(false));
+  dom.closeTop?.addEventListener("click", () => close(false));
   dom.closeForm?.addEventListener("click", () => close(false));
   dom.closeSuccess?.addEventListener("click", () => close(true));
   dom.goProfile?.addEventListener("click", () => {
@@ -678,8 +698,45 @@ const UNQ_TARIFFS = {
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && isOpen) {
       close(false);
+      return;
+    }
+    if (event.key === "Tab" && isOpen) {
+      trapFocus(event);
     }
   });
+
+  function trapFocus(event) {
+    if (!(dom.dialog instanceof HTMLElement)) {
+      return;
+    }
+
+    const focusable = Array.from(
+      dom.dialog.querySelectorAll(
+        'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      ),
+    ).filter((el) => el instanceof HTMLElement && el.offsetParent !== null);
+
+    if (!focusable.length) {
+      event.preventDefault();
+      dom.dialog.focus();
+      return;
+    }
+
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    const current = document.activeElement;
+
+    if (event.shiftKey && current === first) {
+      event.preventDefault();
+      last.focus();
+      return;
+    }
+
+    if (!event.shiftKey && current === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  }
 
   window.UNQOrderModal = {
     open(options = {}) {
@@ -698,6 +755,8 @@ const UNQ_TARIFFS = {
   };
 
   dom.root.style.display = "none";
+  dom.root.classList.remove("is-open");
+  document.body.classList.remove("modal-open");
   void refreshUser();
   bindCtas();
   window.addEventListener("unqx:bind-order-ctas", () => {

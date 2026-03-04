@@ -125,17 +125,32 @@
 <body class="antialiased" data-card-theme="<%= pageCardTheme %>">
   <main class="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-12">
     <div class="relative z-10 w-full max-w-[520px]">
+      <a href="/" class="interactive-btn mb-3 inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-neutral-200 bg-white px-3 py-1.5 text-xs font-semibold text-neutral-700">
+        <svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M15 18 9 12l6-6"></path>
+        </svg>
+        На главную
+      </a>
       <% if (pageTopBadge) { %>
-      <div class="mb-3 inline-flex rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800">🏆 Топ #<%= pageTopBadge.rank %> этой недели</div>
+      <div class="mb-3 inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800">
+        <svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M8 21h8"></path>
+          <path d="M12 17v4"></path>
+          <path d="M7 4h10v3a5 5 0 0 1-10 0z"></path>
+          <path d="M5 7H4a2 2 0 0 0 0 4h2"></path>
+          <path d="M19 7h1a2 2 0 0 1 0 4h-2"></path>
+        </svg>
+        Топ #<%= pageTopBadge.rank %> этой недели
+      </div>
       <% } %>
-      <div id="card-view-root"></div>
+      <div id="card-view-root" class="animate-card-enter"></div>
     </div>
   </main>
 
   <script nonce="<%= cspNonce %>" id="card-view-data" type="application/json"><%- JSON.stringify({
     card: pageCard,
     shareUrl: pageCanonicalUrl,
-    viewsLabel: `${formattedViews} views`,
+    viewsLabel: `${formattedViews} просмотров`,
     slug: pageCard.slug,
     paused: false,
   }) %></script>

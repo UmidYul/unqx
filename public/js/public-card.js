@@ -27,6 +27,18 @@
   const avatarImage = root.querySelector("[data-avatar-image]");
   const avatarFallback = root.querySelector("[data-avatar-fallback]");
   const saveContactButton = root.querySelector("[data-save-contact]");
+  const liveRegion = document.createElement("div");
+  liveRegion.setAttribute("aria-live", "polite");
+  liveRegion.style.position = "absolute";
+  liveRegion.style.width = "1px";
+  liveRegion.style.height = "1px";
+  liveRegion.style.padding = "0";
+  liveRegion.style.margin = "-1px";
+  liveRegion.style.overflow = "hidden";
+  liveRegion.style.clip = "rect(0, 0, 0, 0)";
+  liveRegion.style.whiteSpace = "nowrap";
+  liveRegion.style.border = "0";
+  document.body.appendChild(liveRegion);
 
   function copyWithFallback(value) {
     const textarea = document.createElement("textarea");
@@ -53,6 +65,10 @@
     }
 
     return copyWithFallback(value);
+  }
+
+  function announce(text) {
+    liveRegion.textContent = text;
   }
 
   function showAvatarFallback() {
@@ -108,7 +124,8 @@
             url: shareUrl,
           });
           shared = true;
-          setShareLabel("Shared");
+          setShareLabel("Отправлено");
+          announce("Ссылка отправлена");
         }
       } catch {
         shared = false;
@@ -116,7 +133,8 @@
 
       if (!shared) {
         const copied = await copyText(shareUrl);
-        setShareLabel(copied ? "Copied" : "Error");
+        setShareLabel(copied ? "Скопировано" : "Ошибка");
+        announce(copied ? "Ссылка скопирована" : "Не удалось скопировать ссылку");
       }
 
       if (resetTimer) {
@@ -124,7 +142,7 @@
       }
 
       resetTimer = window.setTimeout(() => {
-        setShareLabel("Share");
+        setShareLabel("Поделиться");
       }, 1600);
     });
   }
@@ -160,6 +178,7 @@
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(downloadUrl);
+      announce("Контакт сохранен");
     });
   }
 

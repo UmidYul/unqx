@@ -116,7 +116,7 @@
     const shareUrl = String(options.shareUrl || "").trim() || window.location.href;
     const showPausedBanner = Boolean(options.showPausedBanner);
     const pausedText = String(options.pausedText || "Визитка на паузе — посетители видят заглушку");
-    const viewsLabel = String(options.viewsLabel || card.viewsLabel || "0 views");
+    const viewsLabel = String(options.viewsLabel || card.viewsLabel || "0 просмотров");
 
     const tagsHtml =
       card.tags.length > 0
@@ -131,7 +131,7 @@
                 `<a href="${esc(button.url)}" target="_blank" rel="noopener noreferrer" class="public-card-button unq-ref-action-btn">${iconSvg(classifyButton(button))}<span>${esc(button.label)}</span></a>`,
             )
             .join("")
-        : '<p class="py-2 text-center text-xs uppercase tracking-wider text-neutral-400">Coming soon</p>';
+        : '<p class="rounded-xl border border-neutral-200 bg-neutral-50 py-3 text-center text-xs text-neutral-500">Владелец пока не добавил контактные кнопки.</p>';
 
     const socialLinks = [
       { label: "Instagram", url: findSocialUrl(card.buttons, [/instagram/i, /insta/i]), icon: "instagram" },
@@ -154,7 +154,7 @@
           <span class="unq-ref-slug"># ${esc(card.slug)}</span>
           <button type="button" data-share-card class="unq-ref-share" aria-label="Поделиться">
             ${iconSvg("share")}
-            <span data-share-label>Share</span>
+            <span data-share-label>Поделиться</span>
           </button>
         </div>
         <div class="public-card-shell unq-ref-shell">
@@ -182,14 +182,14 @@
           <div class="unq-ref-divider"></div>
           <p class="unq-ref-hashtag">${esc(mainHashtag)}</p>
           <div class="unq-ref-about">
-            <p class="unq-ref-about-title">ABOUT INFO</p>
+            <p class="unq-ref-about-title">КОНТАКТЫ</p>
             <p>${iconSvg("location")}<span>${esc(aboutAddress)}</span></p>
             <p>${iconSvg("email")}<span>${esc(aboutEmail)}</span></p>
             <p>${iconSvg("phone")}<span>${esc(aboutPhone)}</span></p>
             <p>${iconSvg("hashtag")}<span>Postcode: ${esc(aboutPostcode)}</span></p>
           </div>
           ${activeSocialLinks.length ? `<div class="unq-ref-social">${activeSocialLinks.map(renderSocialLink).join("")}</div>` : ""}
-          <button type="button" class="unq-ref-save" data-save-contact>${iconSvg("save")}<span>Save contact (.vcf)</span></button>
+          <button type="button" class="unq-ref-save interactive-btn" data-save-contact>${iconSvg("save")}<span>Сохранить контакт (.vcf)</span></button>
         </div>
         <div class="unq-ref-footline">
           <div>© ${esc(viewsLabel)}</div>

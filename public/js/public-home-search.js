@@ -18,6 +18,7 @@ const TARIFFS = {
   initSlugAvailability(orderApi);
   initSlugCalculator(orderApi);
   initOrderLinks(orderApi);
+  initHomeMotion();
 })();
 
 function formatPrice(number) {
@@ -265,6 +266,9 @@ function initMobileMenu() {
 
 function initSlugCounter() {
   const section = document.getElementById("slug-counter-wrap");
+  const loadingNode = document.getElementById("slug-counter-loading");
+  const errorNode = document.getElementById("slug-counter-error");
+  const retryButton = document.getElementById("slug-counter-retry");
   const wrap = document.getElementById("slug-counter");
   const valueNode = document.getElementById("slug-counter-value");
   const totalNode = document.getElementById("slug-counter-total");
@@ -272,6 +276,9 @@ function initSlugCounter() {
 
   if (
     !(section instanceof HTMLElement) ||
+    !(loadingNode instanceof HTMLElement) ||
+    !(errorNode instanceof HTMLElement) ||
+    !(retryButton instanceof HTMLButtonElement) ||
     !(wrap instanceof HTMLElement) ||
     !(valueNode instanceof HTMLElement) ||
     !(totalNode instanceof HTMLElement) ||
@@ -309,7 +316,12 @@ function initSlugCounter() {
     requestAnimationFrame(frame);
   }
 
-  (async () => {
+  async function loadCounter() {
+    section.classList.remove("hidden");
+    loadingNode.classList.remove("hidden");
+    wrap.classList.add("hidden");
+    errorNode.classList.add("hidden");
+
     try {
       const response = await fetch("/api/cards/slug-counter", {
         method: "GET",
@@ -317,22 +329,29 @@ function initSlugCounter() {
       });
 
       if (!response.ok) {
-        return;
+        throw new Error("counter_failed");
       }
 
       const payload = await response.json();
       if (!payload || typeof payload.taken !== "number" || typeof payload.total !== "number") {
-        return;
+        throw new Error("invalid_payload");
       }
 
       totalNode.textContent = Number(payload.total).toLocaleString("ru-RU");
-      section.classList.remove("hidden");
+      loadingNode.classList.add("hidden");
       wrap.classList.remove("hidden");
       animateCounter(payload.taken, payload.total);
     } catch {
-      // keep hidden on failure
+      loadingNode.classList.add("hidden");
+      errorNode.classList.remove("hidden");
     }
-  })();
+  }
+
+  retryButton.addEventListener("click", () => {
+    loadCounter();
+  });
+
+  void loadCounter();
 }
 
 function initSlugAvailability(orderApi) {
@@ -454,7 +473,7 @@ function initSlugAvailability(orderApi) {
 
     if (state === "taken") {
       statusIcon.innerHTML = ICON_BAD;
-      statusText.textContent = `❌ ${slug} занят`;
+      statusText.textContent = `${slug} занят`;
       statusNote.textContent = "Этот UNQ занят, выбери похожий свободный вариант.";
       renderSuggestions(suggestions);
       setPrimaryAction({
@@ -503,6 +522,8 @@ function initSlugAvailability(orderApi) {
 
     checkButton.disabled = true;
     checkButton.classList.add("opacity-75");
+    const prevButtonHtml = checkButton.innerHTML;
+    checkButton.textContent = "Проверяем...";
     setFeedback("loading", slug);
 
     try {
@@ -536,6 +557,7 @@ function initSlugAvailability(orderApi) {
     } finally {
       checkButton.disabled = false;
       checkButton.classList.remove("opacity-75");
+      checkButton.innerHTML = prevButtonHtml;
     }
   }
 
@@ -579,8 +601,10 @@ function initSlugAvailability(orderApi) {
 
       statusNote.textContent = "Готово. Добавили в лист ожидания и уведомим, когда UNQ освободится.";
       primaryAction.classList.add("hidden");
+      showToast("Добавили в лист ожидания", "success");
     } catch {
       statusNote.textContent = "Не удалось добавить в лист ожидания. Попробуй ещё раз.";
+      showToast("Не удалось добавить в лист ожидания", "error");
     }
   });
 
@@ -639,6 +663,7 @@ function initSlugCalculator(orderApi) {
     '<svg class="icon-stroke h-3.5 w-3.5" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"></path></svg>';
   let hasRevealed = false;
   let requestSeq = 0;
+  let lastAnimatedPrice = 0;
 
   function updatePreview(letters, digits) {
     preview.textContent = `unqx.uz/${letters || "___"}${digits || "___"}`;
@@ -698,12 +723,17 @@ function initSlugCalculator(orderApi) {
     rarityText.textContent = rarity.label;
     resultSlug.textContent = pricing.slug;
     if (serverPricing.flash) {
-      resultPrice.innerHTML = `<span class=\"text-neutral-400 line-through\">${formatPrice(serverPricing.flash.basePrice)}</span> <span class=\"text-emerald-700\">${formatPrice(finalPrice)}</span>`;
-      resultFormula.textContent = `⚡ Flash sale применён (-${serverPricing.flash.discountPercent}%)`;
+      resultPrice.innerHTML = `<span class=\"text-neutral-400 line-through\">${formatPrice(serverPricing.flash.basePrice)}</span> <span class=\"text-emerald-700\" id=\"calc-flash-final-price\">${formatPrice(lastAnimatedPrice)}</span>`;
+      const flashFinalNode = resultPrice.querySelector("#calc-flash-final-price");
+      if (flashFinalNode instanceof HTMLElement) {
+        animateNumberText(flashFinalNode, lastAnimatedPrice, finalPrice);
+      }
+      resultFormula.textContent = `Flash sale применён (-${serverPricing.flash.discountPercent}%)`;
     } else {
-      resultPrice.textContent = formatPrice(finalPrice);
+      animateNumberText(resultPrice, lastAnimatedPrice, finalPrice);
       resultFormula.textContent = `${formatPrice(BASE_PRICE)} x ${pricing.letterData.multiplier} x ${pricing.digitData.multiplier} = ${formatPrice(finalPrice)} сум`;
     }
+    lastAnimatedPrice = finalPrice;
     letterMeta.textContent = `${pricing.letterData.label} x${pricing.letterData.multiplier}`;
     digitMeta.textContent = `${pricing.digitData.label} x${pricing.digitData.multiplier}`;
     reserveLink.href = "#";
@@ -738,6 +768,29 @@ function initSlugCalculator(orderApi) {
   updatePreview("", "");
 }
 
+function animateNumberText(node, from, to) {
+  if (!(node instanceof HTMLElement)) {
+    return;
+  }
+  const start = Number.isFinite(from) ? from : 0;
+  const end = Number.isFinite(to) ? to : 0;
+  const duration = 450;
+  const startedAt = performance.now();
+  const distance = end - start;
+
+  const step = (now) => {
+    const progress = Math.min((now - startedAt) / duration, 1);
+    const eased = 1 - (1 - progress) ** 3;
+    const value = Math.round(start + distance * eased);
+    node.textContent = formatPrice(value);
+    if (progress < 1) {
+      requestAnimationFrame(step);
+    }
+  };
+
+  requestAnimationFrame(step);
+}
+
 function initOrderModalBridge() {
   return {
     open(options = {}) {
@@ -770,5 +823,85 @@ function initOrderLinks(orderApi) {
       });
     });
   });
+}
+
+function initHomeMotion() {
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (reduceMotion) {
+    return;
+  }
+  document.body.classList.add("motion-ready");
+
+  document.querySelectorAll("[data-reveal-index]").forEach((node) => {
+    if (!(node instanceof HTMLElement)) {
+      return;
+    }
+    const index = Number(node.getAttribute("data-reveal-index") || 0);
+    node.style.animationDelay = `${Math.max(0, index) * 0.1}s`;
+  });
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) {
+          continue;
+        }
+        const section = entry.target;
+        if (section instanceof HTMLElement) {
+          section.classList.add("is-visible");
+        }
+        observer.unobserve(section);
+      }
+    },
+    {
+      threshold: 0.15,
+      rootMargin: "0px 0px -10% 0px",
+    },
+  );
+
+  document.querySelectorAll("[data-observe-reveal]").forEach((node) => {
+    observer.observe(node);
+  });
+}
+
+function showToast(message, tone = "neutral") {
+  if (!message) {
+    return;
+  }
+  let container = document.getElementById("unqx-toast-container");
+  if (!(container instanceof HTMLElement)) {
+    container = document.createElement("div");
+    container.id = "unqx-toast-container";
+    container.style.position = "fixed";
+    container.style.right = "16px";
+    container.style.top = "16px";
+    container.style.zIndex = "80";
+    container.style.display = "flex";
+    container.style.flexDirection = "column";
+    container.style.gap = "8px";
+    container.style.maxWidth = "92vw";
+    document.body.appendChild(container);
+  }
+
+  const toast = document.createElement("div");
+  toast.className = "unqx-toast";
+  if (tone === "error") {
+    toast.classList.add("is-error");
+  }
+  if (tone === "success") {
+    toast.classList.add("is-success");
+  }
+  toast.textContent = message;
+  container.appendChild(toast);
+  requestAnimationFrame(() => {
+    toast.classList.add("is-visible");
+  });
+
+  window.setTimeout(() => {
+    toast.classList.remove("is-visible");
+    window.setTimeout(() => {
+      toast.remove();
+    }, 200);
+  }, 3200);
 }
 

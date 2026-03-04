@@ -30,17 +30,17 @@ const ALLOWED_MIME = new Set(["image/jpeg", "image/png", "image/webp"]);
 function toSlugStatusLabel(status) {
   switch (status) {
     case "active":
-      return "🟢 Активен";
+      return "Активен";
     case "paused":
-      return "🟡 Пауза";
+      return "Пауза";
     case "private":
-      return "🔴 Приватный";
+      return "Приватный";
     case "approved":
-      return "✅ Одобрен";
+      return "Одобрен";
     case "pending":
-      return "⏳ В ожидании";
+      return "В ожидании";
     case "blocked":
-      return "⛔ Заблокирован";
+      return "Заблокирован";
     case "free":
       return "Свободен";
     default:
@@ -51,17 +51,17 @@ function toSlugStatusLabel(status) {
 function toRequestStatusBadge(status) {
   switch (status) {
     case "new":
-      return "🆕 Новая";
+      return "Новая";
     case "contacted":
-      return "💬 Связались";
+      return "Связались";
     case "paid":
-      return "💳 Ожидает оплаты";
+      return "Ожидает оплаты";
     case "approved":
-      return "✅ Одобрено";
+      return "Одобрено";
     case "rejected":
-      return "❌ Отклонено";
+      return "Отклонено";
     case "expired":
-      return "⬜ ИСТЕКЛА";
+      return "Истекла";
     default:
       return status;
   }

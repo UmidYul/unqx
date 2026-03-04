@@ -6,11 +6,26 @@
       role="dialog"
       aria-modal="true"
       aria-labelledby="order-modal-title"
+      tabindex="-1"
       class="flex w-full max-w-xl flex-col overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-xl max-h-[88vh]"
     >
       <div class="border-b border-neutral-200 px-4 py-3 sm:px-6">
-        <div id="order-modal-progress-auth" class="text-xs font-semibold text-neutral-500">① Вход → ② Заявка → ③ Готово</div>
-        <div id="order-modal-progress-no-auth" class="hidden text-xs font-semibold text-neutral-500">② Заявка → ③ Готово</div>
+        <div class="flex items-center justify-between gap-2">
+          <div>
+            <div id="order-modal-progress-auth" class="text-xs font-semibold text-neutral-500">① Вход → ② Заявка → ③ Готово</div>
+            <div id="order-modal-progress-no-auth" class="hidden text-xs font-semibold text-neutral-500">② Заявка → ③ Готово</div>
+          </div>
+          <button
+            id="order-modal-close-top"
+            type="button"
+            class="interactive-btn inline-flex h-9 w-9 items-center justify-center rounded-lg border border-neutral-300 text-neutral-600"
+            aria-label="Закрыть окно заявки"
+          >
+            <svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="m6 6 12 12M18 6 6 18"></path>
+            </svg>
+          </button>
+        </div>
       </div>
 
       <div id="order-modal-step-auth" class="flex-1 overflow-auto px-4 py-6 sm:px-6">
@@ -152,9 +167,14 @@
       </form>
 
       <div id="order-modal-step-success" class="hidden flex-1 overflow-auto px-4 py-6 sm:px-6">
-        <h3 class="text-2xl font-bold text-neutral-900">✅ Заявка принята!</h3>
+        <h3 class="flex items-center gap-2 text-2xl font-bold text-neutral-900">
+          <svg class="icon-stroke h-6 w-6 text-emerald-700" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="m20 6-11 11-5-5"></path>
+          </svg>
+          Заявка принята
+        </h3>
         <p id="order-modal-success-slug" class="mt-3 font-mono text-lg text-neutral-900">AAA000 зарезервирован на 24 часа</p>
-        <p id="order-modal-countdown" class="mt-2 text-base font-semibold text-neutral-700">⏰ 24:00:00</p>
+        <p id="order-modal-countdown" class="mt-2 text-base font-semibold text-neutral-700">24:00:00</p>
         <p class="mt-4 text-sm text-neutral-600">Мы напишем тебе в Telegram как только проверим заявку. Обычно это занимает до 15 минут.</p>
         <div class="mt-6 flex items-center gap-3">
           <button id="order-modal-go-profile" type="button" class="inline-flex items-center gap-2 rounded-xl bg-neutral-900 px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-neutral-800">
