@@ -20,6 +20,9 @@
     const buttons = Array.isArray(card.buttons)
       ? card.buttons
           .map((button) => ({
+            type: String(button?.type || "other")
+              .trim()
+              .toLowerCase(),
             label: String(button?.label || "").trim(),
             url: String(button?.url || button?.href || "").trim(),
           }))
@@ -60,11 +63,14 @@
       verified:
         '<svg class="h-4 w-4 text-neutral-500" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M12 2.5l2.2 1.8 2.8-.3 1.2 2.5 2.5 1.2-.3 2.8L21.5 12l-1.8 2.2.3 2.8-2.5 1.2-1.2 2.5-2.8-.3L12 21.5l-2.2-1.8-2.8.3-1.2-2.5-2.5-1.2.3-2.8L2.5 12l1.8-2.2-.3-2.8 2.5-1.2 1.2-2.5 2.8.3L12 2.5Zm-1.1 13.1 5-5-1.1-1.1-3.9 3.9-1.8-1.8-1.1 1.1 2.9 2.9Z"></path></svg>',
       phone: '<svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2A19.8 19.8 0 0 1 3 5.2 2 2 0 0 1 5 3h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .8 2.9a2 2 0 0 1-.5 2.1L9 11a16 16 0 0 0 4 4l1.3-1.3a2 2 0 0 1 2.1-.5c.9.4 1.9.7 2.9.8a2 2 0 0 1 1.7 1.9Z"></path></svg>',
+      telegram:
+        '<svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 3 2.7 10.4a1 1 0 0 0 .1 1.9l4.6 1.4 1.7 5.3a1 1 0 0 0 1.7.4l2.6-3 4.8 3.6a1 1 0 0 0 1.6-.6L22 4a1 1 0 0 0-1.4-1Z"></path><path d="m7.5 13.5 10.1-7.3"></path></svg>',
       message: '<svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a8.5 8.5 0 0 1-8.5 8.5A8.7 8.7 0 0 1 8 19.2L3 21l1.8-5A8.7 8.7 0 0 1 3.5 12 8.5 8.5 0 1 1 21 12Z"></path></svg>',
       instagram:
         '<svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"></rect><circle cx="12" cy="12" r="4"></circle><circle cx="17.5" cy="6.5" r="0.8"></circle></svg>',
       click:
         '<svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 7 10 10M7 17 17 7M12 2v4M12 18v4M2 12h4M18 12h4"></path></svg>',
+      globe: '<svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"></path></svg>',
       arrow: '<svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M7 7h10v10"></path></svg>',
       location:
         '<svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z"></path><circle cx="12" cy="10" r="2.8"></circle></svg>',
@@ -83,12 +89,48 @@
   }
 
   function classifyButton(button) {
+    switch (button.type) {
+      case "phone":
+        return "phone";
+      case "telegram":
+        return "telegram";
+      case "instagram":
+        return "instagram";
+      case "tiktok":
+        return "tiktok";
+      case "youtube":
+        return "youtube";
+      case "website":
+        return "globe";
+      case "email":
+        return "email";
+      case "whatsapp":
+        return "message";
+      default:
+        break;
+    }
+
     const signature = `${button.label} ${button.url}`.toLowerCase();
     if (/(telegram|t\.me|message|chat)/.test(signature)) {
-      return "message";
+      return "telegram";
     }
     if (/(instagram|insta)/.test(signature)) {
       return "instagram";
+    }
+    if (/(youtube|youtu\.be)/.test(signature)) {
+      return "youtube";
+    }
+    if (/(tiktok|tik tok)/.test(signature)) {
+      return "tiktok";
+    }
+    if (/(phone|call|tel)/.test(signature)) {
+      return "phone";
+    }
+    if (/(mail|email)/.test(signature)) {
+      return "email";
+    }
+    if (/(site|web|link|globe|www)/.test(signature)) {
+      return "globe";
     }
     if (/(click|pay|payment|card|merchant)/.test(signature)) {
       return "click";

@@ -85,6 +85,11 @@ function parseProfileCardRow(row) {
     name: row.name,
     role: row.role || "",
     bio: row.bio || "",
+    hashtag: row.hashtag || "",
+    address: row.address || "",
+    postcode: row.postcode || "",
+    email: row.email || "",
+    extraPhone: row.extraPhone || "",
     avatarUrl: row.avatarUrl || "",
     tags: Array.isArray(row.tags) ? row.tags : [],
     buttons: Array.isArray(row.buttons) ? row.buttons : [],
@@ -380,6 +385,17 @@ router.put(
 
     const role = String(body.role || "").trim().slice(0, 120) || null;
     const bio = String(body.bio || "").trim().slice(0, 120) || null;
+    const hashtag = String(body.hashtag || "").trim().slice(0, 50) || null;
+    const address = String(body.address || "").trim().slice(0, 300) || null;
+    const postcode = String(body.postcode || "").trim().slice(0, 20) || null;
+    const email = String(body.email || "").trim().slice(0, 100) || null;
+    const extraPhone = String(body.extraPhone || "").trim().slice(0, 30) || null;
+
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      res.status(400).json({ error: "Invalid email" });
+      return;
+    }
+
     const rawTags = Array.isArray(body.tags) ? body.tags : [];
     const rawButtons = Array.isArray(body.buttons) ? body.buttons : [];
     if (effective.plan !== "premium" && rawTags.length > getTagLimit("basic")) {
@@ -412,6 +428,11 @@ router.put(
           name,
           role,
           bio,
+          hashtag,
+          address,
+          postcode,
+          email,
+          extraPhone,
           tags,
           buttons,
           theme,
@@ -422,6 +443,11 @@ router.put(
           name,
           role,
           bio,
+          hashtag,
+          address,
+          postcode,
+          email,
+          extraPhone,
           tags,
           buttons,
           theme,

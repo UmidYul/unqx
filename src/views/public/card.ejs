@@ -30,6 +30,7 @@
     buttons: Array.isArray(pageCardRaw.buttons)
       ? pageCardRaw.buttons
           .map((button) => ({
+            type: typeof button.type === "string" ? button.type.trim().toLowerCase() : "other",
             label: typeof button.label === "string" ? button.label.trim() : "",
             url: typeof button.url === "string" ? button.url.trim() : "",
             isActive: Boolean(button.isActive),

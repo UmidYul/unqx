@@ -226,7 +226,11 @@
             <svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
               <path d="M13 2 3 14h7l-1 8 10-12h-7z"></path>
             </svg>
-            FLASH SALE · Скидка <strong><%= activeFlashSale.discountPercent %>%</strong> на <%= activeFlashSale.conditionLabel %> · Осталось <span data-flash-countdown>--:--:--</span>
+            FLASH SALE · Скидка <strong><%= activeFlashSale.discountPercent %>%</strong> на <%= activeFlashSale.conditionLabel %>
+            <% if (typeof activeFlashSale.slotsLeft === 'number') { %>
+              · Осталось <strong><%= activeFlashSale.slotsLeft.toLocaleString('ru-RU') %></strong> мест/slug
+            <% } %>
+            · Осталось <span data-flash-countdown>--:--:--</span>
           </p>
           <a href="#hero-check" class="interactive-btn min-h-11 rounded-lg border border-amber-300 px-2.5 py-1 text-xs font-semibold">Узнать подробнее →</a>
         </div>
@@ -354,7 +358,7 @@
 
       <% if (nextDrop) { %>
       <section class="px-6 pb-6" data-observe-reveal>
-        <div class="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 rounded-2xl border border-red-200 bg-red-50 px-5 py-4">
+        <div class="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-4 rounded-2xl border border-red-200 bg-red-50 px-5 py-4" data-next-drop-card data-next-drop-id="<%= nextDrop.id %>">
           <p class="inline-flex items-center gap-2 text-sm text-red-900">
             <svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
               <path d="M12 3c2 3 5 4.5 5 8a5 5 0 0 1-10 0c0-2.8 1.8-4.4 3.5-6 .7-.7 1.4-1.3 1.5-2z"></path>
@@ -362,7 +366,16 @@
             </svg>
             Следующий дроп: <strong><%= nextDrop.title %></strong> · <%= new Date(nextDrop.dropAt).toLocaleString('ru-RU') %> · <%= nextDrop.slugCount %> slug
           </p>
-          <a href="/drops" class="interactive-btn min-h-11 rounded-lg border border-red-300 px-3 py-1.5 text-xs font-semibold text-red-900">Подписаться на уведомление</a>
+          <div class="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              data-next-drop-waitlist
+              class="interactive-btn min-h-11 rounded-lg border border-red-300 bg-red-100 px-3 py-1.5 text-xs font-semibold text-red-900"
+            >
+              Забронировать уведомление в 1 клик
+            </button>
+            <a href="/drops" class="interactive-btn min-h-11 rounded-lg border border-red-300 px-3 py-1.5 text-xs font-semibold text-red-900">Подписаться на уведомление</a>
+          </div>
         </div>
       </section>
       <% } %>
@@ -510,6 +523,12 @@
             <div class="mt-4 flex items-baseline gap-2">
               <span id="calc-result-price" class="text-3xl font-bold text-neutral-900">0</span>
               <span class="text-sm text-neutral-400">сум</span>
+            </div>
+            <div id="calc-similar-wrap" class="mt-4 hidden rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2.5">
+              <p class="text-xs text-neutral-500">
+                Похожие свободные:
+                <span id="calc-similar-items" class="ml-1 inline-flex flex-wrap items-center gap-2"></span>
+              </p>
             </div>
 
             <p id="calc-result-formula" class="mt-2 font-mono text-xs text-neutral-400">100 000 x 1 x 1 = 100 000 сум</p>

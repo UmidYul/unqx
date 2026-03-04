@@ -97,6 +97,11 @@
     cRole: $("#profile-card-role"),
     cBio: $("#profile-card-bio"),
     cBioC: $("#profile-card-bio-counter"),
+    cHashtag: $("#profile-card-hashtag"),
+    cAddress: $("#profile-card-address"),
+    cPostcode: $("#profile-card-postcode"),
+    cEmail: $("#profile-card-email"),
+    cExtraPhone: $("#profile-card-extra-phone"),
     cTagInput: $("#profile-card-tag-input"),
     cTagAdd: $("#profile-card-tag-add"),
     cTags: $("#profile-card-tags-list"),
@@ -401,9 +406,17 @@
         slug: primarySlug?.fullSlug || "UNQ",
         name: el.cName?.value || s.user?.displayName || s.user?.firstName || "UNQ+ User",
         phone: "",
+        hashtag: String(el.cHashtag?.value || "").trim(),
+        address: String(el.cAddress?.value || "").trim(),
+        postcode: String(el.cPostcode?.value || "").trim(),
+        email: String(el.cEmail?.value || "").trim(),
+        extraPhone: String(el.cExtraPhone?.value || "").trim(),
         avatarUrl: avatarUrl && !avatarUrl.includes("/brand/unq-mark.svg") ? avatarUrl : null,
         tags: (s.tags || []).map((tag) => ({ label: String(tag || "") })),
         buttons: (s.buttons || []).map((button) => ({
+          type: String(button?.type || "other")
+            .trim()
+            .toLowerCase(),
           label: button?.label || "",
           url: String(button?.href || button?.value || "").trim(),
         })),
@@ -442,6 +455,11 @@
     if (el.cName) el.cName.value = card.name || s.user?.displayName || s.user?.firstName || "";
     if (el.cRole) el.cRole.value = card.role || "";
     if (el.cBio) el.cBio.value = card.bio || "";
+    if (el.cHashtag) el.cHashtag.value = card.hashtag || "";
+    if (el.cAddress) el.cAddress.value = card.address || "";
+    if (el.cPostcode) el.cPostcode.value = card.postcode || "";
+    if (el.cEmail) el.cEmail.value = card.email || "";
+    if (el.cExtraPhone) el.cExtraPhone.value = card.extraPhone || "";
     if (el.cColor) el.cColor.value = card.customColor || "#111111";
     if (el.cBranding) el.cBranding.checked = !card.showBranding;
 
@@ -709,6 +727,11 @@
           name: el.cName?.value || "",
           role: el.cRole?.value || "",
           bio: el.cBio?.value || "",
+          hashtag: el.cHashtag?.value || "",
+          address: el.cAddress?.value || "",
+          postcode: el.cPostcode?.value || "",
+          email: el.cEmail?.value || "",
+          extraPhone: el.cExtraPhone?.value || "",
           tags: s.tags,
           buttons: s.buttons,
           theme: s.theme,
@@ -947,6 +970,11 @@
   el.cRole?.addEventListener("input", renderPreview);
   el.cColor?.addEventListener("input", renderPreview);
   el.cBranding?.addEventListener("change", renderPreview);
+  el.cHashtag?.addEventListener("input", renderPreview);
+  el.cAddress?.addEventListener("input", renderPreview);
+  el.cPostcode?.addEventListener("input", renderPreview);
+  el.cEmail?.addEventListener("input", renderPreview);
+  el.cExtraPhone?.addEventListener("input", renderPreview);
   el.cSave?.addEventListener("click", saveCard);
 
   el.cTagAdd?.addEventListener("click", () => {

@@ -1,6 +1,9 @@
 const { prisma } = require("../db/prisma");
 
 const SLUG_PATTERN = /^[A-Z]{3}[0-9]{3}$/;
+const ALPHABET_SIZE = 26;
+const DIGIT_VARIANTS = 1000;
+const SEQUENTIAL_DIGITS = ["012", "123", "234", "345", "456", "567", "678", "789"];
 
 function normalizeSlug(value) {
   return String(value || "")
@@ -95,9 +98,83 @@ function applyFlashSaleToPrice({ slug, basePrice, sale }) {
   };
 }
 
+async function getFlashSaleSlotsLeft(sale) {
+  if (!sale || !prisma.slug || typeof prisma.slug.count !== "function") {
+    return null;
+  }
+
+  try {
+    if (sale.conditionType === "custom") {
+      const payload = sale.conditionValue && typeof sale.conditionValue === "object" ? sale.conditionValue : {};
+      const allowed = Array.isArray(payload.allowedSlugs)
+        ? Array.from(
+            new Set(
+              payload.allowedSlugs
+                .map((item) => normalizeSlug(item))
+                .filter((item) => SLUG_PATTERN.test(item)),
+            ),
+          )
+        : [];
+      if (!allowed.length) {
+        return null;
+      }
+      const taken = await prisma.slug.count({
+        where: {
+          fullSlug: { in: allowed },
+          status: { not: "free" },
+        },
+      });
+      return Math.max(0, allowed.length - taken);
+    }
+
+    if (sale.conditionType === "pattern_000") {
+      const total = ALPHABET_SIZE ** 3;
+      const taken = await prisma.slug.count({
+        where: {
+          digits: "000",
+          status: { not: "free" },
+        },
+      });
+      return Math.max(0, total - taken);
+    }
+
+    if (sale.conditionType === "pattern_aaa") {
+      const repeated = Array.from({ length: ALPHABET_SIZE }, (_, index) => {
+        const letter = String.fromCharCode(65 + index);
+        return `${letter}${letter}${letter}`;
+      });
+      const total = ALPHABET_SIZE * DIGIT_VARIANTS;
+      const taken = await prisma.slug.count({
+        where: {
+          letters: { in: repeated },
+          status: { not: "free" },
+        },
+      });
+      return Math.max(0, total - taken);
+    }
+
+    if (sale.conditionType === "sequential_digits") {
+      const total = ALPHABET_SIZE ** 3 * SEQUENTIAL_DIGITS.length;
+      const taken = await prisma.slug.count({
+        where: {
+          digits: { in: SEQUENTIAL_DIGITS },
+          status: { not: "free" },
+        },
+      });
+      return Math.max(0, total - taken);
+    }
+  } catch (error) {
+    console.error("[express-app] failed to resolve flash sale slots left", error);
+    return null;
+  }
+
+  return null;
+}
+
 module.exports = {
   normalizeSlug,
   getActiveFlashSale,
+  getFlashSaleSlotsLeft,
   isSlugMatchedByFlashSale,
   applyFlashSaleToPrice,
   resolveConditionLabel,

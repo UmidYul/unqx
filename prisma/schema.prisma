@@ -344,6 +344,11 @@ model ProfileCard {
   name            String    @db.VarChar(120)
   role            String?   @db.VarChar(120)
   bio             String?   @db.VarChar(120)
+  hashtag         String?   @db.VarChar(50)
+  address         String?
+  postcode        String?   @db.VarChar(20)
+  email           String?   @db.VarChar(100)
+  extraPhone      String?   @map("extra_phone") @db.VarChar(30)
   avatarUrl       String?   @map("avatar_url")
   tags            Json      @default("[]")
   buttons         Json      @default("[]")

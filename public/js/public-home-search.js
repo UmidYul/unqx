@@ -17,6 +17,7 @@ const TARIFFS = {
   initHeroSlugOccupancy();
   initSlugAvailability(orderApi);
   initSlugCalculator(orderApi);
+  initNextDropOneClick();
   initOrderLinks(orderApi);
   initHomeMotion();
 })();
@@ -662,6 +663,8 @@ function initSlugCalculator(orderApi) {
   const letterMeta = document.getElementById("calc-letter-meta");
   const digitMeta = document.getElementById("calc-digit-meta");
   const reserveLink = document.getElementById("calc-reserve-link");
+  const similarWrap = document.getElementById("calc-similar-wrap");
+  const similarItems = document.getElementById("calc-similar-items");
 
   if (
     !(lettersInput instanceof HTMLInputElement) ||
@@ -675,7 +678,9 @@ function initSlugCalculator(orderApi) {
     !(resultFormula instanceof HTMLElement) ||
     !(letterMeta instanceof HTMLElement) ||
     !(digitMeta instanceof HTMLElement) ||
-    !(reserveLink instanceof HTMLAnchorElement)
+    !(reserveLink instanceof HTMLAnchorElement) ||
+    !(similarWrap instanceof HTMLElement) ||
+    !(similarItems instanceof HTMLElement)
   ) {
     return;
   }
@@ -716,6 +721,54 @@ function initSlugCalculator(orderApi) {
     }
   }
 
+  async function loadSimilarAvailable(slug) {
+    try {
+      const response = await fetch(`/api/cards/availability?slug=${encodeURIComponent(slug)}&source=calculator`, {
+        method: "GET",
+        headers: { Accept: "application/json" },
+      });
+      if (!response.ok) {
+        return [];
+      }
+      const payload = await response.json();
+      if (payload?.available === true) {
+        return [];
+      }
+      return Array.isArray(payload?.suggestions) ? payload.suggestions.slice(0, 3) : [];
+    } catch {
+      return [];
+    }
+  }
+
+  function renderSimilarAvailable(items) {
+    similarItems.innerHTML = "";
+    if (!Array.isArray(items) || items.length === 0) {
+      similarWrap.classList.add("hidden");
+      return;
+    }
+    items.forEach((slug) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className =
+        "inline-flex items-center rounded-full border border-neutral-200 bg-white px-2.5 py-1 font-mono text-[11px] text-neutral-700 transition-colors hover:bg-neutral-50";
+      button.textContent = slug;
+      button.addEventListener("click", () => {
+        const parsed = splitSlug(slug);
+        if (!parsed) {
+          return;
+        }
+        lettersInput.value = parsed.letters;
+        digitsInput.value = parsed.digits;
+        void updateResult();
+        if (orderApi) {
+          orderApi.open({ slug });
+        }
+      });
+      similarItems.appendChild(button);
+    });
+    similarWrap.classList.remove("hidden");
+  }
+
   async function updateResult() {
     lettersInput.value = normalizeLetters(lettersInput.value);
     digitsInput.value = normalizeDigits(digitsInput.value);
@@ -737,6 +790,7 @@ function initSlugCalculator(orderApi) {
     if (!serverPricing) {
       return;
     }
+    const similarSuggestions = await loadSimilarAvailable(pricing.slug);
     const finalPrice = serverPricing.total;
     const rarity = getRarityBadge(finalPrice);
 
@@ -760,6 +814,7 @@ function initSlugCalculator(orderApi) {
     reserveLink.href = "#";
     reserveLink.setAttribute("data-order-prefill", pricing.slug);
     reserveLink.innerHTML = `Занять ${pricing.slug}${RESERVE_ICON}`;
+    renderSimilarAvailable(similarSuggestions);
   }
 
   lettersInput.addEventListener("input", () => {
@@ -787,6 +842,70 @@ function initSlugCalculator(orderApi) {
   });
 
   updatePreview("", "");
+}
+
+function initNextDropOneClick() {
+  const cta = document.querySelector("[data-next-drop-waitlist]");
+  const card = document.querySelector("[data-next-drop-card]");
+  const heroInput = document.getElementById("home-slug-input");
+  const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "";
+
+  if (!(cta instanceof HTMLButtonElement) || !(card instanceof HTMLElement)) {
+    return;
+  }
+
+  const dropId = card.getAttribute("data-next-drop-id");
+  if (!dropId) {
+    return;
+  }
+
+  cta.addEventListener("click", async () => {
+    const preferredSlug = heroInput instanceof HTMLInputElement ? normalizeStrictSlug(heroInput.value) : "";
+    const previous = cta.textContent;
+    cta.disabled = true;
+    cta.textContent = "Отправка...";
+
+    try {
+      const response = await fetch(`/api/drops/${encodeURIComponent(dropId)}/waitlist`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(csrfToken ? { "X-CSRF-Token": csrfToken } : {}),
+        },
+        body: JSON.stringify({
+          preferredSlug,
+        }),
+      });
+
+      if (response.status === 401) {
+        if (window.UNQOrderModal && typeof window.UNQOrderModal.ensureAuth === "function") {
+          window.UNQOrderModal.ensureAuth(() => {
+            cta.click();
+          });
+        }
+        cta.disabled = false;
+        cta.textContent = previous;
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error("waitlist_failed");
+      }
+
+      cta.textContent = "Уведомление включено";
+      cta.disabled = true;
+      showToast(
+        preferredSlug && /^[A-Z]{3}[0-9]{3}$/.test(preferredSlug)
+          ? `Уведомим о дропе для ${preferredSlug}`
+          : "Уведомление о следующем дропе включено",
+        "success",
+      );
+    } catch {
+      cta.disabled = false;
+      cta.textContent = previous;
+      showToast("Не удалось подписаться на дроп", "error");
+    }
+  });
 }
 
 function animateNumberText(node, from, to) {

@@ -9,7 +9,7 @@ const { getEffectivePlan } = require("../../services/profile");
 const { absoluteUrl } = require("../../utils/url");
 const { buildLeaderboard, normalizePeriod, getSlugTopBadge, getUserLeaderboardSummary } = require("../../services/leaderboard");
 const { getFeatureSetting } = require("../../services/feature-settings");
-const { getActiveFlashSale, resolveConditionLabel } = require("../../services/flash-sales");
+const { getActiveFlashSale, resolveConditionLabel, getFlashSaleSlotsLeft } = require("../../services/flash-sales");
 const { getPublicScoreForSlug } = require("../../services/unq-score");
 const { normalizeRefCode } = require("../../services/referrals");
 
@@ -23,16 +23,32 @@ function sanitizeSlug(value) {
 }
 
 function mapProfileButtons(rawButtons) {
+  const allowedTypes = new Set([
+    "phone",
+    "telegram",
+    "instagram",
+    "tiktok",
+    "youtube",
+    "website",
+    "whatsapp",
+    "email",
+    "other",
+  ]);
   const source = Array.isArray(rawButtons) ? rawButtons : [];
   return source
     .map((item) => {
       const obj = item && typeof item === "object" ? item : {};
+      const typeRaw = String(obj.type || "other")
+        .trim()
+        .toLowerCase();
+      const type = allowedTypes.has(typeRaw) ? typeRaw : "other";
       const label = String(obj.label || "").trim().slice(0, 50);
       const href = String(obj.href || obj.url || "").trim();
       if (!label || !href) {
         return null;
       }
       return {
+        type,
         label,
         url: href,
         isActive: true,
@@ -61,11 +77,11 @@ function buildPublicCardFromProfile({ slug, user, profileCard, viewsCount }) {
     phone: "",
     tags: mapProfileTags(profileCard.tags),
     buttons: mapProfileButtons(profileCard.buttons),
-    hashtag: "",
-    address: "",
-    postcode: "",
-    email: "",
-    extraPhone: "",
+    hashtag: profileCard.hashtag || "",
+    address: profileCard.address || "",
+    postcode: profileCard.postcode || "",
+    email: profileCard.email || "",
+    extraPhone: profileCard.extraPhone || "",
     viewsCount: Number(viewsCount || 0),
     showBranding: Boolean(profileCard.showBranding),
   };
@@ -86,6 +102,7 @@ router.get(
         orderBy: { dropAt: "asc" },
       }),
     ]);
+    const flashSaleSlotsLeft = activeFlashSale ? await getFlashSaleSlotsLeft(activeFlashSale) : null;
 
     let testimonials = [];
     try {
@@ -108,6 +125,7 @@ router.get(
             id: activeFlashSale.id,
             discountPercent: activeFlashSale.discountPercent,
             conditionLabel: resolveConditionLabel(activeFlashSale),
+            slotsLeft: Number.isFinite(flashSaleSlotsLeft) ? flashSaleSlotsLeft : null,
             startsAt: activeFlashSale.startsAt,
             endsAt: activeFlashSale.endsAt,
             description: activeFlashSale.description || activeFlashSale.title,
