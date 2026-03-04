@@ -35,6 +35,11 @@
   };
 
   const fp = (v) => `${Number(v || 0).toLocaleString("ru-RU")} сум`;
+  const fh = (v) => {
+    if (!v) return "—";
+    const diff = Math.max(0, Date.now() - new Date(v).getTime());
+    return `${Math.max(1, Math.floor(diff / 3600000))} ч назад`;
+  };
 
   let csrf = $('meta[name="csrf-token"]')?.getAttribute("content") || "";
   const s = {
@@ -47,7 +52,9 @@
     buttons: [],
     theme: "default_dark",
     referrals: null,
+    score: null,
   };
+  let scoreChart = null;
   let modalLastFocused = null;
   let modalIsOpen = false;
   let modalConfirmHandler = null;
@@ -106,6 +113,13 @@
     cPrev: $("#profile-card-live-preview"),
     cPrevLabel: $("#profile-preview-slug-label"),
     cPrevLink: $("#profile-preview-open-link"),
+    scoreValue: $("#profile-score-value"),
+    scoreTop: $("#profile-score-top"),
+    scoreUpdated: $("#profile-score-updated"),
+    scoreBreakdown: $("#profile-score-breakdown"),
+    scoreTipsList: $("#profile-score-tips-list"),
+    scoreHistoryChart: $("#profile-score-history-chart"),
+    scoreHistoryLock: $("#profile-score-history-lock"),
 
     reqBanner: $("#profile-requests-banner"),
     reqTable: $("#profile-requests-table"),
@@ -550,6 +564,82 @@
     }
   };
 
+  const renderScore = () => {
+    const score = s.score || {};
+    const rows = [
+      ["Просмотры", Number(score.scoreViews || 0), 300],
+      ["Редкость slug", Number(score.scoreSlugRarity || 0), 200],
+      ["Срок владения", Number(score.scoreTenure || 0), 150],
+      ["Активность", Number(score.scoreCtr || 0), 200],
+      ["Браслет", Number(score.scoreBracelet || 0), 100],
+      ["Тариф", Number(score.scorePlan || 0), 49],
+    ];
+    if (el.scoreValue) el.scoreValue.textContent = String(Number(score.score || 0));
+    if (el.scoreTop) el.scoreTop.textContent = `Топ ${Math.max(1, Number(score.topPercent || 100))}%`;
+    if (el.scoreUpdated) el.scoreUpdated.textContent = `Обновлено ${fh(score.calculatedAt)}`;
+    if (el.scoreBreakdown) {
+      el.scoreBreakdown.innerHTML = rows
+        .map(([label, value, max]) => {
+          const width = Math.max(0, Math.min(100, (Number(value || 0) / Number(max || 1)) * 100));
+          return `<div class="grid grid-cols-[150px_1fr_auto] items-center gap-2 text-sm">
+              <span class="text-neutral-600">${esc(label)}</span>
+              <span class="h-1.5 rounded-full bg-neutral-200"><span class="block h-1.5 rounded-full bg-neutral-900" style="width:${width.toFixed(2)}%"></span></span>
+              <span class="text-xs text-neutral-500">${value} / ${max}</span>
+            </div>`;
+        })
+        .join("");
+    }
+
+    const tips = [];
+    if (Number(score.scoreBracelet || 0) === 0) {
+      tips.push('<div class="flex items-center justify-between gap-2"><span>Добавь NFC-браслет — +100 к Score</span><button type="button" data-order-link data-order-bracelet="1" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold">Заказать браслет</button></div>');
+    }
+    if (Number(score.scorePlan || 0) === 0) {
+      tips.push('<div class="flex items-center justify-between gap-2"><span>Перейди на Премиум — +49 к Score</span><button type="button" data-order-link data-order-plan="premium" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold">Улучшить тариф</button></div>');
+    }
+    if (Number(score.scoreViews || 0) < 150) tips.push("<p>Поделись визиткой чтобы получить больше просмотров</p>");
+    if (Number(score.scoreTenure || 0) < 100) tips.push("<p>Score растёт каждый месяц автоматически</p>");
+    if (Number(score.scoreCtr || 0) < 100) tips.push("<p>Добавь больше кнопок чтобы повысить активность</p>");
+    if (el.scoreTipsList) {
+      el.scoreTipsList.innerHTML = tips.length ? tips.join("") : "<p>Отличный прогресс. Поддерживай активность визитки.</p>";
+    }
+
+    const history = Array.isArray(score.history) ? score.history : [];
+    const labels = history.map((item) => {
+      try {
+        return new Date(item.date).toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit" });
+      } catch {
+        return "";
+      }
+    });
+    const values = history.map((item) => Number(item.score || 0));
+    if (scoreChart) {
+      scoreChart.destroy();
+      scoreChart = null;
+    }
+    if (el.scoreHistoryChart && typeof Chart !== "undefined") {
+      scoreChart = new Chart(el.scoreHistoryChart, {
+        type: "line",
+        data: {
+          labels,
+          datasets: [{ data: values, borderColor: "#111827", tension: 0.25, pointRadius: 0 }],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: { min: 0, max: 999, ticks: { stepSize: 200 } },
+          },
+          plugins: { legend: { display: false } },
+        },
+      });
+    }
+    const premium = s.user?.effectivePlan === "premium";
+    if (el.scoreHistoryLock) {
+      el.scoreHistoryLock.classList.toggle("hidden", premium);
+    }
+  };
+
   const renderAll = () => {
     renderSidebar();
     renderSlugs();
@@ -557,6 +647,7 @@
     renderRequests();
     renderSettings();
     renderReferrals();
+    renderScore();
   };
 
   const setLoading = (loading) => {
@@ -578,6 +669,7 @@
       s.slugs = payload.slugs || [];
       s.card = payload.card || null;
       s.requests = payload.requests || [];
+      s.score = payload.score || null;
       try {
         s.referrals = await api("/api/referrals/bootstrap");
       } catch {

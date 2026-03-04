@@ -11,6 +11,9 @@ const DEFAULTS = {
     enabled: true,
     requirePaid: true,
   },
+  unqScore: {
+    enabledOnCards: true,
+  },
 };
 
 async function getFeatureSetting(key, fallback = {}) {

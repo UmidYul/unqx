@@ -116,6 +116,7 @@
   const formattedViews = new Intl.NumberFormat("ru-RU").format(Math.max(0, pageCard.viewsCount));
   const pageCardTheme = pageCard.tariff === "premium" ? pageCard.theme : "default_dark";
   const pageTopBadge = typeof topBadge === "object" && topBadge ? topBadge : null;
+  const pageScore = typeof score === "object" && score ? score : null;
 %>
 <!doctype html>
 <html lang="ru" dir="<%= documentDir %>">
@@ -152,6 +153,7 @@
     shareUrl: pageCanonicalUrl,
     viewsLabel: `${formattedViews} просмотров`,
     slug: pageCard.slug,
+    score: pageScore,
     paused: false,
   }) %></script>
   <script nonce="<%= cspNonce %>" src="/js/card-view.js"></script>

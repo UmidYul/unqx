@@ -8,6 +8,7 @@ const { buildLeaderboard, normalizePeriod } = require("../../services/leaderboar
 const { getFeatureSetting, setFeatureSetting } = require("../../services/feature-settings");
 const { buildDropSlugPool, reserveDropSlugs, getDropLiveStats, releaseUnsoldDropSlugs } = require("../../services/drops");
 const { sendTelegramMessage } = require("../../services/telegram");
+const { recalculateAllScores, recalculateAndRefreshPercentiles } = require("../../services/unq-score");
 
 const router = express.Router();
 
@@ -88,6 +89,102 @@ router.get(
     const rows = await prisma.leaderboardSuspiciousLog.findMany({
       orderBy: { occurredAt: "desc" },
       take: 200,
+    });
+    res.json({ items: rows });
+  }),
+);
+
+router.get(
+  "/score/settings",
+  asyncHandler(async (_req, res) => {
+    const settings = await getFeatureSetting("unqScore");
+    res.json({ settings });
+  }),
+);
+
+router.patch(
+  "/score/settings",
+  asyncHandler(async (req, res) => {
+    const current = await getFeatureSetting("unqScore");
+    const next = await setFeatureSetting("unqScore", {
+      ...current,
+      enabledOnCards: req.body.enabledOnCards === undefined ? current.enabledOnCards : Boolean(req.body.enabledOnCards),
+    });
+    res.json({ ok: true, settings: next });
+  }),
+);
+
+router.get(
+  "/score/overview",
+  asyncHandler(async (_req, res) => {
+    const rows = await prisma.unqScore.findMany({
+      orderBy: [{ score: "desc" }, { percentile: "desc" }],
+      take: 500,
+      include: {
+        user: {
+          select: {
+            telegramId: true,
+            firstName: true,
+            username: true,
+            profileCard: { select: { name: true } },
+            slugs: {
+              where: { status: { in: ["active", "private", "paused", "approved"] } },
+              orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
+              take: 1,
+              select: { fullSlug: true },
+            },
+          },
+        },
+      },
+    });
+    res.json({
+      items: rows.map((row) => ({
+        telegramId: row.telegramId,
+        userName: row.user?.profileCard?.name || row.user?.firstName || row.user?.username || "UNQ+ User",
+        slug: row.user?.slugs?.[0]?.fullSlug || "—",
+        score: row.score,
+        percentile: row.percentile,
+        calculatedAt: row.calculatedAt,
+        breakdown: {
+          views: row.scoreViews,
+          rarity: row.scoreSlugRarity,
+          tenure: row.scoreTenure,
+          ctr: row.scoreCtr,
+          bracelet: row.scoreBracelet,
+          plan: row.scorePlan,
+        },
+      })),
+    });
+  }),
+);
+
+router.post(
+  "/score/recalculate/:telegramId",
+  asyncHandler(async (req, res) => {
+    const telegramId = String(req.params.telegramId || "");
+    if (!telegramId) {
+      res.status(400).json({ error: "Telegram ID required" });
+      return;
+    }
+    const row = await recalculateAndRefreshPercentiles(telegramId);
+    res.json({ ok: true, score: row?.score || 0 });
+  }),
+);
+
+router.post(
+  "/score/recalculate-all",
+  asyncHandler(async (_req, res) => {
+    const result = await recalculateAllScores({ reason: "manual" });
+    res.json({ ok: true, result });
+  }),
+);
+
+router.get(
+  "/score/runs",
+  asyncHandler(async (_req, res) => {
+    const rows = await prisma.scoreRecalculationRun.findMany({
+      orderBy: { startedAt: "desc" },
+      take: 10,
     });
     res.json({ items: rows });
   }),

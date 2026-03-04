@@ -17,6 +17,7 @@ const { getCardStats, getGlobalStats } = require("../../services/stats");
 const { calculateSlugPrice } = require("../../services/slug-pricing");
 const { cleanupOrphanAvatars, deleteAvatarByPublicPath, isSupportedAvatarBuffer, renameAvatarBySlug, saveAvatarFromBuffer } = require("../../services/avatar");
 const { sendSlugApprovedToUser, sendSlugAwaitingPaymentToUser, sendSlugRejectedToUser, sendTelegramMessage } = require("../../services/telegram");
+const { recalculateAndRefreshPercentiles } = require("../../services/unq-score");
 
 const router = express.Router();
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
@@ -860,6 +861,14 @@ router.patch(
       }
     }
 
+    if (status === "approved" || status === "rejected") {
+      try {
+        await recalculateAndRefreshPercentiles(updated.telegramId);
+      } catch (error) {
+        console.error("[express-app] failed to recalculate score after order status change", error);
+      }
+    }
+
     if (status === "rejected") {
       try {
         await sendSlugRejectedToUser({
@@ -1051,6 +1060,7 @@ router.get(
     const pageSizeRaw = Number(req.query.pageSize || "20") || 20;
     const pageSize = Math.max(1, Math.min(200, pageSizeRaw));
     const q = typeof req.query.q === "string" ? req.query.q.trim() : "";
+    const sort = req.query.sort === "score_desc" ? "score_desc" : "created_desc";
 
     const where = q
       ? {
@@ -1070,7 +1080,7 @@ router.get(
         prisma.user.count({ where }),
         prisma.user.findMany({
           where,
-          orderBy: { createdAt: "desc" },
+          orderBy: sort === "created_desc" ? { createdAt: "desc" } : { createdAt: "desc" },
           skip: (page - 1) * pageSize,
           take: pageSize,
           select: {
@@ -1094,7 +1104,7 @@ router.get(
     }
 
     const telegramIds = users.map((item) => item.telegramId);
-    const [slugs, cards, braceletRequests] = await Promise.all([
+    const [slugs, cards, braceletRequests, unqScores] = await Promise.all([
       prisma.slug.findMany({
         where: { ownerTelegramId: { in: telegramIds } },
         select: {
@@ -1116,6 +1126,21 @@ router.get(
           status: "approved",
         },
         select: { telegramId: true, slug: true },
+      }),
+      prisma.unqScore.findMany({
+        where: { telegramId: { in: telegramIds } },
+        select: {
+          telegramId: true,
+          score: true,
+          percentile: true,
+          calculatedAt: true,
+          scoreViews: true,
+          scoreSlugRarity: true,
+          scoreTenure: true,
+          scoreCtr: true,
+          scoreBracelet: true,
+          scorePlan: true,
+        },
       }),
     ]);
 
@@ -1139,9 +1164,24 @@ router.get(
       }
       braceletByUser.get(row.telegramId).add(row.slug);
     }
+    const scoreByUser = new Map(unqScores.map((row) => [row.telegramId, row]));
 
-    res.json({
-      items: users.map((user) => ({
+    const items = users.map((user) => ({
+        unqScore: scoreByUser.get(user.telegramId)
+          ? {
+              score: scoreByUser.get(user.telegramId).score,
+              percentile: scoreByUser.get(user.telegramId).percentile,
+              calculatedAt: scoreByUser.get(user.telegramId).calculatedAt,
+              breakdown: {
+                views: scoreByUser.get(user.telegramId).scoreViews,
+                slugRarity: scoreByUser.get(user.telegramId).scoreSlugRarity,
+                tenure: scoreByUser.get(user.telegramId).scoreTenure,
+                ctr: scoreByUser.get(user.telegramId).scoreCtr,
+                bracelet: scoreByUser.get(user.telegramId).scoreBracelet,
+                plan: scoreByUser.get(user.telegramId).scorePlan,
+              },
+            }
+          : null,
         telegramId: user.telegramId,
         name: user.displayName || user.firstName,
         username: user.username || null,
@@ -1158,7 +1198,14 @@ router.get(
         hasCard: cardsSet.has(user.telegramId),
         status: user.status,
         createdAt: user.createdAt,
-      })),
+      }));
+
+    if (sort === "score_desc") {
+      items.sort((a, b) => (Number(b.unqScore?.score || 0) - Number(a.unqScore?.score || 0)));
+    }
+
+    res.json({
+      items,
       pagination: {
         page,
         pageSize,
@@ -1263,6 +1310,12 @@ router.patch(
       return;
     }
 
+    try {
+      await recalculateAndRefreshPercentiles(result.telegramId);
+    } catch (error) {
+      console.error("[express-app] failed to recalculate score after plan change", error);
+    }
+
     res.json({
       telegramId: result.telegramId,
       plan: result.plan,
@@ -1289,6 +1342,11 @@ router.patch(
       data: { planExpiresAt: parsedDate },
       select: { telegramId: true, planExpiresAt: true },
     });
+    try {
+      await recalculateAndRefreshPercentiles(updated.telegramId);
+    } catch (error) {
+      console.error("[express-app] failed to recalculate score after plan expiry update", error);
+    }
     res.json(updated);
   }),
 );
@@ -1326,6 +1384,11 @@ router.patch(
         data: { status: "blocked" },
       });
     });
+    try {
+      await recalculateAndRefreshPercentiles(telegramId);
+    } catch (error) {
+      console.error("[express-app] failed to recalculate score after user block", error);
+    }
     res.json({ ok: true });
   }),
 );
@@ -1365,6 +1428,11 @@ router.patch(
         data: { status: "active" },
       });
     });
+    try {
+      await recalculateAndRefreshPercentiles(telegramId);
+    } catch (error) {
+      console.error("[express-app] failed to recalculate score after user unblock", error);
+    }
 
     res.json({ ok: true });
   }),
@@ -1560,6 +1628,13 @@ router.patch(
         console.error("[express-app] failed to send slug blocked notification", error);
       }
     }
+    if (updated.ownerTelegramId) {
+      try {
+        await recalculateAndRefreshPercentiles(updated.ownerTelegramId);
+      } catch (error) {
+        console.error("[express-app] failed to recalculate score after slug state change", error);
+      }
+    }
 
     res.json({
       slug: updated.fullSlug,
@@ -1594,8 +1669,15 @@ router.patch(
         activatedAt: new Date(),
         pendingExpiresAt: null,
       },
-      select: { fullSlug: true, status: true, activatedAt: true },
+      select: { fullSlug: true, status: true, activatedAt: true, ownerTelegramId: true },
     });
+    if (updated.ownerTelegramId) {
+      try {
+        await recalculateAndRefreshPercentiles(updated.ownerTelegramId);
+      } catch (error) {
+        console.error("[express-app] failed to recalculate score after slug activation", error);
+      }
+    }
     res.json({ ok: true, slug: updated.fullSlug, status: updated.status, activatedAt: updated.activatedAt });
   }),
 );
@@ -1675,8 +1757,19 @@ router.patch(
     const updated = await prisma.braceletOrder.update({
       where: { id: req.params.id },
       data: { deliveryStatus: toDeliveryStatus(req.body.deliveryStatus) },
-      select: { id: true, deliveryStatus: true },
+      select: { id: true, deliveryStatus: true, slug: true },
     });
+    const owner = await prisma.slug.findUnique({
+      where: { fullSlug: updated.slug },
+      select: { ownerTelegramId: true },
+    });
+    if (owner?.ownerTelegramId) {
+      try {
+        await recalculateAndRefreshPercentiles(owner.ownerTelegramId);
+      } catch (error) {
+        console.error("[express-app] failed to recalculate score after bracelet update", error);
+      }
+    }
     res.json(updated);
   }),
 );
@@ -1770,7 +1863,7 @@ router.get(
     const weekStart = subDays(todayStart, 6);
     const monthStart = subDays(todayStart, 29);
 
-    const [approvedOrders, braceletOrders, activePlans, dailyOrders, checkerLogs] = await Promise.all([
+    const [approvedOrders, braceletOrders, activePlans, dailyOrders, checkerLogs, scoreRows] = await Promise.all([
       prisma.slugRequest.findMany({
         where: { status: "approved" },
         select: { slug: true, createdAt: true, slugPrice: true },
@@ -1794,6 +1887,14 @@ router.get(
         orderBy: { checkedAt: "desc" },
         take: 1000,
         select: { slug: true, pattern: true, checkedAt: true },
+      }),
+      prisma.unqScore.findMany({
+        where: {
+          user: {
+            status: "active",
+          },
+        },
+        select: { score: true },
       }),
     ]);
 
@@ -1889,6 +1990,24 @@ router.get(
       .map(([pattern, count]) => ({ pattern, count }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 10);
+    const averageUnqScore = scoreRows.length
+      ? Number((scoreRows.reduce((acc, row) => acc + Number(row.score || 0), 0) / scoreRows.length).toFixed(1))
+      : 0;
+    const scoreDistribution = Array.from({ length: 10 }).map((_, index) => {
+      const start = index * 100;
+      const end = index === 9 ? 999 : start + 99;
+      const count = scoreRows.filter((row) => {
+        const value = Number(row.score || 0);
+        if (index === 9) {
+          return value >= start && value <= end;
+        }
+        return value >= start && value < start + 100;
+      }).length;
+      return {
+        range: `${start}-${end}`,
+        count,
+      };
+    });
 
     res.json({
       kpis: {
@@ -1896,10 +2015,12 @@ router.get(
         oneTimeRevenue,
         monthlyRecurringRevenue: recurring,
         activeCards: activePlans.length,
+        averageUnqScore,
       },
       ordersDaily,
       tariffSplit,
       topUnboughtPatterns,
+      scoreDistribution,
     });
   }),
 );

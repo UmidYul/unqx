@@ -10,6 +10,7 @@ const { absoluteUrl } = require("../../utils/url");
 const { buildLeaderboard, normalizePeriod, getSlugTopBadge, getUserLeaderboardSummary } = require("../../services/leaderboard");
 const { getFeatureSetting } = require("../../services/feature-settings");
 const { getActiveFlashSale, resolveConditionLabel } = require("../../services/flash-sales");
+const { getPublicScoreForSlug } = require("../../services/unq-score");
 
 const router = express.Router();
 
@@ -205,7 +206,7 @@ router.get(
 
     res.render("public/leaderboard", {
       title: "Топ визиток недели · UNQ+",
-      description: "Топ визиток UNQ+ по просмотрам",
+      description: "Топ визиток UNQ+ по UNQ Score",
       period: board.period,
       items: board.publicItems,
       userSummary,
@@ -405,6 +406,11 @@ router.get(
           viewsCount: views,
         });
         const image = card.avatarUrl ? absoluteUrl(card.avatarUrl) : absoluteUrl("/brand/unq-mark.svg");
+        const viewerTelegramId = getUserSession(req)?.telegramId || null;
+        const score = await getPublicScoreForSlug({
+          slug,
+          viewerTelegramId,
+        });
 
         const topBadge = await getSlugTopBadge(slug);
         res.render("public/card", {
@@ -413,6 +419,7 @@ router.get(
           image,
           card,
           topBadge,
+          score,
           noindex: slugRow.status === "private",
           adminSession: getAdminSession(req),
         });
@@ -459,6 +466,7 @@ router.get(
       description: card.phone,
       image,
       card,
+      score: null,
       adminSession: getAdminSession(req),
     });
   }),

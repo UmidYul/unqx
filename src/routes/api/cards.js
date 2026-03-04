@@ -953,6 +953,61 @@ router.post(
 );
 
 router.post(
+  "/:slug/click",
+  asyncHandler(async (req, res) => {
+    const requestedSlug = sanitizeSlug(req.params.slug);
+    const device = detectDevice(req.get("user-agent"));
+    const dateKey = new Date().toISOString().slice(0, 10);
+    const identity = pickClientIdentity(req);
+    const ipHash = identity ? createHash("sha256").update(`${identity}|click|${requestedSlug || req.params.slug}|${dateKey}`).digest("hex") : null;
+    const dayStart = new Date(`${dateKey}T00:00:00.000Z`);
+
+    const slugRow = await withMissingTableFallback("Slug", null, () =>
+      prisma.slug.findUnique({
+        where: { fullSlug: requestedSlug },
+        select: { fullSlug: true, status: true },
+      }),
+    );
+
+    if (!slugRow || !["active", "private"].includes(slugRow.status)) {
+      res.status(404).json({ error: "Card not found" });
+      return;
+    }
+
+    if (!prisma.slugClick) {
+      res.json({ ok: true });
+      return;
+    }
+
+    await prisma.$transaction(async (tx) => {
+      let isUnique = false;
+      if (ipHash) {
+        const existing = await tx.slugClick.findFirst({
+          where: {
+            fullSlug: slugRow.fullSlug,
+            ipHash,
+            clickedAt: { gte: dayStart },
+          },
+          select: { id: true },
+        });
+        isUnique = !existing;
+      }
+
+      await tx.slugClick.create({
+        data: {
+          fullSlug: slugRow.fullSlug,
+          device,
+          ipHash,
+          isUnique,
+        },
+      });
+    });
+
+    res.json({ ok: true });
+  }),
+);
+
+router.post(
   "/:slug/view",
   asyncHandler(async (req, res) => {
     const requestedSlug = sanitizeSlug(req.params.slug);

@@ -1,9 +1,10 @@
-const { startOfDay, startOfMonth, addDays, addMonths, subDays, subMonths, format } = require("date-fns");
+const { startOfDay, startOfMonth, addDays, addMonths, subDays, subMonths } = require("date-fns");
 const { fromZonedTime, toZonedTime } = require("date-fns-tz");
 
 const { prisma } = require("../db/prisma");
 const { env } = require("../config/env");
 const { getFeatureSetting } = require("./feature-settings");
+const { getScoreLeaderboard } = require("./unq-score");
 
 function normalizePeriod(period) {
   if (period === "month" || period === "all") {
@@ -53,91 +54,10 @@ function getPeriodRange(period, timezone = env.TIMEZONE) {
   };
 }
 
-async function getExcludedSet() {
-  if (!prisma.leaderboardExclusion || typeof prisma.leaderboardExclusion.findMany !== "function") {
-    return new Set();
-  }
-  const rows = await prisma.leaderboardExclusion.findMany({ select: { fullSlug: true } });
-  return new Set(rows.map((row) => row.fullSlug));
-}
-
-async function groupViews({ startUtc, endUtc, excludedSet }) {
-  const grouped = await prisma.slugView.groupBy({
-    by: ["fullSlug"],
-    where: {
-      isUnique: true,
-      viewedAt: { gte: startUtc, lt: endUtc },
-    },
-    _count: { _all: true },
-  });
-
-  const filtered = grouped
-    .map((row) => ({ slug: row.fullSlug, views: row._count._all || 0 }))
-    .filter((row) => !excludedSet.has(row.slug) && row.views > 0)
-    .sort((a, b) => b.views - a.views || a.slug.localeCompare(b.slug));
-
-  return filtered;
-}
-
-async function buildLeaderboard(period = "week", options = {}) {
-  const timezone = options.timezone || env.TIMEZONE;
+async function buildLeaderboard(period = "week") {
   const settings = await getFeatureSetting("leaderboard");
-  const range = getPeriodRange(period, timezone);
-  const excludedSet = await getExcludedSet();
-
-  const [current, previous] = await Promise.all([
-    groupViews({ startUtc: range.startUtc, endUtc: range.endUtc, excludedSet }),
-    range.period === "all"
-      ? Promise.resolve([])
-      : groupViews({ startUtc: range.previousStartUtc, endUtc: range.previousEndUtc, excludedSet }),
-  ]);
-
-  const previousRanks = new Map(previous.map((row, index) => [row.slug, index + 1]));
-  const slugs = current.map((row) => row.slug);
-
-  const slugRows = slugs.length && prisma.slug && typeof prisma.slug.findMany === "function"
-    ? await prisma.slug.findMany({
-        where: { fullSlug: { in: slugs } },
-        select: {
-          fullSlug: true,
-          ownerTelegramId: true,
-          owner: {
-            select: {
-              firstName: true,
-              username: true,
-              photoUrl: true,
-              plan: true,
-              profileCard: {
-                select: { name: true, avatarUrl: true },
-              },
-            },
-          },
-        },
-      })
-    : [];
-
-  const slugMap = new Map(slugRows.map((row) => [row.fullSlug, row]));
-  const items = current.map((row, index) => {
-    const rank = index + 1;
-    const prevRank = previousRanks.get(row.slug) || null;
-    const delta = prevRank ? prevRank - rank : null;
-    const source = slugMap.get(row.slug);
-    const owner = source?.owner || null;
-
-    return {
-      rank,
-      slug: row.slug,
-      views: row.views,
-      previousRank: prevRank,
-      delta,
-      ownerTelegramId: source?.ownerTelegramId || null,
-      ownerName: owner?.profileCard?.name || owner?.firstName || owner?.username || "UNQ+ User",
-      ownerUsername: owner?.username || null,
-      avatarUrl: owner?.profileCard?.avatarUrl || owner?.photoUrl || "/brand/unq-mark.svg",
-      plan: owner?.plan || "basic",
-    };
-  });
-
+  const range = getPeriodRange(period);
+  const items = await getScoreLeaderboard(300);
   const publicLimit = Math.max(1, Math.min(200, Number(settings.publicLimit) || 20));
 
   return {
@@ -150,29 +70,22 @@ async function buildLeaderboard(period = "week", options = {}) {
 }
 
 async function getUserLeaderboardSummary({ telegramId, period = "week" }) {
-  if (!telegramId) {
-    return null;
-  }
+  if (!telegramId) return null;
   const board = await buildLeaderboard(period);
-  const userRows = board.items.filter((row) => row.ownerTelegramId === telegramId);
-  if (!userRows.length) {
-    return null;
-  }
-  const best = userRows.slice().sort((a, b) => a.rank - b.rank)[0];
+  const target = board.items.find((item) => item.telegramId === telegramId);
+  if (!target) return null;
+
   const limit = Math.max(1, Number(board.settings.publicLimit) || 20);
   const topN = board.items.slice(0, limit);
-  const cutoffViews = topN.length === limit ? topN[topN.length - 1].views : 0;
+  const cutoffScore = topN.length === limit ? Number(topN[topN.length - 1].score || 0) : 0;
   return {
-    rank: best.rank,
-    slug: best.slug,
-    views: best.views,
-    toTopViews: best.rank <= limit ? 0 : Math.max(0, cutoffViews - best.views + 1),
+    rank: target.rank,
+    slug: target.slug,
+    score: target.score,
+    views: target.views,
+    toTopScore: target.rank <= limit ? 0 : Math.max(0, cutoffScore - Number(target.score || 0) + 1),
     limit,
   };
-}
-
-function matchesSpike(rows, threshold) {
-  return Array.isArray(rows) && rows.length >= threshold;
 }
 
 async function detectSuspiciousActivity() {

@@ -4,6 +4,7 @@ const { getActiveFlashSale, resolveConditionLabel } = require("./flash-sales");
 const { processDropsSchedule } = require("./drops");
 const { detectSuspiciousActivity } = require("./leaderboard");
 const { markReferralPaidByReferredTelegramId } = require("./referrals");
+const { ensureDailyRecalculation } = require("./unq-score");
 
 const LOOP_MS = 60 * 1000;
 
@@ -58,6 +59,7 @@ async function runJobsOnce() {
   await processDropsSchedule();
   await detectSuspiciousActivity();
   await processReferralPaidSync();
+  await ensureDailyRecalculation();
 }
 
 function startLiveJobs() {

@@ -19,6 +19,7 @@ const {
   getPlanBadgeLabel,
 } = require("../../services/profile");
 const { isSupportedAvatarBuffer, saveAvatarFromBuffer, deleteAvatarByPublicPath } = require("../../services/avatar");
+const { getProfileScoreByTelegramId, recalculateAndRefreshPercentiles } = require("../../services/unq-score");
 
 const router = express.Router();
 const upload = multer({
@@ -117,6 +118,14 @@ function assertUserActive(user, res) {
   return true;
 }
 
+async function safeRecalculateScore(telegramId) {
+  try {
+    await recalculateAndRefreshPercentiles(telegramId);
+  } catch (error) {
+    console.error("[express-app] failed to recalculate score", error);
+  }
+}
+
 async function getUserSlugsWithStats(telegramId) {
   const slugs = await prisma.slug.findMany({
     where: { ownerTelegramId: telegramId },
@@ -180,13 +189,14 @@ router.get(
       return;
     }
 
-    const [slugs, card, requests] = await Promise.all([
+    const [slugs, card, requests, score] = await Promise.all([
       getUserSlugsWithStats(user.telegramId),
       prisma.profileCard.findUnique({ where: { ownerTelegramId: user.telegramId } }),
       prisma.slugRequest.findMany({
         where: { telegramId: user.telegramId },
         orderBy: { createdAt: "desc" },
       }),
+      getProfileScoreByTelegramId(user.telegramId),
     ]);
 
     const effective = getEffectivePlan(user);
@@ -226,6 +236,7 @@ router.get(
         adminNote: item.adminNote,
         createdAt: item.createdAt,
       })),
+      score,
     });
   }),
 );
@@ -270,6 +281,7 @@ router.patch(
       where: { fullSlug },
       data: { status: nextStatus },
     });
+    await safeRecalculateScore(user.telegramId);
 
     res.json({ ok: true, slug: updated.fullSlug, status: updated.status });
   }),
@@ -302,6 +314,7 @@ router.patch(
         data: { isPrimary: true },
       }),
     ]);
+    await safeRecalculateScore(user.telegramId);
 
     res.json({ ok: true, slug: fullSlug, isPrimary: true });
   }),
@@ -430,6 +443,7 @@ router.put(
 
       return cardRow;
     });
+    await safeRecalculateScore(user.telegramId);
 
     res.json({ ok: true, card: parseProfileCardRow(saved) });
   }),
@@ -581,6 +595,7 @@ router.post(
         data: { status: "paused" },
       }),
     ]);
+    await safeRecalculateScore(user.telegramId);
 
     res.json({ ok: true });
   }),

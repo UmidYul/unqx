@@ -117,6 +117,7 @@
     const showPausedBanner = Boolean(options.showPausedBanner);
     const pausedText = String(options.pausedText || "Визитка на паузе — посетители видят заглушку");
     const viewsLabel = String(options.viewsLabel || card.viewsLabel || "0 просмотров");
+    const score = options.score && typeof options.score === "object" ? options.score : null;
 
     const tagsHtml =
       card.tags.length > 0
@@ -128,10 +129,27 @@
         ? card.buttons
             .map(
               (button) =>
-                `<a href="${esc(button.url)}" target="_blank" rel="noopener noreferrer" class="public-card-button unq-ref-action-btn">${iconSvg(classifyButton(button))}<span>${esc(button.label)}</span></a>`,
+                `<a href="${esc(button.url)}" target="_blank" rel="noopener noreferrer" data-track-action class="public-card-button unq-ref-action-btn">${iconSvg(classifyButton(button))}<span>${esc(button.label)}</span></a>`,
             )
             .join("")
         : '<p class="rounded-xl border border-neutral-200 bg-neutral-50 py-3 text-center text-xs text-neutral-500">Владелец пока не добавил контактные кнопки.</p>';
+    const scoreBlock = score
+      ? `<div class="unq-score-block">
+          <div class="unq-score-head">
+            <span class="unq-score-label">UNQ SCORE</span>
+            ${score.rarityLabel ? `<span class="unq-rarity-badge">${esc(score.rarityLabel)}</span>` : ""}
+          </div>
+          <div class="unq-score-row">
+            <span class="unq-score-value">${Number(score.score || 0)}</span>
+            <span class="unq-score-top">Топ ${Number(score.topPercent || 100)}%</span>
+          </div>
+          ${
+            score.isForming
+              ? '<p class="unq-score-note">UNQ Score формируется · обновляется каждые 24ч</p>'
+              : `<div class="unq-score-progress"><span style="width:${Math.max(0, Math.min(100, (Number(score.score || 0) / 999) * 100)).toFixed(2)}%"></span></div>`
+          }
+        </div>`
+      : "";
 
     const socialLinks = [
       { label: "Instagram", url: findSocialUrl(card.buttons, [/instagram/i, /insta/i]), icon: "instagram" },
@@ -177,6 +195,7 @@
             </div>
           </div>
           ${tagsHtml}
+          ${scoreBlock}
           <div class="unq-ref-divider"></div>
           <div class="unq-ref-actions">${buttonsHtml}</div>
           <div class="unq-ref-divider"></div>

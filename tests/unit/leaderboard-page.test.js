@@ -38,8 +38,10 @@ describe("leaderboard page", () => {
           slug: "ABC123",
           ownerName: "Alex",
           avatarUrl: "/brand/unq-mark.svg",
+          score: 512,
+          topPercent: 9,
+          rarityLabel: "RARE",
           views: 100,
-          delta: 1,
           plan: "premium",
         },
       ],
@@ -52,10 +54,11 @@ describe("leaderboard page", () => {
 
   test("renders user summary block", async () => {
     const html = await renderLeaderboardTemplate({
-      userSummary: { rank: 5, views: 50, limit: 20, toTopViews: 11 },
+      userSummary: { rank: 5, score: 412, limit: 20, toTopScore: 89 },
     });
-    expect(html).toContain("Твоя позиция: #5");
-    expect(html).toContain("До топ-20 осталось 11 просмотров");
+    expect(html).toContain("Твой Score: 412");
+    expect(html).toContain("Позиция #5");
+    expect(html).toContain("До топ-20 нужно ещё 89 баллов");
   });
 
   test("contains leaderboard share live region for accessibility", async () => {

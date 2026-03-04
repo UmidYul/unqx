@@ -15,6 +15,7 @@
   const root = window.CardView.mountCardView(host, payload.card || {}, {
     shareUrl: payload.shareUrl || window.location.href,
     viewsLabel: payload.viewsLabel || "",
+    score: payload.score || null,
   });
   if (!(root instanceof HTMLElement)) {
     return;
@@ -27,6 +28,7 @@
   const avatarImage = root.querySelector("[data-avatar-image]");
   const avatarFallback = root.querySelector("[data-avatar-fallback]");
   const saveContactButton = root.querySelector("[data-save-contact]");
+  const actionButtons = Array.from(root.querySelectorAll("[data-track-action]"));
   const liveRegion = document.createElement("div");
   liveRegion.setAttribute("aria-live", "polite");
   liveRegion.style.position = "absolute";
@@ -179,6 +181,25 @@
       document.body.removeChild(link);
       URL.revokeObjectURL(downloadUrl);
       announce("Контакт сохранен");
+    });
+  }
+
+  if (actionButtons.length && slug) {
+    const clickUrl = `/api/cards/${encodeURIComponent(slug)}/click`;
+    actionButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        if (navigator.sendBeacon) {
+          const body = new Blob(["{}"], { type: "application/json" });
+          navigator.sendBeacon(clickUrl, body);
+          return;
+        }
+        void fetch(clickUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: "{}",
+          keepalive: true,
+        });
+      });
     });
   }
 

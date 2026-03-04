@@ -81,7 +81,7 @@
     return `<span class="admin-status-chip is-${m.tone}"><span class="admin-status-dot"></span>${X(m.label)}</span>`;
   }
   function kebabButton() {
-    return '<button type="button" class="admin-kebab-btn" data-kebab-toggle aria-label="Действия" aria-haspopup="menu" aria-expanded="false"><span class="admin-kebab-label">ДЕЙСТВИЯ</span></button>';
+    return `<button type="button" class="admin-kebab-btn" data-kebab-toggle aria-label="Действия" aria-haspopup="menu" aria-expanded="false">${I("more", 16)}</button>`;
   }
   function menuItem({ label, icon, attrs = "", danger = false }) {
     return `<button type="button" class="admin-menu-item${danger ? " is-danger" : ""}" ${attrs}>${I(icon, 16)}<span>${X(label)}</span></button>`;
@@ -199,6 +199,7 @@
       { n: "Выручка разово", v: `${P(oneTime.today || 0)} • ${P(oneTime.week || 0)} • ${P(oneTime.month || 0)}`, i: "creditCard" },
       { n: "Выручка ежемесячная", v: P(s.monthlyRecurringRevenue || 0), i: "calendar" },
       { n: "Активных визиток", v: s.activeCards || 0, i: "link2" },
+      { n: "Средний UNQ Score", v: Number(s.averageUnqScore || 0).toLocaleString("ru-RU"), i: "chart" },
     ].map((x) => `<article class="admin-kpi-card"><div class="admin-kpi-icon">${I(x.i, 20)}</div><p class="admin-kpi-value">${X(x.v)}</p><p class="admin-kpi-label">${x.n}</p></article>`).join("");
     const top = p.topUnboughtPatterns || [];
     table.innerHTML = top.length ? top.map((x) => `<tr class="border-t border-neutral-100"><td class="px-3 py-2 font-mono">${X(x.pattern)}</td><td class="px-3 py-2 font-semibold">${x.count}</td></tr>`).join("") : '<tr><td colspan="2" class="px-3 py-8 text-center text-neutral-500">Нет данных</td></tr>';
@@ -207,6 +208,15 @@
       new Chart(document.getElementById("analytics-orders-chart"), { type: "line", data: { labels: d.map((x) => x.date), datasets: [{ label: "Заявки", data: d.map((x) => x.count), borderColor: "#111827", tension: 0.25 }] }, options: { responsive: true, maintainAspectRatio: false } });
       const t = p.tariffSplit || { basic: 0, premium: 0 };
       new Chart(document.getElementById("analytics-tariff-chart"), { type: "pie", data: { labels: ["Базовый", "Премиум"], datasets: [{ data: [t.basic || 0, t.premium || 0], backgroundColor: ["#e5e7eb", "#111827"] }] }, options: { responsive: true, maintainAspectRatio: false } });
+      const dScore = p.scoreDistribution || [];
+      new Chart(document.getElementById("analytics-score-distribution-chart"), {
+        type: "bar",
+        data: {
+          labels: dScore.map((x) => x.range),
+          datasets: [{ data: dScore.map((x) => x.count), backgroundColor: "#111827" }],
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } },
+      });
     }
   }
 
@@ -263,13 +273,14 @@
     if (!(form instanceof HTMLFormElement) || !(table instanceof HTMLElement)) return;
     const q = {
       q: getFormValue(form, "q", ""),
+      sort: getFormValue(form, "sort", "created_desc"),
       page: getFormValue(form, "page", "1"),
     };
-    setDashboardQuery({ u_q: q.q, u_page: q.page });
+    setDashboardQuery({ u_q: q.q, u_sort: q.sort, u_page: q.page });
     const r = await fetch(`/api/admin/users?${Q(q)}`);
     if (!r.ok) {
       const msg = await E(r);
-      table.innerHTML = `<tr><td colspan="8" class="px-3 py-8 text-center text-red-700">Не удалось загрузить пользователей: ${X(msg)}</td></tr>`;
+      table.innerHTML = `<tr><td colspan="10" class="px-3 py-8 text-center text-red-700">Не удалось загрузить пользователей: ${X(msg)}</td></tr>`;
       return;
     }
     const payload = await r.json();
@@ -286,6 +297,8 @@
             const statusLabel = x.status === "blocked" ? "Заблокирован" : x.status === "deactivated" ? "Деактивирован" : "Активен";
             const braceletSlugs = Array.isArray(x.slugs) ? x.slugs.filter((s) => s.hasBracelet).map((s) => s.fullSlug).join(",") : "";
             const expiryBadge = x.isExpiredPlan ? '<span class="ml-1 inline-flex rounded-full bg-red-100 px-1.5 py-0.5 text-[10px] font-semibold text-red-700">Истёк</span>' : "";
+            const score = Number(x.unqScore?.score || 0);
+            const scoreBreakdown = x.unqScore?.breakdown || {};
             const menu = menuWrap([
               menuItem({ label: "Сменить тариф", icon: "crown", attrs: `data-act="up" data-id="${X(x.telegramId)}" data-current-plan="${X(x.plan)}" data-active-slugs="${Number(x.activeSlugCount || 0)}" data-bracelet-slugs="${X(braceletSlugs)}"` }),
               menuItem({ label: "Продлить тариф", icon: "calendar", attrs: `data-act="ux" data-id="${X(x.telegramId)}"` }),
@@ -294,10 +307,10 @@
               menuSeparator(),
               menuItem({ label: x.status === "blocked" ? "Разблокировать" : "Заблокировать", icon: "shieldOff", attrs: `data-act="ub" data-id="${X(x.telegramId)}" data-status="${X(x.status)}"`, danger: x.status !== "blocked" }),
             ].join(""));
-            return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3">${X(x.username ? `@${x.username}` : x.telegramId)}</td><td class="px-4 py-3">${X(x.name)}</td><td class="px-4 py-3"><span class="inline-flex rounded-full border border-neutral-200 px-2 py-1 text-xs font-medium">${x.plan === "premium" ? "Премиум" : "Базовый"}</span></td><td class="px-4 py-3 text-xs text-neutral-600">${x.planExpiresAt ? D(x.planExpiresAt) : "—"} ${expiryBadge}</td><td class="px-4 py-3 text-xs">${X(slugText)}</td><td class="px-4 py-3">${x.hasCard ? "Есть" : "Нет"}</td><td class="px-4 py-3">${statusChip(x.status === "blocked" ? "rejected" : "approved")}</td><td class="px-4 py-3">${D(x.createdAt)}</td><td class="px-4 py-3"><div class="admin-row-actions">${menu}</div></td></tr>`;
+            return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3">${X(x.username ? `@${x.username}` : x.telegramId)}</td><td class="px-4 py-3">${X(x.name)}</td><td class="px-4 py-3"><span class="inline-flex rounded-full border border-neutral-200 px-2 py-1 text-xs font-medium">${x.plan === "premium" ? "Премиум" : "Базовый"}</span></td><td class="px-4 py-3 text-xs text-neutral-600">${x.planExpiresAt ? D(x.planExpiresAt) : "—"} ${expiryBadge}</td><td class="px-4 py-3 text-xs">${X(slugText)}</td><td class="px-4 py-3">${x.hasCard ? "Есть" : "Нет"}</td><td class="px-4 py-3"><button type="button" data-act="toggle-score" data-id="${X(x.telegramId)}" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-2.5 py-1 text-sm font-semibold">${score}</button></td><td class="px-4 py-3">${statusChip(x.status === "blocked" ? "rejected" : "approved")}</td><td class="px-4 py-3">${D(x.createdAt)}</td><td class="px-4 py-3"><div class="admin-row-actions">${menu}</div></td></tr><tr class="border-t border-neutral-100 hidden" data-score-row="${X(x.telegramId)}"><td colspan="10" class="px-4 py-2 text-xs text-neutral-600">Просмотры: ${Number(scoreBreakdown.views || 0)} | Редкость: ${Number(scoreBreakdown.slugRarity || 0)} | Срок: ${Number(scoreBreakdown.tenure || 0)} | CTR: ${Number(scoreBreakdown.ctr || 0)} | Браслет: ${Number(scoreBreakdown.bracelet || 0)} | Тариф: ${Number(scoreBreakdown.plan || 0)}</td></tr>`;
           })
           .join("")
-      : `<tr><td colspan="8" class="px-3 py-10 text-center text-neutral-500"><div class="inline-flex flex-col items-center gap-2">${I("userCheck", 48)}<span>Нет пользователей</span></div></td></tr>`;
+      : `<tr><td colspan="10" class="px-3 py-10 text-center text-neutral-500"><div class="inline-flex flex-col items-center gap-2">${I("userCheck", 48)}<span>Нет пользователей</span></div></td></tr>`;
     renderPager("users-pagination", payload.pagination, (nextPage) => {
       setFormValue(form, "page", String(nextPage));
       void loadUsers();
@@ -359,7 +372,7 @@
           menuItem({ label: x.isActive ? "Выключить" : "Включить", icon: x.isActive ? "toggleLeft" : "toggleRight", attrs: `data-act="cg" data-id="${x.id}" data-n="${x.isActive ? 0 : 1}"` }),
           menuItem({ label: "QR-код", icon: "qr", attrs: `data-act="qr" data-slug="${x.slug}"` }),
         ].join(""));
-        return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3 font-mono">#${X(x.slug)} <a href="/${encodeURIComponent(x.slug)}" target="_blank" rel="noopener noreferrer" class="ml-1 inline-flex align-middle text-neutral-400">${I("link2", 14)}</a></td><td class="px-4 py-3">${X(x.name)}</td><td class="px-4 py-3">${x.tariff === "premium" ? "Премиум" : "Базовый"}</td><td class="px-4 py-3">${statusChip(x.isActive ? "approved" : "rejected")}</td><td class="px-4 py-3">${Number(x.viewsCount || 0).toLocaleString("ru-RU")}</td><td class="px-4 py-3">${new Date(x.createdAt).toLocaleDateString("ru-RU")}</td><td class="px-4 py-3"><div class="admin-row-actions">${menu}</div></td></tr>`;
+        return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3 font-mono">#${X(x.slug)}</td><td class="px-4 py-3">${X(x.name)}</td><td class="px-4 py-3">${x.tariff === "premium" ? "Премиум" : "Базовый"}</td><td class="px-4 py-3">${statusChip(x.isActive ? "approved" : "rejected")}</td><td class="px-4 py-3">${Number(x.viewsCount || 0).toLocaleString("ru-RU")}</td><td class="px-4 py-3">${new Date(x.createdAt).toLocaleDateString("ru-RU")}</td><td class="px-4 py-3"><div class="admin-row-actions">${menu}</div></td></tr>`;
       }).join("")
       : `<tr><td colspan="7" class="px-3 py-10 text-center text-neutral-500"><div class="inline-flex flex-col items-center gap-2">${I("creditCard", 48)}<span>Нет данных</span></div></td></tr>`;
     renderPager("cards-pagination", payload.pagination, (nextPage) => {
@@ -434,6 +447,35 @@
       setFormValue(form, "page", String(nextPage));
       void loadLogs();
     });
+  }
+
+  async function loadScoreManagement() {
+    const table = document.getElementById("score-table");
+    const runsTable = document.getElementById("score-runs-table");
+    const visibilityToggle = document.getElementById("score-visibility-toggle");
+    if (!(table instanceof HTMLElement) || !(runsTable instanceof HTMLElement)) return;
+
+    const [overviewRes, runsRes, settingsRes] = await Promise.all([
+      fetch("/api/admin/score/overview"),
+      fetch("/api/admin/score/runs"),
+      fetch("/api/admin/score/settings"),
+    ]);
+    if (!overviewRes.ok) return;
+    const overview = await overviewRes.json();
+    const runs = runsRes.ok ? await runsRes.json() : { items: [] };
+    const settings = settingsRes.ok ? await settingsRes.json() : { settings: { enabledOnCards: true } };
+
+    table.innerHTML = (overview.items || []).length
+      ? overview.items.map((x) => `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3">${X(x.userName)}</td><td class="px-4 py-3 font-mono">${X(x.slug || "—")}</td><td class="px-4 py-3 text-lg font-black">${Number(x.score || 0)}</td><td class="px-4 py-3">Топ ${Math.max(1, Math.ceil(100 - Number(x.percentile || 0)))}%</td><td class="px-4 py-3 text-xs">${D(x.calculatedAt)}</td><td class="px-4 py-3"><button type="button" data-act="score-recalc-one" data-id="${X(x.telegramId)}" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold">Пересчитать</button></td></tr>`).join("")
+      : '<tr><td colspan="6" class="px-3 py-8 text-center text-neutral-500">Нет данных</td></tr>';
+
+    runsTable.innerHTML = (runs.items || []).length
+      ? runs.items.map((x) => `<tr class="border-t border-neutral-100"><td class="px-3 py-2">${D(x.startedAt)}</td><td class="px-3 py-2">${Number(x.processedUsers || 0)}</td><td class="px-3 py-2">${Number(x.averageMsPerUser || 0).toFixed(2)} мс</td></tr>`).join("")
+      : '<tr><td colspan="3" class="px-3 py-8 text-center text-neutral-500">Запусков пока нет</td></tr>';
+
+    if (visibilityToggle instanceof HTMLInputElement) {
+      visibilityToggle.checked = Boolean(settings.settings?.enabledOnCards);
+    }
   }
   const am = document.getElementById("activation-modal");
   const af = document.getElementById("activation-form");
@@ -745,6 +787,30 @@
     if (a === "tv") { const id = n.getAttribute("data-id"), isVisible = n.getAttribute("data-n") === "1"; if (!id) return; const r = await fetch(`/api/admin/testimonials/${id}/visibility`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({ isVisible }) }); if (!r.ok) alert(await E(r)); else void loadTestimonials(); }
     if (a === "td") { const id = n.getAttribute("data-id"); if (!id || !confirm("Удалить отзыв?")) return; const r = await fetch(`/api/admin/testimonials/${id}`, { method: "DELETE", headers: H() }); if (!r.ok) alert(await E(r)); else void loadTestimonials(); }
     if (a === "te") { const encoded = n.getAttribute("data-json"); if (!encoded) return; try { openTe(JSON.parse(decodeURIComponent(encoded))); } catch {} }
+    if (a === "toggle-score") {
+      const id = n.getAttribute("data-id");
+      if (!id) return;
+      const row = document.querySelector(`[data-score-row="${id}"]`);
+      if (row instanceof HTMLElement) {
+        row.classList.toggle("hidden");
+      }
+      return;
+    }
+    if (a === "score-recalc-one") {
+      const id = n.getAttribute("data-id");
+      if (!id) return;
+      const r = await fetch(`/api/admin/score/recalculate/${encodeURIComponent(id)}`, {
+        method: "POST",
+        headers: H({ "Content-Type": "application/json" }),
+        body: JSON.stringify({}),
+      });
+      if (!r.ok) alert(await E(r));
+      else {
+        if (tab === "score") void loadScoreManagement();
+        if (tab === "users") void loadUsers();
+      }
+      return;
+    }
   });
 
   document.getElementById("orders-filters")?.addEventListener("submit", (e) => { e.preventDefault(); const f = e.currentTarget; if (f instanceof HTMLFormElement) setFormValue(f, "page", "1"); void loadOrders(); });
@@ -765,6 +831,21 @@
   document.getElementById("cleanup-logs-btn")?.addEventListener("click", async () => {
     const r = await fetch("/api/admin/logs/cleanup", { method: "POST", headers: H() });
     if (!r.ok) alert(await E(r)); else void loadLogs();
+  });
+  document.getElementById("score-recalculate-all-btn")?.addEventListener("click", async () => {
+    const r = await fetch("/api/admin/score/recalculate-all", { method: "POST", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({}) });
+    if (!r.ok) alert(await E(r));
+    else void loadScoreManagement();
+  });
+  document.getElementById("score-visibility-toggle")?.addEventListener("change", async (event) => {
+    const target = event.currentTarget;
+    if (!(target instanceof HTMLInputElement)) return;
+    const r = await fetch("/api/admin/score/settings", {
+      method: "PATCH",
+      headers: H({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ enabledOnCards: target.checked }),
+    });
+    if (!r.ok) alert(await E(r));
   });
 
   if (tab === "orders") {
@@ -790,6 +871,7 @@
     const form = document.getElementById("users-filters");
     if (form instanceof HTMLFormElement) {
       setFormValue(form, "q", getInitial("u_q", "q") || "");
+      setFormValue(form, "sort", getInitial("u_sort", "sort") || "created_desc");
       setFormValue(form, "page", getInitial("u_page", "page") || "1");
     }
   }
@@ -824,4 +906,5 @@
   if (tab === "bracelets") void loadBracelets();
   if (tab === "testimonials") void loadTestimonials();
   if (tab === "logs") void loadLogs();
+  if (tab === "score") void loadScoreManagement();
 })();

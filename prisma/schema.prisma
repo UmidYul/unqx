@@ -293,6 +293,8 @@ model User {
   referralsMade        Referral[]    @relation("ReferrerReferrals")
   referralsReceived    Referral[]    @relation("ReferredReferrals")
   dropWaitlistEntries  DropWaitlist[]
+  unqScore             UnqScore?
+  scoreHistory         ScoreHistory[]
 
   @@index([plan, planExpiresAt])
   @@index([status])
@@ -392,6 +394,63 @@ model SlugView {
   @@index([viewedAt])
   @@index([isUnique, viewedAt])
   @@map("slug_views")
+}
+
+model SlugClick {
+  id       String   @id @default(uuid())
+  fullSlug String   @map("full_slug") @db.VarChar(20)
+  clickedAt DateTime @default(now()) @map("clicked_at")
+  device   String?  @db.VarChar(20)
+  ipHash   String?  @map("ip_hash") @db.VarChar(64)
+  isUnique Boolean  @default(false) @map("is_unique")
+
+  @@index([fullSlug, clickedAt])
+  @@index([fullSlug, ipHash, clickedAt])
+  @@index([clickedAt])
+  @@map("slug_clicks")
+}
+
+model UnqScore {
+  telegramId      String   @id @map("telegram_id") @db.VarChar(40)
+  user            User     @relation(fields: [telegramId], references: [telegramId], onDelete: Cascade)
+  score           Int      @default(0)
+  scoreViews      Int      @default(0) @map("score_views")
+  scoreSlugRarity Int      @default(0) @map("score_slug_rarity")
+  scoreTenure     Int      @default(0) @map("score_tenure")
+  scoreCtr        Int      @default(0) @map("score_ctr")
+  scoreBracelet   Int      @default(0) @map("score_bracelet")
+  scorePlan       Int      @default(0) @map("score_plan")
+  percentile      Float    @default(0)
+  calculatedAt    DateTime @default(now()) @map("calculated_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@index([score(sort: Desc)])
+  @@index([percentile(sort: Desc)])
+  @@map("unq_scores")
+}
+
+model ScoreHistory {
+  id         String   @id @default(uuid())
+  telegramId String   @map("telegram_id") @db.VarChar(40)
+  user       User     @relation(fields: [telegramId], references: [telegramId], onDelete: Cascade)
+  score      Int
+  recordedAt DateTime @map("recorded_at")
+
+  @@unique([telegramId, recordedAt])
+  @@index([recordedAt])
+  @@index([telegramId, recordedAt])
+  @@map("score_history")
+}
+
+model ScoreRecalculationRun {
+  id              String   @id @default(uuid())
+  processedUsers  Int      @default(0) @map("processed_users")
+  averageMsPerUser Float   @default(0) @map("average_ms_per_user")
+  startedAt       DateTime @default(now()) @map("started_at")
+  finishedAt      DateTime @default(now()) @map("finished_at")
+
+  @@index([startedAt(sort: Desc)])
+  @@map("score_recalculation_runs")
 }
 
 model ReferralRewardRule {
