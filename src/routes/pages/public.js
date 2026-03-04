@@ -35,7 +35,69 @@ function isSlugStatusDecodeError(error) {
 
 function isSlugMissingColumnError(error) {
   if (!error || typeof error !== "object") return false;
-  return error.code === "P2022" && String(error?.meta?.modelName || "") === "Slug";
+  return error.code === "P2022";
+}
+
+function isUserMissingColumnError(error) {
+  if (!error || typeof error !== "object") return false;
+  return error.code === "P2022";
+}
+
+async function findUserByTelegramIdWithLegacyFallback(telegramId) {
+  try {
+    return await prisma.user.findUnique({
+      where: { telegramId },
+      select: {
+        telegramId: true,
+        firstName: true,
+        username: true,
+        photoUrl: true,
+        displayName: true,
+        status: true,
+        plan: true,
+      },
+    });
+  } catch (error) {
+    if (!isUserMissingColumnError(error)) {
+      throw error;
+    }
+    const rows = await prisma.$queryRaw`
+      SELECT
+        telegram_id AS "telegramId",
+        first_name AS "firstName",
+        username,
+        photo_url AS "photoUrl"
+      FROM users
+      WHERE telegram_id = ${telegramId}
+      LIMIT 1
+    `;
+    const row = Array.isArray(rows) ? rows[0] : null;
+    if (!row) return null;
+    return {
+      ...row,
+      displayName: null,
+      status: "active",
+      plan: "basic",
+    };
+  }
+}
+
+async function findUserByRefCodeWithLegacyFallback(refCode) {
+  try {
+    return await prisma.user.findFirst({
+      where: { refCode },
+      select: {
+        firstName: true,
+        displayName: true,
+        username: true,
+      },
+    });
+  } catch (error) {
+    if (!isUserMissingColumnError(error)) {
+      throw error;
+    }
+    return null;
+  }
 }
 
 async function findSlugByFullSlugWithLegacyFallback(fullSlug) {
@@ -44,20 +106,12 @@ async function findSlugByFullSlugWithLegacyFallback(fullSlug) {
       where: { fullSlug },
       select: {
         id: true,
-        letters: true,
-        digits: true,
         fullSlug: true,
         ownerTelegramId: true,
         status: true,
         isPrimary: true,
-        pauseMessage: true,
-        requestedAt: true,
-        pendingExpiresAt: true,
-        approvedAt: true,
-        activatedAt: true,
         createdAt: true,
         updatedAt: true,
-        owner: true,
       },
     });
   } catch (error) {
@@ -68,8 +122,6 @@ async function findSlugByFullSlugWithLegacyFallback(fullSlug) {
     const rows = await prisma.$queryRaw`
       SELECT
         id,
-        letters,
-        digits,
         full_slug AS "fullSlug",
         owner_telegram_id AS "ownerTelegramId",
         status::text AS "status",
@@ -91,6 +143,8 @@ async function findSlugByFullSlugWithLegacyFallback(fullSlug) {
 
     return {
       ...row,
+      letters: null,
+      digits: null,
       owner: null,
     };
   }
@@ -233,14 +287,7 @@ router.get(
       req.session.pendingRefCode = refCode;
     }
 
-    const referrer = await prisma.user.findFirst({
-      where: { refCode },
-      select: {
-        firstName: true,
-        displayName: true,
-        username: true,
-      },
-    });
+    const referrer = await findUserByRefCodeWithLegacyFallback(refCode);
 
     const referrerName = (referrer?.displayName || referrer?.firstName || "").trim();
     const referrerUsername = referrer?.username ? `@${referrer.username}` : "";
@@ -288,15 +335,7 @@ router.get(
   requireUserPage,
   asyncHandler(async (req, res) => {
     const sessionUser = getUserSession(req);
-    const user = await prisma.user.findUnique({
-      where: { telegramId: sessionUser.telegramId },
-      select: {
-        telegramId: true,
-        firstName: true,
-        username: true,
-        status: true,
-      },
-    });
+    const user = await findUserByTelegramIdWithLegacyFallback(sessionUser.telegramId);
 
     if (!user || user.status === "blocked" || user.status === "deactivated") {
       res.redirect("/");
@@ -435,7 +474,7 @@ router.get(
         const owner = slugRow.owner
           ? slugRow.owner
           : slugRow.ownerTelegramId
-            ? await prisma.user.findUnique({ where: { telegramId: slugRow.ownerTelegramId } })
+            ? await findUserByTelegramIdWithLegacyFallback(slugRow.ownerTelegramId)
             : null;
         if (owner && (owner.status === "blocked" || owner.status === "deactivated")) {
           res.status(200).render("public/slug-state", {
@@ -488,7 +527,7 @@ router.get(
         }
 
         const [owner, profileCard, views] = await Promise.all([
-          prisma.user.findUnique({ where: { telegramId: slugRow.ownerTelegramId } }),
+          findUserByTelegramIdWithLegacyFallback(slugRow.ownerTelegramId),
           prisma.profileCard.findUnique({ where: { ownerTelegramId: slugRow.ownerTelegramId } }),
           prisma.slugView.count({
             where: {
