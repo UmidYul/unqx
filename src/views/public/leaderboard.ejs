@@ -37,9 +37,11 @@
         </div>
         <div class="mt-2 flex items-center justify-between text-xs text-neutral-500">
           <span><%= item.plan === 'premium' ? 'ПРЕМИУМ' : 'БАЗОВЫЙ' %></span>
+          <% if (item.delta !== null) { %>
           <span>
-            <% if (item.delta === null) { %>—<% } else if (item.delta > 0) { %>↑ +<%= item.delta %><% } else if (item.delta < 0) { %>↓ <%= item.delta %><% } else { %>→ 0<% } %>
+            <% if (item.delta > 0) { %>↑ +<%= item.delta %><% } else if (item.delta < 0) { %>↓ <%= item.delta %><% } else { %>→ 0<% } %>
           </span>
+          <% } %>
         </div>
         <button type="button" data-share-slug="<%= item.slug %>" data-share-rank="<%= item.rank %>" class="mt-4 rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold text-neutral-700">Поделиться</button>
       </article>
@@ -75,7 +77,9 @@
             <td class="px-3 py-2"><a href="/<%= item.slug %>" class="hover:underline"><%= item.slug %></a></td>
             <td class="px-3 py-2"><%= Number(item.views || 0).toLocaleString('ru-RU') %></td>
             <td class="px-3 py-2">
-              <% if (item.delta === null) { %>—<% } else if (item.delta > 0) { %>↑ +<%= item.delta %><% } else if (item.delta < 0) { %>↓ <%= item.delta %><% } else { %>→ 0<% } %>
+              <% if (item.delta !== null) { %>
+                <% if (item.delta > 0) { %>↑ +<%= item.delta %><% } else if (item.delta < 0) { %>↓ <%= item.delta %><% } else { %>→ 0<% } %>
+              <% } %>
             </td>
             <td class="px-3 py-2"><%= item.plan === 'premium' ? 'ПРЕМИУМ' : 'БАЗОВЫЙ' %></td>
             <td class="px-3 py-2">
