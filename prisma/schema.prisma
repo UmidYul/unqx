@@ -49,6 +49,7 @@ enum BraceletDeliveryStatus {
 }
 
 enum UserPlan {
+  none
   basic
   premium
 }
@@ -280,8 +281,9 @@ model User {
   username             String?       @db.VarChar(120)
   photoUrl             String?       @map("photo_url")
   displayName          String?       @map("display_name") @db.VarChar(120)
-  plan                 UserPlan      @default(basic)
-  planExpiresAt        DateTime?     @map("plan_expires_at")
+  plan                 UserPlan      @default(none)
+  planPurchasedAt      DateTime?     @map("plan_purchased_at")
+  planUpgradedAt       DateTime?     @map("plan_upgraded_at")
   notificationsEnabled Boolean       @default(true) @map("notifications_enabled")
   status               UserStatus    @default(active)
   refCode              String?       @unique @map("ref_code") @db.VarChar(40)
@@ -295,8 +297,9 @@ model User {
   dropWaitlistEntries  DropWaitlist[]
   unqScore             UnqScore?
   scoreHistory         ScoreHistory[]
+  purchases            Purchase[]
 
-  @@index([plan, planExpiresAt])
+  @@index([plan, planPurchasedAt])
   @@index([status])
   @@map("users")
 }
@@ -368,6 +371,7 @@ model SlugRequest {
   slug          String            @db.VarChar(20)
   slugPrice     Int               @map("slug_price")
   requestedPlan UserPlan          @map("requested_plan")
+  planPrice     Int               @default(0) @map("plan_price")
   bracelet      Boolean           @default(false)
   contact       String            @db.VarChar(140)
   status        SlugRequestStatus @default(new)
@@ -384,6 +388,32 @@ model SlugRequest {
   @@index([status, createdAt])
   @@index([slug])
   @@map("slug_requests")
+}
+
+enum PurchaseType {
+  slug
+  basic_plan
+  premium_plan
+  upgrade_to_premium
+  bracelet
+}
+
+model Purchase {
+  id              String       @id @default(uuid())
+  telegramId      String       @map("telegram_id") @db.VarChar(40)
+  user            User         @relation(fields: [telegramId], references: [telegramId], onDelete: Cascade)
+  type            PurchaseType
+  amount          Int
+  slug            String?      @db.VarChar(20)
+  purchasedAt     DateTime     @default(now()) @map("purchased_at")
+  approvedByAdmin String?      @map("approved_by_admin") @db.VarChar(40)
+  approvedAt      DateTime?    @map("approved_at")
+  note            String?
+
+  @@index([telegramId, purchasedAt(sort: Desc)])
+  @@index([type, purchasedAt(sort: Desc)])
+  @@index([slug])
+  @@map("purchases")
 }
 
 model SlugView {

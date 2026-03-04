@@ -6,6 +6,7 @@ const { requireAdminApi } = require("../../middleware/auth");
 const { adminApiRateLimit } = require("../../middleware/rate-limit");
 const { buildLeaderboard, normalizePeriod } = require("../../services/leaderboard");
 const { getFeatureSetting, setFeatureSetting } = require("../../services/feature-settings");
+const { getPricingSettings, setPricingSettings } = require("../../services/pricing-settings");
 const { buildDropSlugPool, reserveDropSlugs, getDropLiveStats, releaseUnsoldDropSlugs } = require("../../services/drops");
 const { sendTelegramMessage } = require("../../services/telegram");
 const { recalculateAllScores, recalculateAndRefreshPercentiles } = require("../../services/unq-score");
@@ -314,6 +315,29 @@ router.patch(
       orderBy: { requiredPaidFriends: "asc" },
     });
     res.json({ ok: true, rules: updated });
+  }),
+);
+
+router.get(
+  "/pricing/settings",
+  asyncHandler(async (_req, res) => {
+    const settings = await getPricingSettings();
+    res.json({ settings });
+  }),
+);
+
+router.patch(
+  "/pricing/settings",
+  asyncHandler(async (req, res) => {
+    const current = await getPricingSettings();
+    const next = await setPricingSettings({
+      ...current,
+      ...(req.body.planBasicPrice !== undefined ? { planBasicPrice: Number(req.body.planBasicPrice) } : {}),
+      ...(req.body.planPremiumPrice !== undefined ? { planPremiumPrice: Number(req.body.planPremiumPrice) } : {}),
+      ...(req.body.premiumUpgradePrice !== undefined ? { premiumUpgradePrice: Number(req.body.premiumUpgradePrice) } : {}),
+      ...(req.body.pricingFootnote !== undefined ? { pricingFootnote: String(req.body.pricingFootnote || "") } : {}),
+    });
+    res.json({ ok: true, settings: next });
   }),
 );
 

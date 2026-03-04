@@ -33,11 +33,11 @@
           <div id="analytics-kpis" class="grid gap-3 md:grid-cols-4"></div>
           <div class="grid gap-4 lg:grid-cols-2">
             <article class="rounded-2xl border border-neutral-200 bg-white p-4">
-              <h2 class="text-sm font-semibold text-neutral-900">Заявки по дням (30 дней)</h2>
+              <h2 class="text-sm font-semibold text-neutral-900">Выручка по дням (30 дней)</h2>
               <div class="mt-3 h-[280px]"><canvas id="analytics-orders-chart"></canvas></div>
             </article>
             <article class="rounded-2xl border border-neutral-200 bg-white p-4">
-              <h2 class="text-sm font-semibold text-neutral-900">Разбивка по тарифам</h2>
+              <h2 class="text-sm font-semibold text-neutral-900">Разбивка выручки</h2>
               <div class="mt-3 h-[280px]"><canvas id="analytics-tariff-chart"></canvas></div>
             </article>
           </div>
@@ -67,10 +67,9 @@
               <option value="all">Все статусы</option>
               <option value="new">Новая</option>
               <option value="contacted">Связались</option>
-              <option value="paid">Ожидает оплаты</option>
-              <option value="approved">Одобрено</option>
+              <option value="paid">Оплачено</option>
+              <option value="approved">Активировано</option>
               <option value="rejected">Отклонено</option>
-              <option value="expired">Истекла</option>
             </select>
             <select name="tariff" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">
               <option value="all">Все тарифы</option>
@@ -101,6 +100,7 @@
                     <th class="px-4 py-3">Имя</th>
                     <th class="px-4 py-3">Slug</th>
                     <th class="px-4 py-3">Цена slug</th>
+                    <th class="px-4 py-3">Сумма</th>
                     <th class="px-4 py-3">Тариф</th>
                     <th class="px-4 py-3">Браслет</th>
                     <th class="px-4 py-3">Контакт</th>
@@ -113,6 +113,70 @@
             </div>
           </div>
           <div id="orders-pagination" class="flex items-center justify-end gap-2 text-sm text-neutral-600"></div>
+        </section>
+
+        <section id="tab-purchases" class="<%= pageActiveTab === 'purchases' ? '' : 'hidden' %> space-y-4">
+          <form id="purchases-filters" class="grid gap-3 rounded-2xl border border-neutral-200 bg-white p-4 md:grid-cols-5">
+            <select name="type" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">
+              <option value="all">Все типы</option>
+              <option value="slug">Slug</option>
+              <option value="basic_plan">Базовый тариф</option>
+              <option value="premium_plan">Премиум тариф</option>
+              <option value="upgrade_to_premium">Апгрейд до Премиум</option>
+              <option value="bracelet">Браслет</option>
+            </select>
+            <input name="user" type="text" placeholder="Пользователь" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+            <input type="date" name="dateFrom" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+            <input type="date" name="dateTo" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+            <input type="hidden" name="page" value="1" />
+            <button type="submit" class="inline-flex min-h-11 w-full items-center justify-center justify-self-start rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100 md:w-auto">Применить</button>
+          </form>
+          <div class="flex items-center justify-between gap-3">
+            <p id="purchases-total" class="text-sm font-semibold text-neutral-800">Общая выручка: 0 сум</p>
+            <a id="purchases-export-link" href="/api/admin/purchases/export.csv" class="rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">Скачать CSV</a>
+          </div>
+          <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
+            <div class="overflow-x-auto">
+              <table class="min-w-[980px] w-full text-left text-sm">
+                <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
+                  <tr>
+                    <th class="px-4 py-3">Дата</th>
+                    <th class="px-4 py-3">Пользователь</th>
+                    <th class="px-4 py-3">Тип</th>
+                    <th class="px-4 py-3">Slug</th>
+                    <th class="px-4 py-3">Сумма</th>
+                    <th class="px-4 py-3">Одобрил</th>
+                  </tr>
+                </thead>
+                <tbody id="purchases-table"></tbody>
+              </table>
+            </div>
+          </div>
+          <div id="purchases-pagination" class="flex items-center justify-end gap-2 text-sm text-neutral-600"></div>
+          <form id="pricing-settings-form" class="grid gap-3 rounded-2xl border border-neutral-200 bg-white p-4 md:grid-cols-2">
+            <label class="block">
+              <span class="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">Цена Базового тарифа (сум)</span>
+              <input type="number" min="0" name="planBasicPrice" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+              <span class="mt-1 block text-xs text-neutral-500">Единоразовая стоимость</span>
+            </label>
+            <label class="block">
+              <span class="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">Цена Премиум тарифа (сум)</span>
+              <input type="number" min="0" name="planPremiumPrice" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+              <span class="mt-1 block text-xs text-neutral-500">Единоразовая стоимость</span>
+            </label>
+            <label class="block">
+              <span class="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">Цена апгрейда Базовый → Премиум (сум)</span>
+              <input type="number" min="0" name="premiumUpgradePrice" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+              <span class="mt-1 block text-xs text-neutral-500">Сколько доплачивает пользователь с Базовым тарифом</span>
+            </label>
+            <label class="block">
+              <span class="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">Подпись под тарифами</span>
+              <input type="text" name="pricingFootnote" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+            </label>
+            <div class="md:col-span-2">
+              <button type="submit" class="interactive-btn min-h-11 rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-neutral-800">Сохранить тарифы</button>
+            </div>
+          </form>
         </section>
 
         <section id="tab-users" class="<%= pageActiveTab === 'users' ? '' : 'hidden' %> space-y-4">
@@ -133,7 +197,7 @@
                     <th class="px-4 py-3">Telegram</th>
                     <th class="px-4 py-3">Имя</th>
                     <th class="px-4 py-3">Тариф</th>
-                    <th class="px-4 py-3">До тарифа</th>
+                    <th class="px-4 py-3">Дата покупки</th>
                     <th class="px-4 py-3">Slug(и)</th>
                     <th class="px-4 py-3">Визитка</th>
                     <th class="px-4 py-3">UNQ Score</th>

@@ -25,7 +25,10 @@
         </div>
         <div class="mt-4 space-y-2 rounded-xl border border-neutral-200 bg-neutral-50 p-3">
           <p id="profile-sidebar-plan" class="inline-flex rounded-full border border-neutral-300 px-2.5 py-1 text-xs font-semibold">БАЗОВЫЙ</p>
-          <p id="profile-sidebar-expiry" class="text-xs text-neutral-500">до —</p>
+          <p id="profile-sidebar-expiry" class="text-xs text-neutral-500">Куплено: —</p>
+          <button id="profile-sidebar-choose-plan" type="button" data-order-link data-order-plan="basic" class="interactive-btn hidden min-h-11 rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold text-left">
+            Выбрать тариф →
+          </button>
         </div>
         <nav class="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:mt-5 lg:grid-cols-1">
           <button type="button" data-tab-target="slugs" class="profile-tab-btn interactive-btn min-h-11 rounded-xl border border-neutral-200 px-3 py-2 text-center text-xs font-medium sm:text-sm lg:text-left">МОИ UNQ</button>
@@ -41,8 +44,8 @@
 
       <section class="min-w-0 space-y-4">
         <div id="profile-upgrade-banner" class="hidden rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          Твой Премиум истёк. Некоторые функции недоступны.
-          <a href="#" data-order-link data-order-plan="premium" class="ml-1 underline">Улучшить тариф</a>
+          Открыть Премиум · 80 000 сум единоразово.
+          <a href="#" data-order-link data-order-plan="premium" class="ml-1 underline">Купить Премиум →</a>
         </div>
 
         <article data-tab-panel="slugs" class="profile-tab-panel min-w-0 rounded-2xl border border-neutral-200 bg-white p-4 sm:p-5">
@@ -74,8 +77,8 @@
               <div class="relative">
                 <canvas id="profile-score-history-chart" height="120"></canvas>
                 <div id="profile-score-history-lock" class="hidden absolute inset-0 rounded-xl bg-white/80 p-4 backdrop-blur-sm">
-                  <p class="text-sm font-semibold text-neutral-800">История Score доступна на Премиум</p>
-                  <button type="button" data-order-link data-order-plan="premium" class="interactive-btn mt-2 min-h-11 rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold">Улучшить тариф</button>
+                  <p class="text-sm font-semibold text-neutral-800">Открыть Премиум · 80 000 сум единоразово</p>
+                  <button type="button" data-order-link data-order-plan="premium" class="interactive-btn mt-2 min-h-11 rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold">Купить Премиум →</button>
                 </div>
               </div>
             </div>
@@ -201,6 +204,7 @@
               <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
                 <tr>
                   <th class="px-3 py-2">Дата</th>
+                  <th class="px-3 py-2">Дата покупки</th>
                   <th class="px-3 py-2">UNQ</th>
                   <th class="px-3 py-2">Цена</th>
                   <th class="px-3 py-2">Тариф</th>

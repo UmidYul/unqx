@@ -238,7 +238,13 @@ body[data-card-theme] #public-card-layout {
 body[data-card-theme] #card-view-root {
   margin-inline: auto;
   width: 100%;
-  max-width: 420px !important;
+  max-width: 500px !important;
+}
+
+#card-slug-search-results {
+  max-width: 430px;
+  margin-left: auto;
+  box-shadow: 0 8px 28px rgba(17, 17, 17, 0.06);
 }
 
 .unq-ref-top {

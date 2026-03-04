@@ -143,7 +143,7 @@ function getRewardLabel(rule) {
     return `Скидка ${Number(rule.rewardValue || 0)}%`;
   }
   if (rule.rewardType === "free_month") {
-    return `${Number(rule.rewardValue || 1)} месяц бесплатно`;
+    return "Бонусный тариф";
   }
   return "Бонусный slug";
 }

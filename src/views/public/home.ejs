@@ -14,6 +14,17 @@
   };
   const pageUserSession = typeof userSession !== "undefined" ? userSession : null;
   const hasAuthSession = Boolean(pageUserSession && pageUserSession.telegramId);
+  const hasBasicPlan = hasAuthSession && pageUserSession && pageUserSession.plan === "basic";
+  const pricingSettings =
+    typeof pricing === "object" && pricing
+      ? pricing
+      : {
+          planBasicPrice: 50000,
+          planPremiumPrice: 130000,
+          premiumUpgradePrice: 80000,
+          pricingFootnote: "Тарифы оплачиваются один раз. Без подписки и скрытых платежей.",
+        };
+  const pricingFootnote = String(pricingSettings.pricingFootnote || "").trim() || "Тарифы оплачиваются один раз. Без подписки и скрытых платежей.";
   const authDisplayName = hasAuthSession
     ? `${(pageUserSession.firstName || pageUserSession.displayName || "Мой профиль")} · Мой профиль`
     : "Мой профиль";
@@ -69,7 +80,8 @@
   const plans = [
     {
       name: "Базовый",
-      price: "29 000",
+      price: Number(pricingSettings.planBasicPrice || 50000).toLocaleString("ru-RU"),
+      priceNote: "один раз · навсегда",
       highlighted: false,
       badge: null,
       included: [
@@ -88,7 +100,10 @@
     },
     {
       name: "Премиум",
-      price: "79 000",
+      price: Number(
+        hasBasicPlan ? pricingSettings.premiumUpgradePrice || 80000 : pricingSettings.planPremiumPrice || 130000,
+      ).toLocaleString("ru-RU"),
+      priceNote: hasBasicPlan ? "при наличии Базового тарифа" : "один раз · навсегда",
       highlighted: true,
       badge: "Популярный",
       included: [
@@ -128,7 +143,7 @@
     },
     {
       q: "Есть ли возврат?",
-      a: "Браслет возврату не подлежит. Подписку можно отменить в любой момент — следующий месяц не спишется.",
+      a: "Браслет возврату не подлежит.",
     },
   ];
 %>
@@ -641,8 +656,12 @@
 
               <div class="mt-4 flex items-baseline gap-1">
                 <span class="text-3xl font-bold"><%= plan.price %></span>
-                <span class="text-sm text-neutral-400">сум/мес</span>
+                <span class="text-sm text-neutral-400">сум</span>
               </div>
+
+              <p class="mt-1 text-xs <%= plan.highlighted ? 'text-neutral-400' : 'text-neutral-500' %>">
+                <%= plan.priceNote %>
+              </p>
 
               <p class="mt-1 text-xs <%= plan.highlighted ? 'text-neutral-500' : 'text-neutral-400' %>">
                 + стоимость UNQ по калькулятору
@@ -671,7 +690,7 @@
                 href="#"
                 class="interactive-btn btn-shimmer mt-8 flex min-h-11 items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-medium transition-colors <%= plan.highlighted ? 'bg-white text-neutral-900 hover:bg-neutral-100' : 'bg-neutral-900 text-white hover:bg-neutral-800' %>"
               >
-                Начать
+                Купить тариф
                 <svg class="icon-stroke h-3.5 w-3.5" viewBox="0 0 24 24" aria-hidden="true">
                   <path d="M5 12h14M13 5l7 7-7 7"></path>
                 </svg>
@@ -680,10 +699,7 @@
             <% }); %>
           </div>
 
-          <p class="mt-8 text-center text-xs text-neutral-400">
-            * Стоимость UNQ оплачивается единоразово при регистрации.
-            <a href="#calculator" class="underline transition-colors hover:text-neutral-600">Узнай цену своего UNQ</a>
-          </p>
+          <p class="mt-8 text-center text-xs text-neutral-400"><%= pricingFootnote %></p>
         </div>
       </section>
 

@@ -107,13 +107,12 @@ describe("home page", () => {
     expect(getSlugLimit("premium")).toBe(3);
   });
 
-  test("expired premium is treated as basic", () => {
-    const expired = getEffectivePlan({
-      plan: "premium",
-      planExpiresAt: "2020-01-01T00:00:00.000Z",
+  test("none plan is treated as none", () => {
+    const none = getEffectivePlan({
+      plan: "none",
     });
-    expect(expired.plan).toBe("basic");
-    expect(expired.isExpiredPremium).toBe(true);
+    expect(none.plan).toBe("none");
+    expect(none.isPremium).toBe(false);
   });
 
   test("flash sale discount applies only to matching slug", () => {

@@ -18,6 +18,12 @@ const { calculateSlugPrice } = require("../../services/slug-pricing");
 const { cleanupOrphanAvatars, deleteAvatarByPublicPath, isSupportedAvatarBuffer, renameAvatarBySlug, saveAvatarFromBuffer } = require("../../services/avatar");
 const { sendSlugApprovedToUser, sendSlugAwaitingPaymentToUser, sendSlugRejectedToUser, sendTelegramMessage } = require("../../services/telegram");
 const { recalculateAndRefreshPercentiles } = require("../../services/unq-score");
+const {
+  BRACELET_PRICE,
+  normalizePlan,
+  resolveRequestedPlanForOrder,
+  getPlanPurchaseType,
+} = require("../../services/pricing-settings");
 
 const router = express.Router();
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
@@ -30,6 +36,12 @@ const upload = multer({
 
 function normalizeTariff(value) {
   return value === "premium" ? "premium" : "basic";
+}
+
+function normalizeUserPlan(value) {
+  if (value === "premium") return "premium";
+  if (value === "basic") return "basic";
+  return "none";
 }
 
 function modelDelegateExists(name) {
@@ -103,13 +115,13 @@ function formatOrderStatusLabel(status) {
     case "contacted":
       return "Связались";
     case "paid":
-      return "Ожидает оплаты";
+      return "Оплачено";
     case "approved":
-      return "Одобрено";
+      return "Активировано";
     case "rejected":
       return "Отклонено";
     case "expired":
-      return "Истекла";
+      return "Отклонено";
     default:
       return status;
   }
@@ -120,9 +132,9 @@ function orderStatusEventTitle(status) {
     case "new":
       return "Новая заявка";
     case "paid":
-      return "Заявка оплачена";
+      return "Оплата подтверждена";
     case "approved":
-      return "Заявка одобрена";
+      return "Заявка активирована";
     case "rejected":
       return "Заявка отклонена";
     case "contacted":
@@ -614,6 +626,40 @@ function buildOrdersWhere(query) {
   return where;
 }
 
+function buildPurchasesWhere(query) {
+  const where = {};
+  const allowedTypes = new Set(["slug", "basic_plan", "premium_plan", "upgrade_to_premium", "bracelet"]);
+
+  if (typeof query.type === "string" && query.type !== "all" && allowedTypes.has(query.type)) {
+    where.type = query.type;
+  }
+  if (typeof query.dateFrom === "string" && query.dateFrom) {
+    const from = new Date(`${query.dateFrom}T00:00:00.000Z`);
+    if (!Number.isNaN(from.getTime())) {
+      where.purchasedAt = { gte: from };
+    }
+  }
+  if (typeof query.dateTo === "string" && query.dateTo) {
+    const to = new Date(`${query.dateTo}T23:59:59.999Z`);
+    if (!Number.isNaN(to.getTime())) {
+      where.purchasedAt = {
+        ...(where.purchasedAt || {}),
+        lte: to,
+      };
+    }
+  }
+  if (typeof query.user === "string" && query.user.trim()) {
+    const term = query.user.trim();
+    where.OR = [
+      { telegramId: { contains: term, mode: "insensitive" } },
+      { user: { username: { contains: term, mode: "insensitive" } } },
+      { user: { firstName: { contains: term, mode: "insensitive" } } },
+      { user: { displayName: { contains: term, mode: "insensitive" } } },
+    ];
+  }
+  return where;
+}
+
 router.get(
   "/orders",
   asyncHandler(async (req, res) => {
@@ -658,6 +704,8 @@ router.get(
         name: row.user?.displayName || row.user?.firstName || "UNQ+ User",
         slug: row.slug,
         slugPrice: row.slugPrice,
+        planPrice: row.planPrice || 0,
+        amount: Number(row.slugPrice || 0) + Number(row.planPrice || 0) + (row.bracelet ? BRACELET_PRICE : 0),
         tariff: row.requestedPlan,
         theme: null,
         bracelet: row.bracelet,
@@ -685,6 +733,7 @@ router.patch(
   asyncHandler(async (req, res) => {
     const status = toOrderStatus(req.body.status);
     const adminNote = String(req.body.adminNote || "").trim();
+    const adminLogin = String(req.session?.admin?.login || "").trim() || null;
 
     const order = await prisma.slugRequest.findUnique({
       where: { id: req.params.id },
@@ -760,12 +809,30 @@ router.patch(
           },
         });
 
+        const existingUser = await tx.user.findUnique({
+          where: { telegramId: row.telegramId },
+          select: {
+            plan: true,
+            planPurchasedAt: true,
+            planUpgradedAt: true,
+          },
+        });
+        const currentPlan = normalizePlan(existingUser?.plan);
+        const nextPlan = resolveRequestedPlanForOrder({
+          currentPlan,
+          requestedPlan: order.requestedPlan,
+        });
+        const userPatch = { plan: nextPlan };
+        if (currentPlan === "none" && (nextPlan === "basic" || nextPlan === "premium")) {
+          userPatch.planPurchasedAt = existingUser?.planPurchasedAt || now;
+        }
+        if (currentPlan === "basic" && nextPlan === "premium") {
+          userPatch.planUpgradedAt = now;
+          userPatch.planPurchasedAt = existingUser?.planPurchasedAt || now;
+        }
         await tx.user.update({
           where: { telegramId: row.telegramId },
-          data: {
-            plan: order.requestedPlan,
-            planExpiresAt: addDays(now, 30),
-          },
+          data: userPatch,
         });
 
         const hasPrimary = await tx.slug.count({
@@ -780,6 +847,56 @@ router.patch(
             where: { fullSlug: row.slug },
             data: { isPrimary: true },
           });
+        }
+
+        if (order.status !== "approved" && tx.purchase && typeof tx.purchase.create === "function") {
+          await tx.purchase.create({
+            data: {
+              telegramId: row.telegramId,
+              type: "slug",
+              amount: Number(order.slugPrice || 0),
+              slug: row.slug,
+              purchasedAt: now,
+              approvedByAdmin: adminLogin,
+              approvedAt: now,
+              note: `order:${row.id}`,
+            },
+          });
+
+          const planPurchaseType = getPlanPurchaseType({
+            currentPlan,
+            requestedPlan: nextPlan,
+          });
+          const planPrice = Number(order.planPrice || 0);
+          if (planPurchaseType && planPrice > 0) {
+            await tx.purchase.create({
+              data: {
+                telegramId: row.telegramId,
+                type: planPurchaseType,
+                amount: planPrice,
+                slug: null,
+                purchasedAt: now,
+                approvedByAdmin: adminLogin,
+                approvedAt: now,
+                note: `order:${row.id}`,
+              },
+            });
+          }
+
+          if (order.bracelet) {
+            await tx.purchase.create({
+              data: {
+                telegramId: row.telegramId,
+                type: "bracelet",
+                amount: BRACELET_PRICE,
+                slug: row.slug,
+                purchasedAt: now,
+                approvedByAdmin: adminLogin,
+                approvedAt: now,
+                note: `order:${row.id}`,
+              },
+            });
+          }
         }
 
         if (order.bracelet) {
@@ -836,7 +953,14 @@ router.patch(
         });
       }
 
-      return row;
+      const userAfter =
+        status === "approved"
+          ? await tx.user.findUnique({
+              where: { telegramId: row.telegramId },
+              select: { plan: true },
+            })
+          : null;
+      return { ...row, approvedPlan: userAfter?.plan || null };
     });
 
     if (status === "approved") {
@@ -844,6 +968,7 @@ router.patch(
         await sendSlugApprovedToUser({
           telegramId: updated.telegramId,
           slug: updated.slug,
+          plan: updated.approvedPlan || order.requestedPlan,
         });
       } catch (error) {
         console.error("[express-app] failed to send approval notification", error);
@@ -1089,7 +1214,8 @@ router.get(
             displayName: true,
             username: true,
             plan: true,
-            planExpiresAt: true,
+            planPurchasedAt: true,
+            planUpgradedAt: true,
             status: true,
             createdAt: true,
           },
@@ -1188,7 +1314,8 @@ router.get(
         name: user.displayName || user.firstName,
         username: user.username || null,
         plan: user.plan,
-        planExpiresAt: user.planExpiresAt,
+        planPurchasedAt: user.planPurchasedAt,
+        planUpgradedAt: user.planUpgradedAt,
         slugs: (slugsByUser.get(user.telegramId) || []).map((slug) => ({
           ...slug,
           hasBracelet: Boolean(braceletByUser.get(user.telegramId)?.has(slug.fullSlug)),
@@ -1196,7 +1323,6 @@ router.get(
         activeSlugCount: (slugsByUser.get(user.telegramId) || []).filter((slug) =>
           ["approved", "active", "paused", "private"].includes(slug.status),
         ).length,
-        isExpiredPlan: Boolean(user.planExpiresAt && user.planExpiresAt.getTime() <= Date.now()),
         hasCard: cardsSet.has(user.telegramId),
         status: user.status,
         createdAt: user.createdAt,
@@ -1225,7 +1351,7 @@ router.patch(
       return;
     }
     const telegramId = String(req.params.telegramId || "");
-    const plan = normalizeTariff(req.body.plan);
+    const plan = normalizeUserPlan(req.body.plan);
     const force = Boolean(req.body.force);
     const now = new Date();
 
@@ -1235,7 +1361,8 @@ router.patch(
         select: {
           telegramId: true,
           plan: true,
-          planExpiresAt: true,
+          planPurchasedAt: true,
+          planUpgradedAt: true,
         },
       });
       if (!user) {
@@ -1262,20 +1389,19 @@ router.patch(
         };
       }
 
-      const nextPlanExpiresAt =
-        plan === "premium"
-          ? user.planExpiresAt && user.planExpiresAt.getTime() > now.getTime()
-            ? user.planExpiresAt
-            : addDays(now, 30)
-          : user.planExpiresAt;
-
+      const currentPlan = normalizePlan(user.plan);
+      const userPatch = { plan };
+      if (currentPlan === "none" && (plan === "basic" || plan === "premium")) {
+        userPatch.planPurchasedAt = user.planPurchasedAt || now;
+      }
+      if (currentPlan === "basic" && plan === "premium") {
+        userPatch.planUpgradedAt = now;
+        userPatch.planPurchasedAt = user.planPurchasedAt || now;
+      }
       const updatedUser = await tx.user.update({
         where: { telegramId },
-        data: {
-          plan,
-          planExpiresAt: nextPlanExpiresAt,
-        },
-        select: { telegramId: true, plan: true, planExpiresAt: true },
+        data: userPatch,
+        select: { telegramId: true, plan: true, planPurchasedAt: true, planUpgradedAt: true },
       });
 
       if (plan === "basic" && owned.length > 1) {
@@ -1291,6 +1417,12 @@ router.patch(
             },
           });
         }
+      }
+      if (plan === "none" && owned.length > 0) {
+        await tx.slug.updateMany({
+          where: { fullSlug: { in: owned.map((row) => row.fullSlug) } },
+          data: { status: "paused" },
+        });
       }
 
       return {
@@ -1321,35 +1453,9 @@ router.patch(
     res.json({
       telegramId: result.telegramId,
       plan: result.plan,
-      planExpiresAt: result.planExpiresAt,
+      planPurchasedAt: result.planPurchasedAt,
+      planUpgradedAt: result.planUpgradedAt,
     });
-  }),
-);
-
-router.patch(
-  "/users/:telegramId/plan-expiry",
-  asyncHandler(async (req, res) => {
-    if (!ensureUsersStorageReady(res)) {
-      return;
-    }
-    const telegramId = String(req.params.telegramId || "");
-    const rawDate = String(req.body.planExpiresAt || "").trim();
-    const parsedDate = rawDate ? new Date(rawDate) : null;
-    if (rawDate && (!parsedDate || Number.isNaN(parsedDate.getTime()))) {
-      res.status(400).json({ error: "Invalid date" });
-      return;
-    }
-    const updated = await prisma.user.update({
-      where: { telegramId },
-      data: { planExpiresAt: parsedDate },
-      select: { telegramId: true, planExpiresAt: true },
-    });
-    try {
-      await recalculateAndRefreshPercentiles(updated.telegramId);
-    } catch (error) {
-      console.error("[express-app] failed to recalculate score after plan expiry update", error);
-    }
-    res.json(updated);
   }),
 );
 
@@ -1458,15 +1564,16 @@ router.get(
     });
 
     const lines = [
-      "Дата,Имя,Slug,Цена slug,Тариф,Браслет,Контакт,Статус",
+      "Дата,Имя,Slug,Цена slug,Цена тарифа,Браслет,Сумма,Контакт,Статус",
       ...rows.map((row) =>
         [
           `"${new Date(row.createdAt).toLocaleString("ru-RU")}"`,
           `"${String(row.user?.displayName || row.user?.firstName || "UNQ+ User").replace(/"/g, '""')}"`,
           `"${row.slug}"`,
           row.slugPrice,
-          `"${row.requestedPlan === "premium" ? "Премиум" : "Базовый"}"`,
+          Number(row.planPrice || 0),
           `"${row.bracelet ? "Да" : "Нет"}"`,
+          Number(row.slugPrice || 0) + Number(row.planPrice || 0) + (row.bracelet ? BRACELET_PRICE : 0),
           `"${String(row.contact).replace(/"/g, '""')}"`,
           `"${formatOrderStatusLabel(row.status)}"`,
         ].join(","),
@@ -1476,6 +1583,118 @@ router.get(
     const csv = `\uFEFF${lines.join("\n")}`;
     res.setHeader("Content-Type", "text/csv; charset=utf-8");
     res.setHeader("Content-Disposition", "attachment; filename=orders.csv");
+    res.send(csv);
+  }),
+);
+
+router.get(
+  "/purchases",
+  asyncHandler(async (req, res) => {
+    if (!prisma.purchase) {
+      res.json({
+        totalRevenue: 0,
+        items: [],
+        pagination: { page: 1, pageSize: 20, total: 0, totalPages: 1 },
+      });
+      return;
+    }
+
+    const where = buildPurchasesWhere(req.query);
+    const page = Math.max(1, Number(req.query.page || "1") || 1);
+    const pageSizeRaw = Number(req.query.pageSize || "20") || 20;
+    const pageSize = Math.max(1, Math.min(200, pageSizeRaw));
+
+    const [total, rows, sum] = await Promise.all([
+      prisma.purchase.count({ where }),
+      prisma.purchase.findMany({
+        where,
+        orderBy: { purchasedAt: "desc" },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+        include: {
+          user: {
+            select: {
+              telegramId: true,
+              firstName: true,
+              displayName: true,
+              username: true,
+            },
+          },
+        },
+      }),
+      prisma.purchase.aggregate({
+        where,
+        _sum: { amount: true },
+      }),
+    ]);
+
+    res.json({
+      totalRevenue: Number(sum?._sum?.amount || 0),
+      items: rows.map((row) => ({
+        id: row.id,
+        purchasedAt: row.purchasedAt,
+        telegramId: row.telegramId,
+        userName: row.user?.displayName || row.user?.firstName || "UNQ+ User",
+        username: row.user?.username || null,
+        type: row.type,
+        slug: row.slug || null,
+        amount: row.amount,
+        approvedByAdmin: row.approvedByAdmin || null,
+        approvedAt: row.approvedAt || null,
+        note: row.note || null,
+      })),
+      pagination: {
+        page,
+        pageSize,
+        total,
+        totalPages: Math.max(1, Math.ceil(total / pageSize)),
+      },
+    });
+  }),
+);
+
+router.get(
+  "/purchases/export.csv",
+  asyncHandler(async (req, res) => {
+    if (!prisma.purchase) {
+      res.status(503).json({ error: "Purchases storage unavailable" });
+      return;
+    }
+    const where = buildPurchasesWhere(req.query);
+    const rows = await prisma.purchase.findMany({
+      where,
+      orderBy: { purchasedAt: "desc" },
+      include: {
+        user: {
+          select: {
+            firstName: true,
+            displayName: true,
+            username: true,
+          },
+        },
+      },
+    });
+
+    const lines = [
+      "Дата,Пользователь,Telegram,Тип,Slug,Сумма,Одобрил,Одобрено,Примечание",
+      ...rows.map((row) =>
+        [
+          `"${new Date(row.purchasedAt).toLocaleString("ru-RU")}"`,
+          `"${String(row.user?.displayName || row.user?.firstName || "UNQ+ User").replace(/"/g, '""')}"`,
+          `"${String(row.user?.username ? `@${row.user.username}` : row.telegramId).replace(/"/g, '""')}"`,
+          `"${String(row.type)}"`,
+          `"${String(row.slug || "").replace(/"/g, '""')}"`,
+          Number(row.amount || 0),
+          `"${String(row.approvedByAdmin || "").replace(/"/g, '""')}"`,
+          `"${row.approvedAt ? new Date(row.approvedAt).toLocaleString("ru-RU") : ""}"`,
+          `"${String(row.note || "").replace(/"/g, '""')}"`,
+        ].join(","),
+      ),
+    ];
+
+    const csv = `\uFEFF${lines.join("\n")}`;
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    res.setHeader("Content-Disposition", "attachment; filename=purchases.csv");
     res.send(csv);
   }),
 );
@@ -1862,28 +2081,48 @@ router.get(
     const now = new Date();
     const nowInZone = toZonedTime(now, timezone);
     const todayStart = fromZonedTime(startOfDay(nowInZone), timezone);
-    const weekStart = subDays(todayStart, 6);
     const monthStart = subDays(todayStart, 29);
+    const canUsePurchases = Boolean(prisma.purchase);
 
-    const [approvedOrders, braceletOrders, activePlans, dailyOrders, checkerLogs, scoreRows] = await Promise.all([
-      prisma.slugRequest.findMany({
-        where: { status: "approved" },
-        select: { slug: true, createdAt: true, slugPrice: true },
-      }),
-      prisma.braceletOrder.findMany({
-        select: { createdAt: true },
-      }),
-      prisma.user.findMany({
-        where: {
-          status: { in: ["active", "blocked"] },
-          planExpiresAt: { gt: now },
-        },
-        select: { plan: true },
-      }),
-      prisma.slugRequest.findMany({
-        where: { createdAt: { gte: monthStart } },
-        select: { createdAt: true },
-      }),
+    const [
+      purchasesTodayAgg,
+      purchases30Agg,
+      purchasesAllAgg,
+      purchases30d,
+      purchasesAll,
+      checkerLogs,
+      scoreRows,
+      newOrdersToday,
+      allOrdersForChecks,
+    ] = await Promise.all([
+      canUsePurchases
+        ? prisma.purchase.aggregate({
+            where: { purchasedAt: { gte: todayStart } },
+            _sum: { amount: true },
+          })
+        : Promise.resolve({ _sum: { amount: 0 } }),
+      canUsePurchases
+        ? prisma.purchase.aggregate({
+            where: { purchasedAt: { gte: monthStart } },
+            _sum: { amount: true },
+          })
+        : Promise.resolve({ _sum: { amount: 0 } }),
+      canUsePurchases
+        ? prisma.purchase.aggregate({
+            _sum: { amount: true },
+          })
+        : Promise.resolve({ _sum: { amount: 0 } }),
+      canUsePurchases
+        ? prisma.purchase.findMany({
+            where: { purchasedAt: { gte: monthStart } },
+            select: { purchasedAt: true, amount: true, type: true },
+          })
+        : Promise.resolve([]),
+      canUsePurchases
+        ? prisma.purchase.findMany({
+            select: { amount: true, type: true },
+          })
+        : Promise.resolve([]),
       prisma.slugCheckerLog.findMany({
         where: { source: "hero", checkedAt: { gte: monthStart } },
         orderBy: { checkedAt: "desc" },
@@ -1900,9 +2139,6 @@ router.get(
             select: { score: true },
           })
         : Promise.resolve([]),
-    ]);
-
-    const [newOrdersToday, allOrdersForChecks] = await Promise.all([
       prisma.slugRequest.count({
         where: { createdAt: { gte: todayStart } },
       }),
@@ -1912,61 +2148,33 @@ router.get(
       }),
     ]);
 
-    const oneTimeRevenue = {
-      today: 0,
-      week: 0,
-      month: 0,
+    const revenueToday = Number(purchasesTodayAgg?._sum?.amount || 0);
+    const revenue30Days = Number(purchases30Agg?._sum?.amount || 0);
+    const revenueTotal = Number(purchasesAllAgg?._sum?.amount || 0);
+
+    const breakdown = {
+      slug: 0,
+      basicPlan: 0,
+      premiumPlan: 0,
+      bracelet: 0,
     };
-    for (const row of approvedOrders) {
-      const total = row.slugPrice;
-      if (row.createdAt >= monthStart) {
-        oneTimeRevenue.month += total;
-      }
-      if (row.createdAt >= weekStart) {
-        oneTimeRevenue.week += total;
-      }
-      if (row.createdAt >= todayStart) {
-        oneTimeRevenue.today += total;
-      }
+    for (const item of purchasesAll) {
+      const amount = Number(item.amount || 0);
+      if (item.type === "slug") breakdown.slug += amount;
+      if (item.type === "basic_plan") breakdown.basicPlan += amount;
+      if (item.type === "premium_plan" || item.type === "upgrade_to_premium") breakdown.premiumPlan += amount;
+      if (item.type === "bracelet") breakdown.bracelet += amount;
     }
-    for (const row of braceletOrders) {
-      if (row.createdAt >= monthStart) {
-        oneTimeRevenue.month += 300_000;
-      }
-      if (row.createdAt >= weekStart) {
-        oneTimeRevenue.week += 300_000;
-      }
-      if (row.createdAt >= todayStart) {
-        oneTimeRevenue.today += 300_000;
-      }
-    }
-
-    const recurring = activePlans.reduce(
-      (acc, row) => acc + (row.plan === "premium" ? 79_000 : 29_000),
-      0,
-    );
-
-    const tariffSplit = activePlans.reduce(
-      (acc, row) => {
-        if (row.plan === "premium") {
-          acc.premium += 1;
-        } else {
-          acc.basic += 1;
-        }
-        return acc;
-      },
-      { basic: 0, premium: 0 },
-    );
 
     const { keys } = computeDateRangeKey(timezone, 30);
-    const orderBuckets = new Map(keys.map((key) => [key, 0]));
-    for (const row of dailyOrders) {
-      const key = format(toZonedTime(row.createdAt, timezone), "yyyy-MM-dd");
-      if (orderBuckets.has(key)) {
-        orderBuckets.set(key, (orderBuckets.get(key) || 0) + 1);
+    const revenueBuckets = new Map(keys.map((key) => [key, 0]));
+    for (const row of purchases30d) {
+      const key = format(toZonedTime(row.purchasedAt, timezone), "yyyy-MM-dd");
+      if (revenueBuckets.has(key)) {
+        revenueBuckets.set(key, (revenueBuckets.get(key) || 0) + Number(row.amount || 0));
       }
     }
-    const ordersDaily = keys.map((date) => ({ date, count: orderBuckets.get(date) || 0 }));
+    const revenueDaily = keys.map((date) => ({ date, amount: revenueBuckets.get(date) || 0 }));
 
     const bySlugOrders = new Map();
     for (const row of allOrdersForChecks) {
@@ -2016,13 +2224,13 @@ router.get(
     res.json({
       kpis: {
         newOrdersToday,
-        oneTimeRevenue,
-        monthlyRecurringRevenue: recurring,
-        activeCards: activePlans.length,
+        revenueToday,
+        revenue30Days,
+        revenueTotal,
         averageUnqScore,
+        breakdown,
       },
-      ordersDaily,
-      tariffSplit,
+      revenueDaily,
       topUnboughtPatterns,
       scoreDistribution,
     });

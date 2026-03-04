@@ -92,7 +92,8 @@
                 <input id="order-modal-plan-basic" type="radio" name="order-modal-plan" value="basic" class="peer sr-only" />
                 <span class="block rounded-xl border border-neutral-200 bg-white p-4 transition peer-checked:border-neutral-900 peer-checked:bg-neutral-900 peer-checked:text-white">
                   <span class="block text-[11px] font-mono uppercase tracking-wider text-neutral-400 peer-checked:text-neutral-400">БАЗОВЫЙ</span>
-                  <span class="mt-1 block text-sm font-semibold">29 000 сум/мес</span>
+                  <span id="order-modal-plan-basic-price" class="mt-1 block text-sm font-semibold">50 000 сум</span>
+                  <span id="order-modal-plan-basic-note" class="mt-1 block text-xs">один раз · навсегда</span>
                   <span class="mt-2 block text-xs">· 1 визитка</span>
                   <span class="block text-xs">· До 3 кнопок</span>
                   <span class="block text-xs">· Стандартный шаблон</span>
@@ -104,7 +105,8 @@
                 <input id="order-modal-plan-premium" type="radio" name="order-modal-plan" value="premium" class="peer sr-only" />
                 <span class="block rounded-xl border border-neutral-200 bg-white p-4 transition peer-checked:border-neutral-900 peer-checked:bg-neutral-900 peer-checked:text-white">
                   <span class="block text-[11px] font-mono uppercase tracking-wider text-neutral-400 peer-checked:text-neutral-400">ПРЕМИУМ</span>
-                  <span class="mt-1 block text-sm font-semibold">79 000 сум/мес</span>
+                  <span id="order-modal-plan-premium-price" class="mt-1 block text-sm font-semibold">130 000 сум</span>
+                  <span id="order-modal-plan-premium-note" class="mt-1 block text-xs">один раз · навсегда</span>
                   <span class="mt-2 block text-xs">· До 3 slug</span>
                   <span class="block text-xs">· Любые темы</span>
                   <span class="block text-xs">· Без ограничений</span>
@@ -139,7 +141,7 @@
             </div>
             <div class="mt-1 flex items-center justify-between gap-3">
               <span id="order-modal-total-plan-title">Тариф Базовый</span>
-              <span id="order-modal-total-plan-value">29 000/мес</span>
+              <span id="order-modal-total-plan-value">50 000 сум</span>
             </div>
             <div id="order-modal-total-bracelet-row" class="mt-1 hidden items-center justify-between gap-3">
               <span>Браслет</span>
@@ -147,12 +149,11 @@
             </div>
             <div class="my-3 h-px bg-neutral-200"></div>
             <div class="flex items-center justify-between gap-3 font-semibold text-neutral-900">
-              <span>Сейчас к оплате:</span>
+              <span>Итого к оплате:</span>
               <span id="order-modal-total-now">0 сум</span>
             </div>
-            <div class="mt-1 flex items-center justify-between gap-3 font-semibold text-neutral-900">
-              <span>Далее ежемесячно:</span>
-              <span id="order-modal-total-monthly">29 000 сум/мес</span>
+            <div class="mt-1 text-xs text-neutral-600">
+              <span id="order-modal-total-monthly">Единоразово · больше не платишь</span>
             </div>
           </div>
         </div>

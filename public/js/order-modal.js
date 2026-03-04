@@ -1,8 +1,9 @@
 const UNQ_BASE_PRICE = 100_000;
-const UNQ_BRACELET_PRICE = 300_000;
-const UNQ_TARIFFS = {
-  basic: 29_000,
-  premium: 79_000,
+const DEFAULT_PRICING = {
+  planBasicPrice: 50_000,
+  planPremiumPrice: 130_000,
+  premiumUpgradePrice: 80_000,
+  braceletPrice: 300_000,
 };
 
 (function initOrderModal() {
@@ -35,6 +36,10 @@ const UNQ_TARIFFS = {
     formula: document.getElementById("order-modal-formula"),
     planBasic: document.getElementById("order-modal-plan-basic"),
     planPremium: document.getElementById("order-modal-plan-premium"),
+    planBasicPrice: document.getElementById("order-modal-plan-basic-price"),
+    planBasicNote: document.getElementById("order-modal-plan-basic-note"),
+    planPremiumPrice: document.getElementById("order-modal-plan-premium-price"),
+    planPremiumNote: document.getElementById("order-modal-plan-premium-note"),
     bracelet: document.getElementById("order-modal-bracelet"),
     name: document.getElementById("order-modal-name"),
     totalSlugTitle: document.getElementById("order-modal-total-slug-title"),
@@ -86,6 +91,7 @@ const UNQ_TARIFFS = {
     theme: "default_dark",
     braceletForced: false,
     dropId: null,
+    pricing: { ...DEFAULT_PRICING, userPlan: "none" },
   };
 
   function setCsrfToken(nextToken) {
@@ -186,6 +192,57 @@ const UNQ_TARIFFS = {
 
   function selectedPlan() {
     return dom.planPremium.checked ? "premium" : "basic";
+  }
+
+  function normalizePlan(value) {
+    if (value === "premium") return "premium";
+    if (value === "basic") return "basic";
+    return "none";
+  }
+
+  function currentUserPlan() {
+    return normalizePlan(currentUser?.plan || state.pricing?.userPlan || "none");
+  }
+
+  function getPricing() {
+    const raw = state.pricing || {};
+    return {
+      planBasicPrice: Number(raw.planBasicPrice || DEFAULT_PRICING.planBasicPrice),
+      planPremiumPrice: Number(raw.planPremiumPrice || DEFAULT_PRICING.planPremiumPrice),
+      premiumUpgradePrice: Number(raw.premiumUpgradePrice || DEFAULT_PRICING.premiumUpgradePrice),
+      braceletPrice: Number(raw.braceletPrice || DEFAULT_PRICING.braceletPrice),
+      userPlan: normalizePlan(raw.userPlan || "none"),
+    };
+  }
+
+  function resolvePlanCharge(selected, userPlan, pricing) {
+    if (userPlan === "none") {
+      return selected === "premium" ? pricing.planPremiumPrice : pricing.planBasicPrice;
+    }
+    if (userPlan === "basic" && selected === "premium") {
+      return pricing.premiumUpgradePrice;
+    }
+    return 0;
+  }
+
+  async function refreshPricing() {
+    try {
+      const response = await fetch("/api/cards/pricing", {
+        headers: { Accept: "application/json" },
+        cache: "no-store",
+      });
+      if (!response.ok) {
+        return;
+      }
+      const payload = await response.json().catch(() => ({}));
+      state.pricing = {
+        ...DEFAULT_PRICING,
+        ...payload,
+        userPlan: normalizePlan(payload.userPlan),
+      };
+    } catch {
+      state.pricing = { ...DEFAULT_PRICING, userPlan: "none" };
+    }
   }
 
   function postJson(url, body) {
@@ -313,8 +370,12 @@ const UNQ_TARIFFS = {
     dom.letters.value = normalizeLetters(dom.letters.value);
     dom.digits.value = normalizeDigits(dom.digits.value);
     const pricing = calculateSlugPricing(dom.letters.value, dom.digits.value);
-    const plan = selectedPlan();
-    const monthly = UNQ_TARIFFS[plan];
+    const requestedPlan = selectedPlan();
+    const pricingSettings = getPricing();
+    const userPlan = currentUserPlan();
+    const planCharge = resolvePlanCharge(requestedPlan, userPlan, pricingSettings);
+    const planCardBasic = pricingSettings.planBasicPrice;
+    const planCardPremium = userPlan === "basic" ? pricingSettings.premiumUpgradePrice : pricingSettings.planPremiumPrice;
     const bracelet = dom.bracelet.checked;
     const fallbackSlugPrice = pricing ? pricing.total : 0;
     const server = pricing ? await resolveServerPrice(pricing.slug, fallbackSlugPrice) : { total: 0, flash: null };
@@ -322,11 +383,25 @@ const UNQ_TARIFFS = {
       return;
     }
     const slugPrice = server ? server.total : fallbackSlugPrice;
-    const oneTime = slugPrice + (bracelet ? UNQ_BRACELET_PRICE : 0);
+    const braceletPrice = bracelet ? pricingSettings.braceletPrice : 0;
+    const oneTime = slugPrice + planCharge + braceletPrice;
     const slugLabel = pricing ? pricing.slug : "___ ___";
     const rarity = getRarity(slugPrice);
 
     setSlugMode(pricing);
+
+    if (dom.planBasicPrice instanceof HTMLElement) {
+      dom.planBasicPrice.textContent = `${formatPrice(planCardBasic)} сум`;
+    }
+    if (dom.planBasicNote instanceof HTMLElement) {
+      dom.planBasicNote.textContent = "один раз · навсегда";
+    }
+    if (dom.planPremiumPrice instanceof HTMLElement) {
+      dom.planPremiumPrice.textContent = `${formatPrice(planCardPremium)} сум`;
+    }
+    if (dom.planPremiumNote instanceof HTMLElement) {
+      dom.planPremiumNote.textContent = userPlan === "basic" ? "при наличии Базового тарифа" : "один раз · навсегда";
+    }
 
     if (dom.slugPreview instanceof HTMLElement) {
       dom.slugPreview.textContent = `unqx.uz/${slugLabel.replace(" ", "")}`;
@@ -357,10 +432,11 @@ const UNQ_TARIFFS = {
       dom.totalSlugValue.textContent = `${formatPrice(slugPrice)} сум`;
     }
     if (dom.totalPlanTitle instanceof HTMLElement) {
-      dom.totalPlanTitle.textContent = plan === "premium" ? "Тариф Премиум" : "Тариф Базовый";
+      dom.totalPlanTitle.textContent = requestedPlan === "premium" ? "Тариф Премиум" : "Тариф Базовый";
     }
     if (dom.totalPlanValue instanceof HTMLElement) {
-      dom.totalPlanValue.textContent = `${formatPrice(monthly)}/мес`;
+      dom.totalPlanValue.textContent =
+        planCharge > 0 ? `${formatPrice(planCharge)} сум` : (userPlan === "none" ? "0 сум" : "уже куплен");
     }
     if (dom.totalBraceletRow instanceof HTMLElement) {
       dom.totalBraceletRow.classList.toggle("hidden", !bracelet);
@@ -370,7 +446,7 @@ const UNQ_TARIFFS = {
       dom.totalNow.textContent = `${formatPrice(oneTime)} сум`;
     }
     if (dom.totalMonthly instanceof HTMLElement) {
-      dom.totalMonthly.textContent = `${formatPrice(monthly)} сум/мес`;
+      dom.totalMonthly.textContent = "Единоразово · больше не платишь";
     }
   }
 
@@ -428,14 +504,18 @@ const UNQ_TARIFFS = {
   }
 
   async function refreshUser() {
-    try {
-      const response = await fetch("/api/auth/me", {
-        headers: { Accept: "application/json" },
-        cache: "no-store",
-      });
-      const payload = await response.json().catch(() => ({}));
-      currentUser = payload && payload.authenticated ? payload.user : null;
-    } catch {
+    const [authResult] = await Promise.allSettled([
+      (async () => {
+        const response = await fetch("/api/auth/me", {
+          headers: { Accept: "application/json" },
+          cache: "no-store",
+        });
+        const payload = await response.json().catch(() => ({}));
+        currentUser = payload && payload.authenticated ? payload.user : null;
+      })(),
+      refreshPricing(),
+    ]);
+    if (authResult.status !== "fulfilled") {
       currentUser = null;
     }
     renderUser();
@@ -448,15 +528,18 @@ const UNQ_TARIFFS = {
     const queryPlan = params.get("tariff");
     const queryTheme = params.get("theme");
     const parsed = splitSlug(options.slug || "");
-    const planCandidate = options.plan || queryPlan || "";
+    const currentPlan = currentUserPlan();
+    const defaultPlan = currentPlan === "premium" ? "premium" : "basic";
+    const planCandidate = options.plan || queryPlan || defaultPlan;
     const plan = planCandidate === "premium" ? "premium" : "basic";
     state.theme = typeof options.theme === "string" && options.theme ? options.theme : queryTheme || "default_dark";
     state.slugLocked = Boolean(parsed);
     state.lockedSlug = parsed ? parsed.slug : "";
     state.braceletForced = options.bracelet === true;
     state.dropId = typeof options.dropId === "string" && options.dropId ? options.dropId : null;
-    dom.planBasic.checked = plan === "basic";
-    dom.planPremium.checked = plan === "premium";
+    dom.planBasic.disabled = currentPlan === "premium";
+    dom.planBasic.checked = currentPlan === "premium" ? false : plan === "basic";
+    dom.planPremium.checked = currentPlan === "premium" ? true : plan === "premium";
     dom.bracelet.checked = state.braceletForced;
     dom.bracelet.disabled = state.braceletForced;
     if (parsed) {
@@ -596,7 +679,7 @@ const UNQ_TARIFFS = {
         return;
       }
       if (error.code === "BASIC_SLUG_LIMIT_REACHED") {
-        setStatus("Перейди на Премиум чтобы добавить slug", "error");
+        setStatus("Купи Премиум чтобы добавить slug", "error");
         return;
       }
       if (error.code === "PREMIUM_SLUG_LIMIT_REACHED") {
@@ -619,6 +702,7 @@ const UNQ_TARIFFS = {
     try {
       const payload = await postJson("/api/auth/telegram/callback", telegramUser);
       currentUser = payload.user || null;
+      await refreshPricing();
       renderUser();
       setProgress();
       if (currentUser && !dom.name.value.trim()) {

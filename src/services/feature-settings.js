@@ -14,6 +14,12 @@ const DEFAULTS = {
   unqScore: {
     enabledOnCards: true,
   },
+  pricing: {
+    planBasicPrice: 50_000,
+    planPremiumPrice: 130_000,
+    premiumUpgradePrice: 80_000,
+    pricingFootnote: "Тарифы оплачиваются один раз. Без подписки и скрытых платежей.",
+  },
 };
 
 async function getFeatureSetting(key, fallback = {}) {

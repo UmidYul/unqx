@@ -4,7 +4,7 @@
   const pageMessage = typeof message === "string" ? message : "";
   const pageCtaLabel = typeof ctaLabel === "string" ? ctaLabel : "";
   const pageCtaHref = typeof ctaHref === "string" ? ctaHref : "";
-  const pageCtaOrderLink = Boolean(ctaOrderLink);
+  const pageCtaOrderLink = typeof ctaOrderLink !== "undefined" && Boolean(ctaOrderLink);
   const pageCtaOrderPrefill = typeof ctaOrderPrefill === "string" ? ctaOrderPrefill : "";
   const pageCtaWaitlistSlug = typeof ctaWaitlistSlug === "string" ? ctaWaitlistSlug : "";
 %>

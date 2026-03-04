@@ -41,7 +41,8 @@ function userToSessionPayload(user) {
     photoUrl: user.photoUrl || null,
     displayName,
     plan: user.plan,
-    planExpiresAt: user.planExpiresAt ? user.planExpiresAt.toISOString() : null,
+    planPurchasedAt: user.planPurchasedAt ? user.planPurchasedAt.toISOString() : null,
+    planUpgradedAt: user.planUpgradedAt ? user.planUpgradedAt.toISOString() : null,
     status: user.status,
   };
 }
@@ -57,8 +58,8 @@ function userToClientPayload(user) {
     displayName: normalizeDisplayName(user.displayName, user.firstName),
     plan: user.plan,
     effectivePlan: effective.plan,
-    isExpiredPremium: effective.isExpiredPremium,
-    planExpiresAt: user.planExpiresAt ? user.planExpiresAt.toISOString() : null,
+    planPurchasedAt: user.planPurchasedAt ? user.planPurchasedAt.toISOString() : null,
+    planUpgradedAt: user.planUpgradedAt ? user.planUpgradedAt.toISOString() : null,
     status: user.status,
   };
 }
@@ -98,7 +99,7 @@ router.post(
           username: parsed.username,
           photoUrl: parsed.photoUrl,
           displayName: parsed.firstName,
-          plan: "basic",
+          plan: "none",
           status: "active",
         },
         update: {

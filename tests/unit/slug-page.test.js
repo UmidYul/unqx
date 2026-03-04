@@ -55,6 +55,18 @@ describe("slug page (:slug) templates", () => {
     expect(html).toContain("data-order-prefill=&#34;ABC123&#34;");
   });
 
+  test("renders slug-state without optional cta flags", async () => {
+    const html = await renderView("slug-state.ejs", {
+      slug: "ABC123",
+      heading: "Проверка",
+      message: "Без доп. флагов",
+      ctaLabel: "Открыть",
+      ctaHref: "/",
+    });
+    expect(html).toContain("Открыть");
+    expect(html).not.toContain("data-order-link");
+  });
+
   test("renders paused slug page with owner block and link", async () => {
     const html = await renderView("slug-paused.ejs", {
       slug: "ABC123",

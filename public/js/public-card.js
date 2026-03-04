@@ -32,6 +32,10 @@
   const actionButtons = Array.from(root.querySelectorAll("[data-track-action]"));
   const slugSearchForm = document.getElementById("card-slug-search-form");
   const slugSearchInput = document.getElementById("card-slug-search-input");
+  const slugSearchResults = document.getElementById("card-slug-search-results");
+  let searchTimer = null;
+  let lastQuery = "";
+  let lastItems = [];
   const liveRegion = document.createElement("div");
   liveRegion.setAttribute("aria-live", "polite");
   liveRegion.style.position = "absolute";
@@ -76,19 +80,77 @@
     liveRegion.textContent = text;
   }
 
-  function normalizeStrictSlug(value) {
-    const raw = String(value || "").toUpperCase();
-    let letters = "";
-    let digits = "";
-    for (const char of raw) {
-      if (letters.length < 3) {
-        if (/[A-Z]/.test(char)) letters += char;
-        continue;
-      }
-      if (digits.length < 3 && /[0-9]/.test(char)) digits += char;
-      if (digits.length >= 3) break;
+  function normalizeSearchSlug(value) {
+    return String(value || "")
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, "")
+      .slice(0, 6);
+  }
+
+  function hideResults() {
+    if (!(slugSearchResults instanceof HTMLElement)) return;
+    slugSearchResults.classList.add("hidden");
+    slugSearchResults.innerHTML = "";
+  }
+
+  function renderResults(items, query) {
+    if (!(slugSearchResults instanceof HTMLElement)) return;
+    slugSearchResults.innerHTML = "";
+    if (!query) {
+      hideResults();
+      return;
     }
-    return `${letters}${digits}`;
+
+    if (!Array.isArray(items) || items.length === 0) {
+      slugSearchResults.innerHTML = '<p class="px-2 py-2 text-sm text-neutral-500">Ничего не найдено</p>';
+      slugSearchResults.classList.remove("hidden");
+      return;
+    }
+
+    const list = document.createElement("div");
+    list.className = "flex flex-col";
+    for (const item of items.slice(0, 8)) {
+      const slugValue = String(item?.slug || "").toUpperCase();
+      if (!slugValue) continue;
+      const nameValue = String(item?.name || "UNQ+ User").trim() || "UNQ+ User";
+      const row = document.createElement("a");
+      row.href = `/${encodeURIComponent(slugValue)}`;
+      row.className =
+        "interactive-btn flex items-center justify-between rounded-lg px-2 py-2 text-sm text-neutral-700 hover:bg-neutral-50";
+      row.innerHTML = `<span class="font-semibold text-neutral-800">${slugValue}</span><span class="truncate pl-3 text-xs text-neutral-500">${nameValue}</span>`;
+      list.appendChild(row);
+    }
+    slugSearchResults.appendChild(list);
+    slugSearchResults.classList.remove("hidden");
+  }
+
+  async function searchSlugs(query) {
+    if (!query) {
+      lastItems = [];
+      renderResults([], "");
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/cards/search?q=${encodeURIComponent(query)}`, {
+        method: "GET",
+        headers: { Accept: "application/json" },
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      const payload = await response.json();
+      const items = Array.isArray(payload?.items) ? payload.items : [];
+      if (query !== lastQuery) {
+        return;
+      }
+      lastItems = items;
+      renderResults(items, query);
+    } catch {
+      if (query === lastQuery) {
+        renderResults([], query);
+      }
+    }
   }
 
   function showAvatarFallback() {
@@ -223,25 +285,45 @@
 
   if (slugSearchInput instanceof HTMLInputElement) {
     slugSearchInput.addEventListener("input", () => {
-      slugSearchInput.value = normalizeStrictSlug(slugSearchInput.value);
+      const query = normalizeSearchSlug(slugSearchInput.value);
+      slugSearchInput.value = query;
       slugSearchInput.setCustomValidity("");
+      lastQuery = query;
+      if (searchTimer) {
+        window.clearTimeout(searchTimer);
+      }
+      searchTimer = window.setTimeout(() => {
+        void searchSlugs(query);
+      }, 140);
+    });
+    slugSearchInput.addEventListener("focus", () => {
+      if (lastQuery) {
+        renderResults(lastItems, lastQuery);
+      }
     });
   }
 
   if (slugSearchForm instanceof HTMLFormElement && slugSearchInput instanceof HTMLInputElement) {
     slugSearchForm.addEventListener("submit", (event) => {
       event.preventDefault();
-      const targetSlug = normalizeStrictSlug(slugSearchInput.value);
-      slugSearchInput.value = targetSlug;
-      if (!/^[A-Z]{3}[0-9]{3}$/.test(targetSlug)) {
-        slugSearchInput.setCustomValidity("Введите UNQ в формате AAA001");
-        slugSearchInput.reportValidity();
-        return;
-      }
+      const query = normalizeSearchSlug(slugSearchInput.value);
+      slugSearchInput.value = query;
       slugSearchInput.setCustomValidity("");
-      window.location.href = `/${encodeURIComponent(targetSlug)}`;
+      lastQuery = query;
+      if (searchTimer) {
+        window.clearTimeout(searchTimer);
+      }
+      void searchSlugs(query);
     });
   }
+
+  document.addEventListener("click", (event) => {
+    if (!(slugSearchResults instanceof HTMLElement) || !(slugSearchForm instanceof HTMLFormElement)) return;
+    const target = event.target;
+    if (target instanceof Node && !slugSearchForm.contains(target) && !slugSearchResults.contains(target)) {
+      hideResults();
+    }
+  });
 
   if (!slug) {
     return;

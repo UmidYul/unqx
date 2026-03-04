@@ -68,7 +68,6 @@ async function getUserScoreInputs(telegramId, tx = prisma) {
     select: {
       telegramId: true,
       plan: true,
-      planExpiresAt: true,
       status: true,
     },
   });
@@ -120,8 +119,6 @@ async function getUserScoreInputs(telegramId, tx = prisma) {
   const withMultiplier = slugs.map((item) => ({ ...item, multiplier: getSlugMultiplier(item.fullSlug) }));
   const highestRaritySlug = withMultiplier.sort((a, b) => b.multiplier - a.multiplier)[0] || null;
   const activatedBase = primary?.activatedAt || slugs.find((item) => item.activatedAt)?.activatedAt || null;
-  const isPlanActive = user.plan === "premium" && user.planExpiresAt && new Date(user.planExpiresAt) > now;
-
   return {
     user,
     slugs,
@@ -132,7 +129,7 @@ async function getUserScoreInputs(telegramId, tx = prisma) {
     clicks30d,
     activatedAt: activatedBase,
     hasBracelet: hasBracelet > 0,
-    hasPlan: Boolean(isPlanActive),
+    hasPlan: user.plan === "premium",
   };
 }
 

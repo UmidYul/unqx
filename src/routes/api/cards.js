@@ -10,6 +10,12 @@ const { calculateSlugPrice } = require("../../services/slug-pricing");
 const { sendOrderRequestToTelegram, TelegramConfigError, TelegramDeliveryError } = require("../../services/telegram");
 const { getActiveFlashSale, applyFlashSaleToPrice } = require("../../services/flash-sales");
 const { markDropSlugSold } = require("../../services/drops");
+const {
+  BRACELET_PRICE,
+  getPricingSettings,
+  resolveRequestedPlanForOrder,
+  getPlanCharge,
+} = require("../../services/pricing-settings");
 const { asyncHandler } = require("../../middleware/async");
 const { requireSameOrigin } = require("../../middleware/same-origin");
 const { requireCsrfToken } = require("../../middleware/csrf");
@@ -19,11 +25,6 @@ const { OrderRequestSchema } = require("../../validation/order-request");
 
 const router = express.Router();
 const SLUG_REGEX = /^[A-Z]{3}[0-9]{3}$/;
-const TARIFF_MONTHLY = {
-  basic: 29_000,
-  premium: 79_000,
-};
-const BRACELET_PRICE = 300_000;
 const THEMES = new Set(["default_dark", "light_minimal", "gradient", "neon", "corporate"]);
 
 function isMissingModelTable(error, modelName) {
@@ -679,6 +680,29 @@ router.get(
   }),
 );
 
+router.get(
+  "/pricing",
+  asyncHandler(async (req, res) => {
+    const sessionUser = getUserSession(req);
+    const telegramId = sessionUser?.telegramId ? String(sessionUser.telegramId) : null;
+    const [pricing, user] = await Promise.all([
+      getPricingSettings(),
+      telegramId
+        ? prisma.user.findUnique({
+            where: { telegramId },
+            select: { plan: true },
+          })
+        : Promise.resolve(null),
+    ]);
+
+    res.json({
+      ...pricing,
+      braceletPrice: BRACELET_PRICE,
+      userPlan: user?.plan || "none",
+    });
+  }),
+);
+
 router.post(
   "/order-request",
   publicOrderRateLimit,
@@ -698,32 +722,12 @@ router.post(
         firstName: true,
         username: true,
         plan: true,
-        planExpiresAt: true,
         status: true,
       },
     });
 
     if (!user || user.status === "blocked" || user.status === "deactivated") {
       res.status(403).json({ error: "Account is disabled", code: "ACCOUNT_DISABLED" });
-      return;
-    }
-
-    const hasActivePremium = user.plan === "premium" && user.planExpiresAt && new Date(user.planExpiresAt).getTime() > Date.now();
-    const effectivePlan = hasActivePremium ? "premium" : "basic";
-    const slugLimit = effectivePlan === "premium" ? 3 : 1;
-    const userSlugsCount = await withMissingTableFallback("Slug", 0, () =>
-      prisma.slug.count({
-        where: {
-          ownerTelegramId: user.telegramId,
-          status: { in: ["approved", "active", "paused", "private"] },
-        },
-      }),
-    );
-    if (userSlugsCount >= slugLimit) {
-      res.status(403).json({
-        error: effectivePlan === "premium" ? "Premium UNQ limit reached" : "Upgrade required",
-        code: effectivePlan === "premium" ? "PREMIUM_SLUG_LIMIT_REACHED" : "BASIC_SLUG_LIMIT_REACHED",
-      });
       return;
     }
 
@@ -738,6 +742,27 @@ router.post(
     }
 
     const payload = parsed.data;
+    const pricing = await getPricingSettings();
+    const requestedPlan = resolveRequestedPlanForOrder({
+      currentPlan: user.plan,
+      requestedPlan: payload.tariff,
+    });
+    const slugLimit = requestedPlan === "premium" ? 3 : 1;
+    const userSlugsCount = await withMissingTableFallback("Slug", 0, () =>
+      prisma.slug.count({
+        where: {
+          ownerTelegramId: user.telegramId,
+          status: { in: ["approved", "active", "paused", "private"] },
+        },
+      }),
+    );
+    if (userSlugsCount >= slugLimit) {
+      res.status(403).json({
+        error: slugLimit === 3 ? "Premium UNQ limit reached" : "Upgrade required",
+        code: slugLimit === 3 ? "PREMIUM_SLUG_LIMIT_REACHED" : "BASIC_SLUG_LIMIT_REACHED",
+      });
+      return;
+    }
     const slug = `${payload.letters}${payload.digits}`;
     const state = await getSlugState(slug);
     const dropId = payload.dropId || null;
@@ -787,10 +812,24 @@ router.post(
       sale: activeFlashSale,
     });
     const finalSlugPrice = flashApplied.finalPrice;
-    const tariffPrice = TARIFF_MONTHLY[payload.tariff] ?? TARIFF_MONTHLY.basic;
+    const planPrice = getPlanCharge({
+      currentPlan: user.plan,
+      requestedPlan,
+      pricing,
+    });
+    const tariffPriceLabelValue =
+      requestedPlan === "premium"
+        ? user.plan === "premium"
+          ? 0
+          : user.plan === "basic"
+            ? pricing.premiumUpgradePrice
+            : pricing.planPremiumPrice
+        : user.plan === "none"
+          ? pricing.planBasicPrice
+          : 0;
     const braceletPrice = payload.products.bracelet ? BRACELET_PRICE : 0;
-    const totalOneTime = finalSlugPrice + braceletPrice;
-    const theme = payload.tariff === "premium" ? normalizeTheme(payload.theme) : undefined;
+    const totalOneTime = finalSlugPrice + planPrice + braceletPrice;
+    const theme = requestedPlan === "premium" ? normalizeTheme(payload.theme) : undefined;
     const contact = user.username ? `@${user.username}` : `${user.firstName}`;
     const requestedAt = new Date();
     const pendingExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
@@ -843,7 +882,8 @@ router.post(
             telegramId: user.telegramId,
             slug,
             slugPrice: finalSlugPrice,
-            requestedPlan: payload.tariff,
+            requestedPlan,
+            planPrice,
             bracelet: Boolean(payload.products.bracelet),
             contact,
             status: "new",
@@ -859,7 +899,7 @@ router.post(
             name: payload.name,
             slug,
             slugPrice: finalSlugPrice,
-            tariff: payload.tariff,
+            tariff: requestedPlan,
             theme: theme || null,
             bracelet: Boolean(payload.products.bracelet),
             contact,
@@ -903,8 +943,8 @@ router.post(
         username: user.username || "",
         slug,
         slugPriceLabel: formatPrice(finalSlugPrice),
-        tariff: payload.tariff,
-        tariffPriceLabel: formatPrice(tariffPrice),
+        tariff: requestedPlan,
+        tariffPriceLabel: formatPrice(tariffPriceLabelValue),
         bracelet: payload.products.bracelet,
         contact,
         totalOneTimeLabel: formatPrice(totalOneTime),
@@ -930,6 +970,12 @@ router.post(
       orderId: order.id,
       pendingExpiresAt,
       telegramDelivered,
+      pricing: {
+        slugPrice: finalSlugPrice,
+        planPrice,
+        braceletPrice,
+        totalOneTime,
+      },
       flashSale: flashApplied.hasDiscount
         ? {
             saleId: activeFlashSale.id,

@@ -12,6 +12,7 @@ const { getFeatureSetting } = require("../../services/feature-settings");
 const { getActiveFlashSale, resolveConditionLabel, getFlashSaleSlotsLeft } = require("../../services/flash-sales");
 const { getPublicScoreForSlug } = require("../../services/unq-score");
 const { normalizeRefCode } = require("../../services/referrals");
+const { getPricingSettings } = require("../../services/pricing-settings");
 
 const router = express.Router();
 
@@ -145,7 +146,7 @@ function buildPublicCardFromProfile({ slug, user, profileCard, viewsCount }) {
 router.get(
   "/",
   asyncHandler(async (req, res) => {
-    const [leaderboardSettings, activeFlashSale, nextDrop] = await Promise.all([
+    const [leaderboardSettings, activeFlashSale, nextDrop, pricing] = await Promise.all([
       getFeatureSetting("leaderboard"),
       getActiveFlashSale(),
       prisma.drop.findFirst({
@@ -156,6 +157,7 @@ router.get(
         },
         orderBy: { dropAt: "asc" },
       }),
+      getPricingSettings(),
     ]);
     const flashSaleSlotsLeft = activeFlashSale ? await getFlashSaleSlotsLeft(activeFlashSale) : null;
 
@@ -194,6 +196,7 @@ router.get(
             slugCount: nextDrop.slugCount,
           }
         : null,
+      pricing,
       adminSession: getAdminSession(req),
     });
   }),

@@ -53,6 +53,9 @@
     theme: "default_dark",
     referrals: null,
     score: null,
+    pricing: {
+      premiumUpgradePrice: 80_000,
+    },
   };
   let scoreChart = null;
   let modalLastFocused = null;
@@ -82,6 +85,7 @@
     un: $("#profile-sidebar-username"),
     pl: $("#profile-sidebar-plan"),
     ex: $("#profile-sidebar-expiry"),
+    choosePlan: $("#profile-sidebar-choose-plan"),
 
     slugs: $("#profile-slugs-list"),
     addSlug: $("#profile-add-slug-btn"),
@@ -256,9 +260,33 @@
     if (el.av) el.av.src = s.user.photoUrl || "/brand/unq-mark.svg";
     if (el.nm) el.nm.textContent = s.user.displayName || s.user.firstName || "UNQ+ User";
     if (el.un) el.un.textContent = s.user.username ? `@${s.user.username}` : "@—";
-    if (el.pl) el.pl.textContent = s.user.effectivePlan === "premium" ? "ПРЕМИУМ" : "БАЗОВЫЙ";
-    if (el.ex) el.ex.textContent = s.user.planExpiresAt ? `до ${fd(s.user.planExpiresAt)}` : "до —";
-    if (el.upg) el.upg.classList.toggle("hidden", !s.user.isExpiredPremium);
+    const plan = s.user.plan || "none";
+    if (el.pl) {
+      el.pl.textContent = plan === "premium" ? "ПРЕМИУМ" : plan === "basic" ? "БАЗОВЫЙ" : "ТАРИФ НЕ ВЫБРАН";
+    }
+    if (el.ex) {
+      el.ex.textContent = s.user.planPurchasedAt ? `Куплено: ${fd(s.user.planPurchasedAt)}` : "Куплено: —";
+      if (s.user.planPurchasedAt) {
+        el.ex.title = `Куплено ${fd(s.user.planPurchasedAt)}`;
+      } else {
+        el.ex.removeAttribute("title");
+      }
+    }
+    if (el.choosePlan instanceof HTMLButtonElement) {
+      el.choosePlan.classList.toggle("hidden", plan !== "none");
+    }
+    if (el.upg) {
+      const upgradePrice = Number(s.pricing?.premiumUpgradePrice || 80_000).toLocaleString("ru-RU");
+      const link = el.upg.querySelector('[data-order-link][data-order-plan="premium"]');
+      const messageNode = el.upg.firstChild;
+      if (messageNode && messageNode.nodeType === Node.TEXT_NODE) {
+        messageNode.textContent = `Открыть Премиум · ${upgradePrice} сум единоразово. `;
+      }
+      if (link instanceof HTMLElement) {
+        link.textContent = "Купить Премиум →";
+      }
+      el.upg.classList.toggle("hidden", plan !== "basic");
+    }
   };
 
   const renderSlugs = () => {
@@ -305,14 +333,15 @@
         .join("");
     }
 
-    const plan = s.user?.effectivePlan || "basic";
+    const plan = s.user?.effectivePlan || "none";
     const count = s.slugs.length;
 
     if (el.addSlug && el.addSlugNote) {
       if (plan !== "premium" && count >= 1) {
         el.addSlug.disabled = true;
         el.addSlug.textContent = "Доступно только на Премиум";
-        el.addSlugNote.textContent = "Перейди на Премиум чтобы добавить до 3 UNQ";
+        const price = Number(s.pricing?.premiumUpgradePrice || 80_000).toLocaleString("ru-RU");
+        el.addSlugNote.textContent = `Открыть Премиум · ${price} сум единоразово`;
       } else if (plan === "premium" && count >= 3) {
         el.addSlug.disabled = true;
         el.addSlug.textContent = "Добавить UNQ";
@@ -489,19 +518,20 @@
     el.reqTable.innerHTML = s.requests.length
       ? s.requests
           .map(
-            (requestItem) => `<tr class="border-t border-neutral-100"><td class="px-3 py-2">${fdt(requestItem.createdAt)}</td><td class="px-3 py-2 font-mono">${esc(requestItem.slug)}</td><td class="px-3 py-2">${fp(requestItem.slugPrice)}</td><td class="px-3 py-2">${requestItem.requestedPlan === "premium" ? "Премиум" : "Базовый"}</td><td class="px-3 py-2">${requestItem.bracelet ? "Да" : "Нет"}</td><td class="px-3 py-2">${esc(requestItem.statusBadge || requestItem.status)}</td><td class="px-3 py-2">${esc(requestItem.adminNote || "—")}</td></tr>`,
+            (requestItem) => `<tr class="border-t border-neutral-100"><td class="px-3 py-2">${fdt(requestItem.createdAt)}</td><td class="px-3 py-2">${requestItem.purchasedAt ? fdt(requestItem.purchasedAt) : "—"}</td><td class="px-3 py-2 font-mono">${esc(requestItem.slug)}</td><td class="px-3 py-2">${fp(Number(requestItem.slugPrice || 0) + Number(requestItem.planPrice || 0) + (requestItem.bracelet ? 300000 : 0))}<div class="text-[11px] text-neutral-500">${requestItem.purchasedAt ? `Единоразовая покупка · ${fd(requestItem.purchasedAt)}` : "Единоразовая покупка"}</div></td><td class="px-3 py-2">${requestItem.requestedPlan === "premium" ? "Премиум" : "Базовый"}</td><td class="px-3 py-2">${requestItem.bracelet ? "Да" : "Нет"}</td><td class="px-3 py-2">${esc(requestItem.statusBadge || requestItem.status)}</td><td class="px-3 py-2">${esc(requestItem.adminNote || "—")}</td></tr>`,
           )
           .join("")
-      : '<tr><td colspan="7" class="px-3 py-8 text-center text-neutral-500">Заявок пока нет</td></tr>';
+      : '<tr><td colspan="8" class="px-3 py-8 text-center text-neutral-500">Заявок пока нет</td></tr>';
 
     const approved = s.requests.find((item) => item.status === "approved");
     const paid = s.requests.find((item) => item.status === "paid");
-    const plan = s.user?.effectivePlan || "basic";
+    const plan = s.user?.effectivePlan || "none";
     const count = s.slugs.length;
     if (el.reqNewBtn instanceof HTMLButtonElement) {
       if (plan !== "premium" && count >= 1) {
         el.reqNewBtn.disabled = false;
-        el.reqNewBtn.title = "Перейди на Премиум чтобы добавить slug";
+        const price = Number(s.pricing?.premiumUpgradePrice || 80_000).toLocaleString("ru-RU");
+        el.reqNewBtn.title = `Купить Премиум · ${price} сум единоразово`;
       } else if (plan === "premium" && count >= 3) {
         el.reqNewBtn.disabled = true;
         el.reqNewBtn.title = "Достигнут лимит 3 slug";
@@ -614,7 +644,8 @@
       tips.push('<div class="flex items-center justify-between gap-2"><span>Добавь NFC-браслет — +100 к Score</span><button type="button" data-order-link data-order-bracelet="1" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold">Заказать браслет</button></div>');
     }
     if (Number(score.scorePlan || 0) === 0) {
-      tips.push('<div class="flex items-center justify-between gap-2"><span>Перейди на Премиум — +49 к Score</span><button type="button" data-order-link data-order-plan="premium" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold">Улучшить тариф</button></div>');
+      const price = Number(s.pricing?.premiumUpgradePrice || 80_000).toLocaleString("ru-RU");
+      tips.push(`<div class="flex items-center justify-between gap-2"><span>Открыть Премиум · ${price} сум единоразово · +49 к Score</span><button type="button" data-order-link data-order-plan="premium" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold">Купить Премиум →</button></div>`);
     }
     if (Number(score.scoreViews || 0) < 150) tips.push("<p>Поделись визиткой чтобы получить больше просмотров</p>");
     if (Number(score.scoreTenure || 0) < 100) tips.push("<p>Score растёт каждый месяц автоматически</p>");
@@ -623,7 +654,16 @@
       el.scoreTipsList.innerHTML = tips.length ? tips.join("") : "<p>Отличный прогресс. Поддерживай активность визитки.</p>";
     }
 
-    const history = Array.isArray(score.history) ? score.history : [];
+    const rawHistory = Array.isArray(score.history) ? score.history : [];
+    const history =
+      rawHistory.length > 0
+        ? rawHistory
+        : [
+            {
+              date: score.calculatedAt || new Date().toISOString(),
+              score: Number(score.score || 0),
+            },
+          ];
     const labels = history.map((item) => {
       try {
         return new Date(item.date).toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit" });
@@ -632,6 +672,7 @@
       }
     });
     const values = history.map((item) => Number(item.score || 0));
+    const isSinglePoint = values.length <= 1;
     if (scoreChart) {
       scoreChart.destroy();
       scoreChart = null;
@@ -641,7 +682,17 @@
         type: "line",
         data: {
           labels,
-          datasets: [{ data: values, borderColor: "#111827", tension: 0.25, pointRadius: 0 }],
+          datasets: [
+            {
+              data: values,
+              borderColor: "#111827",
+              borderWidth: 2,
+              tension: 0.25,
+              pointRadius: isSinglePoint ? 3 : 0,
+              pointHoverRadius: 4,
+              pointBackgroundColor: "#111827",
+            },
+          ],
         },
         options: {
           responsive: true,
@@ -689,6 +740,7 @@
       s.card = payload.card || null;
       s.requests = payload.requests || [];
       s.score = payload.score || null;
+      s.pricing = payload.pricing || s.pricing;
       try {
         s.referrals = await api("/api/referrals/bootstrap");
       } catch {
@@ -915,7 +967,7 @@
   });
 
   el.addSlug?.addEventListener("click", () => {
-    const plan = s.user?.effectivePlan || "basic";
+    const plan = s.user?.effectivePlan || "none";
     const count = s.slugs.length;
 
     if (plan === "premium" && count >= 3) {
@@ -924,10 +976,11 @@
     }
 
     if (plan !== "premium" && count >= 1) {
+      const upgradePrice = Number(s.pricing?.premiumUpgradePrice || 80_000).toLocaleString("ru-RU");
       showModal(
         "Нужен Премиум",
-        "Перейди на Премиум чтобы добавить до 3 UNQ",
-        "Улучшить тариф",
+        `Открыть Премиум · ${upgradePrice} сум единоразово`,
+        "Купить Премиум →",
         () => {
           if (window.UNQOrderModal && typeof window.UNQOrderModal.open === "function") {
             window.UNQOrderModal.open({ plan: "premium" });
@@ -942,10 +995,11 @@
   });
 
   el.reqNewBtn?.addEventListener("click", () => {
-    const plan = s.user?.effectivePlan || "basic";
+    const plan = s.user?.effectivePlan || "none";
     const count = s.slugs.length;
     if (plan !== "premium" && count >= 1) {
-      showModal("Нужен Премиум", "Перейди на Премиум чтобы добавить slug");
+      const upgradePrice = Number(s.pricing?.premiumUpgradePrice || 80_000).toLocaleString("ru-RU");
+      showModal("Нужен Премиум", `Купить Премиум · ${upgradePrice} сум единоразово`);
       return;
     }
     if (plan === "premium" && count >= 3) {

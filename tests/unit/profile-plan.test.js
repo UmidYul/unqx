@@ -1,25 +1,25 @@
 const { getEffectivePlan, getSlugLimit, getTagLimit, getButtonLimit } = require("../../src/services/profile");
 
 describe("profile plan helpers", () => {
-  test("treats expired premium as basic", () => {
+  test("keeps premium forever", () => {
     const result = getEffectivePlan({
       plan: "premium",
-      planExpiresAt: new Date(Date.now() - 60_000).toISOString(),
-    });
-    expect(result.plan).toBe("basic");
-    expect(result.isExpiredPremium).toBe(true);
-  });
-
-  test("keeps premium when active", () => {
-    const result = getEffectivePlan({
-      plan: "premium",
-      planExpiresAt: new Date(Date.now() + 60_000).toISOString(),
     });
     expect(result.plan).toBe("premium");
     expect(result.isPremium).toBe(true);
+    expect(result.isExpiredPremium).toBe(false);
+  });
+
+  test("supports no purchased plan", () => {
+    const result = getEffectivePlan({
+      plan: "none",
+    });
+    expect(result.plan).toBe("none");
+    expect(result.isPremium).toBe(false);
   });
 
   test("returns expected limits", () => {
+    expect(getSlugLimit("none")).toBe(0);
     expect(getSlugLimit("basic")).toBe(1);
     expect(getSlugLimit("premium")).toBe(3);
     expect(getTagLimit("basic")).toBe(3);
@@ -28,3 +28,4 @@ describe("profile plan helpers", () => {
     expect(getButtonLimit("premium")).toBeNull();
   });
 });
+

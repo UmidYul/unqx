@@ -38,13 +38,13 @@ async function sendOrderRequestToTelegram(payload) {
     `👤 ${escapeHtml(payload.name)} · ${usernameLabel} · ${telegramLink}`,
     `🔗 <b>Slug:</b> ${escapeHtml(payload.slug)} · unqx.uz/${escapeHtml(payload.slug)}`,
     `💰 <b>Цена slug:</b> ${escapeHtml(payload.slugPriceLabel)} сум`,
-    `⭐ <b>Тариф:</b> ${tariffLabel} · ${escapeHtml(payload.tariffPriceLabel)} сум/мес`,
+    `⭐ <b>Тариф:</b> ${tariffLabel} · ${escapeHtml(payload.tariffPriceLabel)} сум`,
     `📿 <b>Браслет:</b> ${braceletLabel}`,
     "",
     `💵 <b>Итого разово:</b> ${escapeHtml(payload.totalOneTimeLabel)} сум`,
-    `🔄 <b>Ежемесячно:</b> ${escapeHtml(payload.tariffPriceLabel)} сум/мес`,
+    "Единоразовая покупка",
     "",
-    "⏰ Заявка истекает через 24 часа",
+    "⏰ Срок резерва заявки: 24 часа",
   ]
     .filter(Boolean)
     .join("\n");
@@ -87,13 +87,19 @@ async function sendTelegramMessage({ chatId, text, parseMode = "HTML" }) {
   return body;
 }
 
-async function sendSlugApprovedToUser({ telegramId, slug }) {
-  const text = `✅ Твой UNQ ${slug} одобрен!\nВойди на unqx.uz и создай свою визитку.`;
+async function sendSlugApprovedToUser({ telegramId, slug, plan }) {
+  const planLabel = plan === "premium" ? "Премиум" : "Базовый";
+  const text = [
+    `✅ Твой UNQ ${slug} одобрен!`,
+    `Твой тариф ${planLabel} активирован.`,
+    "Это навсегда — больше никаких платежей за тариф.",
+    "Войди на unqx.uz и создай свою визитку.",
+  ].join("\n");
   return sendTelegramMessage({ chatId: telegramId, text, parseMode: "HTML" });
 }
 
 async function sendSlugAwaitingPaymentToUser({ telegramId, slug }) {
-  const text = `💳 Заявка на ${slug} ожидает оплаты.\nПосле подтверждения оплаты мы сразу активируем UNQ.`;
+  const text = `💳 Оплата по заявке ${slug} подтверждена.\nСкоро активируем UNQ.`;
   return sendTelegramMessage({ chatId: telegramId, text, parseMode: "HTML" });
 }
 

@@ -11,28 +11,20 @@ const BUTTON_TYPES = new Set([
   "other",
 ]);
 
-function isFutureDate(dateValue) {
-  if (!dateValue) {
-    return false;
-  }
-  const date = new Date(dateValue);
-  if (Number.isNaN(date.getTime())) {
-    return false;
-  }
-  return date.getTime() > Date.now();
-}
-
 function getEffectivePlan(user) {
-  const plan = user && user.plan === "premium" ? "premium" : "basic";
-  const hasPremiumWindow = plan === "premium" && isFutureDate(user && user.planExpiresAt);
+  const rawPlan = user && typeof user.plan === "string" ? user.plan : "none";
+  const normalizedPlan = rawPlan === "premium" || rawPlan === "basic" ? rawPlan : "none";
   return {
-    plan: hasPremiumWindow ? "premium" : "basic",
-    isPremium: hasPremiumWindow,
-    isExpiredPremium: plan === "premium" && !hasPremiumWindow,
+    plan: normalizedPlan,
+    isPremium: normalizedPlan === "premium",
+    isExpiredPremium: false,
   };
 }
 
 function getSlugLimit(plan) {
+  if (plan === "none") {
+    return 0;
+  }
   return plan === "premium" ? 3 : 1;
 }
 
@@ -122,7 +114,9 @@ function normalizeDisplayName(value, fallback) {
 }
 
 function getPlanBadgeLabel(plan) {
-  return plan === "premium" ? "ПРЕМИУМ" : "БАЗОВЫЙ";
+  if (plan === "premium") return "ПРЕМИУМ";
+  if (plan === "basic") return "БАЗОВЫЙ";
+  return "NONE";
 }
 
 module.exports = {

@@ -20,6 +20,7 @@ const {
 } = require("../../services/profile");
 const { isSupportedAvatarBuffer, saveAvatarFromBuffer, deleteAvatarByPublicPath } = require("../../services/avatar");
 const { getProfileScoreByTelegramId, recalculateAndRefreshPercentiles } = require("../../services/unq-score");
+const { getPricingSettings } = require("../../services/pricing-settings");
 
 const router = express.Router();
 const upload = multer({
@@ -57,13 +58,13 @@ function toRequestStatusBadge(status) {
     case "contacted":
       return "Связались";
     case "paid":
-      return "Ожидает оплаты";
+      return "Оплачено";
     case "approved":
-      return "Одобрено";
+      return "Активировано";
     case "rejected":
       return "Отклонено";
     case "expired":
-      return "Истекла";
+      return "Отклонено";
     default:
       return status;
   }
@@ -195,7 +196,7 @@ router.get(
       return;
     }
 
-    const [slugs, card, requests, score] = await Promise.all([
+    const [slugs, card, requests, score, pricing] = await Promise.all([
       getUserSlugsWithStats(user.telegramId),
       prisma.profileCard.findUnique({ where: { ownerTelegramId: user.telegramId } }),
       prisma.slugRequest.findMany({
@@ -203,6 +204,7 @@ router.get(
         orderBy: { createdAt: "desc" },
       }),
       getProfileScoreByTelegramId(user.telegramId),
+      getPricingSettings(),
     ]);
 
     const effective = getEffectivePlan(user);
@@ -217,8 +219,8 @@ router.get(
         displayName: normalizeDisplayName(user.displayName, user.firstName),
         plan: user.plan,
         effectivePlan: effective.plan,
-        isExpiredPremium: effective.isExpiredPremium,
-        planExpiresAt: user.planExpiresAt,
+        planPurchasedAt: user.planPurchasedAt,
+        planUpgradedAt: user.planUpgradedAt,
         planBadge: getPlanBadgeLabel(effective.plan),
         notificationsEnabled: Boolean(user.notificationsEnabled),
         status: user.status,
@@ -235,14 +237,17 @@ router.get(
         slug: item.slug,
         slugPrice: item.slugPrice,
         requestedPlan: item.requestedPlan,
+        planPrice: item.planPrice,
         bracelet: item.bracelet,
         contact: item.contact,
         status: item.status,
         statusBadge: toRequestStatusBadge(item.status),
         adminNote: item.adminNote,
+        purchasedAt: item.status === "approved" ? item.updatedAt : null,
         createdAt: item.createdAt,
       })),
       score,
+      pricing,
     });
   }),
 );
@@ -587,10 +592,12 @@ router.get(
         slug: item.slug,
         slugPrice: item.slugPrice,
         requestedPlan: item.requestedPlan,
+        planPrice: item.planPrice,
         bracelet: item.bracelet,
         status: item.status,
         statusBadge: toRequestStatusBadge(item.status),
         adminNote: item.adminNote,
+        purchasedAt: item.status === "approved" ? item.updatedAt : null,
         createdAt: item.createdAt,
       })),
     });
