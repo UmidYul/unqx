@@ -241,6 +241,11 @@ body[data-card-theme] #card-view-root {
   max-width: 560px !important;
 }
 
+body[data-card-theme] #card-view-root > [data-card-view] {
+  width: 100%;
+  max-width: 460px;
+}
+
 #card-slug-search-results {
   max-width: 430px;
   margin-left: auto;
