@@ -114,6 +114,38 @@ function formatOrderStatusLabel(status) {
   }
 }
 
+function orderStatusEventTitle(status) {
+  switch (status) {
+    case "new":
+      return "Новая заявка";
+    case "paid":
+      return "Заявка оплачена";
+    case "approved":
+      return "Заявка одобрена";
+    case "rejected":
+      return "Заявка отклонена";
+    case "contacted":
+      return "Связались по заявке";
+    case "expired":
+      return "Заявка истекла";
+    default:
+      return "Обновление заявки";
+  }
+}
+
+function braceletStatusEventTitle(status) {
+  switch (status) {
+    case "ORDERED":
+      return "Браслет заказан";
+    case "SHIPPED":
+      return "Браслет отправлен";
+    case "DELIVERED":
+      return "Браслет доставлен";
+    default:
+      return "Обновление браслета";
+  }
+}
+
 function computeDateRangeKey(timezone, days) {
   const nowInZone = toZonedTime(new Date(), timezone);
   const end = startOfDay(nowInZone);
@@ -212,6 +244,67 @@ router.use(adminApiRateLimit);
 router.use(requireAdminApi);
 router.use(requireSameOrigin);
 router.use(requireCsrfToken);
+
+router.get(
+  "/navigation-summary",
+  asyncHandler(async (_req, res) => {
+    const [newOrdersCount, orderedBraceletsCount, orderEvents, braceletEvents] = await Promise.all([
+      prisma.slugRequest.count({
+        where: { status: "new" },
+      }),
+      prisma.braceletOrder.count({
+        where: { deliveryStatus: "ORDERED" },
+      }),
+      prisma.slugRequest.findMany({
+        orderBy: { updatedAt: "desc" },
+        take: 5,
+        select: {
+          id: true,
+          slug: true,
+          status: true,
+          updatedAt: true,
+        },
+      }),
+      prisma.braceletOrder.findMany({
+        orderBy: { updatedAt: "desc" },
+        take: 5,
+        select: {
+          id: true,
+          slug: true,
+          deliveryStatus: true,
+          updatedAt: true,
+        },
+      }),
+    ]);
+
+    const mergedEvents = [
+      ...orderEvents.map((item) => ({
+        id: `order:${item.id}`,
+        title: orderStatusEventTitle(item.status),
+        slug: item.slug,
+        at: item.updatedAt,
+        href: "/admin/dashboard?tab=orders",
+      })),
+      ...braceletEvents.map((item) => ({
+        id: `bracelet:${item.id}`,
+        title: braceletStatusEventTitle(item.deliveryStatus),
+        slug: item.slug,
+        at: item.updatedAt,
+        href: "/admin/dashboard?tab=bracelets",
+      })),
+    ]
+      .sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())
+      .slice(0, 5);
+
+    res.json({
+      badges: {
+        orders: newOrdersCount,
+        bracelets: orderedBraceletsCount,
+      },
+      events: mergedEvents,
+    });
+  }),
+);
 
 router.get(
   "/cards",

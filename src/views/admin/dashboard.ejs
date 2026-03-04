@@ -6,32 +6,15 @@
       : "analytics";
   const pagePublicBaseUrl = typeof publicBaseUrl === "string" && publicBaseUrl ? publicBaseUrl : "";
   const pageQuery = typeof query === "object" && query ? query : {};
-  const tabs = [
-    { id: "analytics", label: "Аналитика" },
-    { id: "orders", label: "Заявки" },
-    { id: "users", label: "Пользователи" },
-    { id: "slugs", label: "Slug" },
-    { id: "cards", label: "Визитки" },
-    { id: "bracelets", label: "Браслеты" },
-    { id: "leaderboard", label: "Лидерборд" },
-    { id: "referrals", label: "Рефералы" },
-    { id: "flash-sales", label: "Flash Sale" },
-    { id: "drops", label: "Дропы" },
-    { id: "testimonials", label: "Отзывы" },
-    { id: "logs", label: "Логи" },
-  ];
 %>
 <!doctype html>
 <html lang="ru">
 <head>
   <%- include('../partials/head', { title: pageTitle, styles: ['/css/admin.css'] }) %>
 </head>
-<body class="antialiased" data-page="admin-dashboard" data-public-base-url="<%= pagePublicBaseUrl %>" data-active-tab="<%= pageActiveTab %>">
-  <div class="min-h-screen bg-neutral-100">
-    <%- include('../partials/admin-header') %>
-
-    <div class="mx-auto w-full max-w-6xl px-4 py-6">
-      <div class="space-y-5">
+<body class="antialiased" data-admin-layout="1" data-page="admin-dashboard" data-public-base-url="<%= pagePublicBaseUrl %>" data-active-tab="<%= pageActiveTab %>">
+  <%- include('../partials/admin-layout-start', { activeTab: pageActiveTab }) %>
+      <div class="mx-auto w-full max-w-6xl space-y-5">
         <div class="flex flex-wrap items-center justify-between gap-3">
           <h1 class="text-2xl font-black">Управление платформой</h1>
           <a
@@ -41,19 +24,6 @@
             + Создать визитку
           </a>
         </div>
-
-        <nav class="overflow-x-auto rounded-2xl border border-neutral-200 bg-white p-2">
-          <div class="flex min-w-max gap-2">
-            <% tabs.forEach((tab) => { %>
-            <a
-              href="/admin/dashboard?tab=<%= tab.id %>"
-              class="rounded-xl px-3 py-2 text-sm font-medium transition <%= pageActiveTab === tab.id ? 'bg-neutral-900 text-white' : 'text-neutral-700 hover:bg-neutral-100' %>"
-            >
-              <%= tab.label %>
-            </a>
-            <% }); %>
-          </div>
-        </nav>
 
         <section id="tab-analytics" class="<%= pageActiveTab === 'analytics' ? '' : 'hidden' %> space-y-4">
           <div id="analytics-kpis" class="grid gap-3 md:grid-cols-4"></div>
@@ -423,8 +393,7 @@
           <div id="logs-pagination" class="flex items-center justify-end gap-2 text-sm text-neutral-600"></div>
         </section>
       </div>
-    </div>
-  </div>
+  <%- include('../partials/admin-layout-end') %>
 
   <div id="activation-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 p-4" aria-hidden="true">
     <div class="w-full max-w-md rounded-2xl bg-white p-5" role="dialog" aria-modal="true">
@@ -520,6 +489,7 @@
   </div>
 
   <script nonce="<%= cspNonce %>" id="admin-dashboard-query" type="application/json"><%- JSON.stringify(pageQuery) %></script>
+  <script nonce="<%= cspNonce %>" src="/js/admin-layout.js"></script>
   <script nonce="<%= cspNonce %>" src="/vendor/qrcode/qrcode.min.js"></script>
   <script nonce="<%= cspNonce %>" src="/vendor/chartjs/chart.umd.min.js"></script>
   <script nonce="<%= cspNonce %>" src="/js/admin-dashboard.js"></script>

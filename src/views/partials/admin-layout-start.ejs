@@ -1,0 +1,171 @@
+<%
+  const layoutActiveTab = typeof activeTab === "string" && activeTab ? activeTab : "analytics";
+  const layoutCurrentPath = typeof currentPath === "string" && currentPath ? currentPath : "";
+  const isDashboardRoute = layoutCurrentPath === "/admin/dashboard";
+
+  const dashboardLink = (tab) => `/admin/dashboard?tab=${tab}`;
+  const sectionGroups = [
+    {
+      label: "ОСНОВНОЕ",
+      items: [
+        { id: "analytics", label: "Аналитика", href: dashboardLink("analytics"), icon: "chart" },
+        { id: "orders", label: "Заявки", href: dashboardLink("orders"), icon: "orders", badge: "orders" },
+        { id: "users", label: "Пользователи", href: dashboardLink("users"), icon: "users" },
+        { id: "slugs", label: "Slug", href: dashboardLink("slugs"), icon: "slug" },
+        { id: "cards", label: "Визитки", href: dashboardLink("cards"), icon: "cards" },
+        { id: "bracelets", label: "Браслеты", href: dashboardLink("bracelets"), icon: "bracelets", badge: "bracelets" },
+      ],
+    },
+    {
+      label: "МАРКЕТИНГ",
+      items: [
+        { id: "flash-sales", label: "Flash Sale", href: dashboardLink("flash-sales"), icon: "flash" },
+        { id: "drops", label: "Дропы", href: dashboardLink("drops"), icon: "drops" },
+        { id: "leaderboard", label: "Лидерборд", href: dashboardLink("leaderboard"), icon: "leaderboard" },
+        { id: "referrals", label: "Рефералы", href: dashboardLink("referrals"), icon: "referrals" },
+      ],
+    },
+    {
+      label: "КОНТЕНТ",
+      items: [
+        { id: "testimonials", label: "Отзывы", href: dashboardLink("testimonials"), icon: "testimonials" },
+        { id: "logs", label: "Логи", href: dashboardLink("logs"), icon: "logs" },
+      ],
+    },
+  ];
+
+  function itemIsActive(item) {
+    if (isDashboardRoute) {
+      return layoutActiveTab === item.id;
+    }
+    if (item.id === "cards" && layoutCurrentPath.startsWith("/admin/cards")) {
+      return true;
+    }
+    if (item.id === "logs" && layoutCurrentPath === "/admin/logs") {
+      return true;
+    }
+    if (item.id === "analytics" && layoutCurrentPath === "/admin/stats") {
+      return true;
+    }
+    return false;
+  }
+%>
+<div class="admin-shell">
+  <aside id="admin-sidebar" class="admin-sidebar" aria-label="Навигация админ-панели">
+    <div class="admin-sidebar-head">
+      <a href="/admin/dashboard" class="admin-brand" aria-label="UNQ+ Admin">
+        <img src="/brand/unq-mark.svg" alt="" class="admin-brand-mark" />
+        <span class="admin-brand-text">UNQ+ Admin</span>
+      </a>
+      <button type="button" id="admin-sidebar-close" class="admin-sidebar-close" aria-label="Закрыть меню">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M6 6L18 18M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+        </svg>
+      </button>
+    </div>
+
+    <nav class="admin-sidebar-scroll">
+      <% sectionGroups.forEach((group) => { %>
+      <section class="admin-sidebar-group">
+        <h2 class="admin-sidebar-label"><%= group.label %></h2>
+        <ul class="admin-sidebar-list">
+          <% group.items.forEach((item) => { %>
+          <li>
+            <a
+              href="<%= item.href %>"
+              class="admin-sidebar-link <%= itemIsActive(item) ? 'is-active' : '' %>"
+              data-tooltip="<%= item.label %>"
+              aria-current="<%= itemIsActive(item) ? 'page' : 'false' %>"
+            >
+              <span class="admin-sidebar-icon" aria-hidden="true">
+                <% if (item.icon === "chart") { %>
+                <svg viewBox="0 0 24 24" fill="none"><path d="M4 20V10m8 10V4m8 16v-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /><path d="M3 20h18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
+                <% } else if (item.icon === "orders") { %>
+                <svg viewBox="0 0 24 24" fill="none"><rect x="4" y="4" width="16" height="16" rx="2.5" stroke="currentColor" stroke-width="1.8" /><path d="M8 9h8M8 12h8M8 15h5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
+                <% } else if (item.icon === "users") { %>
+                <svg viewBox="0 0 24 24" fill="none"><circle cx="9" cy="9" r="3" stroke="currentColor" stroke-width="1.8" /><path d="M3.8 18a5.2 5.2 0 0 1 10.4 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /><circle cx="17.5" cy="9.5" r="2.5" stroke="currentColor" stroke-width="1.8" /><path d="M14.5 18a4 4 0 0 1 6 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
+                <% } else if (item.icon === "slug") { %>
+                <svg viewBox="0 0 24 24" fill="none"><path d="M10 7h6a4 4 0 1 1 0 8h-2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /><path d="M14 17H8a4 4 0 1 1 0-8h2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
+                <% } else if (item.icon === "cards") { %>
+                <svg viewBox="0 0 24 24" fill="none"><rect x="3.5" y="6" width="17" height="12" rx="2.5" stroke="currentColor" stroke-width="1.8" /><path d="M7 10h6M7 14h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
+                <% } else if (item.icon === "bracelets") { %>
+                <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="6.5" stroke="currentColor" stroke-width="1.8" /><circle cx="12" cy="12" r="2.5" stroke="currentColor" stroke-width="1.8" /></svg>
+                <% } else if (item.icon === "flash") { %>
+                <svg viewBox="0 0 24 24" fill="none"><path d="M13 3L6 13h5l-1 8 8-11h-5l1-7z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" /></svg>
+                <% } else if (item.icon === "drops") { %>
+                <svg viewBox="0 0 24 24" fill="none"><path d="M12 3s5 5.4 5 9a5 5 0 1 1-10 0c0-3.6 5-9 5-9z" stroke="currentColor" stroke-width="1.8" /></svg>
+                <% } else if (item.icon === "leaderboard") { %>
+                <svg viewBox="0 0 24 24" fill="none"><path d="M5 19h14M7 19V9m5 10V5m5 14v-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
+                <% } else if (item.icon === "referrals") { %>
+                <svg viewBox="0 0 24 24" fill="none"><path d="M8 7h7a4 4 0 1 1 0 8h-1" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /><path d="M16 17H9a4 4 0 1 1 0-8h1" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
+                <% } else if (item.icon === "testimonials") { %>
+                <svg viewBox="0 0 24 24" fill="none"><path d="M6 7h12v8H9l-3 3V7z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" /></svg>
+                <% } else if (item.icon === "logs") { %>
+                <svg viewBox="0 0 24 24" fill="none"><path d="M7 4h8l4 4v12H7z" stroke="currentColor" stroke-width="1.8" /><path d="M15 4v4h4M10 13h6M10 17h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
+                <% } %>
+              </span>
+              <span class="admin-sidebar-text"><%= item.label %></span>
+              <% if (item.badge) { %>
+              <span class="admin-sidebar-badge js-nav-badge is-hidden" data-badge-type="<%= item.badge %>"></span>
+              <% } %>
+            </a>
+          </li>
+          <% }); %>
+        </ul>
+      </section>
+      <% }); %>
+    </nav>
+
+    <div class="admin-sidebar-footer">
+      <div class="admin-sidebar-user">
+        <span class="admin-sidebar-avatar" aria-hidden="true">A</span>
+        <span class="admin-sidebar-user-name">Admin</span>
+      </div>
+      <form method="post" action="/admin/logout">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+        <button type="submit" class="admin-sidebar-logout">Выйти</button>
+      </form>
+    </div>
+  </aside>
+
+  <div id="admin-sidebar-backdrop" class="admin-sidebar-backdrop" aria-hidden="true"></div>
+
+  <div class="admin-main-wrap">
+    <header class="admin-topbar">
+      <div class="admin-topbar-inner">
+        <div class="admin-topbar-left">
+          <button type="button" id="admin-sidebar-toggle" class="admin-hamburger" aria-label="Открыть меню" aria-expanded="false">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+            </svg>
+          </button>
+          <a href="/admin/dashboard" class="admin-topbar-brand">UNQ+ Admin</a>
+        </div>
+
+        <div class="admin-topbar-actions">
+          <div class="admin-notify-wrap">
+            <button type="button" id="admin-notify-toggle" class="admin-notify-button" aria-expanded="false" aria-haspopup="menu" aria-label="Уведомления">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M12 4a5 5 0 0 0-5 5v3.5L5 15v1h14v-1l-2-2.5V9a5 5 0 0 0-5-5z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" />
+                <path d="M10 18a2 2 0 0 0 4 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+              </svg>
+              <span id="admin-notify-dot" class="admin-notify-dot is-hidden"></span>
+            </button>
+            <div id="admin-notify-menu" class="admin-notify-menu is-hidden" role="menu" aria-label="Последняя активность">
+              <p class="admin-notify-title">Последняя активность</p>
+              <div id="admin-notify-list" class="admin-notify-list">
+                <p class="admin-notify-empty">Нет новых событий</p>
+              </div>
+            </div>
+          </div>
+
+          <form method="post" action="/admin/logout">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+            <button type="submit" class="admin-topbar-logout">Выйти</button>
+          </form>
+        </div>
+      </div>
+    </header>
+
+    <main class="admin-main">
+      <div class="admin-main-inner">

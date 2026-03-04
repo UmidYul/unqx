@@ -17,12 +17,9 @@
 <head>
   <%- include('../partials/head', { title: pageTitle, styles: ['/css/admin.css'] }) %>
 </head>
-<body class="antialiased">
-  <div class="min-h-screen bg-neutral-100">
-    <%- include('../partials/admin-header') %>
-
-    <div class="mx-auto w-full max-w-6xl px-4 py-6">
-      <div class="space-y-4">
+<body class="antialiased" data-admin-layout="1">
+  <%- include('../partials/admin-layout-start', { activeTab: 'analytics' }) %>
+      <div class="mx-auto w-full max-w-6xl space-y-4">
         <h1 class="text-2xl font-black">Общая статистика</h1>
 
         <div class="grid gap-3 md:grid-cols-4">
@@ -87,10 +84,10 @@
           </div>
         </section>
       </div>
-    </div>
-  </div>
+  <%- include('../partials/admin-layout-end') %>
 
   <script nonce="<%= cspNonce %>" id="global-stats-data" type="application/json"><%- JSON.stringify(pageStats.dailySeries) %></script>
+  <script nonce="<%= cspNonce %>" src="/js/admin-layout.js"></script>
   <script nonce="<%= cspNonce %>" src="/vendor/chartjs/chart.umd.min.js"></script>
   <script nonce="<%= cspNonce %>" src="/js/admin-stats.js"></script>
 </body>
