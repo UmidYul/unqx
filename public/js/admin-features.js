@@ -8,7 +8,7 @@
   const P = (v) => `${Number(v || 0).toLocaleString("ru-RU")} сум`;
   const D = (v) => (v ? new Date(v).toLocaleString("ru-RU") : "-");
   const ICONS = {
-    more: '<path d="M12 5h.01M12 12h.01M12 19h.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
+    more: '<circle cx="12" cy="5" r="1.7" fill="currentColor"/><circle cx="12" cy="12" r="1.7" fill="currentColor"/><circle cx="12" cy="19" r="1.7" fill="currentColor"/>',
     eyeOff: '<path d="M3 3 21 21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M10.6 10.6a2 2 0 0 0 2.8 2.8" stroke="currentColor" stroke-width="1.8"/><path d="M9 5.3a10.9 10.9 0 0 1 12 6.7s-3.5 6-10 6a10.8 10.8 0 0 1-5-.9" stroke="currentColor" stroke-width="1.8"/>',
     eye: '<path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6Z" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="2.6" stroke="currentColor" stroke-width="1.8"/>',
     refresh: '<path d="M20 11a8 8 0 1 0 2 5" stroke="currentColor" stroke-width="1.8"/><path d="M20 4v7h-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
@@ -240,31 +240,6 @@
     });
     form.reset();
     await loadDropsAdmin();
-  });
-
-  document.addEventListener("click", (event) => {
-    const toggle = event.target instanceof HTMLElement ? event.target.closest("[data-kebab-toggle]") : null;
-    if (toggle instanceof HTMLElement) {
-      event.preventDefault();
-      event.stopPropagation();
-      const wrap = toggle.closest(".admin-row-actions");
-      const menu = wrap?.querySelector(".admin-row-menu");
-      if (!(menu instanceof HTMLElement)) return;
-      const isOpen = !menu.classList.contains("is-hidden");
-      closeAllRowMenus();
-      if (!isOpen) {
-        menu.classList.remove("is-hidden");
-        toggle.setAttribute("aria-expanded", "true");
-      }
-      return;
-    }
-    if (!(event.target instanceof HTMLElement) || !event.target.closest(".admin-row-actions")) {
-      closeAllRowMenus();
-    }
-  });
-
-  document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape") closeAllRowMenus();
   });
 
   document.addEventListener("click", async (event) => {

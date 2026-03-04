@@ -41,7 +41,7 @@
     return s.toString();
   };
   const ICONS = {
-    more: '<path d="M12 5h.01M12 12h.01M12 19h.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
+    more: '<circle cx="12" cy="5" r="1.7" fill="currentColor"/><circle cx="12" cy="12" r="1.7" fill="currentColor"/><circle cx="12" cy="19" r="1.7" fill="currentColor"/>',
     clock: '<circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M12 7v5l3 2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
     userCheck: '<path d="M9 13a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" stroke="currentColor" stroke-width="1.8"/><path d="M3 20a6 6 0 0 1 12 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="m17 11 2 2 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
     message: '<path d="M4 5h16v10H8l-4 4V5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>',
