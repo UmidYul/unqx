@@ -423,6 +423,176 @@
   padding: 24px 16px;
 }
 
+.admin-main input,
+.admin-main select,
+.admin-main textarea {
+  border-color: #d4d4d4;
+}
+
+.admin-main input:focus,
+.admin-main select:focus,
+.admin-main textarea:focus {
+  outline: none;
+  border-color: #525252;
+}
+
+.admin-kpi-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  background: #fff;
+  padding: 16px;
+}
+
+.admin-kpi-icon {
+  color: #737373;
+}
+
+.admin-kpi-value {
+  margin-top: 10px;
+  color: #171717;
+  font-size: 24px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.admin-kpi-label {
+  margin-top: 4px;
+  color: #737373;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.admin-table-row {
+  transition: background-color 0.2s ease;
+}
+
+.admin-table-row:hover {
+  background: #fafafa;
+}
+
+.admin-row-actions {
+  position: relative;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.admin-kebab-btn {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #d4d4d4;
+  border-radius: 8px;
+  background: #fff;
+  color: #525252;
+  opacity: 0;
+  transition: opacity 0.2s ease, background-color 0.2s ease;
+}
+
+.admin-table-row:hover .admin-kebab-btn {
+  opacity: 1;
+}
+
+.admin-row-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 40;
+  min-width: 200px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 12px 20px -14px rgba(0, 0, 0, 0.35);
+  padding: 6px;
+}
+
+.admin-row-menu.is-hidden {
+  display: none;
+}
+
+.admin-menu-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #404040;
+  text-align: left;
+  padding: 7px 8px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.admin-menu-item:hover {
+  background: #f5f5f5;
+}
+
+.admin-menu-item.is-danger {
+  color: #b91c1c;
+}
+
+.admin-menu-item:disabled {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.admin-menu-sep {
+  height: 1px;
+  background: #ececec;
+  margin: 5px 2px;
+}
+
+.admin-i {
+  flex: 0 0 auto;
+}
+
+.admin-status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.admin-status-chip .admin-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.admin-status-chip.is-success {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.admin-status-chip.is-danger {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.admin-status-chip.is-warning {
+  background: #fffbeb;
+  color: #b45309;
+}
+
+.admin-status-chip.is-info {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.admin-status-chip.is-muted {
+  background: #f5f5f5;
+  color: #525252;
+}
+
 @media (min-width: 768px) and (max-width: 1024px) {
   .admin-sidebar {
     width: var(--admin-sidebar-width-collapsed);
@@ -523,6 +693,10 @@
 
   .admin-topbar-logout {
     padding: 7px 10px;
+  }
+
+  .admin-kebab-btn {
+    opacity: 1;
   }
 
   body.is-sidebar-open .admin-sidebar {

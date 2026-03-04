@@ -14,7 +14,7 @@ const TARIFFS = {
   const authApi = initTelegramAuth(pageNode);
   const orderApi = initOrderModalBridge();
   initMobileMenu();
-  initSlugCounter();
+  initHeroSlugOccupancy();
   initSlugAvailability(orderApi);
   initSlugCalculator(orderApi);
   initOrderLinks(orderApi);
@@ -264,64 +264,16 @@ function initMobileMenu() {
   });
 }
 
-function initSlugCounter() {
-  const section = document.getElementById("slug-counter-wrap");
-  const loadingNode = document.getElementById("slug-counter-loading");
-  const errorNode = document.getElementById("slug-counter-error");
-  const retryButton = document.getElementById("slug-counter-retry");
-  const wrap = document.getElementById("slug-counter");
-  const valueNode = document.getElementById("slug-counter-value");
-  const totalNode = document.getElementById("slug-counter-total");
-  const fillNode = document.getElementById("slug-counter-fill");
-
-  if (
-    !(section instanceof HTMLElement) ||
-    !(loadingNode instanceof HTMLElement) ||
-    !(errorNode instanceof HTMLElement) ||
-    !(retryButton instanceof HTMLButtonElement) ||
-    !(wrap instanceof HTMLElement) ||
-    !(valueNode instanceof HTMLElement) ||
-    !(totalNode instanceof HTMLElement) ||
-    !(fillNode instanceof HTMLElement)
-  ) {
+function initHeroSlugOccupancy() {
+  const lineNode = document.getElementById("hero-slug-occupancy");
+  if (!(lineNode instanceof HTMLElement)) {
     return;
   }
 
-  function animateCounter(toValue, toTotal) {
-    const safeValue = Math.max(0, Number(toValue) || 0);
-    const safeTotal = Math.max(1, Number(toTotal) || 1);
-    const durationMs = 1200;
-    const startAt = performance.now();
-    const startValue = 0;
+  const TOTAL_LIMIT = 17_576;
+  const format = (value) => Number(value || 0).toLocaleString("ru-RU");
 
-    const easeOutCubic = (t) => 1 - (1 - t) ** 3;
-
-    function frame(now) {
-      const progress = Math.min((now - startAt) / durationMs, 1);
-      const eased = easeOutCubic(progress);
-      const current = Math.round(startValue + (safeValue - startValue) * eased);
-      const ratio = Math.max(0, Math.min(1, current / safeTotal));
-
-      valueNode.textContent = Number(current).toLocaleString("ru-RU");
-      fillNode.style.width = `${(ratio * 100).toFixed(2)}%`;
-
-      if (progress < 1) {
-        requestAnimationFrame(frame);
-      } else {
-        valueNode.textContent = Number(safeValue).toLocaleString("ru-RU");
-        fillNode.style.width = `${(Math.max(0, Math.min(1, safeValue / safeTotal)) * 100).toFixed(2)}%`;
-      }
-    }
-
-    requestAnimationFrame(frame);
-  }
-
-  async function loadCounter() {
-    section.classList.remove("hidden");
-    loadingNode.classList.remove("hidden");
-    wrap.classList.add("hidden");
-    errorNode.classList.add("hidden");
-
+  async function loadOccupancy() {
     try {
       const response = await fetch("/api/cards/slug-counter", {
         method: "GET",
@@ -333,25 +285,22 @@ function initSlugCounter() {
       }
 
       const payload = await response.json();
-      if (!payload || typeof payload.taken !== "number" || typeof payload.total !== "number") {
+      const taken = Number(payload?.taken);
+      if (!Number.isFinite(taken)) {
         throw new Error("invalid_payload");
       }
 
-      totalNode.textContent = Number(payload.total).toLocaleString("ru-RU");
-      loadingNode.classList.add("hidden");
-      wrap.classList.remove("hidden");
-      animateCounter(payload.taken, payload.total);
+      const safeTaken = Math.max(0, Math.min(TOTAL_LIMIT, taken));
+      const left = Math.max(0, TOTAL_LIMIT - safeTaken);
+      lineNode.textContent = `Занято ${format(safeTaken)} из ${format(TOTAL_LIMIT)} · осталось ${format(left)}`;
+      lineNode.classList.remove("hidden");
     } catch {
-      loadingNode.classList.add("hidden");
-      errorNode.classList.remove("hidden");
+      lineNode.classList.add("hidden");
+      lineNode.textContent = "";
     }
   }
 
-  retryButton.addEventListener("click", () => {
-    loadCounter();
-  });
-
-  void loadCounter();
+  void loadOccupancy();
 }
 
 function initSlugAvailability(orderApi) {

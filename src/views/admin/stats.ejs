@@ -20,7 +20,10 @@
 <body class="antialiased" data-admin-layout="1">
   <%- include('../partials/admin-layout-start', { activeTab: 'analytics' }) %>
       <div class="mx-auto w-full max-w-6xl space-y-4">
-        <h1 class="text-2xl font-black">Общая статистика</h1>
+        <div class="border-b border-neutral-200 pb-4">
+          <h1 class="text-2xl font-black">Общая статистика</h1>
+          <p class="mt-1 text-sm text-neutral-500">Сводные метрики платформы и динамика просмотров</p>
+        </div>
 
         <div class="grid gap-3 md:grid-cols-4">
           <div class="rounded-2xl border border-neutral-200 bg-white p-4">

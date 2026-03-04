@@ -40,6 +40,58 @@
     });
     return s.toString();
   };
+  const ICONS = {
+    more: '<path d="M12 5h.01M12 12h.01M12 19h.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
+    clock: '<circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M12 7v5l3 2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
+    userCheck: '<path d="M9 13a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" stroke="currentColor" stroke-width="1.8"/><path d="M3 20a6 6 0 0 1 12 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="m17 11 2 2 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
+    message: '<path d="M4 5h16v10H8l-4 4V5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>',
+    creditCard: '<rect x="3" y="5" width="18" height="14" rx="2.5" stroke="currentColor" stroke-width="1.8"/><path d="M3 10h18" stroke="currentColor" stroke-width="1.8"/>',
+    xCircle: '<circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="m9 9 6 6m0-6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
+    checkCircle: '<circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="m8.5 12 2.5 2.5 4.5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>',
+    external: '<path d="M14 5h5v5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="m10 14 9-9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><rect x="5" y="9" width="10" height="10" rx="2" stroke="currentColor" stroke-width="1.8"/>',
+    send: '<path d="m3 12 18-8-6 16-3-7-9-1Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>',
+    trash: '<path d="M4 7h16M10 11v6M14 11v6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M7 7l1 12h8l1-12M9 7V5h6v2" stroke="currentColor" stroke-width="1.8"/>',
+    pen: '<path d="m4 20 4-.8L20 7a2.2 2.2 0 0 0-3-3L5 16l-1 4Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>',
+    eye: '<path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6Z" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="2.6" stroke="currentColor" stroke-width="1.8"/>',
+    toggleLeft: '<rect x="3" y="7" width="18" height="10" rx="5" stroke="currentColor" stroke-width="1.8"/><circle cx="8" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/>',
+    toggleRight: '<rect x="3" y="7" width="18" height="10" rx="5" stroke="currentColor" stroke-width="1.8"/><circle cx="16" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/>',
+    package: '<path d="M3 8 12 3l9 5-9 5-9-5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M3 8v8l9 5 9-5V8" stroke="currentColor" stroke-width="1.8"/>',
+    truck: '<path d="M3 7h11v8H3zM14 10h4l3 3v2h-7" stroke="currentColor" stroke-width="1.8"/><circle cx="8" cy="17" r="2" stroke="currentColor" stroke-width="1.8"/><circle cx="18" cy="17" r="2" stroke="currentColor" stroke-width="1.8"/>',
+    crown: '<path d="M3 9 7 5l5 6 5-6 4 4-2 9H5L3 9Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>',
+    calendar: '<rect x="4" y="5" width="16" height="15" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M8 3v4M16 3v4M4 10h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
+    shieldOff: '<path d="M12 3 5 6v6c0 5 3.5 8 7 9 1.2-.4 2.4-1 3.4-1.8" stroke="currentColor" stroke-width="1.8"/><path d="m3 3 18 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
+    qr: '<path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4z" stroke="currentColor" stroke-width="1.8"/><path d="M14 14h2v2h-2zM18 14h2v6h-6v-2" stroke="currentColor" stroke-width="1.8"/>',
+    link2: '<path d="M10 7h6a4 4 0 1 1 0 8h-2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M14 17H8a4 4 0 1 1 0-8h2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
+  };
+  const I = (name, size = 14) => `<svg class="admin-i" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" aria-hidden="true">${ICONS[name] || ""}</svg>`;
+  const statusMeta = {
+    new: { label: "Новая", tone: "info" },
+    contacted: { label: "Связались", tone: "muted" },
+    paid: { label: "Ожидает оплаты", tone: "warning" },
+    approved: { label: "Одобрено", tone: "success" },
+    rejected: { label: "Отклонено", tone: "danger" },
+    expired: { label: "Истекла", tone: "muted" },
+    muted: { label: "Скрыт", tone: "muted" },
+    ORDERED: { label: "Заказан", tone: "warning" },
+    SHIPPED: { label: "Отправлен", tone: "info" },
+    DELIVERED: { label: "Доставлен", tone: "success" },
+  };
+  function statusChip(code) {
+    const m = statusMeta[code] || { label: String(code || "-"), tone: "muted" };
+    return `<span class="admin-status-chip is-${m.tone}"><span class="admin-status-dot"></span>${X(m.label)}</span>`;
+  }
+  function kebabButton() {
+    return `<button type="button" class="admin-kebab-btn" data-kebab-toggle aria-label="Действия">${I("more", 16)}</button>`;
+  }
+  function menuItem({ label, icon, attrs = "", danger = false }) {
+    return `<button type="button" class="admin-menu-item${danger ? " is-danger" : ""}" ${attrs}>${I(icon, 16)}<span>${X(label)}</span></button>`;
+  }
+  function menuSeparator() {
+    return '<div class="admin-menu-sep" role="separator"></div>';
+  }
+  function menuWrap(content) {
+    return `${kebabButton()}<div class="admin-row-menu is-hidden">${content}</div>`;
+  }
 
   function setDashboardQuery(values) {
     const url = new URL(location.href);
@@ -128,6 +180,11 @@
     }
   }
 
+  function closeAllRowMenus() {
+    document.querySelectorAll(".admin-row-menu").forEach((node) => node.classList.add("is-hidden"));
+    document.querySelectorAll("[data-kebab-toggle]").forEach((node) => node.setAttribute("aria-expanded", "false"));
+  }
+
   async function loadAnalytics() {
     const kpi = document.getElementById("analytics-kpis");
     const table = document.getElementById("analytics-checker-table");
@@ -138,11 +195,11 @@
     const s = p.kpis || {};
     const oneTime = s.oneTimeRevenue || {};
     kpi.innerHTML = [
-      ["Новых заявок сегодня", s.newOrdersToday || 0],
-      ["Выручка разово", `${P(oneTime.today || 0)} • ${P(oneTime.week || 0)} • ${P(oneTime.month || 0)}`],
-      ["Выручка ежемесячная", P(s.monthlyRecurringRevenue || 0)],
-      ["Всего активных визиток", s.activeCards || 0],
-    ].map(([n, v]) => `<div class="rounded-2xl border border-neutral-200 bg-white p-4"><p class="text-xs uppercase tracking-wide text-neutral-500">${n}</p><p class="mt-2 text-xl font-black">${X(v)}</p></div>`).join("");
+      { n: "Новых заявок сегодня", v: s.newOrdersToday || 0, i: "userCheck" },
+      { n: "Выручка разово", v: `${P(oneTime.today || 0)} • ${P(oneTime.week || 0)} • ${P(oneTime.month || 0)}`, i: "creditCard" },
+      { n: "Выручка ежемесячная", v: P(s.monthlyRecurringRevenue || 0), i: "calendar" },
+      { n: "Активных визиток", v: s.activeCards || 0, i: "link2" },
+    ].map((x) => `<article class="admin-kpi-card"><div class="admin-kpi-icon">${I(x.i, 20)}</div><p class="admin-kpi-value">${X(x.v)}</p><p class="admin-kpi-label">${x.n}</p></article>`).join("");
     const top = p.topUnboughtPatterns || [];
     table.innerHTML = top.length ? top.map((x) => `<tr class="border-t border-neutral-100"><td class="px-3 py-2 font-mono">${X(x.pattern)}</td><td class="px-3 py-2 font-semibold">${x.count}</td></tr>`).join("") : '<tr><td colspan="2" class="px-3 py-8 text-center text-neutral-500">Нет данных</td></tr>';
     if (typeof Chart !== "undefined") {
@@ -175,22 +232,25 @@
     const rows = payload.items || [];
     table.innerHTML = rows.length ? rows.map((x) => {
       const username = x.username || "";
-      const chatBtn = username
-        ? `<a href="https://t.me/${encodeURIComponent(username)}" target="_blank" rel="noopener noreferrer" class="rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100">Написать</a>`
-        : '<button type="button" disabled title="Нужен username в Telegram" class="cursor-not-allowed rounded-lg border border-neutral-200 px-2.5 py-1 text-xs font-semibold text-neutral-400">Написать</button>';
+      const profileHref = x.slug ? `/${encodeURIComponent(x.slug)}` : "";
       const countdown = x.slugState === "pending" ? formatPendingCountdown(x.pendingExpiresAt) : "";
-      const statusExtra =
-        x.status === "expired"
-          ? '<div class="mt-1 inline-flex rounded-full bg-neutral-100 px-2 py-0.5 text-[11px] font-semibold text-neutral-600">ИСТЕКЛА</div>'
-          : countdown
-            ? `<div class="mt-1 text-[11px] text-amber-700">${X(countdown)}</div>`
-            : "";
-      const extendBtn =
-        x.slugState === "pending" && x.status !== "expired"
-          ? `<button data-act="ope" data-id="${x.id}" class="rounded-lg border border-amber-300 px-2.5 py-1 text-xs font-semibold text-amber-800 transition hover:bg-amber-50">Продлить на 24 часа</button>`
-          : "";
-      return `<tr class="border-t border-neutral-100"><td class="px-4 py-3">${D(x.createdAt)}</td><td class="px-4 py-3">${X(x.name)}</td><td class="px-4 py-3 font-mono">${X(x.slug)}</td><td class="px-4 py-3">${P(x.slugPrice)}</td><td class="px-4 py-3">${x.tariff === "premium" ? "Премиум" : "Базовый"}</td><td class="px-4 py-3">${x.bracelet ? "Да" : "Нет"}</td><td class="px-4 py-3">${X(x.contact)}</td><td class="px-4 py-3"><select data-act="os" data-id="${x.id}" data-note="${X(x.adminNote || "")}" class="rounded-lg border border-neutral-300 px-2 py-1 text-xs"><option value="new" ${x.status === "new" ? "selected" : ""}>🆕 Новая</option><option value="contacted" ${x.status === "contacted" ? "selected" : ""}>💬 Связались</option><option value="paid" ${x.status === "paid" ? "selected" : ""}>💳 Ожидает оплаты</option><option value="approved" ${x.status === "approved" ? "selected" : ""}>✅ Одобрено</option><option value="rejected" ${x.status === "rejected" ? "selected" : ""}>❌ Отклонено</option><option value="expired" ${x.status === "expired" ? "selected" : ""}>⬜ ИСТЕКЛА</option></select>${statusExtra}</td><td class="px-4 py-3"><div class="flex flex-wrap gap-2">${chatBtn}${extendBtn}<button data-act="od" data-id="${x.id}" class="rounded-lg border border-red-200 px-2.5 py-1 text-xs font-semibold text-red-700 transition hover:bg-red-50">Удалить</button></div></td></tr>`;
-    }).join("") : '<tr><td colspan="9" class="px-3 py-8 text-center text-neutral-500">Нет заявок</td></tr>';
+      const remainingMs = x.pendingExpiresAt ? new Date(x.pendingExpiresAt).getTime() - Date.now() : 0;
+      const countdownTone = remainingMs <= 30 * 60 * 1000 ? "text-red-700 font-semibold" : remainingMs <= 2 * 60 * 60 * 1000 ? "text-red-700" : "text-neutral-500";
+      const statusBlock = `${statusChip(x.status)}${countdown ? `<div class="mt-1 inline-flex items-center gap-1 text-[11px] ${countdownTone}">${I("clock", 14)}<span>${X(countdown)}</span></div>` : ""}`;
+      const menu = menuWrap([
+        menuItem({ label: "Одобрить", icon: "userCheck", attrs: `data-act="os" data-id="${x.id}" data-status="approved" data-note="${X(x.adminNote || "")}"` }),
+        menuItem({ label: "Связались", icon: "message", attrs: `data-act="os" data-id="${x.id}" data-status="contacted" data-note="${X(x.adminNote || "")}"` }),
+        menuItem({ label: "Ожидает оплаты", icon: "creditCard", attrs: `data-act="os" data-id="${x.id}" data-status="paid" data-note="${X(x.adminNote || "")}"` }),
+        menuItem({ label: "Отклонить", icon: "xCircle", attrs: `data-act="os" data-id="${x.id}" data-status="rejected" data-note="${X(x.adminNote || "")}"`, danger: true }),
+        menuSeparator(),
+        menuItem({ label: "Открыть профиль", icon: "external", attrs: profileHref ? `data-act="open-url" data-url="${profileHref}"` : 'disabled="disabled"' }),
+        menuItem({ label: "Написать в Telegram", icon: "send", attrs: username ? `data-act="open-url" data-url="https://t.me/${encodeURIComponent(username)}"` : 'disabled="disabled"' }),
+        x.slugState === "pending" && x.status !== "expired" ? menuItem({ label: "Продлить 24 часа", icon: "clock", attrs: `data-act="ope" data-id="${x.id}"` }) : "",
+        menuSeparator(),
+        menuItem({ label: "Удалить", icon: "trash", attrs: `data-act="od" data-id="${x.id}"`, danger: true }),
+      ].join(""));
+      return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3">${D(x.createdAt)}</td><td class="px-4 py-3">${X(x.name)}</td><td class="px-4 py-3 font-mono">${X(x.slug)}</td><td class="px-4 py-3">${P(x.slugPrice)}</td><td class="px-4 py-3">${x.tariff === "premium" ? "Премиум" : "Базовый"}</td><td class="px-4 py-3">${x.bracelet ? "Да" : "Нет"}</td><td class="px-4 py-3">${X(x.contact)}</td><td class="px-4 py-3">${statusBlock}</td><td class="px-4 py-3"><div class="admin-row-actions">${menu}</div></td></tr>`;
+    }).join("") : `<tr><td colspan="9" class="px-3 py-10 text-center text-neutral-500"><div class="inline-flex flex-col items-center gap-2">${I("creditCard", 48)}<span>Нет заявок</span></div></td></tr>`;
     renderPager("orders-pagination", payload.pagination, (nextPage) => {
       setFormValue(form, "page", String(nextPage));
       void loadOrders();
@@ -226,10 +286,18 @@
             const statusLabel = x.status === "blocked" ? "Заблокирован" : x.status === "deactivated" ? "Деактивирован" : "Активен";
             const braceletSlugs = Array.isArray(x.slugs) ? x.slugs.filter((s) => s.hasBracelet).map((s) => s.fullSlug).join(",") : "";
             const expiryBadge = x.isExpiredPlan ? '<span class="ml-1 inline-flex rounded-full bg-red-100 px-1.5 py-0.5 text-[10px] font-semibold text-red-700">Истёк</span>' : "";
-            return `<tr class="border-t border-neutral-100"><td class="px-4 py-3">${X(x.username ? `@${x.username}` : x.telegramId)}</td><td class="px-4 py-3">${X(x.name)}</td><td class="px-4 py-3"><select data-act="up" data-id="${X(x.telegramId)}" data-active-slugs="${Number(x.activeSlugCount || 0)}" data-current-plan="${X(x.plan)}" data-bracelet-slugs="${X(braceletSlugs)}" class="rounded-lg border border-neutral-300 px-2 py-1 text-xs"><option value="basic" ${x.plan === "basic" ? "selected" : ""}>Базовый</option><option value="premium" ${x.plan === "premium" ? "selected" : ""}>Премиум</option></select><div class="mt-1 text-[11px] text-neutral-500">до ${x.planExpiresAt ? D(x.planExpiresAt) : "—"} ${expiryBadge}</div></td><td class="px-4 py-3 text-xs">${X(slugText)}</td><td class="px-4 py-3">${x.hasCard ? "Есть" : "Нет"}</td><td class="px-4 py-3">${X(statusLabel)}</td><td class="px-4 py-3">${D(x.createdAt)}</td><td class="px-4 py-3"><div class="flex flex-wrap gap-2"><button data-act="ux" data-id="${X(x.telegramId)}" class="rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100">Срок</button><button data-act="ub" data-id="${X(x.telegramId)}" data-status="${X(x.status)}" class="rounded-lg border ${x.status === "blocked" ? "border-emerald-200 text-emerald-700 hover:bg-emerald-50" : "border-red-200 text-red-700 hover:bg-red-50"} px-2.5 py-1 text-xs font-semibold transition">${x.status === "blocked" ? "Разблок" : "Блок"}</button>${profileLink ? `<a href="${profileLink}" target="_blank" rel="noopener noreferrer" class="rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100">Открыть профиль →</a>` : ""}</div></td></tr>`;
+            const menu = menuWrap([
+              menuItem({ label: "Сменить тариф", icon: "crown", attrs: `data-act="up" data-id="${X(x.telegramId)}" data-current-plan="${X(x.plan)}" data-active-slugs="${Number(x.activeSlugCount || 0)}" data-bracelet-slugs="${X(braceletSlugs)}"` }),
+              menuItem({ label: "Продлить тариф", icon: "calendar", attrs: `data-act="ux" data-id="${X(x.telegramId)}"` }),
+              menuSeparator(),
+              menuItem({ label: "Открыть профиль", icon: "external", attrs: profileLink ? `data-act="open-url" data-url="${profileLink}"` : 'disabled="disabled"' }),
+              menuSeparator(),
+              menuItem({ label: x.status === "blocked" ? "Разблокировать" : "Заблокировать", icon: "shieldOff", attrs: `data-act="ub" data-id="${X(x.telegramId)}" data-status="${X(x.status)}"`, danger: x.status !== "blocked" }),
+            ].join(""));
+            return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3">${X(x.username ? `@${x.username}` : x.telegramId)}</td><td class="px-4 py-3">${X(x.name)}</td><td class="px-4 py-3"><span class="inline-flex rounded-full border border-neutral-200 px-2 py-1 text-xs font-medium">${x.plan === "premium" ? "Премиум" : "Базовый"}</span><div class="mt-1 text-[11px] text-neutral-500">до ${x.planExpiresAt ? D(x.planExpiresAt) : "—"} ${expiryBadge}</div></td><td class="px-4 py-3 text-xs">${X(slugText)}</td><td class="px-4 py-3">${x.hasCard ? "Есть" : "Нет"}</td><td class="px-4 py-3">${statusChip(x.status === "blocked" ? "rejected" : "approved")}</td><td class="px-4 py-3">${D(x.createdAt)}</td><td class="px-4 py-3"><div class="admin-row-actions">${menu}</div></td></tr>`;
           })
           .join("")
-      : '<tr><td colspan="8" class="px-3 py-8 text-center text-neutral-500">Нет пользователей</td></tr>';
+      : `<tr><td colspan="8" class="px-3 py-10 text-center text-neutral-500"><div class="inline-flex flex-col items-center gap-2">${I("userCheck", 48)}<span>Нет пользователей</span></div></td></tr>`;
     renderPager("users-pagination", payload.pagination, (nextPage) => {
       setFormValue(form, "page", String(nextPage));
       void loadUsers();
@@ -254,8 +322,17 @@
     const payload = await r.json();
     const rows = payload.items || [];
     table.innerHTML = rows.length
-      ? rows.map((x) => `<tr class="border-t border-neutral-100"><td class="px-4 py-3 font-mono">${X(x.slug)}</td><td class="px-4 py-3">${x.stateLabel}</td><td class="px-4 py-3">${X(x.ownerName || "-")}</td><td class="px-4 py-3">${x.isPrimary ? "Да" : "Нет"}</td><td class="px-4 py-3">${typeof x.effectivePrice === "number" ? P(x.effectivePrice) : "-"}</td><td class="px-4 py-3">${x.requestedAt ? D(x.requestedAt) : "-"}</td><td class="px-4 py-3">${x.approvedAt ? D(x.approvedAt) : "-"}</td><td class="px-4 py-3">${x.activatedAt ? D(x.activatedAt) : "-"}</td><td class="px-4 py-3"><div class="flex flex-wrap gap-2"><button data-act="st" data-slug="${x.slug}" data-ns="${x.state === "BLOCKED" ? "free" : "blocked"}" class="rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100">${x.state === "BLOCKED" ? "Разблокировать" : "Заблокировать"}</button><button data-act="sa" data-slug="${x.slug}" class="rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100">Активировать визитку</button><button data-act="sp" data-slug="${x.slug}" data-p="${x.priceOverride ?? ""}" class="rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100">Цена</button><a href="/${encodeURIComponent(x.slug)}" target="_blank" rel="noopener noreferrer" class="rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100">Открыть →</a></div></td></tr>`).join("")
-      : '<tr><td colspan="9" class="px-3 py-8 text-center text-neutral-500">Нет данных</td></tr>';
+      ? rows.map((x) => {
+        const menu = menuWrap([
+          menuItem({ label: "Активировать", icon: "checkCircle", attrs: `data-act="sa" data-slug="${x.slug}"` }),
+          menuItem({ label: x.state === "BLOCKED" ? "Разблокировать" : "Заблокировать", icon: x.state === "BLOCKED" ? "toggleRight" : "toggleLeft", attrs: `data-act="st" data-slug="${x.slug}" data-ns="${x.state === "BLOCKED" ? "free" : "blocked"}"` }),
+          menuItem({ label: "Изменить цену", icon: "pen", attrs: `data-act="sp" data-slug="${x.slug}" data-p="${x.priceOverride ?? ""}"` }),
+          menuSeparator(),
+          menuItem({ label: "Открыть визитку", icon: "external", attrs: `data-act="open-url" data-url="/${encodeURIComponent(x.slug)}"` }),
+        ].join(""));
+        return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3 font-mono">${X(x.slug)} <a href="/${encodeURIComponent(x.slug)}" target="_blank" rel="noopener noreferrer" class="ml-1 inline-flex align-middle text-neutral-400">${I("link2", 14)}</a></td><td class="px-4 py-3">${statusChip(x.state === "BLOCKED" ? "rejected" : x.state === "TAKEN" ? "approved" : "new")}</td><td class="px-4 py-3">${X(x.ownerName || "-")}</td><td class="px-4 py-3">${x.isPrimary ? "Да" : "Нет"}</td><td class="px-4 py-3">${typeof x.effectivePrice === "number" ? P(x.effectivePrice) : "-"}</td><td class="px-4 py-3">${x.requestedAt ? D(x.requestedAt) : "-"}</td><td class="px-4 py-3">${x.approvedAt ? D(x.approvedAt) : "-"}</td><td class="px-4 py-3">${x.activatedAt ? D(x.activatedAt) : "-"}</td><td class="px-4 py-3"><div class="admin-row-actions">${menu}</div></td></tr>`;
+      }).join("")
+      : `<tr><td colspan="9" class="px-3 py-10 text-center text-neutral-500"><div class="inline-flex flex-col items-center gap-2">${I("link2", 48)}<span>Нет данных</span></div></td></tr>`;
     renderPager("slugs-pagination", payload.pagination, (nextPage) => {
       setFormValue(form, "page", String(nextPage));
       void loadSlugs();
@@ -273,8 +350,18 @@
     const payload = await r.json();
     const rows = payload.items || [];
     table.innerHTML = rows.length
-      ? rows.map((x) => `<tr class="border-t border-neutral-100"><td class="px-4 py-3 font-mono"><a href="/${encodeURIComponent(x.slug)}" target="_blank" rel="noopener noreferrer" class="text-blue-700 hover:underline">#${X(x.slug)}</a></td><td class="px-4 py-3">${X(x.name)}</td><td class="px-4 py-3"><select data-act="ct" data-id="${x.id}" class="rounded-lg border border-neutral-300 px-2 py-1 text-xs"><option value="basic" ${x.tariff === "basic" ? "selected" : ""}>Базовый</option><option value="premium" ${x.tariff === "premium" ? "selected" : ""}>Премиум</option></select></td><td class="px-4 py-3">${x.isActive ? "Активна" : "Выключена"}</td><td class="px-4 py-3">${Number(x.viewsCount || 0).toLocaleString("ru-RU")}</td><td class="px-4 py-3">${new Date(x.createdAt).toLocaleDateString("ru-RU")}</td><td class="px-4 py-3"><div class="flex flex-wrap gap-2"><button data-act="cg" data-id="${x.id}" data-n="${x.isActive ? 0 : 1}" class="rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100">${x.isActive ? "Выключить" : "Включить"}</button><a href="/admin/cards/${x.id}/edit" class="rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100">Редактировать</a><a href="/${encodeURIComponent(x.slug)}" target="_blank" rel="noopener noreferrer" class="rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100">Открыть →</a><button data-act="qr" data-slug="${x.slug}" class="rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100">QR</button></div></td></tr>`).join("")
-      : '<tr><td colspan="7" class="px-3 py-8 text-center text-neutral-500">Нет данных</td></tr>';
+      ? rows.map((x) => {
+        const menu = menuWrap([
+          menuItem({ label: "Открыть визитку", icon: "eye", attrs: `data-act="open-url" data-url="/${encodeURIComponent(x.slug)}"` }),
+          menuItem({ label: "Редактировать", icon: "pen", attrs: `data-act="open-url" data-url="/admin/cards/${x.id}/edit"` }),
+          menuItem({ label: "Сменить тариф", icon: "crown", attrs: `data-act="ct" data-id="${x.id}"` }),
+          menuSeparator(),
+          menuItem({ label: x.isActive ? "Выключить" : "Включить", icon: x.isActive ? "toggleLeft" : "toggleRight", attrs: `data-act="cg" data-id="${x.id}" data-n="${x.isActive ? 0 : 1}"` }),
+          menuItem({ label: "QR-код", icon: "qr", attrs: `data-act="qr" data-slug="${x.slug}"` }),
+        ].join(""));
+        return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3 font-mono">#${X(x.slug)} <a href="/${encodeURIComponent(x.slug)}" target="_blank" rel="noopener noreferrer" class="ml-1 inline-flex align-middle text-neutral-400">${I("link2", 14)}</a></td><td class="px-4 py-3">${X(x.name)}</td><td class="px-4 py-3">${x.tariff === "premium" ? "Премиум" : "Базовый"}</td><td class="px-4 py-3">${statusChip(x.isActive ? "approved" : "rejected")}</td><td class="px-4 py-3">${Number(x.viewsCount || 0).toLocaleString("ru-RU")}</td><td class="px-4 py-3">${new Date(x.createdAt).toLocaleDateString("ru-RU")}</td><td class="px-4 py-3"><div class="admin-row-actions">${menu}</div></td></tr>`;
+      }).join("")
+      : `<tr><td colspan="7" class="px-3 py-10 text-center text-neutral-500"><div class="inline-flex flex-col items-center gap-2">${I("creditCard", 48)}<span>Нет данных</span></div></td></tr>`;
     renderPager("cards-pagination", payload.pagination, (nextPage) => {
       setFormValue(form, "page", String(nextPage));
       void loadCards();
@@ -292,8 +379,15 @@
     const payload = await r.json();
     const rows = payload.items || [];
     table.innerHTML = rows.length
-      ? rows.map((x) => `<tr class="border-t border-neutral-100"><td class="px-4 py-3">${D(x.createdAt)}</td><td class="px-4 py-3">${X(x.name)}</td><td class="px-4 py-3 font-mono">${X(x.slug)}</td><td class="px-4 py-3">${X(x.contact)}</td><td class="px-4 py-3"><select data-act="bs" data-id="${x.id}" class="rounded-lg border border-neutral-300 px-2 py-1 text-xs"><option value="ORDERED" ${x.deliveryStatus === "ORDERED" ? "selected" : ""}>📦 Заказан</option><option value="SHIPPED" ${x.deliveryStatus === "SHIPPED" ? "selected" : ""}>🚚 Отправлен</option><option value="DELIVERED" ${x.deliveryStatus === "DELIVERED" ? "selected" : ""}>✅ Доставлен</option></select></td></tr>`).join("")
-      : '<tr><td colspan="5" class="px-3 py-8 text-center text-neutral-500">Нет заказов</td></tr>';
+      ? rows.map((x) => {
+        const menu = menuWrap([
+          menuItem({ label: "Заказан", icon: "package", attrs: `data-act="bs" data-id="${x.id}" data-status="ORDERED"` }),
+          menuItem({ label: "Отправлен", icon: "truck", attrs: `data-act="bs" data-id="${x.id}" data-status="SHIPPED"` }),
+          menuItem({ label: "Доставлен", icon: "checkCircle", attrs: `data-act="bs" data-id="${x.id}" data-status="DELIVERED"` }),
+        ].join(""));
+        return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3">${D(x.createdAt)}</td><td class="px-4 py-3">${X(x.name)}</td><td class="px-4 py-3 font-mono">${X(x.slug)}</td><td class="px-4 py-3">${X(x.contact)}</td><td class="px-4 py-3"><div class="flex items-center justify-between gap-2">${statusChip(x.deliveryStatus)}<div class="admin-row-actions">${menu}</div></div></td></tr>`;
+      }).join("")
+      : `<tr><td colspan="5" class="px-3 py-10 text-center text-neutral-500"><div class="inline-flex flex-col items-center gap-2">${I("package", 48)}<span>Нет заказов</span></div></td></tr>`;
     renderPager("bracelets-pagination", payload.pagination, (nextPage) => {
       setFormValue(form, "page", String(nextPage));
       void loadBracelets();
@@ -311,8 +405,14 @@
     const rows = payload.items || [];
     table.innerHTML = rows.length ? rows.map((x) => {
       const data = encodeURIComponent(JSON.stringify({ id: x.id, name: x.name, slug: x.slug, tariff: x.tariff, text: x.text }));
-      return `<tr class="border-t border-neutral-100"><td class="px-4 py-3">${X(x.name)}</td><td class="px-4 py-3 font-mono">${X(x.slug)}</td><td class="px-4 py-3">${x.tariff === "premium" ? "Премиум" : "Базовый"}</td><td class="px-4 py-3">${X(x.text)}</td><td class="px-4 py-3">${x.isVisible ? "Показан" : "Скрыт"}</td><td class="px-4 py-3"><div class="flex flex-wrap gap-2"><button data-act="tv" data-id="${x.id}" data-n="${x.isVisible ? 0 : 1}" class="rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100">${x.isVisible ? "Скрыть" : "Показать"}</button><button data-act="te" data-json="${data}" class="rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100">Редактировать</button><button data-act="td" data-id="${x.id}" class="rounded-lg border border-red-200 px-2.5 py-1 text-xs font-semibold text-red-700 transition hover:bg-red-50">Удалить</button></div></td></tr>`;
-    }).join("") : '<tr><td colspan="6" class="px-3 py-8 text-center text-neutral-500">Нет отзывов</td></tr>';
+      const menu = menuWrap([
+        menuItem({ label: x.isVisible ? "Скрыть" : "Показать", icon: "eye", attrs: `data-act="tv" data-id="${x.id}" data-n="${x.isVisible ? 0 : 1}"` }),
+        menuItem({ label: "Редактировать", icon: "pen", attrs: `data-act="te" data-json="${data}"` }),
+        menuSeparator(),
+        menuItem({ label: "Удалить", icon: "trash", attrs: `data-act="td" data-id="${x.id}"`, danger: true }),
+      ].join(""));
+      return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3">${X(x.name)}</td><td class="px-4 py-3 font-mono">${X(x.slug)}</td><td class="px-4 py-3">${x.tariff === "premium" ? "Премиум" : "Базовый"}</td><td class="px-4 py-3">${X(x.text)}</td><td class="px-4 py-3">${statusChip(x.isVisible ? "approved" : "muted")}</td><td class="px-4 py-3"><div class="admin-row-actions">${menu}</div></td></tr>`;
+    }).join("") : `<tr><td colspan="6" class="px-3 py-10 text-center text-neutral-500"><div class="inline-flex flex-col items-center gap-2">${I("message", 48)}<span>Нет отзывов</span></div></td></tr>`;
     renderPager("testimonials-pagination", payload.pagination, (nextPage) => {
       initialQuery.t_page = String(nextPage);
       void loadTestimonials();
@@ -470,6 +570,29 @@
     closeTe();
     void loadTestimonials();
   });
+  document.addEventListener("click", (e) => {
+    const toggle = e.target instanceof HTMLElement ? e.target.closest("[data-kebab-toggle]") : null;
+    if (toggle instanceof HTMLElement) {
+      e.preventDefault();
+      e.stopPropagation();
+      const wrap = toggle.closest(".admin-row-actions");
+      const menu = wrap?.querySelector(".admin-row-menu");
+      if (!(menu instanceof HTMLElement)) return;
+      const isOpen = !menu.classList.contains("is-hidden");
+      closeAllRowMenus();
+      if (!isOpen) {
+        menu.classList.remove("is-hidden");
+        toggle.setAttribute("aria-expanded", "true");
+      }
+      return;
+    }
+    if (!(e.target instanceof HTMLElement) || !e.target.closest(".admin-row-actions")) {
+      closeAllRowMenus();
+    }
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeAllRowMenus();
+  });
   document.addEventListener("change", async (e) => {
     const t = e.target;
     if (!(t instanceof HTMLElement)) return;
@@ -544,6 +667,71 @@
     const n = e.target instanceof HTMLElement ? e.target.closest("[data-act]") : null;
     if (!(n instanceof HTMLElement)) return;
     const a = n.getAttribute("data-act");
+    closeAllRowMenus();
+    if (a === "open-url") {
+      const url = n.getAttribute("data-url");
+      if (url) window.open(url, "_blank", "noopener,noreferrer");
+      closeAllRowMenus();
+      return;
+    }
+    if (a === "os") {
+      const id = n.getAttribute("data-id");
+      const status = n.getAttribute("data-status");
+      const previousNote = n.getAttribute("data-note") || "";
+      if (!id || !status) return;
+      let adminNote = previousNote;
+      if (status === "rejected") {
+        const entered = prompt("Причина отклонения (будет отправлена в Telegram)", previousNote);
+        if (entered === null) return;
+        adminNote = entered;
+      }
+      const r = await fetch(`/api/admin/orders/${id}/status`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({ status, adminNote }) });
+      if (!r.ok) alert(await E(r));
+      else void loadOrders();
+      closeAllRowMenus();
+      return;
+    }
+    if (a === "bs") {
+      const id = n.getAttribute("data-id");
+      const deliveryStatus = n.getAttribute("data-status");
+      if (!id || !deliveryStatus) return;
+      const r = await fetch(`/api/admin/bracelet-orders/${id}/status`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({ deliveryStatus }) });
+      if (!r.ok) alert(await E(r));
+      else void loadBracelets();
+      closeAllRowMenus();
+      return;
+    }
+    if (a === "ct") {
+      const id = n.getAttribute("data-id");
+      if (!id) return;
+      const tariff = String(prompt("Новый тариф: basic или premium", "basic") || "").trim().toLowerCase();
+      if (!["basic", "premium"].includes(tariff)) return;
+      const r = await fetch(`/api/admin/cards/${id}/tariff`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({ tariff }) });
+      if (!r.ok) alert(await E(r));
+      else void loadCards();
+      closeAllRowMenus();
+      return;
+    }
+    if (a === "up") {
+      const telegramId = n.getAttribute("data-id");
+      if (!telegramId) return;
+      const prevPlan = n.getAttribute("data-current-plan") || "basic";
+      const activeSlugs = Number(n.getAttribute("data-active-slugs") || "0");
+      const braceletSlugs = String(n.getAttribute("data-bracelet-slugs") || "").split(",").map((x) => x.trim()).filter(Boolean);
+      const entered = String(prompt("Новый тариф: basic или premium", prevPlan) || "").trim().toLowerCase();
+      if (!["basic", "premium"].includes(entered) || entered === prevPlan) return;
+      const downgradeToBasic = prevPlan === "premium" && entered === "basic" && activeSlugs > 1;
+      if (downgradeToBasic) {
+        const braceletNote = braceletSlugs.length ? `\nБраслет привязан к: ${braceletSlugs.join(", ")}.` : "";
+        const ok = confirm(`У пользователя ${activeSlugs} slug. При переходе на Базовый будет активен только основной. Продолжить?${braceletNote}`);
+        if (!ok) return;
+      }
+      const r = await fetch(`/api/admin/users/${encodeURIComponent(telegramId)}/plan`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({ plan: entered, force: downgradeToBasic }) });
+      if (!r.ok) alert(await E(r));
+      else void loadUsers();
+      closeAllRowMenus();
+      return;
+    }
     if (a === "oa") openA(n.getAttribute("data-id") || "", n.getAttribute("data-t") || "basic", n.getAttribute("data-th") || "default_dark");
     if (a === "od") { const id = n.getAttribute("data-id"); if (!id || !confirm("Удалить заявку?")) return; const r = await fetch(`/api/admin/orders/${id}`, { method: "DELETE", headers: H() }); if (!r.ok) alert(await E(r)); else void loadOrders(); }
     if (a === "ope") { const id = n.getAttribute("data-id"); if (!id) return; const r = await fetch(`/api/admin/orders/${id}/extend-pending`, { method: "POST", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({}) }); if (!r.ok) alert(await E(r)); else void loadOrders(); }

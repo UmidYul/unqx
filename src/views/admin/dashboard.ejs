@@ -15,13 +15,17 @@
 <body class="antialiased" data-admin-layout="1" data-page="admin-dashboard" data-public-base-url="<%= pagePublicBaseUrl %>" data-active-tab="<%= pageActiveTab %>">
   <%- include('../partials/admin-layout-start', { activeTab: pageActiveTab }) %>
       <div class="mx-auto w-full max-w-6xl space-y-5">
-        <div class="flex flex-wrap items-center justify-between gap-3">
-          <h1 class="text-2xl font-black">Управление платформой</h1>
+        <div class="flex flex-wrap items-start justify-between gap-3 border-b border-neutral-200 pb-4">
+          <div>
+            <h1 class="text-2xl font-black">Управление платформой</h1>
+            <p class="mt-1 text-sm text-neutral-500">Мониторинг заявок, пользователей и маркетинговых инструментов</p>
+          </div>
           <a
             href="/admin/cards/new"
-            class="w-full rounded-xl bg-neutral-900 px-4 py-2 text-center text-sm font-semibold text-white transition hover:bg-neutral-700 sm:w-auto"
+            class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-neutral-900 px-4 py-2 text-center text-sm font-semibold text-white transition hover:bg-neutral-700 sm:w-auto"
           >
-            + Создать визитку
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            <span>Создать визитку</span>
           </a>
         </div>
 
@@ -57,12 +61,12 @@
           <form id="orders-filters" class="grid gap-3 rounded-2xl border border-neutral-200 bg-white p-4 md:grid-cols-6">
             <select name="status" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">
               <option value="all">Все статусы</option>
-              <option value="new">🆕 Новая</option>
-              <option value="contacted">💬 Связались</option>
-              <option value="paid">💳 Ожидает оплаты</option>
-              <option value="approved">✅ Одобрено</option>
-              <option value="rejected">❌ Отклонено</option>
-              <option value="expired">⬜ ИСТЕКЛА</option>
+              <option value="new">Новая</option>
+              <option value="contacted">Связались</option>
+              <option value="paid">Ожидает оплаты</option>
+              <option value="approved">Одобрено</option>
+              <option value="rejected">Отклонено</option>
+              <option value="expired">Истекла</option>
             </select>
             <select name="tariff" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">
               <option value="all">Все тарифы</option>
@@ -207,9 +211,9 @@
           <form id="bracelets-filters" class="grid gap-3 rounded-2xl border border-neutral-200 bg-white p-4 md:grid-cols-[220px_auto]">
             <select name="status" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">
               <option value="all">Все статусы</option>
-              <option value="ORDERED">📦 Заказан</option>
-              <option value="SHIPPED">🚚 Отправлен</option>
-              <option value="DELIVERED">✅ Доставлен</option>
+              <option value="ORDERED">Заказан</option>
+              <option value="SHIPPED">Отправлен</option>
+              <option value="DELIVERED">Доставлен</option>
             </select>
             <input type="hidden" name="page" value="1" />
             <button type="submit" class="rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">Применить</button>
@@ -261,7 +265,7 @@
           </div>
           <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
             <table class="min-w-full text-left text-sm">
-              <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500"><tr><th class="px-4 py-3">⚠️ Подозрительная активность</th><th class="px-4 py-3">Просмотры</th><th class="px-4 py-3">Окно</th><th class="px-4 py-3">Время</th></tr></thead>
+              <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500"><tr><th class="px-4 py-3">Подозрительная активность</th><th class="px-4 py-3">Просмотры</th><th class="px-4 py-3">Окно</th><th class="px-4 py-3">Время</th></tr></thead>
               <tbody id="leaderboard-suspicious-table"></tbody>
             </table>
           </div>
@@ -399,7 +403,9 @@
     <div class="w-full max-w-md rounded-2xl bg-white p-5" role="dialog" aria-modal="true">
       <div class="flex items-center justify-between">
         <h3 class="text-lg font-bold">Активация заявки</h3>
-        <button type="button" id="activation-close-btn" class="text-sm text-neutral-500 hover:text-neutral-900">Закрыть</button>
+        <button type="button" id="activation-close-btn" class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-neutral-300 text-neutral-500 hover:text-neutral-900" aria-label="Закрыть">
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
       </div>
       <form id="activation-form" class="mt-4 space-y-3">
         <input type="hidden" name="orderId" />
@@ -432,7 +438,9 @@
           <img src="/brand/unq-mark.svg" alt="UNQ+" class="h-6 w-6 rounded-md border border-neutral-200 bg-white p-0.5" />
           <span>QR-код <span id="qr-title-slug"></span></span>
         </h3>
-        <button type="button" class="text-sm text-neutral-500 hover:text-neutral-900" data-close-modal>Закрыть</button>
+        <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-neutral-300 text-neutral-500 hover:text-neutral-900" data-close-modal aria-label="Закрыть">
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
       </div>
 
       <div class="mt-4 flex justify-center">
@@ -460,7 +468,9 @@
     <div class="w-full max-w-lg rounded-2xl bg-white p-5" role="dialog" aria-modal="true">
       <div class="flex items-center justify-between">
         <h3 class="text-lg font-bold">Редактировать отзыв</h3>
-        <button type="button" id="testimonial-edit-close-btn" class="text-sm text-neutral-500 hover:text-neutral-900">Закрыть</button>
+        <button type="button" id="testimonial-edit-close-btn" class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-neutral-300 text-neutral-500 hover:text-neutral-900" aria-label="Закрыть">
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
       </div>
       <form id="testimonial-edit-form" class="mt-4 space-y-3">
         <input type="hidden" name="id" />

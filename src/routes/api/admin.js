@@ -98,17 +98,17 @@ function toDeliveryStatus(value) {
 function formatOrderStatusLabel(status) {
   switch (status) {
     case "new":
-      return "🆕 Новая";
+      return "Новая";
     case "contacted":
-      return "💬 Связались";
+      return "Связались";
     case "paid":
-      return "💳 Ожидает оплаты";
+      return "Ожидает оплаты";
     case "approved":
-      return "✅ Одобрено";
+      return "Одобрено";
     case "rejected":
-      return "❌ Отклонено";
+      return "Отклонено";
     case "expired":
-      return "⬜ ИСТЕКЛА";
+      return "Истекла";
     default:
       return status;
   }

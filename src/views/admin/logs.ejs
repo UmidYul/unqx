@@ -16,8 +16,11 @@
 <body class="antialiased" data-admin-layout="1" data-page="admin-logs">
   <%- include('../partials/admin-layout-start', { activeTab: 'logs' }) %>
       <div class="mx-auto w-full max-w-6xl space-y-4">
-        <div class="flex flex-wrap items-center justify-between gap-3">
-          <h1 class="text-2xl font-black">Логи ошибок</h1>
+        <div class="flex flex-wrap items-start justify-between gap-3 border-b border-neutral-200 pb-4">
+          <div>
+            <h1 class="text-2xl font-black">Логи ошибок</h1>
+            <p class="mt-1 text-sm text-neutral-500">Системные ошибки 404/500 и служебные сообщения</p>
+          </div>
           <div class="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
             <button
               type="button"

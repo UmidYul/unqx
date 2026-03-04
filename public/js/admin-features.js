@@ -7,6 +7,26 @@
   const headers = (extra = {}) => ({ ...(csrf ? { "X-CSRF-Token": csrf } : {}), ...extra });
   const P = (v) => `${Number(v || 0).toLocaleString("ru-RU")} сум`;
   const D = (v) => (v ? new Date(v).toLocaleString("ru-RU") : "-");
+  const ICONS = {
+    more: '<path d="M12 5h.01M12 12h.01M12 19h.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
+    eyeOff: '<path d="M3 3 21 21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M10.6 10.6a2 2 0 0 0 2.8 2.8" stroke="currentColor" stroke-width="1.8"/><path d="M9 5.3a10.9 10.9 0 0 1 12 6.7s-3.5 6-10 6a10.8 10.8 0 0 1-5-.9" stroke="currentColor" stroke-width="1.8"/>',
+    eye: '<path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6Z" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="2.6" stroke="currentColor" stroke-width="1.8"/>',
+    refresh: '<path d="M20 11a8 8 0 1 0 2 5" stroke="currentColor" stroke-width="1.8"/><path d="M20 4v7h-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
+    gift: '<path d="M20 12v8H4v-8M2 7h20v5H2zM12 7v13" stroke="currentColor" stroke-width="1.8"/><path d="M7.5 7a2.5 2.5 0 1 1 5-2.5V7M16.5 7a2.5 2.5 0 1 0-5-2.5V7" stroke="currentColor" stroke-width="1.8"/>',
+    pen: '<path d="m4 20 4-.8L20 7a2.2 2.2 0 0 0-3-3L5 16l-1 4Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>',
+    square: '<rect x="5" y="5" width="14" height="14" rx="2" stroke="currentColor" stroke-width="1.8"/>',
+    send: '<path d="m3 12 18-8-6 16-3-7-9-1Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>',
+    trash: '<path d="M4 7h16M10 11v6M14 11v6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M7 7l1 12h8l1-12M9 7V5h6v2" stroke="currentColor" stroke-width="1.8"/>',
+  };
+  const I = (name, size = 16) => `<svg class="admin-i" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" aria-hidden="true">${ICONS[name] || ""}</svg>`;
+  const kebabButton = () => `<button type="button" class="admin-kebab-btn" data-kebab-toggle aria-label="Действия">${I("more", 16)}</button>`;
+  const menuItem = ({ label, icon, attrs = "", danger = false }) => `<button type="button" class="admin-menu-item${danger ? " is-danger" : ""}" ${attrs}>${I(icon, 16)}<span>${label}</span></button>`;
+  const menuSeparator = () => '<div class="admin-menu-sep" role="separator"></div>';
+  const menuWrap = (content) => `${kebabButton()}<div class="admin-row-menu is-hidden">${content}</div>`;
+  function closeAllRowMenus() {
+    document.querySelectorAll(".admin-row-menu").forEach((node) => node.classList.add("is-hidden"));
+    document.querySelectorAll("[data-kebab-toggle]").forEach((node) => node.setAttribute("aria-expanded", "false"));
+  }
 
   async function jsonFetch(url, options = {}) {
     const response = await fetch(url, options);
@@ -40,7 +60,10 @@
     table.innerHTML = (board.items || []).length
       ? board.items
           .map(
-            (item) => `<tr class="border-t border-neutral-100"><td class="px-4 py-3">#${item.rank}</td><td class="px-4 py-3 font-mono">${item.slug}</td><td class="px-4 py-3">${item.ownerName}</td><td class="px-4 py-3">${Number(item.views || 0).toLocaleString("ru-RU")}</td><td class="px-4 py-3">${item.delta == null ? "—" : item.delta > 0 ? `↑ +${item.delta}` : item.delta < 0 ? `↓ ${item.delta}` : "→ 0"}</td><td class="px-4 py-3">${item.plan === "premium" ? "ПРЕМИУМ" : "БАЗОВЫЙ"}</td><td class="px-4 py-3"><button data-a="exclude-lb" data-slug="${item.slug}" class="rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold">Исключить</button><button data-a="reset-lb-user" data-tg="${item.ownerTelegramId || ""}" class="ml-2 rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold">Сбросить счётчик</button></td></tr>`,
+            (item) => `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3">#${item.rank}</td><td class="px-4 py-3 font-mono">${item.slug}</td><td class="px-4 py-3">${item.ownerName}</td><td class="px-4 py-3">${Number(item.views || 0).toLocaleString("ru-RU")}</td><td class="px-4 py-3">${item.delta == null ? "—" : item.delta > 0 ? `+${item.delta}` : item.delta < 0 ? `${item.delta}` : "0"}</td><td class="px-4 py-3">${item.plan === "premium" ? "ПРЕМИУМ" : "БАЗОВЫЙ"}</td><td class="px-4 py-3"><div class="admin-row-actions">${menuWrap([
+              menuItem({ label: "Исключить из лидерборда", icon: "eyeOff", attrs: `data-a="exclude-lb" data-slug="${item.slug}"` }),
+              menuItem({ label: "Сбросить счётчик", icon: "refresh", attrs: `data-a="reset-lb-user" data-tg="${item.ownerTelegramId || ""}"` }),
+            ].join(""))}</div></td></tr>`,
           )
           .join("")
       : '<tr><td colspan="7" class="px-3 py-8 text-center text-neutral-500">Нет данных</td></tr>';
@@ -82,7 +105,7 @@
     table.innerHTML = (rowsPayload.items || []).length
       ? rowsPayload.items
           .map(
-            (item) => `<tr class="border-t border-neutral-100"><td class="px-4 py-3">${item.referrer?.username ? `@${item.referrer.username}` : item.referrerTelegramId}</td><td class="px-4 py-3">${item.referred?.username ? `@${item.referred.username}` : item.referredTelegramId}</td><td class="px-4 py-3">${D(item.createdAt)}</td><td class="px-4 py-3">${item.status}</td><td class="px-4 py-3">${item.rewardType || "—"}</td><td class="px-4 py-3"><button data-a="reward-ref" data-id="${item.id}" class="rounded-lg border border-neutral-300 px-2 py-1 text-xs font-semibold">Выдать вручную</button></td></tr>`,
+            (item) => `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3">${item.referrer?.username ? `@${item.referrer.username}` : item.referrerTelegramId}</td><td class="px-4 py-3">${item.referred?.username ? `@${item.referred.username}` : item.referredTelegramId}</td><td class="px-4 py-3">${D(item.createdAt)}</td><td class="px-4 py-3">${item.status}</td><td class="px-4 py-3">${item.rewardType || "—"}</td><td class="px-4 py-3"><div class="admin-row-actions">${menuWrap(menuItem({ label: "Выдать награду вручную", icon: "gift", attrs: `data-a="reward-ref" data-id="${item.id}"` }))}</div></td></tr>`,
           )
           .join("")
       : '<tr><td colspan="6" class="px-3 py-8 text-center text-neutral-500">Нет данных</td></tr>';
@@ -101,7 +124,12 @@
             } catch {
               stats = { requestsCount: 0, discountSum: 0 };
             }
-            return `<tr class="border-t border-neutral-100"><td class="px-4 py-3">${item.title}</td><td class="px-4 py-3">-${item.discountPercent}%</td><td class="px-4 py-3">${D(item.startsAt)} → ${D(item.endsAt)}</td><td class="px-4 py-3">${item.isActive ? "Активен" : "Остановлен"}</td><td class="px-4 py-3">${stats.requestsCount} заявок · ${P(stats.discountSum)}</td><td class="px-4 py-3"><button data-a="stop-flash" data-id="${item.id}" class="rounded-lg border border-neutral-300 px-2 py-1 text-xs font-semibold">Остановить</button></td></tr>`;
+            return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3">${item.title}</td><td class="px-4 py-3">-${item.discountPercent}%</td><td class="px-4 py-3">${D(item.startsAt)} → ${D(item.endsAt)}</td><td class="px-4 py-3">${item.isActive ? "Активен" : "Остановлен"}</td><td class="px-4 py-3">${stats.requestsCount} заявок · ${P(stats.discountSum)}</td><td class="px-4 py-3"><div class="admin-row-actions">${menuWrap([
+              menuItem({ label: "Редактировать", icon: "pen", attrs: 'disabled="disabled"' }),
+              menuItem({ label: "Остановить досрочно", icon: "square", attrs: `data-a="stop-flash" data-id="${item.id}"` }),
+              menuSeparator(),
+              menuItem({ label: "Удалить", icon: "trash", attrs: 'disabled="disabled"', danger: true }),
+            ].join(""))}</div></td></tr>`;
           }),
         ).then((rows) => rows.join(""))
       : '<tr><td colspan="6" class="px-3 py-8 text-center text-neutral-500">Нет flash sale</td></tr>';
@@ -120,7 +148,13 @@
         } catch {
           // noop
         }
-        return `<tr class="border-t border-neutral-100"><td class="px-4 py-3">${item.title}</td><td class="px-4 py-3">${D(item.dropAt)}</td><td class="px-4 py-3">${item.slugCount}</td><td class="px-4 py-3">${item.isLive ? "LIVE" : item.isFinished ? "Завершён" : "Ожидается"}</td><td class="px-4 py-3">Продано ${live.sold || 0} из ${live.total || item.slugCount}</td><td class="px-4 py-3"><button data-a="finish-drop" data-id="${item.id}" class="rounded-lg border border-neutral-300 px-2 py-1 text-xs font-semibold">Завершить досрочно</button> <button data-a="notify-drop" data-id="${item.id}" class="rounded-lg border border-neutral-300 px-2 py-1 text-xs font-semibold">Уведомить вручную</button></td></tr>`;
+        return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3">${item.title}</td><td class="px-4 py-3">${D(item.dropAt)}</td><td class="px-4 py-3">${item.slugCount}</td><td class="px-4 py-3">${item.isLive ? "LIVE" : item.isFinished ? "Завершён" : "Ожидается"}</td><td class="px-4 py-3">Продано ${live.sold || 0} из ${live.total || item.slugCount}</td><td class="px-4 py-3"><div class="admin-row-actions">${menuWrap([
+          menuItem({ label: "Редактировать", icon: "pen", attrs: 'disabled="disabled"' }),
+          menuItem({ label: "Завершить досрочно", icon: "square", attrs: `data-a="finish-drop" data-id="${item.id}"` }),
+          menuItem({ label: "Отправить уведомление вручную", icon: "send", attrs: `data-a="notify-drop" data-id="${item.id}"` }),
+          menuSeparator(),
+          menuItem({ label: "Удалить", icon: "trash", attrs: 'disabled="disabled"', danger: true }),
+        ].join(""))}</div></td></tr>`;
       }),
     ).then((rows) => rows.join(""));
   }
@@ -208,6 +242,31 @@
     await loadDropsAdmin();
   });
 
+  document.addEventListener("click", (event) => {
+    const toggle = event.target instanceof HTMLElement ? event.target.closest("[data-kebab-toggle]") : null;
+    if (toggle instanceof HTMLElement) {
+      event.preventDefault();
+      event.stopPropagation();
+      const wrap = toggle.closest(".admin-row-actions");
+      const menu = wrap?.querySelector(".admin-row-menu");
+      if (!(menu instanceof HTMLElement)) return;
+      const isOpen = !menu.classList.contains("is-hidden");
+      closeAllRowMenus();
+      if (!isOpen) {
+        menu.classList.remove("is-hidden");
+        toggle.setAttribute("aria-expanded", "true");
+      }
+      return;
+    }
+    if (!(event.target instanceof HTMLElement) || !event.target.closest(".admin-row-actions")) {
+      closeAllRowMenus();
+    }
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") closeAllRowMenus();
+  });
+
   document.addEventListener("click", async (event) => {
     const target = event.target instanceof HTMLElement ? event.target.closest("[data-a]") : null;
     if (!(target instanceof HTMLElement)) return;
@@ -275,6 +334,8 @@
       }
     } catch (error) {
       alert(error.message || "Ошибка");
+    } finally {
+      closeAllRowMenus();
     }
   });
 
