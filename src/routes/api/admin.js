@@ -969,6 +969,7 @@ router.patch(
           telegramId: updated.telegramId,
           slug: updated.slug,
           plan: updated.approvedPlan || order.requestedPlan,
+          hasBracelet: Boolean(order.bracelet),
         });
       } catch (error) {
         console.error("[express-app] failed to send approval notification", error);
@@ -1186,17 +1187,21 @@ router.get(
     const pageSize = Math.max(1, Math.min(200, pageSizeRaw));
     const q = typeof req.query.q === "string" ? req.query.q.trim() : "";
     const sort = req.query.sort === "score_desc" ? "score_desc" : "created_desc";
+    const rawPlanFilter = typeof req.query.plan === "string" ? req.query.plan.trim() : "";
+    const planFilter = ["none", "basic", "premium"].includes(rawPlanFilter) ? rawPlanFilter : "all";
 
-    const where = q
-      ? {
-          OR: [
-            { telegramId: { contains: q, mode: "insensitive" } },
-            { firstName: { contains: q, mode: "insensitive" } },
-            { username: { contains: q, mode: "insensitive" } },
-            { displayName: { contains: q, mode: "insensitive" } },
-          ],
-        }
-      : {};
+    const where = {};
+    if (planFilter !== "all") {
+      where.plan = planFilter;
+    }
+    if (q) {
+      where.OR = [
+        { telegramId: { contains: q, mode: "insensitive" } },
+        { firstName: { contains: q, mode: "insensitive" } },
+        { username: { contains: q, mode: "insensitive" } },
+        { displayName: { contains: q, mode: "insensitive" } },
+      ];
+    }
 
     let total;
     let users;
@@ -1352,8 +1357,13 @@ router.patch(
     }
     const telegramId = String(req.params.telegramId || "");
     const plan = normalizeUserPlan(req.body.plan);
+    const reason = String(req.body.reason || "").trim();
     const force = Boolean(req.body.force);
     const now = new Date();
+    if (!reason) {
+      res.status(400).json({ error: "Reason is required", code: "PLAN_CHANGE_REASON_REQUIRED" });
+      return;
+    }
 
     const result = await prisma.$transaction(async (tx) => {
       const user = await tx.user.findUnique({

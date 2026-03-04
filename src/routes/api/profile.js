@@ -11,6 +11,8 @@ const {
   getSlugLimit,
   getTagLimit,
   getButtonLimit,
+  canCreateCard,
+  canAccessAnalytics,
   normalizeThemeByPlan,
   normalizeColor,
   normalizeTags,
@@ -181,6 +183,23 @@ function assertUserActive(user, res) {
   return true;
 }
 
+function assertPlanAllowsCard(user, res) {
+  if (!canCreateCard(user)) {
+    res.status(403).json({ error: "Тариф не активирован", code: "PLAN_REQUIRED" });
+    return false;
+  }
+  return true;
+}
+
+function assertPlanAllowsSlugManagement(user, res) {
+  const plan = getEffectivePlan(user).plan;
+  if (plan === "none") {
+    res.status(403).json({ error: "Тариф не активирован", code: "PLAN_REQUIRED" });
+    return false;
+  }
+  return true;
+}
+
 async function safeRecalculateScore(telegramId) {
   try {
     await recalculateAndRefreshPercentiles(telegramId);
@@ -277,6 +296,7 @@ router.get(
         effectivePlan: effective.plan,
         planPurchasedAt: user.planPurchasedAt,
         planUpgradedAt: user.planUpgradedAt,
+        welcomeDismissed: Boolean(user.welcomeDismissed),
         planBadge: getPlanBadgeLabel(effective.plan),
         notificationsEnabled: Boolean(user.notificationsEnabled),
         status: user.status,
@@ -286,7 +306,7 @@ router.get(
         tags: getTagLimit(effective.plan),
         buttons: getButtonLimit(effective.plan),
       },
-      slugs,
+      slugs: effective.plan === "none" ? [] : slugs,
       card: parseProfileCardRow(card),
       requests: requests.map((item) => ({
         id: item.id,
@@ -304,6 +324,10 @@ router.get(
       })),
       score,
       pricing,
+      access: {
+        canCreateCard: canCreateCard(user),
+        canAccessAnalytics: canAccessAnalytics(user),
+      },
     });
   }),
 );
@@ -326,6 +350,9 @@ router.patch(
   asyncHandler(async (req, res) => {
     const user = await getCurrentUser(req);
     if (!assertUserActive(user, res)) {
+      return;
+    }
+    if (!assertPlanAllowsSlugManagement(user, res)) {
       return;
     }
 
@@ -361,6 +388,9 @@ router.patch(
     if (!assertUserActive(user, res)) {
       return;
     }
+    if (!assertPlanAllowsSlugManagement(user, res)) {
+      return;
+    }
 
     const fullSlug = sanitizeSlug(req.params.slug);
     const existing = await prisma.slug.findFirst({
@@ -392,6 +422,9 @@ router.patch(
   asyncHandler(async (req, res) => {
     const user = await getCurrentUser(req);
     if (!assertUserActive(user, res)) {
+      return;
+    }
+    if (!assertPlanAllowsSlugManagement(user, res)) {
       return;
     }
 
@@ -433,6 +466,9 @@ router.put(
   asyncHandler(async (req, res) => {
     const user = await getCurrentUser(req);
     if (!assertUserActive(user, res)) {
+      return;
+    }
+    if (!assertPlanAllowsCard(user, res)) {
       return;
     }
 
@@ -567,6 +603,9 @@ router.post(
     if (!assertUserActive(user, res)) {
       return;
     }
+    if (!assertPlanAllowsCard(user, res)) {
+      return;
+    }
 
     const card = await prisma.profileCard.findUnique({
       where: { ownerTelegramId: user.telegramId },
@@ -607,6 +646,9 @@ router.delete(
   asyncHandler(async (req, res) => {
     const user = await getCurrentUser(req);
     if (!assertUserActive(user, res)) {
+      return;
+    }
+    if (!assertPlanAllowsCard(user, res)) {
       return;
     }
 
@@ -657,6 +699,23 @@ router.get(
         createdAt: item.createdAt,
       })),
     });
+  }),
+);
+
+router.patch(
+  "/welcome-dismiss",
+  asyncHandler(async (req, res) => {
+    const user = await getCurrentUser(req);
+    if (!assertUserActive(user, res)) {
+      return;
+    }
+
+    await prisma.user.update({
+      where: { telegramId: user.telegramId },
+      data: { welcomeDismissed: true },
+    });
+
+    res.json({ ok: true, welcomeDismissed: true });
   }),
 );
 

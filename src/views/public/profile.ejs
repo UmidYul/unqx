@@ -14,6 +14,20 @@
         На главную
       </a>
     </div>
+    <section id="profile-welcome-banner" class="mx-auto mb-4 hidden w-full max-w-6xl rounded-2xl border border-neutral-200 bg-white p-4 sm:p-5">
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <h2 class="text-base font-bold text-neutral-900">Добро пожаловать в UNQ+</h2>
+          <p class="mt-1 text-sm text-neutral-600">Ты зарегистрирован. Следующий шаг — займи свой slug и выбери тариф.</p>
+        </div>
+        <button id="profile-welcome-dismiss" type="button" class="interactive-btn inline-flex h-8 w-8 items-center justify-center rounded-lg border border-neutral-300 text-neutral-600" aria-label="Закрыть приветствие">
+          <svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="m6 6 12 12M18 6 6 18"></path>
+          </svg>
+        </button>
+      </div>
+      <button type="button" data-order-link class="interactive-btn mt-3 min-h-11 rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white">Занять slug →</button>
+    </section>
     <div class="mx-auto grid min-w-0 w-full max-w-6xl gap-4 md:gap-6 lg:grid-cols-[300px_1fr]">
       <aside class="min-w-0 rounded-2xl border border-neutral-200 bg-white p-4 sm:p-5">
         <div class="flex items-center gap-3">
@@ -27,12 +41,13 @@
           <p id="profile-sidebar-plan" class="inline-flex rounded-full border border-neutral-300 px-2.5 py-1 text-xs font-semibold">БАЗОВЫЙ</p>
           <p id="profile-sidebar-expiry" class="text-xs text-neutral-500">Куплено: —</p>
           <button id="profile-sidebar-choose-plan" type="button" data-order-link data-order-plan="basic" class="interactive-btn hidden min-h-11 rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold text-left">
-            Выбрать тариф →
+            Купить тариф →
           </button>
         </div>
         <nav class="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:mt-5 lg:grid-cols-1">
           <button type="button" data-tab-target="slugs" class="profile-tab-btn interactive-btn min-h-11 rounded-xl border border-neutral-200 px-3 py-2 text-center text-xs font-medium sm:text-sm lg:text-left">МОИ UNQ</button>
           <button type="button" data-tab-target="card" class="profile-tab-btn interactive-btn min-h-11 rounded-xl border border-neutral-200 px-3 py-2 text-center text-xs font-medium sm:text-sm lg:text-left">МОЯ ВИЗИТКА</button>
+          <button type="button" data-tab-target="analytics" class="profile-tab-btn interactive-btn min-h-11 rounded-xl border border-neutral-200 px-3 py-2 text-center text-xs font-medium sm:text-sm lg:text-left">АНАЛИТИКА</button>
           <button type="button" data-tab-target="requests" class="profile-tab-btn interactive-btn min-h-11 rounded-xl border border-neutral-200 px-3 py-2 text-center text-xs font-medium sm:text-sm lg:text-left">ЗАЯВКИ</button>
           <button type="button" data-tab-target="referrals" class="profile-tab-btn interactive-btn min-h-11 rounded-xl border border-neutral-200 px-3 py-2 text-center text-xs font-medium sm:text-sm lg:text-left">РЕФЕРАЛЫ</button>
           <button type="button" data-tab-target="settings" class="profile-tab-btn interactive-btn min-h-11 rounded-xl border border-neutral-200 px-3 py-2 text-center text-xs font-medium sm:text-sm lg:text-left">НАСТРОЙКИ</button>
@@ -59,6 +74,8 @@
 
         <article data-tab-panel="card" class="profile-tab-panel hidden min-w-0 rounded-2xl border border-neutral-200 bg-white p-4 sm:p-5">
           <h2 class="text-lg font-bold">МОЯ ВИЗИТКА</h2>
+          <section id="profile-card-empty-state" class="hidden mt-5 rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-10 text-center"></section>
+          <div id="profile-card-content">
           <section id="profile-score-panel" class="mt-4 rounded-xl border border-neutral-200 bg-neutral-50 p-4">
             <div class="grid gap-4 xl:grid-cols-[280px_1fr]">
               <div>
@@ -191,6 +208,28 @@
               <div id="profile-card-live-preview" class="rounded-2xl border border-neutral-200 bg-white p-3 sm:p-4"></div>
             </div>
           </div>
+          </div>
+        </article>
+
+        <article data-tab-panel="analytics" class="profile-tab-panel hidden min-w-0 rounded-2xl border border-neutral-200 bg-white p-4 sm:p-5">
+          <h2 class="text-lg font-bold">АНАЛИТИКА</h2>
+          <section id="profile-analytics-empty-state" class="hidden mt-5 rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-10 text-center"></section>
+          <section id="profile-analytics-content" class="mt-4 rounded-xl border border-neutral-200 bg-neutral-50 p-4">
+            <div class="grid gap-4 sm:grid-cols-3">
+              <article class="rounded-xl border border-neutral-200 bg-white p-3">
+                <p class="text-xs uppercase tracking-[0.12em] text-neutral-500">UNQ Score</p>
+                <p id="profile-analytics-score" class="mt-2 text-2xl font-black text-neutral-900">0</p>
+              </article>
+              <article class="rounded-xl border border-neutral-200 bg-white p-3">
+                <p class="text-xs uppercase tracking-[0.12em] text-neutral-500">Топ</p>
+                <p id="profile-analytics-top" class="mt-2 text-2xl font-black text-neutral-900">100%</p>
+              </article>
+              <article class="rounded-xl border border-neutral-200 bg-white p-3">
+                <p class="text-xs uppercase tracking-[0.12em] text-neutral-500">Обновлено</p>
+                <p id="profile-analytics-updated" class="mt-2 text-sm font-semibold text-neutral-700">—</p>
+              </article>
+            </div>
+          </section>
         </article>
 
         <article data-tab-panel="requests" class="profile-tab-panel hidden min-w-0 rounded-2xl border border-neutral-200 bg-white p-4 sm:p-5">
@@ -199,7 +238,8 @@
             <button id="profile-new-request-btn" type="button" class="interactive-btn min-h-11 w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm font-semibold sm:w-auto">Подать новую заявку</button>
           </div>
           <div id="profile-requests-banner" class="hidden mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800"></div>
-          <div class="mt-4 overflow-auto rounded-xl border border-neutral-200">
+          <section id="profile-requests-empty-state" class="hidden mt-5 rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-10 text-center"></section>
+          <div id="profile-requests-table-wrap" class="mt-4 overflow-auto rounded-xl border border-neutral-200">
             <table class="min-w-full text-left text-sm">
               <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
                 <tr>

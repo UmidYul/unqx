@@ -77,7 +77,7 @@ async function findUserByTelegramIdWithLegacyFallback(telegramId) {
       ...row,
       displayName: null,
       status: "active",
-      plan: "basic",
+      plan: "none",
     };
   }
 }

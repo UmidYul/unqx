@@ -29,11 +29,33 @@ function getSlugLimit(plan) {
 }
 
 function getTagLimit(plan) {
+  if (plan === "none") {
+    return 0;
+  }
   return plan === "premium" ? 5 : 3;
 }
 
 function getButtonLimit(plan) {
+  if (plan === "none") {
+    return 0;
+  }
   return plan === "premium" ? null : 3;
+}
+
+function canCreateCard(user) {
+  const plan = getEffectivePlan(user).plan;
+  return plan === "basic" || plan === "premium";
+}
+
+function canAccessAnalytics(user) {
+  return getEffectivePlan(user).plan !== "none";
+}
+
+function canAddSlug({ user, currentSlugCount = 0 }) {
+  const plan = getEffectivePlan(user).plan;
+  if (plan === "none") return false;
+  if (plan === "basic") return Number(currentSlugCount || 0) < 1;
+  return Number(currentSlugCount || 0) < 3;
 }
 
 function normalizeThemeByPlan(theme, effectivePlan) {
@@ -116,7 +138,7 @@ function normalizeDisplayName(value, fallback) {
 function getPlanBadgeLabel(plan) {
   if (plan === "premium") return "ПРЕМИУМ";
   if (plan === "basic") return "БАЗОВЫЙ";
-  return "NONE";
+  return "ТАРИФ НЕ ВЫБРАН";
 }
 
 module.exports = {
@@ -126,6 +148,9 @@ module.exports = {
   getSlugLimit,
   getTagLimit,
   getButtonLimit,
+  canCreateCard,
+  canAccessAnalytics,
+  canAddSlug,
   normalizeThemeByPlan,
   normalizeColor,
   normalizeTags,

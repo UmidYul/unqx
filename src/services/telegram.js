@@ -87,13 +87,18 @@ async function sendTelegramMessage({ chatId, text, parseMode = "HTML" }) {
   return body;
 }
 
-async function sendSlugApprovedToUser({ telegramId, slug, plan }) {
+async function sendSlugApprovedToUser({ telegramId, slug, plan, hasBracelet = false }) {
   const planLabel = plan === "premium" ? "Премиум" : "Базовый";
+  const completionLine = hasBracelet ? "Slug и браслет — всё готово." : "";
   const text = [
-    `✅ Твой UNQ ${slug} одобрен!`,
-    `Твой тариф ${planLabel} активирован.`,
-    "Это навсегда — больше никаких платежей за тариф.",
-    "Войди на unqx.uz и создай свою визитку.",
+    "Заявка одобрена.",
+    "",
+    `Slug: unqx.uz/${slug}`,
+    `Тариф: ${planLabel} — активирован навсегда.`,
+    completionLine,
+    "",
+    "Войди в профиль и создай свою визитку:",
+    "unqx.uz/profile",
   ].join("\n");
   return sendTelegramMessage({ chatId: telegramId, text, parseMode: "HTML" });
 }

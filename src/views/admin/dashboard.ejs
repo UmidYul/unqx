@@ -180,8 +180,14 @@
         </section>
 
         <section id="tab-users" class="<%= pageActiveTab === 'users' ? '' : 'hidden' %> space-y-4">
-          <form id="users-filters" class="grid gap-3 rounded-2xl border border-neutral-200 bg-white p-4 md:grid-cols-[1fr_200px_auto]">
+          <form id="users-filters" class="grid gap-3 rounded-2xl border border-neutral-200 bg-white p-4 md:grid-cols-[1fr_180px_180px_auto]">
             <input type="text" name="q" placeholder="Поиск по Telegram или имени" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+            <select name="plan" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">
+              <option value="all">Все тарифы</option>
+              <option value="none">Без тарифа</option>
+              <option value="basic">Базовый</option>
+              <option value="premium">Премиум</option>
+            </select>
             <select name="sort" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">
               <option value="created_desc">Сначала новые</option>
               <option value="score_desc">По UNQ Score</option>

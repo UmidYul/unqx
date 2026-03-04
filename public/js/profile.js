@@ -79,6 +79,8 @@
   const el = {
     tabs: $$(".profile-tab-btn"),
     panels: $$(".profile-tab-panel"),
+    welcomeBanner: $("#profile-welcome-banner"),
+    welcomeDismiss: $("#profile-welcome-dismiss"),
     upg: $("#profile-upgrade-banner"),
     av: $("#profile-sidebar-avatar"),
     nm: $("#profile-sidebar-name"),
@@ -119,6 +121,8 @@
     cSave: $("#profile-card-save"),
     cSaveStatus: $("#profile-card-save-status"),
     cSlugNote: $("#profile-card-slug-note"),
+    cContent: $("#profile-card-content"),
+    cEmpty: $("#profile-card-empty-state"),
     cPrev: $("#profile-card-live-preview"),
     cPrevLabel: $("#profile-preview-slug-label"),
     cPrevLink: $("#profile-preview-open-link"),
@@ -129,9 +133,16 @@
     scoreTipsList: $("#profile-score-tips-list"),
     scoreHistoryChart: $("#profile-score-history-chart"),
     scoreHistoryLock: $("#profile-score-history-lock"),
+    analyticsContent: $("#profile-analytics-content"),
+    analyticsEmpty: $("#profile-analytics-empty-state"),
+    analyticsScore: $("#profile-analytics-score"),
+    analyticsTop: $("#profile-analytics-top"),
+    analyticsUpdated: $("#profile-analytics-updated"),
 
     reqBanner: $("#profile-requests-banner"),
     reqTable: $("#profile-requests-table"),
+    reqTableWrap: $("#profile-requests-table-wrap"),
+    reqEmpty: $("#profile-requests-empty-state"),
     reqNewBtn: $("#profile-new-request-btn"),
     refLink: $("#profile-ref-link"),
     refCopy: $("#profile-ref-copy"),
@@ -242,7 +253,7 @@
 
   const currentTab = () => {
     const raw = (location.hash || "#slugs").replace("#", "");
-    return ["slugs", "card", "requests", "referrals", "settings"].includes(raw) ? raw : "slugs";
+    return ["slugs", "card", "analytics", "requests", "referrals", "settings"].includes(raw) ? raw : "slugs";
   };
 
   const setTab = () => {
@@ -255,6 +266,33 @@
     el.panels.forEach((panel) => panel.classList.toggle("hidden", panel.getAttribute("data-tab-panel") !== active));
   };
 
+  const getCurrentPlan = () => s.user?.effectivePlan || "none";
+
+  const stateIcon = (name) => {
+    if (name === "shopping") {
+      return '<svg class="mx-auto h-12 w-12 text-neutral-400" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 8h12l-1.3 10.5a2 2 0 0 1-2 1.5H9.3a2 2 0 0 1-2-1.5L6 8Zm3-2a3 3 0 1 1 6 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    }
+    if (name === "credit-card") {
+      return '<svg class="mx-auto h-12 w-12 text-neutral-400" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5" stroke="currentColor" stroke-width="1.8"/><path d="M3 10h18" stroke="currentColor" stroke-width="1.8"/></svg>';
+    }
+    if (name === "bar-chart-2") {
+      return '<svg class="mx-auto h-12 w-12 text-neutral-400" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 20V10m8 10V4m8 16v-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M3 20h18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
+    }
+    if (name === "file-text") {
+      return '<svg class="mx-auto h-12 w-12 text-neutral-400" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M8 3h6l4 4v14H8a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M14 3v5h5M10 12h6M10 16h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
+    }
+    return "";
+  };
+
+  const renderStateCard = ({ icon, title, text, buttonId, buttonLabel }) =>
+    `<div class="mx-auto max-w-md text-center">${stateIcon(icon)}<h3 class="mt-4 text-lg font-bold text-neutral-900">${esc(title)}</h3><p class="mt-2 text-sm text-neutral-600">${esc(text)}</p><button id="${buttonId}" type="button" class="interactive-btn mt-5 min-h-11 rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white">${esc(buttonLabel)}</button></div>`;
+
+  const renderWelcomeBanner = () => {
+    if (!(el.welcomeBanner instanceof HTMLElement)) return;
+    const show = getCurrentPlan() === "none" && !Boolean(s.user?.welcomeDismissed);
+    el.welcomeBanner.classList.toggle("hidden", !show);
+  };
+
   const renderSidebar = () => {
     if (!s.user) return;
     if (el.av) el.av.src = s.user.photoUrl || "/brand/unq-mark.svg";
@@ -262,7 +300,13 @@
     if (el.un) el.un.textContent = s.user.username ? `@${s.user.username}` : "@—";
     const plan = s.user.plan || "none";
     if (el.pl) {
-      el.pl.textContent = plan === "premium" ? "ПРЕМИУМ" : plan === "basic" ? "БАЗОВЫЙ" : "ТАРИФ НЕ ВЫБРАН";
+      el.pl.textContent = plan === "premium" ? "ПРЕМИУМ" : plan === "basic" ? "БАЗОВЫЙ" : "Тариф не выбран";
+      el.pl.className = "inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold";
+      if (plan === "none") {
+        el.pl.classList.add("border-neutral-300", "bg-neutral-100", "text-neutral-700");
+      } else {
+        el.pl.classList.add("border-neutral-300");
+      }
     }
     if (el.ex) {
       el.ex.textContent = s.user.planPurchasedAt ? `Куплено: ${fd(s.user.planPurchasedAt)}` : "Куплено: —";
@@ -291,6 +335,24 @@
 
   const renderSlugs = () => {
     if (!el.slugs) return;
+    const plan = getCurrentPlan();
+
+    if (plan === "none") {
+      if (el.addSlug instanceof HTMLButtonElement) {
+        el.addSlug.classList.add("hidden");
+      }
+      if (el.addSlugNote) {
+        el.addSlugNote.textContent = "";
+      }
+      el.slugs.innerHTML = renderStateCard({
+        icon: "shopping",
+        title: "Сначала выбери тариф",
+        text: "Чтобы занять slug и создать визитку — купи Базовый или Премиум тариф.",
+        buttonId: "profile-slugs-order-btn",
+        buttonLabel: "Занять slug →",
+      });
+      return;
+    }
 
     if (!s.slugs.length) {
       el.slugs.innerHTML = '<div class="rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-6 text-sm text-neutral-500">Пока нет UNQ. Оставь заявку на главной.</div>';
@@ -333,10 +395,10 @@
         .join("");
     }
 
-    const plan = s.user?.effectivePlan || "none";
     const count = s.slugs.length;
 
     if (el.addSlug && el.addSlugNote) {
+      el.addSlug.classList.remove("hidden");
       if (plan !== "premium" && count >= 1) {
         el.addSlug.disabled = true;
         el.addSlug.textContent = "Доступно только на Премиум";
@@ -430,7 +492,7 @@
       s.slugs.find((item) => ["active", "approved", "paused", "private"].includes(item.status)) ||
       s.slugs[0] ||
       null;
-    const effectivePlan = s.user?.effectivePlan === "premium" ? "premium" : "basic";
+    const effectivePlan = getCurrentPlan() === "premium" ? "premium" : "basic";
     return {
       card: {
         slug: primarySlug?.fullSlug || "UNQ",
@@ -479,6 +541,24 @@
   };
 
   const renderCard = () => {
+    const plan = getCurrentPlan();
+    if (plan === "none") {
+      if (el.cContent instanceof HTMLElement) el.cContent.classList.add("hidden");
+      if (el.cEmpty instanceof HTMLElement) {
+        el.cEmpty.classList.remove("hidden");
+        el.cEmpty.innerHTML = renderStateCard({
+          icon: "credit-card",
+          title: "Визитка недоступна",
+          text: "Создать визитку можно после покупки тарифа и активации slug.",
+          buttonId: "profile-card-order-btn",
+          buttonLabel: "Выбрать тариф →",
+        });
+      }
+      return;
+    }
+    if (el.cContent instanceof HTMLElement) el.cContent.classList.remove("hidden");
+    if (el.cEmpty instanceof HTMLElement) el.cEmpty.classList.add("hidden");
+
     const card = s.card || {};
 
     if (el.cAv) el.cAv.src = card.avatarUrl || s.user?.photoUrl || "/brand/unq-mark.svg";
@@ -514,6 +594,24 @@
 
   const renderRequests = () => {
     if (!el.reqTable) return;
+    const plan = getCurrentPlan();
+    if (plan === "none" && !s.requests.length) {
+      if (el.reqBanner) el.reqBanner.classList.add("hidden");
+      if (el.reqTableWrap instanceof HTMLElement) el.reqTableWrap.classList.add("hidden");
+      if (el.reqEmpty instanceof HTMLElement) {
+        el.reqEmpty.classList.remove("hidden");
+        el.reqEmpty.innerHTML = renderStateCard({
+          icon: "file-text",
+          title: "Заявок пока нет",
+          text: "Подай заявку на slug чтобы начать.",
+          buttonId: "profile-requests-order-btn",
+          buttonLabel: "Занять slug →",
+        });
+      }
+      return;
+    }
+    if (el.reqTableWrap instanceof HTMLElement) el.reqTableWrap.classList.remove("hidden");
+    if (el.reqEmpty instanceof HTMLElement) el.reqEmpty.classList.add("hidden");
 
     el.reqTable.innerHTML = s.requests.length
       ? s.requests
@@ -525,7 +623,6 @@
 
     const approved = s.requests.find((item) => item.status === "approved");
     const paid = s.requests.find((item) => item.status === "paid");
-    const plan = s.user?.effectivePlan || "none";
     const count = s.slugs.length;
     if (el.reqNewBtn instanceof HTMLButtonElement) {
       if (plan !== "premium" && count >= 1) {
@@ -710,10 +807,35 @@
     }
   };
 
+  const renderAnalytics = () => {
+    const plan = getCurrentPlan();
+    if (plan === "none") {
+      if (el.analyticsContent instanceof HTMLElement) el.analyticsContent.classList.add("hidden");
+      if (el.analyticsEmpty instanceof HTMLElement) {
+        el.analyticsEmpty.classList.remove("hidden");
+        el.analyticsEmpty.innerHTML = renderStateCard({
+          icon: "bar-chart-2",
+          title: "Нет данных",
+          text: "Аналитика появится после активации визитки.",
+          buttonId: "profile-analytics-order-btn",
+          buttonLabel: "Выбрать тариф →",
+        });
+      }
+      return;
+    }
+    if (el.analyticsContent instanceof HTMLElement) el.analyticsContent.classList.remove("hidden");
+    if (el.analyticsEmpty instanceof HTMLElement) el.analyticsEmpty.classList.add("hidden");
+    if (el.analyticsScore) el.analyticsScore.textContent = String(Number(s.score?.score || 0));
+    if (el.analyticsTop) el.analyticsTop.textContent = `${Math.max(1, Number(s.score?.topPercent || 100))}%`;
+    if (el.analyticsUpdated) el.analyticsUpdated.textContent = fh(s.score?.calculatedAt);
+  };
+
   const renderAll = () => {
+    renderWelcomeBanner();
     renderSidebar();
     renderSlugs();
     renderCard();
+    renderAnalytics();
     renderRequests();
     renderSettings();
     renderReferrals();
@@ -967,8 +1089,14 @@
   });
 
   el.addSlug?.addEventListener("click", () => {
-    const plan = s.user?.effectivePlan || "none";
+    const plan = getCurrentPlan();
     const count = s.slugs.length;
+    if (plan === "none") {
+      if (window.UNQOrderModal && typeof window.UNQOrderModal.open === "function") {
+        window.UNQOrderModal.open({});
+      }
+      return;
+    }
 
     if (plan === "premium" && count >= 3) {
       showModal("Лимит достигнут", "Достигнут лимит 3 UNQ для Премиум тарифа");
@@ -995,8 +1123,14 @@
   });
 
   el.reqNewBtn?.addEventListener("click", () => {
-    const plan = s.user?.effectivePlan || "none";
+    const plan = getCurrentPlan();
     const count = s.slugs.length;
+    if (plan === "none") {
+      if (window.UNQOrderModal && typeof window.UNQOrderModal.open === "function") {
+        window.UNQOrderModal.open({});
+      }
+      return;
+    }
     if (plan !== "premium" && count >= 1) {
       const upgradePrice = Number(s.pricing?.premiumUpgradePrice || 80_000).toLocaleString("ru-RU");
       showModal("Нужен Премиум", `Купить Премиум · ${upgradePrice} сум единоразово`);
@@ -1008,6 +1142,37 @@
     }
     if (window.UNQOrderModal && typeof window.UNQOrderModal.open === "function") {
       window.UNQOrderModal.open({});
+    }
+  });
+
+  document.addEventListener("click", (event) => {
+    const target = event.target instanceof HTMLElement ? event.target : null;
+    if (!target) return;
+    if (
+      target.id === "profile-slugs-order-btn" ||
+      target.id === "profile-card-order-btn" ||
+      target.id === "profile-analytics-order-btn" ||
+      target.id === "profile-requests-order-btn"
+    ) {
+      if (window.UNQOrderModal && typeof window.UNQOrderModal.open === "function") {
+        window.UNQOrderModal.open({});
+      }
+    }
+  });
+
+  el.welcomeDismiss?.addEventListener("click", async () => {
+    try {
+      await api("/api/profile/welcome-dismiss", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      if (s.user) {
+        s.user.welcomeDismissed = true;
+      }
+      renderWelcomeBanner();
+    } catch {
+      renderWelcomeBanner();
     }
   });
 

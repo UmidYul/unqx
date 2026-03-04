@@ -10,6 +10,16 @@ const { getEffectivePlan, normalizeDisplayName } = require("../../services/profi
 const { ensureUserRefCode, linkReferralOnRegistration } = require("../../services/referrals");
 
 const router = express.Router();
+const USER_AUTH_SELECT = {
+  telegramId: true,
+  firstName: true,
+  lastName: true,
+  username: true,
+  photoUrl: true,
+  displayName: true,
+  plan: true,
+  status: true,
+};
 
 function getUserDelegate() {
   const delegate = prisma.user;
@@ -29,6 +39,14 @@ function ensureUserModelReady(res) {
 
 function isUserStorageMissing(error) {
   return Boolean(error) && error.code === "P2021" && String(error?.meta?.modelName || "") === "User";
+}
+
+function isUserColumnMissing(error) {
+  return Boolean(error) && error.code === "P2022";
+}
+
+function isUserStorageUnavailable(error) {
+  return isUserStorageMissing(error) || isUserColumnMissing(error);
 }
 
 function userToSessionPayload(user) {
@@ -99,6 +117,8 @@ router.post(
           username: parsed.username,
           photoUrl: parsed.photoUrl,
           displayName: parsed.firstName,
+          plan: "none",
+          planPurchasedAt: null,
           status: "active",
         },
         update: {
@@ -107,9 +127,10 @@ router.post(
           username: parsed.username,
           photoUrl: parsed.photoUrl,
         },
+        select: USER_AUTH_SELECT,
       });
     } catch (error) {
-      if (isUserStorageMissing(error)) {
+      if (isUserStorageUnavailable(error)) {
         res.status(503).json({
           error: "Authentication is temporarily unavailable",
           code: "AUTH_STORAGE_UNAVAILABLE",
@@ -119,7 +140,13 @@ router.post(
       throw error;
     }
 
-    await ensureUserRefCode(user.telegramId);
+    try {
+      await ensureUserRefCode(user.telegramId);
+    } catch (error) {
+      if (!isUserColumnMissing(error)) {
+        throw error;
+      }
+    }
     if (!existedBefore && req.session?.pendingRefCode) {
       await linkReferralOnRegistration({
         referredTelegramId: user.telegramId,
@@ -156,9 +183,10 @@ router.get(
     try {
       user = await prisma.user.findUnique({
         where: { telegramId: sessionUser.telegramId },
+        select: USER_AUTH_SELECT,
       });
     } catch (error) {
-      if (isUserStorageMissing(error)) {
+      if (isUserStorageUnavailable(error)) {
         res.status(503).json({
           authenticated: false,
           error: "Authentication is temporarily unavailable",

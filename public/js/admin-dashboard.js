@@ -345,7 +345,7 @@
       const countdownTone = remainingMs <= 30 * 60 * 1000 ? "text-red-700 font-semibold" : remainingMs <= 2 * 60 * 60 * 1000 ? "text-red-700" : "text-neutral-500";
       const statusBlock = `${statusChip(x.status)}${countdown ? `<div class="mt-1 inline-flex items-center gap-1 text-[11px] ${countdownTone}">${I("clock", 14)}<span>${X(countdown)}</span></div>` : ""}`;
       const menu = menuWrap([
-        menuItem({ label: "Активировать", icon: "userCheck", attrs: `data-act="os" data-id="${x.id}" data-status="approved" data-note="${X(x.adminNote || "")}"` }),
+        menuItem({ label: "Одобрить", icon: "userCheck", attrs: `data-act="os" data-id="${x.id}" data-status="approved" data-note="${X(x.adminNote || "")}"` }),
         menuItem({ label: "Связались", icon: "message", attrs: `data-act="os" data-id="${x.id}" data-status="contacted" data-note="${X(x.adminNote || "")}"` }),
         menuItem({ label: "Оплачено", icon: "creditCard", attrs: `data-act="os" data-id="${x.id}" data-status="paid" data-note="${X(x.adminNote || "")}"` }),
         menuItem({ label: "Отклонить", icon: "xCircle", attrs: `data-act="os" data-id="${x.id}" data-status="rejected" data-note="${X(x.adminNote || "")}"`, danger: true }),
@@ -428,10 +428,11 @@
     if (!(form instanceof HTMLFormElement) || !(table instanceof HTMLElement)) return;
     const q = {
       q: getFormValue(form, "q", ""),
+      plan: getFormValue(form, "plan", "all"),
       sort: getFormValue(form, "sort", "created_desc"),
       page: getFormValue(form, "page", "1"),
     };
-    setDashboardQuery({ u_q: q.q, u_sort: q.sort, u_page: q.page });
+    setDashboardQuery({ u_q: q.q, u_plan: q.plan, u_sort: q.sort, u_page: q.page });
     const r = await fetch(`/api/admin/users?${Q(q)}`);
     if (!r.ok) {
       const msg = await E(r);
@@ -460,8 +461,9 @@
               menuSeparator(),
               menuItem({ label: x.status === "blocked" ? "Разблокировать" : "Заблокировать", icon: "shieldOff", attrs: `data-act="ub" data-id="${X(x.telegramId)}" data-status="${X(x.status)}"`, danger: x.status !== "blocked" }),
             ].join(""));
-            const planLabel = x.plan === "premium" ? "Премиум" : x.plan === "basic" ? "Базовый" : "NONE";
-            return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3">${X(x.username ? `@${x.username}` : x.telegramId)}</td><td class="px-4 py-3">${X(x.name)}</td><td class="px-4 py-3"><span class="inline-flex rounded-full border border-neutral-200 px-2 py-1 text-xs font-medium">${planLabel}</span></td><td class="px-4 py-3 text-xs text-neutral-600">${x.planPurchasedAt ? D(x.planPurchasedAt) : "—"}</td><td class="px-4 py-3 text-xs">${X(slugText)}</td><td class="px-4 py-3">${x.hasCard ? "Есть" : "Нет"}</td><td class="px-4 py-3"><button type="button" data-act="toggle-score" data-id="${X(x.telegramId)}" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-2.5 py-1 text-sm font-semibold">${score}</button></td><td class="px-4 py-3">${statusChip(x.status === "blocked" ? "rejected" : "approved")}</td><td class="px-4 py-3">${D(x.createdAt)}</td><td class="px-4 py-3"><div class="admin-row-actions">${menu}</div></td></tr><tr class="border-t border-neutral-100 hidden" data-score-row="${X(x.telegramId)}"><td colspan="10" class="px-4 py-2 text-xs text-neutral-600">Просмотры: ${Number(scoreBreakdown.views || 0)} | Редкость: ${Number(scoreBreakdown.slugRarity || 0)} | Срок: ${Number(scoreBreakdown.tenure || 0)} | CTR: ${Number(scoreBreakdown.ctr || 0)} | Браслет: ${Number(scoreBreakdown.bracelet || 0)} | Тариф: ${Number(scoreBreakdown.plan || 0)}</td></tr>`;
+            const planLabel = x.plan === "premium" ? "Премиум" : x.plan === "basic" ? "Базовый" : "Без тарифа";
+            const planChipClass = x.plan === "none" ? "border-neutral-300 bg-neutral-100 text-neutral-700" : "border-neutral-200";
+            return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3">${X(x.username ? `@${x.username}` : x.telegramId)}</td><td class="px-4 py-3">${X(x.name)}</td><td class="px-4 py-3"><span class="inline-flex rounded-full border px-2 py-1 text-xs font-medium ${planChipClass}">${planLabel}</span></td><td class="px-4 py-3 text-xs text-neutral-600">${x.planPurchasedAt ? D(x.planPurchasedAt) : "—"}</td><td class="px-4 py-3 text-xs">${X(slugText)}</td><td class="px-4 py-3">${x.hasCard ? "Есть" : "Нет"}</td><td class="px-4 py-3"><button type="button" data-act="toggle-score" data-id="${X(x.telegramId)}" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-2.5 py-1 text-sm font-semibold">${score}</button></td><td class="px-4 py-3">${statusChip(x.status === "blocked" ? "rejected" : "approved")}</td><td class="px-4 py-3">${D(x.createdAt)}</td><td class="px-4 py-3"><div class="admin-row-actions">${menu}</div></td></tr><tr class="border-t border-neutral-100 hidden" data-score-row="${X(x.telegramId)}"><td colspan="10" class="px-4 py-2 text-xs text-neutral-600">Просмотры: ${Number(scoreBreakdown.views || 0)} | Редкость: ${Number(scoreBreakdown.slugRarity || 0)} | Срок: ${Number(scoreBreakdown.tenure || 0)} | CTR: ${Number(scoreBreakdown.ctr || 0)} | Браслет: ${Number(scoreBreakdown.bracelet || 0)} | Тариф: ${Number(scoreBreakdown.plan || 0)}</td></tr>`;
           })
           .join("")
       : `<tr><td colspan="10" class="px-3 py-10 text-center text-neutral-500"><div class="inline-flex flex-col items-center gap-2">${I("userCheck", 48)}<span>Нет пользователей</span></div></td></tr>`;
@@ -855,7 +857,13 @@
           return;
         }
       }
-      let r = await fetch(`/api/admin/users/${encodeURIComponent(telegramId)}/plan`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({ plan: t.value, force: downgradeToBasic }) });
+      const reason = String(await showPrompt("Причина ручной смены тарифа", "") || "").trim();
+      if (!reason) {
+        showAlert("Укажи причину смены тарифа");
+        t.value = prevPlan;
+        return;
+      }
+      let r = await fetch(`/api/admin/users/${encodeURIComponent(telegramId)}/plan`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({ plan: t.value, reason, force: downgradeToBasic }) });
       if (r.status === 409 && !downgradeToBasic) {
         const payload = await r.json().catch(() => ({}));
         if (payload.code === "PLAN_DOWNGRADE_CONFIRMATION_REQUIRED") {
@@ -866,7 +874,7 @@
             t.value = prevPlan;
             return;
           }
-          r = await fetch(`/api/admin/users/${encodeURIComponent(telegramId)}/plan`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({ plan: "basic", force: true }) });
+          r = await fetch(`/api/admin/users/${encodeURIComponent(telegramId)}/plan`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({ plan: "basic", reason, force: true }) });
         }
       }
       if (!r.ok) {
@@ -896,6 +904,18 @@
       const previousNote = n.getAttribute("data-note") || "";
       if (!id || !status) return;
       let adminNote = previousNote;
+      if (status === "approved") {
+        const row = n.closest("tr");
+        const cells = row ? Array.from(row.querySelectorAll("td")) : [];
+        const userText = cells[1]?.textContent?.trim() || "—";
+        const slugText = cells[2]?.textContent?.trim() || "—";
+        const amountText = cells[4]?.textContent?.trim() || "—";
+        const tariffText = cells[5]?.textContent?.trim() || "—";
+        const ok = await showConfirm(
+          `Подтвердить одобрение заявки?\n\nПользователь: ${userText}\nSlug: ${slugText}\nТариф: ${tariffText}\nОплата: ${amountText} получена\n\nПосле подтверждения:\n· Slug ${slugText} будет закреплён за пользователем\n· Тариф ${tariffText} будет активирован\n· Пользователь получит уведомление в Telegram`,
+        );
+        if (!ok) return;
+      }
       if (status === "rejected") {
         const entered = await showPrompt("Причина отклонения (будет отправлена в Telegram)", previousNote);
         if (entered === null) return;
@@ -938,13 +958,18 @@
       if (!["none", "basic", "premium"].includes(entered) || entered === prevPlan) return;
       const manualWarningOk = await showConfirm("Ручная смена тарифа без оплаты. Использовать только для корректировок. Продолжить?");
       if (!manualWarningOk) return;
+      const reason = String(await showPrompt("Причина ручной смены тарифа", "") || "").trim();
+      if (!reason) {
+        showAlert("Укажи причину смены тарифа");
+        return;
+      }
       const downgradeToBasic = prevPlan === "premium" && entered === "basic" && activeSlugs > 1;
       if (downgradeToBasic) {
         const braceletNote = braceletSlugs.length ? `\nБраслет привязан к: ${braceletSlugs.join(", ")}.` : "";
         const ok = await showConfirm(`У пользователя ${activeSlugs} slug. При переходе на Базовый будет активен только основной. Продолжить?${braceletNote}`);
         if (!ok) return;
       }
-      const r = await fetch(`/api/admin/users/${encodeURIComponent(telegramId)}/plan`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({ plan: entered, force: downgradeToBasic }) });
+      const r = await fetch(`/api/admin/users/${encodeURIComponent(telegramId)}/plan`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({ plan: entered, reason, force: downgradeToBasic }) });
       if (!r.ok) showAlert(await E(r));
       else void loadUsers();
       closeAllRowMenus();
@@ -1074,13 +1099,14 @@
       setFormValue(form, "page", getInitial("s_page", "page") || "1");
     }
   }
-  if (tab === "users") {
-    const form = document.getElementById("users-filters");
-    if (form instanceof HTMLFormElement) {
-      setFormValue(form, "q", getInitial("u_q", "q") || "");
-      setFormValue(form, "sort", getInitial("u_sort", "sort") || "created_desc");
-      setFormValue(form, "page", getInitial("u_page", "page") || "1");
-    }
+    if (tab === "users") {
+      const form = document.getElementById("users-filters");
+      if (form instanceof HTMLFormElement) {
+        setFormValue(form, "q", getInitial("u_q", "q") || "");
+        setFormValue(form, "plan", getInitial("u_plan", "plan") || "all");
+        setFormValue(form, "sort", getInitial("u_sort", "sort") || "created_desc");
+        setFormValue(form, "page", getInitial("u_page", "page") || "1");
+      }
   }
   if (tab === "cards") {
     const form = document.getElementById("cards-filters");

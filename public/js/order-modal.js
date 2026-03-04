@@ -40,6 +40,7 @@ const DEFAULT_PRICING = {
     planBasicNote: document.getElementById("order-modal-plan-basic-note"),
     planPremiumPrice: document.getElementById("order-modal-plan-premium-price"),
     planPremiumNote: document.getElementById("order-modal-plan-premium-note"),
+    planActivationNote: document.getElementById("order-modal-plan-activation-note"),
     bracelet: document.getElementById("order-modal-bracelet"),
     name: document.getElementById("order-modal-name"),
     totalSlugTitle: document.getElementById("order-modal-total-slug-title"),
@@ -394,13 +395,22 @@ const DEFAULT_PRICING = {
       dom.planBasicPrice.textContent = `${formatPrice(planCardBasic)} сум`;
     }
     if (dom.planBasicNote instanceof HTMLElement) {
-      dom.planBasicNote.textContent = "один раз · навсегда";
+      dom.planBasicNote.textContent =
+        userPlan === "basic" || userPlan === "premium" ? "уже куплен ✓" : "один раз · навсегда";
     }
     if (dom.planPremiumPrice instanceof HTMLElement) {
       dom.planPremiumPrice.textContent = `${formatPrice(planCardPremium)} сум`;
     }
     if (dom.planPremiumNote instanceof HTMLElement) {
-      dom.planPremiumNote.textContent = userPlan === "basic" ? "при наличии Базового тарифа" : "один раз · навсегда";
+      dom.planPremiumNote.textContent =
+        userPlan === "premium"
+          ? "уже куплен ✓"
+          : userPlan === "basic"
+            ? `${formatPrice(pricingSettings.premiumUpgradePrice)} сум · апгрейд`
+            : "один раз · навсегда";
+    }
+    if (dom.planActivationNote instanceof HTMLElement) {
+      dom.planActivationNote.textContent = "После оплаты мы активируем твой тариф и slug.";
     }
 
     if (dom.slugPreview instanceof HTMLElement) {
@@ -537,9 +547,22 @@ const DEFAULT_PRICING = {
     state.lockedSlug = parsed ? parsed.slug : "";
     state.braceletForced = options.bracelet === true;
     state.dropId = typeof options.dropId === "string" && options.dropId ? options.dropId : null;
-    dom.planBasic.disabled = currentPlan === "premium";
-    dom.planBasic.checked = currentPlan === "premium" ? false : plan === "basic";
-    dom.planPremium.checked = currentPlan === "premium" ? true : plan === "premium";
+    if (currentPlan === "none") {
+      dom.planBasic.disabled = false;
+      dom.planPremium.disabled = false;
+      dom.planBasic.checked = plan === "basic";
+      dom.planPremium.checked = plan === "premium";
+    } else if (currentPlan === "basic") {
+      dom.planBasic.disabled = true;
+      dom.planPremium.disabled = false;
+      dom.planBasic.checked = plan !== "premium";
+      dom.planPremium.checked = plan === "premium";
+    } else {
+      dom.planBasic.disabled = true;
+      dom.planPremium.disabled = true;
+      dom.planBasic.checked = false;
+      dom.planPremium.checked = true;
+    }
     dom.bracelet.checked = state.braceletForced;
     dom.bracelet.disabled = state.braceletForced;
     if (parsed) {
