@@ -312,6 +312,10 @@ function initSlugAvailability(orderApi) {
   const statusNote = document.getElementById("home-slug-note");
   const suggestionsWrap = document.getElementById("home-slug-suggestions-wrap");
   const suggestionsNode = document.getElementById("home-slug-suggestions");
+  const takenOwnerWrap = document.getElementById("home-slug-taken-owner");
+  const takenOwnerPhoto = document.getElementById("home-slug-taken-owner-photo");
+  const takenOwnerName = document.getElementById("home-slug-taken-owner-name");
+  const takenOwnerView = document.getElementById("home-slug-taken-owner-view");
   const primaryAction = document.getElementById("home-slug-primary-action");
   const calculatorAction = document.getElementById("home-slug-calculator-action");
 
@@ -324,6 +328,10 @@ function initSlugAvailability(orderApi) {
     !(statusNote instanceof HTMLElement) ||
     !(suggestionsWrap instanceof HTMLElement) ||
     !(suggestionsNode instanceof HTMLElement) ||
+    !(takenOwnerWrap instanceof HTMLElement) ||
+    !(takenOwnerPhoto instanceof HTMLImageElement) ||
+    !(takenOwnerName instanceof HTMLElement) ||
+    !(takenOwnerView instanceof HTMLAnchorElement) ||
     !(primaryAction instanceof HTMLAnchorElement)
   ) {
     return;
@@ -366,8 +374,26 @@ function initSlugAvailability(orderApi) {
     suggestionsWrap.classList.remove("hidden");
   }
 
-  function setFeedback(state, slug, suggestions = []) {
+  function setFeedback(state, slug, suggestions = [], owner = null) {
     feedback.classList.remove("hidden");
+
+    function setTakenOwner(owner) {
+      if (!owner || typeof owner !== "object") {
+        takenOwnerWrap.classList.add("hidden");
+        takenOwnerName.textContent = "UNQ+ User";
+        takenOwnerPhoto.src = "/brand/unq-mark.svg";
+        takenOwnerView.href = `/${slug}`;
+        return;
+      }
+
+      const ownerName = String(owner.name || "").trim() || "UNQ+ User";
+      const ownerPhoto = String(owner.photoUrl || "").trim() || "/brand/unq-mark.svg";
+      const ownerHref = String(owner.href || "").trim() || `/${slug}`;
+      takenOwnerName.textContent = ownerName;
+      takenOwnerPhoto.src = ownerPhoto;
+      takenOwnerView.href = ownerHref;
+      takenOwnerWrap.classList.remove("hidden");
+    }
 
     function setPrimaryAction(options) {
       if (!options.visible) {
@@ -394,6 +420,7 @@ function initSlugAvailability(orderApi) {
       statusText.textContent = "Проверяем UNQ...";
       statusNote.textContent = "";
       renderSuggestions([]);
+      setTakenOwner(null);
       setPrimaryAction({ visible: false });
       return;
     }
@@ -403,6 +430,7 @@ function initSlugAvailability(orderApi) {
       statusText.textContent = "Формат UNQ должен быть AAA001";
       statusNote.textContent = "Используйте 3 латинские буквы и 3 цифры.";
       renderSuggestions([]);
+      setTakenOwner(null);
       setPrimaryAction({ visible: false });
       return;
     }
@@ -412,6 +440,7 @@ function initSlugAvailability(orderApi) {
       statusText.textContent = `unqx.uz/${slug} доступен`;
       statusNote.textContent = "UNQ свободен. Оставь заявку и мы активируем его для тебя.";
       renderSuggestions([]);
+      setTakenOwner(null);
       setPrimaryAction({
         visible: true,
         slug,
@@ -425,6 +454,7 @@ function initSlugAvailability(orderApi) {
       statusText.textContent = `${slug} занят`;
       statusNote.textContent = "Этот UNQ занят, выбери похожий свободный вариант.";
       renderSuggestions(suggestions);
+      setTakenOwner(owner);
       setPrimaryAction({
         visible: true,
         slug,
@@ -438,6 +468,7 @@ function initSlugAvailability(orderApi) {
       statusText.textContent = `${slug} на рассмотрении — скоро освободится`;
       statusNote.textContent = "Добавь UNQ в лист ожидания, и мы сообщим в Telegram.";
       renderSuggestions([]);
+      setTakenOwner(null);
       setPrimaryAction({
         visible: true,
         slug,
@@ -452,6 +483,7 @@ function initSlugAvailability(orderApi) {
     statusText.textContent = "Не удалось проверить UNQ";
     statusNote.textContent = "Повторите попытку через несколько секунд.";
     renderSuggestions([]);
+    setTakenOwner(null);
     setPrimaryAction({ visible: false });
   }
 
@@ -500,7 +532,12 @@ function initSlugAvailability(orderApi) {
           : payload.reason === "pending"
             ? "pending"
             : "taken";
-      setFeedback(state, slug, Array.isArray(payload.suggestions) ? payload.suggestions : []);
+      setFeedback(
+        state,
+        slug,
+        Array.isArray(payload.suggestions) ? payload.suggestions : [],
+        payload.owner && typeof payload.owner === "object" ? payload.owner : null,
+      );
     } catch {
       setFeedback("error", slug);
     } finally {

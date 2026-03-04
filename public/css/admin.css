@@ -488,19 +488,23 @@
   border-radius: 8px;
   background: #fff;
   color: #525252;
-  opacity: 0;
-  transition: opacity 0.2s ease, background-color 0.2s ease;
+  opacity: 1;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+  cursor: pointer;
 }
 
-.admin-table-row:hover .admin-kebab-btn {
-  opacity: 1;
+.admin-kebab-btn:hover {
+  background: #f5f5f5;
+  border-color: #a3a3a3;
+  color: #262626;
 }
 
 .admin-row-menu {
   position: absolute;
   right: 0;
-  top: calc(100% + 6px);
-  z-index: 40;
+  top: auto;
+  bottom: calc(100% + 6px);
+  z-index: 80;
   min-width: 200px;
   border: 1px solid #e5e7eb;
   border-radius: 10px;

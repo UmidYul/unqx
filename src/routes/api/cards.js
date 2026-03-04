@@ -197,7 +197,12 @@ async function getSlugState(slug) {
   const [card, record, slugRow] = await Promise.all([
     prisma.card.findUnique({
       where: { slug },
-      select: { id: true },
+      select: {
+        id: true,
+        name: true,
+        avatarUrl: true,
+        isActive: true,
+      },
     }),
     withMissingTableFallback("SlugRecord", null, () =>
       prisma.slugRecord.findUnique({
@@ -208,10 +213,44 @@ async function getSlugState(slug) {
     withMissingTableFallback("Slug", null, () =>
       prisma.slug.findUnique({
         where: { fullSlug: slug },
-        select: { status: true, price: true, pendingExpiresAt: true },
+        select: {
+          status: true,
+          price: true,
+          pendingExpiresAt: true,
+          owner: {
+            select: {
+              firstName: true,
+              photoUrl: true,
+              profileCard: {
+                select: {
+                  name: true,
+                  avatarUrl: true,
+                },
+              },
+            },
+          },
+        },
       }),
     ),
   ]);
+
+  const ownerFromSlug =
+    slugRow?.owner && ["active", "private", "paused"].includes(slugRow.status)
+      ? {
+          name: slugRow.owner.profileCard?.name || slugRow.owner.firstName || "UNQ+ User",
+          photoUrl: slugRow.owner.profileCard?.avatarUrl || slugRow.owner.photoUrl || null,
+          href: `/${slug}`,
+        }
+      : null;
+
+  const ownerFromCard =
+    card && card.isActive
+      ? {
+          name: card.name || "UNQ+ User",
+          photoUrl: card.avatarUrl || null,
+          href: `/${slug}`,
+        }
+      : null;
 
   if (slugRow) {
     if (slugRow.status === "reserved_drop") {
@@ -228,6 +267,7 @@ async function getSlugState(slug) {
       reason: slugRow.status,
       priceOverride: slugRow.price ?? null,
       pendingExpiresAt: slugRow.pendingExpiresAt || null,
+      owner: ownerFromSlug,
     };
   }
 
@@ -236,7 +276,12 @@ async function getSlugState(slug) {
   }
 
   if (card || record?.state === "TAKEN") {
-    return { available: false, reason: "taken", priceOverride: record?.priceOverride ?? null };
+    return {
+      available: false,
+      reason: "taken",
+      priceOverride: record?.priceOverride ?? null,
+      owner: ownerFromCard,
+    };
   }
 
   return { available: true, reason: "available", priceOverride: record?.priceOverride ?? null };
@@ -487,6 +532,7 @@ router.get(
       available: state.available,
       reason: state.reason,
       pendingExpiresAt: state.pendingExpiresAt || null,
+      owner: state.owner || null,
       suggestions,
     });
   }),
