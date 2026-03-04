@@ -154,6 +154,8 @@
             <a href="#cards" class="text-sm text-neutral-500 transition-colors hover:text-neutral-900">Визитки</a>
             <a href="#wristband" class="text-sm text-neutral-500 transition-colors hover:text-neutral-900">Браслет</a>
             <a href="#pricing" class="text-sm text-neutral-500 transition-colors hover:text-neutral-900">Тарифы</a>
+            <% if (leaderboardEnabled) { %><a href="/leaderboard" class="text-sm text-neutral-500 transition-colors hover:text-neutral-900">Топ визиток</a><% } %>
+            <a href="/drops" class="text-sm text-neutral-500 transition-colors hover:text-neutral-900">Дропы</a>
             <div id="home-auth-nav-desktop" class="flex items-center gap-2">
               <button type="button" data-auth-login class="rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100">Войти через Telegram</button>
               <a href="/profile" data-auth-profile class="hidden items-center gap-2 rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100">
@@ -196,6 +198,8 @@
             <a href="#cards" class="text-sm text-neutral-500">Визитки</a>
             <a href="#wristband" class="text-sm text-neutral-500">Браслет</a>
             <a href="#pricing" class="text-sm text-neutral-500">Тарифы</a>
+            <% if (leaderboardEnabled) { %><a href="/leaderboard" class="text-sm text-neutral-500">Топ визиток</a><% } %>
+            <a href="/drops" class="text-sm text-neutral-500">Дропы</a>
             <div id="home-auth-nav-mobile" class="flex items-center gap-2">
               <button type="button" data-auth-login class="rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100">Войти через Telegram</button>
               <a href="/profile" data-auth-profile class="hidden items-center gap-2 rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100">
@@ -216,6 +220,15 @@
           </div>
         </div>
       </nav>
+
+      <% if (activeFlashSale) { %>
+      <section class="sticky top-[72px] z-40 border-b border-amber-200 bg-amber-50 px-6 py-2 text-sm text-amber-900" data-flash-sale-banner data-ends-at="<%= activeFlashSale.endsAt.toISOString() %>">
+        <div class="mx-auto flex w-full max-w-6xl items-center justify-between gap-3">
+          <p>⚡ FLASH SALE · Скидка <strong><%= activeFlashSale.discountPercent %>%</strong> на <%= activeFlashSale.conditionLabel %> · Осталось <span data-flash-countdown>--:--:--</span></p>
+          <a href="#hero-check" class="rounded-lg border border-amber-300 px-2.5 py-1 text-xs font-semibold">Узнать подробнее →</a>
+        </div>
+      </section>
+      <% } %>
 
       <section class="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 pt-20">
         <div class="pointer-events-none absolute -left-40 -top-40 h-[500px] w-[500px] rounded-full bg-neutral-200/40 blur-3xl"></div>
@@ -310,6 +323,15 @@
           </div>
         </div>
       </section>
+
+      <% if (nextDrop) { %>
+      <section class="px-6 pb-6">
+        <div class="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 rounded-2xl border border-red-200 bg-red-50 px-5 py-4">
+          <p class="text-sm text-red-900">🔥 Следующий дроп: <strong><%= nextDrop.title %></strong> · <%= new Date(nextDrop.dropAt).toLocaleString('ru-RU') %> · <%= nextDrop.slugCount %> slug</p>
+          <a href="/drops" class="rounded-lg border border-red-300 px-3 py-1.5 text-xs font-semibold text-red-900">Подписаться на уведомление</a>
+        </div>
+      </section>
+      <% } %>
 
       <section id="slug-counter-wrap" class="hidden px-6 pb-4">
         <div class="mx-auto max-w-3xl">
@@ -719,6 +741,7 @@
 
   <script nonce="<%= cspNonce %>" src="/js/order-modal.js"></script>
   <script nonce="<%= cspNonce %>" src="/js/public-home-search.js"></script>
+  <script nonce="<%= cspNonce %>" src="/js/public-realtime.js"></script>
 </body>
 </html>
 

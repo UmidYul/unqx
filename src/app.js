@@ -18,11 +18,14 @@ const { publicApiRouter } = require("./routes/api/cards");
 const { profileApiRouter } = require("./routes/api/profile");
 const { adminPagesRouter } = require("./routes/pages/admin");
 const { publicPagesRouter } = require("./routes/pages/public");
+const { featuresApiRouter } = require("./routes/api/features");
+const { adminFeaturesApiRouter } = require("./routes/api/admin-features");
 const { systemRouter } = require("./routes/system");
 const { getBaseUrl } = require("./utils/url");
 const { ensureCsrfToken } = require("./middleware/csrf");
 const { runBootstrapTasks } = require("./services/bootstrap");
 const { startPendingExpiryJob } = require("./services/pending-expiry");
+const { startLiveJobs } = require("./services/live-jobs");
 
 function createApp() {
   const app = express();
@@ -127,6 +130,14 @@ function createApp() {
     }),
   );
 
+  app.use((req, _res, next) => {
+    const refCode = typeof req.query?.ref === "string" ? req.query.ref.trim().toUpperCase() : "";
+    if (refCode && req.session) {
+      req.session.pendingRefCode = refCode.replace(/[^A-Z0-9_]/g, "").slice(0, 40);
+    }
+    next();
+  });
+
   app.use((req, res, next) => {
     const baseUrl = getBaseUrl();
     const path = req.path && req.path.startsWith("/") ? req.path : "/";
@@ -159,6 +170,8 @@ function createApp() {
   app.use("/api/auth", authApiRouter);
   app.use("/api/profile", profileApiRouter);
   app.use("/api/cards", publicApiRouter);
+  app.use("/api", featuresApiRouter);
+  app.use("/api/admin", adminFeaturesApiRouter);
 
   app.use(systemRouter);
   app.use(adminPagesRouter);
@@ -181,6 +194,7 @@ function createApp() {
 
   void runBootstrapTasks();
   startPendingExpiryJob();
+  startLiveJobs();
 
   return app;
 }

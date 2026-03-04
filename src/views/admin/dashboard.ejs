@@ -13,6 +13,10 @@
     { id: "slugs", label: "Slug" },
     { id: "cards", label: "Визитки" },
     { id: "bracelets", label: "Браслеты" },
+    { id: "leaderboard", label: "Лидерборд" },
+    { id: "referrals", label: "Рефералы" },
+    { id: "flash-sales", label: "Flash Sale" },
+    { id: "drops", label: "Дропы" },
     { id: "testimonials", label: "Отзывы" },
     { id: "logs", label: "Логи" },
   ];
@@ -259,6 +263,99 @@
           <div id="bracelets-pagination" class="flex items-center justify-end gap-2 text-sm text-neutral-600"></div>
         </section>
 
+        <section id="tab-leaderboard" class="<%= pageActiveTab === 'leaderboard' ? '' : 'hidden' %> space-y-4">
+          <form id="leaderboard-settings-form" class="grid gap-3 rounded-2xl border border-neutral-200 bg-white p-4 md:grid-cols-5">
+            <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="enabled" /> Показать лидерборд</label>
+            <input type="number" name="publicLimit" min="1" max="200" placeholder="Лимит публичных позиций" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+            <input type="number" name="suspiciousThreshold" min="1" placeholder="Порог всплеска" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+            <input type="number" name="suspiciousWindowMinutes" min="1" placeholder="Окно (мин)" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+            <button type="submit" class="rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">Сохранить</button>
+          </form>
+          <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
+            <div class="overflow-x-auto">
+              <table class="min-w-[980px] w-full text-left text-sm">
+                <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
+                  <tr>
+                    <th class="px-4 py-3">#</th>
+                    <th class="px-4 py-3">Slug</th>
+                    <th class="px-4 py-3">Владелец</th>
+                    <th class="px-4 py-3">Просмотры</th>
+                    <th class="px-4 py-3">Динамика</th>
+                    <th class="px-4 py-3">Тариф</th>
+                    <th class="px-4 py-3">Действия</th>
+                  </tr>
+                </thead>
+                <tbody id="leaderboard-table"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
+            <table class="min-w-full text-left text-sm">
+              <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500"><tr><th class="px-4 py-3">⚠️ Подозрительная активность</th><th class="px-4 py-3">Просмотры</th><th class="px-4 py-3">Окно</th><th class="px-4 py-3">Время</th></tr></thead>
+              <tbody id="leaderboard-suspicious-table"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="tab-referrals" class="<%= pageActiveTab === 'referrals' ? '' : 'hidden' %> space-y-4">
+          <div id="referrals-stats" class="grid gap-3 md:grid-cols-3"></div>
+          <form id="referrals-settings-form" class="grid gap-3 rounded-2xl border border-neutral-200 bg-white p-4 md:grid-cols-3">
+            <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="enabled" /> Включить программу</label>
+            <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="requirePaid" /> Учитывать только оплативших</label>
+            <button type="submit" class="rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">Сохранить</button>
+          </form>
+          <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
+            <div class="overflow-x-auto">
+              <table class="min-w-[980px] w-full text-left text-sm">
+                <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
+                  <tr><th class="px-4 py-3">Реферер</th><th class="px-4 py-3">Приглашённый</th><th class="px-4 py-3">Дата</th><th class="px-4 py-3">Статус</th><th class="px-4 py-3">Награда</th><th class="px-4 py-3">Действие</th></tr>
+                </thead>
+                <tbody id="referrals-table"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section id="tab-flash-sales" class="<%= pageActiveTab === 'flash-sales' ? '' : 'hidden' %> space-y-4">
+          <form id="flash-sales-create-form" class="grid gap-3 rounded-2xl border border-neutral-200 bg-white p-4 md:grid-cols-4">
+            <input name="title" type="text" placeholder="Название" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" required />
+            <input name="description" type="text" placeholder="Текст баннера" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+            <input name="discountPercent" type="number" min="1" max="95" placeholder="Скидка %" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" required />
+            <select name="conditionType" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm"><option value="all">Все slug</option><option value="pattern_000">000</option><option value="pattern_aaa">AAA</option><option value="sequential_digits">123/456</option><option value="custom">Кастом</option></select>
+            <input name="startsAt" type="datetime-local" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" required />
+            <input name="endsAt" type="datetime-local" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" required />
+            <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="notifyTelegram" /> Уведомить Telegram</label>
+            <input name="telegramTarget" type="text" placeholder="@channel или chat_id" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+            <button type="submit" class="rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">Запустить</button>
+          </form>
+          <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
+            <table class="min-w-full text-left text-sm">
+              <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500"><tr><th class="px-4 py-3">Название</th><th class="px-4 py-3">Скидка</th><th class="px-4 py-3">Период</th><th class="px-4 py-3">Статус</th><th class="px-4 py-3">Статистика</th><th class="px-4 py-3">Действие</th></tr></thead>
+              <tbody id="flash-sales-table"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="tab-drops" class="<%= pageActiveTab === 'drops' ? '' : 'hidden' %> space-y-4">
+          <form id="drops-create-form" class="grid gap-3 rounded-2xl border border-neutral-200 bg-white p-4 md:grid-cols-4">
+            <input name="title" type="text" placeholder="Название дропа" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" required />
+            <input name="description" type="text" placeholder="Описание" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+            <input name="dropAt" type="datetime-local" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" required />
+            <input name="slugCount" type="number" min="1" max="500" placeholder="Количество slug" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" required />
+            <select name="slugPatternType" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm"><option value="random">Случайные</option><option value="sequential">Последовательные</option><option value="manual">Вручную</option></select>
+            <textarea name="manualSlugs" rows="2" placeholder="Slug по одному в строке (для manual)" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm md:col-span-2"></textarea>
+            <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="notifyTelegram" /> Уведомить Telegram</label>
+            <input name="telegramTarget" type="text" placeholder="@channel или chat_id" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+            <button type="submit" class="rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">Создать дроп</button>
+          </form>
+          <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
+            <table class="min-w-full text-left text-sm">
+              <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500"><tr><th class="px-4 py-3">Название</th><th class="px-4 py-3">Дата</th><th class="px-4 py-3">Slug</th><th class="px-4 py-3">Статус</th><th class="px-4 py-3">Итоги</th><th class="px-4 py-3">Действие</th></tr></thead>
+              <tbody id="drops-table"></tbody>
+            </table>
+          </div>
+        </section>
+
         <section id="tab-testimonials" class="<%= pageActiveTab === 'testimonials' ? '' : 'hidden' %> space-y-4">
           <form id="testimonial-create-form" class="rounded-2xl border border-neutral-200 bg-white p-4">
             <h2 class="text-sm font-semibold text-neutral-900">Добавить отзыв</h2>
@@ -426,5 +523,6 @@
   <script nonce="<%= cspNonce %>" src="/vendor/qrcode/qrcode.min.js"></script>
   <script nonce="<%= cspNonce %>" src="/vendor/chartjs/chart.umd.min.js"></script>
   <script nonce="<%= cspNonce %>" src="/js/admin-dashboard.js"></script>
+  <script nonce="<%= cspNonce %>" src="/js/admin-features.js"></script>
 </body>
 </html>

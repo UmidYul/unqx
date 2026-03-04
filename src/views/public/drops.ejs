@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <%- include('../partials/head', { title: title || 'Дропы slug · UNQ+', description: description || 'Дропы slug UNQ+', styles: ['/css/public-card.css'] }) %>
+</head>
+<body class="antialiased bg-neutral-50" data-page="drops-page" data-telegram-bot-username="<%= telegramBotUsername || '' %>">
+  <main class="mx-auto w-full max-w-6xl px-4 py-8">
+    <div class="mb-6 flex items-center justify-between gap-3">
+      <a href="/" class="text-sm font-semibold text-neutral-600 hover:text-neutral-900">← На главную</a>
+      <a href="/leaderboard" class="text-sm text-neutral-500 hover:text-neutral-900">Топ визиток</a>
+    </div>
+
+    <header class="mb-6 rounded-2xl border border-neutral-200 bg-white p-6">
+      <h1 class="text-3xl font-black tracking-tight text-neutral-900">Дропы slug</h1>
+      <p class="mt-2 text-sm text-neutral-500">Подписывайся на уведомления и забирай slug в первые минуты старта.</p>
+    </header>
+
+    <section class="grid gap-4 md:grid-cols-2">
+      <% if (!drops || !drops.length) { %>
+      <article class="rounded-2xl border border-neutral-200 bg-white p-6 text-sm text-neutral-500">Пока дропов нет.</article>
+      <% } %>
+      <% (drops || []).forEach((drop) => {
+        const pool = Array.isArray(drop.slugsPool) ? drop.slugsPool : [];
+        const sold = Array.isArray(drop.soldSlugs) ? drop.soldSlugs : [];
+        const remaining = Math.max(0, pool.length - sold.length);
+      %>
+      <article class="rounded-2xl border border-neutral-200 bg-white p-5" data-drop-card data-drop-id="<%= drop.id %>" data-drop-at="<%= drop.dropAt.toISOString() %>">
+        <div class="flex items-start justify-between gap-2">
+          <div>
+            <h2 class="text-lg font-bold text-neutral-900"><%= drop.title %></h2>
+            <p class="mt-1 text-sm text-neutral-500"><%= drop.description || '' %></p>
+          </div>
+          <span class="rounded-full border border-neutral-300 px-2 py-1 text-[11px] font-semibold"><%= drop.isLive ? 'LIVE' : drop.isFinished ? 'Завершён' : 'Ожидается' %></span>
+        </div>
+        <p class="mt-4 text-sm text-neutral-700"><strong><%= new Date(drop.dropAt).toLocaleString('ru-RU') %></strong> · <%= drop.slugCount %> slug</p>
+        <p class="mt-1 text-sm text-neutral-600" data-drop-remaining>Осталось <%= remaining %> из <%= drop.slugCount %></p>
+        <p class="mt-2 text-sm font-semibold text-red-700 <%= drop.isLive ? '' : 'hidden' %>" data-drop-live-label>🔥 ДРОП НАЧАЛСЯ</p>
+        <p class="mt-2 text-sm text-neutral-500 <%= drop.isLive ? 'hidden' : '' %>" data-drop-countdown>Старт через --:--:--</p>
+        <div class="mt-4 flex flex-wrap items-center gap-2">
+          <button type="button" data-drop-join="<%= drop.id %>" class="rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold text-neutral-700">Уведомить меня →</button>
+          <a href="#drop-order" class="rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold text-neutral-700">Смотреть доступные slug →</a>
+        </div>
+      </article>
+      <% }) %>
+    </section>
+
+    <section id="drop-order" class="mt-8 rounded-2xl border border-neutral-200 bg-white p-6">
+      <h2 class="text-lg font-bold">Форма заказа для дропа</h2>
+      <p class="mt-2 text-sm text-neutral-500">Когда дроп активен, здесь можно выбрать slug только из пула дропа и отправить заявку.</p>
+      <div class="mt-4" id="drops-live-pool"></div>
+    </section>
+  </main>
+
+  <%- include('../partials/order-modal') %>
+  <script nonce="<%= cspNonce %>" src="/js/order-modal.js"></script>
+  <script nonce="<%= cspNonce %>" src="/js/drops.js"></script>
+</body>
+</html>

@@ -7,6 +7,9 @@ const { getAdminSession, requireUserPage, getUserSession } = require("../../midd
 const { getPublicCardBySlug } = require("../../services/cards");
 const { getEffectivePlan } = require("../../services/profile");
 const { absoluteUrl } = require("../../utils/url");
+const { buildLeaderboard, normalizePeriod, getSlugTopBadge, getUserLeaderboardSummary } = require("../../services/leaderboard");
+const { getFeatureSetting } = require("../../services/feature-settings");
+const { getActiveFlashSale, resolveConditionLabel } = require("../../services/flash-sales");
 
 const router = express.Router();
 
@@ -69,6 +72,19 @@ function buildPublicCardFromProfile({ slug, user, profileCard, viewsCount }) {
 router.get(
   "/",
   asyncHandler(async (req, res) => {
+    const [leaderboardSettings, activeFlashSale, nextDrop] = await Promise.all([
+      getFeatureSetting("leaderboard"),
+      getActiveFlashSale(),
+      prisma.drop.findFirst({
+        where: {
+          isFinished: false,
+          isLive: false,
+          dropAt: { gt: new Date() },
+        },
+        orderBy: { dropAt: "asc" },
+      }),
+    ]);
+
     let testimonials = [];
     try {
       testimonials = await prisma.testimonial.findMany({
@@ -84,6 +100,25 @@ router.get(
       description: "Одна ссылка вместо тысячи слов. Создай свою цифровую визитку на unqx.uz",
       testimonials,
       slugTotalLimit: env.SLUG_TOTAL_LIMIT,
+      leaderboardEnabled: Boolean(leaderboardSettings.enabled),
+      activeFlashSale: activeFlashSale
+        ? {
+            id: activeFlashSale.id,
+            discountPercent: activeFlashSale.discountPercent,
+            conditionLabel: resolveConditionLabel(activeFlashSale),
+            startsAt: activeFlashSale.startsAt,
+            endsAt: activeFlashSale.endsAt,
+            description: activeFlashSale.description || activeFlashSale.title,
+          }
+        : null,
+      nextDrop: nextDrop
+        ? {
+            id: nextDrop.id,
+            title: nextDrop.title,
+            dropAt: nextDrop.dropAt,
+            slugCount: nextDrop.slugCount,
+          }
+        : null,
       adminSession: getAdminSession(req),
     });
   }),
@@ -143,6 +178,60 @@ router.get(
 );
 
 router.get(
+  "/leaderboard",
+  asyncHandler(async (req, res) => {
+    const settings = await getFeatureSetting("leaderboard");
+    if (!settings.enabled) {
+      res.status(404).render("public/not-found", {
+        title: "Страница не найдена",
+        slug: "leaderboard",
+        adminSession: getAdminSession(req),
+      });
+      return;
+    }
+
+    const period = normalizePeriod(req.query.period);
+    const [board, userSummary] = await Promise.all([
+      buildLeaderboard(period),
+      (() => {
+        const user = getUserSession(req);
+        if (!user?.telegramId) return Promise.resolve(null);
+        return getUserLeaderboardSummary({
+          telegramId: user.telegramId,
+          period,
+        });
+      })(),
+    ]);
+
+    res.render("public/leaderboard", {
+      title: "Топ визиток недели · UNQ+",
+      description: "Топ визиток UNQ+ по просмотрам",
+      period: board.period,
+      items: board.publicItems,
+      userSummary,
+      leaderboardSettings: board.settings,
+      adminSession: getAdminSession(req),
+    });
+  }),
+);
+
+router.get(
+  "/drops",
+  asyncHandler(async (req, res) => {
+    const rows = await prisma.drop.findMany({
+      orderBy: { dropAt: "desc" },
+      take: 50,
+    });
+    res.render("public/drops", {
+      title: "Дропы slug · UNQ+",
+      description: "Актуальные и прошедшие дропы slug на UNQ+",
+      drops: rows,
+      adminSession: getAdminSession(req),
+    });
+  }),
+);
+
+router.get(
   "/:slug",
   asyncHandler(async (req, res) => {
     const slug = sanitizeSlug(req.params.slug);
@@ -194,6 +283,20 @@ router.get(
           ctaLabel: "Встать в wishlist →",
           ctaHref: "#",
           ctaWaitlistSlug: slug,
+          noindex: true,
+          adminSession: getAdminSession(req),
+        });
+        return;
+      }
+
+      if (slugRow.status === "reserved_drop") {
+        res.status(200).render("public/slug-state", {
+          title: `UNQ доступен в дропе`,
+          slug,
+          heading: "Этот UNQ доступен в дропе",
+          message: "Подпишись на ближайший дроп и забери этот slug в момент старта.",
+          ctaLabel: "Перейти к дропам →",
+          ctaHref: "/drops",
           noindex: true,
           adminSession: getAdminSession(req),
         });
@@ -303,11 +406,13 @@ router.get(
         });
         const image = card.avatarUrl ? absoluteUrl(card.avatarUrl) : absoluteUrl("/brand/unq-mark.svg");
 
+        const topBadge = await getSlugTopBadge(slug);
         res.render("public/card", {
           title: `${card.name} | UNQ+`,
           description: card.name,
           image,
           card,
+          topBadge,
           noindex: slugRow.status === "private",
           adminSession: getAdminSession(req),
         });

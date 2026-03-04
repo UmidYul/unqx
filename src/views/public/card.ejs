@@ -115,6 +115,7 @@
   const documentDir = /[\u0600-\u06FF]/.test(pageCard.name || "") ? "rtl" : "ltr";
   const formattedViews = new Intl.NumberFormat("ru-RU").format(Math.max(0, pageCard.viewsCount));
   const pageCardTheme = pageCard.tariff === "premium" ? pageCard.theme : "default_dark";
+  const pageTopBadge = typeof topBadge === "object" && topBadge ? topBadge : null;
 %>
 <!doctype html>
 <html lang="ru" dir="<%= documentDir %>">
@@ -123,7 +124,12 @@
 </head>
 <body class="antialiased" data-card-theme="<%= pageCardTheme %>">
   <main class="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-12">
-    <div id="card-view-root" class="relative z-10 w-full max-w-[520px]"></div>
+    <div class="relative z-10 w-full max-w-[520px]">
+      <% if (pageTopBadge) { %>
+      <div class="mb-3 inline-flex rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800">🏆 Топ #<%= pageTopBadge.rank %> этой недели</div>
+      <% } %>
+      <div id="card-view-root"></div>
+    </div>
   </main>
 
   <script nonce="<%= cspNonce %>" id="card-view-data" type="application/json"><%- JSON.stringify({

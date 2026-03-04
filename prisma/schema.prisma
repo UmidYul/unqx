@@ -67,6 +67,34 @@ enum SlugStatus {
   paused
   private
   blocked
+  reserved_drop
+}
+
+enum ReferralStatus {
+  registered
+  paid
+  rewarded
+}
+
+enum ReferralRewardType {
+  discount
+  free_month
+  bonus_slug
+}
+
+enum FlashSaleConditionType {
+  all
+  pattern_000
+  pattern_aaa
+  sequential_digits
+  custom
+}
+
+enum DropSlugPatternType {
+  random
+  sequential
+  themed
+  manual
 }
 
 enum SlugRequestStatus {
@@ -256,11 +284,15 @@ model User {
   planExpiresAt        DateTime?     @map("plan_expires_at")
   notificationsEnabled Boolean       @default(true) @map("notifications_enabled")
   status               UserStatus    @default(active)
+  refCode              String?       @unique @map("ref_code") @db.VarChar(40)
   createdAt            DateTime      @default(now()) @map("created_at")
   updatedAt            DateTime      @updatedAt @map("updated_at")
   slugs                Slug[]
   profileCard          ProfileCard?
   slugRequests         SlugRequest[]
+  referralsMade        Referral[]    @relation("ReferrerReferrals")
+  referralsReceived    Referral[]    @relation("ReferredReferrals")
+  dropWaitlistEntries  DropWaitlist[]
 
   @@index([plan, planExpiresAt])
   @@index([status])
@@ -333,6 +365,11 @@ model SlugRequest {
   contact       String            @db.VarChar(140)
   status        SlugRequestStatus @default(new)
   adminNote     String?           @map("admin_note")
+  dropId        String?           @map("drop_id")
+  drop          Drop?             @relation(fields: [dropId], references: [id], onDelete: SetNull)
+  flashSaleId   String?           @map("flash_sale_id")
+  flashSale     FlashSale?        @relation(fields: [flashSaleId], references: [id], onDelete: SetNull)
+  flashDiscountAmount Int         @default(0) @map("flash_discount_amount")
   createdAt     DateTime          @default(now()) @map("created_at")
   updatedAt     DateTime          @updatedAt @map("updated_at")
 
@@ -352,5 +389,135 @@ model SlugView {
 
   @@index([fullSlug, viewedAt])
   @@index([fullSlug, ipHash, viewedAt])
+  @@index([viewedAt])
+  @@index([isUnique, viewedAt])
   @@map("slug_views")
+}
+
+model ReferralRewardRule {
+  id                 String             @id @default(uuid())
+  requiredPaidFriends Int               @unique @map("required_paid_friends")
+  rewardType         ReferralRewardType @map("reward_type")
+  rewardValue        Int?               @map("reward_value")
+  isActive           Boolean            @default(true) @map("is_active")
+  createdAt          DateTime           @default(now()) @map("created_at")
+  updatedAt          DateTime           @updatedAt @map("updated_at")
+  referrals          Referral[]
+
+  @@map("referral_reward_rules")
+}
+
+model Referral {
+  id                 String             @id @default(uuid())
+  referrerTelegramId String             @map("referrer_telegram_id") @db.VarChar(40)
+  referrer           User               @relation("ReferrerReferrals", fields: [referrerTelegramId], references: [telegramId], onDelete: Cascade)
+  referredTelegramId String             @unique @map("referred_telegram_id") @db.VarChar(40)
+  referred           User               @relation("ReferredReferrals", fields: [referredTelegramId], references: [telegramId], onDelete: Cascade)
+  refCode            String             @map("ref_code") @db.VarChar(40)
+  status             ReferralStatus     @default(registered)
+  rewardType         ReferralRewardType? @map("reward_type")
+  rewardedRuleId     String?            @map("rewarded_rule_id")
+  rewardedRule       ReferralRewardRule? @relation(fields: [rewardedRuleId], references: [id], onDelete: SetNull)
+  createdAt          DateTime           @default(now()) @map("created_at")
+  rewardedAt         DateTime?          @map("rewarded_at")
+  updatedAt          DateTime           @updatedAt @map("updated_at")
+
+  @@index([referrerTelegramId, status])
+  @@index([createdAt])
+  @@map("referrals")
+}
+
+model FeatureSetting {
+  key       String   @id @db.VarChar(80)
+  value     Json     @default("{}")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("feature_settings")
+}
+
+model FlashSale {
+  id                        String                 @id @default(uuid())
+  title                     String                 @db.VarChar(180)
+  description               String?
+  discountPercent           Int                    @map("discount_percent")
+  conditionType             FlashSaleConditionType @map("condition_type")
+  conditionValue            Json?                  @map("condition_value")
+  startsAt                  DateTime               @map("starts_at")
+  endsAt                    DateTime               @map("ends_at")
+  isActive                  Boolean                @default(true) @map("is_active")
+  notifyTelegram            Boolean                @default(false) @map("notify_telegram")
+  telegramTarget            String?                @map("telegram_target") @db.VarChar(120)
+  createdByAdmin            String?                @map("created_by_admin") @db.VarChar(80)
+  startedNotificationSentAt DateTime?              @map("started_notification_sent_at")
+  createdAt                 DateTime               @default(now()) @map("created_at")
+  updatedAt                 DateTime               @updatedAt @map("updated_at")
+  slugRequests              SlugRequest[]
+
+  @@index([isActive, startsAt, endsAt])
+  @@map("flash_sales")
+}
+
+model Drop {
+  id              String              @id @default(uuid())
+  title           String              @db.VarChar(180)
+  description     String?
+  dropAt          DateTime            @map("drop_at")
+  slugCount       Int                 @map("slug_count")
+  slugPatternType DropSlugPatternType @map("slug_pattern_type")
+  slugsPool       Json                @default("[]") @map("slugs_pool")
+  soldSlugs       Json                @default("[]") @map("sold_slugs")
+  isAnnounced     Boolean             @default(false) @map("is_announced")
+  isLive          Boolean             @default(false) @map("is_live")
+  isSoldOut       Boolean             @default(false) @map("is_sold_out")
+  isFinished      Boolean             @default(false) @map("is_finished")
+  notifyTelegram  Boolean             @default(false) @map("notify_telegram")
+  telegramTarget  String?             @map("telegram_target") @db.VarChar(120)
+  notified15mAt   DateTime?           @map("notified_15m_at")
+  notifiedStartAt DateTime?           @map("notified_start_at")
+  createdAt       DateTime            @default(now()) @map("created_at")
+  updatedAt       DateTime            @updatedAt @map("updated_at")
+  waitlist        DropWaitlist[]
+  slugRequests    SlugRequest[]
+
+  @@index([dropAt])
+  @@index([isLive, isFinished, isSoldOut])
+  @@map("drops")
+}
+
+model DropWaitlist {
+  id              String   @id @default(uuid())
+  dropId          String   @map("drop_id")
+  drop            Drop     @relation(fields: [dropId], references: [id], onDelete: Cascade)
+  telegramId      String   @map("telegram_id") @db.VarChar(40)
+  user            User     @relation(fields: [telegramId], references: [telegramId], onDelete: Cascade)
+  joinedAt        DateTime @default(now()) @map("joined_at")
+  notifiedAt      DateTime? @map("notified_at")
+  notified15mAt   DateTime? @map("notified_15m_at")
+  notifiedStartAt DateTime? @map("notified_start_at")
+
+  @@unique([dropId, telegramId])
+  @@index([dropId, joinedAt])
+  @@map("drop_waitlist")
+}
+
+model LeaderboardExclusion {
+  fullSlug   String   @id @map("full_slug") @db.VarChar(20)
+  reason     String?
+  excludedBy String?  @map("excluded_by") @db.VarChar(80)
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@map("leaderboard_exclusions")
+}
+
+model LeaderboardSuspiciousLog {
+  id            String   @id @default(uuid())
+  fullSlug      String   @map("full_slug") @db.VarChar(20)
+  viewsCount    Int      @map("views_count")
+  windowMinutes Int      @map("window_minutes")
+  threshold     Int
+  occurredAt    DateTime @default(now()) @map("occurred_at")
+
+  @@index([fullSlug, occurredAt])
+  @@map("leaderboard_suspicious_log")
 }

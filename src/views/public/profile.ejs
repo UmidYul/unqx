@@ -23,6 +23,7 @@
           <button type="button" data-tab-target="slugs" class="profile-tab-btn rounded-xl border border-neutral-200 px-3 py-2 text-left text-sm font-medium">МОИ UNQ</button>
           <button type="button" data-tab-target="card" class="profile-tab-btn rounded-xl border border-neutral-200 px-3 py-2 text-left text-sm font-medium">МОЯ ВИЗИТКА</button>
           <button type="button" data-tab-target="requests" class="profile-tab-btn rounded-xl border border-neutral-200 px-3 py-2 text-left text-sm font-medium">ЗАЯВКИ</button>
+          <button type="button" data-tab-target="referrals" class="profile-tab-btn rounded-xl border border-neutral-200 px-3 py-2 text-left text-sm font-medium">РЕФЕРАЛЫ</button>
           <button type="button" data-tab-target="settings" class="profile-tab-btn rounded-xl border border-neutral-200 px-3 py-2 text-left text-sm font-medium">НАСТРОЙКИ</button>
         </nav>
       </aside>
@@ -151,6 +152,37 @@
               <tbody id="profile-requests-table"></tbody>
             </table>
           </div>
+        </article>
+
+        <article data-tab-panel="referrals" class="profile-tab-panel hidden rounded-2xl border border-neutral-200 bg-white p-5">
+          <h2 class="text-lg font-bold">РЕФЕРАЛЫ</h2>
+          <div class="mt-4 grid gap-3 rounded-xl border border-neutral-200 bg-neutral-50 p-4 md:grid-cols-[1fr_auto_auto]">
+            <input id="profile-ref-link" type="text" readonly class="rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm" />
+            <button id="profile-ref-copy" type="button" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm font-semibold">Скопировать ссылку</button>
+            <a id="profile-ref-tg" href="#" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm font-semibold text-center">Поделиться в Telegram</a>
+          </div>
+
+          <div class="mt-4 grid gap-3 md:grid-cols-3">
+            <div class="rounded-xl border border-neutral-200 p-3"><p class="text-xs text-neutral-500">Приглашено друзей</p><p id="profile-ref-stat-invited" class="mt-1 text-xl font-black">0</p></div>
+            <div class="rounded-xl border border-neutral-200 p-3"><p class="text-xs text-neutral-500">Из них оплатили</p><p id="profile-ref-stat-paid" class="mt-1 text-xl font-black">0</p></div>
+            <div class="rounded-xl border border-neutral-200 p-3"><p class="text-xs text-neutral-500">Заработано бонусов</p><p id="profile-ref-stat-rewarded" class="mt-1 text-xl font-black">0</p></div>
+          </div>
+
+          <div class="mt-4 overflow-auto rounded-xl border border-neutral-200">
+            <table class="min-w-full text-left text-sm">
+              <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
+                <tr>
+                  <th class="px-3 py-2">Имя</th>
+                  <th class="px-3 py-2">Дата регистрации</th>
+                  <th class="px-3 py-2">Статус</th>
+                  <th class="px-3 py-2">Награда</th>
+                </tr>
+              </thead>
+              <tbody id="profile-ref-table"></tbody>
+            </table>
+          </div>
+
+          <div id="profile-ref-rewards" class="mt-4 grid gap-3 md:grid-cols-3"></div>
         </article>
 
         <article data-tab-panel="settings" class="profile-tab-panel hidden rounded-2xl border border-neutral-200 bg-white p-5">

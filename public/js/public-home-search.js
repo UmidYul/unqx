@@ -638,12 +638,39 @@ function initSlugCalculator(orderApi) {
   const RESERVE_ICON =
     '<svg class="icon-stroke h-3.5 w-3.5" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"></path></svg>';
   let hasRevealed = false;
+  let requestSeq = 0;
 
   function updatePreview(letters, digits) {
     preview.textContent = `unqx.uz/${letters || "___"}${digits || "___"}`;
   }
 
-  function updateResult() {
+  async function applyServerPrice(slug, fallbackTotal) {
+    const seq = ++requestSeq;
+    try {
+      const response = await fetch(`/api/cards/slug-price?slug=${encodeURIComponent(slug)}`);
+      if (!response.ok) {
+        return { total: fallbackTotal, flash: null };
+      }
+      const payload = await response.json();
+      if (seq !== requestSeq) {
+        return null;
+      }
+      const total = Number(payload.price || fallbackTotal);
+      const flash =
+        payload.hasFlashSale && Number(payload.basePrice || 0) > total
+          ? {
+              basePrice: Number(payload.basePrice || total),
+              finalPrice: total,
+              discountPercent: Number(payload.discountPercent || 0),
+            }
+          : null;
+      return { total, flash };
+    } catch {
+      return { total: fallbackTotal, flash: null };
+    }
+  }
+
+  async function updateResult() {
     lettersInput.value = normalizeLetters(lettersInput.value);
     digitsInput.value = normalizeDigits(digitsInput.value);
 
@@ -660,13 +687,23 @@ function initSlugCalculator(orderApi) {
       resultWrap.classList.add("animate-fade-up");
     }
 
-    const rarity = getRarityBadge(pricing.total);
+    const serverPricing = await applyServerPrice(pricing.slug, pricing.total);
+    if (!serverPricing) {
+      return;
+    }
+    const finalPrice = serverPricing.total;
+    const rarity = getRarityBadge(finalPrice);
 
     rarityBadge.className = `inline-flex items-center gap-1 rounded-full border px-3 py-1 font-mono text-[11px] font-medium tracking-wider ${rarity.color}`;
     rarityText.textContent = rarity.label;
     resultSlug.textContent = pricing.slug;
-    resultPrice.textContent = formatPrice(pricing.total);
-    resultFormula.textContent = `${formatPrice(BASE_PRICE)} x ${pricing.letterData.multiplier} x ${pricing.digitData.multiplier} = ${formatPrice(pricing.total)} сум`;
+    if (serverPricing.flash) {
+      resultPrice.innerHTML = `<span class=\"text-neutral-400 line-through\">${formatPrice(serverPricing.flash.basePrice)}</span> <span class=\"text-emerald-700\">${formatPrice(finalPrice)}</span>`;
+      resultFormula.textContent = `⚡ Flash sale применён (-${serverPricing.flash.discountPercent}%)`;
+    } else {
+      resultPrice.textContent = formatPrice(finalPrice);
+      resultFormula.textContent = `${formatPrice(BASE_PRICE)} x ${pricing.letterData.multiplier} x ${pricing.digitData.multiplier} = ${formatPrice(finalPrice)} сум`;
+    }
     letterMeta.textContent = `${pricing.letterData.label} x${pricing.letterData.multiplier}`;
     digitMeta.textContent = `${pricing.digitData.label} x${pricing.digitData.multiplier}`;
     reserveLink.href = "#";

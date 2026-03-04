@@ -101,6 +101,7 @@ async function logoutAdmin(req) {
 }
 
 async function loginUserSession(req, userPayload) {
+  const pendingRefCode = req.session?.pendingRefCode || null;
   await new Promise((resolve, reject) => {
     req.session.regenerate((error) => {
       if (error) {
@@ -112,6 +113,9 @@ async function loginUserSession(req, userPayload) {
   });
 
   req.session.user = userPayload;
+  if (pendingRefCode) {
+    req.session.pendingRefCode = pendingRefCode;
+  }
 
   await new Promise((resolve, reject) => {
     req.session.save((error) => {

@@ -7,6 +7,7 @@ const { requireSameOrigin } = require("../../middleware/same-origin");
 const { getUserSession, loginUserSession, logoutUserSession } = require("../../middleware/auth");
 const { verifyTelegramLoginPayload, TelegramAuthError } = require("../../services/telegram-auth");
 const { getEffectivePlan, normalizeDisplayName } = require("../../services/profile");
+const { ensureUserRefCode, linkReferralOnRegistration } = require("../../services/referrals");
 
 const router = express.Router();
 
@@ -83,6 +84,10 @@ router.post(
     }
 
     let user;
+    const existedBefore = await prisma.user.findUnique({
+      where: { telegramId: parsed.telegramId },
+      select: { telegramId: true },
+    });
     try {
       user = await prisma.user.upsert({
         where: { telegramId: parsed.telegramId },
@@ -112,6 +117,14 @@ router.post(
         return;
       }
       throw error;
+    }
+
+    await ensureUserRefCode(user.telegramId);
+    if (!existedBefore && req.session?.pendingRefCode) {
+      await linkReferralOnRegistration({
+        referredTelegramId: user.telegramId,
+        refCode: req.session.pendingRefCode,
+      });
     }
 
     await loginUserSession(req, userToSessionPayload(user));

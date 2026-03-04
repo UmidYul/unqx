@@ -75,11 +75,13 @@ const UNQ_TARIFFS = {
   let isOpen = false;
   let countdownTimer = null;
   let pendingAuthCallback = null;
+  let priceRequestSeq = 0;
   let state = {
     slugLocked: false,
     lockedSlug: "",
     theme: "default_dark",
     braceletForced: false,
+    dropId: null,
   };
 
   function setCsrfToken(nextToken) {
@@ -263,14 +265,45 @@ const UNQ_TARIFFS = {
     }
   }
 
-  function updateTotals() {
+  async function resolveServerPrice(slug, fallbackTotal) {
+    const seq = ++priceRequestSeq;
+    try {
+      const response = await fetch(`/api/cards/slug-price?slug=${encodeURIComponent(slug)}`);
+      if (!response.ok) {
+        return { total: fallbackTotal, flash: null };
+      }
+      const payload = await response.json();
+      if (seq !== priceRequestSeq) {
+        return null;
+      }
+      const total = Number(payload.price || fallbackTotal);
+      const flash =
+        payload.hasFlashSale && Number(payload.basePrice || 0) > total
+          ? {
+              basePrice: Number(payload.basePrice || total),
+              finalPrice: total,
+              discountPercent: Number(payload.discountPercent || 0),
+            }
+          : null;
+      return { total, flash };
+    } catch {
+      return { total: fallbackTotal, flash: null };
+    }
+  }
+
+  async function updateTotals() {
     dom.letters.value = normalizeLetters(dom.letters.value);
     dom.digits.value = normalizeDigits(dom.digits.value);
     const pricing = calculateSlugPricing(dom.letters.value, dom.digits.value);
     const plan = selectedPlan();
     const monthly = UNQ_TARIFFS[plan];
     const bracelet = dom.bracelet.checked;
-    const slugPrice = pricing ? pricing.total : 0;
+    const fallbackSlugPrice = pricing ? pricing.total : 0;
+    const server = pricing ? await resolveServerPrice(pricing.slug, fallbackSlugPrice) : { total: 0, flash: null };
+    if (pricing && !server) {
+      return;
+    }
+    const slugPrice = server ? server.total : fallbackSlugPrice;
     const oneTime = slugPrice + (bracelet ? UNQ_BRACELET_PRICE : 0);
     const slugLabel = pricing ? pricing.slug : "___ ___";
     const rarity = getRarity(slugPrice);
@@ -281,11 +314,19 @@ const UNQ_TARIFFS = {
       dom.slugPreview.textContent = `unqx.uz/${slugLabel.replace(" ", "")}`;
     }
     if (dom.slugPrice instanceof HTMLElement) {
-      dom.slugPrice.textContent = formatPrice(slugPrice);
+      if (server?.flash) {
+        dom.slugPrice.innerHTML = `<span class=\"line-through text-neutral-400\">${formatPrice(server.flash.basePrice)}</span> <span class=\"text-emerald-700\">${formatPrice(slugPrice)}</span>`;
+      } else {
+        dom.slugPrice.textContent = formatPrice(slugPrice);
+      }
     }
     if (dom.formula instanceof HTMLElement) {
-      const m = pricing ? pricing.letterData.multiplier * pricing.digitData.multiplier : 1;
-      dom.formula.textContent = `${formatPrice(UNQ_BASE_PRICE)} × ${m} = ${formatPrice(slugPrice)} сум`;
+      if (server?.flash) {
+        dom.formula.textContent = `⚡ Flash sale применён (-${server.flash.discountPercent}%)`;
+      } else {
+        const m = pricing ? pricing.letterData.multiplier * pricing.digitData.multiplier : 1;
+        dom.formula.textContent = `${formatPrice(UNQ_BASE_PRICE)} × ${m} = ${formatPrice(slugPrice)} сум`;
+      }
     }
     if (dom.rarity instanceof HTMLElement) {
       dom.rarity.className = `inline-flex rounded-full border px-2.5 py-1 text-[11px] font-semibold tracking-wider ${rarity.cls}`;
@@ -382,6 +423,7 @@ const UNQ_TARIFFS = {
     state.slugLocked = Boolean(parsed);
     state.lockedSlug = parsed ? parsed.slug : "";
     state.braceletForced = options.bracelet === true;
+    state.dropId = typeof options.dropId === "string" && options.dropId ? options.dropId : null;
     dom.planBasic.checked = plan === "basic";
     dom.planPremium.checked = plan === "premium";
     dom.bracelet.checked = state.braceletForced;
@@ -397,7 +439,7 @@ const UNQ_TARIFFS = {
       dom.name.value = currentUser.firstName || currentUser.displayName || "";
     }
     setStatus("", "neutral");
-    updateTotals();
+    void updateTotals();
   }
 
   async function open(options = {}) {
@@ -489,6 +531,7 @@ const UNQ_TARIFFS = {
           digitalCard: true,
           bracelet: Boolean(dom.bracelet.checked),
         },
+        ...(state.dropId ? { dropId: state.dropId } : {}),
       });
       if (dom.successSlug instanceof HTMLElement) {
         dom.successSlug.textContent = `${pricing.slug} зарезервирован на 24 часа`;
@@ -532,7 +575,7 @@ const UNQ_TARIFFS = {
         dom.name.value = currentUser.firstName || currentUser.displayName || "";
       }
       setStep("form");
-      updateTotals();
+      void updateTotals();
       window.dispatchEvent(new CustomEvent("unqx:auth:success", { detail: currentUser }));
       if (typeof pendingAuthCallback === "function") {
         const callback = pendingAuthCallback;
@@ -565,6 +608,7 @@ const UNQ_TARIFFS = {
           plan: node.getAttribute("data-order-plan") || "",
           theme: node.getAttribute("data-order-theme") || "",
           bracelet: node.getAttribute("data-order-bracelet") === "true",
+          dropId: node.getAttribute("data-drop-id") || "",
         };
         void open(options);
       });
@@ -605,11 +649,11 @@ const UNQ_TARIFFS = {
   }
 
   dom.stepForm.addEventListener("submit", handleSubmit);
-  dom.letters.addEventListener("input", updateTotals);
-  dom.digits.addEventListener("input", updateTotals);
-  dom.planBasic.addEventListener("change", updateTotals);
-  dom.planPremium.addEventListener("change", updateTotals);
-  dom.bracelet.addEventListener("change", updateTotals);
+  dom.letters.addEventListener("input", () => void updateTotals());
+  dom.digits.addEventListener("input", () => void updateTotals());
+  dom.planBasic.addEventListener("change", () => void updateTotals());
+  dom.planPremium.addEventListener("change", () => void updateTotals());
+  dom.bracelet.addEventListener("change", () => void updateTotals());
   dom.logout?.addEventListener("click", () => {
     void postJson("/api/auth/logout", {})
       .then(async () => {
@@ -656,4 +700,7 @@ const UNQ_TARIFFS = {
   dom.root.style.display = "none";
   void refreshUser();
   bindCtas();
+  window.addEventListener("unqx:bind-order-ctas", () => {
+    bindCtas();
+  });
 })();

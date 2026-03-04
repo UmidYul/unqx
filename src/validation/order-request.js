@@ -17,6 +17,7 @@ const OrderRequestSchema = z.object({
     digitalCard: z.boolean(),
     bracelet: z.boolean(),
   }),
+  dropId: z.string().uuid().optional(),
 });
 
 module.exports = {

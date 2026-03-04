@@ -46,6 +46,7 @@
     tags: [],
     buttons: [],
     theme: "default_dark",
+    referrals: null,
   };
 
   const buttonTypeLabels = {
@@ -106,6 +107,14 @@
     reqBanner: $("#profile-requests-banner"),
     reqTable: $("#profile-requests-table"),
     reqNewBtn: $("#profile-new-request-btn"),
+    refLink: $("#profile-ref-link"),
+    refCopy: $("#profile-ref-copy"),
+    refTg: $("#profile-ref-tg"),
+    refInvited: $("#profile-ref-stat-invited"),
+    refPaid: $("#profile-ref-stat-paid"),
+    refRewarded: $("#profile-ref-stat-rewarded"),
+    refTable: $("#profile-ref-table"),
+    refRewards: $("#profile-ref-rewards"),
 
     stName: $("#profile-settings-display-name"),
     stTg: $("#profile-settings-telegram"),
@@ -183,7 +192,7 @@
 
   const currentTab = () => {
     const raw = (location.hash || "#slugs").replace("#", "");
-    return ["slugs", "card", "requests", "settings"].includes(raw) ? raw : "slugs";
+    return ["slugs", "card", "requests", "referrals", "settings"].includes(raw) ? raw : "slugs";
   };
 
   const setTab = () => {
@@ -468,12 +477,59 @@
     if (el.stNotif) el.stNotif.checked = Boolean(s.user.notificationsEnabled);
   };
 
+  const renderReferrals = () => {
+    const payload = s.referrals || {};
+    if (el.refLink instanceof HTMLInputElement) {
+      el.refLink.value = payload.refLink || "";
+    }
+    if (el.refTg instanceof HTMLAnchorElement) {
+      const text = encodeURIComponent("Зарегистрируйся на UNQ+ по моей ссылке");
+      const url = encodeURIComponent(payload.refLink || "");
+      el.refTg.href = `tg://msg_url?url=${url}&text=${text}`;
+    }
+    if (el.refInvited) el.refInvited.textContent = String(payload.stats?.invited || 0);
+    if (el.refPaid) el.refPaid.textContent = String(payload.stats?.paid || 0);
+    if (el.refRewarded) el.refRewarded.textContent = String(payload.stats?.rewarded || 0);
+
+    if (el.refTable) {
+      const rows = Array.isArray(payload.referrals) ? payload.referrals : [];
+      el.refTable.innerHTML = rows.length
+        ? rows
+            .map(
+              (item) =>
+                `<tr class="border-t border-neutral-100"><td class="px-3 py-2">${esc(item.name || "UNQ+ User")}</td><td class="px-3 py-2">${fdt(item.createdAt)}</td><td class="px-3 py-2">${esc(item.status)}</td><td class="px-3 py-2">${esc(item.rewardType || "—")}</td></tr>`,
+            )
+            .join("")
+        : '<tr><td colspan="4" class="px-3 py-8 text-center text-neutral-500">Пока нет рефералов</td></tr>';
+    }
+
+    if (el.refRewards) {
+      const rules = Array.isArray(payload.rewards) ? payload.rewards : [];
+      el.refRewards.innerHTML = rules
+        .map((rule) => {
+          const statusLabel =
+            rule.status === "received"
+              ? "Получено ✅"
+              : rule.status === "available"
+                ? "Доступно к получению 🎁"
+                : "Ожидает 🕐";
+          const claimButton =
+            rule.status === "available"
+              ? `<button data-a="claim-reward" data-rule="${rule.id}" class="mt-2 rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold">Забрать награду</button>`
+              : "";
+          return `<article class="rounded-xl border border-neutral-200 p-3"><p class="text-sm font-semibold">За ${rule.threshold} оплативших</p><p class="mt-1 text-sm text-neutral-600">${esc(rule.rewardLabel || "")}</p><p class="mt-2 text-xs text-neutral-500">${statusLabel}</p>${claimButton}</article>`;
+        })
+        .join("");
+    }
+  };
+
   const renderAll = () => {
     renderSidebar();
     renderSlugs();
     renderCard();
     renderRequests();
     renderSettings();
+    renderReferrals();
   };
 
   const load = async () => {
@@ -483,6 +539,11 @@
     s.slugs = payload.slugs || [];
     s.card = payload.card || null;
     s.requests = payload.requests || [];
+    try {
+      s.referrals = await api("/api/referrals/bootstrap");
+    } catch {
+      s.referrals = null;
+    }
     renderAll();
   };
 
@@ -599,6 +660,19 @@
           }),
         });
         await load();
+        return;
+      }
+
+      if (action === "claim-reward") {
+        const ruleId = target.getAttribute("data-rule");
+        if (!ruleId) return;
+        await api(`/api/referrals/rewards/${encodeURIComponent(ruleId)}/claim`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({}),
+        });
+        await load();
+        return;
       }
     } catch (error) {
       showModal("Ошибка", error.message || "Не удалось выполнить действие");
@@ -610,6 +684,22 @@
       location.hash = `#${button.getAttribute("data-tab-target") || "slugs"}`;
     }),
   );
+
+  el.refCopy?.addEventListener("click", async () => {
+    const value = el.refLink instanceof HTMLInputElement ? el.refLink.value : "";
+    if (!value) return;
+    try {
+      await navigator.clipboard.writeText(value);
+      if (el.refCopy) {
+        el.refCopy.textContent = "Скопировано";
+        setTimeout(() => {
+          if (el.refCopy) el.refCopy.textContent = "Скопировать ссылку";
+        }, 1200);
+      }
+    } catch {
+      showModal("Ошибка", "Не удалось скопировать ссылку");
+    }
+  });
 
   window.addEventListener("hashchange", setTab);
   setTab();

@@ -8,6 +8,8 @@ const { detectDevice } = require("../../services/ua");
 const { generateVCard } = require("../../services/vcard");
 const { calculateSlugPrice } = require("../../services/slug-pricing");
 const { sendOrderRequestToTelegram, TelegramConfigError, TelegramDeliveryError } = require("../../services/telegram");
+const { getActiveFlashSale, applyFlashSaleToPrice } = require("../../services/flash-sales");
+const { markDropSlugSold } = require("../../services/drops");
 const { asyncHandler } = require("../../middleware/async");
 const { requireSameOrigin } = require("../../middleware/same-origin");
 const { requireCsrfToken } = require("../../middleware/csrf");
@@ -212,6 +214,9 @@ async function getSlugState(slug) {
   ]);
 
   if (slugRow) {
+    if (slugRow.status === "reserved_drop") {
+      return { available: false, reason: "drop_reserved", priceOverride: slugRow.price ?? null };
+    }
     if (slugRow.status === "blocked") {
       return { available: false, reason: "blocked", priceOverride: slugRow.price ?? null };
     }
@@ -607,11 +612,22 @@ router.get(
       letters: parsed.letters,
       digits: parsed.digits,
     });
+    const activeSale = await getActiveFlashSale();
+    const flash = applyFlashSaleToPrice({
+      slug,
+      basePrice: pricing.total,
+      sale: activeSale,
+    });
 
     res.json({
       slug,
       validFormat: true,
-      price: pricing.total,
+      price: flash.finalPrice,
+      basePrice: flash.basePrice,
+      hasFlashSale: flash.hasDiscount,
+      discountAmount: flash.discountAmount,
+      discountPercent: flash.discountPercent,
+      flashSaleId: flash.hasDiscount ? activeSale.id : null,
       source: "calculator",
     });
   }),
@@ -678,24 +694,56 @@ router.post(
     const payload = parsed.data;
     const slug = `${payload.letters}${payload.digits}`;
     const state = await getSlugState(slug);
+    const dropId = payload.dropId || null;
+    let drop = null;
+    if (dropId) {
+      drop = await prisma.drop.findUnique({ where: { id: dropId } });
+      if (!drop || !drop.isLive || drop.isFinished || drop.isSoldOut) {
+        res.status(409).json({ error: "Drop is not active", code: "DROP_NOT_ACTIVE" });
+        return;
+      }
+      const pool = Array.isArray(drop.slugsPool) ? drop.slugsPool : [];
+      if (!pool.includes(slug)) {
+        res.status(409).json({ error: "Slug is not part of this drop", code: "DROP_SLUG_MISMATCH" });
+        return;
+      }
+    }
     if (!state.available) {
-      res.status(409).json({
-        error: "Этот UNQ только что заняли. Выбери другой.",
-        reason: state.reason,
-        code: "SLUG_NOT_AVAILABLE",
-      });
-      return;
+      if (state.reason === "drop_reserved" && dropId) {
+        // allow checkout through active drop flow
+      } else if (state.reason === "drop_reserved" && !dropId) {
+        res.status(409).json({
+          error: "Этот UNQ доступен только в активном дропе",
+          reason: state.reason,
+          code: "DROP_ONLY_SLUG",
+        });
+        return;
+      } else {
+        res.status(409).json({
+          error: "Этот UNQ только что заняли. Выбери другой.",
+          reason: state.reason,
+          code: "SLUG_NOT_AVAILABLE",
+        });
+        return;
+      }
     }
 
-    const pricing =
+    const basePricing =
       typeof state.priceOverride === "number"
         ? {
             total: state.priceOverride,
           }
         : calculateSlugPrice({ letters: payload.letters, digits: payload.digits });
+    const activeFlashSale = await getActiveFlashSale();
+    const flashApplied = applyFlashSaleToPrice({
+      slug,
+      basePrice: basePricing.total,
+      sale: activeFlashSale,
+    });
+    const finalSlugPrice = flashApplied.finalPrice;
     const tariffPrice = TARIFF_MONTHLY[payload.tariff] ?? TARIFF_MONTHLY.basic;
     const braceletPrice = payload.products.bracelet ? BRACELET_PRICE : 0;
-    const totalOneTime = pricing.total + braceletPrice;
+    const totalOneTime = finalSlugPrice + braceletPrice;
     const theme = payload.tariff === "premium" ? normalizeTheme(payload.theme) : undefined;
     const contact = user.username ? `@${user.username}` : `${user.firstName}`;
     const requestedAt = new Date();
@@ -733,13 +781,13 @@ router.post(
               status: "pending",
               requestedAt,
               pendingExpiresAt,
-              price: pricing.total,
+              price: finalSlugPrice,
             },
             update: {
               status: "pending",
               requestedAt,
               pendingExpiresAt,
-              price: pricing.total,
+              price: finalSlugPrice,
             },
           });
         }
@@ -748,11 +796,14 @@ router.post(
           data: {
             telegramId: user.telegramId,
             slug,
-            slugPrice: pricing.total,
+            slugPrice: finalSlugPrice,
             requestedPlan: payload.tariff,
             bracelet: Boolean(payload.products.bracelet),
             contact,
             status: "new",
+            dropId: drop ? drop.id : null,
+            flashSaleId: flashApplied.hasDiscount ? activeFlashSale.id : null,
+            flashDiscountAmount: flashApplied.discountAmount,
           },
           select: { id: true, status: true },
         });
@@ -761,7 +812,7 @@ router.post(
           data: {
             name: payload.name,
             slug,
-            slugPrice: pricing.total,
+            slugPrice: finalSlugPrice,
             tariff: payload.tariff,
             theme: theme || null,
             bracelet: Boolean(payload.products.bracelet),
@@ -805,7 +856,7 @@ router.post(
         telegramId: user.telegramId,
         username: user.username || "",
         slug,
-        slugPriceLabel: formatPrice(pricing.total),
+        slugPriceLabel: formatPrice(finalSlugPrice),
         tariff: payload.tariff,
         tariffPriceLabel: formatPrice(tariffPrice),
         bracelet: payload.products.bracelet,
@@ -833,8 +884,25 @@ router.post(
       orderId: order.id,
       pendingExpiresAt,
       telegramDelivered,
+      flashSale: flashApplied.hasDiscount
+        ? {
+            saleId: activeFlashSale.id,
+            discountAmount: flashApplied.discountAmount,
+            discountPercent: flashApplied.discountPercent,
+            basePrice: flashApplied.basePrice,
+            finalPrice: flashApplied.finalPrice,
+          }
+        : null,
       ...(telegramDelivered ? {} : { warning: telegramError }),
     });
+
+    if (drop) {
+      try {
+        await markDropSlugSold({ dropId: drop.id, slug });
+      } catch (error) {
+        console.error("[express-app] failed to mark drop slug sold", error);
+      }
+    }
   }),
 );
 
