@@ -28,7 +28,9 @@ function parseTrustProxy(value) {
 
   const booleanValue = parseBoolean(value);
   if (typeof booleanValue === "boolean") {
-    return booleanValue;
+    // express-rate-limit rejects permissive trust proxy=true.
+    // Normalize "true" to first-hop proxy trust (1), keep explicit false.
+    return booleanValue ? 1 : false;
   }
 
   const numericValue = Number(value);
