@@ -448,16 +448,6 @@
   margin-bottom: 2px;
 }
 
-.admin-main .overflow-x-auto .admin-row-actions,
-.admin-main .overflow-x-auto .admin-kebab-btn {
-  position: relative;
-  z-index: 2;
-}
-
-.admin-main .overflow-x-auto .admin-kebab-btn {
-  margin-bottom: 6px;
-}
-
 .admin-kpi-card {
   border: 1px solid #e5e7eb;
   border-radius: 16px;
