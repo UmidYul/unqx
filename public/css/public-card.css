@@ -178,7 +178,7 @@ body[data-page="profile-page"] {
 }
 
 #profile-card-live-preview [data-card-view] {
-  max-width: 420px;
+  max-width: 480px;
   margin: 0 auto;
 }
 
@@ -238,7 +238,7 @@ body[data-card-theme] #public-card-layout {
 body[data-card-theme] #card-view-root {
   margin-inline: auto;
   width: 100%;
-  max-width: 500px !important;
+  max-width: 560px !important;
 }
 
 #card-slug-search-results {

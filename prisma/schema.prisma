@@ -284,6 +284,7 @@ model User {
   plan                 UserPlan      @default(none)
   planPurchasedAt      DateTime?     @map("plan_purchased_at")
   planUpgradedAt       DateTime?     @map("plan_upgraded_at")
+  welcomeDismissed     Boolean       @default(false) @map("welcome_dismissed")
   notificationsEnabled Boolean       @default(true) @map("notifications_enabled")
   status               UserStatus    @default(active)
   refCode              String?       @unique @map("ref_code") @db.VarChar(40)

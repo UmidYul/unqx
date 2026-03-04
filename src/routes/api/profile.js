@@ -29,6 +29,11 @@ const upload = multer({
 });
 const ALLOWED_MIME = new Set(["image/jpeg", "image/png", "image/webp"]);
 
+function isUserMissingColumnError(error) {
+  if (!error || typeof error !== "object") return false;
+  return error.code === "P2022";
+}
+
 function toSlugStatusLabel(status) {
   switch (status) {
     case "active":
@@ -108,9 +113,60 @@ async function getCurrentUser(req) {
   if (!sessionUser || !sessionUser.telegramId) {
     return null;
   }
-  return prisma.user.findUnique({
-    where: { telegramId: sessionUser.telegramId },
-  });
+  try {
+    const row = await prisma.user.findUnique({
+      where: { telegramId: sessionUser.telegramId },
+      select: {
+        telegramId: true,
+        firstName: true,
+        lastName: true,
+        username: true,
+        photoUrl: true,
+        displayName: true,
+        plan: true,
+        notificationsEnabled: true,
+        status: true,
+      },
+    });
+
+    if (!row) return null;
+    return {
+      ...row,
+      planPurchasedAt: null,
+      planUpgradedAt: null,
+    };
+  } catch (error) {
+    if (!isUserMissingColumnError(error)) {
+      throw error;
+    }
+
+    const rows = await prisma.$queryRaw`
+      SELECT
+        telegram_id AS "telegramId",
+        first_name AS "firstName",
+        last_name AS "lastName",
+        username,
+        photo_url AS "photoUrl",
+        display_name AS "displayName",
+        plan::text AS "plan",
+        notifications_enabled AS "notificationsEnabled",
+        status::text AS "status"
+      FROM users
+      WHERE telegram_id = ${sessionUser.telegramId}
+      LIMIT 1
+    `;
+    const row = Array.isArray(rows) ? rows[0] : null;
+    if (!row) return null;
+
+    return {
+      ...row,
+      plan: row.plan === "basic" || row.plan === "premium" || row.plan === "none" ? row.plan : "basic",
+      status: row.status || "active",
+      notificationsEnabled: typeof row.notificationsEnabled === "boolean" ? row.notificationsEnabled : true,
+      planPurchasedAt: null,
+      planUpgradedAt: null,
+    };
+  }
 }
 
 function assertUserActive(user, res) {
