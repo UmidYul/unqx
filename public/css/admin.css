@@ -438,7 +438,12 @@
 
 /* Keep table controls above horizontal scrollbar hit area */
 .admin-main .overflow-x-auto {
-  padding-bottom: 8px;
+  overflow-y: visible;
+  padding-bottom: 14px;
+}
+
+.admin-main .overflow-x-auto > table {
+  margin-bottom: 2px;
 }
 
 .admin-kpi-card {
