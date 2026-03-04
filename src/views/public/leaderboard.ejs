@@ -13,9 +13,9 @@
         На главную
       </a>
       <div class="inline-flex rounded-xl border border-neutral-200 bg-white p-1 text-sm" role="tablist" aria-label="Период рейтинга">
-        <a href="/leaderboard?period=week" class="interactive-btn min-h-11 rounded-lg px-3 py-1.5 <%= period === 'week' ? 'bg-neutral-900 text-white' : 'text-neutral-600' %>" role="tab" aria-selected="<%= period === 'week' ? 'true' : 'false' %>">Неделя</a>
-        <a href="/leaderboard?period=month" class="interactive-btn min-h-11 rounded-lg px-3 py-1.5 <%= period === 'month' ? 'bg-neutral-900 text-white' : 'text-neutral-600' %>" role="tab" aria-selected="<%= period === 'month' ? 'true' : 'false' %>">Месяц</a>
-        <a href="/leaderboard?period=all" class="interactive-btn min-h-11 rounded-lg px-3 py-1.5 <%= period === 'all' ? 'bg-neutral-900 text-white' : 'text-neutral-600' %>" role="tab" aria-selected="<%= period === 'all' ? 'true' : 'false' %>">Всё время</a>
+        <a href="/leaderboard?period=week" class="interactive-btn inline-flex min-h-11 items-center rounded-lg px-3 py-1.5 <%= period === 'week' ? 'bg-neutral-900 text-white' : 'text-neutral-600' %>" role="tab" aria-selected="<%= period === 'week' ? 'true' : 'false' %>">Неделя</a>
+        <a href="/leaderboard?period=month" class="interactive-btn inline-flex min-h-11 items-center rounded-lg px-3 py-1.5 <%= period === 'month' ? 'bg-neutral-900 text-white' : 'text-neutral-600' %>" role="tab" aria-selected="<%= period === 'month' ? 'true' : 'false' %>">Месяц</a>
+        <a href="/leaderboard?period=all" class="interactive-btn inline-flex min-h-11 items-center rounded-lg px-3 py-1.5 <%= period === 'all' ? 'bg-neutral-900 text-white' : 'text-neutral-600' %>" role="tab" aria-selected="<%= period === 'all' ? 'true' : 'false' %>">Всё время</a>
       </div>
     </div>
 
@@ -42,9 +42,10 @@
       <% topThree.forEach((item, idx) => { %>
       <article class="interactive-card rounded-2xl border border-neutral-200 bg-white p-5">
         <p class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-bold <%= rankBadgeByPlace[item.rank] || 'border-neutral-300 bg-neutral-100 text-neutral-800' %>">
-          <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <circle cx="12" cy="10" r="4.5" stroke="currentColor" stroke-width="1.8"></circle>
-            <path d="M9 14.5 7.3 20 12 17.8 16.7 20 15 14.5" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"></path>
+          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <circle cx="12" cy="8.5" r="4.5" stroke="currentColor" stroke-width="1.8"></circle>
+            <path d="m9.4 12.6-2.1 7 4.7-2.5 4.7 2.5-2.1-7" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"></path>
+            <path d="m10.5 8.5 1.2 1.2 2-2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
           </svg>
           <span><%= item.rank %></span>
         </p>

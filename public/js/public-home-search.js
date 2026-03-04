@@ -487,8 +487,8 @@ function initSlugAvailability(orderApi) {
 
     if (state === "taken") {
       statusIcon.innerHTML = ICON_BAD;
-      statusText.textContent = `${slug} занят`;
-      statusNote.textContent = "Этот UNQ занят, выбери похожий свободный вариант.";
+      statusText.textContent = `UNQ ${slug} занят этим пользователем.`;
+      statusNote.textContent = "Выбери похожий свободный UNQ или открой визитку владельца.";
       renderSuggestions(suggestions);
       setTakenOwner(owner);
       setPrimaryAction({

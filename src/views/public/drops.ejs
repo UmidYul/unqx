@@ -4,6 +4,7 @@
   <%- include('../partials/head', { title: title || 'Дропы slug · UNQ+', description: description || 'Дропы slug UNQ+', styles: ['/css/public-card.css'] }) %>
 </head>
 <body class="antialiased bg-neutral-50" data-page="drops-page" data-telegram-bot-username="<%= telegramBotUsername || '' %>">
+  <% const hasDrops = Array.isArray(drops) && drops.length > 0; %>
   <main class="mx-auto w-full max-w-6xl px-4 py-8">
     <div class="mb-6 flex items-center justify-between gap-3">
       <a href="/" class="interactive-btn inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-neutral-300 px-3 py-1.5 text-sm font-semibold text-neutral-600 hover:text-neutral-900">
@@ -15,15 +16,21 @@
       <a href="/leaderboard" class="interactive-btn inline-flex min-h-11 items-center rounded-lg border border-neutral-300 px-3 py-1.5 text-sm text-neutral-500 hover:text-neutral-900">Топ визиток</a>
     </div>
 
+    <% if (!hasDrops) { %>
+    <section class="flex min-h-[calc(100vh-220px)] items-center justify-center">
+      <article class="w-full max-w-md rounded-2xl border border-neutral-200 bg-white p-8 text-center">
+        <p class="text-xs uppercase tracking-[0.18em] text-neutral-500">Дропы</p>
+        <h1 class="mt-3 text-2xl font-bold text-neutral-900">Пока нет активных дропов</h1>
+        <p class="mt-2 text-sm text-neutral-600">Следующие запуски появятся здесь совсем скоро.</p>
+      </article>
+    </section>
+    <% } else { %>
     <header class="mb-6 rounded-2xl border border-neutral-200 bg-white p-6">
       <h1 class="text-3xl font-black tracking-tight text-neutral-900">Дропы slug</h1>
       <p class="mt-2 text-sm text-neutral-500">Подписывайся на уведомления и забирай slug в первые минуты старта.</p>
     </header>
 
     <section class="grid gap-4 md:grid-cols-2">
-      <% if (!drops || !drops.length) { %>
-      <article class="rounded-2xl border border-neutral-200 bg-white p-6 text-sm text-neutral-500">Пока дропов нет.</article>
-      <% } %>
       <% (drops || []).forEach((drop) => {
         const pool = Array.isArray(drop.slugsPool) ? drop.slugsPool : [];
         const sold = Array.isArray(drop.soldSlugs) ? drop.soldSlugs : [];
@@ -59,6 +66,7 @@
         <p class="text-sm text-neutral-500">Загрузка активных дропов...</p>
       </div>
     </section>
+    <% } %>
   </main>
 
   <div id="drops-toast-region" aria-live="polite" class="sr-only"></div>

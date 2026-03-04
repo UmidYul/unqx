@@ -121,11 +121,12 @@ function createApp() {
       secret: env.SESSION_SECRET,
       resave: false,
       saveUninitialized: false,
+      rolling: env.SESSION_ROLLING,
       cookie: {
         httpOnly: true,
         sameSite: "lax",
         secure: env.SESSION_COOKIE_SECURE,
-        maxAge: 1000 * 60 * 60 * 24 * 7,
+        maxAge: 1000 * 60 * env.SESSION_MAX_AGE_MINUTES,
       },
     }),
   );

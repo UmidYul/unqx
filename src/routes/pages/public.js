@@ -22,6 +22,61 @@ function sanitizeSlug(value) {
     .slice(0, 20);
 }
 
+function isSlugStatusDecodeError(error) {
+  if (!error || typeof error !== "object") return false;
+  const message = String(error.message || "");
+  return (
+    error.code === "P2032" ||
+    (message.includes("SlugStatus") && message.includes("incompatible value")) ||
+    (message.includes("Error converting field") && message.includes("status"))
+  );
+}
+
+async function findSlugByFullSlugWithLegacyFallback(fullSlug) {
+  try {
+    return await prisma.slug.findUnique({
+      where: { fullSlug },
+      include: {
+        owner: true,
+      },
+    });
+  } catch (error) {
+    if (!isSlugStatusDecodeError(error)) {
+      throw error;
+    }
+
+    const rows = await prisma.$queryRaw`
+      SELECT
+        id,
+        letters,
+        digits,
+        full_slug AS "fullSlug",
+        owner_telegram_id AS "ownerTelegramId",
+        status::text AS "status",
+        is_primary AS "isPrimary",
+        price,
+        pause_message AS "pauseMessage",
+        requested_at AS "requestedAt",
+        pending_expires_at AS "pendingExpiresAt",
+        approved_at AS "approvedAt",
+        activated_at AS "activatedAt",
+        created_at AS "createdAt",
+        updated_at AS "updatedAt"
+      FROM slugs
+      WHERE full_slug = ${fullSlug}
+      LIMIT 1
+    `;
+
+    const row = Array.isArray(rows) ? rows[0] : null;
+    if (!row) return null;
+
+    return {
+      ...row,
+      owner: null,
+    };
+  }
+}
+
 function mapProfileButtons(rawButtons) {
   const allowedTypes = new Set([
     "phone",
@@ -293,12 +348,7 @@ router.get(
   asyncHandler(async (req, res) => {
     const slug = sanitizeSlug(req.params.slug);
 
-    const slugRow = await prisma.slug.findUnique({
-      where: { fullSlug: slug },
-      include: {
-        owner: true,
-      },
-    });
+    const slugRow = await findSlugByFullSlugWithLegacyFallback(slug);
 
     if (slugRow) {
       if (slugRow.status === "blocked") {
@@ -331,7 +381,7 @@ router.get(
         return;
       }
 
-      if (slugRow.status === "pending") {
+      if (slugRow.status === "pending" || slugRow.status === "reserved") {
         res.status(200).render("public/slug-state", {
           title: `UNQ занят: ${slug}`,
           slug,

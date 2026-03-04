@@ -421,6 +421,7 @@ async function getScoreLeaderboard(limit = 100) {
           telegramId: true,
           firstName: true,
           username: true,
+          photoUrl: true,
           plan: true,
           profileCard: {
             select: { name: true, avatarUrl: true },
@@ -465,7 +466,7 @@ async function getScoreLeaderboard(limit = 100) {
       telegramId: row.telegramId,
       slug,
       ownerName: row.user?.profileCard?.name || row.user?.firstName || row.user?.username || "UNQ+ User",
-      avatarUrl: row.user?.profileCard?.avatarUrl || "/brand/unq-mark.svg",
+      avatarUrl: row.user?.profileCard?.avatarUrl || row.user?.photoUrl || "/brand/unq-mark.svg",
       plan: row.user?.plan || "basic",
       score: row.score,
       percentile: row.percentile,

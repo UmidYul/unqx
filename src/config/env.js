@@ -127,6 +127,8 @@ const schema = z.object({
   ROOT_DIR: z.string().optional(),
   TRUST_PROXY: z.string().optional(),
   SESSION_COOKIE_SECURE: z.string().optional(),
+  SESSION_MAX_AGE_MINUTES: z.coerce.number().int().positive().max(60 * 24 * 30).default(120),
+  SESSION_ROLLING: z.string().optional(),
   DISABLE_HTTPS_ENFORCEMENT: z.string().optional(),
 });
 
@@ -151,6 +153,8 @@ const parsed = schema.parse({
   ROOT_DIR: process.env.ROOT_DIR,
   TRUST_PROXY: process.env.TRUST_PROXY,
   SESSION_COOKIE_SECURE: process.env.SESSION_COOKIE_SECURE,
+  SESSION_MAX_AGE_MINUTES: process.env.SESSION_MAX_AGE_MINUTES,
+  SESSION_ROLLING: process.env.SESSION_ROLLING,
   DISABLE_HTTPS_ENFORCEMENT: process.env.DISABLE_HTTPS_ENFORCEMENT,
 });
 
@@ -161,6 +165,7 @@ const APP_URL = (parsed.APP_URL ?? parsed.NEXT_PUBLIC_APP_URL ?? parsed.NEXTAUTH
 const SESSION_SECRET = parsed.SESSION_SECRET ?? parsed.NEXTAUTH_SECRET ?? "change-me-dev-secret";
 const TRUST_PROXY = parseTrustProxy(parsed.TRUST_PROXY);
 const SESSION_COOKIE_SECURE = parseSessionCookieSecure(parsed.SESSION_COOKIE_SECURE, parsed.NODE_ENV);
+const SESSION_ROLLING = parseBoolean(parsed.SESSION_ROLLING) ?? true;
 const DISABLE_HTTPS_ENFORCEMENT = parseBoolean(parsed.DISABLE_HTTPS_ENFORCEMENT) ?? false;
 
 const env = {
@@ -172,6 +177,7 @@ const env = {
   SESSION_SECRET,
   TRUST_PROXY,
   SESSION_COOKIE_SECURE,
+  SESSION_ROLLING,
   DISABLE_HTTPS_ENFORCEMENT,
 };
 

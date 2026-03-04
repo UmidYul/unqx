@@ -23,6 +23,29 @@ async function renderHomeTemplate() {
   });
 }
 
+async function renderHomeTemplateAuthenticated() {
+  const file = path.join(process.cwd(), "src", "views", "public", "home.ejs");
+  return ejs.renderFile(file, {
+    title: "UNQ+ | Цифровая визитка за 1 минуту",
+    description: "Одна ссылка вместо тысячи слов",
+    slugTotalLimit: 17576,
+    leaderboardEnabled: true,
+    activeFlashSale: null,
+    nextDrop: null,
+    testimonials: [],
+    telegramBotUsername: "unqx_bot",
+    baseUrl: "https://unqx.uz",
+    canonicalUrl: "https://unqx.uz/",
+    cspNonce: "test-nonce",
+    csrfToken: "csrf",
+    userSession: {
+      telegramId: "123456",
+      firstName: "Yuldashev",
+      photoUrl: "https://t.me/i/userpic/320/example.jpg",
+    },
+  });
+}
+
 describe("home page", () => {
   test("renders page without crashing", async () => {
     const html = await renderHomeTemplate();
@@ -49,6 +72,16 @@ describe("home page", () => {
     const html = await renderHomeTemplate();
     const emojiRegex = /[⚡🔥✅❌⏰✓🏆🥇🥈🥉]/u;
     expect(emojiRegex.test(html)).toBe(false);
+  });
+
+  test("renders profile button immediately when user session exists", async () => {
+    const html = await renderHomeTemplateAuthenticated();
+    expect(html).toContain("Yuldashev · Мой профиль");
+    expect(html).toContain("data-auth-profile");
+    expect(html).toContain("inline-flex");
+    expect(html).toContain("data-auth-login");
+    expect(html).toContain("Войти через Telegram");
+    expect(html).toContain("hidden");
   });
 
   test("matches AAA + 000 = 3 000 000", () => {

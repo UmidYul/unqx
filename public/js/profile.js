@@ -144,6 +144,7 @@
     stSave: $("#profile-settings-save"),
     stStatus: $("#profile-settings-status"),
     stDeact: $("#profile-settings-deactivate"),
+    logout: $("#profile-logout-btn"),
 
     modal: $("#profile-modal"),
     modalDialog: $("#profile-modal-dialog"),
@@ -1184,6 +1185,22 @@
         }
       }
     });
+  });
+
+  el.logout?.addEventListener("click", async () => {
+    el.logout.disabled = true;
+    try {
+      await api("/api/auth/logout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      window.dispatchEvent(new CustomEvent("unqx:auth:logout"));
+      location.href = "/";
+    } catch (error) {
+      showModal("Ошибка", error.message || "Не удалось выйти");
+      el.logout.disabled = false;
+    }
   });
 
   load().catch((error) => showModal("Ошибка", error.message || "Не удалось загрузить профиль"));

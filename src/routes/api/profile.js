@@ -39,6 +39,7 @@ function toSlugStatusLabel(status) {
     case "approved":
       return "Одобрен";
     case "pending":
+    case "reserved":
       return "В ожидании";
     case "blocked":
       return "Заблокирован";

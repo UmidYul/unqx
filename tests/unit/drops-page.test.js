@@ -24,10 +24,11 @@ describe("drops page", () => {
     expect(html).toContain("Дропы slug");
   });
 
-  test("renders empty state and loading pool placeholder", async () => {
+  test("renders centered empty state when there are no drops", async () => {
     const html = await renderDropsTemplate({ drops: [] });
-    expect(html).toContain("Пока дропов нет.");
-    expect(html).toContain("Загрузка активных дропов...");
+    expect(html).toContain("Пока нет активных дропов");
+    expect(html).toContain("Следующие запуски появятся здесь совсем скоро.");
+    expect(html).not.toContain("Форма заказа для дропа");
   });
 
   test("renders drop card with emoji-free live label", async () => {

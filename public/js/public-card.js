@@ -29,6 +29,9 @@
   const avatarFallback = root.querySelector("[data-avatar-fallback]");
   const saveContactButton = root.querySelector("[data-save-contact]");
   const actionButtons = Array.from(root.querySelectorAll("[data-track-action]"));
+  const slugSearchForm = document.getElementById("card-slug-search-form");
+  const slugSearchInput = document.getElementById("card-slug-search-input");
+  const slugSearchHint = document.getElementById("card-slug-search-hint");
   const liveRegion = document.createElement("div");
   liveRegion.setAttribute("aria-live", "polite");
   liveRegion.style.position = "absolute";
@@ -71,6 +74,21 @@
 
   function announce(text) {
     liveRegion.textContent = text;
+  }
+
+  function normalizeStrictSlug(value) {
+    const raw = String(value || "").toUpperCase();
+    let letters = "";
+    let digits = "";
+    for (const char of raw) {
+      if (letters.length < 3) {
+        if (/[A-Z]/.test(char)) letters += char;
+        continue;
+      }
+      if (digits.length < 3 && /[0-9]/.test(char)) digits += char;
+      if (digits.length >= 3) break;
+    }
+    return `${letters}${digits}`;
   }
 
   function showAvatarFallback() {
@@ -200,6 +218,36 @@
           keepalive: true,
         });
       });
+    });
+  }
+
+  if (slugSearchInput instanceof HTMLInputElement) {
+    slugSearchInput.addEventListener("input", () => {
+      slugSearchInput.value = normalizeStrictSlug(slugSearchInput.value);
+      slugSearchInput.setCustomValidity("");
+      if (slugSearchHint instanceof HTMLElement) {
+        slugSearchHint.textContent = "Формат: 3 буквы + 3 цифры";
+        slugSearchHint.className = "mt-1 text-[11px] text-neutral-400";
+      }
+    });
+  }
+
+  if (slugSearchForm instanceof HTMLFormElement && slugSearchInput instanceof HTMLInputElement) {
+    slugSearchForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const targetSlug = normalizeStrictSlug(slugSearchInput.value);
+      slugSearchInput.value = targetSlug;
+      if (!/^[A-Z]{3}[0-9]{3}$/.test(targetSlug)) {
+        slugSearchInput.setCustomValidity("Введите UNQ в формате AAA001");
+        slugSearchInput.reportValidity();
+        if (slugSearchHint instanceof HTMLElement) {
+          slugSearchHint.textContent = "Неверный формат. Пример: AAA001";
+          slugSearchHint.className = "mt-1 text-[11px] text-red-600";
+        }
+        return;
+      }
+      slugSearchInput.setCustomValidity("");
+      window.location.href = `/${encodeURIComponent(targetSlug)}`;
     });
   }
 

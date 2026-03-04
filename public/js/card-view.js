@@ -214,7 +214,7 @@
           <span class="unq-ref-slug"># ${esc(card.slug)}</span>
           <button type="button" data-share-card class="unq-ref-share" aria-label="Поделиться">
             ${iconSvg("share")}
-            <span data-share-label>Поделиться</span>
+            <span class="sr-only" data-share-label>Поделиться</span>
           </button>
         </div>
         <div class="public-card-shell unq-ref-shell">
