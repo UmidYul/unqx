@@ -59,7 +59,8 @@
 
   function iconSvg(name) {
     const map = {
-      share: '<svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 12a3.5 3.5 0 1 0-3.4-4.3M15.5 6.7a3.5 3.5 0 1 0 0 10.6M8.2 10.8l7.6-4.3M8.2 13.2l7.6 4.3"></path></svg>',
+      share:
+        '<svg class="icon-stroke h-[15px] w-[15px]" viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="2.25"></circle><circle cx="6" cy="12" r="2.25"></circle><circle cx="18" cy="19" r="2.25"></circle><path d="m8 11 7.5-4.3M8 13l7.5 4.3"></path></svg>',
       verified:
         '<svg class="h-4 w-4 text-neutral-500" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M12 2.5l2.2 1.8 2.8-.3 1.2 2.5 2.5 1.2-.3 2.8L21.5 12l-1.8 2.2.3 2.8-2.5 1.2-1.2 2.5-2.8-.3L12 21.5l-2.2-1.8-2.8.3-1.2-2.5-2.5-1.2.3-2.8L2.5 12l1.8-2.2-.3-2.8 2.5-1.2 1.2-2.5 2.8.3L12 2.5Zm-1.1 13.1 5-5-1.1-1.1-3.9 3.9-1.8-1.8-1.1 1.1 2.9 2.9Z"></path></svg>',
       phone: '<svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2A19.8 19.8 0 0 1 3 5.2 2 2 0 0 1 5 3h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .8 2.9a2 2 0 0 1-.5 2.1L9 11a16 16 0 0 0 4 4l1.3-1.3a2 2 0 0 1 2.1-.5c.9.4 1.9.7 2.9.8a2 2 0 0 1 1.7 1.9Z"></path></svg>',
@@ -160,6 +161,7 @@
     const pausedText = String(options.pausedText || "Визитка на паузе — посетители видят заглушку");
     const viewsLabel = String(options.viewsLabel || card.viewsLabel || "0 просмотров");
     const score = options.score && typeof options.score === "object" ? options.score : null;
+    const topBadge = options.topBadge && typeof options.topBadge === "object" ? options.topBadge : null;
 
     const tagsHtml =
       card.tags.length > 0
@@ -206,6 +208,10 @@
     const aboutEmail = card.email || "unq@uz.com";
     const aboutPhone = card.extraPhone || card.phone || "+998200001360";
     const aboutPostcode = card.postcode || "150100";
+    const topBadgeHtml =
+      topBadge && Number.isFinite(Number(topBadge.rank)) && Number(topBadge.rank) > 0
+        ? `<div class="unq-ref-top-badge">Топ #${Math.round(Number(topBadge.rank))} этой недели</div>`
+        : "";
 
     return `
       <div data-card-view data-slug="${esc(card.slug)}" data-share-url="${esc(shareUrl)}">
@@ -218,6 +224,7 @@
           </button>
         </div>
         <div class="public-card-shell unq-ref-shell">
+          ${topBadgeHtml}
           ${
             card.showBranding
               ? `<div class="unq-ref-brand">

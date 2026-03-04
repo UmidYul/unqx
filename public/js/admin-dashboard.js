@@ -148,7 +148,7 @@
 
     const next = document.createElement("button");
     next.type = "button";
-    next.textContent = "Вперёд →";
+    next.textContent = "Вперёд";
     next.disabled = page >= totalPages;
     next.className = "rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-50";
     next.addEventListener("click", () => onPage(page + 1));

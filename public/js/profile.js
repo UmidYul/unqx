@@ -516,7 +516,7 @@
     if (approved && !s.card) {
       el.reqBanner.classList.remove("hidden");
       el.reqBanner.className = "mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800";
-      el.reqBanner.innerHTML = `Твой UNQ ${esc(approved.slug)} одобрен! Перейди во вкладку 'Моя визитка' чтобы создать карточку. <button data-a="goto-card" class="underline">Создать визитку →</button>`;
+      el.reqBanner.innerHTML = `Твой UNQ ${esc(approved.slug)} одобрен! Перейди во вкладку 'Моя визитка' чтобы создать карточку. <button data-a="goto-card" class="underline">Создать визитку</button>`;
       return;
     }
 
@@ -927,7 +927,7 @@
       showModal(
         "Нужен Премиум",
         "Перейди на Премиум чтобы добавить до 3 UNQ",
-        "Улучшить тариф →",
+        "Улучшить тариф",
         () => {
           if (window.UNQOrderModal && typeof window.UNQOrderModal.open === "function") {
             window.UNQOrderModal.open({ plan: "premium" });

@@ -468,6 +468,28 @@ router.put(
         },
       });
 
+      const ownedSlugs = await tx.slug.findMany({
+        where: { ownerTelegramId: user.telegramId },
+        select: { fullSlug: true },
+      });
+      const legacySlugs = ownedSlugs
+        .map((item) => String(item.fullSlug || "").trim())
+        .filter(Boolean);
+
+      if (legacySlugs.length > 0) {
+        await tx.card.updateMany({
+          where: { slug: { in: legacySlugs } },
+          data: {
+            name,
+            hashtag,
+            address,
+            postcode,
+            email,
+            extraPhone,
+          },
+        });
+      }
+
       return cardRow;
     });
     await safeRecalculateScore(user.telegramId);

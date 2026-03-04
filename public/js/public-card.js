@@ -16,6 +16,7 @@
     shareUrl: payload.shareUrl || window.location.href,
     viewsLabel: payload.viewsLabel || "",
     score: payload.score || null,
+    topBadge: payload.topBadge || null,
   });
   if (!(root instanceof HTMLElement)) {
     return;
@@ -31,7 +32,6 @@
   const actionButtons = Array.from(root.querySelectorAll("[data-track-action]"));
   const slugSearchForm = document.getElementById("card-slug-search-form");
   const slugSearchInput = document.getElementById("card-slug-search-input");
-  const slugSearchHint = document.getElementById("card-slug-search-hint");
   const liveRegion = document.createElement("div");
   liveRegion.setAttribute("aria-live", "polite");
   liveRegion.style.position = "absolute";
@@ -225,10 +225,6 @@
     slugSearchInput.addEventListener("input", () => {
       slugSearchInput.value = normalizeStrictSlug(slugSearchInput.value);
       slugSearchInput.setCustomValidity("");
-      if (slugSearchHint instanceof HTMLElement) {
-        slugSearchHint.textContent = "Формат: 3 буквы + 3 цифры";
-        slugSearchHint.className = "mt-1 text-[11px] text-neutral-400";
-      }
     });
   }
 
@@ -240,10 +236,6 @@
       if (!/^[A-Z]{3}[0-9]{3}$/.test(targetSlug)) {
         slugSearchInput.setCustomValidity("Введите UNQ в формате AAA001");
         slugSearchInput.reportValidity();
-        if (slugSearchHint instanceof HTMLElement) {
-          slugSearchHint.textContent = "Неверный формат. Пример: AAA001";
-          slugSearchHint.className = "mt-1 text-[11px] text-red-600";
-        }
         return;
       }
       slugSearchInput.setCustomValidity("");

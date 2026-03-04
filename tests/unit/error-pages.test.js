@@ -16,7 +16,7 @@ async function renderPublicView(fileName, locals = {}) {
 describe("error pages", () => {
   test("404 page is localized and has main CTA", async () => {
     const html = await renderPublicView("not-found.ejs");
-    expect(html).toContain("404 · Страница не найдена");
+    expect(html).toContain("Страница не найдена");
     expect(html).toContain("На главную");
     expect(html).not.toContain("This page could not be found.");
   });

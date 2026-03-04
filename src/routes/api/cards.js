@@ -235,7 +235,7 @@ async function getSlugState(slug) {
   ]);
 
   const ownerFromSlug =
-    slugRow?.owner && ["active", "private", "paused"].includes(slugRow.status)
+    slugRow?.owner && ["approved", "active", "private", "paused"].includes(slugRow.status)
       ? {
           name: slugRow.owner.profileCard?.name || slugRow.owner.firstName || "UNQ+ User",
           photoUrl: slugRow.owner.profileCard?.avatarUrl || slugRow.owner.photoUrl || null,
@@ -1126,7 +1126,7 @@ router.get(
         }),
         prisma.profileCard.findUnique({
           where: { ownerTelegramId: slugRow.ownerTelegramId },
-          select: { name: true, buttons: true, bio: true },
+          select: { name: true, buttons: true, bio: true, address: true, postcode: true, extraPhone: true },
         }),
       ]);
 
@@ -1151,9 +1151,9 @@ router.get(
           name: profileCard.name || user?.firstName || user?.username || slugRow.fullSlug,
           phone: phoneRaw || "+998000000000",
           email: emailRaw || undefined,
-          extraPhone: undefined,
-          address: "",
-          postcode: "",
+          extraPhone: profileCard.extraPhone || undefined,
+          address: profileCard.address || "",
+          postcode: profileCard.postcode || "",
           hashtag: profileCard.bio || "",
         });
 

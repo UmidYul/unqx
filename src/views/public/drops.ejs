@@ -5,19 +5,19 @@
 </head>
 <body class="antialiased bg-neutral-50" data-page="drops-page" data-telegram-bot-username="<%= telegramBotUsername || '' %>">
   <% const hasDrops = Array.isArray(drops) && drops.length > 0; %>
-  <main class="mx-auto w-full max-w-6xl px-4 py-8">
-    <div class="mb-6 flex items-center justify-between gap-3">
-      <a href="/" class="interactive-btn inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-neutral-300 px-3 py-1.5 text-sm font-semibold text-neutral-600 hover:text-neutral-900">
+  <main class="mx-auto w-full max-w-6xl px-4 <%= hasDrops ? 'py-8' : 'relative min-h-[100dvh] py-8' %>">
+    <div class="<%= hasDrops ? 'mb-6 flex items-center justify-between gap-3' : 'pointer-events-none absolute left-0 right-0 top-8 z-10 flex items-center justify-between gap-3 px-4' %>">
+      <a href="/" class="interactive-btn <%= hasDrops ? '' : 'pointer-events-auto' %> inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-neutral-300 px-3 py-1.5 text-sm font-semibold text-neutral-600 hover:text-neutral-900">
         <svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
           <path d="M15 18 9 12l6-6"></path>
         </svg>
         На главную
       </a>
-      <a href="/leaderboard" class="interactive-btn inline-flex min-h-11 items-center rounded-lg border border-neutral-300 px-3 py-1.5 text-sm text-neutral-500 hover:text-neutral-900">Топ визиток</a>
+      <a href="/leaderboard" class="interactive-btn <%= hasDrops ? '' : 'pointer-events-auto' %> inline-flex min-h-11 items-center rounded-lg border border-neutral-300 px-3 py-1.5 text-sm text-neutral-500 hover:text-neutral-900">Топ визиток</a>
     </div>
 
     <% if (!hasDrops) { %>
-    <section class="flex min-h-[calc(100vh-220px)] items-center justify-center">
+    <section class="flex min-h-[100dvh] items-center justify-center">
       <article class="w-full max-w-md rounded-2xl border border-neutral-200 bg-white p-8 text-center">
         <p class="text-xs uppercase tracking-[0.18em] text-neutral-500">Дропы</p>
         <h1 class="mt-3 text-2xl font-bold text-neutral-900">Пока нет активных дропов</h1>

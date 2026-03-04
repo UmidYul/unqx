@@ -184,7 +184,6 @@ router.get(
 router.post(
   "/logout",
   requireSameOrigin,
-  requireCsrfToken,
   asyncHandler(async (req, res) => {
     await new Promise((resolve, reject) => {
       if (!req.session) {

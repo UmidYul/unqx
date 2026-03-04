@@ -231,7 +231,13 @@ body[data-card-theme] main {
   padding-bottom: 18px !important;
 }
 
+body[data-card-theme] #public-card-layout {
+  margin-inline: auto;
+}
+
 body[data-card-theme] #card-view-root {
+  margin-inline: auto;
+  width: 100%;
   max-width: 420px !important;
 }
 
@@ -267,6 +273,19 @@ body[data-card-theme] #card-view-root {
   background: #fff !important;
   box-shadow: 0 1px 2px rgba(17, 17, 17, 0.08);
   padding: 26px 24px 24px;
+}
+
+.unq-ref-top-badge {
+  width: fit-content;
+  margin: 0 auto 12px;
+  border: 1px solid #d6d6d6;
+  border-radius: 9999px;
+  background: #fafafa;
+  padding: 4px 12px;
+  color: #5f6368;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.2;
 }
 
 .unq-ref-brand {

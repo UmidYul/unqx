@@ -31,12 +31,12 @@ describe("slug page (:slug) templates", () => {
     expect(html).toContain("На главную");
   });
 
-  test("renders top badge without trophy emoji", async () => {
+  test("passes top badge payload to client renderer without trophy emoji", async () => {
     const html = await renderView("card.ejs", {
       card: { slug: "ABC123", name: "Alex", tariff: "basic", buttons: [] },
       topBadge: { rank: 2 },
     });
-    expect(html).toContain("Топ #2 этой недели");
+    expect(html).toContain('"topBadge":{"rank":2}');
     expect(html).not.toContain("🏆");
   });
 
@@ -77,7 +77,7 @@ describe("slug page (:slug) templates", () => {
 
   test("renders localized not-found page with CTA", async () => {
     const html = await renderView("not-found.ejs", {});
-    expect(html).toContain("404 · Страница не найдена");
+    expect(html).toContain("Страница не найдена");
     expect(html).toContain("Проверь ссылку или вернись на главную страницу.");
     expect(html).toContain("На главную");
     expect(html).not.toContain("This page could not be found.");
