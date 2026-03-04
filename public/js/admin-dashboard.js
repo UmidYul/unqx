@@ -658,7 +658,8 @@
     void loadTestimonials();
   });
   document.addEventListener("click", (e) => {
-    const toggle = e.target instanceof HTMLElement ? e.target.closest("[data-kebab-toggle]") : null;
+    const target = e.target;
+    const toggle = target instanceof Element ? target.closest("[data-kebab-toggle]") : null;
     if (toggle instanceof HTMLElement) {
       e.preventDefault();
       e.stopPropagation();
@@ -677,7 +678,7 @@
       }
       return;
     }
-    if (!(e.target instanceof HTMLElement) || !e.target.closest(".admin-row-actions")) {
+    if (!(target instanceof Element) || !target.closest(".admin-row-actions")) {
       closeAllRowMenus();
     }
   });
@@ -763,7 +764,8 @@
   });
 
   document.addEventListener("click", async (e) => {
-    const n = e.target instanceof HTMLElement ? e.target.closest("[data-act]") : null;
+    const target = e.target;
+    const n = target instanceof Element ? target.closest("[data-act]") : null;
     if (!(n instanceof HTMLElement)) return;
     const a = n.getAttribute("data-act");
     closeAllRowMenus();
