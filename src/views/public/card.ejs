@@ -127,14 +127,14 @@
 <body class="antialiased" data-card-theme="<%= pageCardTheme %>">
   <main class="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-12">
     <div id="public-card-layout" class="relative z-10 w-full max-w-[640px]">
-      <div class="mb-3 flex items-center gap-2 flex-nowrap">
+      <div class="mb-3 flex flex-wrap items-center justify-between gap-2 sm:flex-nowrap">
         <a href="/" class="interactive-btn inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-neutral-200 bg-white px-3 py-1.5 text-xs font-semibold text-neutral-700">
           <svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
             <path d="M15 18 9 12l6-6"></path>
           </svg>
           На главную
         </a>
-        <form id="card-slug-search-form" class="flex min-w-0 flex-1 items-center gap-2 max-w-[430px]" action="/" method="get" novalidate>
+        <form id="card-slug-search-form" class="ml-auto flex w-full max-w-[220px] items-center gap-2 sm:max-w-[340px]" action="/" method="get" novalidate>
           <label for="card-slug-search-input" class="sr-only">Поиск UNQ</label>
           <div class="flex min-w-0 flex-1 items-center rounded-lg border border-neutral-200 bg-white px-3 py-2">
             <span class="mr-2 text-xs text-neutral-400">unqx.uz/</span>
