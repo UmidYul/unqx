@@ -436,6 +436,11 @@
   border-color: #525252;
 }
 
+/* Keep table controls above horizontal scrollbar hit area */
+.admin-main .overflow-x-auto {
+  padding-bottom: 8px;
+}
+
 .admin-kpi-card {
   border: 1px solid #e5e7eb;
   border-radius: 16px;
