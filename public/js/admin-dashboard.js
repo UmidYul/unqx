@@ -180,9 +180,54 @@
     }
   }
 
+  let openRowMenu = null;
+  let openRowToggle = null;
+
+  function resetRowMenuPosition(menu) {
+    if (!(menu instanceof HTMLElement)) return;
+    menu.classList.remove("is-floating");
+    menu.style.left = "";
+    menu.style.top = "";
+    menu.style.right = "";
+    menu.style.bottom = "";
+  }
+
+  function positionRowMenu(menu, toggle) {
+    if (!(menu instanceof HTMLElement) || !(toggle instanceof HTMLElement)) return;
+    const gap = 6;
+    const padding = 8;
+    const toggleRect = toggle.getBoundingClientRect();
+    const viewportWidth = document.documentElement.clientWidth;
+    const viewportHeight = document.documentElement.clientHeight;
+    const menuRect = menu.getBoundingClientRect();
+    const menuWidth = Math.max(200, Math.ceil(menuRect.width));
+    const menuHeight = Math.ceil(menuRect.height);
+
+    let left = toggleRect.right - menuWidth;
+    left = Math.max(padding, Math.min(left, viewportWidth - menuWidth - padding));
+
+    const fitsBottom = toggleRect.bottom + gap + menuHeight <= viewportHeight - padding;
+    let top = fitsBottom ? toggleRect.bottom + gap : toggleRect.top - menuHeight - gap;
+    top = Math.max(padding, Math.min(top, viewportHeight - menuHeight - padding));
+
+    menu.style.left = `${Math.round(left)}px`;
+    menu.style.top = `${Math.round(top)}px`;
+  }
+
+  function repositionOpenRowMenu() {
+    if (!(openRowMenu instanceof HTMLElement) || !(openRowToggle instanceof HTMLElement)) return;
+    if (openRowMenu.classList.contains("is-hidden")) return;
+    positionRowMenu(openRowMenu, openRowToggle);
+  }
+
   function closeAllRowMenus() {
-    document.querySelectorAll(".admin-row-menu").forEach((node) => node.classList.add("is-hidden"));
+    document.querySelectorAll(".admin-row-menu").forEach((node) => {
+      node.classList.add("is-hidden");
+      resetRowMenuPosition(node);
+    });
     document.querySelectorAll("[data-kebab-toggle]").forEach((node) => node.setAttribute("aria-expanded", "false"));
+    openRowMenu = null;
+    openRowToggle = null;
   }
 
   async function loadAnalytics() {
@@ -624,6 +669,10 @@
       closeAllRowMenus();
       if (!isOpen) {
         menu.classList.remove("is-hidden");
+        menu.classList.add("is-floating");
+        positionRowMenu(menu, toggle);
+        openRowMenu = menu;
+        openRowToggle = toggle;
         toggle.setAttribute("aria-expanded", "true");
       }
       return;
@@ -635,6 +684,14 @@
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") closeAllRowMenus();
   });
+  window.addEventListener("resize", repositionOpenRowMenu);
+  window.addEventListener(
+    "scroll",
+    () => {
+      if (openRowMenu) closeAllRowMenus();
+    },
+    true,
+  );
   document.addEventListener("change", async (e) => {
     const t = e.target;
     if (!(t instanceof HTMLElement)) return;

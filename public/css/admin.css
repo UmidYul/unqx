@@ -517,6 +517,16 @@
   padding: 6px;
 }
 
+.admin-row-menu.is-floating {
+  position: fixed;
+  left: 0;
+  top: 0;
+  right: auto;
+  bottom: auto;
+  transform: none;
+  z-index: 120;
+}
+
 .admin-row-menu.is-hidden {
   display: none;
 }
