@@ -33,16 +33,35 @@ function isSlugStatusDecodeError(error) {
   );
 }
 
+function isSlugMissingColumnError(error) {
+  if (!error || typeof error !== "object") return false;
+  return error.code === "P2022" && String(error?.meta?.modelName || "") === "Slug";
+}
+
 async function findSlugByFullSlugWithLegacyFallback(fullSlug) {
   try {
     return await prisma.slug.findUnique({
       where: { fullSlug },
-      include: {
+      select: {
+        id: true,
+        letters: true,
+        digits: true,
+        fullSlug: true,
+        ownerTelegramId: true,
+        status: true,
+        isPrimary: true,
+        pauseMessage: true,
+        requestedAt: true,
+        pendingExpiresAt: true,
+        approvedAt: true,
+        activatedAt: true,
+        createdAt: true,
+        updatedAt: true,
         owner: true,
       },
     });
   } catch (error) {
-    if (!isSlugStatusDecodeError(error)) {
+    if (!isSlugStatusDecodeError(error) && !isSlugMissingColumnError(error)) {
       throw error;
     }
 
@@ -55,12 +74,11 @@ async function findSlugByFullSlugWithLegacyFallback(fullSlug) {
         owner_telegram_id AS "ownerTelegramId",
         status::text AS "status",
         is_primary AS "isPrimary",
-        price,
-        pause_message AS "pauseMessage",
-        requested_at AS "requestedAt",
-        pending_expires_at AS "pendingExpiresAt",
-        approved_at AS "approvedAt",
-        activated_at AS "activatedAt",
+        NULL::text AS "pauseMessage",
+        NULL::timestamptz AS "requestedAt",
+        NULL::timestamptz AS "pendingExpiresAt",
+        NULL::timestamptz AS "approvedAt",
+        NULL::timestamptz AS "activatedAt",
         created_at AS "createdAt",
         updated_at AS "updatedAt"
       FROM slugs
