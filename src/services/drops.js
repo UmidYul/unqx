@@ -43,6 +43,7 @@ function buildDropSlugPool({ slugPatternType, slugCount, manualList }) {
 }
 
 async function reserveDropSlugs(pool) {
+  if (!prisma.slug || typeof prisma.slug.upsert !== "function") return;
   if (!Array.isArray(pool) || !pool.length) return;
   const now = new Date();
   await prisma.$transaction(
@@ -72,6 +73,7 @@ async function reserveDropSlugs(pool) {
 }
 
 async function getDropLiveStats(dropId) {
+  if (!prisma.drop || typeof prisma.drop.findUnique !== "function") return null;
   const drop = await prisma.drop.findUnique({ where: { id: dropId } });
   if (!drop) return null;
   const pool = Array.isArray(drop.slugsPool) ? drop.slugsPool : [];
@@ -94,6 +96,7 @@ async function getDropLiveStats(dropId) {
 }
 
 async function markDropSlugSold({ dropId, slug }) {
+  if (!prisma.drop || typeof prisma.drop.findUnique !== "function") return null;
   const drop = await prisma.drop.findUnique({ where: { id: dropId } });
   if (!drop) return null;
   const pool = Array.isArray(drop.slugsPool) ? drop.slugsPool : [];
@@ -114,6 +117,7 @@ async function markDropSlugSold({ dropId, slug }) {
 }
 
 async function releaseUnsoldDropSlugs(dropId) {
+  if (!prisma.drop || typeof prisma.drop.findUnique !== "function") return;
   const drop = await prisma.drop.findUnique({ where: { id: dropId } });
   if (!drop) return;
   const pool = Array.isArray(drop.slugsPool) ? drop.slugsPool : [];
@@ -133,6 +137,7 @@ async function releaseUnsoldDropSlugs(dropId) {
 }
 
 async function sendDropMessageToWaitlist(drop, text, kind) {
+  if (!prisma.dropWaitlist || typeof prisma.dropWaitlist.findMany !== "function") return;
   const waitlist = await prisma.dropWaitlist.findMany({ where: { dropId: drop.id } });
   for (const row of waitlist) {
     try {
@@ -151,6 +156,9 @@ async function sendDropMessageToWaitlist(drop, text, kind) {
 }
 
 async function processDropsSchedule() {
+  if (!prisma.drop || typeof prisma.drop.findMany !== "function") {
+    return;
+  }
   const now = new Date();
   const upcoming = await prisma.drop.findMany({
     where: {

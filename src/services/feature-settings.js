@@ -14,6 +14,10 @@ const DEFAULTS = {
 };
 
 async function getFeatureSetting(key, fallback = {}) {
+  if (!prisma.featureSetting || typeof prisma.featureSetting.findUnique !== "function") {
+    const base = DEFAULTS[key] || {};
+    return { ...base, ...fallback };
+  }
   const row = await prisma.featureSetting.findUnique({ where: { key } });
   const base = DEFAULTS[key] || {};
   const payload = row && row.value && typeof row.value === "object" ? row.value : {};
@@ -21,6 +25,10 @@ async function getFeatureSetting(key, fallback = {}) {
 }
 
 async function setFeatureSetting(key, value) {
+  if (!prisma.featureSetting || typeof prisma.featureSetting.upsert !== "function") {
+    const base = DEFAULTS[key] || {};
+    return { ...base, ...(value && typeof value === "object" ? value : {}) };
+  }
   const base = DEFAULTS[key] || {};
   const next = { ...base, ...(value && typeof value === "object" ? value : {}) };
   await prisma.featureSetting.upsert({

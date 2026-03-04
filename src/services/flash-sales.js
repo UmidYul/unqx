@@ -57,6 +57,9 @@ function isSlugMatchedByFlashSale({ slug, sale }) {
 }
 
 async function getActiveFlashSale() {
+  if (!prisma.flashSale || typeof prisma.flashSale.findFirst !== "function") {
+    return null;
+  }
   const now = new Date();
   return prisma.flashSale.findFirst({
     where: {

@@ -17,6 +17,7 @@ function generateRefCode() {
 }
 
 async function ensureUserRefCode(telegramId) {
+  if (!prisma.user || typeof prisma.user.findUnique !== "function") return null;
   const user = await prisma.user.findUnique({ where: { telegramId } });
   if (!user) return null;
   if (user.refCode) return user.refCode;
@@ -42,6 +43,9 @@ async function ensureUserRefCode(telegramId) {
 }
 
 async function linkReferralOnRegistration({ referredTelegramId, refCode }) {
+  if (!prisma.referral || typeof prisma.referral.create !== "function") {
+    return null;
+  }
   const settings = await getFeatureSetting("referrals");
   if (!settings.enabled) {
     return null;
@@ -79,6 +83,9 @@ async function linkReferralOnRegistration({ referredTelegramId, refCode }) {
 }
 
 async function markReferralPaidByReferredTelegramId(referredTelegramId) {
+  if (!prisma.referral || typeof prisma.referral.findUnique !== "function") {
+    return null;
+  }
   const settings = await getFeatureSetting("referrals");
   if (!settings.enabled || !settings.requirePaid) {
     return null;
@@ -122,6 +129,9 @@ async function markReferralPaidByReferredTelegramId(referredTelegramId) {
 }
 
 async function getRewardRules() {
+  if (!prisma.referralRewardRule || typeof prisma.referralRewardRule.findMany !== "function") {
+    return [];
+  }
   return prisma.referralRewardRule.findMany({
     where: { isActive: true },
     orderBy: { requiredPaidFriends: "asc" },
@@ -139,6 +149,15 @@ function getRewardLabel(rule) {
 }
 
 async function getReferralBootstrap(telegramId) {
+  if (!prisma.user || typeof prisma.user.findUnique !== "function" || !prisma.referral || typeof prisma.referral.findMany !== "function") {
+    return {
+      refCode: "",
+      refLink: "",
+      stats: { invited: 0, paid: 0, rewarded: 0 },
+      referrals: [],
+      rewards: [],
+    };
+  }
   const user = await prisma.user.findUnique({
     where: { telegramId },
     select: { telegramId: true, refCode: true, username: true },
@@ -199,6 +218,11 @@ async function getReferralBootstrap(telegramId) {
 }
 
 async function claimReferralReward({ telegramId, ruleId }) {
+  if (!prisma.referral || typeof prisma.referral.findMany !== "function") {
+    const error = new Error("Referral storage is not ready");
+    error.code = "REFERRAL_STORAGE_UNAVAILABLE";
+    throw error;
+  }
   const rules = await getRewardRules();
   const rule = rules.find((item) => item.id === ruleId);
   if (!rule) {

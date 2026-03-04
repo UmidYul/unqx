@@ -54,6 +54,9 @@ function getPeriodRange(period, timezone = env.TIMEZONE) {
 }
 
 async function getExcludedSet() {
+  if (!prisma.leaderboardExclusion || typeof prisma.leaderboardExclusion.findMany !== "function") {
+    return new Set();
+  }
   const rows = await prisma.leaderboardExclusion.findMany({ select: { fullSlug: true } });
   return new Set(rows.map((row) => row.fullSlug));
 }
@@ -92,7 +95,7 @@ async function buildLeaderboard(period = "week", options = {}) {
   const previousRanks = new Map(previous.map((row, index) => [row.slug, index + 1]));
   const slugs = current.map((row) => row.slug);
 
-  const slugRows = slugs.length
+  const slugRows = slugs.length && prisma.slug && typeof prisma.slug.findMany === "function"
     ? await prisma.slug.findMany({
         where: { fullSlug: { in: slugs } },
         select: {
@@ -173,6 +176,9 @@ function matchesSpike(rows, threshold) {
 }
 
 async function detectSuspiciousActivity() {
+  if (!prisma.slugView || typeof prisma.slugView.groupBy !== "function") {
+    return [];
+  }
   const settings = await getFeatureSetting("leaderboard");
   const threshold = Math.max(10, Number(settings.suspiciousThreshold) || 50);
   const windowMinutes = Math.max(1, Number(settings.suspiciousWindowMinutes) || 10);
@@ -193,7 +199,7 @@ async function detectSuspiciousActivity() {
     .filter((row) => row.views >= threshold)
     .sort((a, b) => b.views - a.views);
 
-  if (suspicious.length) {
+  if (suspicious.length && prisma.leaderboardSuspiciousLog && typeof prisma.leaderboardSuspiciousLog.createMany === "function") {
     await prisma.leaderboardSuspiciousLog.createMany({
       data: suspicious.map((row) => ({
         fullSlug: row.slug,
