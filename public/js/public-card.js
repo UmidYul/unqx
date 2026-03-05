@@ -119,7 +119,7 @@
     }
 
     if (!Array.isArray(items) || items.length === 0) {
-      const buyLink = `/?buySlug=${encodeURIComponent(query)}#hero-check`;
+      const buyLink = `/?calcSlug=${encodeURIComponent(query)}#calculator`;
       slugSearchResults.innerHTML = `
         <div class="px-2 py-2">
           <p class="text-sm text-neutral-500">Ничего не найдено</p>

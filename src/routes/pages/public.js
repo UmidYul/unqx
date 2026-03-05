@@ -270,6 +270,7 @@ function buildPublicCardFromProfile({ slug, user, profileCard, viewsCount }) {
     slugPrice: Number.isFinite(Number(profileCard.slugPrice)) ? Number(profileCard.slugPrice) : null,
     avatarUrl: profileCard.avatarUrl || null,
     name: profileCard.name,
+    role: profileCard.role || "",
     verified: Boolean(user?.isVerified),
     verifiedCompany: user?.verifiedCompany || "",
     tariff: plan,

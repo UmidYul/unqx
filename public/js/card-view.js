@@ -53,6 +53,7 @@
           : "default_dark",
       customColor: normalizeHexColor(card.customColor),
       name,
+      role: String(card.role || "").trim(),
       phone: String(card.phone || "").trim(),
       avatarUrl: avatarUrl || null,
       initials: initials || "UN",
@@ -245,8 +246,11 @@
         : "";
     const useCustomColor = card.tariff === "premium" && Boolean(card.customColor);
     const rootStyle = useCustomColor ? ` style="--card-button-bg:${esc(card.customColor)};"` : "";
-    const verifiedCompanyHtml =
-      card.verified && card.verifiedCompany ? `<p class="unq-ref-verified-company">Верифицировано: ${esc(card.verifiedCompany)}</p>` : "";
+    const companyRoleText = [card.verifiedCompany, card.role].filter(Boolean).join(" • ");
+    const companyRoleHtml =
+      companyRoleText || card.verified
+        ? `<p class="unq-ref-verified-company">${esc(companyRoleText)}${card.verified ? ` ${iconSvg("verified")}` : ""}</p>`
+        : "";
 
     return `
       <div data-card-view data-card-theme="${esc(card.theme)}" data-slug="${esc(card.slug)}" data-share-url="${esc(shareUrl)}"${rootStyle}>
@@ -276,8 +280,8 @@
               <div class="unq-ref-avatar-fallback ${card.avatarUrl ? "hidden" : ""}" data-avatar-fallback aria-hidden="${card.avatarUrl ? "true" : "false"}" ${card.avatarUrl ? "hidden" : ""} style="${card.avatarUrl ? "display:none;" : ""}">${esc(card.initials)}</div>
             </div>
             <div class="unq-ref-name-wrap">
-              <h1 class="unq-ref-name">${esc(card.name)} ${card.verified ? iconSvg("verified") : ""}</h1>
-              ${verifiedCompanyHtml}
+              <h1 class="unq-ref-name">${esc(card.name)}</h1>
+              ${companyRoleHtml}
               ${card.phone ? `<a href="tel:${esc(card.phone.replace(/\s+/g, ""))}" class="unq-ref-phone">${iconSvg("phone")}<span>${esc(card.phone)}</span></a>` : ""}
             </div>
           </div>

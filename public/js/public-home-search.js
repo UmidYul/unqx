@@ -692,19 +692,6 @@ function initSlugAvailability(orderApi) {
     });
   }
 
-  const buySlugFromQuery = normalizeStrictSlug(new URLSearchParams(window.location.search).get("buySlug") || "");
-  if (buySlugFromQuery && SLUG_REGEX.test(buySlugFromQuery)) {
-    slugInput.value = buySlugFromQuery;
-    if (orderApi && typeof orderApi.open === "function") {
-      orderApi.open({ slug: buySlugFromQuery });
-    } else {
-      void verifySlug();
-    }
-
-    const nextUrl = new URL(window.location.href);
-    nextUrl.searchParams.delete("buySlug");
-    window.history.replaceState({}, "", `${nextUrl.pathname}${nextUrl.search}${nextUrl.hash}`);
-  }
 }
 
 function initSlugCalculator(orderApi) {
@@ -898,7 +885,26 @@ function initSlugCalculator(orderApi) {
     });
   });
 
-  updatePreview("", "");
+  const params = new URLSearchParams(window.location.search);
+  const slugFromQuery = normalizeStrictSlug(params.get("calcSlug") || params.get("buySlug") || "");
+  if (slugFromQuery && /^[A-Z]{3}[0-9]{3}$/.test(slugFromQuery)) {
+    const parsed = splitSlug(slugFromQuery);
+    if (parsed) {
+      lettersInput.value = parsed.letters;
+      digitsInput.value = parsed.digits;
+      void updateResult();
+      const heroInput = document.getElementById("home-slug-input");
+      if (heroInput instanceof HTMLInputElement) {
+        heroInput.value = slugFromQuery;
+      }
+    }
+    const nextUrl = new URL(window.location.href);
+    nextUrl.searchParams.delete("calcSlug");
+    nextUrl.searchParams.delete("buySlug");
+    window.history.replaceState({}, "", `${nextUrl.pathname}${nextUrl.search}${nextUrl.hash}`);
+  } else {
+    updatePreview("", "");
+  }
 }
 
 function initNextDropOneClick() {
