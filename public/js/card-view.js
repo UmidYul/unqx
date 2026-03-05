@@ -275,6 +275,44 @@
       }
     }
 
+    if (kind === "telegram") {
+      const normalized = input.replace(/^@+/, "").replace(/^https?:\/\/t\.me\//i, "").trim();
+      return normalized ? `https://t.me/${normalized}` : "";
+    }
+
+    if (kind === "instagram") {
+      const normalized = input
+        .replace(/^@+/, "")
+        .replace(/^https?:\/\/(www\.)?instagram\.com\//i, "")
+        .replace(/\/+$/, "")
+        .trim();
+      return normalized ? `https://instagram.com/${normalized}` : "";
+    }
+
+    if (kind === "tiktok") {
+      const normalized = input
+        .replace(/^https?:\/\/(www\.)?tiktok\.com\//i, "")
+        .replace(/^@+/, "")
+        .replace(/\/+$/, "")
+        .trim();
+      if (!normalized) return "";
+      return normalized.startsWith("@") ? `https://tiktok.com/${normalized}` : `https://tiktok.com/@${normalized}`;
+    }
+
+    if (kind === "youtube") {
+      if (/^(?:@[\w.-]+)$/i.test(input)) {
+        return `https://youtube.com/${input}`;
+      }
+      if (/^[\w.-]+$/i.test(input)) {
+        return `https://youtube.com/@${input}`;
+      }
+    }
+
+    if (kind === "whatsapp") {
+      const digits = input.replace(/[^\d]/g, "");
+      return digits ? `https://wa.me/${digits}` : "";
+    }
+
     return input;
   }
 

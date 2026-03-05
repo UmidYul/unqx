@@ -33,23 +33,19 @@ const upload = multer({
 const ALLOWED_MIME = new Set(["image/jpeg", "image/png", "image/webp"]);
 const CARD_THEMES = new Set(["default_dark", "arctic", "linen", "marble", "forest"]);
 const DIRECTORY_SECTORS = new Set(["design", "sales", "marketing", "it", "other"]);
-const PROFILE_CARD_COLUMNS = new Set([
+const PROFILE_CARD_BASE_COLUMNS = [
   "owner_id",
   "name",
   "role",
   "bio",
-  "hashtag",
-  "address",
-  "postcode",
   "email",
-  "extra_phone",
   "avatar_url",
   "tags",
   "buttons",
   "theme",
   "custom_color",
   "show_branding",
-]);
+];
 
 function toSlugStatusLabel(status) {
   switch (status) {
@@ -178,31 +174,13 @@ async function findProfileCardByOwnerId(ownerId) {
   return mapProfileCardRow(row);
 }
 
-async function getProfileCardColumnSet(db = prisma) {
-  const rows = await db.$queryRaw`
-    SELECT column_name::text AS column_name
-    FROM information_schema.columns
-    WHERE table_schema = 'public'
-      AND table_name = 'profile_cards'
-  `;
-  return new Set(
-    (Array.isArray(rows) ? rows : [])
-      .map((row) => String(row?.column_name || "").trim().toLowerCase())
-      .filter((column) => PROFILE_CARD_COLUMNS.has(column)),
-  );
-}
-
 function buildProfileCardColumnValues(input) {
   return {
     owner_id: input.ownerId,
     name: input.name,
     role: input.role,
     bio: input.bio,
-    hashtag: input.hashtag,
-    address: input.address,
-    postcode: input.postcode,
     email: input.email,
-    extra_phone: input.extraPhone,
     avatar_url: input.avatarUrl,
     tags: JSON.stringify(Array.isArray(input.tags) ? input.tags : []),
     buttons: JSON.stringify(Array.isArray(input.buttons) ? input.buttons : []),
@@ -213,12 +191,8 @@ function buildProfileCardColumnValues(input) {
 }
 
 async function upsertProfileCardCompat(db, input) {
-  const available = await getProfileCardColumnSet(db);
   const allValues = buildProfileCardColumnValues(input);
-  const entries = Object.entries(allValues).filter(([column]) => available.has(column));
-  if (!entries.some(([column]) => column === "owner_id") || !entries.some(([column]) => column === "name")) {
-    throw new Error("profile_cards is missing required columns owner_id/name");
-  }
+  const entries = PROFILE_CARD_BASE_COLUMNS.map((column) => [column, allValues[column]]);
 
   const columns = entries.map(([column]) => column);
   const values = entries.map(([, value]) => value);
