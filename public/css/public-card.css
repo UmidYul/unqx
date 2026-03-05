@@ -411,6 +411,22 @@ body[data-card-theme] #card-view-root > [data-card-view] {
   color: #737373;
   font-size: 12px;
   line-height: 1.35;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: min(100%, 320px);
+}
+
+.unq-ref-verified-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.unq-ref-verified-icon {
+  display: inline-flex;
+  flex: 0 0 auto;
 }
 
 .unq-ref-tags {

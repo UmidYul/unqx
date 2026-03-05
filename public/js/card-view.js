@@ -249,7 +249,7 @@
     const companyRoleText = [card.verifiedCompany, card.role].filter(Boolean).join(" • ");
     const companyRoleHtml =
       companyRoleText || card.verified
-        ? `<p class="unq-ref-verified-company">${esc(companyRoleText)}${card.verified ? ` ${iconSvg("verified")}` : ""}</p>`
+        ? `<p class="unq-ref-verified-company"><span class="unq-ref-verified-text">${esc(companyRoleText)}</span>${card.verified ? `<span class="unq-ref-verified-icon">${iconSvg("verified")}</span>` : ""}</p>`
         : "";
 
     return `

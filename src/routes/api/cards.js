@@ -640,14 +640,23 @@ router.get(
       return;
     }
 
-    const pricing = await calculateSlugPriceFromSettings({
-      letters: parsed.letters,
-      digits: parsed.digits,
-    });
+    const [pricing, slugRow] = await Promise.all([
+      calculateSlugPriceFromSettings({
+        letters: parsed.letters,
+        digits: parsed.digits,
+      }),
+      withMissingTableFallback("Slug", null, () =>
+        prisma.slug.findUnique({
+          where: { fullSlug: slug },
+          select: { price: true },
+        }),
+      ),
+    ]);
+    const basePrice = typeof slugRow?.price === "number" ? Number(slugRow.price) : Number(pricing.total);
     const activeSale = await getActiveFlashSale();
     const flash = applyFlashSaleToPrice({
       slug,
-      basePrice: pricing.total,
+      basePrice,
       sale: activeSale,
     });
 
@@ -1135,4 +1144,3 @@ router.get(
 module.exports = {
   publicApiRouter: router,
 };
-

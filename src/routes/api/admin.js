@@ -1522,18 +1522,70 @@ router.patch(
       res.status(404).json({ error: "Slug not found" });
       return;
     }
-    const row = await prisma.slug.update({
-      where: { fullSlug: slug },
-      data: { price: priceOverride },
-      select: {
-        fullSlug: true,
-        price: true,
-      },
+    const parsed = /^([A-Z]{3})([0-9]{3})$/.exec(slug);
+    const effectiveSlugPrice = (() => {
+      if (typeof priceOverride === "number") {
+        return priceOverride;
+      }
+      if (!parsed) {
+        return null;
+      }
+      return null;
+    })();
+
+    let resolvedPrice = effectiveSlugPrice;
+    if (resolvedPrice === null && parsed) {
+      const slugPricingConfig = await getSlugPricingConfig();
+      resolvedPrice = calculateSlugPrice({
+        letters: parsed[1],
+        digits: parsed[2],
+        config: slugPricingConfig,
+      }).total;
+    }
+
+    const [row, synced] = await prisma.$transaction(async (tx) => {
+      const updatedSlug = await tx.slug.update({
+        where: { fullSlug: slug },
+        data: { price: priceOverride },
+        select: {
+          fullSlug: true,
+          price: true,
+        },
+      });
+
+      // Keep order/purchase amounts in sync with effective slug price so analytics reflects override updates.
+      const slugRequestsResult =
+        typeof resolvedPrice === "number"
+          ? await tx.slugRequest.updateMany({
+              where: { slug },
+              data: { slugPrice: resolvedPrice },
+            })
+          : { count: 0 };
+      const purchasesResult =
+        typeof resolvedPrice === "number" && tx.purchase
+          ? await tx.purchase.updateMany({
+              where: {
+                slug,
+                type: "slug",
+              },
+              data: { amount: resolvedPrice },
+            })
+          : { count: 0 };
+
+      return [
+        updatedSlug,
+        {
+          slugRequestsUpdated: Number(slugRequestsResult?.count || 0),
+          slugPurchasesUpdated: Number(purchasesResult?.count || 0),
+          effectiveSlugPrice: typeof resolvedPrice === "number" ? resolvedPrice : null,
+        },
+      ];
     });
 
     res.json({
       slug: row.fullSlug,
       priceOverride: row.price,
+      synced,
     });
   }),
 );
