@@ -81,10 +81,26 @@
   }
 
   function normalizeSearchSlug(value) {
-    return String(value || "")
-      .toUpperCase()
-      .replace(/[^A-Z0-9]/g, "")
-      .slice(0, 6);
+    const raw = String(value || "").toUpperCase();
+    let letters = "";
+    let digits = "";
+
+    for (const char of raw) {
+      if (letters.length < 3) {
+        if (/[A-Z]/.test(char)) {
+          letters += char;
+        }
+        continue;
+      }
+      if (digits.length < 3 && /[0-9]/.test(char)) {
+        digits += char;
+      }
+      if (digits.length >= 3) {
+        break;
+      }
+    }
+
+    return `${letters}${digits}`;
   }
   const STRICT_SLUG_REGEX = /^[A-Z]{3}[0-9]{3}$/;
 
@@ -142,8 +158,7 @@
     }
 
     if (!STRICT_SLUG_REGEX.test(query)) {
-      slugSearchResults.innerHTML = '<p class="px-2 py-2 text-sm text-neutral-500">Формат: 3 буквы и 3 цифры (например, AAA001)</p>';
-      slugSearchResults.classList.remove("hidden");
+      hideResults();
       return;
     }
 
@@ -334,7 +349,7 @@
       if (!STRICT_SLUG_REGEX.test(query)) {
         slugSearchInput.setCustomValidity("Введите UNQ в формате 3 буквы и 3 цифры (AAA001)");
         slugSearchInput.reportValidity();
-        void searchSlugs(query);
+        hideResults();
         return;
       }
       lastQuery = query;

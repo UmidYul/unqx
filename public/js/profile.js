@@ -351,7 +351,10 @@
 
   const renderSidebar = () => {
     if (!s.user) return;
-    if (el.av) el.av.src = s.user.photoUrl || DEFAULT_PROFILE_AVATAR;
+    if (el.av) {
+      const sidebarAvatar = s.card?.avatarUrl || s.user.photoUrl || DEFAULT_PROFILE_AVATAR;
+      el.av.src = sidebarAvatar;
+    }
     if (el.nm) el.nm.textContent = s.user.displayName || s.user.firstName || "UNQX User";
     if (el.un) el.un.textContent = s.user.username ? `@${s.user.username}` : "@—";
     const plan = s.user.plan || "none";

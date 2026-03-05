@@ -466,7 +466,7 @@ function initSlugAvailability(orderApi) {
       }
 
       const ownerName = String(owner.name || "").trim() || "UNQX User";
-      const ownerPhoto = String(owner.photoUrl || "").trim() || "/brand/logo.PNG";
+      const ownerPhoto = String(owner.avatarUrl || owner.photoUrl || "").trim() || "/brand/logo.PNG";
       const ownerHref = String(owner.href || "").trim() || `/${slug}`;
       takenOwnerName.textContent = ownerName;
       takenOwnerPhoto.src = ownerPhoto;
@@ -1101,4 +1101,3 @@ function showToast(message, tone = "neutral") {
     }, 200);
   }, 3200);
 }
-
