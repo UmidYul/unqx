@@ -12,8 +12,14 @@ function escapeHtml(value) {
 }
 
 async function sendEmail({ to, subject, html }) {
-  if (!env.EMAIL_FROM || !env.SMTP_HOST || !env.SMTP_PORT || !env.SMTP_USER || !env.SMTP_PASS) {
-    throw new Error("Email service is not configured");
+  const missing = [];
+  if (!env.EMAIL_FROM) missing.push("EMAIL_FROM");
+  if (!env.SMTP_HOST) missing.push("SMTP_HOST");
+  if (!env.SMTP_PORT) missing.push("SMTP_PORT");
+  if (!env.SMTP_USER) missing.push("SMTP_USER");
+  if (!env.SMTP_PASS) missing.push("SMTP_PASS");
+  if (missing.length > 0) {
+    throw new Error(`Email service is not configured: missing ${missing.join(", ")}`);
   }
 
   const transporter = nodemailer.createTransport({
