@@ -1,5 +1,6 @@
 const express = require("express");
 const multer = require("multer");
+const { randomBytes } = require("node:crypto");
 
 const { prisma } = require("../../db/prisma");
 const { asyncHandler } = require("../../middleware/async");
@@ -120,17 +121,21 @@ function parseProfileCardRow(row) {
 
 async function getCurrentUser(req) {
   const sessionUser = getUserSession(req);
-  if (!sessionUser || !sessionUser.telegramId) {
+  if (!sessionUser || (!sessionUser.userId && !sessionUser.telegramId)) {
     return null;
   }
   try {
     const row = await prisma.user.findUnique({
-      where: { telegramId: sessionUser.telegramId },
+      where: sessionUser.userId ? { id: sessionUser.userId } : { telegramId: sessionUser.telegramId },
       select: {
+        id: true,
         telegramId: true,
+        email: true,
+        emailVerified: true,
         firstName: true,
         lastName: true,
         username: true,
+        telegramUsername: true,
         photoUrl: true,
         displayName: true,
         plan: true,
@@ -147,6 +152,7 @@ async function getCurrentUser(req) {
     if (!row) return null;
     return {
       ...row,
+      username: row.username || row.telegramUsername || null,
       planPurchasedAt: null,
       planUpgradedAt: null,
     };
@@ -157,10 +163,13 @@ async function getCurrentUser(req) {
 
     const rows = await prisma.$queryRaw`
       SELECT
+        id,
         telegram_id AS "telegramId",
+        email,
         first_name AS "firstName",
         last_name AS "lastName",
         username,
+        telegram_username AS "telegramUsername",
         photo_url AS "photoUrl",
         display_name AS "displayName",
         plan::text AS "plan",
@@ -175,6 +184,8 @@ async function getCurrentUser(req) {
 
     return {
       ...row,
+      username: row.username || row.telegramUsername || null,
+      emailVerified: false,
       plan: row.plan === "basic" || row.plan === "premium" || row.plan === "none" ? row.plan : "basic",
       status: row.status || "active",
       notificationsEnabled: typeof row.notificationsEnabled === "boolean" ? row.notificationsEnabled : true,
@@ -304,7 +315,10 @@ router.get(
 
     res.json({
       user: {
+        id: user.id,
         telegramId: user.telegramId,
+        email: user.email || "",
+        emailVerified: Boolean(user.emailVerified),
         firstName: user.firstName,
         lastName: user.lastName,
         username: user.username,
@@ -707,6 +721,10 @@ router.get(
   asyncHandler(async (req, res) => {
     const user = await getCurrentUser(req);
     if (!assertUserActive(user, res)) return;
+    if (getEffectivePlan(user).plan !== "premium") {
+      res.status(403).json({ error: "Upgrade required", code: "UPGRADE_REQUIRED" });
+      return;
+    }
 
     const fullSlug = sanitizeSlug(req.params.slug);
     const slugRow = await prisma.slug.findFirst({
@@ -1009,11 +1027,16 @@ router.patch(
     const notificationsEnabled = Boolean(req.body.notificationsEnabled);
     const showInDirectory =
       typeof req.body.showInDirectory === "boolean" ? req.body.showInDirectory : Boolean(user.showInDirectory);
+    const telegramUsername = String(req.body.telegramUsername || "")
+      .replace(/^@+/, "")
+      .trim()
+      .slice(0, 120);
 
     const updated = await prisma.user.update({
-      where: { telegramId: user.telegramId },
+      where: { id: user.id },
       data: {
         displayName,
+        telegramUsername: telegramUsername || null,
         notificationsEnabled,
         showInDirectory,
       },
@@ -1027,6 +1050,53 @@ router.patch(
         showInDirectory: updated.showInDirectory,
       },
     });
+  }),
+);
+
+router.post(
+  "/telegram/link/start",
+  asyncHandler(async (req, res) => {
+    const user = await getCurrentUser(req);
+    if (!assertUserActive(user, res)) {
+      return;
+    }
+
+    const token = randomBytes(24).toString("hex");
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+    await prisma.$executeRawUnsafe(
+      `
+      INSERT INTO telegram_link_tokens (user_id, token, expires_at)
+      VALUES ($1, $2, $3)
+      `,
+      user.id,
+      token,
+      expiresAt,
+    );
+
+    res.json({
+      ok: true,
+      token,
+      url: `https://t.me/${encodeURIComponent(process.env.TELEGRAM_BOT_USERNAME || "")}?start=link_${token}`,
+      expiresAt,
+    });
+  }),
+);
+
+router.post(
+  "/telegram/link/unlink",
+  asyncHandler(async (req, res) => {
+    const user = await getCurrentUser(req);
+    if (!assertUserActive(user, res)) {
+      return;
+    }
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        telegramChatId: null,
+      },
+    });
+    res.json({ ok: true });
   }),
 );
 

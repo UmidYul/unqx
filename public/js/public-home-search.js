@@ -238,13 +238,7 @@ function initTelegramAuth(pageNode) {
         window.location.href = "/profile";
         return;
       }
-      if (window.UNQOrderModal && typeof window.UNQOrderModal.ensureAuth === "function") {
-        window.UNQOrderModal.ensureAuth((user) => {
-          if (user) {
-            window.location.href = "/profile";
-          }
-        });
-      }
+      window.location.href = "/login";
     });
   });
 
@@ -256,13 +250,7 @@ function initTelegramAuth(pageNode) {
         window.location.href = "/profile";
         return;
       }
-      if (window.UNQOrderModal && typeof window.UNQOrderModal.ensureAuth === "function") {
-        window.UNQOrderModal.ensureAuth((user) => {
-          if (user) {
-            window.location.href = "/profile";
-          }
-        });
-      }
+      window.location.href = "/login";
     });
   });
 
@@ -283,48 +271,7 @@ function initTelegramAuth(pageNode) {
     void refreshUser();
   });
 
-  void refreshUser().then(async () => {
-    const url = new URL(window.location.href);
-    if (url.searchParams.get("auth") !== "required") {
-      return;
-    }
-
-    const forceAuth = url.searchParams.get("forceAuth") === "1";
-    const nextPath = getSafeNextPath(url.searchParams.get("next"));
-    url.searchParams.delete("auth");
-    url.searchParams.delete("next");
-    url.searchParams.delete("forceAuth");
-    const query = url.searchParams.toString();
-    history.replaceState({}, "", `${url.pathname}${query ? `?${query}` : ""}${url.hash}`);
-
-    if (forceAuth) {
-      try {
-        await fetch("/api/auth/logout", {
-          method: "POST",
-          headers: { Accept: "application/json" },
-          cache: "no-store",
-        });
-      } catch {
-        // ignore: even if logout request fails, we still open auth modal
-      }
-      await refreshUser();
-      currentUser = null;
-      renderAuthUi();
-    }
-
-    if (currentUser && !forceAuth) {
-      window.location.replace(nextPath);
-      return;
-    }
-
-    if (window.UNQOrderModal && typeof window.UNQOrderModal.ensureAuth === "function") {
-      window.UNQOrderModal.ensureAuth((user) => {
-        if (user) {
-          window.location.href = nextPath;
-        }
-      });
-    }
-  });
+  void refreshUser();
 
   return {
     getUser() {

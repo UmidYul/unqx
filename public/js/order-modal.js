@@ -65,7 +65,6 @@ const DEFAULT_PRICING = {
     !(dom.stepAuth instanceof HTMLElement) ||
     !(dom.stepForm instanceof HTMLFormElement) ||
     !(dom.stepSuccess instanceof HTMLElement) ||
-    !(dom.widgetWrap instanceof HTMLElement) ||
     !(dom.letters instanceof HTMLInputElement) ||
     !(dom.digits instanceof HTMLInputElement) ||
     !(dom.name instanceof HTMLInputElement) ||
@@ -461,24 +460,7 @@ const DEFAULT_PRICING = {
   }
 
   function mountWidget() {
-    const botUsername =
-      document.body?.getAttribute("data-telegram-bot-username") ||
-      document.querySelector("[data-telegram-bot-username]")?.getAttribute("data-telegram-bot-username") ||
-      "";
-    if (!botUsername || !(dom.widgetWrap instanceof HTMLElement)) {
-      return;
-    }
-    dom.widgetWrap.innerHTML = "";
-    const script = document.createElement("script");
-    script.async = true;
-    script.src = "https://telegram.org/js/telegram-widget.js?22";
-    script.setAttribute("data-telegram-login", botUsername);
-    script.setAttribute("data-size", "large");
-    script.setAttribute("data-userpic", "false");
-    script.setAttribute("data-request-access", "write");
-    script.setAttribute("data-onauth", "unqxOrderModalTelegramAuth(user)");
-    dom.widgetWrap.appendChild(script);
-    decorateWidget(dom.widgetWrap);
+    // Telegram auth widget removed in favor of email/password authentication.
   }
 
   function decorateWidget(container) {
@@ -488,7 +470,7 @@ const DEFAULT_PRICING = {
     if (!container.querySelector(".order-modal-tg-fake")) {
       const fake = document.createElement("div");
       fake.className = "order-modal-tg-fake";
-      fake.innerHTML = '<span>Войти через Telegram</span>';
+      fake.innerHTML = '<span>Войти</span>';
       container.appendChild(fake);
     }
     if (container.dataset.tgFallbackBound !== "1") {
@@ -598,7 +580,6 @@ const DEFAULT_PRICING = {
       setStep("form");
     } else {
       setStep("auth");
-      mountWidget();
     }
   }
 
@@ -658,7 +639,6 @@ const DEFAULT_PRICING = {
     setStatus("", "neutral");
     if (!currentUser) {
       setStep("auth");
-      mountWidget();
       return;
     }
     const pricing = calculateSlugPricing(dom.letters.value, dom.digits.value);
@@ -698,7 +678,6 @@ const DEFAULT_PRICING = {
     } catch (error) {
       if (error.code === "AUTH_REQUIRED") {
         setStep("auth");
-        mountWidget();
         return;
       }
       if (error.code === "BASIC_SLUG_LIMIT_REACHED") {
@@ -721,31 +700,8 @@ const DEFAULT_PRICING = {
     }
   }
 
-  async function handleTelegramAuth(telegramUser) {
-    try {
-      const payload = await postJson("/api/auth/telegram/callback", telegramUser);
-      currentUser = payload.user || null;
-      await refreshPricing();
-      renderUser();
-      setProgress();
-      if (currentUser && !dom.name.value.trim()) {
-        dom.name.value = currentUser.firstName || currentUser.displayName || "";
-      }
-      setStep("form");
-      void updateTotals();
-      window.dispatchEvent(new CustomEvent("unqx:auth:success", { detail: currentUser }));
-      if (typeof pendingAuthCallback === "function") {
-        const callback = pendingAuthCallback;
-        pendingAuthCallback = null;
-        callback(currentUser);
-      }
-    } catch (error) {
-      setStatus(error.message || "Ошибка входа через Telegram", "error");
-    }
-  }
-
-  window.unqxOrderModalTelegramAuth = (user) => {
-    void handleTelegramAuth(user);
+  window.unqxOrderModalTelegramAuth = () => {
+    window.location.href = "/login";
   };
 
   function bindCtas() {
@@ -817,7 +773,6 @@ const DEFAULT_PRICING = {
         currentUser = null;
         await refreshUser();
         setStep("auth");
-        mountWidget();
         window.dispatchEvent(new CustomEvent("unqx:auth:logout"));
       })
       .catch(() => {

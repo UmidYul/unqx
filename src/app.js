@@ -20,6 +20,7 @@ const { adminPagesRouter } = require("./routes/pages/admin");
 const { publicPagesRouter } = require("./routes/pages/public");
 const { featuresApiRouter } = require("./routes/api/features");
 const { adminFeaturesApiRouter } = require("./routes/api/admin-features");
+const { telegramApiRouter } = require("./routes/api/telegram");
 const { systemRouter } = require("./routes/system");
 const { getBaseUrl } = require("./utils/url");
 const { ensureCsrfToken } = require("./middleware/csrf");
@@ -197,6 +198,11 @@ function createApp() {
 
     if (
       req.path === "/profile" ||
+      req.path === "/login" ||
+      req.path === "/register" ||
+      req.path === "/verify-email" ||
+      req.path === "/forgot-password" ||
+      req.path === "/reset-password" ||
       req.path.startsWith("/api/profile") ||
       req.path.startsWith("/api/auth")
     ) {
@@ -214,6 +220,7 @@ function createApp() {
   app.use("/api/cards", publicApiRouter);
   app.use("/api", featuresApiRouter);
   app.use("/api/admin", adminFeaturesApiRouter);
+  app.use("/api/telegram", telegramApiRouter);
 
   app.use(systemRouter);
   app.use(adminPagesRouter);

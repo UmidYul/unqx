@@ -107,6 +107,7 @@ const schema = z.object({
   NEXTAUTH_SECRET: z.string().min(8).optional(),
   SESSION_SECRET: z.string().min(8).optional(),
   ADMIN_LOGIN: z.string().min(1).default("admin"),
+  ADMIN_EMAIL: z.string().email().optional(),
   ADMIN_PASSWORD_HASH: z
     .string()
     .transform(normalizeBcryptHash)
@@ -121,7 +122,8 @@ const schema = z.object({
   TELEGRAM_BOT_TOKEN: z.string().min(1).optional(),
   TELEGRAM_BOT_USERNAME: z.string().min(1).optional(),
   TELEGRAM_CHAT_ID: z.string().min(1).optional(),
-  TELEGRAM_AUTH_MAX_AGE_SECONDS: z.coerce.number().int().positive().default(86_400),
+  RESEND_API_KEY: z.string().min(1).optional(),
+  EMAIL_FROM: z.string().min(1).optional(),
   SLUG_TOTAL_LIMIT: z.coerce.number().int().positive().default(17_576),
   TIMEZONE: z.string().min(1).default("Asia/Tashkent"),
   ROOT_DIR: z.string().optional(),
@@ -143,11 +145,13 @@ const parsed = schema.parse({
   NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
   SESSION_SECRET: process.env.SESSION_SECRET,
   ADMIN_LOGIN: process.env.ADMIN_LOGIN,
+  ADMIN_EMAIL: process.env.ADMIN_EMAIL,
   ADMIN_PASSWORD_HASH: decodeB64(process.env.ADMIN_PASSWORD_HASH_B64) ?? process.env.ADMIN_PASSWORD_HASH,
   TELEGRAM_BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN,
   TELEGRAM_BOT_USERNAME: normalizeTelegramBotUsername(process.env.TELEGRAM_BOT_USERNAME),
   TELEGRAM_CHAT_ID: process.env.TELEGRAM_CHAT_ID,
-  TELEGRAM_AUTH_MAX_AGE_SECONDS: process.env.TELEGRAM_AUTH_MAX_AGE_SECONDS,
+  RESEND_API_KEY: process.env.RESEND_API_KEY,
+  EMAIL_FROM: process.env.EMAIL_FROM,
   SLUG_TOTAL_LIMIT: process.env.SLUG_TOTAL_LIMIT,
   TIMEZONE: process.env.TIMEZONE,
   ROOT_DIR: process.env.ROOT_DIR,

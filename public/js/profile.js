@@ -167,7 +167,12 @@
     refRewards: $("#profile-ref-rewards"),
 
     stName: $("#profile-settings-display-name"),
+    stEmail: $("#profile-settings-email"),
     stTg: $("#profile-settings-telegram"),
+    stChangeEmail: $("#profile-settings-change-email"),
+    stChangePassword: $("#profile-settings-change-password"),
+    stLinkTelegram: $("#profile-settings-link-telegram"),
+    stUnlinkTelegram: $("#profile-settings-unlink-telegram"),
     stNotif: $("#profile-settings-notifications"),
     stDirectory: $("#profile-settings-directory"),
     stSave: $("#profile-settings-save"),
@@ -407,6 +412,12 @@
     if (!s.slugs.length) {
       el.slugs.innerHTML = '<div class="rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-6 text-sm text-neutral-500">Пока нет UNQ. Оставь заявку на главной.</div>';
     } else {
+      const canUseQr = plan === "premium";
+      const qrAction = canUseQr
+        ? (slug) =>
+            `<button data-a="open-qr" data-slug="${esc(slug)}" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold">Мой QR</button>`
+        : () => "";
+
       el.slugs.innerHTML = s.slugs
         .map((slugItem) => {
           const statusLabel = slugItem.statusLabel || slugItem.status;
@@ -437,7 +448,7 @@
             }
             <div class="mt-3 flex flex-wrap gap-3 text-xs text-neutral-500">
               ${slugItem.isPrimary ? "" : `<button data-a="primary" data-slug="${esc(slugItem.fullSlug)}" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold">Сделать основным</button>`}
-              <button data-a="open-qr" data-slug="${esc(slugItem.fullSlug)}" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold">Мой QR</button>
+              ${qrAction(slugItem.fullSlug)}
               <span>${Number(slugItem.stats?.views || 0).toLocaleString("ru-RU")} просмотров</span>
               <span>с ${fd(slugItem.stats?.since || slugItem.createdAt)}</span>
             </div>
@@ -705,7 +716,8 @@
   const renderSettings = () => {
     if (!s.user) return;
     if (el.stName) el.stName.value = s.user.displayName || s.user.firstName || "";
-    if (el.stTg) el.stTg.value = s.user.username ? `@${s.user.username}` : "@—";
+    if (el.stEmail) el.stEmail.value = s.user.email || "";
+    if (el.stTg) el.stTg.value = s.user.username ? `@${s.user.username}` : "";
     if (el.stNotif) el.stNotif.checked = Boolean(s.user.notificationsEnabled);
     if (el.stDirectory) el.stDirectory.checked = Boolean(s.user.showInDirectory);
     if (el.verificationStatus) {
@@ -1179,6 +1191,10 @@
   };
 
   const openQrModal = async (slug) => {
+    if (getCurrentPlan() !== "premium") {
+      showModal("Доступно на Премиум", "QR-код доступен только для Премиум тарифа.");
+      return;
+    }
     const payload = await api(`/api/profile/slugs/${encodeURIComponent(slug)}/qr`);
     if (!(el.qrModal instanceof HTMLElement)) return;
     el.qrModal.classList.remove("hidden");
@@ -1668,6 +1684,7 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           displayName: el.stName?.value || "",
+          telegramUsername: String(el.stTg?.value || "").replace(/^@+/, "").trim(),
           notificationsEnabled: Boolean(el.stNotif?.checked),
           showInDirectory: Boolean(el.stDirectory?.checked),
         }),
@@ -1715,10 +1732,38 @@
         body: JSON.stringify({}),
       });
       window.dispatchEvent(new CustomEvent("unqx:auth:logout"));
-      location.href = "/?auth=required&next=%2Fprofile&forceAuth=1";
+      location.href = "/login";
     } catch (error) {
       showModal("Ошибка", error.message || "Не удалось выйти");
       el.logout.disabled = false;
+    }
+  });
+
+  el.stLinkTelegram?.addEventListener("click", async () => {
+    try {
+      const payload = await api("/api/profile/telegram/link/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      if (payload?.url) {
+        window.open(payload.url, "_blank", "noopener,noreferrer");
+      }
+    } catch (error) {
+      showModal("Ошибка", error.message || "Не удалось подготовить подключение Telegram");
+    }
+  });
+
+  el.stUnlinkTelegram?.addEventListener("click", async () => {
+    try {
+      await api("/api/profile/telegram/link/unlink", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      showModal("Готово", "Telegram уведомления отключены", "Ок");
+    } catch (error) {
+      showModal("Ошибка", error.message || "Не удалось отключить Telegram");
     }
   });
 

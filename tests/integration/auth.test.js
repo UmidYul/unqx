@@ -10,7 +10,7 @@ describeIntegration("integration auth smoke", () => {
     const response = await request(app).get("/admin/dashboard");
 
     expect(response.status).toBe(302);
-    expect(response.headers.location).toBe("/admin");
+    expect(response.headers.location).toBe("/admin/login");
   });
 
   test("returns 401 for protected admin API when not authenticated", async () => {
@@ -26,6 +26,6 @@ describeIntegration("integration auth smoke", () => {
     const response = await request(app).get("/profile");
 
     expect(response.status).toBe(302);
-    expect(response.headers.location).toContain("/?auth=required&next=%2Fprofile");
+    expect(response.headers.location).toContain("/login?next=%2Fprofile");
   });
 });

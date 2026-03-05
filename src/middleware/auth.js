@@ -2,6 +2,9 @@ const bcrypt = require("bcryptjs");
 
 const { env } = require("../config/env");
 
+const SESSION_MAX_AGE_7_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+const SESSION_MAX_AGE_30_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+
 function getUserSession(req) {
   return req.session && req.session.user ? req.session.user : null;
 }
@@ -13,15 +16,31 @@ function getAdminSession(req) {
 function requireUserPage(req, res, next) {
   if (!getUserSession(req)) {
     const nextPath = typeof req.originalUrl === "string" && req.originalUrl.startsWith("/") ? req.originalUrl : "/profile";
-    return res.redirect(`/?auth=required&next=${encodeURIComponent(nextPath)}`);
+    return res.redirect(`/login?next=${encodeURIComponent(nextPath)}`);
   }
 
   return next();
 }
 
+function requireVerifiedUserPage(req, res, next) {
+  const user = getUserSession(req);
+  if (!user) {
+    const nextPath = typeof req.originalUrl === "string" && req.originalUrl.startsWith("/") ? req.originalUrl : "/profile";
+    return res.redirect(`/login?next=${encodeURIComponent(nextPath)}`);
+  }
+  if (!user.emailVerified) {
+    return res.redirect("/verify-email");
+  }
+  return next();
+}
+
 function requireUserApi(req, res, next) {
-  if (!getUserSession(req)) {
+  const user = getUserSession(req);
+  if (!user) {
     return res.status(401).json({ error: "Unauthorized", code: "AUTH_REQUIRED" });
+  }
+  if (user.emailVerified === false) {
+    return res.status(403).json({ error: "Сначала подтверди email.", code: "EMAIL_UNVERIFIED" });
   }
 
   return next();
@@ -29,7 +48,7 @@ function requireUserApi(req, res, next) {
 
 function requireAdminPage(req, res, next) {
   if (!getAdminSession(req)) {
-    return res.redirect("/admin");
+    return res.redirect("/admin/login");
   }
 
   return next();
@@ -51,7 +70,12 @@ async function verifyAdminCredentials(login, password) {
     return false;
   }
 
-  if (normalizedLogin !== env.ADMIN_LOGIN.trim()) {
+  const expectedAdminEmail = (env.ADMIN_EMAIL || "").trim().toLowerCase();
+  if (expectedAdminEmail) {
+    if (normalizedLogin.toLowerCase() !== expectedAdminEmail) {
+      return false;
+    }
+  } else if (normalizedLogin !== env.ADMIN_LOGIN.trim()) {
     return false;
   }
 
@@ -75,7 +99,7 @@ async function loginAdmin(req) {
 
   req.session.admin = {
     id: "admin",
-    login: env.ADMIN_LOGIN.trim(),
+    login: (env.ADMIN_EMAIL || env.ADMIN_LOGIN).trim(),
   };
 
   await new Promise((resolve, reject) => {
@@ -101,8 +125,9 @@ async function logoutAdmin(req) {
   });
 }
 
-async function loginUserSession(req, userPayload) {
+async function loginUserSession(req, userPayload, options = {}) {
   const pendingRefCode = req.session?.pendingRefCode || null;
+  const rememberMe = Boolean(options.rememberMe);
   await new Promise((resolve, reject) => {
     req.session.regenerate((error) => {
       if (error) {
@@ -114,6 +139,7 @@ async function loginUserSession(req, userPayload) {
   });
 
   req.session.user = userPayload;
+  req.session.cookie.maxAge = rememberMe ? SESSION_MAX_AGE_30_DAYS_MS : SESSION_MAX_AGE_7_DAYS_MS;
   if (pendingRefCode) {
     req.session.pendingRefCode = pendingRefCode;
   }
@@ -151,6 +177,7 @@ module.exports = {
   getUserSession,
   getAdminSession,
   requireUserPage,
+  requireVerifiedUserPage,
   requireUserApi,
   requireAdminPage,
   requireAdminApi,
@@ -159,4 +186,6 @@ module.exports = {
   logoutAdmin,
   loginUserSession,
   logoutUserSession,
+  SESSION_MAX_AGE_7_DAYS_MS,
+  SESSION_MAX_AGE_30_DAYS_MS,
 };

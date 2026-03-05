@@ -3,7 +3,7 @@
   const pageDescription =
     typeof description === "string" && description
       ? description
-      : "Вас пригласили в UNQ+. Зарегистрируйтесь через Telegram и создайте свою цифровую визитку.";
+      : "Вас пригласили в UNQ+. Зарегистрируйтесь и создайте свою цифровую визитку.";
   const inviterLine = referrerName
     ? `${referrerName}${referrerUsername ? ` (${referrerUsername})` : ""}`
     : referrerUsername || "ваш контакт";
@@ -13,7 +13,7 @@
 <head>
   <%- include('../partials/head', { title: pageTitle, description: pageDescription, ogType: 'website' }) %>
 </head>
-<body class="antialiased" data-telegram-bot-username="<%= telegramBotUsername || '' %>">
+<body class="antialiased">
   <main class="relative flex min-h-screen items-center justify-center overflow-hidden bg-neutral-50 px-6 py-16" data-page="public-referral">
     <div class="pointer-events-none absolute -left-24 -top-24 h-72 w-72 rounded-full bg-neutral-200/70 blur-3xl"></div>
     <div class="pointer-events-none absolute -bottom-24 -right-24 h-72 w-72 rounded-full bg-neutral-200/70 blur-3xl"></div>
@@ -28,20 +28,20 @@
 
       <p class="mt-4 text-sm leading-relaxed text-neutral-600">
         Вы перешли по реферальной ссылке от <strong class="text-neutral-900"><%= inviterLine %></strong>.
-        После регистрации через Telegram приглашение сохранится автоматически.
+        После регистрации приглашение сохранится автоматически.
       </p>
 
       <div class="mt-6 rounded-2xl border border-neutral-200 bg-neutral-50 p-4 text-sm text-neutral-700">
         <p><strong>Что дальше:</strong></p>
-        <p class="mt-1">1) Войти через Telegram</p>
+        <p class="mt-1">1) Зарегистрироваться по email</p>
         <p>2) Заполнить визитку</p>
         <p>3) Получить свой UNQ и поделиться ссылкой</p>
       </div>
 
       <div class="mt-7 flex flex-col gap-3 sm:flex-row">
-        <button type="button" data-auth-login class="interactive-btn btn-shimmer min-h-11 rounded-xl bg-neutral-900 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-neutral-800">
-          Зарегистрироваться через Telegram
-        </button>
+        <a href="/register" class="interactive-btn btn-shimmer min-h-11 rounded-xl bg-neutral-900 px-5 py-3 text-center text-sm font-semibold text-white transition-colors hover:bg-neutral-800">
+          Зарегистрироваться
+        </a>
         <a href="/#pricing" class="interactive-btn min-h-11 rounded-xl border border-neutral-300 px-5 py-3 text-center text-sm font-semibold text-neutral-700 transition-colors hover:bg-neutral-100">
           Посмотреть тарифы
         </a>

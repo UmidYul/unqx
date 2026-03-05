@@ -329,8 +329,23 @@
               <input id="profile-settings-display-name" type="text" class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm" />
             </div>
             <div>
+              <label class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Email</label>
+              <div class="flex flex-col gap-2 sm:flex-row">
+                <input id="profile-settings-email" type="email" readonly class="w-full rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm" />
+                <button id="profile-settings-change-email" type="button" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold">Изменить email</button>
+              </div>
+            </div>
+            <div>
+              <button id="profile-settings-change-password" type="button" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold">Изменить пароль</button>
+            </div>
+            <div>
               <label class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Telegram</label>
-              <input id="profile-settings-telegram" type="text" readonly class="w-full rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm" />
+              <input id="profile-settings-telegram" type="text" class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm" placeholder="@username" />
+              <p class="mt-1 text-xs text-neutral-500">Для связи по заявкам. Не используется для входа.</p>
+              <div class="mt-2 flex flex-wrap gap-2">
+                <button id="profile-settings-link-telegram" type="button" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold">Подключить уведомления</button>
+                <button id="profile-settings-unlink-telegram" type="button" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold">Отключить уведомления</button>
+              </div>
             </div>
             <label class="inline-flex items-center gap-2 text-sm">
               <input id="profile-settings-notifications" type="checkbox" />

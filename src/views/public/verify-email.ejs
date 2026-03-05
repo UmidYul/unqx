@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <%- include('../partials/head', { title: title || "Подтверждение email | UNQ+", description: typeof description === 'string' ? description : undefined, noindex: true }) %>
+</head>
+<body class="antialiased bg-neutral-50">
+  <main class="mx-auto flex min-h-screen w-full max-w-md items-center px-4 py-10">
+    <form id="verify-form" class="w-full rounded-2xl border border-neutral-200 bg-white p-5">
+      <h1 class="text-2xl font-bold text-neutral-900">Проверь почту</h1>
+      <p class="mt-1 text-sm text-neutral-500">Мы отправили 6-значный код</p>
+      <label class="mt-4 block text-sm font-medium text-neutral-700">Email
+        <input id="email" type="email" class="mt-1 w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm" required />
+      </label>
+      <label class="mt-3 block text-sm font-medium text-neutral-700">Код
+        <input id="code" inputmode="numeric" maxlength="6" class="mt-1 w-full rounded-xl border border-neutral-200 px-3 py-2 text-center font-mono text-xl tracking-[0.4em]" required />
+      </label>
+      <p id="verify-error" class="mt-3 hidden text-sm text-red-700"></p>
+      <button type="submit" class="interactive-btn mt-4 min-h-11 w-full rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white">Подтвердить</button>
+      <button id="resend" type="button" class="interactive-btn mt-2 min-h-11 w-full rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold">Отправить код повторно</button>
+    </form>
+  </main>
+  <script nonce="<%= cspNonce %>">
+    const emailFromQuery = new URL(window.location.href).searchParams.get("email");
+    if (emailFromQuery) document.getElementById("email").value = emailFromQuery;
+    const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "";
+    const errorNode = document.getElementById("verify-error");
+    document.getElementById("verify-form").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      errorNode.classList.add("hidden");
+      const response = await fetch("/api/auth/verify-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-csrf-token": csrf },
+        body: JSON.stringify({
+          email: document.getElementById("email").value,
+          code: document.getElementById("code").value,
+        }),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        errorNode.textContent = payload?.error || "Ошибка подтверждения";
+        errorNode.classList.remove("hidden");
+        return;
+      }
+      window.location.href = "/profile";
+    });
+    document.getElementById("resend").addEventListener("click", async () => {
+      await fetch("/api/auth/send-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-csrf-token": csrf },
+        body: JSON.stringify({ email: document.getElementById("email").value }),
+      });
+    });
+  </script>
+</body>
+</html>
+

@@ -28,14 +28,7 @@
         window.location.href = "/profile";
         return;
       }
-
-      if (window.UNQOrderModal && typeof window.UNQOrderModal.ensureAuth === "function") {
-        window.UNQOrderModal.ensureAuth((user) => {
-          if (user) {
-            window.location.href = "/profile";
-          }
-        });
-      }
+      window.location.href = "/login";
     });
   });
 

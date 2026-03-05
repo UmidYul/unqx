@@ -39,7 +39,7 @@ async function renderHomeTemplateAuthenticated() {
     cspNonce: "test-nonce",
     csrfToken: "csrf",
     userSession: {
-      telegramId: "123456",
+      userId: "123456",
       firstName: "Yuldashev",
       photoUrl: "https://t.me/i/userpic/320/example.jpg",
     },
@@ -79,8 +79,8 @@ describe("home page", () => {
     expect(html).toContain("Yuldashev · Мой профиль");
     expect(html).toContain("data-auth-profile");
     expect(html).toContain("inline-flex");
-    expect(html).toContain("data-auth-login");
-    expect(html).toContain("Войти через Telegram");
+    expect(html).toContain("Зарегистрироваться");
+    expect(html).toContain("/login");
     expect(html).toContain("hidden");
   });
 

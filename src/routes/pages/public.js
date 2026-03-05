@@ -3,7 +3,7 @@ const express = require("express");
 const { prisma } = require("../../db/prisma");
 const { env } = require("../../config/env");
 const { asyncHandler } = require("../../middleware/async");
-const { getAdminSession, requireUserPage, getUserSession } = require("../../middleware/auth");
+const { getAdminSession, requireVerifiedUserPage, getUserSession } = require("../../middleware/auth");
 const { getPublicCardBySlug } = require("../../services/cards");
 const { getEffectivePlan } = require("../../services/profile");
 const { absoluteUrl } = require("../../utils/url");
@@ -325,6 +325,76 @@ router.get(
 );
 
 router.get(
+  "/login",
+  asyncHandler(async (req, res) => {
+    if (getUserSession(req)?.userId) {
+      res.redirect("/profile");
+      return;
+    }
+    res.render("public/login", {
+      title: "Вход | UNQ+",
+      description: "Войди в UNQ+ по email и паролю",
+      image: defaultSocialImage,
+      next: typeof req.query.next === "string" ? req.query.next : "/profile",
+      adminSession: getAdminSession(req),
+    });
+  }),
+);
+
+router.get(
+  "/register",
+  asyncHandler(async (req, res) => {
+    if (getUserSession(req)?.userId) {
+      res.redirect("/profile");
+      return;
+    }
+    res.render("public/register", {
+      title: "Регистрация | UNQ+",
+      description: "Создай аккаунт UNQ+",
+      image: defaultSocialImage,
+      adminSession: getAdminSession(req),
+    });
+  }),
+);
+
+router.get(
+  "/verify-email",
+  asyncHandler(async (req, res) => {
+    res.render("public/verify-email", {
+      title: "Подтверждение email | UNQ+",
+      description: "Подтверди email и заверши регистрацию",
+      image: defaultSocialImage,
+      adminSession: getAdminSession(req),
+    });
+  }),
+);
+
+router.get(
+  "/forgot-password",
+  asyncHandler(async (req, res) => {
+    res.render("public/forgot-password", {
+      title: "Сброс пароля | UNQ+",
+      description: "Запрос кода для сброса пароля",
+      image: defaultSocialImage,
+      adminSession: getAdminSession(req),
+    });
+  }),
+);
+
+router.get(
+  "/reset-password",
+  asyncHandler(async (req, res) => {
+    res.render("public/reset-password", {
+      title: "Новый пароль | UNQ+",
+      description: "Установи новый пароль",
+      image: defaultSocialImage,
+      email: typeof req.query.email === "string" ? req.query.email : "",
+      adminSession: getAdminSession(req),
+    });
+  }),
+);
+
+router.get(
   "/ref/:refCode",
   asyncHandler(async (req, res) => {
     const refCode = normalizeRefCode(req.params.refCode);
@@ -387,13 +457,13 @@ router.get(
 
 router.get(
   "/profile",
-  requireUserPage,
+  requireVerifiedUserPage,
   asyncHandler(async (req, res) => {
     const sessionUser = getUserSession(req);
-    const user = await findUserByTelegramIdWithLegacyFallback(sessionUser.telegramId);
+    const user = sessionUser?.telegramId ? await findUserByTelegramIdWithLegacyFallback(sessionUser.telegramId) : null;
 
     if (!user || user.status === "blocked" || user.status === "deactivated") {
-      res.redirect("/");
+      res.redirect("/login");
       return;
     }
 

@@ -31,11 +31,13 @@ async function sendOrderRequestToTelegram(payload) {
   const tariffLabel = payload.tariff === "premium" ? "ПРЕМИУМ" : "БАЗОВЫЙ";
   const braceletLabel = payload.bracelet ? "Да (+300 000 сум)" : "Нет";
   const usernameLabel = payload.username ? `@${escapeHtml(payload.username.replace(/^@/, ""))}` : "@—";
-  const telegramLink = payload.telegramId ? `tg://user?id=${escapeHtml(payload.telegramId)}` : "—";
+  const emailLabel = payload.email ? escapeHtml(payload.email) : "—";
   const text = [
     "<b>НОВАЯ ЗАЯВКА UNQ+</b>",
     "",
-    `${escapeHtml(payload.name)} · ${usernameLabel} · ${telegramLink}`,
+    `${escapeHtml(payload.name)} · ${usernameLabel}`,
+    `Email: ${emailLabel}`,
+    `Telegram: ${usernameLabel}`,
     `<b>Slug:</b> ${escapeHtml(payload.slug)} · unqx.uz/${escapeHtml(payload.slug)}`,
     `<b>Цена slug:</b> ${escapeHtml(payload.slugPriceLabel)} сум`,
     `<b>Тариф:</b> ${tariffLabel} · ${escapeHtml(payload.tariffPriceLabel)} сум`,

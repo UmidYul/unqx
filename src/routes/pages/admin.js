@@ -40,12 +40,28 @@ router.get(
   }),
 );
 
+router.get(
+  "/admin/login",
+  asyncHandler(async (req, res) => {
+    if (getAdminSession(req)) {
+      res.redirect("/admin/dashboard");
+      return;
+    }
+    res.render("admin/login", {
+      title: "Вход в админ-панель",
+      error: "",
+      adminSession: null,
+    });
+  }),
+);
+
 router.post(
   "/admin/login",
   loginRateLimit,
   requireCsrfToken,
   asyncHandler(async (req, res) => {
-    const ok = await verifyAdminCredentials(req.body.login, req.body.password);
+    const loginInput = req.body.email || req.body.login;
+    const ok = await verifyAdminCredentials(loginInput, req.body.password);
 
     if (!ok) {
       res.status(401).render("admin/login", {

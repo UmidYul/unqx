@@ -794,17 +794,19 @@ router.post(
   requireCsrfToken,
   asyncHandler(async (req, res) => {
     const userSession = getUserSession(req);
-    if (!userSession || !userSession.telegramId) {
+    if (!userSession || (!userSession.userId && !userSession.telegramId)) {
       res.status(401).json({ error: "Unauthorized", code: "AUTH_REQUIRED" });
       return;
     }
 
     const user = await prisma.user.findUnique({
-      where: { telegramId: userSession.telegramId },
+      where: userSession.userId ? { id: userSession.userId } : { telegramId: userSession.telegramId },
       select: {
         telegramId: true,
+        email: true,
         firstName: true,
         username: true,
+        telegramUsername: true,
         plan: true,
         status: true,
       },
@@ -1024,7 +1026,8 @@ router.post(
       await sendOrderRequestToTelegram({
         name: payload.name,
         telegramId: user.telegramId,
-        username: user.username || "",
+        email: user.email || "",
+        username: user.telegramUsername || user.username || "",
         slug,
         slugPriceLabel: formatPrice(finalSlugPrice),
         tariff: requestedPlan,
