@@ -4,8 +4,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
 
@@ -20,19 +20,6 @@ enum CardTheme {
   gradient
   neon
   corporate
-}
-
-enum OrderStatus {
-  NEW
-  CONTACTED
-  PAID
-  ACTIVATED
-  REJECTED
-}
-
-enum SlugState {
-  TAKEN
-  BLOCKED
 }
 
 enum CheckerResult {
@@ -116,74 +103,12 @@ enum SlugRequestStatus {
   expired
 }
 
-model Card {
-  id         String    @id @default(uuid())
-  slug       String    @unique @db.VarChar(20)
-  isActive   Boolean   @default(true) @map("is_active")
-  tariff     Tariff    @default(basic)
-  theme      CardTheme @default(default_dark)
-  avatarUrl  String?   @map("avatar_url")
-  name       String    @db.VarChar(100)
-  phone      String    @db.VarChar(30)
-  verified   Boolean   @default(false)
-  hashtag    String?   @db.VarChar(50)
-  address    String?
-  postcode   String?   @db.VarChar(20)
-  email      String?   @db.VarChar(100)
-  extraPhone String?   @map("extra_phone") @db.VarChar(30)
-  viewsCount Int       @default(0) @map("views_count")
-  uniqueViewsCount Int @default(0) @map("unique_views_count")
-  createdAt  DateTime  @default(now()) @map("created_at")
-  updatedAt  DateTime  @updatedAt @map("updated_at")
-  buttons    Button[]
-  tags       Tag[]
-  viewsLog   ViewLog[]
-  orderRequests OrderRequest[]
-  slugRecord SlugRecord?
-
-  @@index([isActive])
-  @@index([createdAt])
-  @@map("cards")
-}
-
-model Tag {
-  id        String @id @default(uuid())
-  cardId    String @map("card_id")
-  card      Card   @relation(fields: [cardId], references: [id], onDelete: Cascade)
-  label     String @db.VarChar(50)
-  url       String?
-  sortOrder Int    @map("sort_order")
-
-  @@index([cardId, sortOrder])
-  @@map("tags")
-}
-
-model Button {
-  id        String  @id @default(uuid())
-  cardId    String  @map("card_id")
-  card      Card    @relation(fields: [cardId], references: [id], onDelete: Cascade)
-  label     String  @db.VarChar(50)
-  url       String
-  sortOrder Int     @map("sort_order")
-  isActive  Boolean @default(true) @map("is_active")
-
-  @@index([cardId, sortOrder])
-  @@map("buttons")
-}
-
-model ViewLog {
-  id       String   @id @default(uuid())
-  cardId   String   @map("card_id")
-  card     Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
-  viewedAt DateTime @default(now()) @map("viewed_at")
-  device   String?  @db.VarChar(20)
-  ipHash   String?  @map("ip_hash") @db.VarChar(64)
-  isUnique Boolean  @default(false) @map("is_unique")
-
-  @@index([cardId, viewedAt])
-  @@index([cardId, ipHash, viewedAt])
-  @@index([viewedAt])
-  @@map("views_log")
+enum PurchaseType {
+  slug
+  basic_plan
+  premium_plan
+  upgrade_to_premium
+  bracelet
 }
 
 model ErrorLog {
@@ -199,67 +124,26 @@ model ErrorLog {
   @@map("error_logs")
 }
 
-model OrderRequest {
-  id        String      @id @default(uuid())
-  name      String      @db.VarChar(100)
-  slug      String      @db.VarChar(20)
-  slugPrice Int         @map("slug_price")
-  tariff    Tariff
-  theme     CardTheme?
-  bracelet  Boolean     @default(false)
-  contact   String      @db.VarChar(120)
-  status    OrderStatus @default(NEW)
-  cardId    String?     @map("card_id")
-  card      Card?       @relation(fields: [cardId], references: [id], onDelete: SetNull)
-  createdAt DateTime    @default(now()) @map("created_at")
-  updatedAt DateTime    @updatedAt @map("updated_at")
-  braceletOrder BraceletOrder?
-
-  @@index([slug, createdAt])
-  @@index([status, createdAt])
-  @@index([cardId])
-  @@map("order_requests")
-}
-
 model BraceletOrder {
-  id            String                 @id @default(uuid())
-  orderId       String                 @unique @map("order_id")
-  order         OrderRequest           @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  name          String                 @db.VarChar(100)
-  slug          String                 @db.VarChar(20)
-  contact       String                 @db.VarChar(120)
+  id             String                 @id @default(uuid())
+  orderId        String                 @unique @map("order_id")
+  name           String                 @db.VarChar(100)
+  slug           String                 @db.VarChar(20)
   deliveryStatus BraceletDeliveryStatus @default(ORDERED) @map("delivery_status")
-  createdAt     DateTime               @default(now()) @map("created_at")
-  updatedAt     DateTime               @updatedAt @map("updated_at")
+  createdAt      DateTime               @default(now()) @map("created_at")
+  updatedAt      DateTime               @updatedAt @map("updated_at")
 
   @@index([deliveryStatus, createdAt])
   @@map("bracelet_orders")
 }
 
-model SlugRecord {
-  id             String    @id @default(uuid())
-  slug           String    @unique @db.VarChar(20)
-  state          SlugState @default(TAKEN)
-  ownerName      String?   @map("owner_name") @db.VarChar(100)
-  priceOverride  Int?      @map("price_override")
-  activationDate DateTime? @map("activation_date")
-  cardId         String?   @unique @map("card_id")
-  card           Card?     @relation(fields: [cardId], references: [id], onDelete: SetNull)
-  createdAt      DateTime  @default(now()) @map("created_at")
-  updatedAt      DateTime  @updatedAt @map("updated_at")
-
-  @@index([state])
-  @@index([activationDate])
-  @@map("slug_records")
-}
-
 model SlugCheckerLog {
-  id       String        @id @default(uuid())
-  slug     String?       @db.VarChar(20)
-  pattern  String        @db.VarChar(20)
-  source   String        @db.VarChar(20)
-  result   CheckerResult
-  checkedAt DateTime     @default(now()) @map("checked_at")
+  id        String        @id @default(uuid())
+  slug      String?       @db.VarChar(20)
+  pattern   String        @db.VarChar(20)
+  source    String        @db.VarChar(20)
+  result    CheckerResult
+  checkedAt DateTime      @default(now()) @map("checked_at")
 
   @@index([checkedAt])
   @@index([pattern, checkedAt])
@@ -283,50 +167,49 @@ model Testimonial {
 }
 
 model User {
-  id                   String        @id @default(uuid())
-  telegramId           String        @unique @map("telegram_id") @db.VarChar(40)
-  telegramChatId       String?       @unique @map("telegram_chat_id") @db.VarChar(40)
-  telegramUsername     String?       @map("telegram_username") @db.VarChar(120)
-  email                String?       @unique @db.VarChar(190)
-  pendingEmail         String?       @map("pending_email") @db.VarChar(190)
-  passwordHash         String?       @map("password_hash")
-  emailVerified        Boolean       @default(false) @map("email_verified")
-  otpCode              String?       @map("otp_code")
-  otpExpiresAt         DateTime?     @map("otp_expires_at")
-  otpAttempts          Int           @default(0) @map("otp_attempts")
-  resetPasswordToken   String?       @map("reset_password_token")
-  resetPasswordExpiresAt DateTime?   @map("reset_password_expires_at")
-  lastLoginAt          DateTime?     @map("last_login_at")
-  loginAttempts        Int           @default(0) @map("login_attempts")
-  lockedUntil          DateTime?     @map("locked_until")
-  firstName            String        @map("first_name") @db.VarChar(120)
-  lastName             String?       @map("last_name") @db.VarChar(120)
-  username             String?       @db.VarChar(120)
-  photoUrl             String?       @map("photo_url")
-  displayName          String?       @map("display_name") @db.VarChar(120)
-  plan                 UserPlan      @default(none)
-  planPurchasedAt      DateTime?     @map("plan_purchased_at")
-  planUpgradedAt       DateTime?     @map("plan_upgraded_at")
-  welcomeDismissed     Boolean       @default(false) @map("welcome_dismissed")
-  notificationsEnabled Boolean       @default(true) @map("notifications_enabled")
-  status               UserStatus    @default(active)
-  isVerified           Boolean       @default(false) @map("is_verified")
-  verifiedCompany      String?       @map("verified_company") @db.VarChar(160)
-  verifiedAt           DateTime?     @map("verified_at")
-  showInDirectory      Boolean       @default(true) @map("show_in_directory")
-  refCode              String?       @unique @map("ref_code") @db.VarChar(40)
-  createdAt            DateTime      @default(now()) @map("created_at")
-  updatedAt            DateTime      @updatedAt @map("updated_at")
-  slugs                Slug[]
-  profileCard          ProfileCard?
-  slugRequests         SlugRequest[]
-  referralsMade        Referral[]    @relation("ReferrerReferrals")
-  referralsReceived    Referral[]    @relation("ReferredReferrals")
-  dropWaitlistEntries  DropWaitlist[]
-  unqScore             UnqScore?
-  scoreHistory         ScoreHistory[]
-  purchases            Purchase[]
-  verificationRequests VerificationRequest[]
+  id                     String                @id @default(uuid())
+  telegramChatId         String?               @unique @map("telegram_chat_id") @db.VarChar(40)
+  telegramUsername       String?               @map("telegram_username") @db.VarChar(120)
+  email                  String?               @unique @db.VarChar(190)
+  pendingEmail           String?               @map("pending_email") @db.VarChar(190)
+  passwordHash           String?               @map("password_hash")
+  emailVerified          Boolean               @default(false) @map("email_verified")
+  otpCode                String?               @map("otp_code")
+  otpExpiresAt           DateTime?             @map("otp_expires_at")
+  otpAttempts            Int                   @default(0) @map("otp_attempts")
+  resetPasswordToken     String?               @map("reset_password_token")
+  resetPasswordExpiresAt DateTime?             @map("reset_password_expires_at")
+  lastLoginAt            DateTime?             @map("last_login_at")
+  loginAttempts          Int                   @default(0) @map("login_attempts")
+  lockedUntil            DateTime?             @map("locked_until")
+  firstName              String                @map("first_name") @db.VarChar(120)
+  lastName               String?               @map("last_name") @db.VarChar(120)
+  username               String?               @db.VarChar(120)
+  displayName            String?               @map("display_name") @db.VarChar(120)
+  plan                   UserPlan              @default(none)
+  planPurchasedAt        DateTime?             @map("plan_purchased_at")
+  planUpgradedAt         DateTime?             @map("plan_upgraded_at")
+  welcomeDismissed       Boolean               @default(false) @map("welcome_dismissed")
+  notificationsEnabled   Boolean               @default(true) @map("notifications_enabled")
+  status                 UserStatus            @default(active)
+  isVerified             Boolean               @default(false) @map("is_verified")
+  verifiedCompany        String?               @map("verified_company") @db.VarChar(160)
+  verifiedAt             DateTime?             @map("verified_at")
+  showInDirectory        Boolean               @default(true) @map("show_in_directory")
+  refCode                String?               @unique @map("ref_code") @db.VarChar(40)
+  createdAt              DateTime              @default(now()) @map("created_at")
+  updatedAt              DateTime              @updatedAt @map("updated_at")
+  slugs                  Slug[]
+  profileCard            ProfileCard?
+  slugRequests           SlugRequest[]
+  slugWaitlistEntries    SlugWaitlist[]
+  referralsMade          Referral[]            @relation("ReferrerReferrals")
+  referralsReceived      Referral[]            @relation("ReferredReferrals")
+  dropWaitlistEntries    DropWaitlist[]
+  unqScore               UnqScore?
+  scoreHistory           ScoreHistory[]
+  purchases              Purchase[]
+  verificationRequests   VerificationRequest[]
 
   @@index([plan, planPurchasedAt])
   @@index([status])
@@ -334,105 +217,93 @@ model User {
 }
 
 model Slug {
-  id              String      @id @default(uuid())
-  letters         String      @db.VarChar(3)
-  digits          String      @db.VarChar(3)
-  fullSlug        String      @unique @map("full_slug") @db.VarChar(20)
-  ownerTelegramId String?     @map("owner_telegram_id") @db.VarChar(40)
-  owner           User?       @relation(fields: [ownerTelegramId], references: [telegramId], onDelete: SetNull)
-  status          SlugStatus  @default(free)
-  isPrimary       Boolean     @default(false) @map("is_primary")
-  price           Int?
-  pauseMessage    String?     @map("pause_message") @db.VarChar(220)
-  requestedAt     DateTime?   @map("requested_at")
-  pendingExpiresAt DateTime?  @map("pending_expires_at")
-  analyticsViewsCount Int     @default(0) @map("analytics_views_count")
-  approvedAt      DateTime?   @map("approved_at")
-  activatedAt     DateTime?   @map("activated_at")
-  createdAt       DateTime    @default(now()) @map("created_at")
-  updatedAt       DateTime    @updatedAt @map("updated_at")
+  id                 String      @id @default(uuid())
+  letters            String      @db.VarChar(3)
+  digits             String      @db.VarChar(3)
+  fullSlug           String      @unique @map("full_slug") @db.VarChar(20)
+  ownerId            String?     @map("owner_id")
+  owner              User?       @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  status             SlugStatus  @default(free)
+  isPrimary          Boolean     @default(false) @map("is_primary")
+  price              Int?
+  pauseMessage       String?     @map("pause_message") @db.VarChar(220)
+  requestedAt        DateTime?   @map("requested_at")
+  pendingExpiresAt   DateTime?   @map("pending_expires_at")
+  analyticsViewsCount Int        @default(0) @map("analytics_views_count")
+  approvedAt         DateTime?   @map("approved_at")
+  activatedAt        DateTime?   @map("activated_at")
+  createdAt          DateTime    @default(now()) @map("created_at")
+  updatedAt          DateTime    @updatedAt @map("updated_at")
 
-  @@index([ownerTelegramId, status])
+  @@index([ownerId, status])
   @@index([status, updatedAt])
   @@index([analyticsViewsCount(sort: Desc)])
   @@map("slugs")
 }
 
 model SlugWaitlist {
-  id         String   @id @default(uuid())
-  fullSlug   String   @map("full_slug") @db.VarChar(20)
-  telegramId String?  @map("telegram_id") @db.VarChar(40)
-  ipHash     String?  @map("ip_hash") @db.VarChar(64)
-  userAgent  String?  @map("user_agent")
-  createdAt  DateTime @default(now()) @map("created_at")
+  id        String   @id @default(uuid())
+  fullSlug  String   @map("full_slug") @db.VarChar(20)
+  userId    String?  @map("user_id")
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ipHash    String?  @map("ip_hash") @db.VarChar(64)
+  userAgent String?  @map("user_agent")
+  createdAt DateTime @default(now()) @map("created_at")
 
   @@index([fullSlug, createdAt])
-  @@index([telegramId, createdAt])
+  @@index([userId, createdAt])
   @@map("slug_waitlist")
 }
 
 model ProfileCard {
-  id              String    @id @default(uuid())
-  ownerTelegramId String    @unique @map("owner_telegram_id") @db.VarChar(40)
-  owner           User      @relation(fields: [ownerTelegramId], references: [telegramId], onDelete: Cascade)
-  name            String    @db.VarChar(120)
-  role            String?   @db.VarChar(120)
-  bio             String?   @db.VarChar(120)
-  hashtag         String?   @db.VarChar(50)
-  address         String?
-  postcode        String?   @db.VarChar(20)
-  email           String?   @db.VarChar(100)
-  extraPhone      String?   @map("extra_phone") @db.VarChar(30)
-  avatarUrl       String?   @map("avatar_url")
-  tags            Json      @default("[]")
-  buttons         Json      @default("[]")
-  theme           CardTheme @default(default_dark)
-  customColor     String?   @map("custom_color") @db.VarChar(20)
-  showBranding    Boolean   @default(true) @map("show_branding")
-  createdAt       DateTime  @default(now()) @map("created_at")
-  updatedAt       DateTime  @updatedAt @map("updated_at")
+  id           String    @id @default(uuid())
+  ownerId      String    @unique @map("owner_id")
+  owner        User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  name         String    @db.VarChar(120)
+  role         String?   @db.VarChar(120)
+  bio          String?   @db.VarChar(120)
+  email        String?   @db.VarChar(100)
+  avatarUrl    String?   @map("avatar_url")
+  tags         Json      @default("[]")
+  buttons      Json      @default("[]")
+  theme        CardTheme @default(default_dark)
+  customColor  String?   @map("custom_color") @db.VarChar(20)
+  showBranding Boolean   @default(true) @map("show_branding")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
 
   @@map("profile_cards")
 }
 
 model SlugRequest {
-  id            String            @id @default(uuid())
-  telegramId    String            @map("telegram_id") @db.VarChar(40)
-  user          User              @relation(fields: [telegramId], references: [telegramId], onDelete: Cascade)
-  slug          String            @db.VarChar(20)
-  slugPrice     Int               @map("slug_price")
-  requestedPlan UserPlan          @map("requested_plan")
-  planPrice     Int               @default(0) @map("plan_price")
-  bracelet      Boolean           @default(false)
-  contact       String            @db.VarChar(140)
-  status        SlugRequestStatus @default(new)
-  adminNote     String?           @map("admin_note")
-  dropId        String?           @map("drop_id")
-  drop          Drop?             @relation(fields: [dropId], references: [id], onDelete: SetNull)
-  flashSaleId   String?           @map("flash_sale_id")
-  flashSale     FlashSale?        @relation(fields: [flashSaleId], references: [id], onDelete: SetNull)
-  flashDiscountAmount Int         @default(0) @map("flash_discount_amount")
-  createdAt     DateTime          @default(now()) @map("created_at")
-  updatedAt     DateTime          @updatedAt @map("updated_at")
+  id                 String            @id @default(uuid())
+  userId             String            @map("user_id")
+  user               User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  slug               String            @db.VarChar(20)
+  slugPrice          Int               @map("slug_price")
+  requestedPlan      UserPlan          @map("requested_plan")
+  planPrice          Int               @default(0) @map("plan_price")
+  bracelet           Boolean           @default(false)
+  status             SlugRequestStatus @default(new)
+  adminNote          String?           @map("admin_note")
+  dropId             String?           @map("drop_id")
+  drop               Drop?             @relation(fields: [dropId], references: [id], onDelete: SetNull)
+  flashSaleId        String?           @map("flash_sale_id")
+  flashSale          FlashSale?        @relation(fields: [flashSaleId], references: [id], onDelete: SetNull)
+  flashDiscountAmount Int              @default(0) @map("flash_discount_amount")
+  createdAt          DateTime          @default(now()) @map("created_at")
+  updatedAt          DateTime          @updatedAt @map("updated_at")
 
-  @@index([telegramId, createdAt])
+  @@index([userId, createdAt])
   @@index([status, createdAt])
   @@index([slug])
   @@map("slug_requests")
 }
 
-enum PurchaseType {
-  slug
-  basic_plan
-  premium_plan
-  upgrade_to_premium
-  bracelet
-}
-
 model Purchase {
   id              String       @id @default(uuid())
-  telegramId      String       @map("telegram_id") @db.VarChar(40)
-  user            User         @relation(fields: [telegramId], references: [telegramId], onDelete: Cascade)
+  userId          String       @map("user_id")
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   type            PurchaseType
   amount          Int
   slug            String?      @db.VarChar(20)
@@ -441,39 +312,10 @@ model Purchase {
   approvedAt      DateTime?    @map("approved_at")
   note            String?
 
-  @@index([telegramId, purchasedAt(sort: Desc)])
+  @@index([userId, purchasedAt(sort: Desc)])
   @@index([type, purchasedAt(sort: Desc)])
   @@index([slug])
   @@map("purchases")
-}
-
-model SlugView {
-  id       String   @id @default(uuid())
-  fullSlug String   @map("full_slug") @db.VarChar(20)
-  viewedAt DateTime @default(now()) @map("viewed_at")
-  device   String?  @db.VarChar(20)
-  ipHash   String?  @map("ip_hash") @db.VarChar(64)
-  isUnique Boolean  @default(false) @map("is_unique")
-
-  @@index([fullSlug, viewedAt])
-  @@index([fullSlug, ipHash, viewedAt])
-  @@index([viewedAt])
-  @@index([isUnique, viewedAt])
-  @@map("slug_views")
-}
-
-model SlugClick {
-  id       String   @id @default(uuid())
-  fullSlug String   @map("full_slug") @db.VarChar(20)
-  clickedAt DateTime @default(now()) @map("clicked_at")
-  device   String?  @db.VarChar(20)
-  ipHash   String?  @map("ip_hash") @db.VarChar(64)
-  isUnique Boolean  @default(false) @map("is_unique")
-
-  @@index([fullSlug, clickedAt])
-  @@index([fullSlug, ipHash, clickedAt])
-  @@index([clickedAt])
-  @@map("slug_clicks")
 }
 
 model AnalyticsView {
@@ -504,8 +346,8 @@ model AnalyticsClick {
 
 model VerificationRequest {
   id          String   @id @default(uuid())
-  telegramId  String   @map("telegram_id") @db.VarChar(40)
-  user        User     @relation(fields: [telegramId], references: [telegramId], onDelete: Cascade)
+  userId      String   @map("user_id")
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   slug        String   @db.VarChar(20)
   companyName String   @map("company_name") @db.VarChar(160)
   role        String   @db.VarChar(160)
@@ -517,7 +359,7 @@ model VerificationRequest {
   requestedAt DateTime @default(now()) @map("requested_at")
   reviewedAt  DateTime? @map("reviewed_at")
 
-  @@index([telegramId, status])
+  @@index([userId, status])
   @@index([status, requestedAt(sort: Desc)])
   @@map("verification_requests")
 }
@@ -533,8 +375,8 @@ model DirectoryExclusion {
 }
 
 model UnqScore {
-  telegramId      String   @id @map("telegram_id") @db.VarChar(40)
-  user            User     @relation(fields: [telegramId], references: [telegramId], onDelete: Cascade)
+  userId          String   @id @map("user_id")
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   score           Int      @default(0)
   scoreViews      Int      @default(0) @map("score_views")
   scoreSlugRarity Int      @default(0) @map("score_slug_rarity")
@@ -553,78 +395,70 @@ model UnqScore {
 
 model ScoreHistory {
   id         String   @id @default(uuid())
-  telegramId String   @map("telegram_id") @db.VarChar(40)
-  user       User     @relation(fields: [telegramId], references: [telegramId], onDelete: Cascade)
+  userId     String   @map("user_id")
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   score      Int
   recordedAt DateTime @map("recorded_at")
 
-  @@unique([telegramId, recordedAt])
+  @@unique([userId, recordedAt])
   @@index([recordedAt])
-  @@index([telegramId, recordedAt])
+  @@index([userId, recordedAt])
   @@map("score_history")
 }
 
 model ScoreRecalculationRun {
-  id              String   @id @default(uuid())
-  processedUsers  Int      @default(0) @map("processed_users")
-  averageMsPerUser Float   @default(0) @map("average_ms_per_user")
-  startedAt       DateTime @default(now()) @map("started_at")
-  finishedAt      DateTime @default(now()) @map("finished_at")
+  id               String   @id @default(uuid())
+  processedUsers   Int      @default(0) @map("processed_users")
+  averageMsPerUser Float    @default(0) @map("average_ms_per_user")
+  startedAt        DateTime @default(now()) @map("started_at")
+  finishedAt       DateTime @default(now()) @map("finished_at")
 
   @@index([startedAt(sort: Desc)])
   @@map("score_recalculation_runs")
 }
 
 model ReferralRewardRule {
-  id                 String             @id @default(uuid())
-  requiredPaidFriends Int               @unique @map("required_paid_friends")
-  rewardType         ReferralRewardType @map("reward_type")
-  rewardValue        Int?               @map("reward_value")
-  isActive           Boolean            @default(true) @map("is_active")
-  createdAt          DateTime           @default(now()) @map("created_at")
-  updatedAt          DateTime           @updatedAt @map("updated_at")
-  referrals          Referral[]
+  id                  String             @id @default(uuid())
+  requiredPaidFriends Int                @unique @map("required_paid_friends")
+  rewardType          ReferralRewardType @map("reward_type")
+  rewardValue         Int?               @map("reward_value")
+  isActive            Boolean            @default(true) @map("is_active")
+  createdAt           DateTime           @default(now()) @map("created_at")
+  updatedAt           DateTime           @updatedAt @map("updated_at")
+  referrals           Referral[]
 
   @@map("referral_reward_rules")
 }
 
 model Referral {
-  id                 String             @id @default(uuid())
-  referrerTelegramId String             @map("referrer_telegram_id") @db.VarChar(40)
-  referrer           User               @relation("ReferrerReferrals", fields: [referrerTelegramId], references: [telegramId], onDelete: Cascade)
-  referredTelegramId String             @unique @map("referred_telegram_id") @db.VarChar(40)
-  referred           User               @relation("ReferredReferrals", fields: [referredTelegramId], references: [telegramId], onDelete: Cascade)
-  refCode            String             @map("ref_code") @db.VarChar(40)
-  status             ReferralStatus     @default(registered)
-  rewardType         ReferralRewardType? @map("reward_type")
-  rewardedRuleId     String?            @map("rewarded_rule_id")
-  rewardedRule       ReferralRewardRule? @relation(fields: [rewardedRuleId], references: [id], onDelete: SetNull)
-  createdAt          DateTime           @default(now()) @map("created_at")
-  rewardedAt         DateTime?          @map("rewarded_at")
-  updatedAt          DateTime           @updatedAt @map("updated_at")
+  id             String              @id @default(uuid())
+  referrerId     String              @map("referrer_id")
+  referrer       User                @relation("ReferrerReferrals", fields: [referrerId], references: [id], onDelete: Cascade)
+  referredId     String              @unique @map("referred_id")
+  referred       User                @relation("ReferredReferrals", fields: [referredId], references: [id], onDelete: Cascade)
+  refCode        String              @map("ref_code") @db.VarChar(40)
+  status         ReferralStatus      @default(registered)
+  rewardType     ReferralRewardType? @map("reward_type")
+  rewardedRuleId String?             @map("rewarded_rule_id")
+  rewardedRule   ReferralRewardRule? @relation(fields: [rewardedRuleId], references: [id], onDelete: SetNull)
+  createdAt      DateTime            @default(now()) @map("created_at")
+  rewardedAt     DateTime?           @map("rewarded_at")
+  updatedAt      DateTime            @updatedAt @map("updated_at")
 
-  @@index([referrerTelegramId, status])
+  @@index([referrerId, status])
   @@index([createdAt])
   @@map("referrals")
 }
 
-model FeatureSetting {
-  key       String   @id @db.VarChar(80)
-  value     Json     @default("{}")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  @@map("feature_settings")
-}
-
 model PlatformSetting {
-  key         String           @id @db.VarChar(120)
-  value       Json             @default("{}")
-  group       String           @db.VarChar(60)
-  label       String           @db.VarChar(180)
+  key         String                 @id @db.VarChar(120)
+  value       Json                   @default("{}")
+  group       String                 @db.VarChar(60)
+  label       String                 @db.VarChar(180)
   description String?
   type        SettingValueType
-  updatedAt   DateTime         @updatedAt @map("updated_at")
-  updatedBy   String?          @map("updated_by") @db.VarChar(80)
+  updatedAt   DateTime               @updatedAt @map("updated_at")
+  updatedBy   String?                @map("updated_by") @db.VarChar(80)
   changes     PlatformSettingChange[]
 
   @@index([group])
@@ -699,14 +533,14 @@ model DropWaitlist {
   id              String   @id @default(uuid())
   dropId          String   @map("drop_id")
   drop            Drop     @relation(fields: [dropId], references: [id], onDelete: Cascade)
-  telegramId      String   @map("telegram_id") @db.VarChar(40)
-  user            User     @relation(fields: [telegramId], references: [telegramId], onDelete: Cascade)
+  userId          String   @map("user_id")
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   joinedAt        DateTime @default(now()) @map("joined_at")
   notifiedAt      DateTime? @map("notified_at")
   notified15mAt   DateTime? @map("notified_15m_at")
   notifiedStartAt DateTime? @map("notified_start_at")
 
-  @@unique([dropId, telegramId])
+  @@unique([dropId, userId])
   @@index([dropId, joinedAt])
   @@map("drop_waitlist")
 }
