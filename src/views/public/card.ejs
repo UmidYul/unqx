@@ -7,6 +7,54 @@
   const pageBaseUrl = typeof baseUrl === "string" && baseUrl ? baseUrl : "";
   const pageCanonicalUrl =
     typeof canonicalUrl === "string" && canonicalUrl ? canonicalUrl : `${pageBaseUrl}/${pageCardRaw.slug || "unknown"}`;
+  const isSupportedButtonHref = (value) => /^(https?:\/\/|mailto:|tel:)/i.test(String(value || "").trim());
+  const normalizeButtonUrl = (rawUrl, type) => {
+    const input = String(rawUrl || "").trim();
+    const kind = String(type || "other")
+      .trim()
+      .toLowerCase();
+    if (!input) return "";
+    if (isSupportedButtonHref(input)) return input;
+    if (kind === "phone") {
+      const compact = input.replace(/\s+/g, "");
+      return compact ? `tel:${compact}` : "";
+    }
+    if (kind === "website" || kind === "other") {
+      if (/^[^\s]+\.[^\s]+$/.test(input) && !input.startsWith("@")) {
+        return `https://${input}`;
+      }
+    }
+    if (kind === "telegram") {
+      const normalized = input.replace(/^@+/, "").replace(/^https?:\/\/t\.me\//i, "").trim();
+      return normalized ? `https://t.me/${normalized}` : "";
+    }
+    if (kind === "instagram") {
+      const normalized = input
+        .replace(/^@+/, "")
+        .replace(/^https?:\/\/(www\.)?instagram\.com\//i, "")
+        .replace(/\/+$/, "")
+        .trim();
+      return normalized ? `https://instagram.com/${normalized}` : "";
+    }
+    if (kind === "tiktok") {
+      const normalized = input
+        .replace(/^https?:\/\/(www\.)?tiktok\.com\//i, "")
+        .replace(/^@+/, "")
+        .replace(/\/+$/, "")
+        .trim();
+      if (!normalized) return "";
+      return normalized.startsWith("@") ? `https://tiktok.com/${normalized}` : `https://tiktok.com/@${normalized}`;
+    }
+    if (kind === "youtube") {
+      if (/^(?:@[\w.-]+)$/i.test(input)) return `https://youtube.com/${input}`;
+      if (/^[\w.-]+$/i.test(input)) return `https://youtube.com/@${input}`;
+    }
+    if (kind === "whatsapp") {
+      const digits = input.replace(/[^\d]/g, "");
+      return digits ? `https://wa.me/${digits}` : "";
+    }
+    return input;
+  };
 
   const pageCard = {
     slug: (typeof pageCardRaw.slug === "string" ? pageCardRaw.slug : "unknown").toUpperCase(),
@@ -38,10 +86,10 @@
           .map((button) => ({
             type: typeof button.type === "string" ? button.type.trim().toLowerCase() : "other",
             label: typeof button.label === "string" ? button.label.trim() : "",
-            url: typeof button.url === "string" ? button.url.trim() : "",
+            url: normalizeButtonUrl(button && (button.url || button.href || button.value || ""), button?.type || "other"),
             isActive: Boolean(button.isActive),
           }))
-          .filter((button) => button.isActive && button.label.length > 0 && /^https?:\/\//i.test(button.url))
+          .filter((button) => button.isActive && button.label.length > 0 && isSupportedButtonHref(button.url))
       : [],
     hashtag: pageCardRaw.hashtag || "",
     address: pageCardRaw.address || "",
