@@ -319,7 +319,7 @@
   function normalizeCard(input) {
     const card = input && typeof input === "object" ? input : {};
     const plan = card.tariff === "premium" ? "premium" : "basic";
-    const buttonLimit = plan === "premium" ? 6 : 3;
+    const buttonLimit = 6;
     const tags = Array.isArray(card.tags)
       ? card.tags
         .map((tag) => String((tag && typeof tag === "object" ? tag.label : tag) || "").trim())

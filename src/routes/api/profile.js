@@ -192,7 +192,10 @@ function buildProfileCardColumnValues(input) {
 
 async function upsertProfileCardCompat(db, input) {
   const allValues = buildProfileCardColumnValues(input);
-  const entries = PROFILE_CARD_BASE_COLUMNS.map((column) => [column, allValues[column]]);
+  const requiredColumns = new Set(["owner_id", "name"]);
+  const entries = PROFILE_CARD_BASE_COLUMNS
+    .map((column) => [column, allValues[column]])
+    .filter(([column, value]) => requiredColumns.has(column) || value !== undefined);
 
   const columns = entries.map(([column]) => column);
   const values = entries.map(([, value]) => value);
