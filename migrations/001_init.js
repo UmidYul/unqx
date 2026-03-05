@@ -31,7 +31,7 @@ module.exports = {
       DO $$
       BEGIN
         IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'cardtheme') THEN
-          CREATE TYPE cardtheme AS ENUM ('default_dark', 'arctic', 'linen', 'marble', 'forest');
+          CREATE TYPE cardtheme AS ENUM ('default_dark', 'light_minimal', 'gradient', 'neon', 'corporate');
         END IF;
       END $$;
 
