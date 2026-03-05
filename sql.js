@@ -14,7 +14,7 @@ async function runSQL() {
         await client.connect();
         console.log("✅ Connected to PostgreSQL");
 
-        const sql = fs.readFileSync("./dump (3).sql", "utf8");
+        const sql = fs.readFileSync("./migration_cleanup.sql", "utf8");
 
         await client.query(sql);
 
