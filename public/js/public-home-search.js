@@ -1,4 +1,4 @@
-const DEFAULT_SLUG_PRICING = {
+const DEFAULT_HOME_SLUG_PRICING = {
   basePrice: 100_000,
   lettersAllSame: 5,
   lettersSequential: 3,
@@ -12,7 +12,7 @@ const DEFAULT_SLUG_PRICING = {
   digitsPalindrome: 1.5,
   digitsRandom: 1,
 };
-let slugPricingConfig = { ...DEFAULT_SLUG_PRICING };
+let slugPricingConfig = { ...DEFAULT_HOME_SLUG_PRICING };
 
 (function initPublicHomePage() {
   const pageNode = document.querySelector('[data-page="public-home"]');
@@ -42,10 +42,10 @@ async function loadSlugPricingConfig() {
     if (!response.ok) return;
     const payload = await response.json().catch(() => ({}));
     if (payload && typeof payload === "object") {
-      slugPricingConfig = { ...DEFAULT_SLUG_PRICING, ...payload };
+      slugPricingConfig = { ...DEFAULT_HOME_SLUG_PRICING, ...payload };
     }
   } catch {
-    slugPricingConfig = { ...DEFAULT_SLUG_PRICING };
+    slugPricingConfig = { ...DEFAULT_HOME_SLUG_PRICING };
   }
 }
 
@@ -103,7 +103,7 @@ function splitSlug(value) {
 }
 
 function getLetterMultiplier(letters) {
-  const cfg = slugPricingConfig || DEFAULT_SLUG_PRICING;
+  const cfg = slugPricingConfig || DEFAULT_HOME_SLUG_PRICING;
   const upper = normalizeLetters(letters);
   if (upper.length !== 3) {
     return { multiplier: 1, label: "..." };
@@ -130,7 +130,7 @@ function getLetterMultiplier(letters) {
 }
 
 function getDigitMultiplier(digits) {
-  const cfg = slugPricingConfig || DEFAULT_SLUG_PRICING;
+  const cfg = slugPricingConfig || DEFAULT_HOME_SLUG_PRICING;
   const normalized = normalizeDigits(digits);
   if (normalized.length !== 3) {
     return { multiplier: 1, label: "..." };
@@ -176,7 +176,7 @@ function calculateSlugPricing(letters, digits) {
 
   const letterData = getLetterMultiplier(normalizedLetters);
   const digitData = getDigitMultiplier(normalizedDigits);
-  const total = Number(slugPricingConfig?.basePrice || DEFAULT_SLUG_PRICING.basePrice) * letterData.multiplier * digitData.multiplier;
+  const total = Number(slugPricingConfig?.basePrice || DEFAULT_HOME_SLUG_PRICING.basePrice) * letterData.multiplier * digitData.multiplier;
 
   return {
     letters: normalizedLetters,
@@ -849,7 +849,7 @@ function initSlugCalculator(orderApi) {
       resultFormula.textContent = `Flash sale применён (-${serverPricing.flash.discountPercent}%)`;
     } else {
       animateNumberText(resultPrice, lastAnimatedPrice, finalPrice);
-      resultFormula.textContent = `${formatPrice(slugPricingConfig.basePrice || DEFAULT_SLUG_PRICING.basePrice)} x ${pricing.letterData.multiplier} x ${pricing.digitData.multiplier} = ${formatPrice(finalPrice)} сум`;
+      resultFormula.textContent = `${formatPrice(slugPricingConfig.basePrice || DEFAULT_HOME_SLUG_PRICING.basePrice)} x ${pricing.letterData.multiplier} x ${pricing.digitData.multiplier} = ${formatPrice(finalPrice)} сум`;
     }
     lastAnimatedPrice = finalPrice;
     letterMeta.textContent = `${pricing.letterData.label} x${pricing.letterData.multiplier}`;

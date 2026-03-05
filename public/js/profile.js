@@ -35,6 +35,7 @@
   };
 
   const fp = (v) => `${Number(v || 0).toLocaleString("ru-RU")} сум`;
+  const DEFAULT_PROFILE_AVATAR = "/brand/profile-thin.svg";
   const fh = (v) => {
     if (!v) return "—";
     const diff = Math.max(0, Date.now() - new Date(v).getTime());
@@ -350,7 +351,7 @@
 
   const renderSidebar = () => {
     if (!s.user) return;
-    if (el.av) el.av.src = s.user.photoUrl || "/brand/logo.PNG";
+    if (el.av) el.av.src = s.user.photoUrl || DEFAULT_PROFILE_AVATAR;
     if (el.nm) el.nm.textContent = s.user.displayName || s.user.firstName || "UNQ+ User";
     if (el.un) el.un.textContent = s.user.username ? `@${s.user.username}` : "@—";
     const plan = s.user.plan || "none";
@@ -364,8 +365,10 @@
       }
     }
     if (el.ex) {
+      const hasSelectedPlan = plan !== "none";
+      el.ex.classList.toggle("hidden", !hasSelectedPlan);
       el.ex.textContent = s.user.planPurchasedAt ? `Куплено: ${fd(s.user.planPurchasedAt)}` : "Куплено: —";
-      if (s.user.planPurchasedAt) {
+      if (s.user.planPurchasedAt && hasSelectedPlan) {
         el.ex.title = `Куплено ${fd(s.user.planPurchasedAt)}`;
       } else {
         el.ex.removeAttribute("title");
@@ -565,7 +568,7 @@
         postcode: String(el.cPostcode?.value || "").trim(),
         email: String(el.cEmail?.value || "").trim(),
         extraPhone: String(el.cExtraPhone?.value || "").trim(),
-        avatarUrl: avatarUrl && !avatarUrl.includes("/brand/logo.PNG") ? avatarUrl : null,
+        avatarUrl: avatarUrl && !avatarUrl.includes(DEFAULT_PROFILE_AVATAR) ? avatarUrl : null,
         tags: (s.tags || []).map((tag) => ({ label: String(tag || "") })),
         buttons: (s.buttons || []).map((button) => ({
           type: String(button?.type || "other")
@@ -623,7 +626,7 @@
 
     const card = s.card || {};
 
-    if (el.cAv) el.cAv.src = card.avatarUrl || s.user?.photoUrl || "/brand/logo.PNG";
+    if (el.cAv) el.cAv.src = card.avatarUrl || s.user?.photoUrl || DEFAULT_PROFILE_AVATAR;
     if (el.cName) el.cName.value = card.name || s.user?.displayName || s.user?.firstName || "";
     if (el.cRole) el.cRole.value = card.role || "";
     if (el.cBio) el.cBio.value = card.bio || "";
@@ -716,7 +719,16 @@
   const renderSettings = () => {
     if (!s.user) return;
     if (el.stName) el.stName.value = s.user.displayName || s.user.firstName || "";
-    if (el.stEmail) el.stEmail.value = s.user.email || "";
+    if (el.stEmail) {
+      const accountEmail = String(s.user.email || "").trim();
+      const pendingEmail = String(s.user.pendingEmail || "").trim();
+      el.stEmail.value = pendingEmail || accountEmail || "Не указан";
+      if (pendingEmail) {
+        el.stEmail.title = "Ожидает подтверждения";
+      } else {
+        el.stEmail.removeAttribute("title");
+      }
+    }
     if (el.stTg) el.stTg.value = s.user.username ? `@${s.user.username}` : "";
     if (el.stNotif) el.stNotif.checked = Boolean(s.user.notificationsEnabled);
     if (el.stDirectory) el.stDirectory.checked = Boolean(s.user.showInDirectory);

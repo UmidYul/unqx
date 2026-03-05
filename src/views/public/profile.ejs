@@ -31,7 +31,7 @@
     <div class="mx-auto grid min-w-0 w-full max-w-6xl gap-4 md:gap-6 lg:grid-cols-[300px_1fr]">
       <aside class="min-w-0 rounded-2xl border border-neutral-200 bg-white p-4 sm:p-5">
         <div class="flex items-center gap-3">
-          <img id="profile-sidebar-avatar" src="/brand/logo.PNG" alt="avatar" class="h-14 w-14 rounded-full border border-neutral-200 object-cover" />
+          <img id="profile-sidebar-avatar" src="/brand/profile-thin.svg" alt="avatar" class="h-14 w-14 rounded-full border border-neutral-200 object-cover" />
           <div>
             <p id="profile-sidebar-name" class="text-base font-semibold text-neutral-900">Загрузка...</p>
             <p id="profile-sidebar-username" class="text-sm text-neutral-500">@—</p>
@@ -39,7 +39,7 @@
         </div>
         <div class="mt-4 space-y-2 rounded-xl border border-neutral-200 bg-neutral-50 p-3">
           <p id="profile-sidebar-plan" class="inline-flex rounded-full border border-neutral-300 px-2.5 py-1 text-xs font-semibold">БАЗОВЫЙ</p>
-          <p id="profile-sidebar-expiry" class="text-xs text-neutral-500">Куплено: —</p>
+          <p id="profile-sidebar-expiry" class="hidden text-xs text-neutral-500">Куплено: —</p>
           <button id="profile-sidebar-choose-plan" type="button" data-order-link data-order-plan="basic" class="interactive-btn hidden min-h-11 rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold text-left">
             Купить тариф →
           </button>
@@ -105,7 +105,7 @@
               <div>
                 <label class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Аватар</label>
                 <div class="flex flex-wrap items-center gap-3">
-                  <img id="profile-card-avatar-preview" src="/brand/logo.PNG" alt="avatar" class="h-16 w-16 rounded-full border border-neutral-200 object-cover" />
+                  <img id="profile-card-avatar-preview" src="/brand/profile-thin.svg" alt="avatar" class="h-16 w-16 rounded-full border border-neutral-200 object-cover" />
                   <div class="flex flex-wrap gap-2">
                     <label for="profile-card-avatar-file" class="inline-flex min-h-11 cursor-pointer items-center justify-center rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold">Загрузить</label>
                     <input id="profile-card-avatar-file" type="file" accept="image/png,image/jpeg,image/webp" class="hidden" />
