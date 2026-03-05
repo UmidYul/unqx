@@ -81,44 +81,6 @@ async function seedTestimonials() {
   }
 }
 
-async function backfillSlugRecords() {
-  try {
-    const cards = await prisma.card.findMany({
-      select: {
-        id: true,
-        slug: true,
-        name: true,
-        createdAt: true,
-      },
-    });
-
-    for (const card of cards) {
-      await prisma.slugRecord.upsert({
-        where: { slug: card.slug },
-        create: {
-          slug: card.slug,
-          state: "TAKEN",
-          ownerName: card.name,
-          cardId: card.id,
-          activationDate: card.createdAt,
-        },
-        update: {
-          state: "TAKEN",
-          ownerName: card.name,
-          cardId: card.id,
-          activationDate: card.createdAt,
-        },
-      });
-    }
-  } catch (error) {
-    if (isMissingModelTable(error, "SlugRecord")) {
-      console.warn("[express-app] skip slug backfill: slug_records table is not migrated yet");
-      return;
-    }
-    throw error;
-  }
-}
-
 async function runBootstrapTasks() {
   if (started) {
     return;
@@ -128,9 +90,8 @@ async function runBootstrapTasks() {
   try {
     await ensurePlatformSettingsSeeded();
 
-    const [testimonialsReady, slugRecordsReady] = await Promise.all([
+    const [testimonialsReady] = await Promise.all([
       hasTable("testimonials"),
-      hasTable("slug_records"),
     ]);
 
     if (testimonialsReady) {
@@ -139,11 +100,6 @@ async function runBootstrapTasks() {
       console.warn("[express-app] skip testimonial seed: testimonials table is not migrated yet");
     }
 
-    if (slugRecordsReady) {
-      await backfillSlugRecords();
-    } else {
-      console.warn("[express-app] skip slug backfill: slug_records table is not migrated yet");
-    }
   } catch (error) {
     console.error("[express-app] bootstrap tasks failed", error);
   }

@@ -4,13 +4,11 @@ const { prisma } = require("../../db/prisma");
 const { env } = require("../../config/env");
 const { asyncHandler } = require("../../middleware/async");
 const { getAdminSession, requireVerifiedUserPage, getUserSession } = require("../../middleware/auth");
-const { getPublicCardBySlug } = require("../../services/cards");
 const { getEffectivePlan } = require("../../services/profile");
 const { absoluteUrl } = require("../../utils/url");
 const { buildLeaderboard, normalizePeriod, getSlugTopBadge, getUserLeaderboardSummary } = require("../../services/leaderboard");
 const { getFeatureSetting } = require("../../services/feature-settings");
 const { getActiveFlashSale, resolveConditionLabel, getFlashSaleSlotsLeft } = require("../../services/flash-sales");
-const { getPublicScoreForSlug } = require("../../services/unq-score");
 const { normalizeRefCode } = require("../../services/referrals");
 const { getPricingSettings } = require("../../services/pricing-settings");
 const { getManySettings } = require("../../services/platform-settings");
@@ -75,15 +73,14 @@ function isUserMissingColumnError(error) {
   return error.code === "P2022";
 }
 
-async function findUserByTelegramIdWithLegacyFallback(telegramId) {
+async function findUserByTelegramIdWithLegacyFallback(userId) {
   try {
     return await prisma.user.findUnique({
-      where: { telegramId },
+      where: { id: userId },
       select: {
-        telegramId: true,
+        id: true,
         firstName: true,
         username: true,
-        photoUrl: true,
         displayName: true,
         status: true,
         plan: true,
@@ -97,12 +94,11 @@ async function findUserByTelegramIdWithLegacyFallback(telegramId) {
     }
     const rows = await prisma.$queryRaw`
       SELECT
-        telegram_id AS "telegramId",
+        id,
         first_name AS "firstName",
-        username,
-        photo_url AS "photoUrl"
+        username
       FROM users
-      WHERE telegram_id = ${telegramId}
+      WHERE id = ${userId}
       LIMIT 1
     `;
     const row = Array.isArray(rows) ? rows[0] : null;
@@ -144,7 +140,7 @@ async function findSlugByFullSlugWithLegacyFallback(fullSlug) {
         id: true,
         fullSlug: true,
         price: true,
-        ownerTelegramId: true,
+        ownerId: true,
         status: true,
         isPrimary: true,
         createdAt: true,
@@ -161,7 +157,7 @@ async function findSlugByFullSlugWithLegacyFallback(fullSlug) {
         id,
         full_slug AS "fullSlug",
         price,
-        owner_telegram_id AS "ownerTelegramId",
+        owner_id AS "ownerId",
         status::text AS "status",
         is_primary AS "isPrimary",
         NULL::text AS "pauseMessage",
@@ -186,6 +182,31 @@ async function findSlugByFullSlugWithLegacyFallback(fullSlug) {
       owner: null,
     };
   }
+}
+
+async function findProfileCardByOwnerId(ownerId) {
+  if (!ownerId) return null;
+  const rows = await prisma.$queryRaw`
+    SELECT
+      id,
+      owner_id AS "ownerId",
+      name,
+      role,
+      bio,
+      email,
+      avatar_url AS "avatarUrl",
+      tags,
+      buttons,
+      theme,
+      custom_color AS "customColor",
+      show_branding AS "showBranding",
+      created_at AS "createdAt",
+      updated_at AS "updatedAt"
+    FROM profile_cards
+    WHERE owner_id = ${ownerId}
+    LIMIT 1
+  `;
+  return Array.isArray(rows) ? rows[0] || null : null;
 }
 
 function mapProfileButtons(rawButtons) {
@@ -247,7 +268,7 @@ function buildPublicCardFromProfile({ slug, user, profileCard, viewsCount }) {
   return {
     slug,
     slugPrice: Number.isFinite(Number(profileCard.slugPrice)) ? Number(profileCard.slugPrice) : null,
-    avatarUrl: profileCard.avatarUrl || user?.photoUrl || null,
+    avatarUrl: profileCard.avatarUrl || null,
     name: profileCard.name,
     verified: Boolean(user?.isVerified),
     tariff: plan,
@@ -487,7 +508,7 @@ router.get(
   requireVerifiedUserPage,
   asyncHandler(async (req, res) => {
     const sessionUser = getUserSession(req);
-    const user = sessionUser?.telegramId ? await findUserByTelegramIdWithLegacyFallback(sessionUser.telegramId) : null;
+    const user = sessionUser?.userId ? await findUserByTelegramIdWithLegacyFallback(sessionUser.userId) : null;
 
     if (!user || user.status === "blocked" || user.status === "deactivated") {
       res.redirect("/login");
@@ -521,9 +542,9 @@ router.get(
       buildLeaderboard(period),
       (() => {
         const user = getUserSession(req);
-        if (!user?.telegramId) return Promise.resolve(null);
+        if (!user?.userId) return Promise.resolve(null);
         return getUserLeaderboardSummary({
-          telegramId: user.telegramId,
+          userId: user.userId,
           period,
         });
       })(),
@@ -535,7 +556,7 @@ router.get(
       image: defaultSocialImage,
       period: board.period,
       items: board.publicItems,
-      viewerTelegramId: getUserSession(req)?.telegramId || "",
+      viewerTelegramId: getUserSession(req)?.userId || "",
       userSummary,
       leaderboardSettings: board.settings,
       adminSession: getAdminSession(req),
@@ -715,7 +736,6 @@ router.get(
 
     const where = {
       status: "active",
-      ownerTelegramId: { not: null },
       owner: {
         status: "active",
         showInDirectory: true,
@@ -734,10 +754,9 @@ router.get(
       include: {
         owner: {
           select: {
-            telegramId: true,
+            id: true,
             firstName: true,
             displayName: true,
-            photoUrl: true,
             isVerified: true,
             verifiedCompany: true,
             unqScore: {
@@ -773,7 +792,7 @@ router.get(
           role: owner.profileCard?.role || "",
           bio: owner.profileCard?.bio || "",
           tags: tags.map((tag) => String(tag || "").trim()).filter(Boolean),
-          avatarUrl: owner.profileCard?.avatarUrl || owner.photoUrl || null,
+          avatarUrl: owner.profileCard?.avatarUrl || null,
           isVerified: Boolean(owner.isVerified),
           verifiedCompany: owner.verifiedCompany || "",
           score: Number(owner.unqScore?.score || 0),
@@ -819,7 +838,7 @@ router.get(
   asyncHandler(async (req, res) => {
     const slug = sanitizeSlug(req.params.slug);
     const slugRow = await findSlugByFullSlugWithLegacyFallback(slug);
-    if (!slugRow || !["active", "private"].includes(slugRow.status) || !slugRow.ownerTelegramId) {
+    if (!slugRow || !["active", "private"].includes(slugRow.status) || !slugRow.ownerId) {
       res.status(404).render("public/not-found", {
         title: "Визитка не найдена",
         slug,
@@ -828,13 +847,9 @@ router.get(
       return;
     }
 
-    const [owner, profileCard, score] = await Promise.all([
-      findUserByTelegramIdWithLegacyFallback(slugRow.ownerTelegramId),
-      prisma.profileCard.findUnique({
-        where: { ownerTelegramId: slugRow.ownerTelegramId },
-        select: { name: true, role: true },
-      }),
-      getPublicScoreForSlug({ slug, viewerTelegramId: null }),
+    const [owner, profileCard] = await Promise.all([
+      findUserByTelegramIdWithLegacyFallback(slugRow.ownerId),
+      findProfileCardByOwnerId(slugRow.ownerId),
     ]);
 
     if (!owner || owner.status !== "active") {
@@ -857,7 +872,7 @@ router.get(
       url: absoluteUrl(`/${slug}`),
       ownerName: profileCard?.name || owner.displayName || owner.firstName || "UNQ+ User",
       ownerRole: profileCard?.role || "",
-      score: score ? Number(score.score || 0) : 0,
+      score: 0,
       unavailable: false,
       noindex: slugRow.status === "private",
       adminSession: getAdminSession(req),
@@ -935,8 +950,8 @@ router.get(
       if (slugRow.status === "paused") {
         const owner = slugRow.owner
           ? slugRow.owner
-          : slugRow.ownerTelegramId
-            ? await findUserByTelegramIdWithLegacyFallback(slugRow.ownerTelegramId)
+          : slugRow.ownerId
+            ? await findUserByTelegramIdWithLegacyFallback(slugRow.ownerId)
             : null;
         if (owner && (owner.status === "blocked" || owner.status === "deactivated")) {
           res.status(200).render("public/slug-state", {
@@ -951,8 +966,8 @@ router.get(
           });
           return;
         }
-        const profileCard = slugRow.ownerTelegramId
-          ? await prisma.profileCard.findUnique({ where: { ownerTelegramId: slugRow.ownerTelegramId } })
+        const profileCard = slugRow.ownerId
+          ? await findProfileCardByOwnerId(slugRow.ownerId)
           : null;
         const primarySocial =
           profileCard && Array.isArray(profileCard.buttons)
@@ -964,7 +979,7 @@ router.get(
           slug,
           ownerName: owner?.displayName || owner?.firstName || "UNQ+ User",
           ownerUsername: owner?.username ? `@${owner.username}` : "",
-          ownerAvatar: owner?.photoUrl || profileCard?.avatarUrl || "",
+          ownerAvatar: profileCard?.avatarUrl || "",
           pauseMessage: slugRow.pauseMessage || "Скоро вернусь · Пишите в Telegram",
           primarySocial,
           noindex: true,
@@ -974,7 +989,7 @@ router.get(
       }
 
       if (slugRow.status === "approved" || slugRow.status === "active" || slugRow.status === "private") {
-        if (!slugRow.ownerTelegramId) {
+        if (!slugRow.ownerId) {
           res.status(200).render("public/slug-state", {
             title: "Скоро",
             slug,
@@ -989,14 +1004,16 @@ router.get(
         }
 
         const [owner, profileCard, views] = await Promise.all([
-          findUserByTelegramIdWithLegacyFallback(slugRow.ownerTelegramId),
-          prisma.profileCard.findUnique({ where: { ownerTelegramId: slugRow.ownerTelegramId } }),
-          prisma.slugView.count({
-            where: {
-              fullSlug: slug,
-              isUnique: true,
-            },
-          }),
+          findUserByTelegramIdWithLegacyFallback(slugRow.ownerId),
+          findProfileCardByOwnerId(slugRow.ownerId),
+          prisma.analyticsView
+            ? prisma.analyticsView
+                .findMany({
+                  where: { slug },
+                  select: { sessionId: true },
+                })
+                .then((rows) => new Set(rows.map((row) => row.sessionId)).size)
+            : Promise.resolve(0),
         ]);
 
         if (!owner || !profileCard) {
@@ -1037,11 +1054,7 @@ router.get(
           viewsCount: views,
         });
         const image = card.avatarUrl ? absoluteUrl(card.avatarUrl) : absoluteUrl("/brand/logo.PNG");
-        const viewerTelegramId = getUserSession(req)?.telegramId || null;
-        const score = await getPublicScoreForSlug({
-          slug,
-          viewerTelegramId,
-        });
+        const score = null;
 
         const topBadge = await getSlugTopBadge(slug);
         res.render("public/card", {
@@ -1058,48 +1071,24 @@ router.get(
       }
     }
 
-    const card = await getPublicCardBySlug(req.params.slug);
-
-    if (!card) {
-      try {
-        await prisma.errorLog.create({
-          data: {
-            type: "not_found",
-            path: `/${req.params.slug}`,
-            userAgent: req.get("user-agent") || "",
-          },
-        });
-      } catch (error) {
-        console.error("[express-app] failed to persist not_found log", error);
-      }
-
-      res.status(404).render("public/not-found", {
-        title: "Визитка не найдена",
-        slug: req.params.slug,
-        adminSession: getAdminSession(req),
+    try {
+      await prisma.errorLog.create({
+        data: {
+          type: "not_found",
+          path: `/${req.params.slug}`,
+          userAgent: req.get("user-agent") || "",
+        },
       });
-      return;
+    } catch (error) {
+      console.error("[express-app] failed to persist not_found log", error);
     }
 
-    if (!card.isActive) {
-      res.status(200).render("public/unavailable", {
-        title: "Визитка недоступна",
-        slug: card.slug,
-        adminSession: getAdminSession(req),
-      });
-      return;
-    }
-
-    const image = card.avatarUrl ? absoluteUrl(card.avatarUrl) : absoluteUrl("/brand/logo.PNG");
-
-    res.render("public/card", {
-      title: `${card.name} | UNQ+`,
-      description: `Цифровая визитка ${card.name} на UNQ+: контакты, ссылки и QR для быстрого обмена.`,
-      image,
-      card,
-      score: null,
+    res.status(404).render("public/not-found", {
+      title: "Визитка не найдена",
+      slug: req.params.slug,
       adminSession: getAdminSession(req),
     });
+    return;
   }),
 );
 

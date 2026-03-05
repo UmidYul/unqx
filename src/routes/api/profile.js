@@ -1,6 +1,5 @@
 const express = require("express");
 const multer = require("multer");
-const { randomBytes } = require("node:crypto");
 
 const { prisma } = require("../../db/prisma");
 const { asyncHandler } = require("../../middleware/async");
@@ -22,7 +21,7 @@ const {
   getPlanBadgeLabel,
 } = require("../../services/profile");
 const { isSupportedAvatarBuffer, saveAvatarFromBuffer, deleteAvatarByPublicPath } = require("../../services/avatar");
-const { getProfileScoreByTelegramId, recalculateAndRefreshPercentiles } = require("../../services/unq-score");
+const { getProfileScoreByUserId, recalculateAndRefreshPercentiles } = require("../../services/unq-score");
 const { getPricingSettings } = require("../../services/pricing-settings");
 const { sendVerificationRequestToAdmin } = require("../../services/telegram");
 
@@ -32,11 +31,6 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 },
 });
 const ALLOWED_MIME = new Set(["image/jpeg", "image/png", "image/webp"]);
-
-function isUserMissingColumnError(error) {
-  if (!error || typeof error !== "object") return false;
-  return error.code === "P2022";
-}
 
 function toSlugStatusLabel(status) {
   switch (status) {
@@ -99,15 +93,11 @@ function parseProfileCardRow(row) {
   }
   return {
     id: row.id,
-    ownerTelegramId: row.ownerTelegramId,
+    ownerId: row.ownerId,
     name: row.name,
     role: row.role || "",
     bio: row.bio || "",
-    hashtag: row.hashtag || "",
-    address: row.address || "",
-    postcode: row.postcode || "",
     email: row.email || "",
-    extraPhone: row.extraPhone || "",
     avatarUrl: row.avatarUrl || "",
     tags: Array.isArray(row.tags) ? row.tags : [],
     buttons: Array.isArray(row.buttons) ? row.buttons : [],
@@ -121,85 +111,39 @@ function parseProfileCardRow(row) {
 
 async function getCurrentUser(req) {
   const sessionUser = getUserSession(req);
-  if (!sessionUser || (!sessionUser.userId && !sessionUser.telegramId)) {
+  if (!sessionUser?.userId) {
     return null;
   }
-  try {
-    const row = await prisma.user.findUnique({
-      where: sessionUser.userId ? { id: sessionUser.userId } : { telegramId: sessionUser.telegramId },
-      select: {
-        id: true,
-        telegramId: true,
-        email: true,
-        pendingEmail: true,
-        emailVerified: true,
-        firstName: true,
-        lastName: true,
-        username: true,
-        telegramUsername: true,
-        photoUrl: true,
-        displayName: true,
-        plan: true,
-        notificationsEnabled: true,
-        status: true,
-        isVerified: true,
-        verifiedCompany: true,
-        verifiedAt: true,
-        showInDirectory: true,
-        welcomeDismissed: true,
-      },
-    });
-
-    if (!row) return null;
-    return {
-      ...row,
-      username: row.username || row.telegramUsername || null,
-      planPurchasedAt: null,
-      planUpgradedAt: null,
-    };
-  } catch (error) {
-    if (!isUserMissingColumnError(error)) {
-      throw error;
-    }
-
-    const rows = await prisma.$queryRaw`
-      SELECT
-        id,
-        telegram_id AS "telegramId",
-        email,
-        pending_email AS "pendingEmail",
-        first_name AS "firstName",
-        last_name AS "lastName",
-        username,
-        telegram_username AS "telegramUsername",
-        photo_url AS "photoUrl",
-        display_name AS "displayName",
-        plan::text AS "plan",
-        notifications_enabled AS "notificationsEnabled",
-        status::text AS "status"
-      FROM users
-      WHERE telegram_id = ${sessionUser.telegramId}
-      LIMIT 1
-    `;
-    const row = Array.isArray(rows) ? rows[0] : null;
-    if (!row) return null;
-
-    return {
-      ...row,
-      username: row.username || row.telegramUsername || null,
-      emailVerified: false,
-      plan: row.plan === "basic" || row.plan === "premium" || row.plan === "none" ? row.plan : "basic",
-      status: row.status || "active",
-      notificationsEnabled: typeof row.notificationsEnabled === "boolean" ? row.notificationsEnabled : true,
-      isVerified: false,
-      verifiedCompany: null,
-      verifiedAt: null,
+  const row = await prisma.user.findUnique({
+    where: { id: sessionUser.userId },
+    select: {
+      id: true,
+      email: true,
+      pendingEmail: true,
+      emailVerified: true,
+      firstName: true,
+      lastName: true,
+      username: true,
+      telegramUsername: true,
+      telegramChatId: true,
+      displayName: true,
+      plan: true,
+      notificationsEnabled: true,
+      status: true,
+      isVerified: true,
+      verifiedCompany: true,
+      verifiedAt: true,
       showInDirectory: true,
-      welcomeDismissed: false,
-      planPurchasedAt: null,
-      planUpgradedAt: null,
-    };
-  }
+      welcomeDismissed: true,
+      planPurchasedAt: true,
+      planUpgradedAt: true,
+    },
+  });
+  if (!row) return null;
+  return {
+    ...row,
+    username: row.username || row.telegramUsername || null,
+  };
 }
 
 function assertUserActive(user, res) {
@@ -231,37 +175,49 @@ function assertPlanAllowsSlugManagement(user, res) {
   return true;
 }
 
-async function safeRecalculateScore(telegramId) {
+async function safeRecalculateScore(userId) {
   try {
-    await recalculateAndRefreshPercentiles(telegramId);
+    await recalculateAndRefreshPercentiles(userId);
   } catch (error) {
     console.error("[express-app] failed to recalculate score", error);
   }
 }
 
-async function getUserSlugsWithStats(telegramId) {
+async function getUserSlugsWithStats(userId) {
   const slugs = await prisma.slug.findMany({
-    where: { ownerTelegramId: telegramId },
+    where: { ownerId: userId },
     orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
   });
   const fullSlugs = slugs.map((item) => item.fullSlug);
 
   let viewsBySlug = new Map();
-  if (fullSlugs.length > 0) {
-    const grouped = await prisma.slugView.groupBy({
-      by: ["fullSlug"],
+  if (fullSlugs.length > 0 && prisma.analyticsView) {
+    const rows = await prisma.analyticsView.findMany({
       where: {
-        fullSlug: { in: fullSlugs },
+        slug: { in: fullSlugs },
       },
-      _count: { _all: true },
-      _min: { viewedAt: true },
+      select: {
+        slug: true,
+        visitedAt: true,
+        sessionId: true,
+      },
     });
+    const bucket = new Map();
+    for (const row of rows) {
+      const key = row.slug;
+      const current = bucket.get(key) || { since: row.visitedAt, sessions: new Set() };
+      if (!current.since || row.visitedAt < current.since) {
+        current.since = row.visitedAt;
+      }
+      current.sessions.add(row.sessionId);
+      bucket.set(key, current);
+    }
     viewsBySlug = new Map(
-      grouped.map((row) => [
-        row.fullSlug,
+      Array.from(bucket.entries()).map(([slug, value]) => [
+        slug,
         {
-          views: row._count._all || 0,
-          since: row._min.viewedAt || null,
+          views: value.sessions.size,
+          since: value.since || null,
         },
       ]),
     );
@@ -303,13 +259,13 @@ router.get(
     }
 
     const [slugs, card, requests, score, pricing] = await Promise.all([
-      getUserSlugsWithStats(user.telegramId),
-      prisma.profileCard.findUnique({ where: { ownerTelegramId: user.telegramId } }),
+      getUserSlugsWithStats(user.id),
+      prisma.profileCard.findUnique({ where: { ownerId: user.id } }),
       prisma.slugRequest.findMany({
-        where: { telegramId: user.telegramId },
+        where: { userId: user.id },
         orderBy: { createdAt: "desc" },
       }),
-      getProfileScoreByTelegramId(user.telegramId),
+      getProfileScoreByUserId(user.id),
       getPricingSettings(),
     ]);
 
@@ -318,14 +274,12 @@ router.get(
     res.json({
       user: {
         id: user.id,
-        telegramId: user.telegramId,
         email: user.email || "",
         pendingEmail: user.pendingEmail || "",
         emailVerified: Boolean(user.emailVerified),
         firstName: user.firstName,
         lastName: user.lastName,
         username: user.username,
-        photoUrl: user.photoUrl,
         displayName: normalizeDisplayName(user.displayName, user.firstName),
         plan: user.plan,
         effectivePlan: effective.plan,
@@ -354,7 +308,6 @@ router.get(
         requestedPlan: item.requestedPlan,
         planPrice: item.planPrice,
         bracelet: item.bracelet,
-        contact: item.contact,
         status: item.status,
         statusBadge: toRequestStatusBadge(item.status),
         adminNote: item.adminNote,
@@ -383,7 +336,7 @@ router.get(
       return;
     }
 
-    const slugs = await getUserSlugsWithStats(user.telegramId);
+    const slugs = await getUserSlugsWithStats(user.id);
     res.json({ items: slugs });
   }),
 );
@@ -407,7 +360,7 @@ router.patch(
     }
 
     const existing = await prisma.slug.findFirst({
-      where: { fullSlug, ownerTelegramId: user.telegramId },
+      where: { fullSlug, ownerId: user.id },
     });
     if (!existing) {
       res.status(404).json({ error: "UNQ not found" });
@@ -418,7 +371,7 @@ router.patch(
       where: { fullSlug },
       data: { status: nextStatus },
     });
-    await safeRecalculateScore(user.telegramId);
+    await safeRecalculateScore(user.id);
 
     res.json({ ok: true, slug: updated.fullSlug, status: updated.status });
   }),
@@ -437,7 +390,7 @@ router.patch(
 
     const fullSlug = sanitizeSlug(req.params.slug);
     const existing = await prisma.slug.findFirst({
-      where: { fullSlug, ownerTelegramId: user.telegramId },
+      where: { fullSlug, ownerId: user.id },
     });
     if (!existing) {
       res.status(404).json({ error: "UNQ not found" });
@@ -446,7 +399,7 @@ router.patch(
 
     await prisma.$transaction([
       prisma.slug.updateMany({
-        where: { ownerTelegramId: user.telegramId },
+        where: { ownerId: user.id },
         data: { isPrimary: false },
       }),
       prisma.slug.update({
@@ -454,7 +407,7 @@ router.patch(
         data: { isPrimary: true },
       }),
     ]);
-    await safeRecalculateScore(user.telegramId);
+    await safeRecalculateScore(user.id);
 
     res.json({ ok: true, slug: fullSlug, isPrimary: true });
   }),
@@ -474,7 +427,7 @@ router.patch(
     const fullSlug = sanitizeSlug(req.params.slug);
     const message = String(req.body.message || "").trim().slice(0, 220);
     const existing = await prisma.slug.findFirst({
-      where: { fullSlug, ownerTelegramId: user.telegramId },
+      where: { fullSlug, ownerId: user.id },
     });
     if (!existing) {
       res.status(404).json({ error: "UNQ not found" });
@@ -502,7 +455,7 @@ router.get(
       return;
     }
     const row = await prisma.profileCard.findUnique({
-      where: { ownerTelegramId: user.telegramId },
+      where: { ownerId: user.id },
     });
     res.json({ card: parseProfileCardRow(row) });
   }),
@@ -530,11 +483,7 @@ router.put(
 
     const role = String(body.role || "").trim().slice(0, 120) || null;
     const bio = String(body.bio || "").trim().slice(0, 120) || null;
-    const hashtag = String(body.hashtag || "").trim().slice(0, 50) || null;
-    const address = String(body.address || "").trim().slice(0, 300) || null;
-    const postcode = String(body.postcode || "").trim().slice(0, 20) || null;
     const email = String(body.email || "").trim().slice(0, 100) || null;
-    const extraPhone = String(body.extraPhone || "").trim().slice(0, 30) || null;
 
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       res.status(400).json({ error: "Invalid email" });
@@ -567,17 +516,13 @@ router.put(
 
     const saved = await prisma.$transaction(async (tx) => {
       const cardRow = await tx.profileCard.upsert({
-        where: { ownerTelegramId: user.telegramId },
+        where: { ownerId: user.id },
         create: {
-          ownerTelegramId: user.telegramId,
+          ownerId: user.id,
           name,
           role,
           bio,
-          hashtag,
-          address,
-          postcode,
           email,
-          extraPhone,
           tags,
           buttons,
           theme,
@@ -588,11 +533,7 @@ router.put(
           name,
           role,
           bio,
-          hashtag,
-          address,
-          postcode,
           email,
-          extraPhone,
           tags,
           buttons,
           theme,
@@ -603,7 +544,7 @@ router.put(
 
       await tx.slug.updateMany({
         where: {
-          ownerTelegramId: user.telegramId,
+          ownerId: user.id,
           status: "approved",
         },
         data: {
@@ -612,31 +553,9 @@ router.put(
         },
       });
 
-      const ownedSlugs = await tx.slug.findMany({
-        where: { ownerTelegramId: user.telegramId },
-        select: { fullSlug: true },
-      });
-      const legacySlugs = ownedSlugs
-        .map((item) => String(item.fullSlug || "").trim())
-        .filter(Boolean);
-
-      if (legacySlugs.length > 0) {
-        await tx.card.updateMany({
-          where: { slug: { in: legacySlugs } },
-          data: {
-            name,
-            hashtag,
-            address,
-            postcode,
-            email,
-            extraPhone,
-          },
-        });
-      }
-
       return cardRow;
     });
-    await safeRecalculateScore(user.telegramId);
+    await safeRecalculateScore(user.id);
 
     res.json({ ok: true, card: parseProfileCardRow(saved) });
   }),
@@ -655,7 +574,7 @@ router.post(
     }
 
     const card = await prisma.profileCard.findUnique({
-      where: { ownerTelegramId: user.telegramId },
+      where: { ownerId: user.id },
     });
 
     if (!card) {
@@ -674,13 +593,13 @@ router.post(
       return;
     }
 
-    const avatarUrl = await saveAvatarFromBuffer(`profile_${user.telegramId.replace(/\D/g, "").slice(0, 24)}`, req.file.buffer);
+    const avatarUrl = await saveAvatarFromBuffer(`profile_${String(user.id).replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 24)}`, req.file.buffer);
     if (card.avatarUrl && card.avatarUrl !== avatarUrl) {
       await deleteAvatarByPublicPath(card.avatarUrl);
     }
 
     await prisma.profileCard.update({
-      where: { ownerTelegramId: user.telegramId },
+      where: { ownerId: user.id },
       data: { avatarUrl },
     });
 
@@ -700,7 +619,7 @@ router.delete(
     }
 
     const card = await prisma.profileCard.findUnique({
-      where: { ownerTelegramId: user.telegramId },
+      where: { ownerId: user.id },
     });
     if (!card) {
       res.status(404).json({ error: "Card not found" });
@@ -711,7 +630,7 @@ router.delete(
       await deleteAvatarByPublicPath(card.avatarUrl);
     }
     await prisma.profileCard.update({
-      where: { ownerTelegramId: user.telegramId },
+      where: { ownerId: user.id },
       data: { avatarUrl: null },
     });
 
@@ -731,11 +650,11 @@ router.get(
 
     const fullSlug = sanitizeSlug(req.params.slug);
     const slugRow = await prisma.slug.findFirst({
-      where: { fullSlug, ownerTelegramId: user.telegramId },
+      where: { fullSlug, ownerId: user.id },
       select: {
         fullSlug: true,
         status: true,
-        ownerTelegramId: true,
+        ownerId: true,
         owner: {
           select: {
             firstName: true,
@@ -750,7 +669,7 @@ router.get(
       return;
     }
 
-    const score = await getProfileScoreByTelegramId(user.telegramId);
+    const score = await getProfileScoreByUserId(user.id);
     const ownerName = slugRow.owner?.profileCard?.name || slugRow.owner?.displayName || slugRow.owner?.firstName || "UNQ+ User";
     const ownerRole = slugRow.owner?.profileCard?.role || "";
     res.json({
@@ -770,7 +689,7 @@ router.get(
     const user = await getCurrentUser(req);
     if (!assertUserActive(user, res)) return;
     const slugs = await prisma.slug.findMany({
-      where: { ownerTelegramId: user.telegramId, status: { in: ["active", "private", "paused", "approved"] } },
+      where: { ownerId: user.id, status: { in: ["active", "private", "paused", "approved"] } },
       orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
       select: { fullSlug: true, isPrimary: true, status: true },
     });
@@ -796,7 +715,7 @@ router.get(
       return;
     }
     const owned = await prisma.slug.findFirst({
-      where: { fullSlug, ownerTelegramId: user.telegramId },
+      where: { fullSlug, ownerId: user.id },
       select: { fullSlug: true },
     });
     if (!owned) {
@@ -823,7 +742,7 @@ router.get(
       prisma.analyticsClick
         ? prisma.analyticsClick.findMany({ where: { slug: fullSlug, clickedAt: { gte: previousFrom, lt: from } } })
         : Promise.resolve([]),
-      getProfileScoreByTelegramId(user.telegramId),
+      getProfileScoreByUserId(user.id),
     ]);
 
     const uniqueVisitors = new Set(views.map((item) => item.sessionId)).size;
@@ -902,7 +821,7 @@ router.get(
     if (!assertUserActive(user, res)) return;
     const latest = prisma.verificationRequest
       ? await prisma.verificationRequest.findFirst({
-          where: { telegramId: user.telegramId },
+          where: { userId: user.id },
           orderBy: { requestedAt: "desc" },
         })
       : null;
@@ -935,7 +854,7 @@ router.post(
 
     const primarySlug = await prisma.slug.findFirst({
       where: {
-        ownerTelegramId: user.telegramId,
+        ownerId: user.id,
         status: { in: ["active", "private", "paused", "approved"] },
       },
       orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
@@ -945,7 +864,7 @@ router.post(
 
     const request = await prisma.verificationRequest.create({
       data: {
-        telegramId: user.telegramId,
+        userId: user.id,
         slug: verificationSlug,
         companyName,
         role,
@@ -956,7 +875,7 @@ router.post(
     });
 
     void sendVerificationRequestToAdmin({
-      telegramId: user.telegramId,
+      telegramId: user.telegramChatId || "",
       slug: verificationSlug,
       companyName,
       role,
@@ -980,7 +899,7 @@ router.get(
     }
 
     const rows = await prisma.slugRequest.findMany({
-      where: { telegramId: user.telegramId },
+      where: { userId: user.id },
       orderBy: { createdAt: "desc" },
     });
     res.json({
@@ -1010,7 +929,7 @@ router.patch(
     }
 
     await prisma.user.update({
-      where: { telegramId: user.telegramId },
+      where: { id: user.id },
       data: { welcomeDismissed: true },
     });
 
@@ -1064,23 +983,9 @@ router.post(
       return;
     }
 
-    const token = randomBytes(24).toString("hex");
-    const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
-    await prisma.$executeRawUnsafe(
-      `
-      INSERT INTO telegram_link_tokens (user_id, token, expires_at)
-      VALUES ($1, $2, $3)
-      `,
-      user.id,
-      token,
-      expiresAt,
-    );
-
-    res.json({
-      ok: true,
-      token,
-      url: `https://t.me/${encodeURIComponent(process.env.TELEGRAM_BOT_USERNAME || "")}?start=link_${token}`,
-      expiresAt,
+    res.status(410).json({
+      error: "Telegram linking flow is deprecated",
+      code: "TELEGRAM_LINK_DEPRECATED",
     });
   }),
 );
@@ -1113,15 +1018,15 @@ router.post(
 
     await prisma.$transaction([
       prisma.user.update({
-        where: { telegramId: user.telegramId },
+        where: { id: user.id },
         data: { status: "deactivated" },
       }),
       prisma.slug.updateMany({
-        where: { ownerTelegramId: user.telegramId },
+        where: { ownerId: user.id },
         data: { status: "paused" },
       }),
     ]);
-    await safeRecalculateScore(user.telegramId);
+    await safeRecalculateScore(user.id);
 
     res.json({ ok: true });
   }),

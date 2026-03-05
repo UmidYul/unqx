@@ -1,196 +1,52 @@
 const { prisma } = require("../db/prisma");
 const { compareSlugs, getNextSlug, isValidSlug } = require("./slug");
 
-async function getPublicCardBySlug(slug) {
-  return prisma.card.findUnique({
-    where: { slug },
-    include: {
-      tags: {
-        orderBy: { sortOrder: "asc" },
-      },
-      buttons: {
-        where: { isActive: true },
-        orderBy: { sortOrder: "asc" },
-      },
-    },
-  });
+function legacyCardsError() {
+  const error = new Error("Legacy cards API is deprecated");
+  error.code = "LEGACY_CARDS_DEPRECATED";
+  return error;
+}
+
+async function getPublicCardBySlug() {
+  return null;
 }
 
 async function listCards(options = {}) {
   const pageSize = options.pageSize ?? 20;
   const page = Math.max(1, options.page ?? 1);
-  const status = options.status ?? "all";
-  const query = options.query ? options.query.trim() : undefined;
-
-  const where = {};
-
-  if (status === "active") {
-    where.isActive = true;
-  }
-
-  if (status === "inactive") {
-    where.isActive = false;
-  }
-
-  if (query) {
-    where.OR = [
-      { slug: { contains: query, mode: "insensitive" } },
-      { name: { contains: query, mode: "insensitive" } },
-    ];
-  }
-
-  const total = await prisma.card.count({ where });
-  const items = await prisma.card.findMany({
-    where,
-    orderBy: { createdAt: "desc" },
-    skip: (page - 1) * pageSize,
-    take: pageSize,
-    select: {
-      id: true,
-      slug: true,
-      name: true,
-      isActive: true,
-      tariff: true,
-      theme: true,
-      viewsCount: true,
-      uniqueViewsCount: true,
-      createdAt: true,
-    },
-  });
-
   return {
-    items,
+    items: [],
     pagination: {
       page,
       pageSize,
-      total,
-      totalPages: Math.max(1, Math.ceil(total / pageSize)),
+      total: 0,
+      totalPages: 1,
     },
   };
 }
 
-async function getCardDetailsById(id) {
-  return prisma.card.findUnique({
-    where: { id },
-    include: {
-      tags: { orderBy: { sortOrder: "asc" } },
-      buttons: { orderBy: { sortOrder: "asc" } },
-    },
-  });
+async function getCardDetailsById() {
+  return null;
 }
 
-function normalizeTags(input) {
-  return (input.tags || []).map((tag, index) => ({
-    label: tag.label.trim(),
-    url: tag.url ? tag.url.trim() : null,
-    sortOrder: index,
-  }));
+async function createCard() {
+  throw legacyCardsError();
 }
 
-function normalizeButtons(input) {
-  return (input.buttons || []).map((button, index) => ({
-    label: button.label.trim(),
-    url: button.url.trim(),
-    isActive: button.isActive,
-    sortOrder: index,
-  }));
-}
-
-async function createCard(input) {
-  const tags = normalizeTags(input);
-  const buttons = normalizeButtons(input);
-
-  return prisma.card.create({
-    data: {
-      slug: input.slug,
-      isActive: input.isActive,
-      tariff: input.tariff || "basic",
-      theme: input.theme || "default_dark",
-      name: input.name,
-      phone: input.phone,
-      verified: input.verified,
-      hashtag: input.hashtag ?? null,
-      address: input.address ?? null,
-      postcode: input.postcode ?? null,
-      email: input.email ?? null,
-      extraPhone: input.extraPhone ?? null,
-      tags: {
-        createMany: {
-          data: tags,
-        },
-      },
-      buttons: {
-        createMany: {
-          data: buttons,
-        },
-      },
-    },
-    include: {
-      tags: { orderBy: { sortOrder: "asc" } },
-      buttons: { orderBy: { sortOrder: "asc" } },
-    },
-  });
-}
-
-async function updateCard(id, input) {
-  const tags = normalizeTags(input);
-  const buttons = normalizeButtons(input);
-
-  return prisma.$transaction(async (tx) => {
-    const existing = await tx.card.findUnique({
-      where: { id },
-      select: { tariff: true, theme: true },
-    });
-
-    const updated = await tx.card.update({
-      where: { id },
-      data: {
-        slug: input.slug,
-        isActive: input.isActive,
-        tariff: input.tariff || existing?.tariff || "basic",
-        theme: input.theme || existing?.theme || "default_dark",
-        name: input.name,
-        phone: input.phone,
-        verified: input.verified,
-        hashtag: input.hashtag ?? null,
-        address: input.address ?? null,
-        postcode: input.postcode ?? null,
-        email: input.email ?? null,
-        extraPhone: input.extraPhone ?? null,
-      },
-    });
-
-    await tx.tag.deleteMany({ where: { cardId: id } });
-    await tx.button.deleteMany({ where: { cardId: id } });
-
-    if (tags.length > 0) {
-      await tx.tag.createMany({
-        data: tags.map((tag) => ({ ...tag, cardId: id })),
-      });
-    }
-
-    if (buttons.length > 0) {
-      await tx.button.createMany({
-        data: buttons.map((button) => ({ ...button, cardId: id })),
-      });
-    }
-
-    return updated;
-  });
+async function updateCard() {
+  throw legacyCardsError();
 }
 
 async function generateNextSlug() {
-  const slugs = await prisma.card.findMany({
-    select: { slug: true },
+  const slugs = await prisma.slug.findMany({
+    select: { fullSlug: true },
   });
-
   const max =
     slugs
-      .map((item) => item.slug)
+      .map((item) => item.fullSlug)
       .filter(isValidSlug)
       .sort(compareSlugs)
       .pop() ?? null;
-
   return getNextSlug(max);
 }
 
@@ -202,3 +58,4 @@ module.exports = {
   updateCard,
   generateNextSlug,
 };
+

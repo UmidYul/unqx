@@ -3,7 +3,7 @@ const { sendTelegramMessage } = require("./telegram");
 const { getActiveFlashSale, resolveConditionLabel } = require("./flash-sales");
 const { processDropsSchedule } = require("./drops");
 const { detectSuspiciousActivity } = require("./leaderboard");
-const { markReferralPaidByReferredTelegramId } = require("./referrals");
+const { markReferralPaidByReferredUserId } = require("./referrals");
 const { ensureDailyRecalculation } = require("./unq-score");
 
 const LOOP_MS = 60 * 1000;
@@ -41,13 +41,13 @@ async function processReferralPaidSync() {
     where: {
       status: { in: ["paid", "approved"] },
     },
-    select: { telegramId: true },
-    distinct: ["telegramId"],
+    select: { userId: true },
+    distinct: ["userId"],
   });
 
   for (const row of candidates) {
     try {
-      await markReferralPaidByReferredTelegramId(row.telegramId);
+      await markReferralPaidByReferredUserId(row.userId);
     } catch (error) {
       console.error("[express-app] failed to sync referral paid status", error);
     }

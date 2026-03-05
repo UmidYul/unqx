@@ -16,9 +16,9 @@ function generateRefCode() {
   return `U${randomBytes(4).toString("hex").toUpperCase()}`;
 }
 
-async function ensureUserRefCode(telegramId) {
+async function ensureUserRefCode(userId) {
   if (!prisma.user || typeof prisma.user.findUnique !== "function") return null;
-  const user = await prisma.user.findUnique({ where: { telegramId } });
+  const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user) return null;
   if (user.refCode) return user.refCode;
 
@@ -26,7 +26,7 @@ async function ensureUserRefCode(telegramId) {
     const candidate = generateRefCode();
     try {
       const updated = await prisma.user.update({
-        where: { telegramId },
+        where: { id: userId },
         data: { refCode: candidate },
         select: { refCode: true },
       });
@@ -42,7 +42,7 @@ async function ensureUserRefCode(telegramId) {
   return null;
 }
 
-async function linkReferralOnRegistration({ referredTelegramId, refCode }) {
+async function linkReferralOnRegistration({ referredUserId, refCode }) {
   if (!prisma.referral || typeof prisma.referral.create !== "function") {
     return null;
   }
@@ -52,20 +52,20 @@ async function linkReferralOnRegistration({ referredTelegramId, refCode }) {
   }
 
   const normalized = normalizeRefCode(refCode);
-  if (!normalized || !referredTelegramId) {
+  if (!normalized || !referredUserId) {
     return null;
   }
 
   const referrer = await prisma.user.findFirst({
     where: { refCode: normalized },
-    select: { telegramId: true, refCode: true },
+    select: { id: true, refCode: true },
   });
-  if (!referrer || referrer.telegramId === referredTelegramId) {
+  if (!referrer || referrer.id === referredUserId) {
     return null;
   }
 
   const existing = await prisma.referral.findUnique({
-    where: { referredTelegramId },
+    where: { referredId: referredUserId },
     select: { id: true },
   });
   if (existing) {
@@ -74,15 +74,15 @@ async function linkReferralOnRegistration({ referredTelegramId, refCode }) {
 
   return prisma.referral.create({
     data: {
-      referrerTelegramId: referrer.telegramId,
-      referredTelegramId,
+      referrerId: referrer.id,
+      referredId: referredUserId,
       refCode: referrer.refCode,
       status: "registered",
     },
   });
 }
 
-async function markReferralPaidByReferredTelegramId(referredTelegramId) {
+async function markReferralPaidByReferredUserId(referredUserId) {
   if (!prisma.referral || typeof prisma.referral.findUnique !== "function") {
     return null;
   }
@@ -92,10 +92,10 @@ async function markReferralPaidByReferredTelegramId(referredTelegramId) {
   }
 
   const referral = await prisma.referral.findUnique({
-    where: { referredTelegramId },
+    where: { referredId: referredUserId },
     include: {
       referrer: {
-        select: { telegramId: true, username: true },
+        select: { telegramChatId: true, username: true },
       },
       referred: {
         select: { username: true },
@@ -116,8 +116,12 @@ async function markReferralPaidByReferredTelegramId(referredTelegramId) {
 
   try {
     const refUsername = referral.referred?.username ? `@${referral.referred.username}` : "твой друг";
+    const chatId = referral.referrer?.telegramChatId;
+    if (!chatId) {
+      return updated;
+    }
     await sendTelegramMessage({
-      chatId: referral.referrerTelegramId,
+      chatId,
       text: `🎉 ${refUsername} оплатил slug! Ты получаешь бонус по реферальной программе.`,
       parseMode: "HTML",
     });
@@ -148,7 +152,7 @@ function getRewardLabel(rule) {
   return "Бонусный slug";
 }
 
-async function getReferralBootstrap(telegramId) {
+async function getReferralBootstrap(userId) {
   if (!prisma.user || typeof prisma.user.findUnique !== "function" || !prisma.referral || typeof prisma.referral.findMany !== "function") {
     return {
       refCode: "",
@@ -159,15 +163,15 @@ async function getReferralBootstrap(telegramId) {
     };
   }
   const user = await prisma.user.findUnique({
-    where: { telegramId },
-    select: { telegramId: true, refCode: true, username: true },
+    where: { id: userId },
+    select: { id: true, refCode: true, username: true },
   });
   if (!user) return null;
 
-  const refCode = user.refCode || (await ensureUserRefCode(user.telegramId));
+  const refCode = user.refCode || (await ensureUserRefCode(user.id));
   const [items, rules] = await Promise.all([
     prisma.referral.findMany({
-      where: { referrerTelegramId: user.telegramId },
+      where: { referrerId: user.id },
       include: {
         referred: {
           select: {
@@ -217,7 +221,7 @@ async function getReferralBootstrap(telegramId) {
   };
 }
 
-async function claimReferralReward({ telegramId, ruleId }) {
+async function claimReferralReward({ userId, ruleId }) {
   if (!prisma.referral || typeof prisma.referral.findMany !== "function") {
     const error = new Error("Referral storage is not ready");
     error.code = "REFERRAL_STORAGE_UNAVAILABLE";
@@ -232,7 +236,7 @@ async function claimReferralReward({ telegramId, ruleId }) {
   }
 
   const rows = await prisma.referral.findMany({
-    where: { referrerTelegramId: telegramId },
+    where: { referrerId: userId },
     orderBy: { createdAt: "asc" },
   });
   const paid = rows.filter((item) => item.status === "paid" || item.status === "rewarded");
@@ -277,7 +281,7 @@ module.exports = {
   normalizeRefCode,
   ensureUserRefCode,
   linkReferralOnRegistration,
-  markReferralPaidByReferredTelegramId,
+  markReferralPaidByReferredUserId,
   getReferralBootstrap,
   claimReferralReward,
 };

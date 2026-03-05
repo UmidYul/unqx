@@ -17,35 +17,33 @@ function buildDateKeys(days, timezone) {
     keys.push(format(addDays(startDay, i), "yyyy-MM-dd"));
   }
 
-  const startUtc = fromZonedTime(startDay, timezone);
-
-  return { keys, startUtc };
+  return { keys, startUtc: fromZonedTime(startDay, timezone) };
 }
 
-async function getSeries(days, timezone, cardId) {
+async function getSeries(days, timezone, slug) {
+  if (!prisma.analyticsView) {
+    return [];
+  }
   const { keys, startUtc } = buildDateKeys(days, timezone);
-  const bucket = new Map(keys.map((key) => [key, { views: 0, uniqueViews: 0 }]));
+  const bucket = new Map(keys.map((key) => [key, { views: 0, sessions: new Set() }]));
 
-  const logs = await prisma.viewLog.findMany({
+  const rows = await prisma.analyticsView.findMany({
     where: {
-      viewedAt: { gte: startUtc },
-      ...(cardId ? { cardId } : {}),
+      visitedAt: { gte: startUtc },
+      ...(slug ? { slug } : {}),
     },
     select: {
-      viewedAt: true,
-      isUnique: true,
+      visitedAt: true,
+      sessionId: true,
     },
   });
 
-  for (const row of logs) {
-    const key = format(toZonedTime(row.viewedAt, timezone), "yyyy-MM-dd");
-    if (bucket.has(key)) {
-      const current = bucket.get(key);
-      current.views += 1;
-      if (row.isUnique) {
-        current.uniqueViews += 1;
-      }
-    }
+  for (const row of rows) {
+    const key = format(toZonedTime(row.visitedAt, timezone), "yyyy-MM-dd");
+    if (!bucket.has(key)) continue;
+    const current = bucket.get(key);
+    current.views += 1;
+    current.sessions.add(row.sessionId);
   }
 
   return keys.map((key) => {
@@ -53,64 +51,67 @@ async function getSeries(days, timezone, cardId) {
     return {
       date: key,
       views: current.views,
-      uniqueViews: current.uniqueViews,
+      uniqueViews: current.sessions.size,
     };
   });
 }
 
-async function getCardStats(cardId, timezone = DEFAULT_TIMEZONE, days = 7) {
+async function getCardStats(slug, timezone = DEFAULT_TIMEZONE, days = 7) {
   const normalizedDays = Math.max(1, Math.min(30, days));
+  if (!prisma.analyticsView) {
+    return {
+      totalViews: 0,
+      totalUniqueViews: 0,
+      series7d: [],
+      lastViewAt: null,
+      deviceSplit: { mobile: 0, desktop: 0 },
+    };
+  }
 
-  const [card, lastView, grouped, series7d] = await Promise.all([
-    prisma.card.findUnique({ where: { id: cardId }, select: { viewsCount: true, uniqueViewsCount: true } }),
-    prisma.viewLog.findFirst({
-      where: { cardId },
-      orderBy: { viewedAt: "desc" },
-      select: { viewedAt: true },
+  const [views, series7d] = await Promise.all([
+    prisma.analyticsView.findMany({
+      where: { slug },
+      select: { visitedAt: true, sessionId: true, device: true },
+      orderBy: { visitedAt: "desc" },
     }),
-    prisma.viewLog.groupBy({
-      by: ["device"],
-      where: { cardId },
-      _count: { _all: true },
-    }),
-    getSeries(normalizedDays, timezone, cardId),
+    getSeries(normalizedDays, timezone, slug),
   ]);
 
+  const totalUniqueViews = new Set(views.map((item) => item.sessionId)).size;
   const deviceSplit = { mobile: 0, desktop: 0 };
-
-  for (const row of grouped) {
-    if (row.device === "mobile") {
-      deviceSplit.mobile = row._count._all;
-    }
-
-    if (row.device === "desktop") {
-      deviceSplit.desktop = row._count._all;
-    }
+  for (const row of views) {
+    if (row.device === "mobile") deviceSplit.mobile += 1;
+    if (row.device === "desktop") deviceSplit.desktop += 1;
   }
 
   return {
-    totalViews: card ? card.viewsCount : 0,
-    totalUniqueViews: card ? card.uniqueViewsCount : 0,
+    totalViews: views.length,
+    totalUniqueViews,
     series7d,
-    lastViewAt: lastView ? lastView.viewedAt : null,
+    lastViewAt: views[0]?.visitedAt || null,
     deviceSplit,
   };
 }
 
 async function getGlobalStats(timezone = DEFAULT_TIMEZONE) {
   const [totalCards, activeCards, totalsAggregate, topCards, dailySeries] = await Promise.all([
-    prisma.card.count(),
-    prisma.card.count({ where: { isActive: true } }),
-    prisma.card.aggregate({ _sum: { viewsCount: true, uniqueViewsCount: true } }),
-    prisma.card.findMany({
-      orderBy: { viewsCount: "desc" },
+    prisma.slug.count(),
+    prisma.slug.count({ where: { status: "active" } }),
+    prisma.slug.aggregate({ _sum: { analyticsViewsCount: true } }),
+    prisma.slug.findMany({
+      where: { status: { in: ["active", "private", "paused", "approved"] } },
+      orderBy: [{ analyticsViewsCount: "desc" }, { updatedAt: "desc" }],
       take: 10,
-      select: {
-        id: true,
-        slug: true,
-        name: true,
-        viewsCount: true,
-        uniqueViewsCount: true,
+      include: {
+        owner: {
+          select: {
+            firstName: true,
+            displayName: true,
+            profileCard: {
+              select: { name: true },
+            },
+          },
+        },
       },
     }),
     getSeries(30, timezone),
@@ -119,9 +120,15 @@ async function getGlobalStats(timezone = DEFAULT_TIMEZONE) {
   return {
     totalCards,
     activeCards,
-    totalViews: totalsAggregate._sum.viewsCount || 0,
-    totalUniqueViews: totalsAggregate._sum.uniqueViewsCount || 0,
-    topCards,
+    totalViews: Number(totalsAggregate?._sum?.analyticsViewsCount || 0),
+    totalUniqueViews: 0,
+    topCards: topCards.map((row) => ({
+      id: row.id,
+      slug: row.fullSlug,
+      name: row.owner?.profileCard?.name || row.owner?.displayName || row.owner?.firstName || "UNQ+ User",
+      viewsCount: Number(row.analyticsViewsCount || 0),
+      uniqueViewsCount: 0,
+    })),
     dailySeries,
   };
 }

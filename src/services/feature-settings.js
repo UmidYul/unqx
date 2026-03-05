@@ -1,4 +1,3 @@
-const { prisma } = require("../db/prisma");
 const { getManySettings, setSettingsBatch } = require("./platform-settings");
 
 const DEFAULTS = {
@@ -68,14 +67,8 @@ async function getFeatureSetting(key, fallback = {}) {
     };
   }
 
-  if (!prisma.featureSetting || typeof prisma.featureSetting.findUnique !== "function") {
-    const base = DEFAULTS[key] || {};
-    return { ...base, ...fallback };
-  }
-  const row = await prisma.featureSetting.findUnique({ where: { key } });
   const base = DEFAULTS[key] || {};
-  const payload = row && row.value && typeof row.value === "object" ? row.value : {};
-  return { ...base, ...fallback, ...payload };
+  return { ...base, ...fallback };
 }
 
 async function setFeatureSetting(key, value) {
@@ -107,17 +100,8 @@ async function setFeatureSetting(key, value) {
     return getFeatureSetting("unqScore");
   }
 
-  if (!prisma.featureSetting || typeof prisma.featureSetting.upsert !== "function") {
-    const base = DEFAULTS[key] || {};
-    return { ...base, ...(value && typeof value === "object" ? value : {}) };
-  }
   const base = DEFAULTS[key] || {};
   const next = { ...base, ...(value && typeof value === "object" ? value : {}) };
-  await prisma.featureSetting.upsert({
-    where: { key },
-    create: { key, value: next },
-    update: { value: next },
-  });
   return next;
 }
 

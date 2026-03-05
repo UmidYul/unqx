@@ -59,14 +59,14 @@ function asTopPercent(percentile) {
   return Math.max(1, top);
 }
 
-async function getUserScoreInputs(telegramId, tx = prisma) {
+async function getUserScoreInputs(userId, tx = prisma) {
   const now = new Date();
   const since30d = subDays(now, 30);
 
   const user = await tx.user.findUnique({
-    where: { telegramId },
+    where: { id: userId },
     select: {
-      telegramId: true,
+      id: true,
       plan: true,
       status: true,
     },
@@ -75,7 +75,7 @@ async function getUserScoreInputs(telegramId, tx = prisma) {
 
   const slugs = await tx.slug.findMany({
     where: {
-      ownerTelegramId: telegramId,
+      ownerId: userId,
       status: { in: ["approved", "active", "paused", "private"] },
     },
     orderBy: [{ isPrimary: "desc" }, { activatedAt: "asc" }, { createdAt: "asc" }],
@@ -89,18 +89,18 @@ async function getUserScoreInputs(telegramId, tx = prisma) {
   const slugNames = slugs.map((item) => item.fullSlug);
 
   const [views30d, clicks30d, hasBracelet] = await Promise.all([
-    slugNames.length
-      ? tx.slugView.count({
+    slugNames.length && tx.analyticsView
+      ? tx.analyticsView.count({
           where: {
-            fullSlug: { in: slugNames },
-            viewedAt: { gte: since30d },
+            slug: { in: slugNames },
+            visitedAt: { gte: since30d },
           },
         })
       : 0,
-    slugNames.length && tx.slugClick
-      ? tx.slugClick.count({
+    slugNames.length && tx.analyticsClick
+      ? tx.analyticsClick.count({
           where: {
-            fullSlug: { in: slugNames },
+            slug: { in: slugNames },
             clickedAt: { gte: since30d },
           },
         })
@@ -166,22 +166,22 @@ async function updatePercentiles(tx = prisma) {
         },
       },
     },
-    select: { telegramId: true },
+    select: { id: true },
   });
-  const activeIds = activeUsers.map((item) => item.telegramId);
+  const activeIds = activeUsers.map((item) => item.id);
   if (!activeIds.length) return;
 
   const ranked = await tx.unqScore.findMany({
     where: {
-      telegramId: { in: activeIds },
+      userId: { in: activeIds },
       score: { gt: 0 },
     },
-    select: { telegramId: true, score: true },
+    select: { userId: true, score: true },
   });
   const total = ranked.length;
   if (!total) {
     await tx.unqScore.updateMany({
-      where: { telegramId: { in: activeIds } },
+      where: { userId: { in: activeIds } },
       data: { percentile: 0 },
     });
     return;
@@ -198,7 +198,7 @@ async function updatePercentiles(tx = prisma) {
   await Promise.all(
     ranked.map((row) =>
       tx.unqScore.update({
-        where: { telegramId: row.telegramId },
+        where: { userId: row.userId },
         data: {
           percentile: Number((((lowerScoreCount.get(row.score) || 0) / total) * 100).toFixed(1)),
         },
@@ -206,27 +206,27 @@ async function updatePercentiles(tx = prisma) {
     ),
   );
 
-  const zeroRows = activeIds.filter((id) => !ranked.some((row) => row.telegramId === id));
+  const zeroRows = activeIds.filter((id) => !ranked.some((row) => row.userId === id));
   if (zeroRows.length) {
     await tx.unqScore.updateMany({
-      where: { telegramId: { in: zeroRows } },
+      where: { userId: { in: zeroRows } },
       data: { percentile: 0 },
     });
   }
 }
 
-async function storeDailyHistory(telegramId, score, tx = prisma, now = new Date()) {
+async function storeDailyHistory(userId, score, tx = prisma, now = new Date()) {
   if (!tx.scoreHistory) return;
   const today = startOfDay(now);
   await tx.scoreHistory.upsert({
     where: {
       telegramId_recordedAt: {
-        telegramId,
+        userId,
         recordedAt: today,
       },
     },
     create: {
-      telegramId,
+      userId,
       score,
       recordedAt: today,
     },
@@ -236,17 +236,17 @@ async function storeDailyHistory(telegramId, score, tx = prisma, now = new Date(
   });
 }
 
-async function recalculateUserScore(telegramId, options = {}) {
+async function recalculateUserScore(userId, options = {}) {
   const now = options.now instanceof Date ? options.now : new Date();
   const tx = options.tx || prisma;
   if (!tx.unqScore) return null;
-  const inputs = await getUserScoreInputs(telegramId, tx);
+  const inputs = await getUserScoreInputs(userId, tx);
   if (!inputs) return null;
   const scorePayload = buildScoreFromInputs(inputs);
   const row = await tx.unqScore.upsert({
-    where: { telegramId },
+    where: { userId },
     create: {
-      telegramId,
+      userId,
       ...scorePayload,
       percentile: 0,
       calculatedAt: now,
@@ -256,7 +256,7 @@ async function recalculateUserScore(telegramId, options = {}) {
       calculatedAt: now,
     },
   });
-  await storeDailyHistory(telegramId, row.score, tx, now);
+  await storeDailyHistory(userId, row.score, tx, now);
   return row;
 }
 
@@ -275,10 +275,10 @@ async function recalculateAllScores(options = {}) {
         },
       },
     },
-    select: { telegramId: true },
+    select: { id: true },
   });
   for (const item of users) {
-    await recalculateUserScore(item.telegramId, { now });
+    await recalculateUserScore(item.id, { now });
   }
   await updatePercentiles();
   const totalMs = Date.now() - startedAt;
@@ -300,8 +300,8 @@ async function recalculateAllScores(options = {}) {
   return { processed, averageMsPerUser: averageMs };
 }
 
-async function recalculateAndRefreshPercentiles(telegramId) {
-  const row = await recalculateUserScore(telegramId);
+async function recalculateAndRefreshPercentiles(userId) {
+  const row = await recalculateUserScore(userId);
   await updatePercentiles();
   return row;
 }
@@ -318,34 +318,35 @@ async function ensureDailyRecalculation() {
   return recalculateAllScores({ reason: "daily" });
 }
 
-async function getScoreByTelegramId(telegramId) {
-  if (!telegramId || !prisma.unqScore) return null;
+async function getScoreByUserId(userId) {
+  if (!userId || !prisma.unqScore) return null;
   return prisma.unqScore.findUnique({
-    where: { telegramId },
+    where: { userId },
   });
 }
 
-async function getPublicScoreForSlug({ slug, viewerTelegramId = null }) {
+async function getPublicScoreForSlug({ slug, viewerTelegramId = null, viewerUserId = null }) {
   const normalized = String(slug || "").toUpperCase();
   const slugRow = await prisma.slug.findUnique({
     where: { fullSlug: normalized },
     select: {
       fullSlug: true,
-      ownerTelegramId: true,
+      ownerId: true,
       status: true,
       activatedAt: true,
     },
   });
-  if (!slugRow || !slugRow.ownerTelegramId) return null;
+  if (!slugRow || !slugRow.ownerId) return null;
 
   const settings = await getFeatureSetting("unqScore");
-  const isOwner = viewerTelegramId && viewerTelegramId === slugRow.ownerTelegramId;
+  const viewerId = viewerUserId || viewerTelegramId;
+  const isOwner = viewerId && viewerId === slugRow.ownerId;
   const cardsEnabled = Boolean(settings.enabledOnCards);
   if (!isOwner && !cardsEnabled) return null;
   if (!isOwner && slugRow.status === "paused") return null;
   if (!isOwner && slugRow.status === "private") return null;
 
-  const score = await getScoreByTelegramId(slugRow.ownerTelegramId);
+  const score = await getScoreByUserId(slugRow.ownerId);
   if (!score && !isOwner) return null;
 
   const multiplier = getSlugMultiplier(normalized);
@@ -364,17 +365,17 @@ async function getPublicScoreForSlug({ slug, viewerTelegramId = null }) {
   };
 }
 
-async function getProfileScoreByTelegramId(telegramId) {
+async function getProfileScoreByUserId(userId) {
   const [score, history, inputs] = await Promise.all([
-    getScoreByTelegramId(telegramId),
+    getScoreByUserId(userId),
     prisma.scoreHistory
       ? prisma.scoreHistory.findMany({
-          where: { telegramId },
+          where: { userId },
           orderBy: { recordedAt: "asc" },
           take: 30,
         })
       : [],
-    getUserScoreInputs(telegramId),
+    getUserScoreInputs(userId),
   ]);
   const fallback = {
     score: 0,
@@ -415,10 +416,9 @@ async function getScoreLeaderboard(limit = 100) {
     include: {
       user: {
         select: {
-          telegramId: true,
+          id: true,
           firstName: true,
           username: true,
-          photoUrl: true,
           plan: true,
           profileCard: {
             select: { name: true, avatarUrl: true },
@@ -440,17 +440,17 @@ async function getScoreLeaderboard(limit = 100) {
   const since30d = subDays(new Date(), 30);
   const allSlugs = rows.flatMap((row) => (row.user?.slugs || []).map((slug) => slug.fullSlug));
   const uniqueSlugs = Array.from(new Set(allSlugs));
-  const viewsGrouped = uniqueSlugs.length
-    ? await prisma.slugView.groupBy({
-        by: ["fullSlug"],
+  const viewsGrouped = uniqueSlugs.length && prisma.analyticsView
+    ? await prisma.analyticsView.groupBy({
+        by: ["slug"],
         where: {
-          fullSlug: { in: uniqueSlugs },
-          viewedAt: { gte: since30d },
+          slug: { in: uniqueSlugs },
+          visitedAt: { gte: since30d },
         },
         _count: { _all: true },
       })
     : [];
-  const viewsBySlug = new Map(viewsGrouped.map((row) => [row.fullSlug, row._count._all || 0]));
+  const viewsBySlug = new Map(viewsGrouped.map((row) => [row.slug, row._count._all || 0]));
 
   return rows.map((row, index) => {
     const slugs = row.user?.slugs || [];
@@ -460,10 +460,11 @@ async function getScoreLeaderboard(limit = 100) {
     const rarity = getRarityFromMultiplier(getSlugMultiplier(slug));
     return {
       rank: index + 1,
-      telegramId: row.telegramId,
+      userId: row.userId,
+      telegramId: row.userId,
       slug,
       ownerName: row.user?.profileCard?.name || row.user?.firstName || row.user?.username || "UNQ+ User",
-      avatarUrl: row.user?.profileCard?.avatarUrl || row.user?.photoUrl || "/brand/logo.PNG",
+      avatarUrl: row.user?.profileCard?.avatarUrl || "/brand/logo.PNG",
       plan: row.user?.plan || "basic",
       score: row.score,
       percentile: row.percentile,
@@ -484,7 +485,10 @@ module.exports = {
   recalculateAndRefreshPercentiles,
   ensureDailyRecalculation,
   getPublicScoreForSlug,
-  getProfileScoreByTelegramId,
+  getProfileScoreByTelegramId: getProfileScoreByUserId,
+  getProfileScoreByUserId,
+  getScoreByTelegramId: getScoreByUserId,
+  getScoreByUserId,
   getScoreLeaderboard,
   updatePercentiles,
 };

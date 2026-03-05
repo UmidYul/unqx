@@ -1,5 +1,4 @@
 const express = require("express");
-const multer = require("multer");
 const { addDays, format, startOfDay, subDays } = require("date-fns");
 const { fromZonedTime, toZonedTime } = require("date-fns-tz");
 
@@ -10,12 +9,10 @@ const { asyncHandler } = require("../../middleware/async");
 const { adminApiRateLimit } = require("../../middleware/rate-limit");
 const { requireSameOrigin } = require("../../middleware/same-origin");
 const { requireCsrfToken } = require("../../middleware/csrf");
-const { CardUpsertSchema } = require("../../validation/card");
 const { parsePositiveInt } = require("../../utils/http");
-const { listCards, createCard, getCardDetailsById, updateCard, generateNextSlug } = require("../../services/cards");
-const { getCardStats, getGlobalStats } = require("../../services/stats");
+const { generateNextSlug } = require("../../services/cards");
+const { getGlobalStats } = require("../../services/stats");
 const { calculateSlugPrice, getSlugPricingConfig } = require("../../services/slug-pricing");
-const { cleanupOrphanAvatars, deleteAvatarByPublicPath, isSupportedAvatarBuffer, renameAvatarBySlug, saveAvatarFromBuffer } = require("../../services/avatar");
 const { sendSlugApprovedToUser, sendSlugAwaitingPaymentToUser, sendSlugRejectedToUser, sendTelegramMessage } = require("../../services/telegram");
 const { recalculateAndRefreshPercentiles } = require("../../services/unq-score");
 const {
@@ -26,13 +23,6 @@ const {
 } = require("../../services/pricing-settings");
 
 const router = express.Router();
-const MAX_FILE_SIZE = 5 * 1024 * 1024;
-const ALLOWED_MIME = new Set(["image/jpeg", "image/png", "image/webp"]);
-
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: MAX_FILE_SIZE },
-});
 
 function normalizeTariff(value) {
   return value === "premium" ? "premium" : "basic";
@@ -59,10 +49,6 @@ function ensureUsersStorageReady(res) {
     return false;
   }
   return true;
-}
-
-function normalizeTheme(value) {
-  return ["default_dark", "light_minimal", "gradient", "neon", "corporate"].includes(value) ? value : "default_dark";
 }
 
 function toOrderStatus(value) {
@@ -173,24 +159,6 @@ function computeDateRangeKey(timezone, days) {
   };
 }
 
-function normalizePhoneFromContact(contact) {
-  const raw = String(contact || "").trim();
-  if (!raw) {
-    return "+998000000000";
-  }
-  const digits = raw.replace(/\D/g, "");
-  if (digits.startsWith("998") && digits.length >= 12) {
-    return `+${digits.slice(0, 12)}`;
-  }
-  if (digits.length === 9) {
-    return `+998${digits}`;
-  }
-  if (digits.length === 10 && digits.startsWith("0")) {
-    return `+998${digits.slice(1)}`;
-  }
-  return "+998000000000";
-}
-
 function encodeBlockedPauseMessage(previousStatus, originalPauseMessage) {
   const prev = String(previousStatus || "paused").toLowerCase();
   const safePrev = ["approved", "active", "paused", "private"].includes(prev) ? prev : "paused";
@@ -212,45 +180,6 @@ function parseBlockedPauseMessage(value) {
     previousStatus,
     pauseMessage: pauseMessage || null,
   };
-}
-
-async function getTakenSlugSet() {
-  const [cards, records] = await Promise.all([
-    prisma.card.findMany({ select: { slug: true } }),
-    prisma.slugRecord.findMany({
-      where: { state: { in: ["TAKEN", "BLOCKED"] } },
-      select: { slug: true },
-    }),
-  ]);
-
-  const set = new Set();
-  cards.forEach((row) => set.add(row.slug));
-  records.forEach((row) => set.add(row.slug));
-  return set;
-}
-
-function avatarUploadMiddleware(req, res, next) {
-  upload.single("file")(req, res, (error) => {
-    if (!error) {
-      next();
-      return;
-    }
-
-    if (error instanceof multer.MulterError && error.code === "LIMIT_FILE_SIZE") {
-      res.status(400).json({ error: "File exceeds 5MB" });
-      return;
-    }
-
-    next(error);
-  });
-}
-
-async function cleanupOrphanAvatarsFromDb() {
-  const rows = await prisma.card.findMany({
-    select: { avatarUrl: true },
-  });
-
-  await cleanupOrphanAvatars(rows.map((row) => row.avatarUrl).filter(Boolean));
 }
 
 router.use(adminApiRateLimit);
@@ -319,278 +248,76 @@ router.get(
   }),
 );
 
+function sendLegacyCardsDeprecated(res) {
+  res.status(410).json({
+    error: "Legacy cards API is deprecated",
+    code: "LEGACY_CARDS_DEPRECATED",
+  });
+}
+
 router.get(
   "/cards",
-  asyncHandler(async (req, res) => {
-    const q = req.query.q || undefined;
-    const page = Number(req.query.page || "1");
-    const rawStatus = req.query.status || "all";
-    const status = rawStatus === "active" || rawStatus === "inactive" ? rawStatus : "all";
-
-    const result = await listCards({
-      query: q,
-      status,
-      page: Number.isFinite(page) && page > 0 ? page : 1,
-      pageSize: 20,
+  asyncHandler(async (_req, res) => {
+    res.json({
+      items: [],
+      pagination: { page: 1, pageSize: 20, total: 0, totalPages: 1 },
     });
-
-    res.json(result);
   }),
 );
 
 router.post(
   "/cards",
-  asyncHandler(async (req, res) => {
-    const parsed = CardUpsertSchema.safeParse(req.body);
-
-    if (!parsed.success) {
-      res.status(400).json({
-        error: "Validation failed",
-        issues: parsed.error.flatten(),
-      });
-      return;
-    }
-
-    try {
-      const card = await createCard(parsed.data);
-      res.status(201).json({ id: card.id, slug: card.slug });
-    } catch (error) {
-      if (error && error.code === "P2002") {
-        res.status(409).json({ error: "Slug already exists" });
-        return;
-      }
-
-      throw error;
-    }
+  asyncHandler(async (_req, res) => {
+    sendLegacyCardsDeprecated(res);
   }),
 );
 
 router.get(
   "/cards/:id",
-  asyncHandler(async (req, res) => {
-    const [card, stats] = await Promise.all([getCardDetailsById(req.params.id), getCardStats(req.params.id, env.TIMEZONE)]);
-
-    if (!card) {
-      res.status(404).json({ error: "Card not found" });
-      return;
-    }
-
-    res.json({ card, stats });
+  asyncHandler(async (_req, res) => {
+    sendLegacyCardsDeprecated(res);
   }),
 );
 
 router.patch(
   "/cards/:id",
-  asyncHandler(async (req, res) => {
-    const parsed = CardUpsertSchema.safeParse(req.body);
-
-    if (!parsed.success) {
-      res.status(400).json({
-        error: "Validation failed",
-        issues: parsed.error.flatten(),
-      });
-      return;
-    }
-
-    const existing = await prisma.card.findUnique({
-      where: { id: req.params.id },
-      select: {
-        id: true,
-        slug: true,
-        avatarUrl: true,
-      },
-    });
-
-    if (!existing) {
-      res.status(404).json({ error: "Card not found" });
-      return;
-    }
-
-    try {
-      const updated = await updateCard(req.params.id, parsed.data);
-
-      if (existing.slug !== parsed.data.slug && existing.avatarUrl) {
-        const moved = await renameAvatarBySlug(existing.slug, parsed.data.slug);
-
-        await prisma.card.update({
-          where: { id: updated.id },
-          data: {
-            avatarUrl: moved,
-          },
-        });
-
-        if (!moved) {
-          await deleteAvatarByPublicPath(existing.avatarUrl);
-        }
-      }
-
-      await cleanupOrphanAvatarsFromDb();
-
-      res.json({ id: updated.id, slug: parsed.data.slug });
-    } catch (error) {
-      if (error && error.code === "P2002") {
-        res.status(409).json({ error: "Slug already exists" });
-        return;
-      }
-
-      throw error;
-    }
+  asyncHandler(async (_req, res) => {
+    sendLegacyCardsDeprecated(res);
   }),
 );
 
 router.delete(
   "/cards/:id",
-  asyncHandler(async (req, res) => {
-    const card = await prisma.card.findUnique({
-      where: { id: req.params.id },
-      select: {
-        id: true,
-        avatarUrl: true,
-      },
-    });
-
-    if (!card) {
-      res.status(404).json({ error: "Card not found" });
-      return;
-    }
-
-    await prisma.card.delete({ where: { id: req.params.id } });
-    await deleteAvatarByPublicPath(card.avatarUrl);
-    await cleanupOrphanAvatarsFromDb();
-
-    res.json({ ok: true });
+  asyncHandler(async (_req, res) => {
+    sendLegacyCardsDeprecated(res);
   }),
 );
 
 router.patch(
   "/cards/:id/toggle-active",
-  asyncHandler(async (req, res) => {
-    if (typeof req.body.isActive !== "boolean") {
-      res.status(400).json({ error: "Invalid payload" });
-      return;
-    }
-
-    const card = await prisma.card.update({
-      where: { id: req.params.id },
-      data: {
-        isActive: req.body.isActive,
-      },
-      select: {
-        id: true,
-        isActive: true,
-      },
-    });
-
-    res.json(card);
+  asyncHandler(async (_req, res) => {
+    sendLegacyCardsDeprecated(res);
   }),
 );
 
 router.patch(
   "/cards/:id/tariff",
-  asyncHandler(async (req, res) => {
-    const tariff = normalizeTariff(req.body.tariff);
-    const theme = normalizeTheme(req.body.theme);
-
-    const updated = await prisma.card.update({
-      where: { id: req.params.id },
-      data: {
-        tariff,
-        ...(tariff === "premium" ? { theme } : { theme: "default_dark" }),
-      },
-      select: {
-        id: true,
-        tariff: true,
-        theme: true,
-      },
-    });
-
-    res.json(updated);
+  asyncHandler(async (_req, res) => {
+    sendLegacyCardsDeprecated(res);
   }),
 );
 
 router.post(
   "/cards/:id/avatar",
-  avatarUploadMiddleware,
-  asyncHandler(async (req, res) => {
-    const card = await prisma.card.findUnique({
-      where: { id: req.params.id },
-      select: {
-        id: true,
-        slug: true,
-        avatarUrl: true,
-      },
-    });
-
-    if (!card) {
-      res.status(404).json({ error: "Card not found" });
-      return;
-    }
-
-    const file = req.file;
-
-    if (!file) {
-      res.status(400).json({ error: "File is required" });
-      return;
-    }
-
-    if (!ALLOWED_MIME.has(file.mimetype)) {
-      res.status(400).json({ error: "Unsupported file type" });
-      return;
-    }
-
-    const hasSupportedSignature = await isSupportedAvatarBuffer(file.buffer);
-    if (!hasSupportedSignature) {
-      res.status(400).json({ error: "Invalid image payload" });
-      return;
-    }
-
-    const avatarUrl = await saveAvatarFromBuffer(card.slug, file.buffer);
-
-    if (card.avatarUrl && card.avatarUrl !== avatarUrl) {
-      await deleteAvatarByPublicPath(card.avatarUrl);
-    }
-
-    await prisma.card.update({
-      where: { id: card.id },
-      data: {
-        avatarUrl,
-      },
-    });
-
-    await cleanupOrphanAvatarsFromDb();
-
-    res.json({ avatarUrl });
+  asyncHandler(async (_req, res) => {
+    sendLegacyCardsDeprecated(res);
   }),
 );
 
 router.delete(
   "/cards/:id/avatar",
-  asyncHandler(async (req, res) => {
-    const card = await prisma.card.findUnique({
-      where: { id: req.params.id },
-      select: {
-        id: true,
-        avatarUrl: true,
-      },
-    });
-
-    if (!card) {
-      res.status(404).json({ error: "Card not found" });
-      return;
-    }
-
-    await deleteAvatarByPublicPath(card.avatarUrl);
-
-    await prisma.card.update({
-      where: { id: card.id },
-      data: {
-        avatarUrl: null,
-      },
-    });
-
-    await cleanupOrphanAvatarsFromDb();
-
-    res.json({ ok: true, avatarUrl: null });
+  asyncHandler(async (_req, res) => {
+    sendLegacyCardsDeprecated(res);
   }),
 );
 
@@ -651,7 +378,7 @@ function buildPurchasesWhere(query) {
   if (typeof query.user === "string" && query.user.trim()) {
     const term = query.user.trim();
     where.OR = [
-      { telegramId: { contains: term, mode: "insensitive" } },
+      { userId: { contains: term, mode: "insensitive" } },
       { user: { username: { contains: term, mode: "insensitive" } } },
       { user: { firstName: { contains: term, mode: "insensitive" } } },
       { user: { displayName: { contains: term, mode: "insensitive" } } },
@@ -678,10 +405,11 @@ router.get(
         include: {
           user: {
             select: {
-              telegramId: true,
+              id: true,
               firstName: true,
               displayName: true,
               username: true,
+              telegramChatId: true,
             },
           },
         },
@@ -710,8 +438,8 @@ router.get(
         tariff: row.requestedPlan,
         theme: null,
         bracelet: row.bracelet,
-        contact: row.contact,
-        telegramId: row.telegramId,
+        contact: row.user?.username ? `@${row.user.username}` : row.user?.telegramChatId || row.user?.id || "",
+        telegramId: row.userId,
         username: row.user?.username || null,
         tMeLink: row.user?.username ? `https://t.me/${row.user.username}` : null,
         status: row.status,
@@ -741,7 +469,7 @@ router.patch(
       where: { id: req.params.id },
       include: {
         user: {
-          select: { telegramId: true, firstName: true },
+          select: { id: true, telegramChatId: true, firstName: true },
         },
       },
     });
@@ -760,29 +488,9 @@ router.patch(
         select: {
           id: true,
           status: true,
-          telegramId: true,
+          userId: true,
           slug: true,
           adminNote: true,
-        },
-      });
-
-      const legacyStatus =
-        status === "new"
-          ? "NEW"
-          : status === "contacted"
-            ? "CONTACTED"
-            : status === "paid"
-              ? "PAID"
-              : status === "approved"
-                ? "ACTIVATED"
-                : "REJECTED";
-      await tx.orderRequest.updateMany({
-        where: {
-          slug: row.slug,
-          contact: order.contact,
-        },
-        data: {
-          status: legacyStatus,
         },
       });
 
@@ -794,7 +502,7 @@ router.patch(
             letters: row.slug.slice(0, 3),
             digits: row.slug.slice(3),
             fullSlug: row.slug,
-            ownerTelegramId: row.telegramId,
+            ownerId: row.userId,
             status: "approved",
             approvedAt: now,
             requestedAt: order.createdAt,
@@ -803,7 +511,7 @@ router.patch(
             price: order.slugPrice,
           },
           update: {
-            ownerTelegramId: row.telegramId,
+            ownerId: row.userId,
             status: "approved",
             approvedAt: now,
             pendingExpiresAt: null,
@@ -812,7 +520,7 @@ router.patch(
         });
 
         const existingUser = await tx.user.findUnique({
-          where: { telegramId: row.telegramId },
+          where: { id: row.userId },
           select: {
             plan: true,
             planPurchasedAt: true,
@@ -833,13 +541,13 @@ router.patch(
           userPatch.planPurchasedAt = existingUser?.planPurchasedAt || now;
         }
         await tx.user.update({
-          where: { telegramId: row.telegramId },
+          where: { id: row.userId },
           data: userPatch,
         });
 
         const hasPrimary = await tx.slug.count({
           where: {
-            ownerTelegramId: row.telegramId,
+            ownerId: row.userId,
             isPrimary: true,
             status: { in: ["approved", "active", "paused", "private"] },
           },
@@ -854,7 +562,7 @@ router.patch(
         if (order.status !== "approved" && tx.purchase && typeof tx.purchase.create === "function") {
           await tx.purchase.create({
             data: {
-              telegramId: row.telegramId,
+              userId: row.userId,
               type: "slug",
               amount: Number(order.slugPrice || 0),
               slug: row.slug,
@@ -873,7 +581,7 @@ router.patch(
           if (planPurchaseType && planPrice > 0) {
             await tx.purchase.create({
               data: {
-                telegramId: row.telegramId,
+                userId: row.userId,
                 type: planPurchaseType,
                 amount: planPrice,
                 slug: null,
@@ -888,7 +596,7 @@ router.patch(
           if (order.bracelet) {
             await tx.purchase.create({
               data: {
-                telegramId: row.telegramId,
+                userId: row.userId,
                 type: "bracelet",
                 amount: braceletPriceValue,
                 slug: row.slug,
@@ -898,33 +606,6 @@ router.patch(
                 note: `order:${row.id}`,
               },
             });
-          }
-        }
-
-        if (order.bracelet) {
-          const legacyOrder = await tx.orderRequest.findFirst({
-            where: {
-              slug: row.slug,
-              contact: order.contact,
-            },
-            select: { id: true },
-          });
-          if (legacyOrder) {
-            const legacyBracelet = await tx.braceletOrder.findUnique({
-              where: { orderId: legacyOrder.id },
-              select: { id: true },
-            });
-            if (!legacyBracelet) {
-              await tx.braceletOrder.create({
-                data: {
-                  orderId: legacyOrder.id,
-                  name: order.user?.firstName || "UNQ+ User",
-                  slug: row.slug,
-                  contact: order.contact,
-                  deliveryStatus: "ORDERED",
-                },
-              });
-            }
           }
         }
       }
@@ -937,13 +618,13 @@ router.patch(
             digits: row.slug.slice(3),
             fullSlug: row.slug,
             status: "free",
-            ownerTelegramId: null,
+            ownerId: null,
             isPrimary: false,
             pendingExpiresAt: null,
             price: order.slugPrice,
           },
           update: {
-            ownerTelegramId: null,
+            ownerId: null,
             status: "free",
             isPrimary: false,
             pauseMessage: null,
@@ -958,7 +639,7 @@ router.patch(
       const userAfter =
         status === "approved"
           ? await tx.user.findUnique({
-              where: { telegramId: row.telegramId },
+              where: { id: row.userId },
               select: { plan: true },
             })
           : null;
@@ -968,7 +649,7 @@ router.patch(
     if (status === "approved") {
       try {
         await sendSlugApprovedToUser({
-          telegramId: updated.telegramId,
+          telegramId: order.user?.telegramChatId || "",
           slug: updated.slug,
           plan: updated.approvedPlan || order.requestedPlan,
           hasBracelet: Boolean(order.bracelet),
@@ -981,7 +662,7 @@ router.patch(
     if (status === "paid") {
       try {
         await sendSlugAwaitingPaymentToUser({
-          telegramId: updated.telegramId,
+          telegramId: order.user?.telegramChatId || "",
           slug: updated.slug,
         });
       } catch (error) {
@@ -991,7 +672,7 @@ router.patch(
 
     if (status === "approved" || status === "rejected") {
       try {
-        await recalculateAndRefreshPercentiles(updated.telegramId);
+        await recalculateAndRefreshPercentiles(updated.userId);
       } catch (error) {
         console.error("[express-app] failed to recalculate score after order status change", error);
       }
@@ -1000,7 +681,7 @@ router.patch(
     if (status === "rejected") {
       try {
         await sendSlugRejectedToUser({
-          telegramId: updated.telegramId,
+          telegramId: order.user?.telegramChatId || "",
           slug: updated.slug,
           adminNote: updated.adminNote,
         });
@@ -1061,99 +742,10 @@ router.post(
 router.post(
   "/orders/:id/activate",
   asyncHandler(async (req, res) => {
-    const order = await prisma.orderRequest.findUnique({
-      where: { id: req.params.id },
-      include: { braceletOrder: true },
+    res.status(410).json({
+      error: "Legacy activation flow is deprecated. Use slug request approval.",
+      code: "LEGACY_ORDER_ACTIVATION_DEPRECATED",
     });
-    if (!order) {
-      res.status(404).json({ error: "Order not found" });
-      return;
-    }
-
-    const tariff = normalizeTariff(req.body.tariff || order.tariff);
-    const theme = tariff === "premium" ? normalizeTheme(req.body.theme || order.theme || "default_dark") : "default_dark";
-
-    const existingBySlug = await prisma.card.findUnique({
-      where: { slug: order.slug },
-      select: { id: true },
-    });
-
-    if (existingBySlug && order.cardId && existingBySlug.id !== order.cardId) {
-      res.status(409).json({ error: "Slug already linked to another card" });
-      return;
-    }
-
-    const card =
-      existingBySlug ||
-      (await prisma.card.create({
-        data: {
-          slug: order.slug,
-          isActive: true,
-          tariff,
-          theme,
-          name: order.name,
-          phone: normalizePhoneFromContact(order.contact),
-          verified: false,
-          hashtag: null,
-          address: null,
-          postcode: null,
-          email: null,
-          extraPhone: null,
-        },
-        select: { id: true },
-      }));
-
-    await prisma.$transaction(async (tx) => {
-      await tx.card.update({
-        where: { id: card.id },
-        data: {
-          isActive: true,
-          tariff,
-          theme,
-        },
-      });
-
-      await tx.slugRecord.upsert({
-        where: { slug: order.slug },
-        create: {
-          slug: order.slug,
-          state: "TAKEN",
-          ownerName: order.name,
-          cardId: card.id,
-          activationDate: new Date(),
-        },
-        update: {
-          state: "TAKEN",
-          ownerName: order.name,
-          cardId: card.id,
-          activationDate: new Date(),
-        },
-      });
-
-      await tx.orderRequest.update({
-        where: { id: order.id },
-        data: {
-          status: "ACTIVATED",
-          tariff,
-          theme,
-          cardId: card.id,
-        },
-      });
-
-      if (order.bracelet && !order.braceletOrder) {
-        await tx.braceletOrder.create({
-          data: {
-            orderId: order.id,
-            name: order.name,
-            slug: order.slug,
-            contact: order.contact,
-            deliveryStatus: "ORDERED",
-          },
-        });
-      }
-    });
-
-    res.json({ ok: true, cardId: card.id });
   }),
 );
 
@@ -1162,17 +754,13 @@ router.delete(
   asyncHandler(async (req, res) => {
     const row = await prisma.slugRequest.findUnique({
       where: { id: req.params.id },
-      select: { slug: true, contact: true },
+      select: { id: true },
     });
-    await prisma.slugRequest.delete({ where: { id: req.params.id } });
-    if (row) {
-      await prisma.orderRequest.deleteMany({
-        where: {
-          slug: row.slug,
-          contact: row.contact,
-        },
-      });
+    if (!row) {
+      res.status(404).json({ error: "Order not found" });
+      return;
     }
+    await prisma.slugRequest.delete({ where: { id: req.params.id } });
     res.json({ ok: true });
   }),
 );
@@ -1198,7 +786,7 @@ router.get(
     }
     if (q) {
       where.OR = [
-        { telegramId: { contains: q, mode: "insensitive" } },
+        { id: { contains: q, mode: "insensitive" } },
         { firstName: { contains: q, mode: "insensitive" } },
         { username: { contains: q, mode: "insensitive" } },
         { displayName: { contains: q, mode: "insensitive" } },
@@ -1216,7 +804,7 @@ router.get(
           skip: (page - 1) * pageSize,
           take: pageSize,
           select: {
-            telegramId: true,
+            id: true,
             firstName: true,
             displayName: true,
             username: true,
@@ -1236,12 +824,12 @@ router.get(
       throw error;
     }
 
-    const telegramIds = users.map((item) => item.telegramId);
+    const userIds = users.map((item) => item.id);
     const [slugs, cards, braceletRequests, unqScores] = await Promise.all([
       prisma.slug.findMany({
-        where: { ownerTelegramId: { in: telegramIds } },
+        where: { ownerId: { in: userIds } },
         select: {
-          ownerTelegramId: true,
+          ownerId: true,
           fullSlug: true,
           status: true,
           isPrimary: true,
@@ -1249,22 +837,22 @@ router.get(
         },
       }),
       prisma.profileCard.findMany({
-        where: { ownerTelegramId: { in: telegramIds } },
-        select: { ownerTelegramId: true, id: true },
+        where: { ownerId: { in: userIds } },
+        select: { ownerId: true, id: true },
       }),
       prisma.slugRequest.findMany({
         where: {
-          telegramId: { in: telegramIds },
+          userId: { in: userIds },
           bracelet: true,
           status: "approved",
         },
-        select: { telegramId: true, slug: true },
+        select: { userId: true, slug: true },
       }),
       modelDelegateExists("UnqScore")
         ? prisma.unqScore.findMany({
-            where: { telegramId: { in: telegramIds } },
+            where: { userId: { in: userIds } },
             select: {
-              telegramId: true,
+              userId: true,
               score: true,
               percentile: true,
               calculatedAt: true,
@@ -1281,56 +869,56 @@ router.get(
 
     const slugsByUser = new Map();
     for (const row of slugs) {
-      if (!slugsByUser.has(row.ownerTelegramId)) {
-        slugsByUser.set(row.ownerTelegramId, []);
+      if (!slugsByUser.has(row.ownerId)) {
+        slugsByUser.set(row.ownerId, []);
       }
-      slugsByUser.get(row.ownerTelegramId).push({
+      slugsByUser.get(row.ownerId).push({
         fullSlug: row.fullSlug,
         status: row.status,
         isPrimary: row.isPrimary,
         pauseMessage: row.pauseMessage || null,
       });
     }
-    const cardsSet = new Set(cards.map((item) => item.ownerTelegramId));
+    const cardsSet = new Set(cards.map((item) => item.ownerId));
     const braceletByUser = new Map();
     for (const row of braceletRequests) {
-      if (!braceletByUser.has(row.telegramId)) {
-        braceletByUser.set(row.telegramId, new Set());
+      if (!braceletByUser.has(row.userId)) {
+        braceletByUser.set(row.userId, new Set());
       }
-      braceletByUser.get(row.telegramId).add(row.slug);
+      braceletByUser.get(row.userId).add(row.slug);
     }
-    const scoreByUser = new Map(unqScores.map((row) => [row.telegramId, row]));
+    const scoreByUser = new Map(unqScores.map((row) => [row.userId, row]));
 
     const items = users.map((user) => ({
-        unqScore: scoreByUser.get(user.telegramId)
+        unqScore: scoreByUser.get(user.id)
           ? {
-              score: scoreByUser.get(user.telegramId).score,
-              percentile: scoreByUser.get(user.telegramId).percentile,
-              calculatedAt: scoreByUser.get(user.telegramId).calculatedAt,
+              score: scoreByUser.get(user.id).score,
+              percentile: scoreByUser.get(user.id).percentile,
+              calculatedAt: scoreByUser.get(user.id).calculatedAt,
               breakdown: {
-                views: scoreByUser.get(user.telegramId).scoreViews,
-                slugRarity: scoreByUser.get(user.telegramId).scoreSlugRarity,
-                tenure: scoreByUser.get(user.telegramId).scoreTenure,
-                ctr: scoreByUser.get(user.telegramId).scoreCtr,
-                bracelet: scoreByUser.get(user.telegramId).scoreBracelet,
-                plan: scoreByUser.get(user.telegramId).scorePlan,
+                views: scoreByUser.get(user.id).scoreViews,
+                slugRarity: scoreByUser.get(user.id).scoreSlugRarity,
+                tenure: scoreByUser.get(user.id).scoreTenure,
+                ctr: scoreByUser.get(user.id).scoreCtr,
+                bracelet: scoreByUser.get(user.id).scoreBracelet,
+                plan: scoreByUser.get(user.id).scorePlan,
               },
             }
           : null,
-        telegramId: user.telegramId,
+        telegramId: user.id,
         name: user.displayName || user.firstName,
         username: user.username || null,
         plan: user.plan,
         planPurchasedAt: user.planPurchasedAt,
         planUpgradedAt: user.planUpgradedAt,
-        slugs: (slugsByUser.get(user.telegramId) || []).map((slug) => ({
+        slugs: (slugsByUser.get(user.id) || []).map((slug) => ({
           ...slug,
-          hasBracelet: Boolean(braceletByUser.get(user.telegramId)?.has(slug.fullSlug)),
+          hasBracelet: Boolean(braceletByUser.get(user.id)?.has(slug.fullSlug)),
         })),
-        activeSlugCount: (slugsByUser.get(user.telegramId) || []).filter((slug) =>
+        activeSlugCount: (slugsByUser.get(user.id) || []).filter((slug) =>
           ["approved", "active", "paused", "private"].includes(slug.status),
         ).length,
-        hasCard: cardsSet.has(user.telegramId),
+        hasCard: cardsSet.has(user.id),
         status: user.status,
         createdAt: user.createdAt,
       }));
@@ -1352,12 +940,12 @@ router.get(
 );
 
 router.patch(
-  "/users/:telegramId/plan",
+  "/users/:userId/plan",
   asyncHandler(async (req, res) => {
     if (!ensureUsersStorageReady(res)) {
       return;
     }
-    const telegramId = String(req.params.telegramId || "");
+    const userId = String(req.params.userId || "");
     const plan = normalizeUserPlan(req.body.plan);
     const reason = String(req.body.reason || "").trim();
     const force = Boolean(req.body.force);
@@ -1369,9 +957,9 @@ router.patch(
 
     const result = await prisma.$transaction(async (tx) => {
       const user = await tx.user.findUnique({
-        where: { telegramId },
+        where: { id: userId },
         select: {
-          telegramId: true,
+          id: true,
           plan: true,
           planPurchasedAt: true,
           planUpgradedAt: true,
@@ -1383,7 +971,7 @@ router.patch(
 
       const owned = await tx.slug.findMany({
         where: {
-          ownerTelegramId: telegramId,
+          ownerId: userId,
           status: { in: ["approved", "active", "paused", "private"] },
         },
         orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
@@ -1411,9 +999,9 @@ router.patch(
         userPatch.planPurchasedAt = user.planPurchasedAt || now;
       }
       const updatedUser = await tx.user.update({
-        where: { telegramId },
+        where: { id: userId },
         data: userPatch,
-        select: { telegramId: true, plan: true, planPurchasedAt: true, planUpgradedAt: true },
+        select: { id: true, plan: true, planPurchasedAt: true, planUpgradedAt: true },
       });
 
       if (plan === "basic" && owned.length > 1) {
@@ -1457,13 +1045,13 @@ router.patch(
     }
 
     try {
-      await recalculateAndRefreshPercentiles(result.telegramId);
+      await recalculateAndRefreshPercentiles(result.id);
     } catch (error) {
       console.error("[express-app] failed to recalculate score after plan change", error);
     }
 
     res.json({
-      telegramId: result.telegramId,
+      telegramId: result.id,
       plan: result.plan,
       planPurchasedAt: result.planPurchasedAt,
       planUpgradedAt: result.planUpgradedAt,
@@ -1472,15 +1060,15 @@ router.patch(
 );
 
 router.patch(
-  "/users/:telegramId/block",
+  "/users/:userId/block",
   asyncHandler(async (req, res) => {
     if (!ensureUsersStorageReady(res)) {
       return;
     }
-    const telegramId = String(req.params.telegramId || "");
+    const userId = String(req.params.userId || "");
     await prisma.$transaction(async (tx) => {
       const owned = await tx.slug.findMany({
-        where: { ownerTelegramId: telegramId },
+        where: { ownerId: userId },
         select: {
           fullSlug: true,
           status: true,
@@ -1500,12 +1088,12 @@ router.patch(
         });
       }
       await tx.user.update({
-        where: { telegramId },
+        where: { id: userId },
         data: { status: "blocked" },
       });
     });
     try {
-      await recalculateAndRefreshPercentiles(telegramId);
+      await recalculateAndRefreshPercentiles(userId);
     } catch (error) {
       console.error("[express-app] failed to recalculate score after user block", error);
     }
@@ -1514,16 +1102,16 @@ router.patch(
 );
 
 router.patch(
-  "/users/:telegramId/unblock",
+  "/users/:userId/unblock",
   asyncHandler(async (req, res) => {
     if (!ensureUsersStorageReady(res)) {
       return;
     }
-    const telegramId = String(req.params.telegramId || "");
+    const userId = String(req.params.userId || "");
     await prisma.$transaction(async (tx) => {
       const blocked = await tx.slug.findMany({
         where: {
-          ownerTelegramId: telegramId,
+          ownerId: userId,
           status: "blocked",
         },
         select: {
@@ -1544,12 +1132,12 @@ router.patch(
       }
 
       await tx.user.update({
-        where: { telegramId },
+        where: { id: userId },
         data: { status: "active" },
       });
     });
     try {
-      await recalculateAndRefreshPercentiles(telegramId);
+      await recalculateAndRefreshPercentiles(userId);
     } catch (error) {
       console.error("[express-app] failed to recalculate score after user unblock", error);
     }
@@ -1571,6 +1159,8 @@ router.get(
           select: {
             firstName: true,
             displayName: true,
+            username: true,
+            telegramChatId: true,
           },
         },
       },
@@ -1587,7 +1177,7 @@ router.get(
           Number(row.planPrice || 0),
           `"${row.bracelet ? "Да" : "Нет"}"`,
           Number(row.slugPrice || 0) + Number(row.planPrice || 0) + (row.bracelet ? braceletPriceValue : 0),
-          `"${String(row.contact).replace(/"/g, '""')}"`,
+          `"${String(row.user?.username ? `@${row.user.username}` : row.user?.telegramChatId || row.userId || "").replace(/"/g, '""')}"`,
           `"${formatOrderStatusLabel(row.status)}"`,
         ].join(","),
       ),
@@ -1627,7 +1217,7 @@ router.get(
         include: {
           user: {
             select: {
-              telegramId: true,
+              id: true,
               firstName: true,
               displayName: true,
               username: true,
@@ -1646,7 +1236,7 @@ router.get(
       items: rows.map((row) => ({
         id: row.id,
         purchasedAt: row.purchasedAt,
-        telegramId: row.telegramId,
+        telegramId: row.userId,
         userName: row.user?.displayName || row.user?.firstName || "UNQ+ User",
         username: row.user?.username || null,
         type: row.type,
@@ -1694,7 +1284,7 @@ router.get(
         [
           `"${new Date(row.purchasedAt).toLocaleString("ru-RU")}"`,
           `"${String(row.user?.displayName || row.user?.firstName || "UNQ+ User").replace(/"/g, '""')}"`,
-          `"${String(row.user?.username ? `@${row.user.username}` : row.telegramId).replace(/"/g, '""')}"`,
+          `"${String(row.user?.username ? `@${row.user.username}` : row.userId).replace(/"/g, '""')}"`,
           `"${String(row.type)}"`,
           `"${String(row.slug || "").replace(/"/g, '""')}"`,
           Number(row.amount || 0),
@@ -1764,7 +1354,8 @@ router.get(
               firstName: true,
               displayName: true,
               username: true,
-              telegramId: true,
+              id: true,
+              telegramChatId: true,
             },
           },
         },
@@ -1789,7 +1380,7 @@ router.get(
               ? "Заблокирован"
               : "Занят",
         ownerName: row.owner?.displayName || row.owner?.firstName || "",
-        ownerTelegramId: row.ownerTelegramId || null,
+        ownerId: row.ownerId || null,
         ownerUsername: row.owner?.username || null,
         effectivePrice,
         priceOverride: typeof row.price === "number" ? row.price : null,
@@ -1824,7 +1415,7 @@ router.patch(
 
     const existing = await prisma.slug.findUnique({
       where: { fullSlug: slug },
-      select: { fullSlug: true, ownerTelegramId: true, status: true, pauseMessage: true },
+      select: { fullSlug: true, ownerId: true, status: true, pauseMessage: true, owner: { select: { telegramChatId: true } } },
     });
     if (!existing) {
       res.status(404).json({ error: "Slug not found" });
@@ -1833,7 +1424,7 @@ router.patch(
 
     const data = { status: next };
     if (next === "free") {
-      data.ownerTelegramId = null;
+      data.ownerId = null;
       data.isPrimary = false;
       data.pauseMessage = null;
       data.requestedAt = null;
@@ -1853,19 +1444,19 @@ router.patch(
       data,
     });
 
-    if (next === "blocked" && updated.ownerTelegramId) {
+    if (next === "blocked" && existing.owner?.telegramChatId) {
       try {
         await sendTelegramMessage({
-          chatId: updated.ownerTelegramId,
+          chatId: existing.owner.telegramChatId,
           text: `Твой slug ${updated.fullSlug} был временно заблокирован администратором.`,
         });
       } catch (error) {
         console.error("[express-app] failed to send slug blocked notification", error);
       }
     }
-    if (updated.ownerTelegramId) {
+    if (updated.ownerId) {
       try {
-        await recalculateAndRefreshPercentiles(updated.ownerTelegramId);
+        await recalculateAndRefreshPercentiles(updated.ownerId);
       } catch (error) {
         console.error("[express-app] failed to recalculate score after slug state change", error);
       }
@@ -1874,7 +1465,7 @@ router.patch(
     res.json({
       slug: updated.fullSlug,
       status: updated.status,
-      ownerTelegramId: updated.ownerTelegramId,
+      ownerId: updated.ownerId,
       isPrimary: updated.isPrimary,
       requestedAt: updated.requestedAt,
       approvedAt: updated.approvedAt,
@@ -1904,11 +1495,11 @@ router.patch(
         activatedAt: new Date(),
         pendingExpiresAt: null,
       },
-      select: { fullSlug: true, status: true, activatedAt: true, ownerTelegramId: true },
+      select: { fullSlug: true, status: true, activatedAt: true, ownerId: true },
     });
-    if (updated.ownerTelegramId) {
+    if (updated.ownerId) {
       try {
-        await recalculateAndRefreshPercentiles(updated.ownerTelegramId);
+        await recalculateAndRefreshPercentiles(updated.ownerId);
       } catch (error) {
         console.error("[express-app] failed to recalculate score after slug activation", error);
       }
@@ -1969,7 +1560,6 @@ router.get(
           createdAt: true,
           name: true,
           slug: true,
-          contact: true,
           deliveryStatus: true,
         },
       }),
@@ -1996,11 +1586,11 @@ router.patch(
     });
     const owner = await prisma.slug.findUnique({
       where: { fullSlug: updated.slug },
-      select: { ownerTelegramId: true },
+      select: { ownerId: true },
     });
-    if (owner?.ownerTelegramId) {
+    if (owner?.ownerId) {
       try {
-        await recalculateAndRefreshPercentiles(owner.ownerTelegramId);
+        await recalculateAndRefreshPercentiles(owner.ownerId);
       } catch (error) {
         console.error("[express-app] failed to recalculate score after bracelet update", error);
       }
@@ -2379,7 +1969,7 @@ router.post(
         },
       }),
       prisma.user.update({
-        where: { telegramId: target.telegramId },
+        where: { id: target.userId },
         data: {
           isVerified: true,
           verifiedCompany: target.companyName,
@@ -2509,10 +2099,7 @@ router.get(
 router.get(
   "/cards/:id/stats",
   asyncHandler(async (req, res) => {
-    const daysRaw = Number(req.query.days || "7");
-    const days = Number.isFinite(daysRaw) ? Math.max(1, Math.min(30, daysRaw)) : 7;
-    const stats = await getCardStats(req.params.id, env.TIMEZONE, days);
-    res.json(stats);
+    sendLegacyCardsDeprecated(res);
   }),
 );
 

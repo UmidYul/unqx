@@ -23,18 +23,12 @@ router.get("/robots.txt", (_req, res) => {
 router.get(
   "/sitemap.xml",
   asyncHandler(async (_req, res) => {
-    const [activeSlugs, legacyCards, leaderboardSettings, directorySettings, dropsCount] = await Promise.all([
+    const [activeSlugs, leaderboardSettings, directorySettings, dropsCount] = await Promise.all([
       prisma.slug.findMany({
         where: {
           status: { in: ["active", "approved"] },
-          ownerTelegramId: { not: null },
         },
         select: { fullSlug: true, updatedAt: true },
-        orderBy: { updatedAt: "desc" },
-      }),
-      prisma.card.findMany({
-        where: { isActive: true },
-        select: { slug: true, updatedAt: true },
         orderBy: { updatedAt: "desc" },
       }),
       getFeatureSetting("leaderboard"),
@@ -63,12 +57,6 @@ router.get(
         publicCardMap.set(row.fullSlug, row.updatedAt);
       }
     });
-    legacyCards.forEach((row) => {
-      if (!publicCardMap.has(row.slug)) {
-        publicCardMap.set(row.slug, row.updatedAt);
-      }
-    });
-
     const cardUrls = Array.from(publicCardMap.entries())
       .map(
         ([slug, updatedAt]) =>

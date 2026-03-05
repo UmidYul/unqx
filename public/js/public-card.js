@@ -86,6 +86,7 @@
       .replace(/[^A-Z0-9]/g, "")
       .slice(0, 6);
   }
+  const STRICT_SLUG_REGEX = /^[A-Z]{3}[0-9]{3}$/;
 
   function hideResults() {
     if (!(slugSearchResults instanceof HTMLElement)) return;
@@ -102,7 +103,16 @@
     }
 
     if (!Array.isArray(items) || items.length === 0) {
-      slugSearchResults.innerHTML = '<p class="px-2 py-2 text-sm text-neutral-500">Ничего не найдено</p>';
+      const buyLink = `/?buySlug=${encodeURIComponent(query)}#hero-check`;
+      slugSearchResults.innerHTML = `
+        <div class="px-2 py-2">
+          <p class="text-sm text-neutral-500">Ничего не найдено</p>
+          <a href="${buyLink}" class="interactive-btn mt-2 inline-flex min-h-11 items-center gap-2 rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100">
+            Купить ${query}
+            <svg class="icon-stroke h-3.5 w-3.5" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"></path></svg>
+          </a>
+        </div>
+      `;
       slugSearchResults.classList.remove("hidden");
       return;
     }
@@ -128,6 +138,12 @@
     if (!query) {
       lastItems = [];
       renderResults([], "");
+      return;
+    }
+
+    if (!STRICT_SLUG_REGEX.test(query)) {
+      slugSearchResults.innerHTML = '<p class="px-2 py-2 text-sm text-neutral-500">Формат: 3 буквы и 3 цифры (например, AAA001)</p>';
+      slugSearchResults.classList.remove("hidden");
       return;
     }
 
@@ -294,6 +310,10 @@
       if (searchTimer) {
         window.clearTimeout(searchTimer);
       }
+      if (query.length < 6) {
+        hideResults();
+        return;
+      }
       searchTimer = window.setTimeout(() => {
         void searchSlugs(query);
       }, 140);
@@ -311,6 +331,12 @@
       const query = normalizeSearchSlug(slugSearchInput.value);
       slugSearchInput.value = query;
       slugSearchInput.setCustomValidity("");
+      if (!STRICT_SLUG_REGEX.test(query)) {
+        slugSearchInput.setCustomValidity("Введите UNQ в формате 3 буквы и 3 цифры (AAA001)");
+        slugSearchInput.reportValidity();
+        void searchSlugs(query);
+        return;
+      }
       lastQuery = query;
       if (searchTimer) {
         window.clearTimeout(searchTimer);

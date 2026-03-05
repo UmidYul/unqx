@@ -13,7 +13,6 @@
         { id: "purchases", label: "Покупки", href: dashboardLink("purchases"), icon: "orders" },
         { id: "users", label: "Пользователи", href: dashboardLink("users"), icon: "users" },
         { id: "slugs", label: "Slug", href: dashboardLink("slugs"), icon: "slug" },
-        { id: "cards", label: "Визитки", href: dashboardLink("cards"), icon: "cards" },
         { id: "bracelets", label: "Браслеты", href: dashboardLink("bracelets"), icon: "bracelets", badge: "bracelets" },
         { id: "score", label: "UNQ Score", href: dashboardLink("score"), icon: "leaderboard" },
       ],
@@ -40,9 +39,6 @@
   function itemIsActive(item) {
     if (isDashboardRoute) {
       return layoutActiveTab === item.id;
-    }
-    if (item.id === "cards" && layoutCurrentPath.startsWith("/admin/cards")) {
-      return true;
     }
     if (item.id === "logs" && layoutCurrentPath === "/admin/logs") {
       return true;
@@ -144,7 +140,10 @@
               <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
             </svg>
           </button>
-          <a href="/admin/dashboard" class="admin-topbar-brand">UNQ+ Admin</a>
+          <a href="/admin/dashboard" class="admin-topbar-brand">
+            <img src="/brand/logo.PNG" alt="UNQ+" class="admin-topbar-brand-mark" />
+            <span>UNQ+ Admin</span>
+          </a>
         </div>
 
         <div class="admin-topbar-actions">

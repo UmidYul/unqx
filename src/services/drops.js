@@ -59,7 +59,7 @@ async function reserveDropSlugs(pool) {
         },
         update: {
           status: "reserved_drop",
-          ownerTelegramId: null,
+          ownerId: null,
           isPrimary: false,
           pauseMessage: null,
           requestedAt: now,
@@ -138,10 +138,23 @@ async function releaseUnsoldDropSlugs(dropId) {
 
 async function sendDropMessageToWaitlist(drop, text, kind) {
   if (!prisma.dropWaitlist || typeof prisma.dropWaitlist.findMany !== "function") return;
-  const waitlist = await prisma.dropWaitlist.findMany({ where: { dropId: drop.id } });
+  const waitlist = await prisma.dropWaitlist.findMany({
+    where: { dropId: drop.id },
+    include: {
+      user: {
+        select: {
+          telegramChatId: true,
+        },
+      },
+    },
+  });
   for (const row of waitlist) {
+    const chatId = row.user?.telegramChatId;
+    if (!chatId) {
+      continue;
+    }
     try {
-      await sendTelegramMessage({ chatId: row.telegramId, text, parseMode: "HTML" });
+      await sendTelegramMessage({ chatId, text, parseMode: "HTML" });
       await prisma.dropWaitlist.update({
         where: { id: row.id },
         data:

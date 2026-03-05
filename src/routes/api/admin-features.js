@@ -117,16 +117,16 @@ router.patch(
 );
 
 router.post(
-  "/leaderboard/reset-user/:telegramId",
+  "/leaderboard/reset-user/:userId",
   asyncHandler(async (req, res) => {
-    const telegramId = String(req.params.telegramId || "");
+    const userId = String(req.params.userId || "");
     const slugs = await prisma.slug.findMany({
-      where: { ownerTelegramId: telegramId },
+      where: { ownerId: userId },
       select: { fullSlug: true },
     });
     const targets = slugs.map((row) => row.fullSlug);
     if (targets.length) {
-      await prisma.slugView.deleteMany({ where: { fullSlug: { in: targets } } });
+      await prisma.analyticsView.deleteMany({ where: { slug: { in: targets } } });
     }
     res.json({ ok: true, removed: targets.length });
   }),
@@ -176,7 +176,7 @@ router.get(
       include: {
         user: {
           select: {
-            telegramId: true,
+            id: true,
             firstName: true,
             username: true,
             profileCard: { select: { name: true } },
@@ -192,7 +192,7 @@ router.get(
     });
     res.json({
       items: rows.map((row) => ({
-        telegramId: row.telegramId,
+        userId: row.userId,
         userName: row.user?.profileCard?.name || row.user?.firstName || row.user?.username || "UNQ+ User",
         slug: row.user?.slugs?.[0]?.fullSlug || "—",
         score: row.score,
@@ -212,14 +212,14 @@ router.get(
 );
 
 router.post(
-  "/score/recalculate/:telegramId",
+  "/score/recalculate/:userId",
   asyncHandler(async (req, res) => {
-    const telegramId = String(req.params.telegramId || "");
-    if (!telegramId) {
-      res.status(400).json({ error: "Telegram ID required" });
+    const userId = String(req.params.userId || "");
+    if (!userId) {
+      res.status(400).json({ error: "User ID required" });
       return;
     }
-    const row = await recalculateAndRefreshPercentiles(telegramId);
+    const row = await recalculateAndRefreshPercentiles(userId);
     res.json({ ok: true, score: row?.score || 0 });
   }),
 );
@@ -268,8 +268,8 @@ router.get(
   asyncHandler(async (_req, res) => {
     const rows = await prisma.referral.findMany({
       include: {
-        referrer: { select: { telegramId: true, username: true, firstName: true } },
-        referred: { select: { telegramId: true, username: true, firstName: true } },
+        referrer: { select: { id: true, username: true, firstName: true } },
+        referred: { select: { id: true, username: true, firstName: true } },
         rewardedRule: true,
       },
       orderBy: { createdAt: "desc" },
@@ -698,7 +698,7 @@ router.get(
       where: { dropId: req.params.id, status: { in: ["paid", "approved"] } },
       orderBy: { createdAt: "desc" },
       take: 200,
-      select: { telegramId: true, slug: true, createdAt: true },
+      select: { userId: true, slug: true, createdAt: true },
     });
     res.json({ ...stats, buyers });
   }),
@@ -709,7 +709,7 @@ router.get(
   asyncHandler(async (req, res) => {
     const items = await prisma.dropWaitlist.findMany({
       where: { dropId: req.params.id },
-      include: { user: { select: { telegramId: true, username: true, firstName: true } } },
+      include: { user: { select: { id: true, username: true, firstName: true } } },
       orderBy: { joinedAt: "desc" },
     });
     res.json({ items });
@@ -725,11 +725,24 @@ router.post(
       return;
     }
 
-    const waitlist = await prisma.dropWaitlist.findMany({ where: { dropId: drop.id } });
+    const waitlist = await prisma.dropWaitlist.findMany({
+      where: { dropId: drop.id },
+      include: {
+        user: {
+          select: {
+            telegramChatId: true,
+          },
+        },
+      },
+    });
     for (const row of waitlist) {
+      const chatId = row.user?.telegramChatId;
+      if (!chatId) {
+        continue;
+      }
       try {
         await sendTelegramMessage({
-          chatId: row.telegramId,
+          chatId,
           text: `🔔 Напоминание о дропе: ${drop.title}\nunqx.uz/drops`,
           parseMode: "HTML",
         });

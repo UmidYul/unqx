@@ -42,8 +42,13 @@ async function processPendingSlugExpirations() {
         },
         select: {
           id: true,
-          telegramId: true,
+          userId: true,
           createdAt: true,
+          user: {
+            select: {
+              telegramChatId: true,
+            },
+          },
         },
       });
 
@@ -57,23 +62,13 @@ async function processPendingSlugExpirations() {
             adminNote: `Истекло автоматически через ${pendingHours} часа ожидания`,
           },
         });
-
-        await tx.orderRequest.updateMany({
-          where: {
-            slug: slugRow.fullSlug,
-            status: { in: ["NEW", "CONTACTED", "PAID"] },
-          },
-          data: {
-            status: "REJECTED",
-          },
-        });
       }
 
       await tx.slug.update({
         where: { fullSlug: slugRow.fullSlug },
         data: {
           status: "free",
-          ownerTelegramId: null,
+          ownerId: null,
           isPrimary: false,
           pendingExpiresAt: null,
           requestedAt: null,
@@ -88,9 +83,9 @@ async function processPendingSlugExpirations() {
       const latestOrder = pendingOrders
         .slice()
         .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0];
-      if (latestOrder && latestOrder.telegramId) {
+      if (latestOrder?.user?.telegramChatId) {
         notifications.push({
-          telegramId: latestOrder.telegramId,
+          telegramId: latestOrder.user.telegramChatId,
           slug: slugRow.fullSlug,
         });
       }

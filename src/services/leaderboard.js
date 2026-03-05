@@ -69,10 +69,11 @@ async function buildLeaderboard(period = "week") {
   };
 }
 
-async function getUserLeaderboardSummary({ telegramId, period = "week" }) {
-  if (!telegramId) return null;
+async function getUserLeaderboardSummary({ userId, telegramId, period = "week" }) {
+  const targetId = userId || telegramId;
+  if (!targetId) return null;
   const board = await buildLeaderboard(period);
-  const target = board.items.find((item) => item.telegramId === telegramId);
+  const target = board.items.find((item) => item.userId === targetId || item.telegramId === targetId);
   if (!target) return null;
 
   const limit = Math.max(1, Number(board.settings.publicLimit) || 20);
@@ -89,7 +90,7 @@ async function getUserLeaderboardSummary({ telegramId, period = "week" }) {
 }
 
 async function detectSuspiciousActivity() {
-  if (!prisma.slugView || typeof prisma.slugView.groupBy !== "function") {
+  if (!prisma.analyticsView || typeof prisma.analyticsView.groupBy !== "function") {
     return [];
   }
   const settings = await getFeatureSetting("leaderboard");
@@ -98,17 +99,16 @@ async function detectSuspiciousActivity() {
   const now = new Date();
   const windowStart = new Date(now.getTime() - windowMinutes * 60 * 1000);
 
-  const grouped = await prisma.slugView.groupBy({
-    by: ["fullSlug"],
+  const grouped = await prisma.analyticsView.groupBy({
+    by: ["slug"],
     where: {
-      isUnique: true,
-      viewedAt: { gte: windowStart, lte: now },
+      visitedAt: { gte: windowStart, lte: now },
     },
     _count: { _all: true },
   });
 
   const suspicious = grouped
-    .map((row) => ({ slug: row.fullSlug, views: row._count._all || 0 }))
+    .map((row) => ({ slug: row.slug, views: row._count._all || 0 }))
     .filter((row) => row.views >= threshold)
     .sort((a, b) => b.views - a.views);
 

@@ -1,4 +1,3 @@
-const { randomBytes } = require("node:crypto");
 const bcrypt = require("bcryptjs");
 const express = require("express");
 
@@ -33,7 +32,6 @@ const MAX_OTP_ATTEMPTS = 5;
 
 const USER_AUTH_SELECT = {
   id: true,
-  telegramId: true,
   otpCode: true,
   otpExpiresAt: true,
   otpAttempts: true,
@@ -44,7 +42,6 @@ const USER_AUTH_SELECT = {
   firstName: true,
   lastName: true,
   username: true,
-  photoUrl: true,
   displayName: true,
   plan: true,
   planPurchasedAt: true,
@@ -55,10 +52,6 @@ const USER_AUTH_SELECT = {
 
 function normalizeEmail(value) {
   return String(value || "").trim().toLowerCase();
-}
-
-function generateLegacyTelegramId() {
-  return `legacy_${randomBytes(12).toString("hex")}`;
 }
 
 function generateOtp() {
@@ -142,13 +135,11 @@ function userToSessionPayload(user) {
   const displayName = normalizeDisplayName(user.displayName, user.firstName);
   return {
     userId: user.id,
-    telegramId: user.telegramId || null,
     email: user.email || null,
     emailVerified: Boolean(user.emailVerified),
     firstName: user.firstName,
     lastName: user.lastName || null,
     username: user.username || null,
-    photoUrl: user.photoUrl || null,
     displayName,
     plan: user.plan,
     planPurchasedAt: user.planPurchasedAt ? user.planPurchasedAt.toISOString() : null,
@@ -161,13 +152,11 @@ function userToClientPayload(user) {
   const effective = getEffectivePlan(user);
   return {
     id: user.id,
-    telegramId: user.telegramId || null,
     email: user.email || null,
     emailVerified: Boolean(user.emailVerified),
     firstName: user.firstName,
     lastName: user.lastName || null,
     username: user.username || null,
-    photoUrl: user.photoUrl || null,
     displayName: normalizeDisplayName(user.displayName, user.firstName),
     plan: user.plan,
     effectivePlan: effective.plan,
@@ -206,7 +195,6 @@ router.post(
     const refCode = await generateUniqueRefCode();
     const user = await prisma.user.create({
       data: {
-        telegramId: generateLegacyTelegramId(),
         firstName,
         email,
         passwordHash,
@@ -221,7 +209,7 @@ router.post(
     const { code } = await setVerificationOtp(user.id);
     if (req.session?.pendingRefCode) {
       await linkReferralOnRegistration({
-        referredTelegramId: user.telegramId,
+        referredUserId: user.id,
         refCode: req.session.pendingRefCode,
       });
     }

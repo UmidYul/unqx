@@ -302,10 +302,20 @@
 
 .admin-topbar-brand {
   display: none;
+  align-items: center;
+  gap: 8px;
   font-size: 16px;
   font-weight: 800;
   color: #111827;
   text-decoration: none;
+}
+
+.admin-topbar-brand-mark {
+  width: 22px;
+  height: 22px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  object-fit: cover;
 }
 
 .admin-topbar-actions {

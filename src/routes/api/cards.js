@@ -280,60 +280,33 @@ function normalizeTheme(value) {
 }
 
 async function getSlugState(slug) {
-  const [card, record, slugRow] = await Promise.all([
-    prisma.card.findUnique({
-      where: { slug },
+  const slugRow = await withMissingTableFallback("Slug", null, () =>
+    prisma.slug.findUnique({
+      where: { fullSlug: slug },
       select: {
-        id: true,
-        name: true,
-        avatarUrl: true,
-        isActive: true,
-      },
-    }),
-    withMissingTableFallback("SlugRecord", null, () =>
-      prisma.slugRecord.findUnique({
-        where: { slug },
-        select: { state: true, priceOverride: true },
-      }),
-    ),
-    withMissingTableFallback("Slug", null, () =>
-      prisma.slug.findUnique({
-        where: { fullSlug: slug },
-        select: {
-          status: true,
-          price: true,
-          pendingExpiresAt: true,
-          owner: {
-            select: {
-              firstName: true,
-              photoUrl: true,
-              profileCard: {
-                select: {
-                  name: true,
-                  avatarUrl: true,
-                },
+        status: true,
+        price: true,
+        pendingExpiresAt: true,
+        owner: {
+          select: {
+            firstName: true,
+            profileCard: {
+              select: {
+                name: true,
+                avatarUrl: true,
               },
             },
           },
         },
-      }),
-    ),
-  ]);
+      },
+    }),
+  );
 
   const ownerFromSlug =
     slugRow?.owner && ["approved", "active", "private", "paused"].includes(slugRow.status)
       ? {
           name: slugRow.owner.profileCard?.name || slugRow.owner.firstName || "UNQ+ User",
-          photoUrl: slugRow.owner.profileCard?.avatarUrl || slugRow.owner.photoUrl || null,
-          href: `/${slug}`,
-        }
-      : null;
-
-  const ownerFromCard =
-    card && card.isActive
-      ? {
-          name: card.name || "UNQ+ User",
-          photoUrl: card.avatarUrl || null,
+          avatarUrl: slugRow.owner.profileCard?.avatarUrl || null,
           href: `/${slug}`,
         }
       : null;
@@ -356,49 +329,18 @@ async function getSlugState(slug) {
       owner: ownerFromSlug,
     };
   }
-
-  if (record?.state === "BLOCKED") {
-    return { available: false, reason: "blocked", priceOverride: record.priceOverride };
-  }
-
-  if (card || record?.state === "TAKEN") {
-    return {
-      available: false,
-      reason: "taken",
-      priceOverride: record?.priceOverride ?? null,
-      owner: ownerFromCard,
-    };
-  }
-
-  return { available: true, reason: "available", priceOverride: record?.priceOverride ?? null };
+  return { available: true, reason: "available", priceOverride: null };
 }
 
 async function getTakenSlugsSet() {
-  const [cardRows, recordRows, slugRows] = await Promise.all([
-    prisma.card.findMany({
-      select: { slug: true },
+  const slugRows = await withMissingTableFallback("Slug", [], () =>
+    prisma.slug.findMany({
+      where: { status: { not: "free" } },
+      select: { fullSlug: true },
     }),
-    withMissingTableFallback("SlugRecord", [], () =>
-      prisma.slugRecord.findMany({
-        where: { state: { in: ["TAKEN", "BLOCKED"] } },
-        select: { slug: true },
-      }),
-    ),
-    withMissingTableFallback("Slug", [], () =>
-      prisma.slug.findMany({
-        where: { status: { not: "free" } },
-        select: { fullSlug: true },
-      }),
-    ),
-  ]);
+  );
 
   const taken = new Set();
-  for (const row of cardRows) {
-    taken.add(row.slug);
-  }
-  for (const row of recordRows) {
-    taken.add(row.slug);
-  }
   for (const row of slugRows) {
     taken.add(row.fullSlug);
   }
@@ -503,61 +445,36 @@ router.get(
       return;
     }
 
-    const [legacyItems, newItems] = await Promise.all([
-      prisma.card.findMany({
+    const newItems = await withMissingTableFallback("Slug", [], () =>
+      prisma.slug.findMany({
         where: {
-          isActive: true,
-          slug: {
+          status: { in: ["active", "private"] },
+          fullSlug: {
             startsWith: query,
             mode: "insensitive",
           },
         },
         select: {
-          slug: true,
-          name: true,
-        },
-        orderBy: {
-          slug: "asc",
-        },
-        take: 8,
-      }),
-      withMissingTableFallback("Slug", [], () =>
-        prisma.slug.findMany({
-          where: {
-            status: { in: ["active", "private"] },
-            fullSlug: {
-              startsWith: query,
-              mode: "insensitive",
-            },
-          },
-          select: {
-            fullSlug: true,
-            owner: {
-              select: {
-                firstName: true,
-                profileCard: {
-                  select: {
-                    name: true,
-                  },
+          fullSlug: true,
+          owner: {
+            select: {
+              firstName: true,
+              profileCard: {
+                select: {
+                  name: true,
                 },
               },
             },
           },
-          orderBy: {
-            fullSlug: "asc",
-          },
-          take: 8,
-        }),
-      ),
-    ]);
+        },
+        orderBy: {
+          fullSlug: "asc",
+        },
+        take: 8,
+      }),
+    );
 
     const itemsMap = new Map();
-    for (const row of legacyItems) {
-      itemsMap.set(row.slug, {
-        slug: row.slug,
-        name: row.name,
-      });
-    }
     for (const row of newItems) {
       itemsMap.set(row.fullSlug, {
         slug: row.fullSlug,
@@ -642,13 +559,13 @@ router.post(
     }
 
     const sessionUser = getUserSession(req);
-    const telegramId = sessionUser?.telegramId ? String(sessionUser.telegramId) : null;
+    const userId = sessionUser?.userId ? String(sessionUser.userId) : null;
     const identity = pickClientIdentity(req);
     const ipHash = identity ? createHash("sha256").update(`${identity}|${requested}`).digest("hex") : null;
     const userAgent = String(req.get("user-agent") || "").slice(0, 400);
 
     const dedupeFilters = [
-      ...(telegramId ? [{ telegramId }] : []),
+      ...(userId ? [{ userId }] : []),
       ...(ipHash ? [{ ipHash }] : []),
     ];
     const existing = dedupeFilters.length
@@ -672,7 +589,7 @@ router.post(
       prisma.slugWaitlist.create({
         data: {
           fullSlug: requested,
-          telegramId,
+          userId,
           ipHash,
           userAgent,
         },
@@ -723,23 +640,6 @@ router.get(
       return;
     }
 
-    const record = await withMissingTableFallback("SlugRecord", null, () =>
-      prisma.slugRecord.findUnique({
-        where: { slug },
-        select: { priceOverride: true },
-      }),
-    );
-
-    if (record && typeof record.priceOverride === "number") {
-      res.json({
-        slug,
-        validFormat: true,
-        price: record.priceOverride,
-        source: "override",
-      });
-      return;
-    }
-
     const pricing = await calculateSlugPriceFromSettings({
       letters: parsed.letters,
       digits: parsed.digits,
@@ -769,12 +669,12 @@ router.get(
   "/pricing",
   asyncHandler(async (req, res) => {
     const sessionUser = getUserSession(req);
-    const telegramId = sessionUser?.telegramId ? String(sessionUser.telegramId) : null;
+    const userId = sessionUser?.userId ? String(sessionUser.userId) : null;
     const [pricing, user, braceletPrice] = await Promise.all([
       getPricingSettings(),
-      telegramId
+      userId
         ? prisma.user.findUnique({
-            where: { telegramId },
+            where: { id: userId },
             select: { plan: true },
           })
         : Promise.resolve(null),
@@ -804,15 +704,16 @@ router.post(
   requireCsrfToken,
   asyncHandler(async (req, res) => {
     const userSession = getUserSession(req);
-    if (!userSession || (!userSession.userId && !userSession.telegramId)) {
+    if (!userSession?.userId) {
       res.status(401).json({ error: "Unauthorized", code: "AUTH_REQUIRED" });
       return;
     }
 
     const user = await prisma.user.findUnique({
-      where: userSession.userId ? { id: userSession.userId } : { telegramId: userSession.telegramId },
+      where: { id: userSession.userId },
       select: {
-        telegramId: true,
+        id: true,
+        telegramChatId: true,
         email: true,
         firstName: true,
         username: true,
@@ -847,7 +748,7 @@ router.post(
     const userSlugsCount = await withMissingTableFallback("Slug", 0, () =>
       prisma.slug.count({
         where: {
-          ownerTelegramId: user.telegramId,
+          ownerId: user.id,
           status: { in: ["approved", "active", "paused", "private"] },
         },
       }),
@@ -928,7 +829,6 @@ router.post(
     const braceletPrice = payload.products.bracelet ? braceletPriceValue : 0;
     const totalOneTime = finalSlugPrice + planPrice + braceletPrice;
     const theme = requestedPlan === "premium" ? normalizeTheme(payload.theme) : undefined;
-    const contact = user.username ? `@${user.username}` : `${user.firstName}`;
     const requestedAt = new Date();
     const pendingExpiryHours = Math.max(1, Math.min(168, Number(await getSetting("pending_expiry_hours", 24)) || 24));
     const pendingExpiresAt = new Date(Date.now() + pendingExpiryHours * 60 * 60 * 1000);
@@ -978,45 +878,18 @@ router.post(
 
         const slugRequest = await tx.slugRequest.create({
           data: {
-            telegramId: user.telegramId,
+            userId: user.id,
             slug,
             slugPrice: finalSlugPrice,
             requestedPlan,
             planPrice,
             bracelet: Boolean(payload.products.bracelet),
-            contact,
             status: "new",
             dropId: drop ? drop.id : null,
             flashSaleId: flashApplied.hasDiscount ? activeFlashSale.id : null,
             flashDiscountAmount: flashApplied.discountAmount,
           },
           select: { id: true, status: true },
-        });
-
-        await tx.orderRequest.create({
-          data: {
-            name: payload.name,
-            slug,
-            slugPrice: finalSlugPrice,
-            tariff: requestedPlan,
-            theme: theme || null,
-            bracelet: Boolean(payload.products.bracelet),
-            contact,
-            status: "NEW",
-            ...(payload.products.bracelet
-              ? {
-                  braceletOrder: {
-                    create: {
-                      name: payload.name,
-                      slug,
-                      contact,
-                      deliveryStatus: "ORDERED",
-                    },
-                  },
-                }
-              : {}),
-          },
-          select: { id: true },
         });
 
         return slugRequest;
@@ -1038,7 +911,7 @@ router.post(
     try {
       await sendOrderRequestToTelegram({
         name: payload.name,
-        telegramId: user.telegramId,
+        telegramId: user.telegramChatId || "",
         email: user.email || "",
         username: user.telegramUsername || user.username || "",
         slug,
@@ -1047,7 +920,7 @@ router.post(
         tariffPriceLabel: formatPrice(tariffPriceLabelValue),
         bracelet: payload.products.bracelet,
         braceletPrice: braceletPriceValue,
-        contact,
+        contact: user.username ? `@${user.username}` : `${user.firstName}`,
         totalOneTimeLabel: formatPrice(totalOneTime),
         statusLabel: toOrderStatusLabel("NEW"),
         themeLabel: theme || "default_dark",
@@ -1123,30 +996,6 @@ router.post(
     }
 
     await prisma.$transaction(async (tx) => {
-      if (tx.slugClick) {
-        let isUnique = false;
-        if (ipHash) {
-          const existing = await tx.slugClick.findFirst({
-            where: {
-              fullSlug: slugRow.fullSlug,
-              ipHash,
-              clickedAt: { gte: dayStart },
-            },
-            select: { id: true },
-          });
-          isUnique = !existing;
-        }
-
-        await tx.slugClick.create({
-          data: {
-            fullSlug: slugRow.fullSlug,
-            device,
-            ipHash,
-            isUnique,
-          },
-        });
-      }
-
       if (tx.analyticsClick) {
         await tx.analyticsClick.create({
           data: {
@@ -1190,30 +1039,6 @@ router.post(
       const ipForGeo = pickIpForGeo(req);
       void withMissingTableFallback("SlugView", null, () =>
         prisma.$transaction(async (tx) => {
-          if (tx.slugView) {
-            let isUnique = false;
-            if (ipHash) {
-              const existing = await tx.slugView.findFirst({
-                where: {
-                  fullSlug: slugRow.fullSlug,
-                  ipHash,
-                  viewedAt: { gte: dayStart },
-                },
-                select: { id: true },
-              });
-              isUnique = !existing;
-            }
-
-            await tx.slugView.create({
-              data: {
-                fullSlug: slugRow.fullSlug,
-                device,
-                ipHash,
-                isUnique,
-              },
-            });
-          }
-
           if (tx.slug) {
             await tx.slug.update({
               where: { fullSlug: slugRow.fullSlug },
@@ -1240,51 +1065,7 @@ router.post(
       return;
     }
 
-    const card = await prisma.card.findUnique({
-      where: { slug: req.params.slug },
-      select: { id: true, isActive: true },
-    });
-
-    if (!card || !card.isActive) {
-      res.status(404).json({ error: "Card not found" });
-      return;
-    }
-
-    await prisma.$transaction(async (tx) => {
-      let isUnique = false;
-
-      if (ipHash) {
-        const existing = await tx.viewLog.findFirst({
-          where: {
-            cardId: card.id,
-            ipHash,
-            viewedAt: { gte: dayStart },
-          },
-          select: { id: true },
-        });
-
-        isUnique = !existing;
-      }
-
-      await tx.card.update({
-        where: { id: card.id },
-        data: {
-          viewsCount: { increment: 1 },
-          ...(isUnique ? { uniqueViewsCount: { increment: 1 } } : {}),
-        },
-      });
-
-      await tx.viewLog.create({
-        data: {
-          cardId: card.id,
-          device,
-          ipHash,
-          isUnique,
-        },
-      });
-    });
-
-    res.json({ ok: true });
+    res.status(404).json({ error: "Card not found" });
   }),
 );
 
@@ -1295,19 +1076,19 @@ router.get(
     const slugRow = await withMissingTableFallback("Slug", null, () =>
       prisma.slug.findUnique({
         where: { fullSlug: requestedSlug },
-        select: { fullSlug: true, status: true, ownerTelegramId: true },
+        select: { fullSlug: true, status: true, ownerId: true },
       }),
     );
 
-    if (slugRow && ["active", "private"].includes(slugRow.status) && slugRow.ownerTelegramId) {
+    if (slugRow && ["active", "private"].includes(slugRow.status) && slugRow.ownerId) {
       const [user, profileCard] = await Promise.all([
         prisma.user.findUnique({
-          where: { telegramId: slugRow.ownerTelegramId },
+          where: { id: slugRow.ownerId },
           select: { firstName: true, username: true },
         }),
         prisma.profileCard.findUnique({
-          where: { ownerTelegramId: slugRow.ownerTelegramId },
-          select: { name: true, buttons: true, bio: true, address: true, postcode: true, extraPhone: true },
+          where: { ownerId: slugRow.ownerId },
+          select: { name: true, buttons: true, bio: true, email: true },
         }),
       ]);
 
@@ -1332,9 +1113,10 @@ router.get(
           name: profileCard.name || user?.firstName || user?.username || slugRow.fullSlug,
           phone: phoneRaw || "+998000000000",
           email: emailRaw || undefined,
-          extraPhone: profileCard.extraPhone || undefined,
-          address: profileCard.address || "",
-          postcode: profileCard.postcode || "",
+          email: profileCard.email || undefined,
+          extraPhone: undefined,
+          address: "",
+          postcode: "",
           hashtag: profileCard.bio || "",
         });
 
@@ -1346,32 +1128,7 @@ router.get(
       }
     }
 
-    const card = await prisma.card.findUnique({
-      where: { slug: req.params.slug },
-      select: {
-        slug: true,
-        isActive: true,
-        name: true,
-        phone: true,
-        email: true,
-        extraPhone: true,
-        address: true,
-        postcode: true,
-        hashtag: true,
-      },
-    });
-
-    if (!card || !card.isActive) {
-      res.status(404).json({ error: "Card not found" });
-      return;
-    }
-
-    const payload = generateVCard(card);
-
-    res.setHeader("Content-Type", "text/vcard; charset=utf-8");
-    res.setHeader("Content-Disposition", `attachment; filename="${card.slug}.vcf"`);
-    res.setHeader("Cache-Control", "no-store");
-    res.send(payload);
+    res.status(404).json({ error: "Card not found" });
   }),
 );
 

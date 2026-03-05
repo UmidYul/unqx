@@ -15,7 +15,7 @@ const router = express.Router();
 
 function requireUser(req, res) {
   const userSession = getUserSession(req);
-  if (!userSession?.telegramId) {
+  if (!userSession?.userId) {
     res.status(401).json({ error: "Unauthorized", code: "AUTH_REQUIRED" });
     return null;
   }
@@ -77,7 +77,7 @@ router.get(
     const user = requireUser(req, res);
     if (!user) return;
     const period = normalizePeriod(req.query.period);
-    const payload = await getUserLeaderboardSummary({ telegramId: user.telegramId, period });
+    const payload = await getUserLeaderboardSummary({ userId: user.userId, period });
     res.json({ item: payload });
   }),
 );
@@ -194,14 +194,14 @@ router.post(
 
     await prisma.dropWaitlist.upsert({
       where: {
-        dropId_telegramId: {
+        dropId_userId: {
           dropId: drop.id,
-          telegramId: user.telegramId,
+          userId: user.userId,
         },
       },
       create: {
         dropId: drop.id,
-        telegramId: user.telegramId,
+        userId: user.userId,
       },
       update: {},
     });
@@ -216,7 +216,7 @@ router.get(
   asyncHandler(async (req, res) => {
     const user = requireUser(req, res);
     if (!user) return;
-    const payload = await getReferralBootstrap(user.telegramId);
+    const payload = await getReferralBootstrap(user.userId);
     res.json(payload || {});
   }),
 );
@@ -230,7 +230,7 @@ router.post(
     if (!user) return;
     try {
       const payload = await claimReferralReward({
-        telegramId: user.telegramId,
+        userId: user.userId,
         ruleId: String(req.params.rewardRuleId || ""),
       });
       res.json({ ok: true, reward: payload });
