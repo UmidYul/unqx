@@ -13,9 +13,39 @@ const { getActiveFlashSale, resolveConditionLabel, getFlashSaleSlotsLeft } = req
 const { getPublicScoreForSlug } = require("../../services/unq-score");
 const { normalizeRefCode } = require("../../services/referrals");
 const { getPricingSettings } = require("../../services/pricing-settings");
+const { seoHub, getSeoPage } = require("../../content/seo-pages");
 
 const router = express.Router();
 const defaultSocialImage = absoluteUrl("/brand/logo.PNG");
+
+function buildBreadcrumbJsonLd(items) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: items.map((item, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: item.name,
+      item: item.url,
+    })),
+  };
+}
+
+function buildFaqJsonLd(faqs) {
+  if (!Array.isArray(faqs) || !faqs.length) return null;
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faqs.map((item) => ({
+      "@type": "Question",
+      name: item.question,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: item.answer,
+      },
+    })),
+  };
+}
 
 function sanitizeSlug(value) {
   return String(value || "")
@@ -427,6 +457,135 @@ router.get(
       description: "Актуальные и прошедшие дропы slug на UNQ+",
       image: defaultSocialImage,
       drops: rows,
+      adminSession: getAdminSession(req),
+    });
+  }),
+);
+
+router.get(
+  "/guides",
+  asyncHandler(async (req, res) => {
+    const canonical = absoluteUrl("/guides");
+    const hubJsonLd = [
+      {
+        "@context": "https://schema.org",
+        "@type": "CollectionPage",
+        name: seoHub.heading,
+        description: seoHub.description,
+        url: canonical,
+      },
+      buildBreadcrumbJsonLd([
+        { name: "Главная", url: absoluteUrl("/") },
+        { name: "Гайды", url: canonical },
+      ]),
+    ];
+
+    res.render("public/seo-hub", {
+      title: seoHub.title,
+      description: seoHub.description,
+      heading: seoHub.heading,
+      lead: seoHub.lead,
+      cards: seoHub.cards,
+      image: defaultSocialImage,
+      jsonLd: hubJsonLd,
+      adminSession: getAdminSession(req),
+    });
+  }),
+);
+
+router.get(
+  "/faq",
+  asyncHandler(async (req, res) => {
+    const page = getSeoPage("faq");
+    const canonical = absoluteUrl("/faq");
+    if (!page) {
+      res.redirect("/guides");
+      return;
+    }
+
+    const jsonLd = [
+      {
+        "@context": "https://schema.org",
+        "@type": "Article",
+        headline: page.heading,
+        description: page.description,
+        mainEntityOfPage: canonical,
+        dateModified: page.updatedAt,
+        author: {
+          "@type": "Organization",
+          name: "UNQ+",
+        },
+      },
+      buildBreadcrumbJsonLd([
+        { name: "Главная", url: absoluteUrl("/") },
+        { name: "FAQ", url: canonical },
+      ]),
+      buildFaqJsonLd(page.faqs),
+    ].filter(Boolean);
+
+    res.render("public/seo-page", {
+      title: page.title,
+      description: page.description,
+      heading: page.heading,
+      lead: page.lead,
+      sections: page.sections,
+      faqs: page.faqs,
+      readingMinutes: page.readingMinutes,
+      updatedAt: page.updatedAt,
+      image: defaultSocialImage,
+      jsonLd,
+      adminSession: getAdminSession(req),
+    });
+  }),
+);
+
+router.get(
+  "/guides/:slug",
+  asyncHandler(async (req, res) => {
+    const slug = String(req.params.slug || "").trim().toLowerCase();
+    const page = getSeoPage(slug);
+    if (!page) {
+      res.status(404).render("public/not-found", {
+        title: "Гайд не найден",
+        slug,
+        adminSession: getAdminSession(req),
+      });
+      return;
+    }
+
+    const canonical = absoluteUrl(`/guides/${slug}`);
+    const jsonLd = [
+      {
+        "@context": "https://schema.org",
+        "@type": "Article",
+        headline: page.heading,
+        description: page.description,
+        mainEntityOfPage: canonical,
+        dateModified: page.updatedAt,
+        author: {
+          "@type": "Organization",
+          name: "UNQ+",
+        },
+      },
+      buildBreadcrumbJsonLd([
+        { name: "Главная", url: absoluteUrl("/") },
+        { name: "Гайды", url: absoluteUrl("/guides") },
+        { name: page.heading, url: canonical },
+      ]),
+      buildFaqJsonLd(page.faqs),
+    ].filter(Boolean);
+
+    res.render("public/seo-page", {
+      title: page.title,
+      description: page.description,
+      heading: page.heading,
+      lead: page.lead,
+      sections: page.sections,
+      faqs: page.faqs,
+      readingMinutes: page.readingMinutes,
+      updatedAt: page.updatedAt,
+      image: defaultSocialImage,
+      jsonLd,
       adminSession: getAdminSession(req),
     });
   }),

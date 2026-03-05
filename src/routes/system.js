@@ -46,6 +46,16 @@ router.get(
     const nowIso = new Date().toISOString();
     const homeUrl = `<url><loc>${base}/</loc><lastmod>${nowIso}</lastmod><changefreq>daily</changefreq><priority>1.0</priority></url>`;
     const themesUrl = `<url><loc>${base}/themes</loc><lastmod>${nowIso}</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>`;
+    const seoUrls = [
+      "/guides",
+      "/guides/digital-business-card",
+      "/guides/nfc-business-card",
+      "/guides/unq-slug",
+      "/guides/cases",
+      "/faq",
+    ]
+      .map((path) => `<url><loc>${base}${path}</loc><lastmod>${nowIso}</lastmod><changefreq>weekly</changefreq><priority>0.75</priority></url>`)
+      .join("");
 
     const publicCardMap = new Map();
     activeSlugs.forEach((row) => {
@@ -76,7 +86,7 @@ router.get(
       ? `<url><loc>${base}/drops</loc><lastmod>${nowIso}</lastmod><changefreq>hourly</changefreq><priority>0.7</priority></url>`
       : `<url><loc>${base}/drops</loc><lastmod>${nowIso}</lastmod><changefreq>daily</changefreq><priority>0.6</priority></url>`;
 
-    const xml = `<?xml version=\"1.0\" encoding=\"UTF-8\"?><urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">${homeUrl}${themesUrl}${leaderboardUrl}${directoryUrl}${dropsUrl}${cardUrls}</urlset>`;
+    const xml = `<?xml version=\"1.0\" encoding=\"UTF-8\"?><urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">${homeUrl}${themesUrl}${seoUrls}${leaderboardUrl}${directoryUrl}${dropsUrl}${cardUrls}</urlset>`;
 
     res.type("application/xml").send(xml);
   }),
