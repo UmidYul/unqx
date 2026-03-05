@@ -18,7 +18,7 @@
 <!doctype html>
 <html lang="ru">
 <head>
-  <%- include('../partials/head', { title: title || "UNQ Directory", description: description || "Каталог UNQ+", image: typeof image === 'string' ? image : undefined, noindex: false, jsonLd }) %>
+  <%- include('../partials/head', { title: title || "UNQ Directory", description: description || "Каталог UNQX", image: typeof image === 'string' ? image : undefined, noindex: false, jsonLd }) %>
 </head>
 <body class="bg-neutral-50 antialiased">
   <main class="mx-auto min-h-screen w-full max-w-6xl px-4 py-6">
@@ -28,7 +28,7 @@
         На главную
       </a>
       <h1 class="inline-flex items-center gap-2 text-xl font-black text-neutral-900">
-        <img src="/brand/logo.PNG" alt="UNQ+" class="h-7 w-7 rounded-md border border-neutral-200 object-cover" />
+        <img src="/brand/logo.PNG" alt="UNQX" class="h-7 w-7 rounded-md border border-neutral-200 object-cover" />
         <span>UNQ Directory</span>
       </h1>
     </div>
@@ -68,7 +68,7 @@
                 </div>
               </div>
               <% if (item.isVerified) { %>
-                <span class="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-1 text-[11px] font-semibold text-emerald-700" title="Верифицирован на UNQ+ · Место работы подтверждено">
+                <span class="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-1 text-[11px] font-semibold text-emerald-700" title="Верифицирован на UNQX · Место работы подтверждено">
                   <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M12 2.5 14.2 4.3l2.8-.3 1.2 2.5 2.5 1.2-.3 2.8L21.5 12l-1.8 2.2.3 2.8-2.5 1.2-1.2 2.5-2.8-.3L12 21.5l-2.2-1.8-2.8.3-1.2-2.5-2.5-1.2.3-2.8L2.5 12l1.8-2.2-.3-2.8 2.5-1.2 1.2-2.5 2.8.3L12 2.5Zm-1.1 13.1 5-5-1.1-1.1-3.9 3.9-1.8-1.8-1.1 1.1 2.9 2.9Z"></path></svg>
                   Verified
                 </span>

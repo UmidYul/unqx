@@ -16,7 +16,7 @@ const plans = [
     excluded: [
       "Выбор темы",
       "Кастомные цвета",
-      "Скрыть брендинг UNQ+",
+      "Скрыть брендинг UNQX",
       "Больше 3 кнопок",
     ],
   },
@@ -31,7 +31,7 @@ const plans = [
       "Кастомные цвета и фон",
       "Неограниченное кол-во кнопок",
       "Расширенная аналитика (динамика по дням)",
-      "Скрыть брендинг UNQ+",
+      "Скрыть брендинг UNQX",
       "QR-код + NFC поддержка",
       "Приоритетная поддержка",
     ],
@@ -51,11 +51,10 @@ export function Pricing() {
           {plans.map((plan) => (
             <div
               key={plan.name}
-              className={`relative flex flex-col rounded-2xl border p-8 ${
-                plan.highlighted
+              className={`relative flex flex-col rounded-2xl border p-8 ${plan.highlighted
                   ? "border-neutral-900 bg-neutral-900 text-white"
                   : "border-neutral-200 bg-white text-neutral-900"
-              }`}
+                }`}
             >
               {plan.badge && (
                 <span className="absolute -top-3 right-6 rounded-full bg-neutral-900 px-3 py-1 text-[11px] font-medium tracking-wide text-white ring-4 ring-neutral-50">
@@ -101,11 +100,10 @@ export function Pricing() {
 
               <a
                 href="#"
-                className={`btn-shimmer mt-8 flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-medium transition-colors ${
-                  plan.highlighted
+                className={`btn-shimmer mt-8 flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-medium transition-colors ${plan.highlighted
                     ? "bg-white text-neutral-900 hover:bg-neutral-100"
                     : "bg-neutral-900 text-white hover:bg-neutral-800"
-                }`}
+                  }`}
               >
                 Начать
                 <ArrowRight className="h-3.5 w-3.5" />

@@ -1,9 +1,9 @@
 <%
-  const pageTitle = typeof title === "string" && title ? title : "Вас пригласили в UNQ+";
+  const pageTitle = typeof title === "string" && title ? title : "Вас пригласили в UNQX";
   const pageDescription =
     typeof description === "string" && description
       ? description
-      : "Вас пригласили в UNQ+. Зарегистрируйтесь и создайте свою цифровую визитку.";
+      : "Вас пригласили в UNQX. Зарегистрируйтесь и создайте свою цифровую визитку.";
   const inviterLine = referrerName
     ? `${referrerName}${referrerUsername ? ` (${referrerUsername})` : ""}`
     : referrerUsername || "ваш контакт";
@@ -24,7 +24,7 @@
       </a>
 
       <p class="mt-6 font-mono text-xs uppercase tracking-[0.16em] text-neutral-500">Приглашение</p>
-      <h1 class="mt-3 text-3xl font-black tracking-tight text-neutral-900 md:text-4xl">Вас пригласили в UNQ+</h1>
+      <h1 class="mt-3 text-3xl font-black tracking-tight text-neutral-900 md:text-4xl">Вас пригласили в UNQX</h1>
 
       <p class="mt-4 text-sm leading-relaxed text-neutral-600">
         Вы перешли по реферальной ссылке от <strong class="text-neutral-900"><%= inviterLine %></strong>.

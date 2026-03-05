@@ -670,7 +670,7 @@ router.get(
     }
 
     const score = await getProfileScoreByUserId(user.id);
-    const ownerName = slugRow.owner?.profileCard?.name || slugRow.owner?.displayName || slugRow.owner?.firstName || "UNQ+ User";
+    const ownerName = slugRow.owner?.profileCard?.name || slugRow.owner?.displayName || slugRow.owner?.firstName || "UNQX User";
     const ownerRole = slugRow.owner?.profileCard?.role || "";
     res.json({
       slug: slugRow.fullSlug,
@@ -821,9 +821,9 @@ router.get(
     if (!assertUserActive(user, res)) return;
     const latest = prisma.verificationRequest
       ? await prisma.verificationRequest.findFirst({
-          where: { userId: user.id },
-          orderBy: { requestedAt: "desc" },
-        })
+        where: { userId: user.id },
+        orderBy: { requestedAt: "desc" },
+      })
       : null;
     res.json({
       isVerified: Boolean(user.isVerified),

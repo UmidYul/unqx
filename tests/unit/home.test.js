@@ -8,7 +8,7 @@ const { getEffectivePlan, getSlugLimit } = require("../../src/services/profile")
 async function renderHomeTemplate() {
   const file = path.join(process.cwd(), "src", "views", "public", "home.ejs");
   return ejs.renderFile(file, {
-    title: "UNQ+ | Цифровая визитка за 1 минуту",
+    title: "UNQX | Цифровая визитка за 1 минуту",
     description: "Одна ссылка вместо тысячи слов",
     slugTotalLimit: 17576,
     leaderboardEnabled: true,
@@ -26,7 +26,7 @@ async function renderHomeTemplate() {
 async function renderHomeTemplateAuthenticated() {
   const file = path.join(process.cwd(), "src", "views", "public", "home.ejs");
   return ejs.renderFile(file, {
-    title: "UNQ+ | Цифровая визитка за 1 минуту",
+    title: "UNQX | Цифровая визитка за 1 минуту",
     description: "Одна ссылка вместо тысячи слов",
     slugTotalLimit: 17576,
     leaderboardEnabled: true,
@@ -50,7 +50,7 @@ describe("home page", () => {
   test("renders page without crashing", async () => {
     const html = await renderHomeTemplate();
     expect(html).toContain("<!doctype html>");
-    expect(html).toContain("<title>UNQ+ | Цифровая визитка за 1 минуту</title>");
+    expect(html).toContain("<title>UNQX | Цифровая визитка за 1 минуту</title>");
   });
 
   test("renders key user elements", async () => {

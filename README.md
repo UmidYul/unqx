@@ -1,6 +1,6 @@
 # Express Migration Preview
 
-Express-only implementation of UNQ+ without Next.js and without frontend build tools.
+Express-only implementation of UNQX without Next.js and without frontend build tools.
 
 ## Stack
 

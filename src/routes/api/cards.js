@@ -305,10 +305,10 @@ async function getSlugState(slug) {
   const ownerFromSlug =
     slugRow?.owner && ["approved", "active", "private", "paused"].includes(slugRow.status)
       ? {
-          name: slugRow.owner.profileCard?.name || slugRow.owner.firstName || "UNQ+ User",
-          avatarUrl: slugRow.owner.profileCard?.avatarUrl || null,
-          href: `/${slug}`,
-        }
+        name: slugRow.owner.profileCard?.name || slugRow.owner.firstName || "UNQX User",
+        avatarUrl: slugRow.owner.profileCard?.avatarUrl || null,
+        href: `/${slug}`,
+      }
       : null;
 
   if (slugRow) {
@@ -478,7 +478,7 @@ router.get(
     for (const row of newItems) {
       itemsMap.set(row.fullSlug, {
         slug: row.fullSlug,
-        name: row.owner?.profileCard?.name || row.owner?.firstName || "UNQ+ User",
+        name: row.owner?.profileCard?.name || row.owner?.firstName || "UNQX User",
       });
     }
 
@@ -570,14 +570,14 @@ router.post(
     ];
     const existing = dedupeFilters.length
       ? await withMissingTableFallback("SlugWaitlist", null, () =>
-          prisma.slugWaitlist.findFirst({
-            where: {
-              fullSlug: requested,
-              OR: dedupeFilters,
-            },
-            select: { id: true },
-          }),
-        )
+        prisma.slugWaitlist.findFirst({
+          where: {
+            fullSlug: requested,
+            OR: dedupeFilters,
+          },
+          select: { id: true },
+        }),
+      )
       : null;
 
     if (existing) {
@@ -674,9 +674,9 @@ router.get(
       getPricingSettings(),
       userId
         ? prisma.user.findUnique({
-            where: { id: userId },
-            select: { plan: true },
-          })
+          where: { id: userId },
+          select: { plan: true },
+        })
         : Promise.resolve(null),
       getBraceletPrice(),
     ]);
@@ -801,8 +801,8 @@ router.post(
     const basePricing =
       typeof state.priceOverride === "number"
         ? {
-            total: state.priceOverride,
-          }
+          total: state.priceOverride,
+        }
         : calculateSlugPrice({ letters: payload.letters, digits: payload.digits, config: slugPricingConfig });
     const activeFlashSale = await getActiveFlashSale();
     const flashApplied = applyFlashSaleToPrice({
@@ -844,9 +844,9 @@ router.post(
       order = await prisma.$transaction(async (tx) => {
         const existingSlug = canUseSlugTable
           ? await tx.slug.findUnique({
-              where: { fullSlug: slug },
-              select: { fullSlug: true, status: true },
-            })
+            where: { fullSlug: slug },
+            select: { fullSlug: true, status: true },
+          })
           : null;
         if (existingSlug && existingSlug.status !== "free") {
           const conflictError = new Error("Slug is not available");
@@ -952,12 +952,12 @@ router.post(
       },
       flashSale: flashApplied.hasDiscount
         ? {
-            saleId: activeFlashSale.id,
-            discountAmount: flashApplied.discountAmount,
-            discountPercent: flashApplied.discountPercent,
-            basePrice: flashApplied.basePrice,
-            finalPrice: flashApplied.finalPrice,
-          }
+          saleId: activeFlashSale.id,
+          discountAmount: flashApplied.discountAmount,
+          discountPercent: flashApplied.discountPercent,
+          basePrice: flashApplied.basePrice,
+          finalPrice: flashApplied.finalPrice,
+        }
         : null,
       ...(telegramDelivered ? {} : { warning: telegramError }),
     });

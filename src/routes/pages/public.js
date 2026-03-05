@@ -340,7 +340,7 @@ router.get(
     }
 
     res.render("public/home", {
-      title: "UNQ+ | Цифровая визитка за 1 минуту",
+      title: "UNQX | Цифровая визитка за 1 минуту",
       description: "Одна ссылка вместо тысячи слов. Создай свою цифровую визитку на unqx.uz",
       image: defaultSocialImage,
       testimonials,
@@ -348,22 +348,22 @@ router.get(
       leaderboardEnabled: Boolean(leaderboardSettings.enabled),
       activeFlashSale: activeFlashSale
         ? {
-            id: activeFlashSale.id,
-            discountPercent: activeFlashSale.discountPercent,
-            conditionLabel: resolveConditionLabel(activeFlashSale),
-            slotsLeft: Number.isFinite(flashSaleSlotsLeft) ? flashSaleSlotsLeft : null,
-            startsAt: activeFlashSale.startsAt,
-            endsAt: activeFlashSale.endsAt,
-            description: activeFlashSale.description || activeFlashSale.title,
-          }
+          id: activeFlashSale.id,
+          discountPercent: activeFlashSale.discountPercent,
+          conditionLabel: resolveConditionLabel(activeFlashSale),
+          slotsLeft: Number.isFinite(flashSaleSlotsLeft) ? flashSaleSlotsLeft : null,
+          startsAt: activeFlashSale.startsAt,
+          endsAt: activeFlashSale.endsAt,
+          description: activeFlashSale.description || activeFlashSale.title,
+        }
         : null,
       nextDrop: nextDrop
         ? {
-            id: nextDrop.id,
-            title: nextDrop.title,
-            dropAt: nextDrop.dropAt,
-            slugCount: nextDrop.slugCount,
-          }
+          id: nextDrop.id,
+          title: nextDrop.title,
+          dropAt: nextDrop.dropAt,
+          slugCount: nextDrop.slugCount,
+        }
         : null,
       pricing,
       publicSettings: publicSettingsRaw,
@@ -380,8 +380,8 @@ router.get(
       return;
     }
     res.render("public/login", {
-      title: "Вход | UNQ+",
-      description: "Войди в UNQ+ по email и паролю",
+      title: "Вход | UNQX",
+      description: "Войди в UNQX по email и паролю",
       image: defaultSocialImage,
       next: typeof req.query.next === "string" ? req.query.next : "/profile",
       adminSession: getAdminSession(req),
@@ -397,8 +397,8 @@ router.get(
       return;
     }
     res.render("public/register", {
-      title: "Регистрация | UNQ+",
-      description: "Создай аккаунт UNQ+",
+      title: "Регистрация | UNQX",
+      description: "Создай аккаунт UNQX",
       image: defaultSocialImage,
       adminSession: getAdminSession(req),
     });
@@ -409,7 +409,7 @@ router.get(
   "/verify-email",
   asyncHandler(async (req, res) => {
     res.render("public/verify-email", {
-      title: "Подтверждение email | UNQ+",
+      title: "Подтверждение email | UNQX",
       description: "Подтверди email и заверши регистрацию",
       image: defaultSocialImage,
       adminSession: getAdminSession(req),
@@ -421,7 +421,7 @@ router.get(
   "/forgot-password",
   asyncHandler(async (req, res) => {
     res.render("public/forgot-password", {
-      title: "Сброс пароля | UNQ+",
+      title: "Сброс пароля | UNQX",
       description: "Запрос кода для сброса пароля",
       image: defaultSocialImage,
       adminSession: getAdminSession(req),
@@ -433,7 +433,7 @@ router.get(
   "/reset-password",
   asyncHandler(async (req, res) => {
     res.render("public/reset-password", {
-      title: "Новый пароль | UNQ+",
+      title: "Новый пароль | UNQX",
       description: "Установи новый пароль",
       image: defaultSocialImage,
       email: typeof req.query.email === "string" ? req.query.email : "",
@@ -461,8 +461,8 @@ router.get(
     const referrerUsername = referrer?.username ? `@${referrer.username}` : "";
 
     res.render("public/referral", {
-      title: "Вас пригласили в UNQ+",
-      description: "Зарегистрируйтесь в UNQ+ и получите доступ к цифровой визитке по приглашению.",
+      title: "Вас пригласили в UNQX",
+      description: "Зарегистрируйтесь в UNQX и получите доступ к цифровой визитке по приглашению.",
       image: defaultSocialImage,
       refCode,
       referrerName,
@@ -477,8 +477,8 @@ router.get(
   "/themes",
   asyncHandler(async (req, res) => {
     res.render("public/themes", {
-      title: "Темы Премиум | UNQ+",
-      description: "Каталог премиум-тем UNQ+: выбери стиль визитки, цвета и оформление под свой бренд.",
+      title: "Темы Премиум | UNQX",
+      description: "Каталог премиум-тем UNQX: выбери стиль визитки, цвета и оформление под свой бренд.",
       image: defaultSocialImage,
       adminSession: getAdminSession(req),
     });
@@ -493,8 +493,8 @@ router.get(
     const embed = req.query.embed === "1";
 
     res.render("public/demo", {
-      title: "UNQ+ Demo",
-      description: "Демо цифровой визитки UNQ+: посмотри как выглядит карточка до покупки и настройки профиля.",
+      title: "UNQX Demo",
+      description: "Демо цифровой визитки UNQX: посмотри как выглядит карточка до покупки и настройки профиля.",
       image: defaultSocialImage,
       theme,
       embed,
@@ -516,8 +516,8 @@ router.get(
     }
 
     res.render("public/profile", {
-      title: "Мой профиль | UNQ+",
-      description: "Личный кабинет UNQ+: управляй визиткой, UNQ, аналитикой, заявками и настройками профиля.",
+      title: "Мой профиль | UNQX",
+      description: "Личный кабинет UNQX: управляй визиткой, UNQ, аналитикой, заявками и настройками профиля.",
       image: defaultSocialImage,
       adminSession: getAdminSession(req),
     });
@@ -551,8 +551,8 @@ router.get(
     ]);
 
     res.render("public/leaderboard", {
-      title: "Топ визиток недели · UNQ+",
-      description: "Топ визиток UNQ+ по UNQ Score",
+      title: "Топ визиток недели · UNQX",
+      description: "Топ визиток UNQX по UNQ Score",
       image: defaultSocialImage,
       period: board.period,
       items: board.publicItems,
@@ -572,8 +572,8 @@ router.get(
       take: 50,
     });
     res.render("public/drops", {
-      title: "Дропы slug · UNQ+",
-      description: "Актуальные и прошедшие дропы slug на UNQ+",
+      title: "Дропы slug · UNQX",
+      description: "Актуальные и прошедшие дропы slug на UNQX",
       image: defaultSocialImage,
       drops: rows,
       adminSession: getAdminSession(req),
@@ -632,7 +632,7 @@ router.get(
         dateModified: page.updatedAt,
         author: {
           "@type": "Organization",
-          name: "UNQ+",
+          name: "UNQX",
         },
       },
       buildBreadcrumbJsonLd([
@@ -683,7 +683,7 @@ router.get(
         dateModified: page.updatedAt,
         author: {
           "@type": "Organization",
-          name: "UNQ+",
+          name: "UNQX",
         },
       },
       buildBreadcrumbJsonLd([
@@ -785,7 +785,7 @@ router.get(
         const owner = row.owner;
         if (!owner) return null;
         const tags = Array.isArray(owner.profileCard?.tags) ? owner.profileCard.tags : [];
-        const name = owner.displayName || owner.profileCard?.name || owner.firstName || "UNQ+ User";
+        const name = owner.displayName || owner.profileCard?.name || owner.firstName || "UNQX User";
         return {
           slug: row.fullSlug,
           name,
@@ -822,7 +822,7 @@ router.get(
 
     res.render("public/directory", {
       title: "UNQ Directory",
-      description: "Публичный каталог визиток UNQ+",
+      description: "Публичный каталог визиток UNQX",
       image: defaultSocialImage,
       items,
       pagination: { page: safePage, totalPages, total },
@@ -870,7 +870,7 @@ router.get(
       slug,
       image: defaultSocialImage,
       url: absoluteUrl(`/${slug}`),
-      ownerName: profileCard?.name || owner.displayName || owner.firstName || "UNQ+ User",
+      ownerName: profileCard?.name || owner.displayName || owner.firstName || "UNQX User",
       ownerRole: profileCard?.role || "",
       score: 0,
       unavailable: false,
@@ -977,7 +977,7 @@ router.get(
         res.status(200).render("public/slug-paused", {
           title: `${slug} | Пауза`,
           slug,
-          ownerName: owner?.displayName || owner?.firstName || "UNQ+ User",
+          ownerName: owner?.displayName || owner?.firstName || "UNQX User",
           ownerUsername: owner?.username ? `@${owner.username}` : "",
           ownerAvatar: profileCard?.avatarUrl || "",
           pauseMessage: slugRow.pauseMessage || "Скоро вернусь · Пишите в Telegram",
@@ -1008,11 +1008,11 @@ router.get(
           findProfileCardByOwnerId(slugRow.ownerId),
           prisma.analyticsView
             ? prisma.analyticsView
-                .findMany({
-                  where: { slug },
-                  select: { sessionId: true },
-                })
-                .then((rows) => new Set(rows.map((row) => row.sessionId)).size)
+              .findMany({
+                where: { slug },
+                select: { sessionId: true },
+              })
+              .then((rows) => new Set(rows.map((row) => row.sessionId)).size)
             : Promise.resolve(0),
         ]);
 
@@ -1058,8 +1058,8 @@ router.get(
 
         const topBadge = await getSlugTopBadge(slug);
         res.render("public/card", {
-          title: `${card.name} | UNQ+`,
-          description: `Цифровая визитка ${card.name} на UNQ+: контакты, соцсети, QR и быстрый обмен ссылкой.`,
+          title: `${card.name} | UNQX`,
+          description: `Цифровая визитка ${card.name} на UNQX: контакты, соцсети, QR и быстрый обмен ссылкой.`,
           image,
           card,
           topBadge,

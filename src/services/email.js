@@ -44,10 +44,10 @@ function layout({ title, body }) {
   return `
   <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background:#f5f5f5; padding:24px; color:#171717;">
     <div style="max-width:560px; margin:0 auto; background:#fff; border:1px solid #e5e5e5; border-radius:14px; padding:28px;">
-      <div style="font-size:24px; font-weight:800; letter-spacing:-0.02em;">UNQ+</div>
+      <div style="font-size:24px; font-weight:800; letter-spacing:-0.02em;">UNQX</div>
       <h1 style="margin:18px 0 0; font-size:22px; line-height:1.2;">${title}</h1>
       <div style="margin-top:16px; font-size:15px; line-height:1.6;">${body}</div>
-      <p style="margin-top:24px; font-size:12px; color:#6b7280;">UNQ+ · Ташкент, Узбекистан</p>
+      <p style="margin-top:24px; font-size:12px; color:#6b7280;">UNQX · Ташкент, Узбекистан</p>
     </div>
   </div>`;
 }
@@ -67,11 +67,11 @@ async function sendEmailVerificationOtp({ email, firstName, code }) {
     ${codeBlock(code)}
     <p>Код действителен 10 минут.</p>
     <p>Не передавай этот код никому.</p>
-    <p>Если ты не регистрировался на UNQ+ — просто проигнорируй это письмо.</p>
+    <p>Если ты не регистрировался на UNQX — просто проигнорируй это письмо.</p>
   `;
   await sendEmail({
     to: email,
-    subject: `Код подтверждения UNQ+: ${code}`,
+    subject: `Код подтверждения UNQX: ${code}`,
     html: layout({ title: "Подтверждение email", body }),
   });
 }
@@ -86,7 +86,7 @@ async function sendPasswordResetOtp({ email, firstName, code }) {
   `;
   await sendEmail({
     to: email,
-    subject: `Сброс пароля UNQ+: ${code}`,
+    subject: `Сброс пароля UNQX: ${code}`,
     html: layout({ title: "Сброс пароля", body }),
   });
 }
@@ -100,7 +100,7 @@ async function sendWelcomeEmail({ email, firstName }) {
   `;
   await sendEmail({
     to: email,
-    subject: "Добро пожаловать в UNQ+!",
+    subject: "Добро пожаловать в UNQX!",
     html: layout({ title: "Добро пожаловать", body }),
   });
 }
@@ -115,7 +115,7 @@ async function sendChangeEmailOtp({ email, firstName, code, newEmail }) {
   `;
   await sendEmail({
     to: email,
-    subject: `Подтверди новый email UNQ+: ${code}`,
+    subject: `Подтверди новый email UNQX: ${code}`,
     html: layout({ title: "Подтверждение нового email", body }),
   });
 }

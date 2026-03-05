@@ -122,7 +122,7 @@
     for (const item of items.slice(0, 8)) {
       const slugValue = String(item?.slug || "").toUpperCase();
       if (!slugValue) continue;
-      const nameValue = String(item?.name || "UNQ+ User").trim() || "UNQ+ User";
+      const nameValue = String(item?.name || "UNQX User").trim() || "UNQX User";
       const row = document.createElement("a");
       row.href = `/${encodeURIComponent(slugValue)}`;
       row.className =
@@ -248,7 +248,7 @@
   if (saveContactButton instanceof HTMLButtonElement) {
     saveContactButton.addEventListener("click", () => {
       const card = payload && typeof payload.card === "object" && payload.card ? payload.card : {};
-      const fullName = String(card.name || "UNQ+ User").trim();
+      const fullName = String(card.name || "UNQX User").trim();
       const phone = String(card.phone || card.extraPhone || "").trim();
       const email = String(card.email || "").trim();
       const url = String(payload.shareUrl || shareUrl || window.location.href).trim();

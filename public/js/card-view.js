@@ -14,22 +14,22 @@
     const buttonLimit = plan === "premium" ? 6 : 3;
     const tags = Array.isArray(card.tags)
       ? card.tags
-          .map((tag) => String((tag && typeof tag === "object" ? tag.label : tag) || "").trim())
-          .filter(Boolean)
+        .map((tag) => String((tag && typeof tag === "object" ? tag.label : tag) || "").trim())
+        .filter(Boolean)
       : [];
     const buttons = Array.isArray(card.buttons)
       ? card.buttons
-          .map((button) => ({
-            type: String(button?.type || "other")
-              .trim()
-              .toLowerCase(),
-            label: String(button?.label || "").trim(),
-            url: String(button?.url || button?.href || "").trim(),
-          }))
-          .filter((button) => button.label && /^https?:\/\//i.test(button.url))
-          .slice(0, buttonLimit)
+        .map((button) => ({
+          type: String(button?.type || "other")
+            .trim()
+            .toLowerCase(),
+          label: String(button?.label || "").trim(),
+          url: String(button?.url || button?.href || "").trim(),
+        }))
+        .filter((button) => button.label && /^https?:\/\//i.test(button.url))
+        .slice(0, buttonLimit)
       : [];
-    const name = String(card.name || "").trim() || "UNQ+ User";
+    const name = String(card.name || "").trim() || "UNQX User";
     const avatarUrl = String(card.avatarUrl || "").trim();
     const initials = name
       .split(/\s+/)
@@ -176,11 +176,11 @@
     const buttonsHtml =
       card.buttons.length > 0
         ? card.buttons
-            .map(
-              (button) =>
-                `<a href="${esc(button.url)}" target="_blank" rel="noopener noreferrer" data-track-action data-button-type="${esc(button.type || "other")}" class="public-card-button unq-ref-action-btn">${iconSvg(classifyButton(button))}<span>${esc(button.label)}</span></a>`,
-            )
-            .join("")
+          .map(
+            (button) =>
+              `<a href="${esc(button.url)}" target="_blank" rel="noopener noreferrer" data-track-action data-button-type="${esc(button.type || "other")}" class="public-card-button unq-ref-action-btn">${iconSvg(classifyButton(button))}<span>${esc(button.label)}</span></a>`,
+          )
+          .join("")
         : '<p class="rounded-xl border border-neutral-200 bg-neutral-50 py-3 text-center text-xs text-neutral-500">Владелец пока не добавил контактные кнопки.</p>';
     const scoreBlock = score
       ? `<div class="unq-score-block">
@@ -192,11 +192,10 @@
             <span class="unq-score-value">${Number(score.score || 0)}</span>
             <span class="unq-score-top">Топ ${Number(score.topPercent || 100)}%</span>
           </div>
-          ${
-            score.isForming
-              ? '<p class="unq-score-note">UNQ Score формируется · обновляется каждые 24ч</p>'
-              : `<div class="unq-score-progress"><span style="width:${Math.max(0, Math.min(100, (Number(score.score || 0) / 999) * 100)).toFixed(2)}%"></span></div>`
-          }
+          ${score.isForming
+        ? '<p class="unq-score-note">UNQ Score формируется · обновляется каждые 24ч</p>'
+        : `<div class="unq-score-progress"><span style="width:${Math.max(0, Math.min(100, (Number(score.score || 0) / 999) * 100)).toFixed(2)}%"></span></div>`
+      }
         </div>`
       : "";
 
@@ -235,14 +234,13 @@
         </div>
         <div class="public-card-shell unq-ref-shell">
           ${topBadgeHtml}
-          ${
-            card.showBranding
-              ? `<div class="unq-ref-brand">
-            <h2>UNQ+</h2>
+          ${card.showBranding
+        ? `<div class="unq-ref-brand">
+            <h2>UNQX</h2>
             <p>POWERED BY SCXR</p>
           </div>`
-              : ""
-          }
+        : ""
+      }
           <div class="unq-ref-profile">
             <div class="unq-ref-avatar-wrap">
               ${card.avatarUrl ? `<img src="${esc(card.avatarUrl)}" alt="${esc(card.name)}" class="unq-ref-avatar-img" data-avatar-image />` : ""}
@@ -271,7 +269,7 @@
         </div>
         <div class="unq-ref-footline">
           <div>© ${esc(viewsLabel)}</div>
-          <div>${card.showBranding ? "• UNQ+" : ""}</div>
+          <div>${card.showBranding ? "• UNQX" : ""}</div>
         </div>
       </div>
     `;

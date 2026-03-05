@@ -50,7 +50,7 @@ export function BusinessCard({ slug }: BusinessCardProps) {
   const handleShare = async () => {
     if (navigator.share) {
       await navigator.share({
-        title: "Shukhrat Isroilov | UNQ+",
+        title: "Shukhrat Isroilov | UNQX",
         url: `https://unqx.uz/${slug}`,
       })
     } else {
@@ -89,7 +89,7 @@ export function BusinessCard({ slug }: BusinessCardProps) {
           style={{ animationDelay: "0.3s" }}
         >
           <h2 className="text-2xl font-black tracking-tight text-neutral-900">
-            UNQ+
+            UNQX
           </h2>
           <p className="mt-0.5 text-[10px] tracking-widest text-neutral-400 uppercase">
             powered by scxr
@@ -253,7 +253,7 @@ export function BusinessCard({ slug }: BusinessCardProps) {
         </div>
         <div className="flex items-center gap-1 text-[10px] text-neutral-400">
           <span className="inline-block h-1 w-1 rounded-full bg-neutral-400" />
-          UNQ+
+          UNQX
         </div>
       </div>
     </div>

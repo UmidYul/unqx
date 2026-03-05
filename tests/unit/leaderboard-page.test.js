@@ -5,8 +5,8 @@ const ejs = require("ejs");
 async function renderLeaderboardTemplate(locals = {}) {
   const file = path.join(process.cwd(), "src", "views", "public", "leaderboard.ejs");
   return ejs.renderFile(file, {
-    title: "Топ визиток недели · UNQ+",
-    description: "Топ визиток UNQ+",
+    title: "Топ визиток недели · UNQX",
+    description: "Топ визиток UNQX",
     period: "week",
     items: [],
     userSummary: null,

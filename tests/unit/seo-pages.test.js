@@ -4,9 +4,9 @@ const ejs = require("ejs");
 async function renderSeoHubTemplate() {
   const file = path.join(process.cwd(), "src", "views", "public", "seo-hub.ejs");
   return ejs.renderFile(file, {
-    title: "Гайды и FAQ по цифровым визиткам | UNQ+",
-    description: "Полные гайды UNQ+",
-    heading: "Гайды UNQ+",
+    title: "Гайды и FAQ по цифровым визиткам | UNQX",
+    description: "Полные гайды UNQX",
+    heading: "Гайды UNQX",
     lead: "Сильные материалы",
     image: "https://unqx.uz/brand/logo.PNG",
     jsonLd: [],
@@ -56,7 +56,7 @@ describe("seo pages", () => {
   test("renders seo hub page with internal links", async () => {
     const html = await renderSeoHubTemplate();
     expect(html).toContain("<!doctype html>");
-    expect(html).toContain("Гайды UNQ+");
+    expect(html).toContain("Гайды UNQX");
     expect(html).toContain('href="/guides/digital-business-card"');
     expect(html).toContain('href="/faq"');
   });

@@ -211,7 +211,7 @@ async function getReferralBootstrap(userId) {
     },
     referrals: items.map((item) => ({
       id: item.id,
-      name: item.referred?.firstName || item.referred?.username || "UNQ+ User",
+      name: item.referred?.firstName || item.referred?.username || "UNQX User",
       username: item.referred?.username || null,
       createdAt: item.createdAt,
       status: item.status,

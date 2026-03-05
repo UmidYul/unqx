@@ -76,7 +76,7 @@ Fields:
   type: number
   default: 3
 
-- Скрыть брендинг UNQ+
+- Скрыть брендинг UNQX
   key: plan_basic_hide_branding
   type: boolean
   default: false
@@ -285,7 +285,7 @@ On save:
 - Примечание под кнопкой заказа
   key: bracelet_note
   type: text
-  default: "Браслет привязан к твоему slug — работает только с активной визиткой UNQ+"
+  default: "Браслет привязан к твоему slug — работает только с активной визиткой UNQX"
 
 ### Save behavior
 
@@ -362,7 +362,7 @@ General platform-wide toggles and content.
 - Название платформы
   key: platform_name
   type: text
-  default: "UNQ+"
+  default: "UNQX"
 
 - Слоган (tagline)
   key: platform_tagline

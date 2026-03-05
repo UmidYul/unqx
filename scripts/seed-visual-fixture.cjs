@@ -122,7 +122,7 @@ async function createDemoCard(slug, index) {
     extraPhone: "",
     tags: [
       { label: `Tag ${index}`, url: "" },
-      { label: "UNQ+", url: "https://unqx.uz" },
+      { label: "UNQX", url: "https://unqx.uz" },
     ],
     buttons: [
       { label: "WEBSITE", url: "https://unqx.uz", isActive: true },
@@ -149,7 +149,7 @@ async function seedVisualFixture() {
     tags: [
       { label: "Top Dawg", url: "https://t.me/unqx" },
       { label: "Producer", url: "" },
-      { label: "UNQ+ Team", url: "https://unqx.uz" },
+      { label: "UNQX Team", url: "https://unqx.uz" },
     ],
     buttons: [
       { label: "TELEGRAM", url: "https://t.me/unqx", isActive: true },

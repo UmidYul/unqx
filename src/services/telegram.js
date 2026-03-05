@@ -38,7 +38,7 @@ async function sendOrderRequestToTelegram(payload) {
   const usernameLabel = payload.username ? `@${escapeHtml(payload.username.replace(/^@/, ""))}` : "@—";
   const emailLabel = payload.email ? escapeHtml(payload.email) : "—";
   const text = [
-    "<b>НОВАЯ ЗАЯВКА UNQ+</b>",
+    "<b>НОВАЯ ЗАЯВКА UNQX</b>",
     "",
     `${escapeHtml(payload.name)} · ${usernameLabel}`,
     `Email: ${emailLabel}`,
@@ -155,8 +155,8 @@ async function sendVerificationStatusToUser({ telegramId, status, adminNote }) {
   const note = String(adminNote || "").trim();
   const text =
     status === "approved"
-      ? "Верификация UNQ+ подтверждена. Значок верификации уже активен."
-      : `Верификация UNQ+ отклонена.${note ? `\nПричина: ${escapeHtml(note)}` : ""}`;
+      ? "Верификация UNQX подтверждена. Значок верификации уже активен."
+      : `Верификация UNQX отклонена.${note ? `\nПричина: ${escapeHtml(note)}` : ""}`;
   return sendTelegramMessage({ chatId: telegramId, text, parseMode: "HTML" });
 }
 

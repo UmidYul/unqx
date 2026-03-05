@@ -7,8 +7,8 @@ interface Props {
 export async function generateMetadata({ params }: Props) {
   const { slug } = await params
   return {
-    title: `${slug} | UNQ+`,
-    description: `Digital card ${slug} on UNQ+`,
+    title: `${slug} | UNQX`,
+    description: `Digital card ${slug} on UNQX`,
   }
 }
 

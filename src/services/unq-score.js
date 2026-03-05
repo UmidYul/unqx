@@ -91,27 +91,27 @@ async function getUserScoreInputs(userId, tx = prisma) {
   const [views30d, clicks30d, hasBracelet] = await Promise.all([
     slugNames.length && tx.analyticsView
       ? tx.analyticsView.count({
-          where: {
-            slug: { in: slugNames },
-            visitedAt: { gte: since30d },
-          },
-        })
+        where: {
+          slug: { in: slugNames },
+          visitedAt: { gte: since30d },
+        },
+      })
       : 0,
     slugNames.length && tx.analyticsClick
       ? tx.analyticsClick.count({
-          where: {
-            slug: { in: slugNames },
-            clickedAt: { gte: since30d },
-          },
-        })
+        where: {
+          slug: { in: slugNames },
+          clickedAt: { gte: since30d },
+        },
+      })
       : 0,
     slugNames.length
       ? tx.braceletOrder.count({
-          where: {
-            slug: { in: slugNames },
-            deliveryStatus: { in: ["ORDERED", "SHIPPED", "DELIVERED"] },
-          },
-        })
+        where: {
+          slug: { in: slugNames },
+          deliveryStatus: { in: ["ORDERED", "SHIPPED", "DELIVERED"] },
+        },
+      })
       : 0,
   ]);
 
@@ -370,10 +370,10 @@ async function getProfileScoreByUserId(userId) {
     getScoreByUserId(userId),
     prisma.scoreHistory
       ? prisma.scoreHistory.findMany({
-          where: { userId },
-          orderBy: { recordedAt: "asc" },
-          take: 30,
-        })
+        where: { userId },
+        orderBy: { recordedAt: "asc" },
+        take: 30,
+      })
       : [],
     getUserScoreInputs(userId),
   ]);
@@ -442,13 +442,13 @@ async function getScoreLeaderboard(limit = 100) {
   const uniqueSlugs = Array.from(new Set(allSlugs));
   const viewsGrouped = uniqueSlugs.length && prisma.analyticsView
     ? await prisma.analyticsView.groupBy({
-        by: ["slug"],
-        where: {
-          slug: { in: uniqueSlugs },
-          visitedAt: { gte: since30d },
-        },
-        _count: { _all: true },
-      })
+      by: ["slug"],
+      where: {
+        slug: { in: uniqueSlugs },
+        visitedAt: { gte: since30d },
+      },
+      _count: { _all: true },
+    })
     : [];
   const viewsBySlug = new Map(viewsGrouped.map((row) => [row.slug, row._count._all || 0]));
 
@@ -463,7 +463,7 @@ async function getScoreLeaderboard(limit = 100) {
       userId: row.userId,
       telegramId: row.userId,
       slug,
-      ownerName: row.user?.profileCard?.name || row.user?.firstName || row.user?.username || "UNQ+ User",
+      ownerName: row.user?.profileCard?.name || row.user?.firstName || row.user?.username || "UNQX User",
       avatarUrl: row.user?.profileCard?.avatarUrl || "/brand/logo.PNG",
       plan: row.user?.plan || "basic",
       score: row.score,

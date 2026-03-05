@@ -193,7 +193,7 @@ router.get(
     res.json({
       items: rows.map((row) => ({
         userId: row.userId,
-        userName: row.user?.profileCard?.name || row.user?.firstName || row.user?.username || "UNQ+ User",
+        userName: row.user?.profileCard?.name || row.user?.firstName || row.user?.username || "UNQX User",
         slug: row.user?.slugs?.[0]?.fullSlug || "—",
         score: row.score,
         percentile: row.percentile,

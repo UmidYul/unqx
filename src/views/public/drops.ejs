@@ -6,12 +6,12 @@
     const dropsJsonLd = {
       "@context": "https://schema.org",
       "@type": "CollectionPage",
-      name: title || "Дропы slug · UNQ+",
-      description: description || "Актуальные и прошедшие дропы slug на UNQ+",
+      name: title || "Дропы slug · UNQX",
+      description: description || "Актуальные и прошедшие дропы slug на UNQX",
       url: pageCanonicalUrl,
     };
   %>
-  <%- include('../partials/head', { title: title || 'Дропы slug · UNQ+', description: description || 'Дропы slug UNQ+', image: typeof image === 'string' ? image : undefined, styles: ['/css/public-card.css'], jsonLd: dropsJsonLd }) %>
+  <%- include('../partials/head', { title: title || 'Дропы slug · UNQX', description: description || 'Дропы slug UNQX', image: typeof image === 'string' ? image : undefined, styles: ['/css/public-card.css'], jsonLd: dropsJsonLd }) %>
 </head>
 <body class="antialiased bg-neutral-50" data-page="drops-page" data-telegram-bot-username="<%= telegramBotUsername || '' %>">
   <% const hasDrops = Array.isArray(drops) && drops.length > 0; %>
@@ -24,7 +24,7 @@
         На главную
       </a>
       <a href="/leaderboard" class="interactive-btn <%= hasDrops ? '' : 'pointer-events-auto' %> inline-flex min-h-11 items-center gap-2 rounded-lg border border-neutral-300 px-3 py-1.5 text-sm text-neutral-500 hover:text-neutral-900">
-        <img src="/brand/logo.PNG" alt="UNQ+" class="h-5 w-5 rounded border border-neutral-200 object-cover" />
+        <img src="/brand/logo.PNG" alt="UNQX" class="h-5 w-5 rounded border border-neutral-200 object-cover" />
         <span>Топ визиток</span>
       </a>
     </div>
@@ -40,7 +40,7 @@
     <% } else { %>
     <header class="mb-6 rounded-2xl border border-neutral-200 bg-white p-6">
       <h1 class="inline-flex items-center gap-2 text-3xl font-black tracking-tight text-neutral-900">
-        <img src="/brand/logo.PNG" alt="UNQ+" class="h-8 w-8 rounded-md border border-neutral-200 object-cover" />
+        <img src="/brand/logo.PNG" alt="UNQX" class="h-8 w-8 rounded-md border border-neutral-200 object-cover" />
         <span>Дропы slug</span>
       </h1>
       <p class="mt-2 text-sm text-neutral-500">Подписывайся на уведомления и забирай slug в первые минуты старта.</p>

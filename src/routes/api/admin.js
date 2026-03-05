@@ -419,9 +419,9 @@ router.get(
     const slugSet = new Set(rows.map((row) => row.slug));
     const slugMetaRows = slugSet.size
       ? await prisma.slug.findMany({
-          where: { fullSlug: { in: Array.from(slugSet) } },
-          select: { fullSlug: true, status: true, pendingExpiresAt: true },
-        })
+        where: { fullSlug: { in: Array.from(slugSet) } },
+        select: { fullSlug: true, status: true, pendingExpiresAt: true },
+      })
       : [];
     const slugMetaBySlug = new Map(slugMetaRows.map((row) => [row.fullSlug, row]));
 
@@ -430,7 +430,7 @@ router.get(
         slugState: slugMetaBySlug.get(row.slug)?.status || null,
         pendingExpiresAt: slugMetaBySlug.get(row.slug)?.pendingExpiresAt || null,
         id: row.id,
-        name: row.user?.displayName || row.user?.firstName || "UNQ+ User",
+        name: row.user?.displayName || row.user?.firstName || "UNQX User",
         slug: row.slug,
         slugPrice: row.slugPrice,
         planPrice: row.planPrice || 0,
@@ -639,9 +639,9 @@ router.patch(
       const userAfter =
         status === "approved"
           ? await tx.user.findUnique({
-              where: { id: row.userId },
-              select: { plan: true },
-            })
+            where: { id: row.userId },
+            select: { plan: true },
+          })
           : null;
       return { ...row, approvedPlan: userAfter?.plan || null };
     });
@@ -850,20 +850,20 @@ router.get(
       }),
       modelDelegateExists("UnqScore")
         ? prisma.unqScore.findMany({
-            where: { userId: { in: userIds } },
-            select: {
-              userId: true,
-              score: true,
-              percentile: true,
-              calculatedAt: true,
-              scoreViews: true,
-              scoreSlugRarity: true,
-              scoreTenure: true,
-              scoreCtr: true,
-              scoreBracelet: true,
-              scorePlan: true,
-            },
-          })
+          where: { userId: { in: userIds } },
+          select: {
+            userId: true,
+            score: true,
+            percentile: true,
+            calculatedAt: true,
+            scoreViews: true,
+            scoreSlugRarity: true,
+            scoreTenure: true,
+            scoreCtr: true,
+            scoreBracelet: true,
+            scorePlan: true,
+          },
+        })
         : Promise.resolve([]),
     ]);
 
@@ -890,38 +890,38 @@ router.get(
     const scoreByUser = new Map(unqScores.map((row) => [row.userId, row]));
 
     const items = users.map((user) => ({
-        unqScore: scoreByUser.get(user.id)
-          ? {
-              score: scoreByUser.get(user.id).score,
-              percentile: scoreByUser.get(user.id).percentile,
-              calculatedAt: scoreByUser.get(user.id).calculatedAt,
-              breakdown: {
-                views: scoreByUser.get(user.id).scoreViews,
-                slugRarity: scoreByUser.get(user.id).scoreSlugRarity,
-                tenure: scoreByUser.get(user.id).scoreTenure,
-                ctr: scoreByUser.get(user.id).scoreCtr,
-                bracelet: scoreByUser.get(user.id).scoreBracelet,
-                plan: scoreByUser.get(user.id).scorePlan,
-              },
-            }
-          : null,
-        telegramId: user.id,
-        name: user.displayName || user.firstName,
-        username: user.username || null,
-        plan: user.plan,
-        planPurchasedAt: user.planPurchasedAt,
-        planUpgradedAt: user.planUpgradedAt,
-        slugs: (slugsByUser.get(user.id) || []).map((slug) => ({
-          ...slug,
-          hasBracelet: Boolean(braceletByUser.get(user.id)?.has(slug.fullSlug)),
-        })),
-        activeSlugCount: (slugsByUser.get(user.id) || []).filter((slug) =>
-          ["approved", "active", "paused", "private"].includes(slug.status),
-        ).length,
-        hasCard: cardsSet.has(user.id),
-        status: user.status,
-        createdAt: user.createdAt,
-      }));
+      unqScore: scoreByUser.get(user.id)
+        ? {
+          score: scoreByUser.get(user.id).score,
+          percentile: scoreByUser.get(user.id).percentile,
+          calculatedAt: scoreByUser.get(user.id).calculatedAt,
+          breakdown: {
+            views: scoreByUser.get(user.id).scoreViews,
+            slugRarity: scoreByUser.get(user.id).scoreSlugRarity,
+            tenure: scoreByUser.get(user.id).scoreTenure,
+            ctr: scoreByUser.get(user.id).scoreCtr,
+            bracelet: scoreByUser.get(user.id).scoreBracelet,
+            plan: scoreByUser.get(user.id).scorePlan,
+          },
+        }
+        : null,
+      telegramId: user.id,
+      name: user.displayName || user.firstName,
+      username: user.username || null,
+      plan: user.plan,
+      planPurchasedAt: user.planPurchasedAt,
+      planUpgradedAt: user.planUpgradedAt,
+      slugs: (slugsByUser.get(user.id) || []).map((slug) => ({
+        ...slug,
+        hasBracelet: Boolean(braceletByUser.get(user.id)?.has(slug.fullSlug)),
+      })),
+      activeSlugCount: (slugsByUser.get(user.id) || []).filter((slug) =>
+        ["approved", "active", "paused", "private"].includes(slug.status),
+      ).length,
+      hasCard: cardsSet.has(user.id),
+      status: user.status,
+      createdAt: user.createdAt,
+    }));
 
     if (sort === "score_desc") {
       items.sort((a, b) => (Number(b.unqScore?.score || 0) - Number(a.unqScore?.score || 0)));
@@ -1171,7 +1171,7 @@ router.get(
       ...rows.map((row) =>
         [
           `"${new Date(row.createdAt).toLocaleString("ru-RU")}"`,
-          `"${String(row.user?.displayName || row.user?.firstName || "UNQ+ User").replace(/"/g, '""')}"`,
+          `"${String(row.user?.displayName || row.user?.firstName || "UNQX User").replace(/"/g, '""')}"`,
           `"${row.slug}"`,
           row.slugPrice,
           Number(row.planPrice || 0),
@@ -1237,7 +1237,7 @@ router.get(
         id: row.id,
         purchasedAt: row.purchasedAt,
         telegramId: row.userId,
-        userName: row.user?.displayName || row.user?.firstName || "UNQ+ User",
+        userName: row.user?.displayName || row.user?.firstName || "UNQX User",
         username: row.user?.username || null,
         type: row.type,
         slug: row.slug || null,
@@ -1283,7 +1283,7 @@ router.get(
       ...rows.map((row) =>
         [
           `"${new Date(row.purchasedAt).toLocaleString("ru-RU")}"`,
-          `"${String(row.user?.displayName || row.user?.firstName || "UNQ+ User").replace(/"/g, '""')}"`,
+          `"${String(row.user?.displayName || row.user?.firstName || "UNQX User").replace(/"/g, '""')}"`,
           `"${String(row.user?.username ? `@${row.user.username}` : row.userId).replace(/"/g, '""')}"`,
           `"${String(row.type)}"`,
           `"${String(row.slug || "").replace(/"/g, '""')}"`,
@@ -1366,7 +1366,7 @@ router.get(
     const items = rows.map((row) => {
       const calcPrice =
         /^[A-Z]{3}[0-9]{3}$/.test(row.fullSlug) &&
-        (row.price === null || row.price === undefined)
+          (row.price === null || row.price === undefined)
           ? calculateSlugPrice({ letters: row.fullSlug.slice(0, 3), digits: row.fullSlug.slice(3), config: slugPricingConfig }).total
           : null;
       const effectivePrice = typeof row.price === "number" ? row.price : calcPrice;
@@ -1701,31 +1701,31 @@ router.get(
     ] = await Promise.all([
       canUsePurchases
         ? prisma.purchase.aggregate({
-            where: { purchasedAt: { gte: todayStart } },
-            _sum: { amount: true },
-          })
+          where: { purchasedAt: { gte: todayStart } },
+          _sum: { amount: true },
+        })
         : Promise.resolve({ _sum: { amount: 0 } }),
       canUsePurchases
         ? prisma.purchase.aggregate({
-            where: { purchasedAt: { gte: monthStart } },
-            _sum: { amount: true },
-          })
+          where: { purchasedAt: { gte: monthStart } },
+          _sum: { amount: true },
+        })
         : Promise.resolve({ _sum: { amount: 0 } }),
       canUsePurchases
         ? prisma.purchase.aggregate({
-            _sum: { amount: true },
-          })
+          _sum: { amount: true },
+        })
         : Promise.resolve({ _sum: { amount: 0 } }),
       canUsePurchases
         ? prisma.purchase.findMany({
-            where: { purchasedAt: { gte: monthStart } },
-            select: { purchasedAt: true, amount: true, type: true },
-          })
+          where: { purchasedAt: { gte: monthStart } },
+          select: { purchasedAt: true, amount: true, type: true },
+        })
         : Promise.resolve([]),
       canUsePurchases
         ? prisma.purchase.findMany({
-            select: { amount: true, type: true },
-          })
+          select: { amount: true, type: true },
+        })
         : Promise.resolve([]),
       prisma.slugCheckerLog.findMany({
         where: { source: "hero", checkedAt: { gte: monthStart } },
@@ -1735,13 +1735,13 @@ router.get(
       }),
       modelDelegateExists("UnqScore")
         ? prisma.unqScore.findMany({
-            where: {
-              user: {
-                status: "active",
-              },
+          where: {
+            user: {
+              status: "active",
             },
-            select: { score: true },
-          })
+          },
+          select: { score: true },
+        })
         : Promise.resolve([]),
       prisma.slugRequest.count({
         where: { createdAt: { gte: todayStart } },

@@ -5,7 +5,7 @@ const ejs = require("ejs");
 async function renderProfileTemplate() {
   const file = path.join(process.cwd(), "src", "views", "public", "profile.ejs");
   return ejs.renderFile(file, {
-    title: "Мой профиль | UNQ+",
+    title: "Мой профиль | UNQX",
     telegramBotUsername: "unqx_bot",
     cspNonce: "nonce",
     csrfToken: "csrf",
@@ -18,7 +18,7 @@ describe("profile page", () => {
   test("renders profile page without crash", async () => {
     const html = await renderProfileTemplate();
     expect(html).toContain("<!doctype html>");
-    expect(html).toContain("Мой профиль | UNQ+");
+    expect(html).toContain("Мой профиль | UNQX");
   });
 
   test("renders all profile tabs", async () => {

@@ -1,5 +1,5 @@
 -- ============================================================
--- UNQ+ DATABASE CLEANUP MIGRATION
+-- UNQX DATABASE CLEANUP MIGRATION
 -- Run in order. Back up before executing.
 -- ============================================================
 
@@ -89,12 +89,7 @@ ALTER TABLE public.users
 -- Удалить индекс на telegram_chat_id (оставим поле, удалим только если не нужен уникальный индекс — оставим)
 -- DROP INDEX IF EXISTS public.users_telegram_chat_id_unique_idx; -- ОСТАВИТЬ
 
--- Удалить саму колонку telegram_id из users
--- ВНИМАНИЕ: делаем nullable сначала на случай если есть данные
-ALTER TABLE public.users
-    ALTER COLUMN telegram_id DROP NOT NULL;
-
--- Теперь удаляем колонку
+-- Удалить legacy колонки auth из users (безопасно, если уже удалены)
 ALTER TABLE public.users
     DROP COLUMN IF EXISTS telegram_id,
     DROP COLUMN IF EXISTS photo_url; 

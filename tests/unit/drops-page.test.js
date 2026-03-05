@@ -5,8 +5,8 @@ const ejs = require("ejs");
 async function renderDropsTemplate(locals = {}) {
   const file = path.join(process.cwd(), "src", "views", "public", "drops.ejs");
   return ejs.renderFile(file, {
-    title: "Дропы slug · UNQ+",
-    description: "Дропы slug UNQ+",
+    title: "Дропы slug · UNQX",
+    description: "Дропы slug UNQX",
     drops: [],
     cspNonce: "nonce",
     csrfToken: "csrf",

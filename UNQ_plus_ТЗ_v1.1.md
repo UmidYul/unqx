@@ -1,11 +1,11 @@
-# Техническое задание — UNQ+ Digital Business Card Platform
+# Техническое задание — UNQX Digital Business Card Platform
 **Версия:** 1.1 | **Обновлено:** 2026
 
 ---
 
 ## 1. Обзор проекта
 
-**UNQ+** — платформа для создания цифровых визиток.
+**UNQX** — платформа для создания цифровых визиток.
 
 - Администратор создаёт визитки через панель управления
 - Каждая визитка доступна по уникальному URL: `unqx.uz/AAA001`
@@ -111,7 +111,7 @@
 
 ### Структура страницы (сверху вниз)
 1. Код визитки `#AAA001` — серый, мелкий шрифт
-2. Логотип **UNQ+** / *powered by scxr*
+2. Логотип **UNQX** / *powered by scxr*
 3. Декоративные SVG молнии по углам
 4. Аватар — круглый, с синей галочкой если `verified = true`
 5. Имя + основной телефон
@@ -266,7 +266,7 @@
 ### 6.4 QR-код (модальное окно)
 
 - QR кодирует URL: `https://unqx.uz/AAA001`
-- Логотип **UNQ+** поверх QR-кода в центре
+- Логотип **UNQX** поверх QR-кода в центре
 - Скачать **PNG** (1000×1000px)
 - Скачать **SVG**
 
@@ -330,13 +330,13 @@ ADMIN_PASSWORD_HASH="$2b$10$..."  # bcrypt hash
 ## 9. Промпт для AI-разработки
 
 ```
-Создай full-stack веб-приложение "UNQ+ Digital Business Cards" на Next.js 14 (App Router) + TypeScript + Prisma + PostgreSQL + Tailwind CSS.
+Создай full-stack веб-приложение "UNQX Digital Business Cards" на Next.js 14 (App Router) + TypeScript + Prisma + PostgreSQL + Tailwind CSS.
 
 === ПУБЛИЧНАЯ ВИЗИТКА (GET /[slug]) ===
 - SSR страница, данные из БД по slug
 - Элементы сверху вниз:
   1. Код #SLUG серым
-  2. Логотип UNQ+ / powered by scxr
+  2. Логотип UNQX / powered by scxr
   3. SVG молнии по углам
   4. Круглый аватар (синяя галочка если verified=true)
   5. Имя + телефон
@@ -386,7 +386,7 @@ ADMIN_PASSWORD_HASH="$2b$10$..."  # bcrypt hash
 
 QR-код (модальное окно из кнопки в таблице):
 - qrcode.react, кодирует https://unqx.uz/{slug}
-- Логотип UNQ+ в центре
+- Логотип UNQX в центре
 - Скачать PNG 1000x1000 и SVG
 
 === PRISMA SCHEMA ===
@@ -448,4 +448,4 @@ ADMIN_PASSWORD_HASH="$2b$10$..."
 
 ---
 
-*UNQ+ Platform · Техническое задание v1.1*
+*UNQX Platform · Техническое задание v1.1*

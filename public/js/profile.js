@@ -352,7 +352,7 @@
   const renderSidebar = () => {
     if (!s.user) return;
     if (el.av) el.av.src = s.user.photoUrl || DEFAULT_PROFILE_AVATAR;
-    if (el.nm) el.nm.textContent = s.user.displayName || s.user.firstName || "UNQ+ User";
+    if (el.nm) el.nm.textContent = s.user.displayName || s.user.firstName || "UNQX User";
     if (el.un) el.un.textContent = s.user.username ? `@${s.user.username}` : "@—";
     const plan = s.user.plan || "none";
     if (el.pl) {
@@ -418,7 +418,7 @@
       const canUseQr = plan === "premium";
       const qrAction = canUseQr
         ? (slug) =>
-            `<button data-a="open-qr" data-slug="${esc(slug)}" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold">Мой QR</button>`
+          `<button data-a="open-qr" data-slug="${esc(slug)}" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold">Мой QR</button>`
         : () => "";
 
       el.slugs.innerHTML = s.slugs
@@ -444,10 +444,9 @@
                 <button data-a="cycle" data-slug="${esc(slugItem.fullSlug)}" data-st="${esc(slugItem.status)}" class="interactive-btn inline-flex min-h-11 items-center gap-2 rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold"><span class="status-dot ${statusTone}" aria-hidden="true"></span>${statusLabel}</button>
               </div>
             </div>
-            ${
-              slugItem.status === "paused"
-                ? `<div class="mt-3 flex gap-2"><input data-pm="${esc(slugItem.fullSlug)}" value="${esc(slugItem.pauseMessage || "")}" placeholder="Скоро вернусь · Пишите в Telegram" class="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm"><button data-a="save-pm" data-slug="${esc(slugItem.fullSlug)}" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-3 py-2 text-sm">Сохранить</button></div>`
-                : ""
+            ${slugItem.status === "paused"
+              ? `<div class="mt-3 flex gap-2"><input data-pm="${esc(slugItem.fullSlug)}" value="${esc(slugItem.pauseMessage || "")}" placeholder="Скоро вернусь · Пишите в Telegram" class="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm"><button data-a="save-pm" data-slug="${esc(slugItem.fullSlug)}" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-3 py-2 text-sm">Сохранить</button></div>`
+              : ""
             }
             <div class="mt-3 flex flex-wrap gap-3 text-xs text-neutral-500">
               ${slugItem.isPrimary ? "" : `<button data-a="primary" data-slug="${esc(slugItem.fullSlug)}" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold">Сделать основным</button>`}
@@ -561,7 +560,7 @@
     return {
       card: {
         slug: primarySlug?.fullSlug || "UNQ",
-        name: el.cName?.value || s.user?.displayName || s.user?.firstName || "UNQ+ User",
+        name: el.cName?.value || s.user?.displayName || s.user?.firstName || "UNQX User",
         phone: "",
         hashtag: String(el.cHashtag?.value || "").trim(),
         address: String(el.cAddress?.value || "").trim(),
@@ -674,10 +673,10 @@
 
     el.reqTable.innerHTML = s.requests.length
       ? s.requests
-          .map(
-            (requestItem) => `<tr class="border-t border-neutral-100"><td class="px-3 py-2">${fdt(requestItem.createdAt)}</td><td class="px-3 py-2">${requestItem.purchasedAt ? fdt(requestItem.purchasedAt) : "—"}</td><td class="px-3 py-2 font-mono">${esc(requestItem.slug)}</td><td class="px-3 py-2">${fp(Number(requestItem.slugPrice || 0) + Number(requestItem.planPrice || 0) + (requestItem.bracelet ? 300000 : 0))}<div class="text-[11px] text-neutral-500">${requestItem.purchasedAt ? `Единоразовая покупка · ${fd(requestItem.purchasedAt)}` : "Единоразовая покупка"}</div></td><td class="px-3 py-2">${requestItem.requestedPlan === "premium" ? "Премиум" : "Базовый"}</td><td class="px-3 py-2">${requestItem.bracelet ? "Да" : "Нет"}</td><td class="px-3 py-2">${esc(requestItem.statusBadge || requestItem.status)}</td><td class="px-3 py-2">${esc(requestItem.adminNote || "—")}</td></tr>`,
-          )
-          .join("")
+        .map(
+          (requestItem) => `<tr class="border-t border-neutral-100"><td class="px-3 py-2">${fdt(requestItem.createdAt)}</td><td class="px-3 py-2">${requestItem.purchasedAt ? fdt(requestItem.purchasedAt) : "—"}</td><td class="px-3 py-2 font-mono">${esc(requestItem.slug)}</td><td class="px-3 py-2">${fp(Number(requestItem.slugPrice || 0) + Number(requestItem.planPrice || 0) + (requestItem.bracelet ? 300000 : 0))}<div class="text-[11px] text-neutral-500">${requestItem.purchasedAt ? `Единоразовая покупка · ${fd(requestItem.purchasedAt)}` : "Единоразовая покупка"}</div></td><td class="px-3 py-2">${requestItem.requestedPlan === "premium" ? "Премиум" : "Базовый"}</td><td class="px-3 py-2">${requestItem.bracelet ? "Да" : "Нет"}</td><td class="px-3 py-2">${esc(requestItem.statusBadge || requestItem.status)}</td><td class="px-3 py-2">${esc(requestItem.adminNote || "—")}</td></tr>`,
+        )
+        .join("")
       : '<tr><td colspan="8" class="px-3 py-8 text-center text-neutral-500">Заявок пока нет</td></tr>';
 
     const approved = s.requests.find((item) => item.status === "approved");
@@ -752,7 +751,7 @@
       el.refLink.value = payload.refLink || "";
     }
     if (el.refTg instanceof HTMLAnchorElement) {
-      const text = encodeURIComponent("Зарегистрируйся на UNQ+ по моей ссылке");
+      const text = encodeURIComponent("Зарегистрируйся на UNQX по моей ссылке");
       const url = encodeURIComponent(payload.refLink || "");
       el.refTg.href = `tg://msg_url?url=${url}&text=${text}`;
     }
@@ -764,11 +763,11 @@
       const rows = Array.isArray(payload.referrals) ? payload.referrals : [];
       el.refTable.innerHTML = rows.length
         ? rows
-            .map(
-              (item) =>
-                `<tr class="border-t border-neutral-100"><td class="px-3 py-2">${esc(item.name || "UNQ+ User")}</td><td class="px-3 py-2">${fdt(item.createdAt)}</td><td class="px-3 py-2">${esc(item.status)}</td><td class="px-3 py-2">${esc(item.rewardType || "—")}</td></tr>`,
-            )
-            .join("")
+          .map(
+            (item) =>
+              `<tr class="border-t border-neutral-100"><td class="px-3 py-2">${esc(item.name || "UNQX User")}</td><td class="px-3 py-2">${fdt(item.createdAt)}</td><td class="px-3 py-2">${esc(item.status)}</td><td class="px-3 py-2">${esc(item.rewardType || "—")}</td></tr>`,
+          )
+          .join("")
         : '<tr><td colspan="4" class="px-3 py-8 text-center text-neutral-500">Пока нет рефералов</td></tr>';
     }
 
@@ -838,11 +837,11 @@
       rawHistory.length > 0
         ? rawHistory
         : [
-            {
-              date: score.calculatedAt || new Date().toISOString(),
-              score: Number(score.score || 0),
-            },
-          ];
+          {
+            date: score.calculatedAt || new Date().toISOString(),
+            score: Number(score.score || 0),
+          },
+        ];
     const labels = history.map((item) => {
       try {
         return new Date(item.date).toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit" });

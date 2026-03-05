@@ -9,7 +9,7 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
-  title: 'UNQ+ | Цифровая визитка за 1 минуту',
+  title: 'UNQX | Цифровая визитка за 1 минуту',
   description: 'Одна ссылка вместо тысячи слов. Создай свою цифровую визитку на unqx.uz',
 }
 

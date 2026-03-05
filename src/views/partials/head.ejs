@@ -1,12 +1,12 @@
 <%
-  const pageTitle = typeof title === "string" && title ? title : "UNQ+";
+  const pageTitle = typeof title === "string" && title ? title : "UNQX";
   const pageDescription =
-    typeof description === "string" && description ? description : "UNQ+ platform for digital business cards";
+    typeof description === "string" && description ? description : "UNQX platform for digital business cards";
   const pageStyles = typeof styles !== "undefined" && Array.isArray(styles) ? styles : [];
   const pageImage = typeof image === "string" && image ? image : null;
   const pageCanonical = typeof canonical === "string" && canonical ? canonical : (typeof canonicalUrl === "string" ? canonicalUrl : "");
   const pageLocale = typeof locale === "string" && locale ? locale : "ru_RU";
-  const pageSiteName = typeof siteName === "string" && siteName ? siteName : "UNQ+";
+  const pageSiteName = typeof siteName === "string" && siteName ? siteName : "UNQX";
   const publicSettingsNode = typeof publicSettings === "object" && publicSettings ? publicSettings : {};
   const twitterFromSettings = String(publicSettingsNode.contact_telegram_channel || "").trim();
   const pageTwitterSite = typeof twitterSite === "string" && twitterSite ? twitterSite : (twitterFromSettings || "@unqx_uz");
@@ -21,7 +21,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title><%= pageTitle %></title>
 <meta name="description" content="<%= pageDescription %>" />
-<meta name="author" content="UNQ+" />
+<meta name="author" content="UNQX" />
 <meta name="csrf-token" content="<%= pageCsrfToken %>" />
 <meta name="robots" content="<%= pageNoindex ? 'noindex, nofollow, noarchive' : 'index, follow, max-image-preview:large' %>" />
 <meta name="googlebot" content="<%= pageNoindex ? 'noindex, nofollow, noarchive' : 'index, follow, max-image-preview:large' %>" />

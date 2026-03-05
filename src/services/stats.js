@@ -125,7 +125,7 @@ async function getGlobalStats(timezone = DEFAULT_TIMEZONE) {
     topCards: topCards.map((row) => ({
       id: row.id,
       slug: row.fullSlug,
-      name: row.owner?.profileCard?.name || row.owner?.displayName || row.owner?.firstName || "UNQ+ User",
+      name: row.owner?.profileCard?.name || row.owner?.displayName || row.owner?.firstName || "UNQX User",
       viewsCount: Number(row.analyticsViewsCount || 0),
       uniqueViewsCount: 0,
     })),

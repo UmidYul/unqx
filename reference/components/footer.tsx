@@ -7,7 +7,7 @@ export function Footer() {
         <div className="flex flex-col items-start justify-between gap-10 md:flex-row md:items-end">
           <div>
             <Link href="/" className="text-xl font-black text-neutral-900">
-              UNQ+
+              UNQX
             </Link>
             <p className="mt-2 text-sm text-neutral-400">
               Цифровая визитка нового поколения
@@ -27,7 +27,7 @@ export function Footer() {
 
         <div className="mt-12 border-t border-neutral-200 pt-6">
           <p className="text-xs text-neutral-400">
-            &copy; 2026 UNQ+ &middot; Ташкент, Узбекистан
+            &copy; 2026 UNQX &middot; Ташкент, Узбекистан
           </p>
         </div>
       </div>

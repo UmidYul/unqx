@@ -132,7 +132,7 @@ function normalizeDisplayName(value, fallback) {
   if (next) {
     return next;
   }
-  return String(fallback || "").trim().slice(0, 120) || "UNQ+ User";
+  return String(fallback || "").trim().slice(0, 120) || "UNQX User";
 }
 
 function getPlanBadgeLabel(plan) {

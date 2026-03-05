@@ -459,13 +459,13 @@ function initSlugAvailability(orderApi) {
     function setTakenOwner(owner) {
       if (!owner || typeof owner !== "object") {
         takenOwnerWrap.classList.add("hidden");
-        takenOwnerName.textContent = "UNQ+ User";
+        takenOwnerName.textContent = "UNQX User";
         takenOwnerPhoto.src = "/brand/logo.PNG";
         takenOwnerView.href = `/${slug}`;
         return;
       }
 
-      const ownerName = String(owner.name || "").trim() || "UNQ+ User";
+      const ownerName = String(owner.name || "").trim() || "UNQX User";
       const ownerPhoto = String(owner.photoUrl || "").trim() || "/brand/logo.PNG";
       const ownerHref = String(owner.href || "").trim() || `/${slug}`;
       takenOwnerName.textContent = ownerName;
@@ -767,10 +767,10 @@ function initSlugCalculator(orderApi) {
       const flash =
         payload.hasFlashSale && Number(payload.basePrice || 0) > total
           ? {
-              basePrice: Number(payload.basePrice || total),
-              finalPrice: total,
-              discountPercent: Number(payload.discountPercent || 0),
-            }
+            basePrice: Number(payload.basePrice || total),
+            finalPrice: total,
+            discountPercent: Number(payload.discountPercent || 0),
+          }
           : null;
       return { total, flash };
     } catch {

@@ -23,7 +23,7 @@ async function processFlashSalesSchedule() {
   }
 
   const untilLabel = active.endsAt.toLocaleString("ru-RU");
-  const text = `⚡ FLASH SALE на UNQ+\n${active.description || active.title}\nСкидка ${active.discountPercent}% на ${resolveConditionLabel(active)} · До ${untilLabel}\nunqx.uz`;
+  const text = `⚡ FLASH SALE на UNQX\n${active.description || active.title}\nСкидка ${active.discountPercent}% на ${resolveConditionLabel(active)} · До ${untilLabel}\nunqx.uz`;
 
   try {
     await sendTelegramMessage({ chatId: active.telegramTarget, text, parseMode: "HTML" });
