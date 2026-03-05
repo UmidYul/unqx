@@ -1,6 +1,9 @@
 (function () {
   const root = document.body;
   if (!root || root.getAttribute("data-page") !== "profile-page") return;
+  const telegramBotUsername = String(root.getAttribute("data-telegram-bot-username") || "")
+    .replace(/^@+/, "")
+    .trim();
 
   const $ = (s) => document.querySelector(s);
   const $$ = (s) => Array.from(document.querySelectorAll(s));
@@ -1788,18 +1791,12 @@
   });
 
   el.stLinkTelegram?.addEventListener("click", async () => {
-    try {
-      const payload = await api("/api/profile/telegram/link/start", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
-      });
-      if (payload?.url) {
-        window.open(payload.url, "_blank", "noopener,noreferrer");
-      }
-    } catch (error) {
-      showModal("Ошибка", error.message || "Не удалось подготовить подключение Telegram");
+    if (!telegramBotUsername) {
+      showModal("Ошибка", "Telegram бот не настроен. Укажи username бота в настройках сервера.");
+      return;
     }
+    const url = `https://t.me/${encodeURIComponent(telegramBotUsername)}?start=notify`;
+    window.open(url, "_blank", "noopener,noreferrer");
   });
 
   el.stUnlinkTelegram?.addEventListener("click", async () => {

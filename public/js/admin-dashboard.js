@@ -519,7 +519,7 @@
     table.innerHTML = rows.length
       ? rows
           .map((x) => {
-            const slugText = Array.isArray(x.slugs) && x.slugs.length ? x.slugs.map((s) => `${s.fullSlug} (${s.status}${s.hasBracelet ? ", bracelet" : ""})`).join(", ") : "—";
+            const slugText = Array.isArray(x.slugs) && x.slugs.length ? x.slugs.map((s) => String(s.fullSlug || "").trim()).filter(Boolean).join(", ") : "—";
             const primarySlug =
               Array.isArray(x.slugs) && x.slugs.length
                 ? x.slugs.find((s) => ["active", "private", "paused", "approved"].includes(s.status))?.fullSlug || x.slugs[0].fullSlug

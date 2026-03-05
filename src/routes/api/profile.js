@@ -2,6 +2,7 @@ const express = require("express");
 const multer = require("multer");
 
 const { prisma } = require("../../db/prisma");
+const { env } = require("../../config/env");
 const { asyncHandler } = require("../../middleware/async");
 const { requireUserApi, getUserSession } = require("../../middleware/auth");
 const { requireSameOrigin } = require("../../middleware/same-origin");
@@ -1132,9 +1133,20 @@ router.post(
       return;
     }
 
-    res.status(410).json({
-      error: "Telegram linking flow is deprecated",
-      code: "TELEGRAM_LINK_DEPRECATED",
+    const botUsername = String(env.TELEGRAM_BOT_USERNAME || "")
+      .replace(/^@+/, "")
+      .trim();
+    if (!botUsername) {
+      res.status(400).json({
+        error: "Telegram bot is not configured",
+        code: "TELEGRAM_BOT_NOT_CONFIGURED",
+      });
+      return;
+    }
+
+    res.json({
+      ok: true,
+      url: `https://t.me/${encodeURIComponent(botUsername)}?start=notify`,
     });
   }),
 );

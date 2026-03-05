@@ -1046,7 +1046,7 @@ router.post(
 
       res.json({ ok: true });
       const ipForGeo = pickIpForGeo(req);
-      void withMissingTableFallback("SlugView", null, () =>
+      void withMissingTableFallback("Slug", null, () =>
         prisma.$transaction(async (tx) => {
           if (tx.slug) {
             await tx.slug.update({

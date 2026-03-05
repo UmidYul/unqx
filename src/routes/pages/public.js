@@ -285,10 +285,16 @@ function normalizeDirectorySector(value) {
   return ["design", "sales", "marketing", "it", "other"].includes(normalized) ? normalized : "";
 }
 
-function buildPublicCardFromProfile({ slug, user, profileCard, viewsCount }) {
+function buildPublicCardFromProfile({ slug, user, profileCard, viewsCount, allSlugs = [] }) {
   const plan = getEffectivePlan(user).plan;
+  const normalizedSlugs = Array.isArray(allSlugs)
+    ? allSlugs
+      .map((value) => String(value || "").trim().toUpperCase())
+      .filter(Boolean)
+    : [];
   return {
     slug,
+    slugs: normalizedSlugs.length ? normalizedSlugs : [slug],
     slugPrice: Number.isFinite(Number(profileCard.slugPrice)) ? Number(profileCard.slugPrice) : null,
     avatarUrl: profileCard.avatarUrl || null,
     name: profileCard.name,
@@ -1030,7 +1036,7 @@ router.get(
           return;
         }
 
-        const [owner, profileCard, views] = await Promise.all([
+        const [owner, profileCard, views, ownerSlugs] = await Promise.all([
           findUserByTelegramIdWithLegacyFallback(slugRow.ownerId),
           findProfileCardByOwnerId(slugRow.ownerId),
           prisma.analyticsView
@@ -1041,6 +1047,14 @@ router.get(
               })
               .then((rows) => new Set(rows.map((row) => row.sessionId)).size)
             : Promise.resolve(0),
+          prisma.slug.findMany({
+            where: {
+              ownerId: slugRow.ownerId,
+              status: { not: "free" },
+            },
+            orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
+            select: { fullSlug: true },
+          }),
         ]);
 
         if (!owner || !profileCard) {
@@ -1079,6 +1093,7 @@ router.get(
             slugPrice: typeof slugRow.price === "number" ? slugRow.price : null,
           },
           viewsCount: views,
+          allSlugs: ownerSlugs.map((item) => item.fullSlug),
         });
         const image = card.avatarUrl ? absoluteUrl(card.avatarUrl) : absoluteUrl("/brand/logo.PNG");
         const score = null;

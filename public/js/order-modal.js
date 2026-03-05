@@ -53,11 +53,13 @@ const DEFAULT_PRICING = {
     planBasicNote: document.getElementById("order-modal-plan-basic-note"),
     planPremiumPrice: document.getElementById("order-modal-plan-premium-price"),
     planPremiumNote: document.getElementById("order-modal-plan-premium-note"),
+    planSection: document.getElementById("order-modal-plan-section"),
     planActivationNote: document.getElementById("order-modal-plan-activation-note"),
     bracelet: document.getElementById("order-modal-bracelet"),
     name: document.getElementById("order-modal-name"),
     totalSlugTitle: document.getElementById("order-modal-total-slug-title"),
     totalSlugValue: document.getElementById("order-modal-total-slug-value"),
+    totalPlanRow: document.getElementById("order-modal-total-plan-row"),
     totalPlanTitle: document.getElementById("order-modal-total-plan-title"),
     totalPlanValue: document.getElementById("order-modal-total-plan-value"),
     totalBraceletRow: document.getElementById("order-modal-total-bracelet-row"),
@@ -207,6 +209,10 @@ const DEFAULT_PRICING = {
   }
 
   function selectedPlan() {
+    const userPlan = currentUserPlan();
+    if (userPlan === "basic" || userPlan === "premium") {
+      return userPlan;
+    }
     return dom.planPremium.checked ? "premium" : "basic";
   }
 
@@ -406,6 +412,7 @@ const DEFAULT_PRICING = {
     const requestedPlan = selectedPlan();
     const pricingSettings = getPricing();
     const userPlan = currentUserPlan();
+    const hasExistingPlan = userPlan === "basic" || userPlan === "premium";
     const planCharge = resolvePlanCharge(requestedPlan, userPlan, pricingSettings);
     const planCardBasic = pricingSettings.planBasicPrice;
     const planCardPremium = userPlan === "basic" ? pricingSettings.premiumUpgradePrice : pricingSettings.planPremiumPrice;
@@ -445,6 +452,9 @@ const DEFAULT_PRICING = {
     if (dom.planActivationNote instanceof HTMLElement) {
       dom.planActivationNote.textContent = "После оплаты мы активируем твой тариф и slug.";
     }
+    if (dom.planSection instanceof HTMLElement) {
+      dom.planSection.classList.toggle("hidden", hasExistingPlan);
+    }
 
     if (dom.slugPreview instanceof HTMLElement) {
       dom.slugPreview.textContent = `unqx.uz/${slugLabel.replace(" ", "")}`;
@@ -480,6 +490,10 @@ const DEFAULT_PRICING = {
     if (dom.totalPlanValue instanceof HTMLElement) {
       dom.totalPlanValue.textContent =
         planCharge > 0 ? `${formatPrice(planCharge)} сум` : (userPlan === "none" ? "0 сум" : "уже куплен");
+    }
+    if (dom.totalPlanRow instanceof HTMLElement) {
+      dom.totalPlanRow.classList.toggle("hidden", hasExistingPlan);
+      dom.totalPlanRow.classList.toggle("flex", !hasExistingPlan);
     }
     if (dom.totalBraceletRow instanceof HTMLElement) {
       dom.totalBraceletRow.classList.toggle("hidden", !bracelet);
@@ -556,6 +570,7 @@ const DEFAULT_PRICING = {
     const queryTheme = params.get("theme");
     const parsed = splitSlug(options.slug || "");
     const currentPlan = currentUserPlan();
+    const hasExistingPlan = currentPlan === "basic" || currentPlan === "premium";
     const defaultPlan = currentPlan === "premium" ? "premium" : "basic";
     const planCandidate = options.plan || queryPlan || defaultPlan;
     const plan = planCandidate === "premium" ? "premium" : "basic";
@@ -579,6 +594,9 @@ const DEFAULT_PRICING = {
       dom.planPremium.disabled = true;
       dom.planBasic.checked = false;
       dom.planPremium.checked = true;
+    }
+    if (dom.planSection instanceof HTMLElement) {
+      dom.planSection.classList.toggle("hidden", hasExistingPlan);
     }
     dom.bracelet.checked = state.braceletForced;
     dom.bracelet.disabled = state.braceletForced;

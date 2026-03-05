@@ -236,9 +236,39 @@ body[data-card-theme] #card-view-root > [data-card-view] {
 }
 
 .unq-ref-slug-wrap {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
+  flex: 1;
+}
+
+.unq-ref-slugs {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  padding-bottom: 2px;
+}
+
+.unq-ref-slug-chip {
+  white-space: nowrap;
+  border: var(--theme-surface-border, 1px solid #e1e1e1);
+  border-radius: 9999px;
+  background: var(--theme-surface-bg, #f7f7f7);
+  padding: 2px 8px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 12px;
+  letter-spacing: 0.09em;
+  color: var(--theme-muted-color, #9a9a9a);
+  text-decoration: none;
+}
+
+.unq-ref-slug-chip.is-active {
+  color: var(--theme-email-color, #5f6368);
+  border-color: var(--theme-email-color, #5f6368);
 }
 
 .unq-ref-slug-price {

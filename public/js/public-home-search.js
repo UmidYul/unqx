@@ -233,7 +233,7 @@ function initTelegramAuth(pageNode) {
       }
       for (const node of profileAvatars) {
         if (node instanceof HTMLImageElement) {
-          node.src = currentUser.photoUrl || "/brand/logo.PNG";
+          node.src = currentUser.photoUrl || "/brand/profile-user.svg";
         }
       }
     }

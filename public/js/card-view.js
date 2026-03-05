@@ -347,6 +347,11 @@
       .join("");
     return {
       slug: String(card.slug || "").toUpperCase(),
+      slugs: Array.isArray(card.slugs)
+        ? card.slugs
+          .map((value) => String(value || "").trim().toUpperCase())
+          .filter(Boolean)
+        : [],
       slugPrice: Number.isFinite(Number(card.slugPrice)) ? Number(card.slugPrice) : null,
       tariff: plan,
       theme:
@@ -482,6 +487,7 @@
       Number.isFinite(Number(card.slugPrice)) && Number(card.slugPrice) > 0
         ? `${Number(card.slugPrice).toLocaleString("ru-RU")} сум`
         : "";
+    const slugItems = card.slugs.length > 0 ? card.slugs : [card.slug];
     const score = options.score && typeof options.score === "object" ? options.score : null;
     const topBadge = options.topBadge && typeof options.topBadge === "object" ? options.topBadge : null;
 
@@ -602,7 +608,14 @@
         ${showPausedBanner ? `<div class="mb-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">${esc(pausedText)}</div>` : ""}
         <div class="unq-ref-top">
           <div class="unq-ref-slug-wrap">
-            <span class="unq-ref-slug"># ${esc(card.slug)}</span>
+            <div class="unq-ref-slugs">
+              ${slugItems
+                .map((value) => {
+                  const active = value === card.slug;
+                  return `<a href="/${encodeURIComponent(value)}" class="unq-ref-slug-chip${active ? " is-active" : ""}"># ${esc(value)}</a>`;
+                })
+                .join("")}
+            </div>
             ${slugPriceLabel ? `<span class="unq-ref-slug-price">${esc(slugPriceLabel)}</span>` : ""}
           </div>
           <button type="button" data-share-card class="unq-ref-share" aria-label="Поделиться">

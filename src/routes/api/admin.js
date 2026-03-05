@@ -1522,9 +1522,23 @@ router.patch(
 router.patch(
   "/slugs/:slug/price-override",
   asyncHandler(async (req, res) => {
+    const MAX_DB_INT = 2_147_483_647;
     const slug = String(req.params.slug || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 20);
     const value = req.body.priceOverride;
-    const priceOverride = value === null || value === "" || Number.isNaN(Number(value)) ? null : Math.max(0, Math.round(Number(value)));
+    let priceOverride = null;
+    if (!(value === null || value === "")) {
+      const numeric = Number(value);
+      if (!Number.isFinite(numeric)) {
+        res.status(400).json({ error: "Invalid price override" });
+        return;
+      }
+      const normalized = Math.max(0, Math.round(numeric));
+      if (normalized > MAX_DB_INT) {
+        res.status(400).json({ error: `Price override is too large (max: ${MAX_DB_INT})` });
+        return;
+      }
+      priceOverride = normalized;
+    }
     const existing = await prisma.slug.findUnique({
       where: { fullSlug: slug },
       select: { fullSlug: true },
@@ -1552,6 +1566,13 @@ router.patch(
         digits: parsed[2],
         config: slugPricingConfig,
       }).total;
+    }
+    if (typeof resolvedPrice === "number") {
+      if (!Number.isFinite(resolvedPrice)) {
+        resolvedPrice = null;
+      } else {
+        resolvedPrice = Math.max(0, Math.min(MAX_DB_INT, Math.round(resolvedPrice)));
+      }
     }
 
     const [row, synced] = await prisma.$transaction(async (tx) => {

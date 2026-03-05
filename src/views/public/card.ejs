@@ -58,6 +58,11 @@
 
   const pageCard = {
     slug: (typeof pageCardRaw.slug === "string" ? pageCardRaw.slug : "unknown").toUpperCase(),
+    slugs: Array.isArray(pageCardRaw.slugs)
+      ? pageCardRaw.slugs
+          .map((item) => String(item || "").trim().toUpperCase())
+          .filter((item) => item.length > 0)
+      : [],
     slugPrice: Number.isFinite(Number(pageCardRaw.slugPrice)) ? Number(pageCardRaw.slugPrice) : null,
     avatarUrl: pageCardRaw.avatarUrl || null,
     name: pageCardRaw.name || "Unknown",
