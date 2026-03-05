@@ -576,7 +576,12 @@
           label: button?.label || "",
           url: String(button?.href || button?.value || "").trim(),
         })),
+        verified: Boolean(s.user?.isVerified),
+        verifiedCompany: String(s.user?.verifiedCompany || "").trim(),
         tariff: effectivePlan,
+        theme: s.theme || "default_dark",
+        customColor:
+          effectivePlan === "premium" && el.cColor instanceof HTMLInputElement ? String(el.cColor.value || "").trim() : "",
         showBranding: el.cBranding ? !el.cBranding.checked : true,
       },
       primarySlug,
@@ -1838,4 +1843,3 @@
 
   load().catch((error) => showModal("Ошибка", error.message || "Не удалось загрузить профиль"));
 })();
-

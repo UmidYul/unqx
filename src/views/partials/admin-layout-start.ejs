@@ -29,6 +29,7 @@
     {
       label: "КОНТЕНТ",
       items: [
+        { id: "verification", label: "Верификация", href: dashboardLink("verification"), icon: "userCheck" },
         { id: "settings", label: "Настройки", href: dashboardLink("settings"), icon: "settings" },
         { id: "testimonials", label: "Отзывы", href: dashboardLink("testimonials"), icon: "testimonials" },
         { id: "logs", label: "Логи", href: dashboardLink("logs"), icon: "logs" },
@@ -83,6 +84,8 @@
                 <svg viewBox="0 0 24 24" fill="none"><rect x="4" y="4" width="16" height="16" rx="2.5" stroke="currentColor" stroke-width="1.8" /><path d="M8 9h8M8 12h8M8 15h5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
                 <% } else if (item.icon === "users") { %>
                 <svg viewBox="0 0 24 24" fill="none"><circle cx="9" cy="9" r="3" stroke="currentColor" stroke-width="1.8" /><path d="M3.8 18a5.2 5.2 0 0 1 10.4 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /><circle cx="17.5" cy="9.5" r="2.5" stroke="currentColor" stroke-width="1.8" /><path d="M14.5 18a4 4 0 0 1 6 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
+                <% } else if (item.icon === "userCheck") { %>
+                <svg viewBox="0 0 24 24" fill="none"><circle cx="9" cy="9" r="3" stroke="currentColor" stroke-width="1.8"/><path d="M3.8 18a5.2 5.2 0 0 1 10.4 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="m16 12 2 2 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
                 <% } else if (item.icon === "slug") { %>
                 <svg viewBox="0 0 24 24" fill="none"><path d="M9 3 7 21M17 3l-2 18M4 9h18M3 15h18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
                 <% } else if (item.icon === "cards") { %>

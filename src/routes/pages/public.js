@@ -271,8 +271,10 @@ function buildPublicCardFromProfile({ slug, user, profileCard, viewsCount }) {
     avatarUrl: profileCard.avatarUrl || null,
     name: profileCard.name,
     verified: Boolean(user?.isVerified),
+    verifiedCompany: user?.verifiedCompany || "",
     tariff: plan,
     theme: profileCard.theme || "default_dark",
+    customColor: profileCard.customColor || "",
     phone: "",
     tags: mapProfileTags(profileCard.tags),
     buttons: mapProfileButtons(profileCard.buttons),
@@ -1095,4 +1097,3 @@ router.get(
 module.exports = {
   publicPagesRouter: router,
 };
-

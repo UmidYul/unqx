@@ -406,6 +406,13 @@ body[data-card-theme] #card-view-root > [data-card-view] {
   text-decoration: none;
 }
 
+.unq-ref-verified-company {
+  margin: 6px 0 0;
+  color: #737373;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
 .unq-ref-tags {
   margin-top: 16px;
   display: flex;

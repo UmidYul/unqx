@@ -92,6 +92,9 @@
   };
   const I = (name, size = 14) => `<svg class="admin-i" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" aria-hidden="true">${ICONS[name] || ""}</svg>`;
   const statusMeta = {
+    pending: { label: "На рассмотрении", tone: "warning" },
+    verification_approved: { label: "Одобрено", tone: "success" },
+    verification_rejected: { label: "Отклонено", tone: "danger" },
     new: { label: "Новая", tone: "info" },
     contacted: { label: "Связались", tone: "muted" },
     paid: { label: "Оплачено", tone: "warning" },
@@ -641,6 +644,68 @@
     });
   }
 
+  async function loadVerificationRequests() {
+    const form = document.getElementById("verification-filters");
+    const table = document.getElementById("verification-table");
+    if (!(form instanceof HTMLFormElement) || !(table instanceof HTMLElement)) return;
+    const q = {
+      status: getFormValue(form, "status", "all"),
+      page: getFormValue(form, "page", "1"),
+    };
+    setDashboardQuery({ v_status: q.status, v_page: q.page });
+    const r = await fetch(`/api/admin/verification-requests?${Q(q)}`);
+    if (!r.ok) return;
+    const payload = await r.json();
+    const rows = Array.isArray(payload.items) ? payload.items : [];
+    table.innerHTML = rows.length
+      ? rows
+        .map((x) => {
+          const proofTypeMap = {
+            email: "Email",
+            linkedin: "LinkedIn",
+            website: "Website",
+          };
+          const proofType = proofTypeMap[String(x.proofType || "").toLowerCase()] || String(x.proofType || "—");
+          const proofValueRaw = String(x.proofValue || "").trim();
+          const proofValue = /^https?:\/\//i.test(proofValueRaw)
+            ? `<a href="${X(proofValueRaw)}" target="_blank" rel="noopener noreferrer" class="text-xs text-neutral-700 underline break-all">${X(proofValueRaw)}</a>`
+            : `<span class="text-xs break-all">${X(proofValueRaw || "—")}</span>`;
+          const userName = String(x.user?.displayName || x.user?.firstName || x.user?.username || "—");
+          const userLogin = String(x.user?.username || "").trim();
+          const userCell = `${X(userName)}${userLogin ? `<div class="text-xs text-neutral-500">@${X(userLogin)}</div>` : ""}`;
+          const reviewCell = x.reviewedAt ? D(x.reviewedAt) : "—";
+          const canReview = String(x.status || "").toLowerCase() === "pending";
+          const menu = canReview
+            ? menuWrap(
+              [
+                menuItem({ label: "Одобрить", icon: "checkCircle", attrs: `data-act="vr-approve" data-id="${X(x.id)}"` }),
+                menuItem({ label: "Отклонить", icon: "xCircle", attrs: `data-act="vr-reject" data-id="${X(x.id)}"`, danger: true }),
+              ].join(""),
+            )
+            : "—";
+          const verificationStatusCode =
+            x.status === "approved" ? "verification_approved" : x.status === "rejected" ? "verification_rejected" : "pending";
+          return `<tr class="admin-table-row border-t border-neutral-100">
+              <td class="px-4 py-3">${userCell}</td>
+              <td class="px-4 py-3 font-mono">${X(x.slug || "—")}</td>
+              <td class="px-4 py-3">${X(x.companyName || "—")}</td>
+              <td class="px-4 py-3">${X(x.role || "—")}</td>
+              <td class="px-4 py-3"><div class="text-xs text-neutral-500">${X(proofType)}</div>${proofValue}</td>
+              <td class="px-4 py-3 text-xs">${X(x.comment || "—")}</td>
+              <td class="px-4 py-3">${statusChip(verificationStatusCode)}</td>
+              <td class="px-4 py-3 text-xs">${D(x.requestedAt)}</td>
+              <td class="px-4 py-3 text-xs">${reviewCell}</td>
+              <td class="px-4 py-3"><div class="admin-row-actions">${menu}</div></td>
+            </tr>`;
+        })
+        .join("")
+      : '<tr><td colspan="10" class="px-3 py-8 text-center text-neutral-500">Заявок на верификацию нет</td></tr>';
+    renderPager("verification-pagination", payload.pagination, (nextPage) => {
+      setFormValue(form, "page", String(nextPage));
+      void loadVerificationRequests();
+    });
+  }
+
   async function loadLogs() {
     const form = document.getElementById("logs-filters");
     const table = document.getElementById("logs-table");
@@ -1122,6 +1187,36 @@
       }
       return;
     }
+    if (a === "vr-approve") {
+      const id = n.getAttribute("data-id");
+      if (!id) return;
+      const ok = await showConfirm("Одобрить заявку на верификацию?");
+      if (!ok) return;
+      const r = await fetch(`/api/admin/verification-requests/${encodeURIComponent(id)}/approve`, {
+        method: "POST",
+        headers: H({ "Content-Type": "application/json" }),
+        body: JSON.stringify({}),
+      });
+      if (!r.ok) showAlert(await E(r));
+      else void loadVerificationRequests();
+      closeAllRowMenus();
+      return;
+    }
+    if (a === "vr-reject") {
+      const id = n.getAttribute("data-id");
+      if (!id) return;
+      const adminNote = String(await showPrompt("Причина отклонения", "") || "").trim();
+      if (!adminNote) return;
+      const r = await fetch(`/api/admin/verification-requests/${encodeURIComponent(id)}/reject`, {
+        method: "POST",
+        headers: H({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ adminNote }),
+      });
+      if (!r.ok) showAlert(await E(r));
+      else void loadVerificationRequests();
+      closeAllRowMenus();
+      return;
+    }
   });
 
   document.getElementById("orders-filters")?.addEventListener("submit", (e) => { e.preventDefault(); const f = e.currentTarget; if (f instanceof HTMLFormElement) setFormValue(f, "page", "1"); void loadOrders(); });
@@ -1152,6 +1247,7 @@
   document.getElementById("cards-filters")?.addEventListener("submit", (e) => { e.preventDefault(); const f = e.currentTarget; if (f instanceof HTMLFormElement) setFormValue(f, "page", "1"); void loadCards(); });
   document.getElementById("bracelets-filters")?.addEventListener("submit", (e) => { e.preventDefault(); const f = e.currentTarget; if (f instanceof HTMLFormElement) setFormValue(f, "page", "1"); void loadBracelets(); });
   document.getElementById("logs-filters")?.addEventListener("submit", (e) => { e.preventDefault(); const f = e.currentTarget; if (f instanceof HTMLFormElement) setFormValue(f, "page", "1"); void loadLogs(); });
+  document.getElementById("verification-filters")?.addEventListener("submit", (e) => { e.preventDefault(); const f = e.currentTarget; if (f instanceof HTMLFormElement) setFormValue(f, "page", "1"); void loadVerificationRequests(); });
   document.getElementById("testimonial-create-form")?.addEventListener("submit", async (e) => {
     e.preventDefault();
     const f = e.currentTarget;
@@ -1241,6 +1337,13 @@
       setFormValue(form, "page", getInitial("l_page", "page") || "1");
     }
   }
+  if (tab === "verification") {
+    const form = document.getElementById("verification-filters");
+    if (form instanceof HTMLFormElement) {
+      setFormValue(form, "status", getInitial("v_status", "status") || "all");
+      setFormValue(form, "page", getInitial("v_page", "page") || "1");
+    }
+  }
 
   void loadMaintenanceBanner();
 
@@ -1256,6 +1359,7 @@
   if (tab === "bracelets") void loadBracelets();
   if (tab === "testimonials") void loadTestimonials();
   if (tab === "logs") void loadLogs();
+  if (tab === "verification") void loadVerificationRequests();
   if (tab === "score") void loadScoreManagement();
 })();
 

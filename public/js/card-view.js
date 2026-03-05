@@ -1,4 +1,9 @@
 (function initCardViewGlobal() {
+  function normalizeHexColor(value) {
+    const raw = String(value || "").trim().toLowerCase();
+    return /^#[0-9a-f]{6}$/.test(raw) ? raw : "";
+  }
+
   function esc(value) {
     return String(value ?? "")
       .replace(/&/g, "&amp;")
@@ -41,6 +46,12 @@
       slug: String(card.slug || "").toUpperCase(),
       slugPrice: Number.isFinite(Number(card.slugPrice)) ? Number(card.slugPrice) : null,
       tariff: plan,
+      theme:
+        typeof card.theme === "string" &&
+        ["default_dark", "light_minimal", "gradient", "neon", "corporate"].includes(card.theme)
+          ? card.theme
+          : "default_dark",
+      customColor: normalizeHexColor(card.customColor),
       name,
       phone: String(card.phone || "").trim(),
       avatarUrl: avatarUrl || null,
@@ -48,6 +59,7 @@
       tags,
       buttons,
       verified: Boolean(card.verified),
+      verifiedCompany: String(card.verifiedCompany || "").trim(),
       hashtag: String(card.hashtag || "").trim(),
       address: String(card.address || "").trim(),
       postcode: String(card.postcode || "").trim(),
@@ -210,17 +222,34 @@
     const activeSocialLinks = socialLinks.filter((link) => /^https?:\/\//i.test(link.url));
 
     const mainHashtag = card.hashtag ? (card.hashtag.startsWith("#") ? card.hashtag : `#${card.hashtag}`) : "#UnqPower2026";
-    const aboutAddress = card.address || "Farghona, Mustaqillik 13";
-    const aboutEmail = card.email || "unq@uz.com";
-    const aboutPhone = card.extraPhone || card.phone || "+998200001360";
-    const aboutPostcode = card.postcode || "150100";
+    const aboutAddress = card.address;
+    const aboutEmail = card.email;
+    const aboutPhone = card.extraPhone;
+    const aboutPostcode = card.postcode;
+    const aboutItems = [
+      aboutAddress ? `<p>${iconSvg("location")}<span>${esc(aboutAddress)}</span></p>` : "",
+      aboutEmail ? `<p>${iconSvg("email")}<span>${esc(aboutEmail)}</span></p>` : "",
+      aboutPhone ? `<p>${iconSvg("phone")}<span>${esc(aboutPhone)}</span></p>` : "",
+      aboutPostcode ? `<p>${iconSvg("hashtag")}<span>Postcode: ${esc(aboutPostcode)}</span></p>` : "",
+    ].filter(Boolean);
+    const aboutHtml =
+      aboutItems.length > 0
+        ? `<div class="unq-ref-about">
+            <p class="unq-ref-about-title">КОНТАКТЫ</p>
+            ${aboutItems.join("")}
+          </div>`
+        : "";
     const topBadgeHtml =
       topBadge && Number.isFinite(Number(topBadge.rank)) && Number(topBadge.rank) > 0
         ? `<div class="unq-ref-top-badge">Топ #${Math.round(Number(topBadge.rank))} этой недели</div>`
         : "";
+    const useCustomColor = card.tariff === "premium" && Boolean(card.customColor);
+    const rootStyle = useCustomColor ? ` style="--card-button-bg:${esc(card.customColor)};"` : "";
+    const verifiedCompanyHtml =
+      card.verified && card.verifiedCompany ? `<p class="unq-ref-verified-company">Верифицировано: ${esc(card.verifiedCompany)}</p>` : "";
 
     return `
-      <div data-card-view data-slug="${esc(card.slug)}" data-share-url="${esc(shareUrl)}">
+      <div data-card-view data-card-theme="${esc(card.theme)}" data-slug="${esc(card.slug)}" data-share-url="${esc(shareUrl)}"${rootStyle}>
         ${showPausedBanner ? `<div class="mb-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">${esc(pausedText)}</div>` : ""}
         <div class="unq-ref-top">
           <div class="unq-ref-slug-wrap">
@@ -248,6 +277,7 @@
             </div>
             <div class="unq-ref-name-wrap">
               <h1 class="unq-ref-name">${esc(card.name)} ${card.verified ? iconSvg("verified") : ""}</h1>
+              ${verifiedCompanyHtml}
               ${card.phone ? `<a href="tel:${esc(card.phone.replace(/\s+/g, ""))}" class="unq-ref-phone">${iconSvg("phone")}<span>${esc(card.phone)}</span></a>` : ""}
             </div>
           </div>
@@ -257,13 +287,7 @@
           <div class="unq-ref-actions">${buttonsHtml}</div>
           <div class="unq-ref-divider"></div>
           <p class="unq-ref-hashtag">${esc(mainHashtag)}</p>
-          <div class="unq-ref-about">
-            <p class="unq-ref-about-title">КОНТАКТЫ</p>
-            <p>${iconSvg("location")}<span>${esc(aboutAddress)}</span></p>
-            <p>${iconSvg("email")}<span>${esc(aboutEmail)}</span></p>
-            <p>${iconSvg("phone")}<span>${esc(aboutPhone)}</span></p>
-            <p>${iconSvg("hashtag")}<span>Postcode: ${esc(aboutPostcode)}</span></p>
-          </div>
+          ${aboutHtml}
           ${activeSocialLinks.length ? `<div class="unq-ref-social">${activeSocialLinks.map(renderSocialLink).join("")}</div>` : ""}
           <button type="button" class="unq-ref-save interactive-btn" data-save-contact>${iconSvg("save")}<span>Сохранить контакт (.vcf)</span></button>
         </div>

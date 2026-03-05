@@ -14,12 +14,16 @@
     avatarUrl: pageCardRaw.avatarUrl || null,
     name: pageCardRaw.name || "Unknown",
     verified: Boolean(pageCardRaw.verified),
+    verifiedCompany: typeof pageCardRaw.verifiedCompany === "string" ? pageCardRaw.verifiedCompany.trim() : "",
     tariff: pageCardRaw.tariff === "premium" ? "premium" : "basic",
     theme:
       typeof pageCardRaw.theme === "string" &&
       ["default_dark", "light_minimal", "gradient", "neon", "corporate"].includes(pageCardRaw.theme)
         ? pageCardRaw.theme
         : "default_dark",
+    customColor: /^#[0-9a-fA-F]{6}$/.test(String(pageCardRaw.customColor || "").trim())
+      ? String(pageCardRaw.customColor || "").trim().toLowerCase()
+      : "",
     phone: pageCardRaw.phone || "",
     tags: Array.isArray(pageCardRaw.tags)
       ? pageCardRaw.tags
@@ -110,10 +114,10 @@
       ? pageCard.hashtag
       : `#${pageCard.hashtag}`
     : "#UnqPower2026";
-  const aboutAddress = pageCard.address || "Farghona, Mustaqillik 13";
-  const aboutEmail = pageCard.email || "unq@uz.com";
-  const aboutPhone = pageCard.extraPhone || pageCard.phone || "+998200001360";
-  const aboutPostcode = pageCard.postcode || "150100";
+  const aboutAddress = pageCard.address || "";
+  const aboutEmail = pageCard.email || "";
+  const aboutPhone = pageCard.extraPhone || "";
+  const aboutPostcode = pageCard.postcode || "";
   const documentDir = /[\u0600-\u06FF]/.test(pageCard.name || "") ? "rtl" : "ltr";
   const formattedViews = new Intl.NumberFormat("ru-RU").format(Math.max(0, pageCard.viewsCount));
   const pageCardTheme = pageCard.tariff === "premium" ? pageCard.theme : "default_dark";
