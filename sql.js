@@ -6,7 +6,7 @@ const client = new Client({
     port: 5432,
     user: "unqxuz_umid",
     password: "U!6OjoqfP=Y4T_J8",
-    database: "unqx"
+    database: "unqxuz_DB"
 });
 
 async function runSQL() {
