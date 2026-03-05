@@ -1,9 +1,15 @@
 const { detectDevice } = require("../../src/services/ua");
 
 describe("detectDevice", () => {
-  it("returns mobile for mobile UA", () => {
+  it("returns ios for iPhone UA", () => {
     expect(detectDevice("Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) Mobile/15E148 Safari/604.1")).toBe(
-      "mobile",
+      "ios",
+    );
+  });
+
+  it("returns android for android UA", () => {
+    expect(detectDevice("Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 Mobile Safari/537.36")).toBe(
+      "android",
     );
   });
 

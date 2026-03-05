@@ -287,6 +287,10 @@ model User {
   welcomeDismissed     Boolean       @default(false) @map("welcome_dismissed")
   notificationsEnabled Boolean       @default(true) @map("notifications_enabled")
   status               UserStatus    @default(active)
+  isVerified           Boolean       @default(false) @map("is_verified")
+  verifiedCompany      String?       @map("verified_company") @db.VarChar(160)
+  verifiedAt           DateTime?     @map("verified_at")
+  showInDirectory      Boolean       @default(true) @map("show_in_directory")
   refCode              String?       @unique @map("ref_code") @db.VarChar(40)
   createdAt            DateTime      @default(now()) @map("created_at")
   updatedAt            DateTime      @updatedAt @map("updated_at")
@@ -299,6 +303,7 @@ model User {
   unqScore             UnqScore?
   scoreHistory         ScoreHistory[]
   purchases            Purchase[]
+  verificationRequests VerificationRequest[]
 
   @@index([plan, planPurchasedAt])
   @@index([status])
@@ -318,6 +323,7 @@ model Slug {
   pauseMessage    String?     @map("pause_message") @db.VarChar(220)
   requestedAt     DateTime?   @map("requested_at")
   pendingExpiresAt DateTime?  @map("pending_expires_at")
+  analyticsViewsCount Int     @default(0) @map("analytics_views_count")
   approvedAt      DateTime?   @map("approved_at")
   activatedAt     DateTime?   @map("activated_at")
   createdAt       DateTime    @default(now()) @map("created_at")
@@ -325,6 +331,7 @@ model Slug {
 
   @@index([ownerTelegramId, status])
   @@index([status, updatedAt])
+  @@index([analyticsViewsCount(sort: Desc)])
   @@map("slugs")
 }
 
@@ -444,6 +451,62 @@ model SlugClick {
   @@index([fullSlug, ipHash, clickedAt])
   @@index([clickedAt])
   @@map("slug_clicks")
+}
+
+model AnalyticsView {
+  id        String   @id @default(uuid())
+  slug      String   @db.VarChar(20)
+  visitedAt DateTime @default(now()) @map("visited_at")
+  source    String   @default("direct") @db.VarChar(20)
+  city      String   @default("Неизвестно") @db.VarChar(120)
+  device    String   @default("desktop") @db.VarChar(20)
+  sessionId String   @map("session_id") @db.VarChar(80)
+
+  @@index([slug, visitedAt])
+  @@index([visitedAt])
+  @@index([slug, sessionId, visitedAt])
+  @@map("analytics_views")
+}
+
+model AnalyticsClick {
+  id         String   @id @default(uuid())
+  slug       String   @db.VarChar(20)
+  buttonType String   @default("other") @map("button_type") @db.VarChar(40)
+  clickedAt  DateTime @default(now()) @map("clicked_at")
+
+  @@index([slug, clickedAt])
+  @@index([buttonType, clickedAt])
+  @@map("analytics_clicks")
+}
+
+model VerificationRequest {
+  id          String   @id @default(uuid())
+  telegramId  String   @map("telegram_id") @db.VarChar(40)
+  user        User     @relation(fields: [telegramId], references: [telegramId], onDelete: Cascade)
+  slug        String   @db.VarChar(20)
+  companyName String   @map("company_name") @db.VarChar(160)
+  role        String   @db.VarChar(160)
+  proofType   String   @map("proof_type") @db.VarChar(20)
+  proofValue  String   @map("proof_value") @db.VarChar(320)
+  comment     String?
+  status      String   @default("pending") @db.VarChar(20)
+  adminNote   String?  @map("admin_note")
+  requestedAt DateTime @default(now()) @map("requested_at")
+  reviewedAt  DateTime? @map("reviewed_at")
+
+  @@index([telegramId, status])
+  @@index([status, requestedAt(sort: Desc)])
+  @@map("verification_requests")
+}
+
+model DirectoryExclusion {
+  slug       String   @id @db.VarChar(20)
+  reason     String?
+  excludedBy String?  @map("excluded_by") @db.VarChar(80)
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@map("directory_exclusions")
 }
 
 model UnqScore {

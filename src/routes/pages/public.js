@@ -55,6 +55,8 @@ async function findUserByTelegramIdWithLegacyFallback(telegramId) {
         displayName: true,
         status: true,
         plan: true,
+        isVerified: true,
+        verifiedCompany: true,
       },
     });
   } catch (error) {
@@ -78,6 +80,8 @@ async function findUserByTelegramIdWithLegacyFallback(telegramId) {
       displayName: null,
       status: "active",
       plan: "none",
+      isVerified: false,
+      verifiedCompany: null,
     };
   }
 }
@@ -193,13 +197,24 @@ function mapProfileTags(rawTags) {
     .map((label) => ({ label }));
 }
 
+function classifySectorFromTags(tags) {
+  const joined = (Array.isArray(tags) ? tags : [])
+    .map((tag) => String(tag || "").toLowerCase())
+    .join(" ");
+  if (/(дизайн|design|ux|ui|product)/i.test(joined)) return "design";
+  if (/(продаж|sales|account|bizdev)/i.test(joined)) return "sales";
+  if (/(маркет|marketing|smm|seo|brand)/i.test(joined)) return "marketing";
+  if (/(it|dev|developer|frontend|backend|qa|data|ai)/i.test(joined)) return "it";
+  return "other";
+}
+
 function buildPublicCardFromProfile({ slug, user, profileCard, viewsCount }) {
   const plan = getEffectivePlan(user).plan;
   return {
     slug,
     avatarUrl: profileCard.avatarUrl || user?.photoUrl || null,
     name: profileCard.name,
-    verified: false,
+    verified: Boolean(user?.isVerified),
     tariff: plan,
     theme: profileCard.theme || "default_dark",
     phone: "",
@@ -398,6 +413,177 @@ router.get(
       title: "Дропы slug · UNQ+",
       description: "Актуальные и прошедшие дропы slug на UNQ+",
       drops: rows,
+      adminSession: getAdminSession(req),
+    });
+  }),
+);
+
+router.get(
+  "/directory",
+  asyncHandler(async (req, res) => {
+    const directorySettings = await getFeatureSetting("directory");
+    if (!directorySettings.enabled) {
+      res.status(404).render("public/not-found", {
+        title: "Страница не найдена",
+        slug: "directory",
+        adminSession: getAdminSession(req),
+      });
+      return;
+    }
+
+    const q = String(req.query.q || "").trim().slice(0, 80);
+    const sector = String(req.query.sector || "all").trim().toLowerCase();
+    const sort = ["score", "date", "views"].includes(String(req.query.sort || "")) ? String(req.query.sort) : "score";
+    const page = Math.max(1, Number(req.query.page || 1) || 1);
+    const pageSize = 24;
+
+    const exclusions = prisma.directoryExclusion
+      ? await prisma.directoryExclusion.findMany({ select: { slug: true } })
+      : [];
+    const excludedSlugs = exclusions.map((row) => row.slug);
+
+    const where = {
+      status: "active",
+      ownerTelegramId: { not: null },
+      owner: {
+        status: "active",
+        showInDirectory: true,
+      },
+      ...(excludedSlugs.length ? { fullSlug: { notIn: excludedSlugs } } : {}),
+    };
+
+    const rows = await prisma.slug.findMany({
+      where,
+      orderBy:
+        sort === "views"
+          ? [{ analyticsViewsCount: "desc" }, { updatedAt: "desc" }]
+          : sort === "date"
+            ? [{ createdAt: "desc" }]
+            : [{ updatedAt: "desc" }],
+      include: {
+        owner: {
+          select: {
+            telegramId: true,
+            firstName: true,
+            displayName: true,
+            photoUrl: true,
+            isVerified: true,
+            verifiedCompany: true,
+            unqScore: {
+              select: {
+                score: true,
+                percentile: true,
+              },
+            },
+            profileCard: {
+              select: {
+                name: true,
+                role: true,
+                bio: true,
+                tags: true,
+                avatarUrl: true,
+              },
+            },
+          },
+        },
+      },
+      take: 500,
+    });
+
+    const prepared = rows
+      .map((row) => {
+        const owner = row.owner;
+        if (!owner) return null;
+        const tags = Array.isArray(owner.profileCard?.tags) ? owner.profileCard.tags : [];
+        const name = owner.displayName || owner.profileCard?.name || owner.firstName || "UNQ+ User";
+        return {
+          slug: row.fullSlug,
+          name,
+          role: owner.profileCard?.role || "",
+          bio: owner.profileCard?.bio || "",
+          tags: tags.map((tag) => String(tag || "").trim()).filter(Boolean),
+          avatarUrl: owner.profileCard?.avatarUrl || owner.photoUrl || null,
+          isVerified: Boolean(owner.isVerified),
+          verifiedCompany: owner.verifiedCompany || "",
+          score: Number(owner.unqScore?.score || 0),
+          topPercent: Math.max(1, Math.round(Number(owner.unqScore?.percentile ? 100 - owner.unqScore.percentile : 100))),
+          views: Number(row.analyticsViewsCount || 0),
+          createdAt: row.createdAt,
+          sector: classifySectorFromTags(tags),
+        };
+      })
+      .filter(Boolean)
+      .filter((item) => {
+        if (sector !== "all" && item.sector !== sector) return false;
+        if (!q) return true;
+        const hay = [item.name, item.role, item.bio, item.slug, item.tags.join(" ")].join(" ").toLowerCase();
+        return hay.includes(q.toLowerCase());
+      })
+      .sort((a, b) => {
+        if (sort === "views") return b.views - a.views;
+        if (sort === "date") return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        return b.score - a.score;
+      });
+
+    const total = prepared.length;
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+    const safePage = Math.min(page, totalPages);
+    const items = prepared.slice((safePage - 1) * pageSize, safePage * pageSize);
+
+    res.render("public/directory", {
+      title: "UNQ Directory",
+      description: "Публичный каталог визиток UNQ+",
+      items,
+      pagination: { page: safePage, totalPages, total },
+      filters: { q, sector, sort },
+      noindex: false,
+      adminSession: getAdminSession(req),
+    });
+  }),
+);
+
+router.get(
+  "/qr/:slug",
+  asyncHandler(async (req, res) => {
+    const slug = sanitizeSlug(req.params.slug);
+    const slugRow = await findSlugByFullSlugWithLegacyFallback(slug);
+    if (!slugRow || !["active", "private"].includes(slugRow.status) || !slugRow.ownerTelegramId) {
+      res.status(404).render("public/not-found", {
+        title: "Визитка не найдена",
+        slug,
+        adminSession: getAdminSession(req),
+      });
+      return;
+    }
+
+    const [owner, profileCard, score] = await Promise.all([
+      findUserByTelegramIdWithLegacyFallback(slugRow.ownerTelegramId),
+      prisma.profileCard.findUnique({
+        where: { ownerTelegramId: slugRow.ownerTelegramId },
+        select: { name: true, role: true },
+      }),
+      getPublicScoreForSlug({ slug, viewerTelegramId: null }),
+    ]);
+
+    if (!owner || owner.status !== "active") {
+      res.status(200).render("public/qr", {
+        title: `QR ${slug}`,
+        slug,
+        unavailable: true,
+        adminSession: getAdminSession(req),
+      });
+      return;
+    }
+
+    res.render("public/qr", {
+      title: `QR ${slug}`,
+      slug,
+      url: `${env.BASE_URL.replace(/\/$/, "")}/${slug}`,
+      ownerName: profileCard?.name || owner.displayName || owner.firstName || "UNQ+ User",
+      ownerRole: profileCard?.role || "",
+      score: score ? Number(score.score || 0) : 0,
+      unavailable: false,
+      noindex: slugRow.status === "private",
       adminSession: getAdminSession(req),
     });
   }),

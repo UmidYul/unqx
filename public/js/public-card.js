@@ -268,15 +268,17 @@
     const clickUrl = `/api/cards/${encodeURIComponent(slug)}/click`;
     actionButtons.forEach((button) => {
       button.addEventListener("click", () => {
+        const buttonType = String(button.getAttribute("data-button-type") || "other").toLowerCase();
+        const bodyText = JSON.stringify({ buttonType });
         if (navigator.sendBeacon) {
-          const body = new Blob(["{}"], { type: "application/json" });
+          const body = new Blob([bodyText], { type: "application/json" });
           navigator.sendBeacon(clickUrl, body);
           return;
         }
         void fetch(clickUrl, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: "{}",
+          body: bodyText,
           keepalive: true,
         });
       });
@@ -329,7 +331,8 @@
     return;
   }
 
-  const viewUrl = `/api/cards/${encodeURIComponent(slug)}/view`;
+  const src = new URLSearchParams(window.location.search).get("src");
+  const viewUrl = `/api/cards/${encodeURIComponent(slug)}/view${src ? `?src=${encodeURIComponent(src)}` : ""}`;
 
   if (navigator.sendBeacon) {
     const payload = new Blob(["{}"], { type: "application/json" });

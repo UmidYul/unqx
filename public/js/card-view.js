@@ -173,7 +173,7 @@
         ? card.buttons
             .map(
               (button) =>
-                `<a href="${esc(button.url)}" target="_blank" rel="noopener noreferrer" data-track-action class="public-card-button unq-ref-action-btn">${iconSvg(classifyButton(button))}<span>${esc(button.label)}</span></a>`,
+                `<a href="${esc(button.url)}" target="_blank" rel="noopener noreferrer" data-track-action data-button-type="${esc(button.type || "other")}" class="public-card-button unq-ref-action-btn">${iconSvg(classifyButton(button))}<span>${esc(button.label)}</span></a>`,
             )
             .join("")
         : '<p class="rounded-xl border border-neutral-200 bg-neutral-50 py-3 text-center text-xs text-neutral-500">Владелец пока не добавил контактные кнопки.</p>';

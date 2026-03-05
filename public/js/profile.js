@@ -56,6 +56,7 @@
     pricing: {
       premiumUpgradePrice: 80_000,
     },
+    verification: null,
   };
   let scoreChart = null;
   let modalLastFocused = null;
@@ -156,9 +157,27 @@
     stName: $("#profile-settings-display-name"),
     stTg: $("#profile-settings-telegram"),
     stNotif: $("#profile-settings-notifications"),
+    stDirectory: $("#profile-settings-directory"),
     stSave: $("#profile-settings-save"),
     stStatus: $("#profile-settings-status"),
     stDeact: $("#profile-settings-deactivate"),
+    verificationStatus: $("#profile-verification-status"),
+    verificationOpen: $("#profile-verification-open"),
+    verificationModal: $("#profile-verification-modal"),
+    verificationClose: $("#profile-verification-close"),
+    verificationCompany: $("#profile-verification-company"),
+    verificationRole: $("#profile-verification-role"),
+    verificationSlug: $("#profile-verification-slug"),
+    verificationProofType: $("#profile-verification-proof-type"),
+    verificationProofValue: $("#profile-verification-proof-value"),
+    verificationComment: $("#profile-verification-comment"),
+    verificationSubmit: $("#profile-verification-submit"),
+    qrModal: $("#profile-qr-modal"),
+    qrClose: $("#profile-qr-close"),
+    qrBox: $("#profile-qr-box"),
+    qrLink: $("#profile-qr-link"),
+    qrCopy: $("#profile-qr-copy"),
+    qrDownloadPng: $("#profile-qr-download-png"),
     logout: $("#profile-logout-btn"),
 
     modal: $("#profile-modal"),
@@ -387,6 +406,7 @@
             }
             <div class="mt-3 flex flex-wrap gap-3 text-xs text-neutral-500">
               ${slugItem.isPrimary ? "" : `<button data-a="primary" data-slug="${esc(slugItem.fullSlug)}" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold">Сделать основным</button>`}
+              <button data-a="open-qr" data-slug="${esc(slugItem.fullSlug)}" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold">Мой QR</button>
               <span>${Number(slugItem.stats?.views || 0).toLocaleString("ru-RU")} просмотров</span>
               <span>с ${fd(slugItem.stats?.since || slugItem.createdAt)}</span>
             </div>
@@ -662,6 +682,19 @@
     if (el.stName) el.stName.value = s.user.displayName || s.user.firstName || "";
     if (el.stTg) el.stTg.value = s.user.username ? `@${s.user.username}` : "@—";
     if (el.stNotif) el.stNotif.checked = Boolean(s.user.notificationsEnabled);
+    if (el.stDirectory) el.stDirectory.checked = Boolean(s.user.showInDirectory);
+    if (el.verificationStatus) {
+      const latest = s.verification?.latestRequest;
+      let label = "Статус: не запрошено";
+      if (s.user.isVerified) {
+        label = "Статус: верифицировано";
+      } else if (latest?.status === "pending") {
+        label = "Статус: на проверке";
+      } else if (latest?.status === "rejected") {
+        label = "Статус: отклонено";
+      }
+      el.verificationStatus.textContent = label;
+    }
   };
 
   const renderReferrals = () => {
@@ -868,6 +901,11 @@
       } catch {
         s.referrals = null;
       }
+      try {
+        s.verification = await api("/api/profile/verification");
+      } catch {
+        s.verification = null;
+      }
       renderAll();
     } catch (error) {
       if (error?.code === "AUTH_REQUIRED" || error?.code === "ACCOUNT_DISABLED") {
@@ -927,6 +965,35 @@
     }
   };
 
+  const closeQrModal = () => {
+    if (!(el.qrModal instanceof HTMLElement)) return;
+    el.qrModal.classList.add("hidden");
+    el.qrModal.classList.remove("flex");
+    if (el.qrBox) el.qrBox.innerHTML = "";
+  };
+
+  const openQrModal = async (slug) => {
+    const payload = await api(`/api/profile/slugs/${encodeURIComponent(slug)}/qr`);
+    if (!(el.qrModal instanceof HTMLElement)) return;
+    el.qrModal.classList.remove("hidden");
+    el.qrModal.classList.add("flex");
+    if (el.qrLink) el.qrLink.textContent = payload.url || "";
+    if (el.qrBox) {
+      el.qrBox.innerHTML = "";
+      if (typeof QRCode !== "undefined" && payload.url) {
+        await new Promise((resolve) => {
+          QRCode.toCanvas(payload.url, { width: 300, margin: 2 }, (error, canvas) => {
+            if (!error && canvas instanceof HTMLCanvasElement && el.qrBox) {
+              el.qrBox.innerHTML = "";
+              el.qrBox.appendChild(canvas);
+            }
+            resolve();
+          });
+        });
+      }
+    }
+  };
+
   const cycleStatus = (status) => (status === "active" ? "paused" : status === "paused" ? "private" : "active");
 
   const uploadAvatarBlob = async (blob) => {
@@ -967,6 +1034,13 @@
           renderButtons();
           renderPreview();
         }
+        return;
+      }
+
+      if (action === "open-qr") {
+        const slug = target.getAttribute("data-slug");
+        if (!slug) return;
+        await openQrModal(slug);
         return;
       }
 
@@ -1371,12 +1445,14 @@
         body: JSON.stringify({
           displayName: el.stName?.value || "",
           notificationsEnabled: Boolean(el.stNotif?.checked),
+          showInDirectory: Boolean(el.stDirectory?.checked),
         }),
       });
 
       if (s.user) {
         s.user.displayName = payload.user.displayName;
         s.user.notificationsEnabled = payload.user.notificationsEnabled;
+        s.user.showInDirectory = payload.user.showInDirectory;
       }
 
       renderSidebar();
@@ -1419,6 +1495,65 @@
     } catch (error) {
       showModal("Ошибка", error.message || "Не удалось выйти");
       el.logout.disabled = false;
+    }
+  });
+
+  el.qrClose?.addEventListener("click", closeQrModal);
+  el.qrModal?.addEventListener("click", (event) => {
+    if (event.target === el.qrModal) closeQrModal();
+  });
+  el.qrCopy?.addEventListener("click", async () => {
+    const value = el.qrLink?.textContent || "";
+    if (!value) return;
+    try {
+      await navigator.clipboard.writeText(value);
+      showModal("Готово", "Ссылка скопирована");
+    } catch {
+      showModal("Ошибка", "Не удалось скопировать ссылку");
+    }
+  });
+  el.qrDownloadPng?.addEventListener("click", () => {
+    const canvas = el.qrBox?.querySelector("canvas");
+    if (!(canvas instanceof HTMLCanvasElement)) return;
+    const link = document.createElement("a");
+    link.href = canvas.toDataURL("image/png");
+    link.download = "unq-qr.png";
+    link.click();
+  });
+
+  const closeVerificationModal = () => {
+    if (!(el.verificationModal instanceof HTMLElement)) return;
+    el.verificationModal.classList.add("hidden");
+    el.verificationModal.classList.remove("flex");
+  };
+  el.verificationOpen?.addEventListener("click", () => {
+    if (!(el.verificationModal instanceof HTMLElement)) return;
+    el.verificationModal.classList.remove("hidden");
+    el.verificationModal.classList.add("flex");
+  });
+  el.verificationClose?.addEventListener("click", closeVerificationModal);
+  el.verificationModal?.addEventListener("click", (event) => {
+    if (event.target === el.verificationModal) closeVerificationModal();
+  });
+  el.verificationSubmit?.addEventListener("click", async () => {
+    try {
+      await api("/api/profile/verification-request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          companyName: el.verificationCompany?.value || "",
+          role: el.verificationRole?.value || "",
+          slug: el.verificationSlug?.value || "",
+          proofType: el.verificationProofType?.value || "email",
+          proofValue: el.verificationProofValue?.value || "",
+          comment: el.verificationComment?.value || "",
+        }),
+      });
+      closeVerificationModal();
+      await load();
+      showModal("Готово", "Заявка на верификацию отправлена");
+    } catch (error) {
+      showModal("Ошибка", error.message || "Не удалось отправить заявку");
     }
   });
 

@@ -20,6 +20,9 @@ const DEFAULTS = {
     premiumUpgradePrice: 80_000,
     pricingFootnote: "Тарифы оплачиваются один раз. Без подписки и скрытых платежей.",
   },
+  directory: {
+    enabled: true,
+  },
 };
 
 async function getFeatureSetting(key, fallback = {}) {

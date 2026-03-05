@@ -23,6 +23,7 @@ const {
 const { isSupportedAvatarBuffer, saveAvatarFromBuffer, deleteAvatarByPublicPath } = require("../../services/avatar");
 const { getProfileScoreByTelegramId, recalculateAndRefreshPercentiles } = require("../../services/unq-score");
 const { getPricingSettings } = require("../../services/pricing-settings");
+const { sendVerificationRequestToAdmin } = require("../../services/telegram");
 
 const router = express.Router();
 const upload = multer({
@@ -84,6 +85,13 @@ function sanitizeSlug(value) {
     .slice(0, 20);
 }
 
+function normalizeAnalyticsPeriod(value, isPremium) {
+  const parsed = Number(value);
+  if (parsed === 7) return 7;
+  if (isPremium && (parsed === 30 || parsed === 90)) return parsed;
+  return 7;
+}
+
 function parseProfileCardRow(row) {
   if (!row) {
     return null;
@@ -128,6 +136,11 @@ async function getCurrentUser(req) {
         plan: true,
         notificationsEnabled: true,
         status: true,
+        isVerified: true,
+        verifiedCompany: true,
+        verifiedAt: true,
+        showInDirectory: true,
+        welcomeDismissed: true,
       },
     });
 
@@ -165,6 +178,11 @@ async function getCurrentUser(req) {
       plan: row.plan === "basic" || row.plan === "premium" || row.plan === "none" ? row.plan : "basic",
       status: row.status || "active",
       notificationsEnabled: typeof row.notificationsEnabled === "boolean" ? row.notificationsEnabled : true,
+      isVerified: false,
+      verifiedCompany: null,
+      verifiedAt: null,
+      showInDirectory: true,
+      welcomeDismissed: false,
       planPurchasedAt: null,
       planUpgradedAt: null,
     };
@@ -300,6 +318,10 @@ router.get(
         planBadge: getPlanBadgeLabel(effective.plan),
         notificationsEnabled: Boolean(user.notificationsEnabled),
         status: user.status,
+        isVerified: Boolean(user.isVerified),
+        verifiedCompany: user.verifiedCompany || "",
+        verifiedAt: user.verifiedAt || null,
+        showInDirectory: typeof user.showInDirectory === "boolean" ? user.showInDirectory : true,
       },
       limits: {
         slugs: getSlugLimit(effective.plan),
@@ -681,6 +703,254 @@ router.delete(
 );
 
 router.get(
+  "/slugs/:slug/qr",
+  asyncHandler(async (req, res) => {
+    const user = await getCurrentUser(req);
+    if (!assertUserActive(user, res)) return;
+
+    const fullSlug = sanitizeSlug(req.params.slug);
+    const slugRow = await prisma.slug.findFirst({
+      where: { fullSlug, ownerTelegramId: user.telegramId },
+      select: {
+        fullSlug: true,
+        status: true,
+        ownerTelegramId: true,
+        owner: {
+          select: {
+            firstName: true,
+            displayName: true,
+            profileCard: { select: { name: true, role: true } },
+          },
+        },
+      },
+    });
+    if (!slugRow) {
+      res.status(404).json({ error: "UNQ not found" });
+      return;
+    }
+
+    const score = await getProfileScoreByTelegramId(user.telegramId);
+    const ownerName = slugRow.owner?.profileCard?.name || slugRow.owner?.displayName || slugRow.owner?.firstName || "UNQ+ User";
+    const ownerRole = slugRow.owner?.profileCard?.role || "";
+    res.json({
+      slug: slugRow.fullSlug,
+      url: `https://unqx.uz/${slugRow.fullSlug}`,
+      ownerName,
+      ownerRole,
+      score: Number(score?.score || 0),
+      isAvailableForPublicQr: ["active", "private"].includes(slugRow.status),
+    });
+  }),
+);
+
+router.get(
+  "/analytics/bootstrap",
+  asyncHandler(async (req, res) => {
+    const user = await getCurrentUser(req);
+    if (!assertUserActive(user, res)) return;
+    const slugs = await prisma.slug.findMany({
+      where: { ownerTelegramId: user.telegramId, status: { in: ["active", "private", "paused", "approved"] } },
+      orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
+      select: { fullSlug: true, isPrimary: true, status: true },
+    });
+    const effectivePlan = getEffectivePlan(user).plan;
+    const selectedSlug = slugs.find((item) => item.isPrimary)?.fullSlug || slugs[0]?.fullSlug || null;
+    res.json({
+      slugs,
+      currentPlan: effectivePlan,
+      selectedSlug,
+      periods: effectivePlan === "premium" ? [7, 30, 90] : [7],
+    });
+  }),
+);
+
+router.get(
+  "/analytics",
+  asyncHandler(async (req, res) => {
+    const user = await getCurrentUser(req);
+    if (!assertUserActive(user, res)) return;
+    const fullSlug = sanitizeSlug(req.query.slug);
+    if (!fullSlug) {
+      res.status(400).json({ error: "Slug is required" });
+      return;
+    }
+    const owned = await prisma.slug.findFirst({
+      where: { fullSlug, ownerTelegramId: user.telegramId },
+      select: { fullSlug: true },
+    });
+    if (!owned) {
+      res.status(404).json({ error: "UNQ not found" });
+      return;
+    }
+
+    const effectivePlan = getEffectivePlan(user).plan;
+    const period = normalizeAnalyticsPeriod(req.query.period, effectivePlan === "premium");
+    const now = new Date();
+    const from = new Date(now.getTime() - period * 24 * 60 * 60 * 1000);
+    const previousFrom = new Date(from.getTime() - period * 24 * 60 * 60 * 1000);
+
+    const [views, prevViews, clicks, prevClicks, score] = await Promise.all([
+      prisma.analyticsView
+        ? prisma.analyticsView.findMany({ where: { slug: fullSlug, visitedAt: { gte: from } } })
+        : Promise.resolve([]),
+      prisma.analyticsView
+        ? prisma.analyticsView.findMany({ where: { slug: fullSlug, visitedAt: { gte: previousFrom, lt: from } } })
+        : Promise.resolve([]),
+      prisma.analyticsClick
+        ? prisma.analyticsClick.findMany({ where: { slug: fullSlug, clickedAt: { gte: from } } })
+        : Promise.resolve([]),
+      prisma.analyticsClick
+        ? prisma.analyticsClick.findMany({ where: { slug: fullSlug, clickedAt: { gte: previousFrom, lt: from } } })
+        : Promise.resolve([]),
+      getProfileScoreByTelegramId(user.telegramId),
+    ]);
+
+    const uniqueVisitors = new Set(views.map((item) => item.sessionId)).size;
+    const prevUniqueVisitors = new Set(prevViews.map((item) => item.sessionId)).size;
+    const ctr = views.length ? Number(((clicks.length / views.length) * 100).toFixed(1)) : 0;
+    const prevCtr = prevViews.length ? Number(((prevClicks.length / prevViews.length) * 100).toFixed(1)) : 0;
+    const byDay = new Map();
+    views.forEach((item) => {
+      const key = item.visitedAt.toISOString().slice(0, 10);
+      byDay.set(key, (byDay.get(key) || 0) + 1);
+    });
+
+    const bySource = {};
+    views.forEach((item) => {
+      const key = String(item.source || "direct");
+      bySource[key] = (bySource[key] || 0) + 1;
+    });
+    const byCity = {};
+    views.forEach((item) => {
+      const key = String(item.city || "Неизвестно");
+      byCity[key] = (byCity[key] || 0) + 1;
+    });
+    const byDevice = {};
+    views.forEach((item) => {
+      const key = String(item.device || "desktop");
+      byDevice[key] = (byDevice[key] || 0) + 1;
+    });
+    const byButton = {};
+    clicks.forEach((item) => {
+      const key = String(item.buttonType || "other");
+      byButton[key] = (byButton[key] || 0) + 1;
+    });
+    const byHour = {};
+    views.forEach((item) => {
+      const d = new Date(item.visitedAt);
+      const key = `${d.getUTCDay()}-${d.getUTCHours()}`;
+      byHour[key] = (byHour[key] || 0) + 1;
+    });
+
+    res.json({
+      slug: fullSlug,
+      period,
+      kpi: {
+        views: views.length,
+        uniqueVisitors,
+        clicks: clicks.length,
+        ctr,
+        trends: {
+          views: views.length - prevViews.length,
+          uniqueVisitors: uniqueVisitors - prevUniqueVisitors,
+          clicks: clicks.length - prevClicks.length,
+          ctr: Number((ctr - prevCtr).toFixed(1)),
+        },
+      },
+      chart: {
+        viewsByDay: Array.from(byDay.entries()).map(([date, value]) => ({ date, value })),
+        trafficSources: bySource,
+        geography: byCity,
+        devices: byDevice,
+        buttonActivity: byButton,
+        peakHours: byHour,
+      },
+      score,
+      flags: {
+        isPremium: effectivePlan === "premium",
+        lockedPeriods: effectivePlan === "premium" ? [] : [30, 90],
+      },
+    });
+  }),
+);
+
+router.get(
+  "/verification",
+  asyncHandler(async (req, res) => {
+    const user = await getCurrentUser(req);
+    if (!assertUserActive(user, res)) return;
+    const latest = prisma.verificationRequest
+      ? await prisma.verificationRequest.findFirst({
+          where: { telegramId: user.telegramId },
+          orderBy: { requestedAt: "desc" },
+        })
+      : null;
+    res.json({
+      isVerified: Boolean(user.isVerified),
+      latestRequest: latest,
+    });
+  }),
+);
+
+router.post(
+  "/verification-request",
+  asyncHandler(async (req, res) => {
+    const user = await getCurrentUser(req);
+    if (!assertUserActive(user, res)) return;
+    if (!prisma.verificationRequest) {
+      res.status(503).json({ error: "Verification storage unavailable" });
+      return;
+    }
+
+    const slug = sanitizeSlug(req.body?.slug);
+    const companyName = String(req.body?.companyName || "").trim().slice(0, 160);
+    const role = String(req.body?.role || "").trim().slice(0, 160);
+    const proofType = String(req.body?.proofType || "").trim().toLowerCase();
+    const proofValue = String(req.body?.proofValue || "").trim().slice(0, 320);
+    const comment = String(req.body?.comment || "").trim().slice(0, 1000);
+    if (!slug || !companyName || !role || !["email", "linkedin", "website"].includes(proofType) || !proofValue) {
+      res.status(400).json({ error: "Invalid request payload" });
+      return;
+    }
+
+    const ownedSlug = await prisma.slug.findFirst({
+      where: { fullSlug: slug, ownerTelegramId: user.telegramId },
+      select: { fullSlug: true },
+    });
+    if (!ownedSlug) {
+      res.status(404).json({ error: "UNQ not found" });
+      return;
+    }
+
+    const request = await prisma.verificationRequest.create({
+      data: {
+        telegramId: user.telegramId,
+        slug,
+        companyName,
+        role,
+        proofType,
+        proofValue,
+        comment: comment || null,
+      },
+    });
+
+    void sendVerificationRequestToAdmin({
+      telegramId: user.telegramId,
+      slug,
+      companyName,
+      role,
+      proofType,
+      proofValue,
+      comment,
+    }).catch((error) => {
+      console.error("[express-app] failed to send verification request to telegram", error);
+    });
+
+    res.status(201).json({ ok: true, request });
+  }),
+);
+
+router.get(
   "/requests",
   asyncHandler(async (req, res) => {
     const user = await getCurrentUser(req);
@@ -737,12 +1007,15 @@ router.patch(
 
     const displayName = normalizeDisplayName(req.body.displayName, user.firstName);
     const notificationsEnabled = Boolean(req.body.notificationsEnabled);
+    const showInDirectory =
+      typeof req.body.showInDirectory === "boolean" ? req.body.showInDirectory : Boolean(user.showInDirectory);
 
     const updated = await prisma.user.update({
       where: { telegramId: user.telegramId },
       data: {
         displayName,
         notificationsEnabled,
+        showInDirectory,
       },
     });
 
@@ -751,6 +1024,7 @@ router.patch(
       user: {
         displayName: updated.displayName,
         notificationsEnabled: updated.notificationsEnabled,
+        showInDirectory: updated.showInDirectory,
       },
     });
   }),

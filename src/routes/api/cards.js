@@ -1,4 +1,4 @@
-const { createHash } = require("node:crypto");
+const { createHash, randomUUID } = require("node:crypto");
 
 const express = require("express");
 
@@ -143,6 +143,90 @@ function pickClientIdentity(req) {
   }
 
   return `fp:${userAgent}|${acceptLanguage}`;
+}
+
+const TRACKED_SOURCES = new Set(["qr", "nfc", "telegram"]);
+const TRACKED_BUTTON_TYPES = new Set([
+  "telegram",
+  "phone",
+  "website",
+  "whatsapp",
+  "instagram",
+  "youtube",
+  "email",
+  "tiktok",
+  "other",
+]);
+
+function normalizeSource(value) {
+  const raw = String(value || "")
+    .trim()
+    .toLowerCase();
+  if (!raw) return "direct";
+  if (TRACKED_SOURCES.has(raw)) return raw;
+  return "other";
+}
+
+function normalizeButtonType(value) {
+  const raw = String(value || "")
+    .trim()
+    .toLowerCase();
+  if (!raw) return "other";
+  return TRACKED_BUTTON_TYPES.has(raw) ? raw : "other";
+}
+
+function getAnalyticsSessionId(req, res) {
+  const rawCookie = String(req.get("cookie") || "");
+  const match = rawCookie.match(/(?:^|;\s*)unqx_sid=([^;]+)/);
+  const existing = match ? decodeURIComponent(match[1]) : "";
+  if (existing && /^[a-zA-Z0-9_-]{16,80}$/.test(existing)) {
+    return existing;
+  }
+
+  const next = randomUUID().replace(/-/g, "").slice(0, 32);
+  if (res && typeof res.append === "function") {
+    res.append("Set-Cookie", `unqx_sid=${next}; Max-Age=31536000; Path=/; SameSite=Lax; HttpOnly`);
+  }
+  return next;
+}
+
+function pickIpForGeo(req) {
+  const forwardedFor = req.get("x-forwarded-for");
+  const realIp = req.get("x-real-ip");
+  const forwardedIp = forwardedFor ? forwardedFor.split(",")[0].trim() : "";
+  return normalizeIp(forwardedIp) || normalizeIp(realIp) || normalizeIp(req.ip) || "";
+}
+
+function withTimeout(promise, ms) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error("timeout")), ms);
+    promise
+      .then((value) => {
+        clearTimeout(timer);
+        resolve(value);
+      })
+      .catch((error) => {
+        clearTimeout(timer);
+        reject(error);
+      });
+  });
+}
+
+async function resolveCityByIp(ip) {
+  if (!ip || ip === "127.0.0.1" || ip === "::1") {
+    return "Неизвестно";
+  }
+  try {
+    const response = await withTimeout(fetch(`https://ipapi.co/${encodeURIComponent(ip)}/json/`), 700);
+    if (!response.ok) {
+      return "Неизвестно";
+    }
+    const payload = await response.json().catch(() => ({}));
+    const city = String(payload?.city || "").trim();
+    return city ? city.slice(0, 120) : "Неизвестно";
+  } catch {
+    return "Неизвестно";
+  }
 }
 
 function formatPrice(value) {
@@ -1003,6 +1087,7 @@ router.post(
   asyncHandler(async (req, res) => {
     const requestedSlug = sanitizeSlug(req.params.slug);
     const device = detectDevice(req.get("user-agent"));
+    const buttonType = normalizeButtonType(req.body?.buttonType);
     const dateKey = new Date().toISOString().slice(0, 10);
     const identity = pickClientIdentity(req);
     const ipHash = identity ? createHash("sha256").update(`${identity}|click|${requestedSlug || req.params.slug}|${dateKey}`).digest("hex") : null;
@@ -1020,33 +1105,39 @@ router.post(
       return;
     }
 
-    if (!prisma.slugClick) {
-      res.json({ ok: true });
-      return;
-    }
-
     await prisma.$transaction(async (tx) => {
-      let isUnique = false;
-      if (ipHash) {
-        const existing = await tx.slugClick.findFirst({
-          where: {
+      if (tx.slugClick) {
+        let isUnique = false;
+        if (ipHash) {
+          const existing = await tx.slugClick.findFirst({
+            where: {
+              fullSlug: slugRow.fullSlug,
+              ipHash,
+              clickedAt: { gte: dayStart },
+            },
+            select: { id: true },
+          });
+          isUnique = !existing;
+        }
+
+        await tx.slugClick.create({
+          data: {
             fullSlug: slugRow.fullSlug,
+            device,
             ipHash,
-            clickedAt: { gte: dayStart },
+            isUnique,
           },
-          select: { id: true },
         });
-        isUnique = !existing;
       }
 
-      await tx.slugClick.create({
-        data: {
-          fullSlug: slugRow.fullSlug,
-          device,
-          ipHash,
-          isUnique,
-        },
-      });
+      if (tx.analyticsClick) {
+        await tx.analyticsClick.create({
+          data: {
+            slug: slugRow.fullSlug,
+            buttonType,
+          },
+        });
+      }
     });
 
     res.json({ ok: true });
@@ -1058,6 +1149,8 @@ router.post(
   asyncHandler(async (req, res) => {
     const requestedSlug = sanitizeSlug(req.params.slug);
     const device = detectDevice(req.get("user-agent"));
+    const source = normalizeSource(req.query?.src || req.body?.src);
+    const sessionId = getAnalyticsSessionId(req, res);
     const dateKey = new Date().toISOString().slice(0, 10);
     const identity = pickClientIdentity(req);
     const ipHash = identity ? createHash("sha256").update(`${identity}|${requestedSlug || req.params.slug}|${dateKey}`).digest("hex") : null;
@@ -1076,32 +1169,57 @@ router.post(
         return;
       }
 
-      await withMissingTableFallback("SlugView", null, () =>
+      res.json({ ok: true });
+      const ipForGeo = pickIpForGeo(req);
+      void withMissingTableFallback("SlugView", null, () =>
         prisma.$transaction(async (tx) => {
-          let isUnique = false;
-          if (ipHash) {
-            const existing = await tx.slugView.findFirst({
-              where: {
+          if (tx.slugView) {
+            let isUnique = false;
+            if (ipHash) {
+              const existing = await tx.slugView.findFirst({
+                where: {
+                  fullSlug: slugRow.fullSlug,
+                  ipHash,
+                  viewedAt: { gte: dayStart },
+                },
+                select: { id: true },
+              });
+              isUnique = !existing;
+            }
+
+            await tx.slugView.create({
+              data: {
                 fullSlug: slugRow.fullSlug,
+                device,
                 ipHash,
-                viewedAt: { gte: dayStart },
+                isUnique,
               },
-              select: { id: true },
             });
-            isUnique = !existing;
           }
 
-          await tx.slugView.create({
-            data: {
-              fullSlug: slugRow.fullSlug,
-              device,
-              ipHash,
-              isUnique,
-            },
-          });
+          if (tx.slug) {
+            await tx.slug.update({
+              where: { fullSlug: slugRow.fullSlug },
+              data: { analyticsViewsCount: { increment: 1 } },
+            });
+          }
+
+          if (tx.analyticsView) {
+            const city = await resolveCityByIp(ipForGeo);
+            await tx.analyticsView.create({
+              data: {
+                slug: slugRow.fullSlug,
+                source,
+                city,
+                device,
+                sessionId,
+              },
+            });
+          }
+        }).catch((error) => {
+          console.error("[express-app] failed to write slug analytics view", error);
         }),
       );
-      res.json({ ok: true });
       return;
     }
 

@@ -23,6 +23,36 @@ function requireUser(req, res) {
 }
 
 router.get(
+  "/public/live-stats",
+  asyncHandler(async (_req, res) => {
+    const now = new Date();
+    const todayStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0));
+    const onlineSince = new Date(now.getTime() - 5 * 60 * 1000);
+
+    const [activeCardsTotal, todayCreated, todayActivated, onlineNow] = await Promise.all([
+      prisma.slug.count({ where: { status: "active" } }),
+      prisma.slug.count({ where: { createdAt: { gte: todayStart } } }),
+      prisma.slug.count({ where: { activatedAt: { gte: todayStart } } }),
+      prisma.analyticsView
+        ? prisma.analyticsView
+            .findMany({
+              where: { visitedAt: { gte: onlineSince } },
+              select: { sessionId: true },
+            })
+            .then((rows) => new Set(rows.map((row) => row.sessionId)).size)
+        : Promise.resolve(0),
+    ]);
+
+    res.json({
+      activeCardsTotal,
+      todayCreated,
+      todayActivated,
+      onlineNow,
+    });
+  }),
+);
+
+router.get(
   "/leaderboard",
   asyncHandler(async (req, res) => {
     const settings = await getFeatureSetting("leaderboard");

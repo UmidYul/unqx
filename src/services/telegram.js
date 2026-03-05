@@ -119,6 +119,34 @@ async function sendSlugExpiredToUser({ telegramId, slug }) {
   return sendTelegramMessage({ chatId: telegramId, text, parseMode: "HTML" });
 }
 
+async function sendVerificationRequestToAdmin(payload) {
+  if (!env.TELEGRAM_CHAT_ID) {
+    throw new TelegramConfigError("Telegram chat id is not configured");
+  }
+  const text = [
+    "Новая заявка на верификацию",
+    "",
+    `Telegram ID: ${escapeHtml(payload.telegramId)}`,
+    `Slug: ${escapeHtml(payload.slug)}`,
+    `Компания: ${escapeHtml(payload.companyName)}`,
+    `Роль: ${escapeHtml(payload.role)}`,
+    `Подтверждение: ${escapeHtml(payload.proofType)} · ${escapeHtml(payload.proofValue)}`,
+    payload.comment ? `Комментарий: ${escapeHtml(payload.comment)}` : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
+  return sendTelegramMessage({ chatId: env.TELEGRAM_CHAT_ID, text, parseMode: "HTML" });
+}
+
+async function sendVerificationStatusToUser({ telegramId, status, adminNote }) {
+  const note = String(adminNote || "").trim();
+  const text =
+    status === "approved"
+      ? "Верификация UNQ+ подтверждена. Значок верификации уже активен."
+      : `Верификация UNQ+ отклонена.${note ? `\nПричина: ${escapeHtml(note)}` : ""}`;
+  return sendTelegramMessage({ chatId: telegramId, text, parseMode: "HTML" });
+}
+
 module.exports = {
   TelegramConfigError,
   TelegramDeliveryError,
@@ -128,5 +156,7 @@ module.exports = {
   sendSlugAwaitingPaymentToUser,
   sendSlugRejectedToUser,
   sendSlugExpiredToUser,
+  sendVerificationRequestToAdmin,
+  sendVerificationStatusToUser,
 };
 

@@ -1853,7 +1853,7 @@ router.patch(
       try {
         await sendTelegramMessage({
           chatId: updated.ownerTelegramId,
-          text: `⛔ Твой slug ${updated.fullSlug} был временно заблокирован администратором.`,
+          text: `Твой slug ${updated.fullSlug} был временно заблокирован администратором.`,
         });
       } catch (error) {
         console.error("[express-app] failed to send slug blocked notification", error);
@@ -2244,6 +2244,232 @@ router.get(
       topUnboughtPatterns,
       scoreDistribution,
     });
+  }),
+);
+
+router.get(
+  "/platform-analytics",
+  asyncHandler(async (req, res) => {
+    const period = [7, 30, 90].includes(Number(req.query.period)) ? Number(req.query.period) : 7;
+    const from = new Date(Date.now() - period * 24 * 60 * 60 * 1000);
+    const todayStart = new Date();
+    todayStart.setUTCHours(0, 0, 0, 0);
+    const onlineFrom = new Date(Date.now() - 5 * 60 * 1000);
+
+    const [views, clicks, activeCards, todayCreated, todayActivated, onlineRows, topSlugs] = await Promise.all([
+      prisma.analyticsView ? prisma.analyticsView.findMany({ where: { visitedAt: { gte: from } } }) : Promise.resolve([]),
+      prisma.analyticsClick ? prisma.analyticsClick.findMany({ where: { clickedAt: { gte: from } } }) : Promise.resolve([]),
+      prisma.slug.count({ where: { status: "active" } }),
+      prisma.slug.count({ where: { createdAt: { gte: todayStart } } }),
+      prisma.slug.count({ where: { activatedAt: { gte: todayStart } } }),
+      prisma.analyticsView
+        ? prisma.analyticsView.findMany({ where: { visitedAt: { gte: onlineFrom } }, select: { sessionId: true } })
+        : Promise.resolve([]),
+      prisma.slug.findMany({
+        where: { status: "active" },
+        orderBy: [{ analyticsViewsCount: "desc" }],
+        take: 10,
+        select: { fullSlug: true, analyticsViewsCount: true },
+      }),
+    ]);
+
+    const daily = new Map();
+    views.forEach((item) => {
+      const key = item.visitedAt.toISOString().slice(0, 10);
+      daily.set(key, (daily.get(key) || 0) + 1);
+    });
+    const bySource = {};
+    const byDevice = {};
+    views.forEach((item) => {
+      const src = String(item.source || "direct");
+      const dev = String(item.device || "desktop");
+      bySource[src] = (bySource[src] || 0) + 1;
+      byDevice[dev] = (byDevice[dev] || 0) + 1;
+    });
+    const byButton = {};
+    clicks.forEach((item) => {
+      const key = String(item.buttonType || "other");
+      byButton[key] = (byButton[key] || 0) + 1;
+    });
+
+    res.json({
+      period,
+      totalViewsByDay: Array.from(daily.entries()).map(([date, value]) => ({ date, value })),
+      topSlugs: topSlugs.map((row) => ({ slug: row.fullSlug, views: Number(row.analyticsViewsCount || 0) })),
+      breakdown: {
+        source: bySource,
+        device: byDevice,
+        button: byButton,
+      },
+      realtime: {
+        activeCards,
+        todayCreated,
+        todayActivated,
+        onlineNow: new Set(onlineRows.map((row) => row.sessionId)).size,
+      },
+    });
+  }),
+);
+
+router.get(
+  "/verification-requests",
+  asyncHandler(async (req, res) => {
+    if (!prisma.verificationRequest) {
+      res.json({ items: [], pagination: { page: 1, totalPages: 1, total: 0 } });
+      return;
+    }
+    const status = String(req.query.status || "all").toLowerCase();
+    const page = Math.max(1, Number(req.query.page || 1) || 1);
+    const pageSize = 20;
+    const where = status === "all" ? {} : { status };
+
+    const [total, rows] = await Promise.all([
+      prisma.verificationRequest.count({ where }),
+      prisma.verificationRequest.findMany({
+        where,
+        include: {
+          user: {
+            select: {
+              firstName: true,
+              displayName: true,
+              username: true,
+            },
+          },
+        },
+        orderBy: { requestedAt: "desc" },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+    ]);
+    res.json({
+      items: rows,
+      pagination: {
+        page,
+        total,
+        totalPages: Math.max(1, Math.ceil(total / pageSize)),
+      },
+    });
+  }),
+);
+
+router.post(
+  "/verification-requests/:id/approve",
+  asyncHandler(async (req, res) => {
+    if (!prisma.verificationRequest) {
+      res.status(503).json({ error: "Verification storage unavailable" });
+      return;
+    }
+    const target = await prisma.verificationRequest.findUnique({ where: { id: req.params.id } });
+    if (!target) {
+      res.status(404).json({ error: "Request not found" });
+      return;
+    }
+    const now = new Date();
+    await prisma.$transaction([
+      prisma.verificationRequest.update({
+        where: { id: target.id },
+        data: {
+          status: "approved",
+          reviewedAt: now,
+          adminNote: null,
+        },
+      }),
+      prisma.user.update({
+        where: { telegramId: target.telegramId },
+        data: {
+          isVerified: true,
+          verifiedCompany: target.companyName,
+          verifiedAt: now,
+        },
+      }),
+    ]);
+    res.json({ ok: true });
+  }),
+);
+
+router.post(
+  "/verification-requests/:id/reject",
+  asyncHandler(async (req, res) => {
+    if (!prisma.verificationRequest) {
+      res.status(503).json({ error: "Verification storage unavailable" });
+      return;
+    }
+    const adminNote = String(req.body?.adminNote || "").trim().slice(0, 1000);
+    const target = await prisma.verificationRequest.findUnique({ where: { id: req.params.id } });
+    if (!target) {
+      res.status(404).json({ error: "Request not found" });
+      return;
+    }
+    await prisma.verificationRequest.update({
+      where: { id: target.id },
+      data: {
+        status: "rejected",
+        adminNote: adminNote || null,
+        reviewedAt: new Date(),
+      },
+    });
+    res.json({ ok: true });
+  }),
+);
+
+router.get(
+  "/directory-exclusions",
+  asyncHandler(async (_req, res) => {
+    if (!prisma.directoryExclusion) {
+      res.json({ items: [] });
+      return;
+    }
+    const items = await prisma.directoryExclusion.findMany({
+      orderBy: { updatedAt: "desc" },
+    });
+    res.json({ items });
+  }),
+);
+
+router.post(
+  "/directory-exclusions",
+  asyncHandler(async (req, res) => {
+    if (!prisma.directoryExclusion) {
+      res.status(503).json({ error: "Directory exclusions storage unavailable" });
+      return;
+    }
+    const slug = String(req.body?.slug || "")
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, "")
+      .slice(0, 20);
+    if (!slug) {
+      res.status(400).json({ error: "Invalid slug" });
+      return;
+    }
+    const row = await prisma.directoryExclusion.upsert({
+      where: { slug },
+      create: {
+        slug,
+        reason: String(req.body?.reason || "").trim() || null,
+        excludedBy: String(req.session?.admin?.login || "").trim() || null,
+      },
+      update: {
+        reason: String(req.body?.reason || "").trim() || null,
+        excludedBy: String(req.session?.admin?.login || "").trim() || null,
+      },
+    });
+    res.json({ ok: true, item: row });
+  }),
+);
+
+router.delete(
+  "/directory-exclusions/:slug",
+  asyncHandler(async (req, res) => {
+    if (!prisma.directoryExclusion) {
+      res.status(503).json({ error: "Directory exclusions storage unavailable" });
+      return;
+    }
+    const slug = String(req.params.slug || "")
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, "")
+      .slice(0, 20);
+    await prisma.directoryExclusion.deleteMany({ where: { slug } });
+    res.json({ ok: true });
   }),
 );
 
