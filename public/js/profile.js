@@ -1138,6 +1138,46 @@
     if (el.qrBox) el.qrBox.innerHTML = "";
   };
 
+  const applyLogoToQrCanvas = async (canvas) => {
+    if (!(canvas instanceof HTMLCanvasElement)) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const size = Math.round(canvas.width * 0.22);
+    const x = Math.round((canvas.width - size) / 2);
+    const y = Math.round((canvas.height - size) / 2);
+    const pad = Math.max(6, Math.round(size * 0.14));
+    const boxX = x - pad;
+    const boxY = y - pad;
+    const boxSize = size + pad * 2;
+    const radius = Math.max(8, Math.round(boxSize * 0.18));
+
+    const logo = await new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => resolve(null);
+      img.src = "/brand/logo.PNG";
+    });
+    if (!logo) return;
+
+    ctx.save();
+    ctx.fillStyle = "#ffffff";
+    ctx.beginPath();
+    ctx.moveTo(boxX + radius, boxY);
+    ctx.lineTo(boxX + boxSize - radius, boxY);
+    ctx.quadraticCurveTo(boxX + boxSize, boxY, boxX + boxSize, boxY + radius);
+    ctx.lineTo(boxX + boxSize, boxY + boxSize - radius);
+    ctx.quadraticCurveTo(boxX + boxSize, boxY + boxSize, boxX + boxSize - radius, boxY + boxSize);
+    ctx.lineTo(boxX + radius, boxY + boxSize);
+    ctx.quadraticCurveTo(boxX, boxY + boxSize, boxX, boxY + boxSize - radius);
+    ctx.lineTo(boxX, boxY + radius);
+    ctx.quadraticCurveTo(boxX, boxY, boxX + radius, boxY);
+    ctx.closePath();
+    ctx.fill();
+    ctx.drawImage(logo, x, y, size, size);
+    ctx.restore();
+  };
+
   const openQrModal = async (slug) => {
     const payload = await api(`/api/profile/slugs/${encodeURIComponent(slug)}/qr`);
     if (!(el.qrModal instanceof HTMLElement)) return;
@@ -1148,8 +1188,9 @@
       el.qrBox.innerHTML = "";
       if (typeof QRCode !== "undefined" && payload.url) {
         await new Promise((resolve) => {
-          QRCode.toCanvas(payload.url, { width: 300, margin: 2 }, (error, canvas) => {
+          QRCode.toCanvas(payload.url, { width: 300, margin: 2, errorCorrectionLevel: "H" }, async (error, canvas) => {
             if (!error && canvas instanceof HTMLCanvasElement && el.qrBox) {
+              await applyLogoToQrCanvas(canvas);
               el.qrBox.innerHTML = "";
               el.qrBox.appendChild(canvas);
             }

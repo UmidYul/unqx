@@ -21,10 +21,55 @@
     <script nonce="<%= cspNonce %>" src="/vendor/qrcode/qrcode.min.js"></script>
     <script nonce="<%= cspNonce %>">
       (function () {
+        function drawLogo(canvas) {
+          return new Promise(function (resolve) {
+            if (!(canvas instanceof HTMLCanvasElement)) {
+              resolve();
+              return;
+            }
+            var ctx = canvas.getContext("2d");
+            if (!ctx) {
+              resolve();
+              return;
+            }
+            var size = Math.round(canvas.width * 0.22);
+            var x = Math.round((canvas.width - size) / 2);
+            var y = Math.round((canvas.height - size) / 2);
+            var pad = Math.max(6, Math.round(size * 0.14));
+            var boxX = x - pad;
+            var boxY = y - pad;
+            var boxSize = size + pad * 2;
+            var radius = Math.max(8, Math.round(boxSize * 0.18));
+            var img = new Image();
+            img.onload = function () {
+              ctx.save();
+              ctx.fillStyle = "#ffffff";
+              ctx.beginPath();
+              ctx.moveTo(boxX + radius, boxY);
+              ctx.lineTo(boxX + boxSize - radius, boxY);
+              ctx.quadraticCurveTo(boxX + boxSize, boxY, boxX + boxSize, boxY + radius);
+              ctx.lineTo(boxX + boxSize, boxY + boxSize - radius);
+              ctx.quadraticCurveTo(boxX + boxSize, boxY + boxSize, boxX + boxSize - radius, boxY + boxSize);
+              ctx.lineTo(boxX + radius, boxY + boxSize);
+              ctx.quadraticCurveTo(boxX, boxY + boxSize, boxX, boxY + boxSize - radius);
+              ctx.lineTo(boxX, boxY + radius);
+              ctx.quadraticCurveTo(boxX, boxY, boxX + radius, boxY);
+              ctx.closePath();
+              ctx.fill();
+              ctx.drawImage(img, x, y, size, size);
+              ctx.restore();
+              resolve();
+            };
+            img.onerror = function () { resolve(); };
+            img.src = "/brand/logo.PNG";
+          });
+        }
+
         var box = document.getElementById("qr-box");
         if (!box || typeof QRCode === "undefined") return;
-        QRCode.toCanvas("<%= url %>", { width: 340, margin: 2 }, function (error, canvas) {
+        QRCode.toCanvas("<%= url %>", { width: 340, margin: 2, errorCorrectionLevel: "H" }, async function (error, canvas) {
           if (error || !canvas) return;
+          await drawLogo(canvas);
           box.appendChild(canvas);
         });
       })();

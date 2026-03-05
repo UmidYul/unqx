@@ -685,6 +685,61 @@
   const qtitle = document.getElementById("qr-title-slug");
   let qslug = "";
   let qsvg = "";
+  const qrLogoUrl = `${window.location.origin}/brand/logo.PNG`;
+
+  function withLogoInSvg(svg, width) {
+    if (!svg || typeof svg !== "string") return svg;
+    const size = Math.round(width * 0.22);
+    const x = Math.round((width - size) / 2);
+    const y = Math.round((width - size) / 2);
+    const pad = Math.max(6, Math.round(size * 0.14));
+    const boxX = x - pad;
+    const boxY = y - pad;
+    const boxSize = size + pad * 2;
+    const radius = Math.max(8, Math.round(boxSize * 0.18));
+    const overlay =
+      `<rect x="${boxX}" y="${boxY}" width="${boxSize}" height="${boxSize}" rx="${radius}" ry="${radius}" fill="#ffffff"/>` +
+      `<image href="${qrLogoUrl}" x="${x}" y="${y}" width="${size}" height="${size}" preserveAspectRatio="xMidYMid meet"/>`;
+    return svg.replace("</svg>", `${overlay}</svg>`);
+  }
+
+  async function withLogoOnCanvas(canvas) {
+    if (!(canvas instanceof HTMLCanvasElement)) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    const size = Math.round(canvas.width * 0.22);
+    const x = Math.round((canvas.width - size) / 2);
+    const y = Math.round((canvas.height - size) / 2);
+    const pad = Math.max(6, Math.round(size * 0.14));
+    const boxX = x - pad;
+    const boxY = y - pad;
+    const boxSize = size + pad * 2;
+    const radius = Math.max(8, Math.round(boxSize * 0.18));
+    const img = await new Promise((resolve) => {
+      const image = new Image();
+      image.onload = () => resolve(image);
+      image.onerror = () => resolve(null);
+      image.src = "/brand/logo.PNG";
+    });
+    if (!img) return;
+    ctx.save();
+    ctx.fillStyle = "#ffffff";
+    ctx.beginPath();
+    ctx.moveTo(boxX + radius, boxY);
+    ctx.lineTo(boxX + boxSize - radius, boxY);
+    ctx.quadraticCurveTo(boxX + boxSize, boxY, boxX + boxSize, boxY + radius);
+    ctx.lineTo(boxX + boxSize, boxY + boxSize - radius);
+    ctx.quadraticCurveTo(boxX + boxSize, boxY + boxSize, boxX + boxSize - radius, boxY + boxSize);
+    ctx.lineTo(boxX + radius, boxY + boxSize);
+    ctx.quadraticCurveTo(boxX, boxY + boxSize, boxX, boxY + boxSize - radius);
+    ctx.lineTo(boxX, boxY + radius);
+    ctx.quadraticCurveTo(boxX, boxY, boxX + radius, boxY);
+    ctx.closePath();
+    ctx.fill();
+    ctx.drawImage(img, x, y, size, size);
+    ctx.restore();
+  }
+
   function closeQ() {
     if (qm instanceof HTMLElement) {
       qm.classList.add("hidden");
@@ -696,9 +751,12 @@
     if (!(qm instanceof HTMLElement) || !(qwrap instanceof HTMLElement) || !(qcan instanceof HTMLCanvasElement) || typeof QRCode === "undefined") return;
     const url = `${base}/${slug}`;
     qslug = slug;
-    qsvg = await QRCode.toString(url, { type: "svg", width: 1000, margin: 2, errorCorrectionLevel: "H" });
-    qwrap.innerHTML = await QRCode.toString(url, { type: "svg", width: 240, margin: 2, errorCorrectionLevel: "H" });
+    const svgLarge = await QRCode.toString(url, { type: "svg", width: 1000, margin: 2, errorCorrectionLevel: "H" });
+    const svgSmall = await QRCode.toString(url, { type: "svg", width: 240, margin: 2, errorCorrectionLevel: "H" });
+    qsvg = withLogoInSvg(svgLarge, 1000);
+    qwrap.innerHTML = withLogoInSvg(svgSmall, 240);
     await QRCode.toCanvas(qcan, url, { width: 1000, margin: 2, errorCorrectionLevel: "H" });
+    await withLogoOnCanvas(qcan);
     if (qtitle instanceof HTMLElement) qtitle.textContent = `#${slug}`;
     qm.classList.remove("hidden");
     qm.classList.add("flex");

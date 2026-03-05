@@ -438,6 +438,7 @@ router.get(
       image: defaultSocialImage,
       period: board.period,
       items: board.publicItems,
+      viewerTelegramId: getUserSession(req)?.telegramId || "",
       userSummary,
       leaderboardSettings: board.settings,
       adminSession: getAdminSession(req),
