@@ -27,6 +27,46 @@ npm run start
 
 Default URL: `http://127.0.0.1:3100`
 
+## DB Backup (Google Drive + Telegram status)
+
+Run manual backup:
+
+```bash
+npm run backup:db
+```
+
+What it does:
+
+- Creates PostgreSQL dump via `pg_dump` (custom format).
+- Uploads dump to Google Drive via `rclone` remote.
+- Deletes local temp file after upload.
+- Applies retention by count (`BACKUP_KEEP_FILES`).
+- Sends Telegram message on success/failure.
+
+Required setup:
+
+1. Install `rclone` on server.
+2. Run `rclone config` and create remote (example name: `gdrive`).
+3. Set env:
+
+```env
+BACKUP_RCLONE_REMOTE="gdrive:unqx-backups"
+BACKUP_KEEP_FILES=14
+BACKUP_NOTIFY_TELEGRAM=true
+BACKUP_TELEGRAM_CHAT_ID="-1001234567890"
+BACKUP_STATUS_URL="https://your-domain.com/admin/dashboard"
+```
+
+Scheduling examples:
+
+- `cron` (daily at 03:20):
+
+```cron
+20 3 * * * cd /path/to/unqx && /usr/bin/npm run backup:db >> /var/log/unqx-backup.log 2>&1
+```
+
+- `systemd timer`: call the same `npm run backup:db` command.
+
 ## Environment
 
 Env is read from:

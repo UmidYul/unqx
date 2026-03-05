@@ -7,6 +7,7 @@
     "dev": "node --watch server.js",
     "start": "node server.js",
     "migrate": "node scripts/migrate.js",
+    "backup:db": "node scripts/backup-db.js",
     "db:patch-columns": "node scripts/patch-missing-columns.js",
     "prisma:generate": "node scripts/prisma-generate.cjs",
     "build:vendor": "node scripts/copy-vendor-assets.cjs",
