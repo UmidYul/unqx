@@ -242,6 +242,42 @@
       .replace(/'/g, "&#39;");
   }
 
+  function isSupportedButtonHref(value) {
+    return /^(https?:\/\/|mailto:|tel:)/i.test(String(value || "").trim());
+  }
+
+  function normalizeButtonUrl(rawUrl, type) {
+    const input = String(rawUrl || "").trim();
+    const kind = String(type || "other")
+      .trim()
+      .toLowerCase();
+    if (!input) return "";
+
+    if (isSupportedButtonHref(input)) {
+      return input;
+    }
+
+    if (kind === "phone") {
+      const compact = input.replace(/\s+/g, "");
+      return compact ? `tel:${compact}` : "";
+    }
+
+    if (kind === "email") {
+      if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input)) {
+        return `mailto:${input}`;
+      }
+      return "";
+    }
+
+    if (kind === "website" || kind === "other") {
+      if (/^[^\s]+\.[^\s]+$/.test(input) && !input.startsWith("@")) {
+        return `https://${input}`;
+      }
+    }
+
+    return input;
+  }
+
   function normalizeCard(input) {
     const card = input && typeof input === "object" ? input : {};
     const plan = card.tariff === "premium" ? "premium" : "basic";
@@ -258,9 +294,9 @@
             .trim()
             .toLowerCase(),
           label: String(button?.label || "").trim(),
-          url: String(button?.url || button?.href || "").trim(),
+          url: normalizeButtonUrl(button?.url || button?.href || "", button?.type || "other"),
         }))
-        .filter((button) => button.label && /^https?:\/\//i.test(button.url))
+        .filter((button) => button.label && isSupportedButtonHref(button.url))
         .slice(0, buttonLimit)
       : [];
     const name = String(card.name || "").trim() || "UNQX User";

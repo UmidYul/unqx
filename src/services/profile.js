@@ -7,7 +7,6 @@ const BUTTON_TYPES = new Set([
   "youtube",
   "website",
   "whatsapp",
-  "email",
   "other",
 ]);
 

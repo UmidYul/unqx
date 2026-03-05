@@ -96,13 +96,40 @@ function normalizeDirectorySector(value) {
   return DIRECTORY_SECTORS.has(normalized) ? normalized : "other";
 }
 
-function parseProfileCardRow(row) {
-  if (!row) {
-    return null;
+function parseJsonArray(value) {
+  if (Array.isArray(value)) {
+    return value;
   }
+  if (typeof value === "string" && value.trim()) {
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
+function toBool(value, fallback = false) {
+  if (typeof value === "boolean") return value;
+  if (value === 1 || value === "1" || value === "t" || value === "true") return true;
+  if (value === 0 || value === "0" || value === "f" || value === "false") return false;
+  return fallback;
+}
+
+function mapProfileCardRow(row) {
+  if (!row) return null;
+  const ownerId = row.ownerId ?? row.owner_id ?? null;
+  const avatarUrl = row.avatarUrl ?? row.avatar_url ?? "";
+  const customColor = row.customColor ?? row.custom_color ?? "";
+  const extraPhone = row.extraPhone ?? row.extra_phone ?? "";
+  const createdAt = row.createdAt ?? row.created_at ?? null;
+  const updatedAt = row.updatedAt ?? row.updated_at ?? null;
+  const showBrandingRaw = row.showBranding ?? row.show_branding;
   return {
     id: row.id,
-    ownerId: row.ownerId,
+    ownerId,
     name: row.name,
     role: row.role || "",
     bio: row.bio || "",
@@ -110,16 +137,35 @@ function parseProfileCardRow(row) {
     address: row.address || "",
     postcode: row.postcode || "",
     email: row.email || "",
-    extraPhone: row.extraPhone || "",
-    avatarUrl: row.avatarUrl || "",
-    tags: Array.isArray(row.tags) ? row.tags : [],
-    buttons: Array.isArray(row.buttons) ? row.buttons : [],
+    extraPhone: extraPhone || "",
+    avatarUrl: avatarUrl || "",
+    tags: parseJsonArray(row.tags),
+    buttons: parseJsonArray(row.buttons),
     theme: typeof row.theme === "string" && CARD_THEMES.has(row.theme) ? row.theme : "default_dark",
-    customColor: row.customColor || "",
-    showBranding: Boolean(row.showBranding),
-    createdAt: row.createdAt,
-    updatedAt: row.updatedAt,
+    customColor: customColor || "",
+    showBranding: toBool(showBrandingRaw, true),
+    createdAt,
+    updatedAt,
   };
+}
+
+async function findProfileCardByOwnerId(ownerId) {
+  if (!ownerId) return null;
+  const rows = await prisma.$queryRaw`
+    SELECT *
+    FROM profile_cards
+    WHERE owner_id = ${ownerId}
+    LIMIT 1
+  `;
+  const row = Array.isArray(rows) ? rows[0] || null : null;
+  return mapProfileCardRow(row);
+}
+
+function parseProfileCardRow(row) {
+  if (!row) {
+    return null;
+  }
+  return mapProfileCardRow(row);
 }
 
 async function getCurrentUser(req) {
@@ -274,7 +320,7 @@ router.get(
 
     const [slugs, card, requests, score, pricing] = await Promise.all([
       getUserSlugsWithStats(user.id),
-      prisma.profileCard.findUnique({ where: { ownerId: user.id } }),
+      findProfileCardByOwnerId(user.id),
       prisma.slugRequest.findMany({
         where: { userId: user.id },
         orderBy: { createdAt: "desc" },
@@ -469,9 +515,7 @@ router.get(
       res.json({ card: null });
       return;
     }
-    const row = await prisma.profileCard.findUnique({
-      where: { ownerId: user.id },
-    });
+    const row = await findProfileCardByOwnerId(user.id);
     res.json({ card: parseProfileCardRow(row) });
   }),
 );
@@ -600,9 +644,7 @@ router.post(
       return;
     }
 
-    const card = await prisma.profileCard.findUnique({
-      where: { ownerId: user.id },
-    });
+    const card = await findProfileCardByOwnerId(user.id);
 
     if (!card) {
       res.status(400).json({ error: "Сначала сохрани визитку" });
@@ -645,9 +687,7 @@ router.delete(
       return;
     }
 
-    const card = await prisma.profileCard.findUnique({
-      where: { ownerId: user.id },
-    });
+    const card = await findProfileCardByOwnerId(user.id);
     if (!card) {
       res.status(404).json({ error: "Card not found" });
       return;

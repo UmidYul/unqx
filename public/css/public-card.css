@@ -274,14 +274,7 @@ body[data-card-theme] #card-view-root > [data-card-view] {
 }
 
 .unq-ref-shell::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: var(--theme-top-line, transparent);
-  pointer-events: none;
+  content: none;
 }
 
 .unq-ref-shell > * {

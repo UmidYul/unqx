@@ -80,7 +80,6 @@
     youtube: "YouTube",
     website: "Сайт",
     whatsapp: "WhatsApp",
-    email: "Email",
     other: "Другое",
   };
 
@@ -502,8 +501,9 @@
   };
 
   const buttonRow = (button, index) => {
+    const selectedType = Object.prototype.hasOwnProperty.call(buttonTypeLabels, button.type) ? button.type : "other";
     const options = buttonTypeOptions
-      .map(([value, label]) => `<option value="${value}" ${button.type === value ? "selected" : ""}>${label}</option>`)
+      .map(([value, label]) => `<option value="${value}" ${selectedType === value ? "selected" : ""}>${label}</option>`)
       .join("");
 
     return `<div class="grid gap-2 rounded-xl border border-neutral-200 bg-neutral-50 p-3 md:grid-cols-[160px_1fr_1fr_auto]" data-bi="${index}">
