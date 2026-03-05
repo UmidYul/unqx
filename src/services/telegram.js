@@ -24,6 +24,14 @@ function escapeHtml(value) {
     .replace(/'/g, "&#39;");
 }
 
+function buildAppUrl(pathname) {
+  const base = String(env.APP_URL || "").replace(/\/$/, "");
+  const path = String(pathname || "").trim();
+  if (!base) return path;
+  if (!path) return base;
+  return `${base}${path.startsWith("/") ? path : `/${path}`}`;
+}
+
 async function sendOrderRequestToTelegram(payload) {
   const settings = await getManySettings(["contact_telegram_chat_id", "pending_expiry_hours"]);
   const chatId = String(settings.contact_telegram_chat_id || env.TELEGRAM_CHAT_ID || "").trim();
@@ -60,10 +68,12 @@ async function sendOrderRequestToTelegram(payload) {
     chatId,
     text,
     parseMode: "HTML",
+    inlineButtonText: "Открыть событие",
+    inlineButtonUrl: buildAppUrl("/admin/dashboard?tab=orders"),
   });
 }
 
-async function sendTelegramMessage({ chatId, text, parseMode = "HTML" }) {
+async function sendTelegramMessage({ chatId, text, parseMode = "HTML", inlineButtonText = "", inlineButtonUrl = "" }) {
   if (!env.TELEGRAM_BOT_TOKEN) {
     throw new TelegramConfigError("Telegram bot token is not configured");
   }
@@ -79,6 +89,20 @@ async function sendTelegramMessage({ chatId, text, parseMode = "HTML" }) {
       chat_id: chatId,
       text,
       parse_mode: parseMode,
+      ...(inlineButtonUrl
+        ? {
+          reply_markup: {
+            inline_keyboard: [
+              [
+                {
+                  text: String(inlineButtonText || "Открыть событие"),
+                  url: String(inlineButtonUrl),
+                },
+              ],
+            ],
+          },
+        }
+        : {}),
     }),
   });
 
@@ -107,23 +131,47 @@ async function sendSlugApprovedToUser({ telegramId, slug, plan, hasBracelet = fa
     "Войди в профиль и создай свою визитку:",
     "unqx.uz/profile",
   ].join("\n");
-  return sendTelegramMessage({ chatId: telegramId, text, parseMode: "HTML" });
+  return sendTelegramMessage({
+    chatId: telegramId,
+    text,
+    parseMode: "HTML",
+    inlineButtonText: "Открыть профиль",
+    inlineButtonUrl: buildAppUrl("/profile"),
+  });
 }
 
 async function sendSlugAwaitingPaymentToUser({ telegramId, slug }) {
   const text = `Оплата по заявке ${slug} подтверждена.\nСкоро активируем UNQ.`;
-  return sendTelegramMessage({ chatId: telegramId, text, parseMode: "HTML" });
+  return sendTelegramMessage({
+    chatId: telegramId,
+    text,
+    parseMode: "HTML",
+    inlineButtonText: "Открыть профиль",
+    inlineButtonUrl: buildAppUrl("/profile"),
+  });
 }
 
 async function sendSlugRejectedToUser({ telegramId, slug, adminNote }) {
   const reason = String(adminNote || "").trim() || "Без указания причины";
   const text = `Заявка на ${slug} отклонена.\nПричина: ${escapeHtml(reason)}.\nНапиши нам если есть вопросы.`;
-  return sendTelegramMessage({ chatId: telegramId, text, parseMode: "HTML" });
+  return sendTelegramMessage({
+    chatId: telegramId,
+    text,
+    parseMode: "HTML",
+    inlineButtonText: "Открыть заявки",
+    inlineButtonUrl: buildAppUrl("/profile#requests"),
+  });
 }
 
 async function sendSlugExpiredToUser({ telegramId, slug }) {
   const text = `Заявка на ${slug} истекла — не успели связаться.\nSlug снова доступен. Подай заявку повторно: unqx.uz`;
-  return sendTelegramMessage({ chatId: telegramId, text, parseMode: "HTML" });
+  return sendTelegramMessage({
+    chatId: telegramId,
+    text,
+    parseMode: "HTML",
+    inlineButtonText: "Открыть заявки",
+    inlineButtonUrl: buildAppUrl("/profile#requests"),
+  });
 }
 
 async function sendVerificationRequestToAdmin(payload) {
@@ -158,7 +206,13 @@ async function sendVerificationRequestToAdmin(payload) {
   ]
     .filter(Boolean)
     .join("\n");
-  return sendTelegramMessage({ chatId, text, parseMode: "HTML" });
+  return sendTelegramMessage({
+    chatId,
+    text,
+    parseMode: "HTML",
+    inlineButtonText: "Открыть событие",
+    inlineButtonUrl: buildAppUrl("/admin/dashboard?tab=verification"),
+  });
 }
 
 async function sendVerificationStatusToUser({ telegramId, status, adminNote }) {
@@ -167,7 +221,13 @@ async function sendVerificationStatusToUser({ telegramId, status, adminNote }) {
     status === "approved"
       ? "Верификация UNQX подтверждена. Значок верификации уже активен."
       : `Верификация UNQX отклонена.${note ? `\nПричина: ${escapeHtml(note)}` : ""}`;
-  return sendTelegramMessage({ chatId: telegramId, text, parseMode: "HTML" });
+  return sendTelegramMessage({
+    chatId: telegramId,
+    text,
+    parseMode: "HTML",
+    inlineButtonText: "Открыть профиль",
+    inlineButtonUrl: buildAppUrl("/profile"),
+  });
 }
 
 module.exports = {

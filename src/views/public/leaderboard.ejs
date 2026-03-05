@@ -1,175 +1,219 @@
 <!doctype html>
 <html lang="ru">
+
 <head>
-  <%
-    const pageBaseUrl = typeof baseUrl === "string" ? baseUrl : "";
-    const leaderboardJsonLd = {
-      "@context": "https://schema.org",
-      "@type": "ItemList",
-      name: "Лидерборд UNQ Score",
-      itemListOrder: "https://schema.org/ItemListOrderDescending",
-      itemListElement: (Array.isArray(items) ? items : []).slice(0, 10).map((item, index) => ({
-        "@type": "ListItem",
-        position: index + 1,
-        url: `${pageBaseUrl}/${item.slug}`,
-        name: item.ownerName,
-      })),
+  <% const pageBaseUrl=typeof baseUrl==="string" ? baseUrl : "" ; const leaderboardJsonLd={ "@context"
+    : "https://schema.org" , "@type" : "ItemList" , name: "Лидерборд UNQ" ,
+    itemListOrder: "https://schema.org/ItemListOrderDescending" , itemListElement: (Array.isArray(items) ? items :
+    []).slice(0, 10).map((item, index)=> ({
+    "@type": "ListItem",
+    position: index + 1,
+    url: `${pageBaseUrl}/${item.slug}`,
+    name: item.ownerName,
+    })),
     };
-  %>
-  <%- include('../partials/head', { title: title || 'Топ визиток недели · UNQX', description: description || 'Топ визиток UNQX', image: typeof image === 'string' ? image : undefined, styles: ['/css/public-card.css'], jsonLd: leaderboardJsonLd }) %>
+    %>
+    <%- include('../partials/head', { title: title || 'Топ визиток недели · UNQX' , description: description
+      || 'Топ визиток UNQX' , image: typeof image==='string' ? image : undefined, styles: ['/css/public-card.css'],
+      jsonLd: leaderboardJsonLd }) %>
 </head>
+
 <body class="antialiased bg-neutral-50" data-page="leaderboard" data-period="<%= period %>">
   <main class="mx-auto w-full max-w-6xl px-4 py-8">
     <div class="mb-6 flex items-center justify-between gap-3">
-      <a href="/" class="interactive-btn inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-neutral-300 px-3 py-1.5 text-sm font-semibold text-neutral-600 hover:text-neutral-900">
+      <a href="/"
+        class="interactive-btn inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-neutral-300 px-3 py-1.5 text-sm font-semibold text-neutral-600 hover:text-neutral-900">
         <svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
           <path d="M15 18 9 12l6-6"></path>
         </svg>
         На главную
       </a>
-      <div class="inline-flex rounded-xl border border-neutral-200 bg-white p-1 text-sm" role="tablist" aria-label="Период рейтинга">
-        <a href="/leaderboard?period=week" class="interactive-btn inline-flex min-h-11 items-center rounded-lg px-3 py-1.5 <%= period === 'week' ? 'bg-neutral-900 text-white' : 'text-neutral-600' %>" role="tab" aria-selected="<%= period === 'week' ? 'true' : 'false' %>">Неделя</a>
-        <a href="/leaderboard?period=month" class="interactive-btn inline-flex min-h-11 items-center rounded-lg px-3 py-1.5 <%= period === 'month' ? 'bg-neutral-900 text-white' : 'text-neutral-600' %>" role="tab" aria-selected="<%= period === 'month' ? 'true' : 'false' %>">Месяц</a>
-        <a href="/leaderboard?period=all" class="interactive-btn inline-flex min-h-11 items-center rounded-lg px-3 py-1.5 <%= period === 'all' ? 'bg-neutral-900 text-white' : 'text-neutral-600' %>" role="tab" aria-selected="<%= period === 'all' ? 'true' : 'false' %>">Всё время</a>
+      <div class="inline-flex rounded-xl border border-neutral-200 bg-white p-1 text-sm" role="tablist"
+        aria-label="Период рейтинга">
+        <a href="/leaderboard?period=week"
+          class="interactive-btn inline-flex min-h-11 items-center rounded-lg px-3 py-1.5 <%= period === 'week' ? 'bg-neutral-900 text-white' : 'text-neutral-600' %>"
+          role="tab" aria-selected="<%= period === 'week' ? 'true' : 'false' %>">Неделя</a>
+        <a href="/leaderboard?period=month"
+          class="interactive-btn inline-flex min-h-11 items-center rounded-lg px-3 py-1.5 <%= period === 'month' ? 'bg-neutral-900 text-white' : 'text-neutral-600' %>"
+          role="tab" aria-selected="<%= period === 'month' ? 'true' : 'false' %>">Месяц</a>
+        <a href="/leaderboard?period=all"
+          class="interactive-btn inline-flex min-h-11 items-center rounded-lg px-3 py-1.5 <%= period === 'all' ? 'bg-neutral-900 text-white' : 'text-neutral-600' %>"
+          role="tab" aria-selected="<%= period === 'all' ? 'true' : 'false' %>">Всё время</a>
       </div>
     </div>
 
     <header class="mb-6 rounded-2xl border border-neutral-200 bg-white p-6">
       <h1 class="inline-flex items-center gap-2 text-3xl font-black tracking-tight text-neutral-900">
         <img src="/brand/logo.PNG" alt="UNQX" class="h-8 w-8 rounded-md border border-neutral-200 object-cover" />
-        <span>Лидерборд UNQ Score</span>
+        <span>Лидерборд UNQ</span>
       </h1>
       <p class="mt-2 text-sm text-neutral-500">Обновляется каждый день в полночь</p>
     </header>
 
-    <%
-      const topThree = items.slice(0, 3);
-      const rest = items.slice(3);
-      const currentTelegramId =
-        (typeof viewerTelegramId === "string" && viewerTelegramId)
-          ? viewerTelegramId
-          : (typeof userSession !== "undefined" && userSession && userSession.telegramId ? userSession.telegramId : "");
-      const rankBadgeByPlace = {
-        1: "border-neutral-900 bg-neutral-900 text-white",
-        2: "border-neutral-400 bg-neutral-200 text-neutral-900",
-        3: "border-neutral-300 bg-neutral-100 text-neutral-800",
-      };
-      const isMissingAvatar = (url) => !url || String(url).trim() === "" || String(url).includes("/brand/logo.PNG");
-    %>
-    <section class="grid gap-4 md:grid-cols-3">
-      <% if (!topThree.length) { %>
-      <article class="col-span-full rounded-2xl border border-neutral-200 bg-white p-8 text-center">
-        <p class="text-sm text-neutral-600">Рейтинг пока пуст. Данные появятся после первых уникальных просмотров.</p>
-      </article>
-      <% } %>
-      <% topThree.forEach((item, idx) => { %>
-      <article class="interactive-card rounded-2xl border border-neutral-200 bg-white p-5">
-        <p class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-bold <%= rankBadgeByPlace[item.rank] || 'border-neutral-300 bg-neutral-100 text-neutral-800' %>">
-          <svg class="h-7 w-7" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <circle cx="12" cy="8.5" r="4.5" stroke="currentColor" stroke-width="1.8"></circle>
-            <path d="m9.4 12.6-2.1 7 4.7-2.5 4.7 2.5-2.1-7" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"></path>
-            <path d="m10.5 8.5 1.2 1.2 2-2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
-          </svg>
-          <span><%= item.rank %></span>
-        </p>
-        <div class="mt-3 flex items-center gap-3">
-          <% if (isMissingAvatar(item.avatarUrl)) { %>
-          <span class="inline-flex h-12 w-12 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-400" aria-hidden="true">
-            <svg class="h-7 w-7" viewBox="0 0 24 24" fill="none">
-              <circle cx="12" cy="8.5" r="3.75" stroke="currentColor" stroke-width="1.5"></circle>
-              <path d="M5.5 19c.8-3 3.5-4.8 6.5-4.8s5.7 1.8 6.5 4.8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
-            </svg>
-          </span>
-          <% } else { %>
-          <img src="<%= item.avatarUrl %>" alt="avatar" class="h-12 w-12 rounded-full border border-neutral-200 object-cover" />
+    <% const topThree=items.slice(0, 3); const rest=items.slice(3); const currentTelegramId=(typeof
+      viewerTelegramId==="string" && viewerTelegramId) ? viewerTelegramId : (typeof userSession !=="undefined" &&
+      userSession && userSession.telegramId ? userSession.telegramId : "" ); const rankBadgeByPlace={
+      1: "border-neutral-900 bg-neutral-900 text-white" , 2: "border-neutral-400 bg-neutral-200 text-neutral-900" ,
+      3: "border-neutral-300 bg-neutral-100 text-neutral-800" , }; const isMissingAvatar=(url)=> !url ||
+      String(url).trim() === "" || String(url).includes("/brand/logo.PNG");
+      %>
+      <section class="grid gap-4 md:grid-cols-3">
+        <% if (!topThree.length) { %>
+          <article class="col-span-full rounded-2xl border border-neutral-200 bg-white p-8 text-center">
+            <p class="text-sm text-neutral-600">Рейтинг пока пуст. Данные появятся после первых уникальных просмотров.
+            </p>
+          </article>
           <% } %>
-          <div>
-            <p class="font-semibold text-neutral-900"><%= item.ownerName %></p>
-            <a href="/<%= item.slug %>" class="text-sm text-neutral-500 hover:underline">unqx.uz/<%= item.slug %></a>
-          </div>
-        </div>
-        <div class="mt-4 flex items-center justify-between text-sm">
-          <span class="text-neutral-500">UNQ Score</span>
-          <span class="text-2xl font-black"><%= Number(item.score || 0).toLocaleString('ru-RU') %></span>
-        </div>
-        <div class="mt-2 h-1.5 w-full rounded-full bg-neutral-200">
-          <div class="h-1.5 rounded-full bg-neutral-900" style="width: <%= Math.max(0, Math.min(100, (Number(item.score || 0) / 999) * 100)) %>%"></div>
-        </div>
-        <div class="mt-2 flex items-center justify-between text-xs text-neutral-500">
-          <span><%= item.rarityLabel || 'COMMON' %></span>
-          <span>Топ <%= Number(item.topPercent || 100) %>%</span>
-        </div>
-        <p class="mt-1 text-xs text-neutral-500"><%= Number(item.views || 0).toLocaleString('ru-RU') %> просмотров</p>
-        <% if (currentTelegramId && item.telegramId === currentTelegramId) { %>
-        <button type="button" data-share-slug="<%= item.slug %>" data-share-rank="<%= item.rank %>" class="interactive-btn mt-4 min-h-11 rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold text-neutral-700">Поделиться</button>
-        <% } %>
-      </article>
-      <% }) %>
-    </section>
-
-    <section class="mt-6 overflow-hidden rounded-2xl border border-neutral-200 bg-white">
-      <table class="min-w-full text-left text-sm">
-        <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
-          <tr>
-            <th class="px-3 py-2">Место</th>
-            <th class="px-3 py-2">Владелец</th>
-            <th class="px-3 py-2">Slug</th>
-            <th class="px-3 py-2">UNQ Score</th>
-            <th class="px-3 py-2">Топ</th>
-            <th class="px-3 py-2">Просмотры</th>
-            <th class="px-3 py-2">Тариф</th>
-            <th class="px-3 py-2">Действие</th>
-          </tr>
-        </thead>
-        <tbody>
-          <% if (!rest.length) { %>
-          <tr><td colspan="8" class="px-3 py-8 text-center text-neutral-500">Нет данных</td></tr>
-          <% } %>
-          <% rest.forEach((item) => { %>
-          <tr class="border-t border-neutral-100">
-            <td class="px-3 py-2">#<%= item.rank %></td>
-            <td class="px-3 py-2">
-              <div class="flex items-center gap-2">
-                <% if (isMissingAvatar(item.avatarUrl)) { %>
-                <span class="inline-flex h-7 w-7 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-400" aria-hidden="true">
-                  <svg class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none">
-                    <circle cx="12" cy="8.5" r="3.75" stroke="currentColor" stroke-width="1.5"></circle>
-                    <path d="M5.5 19c.8-3 3.5-4.8 6.5-4.8s5.7 1.8 6.5 4.8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+            <% topThree.forEach((item, idx)=> { %>
+              <article class="interactive-card rounded-2xl border border-neutral-200 bg-white p-5">
+                <p
+                  class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-bold <%= rankBadgeByPlace[item.rank] || 'border-neutral-300 bg-neutral-100 text-neutral-800' %>">
+                  <svg class="h-7 w-7" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <circle cx="12" cy="8.8" r="4.7" stroke="currentColor" stroke-width="1.8"></circle>
+                    <circle cx="12" cy="8.8" r="1.8" stroke="currentColor" stroke-width="1.8"></circle>
+                    <path d="m9.5 13.3-1.8 6.1 4.3-2.2 4.3 2.2-1.8-6.1" stroke="currentColor" stroke-width="1.8"
+                      stroke-linejoin="round"></path>
                   </svg>
-                </span>
-                <% } else { %>
-                <img src="<%= item.avatarUrl %>" alt="avatar" class="h-7 w-7 rounded-full border border-neutral-200 object-cover" />
-                <% } %>
-                <span><%= item.ownerName %></span>
-              </div>
-            </td>
-            <td class="px-3 py-2"><a href="/<%= item.slug %>" class="hover:underline"><%= item.slug %></a></td>
-            <td class="px-3 py-2 text-lg font-black"><%= Number(item.score || 0).toLocaleString('ru-RU') %></td>
-            <td class="px-3 py-2">Топ <%= Number(item.topPercent || 100) %>%</td>
-            <td class="px-3 py-2"><%= Number(item.views || 0).toLocaleString('ru-RU') %></td>
-            <td class="px-3 py-2"><%= item.plan === 'premium' ? 'ПРЕМИУМ' : 'БАЗОВЫЙ' %></td>
-            <td class="px-3 py-2">
-              <% if (currentTelegramId && item.telegramId === currentTelegramId) { %>
-              <button type="button" data-share-slug="<%= item.slug %>" data-share-rank="<%= item.rank %>" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-2 py-1 text-xs font-semibold text-neutral-700">Поделиться</button>
-              <% } %>
-            </td>
-          </tr>
-          <% }) %>
-        </tbody>
-      </table>
-    </section>
+                  <span>
+                    <%= item.rank %>
+                  </span>
+                </p>
+                <div class="mt-3 flex items-center gap-3">
+                  <% if (isMissingAvatar(item.avatarUrl)) { %>
+                    <span
+                      class="inline-flex h-12 w-12 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-400"
+                      aria-hidden="true">
+                      <svg class="h-7 w-7" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="8.5" r="3.75" stroke="currentColor" stroke-width="1.5"></circle>
+                        <path d="M5.5 19c.8-3 3.5-4.8 6.5-4.8s5.7 1.8 6.5 4.8" stroke="currentColor" stroke-width="1.5"
+                          stroke-linecap="round"></path>
+                      </svg>
+                    </span>
+                    <% } else { %>
+                      <img src="<%= item.avatarUrl %>" alt="avatar"
+                        class="h-12 w-12 rounded-full border border-neutral-200 object-cover" />
+                      <% } %>
+                        <div>
+                          <p class="font-semibold text-neutral-900">
+                            <%= item.ownerName %>
+                          </p>
+                          <a href="/<%= item.slug %>" class="text-sm text-neutral-500 hover:underline">unqx.uz/<%=
+                              item.slug %></a>
+                        </div>
+                </div>
+                <div class="mt-4 flex items-center justify-between text-sm">
+                  <span class="text-neutral-500">UNQ Score</span>
+                  <span class="text-2xl font-black">
+                    <%= Number(item.score || 0).toLocaleString('ru-RU') %>
+                  </span>
+                </div>
+                <div class="mt-2 h-1.5 w-full rounded-full bg-neutral-200">
+                  <div class="h-1.5 rounded-full bg-neutral-900"
+                    style="width: <%= Math.max(0, Math.min(100, (Number(item.score || 0) / 999) * 100)) %>%"></div>
+                </div>
+                <div class="mt-2 flex items-center justify-between text-xs text-neutral-500">
+                  <span>
+                    <%= item.rarityLabel || 'COMMON' %>
+                  </span>
+                  <span>Топ <%= Number(item.topPercent || 100) %>%</span>
+                </div>
+                <p class="mt-1 text-xs text-neutral-500">
+                  <%= Number(item.views || 0).toLocaleString('ru-RU') %> просмотров
+                </p>
+                <% if (currentTelegramId && item.telegramId===currentTelegramId) { %>
+                  <button type="button" data-share-slug="<%= item.slug %>" data-share-rank="<%= item.rank %>"
+                    class="interactive-btn mt-4 min-h-11 rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold text-neutral-700">Поделиться</button>
+                  <% } %>
+              </article>
+              <% }) %>
+      </section>
 
-    <% if (userSummary) { %>
-    <section class="mt-6 rounded-2xl border border-neutral-200 bg-white p-4 text-sm text-neutral-700">
-      Твой Score: <%= Number(userSummary.score || 0).toLocaleString('ru-RU') %> · Позиция #<%= userSummary.rank %> · До топ-<%= userSummary.limit %> нужно ещё <%= Number(userSummary.toTopScore || 0).toLocaleString('ru-RU') %> баллов
-      <div class="mt-2 h-1.5 w-full rounded-full bg-neutral-200">
-        <div class="h-1.5 rounded-full bg-neutral-900" style="width: <%= Math.max(0, Math.min(100, (Number(userSummary.score || 0) / (Number(userSummary.score || 0) + Number(userSummary.toTopScore || 0) || 1)) * 100)) %>%"></div>
-      </div>
-    </section>
-    <% } %>
+      <section class="mt-6 overflow-hidden rounded-2xl border border-neutral-200 bg-white">
+        <table class="min-w-full text-left text-sm">
+          <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
+            <tr>
+              <th class="px-3 py-2">Место</th>
+              <th class="px-3 py-2">Владелец</th>
+              <th class="px-3 py-2">Slug</th>
+              <th class="px-3 py-2">UNQ Score</th>
+              <th class="px-3 py-2">Топ</th>
+              <th class="px-3 py-2">Просмотры</th>
+              <th class="px-3 py-2">Тариф</th>
+              <th class="px-3 py-2">Действие</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (!rest.length) { %>
+              <tr>
+                <td colspan="8" class="px-3 py-8 text-center text-neutral-500">Нет данных</td>
+              </tr>
+              <% } %>
+                <% rest.forEach((item)=> { %>
+                  <tr class="border-t border-neutral-100">
+                    <td class="px-3 py-2">#<%= item.rank %>
+                    </td>
+                    <td class="px-3 py-2">
+                      <div class="flex items-center gap-2">
+                        <% if (isMissingAvatar(item.avatarUrl)) { %>
+                          <span
+                            class="inline-flex h-7 w-7 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-400"
+                            aria-hidden="true">
+                            <svg class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none">
+                              <circle cx="12" cy="8.5" r="3.75" stroke="currentColor" stroke-width="1.5"></circle>
+                              <path d="M5.5 19c.8-3 3.5-4.8 6.5-4.8s5.7 1.8 6.5 4.8" stroke="currentColor"
+                                stroke-width="1.5" stroke-linecap="round"></path>
+                            </svg>
+                          </span>
+                          <% } else { %>
+                            <img src="<%= item.avatarUrl %>" alt="avatar"
+                              class="h-7 w-7 rounded-full border border-neutral-200 object-cover" />
+                            <% } %>
+                              <span>
+                                <%= item.ownerName %>
+                              </span>
+                      </div>
+                    </td>
+                    <td class="px-3 py-2"><a href="/<%= item.slug %>" class="hover:underline">
+                        <%= item.slug %>
+                      </a></td>
+                    <td class="px-3 py-2 text-lg font-black">
+                      <%= Number(item.score || 0).toLocaleString('ru-RU') %>
+                    </td>
+                    <td class="px-3 py-2">Топ <%= Number(item.topPercent || 100) %>%</td>
+                    <td class="px-3 py-2">
+                      <%= Number(item.views || 0).toLocaleString('ru-RU') %>
+                    </td>
+                    <td class="px-3 py-2">
+                      <%= item.plan==='premium' ? 'ПРЕМИУМ' : 'БАЗОВЫЙ' %>
+                    </td>
+                    <td class="px-3 py-2">
+                      <% if (currentTelegramId && item.telegramId===currentTelegramId) { %>
+                        <button type="button" data-share-slug="<%= item.slug %>" data-share-rank="<%= item.rank %>"
+                          class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-2 py-1 text-xs font-semibold text-neutral-700">Поделиться</button>
+                        <% } %>
+                    </td>
+                  </tr>
+                  <% }) %>
+          </tbody>
+        </table>
+      </section>
+
+      <% if (userSummary) { %>
+        <section class="mt-6 rounded-2xl border border-neutral-200 bg-white p-4 text-sm text-neutral-700">
+          Твой Score: <%= Number(userSummary.score || 0).toLocaleString('ru-RU') %> · Позиция #<%= userSummary.rank %> ·
+              До топ-<%= userSummary.limit %> нужно ещё <%= Number(userSummary.toTopScore || 0).toLocaleString('ru-RU')
+                  %> баллов
+                  <div class="mt-2 h-1.5 w-full rounded-full bg-neutral-200">
+                    <div class="h-1.5 rounded-full bg-neutral-900"
+                      style="width: <%= Math.max(0, Math.min(100, (Number(userSummary.score || 0) / (Number(userSummary.score || 0) + Number(userSummary.toTopScore || 0) || 1)) * 100)) %>%">
+                    </div>
+                  </div>
+        </section>
+        <% } %>
   </main>
   <div id="leaderboard-toast-region" aria-live="polite" class="sr-only"></div>
 
   <script nonce="<%= cspNonce %>" src="/js/leaderboard.js"></script>
 </body>
+
 </html>

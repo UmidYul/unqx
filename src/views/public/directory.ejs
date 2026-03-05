@@ -69,7 +69,9 @@
                 />
                 <div>
                   <p class="font-semibold text-neutral-900"><%= item.name %></p>
-                  <p class="text-xs text-neutral-500"><%= item.role || '—' %></p>
+                  <% if (item.role) { %>
+                    <p class="text-xs text-neutral-500"><%= item.role %></p>
+                  <% } %>
                 </div>
               </div>
               <% if (item.isVerified) { %>

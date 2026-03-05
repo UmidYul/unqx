@@ -226,7 +226,17 @@ function mapProfileButtons(rawButtons) {
     "email",
     "other",
   ]);
-  const source = Array.isArray(rawButtons) ? rawButtons : [];
+  let source = [];
+  if (Array.isArray(rawButtons)) {
+    source = rawButtons;
+  } else if (typeof rawButtons === "string" && rawButtons.trim()) {
+    try {
+      const parsed = JSON.parse(rawButtons);
+      source = Array.isArray(parsed) ? parsed : [];
+    } catch {
+      source = [];
+    }
+  }
   return source
     .map((item) => {
       const obj = item && typeof item === "object" ? item : {};
@@ -235,7 +245,7 @@ function mapProfileButtons(rawButtons) {
         .toLowerCase();
       const type = allowedTypes.has(typeRaw) ? typeRaw : "other";
       const label = String(obj.label || "").trim().slice(0, 50);
-      const href = String(obj.href || obj.url || "").trim();
+      const href = String(obj.href || obj.url || obj.value || "").trim();
       if (!label || !href) {
         return null;
       }
@@ -806,7 +816,7 @@ router.get(
         return {
           slug: row.fullSlug,
           name,
-          role: owner.profileCard?.role || "",
+          role: owner.profileCard?.role || owner.verifiedCompany || "",
           bio: owner.profileCard?.bio || "",
           tags: tags.map((tag) => String(tag || "").trim()).filter(Boolean),
           avatarUrl: owner.profileCard?.avatarUrl || null,

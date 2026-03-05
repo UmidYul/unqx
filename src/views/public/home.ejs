@@ -160,12 +160,10 @@
                     <a href="/login" data-auth-login
                       class="interactive-btn inline-flex min-h-11 items-center justify-center rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100 <%= hasAuthSession ? 'hidden' : '' %>">Войти</a>
                     <a href="/profile" data-auth-profile
-                      class="<%= hasAuthSession ? 'inline-flex' : 'hidden' %> items-center gap-2 rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100">
+                      class="<%= hasAuthSession ? 'inline-flex' : 'hidden' %> h-9 w-9 items-center justify-center rounded-full border border-neutral-300 text-neutral-700 transition hover:bg-neutral-100"
+                      aria-label="Мой профиль">
                       <img data-auth-avatar src="<%= authPhotoUrl %>" alt="avatar"
-                        class="h-4 w-4 rounded-full border border-neutral-200 object-cover" />
-                      <span data-auth-name>
-                        <%= authDisplayName %>
-                      </span>
+                        class="h-7 w-7 rounded-full border border-neutral-200 bg-white object-cover" />
                     </a>
                   </div>
             </div>
@@ -202,12 +200,10 @@
                     <a href="/login" data-auth-login
                       class="inline-flex min-h-11 items-center justify-center rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100 <%= hasAuthSession ? 'hidden' : '' %>">Войти</a>
                     <a href="/profile" data-auth-profile
-                      class="<%= hasAuthSession ? 'inline-flex' : 'hidden' %> items-center gap-2 rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100">
+                      class="<%= hasAuthSession ? 'inline-flex' : 'hidden' %> h-9 w-9 items-center justify-center rounded-full border border-neutral-300 text-neutral-700 transition hover:bg-neutral-100"
+                      aria-label="Мой профиль">
                       <img data-auth-avatar src="<%= authPhotoUrl %>" alt="avatar"
-                        class="h-4 w-4 rounded-full border border-neutral-200 object-cover" />
-                      <span data-auth-name>
-                        <%= authDisplayName %>
-                      </span>
+                        class="h-7 w-7 rounded-full border border-neutral-200 bg-white object-cover" />
                     </a>
                   </div>
                   <a href="#" data-order-link
