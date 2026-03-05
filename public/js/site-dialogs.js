@@ -25,7 +25,7 @@
       '<div class="unqx-dialog-backdrop" data-unqx-dialog-cancel="1"></div>',
       '<section class="unqx-dialog" role="dialog" aria-modal="true" aria-labelledby="unqx-dialog-title">',
       '  <div class="unqx-dialog-head">',
-      '    <img src="/brand/unq-mark.svg" alt="" class="unqx-dialog-mark"/>',
+      '    <img src="/brand/logo.PNG" alt="" class="unqx-dialog-mark"/>',
       '    <h3 id="unqx-dialog-title" class="unqx-dialog-title">Подтверждение</h3>',
       "  </div>",
       '  <p class="unqx-dialog-message"></p>',

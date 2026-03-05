@@ -123,11 +123,15 @@ async function sendVerificationRequestToAdmin(payload) {
   if (!env.TELEGRAM_CHAT_ID) {
     throw new TelegramConfigError("Telegram chat id is not configured");
   }
+  const verificationTarget =
+    payload.slug && payload.slug !== "PROFILE"
+      ? `Профиль (основной UNQ: ${escapeHtml(payload.slug)})`
+      : "Профиль аккаунта (без привязки к конкретному UNQ)";
   const text = [
     "Новая заявка на верификацию",
     "",
     `Telegram ID: ${escapeHtml(payload.telegramId)}`,
-    `Slug: ${escapeHtml(payload.slug)}`,
+    `Объект: ${verificationTarget}`,
     `Компания: ${escapeHtml(payload.companyName)}`,
     `Роль: ${escapeHtml(payload.role)}`,
     `Подтверждение: ${escapeHtml(payload.proofType)} · ${escapeHtml(payload.proofValue)}`,

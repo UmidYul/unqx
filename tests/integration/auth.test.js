@@ -26,6 +26,6 @@ describeIntegration("integration auth smoke", () => {
     const response = await request(app).get("/profile");
 
     expect(response.status).toBe(302);
-    expect(response.headers.location).toBe("/");
+    expect(response.headers.location).toContain("/?auth=required&next=%2Fprofile");
   });
 });

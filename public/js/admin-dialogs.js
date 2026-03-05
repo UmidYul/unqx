@@ -36,7 +36,7 @@
       '<div class="admin-alert-backdrop" data-admin-alert-close="1"></div>',
       '<div class="admin-alert-dialog" role="dialog" aria-modal="true" aria-labelledby="admin-alert-title">',
       '  <div class="admin-alert-head">',
-      '    <img src="/brand/unq-mark.svg" alt="" class="admin-alert-mark"/>',
+      '    <img src="/brand/logo.PNG" alt="" class="admin-alert-mark"/>',
       '    <h3 id="admin-alert-title" class="admin-alert-title">Сообщение</h3>',
       "  </div>",
       '  <p class="admin-alert-message"></p>',

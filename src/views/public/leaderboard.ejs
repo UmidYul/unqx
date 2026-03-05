@@ -1,7 +1,22 @@
 <!doctype html>
 <html lang="ru">
 <head>
-  <%- include('../partials/head', { title: title || 'Топ визиток недели · UNQ+', description: description || 'Топ визиток UNQ+', styles: ['/css/public-card.css'] }) %>
+  <%
+    const pageBaseUrl = typeof baseUrl === "string" ? baseUrl : "";
+    const leaderboardJsonLd = {
+      "@context": "https://schema.org",
+      "@type": "ItemList",
+      name: "Лидерборд UNQ Score",
+      itemListOrder: "https://schema.org/ItemListOrderDescending",
+      itemListElement: (Array.isArray(items) ? items : []).slice(0, 10).map((item, index) => ({
+        "@type": "ListItem",
+        position: index + 1,
+        url: `${pageBaseUrl}/${item.slug}`,
+        name: item.ownerName,
+      })),
+    };
+  %>
+  <%- include('../partials/head', { title: title || 'Топ визиток недели · UNQ+', description: description || 'Топ визиток UNQ+', image: typeof image === 'string' ? image : undefined, styles: ['/css/public-card.css'], jsonLd: leaderboardJsonLd }) %>
 </head>
 <body class="antialiased bg-neutral-50" data-page="leaderboard" data-period="<%= period %>">
   <main class="mx-auto w-full max-w-6xl px-4 py-8">
@@ -32,7 +47,7 @@
         2: "border-neutral-400 bg-neutral-200 text-neutral-900",
         3: "border-neutral-300 bg-neutral-100 text-neutral-800",
       };
-      const isMissingAvatar = (url) => !url || String(url).trim() === "" || String(url).includes("/brand/unq-mark.svg");
+      const isMissingAvatar = (url) => !url || String(url).trim() === "" || String(url).includes("/brand/logo.PNG");
     %>
     <section class="grid gap-4 md:grid-cols-3">
       <% if (!topThree.length) { %>

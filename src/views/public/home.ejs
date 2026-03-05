@@ -1,765 +1,760 @@
-<%
-  const pageTitle = typeof title === "string" && title ? title : "UNQ+ | Цифровая визитка за 1 минуту";
-  const pageDescription =
-    typeof description === "string" && description
-      ? description
-      : "Одна ссылка вместо тысячи слов. Создай свою цифровую визитку на unqx.uz";
-  const pageBaseUrl = typeof baseUrl === "string" && baseUrl ? baseUrl : "";
-  const pageCanonicalUrl = typeof canonicalUrl === "string" && canonicalUrl ? canonicalUrl : `${pageBaseUrl}/`;
-  const pageJsonLd = {
-    "@context": "https://schema.org",
-    "@type": "WebSite",
-    name: "UNQ+",
-    url: pageCanonicalUrl,
-  };
-  const pageUserSession = typeof userSession !== "undefined" ? userSession : null;
-  const hasAuthSession = Boolean(pageUserSession && pageUserSession.telegramId);
-  const hasBasicPlan = hasAuthSession && pageUserSession && pageUserSession.plan === "basic";
-  const pricingSettings =
-    typeof pricing === "object" && pricing
-      ? pricing
-      : {
-          planBasicPrice: 50000,
-          planPremiumPrice: 130000,
-          premiumUpgradePrice: 80000,
-          pricingFootnote: "Тарифы оплачиваются один раз. Без подписки и скрытых платежей.",
-        };
-  const pricingFootnote = String(pricingSettings.pricingFootnote || "").trim() || "Тарифы оплачиваются один раз. Без подписки и скрытых платежей.";
-  const authDisplayName = hasAuthSession
-    ? `${(pageUserSession.firstName || pageUserSession.displayName || "Мой профиль")} · Мой профиль`
-    : "Мой профиль";
-  const authPhotoUrl = hasAuthSession && pageUserSession.photoUrl ? pageUserSession.photoUrl : "/brand/unq-mark.svg";
-
-  const demos = [
-    { name: "Alex Karimov", role: "Product Designer", slug: "alex" },
-    { name: "Dilnoza R.", role: "Marketing Lead", slug: "dilnoza" },
-    { name: "Sardor M.", role: "Full-Stack Dev", slug: "sardor" },
-    { name: "Nodira K.", role: "Brand Strategist", slug: "nodira" },
-    { name: "Temur A.", role: "Founder, CEO", slug: "temur" },
+<% const pageTitle=typeof title==="string" && title ? title : "UNQ+ | Цифровая визитка за 1 минуту" ; const
+  pageDescription=typeof description==="string" && description ? description
+  : "Одна ссылка вместо тысячи слов. Создай свою цифровую визитку на unqx.uz" ; const pageBaseUrl=typeof
+  baseUrl==="string" && baseUrl ? baseUrl : "" ; const pageCanonicalUrl=typeof canonicalUrl==="string" && canonicalUrl ?
+  canonicalUrl : `${pageBaseUrl}/`; const pageJsonLd=[{ "@context" : "https://schema.org" , "@type" : "WebSite" ,
+  name: "UNQ+" , url: pageCanonicalUrl, potentialAction: { "@type": "SearchAction", target: `${pageBaseUrl}/directory?q={search_term_string}`, "query-input": "required name=search_term_string" } }, { "@context": "https://schema.org", "@type": "Organization", name: "UNQ+", url: pageBaseUrl || pageCanonicalUrl, logo: `${pageBaseUrl}/brand/logo.PNG`, sameAs: ["https://t.me/unqx_uz"] }]; const pageUserSession=typeof userSession !=="undefined" ? userSession : null;
+  const hasAuthSession=Boolean(pageUserSession && pageUserSession.telegramId); const hasBasicPlan=hasAuthSession &&
+  pageUserSession && pageUserSession.plan==="basic" ; const pricingSettings=typeof pricing==="object" && pricing ?
+  pricing : { planBasicPrice: 50000, planPremiumPrice: 130000, premiumUpgradePrice: 80000,
+  pricingFootnote: "Тарифы оплачиваются один раз. Без подписки и скрытых платежей." , }; const
+  pricingFootnote=String(pricingSettings.pricingFootnote || "" ).trim()
+  || "Тарифы оплачиваются один раз. Без подписки и скрытых платежей." ; const authDisplayName=hasAuthSession ?
+  `${(pageUserSession.firstName || pageUserSession.displayName || "Мой профиль" )} · Мой профиль` : "Мой профиль" ;
+  const authPhotoUrl=hasAuthSession && pageUserSession.photoUrl ? pageUserSession.photoUrl : "/brand/logo.PNG" ;
+  const demos=[ { name: "Alex Karimov" , role: "Product Designer" , slug: "alex" }, { name: "Dilnoza R." ,
+  role: "Marketing Lead" , slug: "dilnoza" }, { name: "Sardor M." , role: "Full-Stack Dev" , slug: "sardor" }, {
+  name: "Nodira K." , role: "Brand Strategist" , slug: "nodira" }, { name: "Temur A." , role: "Founder, CEO" ,
+  slug: "temur" }, ]; const testimonialsList=Array.isArray(testimonials) && testimonials.length> 0
+  ? testimonials
+  : [
+  {
+  name: "Алишер",
+  slug: "ALI001",
+  tariff: "premium",
+  text: "Раздаю браслет на каждой встрече — люди реагируют как на магию. Визитку обновил уже три раза, браслет работает как часы.",
+  },
+  {
+  name: "Малика",
+  slug: "MLK007",
+  tariff: "basic",
+  text: "Поставила ссылку в Instagram bio и на визитке. Очень удобно что всё в одном месте и можно менять.",
+  },
+  {
+  name: "Тимур",
+  slug: "TMR000",
+  tariff: "premium",
+  text: "Взял для всей команды. Отдельный UNQ каждому сотруднику — выглядит профессионально на переговорах.",
+  },
   ];
 
-  const testimonialsList =
-    Array.isArray(testimonials) && testimonials.length > 0
-      ? testimonials
-      : [
-          {
-            name: "Алишер",
-            slug: "ALI001",
-            tariff: "premium",
-            text: "Раздаю браслет на каждой встрече — люди реагируют как на магию. Визитку обновил уже три раза, браслет работает как часы.",
-          },
-          {
-            name: "Малика",
-            slug: "MLK007",
-            tariff: "basic",
-            text: "Поставила ссылку в Instagram bio и на визитке. Очень удобно что всё в одном месте и можно менять.",
-          },
-          {
-            name: "Тимур",
-            slug: "TMR000",
-            tariff: "premium",
-            text: "Взял для всей команды. Отдельный UNQ каждому сотруднику — выглядит профессионально на переговорах.",
-          },
-        ];
-
   const steps = [
-    { title: "Выбери UNQ", description: "Найди свой уникальный адрес" },
-    { title: "Заполни карточку", description: "Фото, контакты, ссылки за 2 минуты" },
-    { title: "Делись везде", description: "QR, ссылка, NFC — где угодно" },
+  { title: "Выбери UNQ", description: "Найди свой уникальный адрес" },
+  { title: "Заполни карточку", description: "Фото, контакты, ссылки за 2 минуты" },
+  { title: "Делись везде", description: "QR, ссылка, NFC — где угодно" },
   ];
 
   const wristbandFeatures = [
-    "Тап, моментально открывается unqx.uz/UNQ",
-    "Работает с любым смартфоном — iOS и Android",
-    "Не нужно заряжать — NFC работает пассивно",
-    "Мягкий тканевый браслет — удобно носить каждый день",
-    "Обновил визитку на сайте — браслет автоматически актуален",
-    "Идеально для нетворкинга, съёмок и студенческих мероприятий",
+  "Тап, моментально открывается unqx.uz/UNQ",
+  "Работает с любым смартфоном — iOS и Android",
+  "Не нужно заряжать — NFC работает пассивно",
+  "Мягкий тканевый браслет — удобно носить каждый день",
+  "Обновил визитку на сайте — браслет автоматически актуален",
+  "Идеально для нетворкинга, съёмок и студенческих мероприятий",
   ];
 
   const plans = [
-    {
-      name: "Базовый",
-      price: Number(pricingSettings.planBasicPrice || 50000).toLocaleString("ru-RU"),
-      priceNote: "один раз · навсегда",
-      highlighted: false,
-      badge: null,
-      included: [
-        "1 цифровая визитка",
-        "Стандартный шаблон",
-        "До 3 кнопок (звонок, telegram, сайт)",
-        "QR-код",
-        "Базовая аналитика",
-      ],
-      excluded: [
-        "Выбор темы",
-        "Кастомные цвета",
-        "Скрыть брендинг UNQ+",
-        "Больше 3 кнопок",
-      ],
-    },
-    {
-      name: "Премиум",
-      price: Number(
-        hasBasicPlan ? pricingSettings.premiumUpgradePrice || 80000 : pricingSettings.planPremiumPrice || 130000,
-      ).toLocaleString("ru-RU"),
-      priceNote: hasBasicPlan ? "при наличии Базового тарифа" : "один раз · навсегда",
-      highlighted: true,
-      badge: "Популярный",
-      included: [
-        "1 цифровая визитка",
-        "Выбор темы (5+ тем)",
-        "Кастомные цвета и фон",
-        "Неограниченное кол-во кнопок",
-        "Расширенная аналитика (динамика по дням)",
-        "Скрыть брендинг UNQ+",
-        "QR-код + NFC поддержка",
-        "Приоритетная поддержка",
-      ],
-      excluded: [],
-    },
+  {
+  name: "Базовый",
+  price: Number(pricingSettings.planBasicPrice || 50000).toLocaleString("ru-RU"),
+  priceNote: "один раз · навсегда",
+  highlighted: false,
+  badge: null,
+  included: [
+  "1 цифровая визитка",
+  "Стандартный шаблон",
+  "До 3 кнопок (звонок, telegram, сайт)",
+  "QR-код",
+  "Базовая аналитика",
+  ],
+  excluded: [
+  "Выбор темы",
+  "Кастомные цвета",
+  "Скрыть брендинг UNQ+",
+  "Больше 3 кнопок",
+  ],
+  },
+  {
+  name: "Премиум",
+  price: Number(
+  hasBasicPlan ? pricingSettings.premiumUpgradePrice || 80000 : pricingSettings.planPremiumPrice || 130000,
+  ).toLocaleString("ru-RU"),
+  priceNote: hasBasicPlan ? "при наличии Базового тарифа" : "один раз · навсегда",
+  highlighted: true,
+  badge: "Популярный",
+  included: [
+  "1 цифровая визитка",
+  "Выбор темы (5+ тем)",
+  "Кастомные цвета и фон",
+  "Неограниченное кол-во кнопок",
+  "Расширенная аналитика (динамика по дням)",
+  "Скрыть брендинг UNQ+",
+  "QR-код + NFC поддержка",
+  "Приоритетная поддержка",
+  ],
+  excluded: [],
+  },
   ];
 
   const faqItems = [
-    {
-      q: "Можно ли сменить UNQ после покупки?",
-      a: "Нет — UNQ покупается навсегда и привязывается к тебе. Ты можешь обновлять содержимое визитки сколько угодно раз.",
-    },
-    {
-      q: "Что если я потеряю браслет?",
-      a: "Закажи новый — UNQ остаётся твоим. Достаточно повторно заказать браслет и привязать к тому же UNQ.",
-    },
-    {
-      q: "Работает ли браслет без интернета у владельца?",
-      a: "Да. NFC на браслете не требует интернета с твоей стороны. Телефон того, кто тапнул, просто открывает ссылку.",
-    },
-    {
-      q: "Чем отличается Базовый от Премиум?",
-      a: "Базовый — стандартный шаблон, до 3 кнопок. Премиум — выбор тем, кастомные цвета, без ограничений.",
-    },
-    {
-      q: "Как происходит оплата?",
-      a: "После заявки мы пишем тебе в Telegram и высылаем реквизиты Payme или Click. Активируем после оплаты.",
-    },
-    {
-      q: "Есть ли возврат?",
-      a: "Браслет возврату не подлежит.",
-    },
+  {
+  q: "Можно ли сменить UNQ после покупки?",
+  a: "Нет — UNQ покупается навсегда и привязывается к тебе. Ты можешь обновлять содержимое визитки сколько угодно раз.",
+  },
+  {
+  q: "Что если я потеряю браслет?",
+  a: "Закажи новый — UNQ остаётся твоим. Достаточно повторно заказать браслет и привязать к тому же UNQ.",
+  },
+  {
+  q: "Работает ли браслет без интернета у владельца?",
+  a: "Да. NFC на браслете не требует интернета с твоей стороны. Телефон того, кто тапнул, просто открывает ссылку.",
+  },
+  {
+  q: "Чем отличается Базовый от Премиум?",
+  a: "Базовый — стандартный шаблон, до 3 кнопок. Премиум — выбор тем, кастомные цвета, без ограничений.",
+  },
+  {
+  q: "Как происходит оплата?",
+  a: "После заявки мы пишем тебе в Telegram и высылаем реквизиты Payme или Click. Активируем после оплаты.",
+  },
+  {
+  q: "Есть ли возврат?",
+  a: "Браслет возврату не подлежит.",
+  },
   ];
-%>
-<!doctype html>
-<html lang="ru">
-<head>
-  <%- include('../partials/head', { title: pageTitle, description: pageDescription, styles: ['/css/public-card.css'], ogType: 'website', jsonLd: pageJsonLd }) %>
-</head>
-<body class="antialiased">
-  <main class="relative min-h-screen overflow-hidden bg-neutral-50" data-page="public-home" data-telegram-bot-username="<%= telegramBotUsername || '' %>">
-    <div
-      class="pointer-events-none fixed inset-0 opacity-[0.3]"
-      style="
+  %>
+  <!doctype html>
+  <html lang="ru">
+
+  <head>
+    <%- include('../partials/head', { title: pageTitle, description: pageDescription, styles: ['/css/public-card.css'],
+      image: typeof image === 'string' ? image : undefined, ogType: 'website' , jsonLd: pageJsonLd }) %>
+  </head>
+
+  <body class="antialiased">
+    <main class="relative min-h-screen overflow-hidden bg-neutral-50" data-page="public-home"
+      data-telegram-bot-username="<%= telegramBotUsername || '' %>">
+      <div class="pointer-events-none fixed inset-0 opacity-[0.3]" style="
         background-image:
           linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px),
           linear-gradient(90deg, rgba(0,0,0,0.03) 1px, transparent 1px);
         background-size: 40px 40px;
-      "
-    ></div>
+      "></div>
 
-    <div class="relative z-10">
-      <nav class="fixed left-0 right-0 top-0 z-50 border-b border-neutral-200 bg-white/80 backdrop-blur-md">
-        <div class="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-4">
-          <a href="/" class="text-xl font-black tracking-tight text-neutral-900">UNQ+</a>
+      <div class="relative z-10">
+        <nav class="fixed left-0 right-0 top-0 z-50 border-b border-neutral-200 bg-white/80 backdrop-blur-md">
+          <div class="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-4">
+            <a href="/" class="text-xl font-black tracking-tight text-neutral-900">UNQ+</a>
 
-          <div class="hidden items-center gap-8 md:flex">
-            <a href="#cards" class="text-sm text-neutral-500 transition-colors hover:text-neutral-900">Визитки</a>
-            <a href="#wristband" class="text-sm text-neutral-500 transition-colors hover:text-neutral-900">Браслет</a>
-            <a href="#pricing" class="text-sm text-neutral-500 transition-colors hover:text-neutral-900">Тарифы</a>
-            <% if (leaderboardEnabled) { %><a href="/leaderboard" class="text-sm text-neutral-500 transition-colors hover:text-neutral-900">Топ визиток</a><% } %>
-            <a href="/drops" class="text-sm text-neutral-500 transition-colors hover:text-neutral-900">Дропы</a>
-            <div id="home-auth-nav-desktop" class="flex items-center gap-2">
-              <button type="button" data-auth-login class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100 <%= hasAuthSession ? 'hidden' : '' %>">Войти через Telegram</button>
-              <a href="/profile" data-auth-profile class="<%= hasAuthSession ? 'inline-flex' : 'hidden' %> items-center gap-2 rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100">
-                <img data-auth-avatar src="<%= authPhotoUrl %>" alt="avatar" class="h-4 w-4 rounded-full border border-neutral-200 object-cover" />
-                <span data-auth-name><%= authDisplayName %></span>
-              </a>
+            <div class="hidden items-center gap-8 md:flex">
+              <a href="#cards" class="text-sm text-neutral-500 transition-colors hover:text-neutral-900">Визитки</a>
+              <a href="#wristband" class="text-sm text-neutral-500 transition-colors hover:text-neutral-900">Браслет</a>
+              <a href="#pricing" class="text-sm text-neutral-500 transition-colors hover:text-neutral-900">Тарифы</a>
+              <a href="/directory" class="text-sm text-neutral-500 transition-colors hover:text-neutral-900">Directory</a>
+              <% if (leaderboardEnabled) { %><a href="/leaderboard"
+                  class="text-sm text-neutral-500 transition-colors hover:text-neutral-900">Топ визиток</a>
+                <% } %>
+                  <a href="/drops" class="text-sm text-neutral-500 transition-colors hover:text-neutral-900">Дропы</a>
+                  <div id="home-auth-nav-desktop" class="flex items-center gap-2">
+                    <button type="button" data-auth-login
+                      class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100 <%= hasAuthSession ? 'hidden' : '' %>">Войти через Telegram</button>
+                    <a href="/profile" data-auth-profile
+                      class="<%= hasAuthSession ? 'inline-flex' : 'hidden' %> items-center gap-2 rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100">
+                      <img data-auth-avatar src="<%= authPhotoUrl %>" alt="avatar"
+                        class="h-4 w-4 rounded-full border border-neutral-200 object-cover" />
+                      <span data-auth-name>
+                        <%= authDisplayName %>
+                      </span>
+                    </a>
+                  </div>
             </div>
-          </div>
 
-          <a
-            href="#"
-            data-order-link
-            class="interactive-btn btn-shimmer hidden min-h-11 items-center gap-2 rounded-xl bg-neutral-900 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-neutral-800 md:flex"
-          >
-            Занять UNQ
-            <svg class="icon-stroke h-3.5 w-3.5" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M5 12h14M13 5l7 7-7 7"></path>
-            </svg>
-          </a>
-
-          <button
-            type="button"
-            class="text-neutral-900 md:hidden"
-            data-menu-toggle
-            aria-expanded="false"
-            aria-controls="mobile-menu"
-            aria-label="Открыть меню"
-          >
-            <svg data-menu-open-icon class="icon-stroke h-5 w-5" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M4 6h16M4 12h16M4 18h16"></path>
-            </svg>
-            <svg data-menu-close-icon class="icon-stroke hidden h-5 w-5" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="m6 6 12 12M18 6 6 18"></path>
-            </svg>
-          </button>
-        </div>
-
-        <div id="mobile-menu" class="hidden border-t border-neutral-200 bg-white px-6 pb-6 pt-4 md:hidden" data-mobile-menu>
-          <div class="flex flex-col gap-4">
-            <a href="#cards" class="text-sm text-neutral-500">Визитки</a>
-            <a href="#wristband" class="text-sm text-neutral-500">Браслет</a>
-            <a href="#pricing" class="text-sm text-neutral-500">Тарифы</a>
-            <% if (leaderboardEnabled) { %><a href="/leaderboard" class="text-sm text-neutral-500">Топ визиток</a><% } %>
-            <a href="/drops" class="text-sm text-neutral-500">Дропы</a>
-            <div id="home-auth-nav-mobile" class="flex items-center gap-2">
-              <button type="button" data-auth-login class="rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100 <%= hasAuthSession ? 'hidden' : '' %>">Войти через Telegram</button>
-              <a href="/profile" data-auth-profile class="<%= hasAuthSession ? 'inline-flex' : 'hidden' %> items-center gap-2 rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100">
-                <img data-auth-avatar src="<%= authPhotoUrl %>" alt="avatar" class="h-4 w-4 rounded-full border border-neutral-200 object-cover" />
-                <span data-auth-name><%= authDisplayName %></span>
-              </a>
-            </div>
-            <a
-              href="#"
-              data-order-link
-              class="btn-shimmer mt-2 flex items-center justify-center gap-2 rounded-xl bg-neutral-900 px-4 py-2.5 text-sm font-medium text-white"
-            >
+            <a href="#" data-order-link
+              class="interactive-btn btn-shimmer hidden min-h-11 items-center gap-2 rounded-xl bg-neutral-900 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-neutral-800 md:flex">
               Занять UNQ
               <svg class="icon-stroke h-3.5 w-3.5" viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M5 12h14M13 5l7 7-7 7"></path>
               </svg>
             </a>
-          </div>
-        </div>
-      </nav>
 
-      <% if (activeFlashSale) { %>
-      <section class="sticky top-[72px] z-40 border-b border-amber-200 bg-amber-50 px-6 py-2 text-sm text-amber-900" data-flash-sale-banner data-ends-at="<%= activeFlashSale.endsAt.toISOString() %>">
-        <div class="mx-auto flex w-full max-w-6xl items-center justify-between gap-3">
-          <p class="inline-flex items-center gap-2">
-            <svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M13 2 3 14h7l-1 8 10-12h-7z"></path>
-            </svg>
-            FLASH SALE · Скидка <strong><%= activeFlashSale.discountPercent %>%</strong> на <%= activeFlashSale.conditionLabel %>
-            <% if (typeof activeFlashSale.slotsLeft === 'number') { %>
-              · Осталось <strong><%= activeFlashSale.slotsLeft.toLocaleString('ru-RU') %></strong> мест/slug
-            <% } %>
-            · Осталось <span data-flash-countdown>--:--:--</span>
-          </p>
-          <a href="#hero-check" class="interactive-btn min-h-11 rounded-lg border border-amber-300 px-2.5 py-1 text-xs font-semibold">Узнать подробнее</a>
-        </div>
-      </section>
-      <% } %>
-
-      <section class="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 pt-20">
-        <div class="pointer-events-none absolute -left-40 -top-40 h-[500px] w-[500px] rounded-full bg-neutral-200/40 blur-3xl"></div>
-        <div class="pointer-events-none absolute -bottom-40 -right-40 h-[500px] w-[500px] rounded-full bg-neutral-200/40 blur-3xl"></div>
-
-        <div class="relative z-10 mx-auto max-w-3xl text-center">
-          <h1 class="text-balance text-5xl font-bold leading-[1.1] tracking-tight text-neutral-900 md:text-7xl motion-fade-up" data-reveal-index="0">
-            Твой UNQ.
-            <br />
-            Твой бренд.
-            <br />
-            Навсегда.
-          </h1>
-
-          <p class="mx-auto mt-6 max-w-md text-lg text-neutral-500 motion-fade-up" data-reveal-index="1">
-            Цифровая визитка за 1 минуту — одна ссылка вместо тысячи слов.
-          </p>
-          <div id="home-live-stats" class="mx-auto mt-4 hidden w-full max-w-2xl rounded-xl border border-neutral-200 bg-white/90 px-4 py-2 text-sm text-neutral-700">
-            <span id="home-live-total">0</span> визиток создано ·
-            <span id="home-live-today">0</span> сегодня ·
-            <span id="home-live-online">0</span> онлайн
-          </div>
-
-          <div id="hero-check" class="mx-auto mt-10 flex max-w-md flex-col gap-3 sm:flex-row motion-fade-up" data-page="public-home-search" data-reveal-index="2">
-            <div class="flex flex-1 items-center rounded-xl border border-neutral-200 bg-white px-4 py-3 focus-within:border-neutral-400">
-              <span class="mr-2 text-sm text-neutral-400">unqx.uz/</span>
-              <input
-                id="home-slug-input"
-                type="text"
-                placeholder="AAA001"
-                class="w-full bg-transparent text-sm uppercase text-neutral-900 outline-none placeholder:text-neutral-300"
-                autocomplete="off"
-                spellcheck="false"
-                maxlength="6"
-                pattern="[A-Za-z]{3}[0-9]{3}"
-                title="Формат: 3 латинские буквы и 3 цифры (например AAA001)"
-              />
-            </div>
-            <button
-              id="home-slug-check"
-              type="button"
-              class="interactive-btn btn-shimmer min-h-11 flex items-center justify-center gap-2 rounded-xl bg-neutral-900 px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-neutral-800"
-            >
-              Проверить
-              <svg class="icon-stroke h-3.5 w-3.5" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M5 12h14M13 5l7 7-7 7"></path>
+            <button type="button" class="text-neutral-900 md:hidden" data-menu-toggle aria-expanded="false"
+              aria-controls="mobile-menu" aria-label="Открыть меню">
+              <svg data-menu-open-icon class="icon-stroke h-5 w-5" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4 6h16M4 12h16M4 18h16"></path>
+              </svg>
+              <svg data-menu-close-icon class="icon-stroke hidden h-5 w-5" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="m6 6 12 12M18 6 6 18"></path>
               </svg>
             </button>
           </div>
 
-          <div id="home-slug-feedback" class="mt-6 hidden">
-            <div class="flex items-center justify-center gap-2 text-sm text-neutral-900">
-              <span id="home-slug-status-icon" class="inline-flex h-4 w-4 items-center justify-center"></span>
-              <span id="home-slug-status-text"></span>
-            </div>
-
-            <div id="home-slug-taken-owner" class="mt-3 hidden">
-              <div class="mx-auto flex w-full max-w-md items-center justify-between gap-3 rounded-xl border border-neutral-200 bg-white px-3 py-2">
-                <div class="flex min-w-0 items-center gap-3">
-                  <img
-                    id="home-slug-taken-owner-photo"
-                    src="/brand/unq-mark.svg"
-                    alt="Фото владельца"
-                    class="h-9 w-9 rounded-full border border-neutral-200 object-cover"
-                  />
-                  <p id="home-slug-taken-owner-name" class="truncate text-sm font-semibold text-neutral-900">UNQ+ User</p>
-                </div>
-                <a
-                  id="home-slug-taken-owner-view"
-                  href="#"
-                  class="interactive-btn inline-flex min-h-11 items-center rounded-lg border border-neutral-200 bg-white px-3 py-1.5 text-xs font-semibold text-neutral-700 transition-colors hover:bg-neutral-50"
-                >
-                  Посмотреть
-                </a>
-              </div>
-            </div>
-
-            <div id="home-slug-suggestions-wrap" class="mt-3 hidden">
-              <p class="text-xs text-neutral-500">
-                Попробуй:
-                <span id="home-slug-suggestions" class="ml-1 inline-flex flex-wrap items-center gap-2"></span>
-              </p>
-            </div>
-
-            <div class="mt-4 flex items-center justify-center gap-3">
-              <a
-                id="home-slug-primary-action"
-                href="#"
-                data-order-link
-                class="btn-shimmer inline-flex items-center gap-2 rounded-xl bg-neutral-900 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-neutral-800"
-              >
-                Занять UNQ
-                <svg class="icon-stroke h-3.5 w-3.5" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M5 12h14M13 5l7 7-7 7"></path>
-                </svg>
-              </a>
-              <a
-                id="home-slug-calculator-action"
-                href="#calculator"
-                class="inline-flex items-center gap-2 rounded-xl border border-neutral-200 bg-white px-5 py-2.5 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50"
-              >
-                <svg class="icon-stroke h-3.5 w-3.5" viewBox="0 0 24 24" aria-hidden="true">
-                  <rect x="4" y="3" width="16" height="18" rx="2"></rect>
-                  <path d="M8 7h8M8 11h2M12 11h2M16 11h0M8 15h2M12 15h2M16 15h0"></path>
-                </svg>
-                Узнать цену
-              </a>
-            </div>
-
-            <p id="home-slug-note" class="mt-3 text-xs text-neutral-400"></p>
-          </div>
-          <p id="hero-slug-occupancy" class="mx-auto mt-4 hidden w-full max-w-md text-center text-sm text-neutral-500"></p>
-
-        </div>
-      </section>
-
-      <% if (nextDrop) { %>
-      <section class="px-6 pb-6" data-observe-reveal>
-        <div class="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-4 rounded-2xl border border-red-200 bg-red-50 px-5 py-4" data-next-drop-card data-next-drop-id="<%= nextDrop.id %>">
-          <p class="inline-flex items-center gap-2 text-sm text-red-900">
-            <svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M12 3c2 3 5 4.5 5 8a5 5 0 0 1-10 0c0-2.8 1.8-4.4 3.5-6 .7-.7 1.4-1.3 1.5-2z"></path>
-              <path d="M12 22a3 3 0 0 0 3-3c0-1.4-.8-2.3-1.6-3.2-.7-.7-1.4-1.5-1.4-2.8-1.4 1.2-3 3-3 5a3 3 0 0 0 3 4z"></path>
-            </svg>
-            Следующий дроп: <strong><%= nextDrop.title %></strong> · <%= new Date(nextDrop.dropAt).toLocaleString('ru-RU') %> · <%= nextDrop.slugCount %> slug
-          </p>
-          <div class="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              data-next-drop-waitlist
-              class="interactive-btn min-h-11 rounded-lg border border-red-300 bg-red-100 px-3 py-1.5 text-xs font-semibold text-red-900"
-            >
-              Забронировать уведомление в 1 клик
-            </button>
-            <a href="/drops" class="interactive-btn min-h-11 rounded-lg border border-red-300 px-3 py-1.5 text-xs font-semibold text-red-900">Подписаться на уведомление</a>
-          </div>
-        </div>
-      </section>
-      <% } %>
-
-      <section id="testimonials" class="px-6 py-16" data-observe-reveal>
-        <div class="mx-auto max-w-6xl">
-          <p class="font-mono text-xs uppercase tracking-[0.18em] text-neutral-400">ОТЗЫВЫ</p>
-          <h2 class="mt-3 text-3xl font-bold tracking-tight text-neutral-900 md:text-4xl">Что говорят первые клиенты</h2>
-
-          <div class="mt-8 grid gap-4 md:grid-cols-3">
-            <% testimonialsList.forEach((item) => { %>
-            <article class="interactive-card rounded-2xl border border-neutral-200 bg-white p-5">
-              <div class="flex items-center justify-between gap-3">
-                <div class="flex items-center gap-3">
-                  <div class="flex h-10 w-10 items-center justify-center rounded-full bg-neutral-100 text-xs font-semibold text-neutral-700">
-                    <%= (item.name || "UN").split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase() %>
-                  </div>
-                  <div>
-                    <p class="text-sm font-semibold text-neutral-900"><%= item.name %> · unqx.uz/<%= item.slug %></p>
-                  </div>
-                </div>
-                <span class="rounded-full border border-neutral-200 px-2.5 py-1 text-[11px] font-medium text-neutral-600">
-                  <%= item.tariff === 'premium' ? 'Премиум' : 'Базовый' %>
-                </span>
-              </div>
-              <p class="mt-4 text-sm leading-relaxed text-neutral-600"><%= item.text %></p>
-            </article>
-            <% }) %>
-          </div>
-        </div>
-      </section>
-
-      <section id="b2b" class="px-6 py-16" data-observe-reveal>
-        <div class="mx-auto max-w-6xl">
-          <p class="font-mono text-xs uppercase tracking-[0.18em] text-neutral-400">ДЛЯ БИЗНЕСА</p>
-          <h2 class="mt-3 text-3xl font-bold tracking-tight text-neutral-900 md:text-4xl">Для команд и агентств</h2>
-          <p class="mt-3 max-w-2xl text-base text-neutral-500">
-            Дай каждому сотруднику свой UNQ — один раз настроил, обновляете когда угодно.
-          </p>
-
-          <div class="mt-8 grid gap-4 md:grid-cols-3">
-            <article class="interactive-card rounded-2xl border border-neutral-200 bg-white p-5">
-              <h3 class="text-base font-semibold text-neutral-900">Единый стиль</h3>
-              <p class="mt-2 text-sm text-neutral-600">все визитки команды в одном бренде</p>
-            </article>
-            <article class="interactive-card rounded-2xl border border-neutral-200 bg-white p-5">
-              <h3 class="text-base font-semibold text-neutral-900">Централизованное управление</h3>
-              <p class="mt-2 text-sm text-neutral-600">меняй данные сотрудников из одного кабинета</p>
-            </article>
-            <article class="interactive-card rounded-2xl border border-neutral-200 bg-white p-5">
-              <h3 class="text-base font-semibold text-neutral-900">Оптовая цена</h3>
-              <p class="mt-2 text-sm text-neutral-600">скидка от 5 UNQ</p>
-            </article>
-          </div>
-
-          <a
-            href="https://t.me/unqx_uz"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="interactive-btn btn-shimmer mt-6 inline-flex min-h-11 items-center gap-2 rounded-xl bg-neutral-900 px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-neutral-800"
-          >
-            Обсудить условия
-          </a>
-        </div>
-      </section>
-
-      <section class="px-6 py-24" data-observe-reveal>
-        <div class="mx-auto max-w-6xl">
-          <h2 class="mb-16 text-2xl font-bold tracking-tight text-neutral-900">Как это работает</h2>
-
-          <div class="grid gap-6 md:grid-cols-3">
-            <% steps.forEach((step, index) => { %>
-            <div class="interactive-card flex flex-col gap-4 rounded-2xl border border-neutral-200 bg-white p-8">
-              <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-neutral-100">
-                <% if (index === 0) { %>
-                <svg class="icon-stroke h-4 w-4 text-neutral-900" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M10 13a5 5 0 0 1 0-7l1.5-1.5a5 5 0 0 1 7 7L17 13"></path>
-                  <path d="M14 11a5 5 0 0 1 0 7L12.5 19.5a5 5 0 0 1-7-7L7 11"></path>
-                </svg>
-                <% } else if (index === 1) { %>
-                <svg class="icon-stroke h-4 w-4 text-neutral-900" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M12 20h9"></path>
-                  <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"></path>
-                </svg>
-                <% } else { %>
-                <svg class="icon-stroke h-4 w-4 text-neutral-900" viewBox="0 0 24 24" aria-hidden="true">
-                  <circle cx="18" cy="5" r="3"></circle>
-                  <circle cx="6" cy="12" r="3"></circle>
-                  <circle cx="18" cy="19" r="3"></circle>
-                  <path d="M8.8 10.8 15.2 6.2M8.8 13.2l6.4 4.6"></path>
-                </svg>
+          <div id="mobile-menu" class="hidden border-t border-neutral-200 bg-white px-6 pb-6 pt-4 md:hidden"
+            data-mobile-menu>
+            <div class="flex flex-col gap-4">
+              <a href="#cards" class="text-sm text-neutral-500">Визитки</a>
+              <a href="#wristband" class="text-sm text-neutral-500">Браслет</a>
+              <a href="#pricing" class="text-sm text-neutral-500">Тарифы</a>
+              <a href="/directory" class="text-sm text-neutral-500">Directory</a>
+              <% if (leaderboardEnabled) { %><a href="/leaderboard" class="text-sm text-neutral-500">Топ визиток</a>
                 <% } %>
-              </div>
-              <div>
-                <span class="mb-1 block font-mono text-xs text-neutral-400">0<%= index + 1 %></span>
-                <h3 class="text-base font-medium text-neutral-900"><%= step.title %></h3>
-                <p class="mt-2 text-sm leading-relaxed text-neutral-500"><%= step.description %></p>
-              </div>
+                  <a href="/drops" class="text-sm text-neutral-500">Дропы</a>
+                  <div id="home-auth-nav-mobile" class="flex items-center gap-2">
+                    <button type="button" data-auth-login
+                      class="rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100 <%= hasAuthSession ? 'hidden' : '' %>">Войти через Telegram</button>
+                    <a href="/profile" data-auth-profile
+                      class="<%= hasAuthSession ? 'inline-flex' : 'hidden' %> items-center gap-2 rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100">
+                      <img data-auth-avatar src="<%= authPhotoUrl %>" alt="avatar"
+                        class="h-4 w-4 rounded-full border border-neutral-200 object-cover" />
+                      <span data-auth-name>
+                        <%= authDisplayName %>
+                      </span>
+                    </a>
+                  </div>
+                  <a href="#" data-order-link
+                    class="btn-shimmer mt-2 flex items-center justify-center gap-2 rounded-xl bg-neutral-900 px-4 py-2.5 text-sm font-medium text-white">
+                    Занять UNQ
+                    <svg class="icon-stroke h-3.5 w-3.5" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M5 12h14M13 5l7 7-7 7"></path>
+                    </svg>
+                  </a>
             </div>
-            <% }); %>
           </div>
-        </div>
-      </section>
+        </nav>
 
-      <section id="calculator" class="px-6 py-24" data-observe-reveal>
-        <div class="mx-auto max-w-3xl">
-          <p class="mb-3 font-mono text-xs uppercase tracking-widest text-neutral-400">UNQ Pricing Engine</p>
-          <h2 class="text-3xl font-bold tracking-tight text-neutral-900 md:text-4xl">Узнай цену своего UNQ</h2>
-          <p class="mt-3 text-base text-neutral-500">Формат: AAA000 — 3 буквы + 3 цифры. Цена считается автоматически.</p>
-
-          <div class="mt-10 flex items-center gap-3">
-            <input
-              id="calc-letters"
-              type="text"
-              maxlength="3"
-              placeholder="AAA"
-              class="w-28 rounded-xl border border-neutral-200 bg-white px-4 py-3 text-center font-mono text-lg uppercase text-neutral-900 outline-none transition-colors placeholder:text-neutral-300 focus:border-neutral-400"
-              autocomplete="off"
-            />
-            <span class="text-neutral-300">-</span>
-            <input
-              id="calc-digits"
-              type="text"
-              maxlength="3"
-              placeholder="000"
-              class="w-28 rounded-xl border border-neutral-200 bg-white px-4 py-3 text-center font-mono text-lg text-neutral-900 outline-none transition-colors placeholder:text-neutral-300 focus:border-neutral-400"
-              autocomplete="off"
-            />
-          </div>
-
-          <p id="calc-preview" class="mt-3 font-mono text-sm text-neutral-400">unqx.uz/______</p>
-
-          <div id="calc-result" class="mt-8 hidden rounded-2xl border border-neutral-200 bg-white p-8">
-            <div class="flex items-center gap-3">
-              <span id="calc-rarity-badge" class="inline-flex items-center gap-1 rounded-full border px-3 py-1 font-mono text-[11px] font-medium tracking-wider">
-                <svg class="icon-stroke h-3 w-3" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="m12 3 2.5 5.5L20 10l-4 4 .9 6L12 17l-4.9 3 .9-6-4-4 5.5-1.5L12 3Z"></path>
+        <% if (activeFlashSale) { %>
+          <section class="sticky top-[72px] z-40 border-b border-amber-200 bg-amber-50 px-6 py-2 text-sm text-amber-900"
+            data-flash-sale-banner data-ends-at="<%= activeFlashSale.endsAt.toISOString() %>">
+            <div class="mx-auto flex w-full max-w-6xl items-center justify-between gap-3">
+              <p class="inline-flex items-center gap-2">
+                <svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M13 2 3 14h7l-1 8 10-12h-7z"></path>
                 </svg>
-                <span id="calc-rarity-text">COMMON</span>
-              </span>
-            </div>
-
-            <p id="calc-result-slug" class="mt-5 font-mono text-2xl font-bold tracking-wider text-neutral-900">AAA000</p>
-
-            <div class="mt-4 flex items-baseline gap-2">
-              <span id="calc-result-price" class="text-3xl font-bold text-neutral-900">0</span>
-              <span class="text-sm text-neutral-400">сум</span>
-            </div>
-            <div id="calc-similar-wrap" class="mt-4 hidden rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2.5">
-              <p class="text-xs text-neutral-500">
-                Похожие свободные:
-                <span id="calc-similar-items" class="ml-1 inline-flex flex-wrap items-center gap-2"></span>
+                FLASH SALE · Скидка <strong>
+                  <%= activeFlashSale.discountPercent %>%
+                </strong> на <%= activeFlashSale.conditionLabel %>
+                  <% if (typeof activeFlashSale.slotsLeft==='number' ) { %>
+                    · Осталось <strong>
+                      <%= activeFlashSale.slotsLeft.toLocaleString('ru-RU') %>
+                    </strong> мест/slug
+                    <% } %>
+                      · Осталось <span data-flash-countdown>--:--:--</span>
               </p>
+              <a href="#hero-check"
+                class="interactive-btn min-h-11 rounded-lg border border-amber-300 px-2.5 py-1 text-xs font-semibold">Узнать
+                подробнее</a>
             </div>
+          </section>
+          <% } %>
 
-            <p id="calc-result-formula" class="mt-2 font-mono text-xs text-neutral-400">100 000 x 1 x 1 = 100 000 сум</p>
-
-            <div class="mt-6 flex gap-6">
-              <div>
-                <p class="text-xs text-neutral-400">Буквы</p>
-                <p id="calc-letter-meta" class="mt-1 text-sm font-medium text-neutral-700">Обычные x1</p>
+            <section class="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 pt-20">
+              <div
+                class="pointer-events-none absolute -left-40 -top-40 h-[500px] w-[500px] rounded-full bg-neutral-200/40 blur-3xl">
               </div>
-              <div>
-                <p class="text-xs text-neutral-400">Цифры</p>
-                <p id="calc-digit-meta" class="mt-1 text-sm font-medium text-neutral-700">Обычные x1</p>
-              </div>
-            </div>
-
-            <a
-              id="calc-reserve-link"
-              href="#"
-              data-order-link
-              class="interactive-btn btn-shimmer mt-8 inline-flex min-h-11 items-center gap-2 rounded-xl bg-neutral-900 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-neutral-800"
-            >
-              Занять AAA000
-              <svg class="icon-stroke h-3.5 w-3.5" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M5 12h14M13 5l7 7-7 7"></path>
-              </svg>
-            </a>
-          </div>
-        </div>
-      </section>
-
-      <section id="wristband" class="px-6 py-24" data-observe-reveal>
-        <div class="mx-auto max-w-6xl">
-          <div class="grid items-center gap-16 md:grid-cols-2">
-            <div>
-              <p class="mb-3 font-mono text-xs uppercase tracking-widest text-neutral-400">UNQ+ WRISTBAND</p>
-              <h2 class="text-3xl font-bold tracking-tight text-neutral-900 md:text-4xl">Тап. И ты уже<br />в телефоне собеседника.</h2>
-              <p class="mt-4 text-base leading-relaxed text-neutral-500">
-                Тканевый NFC-браслет с твоим UNQ. Один тап на телефон —<br />и твоя визитка открывается мгновенно. Без QR, без приложений,<br />без объяснений.
-              </p>
-
-              <div class="mt-6 flex items-baseline gap-2">
-                <span class="text-3xl font-bold text-neutral-900">300 000 сум</span>
+              <div
+                class="pointer-events-none absolute -bottom-40 -right-40 h-[500px] w-[500px] rounded-full bg-neutral-200/40 blur-3xl">
               </div>
 
-              <p class="mt-2 text-sm text-neutral-400">Разовая покупка · Доставка по Ташкенту</p>
+              <div class="relative z-10 mx-auto max-w-3xl text-center">
+                <h1
+                  class="text-balance text-5xl font-bold leading-[1.1] tracking-tight text-neutral-900 md:text-7xl motion-fade-up"
+                  data-reveal-index="0">
+                  Твой UNQ.
+                  <br />
+                  Твой бренд.
+                  <br />
+                  Навсегда.
+                </h1>
 
-              <ul class="mt-8 flex flex-col gap-3">
-                <% wristbandFeatures.forEach((feature) => { %>
-                <li class="flex items-center gap-3 text-sm text-neutral-600">
-                  <svg class="icon-stroke h-4 w-4 shrink-0 text-neutral-900" viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="m20 6-11 11-5-5"></path>
-                  </svg>
-                  <%= feature %>
-                </li>
-                <% }); %>
-              </ul>
-
-              <div class="mt-8 flex flex-wrap items-center gap-3">
-                <a
-                  href="#"
-                  data-order-link
-                  data-order-bracelet="true"
-                  class="interactive-btn btn-shimmer inline-flex min-h-11 items-center gap-2 rounded-xl bg-neutral-900 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-neutral-800"
-                >
-                  Заказать браслет
-                </a>
-
-                <span class="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-xs font-medium text-neutral-600">
-                  <svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="m20 6-11 11-5-5"></path>
-                  </svg>
-                  В наличии
-                </span>
-              </div>
-              <p class="mt-3 text-xs text-neutral-500">
-                Браслет привязан к твоему UNQ — работает только с активной визиткой UNQ+
-              </p>
-            </div>
-
-            <div class="relative flex items-center justify-center">
-              <div class="w-full overflow-hidden rounded-2xl border border-neutral-200 bg-white p-8">
-                <div class="absolute right-8 top-8 rounded-full bg-neutral-100 px-3 py-1 font-mono text-[10px] uppercase tracking-wider text-neutral-500">
-                  UNQ+ WRISTBAND
+                <p class="mx-auto mt-6 max-w-md text-lg text-neutral-500 motion-fade-up" data-reveal-index="1">
+                  Цифровая визитка за 1 минуту — одна ссылка вместо тысячи слов.
+                </p>
+                <div id="home-live-stats"
+                  class="mx-auto mt-4 hidden w-full max-w-2xl rounded-xl border border-neutral-200 bg-white/90 px-4 py-2 text-sm text-neutral-700">
+                  <span id="home-live-total">0</span> визиток создано ·
+                  <span id="home-live-today">0</span> сегодня ·
+                  <span id="home-live-online">0</span> онлайн
                 </div>
-                <img
-                  src="/images/whoop.jpg"
-                  alt="UNQ+ NFC-браслет"
-                  class="h-auto w-full object-contain"
-                  loading="lazy"
-                />
+
+                <div id="hero-check" class="mx-auto mt-10 flex max-w-md flex-col gap-3 sm:flex-row motion-fade-up"
+                  data-page="public-home-search" data-reveal-index="2">
+                  <div
+                    class="flex flex-1 items-center rounded-xl border border-neutral-200 bg-white px-4 py-3 focus-within:border-neutral-400">
+                    <span class="mr-2 text-sm text-neutral-400">unqx.uz/</span>
+                    <input id="home-slug-input" type="text" placeholder="AAA001"
+                      class="w-full bg-transparent text-sm uppercase text-neutral-900 outline-none placeholder:text-neutral-300"
+                      autocomplete="off" spellcheck="false" maxlength="6" pattern="[A-Za-z]{3}[0-9]{3}"
+                      title="Формат: 3 латинские буквы и 3 цифры (например AAA001)" />
+                  </div>
+                  <button id="home-slug-check" type="button"
+                    class="interactive-btn btn-shimmer min-h-11 flex items-center justify-center gap-2 rounded-xl bg-neutral-900 px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-neutral-800">
+                    Проверить
+                    <svg class="icon-stroke h-3.5 w-3.5" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M5 12h14M13 5l7 7-7 7"></path>
+                    </svg>
+                  </button>
+                </div>
+
+                <div id="home-slug-feedback" class="mt-6 hidden">
+                  <div class="flex items-center justify-center gap-2 text-sm text-neutral-900">
+                    <span id="home-slug-status-icon" class="inline-flex h-4 w-4 items-center justify-center"></span>
+                    <span id="home-slug-status-text"></span>
+                  </div>
+
+                  <div id="home-slug-taken-owner" class="mt-3 hidden">
+                    <div
+                      class="mx-auto flex w-full max-w-md items-center justify-between gap-3 rounded-xl border border-neutral-200 bg-white px-3 py-2">
+                      <div class="flex min-w-0 items-center gap-3">
+                        <img id="home-slug-taken-owner-photo" src="/brand/logo.PNG" alt="Фото владельца"
+                          class="h-9 w-9 rounded-full border border-neutral-200 object-cover" />
+                        <p id="home-slug-taken-owner-name" class="truncate text-sm font-semibold text-neutral-900">UNQ+
+                          User</p>
+                      </div>
+                      <a id="home-slug-taken-owner-view" href="#"
+                        class="interactive-btn inline-flex min-h-11 items-center rounded-lg border border-neutral-200 bg-white px-3 py-1.5 text-xs font-semibold text-neutral-700 transition-colors hover:bg-neutral-50">
+                        Посмотреть
+                      </a>
+                    </div>
+                  </div>
+
+                  <div id="home-slug-suggestions-wrap" class="mt-3 hidden">
+                    <p class="text-xs text-neutral-500">
+                      Попробуй:
+                      <span id="home-slug-suggestions" class="ml-1 inline-flex flex-wrap items-center gap-2"></span>
+                    </p>
+                  </div>
+
+                  <div class="mt-4 flex items-center justify-center gap-3">
+                    <a id="home-slug-primary-action" href="#" data-order-link
+                      class="btn-shimmer inline-flex items-center gap-2 rounded-xl bg-neutral-900 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-neutral-800">
+                      Занять UNQ
+                      <svg class="icon-stroke h-3.5 w-3.5" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M5 12h14M13 5l7 7-7 7"></path>
+                      </svg>
+                    </a>
+                    <a id="home-slug-calculator-action" href="#calculator"
+                      class="inline-flex items-center gap-2 rounded-xl border border-neutral-200 bg-white px-5 py-2.5 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50">
+                      <svg class="icon-stroke h-3.5 w-3.5" viewBox="0 0 24 24" aria-hidden="true">
+                        <rect x="4" y="3" width="16" height="18" rx="2"></rect>
+                        <path d="M8 7h8M8 11h2M12 11h2M16 11h0M8 15h2M12 15h2M16 15h0"></path>
+                      </svg>
+                      Узнать цену
+                    </a>
+                  </div>
+
+                  <p id="home-slug-note" class="mt-3 text-xs text-neutral-400"></p>
+                </div>
+                <p id="hero-slug-occupancy"
+                  class="mx-auto mt-4 hidden w-full max-w-md text-center text-sm text-neutral-500"></p>
+
               </div>
-            </div>
-          </div>
-        </div>
-      </section>
+            </section>
 
-      <section id="pricing" class="px-6 py-24" data-observe-reveal>
-        <div class="mx-auto max-w-4xl">
-          <h2 class="mb-16 text-2xl font-bold tracking-tight text-neutral-900">Тарифы</h2>
-
-          <div class="grid gap-6 md:grid-cols-2">
-            <% plans.forEach((plan) => { %>
-            <div
-              class="interactive-card relative flex flex-col rounded-2xl border p-8 <%= plan.highlighted ? 'border-neutral-900 bg-neutral-900 text-white' : 'border-neutral-200 bg-white text-neutral-900' %>"
-            >
-              <% if (plan.badge) { %>
-              <span class="absolute -top-3 right-6 rounded-full bg-neutral-900 px-3 py-1 text-[11px] font-medium tracking-wide text-white ring-4 ring-neutral-50">
-                <%= plan.badge %>
-              </span>
+            <% if (nextDrop) { %>
+              <section class="px-6 pb-6" data-observe-reveal>
+                <div
+                  class="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-4 rounded-2xl border border-red-200 bg-red-50 px-5 py-4"
+                  data-next-drop-card data-next-drop-id="<%= nextDrop.id %>">
+                  <p class="inline-flex items-center gap-2 text-sm text-red-900">
+                    <svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M12 3c2 3 5 4.5 5 8a5 5 0 0 1-10 0c0-2.8 1.8-4.4 3.5-6 .7-.7 1.4-1.3 1.5-2z"></path>
+                      <path
+                        d="M12 22a3 3 0 0 0 3-3c0-1.4-.8-2.3-1.6-3.2-.7-.7-1.4-1.5-1.4-2.8-1.4 1.2-3 3-3 5a3 3 0 0 0 3 4z">
+                      </path>
+                    </svg>
+                    Следующий дроп: <strong>
+                      <%= nextDrop.title %>
+                    </strong> · <%= new Date(nextDrop.dropAt).toLocaleString('ru-RU') %> · <%= nextDrop.slugCount %>
+                        slug
+                  </p>
+                  <div class="flex flex-wrap items-center gap-2">
+                    <button type="button" data-next-drop-waitlist
+                      class="interactive-btn min-h-11 rounded-lg border border-red-300 bg-red-100 px-3 py-1.5 text-xs font-semibold text-red-900">
+                      Забронировать уведомление в 1 клик
+                    </button>
+                    <a href="/drops"
+                      class="interactive-btn min-h-11 rounded-lg border border-red-300 px-3 py-1.5 text-xs font-semibold text-red-900">Подписаться
+                      на уведомление</a>
+                  </div>
+                </div>
+              </section>
               <% } %>
 
-              <p class="font-mono text-xs uppercase tracking-widest text-neutral-400"><%= plan.name %></p>
+                <section id="testimonials" class="px-6 py-16" data-observe-reveal>
+                  <div class="mx-auto max-w-6xl">
+                    <p class="font-mono text-xs uppercase tracking-[0.18em] text-neutral-400">ОТЗЫВЫ</p>
+                    <h2 class="mt-3 text-3xl font-bold tracking-tight text-neutral-900 md:text-4xl">Что говорят первые
+                      клиенты</h2>
 
-              <div class="mt-4 flex items-baseline gap-1">
-                <span class="text-3xl font-bold"><%= plan.price %></span>
-                <span class="text-sm text-neutral-400">сум</span>
-              </div>
+                    <div class="mt-8 grid gap-4 md:grid-cols-3">
+                      <% testimonialsList.forEach((item)=> { %>
+                        <article class="interactive-card rounded-2xl border border-neutral-200 bg-white p-5">
+                          <div class="flex items-center justify-between gap-3">
+                            <div class="flex items-center gap-3">
+                              <div
+                                class="flex h-10 w-10 items-center justify-center rounded-full bg-neutral-100 text-xs font-semibold text-neutral-700">
+                                <%= (item.name || "UN" ).split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase() %>
+                  </div>
+                  <div>
+                    <p class=" text-sm font-semibold text-neutral-900">
+                                  <%= item.name %> · unqx.uz/<%= item.slug %>
+                                      </p>
+                              </div>
+                            </div>
+                            <span
+                              class="rounded-full border border-neutral-200 px-2.5 py-1 text-[11px] font-medium text-neutral-600">
+                              <%= item.tariff==='premium' ? 'Премиум' : 'Базовый' %>
+                            </span>
+                          </div>
+                          <p class="mt-4 text-sm leading-relaxed text-neutral-600">
+                            <%= item.text %>
+                          </p>
+                        </article>
+                        <% }) %>
+                    </div>
+                  </div>
+                </section>
 
-              <p class="mt-1 text-xs <%= plan.highlighted ? 'text-neutral-400' : 'text-neutral-500' %>">
-                <%= plan.priceNote %>
-              </p>
+                <section id="b2b" class="px-6 py-16" data-observe-reveal>
+                  <div class="mx-auto max-w-6xl">
+                    <p class="font-mono text-xs uppercase tracking-[0.18em] text-neutral-400">ДЛЯ БИЗНЕСА</p>
+                    <h2 class="mt-3 text-3xl font-bold tracking-tight text-neutral-900 md:text-4xl">Для команд и
+                      агентств</h2>
+                    <p class="mt-3 max-w-2xl text-base text-neutral-500">
+                      Дай каждому сотруднику свой UNQ — один раз настроил, обновляете когда угодно.
+                    </p>
 
-              <p class="mt-1 text-xs <%= plan.highlighted ? 'text-neutral-500' : 'text-neutral-400' %>">
-                + стоимость UNQ по калькулятору
-              </p>
+                    <div class="mt-8 grid gap-4 md:grid-cols-3">
+                      <article class="interactive-card rounded-2xl border border-neutral-200 bg-white p-5">
+                        <h3 class="text-base font-semibold text-neutral-900">Единый стиль</h3>
+                        <p class="mt-2 text-sm text-neutral-600">все визитки команды в одном бренде</p>
+                      </article>
+                      <article class="interactive-card rounded-2xl border border-neutral-200 bg-white p-5">
+                        <h3 class="text-base font-semibold text-neutral-900">Централизованное управление</h3>
+                        <p class="mt-2 text-sm text-neutral-600">меняй данные сотрудников из одного кабинета</p>
+                      </article>
+                      <article class="interactive-card rounded-2xl border border-neutral-200 bg-white p-5">
+                        <h3 class="text-base font-semibold text-neutral-900">Оптовая цена</h3>
+                        <p class="mt-2 text-sm text-neutral-600">скидка от 5 UNQ</p>
+                      </article>
+                    </div>
 
-              <ul class="mt-8 flex flex-1 flex-col gap-2.5">
-                <% plan.included.forEach((feature) => { %>
-                <li class="flex items-start gap-2.5 text-sm <%= plan.highlighted ? 'text-neutral-300' : 'text-neutral-600' %>">
-                  <svg class="icon-stroke mt-0.5 h-3.5 w-3.5 shrink-0 <%= plan.highlighted ? 'text-white' : 'text-neutral-900' %>" viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="m20 6-11 11-5-5"></path>
-                  </svg>
-                  <%= feature %>
-                </li>
-                <% }); %>
-                <% plan.excluded.forEach((feature) => { %>
-                <li class="flex items-start gap-2.5 text-sm <%= plan.highlighted ? 'text-neutral-600' : 'text-neutral-300' %>">
-                  <svg class="icon-stroke mt-0.5 h-3.5 w-3.5 shrink-0 text-neutral-300" viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="m18 6-12 12M6 6l12 12"></path>
-                  </svg>
-                  <%= feature %>
-                </li>
-                <% }); %>
-              </ul>
+                    <a href="https://t.me/unqx_uz" target="_blank" rel="noopener noreferrer"
+                      class="interactive-btn btn-shimmer mt-6 inline-flex min-h-11 items-center gap-2 rounded-xl bg-neutral-900 px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-neutral-800">
+                      Обсудить условия
+                    </a>
+                  </div>
+                </section>
 
-              <a
-                href="#"
-                class="interactive-btn btn-shimmer mt-8 flex min-h-11 items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-medium transition-colors <%= plan.highlighted ? 'bg-white text-neutral-900 hover:bg-neutral-100' : 'bg-neutral-900 text-white hover:bg-neutral-800' %>"
-              >
-                Купить тариф
-                <svg class="icon-stroke h-3.5 w-3.5" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M5 12h14M13 5l7 7-7 7"></path>
-                </svg>
-              </a>
-            </div>
-            <% }); %>
-          </div>
+                <section class="px-6 py-24" data-observe-reveal>
+                  <div class="mx-auto max-w-6xl">
+                    <h2 class="mb-16 text-2xl font-bold tracking-tight text-neutral-900">Как это работает</h2>
 
-          <p class="mt-8 text-center text-xs text-neutral-400"><%= pricingFootnote %></p>
-        </div>
-      </section>
+                    <div class="grid gap-6 md:grid-cols-3">
+                      <% steps.forEach((step, index)=> { %>
+                        <div
+                          class="interactive-card flex flex-col gap-4 rounded-2xl border border-neutral-200 bg-white p-8">
+                          <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-neutral-100">
+                            <% if (index===0) { %>
+                              <svg class="icon-stroke h-4 w-4 text-neutral-900" viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M10 13a5 5 0 0 1 0-7l1.5-1.5a5 5 0 0 1 7 7L17 13"></path>
+                                <path d="M14 11a5 5 0 0 1 0 7L12.5 19.5a5 5 0 0 1-7-7L7 11"></path>
+                              </svg>
+                              <% } else if (index===1) { %>
+                                <svg class="icon-stroke h-4 w-4 text-neutral-900" viewBox="0 0 24 24"
+                                  aria-hidden="true">
+                                  <path d="M12 20h9"></path>
+                                  <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"></path>
+                                </svg>
+                                <% } else { %>
+                                  <svg class="icon-stroke h-4 w-4 text-neutral-900" viewBox="0 0 24 24"
+                                    aria-hidden="true">
+                                    <circle cx="18" cy="5" r="3"></circle>
+                                    <circle cx="6" cy="12" r="3"></circle>
+                                    <circle cx="18" cy="19" r="3"></circle>
+                                    <path d="M8.8 10.8 15.2 6.2M8.8 13.2l6.4 4.6"></path>
+                                  </svg>
+                                  <% } %>
+                          </div>
+                          <div>
+                            <span class="mb-1 block font-mono text-xs text-neutral-400">0<%= index + 1 %></span>
+                            <h3 class="text-base font-medium text-neutral-900">
+                              <%= step.title %>
+                            </h3>
+                            <p class="mt-2 text-sm leading-relaxed text-neutral-500">
+                              <%= step.description %>
+                            </p>
+                          </div>
+                        </div>
+                        <% }); %>
+                    </div>
+                  </div>
+                </section>
 
-      <section id="faq" class="px-6 py-24" data-observe-reveal>
-        <div class="mx-auto max-w-4xl">
-          <p class="font-mono text-xs uppercase tracking-[0.18em] text-neutral-400">ВОПРОСЫ</p>
-          <h2 class="mt-3 text-3xl font-bold tracking-tight text-neutral-900 md:text-4xl">Часто спрашивают</h2>
+                <section id="calculator" class="px-6 py-24" data-observe-reveal>
+                  <div class="mx-auto max-w-3xl">
+                    <p class="mb-3 font-mono text-xs uppercase tracking-widest text-neutral-400">UNQ Pricing Engine</p>
+                    <h2 class="text-3xl font-bold tracking-tight text-neutral-900 md:text-4xl">Узнай цену своего UNQ
+                    </h2>
+                    <p class="mt-3 text-base text-neutral-500">Формат: AAA000 — 3 буквы + 3 цифры. Цена считается
+                      автоматически.</p>
 
-          <div class="mt-8 space-y-3">
-            <% faqItems.forEach((item) => { %>
-            <details class="faq-item group rounded-2xl border border-neutral-200 bg-white p-4">
-              <summary class="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-medium text-neutral-900">
-                <span><%= item.q %></span>
-                <span class="text-neutral-400 transition-transform group-open:rotate-45">+</span>
-              </summary>
-              <p class="mt-3 text-sm leading-relaxed text-neutral-600"><%= item.a %></p>
-            </details>
-            <% }) %>
-          </div>
-        </div>
-      </section>
+                    <div class="mt-10 flex items-center gap-3">
+                      <input id="calc-letters" type="text" maxlength="3" placeholder="AAA"
+                        class="w-28 rounded-xl border border-neutral-200 bg-white px-4 py-3 text-center font-mono text-lg uppercase text-neutral-900 outline-none transition-colors placeholder:text-neutral-300 focus:border-neutral-400"
+                        autocomplete="off" />
+                      <span class="text-neutral-300">-</span>
+                      <input id="calc-digits" type="text" maxlength="3" placeholder="000"
+                        class="w-28 rounded-xl border border-neutral-200 bg-white px-4 py-3 text-center font-mono text-lg text-neutral-900 outline-none transition-colors placeholder:text-neutral-300 focus:border-neutral-400"
+                        autocomplete="off" />
+                    </div>
 
-      <%- include('../partials/order-modal') %>
+                    <p id="calc-preview" class="mt-3 font-mono text-sm text-neutral-400">unqx.uz/______</p>
 
-      <footer class="border-t border-neutral-200 px-6 py-16">
-        <div class="mx-auto max-w-6xl">
-          <div class="flex flex-col items-start justify-between gap-10 md:flex-row md:items-end">
-            <div>
-              <a href="/" class="text-xl font-black text-neutral-900">UNQ+</a>
-              <p class="mt-2 text-sm text-neutral-400">Цифровая визитка нового поколения</p>
-            </div>
+                    <div id="calc-result" class="mt-8 hidden rounded-2xl border border-neutral-200 bg-white p-8">
+                      <div class="flex items-center gap-3">
+                        <span id="calc-rarity-badge"
+                          class="inline-flex items-center gap-1 rounded-full border px-3 py-1 font-mono text-[11px] font-medium tracking-wider">
+                          <svg class="icon-stroke h-3 w-3" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="m12 3 2.5 5.5L20 10l-4 4 .9 6L12 17l-4.9 3 .9-6-4-4 5.5-1.5L12 3Z"></path>
+                          </svg>
+                          <span id="calc-rarity-text">COMMON</span>
+                        </span>
+                      </div>
 
-            <div class="flex flex-wrap gap-8 text-sm text-neutral-400">
-              <a href="#cards" class="transition-colors hover:text-neutral-900">Визитки</a>
-              <a href="#wristband" class="transition-colors hover:text-neutral-900">Браслет</a>
-              <a href="#pricing" class="transition-colors hover:text-neutral-900">Тарифы</a>
-            </div>
+                      <p id="calc-result-slug"
+                        class="mt-5 font-mono text-2xl font-bold tracking-wider text-neutral-900">AAA000</p>
 
-            <p class="hidden text-4xl font-bold tracking-tight text-neutral-200 md:block">unqx.uz</p>
-          </div>
+                      <div class="mt-4 flex items-baseline gap-2">
+                        <span id="calc-result-price" class="text-3xl font-bold text-neutral-900">0</span>
+                        <span class="text-sm text-neutral-400">сум</span>
+                      </div>
+                      <div id="calc-similar-wrap"
+                        class="mt-4 hidden rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2.5">
+                        <p class="text-xs text-neutral-500">
+                          Похожие свободные:
+                          <span id="calc-similar-items" class="ml-1 inline-flex flex-wrap items-center gap-2"></span>
+                        </p>
+                      </div>
 
-          <div class="mt-12 border-t border-neutral-200 pt-6">
-            <p class="text-xs text-neutral-400">&copy; 2026 UNQ+ · Ташкент, Узбекистан</p>
-          </div>
-        </div>
-      </footer>
-    </div>
-  </main>
+                      <p id="calc-result-formula" class="mt-2 font-mono text-xs text-neutral-400">100 000 x 1 x 1 = 100
+                        000 сум</p>
 
-  <script nonce="<%= cspNonce %>" src="/js/site-dialogs.js"></script>
-  <script nonce="<%= cspNonce %>" src="/js/order-modal.js"></script>
-  <script nonce="<%= cspNonce %>" src="/js/public-home-search.js"></script>
-  <script nonce="<%= cspNonce %>" src="/js/public-realtime.js"></script>
-</body>
-</html>
+                      <div class="mt-6 flex gap-6">
+                        <div>
+                          <p class="text-xs text-neutral-400">Буквы</p>
+                          <p id="calc-letter-meta" class="mt-1 text-sm font-medium text-neutral-700">Обычные x1</p>
+                        </div>
+                        <div>
+                          <p class="text-xs text-neutral-400">Цифры</p>
+                          <p id="calc-digit-meta" class="mt-1 text-sm font-medium text-neutral-700">Обычные x1</p>
+                        </div>
+                      </div>
 
+                      <a id="calc-reserve-link" href="#" data-order-link
+                        class="interactive-btn btn-shimmer mt-8 inline-flex min-h-11 items-center gap-2 rounded-xl bg-neutral-900 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-neutral-800">
+                        Занять AAA000
+                        <svg class="icon-stroke h-3.5 w-3.5" viewBox="0 0 24 24" aria-hidden="true">
+                          <path d="M5 12h14M13 5l7 7-7 7"></path>
+                        </svg>
+                      </a>
+                    </div>
+                  </div>
+                </section>
 
+                <section id="wristband" class="px-6 py-24" data-observe-reveal>
+                  <div class="mx-auto max-w-6xl">
+                    <div class="grid items-center gap-16 md:grid-cols-2">
+                      <div>
+                        <p class="mb-3 font-mono text-xs uppercase tracking-widest text-neutral-400">UNQ+ WRISTBAND</p>
+                        <h2 class="text-3xl font-bold tracking-tight text-neutral-900 md:text-4xl">Тап. И ты уже<br />в
+                          телефоне собеседника.</h2>
+                        <p class="mt-4 text-base leading-relaxed text-neutral-500">
+                          Тканевый NFC-браслет с твоим UNQ. Один тап на телефон —<br />и твоя визитка открывается
+                          мгновенно. Без QR, без приложений,<br />без объяснений.
+                        </p>
 
+                        <div class="mt-6 flex items-baseline gap-2">
+                          <span class="text-3xl font-bold text-neutral-900">300 000 сум</span>
+                        </div>
+
+                        <p class="mt-2 text-sm text-neutral-400">Разовая покупка · Доставка по Ташкенту</p>
+
+                        <ul class="mt-8 flex flex-col gap-3">
+                          <% wristbandFeatures.forEach((feature)=> { %>
+                            <li class="flex items-center gap-3 text-sm text-neutral-600">
+                              <svg class="icon-stroke h-4 w-4 shrink-0 text-neutral-900" viewBox="0 0 24 24"
+                                aria-hidden="true">
+                                <path d="m20 6-11 11-5-5"></path>
+                              </svg>
+                              <%= feature %>
+                            </li>
+                            <% }); %>
+                        </ul>
+
+                        <div class="mt-8 flex flex-wrap items-center gap-3">
+                          <a href="#" data-order-link data-order-bracelet="true"
+                            class="interactive-btn btn-shimmer inline-flex min-h-11 items-center gap-2 rounded-xl bg-neutral-900 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-neutral-800">
+                            Заказать браслет
+                          </a>
+
+                          <span
+                            class="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-xs font-medium text-neutral-600">
+                            <svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
+                              <path d="m20 6-11 11-5-5"></path>
+                            </svg>
+                            В наличии
+                          </span>
+                        </div>
+                        <p class="mt-3 text-xs text-neutral-500">
+                          Браслет привязан к твоему UNQ — работает только с активной визиткой UNQ+
+                        </p>
+                      </div>
+
+                      <div class="relative flex items-center justify-center">
+                        <div class="w-full overflow-hidden rounded-2xl border border-neutral-200 bg-white p-8">
+                          <div
+                            class="absolute right-8 top-8 rounded-full bg-neutral-100 px-3 py-1 font-mono text-[10px] uppercase tracking-wider text-neutral-500">
+                            UNQ+ WRISTBAND
+                          </div>
+                          <img src="/images/wristband.png" alt="UNQ+ NFC-браслет" class="h-auto w-full object-contain"
+                            loading="lazy" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                <section id="pricing" class="px-6 py-24" data-observe-reveal>
+                  <div class="mx-auto max-w-4xl">
+                    <h2 class="mb-16 text-2xl font-bold tracking-tight text-neutral-900">Тарифы</h2>
+
+                    <div class="grid gap-6 md:grid-cols-2">
+                      <% plans.forEach((plan)=> { %>
+                        <div
+                          class="interactive-card relative flex flex-col rounded-2xl border p-8 <%= plan.highlighted ? 'border-neutral-900 bg-neutral-900 text-white' : 'border-neutral-200 bg-white text-neutral-900' %>">
+                          <% if (plan.badge) { %>
+                            <span
+                              class="absolute -top-3 right-6 rounded-full bg-neutral-900 px-3 py-1 text-[11px] font-medium tracking-wide text-white ring-4 ring-neutral-50">
+                              <%= plan.badge %>
+                            </span>
+                            <% } %>
+
+                              <p class="font-mono text-xs uppercase tracking-widest text-neutral-400">
+                                <%= plan.name %>
+                              </p>
+
+                              <div class="mt-4 flex items-baseline gap-1">
+                                <span class="text-3xl font-bold">
+                                  <%= plan.price %>
+                                </span>
+                                <span class="text-sm text-neutral-400">сум</span>
+                              </div>
+
+                              <p class="mt-1 text-xs <%= plan.highlighted ? 'text-neutral-400' : 'text-neutral-500' %>">
+                                <%= plan.priceNote %>
+                              </p>
+
+                              <p class="mt-1 text-xs <%= plan.highlighted ? 'text-neutral-500' : 'text-neutral-400' %>">
+                                + стоимость UNQ по калькулятору
+                              </p>
+
+                              <ul class="mt-8 flex flex-1 flex-col gap-2.5">
+                                <% plan.included.forEach((feature)=> { %>
+                                  <li
+                                    class="flex items-start gap-2.5 text-sm <%= plan.highlighted ? 'text-neutral-300' : 'text-neutral-600' %>">
+                                    <svg
+                                      class="icon-stroke mt-0.5 h-3.5 w-3.5 shrink-0 <%= plan.highlighted ? 'text-white' : 'text-neutral-900' %>"
+                                      viewBox="0 0 24 24" aria-hidden="true">
+                                      <path d="m20 6-11 11-5-5"></path>
+                                    </svg>
+                                    <%= feature %>
+                                  </li>
+                                  <% }); %>
+                                    <% plan.excluded.forEach((feature)=> { %>
+                                      <li
+                                        class="flex items-start gap-2.5 text-sm <%= plan.highlighted ? 'text-neutral-600' : 'text-neutral-300' %>">
+                                        <svg class="icon-stroke mt-0.5 h-3.5 w-3.5 shrink-0 text-neutral-300"
+                                          viewBox="0 0 24 24" aria-hidden="true">
+                                          <path d="m18 6-12 12M6 6l12 12"></path>
+                                        </svg>
+                                        <%= feature %>
+                                      </li>
+                                      <% }); %>
+                              </ul>
+
+                              <a href="#"
+                                class="interactive-btn btn-shimmer mt-8 flex min-h-11 items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-medium transition-colors <%= plan.highlighted ? 'bg-white text-neutral-900 hover:bg-neutral-100' : 'bg-neutral-900 text-white hover:bg-neutral-800' %>">
+                                Купить тариф
+                                <svg class="icon-stroke h-3.5 w-3.5" viewBox="0 0 24 24" aria-hidden="true">
+                                  <path d="M5 12h14M13 5l7 7-7 7"></path>
+                                </svg>
+                              </a>
+                        </div>
+                        <% }); %>
+                    </div>
+
+                    <p class="mt-8 text-center text-xs text-neutral-400">
+                      <%= pricingFootnote %>
+                    </p>
+                  </div>
+                </section>
+
+                <section id="faq" class="px-6 py-24" data-observe-reveal>
+                  <div class="mx-auto max-w-4xl">
+                    <p class="font-mono text-xs uppercase tracking-[0.18em] text-neutral-400">ВОПРОСЫ</p>
+                    <h2 class="mt-3 text-3xl font-bold tracking-tight text-neutral-900 md:text-4xl">Часто спрашивают
+                    </h2>
+
+                    <div class="mt-8 space-y-3">
+                      <% faqItems.forEach((item)=> { %>
+                        <details class="faq-item group rounded-2xl border border-neutral-200 bg-white p-4">
+                          <summary
+                            class="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-medium text-neutral-900">
+                            <span>
+                              <%= item.q %>
+                            </span>
+                            <span class="text-neutral-400 transition-transform group-open:rotate-45">+</span>
+                          </summary>
+                          <p class="mt-3 text-sm leading-relaxed text-neutral-600">
+                            <%= item.a %>
+                          </p>
+                        </details>
+                        <% }) %>
+                    </div>
+                  </div>
+                </section>
+
+                <%- include('../partials/order-modal') %>
+
+                  <footer class="border-t border-neutral-200 px-6 py-16">
+                    <div class="mx-auto max-w-6xl">
+                      <div class="flex flex-col items-start justify-between gap-10 md:flex-row md:items-end">
+                        <div>
+                          <a href="/" class="text-xl font-black text-neutral-900">UNQ+</a>
+                          <p class="mt-2 text-sm text-neutral-400">Цифровая визитка нового поколения</p>
+                        </div>
+
+                        <div class="flex flex-wrap gap-8 text-sm text-neutral-400">
+                          <a href="#cards" class="transition-colors hover:text-neutral-900">Визитки</a>
+                          <a href="#wristband" class="transition-colors hover:text-neutral-900">Браслет</a>
+                          <a href="#pricing" class="transition-colors hover:text-neutral-900">Тарифы</a>
+                        </div>
+
+                        <p class="hidden text-4xl font-bold tracking-tight text-neutral-200 md:block">unqx.uz</p>
+                      </div>
+
+                      <div class="mt-12 border-t border-neutral-200 pt-6">
+                        <p class="text-xs text-neutral-400">&copy; 2026 UNQ+ · Ташкент, Узбекистан</p>
+                      </div>
+                    </div>
+                  </footer>
+      </div>
+    </main>
+
+    <script nonce="<%= cspNonce %>" src="/js/site-dialogs.js"></script>
+    <script nonce="<%= cspNonce %>" src="/js/order-modal.js"></script>
+    <script nonce="<%= cspNonce %>" src="/js/public-home-search.js"></script>
+    <script nonce="<%= cspNonce %>" src="/js/public-realtime.js"></script>
+  </body>
+
+  </html>

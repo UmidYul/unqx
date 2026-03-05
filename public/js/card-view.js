@@ -39,6 +39,7 @@
       .join("");
     return {
       slug: String(card.slug || "").toUpperCase(),
+      slugPrice: Number.isFinite(Number(card.slugPrice)) ? Number(card.slugPrice) : null,
       tariff: plan,
       name,
       phone: String(card.phone || "").trim(),
@@ -160,6 +161,10 @@
     const showPausedBanner = Boolean(options.showPausedBanner);
     const pausedText = String(options.pausedText || "Визитка на паузе — посетители видят заглушку");
     const viewsLabel = String(options.viewsLabel || card.viewsLabel || "0 просмотров");
+    const slugPriceLabel =
+      Number.isFinite(Number(card.slugPrice)) && Number(card.slugPrice) > 0
+        ? `${Number(card.slugPrice).toLocaleString("ru-RU")} сум`
+        : "";
     const score = options.score && typeof options.score === "object" ? options.score : null;
     const topBadge = options.topBadge && typeof options.topBadge === "object" ? options.topBadge : null;
 
@@ -196,6 +201,8 @@
       : "";
 
     const socialLinks = [
+      { label: "Telegram", url: findSocialUrl(card.buttons, [/telegram/i, /t\.me/i]), icon: "telegram" },
+      { label: "WhatsApp", url: findSocialUrl(card.buttons, [/whatsapp/i, /wa\.me/i]), icon: "message" },
       { label: "Instagram", url: findSocialUrl(card.buttons, [/instagram/i, /insta/i]), icon: "instagram" },
       { label: "LinkedIn", url: findSocialUrl(card.buttons, [/linkedin/i]), icon: "linkedin" },
       { label: "TikTok", url: findSocialUrl(card.buttons, [/tiktok/i, /tik tok/i]), icon: "tiktok" },
@@ -217,7 +224,10 @@
       <div data-card-view data-slug="${esc(card.slug)}" data-share-url="${esc(shareUrl)}">
         ${showPausedBanner ? `<div class="mb-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">${esc(pausedText)}</div>` : ""}
         <div class="unq-ref-top">
-          <span class="unq-ref-slug"># ${esc(card.slug)}</span>
+          <div class="unq-ref-slug-wrap">
+            <span class="unq-ref-slug"># ${esc(card.slug)}</span>
+            ${slugPriceLabel ? `<span class="unq-ref-slug-price">${esc(slugPriceLabel)}</span>` : ""}
+          </div>
           <button type="button" data-share-card class="unq-ref-share" aria-label="Поделиться">
             ${iconSvg("share")}
             <span class="sr-only" data-share-label>Поделиться</span>

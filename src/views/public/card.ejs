@@ -10,6 +10,7 @@
 
   const pageCard = {
     slug: (typeof pageCardRaw.slug === "string" ? pageCardRaw.slug : "unknown").toUpperCase(),
+    slugPrice: Number.isFinite(Number(pageCardRaw.slugPrice)) ? Number(pageCardRaw.slugPrice) : null,
     avatarUrl: pageCardRaw.avatarUrl || null,
     name: pageCardRaw.name || "Unknown",
     verified: Boolean(pageCardRaw.verified),

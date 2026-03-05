@@ -267,6 +267,23 @@ body[data-card-theme] #card-view-root > [data-card-view] {
   color: #9a9a9a;
 }
 
+.unq-ref-slug-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.unq-ref-slug-price {
+  border: 1px solid #e1e1e1;
+  border-radius: 9999px;
+  background: #f7f7f7;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #5f6368;
+  letter-spacing: normal;
+}
+
 .unq-ref-share {
   display: inline-flex;
   align-items: center;

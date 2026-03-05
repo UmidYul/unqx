@@ -5,6 +5,9 @@
   const pageStyles = typeof styles !== "undefined" && Array.isArray(styles) ? styles : [];
   const pageImage = typeof image === "string" && image ? image : null;
   const pageCanonical = typeof canonical === "string" && canonical ? canonical : (typeof canonicalUrl === "string" ? canonicalUrl : "");
+  const pageLocale = typeof locale === "string" && locale ? locale : "ru_RU";
+  const pageSiteName = typeof siteName === "string" && siteName ? siteName : "UNQ+";
+  const pageTwitterSite = typeof twitterSite === "string" && twitterSite ? twitterSite : "@unqx_uz";
   const pageNoindex = typeof noindex === "boolean" ? noindex : false;
   const pageOgType = typeof ogType === "string" && ogType ? ogType : "website";
   const rawJsonLd = typeof jsonLd !== "undefined" ? jsonLd : undefined;
@@ -16,18 +19,23 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title><%= pageTitle %></title>
 <meta name="description" content="<%= pageDescription %>" />
+<meta name="author" content="UNQ+" />
 <meta name="csrf-token" content="<%= pageCsrfToken %>" />
 <meta name="robots" content="<%= pageNoindex ? 'noindex, nofollow, noarchive' : 'index, follow, max-image-preview:large' %>" />
+<meta name="googlebot" content="<%= pageNoindex ? 'noindex, nofollow, noarchive' : 'index, follow, max-image-preview:large' %>" />
+<meta name="format-detection" content="telephone=no" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet" />
-<link rel="icon" type="image/svg+xml" href="/brand/unq-mark.svg" />
+<link rel="icon" type="image/png" href="/brand/logo.PNG" />
 <link rel="icon" href="/favicon.ico" />
 <link rel="shortcut icon" href="/favicon.ico" />
-<link rel="apple-touch-icon" href="/brand/unq-mark.svg" />
+<link rel="apple-touch-icon" href="/brand/logo.PNG" />
 <meta name="theme-color" content="#111111" />
 <% if (pageCanonical) { %>
 <link rel="canonical" href="<%= pageCanonical %>" />
+<link rel="alternate" hreflang="ru" href="<%= pageCanonical %>" />
+<link rel="alternate" hreflang="x-default" href="<%= pageCanonical %>" />
 <% } %>
 <link rel="stylesheet" href="/css/tailwind.generated.css" />
 <link rel="stylesheet" href="/css/base.css" />
@@ -36,17 +44,22 @@
 <% }); %>
 <% if (pageImage) { %>
 <meta property="og:image" content="<%= pageImage %>" />
+<meta property="og:image:alt" content="<%= pageTitle %>" />
 <meta name="twitter:image" content="<%= pageImage %>" />
+<meta name="twitter:image:alt" content="<%= pageTitle %>" />
 <% } %>
 <meta property="og:title" content="<%= pageTitle %>" />
 <meta property="og:description" content="<%= pageDescription %>" />
 <meta property="og:type" content="<%= pageOgType %>" />
+<meta property="og:site_name" content="<%= pageSiteName %>" />
+<meta property="og:locale" content="<%= pageLocale %>" />
 <% if (pageCanonical) { %>
 <meta property="og:url" content="<%= pageCanonical %>" />
 <% } %>
 <meta name="twitter:card" content="<%= pageImage ? 'summary_large_image' : 'summary' %>" />
 <meta name="twitter:title" content="<%= pageTitle %>" />
 <meta name="twitter:description" content="<%= pageDescription %>" />
+<meta name="twitter:site" content="<%= pageTwitterSite %>" />
 <% pageJsonLd.forEach((entity) => { %>
 <script nonce="<%= pageCspNonce %>" type="application/ld+json"><%- JSON.stringify(entity) %></script>
 <% }); %>

@@ -57,11 +57,17 @@
       premiumUpgradePrice: 80_000,
     },
     verification: null,
+    analyticsBootstrap: null,
+    analyticsPayload: null,
+    analyticsSelectedSlug: "",
+    analyticsSelectedPeriod: 7,
   };
   let scoreChart = null;
+  let analyticsCharts = {};
   let modalLastFocused = null;
   let modalIsOpen = false;
   let modalConfirmHandler = null;
+  let saveAlertTimer = null;
 
   const buttonTypeLabels = {
     phone: "Позвонить",
@@ -120,8 +126,6 @@
     cColor: $("#profile-card-custom-color"),
     cBranding: $("#profile-card-show-branding"),
     cSave: $("#profile-card-save"),
-    cSaveStatus: $("#profile-card-save-status"),
-    cSlugNote: $("#profile-card-slug-note"),
     cContent: $("#profile-card-content"),
     cEmpty: $("#profile-card-empty-state"),
     cPrev: $("#profile-card-live-preview"),
@@ -136,9 +140,17 @@
     scoreHistoryLock: $("#profile-score-history-lock"),
     analyticsContent: $("#profile-analytics-content"),
     analyticsEmpty: $("#profile-analytics-empty-state"),
-    analyticsScore: $("#profile-analytics-score"),
-    analyticsTop: $("#profile-analytics-top"),
-    analyticsUpdated: $("#profile-analytics-updated"),
+    analyticsSlug: $("#profile-analytics-slug"),
+    analyticsPeriods: $("#profile-analytics-periods"),
+    analyticsViews: $("#profile-analytics-views"),
+    analyticsUnique: $("#profile-analytics-unique"),
+    analyticsCtr: $("#profile-analytics-ctr"),
+    analyticsViewsChart: $("#profile-analytics-views-chart"),
+    analyticsSourcesChart: $("#profile-analytics-sources-chart"),
+    analyticsDevicesChart: $("#profile-analytics-devices-chart"),
+    analyticsButtonsChart: $("#profile-analytics-buttons-chart"),
+    analyticsGeoChart: $("#profile-analytics-geo-chart"),
+    analyticsLock: $("#profile-analytics-lock"),
 
     reqBanner: $("#profile-requests-banner"),
     reqTable: $("#profile-requests-table"),
@@ -167,7 +179,6 @@
     verificationClose: $("#profile-verification-close"),
     verificationCompany: $("#profile-verification-company"),
     verificationRole: $("#profile-verification-role"),
-    verificationSlug: $("#profile-verification-slug"),
     verificationProofType: $("#profile-verification-proof-type"),
     verificationProofValue: $("#profile-verification-proof-value"),
     verificationComment: $("#profile-verification-comment"),
@@ -256,6 +267,23 @@
     el.modalOk.addEventListener("click", once);
   };
 
+  const showSaveAlert = (message) => {
+    let node = document.getElementById("profile-save-success-alert");
+    if (!(node instanceof HTMLElement)) {
+      node = document.createElement("div");
+      node.id = "profile-save-success-alert";
+      node.className =
+        "fixed bottom-4 right-4 z-[80] hidden rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-800 shadow";
+      document.body.appendChild(node);
+    }
+    node.textContent = message;
+    node.classList.remove("hidden");
+    if (saveAlertTimer) clearTimeout(saveAlertTimer);
+    saveAlertTimer = setTimeout(() => {
+      node?.classList.add("hidden");
+    }, 2600);
+  };
+
   const destroyCropper = () => {
     if (avatarCropper) {
       avatarCropper.destroy();
@@ -283,6 +311,9 @@
       button.classList.toggle("text-white", on);
     });
     el.panels.forEach((panel) => panel.classList.toggle("hidden", panel.getAttribute("data-tab-panel") !== active));
+    if (active === "analytics") {
+      void refreshAnalytics();
+    }
   };
 
   const getCurrentPlan = () => s.user?.effectivePlan || "none";
@@ -314,7 +345,7 @@
 
   const renderSidebar = () => {
     if (!s.user) return;
-    if (el.av) el.av.src = s.user.photoUrl || "/brand/unq-mark.svg";
+    if (el.av) el.av.src = s.user.photoUrl || "/brand/logo.PNG";
     if (el.nm) el.nm.textContent = s.user.displayName || s.user.firstName || "UNQ+ User";
     if (el.un) el.un.textContent = s.user.username ? `@${s.user.username}` : "@—";
     const plan = s.user.plan || "none";
@@ -523,7 +554,7 @@
         postcode: String(el.cPostcode?.value || "").trim(),
         email: String(el.cEmail?.value || "").trim(),
         extraPhone: String(el.cExtraPhone?.value || "").trim(),
-        avatarUrl: avatarUrl && !avatarUrl.includes("/brand/unq-mark.svg") ? avatarUrl : null,
+        avatarUrl: avatarUrl && !avatarUrl.includes("/brand/logo.PNG") ? avatarUrl : null,
         tags: (s.tags || []).map((tag) => ({ label: String(tag || "") })),
         buttons: (s.buttons || []).map((button) => ({
           type: String(button?.type || "other")
@@ -581,7 +612,7 @@
 
     const card = s.card || {};
 
-    if (el.cAv) el.cAv.src = card.avatarUrl || s.user?.photoUrl || "/brand/unq-mark.svg";
+    if (el.cAv) el.cAv.src = card.avatarUrl || s.user?.photoUrl || "/brand/logo.PNG";
     if (el.cName) el.cName.value = card.name || s.user?.displayName || s.user?.firstName || "";
     if (el.cRole) el.cRole.value = card.role || "";
     if (el.cBio) el.cBio.value = card.bio || "";
@@ -604,12 +635,6 @@
     renderTheme();
     renderPreview();
 
-    if (el.cSlugNote) {
-      const slugNames = s.slugs.map((item) => item.fullSlug).join(", ");
-      el.cSlugNote.textContent = slugNames
-        ? `Все твои UNQ (${slugNames}) показывают эту визитку`
-        : "Все твои UNQ будут показывать эту визитку";
-    }
   };
 
   const renderRequests = () => {
@@ -840,9 +865,27 @@
     }
   };
 
+  const destroyAnalyticsCharts = () => {
+    Object.values(analyticsCharts).forEach((instance) => {
+      if (instance && typeof instance.destroy === "function") {
+        instance.destroy();
+      }
+    });
+    analyticsCharts = {};
+  };
+
+  const buildChart = (canvas, config, key) => {
+    if (!(canvas instanceof HTMLCanvasElement) || typeof Chart === "undefined") return;
+    if (analyticsCharts[key] && typeof analyticsCharts[key].destroy === "function") {
+      analyticsCharts[key].destroy();
+    }
+    analyticsCharts[key] = new Chart(canvas, config);
+  };
+
   const renderAnalytics = () => {
     const plan = getCurrentPlan();
     if (plan === "none") {
+      destroyAnalyticsCharts();
       if (el.analyticsContent instanceof HTMLElement) el.analyticsContent.classList.add("hidden");
       if (el.analyticsEmpty instanceof HTMLElement) {
         el.analyticsEmpty.classList.remove("hidden");
@@ -858,9 +901,130 @@
     }
     if (el.analyticsContent instanceof HTMLElement) el.analyticsContent.classList.remove("hidden");
     if (el.analyticsEmpty instanceof HTMLElement) el.analyticsEmpty.classList.add("hidden");
-    if (el.analyticsScore) el.analyticsScore.textContent = String(Number(s.score?.score || 0));
-    if (el.analyticsTop) el.analyticsTop.textContent = `${Math.max(1, Number(s.score?.topPercent || 100))}%`;
-    if (el.analyticsUpdated) el.analyticsUpdated.textContent = fh(s.score?.calculatedAt);
+    const payload = s.analyticsPayload;
+    if (!payload) return;
+
+    if (el.analyticsViews) el.analyticsViews.textContent = String(Number(payload.kpi?.views || 0));
+    if (el.analyticsUnique) el.analyticsUnique.textContent = String(Number(payload.kpi?.uniqueVisitors || 0));
+    if (el.analyticsCtr) el.analyticsCtr.textContent = `${Number(payload.kpi?.ctr || 0)}%`;
+    if (el.analyticsLock) el.analyticsLock.classList.toggle("hidden", Boolean(payload.flags?.isPremium));
+
+    const viewsByDay = Array.isArray(payload.chart?.viewsByDay) ? payload.chart.viewsByDay : [];
+    const sourceEntries = Object.entries(payload.chart?.trafficSources || {});
+    const deviceEntries = Object.entries(payload.chart?.devices || {});
+    const buttonEntries = Object.entries(payload.chart?.buttonActivity || {});
+    const geoEntries = Object.entries(payload.chart?.geography || {}).sort((a, b) => Number(b[1]) - Number(a[1])).slice(0, 8);
+
+    buildChart(
+      el.analyticsViewsChart,
+      {
+        type: "line",
+        data: {
+          labels: viewsByDay.map((item) => item.date),
+          datasets: [{ data: viewsByDay.map((item) => Number(item.value || 0)), borderColor: "#111827", borderWidth: 2, tension: 0.25 }],
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } },
+      },
+      "views",
+    );
+    buildChart(
+      el.analyticsSourcesChart,
+      {
+        type: "doughnut",
+        data: {
+          labels: sourceEntries.map((item) => item[0]),
+          datasets: [{ data: sourceEntries.map((item) => Number(item[1] || 0)), backgroundColor: ["#111827", "#374151", "#6b7280", "#d1d5db", "#9ca3af"] }],
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: "bottom" } } },
+      },
+      "sources",
+    );
+    buildChart(
+      el.analyticsDevicesChart,
+      {
+        type: "bar",
+        data: {
+          labels: deviceEntries.map((item) => item[0]),
+          datasets: [{ data: deviceEntries.map((item) => Number(item[1] || 0)), backgroundColor: "#111827" }],
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } },
+      },
+      "devices",
+    );
+    buildChart(
+      el.analyticsButtonsChart,
+      {
+        type: "bar",
+        data: {
+          labels: buttonEntries.map((item) => item[0]),
+          datasets: [{ data: buttonEntries.map((item) => Number(item[1] || 0)), backgroundColor: "#374151" }],
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } },
+      },
+      "buttons",
+    );
+    buildChart(
+      el.analyticsGeoChart,
+      {
+        type: "bar",
+        data: {
+          labels: geoEntries.map((item) => item[0]),
+          datasets: [{ data: geoEntries.map((item) => Number(item[1] || 0)), backgroundColor: "#6b7280" }],
+        },
+        options: { indexAxis: "y", responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } },
+      },
+      "geo",
+    );
+  };
+
+  const fillAnalyticsControls = () => {
+    const bootstrap = s.analyticsBootstrap;
+    if (!bootstrap) return;
+    if (el.analyticsSlug instanceof HTMLSelectElement) {
+      el.analyticsSlug.innerHTML = (Array.isArray(bootstrap.slugs) ? bootstrap.slugs : [])
+        .map((item) => `<option value="${esc(item.fullSlug)}">${esc(item.fullSlug)} · ${esc(item.status || "")}</option>`)
+        .join("");
+      if (s.analyticsSelectedSlug) {
+        el.analyticsSlug.value = s.analyticsSelectedSlug;
+      }
+    }
+    if (el.analyticsPeriods instanceof HTMLElement) {
+      const allowed = Array.isArray(bootstrap.periods) ? bootstrap.periods : [7];
+      el.analyticsPeriods.innerHTML = [7, 30, 90]
+        .map((period) => {
+          const isAllowed = allowed.includes(period);
+          const isActive = s.analyticsSelectedPeriod === period;
+          return `<button type="button" data-analytics-period="${period}" class="interactive-btn rounded-lg border px-3 py-1.5 text-xs font-semibold ${isActive ? "border-neutral-900 bg-neutral-900 text-white" : "border-neutral-300"} ${isAllowed ? "" : "opacity-50"}" ${isAllowed ? "" : "disabled"}>${period}д</button>`;
+        })
+        .join("");
+    }
+  };
+
+  const refreshAnalytics = async () => {
+    if (getCurrentPlan() === "none") return;
+    if (!s.analyticsBootstrap) {
+      try {
+        s.analyticsBootstrap = await api("/api/profile/analytics/bootstrap");
+        s.analyticsSelectedSlug = s.analyticsBootstrap.selectedSlug || s.analyticsBootstrap.slugs?.[0]?.fullSlug || "";
+        s.analyticsSelectedPeriod = 7;
+      } catch {
+        s.analyticsBootstrap = { slugs: [], periods: [7] };
+      }
+    }
+    fillAnalyticsControls();
+    if (!s.analyticsSelectedSlug) {
+      s.analyticsPayload = null;
+      renderAnalytics();
+      return;
+    }
+    try {
+      s.analyticsPayload = await api(
+        `/api/profile/analytics?slug=${encodeURIComponent(s.analyticsSelectedSlug)}&period=${encodeURIComponent(s.analyticsSelectedPeriod)}`,
+      );
+    } catch {
+      s.analyticsPayload = null;
+    }
+    renderAnalytics();
   };
 
   const renderAll = () => {
@@ -896,6 +1060,11 @@
       s.requests = payload.requests || [];
       s.score = payload.score || null;
       s.pricing = payload.pricing || s.pricing;
+      if (!s.slugs.find((item) => item.fullSlug === s.analyticsSelectedSlug)) {
+        s.analyticsBootstrap = null;
+        s.analyticsPayload = null;
+        s.analyticsSelectedSlug = "";
+      }
       try {
         s.referrals = await api("/api/referrals/bootstrap");
       } catch {
@@ -919,7 +1088,6 @@
   };
 
   const saveCard = async () => {
-    if (!el.cSaveStatus) return;
     if ((el.cName?.value || "").trim().length === 0) {
       if (el.cardNameError) {
         el.cardNameError.classList.remove("hidden");
@@ -930,7 +1098,6 @@
     if (el.cardNameError) {
       el.cardNameError.classList.add("hidden");
     }
-    el.cSaveStatus.textContent = "";
 
     try {
       await api("/api/profile/card", {
@@ -953,15 +1120,14 @@
         }),
       });
 
-      el.cSaveStatus.textContent = "Визитка обновлена";
-      el.cSaveStatus.className = "text-sm text-emerald-700";
+      showSaveAlert("Успешно сохранено");
       await load();
     } catch (error) {
-      el.cSaveStatus.textContent = "Ошибка. Попробуй ещё раз";
-      el.cSaveStatus.className = "text-sm text-red-700";
       if (error.code === "UPGRADE_REQUIRED") {
         showModal("Доступно на Премиум", "Эта функция доступна только для Премиум тарифа.");
+        return;
       }
+      showModal("Ошибка", error.message || "Не удалось сохранить визитку");
     }
   };
 
@@ -1106,6 +1272,23 @@
       location.hash = `#${button.getAttribute("data-tab-target") || "slugs"}`;
     }),
   );
+
+  el.analyticsSlug?.addEventListener("change", () => {
+    if (!(el.analyticsSlug instanceof HTMLSelectElement)) return;
+    s.analyticsSelectedSlug = el.analyticsSlug.value;
+    void refreshAnalytics();
+  });
+
+  document.addEventListener("click", (event) => {
+    const target = event.target instanceof HTMLElement ? event.target : null;
+    if (!target) return;
+    const periodButton = target.closest("[data-analytics-period]");
+    if (!(periodButton instanceof HTMLElement)) return;
+    const nextPeriod = Number(periodButton.getAttribute("data-analytics-period"));
+    if (!Number.isFinite(nextPeriod)) return;
+    s.analyticsSelectedPeriod = nextPeriod;
+    void refreshAnalytics();
+  });
 
   el.refCopy?.addEventListener("click", async () => {
     const value = el.refLink instanceof HTMLInputElement ? el.refLink.value : "";
@@ -1491,7 +1674,7 @@
         body: JSON.stringify({}),
       });
       window.dispatchEvent(new CustomEvent("unqx:auth:logout"));
-      location.href = "/";
+      location.href = "/?auth=required&next=%2Fprofile&forceAuth=1";
     } catch (error) {
       showModal("Ошибка", error.message || "Не удалось выйти");
       el.logout.disabled = false;
@@ -1543,7 +1726,6 @@
         body: JSON.stringify({
           companyName: el.verificationCompany?.value || "",
           role: el.verificationRole?.value || "",
-          slug: el.verificationSlug?.value || "",
           proofType: el.verificationProofType?.value || "email",
           proofValue: el.verificationProofValue?.value || "",
           comment: el.verificationComment?.value || "",

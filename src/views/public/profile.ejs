@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ru">
 <head>
-  <%- include('../partials/head', { title: title || "Мой профиль | UNQ+", styles: ['/css/public-card.css'], noindex: true }) %>
+  <%- include('../partials/head', { title: title || "Мой профиль | UNQ+", description: typeof description === 'string' ? description : undefined, image: typeof image === 'string' ? image : undefined, styles: ['/css/public-card.css'], noindex: true }) %>
   <link rel="stylesheet" href="/vendor/cropperjs/cropper.min.css" />
 </head>
 <body class="antialiased" data-page="profile-page" data-telegram-bot-username="<%= telegramBotUsername || '' %>">
@@ -31,7 +31,7 @@
     <div class="mx-auto grid min-w-0 w-full max-w-6xl gap-4 md:gap-6 lg:grid-cols-[300px_1fr]">
       <aside class="min-w-0 rounded-2xl border border-neutral-200 bg-white p-4 sm:p-5">
         <div class="flex items-center gap-3">
-          <img id="profile-sidebar-avatar" src="/brand/unq-mark.svg" alt="avatar" class="h-14 w-14 rounded-full border border-neutral-200 object-cover" />
+          <img id="profile-sidebar-avatar" src="/brand/logo.PNG" alt="avatar" class="h-14 w-14 rounded-full border border-neutral-200 object-cover" />
           <div>
             <p id="profile-sidebar-name" class="text-base font-semibold text-neutral-900">Загрузка...</p>
             <p id="profile-sidebar-username" class="text-sm text-neutral-500">@—</p>
@@ -105,7 +105,7 @@
               <div>
                 <label class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Аватар</label>
                 <div class="flex flex-wrap items-center gap-3">
-                  <img id="profile-card-avatar-preview" src="/brand/unq-mark.svg" alt="avatar" class="h-16 w-16 rounded-full border border-neutral-200 object-cover" />
+                  <img id="profile-card-avatar-preview" src="/brand/logo.PNG" alt="avatar" class="h-16 w-16 rounded-full border border-neutral-200 object-cover" />
                   <div class="flex flex-wrap gap-2">
                     <label for="profile-card-avatar-file" class="inline-flex min-h-11 cursor-pointer items-center justify-center rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold">Загрузить</label>
                     <input id="profile-card-avatar-file" type="file" accept="image/png,image/jpeg,image/webp" class="hidden" />
@@ -196,9 +196,9 @@
                 Скрыть брендинг UNQ+
               </label>
 
-              <button id="profile-card-save" type="button" class="interactive-btn min-h-11 rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white">Сохранить визитку</button>
-              <p id="profile-card-save-status" class="text-sm"></p>
-              <p id="profile-card-slug-note" class="text-xs text-neutral-500"></p>
+              <div class="mt-2 flex justify-end">
+                <button id="profile-card-save" type="button" class="interactive-btn min-h-11 rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white">Сохранить визитку</button>
+              </div>
             </div>
 
             <div class="xl:mt-2">
@@ -215,19 +215,51 @@
           <h2 class="text-lg font-bold">АНАЛИТИКА</h2>
           <section id="profile-analytics-empty-state" class="hidden mt-5 rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-10 text-center"></section>
           <section id="profile-analytics-content" class="mt-4 rounded-xl border border-neutral-200 bg-neutral-50 p-4">
+            <div class="mb-4 grid gap-2 md:grid-cols-[1fr_auto]">
+              <select id="profile-analytics-slug" class="rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm"></select>
+              <div id="profile-analytics-periods" class="flex items-center gap-2"></div>
+            </div>
             <div class="grid gap-4 sm:grid-cols-3">
               <article class="rounded-xl border border-neutral-200 bg-white p-3">
-                <p class="text-xs uppercase tracking-[0.12em] text-neutral-500">UNQ Score</p>
-                <p id="profile-analytics-score" class="mt-2 text-2xl font-black text-neutral-900">0</p>
+                <p class="text-xs uppercase tracking-[0.12em] text-neutral-500">Просмотры</p>
+                <p id="profile-analytics-views" class="mt-2 text-2xl font-black text-neutral-900">0</p>
               </article>
               <article class="rounded-xl border border-neutral-200 bg-white p-3">
-                <p class="text-xs uppercase tracking-[0.12em] text-neutral-500">Топ</p>
-                <p id="profile-analytics-top" class="mt-2 text-2xl font-black text-neutral-900">100%</p>
+                <p class="text-xs uppercase tracking-[0.12em] text-neutral-500">Уникальные</p>
+                <p id="profile-analytics-unique" class="mt-2 text-2xl font-black text-neutral-900">0</p>
               </article>
               <article class="rounded-xl border border-neutral-200 bg-white p-3">
-                <p class="text-xs uppercase tracking-[0.12em] text-neutral-500">Обновлено</p>
-                <p id="profile-analytics-updated" class="mt-2 text-sm font-semibold text-neutral-700">—</p>
+                <p class="text-xs uppercase tracking-[0.12em] text-neutral-500">CTR</p>
+                <p id="profile-analytics-ctr" class="mt-2 text-2xl font-black text-neutral-900">0%</p>
               </article>
+            </div>
+            <div class="mt-4 grid gap-4 lg:grid-cols-2">
+              <article class="rounded-xl border border-neutral-200 bg-white p-3">
+                <p class="text-xs uppercase tracking-[0.12em] text-neutral-500">Динамика просмотров</p>
+                <div class="mt-2 h-[220px]"><canvas id="profile-analytics-views-chart"></canvas></div>
+              </article>
+              <article class="rounded-xl border border-neutral-200 bg-white p-3">
+                <p class="text-xs uppercase tracking-[0.12em] text-neutral-500">Источники трафика</p>
+                <div class="mt-2 h-[220px]"><canvas id="profile-analytics-sources-chart"></canvas></div>
+              </article>
+              <article class="rounded-xl border border-neutral-200 bg-white p-3">
+                <p class="text-xs uppercase tracking-[0.12em] text-neutral-500">Устройства</p>
+                <div class="mt-2 h-[220px]"><canvas id="profile-analytics-devices-chart"></canvas></div>
+              </article>
+              <article class="rounded-xl border border-neutral-200 bg-white p-3">
+                <p class="text-xs uppercase tracking-[0.12em] text-neutral-500">Активность кнопок</p>
+                <div class="mt-2 h-[220px]"><canvas id="profile-analytics-buttons-chart"></canvas></div>
+              </article>
+            </div>
+            <article class="mt-4 rounded-xl border border-neutral-200 bg-white p-3">
+              <p class="text-xs uppercase tracking-[0.12em] text-neutral-500">География (города)</p>
+              <div class="mt-2 h-[220px]"><canvas id="profile-analytics-geo-chart"></canvas></div>
+            </article>
+            <div id="profile-analytics-lock" class="mt-4 hidden rounded-xl border border-neutral-200 bg-white/80 p-4 text-sm text-neutral-700">
+              Расширенные периоды аналитики (30 и 90 дней) доступны на Премиум.
+              <button type="button" data-order-link data-order-plan="premium" class="interactive-btn ml-2 min-h-11 rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold">
+                Улучшить тариф
+              </button>
             </div>
           </section>
         </article>
@@ -376,7 +408,6 @@
       <div class="grid gap-2">
         <input id="profile-verification-company" type="text" placeholder="Компания" class="rounded-lg border border-neutral-200 px-3 py-2 text-sm" />
         <input id="profile-verification-role" type="text" placeholder="Роль" class="rounded-lg border border-neutral-200 px-3 py-2 text-sm" />
-        <input id="profile-verification-slug" type="text" placeholder="UNQ (AAA000)" class="rounded-lg border border-neutral-200 px-3 py-2 text-sm uppercase" />
         <select id="profile-verification-proof-type" class="rounded-lg border border-neutral-200 px-3 py-2 text-sm">
           <option value="email">Email</option>
           <option value="linkedin">LinkedIn</option>

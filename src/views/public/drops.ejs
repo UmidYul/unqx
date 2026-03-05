@@ -1,7 +1,17 @@
 <!doctype html>
 <html lang="ru">
 <head>
-  <%- include('../partials/head', { title: title || 'Дропы slug · UNQ+', description: description || 'Дропы slug UNQ+', styles: ['/css/public-card.css'] }) %>
+  <%
+    const pageCanonicalUrl = typeof canonicalUrl === "string" ? canonicalUrl : "";
+    const dropsJsonLd = {
+      "@context": "https://schema.org",
+      "@type": "CollectionPage",
+      name: title || "Дропы slug · UNQ+",
+      description: description || "Актуальные и прошедшие дропы slug на UNQ+",
+      url: pageCanonicalUrl,
+    };
+  %>
+  <%- include('../partials/head', { title: title || 'Дропы slug · UNQ+', description: description || 'Дропы slug UNQ+', image: typeof image === 'string' ? image : undefined, styles: ['/css/public-card.css'], jsonLd: dropsJsonLd }) %>
 </head>
 <body class="antialiased bg-neutral-50" data-page="drops-page" data-telegram-bot-username="<%= telegramBotUsername || '' %>">
   <% const hasDrops = Array.isArray(drops) && drops.length > 0; %>

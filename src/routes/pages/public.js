@@ -15,6 +15,7 @@ const { normalizeRefCode } = require("../../services/referrals");
 const { getPricingSettings } = require("../../services/pricing-settings");
 
 const router = express.Router();
+const defaultSocialImage = absoluteUrl("/brand/logo.PNG");
 
 function sanitizeSlug(value) {
   return String(value || "")
@@ -111,6 +112,7 @@ async function findSlugByFullSlugWithLegacyFallback(fullSlug) {
       select: {
         id: true,
         fullSlug: true,
+        price: true,
         ownerTelegramId: true,
         status: true,
         isPrimary: true,
@@ -127,6 +129,7 @@ async function findSlugByFullSlugWithLegacyFallback(fullSlug) {
       SELECT
         id,
         full_slug AS "fullSlug",
+        price,
         owner_telegram_id AS "ownerTelegramId",
         status::text AS "status",
         is_primary AS "isPrimary",
@@ -212,6 +215,7 @@ function buildPublicCardFromProfile({ slug, user, profileCard, viewsCount }) {
   const plan = getEffectivePlan(user).plan;
   return {
     slug,
+    slugPrice: Number.isFinite(Number(profileCard.slugPrice)) ? Number(profileCard.slugPrice) : null,
     avatarUrl: profileCard.avatarUrl || user?.photoUrl || null,
     name: profileCard.name,
     verified: Boolean(user?.isVerified),
@@ -261,6 +265,7 @@ router.get(
     res.render("public/home", {
       title: "UNQ+ | Цифровая визитка за 1 минуту",
       description: "Одна ссылка вместо тысячи слов. Создай свою цифровую визитку на unqx.uz",
+      image: defaultSocialImage,
       testimonials,
       slugTotalLimit: env.SLUG_TOTAL_LIMIT,
       leaderboardEnabled: Boolean(leaderboardSettings.enabled),
@@ -310,6 +315,7 @@ router.get(
     res.render("public/referral", {
       title: "Вас пригласили в UNQ+",
       description: "Зарегистрируйтесь в UNQ+ и получите доступ к цифровой визитке по приглашению.",
+      image: defaultSocialImage,
       refCode,
       referrerName,
       referrerUsername,
@@ -324,6 +330,8 @@ router.get(
   asyncHandler(async (req, res) => {
     res.render("public/themes", {
       title: "Темы Премиум | UNQ+",
+      description: "Каталог премиум-тем UNQ+: выбери стиль визитки, цвета и оформление под свой бренд.",
+      image: defaultSocialImage,
       adminSession: getAdminSession(req),
     });
   }),
@@ -338,6 +346,8 @@ router.get(
 
     res.render("public/demo", {
       title: "UNQ+ Demo",
+      description: "Демо цифровой визитки UNQ+: посмотри как выглядит карточка до покупки и настройки профиля.",
+      image: defaultSocialImage,
       theme,
       embed,
       adminSession: getAdminSession(req),
@@ -359,6 +369,8 @@ router.get(
 
     res.render("public/profile", {
       title: "Мой профиль | UNQ+",
+      description: "Личный кабинет UNQ+: управляй визиткой, UNQ, аналитикой, заявками и настройками профиля.",
+      image: defaultSocialImage,
       adminSession: getAdminSession(req),
     });
   }),
@@ -393,6 +405,7 @@ router.get(
     res.render("public/leaderboard", {
       title: "Топ визиток недели · UNQ+",
       description: "Топ визиток UNQ+ по UNQ Score",
+      image: defaultSocialImage,
       period: board.period,
       items: board.publicItems,
       userSummary,
@@ -412,6 +425,7 @@ router.get(
     res.render("public/drops", {
       title: "Дропы slug · UNQ+",
       description: "Актуальные и прошедшие дропы slug на UNQ+",
+      image: defaultSocialImage,
       drops: rows,
       adminSession: getAdminSession(req),
     });
@@ -533,6 +547,7 @@ router.get(
     res.render("public/directory", {
       title: "UNQ Directory",
       description: "Публичный каталог визиток UNQ+",
+      image: defaultSocialImage,
       items,
       pagination: { page: safePage, totalPages, total },
       filters: { q, sector, sort },
@@ -568,6 +583,8 @@ router.get(
     if (!owner || owner.status !== "active") {
       res.status(200).render("public/qr", {
         title: `QR ${slug}`,
+        description: `QR-визитка UNQ ${slug} временно недоступна.`,
+        image: defaultSocialImage,
         slug,
         unavailable: true,
         adminSession: getAdminSession(req),
@@ -577,8 +594,10 @@ router.get(
 
     res.render("public/qr", {
       title: `QR ${slug}`,
+      description: `QR-визитка UNQ ${slug}. Открой цифровую карточку владельца по ссылке и поделись за секунду.`,
       slug,
-      url: `${env.BASE_URL.replace(/\/$/, "")}/${slug}`,
+      image: defaultSocialImage,
+      url: absoluteUrl(`/${slug}`),
       ownerName: profileCard?.name || owner.displayName || owner.firstName || "UNQ+ User",
       ownerRole: profileCard?.role || "",
       score: score ? Number(score.score || 0) : 0,
@@ -754,10 +773,13 @@ router.get(
         const card = buildPublicCardFromProfile({
           slug,
           user: owner,
-          profileCard,
+          profileCard: {
+            ...profileCard,
+            slugPrice: typeof slugRow.price === "number" ? slugRow.price : null,
+          },
           viewsCount: views,
         });
-        const image = card.avatarUrl ? absoluteUrl(card.avatarUrl) : absoluteUrl("/brand/unq-mark.svg");
+        const image = card.avatarUrl ? absoluteUrl(card.avatarUrl) : absoluteUrl("/brand/logo.PNG");
         const viewerTelegramId = getUserSession(req)?.telegramId || null;
         const score = await getPublicScoreForSlug({
           slug,
@@ -767,7 +789,7 @@ router.get(
         const topBadge = await getSlugTopBadge(slug);
         res.render("public/card", {
           title: `${card.name} | UNQ+`,
-          description: card.name,
+          description: `Цифровая визитка ${card.name} на UNQ+: контакты, соцсети, QR и быстрый обмен ссылкой.`,
           image,
           card,
           topBadge,
@@ -811,11 +833,11 @@ router.get(
       return;
     }
 
-    const image = card.avatarUrl ? absoluteUrl(card.avatarUrl) : absoluteUrl("/brand/unq-mark.svg");
+    const image = card.avatarUrl ? absoluteUrl(card.avatarUrl) : absoluteUrl("/brand/logo.PNG");
 
     res.render("public/card", {
       title: `${card.name} | UNQ+`,
-      description: card.phone,
+      description: `Цифровая визитка ${card.name} на UNQ+: контакты, ссылки и QR для быстрого обмена.`,
       image,
       card,
       score: null,

@@ -182,6 +182,14 @@ function initTelegramAuth(pageNode) {
   const profileAvatars = Array.from(document.querySelectorAll("[data-auth-avatar]"));
   let currentUser = null;
 
+  function getSafeNextPath(rawValue) {
+    const raw = String(rawValue || "").trim();
+    if (!raw || !raw.startsWith("/") || raw.startsWith("//")) {
+      return "/profile";
+    }
+    return raw;
+  }
+
   function renderAuthUi() {
     for (const node of loginButtons) {
       node.classList.toggle("hidden", Boolean(currentUser));
@@ -196,7 +204,7 @@ function initTelegramAuth(pageNode) {
       }
       for (const node of profileAvatars) {
         if (node instanceof HTMLImageElement) {
-          node.src = currentUser.photoUrl || "/brand/unq-mark.svg";
+          node.src = currentUser.photoUrl || "/brand/logo.PNG";
         }
       }
     }
@@ -240,6 +248,24 @@ function initTelegramAuth(pageNode) {
     });
   });
 
+  profileLinks.forEach((node) => {
+    node.addEventListener("click", async (event) => {
+      event.preventDefault();
+      await refreshUser();
+      if (currentUser) {
+        window.location.href = "/profile";
+        return;
+      }
+      if (window.UNQOrderModal && typeof window.UNQOrderModal.ensureAuth === "function") {
+        window.UNQOrderModal.ensureAuth((user) => {
+          if (user) {
+            window.location.href = "/profile";
+          }
+        });
+      }
+    });
+  });
+
   window.addEventListener("unqx:auth:success", (event) => {
     currentUser = event?.detail || null;
     renderAuthUi();
@@ -257,7 +283,48 @@ function initTelegramAuth(pageNode) {
     void refreshUser();
   });
 
-  void refreshUser();
+  void refreshUser().then(async () => {
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("auth") !== "required") {
+      return;
+    }
+
+    const forceAuth = url.searchParams.get("forceAuth") === "1";
+    const nextPath = getSafeNextPath(url.searchParams.get("next"));
+    url.searchParams.delete("auth");
+    url.searchParams.delete("next");
+    url.searchParams.delete("forceAuth");
+    const query = url.searchParams.toString();
+    history.replaceState({}, "", `${url.pathname}${query ? `?${query}` : ""}${url.hash}`);
+
+    if (forceAuth) {
+      try {
+        await fetch("/api/auth/logout", {
+          method: "POST",
+          headers: { Accept: "application/json" },
+          cache: "no-store",
+        });
+      } catch {
+        // ignore: even if logout request fails, we still open auth modal
+      }
+      await refreshUser();
+      currentUser = null;
+      renderAuthUi();
+    }
+
+    if (currentUser && !forceAuth) {
+      window.location.replace(nextPath);
+      return;
+    }
+
+    if (window.UNQOrderModal && typeof window.UNQOrderModal.ensureAuth === "function") {
+      window.UNQOrderModal.ensureAuth((user) => {
+        if (user) {
+          window.location.href = nextPath;
+        }
+      });
+    }
+  });
 
   return {
     getUser() {
@@ -417,13 +484,13 @@ function initSlugAvailability(orderApi) {
       if (!owner || typeof owner !== "object") {
         takenOwnerWrap.classList.add("hidden");
         takenOwnerName.textContent = "UNQ+ User";
-        takenOwnerPhoto.src = "/brand/unq-mark.svg";
+        takenOwnerPhoto.src = "/brand/logo.PNG";
         takenOwnerView.href = `/${slug}`;
         return;
       }
 
       const ownerName = String(owner.name || "").trim() || "UNQ+ User";
-      const ownerPhoto = String(owner.photoUrl || "").trim() || "/brand/unq-mark.svg";
+      const ownerPhoto = String(owner.photoUrl || "").trim() || "/brand/logo.PNG";
       const ownerHref = String(owner.href || "").trim() || `/${slug}`;
       takenOwnerName.textContent = ownerName;
       takenOwnerPhoto.src = ownerPhoto;

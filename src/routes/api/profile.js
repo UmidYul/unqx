@@ -902,30 +902,30 @@ router.post(
       return;
     }
 
-    const slug = sanitizeSlug(req.body?.slug);
     const companyName = String(req.body?.companyName || "").trim().slice(0, 160);
     const role = String(req.body?.role || "").trim().slice(0, 160);
     const proofType = String(req.body?.proofType || "").trim().toLowerCase();
     const proofValue = String(req.body?.proofValue || "").trim().slice(0, 320);
     const comment = String(req.body?.comment || "").trim().slice(0, 1000);
-    if (!slug || !companyName || !role || !["email", "linkedin", "website"].includes(proofType) || !proofValue) {
+    if (!companyName || !role || !["email", "linkedin", "website"].includes(proofType) || !proofValue) {
       res.status(400).json({ error: "Invalid request payload" });
       return;
     }
 
-    const ownedSlug = await prisma.slug.findFirst({
-      where: { fullSlug: slug, ownerTelegramId: user.telegramId },
+    const primarySlug = await prisma.slug.findFirst({
+      where: {
+        ownerTelegramId: user.telegramId,
+        status: { in: ["active", "private", "paused", "approved"] },
+      },
+      orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
       select: { fullSlug: true },
     });
-    if (!ownedSlug) {
-      res.status(404).json({ error: "UNQ not found" });
-      return;
-    }
+    const verificationSlug = primarySlug?.fullSlug || "PROFILE";
 
     const request = await prisma.verificationRequest.create({
       data: {
         telegramId: user.telegramId,
-        slug,
+        slug: verificationSlug,
         companyName,
         role,
         proofType,
@@ -936,7 +936,7 @@ router.post(
 
     void sendVerificationRequestToAdmin({
       telegramId: user.telegramId,
-      slug,
+      slug: verificationSlug,
       companyName,
       role,
       proofType,

@@ -276,7 +276,7 @@ const DEFAULT_PRICING = {
     const safeName = currentUser?.firstName || currentUser?.displayName || "Пользователь";
     const username = currentUser?.username ? ` · @${currentUser.username}` : "";
     dom.userName.textContent = `${safeName}${username}`;
-    dom.userAvatar.src = currentUser?.photoUrl || "/brand/unq-mark.svg";
+    dom.userAvatar.src = currentUser?.photoUrl || "/brand/logo.PNG";
   }
 
   function isFormDirty() {

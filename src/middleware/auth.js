@@ -12,7 +12,8 @@ function getAdminSession(req) {
 
 function requireUserPage(req, res, next) {
   if (!getUserSession(req)) {
-    return res.redirect("/");
+    const nextPath = typeof req.originalUrl === "string" && req.originalUrl.startsWith("/") ? req.originalUrl : "/profile";
+    return res.redirect(`/?auth=required&next=${encodeURIComponent(nextPath)}`);
   }
 
   return next();

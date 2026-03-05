@@ -64,7 +64,7 @@ export function WhoopSection() {
                 WHOOP 4.0
               </div>
               <Image
-                src="/images/whoop.jpg"
+                src="/images/wristband.png"
                 alt="WHOOP 4.0 fitness bracelet"
                 width={500}
                 height={400}

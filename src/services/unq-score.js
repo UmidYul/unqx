@@ -463,7 +463,7 @@ async function getScoreLeaderboard(limit = 100) {
       telegramId: row.telegramId,
       slug,
       ownerName: row.user?.profileCard?.name || row.user?.firstName || row.user?.username || "UNQ+ User",
-      avatarUrl: row.user?.profileCard?.avatarUrl || row.user?.photoUrl || "/brand/unq-mark.svg",
+      avatarUrl: row.user?.profileCard?.avatarUrl || row.user?.photoUrl || "/brand/logo.PNG",
       plan: row.user?.plan || "basic",
       score: row.score,
       percentile: row.percentile,

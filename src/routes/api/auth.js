@@ -1,6 +1,7 @@
 const express = require("express");
 
 const { prisma } = require("../../db/prisma");
+const { env } = require("../../config/env");
 const { asyncHandler } = require("../../middleware/async");
 const { requireCsrfToken, ensureCsrfToken } = require("../../middleware/csrf");
 const { requireSameOrigin } = require("../../middleware/same-origin");
@@ -211,6 +212,11 @@ router.post(
   "/logout",
   requireSameOrigin,
   asyncHandler(async (req, res) => {
+    const sessionId = req.sessionID;
+    if (req.session) {
+      delete req.session.user;
+    }
+
     await new Promise((resolve, reject) => {
       if (!req.session) {
         resolve();
@@ -224,7 +230,35 @@ router.post(
         resolve();
       });
     });
-    res.clearCookie("unqx.sid");
+
+    if (sessionId && req.sessionStore && typeof req.sessionStore.destroy === "function") {
+      await new Promise((resolve, reject) => {
+        req.sessionStore.destroy(sessionId, (error) => {
+          if (error) {
+            reject(error);
+            return;
+          }
+          resolve();
+        });
+      });
+    }
+
+    await new Promise((resolve, reject) => {
+      req.session.regenerate((error) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+        resolve();
+      });
+    });
+
+    res.clearCookie("unqx.sid", {
+      path: "/",
+      httpOnly: true,
+      sameSite: "lax",
+      secure: env.SESSION_COOKIE_SECURE === true,
+    });
     const csrfToken = ensureCsrfToken(req);
     res.json({ ok: true, csrfToken });
   }),

@@ -11,7 +11,7 @@
 <!doctype html>
 <html lang="ru">
 <head>
-  <%- include('../partials/head', { title: pageTitle, styles: ['/css/public-card.css'] }) %>
+  <%- include('../partials/head', { title: pageTitle, description: typeof description === 'string' ? description : undefined, image: typeof image === 'string' ? image : undefined, styles: ['/css/public-card.css'] }) %>
 </head>
 <body class="antialiased" data-telegram-bot-username="<%= telegramBotUsername || '' %>">
   <main class="min-h-screen bg-neutral-50 px-6 py-16">
