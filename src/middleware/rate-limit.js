@@ -1,8 +1,11 @@
-const rateLimit = require("express-rate-limit");
+const { ipKeyGenerator, rateLimit } = require("express-rate-limit");
 
 function emailKeyGenerator(req) {
   const email = typeof req.body?.email === "string" ? req.body.email.trim().toLowerCase() : "";
-  return email || req.ip || "unknown";
+  if (email) {
+    return `email:${email}`;
+  }
+  return `ip:${ipKeyGenerator(req)}`;
 }
 
 const loginRateLimit = rateLimit({

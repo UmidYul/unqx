@@ -122,8 +122,12 @@ const schema = z.object({
   TELEGRAM_BOT_TOKEN: z.string().min(1).optional(),
   TELEGRAM_BOT_USERNAME: z.string().min(1).optional(),
   TELEGRAM_CHAT_ID: z.string().min(1).optional(),
-  RESEND_API_KEY: z.string().min(1).optional(),
   EMAIL_FROM: z.string().min(1).optional(),
+  SMTP_HOST: z.string().min(1).optional(),
+  SMTP_PORT: z.coerce.number().int().min(1).max(65535).optional(),
+  SMTP_SECURE: z.string().optional(),
+  SMTP_USER: z.string().min(1).optional(),
+  SMTP_PASS: z.string().min(1).optional(),
   SLUG_TOTAL_LIMIT: z.coerce.number().int().positive().default(17_576),
   TIMEZONE: z.string().min(1).default("Asia/Tashkent"),
   ROOT_DIR: z.string().optional(),
@@ -150,8 +154,12 @@ const parsed = schema.parse({
   TELEGRAM_BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN,
   TELEGRAM_BOT_USERNAME: normalizeTelegramBotUsername(process.env.TELEGRAM_BOT_USERNAME),
   TELEGRAM_CHAT_ID: process.env.TELEGRAM_CHAT_ID,
-  RESEND_API_KEY: process.env.RESEND_API_KEY,
   EMAIL_FROM: process.env.EMAIL_FROM,
+  SMTP_HOST: process.env.SMTP_HOST,
+  SMTP_PORT: process.env.SMTP_PORT,
+  SMTP_SECURE: process.env.SMTP_SECURE,
+  SMTP_USER: process.env.SMTP_USER,
+  SMTP_PASS: process.env.SMTP_PASS,
   SLUG_TOTAL_LIMIT: process.env.SLUG_TOTAL_LIMIT,
   TIMEZONE: process.env.TIMEZONE,
   ROOT_DIR: process.env.ROOT_DIR,
@@ -171,6 +179,7 @@ const TRUST_PROXY = parseTrustProxy(parsed.TRUST_PROXY);
 const SESSION_COOKIE_SECURE = parseSessionCookieSecure(parsed.SESSION_COOKIE_SECURE, parsed.NODE_ENV);
 const SESSION_ROLLING = parseBoolean(parsed.SESSION_ROLLING) ?? true;
 const DISABLE_HTTPS_ENFORCEMENT = parseBoolean(parsed.DISABLE_HTTPS_ENFORCEMENT) ?? false;
+const SMTP_SECURE = parseBoolean(parsed.SMTP_SECURE) ?? (Number(parsed.SMTP_PORT || 0) === 465);
 
 const env = {
   ...parsed,
@@ -183,6 +192,7 @@ const env = {
   SESSION_COOKIE_SECURE,
   SESSION_ROLLING,
   DISABLE_HTTPS_ENFORCEMENT,
+  SMTP_SECURE,
 };
 
 module.exports = { env };

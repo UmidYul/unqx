@@ -1,3 +1,5 @@
+const nodemailer = require("nodemailer");
+
 const { env } = require("../config/env");
 
 function escapeHtml(value) {
@@ -10,28 +12,26 @@ function escapeHtml(value) {
 }
 
 async function sendEmail({ to, subject, html }) {
-  if (!env.RESEND_API_KEY || !env.EMAIL_FROM) {
+  if (!env.EMAIL_FROM || !env.SMTP_HOST || !env.SMTP_PORT || !env.SMTP_USER || !env.SMTP_PASS) {
     throw new Error("Email service is not configured");
   }
 
-  const response = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${env.RESEND_API_KEY}`,
-      "Content-Type": "application/json",
+  const transporter = nodemailer.createTransport({
+    host: env.SMTP_HOST,
+    port: Number(env.SMTP_PORT),
+    secure: Boolean(env.SMTP_SECURE),
+    auth: {
+      user: env.SMTP_USER,
+      pass: env.SMTP_PASS,
     },
-    body: JSON.stringify({
-      from: env.EMAIL_FROM,
-      to: [to],
-      subject,
-      html,
-    }),
   });
 
-  if (!response.ok) {
-    const payload = await response.text().catch(() => "");
-    throw new Error(`Failed to send email: ${response.status} ${payload}`);
-  }
+  await transporter.sendMail({
+    from: env.EMAIL_FROM,
+    to,
+    subject,
+    html,
+  });
 }
 
 function layout({ title, body }) {
@@ -120,4 +120,3 @@ module.exports = {
   sendWelcomeEmail,
   sendChangeEmailOtp,
 };
-
