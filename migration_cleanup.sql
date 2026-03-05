@@ -181,6 +181,9 @@ ALTER TABLE public.unq_scores
 
 -- Добавить FK constraint
 ALTER TABLE public.unq_scores
+    DROP CONSTRAINT IF EXISTS unq_scores_user_id_fkey;
+
+ALTER TABLE public.unq_scores
     ADD CONSTRAINT unq_scores_user_id_fkey
     FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
 
