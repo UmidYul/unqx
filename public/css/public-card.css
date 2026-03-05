@@ -391,7 +391,7 @@ body[data-card-theme] #card-view-root > [data-card-view] {
 
 .unq-ref-name {
   margin: 0;
-  display: inline-flex;
+  display: block;
   align-items: center;
   gap: 6px;
   font-size: 35px;
@@ -418,17 +418,18 @@ body[data-card-theme] #card-view-root > [data-card-view] {
   letter-spacing: var(--theme-role-letter-spacing, normal);
   font-size: 12px;
   line-height: 1.35;
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 6px;
-  max-width: min(100%, 320px);
+  justify-content: center;
+  width: 100%;
+  max-width: min(100%, 420px);
 }
 
 .unq-ref-verified-text {
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
+  text-align: center;
 }
 
 .unq-ref-verified-icon {

@@ -540,7 +540,7 @@
   };
 
   const renderTheme = () => {
-    const premium = s.user?.effectivePlan === "premium";
+    const premium = getCurrentPlan() === "premium";
     if (el.cThemeLock) el.cThemeLock.classList.toggle("hidden", premium);
     if (el.cThemeWrap) el.cThemeWrap.classList.toggle("opacity-60", !premium);
 
@@ -571,6 +571,8 @@
       s.slugs[0] ||
       null;
     const effectivePlan = getCurrentPlan() === "premium" ? "premium" : "basic";
+    const effectiveTheme =
+      effectivePlan === "premium" && PROFILE_THEMES.includes(s.theme) ? s.theme : "default_dark";
     return {
       card: {
         slug: primarySlug?.fullSlug || "UNQ",
@@ -593,7 +595,7 @@
         verified: Boolean(s.user?.isVerified),
         verifiedCompany: String(s.user?.verifiedCompany || "").trim(),
         tariff: effectivePlan,
-        theme: s.theme || "default_dark",
+        theme: effectiveTheme,
         customColor:
           effectivePlan === "premium" && el.cColor instanceof HTMLInputElement ? String(el.cColor.value || "").trim() : "",
         showBranding: el.cBranding ? !el.cBranding.checked : true,
@@ -659,6 +661,9 @@
     s.tags = Array.isArray(card.tags) ? card.tags.slice(0) : [];
     s.buttons = Array.isArray(card.buttons) ? card.buttons.slice(0) : [];
     s.theme = PROFILE_THEMES.includes(card.theme) ? card.theme : "default_dark";
+    if (plan !== "premium" && PREMIUM_ONLY_THEMES.has(s.theme)) {
+      s.theme = "default_dark";
+    }
 
     if (el.cBioC) el.cBioC.textContent = `${el.cBio?.value.length || 0}/120`;
 
@@ -1619,7 +1624,10 @@
     button.addEventListener("click", () => {
       const selectedTheme = button.getAttribute("data-theme") || "default_dark";
       const premiumOnly = PREMIUM_ONLY_THEMES.has(selectedTheme);
-      if (premiumOnly && s.user?.effectivePlan !== "premium") return;
+      if (premiumOnly && getCurrentPlan() !== "premium") {
+        showModal("Доступно на Премиум", "Эта тема доступна только для Премиум тарифа.");
+        return;
+      }
       s.theme = PROFILE_THEMES.includes(selectedTheme) ? selectedTheme : "default_dark";
       renderTheme();
       renderPreview();
