@@ -136,6 +136,8 @@ const schema = z.object({
   SESSION_MAX_AGE_MINUTES: z.coerce.number().int().positive().max(60 * 24 * 30).default(120),
   SESSION_ROLLING: z.string().optional(),
   DISABLE_HTTPS_ENFORCEMENT: z.string().optional(),
+  UNVERIFIED_ACCOUNT_CLEANUP_ENABLED: z.string().optional(),
+  UNVERIFIED_ACCOUNT_TTL_HOURS: z.coerce.number().int().positive().max(24 * 365).default(72),
 });
 
 const parsed = schema.parse({
@@ -168,6 +170,8 @@ const parsed = schema.parse({
   SESSION_MAX_AGE_MINUTES: process.env.SESSION_MAX_AGE_MINUTES,
   SESSION_ROLLING: process.env.SESSION_ROLLING,
   DISABLE_HTTPS_ENFORCEMENT: process.env.DISABLE_HTTPS_ENFORCEMENT,
+  UNVERIFIED_ACCOUNT_CLEANUP_ENABLED: process.env.UNVERIFIED_ACCOUNT_CLEANUP_ENABLED,
+  UNVERIFIED_ACCOUNT_TTL_HOURS: process.env.UNVERIFIED_ACCOUNT_TTL_HOURS,
 });
 
 const ROOT_DIR = parsed.ROOT_DIR ? path.resolve(parsed.ROOT_DIR) : rootDirDefault;
@@ -180,6 +184,7 @@ const SESSION_COOKIE_SECURE = parseSessionCookieSecure(parsed.SESSION_COOKIE_SEC
 const SESSION_ROLLING = parseBoolean(parsed.SESSION_ROLLING) ?? true;
 const DISABLE_HTTPS_ENFORCEMENT = parseBoolean(parsed.DISABLE_HTTPS_ENFORCEMENT) ?? false;
 const SMTP_SECURE = parseBoolean(parsed.SMTP_SECURE) ?? (Number(parsed.SMTP_PORT || 0) === 465);
+const UNVERIFIED_ACCOUNT_CLEANUP_ENABLED = parseBoolean(parsed.UNVERIFIED_ACCOUNT_CLEANUP_ENABLED) ?? true;
 
 const env = {
   ...parsed,
@@ -193,6 +198,7 @@ const env = {
   SESSION_ROLLING,
   DISABLE_HTTPS_ENFORCEMENT,
   SMTP_SECURE,
+  UNVERIFIED_ACCOUNT_CLEANUP_ENABLED,
 };
 
 module.exports = { env };

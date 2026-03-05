@@ -1,4 +1,5 @@
 const { prisma } = require("../db/prisma");
+const { env } = require("../config/env");
 const { sendTelegramMessage } = require("./telegram");
 const { getActiveFlashSale, resolveConditionLabel } = require("./flash-sales");
 const { processDropsSchedule } = require("./drops");
@@ -54,11 +55,43 @@ async function processReferralPaidSync() {
   }
 }
 
+async function cleanupStaleUnverifiedAccounts() {
+  if (!env.UNVERIFIED_ACCOUNT_CLEANUP_ENABLED) {
+    return;
+  }
+
+  const ttlHours = Number(env.UNVERIFIED_ACCOUNT_TTL_HOURS || 72);
+  const cutoff = new Date(Date.now() - ttlHours * 60 * 60 * 1000);
+
+  const result = await prisma.user.deleteMany({
+    where: {
+      emailVerified: false,
+      createdAt: { lte: cutoff },
+      profileCard: { is: null },
+      unqScore: { is: null },
+      slugs: { none: {} },
+      slugRequests: { none: {} },
+      slugWaitlistEntries: { none: {} },
+      purchases: { none: {} },
+      verificationRequests: { none: {} },
+      referralsMade: { none: {} },
+      referralsReceived: { none: {} },
+      dropWaitlistEntries: { none: {} },
+      scoreHistory: { none: {} },
+    },
+  });
+
+  if (Number(result?.count || 0) > 0) {
+    console.info(`[express-app] cleaned ${result.count} stale unverified account(s)`);
+  }
+}
+
 async function runJobsOnce() {
   await processFlashSalesSchedule();
   await processDropsSchedule();
   await detectSuspiciousActivity();
   await processReferralPaidSync();
+  await cleanupStaleUnverifiedAccounts();
   await ensureDailyRecalculation();
 }
 
@@ -96,4 +129,5 @@ module.exports = {
   startLiveJobs,
   stopLiveJobs,
   runJobsOnce,
+  cleanupStaleUnverifiedAccounts,
 };

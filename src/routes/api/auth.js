@@ -184,27 +184,47 @@ router.post(
 
     const existing = await prisma.user.findFirst({
       where: { email },
-      select: { id: true },
+      select: { id: true, emailVerified: true, refCode: true },
     });
-    if (existing) {
+    if (existing?.emailVerified) {
       res.status(409).json({ error: "Этот email уже зарегистрирован. Войти →", code: "EMAIL_TAKEN" });
       return;
     }
 
     const passwordHash = await bcrypt.hash(password, PASSWORD_ROUNDS);
-    const refCode = await generateUniqueRefCode();
-    const user = await prisma.user.create({
-      data: {
-        firstName,
-        email,
-        passwordHash,
-        emailVerified: false,
-        plan: "none",
-        status: "active",
-        refCode,
-      },
-      select: USER_AUTH_SELECT,
-    });
+    let user;
+    if (existing) {
+      user = await prisma.user.update({
+        where: { id: existing.id },
+        data: {
+          firstName,
+          passwordHash,
+          emailVerified: false,
+          plan: "none",
+          status: "active",
+          resetPasswordToken: null,
+          resetPasswordExpiresAt: null,
+          loginAttempts: 0,
+          lockedUntil: null,
+          ...(existing.refCode ? {} : { refCode: await generateUniqueRefCode() }),
+        },
+        select: USER_AUTH_SELECT,
+      });
+    } else {
+      const refCode = await generateUniqueRefCode();
+      user = await prisma.user.create({
+        data: {
+          firstName,
+          email,
+          passwordHash,
+          emailVerified: false,
+          plan: "none",
+          status: "active",
+          refCode,
+        },
+        select: USER_AUTH_SELECT,
+      });
+    }
 
     const { code } = await setVerificationOtp(user.id);
     if (req.session?.pendingRefCode) {
@@ -420,8 +440,26 @@ router.post(
     const newPassword = String(req.body?.newPassword || "");
     const confirmPassword = String(req.body?.confirmPassword || "");
 
-    if (!email || !code || newPassword.length < 8 || newPassword !== confirmPassword) {
-      res.status(400).json({ error: "Validation failed", code: "VALIDATION_ERROR" });
+    if (!email) {
+      res.status(400).json({ error: "Email обязателен.", code: "VALIDATION_ERROR" });
+      return;
+    }
+
+    if (code.length !== OTP_LENGTH) {
+      res.status(400).json({ error: "Код должен содержать 6 цифр.", code: "VALIDATION_ERROR" });
+      return;
+    }
+
+    if (newPassword.length < 8) {
+      res.status(400).json({
+        error: "Пароль должен содержать минимум 8 символов.",
+        code: "VALIDATION_ERROR",
+      });
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      res.status(400).json({ error: "Пароли не совпадают.", code: "VALIDATION_ERROR" });
       return;
     }
 

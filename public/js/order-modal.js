@@ -410,6 +410,7 @@ const DEFAULT_PRICING = {
     const planCardBasic = pricingSettings.planBasicPrice;
     const planCardPremium = userPlan === "basic" ? pricingSettings.premiumUpgradePrice : pricingSettings.planPremiumPrice;
     const bracelet = dom.bracelet.checked;
+    const slugBasePrice = Number(state.slugPricing?.basePrice || DEFAULT_SLUG_PRICING.basePrice);
     const fallbackSlugPrice = pricing ? pricing.total : 0;
     const server = pricing ? await resolveServerPrice(pricing.slug, fallbackSlugPrice) : { total: 0, flash: null };
     if (pricing && !server) {
@@ -460,7 +461,7 @@ const DEFAULT_PRICING = {
         dom.formula.textContent = `Flash sale применён (-${server.flash.discountPercent}%)`;
       } else {
         const m = pricing ? pricing.letterData.multiplier * pricing.digitData.multiplier : 1;
-        dom.formula.textContent = `${formatPrice(UNQ_BASE_PRICE)} × ${m} = ${formatPrice(slugPrice)} сум`;
+        dom.formula.textContent = `${formatPrice(slugBasePrice)} × ${m} = ${formatPrice(slugPrice)} сум`;
       }
     }
     if (dom.rarity instanceof HTMLElement) {
