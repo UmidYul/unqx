@@ -210,6 +210,16 @@
     }
   }
 
+  function syncVerificationFiltersFromLocation(form) {
+    if (!(form instanceof HTMLFormElement)) return;
+    const params = new URLSearchParams(location.search);
+    const statusFromUrl = String(params.get("v_status") || params.get("status") || "all").trim().toLowerCase();
+    const pageFromUrl = String(params.get("v_page") || params.get("page") || "1").trim();
+    const allowedStatuses = new Set(["all", "pending", "approved", "rejected"]);
+    setFormValue(form, "status", allowedStatuses.has(statusFromUrl) ? statusFromUrl : "all");
+    setFormValue(form, "page", /^\d+$/.test(pageFromUrl) ? pageFromUrl : "1");
+  }
+
   async function loadMaintenanceBanner() {
     const banner = document.getElementById("admin-maintenance-banner");
     const textNode = document.getElementById("admin-maintenance-text");
@@ -648,48 +658,50 @@
     const form = document.getElementById("verification-filters");
     const table = document.getElementById("verification-table");
     if (!(form instanceof HTMLFormElement) || !(table instanceof HTMLElement)) return;
+    syncVerificationFiltersFromLocation(form);
     table.innerHTML = '<tr><td colspan="10" class="px-3 py-8 text-center text-neutral-500">Загрузка...</td></tr>';
-    const q = {
-      status: getFormValue(form, "status", "all"),
-      page: getFormValue(form, "page", "1"),
-    };
-    setDashboardQuery({ v_status: q.status, v_page: q.page });
-    const r = await fetch(`/api/admin/verification-requests?${Q(q)}`);
-    if (!r.ok) {
-      table.innerHTML = '<tr><td colspan="10" class="px-3 py-8 text-center text-rose-600">Не удалось загрузить заявки на верификацию</td></tr>';
-      return;
-    }
-    const payload = await r.json();
-    const rows = Array.isArray(payload.items) ? payload.items : [];
-    table.innerHTML = rows.length
-      ? rows
-        .map((x) => {
-          const proofTypeMap = {
-            email: "Email",
-            linkedin: "LinkedIn",
-            website: "Website",
-          };
-          const proofType = proofTypeMap[String(x.proofType || "").toLowerCase()] || String(x.proofType || "—");
-          const proofValueRaw = String(x.proofValue || "").trim();
-          const proofValue = /^https?:\/\//i.test(proofValueRaw)
-            ? `<a href="${X(proofValueRaw)}" target="_blank" rel="noopener noreferrer" class="text-xs text-neutral-700 underline break-all">${X(proofValueRaw)}</a>`
-            : `<span class="text-xs break-all">${X(proofValueRaw || "—")}</span>`;
-          const userName = String(x.user?.displayName || x.user?.firstName || x.user?.username || "—");
-          const userLogin = String(x.user?.username || "").trim();
-          const userCell = `${X(userName)}${userLogin ? `<div class="text-xs text-neutral-500">@${X(userLogin)}</div>` : ""}`;
-          const reviewCell = x.reviewedAt ? D(x.reviewedAt) : "—";
-          const canReview = String(x.status || "").toLowerCase() === "pending";
-          const menu = canReview
-            ? menuWrap(
-              [
-                menuItem({ label: "Одобрить", icon: "checkCircle", attrs: `data-act="vr-approve" data-id="${X(x.id)}"` }),
-                menuItem({ label: "Отклонить", icon: "xCircle", attrs: `data-act="vr-reject" data-id="${X(x.id)}"`, danger: true }),
-              ].join(""),
-            )
-            : "—";
-          const verificationStatusCode =
-            x.status === "approved" ? "verification_approved" : x.status === "rejected" ? "verification_rejected" : "pending";
-          return `<tr class="admin-table-row border-t border-neutral-100">
+    try {
+      const q = {
+        status: getFormValue(form, "status", "all"),
+        page: getFormValue(form, "page", "1"),
+      };
+      setDashboardQuery({ v_status: q.status, v_page: q.page });
+      const r = await fetch(`/api/admin/verification-requests?${Q(q)}`);
+      if (!r.ok) {
+        table.innerHTML = '<tr><td colspan="10" class="px-3 py-8 text-center text-rose-600">Не удалось загрузить заявки на верификацию</td></tr>';
+        return;
+      }
+      const payload = await r.json();
+      const rows = Array.isArray(payload.items) ? payload.items : [];
+      table.innerHTML = rows.length
+        ? rows
+          .map((x) => {
+            const proofTypeMap = {
+              email: "Email",
+              linkedin: "LinkedIn",
+              website: "Website",
+            };
+            const proofType = proofTypeMap[String(x.proofType || "").toLowerCase()] || String(x.proofType || "—");
+            const proofValueRaw = String(x.proofValue || "").trim();
+            const proofValue = /^https?:\/\//i.test(proofValueRaw)
+              ? `<a href="${X(proofValueRaw)}" target="_blank" rel="noopener noreferrer" class="text-xs text-neutral-700 underline break-all">${X(proofValueRaw)}</a>`
+              : `<span class="text-xs break-all">${X(proofValueRaw || "—")}</span>`;
+            const userName = String(x.user?.displayName || x.user?.firstName || x.user?.username || "—");
+            const userLogin = String(x.user?.username || "").trim();
+            const userCell = `${X(userName)}${userLogin ? `<div class="text-xs text-neutral-500">@${X(userLogin)}</div>` : ""}`;
+            const reviewCell = x.reviewedAt ? D(x.reviewedAt) : "—";
+            const canReview = String(x.status || "").toLowerCase() === "pending";
+            const menu = canReview
+              ? menuWrap(
+                [
+                  menuItem({ label: "Одобрить", icon: "checkCircle", attrs: `data-act="vr-approve" data-id="${X(x.id)}"` }),
+                  menuItem({ label: "Отклонить", icon: "xCircle", attrs: `data-act="vr-reject" data-id="${X(x.id)}"`, danger: true }),
+                ].join(""),
+              )
+              : "—";
+            const verificationStatusCode =
+              x.status === "approved" ? "verification_approved" : x.status === "rejected" ? "verification_rejected" : "pending";
+            return `<tr class="admin-table-row border-t border-neutral-100">
               <td class="px-4 py-3">${userCell}</td>
               <td class="px-4 py-3 font-mono">${X(x.slug || "—")}</td>
               <td class="px-4 py-3">${X(x.companyName || "—")}</td>
@@ -701,13 +713,16 @@
               <td class="px-4 py-3 text-xs">${reviewCell}</td>
               <td class="px-4 py-3"><div class="admin-row-actions">${menu}</div></td>
             </tr>`;
-        })
-        .join("")
-      : '<tr><td colspan="10" class="px-3 py-8 text-center text-neutral-500">Заявок на верификацию нет</td></tr>';
-    renderPager("verification-pagination", payload.pagination, (nextPage) => {
-      setFormValue(form, "page", String(nextPage));
-      void loadVerificationRequests();
-    });
+          })
+          .join("")
+        : '<tr><td colspan="10" class="px-3 py-8 text-center text-neutral-500">Заявок на верификацию нет</td></tr>';
+      renderPager("verification-pagination", payload.pagination, (nextPage) => {
+        setFormValue(form, "page", String(nextPage));
+        void loadVerificationRequests();
+      });
+    } catch {
+      table.innerHTML = '<tr><td colspan="10" class="px-3 py-8 text-center text-rose-600">Не удалось загрузить заявки на верификацию</td></tr>';
+    }
   }
 
   async function loadLogs() {
@@ -1252,6 +1267,13 @@
   document.getElementById("bracelets-filters")?.addEventListener("submit", (e) => { e.preventDefault(); const f = e.currentTarget; if (f instanceof HTMLFormElement) setFormValue(f, "page", "1"); void loadBracelets(); });
   document.getElementById("logs-filters")?.addEventListener("submit", (e) => { e.preventDefault(); const f = e.currentTarget; if (f instanceof HTMLFormElement) setFormValue(f, "page", "1"); void loadLogs(); });
   document.getElementById("verification-filters")?.addEventListener("submit", (e) => { e.preventDefault(); const f = e.currentTarget; if (f instanceof HTMLFormElement) setFormValue(f, "page", "1"); void loadVerificationRequests(); });
+  document.getElementById("verification-filters")?.elements?.namedItem?.("status")?.addEventListener?.("change", (e) => {
+    const target = e.currentTarget;
+    const form = document.getElementById("verification-filters");
+    if (!(target instanceof HTMLSelectElement) || !(form instanceof HTMLFormElement)) return;
+    setFormValue(form, "page", "1");
+    void loadVerificationRequests();
+  });
   document.getElementById("testimonial-create-form")?.addEventListener("submit", async (e) => {
     e.preventDefault();
     const f = e.currentTarget;
@@ -1346,6 +1368,7 @@
     if (form instanceof HTMLFormElement) {
       setFormValue(form, "status", getInitial("v_status", "status") || "all");
       setFormValue(form, "page", getInitial("v_page", "page") || "1");
+      syncVerificationFiltersFromLocation(form);
     }
   }
 
@@ -1363,7 +1386,10 @@
   if (tab === "bracelets") void loadBracelets();
   if (tab === "testimonials") void loadTestimonials();
   if (tab === "logs") void loadLogs();
-  if (tab === "verification") void loadVerificationRequests();
+  const verificationSection = document.getElementById("tab-verification");
+  if (tab === "verification" || (verificationSection instanceof HTMLElement && !verificationSection.classList.contains("hidden"))) {
+    void loadVerificationRequests();
+  }
   if (tab === "score") void loadScoreManagement();
 })();
 

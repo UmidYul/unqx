@@ -690,9 +690,7 @@ router.post(
   requireCsrfToken,
   asyncHandler(async (req, res) => {
     const sessionId = req.sessionID;
-    if (req.session) {
-      delete req.session.user;
-    }
+    const hadSession = Boolean(req.session);
 
     await new Promise((resolve, reject) => {
       if (!req.session) {
@@ -708,7 +706,7 @@ router.post(
       });
     });
 
-    if (sessionId && req.sessionStore && typeof req.sessionStore.destroy === "function") {
+    if (!hadSession && sessionId && req.sessionStore && typeof req.sessionStore.destroy === "function") {
       await new Promise((resolve, reject) => {
         req.sessionStore.destroy(sessionId, (error) => {
           if (error) {
@@ -720,15 +718,23 @@ router.post(
       });
     }
 
-    await new Promise((resolve, reject) => {
-      req.session.regenerate((error) => {
-        if (error) {
-          reject(error);
+    if (req.sessionStore && typeof req.sessionStore.generate === "function") {
+      req.sessionStore.generate(req);
+    } else {
+      await new Promise((resolve, reject) => {
+        if (!req.session || typeof req.session.regenerate !== "function") {
+          resolve();
           return;
         }
-        resolve();
+        req.session.regenerate((error) => {
+          if (error) {
+            reject(error);
+            return;
+          }
+          resolve();
+        });
       });
-    });
+    }
 
     res.clearCookie("unqx.sid", {
       path: "/",
