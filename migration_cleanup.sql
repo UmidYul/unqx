@@ -168,6 +168,8 @@ DROP INDEX IF EXISTS public.score_history_telegram_id_recorded_at_key;
 ALTER TABLE public.unq_scores
     DROP CONSTRAINT IF EXISTS unq_scores_pkey;
 
+DROP INDEX IF EXISTS public.unq_scores_pkey;
+
 -- Убрать telegram_id колонку
 ALTER TABLE public.unq_scores
     DROP COLUMN IF EXISTS telegram_id;
@@ -210,6 +212,11 @@ ALTER TABLE public.drop_waitlist
 
 -- Добавить новый unique constraint на user_id
 ALTER TABLE public.drop_waitlist
+    DROP CONSTRAINT IF EXISTS drop_waitlist_drop_id_user_id_key;
+
+DROP INDEX IF EXISTS public.drop_waitlist_drop_id_user_id_key;
+
+ALTER TABLE public.drop_waitlist
     ADD CONSTRAINT drop_waitlist_drop_id_user_id_key UNIQUE (drop_id, user_id);
 
 -- ============================================================
@@ -245,14 +252,25 @@ DROP INDEX IF EXISTS public.slugs_owner_telegram_id_status_idx;
 
 -- profile_cards → users
 ALTER TABLE public.profile_cards
+    DROP CONSTRAINT IF EXISTS profile_cards_owner_id_fkey;
+
+ALTER TABLE public.profile_cards
     ADD CONSTRAINT profile_cards_owner_id_fkey
     FOREIGN KEY (owner_id) REFERENCES public.users(id) ON DELETE CASCADE;
 
 -- Unique constraint: один пользователь = одна визитка
 ALTER TABLE public.profile_cards
+    DROP CONSTRAINT IF EXISTS profile_cards_owner_id_key;
+
+DROP INDEX IF EXISTS public.profile_cards_owner_id_key;
+
+ALTER TABLE public.profile_cards
     ADD CONSTRAINT profile_cards_owner_id_key UNIQUE (owner_id);
 
 -- purchases → users
+ALTER TABLE public.purchases
+    DROP CONSTRAINT IF EXISTS purchases_user_id_fkey;
+
 ALTER TABLE public.purchases
     ADD CONSTRAINT purchases_user_id_fkey
     FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
@@ -262,8 +280,14 @@ ALTER TABLE public.purchases
 
 -- referrals → users
 ALTER TABLE public.referrals
+    DROP CONSTRAINT IF EXISTS referrals_referrer_id_fkey;
+
+ALTER TABLE public.referrals
     ADD CONSTRAINT referrals_referrer_id_fkey
     FOREIGN KEY (referrer_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+ALTER TABLE public.referrals
+    DROP CONSTRAINT IF EXISTS referrals_referred_id_fkey;
 
 ALTER TABLE public.referrals
     ADD CONSTRAINT referrals_referred_id_fkey
@@ -275,9 +299,17 @@ ALTER TABLE public.referrals
 
 -- Уникальность: один referred юзер = одна запись
 ALTER TABLE public.referrals
+    DROP CONSTRAINT IF EXISTS referrals_referred_id_key;
+
+DROP INDEX IF EXISTS public.referrals_referred_id_key;
+
+ALTER TABLE public.referrals
     ADD CONSTRAINT referrals_referred_id_key UNIQUE (referred_id);
 
 -- score_history → users
+ALTER TABLE public.score_history
+    DROP CONSTRAINT IF EXISTS score_history_user_id_fkey;
+
 ALTER TABLE public.score_history
     ADD CONSTRAINT score_history_user_id_fkey
     FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
@@ -287,9 +319,17 @@ ALTER TABLE public.score_history
 
 -- Уникальность по user_id + дата
 ALTER TABLE public.score_history
+    DROP CONSTRAINT IF EXISTS score_history_user_id_recorded_at_key;
+
+DROP INDEX IF EXISTS public.score_history_user_id_recorded_at_key;
+
+ALTER TABLE public.score_history
     ADD CONSTRAINT score_history_user_id_recorded_at_key UNIQUE (user_id, recorded_at);
 
 -- slug_requests → users
+ALTER TABLE public.slug_requests
+    DROP CONSTRAINT IF EXISTS slug_requests_user_id_fkey;
+
 ALTER TABLE public.slug_requests
     ADD CONSTRAINT slug_requests_user_id_fkey
     FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
@@ -299,10 +339,16 @@ ALTER TABLE public.slug_requests
 
 -- slugs → users
 ALTER TABLE public.slugs
+    DROP CONSTRAINT IF EXISTS slugs_owner_id_fkey;
+
+ALTER TABLE public.slugs
     ADD CONSTRAINT slugs_owner_id_fkey
     FOREIGN KEY (owner_id) REFERENCES public.users(id) ON DELETE SET NULL;
 
 -- drop_waitlist → users
+ALTER TABLE public.drop_waitlist
+    DROP CONSTRAINT IF EXISTS drop_waitlist_user_id_fkey;
+
 ALTER TABLE public.drop_waitlist
     ADD CONSTRAINT drop_waitlist_user_id_fkey
     FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
@@ -312,10 +358,16 @@ ALTER TABLE public.drop_waitlist
 
 -- slug_waitlist → users
 ALTER TABLE public.slug_waitlist
+    DROP CONSTRAINT IF EXISTS slug_waitlist_user_id_fkey;
+
+ALTER TABLE public.slug_waitlist
     ADD CONSTRAINT slug_waitlist_user_id_fkey
     FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
 
 -- verification_requests → users
+ALTER TABLE public.verification_requests
+    DROP CONSTRAINT IF EXISTS verification_requests_user_id_fkey;
+
 ALTER TABLE public.verification_requests
     ADD CONSTRAINT verification_requests_user_id_fkey
     FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
