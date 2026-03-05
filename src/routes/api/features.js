@@ -29,10 +29,15 @@ router.get(
     const todayStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0));
     const onlineSince = new Date(now.getTime() - 5 * 60 * 1000);
 
-    const [activeCardsTotal, todayCreated, todayActivated, onlineNow] = await Promise.all([
+    const [activeCardsTotal, todayCreated, todayActivated, todayTotal, onlineNow] = await Promise.all([
       prisma.slug.count({ where: { status: "active" } }),
       prisma.slug.count({ where: { createdAt: { gte: todayStart } } }),
       prisma.slug.count({ where: { activatedAt: { gte: todayStart } } }),
+      prisma.slug.count({
+        where: {
+          OR: [{ createdAt: { gte: todayStart } }, { activatedAt: { gte: todayStart } }],
+        },
+      }),
       prisma.analyticsView
         ? prisma.analyticsView
             .findMany({
@@ -47,6 +52,7 @@ router.get(
       activeCardsTotal,
       todayCreated,
       todayActivated,
+      todayTotal,
       onlineNow,
     });
   }),

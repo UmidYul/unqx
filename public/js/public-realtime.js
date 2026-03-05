@@ -59,7 +59,11 @@
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const payload = await response.json();
       animateNumber(totalNode, payload.activeCardsTotal || 0);
-      animateNumber(todayNode, (payload.todayCreated || 0) + (payload.todayActivated || 0));
+      const todayValue =
+        Number.isFinite(Number(payload.todayTotal))
+          ? Number(payload.todayTotal)
+          : Number(payload.todayCreated || 0) + Number(payload.todayActivated || 0);
+      animateNumber(todayNode, todayValue);
       animateNumber(onlineNode, payload.onlineNow || 0);
       bar.classList.remove("hidden");
     } catch {
