@@ -180,7 +180,7 @@ async function findProfileCardByOwnerId(ownerId) {
 
 async function getProfileCardColumnSet(db = prisma) {
   const rows = await db.$queryRaw`
-    SELECT column_name
+    SELECT column_name::text AS column_name
     FROM information_schema.columns
     WHERE table_schema = 'public'
       AND table_name = 'profile_cards'
