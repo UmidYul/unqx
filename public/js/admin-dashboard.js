@@ -90,6 +90,19 @@
     qr: '<path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4z" stroke="currentColor" stroke-width="1.8"/><path d="M14 14h2v2h-2zM18 14h2v6h-6v-2" stroke="currentColor" stroke-width="1.8"/>',
     link2: '<path d="M10 7h6a4 4 0 1 1 0 8h-2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M14 17H8a4 4 0 1 1 0-8h2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
   };
+  const THEME_META = {
+    default_dark: { label: "Default Dark", fill: "#0a0a0a", border: "#ffffff", text: "#111111" },
+    arctic: { label: "Arctic", fill: "#f0f5f9", border: "#7a9db8", text: "#1a2a3a" },
+    linen: { label: "Linen", fill: "#f2ede6", border: "#c8a882", text: "#3a2e24" },
+    marble: { label: "Marble", fill: "#ffffff", border: "#0a0a0a", text: "#0a0a0a" },
+    forest: { label: "Forest", fill: "#0e2010", border: "#c8b88a", text: "#0f1f10" },
+  };
+  function themePill(theme) {
+    const id = String(theme || "default_dark").trim();
+    const meta = THEME_META[id] || THEME_META.default_dark;
+    const bg = `linear-gradient(90deg, ${meta.fill} 0%, ${meta.fill} 14px, transparent 14px, transparent 100%)`;
+    return `<span class="inline-flex items-center rounded-full border px-2 py-1 text-[11px] font-semibold" style="border-color:${meta.border};color:${meta.text};background:${bg};">${X(meta.label)}</span>`;
+  }
   const I = (name, size = 14) => `<svg class="admin-i" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" aria-hidden="true">${ICONS[name] || ""}</svg>`;
   const statusMeta = {
     pending: { label: "На рассмотрении", tone: "warning" },
@@ -529,7 +542,7 @@
                 ? "border-amber-300 bg-amber-50 text-amber-800 whitespace-nowrap"
                 : "border-neutral-200 whitespace-nowrap";
             const telegramLabel = x.username ? `@${x.username}` : "Нет";
-            return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3">${X(telegramLabel)}</td><td class="px-4 py-3">${X(x.name)}</td><td class="px-4 py-3"><span class="inline-flex rounded-full border px-2.5 py-1 text-xs font-medium ${planChipClass}">${planLabel}</span></td><td class="px-4 py-3 text-xs text-neutral-600">${x.planPurchasedAt ? D(x.planPurchasedAt) : "—"}</td><td class="px-4 py-3 text-xs">${X(slugText)}</td><td class="px-4 py-3">${x.hasCard ? "Есть" : "Нет"}</td><td class="px-4 py-3"><button type="button" data-act="toggle-score" data-id="${X(x.telegramId)}" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-2.5 py-1 text-sm font-semibold">${score}</button></td><td class="px-4 py-3">${statusChip(x.status === "blocked" ? "rejected" : "approved")}</td><td class="px-4 py-3">${D(x.createdAt)}</td><td class="px-4 py-3"><div class="admin-row-actions">${menu}</div></td></tr><tr class="border-t border-neutral-100 hidden" data-score-row="${X(x.telegramId)}"><td colspan="10" class="px-4 py-2 text-xs text-neutral-600">Просмотры: ${Number(scoreBreakdown.views || 0)} | Редкость: ${Number(scoreBreakdown.slugRarity || 0)} | Срок: ${Number(scoreBreakdown.tenure || 0)} | CTR: ${Number(scoreBreakdown.ctr || 0)} | Браслет: ${Number(scoreBreakdown.bracelet || 0)} | Тариф: ${Number(scoreBreakdown.plan || 0)}</td></tr>`;
+            return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3">${X(telegramLabel)}</td><td class="px-4 py-3">${X(x.name)}</td><td class="px-4 py-3"><span class="inline-flex rounded-full border px-2.5 py-1 text-xs font-medium ${planChipClass}">${planLabel}</span></td><td class="px-4 py-3 text-xs text-neutral-600">${x.planPurchasedAt ? D(x.planPurchasedAt) : "—"}</td><td class="px-4 py-3 text-xs">${X(slugText)}</td><td class="px-4 py-3">${x.hasCard ? themePill(x.theme || "default_dark") : "Нет"}</td><td class="px-4 py-3"><button type="button" data-act="toggle-score" data-id="${X(x.telegramId)}" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-2.5 py-1 text-sm font-semibold">${score}</button></td><td class="px-4 py-3">${statusChip(x.status === "blocked" ? "rejected" : "approved")}</td><td class="px-4 py-3">${D(x.createdAt)}</td><td class="px-4 py-3"><div class="admin-row-actions">${menu}</div></td></tr><tr class="border-t border-neutral-100 hidden" data-score-row="${X(x.telegramId)}"><td colspan="10" class="px-4 py-2 text-xs text-neutral-600">Просмотры: ${Number(scoreBreakdown.views || 0)} | Редкость: ${Number(scoreBreakdown.slugRarity || 0)} | Срок: ${Number(scoreBreakdown.tenure || 0)} | CTR: ${Number(scoreBreakdown.ctr || 0)} | Браслет: ${Number(scoreBreakdown.bracelet || 0)} | Тариф: ${Number(scoreBreakdown.plan || 0)}</td></tr>`;
           })
           .join("")
       : `<tr><td colspan="10" class="px-3 py-10 text-center text-neutral-500"><div class="inline-flex flex-col items-center gap-2">${I("userCheck", 48)}<span>Нет пользователей</span></div></td></tr>`;
@@ -594,9 +607,9 @@
           menuItem({ label: x.isActive ? "Выключить" : "Включить", icon: x.isActive ? "toggleLeft" : "toggleRight", attrs: `data-act="cg" data-id="${x.id}" data-n="${x.isActive ? 0 : 1}"` }),
           menuItem({ label: "QR-код", icon: "qr", attrs: `data-act="qr" data-slug="${x.slug}"` }),
         ].join(""));
-        return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3 font-mono">#${X(x.slug)}</td><td class="px-4 py-3">${X(x.name)}</td><td class="px-4 py-3">${x.tariff === "premium" ? "Премиум" : "Базовый"}</td><td class="px-4 py-3">${statusChip(x.isActive ? "approved" : "rejected")}</td><td class="px-4 py-3">${Number(x.viewsCount || 0).toLocaleString("ru-RU")}</td><td class="px-4 py-3">${new Date(x.createdAt).toLocaleDateString("ru-RU")}</td><td class="px-4 py-3"><div class="admin-row-actions">${menu}</div></td></tr>`;
+        return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3 font-mono">#${X(x.slug)}</td><td class="px-4 py-3">${X(x.name)}</td><td class="px-4 py-3">${x.tariff === "premium" ? "Премиум" : "Базовый"}</td><td class="px-4 py-3">${statusChip(x.isActive ? "approved" : "rejected")}</td><td class="px-4 py-3">${Number(x.viewsCount || 0).toLocaleString("ru-RU")}</td><td class="px-4 py-3">${new Date(x.createdAt).toLocaleDateString("ru-RU")}</td><td class="px-4 py-3">${themePill(x.theme || "default_dark")}</td><td class="px-4 py-3"><div class="admin-row-actions">${menu}</div></td></tr>`;
       }).join("")
-      : `<tr><td colspan="7" class="px-3 py-10 text-center text-neutral-500"><div class="inline-flex flex-col items-center gap-2">${I("creditCard", 48)}<span>Нет данных</span></div></td></tr>`;
+      : `<tr><td colspan="8" class="px-3 py-10 text-center text-neutral-500"><div class="inline-flex flex-col items-center gap-2">${I("creditCard", 48)}<span>Нет данных</span></div></td></tr>`;
     renderPager("cards-pagination", payload.pagination, (nextPage) => {
       setFormValue(form, "page", String(nextPage));
       void loadCards();
@@ -659,7 +672,7 @@
     const table = document.getElementById("verification-table");
     if (!(form instanceof HTMLFormElement) || !(table instanceof HTMLElement)) return;
     syncVerificationFiltersFromLocation(form);
-    table.innerHTML = '<tr><td colspan="10" class="px-3 py-8 text-center text-neutral-500">Загрузка...</td></tr>';
+    table.innerHTML = '<tr><td colspan="11" class="px-3 py-8 text-center text-neutral-500">Загрузка...</td></tr>';
     try {
       const q = {
         status: getFormValue(form, "status", "all"),
@@ -668,7 +681,7 @@
       setDashboardQuery({ v_status: q.status, v_page: q.page });
       const r = await fetch(`/api/admin/verification-requests?${Q(q)}`);
       if (!r.ok) {
-        table.innerHTML = '<tr><td colspan="10" class="px-3 py-8 text-center text-rose-600">Не удалось загрузить заявки на верификацию</td></tr>';
+        table.innerHTML = '<tr><td colspan="11" class="px-3 py-8 text-center text-rose-600">Не удалось загрузить заявки на верификацию</td></tr>';
         return;
       }
       const payload = await r.json();
@@ -682,6 +695,14 @@
               website: "Website",
             };
             const proofType = proofTypeMap[String(x.proofType || "").toLowerCase()] || String(x.proofType || "—");
+            const sectorMap = {
+              design: "Дизайн",
+              sales: "Продажи",
+              marketing: "Маркетинг",
+              it: "IT",
+              other: "Другое",
+            };
+            const sector = sectorMap[String(x.sector || "").toLowerCase()] || "Другое";
             const proofValueRaw = String(x.proofValue || "").trim();
             const proofValue = /^https?:\/\//i.test(proofValueRaw)
               ? `<a href="${X(proofValueRaw)}" target="_blank" rel="noopener noreferrer" class="text-xs text-neutral-700 underline break-all">${X(proofValueRaw)}</a>`
@@ -706,6 +727,7 @@
               <td class="px-4 py-3 font-mono">${X(x.slug || "—")}</td>
               <td class="px-4 py-3">${X(x.companyName || "—")}</td>
               <td class="px-4 py-3">${X(x.role || "—")}</td>
+              <td class="px-4 py-3">${X(sector)}</td>
               <td class="px-4 py-3"><div class="text-xs text-neutral-500">${X(proofType)}</div>${proofValue}</td>
               <td class="px-4 py-3 text-xs">${X(x.comment || "—")}</td>
               <td class="px-4 py-3">${statusChip(verificationStatusCode)}</td>
@@ -715,13 +737,13 @@
             </tr>`;
           })
           .join("")
-        : '<tr><td colspan="10" class="px-3 py-8 text-center text-neutral-500">Заявок на верификацию нет</td></tr>';
+        : '<tr><td colspan="11" class="px-3 py-8 text-center text-neutral-500">Заявок на верификацию нет</td></tr>';
       renderPager("verification-pagination", payload.pagination, (nextPage) => {
         setFormValue(form, "page", String(nextPage));
         void loadVerificationRequests();
       });
     } catch {
-      table.innerHTML = '<tr><td colspan="10" class="px-3 py-8 text-center text-rose-600">Не удалось загрузить заявки на верификацию</td></tr>';
+      table.innerHTML = '<tr><td colspan="11" class="px-3 py-8 text-center text-rose-600">Не удалось загрузить заявки на верификацию</td></tr>';
     }
   }
 

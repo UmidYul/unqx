@@ -34,6 +34,13 @@ function normalizeUserPlan(value) {
   return "none";
 }
 
+function normalizeDirectorySector(value) {
+  const normalized = String(value || "")
+    .trim()
+    .toLowerCase();
+  return ["design", "sales", "marketing", "it", "other"].includes(normalized) ? normalized : "other";
+}
+
 function modelDelegateExists(name) {
   const key = `${name.slice(0, 1).toLowerCase()}${name.slice(1)}`;
   return Boolean(prisma[key] && typeof prisma[key] === "object");
@@ -838,7 +845,7 @@ router.get(
       }),
       prisma.profileCard.findMany({
         where: { ownerId: { in: userIds } },
-        select: { ownerId: true, id: true },
+        select: { ownerId: true, id: true, theme: true },
       }),
       prisma.slugRequest.findMany({
         where: {
@@ -880,6 +887,9 @@ router.get(
       });
     }
     const cardsSet = new Set(cards.map((item) => item.ownerId));
+    const cardThemeByUser = new Map(
+      cards.map((item) => [item.ownerId, item.theme || "default_dark"]),
+    );
     const braceletByUser = new Map();
     for (const row of braceletRequests) {
       if (!braceletByUser.has(row.userId)) {
@@ -919,6 +929,7 @@ router.get(
         ["approved", "active", "paused", "private"].includes(slug.status),
       ).length,
       hasCard: cardsSet.has(user.id),
+      theme: cardThemeByUser.get(user.id) || "default_dark",
       status: user.status,
       createdAt: user.createdAt,
     }));
@@ -2025,6 +2036,7 @@ router.post(
         data: {
           isVerified: true,
           verifiedCompany: target.companyName,
+          directorySector: normalizeDirectorySector(target.sector),
           verifiedAt: now,
         },
       }),

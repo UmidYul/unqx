@@ -51,10 +51,10 @@ ALTER TYPE public."BraceletDeliveryStatus" OWNER TO unqxuz_umid;
 
 CREATE TYPE public."CardTheme" AS ENUM (
     'default_dark',
-    'light_minimal',
-    'gradient',
-    'neon',
-    'corporate'
+    'arctic',
+    'linen',
+    'marble',
+    'forest'
 );
 
 
@@ -278,10 +278,10 @@ ALTER TYPE public.braceletdeliverystatus OWNER TO unqxuz_umid;
 
 CREATE TYPE public.cardtheme AS ENUM (
     'default_dark',
-    'light_minimal',
-    'gradient',
-    'neon',
-    'corporate'
+    'arctic',
+    'linen',
+    'marble',
+    'forest'
 );
 
 
@@ -2599,4 +2599,3 @@ ALTER DEFAULT PRIVILEGES FOR ROLE unqxuz_umid IN SCHEMA public GRANT ALL ON TABL
 --
 -- PostgreSQL database dump complete
 --
-

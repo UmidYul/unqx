@@ -1,6 +1,75 @@
 <%
   const pageTitle = typeof title === "string" && title ? title : "UNQX Demo";
-  const pageTheme = typeof theme === "string" ? theme : "default_dark";
+  const themeTokens = {
+    default_dark: {
+      cardBg: "#ffffff",
+      cardBorder: "1px solid #d8d8d8",
+      buttonBg: "#151515",
+      buttonText: "#ffffff",
+      nameColor: "#242424",
+      mutedColor: "#9a9a9a",
+      avatarBg: "#ededed",
+      avatarText: "#4a4a4a",
+      radius: "20px",
+    },
+    arctic: {
+      cardBg: "linear-gradient(160deg, #f8fafc 0%, #eef2f7 100%)",
+      cardBorder: "1px solid #dce4ed",
+      buttonBg: "#1a2a3a",
+      buttonText: "#f0f6ff",
+      nameColor: "#1a2a3a",
+      mutedColor: "#7a9db8",
+      avatarBg: "linear-gradient(135deg, #e0eaf4, #c4d6e8)",
+      avatarText: "#4a6880",
+      radius: "24px",
+    },
+    linen: {
+      cardBg: "linear-gradient(160deg, #faf8f4 0%, #f2ede6 100%)",
+      cardBorder: "1px solid #e0d8ce",
+      buttonBg: "#3a2e24",
+      buttonText: "#f2ede6",
+      nameColor: "#3a2e24",
+      mutedColor: "#a08060",
+      avatarBg: "linear-gradient(135deg, #ede8e0, #d8cfc4)",
+      avatarText: "#7a6650",
+      radius: "20px",
+    },
+    marble: {
+      cardBg: "#ffffff",
+      cardBorder: "1px solid #ebebeb",
+      buttonBg: "#0a0a0a",
+      buttonText: "#ffffff",
+      nameColor: "#0a0a0a",
+      mutedColor: "#aaaaaa",
+      avatarBg: "linear-gradient(135deg, #f5f5f5, #e8e8e8)",
+      avatarText: "#555555",
+      radius: "0px",
+    },
+    forest: {
+      cardBg: "linear-gradient(170deg, #0a1a0c 0%, #0e2010 60%, #0c1a0e 100%)",
+      cardBorder: "1px solid #1e3820",
+      buttonBg: "linear-gradient(135deg, #1a3a1a, #253a20)",
+      buttonText: "#e8dcc0",
+      nameColor: "#f0e8d0",
+      mutedColor: "#4a7a4a",
+      avatarBg: "linear-gradient(135deg, #0e1c10, #1a3018)",
+      avatarText: "#e8dcc0",
+      radius: "20px",
+    },
+  };
+  const pageTheme = typeof theme === "string" && themeTokens[theme] ? theme : "default_dark";
+  const tokens = themeTokens[pageTheme];
+  const cardStyle = [
+    `--theme-card-bg:${tokens.cardBg}`,
+    `--theme-card-border:${tokens.cardBorder}`,
+    `--theme-button-primary-bg:${tokens.buttonBg}`,
+    `--theme-button-primary-text:${tokens.buttonText}`,
+    `--theme-name-color:${tokens.nameColor}`,
+    `--theme-muted-color:${tokens.mutedColor}`,
+    `--theme-avatar-bg:${tokens.avatarBg}`,
+    `--theme-avatar-text:${tokens.avatarText}`,
+    `--theme-card-radius:${tokens.radius}`,
+  ].join(";");
   const isEmbed = Boolean(embed);
 %>
 <!doctype html>
@@ -15,14 +84,14 @@
       <h1 class="mb-6 text-3xl font-bold text-neutral-900">Живой пример темы: <%= pageTheme %></h1>
       <% } %>
 
-      <article class="public-card-shell overflow-hidden rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
+      <article class="public-card-shell overflow-hidden rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm" style="<%= cardStyle %>">
         <div class="flex items-center justify-between">
           <span class="text-[11px] font-mono uppercase tracking-wider text-neutral-400">DEMO001</span>
           <span class="text-[11px] text-neutral-400">UNQX</span>
         </div>
 
         <div class="mt-5 text-center">
-          <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-neutral-100 text-sm font-semibold text-neutral-700">DK</div>
+          <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full text-sm font-semibold" style="background:var(--theme-avatar-bg);color:var(--theme-avatar-text);">DK</div>
           <h2 class="mt-3 text-lg font-semibold text-neutral-900">Demo Karimov</h2>
           <p class="mt-1 text-sm text-neutral-500">+998 90 123 45 67</p>
         </div>

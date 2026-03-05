@@ -19,7 +19,7 @@
     tariff: pageCardRaw.tariff === "premium" ? "premium" : "basic",
     theme:
       typeof pageCardRaw.theme === "string" &&
-      ["default_dark", "light_minimal", "gradient", "neon", "corporate"].includes(pageCardRaw.theme)
+      ["default_dark", "arctic", "linen", "marble", "forest"].includes(pageCardRaw.theme)
         ? pageCardRaw.theme
         : "default_dark",
     customColor: /^#[0-9a-fA-F]{6}$/.test(String(pageCardRaw.customColor || "").trim())

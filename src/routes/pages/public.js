@@ -16,6 +16,7 @@ const { seoHub, getSeoPage } = require("../../content/seo-pages");
 
 const router = express.Router();
 const defaultSocialImage = absoluteUrl("/brand/logo.PNG");
+const CARD_THEMES = new Set(["default_dark", "arctic", "linen", "marble", "forest"]);
 
 function buildBreadcrumbJsonLd(items) {
   return {
@@ -263,6 +264,13 @@ function classifySectorFromTags(tags) {
   return "other";
 }
 
+function normalizeDirectorySector(value) {
+  const normalized = String(value || "")
+    .trim()
+    .toLowerCase();
+  return ["design", "sales", "marketing", "it", "other"].includes(normalized) ? normalized : "";
+}
+
 function buildPublicCardFromProfile({ slug, user, profileCard, viewsCount }) {
   const plan = getEffectivePlan(user).plan;
   return {
@@ -274,7 +282,7 @@ function buildPublicCardFromProfile({ slug, user, profileCard, viewsCount }) {
     verified: Boolean(user?.isVerified),
     verifiedCompany: user?.verifiedCompany || "",
     tariff: plan,
-    theme: profileCard.theme || "default_dark",
+    theme: typeof profileCard.theme === "string" && CARD_THEMES.has(profileCard.theme) ? profileCard.theme : "default_dark",
     customColor: profileCard.customColor || "",
     phone: "",
     tags: mapProfileTags(profileCard.tags),
@@ -491,7 +499,7 @@ router.get(
 router.get(
   "/demo",
   asyncHandler(async (req, res) => {
-    const allowedThemes = new Set(["default_dark", "light_minimal", "gradient", "neon", "corporate"]);
+    const allowedThemes = new Set(["default_dark", "arctic", "linen", "marble", "forest"]);
     const theme = typeof req.query.theme === "string" && allowedThemes.has(req.query.theme) ? req.query.theme : "default_dark";
     const embed = req.query.embed === "1";
 
@@ -762,6 +770,7 @@ router.get(
             displayName: true,
             isVerified: true,
             verifiedCompany: true,
+            directorySector: true,
             unqScore: {
               select: {
                 score: true,
@@ -789,6 +798,7 @@ router.get(
         if (!owner) return null;
         const tags = Array.isArray(owner.profileCard?.tags) ? owner.profileCard.tags : [];
         const name = owner.displayName || owner.profileCard?.name || owner.firstName || "UNQX User";
+        const normalizedDirectorySector = normalizeDirectorySector(owner.directorySector);
         return {
           slug: row.fullSlug,
           name,
@@ -802,7 +812,7 @@ router.get(
           topPercent: Math.max(1, Math.round(Number(owner.unqScore?.percentile ? 100 - owner.unqScore.percentile : 100))),
           views: Number(row.analyticsViewsCount || 0),
           createdAt: row.createdAt,
-          sector: classifySectorFromTags(tags),
+          sector: normalizedDirectorySector || classifySectorFromTags(tags),
         };
       })
       .filter(Boolean)

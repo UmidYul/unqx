@@ -31,6 +31,8 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 },
 });
 const ALLOWED_MIME = new Set(["image/jpeg", "image/png", "image/webp"]);
+const CARD_THEMES = new Set(["default_dark", "arctic", "linen", "marble", "forest"]);
+const DIRECTORY_SECTORS = new Set(["design", "sales", "marketing", "it", "other"]);
 
 function toSlugStatusLabel(status) {
   switch (status) {
@@ -87,6 +89,13 @@ function normalizeAnalyticsPeriod(value, isPremium) {
   return 7;
 }
 
+function normalizeDirectorySector(value) {
+  const normalized = String(value || "")
+    .trim()
+    .toLowerCase();
+  return DIRECTORY_SECTORS.has(normalized) ? normalized : "other";
+}
+
 function parseProfileCardRow(row) {
   if (!row) {
     return null;
@@ -101,7 +110,7 @@ function parseProfileCardRow(row) {
     avatarUrl: row.avatarUrl || "",
     tags: Array.isArray(row.tags) ? row.tags : [],
     buttons: Array.isArray(row.buttons) ? row.buttons : [],
-    theme: row.theme || "default_dark",
+    theme: typeof row.theme === "string" && CARD_THEMES.has(row.theme) ? row.theme : "default_dark",
     customColor: row.customColor || "",
     showBranding: Boolean(row.showBranding),
     createdAt: row.createdAt,
@@ -134,6 +143,7 @@ async function getCurrentUser(req) {
       verifiedCompany: true,
       verifiedAt: true,
       showInDirectory: true,
+      directorySector: true,
       welcomeDismissed: true,
       planPurchasedAt: true,
       planUpgradedAt: true,
@@ -293,6 +303,7 @@ router.get(
         verifiedCompany: user.verifiedCompany || "",
         verifiedAt: user.verifiedAt || null,
         showInDirectory: typeof user.showInDirectory === "boolean" ? user.showInDirectory : true,
+        directorySector: normalizeDirectorySector(user.directorySector),
       },
       limits: {
         slugs: getSlugLimit(effective.plan),
@@ -844,6 +855,7 @@ router.post(
 
     const companyName = String(req.body?.companyName || "").trim().slice(0, 160);
     const role = String(req.body?.role || "").trim().slice(0, 160);
+    const sector = normalizeDirectorySector(req.body?.sector);
     const proofType = String(req.body?.proofType || "").trim().toLowerCase();
     const proofValue = String(req.body?.proofValue || "").trim().slice(0, 320);
     const comment = String(req.body?.comment || "").trim().slice(0, 1000);
@@ -868,6 +880,7 @@ router.post(
         slug: verificationSlug,
         companyName,
         role,
+        sector,
         proofType,
         proofValue,
         comment: comment || null,
@@ -879,6 +892,7 @@ router.post(
       slug: verificationSlug,
       companyName,
       role,
+      sector,
       proofType,
       proofValue,
       comment,
@@ -1035,4 +1049,3 @@ router.post(
 module.exports = {
   profileApiRouter: router,
 };
-

@@ -1,4 +1,233 @@
 (function initCardViewGlobal() {
+  const THEME_KEYS = ["default_dark", "arctic", "linen", "marble", "forest"];
+  const THEME_CONFIG = {
+    default_dark: {
+      cardBg: "#ffffff",
+      cardBgOverlay: "none",
+      surfaceBg: "#f5f5f5",
+      cardBorder: "1px solid #d8d8d8",
+      surfaceBorder: "1px solid #e5e5e5",
+      dividerColor: "#e6e6e6",
+      nameColor: "#242424",
+      roleColor: "#737373",
+      mutedColor: "#a0a0a0",
+      accentColor: "#202020",
+      emailColor: "#4b5563",
+      buttonPrimaryBg: "#151515",
+      buttonPrimaryText: "#ffffff",
+      buttonPrimaryBorder: "#151515",
+      buttonSecondaryBg: "#151515",
+      buttonSecondaryText: "#ffffff",
+      buttonSecondaryBorder: "#151515",
+      badgeText: "#5f6368",
+      badgeBg: "#fafafa",
+      badgeBorder: "#d6d6d6",
+      topLineGradient: "none",
+      avatarBg: "#ededed",
+      avatarText: "#4a4a4a",
+      avatarBorder: "1px solid #ececec",
+      cardBorderRadius: "20px",
+      fontFamily: "inherit",
+      nameFontStyle: "normal",
+      nameFontWeight: "400",
+      roleLetterSpacing: "normal",
+      scoreLabelColor: "#737373",
+      scoreValueColor: "#111111",
+      scoreBarFill: "#171717",
+      scoreBarTrack: "#e5e5e5",
+      scorePercentileColor: "#737373",
+      cardShadow: "0 1px 2px rgba(17, 17, 17, 0.08)",
+      buttonShineGradient:
+        "linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.2) 45%, rgba(255,255,255,0.42) 50%, rgba(255,255,255,0.2) 55%, rgba(255,255,255,0) 100%)",
+    },
+    arctic: {
+      cardBg: "linear-gradient(160deg, #f8fafc 0%, #eef2f7 100%)",
+      cardBgOverlay: "none",
+      surfaceBg: "#f0f5f9",
+      cardBorder: "1px solid #dce4ed",
+      surfaceBorder: "1px solid #dce4ed",
+      dividerColor: "#dce4ed",
+      nameColor: "#1a2a3a",
+      roleColor: "#7a9db8",
+      mutedColor: "#a0b8c8",
+      accentColor: "#7a9db8",
+      emailColor: "#4a6880",
+      buttonPrimaryBg: "#1a2a3a",
+      buttonPrimaryText: "#f0f6ff",
+      buttonPrimaryBorder: "#1a2a3a",
+      buttonSecondaryBg: "transparent",
+      buttonSecondaryText: "#4a6880",
+      buttonSecondaryBorder: "#c8d4de",
+      badgeText: "#7a9db8",
+      badgeBg: "transparent",
+      badgeBorder: "transparent",
+      topLineGradient: "linear-gradient(90deg, #b0c4d4, #7a9db8, #b0c4d4)",
+      avatarBg: "linear-gradient(135deg, #e0eaf4, #c4d6e8)",
+      avatarText: "#4a6880",
+      avatarBorder: "2px solid #b0c4d4",
+      cardBorderRadius: "24px",
+      fontFamily: "'Helvetica Neue', Arial, sans-serif",
+      nameFontStyle: "normal",
+      nameFontWeight: "300",
+      roleLetterSpacing: "5px",
+      scoreLabelColor: "#7a9db8",
+      scoreValueColor: "#1a2a3a",
+      scoreBarFill: "#1a2a3a",
+      scoreBarTrack: "#dce4ed",
+      scorePercentileColor: "#a0b8c8",
+      cardShadow: "0 1px 2px rgba(17, 17, 17, 0.08)",
+      buttonShineGradient:
+        "linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.16) 45%, rgba(255,255,255,0.28) 50%, rgba(255,255,255,0.16) 55%, rgba(255,255,255,0) 100%)",
+    },
+    linen: {
+      cardBg: "linear-gradient(160deg, #faf8f4 0%, #f2ede6 100%)",
+      cardBgOverlay: "none",
+      surfaceBg: "#f5f0ea",
+      cardBorder: "1px solid #e0d8ce",
+      surfaceBorder: "1px solid #e0d4c8",
+      dividerColor: "#d4c4b0",
+      nameColor: "#3a2e24",
+      roleColor: "#a08060",
+      mutedColor: "#b0a090",
+      accentColor: "#c8a882",
+      emailColor: "#8a7060",
+      buttonPrimaryBg: "#3a2e24",
+      buttonPrimaryText: "#f2ede6",
+      buttonPrimaryBorder: "#3a2e24",
+      buttonSecondaryBg: "transparent",
+      buttonSecondaryText: "#8a7060",
+      buttonSecondaryBorder: "#d4c4b0",
+      badgeText: "#b09070",
+      badgeBg: "transparent",
+      badgeBorder: "transparent",
+      topLineGradient: "linear-gradient(90deg, transparent, #c8a882, transparent)",
+      avatarBg: "linear-gradient(135deg, #ede8e0, #d8cfc4)",
+      avatarText: "#7a6650",
+      avatarBorder: "2px solid #c8bdb0",
+      cardBorderRadius: "20px",
+      fontFamily: "Georgia, 'Times New Roman', serif",
+      nameFontStyle: "italic",
+      nameFontWeight: "400",
+      roleLetterSpacing: "5px",
+      scoreLabelColor: "#b09070",
+      scoreValueColor: "#3a2e24",
+      scoreBarFill: "#c8a882",
+      scoreBarTrack: "#e0d8ce",
+      scorePercentileColor: "#b0a090",
+      cardShadow: "0 1px 2px rgba(58, 46, 36, 0.08)",
+      buttonShineGradient:
+        "linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.12) 45%, rgba(255,255,255,0.24) 50%, rgba(255,255,255,0.12) 55%, rgba(255,255,255,0) 100%)",
+    },
+    marble: {
+      cardBg: "#ffffff",
+      cardBgOverlay: "marble_veins",
+      surfaceBg: "#ffffff",
+      cardBorder: "1px solid #ebebeb",
+      surfaceBorder: "1px solid #ebebeb",
+      dividerColor: "#ebebeb",
+      nameColor: "#0a0a0a",
+      roleColor: "#aaaaaa",
+      mutedColor: "#cccccc",
+      accentColor: "#0a0a0a",
+      emailColor: "#999999",
+      buttonPrimaryBg: "#0a0a0a",
+      buttonPrimaryText: "#ffffff",
+      buttonPrimaryBorder: "#0a0a0a",
+      buttonSecondaryBg: "#ffffff",
+      buttonSecondaryText: "#333333",
+      buttonSecondaryBorder: "#ebebeb",
+      badgeText: "#bbbbbb",
+      badgeBg: "transparent",
+      badgeBorder: "transparent",
+      topLineGradient: "none",
+      topLineSolid: "#0a0a0a",
+      avatarBg: "linear-gradient(135deg, #f5f5f5, #e8e8e8)",
+      avatarText: "#555555",
+      avatarBorder: "2px solid #dddddd",
+      cardBorderRadius: "0px",
+      fontFamily: "'Helvetica Neue', Arial, sans-serif",
+      nameFontStyle: "normal",
+      nameFontWeight: "800",
+      roleLetterSpacing: "7px",
+      scoreLabelColor: "#aaaaaa",
+      scoreValueColor: "#0a0a0a",
+      scoreBarFill: "#0a0a0a",
+      scoreBarTrack: "#ebebeb",
+      scorePercentileColor: "#cccccc",
+      cardShadow: "0 1px 2px rgba(10, 10, 10, 0.06)",
+      buttonShineGradient:
+        "linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.16) 45%, rgba(255,255,255,0.32) 50%, rgba(255,255,255,0.16) 55%, rgba(255,255,255,0) 100%)",
+    },
+    forest: {
+      cardBg: "linear-gradient(170deg, #0a1a0c 0%, #0e2010 60%, #0c1a0e 100%)",
+      cardBgOverlay: "forest_grain",
+      surfaceBg: "#060e07",
+      cardBorder: "1px solid #1e3820",
+      surfaceBorder: "1px solid #162a18",
+      dividerColor: "#2a4a2a",
+      nameColor: "#f0e8d0",
+      roleColor: "#4a7a4a",
+      mutedColor: "#1e3820",
+      accentColor: "#c8b88a",
+      emailColor: "#3a5a3a",
+      buttonPrimaryBg: "linear-gradient(135deg, #1a3a1a, #253a20)",
+      buttonPrimaryText: "#e8dcc0",
+      buttonPrimaryBorder: "#3a6a3a",
+      buttonSecondaryBg: "transparent",
+      buttonSecondaryText: "#3a5a3a",
+      buttonSecondaryBorder: "#1e3820",
+      badgeText: "#c8b88a",
+      badgeBg: "transparent",
+      badgeBorder: "transparent",
+      topLineGradient: "linear-gradient(90deg, transparent, #e8dcc060, transparent)",
+      avatarBg: "linear-gradient(135deg, #0e1c10, #1a3018)",
+      avatarText: "#e8dcc0",
+      avatarBorder: "2px solid rgba(232, 220, 192, 0.19)",
+      cardBorderRadius: "20px",
+      fontFamily: "Georgia, 'Times New Roman', serif",
+      nameFontStyle: "italic",
+      nameFontWeight: "400",
+      roleLetterSpacing: "6px",
+      scoreLabelColor: "#4a7a4a",
+      scoreValueColor: "#f0e8d0",
+      scoreBarFill: "#c8b88a",
+      scoreBarTrack: "#1e3820",
+      scorePercentileColor: "#4a7a4a",
+      cardShadow: "0 1px 2px rgba(6, 14, 7, 0.35)",
+      buttonShineGradient:
+        "linear-gradient(90deg, rgba(232,220,192,0) 0%, rgba(232,220,192,0.12) 45%, rgba(232,220,192,0.2) 50%, rgba(232,220,192,0.12) 55%, rgba(232,220,192,0) 100%)",
+    },
+  };
+
+  function resolveTheme(themeKey) {
+    const key = typeof themeKey === "string" && THEME_KEYS.includes(themeKey) ? themeKey : "default_dark";
+    return { key, tokens: THEME_CONFIG[key] || THEME_CONFIG.default_dark };
+  }
+
+  function renderThemeOverlay(themeKey) {
+    if (themeKey === "marble") {
+      return `<svg class="unq-ref-overlay-svg" viewBox="0 0 360 600" preserveAspectRatio="none" aria-hidden="true">
+        <path d="M0,80 Q90,60 180,120 T360,80" stroke="#000" stroke-width="1.5" fill="none"></path>
+        <path d="M0,200 Q120,180 200,240 T360,190" stroke="#000" stroke-width="1" fill="none"></path>
+        <path d="M0,380 Q80,360 160,400 T360,370" stroke="#000" stroke-width="0.8" fill="none"></path>
+        <path d="M60,0 Q80,150 40,300 T80,600" stroke="#000" stroke-width="1" fill="none"></path>
+        <path d="M280,0 Q300,200 260,350 T300,600" stroke="#000" stroke-width="0.8" fill="none"></path>
+      </svg>`;
+    }
+    if (themeKey === "forest") {
+      return `<svg class="unq-ref-overlay-svg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <filter id="grain">
+            <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" stitchTiles="stitch"></feTurbulence>
+            <feColorMatrix type="saturate" values="0"></feColorMatrix>
+          </filter>
+        </defs>
+        <rect width="100%" height="100%" filter="url(#grain)"></rect>
+      </svg>`;
+    }
+    return "";
+  }
+
   function normalizeHexColor(value) {
     const raw = String(value || "").trim().toLowerCase();
     return /^#[0-9a-f]{6}$/.test(raw) ? raw : "";
@@ -48,7 +277,7 @@
       tariff: plan,
       theme:
         typeof card.theme === "string" &&
-        ["default_dark", "light_minimal", "gradient", "neon", "corporate"].includes(card.theme)
+        THEME_KEYS.includes(card.theme)
           ? card.theme
           : "default_dark",
       customColor: normalizeHexColor(card.customColor),
@@ -170,6 +399,7 @@
 
   function renderCardView(input, options = {}) {
     const card = normalizeCard(input);
+    const theme = resolveTheme(card.theme);
     const shareUrl = String(options.shareUrl || "").trim() || window.location.href;
     const showPausedBanner = Boolean(options.showPausedBanner);
     const pausedText = String(options.pausedText || "Визитка на паузе — посетители видят заглушку");
@@ -189,12 +419,12 @@
     const buttonsHtml =
       card.buttons.length > 0
         ? card.buttons
-          .map(
-            (button) =>
-              `<a href="${esc(button.url)}" target="_blank" rel="noopener noreferrer" data-track-action data-button-type="${esc(button.type || "other")}" class="public-card-button unq-ref-action-btn">${iconSvg(classifyButton(button))}<span>${esc(button.label)}</span></a>`,
-          )
+          .map((button, index) => {
+            const toneClass = index === 0 ? "is-primary" : "is-secondary";
+            return `<a href="${esc(button.url)}" target="_blank" rel="noopener noreferrer" data-track-action data-button-type="${esc(button.type || "other")}" class="public-card-button unq-ref-action-btn ${toneClass}">${iconSvg(classifyButton(button))}<span>${esc(button.label)}</span></a>`;
+          })
           .join("")
-        : '<p class="rounded-xl border border-neutral-200 bg-neutral-50 py-3 text-center text-xs text-neutral-500">Владелец пока не добавил контактные кнопки.</p>';
+        : '<p class="unq-ref-empty-buttons">Владелец пока не добавил контактные кнопки.</p>';
     const scoreBlock = score
       ? `<div class="unq-score-block">
           <div class="unq-score-head">
@@ -245,7 +475,48 @@
         ? `<div class="unq-ref-top-badge">Топ #${Math.round(Number(topBadge.rank))} этой недели</div>`
         : "";
     const useCustomColor = card.tariff === "premium" && Boolean(card.customColor);
-    const rootStyle = useCustomColor ? ` style="--card-button-bg:${esc(card.customColor)};"` : "";
+    const topLineValue =
+      theme.tokens.topLineGradient === "none"
+        ? theme.tokens.topLineSolid || theme.tokens.accentColor
+        : theme.tokens.topLineGradient;
+    const styleTokens = [
+      `--theme-card-bg:${esc(theme.tokens.cardBg)}`,
+      `--theme-surface-bg:${esc(theme.tokens.surfaceBg)}`,
+      `--theme-card-border:${esc(theme.tokens.cardBorder)}`,
+      `--theme-surface-border:${esc(theme.tokens.surfaceBorder)}`,
+      `--theme-divider-color:${esc(theme.tokens.dividerColor)}`,
+      `--theme-name-color:${esc(theme.tokens.nameColor)}`,
+      `--theme-role-color:${esc(theme.tokens.roleColor)}`,
+      `--theme-muted-color:${esc(theme.tokens.mutedColor)}`,
+      `--theme-accent-color:${esc(theme.tokens.accentColor)}`,
+      `--theme-email-color:${esc(theme.tokens.emailColor)}`,
+      `--theme-button-primary-bg:${esc(useCustomColor ? card.customColor : theme.tokens.buttonPrimaryBg)}`,
+      `--theme-button-primary-text:${esc(theme.tokens.buttonPrimaryText)}`,
+      `--theme-button-primary-border:${esc(theme.tokens.buttonPrimaryBorder)}`,
+      `--theme-button-secondary-bg:${esc(theme.tokens.buttonSecondaryBg)}`,
+      `--theme-button-secondary-text:${esc(theme.tokens.buttonSecondaryText)}`,
+      `--theme-button-secondary-border:${esc(theme.tokens.buttonSecondaryBorder)}`,
+      `--theme-badge-text:${esc(theme.tokens.badgeText)}`,
+      `--theme-badge-bg:${esc(theme.tokens.badgeBg)}`,
+      `--theme-badge-border:${esc(theme.tokens.badgeBorder)}`,
+      `--theme-top-line:${esc(topLineValue)}`,
+      `--theme-avatar-bg:${esc(theme.tokens.avatarBg)}`,
+      `--theme-avatar-text:${esc(theme.tokens.avatarText)}`,
+      `--theme-avatar-border:${esc(theme.tokens.avatarBorder)}`,
+      `--theme-card-radius:${esc(theme.tokens.cardBorderRadius)}`,
+      `--theme-font-family:${esc(theme.tokens.fontFamily)}`,
+      `--theme-name-font-style:${esc(theme.tokens.nameFontStyle)}`,
+      `--theme-name-font-weight:${esc(theme.tokens.nameFontWeight)}`,
+      `--theme-role-letter-spacing:${esc(theme.tokens.roleLetterSpacing)}`,
+      `--theme-score-label:${esc(theme.tokens.scoreLabelColor)}`,
+      `--theme-score-value:${esc(theme.tokens.scoreValueColor)}`,
+      `--theme-score-fill:${esc(theme.tokens.scoreBarFill)}`,
+      `--theme-score-track:${esc(theme.tokens.scoreBarTrack)}`,
+      `--theme-score-percentile:${esc(theme.tokens.scorePercentileColor)}`,
+      `--theme-card-shadow:${esc(theme.tokens.cardShadow)}`,
+      `--theme-button-shine:${esc(theme.tokens.buttonShineGradient)}`,
+    ];
+    const rootStyle = ` style="${styleTokens.join(";")};"`;
     const companyRoleText = [card.verifiedCompany, card.role].filter(Boolean).join(" • ");
     const companyRoleHtml =
       companyRoleText || card.verified
@@ -253,7 +524,7 @@
         : "";
 
     return `
-      <div data-card-view data-card-theme="${esc(card.theme)}" data-slug="${esc(card.slug)}" data-share-url="${esc(shareUrl)}"${rootStyle}>
+      <div data-card-view data-card-theme="${esc(theme.key)}" data-slug="${esc(card.slug)}" data-share-url="${esc(shareUrl)}"${rootStyle}>
         ${showPausedBanner ? `<div class="mb-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">${esc(pausedText)}</div>` : ""}
         <div class="unq-ref-top">
           <div class="unq-ref-slug-wrap">
@@ -266,6 +537,7 @@
           </button>
         </div>
         <div class="public-card-shell unq-ref-shell">
+          <div class="unq-ref-card-overlay">${renderThemeOverlay(theme.key)}</div>
           ${topBadgeHtml}
           ${card.showBranding
         ? `<div class="unq-ref-brand">

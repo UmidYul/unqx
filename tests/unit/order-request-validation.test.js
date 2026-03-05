@@ -21,7 +21,7 @@ describe("order request validation", () => {
     const result = OrderRequestSchema.safeParse({
       ...validPayload,
       tariff: "premium",
-      theme: "gradient",
+      theme: "arctic",
       products: {
         digitalCard: true,
         bracelet: true,

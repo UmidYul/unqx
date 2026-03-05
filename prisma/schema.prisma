@@ -16,10 +16,10 @@ enum Tariff {
 
 enum CardTheme {
   default_dark
-  light_minimal
-  gradient
-  neon
-  corporate
+  arctic
+  linen
+  marble
+  forest
 }
 
 enum CheckerResult {
@@ -196,6 +196,7 @@ model User {
   verifiedCompany        String?               @map("verified_company") @db.VarChar(160)
   verifiedAt             DateTime?             @map("verified_at")
   showInDirectory        Boolean               @default(true) @map("show_in_directory")
+  directorySector        String?               @map("directory_sector") @db.VarChar(20)
   refCode                String?               @unique @map("ref_code") @db.VarChar(40)
   createdAt              DateTime              @default(now()) @map("created_at")
   updatedAt              DateTime              @updatedAt @map("updated_at")
@@ -351,6 +352,7 @@ model VerificationRequest {
   slug        String   @db.VarChar(20)
   companyName String   @map("company_name") @db.VarChar(160)
   role        String   @db.VarChar(160)
+  sector      String   @default("other") @db.VarChar(20)
   proofType   String   @map("proof_type") @db.VarChar(20)
   proofValue  String   @map("proof_value") @db.VarChar(320)
   comment     String?

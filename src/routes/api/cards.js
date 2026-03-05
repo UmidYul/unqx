@@ -26,7 +26,7 @@ const { getSetting } = require("../../services/platform-settings");
 
 const router = express.Router();
 const SLUG_REGEX = /^[A-Z]{3}[0-9]{3}$/;
-const THEMES = new Set(["default_dark", "light_minimal", "gradient", "neon", "corporate"]);
+const THEMES = new Set(["default_dark", "arctic", "linen", "marble", "forest"]);
 
 function isMissingModelTable(error, modelName) {
   return (

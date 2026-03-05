@@ -36,6 +36,8 @@
 
   const fp = (v) => `${Number(v || 0).toLocaleString("ru-RU")} сум`;
   const DEFAULT_PROFILE_AVATAR = "/brand/profile-thin.svg";
+  const PROFILE_THEMES = ["default_dark", "arctic", "linen", "marble", "forest"];
+  const PREMIUM_ONLY_THEMES = new Set(["arctic", "linen", "marble", "forest"]);
   const fh = (v) => {
     if (!v) return "—";
     const diff = Math.max(0, Date.now() - new Date(v).getTime());
@@ -185,6 +187,7 @@
     verificationClose: $("#profile-verification-close"),
     verificationCompany: $("#profile-verification-company"),
     verificationRole: $("#profile-verification-role"),
+    verificationSector: $("#profile-verification-sector"),
     verificationProofType: $("#profile-verification-proof-type"),
     verificationProofValue: $("#profile-verification-proof-value"),
     verificationComment: $("#profile-verification-comment"),
@@ -543,9 +546,17 @@
 
     el.cThemes.forEach((button) => {
       const on = button.getAttribute("data-theme") === s.theme;
+      const themeId = button.getAttribute("data-theme") || "default_dark";
+      const premiumOnly = PREMIUM_ONLY_THEMES.has(themeId);
+      const locked = premiumOnly && !premium;
       button.classList.toggle("bg-neutral-900", on);
       button.classList.toggle("text-white", on);
-      button.disabled = !premium;
+      button.disabled = locked;
+      const lockNode = button.querySelector("[data-theme-lock]");
+      if (lockNode instanceof HTMLElement) {
+        lockNode.classList.toggle("hidden", !locked);
+        lockNode.classList.toggle("inline-flex", locked);
+      }
     });
 
     if (el.cColor) el.cColor.disabled = !premium;
@@ -647,7 +658,7 @@
 
     s.tags = Array.isArray(card.tags) ? card.tags.slice(0) : [];
     s.buttons = Array.isArray(card.buttons) ? card.buttons.slice(0) : [];
-    s.theme = card.theme || "default_dark";
+    s.theme = PROFILE_THEMES.includes(card.theme) ? card.theme : "default_dark";
 
     if (el.cBioC) el.cBioC.textContent = `${el.cBio?.value.length || 0}/120`;
 
@@ -1606,8 +1617,10 @@
 
   el.cThemes.forEach((button) =>
     button.addEventListener("click", () => {
-      if (s.user?.effectivePlan !== "premium") return;
-      s.theme = button.getAttribute("data-theme") || "default_dark";
+      const selectedTheme = button.getAttribute("data-theme") || "default_dark";
+      const premiumOnly = PREMIUM_ONLY_THEMES.has(selectedTheme);
+      if (premiumOnly && s.user?.effectivePlan !== "premium") return;
+      s.theme = PROFILE_THEMES.includes(selectedTheme) ? selectedTheme : "default_dark";
       renderTheme();
       renderPreview();
     }),
@@ -1831,6 +1844,7 @@
         body: JSON.stringify({
           companyName: el.verificationCompany?.value || "",
           role: el.verificationRole?.value || "",
+          sector: el.verificationSector?.value || "other",
           proofType: el.verificationProofType?.value || "email",
           proofValue: el.verificationProofValue?.value || "",
           comment: el.verificationComment?.value || "",

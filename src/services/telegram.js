@@ -136,6 +136,15 @@ async function sendVerificationRequestToAdmin(payload) {
     payload.slug && payload.slug !== "PROFILE"
       ? `Профиль (основной UNQ: ${escapeHtml(payload.slug)})`
       : "Профиль аккаунта (без привязки к конкретному UNQ)";
+  const sectorLabelMap = {
+    design: "Дизайн",
+    sales: "Продажи",
+    marketing: "Маркетинг",
+    it: "IT",
+    other: "Другое",
+  };
+  const sectorKey = String(payload.sector || "other").trim().toLowerCase();
+  const sectorLabel = sectorLabelMap[sectorKey] || "Другое";
   const text = [
     "Новая заявка на верификацию",
     "",
@@ -143,6 +152,7 @@ async function sendVerificationRequestToAdmin(payload) {
     `Объект: ${verificationTarget}`,
     `Компания: ${escapeHtml(payload.companyName)}`,
     `Роль: ${escapeHtml(payload.role)}`,
+    `Сфера: ${escapeHtml(sectorLabel)}`,
     `Подтверждение: ${escapeHtml(payload.proofType)} · ${escapeHtml(payload.proofValue)}`,
     payload.comment ? `Комментарий: ${escapeHtml(payload.comment)}` : "",
   ]
@@ -172,4 +182,3 @@ module.exports = {
   sendVerificationRequestToAdmin,
   sendVerificationStatusToUser,
 };
-
