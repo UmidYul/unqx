@@ -38,7 +38,7 @@ function getButtonLimit(plan) {
   if (plan === "none") {
     return 0;
   }
-  return plan === "premium" ? null : 3;
+  return plan === "premium" ? 6 : 3;
 }
 
 function canCreateCard(user) {

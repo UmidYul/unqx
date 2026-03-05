@@ -397,9 +397,9 @@
       linkedin:
         '<svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"></rect><path d="M8 10v6M8 8.2v.1M12 16v-3.2c0-1.2.9-2.1 2-2.1 1.2 0 2 .9 2 2.1V16"></path></svg>',
       tiktok:
-        '<svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 3v8.7a3.7 3.7 0 1 1-2.5-3.5"></path><path d="M15 3c.6 1.5 2 2.6 3.5 2.8"></path></svg>',
+        '<svg class="icon-stroke h-[16px] w-[16px]" viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 4v8.8a4 4 0 1 1-2.8-3.8"></path><path d="M14.5 4c.8 1.7 2.2 2.8 4 3.1"></path></svg>',
       youtube:
-        '<svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6.5" width="18" height="11" rx="3"></rect><path d="m10 10 5 2-5 2z"></path></svg>',
+        '<svg class="icon-stroke h-[16px] w-[16px]" viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="5.5" width="19" height="13" rx="3.4"></rect><path d="m10 9.2 5.8 2.8-5.8 2.8z"></path></svg>',
       save: '<svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M8 11l4 4 4-4M4 20h16"></path></svg>',
     };
 

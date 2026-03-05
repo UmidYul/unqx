@@ -220,6 +220,33 @@ async function upsertProfileCardCompat(db, input) {
   return mapProfileCardRow(row);
 }
 
+function isMissingColumnError(error) {
+  if (!error || typeof error !== "object") return false;
+  const code = String(error.code || "");
+  const message = String(error.message || "");
+  return code === "42703" || /column .* does not exist/i.test(message);
+}
+
+async function patchOptionalProfileCardFields(db, ownerId, fields) {
+  const optionalColumns = {
+    hashtag: fields.hashtag ?? null,
+    address: fields.address ?? null,
+    postcode: fields.postcode ?? null,
+    extra_phone: fields.extraPhone ?? null,
+  };
+
+  for (const [column, value] of Object.entries(optionalColumns)) {
+    try {
+      await db.$executeRawUnsafe(`UPDATE profile_cards SET "${column}" = $1 WHERE owner_id = $2`, value, ownerId);
+    } catch (error) {
+      if (isMissingColumnError(error)) {
+        continue;
+      }
+      throw error;
+    }
+  }
+}
+
 function parseProfileCardRow(row) {
   if (!row) {
     return null;
@@ -637,7 +664,7 @@ router.put(
     }
 
     const saved = await prisma.$transaction(async (tx) => {
-      const cardRow = await upsertProfileCardCompat(tx, {
+      await upsertProfileCardCompat(tx, {
         ownerId: user.id,
         name,
         role,
@@ -653,6 +680,12 @@ router.put(
         customColor,
         showBranding,
       });
+      await patchOptionalProfileCardFields(tx, user.id, {
+        hashtag,
+        address,
+        postcode,
+        extraPhone,
+      });
 
       await tx.slug.updateMany({
         where: {
@@ -665,7 +698,7 @@ router.put(
         },
       });
 
-      return cardRow;
+      return findProfileCardByOwnerId(user.id);
     });
     await safeRecalculateScore(user.id);
 
