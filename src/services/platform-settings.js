@@ -34,11 +34,14 @@ const DEFAULT_SETTINGS = [
     type: "json",
     label: "Фичи премиум тарифа",
     value: [
-      "Выбор тем",
+      "1 цифровая визитка",
+      "Выбор темы (5+ тем)",
       "Кастомные цвета и фон",
-      "Неограниченное количество кнопок",
-      "Расширенная аналитика",
+      "Неограниченное кол-во кнопок",
+      "Расширенная аналитика (динамика по дням)",
       "Скрыть брендинг UNQ+",
+      "QR-код + NFC поддержка",
+      "Приоритетная поддержка",
     ],
   },
   { key: "plan_premium_popular_badge", group: "pricing", type: "boolean", label: "Бейдж популярного", value: true },
@@ -89,6 +92,7 @@ const DEFAULT_SETTINGS = [
   { key: "contact_telegram_channel", group: "contacts", type: "text", label: "Telegram канал", value: "@unqx_uz" },
   { key: "contact_telegram_chat_id", group: "contacts", type: "text", label: "Telegram chat id", value: env.TELEGRAM_CHAT_ID || "" },
   { key: "contact_support_telegram", group: "contacts", type: "text", label: "Telegram поддержка", value: "@unqx_uz" },
+  { key: "contact_phone", group: "contacts", type: "text", label: "Телефон", value: "" },
   { key: "contact_email", group: "contacts", type: "text", label: "Email", value: "" },
   { key: "contact_address", group: "contacts", type: "text", label: "Адрес", value: "Ташкент, Узбекистан" },
   { key: "contact_response_time", group: "contacts", type: "text", label: "Время ответа", value: "в течение 15 минут" },
@@ -295,6 +299,7 @@ async function getManySettings(keys) {
 async function getSettingsByGroup(group) {
   const normalizedGroup = String(group || "").trim();
   if (!normalizedGroup) return [];
+  const defaults = DEFAULT_SETTINGS.filter((item) => item.group === normalizedGroup);
   try {
     const rows = await prisma.platformSetting.findMany({
       where: { group: normalizedGroup },
@@ -302,7 +307,23 @@ async function getSettingsByGroup(group) {
     });
     if (rows.length) {
       rows.forEach((row) => cacheSet(row.key, row.value));
-      return rows;
+      const byKey = new Map(rows.map((row) => [row.key, row]));
+      const merged = defaults.map((item) => {
+        const existing = byKey.get(item.key);
+        if (existing) return existing;
+        return {
+          key: item.key,
+          value: cloneJson(item.value),
+          group: item.group,
+          label: item.label,
+          description: item.description || null,
+          type: item.type,
+          updatedAt: null,
+          updatedBy: "system",
+        };
+      });
+      const extra = rows.filter((row) => !DEFAULT_MAP.has(row.key));
+      return [...merged, ...extra];
     }
   } catch (error) {
     if (!isSchemaNotReady(error)) {
@@ -310,7 +331,7 @@ async function getSettingsByGroup(group) {
     }
   }
 
-  return DEFAULT_SETTINGS.filter((item) => item.group === normalizedGroup).map((item) => ({
+  return defaults.map((item) => ({
     key: item.key,
     value: cloneJson(item.value),
     group: item.group,

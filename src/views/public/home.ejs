@@ -2,7 +2,7 @@
   pageDescription=typeof description==="string" && description ? description
   : "Одна ссылка вместо тысячи слов. Создай свою цифровую визитку на unqx.uz" ; const pageBaseUrl=typeof
   baseUrl==="string" && baseUrl ? baseUrl : "" ; const pageCanonicalUrl=typeof canonicalUrl==="string" && canonicalUrl ?
-  canonicalUrl : `${pageBaseUrl}/`; const pagePublicSettings=typeof publicSettings==="object" && publicSettings ? publicSettings : {}; const platformName=String(pagePublicSettings.platform_name || "UNQ+"); const platformTagline=String(pagePublicSettings.platform_tagline || "Твой UNQ. Твой бренд. Навсегда."); const platformHeroSubtitle=String(pagePublicSettings.platform_hero_subtitle || "Цифровая визитка за 1 минуту — одна ссылка вместо тысячи слов."); const pricingVisible=Boolean(pagePublicSettings.pricing_section_visible ?? true); const braceletName=String(pagePublicSettings.bracelet_name || "NFC-браслет"); const braceletPrice=Number(pagePublicSettings.bracelet_price || 300000); const braceletFeaturesFromSettings=Array.isArray(pagePublicSettings.bracelet_features) ? pagePublicSettings.bracelet_features : null; const braceletDescription=String(pagePublicSettings.bracelet_description || "Стильный тканевый браслет с NFC, который открывает твою цифровую визитку в один тап."); const braceletNote=String(pagePublicSettings.bracelet_note || "Браслет привязан к твоему slug — работает только с активной визиткой UNQ+"); const supportTelegram=String(pagePublicSettings.contact_support_telegram || "@unqx_uz"); const pageJsonLd=[{ "@context" : "https://schema.org" , "@type" : "WebSite" ,
+  canonicalUrl : `${pageBaseUrl}/`; const pagePublicSettings=typeof publicSettings==="object" && publicSettings ? publicSettings : {}; const platformName=String(pagePublicSettings.platform_name || "UNQ+"); const platformTagline=String(pagePublicSettings.platform_tagline || "Твой UNQ. Твой бренд. Навсегда."); const platformHeroSubtitle=String(pagePublicSettings.platform_hero_subtitle || "Цифровая визитка за 1 минуту — одна ссылка вместо тысячи слов."); const pricingVisible=Boolean(pagePublicSettings.pricing_section_visible ?? true); const braceletName=String(pagePublicSettings.bracelet_name || "NFC-браслет"); const braceletPrice=Number(pagePublicSettings.bracelet_price || 300000); const braceletFeaturesFromSettings=Array.isArray(pagePublicSettings.bracelet_features) ? pagePublicSettings.bracelet_features : null; const braceletDescription=String(pagePublicSettings.bracelet_description || "Стильный тканевый браслет с NFC, который открывает твою цифровую визитку в один тап."); const braceletNote=String(pagePublicSettings.bracelet_note || "Браслет привязан к твоему slug — работает только с активной визиткой UNQ+"); const supportTelegram=String(pagePublicSettings.contact_support_telegram || "@unqx_uz"); const supportPhone=String(pagePublicSettings.contact_phone || "").trim(); const supportPhoneHref=supportPhone.replace(/[^\d+]/g, ""); const pageJsonLd=[{ "@context" : "https://schema.org" , "@type" : "WebSite" ,
   name: platformName , url: pageCanonicalUrl, potentialAction: { "@type": "SearchAction", target: `${pageBaseUrl}/directory?q={search_term_string}`, "query-input": "required name=search_term_string" } }, { "@context": "https://schema.org", "@type": "Organization", name: platformName, url: pageBaseUrl || pageCanonicalUrl, logo: `${pageBaseUrl}/brand/logo.PNG`, sameAs: ["https://t.me/unqx_uz"] }]; const pageUserSession=typeof userSession !=="undefined" ? userSession : null;
   const hasAuthSession=Boolean(pageUserSession && pageUserSession.userId); const hasBasicPlan=hasAuthSession &&
   pageUserSession && pageUserSession.plan==="basic" ; const pricingSettings=typeof pricing==="object" && pricing ?
@@ -155,11 +155,9 @@
                   class="text-sm text-neutral-500 transition-colors hover:text-neutral-900">Топ визиток</a>
                 <% } %>
                   <a href="/drops" class="text-sm text-neutral-500 transition-colors hover:text-neutral-900">Дропы</a>
-                  <div id="home-auth-nav-desktop" class="flex items-center gap-2">
-                    <a href="/login"
+                  <div id="home-auth-nav-desktop" class="flex w-full items-center justify-center gap-2">
+                    <a href="/login" data-auth-login
                       class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100 <%= hasAuthSession ? 'hidden' : '' %>">Войти</a>
-                    <a href="/register"
-                      class="interactive-btn min-h-11 rounded-lg bg-neutral-900 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-neutral-800 <%= hasAuthSession ? 'hidden' : '' %>">Зарегистрироваться</a>
                     <a href="/profile" data-auth-profile
                       class="<%= hasAuthSession ? 'inline-flex' : 'hidden' %> items-center gap-2 rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100">
                       <img data-auth-avatar src="<%= authPhotoUrl %>" alt="avatar"
@@ -202,11 +200,9 @@
               <% if (leaderboardEnabled) { %><a href="/leaderboard" class="text-sm text-neutral-500">Топ визиток</a>
                 <% } %>
                   <a href="/drops" class="text-sm text-neutral-500">Дропы</a>
-                  <div id="home-auth-nav-mobile" class="flex items-center gap-2">
-                    <a href="/login"
+                  <div id="home-auth-nav-mobile" class="flex w-full items-center justify-center gap-2">
+                    <a href="/login" data-auth-login
                       class="rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100 <%= hasAuthSession ? 'hidden' : '' %>">Войти</a>
-                    <a href="/register"
-                      class="rounded-lg bg-neutral-900 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-neutral-800 <%= hasAuthSession ? 'hidden' : '' %>">Зарегистрироваться</a>
                     <a href="/profile" data-auth-profile
                       class="<%= hasAuthSession ? 'inline-flex' : 'hidden' %> items-center gap-2 rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100">
                       <img data-auth-avatar src="<%= authPhotoUrl %>" alt="avatar"
@@ -328,7 +324,7 @@
                   <div class="mt-4 flex items-center justify-center gap-3">
                     <a id="home-slug-primary-action" href="#" data-order-link
                       class="btn-shimmer inline-flex items-center gap-2 rounded-xl bg-neutral-900 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-neutral-800">
-                      Занять UNQ
+                      Купить
                       <svg class="icon-stroke h-3.5 w-3.5" viewBox="0 0 24 24" aria-hidden="true">
                         <path d="M5 12h14M13 5l7 7-7 7"></path>
                       </svg>
@@ -745,6 +741,9 @@
                       </div>
 
                       <div class="mt-12 border-t border-neutral-200 pt-6">
+                        <% if (supportPhone) { %>
+                          <p class="mb-2 text-xs text-neutral-400">Телефон: <a href="tel:<%= supportPhoneHref %>" class="underline transition-colors hover:text-neutral-700"><%= supportPhone %></a></p>
+                        <% } %>
                         <p class="text-xs text-neutral-400">&copy; 2026 <%= platformName %> · <%= String(pagePublicSettings.contact_address || "Ташкент, Узбекистан") %></p>
                       </div>
                     </div>

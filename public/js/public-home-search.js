@@ -516,14 +516,14 @@ function initSlugAvailability(orderApi) {
 
     if (state === "available") {
       statusIcon.innerHTML = ICON_OK;
-      statusText.textContent = `unqx.uz/${slug} доступен`;
-      statusNote.textContent = "UNQ свободен. Оставь заявку и мы активируем его для тебя.";
+      statusText.textContent = `Такой UNQ свободен: ${slug}`;
+      statusNote.textContent = "Можешь сразу купить и занять его.";
       renderSuggestions([]);
       setTakenOwner(null);
       setPrimaryAction({
         visible: true,
         slug,
-        label: "Занять UNQ",
+        label: "Купить",
       });
       return;
     }

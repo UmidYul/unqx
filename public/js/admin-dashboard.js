@@ -302,6 +302,12 @@
     const p = await r.json();
     const s = p.kpis || {};
     const breakdown = s.breakdown || {};
+    const breakdownLines = [
+      `Slug: ${P(breakdown.slug || 0)}`,
+      `Базовый: ${P(breakdown.basicPlan || 0)}`,
+      `Премиум: ${P(breakdown.premiumPlan || 0)}`,
+      `Браслеты: ${P(breakdown.bracelet || 0)}`,
+    ];
     kpi.innerHTML = [
       { n: "Новых заявок сегодня", v: s.newOrdersToday || 0, i: "userCheck" },
       { n: "Выручка сегодня", v: P(s.revenueToday || 0), i: "creditCard" },
@@ -310,10 +316,17 @@
       { n: "Средний UNQ Score", v: Number(s.averageUnqScore || 0).toLocaleString("ru-RU"), i: "chart" },
       {
         n: "Разбивка",
-        v: `Slug ${P(breakdown.slug || 0)} · Базовый ${P(breakdown.basicPlan || 0)} · Премиум ${P(breakdown.premiumPlan || 0)} · Браслеты ${P(breakdown.bracelet || 0)}`,
+        lines: breakdownLines,
         i: "package",
       },
-    ].map((x) => `<article class="admin-kpi-card"><div class="admin-kpi-icon">${I(x.i, 20)}</div><p class="admin-kpi-value">${X(x.v)}</p><p class="admin-kpi-label">${x.n}</p></article>`).join("");
+    ]
+      .map((x) => {
+        const valueMarkup = Array.isArray(x.lines)
+          ? `<ul class="admin-kpi-list">${x.lines.map((line) => `<li>${X(line)}</li>`).join("")}</ul>`
+          : `<p class="admin-kpi-value">${X(x.v)}</p>`;
+        return `<article class="admin-kpi-card"><div class="admin-kpi-icon">${I(x.i, 20)}</div>${valueMarkup}<p class="admin-kpi-label">${x.n}</p></article>`;
+      })
+      .join("");
     const top = p.topUnboughtPatterns || [];
     table.innerHTML = top.length ? top.map((x) => `<tr class="border-t border-neutral-100"><td class="px-3 py-2 font-mono">${X(x.pattern)}</td><td class="px-3 py-2 font-semibold">${x.count}</td></tr>`).join("") : '<tr><td colspan="2" class="px-3 py-8 text-center text-neutral-500">Нет данных</td></tr>';
     if (typeof Chart !== "undefined") {

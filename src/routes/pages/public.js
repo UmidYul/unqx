@@ -300,6 +300,7 @@ router.get(
         "bracelet_description",
         "bracelet_note",
         "contact_support_telegram",
+        "contact_phone",
         "contact_response_time",
         "contact_error_fallback",
         "pending_expiry_hours",

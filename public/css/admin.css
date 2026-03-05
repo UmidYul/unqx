@@ -476,6 +476,16 @@
   text-transform: uppercase;
 }
 
+.admin-kpi-list {
+  margin-top: 10px;
+  padding: 0;
+  list-style: none;
+  color: #171717;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
 .admin-table-row {
   transition: background-color 0.2s ease;
 }
