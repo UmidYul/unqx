@@ -531,7 +531,8 @@
         </section>
 
         <section id="tab-verification" class="<%= pageActiveTab === 'verification' ? '' : 'hidden' %> space-y-4">
-          <form id="verification-filters" class="grid gap-3 rounded-2xl border border-neutral-200 bg-white p-4 md:grid-cols-[220px_auto]">
+          <form id="verification-filters" action="/admin/dashboard" method="get" class="grid gap-3 rounded-2xl border border-neutral-200 bg-white p-4 md:grid-cols-[220px_auto]">
+            <input type="hidden" name="tab" value="verification" />
             <select name="status" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">
               <option value="all">Все статусы</option>
               <option value="pending">На рассмотрении</option>

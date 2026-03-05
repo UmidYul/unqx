@@ -648,13 +648,17 @@
     const form = document.getElementById("verification-filters");
     const table = document.getElementById("verification-table");
     if (!(form instanceof HTMLFormElement) || !(table instanceof HTMLElement)) return;
+    table.innerHTML = '<tr><td colspan="10" class="px-3 py-8 text-center text-neutral-500">Загрузка...</td></tr>';
     const q = {
       status: getFormValue(form, "status", "all"),
       page: getFormValue(form, "page", "1"),
     };
     setDashboardQuery({ v_status: q.status, v_page: q.page });
     const r = await fetch(`/api/admin/verification-requests?${Q(q)}`);
-    if (!r.ok) return;
+    if (!r.ok) {
+      table.innerHTML = '<tr><td colspan="10" class="px-3 py-8 text-center text-rose-600">Не удалось загрузить заявки на верификацию</td></tr>';
+      return;
+    }
     const payload = await r.json();
     const rows = Array.isArray(payload.items) ? payload.items : [];
     table.innerHTML = rows.length
