@@ -325,7 +325,12 @@
     }
   };
 
-  const getCurrentPlan = () => s.user?.effectivePlan || "none";
+  const getCurrentPlan = () => {
+    const raw = String(s.user?.effectivePlan || s.user?.plan || "none")
+      .trim()
+      .toLowerCase();
+    return raw === "premium" || raw === "basic" ? raw : "none";
+  };
 
   const stateIcon = (name) => {
     if (name === "shopping") {
@@ -1101,6 +1106,9 @@
     try {
       const payload = await api("/api/profile/bootstrap");
       s.user = payload.user || null;
+      if (s.user && typeof s.user === "object") {
+        s.user.effectivePlan = getCurrentPlan();
+      }
       s.limits = payload.limits || {};
       s.slugs = payload.slugs || [];
       s.card = payload.card || null;

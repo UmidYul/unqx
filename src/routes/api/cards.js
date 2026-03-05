@@ -1097,7 +1097,16 @@ router.get(
         }),
         prisma.profileCard.findUnique({
           where: { ownerId: slugRow.ownerId },
-          select: { name: true, buttons: true, bio: true, email: true },
+          select: {
+            name: true,
+            buttons: true,
+            bio: true,
+            hashtag: true,
+            email: true,
+            extraPhone: true,
+            address: true,
+            postcode: true,
+          },
         }),
       ]);
 
@@ -1121,12 +1130,11 @@ router.get(
           isActive: true,
           name: profileCard.name || user?.firstName || user?.username || slugRow.fullSlug,
           phone: phoneRaw || "+998000000000",
-          email: emailRaw || undefined,
-          email: profileCard.email || undefined,
-          extraPhone: undefined,
-          address: "",
-          postcode: "",
-          hashtag: profileCard.bio || "",
+          email: profileCard.email || emailRaw || undefined,
+          extraPhone: profileCard.extraPhone || undefined,
+          address: profileCard.address || "",
+          postcode: profileCard.postcode || "",
+          hashtag: profileCard.hashtag || profileCard.bio || "",
         });
 
         res.setHeader("Content-Type", "text/vcard; charset=utf-8");
