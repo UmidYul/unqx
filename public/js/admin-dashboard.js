@@ -207,6 +207,42 @@
     }
   }
 
+  async function loadMaintenanceBanner() {
+    const banner = document.getElementById("admin-maintenance-banner");
+    const textNode = document.getElementById("admin-maintenance-text");
+    const disableBtn = document.getElementById("admin-maintenance-disable");
+    if (!(banner instanceof HTMLElement) || !(textNode instanceof HTMLElement) || !(disableBtn instanceof HTMLButtonElement)) return;
+    try {
+      const response = await fetch("/api/admin/settings/platform");
+      if (!response.ok) return;
+      const payload = await response.json();
+      const items = Array.isArray(payload.items) ? payload.items : [];
+      const asMap = new Map(items.map((item) => [item.key, item.value]));
+      const enabled = Boolean(asMap.get("maintenance_mode"));
+      banner.classList.toggle("hidden", !enabled);
+      const message = String(asMap.get("maintenance_message") || "").trim();
+      textNode.textContent = enabled
+        ? `Режим обслуживания включён — сайт недоступен для пользователей${message ? `. ${message}` : ""}`
+        : "";
+      disableBtn.onclick = async () => {
+        disableBtn.disabled = true;
+        const r = await fetch("/api/admin/settings/platform", {
+          method: "PATCH",
+          headers: H({ "Content-Type": "application/json" }),
+          body: JSON.stringify({ maintenance_mode: false }),
+        });
+        disableBtn.disabled = false;
+        if (!r.ok) {
+          await showAlert(await E(r));
+          return;
+        }
+        banner.classList.add("hidden");
+      };
+    } catch {
+      // ignore banner load failures
+    }
+  }
+
   let openRowMenu = null;
   let openRowToggle = null;
 
@@ -1188,6 +1224,8 @@
       setFormValue(form, "page", getInitial("l_page", "page") || "1");
     }
   }
+
+  void loadMaintenanceBanner();
 
   if (tab === "analytics") void loadAnalytics();
   if (tab === "orders") void loadOrders();

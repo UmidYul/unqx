@@ -20,4 +20,17 @@ describe("slug pricing", () => {
     expect(getLetterMultiplier("ABX").multiplier).toBe(1);
     expect(getDigitMultiplier("374").multiplier).toBe(1);
   });
+
+  it("supports custom multiplier config", () => {
+    const result = calculateSlugPrice({
+      letters: "AAA",
+      digits: "000",
+      config: {
+        basePrice: 200_000,
+        lettersAllSame: 7,
+        digitsZeros: 8,
+      },
+    });
+    expect(result.total).toBe(200_000 * 7 * 8);
+  });
 });

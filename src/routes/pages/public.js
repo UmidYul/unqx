@@ -13,6 +13,7 @@ const { getActiveFlashSale, resolveConditionLabel, getFlashSaleSlotsLeft } = req
 const { getPublicScoreForSlug } = require("../../services/unq-score");
 const { normalizeRefCode } = require("../../services/referrals");
 const { getPricingSettings } = require("../../services/pricing-settings");
+const { getManySettings } = require("../../services/platform-settings");
 const { seoHub, getSeoPage } = require("../../content/seo-pages");
 
 const router = express.Router();
@@ -267,7 +268,7 @@ function buildPublicCardFromProfile({ slug, user, profileCard, viewsCount }) {
 router.get(
   "/",
   asyncHandler(async (req, res) => {
-    const [leaderboardSettings, activeFlashSale, nextDrop, pricing] = await Promise.all([
+    const [leaderboardSettings, activeFlashSale, nextDrop, pricing, publicSettingsRaw] = await Promise.all([
       getFeatureSetting("leaderboard"),
       getActiveFlashSale(),
       prisma.drop.findFirst({
@@ -279,6 +280,30 @@ router.get(
         orderBy: { dropAt: "asc" },
       }),
       getPricingSettings(),
+      getManySettings([
+        "platform_name",
+        "platform_tagline",
+        "platform_hero_subtitle",
+        "platform_total_slugs",
+        "pricing_footnote",
+        "pricing_section_visible",
+        "plan_basic_name",
+        "plan_premium_name",
+        "plan_basic_features",
+        "plan_premium_features",
+        "plan_premium_popular_badge",
+        "bracelet_name",
+        "bracelet_price",
+        "bracelet_in_stock",
+        "bracelet_cta_text",
+        "bracelet_features",
+        "bracelet_description",
+        "bracelet_note",
+        "contact_support_telegram",
+        "contact_response_time",
+        "contact_error_fallback",
+        "pending_expiry_hours",
+      ]),
     ]);
     const flashSaleSlotsLeft = activeFlashSale ? await getFlashSaleSlotsLeft(activeFlashSale) : null;
 
@@ -297,7 +322,7 @@ router.get(
       description: "Одна ссылка вместо тысячи слов. Создай свою цифровую визитку на unqx.uz",
       image: defaultSocialImage,
       testimonials,
-      slugTotalLimit: env.SLUG_TOTAL_LIMIT,
+      slugTotalLimit: Number(publicSettingsRaw.platform_total_slugs || env.SLUG_TOTAL_LIMIT),
       leaderboardEnabled: Boolean(leaderboardSettings.enabled),
       activeFlashSale: activeFlashSale
         ? {
@@ -319,6 +344,7 @@ router.get(
           }
         : null,
       pricing,
+      publicSettings: publicSettingsRaw,
       adminSession: getAdminSession(req),
     });
   }),

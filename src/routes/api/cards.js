@@ -6,13 +6,13 @@ const { prisma } = require("../../db/prisma");
 const { env } = require("../../config/env");
 const { detectDevice } = require("../../services/ua");
 const { generateVCard } = require("../../services/vcard");
-const { calculateSlugPrice } = require("../../services/slug-pricing");
+const { calculateSlugPrice, calculateSlugPriceFromSettings, getSlugPricingConfig } = require("../../services/slug-pricing");
 const { sendOrderRequestToTelegram, TelegramConfigError, TelegramDeliveryError } = require("../../services/telegram");
 const { getActiveFlashSale, applyFlashSaleToPrice } = require("../../services/flash-sales");
 const { markDropSlugSold } = require("../../services/drops");
 const {
-  BRACELET_PRICE,
   getPricingSettings,
+  getBraceletPrice,
   resolveRequestedPlanForOrder,
   getPlanCharge,
 } = require("../../services/pricing-settings");
@@ -22,6 +22,7 @@ const { requireCsrfToken } = require("../../middleware/csrf");
 const { publicOrderRateLimit } = require("../../middleware/rate-limit");
 const { getUserSession } = require("../../middleware/auth");
 const { OrderRequestSchema } = require("../../validation/order-request");
+const { getSetting } = require("../../services/platform-settings");
 
 const router = express.Router();
 const SLUG_REGEX = /^[A-Z]{3}[0-9]{3}$/;
@@ -739,7 +740,7 @@ router.get(
       return;
     }
 
-    const pricing = calculateSlugPrice({
+    const pricing = await calculateSlugPriceFromSettings({
       letters: parsed.letters,
       digits: parsed.digits,
     });
@@ -769,7 +770,7 @@ router.get(
   asyncHandler(async (req, res) => {
     const sessionUser = getUserSession(req);
     const telegramId = sessionUser?.telegramId ? String(sessionUser.telegramId) : null;
-    const [pricing, user] = await Promise.all([
+    const [pricing, user, braceletPrice] = await Promise.all([
       getPricingSettings(),
       telegramId
         ? prisma.user.findUnique({
@@ -777,13 +778,22 @@ router.get(
             select: { plan: true },
           })
         : Promise.resolve(null),
+      getBraceletPrice(),
     ]);
 
     res.json({
       ...pricing,
-      braceletPrice: BRACELET_PRICE,
+      braceletPrice,
       userPlan: user?.plan || "none",
     });
+  }),
+);
+
+router.get(
+  "/slug-pricing-config",
+  asyncHandler(async (_req, res) => {
+    const config = await getSlugPricingConfig();
+    res.json(config);
   }),
 );
 
@@ -885,12 +895,14 @@ router.post(
       }
     }
 
+    const braceletPriceValue = await getBraceletPrice();
+    const slugPricingConfig = await getSlugPricingConfig();
     const basePricing =
       typeof state.priceOverride === "number"
         ? {
             total: state.priceOverride,
           }
-        : calculateSlugPrice({ letters: payload.letters, digits: payload.digits });
+        : calculateSlugPrice({ letters: payload.letters, digits: payload.digits, config: slugPricingConfig });
     const activeFlashSale = await getActiveFlashSale();
     const flashApplied = applyFlashSaleToPrice({
       slug,
@@ -913,12 +925,13 @@ router.post(
         : user.plan === "none"
           ? pricing.planBasicPrice
           : 0;
-    const braceletPrice = payload.products.bracelet ? BRACELET_PRICE : 0;
+    const braceletPrice = payload.products.bracelet ? braceletPriceValue : 0;
     const totalOneTime = finalSlugPrice + planPrice + braceletPrice;
     const theme = requestedPlan === "premium" ? normalizeTheme(payload.theme) : undefined;
     const contact = user.username ? `@${user.username}` : `${user.firstName}`;
     const requestedAt = new Date();
-    const pendingExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    const pendingExpiryHours = Math.max(1, Math.min(168, Number(await getSetting("pending_expiry_hours", 24)) || 24));
+    const pendingExpiresAt = new Date(Date.now() + pendingExpiryHours * 60 * 60 * 1000);
     const canUseSlugTable = await withMissingTableFallback("Slug", false, async () => {
       await prisma.slug.findFirst({
         select: { id: true },
@@ -1033,6 +1046,7 @@ router.post(
         tariff: requestedPlan,
         tariffPriceLabel: formatPrice(tariffPriceLabelValue),
         bracelet: payload.products.bracelet,
+        braceletPrice: braceletPriceValue,
         contact,
         totalOneTimeLabel: formatPrice(totalOneTime),
         statusLabel: toOrderStatusLabel("NEW"),

@@ -7,6 +7,15 @@ const { adminApiRateLimit } = require("../../middleware/rate-limit");
 const { buildLeaderboard, normalizePeriod } = require("../../services/leaderboard");
 const { getFeatureSetting, setFeatureSetting } = require("../../services/feature-settings");
 const { getPricingSettings, setPricingSettings } = require("../../services/pricing-settings");
+const {
+  getSettingsByGroup,
+  setSettingsBatch,
+  resetSettingToDefault,
+  getSettingsChanges,
+  getDefaultSettingDef,
+  getManySettings,
+} = require("../../services/platform-settings");
+const { getSlugPricingConfig } = require("../../services/slug-pricing");
 const { buildDropSlugPool, reserveDropSlugs, getDropLiveStats, releaseUnsoldDropSlugs } = require("../../services/drops");
 const { sendTelegramMessage } = require("../../services/telegram");
 const { recalculateAllScores, recalculateAndRefreshPercentiles } = require("../../services/unq-score");
@@ -15,6 +24,45 @@ const router = express.Router();
 
 router.use(adminApiRateLimit);
 router.use(requireAdminApi);
+
+const SETTINGS_GROUPS = new Set(["pricing", "algorithm", "bracelet", "contacts", "platform"]);
+const GROUP_KEY_PREFIX = {
+  pricing: ["plan_", "pricing_"],
+  algorithm: ["slug_"],
+  bracelet: ["bracelet_"],
+  contacts: ["contact_"],
+  platform: ["platform_", "feature_", "pending_", "score_", "leaderboard_", "referral_", "maintenance_"],
+};
+
+function isKnownGroup(group) {
+  return SETTINGS_GROUPS.has(String(group || ""));
+}
+
+function isKeyAllowedForGroup(group, key) {
+  const prefixes = GROUP_KEY_PREFIX[group] || [];
+  return prefixes.some((prefix) => String(key || "").startsWith(prefix));
+}
+
+function validateSettingValue(key, value) {
+  const k = String(key || "");
+  if (k.endsWith("_price") || k === "slug_base_price") {
+    const n = Number(value);
+    if (!Number.isFinite(n) || n < 0) return "Цена не может быть отрицательной";
+  }
+  if (k === "pending_expiry_hours") {
+    const n = Number(value);
+    if (!Number.isFinite(n) || n < 1 || n > 168) return "pending_expiry_hours должен быть от 1 до 168";
+  }
+  if (k.startsWith("slug_mult_")) {
+    const n = Number(value);
+    if (!Number.isFinite(n) || n < 0.1 || n > 100) return "Множитель должен быть от 0.1 до 100";
+  }
+  if (k.endsWith("_slug_limit") || k.endsWith("_button_limit") || k.endsWith("_tag_limit")) {
+    const n = Number(value);
+    if (!Number.isFinite(n) || n < 0) return "Лимит не может быть отрицательным";
+  }
+  return null;
+}
 
 router.get(
   "/leaderboard",
@@ -323,6 +371,104 @@ router.get(
   asyncHandler(async (_req, res) => {
     const settings = await getPricingSettings();
     res.json({ settings });
+  }),
+);
+
+router.get(
+  "/settings/changes",
+  asyncHandler(async (req, res) => {
+    const group = typeof req.query.group === "string" ? req.query.group : "";
+    const dateFrom = typeof req.query.dateFrom === "string" ? req.query.dateFrom : "";
+    const dateTo = typeof req.query.dateTo === "string" ? req.query.dateTo : "";
+    const page = Number(req.query.page || 1);
+    const pageSize = Math.min(200, Number(req.query.pageSize || 20));
+    const payload = await getSettingsChanges({ group: group || undefined, dateFrom, dateTo, page, pageSize });
+    res.json(payload);
+  }),
+);
+
+router.get(
+  "/settings/:group",
+  asyncHandler(async (req, res) => {
+    const group = String(req.params.group || "");
+    if (!isKnownGroup(group)) {
+      res.status(404).json({ error: "Unknown settings group" });
+      return;
+    }
+    const rows = await getSettingsByGroup(group);
+    const mapped = rows.map((item) => ({
+      key: item.key,
+      value: item.value,
+      group: item.group,
+      label: item.label,
+      description: item.description,
+      type: item.type,
+      updatedAt: item.updatedAt,
+      updatedBy: item.updatedBy,
+      defaultValue: getDefaultSettingDef(item.key)?.value,
+    }));
+    if (group === "algorithm") {
+      const previewConfig = await getSlugPricingConfig();
+      res.json({ group, items: mapped, previewConfig });
+      return;
+    }
+    res.json({ group, items: mapped });
+  }),
+);
+
+router.patch(
+  "/settings/:group",
+  asyncHandler(async (req, res) => {
+    const group = String(req.params.group || "");
+    if (!isKnownGroup(group)) {
+      res.status(404).json({ error: "Unknown settings group" });
+      return;
+    }
+    const payload = req.body && typeof req.body === "object" ? req.body : {};
+    const invalid = [];
+    const patch = {};
+    for (const [key, value] of Object.entries(payload)) {
+      if (!isKeyAllowedForGroup(group, key)) {
+        continue;
+      }
+      const issue = validateSettingValue(key, value);
+      if (issue) {
+        invalid.push({ key, message: issue });
+        continue;
+      }
+      patch[key] = value;
+    }
+    if (invalid.length) {
+      res.status(400).json({ error: "VALIDATION_ERROR", issues: invalid });
+      return;
+    }
+    const changed = await setSettingsBatch(group, patch, req.session?.admin?.login || "admin");
+    const rows = await getSettingsByGroup(group);
+    res.json({
+      ok: true,
+      changed,
+      warning:
+        group === "pricing"
+          ? "Изменение цены не затрагивает существующие покупки и активации."
+          : group === "algorithm"
+            ? "Изменение алгоритма не пересчитывает уже одобренные заявки. Новые цены применяются только к новым заявкам."
+            : null,
+      items: rows,
+    });
+  }),
+);
+
+router.post(
+  "/settings/:group/reset/:key",
+  asyncHandler(async (req, res) => {
+    const group = String(req.params.group || "");
+    const key = String(req.params.key || "");
+    if (!isKnownGroup(group) || !isKeyAllowedForGroup(group, key)) {
+      res.status(404).json({ error: "Unknown setting" });
+      return;
+    }
+    const row = await resetSettingToDefault(key, req.session?.admin?.login || "admin");
+    res.json({ ok: true, item: row });
   }),
 );
 

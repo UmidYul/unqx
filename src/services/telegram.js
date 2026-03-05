@@ -1,4 +1,5 @@
 const { env } = require("../config/env");
+const { getManySettings, getSetting } = require("./platform-settings");
 
 class TelegramConfigError extends Error {
   constructor(message) {
@@ -24,12 +25,16 @@ function escapeHtml(value) {
 }
 
 async function sendOrderRequestToTelegram(payload) {
-  if (!env.TELEGRAM_BOT_TOKEN || !env.TELEGRAM_CHAT_ID) {
+  const settings = await getManySettings(["contact_telegram_chat_id", "pending_expiry_hours"]);
+  const chatId = String(settings.contact_telegram_chat_id || env.TELEGRAM_CHAT_ID || "").trim();
+  const pendingHours = Number(settings.pending_expiry_hours || 24);
+  if (!env.TELEGRAM_BOT_TOKEN || !chatId) {
     throw new TelegramConfigError("Telegram credentials are not configured");
   }
 
   const tariffLabel = payload.tariff === "premium" ? "ПРЕМИУМ" : "БАЗОВЫЙ";
-  const braceletLabel = payload.bracelet ? "Да (+300 000 сум)" : "Нет";
+  const braceletPrice = Number(payload.braceletPrice || (await getSetting("bracelet_price", 300_000)) || 300_000);
+  const braceletLabel = payload.bracelet ? `Да (+${braceletPrice.toLocaleString("ru-RU")} сум)` : "Нет";
   const usernameLabel = payload.username ? `@${escapeHtml(payload.username.replace(/^@/, ""))}` : "@—";
   const emailLabel = payload.email ? escapeHtml(payload.email) : "—";
   const text = [
@@ -46,13 +51,13 @@ async function sendOrderRequestToTelegram(payload) {
     `<b>Итого разово:</b> ${escapeHtml(payload.totalOneTimeLabel)} сум`,
     "Единоразовая покупка",
     "",
-    "Срок резерва заявки: 24 часа",
+    `Срок резерва заявки: ${pendingHours} часа`,
   ]
     .filter(Boolean)
     .join("\n");
 
   return sendTelegramMessage({
-    chatId: env.TELEGRAM_CHAT_ID,
+    chatId,
     text,
     parseMode: "HTML",
   });
@@ -122,7 +127,9 @@ async function sendSlugExpiredToUser({ telegramId, slug }) {
 }
 
 async function sendVerificationRequestToAdmin(payload) {
-  if (!env.TELEGRAM_CHAT_ID) {
+  const settings = await getManySettings(["contact_telegram_chat_id"]);
+  const chatId = String(settings.contact_telegram_chat_id || env.TELEGRAM_CHAT_ID || "").trim();
+  if (!chatId) {
     throw new TelegramConfigError("Telegram chat id is not configured");
   }
   const verificationTarget =
@@ -141,7 +148,7 @@ async function sendVerificationRequestToAdmin(payload) {
   ]
     .filter(Boolean)
     .join("\n");
-  return sendTelegramMessage({ chatId: env.TELEGRAM_CHAT_ID, text, parseMode: "HTML" });
+  return sendTelegramMessage({ chatId, text, parseMode: "HTML" });
 }
 
 async function sendVerificationStatusToUser({ telegramId, status, adminNote }) {

@@ -56,8 +56,8 @@ function codeBlock(code) {
   const digits = String(code || "")
     .split("")
     .map((x) => escapeHtml(x))
-    .join(" ");
-  return `<div style="margin:14px 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size:28px; letter-spacing:8px; font-weight:700;">${digits}</div>`;
+    .join("");
+  return `<div style="margin:14px 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size:28px; letter-spacing:2px; font-weight:700;">${digits}</div>`;
 }
 
 async function sendEmailVerificationOtp({ email, firstName, code }) {

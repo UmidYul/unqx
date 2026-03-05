@@ -1,0 +1,26 @@
+<%
+  const pageTitle = typeof title === "string" && title ? title : "Техническое обслуживание";
+  const text = typeof maintenanceMessage === "string" && maintenanceMessage.trim()
+    ? maintenanceMessage.trim()
+    : "Мы на техническом обслуживании. Скоро вернёмся.";
+%>
+<!doctype html>
+<html lang="ru">
+<head>
+  <%- include('../partials/head', { title: pageTitle, styles: ['/css/public-card.css'], noindex: true }) %>
+</head>
+<body class="antialiased">
+  <main class="flex min-h-screen items-center justify-center px-4">
+    <div class="w-full max-w-lg rounded-2xl border border-rose-200 bg-white p-8 text-center shadow-sm">
+      <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full border border-rose-200 bg-rose-50">
+        <svg class="icon-stroke h-6 w-6 text-rose-700" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 8h0M12 11v5"></path>
+          <circle cx="12" cy="12" r="9"></circle>
+        </svg>
+      </div>
+      <h1 class="mt-4 text-2xl font-bold text-neutral-900">Сайт временно недоступен</h1>
+      <p class="mt-2 text-sm text-neutral-600"><%= text %></p>
+    </div>
+  </main>
+</body>
+</html>

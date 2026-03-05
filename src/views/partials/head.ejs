@@ -7,7 +7,9 @@
   const pageCanonical = typeof canonical === "string" && canonical ? canonical : (typeof canonicalUrl === "string" ? canonicalUrl : "");
   const pageLocale = typeof locale === "string" && locale ? locale : "ru_RU";
   const pageSiteName = typeof siteName === "string" && siteName ? siteName : "UNQ+";
-  const pageTwitterSite = typeof twitterSite === "string" && twitterSite ? twitterSite : "@unqx_uz";
+  const publicSettingsNode = typeof publicSettings === "object" && publicSettings ? publicSettings : {};
+  const twitterFromSettings = String(publicSettingsNode.contact_telegram_channel || "").trim();
+  const pageTwitterSite = typeof twitterSite === "string" && twitterSite ? twitterSite : (twitterFromSettings || "@unqx_uz");
   const pageNoindex = typeof noindex === "boolean" ? noindex : false;
   const pageOgType = typeof ogType === "string" && ogType ? ogType : "website";
   const rawJsonLd = typeof jsonLd !== "undefined" ? jsonLd : undefined;

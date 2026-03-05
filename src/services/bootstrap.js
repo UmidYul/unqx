@@ -1,4 +1,5 @@
 const { prisma } = require("../db/prisma");
+const { ensurePlatformSettingsSeeded } = require("./platform-settings");
 
 let started = false;
 
@@ -125,6 +126,8 @@ async function runBootstrapTasks() {
   started = true;
 
   try {
+    await ensurePlatformSettingsSeeded();
+
     const [testimonialsReady, slugRecordsReady] = await Promise.all([
       hasTable("testimonials"),
       hasTable("slug_records"),

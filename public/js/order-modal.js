@@ -1,4 +1,17 @@
-const UNQ_BASE_PRICE = 100_000;
+const DEFAULT_SLUG_PRICING = {
+  basePrice: 100_000,
+  lettersAllSame: 5,
+  lettersSequential: 3,
+  lettersPalindrome: 2,
+  lettersRandom: 1,
+  digitsZeros: 6,
+  digitsNearZero: 4,
+  digitsAllSame: 4,
+  digitsSequential: 3,
+  digitsRound: 2,
+  digitsPalindrome: 1.5,
+  digitsRandom: 1,
+};
 const DEFAULT_PRICING = {
   planBasicPrice: 50_000,
   planPremiumPrice: 130_000,
@@ -92,6 +105,7 @@ const DEFAULT_PRICING = {
     braceletForced: false,
     dropId: null,
     pricing: { ...DEFAULT_PRICING, userPlan: "none" },
+    slugPricing: { ...DEFAULT_SLUG_PRICING },
   };
 
   function setCsrfToken(nextToken) {
@@ -131,37 +145,39 @@ const DEFAULT_PRICING = {
   }
 
   function getLetterMultiplier(letters) {
+    const cfg = state.slugPricing || DEFAULT_SLUG_PRICING;
     const upper = normalizeLetters(letters);
     if (upper.length !== 3) {
       return { multiplier: 1, label: "..." };
     }
     const [a, b, c] = upper.split("");
-    if (a === b && b === c) return { multiplier: 5, label: "Все одинаковые" };
+    if (a === b && b === c) return { multiplier: Number(cfg.lettersAllSame || 5), label: "Все одинаковые" };
     const ca = a.charCodeAt(0);
     const cb = b.charCodeAt(0);
     const cc = c.charCodeAt(0);
-    if (cb - ca === 1 && cc - cb === 1) return { multiplier: 3, label: "По порядку" };
-    if (a === c && a !== b) return { multiplier: 2, label: "Палиндром" };
-    return { multiplier: 1, label: "Обычные" };
+    if (cb - ca === 1 && cc - cb === 1) return { multiplier: Number(cfg.lettersSequential || 3), label: "По порядку" };
+    if (a === c && a !== b) return { multiplier: Number(cfg.lettersPalindrome || 2), label: "Палиндром" };
+    return { multiplier: Number(cfg.lettersRandom || 1), label: "Обычные" };
   }
 
   function getDigitMultiplier(digits) {
+    const cfg = state.slugPricing || DEFAULT_SLUG_PRICING;
     const normalized = normalizeDigits(digits);
     if (normalized.length !== 3) {
       return { multiplier: 1, label: "..." };
     }
     const num = Number.parseInt(normalized, 10);
     const [d1, d2, d3] = normalized.split("");
-    if (normalized === "000") return { multiplier: 6, label: "000" };
-    if (num >= 1 && num <= 9 && normalized.startsWith("00")) return { multiplier: 4, label: "00X" };
-    if (d1 === d2 && d2 === d3) return { multiplier: 4, label: "Все одинаковые" };
+    if (normalized === "000") return { multiplier: Number(cfg.digitsZeros || 6), label: "000" };
+    if (num >= 1 && num <= 9 && normalized.startsWith("00")) return { multiplier: Number(cfg.digitsNearZero || 4), label: "00X" };
+    if (d1 === d2 && d2 === d3) return { multiplier: Number(cfg.digitsAllSame || 4), label: "Все одинаковые" };
     const n1 = Number.parseInt(d1, 10);
     const n2 = Number.parseInt(d2, 10);
     const n3 = Number.parseInt(d3, 10);
-    if (n2 - n1 === 1 && n3 - n2 === 1) return { multiplier: 3, label: "По порядку" };
-    if (num % 100 === 0 && num > 0) return { multiplier: 2, label: "Круглые" };
-    if (d1 === d3 && d1 !== d2) return { multiplier: 1.5, label: "Палиндром" };
-    return { multiplier: 1, label: "Обычные" };
+    if (n2 - n1 === 1 && n3 - n2 === 1) return { multiplier: Number(cfg.digitsSequential || 3), label: "По порядку" };
+    if (num % 100 === 0 && num > 0) return { multiplier: Number(cfg.digitsRound || 2), label: "Круглые" };
+    if (d1 === d3 && d1 !== d2) return { multiplier: Number(cfg.digitsPalindrome || 1.5), label: "Палиндром" };
+    return { multiplier: Number(cfg.digitsRandom || 1), label: "Обычные" };
   }
 
   function calculateSlugPricing(letters, digits) {
@@ -172,7 +188,7 @@ const DEFAULT_PRICING = {
     }
     const letterData = getLetterMultiplier(normalizedLetters);
     const digitData = getDigitMultiplier(normalizedDigits);
-    const total = UNQ_BASE_PRICE * letterData.multiplier * digitData.multiplier;
+    const total = Number(state.slugPricing?.basePrice || DEFAULT_SLUG_PRICING.basePrice) * letterData.multiplier * digitData.multiplier;
     return {
       slug: `${normalizedLetters}${normalizedDigits}`,
       letters: normalizedLetters,
@@ -242,6 +258,23 @@ const DEFAULT_PRICING = {
       };
     } catch {
       state.pricing = { ...DEFAULT_PRICING, userPlan: "none" };
+    }
+  }
+
+  async function refreshSlugPricing() {
+    try {
+      const response = await fetch("/api/cards/slug-pricing-config", {
+        headers: { Accept: "application/json" },
+        cache: "no-store",
+      });
+      if (!response.ok) return;
+      const payload = await response.json().catch(() => ({}));
+      state.slugPricing = {
+        ...DEFAULT_SLUG_PRICING,
+        ...(payload && typeof payload === "object" ? payload : {}),
+      };
+    } catch {
+      state.slugPricing = { ...DEFAULT_SLUG_PRICING };
     }
   }
 
@@ -506,6 +539,7 @@ const DEFAULT_PRICING = {
         currentUser = payload && payload.authenticated ? payload.user : null;
       })(),
       refreshPricing(),
+      refreshSlugPricing(),
     ]);
     if (authResult.status !== "fulfilled") {
       currentUser = null;
@@ -617,7 +651,7 @@ const DEFAULT_PRICING = {
     const targetTs = new Date(expiresAt).getTime();
     if (!Number.isFinite(targetTs)) {
       if (dom.countdown instanceof HTMLElement) {
-        dom.countdown.textContent = "24:00:00";
+        dom.countdown.textContent = "--:--:--";
       }
       return;
     }
@@ -669,10 +703,13 @@ const DEFAULT_PRICING = {
         },
         ...(state.dropId ? { dropId: state.dropId } : {}),
       });
+      const expiresAtIso = payload.pendingExpiresAt || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
       if (dom.successSlug instanceof HTMLElement) {
-        dom.successSlug.textContent = `${pricing.slug} зарезервирован на 24 часа`;
+        const expiresAt = new Date(expiresAtIso);
+        const hoursLeft = Number.isFinite(expiresAt.getTime()) ? Math.max(1, Math.ceil((expiresAt.getTime() - Date.now()) / (60 * 60 * 1000))) : 24;
+        dom.successSlug.textContent = `${pricing.slug} зарезервирован на ${hoursLeft} часа`;
       }
-      startCountdown(payload.pendingExpiresAt || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString());
+      startCountdown(expiresAtIso);
       setStep("success");
       window.dispatchEvent(new CustomEvent("unqx:order:submitted", { detail: payload }));
     } catch (error) {

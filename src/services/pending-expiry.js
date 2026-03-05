@@ -1,5 +1,6 @@
 const { prisma } = require("../db/prisma");
 const { sendSlugExpiredToUser } = require("./telegram");
+const { getSetting } = require("./platform-settings");
 
 const ONE_HOUR_MS = 60 * 60 * 1000;
 
@@ -11,6 +12,7 @@ function isSchemaNotReady(error) {
 }
 
 async function processPendingSlugExpirations() {
+  const pendingHours = Math.max(1, Math.min(168, Number(await getSetting("pending_expiry_hours", 24)) || 24));
   const now = new Date();
   const expiredSlugs = await prisma.slug.findMany({
     where: {
@@ -52,7 +54,7 @@ async function processPendingSlugExpirations() {
           },
           data: {
             status: "expired",
-            adminNote: "Истекло автоматически через 24 часа ожидания",
+            adminNote: `Истекло автоматически через ${pendingHours} часа ожидания`,
           },
         });
 

@@ -14,12 +14,12 @@ const { CardUpsertSchema } = require("../../validation/card");
 const { parsePositiveInt } = require("../../utils/http");
 const { listCards, createCard, getCardDetailsById, updateCard, generateNextSlug } = require("../../services/cards");
 const { getCardStats, getGlobalStats } = require("../../services/stats");
-const { calculateSlugPrice } = require("../../services/slug-pricing");
+const { calculateSlugPrice, getSlugPricingConfig } = require("../../services/slug-pricing");
 const { cleanupOrphanAvatars, deleteAvatarByPublicPath, isSupportedAvatarBuffer, renameAvatarBySlug, saveAvatarFromBuffer } = require("../../services/avatar");
 const { sendSlugApprovedToUser, sendSlugAwaitingPaymentToUser, sendSlugRejectedToUser, sendTelegramMessage } = require("../../services/telegram");
 const { recalculateAndRefreshPercentiles } = require("../../services/unq-score");
 const {
-  BRACELET_PRICE,
+  getBraceletPrice,
   normalizePlan,
   resolveRequestedPlanForOrder,
   getPlanPurchaseType,
@@ -663,6 +663,7 @@ function buildPurchasesWhere(query) {
 router.get(
   "/orders",
   asyncHandler(async (req, res) => {
+    const braceletPriceValue = await getBraceletPrice();
     const where = buildOrdersWhere(req.query);
     const page = Math.max(1, Number(req.query.page || "1") || 1);
     const pageSizeRaw = Number(req.query.pageSize || "20") || 20;
@@ -705,7 +706,7 @@ router.get(
         slug: row.slug,
         slugPrice: row.slugPrice,
         planPrice: row.planPrice || 0,
-        amount: Number(row.slugPrice || 0) + Number(row.planPrice || 0) + (row.bracelet ? BRACELET_PRICE : 0),
+        amount: Number(row.slugPrice || 0) + Number(row.planPrice || 0) + (row.bracelet ? braceletPriceValue : 0),
         tariff: row.requestedPlan,
         theme: null,
         bracelet: row.bracelet,
@@ -731,6 +732,7 @@ router.get(
 router.patch(
   "/orders/:id/status",
   asyncHandler(async (req, res) => {
+    const braceletPriceValue = await getBraceletPrice();
     const status = toOrderStatus(req.body.status);
     const adminNote = String(req.body.adminNote || "").trim();
     const adminLogin = String(req.session?.admin?.login || "").trim() || null;
@@ -888,7 +890,7 @@ router.patch(
               data: {
                 telegramId: row.telegramId,
                 type: "bracelet",
-                amount: BRACELET_PRICE,
+                amount: braceletPriceValue,
                 slug: row.slug,
                 purchasedAt: now,
                 approvedByAdmin: adminLogin,
@@ -1559,6 +1561,7 @@ router.patch(
 router.get(
   "/orders/export.csv",
   asyncHandler(async (req, res) => {
+    const braceletPriceValue = await getBraceletPrice();
     const where = buildOrdersWhere(req.query);
     const rows = await prisma.slugRequest.findMany({
       where,
@@ -1583,7 +1586,7 @@ router.get(
           row.slugPrice,
           Number(row.planPrice || 0),
           `"${row.bracelet ? "Да" : "Нет"}"`,
-          Number(row.slugPrice || 0) + Number(row.planPrice || 0) + (row.bracelet ? BRACELET_PRICE : 0),
+          Number(row.slugPrice || 0) + Number(row.planPrice || 0) + (row.bracelet ? braceletPriceValue : 0),
           `"${String(row.contact).replace(/"/g, '""')}"`,
           `"${formatOrderStatusLabel(row.status)}"`,
         ].join(","),
@@ -1767,12 +1770,13 @@ router.get(
         },
       }),
     ]);
+    const slugPricingConfig = await getSlugPricingConfig();
 
     const items = rows.map((row) => {
       const calcPrice =
         /^[A-Z]{3}[0-9]{3}$/.test(row.fullSlug) &&
         (row.price === null || row.price === undefined)
-          ? calculateSlugPrice({ letters: row.fullSlug.slice(0, 3), digits: row.fullSlug.slice(3) }).total
+          ? calculateSlugPrice({ letters: row.fullSlug.slice(0, 3), digits: row.fullSlug.slice(3), config: slugPricingConfig }).total
           : null;
       const effectivePrice = typeof row.price === "number" ? row.price : calcPrice;
       return {

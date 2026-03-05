@@ -15,6 +15,12 @@
 <body class="antialiased" data-admin-layout="1" data-page="admin-dashboard" data-public-base-url="<%= pagePublicBaseUrl %>" data-active-tab="<%= pageActiveTab %>">
   <%- include('../partials/admin-layout-start', { activeTab: pageActiveTab }) %>
       <div class="mx-auto w-full max-w-6xl space-y-5">
+        <div id="admin-maintenance-banner" class="hidden rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <p id="admin-maintenance-text" class="font-semibold">Режим обслуживания включён — сайт недоступен для пользователей</p>
+            <button id="admin-maintenance-disable" type="button" class="interactive-btn min-h-11 rounded-xl border border-rose-300 px-3 py-1.5 text-xs font-semibold text-rose-800 hover:bg-rose-100">Отключить</button>
+          </div>
+        </div>
         <div class="flex flex-wrap items-start justify-between gap-3 border-b border-neutral-200 pb-4">
           <div>
             <h1 class="text-2xl font-black">Управление платформой</h1>
@@ -558,6 +564,80 @@
           </div>
           <div id="logs-pagination" class="flex items-center justify-end gap-2 text-sm text-neutral-600"></div>
         </section>
+
+        <section id="tab-settings" class="<%= pageActiveTab === 'settings' ? '' : 'hidden' %>">
+          <div class="grid gap-4 lg:grid-cols-[260px_minmax(0,1fr)]">
+            <aside class="rounded-2xl border border-neutral-200 bg-white p-3">
+              <nav class="space-y-1" id="settings-subtabs">
+                <button type="button" data-settings-subtab="pricing" class="flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-semibold text-neutral-700 hover:bg-neutral-100">Тарифы <span data-settings-unsaved-dot="pricing" class="hidden h-2 w-2 rounded-full bg-amber-500"></span></button>
+                <button type="button" data-settings-subtab="algorithm" class="flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-semibold text-neutral-700 hover:bg-neutral-100">Алгоритм цены slug <span data-settings-unsaved-dot="algorithm" class="hidden h-2 w-2 rounded-full bg-amber-500"></span></button>
+                <button type="button" data-settings-subtab="bracelet" class="flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-semibold text-neutral-700 hover:bg-neutral-100">Браслет <span data-settings-unsaved-dot="bracelet" class="hidden h-2 w-2 rounded-full bg-amber-500"></span></button>
+                <button type="button" data-settings-subtab="contacts" class="flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-semibold text-neutral-700 hover:bg-neutral-100">Контакты <span data-settings-unsaved-dot="contacts" class="hidden h-2 w-2 rounded-full bg-amber-500"></span></button>
+                <button type="button" data-settings-subtab="platform" class="flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-semibold text-neutral-700 hover:bg-neutral-100">Платформа <span data-settings-unsaved-dot="platform" class="hidden h-2 w-2 rounded-full bg-amber-500"></span></button>
+                <button type="button" data-settings-subtab="changes" class="flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-semibold text-neutral-700 hover:bg-neutral-100">Логи изменений</button>
+              </nav>
+            </aside>
+            <div class="space-y-4">
+              <article data-settings-panel="pricing" class="rounded-2xl border border-neutral-200 bg-white p-4">
+                <h2 class="text-base font-bold text-neutral-900">Тарифы</h2>
+                <form id="settings-form-pricing" class="mt-4 grid gap-3 md:grid-cols-2"></form>
+                <div class="mt-3"><button type="button" data-settings-save="pricing" class="interactive-btn min-h-11 rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800">Сохранить тарифы</button></div>
+              </article>
+              <article data-settings-panel="algorithm" class="hidden rounded-2xl border border-neutral-200 bg-white p-4">
+                <h2 class="text-base font-bold text-neutral-900">Алгоритм цены slug</h2>
+                <form id="settings-form-algorithm" class="mt-4 grid gap-3 md:grid-cols-2"></form>
+                <div class="mt-3"><button type="button" data-settings-save="algorithm" class="interactive-btn min-h-11 rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800">Сохранить алгоритм</button></div>
+                <div id="settings-algorithm-preview" class="mt-4 overflow-hidden rounded-xl border border-neutral-200"></div>
+              </article>
+              <article data-settings-panel="bracelet" class="hidden rounded-2xl border border-neutral-200 bg-white p-4">
+                <h2 class="text-base font-bold text-neutral-900">Браслет</h2>
+                <form id="settings-form-bracelet" class="mt-4 grid gap-3 md:grid-cols-2"></form>
+                <div class="mt-3"><button type="button" data-settings-save="bracelet" class="interactive-btn min-h-11 rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800">Сохранить</button></div>
+              </article>
+              <article data-settings-panel="contacts" class="hidden rounded-2xl border border-neutral-200 bg-white p-4">
+                <h2 class="text-base font-bold text-neutral-900">Контакты</h2>
+                <form id="settings-form-contacts" class="mt-4 grid gap-3 md:grid-cols-2"></form>
+                <div class="mt-3"><button type="button" data-settings-save="contacts" class="interactive-btn min-h-11 rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800">Сохранить контакты</button></div>
+              </article>
+              <article data-settings-panel="platform" class="hidden rounded-2xl border border-neutral-200 bg-white p-4">
+                <h2 class="text-base font-bold text-neutral-900">Платформа</h2>
+                <form id="settings-form-platform" class="mt-4 grid gap-3 md:grid-cols-2"></form>
+                <div class="mt-3"><button type="button" data-settings-save="platform" class="interactive-btn min-h-11 rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800">Сохранить платформу</button></div>
+              </article>
+              <article data-settings-panel="changes" class="hidden rounded-2xl border border-neutral-200 bg-white p-4">
+                <h2 class="text-base font-bold text-neutral-900">Логи изменений</h2>
+                <form id="settings-changes-filters" class="mt-3 grid gap-3 md:grid-cols-4">
+                  <select name="group" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">
+                    <option value="">Все группы</option>
+                    <option value="pricing">Тарифы</option>
+                    <option value="algorithm">Алгоритм</option>
+                    <option value="bracelet">Браслет</option>
+                    <option value="contacts">Контакты</option>
+                    <option value="platform">Платформа</option>
+                  </select>
+                  <input type="date" name="dateFrom" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+                  <input type="date" name="dateTo" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+                  <button type="submit" class="interactive-btn min-h-11 rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 hover:bg-neutral-100">Фильтр</button>
+                </form>
+                <div class="mt-4 overflow-x-auto rounded-xl border border-neutral-200">
+                  <table class="min-w-full text-left text-sm">
+                    <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
+                      <tr>
+                        <th class="px-3 py-2">Дата</th>
+                        <th class="px-3 py-2">Настройка</th>
+                        <th class="px-3 py-2">Было</th>
+                        <th class="px-3 py-2">Стало</th>
+                        <th class="px-3 py-2">Кто изменил</th>
+                      </tr>
+                    </thead>
+                    <tbody id="settings-changes-table"></tbody>
+                  </table>
+                </div>
+                <div id="settings-changes-pagination" class="mt-3 flex items-center justify-end gap-2 text-sm text-neutral-600"></div>
+              </article>
+            </div>
+          </div>
+        </section>
       </div>
   <%- include('../partials/admin-layout-end') %>
 
@@ -663,9 +743,11 @@
   <script nonce="<%= cspNonce %>" id="admin-dashboard-query" type="application/json"><%- JSON.stringify(pageQuery) %></script>
   <script nonce="<%= cspNonce %>" src="/js/admin-layout.js"></script>
   <script nonce="<%= cspNonce %>" src="/js/admin-dialogs.js"></script>
+  <script nonce="<%= cspNonce %>" src="/vendor/sortablejs/Sortable.min.js"></script>
   <script nonce="<%= cspNonce %>" src="/vendor/qrcode/qrcode.min.js"></script>
   <script nonce="<%= cspNonce %>" src="/vendor/chartjs/chart.umd.min.js"></script>
   <script nonce="<%= cspNonce %>" src="/js/admin-dashboard.js"></script>
   <script nonce="<%= cspNonce %>" src="/js/admin-features.js"></script>
+  <script nonce="<%= cspNonce %>" src="/js/admin-settings.js"></script>
 </body>
 </html>

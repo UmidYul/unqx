@@ -27,6 +27,7 @@ const { ensureCsrfToken } = require("./middleware/csrf");
 const { runBootstrapTasks } = require("./services/bootstrap");
 const { startPendingExpiryJob } = require("./services/pending-expiry");
 const { startLiveJobs } = require("./services/live-jobs");
+const { getManySettings } = require("./services/platform-settings");
 
 function createApp() {
   const app = express();
@@ -45,6 +46,39 @@ function createApp() {
   app.use((req, res, next) => {
     res.locals.cspNonce = randomBytes(16).toString("base64");
     next();
+  });
+
+  app.use(async (req, res, next) => {
+    try {
+      const path = req.path || "/";
+      const isPublicPageRequest =
+        req.method === "GET" &&
+        !path.startsWith("/admin") &&
+        !path.startsWith("/api/admin") &&
+        !path.startsWith("/api/auth") &&
+        !path.startsWith("/api/profile") &&
+        !path.startsWith("/api/telegram") &&
+        !path.startsWith("/api/cards") &&
+        !path.startsWith("/api/features") &&
+        !path.startsWith("/api/");
+      if (!isPublicPageRequest) {
+        next();
+        return;
+      }
+      const settings = await getManySettings(["maintenance_mode", "maintenance_message"]);
+      const maintenanceMode = Boolean(settings.maintenance_mode);
+      if (!maintenanceMode) {
+        next();
+        return;
+      }
+      res.status(503).render("public/maintenance", {
+        title: "Техническое обслуживание",
+        maintenanceMessage: String(settings.maintenance_message || "Мы на техническом обслуживании. Скоро вернёмся."),
+        adminSession: getAdminSession(req),
+      });
+    } catch {
+      next();
+    }
   });
   app.use(
     helmet({

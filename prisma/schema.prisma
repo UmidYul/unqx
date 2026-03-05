@@ -91,6 +91,15 @@ enum FlashSaleConditionType {
   custom
 }
 
+enum SettingValueType {
+  number
+  text
+  boolean
+  json
+  textarea
+  color
+}
+
 enum DropSlugPatternType {
   random
   sequential
@@ -605,6 +614,36 @@ model FeatureSetting {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("feature_settings")
+}
+
+model PlatformSetting {
+  key         String           @id @db.VarChar(120)
+  value       Json             @default("{}")
+  group       String           @db.VarChar(60)
+  label       String           @db.VarChar(180)
+  description String?
+  type        SettingValueType
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+  updatedBy   String?          @map("updated_by") @db.VarChar(80)
+  changes     PlatformSettingChange[]
+
+  @@index([group])
+  @@map("platform_settings")
+}
+
+model PlatformSettingChange {
+  id         String          @id @default(uuid())
+  settingKey String          @map("setting_key") @db.VarChar(120)
+  setting    PlatformSetting @relation(fields: [settingKey], references: [key], onDelete: Cascade)
+  group      String          @db.VarChar(60)
+  oldValue   Json?           @map("old_value")
+  newValue   Json?           @map("new_value")
+  changedBy  String?         @map("changed_by") @db.VarChar(80)
+  changedAt  DateTime        @default(now()) @map("changed_at")
+
+  @@index([settingKey, changedAt(sort: Desc)])
+  @@index([group, changedAt(sort: Desc)])
+  @@map("platform_setting_changes")
 }
 
 model FlashSale {

@@ -2,8 +2,8 @@
   pageDescription=typeof description==="string" && description ? description
   : "Одна ссылка вместо тысячи слов. Создай свою цифровую визитку на unqx.uz" ; const pageBaseUrl=typeof
   baseUrl==="string" && baseUrl ? baseUrl : "" ; const pageCanonicalUrl=typeof canonicalUrl==="string" && canonicalUrl ?
-  canonicalUrl : `${pageBaseUrl}/`; const pageJsonLd=[{ "@context" : "https://schema.org" , "@type" : "WebSite" ,
-  name: "UNQ+" , url: pageCanonicalUrl, potentialAction: { "@type": "SearchAction", target: `${pageBaseUrl}/directory?q={search_term_string}`, "query-input": "required name=search_term_string" } }, { "@context": "https://schema.org", "@type": "Organization", name: "UNQ+", url: pageBaseUrl || pageCanonicalUrl, logo: `${pageBaseUrl}/brand/logo.PNG`, sameAs: ["https://t.me/unqx_uz"] }]; const pageUserSession=typeof userSession !=="undefined" ? userSession : null;
+  canonicalUrl : `${pageBaseUrl}/`; const pagePublicSettings=typeof publicSettings==="object" && publicSettings ? publicSettings : {}; const platformName=String(pagePublicSettings.platform_name || "UNQ+"); const platformTagline=String(pagePublicSettings.platform_tagline || "Твой UNQ. Твой бренд. Навсегда."); const platformHeroSubtitle=String(pagePublicSettings.platform_hero_subtitle || "Цифровая визитка за 1 минуту — одна ссылка вместо тысячи слов."); const pricingVisible=Boolean(pagePublicSettings.pricing_section_visible ?? true); const braceletName=String(pagePublicSettings.bracelet_name || "NFC-браслет"); const braceletPrice=Number(pagePublicSettings.bracelet_price || 300000); const braceletFeaturesFromSettings=Array.isArray(pagePublicSettings.bracelet_features) ? pagePublicSettings.bracelet_features : null; const braceletDescription=String(pagePublicSettings.bracelet_description || "Стильный тканевый браслет с NFC, который открывает твою цифровую визитку в один тап."); const braceletNote=String(pagePublicSettings.bracelet_note || "Браслет привязан к твоему slug — работает только с активной визиткой UNQ+"); const supportTelegram=String(pagePublicSettings.contact_support_telegram || "@unqx_uz"); const pageJsonLd=[{ "@context" : "https://schema.org" , "@type" : "WebSite" ,
+  name: platformName , url: pageCanonicalUrl, potentialAction: { "@type": "SearchAction", target: `${pageBaseUrl}/directory?q={search_term_string}`, "query-input": "required name=search_term_string" } }, { "@context": "https://schema.org", "@type": "Organization", name: platformName, url: pageBaseUrl || pageCanonicalUrl, logo: `${pageBaseUrl}/brand/logo.PNG`, sameAs: ["https://t.me/unqx_uz"] }]; const pageUserSession=typeof userSession !=="undefined" ? userSession : null;
   const hasAuthSession=Boolean(pageUserSession && pageUserSession.userId); const hasBasicPlan=hasAuthSession &&
   pageUserSession && pageUserSession.plan==="basic" ; const pricingSettings=typeof pricing==="object" && pricing ?
   pricing : { planBasicPrice: 50000, planPremiumPrice: 130000, premiumUpgradePrice: 80000,
@@ -44,7 +44,7 @@
   { title: "Делись везде", description: "QR, ссылка, NFC — где угодно" },
   ];
 
-  const wristbandFeatures = [
+  const wristbandFeatures = braceletFeaturesFromSettings || [
   "Тап, моментально открывается unqx.uz/UNQ",
   "Работает с любым смартфоном — iOS и Android",
   "Не нужно заряжать — NFC работает пассивно",
@@ -55,12 +55,12 @@
 
   const plans = [
   {
-  name: "Базовый",
+  name: String(pagePublicSettings.plan_basic_name || "Базовый"),
   price: Number(pricingSettings.planBasicPrice || 50000).toLocaleString("ru-RU"),
   priceNote: "один раз · навсегда",
   highlighted: false,
   badge: null,
-  included: [
+  included: Array.isArray(pagePublicSettings.plan_basic_features) ? pagePublicSettings.plan_basic_features : [
   "1 цифровая визитка",
   "Стандартный шаблон",
   "До 3 кнопок (звонок, telegram, сайт)",
@@ -75,14 +75,14 @@
   ],
   },
   {
-  name: "Премиум",
+  name: String(pagePublicSettings.plan_premium_name || "Премиум"),
   price: Number(
   hasBasicPlan ? pricingSettings.premiumUpgradePrice || 80000 : pricingSettings.planPremiumPrice || 130000,
   ).toLocaleString("ru-RU"),
   priceNote: hasBasicPlan ? "при наличии Базового тарифа" : "один раз · навсегда",
   highlighted: true,
-  badge: "Популярный",
-  included: [
+  badge: pagePublicSettings.plan_premium_popular_badge === false ? null : "Популярный",
+  included: Array.isArray(pagePublicSettings.plan_premium_features) ? pagePublicSettings.plan_premium_features : [
   "1 цифровая визитка",
   "Выбор темы (5+ тем)",
   "Кастомные цвета и фон",
@@ -143,7 +143,7 @@
       <div class="relative z-10">
         <nav class="fixed left-0 right-0 top-0 z-50 border-b border-neutral-200 bg-white/80 backdrop-blur-md">
           <div class="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-4">
-            <a href="/" class="text-xl font-black tracking-tight text-neutral-900">UNQ+</a>
+            <a href="/" class="text-xl font-black tracking-tight text-neutral-900"><%= platformName %></a>
 
             <div class="hidden items-center gap-8 md:flex">
               <a href="#cards" class="text-sm text-neutral-500 transition-colors hover:text-neutral-900">Визитки</a>
@@ -264,15 +264,11 @@
                 <h1
                   class="text-balance text-5xl font-bold leading-[1.1] tracking-tight text-neutral-900 md:text-7xl motion-fade-up"
                   data-reveal-index="0">
-                  Твой UNQ.
-                  <br />
-                  Твой бренд.
-                  <br />
-                  Навсегда.
+                  <%= platformTagline %>
                 </h1>
 
                 <p class="mx-auto mt-6 max-w-md text-lg text-neutral-500 motion-fade-up" data-reveal-index="1">
-                  Цифровая визитка за 1 минуту — одна ссылка вместо тысячи слов.
+                  <%= platformHeroSubtitle %>
                 </p>
                 <div id="home-live-stats"
                   class="mx-auto mt-4 hidden w-full max-w-2xl rounded-xl border border-neutral-200 bg-white/90 px-4 py-2 text-sm text-neutral-700">
@@ -571,16 +567,13 @@
                   <div class="mx-auto max-w-6xl">
                     <div class="grid items-center gap-16 md:grid-cols-2">
                       <div>
-                        <p class="mb-3 font-mono text-xs uppercase tracking-widest text-neutral-400">UNQ+ WRISTBAND</p>
+                        <p class="mb-3 font-mono text-xs uppercase tracking-widest text-neutral-400"><%= platformName %> WRISTBAND</p>
                         <h2 class="text-3xl font-bold tracking-tight text-neutral-900 md:text-4xl">Тап. И ты уже<br />в
                           телефоне собеседника.</h2>
-                        <p class="mt-4 text-base leading-relaxed text-neutral-500">
-                          Тканевый NFC-браслет с твоим UNQ. Один тап на телефон —<br />и твоя визитка открывается
-                          мгновенно. Без QR, без приложений,<br />без объяснений.
-                        </p>
+                        <p class="mt-4 text-base leading-relaxed text-neutral-500"><%= braceletDescription %></p>
 
                         <div class="mt-6 flex items-baseline gap-2">
-                          <span class="text-3xl font-bold text-neutral-900">300 000 сум</span>
+                          <span class="text-3xl font-bold text-neutral-900"><%= braceletPrice.toLocaleString("ru-RU") %> сум</span>
                         </div>
 
                         <p class="mt-2 text-sm text-neutral-400">Разовая покупка · Доставка по Ташкенту</p>
@@ -600,7 +593,7 @@
                         <div class="mt-8 flex flex-wrap items-center gap-3">
                           <a href="#" data-order-link data-order-bracelet="true"
                             class="interactive-btn btn-shimmer inline-flex min-h-11 items-center gap-2 rounded-xl bg-neutral-900 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-neutral-800">
-                            Заказать браслет
+                            <%= String(pagePublicSettings.bracelet_cta_text || "Заказать браслет") %>
                           </a>
 
                           <span
@@ -608,11 +601,11 @@
                             <svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
                               <path d="m20 6-11 11-5-5"></path>
                             </svg>
-                            В наличии
+                            <%= pagePublicSettings.bracelet_in_stock === false ? "Нет в наличии" : "В наличии" %>
                           </span>
                         </div>
                         <p class="mt-3 text-xs text-neutral-500">
-                          Браслет привязан к твоему UNQ — работает только с активной визиткой UNQ+
+                          <%= braceletNote %>
                         </p>
                       </div>
 
@@ -622,7 +615,7 @@
                             class="absolute right-8 top-8 rounded-full bg-neutral-100 px-3 py-1 font-mono text-[10px] uppercase tracking-wider text-neutral-500">
                             UNQ+ WRISTBAND
                           </div>
-                          <img src="/images/wristband.png" alt="UNQ+ NFC-браслет" class="h-auto w-full object-contain"
+                          <img src="/images/wristband.png" alt="<%= platformName %> <%= braceletName %>" class="h-auto w-full object-contain"
                             loading="lazy" />
                         </div>
                       </div>
@@ -630,7 +623,7 @@
                   </div>
                 </section>
 
-                <section id="pricing" class="px-6 py-24" data-observe-reveal>
+                <section id="pricing" class="<%= pricingVisible ? '' : 'hidden' %> px-6 py-24" data-observe-reveal>
                   <div class="mx-auto max-w-4xl">
                     <h2 class="mb-16 text-2xl font-bold tracking-tight text-neutral-900">Тарифы</h2>
 
@@ -736,7 +729,7 @@
                     <div class="mx-auto max-w-6xl">
                       <div class="flex flex-col items-start justify-between gap-10 md:flex-row md:items-end">
                         <div>
-                          <a href="/" class="text-xl font-black text-neutral-900">UNQ+</a>
+                          <a href="/" class="text-xl font-black text-neutral-900"><%= platformName %></a>
                           <p class="mt-2 text-sm text-neutral-400">Цифровая визитка нового поколения</p>
                         </div>
 
@@ -752,7 +745,7 @@
                       </div>
 
                       <div class="mt-12 border-t border-neutral-200 pt-6">
-                        <p class="text-xs text-neutral-400">&copy; 2026 UNQ+ · Ташкент, Узбекистан</p>
+                        <p class="text-xs text-neutral-400">&copy; 2026 <%= platformName %> · <%= String(pagePublicSettings.contact_address || "Ташкент, Узбекистан") %></p>
                       </div>
                     </div>
                   </footer>

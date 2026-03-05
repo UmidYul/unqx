@@ -1,4 +1,5 @@
 const { getFeatureSetting, setFeatureSetting, DEFAULTS } = require("./feature-settings");
+const { getManySettings, setSettingsBatch, getSetting } = require("./platform-settings");
 
 const BRACELET_PRICE = 300_000;
 
@@ -27,8 +28,24 @@ function normalizePricingSettings(raw) {
 }
 
 async function getPricingSettings() {
-  const raw = await getFeatureSetting("pricing");
-  return normalizePricingSettings(raw);
+  const values = await getManySettings([
+    "plan_basic_price",
+    "plan_premium_price",
+    "plan_premium_upgrade_price",
+    "pricing_footnote",
+  ]);
+  const raw = {
+    planBasicPrice: values.plan_basic_price,
+    planPremiumPrice: values.plan_premium_price,
+    premiumUpgradePrice: values.plan_premium_upgrade_price,
+    pricingFootnote: values.pricing_footnote,
+  };
+  const normalized = normalizePricingSettings(raw);
+  if (normalized.pricingFootnote) {
+    return normalized;
+  }
+  const legacy = await getFeatureSetting("pricing");
+  return normalizePricingSettings(legacy);
 }
 
 async function setPricingSettings(nextPatch) {
@@ -37,8 +54,20 @@ async function setPricingSettings(nextPatch) {
     ...current,
     ...(nextPatch && typeof nextPatch === "object" ? nextPatch : {}),
   });
+  await setSettingsBatch("pricing", {
+    plan_basic_price: next.planBasicPrice,
+    plan_premium_price: next.planPremiumPrice,
+    plan_premium_upgrade_price: next.premiumUpgradePrice,
+    pricing_footnote: next.pricingFootnote,
+  });
   await setFeatureSetting("pricing", next);
   return next;
+}
+
+async function getBraceletPrice() {
+  const value = await getSetting("bracelet_price", BRACELET_PRICE);
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? Math.max(0, Math.round(parsed)) : BRACELET_PRICE;
 }
 
 function resolveRequestedPlanForOrder({ currentPlan, requestedPlan }) {
@@ -86,8 +115,8 @@ module.exports = {
   normalizePricingSettings,
   getPricingSettings,
   setPricingSettings,
+  getBraceletPrice,
   resolveRequestedPlanForOrder,
   getPlanCharge,
   getPlanPurchaseType,
 };
-

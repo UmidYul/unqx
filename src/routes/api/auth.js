@@ -34,6 +34,11 @@ const MAX_OTP_ATTEMPTS = 5;
 const USER_AUTH_SELECT = {
   id: true,
   telegramId: true,
+  otpCode: true,
+  otpExpiresAt: true,
+  otpAttempts: true,
+  resetPasswordToken: true,
+  resetPasswordExpiresAt: true,
   email: true,
   emailVerified: true,
   firstName: true,

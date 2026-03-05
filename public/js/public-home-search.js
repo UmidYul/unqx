@@ -1,9 +1,18 @@
-const BASE_PRICE = 100_000;
-const BRACELET_PRICE = 300_000;
-const TARIFFS = {
-  basic: 29_000,
-  premium: 79_000,
+const DEFAULT_SLUG_PRICING = {
+  basePrice: 100_000,
+  lettersAllSame: 5,
+  lettersSequential: 3,
+  lettersPalindrome: 2,
+  lettersRandom: 1,
+  digitsZeros: 6,
+  digitsNearZero: 4,
+  digitsAllSame: 4,
+  digitsSequential: 3,
+  digitsRound: 2,
+  digitsPalindrome: 1.5,
+  digitsRandom: 1,
 };
+let slugPricingConfig = { ...DEFAULT_SLUG_PRICING };
 
 (function initPublicHomePage() {
   const pageNode = document.querySelector('[data-page="public-home"]');
@@ -17,10 +26,28 @@ const TARIFFS = {
   initHeroSlugOccupancy();
   initSlugAvailability(orderApi);
   initSlugCalculator(orderApi);
+  void loadSlugPricingConfig();
   initNextDropOneClick();
   initOrderLinks(orderApi);
   initHomeMotion();
 })();
+
+async function loadSlugPricingConfig() {
+  try {
+    const response = await fetch("/api/cards/slug-pricing-config", {
+      method: "GET",
+      headers: { Accept: "application/json" },
+      cache: "no-store",
+    });
+    if (!response.ok) return;
+    const payload = await response.json().catch(() => ({}));
+    if (payload && typeof payload === "object") {
+      slugPricingConfig = { ...DEFAULT_SLUG_PRICING, ...payload };
+    }
+  } catch {
+    slugPricingConfig = { ...DEFAULT_SLUG_PRICING };
+  }
+}
 
 function formatPrice(number) {
   return Number(number).toLocaleString("ru-RU").replace(/,/g, " ");
@@ -76,6 +103,7 @@ function splitSlug(value) {
 }
 
 function getLetterMultiplier(letters) {
+  const cfg = slugPricingConfig || DEFAULT_SLUG_PRICING;
   const upper = normalizeLetters(letters);
   if (upper.length !== 3) {
     return { multiplier: 1, label: "..." };
@@ -84,24 +112,25 @@ function getLetterMultiplier(letters) {
   const [a, b, c] = upper.split("");
 
   if (a === b && b === c) {
-    return { multiplier: 5, label: "Все одинаковые" };
+    return { multiplier: Number(cfg.lettersAllSame || 5), label: "Все одинаковые" };
   }
 
   const ca = a.charCodeAt(0);
   const cb = b.charCodeAt(0);
   const cc = c.charCodeAt(0);
   if (cb - ca === 1 && cc - cb === 1) {
-    return { multiplier: 3, label: "По порядку" };
+    return { multiplier: Number(cfg.lettersSequential || 3), label: "По порядку" };
   }
 
   if (a === c && a !== b) {
-    return { multiplier: 2, label: "Палиндром" };
+    return { multiplier: Number(cfg.lettersPalindrome || 2), label: "Палиндром" };
   }
 
-  return { multiplier: 1, label: "Обычные" };
+  return { multiplier: Number(cfg.lettersRandom || 1), label: "Обычные" };
 }
 
 function getDigitMultiplier(digits) {
+  const cfg = slugPricingConfig || DEFAULT_SLUG_PRICING;
   const normalized = normalizeDigits(digits);
   if (normalized.length !== 3) {
     return { multiplier: 1, label: "..." };
@@ -111,29 +140,29 @@ function getDigitMultiplier(digits) {
   const [d1, d2, d3] = normalized.split("");
 
   if (normalized === "000") {
-    return { multiplier: 6, label: "Тройной ноль" };
+    return { multiplier: Number(cfg.digitsZeros || 6), label: "Тройной ноль" };
   }
   if (num >= 1 && num <= 9 && normalized.startsWith("00")) {
-    return { multiplier: 4, label: "Первые девять" };
+    return { multiplier: Number(cfg.digitsNearZero || 4), label: "Первые девять" };
   }
   if (d1 === d2 && d2 === d3) {
-    return { multiplier: 4, label: "Все одинаковые" };
+    return { multiplier: Number(cfg.digitsAllSame || 4), label: "Все одинаковые" };
   }
 
   const n1 = Number.parseInt(d1, 10);
   const n2 = Number.parseInt(d2, 10);
   const n3 = Number.parseInt(d3, 10);
   if (n2 - n1 === 1 && n3 - n2 === 1) {
-    return { multiplier: 3, label: "По порядку" };
+    return { multiplier: Number(cfg.digitsSequential || 3), label: "По порядку" };
   }
   if (num % 100 === 0 && num > 0) {
-    return { multiplier: 2, label: "Круглое" };
+    return { multiplier: Number(cfg.digitsRound || 2), label: "Круглое" };
   }
   if (d1 === d3 && d1 !== d2) {
-    return { multiplier: 1.5, label: "Палиндром" };
+    return { multiplier: Number(cfg.digitsPalindrome || 1.5), label: "Палиндром" };
   }
 
-  return { multiplier: 1, label: "Обычные" };
+  return { multiplier: Number(cfg.digitsRandom || 1), label: "Обычные" };
 }
 
 function calculateSlugPricing(letters, digits) {
@@ -147,7 +176,7 @@ function calculateSlugPricing(letters, digits) {
 
   const letterData = getLetterMultiplier(normalizedLetters);
   const digitData = getDigitMultiplier(normalizedDigits);
-  const total = BASE_PRICE * letterData.multiplier * digitData.multiplier;
+  const total = Number(slugPricingConfig?.basePrice || DEFAULT_SLUG_PRICING.basePrice) * letterData.multiplier * digitData.multiplier;
 
   return {
     letters: normalizedLetters,
@@ -820,7 +849,7 @@ function initSlugCalculator(orderApi) {
       resultFormula.textContent = `Flash sale применён (-${serverPricing.flash.discountPercent}%)`;
     } else {
       animateNumberText(resultPrice, lastAnimatedPrice, finalPrice);
-      resultFormula.textContent = `${formatPrice(BASE_PRICE)} x ${pricing.letterData.multiplier} x ${pricing.digitData.multiplier} = ${formatPrice(finalPrice)} сум`;
+      resultFormula.textContent = `${formatPrice(slugPricingConfig.basePrice || DEFAULT_SLUG_PRICING.basePrice)} x ${pricing.letterData.multiplier} x ${pricing.digitData.multiplier} = ${formatPrice(finalPrice)} сум`;
     }
     lastAnimatedPrice = finalPrice;
     letterMeta.textContent = `${pricing.letterData.label} x${pricing.letterData.multiplier}`;
