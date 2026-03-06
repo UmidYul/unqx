@@ -139,11 +139,13 @@
       const slugValue = String(item?.slug || "").toUpperCase();
       if (!slugValue) continue;
       const nameValue = String(item?.name || "UNQX User").trim() || "UNQX User";
+      const priceValue = Number(item?.slugPrice || 0);
+      const priceLabel = Number.isFinite(priceValue) && priceValue > 0 ? `${priceValue.toLocaleString("ru-RU")} сум` : "";
       const row = document.createElement("a");
       row.href = `/${encodeURIComponent(slugValue)}`;
       row.className =
         "interactive-btn flex items-center justify-between rounded-lg px-2 py-2 text-sm text-neutral-700 hover:bg-neutral-50";
-      row.innerHTML = `<span class="font-semibold text-neutral-800">${slugValue}</span><span class="truncate pl-3 text-xs text-neutral-500">${nameValue}</span>`;
+      row.innerHTML = `<span class="font-semibold text-neutral-800">${slugValue}</span><span class="ml-auto flex flex-col items-end pl-3 text-right"><span class="text-xs text-neutral-500">${nameValue}</span>${priceLabel ? `<span class="text-[11px] font-semibold text-neutral-700">${priceLabel}</span>` : ""}</span>`;
       list.appendChild(row);
     }
     slugSearchResults.appendChild(list);

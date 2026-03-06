@@ -516,6 +516,7 @@ router.get(
         },
         select: {
           fullSlug: true,
+          price: true,
           owner: {
             select: {
               firstName: true,
@@ -534,11 +535,26 @@ router.get(
       }),
     );
 
+    const slugPricingConfig = await getSlugPricingConfig();
+
     const itemsMap = new Map();
     for (const row of newItems) {
+      const parts = splitSlug(row.fullSlug);
+      const calculatedPrice = parts
+        ? Number(
+          calculateSlugPrice({
+            letters: parts.letters,
+            digits: parts.digits,
+            config: slugPricingConfig,
+          }).total,
+        )
+        : 0;
+      const resolvedPrice = typeof row.price === "number" ? Number(row.price) : calculatedPrice;
+
       itemsMap.set(row.fullSlug, {
         slug: row.fullSlug,
         name: row.owner?.profileCard?.name || row.owner?.firstName || "UNQX User",
+        slugPrice: resolvedPrice,
       });
     }
 
@@ -712,7 +728,8 @@ router.get(
         }),
       ),
     ]);
-    const basePrice = typeof slugRow?.price === "number" ? Number(slugRow.price) : Number(pricing.total);
+    const hasPriceOverride = typeof slugRow?.price === "number";
+    const basePrice = hasPriceOverride ? Number(slugRow.price) : Number(pricing.total);
     const activeSale = await getActiveFlashSale();
     const flash = applyFlashSaleToPrice({
       slug,
@@ -729,7 +746,7 @@ router.get(
       discountAmount: flash.discountAmount,
       discountPercent: flash.discountPercent,
       flashSaleId: flash.hasDiscount ? activeSale.id : null,
-      source: "calculator",
+      source: hasPriceOverride ? "override" : "calculator",
     });
   }),
 );

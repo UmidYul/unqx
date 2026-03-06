@@ -511,7 +511,7 @@
     const r = await fetch(`/api/admin/users?${Q(q)}`);
     if (!r.ok) {
       const msg = await E(r);
-      table.innerHTML = `<tr><td colspan="11" class="px-3 py-8 text-center text-red-700">Не удалось загрузить пользователей: ${X(msg)}</td></tr>`;
+      table.innerHTML = `<tr><td colspan="9" class="px-3 py-8 text-center text-red-700">Не удалось загрузить пользователей: ${X(msg)}</td></tr>`;
       return;
     }
     const payload = await r.json();
@@ -533,7 +533,6 @@
               ? x.slugs.find((s) => ["active", "private", "paused", "approved"].includes(s.status))?.fullSlug || x.slugs[0].fullSlug
               : null;
           const profileLink = primarySlug ? `/${encodeURIComponent(primarySlug)}` : x.username ? `https://t.me/${encodeURIComponent(x.username)}` : null;
-          const statusLabel = x.status === "blocked" ? "Заблокирован" : x.status === "deactivated" ? "Деактивирован" : "Активен";
           const braceletSlugs = Array.isArray(x.slugs) ? x.slugs.filter((s) => s.hasBracelet).map((s) => s.fullSlug).join(",") : "";
           const score = Number(x.unqScore?.score || 0);
           const scoreBreakdown = x.unqScore?.breakdown || {};
@@ -549,11 +548,10 @@
             x.plan === "none"
               ? "border-amber-300 bg-amber-50 text-amber-800 whitespace-nowrap"
               : "border-neutral-200 whitespace-nowrap";
-          const telegramLabel = x.username ? `@${x.username}` : "Нет";
-          return `<tr class="admin-table-row border-t border-neutral-100"><td class="admin-col-telegram px-4 py-3">${X(telegramLabel)}</td><td class="px-4 py-3">${X(x.name)}</td><td class="px-4 py-3">${X(x.city || "—")}</td><td class="px-4 py-3"><span class="inline-flex rounded-full border px-2.5 py-1 text-xs font-medium ${planChipClass}">${planLabel}</span></td><td class="px-4 py-3 text-xs text-neutral-600">${x.planPurchasedAt ? D(x.planPurchasedAt) : "—"}</td><td class="admin-col-slugs px-4 py-3 text-xs" title="${X(slugTitle)}">${X(slugText)}</td><td class="px-4 py-3">${x.hasCard ? themePill(x.theme || "default_dark") : "Нет"}</td><td class="px-4 py-3"><button type="button" data-act="toggle-score" data-id="${X(x.telegramId)}" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-2.5 py-1 text-sm font-semibold">${score}</button></td><td class="px-4 py-3">${statusChip(x.status === "blocked" ? "rejected" : "approved")}</td><td class="px-4 py-3">${D(x.createdAt)}</td><td class="px-4 py-3"><div class="admin-row-actions">${menu}</div></td></tr><tr class="border-t border-neutral-100 hidden" data-score-row="${X(x.telegramId)}"><td colspan="11" class="px-4 py-2 text-xs text-neutral-600">Просмотры: ${Number(scoreBreakdown.views || 0)} | Редкость: ${Number(scoreBreakdown.slugRarity || 0)} | Срок: ${Number(scoreBreakdown.tenure || 0)} | CTR: ${Number(scoreBreakdown.ctr || 0)} | Браслет: ${Number(scoreBreakdown.bracelet || 0)} | Тариф: ${Number(scoreBreakdown.plan || 0)}</td></tr>`;
+          return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3">${X(x.name)}</td><td class="px-4 py-3">${X(x.city || "—")}</td><td class="px-4 py-3"><span class="inline-flex rounded-full border px-2.5 py-1 text-xs font-medium ${planChipClass}">${planLabel}</span></td><td class="hidden px-4 py-3 text-xs text-neutral-600 xl:table-cell">${x.planPurchasedAt ? D(x.planPurchasedAt) : "—"}</td><td class="admin-col-slugs px-4 py-3 text-xs" title="${X(slugTitle)}">${X(slugText)}</td><td class="px-4 py-3"><button type="button" data-act="toggle-score" data-id="${X(x.telegramId)}" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-2.5 py-1 text-sm font-semibold">${score}</button></td><td class="px-4 py-3">${statusChip(x.status === "blocked" ? "rejected" : "approved")}</td><td class="px-4 py-3">${D(x.createdAt)}</td><td class="px-4 py-3"><div class="admin-row-actions">${menu}</div></td></tr><tr class="border-t border-neutral-100 hidden" data-score-row="${X(x.telegramId)}"><td colspan="9" class="px-4 py-2 text-xs text-neutral-600">Просмотры: ${Number(scoreBreakdown.views || 0)} | Редкость: ${Number(scoreBreakdown.slugRarity || 0)} | Срок: ${Number(scoreBreakdown.tenure || 0)} | CTR: ${Number(scoreBreakdown.ctr || 0)} | Браслет: ${Number(scoreBreakdown.bracelet || 0)} | Тариф: ${Number(scoreBreakdown.plan || 0)}</td></tr>`;
         })
         .join("")
-      : `<tr><td colspan="11" class="px-3 py-10 text-center text-neutral-500"><div class="inline-flex flex-col items-center gap-2">${I("userCheck", 48)}<span>Нет пользователей</span></div></td></tr>`;
+      : `<tr><td colspan="9" class="px-3 py-10 text-center text-neutral-500"><div class="inline-flex flex-col items-center gap-2">${I("userCheck", 48)}<span>Нет пользователей</span></div></td></tr>`;
     renderPager("users-pagination", payload.pagination, (nextPage) => {
       setFormValue(form, "page", String(nextPage));
       void loadUsers();
