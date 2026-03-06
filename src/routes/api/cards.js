@@ -230,6 +230,46 @@ async function resolveCityByIp(ip) {
   }
 }
 
+async function resolveGeoByIp(ip) {
+  if (!ip || ip === "127.0.0.1" || ip === "::1") {
+    return { city: "Неизвестно", country: "" };
+  }
+  try {
+    const response = await withTimeout(fetch(`https://ipapi.co/${encodeURIComponent(ip)}/json/`), 700);
+    if (!response.ok) {
+      return { city: "Неизвестно", country: "" };
+    }
+    const payload = await response.json().catch(() => ({}));
+    const city = String(payload?.city || "").trim();
+    const country = String(payload?.country_name || payload?.country || "").trim();
+    return {
+      city: city ? city.slice(0, 120) : "Неизвестно",
+      country: country ? country.slice(0, 120) : "",
+    };
+  } catch {
+    return { city: "Неизвестно", country: "" };
+  }
+}
+
+async function getPrimarySlugForUser(userId) {
+  if (!userId) return null;
+  const row = await prisma.slug.findFirst({
+    where: {
+      ownerId: userId,
+      status: { in: ["active", "private", "paused", "approved"] },
+    },
+    orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
+    select: { fullSlug: true },
+  });
+  return row?.fullSlug || null;
+}
+
+function isMissingStorageError(error) {
+  if (!error || typeof error !== "object") return false;
+  const code = String(error.code || "");
+  return code === "42P01" || code === "42703";
+}
+
 function formatPrice(value) {
   return Number(value).toLocaleString("ru-RU").replace(/,/g, " ");
 }
@@ -985,17 +1025,12 @@ router.post(
   "/:slug/click",
   asyncHandler(async (req, res) => {
     const requestedSlug = sanitizeSlug(req.params.slug);
-    const device = detectDevice(req.get("user-agent"));
     const buttonType = normalizeButtonType(req.body?.buttonType);
-    const dateKey = new Date().toISOString().slice(0, 10);
-    const identity = pickClientIdentity(req);
-    const ipHash = identity ? createHash("sha256").update(`${identity}|click|${requestedSlug || req.params.slug}|${dateKey}`).digest("hex") : null;
-    const dayStart = new Date(`${dateKey}T00:00:00.000Z`);
 
     const slugRow = await withMissingTableFallback("Slug", null, () =>
       prisma.slug.findUnique({
         where: { fullSlug: requestedSlug },
-        select: { fullSlug: true, status: true },
+        select: { fullSlug: true, status: true, ownerId: true },
       }),
     );
 
@@ -1026,10 +1061,6 @@ router.post(
     const device = detectDevice(req.get("user-agent"));
     const source = normalizeSource(req.query?.src || req.body?.src);
     const sessionId = getAnalyticsSessionId(req, res);
-    const dateKey = new Date().toISOString().slice(0, 10);
-    const identity = pickClientIdentity(req);
-    const ipHash = identity ? createHash("sha256").update(`${identity}|${requestedSlug || req.params.slug}|${dateKey}`).digest("hex") : null;
-    const dayStart = new Date(`${dateKey}T00:00:00.000Z`);
 
     const slugRow = await withMissingTableFallback("Slug", null, () =>
       prisma.slug.findUnique({
@@ -1046,8 +1077,11 @@ router.post(
 
       res.json({ ok: true });
       const ipForGeo = pickIpForGeo(req);
+      const userSession = getUserSession(req);
+      const viewerUserId = userSession?.userId ? String(userSession.userId) : null;
       void withMissingTableFallback("Slug", null, () =>
         prisma.$transaction(async (tx) => {
+          const geo = await resolveGeoByIp(ipForGeo);
           if (tx.slug) {
             await tx.slug.update({
               where: { fullSlug: slugRow.fullSlug },
@@ -1056,16 +1090,100 @@ router.post(
           }
 
           if (tx.analyticsView) {
-            const city = await resolveCityByIp(ipForGeo);
             await tx.analyticsView.create({
               data: {
                 slug: slugRow.fullSlug,
                 source,
-                city,
+                city: geo.city,
                 device,
                 sessionId,
               },
             });
+          }
+
+          try {
+            await tx.$executeRaw`
+              INSERT INTO tap_events (
+                owner_slug,
+                visitor_slug,
+                visitor_user_id,
+                visitor_ip,
+                user_agent,
+                source,
+                city,
+                country
+              )
+              VALUES (
+                ${slugRow.fullSlug},
+                ${viewerUserId ? await getPrimarySlugForUser(viewerUserId) : null},
+                ${viewerUserId || null},
+                ${ipForGeo || null},
+                ${String(req.get("user-agent") || "") || null},
+                ${source},
+                ${geo.city || null},
+                ${geo.country || null}
+              )
+            `;
+          } catch (error) {
+            if (!isMissingStorageError(error)) {
+              throw error;
+            }
+          }
+
+          if (viewerUserId && slugRow.ownerId && viewerUserId !== slugRow.ownerId) {
+            const viewerSlug = await getPrimarySlugForUser(viewerUserId);
+            if (viewerSlug) {
+              try {
+                await tx.$executeRaw`
+                  INSERT INTO user_contacts (
+                    owner_id,
+                    contact_slug,
+                    contact_user_id,
+                    saved,
+                    subscribed,
+                    first_tap_at,
+                    last_tap_at,
+                    tap_count
+                  )
+                  VALUES (
+                    ${slugRow.ownerId},
+                    ${viewerSlug},
+                    ${viewerUserId},
+                    false,
+                    false,
+                    now(),
+                    now(),
+                    1
+                  )
+                  ON CONFLICT (owner_id, contact_slug)
+                  DO UPDATE SET
+                    contact_user_id = EXCLUDED.contact_user_id,
+                    last_tap_at = now(),
+                    tap_count = user_contacts.tap_count + 1
+                `;
+
+                await tx.$executeRaw`
+                  INSERT INTO notifications (
+                    user_id,
+                    type,
+                    title,
+                    body,
+                    data
+                  )
+                  VALUES (
+                    ${slugRow.ownerId},
+                    'tap',
+                    'Новый тап',
+                    ${`${viewerSlug} открыл вашу визитку`},
+                    ${JSON.stringify({ ownerSlug: slugRow.fullSlug, visitorSlug: viewerSlug, source })}
+                  )
+                `;
+              } catch (error) {
+                if (!isMissingStorageError(error)) {
+                  throw error;
+                }
+              }
+            }
           }
         }).catch((error) => {
           console.error("[express-app] failed to write slug analytics view", error);

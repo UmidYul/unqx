@@ -16,6 +16,7 @@ const { adminApiRouter } = require("./routes/api/admin");
 const { authApiRouter } = require("./routes/api/auth");
 const { publicApiRouter } = require("./routes/api/cards");
 const { profileApiRouter } = require("./routes/api/profile");
+const { mobileApiRouter } = require("./routes/api/mobile");
 const { adminPagesRouter } = require("./routes/pages/admin");
 const { publicPagesRouter } = require("./routes/pages/public");
 const { featuresApiRouter } = require("./routes/api/features");
@@ -252,6 +253,7 @@ function createApp() {
   app.use("/api/auth", authApiRouter);
   app.use("/api/profile", profileApiRouter);
   app.use("/api/cards", publicApiRouter);
+  app.use("/api", mobileApiRouter);
   app.use("/api", featuresApiRouter);
   app.use("/api/admin", adminFeaturesApiRouter);
   app.use("/api/telegram", telegramApiRouter);

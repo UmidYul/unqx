@@ -31,7 +31,7 @@ release
 .deploy-stage/
 # misc
 .DS_Store
-*.pem
+*.pemда
 
 # debug
 npm-debug.log*
