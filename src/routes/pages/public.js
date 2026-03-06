@@ -134,7 +134,7 @@ async function logTapEventFromPageRequest({ req, ownerSlug, ownerId }) {
         city,
         country
       )
-      VALUES (
+      SELECT
         ${ownerSlug},
         ${visitorSlug || null},
         ${visitorUserId || null},
@@ -143,6 +143,15 @@ async function logTapEventFromPageRequest({ req, ownerSlug, ownerId }) {
         ${source},
         ${null},
         ${null}
+      WHERE NOT EXISTS (
+        SELECT 1
+        FROM tap_events te
+        WHERE te.owner_slug = ${ownerSlug}
+          AND te.source = ${source}
+          AND te.visitor_slug IS NOT DISTINCT FROM ${visitorSlug || null}
+          AND te.visitor_user_id IS NOT DISTINCT FROM ${visitorUserId || null}
+          AND te.visitor_ip IS NOT DISTINCT FROM ${pickClientIp(req) || null}
+          AND te.created_at >= now() - interval '5 seconds'
       )
     `;
 

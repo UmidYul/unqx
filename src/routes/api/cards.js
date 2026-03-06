@@ -1157,7 +1157,7 @@ router.post(
                 city,
                 country
               )
-              VALUES (
+              SELECT
                 ${slugRow.fullSlug},
                 ${viewerUserId ? await getPrimarySlugForUser(viewerUserId) : null},
                 ${viewerUserId || null},
@@ -1166,6 +1166,14 @@ router.post(
                 ${source},
                 ${geo.city || null},
                 ${geo.country || null}
+              WHERE NOT EXISTS (
+                SELECT 1
+                FROM tap_events te
+                WHERE te.owner_slug = ${slugRow.fullSlug}
+                  AND te.source = ${source}
+                  AND te.visitor_user_id IS NOT DISTINCT FROM ${viewerUserId || null}
+                  AND te.visitor_ip IS NOT DISTINCT FROM ${ipForGeo || null}
+                  AND te.created_at >= now() - interval '5 seconds'
               )
             `;
           } catch (error) {
