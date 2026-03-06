@@ -458,6 +458,25 @@
   margin-bottom: 2px;
 }
 
+.admin-users-table-wrap {
+  padding-bottom: 0;
+}
+
+.admin-users-table {
+  min-width: 0;
+}
+
+.admin-users-table th,
+.admin-users-table td {
+  vertical-align: top;
+}
+
+.admin-users-table .admin-col-telegram,
+.admin-users-table .admin-col-slugs {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
 .admin-kpi-card {
   border: 1px solid #e5e7eb;
   border-radius: 16px;
