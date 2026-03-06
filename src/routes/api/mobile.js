@@ -1011,10 +1011,16 @@ router.get(
     try {
       const rows = await prisma.$queryRaw`
         SELECT city, country, COUNT(*)::int AS count
-        FROM tap_events
-        WHERE owner_slug = ANY(${slugs}::varchar[])
-          AND city IS NOT NULL
-          AND city <> ''
+        FROM (
+          SELECT
+            COALESCE(NULLIF(BTRIM(u.city), ''), NULLIF(BTRIM(te.city), '')) AS city,
+            te.country AS country
+          FROM tap_events te
+          LEFT JOIN users u ON u.id = te.visitor_user_id
+          WHERE te.owner_slug = ANY(${slugs}::varchar[])
+            AND te.visitor_user_id IS NOT NULL
+        ) geo
+        WHERE city IS NOT NULL
         GROUP BY city, country
         ORDER BY COUNT(*) DESC
         LIMIT 20

@@ -25,6 +25,7 @@ const { isSupportedAvatarBuffer, saveAvatarFromBuffer, deleteAvatarByPublicPath 
 const { getProfileScoreByUserId, recalculateAndRefreshPercentiles } = require("../../services/unq-score");
 const { getPricingSettings } = require("../../services/pricing-settings");
 const { sendVerificationRequestToAdmin } = require("../../services/telegram");
+const { resolveUzbekistanCity } = require("../../constants/uzbekistan-cities");
 
 const router = express.Router();
 const upload = multer({
@@ -1105,9 +1106,7 @@ router.patch(
       .replace(/^@+/, "")
       .trim()
       .slice(0, 120);
-    const city = String(req.body.city || "")
-      .trim()
-      .slice(0, 120);
+    const city = resolveUzbekistanCity(req.body.city);
 
     if (!city) {
       res.status(400).json({ error: "Город обязателен" });

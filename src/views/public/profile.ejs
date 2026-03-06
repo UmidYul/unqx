@@ -500,8 +500,10 @@
             </div>
             <div>
               <label class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Город</label>
-              <input id="profile-settings-city" type="text"
-                class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm" placeholder="Например: Ташкент" />
+              <select id="profile-settings-city" class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm">
+                <option value="" selected disabled>Выберите город</option>
+                <%- include('../partials/city-options') %>
+              </select>
             </div>
             <div>
               <label class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Email</label>

@@ -21,6 +21,7 @@ const {
   sendWelcomeEmail,
 } = require("../../services/email");
 const { linkReferralOnRegistration } = require("../../services/referrals");
+const { resolveUzbekistanCity } = require("../../constants/uzbekistan-cities");
 
 const router = express.Router();
 const OTP_LENGTH = 6;
@@ -56,7 +57,7 @@ function normalizeEmail(value) {
 }
 
 function normalizeCity(value) {
-  return String(value || "").trim().slice(0, 120);
+  return resolveUzbekistanCity(value);
 }
 
 function generateOtp() {

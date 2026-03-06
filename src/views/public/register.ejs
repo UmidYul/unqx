@@ -22,8 +22,11 @@
           class="mt-1 w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm" required />
       </label>
       <label class="mt-3 block text-sm font-medium text-neutral-700">Город
-        <input id="city" type="text" autocomplete="address-level2" placeholder="Например: Ташкент"
-          class="mt-1 w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm" required />
+        <select id="city" autocomplete="address-level2"
+          class="mt-1 w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm" required>
+          <option value="" selected disabled>Выберите город</option>
+          <%- include('../partials/city-options') %>
+        </select>
       </label>
       <label class="mt-3 block text-sm font-medium text-neutral-700">Email
         <input id="email" type="email" autocomplete="email" placeholder="you@example.com"
