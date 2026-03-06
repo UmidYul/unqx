@@ -7,6 +7,7 @@
   const pageBaseUrl = typeof baseUrl === "string" && baseUrl ? baseUrl : "";
   const pageCanonicalUrl =
     typeof canonicalUrl === "string" && canonicalUrl ? canonicalUrl : `${pageBaseUrl}/${pageCardRaw.slug || "unknown"}`;
+  const pageShareUrl = pageCanonicalUrl.includes("?") ? `${pageCanonicalUrl}&src=share` : `${pageCanonicalUrl}?src=share`;
   const isSupportedButtonHref = (value) => /^(https?:\/\/|mailto:|tel:)/i.test(String(value || "").trim());
   const normalizeButtonUrl = (rawUrl, type) => {
     const input = String(rawUrl || "").trim();
@@ -223,12 +224,13 @@
 
   <script nonce="<%= cspNonce %>" id="card-view-data" type="application/json"><%- JSON.stringify({
     card: pageCard,
-    shareUrl: pageCanonicalUrl,
+    shareUrl: pageShareUrl,
     viewsLabel: `${formattedViews} просмотров`,
     slug: pageCard.slug,
     score: pageScore,
     topBadge: pageTopBadge,
     paused: false,
+    trackViaPageRequest: true,
   }) %></script>
   <script nonce="<%= cspNonce %>" src="/js/card-view.js"></script>
   <script nonce="<%= cspNonce %>" src="/js/public-card.js"></script>

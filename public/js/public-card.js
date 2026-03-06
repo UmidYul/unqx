@@ -372,6 +372,10 @@
     return;
   }
 
+  if (payload && payload.trackViaPageRequest) {
+    return;
+  }
+
   const src = new URLSearchParams(window.location.search).get("src");
   const viewUrl = `/api/cards/${encodeURIComponent(slug)}/view${src ? `?src=${encodeURIComponent(src)}` : ""}`;
 

@@ -54,6 +54,152 @@ function sanitizeSlug(value) {
     .slice(0, 20);
 }
 
+function normalizeTapSource(value) {
+  const raw = String(value || "")
+    .trim()
+    .toLowerCase();
+  if (!raw) return "direct";
+  if (raw === "telegram") return "share";
+  if (["nfc", "qr", "direct", "share", "widget"].includes(raw)) {
+    return raw;
+  }
+  return "direct";
+}
+
+function isMobileUA(ua) {
+  return /android|iphone|ipad|mobile/i.test(String(ua || ""));
+}
+
+function resolveTapSource(req) {
+  const explicit = req.query?.src;
+  if (explicit !== undefined && explicit !== null && String(explicit).trim() !== "") {
+    return normalizeTapSource(explicit);
+  }
+
+  const referer = String(req.get("referer") || "").trim();
+  const userAgent = String(req.get("user-agent") || "");
+  if (!referer && isMobileUA(userAgent)) {
+    return "nfc";
+  }
+  return "direct";
+}
+
+function normalizeIp(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  if (raw.startsWith("::ffff:")) {
+    return raw.slice(7);
+  }
+  if (raw === "::1") {
+    return "127.0.0.1";
+  }
+  return raw;
+}
+
+function pickClientIp(req) {
+  const forwardedFor = String(req.get("x-forwarded-for") || "");
+  const realIp = String(req.get("x-real-ip") || "");
+  const firstForwarded = forwardedFor ? forwardedFor.split(",")[0].trim() : "";
+  return normalizeIp(firstForwarded) || normalizeIp(realIp) || normalizeIp(req.ip);
+}
+
+async function getPrimarySlugForUser(userId) {
+  if (!userId) return null;
+  const row = await prisma.slug.findFirst({
+    where: {
+      ownerId: userId,
+      status: { in: ["active", "private", "paused", "approved"] },
+    },
+    orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
+    select: { fullSlug: true },
+  });
+  return row?.fullSlug || null;
+}
+
+async function logTapEventFromPageRequest({ req, ownerSlug, ownerId }) {
+  const source = resolveTapSource(req);
+  const userSession = getUserSession(req);
+  const visitorUserId = userSession?.userId ? String(userSession.userId) : null;
+  const visitorSlug = visitorUserId ? await getPrimarySlugForUser(visitorUserId) : null;
+
+  try {
+    await prisma.$executeRaw`
+      INSERT INTO tap_events (
+        owner_slug,
+        visitor_slug,
+        visitor_user_id,
+        visitor_ip,
+        user_agent,
+        source,
+        city,
+        country
+      )
+      VALUES (
+        ${ownerSlug},
+        ${visitorSlug || null},
+        ${visitorUserId || null},
+        ${pickClientIp(req) || null},
+        ${String(req.get("user-agent") || "") || null},
+        ${source},
+        ${null},
+        ${null}
+      )
+    `;
+
+    if (visitorUserId && ownerId && visitorUserId !== ownerId && visitorSlug) {
+      await prisma.$executeRaw`
+        INSERT INTO user_contacts (
+          owner_id,
+          contact_slug,
+          contact_user_id,
+          saved,
+          subscribed,
+          first_tap_at,
+          last_tap_at,
+          tap_count
+        )
+        VALUES (
+          ${ownerId},
+          ${visitorSlug},
+          ${visitorUserId},
+          false,
+          false,
+          now(),
+          now(),
+          1
+        )
+        ON CONFLICT (owner_id, contact_slug)
+        DO UPDATE SET
+          contact_user_id = EXCLUDED.contact_user_id,
+          last_tap_at = now(),
+          tap_count = user_contacts.tap_count + 1
+      `;
+
+      await prisma.$executeRaw`
+        INSERT INTO notifications (
+          user_id,
+          type,
+          title,
+          body,
+          data
+        )
+        VALUES (
+          ${ownerId},
+          'tap',
+          'Новый тап',
+          ${`${visitorSlug} открыл вашу визитку`},
+          ${JSON.stringify({ ownerSlug, visitorSlug, source })}
+        )
+      `;
+    }
+  } catch (error) {
+    if (error && (String(error.code || "") === "42P01" || String(error.code || "") === "42703")) {
+      return;
+    }
+    throw error;
+  }
+}
+
 function isSlugStatusDecodeError(error) {
   if (!error || typeof error !== "object") return false;
   const message = String(error.message || "");
@@ -902,7 +1048,7 @@ router.get(
       description: `QR-визитка UNQ ${slug}. Открой цифровую карточку владельца по ссылке и поделись за секунду.`,
       slug,
       image: defaultSocialImage,
-      url: absoluteUrl(`/${slug}`),
+      url: absoluteUrl(`/${slug}?src=qr`),
       ownerName: profileCard?.name || owner.displayName || owner.firstName || "UNQX User",
       ownerRole: profileCard?.role || "",
       score: 0,
@@ -1097,6 +1243,15 @@ router.get(
         });
         const image = card.avatarUrl ? absoluteUrl(card.avatarUrl) : absoluteUrl("/brand/logo.PNG");
         const score = null;
+        try {
+          await logTapEventFromPageRequest({
+            req,
+            ownerSlug: slug,
+            ownerId: slugRow.ownerId,
+          });
+        } catch (error) {
+          console.error("[public] failed to log page tap event", error);
+        }
 
         const topBadge = await getSlugTopBadge(slug);
         res.render("public/card", {

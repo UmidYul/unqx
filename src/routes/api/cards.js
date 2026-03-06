@@ -146,7 +146,7 @@ function pickClientIdentity(req) {
   return `fp:${userAgent}|${acceptLanguage}`;
 }
 
-const TRACKED_SOURCES = new Set(["qr", "nfc", "telegram"]);
+const TRACKED_SOURCES = new Set(["nfc", "qr", "direct", "share", "widget"]);
 const TRACKED_BUTTON_TYPES = new Set([
   "telegram",
   "phone",
@@ -164,8 +164,28 @@ function normalizeSource(value) {
     .trim()
     .toLowerCase();
   if (!raw) return "direct";
+  if (raw === "nfc_scan" || raw === "nfc_write") return "nfc";
+  if (raw === "telegram") return "share";
   if (TRACKED_SOURCES.has(raw)) return raw;
-  return "other";
+  return "direct";
+}
+
+function isMobileUA(ua) {
+  return /android|iphone|ipad|mobile/i.test(String(ua || ""));
+}
+
+function resolveTapSource(req, rawSource) {
+  const hasExplicitSource = rawSource !== undefined && rawSource !== null && String(rawSource).trim() !== "";
+  if (hasExplicitSource) {
+    return normalizeSource(rawSource);
+  }
+
+  const referer = String(req.get("referer") || "").trim();
+  const userAgent = String(req.get("user-agent") || "");
+  if (!referer && isMobileUA(userAgent)) {
+    return "nfc";
+  }
+  return "direct";
 }
 
 function normalizeButtonType(value) {
@@ -1059,7 +1079,7 @@ router.post(
   asyncHandler(async (req, res) => {
     const requestedSlug = sanitizeSlug(req.params.slug);
     const device = detectDevice(req.get("user-agent"));
-    const source = normalizeSource(req.query?.src || req.body?.src);
+    const source = resolveTapSource(req, req.query?.src || req.body?.src);
     const sessionId = getAnalyticsSessionId(req, res);
 
     const slugRow = await withMissingTableFallback("Slug", null, () =>

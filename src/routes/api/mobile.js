@@ -10,7 +10,13 @@ const { requireSameOrigin } = require("../../middleware/same-origin");
 
 const router = express.Router();
 const WRITE_OPERATIONS = new Set(["write", "lock"]);
-const SOURCE_SET = new Set(["nfc", "qr", "direct", "telegram", "other"]);
+const SOURCE_SET = new Set(["nfc", "qr", "direct", "share", "widget"]);
+const SOURCE_ALIASES = {
+  telegram: "share",
+  other: "direct",
+  nfc_scan: "nfc",
+  nfc_write: "nfc",
+};
 
 function sanitizeSlug(value) {
   return String(value || "")
@@ -24,7 +30,47 @@ function normalizeSource(value) {
     .trim()
     .toLowerCase();
   if (!source) return "direct";
-  return SOURCE_SET.has(source) ? source : "other";
+  const aliased = SOURCE_ALIASES[source] || source;
+  return SOURCE_SET.has(aliased) ? aliased : "direct";
+}
+
+function parseSourcePeriodStart(periodRaw) {
+  const period = String(periodRaw || "30d")
+    .trim()
+    .toLowerCase();
+  if (period === "7d") return parsePeriodStart(7);
+  if (period === "all") return null;
+  return parsePeriodStart(30);
+}
+
+function sourceStatsFromRows(rows) {
+  const safeRows = Array.isArray(rows) ? rows : [];
+  const sourceMap = new Map();
+  for (const item of safeRows) {
+    const source = normalizeSource(item?.source);
+    const count = Math.max(0, Number(item?.count || 0));
+    sourceMap.set(source, (sourceMap.get(source) || 0) + count);
+  }
+  const normalizedRows = Array.from(sourceMap.entries()).map(([source, count]) => ({ source, count }));
+  const total = normalizedRows.reduce((sum, item) => sum + item.count, 0);
+
+  return normalizedRows
+    .filter((item) => item.count > 0)
+    .map((item) => ({
+      source: item.source,
+      count: item.count,
+      percent: total > 0 ? Math.round((item.count * 1000) / total) / 10 : 0,
+    }))
+    .sort((a, b) => b.count - a.count);
+}
+
+function sourceStatsFromMap(sourceMap) {
+  return sourceStatsFromRows(
+    Object.entries(sourceMap || {}).map(([source, count]) => ({
+      source,
+      count,
+    })),
+  );
 }
 
 function toIso(value) {
@@ -447,16 +493,7 @@ router.get(
 
       const weekTaps = buildSeries(Array.isArray(weekRows) ? weekRows : [], 7);
       const monthTaps = buildSeries(Array.isArray(monthSeriesRows) ? monthSeriesRows : [], 30);
-      const sources = Array.isArray(sourceRows)
-        ? sourceRows.map((item) => {
-            const value = Number(item.count || 0);
-            return {
-              label: String(item.source || "direct"),
-              value,
-              percent: monthCount > 0 ? Math.round((value / monthCount) * 100) : 0,
-            };
-          })
-        : [];
+      const sources = sourceStatsFromRows(sourceRows);
       const geoSlots = [
         { x: 178, y: 72 },
         { x: 152, y: 88 },
@@ -541,20 +578,14 @@ router.get(
         const sourceMap = {};
         const cityMap = {};
         for (const row of monthRowsFallback) {
-          const sourceKey = String(row.source || "direct");
+          const sourceKey = normalizeSource(row.source);
           sourceMap[sourceKey] = (sourceMap[sourceKey] || 0) + 1;
           const cityKey = String(row.city || "").trim();
           if (cityKey) {
             cityMap[cityKey] = (cityMap[cityKey] || 0) + 1;
           }
         }
-        const sourceFallback = Object.entries(sourceMap)
-          .map(([label, value]) => ({
-            label,
-            value: Number(value),
-            percent: monthRowsFallback.length > 0 ? Math.round((Number(value) / monthRowsFallback.length) * 100) : 0,
-          }))
-          .sort((a, b) => b.value - a.value);
+        const sourceFallback = sourceStatsFromMap(sourceMap);
         const cityEntries = Object.entries(cityMap)
           .map(([city, value]) => ({ city, value: Number(value) }))
           .sort((a, b) => b.value - a.value)
@@ -640,7 +671,7 @@ router.get(
           const sourceMap = {};
           const cityMap = {};
           for (const row of monthRows) {
-            const sourceKey = String(row.source || "direct");
+            const sourceKey = normalizeSource(row.source);
             sourceMap[sourceKey] = (sourceMap[sourceKey] || 0) + 1;
             const cityKey = String(row.city || "").trim();
             if (cityKey) {
@@ -666,13 +697,7 @@ router.get(
               growth,
               weekTaps: buildSeries(mapped, 7),
               monthTaps: buildSeries(mapped, 30),
-              sources: Object.entries(sourceMap)
-                .map(([label, value]) => ({
-                  label,
-                  value: Number(value),
-                  percent: monthRows.length > 0 ? Math.round((Number(value) / monthRows.length) * 100) : 0,
-                }))
-                .sort((a, b) => b.value - a.value),
+              sources: sourceStatsFromMap(sourceMap),
               geo: cityEntries.map((item, index) => {
                 const slot = geoSlots[index] || geoSlots[0];
                 return {
@@ -768,7 +793,7 @@ router.get(
           items: fallbackRows.map((item) => ({
             id: String(item.id),
             slug: sanitizeSlug(item.slug),
-            source: String(item.source || "direct"),
+            source: normalizeSource(item.source),
             name: "Гость",
             timestamp: toIso(item.visitedAt),
           })),
@@ -780,7 +805,7 @@ router.get(
         items: (Array.isArray(rows) ? rows : []).map((item) => ({
           id: String(item.id),
           slug: sanitizeSlug(item.visitor_slug) || "UNQ000",
-          source: String(item.source || "direct"),
+          source: normalizeSource(item.source),
           name: nameBySlug.get(sanitizeSlug(item.visitor_slug)) || "Неизвестный",
           timestamp: toIso(item.created_at),
         })),
@@ -802,7 +827,7 @@ router.get(
           items: fallbackRows.map((item) => ({
             id: String(item.id),
             slug: sanitizeSlug(item.slug),
-            source: String(item.source || "direct"),
+            source: normalizeSource(item.source),
             name: "Гость",
             timestamp: toIso(item.visitedAt),
           })),
@@ -832,16 +857,27 @@ router.get(
       res.json({ items: [] });
       return;
     }
+    const periodStart = parseSourcePeriodStart(req.query?.period);
 
     try {
-      const rows = await prisma.$queryRaw`
-        SELECT source, COUNT(*)::int AS count
-        FROM tap_events
-        WHERE owner_slug = ANY(${slugs}::varchar[])
-        GROUP BY source
-        ORDER BY COUNT(*) DESC
-      `;
-      res.json({ items: Array.isArray(rows) ? rows : [] });
+      const rows =
+        periodStart === null
+          ? await prisma.$queryRaw`
+              SELECT source, COUNT(*)::int AS count
+              FROM tap_events
+              WHERE owner_slug = ANY(${slugs}::varchar[])
+              GROUP BY source
+              ORDER BY COUNT(*) DESC
+            `
+          : await prisma.$queryRaw`
+              SELECT source, COUNT(*)::int AS count
+              FROM tap_events
+              WHERE owner_slug = ANY(${slugs}::varchar[])
+                AND created_at >= ${periodStart}
+              GROUP BY source
+              ORDER BY COUNT(*) DESC
+            `;
+      res.json({ items: sourceStatsFromRows(rows) });
     } catch (error) {
       if (isMissingStorageError(error)) {
         res.json({ items: [] });
@@ -1285,6 +1321,7 @@ router.post(
     const uid = String(req.body?.uid || "").trim().slice(0, 80);
     const url = String(req.body?.url || "").trim();
     const slug = extractSlugFromUrl(url);
+    const shouldRecordTap = req.body?.recordTap === undefined ? true : Boolean(req.body?.recordTap);
 
     try {
       await appendNfcHistory({ userId, slug, uid, operation: "read", url });
@@ -1294,7 +1331,7 @@ router.post(
         throw error;
       }
     }
-    if (slug) {
+    if (slug && shouldRecordTap) {
       const visitorSlug = await getPrimarySlug(userId);
       const ownerSlugRow = await prisma.slug.findUnique({
         where: { fullSlug: slug },
@@ -1316,6 +1353,58 @@ router.post(
         if (!isMissingStorageError(error)) {
           throw error;
         }
+      }
+    }
+
+    res.json({ ok: true });
+  }),
+);
+
+router.post(
+  "/nfc/tap",
+  requireSameOrigin,
+  requireCsrfToken,
+  asyncHandler(async (req, res) => {
+    const userSession = getUserSession(req);
+    const userId = userSession?.userId;
+    if (!userId) {
+      res.status(401).json({ error: "Unauthorized", code: "AUTH_REQUIRED" });
+      return;
+    }
+
+    const ownerSlug = sanitizeSlug(req.body?.ownerSlug || req.body?.slug);
+    if (!/^[A-Z]{3}\d{3}$/.test(ownerSlug)) {
+      res.status(400).json({ error: "ownerSlug обязателен", code: "VALIDATION_ERROR" });
+      return;
+    }
+    const source = normalizeSource(req.body?.source || "nfc");
+
+    const ownerSlugRow = await prisma.slug.findUnique({
+      where: { fullSlug: ownerSlug },
+      select: { ownerId: true },
+    });
+    if (!ownerSlugRow) {
+      res.status(404).json({ error: "Owner slug not found", code: "SLUG_NOT_FOUND" });
+      return;
+    }
+
+    const visitorSlug = await getPrimarySlug(userId);
+
+    try {
+      await createTapEvent({
+        ownerSlug,
+        ownerId: ownerSlugRow.ownerId || null,
+        visitorUserId: userId,
+        visitorSlug,
+        source,
+        city: null,
+        country: null,
+        userAgent: String(req.get("user-agent") || ""),
+        visitorIp: pickClientIp(req),
+      });
+    } catch (error) {
+      if (!isMissingStorageError(error)) {
+        throw error;
       }
     }
 
