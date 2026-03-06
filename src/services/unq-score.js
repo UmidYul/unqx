@@ -220,7 +220,7 @@ async function storeDailyHistory(userId, score, tx = prisma, now = new Date()) {
   const today = startOfDay(now);
   await tx.scoreHistory.upsert({
     where: {
-      telegramId_recordedAt: {
+      userId_recordedAt: {
         userId,
         recordedAt: today,
       },
