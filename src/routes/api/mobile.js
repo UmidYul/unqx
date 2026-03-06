@@ -18,6 +18,74 @@ const SOURCE_ALIASES = {
   nfc_write: "nfc",
 };
 
+const CITY_TRANSLIT_MAP = {
+  а: "a",
+  б: "b",
+  в: "v",
+  г: "g",
+  д: "d",
+  е: "e",
+  ё: "yo",
+  ж: "j",
+  з: "z",
+  и: "i",
+  й: "y",
+  к: "k",
+  л: "l",
+  м: "m",
+  н: "n",
+  о: "o",
+  п: "p",
+  р: "r",
+  с: "s",
+  т: "t",
+  у: "u",
+  ф: "f",
+  х: "h",
+  ц: "c",
+  ч: "ch",
+  ш: "sh",
+  щ: "sch",
+  ы: "y",
+  э: "e",
+  ю: "yu",
+  я: "ya",
+  қ: "q",
+  ҳ: "h",
+  ғ: "g",
+  ў: "u",
+};
+
+const UZ_CITY_COORDS = {
+  tashkent: { x: 214, y: 88 },
+  toshkent: { x: 214, y: 88 },
+  chirchiq: { x: 219, y: 81 },
+  angren: { x: 224, y: 86 },
+  gulistan: { x: 203, y: 105 },
+  sirdarya: { x: 202, y: 108 },
+  jizzakh: { x: 184, y: 101 },
+  djizzak: { x: 184, y: 101 },
+  samarkand: { x: 164, y: 98 },
+  navoiy: { x: 132, y: 96 },
+  navoi: { x: 132, y: 96 },
+  bukhara: { x: 109, y: 93 },
+  buxoro: { x: 109, y: 93 },
+  qarshi: { x: 156, y: 121 },
+  karshi: { x: 156, y: 121 },
+  termiz: { x: 212, y: 140 },
+  surxondaryo: { x: 206, y: 134 },
+  denov: { x: 222, y: 130 },
+  fergana: { x: 263, y: 84 },
+  ferghana: { x: 263, y: 84 },
+  namangan: { x: 247, y: 82 },
+  andijan: { x: 279, y: 88 },
+  nukus: { x: 56, y: 42 },
+  urgench: { x: 76, y: 79 },
+  xorazm: { x: 77, y: 83 },
+  khorezm: { x: 77, y: 83 },
+  karakalpakstan: { x: 52, y: 47 },
+};
+
 function sanitizeSlug(value) {
   return String(value || "")
     .toUpperCase()
@@ -32,6 +100,44 @@ function normalizeSource(value) {
   if (!source) return "direct";
   const aliased = SOURCE_ALIASES[source] || source;
   return SOURCE_SET.has(aliased) ? aliased : "direct";
+}
+
+function normalizeCityKey(value) {
+  const normalized = String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[\u02bc\u02bb\u2018\u2019\u201b\u0060\u00b4]/g, "'")
+    .replace(/ў/g, "у")
+    .replace(/қ/g, "к")
+    .replace(/ҳ/g, "х")
+    .replace(/ғ/g, "г")
+    .replace(/\u02bb/g, "");
+
+  return normalized
+    .split("")
+    .map((ch) => CITY_TRANSLIT_MAP[ch] || ch)
+    .join("")
+    .replace(/['`\-\s]+/g, "");
+}
+
+function fallbackGeoSlot(city) {
+  const key = normalizeCityKey(city) || "unknown";
+  let hash = 0;
+  for (let i = 0; i < key.length; i += 1) {
+    hash = (hash * 31 + key.charCodeAt(i)) >>> 0;
+  }
+
+  const x = 92 + (hash % 170);
+  const y = 50 + ((hash >>> 8) % 80);
+  return { x, y };
+}
+
+function resolveUzbekistanCityPoint(city) {
+  const key = normalizeCityKey(city);
+  if (key && UZ_CITY_COORDS[key]) {
+    return UZ_CITY_COORDS[key];
+  }
+  return fallbackGeoSlot(city);
 }
 
 function parseSourcePeriodStart(periodRaw) {
@@ -189,6 +295,16 @@ async function getOwnedSlugs(userId) {
 async function getPrimarySlug(userId) {
   const slugs = await getOwnedSlugs(userId);
   return slugs[0] || null;
+}
+
+async function getUserCity(userId) {
+  if (!userId) return null;
+  const row = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { city: true },
+  });
+  const city = String(row?.city || "").trim();
+  return city || null;
 }
 
 function buildSeries(rows, days) {
@@ -425,14 +541,14 @@ router.get(
         slug: selectedSlug || "",
         card: card
           ? {
-              name: card.name,
-              role: card.role,
-              email: card.email,
-              extraPhone: card.extraPhone,
-              avatarUrl: card.avatarUrl,
-              buttons: card.buttons,
-              theme: card.theme,
-            }
+            name: card.name,
+            role: card.role,
+            email: card.email,
+            extraPhone: card.extraPhone,
+            avatarUrl: card.avatarUrl,
+            buttons: card.buttons,
+            theme: card.theme,
+          }
           : null,
       },
       slugs: slugs.map((item) => ({
@@ -509,14 +625,18 @@ router.get(
         `,
         prisma.$queryRaw`
           SELECT city, COUNT(*)::int AS count
-          FROM tap_events
-          WHERE owner_slug = ANY(${slugs}::varchar[])
-            AND created_at >= ${parsePeriodStart(30)}
-            AND city IS NOT NULL
-            AND city <> ''
+          FROM (
+            SELECT COALESCE(NULLIF(BTRIM(u.city), ''), NULLIF(BTRIM(te.city), '')) AS city
+            FROM tap_events te
+            LEFT JOIN users u ON u.id = te.visitor_user_id
+            WHERE te.owner_slug = ANY(${slugs}::varchar[])
+              AND te.created_at >= ${parsePeriodStart(30)}
+              AND te.visitor_user_id IS NOT NULL
+          ) geo
+          WHERE city IS NOT NULL
           GROUP BY city
           ORDER BY COUNT(*) DESC
-          LIMIT 5
+          LIMIT 20
         `,
       ]);
 
@@ -529,29 +649,23 @@ router.get(
       const weekTaps = buildSeries(Array.isArray(weekRows) ? weekRows : [], 7);
       const monthTaps = buildSeries(Array.isArray(monthSeriesRows) ? monthSeriesRows : [], 30);
       const sources = sourceStatsFromRows(sourceRows);
-      const geoSlots = [
-        { x: 178, y: 72 },
-        { x: 152, y: 88 },
-        { x: 121, y: 92 },
-        { x: 232, y: 73 },
-        { x: 87, y: 79 },
-      ];
       const geoMax = Math.max(
         1,
         ...(Array.isArray(geoRows) ? geoRows.map((item) => Number(item.count || 0)) : [1]),
       );
       const geo = Array.isArray(geoRows)
-        ? geoRows.map((item, index) => {
-            const slot = geoSlots[index] || geoSlots[0];
-            const count = Number(item.count || 0);
-            return {
-              city: String(item.city || "Unknown"),
-              value: count,
-              x: slot.x,
-              y: slot.y,
-              r: Math.max(2, Math.min(8, Math.round((count / geoMax) * 8))),
-            };
-          })
+        ? geoRows.map((item) => {
+          const city = String(item.city || "Unknown");
+          const slot = resolveUzbekistanCityPoint(city);
+          const count = Number(item.count || 0);
+          return {
+            city,
+            value: count,
+            x: slot.x,
+            y: slot.y,
+            r: Math.max(2, Math.min(8, Math.round((count / geoMax) * 8))),
+          };
+        })
         : [];
 
       if (total === 0 && prisma.analyticsView) {
@@ -611,31 +725,13 @@ router.get(
           30,
         );
         const sourceMap = {};
-        const cityMap = {};
         for (const row of monthRowsFallback) {
           const sourceKey = normalizeSource(row.source);
           sourceMap[sourceKey] = (sourceMap[sourceKey] || 0) + 1;
-          const cityKey = String(row.city || "").trim();
-          if (cityKey) {
-            cityMap[cityKey] = (cityMap[cityKey] || 0) + 1;
-          }
         }
         const sourceFallback = sourceStatsFromMap(sourceMap);
-        const cityEntries = Object.entries(cityMap)
-          .map(([city, value]) => ({ city, value: Number(value) }))
-          .sort((a, b) => b.value - a.value)
-          .slice(0, 5);
-        const cityMax = Math.max(1, ...cityEntries.map((item) => item.value));
-        const geoFallback = cityEntries.map((item, index) => {
-          const slot = geoSlots[index] || geoSlots[0];
-          return {
-            city: item.city,
-            value: item.value,
-            x: slot.x,
-            y: slot.y,
-            r: Math.max(2, Math.min(8, Math.round((item.value / cityMax) * 8))),
-          };
-        });
+        // analyticsView does not store visitor user ids, so we cannot safely exclude guests there.
+        const geoFallback = [];
 
         res.json({
           summary: {
@@ -704,27 +800,10 @@ router.get(
           }
           const mapped = Array.from(dayMap.entries()).map(([date, count]) => ({ date, count }));
           const sourceMap = {};
-          const cityMap = {};
           for (const row of monthRows) {
             const sourceKey = normalizeSource(row.source);
             sourceMap[sourceKey] = (sourceMap[sourceKey] || 0) + 1;
-            const cityKey = String(row.city || "").trim();
-            if (cityKey) {
-              cityMap[cityKey] = (cityMap[cityKey] || 0) + 1;
-            }
           }
-          const geoSlots = [
-            { x: 178, y: 72 },
-            { x: 152, y: 88 },
-            { x: 121, y: 92 },
-            { x: 232, y: 73 },
-            { x: 87, y: 79 },
-          ];
-          const cityEntries = Object.entries(cityMap)
-            .map(([city, value]) => ({ city, value: Number(value) }))
-            .sort((a, b) => b.value - a.value)
-            .slice(0, 5);
-          const cityMax = Math.max(1, ...cityEntries.map((item) => item.value));
           res.json({
             summary: {
               totalTaps: totalFallback,
@@ -733,16 +812,7 @@ router.get(
               weekTaps: buildSeries(mapped, 7),
               monthTaps: buildSeries(mapped, 30),
               sources: sourceStatsFromMap(sourceMap),
-              geo: cityEntries.map((item, index) => {
-                const slot = geoSlots[index] || geoSlots[0];
-                return {
-                  city: item.city,
-                  value: item.value,
-                  x: slot.x,
-                  y: slot.y,
-                  r: Math.max(2, Math.min(8, Math.round((item.value / cityMax) * 8))),
-                };
-              }),
+              geo: [],
             },
           });
           return;
@@ -1475,6 +1545,7 @@ router.post(
     }
     if (slug && shouldRecordTap) {
       const visitorSlug = await getPrimarySlug(userId);
+      const visitorCity = await getUserCity(userId);
       const ownerSlugRow = await prisma.slug.findUnique({
         where: { fullSlug: slug },
         select: { ownerId: true },
@@ -1486,7 +1557,7 @@ router.post(
           visitorUserId: userId,
           visitorSlug,
           source: "nfc",
-          city: null,
+          city: visitorCity,
           country: null,
           userAgent: String(req.get("user-agent") || ""),
           visitorIp: pickClientIp(req),
@@ -1531,6 +1602,7 @@ router.post(
     }
 
     const visitorSlug = await getPrimarySlug(userId);
+    const visitorCity = await getUserCity(userId);
 
     try {
       await createTapEvent({
@@ -1539,7 +1611,7 @@ router.post(
         visitorUserId: userId,
         visitorSlug,
         source,
-        city: null,
+        city: visitorCity,
         country: null,
         userAgent: String(req.get("user-agent") || ""),
         visitorIp: pickClientIp(req),
