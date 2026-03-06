@@ -106,7 +106,7 @@
   padding: 12px 8px;
 }
 
-.admin-sidebar-group + .admin-sidebar-group {
+.admin-sidebar-group+.admin-sidebar-group {
   margin-top: 14px;
   padding-top: 14px;
   border-top: 1px solid #f0f0f0;
@@ -454,7 +454,7 @@
   padding-bottom: 14px;
 }
 
-.admin-main .overflow-x-auto > table {
+.admin-main .overflow-x-auto>table {
   margin-bottom: 2px;
 }
 
