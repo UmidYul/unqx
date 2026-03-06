@@ -172,6 +172,7 @@
     refRewards: $("#profile-ref-rewards"),
 
     stName: $("#profile-settings-display-name"),
+    stCity: $("#profile-settings-city"),
     stEmail: $("#profile-settings-email"),
     stTg: $("#profile-settings-telegram"),
     stChangeEmail: $("#profile-settings-change-email"),
@@ -750,6 +751,7 @@
   const renderSettings = () => {
     if (!s.user) return;
     if (el.stName) el.stName.value = s.user.displayName || s.user.firstName || "";
+    if (el.stCity) el.stCity.value = String(s.user.city || "");
     if (el.stEmail) {
       const accountEmail = String(s.user.email || "").trim();
       const pendingEmail = String(s.user.pendingEmail || "").trim();
@@ -1735,6 +1737,7 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           displayName: el.stName?.value || "",
+          city: el.stCity?.value || "",
           telegramUsername: String(el.stTg?.value || "").replace(/^@+/, "").trim(),
           notificationsEnabled: Boolean(el.stNotif?.checked),
           showInDirectory: Boolean(el.stDirectory?.checked),
@@ -1743,6 +1746,7 @@
 
       if (s.user) {
         s.user.displayName = payload.user.displayName;
+        s.user.city = payload.user.city;
         s.user.notificationsEnabled = payload.user.notificationsEnabled;
         s.user.showInDirectory = payload.user.showInDirectory;
       }

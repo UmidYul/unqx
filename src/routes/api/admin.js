@@ -795,6 +795,7 @@ router.get(
       where.OR = [
         { id: { contains: q, mode: "insensitive" } },
         { firstName: { contains: q, mode: "insensitive" } },
+        { city: { contains: q, mode: "insensitive" } },
         { username: { contains: q, mode: "insensitive" } },
         { displayName: { contains: q, mode: "insensitive" } },
       ];
@@ -814,6 +815,7 @@ router.get(
             id: true,
             firstName: true,
             displayName: true,
+            city: true,
             username: true,
             plan: true,
             planPurchasedAt: true,
@@ -917,6 +919,7 @@ router.get(
         : null,
       telegramId: user.id,
       name: user.displayName || user.firstName,
+      city: user.city || "",
       username: user.username || null,
       plan: user.plan,
       planPurchasedAt: user.planPurchasedAt,
@@ -1082,19 +1085,20 @@ router.patch(
         where: { ownerId: userId },
         select: {
           fullSlug: true,
-          status: true,
-          pauseMessage: true,
         },
       });
       for (const row of owned) {
-        if (row.status === "blocked") {
-          continue;
-        }
         await tx.slug.update({
           where: { fullSlug: row.fullSlug },
           data: {
-            status: "blocked",
-            pauseMessage: encodeBlockedPauseMessage(row.status, row.pauseMessage),
+            ownerId: null,
+            status: "free",
+            isPrimary: false,
+            pauseMessage: null,
+            pendingExpiresAt: null,
+            approvedAt: null,
+            requestedAt: null,
+            activatedAt: null,
           },
         });
       }
@@ -1589,19 +1593,19 @@ router.patch(
       const slugRequestsResult =
         typeof resolvedPrice === "number"
           ? await tx.slugRequest.updateMany({
-              where: { slug },
-              data: { slugPrice: resolvedPrice },
-            })
+            where: { slug },
+            data: { slugPrice: resolvedPrice },
+          })
           : { count: 0 };
       const purchasesResult =
         typeof resolvedPrice === "number" && tx.purchase
           ? await tx.purchase.updateMany({
-              where: {
-                slug,
-                type: "slug",
-              },
-              data: { amount: resolvedPrice },
-            })
+            where: {
+              slug,
+              type: "slug",
+            },
+            data: { amount: resolvedPrice },
+          })
           : { count: 0 };
 
       return [

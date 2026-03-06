@@ -41,6 +41,7 @@ const USER_AUTH_SELECT = {
   emailVerified: true,
   firstName: true,
   lastName: true,
+  city: true,
   username: true,
   displayName: true,
   plan: true,
@@ -52,6 +53,10 @@ const USER_AUTH_SELECT = {
 
 function normalizeEmail(value) {
   return String(value || "").trim().toLowerCase();
+}
+
+function normalizeCity(value) {
+  return String(value || "").trim().slice(0, 120);
 }
 
 function generateOtp() {
@@ -139,6 +144,7 @@ function userToSessionPayload(user) {
     emailVerified: Boolean(user.emailVerified),
     firstName: user.firstName,
     lastName: user.lastName || null,
+    city: user.city || null,
     username: user.username || null,
     displayName,
     plan: user.plan,
@@ -156,6 +162,7 @@ function userToClientPayload(user) {
     emailVerified: Boolean(user.emailVerified),
     firstName: user.firstName,
     lastName: user.lastName || null,
+    city: user.city || null,
     username: user.username || null,
     displayName: normalizeDisplayName(user.displayName, user.firstName),
     plan: user.plan,
@@ -173,11 +180,12 @@ router.post(
   requireCsrfToken,
   asyncHandler(async (req, res) => {
     const firstName = String(req.body?.firstName || "").trim().slice(0, 120);
+    const city = normalizeCity(req.body?.city);
     const email = normalizeEmail(req.body?.email);
     const password = String(req.body?.password || "");
     const confirmPassword = String(req.body?.confirmPassword || "");
 
-    if (!firstName || !email || !password || password.length < 8 || password !== confirmPassword) {
+    if (!firstName || !city || !email || !password || password.length < 8 || password !== confirmPassword) {
       res.status(400).json({ error: "Validation failed", code: "VALIDATION_ERROR" });
       return;
     }
@@ -198,6 +206,7 @@ router.post(
         where: { id: existing.id },
         data: {
           firstName,
+          city,
           passwordHash,
           emailVerified: false,
           plan: "none",
@@ -215,6 +224,7 @@ router.post(
       user = await prisma.user.create({
         data: {
           firstName,
+          city,
           email,
           passwordHash,
           emailVerified: false,
@@ -301,10 +311,10 @@ router.post(
           otpAttempts: attempts,
           ...(attempts >= MAX_OTP_ATTEMPTS
             ? {
-                otpCode: null,
-                otpExpiresAt: null,
-                otpAttempts: 0,
-              }
+              otpCode: null,
+              otpExpiresAt: null,
+              otpAttempts: 0,
+            }
             : {}),
         },
       });

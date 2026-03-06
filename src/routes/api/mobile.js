@@ -133,6 +133,41 @@ function isMissingStorageError(error) {
   return code === "42P01" || code === "42703";
 }
 
+function parseJsonArray(value) {
+  if (Array.isArray(value)) return value;
+  if (typeof value === "string" && value.trim()) {
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
+function normalizeStringList(value) {
+  return parseJsonArray(value)
+    .map((item) => String(item || "").trim())
+    .filter(Boolean);
+}
+
+function normalizeProfileButtons(value) {
+  return parseJsonArray(value)
+    .map((item) => {
+      const source = item && typeof item === "object" ? item : {};
+      const label = String(source.label || source.type || "").trim().slice(0, 50);
+      const url = String(source.url || source.value || source.href || "").trim();
+      if (!label || !url) return null;
+      return {
+        icon: String(source.icon || source.type || "other").trim().toLowerCase() || "other",
+        label,
+        url,
+      };
+    })
+    .filter(Boolean);
+}
+
 async function getOwnedSlugs(userId) {
   const rows = await prisma.slug.findMany({
     where: {
@@ -1089,6 +1124,113 @@ router.get(
       })),
       page,
       limit,
+    });
+  }),
+);
+
+router.get(
+  "/directory/:slug",
+  asyncHandler(async (req, res) => {
+    const userSession = getUserSession(req);
+    const userId = userSession?.userId;
+    if (!userId) {
+      res.status(401).json({ error: "Unauthorized", code: "AUTH_REQUIRED" });
+      return;
+    }
+
+    const slug = sanitizeSlug(req.params.slug);
+    if (!slug) {
+      res.status(400).json({ error: "Slug is required", code: "VALIDATION_ERROR" });
+      return;
+    }
+
+    let rows = [];
+    try {
+      rows = await prisma.$queryRawUnsafe(
+        `
+          SELECT
+            s.full_slug AS slug,
+            s.owner_id AS "ownerId",
+            COALESCE(pc.name, u.display_name, u.first_name, 'Unknown') AS name,
+            pc.avatar_url AS "avatarUrl",
+            COALESCE(u.verified_company, '') AS city,
+            COALESCE(u.plan, 'basic') AS tag,
+            COALESCE(s.analytics_views_count, 0) AS taps,
+            COALESCE(pc.role, '') AS role,
+            COALESCE(pc.bio, '') AS bio,
+            COALESCE(pc.email, '') AS email,
+            COALESCE(pc.extra_phone, '') AS phone,
+            COALESCE(pc.tags, '[]'::jsonb) AS tags,
+            COALESCE(pc.buttons, '[]'::jsonb) AS buttons,
+            COALESCE(uc.subscribed, FALSE) AS subscribed,
+            COALESCE(uc.saved, FALSE) AS saved
+          FROM slugs s
+          JOIN users u ON u.id = s.owner_id
+          LEFT JOIN profile_cards pc ON pc.owner_id = u.id
+          LEFT JOIN user_contacts uc ON uc.owner_id = $1 AND uc.contact_slug = s.full_slug
+          WHERE s.full_slug = $2
+            AND s.status IN ('active', 'private', 'paused', 'approved')
+            AND u.status = 'active'
+          LIMIT 1
+        `,
+        userId,
+        slug,
+      );
+    } catch (error) {
+      if (!isMissingStorageError(error)) {
+        throw error;
+      }
+      res.status(404).json({ error: "Resident not found", code: "NOT_FOUND" });
+      return;
+    }
+
+    const row = Array.isArray(rows) ? rows[0] : null;
+    if (!row) {
+      res.status(404).json({ error: "Resident not found", code: "NOT_FOUND" });
+      return;
+    }
+
+    let slugRows = [];
+    try {
+      slugRows = await prisma.$queryRawUnsafe(
+        `
+          SELECT full_slug AS slug
+          FROM slugs
+          WHERE owner_id = $1
+            AND status IN ('active', 'private', 'paused', 'approved')
+          ORDER BY is_primary DESC, created_at ASC
+          LIMIT 24
+        `,
+        row.ownerId,
+      );
+    } catch (error) {
+      if (!isMissingStorageError(error)) {
+        throw error;
+      }
+    }
+
+    const slugs = (Array.isArray(slugRows) ? slugRows : [])
+      .map((item) => sanitizeSlug(item.slug))
+      .filter(Boolean);
+
+    res.json({
+      profile: {
+        slug: sanitizeSlug(row.slug),
+        slugs: slugs.length ? slugs : [sanitizeSlug(row.slug)],
+        name: String(row.name || "Unknown"),
+        avatarUrl: row.avatarUrl || null,
+        city: String(row.city || ""),
+        tag: String(row.tag || "basic"),
+        taps: Number(row.taps || 0),
+        role: String(row.role || ""),
+        bio: String(row.bio || ""),
+        email: String(row.email || ""),
+        phone: String(row.phone || ""),
+        buttons: normalizeProfileButtons(row.buttons),
+        tags: normalizeStringList(row.tags),
+        subscribed: Boolean(row.subscribed),
+        saved: Boolean(row.saved),
+      },
     });
   }),
 );

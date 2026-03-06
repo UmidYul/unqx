@@ -511,41 +511,41 @@
     const r = await fetch(`/api/admin/users?${Q(q)}`);
     if (!r.ok) {
       const msg = await E(r);
-      table.innerHTML = `<tr><td colspan="10" class="px-3 py-8 text-center text-red-700">Не удалось загрузить пользователей: ${X(msg)}</td></tr>`;
+      table.innerHTML = `<tr><td colspan="11" class="px-3 py-8 text-center text-red-700">Не удалось загрузить пользователей: ${X(msg)}</td></tr>`;
       return;
     }
     const payload = await r.json();
     const rows = payload.items || [];
     table.innerHTML = rows.length
       ? rows
-          .map((x) => {
-            const slugText = Array.isArray(x.slugs) && x.slugs.length ? x.slugs.map((s) => String(s.fullSlug || "").trim()).filter(Boolean).join(", ") : "—";
-            const primarySlug =
-              Array.isArray(x.slugs) && x.slugs.length
-                ? x.slugs.find((s) => ["active", "private", "paused", "approved"].includes(s.status))?.fullSlug || x.slugs[0].fullSlug
-                : null;
-            const profileLink = primarySlug ? `/${encodeURIComponent(primarySlug)}` : x.username ? `https://t.me/${encodeURIComponent(x.username)}` : null;
-            const statusLabel = x.status === "blocked" ? "Заблокирован" : x.status === "deactivated" ? "Деактивирован" : "Активен";
-            const braceletSlugs = Array.isArray(x.slugs) ? x.slugs.filter((s) => s.hasBracelet).map((s) => s.fullSlug).join(",") : "";
-            const score = Number(x.unqScore?.score || 0);
-            const scoreBreakdown = x.unqScore?.breakdown || {};
-            const menu = menuWrap([
-              menuItem({ label: "Сменить тариф", icon: "crown", attrs: `data-act="up" data-id="${X(x.telegramId)}" data-current-plan="${X(x.plan)}" data-active-slugs="${Number(x.activeSlugCount || 0)}" data-bracelet-slugs="${X(braceletSlugs)}"` }),
-              menuSeparator(),
-              menuItem({ label: "Открыть профиль", icon: "external", attrs: profileLink ? `data-act="open-url" data-url="${profileLink}"` : 'disabled="disabled"' }),
-              menuSeparator(),
-              menuItem({ label: x.status === "blocked" ? "Разблокировать" : "Заблокировать", icon: "shieldOff", attrs: `data-act="ub" data-id="${X(x.telegramId)}" data-status="${X(x.status)}"`, danger: x.status !== "blocked" }),
-            ].join(""));
-            const planLabel = x.plan === "premium" ? "Премиум" : x.plan === "basic" ? "Базовый" : "Без тарифа";
-            const planChipClass =
-              x.plan === "none"
-                ? "border-amber-300 bg-amber-50 text-amber-800 whitespace-nowrap"
-                : "border-neutral-200 whitespace-nowrap";
-            const telegramLabel = x.username ? `@${x.username}` : "Нет";
-            return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3">${X(telegramLabel)}</td><td class="px-4 py-3">${X(x.name)}</td><td class="px-4 py-3"><span class="inline-flex rounded-full border px-2.5 py-1 text-xs font-medium ${planChipClass}">${planLabel}</span></td><td class="px-4 py-3 text-xs text-neutral-600">${x.planPurchasedAt ? D(x.planPurchasedAt) : "—"}</td><td class="px-4 py-3 text-xs">${X(slugText)}</td><td class="px-4 py-3">${x.hasCard ? themePill(x.theme || "default_dark") : "Нет"}</td><td class="px-4 py-3"><button type="button" data-act="toggle-score" data-id="${X(x.telegramId)}" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-2.5 py-1 text-sm font-semibold">${score}</button></td><td class="px-4 py-3">${statusChip(x.status === "blocked" ? "rejected" : "approved")}</td><td class="px-4 py-3">${D(x.createdAt)}</td><td class="px-4 py-3"><div class="admin-row-actions">${menu}</div></td></tr><tr class="border-t border-neutral-100 hidden" data-score-row="${X(x.telegramId)}"><td colspan="10" class="px-4 py-2 text-xs text-neutral-600">Просмотры: ${Number(scoreBreakdown.views || 0)} | Редкость: ${Number(scoreBreakdown.slugRarity || 0)} | Срок: ${Number(scoreBreakdown.tenure || 0)} | CTR: ${Number(scoreBreakdown.ctr || 0)} | Браслет: ${Number(scoreBreakdown.bracelet || 0)} | Тариф: ${Number(scoreBreakdown.plan || 0)}</td></tr>`;
-          })
-          .join("")
-      : `<tr><td colspan="10" class="px-3 py-10 text-center text-neutral-500"><div class="inline-flex flex-col items-center gap-2">${I("userCheck", 48)}<span>Нет пользователей</span></div></td></tr>`;
+        .map((x) => {
+          const slugText = Array.isArray(x.slugs) && x.slugs.length ? x.slugs.map((s) => String(s.fullSlug || "").trim()).filter(Boolean).join(", ") : "—";
+          const primarySlug =
+            Array.isArray(x.slugs) && x.slugs.length
+              ? x.slugs.find((s) => ["active", "private", "paused", "approved"].includes(s.status))?.fullSlug || x.slugs[0].fullSlug
+              : null;
+          const profileLink = primarySlug ? `/${encodeURIComponent(primarySlug)}` : x.username ? `https://t.me/${encodeURIComponent(x.username)}` : null;
+          const statusLabel = x.status === "blocked" ? "Заблокирован" : x.status === "deactivated" ? "Деактивирован" : "Активен";
+          const braceletSlugs = Array.isArray(x.slugs) ? x.slugs.filter((s) => s.hasBracelet).map((s) => s.fullSlug).join(",") : "";
+          const score = Number(x.unqScore?.score || 0);
+          const scoreBreakdown = x.unqScore?.breakdown || {};
+          const menu = menuWrap([
+            menuItem({ label: "Сменить тариф", icon: "crown", attrs: `data-act="up" data-id="${X(x.telegramId)}" data-current-plan="${X(x.plan)}" data-active-slugs="${Number(x.activeSlugCount || 0)}" data-bracelet-slugs="${X(braceletSlugs)}"` }),
+            menuSeparator(),
+            menuItem({ label: "Открыть профиль", icon: "external", attrs: profileLink ? `data-act="open-url" data-url="${profileLink}"` : 'disabled="disabled"' }),
+            menuSeparator(),
+            menuItem({ label: x.status === "blocked" ? "Разблокировать" : "Заблокировать", icon: "shieldOff", attrs: `data-act="ub" data-id="${X(x.telegramId)}" data-status="${X(x.status)}"`, danger: x.status !== "blocked" }),
+          ].join(""));
+          const planLabel = x.plan === "premium" ? "Премиум" : x.plan === "basic" ? "Базовый" : "Без тарифа";
+          const planChipClass =
+            x.plan === "none"
+              ? "border-amber-300 bg-amber-50 text-amber-800 whitespace-nowrap"
+              : "border-neutral-200 whitespace-nowrap";
+          const telegramLabel = x.username ? `@${x.username}` : "Нет";
+          return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3">${X(telegramLabel)}</td><td class="px-4 py-3">${X(x.name)}</td><td class="px-4 py-3">${X(x.city || "—")}</td><td class="px-4 py-3"><span class="inline-flex rounded-full border px-2.5 py-1 text-xs font-medium ${planChipClass}">${planLabel}</span></td><td class="px-4 py-3 text-xs text-neutral-600">${x.planPurchasedAt ? D(x.planPurchasedAt) : "—"}</td><td class="px-4 py-3 text-xs">${X(slugText)}</td><td class="px-4 py-3">${x.hasCard ? themePill(x.theme || "default_dark") : "Нет"}</td><td class="px-4 py-3"><button type="button" data-act="toggle-score" data-id="${X(x.telegramId)}" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-2.5 py-1 text-sm font-semibold">${score}</button></td><td class="px-4 py-3">${statusChip(x.status === "blocked" ? "rejected" : "approved")}</td><td class="px-4 py-3">${D(x.createdAt)}</td><td class="px-4 py-3"><div class="admin-row-actions">${menu}</div></td></tr><tr class="border-t border-neutral-100 hidden" data-score-row="${X(x.telegramId)}"><td colspan="11" class="px-4 py-2 text-xs text-neutral-600">Просмотры: ${Number(scoreBreakdown.views || 0)} | Редкость: ${Number(scoreBreakdown.slugRarity || 0)} | Срок: ${Number(scoreBreakdown.tenure || 0)} | CTR: ${Number(scoreBreakdown.ctr || 0)} | Браслет: ${Number(scoreBreakdown.bracelet || 0)} | Тариф: ${Number(scoreBreakdown.plan || 0)}</td></tr>`;
+        })
+        .join("")
+      : `<tr><td colspan="11" class="px-3 py-10 text-center text-neutral-500"><div class="inline-flex flex-col items-center gap-2">${I("userCheck", 48)}<span>Нет пользователей</span></div></td></tr>`;
     renderPager("users-pagination", payload.pagination, (nextPage) => {
       setFormValue(form, "page", String(nextPage));
       void loadUsers();
@@ -1203,7 +1203,7 @@
     if (a === "qr") { const slug = n.getAttribute("data-slug"); if (slug) await openQ(slug); }
     if (a === "tv") { const id = n.getAttribute("data-id"), isVisible = n.getAttribute("data-n") === "1"; if (!id) return; const r = await fetch(`/api/admin/testimonials/${id}/visibility`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({ isVisible }) }); if (!r.ok) showAlert(await E(r)); else void loadTestimonials(); }
     if (a === "td") { const id = n.getAttribute("data-id"); if (!id || !await showConfirm("Удалить отзыв?")) return; const r = await fetch(`/api/admin/testimonials/${id}`, { method: "DELETE", headers: H() }); if (!r.ok) showAlert(await E(r)); else void loadTestimonials(); }
-    if (a === "te") { const encoded = n.getAttribute("data-json"); if (!encoded) return; try { openTe(JSON.parse(decodeURIComponent(encoded))); } catch {} }
+    if (a === "te") { const encoded = n.getAttribute("data-json"); if (!encoded) return; try { openTe(JSON.parse(decodeURIComponent(encoded))); } catch { } }
     if (a === "toggle-score") {
       const id = n.getAttribute("data-id");
       if (!id) return;
@@ -1354,14 +1354,14 @@
       setFormValue(form, "page", getInitial("s_page", "page") || "1");
     }
   }
-    if (tab === "users") {
-      const form = document.getElementById("users-filters");
-      if (form instanceof HTMLFormElement) {
-        setFormValue(form, "q", getInitial("u_q", "q") || "");
-        setFormValue(form, "plan", getInitial("u_plan", "plan") || "all");
-        setFormValue(form, "sort", getInitial("u_sort", "sort") || "created_desc");
-        setFormValue(form, "page", getInitial("u_page", "page") || "1");
-      }
+  if (tab === "users") {
+    const form = document.getElementById("users-filters");
+    if (form instanceof HTMLFormElement) {
+      setFormValue(form, "q", getInitial("u_q", "q") || "");
+      setFormValue(form, "plan", getInitial("u_plan", "plan") || "all");
+      setFormValue(form, "sort", getInitial("u_sort", "sort") || "created_desc");
+      setFormValue(form, "page", getInitial("u_page", "page") || "1");
+    }
   }
   if (tab === "cards") {
     const form = document.getElementById("cards-filters");

@@ -272,6 +272,7 @@ async function getCurrentUser(req) {
       emailVerified: true,
       firstName: true,
       lastName: true,
+      city: true,
       username: true,
       telegramUsername: true,
       telegramChatId: true,
@@ -429,6 +430,7 @@ router.get(
         emailVerified: Boolean(user.emailVerified),
         firstName: user.firstName,
         lastName: user.lastName,
+        city: user.city || "",
         username: user.username,
         displayName: normalizeDisplayName(user.displayName, user.firstName),
         plan: user.plan,
@@ -1103,11 +1105,20 @@ router.patch(
       .replace(/^@+/, "")
       .trim()
       .slice(0, 120);
+    const city = String(req.body.city || "")
+      .trim()
+      .slice(0, 120);
+
+    if (!city) {
+      res.status(400).json({ error: "Город обязателен" });
+      return;
+    }
 
     const updated = await prisma.user.update({
       where: { id: user.id },
       data: {
         displayName,
+        city,
         telegramUsername: telegramUsername || null,
         notificationsEnabled,
         showInDirectory,
@@ -1118,6 +1129,7 @@ router.patch(
       ok: true,
       user: {
         displayName: updated.displayName,
+        city: updated.city || "",
         notificationsEnabled: updated.notificationsEnabled,
         showInDirectory: updated.showInDirectory,
       },
