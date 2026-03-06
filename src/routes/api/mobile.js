@@ -99,7 +99,18 @@ function normalizeSource(value) {
     .toLowerCase();
   if (!source) return "direct";
   const aliased = SOURCE_ALIASES[source] || source;
-  return SOURCE_SET.has(aliased) ? aliased : "direct";
+  if (SOURCE_SET.has(aliased)) return aliased;
+
+  // DB can contain verbose/legacy source labels after manual edits/imports.
+  if (aliased.includes("nfc")) return "nfc";
+  if (aliased.includes("qr")) return "qr";
+  if (aliased.includes("telegram") || aliased.includes("share") || aliased.includes("ref")) return "share";
+  if (aliased.includes("widget")) return "widget";
+  if (aliased.includes("direct") || aliased.includes("link") || aliased.includes("web") || aliased.includes("site")) {
+    return "direct";
+  }
+
+  return "direct";
 }
 
 function normalizeCityKey(value) {

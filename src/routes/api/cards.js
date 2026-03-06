@@ -167,6 +167,13 @@ function normalizeSource(value) {
   if (raw === "nfc_scan" || raw === "nfc_write") return "nfc";
   if (raw === "telegram") return "share";
   if (TRACKED_SOURCES.has(raw)) return raw;
+
+  if (raw.includes("nfc")) return "nfc";
+  if (raw.includes("qr")) return "qr";
+  if (raw.includes("telegram") || raw.includes("share") || raw.includes("ref")) return "share";
+  if (raw.includes("widget")) return "widget";
+  if (raw.includes("direct") || raw.includes("link") || raw.includes("web") || raw.includes("site")) return "direct";
+
   return "direct";
 }
 
