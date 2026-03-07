@@ -4,6 +4,7 @@
   const telegramBotUsername = String(root.getAttribute("data-telegram-bot-username") || "")
     .replace(/^@+/, "")
     .trim();
+  const reactivationWindowDays = Math.max(1, Number(root.getAttribute("data-reactivation-window-days") || 30));
 
   const $ = (s) => document.querySelector(s);
   const $$ = (s) => Array.from(document.querySelectorAll(s));
@@ -1809,21 +1810,25 @@
   });
 
   el.stDeact?.addEventListener("click", () => {
-    showModal("Деактивировать аккаунт?", "Все твои UNQ станут недоступны", "Подтвердить", async () => {
-      try {
-        await api("/api/profile/deactivate", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({}),
-        });
-        location.href = "/";
-      } catch (error) {
-        if (el.stStatus) {
-          el.stStatus.textContent = `${error.message}`;
-          el.stStatus.className = "text-sm text-red-700";
+    showModal(
+      "Деактивировать аккаунт?",
+      `Все твои UNQ станут недоступны. Восстановление будет доступно ${reactivationWindowDays} дней, затем аккаунт удалится окончательно.`,
+      "Подтвердить",
+      async () => {
+        try {
+          await api("/api/profile/deactivate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({}),
+          });
+          location.href = "/login";
+        } catch (error) {
+          if (el.stStatus) {
+            el.stStatus.textContent = `${error.message}`;
+            el.stStatus.className = "text-sm text-red-700";
+          }
         }
-      }
-    });
+      });
   });
 
   el.logout?.addEventListener("click", async () => {

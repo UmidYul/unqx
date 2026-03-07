@@ -238,6 +238,7 @@ function createApp() {
       req.path === "/verify-email" ||
       req.path === "/forgot-password" ||
       req.path === "/reset-password" ||
+      req.path === "/reactivate-account" ||
       req.path.startsWith("/api/profile") ||
       req.path.startsWith("/api/auth")
     ) {

@@ -60,6 +60,16 @@ function codeBlock(code) {
   return `<div style="margin:14px 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size:28px; letter-spacing:2px; font-weight:700;">${digits}</div>`;
 }
 
+function formatDateTime(value) {
+  try {
+    const date = value instanceof Date ? value : new Date(value);
+    if (Number.isNaN(date.getTime())) return "скоро";
+    return date.toLocaleString("ru-RU");
+  } catch {
+    return "скоро";
+  }
+}
+
 async function sendEmailVerificationOtp({ email, firstName, code }) {
   const body = `
     <p>Привет, ${escapeHtml(firstName || "друг")}!</p>
@@ -120,9 +130,86 @@ async function sendChangeEmailOtp({ email, firstName, code, newEmail }) {
   });
 }
 
+async function sendAccountDeactivatedEmail({ email, firstName, restoreUntil }) {
+  const untilLabel = formatDateTime(restoreUntil);
+  const body = `
+    <p>Привет, ${escapeHtml(firstName || "друг")}!</p>
+    <p>Твой аккаунт UNQX деактивирован по твоему запросу.</p>
+    <p>Восстановить доступ можно до <strong>${escapeHtml(untilLabel)}</strong>.</p>
+    <p>Если захочешь вернуться — просто войди на UNQX и запусти восстановление аккаунта.</p>
+  `;
+  await sendEmail({
+    to: email,
+    subject: "Аккаунт UNQX деактивирован",
+    html: layout({ title: "Аккаунт деактивирован", body }),
+  });
+}
+
+async function sendAccountReactivationOtp({ email, firstName, code, restoreUntil }) {
+  const untilLabel = formatDateTime(restoreUntil);
+  const body = `
+    <p>Привет, ${escapeHtml(firstName || "друг")}!</p>
+    <p>Код для восстановления аккаунта:</p>
+    ${codeBlock(code)}
+    <p>Код действителен ограниченное время.</p>
+    <p>Аккаунт можно восстановить до <strong>${escapeHtml(untilLabel)}</strong>.</p>
+  `;
+  await sendEmail({
+    to: email,
+    subject: `Код восстановления UNQX: ${code}`,
+    html: layout({ title: "Восстановление аккаунта", body }),
+  });
+}
+
+async function sendAccountReactivationReminderEmail({ email, firstName, restoreUntil, hoursLeft }) {
+  const untilLabel = formatDateTime(restoreUntil);
+  const body = `
+    <p>Привет, ${escapeHtml(firstName || "друг")}!</p>
+    <p>Твой аккаунт UNQX всё ещё деактивирован.</p>
+    <p>До окончательного удаления осталось примерно <strong>${escapeHtml(String(hoursLeft || ""))} ч</strong>.</p>
+    <p>Восстановление доступно до <strong>${escapeHtml(untilLabel)}</strong>.</p>
+  `;
+  await sendEmail({
+    to: email,
+    subject: "Напоминание: восстанови аккаунт UNQX",
+    html: layout({ title: "Аккаунт скоро будет удалён", body }),
+  });
+}
+
+async function sendAccountReactivatedEmail({ email, firstName }) {
+  const body = `
+    <p>Привет, ${escapeHtml(firstName || "друг")}!</p>
+    <p>Твой аккаунт UNQX успешно восстановлен и снова активен.</p>
+    <p>Если это были не ты — срочно смени пароль.</p>
+  `;
+  await sendEmail({
+    to: email,
+    subject: "Аккаунт UNQX восстановлен",
+    html: layout({ title: "Доступ восстановлен", body }),
+  });
+}
+
+async function sendAccountDeletedEmail({ email, firstName }) {
+  const body = `
+    <p>Привет, ${escapeHtml(firstName || "друг")}!</p>
+    <p>Срок хранения деактивированного аккаунта истёк, аккаунт UNQX окончательно удалён.</p>
+    <p>Для использования сервиса потребуется новая регистрация.</p>
+  `;
+  await sendEmail({
+    to: email,
+    subject: "Аккаунт UNQX удалён",
+    html: layout({ title: "Аккаунт удалён", body }),
+  });
+}
+
 module.exports = {
   sendEmailVerificationOtp,
   sendPasswordResetOtp,
   sendWelcomeEmail,
   sendChangeEmailOtp,
+  sendAccountDeactivatedEmail,
+  sendAccountReactivationOtp,
+  sendAccountReactivationReminderEmail,
+  sendAccountReactivatedEmail,
+  sendAccountDeletedEmail,
 };

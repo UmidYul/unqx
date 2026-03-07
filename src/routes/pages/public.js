@@ -772,6 +772,23 @@ router.get(
 );
 
 router.get(
+  "/reactivate-account",
+  asyncHandler(async (req, res) => {
+    if (getUserSession(req)?.userId) {
+      res.redirect("/profile");
+      return;
+    }
+    res.render("public/reactivate-account", {
+      title: "Восстановление аккаунта | UNQX",
+      description: "Восстанови деактивированный аккаунт UNQX",
+      image: defaultSocialImage,
+      email: typeof req.query.email === "string" ? req.query.email : "",
+      adminSession: getAdminSession(req),
+    });
+  }),
+);
+
+router.get(
   "/ref/:refCode",
   asyncHandler(async (req, res) => {
     const refCode = normalizeRefCode(req.params.refCode);
@@ -839,7 +856,7 @@ router.get(
     const sessionUser = getUserSession(req);
     const user = sessionUser?.userId ? await findUserByTelegramIdWithLegacyFallback(sessionUser.userId) : null;
 
-    if (!user || user.status === "blocked" || user.status === "deactivated") {
+    if (!user || user.status === "blocked" || user.status === "deactivated" || user.status === "deleted") {
       // Clear stale/invalid auth to avoid /profile <-> /login redirect loops.
       await logoutUserSession(req);
       res.redirect("/login");
@@ -850,6 +867,7 @@ router.get(
       title: "Мой профиль | UNQX",
       description: "Личный кабинет UNQX: управляй визиткой, UNQ, аналитикой, заявками и настройками профиля.",
       image: defaultSocialImage,
+      reactivationWindowDays: Number(env.ACCOUNT_REACTIVATION_WINDOW_DAYS || 30),
       adminSession: getAdminSession(req),
     });
   }),

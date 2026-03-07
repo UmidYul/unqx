@@ -9,6 +9,7 @@
 </head>
 
 <body class="antialiased" data-page="profile-page" data-telegram-bot-username="<%= telegramBotUsername || '' %>"
+  data-reactivation-window-days="<%= Number.isFinite(Number(reactivationWindowDays)) ? Number(reactivationWindowDays) : 30 %>"
   data-bwignore="true" data-lpignore="true" data-1p-ignore="true">
   <main class="min-h-screen bg-neutral-50 px-3 py-4 sm:px-4 sm:py-6 md:px-6">
     <div class="mx-auto mb-3 w-full max-w-6xl sm:mb-4">

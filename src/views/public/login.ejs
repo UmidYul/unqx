@@ -6,9 +6,10 @@
     description : undefined, noindex: true }) %>
 </head>
 
-<body class="antialiased bg-neutral-50">
+<body class="antialiased bg-neutral-50" data-bwignore="true" data-lpignore="true" data-1p-ignore="true">
   <main class="mx-auto flex min-h-screen w-full max-w-md items-center px-4 py-10">
-    <form id="login-form" class="w-full rounded-2xl border border-neutral-200 bg-white p-5">
+    <form id="login-form" class="w-full rounded-2xl border border-neutral-200 bg-white p-5" data-bwignore="true"
+      data-lpignore="true" data-1p-ignore="true" autocomplete="off">
       <a href="/"
         class="inline-flex items-center gap-2 rounded-lg border border-neutral-200 bg-neutral-50 px-2.5 py-1.5 text-sm font-semibold text-neutral-700">
         <img src="/brand/logo.PNG" alt="UNQX" class="h-6 w-6 rounded-md border border-neutral-200 object-cover" />
@@ -48,6 +49,8 @@
     const errorNode = document.getElementById("login-error");
     const loginErrorByCode = {
       ACCOUNT_DISABLED: "Аккаунт отключен. Обратитесь в поддержку.",
+      ACCOUNT_DEACTIVATED: "Аккаунт деактивирован. Перейди к восстановлению.",
+      ACCOUNT_DELETED: "Аккаунт удален. Нужна новая регистрация.",
       LOCKED: "Слишком много попыток. Попробуйте позже.",
       UNVERIFIED: "Сначала подтвердите email.",
     };
@@ -76,6 +79,11 @@
       });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) {
+        if (payload?.code === "ACCOUNT_DEACTIVATED") {
+          const reactivationEmail = String(payload?.email || email || "").trim();
+          window.location.href = `/reactivate-account?email=${encodeURIComponent(reactivationEmail)}`;
+          return;
+        }
         errorNode.textContent = resolveLoginError(payload);
         errorNode.classList.remove("hidden");
         return;

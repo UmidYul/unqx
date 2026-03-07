@@ -6,7 +6,7 @@ const { env } = require("../../config/env");
 const { asyncHandler } = require("../../middleware/async");
 const { requireCsrfToken, ensureCsrfToken } = require("../../middleware/csrf");
 const { requireSameOrigin } = require("../../middleware/same-origin");
-const { getUserSession, loginUserSession } = require("../../middleware/auth");
+const { getUserSession, loginUserSession, logoutUserSession } = require("../../middleware/auth");
 const {
   authForgotPasswordRateLimit,
   authLoginRateLimit,
@@ -16,6 +16,8 @@ const {
 const { getEffectivePlan, normalizeDisplayName } = require("../../services/profile");
 const {
   sendChangeEmailOtp,
+  sendAccountReactivationOtp,
+  sendAccountReactivatedEmail,
   sendEmailVerificationOtp,
   sendPasswordResetOtp,
   sendWelcomeEmail,
@@ -30,6 +32,8 @@ const RESET_OTP_TTL_HOURS = 1;
 const PASSWORD_ROUNDS = 12;
 const LOGIN_LOCK_MINUTES = 15;
 const MAX_OTP_ATTEMPTS = 5;
+const ACCOUNT_REACTIVATION_WINDOW_DAYS = Number(env.ACCOUNT_REACTIVATION_WINDOW_DAYS || 30);
+const ACCOUNT_REACTIVATION_OTP_TTL_MINUTES = Number(env.ACCOUNT_REACTIVATION_OTP_TTL_MINUTES || 10);
 
 const USER_AUTH_SELECT = {
   id: true,
@@ -50,6 +54,12 @@ const USER_AUTH_SELECT = {
   planUpgradedAt: true,
   status: true,
   pendingEmail: true,
+  deactivatedAt: true,
+  reactivationDeadlineAt: true,
+  reactivationOtpCode: true,
+  reactivationOtpExpiresAt: true,
+  reactivationOtpSentAt: true,
+  deletedAt: true,
 };
 
 function normalizeEmail(value) {
@@ -111,6 +121,31 @@ async function setPasswordResetOtp(userId) {
     data: {
       resetPasswordToken: codeHash,
       resetPasswordExpiresAt: expiresAt,
+    },
+  });
+  return { code, expiresAt };
+}
+
+function resolveReactivationDeadline(user) {
+  if (user?.reactivationDeadlineAt) {
+    return new Date(user.reactivationDeadlineAt);
+  }
+  if (user?.deactivatedAt) {
+    return new Date(new Date(user.deactivatedAt).getTime() + ACCOUNT_REACTIVATION_WINDOW_DAYS * 24 * 60 * 60 * 1000);
+  }
+  return new Date(Date.now() + ACCOUNT_REACTIVATION_WINDOW_DAYS * 24 * 60 * 60 * 1000);
+}
+
+async function setReactivationOtp(userId) {
+  const code = generateOtp();
+  const codeHash = await bcrypt.hash(code, PASSWORD_ROUNDS);
+  const expiresAt = new Date(Date.now() + ACCOUNT_REACTIVATION_OTP_TTL_MINUTES * 60 * 1000);
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      reactivationOtpCode: codeHash,
+      reactivationOtpExpiresAt: expiresAt,
+      reactivationOtpSentAt: new Date(),
     },
   });
   return { code, expiresAt };
@@ -408,10 +443,36 @@ router.post(
       },
     });
 
-    if (user.status === "blocked" || user.status === "deactivated") {
+    if (user.status === "blocked") {
       res.status(403).json({
         error: "Аккаунт отключен. Обратитесь в поддержку.",
         code: "ACCOUNT_DISABLED",
+      });
+      return;
+    }
+
+    if (user.status === "deleted") {
+      res.status(410).json({
+        error: "Аккаунт удалён. Нужна новая регистрация.",
+        code: "ACCOUNT_DELETED",
+      });
+      return;
+    }
+
+    if (user.status === "deactivated") {
+      const restoreUntil = resolveReactivationDeadline(user);
+      if (restoreUntil.getTime() <= Date.now()) {
+        res.status(410).json({
+          error: "Срок восстановления истёк. Нужна новая регистрация.",
+          code: "ACCOUNT_DELETED",
+        });
+        return;
+      }
+      res.status(403).json({
+        error: "Аккаунт деактивирован. Восстанови его по коду из email.",
+        code: "ACCOUNT_DEACTIVATED",
+        email: user.email,
+        restoreUntil: restoreUntil.toISOString(),
       });
       return;
     }
@@ -423,6 +484,120 @@ router.post(
 
     await loginUserSession(req, userToSessionPayload(user), { rememberMe });
     res.json({ ok: true, redirectTo: "/profile", user: userToClientPayload(user) });
+  }),
+);
+
+router.post(
+  "/reactivate/request",
+  authSendOtpRateLimit,
+  requireSameOrigin,
+  requireCsrfToken,
+  asyncHandler(async (req, res) => {
+    const email = normalizeEmail(req.body?.email);
+    if (!email) {
+      res.status(400).json({ error: "Email обязателен", code: "VALIDATION_ERROR" });
+      return;
+    }
+
+    const user = await prisma.user.findFirst({
+      where: { email },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        status: true,
+        deactivatedAt: true,
+        reactivationDeadlineAt: true,
+      },
+    });
+
+    if (!user || user.status !== "deactivated") {
+      res.status(400).json({ error: "Аккаунт недоступен для восстановления", code: "ACCOUNT_NOT_REACTIVATABLE" });
+      return;
+    }
+
+    const restoreUntil = resolveReactivationDeadline(user);
+    if (restoreUntil.getTime() <= Date.now()) {
+      res.status(410).json({ error: "Срок восстановления истёк", code: "ACCOUNT_DELETED" });
+      return;
+    }
+
+    const { code } = await setReactivationOtp(user.id);
+    await sendAccountReactivationOtp({
+      email: user.email,
+      firstName: user.firstName,
+      code,
+      restoreUntil,
+    });
+
+    res.json({ ok: true, email: user.email, restoreUntil: restoreUntil.toISOString() });
+  }),
+);
+
+router.post(
+  "/reactivate/confirm",
+  requireSameOrigin,
+  requireCsrfToken,
+  asyncHandler(async (req, res) => {
+    const email = normalizeEmail(req.body?.email);
+    const code = String(req.body?.code || "").replace(/\D/g, "").slice(0, 6);
+    if (!email || code.length !== OTP_LENGTH) {
+      res.status(400).json({ error: "Проверь email и код", code: "VALIDATION_ERROR" });
+      return;
+    }
+
+    const user = await prisma.user.findFirst({
+      where: { email },
+      select: USER_AUTH_SELECT,
+    });
+
+    if (!user || user.status !== "deactivated") {
+      res.status(400).json({ error: "Аккаунт недоступен для восстановления", code: "ACCOUNT_NOT_REACTIVATABLE" });
+      return;
+    }
+
+    const restoreUntil = resolveReactivationDeadline(user);
+    if (restoreUntil.getTime() <= Date.now()) {
+      res.status(410).json({ error: "Срок восстановления истёк", code: "ACCOUNT_DELETED" });
+      return;
+    }
+
+    if (!user.reactivationOtpCode || !user.reactivationOtpExpiresAt || new Date(user.reactivationOtpExpiresAt).getTime() < Date.now()) {
+      res.status(400).json({ error: "Код недействителен или устарел", code: "REACTIVATION_OTP_INVALID" });
+      return;
+    }
+
+    const validCode = await bcrypt.compare(code, user.reactivationOtpCode);
+    if (!validCode) {
+      res.status(400).json({ error: "Неверный код", code: "REACTIVATION_OTP_INVALID" });
+      return;
+    }
+
+    const updated = await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        status: "active",
+        deactivatedAt: null,
+        reactivationDeadlineAt: null,
+        reactivationOtpCode: null,
+        reactivationOtpExpiresAt: null,
+        reactivationOtpSentAt: null,
+        deletionReminder7SentAt: null,
+        deletionReminder1SentAt: null,
+        deletedAt: null,
+        loginAttempts: 0,
+        lockedUntil: null,
+        lastLoginAt: new Date(),
+      },
+      select: USER_AUTH_SELECT,
+    });
+
+    await loginUserSession(req, userToSessionPayload(updated), { rememberMe: true });
+    void sendAccountReactivatedEmail({ email: updated.email, firstName: updated.firstName }).catch((error) => {
+      console.error("[express-app] failed to send account reactivated email", error);
+    });
+
+    res.json({ ok: true, redirectTo: "/profile", user: userToClientPayload(updated) });
   }),
 );
 
@@ -694,6 +869,12 @@ router.get(
 
     if (!user) {
       res.json({ authenticated: false, csrfToken });
+      return;
+    }
+
+    if (user.status !== "active") {
+      await logoutUserSession(req);
+      res.json({ authenticated: false, csrfToken, accountStatus: user.status });
       return;
     }
 

@@ -140,6 +140,10 @@ const schema = z.object({
   DISABLE_HTTPS_ENFORCEMENT: z.string().optional(),
   UNVERIFIED_ACCOUNT_CLEANUP_ENABLED: z.string().optional(),
   UNVERIFIED_ACCOUNT_TTL_HOURS: z.coerce.number().int().positive().max(24 * 365).default(72),
+  ACCOUNT_REACTIVATION_WINDOW_DAYS: z.coerce.number().int().positive().max(365).default(30),
+  ACCOUNT_REACTIVATION_OTP_TTL_MINUTES: z.coerce.number().int().positive().max(60 * 24).default(10),
+  ACCOUNT_REACTIVATION_REMINDER_DAYS_BEFORE: z.coerce.number().int().positive().max(180).default(7),
+  ACCOUNT_REACTIVATION_LAST_REMINDER_HOURS: z.coerce.number().int().positive().max(24 * 30).default(24),
 });
 
 const parsed = schema.parse({
@@ -176,6 +180,10 @@ const parsed = schema.parse({
   DISABLE_HTTPS_ENFORCEMENT: process.env.DISABLE_HTTPS_ENFORCEMENT,
   UNVERIFIED_ACCOUNT_CLEANUP_ENABLED: process.env.UNVERIFIED_ACCOUNT_CLEANUP_ENABLED,
   UNVERIFIED_ACCOUNT_TTL_HOURS: process.env.UNVERIFIED_ACCOUNT_TTL_HOURS,
+  ACCOUNT_REACTIVATION_WINDOW_DAYS: process.env.ACCOUNT_REACTIVATION_WINDOW_DAYS,
+  ACCOUNT_REACTIVATION_OTP_TTL_MINUTES: process.env.ACCOUNT_REACTIVATION_OTP_TTL_MINUTES,
+  ACCOUNT_REACTIVATION_REMINDER_DAYS_BEFORE: process.env.ACCOUNT_REACTIVATION_REMINDER_DAYS_BEFORE,
+  ACCOUNT_REACTIVATION_LAST_REMINDER_HOURS: process.env.ACCOUNT_REACTIVATION_LAST_REMINDER_HOURS,
 });
 
 const ROOT_DIR = parsed.ROOT_DIR ? path.resolve(parsed.ROOT_DIR) : rootDirDefault;

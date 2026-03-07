@@ -4,7 +4,7 @@ const multer = require("multer");
 const { prisma } = require("../../db/prisma");
 const { env } = require("../../config/env");
 const { asyncHandler } = require("../../middleware/async");
-const { requireUserApi, getUserSession } = require("../../middleware/auth");
+const { requireUserApi, getUserSession, logoutUserSession } = require("../../middleware/auth");
 const { requireSameOrigin } = require("../../middleware/same-origin");
 const { requireCsrfToken } = require("../../middleware/csrf");
 const {
@@ -25,6 +25,7 @@ const { isSupportedAvatarBuffer, saveAvatarFromBuffer, deleteAvatarByPublicPath 
 const { getProfileScoreByUserId, recalculateAndRefreshPercentiles } = require("../../services/unq-score");
 const { getPricingSettings } = require("../../services/pricing-settings");
 const { sendVerificationRequestToAdmin } = require("../../services/telegram");
+const { sendAccountDeactivatedEmail } = require("../../services/email");
 const { resolveUzbekistanCity } = require("../../constants/uzbekistan-cities");
 
 const router = express.Router();
@@ -35,6 +36,7 @@ const upload = multer({
 const ALLOWED_MIME = new Set(["image/jpeg", "image/png", "image/webp"]);
 const CARD_THEMES = new Set(["default_dark", "arctic", "linen", "marble", "forest"]);
 const DIRECTORY_SECTORS = new Set(["design", "sales", "marketing", "it", "other"]);
+const ACCOUNT_REACTIVATION_WINDOW_DAYS = Number(env.ACCOUNT_REACTIVATION_WINDOW_DAYS || 30);
 const PROFILE_CARD_BASE_COLUMNS = [
   "owner_id",
   "name",
@@ -303,7 +305,7 @@ function assertUserActive(user, res) {
     res.status(401).json({ error: "Unauthorized", code: "AUTH_REQUIRED" });
     return false;
   }
-  if (user.status === "blocked" || user.status === "deactivated") {
+  if (user.status === "blocked" || user.status === "deactivated" || user.status === "deleted") {
     res.status(403).json({ error: "Account is disabled", code: "ACCOUNT_DISABLED" });
     return false;
   }
@@ -1263,10 +1265,22 @@ router.post(
       return;
     }
 
+    const deadline = new Date(Date.now() + ACCOUNT_REACTIVATION_WINDOW_DAYS * 24 * 60 * 60 * 1000);
+
     await prisma.$transaction([
       prisma.user.update({
         where: { id: user.id },
-        data: { status: "deactivated" },
+        data: {
+          status: "deactivated",
+          deactivatedAt: new Date(),
+          reactivationDeadlineAt: deadline,
+          reactivationOtpCode: null,
+          reactivationOtpExpiresAt: null,
+          reactivationOtpSentAt: null,
+          deletionReminder7SentAt: null,
+          deletionReminder1SentAt: null,
+          deletedAt: null,
+        },
       }),
       prisma.slug.updateMany({
         where: { ownerId: user.id },
@@ -1274,8 +1288,19 @@ router.post(
       }),
     ]);
     await safeRecalculateScore(user.id);
+    await logoutUserSession(req);
 
-    res.json({ ok: true });
+    if (user.email) {
+      void sendAccountDeactivatedEmail({
+        email: user.email,
+        firstName: user.firstName,
+        restoreUntil: deadline,
+      }).catch((error) => {
+        console.error("[express-app] failed to send deactivation email", error);
+      });
+    }
+
+    res.json({ ok: true, restoreUntil: deadline.toISOString(), reactivationWindowDays: ACCOUNT_REACTIVATION_WINDOW_DAYS });
   }),
 );
 

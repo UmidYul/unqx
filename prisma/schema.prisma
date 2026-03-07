@@ -45,6 +45,7 @@ enum UserStatus {
   active
   blocked
   deactivated
+  deleted
 }
 
 enum SlugStatus {
@@ -193,6 +194,14 @@ model User {
   welcomeDismissed       Boolean               @default(false) @map("welcome_dismissed")
   notificationsEnabled   Boolean               @default(true) @map("notifications_enabled")
   status                 UserStatus            @default(active)
+  deactivatedAt          DateTime?             @map("deactivated_at")
+  reactivationDeadlineAt DateTime?             @map("reactivation_deadline_at")
+  reactivationOtpCode    String?               @map("reactivation_otp_code")
+  reactivationOtpExpiresAt DateTime?           @map("reactivation_otp_expires_at")
+  reactivationOtpSentAt  DateTime?             @map("reactivation_otp_sent_at")
+  deletionReminder7SentAt DateTime?            @map("deletion_reminder_7_sent_at")
+  deletionReminder1SentAt DateTime?            @map("deletion_reminder_1_sent_at")
+  deletedAt              DateTime?             @map("deleted_at")
   isVerified             Boolean               @default(false) @map("is_verified")
   verifiedCompany        String?               @map("verified_company") @db.VarChar(160)
   verifiedAt             DateTime?             @map("verified_at")
@@ -215,6 +224,7 @@ model User {
 
   @@index([plan, planPurchasedAt])
   @@index([status])
+  @@index([status, reactivationDeadlineAt])
   @@map("users")
 }
 

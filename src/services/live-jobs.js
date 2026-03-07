@@ -6,6 +6,10 @@ const { processDropsSchedule } = require("./drops");
 const { detectSuspiciousActivity } = require("./leaderboard");
 const { markReferralPaidByReferredUserId } = require("./referrals");
 const { ensureDailyRecalculation } = require("./unq-score");
+const {
+  sendAccountDeletedEmail,
+  sendAccountReactivationReminderEmail,
+} = require("./email");
 
 const LOOP_MS = 60 * 1000;
 
@@ -86,12 +90,181 @@ async function cleanupStaleUnverifiedAccounts() {
   }
 }
 
+async function finalizeDeletedAccount(user) {
+  const userId = String(user.id || "");
+  if (!userId) return;
+
+  const existingEmail = user.email ? String(user.email) : null;
+  const firstName = user.firstName ? String(user.firstName) : "";
+
+  await prisma.$transaction(async (tx) => {
+    await tx.slug.updateMany({
+      where: { ownerId: userId },
+      data: {
+        ownerId: null,
+        status: "free",
+        isPrimary: false,
+        pauseMessage: null,
+        pendingExpiresAt: null,
+        approvedAt: null,
+        requestedAt: null,
+        activatedAt: null,
+      },
+    });
+
+    await tx.profileCard.deleteMany({ where: { ownerId: userId } });
+
+    await tx.user.update({
+      where: { id: userId },
+      data: {
+        status: "deleted",
+        deletedAt: new Date(),
+        deactivatedAt: null,
+        reactivationDeadlineAt: null,
+        reactivationOtpCode: null,
+        reactivationOtpExpiresAt: null,
+        reactivationOtpSentAt: null,
+        deletionReminder7SentAt: null,
+        deletionReminder1SentAt: null,
+        email: null,
+        pendingEmail: null,
+        passwordHash: null,
+        otpCode: null,
+        otpExpiresAt: null,
+        otpAttempts: 0,
+        resetPasswordToken: null,
+        resetPasswordExpiresAt: null,
+        lockedUntil: null,
+        loginAttempts: 0,
+        firstName: "Deleted User",
+        lastName: null,
+        city: null,
+        username: null,
+        telegramUsername: null,
+        telegramChatId: null,
+        displayName: null,
+        notificationsEnabled: false,
+        showInDirectory: false,
+        isVerified: false,
+        verifiedCompany: null,
+        verifiedAt: null,
+        directorySector: null,
+        plan: "none",
+        planPurchasedAt: null,
+        planUpgradedAt: null,
+      },
+    });
+  });
+
+  await prisma.$executeRawUnsafe(
+    `
+    DELETE FROM user_sessions
+    WHERE (sess::jsonb #>> '{user,userId}') = $1
+    `,
+    userId,
+  );
+
+  if (existingEmail) {
+    try {
+      await sendAccountDeletedEmail({ email: existingEmail, firstName });
+    } catch (error) {
+      console.error("[express-app] failed to send account deleted email", error);
+    }
+  }
+}
+
+async function processDeactivatedAccountLifecycle() {
+  const now = new Date();
+  const reminderHours = Number(env.ACCOUNT_REACTIVATION_REMINDER_DAYS_BEFORE || 7) * 24;
+  const lastReminderHours = Number(env.ACCOUNT_REACTIVATION_LAST_REMINDER_HOURS || 24);
+
+  const users = await prisma.user.findMany({
+    where: {
+      status: "deactivated",
+    },
+    select: {
+      id: true,
+      email: true,
+      firstName: true,
+      deactivatedAt: true,
+      reactivationDeadlineAt: true,
+      deletionReminder7SentAt: true,
+      deletionReminder1SentAt: true,
+    },
+    take: 500,
+  });
+
+  for (const user of users) {
+    let deadline = user.reactivationDeadlineAt ? new Date(user.reactivationDeadlineAt) : null;
+    if (!deadline || Number.isNaN(deadline.getTime())) {
+      const base = user.deactivatedAt ? new Date(user.deactivatedAt) : now;
+      deadline = new Date(base.getTime() + Number(env.ACCOUNT_REACTIVATION_WINDOW_DAYS || 30) * 24 * 60 * 60 * 1000);
+      try {
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { reactivationDeadlineAt: deadline },
+        });
+      } catch (error) {
+        console.error("[express-app] failed to backfill reactivation deadline", { userId: user.id, error });
+        continue;
+      }
+    }
+    const hoursLeft = Math.ceil((deadline.getTime() - now.getTime()) / (60 * 60 * 1000));
+
+    if (hoursLeft <= 0) {
+      try {
+        await finalizeDeletedAccount(user);
+      } catch (error) {
+        console.error("[express-app] failed to finalize deleted account", { userId: user.id, error });
+      }
+      continue;
+    }
+
+    if (!user.email) continue;
+
+    if (hoursLeft <= reminderHours && !user.deletionReminder7SentAt) {
+      try {
+        await sendAccountReactivationReminderEmail({
+          email: user.email,
+          firstName: user.firstName,
+          restoreUntil: deadline,
+          hoursLeft,
+        });
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { deletionReminder7SentAt: new Date() },
+        });
+      } catch (error) {
+        console.error("[express-app] failed to send account reminder (T-7d)", { userId: user.id, error });
+      }
+    }
+
+    if (hoursLeft <= lastReminderHours && !user.deletionReminder1SentAt) {
+      try {
+        await sendAccountReactivationReminderEmail({
+          email: user.email,
+          firstName: user.firstName,
+          restoreUntil: deadline,
+          hoursLeft,
+        });
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { deletionReminder1SentAt: new Date() },
+        });
+      } catch (error) {
+        console.error("[express-app] failed to send account reminder (last day)", { userId: user.id, error });
+      }
+    }
+  }
+}
+
 async function runJobsOnce() {
   await processFlashSalesSchedule();
   await processDropsSchedule();
   await detectSuspiciousActivity();
   await processReferralPaidSync();
   await cleanupStaleUnverifiedAccounts();
+  await processDeactivatedAccountLifecycle();
   await ensureDailyRecalculation();
 }
 
@@ -130,4 +303,5 @@ module.exports = {
   stopLiveJobs,
   runJobsOnce,
   cleanupStaleUnverifiedAccounts,
+  processDeactivatedAccountLifecycle,
 };
