@@ -3,6 +3,46 @@
   const body = document.body;
   if (!body || body.getAttribute("data-page") !== "admin-dashboard") return;
 
+  const autofillIgnoreSelectors = "form,input,textarea,select";
+  const autofillIgnoreAttrs = ["data-bwignore", "data-lpignore", "data-1p-ignore"];
+
+  function markAutofillIgnored(root) {
+    if (!(root instanceof Element) && root !== document) return;
+    const nodes = root === document
+      ? Array.from(document.querySelectorAll(autofillIgnoreSelectors))
+      : [root, ...Array.from(root.querySelectorAll(autofillIgnoreSelectors))];
+
+    nodes.forEach((node) => {
+      if (!(node instanceof Element)) return;
+      autofillIgnoreAttrs.forEach((attr) => {
+        node.setAttribute(attr, "true");
+      });
+      if (node instanceof HTMLInputElement) {
+        if (node.type === "password") {
+          node.setAttribute("autocomplete", "new-password");
+        }
+        if (node.type === "text" && !node.hasAttribute("autocomplete")) {
+          node.setAttribute("autocomplete", "off");
+        }
+      }
+      if ((node instanceof HTMLTextAreaElement || node instanceof HTMLSelectElement) && !node.hasAttribute("autocomplete")) {
+        node.setAttribute("autocomplete", "off");
+      }
+    });
+  }
+
+  markAutofillIgnored(document);
+  const autofillObserver = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      mutation.addedNodes.forEach((added) => {
+        if (added instanceof Element) {
+          markAutofillIgnored(added);
+        }
+      });
+    });
+  });
+  autofillObserver.observe(body, { childList: true, subtree: true });
+
   const tab = body.getAttribute("data-active-tab") || "analytics";
   const base = (body.getAttribute("data-public-base-url") || location.origin).replace(/\/$/, "");
   const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "";
