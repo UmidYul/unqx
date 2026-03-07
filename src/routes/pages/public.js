@@ -5,7 +5,7 @@ const express = require("express");
 const { prisma } = require("../../db/prisma");
 const { env } = require("../../config/env");
 const { asyncHandler } = require("../../middleware/async");
-const { getAdminSession, requireVerifiedUserPage, getUserSession } = require("../../middleware/auth");
+const { getAdminSession, requireVerifiedUserPage, getUserSession, logoutUserSession } = require("../../middleware/auth");
 const { getEffectivePlan } = require("../../services/profile");
 const { absoluteUrl } = require("../../utils/url");
 const { buildLeaderboard, normalizePeriod, getSlugTopBadge, getUserLeaderboardSummary } = require("../../services/leaderboard");
@@ -840,6 +840,8 @@ router.get(
     const user = sessionUser?.userId ? await findUserByTelegramIdWithLegacyFallback(sessionUser.userId) : null;
 
     if (!user || user.status === "blocked" || user.status === "deactivated") {
+      // Clear stale/invalid auth to avoid /profile <-> /login redirect loops.
+      await logoutUserSession(req);
       res.redirect("/login");
       return;
     }
