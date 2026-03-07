@@ -672,9 +672,10 @@ router.post(
 router.get(
   "/me",
   asyncHandler(async (req, res) => {
+    const csrfToken = ensureCsrfToken(req);
     const sessionUser = getUserSession(req);
     if (!sessionUser?.userId) {
-      res.json({ authenticated: false });
+      res.json({ authenticated: false, csrfToken });
       return;
     }
 
@@ -684,13 +685,14 @@ router.get(
     });
 
     if (!user) {
-      res.json({ authenticated: false });
+      res.json({ authenticated: false, csrfToken });
       return;
     }
 
     res.json({
       authenticated: true,
       user: userToClientPayload(user),
+      csrfToken,
     });
   }),
 );

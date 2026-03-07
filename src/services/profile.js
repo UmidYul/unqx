@@ -6,6 +6,7 @@ const BUTTON_TYPES = new Set([
   "tiktok",
   "youtube",
   "website",
+  "card",
   "whatsapp",
   "other",
 ]);

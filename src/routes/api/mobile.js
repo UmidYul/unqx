@@ -1254,6 +1254,7 @@ router.get(
           SELECT
             s.full_slug AS slug,
             s.owner_id AS "ownerId",
+            s.price AS "slugPrice",
             COALESCE(pc.name, u.display_name, u.first_name, 'Unknown') AS name,
             pc.avatar_url AS "avatarUrl",
             COALESCE(u.verified_company, '') AS city,
@@ -1320,6 +1321,7 @@ router.get(
       profile: {
         slug: sanitizeSlug(row.slug),
         slugs: slugs.length ? slugs : [sanitizeSlug(row.slug)],
+        slugPrice: Number.isFinite(Number(row.slugPrice)) ? Number(row.slugPrice) : null,
         name: String(row.name || "Unknown"),
         avatarUrl: row.avatarUrl || null,
         city: String(row.city || ""),

@@ -82,6 +82,7 @@
     tiktok: "TikTok",
     youtube: "YouTube",
     website: "Сайт",
+    card: "Карта",
     whatsapp: "WhatsApp",
     other: "Другое",
   };
@@ -1828,11 +1829,27 @@
   el.logout?.addEventListener("click", async () => {
     el.logout.disabled = true;
     try {
-      await api("/api/auth/logout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
-      });
+      try {
+        await api("/api/auth/logout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({}),
+        });
+      } catch (error) {
+        const isCsrfError = String(error?.message || "").toLowerCase().includes("invalid csrf token");
+        if (!isCsrfError) {
+          throw error;
+        }
+        // Session can rotate after inactivity; refresh token and retry logout once.
+        await api("/api/auth/me", {
+          method: "GET",
+        });
+        await api("/api/auth/logout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({}),
+        });
+      }
       window.dispatchEvent(new CustomEvent("unqx:auth:logout"));
       location.href = "/login";
     } catch (error) {

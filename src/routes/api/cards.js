@@ -152,6 +152,7 @@ const TRACKED_BUTTON_TYPES = new Set([
   "telegram",
   "phone",
   "website",
+  "card",
   "whatsapp",
   "instagram",
   "youtube",

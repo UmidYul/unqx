@@ -243,7 +243,30 @@
   }
 
   function isSupportedButtonHref(value) {
-    return /^(https?:\/\/|mailto:|tel:)/i.test(String(value || "").trim());
+    return /^(https?:\/\/|mailto:|tel:|card:)/i.test(String(value || "").trim());
+  }
+
+  function parseCardDigits(rawValue) {
+    const digits = String(rawValue || "").replace(/\D/g, "");
+    if (digits.length < 12 || digits.length > 19) {
+      return "";
+    }
+    return digits;
+  }
+
+  function detectCardBrand(digits) {
+    const value = String(digits || "");
+    if (!value) return "Карта";
+    if (/^8600\d{12}$/.test(value)) return "Uzcard";
+    if (/^9860\d{12}$/.test(value)) return "Humo";
+    if (/^220[0-4]\d{12}$/.test(value)) return "Mir";
+    if (/^4\d{12}(\d{3})?(\d{3})?$/.test(value)) return "Visa";
+    if (/^(5[1-5]\d{14}|2(?:2[2-9]\d{12}|[3-6]\d{13}|7[01]\d{12}|720\d{12}))$/.test(value)) return "Mastercard";
+    if (/^3[47]\d{13}$/.test(value)) return "American Express";
+    if (/^62\d{14,17}$/.test(value)) return "UnionPay";
+    if (/^(?:2131|1800|35\d{3})\d{11,14}$/.test(value)) return "JCB";
+    if (/^(?:50|5[6-9]|6\d)\d{10,17}$/.test(value)) return "Maestro";
+    return "Карта";
   }
 
   function normalizeButtonUrl(rawUrl, type) {
@@ -276,14 +299,22 @@
     }
 
     if (kind === "telegram") {
-      const normalized = input.replace(/^@+/, "").replace(/^https?:\/\/t\.me\//i, "").trim();
+      const normalized = input
+        .replace(/^@+/, "")
+        .replace(/^(?:https?:\/\/)?(?:www\.)?(?:t(?:elegram)?\.me)\//i, "")
+        .trim();
       return normalized ? `https://t.me/${normalized}` : "";
+    }
+
+    if (kind === "card") {
+      const digits = parseCardDigits(input);
+      return digits ? `card:${digits}` : "";
     }
 
     if (kind === "instagram") {
       const normalized = input
         .replace(/^@+/, "")
-        .replace(/^https?:\/\/(www\.)?instagram\.com\//i, "")
+        .replace(/^(?:https?:\/\/)?(?:www\.|m\.)?instagram\.com\//i, "")
         .replace(/\/+$/, "")
         .trim();
       return normalized ? `https://instagram.com/${normalized}` : "";
@@ -356,7 +387,7 @@
       tariff: plan,
       theme:
         typeof card.theme === "string" &&
-        THEME_KEYS.includes(card.theme)
+          THEME_KEYS.includes(card.theme)
           ? card.theme
           : "default_dark",
       customColor: normalizeHexColor(card.customColor),
@@ -406,6 +437,8 @@
       youtube:
         '<svg class="icon-stroke h-[16px] w-[16px]" viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="5.5" width="19" height="13" rx="3.4"></rect><path d="m10 9.2 5.8 2.8-5.8 2.8z"></path></svg>',
       save: '<svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M8 11l4 4 4-4M4 20h16"></path></svg>',
+      card:
+        '<svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5"></rect><path d="M3 10h18"></path></svg>',
     };
 
     return map[name] || map.arrow;
@@ -425,6 +458,8 @@
         return "youtube";
       case "website":
         return "globe";
+      case "card":
+        return "card";
       case "email":
         return "email";
       case "whatsapp":
@@ -501,8 +536,19 @@
         ? card.buttons
           .map((button, index) => {
             const toneClass = index === 0 ? "is-primary" : "is-secondary";
+            if (button.type === "card") {
+              const cardDigits = parseCardDigits(String(button.url || "").replace(/^card:/i, ""));
+              if (!cardDigits) {
+                return "";
+              }
+              const brand = detectCardBrand(cardDigits);
+              const baseLabel = String(button.label || "").trim() || "Карта";
+              const buttonLabel = baseLabel.includes(brand) ? baseLabel : `${baseLabel} (${brand})`;
+              return `<button type="button" data-track-action data-button-type="card" data-copy-card="${esc(cardDigits)}" class="public-card-button unq-ref-action-btn ${toneClass}">${iconSvg("card")}<span>${esc(buttonLabel)}</span></button>`;
+            }
             return `<a href="${esc(button.url)}" target="_blank" rel="noopener noreferrer" data-track-action data-button-type="${esc(button.type || "other")}" class="public-card-button unq-ref-action-btn ${toneClass}">${iconSvg(classifyButton(button))}<span>${esc(button.label)}</span></a>`;
           })
+          .filter(Boolean)
           .join("")
         : '<p class="unq-ref-empty-buttons">Владелец пока не добавил контактные кнопки.</p>';
     const scoreBlock = score
@@ -610,11 +656,11 @@
           <div class="unq-ref-slug-wrap">
             <div class="unq-ref-slugs">
               ${slugItems
-                .map((value) => {
-                  const active = value === card.slug;
-                  return `<a href="/${encodeURIComponent(value)}" class="unq-ref-slug-chip${active ? " is-active" : ""}"># ${esc(value)}</a>`;
-                })
-                .join("")}
+        .map((value) => {
+          const active = value === card.slug;
+          return `<a href="/${encodeURIComponent(value)}" class="unq-ref-slug-chip${active ? " is-active" : ""}"># ${esc(value)}</a>`;
+        })
+        .join("")}
             </div>
             ${slugPriceLabel ? `<span class="unq-ref-slug-price">${esc(slugPriceLabel)}</span>` : ""}
           </div>

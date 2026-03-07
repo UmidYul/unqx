@@ -49,6 +49,8 @@ const DEFAULT_PRICING = {
     formula: document.getElementById("order-modal-formula"),
     planBasic: document.getElementById("order-modal-plan-basic"),
     planPremium: document.getElementById("order-modal-plan-premium"),
+    planBasicCard: document.getElementById("order-modal-plan-basic-card"),
+    planPremiumCard: document.getElementById("order-modal-plan-premium-card"),
     planBasicPrice: document.getElementById("order-modal-plan-basic-price"),
     planBasicNote: document.getElementById("order-modal-plan-basic-note"),
     planPremiumPrice: document.getElementById("order-modal-plan-premium-price"),
@@ -247,6 +249,35 @@ const DEFAULT_PRICING = {
     return 0;
   }
 
+  function syncPlanVisibilityByUserPlan(userPlan) {
+    const isBasic = userPlan === "basic";
+    const isPremium = userPlan === "premium";
+
+    if (dom.planBasicCard instanceof HTMLElement) {
+      dom.planBasicCard.classList.toggle("hidden", isBasic || isPremium);
+    }
+    if (dom.planPremiumCard instanceof HTMLElement) {
+      dom.planPremiumCard.classList.toggle("hidden", isPremium);
+    }
+    if (dom.planSection instanceof HTMLElement) {
+      const hideWholeSection = isPremium;
+      dom.planSection.classList.toggle("hidden", hideWholeSection);
+    }
+
+    if (isBasic) {
+      dom.planBasic.checked = false;
+      dom.planPremium.checked = true;
+      dom.planBasic.disabled = true;
+      dom.planPremium.disabled = false;
+    }
+    if (isPremium) {
+      dom.planBasic.checked = false;
+      dom.planPremium.checked = true;
+      dom.planBasic.disabled = true;
+      dom.planPremium.disabled = true;
+    }
+  }
+
   async function refreshPricing() {
     try {
       const response = await fetch("/api/cards/pricing", {
@@ -394,10 +425,10 @@ const DEFAULT_PRICING = {
       const flash =
         payload.hasFlashSale && Number(payload.basePrice || 0) > total
           ? {
-              basePrice: Number(payload.basePrice || total),
-              finalPrice: total,
-              discountPercent: Number(payload.discountPercent || 0),
-            }
+            basePrice: Number(payload.basePrice || total),
+            finalPrice: total,
+            discountPercent: Number(payload.discountPercent || 0),
+          }
           : null;
       return { total, flash };
     } catch {
@@ -452,9 +483,7 @@ const DEFAULT_PRICING = {
     if (dom.planActivationNote instanceof HTMLElement) {
       dom.planActivationNote.textContent = "После оплаты мы активируем твой тариф и slug.";
     }
-    if (dom.planSection instanceof HTMLElement) {
-      dom.planSection.classList.toggle("hidden", hasExistingPlan);
-    }
+    syncPlanVisibilityByUserPlan(userPlan);
 
     if (dom.slugPreview instanceof HTMLElement) {
       dom.slugPreview.textContent = `unqx.uz/${slugLabel.replace(" ", "")}`;
@@ -595,9 +624,7 @@ const DEFAULT_PRICING = {
       dom.planBasic.checked = false;
       dom.planPremium.checked = true;
     }
-    if (dom.planSection instanceof HTMLElement) {
-      dom.planSection.classList.toggle("hidden", hasExistingPlan);
-    }
+    syncPlanVisibilityByUserPlan(currentPlan);
     dom.bracelet.checked = state.braceletForced;
     dom.bracelet.disabled = state.braceletForced;
     if (parsed) {

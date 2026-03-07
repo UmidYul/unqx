@@ -300,7 +300,21 @@
   if (actionButtons.length && slug) {
     const clickUrl = `/api/cards/${encodeURIComponent(slug)}/click`;
     actionButtons.forEach((button) => {
-      button.addEventListener("click", () => {
+      button.addEventListener("click", async (event) => {
+        const cardToCopy = String(button.getAttribute("data-copy-card") || "").trim();
+        if (cardToCopy) {
+          event.preventDefault();
+          const copied = await copyText(cardToCopy);
+          const labelNode = button.querySelector("span");
+          const previousText = labelNode instanceof HTMLElement ? labelNode.textContent || "" : "";
+          if (labelNode instanceof HTMLElement) {
+            labelNode.textContent = copied ? "Скопировано" : "Ошибка копирования";
+            window.setTimeout(() => {
+              labelNode.textContent = previousText;
+            }, 1400);
+          }
+          announce(copied ? "Номер карты скопирован" : "Не удалось скопировать номер карты");
+        }
         const buttonType = String(button.getAttribute("data-button-type") || "other").toLowerCase();
         const bodyText = JSON.stringify({ buttonType });
         if (navigator.sendBeacon) {
