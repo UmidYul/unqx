@@ -261,9 +261,7 @@
     document.querySelectorAll("[data-settings-subtab]").forEach((btn) => {
       if (!(btn instanceof HTMLElement)) return;
       const active = btn.getAttribute("data-settings-subtab") === nextSubtab;
-      btn.classList.toggle("bg-neutral-900", active);
-      btn.classList.toggle("text-white", active);
-      btn.classList.toggle("text-neutral-700", !active);
+      btn.classList.toggle("is-active", active);
     });
     state.activeSubtab = nextSubtab;
   }
@@ -314,11 +312,11 @@
         </thead>
         <tbody>
           ${rows
-            .map((row) => {
-              const total = Math.round(cfg.basePrice * row.l * row.d);
-              return `<tr class="border-t border-neutral-100"><td class="px-3 py-2 font-mono">${row.slug}</td><td class="px-3 py-2">×${row.l}</td><td class="px-3 py-2">×${row.d}</td><td class="px-3 py-2 font-semibold">${total.toLocaleString("ru-RU")} сум</td></tr>`;
-            })
-            .join("")}
+        .map((row) => {
+          const total = Math.round(cfg.basePrice * row.l * row.d);
+          return `<tr class="border-t border-neutral-100"><td class="px-3 py-2 font-mono">${row.slug}</td><td class="px-3 py-2">×${row.l}</td><td class="px-3 py-2">×${row.d}</td><td class="px-3 py-2 font-semibold">${total.toLocaleString("ru-RU")} сум</td></tr>`;
+        })
+        .join("")}
         </tbody>
       </table>`;
   }
@@ -365,10 +363,10 @@
     const rows = Array.isArray(payload.items) ? payload.items : [];
     table.innerHTML = rows.length
       ? rows
-          .map(
-            (row) => `<tr class="border-t border-neutral-100"><td class="px-3 py-2">${new Date(row.changedAt).toLocaleString("ru-RU")}</td><td class="px-3 py-2">${esc(row.settingKey)}</td><td class="px-3 py-2"><span class="line-clamp-2">${esc(JSON.stringify(row.oldValue))}</span></td><td class="px-3 py-2"><span class="line-clamp-2">${esc(JSON.stringify(row.newValue))}</span></td><td class="px-3 py-2">${esc(row.changedBy || "admin")}</td></tr>`,
-          )
-          .join("")
+        .map(
+          (row) => `<tr class="border-t border-neutral-100"><td class="px-3 py-2">${new Date(row.changedAt).toLocaleString("ru-RU")}</td><td class="px-3 py-2">${esc(row.settingKey)}</td><td class="px-3 py-2"><span class="line-clamp-2">${esc(JSON.stringify(row.oldValue))}</span></td><td class="px-3 py-2"><span class="line-clamp-2">${esc(JSON.stringify(row.newValue))}</span></td><td class="px-3 py-2">${esc(row.changedBy || "admin")}</td></tr>`,
+        )
+        .join("")
       : `<tr><td colspan="5" class="px-3 py-8 text-center text-neutral-500">Нет данных</td></tr>`;
     const current = Number(payload.page || 1);
     const totalPages = Math.max(1, Number(payload.totalPages || 1));

@@ -662,6 +662,46 @@
   color: #525252;
 }
 
+.settings-subtabs-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.settings-subtab-btn {
+  width: 100%;
+  border: 1px solid transparent;
+  background: #ffffff;
+  color: #374151;
+  transition: background-color 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+}
+
+.settings-subtab-btn:hover {
+  background: #f3f4f6;
+  color: #111827;
+}
+
+.settings-subtab-btn.is-active {
+  border-color: #111827;
+  background: #111827;
+  color: #ffffff;
+}
+
+.settings-subtab-btn:focus-visible {
+  outline: 2px solid #111827;
+  outline-offset: 2px;
+}
+
+@media (max-width: 1023px) {
+  .settings-subtabs-aside {
+    padding: 10px;
+  }
+
+  .settings-subtabs-nav {
+    gap: 4px;
+  }
+}
+
 @media (min-width: 768px) and (max-width: 1024px) {
   .admin-sidebar {
     width: var(--admin-sidebar-width-collapsed);

@@ -975,9 +975,14 @@ router.get(
         orderBy: { requestedAt: "desc" },
       })
       : null;
+    const latestStatus = String(latest?.status || "").toLowerCase();
+    const canSubmitRequest = !user.isVerified && (!latest || latestStatus === "rejected");
+    const canSendCorrection = !user.isVerified && latestStatus === "pending";
     res.json({
       isVerified: Boolean(user.isVerified),
       latestRequest: latest,
+      canSubmitRequest,
+      canSendCorrection,
     });
   }),
 );
@@ -989,6 +994,28 @@ router.post(
     if (!assertUserActive(user, res)) return;
     if (!prisma.verificationRequest) {
       res.status(503).json({ error: "Verification storage unavailable" });
+      return;
+    }
+    if (user.isVerified) {
+      res.status(409).json({ error: "Account is already verified", code: "VERIFICATION_ALREADY_APPROVED" });
+      return;
+    }
+
+    const latest = await prisma.verificationRequest.findFirst({
+      where: { userId: user.id },
+      orderBy: { requestedAt: "desc" },
+    });
+    const latestStatus = String(latest?.status || "").toLowerCase();
+    if (latest && latestStatus !== "rejected") {
+      if (latestStatus === "pending") {
+        res.status(409).json({ error: "Verification request already submitted", code: "VERIFICATION_ALREADY_SUBMITTED" });
+        return;
+      }
+      if (latestStatus === "approved") {
+        res.status(409).json({ error: "Account is already verified", code: "VERIFICATION_ALREADY_APPROVED" });
+        return;
+      }
+      res.status(409).json({ error: "Verification request cannot be submitted now", code: "VERIFICATION_LOCKED" });
       return;
     }
 
@@ -1040,6 +1067,54 @@ router.post(
     });
 
     res.status(201).json({ ok: true, request });
+  }),
+);
+
+router.post(
+  "/verification-request/correction",
+  asyncHandler(async (req, res) => {
+    const user = await getCurrentUser(req);
+    if (!assertUserActive(user, res)) return;
+    if (!prisma.verificationRequest) {
+      res.status(503).json({ error: "Verification storage unavailable" });
+      return;
+    }
+    if (user.isVerified) {
+      res.status(409).json({ error: "Account is already verified", code: "VERIFICATION_ALREADY_APPROVED" });
+      return;
+    }
+
+    const correction = String(req.body?.comment || "").trim().slice(0, 1000);
+    if (correction.length < 5) {
+      res.status(400).json({ error: "Correction text is too short" });
+      return;
+    }
+
+    const pendingRequest = await prisma.verificationRequest.findFirst({
+      where: {
+        userId: user.id,
+        status: "pending",
+      },
+      orderBy: { requestedAt: "desc" },
+    });
+    if (!pendingRequest) {
+      res.status(409).json({ error: "No pending request to correct", code: "VERIFICATION_CORRECTION_NOT_ALLOWED" });
+      return;
+    }
+
+    const correctionLabel = `[Исправление ${new Date().toISOString()}] ${correction}`;
+    const nextComment = pendingRequest.comment
+      ? `${pendingRequest.comment}\n\n${correctionLabel}`
+      : correctionLabel;
+
+    const updated = await prisma.verificationRequest.update({
+      where: { id: pendingRequest.id },
+      data: {
+        comment: nextComment,
+      },
+    });
+
+    res.json({ ok: true, request: updated });
   }),
 );
 

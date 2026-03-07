@@ -24,7 +24,7 @@
         <div class="flex flex-wrap items-start justify-between gap-3 border-b border-neutral-200 pb-4">
           <div>
             <h1 class="text-2xl font-black">Управление платформой</h1>
-            <p class="mt-1 text-sm text-neutral-500">Мониторинг заявок, пользователей и маркетинговых инструментов</p>
+            <p class="mt-1 text-sm text-neutral-600">Мониторинг заявок, пользователей и маркетинговых инструментов</p>
           </div>
           <a href="/admin/dashboard?tab=slugs"
             class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-neutral-900 px-4 py-2 text-center text-sm font-semibold text-white transition hover:bg-neutral-700 sm:w-auto">
@@ -681,24 +681,51 @@
                 аудитории.</p>
             </div>
 
-            <form id="push-test-form" class="grid gap-3 md:grid-cols-3">
-              <input name="userId" type="text" placeholder="userId (опционально)"
-                class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
-              <input name="slug" type="text" placeholder="slug (опционально)"
-                class="rounded-xl border border-neutral-300 px-3 py-2 text-sm uppercase" />
-              <input name="title" type="text" placeholder="Заголовок" value="Тестовое уведомление"
-                class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" required />
-              <textarea name="body" rows="2" placeholder="Текст"
-                class="rounded-xl border border-neutral-300 px-3 py-2 text-sm md:col-span-2"
-                required>Проверка доставки push-уведомления</textarea>
-              <input name="data" type="text"
-                placeholder='JSON data, например {"type":"admin_test","targetPath":"/notifications"}'
-                class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
-              <label class="inline-flex items-center gap-2 text-sm text-neutral-700"><input type="checkbox"
-                  name="includeInApp" checked /> Добавить во внутренние уведомления</label>
-              <button type="submit"
-                class="interactive-btn min-h-11 rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">Отправить
-                тест</button>
+            <form id="push-test-form" class="space-y-3">
+              <div class="rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-xs text-neutral-600">
+                Укажите один идентификатор получателя: <span class="font-semibold text-neutral-800">User ID</span> или
+                <span class="font-semibold text-neutral-800">Slug</span>.
+              </div>
+
+              <div class="grid gap-3 md:grid-cols-3">
+                <label class="block">
+                  <span class="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">User
+                    ID</span>
+                  <input name="userId" type="text" placeholder="Например: 123456789"
+                    class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+                </label>
+
+                <label class="block">
+                  <span
+                    class="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">Slug</span>
+                  <input name="slug" type="text" placeholder="Например: SSS555"
+                    class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm uppercase" />
+                </label>
+
+                <label class="block">
+                  <span
+                    class="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">Заголовок</span>
+                  <input name="title" type="text" placeholder="Заголовок" value="Тестовое уведомление"
+                    class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" required />
+                </label>
+              </div>
+
+              <div class="grid gap-3 md:grid-cols-3">
+                <textarea name="body" rows="2" placeholder="Текст"
+                  class="rounded-xl border border-neutral-300 px-3 py-2 text-sm md:col-span-2"
+                  required>Проверка доставки push-уведомления</textarea>
+                <input name="data" type="text"
+                  placeholder='JSON data, например {"type":"admin_test","targetPath":"/notifications"}'
+                  class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+              </div>
+
+              <div class="grid gap-3 md:grid-cols-3 md:items-center">
+                <label class="inline-flex items-center gap-2 text-sm text-neutral-700"><input type="checkbox"
+                    name="includeInApp" checked /> Добавить во внутренние уведомления</label>
+                <button type="submit"
+                  class="interactive-btn min-h-11 rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">Отправить
+                  тест</button>
+              </div>
             </form>
 
             <div class="h-px bg-neutral-200"></div>
@@ -770,31 +797,31 @@
         </section>
 
         <section id="tab-settings" class="<%= pageActiveTab === 'settings' ? '' : 'hidden' %>">
-          <div class="grid gap-4 lg:grid-cols-[260px_minmax(0,1fr)]">
-            <aside class="rounded-2xl border border-neutral-200 bg-white p-3">
-              <nav class="space-y-1" id="settings-subtabs">
+          <div class="settings-grid grid gap-4 lg:grid-cols-[260px_minmax(0,1fr)]">
+            <aside class="settings-subtabs-aside rounded-2xl border border-neutral-200 bg-white p-3">
+              <nav class="settings-subtabs-nav space-y-1" id="settings-subtabs">
                 <button type="button" data-settings-subtab="pricing"
-                  class="flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-semibold text-neutral-700 hover:bg-neutral-100">Тарифы
+                  class="settings-subtab-btn flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-semibold">Тарифы
                   <span data-settings-unsaved-dot="pricing"
                     class="hidden h-2 w-2 rounded-full bg-amber-500"></span></button>
                 <button type="button" data-settings-subtab="algorithm"
-                  class="flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-semibold text-neutral-700 hover:bg-neutral-100">Алгоритм
+                  class="settings-subtab-btn flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-semibold">Алгоритм
                   цены slug <span data-settings-unsaved-dot="algorithm"
                     class="hidden h-2 w-2 rounded-full bg-amber-500"></span></button>
                 <button type="button" data-settings-subtab="bracelet"
-                  class="flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-semibold text-neutral-700 hover:bg-neutral-100">Браслет
+                  class="settings-subtab-btn flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-semibold">Браслет
                   <span data-settings-unsaved-dot="bracelet"
                     class="hidden h-2 w-2 rounded-full bg-amber-500"></span></button>
                 <button type="button" data-settings-subtab="contacts"
-                  class="flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-semibold text-neutral-700 hover:bg-neutral-100">Контакты
+                  class="settings-subtab-btn flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-semibold">Контакты
                   <span data-settings-unsaved-dot="contacts"
                     class="hidden h-2 w-2 rounded-full bg-amber-500"></span></button>
                 <button type="button" data-settings-subtab="platform"
-                  class="flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-semibold text-neutral-700 hover:bg-neutral-100">Платформа
+                  class="settings-subtab-btn flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-semibold">Платформа
                   <span data-settings-unsaved-dot="platform"
                     class="hidden h-2 w-2 rounded-full bg-amber-500"></span></button>
                 <button type="button" data-settings-subtab="changes"
-                  class="flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-semibold text-neutral-700 hover:bg-neutral-100">Логи
+                  class="settings-subtab-btn flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-semibold">Логи
                   изменений</button>
               </nav>
             </aside>

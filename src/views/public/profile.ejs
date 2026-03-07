@@ -548,10 +548,21 @@
                 <div>
                   <p class="text-sm font-semibold text-neutral-900">Верификация</p>
                   <p id="profile-verification-status" class="text-xs text-neutral-500">Статус: не запрошено</p>
+                  <p id="profile-verification-note" class="mt-1 hidden text-xs text-neutral-500"></p>
                 </div>
                 <button id="profile-verification-open" type="button"
                   class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-3 py-2 text-xs font-semibold">
                   Подать заявку
+                </button>
+              </div>
+              <div id="profile-verification-correction-wrap" class="mt-3 hidden">
+                <p class="text-xs text-neutral-600">Если в заявке допущена ошибка, отправьте правку через форму
+                  исправления.</p>
+                <textarea id="profile-verification-correction" rows="2" placeholder="Опишите исправление"
+                  class="mt-2 w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm"></textarea>
+                <button id="profile-verification-correction-submit" type="button"
+                  class="interactive-btn mt-2 min-h-11 rounded-lg border border-neutral-300 px-3 py-2 text-xs font-semibold">
+                  Отправить исправление
                 </button>
               </div>
             </div>

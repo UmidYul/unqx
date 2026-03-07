@@ -185,6 +185,7 @@
     stStatus: $("#profile-settings-status"),
     stDeact: $("#profile-settings-deactivate"),
     verificationStatus: $("#profile-verification-status"),
+    verificationNote: $("#profile-verification-note"),
     verificationOpen: $("#profile-verification-open"),
     verificationModal: $("#profile-verification-modal"),
     verificationClose: $("#profile-verification-close"),
@@ -195,6 +196,9 @@
     verificationProofValue: $("#profile-verification-proof-value"),
     verificationComment: $("#profile-verification-comment"),
     verificationSubmit: $("#profile-verification-submit"),
+    verificationCorrectionWrap: $("#profile-verification-correction-wrap"),
+    verificationCorrection: $("#profile-verification-correction"),
+    verificationCorrectionSubmit: $("#profile-verification-correction-submit"),
     qrModal: $("#profile-qr-modal"),
     qrClose: $("#profile-qr-close"),
     qrBox: $("#profile-qr-box"),
@@ -767,15 +771,58 @@
     if (el.stDirectory) el.stDirectory.checked = Boolean(s.user.showInDirectory);
     if (el.verificationStatus) {
       const latest = s.verification?.latestRequest;
+      const latestStatus = String(latest?.status || "").toLowerCase();
       let label = "Статус: не запрошено";
       if (s.user.isVerified) {
         label = "Статус: верифицировано";
-      } else if (latest?.status === "pending") {
+      } else if (latestStatus === "pending") {
         label = "Статус: на проверке";
-      } else if (latest?.status === "rejected") {
+      } else if (latestStatus === "rejected") {
         label = "Статус: отклонено";
       }
       el.verificationStatus.textContent = label;
+
+      if (el.verificationNote instanceof HTMLElement) {
+        if (latestStatus === "pending") {
+          el.verificationNote.textContent = "Повторная подача недоступна до решения администратора. Для правок используйте форму исправления ниже.";
+          el.verificationNote.classList.remove("hidden");
+        } else if (latestStatus === "rejected" && latest?.adminNote) {
+          el.verificationNote.textContent = `Причина отклонения: ${latest.adminNote}`;
+          el.verificationNote.classList.remove("hidden");
+        } else {
+          el.verificationNote.textContent = "";
+          el.verificationNote.classList.add("hidden");
+        }
+      }
+    }
+
+    if (el.verificationOpen instanceof HTMLButtonElement) {
+      const latest = s.verification?.latestRequest;
+      const latestStatus = String(latest?.status || "").toLowerCase();
+      const canSubmit =
+        typeof s.verification?.canSubmitRequest === "boolean"
+          ? s.verification.canSubmitRequest
+          : !s.user.isVerified && (!latest || latestStatus === "rejected");
+      el.verificationOpen.disabled = !canSubmit;
+      el.verificationOpen.classList.toggle("opacity-60", !canSubmit);
+      if (s.user.isVerified) {
+        el.verificationOpen.textContent = "Уже верифицировано";
+      } else if (latestStatus === "pending") {
+        el.verificationOpen.textContent = "Заявка отправлена";
+      } else if (latestStatus === "rejected") {
+        el.verificationOpen.textContent = "Подать повторно";
+      } else {
+        el.verificationOpen.textContent = "Подать заявку";
+      }
+    }
+
+    if (el.verificationCorrectionWrap instanceof HTMLElement) {
+      const latestStatus = String(s.verification?.latestRequest?.status || "").toLowerCase();
+      const canSendCorrection =
+        typeof s.verification?.canSendCorrection === "boolean"
+          ? s.verification.canSendCorrection
+          : !s.user.isVerified && latestStatus === "pending";
+      el.verificationCorrectionWrap.classList.toggle("hidden", !canSendCorrection);
     }
   };
 
@@ -1844,8 +1891,33 @@
     el.verificationModal.classList.add("hidden");
     el.verificationModal.classList.remove("flex");
   };
+  const fillVerificationFormFromLatest = () => {
+    const latest = s.verification?.latestRequest;
+    if (!latest) return;
+    if (el.verificationCompany instanceof HTMLInputElement && !el.verificationCompany.value.trim()) {
+      el.verificationCompany.value = String(latest.companyName || "");
+    }
+    if (el.verificationRole instanceof HTMLInputElement && !el.verificationRole.value.trim()) {
+      el.verificationRole.value = String(latest.role || "");
+    }
+    if (el.verificationSector instanceof HTMLSelectElement) {
+      const sector = String(latest.sector || "other").toLowerCase();
+      el.verificationSector.value = ["design", "sales", "marketing", "it", "other"].includes(sector) ? sector : "other";
+    }
+    if (el.verificationProofType instanceof HTMLSelectElement) {
+      const proofType = String(latest.proofType || "email").toLowerCase();
+      el.verificationProofType.value = ["email", "linkedin", "website"].includes(proofType) ? proofType : "email";
+    }
+    if (el.verificationProofValue instanceof HTMLInputElement && !el.verificationProofValue.value.trim()) {
+      el.verificationProofValue.value = String(latest.proofValue || "");
+    }
+  };
   el.verificationOpen?.addEventListener("click", () => {
+    if (el.verificationOpen instanceof HTMLButtonElement && el.verificationOpen.disabled) {
+      return;
+    }
     if (!(el.verificationModal instanceof HTMLElement)) return;
+    fillVerificationFormFromLatest();
     el.verificationModal.classList.remove("hidden");
     el.verificationModal.classList.add("flex");
   });
@@ -1854,6 +1926,9 @@
     if (event.target === el.verificationModal) closeVerificationModal();
   });
   el.verificationSubmit?.addEventListener("click", async () => {
+    if (el.verificationSubmit instanceof HTMLButtonElement) {
+      el.verificationSubmit.disabled = true;
+    }
     try {
       await api("/api/profile/verification-request", {
         method: "POST",
@@ -1872,6 +1947,39 @@
       showModal("Готово", "Заявка на верификацию отправлена");
     } catch (error) {
       showModal("Ошибка", error.message || "Не удалось отправить заявку");
+    } finally {
+      if (el.verificationSubmit instanceof HTMLButtonElement) {
+        el.verificationSubmit.disabled = false;
+      }
+    }
+  });
+
+  el.verificationCorrectionSubmit?.addEventListener("click", async () => {
+    const correctionText = String(el.verificationCorrection?.value || "").trim();
+    if (!correctionText) {
+      showModal("Проверь данные", "Опишите, что нужно исправить в заявке.");
+      return;
+    }
+    if (el.verificationCorrectionSubmit instanceof HTMLButtonElement) {
+      el.verificationCorrectionSubmit.disabled = true;
+    }
+    try {
+      await api("/api/profile/verification-request/correction", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ comment: correctionText }),
+      });
+      if (el.verificationCorrection instanceof HTMLTextAreaElement) {
+        el.verificationCorrection.value = "";
+      }
+      await load();
+      showModal("Готово", "Исправление отправлено администратору.");
+    } catch (error) {
+      showModal("Ошибка", error.message || "Не удалось отправить исправление");
+    } finally {
+      if (el.verificationCorrectionSubmit instanceof HTMLButtonElement) {
+        el.verificationCorrectionSubmit.disabled = false;
+      }
     }
   });
 
