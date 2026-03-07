@@ -1489,13 +1489,15 @@ router.get(
       `;
 
       res.json({
-        items: (Array.isArray(rows) ? rows : []).map((row) => ({
-          id: String(row.id),
-          slug: sanitizeSlug(row.slug) || "UNQ000",
-          uid: row.uid || undefined,
-          type: String(row.operation || "read"),
-          timestamp: toIso(row.created_at),
-        })),
+        items: (Array.isArray(rows) ? rows : [])
+          .map((row) => ({
+            id: String(row.id),
+            slug: sanitizeSlug(row.slug) || null,
+            uid: row.uid || undefined,
+            type: String(row.operation || "read"),
+            timestamp: toIso(row.created_at),
+          }))
+          .filter((row) => Boolean(row.slug)),
       });
     } catch (error) {
       if (isMissingStorageError(error)) {
@@ -1536,9 +1538,9 @@ router.get(
       res.json({
         items: (Array.isArray(rows) ? rows : []).map((row) => ({
           uid: String(row.uid),
-          name: String(row.name || "Метка"),
+          name: row.name ? String(row.name) : null,
           linkedSlug: sanitizeSlug(row.linked_slug) || undefined,
-          status: String(row.status || "ok"),
+          status: row.status ? String(row.status) : null,
           tapCount: Number(row.tap_count || 0),
           lastTapAt: row.last_tap_at ? toIso(row.last_tap_at) : null,
         })),

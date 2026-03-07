@@ -1,3 +1,5 @@
+const fs = require("node:fs");
+const path = require("node:path");
 const express = require("express");
 
 const { prisma } = require("../../db/prisma");
@@ -18,6 +20,21 @@ const { seoHub, getSeoPage } = require("../../content/seo-pages");
 const router = express.Router();
 const defaultSocialImage = absoluteUrl("/brand/logo.PNG");
 const CARD_THEMES = new Set(["default_dark", "arctic", "linen", "marble", "forest"]);
+const LEGAL_DOCS_DIR = path.join(env.EXPRESS_APP_DIR, "docs");
+
+function readLegalDoc(fileName) {
+  try {
+    return fs.readFileSync(path.join(LEGAL_DOCS_DIR, fileName), "utf8");
+  } catch {
+    return "";
+  }
+}
+
+const legalDocs = {
+  terms: readLegalDoc("terms-of-service.md"),
+  privacy: readLegalDoc("privacy-policy.md"),
+  refund: readLegalDoc("refund-policy.md"),
+};
 
 function buildBreadcrumbJsonLd(items) {
   return {
@@ -46,6 +63,116 @@ function buildFaqJsonLd(faqs) {
       },
     })),
   };
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function applyInlineMarkdown(value) {
+  return escapeHtml(value)
+    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+    .replace(/`([^`]+)`/g, "<code>$1</code>");
+}
+
+function stripFirstHeading(markdown) {
+  const lines = String(markdown || "").split(/\r?\n/);
+  const firstContentLine = lines.findIndex((line) => line.trim().length > 0);
+  if (firstContentLine === -1) return "";
+  if (/^#\s+/.test(lines[firstContentLine].trim())) {
+    lines.splice(firstContentLine, 1);
+  }
+  return lines.join("\n").trim();
+}
+
+function extractMarkdownHeading(markdown, fallback) {
+  const match = String(markdown || "").match(/^#\s+(.+)$/m);
+  return match ? match[1].trim() : fallback;
+}
+
+function extractMarkdownMeta(markdown, label) {
+  const escaped = String(label || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const re = new RegExp(`\\*\\*${escaped}:\\*\\*\\s*(.+)`, "i");
+  const match = String(markdown || "").match(re);
+  return match ? match[1].trim() : "";
+}
+
+function estimateReadingMinutes(markdown) {
+  const words = String(markdown || "")
+    .replace(/[#*_`>-]/g, " ")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean).length;
+  return Math.max(1, Math.ceil(words / 180));
+}
+
+function markdownToHtml(markdown, { stripTitle = false } = {}) {
+  const source = stripTitle ? stripFirstHeading(markdown) : String(markdown || "");
+  const lines = source.split(/\r?\n/);
+  const out = [];
+  let paragraph = [];
+  let inList = false;
+
+  const closeList = () => {
+    if (inList) {
+      out.push("</ul>");
+      inList = false;
+    }
+  };
+
+  const flushParagraph = () => {
+    if (!paragraph.length) return;
+    out.push(`<p class=\"mt-3 text-sm leading-7 text-neutral-700 md:text-base\">${applyInlineMarkdown(paragraph.join(" "))}</p>`);
+    paragraph = [];
+  };
+
+  lines.forEach((line) => {
+    const trimmed = line.trim();
+    if (!trimmed) {
+      flushParagraph();
+      closeList();
+      return;
+    }
+
+    const h2 = trimmed.match(/^##\s+(.+)$/);
+    if (h2) {
+      flushParagraph();
+      closeList();
+      out.push(`<h2 class=\"mt-8 border-t border-neutral-200 pt-6 text-2xl font-bold tracking-tight text-neutral-900\">${applyInlineMarkdown(h2[1])}</h2>`);
+      return;
+    }
+
+    const h3 = trimmed.match(/^###\s+(.+)$/);
+    if (h3) {
+      flushParagraph();
+      closeList();
+      out.push(`<h3 class=\"mt-5 text-lg font-semibold text-neutral-900\">${applyInlineMarkdown(h3[1])}</h3>`);
+      return;
+    }
+
+    const bullet = trimmed.match(/^-\s+(.+)$/);
+    if (bullet) {
+      flushParagraph();
+      if (!inList) {
+        out.push("<ul class=\"mt-4 list-disc space-y-2 pl-5 text-sm leading-6 text-neutral-700 md:text-base\">");
+        inList = true;
+      }
+      out.push(`<li>${applyInlineMarkdown(bullet[1])}</li>`);
+      return;
+    }
+
+    closeList();
+    paragraph.push(trimmed);
+  });
+
+  flushParagraph();
+  closeList();
+  return out.join("\n");
 }
 
 function sanitizeSlug(value) {
@@ -905,6 +1032,95 @@ router.get(
       faqs: page.faqs,
       readingMinutes: page.readingMinutes,
       updatedAt: page.updatedAt,
+      image: defaultSocialImage,
+      jsonLd,
+      adminSession: getAdminSession(req),
+    });
+  }),
+);
+
+router.get(
+  "/terms",
+  asyncHandler(async (req, res) => {
+    const markdown = legalDocs.terms;
+    const heading = extractMarkdownHeading(markdown, "UNQX Terms of Service");
+    const updatedAt = extractMarkdownMeta(markdown, "Last updated") || "2026-03-07";
+    const canonical = absoluteUrl("/terms");
+    const jsonLd = [
+      {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        name: heading,
+        description: "Terms of Service for UNQX digital business card platform.",
+        url: canonical,
+        dateModified: updatedAt,
+      },
+      buildBreadcrumbJsonLd([
+        { name: "Главная", url: absoluteUrl("/") },
+        { name: "Terms", url: canonical },
+      ]),
+    ];
+
+    res.render("public/legal-page", {
+      title: `${heading} | UNQX`,
+      description: "Terms of Service for UNQX digital business card platform.",
+      heading,
+      lead: "These terms define the rules for using UNQX services.",
+      updatedAt,
+      effectiveDate: "",
+      readingMinutes: estimateReadingMinutes(markdown),
+      contentHtml: markdownToHtml(markdown, { stripTitle: true }),
+      image: defaultSocialImage,
+      jsonLd,
+      adminSession: getAdminSession(req),
+    });
+  }),
+);
+
+router.get(
+  "/policy",
+  asyncHandler(async (req, res) => {
+    const privacyMd = legalDocs.privacy;
+    const refundMd = legalDocs.refund;
+    const updatedAt = extractMarkdownMeta(privacyMd, "Last updated") || "2026-03-07";
+    const effectiveDate = extractMarkdownMeta(privacyMd, "Effective date") || "";
+    const canonical = absoluteUrl("/policy");
+    const combinedMarkdown = [
+      "# UNQX Policy",
+      "",
+      stripFirstHeading(privacyMd),
+      "",
+      "## Refund Policy",
+      "",
+      stripFirstHeading(refundMd),
+    ]
+      .filter(Boolean)
+      .join("\n");
+
+    const jsonLd = [
+      {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        name: "UNQX Privacy and Refund Policy",
+        description: "Privacy Policy and Refund Policy for UNQX.",
+        url: canonical,
+        dateModified: updatedAt,
+      },
+      buildBreadcrumbJsonLd([
+        { name: "Главная", url: absoluteUrl("/") },
+        { name: "Policy", url: canonical },
+      ]),
+    ];
+
+    res.render("public/legal-page", {
+      title: "UNQX Privacy and Refund Policy",
+      description: "Privacy Policy and Refund Policy for UNQX.",
+      heading: "UNQX Policy",
+      lead: "This page includes UNQX Privacy Policy and Refund Policy.",
+      updatedAt,
+      effectiveDate,
+      readingMinutes: estimateReadingMinutes(combinedMarkdown),
+      contentHtml: markdownToHtml(combinedMarkdown, { stripTitle: true }),
       image: defaultSocialImage,
       jsonLd,
       adminSession: getAdminSession(req),

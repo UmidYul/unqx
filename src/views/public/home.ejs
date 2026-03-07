@@ -2,17 +2,35 @@
   pageDescription=typeof description==="string" && description ? description
   : "Одна ссылка вместо тысячи слов. Создай свою цифровую визитку на unqx.uz" ; const pageBaseUrl=typeof
   baseUrl==="string" && baseUrl ? baseUrl : "" ; const pageCanonicalUrl=typeof canonicalUrl==="string" && canonicalUrl ?
-  canonicalUrl : `${pageBaseUrl}/`; const pagePublicSettings=typeof publicSettings==="object" && publicSettings ? publicSettings : {}; const platformName=String(pagePublicSettings.platform_name || "UNQX"); const platformTagline=String(pagePublicSettings.platform_tagline || "Твой UNQ. Твой бренд. Навсегда."); const platformHeroSubtitle=String(pagePublicSettings.platform_hero_subtitle || "Цифровая визитка за 1 минуту — одна ссылка вместо тысячи слов."); const pricingVisible=Boolean(pagePublicSettings.pricing_section_visible ?? true); const braceletName=String(pagePublicSettings.bracelet_name || "NFC-браслет"); const braceletPrice=Number(pagePublicSettings.bracelet_price || 300000); const braceletFeaturesFromSettings=Array.isArray(pagePublicSettings.bracelet_features) ? pagePublicSettings.bracelet_features : null; const braceletDescription=String(pagePublicSettings.bracelet_description || "Стильный тканевый браслет с NFC, который открывает твою цифровую визитку в один тап."); const braceletNote=String(pagePublicSettings.bracelet_note || "Браслет привязан к твоему slug — работает только с активной визиткой UNQX"); const supportTelegram=String(pagePublicSettings.contact_support_telegram || "@unqx_uz"); const supportPhone=String(pagePublicSettings.contact_phone || "").trim(); const supportPhoneHref=supportPhone.replace(/[^\d+]/g, ""); const pageJsonLd=[{ "@context" : "https://schema.org" , "@type" : "WebSite" ,
-  name: platformName , url: pageCanonicalUrl, potentialAction: { "@type": "SearchAction", target: `${pageBaseUrl}/directory?q={search_term_string}`, "query-input": "required name=search_term_string" } }, { "@context": "https://schema.org", "@type": "Organization", name: platformName, url: pageBaseUrl || pageCanonicalUrl, logo: `${pageBaseUrl}/brand/logo.PNG`, sameAs: ["https://t.me/unqx_uz"] }]; const pageUserSession=typeof userSession !=="undefined" ? userSession : null;
-  const hasAuthSession=Boolean(pageUserSession && pageUserSession.userId); const hasBasicPlan=hasAuthSession &&
-  pageUserSession && pageUserSession.plan==="basic" ; const pricingSettings=typeof pricing==="object" && pricing ?
-  pricing : { planBasicPrice: 50000, planPremiumPrice: 130000, premiumUpgradePrice: 80000,
-  pricingFootnote: "Тарифы оплачиваются один раз. Без подписки и скрытых платежей." , }; const
-  pricingFootnote=String(pricingSettings.pricingFootnote || "" ).trim()
+  canonicalUrl : `${pageBaseUrl}/`; const pagePublicSettings=typeof publicSettings==="object" && publicSettings ?
+  publicSettings : {}; const platformName=String(pagePublicSettings.platform_name || "UNQX" ); const
+  platformTagline=String(pagePublicSettings.platform_tagline || "Твой UNQ. Твой бренд. Навсегда." ); const
+  platformHeroSubtitle=String(pagePublicSettings.platform_hero_subtitle
+  || "Цифровая визитка за 1 минуту — одна ссылка вместо тысячи слов." ); const
+  pricingVisible=Boolean(pagePublicSettings.pricing_section_visible ?? true); const
+  braceletName=String(pagePublicSettings.bracelet_name || "NFC-браслет" ); const
+  braceletPrice=Number(pagePublicSettings.bracelet_price || 300000); const
+  braceletFeaturesFromSettings=Array.isArray(pagePublicSettings.bracelet_features) ?
+  pagePublicSettings.bracelet_features : null; const braceletDescription=String(pagePublicSettings.bracelet_description
+  || "Стильный тканевый браслет с NFC, который открывает твою цифровую визитку в один тап." ); const
+  braceletNote=String(pagePublicSettings.bracelet_note
+  || "Браслет привязан к твоему slug — работает только с активной визиткой UNQX" ); const
+  supportTelegram=String(pagePublicSettings.contact_support_telegram || "@unqx_uz" ); const
+  supportPhone=String(pagePublicSettings.contact_phone || "" ).trim(); const
+  supportPhoneHref=supportPhone.replace(/[^\d+]/g, "" ); const pageJsonLd=[{ "@context" : "https://schema.org" , "@type"
+  : "WebSite" , name: platformName , url: pageCanonicalUrl, potentialAction: { "@type" : "SearchAction" , target:
+  `${pageBaseUrl}/directory?q={search_term_string}`, "query-input" : "required name=search_term_string" } },
+  { "@context" : "https://schema.org" , "@type" : "Organization" , name: platformName, url: pageBaseUrl ||
+  pageCanonicalUrl, logo: `${pageBaseUrl}/brand/logo.PNG`, sameAs: ["https://t.me/unqx_uz"] }]; const
+  pageUserSession=typeof userSession !=="undefined" ? userSession : null; const hasAuthSession=Boolean(pageUserSession
+  && pageUserSession.userId); const hasBasicPlan=hasAuthSession && pageUserSession && pageUserSession.plan==="basic" ;
+  const pricingSettings=typeof pricing==="object" && pricing ? pricing : { planBasicPrice: 50000, planPremiumPrice:
+  130000, premiumUpgradePrice: 80000, pricingFootnote: "Тарифы оплачиваются один раз. Без подписки и скрытых платежей."
+  , }; const pricingFootnote=String(pricingSettings.pricingFootnote || "" ).trim()
   || "Тарифы оплачиваются один раз. Без подписки и скрытых платежей." ; const authDisplayName=hasAuthSession ?
   `${(pageUserSession.firstName || pageUserSession.displayName || "Мой профиль" )} · Мой профиль` : "Мой профиль" ;
-  const authPhotoUrl=hasAuthSession && pageUserSession.avatarUrl ? pageUserSession.avatarUrl : "/brand/profile-user.svg" ;
-  const demos=[ { name: "Alex Karimov" , role: "Product Designer" , slug: "alex" }, { name: "Dilnoza R." ,
+  const authPhotoUrl=hasAuthSession && pageUserSession.avatarUrl ? pageUserSession.avatarUrl : "/brand/profile-user.svg"
+  ; const demos=[ { name: "Alex Karimov" , role: "Product Designer" , slug: "alex" }, { name: "Dilnoza R." ,
   role: "Marketing Lead" , slug: "dilnoza" }, { name: "Sardor M." , role: "Full-Stack Dev" , slug: "sardor" }, {
   name: "Nodira K." , role: "Brand Strategist" , slug: "nodira" }, { name: "Temur A." , role: "Founder, CEO" ,
   slug: "temur" }, ]; const testimonialsList=Array.isArray(testimonials) && testimonials.length> 0
@@ -22,7 +40,8 @@
   name: "Алишер",
   slug: "ALI001",
   tariff: "premium",
-  text: "Раздаю браслет на каждой встрече — люди реагируют как на магию. Визитку обновил уже три раза, браслет работает как часы.",
+  text: "Раздаю браслет на каждой встрече — люди реагируют как на магию. Визитку обновил уже три раза, браслет работает
+  как часы.",
   },
   {
   name: "Малика",
@@ -128,7 +147,7 @@
 
   <head>
     <%- include('../partials/head', { title: pageTitle, description: pageDescription, styles: ['/css/public-card.css'],
-      image: typeof image === 'string' ? image : undefined, ogType: 'website' , jsonLd: pageJsonLd }) %>
+      image: typeof image==='string' ? image : undefined, ogType: 'website' , jsonLd: pageJsonLd }) %>
   </head>
 
   <body class="antialiased">
@@ -144,13 +163,17 @@
         <nav class="fixed left-0 right-0 top-0 z-50 border-b border-neutral-200 bg-white/80 backdrop-blur-md">
           <div class="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-4">
             <a href="/" class="inline-flex items-center gap-2 text-xl font-black tracking-tight text-neutral-900">
-              <img src="/brand/logo.PNG" alt="<%= platformName %>" class="h-8 w-8 rounded-md border border-neutral-200 object-cover" />
-              <span><%= platformName %></span>
+              <img src="/brand/logo.PNG" alt="<%= platformName %>"
+                class="h-8 w-8 rounded-md border border-neutral-200 object-cover" />
+              <span>
+                <%= platformName %>
+              </span>
             </a>
 
             <div class="hidden items-center gap-8 md:flex">
               <a href="#pricing" class="text-sm text-neutral-500 transition-colors hover:text-neutral-900">Доступ</a>
-              <a href="/directory" class="text-sm text-neutral-500 transition-colors hover:text-neutral-900">Резиденты</a>
+              <a href="/directory"
+                class="text-sm text-neutral-500 transition-colors hover:text-neutral-900">Резиденты</a>
               <a href="/guides" class="text-sm text-neutral-500 transition-colors hover:text-neutral-900">Инструкции</a>
               <% if (leaderboardEnabled) { %><a href="/leaderboard"
                   class="whitespace-nowrap text-sm text-neutral-500 transition-colors hover:text-neutral-900">UNQ&nbsp;ELITE</a>
@@ -193,7 +216,8 @@
               <a href="#pricing" class="text-sm text-neutral-500">Доступ</a>
               <a href="/directory" class="text-sm text-neutral-500">Резиденты</a>
               <a href="/guides" class="text-sm text-neutral-500">Инструкции</a>
-              <% if (leaderboardEnabled) { %><a href="/leaderboard" class="whitespace-nowrap text-sm text-neutral-500">UNQ&nbsp;ELITE</a>
+              <% if (leaderboardEnabled) { %><a href="/leaderboard"
+                  class="whitespace-nowrap text-sm text-neutral-500">UNQ&nbsp;ELITE</a>
                 <% } %>
                   <a href="/drops" class="text-sm text-neutral-500">Релизы</a>
                   <div id="home-auth-nav-mobile" class="flex w-full items-center justify-center gap-2">
@@ -557,13 +581,19 @@
                   <div class="mx-auto max-w-6xl">
                     <div class="grid items-center gap-16 md:grid-cols-2">
                       <div>
-                        <p class="mb-3 font-mono text-xs uppercase tracking-widest text-neutral-400"><%= platformName %> WRISTBAND</p>
+                        <p class="mb-3 font-mono text-xs uppercase tracking-widest text-neutral-400">
+                          <%= platformName %> WRISTBAND
+                        </p>
                         <h2 class="text-3xl font-bold tracking-tight text-neutral-900 md:text-4xl">Тап. И ты уже<br />в
                           телефоне собеседника.</h2>
-                        <p class="mt-4 text-base leading-relaxed text-neutral-500"><%= braceletDescription %></p>
+                        <p class="mt-4 text-base leading-relaxed text-neutral-500">
+                          <%= braceletDescription %>
+                        </p>
 
                         <div class="mt-6 flex items-baseline gap-2">
-                          <span class="text-3xl font-bold text-neutral-900"><%= braceletPrice.toLocaleString("ru-RU") %> сум</span>
+                          <span class="text-3xl font-bold text-neutral-900">
+                            <%= braceletPrice.toLocaleString("ru-RU") %> сум
+                          </span>
                         </div>
 
                         <p class="mt-2 text-sm text-neutral-400">Разовая покупка · Доставка по Ташкенту</p>
@@ -583,7 +613,7 @@
                         <div class="mt-8 flex flex-wrap items-center gap-3">
                           <a href="#" data-order-link data-order-bracelet="true"
                             class="interactive-btn btn-shimmer inline-flex min-h-11 items-center gap-2 rounded-xl bg-neutral-900 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-neutral-800">
-                            <%= String(pagePublicSettings.bracelet_cta_text || "Заказать браслет") %>
+                            <%= String(pagePublicSettings.bracelet_cta_text || "Заказать браслет" ) %>
                           </a>
 
                           <span
@@ -591,7 +621,7 @@
                             <svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
                               <path d="m20 6-11 11-5-5"></path>
                             </svg>
-                            <%= pagePublicSettings.bracelet_in_stock === false ? "Нет в наличии" : "В наличии" %>
+                            <%= pagePublicSettings.bracelet_in_stock===false ? "Нет в наличии" : "В наличии" %>
                           </span>
                         </div>
                         <p class="mt-3 text-xs text-neutral-500">
@@ -605,8 +635,8 @@
                             class="absolute right-8 top-8 rounded-full bg-neutral-100 px-3 py-1 font-mono text-[10px] uppercase tracking-wider text-neutral-500">
                             UNQX WRISTBAND
                           </div>
-                          <img src="/images/wristband.png" alt="<%= platformName %> <%= braceletName %>" class="h-auto w-full object-contain"
-                            loading="lazy" />
+                          <img src="/images/wristband.png" alt="<%= platformName %> <%= braceletName %>"
+                            class="h-auto w-full object-contain" loading="lazy" />
                         </div>
                       </div>
                     </div>
@@ -720,8 +750,11 @@
                       <div class="flex flex-col items-start justify-between gap-10 md:flex-row md:items-end">
                         <div>
                           <a href="/" class="inline-flex items-center gap-2 text-xl font-black text-neutral-900">
-                            <img src="/brand/logo.PNG" alt="<%= platformName %>" class="h-8 w-8 rounded-md border border-neutral-200 object-cover" />
-                            <span><%= platformName %></span>
+                            <img src="/brand/logo.PNG" alt="<%= platformName %>"
+                              class="h-8 w-8 rounded-md border border-neutral-200 object-cover" />
+                            <span>
+                              <%= platformName %>
+                            </span>
                           </a>
                           <p class="mt-2 text-sm text-neutral-400">Цифровая визитка нового поколения</p>
                         </div>
@@ -730,8 +763,12 @@
                           <a href="#pricing" class="transition-colors hover:text-neutral-900">Доступ</a>
                           <a href="/directory" class="transition-colors hover:text-neutral-900">Резиденты</a>
                           <a href="/guides" class="transition-colors hover:text-neutral-900">Инструкции</a>
-                          <% if (leaderboardEnabled) { %><a href="/leaderboard" class="whitespace-nowrap transition-colors hover:text-neutral-900">UNQ&nbsp;ELITE</a><% } %>
-                          <a href="/drops" class="transition-colors hover:text-neutral-900">Релизы</a>
+                          <% if (leaderboardEnabled) { %><a href="/leaderboard"
+                              class="whitespace-nowrap transition-colors hover:text-neutral-900">UNQ&nbsp;ELITE</a>
+                            <% } %>
+                              <a href="/drops" class="transition-colors hover:text-neutral-900">Релизы</a>
+                              <a href="/terms" class="transition-colors hover:text-neutral-900">Условия</a>
+                              <a href="/policy" class="transition-colors hover:text-neutral-900">Политика</a>
                         </div>
 
                         <p class="hidden text-4xl font-bold tracking-tight text-neutral-200 md:block">unqx.uz</p>
@@ -739,9 +776,14 @@
 
                       <div class="mt-12 border-t border-neutral-200 pt-6">
                         <% if (supportPhone) { %>
-                          <p class="mb-2 text-xs text-neutral-400">Телефон: <a href="tel:<%= supportPhoneHref %>" class="underline transition-colors hover:text-neutral-700"><%= supportPhone %></a></p>
-                        <% } %>
-                        <p class="text-xs text-neutral-400">&copy; 2026 <%= platformName %> · <%= String(pagePublicSettings.contact_address || "Ташкент, Узбекистан") %></p>
+                          <p class="mb-2 text-xs text-neutral-400">Телефон: <a href="tel:<%= supportPhoneHref %>"
+                              class="underline transition-colors hover:text-neutral-700">
+                              <%= supportPhone %>
+                            </a></p>
+                          <% } %>
+                            <p class="text-xs text-neutral-400">&copy; 2026 <%= platformName %> · <%=
+                                  String(pagePublicSettings.contact_address || "Ташкент, Узбекистан" ) %>
+                            </p>
                       </div>
                     </div>
                   </footer>

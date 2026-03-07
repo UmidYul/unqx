@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="ru">
+
+<head>
+    <%- include("../partials/head", { title, description, image, styles: ["/css/public-card.css"], jsonLd }) %>
+</head>
+
+<body class="bg-neutral-50 antialiased">
+    <main class="mx-auto w-full max-w-5xl px-4 py-8">
+        <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
+            <a href="/"
+                class="interactive-btn inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-neutral-300 px-3 py-1.5 text-sm font-semibold text-neutral-700">
+                <svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M15 18 9 12l6-6"></path>
+                </svg>
+                На главную
+            </a>
+            <div class="inline-flex items-center gap-2 text-xs text-neutral-500">
+                <img src="/brand/logo.PNG" alt="UNQX" class="h-5 w-5 rounded border border-neutral-200 object-cover" />
+                Обновлено: <strong class="text-neutral-700">
+                    <%= updatedAt || "-" %>
+                </strong>
+                <% if (effectiveDate) { %>
+                    · Вступает в силу: <strong class="text-neutral-700">
+                        <%= effectiveDate %>
+                    </strong>
+                    <% } %>
+                        · <%= readingMinutes %> мин чтения
+            </div>
+        </div>
+
+        <article class="rounded-2xl border border-neutral-200 bg-white p-6 md:p-8">
+            <h1 class="text-3xl font-black tracking-tight text-neutral-900 md:text-4xl">
+                <%= heading %>
+            </h1>
+            <p class="mt-3 text-sm leading-6 text-neutral-600 md:text-base">
+                <%= lead %>
+            </p>
+            <section class="mt-5" id="legal-content">
+                <%- contentHtml %>
+            </section>
+
+            <div class="mt-8 border-t border-neutral-200 pt-5">
+                <p class="text-xs uppercase tracking-wide text-neutral-500">Смежные документы</p>
+                <div class="mt-3 flex flex-wrap gap-2">
+                    <a href="/terms"
+                        class="rounded-md border border-neutral-200 px-3 py-1.5 text-sm text-neutral-700 transition-colors hover:text-neutral-900">Условия
+                        использования</a>
+                    <a href="/policy"
+                        class="rounded-md border border-neutral-200 px-3 py-1.5 text-sm text-neutral-700 transition-colors hover:text-neutral-900">Политика
+                        конфиденциальности и возврата</a>
+                </div>
+            </div>
+        </article>
+    </main>
+</body>
+
+</html>

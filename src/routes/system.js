@@ -47,6 +47,8 @@ router.get(
       "/guides/unq-slug",
       "/guides/cases",
       "/faq",
+      "/terms",
+      "/policy",
     ]
       .map((path) => `<url><loc>${base}${path}</loc><lastmod>${nowIso}</lastmod><changefreq>weekly</changefreq><priority>0.75</priority></url>`)
       .join("");
