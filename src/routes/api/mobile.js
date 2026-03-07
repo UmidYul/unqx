@@ -1876,9 +1876,15 @@ router.post(
       return;
     }
 
-    const token = String(req.body?.token || "").trim();
-    if (!token) {
-      res.status(400).json({ error: "Token is required", code: "VALIDATION_ERROR" });
+    const expoToken = String(req.body?.expoToken || req.body?.token || "").trim();
+    if (!expoToken) {
+      res.status(400).json({ error: "Expo token is required", code: "VALIDATION_ERROR" });
+      return;
+    }
+
+    const isExpoToken = /^(ExponentPushToken|ExpoPushToken)\[[^\]]+\]$/.test(expoToken);
+    if (!isExpoToken) {
+      res.status(400).json({ error: "Unsupported push token", code: "VALIDATION_ERROR" });
       return;
     }
 
@@ -1886,7 +1892,7 @@ router.post(
     try {
       await prisma.$executeRaw`
         INSERT INTO push_tokens (user_id, token, platform, created_at, updated_at)
-        VALUES (${userId}, ${token}, ${platform}, now(), now())
+        VALUES (${userId}, ${expoToken}, ${platform}, now(), now())
         ON CONFLICT (user_id, token)
         DO UPDATE SET platform = EXCLUDED.platform, updated_at = now()
       `;
