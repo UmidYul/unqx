@@ -7,6 +7,7 @@ const { asyncHandler } = require("../../middleware/async");
 const { getUserSession } = require("../../middleware/auth");
 const { requireCsrfToken } = require("../../middleware/csrf");
 const { requireSameOrigin } = require("../../middleware/same-origin");
+const { sendTapPushNotification, sendExpoPushToUser } = require("../../services/push");
 
 const router = express.Router();
 const WRITE_OPERATIONS = new Set(["write", "lock"]);
@@ -418,6 +419,21 @@ async function createTapEvent({
           ${JSON.stringify({ ownerSlug, visitorSlug, source })}
         )
       `;
+
+      void sendTapPushNotification({
+        ownerId,
+        ownerSlug,
+        visitorSlug,
+        source,
+      }).catch((pushError) => {
+        console.error("[push] failed to send tap notification", {
+          ownerId,
+          ownerSlug,
+          visitorSlug,
+          source,
+          message: pushError?.message || String(pushError),
+        });
+      });
     }
   } catch (error) {
     if (isMissingStorageError(error)) {
@@ -1877,6 +1893,41 @@ router.post(
     }
 
     res.json({ ok: true });
+  }),
+);
+
+router.post(
+  "/notifications/test-send",
+  requireSameOrigin,
+  requireCsrfToken,
+  asyncHandler(async (req, res) => {
+    const userSession = getUserSession(req);
+    const userId = userSession?.userId;
+    if (!userId) {
+      res.status(401).json({ error: "Unauthorized", code: "AUTH_REQUIRED" });
+      return;
+    }
+
+    const title = String(req.body?.title || "Тестовое уведомление").trim().slice(0, 120);
+    const body = String(req.body?.body || "Проверка push-уведомлений UNQX").trim().slice(0, 512);
+    if (!title || !body) {
+      res.status(400).json({ error: "Title and body are required", code: "VALIDATION_ERROR" });
+      return;
+    }
+
+    const data = req.body?.data && typeof req.body.data === "object" ? req.body.data : { type: "test" };
+
+    const result = await sendExpoPushToUser({
+      userId,
+      title,
+      body,
+      data,
+    });
+
+    res.json({
+      ok: true,
+      result,
+    });
   }),
 );
 

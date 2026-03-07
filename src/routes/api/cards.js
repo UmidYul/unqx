@@ -23,6 +23,7 @@ const { publicOrderRateLimit } = require("../../middleware/rate-limit");
 const { getUserSession } = require("../../middleware/auth");
 const { OrderRequestSchema } = require("../../validation/order-request");
 const { getSetting } = require("../../services/platform-settings");
+const { sendTapPushNotification } = require("../../services/push");
 
 const router = express.Router();
 const SLUG_REGEX = /^[A-Z]{3}[0-9]{3}$/;
@@ -1230,6 +1231,21 @@ router.post(
                     ${JSON.stringify({ ownerSlug: slugRow.fullSlug, visitorSlug: viewerSlug, source })}
                   )
                 `;
+
+                void sendTapPushNotification({
+                  ownerId: slugRow.ownerId,
+                  ownerSlug: slugRow.fullSlug,
+                  visitorSlug: viewerSlug,
+                  source,
+                }).catch((pushError) => {
+                  console.error("[push] failed to send tap notification", {
+                    ownerId: slugRow.ownerId,
+                    ownerSlug: slugRow.fullSlug,
+                    visitorSlug: viewerSlug,
+                    source,
+                    message: pushError?.message || String(pushError),
+                  });
+                });
               } catch (error) {
                 if (!isMissingStorageError(error)) {
                   throw error;

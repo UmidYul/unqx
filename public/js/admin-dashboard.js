@@ -575,6 +575,8 @@
     if (!r.ok) return;
     const payload = await r.json();
     const rows = payload.items || [];
+    const searchedSlug = String(q.q || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6);
+    const canCreateBySearch = rows.length === 0 && /^[A-Z]{3}[0-9]{3}$/.test(searchedSlug);
     table.innerHTML = rows.length
       ? rows.map((x) => {
         const menu = menuWrap([
@@ -586,7 +588,14 @@
         ].join(""));
         return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3 font-mono">${X(x.slug)}</td><td class="px-4 py-3">${statusChip(x.state === "BLOCKED" ? "rejected" : x.state === "TAKEN" ? "approved" : "new")}</td><td class="px-4 py-3">${X(x.ownerName || "-")}</td><td class="px-4 py-3">${x.isPrimary ? "Да" : "Нет"}</td><td class="px-4 py-3">${typeof x.effectivePrice === "number" ? P(x.effectivePrice) : "-"}</td><td class="px-4 py-3">${x.requestedAt ? D(x.requestedAt) : "-"}</td><td class="px-4 py-3">${x.approvedAt ? D(x.approvedAt) : "-"}</td><td class="px-4 py-3">${x.activatedAt ? D(x.activatedAt) : "-"}</td><td class="px-4 py-3"><div class="admin-row-actions">${menu}</div></td></tr>`;
       }).join("")
-      : `<tr><td colspan="9" class="px-3 py-10 text-center text-neutral-500"><div class="inline-flex flex-col items-center gap-2">${I("link2", 48)}<span>Нет данных</span></div></td></tr>`;
+      : canCreateBySearch
+        ? (() => {
+          const menu = menuWrap(
+            menuItem({ label: "Изменить цену", icon: "pen", attrs: `data-act="sp" data-slug="${searchedSlug}" data-p=""` }),
+          );
+          return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3 font-mono">${X(searchedSlug)}</td><td class="px-4 py-3">${statusChip("new")}</td><td class="px-4 py-3">-</td><td class="px-4 py-3">Нет</td><td class="px-4 py-3">-</td><td class="px-4 py-3">-</td><td class="px-4 py-3">-</td><td class="px-4 py-3">-</td><td class="px-4 py-3"><div class="admin-row-actions">${menu}</div></td></tr>`;
+        })()
+        : `<tr><td colspan="9" class="px-3 py-10 text-center text-neutral-500"><div class="inline-flex flex-col items-center gap-2">${I("link2", 48)}<span>Нет данных</span></div></td></tr>`;
     renderPager("slugs-pagination", payload.pagination, (nextPage) => {
       setFormValue(form, "page", String(nextPage));
       void loadSlugs();
@@ -1314,6 +1323,220 @@
   document.getElementById("cleanup-logs-btn")?.addEventListener("click", async () => {
     const r = await fetch("/api/admin/logs/cleanup", { method: "POST", headers: H() });
     if (!r.ok) showAlert(await E(r)); else void loadLogs();
+  });
+  const pushBroadcastStatusNode = document.getElementById("push-broadcast-status");
+  let pushBroadcastPollTimer = null;
+  const setPushBroadcastStatus = (message, tone = "neutral") => {
+    if (!(pushBroadcastStatusNode instanceof HTMLElement)) return;
+    const base = "rounded-xl border px-3 py-2 text-sm";
+    let toneClass = "border-neutral-300 bg-neutral-50 text-neutral-700";
+    if (tone === "success") toneClass = "border-emerald-300 bg-emerald-50 text-emerald-800";
+    if (tone === "error") toneClass = "border-rose-300 bg-rose-50 text-rose-800";
+    if (tone === "progress") toneClass = "border-sky-300 bg-sky-50 text-sky-800";
+    pushBroadcastStatusNode.className = `${base} ${toneClass}`;
+    pushBroadcastStatusNode.textContent = String(message || "").trim();
+    pushBroadcastStatusNode.classList.remove("hidden");
+  };
+  const stopPushBroadcastPolling = () => {
+    if (pushBroadcastPollTimer) {
+      clearTimeout(pushBroadcastPollTimer);
+      pushBroadcastPollTimer = null;
+    }
+  };
+  const pollBroadcastJob = async (jobId, onDone) => {
+    const tick = async () => {
+      try {
+        const r = await fetch(`/api/admin/push/broadcast/jobs/${encodeURIComponent(jobId)}`, { headers: H() });
+        if (!r.ok) {
+          stopPushBroadcastPolling();
+          setPushBroadcastStatus("Не удалось получить статус рассылки", "error");
+          if (onDone) onDone(false);
+          return;
+        }
+
+        const payload = await r.json().catch(() => null);
+        const job = payload?.job || {};
+        const progress = job?.progress || {};
+        const status = String(job?.status || "queued");
+        const total = Number(progress.totalRecipients || 0);
+        const processed = Number(progress.processedRecipients || 0);
+        const percent = Number(progress.percent || 0);
+        const sent = Number(progress.sent || 0);
+        const tokens = Number(progress.tokens || 0);
+        const cleaned = Number(progress.cleaned || 0);
+        const inAppInserted = Number(progress.inAppInserted || 0);
+
+        if (status === "queued" || status === "running") {
+          setPushBroadcastStatus(`Рассылка выполняется: ${processed}/${total} (${percent}%), sent: ${sent}, tokens: ${tokens}, cleaned: ${cleaned}, in-app: ${inAppInserted}`, "progress");
+          pushBroadcastPollTimer = setTimeout(() => {
+            void tick();
+          }, 1500);
+          return;
+        }
+
+        stopPushBroadcastPolling();
+        if (status === "completed") {
+          if (job?.dryRun) {
+            setPushBroadcastStatus(`Dry-run завершён: найдено получателей ${total}`, "success");
+          } else {
+            setPushBroadcastStatus(`Рассылка завершена: ${processed}/${total}, sent: ${sent}, tokens: ${tokens}, cleaned: ${cleaned}, in-app: ${inAppInserted}`, "success");
+          }
+          if (onDone) onDone(true);
+          return;
+        }
+
+        const errorMessage = String(job?.error || "Ошибка выполнения рассылки");
+        setPushBroadcastStatus(`Ошибка рассылки: ${errorMessage}`, "error");
+        if (onDone) onDone(false);
+      } catch {
+        stopPushBroadcastPolling();
+        setPushBroadcastStatus("Сбой сети при проверке статуса рассылки", "error");
+        if (onDone) onDone(false);
+      }
+    };
+
+    void tick();
+  };
+  document.getElementById("push-test-form")?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const form = e.currentTarget;
+    if (!(form instanceof HTMLFormElement)) return;
+
+    const userId = getFormValue(form, "userId", "").trim();
+    const slug = getFormValue(form, "slug", "").trim().toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 20);
+    const title = getFormValue(form, "title", "").trim();
+    const bodyText = getFormValue(form, "body", "").trim();
+    const includeInApp = !!(form.elements.namedItem("includeInApp") instanceof HTMLInputElement && form.elements.namedItem("includeInApp").checked);
+    const rawData = getFormValue(form, "data", "").trim();
+
+    if (!userId && !slug) {
+      showAlert("Укажите userId или slug");
+      return;
+    }
+    if (!title || !bodyText) {
+      showAlert("Заполните заголовок и текст");
+      return;
+    }
+
+    let data = {};
+    if (rawData) {
+      try {
+        const parsed = JSON.parse(rawData);
+        if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+          throw new Error("JSON data must be an object");
+        }
+        data = parsed;
+      } catch {
+        showAlert("Поле JSON data должно быть валидным JSON-объектом");
+        return;
+      }
+    }
+
+    const r = await fetch("/api/admin/push/test-user", {
+      method: "POST",
+      headers: H({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ userId, slug, title, body: bodyText, data, includeInApp }),
+    });
+    if (!r.ok) {
+      showAlert(await E(r));
+      return;
+    }
+
+    const payload = await r.json().catch(() => null);
+    const sent = Number(payload?.result?.sent || 0);
+    const tokens = Number(payload?.result?.tokens || 0);
+    const inserted = Number(payload?.inAppInserted || 0);
+    showAlert(`Тест отправлен. userId: ${payload?.userId || "-"}, sent: ${sent}, tokens: ${tokens}, in-app: ${inserted}`);
+  });
+  document.getElementById("push-broadcast-form")?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const form = e.currentTarget;
+    if (!(form instanceof HTMLFormElement)) return;
+
+    const title = getFormValue(form, "title", "").trim();
+    const bodyText = getFormValue(form, "body", "").trim();
+    if (!title || !bodyText) {
+      showAlert("Заполните заголовок и текст рассылки");
+      return;
+    }
+
+    const plan = getFormValue(form, "plan", "all");
+    const status = getFormValue(form, "status", "all");
+    const limit = Number(getFormValue(form, "limit", "20000")) || 20000;
+    const includeInApp = !!(form.elements.namedItem("includeInApp") instanceof HTMLInputElement && form.elements.namedItem("includeInApp").checked);
+    const onlyWithPushTokens = !!(form.elements.namedItem("onlyWithPushTokens") instanceof HTMLInputElement && form.elements.namedItem("onlyWithPushTokens").checked);
+    const dryRun = !!(form.elements.namedItem("dryRun") instanceof HTMLInputElement && form.elements.namedItem("dryRun").checked);
+    const rawData = getFormValue(form, "data", "").trim();
+
+    let data = {};
+    if (rawData) {
+      try {
+        const parsed = JSON.parse(rawData);
+        if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+          throw new Error("JSON data must be an object");
+        }
+        data = parsed;
+      } catch {
+        showAlert("Поле JSON data должно быть валидным JSON-объектом");
+        return;
+      }
+    }
+
+    const warning = dryRun
+      ? "Сделать dry-run рассылки?"
+      : "Отправить push-рассылку выбранной аудитории?";
+    if (!await showConfirm(warning)) {
+      return;
+    }
+
+    const submitButton = form.querySelector('button[type="submit"]');
+    if (submitButton instanceof HTMLButtonElement) {
+      submitButton.disabled = true;
+    }
+    setPushBroadcastStatus("Инициализация рассылки...", "progress");
+
+    const r = await fetch("/api/admin/push/broadcast/start", {
+      method: "POST",
+      headers: H({ "Content-Type": "application/json" }),
+      body: JSON.stringify({
+        title,
+        body: bodyText,
+        plan,
+        status,
+        limit,
+        includeInApp,
+        onlyWithPushTokens,
+        dryRun,
+        data,
+      }),
+    });
+    if (!r.ok) {
+      if (submitButton instanceof HTMLButtonElement) {
+        submitButton.disabled = false;
+      }
+      showAlert(await E(r));
+      return;
+    }
+
+    const payload = await r.json().catch(() => null);
+    const jobId = String(payload?.job?.id || "").trim();
+    if (!jobId) {
+      if (submitButton instanceof HTMLButtonElement) {
+        submitButton.disabled = false;
+      }
+      setPushBroadcastStatus("Не удалось запустить рассылку", "error");
+      return;
+    }
+
+    stopPushBroadcastPolling();
+    await pollBroadcastJob(jobId, (success) => {
+      if (submitButton instanceof HTMLButtonElement) {
+        submitButton.disabled = false;
+      }
+      if (!success) {
+        showAlert("Рассылка завершилась с ошибкой");
+      }
+    });
   });
   document.getElementById("score-recalculate-all-btn")?.addEventListener("click", async () => {
     const r = await fetch("/api/admin/score/recalculate-all", { method: "POST", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({}) });

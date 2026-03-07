@@ -12,6 +12,7 @@ const { getActiveFlashSale, resolveConditionLabel, getFlashSaleSlotsLeft } = req
 const { normalizeRefCode } = require("../../services/referrals");
 const { getPricingSettings } = require("../../services/pricing-settings");
 const { getManySettings } = require("../../services/platform-settings");
+const { sendTapPushNotification } = require("../../services/push");
 const { seoHub, getSeoPage } = require("../../content/seo-pages");
 
 const router = express.Router();
@@ -200,6 +201,21 @@ async function logTapEventFromPageRequest({ req, ownerSlug, ownerId }) {
           ${JSON.stringify({ ownerSlug, visitorSlug, source })}
         )
       `;
+
+      void sendTapPushNotification({
+        ownerId,
+        ownerSlug,
+        visitorSlug,
+        source,
+      }).catch((pushError) => {
+        console.error("[push] failed to send tap notification", {
+          ownerId,
+          ownerSlug,
+          visitorSlug,
+          source,
+          message: pushError?.message || String(pushError),
+        });
+      });
     }
   } catch (error) {
     if (error && (String(error.code || "") === "42P01" || String(error.code || "") === "42703")) {

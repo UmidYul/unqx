@@ -1,6 +1,7 @@
 const express = require("express");
 const { addDays, format, startOfDay, subDays } = require("date-fns");
 const { fromZonedTime, toZonedTime } = require("date-fns-tz");
+const { Prisma } = require("@prisma/client");
 
 const { prisma } = require("../../db/prisma");
 const { env } = require("../../config/env");
@@ -15,6 +16,7 @@ const { getGlobalStats } = require("../../services/stats");
 const { calculateSlugPrice, getSlugPricingConfig } = require("../../services/slug-pricing");
 const { sendSlugApprovedToUser, sendSlugAwaitingPaymentToUser, sendSlugRejectedToUser, sendTelegramMessage } = require("../../services/telegram");
 const { recalculateAndRefreshPercentiles } = require("../../services/unq-score");
+const { sendExpoPushToUser, sendExpoPushToUsers } = require("../../services/push");
 const {
   getBraceletPrice,
   normalizePlan,
@@ -23,6 +25,292 @@ const {
 } = require("../../services/pricing-settings");
 
 const router = express.Router();
+const PUSH_PRIORITY_SET = new Set(["default", "normal", "high"]);
+const PUSH_SOUND_SET = new Set(["default", "none"]);
+const BROADCAST_CHUNK_USERS = 400;
+const BROADCAST_JOB_LIMIT = 50;
+const BROADCAST_JOB_TTL_MS = 1000 * 60 * 30;
+const broadcastJobs = new Map();
+
+function sanitizeSlug(value) {
+  return String(value || "")
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "")
+    .slice(0, 20);
+}
+
+function normalizeAnalyticsPattern(value) {
+  return String(value || "")
+    .toUpperCase()
+    .replace(/[^A-Z0-9_*\-]/g, "")
+    .slice(0, 32);
+}
+
+function isPushStorageError(error) {
+  if (!error || typeof error !== "object") return false;
+  const code = String(error.code || "");
+  return code === "42P01" || code === "42703" || code === "P2021" || code === "P2022";
+}
+
+function parseJsonObject(value, fallback) {
+  if (value && typeof value === "object" && !Array.isArray(value)) {
+    return value;
+  }
+  if (typeof value !== "string") {
+    return fallback;
+  }
+  const raw = value.trim();
+  if (!raw) return fallback;
+  try {
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+      return parsed;
+    }
+    return fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function normalizePushPriority(value) {
+  const priority = String(value || "").trim().toLowerCase();
+  return PUSH_PRIORITY_SET.has(priority) ? priority : "high";
+}
+
+function normalizePushSound(value) {
+  const sound = String(value || "").trim().toLowerCase();
+  return PUSH_SOUND_SET.has(sound) ? sound : "default";
+}
+
+function normalizePlanFilter(value) {
+  const plan = String(value || "").trim().toLowerCase();
+  return ["all", "none", "basic", "premium"].includes(plan) ? plan : "all";
+}
+
+function normalizeStatusFilter(value) {
+  const status = String(value || "").trim().toLowerCase();
+  return ["all", "active", "blocked"].includes(status) ? status : "all";
+}
+
+async function insertInAppNotifications(userIds, title, body, data, type = "system") {
+  const normalizedIds = Array.from(new Set((Array.isArray(userIds) ? userIds : []).map((id) => String(id || "").trim()).filter(Boolean)));
+  if (!normalizedIds.length) {
+    return 0;
+  }
+
+  const payload = JSON.stringify(data && typeof data === "object" ? data : {});
+  let inserted = 0;
+
+  for (let i = 0; i < normalizedIds.length; i += 200) {
+    const chunk = normalizedIds.slice(i, i + 200);
+    const values = chunk.map((userId) =>
+      Prisma.sql`(${userId}, ${type}, ${title}, ${body}, ${payload})`,
+    );
+
+    await prisma.$executeRaw(
+      Prisma.sql`
+        INSERT INTO notifications (
+          user_id,
+          type,
+          title,
+          body,
+          data
+        )
+        VALUES ${Prisma.join(values)}
+      `,
+    );
+    inserted += chunk.length;
+  }
+
+  return inserted;
+}
+
+async function listBroadcastRecipientIds({ plan, status, onlyWithPushTokens, limit }) {
+  let recipientRows = [];
+  try {
+    recipientRows = await prisma.$queryRaw`
+      SELECT u.id
+      FROM users u
+      WHERE coalesce(u.notifications_enabled, true) = true
+        AND (${plan} = 'all' OR coalesce(u.plan, 'none') = ${plan})
+        AND (${status} = 'all' OR coalesce(u.status, 'active') = ${status})
+        AND (${onlyWithPushTokens} = false OR EXISTS (
+          SELECT 1
+          FROM push_tokens pt
+          WHERE pt.user_id = u.id
+        ))
+      ORDER BY u.created_at DESC
+      LIMIT ${limit}
+    `;
+  } catch (error) {
+    if (!isPushStorageError(error)) {
+      throw error;
+    }
+    recipientRows = [];
+  }
+
+  return Array.from(
+    new Set(
+      (Array.isArray(recipientRows) ? recipientRows : [])
+        .map((row) => String(row?.id || "").trim())
+        .filter(Boolean),
+    ),
+  );
+}
+
+function trimBroadcastJobs() {
+  const now = Date.now();
+  for (const [jobId, job] of broadcastJobs.entries()) {
+    const updatedAt = new Date(job?.updatedAt || job?.createdAt || 0).getTime();
+    if (!Number.isFinite(updatedAt) || now - updatedAt > BROADCAST_JOB_TTL_MS) {
+      broadcastJobs.delete(jobId);
+    }
+  }
+
+  if (broadcastJobs.size <= BROADCAST_JOB_LIMIT) {
+    return;
+  }
+
+  const oldJobs = Array.from(broadcastJobs.entries()).sort((a, b) => {
+    const aTime = new Date(a?.[1]?.updatedAt || a?.[1]?.createdAt || 0).getTime();
+    const bTime = new Date(b?.[1]?.updatedAt || b?.[1]?.createdAt || 0).getTime();
+    return aTime - bTime;
+  });
+
+  while (broadcastJobs.size > BROADCAST_JOB_LIMIT && oldJobs.length) {
+    const oldest = oldJobs.shift();
+    if (!oldest) break;
+    broadcastJobs.delete(oldest[0]);
+  }
+}
+
+function makeBroadcastJob(payload) {
+  trimBroadcastJobs();
+  const jobId = `pb_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+  const nowIso = new Date().toISOString();
+  const job = {
+    id: jobId,
+    status: "queued",
+    createdAt: nowIso,
+    updatedAt: nowIso,
+    startedAt: null,
+    finishedAt: null,
+    error: null,
+    payload,
+    progress: {
+      totalRecipients: payload.recipientIds.length,
+      processedRecipients: 0,
+      chunksTotal: Math.max(1, Math.ceil(payload.recipientIds.length / BROADCAST_CHUNK_USERS)),
+      chunksDone: 0,
+      percent: payload.recipientIds.length ? 0 : 100,
+      sent: 0,
+      tokens: 0,
+      cleaned: 0,
+      inAppInserted: 0,
+      usersReached: 0,
+    },
+  };
+  broadcastJobs.set(jobId, job);
+  return job;
+}
+
+function getBroadcastJobView(job) {
+  if (!job) return null;
+  return {
+    id: job.id,
+    status: job.status,
+    createdAt: job.createdAt,
+    updatedAt: job.updatedAt,
+    startedAt: job.startedAt,
+    finishedAt: job.finishedAt,
+    dryRun: Boolean(job.payload?.dryRun),
+    filters: job.payload?.filters || null,
+    error: job.error,
+    progress: job.progress,
+  };
+}
+
+async function runBroadcastJob(jobId) {
+  const job = broadcastJobs.get(jobId);
+  if (!job || job.status !== "queued") {
+    return;
+  }
+
+  const nowIso = new Date().toISOString();
+  job.status = "running";
+  job.startedAt = nowIso;
+  job.updatedAt = nowIso;
+
+  try {
+    if (job.payload.dryRun) {
+      job.progress.percent = 100;
+      job.status = "completed";
+      job.finishedAt = new Date().toISOString();
+      job.updatedAt = job.finishedAt;
+      return;
+    }
+
+    const { recipientIds, title, body, data, sound, priority, includeInApp } = job.payload;
+    const total = recipientIds.length;
+    const chunks = [];
+    for (let i = 0; i < total; i += BROADCAST_CHUNK_USERS) {
+      chunks.push(recipientIds.slice(i, i + BROADCAST_CHUNK_USERS));
+    }
+
+    if (!chunks.length) {
+      job.progress.percent = 100;
+      job.status = "completed";
+      job.finishedAt = new Date().toISOString();
+      job.updatedAt = job.finishedAt;
+      return;
+    }
+
+    for (let index = 0; index < chunks.length; index += 1) {
+      const chunk = chunks[index];
+      const pushResult = await sendExpoPushToUsers({
+        userIds: chunk,
+        title,
+        body,
+        data,
+        sound,
+        priority,
+      });
+
+      let inAppInsertedChunk = 0;
+      if (includeInApp && chunk.length) {
+        try {
+          inAppInsertedChunk = await insertInAppNotifications(chunk, title, body, data, "system");
+        } catch (error) {
+          if (!isPushStorageError(error)) {
+            throw error;
+          }
+        }
+      }
+
+      job.progress.processedRecipients += chunk.length;
+      job.progress.chunksDone = index + 1;
+      job.progress.percent = total
+        ? Math.min(100, Math.round((job.progress.processedRecipients / total) * 100))
+        : 100;
+      job.progress.sent += Number(pushResult?.sent || 0);
+      job.progress.tokens += Number(pushResult?.tokens || 0);
+      job.progress.cleaned += Number(pushResult?.cleaned || 0);
+      job.progress.inAppInserted += Number(inAppInsertedChunk || 0);
+      job.progress.usersReached += Number(pushResult?.users || 0);
+      job.updatedAt = new Date().toISOString();
+    }
+
+    job.progress.percent = 100;
+    job.status = "completed";
+    job.finishedAt = new Date().toISOString();
+    job.updatedAt = job.finishedAt;
+  } catch (error) {
+    job.status = "failed";
+    job.error = error?.message || String(error);
+    job.finishedAt = new Date().toISOString();
+    job.updatedAt = job.finishedAt;
+  }
+}
 
 function normalizeTariff(value) {
   return value === "premium" ? "premium" : "basic";
@@ -1528,6 +1816,11 @@ router.patch(
   asyncHandler(async (req, res) => {
     const MAX_DB_INT = 2_147_483_647;
     const slug = String(req.params.slug || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 20);
+    const parsed = /^([A-Z]{3})([0-9]{3})$/.exec(slug);
+    if (!parsed) {
+      res.status(400).json({ error: "Slug must be in AAA000 format" });
+      return;
+    }
     const value = req.body.priceOverride;
     let priceOverride = null;
     if (!(value === null || value === "")) {
@@ -1543,21 +1836,10 @@ router.patch(
       }
       priceOverride = normalized;
     }
-    const existing = await prisma.slug.findUnique({
-      where: { fullSlug: slug },
-      select: { fullSlug: true },
-    });
-    if (!existing) {
-      res.status(404).json({ error: "Slug not found" });
-      return;
-    }
-    const parsed = /^([A-Z]{3})([0-9]{3})$/.exec(slug);
+
     const effectiveSlugPrice = (() => {
       if (typeof priceOverride === "number") {
         return priceOverride;
-      }
-      if (!parsed) {
-        return null;
       }
       return null;
     })();
@@ -1580,9 +1862,17 @@ router.patch(
     }
 
     const [row, synced] = await prisma.$transaction(async (tx) => {
-      const updatedSlug = await tx.slug.update({
+      const updatedSlug = await tx.slug.upsert({
         where: { fullSlug: slug },
-        data: { price: priceOverride },
+        create: {
+          letters: parsed[1],
+          digits: parsed[2],
+          fullSlug: slug,
+          status: "free",
+          isPrimary: false,
+          price: priceOverride,
+        },
+        update: { price: priceOverride },
         select: {
           fullSlug: true,
           price: true,
@@ -1888,7 +2178,11 @@ router.get(
       if (bought) {
         continue;
       }
-      patternCounts.set(log.pattern, (patternCounts.get(log.pattern) || 0) + 1);
+      const pattern = normalizeAnalyticsPattern(log.pattern);
+      if (!pattern) {
+        continue;
+      }
+      patternCounts.set(pattern, (patternCounts.get(pattern) || 0) + 1);
     }
     const topUnboughtPatterns = Array.from(patternCounts.entries())
       .map(([pattern, count]) => ({ pattern, count }))
@@ -2208,6 +2502,212 @@ router.post(
   asyncHandler(async (_req, res) => {
     const slug = await generateNextSlug();
     res.json({ slug });
+  }),
+);
+
+router.post(
+  "/push/test-user",
+  asyncHandler(async (req, res) => {
+    const requestedUserId = String(req.body?.userId || "").trim();
+    const requestedSlug = sanitizeSlug(req.body?.slug || "");
+
+    if (!requestedUserId && !requestedSlug) {
+      res.status(400).json({ error: "userId or slug is required", code: "VALIDATION_ERROR" });
+      return;
+    }
+
+    let resolvedUserId = requestedUserId;
+    if (!resolvedUserId && requestedSlug) {
+      const row = await prisma.slug.findUnique({
+        where: { fullSlug: requestedSlug },
+        select: { ownerId: true },
+      });
+      if (!row?.ownerId) {
+        res.status(404).json({ error: "Slug owner not found", code: "NOT_FOUND" });
+        return;
+      }
+      resolvedUserId = String(row.ownerId);
+    }
+
+    const title = String(req.body?.title || "Тестовое уведомление").trim().slice(0, 120);
+    const messageBody = String(req.body?.body || "Проверка доставки push-уведомления").trim().slice(0, 512);
+    if (!title || !messageBody) {
+      res.status(400).json({ error: "Title and body are required", code: "VALIDATION_ERROR" });
+      return;
+    }
+
+    const includeInApp = req.body?.includeInApp !== false;
+    const baseData = parseJsonObject(req.body?.data, {});
+    const data = {
+      type: String(baseData?.type || "admin_test"),
+      ...(baseData || {}),
+    };
+
+    const result = await sendExpoPushToUser({
+      userId: resolvedUserId,
+      title,
+      body: messageBody,
+      data,
+      sound: normalizePushSound(req.body?.sound),
+    });
+
+    let inAppInserted = 0;
+    if (includeInApp) {
+      try {
+        inAppInserted = await insertInAppNotifications([resolvedUserId], title, messageBody, data, "system");
+      } catch (error) {
+        if (!isPushStorageError(error)) {
+          throw error;
+        }
+      }
+    }
+
+    res.json({
+      ok: true,
+      userId: resolvedUserId,
+      result,
+      inAppInserted,
+    });
+  }),
+);
+
+router.post(
+  "/push/broadcast",
+  asyncHandler(async (req, res) => {
+    const title = String(req.body?.title || "").trim().slice(0, 120);
+    const messageBody = String(req.body?.body || "").trim().slice(0, 512);
+    if (!title || !messageBody) {
+      res.status(400).json({ error: "Title and body are required", code: "VALIDATION_ERROR" });
+      return;
+    }
+
+    const plan = normalizePlanFilter(req.body?.plan);
+    const status = normalizeStatusFilter(req.body?.status);
+    const dryRun = req.body?.dryRun === true;
+    const includeInApp = req.body?.includeInApp !== false;
+    const onlyWithPushTokens = req.body?.onlyWithPushTokens !== false;
+    const rawLimit = Number(req.body?.limit || 0);
+    const limit = Number.isFinite(rawLimit) && rawLimit > 0 ? Math.min(Math.floor(rawLimit), 20_000) : 20_000;
+    const baseData = parseJsonObject(req.body?.data, {});
+    const data = {
+      type: String(baseData?.type || "admin_broadcast"),
+      ...(baseData || {}),
+    };
+
+    const recipientIds = await listBroadcastRecipientIds({
+      plan,
+      status,
+      onlyWithPushTokens,
+      limit,
+    });
+
+    if (dryRun) {
+      res.json({
+        ok: true,
+        dryRun: true,
+        recipients: recipientIds.length,
+        filters: { plan, status, limit, onlyWithPushTokens },
+      });
+      return;
+    }
+
+    const result = await sendExpoPushToUsers({
+      userIds: recipientIds,
+      title,
+      body: messageBody,
+      data,
+      sound: normalizePushSound(req.body?.sound),
+      priority: normalizePushPriority(req.body?.priority),
+    });
+
+    let inAppInserted = 0;
+    if (includeInApp && recipientIds.length) {
+      try {
+        inAppInserted = await insertInAppNotifications(recipientIds, title, messageBody, data, "system");
+      } catch (error) {
+        if (!isPushStorageError(error)) {
+          throw error;
+        }
+      }
+    }
+
+    res.json({
+      ok: true,
+      recipients: recipientIds.length,
+      result,
+      inAppInserted,
+      filters: { plan, status, limit, onlyWithPushTokens },
+    });
+  }),
+);
+
+router.post(
+  "/push/broadcast/start",
+  asyncHandler(async (req, res) => {
+    const title = String(req.body?.title || "").trim().slice(0, 120);
+    const messageBody = String(req.body?.body || "").trim().slice(0, 512);
+    if (!title || !messageBody) {
+      res.status(400).json({ error: "Title and body are required", code: "VALIDATION_ERROR" });
+      return;
+    }
+
+    const plan = normalizePlanFilter(req.body?.plan);
+    const status = normalizeStatusFilter(req.body?.status);
+    const dryRun = req.body?.dryRun === true;
+    const includeInApp = req.body?.includeInApp !== false;
+    const onlyWithPushTokens = req.body?.onlyWithPushTokens !== false;
+    const rawLimit = Number(req.body?.limit || 0);
+    const limit = Number.isFinite(rawLimit) && rawLimit > 0 ? Math.min(Math.floor(rawLimit), 20_000) : 20_000;
+    const baseData = parseJsonObject(req.body?.data, {});
+    const data = {
+      type: String(baseData?.type || "admin_broadcast"),
+      ...(baseData || {}),
+    };
+
+    const recipientIds = await listBroadcastRecipientIds({
+      plan,
+      status,
+      onlyWithPushTokens,
+      limit,
+    });
+
+    const payload = {
+      title,
+      body: messageBody,
+      data,
+      sound: normalizePushSound(req.body?.sound),
+      priority: normalizePushPriority(req.body?.priority),
+      includeInApp,
+      dryRun,
+      recipientIds,
+      filters: { plan, status, limit, onlyWithPushTokens },
+    };
+
+    const job = makeBroadcastJob(payload);
+    void runBroadcastJob(job.id);
+
+    res.json({
+      ok: true,
+      job: getBroadcastJobView(job),
+    });
+  }),
+);
+
+router.get(
+  "/push/broadcast/jobs/:jobId",
+  asyncHandler(async (req, res) => {
+    trimBroadcastJobs();
+    const jobId = String(req.params?.jobId || "").trim();
+    const job = broadcastJobs.get(jobId);
+    if (!job) {
+      res.status(404).json({ error: "Broadcast job not found", code: "NOT_FOUND" });
+      return;
+    }
+
+    res.json({
+      ok: true,
+      job: getBroadcastJobView(job),
+    });
   }),
 );
 
