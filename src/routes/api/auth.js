@@ -408,6 +408,14 @@ router.post(
       },
     });
 
+    if (user.status === "blocked" || user.status === "deactivated") {
+      res.status(403).json({
+        error: "Аккаунт отключен. Обратитесь в поддержку.",
+        code: "ACCOUNT_DISABLED",
+      });
+      return;
+    }
+
     if (!user.emailVerified) {
       res.status(403).json({ error: "Сначала подтверди email.", code: "UNVERIFIED", email: user.email });
       return;
