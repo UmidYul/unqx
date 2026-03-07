@@ -1838,8 +1838,6 @@ router.get(
 
 router.post(
   "/notifications/read-all",
-  requireSameOrigin,
-  requireCsrfToken,
   asyncHandler(async (req, res) => {
     const userSession = getUserSession(req);
     const userId = userSession?.userId;
@@ -1866,8 +1864,6 @@ router.post(
 
 router.post(
   "/notifications/token",
-  requireSameOrigin,
-  requireCsrfToken,
   asyncHandler(async (req, res) => {
     const userSession = getUserSession(req);
     const userId = userSession?.userId;
@@ -1908,8 +1904,6 @@ router.post(
 
 router.post(
   "/notifications/test-send",
-  requireSameOrigin,
-  requireCsrfToken,
   asyncHandler(async (req, res) => {
     const userSession = getUserSession(req);
     const userId = userSession?.userId;
