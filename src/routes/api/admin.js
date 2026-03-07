@@ -131,8 +131,7 @@ async function listBroadcastRecipientIds({ plan, status, onlyWithPushTokens, lim
     recipientRows = await prisma.$queryRaw`
       SELECT u.id
       FROM users u
-      WHERE coalesce(u.notifications_enabled, true) = true
-        AND (${plan} = 'all' OR coalesce(u.plan, 'none') = ${plan})
+      WHERE (${plan} = 'all' OR coalesce(u.plan, 'none') = ${plan})
         AND (${status} = 'all' OR coalesce(u.status, 'active') = ${status})
         AND (${onlyWithPushTokens} = false OR EXISTS (
           SELECT 1
@@ -250,7 +249,7 @@ async function runBroadcastJob(jobId) {
       return;
     }
 
-    const { recipientIds, title, body, data, sound, priority, includeInApp } = job.payload;
+    const { recipientIds, title, body, data, sound, priority, includeInApp, respectNotifications } = job.payload;
     const total = recipientIds.length;
     const chunks = [];
     for (let i = 0; i < total; i += BROADCAST_CHUNK_USERS) {
@@ -274,6 +273,7 @@ async function runBroadcastJob(jobId) {
         data,
         sound,
         priority,
+        respectNotifications,
       });
 
       let inAppInsertedChunk = 0;
@@ -2549,7 +2549,46 @@ router.post(
       body: messageBody,
       data,
       sound: normalizePushSound(req.body?.sound),
+      respectNotifications: false,
     });
+
+    let tokenDebug = { total: 0, expo: 0, nonExpo: 0, notificationsEnabled: null };
+    try {
+      const [tokenRows, userRows] = await Promise.all([
+        prisma.$queryRaw`
+          SELECT token
+          FROM push_tokens
+          WHERE user_id = ${resolvedUserId}
+        `,
+        prisma.$queryRaw`
+          SELECT notifications_enabled
+          FROM users
+          WHERE id = ${resolvedUserId}
+          LIMIT 1
+        `,
+      ]);
+
+      const tokens = Array.isArray(tokenRows)
+        ? tokenRows
+          .map((row) => String(row?.token || '').trim())
+          .filter(Boolean)
+        : [];
+      const expo = tokens.filter((value) => /^(ExponentPushToken|ExpoPushToken)\[[^\]]+\]$/.test(value)).length;
+
+      tokenDebug = {
+        total: tokens.length,
+        expo,
+        nonExpo: Math.max(0, tokens.length - expo),
+        notificationsEnabled:
+          Array.isArray(userRows) && userRows.length > 0
+            ? userRows[0]?.notifications_enabled ?? null
+            : null,
+      };
+    } catch (error) {
+      if (!isPushStorageError(error)) {
+        throw error;
+      }
+    }
 
     let inAppInserted = 0;
     if (includeInApp) {
@@ -2567,6 +2606,7 @@ router.post(
       userId: resolvedUserId,
       result,
       inAppInserted,
+      tokenDebug,
     });
   }),
 );
@@ -2618,6 +2658,7 @@ router.post(
       data,
       sound: normalizePushSound(req.body?.sound),
       priority: normalizePushPriority(req.body?.priority),
+      respectNotifications: false,
     });
 
     let inAppInserted = 0;
@@ -2677,6 +2718,7 @@ router.post(
       data,
       sound: normalizePushSound(req.body?.sound),
       priority: normalizePushPriority(req.body?.priority),
+      respectNotifications: false,
       includeInApp,
       dryRun,
       recipientIds,

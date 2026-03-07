@@ -71,21 +71,29 @@ function buildHeaders() {
     return headers;
 }
 
-async function fetchUserPushTokens(userId) {
+async function fetchUserPushTokens(userId, { respectNotifications = true } = {}) {
     if (!userId) {
         return [];
     }
 
     try {
-        const rows = await prisma.$queryRaw`
-      SELECT pt.token
-      FROM push_tokens pt
-      JOIN users u ON u.id = pt.user_id
-      WHERE pt.user_id = ${userId}
-        AND coalesce(u.notifications_enabled, true) = true
-      ORDER BY pt.updated_at DESC
-      LIMIT 50
-    `;
+        const rows = respectNotifications
+            ? await prisma.$queryRaw`
+            SELECT pt.token
+            FROM push_tokens pt
+            JOIN users u ON u.id = pt.user_id
+            WHERE pt.user_id = ${userId}
+                AND coalesce(u.notifications_enabled, true) = true
+            ORDER BY pt.updated_at DESC
+            LIMIT 50
+        `
+            : await prisma.$queryRaw`
+            SELECT pt.token
+            FROM push_tokens pt
+            WHERE pt.user_id = ${userId}
+            ORDER BY pt.updated_at DESC
+            LIMIT 50
+        `;
 
         if (!Array.isArray(rows)) {
             return [];
@@ -101,7 +109,7 @@ async function fetchUserPushTokens(userId) {
     }
 }
 
-async function fetchPushTargetsByUserIds(userIds) {
+async function fetchPushTargetsByUserIds(userIds, { respectNotifications = true } = {}) {
     const normalizedUserIds = Array.from(
         new Set(
             (Array.isArray(userIds) ? userIds : [])
@@ -114,12 +122,18 @@ async function fetchPushTargetsByUserIds(userIds) {
     }
 
     try {
-        const rows = await prisma.$queryRaw`
+        const rows = respectNotifications
+            ? await prisma.$queryRaw`
             SELECT pt.user_id, pt.token
             FROM push_tokens pt
             JOIN users u ON u.id = pt.user_id
             WHERE pt.user_id IN (${Prisma.join(normalizedUserIds)})
                 AND coalesce(u.notifications_enabled, true) = true
+        `
+            : await prisma.$queryRaw`
+            SELECT pt.user_id, pt.token
+            FROM push_tokens pt
+            WHERE pt.user_id IN (${Prisma.join(normalizedUserIds)})
         `;
 
         if (!Array.isArray(rows)) {
@@ -293,12 +307,12 @@ async function dispatchPushTargets(targets, payload) {
     };
 }
 
-async function sendExpoPushToUser({ userId, title, body, data = {}, sound = "default" }) {
+async function sendExpoPushToUser({ userId, title, body, data = {}, sound = "default", respectNotifications = true }) {
     if (!userId || !title || !body || shouldDisablePush()) {
         return { ok: true, sent: 0, tokens: 0 };
     }
 
-    const allTokens = await fetchUserPushTokens(userId);
+    const allTokens = await fetchUserPushTokens(userId, { respectNotifications });
     if (!allTokens.length) {
         return { ok: true, sent: 0, tokens: 0 };
     }
@@ -313,12 +327,12 @@ async function sendExpoPushToUser({ userId, title, body, data = {}, sound = "def
     });
 }
 
-async function sendExpoPushToUsers({ userIds, title, body, data = {}, sound = "default", priority = "high" }) {
+async function sendExpoPushToUsers({ userIds, title, body, data = {}, sound = "default", priority = "high", respectNotifications = true }) {
     if (!Array.isArray(userIds) || !userIds.length || !title || !body || shouldDisablePush()) {
         return { ok: true, sent: 0, tokens: 0, users: 0 };
     }
 
-    const targets = await fetchPushTargetsByUserIds(userIds);
+    const targets = await fetchPushTargetsByUserIds(userIds, { respectNotifications });
     if (!targets.length) {
         return { ok: true, sent: 0, tokens: 0, users: 0 };
     }
