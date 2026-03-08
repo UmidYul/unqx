@@ -286,109 +286,148 @@
     if (themeKey === "default_dark") {
       return `<svg class="unq-ref-overlay-svg" viewBox="0 0 360 600" preserveAspectRatio="none" aria-hidden="true">
         <defs>
-          <pattern id="dots-dark" width="16" height="16" patternUnits="userSpaceOnUse">
-            <circle cx="1.2" cy="1.2" r="0.9" fill="#0f172a"></circle>
+          <pattern id="dd-grid" width="24" height="24" patternUnits="userSpaceOnUse">
+            <path d="M24 0H0V24" stroke="#28426a" stroke-width="0.38"></path>
           </pattern>
+          <pattern id="dd-scan" width="8" height="8" patternUnits="userSpaceOnUse">
+            <path d="M0 0H8" stroke="#243d63" stroke-width="0.22"></path>
+          </pattern>
+          <radialGradient id="dd-halo" cx="50%" cy="42%" r="64%">
+            <stop offset="0%" stop-color="#5f88cb"></stop>
+            <stop offset="100%" stop-color="#0a1424"></stop>
+          </radialGradient>
         </defs>
-        <rect width="100%" height="100%" fill="url(#dots-dark)"></rect>
-        <path d="M0 120C80 94 150 98 220 120C275 138 318 138 360 126" stroke="#111827" stroke-width="1.2" fill="none"></path>
-        <path d="M0 360C66 346 132 348 198 364C260 380 310 380 360 370" stroke="#111827" stroke-width="1" fill="none"></path>
+        <rect width="100%" height="100%" fill="url(#dd-grid)"></rect>
+        <rect width="100%" height="100%" fill="url(#dd-scan)"></rect>
+        <circle cx="286" cy="136" r="170" fill="url(#dd-halo)" opacity="0.23"></circle>
+        <path d="M0 112C82 90 152 94 222 116C277 134 322 134 360 122" stroke="#5f88cb" stroke-width="1.15" fill="none"></path>
+        <path d="M0 338C66 326 136 328 204 344C266 360 316 360 360 350" stroke="#5f88cb" stroke-width="1.05" fill="none"></path>
+        <path d="M46 0V600M170 0V600M294 0V600" stroke="#385985" stroke-width="0.42"></path>
       </svg>`;
     }
     if (themeKey === "arctic") {
       return `<svg class="unq-ref-overlay-svg" viewBox="0 0 360 600" preserveAspectRatio="none" aria-hidden="true">
         <defs>
-          <linearGradient id="frost-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="#c7d9e8"></stop>
-            <stop offset="100%" stop-color="#7a9db8"></stop>
+          <pattern id="ar-facet" width="30" height="30" patternUnits="userSpaceOnUse">
+            <path d="M0 15L15 0L30 15L15 30Z" fill="none" stroke="#9bb8ce" stroke-width="0.36"></path>
+            <path d="M0 15H30M15 0V30" stroke="#bed2e3" stroke-width="0.24"></path>
+          </pattern>
+          <linearGradient id="ar-line" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#8fb0c8"></stop>
+            <stop offset="100%" stop-color="#cddceb"></stop>
           </linearGradient>
         </defs>
-        <path d="M0 70C64 92 128 48 192 72C250 94 308 86 360 62" stroke="url(#frost-grad)" stroke-width="1.1" fill="none"></path>
-        <path d="M0 190C58 210 120 170 182 196C252 224 312 214 360 198" stroke="url(#frost-grad)" stroke-width="1" fill="none"></path>
-        <path d="M0 320C70 286 138 304 198 328C262 354 320 344 360 320" stroke="url(#frost-grad)" stroke-width="1" fill="none"></path>
-        <path d="M0 510C72 536 138 488 208 518C276 548 328 538 360 516" stroke="url(#frost-grad)" stroke-width="0.95" fill="none"></path>
+        <rect width="100%" height="100%" fill="url(#ar-facet)"></rect>
+        <path d="M0 84C66 52 128 62 194 92C258 120 314 120 360 102" stroke="url(#ar-line)" stroke-width="1.05" fill="none"></path>
+        <path d="M0 252C58 226 124 232 192 258C260 284 320 286 360 270" stroke="url(#ar-line)" stroke-width="0.94" fill="none"></path>
+        <path d="M0 468C68 438 136 448 206 474C270 496 324 500 360 486" stroke="url(#ar-line)" stroke-width="0.86" fill="none"></path>
+        <path d="M38 0L222 600M142 0L328 600" stroke="#d4e3ef" stroke-width="0.32"></path>
       </svg>`;
     }
     if (themeKey === "linen") {
       return `<svg class="unq-ref-overlay-svg" viewBox="0 0 360 600" preserveAspectRatio="none" aria-hidden="true">
         <defs>
-          <pattern id="linen-card-thread" width="18" height="18" patternUnits="userSpaceOnUse">
-            <path d="M0 9h18M9 0v18" stroke="#c3a17b" stroke-width="0.42"></path>
-            <path d="M0 0h18M0 18h18M0 0v18M18 0v18" stroke="#dfceba" stroke-width="0.2"></path>
+          <pattern id="ln-weave" width="20" height="20" patternUnits="userSpaceOnUse">
+            <path d="M0 10H20M10 0V20" stroke="#be9a72" stroke-width="0.42"></path>
+            <path d="M0 0H20M0 20H20M0 0V20M20 0V20" stroke="#dec9b1" stroke-width="0.2"></path>
           </pattern>
-          <linearGradient id="linen-card-wave" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="#9f7751"></stop>
-            <stop offset="100%" stop-color="#d2b796"></stop>
+          <pattern id="ln-stitch" width="26" height="26" patternUnits="userSpaceOnUse">
+            <path d="M0 13H26" stroke="#c5a07a" stroke-width="0.28" stroke-dasharray="3 6"></path>
+          </pattern>
+          <linearGradient id="ln-wave" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#97704a"></stop>
+            <stop offset="100%" stop-color="#c9ab87"></stop>
           </linearGradient>
         </defs>
-        <rect width="100%" height="100%" fill="url(#linen-card-thread)"></rect>
-        <path d="M0 78C68 56 144 64 216 82C276 96 320 96 360 86" stroke="url(#linen-card-wave)" stroke-width="0.85" fill="none"></path>
-        <path d="M0 274C66 254 132 262 200 280C268 300 322 298 360 286" stroke="url(#linen-card-wave)" stroke-width="0.75" fill="none"></path>
-        <path d="M0 474C70 450 146 462 214 480C276 498 322 500 360 490" stroke="url(#linen-card-wave)" stroke-width="0.7" fill="none"></path>
+        <rect width="100%" height="100%" fill="url(#ln-weave)"></rect>
+        <rect width="100%" height="100%" fill="url(#ln-stitch)"></rect>
+        <path d="M0 96C72 70 146 78 214 98C278 116 322 116 360 104" stroke="url(#ln-wave)" stroke-width="0.82" fill="none"></path>
+        <path d="M0 288C70 262 140 270 208 290C274 308 322 310 360 296" stroke="url(#ln-wave)" stroke-width="0.72" fill="none"></path>
+        <path d="M0 500C72 474 146 484 214 504C278 522 322 526 360 514" stroke="url(#ln-wave)" stroke-width="0.66" fill="none"></path>
       </svg>`;
     }
     if (themeKey === "marble") {
       return `<svg class="unq-ref-overlay-svg" viewBox="0 0 360 600" preserveAspectRatio="none" aria-hidden="true">
-        <path d="M0,80 Q90,60 180,120 T360,80" stroke="#000" stroke-width="1.5" fill="none"></path>
-        <path d="M0,200 Q120,180 200,240 T360,190" stroke="#000" stroke-width="1" fill="none"></path>
-        <path d="M0,380 Q80,360 160,400 T360,370" stroke="#000" stroke-width="0.8" fill="none"></path>
-        <path d="M60,0 Q80,150 40,300 T80,600" stroke="#000" stroke-width="1" fill="none"></path>
-        <path d="M280,0 Q300,200 260,350 T300,600" stroke="#000" stroke-width="0.8" fill="none"></path>
+        <defs>
+          <filter id="mb-noise">
+            <feTurbulence type="fractalNoise" baseFrequency="0.92" numOctaves="2" stitchTiles="stitch"></feTurbulence>
+            <feColorMatrix type="saturate" values="0"></feColorMatrix>
+          </filter>
+        </defs>
+        <rect width="100%" height="100%" filter="url(#mb-noise)" opacity="0.28"></rect>
+        <path d="M0 84C88 50 164 64 236 100C286 124 330 126 360 110" stroke="#5f5f5f" stroke-width="1.2" fill="none"></path>
+        <path d="M0 222C78 192 150 204 222 236C286 264 328 264 360 252" stroke="#4a4a4a" stroke-width="0.95" fill="none"></path>
+        <path d="M0 402C84 374 160 388 234 418C294 444 334 446 360 434" stroke="#616161" stroke-width="0.86" fill="none"></path>
+        <path d="M58 0C82 130 44 246 72 364C94 454 78 530 98 600" stroke="#6d6d6d" stroke-width="0.76" fill="none"></path>
+        <path d="M270 0C296 128 254 244 284 366C306 456 290 534 314 600" stroke="#6b6b6b" stroke-width="0.7" fill="none"></path>
       </svg>`;
     }
     if (themeKey === "forest") {
-      return `<svg class="unq-ref-overlay-svg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+      return `<svg class="unq-ref-overlay-svg" viewBox="0 0 360 600" preserveAspectRatio="none" aria-hidden="true">
         <defs>
-          <filter id="grain-forest">
-            <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" stitchTiles="stitch"></feTurbulence>
+          <filter id="fr-grain">
+            <feTurbulence type="fractalNoise" baseFrequency="0.84" numOctaves="3" stitchTiles="stitch"></feTurbulence>
             <feColorMatrix type="saturate" values="0"></feColorMatrix>
           </filter>
-          <linearGradient id="forest-mist" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="#e7dbbf"></stop>
-            <stop offset="100%" stop-color="#1f5335"></stop>
+          <pattern id="fr-rings" width="32" height="32" patternUnits="userSpaceOnUse">
+            <circle cx="16" cy="16" r="12" fill="none" stroke="#406f53" stroke-width="0.46"></circle>
+            <circle cx="16" cy="16" r="5.8" fill="none" stroke="#2f5e44" stroke-width="0.34"></circle>
+          </pattern>
+          <linearGradient id="fr-vein" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#7fa283"></stop>
+            <stop offset="100%" stop-color="#cad6b5"></stop>
           </linearGradient>
         </defs>
-        <rect width="100%" height="100%" filter="url(#grain-forest)"></rect>
-        <path d="M0 28C17 23 34 19 51 25C67 30 84 34 100 28" stroke="url(#forest-mist)" stroke-width="0.35" fill="none"></path>
-        <path d="M0 58C18 53 34 52 49 57C65 62 82 64 100 58" stroke="url(#forest-mist)" stroke-width="0.3" fill="none"></path>
-        <path d="M0 84C16 80 34 76 50 80C68 84 84 88 100 84" stroke="url(#forest-mist)" stroke-width="0.28" fill="none"></path>
+        <rect width="100%" height="100%" fill="url(#fr-rings)"></rect>
+        <rect width="100%" height="100%" filter="url(#fr-grain)" opacity="0.34"></rect>
+        <path d="M0 118C70 98 140 104 210 126C272 146 318 146 360 132" stroke="url(#fr-vein)" stroke-width="0.94" fill="none"></path>
+        <path d="M0 326C72 302 144 308 214 330C276 350 322 350 360 338" stroke="url(#fr-vein)" stroke-width="0.86" fill="none"></path>
+        <path d="M0 530C70 506 142 514 212 536C272 554 320 556 360 544" stroke="url(#fr-vein)" stroke-width="0.76" fill="none"></path>
       </svg>`;
     }
     if (themeKey === "royal_ivory") {
       return `<svg class="unq-ref-overlay-svg" viewBox="0 0 360 600" preserveAspectRatio="none" aria-hidden="true">
         <defs>
-          <pattern id="royal-cross" width="26" height="26" patternUnits="userSpaceOnUse">
-            <path d="M13 0V26M0 13H26" stroke="#b48c4e" stroke-width="0.36"></path>
-            <circle cx="13" cy="13" r="1.25" fill="#cfad6f"></circle>
+          <pattern id="ri-lattice" width="28" height="28" patternUnits="userSpaceOnUse">
+            <path d="M14 0V28M0 14H28" stroke="#c49d5a" stroke-width="0.34"></path>
+            <path d="M0 0L28 28M28 0L0 28" stroke="#dfc48f" stroke-width="0.16"></path>
           </pattern>
-          <linearGradient id="royal-wave" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="#b48c4e"></stop>
-            <stop offset="100%" stop-color="#d4b373"></stop>
+          <linearGradient id="ri-line" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#a77b37"></stop>
+            <stop offset="100%" stop-color="#ccab71"></stop>
           </linearGradient>
         </defs>
-        <rect width="100%" height="100%" fill="url(#royal-cross)"></rect>
-        <path d="M0 86C72 58 142 62 212 84C274 104 318 106 360 94" stroke="url(#royal-wave)" stroke-width="0.8" fill="none"></path>
-        <path d="M0 292C70 264 140 272 210 292C276 312 320 314 360 302" stroke="url(#royal-wave)" stroke-width="0.68" fill="none"></path>
-        <path d="M0 510C72 482 144 492 212 512C274 530 320 534 360 520" stroke="url(#royal-wave)" stroke-width="0.64" fill="none"></path>
+        <rect width="100%" height="100%" fill="url(#ri-lattice)"></rect>
+        <path d="M0 92C72 64 148 72 220 94C282 112 322 114 360 102" stroke="url(#ri-line)" stroke-width="0.82" fill="none"></path>
+        <path d="M0 300C70 272 144 282 214 304C278 324 322 326 360 314" stroke="url(#ri-line)" stroke-width="0.72" fill="none"></path>
+        <path d="M0 514C74 486 148 496 218 518C282 538 324 542 360 528" stroke="url(#ri-line)" stroke-width="0.66" fill="none"></path>
+        <path d="M20 38Q40 18 60 38M300 38Q320 18 340 38M20 562Q40 582 60 562M300 562Q320 582 340 562" stroke="#b89253" stroke-width="0.52" fill="none"></path>
       </svg>`;
     }
     if (themeKey === "midnight_obsidian") {
       return `<svg class="unq-ref-overlay-svg" viewBox="0 0 360 600" preserveAspectRatio="none" aria-hidden="true">
         <defs>
-          <pattern id="obsidian-grid" width="24" height="24" patternUnits="userSpaceOnUse">
-            <path d="M0 0H24V24H0Z" fill="none" stroke="#314462" stroke-width="0.34"></path>
+          <pattern id="mo-grid" width="22" height="22" patternUnits="userSpaceOnUse">
+            <path d="M0 0H22V22H0Z" fill="none" stroke="#3b5274" stroke-width="0.32"></path>
           </pattern>
-          <radialGradient id="obsidian-glow" cx="50%" cy="50%" r="70%">
-            <stop offset="0%" stop-color="#76aef8"></stop>
-            <stop offset="100%" stop-color="#0f1828"></stop>
+          <radialGradient id="mo-star" cx="50%" cy="50%" r="70%">
+            <stop offset="0%" stop-color="#9bc2ff"></stop>
+            <stop offset="100%" stop-color="#1a2740"></stop>
           </radialGradient>
         </defs>
-        <rect width="100%" height="100%" fill="url(#obsidian-grid)"></rect>
-        <path d="M0 120C70 98 140 104 210 124C272 142 320 140 360 126" stroke="#6f99d9" stroke-width="0.9" fill="none"></path>
-        <path d="M0 342C68 320 138 326 208 344C272 362 318 362 360 348" stroke="#6f99d9" stroke-width="0.78" fill="none"></path>
-        <circle cx="76" cy="84" r="1.4" fill="url(#obsidian-glow)"></circle>
-        <circle cx="288" cy="178" r="1.2" fill="url(#obsidian-glow)"></circle>
-        <circle cx="220" cy="478" r="1.3" fill="url(#obsidian-glow)"></circle>
+        <rect width="100%" height="100%" fill="url(#mo-grid)"></rect>
+        <path d="M52 92L128 144L214 110L296 164" stroke="#769edb" stroke-width="0.72" fill="none"></path>
+        <path d="M62 334L142 300L224 346L308 320" stroke="#6f99d9" stroke-width="0.72" fill="none"></path>
+        <path d="M0 120C70 98 140 104 210 124C272 142 320 140 360 126" stroke="#6f99d9" stroke-width="0.88" fill="none"></path>
+        <path d="M0 344C68 320 138 326 208 344C272 362 318 362 360 348" stroke="#6f99d9" stroke-width="0.78" fill="none"></path>
+        <circle cx="52" cy="92" r="1.8" fill="url(#mo-star)"></circle>
+        <circle cx="128" cy="144" r="1.4" fill="url(#mo-star)"></circle>
+        <circle cx="214" cy="110" r="1.6" fill="url(#mo-star)"></circle>
+        <circle cx="296" cy="164" r="1.5" fill="url(#mo-star)"></circle>
+        <circle cx="62" cy="334" r="1.7" fill="url(#mo-star)"></circle>
+        <circle cx="142" cy="300" r="1.4" fill="url(#mo-star)"></circle>
+        <circle cx="224" cy="346" r="1.5" fill="url(#mo-star)"></circle>
+        <circle cx="308" cy="320" r="1.7" fill="url(#mo-star)"></circle>
       </svg>`;
     }
     return "";

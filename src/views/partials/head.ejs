@@ -16,6 +16,12 @@
   const pageJsonLd = Array.isArray(rawJsonLd) ? rawJsonLd : rawJsonLd ? [rawJsonLd] : [];
   const pageCsrfToken = typeof csrfToken === "string" ? csrfToken : "";
   const pageCspNonce = typeof cspNonce === "string" ? cspNonce : "";
+  const pageAssetVersion = typeof assetVersion === "string" && assetVersion ? assetVersion : "";
+  const withAssetVersion = (href) => {
+    const src = String(href || "");
+    if (!src || !pageAssetVersion || !src.startsWith("/")) return src;
+    return `${src}${src.includes("?") ? "&" : "?"}v=${encodeURIComponent(pageAssetVersion)}`;
+  };
 %>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -39,10 +45,10 @@
 <link rel="alternate" hreflang="ru" href="<%= pageCanonical %>" />
 <link rel="alternate" hreflang="x-default" href="<%= pageCanonical %>" />
 <% } %>
-<link rel="stylesheet" href="/css/tailwind.generated.css" />
-<link rel="stylesheet" href="/css/base.css" />
+<link rel="stylesheet" href="<%= withAssetVersion('/css/tailwind.generated.css') %>" />
+<link rel="stylesheet" href="<%= withAssetVersion('/css/base.css') %>" />
 <% pageStyles.forEach((styleHref) => { %>
-<link rel="stylesheet" href="<%= styleHref %>" />
+<link rel="stylesheet" href="<%= withAssetVersion(styleHref) %>" />
 <% }); %>
 <% if (pageImage) { %>
 <meta property="og:image" content="<%= pageImage %>" />
