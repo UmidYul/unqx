@@ -8,7 +8,7 @@ const { asyncHandler } = require("../../middleware/async");
 const { getAdminSession, requireVerifiedUserPage, getUserSession, logoutUserSession } = require("../../middleware/auth");
 const { getEffectivePlan } = require("../../services/profile");
 const { absoluteUrl } = require("../../utils/url");
-const { buildLeaderboard, normalizePeriod, getSlugTopBadge, getUserLeaderboardSummary } = require("../../services/leaderboard");
+const { buildLeaderboard, normalizePeriod, getPeriodRange, getSlugTopBadge, getUserLeaderboardSummary } = require("../../services/leaderboard");
 const { getFeatureSetting } = require("../../services/feature-settings");
 const { getActiveFlashSale, resolveConditionLabel, getFlashSaleSlotsLeft } = require("../../services/flash-sales");
 const { normalizeRefCode } = require("../../services/referrals");
@@ -618,7 +618,8 @@ function buildPublicCardFromProfile({ slug, user, profileCard, viewsCount, allSl
 router.get(
   "/",
   asyncHandler(async (req, res) => {
-    const [leaderboardSettings, activeFlashSale, nextDrop, pricing, publicSettingsRaw] = await Promise.all([
+    const weekRange = getPeriodRange("week");
+    const [leaderboardSettings, activeFlashSale, nextDrop, pricing, publicSettingsRaw, topWeeklyViews] = await Promise.all([
       getFeatureSetting("leaderboard"),
       getActiveFlashSale(),
       prisma.drop.findFirst({
@@ -655,6 +656,79 @@ router.get(
         "contact_error_fallback",
         "pending_expiry_hours",
       ]),
+      (async () => {
+        if (!prisma.analyticsView || typeof prisma.analyticsView.groupBy !== "function") {
+          return [];
+        }
+
+        const grouped = await prisma.analyticsView.groupBy({
+          by: ["slug"],
+          where: {
+            visitedAt: {
+              gte: weekRange.startUtc,
+              lt: weekRange.endUtc,
+            },
+          },
+          _count: { _all: true },
+        });
+
+        const ranked = grouped
+          .map((row) => ({
+            slug: String(row.slug || "").trim().toUpperCase(),
+            views: Number(row._count?._all || 0),
+          }))
+          .filter((row) => row.slug && row.views > 0)
+          .sort((a, b) => b.views - a.views)
+          .slice(0, 15);
+
+        if (!ranked.length) return [];
+
+        const slugs = ranked.map((item) => item.slug);
+        const slugRows = await prisma.slug.findMany({
+          where: {
+            fullSlug: { in: slugs },
+            status: { in: ["active", "private"] },
+          },
+          include: {
+            owner: {
+              select: {
+                displayName: true,
+                firstName: true,
+                profileCard: {
+                  select: {
+                    name: true,
+                    role: true,
+                  },
+                },
+              },
+            },
+          },
+        });
+
+        const slugMap = new Map(
+          slugRows.map((row) => [
+            String(row.fullSlug || "").toUpperCase(),
+            {
+              name: row.owner?.displayName || row.owner?.profileCard?.name || row.owner?.firstName || "UNQX User",
+              role: row.owner?.profileCard?.role || "",
+            },
+          ]),
+        );
+
+        return ranked
+          .map((item) => {
+            const profile = slugMap.get(item.slug);
+            if (!profile) return null;
+            return {
+              slug: item.slug,
+              views: item.views,
+              name: profile.name,
+              role: profile.role,
+            };
+          })
+          .filter(Boolean)
+          .slice(0, 3);
+      })(),
     ]);
     const flashSaleSlotsLeft = activeFlashSale ? await getFlashSaleSlotsLeft(activeFlashSale) : null;
 
@@ -694,6 +768,7 @@ router.get(
           slugCount: nextDrop.slugCount,
         }
         : null,
+      topWeeklyViews,
       pricing,
       publicSettings: publicSettingsRaw,
       adminSession: getAdminSession(req),
@@ -921,8 +996,8 @@ router.get(
       take: 50,
     });
     res.render("public/drops", {
-      title: "Дропы slug · UNQX",
-      description: "Актуальные и прошедшие дропы slug на UNQX",
+      title: "Релизы slug · UNQX",
+      description: "Актуальные и прошедшие релизы slug на UNQX",
       image: defaultSocialImage,
       drops: rows,
       adminSession: getAdminSession(req),
@@ -1219,16 +1294,22 @@ router.get(
       take: 500,
     });
 
-    const prepared = rows
-      .map((row) => {
-        const owner = row.owner;
-        if (!owner) return null;
-        const tags = Array.isArray(owner.profileCard?.tags) ? owner.profileCard.tags : [];
-        const name = owner.displayName || owner.profileCard?.name || owner.firstName || "UNQX User";
-        const normalizedDirectorySector = normalizeDirectorySector(owner.directorySector);
-        return {
-          slug: row.fullSlug,
-          name,
+    const groupedByOwner = new Map();
+    for (const row of rows) {
+      const owner = row.owner;
+      if (!owner?.id) continue;
+
+      const ownerId = String(owner.id);
+      const tags = Array.isArray(owner.profileCard?.tags) ? owner.profileCard.tags : [];
+      const normalizedDirectorySector = normalizeDirectorySector(owner.directorySector);
+      const slug = String(row.fullSlug || "").trim();
+      const currentViews = Number(row.analyticsViewsCount || 0);
+      const currentCreatedAt = row.createdAt ? new Date(row.createdAt) : new Date(0);
+
+      const existing = groupedByOwner.get(ownerId);
+      if (!existing) {
+        groupedByOwner.set(ownerId, {
+          name: owner.displayName || owner.profileCard?.name || owner.firstName || "UNQX User",
           role: owner.profileCard?.role || owner.verifiedCompany || "",
           bio: owner.profileCard?.bio || "",
           tags: tags.map((tag) => String(tag || "").trim()).filter(Boolean),
@@ -1237,16 +1318,47 @@ router.get(
           verifiedCompany: owner.verifiedCompany || "",
           score: Number(owner.unqScore?.score || 0),
           topPercent: Math.max(1, Math.round(Number(owner.unqScore?.percentile ? 100 - owner.unqScore.percentile : 100))),
-          views: Number(row.analyticsViewsCount || 0),
-          createdAt: row.createdAt,
+          views: currentViews,
+          createdAt: currentCreatedAt,
           sector: normalizedDirectorySector || classifySectorFromTags(tags),
-        };
-      })
-      .filter(Boolean)
+          primarySlug: slug,
+          slugs: slug ? [slug] : [],
+          slugSet: new Set(slug ? [slug] : []),
+        });
+        continue;
+      }
+
+      existing.views += currentViews;
+      if (currentCreatedAt.getTime() > existing.createdAt.getTime()) {
+        existing.createdAt = currentCreatedAt;
+      }
+      if (slug && !existing.slugSet.has(slug)) {
+        existing.slugSet.add(slug);
+        existing.slugs.push(slug);
+      }
+    }
+
+    const prepared = Array.from(groupedByOwner.values())
+      .map((item) => ({
+        name: item.name,
+        role: item.role,
+        bio: item.bio,
+        tags: item.tags,
+        avatarUrl: item.avatarUrl,
+        isVerified: item.isVerified,
+        verifiedCompany: item.verifiedCompany,
+        score: item.score,
+        topPercent: item.topPercent,
+        views: item.views,
+        createdAt: item.createdAt,
+        sector: item.sector,
+        primarySlug: item.primarySlug,
+        slugs: item.slugs.sort((a, b) => a.localeCompare(b)),
+      }))
       .filter((item) => {
         if (sector !== "all" && item.sector !== sector) return false;
         if (!q) return true;
-        const hay = [item.name, item.role, item.bio, item.slug, item.tags.join(" ")].join(" ").toLowerCase();
+        const hay = [item.name, item.role, item.bio, item.slugs.join(" "), item.tags.join(" ")].join(" ").toLowerCase();
         return hay.includes(q.toLowerCase());
       })
       .sort((a, b) => {

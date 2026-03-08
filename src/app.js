@@ -66,7 +66,25 @@ function createApp() {
         next();
         return;
       }
-      const settings = await getManySettings(["maintenance_mode", "maintenance_message"]);
+      const settings = await getManySettings([
+        "maintenance_mode",
+        "maintenance_message",
+        "maintenance_release_report_mode",
+        "maintenance_release_report_title",
+        "maintenance_release_report_message",
+      ]);
+      const releaseReportMode = Boolean(settings.maintenance_release_report_mode);
+      if (releaseReportMode) {
+        res.status(503).render("public/pre-release-report", {
+          title: String(settings.maintenance_release_report_title || "Отчет до релиза"),
+          reportMessage: String(
+            settings.maintenance_release_report_message ||
+            "Мы готовим релиз и финализируем проверку. Скоро вернемся с обновлением.",
+          ),
+          adminSession: getAdminSession(req),
+        });
+        return;
+      }
       const maintenanceMode = Boolean(settings.maintenance_mode);
       if (!maintenanceMode) {
         next();

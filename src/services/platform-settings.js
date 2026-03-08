@@ -130,6 +130,27 @@ const DEFAULT_SETTINGS = [
     label: "Текст обслуживания",
     value: "Мы на техническом обслуживании. Скоро вернёмся.",
   },
+  {
+    key: "maintenance_release_report_mode",
+    group: "platform",
+    type: "boolean",
+    label: "Показывать отчет до релиза",
+    value: false,
+  },
+  {
+    key: "maintenance_release_report_title",
+    group: "platform",
+    type: "text",
+    label: "Заголовок отчета до релиза",
+    value: "Отчет до релиза",
+  },
+  {
+    key: "maintenance_release_report_message",
+    group: "platform",
+    type: "textarea",
+    label: "Текст отчета до релиза",
+    value: "Мы готовим релиз и финализируем проверку.\n\nВ этом отчете можно указать текущий статус, что уже готово и что осталось до запуска.",
+  },
 ];
 
 const DEFAULT_MAP = new Map(DEFAULT_SETTINGS.map((item) => [item.key, item]));
