@@ -787,21 +787,188 @@ body[data-card-theme] #card-view-root>[data-card-view] {
 }
 
 [data-card-theme="default_dark"] {
-  background: #fafafa;
+  background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
+}
+
+[data-card-theme="default_dark"]::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: radial-gradient(circle at 20px 20px, rgba(0, 0, 0, 0.02) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
 }
 
 [data-card-theme="arctic"] {
-  background: linear-gradient(160deg, #fdfeff 0%, #f5f8fb 100%);
+  background: linear-gradient(160deg, #e8f3f9 0%, #d4e8f2 50%, #c4dce8 100%);
+  position: relative;
+}
+
+[data-card-theme="arctic"]::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: 
+    radial-gradient(circle at 15% 25%, rgba(186, 230, 253, 0.15) 0%, transparent 50%),
+    radial-gradient(circle at 85% 75%, rgba(186, 230, 253, 0.12) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
 }
 
 [data-card-theme="linen"] {
-  background: linear-gradient(160deg, #fcfbf9 0%, #f7f3ee 100%);
+  background: linear-gradient(160deg, #f5f0e8 0%, #ebe3d8 50%, #e0d5c8 100%);
+  position: relative;
+}
+
+[data-card-theme="linen"]::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: 
+    repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(200, 168, 130, 0.03) 2px, rgba(200, 168, 130, 0.03) 4px),
+    repeating-linear-gradient(-45deg, transparent, transparent 2px, rgba(200, 168, 130, 0.03) 2px, rgba(200, 168, 130, 0.03) 4px);
+  pointer-events: none;
+  z-index: 0;
 }
 
 [data-card-theme="marble"] {
-  background: #fefefe;
+  background: linear-gradient(135deg, #ffffff 0%, #f8f8f8 100%);
+  position: relative;
+}
+
+[data-card-theme="marble"]::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(135deg, transparent 0%, transparent 48%, rgba(0, 0, 0, 0.015) 50%, transparent 52%, transparent 100%),
+    linear-gradient(45deg, transparent 0%, transparent 48%, rgba(0, 0, 0, 0.015) 50%, transparent 52%, transparent 100%);
+  background-size: 60px 60px;
+  pointer-events: none;
+  z-index: 0;
 }
 
 [data-card-theme="forest"] {
   background: #0a1a0c;
+  position: relative;
+}
+
+[data-card-theme="forest"]::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(74, 122, 85, 0.15) 0%, transparent 40%),
+    radial-gradient(circle at 80% 70%, rgba(58, 110, 68, 0.12) 0%, transparent 40%),
+    radial-gradient(circle at 50% 50%, rgba(46, 98, 57, 0.08) 0%, transparent 60%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Адаптация элементов интерфейса под темы */
+
+/* Default Dark - светлые кнопки */
+[data-card-theme="default_dark"] .interactive-btn,
+[data-card-theme="default_dark"] #card-slug-search-form > div {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+  color: #404040 !important;
+}
+
+/* Arctic - холодные голубоватые тона */
+[data-card-theme="arctic"] .interactive-btn,
+[data-card-theme="arctic"] #card-slug-search-form > div {
+  background: rgba(248, 250, 252, 0.95) !important;
+  border-color: rgba(124, 157, 184, 0.25) !important;
+  color: #1a2a3a !important;
+  backdrop-filter: blur(8px);
+}
+
+[data-card-theme="arctic"] .interactive-btn:hover {
+  background: rgba(240, 246, 255, 0.98) !important;
+}
+
+/* Linen - теплые бежевые тона */
+[data-card-theme="linen"] .interactive-btn,
+[data-card-theme="linen"] #card-slug-search-form > div {
+  background: rgba(250, 248, 244, 0.95) !important;
+  border-color: rgba(200, 168, 130, 0.25) !important;
+  color: #3a2e24 !important;
+  backdrop-filter: blur(8px);
+}
+
+[data-card-theme="linen"] .interactive-btn:hover {
+  background: rgba(245, 240, 232, 0.98) !important;
+}
+
+/* Marble - чистый белый */
+[data-card-theme="marble"] .interactive-btn,
+[data-card-theme="marble"] #card-slug-search-form > div {
+  background: rgba(255, 255, 255, 0.98) !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+  color: #0a0a0a !important;
+}
+
+[data-card-theme="marble"] .interactive-btn:hover {
+  background: rgba(250, 250, 250, 1) !important;
+}
+
+/* Forest - темно-зеленые с золотистым текстом */
+[data-card-theme="forest"] .interactive-btn,
+[data-card-theme="forest"] #card-slug-search-form > div {
+  background: rgba(42, 106, 58, 0.85) !important;
+  border-color: rgba(232, 220, 192, 0.2) !important;
+  color: #e8dcc0 !important;
+  backdrop-filter: blur(8px);
+}
+
+[data-card-theme="forest"] .interactive-btn:hover {
+  background: rgba(58, 122, 69, 0.95) !important;
+}
+
+[data-card-theme="forest"] #card-slug-search-form input {
+  color: #e8dcc0 !important;
+}
+
+[data-card-theme="forest"] #card-slug-search-form input::placeholder {
+  color: rgba(232, 220, 192, 0.5) !important;
+}
+
+[data-card-theme="forest"] #card-slug-search-form span {
+  color: rgba(232, 220, 192, 0.6) !important;
+}
+
+[data-card-theme="forest"] svg {
+  color: #e8dcc0 !important;
+}
+
+/* Стили для результатов поиска */
+[data-card-theme="default_dark"] #card-slug-search-results {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+[data-card-theme="arctic"] #card-slug-search-results {
+  background: rgba(248, 250, 252, 0.95) !important;
+  border-color: rgba(124, 157, 184, 0.25) !important;
+  backdrop-filter: blur(8px);
+}
+
+[data-card-theme="linen"] #card-slug-search-results {
+  background: rgba(250, 248, 244, 0.95) !important;
+  border-color: rgba(200, 168, 130, 0.25) !important;
+  backdrop-filter: blur(8px);
+}
+
+[data-card-theme="marble"] #card-slug-search-results {
+  background: rgba(255, 255, 255, 0.98) !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+[data-card-theme="forest"] #card-slug-search-results {
+  background: rgba(42, 106, 58, 0.85) !important;
+  border-color: rgba(232, 220, 192, 0.2) !important;
+  color: #e8dcc0 !important;
+  backdrop-filter: blur(8px);
 }

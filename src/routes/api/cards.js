@@ -8,6 +8,7 @@ const { detectDevice } = require("../../services/ua");
 const { generateVCard } = require("../../services/vcard");
 const { calculateSlugPrice, calculateSlugPriceFromSettings, getSlugPricingConfig } = require("../../services/slug-pricing");
 const { sendOrderRequestToTelegram, TelegramConfigError, TelegramDeliveryError } = require("../../services/telegram");
+const { buildOrderPaymentDraft } = require("../../services/payment-flow");
 const { getActiveFlashSale, applyFlashSaleToPrice } = require("../../services/flash-sales");
 const { markDropSlugSold } = require("../../services/drops");
 const {
@@ -1009,8 +1010,13 @@ router.post(
 
     let telegramDelivered = true;
     let telegramError = null;
+    const payment = await buildOrderPaymentDraft({
+      orderId: order.id,
+      amount: totalOneTime,
+    });
     try {
       await sendOrderRequestToTelegram({
+        orderId: order.id,
         name: payload.name,
         telegramId: user.telegramChatId || "",
         email: user.email || "",
@@ -1025,6 +1031,7 @@ router.post(
         totalOneTimeLabel: formatPrice(totalOneTime),
         statusLabel: toOrderStatusLabel("NEW"),
         themeLabel: theme || "default_dark",
+        payment,
       });
     } catch (error) {
       if (error instanceof TelegramConfigError) {
@@ -1051,6 +1058,7 @@ router.post(
         braceletPrice,
         totalOneTime,
       },
+      payment,
       flashSale: flashApplied.hasDiscount
         ? {
           saleId: activeFlashSale.id,

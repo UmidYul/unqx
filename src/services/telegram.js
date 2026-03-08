@@ -1,5 +1,6 @@
 const { env } = require("../config/env");
 const { getManySettings, getSetting } = require("./platform-settings");
+const { getOrderPaymentReference } = require("./payment-flow");
 
 class TelegramConfigError extends Error {
   constructor(message) {
@@ -45,9 +46,14 @@ async function sendOrderRequestToTelegram(payload) {
   const braceletLabel = payload.bracelet ? `Да (+${braceletPrice.toLocaleString("ru-RU")} сум)` : "Нет";
   const usernameLabel = payload.username ? `@${escapeHtml(payload.username.replace(/^@/, ""))}` : "@—";
   const emailLabel = payload.email ? escapeHtml(payload.email) : "—";
+  const paymentReference = getOrderPaymentReference(payload.orderId);
+  const paymentProviderLabel = payload.payment?.providerLabel || "Ручная оплата через Telegram";
+  const paymentInstructions = String(payload.payment?.instructions || "").trim();
   const text = [
     "<b>НОВАЯ ЗАЯВКА UNQX</b>",
     "",
+    `<b>Order ID:</b> ${escapeHtml(payload.orderId)}`,
+    `<b>Код оплаты:</b> ${escapeHtml(paymentReference)}`,
     `${escapeHtml(payload.name)} · ${usernameLabel}`,
     `Email: ${emailLabel}`,
     `Telegram: ${usernameLabel}`,
@@ -58,6 +64,8 @@ async function sendOrderRequestToTelegram(payload) {
     "",
     `<b>Итого разово:</b> ${escapeHtml(payload.totalOneTimeLabel)} сум`,
     "Единоразовая покупка",
+    `<b>Провайдер оплаты:</b> ${escapeHtml(paymentProviderLabel)}`,
+    paymentInstructions ? `Инструкция: ${escapeHtml(paymentInstructions)}` : "",
     "",
     `Срок резерва заявки: ${pendingHours} часа`,
   ]
@@ -68,12 +76,26 @@ async function sendOrderRequestToTelegram(payload) {
     chatId,
     text,
     parseMode: "HTML",
-    inlineButtonText: "Открыть событие",
-    inlineButtonUrl: buildAppUrl("/admin/dashboard?tab=orders"),
+    inlineKeyboard: [
+      [
+        { text: "Связались", callback_data: `ord:contacted:${payload.orderId}` },
+        { text: "Оплачено", callback_data: `ord:paid:${payload.orderId}` },
+      ],
+      [
+        { text: "Открыть в админке", url: buildAppUrl(`/admin/dashboard?tab=orders&orderId=${encodeURIComponent(payload.orderId)}`) },
+      ],
+    ],
   });
 }
 
-async function sendTelegramMessage({ chatId, text, parseMode = "HTML", inlineButtonText = "", inlineButtonUrl = "" }) {
+async function sendTelegramMessage({
+  chatId,
+  text,
+  parseMode = "HTML",
+  inlineButtonText = "",
+  inlineButtonUrl = "",
+  inlineKeyboard = null,
+}) {
   if (!env.TELEGRAM_BOT_TOKEN) {
     throw new TelegramConfigError("Telegram bot token is not configured");
   }
@@ -89,20 +111,26 @@ async function sendTelegramMessage({ chatId, text, parseMode = "HTML", inlineBut
       chat_id: chatId,
       text,
       parse_mode: parseMode,
-      ...(inlineButtonUrl
+      ...((Array.isArray(inlineKeyboard) && inlineKeyboard.length > 0)
         ? {
           reply_markup: {
-            inline_keyboard: [
-              [
-                {
-                  text: String(inlineButtonText || "Открыть событие"),
-                  url: String(inlineButtonUrl),
-                },
-              ],
-            ],
+            inline_keyboard: inlineKeyboard,
           },
         }
-        : {}),
+        : (inlineButtonUrl
+            ? {
+              reply_markup: {
+                inline_keyboard: [
+                  [
+                    {
+                      text: String(inlineButtonText || "Открыть событие"),
+                      url: String(inlineButtonUrl),
+                    },
+                  ],
+                ],
+              },
+            }
+            : {})),
     }),
   });
 
@@ -116,6 +144,29 @@ async function sendTelegramMessage({ chatId, text, parseMode = "HTML", inlineBut
   }
 
   return body;
+}
+
+async function sendTelegramCallbackAnswer({ callbackQueryId, text = "Готово", showAlert = false }) {
+  if (!env.TELEGRAM_BOT_TOKEN || !callbackQueryId) {
+    return null;
+  }
+
+  const endpoint = `https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/answerCallbackQuery`;
+  const response = await fetch(endpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      callback_query_id: callbackQueryId,
+      text: String(text || "Готово").slice(0, 180),
+      show_alert: Boolean(showAlert),
+    }),
+  });
+
+  if (!response.ok) {
+    throw new TelegramDeliveryError(`Telegram API returned ${response.status} for answerCallbackQuery`);
+  }
+
+  return response.json().catch(() => null);
 }
 
 async function sendSlugApprovedToUser({ telegramId, slug, plan, hasBracelet = false }) {
@@ -235,6 +286,7 @@ module.exports = {
   TelegramDeliveryError,
   sendOrderRequestToTelegram,
   sendTelegramMessage,
+  sendTelegramCallbackAnswer,
   sendSlugApprovedToUser,
   sendSlugAwaitingPaymentToUser,
   sendSlugRejectedToUser,
