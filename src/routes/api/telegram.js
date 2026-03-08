@@ -39,12 +39,25 @@ function canApplyTelegramStatus(currentStatus, nextStatus) {
 }
 
 function parseOrderAction(value) {
-  const match = String(value || "").match(/^ord:(contacted|paid|approved):([a-f0-9-]{30,40})$/i);
+  const match = String(value || "").match(/^ord:(contacted|paid|approved):([a-z0-9-]{8,64})$/i);
   if (!match) return null;
   return {
     action: normalizeTelegramAction(match[1]),
     orderId: String(match[2]),
   };
+}
+
+function isWebhookSecretValid(req) {
+  const configuredSecret = String(env.TELEGRAM_WEBHOOK_SECRET || "").trim();
+  if (!configuredSecret) {
+    return true;
+  }
+
+  const headerSecret = String(req.get("x-telegram-bot-api-secret-token") || "").trim();
+  const querySecret = String(req.query?.secret || "").trim();
+  const pathSecret = String(req.params?.secret || "").trim();
+
+  return headerSecret === configuredSecret || querySecret === configuredSecret || pathSecret === configuredSecret;
 }
 
 function cleanupProcessedCallbacks() {
@@ -58,8 +71,17 @@ function cleanupProcessedCallbacks() {
 
 async function isAllowedAdminChat(chatId) {
   const configured = String(await getSetting("contact_telegram_chat_id", "")).trim();
-  if (!configured) return true;
-  return String(chatId || "").trim() === configured;
+  const fallback = String(env.TELEGRAM_CHAT_ID || "").trim();
+  const allowedRaw = configured || fallback;
+  if (!allowedRaw) return true;
+
+  const allowedChats = allowedRaw
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+  if (!allowedChats.length) return true;
+
+  return allowedChats.includes(String(chatId || "").trim());
 }
 
 async function applyOrderActionFromTelegram({ orderId, nextStatus, operatorId }) {
@@ -105,79 +127,75 @@ async function applyOrderActionFromTelegram({ orderId, nextStatus, operatorId })
   }
 }
 
-router.post(
-  "/webhook",
-  asyncHandler(async (req, res) => {
-    const configuredSecret = String(env.TELEGRAM_WEBHOOK_SECRET || "").trim();
-    if (configuredSecret) {
-      const providedSecret = String(req.get("x-telegram-bot-api-secret-token") || "").trim();
-      if (providedSecret !== configuredSecret) {
-        res.status(401).json({ ok: false, error: "Unauthorized webhook" });
-        return;
-      }
-    }
+async function handleTelegramWebhook(req, res) {
+  if (!isWebhookSecretValid(req)) {
+    res.status(401).json({ ok: false, error: "Unauthorized webhook" });
+    return;
+  }
 
-    const update = req.body && typeof req.body === "object" ? req.body : {};
-    const callback = update.callback_query;
+  const update = req.body && typeof req.body === "object" ? req.body : {};
+  const callback = update.callback_query;
 
-    if (!callback || typeof callback !== "object") {
-      res.json({ ok: true });
-      return;
-    }
-
-    const callbackQueryId = String(callback.id || "").trim();
-    const chatId = String(callback?.message?.chat?.id || "").trim();
-    const operatorId = String(callback?.from?.id || "").trim() || "unknown";
-    const parsed = parseOrderAction(callback.data);
-
-    cleanupProcessedCallbacks();
-    if (callbackQueryId && processedCallbacks.has(callbackQueryId)) {
-      await sendTelegramCallbackAnswer({ callbackQueryId, text: "Уже обработано" }).catch(() => null);
-      res.json({ ok: true });
-      return;
-    }
-
-    if (!parsed?.action || !parsed.orderId) {
-      if (callbackQueryId) {
-        await sendTelegramCallbackAnswer({ callbackQueryId, text: "Неизвестное действие" });
-      }
-      res.json({ ok: true });
-      return;
-    }
-
-    const allowed = await isAllowedAdminChat(chatId);
-    if (!allowed) {
-      if (callbackQueryId) {
-        await sendTelegramCallbackAnswer({ callbackQueryId, text: "Чат не авторизован", showAlert: true });
-      }
-      res.json({ ok: true });
-      return;
-    }
-
-    const result = await applyOrderActionFromTelegram({
-      orderId: parsed.orderId,
-      nextStatus: parsed.action,
-      operatorId,
-    });
-    if (callbackQueryId) {
-      processedCallbacks.set(callbackQueryId, Date.now());
-    }
-
-    if (callbackQueryId) {
-      try {
-        await sendTelegramCallbackAnswer({
-          callbackQueryId,
-          text: result.message,
-          showAlert: !result.ok,
-        });
-      } catch (error) {
-        console.error("[express-app] failed to answer telegram callback", error);
-      }
-    }
-
+  if (!callback || typeof callback !== "object") {
     res.json({ ok: true });
-  }),
-);
+    return;
+  }
+
+  const callbackQueryId = String(callback.id || "").trim();
+  const chatId = String(callback?.message?.chat?.id || "").trim();
+  const operatorId = String(callback?.from?.id || "").trim() || "unknown";
+  const parsed = parseOrderAction(callback.data);
+
+  cleanupProcessedCallbacks();
+  if (callbackQueryId && processedCallbacks.has(callbackQueryId)) {
+    await sendTelegramCallbackAnswer({ callbackQueryId, text: "Уже обработано" }).catch(() => null);
+    res.json({ ok: true });
+    return;
+  }
+
+  if (!parsed?.action || !parsed.orderId) {
+    if (callbackQueryId) {
+      await sendTelegramCallbackAnswer({ callbackQueryId, text: "Неизвестное действие" });
+    }
+    res.json({ ok: true });
+    return;
+  }
+
+  const allowed = await isAllowedAdminChat(chatId);
+  if (!allowed) {
+    if (callbackQueryId) {
+      await sendTelegramCallbackAnswer({ callbackQueryId, text: "Чат не авторизован", showAlert: true });
+    }
+    res.json({ ok: true });
+    return;
+  }
+
+  const result = await applyOrderActionFromTelegram({
+    orderId: parsed.orderId,
+    nextStatus: parsed.action,
+    operatorId,
+  });
+  if (callbackQueryId) {
+    processedCallbacks.set(callbackQueryId, Date.now());
+  }
+
+  if (callbackQueryId) {
+    try {
+      await sendTelegramCallbackAnswer({
+        callbackQueryId,
+        text: result.message,
+        showAlert: !result.ok,
+      });
+    } catch (error) {
+      console.error("[express-app] failed to answer telegram callback", error);
+    }
+  }
+
+  res.json({ ok: true });
+}
+
+router.post("/webhook", asyncHandler(handleTelegramWebhook));
+router.post("/webhook/:secret", asyncHandler(handleTelegramWebhook));
 
 module.exports = {
   telegramApiRouter: router,
