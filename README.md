@@ -148,6 +148,87 @@ API:
 - `GET /api/cards/search?q=AAA`
 - `POST /api/cards/order-request`
 - `POST /api/telegram/webhook`
+- `GET /api/admin/payment-events`
+- `GET /api/admin/payment-events/export.csv`
+- `GET /api/admin/payment-stats?period=day|week|month|all`
+- `GET /api/admin/payment-alerts`
+- `GET /api/admin/conversion-funnel?period=day|week|month`
+- `POST /api/admin/payment-alerts/notify`
+
+### Payment Analytics & Monitoring
+
+The system includes comprehensive payment analytics and monitoring:
+
+#### Dashboard Statistics (`GET /api/admin/payment-stats`)
+Returns aggregated payment statistics for specified period:
+- Orders by status (new, contacted, paid, approved, rejected, expired)
+- Payment events by status
+- Revenue by provider
+- Total slugs sold and active users
+
+Query parameters:
+- `period`: `day` (default), `week`, `month`, or `all`
+
+#### Payment Alerts (`GET /api/admin/payment-alerts`)
+Returns actionable alerts for admin attention:
+- **Critical**: Orders marked "paid" but not "approved" > 2 hours
+- **Warning**: Pending orders > 24 hours, payment event mismatches
+- **Info**: Orders "contacted" > 48 hours
+
+#### Conversion Funnel (`GET /api/admin/conversion-funnel`)
+Returns order conversion metrics through the payment flow:
+- new → contacted → paid → approved
+- Conversion rates between stages
+- Drop-off analysis (rejected, expired)
+
+Query parameters:
+- `period`: `day`, `week` (default), or `month`
+
+#### Telegram Notifications (Automated Cron)
+The system includes a standalone script for automated payment monitoring.
+
+**Setup cron job on your server:**
+
+1. Edit crontab:
+```bash
+crontab -e
+```
+
+2. Add one of these schedules:
+
+```bash
+# Every 2 hours (recommended)
+0 */2 * * * cd /path/to/unqx && node scripts/check-payment-alerts.js >> logs/payment-alerts.log 2>&1
+
+# Every hour (for high-volume)
+0 * * * * cd /path/to/unqx && node scripts/check-payment-alerts.js >> logs/payment-alerts.log 2>&1
+
+# Every 4 hours (for low-volume)
+0 */4 * * * cd /path/to/unqx && node scripts/check-payment-alerts.js >> logs/payment-alerts.log 2>&1
+```
+
+**What it does:**
+- Automatically checks for critical/warning payment alerts
+- Sends Telegram notification only when issues found
+- Includes order details (slug, amount, age)
+- Logs all activity for debugging
+
+**Manual trigger (for testing):**
+```bash
+# Using npm script
+npm run cron:alerts
+
+# Or directly
+node scripts/check-payment-alerts.js
+```
+
+**Alternative: External service (cron-job.org):**
+If your hosting doesn't support cron, use external service:
+```
+POST https://yourdomain.com/api/admin/payment-alerts/notify
+Authorization: Bearer <admin_token>
+Schedule: Every 2 hours
+```
 
 ## Visual Compare (Next vs Express)
 

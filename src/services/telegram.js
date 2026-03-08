@@ -284,6 +284,83 @@ async function sendVerificationStatusToUser({ telegramId, status, adminNote }) {
   });
 }
 
+async function sendPaymentAlertsToAdmin(alerts) {
+  const settings = await getManySettings(["contact_telegram_chat_id"]);
+  const chatId = String(settings.contact_telegram_chat_id || env.TELEGRAM_CHAT_ID || "").trim();
+  if (!chatId || !env.TELEGRAM_BOT_TOKEN) {
+    throw new TelegramConfigError("Telegram credentials are not configured");
+  }
+
+  if (!alerts || alerts.length === 0) {
+    return null;
+  }
+
+  const criticalAlerts = alerts.filter((a) => a.severity === "critical");
+  const warningAlerts = alerts.filter((a) => a.severity === "warning");
+  const infoAlerts = alerts.filter((a) => a.severity === "info");
+
+  const lines = ["<b>🔔 АЛЕРТЫ ПЛАТЕЖНОЙ СИСТЕМЫ</b>", ""];
+
+  if (criticalAlerts.length > 0) {
+    lines.push("<b>🚨 КРИТИЧЕСКИЕ:</b>");
+    criticalAlerts.forEach((alert) => {
+      lines.push(`• ${escapeHtml(alert.message)}`);
+      if (alert.data && alert.data.length > 0) {
+        alert.data.slice(0, 3).forEach((item) => {
+          const ageText = item.age ? ` (${item.age}ч)` : "";
+          const amountText = item.amount ? ` — ${item.amount.toLocaleString("ru-RU")} сум` : "";
+          lines.push(`  - ${escapeHtml(item.slug || item.orderId)}${amountText}${ageText}`);
+        });
+        if (alert.data.length > 3) {
+          lines.push(`  ... и еще ${alert.data.length - 3}`);
+        }
+      }
+    });
+    lines.push("");
+  }
+
+  if (warningAlerts.length > 0) {
+    lines.push("<b>⚠️ ПРЕДУПРЕЖДЕНИЯ:</b>");
+    warningAlerts.forEach((alert) => {
+      lines.push(`• ${escapeHtml(alert.message)}`);
+      if (alert.data && alert.data.length > 0) {
+        alert.data.slice(0, 3).forEach((item) => {
+          const ageText = item.age ? ` (${item.age}ч)` : "";
+          lines.push(`  - ${escapeHtml(item.slug || item.orderId)}${ageText}`);
+        });
+        if (alert.data.length > 3) {
+          lines.push(`  ... и еще ${alert.data.length - 3}`);
+        }
+      }
+    });
+    lines.push("");
+  }
+
+  if (infoAlerts.length > 0 && criticalAlerts.length === 0 && warningAlerts.length === 0) {
+    lines.push("<b>ℹ️ ИНФОРМАЦИЯ:</b>");
+    infoAlerts.forEach((alert) => {
+      lines.push(`• ${escapeHtml(alert.message)}`);
+    });
+    lines.push("");
+  }
+
+  const text = lines.join("\n").trim();
+
+  return sendTelegramMessage({
+    chatId,
+    text,
+    parseMode: "HTML",
+    inlineKeyboard: [
+      [
+        {
+          text: "Открыть админку",
+          url: buildAppUrl("/admin/dashboard?tab=orders"),
+        },
+      ],
+    ],
+  });
+}
+
 module.exports = {
   TelegramConfigError,
   TelegramDeliveryError,
@@ -296,4 +373,5 @@ module.exports = {
   sendSlugExpiredToUser,
   sendVerificationRequestToAdmin,
   sendVerificationStatusToUser,
+  sendPaymentAlertsToAdmin,
 };

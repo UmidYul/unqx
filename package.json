@@ -15,6 +15,7 @@
     "seed:visual": "node scripts/seed-visual-fixture.cjs",
     "test:visual": "node scripts/visual-compare.mjs",
     "test:visual:seed": "npm run seed:visual && npm run test:visual",
+    "cron:alerts": "node scripts/check-payment-alerts.js",
     "postinstall": "npm run prisma:generate && npm run build:vendor && npm run build:css",
     "test": "vitest run",
     "test:e2e": "playwright test"

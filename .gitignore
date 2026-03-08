@@ -44,6 +44,8 @@ yarn-error.log*
 !.env.example
 .env*.local
 /backups/
+/logs/
+*.log
 
 # vercel
 .vercel

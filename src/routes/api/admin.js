@@ -14,7 +14,7 @@ const { parsePositiveInt } = require("../../utils/http");
 const { generateNextSlug } = require("../../services/cards");
 const { getGlobalStats } = require("../../services/stats");
 const { calculateSlugPrice, getSlugPricingConfig } = require("../../services/slug-pricing");
-const { sendTelegramMessage } = require("../../services/telegram");
+const { sendTelegramMessage, sendPaymentAlertsToAdmin } = require("../../services/telegram");
 const { recalculateAndRefreshPercentiles } = require("../../services/unq-score");
 const { sendExpoPushToUser, sendExpoPushToUsers } = require("../../services/push");
 const { applyOrderStatusTransition } = require("../../services/order-status-transition");
@@ -22,6 +22,12 @@ const {
   getBraceletPrice,
   normalizePlan,
 } = require("../../services/pricing-settings");
+const {
+  getPaymentStatistics,
+  getPaymentAlerts,
+  getConversionFunnel,
+  isPaymentEventsStorageError: isPaymentEventsStorageErrorAnalytics,
+} = require("../../services/payment-analytics");
 
 const router = express.Router();
 const PUSH_PRIORITY_SET = new Set(["default", "normal", "high"]);
@@ -679,6 +685,105 @@ function buildPurchasesWhere(query) {
     ];
   }
   return where;
+}
+
+function isPaymentEventsStorageError(error) {
+  if (!error || typeof error !== "object") return false;
+  const code = String(error.code || "");
+  const message = String(error.message || "").toLowerCase();
+  return code === "42P01" || code === "P2021" || message.includes("payment_events");
+}
+
+function normalizePaymentEventFilters(query) {
+  const allowedStatus = new Set(["new", "contacted", "paid", "approved", "rejected", "expired"]);
+  const allowedProvider = new Set(["manual_tg", "click", "payme"]);
+
+  const status = String(query.status || "").trim().toLowerCase();
+  const provider = String(query.provider || "").trim().toLowerCase();
+  const source = String(query.source || "").trim().toLowerCase();
+  const orderId = String(query.orderId || "").trim();
+  const userId = String(query.userId || "").trim();
+  const reference = String(query.reference || "").trim();
+  const actor = String(query.actor || "").trim();
+
+  const dateFromRaw = String(query.dateFrom || "").trim();
+  const dateToRaw = String(query.dateTo || "").trim();
+  const dateFrom = dateFromRaw ? new Date(`${dateFromRaw}T00:00:00.000Z`) : null;
+  const dateTo = dateToRaw ? new Date(`${dateToRaw}T23:59:59.999Z`) : null;
+
+  return {
+    status: allowedStatus.has(status) ? status : "",
+    provider: allowedProvider.has(provider) ? provider : "",
+    source,
+    orderId,
+    userId,
+    reference,
+    actor,
+    dateFrom: dateFrom && Number.isFinite(dateFrom.getTime()) ? dateFrom : null,
+    dateTo: dateTo && Number.isFinite(dateTo.getTime()) ? dateTo : null,
+  };
+}
+
+function buildPaymentEventsWhereSql(filters) {
+  const clauses = [];
+  if (filters.status) clauses.push(Prisma.sql`pe.status = ${filters.status}`);
+  if (filters.provider) clauses.push(Prisma.sql`pe.provider = ${filters.provider}`);
+  if (filters.source) clauses.push(Prisma.sql`pe.source = ${filters.source}`);
+  if (filters.orderId) clauses.push(Prisma.sql`CAST(pe.order_id AS TEXT) = ${filters.orderId}`);
+  if (filters.userId) clauses.push(Prisma.sql`CAST(pe.user_id AS TEXT) = ${filters.userId}`);
+  if (filters.reference) clauses.push(Prisma.sql`pe.reference ILIKE ${`%${filters.reference}%`}`);
+  if (filters.actor) clauses.push(Prisma.sql`pe.actor ILIKE ${`%${filters.actor}%`}`);
+  if (filters.dateFrom) clauses.push(Prisma.sql`pe.created_at >= ${filters.dateFrom}`);
+  if (filters.dateTo) clauses.push(Prisma.sql`pe.created_at <= ${filters.dateTo}`);
+  return clauses.length ? Prisma.sql`WHERE ${Prisma.join(clauses, Prisma.sql` AND `)}` : Prisma.empty;
+}
+
+async function queryPaymentEvents({ query, page, pageSize }) {
+  const filters = normalizePaymentEventFilters(query || {});
+  const whereSql = buildPaymentEventsWhereSql(filters);
+  const offset = (page - 1) * pageSize;
+
+  const baseSelectSql = Prisma.sql`
+    FROM payment_events pe
+    LEFT JOIN users u ON u.id = pe.user_id
+    ${whereSql}
+  `;
+
+  const [rows, countRows, totalAmountRows] = await Promise.all([
+    prisma.$queryRaw(Prisma.sql`
+      SELECT
+        pe.id,
+        pe.order_id AS "orderId",
+        pe.user_id AS "userId",
+        pe.status,
+        pe.provider,
+        pe.reference,
+        pe.amount,
+        pe.actor,
+        pe.source,
+        pe.note,
+        pe.created_at AS "createdAt",
+        u.first_name AS "firstName",
+        u.display_name AS "displayName",
+        u.username AS "username"
+      ${baseSelectSql}
+      ORDER BY pe.created_at DESC
+      LIMIT ${pageSize}
+      OFFSET ${offset}
+    `),
+    prisma.$queryRaw(Prisma.sql`
+      SELECT COUNT(*)::bigint AS total
+      ${baseSelectSql}
+    `),
+    prisma.$queryRaw(Prisma.sql`
+      SELECT COALESCE(SUM(pe.amount), 0)::bigint AS total_amount
+      ${baseSelectSql}
+    `),
+  ]);
+
+  const total = Number(countRows?.[0]?.total || 0);
+  const totalAmount = Number(totalAmountRows?.[0]?.total_amount || 0);
+  return { rows: Array.isArray(rows) ? rows : [], total, totalAmount, filters };
 }
 
 router.get(
@@ -1447,6 +1552,166 @@ router.get(
     res.setHeader("Content-Type", "text/csv; charset=utf-8");
     res.setHeader("Content-Disposition", "attachment; filename=purchases.csv");
     res.send(csv);
+  }),
+);
+
+router.get(
+  "/payment-events",
+  asyncHandler(async (req, res) => {
+    const page = Math.max(1, Number(req.query.page || "1") || 1);
+    const pageSizeRaw = Number(req.query.pageSize || "20") || 20;
+    const pageSize = Math.max(1, Math.min(500, pageSizeRaw));
+
+    try {
+      const result = await queryPaymentEvents({ query: req.query, page, pageSize });
+      res.json({
+        totalAmount: result.totalAmount,
+        filters: result.filters,
+        items: result.rows.map((row) => ({
+          id: row.id,
+          orderId: row.orderId,
+          userId: row.userId,
+          userName: row.displayName || row.firstName || "UNQX User",
+          username: row.username || null,
+          status: row.status,
+          provider: row.provider,
+          reference: row.reference,
+          amount: Number(row.amount || 0),
+          actor: row.actor,
+          source: row.source,
+          note: row.note || null,
+          createdAt: row.createdAt,
+        })),
+        pagination: {
+          page,
+          pageSize,
+          total: result.total,
+          totalPages: Math.max(1, Math.ceil(result.total / pageSize)),
+        },
+      });
+    } catch (error) {
+      if (isPaymentEventsStorageError(error)) {
+        res.json({
+          totalAmount: 0,
+          items: [],
+          pagination: { page: 1, pageSize: 20, total: 0, totalPages: 1 },
+        });
+        return;
+      }
+      throw error;
+    }
+  }),
+);
+
+router.get(
+  "/payment-events/export.csv",
+  asyncHandler(async (req, res) => {
+    try {
+      const result = await queryPaymentEvents({ query: req.query, page: 1, pageSize: 10_000 });
+      const lines = [
+        "Дата,Order ID,Пользователь,Username,Статус,Провайдер,Reference,Сумма,Actor,Source,Примечание",
+        ...result.rows.map((row) =>
+          [
+            `"${new Date(row.createdAt).toLocaleString("ru-RU")}"`,
+            `"${String(row.orderId || "").replace(/"/g, '""')}"`,
+            `"${String(row.displayName || row.firstName || "UNQX User").replace(/"/g, '""')}"`,
+            `"${String(row.username ? `@${row.username}` : "").replace(/"/g, '""')}"`,
+            `"${String(row.status || "").replace(/"/g, '""')}"`,
+            `"${String(row.provider || "").replace(/"/g, '""')}"`,
+            `"${String(row.reference || "").replace(/"/g, '""')}"`,
+            Number(row.amount || 0),
+            `"${String(row.actor || "").replace(/"/g, '""')}"`,
+            `"${String(row.source || "").replace(/"/g, '""')}"`,
+            `"${String(row.note || "").replace(/"/g, '""')}"`,
+          ].join(","),
+        ),
+      ];
+
+      const csv = `\uFEFF${lines.join("\n")}`;
+      res.setHeader("Content-Type", "text/csv; charset=utf-8");
+      res.setHeader("Content-Disposition", "attachment; filename=payment-events.csv");
+      res.send(csv);
+    } catch (error) {
+      if (isPaymentEventsStorageError(error)) {
+        res.status(503).json({ error: "Payment events storage unavailable" });
+        return;
+      }
+      throw error;
+    }
+  }),
+);
+
+// ─────────────────────────────────────────────────────────────────────────
+// Payment Analytics & Dashboard
+// ─────────────────────────────────────────────────────────────────────────
+
+router.get(
+  "/payment-stats",
+  asyncHandler(async (req, res) => {
+    const period = String(req.query.period || "day");
+    const allowedPeriods = ["day", "week", "month", "all"];
+    const validPeriod = allowedPeriods.includes(period) ? period : "day";
+
+    try {
+      const stats = await getPaymentStatistics({ period: validPeriod });
+      res.json(stats);
+    } catch (error) {
+      if (isPaymentEventsStorageErrorAnalytics(error)) {
+        res.status(503).json({ error: "Payment analytics unavailable" });
+        return;
+      }
+      throw error;
+    }
+  }),
+);
+
+router.get(
+  "/payment-alerts",
+  asyncHandler(async (req, res) => {
+    try {
+      const alerts = await getPaymentAlerts();
+      res.json({ alerts });
+    } catch (error) {
+      console.error("Error fetching payment alerts:", error);
+      res.status(500).json({ error: "Failed to fetch payment alerts" });
+    }
+  }),
+);
+
+router.get(
+  "/conversion-funnel",
+  asyncHandler(async (req, res) => {
+    const period = String(req.query.period || "week");
+    const allowedPeriods = ["day", "week", "month"];
+    const validPeriod = allowedPeriods.includes(period) ? period : "week";
+
+    try {
+      const funnel = await getConversionFunnel({ period: validPeriod });
+      res.json(funnel);
+    } catch (error) {
+      console.error("Error fetching conversion funnel:", error);
+      res.status(500).json({ error: "Failed to fetch conversion funnel" });
+    }
+  }),
+);
+
+router.post(
+  "/payment-alerts/notify",
+  asyncHandler(async (_req, res) => {
+    try {
+      const alerts = await getPaymentAlerts();
+      
+      if (alerts.length === 0) {
+        res.json({ ok: true, message: "No alerts to send", alertCount: 0 });
+        return;
+      }
+
+      await sendPaymentAlertsToAdmin(alerts);
+      res.json({ ok: true, message: "Alerts sent to Telegram", alertCount: alerts.length });
+    } catch (error) {
+      console.error("Error sending payment alerts:", error);
+      res.status(500).json({ error: "Failed to send payment alerts" });
+    }
   }),
 );
 

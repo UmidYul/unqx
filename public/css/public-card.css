@@ -219,8 +219,8 @@ body[data-page="profile-page"] {
 }
 
 body[data-card-theme] {
-  background-color: #f6f6f6;
-  background-image: none;
+  background-color: var(--theme-page-bg, #f6f6f6);
+  background-image: var(--theme-page-bg-image, none);
 }
 
 body[data-card-theme] main {
@@ -786,11 +786,11 @@ body[data-card-theme] #card-view-root>[data-card-view] {
   font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
-[data-card-theme="default_dark"] {
+body[data-card-theme="default_dark"] {
   background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
 }
 
-[data-card-theme="default_dark"]::before {
+body[data-card-theme="default_dark"]::before {
   content: '';
   position: fixed;
   inset: 0;
@@ -800,44 +800,44 @@ body[data-card-theme] #card-view-root>[data-card-view] {
   z-index: 0;
 }
 
-[data-card-theme="arctic"] {
+body[data-card-theme="arctic"] {
   background: linear-gradient(160deg, #e8f3f9 0%, #d4e8f2 50%, #c4dce8 100%);
   position: relative;
 }
 
-[data-card-theme="arctic"]::before {
+body[data-card-theme="arctic"]::before {
   content: '';
   position: fixed;
   inset: 0;
-  background-image:
+  background-image: 
     radial-gradient(circle at 15% 25%, rgba(186, 230, 253, 0.15) 0%, transparent 50%),
     radial-gradient(circle at 85% 75%, rgba(186, 230, 253, 0.12) 0%, transparent 50%);
   pointer-events: none;
   z-index: 0;
 }
 
-[data-card-theme="linen"] {
+body[data-card-theme="linen"] {
   background: linear-gradient(160deg, #f5f0e8 0%, #ebe3d8 50%, #e0d5c8 100%);
   position: relative;
 }
 
-[data-card-theme="linen"]::before {
+body[data-card-theme="linen"]::before {
   content: '';
   position: fixed;
   inset: 0;
-  background-image:
+  background-image: 
     repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(200, 168, 130, 0.03) 2px, rgba(200, 168, 130, 0.03) 4px),
     repeating-linear-gradient(-45deg, transparent, transparent 2px, rgba(200, 168, 130, 0.03) 2px, rgba(200, 168, 130, 0.03) 4px);
   pointer-events: none;
   z-index: 0;
 }
 
-[data-card-theme="marble"] {
+body[data-card-theme="marble"] {
   background: linear-gradient(135deg, #ffffff 0%, #f8f8f8 100%);
   position: relative;
 }
 
-[data-card-theme="marble"]::before {
+body[data-card-theme="marble"]::before {
   content: '';
   position: fixed;
   inset: 0;
@@ -849,12 +849,12 @@ body[data-card-theme] #card-view-root>[data-card-view] {
   z-index: 0;
 }
 
-[data-card-theme="forest"] {
+body[data-card-theme="forest"] {
   background: #0a1a0c;
   position: relative;
 }
 
-[data-card-theme="forest"]::before {
+body[data-card-theme="forest"]::before {
   content: '';
   position: fixed;
   inset: 0;
@@ -870,7 +870,7 @@ body[data-card-theme] #card-view-root>[data-card-view] {
 
 /* Default Dark - светлые кнопки */
 [data-card-theme="default_dark"] .interactive-btn,
-[data-card-theme="default_dark"] #card-slug-search-form>div {
+[data-card-theme="default_dark"] #card-slug-search-form > div {
   background: rgba(255, 255, 255, 0.95) !important;
   border-color: rgba(0, 0, 0, 0.1) !important;
   color: #404040 !important;
@@ -878,7 +878,7 @@ body[data-card-theme] #card-view-root>[data-card-view] {
 
 /* Arctic - холодные голубоватые тона */
 [data-card-theme="arctic"] .interactive-btn,
-[data-card-theme="arctic"] #card-slug-search-form>div {
+[data-card-theme="arctic"] #card-slug-search-form > div {
   background: rgba(248, 250, 252, 0.95) !important;
   border-color: rgba(124, 157, 184, 0.25) !important;
   color: #1a2a3a !important;
@@ -891,7 +891,7 @@ body[data-card-theme] #card-view-root>[data-card-view] {
 
 /* Linen - теплые бежевые тона */
 [data-card-theme="linen"] .interactive-btn,
-[data-card-theme="linen"] #card-slug-search-form>div {
+[data-card-theme="linen"] #card-slug-search-form > div {
   background: rgba(250, 248, 244, 0.95) !important;
   border-color: rgba(200, 168, 130, 0.25) !important;
   color: #3a2e24 !important;
@@ -904,7 +904,7 @@ body[data-card-theme] #card-view-root>[data-card-view] {
 
 /* Marble - чистый белый */
 [data-card-theme="marble"] .interactive-btn,
-[data-card-theme="marble"] #card-slug-search-form>div {
+[data-card-theme="marble"] #card-slug-search-form > div {
   background: rgba(255, 255, 255, 0.98) !important;
   border-color: rgba(0, 0, 0, 0.08) !important;
   color: #0a0a0a !important;
@@ -916,7 +916,7 @@ body[data-card-theme] #card-view-root>[data-card-view] {
 
 /* Forest - темно-зеленые с золотистым текстом */
 [data-card-theme="forest"] .interactive-btn,
-[data-card-theme="forest"] #card-slug-search-form>div {
+[data-card-theme="forest"] #card-slug-search-form > div {
   background: rgba(42, 106, 58, 0.85) !important;
   border-color: rgba(232, 220, 192, 0.2) !important;
   color: #e8dcc0 !important;
