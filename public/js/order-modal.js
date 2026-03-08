@@ -763,16 +763,29 @@ const DEFAULT_PRICING = {
       const telegramLink = dom.root.querySelector('#order-modal-telegram-link');
       if (telegramLink instanceof HTMLAnchorElement && payload.orderId) {
         const userName = dom.name.value.trim();
+        const userEmail = (currentUser && currentUser.email ? String(currentUser.email).trim() : "") || "не указан";
+        const slugPrice = Number(payload?.pricing?.slugPrice || 0);
+        const planPrice = Number(payload?.pricing?.planPrice || 0);
+        const braceletPrice = Number(payload?.pricing?.braceletPrice || 0);
         const totalAmount = Number(payload?.pricing?.totalOneTime || 0);
-        const message = `Здравствуйте! Хочу оплатить заказ #${payload.orderId}
+        const orderCode = String(payload?.payment?.reference || "").trim() || `UNQX-${String(payload.orderId).replace(/[^a-zA-Z0-9]/g, "").slice(0, 10).toUpperCase()}`;
+        const planLabel = plan === "premium" ? "Тариф Премиум" : "Тариф Базовый";
+        const message = `Здравствуйте! Хочу оплатить заказ ${orderCode}
 
-UNQ: ${pricing.slug}
-Сумма: ${formatPrice(totalAmount)} сум
-Имя: ${userName}`;
+      UNQ: ${pricing.slug}
+      Имя: ${userName}
+      Email: ${userEmail}
 
-  const telegramUrl = `https://t.me/unqx_uz?text=${encodeURIComponent(message)}`;
-  telegramLink.href = telegramUrl;
-  lastTelegramPaymentUrl = telegramUrl;
+      Детализация оплаты:
+      - Slug ${pricing.slug}: ${formatPrice(slugPrice)} сум
+      - ${planLabel}: ${formatPrice(planPrice)} сум
+      - Браслет: ${formatPrice(braceletPrice)} сум
+
+      Итого к оплате: ${formatPrice(totalAmount)} сум`;
+
+        const telegramUrl = `https://t.me/unqx_uz?text=${encodeURIComponent(message)}`;
+        telegramLink.href = telegramUrl;
+        lastTelegramPaymentUrl = telegramUrl;
       }
       
       startCountdown(expiresAtIso);
