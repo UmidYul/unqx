@@ -244,7 +244,7 @@
     paused: false,
     trackViaPageRequest: true,
   }) %></script>
-    <script nonce="<%= cspNonce %>" src="/js/card-view.js"></script>
+    <script nonce="<%= cspNonce %>" src="/js/card-view.js?v=<%= encodeURIComponent(assetVersion || '') %>"></script>
     <script nonce="<%= cspNonce %>" src="/js/public-card.js"></script>
   </body>
 

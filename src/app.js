@@ -37,6 +37,7 @@ function createApp() {
   const expressPublicDir = path.join(env.EXPRESS_APP_DIR, "public");
   const rootPublicDir = env.PUBLIC_DIR;
   const disableHttpsEnforcement = env.DISABLE_HTTPS_ENFORCEMENT === true;
+  const staticAssetVersion = String(env.ASSET_VERSION || Date.now());
 
   app.set("trust proxy", env.TRUST_PROXY);
   app.set("view engine", "ejs");
@@ -47,6 +48,7 @@ function createApp() {
   app.use(compression());
   app.use((req, res, next) => {
     res.locals.cspNonce = randomBytes(16).toString("base64");
+    res.locals.assetVersion = staticAssetVersion;
     next();
   });
 

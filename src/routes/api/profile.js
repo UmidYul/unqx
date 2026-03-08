@@ -267,6 +267,21 @@ function isMissingColumnError(error) {
   return code === "42703" || /column .* does not exist/i.test(message);
 }
 
+function isMissingStorageError(error) {
+  if (!error || typeof error !== "object") return false;
+  const code = String(error.code || "");
+  const message = String(error.message || "");
+  const metaCode = String(error?.meta?.code || error?.meta?.dbErrorCode || "");
+  return (
+    code === "42P01" ||
+    code === "42703" ||
+    metaCode === "42P01" ||
+    metaCode === "42703" ||
+    /relation .* does not exist/i.test(message) ||
+    /column .* does not exist/i.test(message)
+  );
+}
+
 async function patchOptionalProfileCardFields(db, ownerId, fields) {
   const optionalColumns = {
     hashtag: fields.hashtag ?? null,
@@ -914,7 +929,7 @@ router.get(
     const from = new Date(now.getTime() - period * 24 * 60 * 60 * 1000);
     const previousFrom = new Date(from.getTime() - period * 24 * 60 * 60 * 1000);
 
-    const [views, prevViews, clicks, prevClicks, score] = await Promise.all([
+    const [views, prevViews, clicks, prevClicks, score, tapGeoRows] = await Promise.all([
       prisma.analyticsView
         ? prisma.analyticsView.findMany({ where: { slug: fullSlug, visitedAt: { gte: from } } })
         : Promise.resolve([]),
@@ -928,6 +943,30 @@ router.get(
         ? prisma.analyticsClick.findMany({ where: { slug: fullSlug, clickedAt: { gte: previousFrom, lt: from } } })
         : Promise.resolve([]),
       getProfileScoreByUserId(user.id),
+      (async () => {
+        try {
+          const rows = await prisma.$queryRaw`
+            SELECT
+              COALESCE(NULLIF(BTRIM(u.city), ''), NULLIF(BTRIM(te.city), '')) AS city,
+              COALESCE(
+                NULLIF(BTRIM(COALESCE(te.visitor_user_id::text, '')), ''),
+                NULLIF(BTRIM(COALESCE(te.visitor_slug, '')), ''),
+                NULLIF(BTRIM(COALESCE(te.visitor_ip, '')), ''),
+                CONCAT('row:', te.id::text)
+              ) AS visitor_key
+            FROM tap_events te
+            LEFT JOIN users u ON u.id = te.visitor_user_id
+            WHERE te.owner_slug = ${fullSlug}
+              AND te.created_at >= ${from}
+          `;
+          return Array.isArray(rows) ? rows : [];
+        } catch (error) {
+          if (isMissingStorageError(error)) {
+            return [];
+          }
+          throw error;
+        }
+      })(),
     ]);
 
     const uniqueVisitors = new Set(views.map((item) => item.sessionId)).size;
@@ -957,6 +996,17 @@ router.get(
       const deviceKey = String(item.device || "desktop");
       if (!byDeviceSessions.has(deviceKey)) byDeviceSessions.set(deviceKey, new Set());
       byDeviceSessions.get(deviceKey).add(sessionId);
+    });
+
+    // NFC/mobile taps are written to tap_events, not analytics_views.
+    // Merge known cities from tap_events so profile geography shows real locations.
+    tapGeoRows.forEach((item) => {
+      const visitorKey = String(item?.visitor_key || "").trim();
+      if (!visitorKey) return;
+      const cityKey = normalizeAnalyticsCityLabel(item?.city);
+      if (cityKey === UNKNOWN_CITY_LABEL) return;
+      if (!byCitySessions.has(cityKey)) byCitySessions.set(cityKey, new Set());
+      byCitySessions.get(cityKey).add(`tap:${visitorKey}`);
     });
 
     const byDay = new Map(Array.from(byDaySessions.entries()).map(([k, s]) => [k, s.size]));

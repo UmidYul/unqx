@@ -718,8 +718,8 @@
     <script nonce="<%= cspNonce %>" src="/vendor/qrcode/qrcode.min.js"></script>
     <script nonce="<%= cspNonce %>" src="/js/site-dialogs.js"></script>
     <script nonce="<%= cspNonce %>" src="/js/order-modal.js"></script>
-    <script nonce="<%= cspNonce %>" src="/js/card-view.js"></script>
-    <script nonce="<%= cspNonce %>" src="/js/profile.js"></script>
+    <script nonce="<%= cspNonce %>" src="/js/card-view.js?v=<%= encodeURIComponent(assetVersion || '') %>"></script>
+    <script nonce="<%= cspNonce %>" src="/js/profile.js?v=<%= encodeURIComponent(assetVersion || '') %>"></script>
 </body>
 
 </html>
