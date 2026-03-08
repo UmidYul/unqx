@@ -21,7 +21,7 @@ const { asyncHandler } = require("../../middleware/async");
 const { requireSameOrigin } = require("../../middleware/same-origin");
 const { requireCsrfToken } = require("../../middleware/csrf");
 const { publicOrderRateLimit } = require("../../middleware/rate-limit");
-const { getUserSession, requireAuth } = require("../../middleware/auth");
+const { getUserSession, requireUserApi } = require("../../middleware/auth");
 const { OrderRequestSchema } = require("../../validation/order-request");
 const { getSetting } = require("../../services/platform-settings");
 const { sendTapPushNotification } = require("../../services/push");
@@ -1100,7 +1100,7 @@ router.post(
 
 router.post(
   "/order-request/:orderId/cancel",
-  requireAuth,
+  requireUserApi,
   asyncHandler(async (req, res) => {
     const user = req.session.user;
     const orderId = String(req.params.orderId || "").trim();
