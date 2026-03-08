@@ -329,6 +329,7 @@ const DEFAULT_PRICING = {
       if (!response.ok) {
         const error = new Error(payload.error || `HTTP ${response.status}`);
         error.code = payload.code;
+        error.reason = payload.reason;
         error.issues = payload.issues;
         throw error;
       }
@@ -810,6 +811,23 @@ const DEFAULT_PRICING = {
         return;
       }
       if (error.code === "SLUG_NOT_AVAILABLE") {
+        const reason = String(error.reason || "").toLowerCase();
+        if (reason === "pending") {
+          setStatus("Этот UNQ сейчас резервируется другим пользователем. Попробуй позже или выбери другой.", "error");
+          return;
+        }
+        if (reason === "reserved_drop" || reason === "drop_reserved") {
+          setStatus("Этот UNQ доступен только в активном дропе.", "error");
+          return;
+        }
+        if (reason === "blocked") {
+          setStatus("Этот UNQ временно недоступен. Выберите другой вариант.", "error");
+          return;
+        }
+        if (["approved", "active", "private", "paused"].includes(reason)) {
+          setStatus("Этот UNQ уже активирован другим пользователем.", "error");
+          return;
+        }
         setStatus("Этот slug уже занят. Выбери другой.", "error");
         return;
       }
