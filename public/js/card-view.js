@@ -205,6 +205,43 @@
   }
 
   function renderThemeOverlay(themeKey) {
+    if (themeKey === "default_dark") {
+      return `<svg class="unq-ref-overlay-svg" viewBox="0 0 360 600" preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <pattern id="dots-dark" width="16" height="16" patternUnits="userSpaceOnUse">
+            <circle cx="1.2" cy="1.2" r="0.9" fill="#0f172a"></circle>
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#dots-dark)"></rect>
+        <path d="M0 120C80 94 150 98 220 120C275 138 318 138 360 126" stroke="#111827" stroke-width="1.2" fill="none"></path>
+        <path d="M0 360C66 346 132 348 198 364C260 380 310 380 360 370" stroke="#111827" stroke-width="1" fill="none"></path>
+      </svg>`;
+    }
+    if (themeKey === "arctic") {
+      return `<svg class="unq-ref-overlay-svg" viewBox="0 0 360 600" preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <linearGradient id="frost-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#c7d9e8"></stop>
+            <stop offset="100%" stop-color="#7a9db8"></stop>
+          </linearGradient>
+        </defs>
+        <path d="M0 70C64 92 128 48 192 72C250 94 308 86 360 62" stroke="url(#frost-grad)" stroke-width="1.1" fill="none"></path>
+        <path d="M0 190C58 210 120 170 182 196C252 224 312 214 360 198" stroke="url(#frost-grad)" stroke-width="1" fill="none"></path>
+        <path d="M0 320C70 286 138 304 198 328C262 354 320 344 360 320" stroke="url(#frost-grad)" stroke-width="1" fill="none"></path>
+        <path d="M0 510C72 536 138 488 208 518C276 548 328 538 360 516" stroke="url(#frost-grad)" stroke-width="0.95" fill="none"></path>
+      </svg>`;
+    }
+    if (themeKey === "linen") {
+      return `<svg class="unq-ref-overlay-svg" viewBox="0 0 360 600" preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <pattern id="linen-weave" width="14" height="14" patternUnits="userSpaceOnUse">
+            <path d="M0 7h14M7 0v14" stroke="#c8a882" stroke-width="0.45"></path>
+            <path d="M0 0l14 14M14 0L0 14" stroke="#d4c4b0" stroke-width="0.28"></path>
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#linen-weave)"></rect>
+      </svg>`;
+    }
     if (themeKey === "marble") {
       return `<svg class="unq-ref-overlay-svg" viewBox="0 0 360 600" preserveAspectRatio="none" aria-hidden="true">
         <path d="M0,80 Q90,60 180,120 T360,80" stroke="#000" stroke-width="1.5" fill="none"></path>
@@ -217,12 +254,19 @@
     if (themeKey === "forest") {
       return `<svg class="unq-ref-overlay-svg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
         <defs>
-          <filter id="grain">
+          <filter id="grain-forest">
             <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" stitchTiles="stitch"></feTurbulence>
             <feColorMatrix type="saturate" values="0"></feColorMatrix>
           </filter>
+          <linearGradient id="forest-mist" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#e7dbbf"></stop>
+            <stop offset="100%" stop-color="#1f5335"></stop>
+          </linearGradient>
         </defs>
-        <rect width="100%" height="100%" filter="url(#grain)"></rect>
+        <rect width="100%" height="100%" filter="url(#grain-forest)"></rect>
+        <path d="M0 28C17 23 34 19 51 25C67 30 84 34 100 28" stroke="url(#forest-mist)" stroke-width="0.35" fill="none"></path>
+        <path d="M0 58C18 53 34 52 49 57C65 62 82 64 100 58" stroke="url(#forest-mist)" stroke-width="0.3" fill="none"></path>
+        <path d="M0 84C16 80 34 76 50 80C68 84 84 88 100 84" stroke="url(#forest-mist)" stroke-width="0.28" fill="none"></path>
       </svg>`;
     }
     return "";
