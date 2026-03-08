@@ -958,13 +958,41 @@ router.delete(
   asyncHandler(async (req, res) => {
     const row = await prisma.slugRequest.findUnique({
       where: { id: req.params.id },
-      select: { id: true },
+      select: { id: true, slug: true },
     });
     if (!row) {
       res.status(404).json({ error: "Order not found" });
       return;
     }
-    await prisma.slugRequest.delete({ where: { id: req.params.id } });
+    await prisma.$transaction(async (tx) => {
+      await tx.slugRequest.delete({ where: { id: req.params.id } });
+
+      const activeOrdersCount = await tx.slugRequest.count({
+        where: {
+          slug: row.slug,
+          status: { in: ["new", "contacted", "paid"] },
+        },
+      });
+
+      if (activeOrdersCount === 0) {
+        await tx.slug.updateMany({
+          where: {
+            fullSlug: row.slug,
+            status: "pending",
+          },
+          data: {
+            status: "free",
+            ownerId: null,
+            isPrimary: false,
+            pendingExpiresAt: null,
+            requestedAt: null,
+            approvedAt: null,
+            activatedAt: null,
+            pauseMessage: null,
+          },
+        });
+      }
+    });
     res.json({ ok: true });
   }),
 );

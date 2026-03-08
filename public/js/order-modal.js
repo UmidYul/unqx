@@ -102,6 +102,7 @@ const DEFAULT_PRICING = {
   let priceRequestSeq = 0;
   let lastFocusedElement = null;
   let isCloseConfirming = false;
+  let lastTelegramPaymentUrl = "https://t.me/unqx_uz";
   let state = {
     slugLocked: false,
     lockedSlug: "",
@@ -768,8 +769,10 @@ const DEFAULT_PRICING = {
 UNQ: ${pricing.slug}
 Сумма: ${formatPrice(totalAmount)} сум
 Имя: ${userName}`;
-        
-        telegramLink.href = `https://t.me/unqx_uz?text=${encodeURIComponent(message)}`;
+
+  const telegramUrl = `https://t.me/unqx_uz?text=${encodeURIComponent(message)}`;
+  telegramLink.href = telegramUrl;
+  lastTelegramPaymentUrl = telegramUrl;
       }
       
       startCountdown(expiresAtIso);
@@ -884,8 +887,21 @@ UNQ: ${pricing.slug}
   dom.closeForm?.addEventListener("click", () => close(false));
   dom.closeSuccess?.addEventListener("click", () => close(true));
   dom.goProfile?.addEventListener("click", () => {
-    close(true);
-    window.location.href = "/profile";
+    const telegramLink = dom.root.querySelector("#order-modal-telegram-link");
+    const telegramUrl = telegramLink instanceof HTMLAnchorElement && telegramLink.href ? telegramLink.href : lastTelegramPaymentUrl;
+    const encodedMessage = telegramUrl.includes("?text=") ? telegramUrl.split("?text=")[1] : "";
+    const tgAppUrl = `tg://resolve?domain=unqx_uz${encodedMessage ? `&text=${encodedMessage}` : ""}`;
+    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || "");
+
+    if (isMobile) {
+      window.location.href = tgAppUrl;
+      window.setTimeout(() => {
+        window.open(telegramUrl, "_blank", "noopener,noreferrer");
+      }, 900);
+      return;
+    }
+
+    window.open(telegramUrl, "_blank", "noopener,noreferrer");
   });
 
   document.addEventListener("keydown", (event) => {
