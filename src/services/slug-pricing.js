@@ -52,6 +52,7 @@ async function getSlugPricingConfig() {
     "slug_mult_digits_round",
     "slug_mult_digits_palindrome",
     "slug_mult_digits_random",
+    "slug_pricing_custom_rules",
   ]);
   return normalizeConfig({
     basePrice: values.slug_base_price,
@@ -66,6 +67,7 @@ async function getSlugPricingConfig() {
     digitsRound: values.slug_mult_digits_round,
     digitsPalindrome: values.slug_mult_digits_palindrome,
     digitsRandom: values.slug_mult_digits_random,
+    customRules: values.slug_pricing_custom_rules,
   });
 }
 
@@ -138,16 +140,37 @@ function calculateSlugPrice({ letters, digits, config }) {
   const resolvedConfig = normalizeConfig(config || DEFAULTS);
   const normalizedLetters = String(letters || "").toUpperCase();
   const normalizedDigits = String(digits || "");
+  const slug = `${normalizedLetters}${normalizedDigits}`;
   const letterMeta = getLetterMultiplier(normalizedLetters, resolvedConfig);
   const digitMeta = getDigitMultiplier(normalizedDigits, resolvedConfig);
-  const total = resolvedConfig.basePrice * letterMeta.multiplier * digitMeta.multiplier;
-
+  let total = resolvedConfig.basePrice * letterMeta.multiplier * digitMeta.multiplier;
+  let customBreakdown = [];
+  // Кастомные правила (если есть)
+  if (Array.isArray(resolvedConfig.customRules)) {
+    for (const rule of resolvedConfig.customRules) {
+      if (!rule || typeof rule !== 'object' || !rule.pattern || !rule.type || !rule.delta) continue;
+      const pat = String(rule.pattern).toUpperCase();
+      const delta = Number(rule.delta) || 0;
+      let match = false;
+      if (rule.type === 'contains' && slug.includes(pat)) match = true;
+      if (rule.type === 'startsWith' && slug.startsWith(pat)) match = true;
+      if (rule.type === 'endsWith' && slug.endsWith(pat)) match = true;
+      if (rule.type === 'regex') {
+        try { if (new RegExp(pat).test(slug)) match = true; } catch {}
+      }
+      if (match) {
+        total += delta;
+        customBreakdown.push({ label: rule.label || pat, delta });
+      }
+    }
+  }
   return {
     basePrice: resolvedConfig.basePrice,
-    slug: `${normalizedLetters}${normalizedDigits}`,
+    slug,
     letters: letterMeta,
     digits: digitMeta,
     total,
+    customBreakdown,
   };
 }
 

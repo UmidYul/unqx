@@ -4,6 +4,16 @@ const { env } = require("../config/env");
 const CACHE_TTL_MS = 60 * 1000;
 
 const DEFAULT_SETTINGS = [
+  {
+    key: "slug_pricing_custom_rules",
+    group: "algorithm",
+    type: "json",
+    label: "Кастомные правила ценообразования slug (массив объектов: {pattern, type, delta, label})",
+    value: [
+      // Пример: если slug содержит UZB, добавить 1 млн сум
+      { pattern: "UZB", type: "contains", delta: 1000000, label: "+1 млн за UZB" }
+    ],
+  },
   { key: "plan_basic_name", group: "pricing", type: "text", label: "Название базового тарифа", value: "Базовый" },
   { key: "plan_basic_price", group: "pricing", type: "number", label: "Цена базового тарифа", value: 50_000 },
   { key: "plan_basic_slug_limit", group: "pricing", type: "number", label: "Лимит slug (базовый)", value: 1 },
