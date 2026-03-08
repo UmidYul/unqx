@@ -264,7 +264,7 @@ async function resolveGeoByIp(ip) {
     return { city: "Неизвестно", country: "" };
   }
   try {
-    const response = await withTimeout(fetch(`https://ipapi.co/${encodeURIComponent(ip)}/json/`), 700);
+    const response = await withTimeout(fetch(`https://ipapi.co/${encodeURIComponent(ip)}/json/`), 2000);
     if (!response.ok) {
       return { city: "Неизвестно", country: "" };
     }
@@ -1127,7 +1127,25 @@ router.post(
       const viewerUserId = userSession?.userId ? String(userSession.userId) : null;
       void withMissingTableFallback("Slug", null, () =>
         prisma.$transaction(async (tx) => {
-          const geo = await resolveGeoByIp(ipForGeo);
+          let resolvedCity = "Неизвестно";
+
+          // Для авторизованных пользователей сначала пытаемся использовать город из профиля
+          if (viewerUserId && tx.user) {
+            const viewer = await tx.user.findUnique({
+              where: { id: viewerUserId },
+              select: { city: true },
+            });
+            if (viewer?.city) {
+              resolvedCity = String(viewer.city).trim().slice(0, 120);
+            }
+          }
+
+          // Если город не определен из профиля, используем геолокацию по IP
+          if (resolvedCity === "Неизвестно") {
+            const geo = await resolveGeoByIp(ipForGeo);
+            resolvedCity = geo.city;
+          }
+
           if (tx.slug) {
             await tx.slug.update({
               where: { fullSlug: slugRow.fullSlug },
@@ -1140,7 +1158,7 @@ router.post(
               data: {
                 slug: slugRow.fullSlug,
                 source,
-                city: geo.city,
+                city: resolvedCity,
                 device,
                 sessionId,
               },
@@ -1148,6 +1166,7 @@ router.post(
           }
 
           try {
+            const geo = resolvedCity !== "Неизвестно" ? { city: resolvedCity, country: "" } : await resolveGeoByIp(ipForGeo);
             await tx.$executeRaw`
               INSERT INTO tap_events (
                 owner_slug,

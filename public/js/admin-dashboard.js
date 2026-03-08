@@ -620,9 +620,8 @@
     const canCreateBySearch = rows.length === 0 && /^[A-Z]{3}[0-9]{3}$/.test(searchedSlug);
     table.innerHTML = rows.length
       ? rows.map((x) => {
-        const hasManualPrice = typeof x.priceOverride === "number";
         const priceValue = typeof x.effectivePrice === "number" ? P(x.effectivePrice) : "-";
-        const priceCell = `<div class="flex items-center gap-2"><span>${priceValue}</span>${hasManualPrice ? '<span class="inline-flex rounded-full border border-amber-300 bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-700">ручная</span>' : ""}<button type="button" class="interactive-btn min-h-8 rounded-md border border-neutral-300 px-2 py-0.5 text-xs font-semibold text-neutral-700" data-act="sp" data-slug="${X(x.slug)}" data-p="${x.priceOverride ?? ""}" title="Изменить цену">Ред.</button></div>`;
+        const priceCell = `<span>${priceValue}</span>`;
         const menu = menuWrap([
           menuItem({ label: "Активировать", icon: "checkCircle", attrs: `data-act="sa" data-slug="${x.slug}"` }),
           menuItem({ label: x.state === "BLOCKED" ? "Разблокировать" : "Заблокировать", icon: x.state === "BLOCKED" ? "toggleRight" : "toggleLeft", attrs: `data-act="st" data-slug="${x.slug}" data-ns="${x.state === "BLOCKED" ? "free" : "blocked"}"` }),
@@ -637,7 +636,7 @@
           const menu = menuWrap(
             menuItem({ label: "Изменить цену", icon: "pen", attrs: `data-act="sp" data-slug="${searchedSlug}" data-p=""` }),
           );
-          return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3 font-mono">${X(searchedSlug)}</td><td class="px-4 py-3">${statusChip("new")}</td><td class="px-4 py-3">-</td><td class="px-4 py-3">Нет</td><td class="px-4 py-3"><div class="flex items-center gap-2"><span>-</span><button type="button" class="interactive-btn min-h-8 rounded-md border border-neutral-300 px-2 py-0.5 text-xs font-semibold text-neutral-700" data-act="sp" data-slug="${X(searchedSlug)}" data-p="" title="Изменить цену">Ред.</button></div></td><td class="px-4 py-3">-</td><td class="px-4 py-3">-</td><td class="px-4 py-3">-</td><td class="px-4 py-3"><div class="admin-row-actions">${menu}</div></td></tr>`;
+          return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3 font-mono">${X(searchedSlug)}</td><td class="px-4 py-3">${statusChip("new")}</td><td class="px-4 py-3">-</td><td class="px-4 py-3">Нет</td><td class="px-4 py-3"><span>-</span></td><td class="px-4 py-3">-</td><td class="px-4 py-3">-</td><td class="px-4 py-3">-</td><td class="px-4 py-3"><div class="admin-row-actions">${menu}</div></td></tr>`;
         })()
         : `<tr><td colspan="9" class="px-3 py-10 text-center text-neutral-500"><div class="inline-flex flex-col items-center gap-2">${I("link2", 48)}<span>Нет данных</span></div></td></tr>`;
     renderPager("slugs-pagination", payload.pagination, (nextPage) => {

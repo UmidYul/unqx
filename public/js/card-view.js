@@ -393,6 +393,7 @@
       customColor: normalizeHexColor(card.customColor),
       name,
       role: String(card.role || "").trim(),
+      bio: String(card.bio || "").trim(),
       phone: String(card.phone || "").trim(),
       avatarUrl: avatarUrl || null,
       initials: initials || "UN",
@@ -687,6 +688,7 @@
             <div class="unq-ref-name-wrap">
               <h1 class="unq-ref-name">${esc(card.name)}</h1>
               ${companyRoleHtml}
+              ${card.bio ? `<p class="unq-ref-bio">${esc(card.bio)}</p>` : ""}
               ${card.phone ? `<a href="tel:${esc(card.phone.replace(/\s+/g, ""))}" class="unq-ref-phone">${iconSvg("phone")}<span>${esc(card.phone)}</span></a>` : ""}
             </div>
           </div>

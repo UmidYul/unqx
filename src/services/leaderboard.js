@@ -95,6 +95,7 @@ async function buildLeaderboard(period = "week") {
             firstName: true,
             displayName: true,
             plan: true,
+            isVerified: true,
             profileCard: {
               select: {
                 name: true,
@@ -133,6 +134,7 @@ async function buildLeaderboard(period = "week") {
         userId: owner.id,
         telegramId: owner.id,
         score: Number(owner.unqScore?.score || 0),
+        isVerified: Boolean(owner.isVerified),
       };
     })
     .filter(Boolean);

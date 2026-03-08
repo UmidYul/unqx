@@ -597,6 +597,7 @@ function buildPublicCardFromProfile({ slug, user, profileCard, viewsCount, allSl
     avatarUrl: profileCard.avatarUrl || null,
     name: profileCard.name,
     role: profileCard.role || "",
+    bio: profileCard.bio || "",
     verified: Boolean(user?.isVerified),
     verifiedCompany: user?.verifiedCompany || "",
     tariff: plan,
