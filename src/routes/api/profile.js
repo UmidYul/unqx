@@ -37,6 +37,10 @@ const ALLOWED_MIME = new Set(["image/jpeg", "image/png", "image/webp"]);
 const CARD_THEMES = new Set(["default_dark", "arctic", "linen", "marble", "forest"]);
 const DIRECTORY_SECTORS = new Set(["design", "sales", "marketing", "it", "other"]);
 const ACCOUNT_REACTIVATION_WINDOW_DAYS = Number(env.ACCOUNT_REACTIVATION_WINDOW_DAYS || 30);
+const UNKNOWN_CITY_LABEL = "Неизвестно";
+const GEO_CITY_NOISE_ALIASES = new Set([
+  "the dalles",
+]);
 const PROFILE_CARD_BASE_COLUMNS = [
   "owner_id",
   "name",
@@ -111,6 +115,35 @@ function normalizeDirectorySector(value) {
     .trim()
     .toLowerCase();
   return DIRECTORY_SECTORS.has(normalized) ? normalized : "other";
+}
+
+function normalizeAnalyticsCityLabel(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return UNKNOWN_CITY_LABEL;
+
+  const lower = raw.toLowerCase();
+  if (
+    lower === "unknown" ||
+    lower === "неизвестно" ||
+    lower === "null" ||
+    lower === "none" ||
+    lower === "n/a" ||
+    lower === "na" ||
+    lower === "-"
+  ) {
+    return UNKNOWN_CITY_LABEL;
+  }
+
+  const normalizedUzbekistanCity = resolveUzbekistanCity(raw);
+  if (normalizedUzbekistanCity) {
+    return normalizedUzbekistanCity;
+  }
+
+  if (GEO_CITY_NOISE_ALIASES.has(lower)) {
+    return UNKNOWN_CITY_LABEL;
+  }
+
+  return raw.slice(0, 120);
 }
 
 function parseJsonArray(value) {
@@ -917,7 +950,7 @@ router.get(
       if (!bySourceSessions.has(sourceKey)) bySourceSessions.set(sourceKey, new Set());
       bySourceSessions.get(sourceKey).add(sessionId);
 
-      const cityKey = String(item.city || "Неизвестно");
+      const cityKey = normalizeAnalyticsCityLabel(item.city);
       if (!byCitySessions.has(cityKey)) byCitySessions.set(cityKey, new Set());
       byCitySessions.get(cityKey).add(sessionId);
 

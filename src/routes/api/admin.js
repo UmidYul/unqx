@@ -483,6 +483,23 @@ function parseBlockedPauseMessage(value) {
   };
 }
 
+function isTableOrColumnMissing(error) {
+  if (!error || typeof error !== "object") return false;
+  const code = String(error.code || "");
+  return code === "42P01" || code === "42703";
+}
+
+async function safeExecuteRaw(sql, ...params) {
+  try {
+    return await prisma.$executeRawUnsafe(sql, ...params);
+  } catch (error) {
+    if (isTableOrColumnMissing(error)) {
+      return 0;
+    }
+    throw error;
+  }
+}
+
 router.use(adminApiRateLimit);
 router.use(requireAdminApi);
 router.use(requireSameOrigin);
@@ -1425,6 +1442,244 @@ router.patch(
     }
 
     res.json({ ok: true });
+  }),
+);
+
+router.delete(
+  "/users/:userId/purge",
+  asyncHandler(async (req, res) => {
+    if (!ensureUsersStorageReady(res)) {
+      return;
+    }
+    const userId = String(req.params.userId || "").trim();
+    if (!userId) {
+      res.status(400).json({ error: "User id is required" });
+      return;
+    }
+
+    const targetUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true },
+    });
+    if (!targetUser) {
+      res.status(404).json({ error: "User not found" });
+      return;
+    }
+
+    const ownedSlugRows = await prisma.slug.findMany({
+      where: { ownerId: userId },
+      select: { fullSlug: true },
+    });
+    const ownedSlugs = Array.from(new Set(ownedSlugRows.map((item) => String(item.fullSlug || "").trim()).filter(Boolean)));
+
+    const txResult = await prisma.$transaction(async (tx) => {
+      const freed = await tx.slug.updateMany({
+        where: { ownerId: userId },
+        data: {
+          ownerId: null,
+          status: "free",
+          isPrimary: false,
+          pauseMessage: null,
+          pendingExpiresAt: null,
+          approvedAt: null,
+          requestedAt: null,
+          activatedAt: null,
+        },
+      });
+
+      await tx.user.delete({
+        where: { id: userId },
+      });
+
+      return {
+        freedSlugs: Number(freed.count || 0),
+      };
+    });
+
+    // Best-effort cleanup for session/mobile/legacy tables not fully represented in Prisma schema.
+    const rawCleanupCounts = {};
+    rawCleanupCounts.userSessions = Number(
+      await safeExecuteRaw(
+        `
+        DELETE FROM user_sessions
+        WHERE (sess::jsonb #>> '{user,userId}') = $1
+        `,
+        userId,
+      ),
+    );
+    rawCleanupCounts.tapEventsVisitor = Number(
+      await safeExecuteRaw(
+        `
+        DELETE FROM tap_events
+        WHERE visitor_user_id = $1
+        `,
+        userId,
+      ),
+    );
+    rawCleanupCounts.userContactsByContactUser = Number(
+      await safeExecuteRaw(
+        `
+        DELETE FROM user_contacts
+        WHERE contact_user_id = $1
+        `,
+        userId,
+      ),
+    );
+    rawCleanupCounts.nfcHistory = Number(
+      await safeExecuteRaw(
+        `
+        DELETE FROM nfc_history
+        WHERE user_id = $1
+        `,
+        userId,
+      ),
+    );
+    rawCleanupCounts.nfcTags = Number(
+      await safeExecuteRaw(
+        `
+        DELETE FROM nfc_tags
+        WHERE user_id = $1
+        `,
+        userId,
+      ),
+    );
+    rawCleanupCounts.notifications = Number(
+      await safeExecuteRaw(
+        `
+        DELETE FROM notifications
+        WHERE user_id = $1
+        `,
+        userId,
+      ),
+    );
+    rawCleanupCounts.pushTokens = Number(
+      await safeExecuteRaw(
+        `
+        DELETE FROM push_tokens
+        WHERE user_id = $1
+        `,
+        userId,
+      ),
+    );
+    rawCleanupCounts.telegramLinkTokens = Number(
+      await safeExecuteRaw(
+        `
+        DELETE FROM telegram_link_tokens
+        WHERE user_id = $1
+        `,
+        userId,
+      ),
+    );
+
+    if (ownedSlugs.length > 0) {
+      rawCleanupCounts.tapEventsByOwnerSlug = Number(
+        await safeExecuteRaw(
+          `
+          DELETE FROM tap_events
+          WHERE owner_slug = ANY($1::text[])
+          `,
+          ownedSlugs,
+        ),
+      );
+      rawCleanupCounts.userContactsBySlug = Number(
+        await safeExecuteRaw(
+          `
+          DELETE FROM user_contacts
+          WHERE contact_slug = ANY($1::text[])
+          `,
+          ownedSlugs,
+        ),
+      );
+      rawCleanupCounts.slugViewsLegacy = Number(
+        await safeExecuteRaw(
+          `
+          DELETE FROM slug_views
+          WHERE slug = ANY($1::text[])
+          `,
+          ownedSlugs,
+        ),
+      );
+      rawCleanupCounts.slugClicksLegacy = Number(
+        await safeExecuteRaw(
+          `
+          DELETE FROM slug_clicks
+          WHERE slug = ANY($1::text[])
+          `,
+          ownedSlugs,
+        ),
+      );
+      rawCleanupCounts.viewsLogLegacy = Number(
+        await safeExecuteRaw(
+          `
+          DELETE FROM views_log
+          WHERE slug = ANY($1::text[])
+          `,
+          ownedSlugs,
+        ),
+      );
+      rawCleanupCounts.directoryExclusions = Number(
+        await safeExecuteRaw(
+          `
+          DELETE FROM directory_exclusions
+          WHERE slug = ANY($1::text[])
+          `,
+          ownedSlugs,
+        ),
+      );
+      rawCleanupCounts.leaderboardExclusions = Number(
+        await safeExecuteRaw(
+          `
+          DELETE FROM leaderboard_exclusions
+          WHERE full_slug = ANY($1::text[])
+          `,
+          ownedSlugs,
+        ),
+      );
+      rawCleanupCounts.leaderboardSuspicious = Number(
+        await safeExecuteRaw(
+          `
+          DELETE FROM leaderboard_suspicious_log
+          WHERE full_slug = ANY($1::text[])
+          `,
+          ownedSlugs,
+        ),
+      );
+      rawCleanupCounts.slugCheckerLogs = Number(
+        await safeExecuteRaw(
+          `
+          DELETE FROM slug_checker_logs
+          WHERE slug = ANY($1::text[])
+          `,
+          ownedSlugs,
+        ),
+      );
+      rawCleanupCounts.analyticsViews = Number(
+        await safeExecuteRaw(
+          `
+          DELETE FROM analytics_views
+          WHERE slug = ANY($1::text[])
+          `,
+          ownedSlugs,
+        ),
+      );
+      rawCleanupCounts.analyticsClicks = Number(
+        await safeExecuteRaw(
+          `
+          DELETE FROM analytics_clicks
+          WHERE slug = ANY($1::text[])
+          `,
+          ownedSlugs,
+        ),
+      );
+    }
+
+    res.json({
+      ok: true,
+      purgedUserId: userId,
+      freedSlugs: txResult.freedSlugs,
+      affectedSlugs: ownedSlugs,
+      cleanup: rawCleanupCounts,
+    });
   }),
 );
 

@@ -942,6 +942,42 @@ body[data-card-theme] #card-view-root>[data-card-view] {
 }
 
 @media (max-width: 640px) {
+  .unq-ref-top {
+    align-items: flex-start;
+    gap: 8px;
+    padding: 0 6px;
+  }
+
+  .unq-ref-slug-wrap {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 6px 8px;
+  }
+
+  .unq-ref-slugs {
+    display: flex;
+    flex: 1 1 auto;
+    flex-wrap: wrap;
+    gap: 6px;
+    max-width: 100%;
+    overflow: visible;
+    padding-bottom: 0;
+  }
+
+  .unq-ref-slug-chip {
+    font-size: 11px;
+    padding: 2px 7px;
+  }
+
+  .unq-ref-slug-price {
+    font-size: 10px;
+    padding: 2px 7px;
+  }
+
+  .unq-ref-share {
+    margin-top: 2px;
+  }
+
   .unq-ref-shell {
     border-radius: 18px;
     padding: 22px 16px 18px;

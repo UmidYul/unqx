@@ -3,6 +3,16 @@ const { ensurePlatformSettingsSeeded } = require("./platform-settings");
 
 let started = false;
 
+function parseBoolean(value) {
+  if (typeof value !== "string") {
+    return false;
+  }
+  const normalized = value.trim().toLowerCase();
+  return ["1", "true", "yes", "on"].includes(normalized);
+}
+
+const shouldSeedTestimonialsOnBoot = parseBoolean(process.env.SEED_TESTIMONIALS_ON_BOOT);
+
 function isMissingModelTable(error, modelName) {
   return (
     Boolean(error) &&
@@ -51,16 +61,12 @@ const DEFAULT_TESTIMONIALS = [
 
 async function seedTestimonials() {
   try {
+    const existingCount = await prisma.testimonial.count();
+    if (existingCount > 0) {
+      return;
+    }
+
     for (const item of DEFAULT_TESTIMONIALS) {
-      const existing = await prisma.testimonial.findFirst({
-        where: { slug: item.slug, name: item.name },
-        select: { id: true },
-      });
-
-      if (existing) {
-        continue;
-      }
-
       await prisma.testimonial.create({
         data: {
           name: item.name,
@@ -94,9 +100,9 @@ async function runBootstrapTasks() {
       hasTable("testimonials"),
     ]);
 
-    if (testimonialsReady) {
+    if (testimonialsReady && shouldSeedTestimonialsOnBoot) {
       await seedTestimonials();
-    } else {
+    } else if (!testimonialsReady) {
       console.warn("[express-app] skip testimonial seed: testimonials table is not migrated yet");
     }
 

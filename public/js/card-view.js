@@ -591,7 +591,8 @@
       card.buttons.length > 0
         ? card.buttons
           .map((button, index) => {
-            const toneClass = index === 0 ? "is-primary" : "is-secondary";
+            const buttonKind = classifyButton(button);
+            const toneClass = index === 0 && buttonKind !== "telegram" ? "is-primary" : "is-secondary";
             if (button.type === "card") {
               const cardDigits = parseCardDigits(String(button.url || "").replace(/^card:/i, ""));
               if (!cardDigits) {
@@ -602,7 +603,7 @@
               const buttonLabel = baseLabel.includes(brand) ? baseLabel : `${baseLabel} (${brand})`;
               return `<button type="button" data-track-action data-button-type="card" data-copy-card="${esc(cardDigits)}" class="public-card-button unq-ref-action-btn ${toneClass}">${iconSvg("card")}<span>${esc(buttonLabel)}</span></button>`;
             }
-            return `<a href="${esc(button.url)}" target="_blank" rel="noopener noreferrer" data-track-action data-button-type="${esc(button.type || "other")}" class="public-card-button unq-ref-action-btn ${toneClass}">${iconSvg(classifyButton(button))}<span>${esc(button.label)}</span></a>`;
+            return `<a href="${esc(button.url)}" target="_blank" rel="noopener noreferrer" data-track-action data-button-type="${esc(button.type || "other")}" class="public-card-button unq-ref-action-btn ${toneClass}">${iconSvg(buttonKind)}<span>${esc(button.label)}</span></a>`;
           })
           .filter(Boolean)
           .join("")

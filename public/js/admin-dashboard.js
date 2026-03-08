@@ -583,6 +583,7 @@
             menuItem({ label: "Открыть профиль", icon: "external", attrs: profileLink ? `data-act="open-url" data-url="${profileLink}"` : 'disabled="disabled"' }),
             menuSeparator(),
             menuItem({ label: x.status === "blocked" ? "Разблокировать" : "Заблокировать", icon: "shieldOff", attrs: `data-act="ub" data-id="${X(x.telegramId)}" data-status="${X(x.status)}"`, danger: x.status !== "blocked" }),
+            menuItem({ label: "Удалить пользователя полностью", icon: "trash", attrs: `data-act="ud" data-id="${X(x.telegramId)}" data-name="${X(x.name)}"`, danger: true }),
           ].join(""));
           const planLabel = x.plan === "premium" ? "Премиум" : x.plan === "basic" ? "Базовый" : "Без тарифа";
           const planChipClass =
@@ -1319,6 +1320,29 @@
     if (a === "od") { const id = n.getAttribute("data-id"); if (!id || !await showConfirm("Удалить заявку?")) return; const r = await fetch(`/api/admin/orders/${id}`, { method: "DELETE", headers: H() }); if (!r.ok) showAlert(await E(r)); else void loadOrders(); }
     if (a === "ope") { const id = n.getAttribute("data-id"); if (!id) return; const r = await fetch(`/api/admin/orders/${id}/extend-pending`, { method: "POST", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({}) }); if (!r.ok) showAlert(await E(r)); else void loadOrders(); }
     if (a === "ub") { const telegramId = n.getAttribute("data-id"); const status = n.getAttribute("data-status"); if (!telegramId) return; const isBlocked = status === "blocked"; if (!isBlocked && !await showConfirm("Заблокировать пользователя и деактивировать его slug?")) return; if (isBlocked && !await showConfirm("Разблокировать пользователя и восстановить статусы slug?")) return; const r = await fetch(`/api/admin/users/${encodeURIComponent(telegramId)}/${isBlocked ? "unblock" : "block"}`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({}) }); if (!r.ok) showAlert(await E(r)); else void loadUsers(); }
+    if (a === "ud") {
+      const userId = n.getAttribute("data-id");
+      const userName = n.getAttribute("data-name") || "пользователя";
+      if (!userId) return;
+      const hardConfirm = await showConfirm(`Полностью удалить ${userName} и все связанные записи?\n\nДействие необратимо.`);
+      if (!hardConfirm) return;
+      const keyword = String(await showPrompt("Введите DELETE для подтверждения", "") || "").trim();
+      if (keyword !== "DELETE") {
+        await showAlert("Удаление отменено: неверное подтверждение.");
+        return;
+      }
+      const r = await fetch(`/api/admin/users/${encodeURIComponent(userId)}/purge`, { method: "DELETE", headers: H() });
+      if (!r.ok) {
+        await showAlert(await E(r));
+        return;
+      }
+      const payload = await r.json().catch(() => ({}));
+      const freedSlugs = Number(payload?.freedSlugs || 0);
+      await showAlert(`Пользователь удален. Освобождено slug: ${freedSlugs}.`);
+      void loadUsers();
+      closeAllRowMenus();
+      return;
+    }
     if (a === "st") { const slug = n.getAttribute("data-slug"), state = n.getAttribute("data-ns"); if (!slug || !state) return; const r = await fetch(`/api/admin/slugs/${encodeURIComponent(slug)}/state`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({ state }) }); if (!r.ok) showAlert(await E(r)); else void loadSlugs(); }
     if (a === "sa") { const slug = n.getAttribute("data-slug"); if (!slug) return; const r = await fetch(`/api/admin/slugs/${encodeURIComponent(slug)}/activate`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({}) }); if (!r.ok) showAlert(await E(r)); else void loadSlugs(); }
     if (a === "sp") { const slug = n.getAttribute("data-slug"), cur = n.getAttribute("data-p") || ""; if (!slug) return; const x = await showPrompt("Новая цена slug (пусто = убрать override)", cur); if (x === null) return; await applySlugPriceOverride(slug, x); }
