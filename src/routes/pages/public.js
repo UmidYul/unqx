@@ -520,6 +520,7 @@ function mapProfileButtons(rawButtons) {
     "tiktok",
     "youtube",
     "website",
+    "card",
     "whatsapp",
     "email",
     "other",
@@ -620,7 +621,9 @@ router.get(
   "/",
   asyncHandler(async (req, res) => {
     const weekRange = getPeriodRange("week");
-    const [leaderboardSettings, activeFlashSale, nextDrop, pricing, publicSettingsRaw, topWeeklyViews] = await Promise.all([
+    const userSession = getUserSession(req);
+    const userId = userSession?.userId ? String(userSession.userId) : "";
+    const [leaderboardSettings, activeFlashSale, nextDrop, pricing, publicSettingsRaw, topWeeklyViews, authPhotoUrl] = await Promise.all([
       getFeatureSetting("leaderboard"),
       getActiveFlashSale(),
       prisma.drop.findFirst({
@@ -663,7 +666,7 @@ router.get(
         }
 
         const grouped = await prisma.analyticsView.groupBy({
-          by: ["slug"],
+          by: ["slug", "sessionId"],
           where: {
             visitedAt: {
               gte: weekRange.startUtc,
@@ -673,12 +676,16 @@ router.get(
           _count: { _all: true },
         });
 
-        const ranked = grouped
-          .map((row) => ({
-            slug: String(row.slug || "").trim().toUpperCase(),
-            views: Number(row._count?._all || 0),
-          }))
-          .filter((row) => row.slug && row.views > 0)
+        const uniqueBySlug = new Map();
+        for (const row of grouped) {
+          const slugValue = String(row.slug || "").trim().toUpperCase();
+          if (!slugValue) continue;
+          uniqueBySlug.set(slugValue, (uniqueBySlug.get(slugValue) || 0) + 1);
+        }
+
+        const ranked = Array.from(uniqueBySlug.entries())
+          .map(([slugValue, views]) => ({ slug: slugValue, views: Number(views || 0) }))
+          .filter((row) => row.views > 0)
           .sort((a, b) => b.views - a.views);
 
         if (!ranked.length) return [];
@@ -722,7 +729,7 @@ router.get(
           if (!existing) {
             owners.set(ownerId, {
               ownerId,
-              name: owner.displayName || owner.profileCard?.name || owner.firstName || "UNQX User",
+              name: owner.profileCard?.name || owner.displayName || owner.firstName || "UNQX User",
               role: owner.profileCard?.role || "",
               company: owner.verifiedCompany || owner.profileCard?.role || "",
               isVerified: Boolean(owner.isVerified),
@@ -776,6 +783,11 @@ router.get(
           };
         });
       })(),
+      userId
+        ? findProfileCardByOwnerId(userId)
+          .then((card) => String(card?.avatarUrl || "").trim())
+          .catch(() => "")
+        : Promise.resolve(""),
     ]);
     const flashSaleSlotsLeft = activeFlashSale ? await getFlashSaleSlotsLeft(activeFlashSale) : null;
 
@@ -817,6 +829,7 @@ router.get(
         : null,
       topWeeklyViews,
       pricing,
+      authPhotoUrl,
       publicSettings: publicSettingsRaw,
       adminSession: getAdminSession(req),
     });

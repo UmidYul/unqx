@@ -58,7 +58,7 @@ async function buildLeaderboard(period = "week") {
   const range = getPeriodRange(period);
   const groupedViews = prisma.analyticsView && typeof prisma.analyticsView.groupBy === "function"
     ? await prisma.analyticsView.groupBy({
-      by: ["slug"],
+      by: ["slug", "sessionId"],
       where:
         range.period === "all"
           ? undefined
@@ -72,12 +72,16 @@ async function buildLeaderboard(period = "week") {
     })
     : [];
 
-  const rankedByViews = groupedViews
-    .map((row) => ({
-      slug: String(row.slug || "").trim().toUpperCase(),
-      views: Number(row._count?._all || 0),
-    }))
-    .filter((row) => row.slug && row.views > 0)
+  const uniqueBySlug = new Map();
+  for (const row of groupedViews) {
+    const slug = String(row.slug || "").trim().toUpperCase();
+    if (!slug) continue;
+    uniqueBySlug.set(slug, (uniqueBySlug.get(slug) || 0) + 1);
+  }
+
+  const rankedByViews = Array.from(uniqueBySlug.entries())
+    .map(([slug, views]) => ({ slug, views: Number(views || 0) }))
+    .filter((row) => row.views > 0)
     .sort((a, b) => b.views - a.views)
     .slice(0, 1000);
 
@@ -120,24 +124,77 @@ async function buildLeaderboard(period = "week") {
     ]),
   );
 
-  const validItems = rankedByViews
-    .map((entry) => {
-      const row = bySlug.get(entry.slug);
-      const owner = row?.owner;
-      if (!row || !owner) return null;
-      return {
-        slug: entry.slug,
+  const owners = new Map();
+  for (const entry of rankedByViews) {
+    const row = bySlug.get(entry.slug);
+    const owner = row?.owner;
+    const ownerId = owner?.id ? String(owner.id) : "";
+    if (!row || !owner || !ownerId) continue;
+
+    const existing = owners.get(ownerId);
+    if (!existing) {
+      owners.set(ownerId, {
         views: entry.views,
-        ownerName: owner.displayName || owner.profileCard?.name || owner.firstName || "UNQX User",
+        ownerName: owner.profileCard?.name || owner.displayName || owner.firstName || "UNQX User",
         avatarUrl: owner.profileCard?.avatarUrl || null,
         plan: owner.plan || "none",
-        userId: owner.id,
-        telegramId: owner.id,
+        userId: ownerId,
+        telegramId: ownerId,
         score: Number(owner.unqScore?.score || 0),
         isVerified: Boolean(owner.isVerified),
+        rankedSlugs: [entry.slug],
+      });
+      continue;
+    }
+
+    existing.views += entry.views;
+    existing.rankedSlugs.push(entry.slug);
+  }
+
+  const ownerIds = Array.from(owners.keys());
+  const ownerSlugRows = ownerIds.length
+    ? await prisma.slug.findMany({
+      where: {
+        ownerId: { in: ownerIds },
+        status: { in: ["approved", "active", "private", "paused"] },
+      },
+      orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
+      select: {
+        ownerId: true,
+        fullSlug: true,
+      },
+    })
+    : [];
+
+  const ownerSlugs = new Map();
+  for (const row of ownerSlugRows) {
+    const ownerId = String(row.ownerId || "");
+    if (!ownerId) continue;
+    const current = ownerSlugs.get(ownerId) || [];
+    current.push(String(row.fullSlug || "").toUpperCase());
+    ownerSlugs.set(ownerId, current);
+  }
+
+  const validItems = Array.from(owners.values())
+    .map((item) => {
+      const slugs = ownerSlugs.get(item.userId) || item.rankedSlugs;
+      const slug = slugs[0] || item.rankedSlugs[0] || "";
+      return {
+        slug,
+        slugs,
+        views: item.views,
+        ownerName: item.ownerName,
+        avatarUrl: item.avatarUrl,
+        plan: item.plan,
+        userId: item.userId,
+        telegramId: item.telegramId,
+        score: item.score,
+        isVerified: item.isVerified,
       };
     })
-    .filter(Boolean);
+    .filter((item) => item.slug)
+    .sort((a, b) => b.views - a.views)
+    .slice(0, 1000);
 
   const total = validItems.length;
   const items = validItems.map((item, index) => ({
@@ -218,7 +275,8 @@ async function detectSuspiciousActivity() {
 async function getSlugTopBadge(slug) {
   const board = await buildLeaderboard("week");
   const limit = Math.max(1, Number(board.settings.publicLimit) || 20);
-  const found = board.items.find((item) => item.slug === String(slug || "").toUpperCase());
+  const targetSlug = String(slug || "").toUpperCase();
+  const found = board.items.find((item) => Array.isArray(item.slugs) && item.slugs.includes(targetSlug));
   if (!found || found.rank > limit) {
     return null;
   }

@@ -118,6 +118,36 @@
   background: #16a34a;
 }
 
+.public-card-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 22px;
+  transform: translate(-50%, 10px);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 80;
+  border-radius: 9999px;
+  border: 1px solid #171717;
+  background: #171717;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.2;
+  padding: 10px 14px;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.24);
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.public-card-toast.is-visible {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.public-card-toast.is-error {
+  border-color: #dc2626;
+  background: #dc2626;
+}
+
 .status-dot.is-paused {
   background: #ca8a04;
 }
@@ -209,7 +239,7 @@ body[data-card-theme] #card-view-root {
   max-width: 560px !important;
 }
 
-body[data-card-theme] #card-view-root > [data-card-view] {
+body[data-card-theme] #card-view-root>[data-card-view] {
   width: 100%;
   max-width: 460px;
 }
@@ -307,7 +337,7 @@ body[data-card-theme] #card-view-root > [data-card-view] {
   content: none;
 }
 
-.unq-ref-shell > * {
+.unq-ref-shell>* {
   position: relative;
   z-index: 1;
 }
@@ -449,6 +479,16 @@ body[data-card-theme] #card-view-root > [data-card-view] {
   max-width: min(100%, 420px);
 }
 
+.unq-ref-bio {
+  margin: 8px 0 0;
+  color: var(--theme-role-color, #737373);
+  font-size: 11px;
+  line-height: 1.4;
+  text-align: center;
+  width: 100%;
+  max-width: min(100%, 420px);
+}
+
 .unq-ref-verified-text {
   min-width: 0;
   overflow-wrap: anywhere;
@@ -532,7 +572,7 @@ body[data-card-theme] #card-view-root > [data-card-view] {
   overflow: hidden;
 }
 
-.unq-score-progress > span {
+.unq-score-progress>span {
   display: block;
   width: 0%;
   height: 100%;
@@ -587,7 +627,7 @@ body[data-card-theme] #card-view-root > [data-card-view] {
   text-transform: uppercase;
 }
 
-.unq-ref-action-btn > * {
+.unq-ref-action-btn>* {
   position: relative;
   z-index: 2;
 }
@@ -629,6 +669,7 @@ body[data-card-theme] #card-view-root > [data-card-view] {
   0% {
     left: -70%;
   }
+
   100% {
     left: 130%;
   }

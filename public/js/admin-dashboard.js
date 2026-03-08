@@ -135,7 +135,7 @@
     arctic: { label: "Arctic", fill: "#f0f5f9", border: "#7a9db8", text: "#1a2a3a" },
     linen: { label: "Linen", fill: "#f2ede6", border: "#c8a882", text: "#3a2e24" },
     marble: { label: "Marble", fill: "#ffffff", border: "#0a0a0a", text: "#0a0a0a" },
-    forest: { label: "Forest", fill: "#0e2010", border: "#c8b88a", text: "#0f1f10" },
+    forest: { label: "Forest", fill: "#386e44", border: "#b8e8c8", text: "#ffffff" },
   };
   function themePill(theme) {
     const id = String(theme || "default_dark").trim();
@@ -755,7 +755,7 @@
     if (!(table instanceof HTMLElement)) return;
     const q = { page: getInitial("t_page", "page") || "1" };
     setDashboardQuery({ t_page: q.page });
-    const r = await fetch(`/api/admin/testimonials?${Q(q)}`);
+    const r = await fetch(`/api/admin/testimonials?${Q({ ...q, _: Date.now() })}`, { cache: "no-store" });
     if (!r.ok) return;
     const payload = await r.json();
     const rows = payload.items || [];
@@ -1325,7 +1325,20 @@
     if (a === "cg") { const id = n.getAttribute("data-id"), isActive = n.getAttribute("data-n") === "1"; if (!id) return; const r = await fetch(`/api/admin/cards/${id}/toggle-active`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({ isActive }) }); if (!r.ok) showAlert(await E(r)); else void loadCards(); }
     if (a === "qr") { const slug = n.getAttribute("data-slug"); if (slug) await openQ(slug); }
     if (a === "tv") { const id = n.getAttribute("data-id"), isVisible = n.getAttribute("data-n") === "1"; if (!id) return; const r = await fetch(`/api/admin/testimonials/${id}/visibility`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({ isVisible }) }); if (!r.ok) showAlert(await E(r)); else void loadTestimonials(); }
-    if (a === "td") { const id = n.getAttribute("data-id"); if (!id || !await showConfirm("Удалить отзыв?")) return; const r = await fetch(`/api/admin/testimonials/${id}`, { method: "DELETE", headers: H() }); if (!r.ok) showAlert(await E(r)); else void loadTestimonials(); }
+    if (a === "td") {
+      const id = n.getAttribute("data-id");
+      if (!id || !await showConfirm("Удалить отзыв?")) return;
+      const r = await fetch(`/api/admin/testimonials/${encodeURIComponent(id)}`, {
+        method: "DELETE",
+        headers: H(),
+      });
+      if (!r.ok) {
+        await showAlert(await E(r));
+        return;
+      }
+      await loadTestimonials();
+      return;
+    }
     if (a === "te") { const encoded = n.getAttribute("data-json"); if (!encoded) return; try { openTe(JSON.parse(decodeURIComponent(encoded))); } catch { } }
     if (a === "toggle-score") {
       const id = n.getAttribute("data-id");

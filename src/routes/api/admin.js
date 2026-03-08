@@ -2110,7 +2110,16 @@ router.patch(
 router.delete(
   "/testimonials/:id",
   asyncHandler(async (req, res) => {
-    await prisma.testimonial.delete({ where: { id: req.params.id } });
+    try {
+      await prisma.testimonial.delete({ where: { id: req.params.id } });
+    } catch (error) {
+      // Idempotent delete: if record is already gone, treat as success.
+      if (error && typeof error === "object" && "code" in error && error.code === "P2025") {
+        res.json({ ok: true, deleted: false });
+        return;
+      }
+      throw error;
+    }
     res.json({ ok: true });
   }),
 );

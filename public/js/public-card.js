@@ -80,6 +80,38 @@
     liveRegion.textContent = text;
   }
 
+  function showToast(text, kind = "success") {
+    const value = String(text || "").trim();
+    if (!value) return;
+    let toast = document.getElementById("public-card-toast");
+    if (!(toast instanceof HTMLElement)) {
+      toast = document.createElement("div");
+      toast.id = "public-card-toast";
+      toast.className = "public-card-toast";
+      toast.setAttribute("role", "status");
+      toast.setAttribute("aria-live", "polite");
+      document.body.appendChild(toast);
+    }
+    toast.textContent = value;
+    toast.classList.remove("is-error", "is-visible");
+    if (kind === "error") {
+      toast.classList.add("is-error");
+    }
+    requestAnimationFrame(() => {
+      toast.classList.add("is-visible");
+    });
+    const timerKey = "toastTimer";
+    const previousTimer = Number(toast.dataset[timerKey] || 0);
+    if (previousTimer) {
+      window.clearTimeout(previousTimer);
+    }
+    const nextTimer = window.setTimeout(() => {
+      toast.classList.remove("is-visible");
+      delete toast.dataset[timerKey];
+    }, 1600);
+    toast.dataset[timerKey] = String(nextTimer);
+  }
+
   function normalizeSearchSlug(value) {
     const raw = String(value || "").toUpperCase();
     let letters = "";
@@ -249,6 +281,7 @@
       if (!shared) {
         const copied = await copyText(shareUrl);
         setShareLabel(copied ? "Скопировано" : "Ошибка");
+        showToast(copied ? "Ссылка скопирована" : "Не удалось скопировать ссылку", copied ? "success" : "error");
         announce(copied ? "Ссылка скопирована" : "Не удалось скопировать ссылку");
       }
 
@@ -313,6 +346,7 @@
               labelNode.textContent = previousText;
             }, 1400);
           }
+          showToast(copied ? "Номер карты скопирован" : "Не удалось скопировать номер карты", copied ? "success" : "error");
           announce(copied ? "Номер карты скопирован" : "Не удалось скопировать номер карты");
         }
         const buttonType = String(button.getAttribute("data-button-type") || "other").toLowerCase();

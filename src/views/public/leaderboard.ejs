@@ -191,9 +191,16 @@
                               </span>
                       </div>
                     </td>
-                    <td class="px-3 py-2"><a href="/<%= item.slug %>" class="hover:underline">
-                        <%= item.slug %>
-                      </a></td>
+                    <td class="px-3 py-2">
+                      <% const rowSlugs=Array.isArray(item.slugs) ? item.slugs : [item.slug]; %>
+                        <div class="flex flex-wrap gap-1.5">
+                          <% rowSlugs.forEach((slugValue)=> { %>
+                            <a href="/<%= slugValue %>" class="hover:underline">
+                              <%= slugValue %>
+                            </a>
+                            <% }) %>
+                        </div>
+                    </td>
                     <td class="px-3 py-2">
                       <%= Number(item.views || 0).toLocaleString('ru-RU') %>
                     </td>

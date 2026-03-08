@@ -29,11 +29,13 @@
   , }; const pricingFootnote=String(pricingSettings.pricingFootnote || "" ).trim()
   || "Тарифы оплачиваются один раз. Без подписки и скрытых платежей." ; const authDisplayName=hasAuthSession ?
   `${(pageUserSession.firstName || pageUserSession.displayName || "Мой профиль" )} · Мой профиль` : "Мой профиль" ;
-  const authPhotoUrl=hasAuthSession && pageUserSession.avatarUrl ? pageUserSession.avatarUrl : "/brand/profile-user.svg"
-  ; const demos=[ { name: "Alex Karimov" , role: "Product Designer" , slug: "alex" }, { name: "Dilnoza R." ,
-  role: "Marketing Lead" , slug: "dilnoza" }, { name: "Sardor M." , role: "Full-Stack Dev" , slug: "sardor" }, {
-  name: "Nodira K." , role: "Brand Strategist" , slug: "nodira" }, { name: "Temur A." , role: "Founder, CEO" ,
-  slug: "temur" }, ]; const testimonialsList=Array.isArray(testimonials) && testimonials.length> 0
+  const authPhotoUrlFromServer=typeof authPhotoUrl==="string" && authPhotoUrl.trim() ? authPhotoUrl.trim() : "" ; const
+  authNavPhotoUrl=authPhotoUrlFromServer || (hasAuthSession && pageUserSession.avatarUrl ? pageUserSession.avatarUrl
+  : "/brand/profile-user.svg" ) ; const demos=[ { name: "Alex Karimov" , role: "Product Designer" , slug: "alex" }, {
+  name: "Dilnoza R." , role: "Marketing Lead" , slug: "dilnoza" }, { name: "Sardor M." , role: "Full-Stack Dev" ,
+  slug: "sardor" }, { name: "Nodira K." , role: "Brand Strategist" , slug: "nodira" }, { name: "Temur A." ,
+  role: "Founder, CEO" , slug: "temur" }, ]; const testimonialsList=Array.isArray(testimonials) && testimonials.length>
+  0
   ? testimonials
   : [
   {
@@ -189,7 +191,7 @@
                     <a href="/profile" data-auth-profile
                       class="<%= hasAuthSession ? 'inline-flex' : 'hidden' %> h-9 w-9 items-center justify-center rounded-full border border-neutral-300 text-neutral-700 transition hover:bg-neutral-100"
                       aria-label="Мой профиль">
-                      <img data-auth-avatar src="<%= authPhotoUrl %>" alt="avatar"
+                      <img data-auth-avatar src="<%= authNavPhotoUrl %>" alt="avatar"
                         class="h-7 w-7 rounded-full border border-neutral-200 bg-white object-cover" />
                     </a>
                   </div>
@@ -230,7 +232,7 @@
                     <a href="/profile" data-auth-profile
                       class="<%= hasAuthSession ? 'inline-flex' : 'hidden' %> h-9 w-9 items-center justify-center rounded-full border border-neutral-300 text-neutral-700 transition hover:bg-neutral-100"
                       aria-label="Мой профиль">
-                      <img data-auth-avatar src="<%= authPhotoUrl %>" alt="avatar"
+                      <img data-auth-avatar src="<%= authNavPhotoUrl %>" alt="avatar"
                         class="h-7 w-7 rounded-full border border-neutral-200 bg-white object-cover" />
                     </a>
                   </div>
@@ -546,15 +548,12 @@
                                     <%= item.name %>
                                   </p>
                                   <% if (item.isVerified) { %>
-                                    <span
-                                      class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-neutral-900 text-white"
-                                      title="Верифицированный аккаунт">
-                                      <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" aria-hidden="true" fill="none"
-                                        stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
-                                        stroke-linejoin="round">
-                                        <path d="m5 12 4 4 10-10"></path>
-                                      </svg>
-                                    </span>
+                                    <svg class="h-4 w-4 text-neutral-500" viewBox="0 0 24 24" aria-hidden="true"
+                                      fill="currentColor" title="Верифицированный аккаунт">
+                                      <path
+                                        d="M12 2.5l2.2 1.8 2.8-.3 1.2 2.5 2.5 1.2-.3 2.8L21.5 12l-1.8 2.2.3 2.8-2.5 1.2-1.2 2.5-2.8-.3L12 21.5l-2.2-1.8-2.8.3-1.2-2.5-2.5-1.2.3-2.8L2.5 12l1.8-2.2-.3-2.8 2.5-1.2 1.2-2.5 2.8.3L12 2.5Zm-1.1 13.1 5-5-1.1-1.1-3.9 3.9-1.8-1.8-1.1 1.1 2.9 2.9Z">
+                                      </path>
+                                    </svg>
                                     <% } %>
                                 </div>
                               </div>
