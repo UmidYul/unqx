@@ -47,6 +47,23 @@
           </div>
         </div>
 
+        <section id="order-modal-step-pending" class="hidden flex-1 overflow-auto px-4 py-6 sm:px-6">
+          <h3 class="text-xl font-bold text-neutral-900">У вас есть незавершённый заказ</h3>
+          <p class="mt-2 text-sm text-neutral-600">Завершите текущий заказ или отмените его, чтобы создать новый.</p>
+          <div class="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+            <p id="order-modal-pending-meta" class="text-xs text-amber-800">UNQ: —</p>
+          </div>
+          <p id="order-modal-pending-status" class="mt-3 text-sm text-neutral-600"></p>
+          <div class="mt-5 flex flex-wrap items-center gap-3">
+            <a id="order-modal-pending-continue" href="#" target="_blank" rel="noopener noreferrer"
+              class="interactive-btn inline-flex min-h-11 items-center justify-center rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm font-semibold text-neutral-800">Продолжить оплату</a>
+            <button id="order-modal-pending-cancel" type="button"
+              class="interactive-btn min-h-11 rounded-lg border border-red-200 bg-white px-3 py-2 text-sm font-semibold text-red-700">Отменить и создать новый</button>
+            <button id="order-modal-close-pending" type="button"
+              class="text-sm font-semibold text-neutral-600 underline">Закрыть</button>
+          </div>
+        </section>
+
         <form id="order-modal-step-form" class="hidden flex-1 overflow-auto px-4 py-6 sm:px-6" novalidate>
           <div class="rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm text-neutral-700">
             <div class="flex items-center justify-between gap-3">
@@ -59,17 +76,6 @@
                 ты? Выйти</button>
             </div>
           </div>
-
-          <section id="order-modal-pending-state" class="mt-4 hidden rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-            <p class="font-semibold">У вас есть незавершённый заказ</p>
-            <p id="order-modal-pending-meta" class="mt-1 text-xs text-amber-800">UNQ: —</p>
-            <div class="mt-3 flex flex-wrap items-center gap-2">
-              <a id="order-modal-pending-continue" href="#" target="_blank" rel="noopener noreferrer"
-                class="interactive-btn inline-flex min-h-11 items-center justify-center rounded-lg border border-amber-300 bg-white px-3 py-2 text-xs font-semibold text-amber-900">Продолжить оплату</a>
-              <button id="order-modal-pending-cancel" type="button"
-                class="interactive-btn min-h-11 rounded-lg border border-red-200 bg-white px-3 py-2 text-xs font-semibold text-red-700">Отменить и создать новый</button>
-            </div>
-          </section>
 
           <div class="mt-5 space-y-5">
             <div id="order-modal-slug-readonly-wrap" class="hidden rounded-xl border border-neutral-200 bg-white p-4">

@@ -934,14 +934,6 @@ router.get(
       nextAction = "resume_pending";
       canPurchase = false;
       message = `У вас уже есть незавершённый заказ ${pendingOrder.slug}. Продолжите оплату или отмените заказ.`;
-    } else if (currentPlan === "premium") {
-      nextAction = "already_premium";
-      canPurchase = false;
-      message = "Премиум уже активирован. Дополнительная покупка не требуется.";
-    } else if (currentPlan === "basic" && requestedPlan === "basic") {
-      nextAction = "already_basic";
-      canPurchase = true;
-      message = "Базовый уже активирован. Для расширения возможностей выберите Премиум.";
     } else if (activeOrdersCount >= activeOrdersLimit) {
       nextAction = "limit_reached";
       canPurchase = false;
@@ -950,6 +942,14 @@ router.get(
       nextAction = "slug_limit_reached";
       canPurchase = false;
       message = slugLimit === 3 ? "Достигнут лимит 3 UNQ для Премиум." : "Для нового UNQ нужен апгрейд до Премиум.";
+    } else if (currentPlan === "premium") {
+      nextAction = "checkout";
+      canPurchase = true;
+      message = "Премиум активирован. К оплате только slug и дополнительные товары.";
+    } else if (currentPlan === "basic" && requestedPlan === "basic") {
+      nextAction = "checkout";
+      canPurchase = true;
+      message = "Базовый уже активирован. Для расширения возможностей можно выбрать Премиум.";
     } else if (currentPlan === "basic" && requestedPlan === "premium") {
       nextAction = "upgrade";
       canPurchase = true;

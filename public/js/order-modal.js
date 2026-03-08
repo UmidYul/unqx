@@ -32,6 +32,7 @@ const DEFAULT_PRICING = {
     progressAuth: document.getElementById("order-modal-progress-auth"),
     progressNoAuth: document.getElementById("order-modal-progress-no-auth"),
     stepAuth: document.getElementById("order-modal-step-auth"),
+    stepPending: document.getElementById("order-modal-step-pending"),
     stepForm: document.getElementById("order-modal-step-form"),
     stepSuccess: document.getElementById("order-modal-step-success"),
     widgetWrap: document.getElementById("order-modal-telegram-widget"),
@@ -75,10 +76,11 @@ const DEFAULT_PRICING = {
     countdown: document.getElementById("order-modal-countdown"),
     goProfile: document.getElementById("order-modal-go-profile"),
     closeSuccess: document.getElementById("order-modal-close-success"),
-    pendingState: document.getElementById("order-modal-pending-state"),
     pendingMeta: document.getElementById("order-modal-pending-meta"),
+    pendingStatus: document.getElementById("order-modal-pending-status"),
     pendingContinue: document.getElementById("order-modal-pending-continue"),
     pendingCancel: document.getElementById("order-modal-pending-cancel"),
+    closePending: document.getElementById("order-modal-close-pending"),
   };
 
   if (
@@ -404,6 +406,7 @@ const DEFAULT_PRICING = {
 
   function setStep(step) {
     dom.stepAuth.classList.toggle("hidden", step !== "auth");
+    dom.stepPending?.classList.toggle("hidden", step !== "pending");
     dom.stepForm.classList.toggle("hidden", step !== "form");
     dom.stepSuccess.classList.toggle("hidden", step !== "success");
   }
@@ -426,6 +429,17 @@ const DEFAULT_PRICING = {
     if (tone === "error") dom.status.classList.add("text-red-700");
     else if (tone === "success") dom.status.classList.add("text-emerald-700");
     else dom.status.classList.add("text-neutral-600");
+  }
+
+  function setPendingStatus(text, tone) {
+    if (!(dom.pendingStatus instanceof HTMLElement)) {
+      return;
+    }
+    dom.pendingStatus.textContent = text || "";
+    dom.pendingStatus.className = "mt-3 text-sm";
+    if (tone === "error") dom.pendingStatus.classList.add("text-red-700");
+    else if (tone === "success") dom.pendingStatus.classList.add("text-emerald-700");
+    else dom.pendingStatus.classList.add("text-neutral-600");
   }
 
   function formatPendingDateTime(value) {
@@ -460,7 +474,7 @@ const DEFAULT_PRICING = {
   }
 
   function renderPendingOrderState(precheck) {
-    const wrap = dom.pendingState;
+    const wrap = dom.stepPending;
     if (!(wrap instanceof HTMLElement)) {
       return;
     }
@@ -468,9 +482,8 @@ const DEFAULT_PRICING = {
     const action = String(precheck?.nextAction || "");
     const pending = precheck?.pendingOrder && typeof precheck.pendingOrder === "object" ? precheck.pendingOrder : null;
     const visible = action === "resume_pending" && Boolean(pending);
-    wrap.classList.toggle("hidden", !visible);
-
     if (!visible) {
+      setPendingStatus("", "neutral");
       if (dom.pendingMeta instanceof HTMLElement) {
         dom.pendingMeta.textContent = "UNQ: —";
       }
@@ -535,16 +548,25 @@ const DEFAULT_PRICING = {
       renderPendingOrderState(precheck);
       setSubmitBlockedMessage("");
       setStatus(String(precheck.message || ""), "neutral");
+      setPendingStatus("", "neutral");
       return "auth";
     }
 
     renderPendingOrderState(precheck);
 
     const action = String(precheck.nextAction || "checkout");
+    if (action === "resume_pending" && precheck.pendingOrder) {
+      setSubmitBlockedMessage("");
+      setStatus("", "neutral");
+      setPendingStatus(String(precheck.message || ""), "neutral");
+      return "pending";
+    }
+
     const canPurchase = precheck.canPurchase !== false;
     const message = String(precheck.message || "").trim();
     const blockedMessage = canPurchase ? "" : (message || "Покупка сейчас недоступна.");
     setSubmitBlockedMessage(blockedMessage);
+    setPendingStatus("", "neutral");
 
     if (message) {
       const tone = action === "already_basic" || action === "already_premium" || action === "upgrade" ? "neutral" : (canPurchase ? "neutral" : "error");
@@ -1108,10 +1130,11 @@ const DEFAULT_PRICING = {
   dom.closeTop?.addEventListener("click", () => close(false));
   dom.closeForm?.addEventListener("click", () => close(false));
   dom.closeSuccess?.addEventListener("click", () => close(true));
+  dom.closePending?.addEventListener("click", () => close(false));
   dom.pendingCancel?.addEventListener("click", async () => {
     const orderId = String(dom.pendingCancel?.getAttribute("data-order-id") || "").trim();
     if (!orderId) {
-      setStatus("Не удалось определить заказ для отмены.", "error");
+      setPendingStatus("Не удалось определить заказ для отмены.", "error");
       return;
     }
     const confirmed = await showConfirm("Отменить текущий заказ и освободить UNQ?");
@@ -1125,8 +1148,9 @@ const DEFAULT_PRICING = {
       await postJson(`/api/cards/order-request/${encodeURIComponent(orderId)}/cancel`, {});
       await refreshCheckoutContext();
       setStatus("Заказ отменён. Теперь можно создать новый.", "success");
+      setPendingStatus("", "neutral");
     } catch (error) {
-      setStatus(error?.message || "Не удалось отменить заказ.", "error");
+      setPendingStatus(error?.message || "Не удалось отменить заказ.", "error");
     } finally {
       dom.pendingCancel.disabled = false;
       dom.pendingCancel.textContent = originalText;
