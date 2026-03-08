@@ -308,20 +308,24 @@
     if (themeKey === "arctic") {
       return `<svg class="unq-ref-overlay-svg" viewBox="0 0 360 600" preserveAspectRatio="none" aria-hidden="true">
         <defs>
-          <pattern id="ar-facet" width="30" height="30" patternUnits="userSpaceOnUse">
-            <path d="M0 15L15 0L30 15L15 30Z" fill="none" stroke="#9bb8ce" stroke-width="0.36"></path>
-            <path d="M0 15H30M15 0V30" stroke="#bed2e3" stroke-width="0.24"></path>
+          <pattern id="ar-frost-grid" width="28" height="28" patternUnits="userSpaceOnUse">
+            <path d="M0 14H28M14 0V28" stroke="#aec5d9" stroke-width="0.24"></path>
+            <circle cx="14" cy="14" r="0.65" fill="#b9cfe2"></circle>
           </pattern>
-          <linearGradient id="ar-line" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="#8fb0c8"></stop>
-            <stop offset="100%" stop-color="#cddceb"></stop>
+          <linearGradient id="ar-frost-line" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#9cb8cf"></stop>
+            <stop offset="100%" stop-color="#d3e0ec"></stop>
+          </linearGradient>
+          <radialGradient id="ar-frost-glow" cx="50%" cy="30%" r="70%">
+            <stop offset="0%" stop-color="#e8f3fd"></stop>
+            <stop offset="100%" stop-color="#cfdcea"></stop>
           </linearGradient>
         </defs>
-        <rect width="100%" height="100%" fill="url(#ar-facet)"></rect>
-        <path d="M0 84C66 52 128 62 194 92C258 120 314 120 360 102" stroke="url(#ar-line)" stroke-width="1.05" fill="none"></path>
-        <path d="M0 252C58 226 124 232 192 258C260 284 320 286 360 270" stroke="url(#ar-line)" stroke-width="0.94" fill="none"></path>
-        <path d="M0 468C68 438 136 448 206 474C270 496 324 500 360 486" stroke="url(#ar-line)" stroke-width="0.86" fill="none"></path>
-        <path d="M38 0L222 600M142 0L328 600" stroke="#d4e3ef" stroke-width="0.32"></path>
+        <rect width="100%" height="100%" fill="url(#ar-frost-grid)"></rect>
+        <circle cx="302" cy="104" r="160" fill="url(#ar-frost-glow)" opacity="0.34"></circle>
+        <path d="M0 94C64 72 130 78 198 102C262 124 316 124 360 112" stroke="url(#ar-frost-line)" stroke-width="0.84" fill="none"></path>
+        <path d="M0 284C62 262 128 268 196 292C262 316 316 318 360 304" stroke="url(#ar-frost-line)" stroke-width="0.74" fill="none"></path>
+        <path d="M0 488C64 466 132 472 198 496C262 518 316 522 360 508" stroke="url(#ar-frost-line)" stroke-width="0.68" fill="none"></path>
       </svg>`;
     }
     if (themeKey === "linen") {

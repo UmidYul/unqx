@@ -562,8 +562,8 @@ body[data-card-theme] #card-view-root>[data-card-view] {
 }
 
 [data-card-theme="arctic"] .unq-ref-overlay-svg {
-  opacity: 0.2;
-  mix-blend-mode: soft-light;
+  opacity: 0.12;
+  mix-blend-mode: normal;
 }
 
 [data-card-theme="linen"] .unq-ref-overlay-svg {
