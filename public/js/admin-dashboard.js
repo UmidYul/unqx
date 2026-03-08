@@ -619,6 +619,9 @@
     const canCreateBySearch = rows.length === 0 && /^[A-Z]{3}[0-9]{3}$/.test(searchedSlug);
     table.innerHTML = rows.length
       ? rows.map((x) => {
+        const hasManualPrice = typeof x.priceOverride === "number";
+        const priceValue = typeof x.effectivePrice === "number" ? P(x.effectivePrice) : "-";
+        const priceCell = `<div class="flex items-center gap-2"><span>${priceValue}</span>${hasManualPrice ? '<span class="inline-flex rounded-full border border-amber-300 bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-700">ручная</span>' : ""}<button type="button" class="interactive-btn min-h-8 rounded-md border border-neutral-300 px-2 py-0.5 text-xs font-semibold text-neutral-700" data-act="sp" data-slug="${X(x.slug)}" data-p="${x.priceOverride ?? ""}" title="Изменить цену">Ред.</button></div>`;
         const menu = menuWrap([
           menuItem({ label: "Активировать", icon: "checkCircle", attrs: `data-act="sa" data-slug="${x.slug}"` }),
           menuItem({ label: x.state === "BLOCKED" ? "Разблокировать" : "Заблокировать", icon: x.state === "BLOCKED" ? "toggleRight" : "toggleLeft", attrs: `data-act="st" data-slug="${x.slug}" data-ns="${x.state === "BLOCKED" ? "free" : "blocked"}"` }),
@@ -626,14 +629,14 @@
           menuSeparator(),
           menuItem({ label: "Открыть визитку", icon: "external", attrs: `data-act="open-url" data-url="/${encodeURIComponent(x.slug)}"` }),
         ].join(""));
-        return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3 font-mono">${X(x.slug)}</td><td class="px-4 py-3">${statusChip(x.state === "BLOCKED" ? "rejected" : x.state === "TAKEN" ? "approved" : "new")}</td><td class="px-4 py-3">${X(x.ownerName || "-")}</td><td class="px-4 py-3">${x.isPrimary ? "Да" : "Нет"}</td><td class="px-4 py-3">${typeof x.effectivePrice === "number" ? P(x.effectivePrice) : "-"}</td><td class="px-4 py-3">${x.requestedAt ? D(x.requestedAt) : "-"}</td><td class="px-4 py-3">${x.approvedAt ? D(x.approvedAt) : "-"}</td><td class="px-4 py-3">${x.activatedAt ? D(x.activatedAt) : "-"}</td><td class="px-4 py-3"><div class="admin-row-actions">${menu}</div></td></tr>`;
+        return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3 font-mono">${X(x.slug)}</td><td class="px-4 py-3">${statusChip(x.state === "BLOCKED" ? "rejected" : x.state === "TAKEN" ? "approved" : "new")}</td><td class="px-4 py-3">${X(x.ownerName || "-")}</td><td class="px-4 py-3">${x.isPrimary ? "Да" : "Нет"}</td><td class="px-4 py-3">${priceCell}</td><td class="px-4 py-3">${x.requestedAt ? D(x.requestedAt) : "-"}</td><td class="px-4 py-3">${x.approvedAt ? D(x.approvedAt) : "-"}</td><td class="px-4 py-3">${x.activatedAt ? D(x.activatedAt) : "-"}</td><td class="px-4 py-3"><div class="admin-row-actions">${menu}</div></td></tr>`;
       }).join("")
       : canCreateBySearch
         ? (() => {
           const menu = menuWrap(
             menuItem({ label: "Изменить цену", icon: "pen", attrs: `data-act="sp" data-slug="${searchedSlug}" data-p=""` }),
           );
-          return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3 font-mono">${X(searchedSlug)}</td><td class="px-4 py-3">${statusChip("new")}</td><td class="px-4 py-3">-</td><td class="px-4 py-3">Нет</td><td class="px-4 py-3">-</td><td class="px-4 py-3">-</td><td class="px-4 py-3">-</td><td class="px-4 py-3">-</td><td class="px-4 py-3"><div class="admin-row-actions">${menu}</div></td></tr>`;
+          return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3 font-mono">${X(searchedSlug)}</td><td class="px-4 py-3">${statusChip("new")}</td><td class="px-4 py-3">-</td><td class="px-4 py-3">Нет</td><td class="px-4 py-3"><div class="flex items-center gap-2"><span>-</span><button type="button" class="interactive-btn min-h-8 rounded-md border border-neutral-300 px-2 py-0.5 text-xs font-semibold text-neutral-700" data-act="sp" data-slug="${X(searchedSlug)}" data-p="" title="Изменить цену">Ред.</button></div></td><td class="px-4 py-3">-</td><td class="px-4 py-3">-</td><td class="px-4 py-3">-</td><td class="px-4 py-3"><div class="admin-row-actions">${menu}</div></td></tr>`;
         })()
         : `<tr><td colspan="9" class="px-3 py-10 text-center text-neutral-500"><div class="inline-flex flex-col items-center gap-2">${I("link2", 48)}<span>Нет данных</span></div></td></tr>`;
     renderPager("slugs-pagination", payload.pagination, (nextPage) => {
@@ -669,6 +672,50 @@
       setFormValue(form, "page", String(nextPage));
       void loadCards();
     });
+  }
+
+  async function applySlugPriceOverride(slugRaw, priceRaw) {
+    const slug = String(slugRaw || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6);
+    if (!/^[A-Z]{3}[0-9]{3}$/.test(slug)) {
+      await showAlert("Slug должен быть в формате AAA000");
+      return false;
+    }
+
+    const payloadPrice =
+      priceRaw === null || priceRaw === undefined || String(priceRaw).trim() === ""
+        ? null
+        : Number(String(priceRaw).trim());
+
+    if (!(payloadPrice === null || Number.isFinite(payloadPrice))) {
+      await showAlert("Некорректная цена override");
+      return false;
+    }
+
+    const r = await fetch(`/api/admin/slugs/${encodeURIComponent(slug)}/price-override`, {
+      method: "PATCH",
+      headers: H({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ priceOverride: payloadPrice === null ? null : payloadPrice }),
+    });
+    if (!r.ok) {
+      await showAlert(await E(r));
+      return false;
+    }
+
+    const statusNode = document.getElementById("slugs-price-override-status");
+    if (statusNode instanceof HTMLElement) {
+      statusNode.textContent =
+        payloadPrice === null
+          ? `Override для ${slug} удален`
+          : `Цена для ${slug} сохранена: ${Number(payloadPrice).toLocaleString("ru-RU")} сум`;
+    }
+
+    const slugsFilterForm = document.getElementById("slugs-filters");
+    if (slugsFilterForm instanceof HTMLFormElement) {
+      setFormValue(slugsFilterForm, "q", slug);
+      setFormValue(slugsFilterForm, "page", "1");
+    }
+    await loadSlugs();
+    return true;
   }
 
   async function loadBracelets() {
@@ -1253,7 +1300,7 @@
     if (a === "ub") { const telegramId = n.getAttribute("data-id"); const status = n.getAttribute("data-status"); if (!telegramId) return; const isBlocked = status === "blocked"; if (!isBlocked && !await showConfirm("Заблокировать пользователя и деактивировать его slug?")) return; if (isBlocked && !await showConfirm("Разблокировать пользователя и восстановить статусы slug?")) return; const r = await fetch(`/api/admin/users/${encodeURIComponent(telegramId)}/${isBlocked ? "unblock" : "block"}`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({}) }); if (!r.ok) showAlert(await E(r)); else void loadUsers(); }
     if (a === "st") { const slug = n.getAttribute("data-slug"), state = n.getAttribute("data-ns"); if (!slug || !state) return; const r = await fetch(`/api/admin/slugs/${encodeURIComponent(slug)}/state`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({ state }) }); if (!r.ok) showAlert(await E(r)); else void loadSlugs(); }
     if (a === "sa") { const slug = n.getAttribute("data-slug"); if (!slug) return; const r = await fetch(`/api/admin/slugs/${encodeURIComponent(slug)}/activate`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({}) }); if (!r.ok) showAlert(await E(r)); else void loadSlugs(); }
-    if (a === "sp") { const slug = n.getAttribute("data-slug"), cur = n.getAttribute("data-p") || ""; if (!slug) return; const x = await showPrompt("Новая цена slug (пусто = убрать override)", cur); if (x === null) return; const r = await fetch(`/api/admin/slugs/${encodeURIComponent(slug)}/price-override`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({ priceOverride: x.trim() ? Number(x.trim()) : null }) }); if (!r.ok) showAlert(await E(r)); else void loadSlugs(); }
+    if (a === "sp") { const slug = n.getAttribute("data-slug"), cur = n.getAttribute("data-p") || ""; if (!slug) return; const x = await showPrompt("Новая цена slug (пусто = убрать override)", cur); if (x === null) return; await applySlugPriceOverride(slug, x); }
     if (a === "cg") { const id = n.getAttribute("data-id"), isActive = n.getAttribute("data-n") === "1"; if (!id) return; const r = await fetch(`/api/admin/cards/${id}/toggle-active`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({ isActive }) }); if (!r.ok) showAlert(await E(r)); else void loadCards(); }
     if (a === "qr") { const slug = n.getAttribute("data-slug"); if (slug) await openQ(slug); }
     if (a === "tv") { const id = n.getAttribute("data-id"), isVisible = n.getAttribute("data-n") === "1"; if (!id) return; const r = await fetch(`/api/admin/testimonials/${id}/visibility`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({ isVisible }) }); if (!r.ok) showAlert(await E(r)); else void loadTestimonials(); }
@@ -1340,6 +1387,21 @@
   });
   document.getElementById("users-filters")?.addEventListener("submit", (e) => { e.preventDefault(); const f = e.currentTarget; if (f instanceof HTMLFormElement) setFormValue(f, "page", "1"); void loadUsers(); });
   document.getElementById("slugs-filters")?.addEventListener("submit", (e) => { e.preventDefault(); const f = e.currentTarget; if (f instanceof HTMLFormElement) setFormValue(f, "page", "1"); void loadSlugs(); });
+  document.getElementById("slugs-price-override-form")?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const form = e.currentTarget;
+    if (!(form instanceof HTMLFormElement)) return;
+    const slug = getFormValue(form, "slug", "");
+    const priceOverride = getFormValue(form, "priceOverride", "");
+    await applySlugPriceOverride(slug, priceOverride);
+  });
+  document.getElementById("slugs-price-override-reset")?.addEventListener("click", async () => {
+    const form = document.getElementById("slugs-price-override-form");
+    if (!(form instanceof HTMLFormElement)) return;
+    const slug = getFormValue(form, "slug", "");
+    await applySlugPriceOverride(slug, null);
+    setFormValue(form, "priceOverride", "");
+  });
   document.getElementById("cards-filters")?.addEventListener("submit", (e) => { e.preventDefault(); const f = e.currentTarget; if (f instanceof HTMLFormElement) setFormValue(f, "page", "1"); void loadCards(); });
   document.getElementById("bracelets-filters")?.addEventListener("submit", (e) => { e.preventDefault(); const f = e.currentTarget; if (f instanceof HTMLFormElement) setFormValue(f, "page", "1"); void loadBracelets(); });
   document.getElementById("logs-filters")?.addEventListener("submit", (e) => { e.preventDefault(); const f = e.currentTarget; if (f instanceof HTMLFormElement) setFormValue(f, "page", "1"); void loadLogs(); });

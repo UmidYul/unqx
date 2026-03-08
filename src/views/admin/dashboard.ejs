@@ -263,6 +263,20 @@
             <button type="submit"
               class="inline-flex min-h-11 w-full items-center justify-center justify-self-start rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100 md:w-auto">Применить</button>
           </form>
+          <form id="slugs-price-override-form"
+            class="grid gap-3 rounded-2xl border border-neutral-200 bg-white p-4 md:grid-cols-[180px_220px_auto_auto]">
+            <input type="text" name="slug" placeholder="AAA000" maxlength="6"
+              class="rounded-xl border border-neutral-300 px-3 py-2 text-sm uppercase" />
+            <input type="number" min="0" step="1" name="priceOverride" placeholder="Цена override"
+              class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+            <button type="submit"
+              class="inline-flex min-h-11 w-full items-center justify-center justify-self-start rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100 md:w-auto">Сохранить
+              цену</button>
+            <button type="button" id="slugs-price-override-reset"
+              class="inline-flex min-h-11 w-full items-center justify-center justify-self-start rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100 md:w-auto">Сбросить
+              override</button>
+          </form>
+          <p id="slugs-price-override-status" class="text-xs text-neutral-500"></p>
           <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
             <div class="overflow-x-auto">
               <table class="min-w-[980px] w-full text-left text-sm">
