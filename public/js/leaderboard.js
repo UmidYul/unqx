@@ -22,7 +22,7 @@
     button.addEventListener("click", async () => {
       const slug = button.getAttribute("data-share-slug") || "UNQ";
       const rank = button.getAttribute("data-share-rank") || "?";
-      const text = `Я на #${rank} в лидерборде UNQ Score.\nМоя визитка: unqx.uz/${slug}`;
+      const text = `Я на #${rank} в лидерборде по просмотрам.\nМоя визитка: unqx.uz/${slug}`;
       const ok = await copyText(text);
       const old = button.textContent;
       button.textContent = ok ? "Скопировано" : "Ошибка";

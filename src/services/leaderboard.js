@@ -4,7 +4,6 @@ const { fromZonedTime, toZonedTime } = require("date-fns-tz");
 const { prisma } = require("../db/prisma");
 const { env } = require("../config/env");
 const { getFeatureSetting } = require("./feature-settings");
-const { getScoreLeaderboard } = require("./unq-score");
 
 function normalizePeriod(period) {
   if (period === "month" || period === "all") {
@@ -57,7 +56,95 @@ function getPeriodRange(period, timezone = env.TIMEZONE) {
 async function buildLeaderboard(period = "week") {
   const settings = await getFeatureSetting("leaderboard");
   const range = getPeriodRange(period);
-  const items = await getScoreLeaderboard(300);
+  const groupedViews = prisma.analyticsView && typeof prisma.analyticsView.groupBy === "function"
+    ? await prisma.analyticsView.groupBy({
+      by: ["slug"],
+      where:
+        range.period === "all"
+          ? undefined
+          : {
+            visitedAt: {
+              gte: range.startUtc,
+              lt: range.endUtc,
+            },
+          },
+      _count: { _all: true },
+    })
+    : [];
+
+  const rankedByViews = groupedViews
+    .map((row) => ({
+      slug: String(row.slug || "").trim().toUpperCase(),
+      views: Number(row._count?._all || 0),
+    }))
+    .filter((row) => row.slug && row.views > 0)
+    .sort((a, b) => b.views - a.views)
+    .slice(0, 1000);
+
+  const slugRows = rankedByViews.length
+    ? await prisma.slug.findMany({
+      where: {
+        fullSlug: { in: rankedByViews.map((row) => row.slug) },
+        status: { in: ["approved", "active", "private", "paused"] },
+      },
+      select: {
+        fullSlug: true,
+        owner: {
+          select: {
+            id: true,
+            firstName: true,
+            displayName: true,
+            plan: true,
+            profileCard: {
+              select: {
+                name: true,
+                avatarUrl: true,
+              },
+            },
+            unqScore: {
+              select: {
+                score: true,
+              },
+            },
+          },
+        },
+      },
+    })
+    : [];
+
+  const bySlug = new Map(
+    slugRows.map((row) => [
+      String(row.fullSlug || "").toUpperCase(),
+      row,
+    ]),
+  );
+
+  const validItems = rankedByViews
+    .map((entry) => {
+      const row = bySlug.get(entry.slug);
+      const owner = row?.owner;
+      if (!row || !owner) return null;
+      return {
+        slug: entry.slug,
+        views: entry.views,
+        ownerName: owner.displayName || owner.profileCard?.name || owner.firstName || "UNQX User",
+        avatarUrl: owner.profileCard?.avatarUrl || null,
+        plan: owner.plan || "none",
+        userId: owner.id,
+        telegramId: owner.id,
+        score: Number(owner.unqScore?.score || 0),
+      };
+    })
+    .filter(Boolean);
+
+  const total = validItems.length;
+  const items = validItems.map((item, index) => ({
+    ...item,
+    rank: index + 1,
+    topPercent: Math.max(1, Math.ceil(((index + 1) / Math.max(1, total)) * 100)),
+    rarityLabel: "",
+  }));
+
   const publicLimit = Math.max(1, Math.min(200, Number(settings.publicLimit) || 20));
 
   return {
@@ -78,13 +165,13 @@ async function getUserLeaderboardSummary({ userId, telegramId, period = "week" }
 
   const limit = Math.max(1, Number(board.settings.publicLimit) || 20);
   const topN = board.items.slice(0, limit);
-  const cutoffScore = topN.length === limit ? Number(topN[topN.length - 1].score || 0) : 0;
+  const cutoffViews = topN.length === limit ? Number(topN[topN.length - 1].views || 0) : 0;
   return {
     rank: target.rank,
     slug: target.slug,
     score: target.score,
     views: target.views,
-    toTopScore: target.rank <= limit ? 0 : Math.max(0, cutoffScore - Number(target.score || 0) + 1),
+    toTopViews: target.rank <= limit ? 0 : Math.max(0, cutoffViews - Number(target.views || 0) + 1),
     limit,
   };
 }

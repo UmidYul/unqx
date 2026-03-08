@@ -678,8 +678,7 @@ router.get(
             views: Number(row._count?._all || 0),
           }))
           .filter((row) => row.slug && row.views > 0)
-          .sort((a, b) => b.views - a.views)
-          .slice(0, 15);
+          .sort((a, b) => b.views - a.views);
 
         if (!ranked.length) return [];
 
@@ -692,12 +691,14 @@ router.get(
           include: {
             owner: {
               select: {
+                id: true,
                 displayName: true,
                 firstName: true,
                 profileCard: {
                   select: {
                     name: true,
                     role: true,
+                    avatarUrl: true,
                   },
                 },
               },
@@ -705,29 +706,68 @@ router.get(
           },
         });
 
-        const slugMap = new Map(
-          slugRows.map((row) => [
-            String(row.fullSlug || "").toUpperCase(),
-            {
-              name: row.owner?.displayName || row.owner?.profileCard?.name || row.owner?.firstName || "UNQX User",
-              role: row.owner?.profileCard?.role || "",
-            },
-          ]),
-        );
+        const slugMap = new Map(slugRows.map((row) => [String(row.fullSlug || "").toUpperCase(), row]));
+        const owners = new Map();
 
-        return ranked
-          .map((item) => {
-            const profile = slugMap.get(item.slug);
-            if (!profile) return null;
-            return {
-              slug: item.slug,
+        for (const item of ranked) {
+          const row = slugMap.get(item.slug);
+          const owner = row?.owner;
+          const ownerId = owner?.id ? String(owner.id) : "";
+          if (!ownerId) continue;
+
+          const existing = owners.get(ownerId);
+          if (!existing) {
+            owners.set(ownerId, {
+              ownerId,
+              name: owner.displayName || owner.profileCard?.name || owner.firstName || "UNQX User",
+              role: owner.profileCard?.role || "",
+              avatarUrl: owner.profileCard?.avatarUrl || null,
               views: item.views,
-              name: profile.name,
-              role: profile.role,
-            };
-          })
-          .filter(Boolean)
+            });
+            continue;
+          }
+
+          existing.views += item.views;
+        }
+
+        const topOwners = Array.from(owners.values())
+          .sort((a, b) => b.views - a.views)
           .slice(0, 3);
+
+        if (!topOwners.length) return [];
+
+        const ownerSlugs = await prisma.slug.findMany({
+          where: {
+            ownerId: { in: topOwners.map((item) => item.ownerId) },
+            status: { in: ["approved", "active", "private", "paused"] },
+          },
+          orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
+          select: {
+            ownerId: true,
+            fullSlug: true,
+          },
+        });
+
+        const slugsByOwner = new Map();
+        for (const row of ownerSlugs) {
+          const ownerId = String(row.ownerId || "");
+          if (!ownerId) continue;
+          const current = slugsByOwner.get(ownerId) || [];
+          current.push(String(row.fullSlug || "").toUpperCase());
+          slugsByOwner.set(ownerId, current);
+        }
+
+        return topOwners.map((item) => {
+          const allSlugs = slugsByOwner.get(item.ownerId) || [];
+          return {
+            primarySlug: allSlugs[0] || "",
+            slugs: allSlugs,
+            views: item.views,
+            name: item.name,
+            role: item.role,
+            avatarUrl: item.avatarUrl,
+          };
+        });
       })(),
     ]);
     const flashSaleSlotsLeft = activeFlashSale ? await getFlashSaleSlotsLeft(activeFlashSale) : null;
@@ -975,8 +1015,8 @@ router.get(
     ]);
 
     res.render("public/leaderboard", {
-      title: "Топ визиток недели · UNQX",
-      description: "Топ визиток UNQX по UNQ Score",
+      title: "Топ визиток по просмотрам · UNQX",
+      description: "Лидерборд визиток UNQX по просмотрам",
       image: defaultSocialImage,
       period: board.period,
       items: board.publicItems,

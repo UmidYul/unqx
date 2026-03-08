@@ -45,7 +45,7 @@
     <header class="mb-6 rounded-2xl border border-neutral-200 bg-white p-6">
       <h1 class="inline-flex items-center gap-2 text-3xl font-black tracking-tight text-neutral-900">
         <img src="/brand/logo.PNG" alt="UNQX" class="h-8 w-8 rounded-md border border-neutral-200 object-cover" />
-        <span>Лидерборд UNQ</span>
+        <span>Лидерборд по просмотрам</span>
       </h1>
       <p class="mt-2 text-sm text-neutral-500">Обновляется каждый день в полночь</p>
     </header>
@@ -68,10 +68,11 @@
               <article class="interactive-card rounded-2xl border border-neutral-200 bg-white p-5">
                 <p
                   class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-bold <%= rankBadgeByPlace[item.rank] || 'border-neutral-300 bg-neutral-100 text-neutral-800' %>">
-                  <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-  <circle cx="12" cy="8.5" r="4.25"></circle>
-  <path d="m9.2 13.8-1.4 5.6L12 17l4.2 2.4-1.4-5.6"></path>
-</svg>
+                  <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor"
+                    stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="8.5" r="4.25"></circle>
+                    <path d="m9.2 13.8-1.4 5.6L12 17l4.2 2.4-1.4-5.6"></path>
+                  </svg>
                   <span>
                     <%= item.rank %>
                   </span>
@@ -100,23 +101,22 @@
                         </div>
                 </div>
                 <div class="mt-4 flex items-center justify-between text-sm">
-                  <span class="text-neutral-500">UNQ Score</span>
+                  <span class="text-neutral-500">Просмотры</span>
                   <span class="text-2xl font-black">
-                    <%= Number(item.score || 0).toLocaleString('ru-RU') %>
+                    <%= Number(item.views || 0).toLocaleString('ru-RU') %>
                   </span>
                 </div>
                 <div class="mt-2 h-1.5 w-full rounded-full bg-neutral-200">
                   <div class="h-1.5 rounded-full bg-neutral-900"
-                    style="width: <%= Math.max(0, Math.min(100, (Number(item.score || 0) / 999) * 100)) %>%"></div>
+                    style="width: <%= Math.max(0, Math.min(100, (Number(item.views || 0) / Math.max(1, Number(topThree[0]?.views || 0))) * 100)) %>%">
+                  </div>
                 </div>
                 <div class="mt-2 flex items-center justify-between text-xs text-neutral-500">
-                  <span>
-                    <%= item.rarityLabel || 'COMMON' %>
-                  </span>
+                  <span>За выбранный период</span>
                   <span>Топ <%= Number(item.topPercent || 100) %>%</span>
                 </div>
                 <p class="mt-1 text-xs text-neutral-500">
-                  <%= Number(item.views || 0).toLocaleString('ru-RU') %> просмотров
+                  UNQ Score: <%= Number(item.score || 0).toLocaleString('ru-RU') %>
                 </p>
                 <% if (currentTelegramId && item.telegramId===currentTelegramId) { %>
                   <button type="button" data-share-slug="<%= item.slug %>" data-share-rank="<%= item.rank %>"
@@ -133,9 +133,9 @@
               <th class="px-3 py-2">Место</th>
               <th class="px-3 py-2">Владелец</th>
               <th class="px-3 py-2">Slug</th>
-              <th class="px-3 py-2">UNQ Score</th>
-              <th class="px-3 py-2">Топ</th>
               <th class="px-3 py-2">Просмотры</th>
+              <th class="px-3 py-2">Топ</th>
+              <th class="px-3 py-2">UNQ Score</th>
               <th class="px-3 py-2">Тариф</th>
               <th class="px-3 py-2">Действие</th>
             </tr>
@@ -174,12 +174,12 @@
                     <td class="px-3 py-2"><a href="/<%= item.slug %>" class="hover:underline">
                         <%= item.slug %>
                       </a></td>
-                    <td class="px-3 py-2 text-lg font-black">
-                      <%= Number(item.score || 0).toLocaleString('ru-RU') %>
+                    <td class="px-3 py-2">
+                      <%= Number(item.views || 0).toLocaleString('ru-RU') %>
                     </td>
                     <td class="px-3 py-2">Топ <%= Number(item.topPercent || 100) %>%</td>
                     <td class="px-3 py-2">
-                      <%= Number(item.views || 0).toLocaleString('ru-RU') %>
+                      <%= Number(item.score || 0).toLocaleString('ru-RU') %>
                     </td>
                     <td class="px-3 py-2">
                       <%= item.plan==='premium' ? 'ПРЕМИУМ' : 'БАЗОВЫЙ' %>
@@ -198,12 +198,13 @@
 
       <% if (userSummary) { %>
         <section class="mt-6 rounded-2xl border border-neutral-200 bg-white p-4 text-sm text-neutral-700">
-          Твой Score: <%= Number(userSummary.score || 0).toLocaleString('ru-RU') %> · Позиция #<%= userSummary.rank %> ·
-              До топ-<%= userSummary.limit %> нужно ещё <%= Number(userSummary.toTopScore || 0).toLocaleString('ru-RU')
-                  %> баллов
+          Твои просмотры: <%= Number(userSummary.views || 0).toLocaleString('ru-RU') %> · Позиция #<%= userSummary.rank
+              %> ·
+              До топ-<%= userSummary.limit %> нужно ещё <%= Number(userSummary.toTopViews || 0).toLocaleString('ru-RU')
+                  %> просмотров
                   <div class="mt-2 h-1.5 w-full rounded-full bg-neutral-200">
                     <div class="h-1.5 rounded-full bg-neutral-900"
-                      style="width: <%= Math.max(0, Math.min(100, (Number(userSummary.score || 0) / (Number(userSummary.score || 0) + Number(userSummary.toTopScore || 0) || 1)) * 100)) %>%">
+                      style="width: <%= Math.max(0, Math.min(100, (Number(userSummary.views || 0) / (Number(userSummary.views || 0) + Number(userSummary.toTopViews || 0) || 1)) * 100)) %>%">
                     </div>
                   </div>
         </section>
@@ -215,4 +216,3 @@
 </body>
 
 </html>
-
