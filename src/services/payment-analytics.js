@@ -163,7 +163,8 @@ async function getPaymentAlerts() {
         user: {
           select: {
             id: true,
-            fullName: true,
+            displayName: true,
+            firstName: true,
             email: true,
           },
         },
@@ -182,7 +183,7 @@ async function getPaymentAlerts() {
           orderId: o.id,
           slug: o.slug,
           age: Math.floor((Date.now() - o.createdAt.getTime()) / (1000 * 60 * 60)),
-          userName: o.user?.fullName || "Unknown",
+          userName: o.user?.displayName || o.user?.firstName || "Unknown",
           userEmail: o.user?.email,
         })),
       });
@@ -204,7 +205,8 @@ async function getPaymentAlerts() {
         user: {
           select: {
             id: true,
-            fullName: true,
+            displayName: true,
+            firstName: true,
           },
         },
       },
@@ -223,7 +225,7 @@ async function getPaymentAlerts() {
           slug: o.slug,
           amount: (o.slugPrice || 0) + (o.planPrice || 0),
           age: Math.floor((Date.now() - o.updatedAt.getTime()) / (1000 * 60 * 60)),
-          userName: o.user?.fullName || "Unknown",
+          userName: o.user?.displayName || o.user?.firstName || "Unknown",
         })),
       });
     }
@@ -242,7 +244,8 @@ async function getPaymentAlerts() {
         user: {
           select: {
             id: true,
-            fullName: true,
+            displayName: true,
+            firstName: true,
           },
         },
       },
@@ -260,7 +263,7 @@ async function getPaymentAlerts() {
           orderId: o.id,
           slug: o.slug,
           age: Math.floor((Date.now() - o.updatedAt.getTime()) / (1000 * 60 * 60)),
-          userName: o.user?.fullName || "Unknown",
+          userName: o.user?.displayName || o.user?.firstName || "Unknown",
         })),
       });
     }
