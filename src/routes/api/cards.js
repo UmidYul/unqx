@@ -842,6 +842,22 @@ router.post(
     }
 
     const payload = parsed.data;
+    const activeOrdersLimit = 3;
+    const activeOrdersCount = await prisma.slugRequest.count({
+      where: {
+        userId: user.id,
+        status: { in: ["new", "contacted", "paid"] },
+      },
+    });
+    if (activeOrdersCount >= activeOrdersLimit) {
+      res.status(429).json({
+        error: `У вас уже есть ${activeOrdersLimit} активных заказа. Дождитесь обработки или отмените один из них.`,
+        code: "TOO_MANY_ACTIVE_ORDERS",
+        activeOrdersLimit,
+      });
+      return;
+    }
+
     const pricing = await getPricingSettings();
     const requestedPlan = resolveRequestedPlanForOrder({
       currentPlan: user.plan,
@@ -1135,7 +1151,7 @@ router.post(
 
     // Only new orders can be cancelled
     if (order.status !== "new") {
-      res.status(400).json({ 
+      res.status(400).json({
         error: "Нельзя отменить заказ в статусе: " + order.status,
         currentStatus: order.status,
       });
@@ -1181,8 +1197,8 @@ router.post(
       console.error("[express-app] failed to log cancel event", error);
     }
 
-    res.json({ 
-      ok: true, 
+    res.json({
+      ok: true,
       message: "Заказ отменён, slug освобождён",
       orderId: order.id,
       slug: order.slug,

@@ -269,15 +269,21 @@
     return "Карта";
   }
 
-  function normalizeButtonUrl(rawUrl, type) {
+  function normalizeButtonUrl(rawUrl, type, label) {
     const input = String(rawUrl || "").trim();
     const kind = String(type || "other")
       .trim()
       .toLowerCase();
+    const labelRaw = String(label || "").trim().toLowerCase();
+    const mapLikeLabel = /(карта|map|maps|geo|location|локац)/i.test(labelRaw);
     if (!input) return "";
 
     if (isSupportedButtonHref(input)) {
       return input;
+    }
+
+    if (kind === "map" || mapLikeLabel) {
+      return `https://maps.google.com/?q=${encodeURIComponent(input)}`;
     }
 
     if (kind === "phone") {
@@ -363,7 +369,7 @@
             .trim()
             .toLowerCase(),
           label: String(button?.label || "").trim(),
-          url: normalizeButtonUrl(button?.url || button?.href || "", button?.type || "other"),
+          url: normalizeButtonUrl(button?.url || button?.href || "", button?.type || "other", button?.label || ""),
         }))
         .filter((button) => button.label && isSupportedButtonHref(button.url))
         .slice(0, buttonLimit)
@@ -459,6 +465,8 @@
         return "youtube";
       case "website":
         return "globe";
+      case "map":
+        return "location";
       case "card":
         return "card";
       case "email":
@@ -490,6 +498,9 @@
     }
     if (/(site|web|link|globe|www)/.test(signature)) {
       return "globe";
+    }
+    if (/(карта|map|maps|geo|location|loc)/.test(signature)) {
+      return "location";
     }
     if (/(click|pay|payment|card|merchant)/.test(signature)) {
       return "click";

@@ -1,6 +1,9 @@
 const { prisma } = require("../db/prisma");
 const { sendSlugExpiredToUser } = require("./telegram");
 const { getSetting } = require("./platform-settings");
+const { logPaymentEvent } = require("./payment-events");
+const { getOrderPaymentReference } = require("./payment-flow");
+const { getBraceletPrice } = require("./pricing-settings");
 
 const ONE_HOUR_MS = 60 * 60 * 1000;
 
@@ -13,6 +16,7 @@ function isSchemaNotReady(error) {
 
 async function processPendingSlugExpirations() {
   const pendingHours = Math.max(1, Math.min(168, Number(await getSetting("pending_expiry_hours", 24)) || 24));
+  const braceletPrice = await getBraceletPrice();
   const now = new Date();
   const expiredSlugs = await prisma.slug.findMany({
     where: {
@@ -32,6 +36,7 @@ async function processPendingSlugExpirations() {
 
   let expiredOrdersCount = 0;
   const notifications = [];
+  const expiredOrders = [];
 
   await prisma.$transaction(async (tx) => {
     for (const slugRow of expiredSlugs) {
@@ -43,6 +48,10 @@ async function processPendingSlugExpirations() {
         select: {
           id: true,
           userId: true,
+          slug: true,
+          slugPrice: true,
+          planPrice: true,
+          bracelet: true,
           createdAt: true,
           user: {
             select: {
@@ -79,18 +88,39 @@ async function processPendingSlugExpirations() {
       });
 
       expiredOrdersCount += pendingOrders.length;
+      expiredOrders.push(...pendingOrders);
 
-      const latestOrder = pendingOrders
-        .slice()
-        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0];
-      if (latestOrder?.user?.telegramChatId) {
+      pendingOrders.forEach((orderItem) => {
+        if (!orderItem?.user?.telegramChatId) {
+          return;
+        }
         notifications.push({
-          telegramId: latestOrder.user.telegramChatId,
+          telegramId: orderItem.user.telegramChatId,
           slug: slugRow.fullSlug,
+          orderId: orderItem.id,
         });
-      }
+      });
     }
   });
+
+  for (const orderItem of expiredOrders) {
+    try {
+      const amount = Number(orderItem.slugPrice || 0) + Number(orderItem.planPrice || 0) + (orderItem.bracelet ? Number(braceletPrice || 0) : 0);
+      await logPaymentEvent({
+        orderId: orderItem.id,
+        userId: orderItem.userId,
+        status: "expired",
+        provider: "manual_tg",
+        reference: getOrderPaymentReference(orderItem.id),
+        amount,
+        actor: "system:pending-expiry",
+        source: "pending_expiry_job",
+        note: `Order expired automatically after ${pendingHours}h`,
+      });
+    } catch (error) {
+      console.error("[express-app] failed to log pending expiry event", error);
+    }
+  }
 
   for (const item of notifications) {
     try {
@@ -106,6 +136,8 @@ async function processPendingSlugExpirations() {
   return {
     slugs: expiredSlugs.length,
     orders: expiredOrdersCount,
+    notifications: notifications.length,
+    events: expiredOrders.length,
   };
 }
 
@@ -119,7 +151,7 @@ function startPendingExpiryJob() {
     try {
       const result = await processPendingSlugExpirations();
       if (result.orders > 0) {
-        console.log(`[express-app] pending expiry job: expired ${result.orders} orders across ${result.slugs} slugs`);
+        console.log(`[express-app] pending expiry job: expired ${result.orders} orders across ${result.slugs} slugs; events=${result.events || 0}; notifications=${result.notifications || 0}`);
       }
     } catch (error) {
       if (isSchemaNotReady(error)) {

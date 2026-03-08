@@ -758,7 +758,7 @@ const DEFAULT_PRICING = {
         const hoursLeft = Number.isFinite(expiresAt.getTime()) ? Math.max(1, Math.ceil((expiresAt.getTime() - Date.now()) / (60 * 60 * 1000))) : 24;
         dom.successSlug.textContent = `${pricing.slug} зарезервирован на ${hoursLeft} часа`;
       }
-      
+
       // Generate Telegram contact link with order details
       const telegramLink = dom.root.querySelector('#order-modal-telegram-link');
       if (telegramLink instanceof HTMLAnchorElement && payload.orderId) {
@@ -788,7 +788,7 @@ const DEFAULT_PRICING = {
         telegramLink.href = telegramUrl;
         lastTelegramPaymentUrl = telegramUrl;
       }
-      
+
       startCountdown(expiresAtIso);
       setStep("success");
       window.dispatchEvent(new CustomEvent("unqx:order:submitted", { detail: payload }));
@@ -803,6 +803,10 @@ const DEFAULT_PRICING = {
       }
       if (error.code === "PREMIUM_SLUG_LIMIT_REACHED") {
         setStatus("Достигнут лимит 3 slug", "error");
+        return;
+      }
+      if (error.code === "TOO_MANY_ACTIVE_ORDERS") {
+        setStatus("У вас уже 3 активных заказа. Дождитесь обработки или отмените один заказ в профиле.", "error");
         return;
       }
       if (error.code === "SLUG_NOT_AVAILABLE") {

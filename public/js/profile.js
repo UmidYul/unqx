@@ -83,6 +83,7 @@
     tiktok: "TikTok",
     youtube: "YouTube",
     website: "Сайт",
+    map: "Карта",
     card: "Карта",
     whatsapp: "WhatsApp",
     other: "Другое",
@@ -691,6 +692,32 @@
 
   const renderRequests = () => {
     if (!el.reqTable) return;
+    const getOrderProgress = (requestItem) => {
+      const status = String(requestItem?.status || "").trim().toLowerCase();
+      const progressMap = { new: 1, contacted: 2, paid: 3, approved: 4 };
+      const done = Number(progressMap[status] || 0);
+      const labels = ["Создан", "Связались", "Оплачено", "Активирован"];
+
+      if (status === "rejected" || status === "expired") {
+        const failLabel = status === "rejected" ? "Отклонен" : "Истек";
+        return `<div class="inline-flex items-center rounded-full border border-rose-200 bg-rose-50 px-2.5 py-1 text-[11px] font-semibold text-rose-700">${failLabel}</div>`;
+      }
+
+      const steps = labels
+        .map((label, index) => {
+          const step = index + 1;
+          const isDone = done >= step;
+          return `<div class="flex items-center gap-1.5 ${index > 0 ? "ml-2" : ""}">
+            ${index > 0 ? `<span class="h-px w-5 ${done >= step ? "bg-emerald-500" : "bg-neutral-300"}"></span>` : ""}
+            <span class="h-2.5 w-2.5 rounded-full ${isDone ? "bg-emerald-500" : "bg-neutral-300"}"></span>
+            <span class="text-[10px] ${isDone ? "text-neutral-800" : "text-neutral-500"}">${label}</span>
+          </div>`;
+        })
+        .join("");
+
+      return `<div class="min-w-[260px]"><div class="flex items-center">${steps}</div></div>`;
+    };
+
     const plan = getCurrentPlan();
     if (plan === "none" && !s.requests.length) {
       if (el.reqBanner) el.reqBanner.classList.add("hidden");
@@ -713,10 +740,10 @@
     el.reqTable.innerHTML = s.requests.length
       ? s.requests
         .map(
-          (requestItem) => `<tr class="border-t border-neutral-100"><td class="px-3 py-2">${fdt(requestItem.createdAt)}</td><td class="px-3 py-2">${requestItem.purchasedAt ? fdt(requestItem.purchasedAt) : "—"}</td><td class="px-3 py-2 font-mono">${esc(requestItem.slug)}</td><td class="px-3 py-2">${fp(Number(requestItem.slugPrice || 0) + Number(requestItem.planPrice || 0) + (requestItem.bracelet ? 300000 : 0))}<div class="text-[11px] text-neutral-500">${requestItem.purchasedAt ? `Единоразовая покупка · ${fd(requestItem.purchasedAt)}` : "Единоразовая покупка"}</div></td><td class="px-3 py-2">${requestItem.requestedPlan === "premium" ? "Премиум" : "Базовый"}</td><td class="px-3 py-2">${requestItem.bracelet ? "Да" : "Нет"}</td><td class="px-3 py-2">${esc(requestItem.statusBadge || requestItem.status)}</td><td class="px-3 py-2">${esc(requestItem.adminNote || "—")}</td></tr>`,
+          (requestItem) => `<tr class="border-t border-neutral-100"><td class="px-3 py-2">${fdt(requestItem.createdAt)}</td><td class="px-3 py-2">${requestItem.purchasedAt ? fdt(requestItem.purchasedAt) : "—"}</td><td class="px-3 py-2 font-mono">${esc(requestItem.slug)}</td><td class="px-3 py-2">${fp(Number(requestItem.slugPrice || 0) + Number(requestItem.planPrice || 0) + (requestItem.bracelet ? 300000 : 0))}<div class="text-[11px] text-neutral-500">${requestItem.purchasedAt ? `Единоразовая покупка · ${fd(requestItem.purchasedAt)}` : "Единоразовая покупка"}</div></td><td class="px-3 py-2">${requestItem.requestedPlan === "premium" ? "Премиум" : "Базовый"}</td><td class="px-3 py-2">${requestItem.bracelet ? "Да" : "Нет"}</td><td class="px-3 py-2">${esc(requestItem.statusBadge || requestItem.status)}</td><td class="px-3 py-2">${getOrderProgress(requestItem)}</td><td class="px-3 py-2">${esc(requestItem.adminNote || "—")}${requestItem.status === "new" ? `<div class="mt-2"><button type="button" data-a="cancel-request" data-order-id="${esc(requestItem.id)}" class="interactive-btn min-h-11 rounded-lg border border-red-200 px-2.5 py-1 text-xs font-semibold text-red-700">Отменить</button></div>` : ""}</td></tr>`,
         )
         .join("")
-      : '<tr><td colspan="8" class="px-3 py-8 text-center text-neutral-500">Заявок пока нет</td></tr>';
+      : '<tr><td colspan="9" class="px-3 py-8 text-center text-neutral-500">Заявок пока нет</td></tr>';
 
     const approved = s.requests.find((item) => item.status === "approved");
     const paid = s.requests.find((item) => item.status === "paid");
@@ -1559,6 +1586,28 @@
   document.addEventListener("click", (event) => {
     const target = event.target instanceof HTMLElement ? event.target : null;
     if (!target) return;
+    const cancelNode = target.closest('[data-a="cancel-request"]');
+    if (cancelNode instanceof HTMLElement) {
+      const orderId = String(cancelNode.getAttribute("data-order-id") || "").trim();
+      if (!orderId) {
+        return;
+      }
+      showModal("Отменить заявку", "UNQ будет освобожден сразу. Продолжить?", "Отменить заявку", async () => {
+        try {
+          await api(`/api/cards/order-request/${encodeURIComponent(orderId)}/cancel`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({}),
+          });
+          await load();
+          location.hash = "#requests";
+          showSaveAlert("Заявка отменена, UNQ освобожден");
+        } catch (error) {
+          showModal("Не удалось отменить", error.message || "Попробуйте позже");
+        }
+      });
+      return;
+    }
     if (
       target.id === "profile-slugs-order-btn" ||
       target.id === "profile-card-order-btn" ||

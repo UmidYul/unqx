@@ -22,6 +22,7 @@ const { publicPagesRouter } = require("./routes/pages/public");
 const { featuresApiRouter } = require("./routes/api/features");
 const { adminFeaturesApiRouter } = require("./routes/api/admin-features");
 const { telegramApiRouter } = require("./routes/api/telegram");
+const { paymentsApiRouter } = require("./routes/api/payments");
 const { systemRouter } = require("./routes/system");
 const { getBaseUrl } = require("./utils/url");
 const { ensureCsrfToken } = require("./middleware/csrf");
@@ -292,6 +293,7 @@ function createApp() {
   app.use("/api/auth", authApiRouter);
   app.use("/api/profile", profileApiRouter);
   app.use("/api/cards", publicApiRouter);
+  app.use("/api/payments", paymentsApiRouter);
   app.use("/api", mobileApiRouter);
   app.use("/api", featuresApiRouter);
   app.use("/api/admin", adminFeaturesApiRouter);

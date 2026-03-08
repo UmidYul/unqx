@@ -520,6 +520,7 @@ function mapProfileButtons(rawButtons) {
     "tiktok",
     "youtube",
     "website",
+    "map",
     "card",
     "whatsapp",
     "email",

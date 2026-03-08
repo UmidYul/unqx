@@ -9,13 +9,22 @@
     typeof canonicalUrl === "string" && canonicalUrl ? canonicalUrl : `${pageBaseUrl}/${pageCardRaw.slug || "unknown"}`;
   const pageShareUrl = pageCanonicalUrl.includes("?") ? `${pageCanonicalUrl}&src=share` : `${pageCanonicalUrl}?src=share`;
   const isSupportedButtonHref = (value) => /^(https?:\/\/|mailto:|tel:)/i.test(String(value || "").trim());
-  const normalizeButtonUrl = (rawUrl, type) => {
+  const normalizeButtonUrl = (rawUrl, type, label) => {
     const input = String(rawUrl || "").trim();
     const kind = String(type || "other")
       .trim()
       .toLowerCase();
+    const labelRaw = String(label || "").trim().toLowerCase();
+    const mapLikeLabel = /(карта|map|maps|geo|location|локац)/i.test(labelRaw);
     if (!input) return "";
     if (isSupportedButtonHref(input)) return input;
+    if (kind === "map" || mapLikeLabel) {
+      if (/^-?\d{1,2}(?:\.\d+)?\s*,\s*-?\d{1,3}(?:\.\d+)?$/.test(input)) {
+        return `https://maps.google.com/?q=${encodeURIComponent(input)}`;
+      }
+      return `https://maps.google.com/?q=${encodeURIComponent(input)}`;
+    }
+
     if (kind === "phone") {
       const compact = input.replace(/\s+/g, "");
       return compact ? `tel:${compact}` : "";
@@ -92,7 +101,11 @@
           .map((button) => ({
             type: typeof button.type === "string" ? button.type.trim().toLowerCase() : "other",
             label: typeof button.label === "string" ? button.label.trim() : "",
-            url: normalizeButtonUrl(button && (button.url || button.href || button.value || ""), button?.type || "other"),
+            url: normalizeButtonUrl(
+              button && (button.url || button.href || button.value || ""),
+              button?.type || "other",
+              button?.label || "",
+            ),
             isActive: Boolean(button.isActive),
           }))
           .filter((button) => button.isActive && button.label.length > 0 && isSupportedButtonHref(button.url))
