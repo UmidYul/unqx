@@ -73,6 +73,7 @@
   avatarUrl: pageCardRaw.avatarUrl || null,
   name: pageCardRaw.name || "Unknown",
   role: typeof pageCardRaw.role === "string" ? pageCardRaw.role.trim() : "",
+  bio: typeof pageCardRaw.bio === "string" ? pageCardRaw.bio.trim() : "",
   verified: Boolean(pageCardRaw.verified),
   verifiedCompany: typeof pageCardRaw.verifiedCompany === "string" ? pageCardRaw.verifiedCompany.trim() : "",
   tariff: pageCardRaw.tariff === "premium" ? "premium" : "basic",

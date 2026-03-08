@@ -20,117 +20,6 @@ const DEFAULT_PRICING = {
 };
 
 (function initOrderModal() {
-  // Wizard state
-  let wizardStep = 1;
-  const wizardStepsCount = 4;
-  // Wizard step containers
-  const wizardStepEls = [
-    dom.stepForm.querySelector('#order-wizard-step-1'),
-    dom.stepForm.querySelector('#order-wizard-step-2'),
-    dom.stepForm.querySelector('#order-wizard-step-3'),
-    dom.stepForm.querySelector('#order-wizard-step-4'),
-  ];
-
-  function showWizardStep(step) {
-    wizardStep = step;
-    wizardStepEls.forEach((el, idx) => {
-      if (el) el.classList.toggle('hidden', idx !== step - 1);
-    });
-    // Прогресс-бар визуальный
-    const bar = document.getElementById('order-modal-progress-bar-inner');
-    const label = document.getElementById('order-modal-progress-label');
-    if (bar) {
-      bar.style.width = `${Math.max(1, Math.min(4, step)) * 25}%`;
-    }
-    if (label) {
-      label.textContent = `Шаг ${step} из 4`;
-    }
-    if (dom.progressAuth instanceof HTMLElement) {
-      dom.progressAuth.textContent = `① Slug · ② Тариф · ③ Дополнительно · ④ Подтверждение`;
-    }
-    if (dom.progressNoAuth instanceof HTMLElement) {
-      dom.progressNoAuth.textContent = `① Slug · ② Тариф · ③ Дополнительно · ④ Подтверждение`;
-    }
-    setStatus('', 'neutral');
-  }
-
-  function validateWizardStep(step) {
-    // step: 1 - slug, 2 - plan, 3 - extras, 4 - confirm
-    if (step === 1) {
-      const letters = dom.letters.value;
-      const digits = dom.digits.value;
-      if (normalizeLetters(letters).length !== 3 || normalizeDigits(digits).length !== 3) {
-        setStatus('Введите корректный slug (AAA + 000)', 'error');
-        return false;
-      }
-      return true;
-    }
-    if (step === 2) {
-      if (!dom.planBasic.checked && !dom.planPremium.checked) {
-        setStatus('Выберите тариф', 'error');
-        return false;
-      }
-      return true;
-    }
-    if (step === 3) {
-      // Имя для визитки обязательно
-      if (!dom.name.value.trim()) {
-        setStatus('Имя для визитки обязательно', 'error');
-        return false;
-      }
-      return true;
-    }
-    return true;
-  }
-
-  function nextWizardStep() {
-    if (!validateWizardStep(wizardStep)) return;
-    if (wizardStep < wizardStepsCount) {
-      showWizardStep(wizardStep + 1);
-    }
-  }
-  function prevWizardStep() {
-    if (wizardStep > 1) {
-      showWizardStep(wizardStep - 1);
-    }
-  }
-
-  // Навесить обработчики на кнопки wizard
-  function bindWizardNav() {
-    const btnNext1 = dom.stepForm.querySelector('#order-wizard-next-1');
-    const btnNext2 = dom.stepForm.querySelector('#order-wizard-next-2');
-    const btnNext3 = dom.stepForm.querySelector('#order-wizard-next-3');
-    const btnPrev2 = dom.stepForm.querySelector('#order-wizard-prev-2');
-    const btnPrev3 = dom.stepForm.querySelector('#order-wizard-prev-3');
-    const btnPrev4 = dom.stepForm.querySelector('#order-wizard-prev-4');
-    if (btnNext1) btnNext1.addEventListener('click', nextWizardStep);
-    if (btnNext2) btnNext2.addEventListener('click', nextWizardStep);
-    if (btnNext3) btnNext3.addEventListener('click', nextWizardStep);
-    if (btnPrev2) btnPrev2.addEventListener('click', prevWizardStep);
-    if (btnPrev3) btnPrev3.addEventListener('click', prevWizardStep);
-    if (btnPrev4) btnPrev4.addEventListener('click', prevWizardStep);
-  }
-
-  // Переопределить submit формы: только на 4 шаге
-  dom.stepForm.addEventListener('submit', function (e) {
-    if (wizardStep !== 4) {
-      e.preventDefault();
-      nextWizardStep();
-      return false;
-    }
-    // На 4 шаге — финальный submit
-    handleSubmit(e);
-  });
-
-  // При открытии формы — всегда начинать с шага 1
-  const origOpen = open;
-  open = async function (options = {}) {
-    await origOpen(options);
-    if (currentUser) {
-      showWizardStep(1);
-    }
-    bindWizardNav();
-  };
   const root = document.getElementById("order-modal-root");
   if (!(root instanceof HTMLElement)) {
     return;
@@ -186,6 +75,10 @@ const DEFAULT_PRICING = {
     countdown: document.getElementById("order-modal-countdown"),
     goProfile: document.getElementById("order-modal-go-profile"),
     closeSuccess: document.getElementById("order-modal-close-success"),
+    pendingState: document.getElementById("order-modal-pending-state"),
+    pendingMeta: document.getElementById("order-modal-pending-meta"),
+    pendingContinue: document.getElementById("order-modal-pending-continue"),
+    pendingCancel: document.getElementById("order-modal-pending-cancel"),
   };
 
   if (
@@ -220,6 +113,9 @@ const DEFAULT_PRICING = {
     theme: "default_dark",
     braceletForced: false,
     dropId: null,
+    checkoutContext: null,
+    submitBlockedMessage: "",
+    lastOpenOptions: {},
     pricing: { ...DEFAULT_PRICING, userPlan: "none" },
     slugPricing: { ...DEFAULT_SLUG_PRICING },
   };
@@ -324,8 +220,8 @@ const DEFAULT_PRICING = {
 
   function selectedPlan() {
     const userPlan = currentUserPlan();
-    if (userPlan === "basic" || userPlan === "premium") {
-      return userPlan;
+    if (userPlan === "premium") {
+      return "premium";
     }
     return dom.planPremium.checked ? "premium" : "basic";
   }
@@ -338,6 +234,38 @@ const DEFAULT_PRICING = {
 
   function currentUserPlan() {
     return normalizePlan(currentUser?.plan || state.pricing?.userPlan || "none");
+  }
+
+  function resolveRequestedPlanFromOpenOptions(options = {}) {
+    const params = new URLSearchParams(window.location.search);
+    const queryPlan = params.get("tariff");
+    const raw = String(options.plan || queryPlan || "").trim().toLowerCase();
+    return raw === "premium" ? "premium" : "basic";
+  }
+
+  async function fetchOrderPrecheck(options = {}) {
+    const requestedPlan = resolveRequestedPlanFromOpenOptions(options);
+    try {
+      const response = await fetch(`/api/cards/order-precheck?requestedPlan=${encodeURIComponent(requestedPlan)}`, {
+        headers: { Accept: "application/json" },
+        cache: "no-store",
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(payload.error || `HTTP ${response.status}`);
+      }
+      return payload;
+    } catch {
+      return {
+        authenticated: Boolean(currentUser),
+        currentPlan: currentUserPlan(),
+        requestedPlan,
+        resolvedPlan: requestedPlan,
+        canPurchase: Boolean(currentUser),
+        nextAction: currentUser ? "checkout" : "login",
+        message: "",
+      };
+    }
   }
 
   function getPricing() {
@@ -498,6 +426,135 @@ const DEFAULT_PRICING = {
     if (tone === "error") dom.status.classList.add("text-red-700");
     else if (tone === "success") dom.status.classList.add("text-emerald-700");
     else dom.status.classList.add("text-neutral-600");
+  }
+
+  function formatPendingDateTime(value) {
+    try {
+      if (!value) return "—";
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return "—";
+      return date.toLocaleString("ru-RU", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch {
+      return "—";
+    }
+  }
+
+  function planLabel(plan) {
+    return String(plan || "").toLowerCase() === "premium" ? "Премиум" : "Базовый";
+  }
+
+  function buildPendingPaymentUrl(order) {
+    if (!order || typeof order !== "object") {
+      return "https://t.me/unqx_uz";
+    }
+    const reference = String(order.paymentReference || "").trim() || `UNQX-${String(order.id || "").replace(/[^a-zA-Z0-9]/g, "").slice(0, 10).toUpperCase()}`;
+    const slug = String(order.slug || "").trim().toUpperCase();
+    const message = `Здравствуйте! Продолжаю оплату заказа #️⃣ ${reference}\n\nUNQ: ${slug}\nТариф: ${planLabel(order.requestedPlan)}`;
+    return `https://t.me/unqx_uz?text=${encodeURIComponent(message)}`;
+  }
+
+  function renderPendingOrderState(precheck) {
+    const wrap = dom.pendingState;
+    if (!(wrap instanceof HTMLElement)) {
+      return;
+    }
+
+    const action = String(precheck?.nextAction || "");
+    const pending = precheck?.pendingOrder && typeof precheck.pendingOrder === "object" ? precheck.pendingOrder : null;
+    const visible = action === "resume_pending" && Boolean(pending);
+    wrap.classList.toggle("hidden", !visible);
+
+    if (!visible) {
+      if (dom.pendingMeta instanceof HTMLElement) {
+        dom.pendingMeta.textContent = "UNQ: —";
+      }
+      if (dom.pendingContinue instanceof HTMLAnchorElement) {
+        dom.pendingContinue.href = "#";
+      }
+      if (dom.pendingCancel instanceof HTMLButtonElement) {
+        dom.pendingCancel.removeAttribute("data-order-id");
+      }
+      return;
+    }
+
+    const meta = `UNQ: ${String(pending.slug || "—").toUpperCase()} · Тариф: ${planLabel(pending.requestedPlan)} · Резерв до: ${formatPendingDateTime(pending.pendingExpiresAt)}`;
+    if (dom.pendingMeta instanceof HTMLElement) {
+      dom.pendingMeta.textContent = meta;
+    }
+    if (dom.pendingContinue instanceof HTMLAnchorElement) {
+      dom.pendingContinue.href = buildPendingPaymentUrl(pending);
+    }
+    if (dom.pendingCancel instanceof HTMLButtonElement) {
+      dom.pendingCancel.setAttribute("data-order-id", String(pending.id || ""));
+    }
+  }
+
+  function setSubmitBlockedMessage(message) {
+    const normalized = String(message || "").trim();
+    state.submitBlockedMessage = normalized;
+    const blocked = Boolean(normalized);
+    if (!(dom.submit instanceof HTMLButtonElement)) {
+      return;
+    }
+    dom.submit.disabled = blocked;
+    dom.submit.classList.toggle("opacity-70", blocked);
+    dom.submit.classList.toggle("cursor-not-allowed", blocked);
+    if (blocked) {
+      dom.submit.title = normalized;
+    } else {
+      dom.submit.removeAttribute("title");
+    }
+  }
+
+  function applyOrderPrecheck(context) {
+    state.checkoutContext = context && typeof context === "object" ? context : null;
+    const precheck = state.checkoutContext;
+    if (!precheck) {
+      renderPendingOrderState(null);
+      setSubmitBlockedMessage("");
+      setStatus("", "neutral");
+      return "form";
+    }
+
+    if (precheck.pricing && typeof precheck.pricing === "object") {
+      state.pricing = {
+        ...DEFAULT_PRICING,
+        ...state.pricing,
+        ...precheck.pricing,
+        userPlan: normalizePlan(precheck.currentPlan || precheck.pricing.userPlan || state.pricing?.userPlan),
+      };
+    }
+
+    if (!precheck.authenticated || precheck.nextAction === "login") {
+      renderPendingOrderState(precheck);
+      setSubmitBlockedMessage("");
+      setStatus(String(precheck.message || ""), "neutral");
+      return "auth";
+    }
+
+    renderPendingOrderState(precheck);
+
+    const action = String(precheck.nextAction || "checkout");
+    const canPurchase = precheck.canPurchase !== false;
+    const message = String(precheck.message || "").trim();
+    const blockedMessage = canPurchase ? "" : (message || "Покупка сейчас недоступна.");
+    setSubmitBlockedMessage(blockedMessage);
+
+    if (message) {
+      const tone = action === "already_basic" || action === "already_premium" || action === "upgrade" ? "neutral" : (canPurchase ? "neutral" : "error");
+      setStatus(message, tone);
+    } else {
+      setStatus("", "neutral");
+    }
+
+    void updateTotals();
+    return "form";
   }
 
   function showConfirm(message) {
@@ -708,15 +765,15 @@ const DEFAULT_PRICING = {
     return currentUser;
   }
 
-  function prefillFromOpenOptions(options = {}) {
+  function prefillFromOpenOptions(options = {}, precheck = null) {
     const params = new URLSearchParams(window.location.search);
     const queryPlan = params.get("tariff");
     const queryTheme = params.get("theme");
     const parsed = splitSlug(options.slug || "");
-    const currentPlan = currentUserPlan();
-    const hasExistingPlan = currentPlan === "basic" || currentPlan === "premium";
+    const currentPlan = normalizePlan(precheck?.currentPlan || currentUserPlan());
     const defaultPlan = currentPlan === "premium" ? "premium" : "basic";
-    const planCandidate = options.plan || queryPlan || defaultPlan;
+    const contextPlan = precheck?.resolvedPlan === "premium" ? "premium" : precheck?.resolvedPlan === "basic" ? "basic" : "";
+    const planCandidate = contextPlan || options.plan || queryPlan || defaultPlan;
     const plan = planCandidate === "premium" ? "premium" : "basic";
     state.theme = typeof options.theme === "string" && options.theme ? options.theme : queryTheme || "default_dark";
     state.slugLocked = Boolean(parsed);
@@ -753,10 +810,12 @@ const DEFAULT_PRICING = {
       dom.name.value = currentUser.firstName || currentUser.displayName || "";
     }
     setStatus("", "neutral");
+    setSubmitBlockedMessage("");
     void updateTotals();
   }
 
   async function open(options = {}) {
+    state.lastOpenOptions = options && typeof options === "object" ? { ...options } : {};
     lastFocusedElement = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     isOpen = true;
     isClosing = false;
@@ -770,12 +829,18 @@ const DEFAULT_PRICING = {
       dom.dialog?.focus();
     });
     await refreshUser();
-    prefillFromOpenOptions(options);
-    if (currentUser) {
-      setStep("form");
-    } else {
-      setStep("auth");
-    }
+    const precheck = await fetchOrderPrecheck(state.lastOpenOptions);
+    prefillFromOpenOptions(state.lastOpenOptions, precheck);
+    const step = applyOrderPrecheck(precheck);
+    setStep(step);
+  }
+
+  async function refreshCheckoutContext() {
+    const precheck = await fetchOrderPrecheck(state.lastOpenOptions || {});
+    prefillFromOpenOptions(state.lastOpenOptions || {}, precheck);
+    const step = applyOrderPrecheck(precheck);
+    setStep(step);
+    return precheck;
   }
 
   async function close(force = false) {
@@ -834,6 +899,10 @@ const DEFAULT_PRICING = {
     setStatus("", "neutral");
     if (!currentUser) {
       setStep("auth");
+      return;
+    }
+    if (state.checkoutContext && state.checkoutContext.canPurchase === false) {
+      setStatus(state.submitBlockedMessage || String(state.checkoutContext.message || "Покупка сейчас недоступна."), "error");
       return;
     }
     const pricing = calculateSlugPricing(dom.letters.value, dom.digits.value);
@@ -944,9 +1013,15 @@ const DEFAULT_PRICING = {
       }
       setStatus(error.message || "Ошибка отправки заявки", "error");
     } finally {
-      dom.submit.disabled = false;
-      dom.submit.classList.remove("opacity-70", "cursor-not-allowed");
+      dom.submit.disabled = Boolean(state.submitBlockedMessage);
+      dom.submit.classList.toggle("opacity-70", dom.submit.disabled);
+      dom.submit.classList.toggle("cursor-not-allowed", dom.submit.disabled);
       dom.submit.innerHTML = submitHtml;
+      if (state.submitBlockedMessage) {
+        dom.submit.title = state.submitBlockedMessage;
+      } else {
+        dom.submit.removeAttribute("title");
+      }
     }
   }
 
@@ -1033,6 +1108,30 @@ const DEFAULT_PRICING = {
   dom.closeTop?.addEventListener("click", () => close(false));
   dom.closeForm?.addEventListener("click", () => close(false));
   dom.closeSuccess?.addEventListener("click", () => close(true));
+  dom.pendingCancel?.addEventListener("click", async () => {
+    const orderId = String(dom.pendingCancel?.getAttribute("data-order-id") || "").trim();
+    if (!orderId) {
+      setStatus("Не удалось определить заказ для отмены.", "error");
+      return;
+    }
+    const confirmed = await showConfirm("Отменить текущий заказ и освободить UNQ?");
+    if (!confirmed) {
+      return;
+    }
+    const originalText = dom.pendingCancel.textContent || "Отменить и создать новый";
+    dom.pendingCancel.disabled = true;
+    dom.pendingCancel.textContent = "Отмена...";
+    try {
+      await postJson(`/api/cards/order-request/${encodeURIComponent(orderId)}/cancel`, {});
+      await refreshCheckoutContext();
+      setStatus("Заказ отменён. Теперь можно создать новый.", "success");
+    } catch (error) {
+      setStatus(error?.message || "Не удалось отменить заказ.", "error");
+    } finally {
+      dom.pendingCancel.disabled = false;
+      dom.pendingCancel.textContent = originalText;
+    }
+  });
   dom.goProfile?.addEventListener("click", () => {
     const telegramLink = dom.root.querySelector("#order-modal-telegram-link");
     const fallbackUrl = "https://t.me/unqx_uz";

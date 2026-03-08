@@ -92,7 +92,7 @@
   "QR-код",
   "Базовая аналитика",
   ],
-  excluded: [
+  excluded: Array.isArray(pagePublicSettings.plan_basic_excluded_features) ? pagePublicSettings.plan_basic_excluded_features : [
   "Выбор темы",
   "Кастомные цвета",
   "Скрыть брендинг UNQX",
@@ -117,7 +117,7 @@
   "QR-код + NFC поддержка",
   "Приоритетная поддержка",
   ],
-  excluded: [],
+  excluded: Array.isArray(pagePublicSettings.plan_premium_excluded_features) ? pagePublicSettings.plan_premium_excluded_features : [],
   },
   ];
 
@@ -180,7 +180,6 @@
               <a href="#pricing" class="text-sm text-neutral-500 transition-colors hover:text-neutral-900">Доступ</a>
               <a href="/directory"
                 class="text-sm text-neutral-500 transition-colors hover:text-neutral-900">Резиденты</a>
-              <a href="/guides" class="text-sm text-neutral-500 transition-colors hover:text-neutral-900">Инструкции</a>
               <% if (leaderboardEnabled) { %><a href="/leaderboard"
                   class="whitespace-nowrap text-sm text-neutral-500 transition-colors hover:text-neutral-900">UNQ&nbsp;ELITE</a>
                 <% } %>
@@ -221,7 +220,6 @@
             <div class="flex flex-col gap-4">
               <a href="#pricing" class="text-sm text-neutral-500">Доступ</a>
               <a href="/directory" class="text-sm text-neutral-500">Резиденты</a>
-              <a href="/guides" class="text-sm text-neutral-500">Инструкции</a>
               <% if (leaderboardEnabled) { %><a href="/leaderboard"
                   class="whitespace-nowrap text-sm text-neutral-500">UNQ&nbsp;ELITE</a>
                 <% } %>
@@ -776,7 +774,7 @@
                                       <% }); %>
                               </ul>
 
-                              <a href="#"
+                              <a href="#" data-order-link data-order-plan="<%= plan.highlighted ? 'premium' : 'basic' %>"
                                 class="interactive-btn btn-shimmer mt-8 flex min-h-11 items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-medium transition-colors <%= plan.highlighted ? 'bg-white text-neutral-900 hover:bg-neutral-100' : 'bg-neutral-900 text-white hover:bg-neutral-800' %>">
                                 Купить тариф
                                 <svg class="icon-stroke h-3.5 w-3.5" viewBox="0 0 24 24" aria-hidden="true">

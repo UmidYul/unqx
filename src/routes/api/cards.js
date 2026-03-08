@@ -12,6 +12,7 @@ const { buildOrderPaymentDraft, getOrderPaymentReference } = require("../../serv
 const { getActiveFlashSale, applyFlashSaleToPrice } = require("../../services/flash-sales");
 const { markDropSlugSold } = require("../../services/drops");
 const {
+  normalizePlan,
   getPricingSettings,
   getBraceletPrice,
   resolveRequestedPlanForOrder,
@@ -788,6 +789,198 @@ router.get(
       ...pricing,
       braceletPrice,
       userPlan: user?.plan || "none",
+    });
+  }),
+);
+
+router.get(
+  "/order-precheck",
+  asyncHandler(async (req, res) => {
+    const requestedPlan = String(req.query.requestedPlan || req.query.plan || "").trim().toLowerCase() === "premium" ? "premium" : "basic";
+    const activeOrdersLimit = 3;
+    const sessionUser = getUserSession(req);
+    const [pricing, braceletPrice] = await Promise.all([getPricingSettings(), getBraceletPrice()]);
+
+    if (!sessionUser?.userId) {
+      res.json({
+        authenticated: false,
+        accountStatus: "guest",
+        currentPlan: "none",
+        requestedPlan,
+        resolvedPlan: requestedPlan,
+        canPurchase: false,
+        nextAction: "login",
+        message: "Войдите в аккаунт, чтобы продолжить покупку тарифа.",
+        pricing: {
+          ...pricing,
+          braceletPrice,
+          planChargePreview: requestedPlan === "premium" ? pricing.planPremiumPrice : pricing.planBasicPrice,
+        },
+        limits: {
+          activeOrdersLimit,
+          activeOrdersCount: 0,
+          slugLimit: requestedPlan === "premium" ? 3 : 1,
+          userSlugsCount: 0,
+        },
+        pendingOrder: null,
+      });
+      return;
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: sessionUser.userId },
+      select: {
+        id: true,
+        status: true,
+        plan: true,
+      },
+    });
+
+    if (!user) {
+      res.json({
+        authenticated: false,
+        accountStatus: "guest",
+        currentPlan: "none",
+        requestedPlan,
+        resolvedPlan: requestedPlan,
+        canPurchase: false,
+        nextAction: "login",
+        message: "Сессия устарела. Войдите снова.",
+        pricing: {
+          ...pricing,
+          braceletPrice,
+          planChargePreview: requestedPlan === "premium" ? pricing.planPremiumPrice : pricing.planBasicPrice,
+        },
+        limits: {
+          activeOrdersLimit,
+          activeOrdersCount: 0,
+          slugLimit: requestedPlan === "premium" ? 3 : 1,
+          userSlugsCount: 0,
+        },
+        pendingOrder: null,
+      });
+      return;
+    }
+
+    const currentPlan = normalizePlan(user.plan);
+    const resolvedPlan = resolveRequestedPlanForOrder({
+      currentPlan,
+      requestedPlan,
+    });
+    const slugLimit = resolvedPlan === "premium" ? 3 : 1;
+
+    const [activeOrdersCount, userSlugsCount, latestActiveOrder] = await Promise.all([
+      prisma.slugRequest.count({
+        where: {
+          userId: user.id,
+          status: { in: ["new", "contacted", "paid"] },
+        },
+      }),
+      withMissingTableFallback("Slug", 0, () =>
+        prisma.slug.count({
+          where: {
+            ownerId: user.id,
+            status: { in: ["approved", "active", "paused", "private"] },
+          },
+        }),
+      ),
+      prisma.slugRequest.findFirst({
+        where: {
+          userId: user.id,
+          status: { in: ["new", "contacted", "paid"] },
+        },
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          slug: true,
+          status: true,
+          requestedPlan: true,
+          createdAt: true,
+        },
+      }),
+    ]);
+
+    let pendingOrder = null;
+    if (latestActiveOrder) {
+      const slugRow = await withMissingTableFallback("Slug", null, () =>
+        prisma.slug.findUnique({
+          where: { fullSlug: latestActiveOrder.slug },
+          select: {
+            status: true,
+            pendingExpiresAt: true,
+          },
+        }),
+      );
+      pendingOrder = {
+        id: latestActiveOrder.id,
+        slug: latestActiveOrder.slug,
+        status: latestActiveOrder.status,
+        requestedPlan: latestActiveOrder.requestedPlan,
+        paymentReference: getOrderPaymentReference(latestActiveOrder.id),
+        createdAt: latestActiveOrder.createdAt,
+        pendingExpiresAt: slugRow?.status === "pending" ? slugRow.pendingExpiresAt || null : null,
+      };
+    }
+
+    let nextAction = "checkout";
+    let canPurchase = true;
+    let message = "";
+
+    if (user.status === "blocked" || user.status === "deactivated") {
+      nextAction = "blocked";
+      canPurchase = false;
+      message = "Аккаунт временно недоступен. Обратитесь в поддержку.";
+    } else if (pendingOrder) {
+      nextAction = "resume_pending";
+      canPurchase = false;
+      message = `У вас уже есть незавершённый заказ ${pendingOrder.slug}. Продолжите оплату или отмените заказ.`;
+    } else if (currentPlan === "premium") {
+      nextAction = "already_premium";
+      canPurchase = false;
+      message = "Премиум уже активирован. Дополнительная покупка не требуется.";
+    } else if (currentPlan === "basic" && requestedPlan === "basic") {
+      nextAction = "already_basic";
+      canPurchase = true;
+      message = "Базовый уже активирован. Для расширения возможностей выберите Премиум.";
+    } else if (activeOrdersCount >= activeOrdersLimit) {
+      nextAction = "limit_reached";
+      canPurchase = false;
+      message = `У вас уже ${activeOrdersLimit} активных заказа. Дождитесь обработки или отмените один из них.`;
+    } else if (userSlugsCount >= slugLimit) {
+      nextAction = "slug_limit_reached";
+      canPurchase = false;
+      message = slugLimit === 3 ? "Достигнут лимит 3 UNQ для Премиум." : "Для нового UNQ нужен апгрейд до Премиум.";
+    } else if (currentPlan === "basic" && requestedPlan === "premium") {
+      nextAction = "upgrade";
+      canPurchase = true;
+      message = "Доступен апгрейд до Премиум.";
+    }
+
+    res.json({
+      authenticated: true,
+      accountStatus: user.status || "active",
+      currentPlan,
+      requestedPlan,
+      resolvedPlan,
+      canPurchase,
+      nextAction,
+      message,
+      pricing: {
+        ...pricing,
+        braceletPrice,
+        planChargePreview: getPlanCharge({
+          currentPlan,
+          requestedPlan: resolvedPlan,
+          pricing,
+        }),
+      },
+      limits: {
+        activeOrdersLimit,
+        activeOrdersCount,
+        slugLimit,
+        userSlugsCount,
+      },
+      pendingOrder,
     });
   }),
 );
