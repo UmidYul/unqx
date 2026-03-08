@@ -578,6 +578,7 @@
           const scoreBreakdown = x.unqScore?.breakdown || {};
           const menu = menuWrap([
             menuItem({ label: "Сменить тариф", icon: "crown", attrs: `data-act="up" data-id="${X(x.telegramId)}" data-current-plan="${X(x.plan)}" data-active-slugs="${Number(x.activeSlugCount || 0)}" data-bracelet-slugs="${X(braceletSlugs)}"` }),
+            ...(x.isVerified ? [menuItem({ label: "Снять верификацию", icon: "xCircle", attrs: `data-act="uv" data-id="${X(x.telegramId)}"`, danger: true })] : []),
             menuSeparator(),
             menuItem({ label: "Открыть профиль", icon: "external", attrs: profileLink ? `data-act="open-url" data-url="${profileLink}"` : 'disabled="disabled"' }),
             menuSeparator(),
@@ -700,13 +701,19 @@
       await showAlert(await E(r));
       return false;
     }
+    const payload = await r.json().catch(() => ({}));
+    const ignoredForPurchasedSlug = Boolean(payload?.synced?.appliedToPurchasedSlug);
 
     const statusNode = document.getElementById("slugs-price-override-status");
     if (statusNode instanceof HTMLElement) {
-      statusNode.textContent =
-        payloadPrice === null
-          ? `Override для ${slug} удален`
-          : `Цена для ${slug} сохранена: ${Number(payloadPrice).toLocaleString("ru-RU")} сум`;
+      if (ignoredForPurchasedSlug) {
+        statusNode.textContent = `Slug ${slug} уже куплен/активирован. Override не применен, цена не изменена.`;
+      } else {
+        statusNode.textContent =
+          payloadPrice === null
+            ? `Override для ${slug} удален`
+            : `Цена для ${slug} сохранена: ${Number(payloadPrice).toLocaleString("ru-RU")} сум`;
+      }
     }
 
     const slugsFilterForm = document.getElementById("slugs-filters");
@@ -1289,6 +1296,21 @@
         if (!ok) return;
       }
       const r = await fetch(`/api/admin/users/${encodeURIComponent(telegramId)}/plan`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({ plan: entered, reason, force: downgradeToBasic }) });
+      if (!r.ok) showAlert(await E(r));
+      else void loadUsers();
+      closeAllRowMenus();
+      return;
+    }
+    if (a === "uv") {
+      const telegramId = n.getAttribute("data-id");
+      if (!telegramId) return;
+      const ok = await showConfirm("Снять верификацию у пользователя?");
+      if (!ok) return;
+      const r = await fetch(`/api/admin/users/${encodeURIComponent(telegramId)}/unverify`, {
+        method: "PATCH",
+        headers: H({ "Content-Type": "application/json" }),
+        body: JSON.stringify({}),
+      });
       if (!r.ok) showAlert(await E(r));
       else void loadUsers();
       closeAllRowMenus();

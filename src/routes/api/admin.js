@@ -1105,6 +1105,8 @@ router.get(
             displayName: true,
             city: true,
             username: true,
+            isVerified: true,
+            verifiedCompany: true,
             plan: true,
             planPurchasedAt: true,
             planUpgradedAt: true,
@@ -1209,6 +1211,8 @@ router.get(
       name: user.displayName || user.firstName,
       city: user.city || "",
       username: user.username || null,
+      isVerified: Boolean(user.isVerified),
+      verifiedCompany: user.verifiedCompany || "",
       plan: user.plan,
       planPurchasedAt: user.planPurchasedAt,
       planUpgradedAt: user.planUpgradedAt,
@@ -1357,6 +1361,44 @@ router.patch(
       plan: result.plan,
       planPurchasedAt: result.planPurchasedAt,
       planUpgradedAt: result.planUpgradedAt,
+    });
+  }),
+);
+
+router.patch(
+  "/users/:userId/unverify",
+  asyncHandler(async (req, res) => {
+    if (!ensureUsersStorageReady(res)) {
+      return;
+    }
+    const userId = String(req.params.userId || "");
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, isVerified: true },
+    });
+    if (!user) {
+      res.status(404).json({ error: "User not found" });
+      return;
+    }
+
+    const updated = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        isVerified: false,
+        verifiedCompany: null,
+      },
+      select: {
+        id: true,
+        isVerified: true,
+        verifiedCompany: true,
+      },
+    });
+
+    res.json({
+      ok: true,
+      userId: updated.id,
+      isVerified: updated.isVerified,
+      verifiedCompany: updated.verifiedCompany,
     });
   }),
 );
@@ -1862,39 +1904,55 @@ router.patch(
     }
 
     const [row, synced] = await prisma.$transaction(async (tx) => {
-      const updatedSlug = await tx.slug.upsert({
+      const existingSlug = await tx.slug.findUnique({
         where: { fullSlug: slug },
-        create: {
-          letters: parsed[1],
-          digits: parsed[2],
-          fullSlug: slug,
-          status: "free",
-          isPrimary: false,
-          price: priceOverride,
-        },
-        update: { price: priceOverride },
         select: {
           fullSlug: true,
+          status: true,
           price: true,
         },
       });
+      const hasPurchasedOwner = Boolean(
+        existingSlug && ["approved", "active", "paused", "private"].includes(existingSlug.status),
+      );
 
-      // Keep order/purchase amounts in sync with effective slug price so analytics reflects override updates.
-      const slugRequestsResult =
-        typeof resolvedPrice === "number"
-          ? await tx.slugRequest.updateMany({
-            where: { slug },
-            data: { slugPrice: resolvedPrice },
+      const updatedSlug = existingSlug
+        ? hasPurchasedOwner
+          ? existingSlug
+          : await tx.slug.update({
+            where: { fullSlug: slug },
+            data: { price: priceOverride },
+            select: {
+              fullSlug: true,
+              status: true,
+              price: true,
+            },
           })
-          : { count: 0 };
-      const purchasesResult =
-        typeof resolvedPrice === "number" && tx.purchase
-          ? await tx.purchase.updateMany({
+        : await tx.slug.create({
+          data: {
+            letters: parsed[1],
+            digits: parsed[2],
+            fullSlug: slug,
+            status: "free",
+            isPrimary: false,
+            price: priceOverride,
+          },
+          select: {
+            fullSlug: true,
+            status: true,
+            price: true,
+          },
+        });
+
+      // Apply override only to not yet purchased requests; keep approved/history immutable.
+      const slugRequestsResult =
+        !hasPurchasedOwner && typeof resolvedPrice === "number"
+          ? await tx.slugRequest.updateMany({
             where: {
               slug,
-              type: "slug",
+              status: { in: ["new", "contacted", "paid"] },
             },
-            data: { amount: resolvedPrice },
+            data: { slugPrice: resolvedPrice },
           })
           : { count: 0 };
 
@@ -1902,8 +1960,9 @@ router.patch(
         updatedSlug,
         {
           slugRequestsUpdated: Number(slugRequestsResult?.count || 0),
-          slugPurchasesUpdated: Number(purchasesResult?.count || 0),
+          slugPurchasesUpdated: 0,
           effectiveSlugPrice: typeof resolvedPrice === "number" ? resolvedPrice : null,
+          appliedToPurchasedSlug: hasPurchasedOwner,
         },
       ];
     });

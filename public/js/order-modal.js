@@ -430,9 +430,9 @@ const DEFAULT_PRICING = {
             discountPercent: Number(payload.discountPercent || 0),
           }
           : null;
-      return { total, flash };
+      return { total, flash, source: String(payload.source || "calculator") };
     } catch {
-      return { total: fallbackTotal, flash: null };
+      return { total: fallbackTotal, flash: null, source: "calculator" };
     }
   }
 
@@ -498,6 +498,8 @@ const DEFAULT_PRICING = {
     if (dom.formula instanceof HTMLElement) {
       if (server?.flash) {
         dom.formula.textContent = `Flash sale применён (-${server.flash.discountPercent}%)`;
+      } else if (server?.source === "override") {
+        dom.formula.textContent = `Персональная цена: ${formatPrice(slugPrice)} сум`;
       } else {
         const m = pricing ? pricing.letterData.multiplier * pricing.digitData.multiplier : 1;
         dom.formula.textContent = `${formatPrice(slugBasePrice)} × ${m} = ${formatPrice(slugPrice)} сум`;
