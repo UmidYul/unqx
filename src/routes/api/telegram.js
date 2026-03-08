@@ -128,13 +128,26 @@ async function applyOrderActionFromTelegram({ orderId, nextStatus, operatorId })
 }
 
 async function handleTelegramWebhook(req, res) {
+  const update = req.body && typeof req.body === "object" ? req.body : {};
+  const callback = update.callback_query;
+  if (callback && typeof callback === "object") {
+    console.info("[telegram-webhook] callback received", {
+      callbackId: String(callback.id || "").trim(),
+      chatId: String(callback?.message?.chat?.id || "").trim(),
+      fromId: String(callback?.from?.id || "").trim(),
+      data: String(callback.data || "").slice(0, 120),
+    });
+  }
+
   if (!isWebhookSecretValid(req)) {
+    console.warn("[telegram-webhook] rejected: invalid secret", {
+      hasHeaderSecret: Boolean(req.get("x-telegram-bot-api-secret-token")),
+      hasQuerySecret: Boolean(req.query?.secret),
+      hasPathSecret: Boolean(req.params?.secret),
+    });
     res.status(401).json({ ok: false, error: "Unauthorized webhook" });
     return;
   }
-
-  const update = req.body && typeof req.body === "object" ? req.body : {};
-  const callback = update.callback_query;
 
   if (!callback || typeof callback !== "object") {
     res.json({ ok: true });
@@ -148,12 +161,16 @@ async function handleTelegramWebhook(req, res) {
 
   cleanupProcessedCallbacks();
   if (callbackQueryId && processedCallbacks.has(callbackQueryId)) {
+    console.info("[telegram-webhook] duplicate callback ignored", { callbackQueryId });
     await sendTelegramCallbackAnswer({ callbackQueryId, text: "Уже обработано" }).catch(() => null);
     res.json({ ok: true });
     return;
   }
 
   if (!parsed?.action || !parsed.orderId) {
+    console.warn("[telegram-webhook] callback parse failed", {
+      callbackData: String(callback.data || "").slice(0, 120),
+    });
     if (callbackQueryId) {
       await sendTelegramCallbackAnswer({ callbackQueryId, text: "Неизвестное действие" });
     }
@@ -163,6 +180,7 @@ async function handleTelegramWebhook(req, res) {
 
   const allowed = await isAllowedAdminChat(chatId);
   if (!allowed) {
+    console.warn("[telegram-webhook] rejected: unauthorized chat", { chatId });
     if (callbackQueryId) {
       await sendTelegramCallbackAnswer({ callbackQueryId, text: "Чат не авторизован", showAlert: true });
     }
@@ -174,6 +192,12 @@ async function handleTelegramWebhook(req, res) {
     orderId: parsed.orderId,
     nextStatus: parsed.action,
     operatorId,
+  });
+  console.info("[telegram-webhook] status transition result", {
+    orderId: parsed.orderId,
+    nextStatus: parsed.action,
+    ok: result.ok,
+    code: result.code || null,
   });
   if (callbackQueryId) {
     processedCallbacks.set(callbackQueryId, Date.now());
