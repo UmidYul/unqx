@@ -283,7 +283,7 @@ async function getPaymentAlerts() {
         WHERE sr.status IN ('paid', 'approved')
           AND sr.created_at > NOW() - INTERVAL '7 days'
         GROUP BY sr.id, sr.slug, sr.status, sr.slug_price, sr.plan_price
-        HAVING COUNT(pe.id) = 0 OR NOT(ARRAY['approved']::text[] <@ ARRAY_AGG(DISTINCT pe.status))
+        HAVING COUNT(pe.id) = 0 OR NOT('approved' = ANY(ARRAY_AGG(DISTINCT pe.status)))
         LIMIT 10
       `;
 
