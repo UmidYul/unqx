@@ -191,7 +191,7 @@
             ${description}${reset}
           </label>`;
         }
-        if (item.type === "datetime") {
+        if (item.type === "datetime" || item.key === "maintenance_release_open_at") {
           return `<label class="block"><span class="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">${esc(item.label)}</span>
             <input type="datetime-local" name="${esc(item.key)}" value="${esc(toDateTimeLocalValue(item.value))}" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
             ${description}${reset}

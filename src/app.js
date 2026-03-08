@@ -52,18 +52,27 @@ function createApp() {
   app.use(async (req, res, next) => {
     try {
       const path = req.path || "/";
-      const isHomePage = path === "/";
+      const acceptsHtml = req.accepts(["html", "json", "text"]) === "html";
+      const isStaticAssetRequest =
+        path.startsWith("/css/") ||
+        path.startsWith("/js/") ||
+        path.startsWith("/images/") ||
+        path.startsWith("/vendor/") ||
+        path.startsWith("/brand/") ||
+        path.startsWith("/uploads/") ||
+        path === "/favicon.ico";
       const isPublicPageRequest =
         req.method === "GET" &&
-        (isHomePage ||
-          !path.startsWith("/admin") &&
-          !path.startsWith("/api/admin") &&
-          !path.startsWith("/api/auth") &&
-          !path.startsWith("/api/profile") &&
-          !path.startsWith("/api/telegram") &&
-          !path.startsWith("/api/cards") &&
-          !path.startsWith("/api/features") &&
-          !path.startsWith("/api/"));
+        acceptsHtml &&
+        !isStaticAssetRequest &&
+        !path.startsWith("/admin") &&
+        !path.startsWith("/api/admin") &&
+        !path.startsWith("/api/auth") &&
+        !path.startsWith("/api/profile") &&
+        !path.startsWith("/api/telegram") &&
+        !path.startsWith("/api/cards") &&
+        !path.startsWith("/api/features") &&
+        !path.startsWith("/api/");
       if (!isPublicPageRequest) {
         next();
         return;
