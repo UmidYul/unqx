@@ -1,187 +1,184 @@
-<%
-  const pageTitle = typeof title === "string" && title ? title : "UNQX";
-  const pageDescription =
-    typeof description === "string" && description ? description : "UNQX platform for digital business cards";
-  const pageImage = typeof image === "string" && image ? image : null;
-  const pageCardRaw = typeof card === "object" && card ? card : {};
-  const pageBaseUrl = typeof baseUrl === "string" && baseUrl ? baseUrl : "";
-  const pageCanonicalUrl =
-    typeof canonicalUrl === "string" && canonicalUrl ? canonicalUrl : `${pageBaseUrl}/${pageCardRaw.slug || "unknown"}`;
-  const pageShareUrl = pageCanonicalUrl.includes("?") ? `${pageCanonicalUrl}&src=share` : `${pageCanonicalUrl}?src=share`;
-  const isSupportedButtonHref = (value) => /^(https?:\/\/|mailto:|tel:)/i.test(String(value || "").trim());
+<% const pageTitle=typeof title==="string" && title ? title : "UNQX" ; const pageDescription=typeof
+  description==="string" && description ? description : "UNQX platform for digital business cards" ; const
+  pageImage=typeof image==="string" && image ? image : null; const pageCardRaw=typeof card==="object" && card ? card :
+  {}; const pageBaseUrl=typeof baseUrl==="string" && baseUrl ? baseUrl : "" ; const pageCanonicalUrl=typeof
+  canonicalUrl==="string" && canonicalUrl ? canonicalUrl : `${pageBaseUrl}/${pageCardRaw.slug || "unknown" }`; const
+  pageShareUrl=pageCanonicalUrl.includes("?") ? `${pageCanonicalUrl}&src=share` : `${pageCanonicalUrl}?src=share`; const
+  isSupportedButtonHref=(value)=> /^(https?:\/\/|mailto:|tel:)/i.test(String(value || "").trim());
   const normalizeButtonUrl = (rawUrl, type, label) => {
-    const input = String(rawUrl || "").trim();
-    const kind = String(type || "other")
-      .trim()
-      .toLowerCase();
-    const labelRaw = String(label || "").trim().toLowerCase();
-    const mapLikeLabel = /(карта|map|maps|geo|location|локац)/i.test(labelRaw);
-    if (!input) return "";
-    if (isSupportedButtonHref(input)) return input;
-    if (kind === "map" || mapLikeLabel) {
-      if (/^-?\d{1,2}(?:\.\d+)?\s*,\s*-?\d{1,3}(?:\.\d+)?$/.test(input)) {
-        return `https://maps.google.com/?q=${encodeURIComponent(input)}`;
-      }
-      return `https://maps.google.com/?q=${encodeURIComponent(input)}`;
-    }
+  const input = String(rawUrl || "").trim();
+  const kind = String(type || "other")
+  .trim()
+  .toLowerCase();
+  const labelRaw = String(label || "").trim().toLowerCase();
+  const mapLikeLabel = /(карта|map|maps|geo|location|локац)/i.test(labelRaw);
+  if (!input) return "";
+  if (isSupportedButtonHref(input)) return input;
+  if (kind === "map" || mapLikeLabel) {
+  if (/^-?\d{1,2}(?:\.\d+)?\s*,\s*-?\d{1,3}(?:\.\d+)?$/.test(input)) {
+  return `https://maps.google.com/?q=${encodeURIComponent(input)}`;
+  }
+  return `https://maps.google.com/?q=${encodeURIComponent(input)}`;
+  }
 
-    if (kind === "phone") {
-      const compact = input.replace(/\s+/g, "");
-      return compact ? `tel:${compact}` : "";
-    }
-    if (kind === "website" || kind === "other") {
-      if (/^[^\s]+\.[^\s]+$/.test(input) && !input.startsWith("@")) {
-        return `https://${input}`;
-      }
-    }
-    if (kind === "telegram") {
-      const normalized = input.replace(/^@+/, "").replace(/^https?:\/\/t\.me\//i, "").trim();
-      return normalized ? `https://t.me/${normalized}` : "";
-    }
-    if (kind === "instagram") {
-      const normalized = input
-        .replace(/^@+/, "")
-        .replace(/^https?:\/\/(www\.)?instagram\.com\//i, "")
-        .replace(/\/+$/, "")
-        .trim();
-      return normalized ? `https://instagram.com/${normalized}` : "";
-    }
-    if (kind === "tiktok") {
-      const normalized = input
-        .replace(/^https?:\/\/(www\.)?tiktok\.com\//i, "")
-        .replace(/^@+/, "")
-        .replace(/\/+$/, "")
-        .trim();
-      if (!normalized) return "";
-      return normalized.startsWith("@") ? `https://tiktok.com/${normalized}` : `https://tiktok.com/@${normalized}`;
-    }
-    if (kind === "youtube") {
-      if (/^(?:@[\w.-]+)$/i.test(input)) return `https://youtube.com/${input}`;
-      if (/^[\w.-]+$/i.test(input)) return `https://youtube.com/@${input}`;
-    }
-    if (kind === "whatsapp") {
-      const digits = input.replace(/[^\d]/g, "");
-      return digits ? `https://wa.me/${digits}` : "";
-    }
-    return input;
+  if (kind === "phone") {
+  const compact = input.replace(/\s+/g, "");
+  return compact ? `tel:${compact}` : "";
+  }
+  if (kind === "website" || kind === "other") {
+  if (/^[^\s]+\.[^\s]+$/.test(input) && !input.startsWith("@")) {
+  return `https://${input}`;
+  }
+  }
+  if (kind === "telegram") {
+  const normalized = input.replace(/^@+/, "").replace(/^https?:\/\/t\.me\//i, "").trim();
+  return normalized ? `https://t.me/${normalized}` : "";
+  }
+  if (kind === "instagram") {
+  const normalized = input
+  .replace(/^@+/, "")
+  .replace(/^https?:\/\/(www\.)?instagram\.com\//i, "")
+  .replace(/\/+$/, "")
+  .trim();
+  return normalized ? `https://instagram.com/${normalized}` : "";
+  }
+  if (kind === "tiktok") {
+  const normalized = input
+  .replace(/^https?:\/\/(www\.)?tiktok\.com\//i, "")
+  .replace(/^@+/, "")
+  .replace(/\/+$/, "")
+  .trim();
+  if (!normalized) return "";
+  return normalized.startsWith("@") ? `https://tiktok.com/${normalized}` : `https://tiktok.com/@${normalized}`;
+  }
+  if (kind === "youtube") {
+  if (/^(?:@[\w.-]+)$/i.test(input)) return `https://youtube.com/${input}`;
+  if (/^[\w.-]+$/i.test(input)) return `https://youtube.com/@${input}`;
+  }
+  if (kind === "whatsapp") {
+  const digits = input.replace(/[^\d]/g, "");
+  return digits ? `https://wa.me/${digits}` : "";
+  }
+  return input;
   };
 
   const pageCard = {
-    slug: (typeof pageCardRaw.slug === "string" ? pageCardRaw.slug : "unknown").toUpperCase(),
-    slugs: Array.isArray(pageCardRaw.slugs)
-      ? pageCardRaw.slugs
-          .map((item) => String(item || "").trim().toUpperCase())
-          .filter((item) => item.length > 0)
-      : [],
-    slugPrice: Number.isFinite(Number(pageCardRaw.slugPrice)) ? Number(pageCardRaw.slugPrice) : null,
-    avatarUrl: pageCardRaw.avatarUrl || null,
-    name: pageCardRaw.name || "Unknown",
-    role: typeof pageCardRaw.role === "string" ? pageCardRaw.role.trim() : "",
-    verified: Boolean(pageCardRaw.verified),
-    verifiedCompany: typeof pageCardRaw.verifiedCompany === "string" ? pageCardRaw.verifiedCompany.trim() : "",
-    tariff: pageCardRaw.tariff === "premium" ? "premium" : "basic",
-    theme:
-      typeof pageCardRaw.theme === "string" &&
-      ["default_dark", "arctic", "linen", "marble", "forest"].includes(pageCardRaw.theme)
-        ? pageCardRaw.theme
-        : "default_dark",
-    customColor: /^#[0-9a-fA-F]{6}$/.test(String(pageCardRaw.customColor || "").trim())
-      ? String(pageCardRaw.customColor || "").trim().toLowerCase()
-      : "",
-    phone: pageCardRaw.phone || "",
-    tags: Array.isArray(pageCardRaw.tags)
-      ? pageCardRaw.tags
-          .map((tag) => ({
-            label: typeof tag.label === "string" ? tag.label.trim() : "",
-          }))
-          .filter((tag) => tag.label.length > 0)
-      : [],
-    buttons: Array.isArray(pageCardRaw.buttons)
-      ? pageCardRaw.buttons
-          .map((button) => ({
-            type: typeof button.type === "string" ? button.type.trim().toLowerCase() : "other",
-            label: typeof button.label === "string" ? button.label.trim() : "",
-            url: normalizeButtonUrl(
-              button && (button.url || button.href || button.value || ""),
-              button?.type || "other",
-              button?.label || "",
-            ),
-            isActive: Boolean(button.isActive),
-          }))
-          .filter((button) => button.isActive && button.label.length > 0 && isSupportedButtonHref(button.url))
-      : [],
-    hashtag: pageCardRaw.hashtag || "",
-    address: pageCardRaw.address || "",
-    postcode: pageCardRaw.postcode || "",
-    email: pageCardRaw.email || "",
-    extraPhone: pageCardRaw.extraPhone || "",
-    viewsCount: Number(pageCardRaw.viewsCount) || 0,
-    showBranding: typeof pageCardRaw.showBranding === "boolean" ? pageCardRaw.showBranding : true,
+  slug: (typeof pageCardRaw.slug === "string" ? pageCardRaw.slug : "unknown").toUpperCase(),
+  slugs: Array.isArray(pageCardRaw.slugs)
+  ? pageCardRaw.slugs
+  .map((item) => String(item || "").trim().toUpperCase())
+  .filter((item) => item.length > 0)
+  : [],
+  slugPrice: Number.isFinite(Number(pageCardRaw.slugPrice)) ? Number(pageCardRaw.slugPrice) : null,
+  avatarUrl: pageCardRaw.avatarUrl || null,
+  name: pageCardRaw.name || "Unknown",
+  role: typeof pageCardRaw.role === "string" ? pageCardRaw.role.trim() : "",
+  verified: Boolean(pageCardRaw.verified),
+  verifiedCompany: typeof pageCardRaw.verifiedCompany === "string" ? pageCardRaw.verifiedCompany.trim() : "",
+  tariff: pageCardRaw.tariff === "premium" ? "premium" : "basic",
+  theme:
+  typeof pageCardRaw.theme === "string" &&
+  ["default_dark", "arctic", "linen", "marble", "forest"].includes(pageCardRaw.theme)
+  ? pageCardRaw.theme
+  : "default_dark",
+  customColor: /^#[0-9a-fA-F]{6}$/.test(String(pageCardRaw.customColor || "").trim())
+  ? String(pageCardRaw.customColor || "").trim().toLowerCase()
+  : "",
+  phone: pageCardRaw.phone || "",
+  tags: Array.isArray(pageCardRaw.tags)
+  ? pageCardRaw.tags
+  .map((tag) => ({
+  label: typeof tag.label === "string" ? tag.label.trim() : "",
+  }))
+  .filter((tag) => tag.label.length > 0)
+  : [],
+  buttons: Array.isArray(pageCardRaw.buttons)
+  ? pageCardRaw.buttons
+  .map((button) => ({
+  type: typeof button.type === "string" ? button.type.trim().toLowerCase() : "other",
+  label: typeof button.label === "string" ? button.label.trim() : "",
+  url: normalizeButtonUrl(
+  button && (button.url || button.href || button.value || ""),
+  button?.type || "other",
+  button?.label || "",
+  ),
+  isActive: Boolean(button.isActive),
+  }))
+  .filter((button) => button.isActive && button.label.length > 0 && isSupportedButtonHref(button.url))
+  : [],
+  hashtag: pageCardRaw.hashtag || "",
+  address: pageCardRaw.address || "",
+  postcode: pageCardRaw.postcode || "",
+  email: pageCardRaw.email || "",
+  extraPhone: pageCardRaw.extraPhone || "",
+  viewsCount: Number(pageCardRaw.viewsCount) || 0,
+  showBranding: typeof pageCardRaw.showBranding === "boolean" ? pageCardRaw.showBranding : true,
   };
 
   const pageJsonLd = {
-    "@context": "https://schema.org",
-    "@type": "ProfilePage",
-    url: pageCanonicalUrl,
-    name: pageTitle,
-    mainEntity: {
-      "@type": "Person",
-      name: pageCard.name,
-      telephone: pageCard.phone || undefined,
-      email: pageCard.email || undefined,
-      image: pageImage || undefined,
-      sameAs: pageCard.buttons.map((button) => button.url),
-    },
+  "@context": "https://schema.org",
+  "@type": "ProfilePage",
+  url: pageCanonicalUrl,
+  name: pageTitle,
+  mainEntity: {
+  "@type": "Person",
+  name: pageCard.name,
+  telephone: pageCard.phone || undefined,
+  email: pageCard.email || undefined,
+  image: pageImage || undefined,
+  sameAs: pageCard.buttons.map((button) => button.url),
+  },
   };
 
   const initials = (pageCard.name || "")
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => (part[0] ? part[0].toUpperCase() : ""))
-    .join("");
+  .split(/\s+/)
+  .filter(Boolean)
+  .slice(0, 2)
+  .map((part) => (part[0] ? part[0].toUpperCase() : ""))
+  .join("");
 
   const actionButtons = pageCard.buttons.slice(0, 4).map((button) => {
-    const signature = `${button.label} ${button.url}`.toLowerCase();
-    let icon = "arrow";
-    if (/(telegram|t\.me|message|chat)/.test(signature)) {
-      icon = "message";
-    } else if (/(instagram|insta)/.test(signature)) {
-      icon = "instagram";
-    } else if (/(click|pay|payment|card|kaspi|merchant)/.test(signature)) {
-      icon = "click";
-    } else if (/(phone|call|tel)/.test(signature)) {
-      icon = "phone";
-    } else if (/(site|web|link|globe|www)/.test(signature)) {
-      icon = "globe";
-    } else if (/(steam|trade|shop|store|market)/.test(signature)) {
-      icon = "arrow";
-    }
+  const signature = `${button.label} ${button.url}`.toLowerCase();
+  let icon = "arrow";
+  if (/(telegram|t\.me|message|chat)/.test(signature)) {
+  icon = "message";
+  } else if (/(instagram|insta)/.test(signature)) {
+  icon = "instagram";
+  } else if (/(click|pay|payment|card|kaspi|merchant)/.test(signature)) {
+  icon = "click";
+  } else if (/(phone|call|tel)/.test(signature)) {
+  icon = "phone";
+  } else if (/(site|web|link|globe|www)/.test(signature)) {
+  icon = "globe";
+  } else if (/(steam|trade|shop|store|market)/.test(signature)) {
+  icon = "arrow";
+  }
 
-    return {
-      label: button.label,
-      url: button.url,
-      icon,
-    };
+  return {
+  label: button.label,
+  url: button.url,
+  icon,
+  };
   });
 
   function findSocialUrl(patterns) {
-    const found = pageCard.buttons.find((button) => patterns.some((pattern) => pattern.test(`${button.label} ${button.url}`)));
-    return found ? found.url : "#";
+  const found = pageCard.buttons.find((button) => patterns.some((pattern) => pattern.test(`${button.label}
+  ${button.url}`)));
+  return found ? found.url : "#";
   }
 
   const socialLinks = [
-    { label: "Instagram", url: findSocialUrl([/instagram/i, /insta/i]), icon: "instagram" },
-    { label: "LinkedIn", url: findSocialUrl([/linkedin/i]), icon: "linkedin" },
-    { label: "TikTok", url: findSocialUrl([/tiktok/i, /tik tok/i]), icon: "tiktok" },
-    { label: "YouTube", url: findSocialUrl([/youtube/i, /youtu\.be/i]), icon: "youtube" },
+  { label: "Instagram", url: findSocialUrl([/instagram/i, /insta/i]), icon: "instagram" },
+  { label: "LinkedIn", url: findSocialUrl([/linkedin/i]), icon: "linkedin" },
+  { label: "TikTok", url: findSocialUrl([/tiktok/i, /tik tok/i]), icon: "tiktok" },
+  { label: "YouTube", url: findSocialUrl([/youtube/i, /youtu\.be/i]), icon: "youtube" },
   ];
 
   const mainHashtag = pageCard.hashtag
-    ? pageCard.hashtag.startsWith("#")
-      ? pageCard.hashtag
-      : `#${pageCard.hashtag}`
-    : "#UnqPower2026";
+  ? pageCard.hashtag.startsWith("#")
+  ? pageCard.hashtag
+  : `#${pageCard.hashtag}`
+  : "#UnqPower2026";
   const aboutAddress = pageCard.address || "";
   const aboutEmail = pageCard.email || "";
   const aboutPhone = pageCard.extraPhone || "";
@@ -191,51 +188,52 @@
   const pageCardTheme = pageCard.tariff === "premium" ? pageCard.theme : "default_dark";
   const pageTopBadge = typeof topBadge === "object" && topBadge ? topBadge : null;
   const pageScore = typeof score === "object" && score ? score : null;
-%>
-<!doctype html>
-<html lang="ru" dir="<%= documentDir %>">
-<head>
-  <%- include('../partials/head', { title: pageTitle, description: pageDescription, image: pageImage, styles: ['/css/public-card.css'], ogType: 'profile', jsonLd: pageJsonLd, noindex: typeof noindex === 'boolean' ? noindex : false }) %>
-</head>
-<body class="antialiased" data-card-theme="<%= pageCardTheme %>">
-  <main class="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-12">
-    <div id="public-card-layout" class="relative z-10 w-full max-w-[640px]">
-      <div class="mb-3 flex flex-wrap items-center justify-between gap-2 sm:flex-nowrap">
-        <a href="/" class="interactive-btn inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-neutral-200 bg-white px-3 py-1.5 text-xs font-semibold text-neutral-700">
-          <svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M15 18 9 12l6-6"></path>
-          </svg>
-          На главную
-        </a>
-        <form id="card-slug-search-form" class="ml-auto flex w-full max-w-[220px] items-center gap-2 sm:max-w-[340px]" action="/" method="get" novalidate>
-          <label for="card-slug-search-input" class="sr-only">Поиск UNQ</label>
-          <div class="flex min-w-0 flex-1 items-center rounded-lg border border-neutral-200 bg-white px-3 py-2">
-            <span class="mr-2 text-xs text-neutral-400">unqx.uz/</span>
-            <input
-              id="card-slug-search-input"
-              type="text"
-              inputmode="text"
-              autocomplete="off"
-              spellcheck="false"
-              maxlength="6"
-              placeholder="AAA001"
-              class="w-full bg-transparent text-sm uppercase text-neutral-800 outline-none placeholder:text-neutral-300"
-            />
-          </div>
-          <button type="submit" class="interactive-btn inline-flex min-h-11 items-center justify-center rounded-lg border border-neutral-300 px-3 py-2 text-neutral-700" aria-label="Искать">
-            <svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="11" cy="11" r="7"></circle>
-              <path d="m20 20-3.5-3.5"></path>
-            </svg>
-          </button>
-        </form>
-      </div>
-      <div id="card-slug-search-results" class="mb-3 hidden rounded-xl border border-neutral-200 bg-white p-2"></div>
-      <div id="card-view-root" class="animate-card-enter flex justify-center"></div>
-    </div>
-  </main>
+  %>
+  <!doctype html>
+  <html lang="ru" dir="<%= documentDir %>">
 
-  <script nonce="<%= cspNonce %>" id="card-view-data" type="application/json"><%- JSON.stringify({
+  <head>
+    <%- include('../partials/head', { title: pageTitle, description: pageDescription, image: pageImage, styles:
+      ['/css/public-card.css'], ogType: 'profile' , jsonLd: pageJsonLd, noindex: typeof noindex==='boolean' ? noindex :
+      false }) %>
+  </head>
+
+  <body class="antialiased" data-card-theme="<%= pageCardTheme %>">
+    <main class="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-12">
+      <div id="public-card-layout" class="relative z-10 w-full max-w-[640px]">
+        <div class="mb-3 flex flex-wrap items-center justify-between gap-2 sm:flex-nowrap">
+          <a href="/"
+            class="interactive-btn inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-neutral-200 bg-white px-3 py-1.5 text-xs font-semibold text-neutral-700">
+            <svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M15 18 9 12l6-6"></path>
+            </svg>
+            На главную
+          </a>
+          <form id="card-slug-search-form" class="ml-auto flex w-full max-w-[220px] items-center gap-2 sm:max-w-[340px]"
+            action="/" method="get" novalidate>
+            <label for="card-slug-search-input" class="sr-only">Поиск UNQ</label>
+            <div class="flex min-w-0 flex-1 items-center rounded-lg border border-neutral-200 bg-white px-3 py-2">
+              <span class="mr-2 text-xs text-neutral-400">unqx.uz/</span>
+              <input id="card-slug-search-input" type="text" inputmode="text" autocomplete="off" spellcheck="false"
+                maxlength="6" placeholder="AAA001"
+                class="w-full bg-transparent text-sm uppercase text-neutral-800 outline-none placeholder:text-neutral-300" />
+            </div>
+            <button type="submit"
+              class="interactive-btn inline-flex min-h-11 items-center justify-center rounded-lg border border-neutral-300 px-3 py-2 text-neutral-700"
+              aria-label="Искать">
+              <svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="11" cy="11" r="7"></circle>
+                <path d="m20 20-3.5-3.5"></path>
+              </svg>
+            </button>
+          </form>
+        </div>
+        <div id="card-slug-search-results" class="mb-3 hidden rounded-xl border border-neutral-200 bg-white p-2"></div>
+        <div id="card-view-root" class="animate-card-enter flex justify-center"></div>
+      </div>
+    </main>
+
+    <script nonce="<%= cspNonce %>" id="card-view-data" type="application/json"><%- JSON.stringify({
     card: pageCard,
     shareUrl: pageShareUrl,
     viewsLabel: `${formattedViews} просмотров`,
@@ -245,7 +243,8 @@
     paused: false,
     trackViaPageRequest: true,
   }) %></script>
-  <script nonce="<%= cspNonce %>" src="/js/card-view.js"></script>
-  <script nonce="<%= cspNonce %>" src="/js/public-card.js"></script>
-</body>
-</html>
+    <script nonce="<%= cspNonce %>" src="/js/card-view.js"></script>
+    <script nonce="<%= cspNonce %>" src="/js/public-card.js"></script>
+  </body>
+
+  </html>

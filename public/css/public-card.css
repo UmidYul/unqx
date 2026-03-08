@@ -810,7 +810,7 @@ body[data-card-theme="arctic"]::before {
   content: '';
   position: fixed;
   inset: 0;
-  background-image: 
+  background-image:
     radial-gradient(circle at 15% 25%, rgba(186, 230, 253, 0.15) 0%, transparent 50%),
     radial-gradient(circle at 85% 75%, rgba(186, 230, 253, 0.12) 0%, transparent 50%);
   pointer-events: none;
@@ -826,7 +826,7 @@ body[data-card-theme="linen"]::before {
   content: '';
   position: fixed;
   inset: 0;
-  background-image: 
+  background-image:
     repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(200, 168, 130, 0.03) 2px, rgba(200, 168, 130, 0.03) 4px),
     repeating-linear-gradient(-45deg, transparent, transparent 2px, rgba(200, 168, 130, 0.03) 2px, rgba(200, 168, 130, 0.03) 4px);
   pointer-events: none;
@@ -871,7 +871,7 @@ body[data-card-theme="forest"]::before {
 
 /* Default Dark - светлые кнопки */
 [data-card-theme="default_dark"] .interactive-btn,
-[data-card-theme="default_dark"] #card-slug-search-form > div {
+[data-card-theme="default_dark"] #card-slug-search-form>div {
   background: rgba(255, 255, 255, 0.95) !important;
   border-color: rgba(0, 0, 0, 0.1) !important;
   color: #404040 !important;
@@ -879,7 +879,7 @@ body[data-card-theme="forest"]::before {
 
 /* Arctic - холодные голубоватые тона */
 [data-card-theme="arctic"] .interactive-btn,
-[data-card-theme="arctic"] #card-slug-search-form > div {
+[data-card-theme="arctic"] #card-slug-search-form>div {
   background: rgba(248, 250, 252, 0.95) !important;
   border-color: rgba(124, 157, 184, 0.25) !important;
   color: #1a2a3a !important;
@@ -892,7 +892,7 @@ body[data-card-theme="forest"]::before {
 
 /* Linen - теплые бежевые тона */
 [data-card-theme="linen"] .interactive-btn,
-[data-card-theme="linen"] #card-slug-search-form > div {
+[data-card-theme="linen"] #card-slug-search-form>div {
   background: rgba(250, 248, 244, 0.95) !important;
   border-color: rgba(200, 168, 130, 0.25) !important;
   color: #3a2e24 !important;
@@ -905,7 +905,7 @@ body[data-card-theme="forest"]::before {
 
 /* Marble - чистый белый */
 [data-card-theme="marble"] .interactive-btn,
-[data-card-theme="marble"] #card-slug-search-form > div {
+[data-card-theme="marble"] #card-slug-search-form>div {
   background: rgba(255, 255, 255, 0.98) !important;
   border-color: rgba(0, 0, 0, 0.08) !important;
   color: #0a0a0a !important;
@@ -917,7 +917,7 @@ body[data-card-theme="forest"]::before {
 
 /* Forest - темно-зеленые с золотистым текстом */
 [data-card-theme="forest"] .interactive-btn,
-[data-card-theme="forest"] #card-slug-search-form > div {
+[data-card-theme="forest"] #card-slug-search-form>div {
   background: rgba(42, 106, 58, 0.85) !important;
   border-color: rgba(232, 220, 192, 0.2) !important;
   color: #e8dcc0 !important;
