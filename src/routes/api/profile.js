@@ -34,7 +34,7 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 },
 });
 const ALLOWED_MIME = new Set(["image/jpeg", "image/png", "image/webp"]);
-const CARD_THEMES = new Set(["default_dark", "arctic", "linen", "marble", "forest"]);
+const CARD_THEMES = new Set(["default_dark", "arctic", "linen", "marble", "forest", "royal_ivory", "midnight_obsidian"]);
 const DIRECTORY_SECTORS = new Set(["design", "sales", "marketing", "it", "other"]);
 const ACCOUNT_REACTIVATION_WINDOW_DAYS = Number(env.ACCOUNT_REACTIVATION_WINDOW_DAYS || 30);
 const UNKNOWN_CITY_LABEL = "Неизвестно";

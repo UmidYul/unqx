@@ -369,6 +369,11 @@ body[data-page="profile-page"] {
     padding: 0 12px;
   }
 
+  [data-page="public-home"] #calculator {
+    padding-top: 56px;
+    padding-bottom: 56px;
+  }
+
   #profile-card-live-preview [data-card-view] {
     max-width: 100%;
   }
@@ -534,7 +539,7 @@ body[data-card-theme] #card-view-root>[data-card-view] {
 }
 
 [data-card-theme="linen"] .unq-ref-overlay-svg {
-  opacity: 0.075;
+  opacity: 0.14;
 }
 
 [data-card-theme="marble"] .unq-ref-overlay-svg {
@@ -543,6 +548,14 @@ body[data-card-theme] #card-view-root>[data-card-view] {
 
 [data-card-theme="forest"] .unq-ref-overlay-svg {
   opacity: 0.045;
+}
+
+[data-card-theme="royal_ivory"] .unq-ref-overlay-svg {
+  opacity: 0.12;
+}
+
+[data-card-theme="midnight_obsidian"] .unq-ref-overlay-svg {
+  opacity: 0.095;
 }
 
 .unq-ref-top-badge {
@@ -1039,7 +1052,7 @@ body[data-card-theme="arctic"]::before {
 }
 
 body[data-card-theme="linen"] {
-  background: linear-gradient(160deg, #f5f0e8 0%, #ebe3d8 50%, #e0d5c8 100%);
+  background: linear-gradient(160deg, #f3ecdf 0%, #e9ddcb 52%, #dcccb7 100%);
   position: relative;
 }
 
@@ -1048,8 +1061,23 @@ body[data-card-theme="linen"]::before {
   position: fixed;
   inset: 0;
   background-image:
-    repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(200, 168, 130, 0.03) 2px, rgba(200, 168, 130, 0.03) 4px),
-    repeating-linear-gradient(-45deg, transparent, transparent 2px, rgba(200, 168, 130, 0.03) 2px, rgba(200, 168, 130, 0.03) 4px);
+    repeating-linear-gradient(45deg, transparent 0 6px, rgba(180, 145, 106, 0.085) 6px 8px),
+    repeating-linear-gradient(-45deg, transparent 0 6px, rgba(161, 126, 90, 0.07) 6px 8px),
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.06) 0 1px, transparent 1px 22px),
+    repeating-linear-gradient(90deg, rgba(99, 70, 42, 0.045) 0 1px, transparent 1px 22px);
+  background-size: 100% 100%, 100% 100%, 22px 22px, 22px 22px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+body[data-card-theme="linen"]::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(circle at 12% 14%, rgba(255, 247, 235, 0.38) 0%, transparent 38%),
+    radial-gradient(circle at 84% 18%, rgba(146, 111, 77, 0.11) 0%, transparent 44%),
+    radial-gradient(circle at 50% 86%, rgba(120, 88, 58, 0.09) 0%, transparent 48%);
   pointer-events: none;
   z-index: 0;
 }
@@ -1084,6 +1112,41 @@ body[data-card-theme="forest"]::before {
     radial-gradient(circle at 20% 30%, rgba(33, 88, 57, 0.18) 0%, transparent 42%),
     radial-gradient(circle at 80% 70%, rgba(24, 64, 43, 0.16) 0%, transparent 42%),
     radial-gradient(circle at 50% 50%, rgba(11, 31, 20, 0.22) 0%, transparent 62%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+body[data-card-theme="royal_ivory"] {
+  background: linear-gradient(160deg, #f8f2e6 0%, #efe3cc 55%, #e5d3ae 100%);
+  position: relative;
+}
+
+body[data-card-theme="royal_ivory"]::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    repeating-linear-gradient(45deg, transparent 0 12px, rgba(146, 111, 56, 0.055) 12px 13px),
+    repeating-linear-gradient(-45deg, transparent 0 12px, rgba(176, 138, 74, 0.04) 12px 13px),
+    radial-gradient(circle at 18% 24%, rgba(255, 247, 231, 0.4) 0%, transparent 40%),
+    radial-gradient(circle at 82% 76%, rgba(196, 154, 84, 0.14) 0%, transparent 42%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+body[data-card-theme="midnight_obsidian"] {
+  background: linear-gradient(150deg, #090f16 0%, #101827 48%, #0a0f15 100%);
+  position: relative;
+}
+
+body[data-card-theme="midnight_obsidian"]::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    radial-gradient(circle at 12% 16%, rgba(58, 89, 143, 0.35) 0%, transparent 42%),
+    radial-gradient(circle at 82% 74%, rgba(37, 63, 104, 0.32) 0%, transparent 44%),
+    linear-gradient(120deg, rgba(120, 160, 224, 0.06) 0%, transparent 28%, rgba(120, 160, 224, 0.06) 56%, transparent 80%);
   pointer-events: none;
   z-index: 0;
 }
@@ -1149,6 +1212,30 @@ body[data-card-theme="forest"]::before {
   background: rgba(29, 78, 51, 0.92) !important;
 }
 
+[data-card-theme="royal_ivory"] .interactive-btn,
+[data-card-theme="royal_ivory"] #card-slug-search-form>div {
+  background: rgba(252, 245, 231, 0.9) !important;
+  border-color: rgba(176, 138, 74, 0.3) !important;
+  color: #5d4520 !important;
+  backdrop-filter: blur(6px);
+}
+
+[data-card-theme="royal_ivory"] .interactive-btn:hover {
+  background: rgba(249, 238, 215, 0.95) !important;
+}
+
+[data-card-theme="midnight_obsidian"] .interactive-btn,
+[data-card-theme="midnight_obsidian"] #card-slug-search-form>div {
+  background: rgba(18, 28, 44, 0.86) !important;
+  border-color: rgba(95, 130, 186, 0.34) !important;
+  color: #d6e6ff !important;
+  backdrop-filter: blur(8px);
+}
+
+[data-card-theme="midnight_obsidian"] .interactive-btn:hover {
+  background: rgba(24, 38, 58, 0.92) !important;
+}
+
 [data-card-theme="forest"] #card-slug-search-form input {
   color: #e7dbbf !important;
 }
@@ -1163,6 +1250,22 @@ body[data-card-theme="forest"]::before {
 
 [data-card-theme="forest"] svg {
   color: #e7dbbf !important;
+}
+
+[data-card-theme="midnight_obsidian"] svg {
+  color: #d6e6ff !important;
+}
+
+[data-card-theme="midnight_obsidian"] #card-slug-search-form input {
+  color: #d6e6ff !important;
+}
+
+[data-card-theme="midnight_obsidian"] #card-slug-search-form input::placeholder {
+  color: rgba(198, 219, 255, 0.48) !important;
+}
+
+[data-card-theme="midnight_obsidian"] #card-slug-search-form span {
+  color: rgba(176, 201, 240, 0.62) !important;
 }
 
 /* Стили для результатов поиска */
@@ -1192,5 +1295,19 @@ body[data-card-theme="forest"]::before {
   background: rgba(20, 62, 41, 0.9) !important;
   border-color: rgba(231, 219, 191, 0.24) !important;
   color: #e7dbbf !important;
+  backdrop-filter: blur(8px);
+}
+
+[data-card-theme="royal_ivory"] #card-slug-search-results {
+  background: rgba(252, 245, 231, 0.92) !important;
+  border-color: rgba(176, 138, 74, 0.3) !important;
+  color: #5d4520 !important;
+  backdrop-filter: blur(6px);
+}
+
+[data-card-theme="midnight_obsidian"] #card-slug-search-results {
+  background: rgba(18, 28, 44, 0.92) !important;
+  border-color: rgba(95, 130, 186, 0.34) !important;
+  color: #d6e6ff !important;
   backdrop-filter: blur(8px);
 }

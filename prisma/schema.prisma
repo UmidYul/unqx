@@ -20,6 +20,8 @@ enum CardTheme {
   linen
   marble
   forest
+  royal_ivory
+  midnight_obsidian
 }
 
 enum CheckerResult {

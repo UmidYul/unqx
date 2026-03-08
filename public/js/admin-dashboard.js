@@ -131,11 +131,13 @@
     link2: '<path d="M10 7h6a4 4 0 1 1 0 8h-2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M14 17H8a4 4 0 1 1 0-8h2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
   };
   const THEME_META = {
-    default_dark: { label: "Default Dark", fill: "#0a0a0a", border: "#ffffff", text: "#111111" },
-    arctic: { label: "Arctic", fill: "#f0f5f9", border: "#7a9db8", text: "#1a2a3a" },
-    linen: { label: "Linen", fill: "#f2ede6", border: "#c8a882", text: "#3a2e24" },
-    marble: { label: "Marble", fill: "#ffffff", border: "#0a0a0a", text: "#0a0a0a" },
-    forest: { label: "Forest", fill: "#1f5335", border: "#e7dbbf", text: "#e7dbbf" },
+    default_dark: { label: "Obsidian Noir", fill: "#0a0a0a", border: "#ffffff", text: "#111111" },
+    arctic: { label: "Glacier Platinum", fill: "#f0f5f9", border: "#7a9db8", text: "#1a2a3a" },
+    linen: { label: "Imperial Linen", fill: "#f2ede6", border: "#c8a882", text: "#3a2e24" },
+    marble: { label: "Carrara Prestige", fill: "#ffffff", border: "#0a0a0a", text: "#0a0a0a" },
+    forest: { label: "Emerald Reserve", fill: "#1f5335", border: "#e7dbbf", text: "#e7dbbf" },
+    royal_ivory: { label: "Royal Ivory", fill: "#f7efdc", border: "#b89150", text: "#644b22" },
+    midnight_obsidian: { label: "Midnight Obsidian", fill: "#111927", border: "#5374a6", text: "#d6e6ff" },
   };
   function themePill(theme) {
     const id = String(theme || "default_dark").trim();

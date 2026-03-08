@@ -31,7 +31,7 @@ const { logPaymentEvent } = require("../../services/payment-events");
 
 const router = express.Router();
 const SLUG_REGEX = /^[A-Z]{3}[0-9]{3}$/;
-const THEMES = new Set(["default_dark", "arctic", "linen", "marble", "forest"]);
+const THEMES = new Set(["default_dark", "arctic", "linen", "marble", "forest", "royal_ivory", "midnight_obsidian"]);
 
 function isMissingModelTable(error, modelName) {
   return (

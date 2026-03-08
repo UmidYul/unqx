@@ -19,7 +19,7 @@ const { seoHub, getSeoPage } = require("../../content/seo-pages");
 
 const router = express.Router();
 const defaultSocialImage = absoluteUrl("/brand/logo.PNG");
-const CARD_THEMES = new Set(["default_dark", "arctic", "linen", "marble", "forest"]);
+const CARD_THEMES = new Set(["default_dark", "arctic", "linen", "marble", "forest", "royal_ivory", "midnight_obsidian"]);
 const LEGAL_DOCS_DIR = path.join(env.EXPRESS_APP_DIR, "docs");
 
 function readLegalDoc(fileName) {
@@ -1034,7 +1034,7 @@ router.get(
 router.get(
   "/demo",
   asyncHandler(async (req, res) => {
-    const allowedThemes = new Set(["default_dark", "arctic", "linen", "marble", "forest"]);
+    const allowedThemes = new Set(["default_dark", "arctic", "linen", "marble", "forest", "royal_ivory", "midnight_obsidian"]);
     const theme = typeof req.query.theme === "string" && allowedThemes.has(req.query.theme) ? req.query.theme : "default_dark";
     const embed = req.query.embed === "1";
 

@@ -1,5 +1,5 @@
 (function initCardViewGlobal() {
-  const THEME_KEYS = ["default_dark", "arctic", "linen", "marble", "forest"];
+  const THEME_KEYS = ["default_dark", "arctic", "linen", "marble", "forest", "royal_ivory", "midnight_obsidian"];
   const THEME_CONFIG = {
     default_dark: {
       cardBg: "#ffffff",
@@ -197,6 +197,84 @@
       buttonShineGradient:
         "linear-gradient(90deg, rgba(231,219,191,0) 0%, rgba(231,219,191,0.11) 45%, rgba(231,219,191,0.18) 50%, rgba(231,219,191,0.11) 55%, rgba(231,219,191,0) 100%)",
     },
+    royal_ivory: {
+      cardBg: "linear-gradient(165deg, #fffdf7 0%, #f7efdc 52%, #eedfbd 100%)",
+      cardBgOverlay: "royal_filigree",
+      surfaceBg: "#fbf4e4",
+      cardBorder: "1px solid #d8bf8c",
+      surfaceBorder: "1px solid #dec79a",
+      dividerColor: "#d7be8d",
+      nameColor: "#3e2f1a",
+      roleColor: "#8b6f42",
+      mutedColor: "#aa9168",
+      accentColor: "#b08a4a",
+      emailColor: "#6e5836",
+      buttonPrimaryBg: "linear-gradient(135deg, #9f7a3e, #c69a55)",
+      buttonPrimaryText: "#fff8e8",
+      buttonPrimaryBorder: "#b89150",
+      buttonSecondaryBg: "transparent",
+      buttonSecondaryText: "#775b32",
+      buttonSecondaryBorder: "#c8ae7a",
+      badgeText: "#8c6b3c",
+      badgeBg: "rgba(255, 249, 235, 0.9)",
+      badgeBorder: "1px solid rgba(184, 146, 79, 0.38)",
+      topLineGradient: "linear-gradient(90deg, transparent, #bd9554, transparent)",
+      avatarBg: "linear-gradient(135deg, #f1e3c5, #dec391)",
+      avatarText: "#644b22",
+      avatarBorder: "2px solid rgba(167, 130, 70, 0.35)",
+      cardBorderRadius: "22px",
+      fontFamily: "'Fraunces', 'Cormorant Garamond', Georgia, serif",
+      nameFontStyle: "normal",
+      nameFontWeight: "500",
+      roleLetterSpacing: "4px",
+      scoreLabelColor: "#8b6f42",
+      scoreValueColor: "#3e2f1a",
+      scoreBarFill: "#b08a4a",
+      scoreBarTrack: "#ead8b8",
+      scorePercentileColor: "#aa9168",
+      cardShadow: "0 14px 34px rgba(85, 60, 20, 0.14)",
+      buttonShineGradient:
+        "linear-gradient(90deg, rgba(255,248,232,0) 0%, rgba(255,248,232,0.2) 45%, rgba(255,248,232,0.34) 50%, rgba(255,248,232,0.2) 55%, rgba(255,248,232,0) 100%)",
+    },
+    midnight_obsidian: {
+      cardBg: "linear-gradient(160deg, #0c1118 0%, #111927 45%, #0a0f15 100%)",
+      cardBgOverlay: "midnight_constellation",
+      surfaceBg: "#101827",
+      cardBorder: "1px solid #2b3547",
+      surfaceBorder: "1px solid #273245",
+      dividerColor: "#2f3b52",
+      nameColor: "#d5e4ff",
+      roleColor: "#8ea7cf",
+      mutedColor: "#7084a5",
+      accentColor: "#7fb3ff",
+      emailColor: "#b8c8e6",
+      buttonPrimaryBg: "linear-gradient(135deg, #1b2f4f, #284c78)",
+      buttonPrimaryText: "#ecf3ff",
+      buttonPrimaryBorder: "#3f5f8e",
+      buttonSecondaryBg: "transparent",
+      buttonSecondaryText: "#c2d6f7",
+      buttonSecondaryBorder: "#3a5379",
+      badgeText: "#9db6da",
+      badgeBg: "rgba(45, 60, 90, 0.26)",
+      badgeBorder: "1px solid rgba(141, 170, 213, 0.38)",
+      topLineGradient: "linear-gradient(90deg, transparent, #6ea3f3, transparent)",
+      avatarBg: "linear-gradient(135deg, #172238, #0f1829)",
+      avatarText: "#d6e6ff",
+      avatarBorder: "2px solid rgba(123, 157, 211, 0.34)",
+      cardBorderRadius: "20px",
+      fontFamily: "'Sora', 'Avenir Next', 'Segoe UI', sans-serif",
+      nameFontStyle: "normal",
+      nameFontWeight: "500",
+      roleLetterSpacing: "4px",
+      scoreLabelColor: "#8ea7cf",
+      scoreValueColor: "#d7e7ff",
+      scoreBarFill: "#7fb3ff",
+      scoreBarTrack: "#273245",
+      scorePercentileColor: "#7f97bc",
+      cardShadow: "0 18px 42px rgba(3, 7, 13, 0.6)",
+      buttonShineGradient:
+        "linear-gradient(90deg, rgba(205,225,255,0) 0%, rgba(205,225,255,0.16) 45%, rgba(205,225,255,0.28) 50%, rgba(205,225,255,0.16) 55%, rgba(205,225,255,0) 100%)",
+    },
   };
 
   function resolveTheme(themeKey) {
@@ -234,12 +312,19 @@
     if (themeKey === "linen") {
       return `<svg class="unq-ref-overlay-svg" viewBox="0 0 360 600" preserveAspectRatio="none" aria-hidden="true">
         <defs>
-          <pattern id="linen-weave" width="14" height="14" patternUnits="userSpaceOnUse">
-            <path d="M0 7h14M7 0v14" stroke="#c8a882" stroke-width="0.45"></path>
-            <path d="M0 0l14 14M14 0L0 14" stroke="#d4c4b0" stroke-width="0.28"></path>
+          <pattern id="linen-card-thread" width="18" height="18" patternUnits="userSpaceOnUse">
+            <path d="M0 9h18M9 0v18" stroke="#c3a17b" stroke-width="0.42"></path>
+            <path d="M0 0h18M0 18h18M0 0v18M18 0v18" stroke="#dfceba" stroke-width="0.2"></path>
           </pattern>
+          <linearGradient id="linen-card-wave" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#9f7751"></stop>
+            <stop offset="100%" stop-color="#d2b796"></stop>
+          </linearGradient>
         </defs>
-        <rect width="100%" height="100%" fill="url(#linen-weave)"></rect>
+        <rect width="100%" height="100%" fill="url(#linen-card-thread)"></rect>
+        <path d="M0 78C68 56 144 64 216 82C276 96 320 96 360 86" stroke="url(#linen-card-wave)" stroke-width="0.85" fill="none"></path>
+        <path d="M0 274C66 254 132 262 200 280C268 300 322 298 360 286" stroke="url(#linen-card-wave)" stroke-width="0.75" fill="none"></path>
+        <path d="M0 474C70 450 146 462 214 480C276 498 322 500 360 490" stroke="url(#linen-card-wave)" stroke-width="0.7" fill="none"></path>
       </svg>`;
     }
     if (themeKey === "marble") {
@@ -267,6 +352,43 @@
         <path d="M0 28C17 23 34 19 51 25C67 30 84 34 100 28" stroke="url(#forest-mist)" stroke-width="0.35" fill="none"></path>
         <path d="M0 58C18 53 34 52 49 57C65 62 82 64 100 58" stroke="url(#forest-mist)" stroke-width="0.3" fill="none"></path>
         <path d="M0 84C16 80 34 76 50 80C68 84 84 88 100 84" stroke="url(#forest-mist)" stroke-width="0.28" fill="none"></path>
+      </svg>`;
+    }
+    if (themeKey === "royal_ivory") {
+      return `<svg class="unq-ref-overlay-svg" viewBox="0 0 360 600" preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <pattern id="royal-cross" width="26" height="26" patternUnits="userSpaceOnUse">
+            <path d="M13 0V26M0 13H26" stroke="#b48c4e" stroke-width="0.36"></path>
+            <circle cx="13" cy="13" r="1.25" fill="#cfad6f"></circle>
+          </pattern>
+          <linearGradient id="royal-wave" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#b48c4e"></stop>
+            <stop offset="100%" stop-color="#d4b373"></stop>
+          </linearGradient>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#royal-cross)"></rect>
+        <path d="M0 86C72 58 142 62 212 84C274 104 318 106 360 94" stroke="url(#royal-wave)" stroke-width="0.8" fill="none"></path>
+        <path d="M0 292C70 264 140 272 210 292C276 312 320 314 360 302" stroke="url(#royal-wave)" stroke-width="0.68" fill="none"></path>
+        <path d="M0 510C72 482 144 492 212 512C274 530 320 534 360 520" stroke="url(#royal-wave)" stroke-width="0.64" fill="none"></path>
+      </svg>`;
+    }
+    if (themeKey === "midnight_obsidian") {
+      return `<svg class="unq-ref-overlay-svg" viewBox="0 0 360 600" preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <pattern id="obsidian-grid" width="24" height="24" patternUnits="userSpaceOnUse">
+            <path d="M0 0H24V24H0Z" fill="none" stroke="#314462" stroke-width="0.34"></path>
+          </pattern>
+          <radialGradient id="obsidian-glow" cx="50%" cy="50%" r="70%">
+            <stop offset="0%" stop-color="#76aef8"></stop>
+            <stop offset="100%" stop-color="#0f1828"></stop>
+          </radialGradient>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#obsidian-grid)"></rect>
+        <path d="M0 120C70 98 140 104 210 124C272 142 320 140 360 126" stroke="#6f99d9" stroke-width="0.9" fill="none"></path>
+        <path d="M0 342C68 320 138 326 208 344C272 362 318 362 360 348" stroke="#6f99d9" stroke-width="0.78" fill="none"></path>
+        <circle cx="76" cy="84" r="1.4" fill="url(#obsidian-glow)"></circle>
+        <circle cx="288" cy="178" r="1.2" fill="url(#obsidian-glow)"></circle>
+        <circle cx="220" cy="478" r="1.3" fill="url(#obsidian-glow)"></circle>
       </svg>`;
     }
     return "";

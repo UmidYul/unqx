@@ -12,7 +12,7 @@ const OrderRequestSchema = z.object({
     .trim()
     .regex(/^[0-9]{3}$/, "Slug должен быть в формате AAA000"),
   tariff: z.enum(["basic", "premium"]),
-  theme: z.enum(["default_dark", "arctic", "linen", "marble", "forest"]).optional(),
+  theme: z.enum(["default_dark", "arctic", "linen", "marble", "forest", "royal_ivory", "midnight_obsidian"]).optional(),
   products: z.object({
     digitalCard: z.boolean(),
     bracelet: z.boolean(),

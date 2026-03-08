@@ -1,4 +1,4 @@
-const PROFILE_THEMES = new Set(["default_dark", "arctic", "linen", "marble", "forest"]);
+const PROFILE_THEMES = new Set(["default_dark", "arctic", "linen", "marble", "forest", "royal_ivory", "midnight_obsidian"]);
 const BUTTON_TYPES = new Set([
   "phone",
   "telegram",

@@ -486,7 +486,50 @@ function parseBlockedPauseMessage(value) {
 function isTableOrColumnMissing(error) {
   if (!error || typeof error !== "object") return false;
   const code = String(error.code || "");
-  return code === "42P01" || code === "42703";
+  if (code === "42P01" || code === "42703" || code === "P2021" || code === "P2022") {
+    return true;
+  }
+
+  if (code !== "P2010") {
+    return false;
+  }
+
+  const meta = error.meta && typeof error.meta === "object" ? error.meta : {};
+  const adapterError = meta.driverAdapterError && typeof meta.driverAdapterError === "object"
+    ? meta.driverAdapterError
+    : {};
+  const adapterCause = adapterError.cause && typeof adapterError.cause === "object"
+    ? adapterError.cause
+    : {};
+
+  const nestedCode = String(
+    meta.code ||
+      meta.dbErrorCode ||
+      adapterError.code ||
+      adapterCause.code ||
+      "",
+  );
+  if (nestedCode === "42P01" || nestedCode === "42703") {
+    return true;
+  }
+
+  const message = [
+    String(error.message || ""),
+    String(meta.message || ""),
+    String(meta.dbErrorMessage || ""),
+    String(adapterError.message || ""),
+    String(adapterCause.message || ""),
+  ]
+    .join(" ")
+    .toLowerCase();
+
+  return (
+    message.includes("does not exist") &&
+    (message.includes("relation") ||
+      message.includes("column") ||
+      message.includes("tabledoesnotexist") ||
+      message.includes("columndoesnotexist"))
+  );
 }
 
 async function safeExecuteRaw(sql, ...params) {

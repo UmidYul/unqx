@@ -37,8 +37,8 @@
 
   const fp = (v) => `${Number(v || 0).toLocaleString("ru-RU")} сум`;
   const DEFAULT_PROFILE_AVATAR = "/brand/profile-thin.svg";
-  const PROFILE_THEMES = ["default_dark", "arctic", "linen", "marble", "forest"];
-  const PREMIUM_ONLY_THEMES = new Set(["arctic", "linen", "marble", "forest"]);
+  const PROFILE_THEMES = ["default_dark", "arctic", "linen", "marble", "forest", "royal_ivory", "midnight_obsidian"];
+  const PREMIUM_ONLY_THEMES = new Set(["arctic", "linen", "marble", "forest", "royal_ivory", "midnight_obsidian"]);
   const fh = (v) => {
     if (!v) return "—";
     const diff = Math.max(0, Date.now() - new Date(v).getTime());

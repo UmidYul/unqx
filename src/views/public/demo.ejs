@@ -1,68 +1,140 @@
-<% const pageTitle=typeof title==="string" && title ? title : "UNQX Demo" ; const themeTokens={ default_dark: {
-  cardBg: "#ffffff" , cardBorder: "1px solid #d8d8d8" , buttonBg: "#151515" , buttonText: "#ffffff" ,
-  nameColor: "#242424" , mutedColor: "#9a9a9a" , avatarBg: "#ededed" , avatarText: "#4a4a4a" , radius: "20px" , },
-  arctic: { cardBg: "linear-gradient(160deg, #f8fafc 0%, #eef2f7 100%)" , cardBorder: "1px solid #dce4ed" ,
-  buttonBg: "#1a2a3a" , buttonText: "#f0f6ff" , nameColor: "#1a2a3a" , mutedColor: "#7a9db8" ,
-  avatarBg: "linear-gradient(135deg, #e0eaf4, #c4d6e8)" , avatarText: "#4a6880" , radius: "24px" , }, linen: {
-  cardBg: "linear-gradient(160deg, #faf8f4 0%, #f2ede6 100%)" , cardBorder: "1px solid #e0d8ce" , buttonBg: "#3a2e24" ,
-  buttonText: "#f2ede6" , nameColor: "#3a2e24" , mutedColor: "#a08060" ,
-  avatarBg: "linear-gradient(135deg, #ede8e0, #d8cfc4)" , avatarText: "#7a6650" , radius: "20px" , }, marble: {
-  cardBg: "#ffffff" , cardBorder: "1px solid #ebebeb" , buttonBg: "#0a0a0a" , buttonText: "#ffffff" ,
-  nameColor: "#0a0a0a" , mutedColor: "#aaaaaa" , avatarBg: "linear-gradient(135deg, #f5f5f5, #e8e8e8)" ,
-  avatarText: "#555555" , radius: "0px" , }, forest: {
-  cardBg: "linear-gradient(170deg, #153c27 0%, #1f5335 56%, #112f20 100%)" , cardBorder: "1px solid #2f6b47" ,
-  buttonBg: "linear-gradient(135deg, #18472d, #245f3d)" , buttonText: "#e7dbbf" , nameColor: "#e7dbbf" ,
-  mutedColor: "#e7dbbf" , avatarBg: "linear-gradient(135deg, #18472d, #235b3a)" , avatarText: "#e7dbbf" , radius: "20px"
-  , }, }; const pageTheme=typeof theme==="string" && themeTokens[theme] ? theme : "default_dark" ; const
-  tokens=themeTokens[pageTheme]; const cardStyle=[ `--theme-card-bg:${tokens.cardBg}`,
-  `--theme-card-border:${tokens.cardBorder}`, `--theme-button-primary-bg:${tokens.buttonBg}`,
-  `--theme-button-primary-text:${tokens.buttonText}`, `--theme-name-color:${tokens.nameColor}`,
-  `--theme-muted-color:${tokens.mutedColor}`, `--theme-avatar-bg:${tokens.avatarBg}`,
-  `--theme-avatar-text:${tokens.avatarText}`, `--theme-card-radius:${tokens.radius}`, ].join(";"); const
-  isEmbed=Boolean(embed); %>
-  <!doctype html>
-  <html lang="ru">
+<%
+  const pageTitle = typeof title === "string" && title ? title : "UNQX Demo";
+  const themeTokens = {
+    default_dark: {
+      cardBg: "#ffffff",
+      cardBorder: "1px solid #d8d8d8",
+      buttonBg: "#151515",
+      buttonText: "#ffffff",
+      nameColor: "#242424",
+      mutedColor: "#9a9a9a",
+      avatarBg: "#ededed",
+      avatarText: "#4a4a4a",
+      radius: "20px",
+    },
+    arctic: {
+      cardBg: "linear-gradient(160deg, #f8fafc 0%, #eef2f7 100%)",
+      cardBorder: "1px solid #dce4ed",
+      buttonBg: "#1a2a3a",
+      buttonText: "#f0f6ff",
+      nameColor: "#1a2a3a",
+      mutedColor: "#7a9db8",
+      avatarBg: "linear-gradient(135deg, #e0eaf4, #c4d6e8)",
+      avatarText: "#4a6880",
+      radius: "24px",
+    },
+    linen: {
+      cardBg: "linear-gradient(160deg, #faf8f4 0%, #f2ede6 100%)",
+      cardBorder: "1px solid #e0d8ce",
+      buttonBg: "#3a2e24",
+      buttonText: "#f2ede6",
+      nameColor: "#3a2e24",
+      mutedColor: "#a08060",
+      avatarBg: "linear-gradient(135deg, #ede8e0, #d8cfc4)",
+      avatarText: "#7a6650",
+      radius: "20px",
+    },
+    marble: {
+      cardBg: "#ffffff",
+      cardBorder: "1px solid #ebebeb",
+      buttonBg: "#0a0a0a",
+      buttonText: "#ffffff",
+      nameColor: "#0a0a0a",
+      mutedColor: "#aaaaaa",
+      avatarBg: "linear-gradient(135deg, #f5f5f5, #e8e8e8)",
+      avatarText: "#555555",
+      radius: "0px",
+    },
+    forest: {
+      cardBg: "linear-gradient(170deg, #153c27 0%, #1f5335 56%, #112f20 100%)",
+      cardBorder: "1px solid #2f6b47",
+      buttonBg: "linear-gradient(135deg, #18472d, #245f3d)",
+      buttonText: "#e7dbbf",
+      nameColor: "#e7dbbf",
+      mutedColor: "#e7dbbf",
+      avatarBg: "linear-gradient(135deg, #18472d, #235b3a)",
+      avatarText: "#e7dbbf",
+      radius: "20px",
+    },
+    royal_ivory: {
+      cardBg: "linear-gradient(165deg, #fffdf7 0%, #f7efdc 52%, #eedfbd 100%)",
+      cardBorder: "1px solid #d8bf8c",
+      buttonBg: "linear-gradient(135deg, #9f7a3e, #c69a55)",
+      buttonText: "#fff8e8",
+      nameColor: "#3e2f1a",
+      mutedColor: "#8b6f42",
+      avatarBg: "linear-gradient(135deg, #f1e3c5, #dec391)",
+      avatarText: "#644b22",
+      radius: "22px",
+    },
+    midnight_obsidian: {
+      cardBg: "linear-gradient(160deg, #0c1118 0%, #111927 45%, #0a0f15 100%)",
+      cardBorder: "1px solid #2b3547",
+      buttonBg: "linear-gradient(135deg, #1b2f4f, #284c78)",
+      buttonText: "#ecf3ff",
+      nameColor: "#d5e4ff",
+      mutedColor: "#8ea7cf",
+      avatarBg: "linear-gradient(135deg, #172238, #0f1829)",
+      avatarText: "#d6e6ff",
+      radius: "20px",
+    },
+  };
+  const pageTheme = typeof theme === "string" && themeTokens[theme] ? theme : "default_dark";
+  const tokens = themeTokens[pageTheme];
+  const cardStyle = [
+    `--theme-card-bg:${tokens.cardBg}`,
+    `--theme-card-border:${tokens.cardBorder}`,
+    `--theme-button-primary-bg:${tokens.buttonBg}`,
+    `--theme-button-primary-text:${tokens.buttonText}`,
+    `--theme-name-color:${tokens.nameColor}`,
+    `--theme-muted-color:${tokens.mutedColor}`,
+    `--theme-avatar-bg:${tokens.avatarBg}`,
+    `--theme-avatar-text:${tokens.avatarText}`,
+    `--theme-card-radius:${tokens.radius}`,
+  ].join(";");
+  const isEmbed = Boolean(embed);
+  const pageMainStyleMap = {
+    default_dark: "background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%); position: relative;",
+    arctic: "background: linear-gradient(160deg, #e8f3f9 0%, #d4e8f2 50%, #c4dce8 100%); position: relative;",
+    linen: "background: linear-gradient(160deg, #f3ecdf 0%, #e9ddcb 52%, #dcccb7 100%); position: relative;",
+    marble: "background: linear-gradient(135deg, #ffffff 0%, #f8f8f8 100%); position: relative;",
+    forest: "background: #071a10; position: relative;",
+    royal_ivory: "background: linear-gradient(160deg, #f8f2e6 0%, #efe3cc 55%, #e5d3ae 100%); position: relative;",
+    midnight_obsidian: "background: radial-gradient(circle at 12% 14%, rgba(58, 89, 143, 0.35) 0%, transparent 40%), linear-gradient(150deg, #090f16 0%, #101827 48%, #0a0f15 100%); position: relative;",
+  };
+  const pageMainStyle = isEmbed ? "" : pageMainStyleMap[pageTheme] || pageMainStyleMap.default_dark;
+  const headingClass = pageTheme === "forest" || pageTheme === "midnight_obsidian" ? "text-neutral-100" : "text-neutral-900";
+%>
+<!doctype html>
+<html lang="ru">
+<head>
+  <%- include('../partials/head', { title: pageTitle, description: typeof description === 'string' ? description : undefined, image: typeof image === 'string' ? image : undefined, styles: ['/css/public-card.css'], noindex: isEmbed }) %>
+</head>
+<body class="antialiased" data-card-theme="<%= pageTheme %>" style="font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
+  <main class="<%= isEmbed ? 'p-2' : 'min-h-screen p-8' %>" style="<%= pageMainStyle %>">
+    <div class="<%= isEmbed ? '' : 'mx-auto max-w-3xl' %>">
+      <% if (!isEmbed) { %>
+        <h1 class="mb-6 text-3xl font-bold <%= headingClass %>">Живой пример темы: <%= pageTheme %></h1>
+      <% } %>
 
-  <head>
-    <%- include('../partials/head', { title: pageTitle, description: typeof description==='string' ? description :
-      undefined, image: typeof image==='string' ? image : undefined, styles: ['/css/public-card.css'], noindex: isEmbed
-      }) %>
-  </head>
+      <article class="public-card-shell overflow-hidden rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm" style="<%= cardStyle %>">
+        <div class="flex items-center justify-between">
+          <span class="text-[11px] font-mono uppercase tracking-wider text-neutral-400">DEMO001</span>
+          <span class="text-[11px] text-neutral-400">UNQX</span>
+        </div>
 
-  <body class="antialiased" data-card-theme="<%= pageTheme %>"
-    style="font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
-    <main class="<%= isEmbed ? 'p-2' : 'min-h-screen p-8' %>"
-      style="<%= isEmbed ? '' : (pageTheme === 'forest' ? 'background: #071a10; position: relative;' : pageTheme === 'arctic' ? 'background: linear-gradient(160deg, #e8f3f9 0%, #d4e8f2 50%, #c4dce8 100%); position: relative;' : pageTheme === 'linen' ? 'background: linear-gradient(160deg, #f5f0e8 0%, #ebe3d8 50%, #e0d5c8 100%); position: relative;' : pageTheme === 'marble' ? 'background: linear-gradient(135deg, #ffffff 0%, #f8f8f8 100%); position: relative;' : 'background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);') %>">
-      <div class="<%= isEmbed ? '' : 'mx-auto max-w-3xl' %>">
-        <% if (!isEmbed) { %>
-          <h1 class="mb-6 text-3xl font-bold text-neutral-900">Живой пример темы: <%= pageTheme %>
-          </h1>
-          <% } %>
+        <div class="mt-5 text-center">
+          <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full text-sm font-semibold" style="background:var(--theme-avatar-bg);color:var(--theme-avatar-text);">DK</div>
+          <h2 class="mt-3 text-lg font-semibold" style="color:var(--theme-name-color);">Demo Karimov</h2>
+          <p class="mt-1 text-sm" style="color:var(--theme-muted-color);">+998 90 123 45 67</p>
+        </div>
 
-            <article
-              class="public-card-shell overflow-hidden rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm"
-              style="<%= cardStyle %>">
-              <div class="flex items-center justify-between">
-                <span class="text-[11px] font-mono uppercase tracking-wider text-neutral-400">DEMO001</span>
-                <span class="text-[11px] text-neutral-400">UNQX</span>
-              </div>
-
-              <div class="mt-5 text-center">
-                <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full text-sm font-semibold"
-                  style="background:var(--theme-avatar-bg);color:var(--theme-avatar-text);">DK</div>
-                <h2 class="mt-3 text-lg font-semibold text-neutral-900">Demo Karimov</h2>
-                <p class="mt-1 text-sm text-neutral-500">+998 90 123 45 67</p>
-              </div>
-
-              <div class="mt-5 flex flex-col gap-2">
-                <a href="#"
-                  class="public-card-button btn-shimmer rounded-xl bg-neutral-900 px-4 py-3 text-center text-sm font-medium text-white">TELEGRAM</a>
-                <a href="#"
-                  class="public-card-button btn-shimmer rounded-xl bg-neutral-900 px-4 py-3 text-center text-sm font-medium text-white">WEBSITE</a>
-              </div>
-            </article>
-      </div>
-    </main>
-  </body>
-
-  </html>
+        <div class="mt-5 flex flex-col gap-2">
+          <a href="#" class="public-card-button btn-shimmer rounded-xl bg-neutral-900 px-4 py-3 text-center text-sm font-medium text-white">TELEGRAM</a>
+          <a href="#" class="public-card-button btn-shimmer rounded-xl bg-neutral-900 px-4 py-3 text-center text-sm font-medium text-white">WEBSITE</a>
+        </div>
+      </article>
+    </div>
+  </main>
+</body>
+</html>
