@@ -770,17 +770,18 @@ const DEFAULT_PRICING = {
         const totalAmount = Number(payload?.pricing?.totalOneTime || 0);
         const orderCode = String(payload?.payment?.reference || "").trim() || `UNQX-${String(payload.orderId).replace(/[^a-zA-Z0-9]/g, "").slice(0, 10).toUpperCase()}`;
         const planLabel = plan === "premium" ? "Тариф Премиум" : "Тариф Базовый";
-        const message = `Здравствуйте! Хочу оплатить заказ ${orderCode}
+        const message = `Здравствуйте! Хочу оплатить заказ #️⃣ ${orderCode}
 
       UNQ: ${pricing.slug}
       Имя: ${userName}
-      Email: ${userEmail}
+      📧 Email: ${userEmail}
 
-      Детализация оплаты:
-      - Slug ${pricing.slug}: ${formatPrice(slugPrice)} сум
-      - ${planLabel}: ${formatPrice(planPrice)} сум
-      - Браслет: ${formatPrice(braceletPrice)} сум
-
+      ━━━━━━━━━━━━
+      💳 Детализация оплаты:
+      • Slug ${pricing.slug}: ${formatPrice(slugPrice)} сум
+      • ${planLabel}: ${formatPrice(planPrice)} сум
+      • Браслет: ${formatPrice(braceletPrice)} сум
+      ━━━━━━━━━━━━
       Итого к оплате: ${formatPrice(totalAmount)} сум`;
 
         const telegramUrl = `https://t.me/unqx_uz?text=${encodeURIComponent(message)}`;
