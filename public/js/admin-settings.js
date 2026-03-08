@@ -125,6 +125,26 @@
     if (!(form instanceof HTMLFormElement)) return;
     const next = {};
     loaded.forEach((item) => {
+      // Спец. обработка для визуального редактора custom_rules
+      if (item.key === "slug_pricing_custom_rules") {
+        const textarea = form.elements.namedItem(item.key);
+        if (textarea instanceof HTMLTextAreaElement) {
+          // Собираем значения из таблицы
+          const rows = form.querySelectorAll("#custom-rules-rows tr[data-rule-row]");
+          const arr = [];
+          rows.forEach((row, idx) => {
+            arr.push({
+              pattern: row.querySelector(`[data-rule-pattern='${idx}']`)?.value || "",
+              type: row.querySelector(`[data-rule-type='${idx}']`)?.value || "contains",
+              delta: Number(row.querySelector(`[data-rule-delta='${idx}']`)?.value || 0),
+              label: row.querySelector(`[data-rule-label='${idx}']`)?.value || "",
+            });
+          });
+          textarea.value = JSON.stringify(arr);
+          next[item.key] = arr;
+        }
+        return;
+      }
       const field = form.elements.namedItem(item.key);
       if (field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement) {
         next[item.key] = parseInputValue(field, item);
@@ -157,6 +177,45 @@
   }
 
   function renderGroup(group, items) {
+        // Вешаем обработчики на визуальный редактор custom_rules
+        if (group === "algorithm") {
+          setTimeout(() => {
+            const form = document.getElementById(`settings-form-algorithm`);
+            if (!form) return;
+            const addBtn = form.querySelector("#custom-rules-add");
+            if (addBtn) {
+              addBtn.addEventListener("click", () => {
+                const textarea = form.elements.namedItem("slug_pricing_custom_rules");
+                let arr = [];
+                try { arr = JSON.parse(textarea.value || "[]"); } catch { arr = []; }
+                arr.push({ pattern: "", type: "contains", delta: 0, label: "" });
+                textarea.value = JSON.stringify(arr);
+                renderGroup(group, items.map(i => i.key === "slug_pricing_custom_rules" ? { ...i, value: arr } : i));
+                updateCurrentFromForm(group);
+              });
+            }
+            const rows = form.querySelectorAll("#custom-rules-rows [data-rule-remove]");
+            rows.forEach((btn) => {
+              btn.addEventListener("click", () => {
+                const idx = Number(btn.getAttribute("data-rule-remove"));
+                const textarea = form.elements.namedItem("slug_pricing_custom_rules");
+                let arr = [];
+                try { arr = JSON.parse(textarea.value || "[]"); } catch { arr = []; }
+                arr.splice(idx, 1);
+                textarea.value = JSON.stringify(arr);
+                renderGroup(group, items.map(i => i.key === "slug_pricing_custom_rules" ? { ...i, value: arr } : i));
+                updateCurrentFromForm(group);
+              });
+            });
+            // Inline редактирование
+            const inputs = form.querySelectorAll("#custom-rules-rows input, #custom-rules-rows select");
+            inputs.forEach((input) => {
+              input.addEventListener("input", () => {
+                updateCurrentFromForm(group);
+              });
+            });
+          }, 0);
+        }
     const form = document.getElementById(`settings-form-${group}`);
     if (!(form instanceof HTMLFormElement)) return;
     state.loaded[group] = items;
@@ -172,6 +231,45 @@
       .map((item) => {
         const description = item.description ? `<div class="mt-1 text-xs text-neutral-500">${esc(item.description)}</div>` : "";
         const reset = `<button type="button" data-settings-reset="${group}:${item.key}" class="mt-1 text-xs font-semibold text-neutral-500 underline">Сбросить</button>`;
+        // Визуальный редактор для slug_pricing_custom_rules
+        if (item.key === "slug_pricing_custom_rules" && Array.isArray(item.value)) {
+          return `<label class="block md:col-span-2"><span class="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">${esc(item.label)}</span>
+            <div id="custom-rules-editor">
+              <table class="min-w-full text-left text-sm border mb-2">
+                <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
+                  <tr>
+                    <th class="px-2 py-1">Паттерн</th>
+                    <th class="px-2 py-1">Тип</th>
+                    <th class="px-2 py-1">Надбавка</th>
+                    <th class="px-2 py-1">Метка</th>
+                    <th class="px-2 py-1"></th>
+                  </tr>
+                </thead>
+                <tbody id="custom-rules-rows">
+                  ${item.value.map((rule, idx) => `
+                    <tr data-rule-row="${idx}">
+                      <td><input type="text" class="border rounded px-1 py-0.5 w-28" data-rule-pattern="${idx}" value="${esc(rule.pattern||"")}" /></td>
+                      <td>
+                        <select class="border rounded px-1 py-0.5" data-rule-type="${idx}">
+                          <option value="contains" ${rule.type==="contains"?"selected":""}>Содержит</option>
+                          <option value="startsWith" ${rule.type==="startsWith"?"selected":""}>Начинается</option>
+                          <option value="endsWith" ${rule.type==="endsWith"?"selected":""}>Заканчивается</option>
+                          <option value="regex" ${rule.type==="regex"?"selected":""}>RegExp</option>
+                        </select>
+                      </td>
+                      <td><input type="number" class="border rounded px-1 py-0.5 w-20" data-rule-delta="${idx}" value="${esc(rule.delta||0)}" /></td>
+                      <td><input type="text" class="border rounded px-1 py-0.5 w-32" data-rule-label="${idx}" value="${esc(rule.label||"")}" /></td>
+                      <td><button type="button" class="text-rose-600" data-rule-remove="${idx}">✕</button></td>
+                    </tr>
+                  `).join("")}
+                </tbody>
+              </table>
+              <button type="button" class="interactive-btn min-h-9 rounded bg-neutral-200 px-3 py-1 text-xs font-semibold text-neutral-700" id="custom-rules-add">Добавить правило</button>
+            </div>
+            <textarea name="${esc(item.key)}" class="hidden">${esc(JSON.stringify(item.value || []))}</textarea>
+            ${description}${reset}
+          </label>`;
+        }
         if (item.type === "boolean") {
           return `<label class="flex items-start gap-3 rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm md:col-span-2">
             <input type="checkbox" name="${esc(item.key)}" ${item.value ? "checked" : ""} class="mt-1 h-4 w-4 rounded border-neutral-300" />
