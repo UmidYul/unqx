@@ -1,6 +1,9 @@
 const { prisma } = require("../db/prisma");
 
 const SLUG_PATTERN = /^[A-Z]{3}[0-9]{3}$/;
+const SLUG_MASK_PATTERN = /^[A-Z0-9*?]{6}$/;
+const SHORT_LETTER_MASK_PATTERN = /^[A-Z*?]{3}$/;
+const SHORT_DIGIT_MASK_PATTERN = /^[0-9*?]{3}$/;
 const ALPHABET_SIZE = 26;
 const DIGIT_VARIANTS = 1000;
 const SEQUENTIAL_DIGITS = ["012", "123", "234", "345", "456", "567", "678", "789"];
@@ -20,6 +23,28 @@ function hasSequentialDigits(digits) {
   return b - a === 1 && c - b === 1;
 }
 
+function normalizeCustomPattern(value) {
+  const cleaned = String(value || "")
+    .toUpperCase()
+    .replace(/[^A-Z0-9*?]/g, "");
+  if (!cleaned) return null;
+  if (SLUG_MASK_PATTERN.test(cleaned)) return cleaned;
+  if (SHORT_LETTER_MASK_PATTERN.test(cleaned)) return `${cleaned}***`;
+  if (SHORT_DIGIT_MASK_PATTERN.test(cleaned)) return `***${cleaned}`;
+  return null;
+}
+
+function isSlugMatchingMask(slug, mask) {
+  const normalizedMask = normalizeCustomPattern(mask);
+  if (!normalizedMask) return false;
+  for (let index = 0; index < 6; index += 1) {
+    const expected = normalizedMask[index];
+    if (expected === "*" || expected === "?") continue;
+    if (slug[index] !== expected) return false;
+  }
+  return true;
+}
+
 function resolveConditionLabel(sale) {
   if (!sale) return "";
   switch (sale.conditionType) {
@@ -31,6 +56,21 @@ function resolveConditionLabel(sale) {
       return "slug с одинаковыми буквами";
     case "sequential_digits":
       return "slug с последовательными цифрами";
+    case "custom": {
+      const payload = sale.conditionValue && typeof sale.conditionValue === "object" ? sale.conditionValue : {};
+      const allowedCount = Array.isArray(payload.allowedSlugs) ? payload.allowedSlugs.length : 0;
+      const patternCount = Array.isArray(payload.slugPatterns) ? payload.slugPatterns.length : 0;
+      if (allowedCount > 0 && patternCount > 0) {
+        return `${allowedCount} точн. slug + ${patternCount} паттернов`;
+      }
+      if (allowedCount > 0) {
+        return `${allowedCount} выбранных slug`;
+      }
+      if (patternCount > 0) {
+        return `${patternCount} кастомных паттернов`;
+      }
+      return "выбранные slug";
+    }
     default:
       return "выбранные slug";
   }
@@ -49,9 +89,24 @@ function isSlugMatchedByFlashSale({ slug, sale }) {
   if (sale.conditionType === "sequential_digits") return hasSequentialDigits(digits);
   if (sale.conditionType === "custom") {
     const payload = sale.conditionValue && typeof sale.conditionValue === "object" ? sale.conditionValue : {};
-    if (Array.isArray(payload.allowedSlugs)) {
-      const set = new Set(payload.allowedSlugs.map((item) => normalizeSlug(item)));
-      return set.has(normalized);
+    const allowed = Array.isArray(payload.allowedSlugs)
+      ? Array.from(
+          new Set(
+            payload.allowedSlugs
+              .map((item) => normalizeSlug(item))
+              .filter((item) => SLUG_PATTERN.test(item)),
+          ),
+        )
+      : [];
+    if (allowed.length && allowed.includes(normalized)) {
+      return true;
+    }
+
+    const patterns = Array.isArray(payload.slugPatterns)
+      ? Array.from(new Set(payload.slugPatterns.map((item) => normalizeCustomPattern(item)).filter(Boolean)))
+      : [];
+    if (patterns.length) {
+      return patterns.some((pattern) => isSlugMatchingMask(normalized, pattern));
     }
     return false;
   }
@@ -115,6 +170,10 @@ async function getFlashSaleSlotsLeft(sale) {
             ),
           )
         : [];
+      const hasPatterns = Array.isArray(payload.slugPatterns) && payload.slugPatterns.length > 0;
+      if (hasPatterns) {
+        return null;
+      }
       if (!allowed.length) {
         return null;
       }

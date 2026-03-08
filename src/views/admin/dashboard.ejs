@@ -531,6 +531,14 @@
               <option value="sequential_digits">123/456</option>
               <option value="custom">Кастом</option>
             </select>
+            <div class="hidden md:col-span-2" data-flash-custom-wrap>
+              <textarea name="conditionPatternInput" rows="2"
+                placeholder="Кастомные правила: AAA000, AAA***, ***777, A*A12? (через запятую, пробел или новую строку)"
+                class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm font-mono uppercase"></textarea>
+              <p class="mt-1 text-xs text-neutral-500">
+                Для `custom`: точный slug или маска 6 символов. `*` = любой символ, `?` = один символ.
+              </p>
+            </div>
             <input name="startsAt" type="datetime-local" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm"
               required />
             <input name="endsAt" type="datetime-local" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm"

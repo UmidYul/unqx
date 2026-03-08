@@ -77,7 +77,7 @@ async function sendEmailVerificationOtp({ email, firstName, code }) {
     ${codeBlock(code)}
     <p>Код действителен 10 минут.</p>
     <p>Не передавай этот код никому.</p>
-    <p>Если ты не регистрировался на UNQX — просто проигнорируй это письмо.</p>
+    <p>Если ты не регистрировался на UNQX - просто проигнорируй это письмо.</p>
   `;
   await sendEmail({
     to: email,
@@ -92,7 +92,7 @@ async function sendPasswordResetOtp({ email, firstName, code }) {
     <p>Код для сброса пароля:</p>
     ${codeBlock(code)}
     <p>Код действителен 1 час.</p>
-    <p>Если ты не запрашивал сброс — просто проигнорируй это письмо.</p>
+    <p>Если ты не запрашивал сброс - просто проигнорируй это письмо.</p>
   `;
   await sendEmail({
     to: email,
@@ -105,7 +105,7 @@ async function sendWelcomeEmail({ email, firstName }) {
   const body = `
     <p>Привет, ${escapeHtml(firstName || "друг")}!</p>
     <p>Твой аккаунт активирован.</p>
-    <p>Следующий шаг — займи свой slug.</p>
+    <p>Следующий шаг - займи свой slug.</p>
     <p><a href="https://unqx.uz" style="display:inline-block; padding:10px 14px; border-radius:10px; background:#111; color:#fff; text-decoration:none; font-weight:600;">Занять slug</a></p>
   `;
   await sendEmail({
@@ -136,7 +136,7 @@ async function sendAccountDeactivatedEmail({ email, firstName, restoreUntil }) {
     <p>Привет, ${escapeHtml(firstName || "друг")}!</p>
     <p>Твой аккаунт UNQX деактивирован по твоему запросу.</p>
     <p>Восстановить доступ можно до <strong>${escapeHtml(untilLabel)}</strong>.</p>
-    <p>Если захочешь вернуться — просто войди на UNQX и запусти восстановление аккаунта.</p>
+    <p>Если захочешь вернуться - просто войди на UNQX и запусти восстановление аккаунта.</p>
   `;
   await sendEmail({
     to: email,
@@ -180,7 +180,7 @@ async function sendAccountReactivatedEmail({ email, firstName }) {
   const body = `
     <p>Привет, ${escapeHtml(firstName || "друг")}!</p>
     <p>Твой аккаунт UNQX успешно восстановлен и снова активен.</p>
-    <p>Если это были не ты — срочно смени пароль.</p>
+    <p>Если это были не ты - срочно смени пароль.</p>
   `;
   await sendEmail({
     to: email,

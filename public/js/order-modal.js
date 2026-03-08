@@ -29,6 +29,8 @@ const DEFAULT_PRICING = {
     root,
     backdrop: document.getElementById("order-modal-backdrop"),
     dialog: document.getElementById("order-modal-dialog"),
+    progressBarInner: document.getElementById("order-modal-progress-bar-inner"),
+    progressLabel: document.getElementById("order-modal-progress-label"),
     progressAuth: document.getElementById("order-modal-progress-auth"),
     progressNoAuth: document.getElementById("order-modal-progress-no-auth"),
     stepAuth: document.getElementById("order-modal-step-auth"),
@@ -120,6 +122,13 @@ const DEFAULT_PRICING = {
     lastOpenOptions: {},
     pricing: { ...DEFAULT_PRICING, userPlan: "none" },
     slugPricing: { ...DEFAULT_SLUG_PRICING },
+  };
+
+  const STEP_PROGRESS = {
+    auth: { width: "25%", label: "Шаг 1 из 4", line: "① Slug · ② Тариф · ③ Дополнительно · ④ Подтверждение" },
+    form: { width: "25%", label: "Шаг 1 из 4", line: "① Slug · ② Тариф · ③ Дополнительно · ④ Подтверждение" },
+    pending: { width: "100%", label: "Незавершённый заказ", line: "Продолжите оплату или отмените заказ" },
+    success: { width: "100%", label: "Готово", line: "Заявка создана · ожидаем оплату" },
   };
 
   function setCsrfToken(nextToken) {
@@ -405,6 +414,20 @@ const DEFAULT_PRICING = {
   }
 
   function setStep(step) {
+    const progress = STEP_PROGRESS[step] || STEP_PROGRESS.form;
+    if (dom.progressBarInner instanceof HTMLElement) {
+      dom.progressBarInner.style.width = progress.width;
+    }
+    if (dom.progressLabel instanceof HTMLElement) {
+      dom.progressLabel.textContent = progress.label;
+    }
+    if (dom.progressAuth instanceof HTMLElement) {
+      dom.progressAuth.textContent = progress.line;
+    }
+    if (dom.progressNoAuth instanceof HTMLElement) {
+      dom.progressNoAuth.textContent = progress.line;
+    }
+
     dom.stepAuth.classList.toggle("hidden", step !== "auth");
     dom.stepPending?.classList.toggle("hidden", step !== "pending");
     dom.stepForm.classList.toggle("hidden", step !== "form");

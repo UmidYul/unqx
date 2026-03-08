@@ -1240,9 +1240,15 @@ router.post(
       return;
     }
 
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { notificationsEnabled: true },
+    });
+
     res.json({
       ok: true,
       url: `https://t.me/${encodeURIComponent(botUsername)}?start=notify`,
+      notificationsEnabled: true,
     });
   }),
 );
@@ -1259,9 +1265,10 @@ router.post(
       where: { id: user.id },
       data: {
         telegramChatId: null,
+        notificationsEnabled: false,
       },
     });
-    res.json({ ok: true });
+    res.json({ ok: true, notificationsEnabled: false });
   }),
 );
 

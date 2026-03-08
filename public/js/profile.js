@@ -1,9 +1,6 @@
 (function () {
   const root = document.body;
   if (!root || root.getAttribute("data-page") !== "profile-page") return;
-  const telegramBotUsername = String(root.getAttribute("data-telegram-bot-username") || "")
-    .replace(/^@+/, "")
-    .trim();
   const reactivationWindowDays = Math.max(1, Number(root.getAttribute("data-reactivation-window-days") || 30));
 
   const $ = (s) => document.querySelector(s);
@@ -426,7 +423,7 @@
       el.slugs.innerHTML = renderStateCard({
         icon: "shopping",
         title: "Сначала выбери тариф",
-        text: "Чтобы занять slug и создать визитку — купи Базовый или Премиум тариф.",
+        text: "Чтобы занять slug и создать визитку - купи Базовый или Премиум тариф.",
         buttonId: "profile-slugs-order-btn",
         buttonLabel: "Занять slug →",
       });
@@ -636,7 +633,7 @@
     window.CardView.mountCardView(el.cPrev, card, {
       shareUrl: primarySlug ? `${location.origin}/${encodeURIComponent(primarySlug.fullSlug)}` : location.href,
       showPausedBanner: primarySlug?.status === "paused",
-      pausedText: "Визитка на паузе — посетители видят заглушку",
+      pausedText: "Визитка на паузе - посетители видят заглушку",
       viewsLabel: `${Number(primarySlug?.stats?.views || 0).toLocaleString("ru-RU")} просмотров`,
     });
   };
@@ -793,6 +790,17 @@
     el.reqBanner.classList.add("hidden");
   };
 
+  const renderTelegramNotificationActions = (enabled) => {
+    const resolvedEnabled =
+      typeof enabled === "boolean" ? enabled : Boolean(s.user && s.user.notificationsEnabled);
+    if (el.stLinkTelegram instanceof HTMLButtonElement) {
+      el.stLinkTelegram.classList.toggle("hidden", resolvedEnabled);
+    }
+    if (el.stUnlinkTelegram instanceof HTMLButtonElement) {
+      el.stUnlinkTelegram.classList.toggle("hidden", !resolvedEnabled);
+    }
+  };
+
   const renderSettings = () => {
     if (!s.user) return;
     if (el.stName) el.stName.value = s.user.displayName || s.user.firstName || "";
@@ -809,6 +817,7 @@
     }
     if (el.stTg) el.stTg.value = s.user.username ? `@${s.user.username}` : "";
     if (el.stNotif) el.stNotif.checked = Boolean(s.user.notificationsEnabled);
+    renderTelegramNotificationActions(Boolean(s.user.notificationsEnabled));
     if (el.stDirectory) el.stDirectory.checked = Boolean(s.user.showInDirectory);
     if (el.verificationStatus) {
       const latest = s.verification?.latestRequest;
@@ -941,7 +950,7 @@
 
     const tips = [];
     if (Number(score.scoreBracelet || 0) === 0) {
-      tips.push('<div class="flex items-center justify-between gap-2"><span>Добавь NFC-браслет — +100 к Score</span><button type="button" data-order-link data-order-bracelet="1" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold">Заказать браслет</button></div>');
+      tips.push('<div class="flex items-center justify-between gap-2"><span>Добавь NFC-браслет - +100 к Score</span><button type="button" data-order-link data-order-bracelet="1" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold">Заказать браслет</button></div>');
     }
     if (Number(score.scorePlan || 0) === 0) {
       const price = Number(s.pricing?.premiumUpgradePrice || 80_000).toLocaleString("ru-RU");
@@ -1862,12 +1871,17 @@
       }
 
       renderSidebar();
+      renderTelegramNotificationActions(Boolean(payload?.user?.notificationsEnabled));
       el.stStatus.textContent = "Сохранено";
       el.stStatus.className = "text-sm text-emerald-700";
     } catch (error) {
       el.stStatus.textContent = `${error.message}`;
       el.stStatus.className = "text-sm text-red-700";
     }
+  });
+
+  el.stNotif?.addEventListener("change", () => {
+    renderTelegramNotificationActions(Boolean(el.stNotif?.checked));
   });
 
   el.stDeact?.addEventListener("click", () => {
@@ -1925,24 +1939,56 @@
   });
 
   el.stLinkTelegram?.addEventListener("click", async () => {
-    if (!telegramBotUsername) {
-      showModal("Ошибка", "Telegram бот не настроен. Укажи username бота в настройках сервера.");
-      return;
+    const btn = el.stLinkTelegram;
+    if (!(btn instanceof HTMLButtonElement)) return;
+    btn.disabled = true;
+    try {
+      const payload = await api("/api/profile/telegram/link/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      const url = String(payload?.url || "").trim();
+      if (!url) {
+        throw new Error("Не удалось получить ссылку Telegram");
+      }
+      if (s.user) {
+        s.user.notificationsEnabled = true;
+      }
+      if (el.stNotif instanceof HTMLInputElement) {
+        el.stNotif.checked = true;
+      }
+      renderTelegramNotificationActions(true);
+      window.open(url, "_blank", "noopener,noreferrer");
+    } catch (error) {
+      showModal("Ошибка", error.message || "Не удалось подключить Telegram");
+    } finally {
+      btn.disabled = false;
     }
-    const url = `https://t.me/${encodeURIComponent(telegramBotUsername)}?start=notify`;
-    window.open(url, "_blank", "noopener,noreferrer");
   });
 
   el.stUnlinkTelegram?.addEventListener("click", async () => {
+    const btn = el.stUnlinkTelegram;
+    if (!(btn instanceof HTMLButtonElement)) return;
+    btn.disabled = true;
     try {
       await api("/api/profile/telegram/link/unlink", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({}),
       });
+      if (s.user) {
+        s.user.notificationsEnabled = false;
+      }
+      if (el.stNotif instanceof HTMLInputElement) {
+        el.stNotif.checked = false;
+      }
+      renderTelegramNotificationActions(false);
       showModal("Готово", "Telegram уведомления отключены", "Ок");
     } catch (error) {
       showModal("Ошибка", error.message || "Не удалось отключить Telegram");
+    } finally {
+      btn.disabled = false;
     }
   });
 

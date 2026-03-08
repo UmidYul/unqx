@@ -544,7 +544,7 @@ function initSlugAvailability(orderApi) {
 
     if (state === "pending") {
       statusIcon.innerHTML = ICON_INFO;
-      statusText.textContent = `${slug} на рассмотрении — скоро освободится`;
+      statusText.textContent = `${slug} на рассмотрении - скоро освободится`;
       statusNote.textContent = "Добавь UNQ в лист ожидания, и мы сообщим в Telegram.";
       renderSuggestions([]);
       setTakenOwner(null);
@@ -912,6 +912,9 @@ function initNextDropOneClick() {
   const card = document.querySelector("[data-next-drop-card]");
   const heroInput = document.getElementById("home-slug-input");
   const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "";
+  const telegramBotUsername = String(document.body?.getAttribute("data-telegram-bot-username") || "")
+    .replace(/^@+/, "")
+    .trim();
 
   if (!(cta instanceof HTMLButtonElement) || !(card instanceof HTMLElement)) {
     return;
@@ -951,7 +954,32 @@ function initNextDropOneClick() {
         return;
       }
 
+      const payload = await response.json().catch(() => ({}));
       if (!response.ok) {
+        const code = String(payload.code || "").toUpperCase();
+        if (code === "TELEGRAM_NOT_LINKED") {
+          if (telegramBotUsername) {
+            window.open(`https://t.me/${encodeURIComponent(telegramBotUsername)}?start=notify`, "_blank", "noopener,noreferrer");
+            showToast("Подключи Telegram-бота и повтори подписку.", "info");
+          } else {
+            showToast("Подключи Telegram в профиле, затем повтори подписку.", "error");
+          }
+          cta.disabled = false;
+          cta.textContent = previous;
+          return;
+        }
+        if (code === "DROP_ALREADY_LIVE") {
+          showToast("Дроп уже стартовал. Перейди в раздел релизов и выбери slug.", "info");
+          cta.disabled = false;
+          cta.textContent = previous;
+          return;
+        }
+        if (code === "DROP_CLOSED") {
+          showToast("Этот дроп уже завершён.", "error");
+          cta.disabled = false;
+          cta.textContent = previous;
+          return;
+        }
         throw new Error("waitlist_failed");
       }
 

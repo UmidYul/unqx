@@ -16,6 +16,11 @@
   const headers = (extra = {}) => ({ ...(csrf ? { "X-CSRF-Token": csrf } : {}), ...extra });
   const P = (v) => `${Number(v || 0).toLocaleString("ru-RU")} сум`;
   const D = (v) => (v ? new Date(v).toLocaleString("ru-RU") : "-");
+  const FLASH_CONDITION_TYPES = new Set(["all", "pattern_000", "pattern_aaa", "sequential_digits", "custom"]);
+  const SLUG_RE = /^[A-Z]{3}[0-9]{3}$/;
+  const FULL_MASK_RE = /^[A-Z0-9*?]{6}$/;
+  const LETTER_MASK_RE = /^[A-Z*?]{3}$/;
+  const DIGIT_MASK_RE = /^[0-9*?]{3}$/;
   const ICONS = {
     more: '<circle cx="12" cy="5" r="1.7" fill="currentColor"/><circle cx="12" cy="12" r="1.7" fill="currentColor"/><circle cx="12" cy="19" r="1.7" fill="currentColor"/>',
     eyeOff: '<path d="M3 3 21 21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M10.6 10.6a2 2 0 0 0 2.8 2.8" stroke="currentColor" stroke-width="1.8"/><path d="M9 5.3a10.9 10.9 0 0 1 12 6.7s-3.5 6-10 6a10.8 10.8 0 0 1-5-.9" stroke="currentColor" stroke-width="1.8"/>',
@@ -35,6 +40,90 @@
   function closeAllRowMenus() {
     document.querySelectorAll(".admin-row-menu").forEach((node) => node.classList.add("is-hidden"));
     document.querySelectorAll("[data-kebab-toggle]").forEach((node) => node.setAttribute("aria-expanded", "false"));
+  }
+
+  function tokenizePatternInput(raw) {
+    return String(raw || "")
+      .split(/[\s,;]+/g)
+      .map((item) => String(item || "").trim())
+      .filter(Boolean);
+  }
+
+  function normalizePatternToken(token) {
+    const cleaned = String(token || "")
+      .toUpperCase()
+      .replace(/[^A-Z0-9*?]/g, "");
+    if (!cleaned) return null;
+    if (SLUG_RE.test(cleaned)) return { kind: "slug", value: cleaned };
+    if (FULL_MASK_RE.test(cleaned)) return { kind: "mask", value: cleaned };
+    if (LETTER_MASK_RE.test(cleaned)) return { kind: "mask", value: `${cleaned}***` };
+    if (DIGIT_MASK_RE.test(cleaned)) return { kind: "mask", value: `***${cleaned}` };
+    return null;
+  }
+
+  function buildFlashCustomConditionValue(rawPatternInput) {
+    const allowedSlugs = [];
+    const slugPatterns = [];
+    const seen = new Set();
+    let droppedCount = 0;
+
+    for (const token of tokenizePatternInput(rawPatternInput)) {
+      const parsed = normalizePatternToken(token);
+      if (!parsed) {
+        droppedCount += 1;
+        continue;
+      }
+      const key = `${parsed.kind}:${parsed.value}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      if (parsed.kind === "slug") {
+        allowedSlugs.push(parsed.value);
+      } else {
+        slugPatterns.push(parsed.value);
+      }
+    }
+
+    return {
+      allowedSlugs,
+      slugPatterns,
+      droppedCount,
+    };
+  }
+
+  function resolveFlashConditionLabel(item) {
+    const type = String(item?.conditionType || "all");
+    if (type === "all") return "Все slug";
+    if (type === "pattern_000") return "Slug с 000";
+    if (type === "pattern_aaa") return "Slug с одинаковыми буквами";
+    if (type === "sequential_digits") return "Slug с последовательными цифрами";
+    if (type !== "custom") return "Кастом";
+    const value = item?.conditionValue && typeof item.conditionValue === "object" ? item.conditionValue : {};
+    const slugPatterns = Array.isArray(value.slugPatterns) ? value.slugPatterns.length : 0;
+    const allowedSlugs = Array.isArray(value.allowedSlugs) ? value.allowedSlugs.length : 0;
+    if (slugPatterns && allowedSlugs) return `Кастом: ${slugPatterns} маск., ${allowedSlugs} точн. slug`;
+    if (slugPatterns) return `Кастом: ${slugPatterns} маск.`;
+    if (allowedSlugs) return `Кастом: ${allowedSlugs} точн. slug`;
+    return "Кастом";
+  }
+
+  function setupFlashCreateForm() {
+    const form = document.getElementById("flash-sales-create-form");
+    if (!(form instanceof HTMLFormElement)) return;
+    const conditionType = form.elements.namedItem("conditionType");
+    const customInput = form.elements.namedItem("conditionPatternInput");
+    const customWrap = form.querySelector("[data-flash-custom-wrap]");
+    if (!(conditionType instanceof HTMLSelectElement) || !(customInput instanceof HTMLTextAreaElement) || !(customWrap instanceof HTMLElement)) {
+      return;
+    }
+    const sync = () => {
+      const isCustom = conditionType.value === "custom";
+      customWrap.classList.toggle("hidden", !isCustom);
+      customInput.disabled = !isCustom;
+      customInput.required = isCustom;
+      if (!isCustom) customInput.value = "";
+    };
+    conditionType.addEventListener("change", sync);
+    sync();
   }
 
   async function jsonFetch(url, options = {}) {
@@ -68,21 +157,21 @@
 
     table.innerHTML = (board.items || []).length
       ? board.items
-          .map(
-            (item) => `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3">#${item.rank}</td><td class="px-4 py-3 font-mono">${item.slug}</td><td class="px-4 py-3">${item.ownerName}</td><td class="px-4 py-3">${Number(item.views || 0).toLocaleString("ru-RU")}</td><td class="px-4 py-3">${item.delta == null ? "—" : item.delta > 0 ? `+${item.delta}` : item.delta < 0 ? `${item.delta}` : "0"}</td><td class="px-4 py-3">${item.plan === "premium" ? "ПРЕМИУМ" : "БАЗОВЫЙ"}</td><td class="px-4 py-3"><div class="admin-row-actions">${menuWrap([
-              menuItem({ label: "Исключить из лидерборда", icon: "eyeOff", attrs: `data-a="exclude-lb" data-slug="${item.slug}"` }),
-              menuItem({ label: "Сбросить счётчик", icon: "refresh", attrs: `data-a="reset-lb-user" data-tg="${item.ownerTelegramId || ""}"` }),
-            ].join(""))}</div></td></tr>`,
-          )
-          .join("")
+        .map(
+          (item) => `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3">#${item.rank}</td><td class="px-4 py-3 font-mono">${item.slug}</td><td class="px-4 py-3">${item.ownerName}</td><td class="px-4 py-3">${Number(item.views || 0).toLocaleString("ru-RU")}</td><td class="px-4 py-3">${item.delta == null ? "—" : item.delta > 0 ? `+${item.delta}` : item.delta < 0 ? `${item.delta}` : "0"}</td><td class="px-4 py-3">${item.plan === "premium" ? "ПРЕМИУМ" : "БАЗОВЫЙ"}</td><td class="px-4 py-3"><div class="admin-row-actions">${menuWrap([
+            menuItem({ label: "Исключить из лидерборда", icon: "eyeOff", attrs: `data-a="exclude-lb" data-slug="${item.slug}"` }),
+            menuItem({ label: "Сбросить счётчик", icon: "refresh", attrs: `data-a="reset-lb-user" data-tg="${item.ownerTelegramId || ""}"` }),
+          ].join(""))}</div></td></tr>`,
+        )
+        .join("")
       : '<tr><td colspan="7" class="px-3 py-8 text-center text-neutral-500">Нет данных</td></tr>';
 
     susp.innerHTML = (suspicious.items || []).length
       ? suspicious.items
-          .map(
-            (item) => `<tr class="border-t border-neutral-100"><td class="px-4 py-3 font-mono">${item.fullSlug}</td><td class="px-4 py-3">${item.viewsCount}</td><td class="px-4 py-3">${item.windowMinutes} мин</td><td class="px-4 py-3">${D(item.occurredAt)}</td></tr>`,
-          )
-          .join("")
+        .map(
+          (item) => `<tr class="border-t border-neutral-100"><td class="px-4 py-3 font-mono">${item.fullSlug}</td><td class="px-4 py-3">${item.viewsCount}</td><td class="px-4 py-3">${item.windowMinutes} мин</td><td class="px-4 py-3">${D(item.occurredAt)}</td></tr>`,
+        )
+        .join("")
       : '<tr><td colspan="4" class="px-4 py-8 text-center text-neutral-500">Нет флагов</td></tr>';
   }
 
@@ -113,10 +202,10 @@
 
     table.innerHTML = (rowsPayload.items || []).length
       ? rowsPayload.items
-          .map(
-            (item) => `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3">${item.referrer?.username ? `@${item.referrer.username}` : item.referrerTelegramId}</td><td class="px-4 py-3">${item.referred?.username ? `@${item.referred.username}` : item.referredTelegramId}</td><td class="px-4 py-3">${D(item.createdAt)}</td><td class="px-4 py-3">${item.status}</td><td class="px-4 py-3">${item.rewardType || "—"}</td><td class="px-4 py-3"><div class="admin-row-actions">${menuWrap(menuItem({ label: "Выдать награду вручную", icon: "gift", attrs: `data-a="reward-ref" data-id="${item.id}"` }))}</div></td></tr>`,
-          )
-          .join("")
+        .map(
+          (item) => `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3">${item.referrer?.username ? `@${item.referrer.username}` : item.referrerTelegramId}</td><td class="px-4 py-3">${item.referred?.username ? `@${item.referred.username}` : item.referredTelegramId}</td><td class="px-4 py-3">${D(item.createdAt)}</td><td class="px-4 py-3">${item.status}</td><td class="px-4 py-3">${item.rewardType || "—"}</td><td class="px-4 py-3"><div class="admin-row-actions">${menuWrap(menuItem({ label: "Выдать награду вручную", icon: "gift", attrs: `data-a="reward-ref" data-id="${item.id}"` }))}</div></td></tr>`,
+        )
+        .join("")
       : '<tr><td colspan="6" class="px-3 py-8 text-center text-neutral-500">Нет данных</td></tr>';
   }
 
@@ -126,21 +215,21 @@
     const payload = await jsonFetch("/api/admin/flash-sales");
     table.innerHTML = (payload.items || []).length
       ? await Promise.all(
-          payload.items.map(async (item) => {
-            let stats = { requestsCount: 0, discountSum: 0 };
-            try {
-              stats = await jsonFetch(`/api/admin/flash-sales/${item.id}/stats`);
-            } catch {
-              stats = { requestsCount: 0, discountSum: 0 };
-            }
-            return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3">${item.title}</td><td class="px-4 py-3">-${item.discountPercent}%</td><td class="px-4 py-3">${D(item.startsAt)} - ${D(item.endsAt)}</td><td class="px-4 py-3">${item.isActive ? "Активен" : "Остановлен"}</td><td class="px-4 py-3">${stats.requestsCount} заявок · ${P(stats.discountSum)}</td><td class="px-4 py-3"><div class="admin-row-actions">${menuWrap([
-              menuItem({ label: "Редактировать", icon: "pen", attrs: 'disabled="disabled"' }),
-              menuItem({ label: "Остановить досрочно", icon: "square", attrs: `data-a="stop-flash" data-id="${item.id}"` }),
-              menuSeparator(),
-              menuItem({ label: "Удалить", icon: "trash", attrs: 'disabled="disabled"', danger: true }),
-            ].join(""))}</div></td></tr>`;
-          }),
-        ).then((rows) => rows.join(""))
+        payload.items.map(async (item) => {
+          let stats = { requestsCount: 0, discountSum: 0 };
+          try {
+            stats = await jsonFetch(`/api/admin/flash-sales/${item.id}/stats`);
+          } catch {
+            stats = { requestsCount: 0, discountSum: 0 };
+          }
+          return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3"><p class="font-semibold">${item.title}</p><p class="mt-1 text-xs text-neutral-500">${resolveFlashConditionLabel(item)}</p></td><td class="px-4 py-3">-${item.discountPercent}%</td><td class="px-4 py-3">${D(item.startsAt)} - ${D(item.endsAt)}</td><td class="px-4 py-3">${item.isActive ? "Активен" : "Остановлен"}</td><td class="px-4 py-3">${stats.requestsCount} заявок · ${P(stats.discountSum)}</td><td class="px-4 py-3"><div class="admin-row-actions">${menuWrap([
+            menuItem({ label: "Редактировать", icon: "pen", attrs: 'disabled="disabled"' }),
+            menuItem({ label: "Остановить досрочно", icon: "square", attrs: `data-a="stop-flash" data-id="${item.id}"` }),
+            menuSeparator(),
+            menuItem({ label: "Удалить", icon: "trash", attrs: 'disabled="disabled"', danger: true }),
+          ].join(""))}</div></td></tr>`;
+        }),
+      ).then((rows) => rows.join(""))
       : '<tr><td colspan="6" class="px-3 py-8 text-center text-neutral-500">Нет flash sale</td></tr>';
   }
 
@@ -210,6 +299,29 @@
     const form = event.currentTarget;
     if (!(form instanceof HTMLFormElement)) return;
     const fd = new FormData(form);
+    const conditionType = String(fd.get("conditionType") || "all");
+    if (!FLASH_CONDITION_TYPES.has(conditionType)) {
+      await showAlert("Некорректный тип условия flash sale");
+      return;
+    }
+
+    let conditionValue = null;
+    if (conditionType === "custom") {
+      const customRaw = String(fd.get("conditionPatternInput") || "");
+      const custom = buildFlashCustomConditionValue(customRaw);
+      if (!custom.allowedSlugs.length && !custom.slugPatterns.length) {
+        await showAlert("Добавьте хотя бы один кастомный slug или паттерн");
+        return;
+      }
+      conditionValue = {
+        allowedSlugs: custom.allowedSlugs,
+        slugPatterns: custom.slugPatterns,
+      };
+      if (custom.droppedCount > 0) {
+        await showAlert(`Часть значений пропущена (${custom.droppedCount}) - оставлены только валидные slug/паттерны.`);
+      }
+    }
+
     await jsonFetch("/api/admin/flash-sales", {
       method: "POST",
       headers: headers({ "Content-Type": "application/json" }),
@@ -217,7 +329,8 @@
         title: String(fd.get("title") || ""),
         description: String(fd.get("description") || ""),
         discountPercent: Number(fd.get("discountPercent") || 0),
-        conditionType: String(fd.get("conditionType") || "all"),
+        conditionType,
+        conditionValue,
         startsAt: new Date(String(fd.get("startsAt") || "")).toISOString(),
         endsAt: new Date(String(fd.get("endsAt") || "")).toISOString(),
         notifyTelegram: fd.get("notifyTelegram") === "on",
@@ -327,5 +440,6 @@
   if (tab === "referrals") void loadReferralsAdmin();
   if (tab === "flash-sales") void loadFlashSalesAdmin();
   if (tab === "drops") void loadDropsAdmin();
+  setupFlashCreateForm();
 })();
 

@@ -1,8 +1,8 @@
 [05.03.2026 0:02] Yuldashev: Add a new "Настройки" section to the admin panel sidebar.
 This section controls all platform-wide configurable values.
-No hardcoded values anywhere in the codebase — 
+No hardcoded values anywhere in the codebase - 
 everything reads from the settings database table.
-No design changes — follow existing admin design system.
+No design changes - follow existing admin design system.
 Icons from lucide-react only. No emoji.
 
 ---
@@ -11,7 +11,7 @@ Icons from lucide-react only. No emoji.
 
 platform_settings table:
   - key (unique string, e.g. "bracelet_price")
-  - value (JSON — handles strings, numbers, arrays, objects)
+  - value (JSON - handles strings, numbers, arrays, objects)
   - group (e.g. "pricing" | "algorithm" | "plans" | "contacts" | "platform")
   - label (human-readable name shown in admin)
   - description (hint text shown under the field)
@@ -25,7 +25,7 @@ and refreshed every 60 seconds or on manual save.
 
 ---
 
-# SETTINGS PAGE — admin sidebar: "Настройки"
+# SETTINGS PAGE - admin sidebar: "Настройки"
 
 Icon: Settings
 
@@ -42,7 +42,7 @@ Tabs:
 
 ---
 
-## TAB 1 — ТАРИФЫ
+## TAB 1 - ТАРИФЫ
 
 Controls all plan-related values.
 Changes apply immediately across the entire platform
@@ -136,14 +136,14 @@ On save:
 - Updates platform_settings table
 - Invalidates settings cache
 - Landing page pricing section re-renders with new values on next load
-- Active user plans are NOT affected — only new purchases use new price
+- Active user plans are NOT affected - only new purchases use new price
 - Show success toast: "Тарифы обновлены"
 - Show warning if price changed:
   "Изменение цены не затрагивает существующие подписки"
 
 ---
 
-## TAB 2 — АЛГОРИТМ ЦЕНЫ SLUG
+## TAB 2 - АЛГОРИТМ ЦЕНЫ SLUG
 
 Controls the slug price calculation formula.
 Changes apply immediately to:
@@ -159,7 +159,7 @@ Changes apply immediately to:
   type: number
   default: 100000
 
-### Множители — Буквы
+### Множители - Буквы
 
 Each multiplier editable as a number input:
 
@@ -182,7 +182,7 @@ Each multiplier editable as a number input:
   key: slug_mult_letters_random
   type: number
   default: 1
-[05.03.2026 0:02] Yuldashev: ### Множители — Цифры
+[05.03.2026 0:02] Yuldashev: ### Множители - Цифры
 
 - "000"
   key: slug_mult_digits_zeros
@@ -246,7 +246,7 @@ On save:
 
 ---
 
-## TAB 3 — БРАСЛЕТ
+## TAB 3 - БРАСЛЕТ
 
 - Название товара
   key: bracelet_name
@@ -285,7 +285,7 @@ On save:
 - Примечание под кнопкой заказа
   key: bracelet_note
   type: text
-  default: "Браслет привязан к твоему slug — работает только с активной визиткой UNQX"
+  default: "Браслет привязан к твоему slug - работает только с активной визиткой UNQX"
 
 ### Save behavior
 
@@ -295,7 +295,7 @@ Success toast: "Данные браслета обновлены"
 
 ---
 
-## TAB 4 — КОНТАКТЫ
+## TAB 4 - КОНТАКТЫ
 
 All organization contact info used across the platform.
 
@@ -336,7 +336,7 @@ All organization contact info used across the platform.
   type: text
   default: "в течение 15 минут"
   Used in: order form subtitle
-  "Заполни форму — мы свяжемся [contact_response_time]"
+  "Заполни форму - мы свяжемся [contact_response_time]"
 
 - Текст для ошибки отправки заявки
   key: contact_error_fallback
@@ -353,7 +353,7 @@ Success toast: "Контакты обновлены"
 
 ---
 
-## TAB 5 — ПЛАТФОРМА
+## TAB 5 - ПЛАТФОРМА
 
 General platform-wide toggles and content.
 
@@ -428,7 +428,7 @@ Each is a toggle with label and description:
   type: number
   default: 20
 
-- Реферальная программа — за N друзей (уровни)
+- Реферальная программа - за N друзей (уровни)
   key: referral_tiers
   type: json
   default:
@@ -455,12 +455,12 @@ When maintenance_mode = true:
   All public pages show maintenance screen
   Admin panel remains accessible
   Show red warning banner at top of admin:
-  "Режим обслуживания включён — сайт недоступен для пользователей"
+  "Режим обслуживания включён - сайт недоступен для пользователей"
   with "Отключить" button inline
 
 ---
 
-## TAB 6 — ЛОГ ИЗМЕНЕНИЙ
+## TAB 6 - ЛОГ ИЗМЕНЕНИЙ
 
 Read-only table of all settings changes.
 

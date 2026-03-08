@@ -441,6 +441,7 @@ async function findSlugByFullSlugWithLegacyFallback(fullSlug) {
         price: true,
         ownerId: true,
         status: true,
+        pauseMessage: true,
         isPrimary: true,
         createdAt: true,
         updatedAt: true,
@@ -546,13 +547,14 @@ function mapProfileButtons(rawButtons) {
       const type = allowedTypes.has(typeRaw) ? typeRaw : "other";
       const label = String(obj.label || "").trim().slice(0, 50);
       const href = String(obj.href || obj.url || obj.value || "").trim();
-      if (!label || !href) {
+      const normalizedHref = normalizeButtonUrl(href, type, label);
+      if (!label || !normalizedHref || !isSupportedButtonHref(normalizedHref)) {
         return null;
       }
       return {
         type,
         label,
-        url: href,
+        url: normalizedHref,
         isActive: true,
       };
     })
@@ -576,6 +578,66 @@ function classifySectorFromTags(tags) {
   if (/(маркет|marketing|smm|seo|brand)/i.test(joined)) return "marketing";
   if (/(it|dev|developer|frontend|backend|qa|data|ai)/i.test(joined)) return "it";
   return "other";
+}
+
+function isSupportedButtonHref(value) {
+  return /^(https?:\/\/|mailto:|tel:)/i.test(String(value || "").trim());
+}
+
+function normalizeButtonUrl(rawUrl, type, label) {
+  const input = String(rawUrl || "").trim();
+  const kind = String(type || "other")
+    .trim()
+    .toLowerCase();
+  const labelRaw = String(label || "").trim().toLowerCase();
+  const mapLikeLabel = /(карта|map|maps|geo|location|локац)/i.test(labelRaw);
+  if (!input) return "";
+  if (isSupportedButtonHref(input)) return input;
+  if (kind === "map" || mapLikeLabel) {
+    return `https://maps.google.com/?q=${encodeURIComponent(input)}`;
+  }
+  if (kind === "phone") {
+    const compact = input.replace(/\s+/g, "");
+    return compact ? `tel:${compact}` : "";
+  }
+  if (kind === "email") {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input) ? `mailto:${input}` : "";
+  }
+  if (kind === "website" || kind === "other") {
+    if (/^[^\s]+\.[^\s]+$/.test(input) && !input.startsWith("@")) {
+      return `https://${input}`;
+    }
+  }
+  if (kind === "telegram") {
+    const normalized = input.replace(/^@+/, "").replace(/^https?:\/\/t\.me\//i, "").trim();
+    return normalized ? `https://t.me/${normalized}` : "";
+  }
+  if (kind === "instagram") {
+    const normalized = input
+      .replace(/^@+/, "")
+      .replace(/^https?:\/\/(www\.)?instagram\.com\//i, "")
+      .replace(/\/+$/, "")
+      .trim();
+    return normalized ? `https://instagram.com/${normalized}` : "";
+  }
+  if (kind === "tiktok") {
+    const normalized = input
+      .replace(/^https?:\/\/(www\.)?tiktok\.com\//i, "")
+      .replace(/^@+/, "")
+      .replace(/\/+$/, "")
+      .trim();
+    if (!normalized) return "";
+    return normalized.startsWith("@") ? `https://tiktok.com/${normalized}` : `https://tiktok.com/@${normalized}`;
+  }
+  if (kind === "youtube") {
+    if (/^(?:@[\w.-]+)$/i.test(input)) return `https://youtube.com/${input}`;
+    if (/^[\w.-]+$/i.test(input)) return `https://youtube.com/@${input}`;
+  }
+  if (kind === "whatsapp") {
+    const digits = input.replace(/[^\d]/g, "");
+    return digits ? `https://wa.me/${digits}` : "";
+  }
+  return input;
 }
 
 function normalizeDirectorySector(value) {
@@ -1005,6 +1067,7 @@ router.get(
       title: "Мой профиль | UNQX",
       description: "Личный кабинет UNQX: управляй визиткой, UNQ, аналитикой, заявками и настройками профиля.",
       image: defaultSocialImage,
+      telegramBotUsername: String(env.TELEGRAM_BOT_USERNAME || "").replace(/^@+/, "").trim(),
       reactivationWindowDays: Number(env.ACCOUNT_REACTIVATION_WINDOW_DAYS || 30),
       adminSession: getAdminSession(req),
     });
@@ -1054,15 +1117,63 @@ router.get(
 router.get(
   "/drops",
   asyncHandler(async (req, res) => {
+    const sessionUser = getUserSession(req);
+    const viewerUserId = sessionUser?.userId ? String(sessionUser.userId) : "";
     const rows = await prisma.drop.findMany({
       orderBy: { dropAt: "desc" },
       take: 50,
     });
+    let joinedDropIds = [];
+    if (viewerUserId && rows.length && prisma.dropWaitlist && typeof prisma.dropWaitlist.findMany === "function") {
+      try {
+        const items = await prisma.dropWaitlist.findMany({
+          where: {
+            userId: viewerUserId,
+            dropId: { in: rows.map((row) => row.id) },
+          },
+          select: { dropId: true },
+        });
+        joinedDropIds = items.map((item) => String(item.dropId || "")).filter(Boolean);
+      } catch (error) {
+        if (!error || (error.code !== "P2021" && error.code !== "P2022")) {
+          throw error;
+        }
+      }
+    }
+    const summary = rows.reduce(
+      (acc, drop) => {
+        const pool = Array.isArray(drop.slugsPool) ? drop.slugsPool : [];
+        const sold = Array.isArray(drop.soldSlugs) ? drop.soldSlugs : [];
+        const total = Number(drop.slugCount) > 0 ? Number(drop.slugCount) : pool.length;
+        const remaining = Math.max(0, total - sold.length);
+        const isPast = Boolean(drop.isFinished || drop.isSoldOut);
+        const isLive = Boolean(drop.isLive) && !isPast;
+        const isUpcoming = !isLive && !isPast;
+
+        acc.total += 1;
+        acc.totalSlots += total;
+        if (isLive) {
+          acc.live += 1;
+          acc.liveRemaining += remaining;
+        } else if (isUpcoming) {
+          acc.upcoming += 1;
+        } else {
+          acc.past += 1;
+        }
+        return acc;
+      },
+      { total: 0, live: 0, upcoming: 0, past: 0, totalSlots: 0, liveRemaining: 0 },
+    );
+
     res.render("public/drops", {
       title: "Релизы slug · UNQX",
       description: "Актуальные и прошедшие релизы slug на UNQX",
       image: defaultSocialImage,
       drops: rows,
+      dropsSummary: summary,
+      viewerUserId,
+      joinedDropIds,
+      telegramBotUsername: String(env.TELEGRAM_BOT_USERNAME || "").replace(/^@+/, "").trim(),
       adminSession: getAdminSession(req),
     });
   }),
@@ -1599,10 +1710,16 @@ router.get(
         const profileCard = slugRow.ownerId
           ? await findProfileCardByOwnerId(slugRow.ownerId)
           : null;
-        const primarySocial =
+        const socialButtons =
           profileCard && Array.isArray(profileCard.buttons)
-            ? mapProfileButtons(profileCard.buttons)[0] || null
-            : null;
+            ? mapProfileButtons(profileCard.buttons)
+            : [];
+        const usernameForTelegram = String(owner?.username || "").replace(/^@+/, "").trim();
+        const telegramFallback = usernameForTelegram
+          ? { type: "telegram", label: "Telegram", url: `https://t.me/${usernameForTelegram}`, isActive: true }
+          : null;
+        const primarySocial =
+          socialButtons.find((item) => item.type === "telegram") || socialButtons[0] || telegramFallback;
 
         res.status(200).render("public/slug-paused", {
           title: `${slug} | Пауза`,

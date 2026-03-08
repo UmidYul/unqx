@@ -10,9 +10,9 @@
   cardBg: "#ffffff" , cardBorder: "1px solid #ebebeb" , buttonBg: "#0a0a0a" , buttonText: "#ffffff" ,
   nameColor: "#0a0a0a" , mutedColor: "#aaaaaa" , avatarBg: "linear-gradient(135deg, #f5f5f5, #e8e8e8)" ,
   avatarText: "#555555" , radius: "0px" , }, forest: {
-  cardBg: "linear-gradient(170deg, #2a5a35 0%, #386e44 60%, #2e6239 100%)" , cardBorder: "1px solid #4a8a5a" ,
-  buttonBg: "linear-gradient(135deg, #2a6a3a, #3a7a45)" , buttonText: "#e8dcc0" , nameColor: "#e8dcc0" ,
-  mutedColor: "#e8dcc0" , avatarBg: "linear-gradient(135deg, #2e5a38, #3a6a42)" , avatarText: "#e8dcc0" , radius: "20px"
+  cardBg: "linear-gradient(170deg, #153c27 0%, #1f5335 56%, #112f20 100%)" , cardBorder: "1px solid #2f6b47" ,
+  buttonBg: "linear-gradient(135deg, #18472d, #245f3d)" , buttonText: "#e7dbbf" , nameColor: "#e7dbbf" ,
+  mutedColor: "#e7dbbf" , avatarBg: "linear-gradient(135deg, #18472d, #235b3a)" , avatarText: "#e7dbbf" , radius: "20px"
   , }, }; const pageTheme=typeof theme==="string" && themeTokens[theme] ? theme : "default_dark" ; const
   tokens=themeTokens[pageTheme]; const cardStyle=[ `--theme-card-bg:${tokens.cardBg}`,
   `--theme-card-border:${tokens.cardBorder}`, `--theme-button-primary-bg:${tokens.buttonBg}`,
@@ -32,7 +32,7 @@
   <body class="antialiased" data-card-theme="<%= pageTheme %>"
     style="font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
     <main class="<%= isEmbed ? 'p-2' : 'min-h-screen p-8' %>"
-      style="<%= isEmbed ? '' : (pageTheme === 'forest' ? 'background: #0a1a0c; position: relative;' : pageTheme === 'arctic' ? 'background: linear-gradient(160deg, #e8f3f9 0%, #d4e8f2 50%, #c4dce8 100%); position: relative;' : pageTheme === 'linen' ? 'background: linear-gradient(160deg, #f5f0e8 0%, #ebe3d8 50%, #e0d5c8 100%); position: relative;' : pageTheme === 'marble' ? 'background: linear-gradient(135deg, #ffffff 0%, #f8f8f8 100%); position: relative;' : 'background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);') %>">
+      style="<%= isEmbed ? '' : (pageTheme === 'forest' ? 'background: #071a10; position: relative;' : pageTheme === 'arctic' ? 'background: linear-gradient(160deg, #e8f3f9 0%, #d4e8f2 50%, #c4dce8 100%); position: relative;' : pageTheme === 'linen' ? 'background: linear-gradient(160deg, #f5f0e8 0%, #ebe3d8 50%, #e0d5c8 100%); position: relative;' : pageTheme === 'marble' ? 'background: linear-gradient(135deg, #ffffff 0%, #f8f8f8 100%); position: relative;' : 'background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);') %>">
       <div class="<%= isEmbed ? '' : 'mx-auto max-w-3xl' %>">
         <% if (!isEmbed) { %>
           <h1 class="mb-6 text-3xl font-bold text-neutral-900">Живой пример темы: <%= pageTheme %>

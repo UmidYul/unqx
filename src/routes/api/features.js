@@ -192,28 +192,65 @@ router.post(
     const user = requireUser(req, res);
     if (!user) return;
 
-    const drop = await prisma.drop.findUnique({ where: { id: req.params.id } });
+    const [drop, userRow] = await Promise.all([
+      prisma.drop.findUnique({ where: { id: req.params.id } }),
+      prisma.user.findUnique({
+        where: { id: user.userId },
+        select: { telegramChatId: true, notificationsEnabled: true },
+      }),
+    ]);
+
     if (!drop) {
       res.status(404).json({ error: "Drop not found" });
       return;
     }
 
-    await prisma.dropWaitlist.upsert({
+    if (drop.isFinished || drop.isSoldOut) {
+      res.status(409).json({ error: "Drop is closed", code: "DROP_CLOSED" });
+      return;
+    }
+
+    if (drop.isLive) {
+      res.status(409).json({ error: "Drop already live", code: "DROP_ALREADY_LIVE" });
+      return;
+    }
+
+    if (!userRow?.telegramChatId) {
+      res.status(409).json({
+        error: "Telegram is not linked",
+        code: "TELEGRAM_NOT_LINKED",
+      });
+      return;
+    }
+
+    const existing = await prisma.dropWaitlist.findUnique({
       where: {
         dropId_userId: {
           dropId: drop.id,
           userId: user.userId,
         },
       },
-      create: {
-        dropId: drop.id,
-        userId: user.userId,
-      },
-      update: {},
+      select: { id: true },
     });
 
+    if (!existing) {
+      await prisma.dropWaitlist.create({
+        data: {
+          dropId: drop.id,
+          userId: user.userId,
+        },
+      });
+    }
+
+    if (!userRow.notificationsEnabled) {
+      await prisma.user.update({
+        where: { id: user.userId },
+        data: { notificationsEnabled: true },
+      });
+    }
+
     const waitlistCount = await prisma.dropWaitlist.count({ where: { dropId: drop.id } });
-    res.json({ ok: true, waitlistCount });
+    res.json({ ok: true, waitlistCount, alreadyJoined: Boolean(existing) });
   }),
 );
 

@@ -1,8 +1,8 @@
-# UNQX NFC Manager — Production-Ready App Prompt
+# UNQX NFC Manager - Production-Ready App Prompt
 
 ## Контекст
 
-Ты создаёшь **UNQX NFC Manager** — мобильное приложение (Next.js / React, TypeScript) для платформы **unqx.uz**. Приложение будет размещено в директории сайта (`/app/nfc` или `/pages/nfc`), поэтому имеет прямой доступ ко всем API, middleware, хукам, контексту авторизации и типам, которые уже существуют в проекте.
+Ты создаёшь **UNQX NFC Manager** - мобильное приложение (Next.js / React, TypeScript) для платформы **unqx.uz**. Приложение будет размещено в директории сайта (`/app/nfc` или `/pages/nfc`), поэтому имеет прямой доступ ко всем API, middleware, хукам, контексту авторизации и типам, которые уже существуют в проекте.
 
 **Референс дизайна:** Используй приложённый `unqx-nfc-app.tsx` как pixel-perfect референс UI. Все экраны, компоненты, анимации и цвета должны точно соответствовать референсу.
 
@@ -88,7 +88,7 @@ app/nfc/                          # или pages/nfc/
 
 ## Дизайн-система (точно по референсу)
 
-### Цвета — Светлая тема (основная, 1:1 с unqx.uz)
+### Цвета - Светлая тема (основная, 1:1 с unqx.uz)
 ```typescript
 const LIGHT = {
   bg:            '#ffffff',
@@ -111,7 +111,7 @@ const LIGHT = {
 };
 ```
 
-### Цвета — Тёмная тема
+### Цвета - Тёмная тема
 ```typescript
 const DARK = {
   bg:            '#0a0a0a',
@@ -170,7 +170,7 @@ font-family: 'Inter', sans-serif;
 
 ---
 
-## Хук useNFC — Web NFC API
+## Хук useNFC - Web NFC API
 
 ```typescript
 // hooks/useNFC.ts
@@ -235,7 +235,7 @@ export function useNFC(): UseNFCReturn {
           : undefined;
         setTag({ uid: serialNumber, url });
         setState('success');
-        // POST /api/nfc/scan — логируем скан
+        // POST /api/nfc/scan - логируем скан
         fetch('/api/nfc/scan', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -263,7 +263,7 @@ export function useNFC(): UseNFCReturn {
       readerRef.current = writer;
       await writer.write({ records: [{ recordType: 'url', data: url }] });
       setState('written');
-      // POST /api/nfc/write — логируем запись
+      // POST /api/nfc/write - логируем запись
       await fetch('/api/nfc/write', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -325,7 +325,7 @@ export function useNFC(): UseNFCReturn {
 
 ---
 
-## Хук useTheme — Авто-тема по расписанию
+## Хук useTheme - Авто-тема по расписанию
 
 ```typescript
 // hooks/useTheme.ts
@@ -379,7 +379,7 @@ export function useTheme() {
 
 ---
 
-## Хук useExport — VCF и CSV
+## Хук useExport - VCF и CSV
 
 ```typescript
 // hooks/useExport.ts
@@ -415,7 +415,7 @@ export function useExport() {
 
 ## API интеграция
 
-Все запросы используют существующий `apiClient` из проекта. Если его нет — используй `fetch` с базовым URL из `process.env.NEXT_PUBLIC_API_URL`.
+Все запросы используют существующий `apiClient` из проекта. Если его нет - используй `fetch` с базовым URL из `process.env.NEXT_PUBLIC_API_URL`.
 
 ### Эндпоинты (из приложённых API контрактов)
 
@@ -684,7 +684,7 @@ export function useNotifications() {
 **Контакты:**
 - `GET /api/contacts` → список
 - Звёздочка → `POST /api/contacts/:slug/save` (toggle)
-- Фильтр "Избранные" — клиентская фильтрация
+- Фильтр "Избранные" - клиентская фильтрация
 - "↓ .vcf" / "↓ .csv" → `useExport()` на клиенте
 
 **Резиденты:**
@@ -707,7 +707,7 @@ export function useNotifications() {
 **Редактор визитки:**
 - Загружает данные из `useUser()` (auth контекст)
 - `PATCH /api/me/card` при сохранении
-- Предпросмотр — рендерит `<CardPreview card={localState} />`
+- Предпросмотр - рендерит `<CardPreview card={localState} />`
 
 **Браслет и метки:**
 - `GET /api/wristband/status` → статус браслета
@@ -765,7 +765,7 @@ export function QRDisplay({ slug, size = 150 }: { slug: string; size?: number })
 ```typescript
 // Каждый API вызов оборачивается в try/catch
 // Показывай toast / inline error, но не крашь UI
-// Если NFC не поддерживается — показывай info-баннер:
+// Если NFC не поддерживается - показывай info-баннер:
 
 const NFCUnsupportedBanner = ({ T }: { T: ThemeTokens }) => (
   <div style={{ background: T.blueBg, border: `1px solid ${T.blue}30`, borderRadius: 12, padding: '14px 16px' }}>
@@ -774,7 +774,7 @@ const NFCUnsupportedBanner = ({ T }: { T: ThemeTokens }) => (
     </div>
     <div style={{ fontSize: 12, color: T.textSub, lineHeight: 1.6 }}>
       Web NFC работает только в Chrome на Android с NFC-чипом.
-      На iOS и десктопе — используй QR-код.
+      На iOS и десктопе - используй QR-код.
     </div>
   </div>
 );
@@ -784,8 +784,8 @@ const NFCUnsupportedBanner = ({ T }: { T: ThemeTokens }) => (
 
 ## Чеклист production ready
 
-- [ ] `loading.tsx` — skeleton для каждой страницы
-- [ ] `error.tsx` — error boundary
+- [ ] `loading.tsx` - skeleton для каждой страницы
+- [ ] `error.tsx` - error boundary
 - [ ] `metadata` в `layout.tsx` (title, description, og:image)
 - [ ] Все строки на русском через `const t = { ... }` объект (готово к i18n)
 - [ ] Все API вызовы с AbortController (отмена при unmount)
@@ -793,7 +793,7 @@ const NFCUnsupportedBanner = ({ T }: { T: ThemeTokens }) => (
 - [ ] Infinite scroll в директории (Intersection Observer)
 - [ ] `<Image>` из next/image для всех изображений
 - [ ] `use client` только там где нужно (минимизируй)
-- [ ] Всё что можно — серверные компоненты
+- [ ] Всё что можно - серверные компоненты
 - [ ] Оптимистичные обновления для toggle (сохранить, подписаться)
 - [ ] `localStorage` через хук с SSR-safe проверкой (`typeof window !== 'undefined'`)
 - [ ] Правильный z-index стеккинг: модалки > overlays > nav > content
@@ -807,32 +807,32 @@ const NFCUnsupportedBanner = ({ T }: { T: ThemeTokens }) => (
 
 ## Важные детали реализации
 
-1. **NFC fallback:** Web NFC работает только в Chrome Android. На iOS/десктоп — показывай баннер с объяснением и альтернативой (QR).
+1. **NFC fallback:** Web NFC работает только в Chrome Android. На iOS/десктоп - показывай баннер с объяснением и альтернативой (QR).
 
-2. **Авторизация:** Используй `getServerSession()` в серверных компонентах для проверки. Если пользователь не авторизован — редирект на `/login`.
+2. **Авторизация:** Используй `getServerSession()` в серверных компонентах для проверки. Если пользователь не авторизован - редирект на `/login`.
 
-3. **Оптимистичные обновления:** При нажатии "Сохранить" / "Подписаться" — сразу меняй UI, затем делай запрос. При ошибке — откатывай.
+3. **Оптимистичные обновления:** При нажатии "Сохранить" / "Подписаться" - сразу меняй UI, затем делай запрос. При ошибке - откатывай.
 
-4. **Переименование метки:** Inline редактирование — клик на иконку карандаша, input появляется на месте названия, Enter / кнопка OK → `PATCH /api/nfc/tags/:uid`.
+4. **Переименование метки:** Inline редактирование - клик на иконку карандаша, input появляется на месте названия, Enter / кнопка OK → `PATCH /api/nfc/tags/:uid`.
 
-5. **Карта тапов:** SVG с упрощённым контуром Узбекистана. Точки из `geo` API — масштабируй координаты lat/lng в SVG viewBox.
+5. **Карта тапов:** SVG с упрощённым контуром Узбекистана. Точки из `geo` API - масштабируй координаты lat/lng в SVG viewBox.
 
 6. **Виджеты:** Статичные превью (не настоящие виджеты ОС). Добавь кнопку "Скачать скриншот" через `html2canvas` или просто инструкцию.
 
-7. **Заказ браслета:** После `POST /api/orders/wristband` — показывай confirmation с order ID и переключайся на tracking view.
+7. **Заказ браслета:** После `POST /api/orders/wristband` - показывай confirmation с order ID и переключайся на tracking view.
 
-8. **SSE тапы:** Если сервер не отдаёт SSE эндпоинт — используй polling каждые 30 секунд как fallback.
+8. **SSE тапы:** Если сервер не отдаёт SSE эндпоинт - используй polling каждые 30 секунд как fallback.
 
-9. **Slug validation:** При вводе в write tab — только `[A-Z]` для букв (автоматически uppercase), только `[0-9]` для цифр. Автофокус переходит на второй инпут когда первый заполнен.
+9. **Slug validation:** При вводе в write tab - только `[A-Z]` для букв (автоматически uppercase), только `[0-9]` для цифр. Автофокус переходит на второй инпут когда первый заполнен.
 
-10. **Тема в localStorage:** При первом рендере на сервере — всегда light. На клиенте — читаем из localStorage и обновляем.
+10. **Тема в localStorage:** При первом рендере на сервере - всегда light. На клиенте - читаем из localStorage и обновляем.
 
 ---
 
 ## Референс файлы
 
-- `unqx-nfc-app.tsx` — полный pixel-perfect UI референс
-- `api-contracts.md` / `api-contracts.yaml` — все эндпоинты с типами запроса/ответа
+- `unqx-nfc-app.tsx` - полный pixel-perfect UI референс
+- `api-contracts.md` / `api-contracts.yaml` - все эндпоинты с типами запроса/ответа
 
 Приложи оба файла в начале диалога с разработчиком.
 
@@ -844,11 +844,11 @@ const NFCUnsupportedBanner = ({ T }: { T: ThemeTokens }) => (
 
 ---
 
-## Часть 2 — Иконки, App Store / Google Play, Порядок разработки
+## Часть 2 - Иконки, App Store / Google Play, Порядок разработки
 
 ---
 
-## 1. Иконки — только SVG, только тёмные, без эмодзи
+## 1. Иконки - только SVG, только тёмные, без эмодзи
 
 ### Полный запрет
 
@@ -860,7 +860,7 @@ const NFCUnsupportedBanner = ({ T }: { T: ThemeTokens }) => (
 
 ### Библиотека иконок
 
-Используй **Lucide React** (`npm install lucide-react`) — строгий, минималистичный набор, точно совпадающий со стилем unqx.uz.
+Используй **Lucide React** (`npm install lucide-react`) - строгий, минималистичный набор, точно совпадающий со стилем unqx.uz.
 
 ```typescript
 import {
@@ -888,25 +888,25 @@ import {
 ### Правила применения иконок
 
 ```typescript
-// ✅ ПРАВИЛЬНО — все иконки одного цвета (T.text или T.textMuted)
+// ✅ ПРАВИЛЬНО - все иконки одного цвета (T.text или T.textMuted)
 <Home size={20} color={T.text} strokeWidth={1.5} />
 <Wifi size={20} color={T.accent} strokeWidth={1.5} />
 
-// ✅ ПРАВИЛЬНО — иконка в круглом контейнере с нейтральным фоном
+// ✅ ПРАВИЛЬНО - иконка в круглом контейнере с нейтральным фоном
 <div style={{ width: 38, height: 38, borderRadius: '50%',
   background: T.surface, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
   <Share2 size={17} color={T.text} strokeWidth={1.5} />
 </div>
 
-// ❌ НЕПРАВИЛЬНО — цветной круг под иконку соцсети
+// ❌ НЕПРАВИЛЬНО - цветной круг под иконку соцсети
 <div style={{ background: '#2aabee' }}>
   <span>✈</span>
 </div>
 
-// ❌ НЕПРАВИЛЬНО — эмодзи как иконка кнопки
+// ❌ НЕПРАВИЛЬНО - эмодзи как иконка кнопки
 <button>📞 Позвонить</button>
 
-// ❌ НЕПРАВИЛЬНО — unicode вместо иконки
+// ❌ НЕПРАВИЛЬНО - unicode вместо иконки
 <div style={{ fontSize: 18 }}>◎</div>
 ```
 
@@ -941,15 +941,15 @@ import {
 | 📍 (Адрес) | `<MapPin />` |
 | 📸 (Фото) | `<Camera />` |
 
-### Share Sheet — без цветных фонов
+### Share Sheet - без цветных фонов
 
 ```typescript
-// ❌ НЕПРАВИЛЬНО — цветные круги соцсетей
+// ❌ НЕПРАВИЛЬНО - цветные круги соцсетей
 const shareOptions = [
   { label: 'Telegram', icon: '✈', color: '#2aabee', bg: '#e8f6fd' },
 ];
 
-// ✅ ПРАВИЛЬНО — единый стиль, нейтральные цвета
+// ✅ ПРАВИЛЬНО - единый стиль, нейтральные цвета
 const shareOptions = [
   {
     label: 'Telegram',
@@ -973,7 +973,7 @@ const shareOptions = [
   },
 ];
 
-// Рендер — все иконки одинакового стиля
+// Рендер - все иконки одинакового стиля
 {shareOptions.map(({ label, Icon, href, action }) => (
   <a
     key={label}
@@ -1000,7 +1000,7 @@ const shareOptions = [
 ### Иконки в кнопках визитки (CardEditor)
 
 ```typescript
-// Выбор иконки для кнопок — только Lucide, без эмодзи
+// Выбор иконки для кнопок - только Lucide, без эмодзи
 const BUTTON_ICONS: { key: string; Icon: LucideIcon; label: string }[] = [
   { key: 'phone',    Icon: Phone,          label: 'Телефон'  },
   { key: 'mail',     Icon: Mail,           label: 'Email'    },
@@ -1012,7 +1012,7 @@ const BUTTON_ICONS: { key: string; Icon: LucideIcon; label: string }[] = [
   { key: 'message',  Icon: MessageCircle,  label: 'Telegram' },
 ];
 
-// Выбор иконки — сетка кнопок
+// Выбор иконки - сетка кнопок
 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
   {BUTTON_ICONS.map(({ key, Icon, label }) => (
     <div
@@ -1059,12 +1059,12 @@ const BUTTON_ICONS: { key: string; Icon: LucideIcon; label: string }[] = [
 
 ## 2. Подготовка к App Store и Google Play
 
-Приложение строится как **PWA + Capacitor** (или **React Native WebView** если в проекте уже есть RN). Основной стек — Next.js PWA, обёрнутый в Capacitor для нативных сборок.
+Приложение строится как **PWA + Capacitor** (или **React Native WebView** если в проекте уже есть RN). Основной стек - Next.js PWA, обёрнутый в Capacitor для нативных сборок.
 
 ### 2.1 PWA конфигурация
 
 ```typescript
-// next.config.ts — добавить PWA
+// next.config.ts - добавить PWA
 import withPWA from 'next-pwa';
 
 const config = withPWA({
@@ -1099,7 +1099,7 @@ export default config;
 {
   "name": "UNQX NFC Manager",
   "short_name": "UNQX",
-  "description": "Цифровая визитка нового поколения — читай и записывай NFC-метки",
+  "description": "Цифровая визитка нового поколения - читай и записывай NFC-метки",
   "start_url": "/nfc",
   "display": "standalone",
   "orientation": "portrait",
@@ -1155,7 +1155,7 @@ export default config;
 }
 ```
 
-### 2.2 Capacitor — нативные сборки
+### 2.2 Capacitor - нативные сборки
 
 ```bash
 # Установка
@@ -1177,7 +1177,7 @@ const config: CapacitorConfig = {
   webDir: 'out',
   server: {
     androidScheme: 'https',
-    // В dev режиме — указывай на локальный Next.js
+    // В dev режиме - указывай на локальный Next.js
     // url: 'http://192.168.x.x:3000',
   },
   plugins: {
@@ -1210,10 +1210,10 @@ const config: CapacitorConfig = {
 export default config;
 ```
 
-### 2.3 NFC хук — нативный + web fallback
+### 2.3 NFC хук - нативный + web fallback
 
 ```typescript
-// hooks/useNFC.ts — финальная версия с Capacitor fallback
+// hooks/useNFC.ts - финальная версия с Capacitor fallback
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { Capacitor } from '@capacitor/core';
@@ -1230,9 +1230,9 @@ export function useNFC() {
   const isSupported = isWebNFCSupported || isNativePlatform;
 
   // ... остальная логика хука из Части 1
-  // При isNativePlatform — используй NativeNFC.read() / NativeNFC.write()
-  // При isWebNFCSupported — используй NDEFReader
-  // Иначе — setState('unsupported')
+  // При isNativePlatform - используй NativeNFC.read() / NativeNFC.write()
+  // При isWebNFCSupported - используй NDEFReader
+  // Иначе - setState('unsupported')
 }
 ```
 
@@ -1243,21 +1243,21 @@ export function useNFC() {
 ```markdown
 ## App Store Connect
 
-**Название:** UNQX — NFC Визитка
+**Название:** UNQX - NFC Визитка
 **Subtitle:** Читай и записывай NFC-метки
 **Категория:** Business
 **Возраст:** 4+
 
 **Описание (RU):**
-UNQX — приложение для управления цифровой визиткой нового поколения.
+UNQX - приложение для управления цифровой визиткой нового поколения.
 
-— Читай NFC-метки одним касанием
-— Записывай свой UNQ-адрес на браслет, наклейку или визитку
-— Смотри аналитику: кто и когда тапнул твою карточку
-— Управляй контактами и следи за лидербордом резидентов
-— Заказывай NFC-браслеты прямо из приложения
+- Читай NFC-метки одним касанием
+- Записывай свой UNQ-адрес на браслет, наклейку или визитку
+- Смотри аналитику: кто и когда тапнул твою карточку
+- Управляй контактами и следи за лидербордом резидентов
+- Заказывай NFC-браслеты прямо из приложения
 
-Для пользователей unqx.uz — требуется активный UNQ.
+Для пользователей unqx.uz - требуется активный UNQ.
 
 **Ключевые слова:**
 nfc, визитка, цифровая визитка, бизнес карта, nfc браслет, unqx, контакты, qr код
@@ -1280,9 +1280,9 @@ nfc, визитка, цифровая визитка, бизнес карта, n
 ```markdown
 ## Google Play Console
 
-**Название:** UNQX — NFC Менеджер
+**Название:** UNQX - NFC Менеджер
 **Краткое описание (80 симв.):**
-Цифровая визитка с NFC. Тапни — и ты уже в телефоне собеседника.
+Цифровая визитка с NFC. Тапни - и ты уже в телефоне собеседника.
 
 **Полное описание:**
 [аналогично iOS]
@@ -1292,7 +1292,7 @@ nfc, визитка, цифровая визитка, бизнес карта, n
 **Рейтинг контента:** Everyone
 **Целевая аудитория:** 18+
 
-**AndroidManifest.xml — разрешения:**
+**AndroidManifest.xml - разрешения:**
 <uses-permission android:name="android.permission.NFC" />
 <uses-feature android:name="android.hardware.nfc" android:required="false" />
 <uses-permission android:name="android.permission.INTERNET" />
@@ -1312,9 +1312,9 @@ versionCode: семантически из package.json
 npm install -g @capacitor/assets
 
 # Требуемые исходники:
-# assets/icon.png       — 1024x1024, без скруглений, белый фон, чёрный логотип UNQX
-# assets/splash.png     — 2732x2732, белый фон, центрированный логотип
-# assets/icon-dark.png  — для тёмной темы (тёмный фон, светлый логотип)
+# assets/icon.png       - 1024x1024, без скруглений, белый фон, чёрный логотип UNQX
+# assets/splash.png     - 2732x2732, белый фон, центрированный логотип
+# assets/icon-dark.png  - для тёмной темы (тёмный фон, светлый логотип)
 
 npx @capacitor/assets generate \
   --iconBackgroundColor '#ffffff' \
@@ -1326,7 +1326,7 @@ npx @capacitor/assets generate \
 ### 2.7 Хаптика (тактильная отдача)
 
 ```typescript
-// При успешном скане/записи NFC — добавить вибрацию
+// При успешном скане/записи NFC - добавить вибрацию
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 
 // После успешного NFC scan
@@ -1347,7 +1347,7 @@ if (!Capacitor.isNativePlatform() && 'vibrate' in navigator) {
 ### 2.8 Deep Links
 
 ```typescript
-// iOS — apple-app-site-association (уже на сервере unqx.uz)
+// iOS - apple-app-site-association (уже на сервере unqx.uz)
 // public/.well-known/apple-app-site-association
 {
   "applinks": {
@@ -1359,7 +1359,7 @@ if (!Capacitor.isNativePlatform() && 'vibrate' in navigator) {
   }
 }
 
-// Android — assetlinks.json
+// Android - assetlinks.json
 // public/.well-known/assetlinks.json
 [{
   "relation": ["delegate_permission/common.handle_all_urls"],
@@ -1383,68 +1383,68 @@ useEffect(() => {
 
 ---
 
-## 3. Порядок разработки — строго по очереди, без полумер
+## 3. Порядок разработки - строго по очереди, без полумер
 
 Разрабатывай приложение в строго заданном порядке. **Не переходи к следующему шагу, пока текущий не завершён полностью.** Каждый шаг сдаётся с полностью рабочим кодом, подключёнными API, анимациями и обработкой ошибок.
 
 ---
 
-### Шаг 0 — Фундамент (выполни первым, до любой страницы)
+### Шаг 0 - Фундамент (выполни первым, до любой страницы)
 
 **Что сделать:**
 1. Установить все зависимости: `lucide-react`, `qrcode.react`, `next-pwa`, `@capacitor/core`, `@capacitor/cli`, `@capacitor/android`, `@capacitor/ios`, `@capacitor/haptics`, `@capacitor/share`
 2. Настроить `next.config.ts` с PWA
 3. Создать `public/manifest.json` со всеми полями
 4. Создать `capacitor.config.ts`
-5. Создать `types/index.ts` — все TypeScript интерфейсы из этого промта
-6. Создать `hooks/useTheme.ts` — полная реализация с localStorage и авто-режимом
-7. Создать `hooks/useNFC.ts` — полная реализация с web + native fallback
-8. Создать `hooks/useNotifications.ts` — SSE + polling fallback
-9. Создать `hooks/useExport.ts` — VCF и CSV
-10. Создать `components/ui/shared.tsx` — Pill, Label, Row, Chevron, Divider, ScanArea, NFCRings, DotsLoader, CheckCircle, Sparkline, QRDisplay
-11. Создать `components/AppShell.tsx` — телефонный frame, статус-бар, top bar с уведомлениями, bottom nav
-12. Создать `store/nfcStore.ts` — Zustand стор с состоянием всего приложения
+5. Создать `types/index.ts` - все TypeScript интерфейсы из этого промта
+6. Создать `hooks/useTheme.ts` - полная реализация с localStorage и авто-режимом
+7. Создать `hooks/useNFC.ts` - полная реализация с web + native fallback
+8. Создать `hooks/useNotifications.ts` - SSE + polling fallback
+9. Создать `hooks/useExport.ts` - VCF и CSV
+10. Создать `components/ui/shared.tsx` - Pill, Label, Row, Chevron, Divider, ScanArea, NFCRings, DotsLoader, CheckCircle, Sparkline, QRDisplay
+11. Создать `components/AppShell.tsx` - телефонный frame, статус-бар, top bar с уведомлениями, bottom nav
+12. Создать `store/nfcStore.ts` - Zustand стор с состоянием всего приложения
 13. Создать `app/nfc/layout.tsx` с метатегами, подключением шрифтов Google Fonts, manifest
 
 **Критерии готовности:** приложение запускается, тема переключается, навигация работает, типы не имеют ошибок, шрифты Inter + Playfair Display загружены.
 
 ---
 
-### Шаг 1 — Главная страница (HomePage) — полностью
+### Шаг 1 - Главная страница (HomePage) - полностью
 
 **Что сделать:**
-1. `GET /api/me` — загрузить данные пользователя, показать имя, слаг, тариф
-2. `GET /api/analytics/summary` — загрузить счётчик тапов
+1. `GET /api/me` - загрузить данные пользователя, показать имя, слаг, тариф
+2. `GET /api/analytics/summary` - загрузить счётчик тапов
 3. Реализовать анимацию count-up для общего счётчика (0 → реальное значение за 1.5с)
-4. `GET /api/analytics/recent` — последние тапы, с реальными именами и временем
+4. `GET /api/analytics/recent` - последние тапы, с реальными именами и временем
 5. Hero-карточка с именем из API, кнопки "Поделиться" и "QR-код" → открывают ShareSheet
-6. ShareSheet — полностью рабочий: QR через `qrcode.react`, ссылки Telegram/WhatsApp открываются, копирование через `navigator.clipboard`, скачивание QR через canvas `toDataURL()`
-7. Skeleton loading — пока данные грузятся, показывай placeholder'ы нужной формы
-8. Обработка ошибок — если API недоступен, показывай inline сообщение
+6. ShareSheet - полностью рабочий: QR через `qrcode.react`, ссылки Telegram/WhatsApp открываются, копирование через `navigator.clipboard`, скачивание QR через canvas `toDataURL()`
+7. Skeleton loading - пока данные грузятся, показывай placeholder'ы нужной формы
+8. Обработка ошибок - если API недоступен, показывай inline сообщение
 
 **Критерии готовности:** реальные данные, работающий QR, работающий шаринг, skeleton при загрузке.
 
 ---
 
-### Шаг 2 — NFC страница (NFCPage) — полностью
+### Шаг 2 - NFC страница (NFCPage) - полностью
 
 **Что сделать, по вкладкам:**
 
 **Вкладка "Читать":**
-1. `useNFC().startRead()` — запуск Web NFC
-2. Если устройство не поддерживает — баннер с Lucide `<Info />` и текстом (без эмодзи)
+1. `useNFC().startRead()` - запуск Web NFC
+2. Если устройство не поддерживает - баннер с Lucide `<Info />` и текстом (без эмодзи)
 3. После успешного скана → `POST /api/nfc/scan` → показать данные метки
-4. `GET /api/nfc/history` — история внизу с реальными данными
+4. `GET /api/nfc/history` - история внизу с реальными данными
 5. Хаптика при успехе
 
 **Вкладка "Записать":**
 1. Два инпута (буквы + цифры), автофокус, только допустимые символы
-2. `useNFC().writeURL()` — запись
-3. `POST /api/nfc/write` — логирование
+2. `useNFC().writeURL()` - запись
+3. `POST /api/nfc/write` - логирование
 4. Хаптика при успехе
 
 **Вкладка "Проверить":**
-1. `useNFC().verify()` — чтение метаданных
+1. `useNFC().verify()` - чтение метаданных
 2. Показ типа, ёмкости, данных
 
 **Вкладка "Batch":**
@@ -1457,108 +1457,108 @@ useEffect(() => {
 
 ---
 
-### Шаг 3 — Люди (PeoplePage) — полностью
+### Шаг 3 - Люди (PeoplePage) - полностью
 
 **Вкладка "Контакты":**
-1. `GET /api/contacts` — список контактов
+1. `GET /api/contacts` - список контактов
 2. Поиск с debounce 300ms (клиентская фильтрация)
-3. Фильтр "Избранные" — кнопка с `<Star />` в заголовке
+3. Фильтр "Избранные" - кнопка с `<Star />` в заголовке
 4. Кнопка ★ у каждого контакта → `POST /api/contacts/:slug/save` (toggle, оптимистичное обновление)
-5. `useExport().exportVCF()` — кнопка с `<Download />`, реальное скачивание
-6. `useExport().exportCSV()` — то же
+5. `useExport().exportVCF()` - кнопка с `<Download />`, реальное скачивание
+6. `useExport().exportCSV()` - то же
 
 **Вкладка "Резиденты":**
-1. `GET /api/directory?q=&page=1` — список
+1. `GET /api/directory?q=&page=1` - список
 2. Debounced поиск 300ms → `GET /api/directory?q=query`
-3. Infinite scroll (Intersection Observer) — подгрузка следующей страницы
+3. Infinite scroll (Intersection Observer) - подгрузка следующей страницы
 4. Кнопка `<Bell />` / `<BellOff />` → `POST /api/contacts/:slug/subscribe` (toggle, оптимистично)
 
 **Вкладка "Elite":**
-1. `GET /api/leaderboard` — список
-2. Медали через условный рендер (1=gold, 2=silver, 3=bronze) — используй Lucide `<Award />` или простые числа с разными цветами, без эмодзи
-3. Дельта — `<TrendingUp size={12} />` перед числом
+1. `GET /api/leaderboard` - список
+2. Медали через условный рендер (1=gold, 2=silver, 3=bronze) - используй Lucide `<Award />` или простые числа с разными цветами, без эмодзи
+3. Дельта - `<TrendingUp size={12} />` перед числом
 
 **Критерии готовности:** реальные данные, debounce, infinite scroll, оптимистичные обновления, экспорт работает.
 
 ---
 
-### Шаг 4 — Аналитика (AnalyticsPage) — полностью
+### Шаг 4 - Аналитика (AnalyticsPage) - полностью
 
 **Что сделать:**
-1. `GET /api/analytics/summary` — один запрос, все данные
+1. `GET /api/analytics/summary` - один запрос, все данные
 2. Общий счётчик + sparkline за 30 дней
-3. Барчарт за неделю — `transformOrigin: 'bottom'`, анимация `barGrow`, текущий день выделен
-4. SVG-карта Узбекистана — точки из `summary.geo`, масштабируй `lat/lng` → SVG координаты
-5. Источники тапов — progress bars с анимацией ширины при mount
-6. Устройства и города — те же progress bars
+3. Барчарт за неделю - `transformOrigin: 'bottom'`, анимация `barGrow`, текущий день выделен
+4. SVG-карта Узбекистана - точки из `summary.geo`, масштабируй `lat/lng` → SVG координаты
+5. Источники тапов - progress bars с анимацией ширины при mount
+6. Устройства и города - те же progress bars
 7. Skeleton пока грузится
 
 **Критерии готовности:** все секции с реальными данными из API, анимации при появлении на экране.
 
 ---
 
-### Шаг 5 — Профиль (ProfilePage) — полностью
+### Шаг 5 - Профиль (ProfilePage) - полностью
 
 **Редактор визитки:**
 1. Загрузить `GET /api/me` → заполнить форму
 2. Инлайн редактирование имени, должности, телефона, Telegram, email
 3. Выбор темы визитки (3 варианта карточек)
-4. Добавление/удаление кнопок — иконки через сетку Lucide (из BUTTON_ICONS)
-5. Кнопка "Превью" → `<CardPreview />` — рендерит визитку как видят другие (без iframe, прямой рендер)
-6. `PATCH /api/me/card` при сохранении — с loading состоянием на кнопке
+4. Добавление/удаление кнопок - иконки через сетку Lucide (из BUTTON_ICONS)
+5. Кнопка "Превью" → `<CardPreview />` - рендерит визитку как видят другие (без iframe, прямой рендер)
+6. `PATCH /api/me/card` при сохранении - с loading состоянием на кнопке
 
 **Браслет и метки:**
-1. `GET /api/wristband/status` — статус
-2. `GET /api/nfc/tags` — список меток
-3. Inline переименование → `PATCH /api/nfc/tags/:uid { name }` — Enter сохраняет
-4. История по каждой метке — фильтрация из `GET /api/nfc/history` по uid
+1. `GET /api/wristband/status` - статус
+2. `GET /api/nfc/tags` - список меток
+3. Inline переименование → `PATCH /api/nfc/tags/:uid { name }` - Enter сохраняет
+4. История по каждой метке - фильтрация из `GET /api/nfc/history` по uid
 5. Форма заказа → `POST /api/orders/wristband` → показать order id
-6. `GET /api/orders/:id/status` — трекинг с timeline
+6. `GET /api/orders/:id/status` - трекинг с timeline
 
 **Виджеты:**
 1. Статичные превью (3 варианта) с реальными данными пользователя
-2. Кнопка "Скопировать скриншот" — `html2canvas` или инструкция
+2. Кнопка "Скопировать скриншот" - `html2canvas` или инструкция
 
 **Настройки:**
-1. Тема — переключатель → `useTheme().toggleTheme()`
-2. Авто-тема — переключатель → `useTheme().toggleAuto()`
-3. Уведомления — localStorage toggle
+1. Тема - переключатель → `useTheme().toggleTheme()`
+2. Авто-тема - переключатель → `useTheme().toggleAuto()`
+3. Уведомления - localStorage toggle
 4. Все переключатели анимированы (transition на transform)
 
 **QR + Поделиться:**
-1. QR через `qrcode.react` — реальный слаг пользователя
-2. Скачивание PNG — `canvas.toDataURL()` → download
+1. QR через `qrcode.react` - реальный слаг пользователя
+2. Скачивание PNG - `canvas.toDataURL()` → download
 3. Шаринг → `ShareSheet`
 
 **Критерии готовности:** редактор сохраняет в API, все переключатели работают, браслет с реальными данными, заказ проходит полный флоу.
 
 ---
 
-### Шаг 6 — Уведомления (NotificationPanel) — полностью
+### Шаг 6 - Уведомления (NotificationPanel) - полностью
 
 **Что сделать:**
-1. `GET /api/notifications` — список при открытии
-2. SSE `GET /api/notifications/stream` — реал-тайм новые тапы
+1. `GET /api/notifications` - список при открытии
+2. SSE `GET /api/notifications/stream` - реал-тайм новые тапы
 3. Fallback: если SSE недоступен → polling каждые 30с
 4. `POST /api/notifications/read-all` при открытии панели
-5. Красная точка на колоколе — исчезает после открытия
+5. Красная точка на колоколе - исчезает после открытия
 6. Список с иконками Lucide по типу уведомления (tap=`<Wifi/>`, write=`<PenLine/>`, report=`<BarChart2/>`, elite=`<Award/>`)
 
 **Критерии готовности:** реальные уведомления, SSE работает, точка исчезает после прочтения.
 
 ---
 
-### Шаг 7 — Финальная проверка и Store-сборка
+### Шаг 7 - Финальная проверка и Store-сборка
 
 **Что сделать:**
 1. Пройти по всему чеклисту из раздела "production ready" в Части 1
-2. Запустить `next build` — 0 ошибок TypeScript, 0 ошибок сборки
+2. Запустить `next build` - 0 ошибок TypeScript, 0 ошибок сборки
 3. Запустить `next export` (если нужен static) или убедиться что SSR работает
-4. `npx cap sync` — синхронизировать с Android/iOS
-5. `npx cap build android` — убедиться что сборка проходит
-6. `npx cap build ios` — убедиться что сборка проходит
+4. `npx cap sync` - синхронизировать с Android/iOS
+5. `npx cap build android` - убедиться что сборка проходит
+6. `npx cap build ios` - убедиться что сборка проходит
 7. Проверить Lighthouse score: Performance ≥ 90, Accessibility ≥ 95, PWA ✓
-8. Проверить что все иконки — только Lucide, ни одного эмодзи в UI
+8. Проверить что все иконки - только Lucide, ни одного эмодзи в UI
 9. Проверить что светлая тема 1:1 с unqx.uz (те же цвета, шрифты, отступы)
 10. Проверить что тёмная тема применяется корректно на всех компонентах
 
@@ -1566,9 +1566,9 @@ useEffect(() => {
 
 ## Финальное напоминание
 
-- **Никаких эмодзи.** Если видишь эмодзи в коде — это ошибка. Заменяй на Lucide.
-- **Никаких цветных иконок соцсетей.** Все иконки — `color={T.text}` или `color={T.textMuted}`.
-- **Никаких полумер.** Каждая страница — полностью рабочая, с API, с анимациями, с обработкой ошибок.
+- **Никаких эмодзи.** Если видишь эмодзи в коде - это ошибка. Заменяй на Lucide.
+- **Никаких цветных иконок соцсетей.** Все иконки - `color={T.text}` или `color={T.textMuted}`.
+- **Никаких полумер.** Каждая страница - полностью рабочая, с API, с анимациями, с обработкой ошибок.
 - **Строгий порядок.** Шаг 0 → 1 → 2 → 3 → 4 → 5 → 6 → 7. Не начинай Шаг 2 пока не сдал Шаг 1.
-- **strokeWidth: 1.5** на всех Lucide иконках — это стандарт unqx.uz.
-- **Playfair Display** только для заголовков страниц, имён, слагов. Всё остальное — Inter.
+- **strokeWidth: 1.5** на всех Lucide иконках - это стандарт unqx.uz.
+- **Playfair Display** только для заголовков страниц, имён, слагов. Всё остальное - Inter.

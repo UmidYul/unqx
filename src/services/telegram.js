@@ -121,19 +121,19 @@ async function sendTelegramMessage({
           },
         }
         : (inlineButtonUrl
-            ? {
-              reply_markup: {
-                inline_keyboard: [
-                  [
-                    {
-                      text: String(inlineButtonText || "Открыть событие"),
-                      url: String(inlineButtonUrl),
-                    },
-                  ],
+          ? {
+            reply_markup: {
+              inline_keyboard: [
+                [
+                  {
+                    text: String(inlineButtonText || "Открыть событие"),
+                    url: String(inlineButtonUrl),
+                  },
                 ],
-              },
-            }
-            : {})),
+              ],
+            },
+          }
+          : {})),
     }),
   });
 
@@ -174,12 +174,12 @@ async function sendTelegramCallbackAnswer({ callbackQueryId, text = "Готов�
 
 async function sendSlugApprovedToUser({ telegramId, slug, plan, hasBracelet = false }) {
   const planLabel = plan === "premium" ? "Премиум" : "Базовый";
-  const completionLine = hasBracelet ? "Slug и браслет — всё готово." : "";
+  const completionLine = hasBracelet ? "Slug и браслет - всё готово." : "";
   const text = [
     "Заявка одобрена.",
     "",
     `Slug: unqx.uz/${slug}`,
-    `Тариф: ${planLabel} — активирован навсегда.`,
+    `Тариф: ${planLabel} - активирован навсегда.`,
     completionLine,
     "",
     "Войди в профиль и создай свою визитку:",
@@ -218,7 +218,7 @@ async function sendSlugRejectedToUser({ telegramId, slug, adminNote }) {
 }
 
 async function sendSlugExpiredToUser({ telegramId, slug }) {
-  const text = `Заявка на ${slug} истекла — не успели связаться.\nSlug снова доступен. Подай заявку повторно: unqx.uz`;
+  const text = `Заявка на ${slug} истекла - не успели связаться.\nSlug снова доступен. Подай заявку повторно: unqx.uz`;
   return sendTelegramMessage({
     chatId: telegramId,
     text,
@@ -308,7 +308,7 @@ async function sendPaymentAlertsToAdmin(alerts) {
       if (alert.data && alert.data.length > 0) {
         alert.data.slice(0, 3).forEach((item) => {
           const ageText = item.age ? ` (${item.age}ч)` : "";
-          const amountText = item.amount ? ` — ${item.amount.toLocaleString("ru-RU")} сум` : "";
+          const amountText = item.amount ? ` - ${item.amount.toLocaleString("ru-RU")} сум` : "";
           lines.push(`  - ${escapeHtml(item.slug || item.orderId)}${amountText}${ageText}`);
         });
         if (alert.data.length > 3) {

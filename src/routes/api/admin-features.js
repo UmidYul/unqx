@@ -26,6 +26,11 @@ router.use(adminApiRateLimit);
 router.use(requireAdminApi);
 
 const SETTINGS_GROUPS = new Set(["pricing", "algorithm", "bracelet", "contacts", "platform"]);
+const FLASH_CONDITION_TYPES = new Set(["all", "pattern_000", "pattern_aaa", "sequential_digits", "custom"]);
+const FLASH_SLUG_RE = /^[A-Z]{3}[0-9]{3}$/;
+const FLASH_FULL_MASK_RE = /^[A-Z0-9*?]{6}$/;
+const FLASH_LETTER_MASK_RE = /^[A-Z*?]{3}$/;
+const FLASH_DIGIT_MASK_RE = /^[0-9*?]{3}$/;
 const GROUP_KEY_PREFIX = {
   pricing: ["plan_", "pricing_"],
   algorithm: ["slug_"],
@@ -62,6 +67,86 @@ function validateSettingValue(key, value) {
     if (!Number.isFinite(n) || n < 0) return "Лимит не может быть отрицательным";
   }
   return null;
+}
+
+function parseFlashPatternToken(value) {
+  const cleaned = String(value || "")
+    .toUpperCase()
+    .replace(/[^A-Z0-9*?]/g, "");
+  if (!cleaned) return null;
+  if (FLASH_SLUG_RE.test(cleaned)) return { kind: "slug", value: cleaned };
+  if (FLASH_FULL_MASK_RE.test(cleaned)) return { kind: "mask", value: cleaned };
+  if (FLASH_LETTER_MASK_RE.test(cleaned)) return { kind: "mask", value: `${cleaned}***` };
+  if (FLASH_DIGIT_MASK_RE.test(cleaned)) return { kind: "mask", value: `***${cleaned}` };
+  return null;
+}
+
+function tokenizePatternsInput(raw) {
+  return String(raw || "")
+    .split(/[\s,;]+/g)
+    .map((item) => String(item || "").trim())
+    .filter(Boolean);
+}
+
+function normalizeFlashConditionValue(conditionType, rawConditionValue) {
+  if (conditionType !== "custom") return null;
+  const parsed = [];
+  if (typeof rawConditionValue === "string") {
+    parsed.push(...tokenizePatternsInput(rawConditionValue));
+  } else if (rawConditionValue && typeof rawConditionValue === "object") {
+    if (Array.isArray(rawConditionValue.allowedSlugs)) {
+      parsed.push(...rawConditionValue.allowedSlugs.map((item) => String(item || "")));
+    }
+    if (Array.isArray(rawConditionValue.slugPatterns)) {
+      parsed.push(...rawConditionValue.slugPatterns.map((item) => String(item || "")));
+    }
+    if (typeof rawConditionValue.patternsInput === "string") {
+      parsed.push(...tokenizePatternsInput(rawConditionValue.patternsInput));
+    }
+  }
+
+  const allowedSlugs = [];
+  const slugPatterns = [];
+  const seen = new Set();
+  for (const token of parsed) {
+    const normalized = parseFlashPatternToken(token);
+    if (!normalized) continue;
+    const dedupeKey = `${normalized.kind}:${normalized.value}`;
+    if (seen.has(dedupeKey)) continue;
+    seen.add(dedupeKey);
+    if (normalized.kind === "slug") {
+      allowedSlugs.push(normalized.value);
+    } else {
+      slugPatterns.push(normalized.value);
+    }
+  }
+
+  if (!allowedSlugs.length && !slugPatterns.length) {
+    return { error: "Для custom-условия укажите хотя бы один slug или паттерн" };
+  }
+
+  return {
+    value: {
+      allowedSlugs,
+      slugPatterns,
+    },
+  };
+}
+
+function normalizeFlashDiscountPercent(value) {
+  const percent = Number(value);
+  if (!Number.isFinite(percent) || percent < 1 || percent > 95) {
+    return { error: "discountPercent должен быть от 1 до 95" };
+  }
+  return { value: Math.trunc(percent) };
+}
+
+function parseIsoDate(value, fieldName) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return { error: `${fieldName} должен быть валидной датой` };
+  }
+  return { value: date };
 }
 
 router.get(
@@ -501,15 +586,48 @@ router.get(
 router.post(
   "/flash-sales",
   asyncHandler(async (req, res) => {
+    const conditionType = String(req.body.conditionType || "all");
+    if (!FLASH_CONDITION_TYPES.has(conditionType)) {
+      res.status(400).json({ error: "Некорректный conditionType" });
+      return;
+    }
+
+    const discount = normalizeFlashDiscountPercent(req.body.discountPercent);
+    if (discount.error) {
+      res.status(400).json({ error: discount.error });
+      return;
+    }
+
+    const startsAt = parseIsoDate(req.body.startsAt, "startsAt");
+    if (startsAt.error) {
+      res.status(400).json({ error: startsAt.error });
+      return;
+    }
+    const endsAt = parseIsoDate(req.body.endsAt, "endsAt");
+    if (endsAt.error) {
+      res.status(400).json({ error: endsAt.error });
+      return;
+    }
+    if (endsAt.value <= startsAt.value) {
+      res.status(400).json({ error: "endsAt должен быть позже startsAt" });
+      return;
+    }
+
+    const condition = normalizeFlashConditionValue(conditionType, req.body.conditionValue);
+    if (condition?.error) {
+      res.status(400).json({ error: condition.error });
+      return;
+    }
+
     const created = await prisma.flashSale.create({
       data: {
         title: String(req.body.title || "Flash sale").trim(),
         description: String(req.body.description || "").trim() || null,
-        discountPercent: Number(req.body.discountPercent || 0),
-        conditionType: String(req.body.conditionType || "all"),
-        conditionValue: req.body.conditionValue && typeof req.body.conditionValue === "object" ? req.body.conditionValue : null,
-        startsAt: new Date(req.body.startsAt),
-        endsAt: new Date(req.body.endsAt),
+        discountPercent: discount.value,
+        conditionType,
+        conditionValue: condition?.value || null,
+        startsAt: startsAt.value,
+        endsAt: endsAt.value,
         isActive: req.body.isActive === undefined ? true : Boolean(req.body.isActive),
         notifyTelegram: Boolean(req.body.notifyTelegram),
         telegramTarget: String(req.body.telegramTarget || "").trim() || null,
@@ -523,16 +641,75 @@ router.post(
 router.patch(
   "/flash-sales/:id",
   asyncHandler(async (req, res) => {
+    const existing = await prisma.flashSale.findUnique({
+      where: { id: req.params.id },
+    });
+    if (!existing) {
+      res.status(404).json({ error: "Not found" });
+      return;
+    }
+
+    const nextConditionType = req.body.conditionType !== undefined ? String(req.body.conditionType || "all") : existing.conditionType;
+    if (!FLASH_CONDITION_TYPES.has(nextConditionType)) {
+      res.status(400).json({ error: "Некорректный conditionType" });
+      return;
+    }
+
+    let nextStartsAt = existing.startsAt;
+    if (req.body.startsAt !== undefined) {
+      const startsAt = parseIsoDate(req.body.startsAt, "startsAt");
+      if (startsAt.error) {
+        res.status(400).json({ error: startsAt.error });
+        return;
+      }
+      nextStartsAt = startsAt.value;
+    }
+
+    let nextEndsAt = existing.endsAt;
+    if (req.body.endsAt !== undefined) {
+      const endsAt = parseIsoDate(req.body.endsAt, "endsAt");
+      if (endsAt.error) {
+        res.status(400).json({ error: endsAt.error });
+        return;
+      }
+      nextEndsAt = endsAt.value;
+    }
+
+    if (nextEndsAt <= nextStartsAt) {
+      res.status(400).json({ error: "endsAt должен быть позже startsAt" });
+      return;
+    }
+
+    let normalizedDiscount = null;
+    if (req.body.discountPercent !== undefined) {
+      normalizedDiscount = normalizeFlashDiscountPercent(req.body.discountPercent);
+      if (normalizedDiscount.error) {
+        res.status(400).json({ error: normalizedDiscount.error });
+        return;
+      }
+    }
+
+    let normalizedConditionValue;
+    if (req.body.conditionType !== undefined || req.body.conditionValue !== undefined) {
+      const sourceConditionValue = req.body.conditionValue !== undefined ? req.body.conditionValue : existing.conditionValue;
+      const condition = normalizeFlashConditionValue(nextConditionType, sourceConditionValue);
+      if (condition?.error) {
+        res.status(400).json({ error: condition.error });
+        return;
+      }
+      normalizedConditionValue = condition?.value || null;
+    }
+
     const updated = await prisma.flashSale.update({
       where: { id: req.params.id },
       data: {
         ...(req.body.title !== undefined ? { title: String(req.body.title || "") } : {}),
         ...(req.body.description !== undefined ? { description: String(req.body.description || "") || null } : {}),
-        ...(req.body.discountPercent !== undefined ? { discountPercent: Number(req.body.discountPercent || 0) } : {}),
-        ...(req.body.conditionType !== undefined ? { conditionType: String(req.body.conditionType || "all") } : {}),
-        ...(req.body.conditionValue !== undefined ? { conditionValue: req.body.conditionValue || null } : {}),
-        ...(req.body.startsAt !== undefined ? { startsAt: new Date(req.body.startsAt) } : {}),
-        ...(req.body.endsAt !== undefined ? { endsAt: new Date(req.body.endsAt) } : {}),
+        ...(normalizedDiscount ? { discountPercent: normalizedDiscount.value } : {}),
+        ...(req.body.conditionType !== undefined ? { conditionType: nextConditionType } : {}),
+        ...(normalizedConditionValue !== undefined ? { conditionValue: normalizedConditionValue } : {}),
+        ...(req.body.startsAt !== undefined ? { startsAt: nextStartsAt } : {}),
+        ...(req.body.endsAt !== undefined ? { endsAt: nextEndsAt } : {}),
         ...(req.body.isActive !== undefined ? { isActive: Boolean(req.body.isActive) } : {}),
         ...(req.body.notifyTelegram !== undefined ? { notifyTelegram: Boolean(req.body.notifyTelegram) } : {}),
         ...(req.body.telegramTarget !== undefined ? { telegramTarget: String(req.body.telegramTarget || "") || null } : {}),

@@ -135,7 +135,7 @@
     arctic: { label: "Arctic", fill: "#f0f5f9", border: "#7a9db8", text: "#1a2a3a" },
     linen: { label: "Linen", fill: "#f2ede6", border: "#c8a882", text: "#3a2e24" },
     marble: { label: "Marble", fill: "#ffffff", border: "#0a0a0a", text: "#0a0a0a" },
-    forest: { label: "Forest", fill: "#386e44", border: "#e8dcc0", text: "#e8dcc0" },
+    forest: { label: "Forest", fill: "#1f5335", border: "#e7dbbf", text: "#e7dbbf" },
   };
   function themePill(theme) {
     const id = String(theme || "default_dark").trim();
@@ -288,7 +288,7 @@
       banner.classList.toggle("hidden", !enabled);
       const message = String(asMap.get("maintenance_message") || "").trim();
       textNode.textContent = enabled
-        ? `Режим обслуживания включён — сайт недоступен для пользователей${message ? `. ${message}` : ""}`
+        ? `Режим обслуживания включён - сайт недоступен для пользователей${message ? `. ${message}` : ""}`
         : "";
       disableBtn.onclick = async () => {
         disableBtn.disabled = true;
