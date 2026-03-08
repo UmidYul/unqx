@@ -694,6 +694,8 @@ router.get(
                 id: true,
                 displayName: true,
                 firstName: true,
+                isVerified: true,
+                verifiedCompany: true,
                 profileCard: {
                   select: {
                     name: true,
@@ -721,6 +723,8 @@ router.get(
               ownerId,
               name: owner.displayName || owner.profileCard?.name || owner.firstName || "UNQX User",
               role: owner.profileCard?.role || "",
+              company: owner.verifiedCompany || owner.profileCard?.role || "",
+              isVerified: Boolean(owner.isVerified),
               avatarUrl: owner.profileCard?.avatarUrl || null,
               views: item.views,
             });
@@ -765,6 +769,8 @@ router.get(
             views: item.views,
             name: item.name,
             role: item.role,
+            company: item.company,
+            isVerified: item.isVerified,
             avatarUrl: item.avatarUrl,
           };
         });
