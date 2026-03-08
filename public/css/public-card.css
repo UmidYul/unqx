@@ -395,11 +395,11 @@ body[data-page="profile-page"] {
 body[data-card-theme] {
   background-color: var(--theme-page-bg, #f6f6f6);
   background-image: var(--theme-page-bg-image, none);
-  --theme-screen-grid: rgba(18, 22, 31, 0.06);
-  --theme-screen-dots: rgba(18, 22, 31, 0.08);
-  --theme-screen-glow-a: rgba(255, 255, 255, 0.16);
-  --theme-screen-glow-b: rgba(255, 255, 255, 0);
-  --theme-screen-opacity: 0.62;
+  --theme-screen-opacity: 0.52;
+  --theme-screen-pattern:
+    radial-gradient(circle at 16% 22%, rgba(255, 255, 255, 0.22) 0%, transparent 42%),
+    radial-gradient(circle at 82% 76%, rgba(17, 26, 44, 0.07) 0%, transparent 46%),
+    repeating-linear-gradient(132deg, transparent 0 34px, rgba(20, 28, 42, 0.035) 34px 36px);
 }
 
 body[data-card-theme] main {
@@ -417,13 +417,7 @@ body[data-card-theme] main::after {
   pointer-events: none;
   z-index: 0;
   opacity: var(--theme-screen-opacity, 0.62);
-  background-image:
-    repeating-linear-gradient(0deg, transparent 0 23px, var(--theme-screen-grid) 23px 24px),
-    repeating-linear-gradient(90deg, transparent 0 23px, var(--theme-screen-grid) 23px 24px),
-    radial-gradient(circle at 14% 18%, var(--theme-screen-dots) 0.9px, transparent 1px),
-    radial-gradient(circle at 86% 72%, var(--theme-screen-dots) 0.9px, transparent 1px),
-    linear-gradient(140deg, var(--theme-screen-glow-a) 0%, var(--theme-screen-glow-b) 44%);
-  background-size: 24px 24px, 24px 24px, 30px 30px, 30px 30px, 100% 100%;
+  background-image: var(--theme-screen-pattern);
 }
 
 body[data-card-theme] #public-card-layout {
@@ -1056,10 +1050,12 @@ body[data-card-theme] #card-view-root>[data-card-view] {
 
 body[data-card-theme="default_dark"] {
   background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
-  --theme-screen-grid: rgba(24, 24, 24, 0.07);
-  --theme-screen-dots: rgba(26, 26, 26, 0.08);
-  --theme-screen-glow-a: rgba(255, 255, 255, 0.24);
-  --theme-screen-opacity: 0.64;
+  --theme-screen-opacity: 0.5;
+  --theme-screen-pattern:
+    radial-gradient(circle at 22% 14%, rgba(255, 255, 255, 0.24) 0%, transparent 38%),
+    radial-gradient(circle at 78% 82%, rgba(0, 0, 0, 0.065) 0%, transparent 42%),
+    repeating-linear-gradient(146deg, transparent 0 42px, rgba(24, 24, 24, 0.04) 42px 44px),
+    repeating-linear-gradient(34deg, transparent 0 58px, rgba(255, 255, 255, 0.16) 58px 60px);
 }
 
 body[data-card-theme="default_dark"]::before {
@@ -1075,10 +1071,12 @@ body[data-card-theme="default_dark"]::before {
 body[data-card-theme="arctic"] {
   background: linear-gradient(160deg, #e8f3f9 0%, #d4e8f2 50%, #c4dce8 100%);
   position: relative;
-  --theme-screen-grid: rgba(66, 95, 124, 0.08);
-  --theme-screen-dots: rgba(58, 88, 118, 0.1);
-  --theme-screen-glow-a: rgba(231, 245, 255, 0.28);
-  --theme-screen-opacity: 0.66;
+  --theme-screen-opacity: 0.46;
+  --theme-screen-pattern:
+    radial-gradient(circle at 14% 18%, rgba(233, 245, 255, 0.38) 0%, transparent 36%),
+    radial-gradient(circle at 86% 78%, rgba(132, 166, 194, 0.16) 0%, transparent 40%),
+    repeating-linear-gradient(120deg, transparent 0 44px, rgba(114, 146, 173, 0.06) 44px 46px),
+    repeating-linear-gradient(64deg, transparent 0 68px, rgba(223, 236, 246, 0.22) 68px 70px);
 }
 
 body[data-card-theme="arctic"]::before {
@@ -1095,10 +1093,12 @@ body[data-card-theme="arctic"]::before {
 body[data-card-theme="linen"] {
   background: linear-gradient(160deg, #f3ecdf 0%, #e9ddcb 52%, #dcccb7 100%);
   position: relative;
-  --theme-screen-grid: rgba(110, 80, 46, 0.09);
-  --theme-screen-dots: rgba(102, 74, 42, 0.11);
-  --theme-screen-glow-a: rgba(255, 245, 229, 0.24);
-  --theme-screen-opacity: 0.64;
+  --theme-screen-opacity: 0.48;
+  --theme-screen-pattern:
+    radial-gradient(circle at 12% 20%, rgba(255, 247, 233, 0.34) 0%, transparent 34%),
+    radial-gradient(circle at 84% 82%, rgba(165, 126, 84, 0.12) 0%, transparent 42%),
+    repeating-linear-gradient(124deg, transparent 0 38px, rgba(131, 96, 61, 0.055) 38px 40px),
+    repeating-linear-gradient(56deg, transparent 0 54px, rgba(238, 224, 201, 0.2) 54px 56px);
 }
 
 body[data-card-theme="linen"]::before {
@@ -1130,10 +1130,12 @@ body[data-card-theme="linen"]::after {
 body[data-card-theme="marble"] {
   background: linear-gradient(135deg, #ffffff 0%, #f8f8f8 100%);
   position: relative;
-  --theme-screen-grid: rgba(16, 16, 16, 0.045);
-  --theme-screen-dots: rgba(22, 22, 22, 0.06);
-  --theme-screen-glow-a: rgba(255, 255, 255, 0.2);
-  --theme-screen-opacity: 0.56;
+  --theme-screen-opacity: 0.44;
+  --theme-screen-pattern:
+    radial-gradient(circle at 18% 16%, rgba(255, 255, 255, 0.26) 0%, transparent 36%),
+    radial-gradient(circle at 84% 78%, rgba(0, 0, 0, 0.045) 0%, transparent 40%),
+    repeating-linear-gradient(112deg, transparent 0 52px, rgba(35, 35, 35, 0.028) 52px 54px),
+    repeating-linear-gradient(36deg, transparent 0 76px, rgba(255, 255, 255, 0.2) 76px 78px);
 }
 
 body[data-card-theme="marble"]::before {
@@ -1151,10 +1153,12 @@ body[data-card-theme="marble"]::before {
 body[data-card-theme="forest"] {
   background: #071a10;
   position: relative;
-  --theme-screen-grid: rgba(201, 184, 147, 0.08);
-  --theme-screen-dots: rgba(221, 205, 168, 0.11);
-  --theme-screen-glow-a: rgba(40, 86, 58, 0.22);
-  --theme-screen-opacity: 0.62;
+  --theme-screen-opacity: 0.5;
+  --theme-screen-pattern:
+    radial-gradient(circle at 14% 22%, rgba(43, 104, 68, 0.32) 0%, transparent 34%),
+    radial-gradient(circle at 88% 76%, rgba(32, 74, 50, 0.3) 0%, transparent 40%),
+    repeating-linear-gradient(128deg, transparent 0 42px, rgba(198, 184, 147, 0.065) 42px 44px),
+    repeating-linear-gradient(58deg, transparent 0 66px, rgba(89, 128, 101, 0.12) 66px 68px);
 }
 
 body[data-card-theme="forest"]::before {
@@ -1172,10 +1176,12 @@ body[data-card-theme="forest"]::before {
 body[data-card-theme="royal_ivory"] {
   background: linear-gradient(160deg, #f8f2e6 0%, #efe3cc 55%, #e5d3ae 100%);
   position: relative;
-  --theme-screen-grid: rgba(132, 97, 46, 0.1);
-  --theme-screen-dots: rgba(148, 109, 52, 0.12);
-  --theme-screen-glow-a: rgba(255, 248, 234, 0.24);
-  --theme-screen-opacity: 0.64;
+  --theme-screen-opacity: 0.5;
+  --theme-screen-pattern:
+    radial-gradient(circle at 15% 18%, rgba(255, 248, 233, 0.36) 0%, transparent 36%),
+    radial-gradient(circle at 86% 78%, rgba(167, 123, 56, 0.13) 0%, transparent 42%),
+    repeating-linear-gradient(134deg, transparent 0 36px, rgba(150, 112, 50, 0.07) 36px 38px),
+    repeating-linear-gradient(46deg, transparent 0 62px, rgba(230, 208, 168, 0.21) 62px 64px);
 }
 
 body[data-card-theme="royal_ivory"]::before {
@@ -1194,10 +1200,12 @@ body[data-card-theme="royal_ivory"]::before {
 body[data-card-theme="midnight_obsidian"] {
   background: linear-gradient(150deg, #090f16 0%, #101827 48%, #0a0f15 100%);
   position: relative;
-  --theme-screen-grid: rgba(120, 158, 223, 0.11);
-  --theme-screen-dots: rgba(135, 174, 238, 0.14);
-  --theme-screen-glow-a: rgba(65, 101, 164, 0.24);
-  --theme-screen-opacity: 0.64;
+  --theme-screen-opacity: 0.5;
+  --theme-screen-pattern:
+    radial-gradient(circle at 12% 16%, rgba(72, 108, 170, 0.34) 0%, transparent 36%),
+    radial-gradient(circle at 86% 74%, rgba(47, 77, 126, 0.3) 0%, transparent 42%),
+    repeating-linear-gradient(118deg, transparent 0 40px, rgba(126, 161, 226, 0.09) 40px 42px),
+    repeating-linear-gradient(62deg, transparent 0 70px, rgba(63, 98, 156, 0.12) 70px 72px);
 }
 
 body[data-card-theme="midnight_obsidian"]::before {
