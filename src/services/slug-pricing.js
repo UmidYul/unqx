@@ -35,6 +35,7 @@ function normalizeConfig(input) {
     digitsRound: getNum(source.digitsRound, DEFAULTS.digitsRound),
     digitsPalindrome: getNum(source.digitsPalindrome, DEFAULTS.digitsPalindrome),
     digitsRandom: getNum(source.digitsRandom, DEFAULTS.digitsRandom),
+    customRules: source.customRules || [],
   };
 }
 
