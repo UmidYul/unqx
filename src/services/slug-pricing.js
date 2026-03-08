@@ -156,7 +156,7 @@ function calculateSlugPrice({ letters, digits, config }) {
       if (rule.type === 'startsWith' && slug.startsWith(pat)) match = true;
       if (rule.type === 'endsWith' && slug.endsWith(pat)) match = true;
       if (rule.type === 'regex') {
-        try { if (new RegExp(pat).test(slug)) match = true; } catch {}
+        try { if (new RegExp(pat).test(slug)) match = true; } catch { }
       }
       if (match) {
         total += delta;
