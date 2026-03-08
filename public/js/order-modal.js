@@ -761,9 +761,9 @@ const DEFAULT_PRICING = {
       
       // Generate Telegram contact link with order details
       const telegramLink = dom.root.querySelector('#order-modal-telegram-link');
-      if (telegramLink instanceof HTMLAnchorElement && payload.orderId && payload.pricing) {
+      if (telegramLink instanceof HTMLAnchorElement && payload.orderId) {
         const userName = dom.name.value.trim();
-        const totalAmount = payload.pricing.totalOneTime;
+        const totalAmount = Number(payload?.pricing?.totalOneTime || 0);
         const message = `Здравствуйте! Хочу оплатить заказ #${payload.orderId}
 
 UNQ: ${pricing.slug}
@@ -888,7 +888,9 @@ UNQ: ${pricing.slug}
   dom.closeSuccess?.addEventListener("click", () => close(true));
   dom.goProfile?.addEventListener("click", () => {
     const telegramLink = dom.root.querySelector("#order-modal-telegram-link");
-    const telegramUrl = telegramLink instanceof HTMLAnchorElement && telegramLink.href ? telegramLink.href : lastTelegramPaymentUrl;
+    const fallbackUrl = "https://t.me/unqx_uz";
+    const candidateUrl = telegramLink instanceof HTMLAnchorElement && telegramLink.href ? telegramLink.href : lastTelegramPaymentUrl;
+    const telegramUrl = /^https:\/\/t\.me\/unqx_uz(?:\?|$)/i.test(candidateUrl) ? candidateUrl : (lastTelegramPaymentUrl || fallbackUrl);
     const encodedMessage = telegramUrl.includes("?text=") ? telegramUrl.split("?text=")[1] : "";
     const tgAppUrl = `tg://resolve?domain=unqx_uz${encodedMessage ? `&text=${encodedMessage}` : ""}`;
     const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || "");
@@ -896,12 +898,12 @@ UNQ: ${pricing.slug}
     if (isMobile) {
       window.location.href = tgAppUrl;
       window.setTimeout(() => {
-        window.open(telegramUrl, "_blank", "noopener,noreferrer");
+        window.location.href = telegramUrl;
       }, 900);
       return;
     }
 
-    window.open(telegramUrl, "_blank", "noopener,noreferrer");
+    window.location.href = telegramUrl;
   });
 
   document.addEventListener("keydown", (event) => {
