@@ -255,9 +255,27 @@ async function upsertProfileCardCompat(db, input) {
     RETURNING *
   `;
 
-  const rows = await db.$queryRawUnsafe(query, ...values);
-  const row = Array.isArray(rows) ? rows[0] || null : null;
-  return mapProfileCardRow(row);
+  try {
+    const rows = await db.$queryRawUnsafe(query, ...values);
+    const row = Array.isArray(rows) ? rows[0] || null : null;
+    return mapProfileCardRow(row);
+  } catch (error) {
+    if (isCardThemeEnumValueError(error) && String(input.theme || "") !== "default_dark") {
+      console.warn(
+        `[express-app] unsupported CardTheme value "${String(input.theme || "")}" in DB enum; fallback to default_dark`,
+      );
+      const fallbackInput = {
+        ...input,
+        theme: "default_dark",
+      };
+      const fallbackValuesMap = buildProfileCardColumnValues(fallbackInput);
+      const fallbackValues = columns.map((column) => fallbackValuesMap[column]);
+      const rows = await db.$queryRawUnsafe(query, ...fallbackValues);
+      const row = Array.isArray(rows) ? rows[0] || null : null;
+      return mapProfileCardRow(row);
+    }
+    throw error;
+  }
 }
 
 function isMissingColumnError(error) {
@@ -280,6 +298,17 @@ function isMissingStorageError(error) {
     /relation .* does not exist/i.test(message) ||
     /column .* does not exist/i.test(message)
   );
+}
+
+function isCardThemeEnumValueError(error) {
+  if (!error || typeof error !== "object") return false;
+  const code = String(error.code || "");
+  const message = String(error.message || "");
+  const driverMessage = String(error?.meta?.driverAdapterError?.message || "");
+  const mergedMessage = `${message}\n${driverMessage}`;
+  const enumInputFailure =
+    code === "P2010" || code === "22P02" || /invalid input value for enum/i.test(mergedMessage);
+  return enumInputFailure && /cardtheme/i.test(mergedMessage);
 }
 
 async function patchOptionalProfileCardFields(db, ownerId, fields) {
