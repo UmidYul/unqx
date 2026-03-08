@@ -52,16 +52,18 @@ function createApp() {
   app.use(async (req, res, next) => {
     try {
       const path = req.path || "/";
+      const isHomePage = path === "/";
       const isPublicPageRequest =
         req.method === "GET" &&
-        !path.startsWith("/admin") &&
-        !path.startsWith("/api/admin") &&
-        !path.startsWith("/api/auth") &&
-        !path.startsWith("/api/profile") &&
-        !path.startsWith("/api/telegram") &&
-        !path.startsWith("/api/cards") &&
-        !path.startsWith("/api/features") &&
-        !path.startsWith("/api/");
+        (isHomePage ||
+          !path.startsWith("/admin") &&
+          !path.startsWith("/api/admin") &&
+          !path.startsWith("/api/auth") &&
+          !path.startsWith("/api/profile") &&
+          !path.startsWith("/api/telegram") &&
+          !path.startsWith("/api/cards") &&
+          !path.startsWith("/api/features") &&
+          !path.startsWith("/api/"));
       if (!isPublicPageRequest) {
         next();
         return;
@@ -72,15 +74,24 @@ function createApp() {
         "maintenance_release_report_mode",
         "maintenance_release_report_title",
         "maintenance_release_report_message",
+        "maintenance_release_open_at",
       ]);
       const releaseReportMode = Boolean(settings.maintenance_release_report_mode);
       if (releaseReportMode) {
+        const openAtRaw = String(settings.maintenance_release_open_at || "").trim();
+        const openAtDate = openAtRaw ? new Date(openAtRaw) : null;
+        const hasOpenAt = Boolean(openAtDate) && Number.isFinite(openAtDate.getTime());
+        if (hasOpenAt && Date.now() >= openAtDate.getTime()) {
+          next();
+          return;
+        }
         res.status(503).render("public/pre-release-report", {
-          title: String(settings.maintenance_release_report_title || "Отчет до релиза"),
+          title: String(settings.maintenance_release_report_title || "Отсчёт до релиза"),
           reportMessage: String(
             settings.maintenance_release_report_message ||
             "Мы готовим релиз и финализируем проверку. Скоро вернемся с обновлением.",
           ),
+          opensAt: hasOpenAt ? openAtDate.toISOString() : "",
           adminSession: getAdminSession(req),
         });
         return;

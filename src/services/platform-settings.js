@@ -134,22 +134,29 @@ const DEFAULT_SETTINGS = [
     key: "maintenance_release_report_mode",
     group: "platform",
     type: "boolean",
-    label: "Показывать отчет до релиза",
+    label: "Показывать отсчёт до релиза",
     value: false,
   },
   {
     key: "maintenance_release_report_title",
     group: "platform",
     type: "text",
-    label: "Заголовок отчета до релиза",
-    value: "Отчет до релиза",
+    label: "Заголовок отсчёта до релиза",
+    value: "Отсчёт до релиза",
   },
   {
     key: "maintenance_release_report_message",
     group: "platform",
     type: "textarea",
-    label: "Текст отчета до релиза",
+    label: "Текст отсчёта до релиза",
     value: "Мы готовим релиз и финализируем проверку.\n\nВ этом отчете можно указать текущий статус, что уже готово и что осталось до запуска.",
+  },
+  {
+    key: "maintenance_release_open_at",
+    group: "platform",
+    type: "datetime",
+    label: "Дата и время открытия сайта",
+    value: "",
   },
 ];
 

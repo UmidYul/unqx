@@ -105,6 +105,20 @@
     return String(field.value || "");
   }
 
+  function toDateTimeLocalValue(value) {
+    const raw = String(value ?? "").trim();
+    if (!raw) return "";
+    const parsed = new Date(raw);
+    if (!Number.isFinite(parsed.getTime())) return "";
+    const pad = (n) => String(n).padStart(2, "0");
+    const yyyy = parsed.getFullYear();
+    const mm = pad(parsed.getMonth() + 1);
+    const dd = pad(parsed.getDate());
+    const hh = pad(parsed.getHours());
+    const min = pad(parsed.getMinutes());
+    return `${yyyy}-${mm}-${dd}T${hh}:${min}`;
+  }
+
   function updateCurrentFromForm(group) {
     const form = document.getElementById(`settings-form-${group}`);
     const loaded = state.loaded[group] || [];
@@ -174,6 +188,12 @@
         if (item.type === "textarea" || item.type === "json") {
           return `<label class="block md:col-span-2"><span class="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">${esc(item.label)}</span>
             <textarea name="${esc(item.key)}" rows="3" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm">${esc(item.type === "json" ? JSON.stringify(item.value ?? null, null, 2) : String(item.value ?? ""))}</textarea>
+            ${description}${reset}
+          </label>`;
+        }
+        if (item.type === "datetime") {
+          return `<label class="block"><span class="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">${esc(item.label)}</span>
+            <input type="datetime-local" name="${esc(item.key)}" value="${esc(toDateTimeLocalValue(item.value))}" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
             ${description}${reset}
           </label>`;
         }

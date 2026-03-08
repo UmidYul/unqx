@@ -1,7 +1,10 @@
-<% const pageTitle=typeof title==="string" && title.trim() ? title.trim() : "Отчет до релиза" ; const message=typeof
+<% const pageTitle=typeof title==="string" && title.trim() ? title.trim() : "Отсчёт до релиза" ; const message=typeof
     reportMessage==="string" && reportMessage.trim() ? reportMessage.trim()
     : "Мы готовим релиз и финализируем проверку. Скоро вернемся с обновлением." ; const
     lines=message.split(/\r?\n/).map((line)=> line.trim()).filter(Boolean);
+    const opensAtIso = typeof opensAt === "string" ? opensAt.trim() : "";
+    const opensAtDate = opensAtIso ? new Date(opensAtIso) : null;
+    const hasOpenDate = opensAtDate && Number.isFinite(opensAtDate.getTime());
     %>
     <!doctype html>
     <html lang="ru">
@@ -35,8 +38,50 @@
                         </p>
                         <% } %>
 
-                            <p class="mt-6 text-xs text-neutral-500">Страница временно отображается вместо публичных
-                                разделов сайта.</p>
+                            <% if (hasOpenDate) { %>
+                                <div class="mt-6 rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3">
+                                    <p class="text-xs uppercase tracking-[0.12em] text-neutral-500">До открытия сайта
+                                    </p>
+                                    <p id="release-countdown" class="mt-2 text-xl font-semibold text-neutral-900">
+                                        --:--:--</p>
+                                    <p class="mt-1 text-xs text-neutral-500">Открытие: <%=
+                                            opensAtDate.toLocaleString('ru-RU') %>
+                                    </p>
+                                </div>
+                                <script nonce="<%= cspNonce %>">
+                                    (function () {
+                                        var node = document.getElementById("release-countdown");
+                                        if (!node) return;
+                                        var target = new Date("<%= opensAtIso %>").getTime();
+                                        if (!Number.isFinite(target)) return;
+
+                                        function pad(n) {
+                                            return String(Math.max(0, n)).padStart(2, "0");
+                                        }
+
+                                        function tick() {
+                                            var diff = target - Date.now();
+                                            if (diff <= 0) {
+                                                node.textContent = "Сайт открывается...";
+                                                window.location.reload();
+                                                return;
+                                            }
+                                            var totalSec = Math.floor(diff / 1000);
+                                            var days = Math.floor(totalSec / 86400);
+                                            var hours = Math.floor((totalSec % 86400) / 3600);
+                                            var mins = Math.floor((totalSec % 3600) / 60);
+                                            var secs = totalSec % 60;
+                                            node.textContent = (days > 0 ? days + "д " : "") + pad(hours) + ":" + pad(mins) + ":" + pad(secs);
+                                        }
+
+                                        tick();
+                                        setInterval(tick, 1000);
+                                    })();
+                                </script>
+                                <% } %>
+
+                                    <p class="mt-6 text-xs text-neutral-500">Страница временно отображается вместо
+                                        публичных разделов сайта.</p>
             </article>
         </main>
     </body>
