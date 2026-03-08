@@ -24,6 +24,7 @@ const { getUserSession } = require("../../middleware/auth");
 const { OrderRequestSchema } = require("../../validation/order-request");
 const { getSetting } = require("../../services/platform-settings");
 const { sendTapPushNotification } = require("../../services/push");
+const { resolveUzbekistanCity } = require("../../constants/uzbekistan-cities");
 
 const router = express.Router();
 const SLUG_REGEX = /^[A-Z]{3}[0-9]{3}$/;
@@ -269,10 +270,15 @@ async function resolveGeoByIp(ip) {
       return { city: "Неизвестно", country: "" };
     }
     const payload = await response.json().catch(() => ({}));
-    const city = String(payload?.city || "").trim();
+    const cityRaw = String(payload?.city || "").trim();
     const country = String(payload?.country_name || payload?.country || "").trim();
+
+    // Нормализуем город через маппинг узбекских городов (Tashkent → Ташкент)
+    const normalizedCity = resolveUzbekistanCity(cityRaw);
+    const city = normalizedCity || (cityRaw ? cityRaw.slice(0, 120) : "Неизвестно");
+
     return {
-      city: city ? city.slice(0, 120) : "Неизвестно",
+      city,
       country: country ? country.slice(0, 120) : "",
     };
   } catch {
