@@ -26,6 +26,7 @@ const { OrderRequestSchema } = require("../../validation/order-request");
 const { getSetting } = require("../../services/platform-settings");
 const { sendTapPushNotification } = require("../../services/push");
 const { resolveUzbekistanCity } = require("../../constants/uzbekistan-cities");
+const { logPaymentEvent } = require("../../services/payment-events");
 
 const router = express.Router();
 const SLUG_REGEX = /^[A-Z]{3}[0-9]{3}$/;
@@ -1045,6 +1046,22 @@ router.post(
       } else {
         throw error;
       }
+    }
+
+    try {
+      await logPaymentEvent({
+        orderId: order.id,
+        userId: user.id,
+        status: "new",
+        provider: payment.provider,
+        reference: payment.reference,
+        amount: payment.amount,
+        actor: `user:${user.id}`,
+        source: "order_request",
+        note: telegramDelivered ? "Order created" : `Order created, telegram warning: ${telegramError || "unknown"}`,
+      });
+    } catch (error) {
+      console.error("[express-app] failed to log payment event for order request", error);
     }
 
     res.json({

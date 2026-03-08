@@ -14,14 +14,13 @@ const { parsePositiveInt } = require("../../utils/http");
 const { generateNextSlug } = require("../../services/cards");
 const { getGlobalStats } = require("../../services/stats");
 const { calculateSlugPrice, getSlugPricingConfig } = require("../../services/slug-pricing");
-const { sendSlugApprovedToUser, sendSlugAwaitingPaymentToUser, sendSlugRejectedToUser, sendTelegramMessage } = require("../../services/telegram");
+const { sendTelegramMessage } = require("../../services/telegram");
 const { recalculateAndRefreshPercentiles } = require("../../services/unq-score");
 const { sendExpoPushToUser, sendExpoPushToUsers } = require("../../services/push");
+const { applyOrderStatusTransition } = require("../../services/order-status-transition");
 const {
   getBraceletPrice,
   normalizePlan,
-  resolveRequestedPlanForOrder,
-  getPlanPurchaseType,
 } = require("../../services/pricing-settings");
 
 const router = express.Router();
@@ -719,9 +718,21 @@ router.get(
       })
       : [];
     const slugMetaBySlug = new Map(slugMetaRows.map((row) => [row.fullSlug, row]));
+    const paymentByOrderId = new Map();
+    await Promise.all(
+      rows.map(async (row) => {
+        const totalAmount = Number(row.slugPrice || 0) + Number(row.planPrice || 0) + (row.bracelet ? braceletPriceValue : 0);
+        const payment = await buildOrderPaymentDraft({
+          orderId: row.id,
+          amount: totalAmount,
+        });
+        paymentByOrderId.set(row.id, payment);
+      }),
+    );
 
     res.json({
       items: rows.map((row) => ({
+        payment: paymentByOrderId.get(row.id) || null,
         slugState: slugMetaBySlug.get(row.slug)?.status || null,
         pendingExpiresAt: slugMetaBySlug.get(row.slug)?.pendingExpiresAt || null,
         id: row.id,
@@ -755,237 +766,29 @@ router.get(
 router.patch(
   "/orders/:id/status",
   asyncHandler(async (req, res) => {
-    const braceletPriceValue = await getBraceletPrice();
     const status = toOrderStatus(req.body.status);
     const adminNote = String(req.body.adminNote || "").trim();
     const adminLogin = String(req.session?.admin?.login || "").trim() || null;
-
-    const order = await prisma.slugRequest.findUnique({
-      where: { id: req.params.id },
-      include: {
-        user: {
-          select: { id: true, telegramChatId: true, firstName: true },
-        },
-      },
-    });
-    if (!order) {
-      res.status(404).json({ error: "Order not found" });
-      return;
-    }
-
-    const updated = await prisma.$transaction(async (tx) => {
-      const row = await tx.slugRequest.update({
-        where: { id: order.id },
-        data: {
-          status,
-          adminNote: adminNote || null,
-        },
-        select: {
-          id: true,
-          status: true,
-          userId: true,
-          slug: true,
-          adminNote: true,
-        },
+    try {
+      const { updated } = await applyOrderStatusTransition({
+        orderId: req.params.id,
+        status,
+        adminNote,
+        adminActor: adminLogin || "admin",
+        source: "admin_api",
       });
-
-      if (status === "approved") {
-        const now = new Date();
-        await tx.slug.upsert({
-          where: { fullSlug: row.slug },
-          create: {
-            letters: row.slug.slice(0, 3),
-            digits: row.slug.slice(3),
-            fullSlug: row.slug,
-            ownerId: row.userId,
-            status: "approved",
-            approvedAt: now,
-            requestedAt: order.createdAt,
-            pendingExpiresAt: null,
-            isPrimary: false,
-            price: order.slugPrice,
-          },
-          update: {
-            ownerId: row.userId,
-            status: "approved",
-            approvedAt: now,
-            pendingExpiresAt: null,
-            price: order.slugPrice,
-          },
-        });
-
-        const existingUser = await tx.user.findUnique({
-          where: { id: row.userId },
-          select: {
-            plan: true,
-            planPurchasedAt: true,
-            planUpgradedAt: true,
-          },
-        });
-        const currentPlan = normalizePlan(existingUser?.plan);
-        const nextPlan = resolveRequestedPlanForOrder({
-          currentPlan,
-          requestedPlan: order.requestedPlan,
-        });
-        const userPatch = { plan: nextPlan };
-        if (currentPlan === "none" && (nextPlan === "basic" || nextPlan === "premium")) {
-          userPatch.planPurchasedAt = existingUser?.planPurchasedAt || now;
-        }
-        if (currentPlan === "basic" && nextPlan === "premium") {
-          userPatch.planUpgradedAt = now;
-          userPatch.planPurchasedAt = existingUser?.planPurchasedAt || now;
-        }
-        await tx.user.update({
-          where: { id: row.userId },
-          data: userPatch,
-        });
-
-        const hasPrimary = await tx.slug.count({
-          where: {
-            ownerId: row.userId,
-            isPrimary: true,
-            status: { in: ["approved", "active", "paused", "private"] },
-          },
-        });
-        if (!hasPrimary) {
-          await tx.slug.update({
-            where: { fullSlug: row.slug },
-            data: { isPrimary: true },
-          });
-        }
-
-        if (order.status !== "approved" && tx.purchase && typeof tx.purchase.create === "function") {
-          await tx.purchase.create({
-            data: {
-              userId: row.userId,
-              type: "slug",
-              amount: Number(order.slugPrice || 0),
-              slug: row.slug,
-              purchasedAt: now,
-              approvedByAdmin: adminLogin,
-              approvedAt: now,
-              note: `order:${row.id}`,
-            },
-          });
-
-          const planPurchaseType = getPlanPurchaseType({
-            currentPlan,
-            requestedPlan: nextPlan,
-          });
-          const planPrice = Number(order.planPrice || 0);
-          if (planPurchaseType && planPrice > 0) {
-            await tx.purchase.create({
-              data: {
-                userId: row.userId,
-                type: planPurchaseType,
-                amount: planPrice,
-                slug: null,
-                purchasedAt: now,
-                approvedByAdmin: adminLogin,
-                approvedAt: now,
-                note: `order:${row.id}`,
-              },
-            });
-          }
-
-          if (order.bracelet) {
-            await tx.purchase.create({
-              data: {
-                userId: row.userId,
-                type: "bracelet",
-                amount: braceletPriceValue,
-                slug: row.slug,
-                purchasedAt: now,
-                approvedByAdmin: adminLogin,
-                approvedAt: now,
-                note: `order:${row.id}`,
-              },
-            });
-          }
-        }
+      res.json({ id: updated.id, status: updated.status });
+    } catch (error) {
+      if (error?.code === "ORDER_NOT_FOUND") {
+        res.status(404).json({ error: "Order not found" });
+        return;
       }
-
-      if (status === "rejected") {
-        await tx.slug.upsert({
-          where: { fullSlug: row.slug },
-          create: {
-            letters: row.slug.slice(0, 3),
-            digits: row.slug.slice(3),
-            fullSlug: row.slug,
-            status: "free",
-            ownerId: null,
-            isPrimary: false,
-            pendingExpiresAt: null,
-            price: order.slugPrice,
-          },
-          update: {
-            ownerId: null,
-            status: "free",
-            isPrimary: false,
-            pauseMessage: null,
-            pendingExpiresAt: null,
-            approvedAt: null,
-            requestedAt: null,
-            activatedAt: null,
-          },
-        });
+      if (error?.code === "INVALID_STATUS_TRANSITION") {
+        res.status(409).json({ error: error.message, code: error.code });
+        return;
       }
-
-      const userAfter =
-        status === "approved"
-          ? await tx.user.findUnique({
-            where: { id: row.userId },
-            select: { plan: true },
-          })
-          : null;
-      return { ...row, approvedPlan: userAfter?.plan || null };
-    });
-
-    if (status === "approved") {
-      try {
-        await sendSlugApprovedToUser({
-          telegramId: order.user?.telegramChatId || "",
-          slug: updated.slug,
-          plan: updated.approvedPlan || order.requestedPlan,
-          hasBracelet: Boolean(order.bracelet),
-        });
-      } catch (error) {
-        console.error("[express-app] failed to send approval notification", error);
-      }
+      throw error;
     }
-
-    if (status === "paid") {
-      try {
-        await sendSlugAwaitingPaymentToUser({
-          telegramId: order.user?.telegramChatId || "",
-          slug: updated.slug,
-        });
-      } catch (error) {
-        console.error("[express-app] failed to send payment-pending notification", error);
-      }
-    }
-
-    if (status === "approved" || status === "rejected") {
-      try {
-        await recalculateAndRefreshPercentiles(updated.userId);
-      } catch (error) {
-        console.error("[express-app] failed to recalculate score after order status change", error);
-      }
-    }
-
-    if (status === "rejected") {
-      try {
-        await sendSlugRejectedToUser({
-          telegramId: order.user?.telegramChatId || "",
-          slug: updated.slug,
-          adminNote: updated.adminNote,
-        });
-      } catch (error) {
-        console.error("[express-app] failed to send rejection notification", error);
-      }
-    }
-
-    res.json({ id: updated.id, status: updated.status });
   }),
 );
 

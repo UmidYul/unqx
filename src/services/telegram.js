@@ -82,6 +82,9 @@ async function sendOrderRequestToTelegram(payload) {
         { text: "Оплачено", callback_data: `ord:paid:${payload.orderId}` },
       ],
       [
+        { text: "Активировать", callback_data: `ord:approved:${payload.orderId}` },
+      ],
+      [
         { text: "Открыть в админке", url: buildAppUrl(`/admin/dashboard?tab=orders&orderId=${encodeURIComponent(payload.orderId)}`) },
       ],
     ],

@@ -98,7 +98,19 @@ SESSION_MAX_AGE_MINUTES=120
 SESSION_ROLLING=true
 TELEGRAM_BOT_TOKEN="123456:replace_me"
 TELEGRAM_CHAT_ID="-1001234567890"
+TELEGRAM_WEBHOOK_SECRET="replace_with_random_secret"
 ```
+
+Semi-automatic payments (current mode):
+
+- `payment_provider` in `platform_settings` should be `manual_tg`.
+- New order is sent to admin Telegram chat with action buttons `Связались`, `Оплачено`, `Активировать`.
+- Recommended sequence: `Связались` -> `Оплачено` -> `Активировать`.
+- Bot webhook endpoint: `POST /api/telegram/webhook`.
+- If `TELEGRAM_WEBHOOK_SECRET` is set, requests must include matching
+	`x-telegram-bot-api-secret-token` header.
+- To prepare migration to gateways later, configure optional settings now:
+	`payment_click_merchant_id`, `payment_payme_merchant_id`.
 
 Notes for hosting:
 
@@ -135,6 +147,7 @@ API:
 - `GET /api/cards/:slug/vcf`
 - `GET /api/cards/search?q=AAA`
 - `POST /api/cards/order-request`
+- `POST /api/telegram/webhook`
 
 ## Visual Compare (Next vs Express)
 
