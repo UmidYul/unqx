@@ -40,13 +40,14 @@ async function getPaymentStatistics({ period = "day" } = {}) {
 
     // Order statistics by status
     const orderStats = await prisma.slugRequest.groupBy({
-      by: ["orderStatus"],
+      by: ["status"],
       where: {
         createdAt: { gte: startDate },
       },
       _count: true,
       _sum: {
-        totalOneTime: true,
+        slugPrice: true,
+        planPrice: true,
       },
     });
 
@@ -107,12 +108,12 @@ async function getPaymentStatistics({ period = "day" } = {}) {
       endDate: now,
       orders: {
         byStatus: orderStats.map((s) => ({
-          status: s.orderStatus,
+          status: s.status,
           count: s._count,
-          totalAmount: s._sum.totalOneTime || 0,
+          totalAmount: (s._sum.slugPrice || 0) + (s._sum.planPrice || 0),
         })),
         total: orderStats.reduce((sum, s) => sum + s._count, 0),
-        totalRevenue: orderStats.reduce((sum, s) => sum + (s._sum.totalOneTime || 0), 0),
+        totalRevenue: orderStats.reduce((sum, s) => sum + (s._sum.slugPrice || 0) + (s._sum.planPrice || 0), 0),
       },
       events: {
         byStatus: eventStats.map((e) => ({
@@ -152,7 +153,7 @@ async function getPaymentAlerts() {
     const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
     const oldPendingOrders = await prisma.slugRequest.findMany({
       where: {
-        orderStatus: "new",
+        status: "new",
         createdAt: { lt: oneDayAgo },
       },
       select: {
@@ -191,14 +192,15 @@ async function getPaymentAlerts() {
     const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000);
     const paidNotApproved = await prisma.slugRequest.findMany({
       where: {
-        orderStatus: "paid",
+        status: "paid",
         updatedAt: { lt: twoHoursAgo },
       },
       select: {
         id: true,
         slug: true,
         updatedAt: true,
-        totalOneTime: true,
+        slugPrice: true,
+        planPrice: true,
         user: {
           select: {
             id: true,
@@ -219,7 +221,7 @@ async function getPaymentAlerts() {
         data: paidNotApproved.map((o) => ({
           orderId: o.id,
           slug: o.slug,
-          amount: o.totalOneTime,
+          amount: (o.slugPrice || 0) + (o.planPrice || 0),
           age: Math.floor((Date.now() - o.updatedAt.getTime()) / (1000 * 60 * 60)),
           userName: o.user?.fullName || "Unknown",
         })),
@@ -230,7 +232,7 @@ async function getPaymentAlerts() {
     const twoDaysAgo = new Date(Date.now() - 48 * 60 * 60 * 1000);
     const contactedStalled = await prisma.slugRequest.findMany({
       where: {
-        orderStatus: "contacted",
+        status: "contacted",
         updatedAt: { lt: twoDaysAgo },
       },
       select: {
@@ -269,15 +271,15 @@ async function getPaymentAlerts() {
         SELECT 
           sr.id as order_id,
           sr.slug,
-          sr.order_status,
-          sr.total_one_time,
+          sr.status,
+          (sr.slug_price + sr.plan_price)::int as total_amount,
           COUNT(pe.id)::int as event_count,
           ARRAY_AGG(DISTINCT pe.status) as event_statuses
         FROM slug_requests sr
         LEFT JOIN payment_events pe ON pe.order_id = sr.id
-        WHERE sr.order_status IN ('paid', 'approved')
+        WHERE sr.status IN ('paid', 'approved')
           AND sr.created_at > NOW() - INTERVAL '7 days'
-        GROUP BY sr.id, sr.slug, sr.order_status, sr.total_one_time
+        GROUP BY sr.id, sr.slug, sr.status, sr.slug_price, sr.plan_price
         HAVING COUNT(pe.id) = 0 OR NOT(ARRAY['approved']::text[] <@ ARRAY_AGG(DISTINCT pe.status))
         LIMIT 10
       `;
@@ -291,8 +293,8 @@ async function getPaymentAlerts() {
           data: discrepancies.map((d) => ({
             orderId: d.order_id,
             slug: d.slug,
-            orderStatus: d.order_status,
-            amount: d.total_one_time,
+            status: d.status,
+            amount: d.total_amount,
             eventCount: d.event_count,
             eventStatuses: d.event_statuses,
           })),
@@ -337,27 +339,27 @@ async function getConversionFunnel({ period = "week" } = {}) {
 
     // Count orders by each status
     const newOrders = await prisma.slugRequest.count({
-      where: { orderStatus: "new", createdAt: { gte: startDate } },
+      where: { status: "new", createdAt: { gte: startDate } },
     });
 
     const contactedOrders = await prisma.slugRequest.count({
-      where: { orderStatus: "contacted", createdAt: { gte: startDate } },
+      where: { status: "contacted", createdAt: { gte: startDate } },
     });
 
     const paidOrders = await prisma.slugRequest.count({
-      where: { orderStatus: "paid", createdAt: { gte: startDate } },
+      where: { status: "paid", createdAt: { gte: startDate } },
     });
 
     const approvedOrders = await prisma.slugRequest.count({
-      where: { orderStatus: "approved", createdAt: { gte: startDate } },
+      where: { status: "approved", createdAt: { gte: startDate } },
     });
 
     const rejectedOrders = await prisma.slugRequest.count({
-      where: { orderStatus: "rejected", createdAt: { gte: startDate } },
+      where: { status: "rejected", createdAt: { gte: startDate } },
     });
 
     const expiredOrders = await prisma.slugRequest.count({
-      where: { orderStatus: "expired", createdAt: { gte: startDate } },
+      where: { status: "expired", createdAt: { gte: startDate } },
     });
 
     const totalOrders = newOrders + contactedOrders + paidOrders + approvedOrders + rejectedOrders + expiredOrders;
