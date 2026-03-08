@@ -20,6 +20,117 @@ const DEFAULT_PRICING = {
 };
 
 (function initOrderModal() {
+  // Wizard state
+  let wizardStep = 1;
+  const wizardStepsCount = 4;
+  // Wizard step containers
+  const wizardStepEls = [
+    dom.stepForm.querySelector('#order-wizard-step-1'),
+    dom.stepForm.querySelector('#order-wizard-step-2'),
+    dom.stepForm.querySelector('#order-wizard-step-3'),
+    dom.stepForm.querySelector('#order-wizard-step-4'),
+  ];
+
+  function showWizardStep(step) {
+    wizardStep = step;
+    wizardStepEls.forEach((el, idx) => {
+      if (el) el.classList.toggle('hidden', idx !== step - 1);
+    });
+    // Прогресс-бар визуальный
+    const bar = document.getElementById('order-modal-progress-bar-inner');
+    const label = document.getElementById('order-modal-progress-label');
+    if (bar) {
+      bar.style.width = `${Math.max(1, Math.min(4, step)) * 25}%`;
+    }
+    if (label) {
+      label.textContent = `Шаг ${step} из 4`;
+    }
+    if (dom.progressAuth instanceof HTMLElement) {
+      dom.progressAuth.textContent = `① Slug · ② Тариф · ③ Дополнительно · ④ Подтверждение`;
+    }
+    if (dom.progressNoAuth instanceof HTMLElement) {
+      dom.progressNoAuth.textContent = `① Slug · ② Тариф · ③ Дополнительно · ④ Подтверждение`;
+    }
+    setStatus('', 'neutral');
+  }
+
+  function validateWizardStep(step) {
+    // step: 1 - slug, 2 - plan, 3 - extras, 4 - confirm
+    if (step === 1) {
+      const letters = dom.letters.value;
+      const digits = dom.digits.value;
+      if (normalizeLetters(letters).length !== 3 || normalizeDigits(digits).length !== 3) {
+        setStatus('Введите корректный slug (AAA + 000)', 'error');
+        return false;
+      }
+      return true;
+    }
+    if (step === 2) {
+      if (!dom.planBasic.checked && !dom.planPremium.checked) {
+        setStatus('Выберите тариф', 'error');
+        return false;
+      }
+      return true;
+    }
+    if (step === 3) {
+      // Имя для визитки обязательно
+      if (!dom.name.value.trim()) {
+        setStatus('Имя для визитки обязательно', 'error');
+        return false;
+      }
+      return true;
+    }
+    return true;
+  }
+
+  function nextWizardStep() {
+    if (!validateWizardStep(wizardStep)) return;
+    if (wizardStep < wizardStepsCount) {
+      showWizardStep(wizardStep + 1);
+    }
+  }
+  function prevWizardStep() {
+    if (wizardStep > 1) {
+      showWizardStep(wizardStep - 1);
+    }
+  }
+
+  // Навесить обработчики на кнопки wizard
+  function bindWizardNav() {
+    const btnNext1 = dom.stepForm.querySelector('#order-wizard-next-1');
+    const btnNext2 = dom.stepForm.querySelector('#order-wizard-next-2');
+    const btnNext3 = dom.stepForm.querySelector('#order-wizard-next-3');
+    const btnPrev2 = dom.stepForm.querySelector('#order-wizard-prev-2');
+    const btnPrev3 = dom.stepForm.querySelector('#order-wizard-prev-3');
+    const btnPrev4 = dom.stepForm.querySelector('#order-wizard-prev-4');
+    if (btnNext1) btnNext1.addEventListener('click', nextWizardStep);
+    if (btnNext2) btnNext2.addEventListener('click', nextWizardStep);
+    if (btnNext3) btnNext3.addEventListener('click', nextWizardStep);
+    if (btnPrev2) btnPrev2.addEventListener('click', prevWizardStep);
+    if (btnPrev3) btnPrev3.addEventListener('click', prevWizardStep);
+    if (btnPrev4) btnPrev4.addEventListener('click', prevWizardStep);
+  }
+
+  // Переопределить submit формы: только на 4 шаге
+  dom.stepForm.addEventListener('submit', function (e) {
+    if (wizardStep !== 4) {
+      e.preventDefault();
+      nextWizardStep();
+      return false;
+    }
+    // На 4 шаге — финальный submit
+    handleSubmit(e);
+  });
+
+  // При открытии формы — всегда начинать с шага 1
+  const origOpen = open;
+  open = async function (options = {}) {
+    await origOpen(options);
+    if (currentUser) {
+      showWizardStep(1);
+    }
+    bindWizardNav();
+  };
   const root = document.getElementById("order-modal-root");
   if (!(root instanceof HTMLElement)) {
     return;
