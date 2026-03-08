@@ -4,9 +4,13 @@ const { Prisma } = require("@prisma/client");
 
 const EXPO_PUSH_SEND_URL = "https://exp.host/--/api/v2/push/send";
 const EXPO_PUSH_RECEIPTS_URL = "https://exp.host/--/api/v2/push/getReceipts";
-const MAX_SEND_BATCH = 100;
+const MAX_EXPO_SEND_BATCH = 100;
 const MAX_RECEIPTS_BATCH = 300;
-const TOKEN_PATTERN = /^(ExponentPushToken|ExpoPushToken)\[[^\]]+\]$/;
+const MAX_FCM_SEND_BATCH = 500;
+const EXPO_TOKEN_PATTERN = /^(ExponentPushToken|ExpoPushToken)\[[^\]]+\]$/;
+const FCM_TOKEN_PATTERN = /^[A-Za-z0-9:_\-]{80,}$/;
+
+let firebaseMessaging = undefined;
 
 function isStorageMissing(error) {
     if (!error || typeof error !== "object") return false;
@@ -28,7 +32,15 @@ function normalizeToken(value) {
 }
 
 function isExpoPushToken(value) {
-    return TOKEN_PATTERN.test(String(value || ""));
+    return EXPO_TOKEN_PATTERN.test(String(value || ""));
+}
+
+function isLikelyFcmToken(value) {
+    const token = String(value || "").trim();
+    if (!token || isExpoPushToken(token)) {
+        return false;
+    }
+    return FCM_TOKEN_PATTERN.test(token);
 }
 
 async function removeInvalidTokens(userId, tokens) {
@@ -69,6 +81,21 @@ function buildHeaders() {
     }
 
     return headers;
+}
+
+function parseBoolean(value) {
+    if (typeof value !== "string") {
+        return undefined;
+    }
+
+    const normalized = value.trim().toLowerCase();
+    if (["1", "true", "yes", "on"].includes(normalized)) {
+        return true;
+    }
+    if (["0", "false", "no", "off"].includes(normalized)) {
+        return false;
+    }
+    return undefined;
 }
 
 async function fetchUserPushTokens(userId, { respectNotifications = true } = {}) {
@@ -154,12 +181,76 @@ async function fetchPushTargetsByUserIds(userIds, { respectNotifications = true 
     }
 }
 
-function shouldDisablePush() {
+function shouldDisableExpoPush() {
     const raw = String(env.EXPO_PUSH_ENABLED || "").trim().toLowerCase();
     if (!raw) {
         return false;
     }
     return raw === "0" || raw === "false" || raw === "no" || raw === "off";
+}
+
+function shouldDisableFcmPush() {
+    const raw = parseBoolean(env.FCM_PUSH_ENABLED);
+    return raw === false;
+}
+
+function toStringRecord(data) {
+    if (!data || typeof data !== "object") {
+        return {};
+    }
+
+    const out = {};
+    for (const [key, value] of Object.entries(data)) {
+        if (value === undefined || value === null) {
+            continue;
+        }
+        if (typeof value === "string") {
+            out[key] = value;
+            continue;
+        }
+        if (typeof value === "number" || typeof value === "boolean") {
+            out[key] = String(value);
+            continue;
+        }
+        try {
+            out[key] = JSON.stringify(value);
+        } catch {
+            out[key] = String(value);
+        }
+    }
+
+    return out;
+}
+
+async function getFirebaseMessaging() {
+    if (firebaseMessaging !== undefined) {
+        return firebaseMessaging;
+    }
+
+    if (shouldDisableFcmPush()) {
+        firebaseMessaging = null;
+        return firebaseMessaging;
+    }
+
+    try {
+        const admin = require("firebase-admin");
+        if (!admin.apps.length) {
+            const serviceAccountRaw = env.FIREBASE_SERVICE_ACCOUNT_JSON || (env.FIREBASE_SERVICE_ACCOUNT_B64 ? Buffer.from(env.FIREBASE_SERVICE_ACCOUNT_B64, "base64").toString("utf8") : "");
+            if (serviceAccountRaw) {
+                const credentials = JSON.parse(serviceAccountRaw);
+                admin.initializeApp({
+                    credential: admin.credential.cert(credentials),
+                });
+            } else {
+                admin.initializeApp();
+            }
+        }
+        firebaseMessaging = admin.messaging();
+        return firebaseMessaging;
+    } catch {
+        firebaseMessaging = null;
+        return firebaseMessaging;
+    }
 }
 
 async function sendMessagesToExpo(messages) {
@@ -194,46 +285,9 @@ async function fetchExpoReceipts(ids) {
     return payload.data;
 }
 
-async function dispatchPushTargets(targets, payload) {
-    const cleanedTargets = Array.isArray(targets)
-        ? targets
-            .map((item) => ({
-                userId: String(item?.userId || "").trim(),
-                token: normalizeToken(item?.token),
-            }))
-            .filter((item) => item.userId && item.token)
-        : [];
-
-    if (!cleanedTargets.length) {
-        return { ok: true, sent: 0, tokens: 0, cleaned: 0, users: 0 };
-    }
-
-    const uniqueByPair = new Map();
-    for (const item of cleanedTargets) {
-        const key = `${item.userId}:${item.token}`;
-        if (!uniqueByPair.has(key)) {
-            uniqueByPair.set(key, item);
-        }
-    }
-
-    const deduped = Array.from(uniqueByPair.values());
-    const invalidByUser = new Map();
-    const validTargets = [];
-    for (const item of deduped) {
-        if (isExpoPushToken(item.token)) {
-            validTargets.push(item);
-        } else {
-            if (!invalidByUser.has(item.userId)) invalidByUser.set(item.userId, new Set());
-            invalidByUser.get(item.userId).add(item.token);
-        }
-    }
-
-    for (const [userId, tokenSet] of invalidByUser.entries()) {
-        await removeInvalidTokens(userId, Array.from(tokenSet));
-    }
-
-    if (!validTargets.length) {
-        return { ok: true, sent: 0, tokens: 0, cleaned: invalidByUser.size, users: 0 };
+async function sendExpoTargets(validTargets, payload) {
+    if (!validTargets.length || shouldDisableExpoPush()) {
+        return { sent: 0, tokens: 0, cleaned: 0, users: 0 };
     }
 
     const messageTemplate = {
@@ -249,7 +303,7 @@ async function dispatchPushTargets(targets, payload) {
     const deadByUser = new Map();
     let sentCount = 0;
 
-    for (const targetChunk of chunkArray(validTargets, MAX_SEND_BATCH)) {
+    for (const targetChunk of chunkArray(validTargets, MAX_EXPO_SEND_BATCH)) {
         const messages = targetChunk.map((target) => ({ ...messageTemplate, to: target.token }));
         const expoResponse = await sendMessagesToExpo(messages);
 
@@ -299,7 +353,6 @@ async function dispatchPushTargets(targets, payload) {
     }
 
     return {
-        ok: true,
         sent: sentCount,
         tokens: validTargets.length,
         cleaned: cleanedCount,
@@ -307,8 +360,136 @@ async function dispatchPushTargets(targets, payload) {
     };
 }
 
+async function sendFcmTargets(validTargets, payload) {
+    if (!validTargets.length) {
+        return { sent: 0, tokens: 0, cleaned: 0, users: 0 };
+    }
+
+    const messaging = await getFirebaseMessaging();
+    if (!messaging) {
+        return { sent: 0, tokens: 0, cleaned: 0, users: 0 };
+    }
+
+    const deadByUser = new Map();
+    let sentCount = 0;
+
+    for (const targetChunk of chunkArray(validTargets, MAX_FCM_SEND_BATCH)) {
+        const message = {
+            tokens: targetChunk.map((item) => item.token),
+            notification: {
+                title: String(payload?.title || "").slice(0, 120),
+                body: String(payload?.body || "").slice(0, 512),
+            },
+            data: toStringRecord(payload?.data),
+            android: {
+                priority: payload?.priority === "normal" ? "normal" : "high",
+                notification: {
+                    channelId: payload?.channelId || "default",
+                    sound: payload?.sound === "none" ? undefined : "default",
+                },
+            },
+        };
+
+        const response = await messaging.sendEachForMulticast(message);
+        sentCount += Number(response?.successCount || 0);
+
+        response.responses.forEach((item, index) => {
+            if (item?.success) {
+                return;
+            }
+            const code = String(item?.error?.code || "");
+            if (code === "messaging/registration-token-not-registered" || code === "messaging/invalid-registration-token") {
+                const target = targetChunk[index];
+                if (!target) {
+                    return;
+                }
+                if (!deadByUser.has(target.userId)) {
+                    deadByUser.set(target.userId, new Set());
+                }
+                deadByUser.get(target.userId).add(target.token);
+            }
+        });
+    }
+
+    let cleanedCount = 0;
+    for (const [userId, tokenSet] of deadByUser.entries()) {
+        const tokens = Array.from(tokenSet);
+        cleanedCount += tokens.length;
+        await removeInvalidTokens(userId, tokens);
+    }
+
+    return {
+        sent: sentCount,
+        tokens: validTargets.length,
+        cleaned: cleanedCount,
+        users: new Set(validTargets.map((item) => item.userId)).size,
+    };
+}
+
+async function dispatchPushTargets(targets, payload) {
+    const cleanedTargets = Array.isArray(targets)
+        ? targets
+            .map((item) => ({
+                userId: String(item?.userId || "").trim(),
+                token: normalizeToken(item?.token),
+            }))
+            .filter((item) => item.userId && item.token)
+        : [];
+
+    if (!cleanedTargets.length) {
+        return { ok: true, sent: 0, tokens: 0, cleaned: 0, users: 0, expoSent: 0, fcmSent: 0 };
+    }
+
+    const uniqueByPair = new Map();
+    for (const item of cleanedTargets) {
+        const key = `${item.userId}:${item.token}`;
+        if (!uniqueByPair.has(key)) {
+            uniqueByPair.set(key, item);
+        }
+    }
+
+    const deduped = Array.from(uniqueByPair.values());
+    const expoTargets = [];
+    const fcmTargets = [];
+    const invalidByUser = new Map();
+
+    for (const item of deduped) {
+        if (isExpoPushToken(item.token)) {
+            expoTargets.push(item);
+            continue;
+        }
+        if (isLikelyFcmToken(item.token)) {
+            fcmTargets.push(item);
+            continue;
+        }
+        if (!invalidByUser.has(item.userId)) {
+            invalidByUser.set(item.userId, new Set());
+        }
+        invalidByUser.get(item.userId).add(item.token);
+    }
+
+    for (const [userId, tokenSet] of invalidByUser.entries()) {
+        await removeInvalidTokens(userId, Array.from(tokenSet));
+    }
+
+    const [expoResult, fcmResult] = await Promise.all([
+        sendExpoTargets(expoTargets, payload),
+        sendFcmTargets(fcmTargets, payload),
+    ]);
+
+    return {
+        ok: true,
+        sent: expoResult.sent + fcmResult.sent,
+        expoSent: expoResult.sent,
+        fcmSent: fcmResult.sent,
+        tokens: expoResult.tokens + fcmResult.tokens,
+        cleaned: expoResult.cleaned + fcmResult.cleaned,
+        users: new Set(deduped.map((item) => item.userId)).size,
+    };
+}
+
 async function sendExpoPushToUser({ userId, title, body, data = {}, sound = "default", respectNotifications = true }) {
-    if (!userId || !title || !body || shouldDisablePush()) {
+    if (!userId || !title || !body) {
         return { ok: true, sent: 0, tokens: 0 };
     }
 
@@ -328,7 +509,7 @@ async function sendExpoPushToUser({ userId, title, body, data = {}, sound = "def
 }
 
 async function sendExpoPushToUsers({ userIds, title, body, data = {}, sound = "default", priority = "high", respectNotifications = true }) {
-    if (!Array.isArray(userIds) || !userIds.length || !title || !body || shouldDisablePush()) {
+    if (!Array.isArray(userIds) || !userIds.length || !title || !body) {
         return { ok: true, sent: 0, tokens: 0, users: 0 };
     }
 

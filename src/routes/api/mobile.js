@@ -1791,6 +1791,68 @@ router.patch(
   }),
 );
 
+router.delete(
+  "/nfc/tags/:uid",
+  asyncHandler(async (req, res) => {
+    const userSession = getUserSession(req);
+    const userId = userSession?.userId;
+    if (!userId) {
+      res.status(401).json({ error: "Unauthorized", code: "AUTH_REQUIRED" });
+      return;
+    }
+
+    const uid = String(req.params.uid || "").trim().slice(0, 80);
+    if (!uid) {
+      res.status(400).json({ error: "UID is required", code: "VALIDATION_ERROR" });
+      return;
+    }
+
+    try {
+      await prisma.$executeRaw`
+        DELETE FROM nfc_tags
+        WHERE uid = ${uid} AND user_id = ${userId}
+      `;
+    } catch (error) {
+      if (!isMissingStorageError(error)) {
+        throw error;
+      }
+    }
+
+    res.json({ ok: true });
+  }),
+);
+
+router.delete(
+  "/nfc/tags",
+  asyncHandler(async (req, res) => {
+    const userSession = getUserSession(req);
+    const userId = userSession?.userId;
+    if (!userId) {
+      res.status(401).json({ error: "Unauthorized", code: "AUTH_REQUIRED" });
+      return;
+    }
+
+    const uid = String(req.query?.uid || "").trim().slice(0, 80);
+    if (!uid) {
+      res.status(400).json({ error: "UID is required", code: "VALIDATION_ERROR" });
+      return;
+    }
+
+    try {
+      await prisma.$executeRaw`
+        DELETE FROM nfc_tags
+        WHERE uid = ${uid} AND user_id = ${userId}
+      `;
+    } catch (error) {
+      if (!isMissingStorageError(error)) {
+        throw error;
+      }
+    }
+
+    res.json({ ok: true });
+  }),
+);
+
 router.get(
   "/notifications",
   asyncHandler(async (req, res) => {
@@ -1872,33 +1934,51 @@ router.post(
       return;
     }
 
-    const expoToken = String(req.body?.expoToken || req.body?.token || "").trim();
-    if (!expoToken) {
-      res.status(400).json({ error: "Expo token is required", code: "VALIDATION_ERROR" });
-      return;
+    const expoToken = String(req.body?.expoToken || "").trim();
+    const fcmToken = String(req.body?.fcmToken || req.body?.deviceToken || "").trim();
+    const fallbackToken = String(req.body?.token || "").trim();
+
+    const expoPattern = /^(ExponentPushToken|ExpoPushToken)\[[^\]]+\]$/;
+    const tokens = new Set();
+
+    if (expoToken && expoPattern.test(expoToken)) {
+      tokens.add(expoToken);
     }
 
-    const isExpoToken = /^(ExponentPushToken|ExpoPushToken)\[[^\]]+\]$/.test(expoToken);
-    if (!isExpoToken) {
-      res.status(400).json({ error: "Unsupported push token", code: "VALIDATION_ERROR" });
+    if (fcmToken && !expoPattern.test(fcmToken)) {
+      tokens.add(fcmToken);
+    }
+
+    if (fallbackToken) {
+      if (expoPattern.test(fallbackToken)) {
+        tokens.add(fallbackToken);
+      } else if (!expoToken && !fcmToken) {
+        tokens.add(fallbackToken);
+      }
+    }
+
+    if (!tokens.size) {
+      res.status(400).json({ error: "Push token is required", code: "VALIDATION_ERROR" });
       return;
     }
 
     const platform = String(req.body?.platform || detectPlatform(req.get("user-agent")));
     try {
-      await prisma.$executeRaw`
-        INSERT INTO push_tokens (user_id, token, platform, created_at, updated_at)
-        VALUES (${userId}, ${expoToken}, ${platform}, now(), now())
-        ON CONFLICT (user_id, token)
-        DO UPDATE SET platform = EXCLUDED.platform, updated_at = now()
-      `;
+      for (const token of tokens) {
+        await prisma.$executeRaw`
+          INSERT INTO push_tokens (user_id, token, platform, created_at, updated_at)
+          VALUES (${userId}, ${token}, ${platform}, now(), now())
+          ON CONFLICT (user_id, token)
+          DO UPDATE SET platform = EXCLUDED.platform, updated_at = now()
+        `;
+      }
     } catch (error) {
       if (!isMissingStorageError(error)) {
         throw error;
       }
     }
 
-    res.json({ ok: true });
+    res.json({ ok: true, tokensStored: tokens.size });
   }),
 );
 
