@@ -1320,7 +1320,7 @@ router.get(
       where,
       orderBy:
         sort === "views"
-          ? [{ analyticsViewsCount: "desc" }, { updatedAt: "desc" }]
+          ? [{ updatedAt: "desc" }]
           : sort === "date"
             ? [{ createdAt: "desc" }]
             : [{ updatedAt: "desc" }],
@@ -1354,6 +1354,21 @@ router.get(
       take: 500,
     });
 
+    const rowSlugs = rows.map((row) => String(row.fullSlug || "").trim().toUpperCase()).filter(Boolean);
+    const uniqueViewRows = rowSlugs.length && prisma.analyticsView && typeof prisma.analyticsView.groupBy === "function"
+      ? await prisma.analyticsView.groupBy({
+        by: ["slug", "sessionId"],
+        where: { slug: { in: rowSlugs } },
+        _count: { _all: true },
+      })
+      : [];
+    const uniqueViewsBySlug = new Map();
+    uniqueViewRows.forEach((row) => {
+      const slugKey = String(row.slug || "").trim().toUpperCase();
+      if (!slugKey) return;
+      uniqueViewsBySlug.set(slugKey, (uniqueViewsBySlug.get(slugKey) || 0) + 1);
+    });
+
     const groupedByOwner = new Map();
     for (const row of rows) {
       const owner = row.owner;
@@ -1363,7 +1378,7 @@ router.get(
       const tags = Array.isArray(owner.profileCard?.tags) ? owner.profileCard.tags : [];
       const normalizedDirectorySector = normalizeDirectorySector(owner.directorySector);
       const slug = String(row.fullSlug || "").trim();
-      const currentViews = Number(row.analyticsViewsCount || 0);
+      const currentViews = Number(uniqueViewsBySlug.get(String(row.fullSlug || "").trim().toUpperCase()) || 0);
       const currentCreatedAt = row.createdAt ? new Date(row.createdAt) : new Date(0);
 
       const existing = groupedByOwner.get(ownerId);

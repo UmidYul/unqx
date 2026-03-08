@@ -1152,7 +1152,19 @@ router.post(
             resolvedCity = geo.city;
           }
 
-          if (tx.slug) {
+          let isUniqueSessionView = true;
+          if (tx.analyticsView) {
+            const exists = await tx.analyticsView.findFirst({
+              where: {
+                slug: slugRow.fullSlug,
+                sessionId,
+              },
+              select: { id: true },
+            });
+            isUniqueSessionView = !exists;
+          }
+
+          if (tx.slug && isUniqueSessionView) {
             await tx.slug.update({
               where: { fullSlug: slugRow.fullSlug },
               data: { analyticsViewsCount: { increment: 1 } },

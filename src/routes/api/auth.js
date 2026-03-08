@@ -878,9 +878,22 @@ router.get(
       return;
     }
 
+    const profileCardRows = await prisma.$queryRaw`
+      SELECT avatar_url
+      FROM profile_cards
+      WHERE owner_id = ${user.id}
+      LIMIT 1
+    `;
+    const avatarUrl = Array.isArray(profileCardRows) && profileCardRows[0]?.avatar_url
+      ? String(profileCardRows[0].avatar_url).trim()
+      : "";
+
+    const userPayload = userToClientPayload(user);
+    userPayload.photoUrl = avatarUrl || sessionUser.avatarUrl || "/brand/profile-user.svg";
+
     res.json({
       authenticated: true,
-      user: userToClientPayload(user),
+      user: userPayload,
       csrfToken,
     });
   }),

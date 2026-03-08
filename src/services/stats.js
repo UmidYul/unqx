@@ -42,7 +42,9 @@ async function getSeries(days, timezone, slug) {
     const key = format(toZonedTime(row.visitedAt, timezone), "yyyy-MM-dd");
     if (!bucket.has(key)) continue;
     const current = bucket.get(key);
-    current.views += 1;
+    if (!current.sessions.has(row.sessionId)) {
+      current.views += 1;
+    }
     current.sessions.add(row.sessionId);
   }
 
@@ -78,14 +80,15 @@ async function getCardStats(slug, timezone = DEFAULT_TIMEZONE, days = 7) {
   ]);
 
   const totalUniqueViews = new Set(views.map((item) => item.sessionId)).size;
-  const deviceSplit = { mobile: 0, desktop: 0 };
+  const deviceSessions = { mobile: new Set(), desktop: new Set() };
   for (const row of views) {
-    if (row.device === "mobile") deviceSplit.mobile += 1;
-    if (row.device === "desktop") deviceSplit.desktop += 1;
+    if (row.device === "mobile") deviceSessions.mobile.add(row.sessionId);
+    if (row.device === "desktop") deviceSessions.desktop.add(row.sessionId);
   }
+  const deviceSplit = { mobile: deviceSessions.mobile.size, desktop: deviceSessions.desktop.size };
 
   return {
-    totalViews: views.length,
+    totalViews: totalUniqueViews,
     totalUniqueViews,
     series7d,
     lastViewAt: views[0]?.visitedAt || null,
@@ -94,14 +97,32 @@ async function getCardStats(slug, timezone = DEFAULT_TIMEZONE, days = 7) {
 }
 
 async function getGlobalStats(timezone = DEFAULT_TIMEZONE) {
-  const [totalCards, activeCards, totalsAggregate, topCards, dailySeries] = await Promise.all([
+  const [totalCards, activeCards, uniqueSlugSessionRows, dailySeries] = await Promise.all([
     prisma.slug.count(),
     prisma.slug.count({ where: { status: "active" } }),
-    prisma.slug.aggregate({ _sum: { analyticsViewsCount: true } }),
-    prisma.slug.findMany({
-      where: { status: { in: ["active", "private", "paused", "approved"] } },
-      orderBy: [{ analyticsViewsCount: "desc" }, { updatedAt: "desc" }],
-      take: 10,
+    prisma.analyticsView && typeof prisma.analyticsView.groupBy === "function"
+      ? prisma.analyticsView.groupBy({
+        by: ["slug", "sessionId"],
+        _count: { _all: true },
+      })
+      : Promise.resolve([]),
+    getSeries(30, timezone),
+  ]);
+
+  const uniqueViewsBySlug = new Map();
+  uniqueSlugSessionRows.forEach((row) => {
+    const slug = String(row.slug || "").trim().toUpperCase();
+    if (!slug) return;
+    uniqueViewsBySlug.set(slug, (uniqueViewsBySlug.get(slug) || 0) + 1);
+  });
+
+  const topSlugEntries = Array.from(uniqueViewsBySlug.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10);
+  const topSlugs = topSlugEntries.map(([slug]) => slug);
+  const topCardsRows = topSlugs.length
+    ? await prisma.slug.findMany({
+      where: { fullSlug: { in: topSlugs } },
       include: {
         owner: {
           select: {
@@ -113,22 +134,26 @@ async function getGlobalStats(timezone = DEFAULT_TIMEZONE) {
           },
         },
       },
-    }),
-    getSeries(30, timezone),
-  ]);
+    })
+    : [];
+  const topCardsBySlug = new Map(topCardsRows.map((row) => [String(row.fullSlug || "").toUpperCase(), row]));
+  const totalUniqueViews = Array.from(uniqueViewsBySlug.values()).reduce((sum, value) => sum + Number(value || 0), 0);
 
   return {
     totalCards,
     activeCards,
-    totalViews: Number(totalsAggregate?._sum?.analyticsViewsCount || 0),
-    totalUniqueViews: 0,
-    topCards: topCards.map((row) => ({
-      id: row.id,
-      slug: row.fullSlug,
-      name: row.owner?.profileCard?.name || row.owner?.displayName || row.owner?.firstName || "UNQX User",
-      viewsCount: Number(row.analyticsViewsCount || 0),
-      uniqueViewsCount: 0,
-    })),
+    totalViews: totalUniqueViews,
+    totalUniqueViews,
+    topCards: topSlugEntries.map(([slug, views]) => {
+      const row = topCardsBySlug.get(slug);
+      return {
+        id: row?.id || slug,
+        slug,
+        name: row?.owner?.profileCard?.name || row?.owner?.displayName || row?.owner?.firstName || "UNQX User",
+        viewsCount: Number(views || 0),
+        uniqueViewsCount: Number(views || 0),
+      };
+    }),
     dailySeries,
   };
 }

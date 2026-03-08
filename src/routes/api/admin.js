@@ -2300,7 +2300,7 @@ router.get(
     todayStart.setUTCHours(0, 0, 0, 0);
     const onlineFrom = new Date(Date.now() - 5 * 60 * 1000);
 
-    const [views, clicks, activeCards, todayCreated, todayActivated, onlineRows, topSlugs] = await Promise.all([
+    const [views, clicks, activeCards, todayCreated, todayActivated, onlineRows, topSlugRows] = await Promise.all([
       prisma.analyticsView ? prisma.analyticsView.findMany({ where: { visitedAt: { gte: from } } }) : Promise.resolve([]),
       prisma.analyticsClick ? prisma.analyticsClick.findMany({ where: { clickedAt: { gte: from } } }) : Promise.resolve([]),
       prisma.slug.count({ where: { status: "active" } }),
@@ -2309,37 +2309,58 @@ router.get(
       prisma.analyticsView
         ? prisma.analyticsView.findMany({ where: { visitedAt: { gte: onlineFrom } }, select: { sessionId: true } })
         : Promise.resolve([]),
-      prisma.slug.findMany({
-        where: { status: "active" },
-        orderBy: [{ analyticsViewsCount: "desc" }],
-        take: 10,
-        select: { fullSlug: true, analyticsViewsCount: true },
-      }),
+      prisma.analyticsView
+        ? prisma.analyticsView.groupBy({
+          by: ["slug", "sessionId"],
+          where: { visitedAt: { gte: from } },
+          _count: { _all: true },
+        })
+        : Promise.resolve([]),
     ]);
 
-    const daily = new Map();
+    const dailySessions = new Map();
     views.forEach((item) => {
       const key = item.visitedAt.toISOString().slice(0, 10);
-      daily.set(key, (daily.get(key) || 0) + 1);
+      if (!dailySessions.has(key)) {
+        dailySessions.set(key, new Set());
+      }
+      dailySessions.get(key).add(String(item.sessionId || ""));
     });
-    const bySource = {};
-    const byDevice = {};
+    const daily = new Map(Array.from(dailySessions.entries()).map(([date, sessions]) => [date, sessions.size]));
+    const bySourceSessions = new Map();
+    const byDeviceSessions = new Map();
     views.forEach((item) => {
+      const sessionId = String(item.sessionId || "");
       const src = String(item.source || "direct");
       const dev = String(item.device || "desktop");
-      bySource[src] = (bySource[src] || 0) + 1;
-      byDevice[dev] = (byDevice[dev] || 0) + 1;
+      if (!bySourceSessions.has(src)) bySourceSessions.set(src, new Set());
+      if (!byDeviceSessions.has(dev)) byDeviceSessions.set(dev, new Set());
+      bySourceSessions.get(src).add(sessionId);
+      byDeviceSessions.get(dev).add(sessionId);
     });
+    const bySource = Object.fromEntries(Array.from(bySourceSessions.entries()).map(([k, s]) => [k, s.size]));
+    const byDevice = Object.fromEntries(Array.from(byDeviceSessions.entries()).map(([k, s]) => [k, s.size]));
     const byButton = {};
     clicks.forEach((item) => {
       const key = String(item.buttonType || "other");
       byButton[key] = (byButton[key] || 0) + 1;
     });
 
+    const topSlugCounter = new Map();
+    topSlugRows.forEach((row) => {
+      const slug = String(row.slug || "").toUpperCase();
+      if (!slug) return;
+      topSlugCounter.set(slug, (topSlugCounter.get(slug) || 0) + 1);
+    });
+    const topSlugs = Array.from(topSlugCounter.entries())
+      .map(([slug, views]) => ({ slug, views }))
+      .sort((a, b) => b.views - a.views)
+      .slice(0, 10);
+
     res.json({
       period,
       totalViewsByDay: Array.from(daily.entries()).map(([date, value]) => ({ date, value })),
-      topSlugs: topSlugs.map((row) => ({ slug: row.fullSlug, views: Number(row.analyticsViewsCount || 0) })),
+      topSlugs,
       breakdown: {
         source: bySource,
         device: byDevice,

@@ -135,7 +135,7 @@
     arctic: { label: "Arctic", fill: "#f0f5f9", border: "#7a9db8", text: "#1a2a3a" },
     linen: { label: "Linen", fill: "#f2ede6", border: "#c8a882", text: "#3a2e24" },
     marble: { label: "Marble", fill: "#ffffff", border: "#0a0a0a", text: "#0a0a0a" },
-    forest: { label: "Forest", fill: "#386e44", border: "#b8e8c8", text: "#ffffff" },
+    forest: { label: "Forest", fill: "#386e44", border: "#e8dcc0", text: "#e8dcc0" },
   };
   function themePill(theme) {
     const id = String(theme || "default_dark").trim();

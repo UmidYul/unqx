@@ -246,15 +246,22 @@ async function detectSuspiciousActivity() {
   const windowStart = new Date(now.getTime() - windowMinutes * 60 * 1000);
 
   const grouped = await prisma.analyticsView.groupBy({
-    by: ["slug"],
+    by: ["slug", "sessionId"],
     where: {
       visitedAt: { gte: windowStart, lte: now },
     },
     _count: { _all: true },
   });
 
-  const suspicious = grouped
-    .map((row) => ({ slug: row.slug, views: row._count._all || 0 }))
+  const uniqueBySlug = new Map();
+  grouped.forEach((row) => {
+    const slug = String(row.slug || "");
+    if (!slug) return;
+    uniqueBySlug.set(slug, (uniqueBySlug.get(slug) || 0) + 1);
+  });
+
+  const suspicious = Array.from(uniqueBySlug.entries())
+    .map(([slug, views]) => ({ slug, views }))
     .filter((row) => row.views >= threshold)
     .sort((a, b) => b.views - a.views);
 

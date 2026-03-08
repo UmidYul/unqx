@@ -899,29 +899,37 @@ router.get(
 
     const uniqueVisitors = new Set(views.map((item) => item.sessionId)).size;
     const prevUniqueVisitors = new Set(prevViews.map((item) => item.sessionId)).size;
-    const ctr = views.length ? Number(((clicks.length / views.length) * 100).toFixed(1)) : 0;
-    const prevCtr = prevViews.length ? Number(((prevClicks.length / prevViews.length) * 100).toFixed(1)) : 0;
-    const byDay = new Map();
+    const ctr = uniqueVisitors ? Number(((clicks.length / uniqueVisitors) * 100).toFixed(1)) : 0;
+    const prevCtr = prevUniqueVisitors ? Number(((prevClicks.length / prevUniqueVisitors) * 100).toFixed(1)) : 0;
+
+    const byDaySessions = new Map();
+    const bySourceSessions = new Map();
+    const byCitySessions = new Map();
+    const byDeviceSessions = new Map();
+
     views.forEach((item) => {
-      const key = item.visitedAt.toISOString().slice(0, 10);
-      byDay.set(key, (byDay.get(key) || 0) + 1);
+      const sessionId = String(item.sessionId || "");
+      const dayKey = item.visitedAt.toISOString().slice(0, 10);
+      if (!byDaySessions.has(dayKey)) byDaySessions.set(dayKey, new Set());
+      byDaySessions.get(dayKey).add(sessionId);
+
+      const sourceKey = String(item.source || "direct");
+      if (!bySourceSessions.has(sourceKey)) bySourceSessions.set(sourceKey, new Set());
+      bySourceSessions.get(sourceKey).add(sessionId);
+
+      const cityKey = String(item.city || "Неизвестно");
+      if (!byCitySessions.has(cityKey)) byCitySessions.set(cityKey, new Set());
+      byCitySessions.get(cityKey).add(sessionId);
+
+      const deviceKey = String(item.device || "desktop");
+      if (!byDeviceSessions.has(deviceKey)) byDeviceSessions.set(deviceKey, new Set());
+      byDeviceSessions.get(deviceKey).add(sessionId);
     });
 
-    const bySource = {};
-    views.forEach((item) => {
-      const key = String(item.source || "direct");
-      bySource[key] = (bySource[key] || 0) + 1;
-    });
-    const byCity = {};
-    views.forEach((item) => {
-      const key = String(item.city || "Неизвестно");
-      byCity[key] = (byCity[key] || 0) + 1;
-    });
-    const byDevice = {};
-    views.forEach((item) => {
-      const key = String(item.device || "desktop");
-      byDevice[key] = (byDevice[key] || 0) + 1;
-    });
+    const byDay = new Map(Array.from(byDaySessions.entries()).map(([k, s]) => [k, s.size]));
+    const bySource = Object.fromEntries(Array.from(bySourceSessions.entries()).map(([k, s]) => [k, s.size]));
+    const byCity = Object.fromEntries(Array.from(byCitySessions.entries()).map(([k, s]) => [k, s.size]));
+    const byDevice = Object.fromEntries(Array.from(byDeviceSessions.entries()).map(([k, s]) => [k, s.size]));
     const byButton = {};
     clicks.forEach((item) => {
       const key = String(item.buttonType || "other");
@@ -938,12 +946,12 @@ router.get(
       slug: fullSlug,
       period,
       kpi: {
-        views: views.length,
+        views: uniqueVisitors,
         uniqueVisitors,
         clicks: clicks.length,
         ctr,
         trends: {
-          views: views.length - prevViews.length,
+          views: uniqueVisitors - prevUniqueVisitors,
           uniqueVisitors: uniqueVisitors - prevUniqueVisitors,
           clicks: clicks.length - prevClicks.length,
           ctr: Number((ctr - prevCtr).toFixed(1)),

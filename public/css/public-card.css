@@ -781,3 +781,27 @@ body[data-card-theme] #card-view-root>[data-card-view] {
     font-size: 14px;
   }
 }
+
+[data-card-theme] {
+  font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+[data-card-theme="default_dark"] {
+  background: #fafafa;
+}
+
+[data-card-theme="arctic"] {
+  background: linear-gradient(160deg, #fdfeff 0%, #f5f8fb 100%);
+}
+
+[data-card-theme="linen"] {
+  background: linear-gradient(160deg, #fcfbf9 0%, #f7f3ee 100%);
+}
+
+[data-card-theme="marble"] {
+  background: #fefefe;
+}
+
+[data-card-theme="forest"] {
+  background: #0a1a0c;
+}

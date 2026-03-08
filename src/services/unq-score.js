@@ -442,7 +442,7 @@ async function getScoreLeaderboard(limit = 100) {
   const uniqueSlugs = Array.from(new Set(allSlugs));
   const viewsGrouped = uniqueSlugs.length && prisma.analyticsView
     ? await prisma.analyticsView.groupBy({
-      by: ["slug"],
+      by: ["slug", "sessionId"],
       where: {
         slug: { in: uniqueSlugs },
         visitedAt: { gte: since30d },
@@ -450,7 +450,12 @@ async function getScoreLeaderboard(limit = 100) {
       _count: { _all: true },
     })
     : [];
-  const viewsBySlug = new Map(viewsGrouped.map((row) => [row.slug, row._count._all || 0]));
+  const viewsBySlug = new Map();
+  viewsGrouped.forEach((row) => {
+    const slugValue = String(row.slug || "");
+    if (!slugValue) return;
+    viewsBySlug.set(slugValue, (viewsBySlug.get(slugValue) || 0) + 1);
+  });
 
   return rows.map((row, index) => {
     const slugs = row.user?.slugs || [];
