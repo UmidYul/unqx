@@ -234,9 +234,9 @@
         // Визуальный редактор для slug_pricing_custom_rules
         if (item.key === "slug_pricing_custom_rules" && Array.isArray(item.value)) {
           return `<label class="block md:col-span-2"><span class="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">${esc(item.label)}</span>
-            <div id="custom-rules-editor">
-              <table class="min-w-full text-left text-sm border mb-2">
-                <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
+            <div id="custom-rules-editor" class="rounded-xl bg-neutral-50 border border-neutral-200 p-3 mb-2">
+              <table class="min-w-full text-left text-sm">
+                <thead class="bg-neutral-100 text-xs uppercase tracking-wide text-neutral-500">
                   <tr>
                     <th class="px-2 py-1">Паттерн</th>
                     <th class="px-2 py-1">Тип</th>
@@ -247,24 +247,24 @@
                 </thead>
                 <tbody id="custom-rules-rows">
                   ${item.value.map((rule, idx) => `
-                    <tr data-rule-row="${idx}">
-                      <td><input type="text" class="border rounded px-1 py-0.5 w-28" data-rule-pattern="${idx}" value="${esc(rule.pattern||"")}" /></td>
+                    <tr data-rule-row="${idx}" class="hover:bg-neutral-100 transition">
+                      <td><input type="text" class="border border-neutral-300 rounded-lg px-2 py-1 w-28 focus:border-neutral-500 focus:bg-white transition" data-rule-pattern="${idx}" value="${esc(rule.pattern||"")}" /></td>
                       <td>
-                        <select class="border rounded px-1 py-0.5" data-rule-type="${idx}">
+                        <select class="border border-neutral-300 rounded-lg px-2 py-1 focus:border-neutral-500 transition" data-rule-type="${idx}">
                           <option value="contains" ${rule.type==="contains"?"selected":""}>Содержит</option>
                           <option value="startsWith" ${rule.type==="startsWith"?"selected":""}>Начинается</option>
                           <option value="endsWith" ${rule.type==="endsWith"?"selected":""}>Заканчивается</option>
                           <option value="regex" ${rule.type==="regex"?"selected":""}>RegExp</option>
                         </select>
                       </td>
-                      <td><input type="number" class="border rounded px-1 py-0.5 w-20" data-rule-delta="${idx}" value="${esc(rule.delta||0)}" /></td>
-                      <td><input type="text" class="border rounded px-1 py-0.5 w-32" data-rule-label="${idx}" value="${esc(rule.label||"")}" /></td>
-                      <td><button type="button" class="text-rose-600" data-rule-remove="${idx}">✕</button></td>
+                      <td><input type="number" class="border border-neutral-300 rounded-lg px-2 py-1 w-20 focus:border-neutral-500 focus:bg-white transition" data-rule-delta="${idx}" value="${esc(rule.delta||0)}" /></td>
+                      <td><input type="text" class="border border-neutral-300 rounded-lg px-2 py-1 w-32 focus:border-neutral-500 focus:bg-white transition" data-rule-label="${idx}" value="${esc(rule.label||"")}" /></td>
+                      <td><button type="button" class="text-rose-600 hover:text-rose-800 font-bold text-lg px-2 py-1 rounded transition" data-rule-remove="${idx}" title="Удалить">✕</button></td>
                     </tr>
                   `).join("")}
                 </tbody>
               </table>
-              <button type="button" class="interactive-btn min-h-9 rounded bg-neutral-200 px-3 py-1 text-xs font-semibold text-neutral-700" id="custom-rules-add">Добавить правило</button>
+              <button type="button" class="interactive-btn min-h-9 rounded-xl bg-neutral-200 hover:bg-neutral-300 px-4 py-2 text-xs font-semibold text-neutral-700 mt-2 transition" id="custom-rules-add">Добавить правило</button>
             </div>
             <textarea name="${esc(item.key)}" class="hidden">${esc(JSON.stringify(item.value || []))}</textarea>
             ${description}${reset}
