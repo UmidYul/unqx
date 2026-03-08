@@ -8,7 +8,7 @@ const { detectDevice } = require("../../services/ua");
 const { generateVCard } = require("../../services/vcard");
 const { calculateSlugPrice, calculateSlugPriceFromSettings, getSlugPricingConfig } = require("../../services/slug-pricing");
 const { sendOrderRequestToTelegram, TelegramConfigError, TelegramDeliveryError } = require("../../services/telegram");
-const { buildOrderPaymentDraft } = require("../../services/payment-flow");
+const { buildOrderPaymentDraft, getOrderPaymentReference } = require("../../services/payment-flow");
 const { getActiveFlashSale, applyFlashSaleToPrice } = require("../../services/flash-sales");
 const { markDropSlugSold } = require("../../services/drops");
 const {
@@ -21,7 +21,7 @@ const { asyncHandler } = require("../../middleware/async");
 const { requireSameOrigin } = require("../../middleware/same-origin");
 const { requireCsrfToken } = require("../../middleware/csrf");
 const { publicOrderRateLimit } = require("../../middleware/rate-limit");
-const { getUserSession } = require("../../middleware/auth");
+const { getUserSession, requireAuth } = require("../../middleware/auth");
 const { OrderRequestSchema } = require("../../validation/order-request");
 const { getSetting } = require("../../services/platform-settings");
 const { sendTapPushNotification } = require("../../services/push");
@@ -1095,6 +1095,98 @@ router.post(
         console.error("[express-app] failed to mark drop slug sold", error);
       }
     }
+  }),
+);
+
+router.post(
+  "/order-request/:orderId/cancel",
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const user = req.session.user;
+    const orderId = String(req.params.orderId || "").trim();
+
+    if (!orderId) {
+      res.status(400).json({ error: "Order ID is required" });
+      return;
+    }
+
+    // Find order
+    const order = await prisma.slugRequest.findUnique({
+      where: { id: orderId },
+      select: {
+        id: true,
+        userId: true,
+        slug: true,
+        status: true,
+        createdAt: true,
+      },
+    });
+
+    if (!order) {
+      res.status(404).json({ error: "Заказ не найден" });
+      return;
+    }
+
+    // Check ownership
+    if (order.userId !== user.id) {
+      res.status(403).json({ error: "Это не ваш заказ" });
+      return;
+    }
+
+    // Only new orders can be cancelled
+    if (order.status !== "new") {
+      res.status(400).json({ 
+        error: "Нельзя отменить заказ в статусе: " + order.status,
+        currentStatus: order.status,
+      });
+      return;
+    }
+
+    // Update order status to rejected and free the slug
+    await prisma.$transaction(async (tx) => {
+      // Update order
+      await tx.slugRequest.update({
+        where: { id: order.id },
+        data: {
+          status: "rejected",
+          adminNote: "Отменено пользователем",
+        },
+      });
+
+      // Free the slug
+      await tx.slug.update({
+        where: { fullSlug: order.slug },
+        data: {
+          status: "free",
+          ownerId: null,
+          pendingExpiresAt: null,
+        },
+      });
+    });
+
+    // Log cancellation event
+    try {
+      await logPaymentEvent({
+        orderId: order.id,
+        userId: user.id,
+        status: "rejected",
+        provider: "manual_tg",
+        reference: getOrderPaymentReference(order.id),
+        amount: 0,
+        actor: `user:${user.id}`,
+        source: "user_cancel",
+        note: "User cancelled order",
+      });
+    } catch (error) {
+      console.error("[express-app] failed to log cancel event", error);
+    }
+
+    res.json({ 
+      ok: true, 
+      message: "Заказ отменён, slug освобождён",
+      orderId: order.id,
+      slug: order.slug,
+    });
   }),
 );
 

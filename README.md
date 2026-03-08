@@ -147,6 +147,7 @@ API:
 - `GET /api/cards/:slug/vcf`
 - `GET /api/cards/search?q=AAA`
 - `POST /api/cards/order-request`
+- `POST /api/cards/order-request/:orderId/cancel`
 - `POST /api/telegram/webhook`
 - `GET /api/admin/payment-events`
 - `GET /api/admin/payment-events/export.csv`
@@ -154,6 +155,38 @@ API:
 - `GET /api/admin/payment-alerts`
 - `GET /api/admin/conversion-funnel?period=day|week|month`
 - `POST /api/admin/payment-alerts/notify`
+
+### User Order Cancellation
+
+Users can cancel their own orders if they are still in "new" status (not yet contacted by admin).
+
+#### Cancel Order (`POST /api/cards/order-request/:orderId/cancel`)
+Allows authenticated users to cancel their pending orders.
+
+**Requirements:**
+- User must be authenticated
+- Order must belong to the user
+- Order status must be "new"
+
+**What happens:**
+- Order status changed to "rejected" with note "Отменено пользователем"
+- Slug is freed and becomes available again
+- Payment event logged with source "user_cancel"
+
+**Response:**
+```json
+{
+  "ok": true,
+  "message": "Заказ отменён, slug освобождён",
+  "orderId": "order-uuid",
+  "slug": "AAA001"
+}
+```
+
+**Error cases:**
+- 400: Order not in "new" status
+- 403: Order belongs to different user
+- 404: Order not found
 
 ### Payment Analytics & Monitoring
 

@@ -757,6 +757,21 @@ const DEFAULT_PRICING = {
         const hoursLeft = Number.isFinite(expiresAt.getTime()) ? Math.max(1, Math.ceil((expiresAt.getTime() - Date.now()) / (60 * 60 * 1000))) : 24;
         dom.successSlug.textContent = `${pricing.slug} зарезервирован на ${hoursLeft} часа`;
       }
+      
+      // Generate Telegram contact link with order details
+      const telegramLink = dom.root.querySelector('#order-modal-telegram-link');
+      if (telegramLink instanceof HTMLAnchorElement && payload.orderId && payload.pricing) {
+        const userName = dom.name.value.trim();
+        const totalAmount = payload.pricing.totalOneTime;
+        const message = `Здравствуйте! Хочу оплатить заказ #${payload.orderId}
+
+UNQ: ${pricing.slug}
+Сумма: ${formatPrice(totalAmount)} сум
+Имя: ${userName}`;
+        
+        telegramLink.href = `https://t.me/unqx_uz?text=${encodeURIComponent(message)}`;
+      }
+      
       startCountdown(expiresAtIso);
       setStep("success");
       window.dispatchEvent(new CustomEvent("unqx:order:submitted", { detail: payload }));
