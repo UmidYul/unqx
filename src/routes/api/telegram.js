@@ -219,6 +219,12 @@ async function applyOrderActionFromTelegram({ orderId, nextStatus, operatorId })
 
 async function handleTelegramWebhook(req, res) {
   const update = req.body && typeof req.body === "object" ? req.body : {};
+  const updateId = Number(update.update_id || 0);
+  console.info("[telegram-webhook] update received", {
+    updateId: Number.isFinite(updateId) && updateId > 0 ? updateId : null,
+    keys: Object.keys(update).slice(0, 10),
+    hasCallbackQuery: Boolean(update.callback_query),
+  });
   const callback = update.callback_query;
   if (callback && typeof callback === "object") {
     console.info("[telegram-webhook] callback received", {

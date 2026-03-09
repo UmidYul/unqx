@@ -64,11 +64,17 @@ async function ensureTelegramWebhook() {
   const currentAllowedUpdates = Array.isArray(webhookInfo?.allowed_updates) ? webhookInfo.allowed_updates : [];
   const hasCallbackUpdates =
     currentAllowedUpdates.length === 0 || currentAllowedUpdates.includes("callback_query");
+  const forceSetForSecretSync = Boolean(secret);
 
-  const shouldUpdate = !sameWebhookUrl(currentUrl, expectedUrl) || !hasCallbackUpdates;
+  const shouldUpdate = !sameWebhookUrl(currentUrl, expectedUrl) || !hasCallbackUpdates || forceSetForSecretSync;
 
   if (!shouldUpdate) {
-    console.info("[telegram-webhook] webhook is up to date", { url: currentUrl });
+    console.info("[telegram-webhook] webhook is up to date", {
+      url: currentUrl,
+      pendingUpdates: Number(webhookInfo?.pending_update_count || 0),
+      lastErrorDate: webhookInfo?.last_error_date || null,
+      lastErrorMessage: webhookInfo?.last_error_message || null,
+    });
     return { ok: true, updated: false, url: currentUrl };
   }
 
@@ -82,7 +88,14 @@ async function ensureTelegramWebhook() {
   }
 
   await telegramApiCall("setWebhook", payload);
-  console.info("[telegram-webhook] webhook updated", { url: expectedUrl, withSecret: Boolean(secret) });
+  const after = await telegramApiCall("getWebhookInfo");
+  console.info("[telegram-webhook] webhook updated", {
+    url: expectedUrl,
+    withSecret: Boolean(secret),
+    pendingUpdates: Number(after?.pending_update_count || 0),
+    lastErrorDate: after?.last_error_date || null,
+    lastErrorMessage: after?.last_error_message || null,
+  });
   return { ok: true, updated: true, url: expectedUrl };
 }
 
