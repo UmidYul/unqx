@@ -1,4 +1,4 @@
-const { env } = require("../config/env");
+﻿const { env } = require("../config/env");
 const { getManySettings, getSetting } = require("./platform-settings");
 const { getOrderPaymentReference } = require("./payment-flow");
 
@@ -375,3 +375,4 @@ module.exports = {
   sendVerificationStatusToUser,
   sendPaymentAlertsToAdmin,
 };
+

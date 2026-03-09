@@ -1,4 +1,4 @@
-const express = require("express");
+﻿const express = require("express");
 
 const { asyncHandler } = require("../../middleware/async");
 const { env } = require("../../config/env");
@@ -39,7 +39,7 @@ function canApplyTelegramStatus(currentStatus, nextStatus) {
 }
 
 function parseOrderAction(value) {
-  const match = String(value || "").match(/^ord:(contacted|paid|approved):([a-z0-9-]{8,64})$/i);
+  const match = String(value || "").match(/^ord:(contacted|paid|approved):([a-z0-9-]{1,128})$/i);
   if (!match) return null;
   return {
     action: normalizeTelegramAction(match[1]),
@@ -84,6 +84,58 @@ async function isAllowedAdminChat(chatId) {
   return allowedChats.includes(String(chatId || "").trim());
 }
 
+function buildAdminDashboardUrl(orderId) {
+  const base = String(env.APP_URL || "").replace(/\/$/, "");
+  const path = "/admin/dashboard?tab=orders&orderId=" + encodeURIComponent(String(orderId || ""));
+  return base ? `${base}${path}` : path;
+}
+
+function buildTelegramOrderKeyboard(orderId, status) {
+  const current = String(status || "new").trim().toLowerCase();
+  const rows = [];
+
+  if (current === "new") {
+    rows.push([
+      { text: "Contacted", callback_data: "ord:contacted:" + orderId },
+      { text: "Paid", callback_data: "ord:paid:" + orderId },
+    ]);
+    rows.push([{ text: "Activate", callback_data: "ord:approved:" + orderId }]);
+  } else if (current === "contacted") {
+    rows.push([{ text: "Оплачено", callback_data: "ord:paid:" + orderId }]);
+    rows.push([{ text: "Activate", callback_data: "ord:approved:" + orderId }]);
+  } else if (current === "paid") {
+    rows.push([{ text: "Activate", callback_data: "ord:approved:" + orderId }]);
+  }
+
+  rows.push([{ text: "Open admin", url: buildAdminDashboardUrl(orderId) }]);
+  return rows;
+}
+
+async function updateTelegramOrderMessageKeyboard({ chatId, messageId, orderId, status }) {
+  if (!env.TELEGRAM_BOT_TOKEN || !chatId || !messageId || !orderId) {
+    return null;
+  }
+
+  const endpoint = `https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/editMessageReplyMarkup`;
+  const response = await fetch(endpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      chat_id: String(chatId),
+      message_id: Number(messageId),
+      reply_markup: {
+        inline_keyboard: buildTelegramOrderKeyboard(orderId, status),
+      },
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Telegram editMessageReplyMarkup failed with ${response.status}`);
+  }
+
+  return response.json().catch(() => null);
+}
+
 async function applyOrderActionFromTelegram({ orderId, nextStatus, operatorId }) {
   const notePrefixByStatus = {
     contacted: "Контакт отмечен через Telegram",
@@ -96,13 +148,14 @@ async function applyOrderActionFromTelegram({ orderId, nextStatus, operatorId })
     select: { status: true },
   });
   if (!currentOrder) {
-    return { ok: false, code: "ORDER_NOT_FOUND", message: "Заявка не найдена" };
+    return { ok: false, code: "ORDER_NOT_FOUND", message: "Заявка не найдена", status: null };
   }
   if (!canApplyTelegramStatus(currentOrder.status, nextStatus)) {
     return {
       ok: false,
       code: "INVALID_STATUS_TRANSITION",
       message: `Нельзя сменить статус ${currentOrder.status} -> ${nextStatus}`,
+      status: String(currentOrder.status || "").toLowerCase(),
     };
   }
 
@@ -115,13 +168,18 @@ async function applyOrderActionFromTelegram({ orderId, nextStatus, operatorId })
       adminActor: `tg:${operatorId}`,
       source: "telegram_callback",
     });
-    return { ok: true, message: `Статус обновлен: ${nextStatus}` };
+    return { ok: true, message: `Статус обновлен: ${nextStatus}`, status: nextStatus };
   } catch (error) {
     if (error?.code === "ORDER_NOT_FOUND") {
-      return { ok: false, code: error.code, message: "Заявка не найдена" };
+      return { ok: false, code: error.code, message: "Заявка не найдена", status: null };
     }
     if (error?.code === "INVALID_STATUS_TRANSITION") {
-      return { ok: false, code: error.code, message: error.message };
+      return {
+        ok: false,
+        code: error.code,
+        message: error.message,
+        status: String(currentOrder.status || "").toLowerCase(),
+      };
     }
     throw error;
   }
@@ -157,6 +215,7 @@ async function handleTelegramWebhook(req, res) {
   const callbackQueryId = String(callback.id || "").trim();
   const chatId = String(callback?.message?.chat?.id || "").trim();
   const operatorId = String(callback?.from?.id || "").trim() || "unknown";
+  const messageId = Number(callback?.message?.message_id || 0);
   const parsed = parseOrderAction(callback.data);
 
   cleanupProcessedCallbacks();
@@ -199,8 +258,22 @@ async function handleTelegramWebhook(req, res) {
     ok: result.ok,
     code: result.code || null,
   });
+
   if (callbackQueryId) {
     processedCallbacks.set(callbackQueryId, Date.now());
+  }
+
+  if (result.ok && messageId > 0 && chatId) {
+    try {
+      await updateTelegramOrderMessageKeyboard({
+        chatId,
+        messageId,
+        orderId: parsed.orderId,
+        status: result.status || parsed.action,
+      });
+    } catch (error) {
+      console.error("[express-app] failed to update telegram order keyboard", error);
+    }
   }
 
   if (callbackQueryId) {
@@ -224,3 +297,4 @@ router.post("/webhook/:secret", asyncHandler(handleTelegramWebhook));
 module.exports = {
   telegramApiRouter: router,
 };
+

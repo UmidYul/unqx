@@ -15,7 +15,7 @@ function normalizePaymentProvider(value) {
 function toProviderLabel(provider) {
   if (provider === "click") return "Click";
   if (provider === "payme") return "Payme";
-  return "Р СѓС‡РЅР°СЏ РѕРїР»Р°С‚Р° С‡РµСЂРµР· Telegram";
+  return "Ручная оплата через Telegram";
 }
 
 function getOrderPaymentReference(orderId) {
@@ -81,6 +81,7 @@ function buildManualTelegramPaymentUrl({
     `Итого к оплате: ${toMoneyLabel(resolvedTotal)}`;
   return `https://t.me/${safeUsername}?text=${encodeURIComponent(message)}`;
 }
+
 async function getPaymentConfig() {
   const values = await getManySettings([
     "payment_provider",
@@ -116,7 +117,7 @@ async function buildOrderPaymentDraft({ orderId, amount }) {
       checkoutUrl: null,
       instructions:
         config.manualInstructions ||
-        "РћРїР»Р°С‚Р° РїСЂРѕРІРѕРґРёС‚СЃСЏ С‡РµСЂРµР· РјРµРЅРµРґР¶РµСЂР° РІ Telegram. РЈРєР°Р¶Рё РєРѕРґ РѕРїР»Р°С‚С‹ РїСЂРё РїРµСЂРµРІРѕРґРµ Рё РѕС‚РїСЂР°РІСЊ РїРѕРґС‚РІРµСЂР¶РґРµРЅРёРµ РјРµРЅРµРґР¶РµСЂСѓ.",
+        "Оплата проводится через менеджера в Telegram. Укажи код оплаты при переводе и отправь подтверждение менеджеру.",
     };
   }
 
@@ -134,8 +135,8 @@ async function buildOrderPaymentDraft({ orderId, amount }) {
     checkoutUrl: null,
     isReady: hasMerchant,
     instructions: hasMerchant
-      ? `${config.providerLabel} Р±СѓРґРµС‚ РґРѕСЃС‚СѓРїРµРЅ РїРѕСЃР»Рµ РІРєР»СЋС‡РµРЅРёСЏ checkout endpoint.`
-      : `${config.providerLabel} РїРѕРєР° РЅРµ РЅР°СЃС‚СЂРѕРµРЅ. РСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ СЂСѓС‡РЅР°СЏ РѕР±СЂР°Р±РѕС‚РєР° Р°РґРјРёРЅРѕРј.`,
+      ? `${config.providerLabel} будет доступен после включения checkout endpoint.`
+      : `${config.providerLabel} пока не настроен. Используется ручная обработка админом.`,
   };
 }
 
@@ -149,4 +150,3 @@ module.exports = {
   getPaymentConfig,
   buildOrderPaymentDraft,
 };
-

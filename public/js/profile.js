@@ -816,35 +816,32 @@ Email: ${userEmail}
             const showNote = ["rejected", "expired"].includes(normalizedStatus);
             const canResumePayment = normalizedStatus === "new" || normalizedStatus === "contacted";
             const totalPrice = Number(requestItem.slugPrice || 0) + Number(requestItem.planPrice || 0) + (requestItem.bracelet ? 300000 : 0);
-            const actionButtons = [
-              canResumePayment
-                ? `<button type="button" data-a="pay-request" data-order-id="${esc(requestItem.id)}" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold text-neutral-800">Оплатить</button>`
-                : "",
-              normalizedStatus === "new"
-                ? `<button type="button" data-a="cancel-request" data-order-id="${esc(requestItem.id)}" class="interactive-btn min-h-11 rounded-lg border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-700">Отменить</button>`
-                : "",
-            ]
-              .filter(Boolean)
-              .join("");
+            const payActionButton = canResumePayment
+              ? `<button type="button" data-a="pay-request" data-order-id="${esc(requestItem.id)}" class="interactive-btn min-h-11 w-full rounded-lg bg-neutral-900 px-3 py-2 text-xs font-semibold text-white">Оплатить</button>`
+              : "";
+            const cancelActionButton = normalizedStatus === "new"
+              ? `<button type="button" data-a="cancel-request" data-order-id="${esc(requestItem.id)}" class="interactive-btn min-h-11 w-full rounded-lg border border-red-200 bg-white px-3 py-2 text-xs font-semibold text-red-700">Отменить</button>`
+              : "";
+            const actionButtons = [payActionButton, cancelActionButton].filter(Boolean).join("");
             return `<article class="rounded-xl border border-neutral-200 bg-white p-3">
               <div class="flex items-start justify-between gap-2">
-                <div>
+                <div class="min-w-0">
                   <p class="text-[11px] uppercase tracking-[0.12em] text-neutral-500">UNQ</p>
-                  <p class="font-mono text-sm font-semibold text-neutral-900">${esc(requestItem.slug)}</p>
+                  <p class="break-all font-mono text-sm font-semibold text-neutral-900">${esc(requestItem.slug)}</p>
                 </div>
-                <div class="text-right">
+                <div class="shrink-0 text-right">
                   <p class="text-[11px] uppercase tracking-[0.12em] text-neutral-500">Статус</p>
                   <p class="text-sm font-semibold text-neutral-800">${esc(requestItem.statusBadge || requestItem.status)}</p>
                 </div>
               </div>
-              <div class="mt-3 grid grid-cols-2 gap-2 text-xs text-neutral-600">
+              <div class="mt-3 grid grid-cols-1 gap-2 text-xs text-neutral-600 sm:grid-cols-2">
                 <div>
                   <p class="text-[11px] uppercase tracking-[0.12em] text-neutral-500">Дата</p>
-                  <p>${fdt(requestItem.createdAt)}</p>
+                  <p class="break-words">${fdt(requestItem.createdAt)}</p>
                 </div>
                 <div>
                   <p class="text-[11px] uppercase tracking-[0.12em] text-neutral-500">Покупка</p>
-                  <p>${requestItem.purchasedAt ? fdt(requestItem.purchasedAt) : "—"}</p>
+                  <p class="break-words">${requestItem.purchasedAt ? fdt(requestItem.purchasedAt) : "—"}</p>
                 </div>
                 <div>
                   <p class="text-[11px] uppercase tracking-[0.12em] text-neutral-500">Тариф</p>
@@ -861,7 +858,7 @@ Email: ${userEmail}
                 <p class="text-[11px] text-neutral-500">${requestItem.purchasedAt ? `Единоразовая покупка · ${fd(requestItem.purchasedAt)}` : "Единоразовая покупка"}</p>
               </div>
               ${showNote ? `<p class="mt-3 text-xs text-rose-700">Примечание: ${esc(requestItem.adminNote || "—")}</p>` : ""}
-              ${actionButtons ? `<div class="mt-3 flex flex-wrap gap-2">${actionButtons}</div>` : ""}
+              ${actionButtons ? `<div class="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">${actionButtons}</div>` : ""}
             </article>`;
           })
           .join("")
@@ -2324,6 +2321,8 @@ Email: ${userEmail}
   });
   load().catch((error) => showModal("Ошибка", error.message || "Не удалось загрузить профиль"));
 })();
+
+
 
 
 
