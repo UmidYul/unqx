@@ -69,7 +69,20 @@ function cleanupProcessedCallbacks() {
   }
 }
 
-async function isAllowedAdminChat(chatId) {
+function normalizeTelegramHandle(value) {
+  const raw = String(value || "").trim().toLowerCase();
+  if (!raw) return "";
+  return raw.replace(/^@+/, "");
+}
+
+function normalizeTelegramChatNumeric(value) {
+  const raw = String(value || "").trim();
+  if (!raw || !/^-?\d+$/.test(raw)) return "";
+  const abs = raw.replace(/^-/, "");
+  return abs.startsWith("100") ? abs.slice(3) : abs;
+}
+
+async function isAllowedAdminChat(chat) {
   const configured = String(await getSetting("contact_telegram_chat_id", "")).trim();
   const fallback = String(env.TELEGRAM_CHAT_ID || "").trim();
   const allowedRaw = configured || fallback;
@@ -81,7 +94,26 @@ async function isAllowedAdminChat(chatId) {
     .filter(Boolean);
   if (!allowedChats.length) return true;
 
-  return allowedChats.includes(String(chatId || "").trim());
+  const chatId = String(chat?.id || "").trim();
+  const chatHandle = normalizeTelegramHandle(chat?.username);
+  const chatNumeric = normalizeTelegramChatNumeric(chatId);
+
+  return allowedChats.some((allowed) => {
+    const allowedRawValue = String(allowed || "").trim();
+    if (!allowedRawValue) return false;
+
+    if (allowedRawValue.startsWith("@")) {
+      const allowedHandle = normalizeTelegramHandle(allowedRawValue);
+      return Boolean(chatHandle) && allowedHandle === chatHandle;
+    }
+
+    if (chatId && allowedRawValue === chatId) {
+      return true;
+    }
+
+    const allowedNumeric = normalizeTelegramChatNumeric(allowedRawValue);
+    return Boolean(chatNumeric && allowedNumeric && chatNumeric === allowedNumeric);
+  });
 }
 
 function buildAdminDashboardUrl(orderId) {
@@ -203,6 +235,14 @@ async function handleTelegramWebhook(req, res) {
       hasQuerySecret: Boolean(req.query?.secret),
       hasPathSecret: Boolean(req.params?.secret),
     });
+    const callbackQueryId = String(callback?.id || "").trim();
+    if (callbackQueryId) {
+      await sendTelegramCallbackAnswer({
+        callbackQueryId,
+        text: "Webhook отклонён: неверный секрет",
+        showAlert: true,
+      }).catch(() => null);
+    }
     res.status(401).json({ ok: false, error: "Unauthorized webhook" });
     return;
   }
@@ -213,7 +253,8 @@ async function handleTelegramWebhook(req, res) {
   }
 
   const callbackQueryId = String(callback.id || "").trim();
-  const chatId = String(callback?.message?.chat?.id || "").trim();
+  const chat = callback?.message?.chat && typeof callback.message.chat === "object" ? callback.message.chat : null;
+  const chatId = String(chat?.id || "").trim();
   const operatorId = String(callback?.from?.id || "").trim() || "unknown";
   const messageId = Number(callback?.message?.message_id || 0);
   const parsed = parseOrderAction(callback.data);
@@ -237,7 +278,7 @@ async function handleTelegramWebhook(req, res) {
     return;
   }
 
-  const allowed = await isAllowedAdminChat(chatId);
+  const allowed = await isAllowedAdminChat(chat);
   if (!allowed) {
     console.warn("[telegram-webhook] rejected: unauthorized chat", { chatId });
     if (callbackQueryId) {

@@ -927,40 +927,43 @@ router.get(
           },
         }),
       );
-      pendingOrder = {
-        id: latestActiveOrder.id,
-        slug: latestActiveOrder.slug,
-        status: latestActiveOrder.status,
-        requestedPlan: latestActiveOrder.requestedPlan,
-        paymentReference: getOrderPaymentReference(latestActiveOrder.id),
-        slugPrice: Number(latestActiveOrder.slugPrice || 0),
-        planPrice: Number(latestActiveOrder.planPrice || 0),
-        bracelet: Boolean(latestActiveOrder.bracelet),
-        braceletPrice: Number(braceletPrice || 0),
-        totalOneTime:
-          Number(latestActiveOrder.slugPrice || 0) +
-          Number(latestActiveOrder.planPrice || 0) +
-          (latestActiveOrder.bracelet ? Number(braceletPrice || 0) : 0),
-        paymentUrl: buildManualTelegramPaymentUrl({
-          orderId: latestActiveOrder.id,
+      const slugIsPending = String(slugRow?.status || "") === "pending";
+      if (slugIsPending) {
+        pendingOrder = {
+          id: latestActiveOrder.id,
           slug: latestActiveOrder.slug,
+          status: latestActiveOrder.status,
           requestedPlan: latestActiveOrder.requestedPlan,
-          reference: getOrderPaymentReference(latestActiveOrder.id),
-          telegramUsername: supportTelegram,
-          fullName,
-          email: user.email || "",
-          slugPrice: latestActiveOrder.slugPrice,
-          planPrice: latestActiveOrder.planPrice,
+          paymentReference: getOrderPaymentReference(latestActiveOrder.id),
+          slugPrice: Number(latestActiveOrder.slugPrice || 0),
+          planPrice: Number(latestActiveOrder.planPrice || 0),
           bracelet: Boolean(latestActiveOrder.bracelet),
-          braceletPrice,
-          totalAmount:
+          braceletPrice: Number(braceletPrice || 0),
+          totalOneTime:
             Number(latestActiveOrder.slugPrice || 0) +
             Number(latestActiveOrder.planPrice || 0) +
             (latestActiveOrder.bracelet ? Number(braceletPrice || 0) : 0),
-        }),
-        createdAt: latestActiveOrder.createdAt,
-        pendingExpiresAt: slugRow?.status === "pending" ? slugRow.pendingExpiresAt || null : null,
-      };
+          paymentUrl: buildManualTelegramPaymentUrl({
+            orderId: latestActiveOrder.id,
+            slug: latestActiveOrder.slug,
+            requestedPlan: latestActiveOrder.requestedPlan,
+            reference: getOrderPaymentReference(latestActiveOrder.id),
+            telegramUsername: supportTelegram,
+            fullName,
+            email: user.email || "",
+            slugPrice: latestActiveOrder.slugPrice,
+            planPrice: latestActiveOrder.planPrice,
+            bracelet: Boolean(latestActiveOrder.bracelet),
+            braceletPrice,
+            totalAmount:
+              Number(latestActiveOrder.slugPrice || 0) +
+              Number(latestActiveOrder.planPrice || 0) +
+              (latestActiveOrder.bracelet ? Number(braceletPrice || 0) : 0),
+          }),
+          createdAt: latestActiveOrder.createdAt,
+          pendingExpiresAt: slugRow?.pendingExpiresAt || null,
+        };
+      }
     }
 
     let nextAction = "checkout";
@@ -1414,8 +1417,11 @@ router.post(
       return;
     }
 
-    // Only new orders can be cancelled
-    if (order.status !== "new") {
+    const orderStatus = String(order.status || "").toLowerCase();
+    const cancelableStatuses = new Set(["new", "contacted", "paid"]);
+
+    // Allow cancellation for any unfinished order statuses shown in precheck.
+    if (!cancelableStatuses.has(orderStatus)) {
       res.status(400).json({
         error: "Нельзя отменить заказ в статусе: " + order.status,
         currentStatus: order.status,
