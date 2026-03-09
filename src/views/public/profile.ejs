@@ -622,6 +622,31 @@
     </div>
   </main>
 
+  <div id="profile-bracelet-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 p-4">
+    <div id="profile-bracelet-modal-dialog" class="w-full max-w-md rounded-2xl bg-white p-5" role="dialog"
+      aria-modal="true" aria-labelledby="profile-bracelet-modal-title" tabindex="-1">
+      <button id="profile-bracelet-modal-close-top" type="button"
+        class="interactive-btn ml-auto inline-flex h-9 w-9 items-center justify-center rounded-lg border border-neutral-300 text-neutral-600"
+        aria-label="Закрыть окно">
+        <svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="m6 6 12 12M18 6 6 18"></path>
+        </svg>
+      </button>
+      <h3 id="profile-bracelet-modal-title" class="text-lg font-bold text-neutral-900">Заказ NFC-браслета</h3>
+      <p class="mt-2 text-sm text-neutral-600">Оформи отдельный заказ браслета для повышения UNQ Score.</p>
+      <div class="mt-3 rounded-xl border border-neutral-200 bg-neutral-50 p-3 text-sm text-neutral-700">
+        Стоимость: <span id="profile-bracelet-modal-price" class="font-semibold text-neutral-900">300 000 сум</span>
+      </div>
+      <div class="mt-4 flex flex-col gap-2 sm:flex-row">
+        <button id="profile-bracelet-modal-submit" type="button"
+          class="interactive-btn min-h-11 rounded-lg bg-neutral-900 px-3 py-1.5 text-sm font-semibold text-white sm:min-w-[160px]">Оформить
+          заказ</button>
+        <button id="profile-bracelet-modal-close" type="button"
+          class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-3 py-1.5 text-sm font-semibold sm:min-w-[120px]">Закрыть</button>
+      </div>
+    </div>
+  </div>
+
   <div id="profile-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 p-4">
     <div id="profile-modal-dialog" class="w-full max-w-md rounded-2xl bg-white p-5" role="dialog" aria-modal="true"
       tabindex="-1">

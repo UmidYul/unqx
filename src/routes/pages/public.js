@@ -858,9 +858,45 @@ router.get(
 
     let testimonials = [];
     try {
-      testimonials = await prisma.testimonial.findMany({
+      const rawTestimonials = await prisma.testimonial.findMany({
         where: { isVisible: true },
         orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+      });
+      const testimonialSlugs = rawTestimonials
+        .map((item) => sanitizeSlug(item.slug))
+        .filter(Boolean);
+
+      const avatarBySlug = new Map();
+      if (testimonialSlugs.length) {
+        const slugRows = await withMissingTableFallback("Slug", [], () =>
+          prisma.slug.findMany({
+            where: { fullSlug: { in: testimonialSlugs } },
+            select: {
+              fullSlug: true,
+              owner: {
+                select: {
+                  profileCard: {
+                    select: { avatarUrl: true },
+                  },
+                },
+              },
+            },
+          }),
+        );
+        for (const row of slugRows) {
+          const key = String(row?.fullSlug || "").trim().toUpperCase();
+          if (!key) continue;
+          avatarBySlug.set(key, String(row?.owner?.profileCard?.avatarUrl || "").trim());
+        }
+      }
+
+      testimonials = rawTestimonials.map((item) => {
+        const normalizedSlug = sanitizeSlug(item.slug);
+        return {
+          ...item,
+          slug: normalizedSlug || item.slug,
+          avatarUrl: avatarBySlug.get(normalizedSlug) || "",
+        };
       });
     } catch (error) {
       console.error("[express-app] failed to load testimonials", error);

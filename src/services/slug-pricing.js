@@ -15,6 +15,34 @@ const DEFAULTS = {
   digitsRandom: 1,
 };
 
+const DEFAULT_BUILTIN_RULES = [
+  { pattern: "VSF", type: "contains", delta: 1_000_000, label: "+1 млн за VSF" },
+];
+
+function normalizeCustomRules(rules) {
+  const source = Array.isArray(rules) ? rules : [];
+  const normalized = [];
+
+  for (const item of source) {
+    if (!item || typeof item !== "object") continue;
+    const pattern = String(item.pattern || "").trim().toUpperCase();
+    const type = String(item.type || "").trim();
+    const delta = Number(item.delta);
+    const label = String(item.label || "").trim();
+    if (!pattern) continue;
+    if (!["contains", "startsWith", "endsWith", "regex"].includes(type)) continue;
+    if (!Number.isFinite(delta) || delta === 0) continue;
+    normalized.push({ pattern, type, delta: Math.round(delta), label });
+  }
+
+  const hasVsfRule = normalized.some((rule) => rule.pattern === "VSF");
+  if (!hasVsfRule) {
+    normalized.push(...DEFAULT_BUILTIN_RULES);
+  }
+
+  return normalized;
+}
+
 function normalizeConfig(input) {
   const source = input && typeof input === "object" ? input : {};
   const getNum = (value, fallback) => {
@@ -35,7 +63,7 @@ function normalizeConfig(input) {
     digitsRound: getNum(source.digitsRound, DEFAULTS.digitsRound),
     digitsPalindrome: getNum(source.digitsPalindrome, DEFAULTS.digitsPalindrome),
     digitsRandom: getNum(source.digitsRandom, DEFAULTS.digitsRandom),
-    customRules: source.customRules || [],
+    customRules: normalizeCustomRules(source.customRules),
   };
 }
 
@@ -144,32 +172,38 @@ function calculateSlugPrice({ letters, digits, config }) {
   const slug = `${normalizedLetters}${normalizedDigits}`;
   const letterMeta = getLetterMultiplier(normalizedLetters, resolvedConfig);
   const digitMeta = getDigitMultiplier(normalizedDigits, resolvedConfig);
-  let total = resolvedConfig.basePrice * letterMeta.multiplier * digitMeta.multiplier;
-  let customBreakdown = [];
-  // Кастомные правила (если есть)
-  if (Array.isArray(resolvedConfig.customRules)) {
-    for (const rule of resolvedConfig.customRules) {
-      if (!rule || typeof rule !== 'object' || !rule.pattern || !rule.type || !rule.delta) continue;
-      const pat = String(rule.pattern).toUpperCase();
-      const delta = Number(rule.delta) || 0;
-      let match = false;
-      if (rule.type === 'contains' && slug.includes(pat)) match = true;
-      if (rule.type === 'startsWith' && slug.startsWith(pat)) match = true;
-      if (rule.type === 'endsWith' && slug.endsWith(pat)) match = true;
-      if (rule.type === 'regex') {
-        try { if (new RegExp(pat).test(slug)) match = true; } catch { }
-      }
-      if (match) {
-        total += delta;
-        customBreakdown.push({ label: rule.label || pat, delta });
+  const multipliedBase = Math.round(resolvedConfig.basePrice * letterMeta.multiplier * digitMeta.multiplier);
+
+  let customDeltaTotal = 0;
+  const customBreakdown = [];
+  for (const rule of resolvedConfig.customRules) {
+    const pat = String(rule.pattern).toUpperCase();
+    const delta = Number(rule.delta) || 0;
+    let match = false;
+    if (rule.type === "contains" && slug.includes(pat)) match = true;
+    if (rule.type === "startsWith" && slug.startsWith(pat)) match = true;
+    if (rule.type === "endsWith" && slug.endsWith(pat)) match = true;
+    if (rule.type === "regex") {
+      try {
+        if (new RegExp(pat).test(slug)) match = true;
+      } catch {
+        match = false;
       }
     }
+    if (!match) continue;
+    customDeltaTotal += delta;
+    customBreakdown.push({ label: rule.label || pat, delta, pattern: pat, type: rule.type });
   }
+
+  const total = multipliedBase + customDeltaTotal;
+
   return {
     basePrice: resolvedConfig.basePrice,
     slug,
     letters: letterMeta,
     digits: digitMeta,
+    multipliedBase,
+    customDeltaTotal,
     total,
     customBreakdown,
   };

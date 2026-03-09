@@ -1905,7 +1905,7 @@ Email: ${userEmail}
 
     const previousDefault = buttonTypeLabels[prev.type] || "";
     const nextDefault = buttonTypeLabels[type] || "";
-    if ((label || "").trim() === "" || label === previousDefault) {
+    if (type !== prev.type && label === previousDefault) {
       label = nextDefault;
       if (labelField instanceof HTMLInputElement) {
         labelField.value = label;

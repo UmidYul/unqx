@@ -2,6 +2,7 @@
   const flash = document.querySelector("[data-flash-sale-banner]");
   if (flash instanceof HTMLElement) {
     const node = flash.querySelector("[data-flash-countdown]");
+    const action = flash.querySelector("[data-flash-sale-action]");
     const endsAtRaw = flash.getAttribute("data-ends-at") || "";
     const target = new Date(endsAtRaw);
 
@@ -24,6 +25,25 @@
 
     tick();
     setInterval(tick, 1000);
+
+    if (action instanceof HTMLAnchorElement) {
+      action.addEventListener("click", (event) => {
+        const targetId = String(action.getAttribute("data-flash-scroll-target") || "hero-check").trim();
+        if (!targetId) return;
+        const section = document.getElementById(targetId);
+        if (section instanceof HTMLElement) {
+          event.preventDefault();
+          section.scrollIntoView({ behavior: "smooth", block: "start" });
+          try {
+            history.replaceState(null, "", `#${encodeURIComponent(targetId)}`);
+          } catch {
+            // ignore history errors
+          }
+          return;
+        }
+        action.href = `/#${encodeURIComponent(targetId)}`;
+      });
+    }
   }
 
   const bar = document.getElementById("home-live-stats");

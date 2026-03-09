@@ -334,6 +334,30 @@ body.motion-ready [data-observe-reveal].is-visible {
   line-height: 1.5;
 }
 
+.unqx-dialog-input-wrap {
+  margin-top: 12px;
+}
+
+.unqx-dialog-input-wrap.is-hidden {
+  display: none;
+}
+
+.unqx-dialog-input {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid #d4d4d4;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #171717;
+  padding: 10px 12px;
+  font-size: 14px;
+  outline: none;
+}
+
+.unqx-dialog-input:focus {
+  border-color: #737373;
+}
+
 .unqx-dialog-actions {
   margin-top: 18px;
   display: flex;
@@ -356,6 +380,10 @@ body.motion-ready [data-observe-reveal].is-visible {
   border-color: #d4d4d4;
   background: #ffffff;
   color: #404040;
+}
+
+.unqx-dialog-btn.is-hidden {
+  display: none;
 }
 
 @media (prefers-reduced-motion: reduce) {

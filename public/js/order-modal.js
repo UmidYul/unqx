@@ -18,6 +18,8 @@ const DEFAULT_PRICING = {
   premiumUpgradePrice: 80_000,
   braceletPrice: 300_000,
 };
+const PENDING_PURCHASE_INTENT_KEY = "unqx.pendingPurchaseIntent.v1";
+const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
 
 (function initOrderModal() {
   const root = document.getElementById("order-modal-root");
@@ -34,6 +36,8 @@ const DEFAULT_PRICING = {
     progressAuth: document.getElementById("order-modal-progress-auth"),
     progressNoAuth: document.getElementById("order-modal-progress-no-auth"),
     stepAuth: document.getElementById("order-modal-step-auth"),
+    authLogin: document.getElementById("order-modal-auth-login"),
+    authRegister: document.getElementById("order-modal-auth-register"),
     stepPending: document.getElementById("order-modal-step-pending"),
     stepForm: document.getElementById("order-modal-step-form"),
     stepSuccess: document.getElementById("order-modal-step-success"),
@@ -107,6 +111,7 @@ const DEFAULT_PRICING = {
   let countdownTimer = null;
   let pendingAuthCallback = null;
   let priceRequestSeq = 0;
+  let currentStep = "auth";
   let lastFocusedElement = null;
   let isCloseConfirming = false;
   let lastTelegramPaymentUrl = "https://t.me/unqx_uz";
@@ -122,13 +127,14 @@ const DEFAULT_PRICING = {
     checkoutContext: null,
     submitBlockedMessage: "",
     lastOpenOptions: {},
+    initialFormSnapshot: null,
     pricing: { ...DEFAULT_PRICING, userPlan: "none" },
     slugPricing: { ...DEFAULT_SLUG_PRICING },
   };
 
   const STEP_PROGRESS = {
-    auth: { width: "25%", label: "Шаг 1 из 4", line: "① Slug · ② Тариф · ③ Дополнительно · ④ Подтверждение" },
-    form: { width: "25%", label: "Шаг 1 из 4", line: "① Slug · ② Тариф · ③ Дополнительно · ④ Подтверждение" },
+    auth: { width: "25%" },
+    form: { width: "25%" },
     pending: { width: "100%", label: "Незавершённый заказ", line: "Продолжите оплату или отмените заказ" },
     success: { width: "100%", label: "Готово", line: "Заявка создана · ожидаем оплату" },
   };
@@ -139,6 +145,112 @@ const DEFAULT_PRICING = {
     }
     csrfToken = nextToken;
     document.querySelector('meta[name="csrf-token"]')?.setAttribute("content", nextToken);
+  }
+
+  function normalizeOpenIntent(options = {}) {
+    const slugParsed = splitSlug(options.slug || "");
+    const slug = slugParsed ? slugParsed.slug : "";
+    const planRaw = String(options.plan || "").trim().toLowerCase();
+    const plan = planRaw === "premium" ? "premium" : planRaw === "basic" ? "basic" : "";
+    const theme = String(options.theme || "").trim();
+    const dropId = String(options.dropId || "").trim();
+    return {
+      slug,
+      plan,
+      theme,
+      bracelet: Boolean(options.bracelet),
+      dropId,
+    };
+  }
+
+  function hasMeaningfulIntent(intent) {
+    if (!intent || typeof intent !== "object") return false;
+    return Boolean(intent.slug || intent.plan || intent.theme || intent.bracelet || intent.dropId);
+  }
+
+  function readPendingPurchaseIntent() {
+    try {
+      const raw = window.localStorage.getItem(PENDING_PURCHASE_INTENT_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (!parsed || typeof parsed !== "object") return null;
+      const createdAt = Number(parsed.createdAt || 0);
+      if (!Number.isFinite(createdAt) || createdAt <= 0) return null;
+      if (Date.now() - createdAt > PENDING_PURCHASE_INTENT_TTL_MS) return null;
+      const intent = normalizeOpenIntent(parsed.options || {});
+      return hasMeaningfulIntent(intent) ? intent : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function clearPendingPurchaseIntent() {
+    try {
+      window.localStorage.removeItem(PENDING_PURCHASE_INTENT_KEY);
+    } catch {
+      // ignore localStorage errors
+    }
+  }
+
+  function savePendingPurchaseIntent(options = {}) {
+    const intent = normalizeOpenIntent(options);
+    if (!hasMeaningfulIntent(intent)) {
+      clearPendingPurchaseIntent();
+      return;
+    }
+    try {
+      window.localStorage.setItem(
+        PENDING_PURCHASE_INTENT_KEY,
+        JSON.stringify({
+          createdAt: Date.now(),
+          options: intent,
+        }),
+      );
+    } catch {
+      // ignore localStorage errors
+    }
+  }
+
+  function buildAuthNextPath() {
+    return `${window.location.pathname || "/"}${window.location.search || ""}${window.location.hash || ""}`;
+  }
+
+  function bindAuthIntentLinks() {
+    const intent = normalizeOpenIntent(state.lastOpenOptions || {});
+    const nextPath = buildAuthNextPath();
+
+    if (dom.authLogin instanceof HTMLAnchorElement) {
+      dom.authLogin.href = `/login?next=${encodeURIComponent(nextPath)}`;
+      if (dom.authLogin.dataset.intentBound !== "1") {
+        dom.authLogin.dataset.intentBound = "1";
+        dom.authLogin.addEventListener("click", () => {
+          savePendingPurchaseIntent(state.lastOpenOptions || {});
+        });
+      }
+    }
+
+    if (dom.authRegister instanceof HTMLAnchorElement) {
+      dom.authRegister.href = `/register?next=${encodeURIComponent(nextPath)}`;
+      if (dom.authRegister.dataset.intentBound !== "1") {
+        dom.authRegister.dataset.intentBound = "1";
+        dom.authRegister.addEventListener("click", () => {
+          savePendingPurchaseIntent(state.lastOpenOptions || intent);
+        });
+      }
+    }
+  }
+
+  function restorePurchaseIntentIfNeeded() {
+    if (isOpen || !currentUser) {
+      return;
+    }
+    const intent = readPendingPurchaseIntent();
+    if (!intent) {
+      clearPendingPurchaseIntent();
+      return;
+    }
+    clearPendingPurchaseIntent();
+    void open(intent);
   }
 
   function openTelegramUrl(url) {
@@ -313,13 +425,42 @@ const DEFAULT_PRICING = {
     }
     const letterData = getLetterMultiplier(normalizedLetters);
     const digitData = getDigitMultiplier(normalizedDigits);
-    const total = Number(state.slugPricing?.basePrice || DEFAULT_SLUG_PRICING.basePrice) * letterData.multiplier * digitData.multiplier;
+    const slugValue = `${normalizedLetters}${normalizedDigits}`;
+    const multipliedBase = Number(state.slugPricing?.basePrice || DEFAULT_SLUG_PRICING.basePrice) * letterData.multiplier * digitData.multiplier;
+    const customRules = Array.isArray(state.slugPricing?.customRules) ? state.slugPricing.customRules : [];
+    let customDeltaTotal = 0;
+    const customBreakdown = [];
+    for (const rawRule of customRules) {
+      if (!rawRule || typeof rawRule !== "object") continue;
+      const pattern = String(rawRule.pattern || "").trim().toUpperCase();
+      const type = String(rawRule.type || "").trim();
+      const delta = Number(rawRule.delta || 0);
+      if (!pattern || !Number.isFinite(delta) || delta === 0) continue;
+      let match = false;
+      if (type === "contains" && slugValue.includes(pattern)) match = true;
+      if (type === "startsWith" && slugValue.startsWith(pattern)) match = true;
+      if (type === "endsWith" && slugValue.endsWith(pattern)) match = true;
+      if (type === "regex") {
+        try {
+          if (new RegExp(pattern).test(slugValue)) match = true;
+        } catch {
+          match = false;
+        }
+      }
+      if (!match) continue;
+      customDeltaTotal += delta;
+      customBreakdown.push({ label: String(rawRule.label || pattern).trim() || pattern, delta });
+    }
+    const total = multipliedBase + customDeltaTotal;
     return {
-      slug: `${normalizedLetters}${normalizedDigits}`,
+      slug: slugValue,
       letters: normalizedLetters,
       digits: normalizedDigits,
       letterData,
       digitData,
+      multipliedBase,
+      customDeltaTotal,
+      customBreakdown,
       total,
     };
   }
@@ -502,10 +643,29 @@ const DEFAULT_PRICING = {
     dom.userAvatar.src = currentUser?.photoUrl || "/brand/logo.PNG";
   }
 
+  function getCurrentFormSnapshot() {
+    return {
+      letters: normalizeLetters(dom.letters.value),
+      digits: normalizeDigits(dom.digits.value),
+      name: String(dom.name.value || "").trim(),
+      bracelet: Boolean(dom.bracelet.checked),
+      plan: selectedPlan(),
+    };
+  }
+
   function isFormDirty() {
-    const hasSlug = Boolean(normalizeLetters(dom.letters.value) || normalizeDigits(dom.digits.value));
-    const hasName = Boolean(dom.name.value.trim());
-    return hasSlug || hasName || dom.bracelet.checked || dom.planPremium.checked;
+    const baseline = state.initialFormSnapshot;
+    const current = getCurrentFormSnapshot();
+    if (!baseline || typeof baseline !== "object") {
+      return Boolean(current.letters || current.digits || current.name || current.bracelet || current.plan === "premium");
+    }
+    return (
+      current.letters !== String(baseline.letters || "") ||
+      current.digits !== String(baseline.digits || "") ||
+      current.name !== String(baseline.name || "") ||
+      current.bracelet !== Boolean(baseline.bracelet) ||
+      current.plan !== String(baseline.plan || "basic")
+    );
   }
 
   function stopCountdown() {
@@ -515,19 +675,54 @@ const DEFAULT_PRICING = {
     }
   }
 
+  function getFormStages() {
+    const stages = [];
+    if (!state.slugLocked) {
+      stages.push("Slug");
+    }
+    if (dom.planSection instanceof HTMLElement && !dom.planSection.classList.contains("hidden")) {
+      stages.push("Тариф");
+    }
+    if (dom.bracelet instanceof HTMLInputElement && !dom.bracelet.disabled) {
+      stages.push("Дополнительно");
+    }
+    stages.push("Подтверждение");
+    return stages;
+  }
+
+  function formatStagesLine(stages) {
+    return stages.map((label, index) => `${String.fromCodePoint(0x2460 + index)} ${label}`).join(" · ");
+  }
+
   function setStep(step) {
+    currentStep = step;
     const progress = STEP_PROGRESS[step] || STEP_PROGRESS.form;
     if (dom.progressBarInner instanceof HTMLElement) {
       dom.progressBarInner.style.width = progress.width;
     }
+
+    let label = String(progress.label || "");
+    let line = String(progress.line || "");
+    if (step === "form") {
+      const stages = getFormStages();
+      label = `Шаг 1 из ${stages.length}`;
+      line = formatStagesLine(stages);
+    }
+    if (step === "auth") {
+      label = "";
+      line = "";
+    }
     if (dom.progressLabel instanceof HTMLElement) {
-      dom.progressLabel.textContent = progress.label;
+      dom.progressLabel.textContent = label;
+      dom.progressLabel.classList.toggle("hidden", !label);
     }
     if (dom.progressAuth instanceof HTMLElement) {
-      dom.progressAuth.textContent = progress.line;
+      dom.progressAuth.textContent = line;
+      dom.progressAuth.classList.toggle("hidden", !line);
     }
     if (dom.progressNoAuth instanceof HTMLElement) {
-      dom.progressNoAuth.textContent = progress.line;
+      dom.progressNoAuth.textContent = line;
+      dom.progressNoAuth.classList.toggle("hidden", !line);
     }
 
     dom.stepAuth.classList.toggle("hidden", step !== "auth");
@@ -538,6 +733,11 @@ const DEFAULT_PRICING = {
 
   function setProgress() {
     if (!(dom.progressAuth instanceof HTMLElement) || !(dom.progressNoAuth instanceof HTMLElement)) {
+      return;
+    }
+    if (currentStep === "auth") {
+      dom.progressAuth.classList.add("hidden");
+      dom.progressNoAuth.classList.add("hidden");
       return;
     }
     const showAuth = !currentUser;
@@ -735,9 +935,6 @@ const DEFAULT_PRICING = {
         cancelText: "Остаться",
       });
     }
-    if (typeof window.confirm === "function") {
-      return Promise.resolve(window.confirm(message));
-    }
     return Promise.resolve(false);
   }
 
@@ -770,9 +967,14 @@ const DEFAULT_PRICING = {
             discountPercent: Number(payload.discountPercent || 0),
           }
           : null;
-      return { total, flash, source: String(payload.source || "calculator") };
+      return {
+        total,
+        flash,
+        source: String(payload.source || "calculator"),
+        calculation: payload?.calculation && typeof payload.calculation === "object" ? payload.calculation : null,
+      };
     } catch {
-      return { total: fallbackTotal, flash: null, source: "calculator" };
+      return { total: fallbackTotal, flash: null, source: "calculator", calculation: null };
     }
   }
 
@@ -841,8 +1043,35 @@ const DEFAULT_PRICING = {
       } else if (server?.source === "override") {
         dom.formula.textContent = `Персональная цена: ${formatPrice(slugPrice)} сум`;
       } else {
-        const m = pricing ? pricing.letterData.multiplier * pricing.digitData.multiplier : 1;
-        dom.formula.textContent = `${formatPrice(slugBasePrice)} × ${m} = ${formatPrice(slugPrice)} сум`;
+        const calc = server?.calculation;
+        const base = Number(calc?.basePrice || slugBasePrice);
+        const lettersMultiplier = Number(calc?.lettersMultiplier || pricing?.letterData?.multiplier || 1);
+        const digitsMultiplier = Number(calc?.digitsMultiplier || pricing?.digitData?.multiplier || 1);
+        const customBreakdown =
+          Array.isArray(calc?.customBreakdown) && calc.customBreakdown.length
+            ? calc.customBreakdown
+            : Array.isArray(pricing?.customBreakdown)
+              ? pricing.customBreakdown
+              : [];
+        const customParts = customBreakdown
+          .map((item) => {
+            const delta = Number(item?.delta || 0);
+            if (!delta) return "";
+            const sign = delta > 0 ? "+" : "-";
+            const amount = formatPrice(Math.abs(delta));
+            const label = String(item?.label || "").trim();
+            return `${sign} ${amount}${label ? ` (${label})` : ""}`;
+          })
+          .filter(Boolean)
+          .join(" ");
+        const customDeltaTotal = Number(calc?.customDeltaTotal ?? (pricing?.customDeltaTotal || 0));
+        const tail = customParts ? ` ${customParts}` : "";
+        if (!customParts && customDeltaTotal) {
+          const sign = customDeltaTotal > 0 ? "+" : "-";
+          dom.formula.textContent = `${formatPrice(base)} × ${lettersMultiplier} × ${digitsMultiplier} ${sign} ${formatPrice(Math.abs(customDeltaTotal))} = ${formatPrice(slugPrice)} сум`;
+        } else {
+          dom.formula.textContent = `${formatPrice(base)} × ${lettersMultiplier} × ${digitsMultiplier}${tail} = ${formatPrice(slugPrice)} сум`;
+        }
       }
     }
     if (dom.rarity instanceof HTMLElement) {
@@ -981,6 +1210,7 @@ const DEFAULT_PRICING = {
     }
     setStatus("", "neutral");
     setSubmitBlockedMessage("");
+    state.initialFormSnapshot = getCurrentFormSnapshot();
     void updateTotals();
   }
 
@@ -999,6 +1229,7 @@ const DEFAULT_PRICING = {
       dom.dialog?.focus();
     });
     await refreshUser();
+    bindAuthIntentLinks();
     const precheck = await fetchOrderPrecheck(state.lastOpenOptions);
     prefillFromOpenOptions(state.lastOpenOptions, precheck);
     const step = applyOrderPrecheck(precheck);
@@ -1407,7 +1638,9 @@ const DEFAULT_PRICING = {
   dom.root.style.display = "none";
   dom.root.classList.remove("is-open");
   document.body.classList.remove("modal-open");
-  void refreshUser();
+  void refreshUser().then(() => {
+    restorePurchaseIntentIfNeeded();
+  });
   bindCtas();
   void syncQuickPayState();
   window.addEventListener("focus", () => {

@@ -176,14 +176,43 @@ function calculateSlugPricing(letters, digits) {
 
   const letterData = getLetterMultiplier(normalizedLetters);
   const digitData = getDigitMultiplier(normalizedDigits);
-  const total = Number(slugPricingConfig?.basePrice || DEFAULT_HOME_SLUG_PRICING.basePrice) * letterData.multiplier * digitData.multiplier;
+  const slug = `${normalizedLetters}${normalizedDigits}`;
+  const multipliedBase = Number(slugPricingConfig?.basePrice || DEFAULT_HOME_SLUG_PRICING.basePrice) * letterData.multiplier * digitData.multiplier;
+  const customRules = Array.isArray(slugPricingConfig?.customRules) ? slugPricingConfig.customRules : [];
+  let customDeltaTotal = 0;
+  const customBreakdown = [];
+  for (const rawRule of customRules) {
+    if (!rawRule || typeof rawRule !== "object") continue;
+    const pattern = String(rawRule.pattern || "").trim().toUpperCase();
+    const type = String(rawRule.type || "").trim();
+    const delta = Number(rawRule.delta || 0);
+    if (!pattern || !Number.isFinite(delta) || delta === 0) continue;
+    let match = false;
+    if (type === "contains" && slug.includes(pattern)) match = true;
+    if (type === "startsWith" && slug.startsWith(pattern)) match = true;
+    if (type === "endsWith" && slug.endsWith(pattern)) match = true;
+    if (type === "regex") {
+      try {
+        if (new RegExp(pattern).test(slug)) match = true;
+      } catch {
+        match = false;
+      }
+    }
+    if (!match) continue;
+    customDeltaTotal += delta;
+    customBreakdown.push({ label: String(rawRule.label || pattern).trim() || pattern, delta });
+  }
+  const total = multipliedBase + customDeltaTotal;
 
   return {
     letters: normalizedLetters,
     digits: normalizedDigits,
-    slug: `${normalizedLetters}${normalizedDigits}`,
+    slug,
     letterData,
     digitData,
+    multipliedBase,
+    customDeltaTotal,
+    customBreakdown,
     total,
   };
 }
@@ -698,6 +727,7 @@ function initSlugCalculator(orderApi) {
   const lettersInput = document.getElementById("calc-letters");
   const digitsInput = document.getElementById("calc-digits");
   const preview = document.getElementById("calc-preview");
+  const emptyState = document.getElementById("calc-empty-state");
   const resultWrap = document.getElementById("calc-result");
   const rarityBadge = document.getElementById("calc-rarity-badge");
   const rarityText = document.getElementById("calc-rarity-text");
@@ -714,6 +744,7 @@ function initSlugCalculator(orderApi) {
     !(lettersInput instanceof HTMLInputElement) ||
     !(digitsInput instanceof HTMLInputElement) ||
     !(preview instanceof HTMLElement) ||
+    !(emptyState instanceof HTMLElement) ||
     !(resultWrap instanceof HTMLElement) ||
     !(rarityBadge instanceof HTMLElement) ||
     !(rarityText instanceof HTMLElement) ||
@@ -739,6 +770,16 @@ function initSlugCalculator(orderApi) {
     preview.textContent = `unqx.uz/${letters || "___"}${digits || "___"}`;
   }
 
+  function showEmptyState() {
+    emptyState.classList.remove("hidden");
+    resultWrap.classList.add("hidden");
+  }
+
+  function showResultState() {
+    emptyState.classList.add("hidden");
+    resultWrap.classList.remove("hidden");
+  }
+
   async function applyServerPrice(slug, fallbackTotal) {
     const seq = ++requestSeq;
     try {
@@ -759,9 +800,13 @@ function initSlugCalculator(orderApi) {
             discountPercent: Number(payload.discountPercent || 0),
           }
           : null;
-      return { total, flash };
+      return {
+        total,
+        flash,
+        calculation: payload?.calculation && typeof payload.calculation === "object" ? payload.calculation : null,
+      };
     } catch {
-      return { total: fallbackTotal, flash: null };
+      return { total: fallbackTotal, flash: null, calculation: null };
     }
   }
 
@@ -821,14 +866,15 @@ function initSlugCalculator(orderApi) {
     updatePreview(lettersInput.value, digitsInput.value);
 
     if (!pricing) {
+      showEmptyState();
       return;
     }
 
     if (!hasRevealed) {
       hasRevealed = true;
-      resultWrap.classList.remove("hidden");
       resultWrap.classList.add("animate-fade-up");
     }
+    showResultState();
 
     const serverPricing = await applyServerPrice(pricing.slug, pricing.total);
     if (!serverPricing) {
@@ -850,7 +896,25 @@ function initSlugCalculator(orderApi) {
       resultFormula.textContent = `Flash sale применён (-${serverPricing.flash.discountPercent}%)`;
     } else {
       animateNumberText(resultPrice, lastAnimatedPrice, finalPrice);
-      resultFormula.textContent = `${formatPrice(slugPricingConfig.basePrice || DEFAULT_HOME_SLUG_PRICING.basePrice)} x ${pricing.letterData.multiplier} x ${pricing.digitData.multiplier} = ${formatPrice(finalPrice)} сум`;
+      const calc = serverPricing.calculation;
+      const base = Number(calc?.basePrice || slugPricingConfig.basePrice || DEFAULT_HOME_SLUG_PRICING.basePrice);
+      const lettersMultiplier = Number(calc?.lettersMultiplier || pricing.letterData.multiplier || 1);
+      const digitsMultiplier = Number(calc?.digitsMultiplier || pricing.digitData.multiplier || 1);
+      const customParts = Array.isArray(calc?.customBreakdown)
+        ? calc.customBreakdown
+          .map((item) => {
+            const delta = Number(item?.delta || 0);
+            if (!delta) return "";
+            const sign = delta > 0 ? "+" : "-";
+            const amount = formatPrice(Math.abs(delta));
+            const label = String(item?.label || "").trim();
+            return `${sign} ${amount}${label ? ` (${label})` : ""}`;
+          })
+          .filter(Boolean)
+          .join(" ")
+        : "";
+      const tail = customParts ? ` ${customParts}` : "";
+      resultFormula.textContent = `${formatPrice(base)} x ${lettersMultiplier} x ${digitsMultiplier}${tail} = ${formatPrice(finalPrice)} сум`;
     }
     lastAnimatedPrice = finalPrice;
     letterMeta.textContent = `${pricing.letterData.label} x${pricing.letterData.multiplier}`;
@@ -904,6 +968,7 @@ function initSlugCalculator(orderApi) {
     window.history.replaceState({}, "", `${nextUrl.pathname}${nextUrl.search}${nextUrl.hash}`);
   } else {
     updatePreview("", "");
+    showEmptyState();
   }
 }
 
