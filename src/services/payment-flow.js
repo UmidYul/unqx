@@ -26,6 +26,35 @@ function getOrderPaymentReference(orderId) {
   return `UNQX-${compact || "ORDER"}`;
 }
 
+function normalizeTelegramUsername(value) {
+  const normalized = String(value || "")
+    .replace(/^@+/, "")
+    .trim()
+    .replace(/[^a-zA-Z0-9_]/g, "");
+  return normalized || "unqx_uz";
+}
+
+function toPlanLabel(plan) {
+  return String(plan || "").toLowerCase() === "premium" ? "Премиум" : "Базовый";
+}
+
+function buildManualTelegramPaymentUrl({
+  orderId,
+  slug,
+  requestedPlan,
+  reference,
+  telegramUsername = "unqx_uz",
+}) {
+  const safeUsername = normalizeTelegramUsername(telegramUsername);
+  const paymentReference = String(reference || "").trim() || getOrderPaymentReference(orderId);
+  const safeSlug = String(slug || "").trim().toUpperCase();
+  const message =
+    `Здравствуйте! Продолжаю оплату заказа #️⃣ ${paymentReference}\n\n` +
+    `UNQ: ${safeSlug}\n` +
+    `Тариф: ${toPlanLabel(requestedPlan)}`;
+  return `https://t.me/${safeUsername}?text=${encodeURIComponent(message)}`;
+}
+
 async function getPaymentConfig() {
   const values = await getManySettings([
     "payment_provider",
@@ -89,6 +118,8 @@ module.exports = {
   normalizePaymentProvider,
   toProviderLabel,
   getOrderPaymentReference,
+  normalizeTelegramUsername,
+  buildManualTelegramPaymentUrl,
   getPaymentConfig,
   buildOrderPaymentDraft,
 };

@@ -27,6 +27,8 @@ const { getPricingSettings } = require("../../services/pricing-settings");
 const { sendVerificationRequestToAdmin } = require("../../services/telegram");
 const { sendAccountDeactivatedEmail } = require("../../services/email");
 const { resolveUzbekistanCity } = require("../../constants/uzbekistan-cities");
+const { getSetting } = require("../../services/platform-settings");
+const { getOrderPaymentReference, buildManualTelegramPaymentUrl, normalizeTelegramUsername } = require("../../services/payment-flow");
 
 const router = express.Router();
 const upload = multer({
@@ -38,6 +40,7 @@ const CARD_THEMES = new Set(["default_dark", "arctic", "linen", "marble", "fores
 const DIRECTORY_SECTORS = new Set(["design", "sales", "marketing", "it", "other"]);
 const ACCOUNT_REACTIVATION_WINDOW_DAYS = Number(env.ACCOUNT_REACTIVATION_WINDOW_DAYS || 30);
 const UNKNOWN_CITY_LABEL = "Неизвестно";
+const FALLBACK_SUPPORT_TELEGRAM = "unqx_uz";
 const GEO_CITY_NOISE_ALIASES = new Set([
   "the dalles",
 ]);
@@ -94,6 +97,31 @@ function toRequestStatusBadge(status) {
     default:
       return status;
   }
+}
+
+function mapProfileRequest(item, supportTelegram) {
+  const paymentReference = getOrderPaymentReference(item.id);
+  return {
+    id: item.id,
+    slug: item.slug,
+    slugPrice: item.slugPrice,
+    requestedPlan: item.requestedPlan,
+    planPrice: item.planPrice,
+    bracelet: item.bracelet,
+    status: item.status,
+    statusBadge: toRequestStatusBadge(item.status),
+    adminNote: item.adminNote,
+    purchasedAt: item.status === "approved" ? item.updatedAt : null,
+    createdAt: item.createdAt,
+    paymentReference,
+    paymentUrl: buildManualTelegramPaymentUrl({
+      orderId: item.id,
+      slug: item.slug,
+      requestedPlan: item.requestedPlan,
+      reference: paymentReference,
+      telegramUsername: supportTelegram,
+    }),
+  };
 }
 
 function sanitizeSlug(value) {
@@ -489,7 +517,7 @@ router.get(
       return;
     }
 
-    const [slugs, card, requests, score, pricing] = await Promise.all([
+    const [slugs, card, requests, score, pricing, supportTelegramRaw] = await Promise.all([
       getUserSlugsWithStats(user.id),
       findProfileCardByOwnerId(user.id),
       prisma.slugRequest.findMany({
@@ -498,7 +526,9 @@ router.get(
       }),
       getProfileScoreByUserId(user.id),
       getPricingSettings(),
+      getSetting("contact_support_telegram", `@${FALLBACK_SUPPORT_TELEGRAM}`),
     ]);
+    const supportTelegram = normalizeTelegramUsername(supportTelegramRaw);
 
     const effective = getEffectivePlan(user);
 
@@ -534,19 +564,7 @@ router.get(
       },
       slugs: effective.plan === "none" ? [] : slugs,
       card: effective.plan === "none" ? null : parseProfileCardRow(card),
-      requests: requests.map((item) => ({
-        id: item.id,
-        slug: item.slug,
-        slugPrice: item.slugPrice,
-        requestedPlan: item.requestedPlan,
-        planPrice: item.planPrice,
-        bracelet: item.bracelet,
-        status: item.status,
-        statusBadge: toRequestStatusBadge(item.status),
-        adminNote: item.adminNote,
-        purchasedAt: item.status === "approved" ? item.updatedAt : null,
-        createdAt: item.createdAt,
-      })),
+      requests: requests.map((item) => mapProfileRequest(item, supportTelegram)),
       score,
       pricing,
       access: {
@@ -1248,24 +1266,16 @@ router.get(
       return;
     }
 
-    const rows = await prisma.slugRequest.findMany({
-      where: { userId: user.id },
-      orderBy: { createdAt: "desc" },
-    });
+    const [rows, supportTelegramRaw] = await Promise.all([
+      prisma.slugRequest.findMany({
+        where: { userId: user.id },
+        orderBy: { createdAt: "desc" },
+      }),
+      getSetting("contact_support_telegram", `@${FALLBACK_SUPPORT_TELEGRAM}`),
+    ]);
+    const supportTelegram = normalizeTelegramUsername(supportTelegramRaw);
     res.json({
-      items: rows.map((item) => ({
-        id: item.id,
-        slug: item.slug,
-        slugPrice: item.slugPrice,
-        requestedPlan: item.requestedPlan,
-        planPrice: item.planPrice,
-        bracelet: item.bracelet,
-        status: item.status,
-        statusBadge: toRequestStatusBadge(item.status),
-        adminNote: item.adminNote,
-        purchasedAt: item.status === "approved" ? item.updatedAt : null,
-        createdAt: item.createdAt,
-      })),
+      items: rows.map((item) => mapProfileRequest(item, supportTelegram)),
     });
   }),
 );

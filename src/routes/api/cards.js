@@ -8,7 +8,12 @@ const { detectDevice } = require("../../services/ua");
 const { generateVCard } = require("../../services/vcard");
 const { calculateSlugPrice, calculateSlugPriceFromSettings, getSlugPricingConfig } = require("../../services/slug-pricing");
 const { sendOrderRequestToTelegram, TelegramConfigError, TelegramDeliveryError } = require("../../services/telegram");
-const { buildOrderPaymentDraft, getOrderPaymentReference } = require("../../services/payment-flow");
+const {
+  buildOrderPaymentDraft,
+  getOrderPaymentReference,
+  buildManualTelegramPaymentUrl,
+  normalizeTelegramUsername,
+} = require("../../services/payment-flow");
 const { getActiveFlashSale, applyFlashSaleToPrice } = require("../../services/flash-sales");
 const { markDropSlugSold } = require("../../services/drops");
 const {
@@ -32,6 +37,7 @@ const { logPaymentEvent } = require("../../services/payment-events");
 const router = express.Router();
 const SLUG_REGEX = /^[A-Z]{3}[0-9]{3}$/;
 const THEMES = new Set(["default_dark", "arctic", "linen", "marble", "forest", "royal_ivory", "midnight_obsidian"]);
+const FALLBACK_SUPPORT_TELEGRAM = "unqx_uz";
 
 function isMissingModelTable(error, modelName) {
   return (
@@ -869,7 +875,7 @@ router.get(
     });
     const slugLimit = resolvedPlan === "premium" ? 3 : 1;
 
-    const [activeOrdersCount, userSlugsCount, latestActiveOrder] = await Promise.all([
+    const [activeOrdersCount, userSlugsCount, latestActiveOrder, supportTelegramRaw] = await Promise.all([
       prisma.slugRequest.count({
         where: {
           userId: user.id,
@@ -898,7 +904,9 @@ router.get(
           createdAt: true,
         },
       }),
+      getSetting("contact_support_telegram", `@${FALLBACK_SUPPORT_TELEGRAM}`),
     ]);
+    const supportTelegram = normalizeTelegramUsername(supportTelegramRaw);
 
     let pendingOrder = null;
     if (latestActiveOrder) {
@@ -917,6 +925,12 @@ router.get(
         status: latestActiveOrder.status,
         requestedPlan: latestActiveOrder.requestedPlan,
         paymentReference: getOrderPaymentReference(latestActiveOrder.id),
+        paymentUrl: buildManualTelegramPaymentUrl({
+          orderId: latestActiveOrder.id,
+          slug: latestActiveOrder.slug,
+          requestedPlan: latestActiveOrder.requestedPlan,
+          telegramUsername: supportTelegram,
+        }),
         createdAt: latestActiveOrder.createdAt,
         pendingExpiresAt: slugRow?.status === "pending" ? slugRow.pendingExpiresAt || null : null,
       };
@@ -1224,6 +1238,16 @@ router.post(
       orderId: order.id,
       amount: totalOneTime,
     });
+    const supportTelegram = normalizeTelegramUsername(
+      await getSetting("contact_support_telegram", `@${FALLBACK_SUPPORT_TELEGRAM}`),
+    );
+    const paymentTelegramUrl = buildManualTelegramPaymentUrl({
+      orderId: order.id,
+      slug,
+      requestedPlan,
+      reference: payment.reference,
+      telegramUsername: supportTelegram,
+    });
     try {
       await sendOrderRequestToTelegram({
         orderId: order.id,
@@ -1285,6 +1309,9 @@ router.post(
         totalOneTime,
       },
       payment,
+      paymentLinks: {
+        telegramUrl: paymentTelegramUrl,
+      },
       flashSale: flashApplied.hasDiscount
         ? {
           saleId: activeFlashSale.id,

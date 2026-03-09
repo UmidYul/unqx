@@ -111,6 +111,9 @@ const DEFAULT_PRICING = {
   let lastFocusedElement = null;
   let isCloseConfirming = false;
   let lastTelegramPaymentUrl = "https://t.me/unqx_uz";
+  let quickPayNode = null;
+  let quickPayState = null;
+  let quickPayDismissed = false;
   let state = {
     slugLocked: false,
     lockedSlug: "",
@@ -137,6 +140,106 @@ const DEFAULT_PRICING = {
     }
     csrfToken = nextToken;
     document.querySelector('meta[name="csrf-token"]')?.setAttribute("content", nextToken);
+  }
+
+  function openTelegramUrl(url) {
+    const fallbackUrl = "https://t.me/unqx_uz";
+    const telegramUrl = /^https:\/\/t\.me\/[a-zA-Z0-9_]{4,}(?:\?|$)/i.test(url || "") ? url : fallbackUrl;
+    const [baseUrl, query = ""] = telegramUrl.split("?");
+    const username = String(baseUrl.replace(/^https:\/\/t\.me\//i, "")).trim() || "unqx_uz";
+    const params = new URLSearchParams(query);
+    const text = params.get("text");
+    const tgAppUrl = `tg://resolve?domain=${encodeURIComponent(username)}${text ? `&text=${encodeURIComponent(text)}` : ""}`;
+    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || "");
+    if (isMobile) {
+      window.location.href = tgAppUrl;
+      window.setTimeout(() => {
+        window.location.href = telegramUrl;
+      }, 900);
+      return;
+    }
+    window.location.href = telegramUrl;
+  }
+
+  function upsertQuickPayButton() {
+    if (quickPayNode instanceof HTMLElement && document.body.contains(quickPayNode)) {
+      return quickPayNode;
+    }
+    const wrap = document.createElement("div");
+    wrap.id = "order-quick-pay";
+    wrap.style.position = "fixed";
+    wrap.style.right = "16px";
+    wrap.style.bottom = "16px";
+    wrap.style.zIndex = "85";
+    wrap.style.display = "none";
+    wrap.innerHTML = `
+      <div style="display:flex;align-items:center;gap:8px;background:#111827;color:#fff;border-radius:12px;padding:10px 12px;box-shadow:0 10px 30px rgba(0,0,0,.25);max-width:90vw;">
+        <button type="button" data-a="open" class="interactive-btn" style="border:0;background:transparent;color:inherit;font-weight:600;cursor:pointer;white-space:nowrap;">Продолжить оплату</button>
+        <button type="button" data-a="clear" class="interactive-btn" aria-label="Скрыть" style="border:0;background:transparent;color:#cbd5e1;cursor:pointer;font-size:16px;line-height:1;">×</button>
+      </div>
+    `;
+    wrap.addEventListener("click", (event) => {
+      const target = event.target instanceof HTMLElement ? event.target.closest("[data-a]") : null;
+      if (!(target instanceof HTMLElement)) return;
+      const action = target.getAttribute("data-a");
+      if (action === "clear") {
+        quickPayDismissed = true;
+        renderQuickPayButton();
+        return;
+      }
+      if (quickPayState?.url) {
+        openTelegramUrl(quickPayState.url);
+        return;
+      }
+      void syncQuickPayState();
+    });
+    document.body.appendChild(wrap);
+    quickPayNode = wrap;
+    return wrap;
+  }
+
+  function renderQuickPayButton() {
+    const node = upsertQuickPayButton();
+    const draft = quickPayState;
+    if (!draft || quickPayDismissed) {
+      node.style.display = "none";
+      return;
+    }
+    const openBtn = node.querySelector('[data-a="open"]');
+    if (openBtn instanceof HTMLButtonElement) {
+      const tail = draft.reference || draft.slug || "заказ";
+      openBtn.textContent = `Продолжить оплату · ${tail}`;
+    }
+    node.style.display = "block";
+  }
+
+  async function syncQuickPayState(precheck = null) {
+    try {
+      const context =
+        precheck && typeof precheck === "object"
+          ? precheck
+          : await fetchOrderPrecheck(state.lastOpenOptions || {});
+      const pending = context?.pendingOrder && typeof context.pendingOrder === "object" ? context.pendingOrder : null;
+      const isPendingFlow = String(context?.nextAction || "") === "resume_pending" && Boolean(pending);
+      if (!isPendingFlow) {
+        quickPayState = null;
+        quickPayDismissed = false;
+        renderQuickPayButton();
+        return null;
+      }
+      const url = buildPendingPaymentUrl(pending);
+      quickPayState = {
+        url,
+        orderId: String(pending.id || "").trim(),
+        slug: String(pending.slug || "").trim().toUpperCase(),
+        reference: String(pending.paymentReference || "").trim(),
+      };
+      quickPayDismissed = false;
+    } catch {
+      quickPayState = null;
+    }
+    renderQuickPayButton();
+    return quickPayState;
   }
 
   function formatPrice(number) {
@@ -490,6 +593,10 @@ const DEFAULT_PRICING = {
     if (!order || typeof order !== "object") {
       return "https://t.me/unqx_uz";
     }
+    const serverUrl = String(order.paymentUrl || "").trim();
+    if (/^https:\/\/t\.me\/[a-zA-Z0-9_]{4,}(?:\?|$)/.test(serverUrl)) {
+      return serverUrl;
+    }
     const reference = String(order.paymentReference || "").trim() || `UNQX-${String(order.id || "").replace(/[^a-zA-Z0-9]/g, "").slice(0, 10).toUpperCase()}`;
     const slug = String(order.slug || "").trim().toUpperCase();
     const message = `Здравствуйте! Продолжаю оплату заказа #️⃣ ${reference}\n\nUNQ: ${slug}\nТариф: ${planLabel(order.requestedPlan)}`;
@@ -507,6 +614,9 @@ const DEFAULT_PRICING = {
     const visible = action === "resume_pending" && Boolean(pending);
     if (!visible) {
       setPendingStatus("", "neutral");
+      quickPayState = null;
+      quickPayDismissed = false;
+      renderQuickPayButton();
       if (dom.pendingMeta instanceof HTMLElement) {
         dom.pendingMeta.textContent = "UNQ: —";
       }
@@ -524,7 +634,17 @@ const DEFAULT_PRICING = {
       dom.pendingMeta.textContent = meta;
     }
     if (dom.pendingContinue instanceof HTMLAnchorElement) {
-      dom.pendingContinue.href = buildPendingPaymentUrl(pending);
+      const url = buildPendingPaymentUrl(pending);
+      dom.pendingContinue.href = url;
+      lastTelegramPaymentUrl = url;
+      quickPayState = {
+        url,
+        orderId: String(pending.id || "").trim(),
+        slug: String(pending.slug || "").trim().toUpperCase(),
+        reference: String(pending.paymentReference || "").trim(),
+      };
+      quickPayDismissed = false;
+      renderQuickPayButton();
     }
     if (dom.pendingCancel instanceof HTMLButtonElement) {
       dom.pendingCancel.setAttribute("data-order-id", String(pending.id || ""));
@@ -1010,9 +1130,17 @@ const DEFAULT_PRICING = {
       ━━━━━━━━━━━━
       Итого к оплате: ${formatPrice(totalAmount)} сум`;
 
-        const telegramUrl = `https://t.me/unqx_uz?text=${encodeURIComponent(message)}`;
+        const telegramUrl = String(payload?.paymentLinks?.telegramUrl || "").trim() || `https://t.me/unqx_uz?text=${encodeURIComponent(message)}`;
         telegramLink.href = telegramUrl;
         lastTelegramPaymentUrl = telegramUrl;
+        quickPayState = {
+          url: telegramUrl,
+          orderId: String(payload.orderId || "").trim(),
+          slug: String(pricing.slug || "").trim().toUpperCase(),
+          reference: String(orderCode || "").trim(),
+        };
+        quickPayDismissed = false;
+        renderQuickPayButton();
       }
 
       startCountdown(expiresAtIso);
@@ -1154,6 +1282,14 @@ const DEFAULT_PRICING = {
   dom.closeForm?.addEventListener("click", () => close(false));
   dom.closeSuccess?.addEventListener("click", () => close(true));
   dom.closePending?.addEventListener("click", () => close(false));
+  dom.pendingContinue?.addEventListener("click", (event) => {
+    event.preventDefault();
+    const href = dom.pendingContinue instanceof HTMLAnchorElement ? String(dom.pendingContinue.href || "").trim() : "";
+    if (!href || href === "#") {
+      return;
+    }
+    openTelegramUrl(href);
+  });
   dom.pendingCancel?.addEventListener("click", async () => {
     const orderId = String(dom.pendingCancel?.getAttribute("data-order-id") || "").trim();
     if (!orderId) {
@@ -1169,6 +1305,11 @@ const DEFAULT_PRICING = {
     dom.pendingCancel.textContent = "Отмена...";
     try {
       await postJson(`/api/cards/order-request/${encodeURIComponent(orderId)}/cancel`, {});
+      if (quickPayState && quickPayState.orderId === orderId) {
+        quickPayState = null;
+        quickPayDismissed = false;
+        renderQuickPayButton();
+      }
       await refreshCheckoutContext();
       setStatus("Заказ отменён. Теперь можно создать новый.", "success");
       setPendingStatus("", "neutral");
@@ -1183,20 +1324,8 @@ const DEFAULT_PRICING = {
     const telegramLink = dom.root.querySelector("#order-modal-telegram-link");
     const fallbackUrl = "https://t.me/unqx_uz";
     const candidateUrl = telegramLink instanceof HTMLAnchorElement && telegramLink.href ? telegramLink.href : lastTelegramPaymentUrl;
-    const telegramUrl = /^https:\/\/t\.me\/unqx_uz(?:\?|$)/i.test(candidateUrl) ? candidateUrl : (lastTelegramPaymentUrl || fallbackUrl);
-    const encodedMessage = telegramUrl.includes("?text=") ? telegramUrl.split("?text=")[1] : "";
-    const tgAppUrl = `tg://resolve?domain=unqx_uz${encodedMessage ? `&text=${encodedMessage}` : ""}`;
-    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || "");
-
-    if (isMobile) {
-      window.location.href = tgAppUrl;
-      window.setTimeout(() => {
-        window.location.href = telegramUrl;
-      }, 900);
-      return;
-    }
-
-    window.location.href = telegramUrl;
+    const telegramUrl = /^https:\/\/t\.me\/[a-zA-Z0-9_]{4,}(?:\?|$)/i.test(candidateUrl) ? candidateUrl : (lastTelegramPaymentUrl || fallbackUrl);
+    openTelegramUrl(telegramUrl);
   });
 
   document.addEventListener("keydown", (event) => {
@@ -1256,6 +1385,18 @@ const DEFAULT_PRICING = {
     getUser() {
       return currentUser;
     },
+    openSavedPayment() {
+      if (quickPayState?.url) {
+        openTelegramUrl(quickPayState.url);
+        return true;
+      }
+      void syncQuickPayState().then((next) => {
+        if (next?.url) {
+          openTelegramUrl(next.url);
+        }
+      });
+      return false;
+    },
   };
 
   dom.root.style.display = "none";
@@ -1263,6 +1404,10 @@ const DEFAULT_PRICING = {
   document.body.classList.remove("modal-open");
   void refreshUser();
   bindCtas();
+  void syncQuickPayState();
+  window.addEventListener("focus", () => {
+    void syncQuickPayState();
+  });
   window.addEventListener("unqx:bind-order-ctas", () => {
     bindCtas();
   });
