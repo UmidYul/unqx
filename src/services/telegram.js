@@ -72,7 +72,7 @@ async function sendOrderRequestToTelegram(payload) {
     .filter(Boolean)
     .join("\n");
 
-  return sendTelegramMessage({
+  const sent = await sendTelegramMessage({
     chatId,
     text,
     parseMode: "HTML",
@@ -89,6 +89,13 @@ async function sendOrderRequestToTelegram(payload) {
       ],
     ],
   });
+
+  const chatType = String(sent?.result?.chat?.type || "").toLowerCase();
+  if (chatType === "channel") {
+    console.warn("[telegram] order requests are sent to a channel; callback buttons may not emit callback_query updates. Use private/group/supergroup chat id for interactive status buttons.");
+  }
+
+  return sent;
 }
 
 async function sendTelegramMessage({
