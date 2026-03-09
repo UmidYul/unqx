@@ -101,7 +101,7 @@ function buildTelegramOrderKeyboard(orderId, status) {
     ]);
     rows.push([{ text: "Activate", callback_data: "ord:approved:" + orderId }]);
   } else if (current === "contacted") {
-    rows.push([{ text: "Оплачено", callback_data: "ord:paid:" + orderId }]);
+    rows.push([{ text: "Paid", callback_data: "ord:paid:" + orderId }]);
     rows.push([{ text: "Activate", callback_data: "ord:approved:" + orderId }]);
   } else if (current === "paid") {
     rows.push([{ text: "Activate", callback_data: "ord:approved:" + orderId }]);
@@ -297,4 +297,5 @@ router.post("/webhook/:secret", asyncHandler(handleTelegramWebhook));
 module.exports = {
   telegramApiRouter: router,
 };
+
 

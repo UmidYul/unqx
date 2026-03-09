@@ -101,15 +101,15 @@ async function withMissingTableFallback(modelName, fallbackValue, callback) {
 function toOrderStatusLabel(status) {
   switch (status) {
     case "NEW":
-      return "РќРѕРІР°СЏ";
+      return "Новая";
     case "CONTACTED":
-      return "РЎРІСЏР·Р°Р»РёСЃСЊ";
+      return "Связались";
     case "PAID":
-      return "РћРїР»Р°С‡РµРЅРѕ";
+      return "Оплачено";
     case "ACTIVATED":
-      return "РђРєС‚РёРІРёСЂРѕРІР°РЅРѕ";
+      return "Активировано";
     case "REJECTED":
-      return "РћС‚РєР»РѕРЅРµРЅРѕ";
+      return "Отклонено";
     default:
       return status;
   }
@@ -254,44 +254,44 @@ function withTimeout(promise, ms) {
 
 async function resolveCityByIp(ip) {
   if (!ip || ip === "127.0.0.1" || ip === "::1") {
-    return "РќРµРёР·РІРµСЃС‚РЅРѕ";
+    return "Неизвестно";
   }
   try {
     const response = await withTimeout(fetch(`https://ipapi.co/${encodeURIComponent(ip)}/json/`), 700);
     if (!response.ok) {
-      return "РќРµРёР·РІРµСЃС‚РЅРѕ";
+      return "Неизвестно";
     }
     const payload = await response.json().catch(() => ({}));
     const city = String(payload?.city || "").trim();
-    return city ? city.slice(0, 120) : "РќРµРёР·РІРµСЃС‚РЅРѕ";
+    return city ? city.slice(0, 120) : "Неизвестно";
   } catch {
-    return "РќРµРёР·РІРµСЃС‚РЅРѕ";
+    return "Неизвестно";
   }
 }
 
 async function resolveGeoByIp(ip) {
   if (!ip || ip === "127.0.0.1" || ip === "::1") {
-    return { city: "РќРµРёР·РІРµСЃС‚РЅРѕ", country: "" };
+    return { city: "Неизвестно", country: "" };
   }
   try {
     const response = await withTimeout(fetch(`https://ipapi.co/${encodeURIComponent(ip)}/json/`), 2000);
     if (!response.ok) {
-      return { city: "РќРµРёР·РІРµСЃС‚РЅРѕ", country: "" };
+      return { city: "Неизвестно", country: "" };
     }
     const payload = await response.json().catch(() => ({}));
     const cityRaw = String(payload?.city || "").trim();
     const country = String(payload?.country_name || payload?.country || "").trim();
 
-    // РќРѕСЂРјР°Р»РёР·СѓРµРј РіРѕСЂРѕРґ С‡РµСЂРµР· РјР°РїРїРёРЅРі СѓР·Р±РµРєСЃРєРёС… РіРѕСЂРѕРґРѕРІ (Tashkent в†’ РўР°С€РєРµРЅС‚)
+    // Нормализуем город через маппинг узбекских городов (Tashkent → Ташкент)
     const normalizedCity = resolveUzbekistanCity(cityRaw);
-    const city = normalizedCity || (cityRaw ? cityRaw.slice(0, 120) : "РќРµРёР·РІРµСЃС‚РЅРѕ");
+    const city = normalizedCity || (cityRaw ? cityRaw.slice(0, 120) : "Неизвестно");
 
     return {
       city,
       country: country ? country.slice(0, 120) : "",
     };
   } catch {
-    return { city: "РќРµРёР·РІРµСЃС‚РЅРѕ", country: "" };
+    return { city: "Неизвестно", country: "" };
   }
 }
 
@@ -325,12 +325,12 @@ function mapOrderValidationIssues(error) {
     const field = issue.path && issue.path[0];
 
     if (field === "name") {
-      issues.name = issue.message || "РРјСЏ РѕР±СЏР·Р°С‚РµР»СЊРЅРѕ";
+      issues.name = issue.message || "Имя обязательно";
       continue;
     }
 
     if (field === "letters" || field === "digits") {
-      issues.slug = "UNQ РґРѕР»Р¶РµРЅ Р±С‹С‚СЊ РІ С„РѕСЂРјР°С‚Рµ AAA000";
+      issues.slug = "UNQ должен быть в формате AAA000";
       continue;
     }
 
@@ -816,7 +816,7 @@ router.get(
         resolvedPlan: requestedPlan,
         canPurchase: false,
         nextAction: "login",
-        message: "Р’РѕР№РґРёС‚Рµ РІ Р°РєРєР°СѓРЅС‚, С‡С‚РѕР±С‹ РїСЂРѕРґРѕР»Р¶РёС‚СЊ РїРѕРєСѓРїРєСѓ С‚Р°СЂРёС„Р°.",
+        message: "Войдите в аккаунт, чтобы продолжить покупку тарифа.",
         pricing: {
           ...pricing,
           braceletPrice,
@@ -855,7 +855,7 @@ router.get(
         resolvedPlan: requestedPlan,
         canPurchase: false,
         nextAction: "login",
-        message: "РЎРµСЃСЃРёСЏ СѓСЃС‚Р°СЂРµР»Р°. Р’РѕР№РґРёС‚Рµ СЃРЅРѕРІР°.",
+        message: "Сессия устарела. Войдите снова.",
         pricing: {
           ...pricing,
           braceletPrice,
@@ -970,31 +970,31 @@ router.get(
     if (user.status === "blocked" || user.status === "deactivated") {
       nextAction = "blocked";
       canPurchase = false;
-      message = "РђРєРєР°СѓРЅС‚ РІСЂРµРјРµРЅРЅРѕ РЅРµРґРѕСЃС‚СѓРїРµРЅ. РћР±СЂР°С‚РёС‚РµСЃСЊ РІ РїРѕРґРґРµСЂР¶РєСѓ.";
+      message = "Account is temporarily unavailable. Contact support.";
     } else if (pendingOrder) {
       nextAction = "resume_pending";
       canPurchase = false;
-      message = `РЈ РІР°СЃ СѓР¶Рµ РµСЃС‚СЊ РЅРµР·Р°РІРµСЂС€С‘РЅРЅС‹Р№ Р·Р°РєР°Р· ${pendingOrder.slug}. РџСЂРѕРґРѕР»Р¶РёС‚Рµ РѕРїР»Р°С‚Сѓ РёР»Рё РѕС‚РјРµРЅРёС‚Рµ Р·Р°РєР°Р·.`;
+      message = `You already have an unfinished order ${pendingOrder.slug}. Continue payment or cancel the order.`;
     } else if (activeOrdersCount >= activeOrdersLimit) {
       nextAction = "limit_reached";
       canPurchase = false;
-      message = `РЈ РІР°СЃ СѓР¶Рµ ${activeOrdersLimit} Р°РєС‚РёРІРЅС‹С… Р·Р°РєР°Р·Р°. Р”РѕР¶РґРёС‚РµСЃСЊ РѕР±СЂР°Р±РѕС‚РєРё РёР»Рё РѕС‚РјРµРЅРёС‚Рµ РѕРґРёРЅ РёР· РЅРёС….`;
+      message = `You already have ${activeOrdersLimit} active orders. Wait for processing or cancel one.`;
     } else if (userSlugsCount >= slugLimit) {
       nextAction = "slug_limit_reached";
       canPurchase = false;
-      message = slugLimit === 3 ? "Р”РѕСЃС‚РёРіРЅСѓС‚ Р»РёРјРёС‚ 3 UNQ РґР»СЏ РџСЂРµРјРёСѓРј." : "Р”Р»СЏ РЅРѕРІРѕРіРѕ UNQ РЅСѓР¶РµРЅ Р°РїРіСЂРµР№Рґ РґРѕ РџСЂРµРјРёСѓРј.";
+      message = slugLimit === 3 ? "Reached limit of 3 UNQ for Premium." : "Premium upgrade is required for a new UNQ.";
     } else if (currentPlan === "premium") {
       nextAction = "checkout";
       canPurchase = true;
-      message = "РџСЂРµРјРёСѓРј Р°РєС‚РёРІРёСЂРѕРІР°РЅ. Рљ РѕРїР»Р°С‚Рµ С‚РѕР»СЊРєРѕ slug Рё РґРѕРїРѕР»РЅРёС‚РµР»СЊРЅС‹Рµ С‚РѕРІР°СЂС‹.";
+      message = "Premium is active. Only slug and optional products are payable.";
     } else if (currentPlan === "basic" && requestedPlan === "basic") {
       nextAction = "checkout";
       canPurchase = true;
-      message = "Р‘Р°Р·РѕРІС‹Р№ СѓР¶Рµ Р°РєС‚РёРІРёСЂРѕРІР°РЅ. Р”Р»СЏ СЂР°СЃС€РёСЂРµРЅРёСЏ РІРѕР·РјРѕР¶РЅРѕСЃС‚РµР№ РјРѕР¶РЅРѕ РІС‹Р±СЂР°С‚СЊ РџСЂРµРјРёСѓРј.";
+      message = "Basic is already active. You can choose Premium to unlock more features.";
     } else if (currentPlan === "basic" && requestedPlan === "premium") {
       nextAction = "upgrade";
       canPurchase = true;
-      message = "Р”РѕСЃС‚СѓРїРµРЅ Р°РїРіСЂРµР№Рґ РґРѕ РџСЂРµРјРёСѓРј.";
+      message = "Premium upgrade is available.";
     }
 
     res.json({
@@ -1087,7 +1087,7 @@ router.post(
     });
     if (activeOrdersCount >= activeOrdersLimit) {
       res.status(429).json({
-        error: `РЈ РІР°СЃ СѓР¶Рµ РµСЃС‚СЊ ${activeOrdersLimit} Р°РєС‚РёРІРЅС‹С… Р·Р°РєР°Р·Р°. Р”РѕР¶РґРёС‚РµСЃСЊ РѕР±СЂР°Р±РѕС‚РєРё РёР»Рё РѕС‚РјРµРЅРёС‚Рµ РѕРґРёРЅ РёР· РЅРёС….`,
+        error: `You already have ${activeOrdersLimit} active orders. Wait for processing or cancel one.`,
         code: "TOO_MANY_ACTIVE_ORDERS",
         activeOrdersLimit,
       });
@@ -1136,14 +1136,14 @@ router.post(
         // allow checkout through active drop flow
       } else if (state.reason === "drop_reserved" && !dropId) {
         res.status(409).json({
-          error: "Р­С‚РѕС‚ UNQ РґРѕСЃС‚СѓРїРµРЅ С‚РѕР»СЊРєРѕ РІ Р°РєС‚РёРІРЅРѕРј РґСЂРѕРїРµ",
+          error: "Этот UNQ доступен только в активном дропе",
           reason: state.reason,
           code: "DROP_ONLY_SLUG",
         });
         return;
       } else {
         res.status(409).json({
-          error: "Р­С‚РѕС‚ UNQ С‚РѕР»СЊРєРѕ С‡С‚Рѕ Р·Р°РЅСЏР»Рё. Р’С‹Р±РµСЂРё РґСЂСѓРіРѕР№.",
+          error: "Этот UNQ только что заняли. Выбери другой.",
           reason: state.reason,
           code: "SLUG_NOT_AVAILABLE",
         });
@@ -1252,7 +1252,7 @@ router.post(
     } catch (error) {
       if (error && error.code === "SLUG_NOT_AVAILABLE") {
         res.status(409).json({
-          error: "Р­С‚РѕС‚ UNQ С‚РѕР»СЊРєРѕ С‡С‚Рѕ Р·Р°РЅСЏР»Рё. Р’С‹Р±РµСЂРё РґСЂСѓРіРѕР№.",
+          error: "Этот UNQ только что заняли. Выбери другой.",
           reason: error.reason || "taken",
           code: "SLUG_NOT_AVAILABLE",
         });
@@ -1398,20 +1398,20 @@ router.post(
     });
 
     if (!order) {
-      res.status(404).json({ error: "Р—Р°РєР°Р· РЅРµ РЅР°Р№РґРµРЅ" });
+      res.status(404).json({ error: "Заказ не найден" });
       return;
     }
 
     // Check ownership
     if (order.userId !== user.id) {
-      res.status(403).json({ error: "Р­С‚Рѕ РЅРµ РІР°С€ Р·Р°РєР°Р·" });
+      res.status(403).json({ error: "Это не ваш заказ" });
       return;
     }
 
     // Only new orders can be cancelled
     if (order.status !== "new") {
       res.status(400).json({
-        error: "РќРµР»СЊР·СЏ РѕС‚РјРµРЅРёС‚СЊ Р·Р°РєР°Р· РІ СЃС‚Р°С‚СѓСЃРµ: " + order.status,
+        error: "Нельзя отменить заказ в статусе: " + order.status,
         currentStatus: order.status,
       });
       return;
@@ -1424,7 +1424,7 @@ router.post(
         where: { id: order.id },
         data: {
           status: "rejected",
-          adminNote: "РћС‚РјРµРЅРµРЅРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»РµРј",
+          adminNote: "Отменено пользователем",
         },
       });
 
@@ -1458,7 +1458,7 @@ router.post(
 
     res.json({
       ok: true,
-      message: "Р—Р°РєР°Р· РѕС‚РјРµРЅС‘РЅ, slug РѕСЃРІРѕР±РѕР¶РґС‘РЅ",
+      message: "Заказ отменён, slug освобождён",
       orderId: order.id,
       slug: order.slug,
     });
@@ -1525,9 +1525,9 @@ router.post(
       const viewerUserId = userSession?.userId ? String(userSession.userId) : null;
       void withMissingTableFallback("Slug", null, () =>
         prisma.$transaction(async (tx) => {
-          let resolvedCity = "РќРµРёР·РІРµСЃС‚РЅРѕ";
+          let resolvedCity = "Неизвестно";
 
-          // Р”Р»СЏ Р°РІС‚РѕСЂРёР·РѕРІР°РЅРЅС‹С… РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№ СЃРЅР°С‡Р°Р»Р° РїС‹С‚Р°РµРјСЃСЏ РёСЃРїРѕР»СЊР·РѕРІР°С‚СЊ РіРѕСЂРѕРґ РёР· РїСЂРѕС„РёР»СЏ
+          // Для авторизованных пользователей сначала пытаемся использовать город из профиля
           if (viewerUserId && tx.user) {
             const viewer = await tx.user.findUnique({
               where: { id: viewerUserId },
@@ -1538,8 +1538,8 @@ router.post(
             }
           }
 
-          // Р•СЃР»Рё РіРѕСЂРѕРґ РЅРµ РѕРїСЂРµРґРµР»РµРЅ РёР· РїСЂРѕС„РёР»СЏ, РёСЃРїРѕР»СЊР·СѓРµРј РіРµРѕР»РѕРєР°С†РёСЋ РїРѕ IP
-          if (resolvedCity === "РќРµРёР·РІРµСЃС‚РЅРѕ") {
+          // Если город не определен из профиля, используем геолокацию по IP
+          if (resolvedCity === "Неизвестно") {
             const geo = await resolveGeoByIp(ipForGeo);
             resolvedCity = geo.city;
           }
@@ -1576,7 +1576,7 @@ router.post(
           }
 
           try {
-            const geo = resolvedCity !== "РќРµРёР·РІРµСЃС‚РЅРѕ" ? { city: resolvedCity, country: "" } : await resolveGeoByIp(ipForGeo);
+            const geo = resolvedCity !== "Неизвестно" ? { city: resolvedCity, country: "" } : await resolveGeoByIp(ipForGeo);
             await tx.$executeRaw`
               INSERT INTO tap_events (
                 owner_slug,
@@ -1656,8 +1656,8 @@ router.post(
                   VALUES (
                     ${slugRow.ownerId},
                     'tap',
-                    'РќРѕРІС‹Р№ С‚Р°Рї',
-                    ${`${viewerSlug} РѕС‚РєСЂС‹Р» РІР°С€Сѓ РІРёР·РёС‚РєСѓ`},
+                    'Новый тап',
+                    ${`${viewerSlug} открыл вашу визитку`},
                     ${JSON.stringify({ ownerSlug: slugRow.fullSlug, visitorSlug: viewerSlug, source })}
                   )
                 `;
@@ -1768,6 +1768,7 @@ router.get(
 module.exports = {
   publicApiRouter: router,
 };
+
 
 
 
