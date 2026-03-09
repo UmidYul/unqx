@@ -58,6 +58,12 @@ async function ensureTelegramWebhook() {
     return { ok: false, skipped: true, reason: "invalid_app_url" };
   }
 
+  const botInfo = await telegramApiCall("getMe");
+  console.info("[telegram-webhook] bot identity", {
+    id: botInfo?.id || null,
+    username: botInfo?.username ? `@${botInfo.username}` : null,
+  });
+
   const expectedUrl = normalizeWebhookUrl(appUrl);
   const webhookInfo = await telegramApiCall("getWebhookInfo");
   const currentUrl = String(webhookInfo?.url || "");
