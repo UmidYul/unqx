@@ -39,7 +39,7 @@ const ALLOWED_MIME = new Set(["image/jpeg", "image/png", "image/webp"]);
 const CARD_THEMES = new Set(["default_dark", "arctic", "linen", "marble", "forest", "royal_ivory", "midnight_obsidian"]);
 const DIRECTORY_SECTORS = new Set(["design", "sales", "marketing", "it", "other"]);
 const ACCOUNT_REACTIVATION_WINDOW_DAYS = Number(env.ACCOUNT_REACTIVATION_WINDOW_DAYS || 30);
-const UNKNOWN_CITY_LABEL = "РќРµРёР·РІРµСЃС‚РЅРѕ";
+const UNKNOWN_CITY_LABEL = "Неизвестно";
 const FALLBACK_SUPPORT_TELEGRAM = "unqx_uz";
 const GEO_CITY_NOISE_ALIASES = new Set([
   "the dalles",
@@ -61,20 +61,20 @@ const PROFILE_CARD_BASE_COLUMNS = [
 function toSlugStatusLabel(status) {
   switch (status) {
     case "active":
-      return "РђРєС‚РёРІРµРЅ";
+      return "Активен";
     case "paused":
-      return "РџР°СѓР·Р°";
+      return "Пауза";
     case "private":
-      return "РџСЂРёРІР°С‚РЅС‹Р№";
+      return "Приватный";
     case "approved":
-      return "РћРґРѕР±СЂРµРЅ";
+      return "Одобрен";
     case "pending":
     case "reserved":
-      return "Р’ РѕР¶РёРґР°РЅРёРё";
+      return "В ожидании";
     case "blocked":
-      return "Р—Р°Р±Р»РѕРєРёСЂРѕРІР°РЅ";
+      return "Заблокирован";
     case "free":
-      return "РЎРІРѕР±РѕРґРµРЅ";
+      return "Свободен";
     default:
       return status;
   }
@@ -83,17 +83,17 @@ function toSlugStatusLabel(status) {
 function toRequestStatusBadge(status) {
   switch (status) {
     case "new":
-      return "РќРѕРІР°СЏ";
+      return "Новая";
     case "contacted":
-      return "РЎРІСЏР·Р°Р»РёСЃСЊ";
+      return "Связались";
     case "paid":
-      return "РћРїР»Р°С‡РµРЅРѕ";
+      return "Оплачено";
     case "approved":
-      return "РђРєС‚РёРІРёСЂРѕРІР°РЅРѕ";
+      return "Активировано";
     case "rejected":
-      return "РћС‚РєР»РѕРЅРµРЅРѕ";
+      return "Отклонено";
     case "expired":
-      return "РћС‚РєР»РѕРЅРµРЅРѕ";
+      return "Отклонено";
     default:
       return status;
   }
@@ -167,7 +167,7 @@ function normalizeAnalyticsCityLabel(value) {
   const lower = raw.toLowerCase();
   if (
     lower === "unknown" ||
-    lower === "РЅРµРёР·РІРµСЃС‚РЅРѕ" ||
+    lower === "неизвестно" ||
     lower === "null" ||
     lower === "none" ||
     lower === "n/a" ||
@@ -434,7 +434,7 @@ function assertUserActive(user, res) {
 
 function assertPlanAllowsCard(user, res) {
   if (!canCreateCard(user)) {
-    res.status(403).json({ error: "РўР°СЂРёС„ РЅРµ Р°РєС‚РёРІРёСЂРѕРІР°РЅ", code: "PLAN_REQUIRED" });
+    res.status(403).json({ error: "Тариф не активирован", code: "PLAN_REQUIRED" });
     return false;
   }
   return true;
@@ -443,7 +443,7 @@ function assertPlanAllowsCard(user, res) {
 function assertPlanAllowsSlugManagement(user, res) {
   const plan = getEffectivePlan(user).plan;
   if (plan === "none") {
-    res.status(403).json({ error: "РўР°СЂРёС„ РЅРµ Р°РєС‚РёРІРёСЂРѕРІР°РЅ", code: "PLAN_REQUIRED" });
+    res.status(403).json({ error: "Тариф не активирован", code: "PLAN_REQUIRED" });
     return false;
   }
   return true;
@@ -848,7 +848,7 @@ router.post(
     const card = await findProfileCardByOwnerId(user.id);
 
     if (!card) {
-      res.status(400).json({ error: "РЎРЅР°С‡Р°Р»Р° СЃРѕС…СЂР°РЅРё РІРёР·РёС‚РєСѓ" });
+      res.status(400).json({ error: "Сначала сохрани визитку" });
       return;
     }
 
@@ -1265,7 +1265,7 @@ router.post(
       return;
     }
 
-    const correctionLabel = `[РСЃРїСЂР°РІР»РµРЅРёРµ ${new Date().toISOString()}] ${correction}`;
+    const correctionLabel = `[Исправление ${new Date().toISOString()}] ${correction}`;
     const nextComment = pendingRequest.comment
       ? `${pendingRequest.comment}\n\n${correctionLabel}`
       : correctionLabel;
@@ -1347,7 +1347,7 @@ router.patch(
     const city = resolveUzbekistanCity(req.body.city);
 
     if (!city) {
-      res.status(400).json({ error: "Р“РѕСЂРѕРґ РѕР±СЏР·Р°С‚РµР»РµРЅ" });
+      res.status(400).json({ error: "Город обязателен" });
       return;
     }
 

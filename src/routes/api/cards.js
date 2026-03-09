@@ -970,31 +970,31 @@ router.get(
     if (user.status === "blocked" || user.status === "deactivated") {
       nextAction = "blocked";
       canPurchase = false;
-      message = "Account is temporarily unavailable. Contact support.";
+      message = "Аккаунт временно недоступен. Обратитесь в поддержку.";
     } else if (pendingOrder) {
       nextAction = "resume_pending";
       canPurchase = false;
-      message = `You already have an unfinished order ${pendingOrder.slug}. Continue payment or cancel the order.`;
+      message = `У вас уже есть незавершённый заказ ${pendingOrder.slug}. Продолжите оплату или отмените заказ.`;
     } else if (activeOrdersCount >= activeOrdersLimit) {
       nextAction = "limit_reached";
       canPurchase = false;
-      message = `You already have ${activeOrdersLimit} active orders. Wait for processing or cancel one.`;
+      message = `У вас уже есть ${activeOrdersLimit} активных заказов. Дождитесь обработки или отмените один.`;
     } else if (userSlugsCount >= slugLimit) {
       nextAction = "slug_limit_reached";
       canPurchase = false;
-      message = slugLimit === 3 ? "Reached limit of 3 UNQ for Premium." : "Premium upgrade is required for a new UNQ.";
+      message = slugLimit === 3 ? "Достигнут лимит: 3 UNQ для тарифа Премиум." : "Для нового UNQ требуется переход на Премиум.";
     } else if (currentPlan === "premium") {
       nextAction = "checkout";
       canPurchase = true;
-      message = "Premium is active. Only slug and optional products are payable.";
+      message = "Тариф Премиум уже активен. Оплачиваются только slug и дополнительные товары.";
     } else if (currentPlan === "basic" && requestedPlan === "basic") {
       nextAction = "checkout";
       canPurchase = true;
-      message = "Basic is already active. You can choose Premium to unlock more features.";
+      message = "Тариф Базовый уже активен. Вы можете выбрать Премиум для расширенных возможностей.";
     } else if (currentPlan === "basic" && requestedPlan === "premium") {
       nextAction = "upgrade";
       canPurchase = true;
-      message = "Premium upgrade is available.";
+      message = "Доступно обновление до тарифа Премиум.";
     }
 
     res.json({
@@ -1063,7 +1063,7 @@ router.post(
     });
 
     if (!user || user.status === "blocked" || user.status === "deactivated") {
-      res.status(403).json({ error: "Account is disabled", code: "ACCOUNT_DISABLED" });
+      res.status(403).json({ error: "Аккаунт недоступен", code: "ACCOUNT_DISABLED" });
       return;
     }
 
@@ -1087,7 +1087,7 @@ router.post(
     });
     if (activeOrdersCount >= activeOrdersLimit) {
       res.status(429).json({
-        error: `You already have ${activeOrdersLimit} active orders. Wait for processing or cancel one.`,
+        error: `У вас уже есть ${activeOrdersLimit} активных заказов. Дождитесь обработки или отмените один.`,
         code: "TOO_MANY_ACTIVE_ORDERS",
         activeOrdersLimit,
       });
@@ -1377,8 +1377,14 @@ router.post(
   "/order-request/:orderId/cancel",
   requireUserApi,
   asyncHandler(async (req, res) => {
-    const user = req.session.user;
+    const sessionUser = getUserSession(req);
+    const sessionUserId = sessionUser?.userId ? String(sessionUser.userId) : "";
     const orderId = String(req.params.orderId || "").trim();
+
+    if (!sessionUserId) {
+      res.status(401).json({ error: "Unauthorized", code: "AUTH_REQUIRED" });
+      return;
+    }
 
     if (!orderId) {
       res.status(400).json({ error: "Order ID is required" });
@@ -1403,7 +1409,7 @@ router.post(
     }
 
     // Check ownership
-    if (order.userId !== user.id) {
+    if (String(order.userId || "") !== sessionUserId) {
       res.status(403).json({ error: "Это не ваш заказ" });
       return;
     }
@@ -1443,12 +1449,12 @@ router.post(
     try {
       await logPaymentEvent({
         orderId: order.id,
-        userId: user.id,
+        userId: sessionUserId,
         status: "rejected",
         provider: "manual_tg",
         reference: getOrderPaymentReference(order.id),
         amount: 0,
-        actor: `user:${user.id}`,
+        actor: `user:${sessionUserId}`,
         source: "user_cancel",
         note: "User cancelled order",
       });

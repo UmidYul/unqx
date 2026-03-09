@@ -82,7 +82,6 @@ const DEFAULT_PRICING = {
     pendingStatus: document.getElementById("order-modal-pending-status"),
     pendingContinue: document.getElementById("order-modal-pending-continue"),
     pendingCancel: document.getElementById("order-modal-pending-cancel"),
-    closePending: document.getElementById("order-modal-close-pending"),
   };
 
   if (
@@ -1287,7 +1286,6 @@ const DEFAULT_PRICING = {
   dom.closeTop?.addEventListener("click", () => close(false));
   dom.closeForm?.addEventListener("click", () => close(false));
   dom.closeSuccess?.addEventListener("click", () => close(true));
-  dom.closePending?.addEventListener("click", () => close(false));
   dom.pendingContinue?.addEventListener("click", (event) => {
     event.preventDefault();
     const href = dom.pendingContinue instanceof HTMLAnchorElement ? String(dom.pendingContinue.href || "").trim() : "";
