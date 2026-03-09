@@ -1,4 +1,4 @@
-const express = require("express");
+﻿const express = require("express");
 const multer = require("multer");
 
 const { prisma } = require("../../db/prisma");
@@ -23,7 +23,7 @@ const {
 } = require("../../services/profile");
 const { isSupportedAvatarBuffer, saveAvatarFromBuffer, deleteAvatarByPublicPath } = require("../../services/avatar");
 const { getProfileScoreByUserId, recalculateAndRefreshPercentiles } = require("../../services/unq-score");
-const { getPricingSettings } = require("../../services/pricing-settings");
+const { getPricingSettings, getBraceletPrice } = require("../../services/pricing-settings");
 const { sendVerificationRequestToAdmin } = require("../../services/telegram");
 const { sendAccountDeactivatedEmail } = require("../../services/email");
 const { resolveUzbekistanCity } = require("../../constants/uzbekistan-cities");
@@ -39,7 +39,7 @@ const ALLOWED_MIME = new Set(["image/jpeg", "image/png", "image/webp"]);
 const CARD_THEMES = new Set(["default_dark", "arctic", "linen", "marble", "forest", "royal_ivory", "midnight_obsidian"]);
 const DIRECTORY_SECTORS = new Set(["design", "sales", "marketing", "it", "other"]);
 const ACCOUNT_REACTIVATION_WINDOW_DAYS = Number(env.ACCOUNT_REACTIVATION_WINDOW_DAYS || 30);
-const UNKNOWN_CITY_LABEL = "Неизвестно";
+const UNKNOWN_CITY_LABEL = "РќРµРёР·РІРµСЃС‚РЅРѕ";
 const FALLBACK_SUPPORT_TELEGRAM = "unqx_uz";
 const GEO_CITY_NOISE_ALIASES = new Set([
   "the dalles",
@@ -61,20 +61,20 @@ const PROFILE_CARD_BASE_COLUMNS = [
 function toSlugStatusLabel(status) {
   switch (status) {
     case "active":
-      return "Активен";
+      return "РђРєС‚РёРІРµРЅ";
     case "paused":
-      return "Пауза";
+      return "РџР°СѓР·Р°";
     case "private":
-      return "Приватный";
+      return "РџСЂРёРІР°С‚РЅС‹Р№";
     case "approved":
-      return "Одобрен";
+      return "РћРґРѕР±СЂРµРЅ";
     case "pending":
     case "reserved":
-      return "В ожидании";
+      return "Р’ РѕР¶РёРґР°РЅРёРё";
     case "blocked":
-      return "Заблокирован";
+      return "Р—Р°Р±Р»РѕРєРёСЂРѕРІР°РЅ";
     case "free":
-      return "Свободен";
+      return "РЎРІРѕР±РѕРґРµРЅ";
     default:
       return status;
   }
@@ -83,23 +83,31 @@ function toSlugStatusLabel(status) {
 function toRequestStatusBadge(status) {
   switch (status) {
     case "new":
-      return "Новая";
+      return "РќРѕРІР°СЏ";
     case "contacted":
-      return "Связались";
+      return "РЎРІСЏР·Р°Р»РёСЃСЊ";
     case "paid":
-      return "Оплачено";
+      return "РћРїР»Р°С‡РµРЅРѕ";
     case "approved":
-      return "Активировано";
+      return "РђРєС‚РёРІРёСЂРѕРІР°РЅРѕ";
     case "rejected":
-      return "Отклонено";
+      return "РћС‚РєР»РѕРЅРµРЅРѕ";
     case "expired":
-      return "Отклонено";
+      return "РћС‚РєР»РѕРЅРµРЅРѕ";
     default:
       return status;
   }
 }
 
-function mapProfileRequest(item, supportTelegram) {
+function mapProfileRequest(item, options = {}) {
+  const supportTelegram = normalizeTelegramUsername(options.supportTelegram || FALLBACK_SUPPORT_TELEGRAM);
+  const fullName = String(options.fullName || "").trim();
+  const email = String(options.email || "").trim();
+  const braceletPrice = Math.max(0, Number(options.braceletPrice || 0));
+  const slugPrice = Number(item.slugPrice || 0);
+  const planPrice = Number(item.planPrice || 0);
+  const hasBracelet = Boolean(item.bracelet);
+  const totalAmount = slugPrice + planPrice + (hasBracelet ? braceletPrice : 0);
   const paymentReference = getOrderPaymentReference(item.id);
   return {
     id: item.id,
@@ -120,6 +128,13 @@ function mapProfileRequest(item, supportTelegram) {
       requestedPlan: item.requestedPlan,
       reference: paymentReference,
       telegramUsername: supportTelegram,
+      fullName,
+      email,
+      slugPrice,
+      planPrice,
+      bracelet: hasBracelet,
+      braceletPrice,
+      totalAmount,
     }),
   };
 }
@@ -152,7 +167,7 @@ function normalizeAnalyticsCityLabel(value) {
   const lower = raw.toLowerCase();
   if (
     lower === "unknown" ||
-    lower === "неизвестно" ||
+    lower === "РЅРµРёР·РІРµСЃС‚РЅРѕ" ||
     lower === "null" ||
     lower === "none" ||
     lower === "n/a" ||
@@ -419,7 +434,7 @@ function assertUserActive(user, res) {
 
 function assertPlanAllowsCard(user, res) {
   if (!canCreateCard(user)) {
-    res.status(403).json({ error: "Тариф не активирован", code: "PLAN_REQUIRED" });
+    res.status(403).json({ error: "РўР°СЂРёС„ РЅРµ Р°РєС‚РёРІРёСЂРѕРІР°РЅ", code: "PLAN_REQUIRED" });
     return false;
   }
   return true;
@@ -428,7 +443,7 @@ function assertPlanAllowsCard(user, res) {
 function assertPlanAllowsSlugManagement(user, res) {
   const plan = getEffectivePlan(user).plan;
   if (plan === "none") {
-    res.status(403).json({ error: "Тариф не активирован", code: "PLAN_REQUIRED" });
+    res.status(403).json({ error: "РўР°СЂРёС„ РЅРµ Р°РєС‚РёРІРёСЂРѕРІР°РЅ", code: "PLAN_REQUIRED" });
     return false;
   }
   return true;
@@ -517,7 +532,7 @@ router.get(
       return;
     }
 
-    const [slugs, card, requests, score, pricing, supportTelegramRaw] = await Promise.all([
+    const [slugs, card, requests, score, pricing, supportTelegramRaw, braceletPrice] = await Promise.all([
       getUserSlugsWithStats(user.id),
       findProfileCardByOwnerId(user.id),
       prisma.slugRequest.findMany({
@@ -527,6 +542,7 @@ router.get(
       getProfileScoreByUserId(user.id),
       getPricingSettings(),
       getSetting("contact_support_telegram", `@${FALLBACK_SUPPORT_TELEGRAM}`),
+      getBraceletPrice(),
     ]);
     const supportTelegram = normalizeTelegramUsername(supportTelegramRaw);
 
@@ -564,7 +580,14 @@ router.get(
       },
       slugs: effective.plan === "none" ? [] : slugs,
       card: effective.plan === "none" ? null : parseProfileCardRow(card),
-      requests: requests.map((item) => mapProfileRequest(item, supportTelegram)),
+      requests: requests.map((item) =>
+        mapProfileRequest(item, {
+          supportTelegram,
+          fullName: normalizeDisplayName(user.displayName, user.firstName),
+          email: user.email || "",
+          braceletPrice,
+        }),
+      ),
       score,
       pricing,
       access: {
@@ -825,7 +848,7 @@ router.post(
     const card = await findProfileCardByOwnerId(user.id);
 
     if (!card) {
-      res.status(400).json({ error: "Сначала сохрани визитку" });
+      res.status(400).json({ error: "РЎРЅР°С‡Р°Р»Р° СЃРѕС…СЂР°РЅРё РІРёР·РёС‚РєСѓ" });
       return;
     }
 
@@ -1242,7 +1265,7 @@ router.post(
       return;
     }
 
-    const correctionLabel = `[Исправление ${new Date().toISOString()}] ${correction}`;
+    const correctionLabel = `[РСЃРїСЂР°РІР»РµРЅРёРµ ${new Date().toISOString()}] ${correction}`;
     const nextComment = pendingRequest.comment
       ? `${pendingRequest.comment}\n\n${correctionLabel}`
       : correctionLabel;
@@ -1266,16 +1289,24 @@ router.get(
       return;
     }
 
-    const [rows, supportTelegramRaw] = await Promise.all([
+    const [rows, supportTelegramRaw, braceletPrice] = await Promise.all([
       prisma.slugRequest.findMany({
         where: { userId: user.id },
         orderBy: { createdAt: "desc" },
       }),
       getSetting("contact_support_telegram", `@${FALLBACK_SUPPORT_TELEGRAM}`),
+      getBraceletPrice(),
     ]);
     const supportTelegram = normalizeTelegramUsername(supportTelegramRaw);
     res.json({
-      items: rows.map((item) => mapProfileRequest(item, supportTelegram)),
+      items: rows.map((item) =>
+        mapProfileRequest(item, {
+          supportTelegram,
+          fullName: normalizeDisplayName(user.displayName, user.firstName),
+          email: user.email || "",
+          braceletPrice,
+        }),
+      ),
     });
   }),
 );
@@ -1316,7 +1347,7 @@ router.patch(
     const city = resolveUzbekistanCity(req.body.city);
 
     if (!city) {
-      res.status(400).json({ error: "Город обязателен" });
+      res.status(400).json({ error: "Р“РѕСЂРѕРґ РѕР±СЏР·Р°С‚РµР»РµРЅ" });
       return;
     }
 
@@ -1444,3 +1475,6 @@ router.post(
 module.exports = {
   profileApiRouter: router,
 };
+
+
+

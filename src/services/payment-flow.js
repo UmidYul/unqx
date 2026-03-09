@@ -1,4 +1,4 @@
-const { getManySettings } = require("./platform-settings");
+﻿const { getManySettings } = require("./platform-settings");
 
 const SUPPORTED_PAYMENT_PROVIDERS = ["manual_tg", "click", "payme"];
 
@@ -15,7 +15,7 @@ function normalizePaymentProvider(value) {
 function toProviderLabel(provider) {
   if (provider === "click") return "Click";
   if (provider === "payme") return "Payme";
-  return "Ручная оплата через Telegram";
+  return "Р СѓС‡РЅР°СЏ РѕРїР»Р°С‚Р° С‡РµСЂРµР· Telegram";
 }
 
 function getOrderPaymentReference(orderId) {
@@ -38,23 +38,49 @@ function toPlanLabel(plan) {
   return String(plan || "").toLowerCase() === "premium" ? "Премиум" : "Базовый";
 }
 
+function toMoneyLabel(value) {
+  return `${Number(value || 0).toLocaleString("ru-RU")} сум`;
+}
+
+function toNameLabel(value) {
+  const normalized = String(value || "").trim();
+  return normalized || "не указано";
+}
+
 function buildManualTelegramPaymentUrl({
   orderId,
   slug,
   requestedPlan,
   reference,
   telegramUsername = "unqx_uz",
+  fullName = "",
+  email = "",
+  slugPrice = 0,
+  planPrice = 0,
+  bracelet = false,
+  braceletPrice = 0,
+  totalAmount = null,
 }) {
   const safeUsername = normalizeTelegramUsername(telegramUsername);
   const paymentReference = String(reference || "").trim() || getOrderPaymentReference(orderId);
   const safeSlug = String(slug || "").trim().toUpperCase();
+  const normalizedEmail = String(email || "").trim() || "не указан";
+  const slugPart = Math.max(0, Number(slugPrice || 0));
+  const planPart = Math.max(0, Number(planPrice || 0));
+  const braceletPart = bracelet ? Math.max(0, Number(braceletPrice || 0)) : 0;
+  const resolvedTotal = totalAmount == null ? slugPart + planPart + braceletPart : Math.max(0, Number(totalAmount || 0));
   const message =
-    `Здравствуйте! Продолжаю оплату заказа #️⃣ ${paymentReference}\n\n` +
+    `Здравствуйте! Хочу оплатить заказ #️⃣ ${paymentReference}\n\n` +
     `UNQ: ${safeSlug}\n` +
-    `Тариф: ${toPlanLabel(requestedPlan)}`;
+    `ФИО: ${toNameLabel(fullName)}\n` +
+    `Email: ${normalizedEmail}\n\n` +
+    `💳 Детализация оплаты:\n` +
+    `• Slug ${safeSlug}: ${toMoneyLabel(slugPart)}\n` +
+    `• Тариф ${toPlanLabel(requestedPlan)}: ${toMoneyLabel(planPart)}\n` +
+    `• Браслет: ${toMoneyLabel(braceletPart)}\n\n` +
+    `Итого к оплате: ${toMoneyLabel(resolvedTotal)}`;
   return `https://t.me/${safeUsername}?text=${encodeURIComponent(message)}`;
 }
-
 async function getPaymentConfig() {
   const values = await getManySettings([
     "payment_provider",
@@ -90,7 +116,7 @@ async function buildOrderPaymentDraft({ orderId, amount }) {
       checkoutUrl: null,
       instructions:
         config.manualInstructions ||
-        "Оплата проводится через менеджера в Telegram. Укажи код оплаты при переводе и отправь подтверждение менеджеру.",
+        "РћРїР»Р°С‚Р° РїСЂРѕРІРѕРґРёС‚СЃСЏ С‡РµСЂРµР· РјРµРЅРµРґР¶РµСЂР° РІ Telegram. РЈРєР°Р¶Рё РєРѕРґ РѕРїР»Р°С‚С‹ РїСЂРё РїРµСЂРµРІРѕРґРµ Рё РѕС‚РїСЂР°РІСЊ РїРѕРґС‚РІРµСЂР¶РґРµРЅРёРµ РјРµРЅРµРґР¶РµСЂСѓ.",
     };
   }
 
@@ -108,8 +134,8 @@ async function buildOrderPaymentDraft({ orderId, amount }) {
     checkoutUrl: null,
     isReady: hasMerchant,
     instructions: hasMerchant
-      ? `${config.providerLabel} будет доступен после включения checkout endpoint.`
-      : `${config.providerLabel} пока не настроен. Используется ручная обработка админом.`,
+      ? `${config.providerLabel} Р±СѓРґРµС‚ РґРѕСЃС‚СѓРїРµРЅ РїРѕСЃР»Рµ РІРєР»СЋС‡РµРЅРёСЏ checkout endpoint.`
+      : `${config.providerLabel} РїРѕРєР° РЅРµ РЅР°СЃС‚СЂРѕРµРЅ. РСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ СЂСѓС‡РЅР°СЏ РѕР±СЂР°Р±РѕС‚РєР° Р°РґРјРёРЅРѕРј.`,
   };
 }
 
@@ -123,3 +149,4 @@ module.exports = {
   getPaymentConfig,
   buildOrderPaymentDraft,
 };
+

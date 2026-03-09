@@ -1,4 +1,4 @@
-const DEFAULT_SLUG_PRICING = {
+﻿const DEFAULT_SLUG_PRICING = {
   basePrice: 100_000,
   lettersAllSame: 5,
   lettersSequential: 3,
@@ -128,10 +128,10 @@ const DEFAULT_PRICING = {
   };
 
   const STEP_PROGRESS = {
-    auth: { width: "25%", label: "Шаг 1 из 4", line: "① Slug · ② Тариф · ③ Дополнительно · ④ Подтверждение" },
-    form: { width: "25%", label: "Шаг 1 из 4", line: "① Slug · ② Тариф · ③ Дополнительно · ④ Подтверждение" },
-    pending: { width: "100%", label: "Незавершённый заказ", line: "Продолжите оплату или отмените заказ" },
-    success: { width: "100%", label: "Готово", line: "Заявка создана · ожидаем оплату" },
+    auth: { width: "25%", label: "РЁР°Рі 1 РёР· 4", line: "в‘  Slug В· в‘Ў РўР°СЂРёС„ В· в‘ў Р”РѕРїРѕР»РЅРёС‚РµР»СЊРЅРѕ В· в‘Ј РџРѕРґС‚РІРµСЂР¶РґРµРЅРёРµ" },
+    form: { width: "25%", label: "РЁР°Рі 1 РёР· 4", line: "в‘  Slug В· в‘Ў РўР°СЂРёС„ В· в‘ў Р”РѕРїРѕР»РЅРёС‚РµР»СЊРЅРѕ В· в‘Ј РџРѕРґС‚РІРµСЂР¶РґРµРЅРёРµ" },
+    pending: { width: "100%", label: "РќРµР·Р°РІРµСЂС€С‘РЅРЅС‹Р№ Р·Р°РєР°Р·", line: "РџСЂРѕРґРѕР»Р¶РёС‚Рµ РѕРїР»Р°С‚Сѓ РёР»Рё РѕС‚РјРµРЅРёС‚Рµ Р·Р°РєР°Р·" },
+    success: { width: "100%", label: "Р“РѕС‚РѕРІРѕ", line: "Р—Р°СЏРІРєР° СЃРѕР·РґР°РЅР° В· РѕР¶РёРґР°РµРј РѕРїР»Р°С‚Сѓ" },
   };
 
   function setCsrfToken(nextToken) {
@@ -174,8 +174,8 @@ const DEFAULT_PRICING = {
     wrap.style.display = "none";
     wrap.innerHTML = `
       <div style="display:flex;align-items:center;gap:8px;background:#111827;color:#fff;border-radius:12px;padding:10px 12px;box-shadow:0 10px 30px rgba(0,0,0,.25);max-width:90vw;">
-        <button type="button" data-a="open" class="interactive-btn" style="border:0;background:transparent;color:inherit;font-weight:600;cursor:pointer;white-space:nowrap;">Продолжить оплату</button>
-        <button type="button" data-a="clear" class="interactive-btn" aria-label="Скрыть" style="border:0;background:transparent;color:#cbd5e1;cursor:pointer;font-size:16px;line-height:1;">×</button>
+        <button type="button" data-a="open" class="interactive-btn" style="border:0;background:transparent;color:inherit;font-weight:600;cursor:pointer;white-space:nowrap;">РџСЂРѕРґРѕР»Р¶РёС‚СЊ РѕРїР»Р°С‚Сѓ</button>
+        <button type="button" data-a="clear" class="interactive-btn" aria-label="РЎРєСЂС‹С‚СЊ" style="border:0;background:transparent;color:#cbd5e1;cursor:pointer;font-size:16px;line-height:1;">Г—</button>
       </div>
     `;
     wrap.addEventListener("click", (event) => {
@@ -207,8 +207,8 @@ const DEFAULT_PRICING = {
     }
     const openBtn = node.querySelector('[data-a="open"]');
     if (openBtn instanceof HTMLButtonElement) {
-      const tail = draft.reference || draft.slug || "заказ";
-      openBtn.textContent = `Продолжить оплату · ${tail}`;
+      const tail = draft.reference || draft.slug || "Р·Р°РєР°Р·";
+      openBtn.textContent = `РџСЂРѕРґРѕР»Р¶РёС‚СЊ РѕРїР»Р°С‚Сѓ В· ${tail}`;
     }
     node.style.display = "block";
   }
@@ -277,13 +277,13 @@ const DEFAULT_PRICING = {
       return { multiplier: 1, label: "..." };
     }
     const [a, b, c] = upper.split("");
-    if (a === b && b === c) return { multiplier: Number(cfg.lettersAllSame || 5), label: "Все одинаковые" };
+    if (a === b && b === c) return { multiplier: Number(cfg.lettersAllSame || 5), label: "Р’СЃРµ РѕРґРёРЅР°РєРѕРІС‹Рµ" };
     const ca = a.charCodeAt(0);
     const cb = b.charCodeAt(0);
     const cc = c.charCodeAt(0);
-    if (cb - ca === 1 && cc - cb === 1) return { multiplier: Number(cfg.lettersSequential || 3), label: "По порядку" };
-    if (a === c && a !== b) return { multiplier: Number(cfg.lettersPalindrome || 2), label: "Палиндром" };
-    return { multiplier: Number(cfg.lettersRandom || 1), label: "Обычные" };
+    if (cb - ca === 1 && cc - cb === 1) return { multiplier: Number(cfg.lettersSequential || 3), label: "РџРѕ РїРѕСЂСЏРґРєСѓ" };
+    if (a === c && a !== b) return { multiplier: Number(cfg.lettersPalindrome || 2), label: "РџР°Р»РёРЅРґСЂРѕРј" };
+    return { multiplier: Number(cfg.lettersRandom || 1), label: "РћР±С‹С‡РЅС‹Рµ" };
   }
 
   function getDigitMultiplier(digits) {
@@ -296,14 +296,14 @@ const DEFAULT_PRICING = {
     const [d1, d2, d3] = normalized.split("");
     if (normalized === "000") return { multiplier: Number(cfg.digitsZeros || 6), label: "000" };
     if (num >= 1 && num <= 9 && normalized.startsWith("00")) return { multiplier: Number(cfg.digitsNearZero || 4), label: "00X" };
-    if (d1 === d2 && d2 === d3) return { multiplier: Number(cfg.digitsAllSame || 4), label: "Все одинаковые" };
+    if (d1 === d2 && d2 === d3) return { multiplier: Number(cfg.digitsAllSame || 4), label: "Р’СЃРµ РѕРґРёРЅР°РєРѕРІС‹Рµ" };
     const n1 = Number.parseInt(d1, 10);
     const n2 = Number.parseInt(d2, 10);
     const n3 = Number.parseInt(d3, 10);
-    if (n2 - n1 === 1 && n3 - n2 === 1) return { multiplier: Number(cfg.digitsSequential || 3), label: "По порядку" };
-    if (num % 100 === 0 && num > 0) return { multiplier: Number(cfg.digitsRound || 2), label: "Круглые" };
-    if (d1 === d3 && d1 !== d2) return { multiplier: Number(cfg.digitsPalindrome || 1.5), label: "Палиндром" };
-    return { multiplier: Number(cfg.digitsRandom || 1), label: "Обычные" };
+    if (n2 - n1 === 1 && n3 - n2 === 1) return { multiplier: Number(cfg.digitsSequential || 3), label: "РџРѕ РїРѕСЂСЏРґРєСѓ" };
+    if (num % 100 === 0 && num > 0) return { multiplier: Number(cfg.digitsRound || 2), label: "РљСЂСѓРіР»С‹Рµ" };
+    if (d1 === d3 && d1 !== d2) return { multiplier: Number(cfg.digitsPalindrome || 1.5), label: "РџР°Р»РёРЅРґСЂРѕРј" };
+    return { multiplier: Number(cfg.digitsRandom || 1), label: "РћР±С‹С‡РЅС‹Рµ" };
   }
 
   function calculateSlugPricing(letters, digits) {
@@ -497,8 +497,8 @@ const DEFAULT_PRICING = {
     if (!(dom.userName instanceof HTMLElement) || !(dom.userAvatar instanceof HTMLImageElement)) {
       return;
     }
-    const safeName = currentUser?.firstName || currentUser?.displayName || "Пользователь";
-    const username = currentUser?.username ? ` · @${currentUser.username}` : "";
+    const safeName = currentUser?.firstName || currentUser?.displayName || "РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ";
+    const username = currentUser?.username ? ` В· @${currentUser.username}` : "";
     dom.userName.textContent = `${safeName}${username}`;
     dom.userAvatar.src = currentUser?.photoUrl || "/brand/logo.PNG";
   }
@@ -570,9 +570,9 @@ const DEFAULT_PRICING = {
 
   function formatPendingDateTime(value) {
     try {
-      if (!value) return "—";
+      if (!value) return "вЂ”";
       const date = new Date(value);
-      if (Number.isNaN(date.getTime())) return "—";
+      if (Number.isNaN(date.getTime())) return "вЂ”";
       return date.toLocaleString("ru-RU", {
         day: "2-digit",
         month: "2-digit",
@@ -581,12 +581,12 @@ const DEFAULT_PRICING = {
         minute: "2-digit",
       });
     } catch {
-      return "—";
+      return "вЂ”";
     }
   }
 
   function planLabel(plan) {
-    return String(plan || "").toLowerCase() === "premium" ? "Премиум" : "Базовый";
+    return String(plan || "").toLowerCase() === "premium" ? "РџСЂРµРјРёСѓРј" : "Р‘Р°Р·РѕРІС‹Р№";
   }
 
   function buildPendingPaymentUrl(order) {
@@ -599,7 +599,13 @@ const DEFAULT_PRICING = {
     }
     const reference = String(order.paymentReference || "").trim() || `UNQX-${String(order.id || "").replace(/[^a-zA-Z0-9]/g, "").slice(0, 10).toUpperCase()}`;
     const slug = String(order.slug || "").trim().toUpperCase();
-    const message = `Здравствуйте! Продолжаю оплату заказа #️⃣ ${reference}\n\nUNQ: ${slug}\nТариф: ${planLabel(order.requestedPlan)}`;
+    const slugPrice = Number(order.slugPrice || 0);
+    const planPriceValue = Number(order.planPrice || 0);
+    const braceletPriceValue = order.bracelet ? Number(order.braceletPrice || 300000) : 0;
+    const totalAmount = Number(order.totalOneTime || slugPrice + planPriceValue + braceletPriceValue);
+    const userName = (currentUser?.displayName || currentUser?.firstName || "").trim() || "не указано";
+    const userEmail = (currentUser?.email || "").trim() || "не указан";
+    const message = `Здравствуйте! Хочу оплатить заказ #️⃣ ${reference}\n\nUNQ: ${slug}\nФИО: ${userName}\nEmail: ${userEmail}\n\n💳 Детализация оплаты:\n• Slug ${slug}: ${formatPrice(slugPrice)} сум\n• Тариф ${planLabel(order.requestedPlan)}: ${formatPrice(planPriceValue)} сум\n• Браслет: ${formatPrice(braceletPriceValue)} сум\n\nИтого к оплате: ${formatPrice(totalAmount)} сум`;
     return `https://t.me/unqx_uz?text=${encodeURIComponent(message)}`;
   }
 
@@ -618,7 +624,7 @@ const DEFAULT_PRICING = {
       quickPayDismissed = false;
       renderQuickPayButton();
       if (dom.pendingMeta instanceof HTMLElement) {
-        dom.pendingMeta.textContent = "UNQ: —";
+        dom.pendingMeta.textContent = "UNQ: вЂ”";
       }
       if (dom.pendingContinue instanceof HTMLAnchorElement) {
         dom.pendingContinue.href = "#";
@@ -629,7 +635,7 @@ const DEFAULT_PRICING = {
       return;
     }
 
-    const meta = `UNQ: ${String(pending.slug || "—").toUpperCase()} · Тариф: ${planLabel(pending.requestedPlan)} · Резерв до: ${formatPendingDateTime(pending.pendingExpiresAt)}`;
+    const meta = `UNQ: ${String(pending.slug || "вЂ”").toUpperCase()} В· РўР°СЂРёС„: ${planLabel(pending.requestedPlan)} В· Р РµР·РµСЂРІ РґРѕ: ${formatPendingDateTime(pending.pendingExpiresAt)}`;
     if (dom.pendingMeta instanceof HTMLElement) {
       dom.pendingMeta.textContent = meta;
     }
@@ -707,7 +713,7 @@ const DEFAULT_PRICING = {
 
     const canPurchase = precheck.canPurchase !== false;
     const message = String(precheck.message || "").trim();
-    const blockedMessage = canPurchase ? "" : (message || "Покупка сейчас недоступна.");
+    const blockedMessage = canPurchase ? "" : (message || "РџРѕРєСѓРїРєР° СЃРµР№С‡Р°СЃ РЅРµРґРѕСЃС‚СѓРїРЅР°.");
     setSubmitBlockedMessage(blockedMessage);
     setPendingStatus("", "neutral");
 
@@ -725,9 +731,9 @@ const DEFAULT_PRICING = {
   function showConfirm(message) {
     if (window.UNQSiteDialog?.confirm) {
       return window.UNQSiteDialog.confirm(message, {
-        title: "Подтверждение",
-        confirmText: "Закрыть",
-        cancelText: "Остаться",
+        title: "РџРѕРґС‚РІРµСЂР¶РґРµРЅРёРµ",
+        confirmText: "Р—Р°РєСЂС‹С‚СЊ",
+        cancelText: "РћСЃС‚Р°С‚СЊСЃСЏ",
       });
     }
     if (typeof window.confirm === "function") {
@@ -798,25 +804,25 @@ const DEFAULT_PRICING = {
     setSlugMode(pricing);
 
     if (dom.planBasicPrice instanceof HTMLElement) {
-      dom.planBasicPrice.textContent = `${formatPrice(planCardBasic)} сум`;
+      dom.planBasicPrice.textContent = `${formatPrice(planCardBasic)} СЃСѓРј`;
     }
     if (dom.planBasicNote instanceof HTMLElement) {
       dom.planBasicNote.textContent =
-        userPlan === "basic" || userPlan === "premium" ? "уже куплен ✓" : "один раз · навсегда";
+        userPlan === "basic" || userPlan === "premium" ? "СѓР¶Рµ РєСѓРїР»РµРЅ вњ“" : "РѕРґРёРЅ СЂР°Р· В· РЅР°РІСЃРµРіРґР°";
     }
     if (dom.planPremiumPrice instanceof HTMLElement) {
-      dom.planPremiumPrice.textContent = `${formatPrice(planCardPremium)} сум`;
+      dom.planPremiumPrice.textContent = `${formatPrice(planCardPremium)} СЃСѓРј`;
     }
     if (dom.planPremiumNote instanceof HTMLElement) {
       dom.planPremiumNote.textContent =
         userPlan === "premium"
-          ? "уже куплен ✓"
+          ? "СѓР¶Рµ РєСѓРїР»РµРЅ вњ“"
           : userPlan === "basic"
-            ? `${formatPrice(pricingSettings.premiumUpgradePrice)} сум · апгрейд`
-            : "один раз · навсегда";
+            ? `${formatPrice(pricingSettings.premiumUpgradePrice)} СЃСѓРј В· Р°РїРіСЂРµР№Рґ`
+            : "РѕРґРёРЅ СЂР°Р· В· РЅР°РІСЃРµРіРґР°";
     }
     if (dom.planActivationNote instanceof HTMLElement) {
-      dom.planActivationNote.textContent = "После оплаты мы активируем твой тариф и slug.";
+      dom.planActivationNote.textContent = "РџРѕСЃР»Рµ РѕРїР»Р°С‚С‹ РјС‹ Р°РєС‚РёРІРёСЂСѓРµРј С‚РІРѕР№ С‚Р°СЂРёС„ Рё slug.";
     }
     syncPlanVisibilityByUserPlan(userPlan);
 
@@ -832,12 +838,12 @@ const DEFAULT_PRICING = {
     }
     if (dom.formula instanceof HTMLElement) {
       if (server?.flash) {
-        dom.formula.textContent = `Flash sale применён (-${server.flash.discountPercent}%)`;
+        dom.formula.textContent = `Flash sale РїСЂРёРјРµРЅС‘РЅ (-${server.flash.discountPercent}%)`;
       } else if (server?.source === "override") {
-        dom.formula.textContent = `Персональная цена: ${formatPrice(slugPrice)} сум`;
+        dom.formula.textContent = `РџРµСЂСЃРѕРЅР°Р»СЊРЅР°СЏ С†РµРЅР°: ${formatPrice(slugPrice)} СЃСѓРј`;
       } else {
         const m = pricing ? pricing.letterData.multiplier * pricing.digitData.multiplier : 1;
-        dom.formula.textContent = `${formatPrice(slugBasePrice)} × ${m} = ${formatPrice(slugPrice)} сум`;
+        dom.formula.textContent = `${formatPrice(slugBasePrice)} Г— ${m} = ${formatPrice(slugPrice)} СЃСѓРј`;
       }
     }
     if (dom.rarity instanceof HTMLElement) {
@@ -848,14 +854,14 @@ const DEFAULT_PRICING = {
       dom.totalSlugTitle.textContent = `Slug ${pricing ? pricing.slug : "AAA000"}`;
     }
     if (dom.totalSlugValue instanceof HTMLElement) {
-      dom.totalSlugValue.textContent = `${formatPrice(slugPrice)} сум`;
+      dom.totalSlugValue.textContent = `${formatPrice(slugPrice)} СЃСѓРј`;
     }
     if (dom.totalPlanTitle instanceof HTMLElement) {
-      dom.totalPlanTitle.textContent = requestedPlan === "premium" ? "Тариф Премиум" : "Тариф Базовый";
+      dom.totalPlanTitle.textContent = requestedPlan === "premium" ? "РўР°СЂРёС„ РџСЂРµРјРёСѓРј" : "РўР°СЂРёС„ Р‘Р°Р·РѕРІС‹Р№";
     }
     if (dom.totalPlanValue instanceof HTMLElement) {
       dom.totalPlanValue.textContent =
-        planCharge > 0 ? `${formatPrice(planCharge)} сум` : (userPlan === "none" ? "0 сум" : "уже куплен");
+        planCharge > 0 ? `${formatPrice(planCharge)} СЃСѓРј` : (userPlan === "none" ? "0 СЃСѓРј" : "СѓР¶Рµ РєСѓРїР»РµРЅ");
     }
     if (dom.totalPlanRow instanceof HTMLElement) {
       dom.totalPlanRow.classList.toggle("hidden", hasExistingPlan);
@@ -866,10 +872,10 @@ const DEFAULT_PRICING = {
       dom.totalBraceletRow.classList.toggle("flex", bracelet);
     }
     if (dom.totalNow instanceof HTMLElement) {
-      dom.totalNow.textContent = `${formatPrice(oneTime)} сум`;
+      dom.totalNow.textContent = `${formatPrice(oneTime)} СЃСѓРј`;
     }
     if (dom.totalMonthly instanceof HTMLElement) {
-      dom.totalMonthly.textContent = "Единоразово · больше не платишь";
+      dom.totalMonthly.textContent = "Р•РґРёРЅРѕСЂР°Р·РѕРІРѕ В· Р±РѕР»СЊС€Рµ РЅРµ РїР»Р°С‚РёС€СЊ";
     }
   }
 
@@ -884,7 +890,7 @@ const DEFAULT_PRICING = {
     if (!container.querySelector(".order-modal-tg-fake")) {
       const fake = document.createElement("div");
       fake.className = "order-modal-tg-fake";
-      fake.innerHTML = '<span>Войти</span>';
+      fake.innerHTML = '<span>Р’РѕР№С‚Рё</span>';
       container.appendChild(fake);
     }
     if (container.dataset.tgFallbackBound !== "1") {
@@ -1014,7 +1020,7 @@ const DEFAULT_PRICING = {
     }
     if (!force && dom.stepForm && !dom.stepForm.classList.contains("hidden") && isFormDirty()) {
       isCloseConfirming = true;
-      const ok = await showConfirm("Закрыть? Данные не сохранятся");
+      const ok = await showConfirm("Р—Р°РєСЂС‹С‚СЊ? Р”Р°РЅРЅС‹Рµ РЅРµ СЃРѕС…СЂР°РЅСЏС‚СЃСЏ");
       isCloseConfirming = false;
       if (!ok || !isOpen || isClosing) {
         return;
@@ -1067,23 +1073,23 @@ const DEFAULT_PRICING = {
       return;
     }
     if (state.checkoutContext && state.checkoutContext.canPurchase === false) {
-      setStatus(state.submitBlockedMessage || String(state.checkoutContext.message || "Покупка сейчас недоступна."), "error");
+      setStatus(state.submitBlockedMessage || String(state.checkoutContext.message || "РџРѕРєСѓРїРєР° СЃРµР№С‡Р°СЃ РЅРµРґРѕСЃС‚СѓРїРЅР°."), "error");
       return;
     }
     const pricing = calculateSlugPricing(dom.letters.value, dom.digits.value);
     if (!pricing) {
-      setStatus("Заполни slug в формате AAA000", "error");
+      setStatus("Р—Р°РїРѕР»РЅРё slug РІ С„РѕСЂРјР°С‚Рµ AAA000", "error");
       return;
     }
     if (!dom.name.value.trim()) {
-      setStatus("Имя для визитки обязательно", "error");
+      setStatus("РРјСЏ РґР»СЏ РІРёР·РёС‚РєРё РѕР±СЏР·Р°С‚РµР»СЊРЅРѕ", "error");
       return;
     }
     const plan = selectedPlan();
     const submitHtml = dom.submit.innerHTML;
     dom.submit.disabled = true;
     dom.submit.classList.add("opacity-70", "cursor-not-allowed");
-    dom.submit.textContent = "Отправка...";
+    dom.submit.textContent = "РћС‚РїСЂР°РІРєР°...";
 
     try {
       const payload = await postJson("/api/cards/order-request", {
@@ -1102,33 +1108,33 @@ const DEFAULT_PRICING = {
       if (dom.successSlug instanceof HTMLElement) {
         const expiresAt = new Date(expiresAtIso);
         const hoursLeft = Number.isFinite(expiresAt.getTime()) ? Math.max(1, Math.ceil((expiresAt.getTime() - Date.now()) / (60 * 60 * 1000))) : 24;
-        dom.successSlug.textContent = `${pricing.slug} зарезервирован на ${hoursLeft} часа`;
+        dom.successSlug.textContent = `${pricing.slug} Р·Р°СЂРµР·РµСЂРІРёСЂРѕРІР°РЅ РЅР° ${hoursLeft} С‡Р°СЃР°`;
       }
 
       // Generate Telegram contact link with order details
       const telegramLink = dom.root.querySelector('#order-modal-telegram-link');
       if (telegramLink instanceof HTMLAnchorElement && payload.orderId) {
         const userName = dom.name.value.trim();
-        const userEmail = (currentUser && currentUser.email ? String(currentUser.email).trim() : "") || "не указан";
+        const userEmail = (currentUser && currentUser.email ? String(currentUser.email).trim() : "") || "РЅРµ СѓРєР°Р·Р°РЅ";
         const slugPrice = Number(payload?.pricing?.slugPrice || 0);
         const planPrice = Number(payload?.pricing?.planPrice || 0);
         const braceletPrice = Number(payload?.pricing?.braceletPrice || 0);
         const totalAmount = Number(payload?.pricing?.totalOneTime || 0);
         const orderCode = String(payload?.payment?.reference || "").trim() || `UNQX-${String(payload.orderId).replace(/[^a-zA-Z0-9]/g, "").slice(0, 10).toUpperCase()}`;
-        const planLabel = plan === "premium" ? "Тариф Премиум" : "Тариф Базовый";
-        const message = `Здравствуйте! Хочу оплатить заказ #️⃣ ${orderCode}
+        const planLabel = plan === "premium" ? "РўР°СЂРёС„ РџСЂРµРјРёСѓРј" : "РўР°СЂРёС„ Р‘Р°Р·РѕРІС‹Р№";
+        const message = `Р—РґСЂР°РІСЃС‚РІСѓР№С‚Рµ! РҐРѕС‡Сѓ РѕРїР»Р°С‚РёС‚СЊ Р·Р°РєР°Р· #пёЏвѓЈ ${orderCode}
 
       UNQ: ${pricing.slug}
-      Имя: ${userName}
-      📧 Email: ${userEmail}
+      РРјСЏ: ${userName}
+      рџ“§ Email: ${userEmail}
 
-      ━━━━━━━━━━━━
-      💳 Детализация оплаты:
-      • Slug ${pricing.slug}: ${formatPrice(slugPrice)} сум
-      • ${planLabel}: ${formatPrice(planPrice)} сум
-      • Браслет: ${formatPrice(braceletPrice)} сум
-      ━━━━━━━━━━━━
-      Итого к оплате: ${formatPrice(totalAmount)} сум`;
+      в”Ѓв”Ѓв”Ѓв”Ѓв”Ѓв”Ѓв”Ѓв”Ѓв”Ѓв”Ѓв”Ѓв”Ѓ
+      рџ’і Р”РµС‚Р°Р»РёР·Р°С†РёСЏ РѕРїР»Р°С‚С‹:
+      вЂў Slug ${pricing.slug}: ${formatPrice(slugPrice)} СЃСѓРј
+      вЂў ${planLabel}: ${formatPrice(planPrice)} СЃСѓРј
+      вЂў Р‘СЂР°СЃР»РµС‚: ${formatPrice(braceletPrice)} СЃСѓРј
+      в”Ѓв”Ѓв”Ѓв”Ѓв”Ѓв”Ѓв”Ѓв”Ѓв”Ѓв”Ѓв”Ѓв”Ѓ
+      РС‚РѕРіРѕ Рє РѕРїР»Р°С‚Рµ: ${formatPrice(totalAmount)} СЃСѓРј`;
 
         const telegramUrl = String(payload?.paymentLinks?.telegramUrl || "").trim() || `https://t.me/unqx_uz?text=${encodeURIComponent(message)}`;
         telegramLink.href = telegramUrl;
@@ -1152,39 +1158,39 @@ const DEFAULT_PRICING = {
         return;
       }
       if (error.code === "BASIC_SLUG_LIMIT_REACHED") {
-        setStatus("Купи Премиум чтобы добавить slug", "error");
+        setStatus("РљСѓРїРё РџСЂРµРјРёСѓРј С‡С‚РѕР±С‹ РґРѕР±Р°РІРёС‚СЊ slug", "error");
         return;
       }
       if (error.code === "PREMIUM_SLUG_LIMIT_REACHED") {
-        setStatus("Достигнут лимит 3 slug", "error");
+        setStatus("Р”РѕСЃС‚РёРіРЅСѓС‚ Р»РёРјРёС‚ 3 slug", "error");
         return;
       }
       if (error.code === "TOO_MANY_ACTIVE_ORDERS") {
-        setStatus("У вас уже 3 активных заказа. Дождитесь обработки или отмените один заказ в профиле.", "error");
+        setStatus("РЈ РІР°СЃ СѓР¶Рµ 3 Р°РєС‚РёРІРЅС‹С… Р·Р°РєР°Р·Р°. Р”РѕР¶РґРёС‚РµСЃСЊ РѕР±СЂР°Р±РѕС‚РєРё РёР»Рё РѕС‚РјРµРЅРёС‚Рµ РѕРґРёРЅ Р·Р°РєР°Р· РІ РїСЂРѕС„РёР»Рµ.", "error");
         return;
       }
       if (error.code === "SLUG_NOT_AVAILABLE") {
         const reason = String(error.reason || "").toLowerCase();
         if (reason === "pending") {
-          setStatus("Этот UNQ сейчас резервируется другим пользователем. Попробуй позже или выбери другой.", "error");
+          setStatus("Р­С‚РѕС‚ UNQ СЃРµР№С‡Р°СЃ СЂРµР·РµСЂРІРёСЂСѓРµС‚СЃСЏ РґСЂСѓРіРёРј РїРѕР»СЊР·РѕРІР°С‚РµР»РµРј. РџРѕРїСЂРѕР±СѓР№ РїРѕР·Р¶Рµ РёР»Рё РІС‹Р±РµСЂРё РґСЂСѓРіРѕР№.", "error");
           return;
         }
         if (reason === "reserved_drop" || reason === "drop_reserved") {
-          setStatus("Этот UNQ доступен только в активном дропе.", "error");
+          setStatus("Р­С‚РѕС‚ UNQ РґРѕСЃС‚СѓРїРµРЅ С‚РѕР»СЊРєРѕ РІ Р°РєС‚РёРІРЅРѕРј РґСЂРѕРїРµ.", "error");
           return;
         }
         if (reason === "blocked") {
-          setStatus("Этот UNQ временно недоступен. Выберите другой вариант.", "error");
+          setStatus("Р­С‚РѕС‚ UNQ РІСЂРµРјРµРЅРЅРѕ РЅРµРґРѕСЃС‚СѓРїРµРЅ. Р’С‹Р±РµСЂРёС‚Рµ РґСЂСѓРіРѕР№ РІР°СЂРёР°РЅС‚.", "error");
           return;
         }
         if (["approved", "active", "private", "paused"].includes(reason)) {
-          setStatus("Этот UNQ уже активирован другим пользователем.", "error");
+          setStatus("Р­С‚РѕС‚ UNQ СѓР¶Рµ Р°РєС‚РёРІРёСЂРѕРІР°РЅ РґСЂСѓРіРёРј РїРѕР»СЊР·РѕРІР°С‚РµР»РµРј.", "error");
           return;
         }
-        setStatus("Этот slug уже занят. Выбери другой.", "error");
+        setStatus("Р­С‚РѕС‚ slug СѓР¶Рµ Р·Р°РЅСЏС‚. Р’С‹Р±РµСЂРё РґСЂСѓРіРѕР№.", "error");
         return;
       }
-      setStatus(error.message || "Ошибка отправки заявки", "error");
+      setStatus(error.message || "РћС€РёР±РєР° РѕС‚РїСЂР°РІРєРё Р·Р°СЏРІРєРё", "error");
     } finally {
       dom.submit.disabled = Boolean(state.submitBlockedMessage);
       dom.submit.classList.toggle("opacity-70", dom.submit.disabled);
@@ -1251,9 +1257,9 @@ const DEFAULT_PRICING = {
           if (node instanceof HTMLButtonElement) {
             node.disabled = true;
           }
-          node.textContent = "Добавлено в wishlist";
+          node.textContent = "Р”РѕР±Р°РІР»РµРЅРѕ РІ wishlist";
         } catch {
-          node.textContent = "Не удалось. Повтори";
+          node.textContent = "РќРµ СѓРґР°Р»РѕСЃСЊ. РџРѕРІС‚РѕСЂРё";
         }
       });
     });
@@ -1274,7 +1280,7 @@ const DEFAULT_PRICING = {
         window.dispatchEvent(new CustomEvent("unqx:auth:logout"));
       })
       .catch(() => {
-        setStatus("Не удалось выйти", "error");
+        setStatus("РќРµ СѓРґР°Р»РѕСЃСЊ РІС‹Р№С‚Рё", "error");
       });
   });
   dom.backdrop.addEventListener("click", () => close(false));
@@ -1293,16 +1299,16 @@ const DEFAULT_PRICING = {
   dom.pendingCancel?.addEventListener("click", async () => {
     const orderId = String(dom.pendingCancel?.getAttribute("data-order-id") || "").trim();
     if (!orderId) {
-      setPendingStatus("Не удалось определить заказ для отмены.", "error");
+      setPendingStatus("РќРµ СѓРґР°Р»РѕСЃСЊ РѕРїСЂРµРґРµР»РёС‚СЊ Р·Р°РєР°Р· РґР»СЏ РѕС‚РјРµРЅС‹.", "error");
       return;
     }
-    const confirmed = await showConfirm("Отменить текущий заказ и освободить UNQ?");
+    const confirmed = await showConfirm("РћС‚РјРµРЅРёС‚СЊ С‚РµРєСѓС‰РёР№ Р·Р°РєР°Р· Рё РѕСЃРІРѕР±РѕРґРёС‚СЊ UNQ?");
     if (!confirmed) {
       return;
     }
-    const originalText = dom.pendingCancel.textContent || "Отменить и создать новый";
+    const originalText = dom.pendingCancel.textContent || "РћС‚РјРµРЅРёС‚СЊ Рё СЃРѕР·РґР°С‚СЊ РЅРѕРІС‹Р№";
     dom.pendingCancel.disabled = true;
-    dom.pendingCancel.textContent = "Отмена...";
+    dom.pendingCancel.textContent = "РћС‚РјРµРЅР°...";
     try {
       await postJson(`/api/cards/order-request/${encodeURIComponent(orderId)}/cancel`, {});
       if (quickPayState && quickPayState.orderId === orderId) {
@@ -1312,9 +1318,10 @@ const DEFAULT_PRICING = {
       }
       await refreshCheckoutContext();
       setStatus("Заказ отменён. Теперь можно создать новый.", "success");
+      window.dispatchEvent(new CustomEvent("unqx:order:cancelled", { detail: { orderId } }));
       setPendingStatus("", "neutral");
     } catch (error) {
-      setPendingStatus(error?.message || "Не удалось отменить заказ.", "error");
+      setPendingStatus(error?.message || "РќРµ СѓРґР°Р»РѕСЃСЊ РѕС‚РјРµРЅРёС‚СЊ Р·Р°РєР°Р·.", "error");
     } finally {
       dom.pendingCancel.disabled = false;
       dom.pendingCancel.textContent = originalText;
@@ -1412,3 +1419,6 @@ const DEFAULT_PRICING = {
     bindCtas();
   });
 })();
+
+
+
