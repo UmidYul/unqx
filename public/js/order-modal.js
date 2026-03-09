@@ -718,12 +718,11 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     }
     if (dom.progressAuth instanceof HTMLElement) {
       dom.progressAuth.textContent = line;
-      dom.progressAuth.classList.toggle("hidden", !line);
     }
     if (dom.progressNoAuth instanceof HTMLElement) {
       dom.progressNoAuth.textContent = line;
-      dom.progressNoAuth.classList.toggle("hidden", !line);
     }
+    setProgress();
 
     dom.stepAuth.classList.toggle("hidden", step !== "auth");
     dom.stepPending?.classList.toggle("hidden", step !== "pending");
@@ -735,7 +734,10 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     if (!(dom.progressAuth instanceof HTMLElement) || !(dom.progressNoAuth instanceof HTMLElement)) {
       return;
     }
-    if (currentStep === "auth") {
+    const lineAuth = String(dom.progressAuth.textContent || "").trim();
+    const lineNoAuth = String(dom.progressNoAuth.textContent || "").trim();
+    const hasLine = Boolean(lineAuth || lineNoAuth);
+    if (currentStep === "auth" || !hasLine) {
       dom.progressAuth.classList.add("hidden");
       dom.progressNoAuth.classList.add("hidden");
       return;

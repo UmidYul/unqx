@@ -37,6 +37,7 @@
 
   const fp = (v) => `${Number(v || 0).toLocaleString("ru-RU")} сум`;
   const DEFAULT_PROFILE_AVATAR = "/brand/profile-thin.svg";
+  const DEFAULT_BRACELET_PRICE = 300_000;
   const PROFILE_THEMES = ["default_dark", "arctic", "linen", "marble", "forest", "royal_ivory", "midnight_obsidian"];
   const PREMIUM_ONLY_THEMES = new Set(["arctic", "linen", "marble", "forest", "royal_ivory", "midnight_obsidian"]);
   const TELEGRAM_PAYMENT_USERNAME = "unqx_uz";
@@ -75,6 +76,8 @@
   let saveAlertTimer = null;
   let profileRefreshTimer = null;
   let profileRefreshInFlight = false;
+  let braceletModalLastFocused = null;
+  let braceletModalOpen = false;
 
   const toOrderPaymentReference = (orderId) => `UNQX-${String(orderId || "").replace(/[^a-zA-Z0-9]/g, "").slice(0, 10).toUpperCase()}`;
 
@@ -279,6 +282,13 @@ Email: ${userEmail}
     qrDownloadPng: $("#profile-qr-download-png"),
     logout: $("#profile-logout-btn"),
 
+    braceletModal: $("#profile-bracelet-modal"),
+    braceletModalDialog: $("#profile-bracelet-modal-dialog"),
+    braceletModalPrice: $("#profile-bracelet-modal-price"),
+    braceletModalSubmit: $("#profile-bracelet-modal-submit"),
+    braceletModalClose: $("#profile-bracelet-modal-close"),
+    braceletModalCloseTop: $("#profile-bracelet-modal-close-top"),
+
     modal: $("#profile-modal"),
     modalDialog: $("#profile-modal-dialog"),
     modalTitle: $("#profile-modal-title"),
@@ -353,6 +363,31 @@ Email: ${userEmail}
 
     modalConfirmHandler = once;
     el.modalOk.addEventListener("click", once);
+  };
+
+  const closeBraceletModal = () => {
+    if (!(el.braceletModal instanceof HTMLElement)) return;
+    el.braceletModal.classList.add("hidden");
+    el.braceletModal.classList.remove("flex");
+    braceletModalOpen = false;
+    if (braceletModalLastFocused instanceof HTMLElement) {
+      braceletModalLastFocused.focus();
+    }
+  };
+
+  const openBraceletModal = () => {
+    if (!(el.braceletModal instanceof HTMLElement)) return;
+    const priceValue = Number(s.pricing?.braceletPrice || DEFAULT_BRACELET_PRICE);
+    if (el.braceletModalPrice instanceof HTMLElement) {
+      el.braceletModalPrice.textContent = `${priceValue.toLocaleString("ru-RU")} сум`;
+    }
+    braceletModalLastFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    el.braceletModal.classList.remove("hidden");
+    el.braceletModal.classList.add("flex");
+    braceletModalOpen = true;
+    requestAnimationFrame(() => {
+      el.braceletModalDialog?.focus();
+    });
   };
 
   const showSaveAlert = (message) => {
@@ -1100,7 +1135,7 @@ Email: ${userEmail}
 
     const tips = [];
     if (Number(score.scoreBracelet || 0) === 0) {
-      tips.push('<div class="flex items-center justify-between gap-2"><span>Добавь NFC-браслет - +100 к Score</span><button type="button" data-order-link data-order-bracelet="1" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold">Заказать браслет</button></div>');
+      tips.push('<div class="flex items-center justify-between gap-2"><span>Добавь NFC-браслет - +100 к Score</span><button type="button" data-a="open-bracelet-order-modal" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold">Заказать браслет</button></div>');
     }
     if (Number(score.scorePlan || 0) === 0) {
       const price = Number(s.pricing?.premiumUpgradePrice || 80_000).toLocaleString("ru-RU");
@@ -1111,6 +1146,7 @@ Email: ${userEmail}
     if (Number(score.scoreCtr || 0) < 100) tips.push("<p>Добавь больше кнопок чтобы повысить активность</p>");
     if (el.scoreTipsList) {
       el.scoreTipsList.innerHTML = tips.length ? tips.join("") : "<p>Отличный прогресс. Поддерживай активность визитки.</p>";
+      window.dispatchEvent(new CustomEvent("unqx:bind-order-ctas"));
     }
 
     const rawHistory = Array.isArray(score.history) ? score.history : [];
@@ -1535,6 +1571,11 @@ Email: ${userEmail}
         return;
       }
 
+      if (action === "open-bracelet-order-modal") {
+        openBraceletModal();
+        return;
+      }
+
       if (action === "rm-tag") {
         const index = Number(target.getAttribute("data-i"));
         if (!Number.isNaN(index)) {
@@ -1666,13 +1707,55 @@ Email: ${userEmail}
   el.modal?.addEventListener("click", (event) => {
     if (event.target === el.modal) closeModal();
   });
+  el.braceletModalClose?.addEventListener("click", closeBraceletModal);
+  el.braceletModalCloseTop?.addEventListener("click", closeBraceletModal);
+  el.braceletModal?.addEventListener("click", (event) => {
+    if (event.target === el.braceletModal) closeBraceletModal();
+  });
+  el.braceletModalSubmit?.addEventListener("click", () => {
+    closeBraceletModal();
+    if (window.UNQOrderModal && typeof window.UNQOrderModal.open === "function") {
+      window.UNQOrderModal.open({ bracelet: true });
+    }
+  });
   document.addEventListener("keydown", (event) => {
-    if (!modalIsOpen) return;
     if (event.key === "Escape") {
-      closeModal();
+      if (braceletModalOpen) {
+        closeBraceletModal();
+        return;
+      }
+      if (modalIsOpen) {
+        closeModal();
+      }
       return;
     }
-    if (event.key !== "Tab" || !(el.modalDialog instanceof HTMLElement)) return;
+    if (event.key !== "Tab") return;
+    if (braceletModalOpen && el.braceletModalDialog instanceof HTMLElement) {
+      const focusable = Array.from(
+        el.braceletModalDialog.querySelectorAll(
+          'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ),
+      ).filter((item) => item instanceof HTMLElement && item.offsetParent !== null);
+      if (!focusable.length) {
+        event.preventDefault();
+        el.braceletModalDialog.focus();
+        return;
+      }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      const current = document.activeElement;
+      if (event.shiftKey && current === first) {
+        event.preventDefault();
+        last.focus();
+        return;
+      }
+      if (!event.shiftKey && current === last) {
+        event.preventDefault();
+        first.focus();
+      }
+      return;
+    }
+    if (!modalIsOpen || !(el.modalDialog instanceof HTMLElement)) return;
     const focusable = Array.from(
       el.modalDialog.querySelectorAll(
         'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',

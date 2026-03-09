@@ -803,10 +803,11 @@ function initSlugCalculator(orderApi) {
       return {
         total,
         flash,
+        source: String(payload?.source || "calculator"),
         calculation: payload?.calculation && typeof payload.calculation === "object" ? payload.calculation : null,
       };
     } catch {
-      return { total: fallbackTotal, flash: null, calculation: null };
+      return { total: fallbackTotal, flash: null, source: "calculator", calculation: null };
     }
   }
 
@@ -894,6 +895,9 @@ function initSlugCalculator(orderApi) {
         animateNumberText(flashFinalNode, lastAnimatedPrice, finalPrice);
       }
       resultFormula.textContent = `Flash sale применён (-${serverPricing.flash.discountPercent}%)`;
+    } else if (serverPricing.source === "override") {
+      animateNumberText(resultPrice, lastAnimatedPrice, finalPrice);
+      resultFormula.textContent = `Персональная цена: ${formatPrice(finalPrice)} сум`;
     } else {
       animateNumberText(resultPrice, lastAnimatedPrice, finalPrice);
       const calc = serverPricing.calculation;

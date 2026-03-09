@@ -107,33 +107,6 @@
           <section id="profile-card-empty-state"
             class="hidden mt-5 rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-10 text-center"></section>
           <div id="profile-card-content">
-            <section id="profile-score-panel" class="mt-4 rounded-xl border border-neutral-200 bg-neutral-50 p-4">
-              <div class="grid gap-4 xl:grid-cols-[280px_1fr]">
-                <div>
-                  <p class="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">UNQ SCORE</p>
-                  <p id="profile-score-value" class="mt-2 text-5xl font-black text-neutral-900">0</p>
-                  <p id="profile-score-top" class="mt-1 text-sm text-neutral-500">Топ 100%</p>
-                  <p id="profile-score-updated" class="mt-1 text-xs text-neutral-500">Обновлено —</p>
-                </div>
-                <div id="profile-score-breakdown" class="space-y-2"></div>
-              </div>
-              <details id="profile-score-tips" class="mt-4 rounded-xl border border-neutral-200 bg-white p-3">
-                <summary class="cursor-pointer text-sm font-semibold text-neutral-800">Как повысить Score</summary>
-                <div id="profile-score-tips-list" class="mt-2 space-y-2 text-sm text-neutral-600"></div>
-              </details>
-              <div class="mt-4 rounded-xl border border-neutral-200 bg-white p-3">
-                <div class="relative">
-                  <canvas id="profile-score-history-chart" height="120"></canvas>
-                  <div id="profile-score-history-lock"
-                    class="hidden absolute inset-0 rounded-xl bg-white/80 p-4 backdrop-blur-sm">
-                    <p class="text-sm font-semibold text-neutral-800">Открыть Премиум · 80 000 сум единоразово</p>
-                    <button type="button" data-order-link data-order-plan="premium"
-                      class="interactive-btn mt-2 min-h-11 rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold">Купить
-                      Премиум →</button>
-                  </div>
-                </div>
-              </div>
-            </section>
             <div class="mt-4 grid items-start gap-4 2xl:grid-cols-[minmax(0,1fr)_340px]">
               <div class="space-y-4">
                 <div>
@@ -391,7 +364,34 @@
           <section id="profile-analytics-empty-state"
             class="hidden mt-5 rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-10 text-center"></section>
           <section id="profile-analytics-content" class="mt-4 rounded-xl border border-neutral-200 bg-neutral-50 p-4">
-            <div class="mb-4 grid gap-2 md:grid-cols-[1fr_auto]">
+            <section id="profile-score-panel" class="rounded-xl border border-neutral-200 bg-white p-4">
+              <div class="grid gap-4 xl:grid-cols-[280px_1fr]">
+                <div>
+                  <p class="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">UNQ SCORE</p>
+                  <p id="profile-score-value" class="mt-2 text-5xl font-black text-neutral-900">0</p>
+                  <p id="profile-score-top" class="mt-1 text-sm text-neutral-500">Топ 100%</p>
+                  <p id="profile-score-updated" class="mt-1 text-xs text-neutral-500">Обновлено —</p>
+                </div>
+                <div id="profile-score-breakdown" class="space-y-2"></div>
+              </div>
+              <details id="profile-score-tips" class="mt-4 rounded-xl border border-neutral-200 bg-white p-3">
+                <summary class="cursor-pointer text-sm font-semibold text-neutral-800">Как повысить Score</summary>
+                <div id="profile-score-tips-list" class="mt-2 space-y-2 text-sm text-neutral-600"></div>
+              </details>
+              <div class="mt-4 rounded-xl border border-neutral-200 bg-white p-3">
+                <div class="relative">
+                  <canvas id="profile-score-history-chart" height="120"></canvas>
+                  <div id="profile-score-history-lock"
+                    class="hidden absolute inset-0 rounded-xl bg-white/80 p-4 backdrop-blur-sm">
+                    <p class="text-sm font-semibold text-neutral-800">Открыть Премиум · 80 000 сум единоразово</p>
+                    <button type="button" data-order-link data-order-plan="premium"
+                      class="interactive-btn mt-2 min-h-11 rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold">Купить
+                      Премиум →</button>
+                  </div>
+                </div>
+              </div>
+            </section>
+            <div class="mb-4 mt-4 grid gap-2 md:grid-cols-[1fr_auto]">
               <select id="profile-analytics-slug"
                 class="rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm"></select>
               <div id="profile-analytics-periods" class="flex items-center gap-2"></div>
