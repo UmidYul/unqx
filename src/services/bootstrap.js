@@ -1,5 +1,6 @@
 const { prisma } = require("../db/prisma");
 const { ensurePlatformSettingsSeeded } = require("./platform-settings");
+const { ensureTelegramWebhook } = require("./telegram-webhook");
 
 let started = false;
 
@@ -95,6 +96,11 @@ async function runBootstrapTasks() {
 
   try {
     await ensurePlatformSettingsSeeded();
+    try {
+      await ensureTelegramWebhook();
+    } catch (error) {
+      console.error("[express-app] failed to ensure telegram webhook", error);
+    }
 
     const [testimonialsReady] = await Promise.all([
       hasTable("testimonials"),
