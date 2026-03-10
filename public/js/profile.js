@@ -93,6 +93,14 @@
         return null;
       }
     }
+    function hasPendingDraft() {
+      const draft = readDraft();
+      if (!draft) return false;
+      const draftUpdatedAt = Number(draft.updatedAt || 0);
+      const cardUpdatedAt = s.card?.updatedAt ? new Date(s.card.updatedAt).getTime() : 0;
+      if (draftUpdatedAt && cardUpdatedAt && draftUpdatedAt <= cardUpdatedAt) return false;
+      return true;
+    }
 
     function restoreDraft() {
       const draft = readDraft();
@@ -2393,6 +2401,9 @@ Email: ${userEmail}
     });
 
     const refreshProfileSoon = (delayMs = 150) => {
+      if (hasPendingDraft()) {
+        return;
+      }
       if (profileRefreshTimer) {
         clearTimeout(profileRefreshTimer);
         profileRefreshTimer = null;
