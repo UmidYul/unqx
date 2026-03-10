@@ -1,4 +1,5 @@
-﻿(function () {
+﻿let csrf = null;
+(function () {
   const root = document.body;
   if (!root || root.getAttribute("data-page") !== "profile-page") return;
   const reactivationWindowDays = Math.max(1, Number(root.getAttribute("data-reactivation-window-days") || 30));
