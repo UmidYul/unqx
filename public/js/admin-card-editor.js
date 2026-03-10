@@ -414,6 +414,150 @@
     return ok;
   }
 
+  const DRAFT_KEY_BASE = "unqx_admin_card_draft";
+  const DRAFT_TTL_MS = 1000 * 60 * 60 * 24 * 7;
+  let draftSaveTimer = null;
+
+  function getDraftKey() {
+    return `${DRAFT_KEY_BASE}:${cardId || "new"}`;
+  }
+
+  function readDraft() {
+    try {
+      const raw = localStorage.getItem(getDraftKey());
+      if (!raw) {
+        return null;
+      }
+      const draft = JSON.parse(raw);
+      return draft && typeof draft === "object" ? draft : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function clearDraft() {
+    try {
+      localStorage.removeItem(getDraftKey());
+    } catch {
+      // ignore storage errors
+    }
+  }
+
+  function isDraftFresh(draft) {
+    const updatedAt = Number(draft?.updatedAt || 0);
+    if (!updatedAt) {
+      return false;
+    }
+    return Date.now() - updatedAt <= DRAFT_TTL_MS;
+  }
+
+  function readTagRowsRaw() {
+    return Array.from(tagsList.querySelectorAll('[data-item="tag"]')).map((row) => {
+      const labelInput = row.querySelector(".tag-label");
+      const urlInput = row.querySelector(".tag-url");
+      return {
+        label: labelInput instanceof HTMLInputElement ? labelInput.value : "",
+        url: urlInput instanceof HTMLInputElement ? urlInput.value : "",
+      };
+    });
+  }
+
+  function readButtonRowsRaw() {
+    return Array.from(buttonsList.querySelectorAll('[data-item="button"]')).map((row) => {
+      const labelInput = row.querySelector(".button-label");
+      const urlInput = row.querySelector(".button-url");
+      const activeNode = row.querySelector(".button-active");
+      return {
+        label: labelInput instanceof HTMLInputElement ? labelInput.value : "",
+        url: urlInput instanceof HTMLInputElement ? urlInput.value : "",
+        isActive: activeNode instanceof HTMLInputElement ? activeNode.checked : true,
+      };
+    });
+  }
+
+  function collectDraft() {
+    return {
+      mode,
+      cardId: cardId || "",
+      slug: slugInput.value,
+      isActive: Boolean(activeInput.checked),
+      name: nameInput.value,
+      phone: phoneInput.value,
+      verified: Boolean(verifiedInput.checked),
+      hashtag: hashtagInput.value,
+      address: addressInput.value,
+      postcode: postcodeInput.value,
+      email: emailInput.value,
+      extraPhone: extraPhoneInput.value,
+      tags: readTagRowsRaw(),
+      buttons: readButtonRowsRaw(),
+      updatedAt: Date.now(),
+    };
+  }
+
+  function saveDraft() {
+    try {
+      localStorage.setItem(getDraftKey(), JSON.stringify(collectDraft()));
+    } catch {
+      // ignore storage errors
+    }
+  }
+
+  function scheduleSaveDraft() {
+    if (draftSaveTimer) {
+      window.clearTimeout(draftSaveTimer);
+    }
+    draftSaveTimer = window.setTimeout(() => {
+      saveDraft();
+      draftSaveTimer = null;
+    }, 300);
+  }
+
+  function restoreDraft() {
+    const draft = readDraft();
+    if (!draft || !isDraftFresh(draft)) {
+      return;
+    }
+    if (draft.mode !== mode) {
+      return;
+    }
+    if (mode === "edit" && String(draft.cardId || "") !== String(cardId || "")) {
+      return;
+    }
+
+    if (typeof draft.slug === "string") slugInput.value = draft.slug;
+    if (typeof draft.isActive === "boolean") activeInput.checked = draft.isActive;
+    if (typeof draft.name === "string") nameInput.value = draft.name;
+    if (typeof draft.phone === "string") phoneInput.value = draft.phone;
+    if (typeof draft.verified === "boolean") verifiedInput.checked = draft.verified;
+    if (typeof draft.hashtag === "string") hashtagInput.value = draft.hashtag;
+    if (typeof draft.address === "string") addressInput.value = draft.address;
+    if (typeof draft.postcode === "string") postcodeInput.value = draft.postcode;
+    if (typeof draft.email === "string") emailInput.value = draft.email;
+    if (typeof draft.extraPhone === "string") extraPhoneInput.value = draft.extraPhone;
+
+    if (Array.isArray(draft.tags)) {
+      tagsList.innerHTML = "";
+      draft.tags.forEach((tag) => {
+        tagsList.appendChild(createTagRow(tag));
+      });
+    }
+
+    if (Array.isArray(draft.buttons)) {
+      buttonsList.innerHTML = "";
+      draft.buttons.forEach((button) => {
+        buttonsList.appendChild(createButtonRow(button));
+      });
+    }
+
+    [phoneInput, extraPhoneInput].forEach((inputNode) => {
+      inputNode.value = inputNode.value ? formatUzPhone(inputNode.value) : "";
+    });
+
+    refreshTagsPreview();
+    clearButtonRowErrors();
+  }
+
   function collectPayload() {
     return {
       slug: sanitizeSlug(slugInput.value),
@@ -530,16 +674,21 @@
     inputNode.value = inputNode.value ? formatUzPhone(inputNode.value) : "";
   });
 
+  form.addEventListener("input", scheduleSaveDraft);
+  form.addEventListener("change", scheduleSaveDraft);
+
   if (addTagBtn instanceof HTMLElement) {
     addTagBtn.addEventListener("click", () => {
       tagsList.appendChild(createTagRow({ label: "", url: "" }));
       refreshTagsPreview();
+      scheduleSaveDraft();
     });
   }
 
   if (addButtonBtn instanceof HTMLElement) {
     addButtonBtn.addEventListener("click", () => {
       buttonsList.appendChild(createButtonRow({ label: "", url: "https://", isActive: true }));
+      scheduleSaveDraft();
     });
   }
 
@@ -561,6 +710,7 @@
       }
 
       refreshTagsPreview();
+      scheduleSaveDraft();
     });
 
     listNode.addEventListener("input", () => {
@@ -568,6 +718,7 @@
       if (listNode === buttonsList) {
         clearButtonRowErrors();
       }
+      scheduleSaveDraft();
     });
 
     listNode.addEventListener("focusout", (event) => {
@@ -582,6 +733,7 @@
 
       const normalized = normalizeUrl(target.value);
       target.value = normalized;
+      scheduleSaveDraft();
     });
   });
 
@@ -589,11 +741,13 @@
     new Sortable(tagsList, {
       animation: 150,
       handle: "[data-drag-handle]",
+      onEnd: scheduleSaveDraft,
     });
 
     new Sortable(buttonsList, {
       animation: 150,
       handle: "[data-drag-handle]",
+      onEnd: scheduleSaveDraft,
     });
   }
 
@@ -625,6 +779,8 @@
         setFormError(data.error || "Не удалось сохранить визитку");
         return;
       }
+
+      clearDraft();
 
       if (mode === "create") {
         cardId = data.id || "";
@@ -958,5 +1114,6 @@
     sessionStorage.removeItem("card-editor-notice");
   }
 
+  restoreDraft();
   refreshTagsPreview();
 })();
