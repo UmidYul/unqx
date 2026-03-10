@@ -2364,6 +2364,7 @@ Email: ${userEmail}
     });
     load().catch((error) => showModal("Ошибка", error.message || "Не удалось загрузить профиль"));
   })();
+})();
 
 
 
