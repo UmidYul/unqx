@@ -1322,6 +1322,18 @@ body[data-card-theme="midnight_obsidian"]::before {
   color: rgba(231, 219, 191, 0.62) !important;
 }
 
+/* Keep "Save contact" button transparent regardless of theme */
+[data-card-theme] .unq-ref-save,
+[data-card-theme] .unq-ref-save:hover,
+[data-card-theme] .unq-ref-save:focus,
+[data-card-theme] .unq-ref-save:active {
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  transform: none !important;
+}
+
 [data-card-theme="forest"] svg {
   color: #e7dbbf !important;
 }
