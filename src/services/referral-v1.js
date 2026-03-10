@@ -1,13 +1,6 @@
 const { prisma } = require("../db/prisma");
 const { getManySettings } = require("./platform-settings");
-
-function normalizeRefCode(value) {
-  return String(value || "")
-    .trim()
-    .toUpperCase()
-    .replace(/[^A-Z0-9_]/g, "")
-    .slice(0, 40);
-}
+const { normalizeRefCode, normalizeSource, normalizeOffer } = require("./referral-normalize");
 
 const DEFAULTS = {
   enabled: true,
@@ -16,24 +9,6 @@ const DEFAULTS = {
   discountCapPercent: 30,
   tiersEnabled: false,
 };
-
-function normalizeSource(value) {
-  const normalized = String(value || "")
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9_-]/g, "")
-    .slice(0, 40);
-  return normalized || "order_modal";
-}
-
-function normalizeOffer(value) {
-  const normalized = String(value || "")
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9_.:-]/g, "")
-    .slice(0, 80);
-  return normalized || "default";
-}
 
 async function getReferralV1Settings() {
   const values = await getManySettings([

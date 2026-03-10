@@ -4,6 +4,7 @@ const { prisma } = require("../db/prisma");
 const { getFeatureSetting } = require("./feature-settings");
 const { getReferralV1Settings, getWalletBalance } = require("./referral-v1");
 const { getActiveCampaignsSafe } = require("./referral-v2");
+const { normalizeRefCode } = require("./referral-normalize");
 
 function isMissingModelTable(error, modelName) {
   return (
@@ -32,14 +33,6 @@ function isMissingModelDelegateError(error) {
 
 function isMissingReferralBootstrapStorage(error, modelName) {
   return isMissingModelTable(error, modelName) || isMissingModelColumn(error, modelName) || isMissingModelDelegateError(error);
-}
-
-function normalizeRefCode(value) {
-  return String(value || "")
-    .trim()
-    .toUpperCase()
-    .replace(/[^A-Z0-9_]/g, "")
-    .slice(0, 40);
 }
 
 function generateRefCode() {

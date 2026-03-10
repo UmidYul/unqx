@@ -2,7 +2,7 @@ const { createHash } = require("node:crypto");
 
 const { prisma } = require("../db/prisma");
 const { getManySettings } = require("./platform-settings");
-const { normalizeSource, normalizeOffer } = require("./referral-v1");
+const { normalizeRefCode, normalizeSource, normalizeOffer } = require("./referral-normalize");
 
 const DEFAULTS = {
   velocityWindowHours: 24,
@@ -54,14 +54,6 @@ function normalizePromoCode(value) {
     .toUpperCase()
     .replace(/[^A-Z0-9_-]/g, "")
     .slice(0, 32);
-}
-
-function normalizeRefCode(value) {
-  return String(value || "")
-    .trim()
-    .toUpperCase()
-    .replace(/[^A-Z0-9_]/g, "")
-    .slice(0, 40);
 }
 
 function safeNumber(value, fallback = 0) {
