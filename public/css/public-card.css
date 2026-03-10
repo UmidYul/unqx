@@ -965,8 +965,10 @@ body[data-card-theme] #card-view-root>[data-card-view] {
   justify-content: center;
   gap: 6px;
   border: 0;
-  background: transparent;
-  box-shadow: none;
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
   color: var(--theme-muted-color, #a1a1aa);
   font-size: 14px;
   padding: 4px 0;

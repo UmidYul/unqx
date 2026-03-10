@@ -904,6 +904,14 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
       };
     }
 
+    const forceAuth = Boolean(currentUser) && document.body?.getAttribute("data-page") === "profile-page";
+    if (forceAuth && (!precheck.authenticated || precheck.nextAction === "login")) {
+      precheck.authenticated = true;
+      precheck.nextAction = "checkout";
+      precheck.canPurchase = true;
+      precheck.message = "";
+    }
+
     if (!precheck.authenticated || precheck.nextAction === "login") {
       renderPendingOrderState(precheck);
       setSubmitBlockedMessage("");
@@ -1297,6 +1305,15 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     window.setTimeout(apply, 1200);
   }
 
+  function getProfileUserFallback() {
+    const isProfilePage = document.body?.getAttribute("data-page") === "profile-page";
+    if (!isProfilePage) {
+      return null;
+    }
+    const candidate = window.UNQProfileUser;
+    return candidate && typeof candidate === "object" ? candidate : null;
+  }
+
   async function refreshUser() {
     const [authResult] = await Promise.allSettled([
       (async () => {
@@ -1312,6 +1329,12 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     ]);
     if (authResult.status !== "fulfilled") {
       currentUser = null;
+    }
+    if (!currentUser) {
+      const fallbackUser = getProfileUserFallback();
+      if (fallbackUser) {
+        currentUser = fallbackUser;
+      }
     }
     renderUser();
     setProgress();
