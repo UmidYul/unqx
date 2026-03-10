@@ -79,7 +79,8 @@
   tariff: pageCardRaw.tariff === "premium" ? "premium" : "basic",
   theme:
   typeof pageCardRaw.theme === "string" &&
-  ["default_dark", "arctic", "linen", "marble", "forest", "royal_ivory", "midnight_obsidian"].includes(pageCardRaw.theme)
+  ["default_dark", "arctic", "linen", "marble", "forest", "royal_ivory",
+  "midnight_obsidian"].includes(pageCardRaw.theme)
   ? pageCardRaw.theme
   : "default_dark",
   customColor: /^#[0-9a-fA-F]{6}$/.test(String(pageCardRaw.customColor || "").trim())
@@ -235,7 +236,11 @@
     </main>
 
     <script nonce="<%= cspNonce %>" id="card-view-data" type="application/json"><%- JSON.stringify({
-    card: pageCard,
+    card: {
+      ...pageCard,
+      role: pageCard.role,
+      bio: pageCard.bio,
+    },
     shareUrl: pageShareUrl,
     viewsLabel: `${formattedViews} просмотров`,
     slug: pageCard.slug,
