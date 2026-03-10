@@ -74,6 +74,7 @@
         theme: s.theme,
         customColor: el.cColor?.value || null,
         showBranding: el.cBranding ? !el.cBranding.checked : true,
+        updatedAt: Date.now(),
       };
       localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
     }
@@ -82,32 +83,49 @@
       localStorage.removeItem(DRAFT_KEY);
     }
 
-    function restoreDraft() {
-      if (s.draftRestored) return;
+    function readDraft() {
       const draftRaw = localStorage.getItem(DRAFT_KEY);
-      if (!draftRaw) return;
+      if (!draftRaw) return null;
       try {
         const draft = JSON.parse(draftRaw);
-        if (typeof draft !== "object" || !draft) return;
-        if (el.cName && draft.name) el.cName.value = draft.name;
-        if (el.cRole && draft.role) el.cRole.value = draft.role;
-        if (el.cBio && draft.bio) el.cBio.value = draft.bio;
-        if (el.cHashtag && draft.hashtag) el.cHashtag.value = draft.hashtag;
-        if (el.cAddress && draft.address) el.cAddress.value = draft.address;
-        if (el.cPostcode && draft.postcode) el.cPostcode.value = draft.postcode;
-        if (el.cEmail && draft.email) el.cEmail.value = draft.email;
-        if (el.cExtraPhone && draft.extraPhone) el.cExtraPhone.value = draft.extraPhone;
-        if (Array.isArray(draft.tags)) s.tags = [...draft.tags];
-        if (Array.isArray(draft.buttons)) s.buttons = JSON.parse(JSON.stringify(draft.buttons));
-        if (draft.theme) s.theme = draft.theme;
-        if (el.cColor && draft.customColor) el.cColor.value = draft.customColor;
-        if (el.cBranding) el.cBranding.checked = draft.showBranding === false ? true : false;
-        s.draftRestored = true;
-        renderTags && renderTags();
-        renderButtons && renderButtons();
-        renderTheme && renderTheme();
-        renderPreview && renderPreview();
-      } catch { }
+        return typeof draft === "object" && draft ? draft : null;
+      } catch {
+        return null;
+      }
+    }
+
+    function restoreDraft() {
+      const draft = readDraft();
+      if (!draft) return;
+      const cardUpdatedAt = s.card?.updatedAt ? new Date(s.card.updatedAt).getTime() : 0;
+      const draftUpdatedAt = Number(draft.updatedAt || 0);
+      if (cardUpdatedAt && draftUpdatedAt && draftUpdatedAt <= cardUpdatedAt) return;
+      if (draftUpdatedAt && s.draftRestoredAt && draftUpdatedAt <= s.draftRestoredAt) return;
+
+      const hasOwn = (key) => Object.prototype.hasOwnProperty.call(draft, key);
+      if (el.cName && hasOwn("name")) el.cName.value = draft.name ?? "";
+      if (el.cRole && hasOwn("role")) el.cRole.value = draft.role ?? "";
+      if (el.cBio && hasOwn("bio")) el.cBio.value = draft.bio ?? "";
+      if (el.cHashtag && hasOwn("hashtag")) el.cHashtag.value = draft.hashtag ?? "";
+      if (el.cAddress && hasOwn("address")) el.cAddress.value = draft.address ?? "";
+      if (el.cPostcode && hasOwn("postcode")) el.cPostcode.value = draft.postcode ?? "";
+      if (el.cEmail && hasOwn("email")) el.cEmail.value = draft.email ?? "";
+      if (el.cExtraPhone && hasOwn("extraPhone")) el.cExtraPhone.value = draft.extraPhone ?? "";
+      if (Array.isArray(draft.tags)) s.tags = [...draft.tags];
+      if (Array.isArray(draft.buttons)) s.buttons = JSON.parse(JSON.stringify(draft.buttons));
+      if (typeof draft.theme === "string" && PROFILE_THEMES.includes(draft.theme)) s.theme = draft.theme;
+      if (getCurrentPlan() !== "premium" && PREMIUM_ONLY_THEMES.has(s.theme)) {
+        s.theme = "default_dark";
+      }
+      if (el.cColor && hasOwn("customColor")) el.cColor.value = draft.customColor || "";
+      if (el.cBranding && hasOwn("showBranding")) el.cBranding.checked = draft.showBranding === false;
+      if (el.cBioC) el.cBioC.textContent = `${el.cBio?.value.length || 0}/120`;
+
+      s.draftRestoredAt = draftUpdatedAt || Date.now();
+      renderTags && renderTags();
+      renderButtons && renderButtons();
+      renderTheme && renderTheme();
+      renderPreview && renderPreview();
     }
     let scoreChart = null;
     let analyticsCharts = {};
@@ -1520,8 +1538,8 @@ Email: ${userEmail}
           s.verification = null;
         }
         renderAll();
-        // Восстановить черновик, если есть и профиль не был только что сохранён
-        if (!s.draftRestored && !s.card) restoreDraft();
+        // Восстановить черновик, если он новее данных профиля
+        restoreDraft();
       } catch (error) {
         if (error?.code === "AUTH_REQUIRED" || error?.code === "ACCOUNT_DISABLED") {
           location.replace("/");
@@ -1571,6 +1589,7 @@ Email: ${userEmail}
           }),
         });
 
+        clearDraft();
         showSaveAlert("Успешно сохранено");
         await load();
       } catch (error) {
