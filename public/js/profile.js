@@ -154,7 +154,6 @@ Email: ${userEmail}
     tiktok: "TikTok",
     youtube: "YouTube",
     website: "Сайт",
-    map: "Карта",
     card: "Карта",
     whatsapp: "WhatsApp",
     other: "Другое",
