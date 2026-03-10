@@ -24,6 +24,65 @@ const defaultSocialImage = absoluteUrl("/brand/logo.PNG");
 const CARD_THEMES = new Set(["default_dark", "arctic", "linen", "marble", "forest", "royal_ivory", "midnight_obsidian"]);
 const LEGAL_DOCS_DIR = path.join(env.EXPRESS_APP_DIR, "docs");
 
+function isMissingModelTable(error, modelName) {
+  return (
+    Boolean(error) &&
+    error.code === "P2021" &&
+    (!modelName || String(error?.meta?.modelName || "") === modelName)
+  );
+}
+
+function isMissingModelColumn(error, modelName) {
+  if (!error || error.code !== "P2022") {
+    return false;
+  }
+
+  if (!modelName) {
+    return true;
+  }
+
+  const targetModel = String(error?.meta?.modelName || "");
+  if (!targetModel) {
+    return true;
+  }
+
+  return targetModel === modelName;
+}
+
+function getModelDelegate(modelName) {
+  if (!modelName || typeof modelName !== "string") {
+    return null;
+  }
+  const key = `${modelName.slice(0, 1).toLowerCase()}${modelName.slice(1)}`;
+  const delegate = prisma[key];
+  return delegate && typeof delegate === "object" ? delegate : null;
+}
+
+function isMissingModelDelegateError(error) {
+  if (!error || error.name !== "TypeError") {
+    return false;
+  }
+  const message = String(error.message || "");
+  return (
+    message.includes("Cannot read properties of undefined") &&
+    (message.includes("findMany") || message.includes("findUnique") || message.includes("count") || message.includes("upsert"))
+  );
+}
+
+async function withMissingTableFallback(modelName, fallbackValue, callback) {
+  if (!getModelDelegate(modelName)) {
+    return fallbackValue;
+  }
+  try {
+    return await callback();
+  } catch (error) {
+    if (isMissingModelTable(error, modelName) || isMissingModelColumn(error, modelName) || isMissingModelDelegateError(error)) {
+      return fallbackValue;
+    }
+    throw error;
+  }
+}
+
 function readLegalDoc(fileName) {
   try {
     return fs.readFileSync(path.join(LEGAL_DOCS_DIR, fileName), "utf8");
