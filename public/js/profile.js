@@ -8,6 +8,26 @@
 
     const $ = (s) => document.querySelector(s);
     const $$ = (s) => Array.from(document.querySelectorAll(s));
+    const esc = (value) =>
+      String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    const toDate = (value) => {
+      const date = new Date(value);
+      return Number.isNaN(date.getTime()) ? null : date;
+    };
+    const fd = (value) => {
+      const date = toDate(value);
+      return date ? date.toLocaleDateString("ru-RU") : "—";
+    };
+    const fdt = (value) => {
+      const date = toDate(value);
+      return date ? date.toLocaleString("ru-RU") : "—";
+    };
+    const fp = (value) => `${Number(value || 0).toLocaleString("ru-RU")} сум`;
 
 
     const DRAFT_KEY = "unqx_profile_card_draft";
