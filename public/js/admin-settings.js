@@ -34,6 +34,22 @@
       payment_click_merchant_id: "Заполняется только при активной интеграции Click.",
       payment_payme_merchant_id: "Заполняется только при активной интеграции Payme.",
       contact_telegram_chat_id: "Служебный идентификатор для отправки уведомлений в Telegram.",
+      feature_directory: "Показывает публичный каталог визиток (Directory).",
+      feature_leaderboard: "Включает страницу рейтинга пользователей.",
+      feature_score_public: "Показывает UNQ Score на публичной визитке.",
+      feature_verification: "Разрешает пользователям отправлять заявки на верификацию.",
+      feature_drops: "Включает страницу и механику drops.",
+      feature_referrals: "Включает реферальную систему для новых заказов.",
+      referral_v1_referrer_reward: "Сумма бонуса пользователю, который пригласил друга.",
+      referral_v1_invitee_discount: "Скидка новому пользователю по реферальной ссылке.",
+      referral_v1_discount_cap_percent: "Максимальный общий дисконт от slug-базы.",
+      pending_expiry_hours: "Через сколько часов неоплаченный заказ станет просроченным.",
+      score_recalc_interval_hours: "Как часто пересчитывать UNQ Score.",
+      leaderboard_min_views: "Минимум просмотров визитки для попадания в рейтинг.",
+      leaderboard_public_count: "Сколько карточек показывать в публичном рейтинге.",
+      maintenance_mode: "Отключает сайт для пользователей и показывает страницу обслуживания.",
+      maintenance_release_report_mode: "Показывает публичную страницу отчета до релиза.",
+      maintenance_release_open_at: "Дата и время, когда сайт автоматически откроется.",
     },
     orderByGroup: {
       pricing: [
@@ -402,7 +418,7 @@
       .map((item, index) => {
         const sectionTitle =
           item.__section && preparedItems[index - 1]?.__section !== item.__section
-            ? `<div class="md:col-span-2 mt-2 border-t border-neutral-200 pt-3 text-xs font-semibold uppercase tracking-[0.12em] text-neutral-500">${esc(item.__section)}</div>`
+            ? `<div class="md:col-span-2 mt-3 rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-neutral-600">${esc(item.__section)}</div>`
             : "";
         const description = item.description ? `<div class="mt-1 text-xs text-neutral-500">${esc(item.description)}</div>` : "";
         const reset = `<button type="button" data-settings-reset="${group}:${item.key}" class="mt-1 text-xs font-semibold text-neutral-500 underline">Сбросить</button>`;
