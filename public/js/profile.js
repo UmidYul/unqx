@@ -28,6 +28,16 @@
       return date ? date.toLocaleString("ru-RU") : "—";
     };
     const fp = (value) => `${Number(value || 0).toLocaleString("ru-RU")} сум`;
+    const PROFILE_THEMES = [
+      "default_dark",
+      "arctic",
+      "linen",
+      "marble",
+      "forest",
+      "royal_ivory",
+      "midnight_obsidian",
+    ];
+    const PREMIUM_ONLY_THEMES = new Set(PROFILE_THEMES.filter((theme) => theme !== "default_dark"));
 
 
     const DRAFT_KEY = "unqx_profile_card_draft";
