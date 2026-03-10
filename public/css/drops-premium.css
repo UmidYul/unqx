@@ -1,0 +1,76 @@
+[data-page="drops-page"] {
+  background: #f5f5f5;
+}
+
+[data-page="drops-page"] main {
+  position: relative;
+}
+
+[data-page="drops-page"] header.rounded-2xl {
+  border-color: rgba(17, 24, 39, 0.1);
+  background: #ffffff;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 22px 46px rgba(15, 23, 42, 0.08);
+}
+
+[data-page="drops-page"] [data-drop-card] {
+  border-color: rgba(15, 23, 42, 0.12);
+  background: #ffffff;
+  box-shadow: 0 16px 34px rgba(15, 23, 42, 0.07);
+  transition: transform 220ms ease, box-shadow 220ms ease, border-color 220ms ease;
+}
+
+[data-page="drops-page"] [data-drop-card]:hover {
+  transform: translateY(-2px);
+  border-color: rgba(17, 24, 39, 0.22);
+  box-shadow: 0 22px 44px rgba(15, 23, 42, 0.12);
+}
+
+[data-page="drops-page"] [data-drop-status-badge] {
+  letter-spacing: 0.05em;
+}
+
+[data-page="drops-page"] [data-drop-status="live"] [data-drop-status-badge] {
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.08);
+}
+
+[data-page="drops-page"] #drop-order {
+  border-color: rgba(17, 24, 39, 0.1);
+  background: #ffffff;
+  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.09);
+}
+
+[data-page="drops-page"] #drops-live-pool > div,
+[data-page="drops-page"] .drops-live-row {
+  border-color: rgba(15, 23, 42, 0.14);
+  background: #ffffff;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+}
+
+[data-page="drops-page"] .interactive-btn {
+  transition: transform 160ms ease, box-shadow 180ms ease, background-color 160ms ease, border-color 160ms ease;
+}
+
+[data-page="drops-page"] .interactive-btn:hover {
+  transform: translateY(-1px);
+}
+
+[data-page="drops-page"] [data-order-link].interactive-btn {
+  border-color: rgba(17, 24, 39, 0.2);
+  background: #ffffff;
+}
+
+[data-page="drops-page"] [data-order-link].interactive-btn:hover {
+  border-color: rgba(17, 24, 39, 0.34);
+  background: #fafafa;
+}
+
+[data-page="drops-page"] [data-drop-open-live] {
+  border-color: rgba(17, 24, 39, 0.2);
+  background: #111827;
+  color: #fff;
+}
+
+[data-page="drops-page"] [data-drop-open-live]:hover {
+  background: #0b1220;
+}

@@ -3,6 +3,7 @@ const os = require("node:os");
 const path = require("node:path");
 const { spawn } = require("node:child_process");
 const dotenv = require("dotenv");
+const { Storage } = require("@google-cloud/storage");
 
 const APP_DIR = path.join(__dirname, "..");
 const ROOT_DIR = path.resolve(APP_DIR, "..");
@@ -89,7 +90,59 @@ function joinRemotePath(remote, name) {
   return `${normalizeRemotePath(remote)}/${String(name || "").replace(/^\/+/, "")}`;
 }
 
-async function sendTelegramStatus({ ok, chatId, token, message, inlineButtonUrl = "", inlineButtonText = "Открыть событие" }) {
+function formatBytes(value) {
+  const bytes = Number(value || 0);
+  if (bytes <= 0) return "0 B";
+  const units = ["B", "KB", "MB", "GB", "TB"];
+  const idx = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+  const num = bytes / Math.pow(1024, idx);
+  return `${num.toFixed(idx === 0 ? 0 : 2)} ${units[idx]}`;
+}
+
+function escapeHtml(value) {
+  return String(value || "").replace(/[<>&]/g, (char) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" }[char]));
+}
+
+function normalizeObjectPrefix(prefix) {
+  return String(prefix || "")
+    .trim()
+    .replace(/\\/g, "/")
+    .replace(/^\/+/, "")
+    .replace(/\/+$/, "");
+}
+
+function buildObjectName(prefix, fileName) {
+  const cleanPrefix = normalizeObjectPrefix(prefix);
+  return cleanPrefix ? `${cleanPrefix}/${fileName}` : fileName;
+}
+
+function parseJsonBase64(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return null;
+  try {
+    const decoded = Buffer.from(raw, "base64").toString("utf8");
+    const parsed = JSON.parse(decoded);
+    return parsed && typeof parsed === "object" ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function createStorageClient() {
+  const projectId = String(process.env.BACKUP_GCS_PROJECT_ID || "").trim() || undefined;
+  const keyFile = String(process.env.BACKUP_GCS_KEY_FILE || "").trim();
+  const keyJson = parseJsonBase64(process.env.BACKUP_GCS_KEY_JSON_BASE64);
+
+  if (keyJson) {
+    return new Storage({ projectId: projectId || keyJson.project_id, credentials: keyJson });
+  }
+  if (keyFile) {
+    return new Storage({ projectId, keyFilename: keyFile });
+  }
+  return new Storage({ projectId });
+}
+
+async function sendTelegramStatus({ chatId, token, message, inlineButtonUrl = "", inlineButtonText = "Открыть событие" }) {
   if (!chatId || !token) return;
   try {
     const endpoint = `https://api.telegram.org/bot${token}/sendMessage`;
@@ -116,18 +169,36 @@ async function sendTelegramStatus({ ok, chatId, token, message, inlineButtonUrl 
   } catch (error) {
     console.error(`[backup] telegram notify error: ${error.message}`);
   }
-  if (!ok) {
-    // Keep this function side-effect-only; main flow handles exit code.
-  }
 }
 
-function formatBytes(value) {
-  const bytes = Number(value || 0);
-  if (bytes <= 0) return "0 B";
-  const units = ["B", "KB", "MB", "GB", "TB"];
-  const idx = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
-  const num = bytes / Math.pow(1024, idx);
-  return `${num.toFixed(idx === 0 ? 0 : 2)} ${units[idx]}`;
+async function sendTelegramDocument({ chatId, token, filePath, fileName, caption = "" }) {
+  if (!chatId || !token) return false;
+  try {
+    const endpoint = `https://api.telegram.org/bot${token}/sendDocument`;
+    const fileBuffer = fs.readFileSync(filePath);
+    const form = new FormData();
+    form.append("chat_id", chatId);
+    if (caption) {
+      form.append("caption", caption);
+      form.append("parse_mode", "HTML");
+    }
+    form.append("document", new Blob([fileBuffer]), fileName);
+
+    const response = await fetch(endpoint, {
+      method: "POST",
+      body: form,
+    });
+
+    if (!response.ok) {
+      const body = await response.text().catch(() => "");
+      console.error(`[backup] telegram sendDocument failed (${response.status}): ${body}`);
+      return false;
+    }
+    return true;
+  } catch (error) {
+    console.error(`[backup] telegram sendDocument error: ${error.message}`);
+    return false;
+  }
 }
 
 async function pruneRemoteBackups({ rcloneBin, remote, prefix, keepFiles }) {
@@ -143,9 +214,37 @@ async function pruneRemoteBackups({ rcloneBin, remote, prefix, keepFiles }) {
   const stale = files.slice(keepFiles);
   for (const filename of stale) {
     const full = joinRemotePath(remote, filename);
+    // eslint-disable-next-line no-await-in-loop
     await runCommand(rcloneBin, ["deletefile", full]);
   }
   return { total: files.length, deleted: stale.length };
+}
+
+async function pruneGcsBackups({ bucket, objectPrefix, filePrefix, keepFiles }) {
+  const listPrefix = normalizeObjectPrefix(objectPrefix);
+  const [files] = await bucket.getFiles({
+    prefix: listPrefix ? `${listPrefix}/` : undefined,
+  });
+
+  const candidates = files
+    .filter((item) => {
+      const name = String(item?.name || "");
+      const base = path.posix.basename(name);
+      return base.startsWith(`${filePrefix}-`) && base.endsWith(".dump");
+    })
+    .sort((left, right) => {
+      const a = path.posix.basename(String(left?.name || ""));
+      const b = path.posix.basename(String(right?.name || ""));
+      return b.localeCompare(a);
+    });
+
+  const stale = candidates.slice(keepFiles);
+  for (const item of stale) {
+    // eslint-disable-next-line no-await-in-loop
+    await item.delete({ ignoreNotFound: true });
+  }
+
+  return { total: candidates.length, deleted: stale.length };
 }
 
 async function main() {
@@ -156,15 +255,23 @@ async function main() {
         "",
         "Required env:",
         "  DATABASE_URL or DIRECT_URL",
-        "  BACKUP_RCLONE_REMOTE (example: gdrive:unqx-backups)",
+        "  and one storage target:",
+        "    BACKUP_RCLONE_REMOTE=gdrive:unqx-backups",
+        "    or BACKUP_GCS_BUCKET=unqx-backups",
         "",
         "Optional env:",
+        "  BACKUP_RCLONE_BIN=rclone",
+        "  BACKUP_GCS_PREFIX=db",
+        "  BACKUP_GCS_PROJECT_ID=your-gcp-project",
+        "  BACKUP_GCS_KEY_FILE=/abs/path/service-account.json",
+        "  BACKUP_GCS_KEY_JSON_BASE64=eyJ0eXBlIjoi...",
         "  BACKUP_KEEP_FILES=14",
         "  BACKUP_FILE_PREFIX=unqx-db",
         "  BACKUP_PGDUMP_BIN=pg_dump",
-        "  BACKUP_RCLONE_BIN=rclone",
         "  BACKUP_NOTIFY_TELEGRAM=true",
         "  BACKUP_TELEGRAM_CHAT_ID=-1001234567890",
+        "  BACKUP_TELEGRAM_SEND_FILE=true",
+        "  BACKUP_TELEGRAM_MAX_FILE_MB=45",
         "  BACKUP_STATUS_URL=https://your-domain.com/admin/dashboard",
       ].join("\n"),
     );
@@ -176,10 +283,16 @@ async function main() {
   const pgDumpBin = String(process.env.BACKUP_PGDUMP_BIN || "pg_dump").trim();
   const rcloneBin = String(process.env.BACKUP_RCLONE_BIN || "rclone").trim();
   const rcloneRemote = normalizeRemotePath(process.env.BACKUP_RCLONE_REMOTE || "");
+  const gcsBucket = String(process.env.BACKUP_GCS_BUCKET || "").trim();
+  const gcsPrefix = normalizeObjectPrefix(process.env.BACKUP_GCS_PREFIX || "db");
+  const useRclone = Boolean(rcloneRemote);
+  const useGcs = !useRclone && Boolean(gcsBucket);
   const keepFiles = asInt(process.env.BACKUP_KEEP_FILES, 14);
   const tmpDir = String(process.env.BACKUP_TMP_DIR || os.tmpdir()).trim() || os.tmpdir();
   const filePrefix = String(process.env.BACKUP_FILE_PREFIX || "unqx-db").trim() || "unqx-db";
   const notifyEnabled = asBool(process.env.BACKUP_NOTIFY_TELEGRAM, true);
+  const sendFileToTelegram = asBool(process.env.BACKUP_TELEGRAM_SEND_FILE, true);
+  const tgFileLimitBytes = asInt(process.env.BACKUP_TELEGRAM_MAX_FILE_MB, 45) * 1024 * 1024;
   const tgToken = String(process.env.TELEGRAM_BOT_TOKEN || "").trim();
   const tgChatId = String(process.env.BACKUP_TELEGRAM_CHAT_ID || process.env.TELEGRAM_CHAT_ID || "").trim();
   const statusUrl = String(process.env.BACKUP_STATUS_URL || "").trim();
@@ -187,17 +300,19 @@ async function main() {
   if (!databaseUrl) {
     throw new Error("DATABASE_URL (or DIRECT_URL) is required");
   }
-  if (!rcloneRemote) {
-    throw new Error("BACKUP_RCLONE_REMOTE is required (example: gdrive:unqx-backups)");
+  if (!useRclone && !useGcs) {
+    throw new Error("Set BACKUP_RCLONE_REMOTE (Drive) or BACKUP_GCS_BUCKET (GCS)");
   }
 
   fs.mkdirSync(tmpDir, { recursive: true });
   const fileName = `${filePrefix}-${buildTimestamp()}.dump`;
   const localPath = path.join(tmpDir, fileName);
-  const remotePath = joinRemotePath(rcloneRemote, fileName);
 
+  let uploadedTo = "";
   let sizeBytes = 0;
   let pruned = { total: 0, deleted: 0 };
+  let sentAsDocument = false;
+
   try {
     console.log(`[backup] dump start -> ${localPath}`);
     await runCommand(pgDumpBin, [
@@ -214,33 +329,69 @@ async function main() {
     sizeBytes = stats.size;
     console.log(`[backup] dump done (${formatBytes(sizeBytes)})`);
 
-    console.log(`[backup] upload start -> ${remotePath}`);
-    await runCommand(rcloneBin, ["copyto", localPath, remotePath]);
-    console.log("[backup] upload done");
+    if (useRclone) {
+      const remotePath = joinRemotePath(rcloneRemote, fileName);
+      uploadedTo = remotePath;
+      console.log(`[backup] upload start -> ${remotePath}`);
+      await runCommand(rcloneBin, ["copyto", localPath, remotePath]);
+      console.log("[backup] upload done");
 
-    pruned = await pruneRemoteBackups({
-      rcloneBin,
-      remote: rcloneRemote,
-      prefix: filePrefix,
-      keepFiles,
-    });
+      pruned = await pruneRemoteBackups({
+        rcloneBin,
+        remote: rcloneRemote,
+        prefix: filePrefix,
+        keepFiles,
+      });
+    } else {
+      const storage = createStorageClient();
+      const bucket = storage.bucket(gcsBucket);
+      const objectName = buildObjectName(gcsPrefix, fileName);
+      uploadedTo = `gs://${gcsBucket}/${objectName}`;
+      console.log(`[backup] upload start -> ${uploadedTo}`);
+      await bucket.upload(localPath, {
+        destination: objectName,
+        resumable: true,
+        validation: "crc32c",
+        metadata: { contentType: "application/octet-stream" },
+      });
+      console.log("[backup] upload done");
+
+      pruned = await pruneGcsBackups({
+        bucket,
+        objectPrefix: gcsPrefix,
+        filePrefix,
+        keepFiles,
+      });
+    }
+
     if (pruned.deleted > 0) {
       console.log(`[backup] pruned ${pruned.deleted} old backup(s)`);
+    }
+
+    if (notifyEnabled && sendFileToTelegram && tgToken && tgChatId && sizeBytes <= tgFileLimitBytes) {
+      sentAsDocument = await sendTelegramDocument({
+        chatId: tgChatId,
+        token: tgToken,
+        filePath: localPath,
+        fileName,
+        caption: `<b>DB backup file</b>\n<code>${escapeHtml(fileName)}</code>`,
+      });
     }
 
     const duration = formatDurationMs(Date.now() - startedAt);
     const successText = [
       "<b>Backup: SUCCESS</b>",
-      `File: <code>${fileName}</code>`,
+      `File: <code>${escapeHtml(fileName)}</code>`,
       `Size: <code>${formatBytes(sizeBytes)}</code>`,
-      `Remote: <code>${rcloneRemote}</code>`,
+      `Storage: <code>${useRclone ? "Google Drive (rclone)" : "Google Cloud Storage"}</code>`,
+      `Path: <code>${escapeHtml(uploadedTo)}</code>`,
       `Kept: <code>${Math.min(pruned.total, keepFiles)}</code> / Limit: <code>${keepFiles}</code>`,
       `Duration: <code>${duration}</code>`,
+      `Telegram file: <code>${sentAsDocument ? "sent" : sendFileToTelegram ? "not-sent" : "disabled"}</code>`,
     ].join("\n");
 
     if (notifyEnabled) {
       await sendTelegramStatus({
-        ok: true,
         chatId: tgChatId,
         token: tgToken,
         message: successText,
@@ -251,12 +402,11 @@ async function main() {
     console.log("[backup] success");
   } catch (error) {
     const duration = formatDurationMs(Date.now() - startedAt);
-    const stderr = String(error?.stderr || error?.message || "unknown error")
-      .slice(0, 900)
-      .replace(/[<>&]/g, (char) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" }[char]));
+    const stderr = escapeHtml(String(error?.stderr || error?.message || "unknown error").slice(0, 900));
     const failText = [
       "<b>Backup: FAILED</b>",
-      `Remote: <code>${rcloneRemote || "-"}</code>`,
+      `Storage: <code>${useRclone ? "Google Drive (rclone)" : "Google Cloud Storage"}</code>`,
+      `Path: <code>${escapeHtml(uploadedTo || (useRclone ? rcloneRemote : gcsBucket) || "-")}</code>`,
       `Duration: <code>${duration}</code>`,
       "",
       `<code>${stderr}</code>`,
@@ -264,7 +414,6 @@ async function main() {
 
     if (notifyEnabled) {
       await sendTelegramStatus({
-        ok: false,
         chatId: tgChatId,
         token: tgToken,
         message: failText,

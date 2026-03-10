@@ -4,6 +4,12 @@ const { buildOrderPaymentDraft } = require("./payment-flow");
 const { logPaymentEvent } = require("./payment-events");
 const { sendSlugApprovedToUser, sendSlugAwaitingPaymentToUser, sendSlugRejectedToUser } = require("./telegram");
 const { recalculateAndRefreshPercentiles } = require("./unq-score");
+const {
+    getReferralV1Settings,
+    resolveReferrerForUser,
+    recordBonusLedger,
+} = require("./referral-v1");
+const { finalizeCampaignUsage, releaseCampaignUsage } = require("./referral-v2");
 
 function makeTransitionError(code, message) {
     const error = new Error(message);
@@ -80,6 +86,7 @@ async function applyOrderStatusTransition({
 
         if (nextStatus === "approved") {
             const now = new Date();
+            const referralSettings = await getReferralV1Settings();
             await tx.slug.upsert({
                 where: { fullSlug: row.slug },
                 create: {
@@ -146,7 +153,7 @@ async function applyOrderStatusTransition({
             }
 
             if (order.status !== "approved" && tx.purchase && typeof tx.purchase.create === "function") {
-                await tx.purchase.create({
+                const slugPurchase = await tx.purchase.create({
                     data: {
                         userId: row.userId,
                         type: "slug",
@@ -156,7 +163,19 @@ async function applyOrderStatusTransition({
                         approvedByAdmin: actor,
                         approvedAt: now,
                         note: `order:${row.id};payment:${paymentAuditNote}`,
+                        refCode: order.refCode || null,
+                        refSource: order.refSource || null,
+                        refOffer: order.refOffer || null,
+                        campaignId: order.campaignId || null,
+                        promoCode: order.promoCode || null,
+                        fraudVerdict: order.fraudVerdict || null,
+                        fraudReason: order.fraudReason || null,
+                        campaignSnapshot: order.campaignSnapshot || null,
+                        inviteeDiscountApplied: Number(order.inviteeDiscountApplied || 0),
+                        bonusSpent: Number(order.bonusSpent || 0),
+                        discountCapApplied: Number(order.discountCapApplied || 0),
                     },
+                    select: { id: true },
                 });
 
                 const planPurchaseType = getPlanPurchaseType({
@@ -193,6 +212,92 @@ async function applyOrderStatusTransition({
                         },
                     });
                 }
+
+                const isFraudAllowed = String(order.fraudVerdict || "allow") === "allow";
+                const rewardAmountFromSnapshot = Math.max(
+                    0,
+                    Math.round(Number(order?.campaignSnapshot?.referrerReward || referralSettings.referrerReward || 0)),
+                );
+                const shouldProcessReferral =
+                    referralSettings.enabled ||
+                    Number(order.inviteeDiscountApplied || 0) > 0 ||
+                    Number(order.bonusSpent || 0) > 0 ||
+                    Boolean(order.refCode);
+
+                if (shouldProcessReferral && tx.referralConversion) {
+                    const referrer = await resolveReferrerForUser({
+                        userId: row.userId,
+                        explicitRefCode: order.refCode || "",
+                        sessionRefCode: "",
+                        tx,
+                    });
+
+                    let conversion = null;
+                    if (referrer?.referrerId) {
+                        conversion = await tx.referralConversion.upsert({
+                            where: { orderId: row.id },
+                            create: {
+                                referrerId: referrer.referrerId,
+                                referredId: row.userId,
+                                refCode: referrer.refCode || order.refCode || null,
+                                refSource: order.refSource || null,
+                                refOffer: order.refOffer || null,
+                                status: isFraudAllowed ? "approved" : "pending",
+                                rewardAmount: isFraudAllowed ? rewardAmountFromSnapshot : 0,
+                                inviteeDiscountApplied: Number(order.inviteeDiscountApplied || 0),
+                                bonusSpent: Number(order.bonusSpent || 0),
+                                orderId: row.id,
+                                purchaseId: slugPurchase.id,
+                                approvedAt: isFraudAllowed ? now : null,
+                            },
+                            update: {
+                                status: isFraudAllowed ? "approved" : "pending",
+                                rewardAmount: isFraudAllowed ? rewardAmountFromSnapshot : 0,
+                                inviteeDiscountApplied: Number(order.inviteeDiscountApplied || 0),
+                                bonusSpent: Number(order.bonusSpent || 0),
+                                purchaseId: slugPurchase.id,
+                                approvedAt: isFraudAllowed ? now : null,
+                            },
+                            select: { id: true, referrerId: true },
+                        });
+                    }
+
+                    const bonusSpent = Math.max(0, Number(order.bonusSpent || 0));
+                    if (bonusSpent > 0) {
+                        await recordBonusLedger({
+                            tx,
+                            userId: row.userId,
+                            delta: -bonusSpent,
+                            kind: "bonus_spend",
+                            idempotencyKey: `order:${row.id}:bonus_spend`,
+                            orderId: row.id,
+                            purchaseId: slugPurchase.id,
+                            conversionId: conversion?.id || null,
+                            note: "Bonus spent for approved order",
+                        });
+                    }
+
+                    if (isFraudAllowed && conversion?.referrerId && rewardAmountFromSnapshot > 0) {
+                        await recordBonusLedger({
+                            tx,
+                            userId: conversion.referrerId,
+                            delta: rewardAmountFromSnapshot,
+                            kind: "referral_reward",
+                            idempotencyKey: `refconv:${conversion.id}:reward`,
+                            orderId: row.id,
+                            purchaseId: slugPurchase.id,
+                            conversionId: conversion.id,
+                            note: `Referral reward for order ${row.id}`,
+                        });
+                    }
+                }
+
+                await finalizeCampaignUsage({
+                    tx,
+                    orderId: row.id,
+                    purchaseId: slugPurchase.id,
+                    amountSpent: Number(order.inviteeDiscountApplied || 0),
+                });
             }
         }
 
@@ -219,6 +324,10 @@ async function applyOrderStatusTransition({
                     requestedAt: null,
                     activatedAt: null,
                 },
+            });
+            await releaseCampaignUsage({
+                tx,
+                orderId: row.id,
             });
         }
 

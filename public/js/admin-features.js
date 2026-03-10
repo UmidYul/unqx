@@ -12,6 +12,15 @@
     }
     return Promise.resolve();
   };
+  const showConfirm = (message) => {
+    if (window.UNQAdminDialog?.confirm) {
+      return window.UNQAdminDialog.confirm(message);
+    }
+    if (typeof window.confirm === "function") {
+      return Promise.resolve(window.confirm(message));
+    }
+    return Promise.resolve(false);
+  };
 
   const headers = (extra = {}) => ({ ...(csrf ? { "X-CSRF-Token": csrf } : {}), ...extra });
   const P = (v) => `${Number(v || 0).toLocaleString("ru-RU")} сум`;
@@ -37,6 +46,26 @@
   const menuItem = ({ label, icon, attrs = "", danger = false }) => `<button type="button" class="admin-menu-item${danger ? " is-danger" : ""}" ${attrs}>${I(icon, 16)}<span>${label}</span></button>`;
   const menuSeparator = () => '<div class="admin-menu-sep" role="separator"></div>';
   const menuWrap = (content) => `${kebabButton()}<div class="admin-row-menu is-hidden">${content}</div>`;
+  const encodeAttr = (value) => encodeURIComponent(String(value == null ? "" : value));
+  const decodeAttr = (value) => {
+    try {
+      return decodeURIComponent(String(value || ""));
+    } catch {
+      return String(value || "");
+    }
+  };
+  const toDateInputValue = (value) => {
+    const date = new Date(String(value || ""));
+    if (!Number.isFinite(date.getTime())) return "";
+    const pad = (n) => String(n).padStart(2, "0");
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  };
+  const conditionValueToInput = (conditionValue) => {
+    if (!conditionValue || typeof conditionValue !== "object") return "";
+    const allowed = Array.isArray(conditionValue.allowedSlugs) ? conditionValue.allowedSlugs : [];
+    const masks = Array.isArray(conditionValue.slugPatterns) ? conditionValue.slugPatterns : [];
+    return [...allowed, ...masks].join(" ");
+  };
   function closeAllRowMenus() {
     document.querySelectorAll(".admin-row-menu").forEach((node) => node.classList.add("is-hidden"));
     document.querySelectorAll("[data-kebab-toggle]").forEach((node) => node.setAttribute("aria-expanded", "false"));
@@ -178,24 +207,39 @@
   async function loadReferralsAdmin() {
     const stats = document.getElementById("referrals-stats");
     const table = document.getElementById("referrals-table");
+    const ledgerTable = document.getElementById("referrals-ledger-table");
     const settingsForm = document.getElementById("referrals-settings-form");
     if (!(stats instanceof HTMLElement) || !(table instanceof HTMLElement)) return;
 
-    const [statPayload, rowsPayload, settingsPayload] = await Promise.all([
+    const [statPayload, rowsPayload, ledgerPayload, settingsPayload] = await Promise.all([
       jsonFetch("/api/admin/referrals/stats"),
       jsonFetch("/api/admin/referrals"),
+      jsonFetch("/api/admin/referrals/ledger"),
       jsonFetch("/api/admin/referrals/settings"),
     ]);
+
     if (settingsForm instanceof HTMLFormElement) {
       const enabled = settingsForm.elements.namedItem("enabled");
-      const requirePaid = settingsForm.elements.namedItem("requirePaid");
-      if (enabled instanceof HTMLInputElement) enabled.checked = Boolean(settingsPayload.settings?.enabled);
-      if (requirePaid instanceof HTMLInputElement) requirePaid.checked = Boolean(settingsPayload.settings?.requirePaid);
+      const referrerReward = settingsForm.elements.namedItem("referrerReward");
+      const inviteeDiscount = settingsForm.elements.namedItem("inviteeDiscount");
+      const discountCapPercent = settingsForm.elements.namedItem("discountCapPercent");
+
+      if (enabled instanceof HTMLInputElement) enabled.checked = Boolean(settingsPayload.settings?.feature_referrals);
+      if (referrerReward instanceof HTMLInputElement) {
+        referrerReward.value = String(settingsPayload.settings?.referral_v1_referrer_reward || 50000);
+      }
+      if (inviteeDiscount instanceof HTMLInputElement) {
+        inviteeDiscount.value = String(settingsPayload.settings?.referral_v1_invitee_discount || 100000);
+      }
+      if (discountCapPercent instanceof HTMLInputElement) {
+        discountCapPercent.value = String(settingsPayload.settings?.referral_v1_discount_cap_percent || 30);
+      }
     }
+
     stats.innerHTML = [
-      ["Всего реф-регистраций", statPayload.totalRegistrations],
-      ["Конверсия в оплату", `${statPayload.conversionPaid}%`],
-      ["Выдано наград", statPayload.rewarded],
+      ["Total conversions", statPayload.totalRegistrations],
+      ["Paid conversion", `${statPayload.conversionPaid}%`],
+      ["Bonuses credited", P(statPayload.rewardAmount || 0)],
     ]
       .map(([title, value]) => `<article class="rounded-2xl border border-neutral-200 bg-white p-4"><p class="text-xs uppercase tracking-wide text-neutral-500">${title}</p><p class="mt-2 text-2xl font-black">${value}</p></article>`)
       .join("");
@@ -203,10 +247,20 @@
     table.innerHTML = (rowsPayload.items || []).length
       ? rowsPayload.items
         .map(
-          (item) => `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3">${item.referrer?.username ? `@${item.referrer.username}` : item.referrerTelegramId}</td><td class="px-4 py-3">${item.referred?.username ? `@${item.referred.username}` : item.referredTelegramId}</td><td class="px-4 py-3">${D(item.createdAt)}</td><td class="px-4 py-3">${item.status}</td><td class="px-4 py-3">${item.rewardType || "—"}</td><td class="px-4 py-3"><div class="admin-row-actions">${menuWrap(menuItem({ label: "Выдать награду вручную", icon: "gift", attrs: `data-a="reward-ref" data-id="${item.id}"` }))}</div></td></tr>`,
+          (item) => `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3">${item.referrer?.username ? `@${item.referrer.username}` : item.referrer?.firstName || item.referrerId}</td><td class="px-4 py-3">${item.referred?.username ? `@${item.referred.username}` : item.referred?.firstName || item.referredId}</td><td class="px-4 py-3">${D(item.createdAt)}</td><td class="px-4 py-3">${item.status || "pending"}</td><td class="px-4 py-3">${item.refSource || "direct"} / ${item.refOffer || "-"}</td><td class="px-4 py-3">${P(item.rewardAmount || 0)}</td><td class="px-4 py-3"><div class="admin-row-actions">${menuWrap(menuItem({ label: "Grant reward manually", icon: "gift", attrs: `data-a="reward-ref" data-id="${item.id}"` }))}</div></td></tr>`,
         )
         .join("")
-      : '<tr><td colspan="6" class="px-3 py-8 text-center text-neutral-500">Нет данных</td></tr>';
+      : '<tr><td colspan="7" class="px-3 py-8 text-center text-neutral-500">No data</td></tr>';
+
+    if (ledgerTable instanceof HTMLElement) {
+      ledgerTable.innerHTML = (ledgerPayload.items || []).length
+        ? ledgerPayload.items
+          .map(
+            (item) => `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3">${D(item.createdAt)}</td><td class="px-4 py-3">${item.user?.username ? `@${item.user.username}` : item.user?.firstName || item.userId}</td><td class="px-4 py-3">${item.direction || "-"}</td><td class="px-4 py-3">${item.kind || "-"}</td><td class="px-4 py-3">${P(item.amount || 0)}</td><td class="px-4 py-3">${P(item.balanceAfter || 0)}</td><td class="px-4 py-3 font-mono text-xs">${item.idempotencyKey || "-"}</td></tr>`,
+          )
+          .join("")
+        : '<tr><td colspan="7" class="px-3 py-8 text-center text-neutral-500">No operations</td></tr>';
+    }
   }
 
   async function loadFlashSalesAdmin() {
@@ -222,11 +276,16 @@
           } catch {
             stats = { requestsCount: 0, discountSum: 0 };
           }
+          const conditionRaw = encodeAttr(JSON.stringify(item.conditionValue || null));
           return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3"><p class="font-semibold">${item.title}</p><p class="mt-1 text-xs text-neutral-500">${resolveFlashConditionLabel(item)}</p></td><td class="px-4 py-3">-${item.discountPercent}%</td><td class="px-4 py-3">${D(item.startsAt)} - ${D(item.endsAt)}</td><td class="px-4 py-3">${item.isActive ? "Активен" : "Остановлен"}</td><td class="px-4 py-3">${stats.requestsCount} заявок · ${P(stats.discountSum)}</td><td class="px-4 py-3"><div class="admin-row-actions">${menuWrap([
-            menuItem({ label: "Редактировать", icon: "pen", attrs: 'disabled="disabled"' }),
+            menuItem({
+              label: "Редактировать",
+              icon: "pen",
+              attrs: `data-a="edit-flash" data-id="${item.id}" data-title="${encodeAttr(item.title || "")}" data-description="${encodeAttr(item.description || "")}" data-discount="${item.discountPercent}" data-condition-type="${encodeAttr(item.conditionType || "all")}" data-condition-value="${conditionRaw}" data-starts-at="${encodeAttr(item.startsAt || "")}" data-ends-at="${encodeAttr(item.endsAt || "")}" data-is-active="${item.isActive ? "1" : "0"}" data-telegram-target="${encodeAttr(item.telegramTarget || "")}"`,
+            }),
             menuItem({ label: "Остановить досрочно", icon: "square", attrs: `data-a="stop-flash" data-id="${item.id}"` }),
             menuSeparator(),
-            menuItem({ label: "Удалить", icon: "trash", attrs: 'disabled="disabled"', danger: true }),
+            menuItem({ label: "Удалить", icon: "trash", attrs: `data-a="delete-flash" data-id="${item.id}"`, danger: true }),
           ].join(""))}</div></td></tr>`;
         }),
       ).then((rows) => rows.join(""))
@@ -247,11 +306,15 @@
           // noop
         }
         return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3">${item.title}</td><td class="px-4 py-3">${D(item.dropAt)}</td><td class="px-4 py-3">${item.slugCount}</td><td class="px-4 py-3">${item.isLive ? "LIVE" : item.isFinished ? "Завершён" : "Ожидается"}</td><td class="px-4 py-3">Продано ${live.sold || 0} из ${live.total || item.slugCount}</td><td class="px-4 py-3"><div class="admin-row-actions">${menuWrap([
-          menuItem({ label: "Редактировать", icon: "pen", attrs: 'disabled="disabled"' }),
+          menuItem({
+            label: "Редактировать",
+            icon: "pen",
+            attrs: `data-a="edit-drop" data-id="${item.id}" data-title="${encodeAttr(item.title || "")}" data-description="${encodeAttr(item.description || "")}" data-drop-at="${encodeAttr(item.dropAt || "")}" data-telegram-target="${encodeAttr(item.telegramTarget || "")}"`,
+          }),
           menuItem({ label: "Завершить досрочно", icon: "square", attrs: `data-a="finish-drop" data-id="${item.id}"` }),
           menuItem({ label: "Отправить уведомление вручную", icon: "send", attrs: `data-a="notify-drop" data-id="${item.id}"` }),
           menuSeparator(),
-          menuItem({ label: "Удалить", icon: "trash", attrs: 'disabled="disabled"', danger: true }),
+          menuItem({ label: "Удалить", icon: "trash", attrs: `data-a="delete-drop" data-id="${item.id}"`, danger: true }),
         ].join(""))}</div></td></tr>`;
       }),
     ).then((rows) => rows.join(""));
@@ -283,15 +346,20 @@
     const form = event.currentTarget;
     if (!(form instanceof HTMLFormElement)) return;
     const enabled = form.elements.namedItem("enabled");
-    const requirePaid = form.elements.namedItem("requirePaid");
+    const referrerReward = form.elements.namedItem("referrerReward");
+    const inviteeDiscount = form.elements.namedItem("inviteeDiscount");
+    const discountCapPercent = form.elements.namedItem("discountCapPercent");
     await jsonFetch("/api/admin/referrals/settings", {
       method: "PATCH",
       headers: headers({ "Content-Type": "application/json" }),
       body: JSON.stringify({
         enabled: enabled instanceof HTMLInputElement ? enabled.checked : true,
-        requirePaid: requirePaid instanceof HTMLInputElement ? requirePaid.checked : true,
+        referrerReward: referrerReward instanceof HTMLInputElement ? Number(referrerReward.value || 0) : 0,
+        inviteeDiscount: inviteeDiscount instanceof HTMLInputElement ? Number(inviteeDiscount.value || 0) : 0,
+        discountCapPercent: discountCapPercent instanceof HTMLInputElement ? Number(discountCapPercent.value || 0) : 0,
       }),
     });
+    await loadReferralsAdmin();
   });
 
   document.getElementById("flash-sales-create-form")?.addEventListener("submit", async (event) => {
@@ -396,7 +464,7 @@
         await jsonFetch(`/api/admin/referrals/${encodeURIComponent(id)}/reward`, {
           method: "POST",
           headers: headers({ "Content-Type": "application/json" }),
-          body: JSON.stringify({ rewardType: "discount" }),
+          body: JSON.stringify({ amount: 50000 }),
         });
         await loadReferralsAdmin();
       }
@@ -410,11 +478,140 @@
         });
         await loadFlashSalesAdmin();
       }
+      if (action === "edit-flash") {
+        const id = target.getAttribute("data-id");
+        if (!id) return;
+        const currentTitle = decodeAttr(target.getAttribute("data-title"));
+        const currentDescription = decodeAttr(target.getAttribute("data-description"));
+        const currentDiscount = Number(target.getAttribute("data-discount") || 0);
+        const currentType = decodeAttr(target.getAttribute("data-condition-type")) || "all";
+        const currentStartsAt = toDateInputValue(decodeAttr(target.getAttribute("data-starts-at")));
+        const currentEndsAt = toDateInputValue(decodeAttr(target.getAttribute("data-ends-at")));
+        const currentIsActive = target.getAttribute("data-is-active") === "1";
+        const currentTelegramTarget = decodeAttr(target.getAttribute("data-telegram-target"));
+        let conditionValueRaw = decodeAttr(target.getAttribute("data-condition-value"));
+        let conditionValue = null;
+        try {
+          conditionValue = conditionValueRaw ? JSON.parse(conditionValueRaw) : null;
+        } catch {
+          conditionValue = null;
+        }
+
+        const nextTitle = window.prompt("Название flash sale", currentTitle);
+        if (nextTitle == null) return;
+        const nextDescription = window.prompt("Описание flash sale", currentDescription);
+        if (nextDescription == null) return;
+        const nextDiscountRaw = window.prompt("Скидка в процентах (1-95)", String(currentDiscount));
+        if (nextDiscountRaw == null) return;
+        const nextDiscount = Number(nextDiscountRaw);
+        if (!Number.isFinite(nextDiscount)) {
+          await showAlert("Некорректная скидка");
+          return;
+        }
+        const nextType = (window.prompt("Тип условия: all | pattern_000 | pattern_aaa | sequential_digits | custom", currentType) || "").trim();
+        if (!FLASH_CONDITION_TYPES.has(nextType)) {
+          await showAlert("Некорректный тип условия");
+          return;
+        }
+        let nextConditionValue = null;
+        if (nextType === "custom") {
+          const currentPatternInput = conditionValueToInput(conditionValue);
+          const nextPatternInput = window.prompt("Кастомные slug/маски через пробел или запятую", currentPatternInput);
+          if (nextPatternInput == null) return;
+          const custom = buildFlashCustomConditionValue(nextPatternInput);
+          if (!custom.allowedSlugs.length && !custom.slugPatterns.length) {
+            await showAlert("Добавьте хотя бы один кастомный slug или паттерн");
+            return;
+          }
+          nextConditionValue = {
+            allowedSlugs: custom.allowedSlugs,
+            slugPatterns: custom.slugPatterns,
+          };
+        }
+        const nextStartsAt = window.prompt("Дата старта (YYYY-MM-DDTHH:mm)", currentStartsAt);
+        if (nextStartsAt == null) return;
+        const nextEndsAt = window.prompt("Дата окончания (YYYY-MM-DDTHH:mm)", currentEndsAt);
+        if (nextEndsAt == null) return;
+        const nextActiveRaw = window.prompt("Активность: 1 = активен, 0 = остановлен", currentIsActive ? "1" : "0");
+        if (nextActiveRaw == null) return;
+        const nextTelegramTarget = window.prompt("Telegram target (опционально)", currentTelegramTarget);
+        if (nextTelegramTarget == null) return;
+
+        await jsonFetch(`/api/admin/flash-sales/${encodeURIComponent(id)}`, {
+          method: "PATCH",
+          headers: headers({ "Content-Type": "application/json" }),
+          body: JSON.stringify({
+            title: nextTitle.trim(),
+            description: nextDescription.trim(),
+            discountPercent: nextDiscount,
+            conditionType: nextType,
+            conditionValue: nextConditionValue,
+            startsAt: new Date(nextStartsAt).toISOString(),
+            endsAt: new Date(nextEndsAt).toISOString(),
+            isActive: String(nextActiveRaw).trim() !== "0",
+            telegramTarget: String(nextTelegramTarget || "").trim(),
+          }),
+        });
+        await loadFlashSalesAdmin();
+      }
+      if (action === "delete-flash") {
+        const id = target.getAttribute("data-id");
+        if (!id) return;
+        const ok = await showConfirm("Удалить flash sale? Действие необратимо.");
+        if (!ok) return;
+        await jsonFetch(`/api/admin/flash-sales/${encodeURIComponent(id)}`, {
+          method: "DELETE",
+          headers: headers({ "Content-Type": "application/json" }),
+          body: JSON.stringify({}),
+        });
+        await loadFlashSalesAdmin();
+      }
       if (action === "finish-drop") {
         const id = target.getAttribute("data-id");
         if (!id) return;
         await jsonFetch(`/api/admin/drops/${encodeURIComponent(id)}/finish`, {
           method: "POST",
+          headers: headers({ "Content-Type": "application/json" }),
+          body: JSON.stringify({}),
+        });
+        await loadDropsAdmin();
+      }
+      if (action === "edit-drop") {
+        const id = target.getAttribute("data-id");
+        if (!id) return;
+        const currentTitle = decodeAttr(target.getAttribute("data-title"));
+        const currentDescription = decodeAttr(target.getAttribute("data-description"));
+        const currentDropAt = toDateInputValue(decodeAttr(target.getAttribute("data-drop-at")));
+        const currentTelegramTarget = decodeAttr(target.getAttribute("data-telegram-target"));
+
+        const nextTitle = window.prompt("Название дропа", currentTitle);
+        if (nextTitle == null) return;
+        const nextDescription = window.prompt("Описание дропа", currentDescription);
+        if (nextDescription == null) return;
+        const nextDropAt = window.prompt("Дата дропа (YYYY-MM-DDTHH:mm)", currentDropAt);
+        if (nextDropAt == null) return;
+        const nextTelegramTarget = window.prompt("Telegram target (опционально)", currentTelegramTarget);
+        if (nextTelegramTarget == null) return;
+
+        await jsonFetch(`/api/admin/drops/${encodeURIComponent(id)}`, {
+          method: "PATCH",
+          headers: headers({ "Content-Type": "application/json" }),
+          body: JSON.stringify({
+            title: nextTitle.trim(),
+            description: nextDescription.trim(),
+            dropAt: new Date(nextDropAt).toISOString(),
+            telegramTarget: String(nextTelegramTarget || "").trim(),
+          }),
+        });
+        await loadDropsAdmin();
+      }
+      if (action === "delete-drop") {
+        const id = target.getAttribute("data-id");
+        if (!id) return;
+        const ok = await showConfirm("Удалить дроп? Действие необратимо.");
+        if (!ok) return;
+        await jsonFetch(`/api/admin/drops/${encodeURIComponent(id)}`, {
+          method: "DELETE",
           headers: headers({ "Content-Type": "application/json" }),
           body: JSON.stringify({}),
         });

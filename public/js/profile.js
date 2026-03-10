@@ -1,4 +1,4 @@
-(function () {
+﻿(function () {
   const root = document.body;
   if (!root || root.getAttribute("data-page") !== "profile-page") return;
   const reactivationWindowDays = Math.max(1, Number(root.getAttribute("data-reactivation-window-days") || 30));
@@ -37,8 +37,10 @@
 
   const fp = (v) => `${Number(v || 0).toLocaleString("ru-RU")} сум`;
   const DEFAULT_PROFILE_AVATAR = "/brand/profile-thin.svg";
+  const DEFAULT_BRACELET_PRICE = 300_000;
   const PROFILE_THEMES = ["default_dark", "arctic", "linen", "marble", "forest", "royal_ivory", "midnight_obsidian"];
   const PREMIUM_ONLY_THEMES = new Set(["arctic", "linen", "marble", "forest", "royal_ivory", "midnight_obsidian"]);
+  const TELEGRAM_PAYMENT_USERNAME = "unqx_uz";
   const fh = (v) => {
     if (!v) return "—";
     const diff = Math.max(0, Date.now() - new Date(v).getTime());
@@ -72,6 +74,78 @@
   let modalIsOpen = false;
   let modalConfirmHandler = null;
   let saveAlertTimer = null;
+  let profileRefreshTimer = null;
+  let profileRefreshInFlight = false;
+  let braceletModalLastFocused = null;
+  let braceletModalOpen = false;
+
+  const toOrderPaymentReference = (orderId) => `UNQX-${String(orderId || "").replace(/[^a-zA-Z0-9]/g, "").slice(0, 10).toUpperCase()}`;
+
+  const planLabel = (value) => (String(value || "").toLowerCase() === "premium" ? "Премиум" : "Базовый");
+
+  const buildTelegramPaymentUrl = (requestItem) => {
+    const serverUrl = String(requestItem?.paymentUrl || "").trim();
+    if (/^https:\/\/t\.me\/[a-zA-Z0-9_]{4,}(?:\?|$)/i.test(serverUrl)) {
+      return serverUrl;
+    }
+    const orderCode = toOrderPaymentReference(requestItem?.id);
+    const slug = String(requestItem?.slug || "").toUpperCase();
+    const slugPrice = Number(requestItem?.slugPrice || 0);
+    const planPrice = Number(requestItem?.planPrice || 0);
+    const braceletPrice = requestItem?.bracelet ? Number(requestItem?.braceletPrice || 300_000) : 0;
+    const total = Number(requestItem?.totalOneTime || slugPrice + planPrice + braceletPrice);
+    const userName = String(s.user?.displayName || s.user?.firstName || "").trim() || "не указано";
+    const userEmail = String(s.user?.email || "").trim() || "не указан";
+    const message = `Здравствуйте! Хочу оплатить заказ #️⃣ ${orderCode}\n\nUNQ: ${slug}\nФИО: ${userName}\nEmail: ${userEmail}\n\n💳 Детализация оплаты:\n• Slug ${slug}: ${Number(slugPrice).toLocaleString("ru-RU")} сум\n• Тариф ${planLabel(requestItem?.requestedPlan)}: ${Number(planPrice).toLocaleString("ru-RU")} сум\n• Браслет: ${Number(braceletPrice).toLocaleString("ru-RU")} сум\n\nИтого к оплате: ${Number(total).toLocaleString("ru-RU")} сум`;
+    return `https://t.me/${TELEGRAM_PAYMENT_USERNAME}?text=${encodeURIComponent(message)}`;
+  };
+
+  const openTelegramUrl = (url) => {
+    const fallbackUrl = `https://t.me/${TELEGRAM_PAYMENT_USERNAME}`;
+    const telegramUrl = /^https:\/\/t\.me\/[a-zA-Z0-9_]{4,}(?:\?|$)/i.test(url || "") ? url : fallbackUrl;
+    const [baseUrl, query = ""] = telegramUrl.split("?");
+    const username = String(baseUrl.replace(/^https:\/\/t\.me\//i, "")).trim() || TELEGRAM_PAYMENT_USERNAME;
+    const params = new URLSearchParams(query);
+    const text = params.get("text");
+    const tgAppUrl = `tg://resolve?domain=${encodeURIComponent(username)}${text ? `&text=${encodeURIComponent(text)}` : ""}`;
+    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || "");
+    if (isMobile) {
+      window.location.href = tgAppUrl;
+      window.setTimeout(() => {
+        window.location.href = telegramUrl;
+      }, 900);
+      return;
+    }
+    window.location.href = telegramUrl;
+  };
+
+  const buildPendingPaymentUrl = (order) => {
+    const serverUrl = String(order?.paymentUrl || "").trim();
+    if (/^https:\/\/t\.me\/[a-zA-Z0-9_]{4,}(?:\?|$)/i.test(serverUrl)) {
+      return serverUrl;
+    }
+    const reference = String(order?.paymentReference || "").trim() || toOrderPaymentReference(order?.id);
+    const slug = String(order?.slug || "").trim().toUpperCase();
+    const slugPrice = Number(order?.slugPrice || 0);
+    const planPrice = Number(order?.planPrice || 0);
+    const braceletPrice = order?.bracelet ? Number(order?.braceletPrice || 300_000) : 0;
+    const total = Number(order?.totalOneTime || slugPrice + planPrice + braceletPrice);
+    const userName = String(s.user?.displayName || s.user?.firstName || "").trim() || "не указано";
+    const userEmail = String(s.user?.email || "").trim() || "не указан";
+    const message = `Здравствуйте! Хочу оплатить заказ #️⃣ ${reference}
+
+UNQ: ${slug}
+ФИО: ${userName}
+Email: ${userEmail}
+
+💳 Детализация оплаты:
+• Slug ${slug}: ${Number(slugPrice).toLocaleString("ru-RU")} сум
+• Тариф ${planLabel(order?.requestedPlan)}: ${Number(planPrice).toLocaleString("ru-RU")} сум
+• Браслет: ${Number(braceletPrice).toLocaleString("ru-RU")} сум
+
+Итого к оплате: ${Number(total).toLocaleString("ru-RU")} сум`;
+    return `https://t.me/${TELEGRAM_PAYMENT_USERNAME}?text=${encodeURIComponent(message)}`;
+  };
 
   const buttonTypeLabels = {
     phone: "Позвонить",
@@ -160,6 +234,7 @@
     reqBanner: $("#profile-requests-banner"),
     reqTable: $("#profile-requests-table"),
     reqTableWrap: $("#profile-requests-table-wrap"),
+    reqMobileList: $("#profile-requests-mobile-list"),
     reqEmpty: $("#profile-requests-empty-state"),
     reqNewBtn: $("#profile-new-request-btn"),
     refLink: $("#profile-ref-link"),
@@ -168,8 +243,14 @@
     refInvited: $("#profile-ref-stat-invited"),
     refPaid: $("#profile-ref-stat-paid"),
     refRewarded: $("#profile-ref-stat-rewarded"),
+    refBonusBalance: $("#profile-ref-bonus-balance"),
+    refBonusEarned: $("#profile-ref-bonus-earned"),
+    refBonusSpent: $("#profile-ref-bonus-spent"),
     refTable: $("#profile-ref-table"),
     refRewards: $("#profile-ref-rewards"),
+    refBonusHistory: $("#profile-ref-bonus-history"),
+    refCampaigns: $("#profile-ref-campaigns"),
+    refFraud: $("#profile-ref-fraud"),
 
     stName: $("#profile-settings-display-name"),
     stCity: $("#profile-settings-city"),
@@ -206,6 +287,13 @@
     qrCopy: $("#profile-qr-copy"),
     qrDownloadPng: $("#profile-qr-download-png"),
     logout: $("#profile-logout-btn"),
+
+    braceletModal: $("#profile-bracelet-modal"),
+    braceletModalDialog: $("#profile-bracelet-modal-dialog"),
+    braceletModalPrice: $("#profile-bracelet-modal-price"),
+    braceletModalSubmit: $("#profile-bracelet-modal-submit"),
+    braceletModalClose: $("#profile-bracelet-modal-close"),
+    braceletModalCloseTop: $("#profile-bracelet-modal-close-top"),
 
     modal: $("#profile-modal"),
     modalDialog: $("#profile-modal-dialog"),
@@ -283,6 +371,31 @@
     el.modalOk.addEventListener("click", once);
   };
 
+  const closeBraceletModal = () => {
+    if (!(el.braceletModal instanceof HTMLElement)) return;
+    el.braceletModal.classList.add("hidden");
+    el.braceletModal.classList.remove("flex");
+    braceletModalOpen = false;
+    if (braceletModalLastFocused instanceof HTMLElement) {
+      braceletModalLastFocused.focus();
+    }
+  };
+
+  const openBraceletModal = () => {
+    if (!(el.braceletModal instanceof HTMLElement)) return;
+    const priceValue = Number(s.pricing?.braceletPrice || DEFAULT_BRACELET_PRICE);
+    if (el.braceletModalPrice instanceof HTMLElement) {
+      el.braceletModalPrice.textContent = `${priceValue.toLocaleString("ru-RU")} сум`;
+    }
+    braceletModalLastFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    el.braceletModal.classList.remove("hidden");
+    el.braceletModal.classList.add("flex");
+    braceletModalOpen = true;
+    requestAnimationFrame(() => {
+      el.braceletModalDialog?.focus();
+    });
+  };
+
   const showSaveAlert = (message) => {
     let node = document.getElementById("profile-save-success-alert");
     if (!(node instanceof HTMLElement)) {
@@ -316,7 +429,7 @@
 
   const currentTab = () => {
     const raw = (location.hash || "#slugs").replace("#", "");
-    return ["slugs", "card", "analytics", "requests", "referrals", "settings"].includes(raw) ? raw : "slugs";
+    return ["slugs", "card", "analytics", "requests", "settings"].includes(raw) ? raw : "slugs";
   };
 
   const setTab = () => {
@@ -719,6 +832,7 @@
     if (plan === "none" && !s.requests.length) {
       if (el.reqBanner) el.reqBanner.classList.add("hidden");
       if (el.reqTableWrap instanceof HTMLElement) el.reqTableWrap.classList.add("hidden");
+      if (el.reqMobileList instanceof HTMLElement) el.reqMobileList.classList.add("hidden");
       if (el.reqEmpty instanceof HTMLElement) {
         el.reqEmpty.classList.remove("hidden");
         el.reqEmpty.innerHTML = renderStateCard({
@@ -732,13 +846,82 @@
       return;
     }
     if (el.reqTableWrap instanceof HTMLElement) el.reqTableWrap.classList.remove("hidden");
+    if (el.reqMobileList instanceof HTMLElement) el.reqMobileList.classList.remove("hidden");
     if (el.reqEmpty instanceof HTMLElement) el.reqEmpty.classList.add("hidden");
 
+    if (el.reqMobileList) {
+      el.reqMobileList.innerHTML = s.requests.length
+        ? s.requests
+          .map((requestItem) => {
+            const normalizedStatus = String(requestItem.status || "").toLowerCase();
+            const showNote = ["rejected", "expired"].includes(normalizedStatus);
+            const canResumePayment = normalizedStatus === "new" || normalizedStatus === "contacted";
+            const totalPrice = Number(requestItem.slugPrice || 0) + Number(requestItem.planPrice || 0) + (requestItem.bracelet ? 300000 : 0);
+            const payActionButton = canResumePayment
+              ? `<button type="button" data-a="pay-request" data-order-id="${esc(requestItem.id)}" class="interactive-btn min-h-11 w-full rounded-lg bg-neutral-900 px-3 py-2 text-xs font-semibold text-white">Оплатить</button>`
+              : "";
+            const cancelActionButton = normalizedStatus === "new"
+              ? `<button type="button" data-a="cancel-request" data-order-id="${esc(requestItem.id)}" class="interactive-btn min-h-11 w-full rounded-lg border border-red-200 bg-white px-3 py-2 text-xs font-semibold text-red-700">Отменить</button>`
+              : "";
+            const actionButtons = [payActionButton, cancelActionButton].filter(Boolean).join("");
+            return `<article class="rounded-xl border border-neutral-200 bg-white p-3">
+              <div class="flex items-start justify-between gap-2">
+                <div class="min-w-0">
+                  <p class="text-[11px] uppercase tracking-[0.12em] text-neutral-500">UNQ</p>
+                  <p class="break-all font-mono text-sm font-semibold text-neutral-900">${esc(requestItem.slug)}</p>
+                </div>
+                <div class="shrink-0 text-right">
+                  <p class="text-[11px] uppercase tracking-[0.12em] text-neutral-500">Статус</p>
+                  <p class="text-sm font-semibold text-neutral-800">${esc(requestItem.statusBadge || requestItem.status)}</p>
+                </div>
+              </div>
+              <div class="mt-3 grid grid-cols-1 gap-2 text-xs text-neutral-600 sm:grid-cols-2">
+                <div>
+                  <p class="text-[11px] uppercase tracking-[0.12em] text-neutral-500">Дата</p>
+                  <p class="break-words">${fdt(requestItem.createdAt)}</p>
+                </div>
+                <div>
+                  <p class="text-[11px] uppercase tracking-[0.12em] text-neutral-500">Покупка</p>
+                  <p class="break-words">${requestItem.purchasedAt ? fdt(requestItem.purchasedAt) : "—"}</p>
+                </div>
+                <div>
+                  <p class="text-[11px] uppercase tracking-[0.12em] text-neutral-500">Тариф</p>
+                  <p>${requestItem.requestedPlan === "premium" ? "Премиум" : "Базовый"}</p>
+                </div>
+                <div>
+                  <p class="text-[11px] uppercase tracking-[0.12em] text-neutral-500">Браслет</p>
+                  <p>${requestItem.bracelet ? "Да" : "Нет"}</p>
+                </div>
+              </div>
+              <div class="mt-3 rounded-lg border border-neutral-200 bg-neutral-50 px-2.5 py-2">
+                <p class="text-[11px] uppercase tracking-[0.12em] text-neutral-500">Цена</p>
+                <p class="text-sm font-semibold text-neutral-900">${fp(totalPrice)}</p>
+                <p class="text-[11px] text-neutral-500">${requestItem.purchasedAt ? `Единоразовая покупка · ${fd(requestItem.purchasedAt)}` : "Единоразовая покупка"}</p>
+              </div>
+              ${showNote ? `<p class="mt-3 text-xs text-rose-700">Примечание: ${esc(requestItem.adminNote || "—")}</p>` : ""}
+              ${actionButtons ? `<div class="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">${actionButtons}</div>` : ""}
+            </article>`;
+          })
+          .join("")
+        : '<div class="rounded-xl border border-neutral-200 bg-white px-3 py-5 text-center text-sm text-neutral-500">Заявок пока нет</div>';
+    }
     el.reqTable.innerHTML = s.requests.length
       ? s.requests
         .map(
           (requestItem) => {
-            const showNote = ["rejected", "expired"].includes(String(requestItem.status).toLowerCase());
+            const normalizedStatus = String(requestItem.status || "").toLowerCase();
+            const showNote = ["rejected", "expired"].includes(normalizedStatus);
+            const canResumePayment = normalizedStatus === "new" || normalizedStatus === "contacted";
+            const actionButtons = [
+              canResumePayment
+                ? `<button type="button" data-a="pay-request" data-order-id="${esc(requestItem.id)}" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold text-neutral-800">Оплатить</button>`
+                : "",
+              normalizedStatus === "new"
+                ? `<button type="button" data-a="cancel-request" data-order-id="${esc(requestItem.id)}" class="interactive-btn min-h-11 rounded-lg border border-red-200 px-2.5 py-1 text-xs font-semibold text-red-700">Отменить</button>`
+                : "",
+            ]
+              .filter(Boolean)
+              .join('<span class="inline-block w-1"></span>');
             return `<tr class="border-t border-neutral-100">
               <td class="px-3 py-2">${fdt(requestItem.createdAt)}</td>
               <td class="px-3 py-2">${requestItem.purchasedAt ? fdt(requestItem.purchasedAt) : "—"}</td>
@@ -747,7 +930,7 @@
               <td class="px-3 py-2">${requestItem.requestedPlan === "premium" ? "Премиум" : "Базовый"}</td>
               <td class="px-3 py-2">${requestItem.bracelet ? "Да" : "Нет"}</td>
               <td class="px-3 py-2">${esc(requestItem.statusBadge || requestItem.status)}</td>
-              <td class="px-3 py-2">${showNote ? esc(requestItem.adminNote || "—") : ""}${requestItem.status === "new" ? `<div class="mt-2"><button type="button" data-a="cancel-request" data-order-id="${esc(requestItem.id)}" class="interactive-btn min-h-11 rounded-lg border border-red-200 px-2.5 py-1 text-xs font-semibold text-red-700">Отменить</button></div>` : ""}</td>
+              <td class="px-3 py-2">${showNote ? esc(requestItem.adminNote || "—") : ""}${actionButtons ? `<div class="mt-2">${actionButtons}</div>` : ""}</td>
             </tr>`;
           }
         )
@@ -755,6 +938,7 @@
       : '<tr><td colspan="9" class="px-3 py-8 text-center text-neutral-500">Заявок пока нет</td></tr>';
 
     const approved = s.requests.find((item) => item.status === "approved");
+    const needsPayment = s.requests.find((item) => ["new", "contacted"].includes(String(item.status || "").toLowerCase()));
     const paid = s.requests.find((item) => item.status === "paid");
     const count = s.slugs.length;
     if (el.reqNewBtn instanceof HTMLButtonElement) {
@@ -777,6 +961,13 @@
       el.reqBanner.classList.remove("hidden");
       el.reqBanner.className = "mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800";
       el.reqBanner.innerHTML = `Твой UNQ ${esc(approved.slug)} одобрен! Перейди во вкладку 'Моя визитка' чтобы создать карточку. <button data-a="goto-card" class="underline">Создать визитку</button>`;
+      return;
+    }
+
+    if (needsPayment) {
+      el.reqBanner.classList.remove("hidden");
+      el.reqBanner.className = "mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900";
+      el.reqBanner.innerHTML = `Есть незавершенная оплата по заявке <span class="font-mono">${esc(needsPayment.slug || "")}</span>. <button type="button" data-a="pay-request" data-order-id="${esc(needsPayment.id)}" class="underline font-semibold">Продолжить в Telegram</button>`;
       return;
     }
 
@@ -888,7 +1079,10 @@
     }
     if (el.refInvited) el.refInvited.textContent = String(payload.stats?.invited || 0);
     if (el.refPaid) el.refPaid.textContent = String(payload.stats?.paid || 0);
-    if (el.refRewarded) el.refRewarded.textContent = String(payload.stats?.rewarded || 0);
+    if (el.refRewarded) el.refRewarded.textContent = `${Number(payload.stats?.rewardsAmount || 0).toLocaleString("ru-RU")} сум`;
+    if (el.refBonusBalance) el.refBonusBalance.textContent = `${Number(payload.bonus?.balance || 0).toLocaleString("ru-RU")} сум`;
+    if (el.refBonusEarned) el.refBonusEarned.textContent = `${Number(payload.bonus?.totalEarned || 0).toLocaleString("ru-RU")} сум`;
+    if (el.refBonusSpent) el.refBonusSpent.textContent = `${Number(payload.bonus?.totalSpent || 0).toLocaleString("ru-RU")} сум`;
 
     if (el.refTable) {
       const rows = Array.isArray(payload.referrals) ? payload.referrals : [];
@@ -896,7 +1090,7 @@
         ? rows
           .map(
             (item) =>
-              `<tr class="border-t border-neutral-100"><td class="px-3 py-2">${esc(item.name || "UNQX User")}</td><td class="px-3 py-2">${fdt(item.createdAt)}</td><td class="px-3 py-2">${esc(item.status)}</td><td class="px-3 py-2">${esc(item.rewardType || "—")}</td></tr>`,
+              `<tr class="border-t border-neutral-100"><td class="px-3 py-2">${esc(item.name || "UNQX User")}</td><td class="px-3 py-2">${fdt(item.createdAt)}</td><td class="px-3 py-2">${esc(item.status)}</td><td class="px-3 py-2">${Number(item.rewardAmount || 0).toLocaleString("ru-RU")} сум</td></tr>`,
           )
           .join("")
         : '<tr><td colspan="4" class="px-3 py-8 text-center text-neutral-500">Пока нет рефералов</td></tr>';
@@ -919,6 +1113,39 @@
           return `<article class="rounded-xl border border-neutral-200 p-3"><p class="text-sm font-semibold">За ${rule.threshold} оплативших</p><p class="mt-1 text-sm text-neutral-600">${esc(rule.rewardLabel || "")}</p><p class="mt-2 text-xs text-neutral-500">${statusLabel}</p>${claimButton}</article>`;
         })
         .join("");
+    }
+    if (el.refBonusHistory) {
+      const rows = Array.isArray(payload.bonus?.history) ? payload.bonus.history : [];
+      el.refBonusHistory.innerHTML = rows.length
+        ? rows
+            .map(
+              (item) =>
+                `<tr class="border-t border-neutral-100"><td class="px-3 py-2">${fdt(item.createdAt)}</td><td class="px-3 py-2">${esc(item.kind || "—")}</td><td class="px-3 py-2">${item.direction === "debit" ? "-" : "+"}${Number(item.amount || 0).toLocaleString("ru-RU")} сум</td><td class="px-3 py-2">${Number(item.balanceAfter || 0).toLocaleString("ru-RU")} сум</td><td class="px-3 py-2">${esc(item.note || "—")}</td></tr>`,
+            )
+            .join("")
+        : '<tr><td colspan="5" class="px-3 py-8 text-center text-neutral-500">История бонусов появится после операций</td></tr>';
+    }
+    if (el.refCampaigns) {
+      const rows = Array.isArray(payload.campaigns) ? payload.campaigns : [];
+      el.refCampaigns.innerHTML = rows.length
+        ? rows
+            .map(
+              (item) =>
+                `<tr class="border-t border-neutral-100"><td class="px-3 py-2">${esc(item.name || "Campaign")}</td><td class="px-3 py-2">${esc(item.type || "-")}</td><td class="px-3 py-2">${esc(`${item.source || "-"} / ${item.offer || "-"}`)}</td><td class="px-3 py-2">${esc(item.promoCode || "-")}</td></tr>`,
+            )
+            .join("")
+        : '<tr><td colspan="4" class="px-3 py-8 text-center text-neutral-500">Активных кампаний нет</td></tr>';
+    }
+    if (el.refFraud) {
+      const rows = Array.isArray(payload.fraud) ? payload.fraud : [];
+      el.refFraud.innerHTML = rows.length
+        ? rows
+            .map(
+              (item) =>
+                `<tr class="border-t border-neutral-100"><td class="px-3 py-2">${fdt(item.createdAt)}</td><td class="px-3 py-2">${esc(String(item.verdict || "").toUpperCase())}</td><td class="px-3 py-2">${esc(item.reason || "—")}</td></tr>`,
+            )
+            .join("")
+        : '<tr><td colspan="3" class="px-3 py-8 text-center text-neutral-500">Проверок пока нет</td></tr>';
     }
   };
 
@@ -950,7 +1177,7 @@
 
     const tips = [];
     if (Number(score.scoreBracelet || 0) === 0) {
-      tips.push('<div class="flex items-center justify-between gap-2"><span>Добавь NFC-браслет - +100 к Score</span><button type="button" data-order-link data-order-bracelet="1" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold">Заказать браслет</button></div>');
+      tips.push('<div class="flex items-center justify-between gap-2"><span>Добавь NFC-браслет - +100 к Score</span><button type="button" data-a="open-bracelet-order-modal" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold">Заказать браслет</button></div>');
     }
     if (Number(score.scorePlan || 0) === 0) {
       const price = Number(s.pricing?.premiumUpgradePrice || 80_000).toLocaleString("ru-RU");
@@ -961,6 +1188,7 @@
     if (Number(score.scoreCtr || 0) < 100) tips.push("<p>Добавь больше кнопок чтобы повысить активность</p>");
     if (el.scoreTipsList) {
       el.scoreTipsList.innerHTML = tips.length ? tips.join("") : "<p>Отличный прогресс. Поддерживай активность визитки.</p>";
+      window.dispatchEvent(new CustomEvent("unqx:bind-order-ctas"));
     }
 
     const rawHistory = Array.isArray(score.history) ? score.history : [];
@@ -1385,6 +1613,11 @@
         return;
       }
 
+      if (action === "open-bracelet-order-modal") {
+        openBraceletModal();
+        return;
+      }
+
       if (action === "rm-tag") {
         const index = Number(target.getAttribute("data-i"));
         if (!Number.isNaN(index)) {
@@ -1481,7 +1714,7 @@
     void refreshAnalytics();
   });
 
-  document.addEventListener("click", (event) => {
+  document.addEventListener("click", async (event) => {
     const target = event.target instanceof HTMLElement ? event.target : null;
     if (!target) return;
     const periodButton = target.closest("[data-analytics-period]");
@@ -1516,13 +1749,55 @@
   el.modal?.addEventListener("click", (event) => {
     if (event.target === el.modal) closeModal();
   });
+  el.braceletModalClose?.addEventListener("click", closeBraceletModal);
+  el.braceletModalCloseTop?.addEventListener("click", closeBraceletModal);
+  el.braceletModal?.addEventListener("click", (event) => {
+    if (event.target === el.braceletModal) closeBraceletModal();
+  });
+  el.braceletModalSubmit?.addEventListener("click", () => {
+    closeBraceletModal();
+    if (window.UNQOrderModal && typeof window.UNQOrderModal.open === "function") {
+      window.UNQOrderModal.open({ bracelet: true });
+    }
+  });
   document.addEventListener("keydown", (event) => {
-    if (!modalIsOpen) return;
     if (event.key === "Escape") {
-      closeModal();
+      if (braceletModalOpen) {
+        closeBraceletModal();
+        return;
+      }
+      if (modalIsOpen) {
+        closeModal();
+      }
       return;
     }
-    if (event.key !== "Tab" || !(el.modalDialog instanceof HTMLElement)) return;
+    if (event.key !== "Tab") return;
+    if (braceletModalOpen && el.braceletModalDialog instanceof HTMLElement) {
+      const focusable = Array.from(
+        el.braceletModalDialog.querySelectorAll(
+          'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ),
+      ).filter((item) => item instanceof HTMLElement && item.offsetParent !== null);
+      if (!focusable.length) {
+        event.preventDefault();
+        el.braceletModalDialog.focus();
+        return;
+      }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      const current = document.activeElement;
+      if (event.shiftKey && current === first) {
+        event.preventDefault();
+        last.focus();
+        return;
+      }
+      if (!event.shiftKey && current === last) {
+        event.preventDefault();
+        first.focus();
+      }
+      return;
+    }
+    if (!modalIsOpen || !(el.modalDialog instanceof HTMLElement)) return;
     const focusable = Array.from(
       el.modalDialog.querySelectorAll(
         'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
@@ -1604,9 +1879,30 @@
     }
   });
 
-  document.addEventListener("click", (event) => {
+  document.addEventListener("click", async (event) => {
     const target = event.target instanceof HTMLElement ? event.target : null;
     if (!target) return;
+    const payNode = target.closest('[data-a="pay-request"]');
+    if (payNode instanceof HTMLElement) {
+      const orderId = String(payNode.getAttribute("data-order-id") || "").trim();
+      const requestItem = s.requests.find((item) => String(item.id) === orderId);
+      let url = "";
+      try {
+        const requestedPlan = String(requestItem?.requestedPlan || "basic").toLowerCase() === "premium" ? "premium" : "basic";
+        const precheck = await api(`/api/cards/order-precheck?requestedPlan=${encodeURIComponent(requestedPlan)}`);
+        const pending = precheck?.pendingOrder && typeof precheck.pendingOrder === "object" ? precheck.pendingOrder : null;
+        if (pending) {
+          url = buildPendingPaymentUrl(pending);
+        }
+      } catch {
+        // fallback to local request snapshot
+      }
+      if (!url) {
+        url = buildTelegramPaymentUrl(requestItem || { id: orderId, slug: "", requestedPlan: "basic" });
+      }
+      openTelegramUrl(url);
+      return;
+    }
     const cancelNode = target.closest('[data-a="cancel-request"]');
     if (cancelNode instanceof HTMLElement) {
       const orderId = String(cancelNode.getAttribute("data-order-id") || "").trim();
@@ -1734,7 +2030,7 @@
 
     const previousDefault = buttonTypeLabels[prev.type] || "";
     const nextDefault = buttonTypeLabels[type] || "";
-    if ((label || "").trim() === "" || label === previousDefault) {
+    if (type !== prev.type && label === previousDefault) {
       label = nextDefault;
       if (labelField instanceof HTMLInputElement) {
         labelField.value = label;
@@ -2112,5 +2408,59 @@
     }
   });
 
+  const refreshProfileSoon = (delayMs = 150) => {
+    if (profileRefreshTimer) {
+      clearTimeout(profileRefreshTimer);
+      profileRefreshTimer = null;
+    }
+    profileRefreshTimer = setTimeout(async () => {
+      if (profileRefreshInFlight) return;
+      profileRefreshInFlight = true;
+      try {
+        await load();
+      } catch {
+        // explicit user actions already show errors
+      } finally {
+        profileRefreshInFlight = false;
+      }
+    }, Math.max(0, Number(delayMs) || 0));
+  };
+
+  window.addEventListener("unqx:order:submitted", () => {
+    location.hash = "#requests";
+    refreshProfileSoon(80);
+  });
+
+  window.addEventListener("unqx:order:cancelled", () => {
+    refreshProfileSoon(80);
+  });
+
+  window.addEventListener("focus", () => {
+    refreshProfileSoon(150);
+  });
+
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") {
+      refreshProfileSoon(150);
+    }
+  });
   load().catch((error) => showModal("Ошибка", error.message || "Не удалось загрузить профиль"));
 })();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

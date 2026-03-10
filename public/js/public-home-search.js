@@ -176,14 +176,43 @@ function calculateSlugPricing(letters, digits) {
 
   const letterData = getLetterMultiplier(normalizedLetters);
   const digitData = getDigitMultiplier(normalizedDigits);
-  const total = Number(slugPricingConfig?.basePrice || DEFAULT_HOME_SLUG_PRICING.basePrice) * letterData.multiplier * digitData.multiplier;
+  const slug = `${normalizedLetters}${normalizedDigits}`;
+  const multipliedBase = Number(slugPricingConfig?.basePrice || DEFAULT_HOME_SLUG_PRICING.basePrice) * letterData.multiplier * digitData.multiplier;
+  const customRules = Array.isArray(slugPricingConfig?.customRules) ? slugPricingConfig.customRules : [];
+  let customDeltaTotal = 0;
+  const customBreakdown = [];
+  for (const rawRule of customRules) {
+    if (!rawRule || typeof rawRule !== "object") continue;
+    const pattern = String(rawRule.pattern || "").trim().toUpperCase();
+    const type = String(rawRule.type || "").trim();
+    const delta = Number(rawRule.delta || 0);
+    if (!pattern || !Number.isFinite(delta) || delta === 0) continue;
+    let match = false;
+    if (type === "contains" && slug.includes(pattern)) match = true;
+    if (type === "startsWith" && slug.startsWith(pattern)) match = true;
+    if (type === "endsWith" && slug.endsWith(pattern)) match = true;
+    if (type === "regex") {
+      try {
+        if (new RegExp(pattern).test(slug)) match = true;
+      } catch {
+        match = false;
+      }
+    }
+    if (!match) continue;
+    customDeltaTotal += delta;
+    customBreakdown.push({ label: String(rawRule.label || pattern).trim() || pattern, delta });
+  }
+  const total = multipliedBase + customDeltaTotal;
 
   return {
     letters: normalizedLetters,
     digits: normalizedDigits,
-    slug: `${normalizedLetters}${normalizedDigits}`,
+    slug,
     letterData,
     digitData,
+    multipliedBase,
+    customDeltaTotal,
+    customBreakdown,
     total,
   };
 }
@@ -697,7 +726,9 @@ function initSlugAvailability(orderApi) {
 function initSlugCalculator(orderApi) {
   const lettersInput = document.getElementById("calc-letters");
   const digitsInput = document.getElementById("calc-digits");
+  const generateButton = document.getElementById("calc-generate-button");
   const preview = document.getElementById("calc-preview");
+  const emptyState = document.getElementById("calc-empty-state");
   const resultWrap = document.getElementById("calc-result");
   const rarityBadge = document.getElementById("calc-rarity-badge");
   const rarityText = document.getElementById("calc-rarity-text");
@@ -714,6 +745,7 @@ function initSlugCalculator(orderApi) {
     !(lettersInput instanceof HTMLInputElement) ||
     !(digitsInput instanceof HTMLInputElement) ||
     !(preview instanceof HTMLElement) ||
+    !(emptyState instanceof HTMLElement) ||
     !(resultWrap instanceof HTMLElement) ||
     !(rarityBadge instanceof HTMLElement) ||
     !(rarityText instanceof HTMLElement) ||
@@ -734,9 +766,22 @@ function initSlugCalculator(orderApi) {
   let hasRevealed = false;
   let requestSeq = 0;
   let lastAnimatedPrice = 0;
+  let isApplyingDefaultSlug = false;
+  let isGeneratingSlug = false;
+  const unavailableSlugCache = new Set();
 
   function updatePreview(letters, digits) {
     preview.textContent = `unqx.uz/${letters || "___"}${digits || "___"}`;
+  }
+
+  function showEmptyState() {
+    emptyState.classList.remove("hidden");
+    resultWrap.classList.add("hidden");
+  }
+
+  function showResultState() {
+    emptyState.classList.add("hidden");
+    resultWrap.classList.remove("hidden");
   }
 
   async function applyServerPrice(slug, fallbackTotal) {
@@ -759,9 +804,14 @@ function initSlugCalculator(orderApi) {
             discountPercent: Number(payload.discountPercent || 0),
           }
           : null;
-      return { total, flash };
+      return {
+        total,
+        flash,
+        source: String(payload?.source || "calculator"),
+        calculation: payload?.calculation && typeof payload.calculation === "object" ? payload.calculation : null,
+      };
     } catch {
-      return { total: fallbackTotal, flash: null };
+      return { total: fallbackTotal, flash: null, source: "calculator", calculation: null };
     }
   }
 
@@ -781,6 +831,240 @@ function initSlugCalculator(orderApi) {
       return Array.isArray(payload?.suggestions) ? payload.suggestions.slice(0, 3) : [];
     } catch {
       return [];
+    }
+  }
+
+  async function isSlugAvailable(slug) {
+    if (unavailableSlugCache.has(slug)) {
+      return false;
+    }
+    try {
+      const response = await fetch(`/api/cards/availability?slug=${encodeURIComponent(slug)}&source=calculator_generate`, {
+        method: "GET",
+        headers: { Accept: "application/json" },
+      });
+      if (!response.ok) {
+        return false;
+      }
+      const payload = await response.json().catch(() => ({}));
+      const available = payload?.available === true;
+      if (!available) {
+        unavailableSlugCache.add(slug);
+      }
+      return available;
+    } catch {
+      return false;
+    }
+  }
+
+  async function getBulkAvailability(slugs) {
+    const normalized = Array.from(
+      new Set(
+        (Array.isArray(slugs) ? slugs : [])
+          .map((slug) => normalizeStrictSlug(slug))
+          .filter((slug) => /^[A-Z]{3}[0-9]{3}$/.test(slug)),
+      ),
+    ).slice(0, 60);
+
+    if (normalized.length === 0) {
+      return new Map();
+    }
+
+    const params = new URLSearchParams({
+      slugs: normalized.join(","),
+      source: "calculator_generate",
+    });
+
+    try {
+      const response = await fetch(`/api/cards/availability-bulk?${params.toString()}`, {
+        method: "GET",
+        headers: { Accept: "application/json" },
+      });
+      if (!response.ok) {
+        return new Map();
+      }
+      const payload = await response.json().catch(() => ({}));
+      const items = Array.isArray(payload?.items) ? payload.items : [];
+      const out = new Map();
+      items.forEach((item) => {
+        const slug = normalizeStrictSlug(item?.slug || "");
+        if (!slug) return;
+        const available = item?.available === true;
+        out.set(slug, available);
+        if (!available) {
+          unavailableSlugCache.add(slug);
+        }
+      });
+      return out;
+    } catch {
+      return new Map();
+    }
+  }
+
+  function randomFrom(list) {
+    return list[Math.floor(Math.random() * list.length)] || "";
+  }
+
+  function buildRandomLetters() {
+    const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+    const mode = randomFrom(["random", "random", "random", "sequential", "palindrome"]);
+    if (mode === "sequential") {
+      const startIndex = Math.floor(Math.random() * 24);
+      return `${alphabet[startIndex]}${alphabet[startIndex + 1]}${alphabet[startIndex + 2]}`;
+    }
+    if (mode === "palindrome") {
+      const a = randomFrom(alphabet);
+      const b = randomFrom(alphabet.filter((char) => char !== a));
+      return `${a}${b}${a}`;
+    }
+    return `${randomFrom(alphabet)}${randomFrom(alphabet)}${randomFrom(alphabet)}`;
+  }
+
+  function buildRandomDigits() {
+    const mode = randomFrom(["random", "random", "palindrome", "round", "sequential"]);
+    if (mode === "round") {
+      const first = Math.floor(Math.random() * 9) + 1;
+      return `${first}00`;
+    }
+    if (mode === "sequential") {
+      const start = Math.floor(Math.random() * 8);
+      return `${start}${start + 1}${start + 2}`;
+    }
+    if (mode === "palindrome") {
+      const a = Math.floor(Math.random() * 10);
+      const b = Math.floor(Math.random() * 10);
+      return `${a}${b}${a}`;
+    }
+    return `${Math.floor(Math.random() * 10)}${Math.floor(Math.random() * 10)}${Math.floor(Math.random() * 10)}`;
+  }
+
+  function buildAffordableCandidates() {
+    const basePrice = Number(slugPricingConfig?.basePrice || DEFAULT_HOME_SLUG_PRICING.basePrice);
+    const minTotal = Math.max(1, Math.round(basePrice));
+    const maxTotal = Math.max(minTotal, Math.round(basePrice * 8));
+    const candidates = [];
+    const seen = new Set();
+    const attempts = 550;
+
+    for (let i = 0; i < attempts; i += 1) {
+      const letters = buildRandomLetters();
+      const digits = buildRandomDigits();
+      const pricing = calculateSlugPricing(letters, digits);
+      if (!pricing) {
+        continue;
+      }
+      if (pricing.total < minTotal || pricing.total > maxTotal) {
+        continue;
+      }
+      if (seen.has(pricing.slug)) {
+        continue;
+      }
+      seen.add(pricing.slug);
+      candidates.push({ slug: pricing.slug, total: Number(pricing.total || 0) });
+      if (candidates.length >= 160) {
+        break;
+      }
+    }
+
+    return candidates
+      .sort((left, right) => {
+        if (left.total !== right.total) {
+          return left.total - right.total;
+        }
+        return left.slug.localeCompare(right.slug);
+      })
+      .map((item) => item.slug);
+  }
+
+  async function findFirstAvailableCandidate(candidates) {
+    if (!Array.isArray(candidates) || candidates.length === 0) {
+      return "";
+    }
+
+    const maxChecks = 48;
+    const batchSize = 16;
+    const shortlist = candidates.slice(0, maxChecks);
+
+    for (let offset = 0; offset < shortlist.length; offset += batchSize) {
+      const chunk = shortlist.slice(offset, offset + batchSize);
+      // Server-side bulk availability significantly reduces round-trips.
+      // eslint-disable-next-line no-await-in-loop
+      const bulkMap = await getBulkAvailability(chunk);
+      if (bulkMap.size > 0) {
+        for (const slug of chunk) {
+          if (bulkMap.get(slug) === true) {
+            return slug;
+          }
+        }
+        continue;
+      }
+      // Fallback to direct checks if bulk endpoint is temporarily unavailable.
+      // eslint-disable-next-line no-await-in-loop
+      const checks = await Promise.all(chunk.map((slug) => isSlugAvailable(slug)));
+      const foundIndex = checks.findIndex((isFree) => isFree === true);
+      if (foundIndex !== -1) {
+        return chunk[foundIndex] || "";
+      }
+    }
+    return "";
+  }
+
+  async function requestServerGeneratedSlug() {
+    try {
+      const response = await fetch("/api/cards/slug-generate-affordable?source=calculator_generate", {
+        method: "GET",
+        headers: { Accept: "application/json" },
+      });
+      if (!response.ok) {
+        return "";
+      }
+      const payload = await response.json().catch(() => ({}));
+      const slug = normalizeStrictSlug(payload?.slug || "");
+      if (!payload?.ok || !/^[A-Z]{3}[0-9]{3}$/.test(slug)) {
+        return "";
+      }
+      return slug;
+    } catch {
+      return "";
+    }
+  }
+
+  async function handleGenerateSlug() {
+    if (isGeneratingSlug) {
+      return;
+    }
+    isGeneratingSlug = true;
+    if (generateButton instanceof HTMLButtonElement) {
+      generateButton.disabled = true;
+    }
+    const icon = generateButton instanceof HTMLElement ? generateButton.querySelector("svg") : null;
+    if (icon instanceof SVGElement) {
+      icon.classList.add("animate-spin");
+    }
+
+    try {
+      let slug = await requestServerGeneratedSlug();
+      if (!slug) {
+        const candidates = buildAffordableCandidates();
+        slug = await findFirstAvailableCandidate(candidates);
+      }
+      if (slug) {
+        const parsed = splitSlug(slug);
+        if (parsed) {
+          lettersInput.value = parsed.letters;
+          digitsInput.value = parsed.digits;
+          await updateResult();
+          return;
+        }
+      }
+    } finally {
+      isGeneratingSlug = false;
+      if (icon instanceof SVGElement) {
+        icon.classList.remove("animate-spin");
+      }
+      if (generateButton instanceof HTMLButtonElement) {
+        generateButton.disabled = false;
+      }
     }
   }
 
@@ -821,14 +1105,23 @@ function initSlugCalculator(orderApi) {
     updatePreview(lettersInput.value, digitsInput.value);
 
     if (!pricing) {
+      if (!isApplyingDefaultSlug && !lettersInput.value && !digitsInput.value) {
+        isApplyingDefaultSlug = true;
+        lettersInput.value = "AAA";
+        digitsInput.value = "000";
+        await updateResult();
+        isApplyingDefaultSlug = false;
+        return;
+      }
+      showEmptyState();
       return;
     }
 
     if (!hasRevealed) {
       hasRevealed = true;
-      resultWrap.classList.remove("hidden");
       resultWrap.classList.add("animate-fade-up");
     }
+    showResultState();
 
     const serverPricing = await applyServerPrice(pricing.slug, pricing.total);
     if (!serverPricing) {
@@ -848,9 +1141,30 @@ function initSlugCalculator(orderApi) {
         animateNumberText(flashFinalNode, lastAnimatedPrice, finalPrice);
       }
       resultFormula.textContent = `Flash sale применён (-${serverPricing.flash.discountPercent}%)`;
+    } else if (serverPricing.source === "override") {
+      animateNumberText(resultPrice, lastAnimatedPrice, finalPrice);
+      resultFormula.textContent = `Персональная цена: ${formatPrice(finalPrice)} сум`;
     } else {
       animateNumberText(resultPrice, lastAnimatedPrice, finalPrice);
-      resultFormula.textContent = `${formatPrice(slugPricingConfig.basePrice || DEFAULT_HOME_SLUG_PRICING.basePrice)} x ${pricing.letterData.multiplier} x ${pricing.digitData.multiplier} = ${formatPrice(finalPrice)} сум`;
+      const calc = serverPricing.calculation;
+      const base = Number(calc?.basePrice || slugPricingConfig.basePrice || DEFAULT_HOME_SLUG_PRICING.basePrice);
+      const lettersMultiplier = Number(calc?.lettersMultiplier || pricing.letterData.multiplier || 1);
+      const digitsMultiplier = Number(calc?.digitsMultiplier || pricing.digitData.multiplier || 1);
+      const customParts = Array.isArray(calc?.customBreakdown)
+        ? calc.customBreakdown
+          .map((item) => {
+            const delta = Number(item?.delta || 0);
+            if (!delta) return "";
+            const sign = delta > 0 ? "+" : "-";
+            const amount = formatPrice(Math.abs(delta));
+            const label = String(item?.label || "").trim();
+            return `${sign} ${amount}${label ? ` (${label})` : ""}`;
+          })
+          .filter(Boolean)
+          .join(" ")
+        : "";
+      const tail = customParts ? ` ${customParts}` : "";
+      resultFormula.textContent = `${formatPrice(base)} x ${lettersMultiplier} x ${digitsMultiplier}${tail} = ${formatPrice(finalPrice)} сум`;
     }
     lastAnimatedPrice = finalPrice;
     letterMeta.textContent = `${pricing.letterData.label} x${pricing.letterData.multiplier}`;
@@ -868,6 +1182,12 @@ function initSlugCalculator(orderApi) {
   digitsInput.addEventListener("input", () => {
     updateResult();
   });
+
+  if (generateButton instanceof HTMLButtonElement) {
+    generateButton.addEventListener("click", () => {
+      void handleGenerateSlug();
+    });
+  }
 
   document.querySelectorAll(".calc-example-btn").forEach((button) => {
     button.addEventListener("click", () => {
@@ -903,7 +1223,9 @@ function initSlugCalculator(orderApi) {
     nextUrl.searchParams.delete("buySlug");
     window.history.replaceState({}, "", `${nextUrl.pathname}${nextUrl.search}${nextUrl.hash}`);
   } else {
-    updatePreview("", "");
+    lettersInput.value = "AAA";
+    digitsInput.value = "000";
+    void updateResult();
   }
 }
 

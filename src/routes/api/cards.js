@@ -1,4 +1,4 @@
-const { createHash, randomUUID } = require("node:crypto");
+﻿const { createHash, randomUUID } = require("node:crypto");
 
 const express = require("express");
 
@@ -8,7 +8,12 @@ const { detectDevice } = require("../../services/ua");
 const { generateVCard } = require("../../services/vcard");
 const { calculateSlugPrice, calculateSlugPriceFromSettings, getSlugPricingConfig } = require("../../services/slug-pricing");
 const { sendOrderRequestToTelegram, TelegramConfigError, TelegramDeliveryError } = require("../../services/telegram");
-const { buildOrderPaymentDraft, getOrderPaymentReference } = require("../../services/payment-flow");
+const {
+  buildOrderPaymentDraft,
+  getOrderPaymentReference,
+  buildManualTelegramPaymentUrl,
+  normalizeTelegramUsername,
+} = require("../../services/payment-flow");
 const { getActiveFlashSale, applyFlashSaleToPrice } = require("../../services/flash-sales");
 const { markDropSlugSold } = require("../../services/drops");
 const {
@@ -28,10 +33,41 @@ const { getSetting } = require("../../services/platform-settings");
 const { sendTapPushNotification } = require("../../services/push");
 const { resolveUzbekistanCity } = require("../../constants/uzbekistan-cities");
 const { logPaymentEvent } = require("../../services/payment-events");
+const {
+  getReferralV1Settings,
+  getWalletBalance,
+  hasApprovedSlugPurchase,
+  resolveReferrerForUser,
+  computeDiscountAllocation,
+  resolveOrderAttribution,
+} = require("../../services/referral-v1");
+const {
+  normalizePromoCode,
+  getReferralV2Settings,
+  resolveCampaignForCheckout,
+  buildCampaignSnapshot,
+  evaluateCampaignEligibility,
+  runFraudCheck,
+  reserveCampaignUsage,
+} = require("../../services/referral-v2");
 
 const router = express.Router();
 const SLUG_REGEX = /^[A-Z]{3}[0-9]{3}$/;
 const THEMES = new Set(["default_dark", "arctic", "linen", "marble", "forest", "royal_ivory", "midnight_obsidian"]);
+const FALLBACK_SUPPORT_TELEGRAM = "unqx_uz";
+const AFFORDABLE_CACHE_TTL_LOW_LOAD_MS = 10_000;
+const AFFORDABLE_CACHE_TTL_MEDIUM_LOAD_MS = 8_000;
+const AFFORDABLE_CACHE_TTL_HIGH_LOAD_MS = 5_000;
+const affordableCandidatesCache = {
+  expiresAt: 0,
+  candidates: [],
+};
+const affordablePickCache = {
+  expiresAt: 0,
+  slug: "",
+  estimatedPrice: 0,
+};
+const affordableLoadWindow = [];
 
 function isMissingModelTable(error, modelName) {
   return (
@@ -78,6 +114,19 @@ function isMissingModelDelegateError(error) {
   );
 }
 
+function isReferralInfraError(error) {
+  if (!error) return false;
+  if (isMissingModelTable(error) || isMissingModelColumn(error) || isMissingModelDelegateError(error)) {
+    return true;
+  }
+  const name = String(error?.name || "");
+  const message = String(error?.message || "");
+  if (name.includes("PrismaClientValidationError") || name.includes("PrismaClientKnownRequestError") || name.includes("PrismaClientUnknownRequestError")) {
+    return /referral|campaign|bonus|wallet|promo/i.test(message);
+  }
+  return false;
+}
+
 async function withMissingTableFallback(modelName, fallbackValue, callback) {
   if (!getModelDelegate(modelName)) {
     return fallbackValue;
@@ -87,6 +136,122 @@ async function withMissingTableFallback(modelName, fallbackValue, callback) {
   } catch (error) {
     if (isMissingModelTable(error, modelName) || isMissingModelColumn(error, modelName) || isMissingModelDelegateError(error)) {
       return fallbackValue;
+    }
+    throw error;
+  }
+}
+
+async function findLatestActiveOrderSafe(userId) {
+  const where = {
+    userId,
+    status: { in: ["new", "contacted", "paid"] },
+  };
+  const orderBy = { createdAt: "desc" };
+  try {
+    return await prisma.slugRequest.findFirst({
+      where,
+      orderBy,
+      select: {
+        id: true,
+        slug: true,
+        status: true,
+        requestedPlan: true,
+        slugPrice: true,
+        planPrice: true,
+        inviteeDiscountApplied: true,
+        bonusSpent: true,
+        discountCapApplied: true,
+        campaignId: true,
+        promoCode: true,
+        fraudVerdict: true,
+        fraudReason: true,
+        campaignSnapshot: true,
+        bracelet: true,
+        createdAt: true,
+      },
+    });
+  } catch (error) {
+    if (!(isMissingModelTable(error, "SlugRequest") || isMissingModelColumn(error, "SlugRequest") || isMissingModelDelegateError(error))) {
+      throw error;
+    }
+    // Fallback for databases that are behind on referral-v2 columns.
+    return withMissingTableFallback("SlugRequest", null, () =>
+      prisma.slugRequest.findFirst({
+        where,
+        orderBy,
+        select: {
+          id: true,
+          slug: true,
+          status: true,
+          requestedPlan: true,
+          slugPrice: true,
+          planPrice: true,
+          bracelet: true,
+          createdAt: true,
+        },
+      }),
+    );
+  }
+}
+
+async function safeResolveCampaignForCheckout(params) {
+  try {
+    return await resolveCampaignForCheckout(params);
+  } catch (error) {
+    if (isReferralInfraError(error)) {
+      console.warn("[express-app] referral campaign resolve fallback in cards route", error?.message || error);
+      return {
+        campaign: null,
+        normalizedPromoCode: normalizePromoCode(params?.promoCode || ""),
+      };
+    }
+    throw error;
+  }
+}
+
+async function safeEvaluateCampaignEligibility(params) {
+  try {
+    return await evaluateCampaignEligibility(params);
+  } catch (error) {
+    if (isReferralInfraError(error)) {
+      console.warn("[express-app] referral campaign eligibility fallback in cards route", error?.message || error);
+      return { allowed: false, reason: "campaign_unavailable", usedBudget: 0, usedByUser: 0 };
+    }
+    throw error;
+  }
+}
+
+async function safeGetWalletBalance(userId) {
+  try {
+    return await getWalletBalance(userId);
+  } catch (error) {
+    if (isReferralInfraError(error)) {
+      console.warn("[express-app] wallet balance fallback in cards route", error?.message || error);
+      return 0;
+    }
+    throw error;
+  }
+}
+
+async function safeHasApprovedSlugPurchase(userId) {
+  try {
+    return await hasApprovedSlugPurchase(userId);
+  } catch (error) {
+    if (isReferralInfraError(error)) {
+      console.warn("[express-app] first approved purchase fallback in cards route", error?.message || error);
+      return false;
+    }
+    throw error;
+  }
+}
+
+async function safeResolveReferrerForUser(params) {
+  try {
+    return await resolveReferrerForUser(params);
+  } catch (error) {
+    if (isReferralInfraError(error)) {
+      console.warn("[express-app] resolve referrer fallback in cards route", error?.message || error);
+      return null;
     }
     throw error;
   }
@@ -358,10 +523,56 @@ function normalizeTheme(value) {
 }
 
 async function getSlugState(slug) {
-  const slugRow = await withMissingTableFallback("Slug", null, () =>
-    prisma.slug.findUnique({
-      where: { fullSlug: slug },
+  const rows = await getSlugStatesBulk([slug]);
+  return rows.get(slug) || { available: true, reason: "available", priceOverride: null };
+}
+
+function mapSlugRowToState(slug, slugRow) {
+  if (!slugRow) {
+    return { available: true, reason: "available", priceOverride: null };
+  }
+
+  const ownerFromSlug =
+    slugRow.owner && ["approved", "active", "private", "paused"].includes(slugRow.status)
+      ? {
+        name: slugRow.owner.profileCard?.name || slugRow.owner.firstName || "UNQX User",
+        avatarUrl: slugRow.owner.profileCard?.avatarUrl || null,
+        href: `/${slug}`,
+      }
+      : null;
+
+  if (slugRow.status === "reserved_drop") {
+    return { available: false, reason: "drop_reserved", priceOverride: slugRow.price ?? null };
+  }
+  if (slugRow.status === "blocked") {
+    return { available: false, reason: "blocked", priceOverride: slugRow.price ?? null };
+  }
+  if (slugRow.status === "free") {
+    return { available: true, reason: "available", priceOverride: slugRow.price ?? null };
+  }
+  return {
+    available: false,
+    reason: slugRow.status,
+    priceOverride: slugRow.price ?? null,
+    pendingExpiresAt: slugRow.pendingExpiresAt || null,
+    owner: ownerFromSlug,
+  };
+}
+
+async function getSlugStatesBulk(slugs = []) {
+  const target = Array.from(new Set((Array.isArray(slugs) ? slugs : []).filter((item) => SLUG_REGEX.test(item))));
+  const out = new Map();
+  if (target.length === 0) {
+    return out;
+  }
+
+  const slugRows = await withMissingTableFallback("Slug", [], () =>
+    prisma.slug.findMany({
+      where: {
+        fullSlug: { in: target },
+      },
       select: {
+        fullSlug: true,
         status: true,
         price: true,
         pendingExpiresAt: true,
@@ -379,35 +590,12 @@ async function getSlugState(slug) {
       },
     }),
   );
+  const rowsBySlug = new Map(slugRows.map((row) => [row.fullSlug, row]));
 
-  const ownerFromSlug =
-    slugRow?.owner && ["approved", "active", "private", "paused"].includes(slugRow.status)
-      ? {
-        name: slugRow.owner.profileCard?.name || slugRow.owner.firstName || "UNQX User",
-        avatarUrl: slugRow.owner.profileCard?.avatarUrl || null,
-        href: `/${slug}`,
-      }
-      : null;
-
-  if (slugRow) {
-    if (slugRow.status === "reserved_drop") {
-      return { available: false, reason: "drop_reserved", priceOverride: slugRow.price ?? null };
-    }
-    if (slugRow.status === "blocked") {
-      return { available: false, reason: "blocked", priceOverride: slugRow.price ?? null };
-    }
-    if (slugRow.status === "free") {
-      return { available: true, reason: "available", priceOverride: slugRow.price ?? null };
-    }
-    return {
-      available: false,
-      reason: slugRow.status,
-      priceOverride: slugRow.price ?? null,
-      pendingExpiresAt: slugRow.pendingExpiresAt || null,
-      owner: ownerFromSlug,
-    };
+  for (const slug of target) {
+    out.set(slug, mapSlugRowToState(slug, rowsBySlug.get(slug) || null));
   }
-  return { available: true, reason: "available", priceOverride: null };
+  return out;
 }
 
 async function getTakenSlugsSet() {
@@ -459,6 +647,105 @@ function randomSlug() {
   const letters = Array.from({ length: 3 }, () => String.fromCharCode(65 + Math.floor(Math.random() * 26))).join("");
   const digits = String(Math.floor(Math.random() * 1000)).padStart(3, "0");
   return `${letters}${digits}`;
+}
+
+function randomFrom(list) {
+  return list[Math.floor(Math.random() * list.length)] || "";
+}
+
+function buildRandomLettersAffordable() {
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+  const mode = randomFrom(["random", "random", "random", "sequential", "palindrome"]);
+  if (mode === "sequential") {
+    const startIndex = Math.floor(Math.random() * 24);
+    return `${alphabet[startIndex]}${alphabet[startIndex + 1]}${alphabet[startIndex + 2]}`;
+  }
+  if (mode === "palindrome") {
+    const a = randomFrom(alphabet);
+    const b = randomFrom(alphabet.filter((char) => char !== a));
+    return `${a}${b}${a}`;
+  }
+  return `${randomFrom(alphabet)}${randomFrom(alphabet)}${randomFrom(alphabet)}`;
+}
+
+function buildRandomDigitsAffordable() {
+  const mode = randomFrom(["random", "random", "palindrome", "round", "sequential"]);
+  if (mode === "round") {
+    const first = Math.floor(Math.random() * 9) + 1;
+    return `${first}00`;
+  }
+  if (mode === "sequential") {
+    const start = Math.floor(Math.random() * 8);
+    return `${start}${start + 1}${start + 2}`;
+  }
+  if (mode === "palindrome") {
+    const a = Math.floor(Math.random() * 10);
+    const b = Math.floor(Math.random() * 10);
+    return `${a}${b}${a}`;
+  }
+  return `${Math.floor(Math.random() * 10)}${Math.floor(Math.random() * 10)}${Math.floor(Math.random() * 10)}`;
+}
+
+async function generateAffordableCandidates({ limit = 120 }) {
+  const targetLimit = Math.max(20, Math.min(300, Number(limit) || 120));
+  const config = await getSlugPricingConfig();
+  const basePrice = Math.max(1, Number(config?.basePrice || 100_000));
+  const minTotal = Math.round(basePrice);
+  const maxTotal = Math.round(basePrice * 8);
+  const out = [];
+  const seen = new Set();
+  const attempts = 650;
+
+  for (let i = 0; i < attempts; i += 1) {
+    const slug = `${buildRandomLettersAffordable()}${buildRandomDigitsAffordable()}`;
+    if (!SLUG_REGEX.test(slug) || seen.has(slug)) continue;
+    seen.add(slug);
+    const parsed = splitSlug(slug);
+    if (!parsed) continue;
+    const price = Number(
+      calculateSlugPrice({
+        letters: parsed.letters,
+        digits: parsed.digits,
+        config,
+      }).total,
+    );
+    if (price < minTotal || price > maxTotal) continue;
+    out.push({ slug, price });
+    if (out.length >= targetLimit) break;
+  }
+
+  return out.sort((left, right) => {
+    if (left.price !== right.price) return left.price - right.price;
+    return left.slug.localeCompare(right.slug);
+  });
+}
+
+async function getAffordableCandidatesCached({ limit = 120 }) {
+  const now = Date.now();
+  if (affordableCandidatesCache.expiresAt > now && Array.isArray(affordableCandidatesCache.candidates) && affordableCandidatesCache.candidates.length > 0) {
+    return affordableCandidatesCache.candidates;
+  }
+  const generated = await generateAffordableCandidates({ limit });
+  affordableCandidatesCache.candidates = generated;
+  affordableCandidatesCache.expiresAt = now + AFFORDABLE_CACHE_TTL_MEDIUM_LOAD_MS;
+  return generated;
+}
+
+function getAdaptiveAffordableTtlMs() {
+  const now = Date.now();
+  const windowMs = 60_000;
+  affordableLoadWindow.push(now);
+  while (affordableLoadWindow.length > 0 && now - affordableLoadWindow[0] > windowMs) {
+    affordableLoadWindow.shift();
+  }
+  const rpm = affordableLoadWindow.length;
+  if (rpm >= 25) {
+    return AFFORDABLE_CACHE_TTL_HIGH_LOAD_MS;
+  }
+  if (rpm <= 8) {
+    return AFFORDABLE_CACHE_TTL_LOW_LOAD_MS;
+  }
+  return AFFORDABLE_CACHE_TTL_MEDIUM_LOAD_MS;
 }
 
 async function generateAvailableSuggestions({ count, base }) {
@@ -635,6 +922,59 @@ router.get(
   }),
 );
 
+router.get(
+  "/availability-bulk",
+  asyncHandler(async (req, res) => {
+    const source = typeof req.query.source === "string" ? req.query.source.slice(0, 20).toLowerCase() : "unknown";
+    const rawInput = String(req.query.slugs || req.query.items || "");
+    const requested = rawInput
+      .split(",")
+      .map((item) => String(item || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6))
+      .filter(Boolean)
+      .slice(0, 60);
+
+    const unique = Array.from(new Set(requested));
+    const validSlugs = unique.filter((slug) => SLUG_REGEX.test(slug));
+    const stateMap = await getSlugStatesBulk(validSlugs);
+    const items = unique.map((slug) => {
+      const validFormat = SLUG_REGEX.test(slug);
+      if (!validFormat) {
+        return {
+          slug,
+          validFormat: false,
+          available: false,
+          reason: "invalid_format",
+        };
+      }
+      const state = stateMap.get(slug) || { available: true, reason: "available", priceOverride: null };
+      return {
+        slug,
+        validFormat: true,
+        available: Boolean(state.available),
+        reason: String(state.reason || "unknown"),
+      };
+    });
+
+    if (source === "hero") {
+      await Promise.all(
+        items.slice(0, 10).map((item) =>
+          logChecker({
+            slug: item.slug,
+            pattern: item.slug,
+            source,
+            result: item.validFormat ? (item.available ? "AVAILABLE" : "TAKEN") : "INVALID",
+          }),
+        ),
+      );
+    }
+
+    res.json({
+      items,
+      checked: items.length,
+    });
+  }),
+);
+
 router.post(
   "/waitlist",
   requireSameOrigin,
@@ -720,6 +1060,73 @@ router.get(
 );
 
 router.get(
+  "/slug-generate-affordable",
+  asyncHandler(async (req, res) => {
+    const source = typeof req.query.source === "string" ? req.query.source.slice(0, 20).toLowerCase() : "calculator";
+    const now = Date.now();
+    const adaptiveTtlMs = getAdaptiveAffordableTtlMs();
+
+    if (affordablePickCache.expiresAt > now && SLUG_REGEX.test(affordablePickCache.slug)) {
+      const cachedMap = await getSlugStatesBulk([affordablePickCache.slug]);
+      if (cachedMap.get(affordablePickCache.slug)?.available === true) {
+        res.json({
+          ok: true,
+          source,
+          slug: affordablePickCache.slug,
+          estimatedPrice: affordablePickCache.estimatedPrice,
+          segment: "low_mid",
+          cache: "hit",
+          ttlMs: adaptiveTtlMs,
+        });
+        return;
+      }
+      affordablePickCache.expiresAt = 0;
+      affordablePickCache.slug = "";
+      affordablePickCache.estimatedPrice = 0;
+    }
+
+    const candidates = await getAffordableCandidatesCached({ limit: 140 });
+    const slugs = candidates.map((item) => item.slug).slice(0, 80);
+    const states = await getSlugStatesBulk(slugs);
+    const picked = candidates.find((item) => states.get(item.slug)?.available === true) || null;
+
+    if (!picked) {
+      res.json({
+        ok: false,
+        source,
+        slug: "",
+        message: "no_available_affordable_slug",
+      });
+      return;
+    }
+
+    await logChecker({
+      slug: picked.slug,
+      pattern: picked.slug,
+      source: source === "hero" ? "hero" : "calculator",
+      result: "AVAILABLE",
+    });
+
+    res.json({
+      ok: true,
+      source,
+      slug: picked.slug,
+      estimatedPrice: picked.price,
+      segment: "low_mid",
+      cache: "miss",
+      ttlMs: adaptiveTtlMs,
+    });
+
+    affordablePickCache.expiresAt = now + adaptiveTtlMs;
+    affordablePickCache.slug = picked.slug;
+    affordablePickCache.estimatedPrice = picked.price;
+    if (affordableCandidatesCache.expiresAt < now + adaptiveTtlMs) {
+      affordableCandidatesCache.expiresAt = now + adaptiveTtlMs;
+    }
+  }),
+);
+
+router.get(
   "/slug-price",
   asyncHandler(async (req, res) => {
     const raw = typeof req.query.slug === "string" ? req.query.slug : "";
@@ -760,6 +1167,15 @@ router.get(
       validFormat: true,
       price: flash.finalPrice,
       basePrice: flash.basePrice,
+      calculatedPrice: Number(pricing.total),
+      calculation: {
+        basePrice: Number(pricing.basePrice || 0),
+        lettersMultiplier: Number(pricing.letters?.multiplier || 1),
+        digitsMultiplier: Number(pricing.digits?.multiplier || 1),
+        multipliedBase: Number(pricing.multipliedBase || 0),
+        customDeltaTotal: Number(pricing.customDeltaTotal || 0),
+        customBreakdown: Array.isArray(pricing.customBreakdown) ? pricing.customBreakdown : [],
+      },
       hasFlashSale: flash.hasDiscount,
       discountAmount: flash.discountAmount,
       discountPercent: flash.discountPercent,
@@ -799,7 +1215,92 @@ router.get(
     const requestedPlan = String(req.query.requestedPlan || req.query.plan || "").trim().toLowerCase() === "premium" ? "premium" : "basic";
     const activeOrdersLimit = 3;
     const sessionUser = getUserSession(req);
-    const [pricing, braceletPrice] = await Promise.all([getPricingSettings(), getBraceletPrice()]);
+    const promoCodeInput = normalizePromoCode(req.query.promoCode || req.query.promo || "");
+    const attribution = resolveOrderAttribution({
+      body: {},
+      query: req.query || {},
+      path: req.path || req.originalUrl || "",
+    });
+
+    const safeFailPrecheck = (message = "Временная ошибка precheck. Попробуйте снова.") => {
+      res.json({
+        authenticated: Boolean(sessionUser?.userId),
+        accountStatus: sessionUser?.userId ? "active" : "guest",
+        currentPlan: "none",
+        requestedPlan,
+        resolvedPlan: requestedPlan,
+        canPurchase: false,
+        nextAction: sessionUser?.userId ? "retry" : "login",
+        message,
+        pricing: {
+          planBasicPrice: 50_000,
+          planPremiumPrice: 130_000,
+          premiumUpgradePrice: 80_000,
+          braceletPrice: 300_000,
+          planChargePreview: requestedPlan === "premium" ? 130_000 : 50_000,
+        },
+        limits: {
+          activeOrdersLimit,
+          activeOrdersCount: 0,
+          slugLimit: requestedPlan === "premium" ? 3 : 1,
+          userSlugsCount: 0,
+        },
+        referral: {
+          enabled: false,
+          source: attribution.refSource,
+          offer: attribution.refOffer,
+          promoCodeApplied: "",
+          campaignApplied: false,
+          campaignType: null,
+          campaignName: "",
+          walletBalance: 0,
+          hasReferrer: false,
+          firstOrderEligible: false,
+          inviteeDiscountCandidate: 0,
+          bonusSpendCandidate: 0,
+          capPercent: 30,
+          fraudVerdict: "allow",
+          fraudHint: "",
+          breakdown: {
+            inviteeDiscountApplied: 0,
+            bonusSpent: 0,
+            discountCapApplied: 0,
+            productDiscountAmount: 0,
+          },
+        },
+        pendingOrder: null,
+      });
+    };
+
+    let pricing;
+    let braceletPrice;
+    let referralSettings;
+    let referralV2Settings;
+    let campaignResolved;
+    try {
+      [pricing, braceletPrice, referralSettings, referralV2Settings, campaignResolved] = await Promise.all([
+        getPricingSettings(),
+        getBraceletPrice(),
+        getReferralV1Settings(),
+        getReferralV2Settings(),
+        safeResolveCampaignForCheckout({
+          source: attribution.refSource,
+          offer: attribution.refOffer,
+          promoCode: promoCodeInput,
+        }),
+      ]);
+    } catch (error) {
+      console.error("[express-app] order-precheck base load failed", error);
+      safeFailPrecheck("Не удалось загрузить precheck. Попробуйте снова.");
+      return;
+    }
+    const campaignPreview = buildCampaignSnapshot({
+      campaign: campaignResolved.campaign,
+      referrerReward: referralSettings.referrerReward,
+      inviteeDiscount: referralSettings.inviteeDiscount,
+      discountCapPercent: referralSettings.discountCapPercent,
+      normalizedPromoCode: campaignResolved.normalizedPromoCode,
+    });
 
     if (!sessionUser?.userId) {
       res.json({
@@ -822,6 +1323,29 @@ router.get(
           slugLimit: requestedPlan === "premium" ? 3 : 1,
           userSlugsCount: 0,
         },
+        referral: {
+          enabled: referralSettings.enabled,
+          source: attribution.refSource,
+          offer: attribution.refOffer,
+          promoCodeApplied: campaignPreview.promoCodeApplied || "",
+          campaignApplied: campaignPreview.campaignApplied,
+          campaignType: campaignPreview.campaignType,
+          campaignName: campaignPreview.campaignName,
+          walletBalance: 0,
+          hasReferrer: false,
+          firstOrderEligible: false,
+          inviteeDiscountCandidate: 0,
+          bonusSpendCandidate: 0,
+          capPercent: referralSettings.discountCapPercent,
+          fraudVerdict: "allow",
+          fraudHint: "",
+          breakdown: {
+            inviteeDiscountApplied: 0,
+            bonusSpent: 0,
+            discountCapApplied: 0,
+            productDiscountAmount: 0,
+          },
+        },
         pendingOrder: null,
       });
       return;
@@ -833,6 +1357,10 @@ router.get(
         id: true,
         status: true,
         plan: true,
+        firstName: true,
+        lastName: true,
+        displayName: true,
+        email: true,
       },
     });
 
@@ -857,6 +1385,29 @@ router.get(
           slugLimit: requestedPlan === "premium" ? 3 : 1,
           userSlugsCount: 0,
         },
+        referral: {
+          enabled: referralSettings.enabled,
+          source: attribution.refSource,
+          offer: attribution.refOffer,
+          promoCodeApplied: campaignPreview.promoCodeApplied || "",
+          campaignApplied: campaignPreview.campaignApplied,
+          campaignType: campaignPreview.campaignType,
+          campaignName: campaignPreview.campaignName,
+          walletBalance: 0,
+          hasReferrer: false,
+          firstOrderEligible: false,
+          inviteeDiscountCandidate: 0,
+          bonusSpendCandidate: 0,
+          capPercent: referralSettings.discountCapPercent,
+          fraudVerdict: "allow",
+          fraudHint: "",
+          breakdown: {
+            inviteeDiscountApplied: 0,
+            bonusSpent: 0,
+            discountCapApplied: 0,
+            productDiscountAmount: 0,
+          },
+        },
         pendingOrder: null,
       });
       return;
@@ -869,7 +1420,7 @@ router.get(
     });
     const slugLimit = resolvedPlan === "premium" ? 3 : 1;
 
-    const [activeOrdersCount, userSlugsCount, latestActiveOrder] = await Promise.all([
+    const [activeOrdersCount, userSlugsCount, latestActiveOrder, supportTelegramRaw, walletBalance, firstApprovedOrderExists, referrerLink] = await Promise.all([
       prisma.slugRequest.count({
         where: {
           userId: user.id,
@@ -884,21 +1435,31 @@ router.get(
           },
         }),
       ),
-      prisma.slugRequest.findFirst({
-        where: {
-          userId: user.id,
-          status: { in: ["new", "contacted", "paid"] },
-        },
-        orderBy: { createdAt: "desc" },
-        select: {
-          id: true,
-          slug: true,
-          status: true,
-          requestedPlan: true,
-          createdAt: true,
-        },
+      findLatestActiveOrderSafe(user.id),
+      getSetting("contact_support_telegram", `@${FALLBACK_SUPPORT_TELEGRAM}`),
+      safeGetWalletBalance(user.id),
+      safeHasApprovedSlugPurchase(user.id),
+      safeResolveReferrerForUser({
+        userId: user.id,
+        explicitRefCode: attribution.refCode,
+        sessionRefCode: req.session?.pendingRefCode,
       }),
     ]);
+    const campaignEligibility = await safeEvaluateCampaignEligibility({
+      campaign: campaignResolved.campaign,
+      userId: user.id,
+      settings: referralV2Settings,
+    });
+    const effectiveCampaign = campaignEligibility.allowed ? campaignResolved.campaign : null;
+    const campaignSnapshot = buildCampaignSnapshot({
+      campaign: effectiveCampaign,
+      referrerReward: referralSettings.referrerReward,
+      inviteeDiscount: referralSettings.inviteeDiscount,
+      discountCapPercent: referralSettings.discountCapPercent,
+      normalizedPromoCode: campaignResolved.normalizedPromoCode,
+    });
+    const supportTelegram = normalizeTelegramUsername(supportTelegramRaw);
+    const fullName = [user.firstName, user.lastName].map((x) => String(x || "").trim()).filter(Boolean).join(" ") || String(user.displayName || "").trim();
 
     let pendingOrder = null;
     if (latestActiveOrder) {
@@ -911,15 +1472,63 @@ router.get(
           },
         }),
       );
-      pendingOrder = {
-        id: latestActiveOrder.id,
-        slug: latestActiveOrder.slug,
-        status: latestActiveOrder.status,
-        requestedPlan: latestActiveOrder.requestedPlan,
-        paymentReference: getOrderPaymentReference(latestActiveOrder.id),
-        createdAt: latestActiveOrder.createdAt,
-        pendingExpiresAt: slugRow?.status === "pending" ? slugRow.pendingExpiresAt || null : null,
-      };
+      const slugIsPending = String(slugRow?.status || "") === "pending";
+      if (slugIsPending) {
+        pendingOrder = {
+          id: latestActiveOrder.id,
+          slug: latestActiveOrder.slug,
+          status: latestActiveOrder.status,
+          requestedPlan: latestActiveOrder.requestedPlan,
+          paymentReference: getOrderPaymentReference(latestActiveOrder.id),
+          slugPrice: Number(latestActiveOrder.slugPrice || 0),
+          planPrice: Number(latestActiveOrder.planPrice || 0),
+          inviteeDiscountApplied: Number(latestActiveOrder.inviteeDiscountApplied || 0),
+          bonusSpent: Number(latestActiveOrder.bonusSpent || 0),
+          discountCapApplied: Number(latestActiveOrder.discountCapApplied || 0),
+          campaignId: latestActiveOrder.campaignId || null,
+          promoCodeApplied: latestActiveOrder.promoCode || "",
+          campaignSnapshot: latestActiveOrder.campaignSnapshot || null,
+          fraudVerdict: latestActiveOrder.fraudVerdict || "allow",
+          fraudHint: latestActiveOrder.fraudReason || "",
+          bracelet: Boolean(latestActiveOrder.bracelet),
+          braceletPrice: Number(braceletPrice || 0),
+          totalOneTime:
+            Math.max(
+              0,
+              Number(latestActiveOrder.slugPrice || 0) -
+                Number(latestActiveOrder.inviteeDiscountApplied || 0) -
+                Number(latestActiveOrder.bonusSpent || 0),
+            ) +
+            Number(latestActiveOrder.planPrice || 0) +
+            (latestActiveOrder.bracelet ? Number(braceletPrice || 0) : 0),
+          paymentUrl: buildManualTelegramPaymentUrl({
+            orderId: latestActiveOrder.id,
+            slug: latestActiveOrder.slug,
+            requestedPlan: latestActiveOrder.requestedPlan,
+            reference: getOrderPaymentReference(latestActiveOrder.id),
+            telegramUsername: supportTelegram,
+            fullName,
+            email: user.email || "",
+            slugPrice: latestActiveOrder.slugPrice,
+            planPrice: latestActiveOrder.planPrice,
+            inviteeDiscountApplied: latestActiveOrder.inviteeDiscountApplied,
+            bonusSpent: latestActiveOrder.bonusSpent,
+            bracelet: Boolean(latestActiveOrder.bracelet),
+            braceletPrice,
+            totalAmount:
+              Math.max(
+                0,
+                Number(latestActiveOrder.slugPrice || 0) -
+                  Number(latestActiveOrder.inviteeDiscountApplied || 0) -
+                  Number(latestActiveOrder.bonusSpent || 0),
+              ) +
+              Number(latestActiveOrder.planPrice || 0) +
+              (latestActiveOrder.bracelet ? Number(braceletPrice || 0) : 0),
+          }),
+          createdAt: latestActiveOrder.createdAt,
+          pendingExpiresAt: slugRow?.pendingExpiresAt || null,
+        };
+      }
     }
 
     let nextAction = "checkout";
@@ -937,24 +1546,34 @@ router.get(
     } else if (activeOrdersCount >= activeOrdersLimit) {
       nextAction = "limit_reached";
       canPurchase = false;
-      message = `У вас уже ${activeOrdersLimit} активных заказа. Дождитесь обработки или отмените один из них.`;
+      message = `У вас уже есть ${activeOrdersLimit} активных заказов. Дождитесь обработки или отмените один.`;
     } else if (userSlugsCount >= slugLimit) {
       nextAction = "slug_limit_reached";
       canPurchase = false;
-      message = slugLimit === 3 ? "Достигнут лимит 3 UNQ для Премиум." : "Для нового UNQ нужен апгрейд до Премиум.";
+      message = slugLimit === 3 ? "Достигнут лимит: 3 UNQ для тарифа Премиум." : "Для нового UNQ требуется переход на Премиум.";
     } else if (currentPlan === "premium") {
       nextAction = "checkout";
       canPurchase = true;
-      message = "Премиум активирован. К оплате только slug и дополнительные товары.";
+      message = "Тариф Премиум уже активен. Оплачиваются только slug и дополнительные товары.";
     } else if (currentPlan === "basic" && requestedPlan === "basic") {
       nextAction = "checkout";
       canPurchase = true;
-      message = "Базовый уже активирован. Для расширения возможностей можно выбрать Премиум.";
+      message = "Тариф Базовый уже активен. Вы можете выбрать Премиум для расширенных возможностей.";
     } else if (currentPlan === "basic" && requestedPlan === "premium") {
       nextAction = "upgrade";
       canPurchase = true;
-      message = "Доступен апгрейд до Премиум.";
+      message = "Доступно обновление до тарифа Премиум.";
     }
+
+    const firstOrderEligible = referralSettings.enabled && !firstApprovedOrderExists && Boolean(referrerLink?.referrerId);
+    const inviteeDiscountCandidate = firstOrderEligible ? campaignSnapshot.inviteeDiscount : 0;
+    const referralPreview = computeDiscountAllocation({
+      slugBasePrice: 0,
+      slugPriceAfterProductDiscount: 0,
+      inviteeDiscountCandidate,
+      walletBalance,
+      discountCapPercent: campaignSnapshot.discountCapPercent,
+    });
 
     res.json({
       authenticated: true,
@@ -979,6 +1598,30 @@ router.get(
         activeOrdersCount,
         slugLimit,
         userSlugsCount,
+      },
+      referral: {
+        enabled: referralSettings.enabled,
+        source: attribution.refSource,
+        offer: attribution.refOffer,
+        promoCodeApplied: campaignSnapshot.promoCodeApplied || "",
+        campaignApplied: campaignSnapshot.campaignApplied,
+        campaignType: campaignSnapshot.campaignType,
+        campaignName: campaignSnapshot.campaignName,
+        refCode: referrerLink?.refCode || attribution.refCode || "",
+        hasReferrer: Boolean(referrerLink?.referrerId),
+        firstOrderEligible,
+        walletBalance,
+        inviteeDiscountCandidate,
+        bonusSpendCandidate: Math.max(0, Math.round(Number(walletBalance || 0))),
+        capPercent: campaignSnapshot.discountCapPercent,
+        fraudVerdict: "allow",
+        fraudHint: campaignEligibility.reason || "",
+        breakdown: {
+          inviteeDiscountApplied: referralPreview.inviteeDiscountApplied,
+          bonusSpent: referralPreview.bonusSpent,
+          discountCapApplied: referralPreview.discountCapApplied,
+          productDiscountAmount: referralPreview.productDiscountAmount,
+        },
       },
       pendingOrder,
     });
@@ -1012,6 +1655,8 @@ router.post(
         telegramChatId: true,
         email: true,
         firstName: true,
+        lastName: true,
+        displayName: true,
         username: true,
         telegramUsername: true,
         plan: true,
@@ -1020,7 +1665,7 @@ router.post(
     });
 
     if (!user || user.status === "blocked" || user.status === "deactivated") {
-      res.status(403).json({ error: "Account is disabled", code: "ACCOUNT_DISABLED" });
+      res.status(403).json({ error: "Аккаунт недоступен", code: "ACCOUNT_DISABLED" });
       return;
     }
 
@@ -1044,14 +1689,49 @@ router.post(
     });
     if (activeOrdersCount >= activeOrdersLimit) {
       res.status(429).json({
-        error: `У вас уже есть ${activeOrdersLimit} активных заказа. Дождитесь обработки или отмените один из них.`,
+        error: `У вас уже есть ${activeOrdersLimit} активных заказов. Дождитесь обработки или отмените один.`,
         code: "TOO_MANY_ACTIVE_ORDERS",
         activeOrdersLimit,
       });
       return;
     }
 
-    const pricing = await getPricingSettings();
+    const attribution = resolveOrderAttribution({
+      body: payload,
+      query: req.query || {},
+      path: req.path || req.originalUrl || "",
+    });
+    const promoCodeInput = normalizePromoCode(payload.promoCode || req.query?.promoCode || "");
+    const [pricing, referralSettings, referralV2Settings, walletBalance, firstApprovedOrderExists, referrerLink, campaignResolved] = await Promise.all([
+      getPricingSettings(),
+      getReferralV1Settings(),
+      getReferralV2Settings(),
+      safeGetWalletBalance(user.id),
+      safeHasApprovedSlugPurchase(user.id),
+      safeResolveReferrerForUser({
+        userId: user.id,
+        explicitRefCode: attribution.refCode || payload.refCode,
+        sessionRefCode: req.session?.pendingRefCode,
+      }),
+      safeResolveCampaignForCheckout({
+        source: attribution.refSource,
+        offer: attribution.refOffer,
+        promoCode: promoCodeInput,
+      }),
+    ]);
+    const campaignEligibility = await safeEvaluateCampaignEligibility({
+      campaign: campaignResolved.campaign,
+      userId: user.id,
+      settings: referralV2Settings,
+    });
+    const effectiveCampaign = campaignEligibility.allowed ? campaignResolved.campaign : null;
+    const campaignSnapshot = buildCampaignSnapshot({
+      campaign: effectiveCampaign,
+      referrerReward: referralSettings.referrerReward,
+      inviteeDiscount: referralSettings.inviteeDiscount,
+      discountCapPercent: referralSettings.discountCapPercent,
+      normalizedPromoCode: campaignResolved.normalizedPromoCode,
+    });
     const requestedPlan = resolveRequestedPlanForOrder({
       currentPlan: user.plan,
       requestedPlan: payload.tariff,
@@ -1122,7 +1802,36 @@ router.post(
       basePrice: basePricing.total,
       sale: activeFlashSale,
     });
-    const finalSlugPrice = flashApplied.finalPrice;
+    const slugPriceAfterProductDiscount = flashApplied.finalPrice;
+    const fraudCheck = await runFraudCheck({
+      userId: user.id,
+      ipRaw: req.ip || req.get("x-forwarded-for") || req.get("x-real-ip") || "",
+      userAgent: req.get("user-agent") || "",
+      persist: false,
+    });
+    let effectiveCampaignForOrder = effectiveCampaign;
+    let campaignSnapshotForOrder = campaignSnapshot;
+    if (fraudCheck.verdict === "block") {
+      effectiveCampaignForOrder = null;
+      campaignSnapshotForOrder = buildCampaignSnapshot({
+        campaign: null,
+        referrerReward: referralSettings.referrerReward,
+        inviteeDiscount: referralSettings.inviteeDiscount,
+        discountCapPercent: referralSettings.discountCapPercent,
+        normalizedPromoCode: campaignResolved.normalizedPromoCode,
+      });
+    }
+
+    const firstOrderEligible = referralSettings.enabled && !firstApprovedOrderExists && Boolean(referrerLink?.referrerId);
+    const inviteeDiscountCandidate = firstOrderEligible ? campaignSnapshotForOrder.inviteeDiscount : 0;
+    const referralPricing = computeDiscountAllocation({
+      slugBasePrice: basePricing.total,
+      slugPriceAfterProductDiscount,
+      inviteeDiscountCandidate,
+      walletBalance,
+      discountCapPercent: campaignSnapshotForOrder.discountCapPercent,
+    });
+    const finalSlugPrice = referralPricing.finalSlugPayable;
     const planPrice = getPlanCharge({
       currentPlan: user.plan,
       requestedPlan,
@@ -1200,9 +1909,47 @@ router.post(
             dropId: drop ? drop.id : null,
             flashSaleId: flashApplied.hasDiscount ? activeFlashSale.id : null,
             flashDiscountAmount: flashApplied.discountAmount,
+            refCode: referrerLink?.refCode || attribution.refCode || null,
+            refSource: attribution.refSource || null,
+            refOffer: attribution.refOffer || null,
+            campaignId: effectiveCampaignForOrder?.id || null,
+            promoCode: campaignSnapshotForOrder.promoCodeApplied || null,
+            fraudVerdict: fraudCheck.verdict || "allow",
+            fraudReason: fraudCheck.reason || null,
+            campaignSnapshot: campaignSnapshotForOrder,
+            inviteeDiscountApplied: referralPricing.inviteeDiscountApplied,
+            bonusSpent: referralPricing.bonusSpent,
+            discountCapApplied: referralPricing.discountCapApplied,
           },
-          select: { id: true, status: true },
+          select: { id: true, status: true, slug: true },
         });
+
+        if (tx.referralFraudCheck) {
+          await tx.referralFraudCheck.create({
+            data: {
+              orderId: slugRequest.id,
+              userId: user.id,
+              ipHash: fraudCheck.ipHash || null,
+              deviceHash: fraudCheck.deviceHash || null,
+              velocityIpCount: Number(fraudCheck.velocityIpCount || 0),
+              velocityDeviceCount: Number(fraudCheck.velocityDeviceCount || 0),
+              score: Number(fraudCheck.score || 0),
+              reason: fraudCheck.reason || null,
+              verdict: fraudCheck.verdict || "allow",
+            },
+          });
+        }
+
+        if (effectiveCampaignForOrder?.id) {
+          await reserveCampaignUsage({
+            tx,
+            campaignId: effectiveCampaignForOrder.id,
+            userId: user.id,
+            orderId: slugRequest.id,
+            amountSpent: referralPricing.inviteeDiscountApplied,
+            idempotencyKey: `campaign:${effectiveCampaignForOrder.id}:order:${slugRequest.id}:reserve`,
+          });
+        }
 
         return slugRequest;
       });
@@ -1223,6 +1970,29 @@ router.post(
     const payment = await buildOrderPaymentDraft({
       orderId: order.id,
       amount: totalOneTime,
+    });
+    const supportTelegram = normalizeTelegramUsername(
+      await getSetting("contact_support_telegram", `@${FALLBACK_SUPPORT_TELEGRAM}`),
+    );
+    const fullName =
+      String(payload.name || "").trim() ||
+      [user.firstName, user.lastName].map((x) => String(x || "").trim()).filter(Boolean).join(" ");
+    const paymentTelegramUrl = buildManualTelegramPaymentUrl({
+      orderId: order.id,
+      slug,
+      requestedPlan,
+      reference: payment.reference,
+      telegramUsername: supportTelegram,
+      fullName,
+      email: user.email || "",
+      slugPrice: finalSlugPrice,
+      slugPriceBeforeDiscount: slugPriceAfterProductDiscount,
+      inviteeDiscountApplied: referralPricing.inviteeDiscountApplied,
+      bonusSpent: referralPricing.bonusSpent,
+      planPrice,
+      bracelet: Boolean(payload.products.bracelet),
+      braceletPrice,
+      totalAmount: totalOneTime,
     });
     try {
       await sendOrderRequestToTelegram({
@@ -1279,12 +2049,45 @@ router.post(
       pendingExpiresAt,
       telegramDelivered,
       pricing: {
+        slugBasePrice: Math.max(0, Math.round(Number(basePricing.total || 0))),
+        slugPriceAfterProductDiscount: slugPriceAfterProductDiscount,
+        productDiscountAmount: referralPricing.productDiscountAmount,
+        campaignApplied: campaignSnapshotForOrder.campaignApplied,
+        campaignType: campaignSnapshotForOrder.campaignType,
+        campaignName: campaignSnapshotForOrder.campaignName,
+        promoCodeApplied: campaignSnapshotForOrder.promoCodeApplied || "",
+        inviteeDiscountApplied: referralPricing.inviteeDiscountApplied,
+        bonusSpent: referralPricing.bonusSpent,
+        discountCapApplied: referralPricing.discountCapApplied,
+        fraudVerdict: fraudCheck.verdict || "allow",
+        fraudHint: fraudCheck.reason || "",
         slugPrice: finalSlugPrice,
         planPrice,
         braceletPrice,
         totalOneTime,
       },
+      referral: {
+        enabled: referralSettings.enabled,
+        source: attribution.refSource,
+        offer: attribution.refOffer,
+        promoCodeApplied: campaignSnapshotForOrder.promoCodeApplied || "",
+        campaignApplied: campaignSnapshotForOrder.campaignApplied,
+        campaignType: campaignSnapshotForOrder.campaignType,
+        campaignName: campaignSnapshotForOrder.campaignName,
+        campaignId: campaignSnapshotForOrder.campaignId,
+        refCode: referrerLink?.refCode || attribution.refCode || "",
+        hasReferrer: Boolean(referrerLink?.referrerId),
+        firstOrderEligible,
+        walletBalance,
+        capPercent: campaignSnapshotForOrder.discountCapPercent,
+        rewardAmount: campaignSnapshotForOrder.referrerReward,
+        fraudVerdict: fraudCheck.verdict || "allow",
+        fraudHint: fraudCheck.reason || "",
+      },
       payment,
+      paymentLinks: {
+        telegramUrl: paymentTelegramUrl,
+      },
       flashSale: flashApplied.hasDiscount
         ? {
           saleId: activeFlashSale.id,
@@ -1311,8 +2114,14 @@ router.post(
   "/order-request/:orderId/cancel",
   requireUserApi,
   asyncHandler(async (req, res) => {
-    const user = req.session.user;
+    const sessionUser = getUserSession(req);
+    const sessionUserId = sessionUser?.userId ? String(sessionUser.userId) : "";
     const orderId = String(req.params.orderId || "").trim();
+
+    if (!sessionUserId) {
+      res.status(401).json({ error: "Unauthorized", code: "AUTH_REQUIRED" });
+      return;
+    }
 
     if (!orderId) {
       res.status(400).json({ error: "Order ID is required" });
@@ -1337,13 +2146,16 @@ router.post(
     }
 
     // Check ownership
-    if (order.userId !== user.id) {
+    if (String(order.userId || "") !== sessionUserId) {
       res.status(403).json({ error: "Это не ваш заказ" });
       return;
     }
 
-    // Only new orders can be cancelled
-    if (order.status !== "new") {
+    const orderStatus = String(order.status || "").toLowerCase();
+    const cancelableStatuses = new Set(["new", "contacted", "paid"]);
+
+    // Allow cancellation for any unfinished order statuses shown in precheck.
+    if (!cancelableStatuses.has(orderStatus)) {
       res.status(400).json({
         error: "Нельзя отменить заказ в статусе: " + order.status,
         currentStatus: order.status,
@@ -1371,18 +2183,31 @@ router.post(
           pendingExpiresAt: null,
         },
       });
+
+      if (tx.referralCampaignUsage) {
+        await tx.referralCampaignUsage.updateMany({
+          where: {
+            orderId: order.id,
+            status: "reserved",
+          },
+          data: {
+            status: "released",
+            releasedAt: new Date(),
+          },
+        });
+      }
     });
 
     // Log cancellation event
     try {
       await logPaymentEvent({
         orderId: order.id,
-        userId: user.id,
+        userId: sessionUserId,
         status: "rejected",
         provider: "manual_tg",
         reference: getOrderPaymentReference(order.id),
         amount: 0,
-        actor: `user:${user.id}`,
+        actor: `user:${sessionUserId}`,
         source: "user_cancel",
         note: "User cancelled order",
       });
@@ -1702,3 +2527,10 @@ router.get(
 module.exports = {
   publicApiRouter: router,
 };
+
+
+
+
+
+
+

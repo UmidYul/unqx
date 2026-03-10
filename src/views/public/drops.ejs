@@ -6,7 +6,7 @@
     : "https://schema.org" , "@type" : "CollectionPage" , name: title || "Релизы slug · UNQX" , description: description
     || "Актуальные и прошедшие релизы slug на UNQX" , url: pageCanonicalUrl, }; %>
     <%- include('../partials/head', { title: title || 'Релизы slug · UNQX' , description: description
-      || 'Релизы slug UNQX' , image: typeof image==='string' ? image : undefined, styles: ['/css/public-card.css'],
+      || 'Релизы slug UNQX' , image: typeof image==='string' ? image : undefined, styles: ['/css/public-card.css', '/css/drops-premium.css'],
       jsonLd: dropsJsonLd }) %>
 </head>
 
@@ -182,3 +182,4 @@
 </body>
 
 </html>
+

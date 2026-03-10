@@ -1,4 +1,4 @@
-const DEFAULT_SLUG_PRICING = {
+﻿const DEFAULT_SLUG_PRICING = {
   basePrice: 100_000,
   lettersAllSame: 5,
   lettersSequential: 3,
@@ -18,6 +18,8 @@ const DEFAULT_PRICING = {
   premiumUpgradePrice: 80_000,
   braceletPrice: 300_000,
 };
+const PENDING_PURCHASE_INTENT_KEY = "unqx.pendingPurchaseIntent.v1";
+const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
 
 (function initOrderModal() {
   const root = document.getElementById("order-modal-root");
@@ -34,6 +36,8 @@ const DEFAULT_PRICING = {
     progressAuth: document.getElementById("order-modal-progress-auth"),
     progressNoAuth: document.getElementById("order-modal-progress-no-auth"),
     stepAuth: document.getElementById("order-modal-step-auth"),
+    authLogin: document.getElementById("order-modal-auth-login"),
+    authRegister: document.getElementById("order-modal-auth-register"),
     stepPending: document.getElementById("order-modal-step-pending"),
     stepForm: document.getElementById("order-modal-step-form"),
     stepSuccess: document.getElementById("order-modal-step-success"),
@@ -61,12 +65,24 @@ const DEFAULT_PRICING = {
     planSection: document.getElementById("order-modal-plan-section"),
     planActivationNote: document.getElementById("order-modal-plan-activation-note"),
     bracelet: document.getElementById("order-modal-bracelet"),
+    promoCode: document.getElementById("order-modal-promo-code"),
+    promoCheck: document.getElementById("order-modal-promo-check"),
+    campaignHint: document.getElementById("order-modal-campaign-hint"),
+    fraudHint: document.getElementById("order-modal-fraud-hint"),
     name: document.getElementById("order-modal-name"),
     totalSlugTitle: document.getElementById("order-modal-total-slug-title"),
     totalSlugValue: document.getElementById("order-modal-total-slug-value"),
     totalPlanRow: document.getElementById("order-modal-total-plan-row"),
     totalPlanTitle: document.getElementById("order-modal-total-plan-title"),
     totalPlanValue: document.getElementById("order-modal-total-plan-value"),
+    totalProductDiscountRow: document.getElementById("order-modal-total-product-discount-row"),
+    totalProductDiscountValue: document.getElementById("order-modal-total-product-discount-value"),
+    totalInviteeDiscountRow: document.getElementById("order-modal-total-invitee-discount-row"),
+    totalInviteeDiscountValue: document.getElementById("order-modal-total-invitee-discount-value"),
+    totalBonusRow: document.getElementById("order-modal-total-bonus-row"),
+    totalBonusValue: document.getElementById("order-modal-total-bonus-value"),
+    totalCapRow: document.getElementById("order-modal-total-cap-row"),
+    totalCapValue: document.getElementById("order-modal-total-cap-value"),
     totalBraceletRow: document.getElementById("order-modal-total-bracelet-row"),
     totalNow: document.getElementById("order-modal-total-now"),
     totalMonthly: document.getElementById("order-modal-total-monthly"),
@@ -82,7 +98,6 @@ const DEFAULT_PRICING = {
     pendingStatus: document.getElementById("order-modal-pending-status"),
     pendingContinue: document.getElementById("order-modal-pending-continue"),
     pendingCancel: document.getElementById("order-modal-pending-cancel"),
-    closePending: document.getElementById("order-modal-close-pending"),
   };
 
   if (
@@ -108,25 +123,34 @@ const DEFAULT_PRICING = {
   let countdownTimer = null;
   let pendingAuthCallback = null;
   let priceRequestSeq = 0;
+  let currentStep = "auth";
   let lastFocusedElement = null;
   let isCloseConfirming = false;
   let lastTelegramPaymentUrl = "https://t.me/unqx_uz";
+  let quickPayNode = null;
+  let quickPayState = null;
+  let quickPayDismissed = false;
   let state = {
     slugLocked: false,
     lockedSlug: "",
     theme: "default_dark",
     braceletForced: false,
     dropId: null,
+    refSource: "",
+    refOffer: "",
+    promoCode: "",
+    promoValidationHint: "",
     checkoutContext: null,
     submitBlockedMessage: "",
     lastOpenOptions: {},
+    initialFormSnapshot: null,
     pricing: { ...DEFAULT_PRICING, userPlan: "none" },
     slugPricing: { ...DEFAULT_SLUG_PRICING },
   };
 
   const STEP_PROGRESS = {
-    auth: { width: "25%", label: "Шаг 1 из 4", line: "① Slug · ② Тариф · ③ Дополнительно · ④ Подтверждение" },
-    form: { width: "25%", label: "Шаг 1 из 4", line: "① Slug · ② Тариф · ③ Дополнительно · ④ Подтверждение" },
+    auth: { width: "25%" },
+    form: { width: "25%" },
     pending: { width: "100%", label: "Незавершённый заказ", line: "Продолжите оплату или отмените заказ" },
     success: { width: "100%", label: "Готово", line: "Заявка создана · ожидаем оплату" },
   };
@@ -139,8 +163,228 @@ const DEFAULT_PRICING = {
     document.querySelector('meta[name="csrf-token"]')?.setAttribute("content", nextToken);
   }
 
+  function normalizeOpenIntent(options = {}) {
+    const slugParsed = splitSlug(options.slug || "");
+    const slug = slugParsed ? slugParsed.slug : "";
+    const planRaw = String(options.plan || "").trim().toLowerCase();
+    const plan = planRaw === "premium" ? "premium" : planRaw === "basic" ? "basic" : "";
+    const theme = String(options.theme || "").trim();
+    const dropId = String(options.dropId || "").trim();
+    const refSource = String(options.refSource || "").trim().toLowerCase().replace(/[^a-z0-9_-]/g, "").slice(0, 40);
+    const refOffer = String(options.refOffer || "").trim().toLowerCase().replace(/[^a-z0-9_.:-]/g, "").slice(0, 80);
+    const promoCode = String(options.promoCode || "").trim().toUpperCase().replace(/[^A-Z0-9_-]/g, "").slice(0, 32);
+    return {
+      slug,
+      plan,
+      theme,
+      bracelet: Boolean(options.bracelet),
+      dropId,
+      refSource,
+      refOffer,
+      promoCode,
+    };
+  }
+
+  function hasMeaningfulIntent(intent) {
+    if (!intent || typeof intent !== "object") return false;
+    return Boolean(intent.slug || intent.plan || intent.theme || intent.bracelet || intent.dropId || intent.refSource || intent.refOffer || intent.promoCode);
+  }
+
+  function readPendingPurchaseIntent() {
+    try {
+      const raw = window.localStorage.getItem(PENDING_PURCHASE_INTENT_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (!parsed || typeof parsed !== "object") return null;
+      const createdAt = Number(parsed.createdAt || 0);
+      if (!Number.isFinite(createdAt) || createdAt <= 0) return null;
+      if (Date.now() - createdAt > PENDING_PURCHASE_INTENT_TTL_MS) return null;
+      const intent = normalizeOpenIntent(parsed.options || {});
+      return hasMeaningfulIntent(intent) ? intent : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function clearPendingPurchaseIntent() {
+    try {
+      window.localStorage.removeItem(PENDING_PURCHASE_INTENT_KEY);
+    } catch {
+      // ignore localStorage errors
+    }
+  }
+
+  function savePendingPurchaseIntent(options = {}) {
+    const intent = normalizeOpenIntent(options);
+    if (!hasMeaningfulIntent(intent)) {
+      clearPendingPurchaseIntent();
+      return;
+    }
+    try {
+      window.localStorage.setItem(
+        PENDING_PURCHASE_INTENT_KEY,
+        JSON.stringify({
+          createdAt: Date.now(),
+          options: intent,
+        }),
+      );
+    } catch {
+      // ignore localStorage errors
+    }
+  }
+
+  function buildAuthNextPath() {
+    return `${window.location.pathname || "/"}${window.location.search || ""}${window.location.hash || ""}`;
+  }
+
+  function bindAuthIntentLinks() {
+    const intent = normalizeOpenIntent(state.lastOpenOptions || {});
+    const nextPath = buildAuthNextPath();
+
+    if (dom.authLogin instanceof HTMLAnchorElement) {
+      dom.authLogin.href = `/login?next=${encodeURIComponent(nextPath)}`;
+      if (dom.authLogin.dataset.intentBound !== "1") {
+        dom.authLogin.dataset.intentBound = "1";
+        dom.authLogin.addEventListener("click", () => {
+          savePendingPurchaseIntent(state.lastOpenOptions || {});
+        });
+      }
+    }
+
+    if (dom.authRegister instanceof HTMLAnchorElement) {
+      dom.authRegister.href = `/register?next=${encodeURIComponent(nextPath)}`;
+      if (dom.authRegister.dataset.intentBound !== "1") {
+        dom.authRegister.dataset.intentBound = "1";
+        dom.authRegister.addEventListener("click", () => {
+          savePendingPurchaseIntent(state.lastOpenOptions || intent);
+        });
+      }
+    }
+  }
+
+  function restorePurchaseIntentIfNeeded() {
+    if (isOpen || !currentUser) {
+      return;
+    }
+    const intent = readPendingPurchaseIntent();
+    if (!intent) {
+      clearPendingPurchaseIntent();
+      return;
+    }
+    clearPendingPurchaseIntent();
+    void open(intent);
+  }
+
+  function openTelegramUrl(url) {
+    const fallbackUrl = "https://t.me/unqx_uz";
+    const telegramUrl = /^https:\/\/t\.me\/[a-zA-Z0-9_]{4,}(?:\?|$)/i.test(url || "") ? url : fallbackUrl;
+    const [baseUrl, query = ""] = telegramUrl.split("?");
+    const username = String(baseUrl.replace(/^https:\/\/t\.me\//i, "")).trim() || "unqx_uz";
+    const params = new URLSearchParams(query);
+    const text = params.get("text");
+    const tgAppUrl = `tg://resolve?domain=${encodeURIComponent(username)}${text ? `&text=${encodeURIComponent(text)}` : ""}`;
+    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || "");
+    if (isMobile) {
+      window.location.href = tgAppUrl;
+      window.setTimeout(() => {
+        window.location.href = telegramUrl;
+      }, 900);
+      return;
+    }
+    window.location.href = telegramUrl;
+  }
+
+  function upsertQuickPayButton() {
+    if (quickPayNode instanceof HTMLElement && document.body.contains(quickPayNode)) {
+      return quickPayNode;
+    }
+    const wrap = document.createElement("div");
+    wrap.id = "order-quick-pay";
+    wrap.style.position = "fixed";
+    wrap.style.right = "16px";
+    wrap.style.bottom = "16px";
+    wrap.style.zIndex = "85";
+    wrap.style.display = "none";
+    wrap.innerHTML = `
+      <div style="display:flex;align-items:center;gap:8px;background:#111827;color:#fff;border-radius:12px;padding:10px 12px;box-shadow:0 10px 30px rgba(0,0,0,.25);max-width:90vw;">
+        <button type="button" data-a="open" class="interactive-btn" style="border:0;background:transparent;color:inherit;font-weight:600;cursor:pointer;white-space:nowrap;">Продолжить оплату</button>
+        <button type="button" data-a="clear" class="interactive-btn" aria-label="Скрыть" style="border:0;background:transparent;color:#cbd5e1;cursor:pointer;font-size:16px;line-height:1;">×</button>
+      </div>
+    `;
+    wrap.addEventListener("click", (event) => {
+      const target = event.target instanceof HTMLElement ? event.target.closest("[data-a]") : null;
+      if (!(target instanceof HTMLElement)) return;
+      const action = target.getAttribute("data-a");
+      if (action === "clear") {
+        quickPayDismissed = true;
+        renderQuickPayButton();
+        return;
+      }
+      if (quickPayState?.url) {
+        openTelegramUrl(quickPayState.url);
+        return;
+      }
+      void syncQuickPayState();
+    });
+    document.body.appendChild(wrap);
+    quickPayNode = wrap;
+    return wrap;
+  }
+
+  function renderQuickPayButton() {
+    const node = upsertQuickPayButton();
+    const draft = quickPayState;
+    if (!draft || quickPayDismissed) {
+      node.style.display = "none";
+      return;
+    }
+    const openBtn = node.querySelector('[data-a="open"]');
+    if (openBtn instanceof HTMLButtonElement) {
+      const tail = draft.reference || draft.slug || "заказ";
+      openBtn.textContent = `Продолжить оплату · ${tail}`;
+    }
+    node.style.display = "block";
+  }
+
+  async function syncQuickPayState(precheck = null) {
+    try {
+      const context =
+        precheck && typeof precheck === "object"
+          ? precheck
+          : await fetchOrderPrecheck(state.lastOpenOptions || {});
+      const pending = context?.pendingOrder && typeof context.pendingOrder === "object" ? context.pendingOrder : null;
+      const isPendingFlow = String(context?.nextAction || "") === "resume_pending" && Boolean(pending);
+      if (!isPendingFlow) {
+        quickPayState = null;
+        quickPayDismissed = false;
+        renderQuickPayButton();
+        return null;
+      }
+      const url = buildPendingPaymentUrl(pending);
+      quickPayState = {
+        url,
+        orderId: String(pending.id || "").trim(),
+        slug: String(pending.slug || "").trim().toUpperCase(),
+        reference: String(pending.paymentReference || "").trim(),
+      };
+      quickPayDismissed = false;
+    } catch {
+      quickPayState = null;
+    }
+    renderQuickPayButton();
+    return quickPayState;
+  }
+
   function formatPrice(number) {
     return Number(number || 0).toLocaleString("ru-RU").replace(/,/g, " ");
+  }
+
+  function formatHoursRu(value) {
+    const hours = Math.max(1, Math.round(Number(value) || 0));
+    const mod10 = hours % 10;
+    const mod100 = hours % 100;
+    const suffix = mod10 === 1 && mod100 !== 11 ? "час" : mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20) ? "часа" : "часов";
+    return `${hours} ${suffix}`;
   }
 
   function normalizeLetters(value) {
@@ -211,13 +455,42 @@ const DEFAULT_PRICING = {
     }
     const letterData = getLetterMultiplier(normalizedLetters);
     const digitData = getDigitMultiplier(normalizedDigits);
-    const total = Number(state.slugPricing?.basePrice || DEFAULT_SLUG_PRICING.basePrice) * letterData.multiplier * digitData.multiplier;
+    const slugValue = `${normalizedLetters}${normalizedDigits}`;
+    const multipliedBase = Number(state.slugPricing?.basePrice || DEFAULT_SLUG_PRICING.basePrice) * letterData.multiplier * digitData.multiplier;
+    const customRules = Array.isArray(state.slugPricing?.customRules) ? state.slugPricing.customRules : [];
+    let customDeltaTotal = 0;
+    const customBreakdown = [];
+    for (const rawRule of customRules) {
+      if (!rawRule || typeof rawRule !== "object") continue;
+      const pattern = String(rawRule.pattern || "").trim().toUpperCase();
+      const type = String(rawRule.type || "").trim();
+      const delta = Number(rawRule.delta || 0);
+      if (!pattern || !Number.isFinite(delta) || delta === 0) continue;
+      let match = false;
+      if (type === "contains" && slugValue.includes(pattern)) match = true;
+      if (type === "startsWith" && slugValue.startsWith(pattern)) match = true;
+      if (type === "endsWith" && slugValue.endsWith(pattern)) match = true;
+      if (type === "regex") {
+        try {
+          if (new RegExp(pattern).test(slugValue)) match = true;
+        } catch {
+          match = false;
+        }
+      }
+      if (!match) continue;
+      customDeltaTotal += delta;
+      customBreakdown.push({ label: String(rawRule.label || pattern).trim() || pattern, delta });
+    }
+    const total = multipliedBase + customDeltaTotal;
     return {
-      slug: `${normalizedLetters}${normalizedDigits}`,
+      slug: slugValue,
       letters: normalizedLetters,
       digits: normalizedDigits,
       letterData,
       digitData,
+      multipliedBase,
+      customDeltaTotal,
+      customBreakdown,
       total,
     };
   }
@@ -254,10 +527,49 @@ const DEFAULT_PRICING = {
     return raw === "premium" ? "premium" : "basic";
   }
 
+  function resolveFallbackAttribution() {
+    const path = String(window.location.pathname || "").toLowerCase();
+    if (path.startsWith("/drops")) {
+      return { refSource: "drops", refOffer: "drop_live" };
+    }
+    return { refSource: "order_modal", refOffer: "default" };
+  }
+
+  function resolveAttributionFromOptions(options = {}) {
+    const fallback = resolveFallbackAttribution();
+    const source = String(options.refSource || state.refSource || fallback.refSource || "")
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9_-]/g, "")
+      .slice(0, 40);
+    const offer = String(options.refOffer || state.refOffer || fallback.refOffer || "")
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9_.:-]/g, "")
+      .slice(0, 80);
+    return {
+      refSource: source || fallback.refSource,
+      refOffer: offer || fallback.refOffer,
+    };
+  }
+
   async function fetchOrderPrecheck(options = {}) {
     const requestedPlan = resolveRequestedPlanFromOpenOptions(options);
+    const attribution = resolveAttributionFromOptions(options);
+    const params = new URLSearchParams();
+    params.set("requestedPlan", requestedPlan);
+    if (attribution.refSource) params.set("refSource", attribution.refSource);
+    if (attribution.refOffer) params.set("refOffer", attribution.refOffer);
+    const promoCode = String(state.promoCode || (dom.promoCode instanceof HTMLInputElement ? dom.promoCode.value : "") || "")
+      .trim()
+      .toUpperCase()
+      .replace(/[^A-Z0-9_-]/g, "")
+      .slice(0, 32);
+    if (promoCode) {
+      params.set("promoCode", promoCode);
+    }
     try {
-      const response = await fetch(`/api/cards/order-precheck?requestedPlan=${encodeURIComponent(requestedPlan)}`, {
+      const response = await fetch(`/api/cards/order-precheck?${params.toString()}`, {
         headers: { Accept: "application/json" },
         cache: "no-store",
       });
@@ -275,6 +587,23 @@ const DEFAULT_PRICING = {
         canPurchase: Boolean(currentUser),
         nextAction: currentUser ? "checkout" : "login",
         message: "",
+        referral: {
+          enabled: false,
+          source: attribution.refSource,
+          offer: attribution.refOffer,
+          walletBalance: 0,
+          hasReferrer: false,
+          firstOrderEligible: false,
+          inviteeDiscountCandidate: 0,
+          bonusSpendCandidate: 0,
+          capPercent: 0,
+          breakdown: {
+            inviteeDiscountApplied: 0,
+            bonusSpent: 0,
+            discountCapApplied: 0,
+            productDiscountAmount: 0,
+          },
+        },
       };
     }
   }
@@ -400,10 +729,29 @@ const DEFAULT_PRICING = {
     dom.userAvatar.src = currentUser?.photoUrl || "/brand/logo.PNG";
   }
 
+  function getCurrentFormSnapshot() {
+    return {
+      letters: normalizeLetters(dom.letters.value),
+      digits: normalizeDigits(dom.digits.value),
+      name: String(dom.name.value || "").trim(),
+      bracelet: Boolean(dom.bracelet.checked),
+      plan: selectedPlan(),
+    };
+  }
+
   function isFormDirty() {
-    const hasSlug = Boolean(normalizeLetters(dom.letters.value) || normalizeDigits(dom.digits.value));
-    const hasName = Boolean(dom.name.value.trim());
-    return hasSlug || hasName || dom.bracelet.checked || dom.planPremium.checked;
+    const baseline = state.initialFormSnapshot;
+    const current = getCurrentFormSnapshot();
+    if (!baseline || typeof baseline !== "object") {
+      return Boolean(current.letters || current.digits || current.name || current.bracelet || current.plan === "premium");
+    }
+    return (
+      current.letters !== String(baseline.letters || "") ||
+      current.digits !== String(baseline.digits || "") ||
+      current.name !== String(baseline.name || "") ||
+      current.bracelet !== Boolean(baseline.bracelet) ||
+      current.plan !== String(baseline.plan || "basic")
+    );
   }
 
   function stopCountdown() {
@@ -413,20 +761,54 @@ const DEFAULT_PRICING = {
     }
   }
 
+  function getFormStages() {
+    const stages = [];
+    if (!state.slugLocked) {
+      stages.push("Slug");
+    }
+    if (dom.planSection instanceof HTMLElement && !dom.planSection.classList.contains("hidden")) {
+      stages.push("Тариф");
+    }
+    if (dom.bracelet instanceof HTMLInputElement && !dom.bracelet.disabled) {
+      stages.push("Дополнительно");
+    }
+    stages.push("Подтверждение");
+    return stages;
+  }
+
+  function formatStagesLine(stages) {
+    return stages.map((label, index) => `${String.fromCodePoint(0x2460 + index)} ${label}`).join(" · ");
+  }
+
   function setStep(step) {
+    currentStep = step;
     const progress = STEP_PROGRESS[step] || STEP_PROGRESS.form;
     if (dom.progressBarInner instanceof HTMLElement) {
       dom.progressBarInner.style.width = progress.width;
     }
+
+    let label = String(progress.label || "");
+    let line = String(progress.line || "");
+    if (step === "form") {
+      const stages = getFormStages();
+      label = `Шаг 1 из ${stages.length}`;
+      line = formatStagesLine(stages);
+    }
+    if (step === "auth") {
+      label = "";
+      line = "";
+    }
     if (dom.progressLabel instanceof HTMLElement) {
-      dom.progressLabel.textContent = progress.label;
+      dom.progressLabel.textContent = label;
+      dom.progressLabel.classList.toggle("hidden", !label);
     }
     if (dom.progressAuth instanceof HTMLElement) {
-      dom.progressAuth.textContent = progress.line;
+      dom.progressAuth.textContent = line;
     }
     if (dom.progressNoAuth instanceof HTMLElement) {
-      dom.progressNoAuth.textContent = progress.line;
+      dom.progressNoAuth.textContent = line;
     }
+    setProgress();
 
     dom.stepAuth.classList.toggle("hidden", step !== "auth");
     dom.stepPending?.classList.toggle("hidden", step !== "pending");
@@ -436,6 +818,14 @@ const DEFAULT_PRICING = {
 
   function setProgress() {
     if (!(dom.progressAuth instanceof HTMLElement) || !(dom.progressNoAuth instanceof HTMLElement)) {
+      return;
+    }
+    const lineAuth = String(dom.progressAuth.textContent || "").trim();
+    const lineNoAuth = String(dom.progressNoAuth.textContent || "").trim();
+    const hasLine = Boolean(lineAuth || lineNoAuth);
+    if (currentStep === "auth" || !hasLine) {
+      dom.progressAuth.classList.add("hidden");
+      dom.progressNoAuth.classList.add("hidden");
       return;
     }
     const showAuth = !currentUser;
@@ -490,9 +880,21 @@ const DEFAULT_PRICING = {
     if (!order || typeof order !== "object") {
       return "https://t.me/unqx_uz";
     }
+    const serverUrl = String(order.paymentUrl || "").trim();
+    if (/^https:\/\/t\.me\/[a-zA-Z0-9_]{4,}(?:\?|$)/.test(serverUrl)) {
+      return serverUrl;
+    }
     const reference = String(order.paymentReference || "").trim() || `UNQX-${String(order.id || "").replace(/[^a-zA-Z0-9]/g, "").slice(0, 10).toUpperCase()}`;
     const slug = String(order.slug || "").trim().toUpperCase();
-    const message = `Здравствуйте! Продолжаю оплату заказа #️⃣ ${reference}\n\nUNQ: ${slug}\nТариф: ${planLabel(order.requestedPlan)}`;
+    const slugPrice = Number(order.slugPrice || 0);
+    const inviteeDiscountApplied = Number(order.inviteeDiscountApplied || 0);
+    const bonusSpent = Number(order.bonusSpent || 0);
+    const planPriceValue = Number(order.planPrice || 0);
+    const braceletPriceValue = order.bracelet ? Number(order.braceletPrice || 300000) : 0;
+    const totalAmount = Number(order.totalOneTime || Math.max(0, slugPrice - inviteeDiscountApplied - bonusSpent) + planPriceValue + braceletPriceValue);
+    const userName = (currentUser?.displayName || currentUser?.firstName || "").trim() || "не указано";
+    const userEmail = (currentUser?.email || "").trim() || "не указан";
+    const message = `Здравствуйте! Хочу оплатить заказ #️⃣ ${reference}\n\nUNQ: ${slug}\nФИО: ${userName}\nEmail: ${userEmail}\n\n💳 Детализация оплаты:\n• Slug ${slug}: ${formatPrice(slugPrice)} сум\n• Скидка по рефералке: -${formatPrice(inviteeDiscountApplied)} сум\n• Списано бонусов: -${formatPrice(bonusSpent)} сум\n• Тариф ${planLabel(order.requestedPlan)}: ${formatPrice(planPriceValue)} сум\n• Браслет: ${formatPrice(braceletPriceValue)} сум\n\nИтого к оплате: ${formatPrice(totalAmount)} сум`;
     return `https://t.me/unqx_uz?text=${encodeURIComponent(message)}`;
   }
 
@@ -507,6 +909,9 @@ const DEFAULT_PRICING = {
     const visible = action === "resume_pending" && Boolean(pending);
     if (!visible) {
       setPendingStatus("", "neutral");
+      quickPayState = null;
+      quickPayDismissed = false;
+      renderQuickPayButton();
       if (dom.pendingMeta instanceof HTMLElement) {
         dom.pendingMeta.textContent = "UNQ: —";
       }
@@ -524,7 +929,17 @@ const DEFAULT_PRICING = {
       dom.pendingMeta.textContent = meta;
     }
     if (dom.pendingContinue instanceof HTMLAnchorElement) {
-      dom.pendingContinue.href = buildPendingPaymentUrl(pending);
+      const url = buildPendingPaymentUrl(pending);
+      dom.pendingContinue.href = url;
+      lastTelegramPaymentUrl = url;
+      quickPayState = {
+        url,
+        orderId: String(pending.id || "").trim(),
+        slug: String(pending.slug || "").trim().toUpperCase(),
+        reference: String(pending.paymentReference || "").trim(),
+      };
+      quickPayDismissed = false;
+      renderQuickPayButton();
     }
     if (dom.pendingCancel instanceof HTMLButtonElement) {
       dom.pendingCancel.setAttribute("data-order-id", String(pending.id || ""));
@@ -602,18 +1017,22 @@ const DEFAULT_PRICING = {
     return "form";
   }
 
-  function showConfirm(message) {
+  function showConfirm(message, options = {}) {
+    const title = String(options.title || "Подтверждение");
+    const confirmText = String(options.confirmText || "Подтвердить");
+    const cancelText = String(options.cancelText || "Отмена");
     if (window.UNQSiteDialog?.confirm) {
       return window.UNQSiteDialog.confirm(message, {
-        title: "Подтверждение",
-        confirmText: "Закрыть",
-        cancelText: "Остаться",
+        title,
+        confirmText,
+        cancelText,
       });
     }
-    if (typeof window.confirm === "function") {
-      return Promise.resolve(window.confirm(message));
+    try {
+      return Promise.resolve(window.confirm(String(message || "")));
+    } catch {
+      return Promise.resolve(false);
     }
-    return Promise.resolve(false);
   }
 
   function setSlugMode(pricing) {
@@ -645,9 +1064,14 @@ const DEFAULT_PRICING = {
             discountPercent: Number(payload.discountPercent || 0),
           }
           : null;
-      return { total, flash, source: String(payload.source || "calculator") };
+      return {
+        total,
+        flash,
+        source: String(payload.source || "calculator"),
+        calculation: payload?.calculation && typeof payload.calculation === "object" ? payload.calculation : null,
+      };
     } catch {
-      return { total: fallbackTotal, flash: null, source: "calculator" };
+      return { total: fallbackTotal, flash: null, source: "calculator", calculation: null };
     }
   }
 
@@ -670,8 +1094,21 @@ const DEFAULT_PRICING = {
       return;
     }
     const slugPrice = server ? server.total : fallbackSlugPrice;
+    const slugBaseForCap = server?.flash?.basePrice ? Number(server.flash.basePrice || slugPrice) : slugPrice;
+    const productDiscountAmount = Math.max(0, Math.round(slugBaseForCap - slugPrice));
+    const referral = state.checkoutContext?.referral && typeof state.checkoutContext.referral === "object" ? state.checkoutContext.referral : null;
+    const capPercent = Number(referral?.capPercent || 0);
+    const inviteeCandidate = Number(referral?.inviteeDiscountCandidate || 0);
+    const walletBalance = Number(referral?.walletBalance || 0);
+    const capAmount = Math.max(0, Math.floor((Math.max(0, slugBaseForCap) * capPercent) / 100));
+    const capRemaining = Math.max(0, capAmount - productDiscountAmount);
+    const inviteeDiscountApplied = Math.max(0, Math.min(inviteeCandidate, capRemaining, slugPrice));
+    const afterInvitee = Math.max(0, slugPrice - inviteeDiscountApplied);
+    const bonusSpent = Math.max(0, Math.min(walletBalance, Math.max(0, capRemaining - inviteeDiscountApplied), afterInvitee));
+    const slugPayable = Math.max(0, afterInvitee - bonusSpent);
+    const discountCapApplied = Math.max(0, (inviteeCandidate - inviteeDiscountApplied) + Math.max(0, walletBalance - bonusSpent));
     const braceletPrice = bracelet ? pricingSettings.braceletPrice : 0;
-    const oneTime = slugPrice + planCharge + braceletPrice;
+    const oneTime = slugPayable + planCharge + braceletPrice;
     const slugLabel = pricing ? pricing.slug : "___ ___";
     const rarity = getRarity(slugPrice);
 
@@ -716,8 +1153,35 @@ const DEFAULT_PRICING = {
       } else if (server?.source === "override") {
         dom.formula.textContent = `Персональная цена: ${formatPrice(slugPrice)} сум`;
       } else {
-        const m = pricing ? pricing.letterData.multiplier * pricing.digitData.multiplier : 1;
-        dom.formula.textContent = `${formatPrice(slugBasePrice)} × ${m} = ${formatPrice(slugPrice)} сум`;
+        const calc = server?.calculation;
+        const base = Number(calc?.basePrice || slugBasePrice);
+        const lettersMultiplier = Number(calc?.lettersMultiplier || pricing?.letterData?.multiplier || 1);
+        const digitsMultiplier = Number(calc?.digitsMultiplier || pricing?.digitData?.multiplier || 1);
+        const customBreakdown =
+          Array.isArray(calc?.customBreakdown) && calc.customBreakdown.length
+            ? calc.customBreakdown
+            : Array.isArray(pricing?.customBreakdown)
+              ? pricing.customBreakdown
+              : [];
+        const customParts = customBreakdown
+          .map((item) => {
+            const delta = Number(item?.delta || 0);
+            if (!delta) return "";
+            const sign = delta > 0 ? "+" : "-";
+            const amount = formatPrice(Math.abs(delta));
+            const label = String(item?.label || "").trim();
+            return `${sign} ${amount}${label ? ` (${label})` : ""}`;
+          })
+          .filter(Boolean)
+          .join(" ");
+        const customDeltaTotal = Number(calc?.customDeltaTotal ?? (pricing?.customDeltaTotal || 0));
+        const tail = customParts ? ` ${customParts}` : "";
+        if (!customParts && customDeltaTotal) {
+          const sign = customDeltaTotal > 0 ? "+" : "-";
+          dom.formula.textContent = `${formatPrice(base)} × ${lettersMultiplier} × ${digitsMultiplier} ${sign} ${formatPrice(Math.abs(customDeltaTotal))} = ${formatPrice(slugPrice)} сум`;
+        } else {
+          dom.formula.textContent = `${formatPrice(base)} × ${lettersMultiplier} × ${digitsMultiplier}${tail} = ${formatPrice(slugPrice)} сум`;
+        }
       }
     }
     if (dom.rarity instanceof HTMLElement) {
@@ -728,7 +1192,7 @@ const DEFAULT_PRICING = {
       dom.totalSlugTitle.textContent = `Slug ${pricing ? pricing.slug : "AAA000"}`;
     }
     if (dom.totalSlugValue instanceof HTMLElement) {
-      dom.totalSlugValue.textContent = `${formatPrice(slugPrice)} сум`;
+      dom.totalSlugValue.textContent = `${formatPrice(slugPayable)} сум`;
     }
     if (dom.totalPlanTitle instanceof HTMLElement) {
       dom.totalPlanTitle.textContent = requestedPlan === "premium" ? "Тариф Премиум" : "Тариф Базовый";
@@ -745,11 +1209,133 @@ const DEFAULT_PRICING = {
       dom.totalBraceletRow.classList.toggle("hidden", !bracelet);
       dom.totalBraceletRow.classList.toggle("flex", bracelet);
     }
+    if (dom.totalProductDiscountRow instanceof HTMLElement) {
+      dom.totalProductDiscountRow.classList.toggle("hidden", productDiscountAmount <= 0);
+      dom.totalProductDiscountRow.classList.toggle("flex", productDiscountAmount > 0);
+    }
+    if (dom.totalProductDiscountValue instanceof HTMLElement) {
+      dom.totalProductDiscountValue.textContent = `-${formatPrice(productDiscountAmount)} сум`;
+    }
+    if (dom.totalInviteeDiscountRow instanceof HTMLElement) {
+      dom.totalInviteeDiscountRow.classList.toggle("hidden", inviteeDiscountApplied <= 0);
+      dom.totalInviteeDiscountRow.classList.toggle("flex", inviteeDiscountApplied > 0);
+    }
+    if (dom.totalInviteeDiscountValue instanceof HTMLElement) {
+      dom.totalInviteeDiscountValue.textContent = `-${formatPrice(inviteeDiscountApplied)} сум`;
+    }
+    if (dom.totalBonusRow instanceof HTMLElement) {
+      dom.totalBonusRow.classList.toggle("hidden", bonusSpent <= 0);
+      dom.totalBonusRow.classList.toggle("flex", bonusSpent > 0);
+    }
+    if (dom.totalBonusValue instanceof HTMLElement) {
+      dom.totalBonusValue.textContent = `-${formatPrice(bonusSpent)} сум`;
+    }
+    if (dom.totalCapRow instanceof HTMLElement) {
+      dom.totalCapRow.classList.toggle("hidden", discountCapApplied <= 0);
+      dom.totalCapRow.classList.toggle("flex", discountCapApplied > 0);
+    }
+    if (dom.totalCapValue instanceof HTMLElement) {
+      dom.totalCapValue.textContent = `+${formatPrice(discountCapApplied)} сум`;
+    }
     if (dom.totalNow instanceof HTMLElement) {
       dom.totalNow.textContent = `${formatPrice(oneTime)} сум`;
     }
     if (dom.totalMonthly instanceof HTMLElement) {
       dom.totalMonthly.textContent = "Единоразово · больше не платишь";
+    }
+    if (dom.campaignHint instanceof HTMLElement) {
+      const campaignApplied = Boolean(referral?.campaignApplied);
+      const campaignName = String(referral?.campaignName || "").trim();
+      const promoCodeApplied = String(referral?.promoCodeApplied || "").trim();
+      if (campaignApplied) {
+        dom.campaignHint.classList.remove("hidden");
+        dom.campaignHint.textContent = campaignName
+          ? `Применена кампания: ${campaignName}${promoCodeApplied ? ` (${promoCodeApplied})` : ""}`
+          : `Применена акция${promoCodeApplied ? ` (${promoCodeApplied})` : ""}`;
+      } else if (state.promoValidationHint) {
+        dom.campaignHint.classList.remove("hidden");
+        dom.campaignHint.textContent = state.promoValidationHint;
+      } else {
+        dom.campaignHint.classList.add("hidden");
+        dom.campaignHint.textContent = "";
+      }
+    }
+    if (dom.fraudHint instanceof HTMLElement) {
+      const fraudVerdict = String(referral?.fraudVerdict || "").trim().toLowerCase();
+      const fraudHint = String(referral?.fraudHint || "").trim();
+      if (fraudVerdict === "block") {
+        dom.fraudHint.classList.remove("hidden");
+        dom.fraudHint.textContent = "Кампанийная скидка недоступна для этого заказа. Применен стандартный расчет.";
+      } else if (fraudVerdict === "review") {
+        dom.fraudHint.classList.remove("hidden");
+        dom.fraudHint.textContent = fraudHint
+          ? `Проверка безопасности: ${fraudHint}. Награда рефереру будет после проверки.`
+          : "Проверка безопасности: награда рефереру будет после проверки.";
+      } else {
+        dom.fraudHint.classList.add("hidden");
+        dom.fraudHint.textContent = "";
+      }
+    }
+  }
+
+  async function validatePromoCodeManually() {
+    if (!(dom.promoCode instanceof HTMLInputElement)) {
+      return;
+    }
+    const promoCode = String(dom.promoCode.value || "")
+      .trim()
+      .toUpperCase()
+      .replace(/[^A-Z0-9_-]/g, "")
+      .slice(0, 32);
+    dom.promoCode.value = promoCode;
+    state.promoCode = promoCode;
+    if (!promoCode) {
+      state.promoValidationHint = "";
+      if (dom.campaignHint instanceof HTMLElement) {
+        dom.campaignHint.classList.add("hidden");
+        dom.campaignHint.textContent = "";
+      }
+      await refreshCheckoutContext();
+      return;
+    }
+    const originalText = dom.promoCheck instanceof HTMLButtonElement ? dom.promoCheck.textContent : "";
+    if (dom.promoCheck instanceof HTMLButtonElement) {
+      dom.promoCheck.disabled = true;
+      dom.promoCheck.textContent = "Проверка...";
+    }
+    try {
+      const payload = await postJson("/api/referrals/promo/validate", {
+        promoCode,
+        refSource: state.refSource || "order_modal",
+        refOffer: state.refOffer || "default",
+      });
+      if (payload?.valid) {
+        state.promoValidationHint = "";
+        if (dom.campaignHint instanceof HTMLElement) {
+          dom.campaignHint.classList.remove("hidden");
+          dom.campaignHint.textContent = `Промокод применен: ${promoCode}${payload?.campaignName ? ` · ${payload.campaignName}` : ""}`;
+        }
+      } else {
+        state.promoValidationHint = "Промокод не найден или не активен.";
+        if (dom.campaignHint instanceof HTMLElement) {
+          dom.campaignHint.classList.remove("hidden");
+          dom.campaignHint.textContent = state.promoValidationHint;
+        }
+      }
+    } catch (error) {
+      state.promoValidationHint = "Промокод не найден или не активен.";
+      if (dom.campaignHint instanceof HTMLElement) {
+        dom.campaignHint.classList.remove("hidden");
+        dom.campaignHint.textContent = state.promoValidationHint;
+      }
+      setStatus(error?.message || "Промокод недействителен", "error");
+    } finally {
+      if (dom.promoCheck instanceof HTMLButtonElement) {
+        dom.promoCheck.disabled = false;
+        dom.promoCheck.textContent = originalText || "Проверить";
+      }
+      await refreshCheckoutContext();
+      await updateTotals();
     }
   }
 
@@ -820,11 +1406,22 @@ const DEFAULT_PRICING = {
     const contextPlan = precheck?.resolvedPlan === "premium" ? "premium" : precheck?.resolvedPlan === "basic" ? "basic" : "";
     const planCandidate = contextPlan || options.plan || queryPlan || defaultPlan;
     const plan = planCandidate === "premium" ? "premium" : "basic";
+    const attribution = resolveAttributionFromOptions({
+      ...options,
+      refSource: precheck?.referral?.source || options.refSource,
+      refOffer: precheck?.referral?.offer || options.refOffer,
+    });
     state.theme = typeof options.theme === "string" && options.theme ? options.theme : queryTheme || "default_dark";
     state.slugLocked = Boolean(parsed);
     state.lockedSlug = parsed ? parsed.slug : "";
     state.braceletForced = options.bracelet === true;
     state.dropId = typeof options.dropId === "string" && options.dropId ? options.dropId : null;
+    state.refSource = attribution.refSource;
+    state.refOffer = attribution.refOffer;
+    state.promoCode = String(options.promoCode || precheck?.referral?.promoCodeApplied || "").trim().toUpperCase().replace(/[^A-Z0-9_-]/g, "").slice(0, 32);
+    if (dom.promoCode instanceof HTMLInputElement) {
+      dom.promoCode.value = state.promoCode;
+    }
     if (currentPlan === "none") {
       dom.planBasic.disabled = false;
       dom.planPremium.disabled = false;
@@ -856,6 +1453,7 @@ const DEFAULT_PRICING = {
     }
     setStatus("", "neutral");
     setSubmitBlockedMessage("");
+    state.initialFormSnapshot = getCurrentFormSnapshot();
     void updateTotals();
   }
 
@@ -874,6 +1472,7 @@ const DEFAULT_PRICING = {
       dom.dialog?.focus();
     });
     await refreshUser();
+    bindAuthIntentLinks();
     const precheck = await fetchOrderPrecheck(state.lastOpenOptions);
     prefillFromOpenOptions(state.lastOpenOptions, precheck);
     const step = applyOrderPrecheck(precheck);
@@ -894,7 +1493,11 @@ const DEFAULT_PRICING = {
     }
     if (!force && dom.stepForm && !dom.stepForm.classList.contains("hidden") && isFormDirty()) {
       isCloseConfirming = true;
-      const ok = await showConfirm("Закрыть? Данные не сохранятся");
+      const ok = await showConfirm("Закрыть? Данные не сохранятся", {
+        title: "Подтверждение",
+        confirmText: "Закрыть",
+        cancelText: "Остаться",
+      });
       isCloseConfirming = false;
       if (!ok || !isOpen || isClosing) {
         return;
@@ -972,6 +1575,15 @@ const DEFAULT_PRICING = {
         digits: pricing.digits,
         tariff: plan,
         theme: state.theme || "default_dark",
+        refSource: state.refSource || "",
+        refOffer: state.refOffer || "",
+        refCode: String(state.checkoutContext?.referral?.refCode || "").trim(),
+        promoCode:
+          String(state.promoCode || (dom.promoCode instanceof HTMLInputElement ? dom.promoCode.value : "") || "")
+            .trim()
+            .toUpperCase()
+            .replace(/[^A-Z0-9_-]/g, "")
+            .slice(0, 32),
         products: {
           digitalCard: true,
           bracelet: Boolean(dom.bracelet.checked),
@@ -981,8 +1593,10 @@ const DEFAULT_PRICING = {
       const expiresAtIso = payload.pendingExpiresAt || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
       if (dom.successSlug instanceof HTMLElement) {
         const expiresAt = new Date(expiresAtIso);
-        const hoursLeft = Number.isFinite(expiresAt.getTime()) ? Math.max(1, Math.ceil((expiresAt.getTime() - Date.now()) / (60 * 60 * 1000))) : 24;
-        dom.successSlug.textContent = `${pricing.slug} зарезервирован на ${hoursLeft} часа`;
+        const hoursLeft = Number.isFinite(expiresAt.getTime())
+          ? Math.max(1, Math.round((expiresAt.getTime() - Date.now()) / (60 * 60 * 1000)))
+          : 24;
+        dom.successSlug.textContent = `${pricing.slug} зарезервирован на ${formatHoursRu(hoursLeft)}`;
       }
 
       // Generate Telegram contact link with order details
@@ -991,6 +1605,9 @@ const DEFAULT_PRICING = {
         const userName = dom.name.value.trim();
         const userEmail = (currentUser && currentUser.email ? String(currentUser.email).trim() : "") || "не указан";
         const slugPrice = Number(payload?.pricing?.slugPrice || 0);
+        const slugBasePrice = Number(payload?.pricing?.slugBasePrice || slugPrice);
+        const inviteeDiscountApplied = Number(payload?.pricing?.inviteeDiscountApplied || 0);
+        const bonusSpent = Number(payload?.pricing?.bonusSpent || 0);
         const planPrice = Number(payload?.pricing?.planPrice || 0);
         const braceletPrice = Number(payload?.pricing?.braceletPrice || 0);
         const totalAmount = Number(payload?.pricing?.totalOneTime || 0);
@@ -1004,15 +1621,26 @@ const DEFAULT_PRICING = {
 
       ━━━━━━━━━━━━
       💳 Детализация оплаты:
+      • База slug ${pricing.slug}: ${formatPrice(slugBasePrice)} сум
       • Slug ${pricing.slug}: ${formatPrice(slugPrice)} сум
+      • Скидка по рефералке: -${formatPrice(inviteeDiscountApplied)} сум
+      • Списано бонусов: -${formatPrice(bonusSpent)} сум
       • ${planLabel}: ${formatPrice(planPrice)} сум
       • Браслет: ${formatPrice(braceletPrice)} сум
       ━━━━━━━━━━━━
       Итого к оплате: ${formatPrice(totalAmount)} сум`;
 
-        const telegramUrl = `https://t.me/unqx_uz?text=${encodeURIComponent(message)}`;
+        const telegramUrl = String(payload?.paymentLinks?.telegramUrl || "").trim() || `https://t.me/unqx_uz?text=${encodeURIComponent(message)}`;
         telegramLink.href = telegramUrl;
         lastTelegramPaymentUrl = telegramUrl;
+        quickPayState = {
+          url: telegramUrl,
+          orderId: String(payload.orderId || "").trim(),
+          slug: String(pricing.slug || "").trim().toUpperCase(),
+          reference: String(orderCode || "").trim(),
+        };
+        quickPayDismissed = false;
+        renderQuickPayButton();
       }
 
       startCountdown(expiresAtIso);
@@ -1074,6 +1702,34 @@ const DEFAULT_PRICING = {
     window.location.href = "/login";
   };
 
+  function inferAttributionFromCta(node) {
+    const sourceAttr = String(node.getAttribute("data-order-source") || "").trim().toLowerCase();
+    const offerAttr = String(node.getAttribute("data-order-offer") || "").trim().toLowerCase();
+    if (sourceAttr || offerAttr) {
+      return {
+        refSource: sourceAttr,
+        refOffer: offerAttr,
+      };
+    }
+    if (node.getAttribute("data-drop-id")) {
+      return { refSource: "drops", refOffer: "drop_live" };
+    }
+    if (node.closest("#pricing")) {
+      return { refSource: "pricing", refOffer: "pricing_card" };
+    }
+    if (node.id === "calc-reserve-link" || node.closest("#calculator")) {
+      return { refSource: "home", refOffer: "calculator" };
+    }
+    if (node.closest("[data-flash-sale-banner]")) {
+      return { refSource: "flash", refOffer: "flash_sale" };
+    }
+    if (node.closest("#hero-check")) {
+      return { refSource: "home", refOffer: "hero_check" };
+    }
+    const fallback = resolveFallbackAttribution();
+    return { refSource: fallback.refSource, refOffer: fallback.refOffer };
+  }
+
   function bindCtas() {
     document.querySelectorAll("[data-order-link]").forEach((node) => {
       if (!(node instanceof HTMLElement) || node.dataset.orderLinkBound === "1") {
@@ -1092,6 +1748,7 @@ const DEFAULT_PRICING = {
           theme: node.getAttribute("data-order-theme") || "",
           bracelet: node.getAttribute("data-order-bracelet") === "true",
           dropId: node.getAttribute("data-drop-id") || "",
+          ...inferAttributionFromCta(node),
         };
         void open(options);
       });
@@ -1137,6 +1794,17 @@ const DEFAULT_PRICING = {
   dom.planBasic.addEventListener("change", () => void updateTotals());
   dom.planPremium.addEventListener("change", () => void updateTotals());
   dom.bracelet.addEventListener("change", () => void updateTotals());
+  dom.promoCode?.addEventListener("input", () => {
+    if (!(dom.promoCode instanceof HTMLInputElement)) return;
+    dom.promoCode.value = String(dom.promoCode.value || "")
+      .toUpperCase()
+      .replace(/[^A-Z0-9_-]/g, "")
+      .slice(0, 32);
+    state.promoCode = dom.promoCode.value;
+    state.promoValidationHint = "";
+  });
+  dom.promoCode?.addEventListener("change", () => void validatePromoCodeManually());
+  dom.promoCheck?.addEventListener("click", () => void validatePromoCodeManually());
   dom.logout?.addEventListener("click", () => {
     void postJson("/api/auth/logout", {})
       .then(async () => {
@@ -1153,14 +1821,25 @@ const DEFAULT_PRICING = {
   dom.closeTop?.addEventListener("click", () => close(false));
   dom.closeForm?.addEventListener("click", () => close(false));
   dom.closeSuccess?.addEventListener("click", () => close(true));
-  dom.closePending?.addEventListener("click", () => close(false));
+  dom.pendingContinue?.addEventListener("click", (event) => {
+    event.preventDefault();
+    const href = dom.pendingContinue instanceof HTMLAnchorElement ? String(dom.pendingContinue.href || "").trim() : "";
+    if (!href || href === "#") {
+      return;
+    }
+    openTelegramUrl(href);
+  });
   dom.pendingCancel?.addEventListener("click", async () => {
     const orderId = String(dom.pendingCancel?.getAttribute("data-order-id") || "").trim();
     if (!orderId) {
       setPendingStatus("Не удалось определить заказ для отмены.", "error");
       return;
     }
-    const confirmed = await showConfirm("Отменить текущий заказ и освободить UNQ?");
+    const confirmed = await showConfirm("Отменить текущий заказ и освободить UNQ?", {
+      title: "Отмена заказа",
+      confirmText: "Отменить заказ",
+      cancelText: "Оставить как есть",
+    });
     if (!confirmed) {
       return;
     }
@@ -1169,8 +1848,14 @@ const DEFAULT_PRICING = {
     dom.pendingCancel.textContent = "Отмена...";
     try {
       await postJson(`/api/cards/order-request/${encodeURIComponent(orderId)}/cancel`, {});
+      if (quickPayState && quickPayState.orderId === orderId) {
+        quickPayState = null;
+        quickPayDismissed = false;
+        renderQuickPayButton();
+      }
       await refreshCheckoutContext();
-      setStatus("Заказ отменён. Теперь можно создать новый.", "success");
+      setStatus("Заказ отменен. Теперь можно создать новый.", "success");
+      window.dispatchEvent(new CustomEvent("unqx:order:cancelled", { detail: { orderId } }));
       setPendingStatus("", "neutral");
     } catch (error) {
       setPendingStatus(error?.message || "Не удалось отменить заказ.", "error");
@@ -1183,20 +1868,8 @@ const DEFAULT_PRICING = {
     const telegramLink = dom.root.querySelector("#order-modal-telegram-link");
     const fallbackUrl = "https://t.me/unqx_uz";
     const candidateUrl = telegramLink instanceof HTMLAnchorElement && telegramLink.href ? telegramLink.href : lastTelegramPaymentUrl;
-    const telegramUrl = /^https:\/\/t\.me\/unqx_uz(?:\?|$)/i.test(candidateUrl) ? candidateUrl : (lastTelegramPaymentUrl || fallbackUrl);
-    const encodedMessage = telegramUrl.includes("?text=") ? telegramUrl.split("?text=")[1] : "";
-    const tgAppUrl = `tg://resolve?domain=unqx_uz${encodedMessage ? `&text=${encodedMessage}` : ""}`;
-    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || "");
-
-    if (isMobile) {
-      window.location.href = tgAppUrl;
-      window.setTimeout(() => {
-        window.location.href = telegramUrl;
-      }, 900);
-      return;
-    }
-
-    window.location.href = telegramUrl;
+    const telegramUrl = /^https:\/\/t\.me\/[a-zA-Z0-9_]{4,}(?:\?|$)/i.test(candidateUrl) ? candidateUrl : (lastTelegramPaymentUrl || fallbackUrl);
+    openTelegramUrl(telegramUrl);
   });
 
   document.addEventListener("keydown", (event) => {
@@ -1256,14 +1929,37 @@ const DEFAULT_PRICING = {
     getUser() {
       return currentUser;
     },
+    openSavedPayment() {
+      if (quickPayState?.url) {
+        openTelegramUrl(quickPayState.url);
+        return true;
+      }
+      void syncQuickPayState().then((next) => {
+        if (next?.url) {
+          openTelegramUrl(next.url);
+        }
+      });
+      return false;
+    },
   };
 
   dom.root.style.display = "none";
   dom.root.classList.remove("is-open");
   document.body.classList.remove("modal-open");
-  void refreshUser();
+  void refreshUser().then(() => {
+    restorePurchaseIntentIfNeeded();
+  });
   bindCtas();
+  void syncQuickPayState();
+  window.addEventListener("focus", () => {
+    void syncQuickPayState();
+  });
   window.addEventListener("unqx:bind-order-ctas", () => {
     bindCtas();
   });
 })();
+
+
+
+
+

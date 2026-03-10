@@ -345,7 +345,7 @@
           : '<span class="text-xs text-neutral-500">Все slug уже заняты</span>';
 
         return `
-          <div class="mb-3 rounded-xl border border-neutral-200 p-4">
+          <div class="drops-live-row mb-3 rounded-xl border border-neutral-200 p-4">
             <div class="flex flex-wrap items-center justify-between gap-2">
               <p class="text-sm font-semibold text-neutral-900">${escapeHtml(drop.title || "LIVE drop")}</p>
               <span class="rounded-full border border-red-200 bg-red-50 px-2 py-1 text-[11px] font-semibold text-red-700">LIVE · осталось ${Number(drop.remaining || 0)}</span>

@@ -156,6 +156,10 @@ const DEFAULT_SETTINGS = [
   { key: "feature_directory", group: "platform", type: "boolean", label: "Directory включен", value: true },
   { key: "feature_leaderboard", group: "platform", type: "boolean", label: "Лидерборд включен", value: true },
   { key: "feature_referrals", group: "platform", type: "boolean", label: "Рефералы включены", value: true },
+  { key: "referral_v1_referrer_reward", group: "platform", type: "number", label: "Реферальная награда (сум)", value: 50_000 },
+  { key: "referral_v1_invitee_discount", group: "platform", type: "number", label: "Скидка приглашенному (сум)", value: 100_000 },
+  { key: "referral_v1_discount_cap_percent", group: "platform", type: "number", label: "Лимит общей скидки (%)", value: 30 },
+  { key: "referral_v1_tiers_enabled", group: "platform", type: "boolean", label: "Tier-рефералка включена", value: false },
   { key: "feature_score_public", group: "platform", type: "boolean", label: "UNQ Score публичный", value: true },
   { key: "feature_verification", group: "platform", type: "boolean", label: "Верификация включена", value: true },
   { key: "feature_drops", group: "platform", type: "boolean", label: "Дропы активны", value: true },
@@ -314,8 +318,10 @@ async function getSetting(key, fallback) {
   try {
     const row = await getSettingRow(normalizedKey);
     if (row) {
-      cacheSet(normalizedKey, row.value);
-      return cloneJson(row.value);
+      const settingType = defaultDef?.type || row.type || normalizeType(row.value);
+      const normalizedValue = normalizeValueForType(settingType, row.value);
+      cacheSet(normalizedKey, normalizedValue);
+      return cloneJson(normalizedValue);
     }
   } catch (error) {
     if (!isSchemaNotReady(error)) {
@@ -357,7 +363,9 @@ async function getManySettings(keys) {
     const byKey = new Map(rows.map((row) => [row.key, row.value]));
     for (const key of missing) {
       const defaultDef = getDefaultSettingDef(key);
-      const value = byKey.has(key) ? byKey.get(key) : defaultDef ? cloneJson(defaultDef.value) : undefined;
+      const raw = byKey.has(key) ? byKey.get(key) : defaultDef ? cloneJson(defaultDef.value) : undefined;
+      const settingType = defaultDef?.type || normalizeType(raw);
+      const value = normalizeValueForType(settingType, raw);
       cacheSet(key, value);
       result[key] = cloneJson(value);
     }
@@ -390,7 +398,17 @@ async function getSettingsByGroup(group) {
       const byKey = new Map(rows.map((row) => [row.key, row]));
       const merged = defaults.map((item) => {
         const existing = byKey.get(item.key);
-        if (existing) return existing;
+        if (existing) {
+          const canonicalType = item.type || existing.type || normalizeType(existing.value);
+          return {
+            ...existing,
+            group: item.group || existing.group,
+            type: canonicalType,
+            label: item.label || existing.label,
+            description: item.description || existing.description || null,
+            value: normalizeValueForType(canonicalType, existing.value),
+          };
+        }
         return {
           key: item.key,
           value: cloneJson(item.value),
@@ -437,6 +455,12 @@ function normalizeValueForType(type, value) {
     return Number.isFinite(n) ? n : 0;
   }
   if (type === "boolean") {
+    if (typeof value === "string") {
+      const normalized = value.trim().toLowerCase();
+      if (!normalized) return false;
+      if (["false", "0", "off", "no", "нет"].includes(normalized)) return false;
+      if (["true", "1", "on", "yes", "да"].includes(normalized)) return true;
+    }
     return Boolean(value);
   }
   if (type === "json") {
@@ -468,7 +492,7 @@ async function setSettingsBatch(group, patch, updatedBy = "system") {
     for (const key of keys) {
       const defaultDef = getDefaultSettingDef(key);
       const existing = await tx.platformSetting.findUnique({ where: { key } });
-      const settingType = existing?.type || defaultDef?.type || normalizeType(payload[key]);
+      const settingType = defaultDef?.type || existing?.type || normalizeType(payload[key]);
       const nextValue = normalizeValueForType(settingType, payload[key]);
       const previousValue = existing ? existing.value : defaultDef ? defaultDef.value : null;
       const settingGroup = existing?.group || defaultDef?.group || normalizedGroup || "platform";

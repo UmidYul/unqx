@@ -1,15 +1,38 @@
-const { randomBytes } = require("node:crypto");
+﻿const { randomBytes } = require("node:crypto");
 
 const { prisma } = require("../db/prisma");
 const { getFeatureSetting } = require("./feature-settings");
-const { sendTelegramMessage } = require("./telegram");
+const { getReferralV1Settings, getWalletBalance } = require("./referral-v1");
+const { getActiveCampaignsSafe } = require("./referral-v2");
+const { normalizeRefCode } = require("./referral-normalize");
 
-function normalizeRefCode(value) {
-  return String(value || "")
-    .trim()
-    .toUpperCase()
-    .replace(/[^A-Z0-9_]/g, "")
-    .slice(0, 40);
+function isMissingModelTable(error, modelName) {
+  return (
+    Boolean(error) &&
+    error.code === "P2021" &&
+    (!modelName || String(error?.meta?.modelName || "") === modelName)
+  );
+}
+
+function isMissingModelColumn(error, modelName) {
+  if (!error || error.code !== "P2022") return false;
+  if (!modelName) return true;
+  const targetModel = String(error?.meta?.modelName || "");
+  if (!targetModel) return true;
+  return targetModel === modelName;
+}
+
+function isMissingModelDelegateError(error) {
+  if (!error || error.name !== "TypeError") return false;
+  const message = String(error.message || "");
+  return (
+    message.includes("Cannot read properties of undefined") &&
+    (message.includes("findMany") || message.includes("findUnique") || message.includes("count") || message.includes("aggregate") || message.includes("create"))
+  );
+}
+
+function isMissingReferralBootstrapStorage(error, modelName) {
+  return isMissingModelTable(error, modelName) || isMissingModelColumn(error, modelName) || isMissingModelDelegateError(error);
 }
 
 function generateRefCode() {
@@ -82,124 +105,98 @@ async function linkReferralOnRegistration({ referredUserId, refCode }) {
   });
 }
 
-async function markReferralPaidByReferredUserId(referredUserId) {
-  if (!prisma.referral || typeof prisma.referral.findUnique !== "function") {
-    return null;
-  }
-  const settings = await getFeatureSetting("referrals");
-  if (!settings.enabled || !settings.requirePaid) {
-    return null;
-  }
-
-  const referral = await prisma.referral.findUnique({
-    where: { referredId: referredUserId },
-    include: {
-      referrer: {
-        select: { telegramChatId: true, username: true },
-      },
-      referred: {
-        select: { username: true },
-      },
-    },
-  });
-  if (!referral || referral.status === "paid" || referral.status === "rewarded") {
-    return referral;
-  }
-
-  const updated = await prisma.referral.update({
-    where: { id: referral.id },
-    data: {
-      status: "paid",
-      rewardType: "discount",
-    },
-  });
-
-  try {
-    const refUsername = referral.referred?.username ? `@${referral.referred.username}` : "твой друг";
-    const chatId = referral.referrer?.telegramChatId;
-    if (!chatId) {
-      return updated;
-    }
-    await sendTelegramMessage({
-      chatId,
-      text: `🎉 ${refUsername} оплатил slug! Ты получаешь бонус по реферальной программе.`,
-      parseMode: "HTML",
-    });
-  } catch (error) {
-    console.error("[express-app] failed to send referral paid telegram", error);
-  }
-
-  return updated;
-}
-
-async function getRewardRules() {
-  if (!prisma.referralRewardRule || typeof prisma.referralRewardRule.findMany !== "function") {
-    return [];
-  }
-  return prisma.referralRewardRule.findMany({
-    where: { isActive: true },
-    orderBy: { requiredPaidFriends: "asc" },
-  });
-}
-
-function getRewardLabel(rule) {
-  if (rule.rewardType === "discount") {
-    return `Скидка ${Number(rule.rewardValue || 0)}%`;
-  }
-  if (rule.rewardType === "free_month") {
-    return "Бонусный тариф";
-  }
-  return "Бонусный slug";
+async function markReferralPaidByReferredUserId() {
+  // Deprecated in referral v1 (conversion is finalized on approved order).
+  return null;
 }
 
 async function getReferralBootstrap(userId) {
-  if (!prisma.user || typeof prisma.user.findUnique !== "function" || !prisma.referral || typeof prisma.referral.findMany !== "function") {
+  if (!prisma.user || typeof prisma.user.findUnique !== "function") {
     return {
       refCode: "",
       refLink: "",
-      stats: { invited: 0, paid: 0, rewarded: 0 },
+      stats: { invited: 0, paid: 0, rewarded: 0, rewardsAmount: 0 },
+      bonus: { balance: 0, totalEarned: 0, totalSpent: 0, history: [] },
       referrals: [],
+      campaigns: [],
+      fraud: [],
       rewards: [],
     };
   }
+
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { id: true, refCode: true, username: true },
+    select: { id: true, refCode: true },
   });
   if (!user) return null;
 
-  const refCode = user.refCode || (await ensureUserRefCode(user.id));
-  const [items, rules] = await Promise.all([
-    prisma.referral.findMany({
-      where: { referrerId: user.id },
-      include: {
-        referred: {
-          select: {
-            firstName: true,
-            username: true,
-          },
-        },
-      },
-      orderBy: { createdAt: "desc" },
+  const refCode = user.refCode || (await ensureUserRefCode(user.id)) || "";
+  const settings = await getReferralV1Settings();
+
+  const [conversions, bonusHistory, bonusBalance, activeCampaigns, fraudChecks] = await Promise.all([
+    prisma.referralConversion
+      ? prisma.referralConversion
+          .findMany({
+            where: { referrerId: user.id },
+            include: {
+              referred: {
+                select: {
+                  firstName: true,
+                  username: true,
+                },
+              },
+            },
+            orderBy: { createdAt: "desc" },
+            take: 300,
+          })
+          .catch((error) => {
+            if (isMissingReferralBootstrapStorage(error, "ReferralConversion")) return [];
+            throw error;
+          })
+      : Promise.resolve([]),
+    prisma.bonusLedger
+      ? prisma.bonusLedger
+          .findMany({
+            where: { userId: user.id },
+            orderBy: { createdAt: "desc" },
+            take: 100,
+          })
+          .catch((error) => {
+            if (isMissingReferralBootstrapStorage(error, "BonusLedger")) return [];
+            throw error;
+          })
+      : Promise.resolve([]),
+    getWalletBalance(user.id).catch((error) => {
+      if (isMissingReferralBootstrapStorage(error, "UserBonusWallet")) return 0;
+      throw error;
     }),
-    getRewardRules(),
+    getActiveCampaignsSafe(),
+    prisma.referralFraudCheck
+      ? prisma.referralFraudCheck
+          .findMany({
+            where: { userId: user.id },
+            orderBy: { createdAt: "desc" },
+            take: 100,
+          })
+          .catch((error) => {
+            if (isMissingReferralBootstrapStorage(error, "ReferralFraudCheck")) return [];
+            throw error;
+          })
+      : Promise.resolve([]),
   ]);
 
-  const invited = items.length;
-  const paid = items.filter((item) => item.status === "paid" || item.status === "rewarded").length;
-  const rewarded = items.filter((item) => item.status === "rewarded").length;
-
-  const ruleCards = rules.map((rule) => {
-    const eligible = paid >= rule.requiredPaidFriends;
-    const got = items.some((item) => item.rewardedRuleId === rule.id && item.status === "rewarded");
-    return {
-      id: rule.id,
-      threshold: rule.requiredPaidFriends,
-      rewardType: rule.rewardType,
-      rewardLabel: getRewardLabel(rule),
-      status: got ? "received" : eligible ? "available" : "pending",
-    };
-  });
+  const invited = conversions.length;
+  const paid = conversions.filter((item) => item.status === "approved").length;
+  const rewarded = paid;
+  const rewardsAmount = conversions
+    .filter((item) => item.status === "approved")
+    .reduce((sum, item) => sum + Number(item.rewardAmount || 0), 0);
+  const totalEarned = bonusHistory
+    .filter((item) => String(item.direction || "") === "credit")
+    .reduce((sum, item) => sum + Number(item.amount || 0), 0);
+  const totalSpent = bonusHistory
+    .filter((item) => String(item.direction || "") === "debit")
+    .reduce((sum, item) => sum + Number(item.amount || 0), 0);
 
   return {
     refCode,
@@ -208,73 +205,66 @@ async function getReferralBootstrap(userId) {
       invited,
       paid,
       rewarded,
+      rewardsAmount,
     },
-    referrals: items.map((item) => ({
+    bonus: {
+      balance: bonusBalance,
+      totalEarned,
+      totalSpent,
+      history: bonusHistory.map((item) => ({
+        id: item.id,
+        direction: item.direction,
+        kind: item.kind,
+        amount: Number(item.amount || 0),
+        balanceAfter: Number(item.balanceAfter || 0),
+        note: item.note || "",
+        createdAt: item.createdAt,
+      })),
+    },
+    referrals: conversions.map((item) => ({
       id: item.id,
       name: item.referred?.firstName || item.referred?.username || "UNQX User",
       username: item.referred?.username || null,
       createdAt: item.createdAt,
-      status: item.status,
-      rewardType: item.rewardType,
+      status: item.status === "approved" ? "approved" : "pending",
+      rewardType: "bonus_balance",
+      rewardAmount: Number(item.rewardAmount || 0),
+      source: item.refSource || "",
+      offer: item.refOffer || "",
     })),
-    rewards: ruleCards,
+    campaigns: (activeCampaigns || []).map((item) => ({
+      id: item.id,
+      name: item.name || "",
+      type: item.type,
+      source: item.source || "",
+      offer: item.offer || "",
+      promoCode: item.type === "promo_code" ? String(item.promoCode || "") : "",
+      startsAt: item.startsAt,
+      endsAt: item.endsAt,
+    })),
+    fraud: (fraudChecks || []).map((item) => ({
+      id: item.id,
+      verdict: item.verdict,
+      reason: item.reason || "",
+      score: Number(item.score || 0),
+      createdAt: item.createdAt,
+    })),
+    rewards: [
+      {
+        id: "referral_v1_fixed",
+        threshold: 1,
+        rewardType: "bonus_balance",
+        rewardLabel: `+${Number(settings.referrerReward || 0).toLocaleString("ru-RU")} сум за подтверждённый заказ`,
+        status: "received",
+      },
+    ],
   };
 }
 
-async function claimReferralReward({ userId, ruleId }) {
-  if (!prisma.referral || typeof prisma.referral.findMany !== "function") {
-    const error = new Error("Referral storage is not ready");
-    error.code = "REFERRAL_STORAGE_UNAVAILABLE";
-    throw error;
-  }
-  const rules = await getRewardRules();
-  const rule = rules.find((item) => item.id === ruleId);
-  if (!rule) {
-    const error = new Error("Reward rule not found");
-    error.code = "RULE_NOT_FOUND";
-    throw error;
-  }
-
-  const rows = await prisma.referral.findMany({
-    where: { referrerId: userId },
-    orderBy: { createdAt: "asc" },
-  });
-  const paid = rows.filter((item) => item.status === "paid" || item.status === "rewarded");
-  if (paid.length < rule.requiredPaidFriends) {
-    const error = new Error("Reward is not available yet");
-    error.code = "REWARD_NOT_AVAILABLE";
-    throw error;
-  }
-
-  const already = rows.some((item) => item.rewardedRuleId === rule.id && item.status === "rewarded");
-  if (already) {
-    const error = new Error("Reward already claimed");
-    error.code = "ALREADY_CLAIMED";
-    throw error;
-  }
-
-  const candidate = paid.find((item) => item.status === "paid" && !item.rewardedRuleId);
-  if (!candidate) {
-    const error = new Error("No paid referral available to attach reward");
-    error.code = "NO_PAID_REFERRAL";
-    throw error;
-  }
-
-  const updated = await prisma.referral.update({
-    where: { id: candidate.id },
-    data: {
-      status: "rewarded",
-      rewardType: rule.rewardType,
-      rewardedRuleId: rule.id,
-      rewardedAt: new Date(),
-    },
-  });
-
-  return {
-    id: updated.id,
-    rewardType: updated.rewardType,
-    rewardedAt: updated.rewardedAt,
-  };
+async function claimReferralReward() {
+  const error = new Error("Manual reward claiming disabled in referral v1");
+  error.code = "REWARD_CLAIM_DISABLED";
+  throw error;
 }
 
 module.exports = {
