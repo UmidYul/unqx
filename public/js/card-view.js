@@ -654,7 +654,7 @@
         '<svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 9h4M14 9v11M14 9h-3a3 3 0 0 1 3-3h3"></path></svg>',
       x: '<svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4l14 16M19 4L5 20"></path></svg>',
       steam:
-        '<svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true"><circle cx="7.5" cy="16.5" r="3"></circle><circle cx="16.5" cy="7.5" r="3"></circle><path d="M9.9 14.1l4.2-4.2"></path><path d="M7.5 13.5l2.1 1"></path></svg>',
+        '<svg class="h-4 w-4" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><circle cx="16.6" cy="7.4" r="2.7"></circle><circle cx="7.6" cy="16.4" r="2.9"></circle><path d="M9.1 14.9 15 9a3.9 3.9 0 0 0 0 5.6l-3.3 3.3a3.9 3.9 0 0 1-5.6 0l3-3z" opacity="0.35"></path></svg>',
       click:
         '<svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 7 10 10M7 17 17 7M12 2v4M12 18v4M2 12h4M18 12h4"></path></svg>',
       globe: '<svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"></path></svg>',
