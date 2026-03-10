@@ -768,10 +768,11 @@ Email: ${userEmail}
 
     function buildPreviewCardData() {
       const avatarUrl = String(el.cAv?.getAttribute("src") || "").trim();
+      const slugs = Array.isArray(s.slugs) ? s.slugs : [];
       const primarySlug =
-        s.slugs.find((item) => item.isPrimary) ||
-        s.slugs.find((item) => ["active", "approved", "paused", "private"].includes(item.status)) ||
-        s.slugs[0] ||
+        slugs.find((item) => item.isPrimary) ||
+        slugs.find((item) => ["active", "approved", "paused", "private"].includes(item.status)) ||
+        slugs[0] ||
         null;
       const effectivePlan = getCurrentPlan() === "premium" ? "premium" : "basic";
       const effectiveTheme =
