@@ -127,9 +127,6 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
   let lastFocusedElement = null;
   let isCloseConfirming = false;
   let lastTelegramPaymentUrl = "https://t.me/unqx_uz";
-  let quickPayNode = null;
-  let quickPayState = null;
-  let quickPayDismissed = false;
   let state = {
     slugLocked: false,
     lockedSlug: "",
@@ -294,86 +291,6 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     window.location.href = telegramUrl;
   }
 
-  function upsertQuickPayButton() {
-    if (quickPayNode instanceof HTMLElement && document.body.contains(quickPayNode)) {
-      return quickPayNode;
-    }
-    const wrap = document.createElement("div");
-    wrap.id = "order-quick-pay";
-    wrap.style.position = "fixed";
-    wrap.style.right = "16px";
-    wrap.style.bottom = "16px";
-    wrap.style.zIndex = "85";
-    wrap.style.display = "none";
-    wrap.innerHTML = `
-      <div style="display:flex;align-items:center;gap:8px;background:#111827;color:#fff;border-radius:12px;padding:10px 12px;box-shadow:0 10px 30px rgba(0,0,0,.25);max-width:90vw;">
-        <button type="button" data-a="open" class="interactive-btn" style="border:0;background:transparent;color:inherit;font-weight:600;cursor:pointer;white-space:nowrap;">Продолжить оплату</button>
-        <button type="button" data-a="clear" class="interactive-btn" aria-label="Скрыть" style="border:0;background:transparent;color:#cbd5e1;cursor:pointer;font-size:16px;line-height:1;">×</button>
-      </div>
-    `;
-    wrap.addEventListener("click", (event) => {
-      const target = event.target instanceof HTMLElement ? event.target.closest("[data-a]") : null;
-      if (!(target instanceof HTMLElement)) return;
-      const action = target.getAttribute("data-a");
-      if (action === "clear") {
-        quickPayDismissed = true;
-        renderQuickPayButton();
-        return;
-      }
-      if (quickPayState?.url) {
-        openTelegramUrl(quickPayState.url);
-        return;
-      }
-      void syncQuickPayState();
-    });
-    document.body.appendChild(wrap);
-    quickPayNode = wrap;
-    return wrap;
-  }
-
-  function renderQuickPayButton() {
-    const node = upsertQuickPayButton();
-    const draft = quickPayState;
-    if (!draft || quickPayDismissed) {
-      node.style.display = "none";
-      return;
-    }
-    const openBtn = node.querySelector('[data-a="open"]');
-    if (openBtn instanceof HTMLButtonElement) {
-      const tail = draft.reference || draft.slug || "заказ";
-      openBtn.textContent = `Продолжить оплату · ${tail}`;
-    }
-    node.style.display = "block";
-  }
-
-  async function syncQuickPayState(precheck = null) {
-    try {
-      const context =
-        precheck && typeof precheck === "object"
-          ? precheck
-          : await fetchOrderPrecheck(state.lastOpenOptions || {});
-      const pending = context?.pendingOrder && typeof context.pendingOrder === "object" ? context.pendingOrder : null;
-      const isPendingFlow = String(context?.nextAction || "") === "resume_pending" && Boolean(pending);
-      if (!isPendingFlow) {
-        quickPayState = null;
-        quickPayDismissed = false;
-        renderQuickPayButton();
-        return null;
-      }
-      const url = buildPendingPaymentUrl(pending);
-      quickPayState = {
-        url,
-        orderId: String(pending.id || "").trim(),
-        slug: String(pending.slug || "").trim().toUpperCase(),
-        reference: String(pending.paymentReference || "").trim(),
-      };
-      quickPayDismissed = false;
-    } catch {
-      quickPayState = null;
-    }
-    renderQuickPayButton();
-    return quickPayState;
-  }
 
   function formatPrice(number) {
     return Number(number || 0).toLocaleString("ru-RU").replace(/,/g, " ");
