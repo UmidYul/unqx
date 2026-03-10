@@ -67,7 +67,61 @@
     analyticsPayload: null,
     analyticsSelectedSlug: "",
     analyticsSelectedPeriod: 7,
+    draftRestored: false,
   };
+
+  const DRAFT_KEY = "unqx_profile_card_draft";
+
+  function saveDraft() {
+    const draft = {
+      name: el.cName?.value || "",
+      role: el.cRole?.value || "",
+      bio: el.cBio?.value || "",
+      hashtag: el.cHashtag?.value || "",
+      address: el.cAddress?.value || "",
+      postcode: el.cPostcode?.value || "",
+      email: el.cEmail?.value || "",
+      extraPhone: el.cExtraPhone?.value || "",
+      tags: Array.isArray(s.tags) ? [...s.tags] : [],
+      buttons: Array.isArray(s.buttons) ? JSON.parse(JSON.stringify(s.buttons)) : [],
+      theme: s.theme,
+      customColor: el.cColor?.value || null,
+      showBranding: el.cBranding ? !el.cBranding.checked : true,
+    };
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+  }
+
+  function clearDraft() {
+    localStorage.removeItem(DRAFT_KEY);
+  }
+
+  function restoreDraft() {
+    if (s.draftRestored) return;
+    const draftRaw = localStorage.getItem(DRAFT_KEY);
+    if (!draftRaw) return;
+    try {
+      const draft = JSON.parse(draftRaw);
+      if (typeof draft !== "object" || !draft) return;
+      if (el.cName && draft.name) el.cName.value = draft.name;
+      if (el.cRole && draft.role) el.cRole.value = draft.role;
+      if (el.cBio && draft.bio) el.cBio.value = draft.bio;
+      if (el.cHashtag && draft.hashtag) el.cHashtag.value = draft.hashtag;
+      if (el.cAddress && draft.address) el.cAddress.value = draft.address;
+      if (el.cPostcode && draft.postcode) el.cPostcode.value = draft.postcode;
+      if (el.cEmail && draft.email) el.cEmail.value = draft.email;
+      if (el.cExtraPhone && draft.extraPhone) el.cExtraPhone.value = draft.extraPhone;
+      if (Array.isArray(draft.tags)) s.tags = [...draft.tags];
+      if (Array.isArray(draft.buttons)) s.buttons = JSON.parse(JSON.stringify(draft.buttons));
+      if (draft.theme) s.theme = draft.theme;
+      if (el.cColor && draft.customColor) el.cColor.value = draft.customColor;
+      if (el.cBranding) el.cBranding.checked = draft.showBranding === false ? true : false;
+      s.draftRestored = true;
+      renderTags && renderTags();
+      renderButtons && renderButtons();
+      renderTheme && renderTheme();
+      renderPreview && renderPreview();
+    } catch { }
+  }
   let scoreChart = null;
   let analyticsCharts = {};
   let modalLastFocused = null;
@@ -1479,6 +1533,8 @@ Email: ${userEmail}
         s.verification = null;
       }
       renderAll();
+      // Восстановить черновик, если есть и профиль не был только что сохранён
+      if (!s.draftRestored && !s.card) restoreDraft();
     } catch (error) {
       if (error?.code === "AUTH_REQUIRED" || error?.code === "ACCOUNT_DISABLED") {
         location.replace("/");
@@ -1615,220 +1671,196 @@ Email: ${userEmail}
 
   const cycleStatus = (status) => (status === "active" ? "paused" : status === "paused" ? "private" : "active");
 
-  const uploadAvatarBlob = async (blob) => {
-    const form = new FormData();
-    form.append("file", new File([blob], "avatar.webp", { type: "image/webp" }));
-    await api("/api/profile/card/avatar", {
-      method: "POST",
-      body: form,
-    });
-  };
+  const saveCard = async () => {
+    if ((el.cName?.value || "").trim().length === 0) {
+      if (el.cardNameError) {
+        el.cardNameError.classList.remove("hidden");
+      }
+      showModal("Проверь поля", "Имя для визитки обязательно.");
+      return;
+    }
 
-  document.addEventListener("click", async (event) => {
-    const target = event.target instanceof HTMLElement ? event.target : null;
-    if (!target) return;
-
-    const action = target.getAttribute("data-a");
+    if (el.cardNameError) {
+      el.cardNameError.classList.add("hidden");
+    }
 
     try {
-      if (action === "goto-card") {
-        location.hash = "#card";
-        return;
-      }
+      await api("/api/profile/card", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: el.cName?.value || "",
+          role: el.cRole?.value || "",
+          bio: el.cBio?.value || "",
+          hashtag: el.cHashtag?.value || "",
+          address: el.cAddress?.value || "",
+          postcode: el.cPostcode?.value || "",
+          email: el.cEmail?.value || "",
+          extraPhone: el.cExtraPhone?.value || "",
+          tags: s.tags,
+          buttons: (s.buttons || []).map((b) => ({
+            type: b.type || 'other',
+            label: b.label || '',
+            href: typeof b.url === 'string' ? b.url : (typeof b.href === 'string' ? b.href : ''),
+            value: typeof b.url === 'string' ? b.url : (typeof b.value === 'string' ? b.value : ''),
+          })),
+          theme: s.theme,
+          customColor: el.cColor?.value || null,
+          showBranding: el.cBranding ? !el.cBranding.checked : true,
+        }),
+      });
 
-      if (action === "open-bracelet-order-modal") {
-        openBraceletModal();
+      showSaveAlert("Успешно сохранено");
+      clearDraft();
+      await load();
+    } catch (error) {
+      if (error.code === "UPGRADE_REQUIRED") {
+        showModal("Доступно на Премиум", "Эта функция доступна только для Премиум тарифа.");
         return;
       }
-
-      if (action === "rm-tag") {
-        const index = Number(target.getAttribute("data-i"));
-        if (!Number.isNaN(index)) {
-          s.tags.splice(index, 1);
-          renderTags();
-          renderPreview();
-        }
-        return;
-      }
-
-      if (action === "rm-btn") {
-        const index = Number(target.getAttribute("data-i"));
-        if (!Number.isNaN(index)) {
-          s.buttons.splice(index, 1);
-          renderButtons();
-          renderPreview();
-        }
-        return;
-      }
-
-      if (action === "open-qr") {
-        const slug = target.getAttribute("data-slug");
-        if (!slug) return;
-        await openQrModal(slug);
-        return;
-      }
+      showModal("Ошибка", error.message || "Не удалось сохранить визитку");
+    }
+  };
+  await openQrModal(slug);
+  return;
+}
 
       if (action === "cycle") {
-        const slug = target.getAttribute("data-slug");
-        const status = target.getAttribute("data-st");
-        if (!slug || !status) return;
+  const slug = target.getAttribute("data-slug");
+  const status = target.getAttribute("data-st");
+  if (!slug || !status) return;
 
-        await api(`/api/profile/slugs/${encodeURIComponent(slug)}/status`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ status: cycleStatus(status) }),
-        });
-        await load();
-        return;
-      }
-
-      if (action === "primary") {
-        const slug = target.getAttribute("data-slug");
-        if (!slug) return;
-        await api(`/api/profile/slugs/${encodeURIComponent(slug)}/primary`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({}),
-        });
-        await load();
-        return;
-      }
-
-      if (action === "save-pm") {
-        const slug = target.getAttribute("data-slug");
-        if (!slug) return;
-        const input = el.slugs?.querySelector(`[data-pm="${slug}"]`);
-        await api(`/api/profile/slugs/${encodeURIComponent(slug)}/pause-message`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            message: input instanceof HTMLInputElement ? input.value : "",
-          }),
-        });
-        await load();
-        return;
-      }
-
-      if (action === "claim-reward") {
-        const ruleId = target.getAttribute("data-rule");
-        if (!ruleId) return;
-        await api(`/api/referrals/rewards/${encodeURIComponent(ruleId)}/claim`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({}),
-        });
-        await load();
-        return;
-      }
-    } catch (error) {
-      showModal("Ошибка", error.message || "Не удалось выполнить действие");
-    }
+  await api(`/api/profile/slugs/${encodeURIComponent(slug)}/status`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ status: cycleStatus(status) }),
   });
+  await load();
+  return;
+}
 
-  el.tabs.forEach((button) =>
-    button.addEventListener("click", () => {
-      location.hash = `#${button.getAttribute("data-tab-target") || "slugs"}`;
+if (action === "primary") {
+  const slug = target.getAttribute("data-slug");
+  if (!slug) return;
+  await api(`/api/profile/slugs/${encodeURIComponent(slug)}/primary`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({}),
+  });
+  await load();
+  return;
+}
+
+if (action === "save-pm") {
+  const slug = target.getAttribute("data-slug");
+  if (!slug) return;
+  const input = el.slugs?.querySelector(`[data-pm="${slug}"]`);
+  await api(`/api/profile/slugs/${encodeURIComponent(slug)}/pause-message`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      message: input instanceof HTMLInputElement ? input.value : "",
     }),
-  );
+  });
+  await load();
+  return;
+}
 
-  el.analyticsSlug?.addEventListener("change", () => {
-    if (!(el.analyticsSlug instanceof HTMLSelectElement)) return;
-    s.analyticsSelectedSlug = el.analyticsSlug.value;
-    void refreshAnalytics();
+if (action === "claim-reward") {
+  const ruleId = target.getAttribute("data-rule");
+  if (!ruleId) return;
+  await api(`/api/referrals/rewards/${encodeURIComponent(ruleId)}/claim`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({}),
+  });
+  await load();
+  return;
+}
+    } catch (error) {
+  showModal("Ошибка", error.message || "Не удалось выполнить действие");
+}
   });
 
-  document.addEventListener("click", async (event) => {
-    const target = event.target instanceof HTMLElement ? event.target : null;
-    if (!target) return;
-    const periodButton = target.closest("[data-analytics-period]");
-    if (!(periodButton instanceof HTMLElement)) return;
-    const nextPeriod = Number(periodButton.getAttribute("data-analytics-period"));
-    if (!Number.isFinite(nextPeriod)) return;
-    s.analyticsSelectedPeriod = nextPeriod;
-    void refreshAnalytics();
-  });
+el.tabs.forEach((button) =>
+  button.addEventListener("click", () => {
+    location.hash = `#${button.getAttribute("data-tab-target") || "slugs"}`;
+  }),
+);
 
-  el.refCopy?.addEventListener("click", async () => {
-    const value = el.refLink instanceof HTMLInputElement ? el.refLink.value : "";
-    if (!value) return;
-    try {
-      await navigator.clipboard.writeText(value);
-      if (el.refCopy) {
-        el.refCopy.textContent = "Скопировано";
-        setTimeout(() => {
-          if (el.refCopy) el.refCopy.textContent = "Скопировать ссылку";
-        }, 1200);
-      }
-    } catch {
-      showModal("Ошибка", "Не удалось скопировать ссылку");
+el.analyticsSlug?.addEventListener("change", () => {
+  if (!(el.analyticsSlug instanceof HTMLSelectElement)) return;
+  s.analyticsSelectedSlug = el.analyticsSlug.value;
+  void refreshAnalytics();
+});
+
+document.addEventListener("click", async (event) => {
+  const target = event.target instanceof HTMLElement ? event.target : null;
+  if (!target) return;
+  const periodButton = target.closest("[data-analytics-period]");
+  if (!(periodButton instanceof HTMLElement)) return;
+  const nextPeriod = Number(periodButton.getAttribute("data-analytics-period"));
+  if (!Number.isFinite(nextPeriod)) return;
+  s.analyticsSelectedPeriod = nextPeriod;
+  void refreshAnalytics();
+});
+
+el.refCopy?.addEventListener("click", async () => {
+  const value = el.refLink instanceof HTMLInputElement ? el.refLink.value : "";
+  if (!value) return;
+  try {
+    await navigator.clipboard.writeText(value);
+    if (el.refCopy) {
+      el.refCopy.textContent = "Скопировано";
+      setTimeout(() => {
+        if (el.refCopy) el.refCopy.textContent = "Скопировать ссылку";
+      }, 1200);
     }
-  });
+  } catch {
+    showModal("Ошибка", "Не удалось скопировать ссылку");
+  }
+});
 
-  window.addEventListener("hashchange", setTab);
-  setTab();
+window.addEventListener("hashchange", setTab);
+setTab();
 
-  el.modalClose?.addEventListener("click", closeModal);
-  el.modalCloseTop?.addEventListener("click", closeModal);
-  el.modal?.addEventListener("click", (event) => {
-    if (event.target === el.modal) closeModal();
-  });
-  el.braceletModalClose?.addEventListener("click", closeBraceletModal);
-  el.braceletModalCloseTop?.addEventListener("click", closeBraceletModal);
-  el.braceletModal?.addEventListener("click", (event) => {
-    if (event.target === el.braceletModal) closeBraceletModal();
-  });
-  el.braceletModalSubmit?.addEventListener("click", () => {
-    closeBraceletModal();
-    if (window.UNQOrderModal && typeof window.UNQOrderModal.open === "function") {
-      window.UNQOrderModal.open({ bracelet: true });
-    }
-  });
-  document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape") {
-      if (braceletModalOpen) {
-        closeBraceletModal();
-        return;
-      }
-      if (modalIsOpen) {
-        closeModal();
-      }
+el.modalClose?.addEventListener("click", closeModal);
+el.modalCloseTop?.addEventListener("click", closeModal);
+el.modal?.addEventListener("click", (event) => {
+  if (event.target === el.modal) closeModal();
+});
+el.braceletModalClose?.addEventListener("click", closeBraceletModal);
+el.braceletModalCloseTop?.addEventListener("click", closeBraceletModal);
+el.braceletModal?.addEventListener("click", (event) => {
+  if (event.target === el.braceletModal) closeBraceletModal();
+});
+el.braceletModalSubmit?.addEventListener("click", () => {
+  closeBraceletModal();
+  if (window.UNQOrderModal && typeof window.UNQOrderModal.open === "function") {
+    window.UNQOrderModal.open({ bracelet: true });
+  }
+});
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") {
+    if (braceletModalOpen) {
+      closeBraceletModal();
       return;
     }
-    if (event.key !== "Tab") return;
-    if (braceletModalOpen && el.braceletModalDialog instanceof HTMLElement) {
-      const focusable = Array.from(
-        el.braceletModalDialog.querySelectorAll(
-          'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
-        ),
-      ).filter((item) => item instanceof HTMLElement && item.offsetParent !== null);
-      if (!focusable.length) {
-        event.preventDefault();
-        el.braceletModalDialog.focus();
-        return;
-      }
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      const current = document.activeElement;
-      if (event.shiftKey && current === first) {
-        event.preventDefault();
-        last.focus();
-        return;
-      }
-      if (!event.shiftKey && current === last) {
-        event.preventDefault();
-        first.focus();
-      }
-      return;
+    if (modalIsOpen) {
+      closeModal();
     }
-    if (!modalIsOpen || !(el.modalDialog instanceof HTMLElement)) return;
+    return;
+  }
+  if (event.key !== "Tab") return;
+  if (braceletModalOpen && el.braceletModalDialog instanceof HTMLElement) {
     const focusable = Array.from(
-      el.modalDialog.querySelectorAll(
+      el.braceletModalDialog.querySelectorAll(
         'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
       ),
     ).filter((item) => item instanceof HTMLElement && item.offsetParent !== null);
     if (!focusable.length) {
       event.preventDefault();
-      el.modalDialog.focus();
+      el.braceletModalDialog.focus();
       return;
     }
     const first = focusable[0];
@@ -1843,632 +1875,662 @@ Email: ${userEmail}
       event.preventDefault();
       first.focus();
     }
-  });
+    return;
+  }
+  if (!modalIsOpen || !(el.modalDialog instanceof HTMLElement)) return;
+  const focusable = Array.from(
+    el.modalDialog.querySelectorAll(
+      'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
+    ),
+  ).filter((item) => item instanceof HTMLElement && item.offsetParent !== null);
+  if (!focusable.length) {
+    event.preventDefault();
+    el.modalDialog.focus();
+    return;
+  }
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  const current = document.activeElement;
+  if (event.shiftKey && current === first) {
+    event.preventDefault();
+    last.focus();
+    return;
+  }
+  if (!event.shiftKey && current === last) {
+    event.preventDefault();
+    first.focus();
+  }
+});
 
-  el.addSlug?.addEventListener("click", () => {
-    const plan = getCurrentPlan();
-    const count = s.slugs.length;
-    if (plan === "none") {
-      if (window.UNQOrderModal && typeof window.UNQOrderModal.open === "function") {
-        window.UNQOrderModal.open({});
-      }
-      return;
-    }
-
-    if (plan === "premium" && count >= 3) {
-      showModal("Лимит достигнут", "Достигнут лимит 3 UNQ для Премиум тарифа");
-      return;
-    }
-
-    if (plan !== "premium" && count >= 1) {
-      const upgradePrice = Number(s.pricing?.premiumUpgradePrice || 80_000).toLocaleString("ru-RU");
-      showModal(
-        "Нужен Премиум",
-        `Открыть Премиум · ${upgradePrice} сум единоразово`,
-        "Купить Премиум →",
-        () => {
-          if (window.UNQOrderModal && typeof window.UNQOrderModal.open === "function") {
-            window.UNQOrderModal.open({ plan: "premium" });
-          }
-        },
-      );
-      return;
-    }
+el.addSlug?.addEventListener("click", () => {
+  const plan = getCurrentPlan();
+  const count = s.slugs.length;
+  if (plan === "none") {
     if (window.UNQOrderModal && typeof window.UNQOrderModal.open === "function") {
       window.UNQOrderModal.open({});
     }
-  });
+    return;
+  }
 
-  el.reqNewBtn?.addEventListener("click", () => {
-    const plan = getCurrentPlan();
-    const count = s.slugs.length;
-    if (plan === "none") {
-      if (window.UNQOrderModal && typeof window.UNQOrderModal.open === "function") {
-        window.UNQOrderModal.open({});
-      }
-      return;
-    }
-    if (plan !== "premium" && count >= 1) {
-      const upgradePrice = Number(s.pricing?.premiumUpgradePrice || 80_000).toLocaleString("ru-RU");
-      showModal("Нужен Премиум", `Купить Премиум · ${upgradePrice} сум единоразово`);
-      return;
-    }
-    if (plan === "premium" && count >= 3) {
-      showModal("Лимит достигнут", "Достигнут лимит 3 slug");
-      return;
-    }
+  if (plan === "premium" && count >= 3) {
+    showModal("Лимит достигнут", "Достигнут лимит 3 UNQ для Премиум тарифа");
+    return;
+  }
+
+  if (plan !== "premium" && count >= 1) {
+    const upgradePrice = Number(s.pricing?.premiumUpgradePrice || 80_000).toLocaleString("ru-RU");
+    showModal(
+      "Нужен Премиум",
+      `Открыть Премиум · ${upgradePrice} сум единоразово`,
+      "Купить Премиум →",
+      () => {
+        if (window.UNQOrderModal && typeof window.UNQOrderModal.open === "function") {
+          window.UNQOrderModal.open({ plan: "premium" });
+        }
+      },
+    );
+    return;
+  }
+  if (window.UNQOrderModal && typeof window.UNQOrderModal.open === "function") {
+    window.UNQOrderModal.open({});
+  }
+});
+
+el.reqNewBtn?.addEventListener("click", () => {
+  const plan = getCurrentPlan();
+  const count = s.slugs.length;
+  if (plan === "none") {
     if (window.UNQOrderModal && typeof window.UNQOrderModal.open === "function") {
       window.UNQOrderModal.open({});
     }
-  });
+    return;
+  }
+  if (plan !== "premium" && count >= 1) {
+    const upgradePrice = Number(s.pricing?.premiumUpgradePrice || 80_000).toLocaleString("ru-RU");
+    showModal("Нужен Премиум", `Купить Премиум · ${upgradePrice} сум единоразово`);
+    return;
+  }
+  if (plan === "premium" && count >= 3) {
+    showModal("Лимит достигнут", "Достигнут лимит 3 slug");
+    return;
+  }
+  if (window.UNQOrderModal && typeof window.UNQOrderModal.open === "function") {
+    window.UNQOrderModal.open({});
+  }
+});
 
-  document.addEventListener("click", async (event) => {
-    const target = event.target instanceof HTMLElement ? event.target : null;
-    if (!target) return;
-    const payNode = target.closest('[data-a="pay-request"]');
-    if (payNode instanceof HTMLElement) {
-      const orderId = String(payNode.getAttribute("data-order-id") || "").trim();
-      const requestItem = s.requests.find((item) => String(item.id) === orderId);
-      let url = "";
-      try {
-        const requestedPlan = String(requestItem?.requestedPlan || "basic").toLowerCase() === "premium" ? "premium" : "basic";
-        const precheck = await api(`/api/cards/order-precheck?requestedPlan=${encodeURIComponent(requestedPlan)}`);
-        const pending = precheck?.pendingOrder && typeof precheck.pendingOrder === "object" ? precheck.pendingOrder : null;
-        if (pending) {
-          url = buildPendingPaymentUrl(pending);
-        }
-      } catch {
-        // fallback to local request snapshot
-      }
-      if (!url) {
-        url = buildTelegramPaymentUrl(requestItem || { id: orderId, slug: "", requestedPlan: "basic" });
-      }
-      openTelegramUrl(url);
-      return;
-    }
-    const cancelNode = target.closest('[data-a="cancel-request"]');
-    if (cancelNode instanceof HTMLElement) {
-      const orderId = String(cancelNode.getAttribute("data-order-id") || "").trim();
-      if (!orderId) {
-        return;
-      }
-      showModal("Отменить заявку", "UNQ будет освобожден сразу. Продолжить?", "Отменить заявку", async () => {
-        try {
-          await api(`/api/cards/order-request/${encodeURIComponent(orderId)}/cancel`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({}),
-          });
-          await load();
-          location.hash = "#requests";
-          showSaveAlert("Заявка отменена, UNQ освобожден");
-        } catch (error) {
-          showModal("Не удалось отменить", error.message || "Попробуйте позже");
-        }
-      });
-      return;
-    }
-    if (
-      target.id === "profile-slugs-order-btn" ||
-      target.id === "profile-card-order-btn" ||
-      target.id === "profile-analytics-order-btn" ||
-      target.id === "profile-requests-order-btn"
-    ) {
-      if (window.UNQOrderModal && typeof window.UNQOrderModal.open === "function") {
-        window.UNQOrderModal.open({});
-      }
-    }
-  });
-
-  el.welcomeDismiss?.addEventListener("click", async () => {
+document.addEventListener("click", async (event) => {
+  const target = event.target instanceof HTMLElement ? event.target : null;
+  if (!target) return;
+  const payNode = target.closest('[data-a="pay-request"]');
+  if (payNode instanceof HTMLElement) {
+    const orderId = String(payNode.getAttribute("data-order-id") || "").trim();
+    const requestItem = s.requests.find((item) => String(item.id) === orderId);
+    let url = "";
     try {
-      await api("/api/profile/welcome-dismiss", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
-      });
-      if (s.user) {
-        s.user.welcomeDismissed = true;
+      const requestedPlan = String(requestItem?.requestedPlan || "basic").toLowerCase() === "premium" ? "premium" : "basic";
+      const precheck = await api(`/api/cards/order-precheck?requestedPlan=${encodeURIComponent(requestedPlan)}`);
+      const pending = precheck?.pendingOrder && typeof precheck.pendingOrder === "object" ? precheck.pendingOrder : null;
+      if (pending) {
+        url = buildPendingPaymentUrl(pending);
       }
-      renderWelcomeBanner();
     } catch {
-      renderWelcomeBanner();
+      // fallback to local request snapshot
     }
-  });
-
-  el.cBio?.addEventListener("input", () => {
-    if (el.cBioC) el.cBioC.textContent = `${el.cBio.value.length}/120`;
-    renderPreview();
-  });
-
-  el.cName?.addEventListener("input", () => {
-    if (el.cardNameError && (el.cName?.value || "").trim().length > 0) {
-      el.cardNameError.classList.add("hidden");
+    if (!url) {
+      url = buildTelegramPaymentUrl(requestItem || { id: orderId, slug: "", requestedPlan: "basic" });
     }
-    renderPreview();
-  });
-  el.cRole?.addEventListener("input", renderPreview);
-  el.cColor?.addEventListener("input", renderPreview);
-  el.cBranding?.addEventListener("change", renderPreview);
-  el.cHashtag?.addEventListener("input", renderPreview);
-  el.cAddress?.addEventListener("input", renderPreview);
-  el.cPostcode?.addEventListener("input", renderPreview);
-  el.cEmail?.addEventListener("input", renderPreview);
-  el.cExtraPhone?.addEventListener("input", renderPreview);
-  el.cSave?.addEventListener("click", saveCard);
-
-  el.cTagAdd?.addEventListener("click", () => {
-    const raw = el.cTagInput instanceof HTMLInputElement ? el.cTagInput.value.trim() : "";
-    if (!raw) return;
-
-    const limit = getTagLimit();
-    if (s.tags.length >= limit) {
-      showModal("Лимит тегов", `Можно добавить до ${limit} тегов.`);
+    openTelegramUrl(url);
+    return;
+  }
+  const cancelNode = target.closest('[data-a="cancel-request"]');
+  if (cancelNode instanceof HTMLElement) {
+    const orderId = String(cancelNode.getAttribute("data-order-id") || "").trim();
+    if (!orderId) {
       return;
     }
+    showModal("Отменить заявку", "UNQ будет освобожден сразу. Продолжить?", "Отменить заявку", async () => {
+      try {
+        await api(`/api/cards/order-request/${encodeURIComponent(orderId)}/cancel`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({}),
+        });
+        await load();
+        location.hash = "#requests";
+        showSaveAlert("Заявка отменена, UNQ освобожден");
+      } catch (error) {
+        showModal("Не удалось отменить", error.message || "Попробуйте позже");
+      }
+    });
+    return;
+  }
+  if (
+    target.id === "profile-slugs-order-btn" ||
+    target.id === "profile-card-order-btn" ||
+    target.id === "profile-analytics-order-btn" ||
+    target.id === "profile-requests-order-btn"
+  ) {
+    if (window.UNQOrderModal && typeof window.UNQOrderModal.open === "function") {
+      window.UNQOrderModal.open({});
+    }
+  }
+});
 
-    s.tags.push((raw.startsWith("#") ? raw : `#${raw}`).slice(0, 32));
-    if (el.cTagInput) el.cTagInput.value = "";
-    renderTags();
-    renderPreview();
+el.welcomeDismiss?.addEventListener("click", async () => {
+  try {
+    await api("/api/profile/welcome-dismiss", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({}),
+    });
+    if (s.user) {
+      s.user.welcomeDismissed = true;
+    }
+    renderWelcomeBanner();
+  } catch {
+    renderWelcomeBanner();
+  }
+});
+
+el.cBio?.addEventListener("input", () => {
+  if (el.cBioC) el.cBioC.textContent = `${el.cBio.value.length}/120`;
+  renderPreview();
+  saveDraft();
+});
+
+el.cName?.addEventListener("input", () => {
+  if (el.cardNameError && (el.cName?.value || "").trim().length > 0) {
+    el.cardNameError.classList.add("hidden");
+  }
+  renderPreview();
+  saveDraft();
+});
+el.cRole?.addEventListener("input", () => { renderPreview(); saveDraft(); });
+el.cColor?.addEventListener("input", () => { renderPreview(); saveDraft(); });
+el.cBranding?.addEventListener("change", () => { renderPreview(); saveDraft(); });
+el.cHashtag?.addEventListener("input", () => { renderPreview(); saveDraft(); });
+el.cAddress?.addEventListener("input", () => { renderPreview(); saveDraft(); });
+el.cPostcode?.addEventListener("input", () => { renderPreview(); saveDraft(); });
+el.cEmail?.addEventListener("input", () => { renderPreview(); saveDraft(); });
+el.cExtraPhone?.addEventListener("input", () => { renderPreview(); saveDraft(); });
+el.cSave?.addEventListener("click", saveCard);
+
+el.cTagAdd?.addEventListener("click", () => {
+  const raw = el.cTagInput instanceof HTMLInputElement ? el.cTagInput.value.trim() : "";
+  if (!raw) return;
+
+  const limit = getTagLimit();
+  if (s.tags.length >= limit) {
+    showModal("Лимит тегов", `Можно добавить до ${limit} тегов.`);
+    return;
+  }
+
+  s.tags.push((raw.startsWith("#") ? raw : `#${raw}`).slice(0, 32));
+  if (el.cTagInput) el.cTagInput.value = "";
+  renderTags();
+  renderPreview();
+  saveDraft();
+});
+
+el.cBtnAdd?.addEventListener("click", () => {
+  const limit = getButtonLimit();
+  if (Number.isFinite(limit) && s.buttons.length >= limit) {
+    showModal("Лимит кнопок", "Для большего количества кнопок нужен Премиум.");
+    return;
+  }
+
+  s.buttons.push({
+    id: `${Date.now()}_${Math.random()}`,
+    type: "other",
+    label: buttonTypeLabels.other,
+    href: "",
+    value: "",
   });
 
-  el.cBtnAdd?.addEventListener("click", () => {
-    const limit = getButtonLimit();
-    if (Number.isFinite(limit) && s.buttons.length >= limit) {
-      showModal("Лимит кнопок", "Для большего количества кнопок нужен Премиум.");
+  renderButtons();
+  renderPreview();
+  saveDraft();
+});
+
+el.cBtns?.addEventListener("input", (event) => {
+  const node = event.target instanceof HTMLElement ? event.target : null;
+  if (!node) return;
+
+  const row = node.closest("[data-bi]");
+  if (!(row instanceof HTMLElement)) return;
+
+  const index = Number(row.getAttribute("data-bi"));
+  if (!s.buttons[index]) return;
+
+  const typeField = row.querySelector('[data-bf="type"]');
+  const labelField = row.querySelector('[data-bf="label"]');
+  const hrefField = row.querySelector('[data-bf="href"]');
+
+  const prev = s.buttons[index];
+  const type = typeField instanceof HTMLSelectElement ? typeField.value : "other";
+  let label = labelField instanceof HTMLInputElement ? labelField.value : "";
+  const href = hrefField instanceof HTMLInputElement ? hrefField.value : "";
+
+  const previousDefault = buttonTypeLabels[prev.type] || "";
+  const nextDefault = buttonTypeLabels[type] || "";
+  if (type !== prev.type && label === previousDefault) {
+    label = nextDefault;
+    if (labelField instanceof HTMLInputElement) {
+      labelField.value = label;
+    }
+  }
+
+  s.buttons[index] = {
+    ...prev,
+    type,
+    label,
+    href,
+    value: href,
+  };
+
+  renderPreview();
+  saveDraft();
+});
+
+el.cThemes.forEach((button) =>
+  button.addEventListener("click", () => {
+    const selectedTheme = button.getAttribute("data-theme") || "default_dark";
+    const premiumOnly = PREMIUM_ONLY_THEMES.has(selectedTheme);
+    if (premiumOnly && getCurrentPlan() !== "premium") {
+      showModal("Доступно на Премиум", "Эта тема доступна только для Премиум тарифа.");
       return;
     }
+    s.theme = PROFILE_THEMES.includes(selectedTheme) ? selectedTheme : "default_dark";
+    renderTheme();
+    renderPreview();
+  }),
+);
 
-    s.buttons.push({
-      id: `${Date.now()}_${Math.random()}`,
-      type: "other",
-      label: buttonTypeLabels.other,
-      href: "",
-      value: "",
+el.cAvFile?.addEventListener("change", async () => {
+  const file = el.cAvFile?.files && el.cAvFile.files[0];
+  if (!file) return;
+
+  if (!/^image\/(png|jpeg|webp)$/i.test(file.type)) {
+    showModal("Ошибка", "Поддерживаются только PNG, JPG и WEBP");
+    hideAvatarCrop();
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    if (!(el.cAvCropImage instanceof HTMLImageElement) || !(el.cAvCropWrap instanceof HTMLElement)) return;
+
+    el.cAvCropImage.src = String(reader.result || "");
+    el.cAvCropWrap.classList.remove("hidden");
+
+    destroyCropper();
+    if (typeof Cropper !== "undefined") {
+      avatarCropper = new Cropper(el.cAvCropImage, {
+        aspectRatio: 1,
+        viewMode: 1,
+        autoCropArea: 1,
+        dragMode: "move",
+        background: false,
+        responsive: true,
+        guides: false,
+      });
+    }
+  };
+  reader.onerror = () => showModal("Ошибка", "Не удалось прочитать файл");
+  reader.readAsDataURL(file);
+});
+
+el.cAvCropSave?.addEventListener("click", async () => {
+  if (!avatarCropper) return;
+
+  try {
+    const canvas = avatarCropper.getCroppedCanvas({
+      width: 512,
+      height: 512,
+      imageSmoothingQuality: "high",
     });
 
-    renderButtons();
-    renderPreview();
-  });
-
-  el.cBtns?.addEventListener("input", (event) => {
-    const node = event.target instanceof HTMLElement ? event.target : null;
-    if (!node) return;
-
-    const row = node.closest("[data-bi]");
-    if (!(row instanceof HTMLElement)) return;
-
-    const index = Number(row.getAttribute("data-bi"));
-    if (!s.buttons[index]) return;
-
-    const typeField = row.querySelector('[data-bf="type"]');
-    const labelField = row.querySelector('[data-bf="label"]');
-    const hrefField = row.querySelector('[data-bf="href"]');
-
-    const prev = s.buttons[index];
-    const type = typeField instanceof HTMLSelectElement ? typeField.value : "other";
-    let label = labelField instanceof HTMLInputElement ? labelField.value : "";
-    const href = hrefField instanceof HTMLInputElement ? hrefField.value : "";
-
-    const previousDefault = buttonTypeLabels[prev.type] || "";
-    const nextDefault = buttonTypeLabels[type] || "";
-    if (type !== prev.type && label === previousDefault) {
-      label = nextDefault;
-      if (labelField instanceof HTMLInputElement) {
-        labelField.value = label;
-      }
-    }
-
-    s.buttons[index] = {
-      ...prev,
-      type,
-      label,
-      href,
-      value: href,
-    };
-
-    renderPreview();
-  });
-
-  el.cThemes.forEach((button) =>
-    button.addEventListener("click", () => {
-      const selectedTheme = button.getAttribute("data-theme") || "default_dark";
-      const premiumOnly = PREMIUM_ONLY_THEMES.has(selectedTheme);
-      if (premiumOnly && getCurrentPlan() !== "premium") {
-        showModal("Доступно на Премиум", "Эта тема доступна только для Премиум тарифа.");
-        return;
-      }
-      s.theme = PROFILE_THEMES.includes(selectedTheme) ? selectedTheme : "default_dark";
-      renderTheme();
-      renderPreview();
-    }),
-  );
-
-  el.cAvFile?.addEventListener("change", async () => {
-    const file = el.cAvFile?.files && el.cAvFile.files[0];
-    if (!file) return;
-
-    if (!/^image\/(png|jpeg|webp)$/i.test(file.type)) {
-      showModal("Ошибка", "Поддерживаются только PNG, JPG и WEBP");
-      hideAvatarCrop();
+    if (!canvas) {
+      showModal("Ошибка", "Не удалось подготовить изображение");
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (!(el.cAvCropImage instanceof HTMLImageElement) || !(el.cAvCropWrap instanceof HTMLElement)) return;
+    const blob = await new Promise((resolve) => {
+      canvas.toBlob(resolve, "image/webp", 0.92);
+    });
 
-      el.cAvCropImage.src = String(reader.result || "");
-      el.cAvCropWrap.classList.remove("hidden");
-
-      destroyCropper();
-      if (typeof Cropper !== "undefined") {
-        avatarCropper = new Cropper(el.cAvCropImage, {
-          aspectRatio: 1,
-          viewMode: 1,
-          autoCropArea: 1,
-          dragMode: "move",
-          background: false,
-          responsive: true,
-          guides: false,
-        });
-      }
-    };
-    reader.onerror = () => showModal("Ошибка", "Не удалось прочитать файл");
-    reader.readAsDataURL(file);
-  });
-
-  el.cAvCropSave?.addEventListener("click", async () => {
-    if (!avatarCropper) return;
-
-    try {
-      const canvas = avatarCropper.getCroppedCanvas({
-        width: 512,
-        height: 512,
-        imageSmoothingQuality: "high",
-      });
-
-      if (!canvas) {
-        showModal("Ошибка", "Не удалось подготовить изображение");
-        return;
-      }
-
-      const blob = await new Promise((resolve) => {
-        canvas.toBlob(resolve, "image/webp", 0.92);
-      });
-
-      if (!(blob instanceof Blob)) {
-        showModal("Ошибка", "Не удалось сохранить изображение");
-        return;
-      }
-
-      await uploadAvatarBlob(blob);
-      hideAvatarCrop();
-      await load();
-    } catch (error) {
-      showModal("Ошибка", error.message || "Не удалось загрузить аватар");
+    if (!(blob instanceof Blob)) {
+      showModal("Ошибка", "Не удалось сохранить изображение");
+      return;
     }
-  });
 
-  el.cAvRemove?.addEventListener("click", async () => {
-    try {
-      await api("/api/profile/card/avatar", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
-      });
-      hideAvatarCrop();
-      await load();
-    } catch (error) {
-      showModal("Ошибка", error.message || "Не удалось удалить аватар");
+    await uploadAvatarBlob(blob);
+    hideAvatarCrop();
+    await load();
+  } catch (error) {
+    showModal("Ошибка", error.message || "Не удалось загрузить аватар");
+  }
+});
+
+el.cAvRemove?.addEventListener("click", async () => {
+  try {
+    await api("/api/profile/card/avatar", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({}),
+    });
+    hideAvatarCrop();
+    await load();
+  } catch (error) {
+    showModal("Ошибка", error.message || "Не удалось удалить аватар");
+  }
+});
+
+el.stSave?.addEventListener("click", async () => {
+  if (!el.stStatus) return;
+  el.stStatus.textContent = "";
+
+  try {
+    const payload = await api("/api/profile/settings", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        displayName: el.stName?.value || "",
+        city: el.stCity?.value || "",
+        telegramUsername: String(el.stTg?.value || "").replace(/^@+/, "").trim(),
+        notificationsEnabled: Boolean(el.stNotif?.checked),
+        showInDirectory: Boolean(el.stDirectory?.checked),
+      }),
+    });
+
+    if (s.user) {
+      s.user.displayName = payload.user.displayName;
+      s.user.city = payload.user.city;
+      s.user.notificationsEnabled = payload.user.notificationsEnabled;
+      s.user.showInDirectory = payload.user.showInDirectory;
     }
-  });
 
-  el.stSave?.addEventListener("click", async () => {
-    if (!el.stStatus) return;
-    el.stStatus.textContent = "";
+    renderSidebar();
+    renderTelegramNotificationActions(Boolean(payload?.user?.notificationsEnabled));
+    el.stStatus.textContent = "Сохранено";
+    el.stStatus.className = "text-sm text-emerald-700";
+  } catch (error) {
+    el.stStatus.textContent = `${error.message}`;
+    el.stStatus.className = "text-sm text-red-700";
+  }
+});
 
-    try {
-      const payload = await api("/api/profile/settings", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          displayName: el.stName?.value || "",
-          city: el.stCity?.value || "",
-          telegramUsername: String(el.stTg?.value || "").replace(/^@+/, "").trim(),
-          notificationsEnabled: Boolean(el.stNotif?.checked),
-          showInDirectory: Boolean(el.stDirectory?.checked),
-        }),
-      });
+el.stNotif?.addEventListener("change", () => {
+  renderTelegramNotificationActions(Boolean(el.stNotif?.checked));
+});
 
-      if (s.user) {
-        s.user.displayName = payload.user.displayName;
-        s.user.city = payload.user.city;
-        s.user.notificationsEnabled = payload.user.notificationsEnabled;
-        s.user.showInDirectory = payload.user.showInDirectory;
-      }
-
-      renderSidebar();
-      renderTelegramNotificationActions(Boolean(payload?.user?.notificationsEnabled));
-      el.stStatus.textContent = "Сохранено";
-      el.stStatus.className = "text-sm text-emerald-700";
-    } catch (error) {
-      el.stStatus.textContent = `${error.message}`;
-      el.stStatus.className = "text-sm text-red-700";
-    }
-  });
-
-  el.stNotif?.addEventListener("change", () => {
-    renderTelegramNotificationActions(Boolean(el.stNotif?.checked));
-  });
-
-  el.stDeact?.addEventListener("click", () => {
-    showModal(
-      "Деактивировать аккаунт?",
-      `Все твои UNQ станут недоступны. Восстановление будет доступно ${reactivationWindowDays} дней, затем аккаунт удалится окончательно.`,
-      "Подтвердить",
-      async () => {
-        try {
-          await api("/api/profile/deactivate", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({}),
-          });
-          location.href = "/login";
-        } catch (error) {
-          if (el.stStatus) {
-            el.stStatus.textContent = `${error.message}`;
-            el.stStatus.className = "text-sm text-red-700";
-          }
-        }
-      });
-  });
-
-  el.logout?.addEventListener("click", async () => {
-    el.logout.disabled = true;
-    try {
+el.stDeact?.addEventListener("click", () => {
+  showModal(
+    "Деактивировать аккаунт?",
+    `Все твои UNQ станут недоступны. Восстановление будет доступно ${reactivationWindowDays} дней, затем аккаунт удалится окончательно.`,
+    "Подтвердить",
+    async () => {
       try {
-        await api("/api/auth/logout", {
+        await api("/api/profile/deactivate", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({}),
         });
+        location.href = "/login";
       } catch (error) {
-        const isCsrfError = String(error?.message || "").toLowerCase().includes("invalid csrf token");
-        if (!isCsrfError) {
-          throw error;
+        if (el.stStatus) {
+          el.stStatus.textContent = `${error.message}`;
+          el.stStatus.className = "text-sm text-red-700";
         }
-        // Session can rotate after inactivity; refresh token and retry logout once.
-        await api("/api/auth/me", {
-          method: "GET",
-        });
-        await api("/api/auth/logout", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({}),
-        });
       }
-      window.dispatchEvent(new CustomEvent("unqx:auth:logout"));
-      location.href = "/login";
-    } catch (error) {
-      showModal("Ошибка", error.message || "Не удалось выйти");
-      el.logout.disabled = false;
-    }
-  });
+    });
+});
 
-  el.stLinkTelegram?.addEventListener("click", async () => {
-    const btn = el.stLinkTelegram;
-    if (!(btn instanceof HTMLButtonElement)) return;
-    btn.disabled = true;
+el.logout?.addEventListener("click", async () => {
+  el.logout.disabled = true;
+  try {
     try {
-      const payload = await api("/api/profile/telegram/link/start", {
+      await api("/api/auth/logout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({}),
       });
-      const url = String(payload?.url || "").trim();
-      if (!url) {
-        throw new Error("Не удалось получить ссылку Telegram");
-      }
-      if (s.user) {
-        s.user.notificationsEnabled = true;
-      }
-      if (el.stNotif instanceof HTMLInputElement) {
-        el.stNotif.checked = true;
-      }
-      renderTelegramNotificationActions(true);
-      window.open(url, "_blank", "noopener,noreferrer");
     } catch (error) {
-      showModal("Ошибка", error.message || "Не удалось подключить Telegram");
-    } finally {
-      btn.disabled = false;
-    }
-  });
-
-  el.stUnlinkTelegram?.addEventListener("click", async () => {
-    const btn = el.stUnlinkTelegram;
-    if (!(btn instanceof HTMLButtonElement)) return;
-    btn.disabled = true;
-    try {
-      await api("/api/profile/telegram/link/unlink", {
+      const isCsrfError = String(error?.message || "").toLowerCase().includes("invalid csrf token");
+      if (!isCsrfError) {
+        throw error;
+      }
+      // Session can rotate after inactivity; refresh token and retry logout once.
+      await api("/api/auth/me", {
+        method: "GET",
+      });
+      await api("/api/auth/logout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({}),
       });
-      if (s.user) {
-        s.user.notificationsEnabled = false;
-      }
-      if (el.stNotif instanceof HTMLInputElement) {
-        el.stNotif.checked = false;
-      }
-      renderTelegramNotificationActions(false);
-      showModal("Готово", "Telegram уведомления отключены", "Ок");
-    } catch (error) {
-      showModal("Ошибка", error.message || "Не удалось отключить Telegram");
-    } finally {
-      btn.disabled = false;
     }
-  });
+    window.dispatchEvent(new CustomEvent("unqx:auth:logout"));
+    location.href = "/login";
+  } catch (error) {
+    showModal("Ошибка", error.message || "Не удалось выйти");
+    el.logout.disabled = false;
+  }
+});
 
-  el.qrClose?.addEventListener("click", closeQrModal);
-  el.qrModal?.addEventListener("click", (event) => {
-    if (event.target === el.qrModal) closeQrModal();
-  });
-  el.qrCopy?.addEventListener("click", async () => {
-    const value = el.qrLink?.textContent || "";
-    if (!value) return;
-    try {
-      await navigator.clipboard.writeText(value);
-      showModal("Готово", "Ссылка скопирована");
-    } catch {
-      showModal("Ошибка", "Не удалось скопировать ссылку");
+el.stLinkTelegram?.addEventListener("click", async () => {
+  const btn = el.stLinkTelegram;
+  if (!(btn instanceof HTMLButtonElement)) return;
+  btn.disabled = true;
+  try {
+    const payload = await api("/api/profile/telegram/link/start", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({}),
+    });
+    const url = String(payload?.url || "").trim();
+    if (!url) {
+      throw new Error("Не удалось получить ссылку Telegram");
     }
-  });
-  el.qrDownloadPng?.addEventListener("click", () => {
-    const canvas = el.qrBox?.querySelector("canvas");
-    if (!(canvas instanceof HTMLCanvasElement)) return;
-    const link = document.createElement("a");
-    link.href = canvas.toDataURL("image/png");
-    link.download = "unq-qr.png";
-    link.click();
-  });
+    if (s.user) {
+      s.user.notificationsEnabled = true;
+    }
+    if (el.stNotif instanceof HTMLInputElement) {
+      el.stNotif.checked = true;
+    }
+    renderTelegramNotificationActions(true);
+    window.open(url, "_blank", "noopener,noreferrer");
+  } catch (error) {
+    showModal("Ошибка", error.message || "Не удалось подключить Telegram");
+  } finally {
+    btn.disabled = false;
+  }
+});
 
-  const closeVerificationModal = () => {
-    if (!(el.verificationModal instanceof HTMLElement)) return;
-    el.verificationModal.classList.add("hidden");
-    el.verificationModal.classList.remove("flex");
-  };
-  const fillVerificationFormFromLatest = () => {
-    const latest = s.verification?.latestRequest;
-    if (!latest) return;
-    if (el.verificationCompany instanceof HTMLInputElement && !el.verificationCompany.value.trim()) {
-      el.verificationCompany.value = String(latest.companyName || "");
+el.stUnlinkTelegram?.addEventListener("click", async () => {
+  const btn = el.stUnlinkTelegram;
+  if (!(btn instanceof HTMLButtonElement)) return;
+  btn.disabled = true;
+  try {
+    await api("/api/profile/telegram/link/unlink", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({}),
+    });
+    if (s.user) {
+      s.user.notificationsEnabled = false;
     }
-    if (el.verificationRole instanceof HTMLInputElement && !el.verificationRole.value.trim()) {
-      el.verificationRole.value = String(latest.role || "");
+    if (el.stNotif instanceof HTMLInputElement) {
+      el.stNotif.checked = false;
     }
-    if (el.verificationSector instanceof HTMLSelectElement) {
-      const sector = String(latest.sector || "other").toLowerCase();
-      el.verificationSector.value = ["design", "sales", "marketing", "it", "other"].includes(sector) ? sector : "other";
-    }
-    if (el.verificationProofType instanceof HTMLSelectElement) {
-      const proofType = String(latest.proofType || "email").toLowerCase();
-      el.verificationProofType.value = ["email", "linkedin", "website"].includes(proofType) ? proofType : "email";
-    }
-    if (el.verificationProofValue instanceof HTMLInputElement && !el.verificationProofValue.value.trim()) {
-      el.verificationProofValue.value = String(latest.proofValue || "");
-    }
-  };
-  el.verificationOpen?.addEventListener("click", () => {
-    if (el.verificationOpen instanceof HTMLButtonElement && el.verificationOpen.disabled) {
-      return;
-    }
-    if (!(el.verificationModal instanceof HTMLElement)) return;
-    fillVerificationFormFromLatest();
-    el.verificationModal.classList.remove("hidden");
-    el.verificationModal.classList.add("flex");
-  });
-  el.verificationClose?.addEventListener("click", closeVerificationModal);
-  el.verificationModal?.addEventListener("click", (event) => {
-    if (event.target === el.verificationModal) closeVerificationModal();
-  });
-  el.verificationSubmit?.addEventListener("click", async () => {
+    renderTelegramNotificationActions(false);
+    showModal("Готово", "Telegram уведомления отключены", "Ок");
+  } catch (error) {
+    showModal("Ошибка", error.message || "Не удалось отключить Telegram");
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+el.qrClose?.addEventListener("click", closeQrModal);
+el.qrModal?.addEventListener("click", (event) => {
+  if (event.target === el.qrModal) closeQrModal();
+});
+el.qrCopy?.addEventListener("click", async () => {
+  const value = el.qrLink?.textContent || "";
+  if (!value) return;
+  try {
+    await navigator.clipboard.writeText(value);
+    showModal("Готово", "Ссылка скопирована");
+  } catch {
+    showModal("Ошибка", "Не удалось скопировать ссылку");
+  }
+});
+el.qrDownloadPng?.addEventListener("click", () => {
+  const canvas = el.qrBox?.querySelector("canvas");
+  if (!(canvas instanceof HTMLCanvasElement)) return;
+  const link = document.createElement("a");
+  link.href = canvas.toDataURL("image/png");
+  link.download = "unq-qr.png";
+  link.click();
+});
+
+const closeVerificationModal = () => {
+  if (!(el.verificationModal instanceof HTMLElement)) return;
+  el.verificationModal.classList.add("hidden");
+  el.verificationModal.classList.remove("flex");
+};
+const fillVerificationFormFromLatest = () => {
+  const latest = s.verification?.latestRequest;
+  if (!latest) return;
+  if (el.verificationCompany instanceof HTMLInputElement && !el.verificationCompany.value.trim()) {
+    el.verificationCompany.value = String(latest.companyName || "");
+  }
+  if (el.verificationRole instanceof HTMLInputElement && !el.verificationRole.value.trim()) {
+    el.verificationRole.value = String(latest.role || "");
+  }
+  if (el.verificationSector instanceof HTMLSelectElement) {
+    const sector = String(latest.sector || "other").toLowerCase();
+    el.verificationSector.value = ["design", "sales", "marketing", "it", "other"].includes(sector) ? sector : "other";
+  }
+  if (el.verificationProofType instanceof HTMLSelectElement) {
+    const proofType = String(latest.proofType || "email").toLowerCase();
+    el.verificationProofType.value = ["email", "linkedin", "website"].includes(proofType) ? proofType : "email";
+  }
+  if (el.verificationProofValue instanceof HTMLInputElement && !el.verificationProofValue.value.trim()) {
+    el.verificationProofValue.value = String(latest.proofValue || "");
+  }
+};
+el.verificationOpen?.addEventListener("click", () => {
+  if (el.verificationOpen instanceof HTMLButtonElement && el.verificationOpen.disabled) {
+    return;
+  }
+  if (!(el.verificationModal instanceof HTMLElement)) return;
+  fillVerificationFormFromLatest();
+  el.verificationModal.classList.remove("hidden");
+  el.verificationModal.classList.add("flex");
+});
+el.verificationClose?.addEventListener("click", closeVerificationModal);
+el.verificationModal?.addEventListener("click", (event) => {
+  if (event.target === el.verificationModal) closeVerificationModal();
+});
+el.verificationSubmit?.addEventListener("click", async () => {
+  if (el.verificationSubmit instanceof HTMLButtonElement) {
+    el.verificationSubmit.disabled = true;
+  }
+  try {
+    await api("/api/profile/verification-request", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        companyName: el.verificationCompany?.value || "",
+        role: el.verificationRole?.value || "",
+        sector: el.verificationSector?.value || "other",
+        proofType: el.verificationProofType?.value || "email",
+        proofValue: el.verificationProofValue?.value || "",
+        comment: el.verificationComment?.value || "",
+      }),
+    });
+    closeVerificationModal();
+    await load();
+    showModal("Готово", "Заявка на верификацию отправлена");
+  } catch (error) {
+    showModal("Ошибка", error.message || "Не удалось отправить заявку");
+  } finally {
     if (el.verificationSubmit instanceof HTMLButtonElement) {
-      el.verificationSubmit.disabled = true;
+      el.verificationSubmit.disabled = false;
     }
-    try {
-      await api("/api/profile/verification-request", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          companyName: el.verificationCompany?.value || "",
-          role: el.verificationRole?.value || "",
-          sector: el.verificationSector?.value || "other",
-          proofType: el.verificationProofType?.value || "email",
-          proofValue: el.verificationProofValue?.value || "",
-          comment: el.verificationComment?.value || "",
-        }),
-      });
-      closeVerificationModal();
-      await load();
-      showModal("Готово", "Заявка на верификацию отправлена");
-    } catch (error) {
-      showModal("Ошибка", error.message || "Не удалось отправить заявку");
-    } finally {
-      if (el.verificationSubmit instanceof HTMLButtonElement) {
-        el.verificationSubmit.disabled = false;
-      }
-    }
-  });
+  }
+});
 
-  el.verificationCorrectionSubmit?.addEventListener("click", async () => {
-    const correctionText = String(el.verificationCorrection?.value || "").trim();
-    if (!correctionText) {
-      showModal("Проверь данные", "Опишите, что нужно исправить в заявке.");
-      return;
+el.verificationCorrectionSubmit?.addEventListener("click", async () => {
+  const correctionText = String(el.verificationCorrection?.value || "").trim();
+  if (!correctionText) {
+    showModal("Проверь данные", "Опишите, что нужно исправить в заявке.");
+    return;
+  }
+  if (el.verificationCorrectionSubmit instanceof HTMLButtonElement) {
+    el.verificationCorrectionSubmit.disabled = true;
+  }
+  try {
+    await api("/api/profile/verification-request/correction", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ comment: correctionText }),
+    });
+    if (el.verificationCorrection instanceof HTMLTextAreaElement) {
+      el.verificationCorrection.value = "";
     }
+    await load();
+    showModal("Готово", "Исправление отправлено администратору.");
+  } catch (error) {
+    showModal("Ошибка", error.message || "Не удалось отправить исправление");
+  } finally {
     if (el.verificationCorrectionSubmit instanceof HTMLButtonElement) {
-      el.verificationCorrectionSubmit.disabled = true;
+      el.verificationCorrectionSubmit.disabled = false;
     }
+  }
+});
+
+const refreshProfileSoon = (delayMs = 150) => {
+  if (profileRefreshTimer) {
+    clearTimeout(profileRefreshTimer);
+    profileRefreshTimer = null;
+  }
+  profileRefreshTimer = setTimeout(async () => {
+    if (profileRefreshInFlight) return;
+    profileRefreshInFlight = true;
     try {
-      await api("/api/profile/verification-request/correction", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ comment: correctionText }),
-      });
-      if (el.verificationCorrection instanceof HTMLTextAreaElement) {
-        el.verificationCorrection.value = "";
-      }
       await load();
-      showModal("Готово", "Исправление отправлено администратору.");
-    } catch (error) {
-      showModal("Ошибка", error.message || "Не удалось отправить исправление");
+    } catch {
+      // explicit user actions already show errors
     } finally {
-      if (el.verificationCorrectionSubmit instanceof HTMLButtonElement) {
-        el.verificationCorrectionSubmit.disabled = false;
-      }
+      profileRefreshInFlight = false;
     }
-  });
+  }, Math.max(0, Number(delayMs) || 0));
+};
 
-  const refreshProfileSoon = (delayMs = 150) => {
-    if (profileRefreshTimer) {
-      clearTimeout(profileRefreshTimer);
-      profileRefreshTimer = null;
-    }
-    profileRefreshTimer = setTimeout(async () => {
-      if (profileRefreshInFlight) return;
-      profileRefreshInFlight = true;
-      try {
-        await load();
-      } catch {
-        // explicit user actions already show errors
-      } finally {
-        profileRefreshInFlight = false;
-      }
-    }, Math.max(0, Number(delayMs) || 0));
-  };
+window.addEventListener("unqx:order:submitted", () => {
+  location.hash = "#requests";
+  refreshProfileSoon(80);
+});
 
-  window.addEventListener("unqx:order:submitted", () => {
-    location.hash = "#requests";
-    refreshProfileSoon(80);
-  });
+window.addEventListener("unqx:order:cancelled", () => {
+  refreshProfileSoon(80);
+});
 
-  window.addEventListener("unqx:order:cancelled", () => {
-    refreshProfileSoon(80);
-  });
+window.addEventListener("focus", () => {
+  refreshProfileSoon(150);
+});
 
-  window.addEventListener("focus", () => {
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") {
     refreshProfileSoon(150);
-  });
-
-  document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "visible") {
-      refreshProfileSoon(150);
-    }
-  });
-  load().catch((error) => showModal("Ошибка", error.message || "Не удалось загрузить профиль"));
-})();
+  }
+});
+load().catch((error) => showModal("Ошибка", error.message || "Не удалось загрузить профиль"));
+}) ();
 
 
 
