@@ -622,6 +622,12 @@ Email: ${userEmail}
   };
 
   const buttonRow = (button, index) => {
+    // Always use 'url' for editing; initialize from href/value if needed
+    const url = typeof button.url === 'string' && button.url.length > 0
+      ? button.url
+      : (typeof button.href === 'string' && button.href.length > 0
+        ? button.href
+        : (typeof button.value === 'string' ? button.value : ''));
     const selectedType = Object.prototype.hasOwnProperty.call(buttonTypeLabels, button.type) ? button.type : "other";
     const options = buttonTypeOptions
       .map(([value, label]) => `<option value="${value}" ${selectedType === value ? "selected" : ""}>${label}</option>`)
@@ -630,7 +636,7 @@ Email: ${userEmail}
     return `<div class="grid gap-2 rounded-xl border border-neutral-200 bg-neutral-50 p-3 md:grid-cols-[160px_1fr_1fr_auto]" data-bi="${index}">
       <select data-bf="type" class="rounded-lg border border-neutral-200 px-2.5 py-2 text-sm">${options}</select>
       <input data-bf="label" value="${esc(button.label || "")}" class="rounded-lg border border-neutral-200 px-2.5 py-2 text-sm">
-      <input data-bf="href" value="${esc(button.href || "")}" class="rounded-lg border border-neutral-200 px-2.5 py-2 text-sm">
+      <input data-bf="href" value="${esc(url)}" class="rounded-lg border border-neutral-200 px-2.5 py-2 text-sm">
       <button data-a="rm-btn" data-i="${index}" class="rounded-lg border border-red-200 px-3 py-2 text-xs font-semibold text-red-700">Удалить</button>
     </div>`;
   };
@@ -785,7 +791,17 @@ Email: ${userEmail}
     if (el.cBranding) el.cBranding.checked = !card.showBranding;
 
     s.tags = Array.isArray(card.tags) ? card.tags.slice(0) : [];
-    s.buttons = Array.isArray(card.buttons) ? card.buttons.slice(0) : [];
+    // Normalize all button objects to always have 'url' for editing
+    s.buttons = Array.isArray(card.buttons)
+      ? card.buttons.map((b) => ({
+        ...b,
+        url: typeof b.url === 'string' && b.url.length > 0
+          ? b.url
+          : (typeof b.href === 'string' && b.href.length > 0
+            ? b.href
+            : (typeof b.value === 'string' ? b.value : ''))
+      }))
+      : [];
     s.theme = PROFILE_THEMES.includes(card.theme) ? card.theme : "default_dark";
     if (plan !== "premium" && PREMIUM_ONLY_THEMES.has(s.theme)) {
       s.theme = "default_dark";
@@ -1118,33 +1134,33 @@ Email: ${userEmail}
       const rows = Array.isArray(payload.bonus?.history) ? payload.bonus.history : [];
       el.refBonusHistory.innerHTML = rows.length
         ? rows
-            .map(
-              (item) =>
-                `<tr class="border-t border-neutral-100"><td class="px-3 py-2">${fdt(item.createdAt)}</td><td class="px-3 py-2">${esc(item.kind || "—")}</td><td class="px-3 py-2">${item.direction === "debit" ? "-" : "+"}${Number(item.amount || 0).toLocaleString("ru-RU")} сум</td><td class="px-3 py-2">${Number(item.balanceAfter || 0).toLocaleString("ru-RU")} сум</td><td class="px-3 py-2">${esc(item.note || "—")}</td></tr>`,
-            )
-            .join("")
+          .map(
+            (item) =>
+              `<tr class="border-t border-neutral-100"><td class="px-3 py-2">${fdt(item.createdAt)}</td><td class="px-3 py-2">${esc(item.kind || "—")}</td><td class="px-3 py-2">${item.direction === "debit" ? "-" : "+"}${Number(item.amount || 0).toLocaleString("ru-RU")} сум</td><td class="px-3 py-2">${Number(item.balanceAfter || 0).toLocaleString("ru-RU")} сум</td><td class="px-3 py-2">${esc(item.note || "—")}</td></tr>`,
+          )
+          .join("")
         : '<tr><td colspan="5" class="px-3 py-8 text-center text-neutral-500">История бонусов появится после операций</td></tr>';
     }
     if (el.refCampaigns) {
       const rows = Array.isArray(payload.campaigns) ? payload.campaigns : [];
       el.refCampaigns.innerHTML = rows.length
         ? rows
-            .map(
-              (item) =>
-                `<tr class="border-t border-neutral-100"><td class="px-3 py-2">${esc(item.name || "Campaign")}</td><td class="px-3 py-2">${esc(item.type || "-")}</td><td class="px-3 py-2">${esc(`${item.source || "-"} / ${item.offer || "-"}`)}</td><td class="px-3 py-2">${esc(item.promoCode || "-")}</td></tr>`,
-            )
-            .join("")
+          .map(
+            (item) =>
+              `<tr class="border-t border-neutral-100"><td class="px-3 py-2">${esc(item.name || "Campaign")}</td><td class="px-3 py-2">${esc(item.type || "-")}</td><td class="px-3 py-2">${esc(`${item.source || "-"} / ${item.offer || "-"}`)}</td><td class="px-3 py-2">${esc(item.promoCode || "-")}</td></tr>`,
+          )
+          .join("")
         : '<tr><td colspan="4" class="px-3 py-8 text-center text-neutral-500">Активных кампаний нет</td></tr>';
     }
     if (el.refFraud) {
       const rows = Array.isArray(payload.fraud) ? payload.fraud : [];
       el.refFraud.innerHTML = rows.length
         ? rows
-            .map(
-              (item) =>
-                `<tr class="border-t border-neutral-100"><td class="px-3 py-2">${fdt(item.createdAt)}</td><td class="px-3 py-2">${esc(String(item.verdict || "").toUpperCase())}</td><td class="px-3 py-2">${esc(item.reason || "—")}</td></tr>`,
-            )
-            .join("")
+          .map(
+            (item) =>
+              `<tr class="border-t border-neutral-100"><td class="px-3 py-2">${fdt(item.createdAt)}</td><td class="px-3 py-2">${esc(String(item.verdict || "").toUpperCase())}</td><td class="px-3 py-2">${esc(item.reason || "—")}</td></tr>`,
+          )
+          .join("")
         : '<tr><td colspan="3" class="px-3 py-8 text-center text-neutral-500">Проверок пока нет</td></tr>';
     }
   };
