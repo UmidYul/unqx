@@ -55,6 +55,19 @@ const router = express.Router();
 const SLUG_REGEX = /^[A-Z]{3}[0-9]{3}$/;
 const THEMES = new Set(["default_dark", "arctic", "linen", "marble", "forest", "royal_ivory", "midnight_obsidian"]);
 const FALLBACK_SUPPORT_TELEGRAM = "unqx_uz";
+const AFFORDABLE_CACHE_TTL_LOW_LOAD_MS = 10_000;
+const AFFORDABLE_CACHE_TTL_MEDIUM_LOAD_MS = 8_000;
+const AFFORDABLE_CACHE_TTL_HIGH_LOAD_MS = 5_000;
+const affordableCandidatesCache = {
+  expiresAt: 0,
+  candidates: [],
+};
+const affordablePickCache = {
+  expiresAt: 0,
+  slug: "",
+  estimatedPrice: 0,
+};
+const affordableLoadWindow = [];
 
 function isMissingModelTable(error, modelName) {
   return (
@@ -125,6 +138,59 @@ async function withMissingTableFallback(modelName, fallbackValue, callback) {
       return fallbackValue;
     }
     throw error;
+  }
+}
+
+async function findLatestActiveOrderSafe(userId) {
+  const where = {
+    userId,
+    status: { in: ["new", "contacted", "paid"] },
+  };
+  const orderBy = { createdAt: "desc" };
+  try {
+    return await prisma.slugRequest.findFirst({
+      where,
+      orderBy,
+      select: {
+        id: true,
+        slug: true,
+        status: true,
+        requestedPlan: true,
+        slugPrice: true,
+        planPrice: true,
+        inviteeDiscountApplied: true,
+        bonusSpent: true,
+        discountCapApplied: true,
+        campaignId: true,
+        promoCode: true,
+        fraudVerdict: true,
+        fraudReason: true,
+        campaignSnapshot: true,
+        bracelet: true,
+        createdAt: true,
+      },
+    });
+  } catch (error) {
+    if (!(isMissingModelTable(error, "SlugRequest") || isMissingModelColumn(error, "SlugRequest") || isMissingModelDelegateError(error))) {
+      throw error;
+    }
+    // Fallback for databases that are behind on referral-v2 columns.
+    return withMissingTableFallback("SlugRequest", null, () =>
+      prisma.slugRequest.findFirst({
+        where,
+        orderBy,
+        select: {
+          id: true,
+          slug: true,
+          status: true,
+          requestedPlan: true,
+          slugPrice: true,
+          planPrice: true,
+          bracelet: true,
+          createdAt: true,
+        },
+      }),
+    );
   }
 }
 
@@ -654,6 +720,34 @@ async function generateAffordableCandidates({ limit = 120 }) {
   });
 }
 
+async function getAffordableCandidatesCached({ limit = 120 }) {
+  const now = Date.now();
+  if (affordableCandidatesCache.expiresAt > now && Array.isArray(affordableCandidatesCache.candidates) && affordableCandidatesCache.candidates.length > 0) {
+    return affordableCandidatesCache.candidates;
+  }
+  const generated = await generateAffordableCandidates({ limit });
+  affordableCandidatesCache.candidates = generated;
+  affordableCandidatesCache.expiresAt = now + AFFORDABLE_CACHE_TTL_MEDIUM_LOAD_MS;
+  return generated;
+}
+
+function getAdaptiveAffordableTtlMs() {
+  const now = Date.now();
+  const windowMs = 60_000;
+  affordableLoadWindow.push(now);
+  while (affordableLoadWindow.length > 0 && now - affordableLoadWindow[0] > windowMs) {
+    affordableLoadWindow.shift();
+  }
+  const rpm = affordableLoadWindow.length;
+  if (rpm >= 25) {
+    return AFFORDABLE_CACHE_TTL_HIGH_LOAD_MS;
+  }
+  if (rpm <= 8) {
+    return AFFORDABLE_CACHE_TTL_LOW_LOAD_MS;
+  }
+  return AFFORDABLE_CACHE_TTL_MEDIUM_LOAD_MS;
+}
+
 async function generateAvailableSuggestions({ count, base }) {
   const target = Math.max(1, Math.min(10, Number(count) || 5));
   const taken = await getTakenSlugsSet();
@@ -969,7 +1063,29 @@ router.get(
   "/slug-generate-affordable",
   asyncHandler(async (req, res) => {
     const source = typeof req.query.source === "string" ? req.query.source.slice(0, 20).toLowerCase() : "calculator";
-    const candidates = await generateAffordableCandidates({ limit: 140 });
+    const now = Date.now();
+    const adaptiveTtlMs = getAdaptiveAffordableTtlMs();
+
+    if (affordablePickCache.expiresAt > now && SLUG_REGEX.test(affordablePickCache.slug)) {
+      const cachedMap = await getSlugStatesBulk([affordablePickCache.slug]);
+      if (cachedMap.get(affordablePickCache.slug)?.available === true) {
+        res.json({
+          ok: true,
+          source,
+          slug: affordablePickCache.slug,
+          estimatedPrice: affordablePickCache.estimatedPrice,
+          segment: "low_mid",
+          cache: "hit",
+          ttlMs: adaptiveTtlMs,
+        });
+        return;
+      }
+      affordablePickCache.expiresAt = 0;
+      affordablePickCache.slug = "";
+      affordablePickCache.estimatedPrice = 0;
+    }
+
+    const candidates = await getAffordableCandidatesCached({ limit: 140 });
     const slugs = candidates.map((item) => item.slug).slice(0, 80);
     const states = await getSlugStatesBulk(slugs);
     const picked = candidates.find((item) => states.get(item.slug)?.available === true) || null;
@@ -997,7 +1113,16 @@ router.get(
       slug: picked.slug,
       estimatedPrice: picked.price,
       segment: "low_mid",
+      cache: "miss",
+      ttlMs: adaptiveTtlMs,
     });
+
+    affordablePickCache.expiresAt = now + adaptiveTtlMs;
+    affordablePickCache.slug = picked.slug;
+    affordablePickCache.estimatedPrice = picked.price;
+    if (affordableCandidatesCache.expiresAt < now + adaptiveTtlMs) {
+      affordableCandidatesCache.expiresAt = now + adaptiveTtlMs;
+    }
   }),
 );
 
@@ -1096,17 +1221,79 @@ router.get(
       query: req.query || {},
       path: req.path || req.originalUrl || "",
     });
-    const [pricing, braceletPrice, referralSettings, referralV2Settings, campaignResolved] = await Promise.all([
-      getPricingSettings(),
-      getBraceletPrice(),
-      getReferralV1Settings(),
-      getReferralV2Settings(),
-      safeResolveCampaignForCheckout({
-        source: attribution.refSource,
-        offer: attribution.refOffer,
-        promoCode: promoCodeInput,
-      }),
-    ]);
+
+    const safeFailPrecheck = (message = "Временная ошибка precheck. Попробуйте снова.") => {
+      res.json({
+        authenticated: Boolean(sessionUser?.userId),
+        accountStatus: sessionUser?.userId ? "active" : "guest",
+        currentPlan: "none",
+        requestedPlan,
+        resolvedPlan: requestedPlan,
+        canPurchase: false,
+        nextAction: sessionUser?.userId ? "retry" : "login",
+        message,
+        pricing: {
+          planBasicPrice: 50_000,
+          planPremiumPrice: 130_000,
+          premiumUpgradePrice: 80_000,
+          braceletPrice: 300_000,
+          planChargePreview: requestedPlan === "premium" ? 130_000 : 50_000,
+        },
+        limits: {
+          activeOrdersLimit,
+          activeOrdersCount: 0,
+          slugLimit: requestedPlan === "premium" ? 3 : 1,
+          userSlugsCount: 0,
+        },
+        referral: {
+          enabled: false,
+          source: attribution.refSource,
+          offer: attribution.refOffer,
+          promoCodeApplied: "",
+          campaignApplied: false,
+          campaignType: null,
+          campaignName: "",
+          walletBalance: 0,
+          hasReferrer: false,
+          firstOrderEligible: false,
+          inviteeDiscountCandidate: 0,
+          bonusSpendCandidate: 0,
+          capPercent: 30,
+          fraudVerdict: "allow",
+          fraudHint: "",
+          breakdown: {
+            inviteeDiscountApplied: 0,
+            bonusSpent: 0,
+            discountCapApplied: 0,
+            productDiscountAmount: 0,
+          },
+        },
+        pendingOrder: null,
+      });
+    };
+
+    let pricing;
+    let braceletPrice;
+    let referralSettings;
+    let referralV2Settings;
+    let campaignResolved;
+    try {
+      [pricing, braceletPrice, referralSettings, referralV2Settings, campaignResolved] = await Promise.all([
+        getPricingSettings(),
+        getBraceletPrice(),
+        getReferralV1Settings(),
+        getReferralV2Settings(),
+        safeResolveCampaignForCheckout({
+          source: attribution.refSource,
+          offer: attribution.refOffer,
+          promoCode: promoCodeInput,
+        }),
+      ]);
+    } catch (error) {
+      console.error("[express-app] order-precheck base load failed", error);
+      safeFailPrecheck("Не удалось загрузить precheck. Попробуйте снова.");
+      return;
+    }
     const campaignPreview = buildCampaignSnapshot({
       campaign: campaignResolved.campaign,
       referrerReward: referralSettings.referrerReward,
@@ -1248,31 +1435,7 @@ router.get(
           },
         }),
       ),
-      prisma.slugRequest.findFirst({
-        where: {
-          userId: user.id,
-          status: { in: ["new", "contacted", "paid"] },
-        },
-        orderBy: { createdAt: "desc" },
-        select: {
-          id: true,
-          slug: true,
-          status: true,
-          requestedPlan: true,
-          slugPrice: true,
-          planPrice: true,
-          inviteeDiscountApplied: true,
-          bonusSpent: true,
-          discountCapApplied: true,
-          campaignId: true,
-          promoCode: true,
-          fraudVerdict: true,
-          fraudReason: true,
-          campaignSnapshot: true,
-          bracelet: true,
-          createdAt: true,
-        },
-      }),
+      findLatestActiveOrderSafe(user.id),
       getSetting("contact_support_telegram", `@${FALLBACK_SUPPORT_TELEGRAM}`),
       safeGetWalletBalance(user.id),
       safeHasApprovedSlugPurchase(user.id),

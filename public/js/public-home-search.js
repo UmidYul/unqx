@@ -1054,11 +1054,9 @@ function initSlugCalculator(orderApi) {
           lettersInput.value = parsed.letters;
           digitsInput.value = parsed.digits;
           await updateResult();
-          showToast(`Сгенерирован свободный slug: ${slug}`, "success");
           return;
         }
       }
-      showToast("Не найден свободный slug в низком/среднем сегменте. Попробуйте ещё раз.", "info");
     } finally {
       isGeneratingSlug = false;
       if (icon instanceof SVGElement) {
