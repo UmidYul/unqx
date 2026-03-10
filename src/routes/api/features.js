@@ -367,7 +367,7 @@ router.post(
       normalizedPromoCode: resolved.normalizedPromoCode,
     });
     if (!snapshot.campaignApplied || snapshot.campaignType !== "promo_code") {
-      res.status(404).json({
+      res.json({
         ok: false,
         promoCode,
         valid: false,

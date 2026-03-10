@@ -139,6 +139,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     refSource: "",
     refOffer: "",
     promoCode: "",
+    promoValidationHint: "",
     checkoutContext: null,
     submitBlockedMessage: "",
     lastOpenOptions: {},
@@ -376,6 +377,14 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
 
   function formatPrice(number) {
     return Number(number || 0).toLocaleString("ru-RU").replace(/,/g, " ");
+  }
+
+  function formatHoursRu(value) {
+    const hours = Math.max(1, Math.round(Number(value) || 0));
+    const mod10 = hours % 10;
+    const mod100 = hours % 100;
+    const suffix = mod10 === 1 && mod100 !== 11 ? "час" : mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20) ? "часа" : "часов";
+    return `${hours} ${suffix}`;
   }
 
   function normalizeLetters(value) {
@@ -1236,6 +1245,9 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
         dom.campaignHint.textContent = campaignName
           ? `Применена кампания: ${campaignName}${promoCodeApplied ? ` (${promoCodeApplied})` : ""}`
           : `Применена акция${promoCodeApplied ? ` (${promoCodeApplied})` : ""}`;
+      } else if (state.promoValidationHint) {
+        dom.campaignHint.classList.remove("hidden");
+        dom.campaignHint.textContent = state.promoValidationHint;
       } else {
         dom.campaignHint.classList.add("hidden");
         dom.campaignHint.textContent = "";
@@ -1271,6 +1283,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     dom.promoCode.value = promoCode;
     state.promoCode = promoCode;
     if (!promoCode) {
+      state.promoValidationHint = "";
       if (dom.campaignHint instanceof HTMLElement) {
         dom.campaignHint.classList.add("hidden");
         dom.campaignHint.textContent = "";
@@ -1290,15 +1303,23 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
         refOffer: state.refOffer || "default",
       });
       if (payload?.valid) {
+        state.promoValidationHint = "";
         if (dom.campaignHint instanceof HTMLElement) {
           dom.campaignHint.classList.remove("hidden");
           dom.campaignHint.textContent = `Промокод применен: ${promoCode}${payload?.campaignName ? ` · ${payload.campaignName}` : ""}`;
         }
+      } else {
+        state.promoValidationHint = "Промокод не найден или не активен.";
+        if (dom.campaignHint instanceof HTMLElement) {
+          dom.campaignHint.classList.remove("hidden");
+          dom.campaignHint.textContent = state.promoValidationHint;
+        }
       }
     } catch (error) {
+      state.promoValidationHint = "Промокод не найден или не активен.";
       if (dom.campaignHint instanceof HTMLElement) {
         dom.campaignHint.classList.remove("hidden");
-        dom.campaignHint.textContent = "Промокод не найден или не активен.";
+        dom.campaignHint.textContent = state.promoValidationHint;
       }
       setStatus(error?.message || "Промокод недействителен", "error");
     } finally {
@@ -1561,8 +1582,10 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
       const expiresAtIso = payload.pendingExpiresAt || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
       if (dom.successSlug instanceof HTMLElement) {
         const expiresAt = new Date(expiresAtIso);
-        const hoursLeft = Number.isFinite(expiresAt.getTime()) ? Math.max(1, Math.ceil((expiresAt.getTime() - Date.now()) / (60 * 60 * 1000))) : 24;
-        dom.successSlug.textContent = `${pricing.slug} зарезервирован на ${hoursLeft} часа`;
+        const hoursLeft = Number.isFinite(expiresAt.getTime())
+          ? Math.max(1, Math.round((expiresAt.getTime() - Date.now()) / (60 * 60 * 1000)))
+          : 24;
+        dom.successSlug.textContent = `${pricing.slug} зарезервирован на ${formatHoursRu(hoursLeft)}`;
       }
 
       // Generate Telegram contact link with order details
@@ -1767,6 +1790,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
       .replace(/[^A-Z0-9_-]/g, "")
       .slice(0, 32);
     state.promoCode = dom.promoCode.value;
+    state.promoValidationHint = "";
   });
   dom.promoCode?.addEventListener("change", () => void validatePromoCodeManually());
   dom.promoCheck?.addEventListener("click", () => void validatePromoCodeManually());
