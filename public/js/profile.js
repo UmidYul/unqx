@@ -1610,62 +1610,7 @@ Email: ${userEmail}
 
 
 
-  if (action === "cycle") {
-    const slug = target.getAttribute("data-slug");
-    const status = target.getAttribute("data-st");
-    if (!slug || !status) return;
 
-    await api(`/api/profile/slugs/${encodeURIComponent(slug)}/status`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: cycleStatus(status) }),
-    });
-    await load();
-    return;
-  }
-
-  if (action === "primary") {
-    const slug = target.getAttribute("data-slug");
-    if (!slug) return;
-    await api(`/api/profile/slugs/${encodeURIComponent(slug)}/primary`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({}),
-    });
-    await load();
-    return;
-  }
-
-  if (action === "save-pm") {
-    const slug = target.getAttribute("data-slug");
-    if (!slug) return;
-    const input = el.slugs?.querySelector(`[data-pm="${slug}"]`);
-    await api(`/api/profile/slugs/${encodeURIComponent(slug)}/pause-message`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        message: input instanceof HTMLInputElement ? input.value : "",
-      }),
-    });
-    await load();
-    return;
-  }
-
-  if (action === "claim-reward") {
-    const ruleId = target.getAttribute("data-rule");
-    if (!ruleId) return;
-    await api(`/api/referrals/rewards/${encodeURIComponent(ruleId)}/claim`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({}),
-    });
-    await load();
-    return;
-  }
-} catch (error) {
-  showModal("Ошибка", error.message || "Не удалось выполнить действие");
-}
-  });
 
 el.tabs.forEach((button) =>
   button.addEventListener("click", () => {
