@@ -439,6 +439,8 @@ Email: ${userEmail}
       button.classList.toggle("text-white", on);
     });
     el.panels.forEach((panel) => panel.classList.toggle("hidden", panel.getAttribute("data-tab-panel") !== active));
+    // Не вызываем load() или renderAll() при переключении вкладок, чтобы не сбрасывать прогресс
+    // Только для вкладки аналитики подгружаем данные
     if (active === "analytics") {
       void refreshAnalytics();
     }
