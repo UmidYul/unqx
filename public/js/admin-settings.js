@@ -6,6 +6,158 @@
 
   const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "";
   const groups = ["pricing", "algorithm", "bracelet", "contacts", "platform"];
+  const uiConfig = {
+    hiddenByGroup: {
+      platform: new Set(["referral_tiers", "referral_v1_tiers_enabled"]),
+    },
+    labelByKey: {
+      plan_basic_name: "Название тарифа Basic",
+      plan_basic_price: "Цена тарифа Basic (сум)",
+      plan_premium_name: "Название тарифа Premium",
+      plan_premium_price: "Цена тарифа Premium (сум)",
+      plan_premium_upgrade_price: "Цена апгрейда до Premium (сум)",
+      pricing_section_visible: "Показывать блок тарифов на главной",
+      plan_premium_popular_badge: "Показывать бейдж Популярный",
+      payment_manual_instructions: "Инструкция для ручной оплаты",
+      payment_click_merchant_id: "Click Merchant ID",
+      payment_payme_merchant_id: "Payme Merchant ID",
+      contact_telegram_chat_id: "Telegram Chat ID (служебный)",
+      platform_hero_subtitle: "Подзаголовок hero-блока",
+      platform_total_slugs: "Общее количество slug",
+      pending_expiry_hours: "Срок pending-заказа (часы)",
+      score_recalc_interval_hours: "Пересчет Score (часы)",
+      referral_v1_referrer_reward: "Награда рефереру (сум)",
+      referral_v1_invitee_discount: "Скидка приглашенному (сум)",
+      referral_v1_discount_cap_percent: "Лимит общей скидки (%)",
+    },
+    descriptionByKey: {
+      payment_click_merchant_id: "Заполняется только при активной интеграции Click.",
+      payment_payme_merchant_id: "Заполняется только при активной интеграции Payme.",
+      contact_telegram_chat_id: "Служебный идентификатор для отправки уведомлений в Telegram.",
+    },
+    orderByGroup: {
+      pricing: [
+        "plan_basic_name",
+        "plan_basic_price",
+        "plan_basic_slug_limit",
+        "plan_basic_button_limit",
+        "plan_basic_tag_limit",
+        "plan_basic_themes",
+        "plan_basic_hide_branding",
+        "plan_basic_analytics_days",
+        "plan_basic_features",
+        "plan_basic_excluded_features",
+        "plan_premium_name",
+        "plan_premium_price",
+        "plan_premium_upgrade_price",
+        "plan_premium_slug_limit",
+        "plan_premium_button_limit",
+        "plan_premium_tag_limit",
+        "plan_premium_themes",
+        "plan_premium_hide_branding",
+        "plan_premium_analytics_days",
+        "plan_premium_features",
+        "plan_premium_excluded_features",
+        "pricing_section_visible",
+        "plan_premium_popular_badge",
+        "pricing_footnote",
+        "payment_provider",
+        "payment_manual_instructions",
+        "payment_click_merchant_id",
+        "payment_payme_merchant_id",
+      ],
+      algorithm: [
+        "slug_base_price",
+        "slug_mult_letters_all_same",
+        "slug_mult_letters_sequential",
+        "slug_mult_letters_palindrome",
+        "slug_mult_letters_random",
+        "slug_mult_digits_zeros",
+        "slug_mult_digits_near_zero",
+        "slug_mult_digits_all_same",
+        "slug_mult_digits_sequential",
+        "slug_mult_digits_round",
+        "slug_mult_digits_palindrome",
+        "slug_mult_digits_random",
+        "slug_pricing_custom_rules",
+      ],
+      bracelet: [
+        "bracelet_name",
+        "bracelet_price",
+        "bracelet_in_stock",
+        "bracelet_cta_text",
+        "bracelet_description",
+        "bracelet_note",
+        "bracelet_features",
+      ],
+      contacts: [
+        "contact_support_telegram",
+        "contact_phone",
+        "contact_email",
+        "contact_address",
+        "contact_response_time",
+        "contact_error_fallback",
+        "contact_telegram_bot",
+        "contact_telegram_channel",
+        "contact_telegram_chat_id",
+      ],
+      platform: [
+        "platform_name",
+        "platform_tagline",
+        "platform_hero_subtitle",
+        "platform_total_slugs",
+        "feature_directory",
+        "feature_leaderboard",
+        "feature_score_public",
+        "feature_verification",
+        "feature_drops",
+        "feature_referrals",
+        "referral_v1_referrer_reward",
+        "referral_v1_invitee_discount",
+        "referral_v1_discount_cap_percent",
+        "pending_expiry_hours",
+        "score_recalc_interval_hours",
+        "leaderboard_min_views",
+        "leaderboard_public_count",
+        "maintenance_mode",
+        "maintenance_message",
+        "maintenance_release_report_mode",
+        "maintenance_release_report_title",
+        "maintenance_release_report_message",
+        "maintenance_release_open_at",
+      ],
+    },
+    sectionByKey: {
+      pricing: {
+        plan_basic_name: "Тариф Basic",
+        plan_premium_name: "Тариф Premium",
+        pricing_section_visible: "Публичное отображение",
+        payment_provider: "Оплата",
+      },
+      algorithm: {
+        slug_base_price: "Базовая цена",
+        slug_mult_letters_all_same: "Множители для букв",
+        slug_mult_digits_zeros: "Множители для цифр",
+        slug_pricing_custom_rules: "Кастомные паттерны",
+      },
+      bracelet: {
+        bracelet_name: "Основные настройки",
+        bracelet_description: "Контент",
+      },
+      contacts: {
+        contact_support_telegram: "Публичные контакты",
+        contact_telegram_bot: "Telegram",
+        contact_telegram_chat_id: "Служебные параметры",
+      },
+      platform: {
+        platform_name: "Бренд и витрина",
+        feature_directory: "Функции платформы",
+        referral_v1_referrer_reward: "Рефералка",
+        pending_expiry_hours: "Лимиты и расчеты",
+        maintenance_mode: "Обслуживание",
+      },
+    },
+  };
   const state = {
     activeSubtab: "pricing",
     loaded: {},
@@ -176,6 +328,24 @@
     `;
   }
 
+  function prepareGroupItems(group, items) {
+    const hidden = uiConfig.hiddenByGroup[group] || new Set();
+    const withMeta = items
+      .filter((item) => !hidden.has(item.key))
+      .map((item) => ({
+        ...item,
+        label: uiConfig.labelByKey[item.key] || item.label,
+        description: uiConfig.descriptionByKey[item.key] || item.description,
+        __section: uiConfig.sectionByKey[group]?.[item.key] || "",
+      }));
+    const byKey = new Map(withMeta.map((item) => [item.key, item]));
+    const orderedKeys = uiConfig.orderByGroup[group] || [];
+    const ordered = orderedKeys.map((key) => byKey.get(key)).filter(Boolean);
+    const orderedSet = new Set(ordered.map((item) => item.key));
+    const rest = withMeta.filter((item) => !orderedSet.has(item.key));
+    return [...ordered, ...rest];
+  }
+
   function renderGroup(group, items) {
         // Вешаем обработчики на визуальный редактор custom_rules
         if (group === "algorithm") {
@@ -218,22 +388,27 @@
         }
     const form = document.getElementById(`settings-form-${group}`);
     if (!(form instanceof HTMLFormElement)) return;
-    state.loaded[group] = items;
+    const preparedItems = prepareGroupItems(group, items);
+    state.loaded[group] = preparedItems;
     const current = {};
-    items.forEach((item) => {
+    preparedItems.forEach((item) => {
       current[item.key] = item.value;
     });
     state.originalByGroup[group] = clone(current);
     state.currentByGroup[group] = clone(current);
     setDirty(group, false);
 
-    form.innerHTML = items
-      .map((item) => {
+    form.innerHTML = preparedItems
+      .map((item, index) => {
+        const sectionTitle =
+          item.__section && preparedItems[index - 1]?.__section !== item.__section
+            ? `<div class="md:col-span-2 mt-2 border-t border-neutral-200 pt-3 text-xs font-semibold uppercase tracking-[0.12em] text-neutral-500">${esc(item.__section)}</div>`
+            : "";
         const description = item.description ? `<div class="mt-1 text-xs text-neutral-500">${esc(item.description)}</div>` : "";
         const reset = `<button type="button" data-settings-reset="${group}:${item.key}" class="mt-1 text-xs font-semibold text-neutral-500 underline">Сбросить</button>`;
         // Визуальный редактор для slug_pricing_custom_rules
         if (item.key === "slug_pricing_custom_rules" && Array.isArray(item.value)) {
-          return `<label class="block md:col-span-2"><span class="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">${esc(item.label)}</span>
+          return `${sectionTitle}<label class="block md:col-span-2"><span class="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">${esc(item.label)}</span>
             <div id="custom-rules-editor" class="rounded-xl bg-neutral-50 border border-neutral-200 p-3 mb-2">
               <table class="min-w-full text-left text-sm">
                 <thead class="bg-neutral-100 text-xs uppercase tracking-wide text-neutral-500">
@@ -271,31 +446,31 @@
           </label>`;
         }
         if (item.type === "boolean") {
-          return `<label class="flex items-start gap-3 rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm md:col-span-2">
+          return `${sectionTitle}<label class="flex items-start gap-3 rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm md:col-span-2">
             <input type="checkbox" name="${esc(item.key)}" ${item.value ? "checked" : ""} class="mt-1 h-4 w-4 rounded border-neutral-300" />
             <span><span class="font-semibold text-neutral-800">${esc(item.label)}</span>${description}${reset}</span>
           </label>`;
         }
         if (item.type === "json" && Array.isArray(item.value)) {
-          return `<label class="block md:col-span-2"><span class="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">${esc(item.label)}</span>
+          return `${sectionTitle}<label class="block md:col-span-2"><span class="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">${esc(item.label)}</span>
             ${buildArrayEditor(group, item, item.value)}
             <textarea name="${esc(item.key)}" class="hidden">${esc(JSON.stringify(item.value || []))}</textarea>
             ${description}${reset}
           </label>`;
         }
         if (item.type === "textarea" || item.type === "json") {
-          return `<label class="block md:col-span-2"><span class="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">${esc(item.label)}</span>
+          return `${sectionTitle}<label class="block md:col-span-2"><span class="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">${esc(item.label)}</span>
             <textarea name="${esc(item.key)}" rows="3" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm">${esc(item.type === "json" ? JSON.stringify(item.value ?? null, null, 2) : String(item.value ?? ""))}</textarea>
             ${description}${reset}
           </label>`;
         }
         if (item.type === "datetime" || item.key === "maintenance_release_open_at") {
-          return `<label class="block"><span class="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">${esc(item.label)}</span>
+          return `${sectionTitle}<label class="block"><span class="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">${esc(item.label)}</span>
             <input type="datetime-local" name="${esc(item.key)}" value="${esc(toDateTimeLocalValue(item.value))}" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
             ${description}${reset}
           </label>`;
         }
-        return `<label class="block"><span class="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">${esc(item.label)}</span>
+        return `${sectionTitle}<label class="block"><span class="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">${esc(item.label)}</span>
           <input type="${item.type === "number" ? "number" : "text"}" ${item.type === "number" ? 'step="any"' : ""} name="${esc(item.key)}" value="${esc(item.value ?? "")}" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
           ${description}${reset}
         </label>`;
