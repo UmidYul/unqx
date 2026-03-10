@@ -1,4 +1,9 @@
-﻿const DEFAULT_SLUG_PRICING = {
+﻿// Заглушка для syncQuickPayState, чтобы не было ReferenceError
+async function syncQuickPayState() {
+  // TODO: реализовать или восстановить логику, если требуется
+  return null;
+}
+const DEFAULT_SLUG_PRICING = {
   basePrice: 100_000,
   lettersAllSame: 5,
   lettersSequential: 3,
