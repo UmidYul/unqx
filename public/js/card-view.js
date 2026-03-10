@@ -646,6 +646,15 @@
       message: '<svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a8.5 8.5 0 0 1-8.5 8.5A8.7 8.7 0 0 1 8 19.2L3 21l1.8-5A8.7 8.7 0 0 1 3.5 12 8.5 8.5 0 1 1 21 12Z"></path></svg>',
       instagram:
         '<svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"></rect><circle cx="12" cy="12" r="4"></circle><circle cx="17.5" cy="6.5" r="0.8"></circle></svg>',
+      discord:
+        '<svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="6" width="16" height="12" rx="6"></rect><circle cx="10" cy="12" r="1"></circle><circle cx="14" cy="12" r="1"></circle><path d="M9 15c1 1 2 1 3 0"></path></svg>',
+      github:
+        '<svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 9 4 12l4 3M16 9l4 3-4 3M10 19l4-14"></path></svg>',
+      facebook:
+        '<svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 9h4M14 9v11M14 9h-3a3 3 0 0 1 3-3h3"></path></svg>',
+      x: '<svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4l14 16M19 4L5 20"></path></svg>',
+      steam:
+        '<svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true"><circle cx="7.5" cy="16.5" r="3"></circle><circle cx="16.5" cy="7.5" r="3"></circle><path d="M9.9 14.1l4.2-4.2"></path><path d="M7.5 13.5l2.1 1"></path></svg>',
       click:
         '<svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 7 10 10M7 17 17 7M12 2v4M12 18v4M2 12h4M18 12h4"></path></svg>',
       globe: '<svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"></path></svg>',
@@ -695,6 +704,27 @@
     }
 
     const signature = `${button.label} ${button.url}`.toLowerCase();
+    if (/(steam|steamcommunity|steampowered)/.test(signature)) {
+      return "steam";
+    }
+    if (/(discord|discord\.gg)/.test(signature)) {
+      return "discord";
+    }
+    if (/(github|gitlab|bitbucket)/.test(signature)) {
+      return "github";
+    }
+    if (/(facebook|fb\.com)/.test(signature)) {
+      return "facebook";
+    }
+    if (/(twitter|x\.com)/.test(signature)) {
+      return "x";
+    }
+    if (/(whatsapp|wa\.me)/.test(signature)) {
+      return "message";
+    }
+    if (/(linkedin)/.test(signature)) {
+      return "linkedin";
+    }
     if (/(telegram|t\.me|message|chat)/.test(signature)) {
       return "telegram";
     }

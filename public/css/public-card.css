@@ -814,7 +814,7 @@ body[data-card-theme] #card-view-root>[data-card-view] {
 
 .unq-ref-tag {
   border-radius: 9999px;
-  background: var(--theme-surface-bg, #f0f0f0);
+  background: transparent;
   padding: 7px 12px;
   color: var(--theme-email-color, #5f6368);
   font-size: 15px;
@@ -966,6 +966,7 @@ body[data-card-theme] #card-view-root>[data-card-view] {
   gap: 6px;
   border: 0;
   background: transparent;
+  box-shadow: none;
   color: var(--theme-muted-color, #a1a1aa);
   font-size: 14px;
   padding: 4px 0;
