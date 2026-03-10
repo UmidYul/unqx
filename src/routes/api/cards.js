@@ -101,6 +101,19 @@ function isMissingModelDelegateError(error) {
   );
 }
 
+function isReferralInfraError(error) {
+  if (!error) return false;
+  if (isMissingModelTable(error) || isMissingModelColumn(error) || isMissingModelDelegateError(error)) {
+    return true;
+  }
+  const name = String(error?.name || "");
+  const message = String(error?.message || "");
+  if (name.includes("PrismaClientValidationError") || name.includes("PrismaClientKnownRequestError") || name.includes("PrismaClientUnknownRequestError")) {
+    return /referral|campaign|bonus|wallet|promo/i.test(message);
+  }
+  return false;
+}
+
 async function withMissingTableFallback(modelName, fallbackValue, callback) {
   if (!getModelDelegate(modelName)) {
     return fallbackValue;
@@ -110,6 +123,69 @@ async function withMissingTableFallback(modelName, fallbackValue, callback) {
   } catch (error) {
     if (isMissingModelTable(error, modelName) || isMissingModelColumn(error, modelName) || isMissingModelDelegateError(error)) {
       return fallbackValue;
+    }
+    throw error;
+  }
+}
+
+async function safeResolveCampaignForCheckout(params) {
+  try {
+    return await resolveCampaignForCheckout(params);
+  } catch (error) {
+    if (isReferralInfraError(error)) {
+      console.warn("[express-app] referral campaign resolve fallback in cards route", error?.message || error);
+      return {
+        campaign: null,
+        normalizedPromoCode: normalizePromoCode(params?.promoCode || ""),
+      };
+    }
+    throw error;
+  }
+}
+
+async function safeEvaluateCampaignEligibility(params) {
+  try {
+    return await evaluateCampaignEligibility(params);
+  } catch (error) {
+    if (isReferralInfraError(error)) {
+      console.warn("[express-app] referral campaign eligibility fallback in cards route", error?.message || error);
+      return { allowed: false, reason: "campaign_unavailable", usedBudget: 0, usedByUser: 0 };
+    }
+    throw error;
+  }
+}
+
+async function safeGetWalletBalance(userId) {
+  try {
+    return await getWalletBalance(userId);
+  } catch (error) {
+    if (isReferralInfraError(error)) {
+      console.warn("[express-app] wallet balance fallback in cards route", error?.message || error);
+      return 0;
+    }
+    throw error;
+  }
+}
+
+async function safeHasApprovedSlugPurchase(userId) {
+  try {
+    return await hasApprovedSlugPurchase(userId);
+  } catch (error) {
+    if (isReferralInfraError(error)) {
+      console.warn("[express-app] first approved purchase fallback in cards route", error?.message || error);
+      return false;
+    }
+    throw error;
+  }
+}
+
+async function safeResolveReferrerForUser(params) {
+  try {
+    return await resolveReferrerForUser(params);
+  } catch (error) {
+    if (isReferralInfraError(error)) {
+      console.warn("[express-app] resolve referrer fallback in cards route", error?.message || error);
+      return null;
     }
     throw error;
   }
@@ -381,10 +457,56 @@ function normalizeTheme(value) {
 }
 
 async function getSlugState(slug) {
-  const slugRow = await withMissingTableFallback("Slug", null, () =>
-    prisma.slug.findUnique({
-      where: { fullSlug: slug },
+  const rows = await getSlugStatesBulk([slug]);
+  return rows.get(slug) || { available: true, reason: "available", priceOverride: null };
+}
+
+function mapSlugRowToState(slug, slugRow) {
+  if (!slugRow) {
+    return { available: true, reason: "available", priceOverride: null };
+  }
+
+  const ownerFromSlug =
+    slugRow.owner && ["approved", "active", "private", "paused"].includes(slugRow.status)
+      ? {
+        name: slugRow.owner.profileCard?.name || slugRow.owner.firstName || "UNQX User",
+        avatarUrl: slugRow.owner.profileCard?.avatarUrl || null,
+        href: `/${slug}`,
+      }
+      : null;
+
+  if (slugRow.status === "reserved_drop") {
+    return { available: false, reason: "drop_reserved", priceOverride: slugRow.price ?? null };
+  }
+  if (slugRow.status === "blocked") {
+    return { available: false, reason: "blocked", priceOverride: slugRow.price ?? null };
+  }
+  if (slugRow.status === "free") {
+    return { available: true, reason: "available", priceOverride: slugRow.price ?? null };
+  }
+  return {
+    available: false,
+    reason: slugRow.status,
+    priceOverride: slugRow.price ?? null,
+    pendingExpiresAt: slugRow.pendingExpiresAt || null,
+    owner: ownerFromSlug,
+  };
+}
+
+async function getSlugStatesBulk(slugs = []) {
+  const target = Array.from(new Set((Array.isArray(slugs) ? slugs : []).filter((item) => SLUG_REGEX.test(item))));
+  const out = new Map();
+  if (target.length === 0) {
+    return out;
+  }
+
+  const slugRows = await withMissingTableFallback("Slug", [], () =>
+    prisma.slug.findMany({
+      where: {
+        fullSlug: { in: target },
+      },
       select: {
+        fullSlug: true,
         status: true,
         price: true,
         pendingExpiresAt: true,
@@ -402,35 +524,12 @@ async function getSlugState(slug) {
       },
     }),
   );
+  const rowsBySlug = new Map(slugRows.map((row) => [row.fullSlug, row]));
 
-  const ownerFromSlug =
-    slugRow?.owner && ["approved", "active", "private", "paused"].includes(slugRow.status)
-      ? {
-        name: slugRow.owner.profileCard?.name || slugRow.owner.firstName || "UNQX User",
-        avatarUrl: slugRow.owner.profileCard?.avatarUrl || null,
-        href: `/${slug}`,
-      }
-      : null;
-
-  if (slugRow) {
-    if (slugRow.status === "reserved_drop") {
-      return { available: false, reason: "drop_reserved", priceOverride: slugRow.price ?? null };
-    }
-    if (slugRow.status === "blocked") {
-      return { available: false, reason: "blocked", priceOverride: slugRow.price ?? null };
-    }
-    if (slugRow.status === "free") {
-      return { available: true, reason: "available", priceOverride: slugRow.price ?? null };
-    }
-    return {
-      available: false,
-      reason: slugRow.status,
-      priceOverride: slugRow.price ?? null,
-      pendingExpiresAt: slugRow.pendingExpiresAt || null,
-      owner: ownerFromSlug,
-    };
+  for (const slug of target) {
+    out.set(slug, mapSlugRowToState(slug, rowsBySlug.get(slug) || null));
   }
-  return { available: true, reason: "available", priceOverride: null };
+  return out;
 }
 
 async function getTakenSlugsSet() {
@@ -482,6 +581,77 @@ function randomSlug() {
   const letters = Array.from({ length: 3 }, () => String.fromCharCode(65 + Math.floor(Math.random() * 26))).join("");
   const digits = String(Math.floor(Math.random() * 1000)).padStart(3, "0");
   return `${letters}${digits}`;
+}
+
+function randomFrom(list) {
+  return list[Math.floor(Math.random() * list.length)] || "";
+}
+
+function buildRandomLettersAffordable() {
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+  const mode = randomFrom(["random", "random", "random", "sequential", "palindrome"]);
+  if (mode === "sequential") {
+    const startIndex = Math.floor(Math.random() * 24);
+    return `${alphabet[startIndex]}${alphabet[startIndex + 1]}${alphabet[startIndex + 2]}`;
+  }
+  if (mode === "palindrome") {
+    const a = randomFrom(alphabet);
+    const b = randomFrom(alphabet.filter((char) => char !== a));
+    return `${a}${b}${a}`;
+  }
+  return `${randomFrom(alphabet)}${randomFrom(alphabet)}${randomFrom(alphabet)}`;
+}
+
+function buildRandomDigitsAffordable() {
+  const mode = randomFrom(["random", "random", "palindrome", "round", "sequential"]);
+  if (mode === "round") {
+    const first = Math.floor(Math.random() * 9) + 1;
+    return `${first}00`;
+  }
+  if (mode === "sequential") {
+    const start = Math.floor(Math.random() * 8);
+    return `${start}${start + 1}${start + 2}`;
+  }
+  if (mode === "palindrome") {
+    const a = Math.floor(Math.random() * 10);
+    const b = Math.floor(Math.random() * 10);
+    return `${a}${b}${a}`;
+  }
+  return `${Math.floor(Math.random() * 10)}${Math.floor(Math.random() * 10)}${Math.floor(Math.random() * 10)}`;
+}
+
+async function generateAffordableCandidates({ limit = 120 }) {
+  const targetLimit = Math.max(20, Math.min(300, Number(limit) || 120));
+  const config = await getSlugPricingConfig();
+  const basePrice = Math.max(1, Number(config?.basePrice || 100_000));
+  const minTotal = Math.round(basePrice);
+  const maxTotal = Math.round(basePrice * 8);
+  const out = [];
+  const seen = new Set();
+  const attempts = 650;
+
+  for (let i = 0; i < attempts; i += 1) {
+    const slug = `${buildRandomLettersAffordable()}${buildRandomDigitsAffordable()}`;
+    if (!SLUG_REGEX.test(slug) || seen.has(slug)) continue;
+    seen.add(slug);
+    const parsed = splitSlug(slug);
+    if (!parsed) continue;
+    const price = Number(
+      calculateSlugPrice({
+        letters: parsed.letters,
+        digits: parsed.digits,
+        config,
+      }).total,
+    );
+    if (price < minTotal || price > maxTotal) continue;
+    out.push({ slug, price });
+    if (out.length >= targetLimit) break;
+  }
+
+  return out.sort((left, right) => {
+    if (left.price !== right.price) return left.price - right.price;
+    return left.slug.localeCompare(right.slug);
+  });
 }
 
 async function generateAvailableSuggestions({ count, base }) {
@@ -658,6 +828,59 @@ router.get(
   }),
 );
 
+router.get(
+  "/availability-bulk",
+  asyncHandler(async (req, res) => {
+    const source = typeof req.query.source === "string" ? req.query.source.slice(0, 20).toLowerCase() : "unknown";
+    const rawInput = String(req.query.slugs || req.query.items || "");
+    const requested = rawInput
+      .split(",")
+      .map((item) => String(item || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6))
+      .filter(Boolean)
+      .slice(0, 60);
+
+    const unique = Array.from(new Set(requested));
+    const validSlugs = unique.filter((slug) => SLUG_REGEX.test(slug));
+    const stateMap = await getSlugStatesBulk(validSlugs);
+    const items = unique.map((slug) => {
+      const validFormat = SLUG_REGEX.test(slug);
+      if (!validFormat) {
+        return {
+          slug,
+          validFormat: false,
+          available: false,
+          reason: "invalid_format",
+        };
+      }
+      const state = stateMap.get(slug) || { available: true, reason: "available", priceOverride: null };
+      return {
+        slug,
+        validFormat: true,
+        available: Boolean(state.available),
+        reason: String(state.reason || "unknown"),
+      };
+    });
+
+    if (source === "hero") {
+      await Promise.all(
+        items.slice(0, 10).map((item) =>
+          logChecker({
+            slug: item.slug,
+            pattern: item.slug,
+            source,
+            result: item.validFormat ? (item.available ? "AVAILABLE" : "TAKEN") : "INVALID",
+          }),
+        ),
+      );
+    }
+
+    res.json({
+      items,
+      checked: items.length,
+    });
+  }),
+);
+
 router.post(
   "/waitlist",
   requireSameOrigin,
@@ -739,6 +962,42 @@ router.get(
       base: SLUG_REGEX.test(base) ? base : null,
     });
     res.json({ suggestions });
+  }),
+);
+
+router.get(
+  "/slug-generate-affordable",
+  asyncHandler(async (req, res) => {
+    const source = typeof req.query.source === "string" ? req.query.source.slice(0, 20).toLowerCase() : "calculator";
+    const candidates = await generateAffordableCandidates({ limit: 140 });
+    const slugs = candidates.map((item) => item.slug).slice(0, 80);
+    const states = await getSlugStatesBulk(slugs);
+    const picked = candidates.find((item) => states.get(item.slug)?.available === true) || null;
+
+    if (!picked) {
+      res.json({
+        ok: false,
+        source,
+        slug: "",
+        message: "no_available_affordable_slug",
+      });
+      return;
+    }
+
+    await logChecker({
+      slug: picked.slug,
+      pattern: picked.slug,
+      source: source === "hero" ? "hero" : "calculator",
+      result: "AVAILABLE",
+    });
+
+    res.json({
+      ok: true,
+      source,
+      slug: picked.slug,
+      estimatedPrice: picked.price,
+      segment: "low_mid",
+    });
   }),
 );
 
@@ -842,7 +1101,7 @@ router.get(
       getBraceletPrice(),
       getReferralV1Settings(),
       getReferralV2Settings(),
-      resolveCampaignForCheckout({
+      safeResolveCampaignForCheckout({
         source: attribution.refSource,
         offer: attribution.refOffer,
         promoCode: promoCodeInput,
@@ -1015,15 +1274,15 @@ router.get(
         },
       }),
       getSetting("contact_support_telegram", `@${FALLBACK_SUPPORT_TELEGRAM}`),
-      getWalletBalance(user.id),
-      hasApprovedSlugPurchase(user.id),
-      resolveReferrerForUser({
+      safeGetWalletBalance(user.id),
+      safeHasApprovedSlugPurchase(user.id),
+      safeResolveReferrerForUser({
         userId: user.id,
         explicitRefCode: attribution.refCode,
         sessionRefCode: req.session?.pendingRefCode,
       }),
     ]);
-    const campaignEligibility = await evaluateCampaignEligibility({
+    const campaignEligibility = await safeEvaluateCampaignEligibility({
       campaign: campaignResolved.campaign,
       userId: user.id,
       settings: referralV2Settings,
@@ -1284,20 +1543,20 @@ router.post(
       getPricingSettings(),
       getReferralV1Settings(),
       getReferralV2Settings(),
-      getWalletBalance(user.id),
-      hasApprovedSlugPurchase(user.id),
-      resolveReferrerForUser({
+      safeGetWalletBalance(user.id),
+      safeHasApprovedSlugPurchase(user.id),
+      safeResolveReferrerForUser({
         userId: user.id,
         explicitRefCode: attribution.refCode || payload.refCode,
         sessionRefCode: req.session?.pendingRefCode,
       }),
-      resolveCampaignForCheckout({
+      safeResolveCampaignForCheckout({
         source: attribution.refSource,
         offer: attribution.refOffer,
         promoCode: promoCodeInput,
       }),
     ]);
-    const campaignEligibility = await evaluateCampaignEligibility({
+    const campaignEligibility = await safeEvaluateCampaignEligibility({
       campaign: campaignResolved.campaign,
       userId: user.id,
       settings: referralV2Settings,

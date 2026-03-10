@@ -768,6 +768,7 @@ function initSlugCalculator(orderApi) {
   let lastAnimatedPrice = 0;
   let isApplyingDefaultSlug = false;
   let isGeneratingSlug = false;
+  const unavailableSlugCache = new Set();
 
   function updatePreview(letters, digits) {
     preview.textContent = `unqx.uz/${letters || "___"}${digits || "___"}`;
@@ -834,6 +835,9 @@ function initSlugCalculator(orderApi) {
   }
 
   async function isSlugAvailable(slug) {
+    if (unavailableSlugCache.has(slug)) {
+      return false;
+    }
     try {
       const response = await fetch(`/api/cards/availability?slug=${encodeURIComponent(slug)}&source=calculator_generate`, {
         method: "GET",
@@ -843,9 +847,57 @@ function initSlugCalculator(orderApi) {
         return false;
       }
       const payload = await response.json().catch(() => ({}));
-      return payload?.available === true;
+      const available = payload?.available === true;
+      if (!available) {
+        unavailableSlugCache.add(slug);
+      }
+      return available;
     } catch {
       return false;
+    }
+  }
+
+  async function getBulkAvailability(slugs) {
+    const normalized = Array.from(
+      new Set(
+        (Array.isArray(slugs) ? slugs : [])
+          .map((slug) => normalizeStrictSlug(slug))
+          .filter((slug) => /^[A-Z]{3}[0-9]{3}$/.test(slug)),
+      ),
+    ).slice(0, 60);
+
+    if (normalized.length === 0) {
+      return new Map();
+    }
+
+    const params = new URLSearchParams({
+      slugs: normalized.join(","),
+      source: "calculator_generate",
+    });
+
+    try {
+      const response = await fetch(`/api/cards/availability-bulk?${params.toString()}`, {
+        method: "GET",
+        headers: { Accept: "application/json" },
+      });
+      if (!response.ok) {
+        return new Map();
+      }
+      const payload = await response.json().catch(() => ({}));
+      const items = Array.isArray(payload?.items) ? payload.items : [];
+      const out = new Map();
+      items.forEach((item) => {
+        const slug = normalizeStrictSlug(item?.slug || "");
+        if (!slug) return;
+        const available = item?.available === true;
+        out.set(slug, available);
+        if (!available) {
+          unavailableSlugCache.add(slug);
+        }
+      });
+      return out;
+    } catch {
+      return new Map();
     }
   }
 
@@ -924,6 +976,59 @@ function initSlugCalculator(orderApi) {
       .map((item) => item.slug);
   }
 
+  async function findFirstAvailableCandidate(candidates) {
+    if (!Array.isArray(candidates) || candidates.length === 0) {
+      return "";
+    }
+
+    const maxChecks = 48;
+    const batchSize = 16;
+    const shortlist = candidates.slice(0, maxChecks);
+
+    for (let offset = 0; offset < shortlist.length; offset += batchSize) {
+      const chunk = shortlist.slice(offset, offset + batchSize);
+      // Server-side bulk availability significantly reduces round-trips.
+      // eslint-disable-next-line no-await-in-loop
+      const bulkMap = await getBulkAvailability(chunk);
+      if (bulkMap.size > 0) {
+        for (const slug of chunk) {
+          if (bulkMap.get(slug) === true) {
+            return slug;
+          }
+        }
+        continue;
+      }
+      // Fallback to direct checks if bulk endpoint is temporarily unavailable.
+      // eslint-disable-next-line no-await-in-loop
+      const checks = await Promise.all(chunk.map((slug) => isSlugAvailable(slug)));
+      const foundIndex = checks.findIndex((isFree) => isFree === true);
+      if (foundIndex !== -1) {
+        return chunk[foundIndex] || "";
+      }
+    }
+    return "";
+  }
+
+  async function requestServerGeneratedSlug() {
+    try {
+      const response = await fetch("/api/cards/slug-generate-affordable?source=calculator_generate", {
+        method: "GET",
+        headers: { Accept: "application/json" },
+      });
+      if (!response.ok) {
+        return "";
+      }
+      const payload = await response.json().catch(() => ({}));
+      const slug = normalizeStrictSlug(payload?.slug || "");
+      if (!payload?.ok || !/^[A-Z]{3}[0-9]{3}$/.test(slug)) {
+        return "";
+      }
+      return slug;
+    } catch {
+      return "";
+    }
+  }
+
   async function handleGenerateSlug() {
     if (isGeneratingSlug) {
       return;
@@ -938,23 +1043,20 @@ function initSlugCalculator(orderApi) {
     }
 
     try {
-      const candidates = buildAffordableCandidates();
-      for (const slug of candidates) {
-        // We check from lower price to medium segment and stop at first free slug.
-        // eslint-disable-next-line no-await-in-loop
-        const available = await isSlugAvailable(slug);
-        if (!available) {
-          continue;
-        }
+      let slug = await requestServerGeneratedSlug();
+      if (!slug) {
+        const candidates = buildAffordableCandidates();
+        slug = await findFirstAvailableCandidate(candidates);
+      }
+      if (slug) {
         const parsed = splitSlug(slug);
-        if (!parsed) {
-          continue;
+        if (parsed) {
+          lettersInput.value = parsed.letters;
+          digitsInput.value = parsed.digits;
+          await updateResult();
+          showToast(`Сгенерирован свободный slug: ${slug}`, "success");
+          return;
         }
-        lettersInput.value = parsed.letters;
-        digitsInput.value = parsed.digits;
-        await updateResult();
-        showToast(`Сгенерирован свободный slug: ${slug}`, "success");
-        return;
       }
       showToast("Не найден свободный slug в низком/среднем сегменте. Попробуйте ещё раз.", "info");
     } finally {
