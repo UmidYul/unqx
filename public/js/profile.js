@@ -28,6 +28,18 @@
       return date ? date.toLocaleString("ru-RU") : "—";
     };
     const fp = (value) => `${Number(value || 0).toLocaleString("ru-RU")} сум`;
+    const fh = (value) => {
+      const date = toDate(value);
+      return date
+        ? date.toLocaleString("ru-RU", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+        : "—";
+    };
     const PROFILE_THEMES = [
       "default_dark",
       "arctic",
