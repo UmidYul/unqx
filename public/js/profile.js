@@ -1608,59 +1608,7 @@ Email: ${userEmail}
 
   const cycleStatus = (status) => (status === "active" ? "paused" : status === "paused" ? "private" : "active");
 
-  const saveCard = async () => {
-    if ((el.cName?.value || "").trim().length === 0) {
-      if (el.cardNameError) {
-        el.cardNameError.classList.remove("hidden");
-      }
-      showModal("Проверь поля", "Имя для визитки обязательно.");
-      return;
-    }
 
-    if (el.cardNameError) {
-      el.cardNameError.classList.add("hidden");
-    }
-
-    try {
-      await api("/api/profile/card", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: el.cName?.value || "",
-          role: el.cRole?.value || "",
-          bio: el.cBio?.value || "",
-          hashtag: el.cHashtag?.value || "",
-          address: el.cAddress?.value || "",
-          postcode: el.cPostcode?.value || "",
-          email: el.cEmail?.value || "",
-          extraPhone: el.cExtraPhone?.value || "",
-          tags: s.tags,
-          buttons: (s.buttons || []).map((b) => ({
-            type: b.type || 'other',
-            label: b.label || '',
-            href: typeof b.url === 'string' ? b.url : (typeof b.href === 'string' ? b.href : ''),
-            value: typeof b.url === 'string' ? b.url : (typeof b.value === 'string' ? b.value : ''),
-          })),
-          theme: s.theme,
-          customColor: el.cColor?.value || null,
-          showBranding: el.cBranding ? !el.cBranding.checked : true,
-        }),
-      });
-
-      showSaveAlert("Успешно сохранено");
-      clearDraft();
-      await load();
-    } catch (error) {
-      if (error.code === "UPGRADE_REQUIRED") {
-        showModal("Доступно на Премиум", "Эта функция доступна только для Премиум тарифа.");
-        return;
-      }
-      showModal("Ошибка", error.message || "Не удалось сохранить визитку");
-    }
-  };
-  await openQrModal(slug);
-  return;
-}
 
 if (action === "cycle") {
   const slug = target.getAttribute("data-slug");
