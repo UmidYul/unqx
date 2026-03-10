@@ -377,12 +377,38 @@ Email: ${userEmail}
     const getButtonLimit = () => (hasButtonLimit() ? Number(s.limits.buttons) : Number.POSITIVE_INFINITY);
     const getTagLimit = () => (Number.isFinite(s.limits?.tags) ? Number(s.limits.tags) : 3);
 
+    const initCsrfFromMeta = () => {
+      if (csrf) return;
+      const token = $('meta[name="csrf-token"]')?.getAttribute("content") || "";
+      if (token) csrf = token;
+    };
+
+    const refreshCsrfToken = async () => {
+      try {
+        const response = await fetch("/api/auth/me", { method: "GET" });
+        const payload = await response.json().catch(() => ({}));
+        if (payload.csrfToken) {
+          csrf = payload.csrfToken;
+          $('meta[name="csrf-token"]')?.setAttribute("content", csrf);
+        }
+      } catch {
+        // best effort
+      }
+    };
+
     const api = async (url, options = {}) => {
+      initCsrfFromMeta();
       const headers = { ...(options.headers || {}) };
       if (csrf) headers["X-CSRF-Token"] = csrf;
-      const response = await fetch(url, { ...options, headers });
+      const { _csrfRetried, ...fetchOptions } = options;
+      const response = await fetch(url, { ...fetchOptions, headers });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) {
+        const errorText = String(payload.error || "").toLowerCase();
+        if (!_csrfRetried && errorText.includes("invalid csrf token")) {
+          await refreshCsrfToken();
+          return api(url, { ...options, _csrfRetried: true });
+        }
         const error = new Error(payload.error || `HTTP ${response.status}`);
         error.code = payload.code;
         throw error;
