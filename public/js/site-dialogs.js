@@ -46,7 +46,7 @@
     messageNode = layer.querySelector(".unqx-dialog-message");
     inputWrap = layer.querySelector(".unqx-dialog-input-wrap");
     inputNode = layer.querySelector(".unqx-dialog-input");
-    cancelButton = layer.querySelector("[data-unqx-dialog-cancel='1']");
+    cancelButton = layer.querySelector("button[data-unqx-dialog-cancel='1']");
     confirmButton = layer.querySelector("[data-unqx-dialog-confirm='1']");
 
     if (
