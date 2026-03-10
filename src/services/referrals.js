@@ -5,6 +5,35 @@ const { getFeatureSetting } = require("./feature-settings");
 const { getReferralV1Settings, getWalletBalance } = require("./referral-v1");
 const { getActiveCampaignsSafe } = require("./referral-v2");
 
+function isMissingModelTable(error, modelName) {
+  return (
+    Boolean(error) &&
+    error.code === "P2021" &&
+    (!modelName || String(error?.meta?.modelName || "") === modelName)
+  );
+}
+
+function isMissingModelColumn(error, modelName) {
+  if (!error || error.code !== "P2022") return false;
+  if (!modelName) return true;
+  const targetModel = String(error?.meta?.modelName || "");
+  if (!targetModel) return true;
+  return targetModel === modelName;
+}
+
+function isMissingModelDelegateError(error) {
+  if (!error || error.name !== "TypeError") return false;
+  const message = String(error.message || "");
+  return (
+    message.includes("Cannot read properties of undefined") &&
+    (message.includes("findMany") || message.includes("findUnique") || message.includes("count") || message.includes("aggregate") || message.includes("create"))
+  );
+}
+
+function isMissingReferralBootstrapStorage(error, modelName) {
+  return isMissingModelTable(error, modelName) || isMissingModelColumn(error, modelName) || isMissingModelDelegateError(error);
+}
+
 function normalizeRefCode(value) {
   return String(value || "")
     .trim()
@@ -113,35 +142,53 @@ async function getReferralBootstrap(userId) {
 
   const [conversions, bonusHistory, bonusBalance, activeCampaigns, fraudChecks] = await Promise.all([
     prisma.referralConversion
-      ? prisma.referralConversion.findMany({
-          where: { referrerId: user.id },
-          include: {
-            referred: {
-              select: {
-                firstName: true,
-                username: true,
+      ? prisma.referralConversion
+          .findMany({
+            where: { referrerId: user.id },
+            include: {
+              referred: {
+                select: {
+                  firstName: true,
+                  username: true,
+                },
               },
             },
-          },
-          orderBy: { createdAt: "desc" },
-          take: 300,
-        })
+            orderBy: { createdAt: "desc" },
+            take: 300,
+          })
+          .catch((error) => {
+            if (isMissingReferralBootstrapStorage(error, "ReferralConversion")) return [];
+            throw error;
+          })
       : Promise.resolve([]),
     prisma.bonusLedger
-      ? prisma.bonusLedger.findMany({
-          where: { userId: user.id },
-          orderBy: { createdAt: "desc" },
-          take: 100,
-        })
+      ? prisma.bonusLedger
+          .findMany({
+            where: { userId: user.id },
+            orderBy: { createdAt: "desc" },
+            take: 100,
+          })
+          .catch((error) => {
+            if (isMissingReferralBootstrapStorage(error, "BonusLedger")) return [];
+            throw error;
+          })
       : Promise.resolve([]),
-    getWalletBalance(user.id),
+    getWalletBalance(user.id).catch((error) => {
+      if (isMissingReferralBootstrapStorage(error, "UserBonusWallet")) return 0;
+      throw error;
+    }),
     getActiveCampaignsSafe(),
     prisma.referralFraudCheck
-      ? prisma.referralFraudCheck.findMany({
-          where: { userId: user.id },
-          orderBy: { createdAt: "desc" },
-          take: 100,
-        })
+      ? prisma.referralFraudCheck
+          .findMany({
+            where: { userId: user.id },
+            orderBy: { createdAt: "desc" },
+            take: 100,
+          })
+          .catch((error) => {
+            if (isMissingReferralBootstrapStorage(error, "ReferralFraudCheck")) return [];
+            throw error;
+          })
       : Promise.resolve([]),
   ]);
 
