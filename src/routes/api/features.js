@@ -11,6 +11,13 @@ const { getActiveFlashSale, resolveConditionLabel } = require("../../services/fl
 const { getDropLiveStats } = require("../../services/drops");
 const { getReferralBootstrap, claimReferralReward } = require("../../services/referrals");
 const { getWalletBalance } = require("../../services/referral-v1");
+const {
+  normalizePromoCode,
+  getActiveCampaignsSafe,
+  resolveCampaignForCheckout,
+  buildCampaignSnapshot,
+} = require("../../services/referral-v2");
+const { getReferralV1Settings } = require("../../services/referral-v1");
 
 const router = express.Router();
 
@@ -310,6 +317,73 @@ router.get(
         note: item.note || "",
         createdAt: item.createdAt,
       })),
+    });
+  }),
+);
+
+router.get(
+  "/referrals/campaigns/active",
+  asyncHandler(async (_req, res) => {
+    const items = await getActiveCampaignsSafe();
+    res.json({
+      items: items.map((item) => ({
+        id: item.id,
+        name: item.name,
+        type: item.type,
+        source: item.source || "",
+        offer: item.offer || "",
+        promoCode: item.type === "promo_code" ? String(item.promoCode || "") : "",
+        startsAt: item.startsAt,
+        endsAt: item.endsAt,
+        priority: Number(item.priority || 0),
+      })),
+    });
+  }),
+);
+
+router.post(
+  "/referrals/promo/validate",
+  requireSameOrigin,
+  requireCsrfToken,
+  asyncHandler(async (req, res) => {
+    const promoCode = normalizePromoCode(req.body?.promoCode || "");
+    if (!promoCode) {
+      res.status(400).json({ error: "PROMO_CODE_REQUIRED" });
+      return;
+    }
+    const [v1Settings, resolved] = await Promise.all([
+      getReferralV1Settings(),
+      resolveCampaignForCheckout({
+        source: String(req.body?.refSource || "order_modal"),
+        offer: String(req.body?.refOffer || "default"),
+        promoCode,
+      }),
+    ]);
+    const snapshot = buildCampaignSnapshot({
+      campaign: resolved.campaign,
+      referrerReward: v1Settings.referrerReward,
+      inviteeDiscount: v1Settings.inviteeDiscount,
+      discountCapPercent: v1Settings.discountCapPercent,
+      normalizedPromoCode: resolved.normalizedPromoCode,
+    });
+    if (!snapshot.campaignApplied || snapshot.campaignType !== "promo_code") {
+      res.status(404).json({
+        ok: false,
+        promoCode,
+        valid: false,
+      });
+      return;
+    }
+    res.json({
+      ok: true,
+      valid: true,
+      promoCode,
+      campaignApplied: snapshot.campaignApplied,
+      campaignType: snapshot.campaignType,
+      campaignName: snapshot.campaignName,
+      inviteeDiscount: snapshot.inviteeDiscount,
+      referrerReward: snapshot.referrerReward,
+      capPercent: snapshot.discountCapPercent,
     });
   }),
 );

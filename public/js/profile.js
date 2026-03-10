@@ -249,6 +249,8 @@ Email: ${userEmail}
     refTable: $("#profile-ref-table"),
     refRewards: $("#profile-ref-rewards"),
     refBonusHistory: $("#profile-ref-bonus-history"),
+    refCampaigns: $("#profile-ref-campaigns"),
+    refFraud: $("#profile-ref-fraud"),
 
     stName: $("#profile-settings-display-name"),
     stCity: $("#profile-settings-city"),
@@ -1122,6 +1124,28 @@ Email: ${userEmail}
             )
             .join("")
         : '<tr><td colspan="5" class="px-3 py-8 text-center text-neutral-500">История бонусов появится после операций</td></tr>';
+    }
+    if (el.refCampaigns) {
+      const rows = Array.isArray(payload.campaigns) ? payload.campaigns : [];
+      el.refCampaigns.innerHTML = rows.length
+        ? rows
+            .map(
+              (item) =>
+                `<tr class="border-t border-neutral-100"><td class="px-3 py-2">${esc(item.name || "Campaign")}</td><td class="px-3 py-2">${esc(item.type || "-")}</td><td class="px-3 py-2">${esc(`${item.source || "-"} / ${item.offer || "-"}`)}</td><td class="px-3 py-2">${esc(item.promoCode || "-")}</td></tr>`,
+            )
+            .join("")
+        : '<tr><td colspan="4" class="px-3 py-8 text-center text-neutral-500">Активных кампаний нет</td></tr>';
+    }
+    if (el.refFraud) {
+      const rows = Array.isArray(payload.fraud) ? payload.fraud : [];
+      el.refFraud.innerHTML = rows.length
+        ? rows
+            .map(
+              (item) =>
+                `<tr class="border-t border-neutral-100"><td class="px-3 py-2">${fdt(item.createdAt)}</td><td class="px-3 py-2">${esc(String(item.verdict || "").toUpperCase())}</td><td class="px-3 py-2">${esc(item.reason || "—")}</td></tr>`,
+            )
+            .join("")
+        : '<tr><td colspan="3" class="px-3 py-8 text-center text-neutral-500">Проверок пока нет</td></tr>';
     }
   };
 

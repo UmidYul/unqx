@@ -3,6 +3,7 @@
 const { prisma } = require("../db/prisma");
 const { getFeatureSetting } = require("./feature-settings");
 const { getReferralV1Settings, getWalletBalance } = require("./referral-v1");
+const { getActiveCampaignsSafe } = require("./referral-v2");
 
 function normalizeRefCode(value) {
   return String(value || "")
@@ -95,6 +96,8 @@ async function getReferralBootstrap(userId) {
       stats: { invited: 0, paid: 0, rewarded: 0, rewardsAmount: 0 },
       bonus: { balance: 0, totalEarned: 0, totalSpent: 0, history: [] },
       referrals: [],
+      campaigns: [],
+      fraud: [],
       rewards: [],
     };
   }
@@ -108,7 +111,7 @@ async function getReferralBootstrap(userId) {
   const refCode = user.refCode || (await ensureUserRefCode(user.id)) || "";
   const settings = await getReferralV1Settings();
 
-  const [conversions, bonusHistory, bonusBalance] = await Promise.all([
+  const [conversions, bonusHistory, bonusBalance, activeCampaigns, fraudChecks] = await Promise.all([
     prisma.referralConversion
       ? prisma.referralConversion.findMany({
           where: { referrerId: user.id },
@@ -132,6 +135,14 @@ async function getReferralBootstrap(userId) {
         })
       : Promise.resolve([]),
     getWalletBalance(user.id),
+    getActiveCampaignsSafe(),
+    prisma.referralFraudCheck
+      ? prisma.referralFraudCheck.findMany({
+          where: { userId: user.id },
+          orderBy: { createdAt: "desc" },
+          take: 100,
+        })
+      : Promise.resolve([]),
   ]);
 
   const invited = conversions.length;
@@ -180,6 +191,23 @@ async function getReferralBootstrap(userId) {
       rewardAmount: Number(item.rewardAmount || 0),
       source: item.refSource || "",
       offer: item.refOffer || "",
+    })),
+    campaigns: (activeCampaigns || []).map((item) => ({
+      id: item.id,
+      name: item.name || "",
+      type: item.type,
+      source: item.source || "",
+      offer: item.offer || "",
+      promoCode: item.type === "promo_code" ? String(item.promoCode || "") : "",
+      startsAt: item.startsAt,
+      endsAt: item.endsAt,
+    })),
+    fraud: (fraudChecks || []).map((item) => ({
+      id: item.id,
+      verdict: item.verdict,
+      reason: item.reason || "",
+      score: Number(item.score || 0),
+      createdAt: item.createdAt,
     })),
     rewards: [
       {

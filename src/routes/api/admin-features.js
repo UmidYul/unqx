@@ -19,6 +19,8 @@ const { getSlugPricingConfig } = require("../../services/slug-pricing");
 const { buildDropSlugPool, reserveDropSlugs, getDropLiveStats, releaseUnsoldDropSlugs } = require("../../services/drops");
 const { sendTelegramMessage } = require("../../services/telegram");
 const { recalculateAllScores, recalculateAndRefreshPercentiles } = require("../../services/unq-score");
+const { normalizePromoCode, normalizeSource, normalizeOffer } = require("../../services/referral-v2");
+const { recordBonusLedger } = require("../../services/referral-v1");
 
 const router = express.Router();
 
@@ -416,6 +418,211 @@ router.get(
 );
 
 router.get(
+  "/referrals/campaigns",
+  asyncHandler(async (_req, res) => {
+    const items = prisma.referralCampaign
+      ? await prisma.referralCampaign.findMany({
+          orderBy: [{ status: "asc" }, { priority: "desc" }, { updatedAt: "desc" }],
+          take: 500,
+        })
+      : [];
+    res.json({ items });
+  }),
+);
+
+router.post(
+  "/referrals/campaigns",
+  asyncHandler(async (req, res) => {
+    if (!prisma.referralCampaign) {
+      res.status(503).json({ error: "Referral campaign storage unavailable" });
+      return;
+    }
+    const type = String(req.body.type || "").trim().toLowerCase();
+    if (!["source_offer", "promo_code"].includes(type)) {
+      res.status(400).json({ error: "Invalid campaign type" });
+      return;
+    }
+    const created = await prisma.referralCampaign.create({
+      data: {
+        name: String(req.body.name || "").trim() || "Referral campaign",
+        type,
+        status: String(req.body.status || "draft").trim().toLowerCase(),
+        source: type === "source_offer" ? normalizeSource(req.body.source || "") : null,
+        offer: type === "source_offer" ? normalizeOffer(req.body.offer || "") : null,
+        promoCode: type === "promo_code" ? normalizePromoCode(req.body.promoCode || "") : null,
+        rewardAmountOverride:
+          req.body.rewardAmountOverride === undefined ? null : Math.max(0, Math.round(Number(req.body.rewardAmountOverride || 0))),
+        inviteeDiscountOverride:
+          req.body.inviteeDiscountOverride === undefined ? null : Math.max(0, Math.round(Number(req.body.inviteeDiscountOverride || 0))),
+        discountCapPercentOverride:
+          req.body.discountCapPercentOverride === undefined ? null : Math.max(0, Math.min(100, Number(req.body.discountCapPercentOverride || 0))),
+        priority: Math.round(Number(req.body.priority || 0)),
+        budgetAmount: Math.max(0, Math.round(Number(req.body.budgetAmount || 0))),
+        perUserCap: Math.max(1, Math.round(Number(req.body.perUserCap || 1))),
+        startsAt: req.body.startsAt ? new Date(req.body.startsAt) : null,
+        endsAt: req.body.endsAt ? new Date(req.body.endsAt) : null,
+        createdBy: req.session?.admin?.login || "admin",
+      },
+    });
+    res.status(201).json({ ok: true, item: created });
+  }),
+);
+
+router.patch(
+  "/referrals/campaigns/:id",
+  asyncHandler(async (req, res) => {
+    if (!prisma.referralCampaign) {
+      res.status(503).json({ error: "Referral campaign storage unavailable" });
+      return;
+    }
+    const existing = await prisma.referralCampaign.findUnique({ where: { id: req.params.id } });
+    if (!existing) {
+      res.status(404).json({ error: "Campaign not found" });
+      return;
+    }
+    const nextType = req.body.type ? String(req.body.type).trim().toLowerCase() : existing.type;
+    const updated = await prisma.referralCampaign.update({
+      where: { id: existing.id },
+      data: {
+        ...(req.body.name !== undefined ? { name: String(req.body.name || "").trim() || existing.name } : {}),
+        ...(req.body.type !== undefined ? { type: nextType } : {}),
+        ...(req.body.status !== undefined ? { status: String(req.body.status || "").trim().toLowerCase() } : {}),
+        ...(req.body.source !== undefined ? { source: nextType === "source_offer" ? normalizeSource(req.body.source || "") : null } : {}),
+        ...(req.body.offer !== undefined ? { offer: nextType === "source_offer" ? normalizeOffer(req.body.offer || "") : null } : {}),
+        ...(req.body.promoCode !== undefined ? { promoCode: nextType === "promo_code" ? normalizePromoCode(req.body.promoCode || "") : null } : {}),
+        ...(req.body.rewardAmountOverride !== undefined ? { rewardAmountOverride: Math.max(0, Math.round(Number(req.body.rewardAmountOverride || 0))) } : {}),
+        ...(req.body.inviteeDiscountOverride !== undefined ? { inviteeDiscountOverride: Math.max(0, Math.round(Number(req.body.inviteeDiscountOverride || 0))) } : {}),
+        ...(req.body.discountCapPercentOverride !== undefined ? { discountCapPercentOverride: Math.max(0, Math.min(100, Number(req.body.discountCapPercentOverride || 0))) } : {}),
+        ...(req.body.priority !== undefined ? { priority: Math.round(Number(req.body.priority || 0)) } : {}),
+        ...(req.body.budgetAmount !== undefined ? { budgetAmount: Math.max(0, Math.round(Number(req.body.budgetAmount || 0))) } : {}),
+        ...(req.body.perUserCap !== undefined ? { perUserCap: Math.max(1, Math.round(Number(req.body.perUserCap || 1))) } : {}),
+        ...(req.body.startsAt !== undefined ? { startsAt: req.body.startsAt ? new Date(req.body.startsAt) : null } : {}),
+        ...(req.body.endsAt !== undefined ? { endsAt: req.body.endsAt ? new Date(req.body.endsAt) : null } : {}),
+      },
+    });
+    res.json({ ok: true, item: updated });
+  }),
+);
+
+router.get(
+  "/referrals/campaigns/:id/usage",
+  asyncHandler(async (req, res) => {
+    const items = prisma.referralCampaignUsage
+      ? await prisma.referralCampaignUsage.findMany({
+          where: { campaignId: req.params.id },
+          include: {
+            user: { select: { id: true, username: true, firstName: true } },
+          },
+          orderBy: { createdAt: "desc" },
+          take: 500,
+        })
+      : [];
+    res.json({ items });
+  }),
+);
+
+router.get(
+  "/referrals/fraud",
+  asyncHandler(async (req, res) => {
+    const where = {};
+    if (typeof req.query.verdict === "string" && req.query.verdict.trim()) {
+      where.verdict = req.query.verdict.trim().toLowerCase();
+    }
+    const items = prisma.referralFraudCheck
+      ? await prisma.referralFraudCheck.findMany({
+          where,
+          include: {
+            user: { select: { id: true, username: true, firstName: true } },
+            order: { select: { id: true, slug: true, status: true } },
+          },
+          orderBy: { createdAt: "desc" },
+          take: 500,
+        })
+      : [];
+    res.json({ items });
+  }),
+);
+
+router.patch(
+  "/referrals/fraud/:id/verdict",
+  asyncHandler(async (req, res) => {
+    if (!prisma.referralFraudCheck) {
+      res.status(503).json({ error: "Referral fraud storage unavailable" });
+      return;
+    }
+    const verdict = String(req.body.verdict || "").trim().toLowerCase();
+    if (!["allow", "block", "review"].includes(verdict)) {
+      res.status(400).json({ error: "Invalid verdict" });
+      return;
+    }
+    const item = await prisma.referralFraudCheck.update({
+      where: { id: req.params.id },
+      data: {
+        verdict,
+        reason: req.body.reason !== undefined ? String(req.body.reason || "") : undefined,
+      },
+      include: { order: { select: { id: true } } },
+    });
+    if (item.orderId && prisma.slugRequest) {
+      const order = await prisma.slugRequest.update({
+        where: { id: item.orderId },
+        data: {
+          fraudVerdict: verdict,
+          ...(req.body.reason !== undefined ? { fraudReason: String(req.body.reason || "") } : {}),
+        },
+        select: {
+          id: true,
+          campaignSnapshot: true,
+        },
+      });
+      if (verdict === "allow" && prisma.referralConversion && prisma.bonusLedger && prisma.userBonusWallet) {
+        const conversion = await prisma.referralConversion.findUnique({
+          where: { orderId: item.orderId },
+          select: {
+            id: true,
+            referrerId: true,
+            status: true,
+            rewardAmount: true,
+            purchaseId: true,
+          },
+        });
+        if (conversion && conversion.status !== "approved") {
+          const rewardAmount = Math.max(
+            0,
+            Math.round(Number(order?.campaignSnapshot?.referrerReward || conversion.rewardAmount || 0)),
+          );
+          const updatedConversion = await prisma.referralConversion.update({
+            where: { id: conversion.id },
+            data: {
+              status: "approved",
+              rewardAmount,
+              approvedAt: new Date(),
+            },
+            select: { id: true, referrerId: true, orderId: true, purchaseId: true, rewardAmount: true },
+          });
+          if (rewardAmount > 0) {
+            await prisma.$transaction(async (tx) => {
+              await recordBonusLedger({
+                tx,
+                userId: updatedConversion.referrerId,
+                delta: rewardAmount,
+                kind: "referral_reward",
+                idempotencyKey: `refconv:${updatedConversion.id}:reward`,
+                orderId: updatedConversion.orderId || item.orderId,
+                purchaseId: updatedConversion.purchaseId || null,
+                conversionId: updatedConversion.id,
+                note: `Referral reward approved by fraud review`,
+              });
+            });
+          }
+        }
+      }
+    }
+    res.json({ ok: true, item });
+  }),
+);
+
+router.get(
   "/referrals/ledger",
   asyncHandler(async (req, res) => {
     const where = {};
@@ -569,6 +776,12 @@ router.patch(
     if (req.body.inviteeDiscount !== undefined) payload.referral_v1_invitee_discount = Math.max(0, Math.round(Number(req.body.inviteeDiscount || 0)));
     if (req.body.discountCapPercent !== undefined) payload.referral_v1_discount_cap_percent = Math.max(0, Math.min(100, Number(req.body.discountCapPercent || 0)));
     if (req.body.tiersEnabled !== undefined) payload.referral_v1_tiers_enabled = Boolean(req.body.tiersEnabled);
+    if (req.body.fraudVelocityWindowHours !== undefined) payload.referral_v2_velocity_window_hours = Math.max(1, Math.min(168, Math.round(Number(req.body.fraudVelocityWindowHours || 24))));
+    if (req.body.fraudVelocityIpLimit !== undefined) payload.referral_v2_velocity_ip_limit = Math.max(1, Math.round(Number(req.body.fraudVelocityIpLimit || 5)));
+    if (req.body.fraudVelocityDeviceLimit !== undefined) payload.referral_v2_velocity_device_limit = Math.max(1, Math.round(Number(req.body.fraudVelocityDeviceLimit || 4)));
+    if (req.body.fraudReviewScoreThreshold !== undefined) payload.referral_v2_review_score_threshold = Math.max(1, Math.round(Number(req.body.fraudReviewScoreThreshold || 60)));
+    if (req.body.fraudBlockScoreThreshold !== undefined) payload.referral_v2_block_score_threshold = Math.max(1, Math.round(Number(req.body.fraudBlockScoreThreshold || 100)));
+    if (req.body.defaultPerUserCap !== undefined) payload.referral_v2_default_per_user_cap = Math.max(1, Math.round(Number(req.body.defaultPerUserCap || 1)));
     await setSettingsBatch("platform", payload, req.session?.admin?.login || "admin");
     const next = await getManySettings([
       "feature_referrals",
@@ -576,6 +789,12 @@ router.patch(
       "referral_v1_invitee_discount",
       "referral_v1_discount_cap_percent",
       "referral_v1_tiers_enabled",
+      "referral_v2_velocity_window_hours",
+      "referral_v2_velocity_ip_limit",
+      "referral_v2_velocity_device_limit",
+      "referral_v2_review_score_threshold",
+      "referral_v2_block_score_threshold",
+      "referral_v2_default_per_user_cap",
     ]);
     res.json({ ok: true, settings: next });
   }),
@@ -590,6 +809,12 @@ router.get(
       "referral_v1_invitee_discount",
       "referral_v1_discount_cap_percent",
       "referral_v1_tiers_enabled",
+      "referral_v2_velocity_window_hours",
+      "referral_v2_velocity_ip_limit",
+      "referral_v2_velocity_device_limit",
+      "referral_v2_review_score_threshold",
+      "referral_v2_block_score_threshold",
+      "referral_v2_default_per_user_cap",
     ]);
     res.json({ settings });
   }),

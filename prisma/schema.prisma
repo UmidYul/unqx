@@ -132,6 +132,24 @@ enum ReferralConversionStatus {
   reversed
 }
 
+enum ReferralCampaignType {
+  source_offer
+  promo_code
+}
+
+enum ReferralCampaignStatus {
+  draft
+  active
+  paused
+  archived
+}
+
+enum ReferralFraudVerdict {
+  allow
+  block
+  review
+}
+
 model ErrorLog {
   id         String   @id @default(uuid())
   type       String   @db.VarChar(30)
@@ -238,6 +256,8 @@ model User {
   referralsReceived      Referral[]            @relation("ReferredReferrals")
   referralConversionsAsReferrer ReferralConversion[] @relation("ReferralConversionReferrer")
   referralConversionsAsReferred ReferralConversion[] @relation("ReferralConversionReferred")
+  referralCampaignUsages ReferralCampaignUsage[]
+  referralFraudChecks    ReferralFraudCheck[]
   bonusWallet            UserBonusWallet?
   bonusLedger            BonusLedger[]
   dropWaitlistEntries    DropWaitlist[]
@@ -334,17 +354,28 @@ model SlugRequest {
   refCode            String?           @map("ref_code") @db.VarChar(40)
   refSource          String?           @map("ref_source") @db.VarChar(40)
   refOffer           String?           @map("ref_offer") @db.VarChar(80)
+  campaignId         String?           @map("campaign_id")
+  campaign           ReferralCampaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  promoCode          String?           @map("promo_code") @db.VarChar(32)
+  fraudVerdict       ReferralFraudVerdict? @map("fraud_verdict")
+  fraudReason        String?           @map("fraud_reason")
+  campaignSnapshot   Json?             @map("campaign_snapshot")
   inviteeDiscountApplied Int           @default(0) @map("invitee_discount_applied")
   bonusSpent         Int               @default(0) @map("bonus_spent")
   discountCapApplied Int               @default(0) @map("discount_cap_applied")
   conversion         ReferralConversion?
   bonusLedger        BonusLedger[]
+  campaignUsage      ReferralCampaignUsage[]
+  fraudChecks        ReferralFraudCheck[]
   createdAt          DateTime          @default(now()) @map("created_at")
   updatedAt          DateTime          @updatedAt @map("updated_at")
 
   @@index([userId, createdAt])
   @@index([status, createdAt])
   @@index([slug])
+  @@index([campaignId, createdAt(sort: Desc)])
+  @@index([fraudVerdict, createdAt(sort: Desc)])
+  @@index([promoCode])
   @@map("slug_requests")
 }
 
@@ -362,15 +393,25 @@ model Purchase {
   refCode         String?      @map("ref_code") @db.VarChar(40)
   refSource       String?      @map("ref_source") @db.VarChar(40)
   refOffer        String?      @map("ref_offer") @db.VarChar(80)
+  campaignId      String?      @map("campaign_id")
+  campaign        ReferralCampaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  promoCode       String?      @map("promo_code") @db.VarChar(32)
+  fraudVerdict    ReferralFraudVerdict? @map("fraud_verdict")
+  fraudReason     String?      @map("fraud_reason")
+  campaignSnapshot Json?       @map("campaign_snapshot")
   inviteeDiscountApplied Int   @default(0) @map("invitee_discount_applied")
   bonusSpent      Int          @default(0) @map("bonus_spent")
   discountCapApplied Int       @default(0) @map("discount_cap_applied")
   conversion      ReferralConversion?
   bonusLedger     BonusLedger[]
+  campaignUsage   ReferralCampaignUsage[]
 
   @@index([userId, purchasedAt(sort: Desc)])
   @@index([type, purchasedAt(sort: Desc)])
   @@index([slug])
+  @@index([campaignId, purchasedAt(sort: Desc)])
+  @@index([fraudVerdict, purchasedAt(sort: Desc)])
+  @@index([promoCode])
   @@map("purchases")
 }
 
@@ -437,6 +478,82 @@ model ReferralConversion {
   @@index([refSource, refOffer, createdAt(sort: Desc)])
   @@index([status, createdAt(sort: Desc)])
   @@map("referral_conversions")
+}
+
+model ReferralCampaign {
+  id                         String                 @id @default(uuid())
+  name                       String                 @db.VarChar(180)
+  type                       ReferralCampaignType
+  status                     ReferralCampaignStatus @default(draft)
+  source                     String?                @db.VarChar(40)
+  offer                      String?                @db.VarChar(80)
+  promoCode                  String?                @map("promo_code") @db.VarChar(32)
+  rewardAmountOverride       Int?                   @map("reward_amount_override")
+  inviteeDiscountOverride    Int?                   @map("invitee_discount_override")
+  discountCapPercentOverride Float?                 @map("discount_cap_percent_override")
+  priority                   Int                    @default(0)
+  budgetAmount               Int                    @default(0) @map("budget_amount")
+  perUserCap                 Int                    @default(1) @map("per_user_cap")
+  startsAt                   DateTime?              @map("starts_at")
+  endsAt                     DateTime?              @map("ends_at")
+  createdBy                  String?                @map("created_by") @db.VarChar(80)
+  createdAt                  DateTime               @default(now()) @map("created_at")
+  updatedAt                  DateTime               @updatedAt @map("updated_at")
+  orders                     SlugRequest[]
+  purchases                  Purchase[]
+  usages                     ReferralCampaignUsage[]
+
+  @@index([status, type, startsAt, endsAt])
+  @@index([source, offer, status, priority(sort: Desc)])
+  @@index([promoCode, status, priority(sort: Desc)])
+  @@map("referral_campaigns")
+}
+
+model ReferralCampaignUsage {
+  id             String          @id @default(uuid())
+  campaignId     String          @map("campaign_id")
+  campaign       ReferralCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  userId         String          @map("user_id")
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orderId        String?         @map("order_id")
+  order          SlugRequest?    @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  purchaseId     String?         @map("purchase_id")
+  purchase       Purchase?       @relation(fields: [purchaseId], references: [id], onDelete: SetNull)
+  status         String          @default("reserved") @db.VarChar(20)
+  amountSpent    Int             @default(0) @map("amount_spent")
+  idempotencyKey String          @unique @map("idempotency_key") @db.VarChar(120)
+  createdAt      DateTime        @default(now()) @map("created_at")
+  finalizedAt    DateTime?       @map("finalized_at")
+  releasedAt     DateTime?       @map("released_at")
+
+  @@index([campaignId, createdAt(sort: Desc)])
+  @@index([userId, campaignId, createdAt(sort: Desc)])
+  @@index([orderId])
+  @@index([purchaseId])
+  @@map("referral_campaign_usage")
+}
+
+model ReferralFraudCheck {
+  id                String              @id @default(uuid())
+  orderId           String?             @map("order_id")
+  order             SlugRequest?        @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  userId            String              @map("user_id")
+  user              User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ipHash            String?             @map("ip_hash") @db.VarChar(64)
+  deviceHash        String?             @map("device_hash") @db.VarChar(64)
+  velocityIpCount   Int                 @default(0) @map("velocity_ip_count")
+  velocityDeviceCount Int               @default(0) @map("velocity_device_count")
+  score             Int                 @default(0)
+  reason            String?
+  verdict           ReferralFraudVerdict
+  createdAt         DateTime            @default(now()) @map("created_at")
+
+  @@index([orderId])
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([verdict, createdAt(sort: Desc)])
+  @@index([ipHash, createdAt(sort: Desc)])
+  @@index([deviceHash, createdAt(sort: Desc)])
+  @@map("referral_fraud_checks")
 }
 
 model AnalyticsView {

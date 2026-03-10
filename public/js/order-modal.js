@@ -65,6 +65,10 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     planSection: document.getElementById("order-modal-plan-section"),
     planActivationNote: document.getElementById("order-modal-plan-activation-note"),
     bracelet: document.getElementById("order-modal-bracelet"),
+    promoCode: document.getElementById("order-modal-promo-code"),
+    promoCheck: document.getElementById("order-modal-promo-check"),
+    campaignHint: document.getElementById("order-modal-campaign-hint"),
+    fraudHint: document.getElementById("order-modal-fraud-hint"),
     name: document.getElementById("order-modal-name"),
     totalSlugTitle: document.getElementById("order-modal-total-slug-title"),
     totalSlugValue: document.getElementById("order-modal-total-slug-value"),
@@ -134,6 +138,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     dropId: null,
     refSource: "",
     refOffer: "",
+    promoCode: "",
     checkoutContext: null,
     submitBlockedMessage: "",
     lastOpenOptions: {},
@@ -166,6 +171,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     const dropId = String(options.dropId || "").trim();
     const refSource = String(options.refSource || "").trim().toLowerCase().replace(/[^a-z0-9_-]/g, "").slice(0, 40);
     const refOffer = String(options.refOffer || "").trim().toLowerCase().replace(/[^a-z0-9_.:-]/g, "").slice(0, 80);
+    const promoCode = String(options.promoCode || "").trim().toUpperCase().replace(/[^A-Z0-9_-]/g, "").slice(0, 32);
     return {
       slug,
       plan,
@@ -174,12 +180,13 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
       dropId,
       refSource,
       refOffer,
+      promoCode,
     };
   }
 
   function hasMeaningfulIntent(intent) {
     if (!intent || typeof intent !== "object") return false;
-    return Boolean(intent.slug || intent.plan || intent.theme || intent.bracelet || intent.dropId || intent.refSource || intent.refOffer);
+    return Boolean(intent.slug || intent.plan || intent.theme || intent.bracelet || intent.dropId || intent.refSource || intent.refOffer || intent.promoCode);
   }
 
   function readPendingPurchaseIntent() {
@@ -544,6 +551,14 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     params.set("requestedPlan", requestedPlan);
     if (attribution.refSource) params.set("refSource", attribution.refSource);
     if (attribution.refOffer) params.set("refOffer", attribution.refOffer);
+    const promoCode = String(state.promoCode || (dom.promoCode instanceof HTMLInputElement ? dom.promoCode.value : "") || "")
+      .trim()
+      .toUpperCase()
+      .replace(/[^A-Z0-9_-]/g, "")
+      .slice(0, 32);
+    if (promoCode) {
+      params.set("promoCode", promoCode);
+    }
     try {
       const response = await fetch(`/api/cards/order-precheck?${params.toString()}`, {
         headers: { Accept: "application/json" },
@@ -1212,6 +1227,88 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     if (dom.totalMonthly instanceof HTMLElement) {
       dom.totalMonthly.textContent = "Единоразово · больше не платишь";
     }
+    if (dom.campaignHint instanceof HTMLElement) {
+      const campaignApplied = Boolean(referral?.campaignApplied);
+      const campaignName = String(referral?.campaignName || "").trim();
+      const promoCodeApplied = String(referral?.promoCodeApplied || "").trim();
+      if (campaignApplied) {
+        dom.campaignHint.classList.remove("hidden");
+        dom.campaignHint.textContent = campaignName
+          ? `Применена кампания: ${campaignName}${promoCodeApplied ? ` (${promoCodeApplied})` : ""}`
+          : `Применена акция${promoCodeApplied ? ` (${promoCodeApplied})` : ""}`;
+      } else {
+        dom.campaignHint.classList.add("hidden");
+        dom.campaignHint.textContent = "";
+      }
+    }
+    if (dom.fraudHint instanceof HTMLElement) {
+      const fraudVerdict = String(referral?.fraudVerdict || "").trim().toLowerCase();
+      const fraudHint = String(referral?.fraudHint || "").trim();
+      if (fraudVerdict === "block") {
+        dom.fraudHint.classList.remove("hidden");
+        dom.fraudHint.textContent = "Кампанийная скидка недоступна для этого заказа. Применен стандартный расчет.";
+      } else if (fraudVerdict === "review") {
+        dom.fraudHint.classList.remove("hidden");
+        dom.fraudHint.textContent = fraudHint
+          ? `Проверка безопасности: ${fraudHint}. Награда рефереру будет после проверки.`
+          : "Проверка безопасности: награда рефереру будет после проверки.";
+      } else {
+        dom.fraudHint.classList.add("hidden");
+        dom.fraudHint.textContent = "";
+      }
+    }
+  }
+
+  async function validatePromoCodeManually() {
+    if (!(dom.promoCode instanceof HTMLInputElement)) {
+      return;
+    }
+    const promoCode = String(dom.promoCode.value || "")
+      .trim()
+      .toUpperCase()
+      .replace(/[^A-Z0-9_-]/g, "")
+      .slice(0, 32);
+    dom.promoCode.value = promoCode;
+    state.promoCode = promoCode;
+    if (!promoCode) {
+      if (dom.campaignHint instanceof HTMLElement) {
+        dom.campaignHint.classList.add("hidden");
+        dom.campaignHint.textContent = "";
+      }
+      await refreshCheckoutContext();
+      return;
+    }
+    const originalText = dom.promoCheck instanceof HTMLButtonElement ? dom.promoCheck.textContent : "";
+    if (dom.promoCheck instanceof HTMLButtonElement) {
+      dom.promoCheck.disabled = true;
+      dom.promoCheck.textContent = "Проверка...";
+    }
+    try {
+      const payload = await postJson("/api/referrals/promo/validate", {
+        promoCode,
+        refSource: state.refSource || "order_modal",
+        refOffer: state.refOffer || "default",
+      });
+      if (payload?.valid) {
+        if (dom.campaignHint instanceof HTMLElement) {
+          dom.campaignHint.classList.remove("hidden");
+          dom.campaignHint.textContent = `Промокод применен: ${promoCode}${payload?.campaignName ? ` · ${payload.campaignName}` : ""}`;
+        }
+      }
+    } catch (error) {
+      if (dom.campaignHint instanceof HTMLElement) {
+        dom.campaignHint.classList.remove("hidden");
+        dom.campaignHint.textContent = "Промокод не найден или не активен.";
+      }
+      setStatus(error?.message || "Промокод недействителен", "error");
+    } finally {
+      if (dom.promoCheck instanceof HTMLButtonElement) {
+        dom.promoCheck.disabled = false;
+        dom.promoCheck.textContent = originalText || "Проверить";
+      }
+      await refreshCheckoutContext();
+      await updateTotals();
+    }
   }
 
   function mountWidget() {
@@ -1293,6 +1390,10 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     state.dropId = typeof options.dropId === "string" && options.dropId ? options.dropId : null;
     state.refSource = attribution.refSource;
     state.refOffer = attribution.refOffer;
+    state.promoCode = String(options.promoCode || precheck?.referral?.promoCodeApplied || "").trim().toUpperCase().replace(/[^A-Z0-9_-]/g, "").slice(0, 32);
+    if (dom.promoCode instanceof HTMLInputElement) {
+      dom.promoCode.value = state.promoCode;
+    }
     if (currentPlan === "none") {
       dom.planBasic.disabled = false;
       dom.planPremium.disabled = false;
@@ -1445,6 +1546,12 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
         refSource: state.refSource || "",
         refOffer: state.refOffer || "",
         refCode: String(state.checkoutContext?.referral?.refCode || "").trim(),
+        promoCode:
+          String(state.promoCode || (dom.promoCode instanceof HTMLInputElement ? dom.promoCode.value : "") || "")
+            .trim()
+            .toUpperCase()
+            .replace(/[^A-Z0-9_-]/g, "")
+            .slice(0, 32),
         products: {
           digitalCard: true,
           bracelet: Boolean(dom.bracelet.checked),
@@ -1653,6 +1760,16 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
   dom.planBasic.addEventListener("change", () => void updateTotals());
   dom.planPremium.addEventListener("change", () => void updateTotals());
   dom.bracelet.addEventListener("change", () => void updateTotals());
+  dom.promoCode?.addEventListener("input", () => {
+    if (!(dom.promoCode instanceof HTMLInputElement)) return;
+    dom.promoCode.value = String(dom.promoCode.value || "")
+      .toUpperCase()
+      .replace(/[^A-Z0-9_-]/g, "")
+      .slice(0, 32);
+    state.promoCode = dom.promoCode.value;
+  });
+  dom.promoCode?.addEventListener("change", () => void validatePromoCodeManually());
+  dom.promoCheck?.addEventListener("click", () => void validatePromoCodeManually());
   dom.logout?.addEventListener("click", () => {
     void postJson("/api/auth/logout", {})
       .then(async () => {

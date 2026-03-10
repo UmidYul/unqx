@@ -9,6 +9,7 @@ const {
     resolveReferrerForUser,
     recordBonusLedger,
 } = require("./referral-v1");
+const { finalizeCampaignUsage, releaseCampaignUsage } = require("./referral-v2");
 
 function makeTransitionError(code, message) {
     const error = new Error(message);
@@ -165,6 +166,11 @@ async function applyOrderStatusTransition({
                         refCode: order.refCode || null,
                         refSource: order.refSource || null,
                         refOffer: order.refOffer || null,
+                        campaignId: order.campaignId || null,
+                        promoCode: order.promoCode || null,
+                        fraudVerdict: order.fraudVerdict || null,
+                        fraudReason: order.fraudReason || null,
+                        campaignSnapshot: order.campaignSnapshot || null,
                         inviteeDiscountApplied: Number(order.inviteeDiscountApplied || 0),
                         bonusSpent: Number(order.bonusSpent || 0),
                         discountCapApplied: Number(order.discountCapApplied || 0),
@@ -207,6 +213,11 @@ async function applyOrderStatusTransition({
                     });
                 }
 
+                const isFraudAllowed = String(order.fraudVerdict || "allow") === "allow";
+                const rewardAmountFromSnapshot = Math.max(
+                    0,
+                    Math.round(Number(order?.campaignSnapshot?.referrerReward || referralSettings.referrerReward || 0)),
+                );
                 const shouldProcessReferral =
                     referralSettings.enabled ||
                     Number(order.inviteeDiscountApplied || 0) > 0 ||
@@ -231,21 +242,21 @@ async function applyOrderStatusTransition({
                                 refCode: referrer.refCode || order.refCode || null,
                                 refSource: order.refSource || null,
                                 refOffer: order.refOffer || null,
-                                status: "approved",
-                                rewardAmount: referralSettings.referrerReward,
+                                status: isFraudAllowed ? "approved" : "pending",
+                                rewardAmount: isFraudAllowed ? rewardAmountFromSnapshot : 0,
                                 inviteeDiscountApplied: Number(order.inviteeDiscountApplied || 0),
                                 bonusSpent: Number(order.bonusSpent || 0),
                                 orderId: row.id,
                                 purchaseId: slugPurchase.id,
-                                approvedAt: now,
+                                approvedAt: isFraudAllowed ? now : null,
                             },
                             update: {
-                                status: "approved",
-                                rewardAmount: referralSettings.referrerReward,
+                                status: isFraudAllowed ? "approved" : "pending",
+                                rewardAmount: isFraudAllowed ? rewardAmountFromSnapshot : 0,
                                 inviteeDiscountApplied: Number(order.inviteeDiscountApplied || 0),
                                 bonusSpent: Number(order.bonusSpent || 0),
                                 purchaseId: slugPurchase.id,
-                                approvedAt: now,
+                                approvedAt: isFraudAllowed ? now : null,
                             },
                             select: { id: true, referrerId: true },
                         });
@@ -266,11 +277,11 @@ async function applyOrderStatusTransition({
                         });
                     }
 
-                    if (conversion?.referrerId && Number(referralSettings.referrerReward || 0) > 0) {
+                    if (isFraudAllowed && conversion?.referrerId && rewardAmountFromSnapshot > 0) {
                         await recordBonusLedger({
                             tx,
                             userId: conversion.referrerId,
-                            delta: Number(referralSettings.referrerReward || 0),
+                            delta: rewardAmountFromSnapshot,
                             kind: "referral_reward",
                             idempotencyKey: `refconv:${conversion.id}:reward`,
                             orderId: row.id,
@@ -280,6 +291,13 @@ async function applyOrderStatusTransition({
                         });
                     }
                 }
+
+                await finalizeCampaignUsage({
+                    tx,
+                    orderId: row.id,
+                    purchaseId: slugPurchase.id,
+                    amountSpent: Number(order.inviteeDiscountApplied || 0),
+                });
             }
         }
 
@@ -306,6 +324,10 @@ async function applyOrderStatusTransition({
                     requestedAt: null,
                     activatedAt: null,
                 },
+            });
+            await releaseCampaignUsage({
+                tx,
+                orderId: row.id,
             });
         }
 

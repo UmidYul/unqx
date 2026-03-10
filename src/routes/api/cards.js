@@ -41,6 +41,15 @@ const {
   computeDiscountAllocation,
   resolveOrderAttribution,
 } = require("../../services/referral-v1");
+const {
+  normalizePromoCode,
+  getReferralV2Settings,
+  resolveCampaignForCheckout,
+  buildCampaignSnapshot,
+  evaluateCampaignEligibility,
+  runFraudCheck,
+  reserveCampaignUsage,
+} = require("../../services/referral-v2");
 
 const router = express.Router();
 const SLUG_REGEX = /^[A-Z]{3}[0-9]{3}$/;
@@ -822,16 +831,30 @@ router.get(
     const requestedPlan = String(req.query.requestedPlan || req.query.plan || "").trim().toLowerCase() === "premium" ? "premium" : "basic";
     const activeOrdersLimit = 3;
     const sessionUser = getUserSession(req);
+    const promoCodeInput = normalizePromoCode(req.query.promoCode || req.query.promo || "");
     const attribution = resolveOrderAttribution({
       body: {},
       query: req.query || {},
       path: req.path || req.originalUrl || "",
     });
-    const [pricing, braceletPrice, referralSettings] = await Promise.all([
+    const [pricing, braceletPrice, referralSettings, referralV2Settings, campaignResolved] = await Promise.all([
       getPricingSettings(),
       getBraceletPrice(),
       getReferralV1Settings(),
+      getReferralV2Settings(),
+      resolveCampaignForCheckout({
+        source: attribution.refSource,
+        offer: attribution.refOffer,
+        promoCode: promoCodeInput,
+      }),
     ]);
+    const campaignPreview = buildCampaignSnapshot({
+      campaign: campaignResolved.campaign,
+      referrerReward: referralSettings.referrerReward,
+      inviteeDiscount: referralSettings.inviteeDiscount,
+      discountCapPercent: referralSettings.discountCapPercent,
+      normalizedPromoCode: campaignResolved.normalizedPromoCode,
+    });
 
     if (!sessionUser?.userId) {
       res.json({
@@ -858,12 +881,18 @@ router.get(
           enabled: referralSettings.enabled,
           source: attribution.refSource,
           offer: attribution.refOffer,
+          promoCodeApplied: campaignPreview.promoCodeApplied || "",
+          campaignApplied: campaignPreview.campaignApplied,
+          campaignType: campaignPreview.campaignType,
+          campaignName: campaignPreview.campaignName,
           walletBalance: 0,
           hasReferrer: false,
           firstOrderEligible: false,
           inviteeDiscountCandidate: 0,
           bonusSpendCandidate: 0,
           capPercent: referralSettings.discountCapPercent,
+          fraudVerdict: "allow",
+          fraudHint: "",
           breakdown: {
             inviteeDiscountApplied: 0,
             bonusSpent: 0,
@@ -914,12 +943,18 @@ router.get(
           enabled: referralSettings.enabled,
           source: attribution.refSource,
           offer: attribution.refOffer,
+          promoCodeApplied: campaignPreview.promoCodeApplied || "",
+          campaignApplied: campaignPreview.campaignApplied,
+          campaignType: campaignPreview.campaignType,
+          campaignName: campaignPreview.campaignName,
           walletBalance: 0,
           hasReferrer: false,
           firstOrderEligible: false,
           inviteeDiscountCandidate: 0,
           bonusSpendCandidate: 0,
           capPercent: referralSettings.discountCapPercent,
+          fraudVerdict: "allow",
+          fraudHint: "",
           breakdown: {
             inviteeDiscountApplied: 0,
             bonusSpent: 0,
@@ -970,6 +1005,11 @@ router.get(
           inviteeDiscountApplied: true,
           bonusSpent: true,
           discountCapApplied: true,
+          campaignId: true,
+          promoCode: true,
+          fraudVerdict: true,
+          fraudReason: true,
+          campaignSnapshot: true,
           bracelet: true,
           createdAt: true,
         },
@@ -983,6 +1023,19 @@ router.get(
         sessionRefCode: req.session?.pendingRefCode,
       }),
     ]);
+    const campaignEligibility = await evaluateCampaignEligibility({
+      campaign: campaignResolved.campaign,
+      userId: user.id,
+      settings: referralV2Settings,
+    });
+    const effectiveCampaign = campaignEligibility.allowed ? campaignResolved.campaign : null;
+    const campaignSnapshot = buildCampaignSnapshot({
+      campaign: effectiveCampaign,
+      referrerReward: referralSettings.referrerReward,
+      inviteeDiscount: referralSettings.inviteeDiscount,
+      discountCapPercent: referralSettings.discountCapPercent,
+      normalizedPromoCode: campaignResolved.normalizedPromoCode,
+    });
     const supportTelegram = normalizeTelegramUsername(supportTelegramRaw);
     const fullName = [user.firstName, user.lastName].map((x) => String(x || "").trim()).filter(Boolean).join(" ") || String(user.displayName || "").trim();
 
@@ -1010,6 +1063,11 @@ router.get(
           inviteeDiscountApplied: Number(latestActiveOrder.inviteeDiscountApplied || 0),
           bonusSpent: Number(latestActiveOrder.bonusSpent || 0),
           discountCapApplied: Number(latestActiveOrder.discountCapApplied || 0),
+          campaignId: latestActiveOrder.campaignId || null,
+          promoCodeApplied: latestActiveOrder.promoCode || "",
+          campaignSnapshot: latestActiveOrder.campaignSnapshot || null,
+          fraudVerdict: latestActiveOrder.fraudVerdict || "allow",
+          fraudHint: latestActiveOrder.fraudReason || "",
           bracelet: Boolean(latestActiveOrder.bracelet),
           braceletPrice: Number(braceletPrice || 0),
           totalOneTime:
@@ -1086,13 +1144,13 @@ router.get(
     }
 
     const firstOrderEligible = referralSettings.enabled && !firstApprovedOrderExists && Boolean(referrerLink?.referrerId);
-    const inviteeDiscountCandidate = firstOrderEligible ? referralSettings.inviteeDiscount : 0;
+    const inviteeDiscountCandidate = firstOrderEligible ? campaignSnapshot.inviteeDiscount : 0;
     const referralPreview = computeDiscountAllocation({
       slugBasePrice: 0,
       slugPriceAfterProductDiscount: 0,
       inviteeDiscountCandidate,
       walletBalance,
-      discountCapPercent: referralSettings.discountCapPercent,
+      discountCapPercent: campaignSnapshot.discountCapPercent,
     });
 
     res.json({
@@ -1123,13 +1181,19 @@ router.get(
         enabled: referralSettings.enabled,
         source: attribution.refSource,
         offer: attribution.refOffer,
+        promoCodeApplied: campaignSnapshot.promoCodeApplied || "",
+        campaignApplied: campaignSnapshot.campaignApplied,
+        campaignType: campaignSnapshot.campaignType,
+        campaignName: campaignSnapshot.campaignName,
         refCode: referrerLink?.refCode || attribution.refCode || "",
         hasReferrer: Boolean(referrerLink?.referrerId),
         firstOrderEligible,
         walletBalance,
         inviteeDiscountCandidate,
         bonusSpendCandidate: Math.max(0, Math.round(Number(walletBalance || 0))),
-        capPercent: referralSettings.discountCapPercent,
+        capPercent: campaignSnapshot.discountCapPercent,
+        fraudVerdict: "allow",
+        fraudHint: campaignEligibility.reason || "",
         breakdown: {
           inviteeDiscountApplied: referralPreview.inviteeDiscountApplied,
           bonusSpent: referralPreview.bonusSpent,
@@ -1215,9 +1279,11 @@ router.post(
       query: req.query || {},
       path: req.path || req.originalUrl || "",
     });
-    const [pricing, referralSettings, walletBalance, firstApprovedOrderExists, referrerLink] = await Promise.all([
+    const promoCodeInput = normalizePromoCode(payload.promoCode || req.query?.promoCode || "");
+    const [pricing, referralSettings, referralV2Settings, walletBalance, firstApprovedOrderExists, referrerLink, campaignResolved] = await Promise.all([
       getPricingSettings(),
       getReferralV1Settings(),
+      getReferralV2Settings(),
       getWalletBalance(user.id),
       hasApprovedSlugPurchase(user.id),
       resolveReferrerForUser({
@@ -1225,7 +1291,25 @@ router.post(
         explicitRefCode: attribution.refCode || payload.refCode,
         sessionRefCode: req.session?.pendingRefCode,
       }),
+      resolveCampaignForCheckout({
+        source: attribution.refSource,
+        offer: attribution.refOffer,
+        promoCode: promoCodeInput,
+      }),
     ]);
+    const campaignEligibility = await evaluateCampaignEligibility({
+      campaign: campaignResolved.campaign,
+      userId: user.id,
+      settings: referralV2Settings,
+    });
+    const effectiveCampaign = campaignEligibility.allowed ? campaignResolved.campaign : null;
+    const campaignSnapshot = buildCampaignSnapshot({
+      campaign: effectiveCampaign,
+      referrerReward: referralSettings.referrerReward,
+      inviteeDiscount: referralSettings.inviteeDiscount,
+      discountCapPercent: referralSettings.discountCapPercent,
+      normalizedPromoCode: campaignResolved.normalizedPromoCode,
+    });
     const requestedPlan = resolveRequestedPlanForOrder({
       currentPlan: user.plan,
       requestedPlan: payload.tariff,
@@ -1297,14 +1381,33 @@ router.post(
       sale: activeFlashSale,
     });
     const slugPriceAfterProductDiscount = flashApplied.finalPrice;
+    const fraudCheck = await runFraudCheck({
+      userId: user.id,
+      ipRaw: req.ip || req.get("x-forwarded-for") || req.get("x-real-ip") || "",
+      userAgent: req.get("user-agent") || "",
+      persist: false,
+    });
+    let effectiveCampaignForOrder = effectiveCampaign;
+    let campaignSnapshotForOrder = campaignSnapshot;
+    if (fraudCheck.verdict === "block") {
+      effectiveCampaignForOrder = null;
+      campaignSnapshotForOrder = buildCampaignSnapshot({
+        campaign: null,
+        referrerReward: referralSettings.referrerReward,
+        inviteeDiscount: referralSettings.inviteeDiscount,
+        discountCapPercent: referralSettings.discountCapPercent,
+        normalizedPromoCode: campaignResolved.normalizedPromoCode,
+      });
+    }
+
     const firstOrderEligible = referralSettings.enabled && !firstApprovedOrderExists && Boolean(referrerLink?.referrerId);
-    const inviteeDiscountCandidate = firstOrderEligible ? referralSettings.inviteeDiscount : 0;
+    const inviteeDiscountCandidate = firstOrderEligible ? campaignSnapshotForOrder.inviteeDiscount : 0;
     const referralPricing = computeDiscountAllocation({
       slugBasePrice: basePricing.total,
       slugPriceAfterProductDiscount,
       inviteeDiscountCandidate,
       walletBalance,
-      discountCapPercent: referralSettings.discountCapPercent,
+      discountCapPercent: campaignSnapshotForOrder.discountCapPercent,
     });
     const finalSlugPrice = referralPricing.finalSlugPayable;
     const planPrice = getPlanCharge({
@@ -1387,12 +1490,44 @@ router.post(
             refCode: referrerLink?.refCode || attribution.refCode || null,
             refSource: attribution.refSource || null,
             refOffer: attribution.refOffer || null,
+            campaignId: effectiveCampaignForOrder?.id || null,
+            promoCode: campaignSnapshotForOrder.promoCodeApplied || null,
+            fraudVerdict: fraudCheck.verdict || "allow",
+            fraudReason: fraudCheck.reason || null,
+            campaignSnapshot: campaignSnapshotForOrder,
             inviteeDiscountApplied: referralPricing.inviteeDiscountApplied,
             bonusSpent: referralPricing.bonusSpent,
             discountCapApplied: referralPricing.discountCapApplied,
           },
-          select: { id: true, status: true },
+          select: { id: true, status: true, slug: true },
         });
+
+        if (tx.referralFraudCheck) {
+          await tx.referralFraudCheck.create({
+            data: {
+              orderId: slugRequest.id,
+              userId: user.id,
+              ipHash: fraudCheck.ipHash || null,
+              deviceHash: fraudCheck.deviceHash || null,
+              velocityIpCount: Number(fraudCheck.velocityIpCount || 0),
+              velocityDeviceCount: Number(fraudCheck.velocityDeviceCount || 0),
+              score: Number(fraudCheck.score || 0),
+              reason: fraudCheck.reason || null,
+              verdict: fraudCheck.verdict || "allow",
+            },
+          });
+        }
+
+        if (effectiveCampaignForOrder?.id) {
+          await reserveCampaignUsage({
+            tx,
+            campaignId: effectiveCampaignForOrder.id,
+            userId: user.id,
+            orderId: slugRequest.id,
+            amountSpent: referralPricing.inviteeDiscountApplied,
+            idempotencyKey: `campaign:${effectiveCampaignForOrder.id}:order:${slugRequest.id}:reserve`,
+          });
+        }
 
         return slugRequest;
       });
@@ -1495,9 +1630,15 @@ router.post(
         slugBasePrice: Math.max(0, Math.round(Number(basePricing.total || 0))),
         slugPriceAfterProductDiscount: slugPriceAfterProductDiscount,
         productDiscountAmount: referralPricing.productDiscountAmount,
+        campaignApplied: campaignSnapshotForOrder.campaignApplied,
+        campaignType: campaignSnapshotForOrder.campaignType,
+        campaignName: campaignSnapshotForOrder.campaignName,
+        promoCodeApplied: campaignSnapshotForOrder.promoCodeApplied || "",
         inviteeDiscountApplied: referralPricing.inviteeDiscountApplied,
         bonusSpent: referralPricing.bonusSpent,
         discountCapApplied: referralPricing.discountCapApplied,
+        fraudVerdict: fraudCheck.verdict || "allow",
+        fraudHint: fraudCheck.reason || "",
         slugPrice: finalSlugPrice,
         planPrice,
         braceletPrice,
@@ -1507,12 +1648,19 @@ router.post(
         enabled: referralSettings.enabled,
         source: attribution.refSource,
         offer: attribution.refOffer,
+        promoCodeApplied: campaignSnapshotForOrder.promoCodeApplied || "",
+        campaignApplied: campaignSnapshotForOrder.campaignApplied,
+        campaignType: campaignSnapshotForOrder.campaignType,
+        campaignName: campaignSnapshotForOrder.campaignName,
+        campaignId: campaignSnapshotForOrder.campaignId,
         refCode: referrerLink?.refCode || attribution.refCode || "",
         hasReferrer: Boolean(referrerLink?.referrerId),
         firstOrderEligible,
         walletBalance,
-        capPercent: referralSettings.discountCapPercent,
-        rewardAmount: referralSettings.referrerReward,
+        capPercent: campaignSnapshotForOrder.discountCapPercent,
+        rewardAmount: campaignSnapshotForOrder.referrerReward,
+        fraudVerdict: fraudCheck.verdict || "allow",
+        fraudHint: fraudCheck.reason || "",
       },
       payment,
       paymentLinks: {
@@ -1613,6 +1761,19 @@ router.post(
           pendingExpiresAt: null,
         },
       });
+
+      if (tx.referralCampaignUsage) {
+        await tx.referralCampaignUsage.updateMany({
+          where: {
+            orderId: order.id,
+            status: "reserved",
+          },
+          data: {
+            status: "released",
+            releasedAt: new Date(),
+          },
+        });
+      }
     });
 
     // Log cancellation event
