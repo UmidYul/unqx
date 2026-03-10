@@ -732,6 +732,7 @@ Email: ${userEmail}
         customColor:
           effectivePlan === "premium" && el.cColor instanceof HTMLInputElement ? String(el.cColor.value || "").trim() : "",
         showBranding: el.cBranding ? !el.cBranding.checked : true,
+        bio: String(el.cBio?.value || "").trim(),
       },
       primarySlug,
     };
