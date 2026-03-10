@@ -227,55 +227,109 @@ function buildProfileCardColumnValues(input) {
   };
 }
 
-async function upsertProfileCardCompat(db, input) {
-  const allValues = buildProfileCardColumnValues(input);
-  const requiredColumns = new Set(["owner_id", "name"]);
-  const entries = PROFILE_CARD_BASE_COLUMNS
-    .map((column) => [column, allValues[column]])
-    .filter(([column, value]) => requiredColumns.has(column) || value !== undefined);
+function buildRawErrorText(error) {
+  if (!error || typeof error !== "object") {
+    return "";
+  }
+  const parts = [];
+  const push = (value) => {
+    if (value === undefined || value === null) return;
+    const text = String(value);
+    if (text.trim()) parts.push(text);
+  };
 
-  const columns = entries.map(([column]) => column);
-  const values = entries.map(([, value]) => value);
-  const placeholders = columns.map((column, index) => {
-    const n = index + 1;
-    if (column === "tags" || column === "buttons") {
-      return `$${n}::jsonb`;
-    }
-    return `$${n}`;
-  });
-  const updates = columns
-    .filter((column) => column !== "owner_id")
-    .map((column) => `"${column}" = EXCLUDED."${column}"`);
-
-  const query = `
-    INSERT INTO profile_cards (${columns.map((column) => `"${column}"`).join(", ")})
-    VALUES (${placeholders.join(", ")})
-    ON CONFLICT (owner_id) DO UPDATE
-      SET ${updates.join(", ")}
-    RETURNING *
-  `;
+  push(error.message);
+  push(error.code);
+  push(error?.meta?.message);
+  push(error?.meta?.code);
+  push(error?.meta?.dbErrorCode);
+  push(error?.meta?.driverAdapterError?.message);
+  push(error?.meta?.driverAdapterError?.cause?.message);
 
   try {
-    const rows = await db.$queryRawUnsafe(query, ...values);
-    const row = Array.isArray(rows) ? rows[0] || null : null;
-    return mapProfileCardRow(row);
-  } catch (error) {
-    if (isCardThemeEnumValueError(error) && String(input.theme || "") !== "default_dark") {
-      console.warn(
-        `[express-app] unsupported CardTheme value "${String(input.theme || "")}" in DB enum; fallback to default_dark`,
-      );
-      const fallbackInput = {
-        ...input,
-        theme: "default_dark",
-      };
-      const fallbackValuesMap = buildProfileCardColumnValues(fallbackInput);
-      const fallbackValues = columns.map((column) => fallbackValuesMap[column]);
-      const rows = await db.$queryRawUnsafe(query, ...fallbackValues);
+    push(JSON.stringify(error.meta || {}));
+  } catch {
+    // ignore non-serializable meta
+  }
+
+  return parts.join("\n");
+}
+
+function extractMissingColumnName(error) {
+  const message = buildRawErrorText(error);
+  if (!message) return null;
+  const patterns = [
+    /column\s+"?([a-z0-9_]+)"?\s+does not exist/i,
+    /column\s+profile_cards\."?([a-z0-9_]+)"?\s+does not exist/i,
+  ];
+  for (const pattern of patterns) {
+    const match = message.match(pattern);
+    if (match && match[1]) {
+      return String(match[1]).toLowerCase();
+    }
+  }
+  return null;
+}
+
+async function upsertProfileCardCompat(db, input) {
+  const requiredColumns = new Set(["owner_id", "name"]);
+  const baseValues = buildProfileCardColumnValues(input);
+  let enabledColumns = PROFILE_CARD_BASE_COLUMNS.filter((column) => {
+    return requiredColumns.has(column) || baseValues[column] !== undefined;
+  });
+  let effectiveTheme = input.theme;
+
+  for (let attempt = 0; attempt < PROFILE_CARD_BASE_COLUMNS.length + 4; attempt += 1) {
+    const valuesMap = buildProfileCardColumnValues({
+      ...input,
+      theme: effectiveTheme,
+    });
+    const entries = enabledColumns.map((column) => [column, valuesMap[column]]);
+    const columns = entries.map(([column]) => column);
+    const values = entries.map(([, value]) => value);
+    const placeholders = columns.map((column, index) => {
+      const n = index + 1;
+      if (column === "tags" || column === "buttons") {
+        return `$${n}::jsonb`;
+      }
+      return `$${n}`;
+    });
+    const updates = columns
+      .filter((column) => column !== "owner_id")
+      .map((column) => `"${column}" = EXCLUDED."${column}"`);
+
+    const query = `
+      INSERT INTO profile_cards (${columns.map((column) => `"${column}"`).join(", ")})
+      VALUES (${placeholders.join(", ")})
+      ON CONFLICT (owner_id) DO UPDATE
+        SET ${updates.join(", ")}
+      RETURNING *
+    `;
+
+    try {
+      const rows = await db.$queryRawUnsafe(query, ...values);
       const row = Array.isArray(rows) ? rows[0] || null : null;
       return mapProfileCardRow(row);
+    } catch (error) {
+      if (isCardThemeEnumValueError(error) && String(effectiveTheme || "") !== "default_dark" && columns.includes("theme")) {
+        console.warn(
+          `[express-app] unsupported CardTheme value "${String(effectiveTheme || "")}" in DB enum; fallback to default_dark`,
+        );
+        effectiveTheme = "default_dark";
+        continue;
+      }
+
+      const missingColumn = extractMissingColumnName(error);
+      if (missingColumn && enabledColumns.includes(missingColumn) && !requiredColumns.has(missingColumn)) {
+        console.warn(`[express-app] profile_cards column "${missingColumn}" is missing; retrying without it`);
+        enabledColumns = enabledColumns.filter((column) => column !== missingColumn);
+        continue;
+      }
+      throw error;
     }
-    throw error;
   }
+
+  throw new Error("Failed to upsert profile card with available schema");
 }
 
 function isMissingColumnError(error) {
@@ -303,9 +357,7 @@ function isMissingStorageError(error) {
 function isCardThemeEnumValueError(error) {
   if (!error || typeof error !== "object") return false;
   const code = String(error.code || "");
-  const message = String(error.message || "");
-  const driverMessage = String(error?.meta?.driverAdapterError?.message || "");
-  const mergedMessage = `${message}\n${driverMessage}`;
+  const mergedMessage = buildRawErrorText(error);
   const enumInputFailure =
     code === "P2010" || code === "22P02" || /invalid input value for enum/i.test(mergedMessage);
   return enumInputFailure && /cardtheme/i.test(mergedMessage);

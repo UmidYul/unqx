@@ -551,8 +551,8 @@ body[data-card-theme] #card-view-root>[data-card-view] {
 }
 
 [data-card-theme="default_dark"] .unq-ref-overlay-svg {
-  opacity: 0.22;
-  mix-blend-mode: screen;
+  opacity: 0.13;
+  mix-blend-mode: normal;
 }
 
 [data-card-theme="arctic"] .unq-ref-overlay-svg {
@@ -1049,21 +1049,23 @@ body[data-card-theme] #card-view-root>[data-card-view] {
 }
 
 body[data-card-theme="default_dark"] {
-  background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
-  --theme-screen-opacity: 0.5;
+  background: linear-gradient(140deg, #f7f8fa 0%, #eceff3 52%, #e5e9ef 100%);
+  --theme-screen-opacity: 0.36;
   --theme-screen-pattern:
-    radial-gradient(circle at 22% 14%, rgba(255, 255, 255, 0.24) 0%, transparent 38%),
-    radial-gradient(circle at 78% 82%, rgba(0, 0, 0, 0.065) 0%, transparent 42%),
-    repeating-linear-gradient(146deg, transparent 0 42px, rgba(24, 24, 24, 0.04) 42px 44px),
-    repeating-linear-gradient(34deg, transparent 0 58px, rgba(255, 255, 255, 0.16) 58px 60px);
+    radial-gradient(circle at 14% 16%, rgba(255, 255, 255, 0.34) 0%, transparent 42%),
+    radial-gradient(circle at 84% 82%, rgba(96, 108, 130, 0.12) 0%, transparent 44%),
+    repeating-linear-gradient(90deg, transparent 0 54px, rgba(58, 70, 92, 0.045) 54px 56px),
+    repeating-linear-gradient(0deg, transparent 0 84px, rgba(255, 255, 255, 0.34) 84px 86px);
 }
 
 body[data-card-theme="default_dark"]::before {
   content: '';
   position: fixed;
   inset: 0;
-  background-image: radial-gradient(circle at 20px 20px, rgba(0, 0, 0, 0.02) 1px, transparent 1px);
-  background-size: 40px 40px;
+  background-image:
+    radial-gradient(circle at 22% 28%, rgba(255, 255, 255, 0.26) 0%, transparent 48%),
+    radial-gradient(circle at 78% 70%, rgba(80, 95, 120, 0.08) 0%, transparent 54%),
+    repeating-linear-gradient(112deg, transparent 0 90px, rgba(143, 152, 170, 0.06) 90px 92px);
   pointer-events: none;
   z-index: 0;
 }

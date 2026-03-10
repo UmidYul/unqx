@@ -286,23 +286,31 @@
     if (themeKey === "default_dark") {
       return `<svg class="unq-ref-overlay-svg" viewBox="0 0 360 600" preserveAspectRatio="none" aria-hidden="true">
         <defs>
-          <pattern id="dd-grid" width="24" height="24" patternUnits="userSpaceOnUse">
-            <path d="M24 0H0V24" stroke="#28426a" stroke-width="0.38"></path>
+          <pattern id="dd-bands" width="52" height="52" patternUnits="userSpaceOnUse">
+            <path d="M0 12H52M0 36H52" stroke="#cfd6e2" stroke-width="0.38"></path>
+            <rect x="8" y="22" width="14" height="4" rx="2" fill="#dce2ec" opacity="0.44"></rect>
+            <rect x="30" y="44" width="10" height="3.4" rx="1.7" fill="#c8d0dd" opacity="0.38"></rect>
           </pattern>
-          <pattern id="dd-scan" width="8" height="8" patternUnits="userSpaceOnUse">
-            <path d="M0 0H8" stroke="#243d63" stroke-width="0.22"></path>
+          <pattern id="dd-figures" width="70" height="70" patternUnits="userSpaceOnUse">
+            <circle cx="14" cy="16" r="1.6" fill="#c7cfdb" opacity="0.48"></circle>
+            <circle cx="48" cy="28" r="1.2" fill="#bac4d3" opacity="0.42"></circle>
+            <rect x="22" y="50" width="12" height="5" rx="2.5" fill="#d4dbe6" opacity="0.34"></rect>
           </pattern>
-          <radialGradient id="dd-halo" cx="50%" cy="42%" r="64%">
-            <stop offset="0%" stop-color="#5f88cb"></stop>
-            <stop offset="100%" stop-color="#0a1424"></stop>
+          <linearGradient id="dd-flow" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#b0bbcb"></stop>
+            <stop offset="100%" stop-color="#dfe4ec"></stop>
+          </linearGradient>
+          <radialGradient id="dd-halo" cx="50%" cy="38%" r="68%">
+            <stop offset="0%" stop-color="#f8fbff"></stop>
+            <stop offset="100%" stop-color="#d7deea"></stop>
           </radialGradient>
         </defs>
-        <rect width="100%" height="100%" fill="url(#dd-grid)"></rect>
-        <rect width="100%" height="100%" fill="url(#dd-scan)"></rect>
-        <circle cx="286" cy="136" r="170" fill="url(#dd-halo)" opacity="0.23"></circle>
-        <path d="M0 112C82 90 152 94 222 116C277 134 322 134 360 122" stroke="#5f88cb" stroke-width="1.15" fill="none"></path>
-        <path d="M0 338C66 326 136 328 204 344C266 360 316 360 360 350" stroke="#5f88cb" stroke-width="1.05" fill="none"></path>
-        <path d="M46 0V600M170 0V600M294 0V600" stroke="#385985" stroke-width="0.42"></path>
+        <rect width="100%" height="100%" fill="url(#dd-bands)"></rect>
+        <rect width="100%" height="100%" fill="url(#dd-figures)"></rect>
+        <circle cx="286" cy="130" r="164" fill="url(#dd-halo)" opacity="0.2"></circle>
+        <path d="M0 112C78 94 150 98 222 118C282 136 324 136 360 126" stroke="url(#dd-flow)" stroke-width="0.88" fill="none"></path>
+        <path d="M0 324C74 306 146 312 216 332C278 350 322 352 360 342" stroke="url(#dd-flow)" stroke-width="0.78" fill="none"></path>
+        <path d="M0 522C80 504 152 510 224 530C286 548 326 550 360 540" stroke="url(#dd-flow)" stroke-width="0.68" fill="none"></path>
       </svg>`;
     }
     if (themeKey === "arctic") {
