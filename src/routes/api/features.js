@@ -10,6 +10,7 @@ const { getFeatureSetting } = require("../../services/feature-settings");
 const { getActiveFlashSale, resolveConditionLabel } = require("../../services/flash-sales");
 const { getDropLiveStats } = require("../../services/drops");
 const { getReferralBootstrap, claimReferralReward } = require("../../services/referrals");
+const { getWalletBalance } = require("../../services/referral-v1");
 
 const router = express.Router();
 
@@ -280,6 +281,36 @@ router.post(
     } catch (error) {
       res.status(400).json({ error: error.message, code: error.code || "CLAIM_FAILED" });
     }
+  }),
+);
+
+router.get(
+  "/referrals/bonus",
+  asyncHandler(async (req, res) => {
+    const user = requireUser(req, res);
+    if (!user) return;
+    const [balance, history] = await Promise.all([
+      getWalletBalance(user.userId),
+      prisma.bonusLedger
+        ? prisma.bonusLedger.findMany({
+            where: { userId: user.userId },
+            orderBy: { createdAt: "desc" },
+            take: 100,
+          })
+        : Promise.resolve([]),
+    ]);
+    res.json({
+      balance,
+      history: history.map((item) => ({
+        id: item.id,
+        direction: item.direction,
+        kind: item.kind,
+        amount: Number(item.amount || 0),
+        balanceAfter: Number(item.balanceAfter || 0),
+        note: item.note || "",
+        createdAt: item.createdAt,
+      })),
+    });
   }),
 );
 

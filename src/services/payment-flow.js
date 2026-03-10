@@ -56,6 +56,9 @@ function buildManualTelegramPaymentUrl({
   fullName = "",
   email = "",
   slugPrice = 0,
+  slugPriceBeforeDiscount = null,
+  inviteeDiscountApplied = 0,
+  bonusSpent = 0,
   planPrice = 0,
   bracelet = false,
   braceletPrice = 0,
@@ -69,6 +72,9 @@ function buildManualTelegramPaymentUrl({
   const planPart = Math.max(0, Number(planPrice || 0));
   const braceletPart = bracelet ? Math.max(0, Number(braceletPrice || 0)) : 0;
   const resolvedTotal = totalAmount == null ? slugPart + planPart + braceletPart : Math.max(0, Number(totalAmount || 0));
+  const slugBeforeDiscount = slugPriceBeforeDiscount == null ? slugPart : Math.max(slugPart, Math.round(Number(slugPriceBeforeDiscount || 0)));
+  const inviteeDiscountPart = Math.max(0, Math.round(Number(inviteeDiscountApplied || 0)));
+  const bonusSpentPart = Math.max(0, Math.round(Number(bonusSpent || 0)));
   const message =
     `Здравствуйте! Хочу оплатить заказ #️⃣ ${paymentReference}\n\n` +
     `UNQ: ${safeSlug}\n` +
@@ -76,6 +82,9 @@ function buildManualTelegramPaymentUrl({
     `Email: ${normalizedEmail}\n\n` +
     `💳 Детализация оплаты:\n` +
     `• Slug ${safeSlug}: ${toMoneyLabel(slugPart)}\n` +
+    (slugBeforeDiscount > slugPart ? `• База slug: ${toMoneyLabel(slugBeforeDiscount)}\n` : "") +
+    (inviteeDiscountPart > 0 ? `• Реферальная скидка: -${toMoneyLabel(inviteeDiscountPart)}\n` : "") +
+    (bonusSpentPart > 0 ? `• Списано бонусов: -${toMoneyLabel(bonusSpentPart)}\n` : "") +
     `• Тариф ${toPlanLabel(requestedPlan)}: ${toMoneyLabel(planPart)}\n` +
     `• Браслет: ${toMoneyLabel(braceletPart)}\n\n` +
     `Итого к оплате: ${toMoneyLabel(resolvedTotal)}`;

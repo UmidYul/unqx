@@ -71,6 +71,14 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     totalPlanRow: document.getElementById("order-modal-total-plan-row"),
     totalPlanTitle: document.getElementById("order-modal-total-plan-title"),
     totalPlanValue: document.getElementById("order-modal-total-plan-value"),
+    totalProductDiscountRow: document.getElementById("order-modal-total-product-discount-row"),
+    totalProductDiscountValue: document.getElementById("order-modal-total-product-discount-value"),
+    totalInviteeDiscountRow: document.getElementById("order-modal-total-invitee-discount-row"),
+    totalInviteeDiscountValue: document.getElementById("order-modal-total-invitee-discount-value"),
+    totalBonusRow: document.getElementById("order-modal-total-bonus-row"),
+    totalBonusValue: document.getElementById("order-modal-total-bonus-value"),
+    totalCapRow: document.getElementById("order-modal-total-cap-row"),
+    totalCapValue: document.getElementById("order-modal-total-cap-value"),
     totalBraceletRow: document.getElementById("order-modal-total-bracelet-row"),
     totalNow: document.getElementById("order-modal-total-now"),
     totalMonthly: document.getElementById("order-modal-total-monthly"),
@@ -124,6 +132,8 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     theme: "default_dark",
     braceletForced: false,
     dropId: null,
+    refSource: "",
+    refOffer: "",
     checkoutContext: null,
     submitBlockedMessage: "",
     lastOpenOptions: {},
@@ -154,18 +164,22 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     const plan = planRaw === "premium" ? "premium" : planRaw === "basic" ? "basic" : "";
     const theme = String(options.theme || "").trim();
     const dropId = String(options.dropId || "").trim();
+    const refSource = String(options.refSource || "").trim().toLowerCase().replace(/[^a-z0-9_-]/g, "").slice(0, 40);
+    const refOffer = String(options.refOffer || "").trim().toLowerCase().replace(/[^a-z0-9_.:-]/g, "").slice(0, 80);
     return {
       slug,
       plan,
       theme,
       bracelet: Boolean(options.bracelet),
       dropId,
+      refSource,
+      refOffer,
     };
   }
 
   function hasMeaningfulIntent(intent) {
     if (!intent || typeof intent !== "object") return false;
-    return Boolean(intent.slug || intent.plan || intent.theme || intent.bracelet || intent.dropId);
+    return Boolean(intent.slug || intent.plan || intent.theme || intent.bracelet || intent.dropId || intent.refSource || intent.refOffer);
   }
 
   function readPendingPurchaseIntent() {
@@ -497,10 +511,41 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     return raw === "premium" ? "premium" : "basic";
   }
 
+  function resolveFallbackAttribution() {
+    const path = String(window.location.pathname || "").toLowerCase();
+    if (path.startsWith("/drops")) {
+      return { refSource: "drops", refOffer: "drop_live" };
+    }
+    return { refSource: "order_modal", refOffer: "default" };
+  }
+
+  function resolveAttributionFromOptions(options = {}) {
+    const fallback = resolveFallbackAttribution();
+    const source = String(options.refSource || state.refSource || fallback.refSource || "")
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9_-]/g, "")
+      .slice(0, 40);
+    const offer = String(options.refOffer || state.refOffer || fallback.refOffer || "")
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9_.:-]/g, "")
+      .slice(0, 80);
+    return {
+      refSource: source || fallback.refSource,
+      refOffer: offer || fallback.refOffer,
+    };
+  }
+
   async function fetchOrderPrecheck(options = {}) {
     const requestedPlan = resolveRequestedPlanFromOpenOptions(options);
+    const attribution = resolveAttributionFromOptions(options);
+    const params = new URLSearchParams();
+    params.set("requestedPlan", requestedPlan);
+    if (attribution.refSource) params.set("refSource", attribution.refSource);
+    if (attribution.refOffer) params.set("refOffer", attribution.refOffer);
     try {
-      const response = await fetch(`/api/cards/order-precheck?requestedPlan=${encodeURIComponent(requestedPlan)}`, {
+      const response = await fetch(`/api/cards/order-precheck?${params.toString()}`, {
         headers: { Accept: "application/json" },
         cache: "no-store",
       });
@@ -518,6 +563,23 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
         canPurchase: Boolean(currentUser),
         nextAction: currentUser ? "checkout" : "login",
         message: "",
+        referral: {
+          enabled: false,
+          source: attribution.refSource,
+          offer: attribution.refOffer,
+          walletBalance: 0,
+          hasReferrer: false,
+          firstOrderEligible: false,
+          inviteeDiscountCandidate: 0,
+          bonusSpendCandidate: 0,
+          capPercent: 0,
+          breakdown: {
+            inviteeDiscountApplied: 0,
+            bonusSpent: 0,
+            discountCapApplied: 0,
+            productDiscountAmount: 0,
+          },
+        },
       };
     }
   }
@@ -801,12 +863,14 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     const reference = String(order.paymentReference || "").trim() || `UNQX-${String(order.id || "").replace(/[^a-zA-Z0-9]/g, "").slice(0, 10).toUpperCase()}`;
     const slug = String(order.slug || "").trim().toUpperCase();
     const slugPrice = Number(order.slugPrice || 0);
+    const inviteeDiscountApplied = Number(order.inviteeDiscountApplied || 0);
+    const bonusSpent = Number(order.bonusSpent || 0);
     const planPriceValue = Number(order.planPrice || 0);
     const braceletPriceValue = order.bracelet ? Number(order.braceletPrice || 300000) : 0;
-    const totalAmount = Number(order.totalOneTime || slugPrice + planPriceValue + braceletPriceValue);
+    const totalAmount = Number(order.totalOneTime || Math.max(0, slugPrice - inviteeDiscountApplied - bonusSpent) + planPriceValue + braceletPriceValue);
     const userName = (currentUser?.displayName || currentUser?.firstName || "").trim() || "не указано";
     const userEmail = (currentUser?.email || "").trim() || "не указан";
-    const message = `Здравствуйте! Хочу оплатить заказ #️⃣ ${reference}\n\nUNQ: ${slug}\nФИО: ${userName}\nEmail: ${userEmail}\n\n💳 Детализация оплаты:\n• Slug ${slug}: ${formatPrice(slugPrice)} сум\n• Тариф ${planLabel(order.requestedPlan)}: ${formatPrice(planPriceValue)} сум\n• Браслет: ${formatPrice(braceletPriceValue)} сум\n\nИтого к оплате: ${formatPrice(totalAmount)} сум`;
+    const message = `Здравствуйте! Хочу оплатить заказ #️⃣ ${reference}\n\nUNQ: ${slug}\nФИО: ${userName}\nEmail: ${userEmail}\n\n💳 Детализация оплаты:\n• Slug ${slug}: ${formatPrice(slugPrice)} сум\n• Скидка по рефералке: -${formatPrice(inviteeDiscountApplied)} сум\n• Списано бонусов: -${formatPrice(bonusSpent)} сум\n• Тариф ${planLabel(order.requestedPlan)}: ${formatPrice(planPriceValue)} сум\n• Браслет: ${formatPrice(braceletPriceValue)} сум\n\nИтого к оплате: ${formatPrice(totalAmount)} сум`;
     return `https://t.me/unqx_uz?text=${encodeURIComponent(message)}`;
   }
 
@@ -999,8 +1063,21 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
       return;
     }
     const slugPrice = server ? server.total : fallbackSlugPrice;
+    const slugBaseForCap = server?.flash?.basePrice ? Number(server.flash.basePrice || slugPrice) : slugPrice;
+    const productDiscountAmount = Math.max(0, Math.round(slugBaseForCap - slugPrice));
+    const referral = state.checkoutContext?.referral && typeof state.checkoutContext.referral === "object" ? state.checkoutContext.referral : null;
+    const capPercent = Number(referral?.capPercent || 0);
+    const inviteeCandidate = Number(referral?.inviteeDiscountCandidate || 0);
+    const walletBalance = Number(referral?.walletBalance || 0);
+    const capAmount = Math.max(0, Math.floor((Math.max(0, slugBaseForCap) * capPercent) / 100));
+    const capRemaining = Math.max(0, capAmount - productDiscountAmount);
+    const inviteeDiscountApplied = Math.max(0, Math.min(inviteeCandidate, capRemaining, slugPrice));
+    const afterInvitee = Math.max(0, slugPrice - inviteeDiscountApplied);
+    const bonusSpent = Math.max(0, Math.min(walletBalance, Math.max(0, capRemaining - inviteeDiscountApplied), afterInvitee));
+    const slugPayable = Math.max(0, afterInvitee - bonusSpent);
+    const discountCapApplied = Math.max(0, (inviteeCandidate - inviteeDiscountApplied) + Math.max(0, walletBalance - bonusSpent));
     const braceletPrice = bracelet ? pricingSettings.braceletPrice : 0;
-    const oneTime = slugPrice + planCharge + braceletPrice;
+    const oneTime = slugPayable + planCharge + braceletPrice;
     const slugLabel = pricing ? pricing.slug : "___ ___";
     const rarity = getRarity(slugPrice);
 
@@ -1084,7 +1161,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
       dom.totalSlugTitle.textContent = `Slug ${pricing ? pricing.slug : "AAA000"}`;
     }
     if (dom.totalSlugValue instanceof HTMLElement) {
-      dom.totalSlugValue.textContent = `${formatPrice(slugPrice)} сум`;
+      dom.totalSlugValue.textContent = `${formatPrice(slugPayable)} сум`;
     }
     if (dom.totalPlanTitle instanceof HTMLElement) {
       dom.totalPlanTitle.textContent = requestedPlan === "premium" ? "Тариф Премиум" : "Тариф Базовый";
@@ -1100,6 +1177,34 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     if (dom.totalBraceletRow instanceof HTMLElement) {
       dom.totalBraceletRow.classList.toggle("hidden", !bracelet);
       dom.totalBraceletRow.classList.toggle("flex", bracelet);
+    }
+    if (dom.totalProductDiscountRow instanceof HTMLElement) {
+      dom.totalProductDiscountRow.classList.toggle("hidden", productDiscountAmount <= 0);
+      dom.totalProductDiscountRow.classList.toggle("flex", productDiscountAmount > 0);
+    }
+    if (dom.totalProductDiscountValue instanceof HTMLElement) {
+      dom.totalProductDiscountValue.textContent = `-${formatPrice(productDiscountAmount)} сум`;
+    }
+    if (dom.totalInviteeDiscountRow instanceof HTMLElement) {
+      dom.totalInviteeDiscountRow.classList.toggle("hidden", inviteeDiscountApplied <= 0);
+      dom.totalInviteeDiscountRow.classList.toggle("flex", inviteeDiscountApplied > 0);
+    }
+    if (dom.totalInviteeDiscountValue instanceof HTMLElement) {
+      dom.totalInviteeDiscountValue.textContent = `-${formatPrice(inviteeDiscountApplied)} сум`;
+    }
+    if (dom.totalBonusRow instanceof HTMLElement) {
+      dom.totalBonusRow.classList.toggle("hidden", bonusSpent <= 0);
+      dom.totalBonusRow.classList.toggle("flex", bonusSpent > 0);
+    }
+    if (dom.totalBonusValue instanceof HTMLElement) {
+      dom.totalBonusValue.textContent = `-${formatPrice(bonusSpent)} сум`;
+    }
+    if (dom.totalCapRow instanceof HTMLElement) {
+      dom.totalCapRow.classList.toggle("hidden", discountCapApplied <= 0);
+      dom.totalCapRow.classList.toggle("flex", discountCapApplied > 0);
+    }
+    if (dom.totalCapValue instanceof HTMLElement) {
+      dom.totalCapValue.textContent = `+${formatPrice(discountCapApplied)} сум`;
     }
     if (dom.totalNow instanceof HTMLElement) {
       dom.totalNow.textContent = `${formatPrice(oneTime)} сум`;
@@ -1176,11 +1281,18 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     const contextPlan = precheck?.resolvedPlan === "premium" ? "premium" : precheck?.resolvedPlan === "basic" ? "basic" : "";
     const planCandidate = contextPlan || options.plan || queryPlan || defaultPlan;
     const plan = planCandidate === "premium" ? "premium" : "basic";
+    const attribution = resolveAttributionFromOptions({
+      ...options,
+      refSource: precheck?.referral?.source || options.refSource,
+      refOffer: precheck?.referral?.offer || options.refOffer,
+    });
     state.theme = typeof options.theme === "string" && options.theme ? options.theme : queryTheme || "default_dark";
     state.slugLocked = Boolean(parsed);
     state.lockedSlug = parsed ? parsed.slug : "";
     state.braceletForced = options.bracelet === true;
     state.dropId = typeof options.dropId === "string" && options.dropId ? options.dropId : null;
+    state.refSource = attribution.refSource;
+    state.refOffer = attribution.refOffer;
     if (currentPlan === "none") {
       dom.planBasic.disabled = false;
       dom.planPremium.disabled = false;
@@ -1330,6 +1442,9 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
         digits: pricing.digits,
         tariff: plan,
         theme: state.theme || "default_dark",
+        refSource: state.refSource || "",
+        refOffer: state.refOffer || "",
+        refCode: String(state.checkoutContext?.referral?.refCode || "").trim(),
         products: {
           digitalCard: true,
           bracelet: Boolean(dom.bracelet.checked),
@@ -1349,6 +1464,9 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
         const userName = dom.name.value.trim();
         const userEmail = (currentUser && currentUser.email ? String(currentUser.email).trim() : "") || "не указан";
         const slugPrice = Number(payload?.pricing?.slugPrice || 0);
+        const slugBasePrice = Number(payload?.pricing?.slugBasePrice || slugPrice);
+        const inviteeDiscountApplied = Number(payload?.pricing?.inviteeDiscountApplied || 0);
+        const bonusSpent = Number(payload?.pricing?.bonusSpent || 0);
         const planPrice = Number(payload?.pricing?.planPrice || 0);
         const braceletPrice = Number(payload?.pricing?.braceletPrice || 0);
         const totalAmount = Number(payload?.pricing?.totalOneTime || 0);
@@ -1362,7 +1480,10 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
 
       ━━━━━━━━━━━━
       💳 Детализация оплаты:
+      • База slug ${pricing.slug}: ${formatPrice(slugBasePrice)} сум
       • Slug ${pricing.slug}: ${formatPrice(slugPrice)} сум
+      • Скидка по рефералке: -${formatPrice(inviteeDiscountApplied)} сум
+      • Списано бонусов: -${formatPrice(bonusSpent)} сум
       • ${planLabel}: ${formatPrice(planPrice)} сум
       • Браслет: ${formatPrice(braceletPrice)} сум
       ━━━━━━━━━━━━
@@ -1440,6 +1561,34 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     window.location.href = "/login";
   };
 
+  function inferAttributionFromCta(node) {
+    const sourceAttr = String(node.getAttribute("data-order-source") || "").trim().toLowerCase();
+    const offerAttr = String(node.getAttribute("data-order-offer") || "").trim().toLowerCase();
+    if (sourceAttr || offerAttr) {
+      return {
+        refSource: sourceAttr,
+        refOffer: offerAttr,
+      };
+    }
+    if (node.getAttribute("data-drop-id")) {
+      return { refSource: "drops", refOffer: "drop_live" };
+    }
+    if (node.closest("#pricing")) {
+      return { refSource: "pricing", refOffer: "pricing_card" };
+    }
+    if (node.id === "calc-reserve-link" || node.closest("#calculator")) {
+      return { refSource: "home", refOffer: "calculator" };
+    }
+    if (node.closest("[data-flash-sale-banner]")) {
+      return { refSource: "flash", refOffer: "flash_sale" };
+    }
+    if (node.closest("#hero-check")) {
+      return { refSource: "home", refOffer: "hero_check" };
+    }
+    const fallback = resolveFallbackAttribution();
+    return { refSource: fallback.refSource, refOffer: fallback.refOffer };
+  }
+
   function bindCtas() {
     document.querySelectorAll("[data-order-link]").forEach((node) => {
       if (!(node instanceof HTMLElement) || node.dataset.orderLinkBound === "1") {
@@ -1458,6 +1607,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
           theme: node.getAttribute("data-order-theme") || "",
           bracelet: node.getAttribute("data-order-bracelet") === "true",
           dropId: node.getAttribute("data-drop-id") || "",
+          ...inferAttributionFromCta(node),
         };
         void open(options);
       });

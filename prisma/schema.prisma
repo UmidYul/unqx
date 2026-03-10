@@ -114,6 +114,24 @@ enum PurchaseType {
   bracelet
 }
 
+enum BonusLedgerDirection {
+  credit
+  debit
+}
+
+enum BonusLedgerKind {
+  referral_reward
+  bonus_spend
+  bonus_refund
+  manual_adjustment
+}
+
+enum ReferralConversionStatus {
+  pending
+  approved
+  reversed
+}
+
 model ErrorLog {
   id         String   @id @default(uuid())
   type       String   @db.VarChar(30)
@@ -218,6 +236,10 @@ model User {
   slugWaitlistEntries    SlugWaitlist[]
   referralsMade          Referral[]            @relation("ReferrerReferrals")
   referralsReceived      Referral[]            @relation("ReferredReferrals")
+  referralConversionsAsReferrer ReferralConversion[] @relation("ReferralConversionReferrer")
+  referralConversionsAsReferred ReferralConversion[] @relation("ReferralConversionReferred")
+  bonusWallet            UserBonusWallet?
+  bonusLedger            BonusLedger[]
   dropWaitlistEntries    DropWaitlist[]
   unqScore               UnqScore?
   scoreHistory           ScoreHistory[]
@@ -309,6 +331,14 @@ model SlugRequest {
   flashSaleId        String?           @map("flash_sale_id")
   flashSale          FlashSale?        @relation(fields: [flashSaleId], references: [id], onDelete: SetNull)
   flashDiscountAmount Int              @default(0) @map("flash_discount_amount")
+  refCode            String?           @map("ref_code") @db.VarChar(40)
+  refSource          String?           @map("ref_source") @db.VarChar(40)
+  refOffer           String?           @map("ref_offer") @db.VarChar(80)
+  inviteeDiscountApplied Int           @default(0) @map("invitee_discount_applied")
+  bonusSpent         Int               @default(0) @map("bonus_spent")
+  discountCapApplied Int               @default(0) @map("discount_cap_applied")
+  conversion         ReferralConversion?
+  bonusLedger        BonusLedger[]
   createdAt          DateTime          @default(now()) @map("created_at")
   updatedAt          DateTime          @updatedAt @map("updated_at")
 
@@ -329,11 +359,84 @@ model Purchase {
   approvedByAdmin String?      @map("approved_by_admin") @db.VarChar(40)
   approvedAt      DateTime?    @map("approved_at")
   note            String?
+  refCode         String?      @map("ref_code") @db.VarChar(40)
+  refSource       String?      @map("ref_source") @db.VarChar(40)
+  refOffer        String?      @map("ref_offer") @db.VarChar(80)
+  inviteeDiscountApplied Int   @default(0) @map("invitee_discount_applied")
+  bonusSpent      Int          @default(0) @map("bonus_spent")
+  discountCapApplied Int       @default(0) @map("discount_cap_applied")
+  conversion      ReferralConversion?
+  bonusLedger     BonusLedger[]
 
   @@index([userId, purchasedAt(sort: Desc)])
   @@index([type, purchasedAt(sort: Desc)])
   @@index([slug])
   @@map("purchases")
+}
+
+model UserBonusWallet {
+  userId    String   @id @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  balance   Int      @default(0)
+  updatedAt DateTime @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("user_bonus_wallet")
+}
+
+model BonusLedger {
+  id            String              @id @default(uuid())
+  userId        String              @map("user_id")
+  user          User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  direction     BonusLedgerDirection
+  kind          BonusLedgerKind
+  amount        Int
+  balanceAfter  Int                 @map("balance_after")
+  idempotencyKey String             @unique @map("idempotency_key") @db.VarChar(120)
+  orderId       String?             @map("order_id")
+  order         SlugRequest?        @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  purchaseId    String?             @map("purchase_id")
+  purchase      Purchase?           @relation(fields: [purchaseId], references: [id], onDelete: SetNull)
+  conversionId  String?             @map("conversion_id")
+  conversion    ReferralConversion? @relation(fields: [conversionId], references: [id], onDelete: SetNull)
+  note          String?
+  createdAt     DateTime            @default(now()) @map("created_at")
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([kind, createdAt(sort: Desc)])
+  @@index([orderId])
+  @@index([purchaseId])
+  @@index([conversionId])
+  @@map("bonus_ledger")
+}
+
+model ReferralConversion {
+  id                    String                   @id @default(uuid())
+  referrerId            String                   @map("referrer_id")
+  referrer              User                     @relation("ReferralConversionReferrer", fields: [referrerId], references: [id], onDelete: Cascade)
+  referredId            String                   @map("referred_id")
+  referred              User                     @relation("ReferralConversionReferred", fields: [referredId], references: [id], onDelete: Cascade)
+  refCode               String?                  @map("ref_code") @db.VarChar(40)
+  refSource             String?                  @map("ref_source") @db.VarChar(40)
+  refOffer              String?                  @map("ref_offer") @db.VarChar(80)
+  status                ReferralConversionStatus @default(pending)
+  rewardAmount          Int                      @default(0) @map("reward_amount")
+  inviteeDiscountApplied Int                     @default(0) @map("invitee_discount_applied")
+  bonusSpent            Int                      @default(0) @map("bonus_spent")
+  orderId               String?                  @unique @map("order_id")
+  order                 SlugRequest?             @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  purchaseId            String?                  @unique @map("purchase_id")
+  purchase              Purchase?                @relation(fields: [purchaseId], references: [id], onDelete: SetNull)
+  approvedAt            DateTime?                @map("approved_at")
+  createdAt             DateTime                 @default(now()) @map("created_at")
+  updatedAt             DateTime                 @updatedAt @map("updated_at")
+  bonusLedger           BonusLedger[]
+
+  @@index([referrerId, createdAt(sort: Desc)])
+  @@index([referredId, createdAt(sort: Desc)])
+  @@index([refSource, refOffer, createdAt(sort: Desc)])
+  @@index([status, createdAt(sort: Desc)])
+  @@map("referral_conversions")
 }
 
 model AnalyticsView {

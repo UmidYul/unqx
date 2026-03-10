@@ -506,6 +506,21 @@
             </div>
           </div>
 
+          <div class="mt-4 grid gap-3 md:grid-cols-3">
+            <div class="rounded-xl border border-neutral-200 bg-neutral-50 p-3">
+              <p class="text-xs text-neutral-500">Баланс бонусов</p>
+              <p id="profile-ref-bonus-balance" class="mt-1 text-xl font-black">0 сум</p>
+            </div>
+            <div class="rounded-xl border border-neutral-200 bg-neutral-50 p-3">
+              <p class="text-xs text-neutral-500">Начислено</p>
+              <p id="profile-ref-bonus-earned" class="mt-1 text-xl font-black">0 сум</p>
+            </div>
+            <div class="rounded-xl border border-neutral-200 bg-neutral-50 p-3">
+              <p class="text-xs text-neutral-500">Списано</p>
+              <p id="profile-ref-bonus-spent" class="mt-1 text-xl font-black">0 сум</p>
+            </div>
+          </div>
+
           <div class="mt-4 overflow-auto rounded-xl border border-neutral-200">
             <table class="min-w-full text-left text-sm">
               <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
@@ -521,6 +536,20 @@
           </div>
 
           <div id="profile-ref-rewards" class="mt-4 grid gap-3 md:grid-cols-3"></div>
+          <div class="mt-4 overflow-auto rounded-xl border border-neutral-200">
+            <table class="min-w-full text-left text-sm">
+              <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
+                <tr>
+                  <th class="px-3 py-2">Дата</th>
+                  <th class="px-3 py-2">Тип</th>
+                  <th class="px-3 py-2">Сумма</th>
+                  <th class="px-3 py-2">Баланс</th>
+                  <th class="px-3 py-2">Комментарий</th>
+                </tr>
+              </thead>
+              <tbody id="profile-ref-bonus-history"></tbody>
+            </table>
+          </div>
         </article>
 
         <article data-tab-panel="settings"

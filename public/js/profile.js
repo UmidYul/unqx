@@ -243,8 +243,12 @@ Email: ${userEmail}
     refInvited: $("#profile-ref-stat-invited"),
     refPaid: $("#profile-ref-stat-paid"),
     refRewarded: $("#profile-ref-stat-rewarded"),
+    refBonusBalance: $("#profile-ref-bonus-balance"),
+    refBonusEarned: $("#profile-ref-bonus-earned"),
+    refBonusSpent: $("#profile-ref-bonus-spent"),
     refTable: $("#profile-ref-table"),
     refRewards: $("#profile-ref-rewards"),
+    refBonusHistory: $("#profile-ref-bonus-history"),
 
     stName: $("#profile-settings-display-name"),
     stCity: $("#profile-settings-city"),
@@ -1073,7 +1077,10 @@ Email: ${userEmail}
     }
     if (el.refInvited) el.refInvited.textContent = String(payload.stats?.invited || 0);
     if (el.refPaid) el.refPaid.textContent = String(payload.stats?.paid || 0);
-    if (el.refRewarded) el.refRewarded.textContent = String(payload.stats?.rewarded || 0);
+    if (el.refRewarded) el.refRewarded.textContent = `${Number(payload.stats?.rewardsAmount || 0).toLocaleString("ru-RU")} сум`;
+    if (el.refBonusBalance) el.refBonusBalance.textContent = `${Number(payload.bonus?.balance || 0).toLocaleString("ru-RU")} сум`;
+    if (el.refBonusEarned) el.refBonusEarned.textContent = `${Number(payload.bonus?.totalEarned || 0).toLocaleString("ru-RU")} сум`;
+    if (el.refBonusSpent) el.refBonusSpent.textContent = `${Number(payload.bonus?.totalSpent || 0).toLocaleString("ru-RU")} сум`;
 
     if (el.refTable) {
       const rows = Array.isArray(payload.referrals) ? payload.referrals : [];
@@ -1081,7 +1088,7 @@ Email: ${userEmail}
         ? rows
           .map(
             (item) =>
-              `<tr class="border-t border-neutral-100"><td class="px-3 py-2">${esc(item.name || "UNQX User")}</td><td class="px-3 py-2">${fdt(item.createdAt)}</td><td class="px-3 py-2">${esc(item.status)}</td><td class="px-3 py-2">${esc(item.rewardType || "—")}</td></tr>`,
+              `<tr class="border-t border-neutral-100"><td class="px-3 py-2">${esc(item.name || "UNQX User")}</td><td class="px-3 py-2">${fdt(item.createdAt)}</td><td class="px-3 py-2">${esc(item.status)}</td><td class="px-3 py-2">${Number(item.rewardAmount || 0).toLocaleString("ru-RU")} сум</td></tr>`,
           )
           .join("")
         : '<tr><td colspan="4" class="px-3 py-8 text-center text-neutral-500">Пока нет рефералов</td></tr>';
@@ -1104,6 +1111,17 @@ Email: ${userEmail}
           return `<article class="rounded-xl border border-neutral-200 p-3"><p class="text-sm font-semibold">За ${rule.threshold} оплативших</p><p class="mt-1 text-sm text-neutral-600">${esc(rule.rewardLabel || "")}</p><p class="mt-2 text-xs text-neutral-500">${statusLabel}</p>${claimButton}</article>`;
         })
         .join("");
+    }
+    if (el.refBonusHistory) {
+      const rows = Array.isArray(payload.bonus?.history) ? payload.bonus.history : [];
+      el.refBonusHistory.innerHTML = rows.length
+        ? rows
+            .map(
+              (item) =>
+                `<tr class="border-t border-neutral-100"><td class="px-3 py-2">${fdt(item.createdAt)}</td><td class="px-3 py-2">${esc(item.kind || "—")}</td><td class="px-3 py-2">${item.direction === "debit" ? "-" : "+"}${Number(item.amount || 0).toLocaleString("ru-RU")} сум</td><td class="px-3 py-2">${Number(item.balanceAfter || 0).toLocaleString("ru-RU")} сум</td><td class="px-3 py-2">${esc(item.note || "—")}</td></tr>`,
+            )
+            .join("")
+        : '<tr><td colspan="5" class="px-3 py-8 text-center text-neutral-500">История бонусов появится после операций</td></tr>';
     }
   };
 

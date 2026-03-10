@@ -107,7 +107,10 @@ function mapProfileRequest(item, options = {}) {
   const slugPrice = Number(item.slugPrice || 0);
   const planPrice = Number(item.planPrice || 0);
   const hasBracelet = Boolean(item.bracelet);
-  const totalAmount = slugPrice + planPrice + (hasBracelet ? braceletPrice : 0);
+  const inviteeDiscountApplied = Math.max(0, Number(item.inviteeDiscountApplied || 0));
+  const bonusSpent = Math.max(0, Number(item.bonusSpent || 0));
+  const slugPayable = Math.max(0, slugPrice - inviteeDiscountApplied - bonusSpent);
+  const totalAmount = slugPayable + planPrice + (hasBracelet ? braceletPrice : 0);
   const paymentReference = getOrderPaymentReference(item.id);
   return {
     id: item.id,
@@ -130,7 +133,10 @@ function mapProfileRequest(item, options = {}) {
       telegramUsername: supportTelegram,
       fullName,
       email,
-      slugPrice,
+      slugPrice: slugPayable,
+      slugPriceBeforeDiscount: slugPrice,
+      inviteeDiscountApplied,
+      bonusSpent,
       planPrice,
       bracelet: hasBracelet,
       braceletPrice,

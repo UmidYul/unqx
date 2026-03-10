@@ -33,6 +33,14 @@ const { getSetting } = require("../../services/platform-settings");
 const { sendTapPushNotification } = require("../../services/push");
 const { resolveUzbekistanCity } = require("../../constants/uzbekistan-cities");
 const { logPaymentEvent } = require("../../services/payment-events");
+const {
+  getReferralV1Settings,
+  getWalletBalance,
+  hasApprovedSlugPurchase,
+  resolveReferrerForUser,
+  computeDiscountAllocation,
+  resolveOrderAttribution,
+} = require("../../services/referral-v1");
 
 const router = express.Router();
 const SLUG_REGEX = /^[A-Z]{3}[0-9]{3}$/;
@@ -814,7 +822,16 @@ router.get(
     const requestedPlan = String(req.query.requestedPlan || req.query.plan || "").trim().toLowerCase() === "premium" ? "premium" : "basic";
     const activeOrdersLimit = 3;
     const sessionUser = getUserSession(req);
-    const [pricing, braceletPrice] = await Promise.all([getPricingSettings(), getBraceletPrice()]);
+    const attribution = resolveOrderAttribution({
+      body: {},
+      query: req.query || {},
+      path: req.path || req.originalUrl || "",
+    });
+    const [pricing, braceletPrice, referralSettings] = await Promise.all([
+      getPricingSettings(),
+      getBraceletPrice(),
+      getReferralV1Settings(),
+    ]);
 
     if (!sessionUser?.userId) {
       res.json({
@@ -836,6 +853,23 @@ router.get(
           activeOrdersCount: 0,
           slugLimit: requestedPlan === "premium" ? 3 : 1,
           userSlugsCount: 0,
+        },
+        referral: {
+          enabled: referralSettings.enabled,
+          source: attribution.refSource,
+          offer: attribution.refOffer,
+          walletBalance: 0,
+          hasReferrer: false,
+          firstOrderEligible: false,
+          inviteeDiscountCandidate: 0,
+          bonusSpendCandidate: 0,
+          capPercent: referralSettings.discountCapPercent,
+          breakdown: {
+            inviteeDiscountApplied: 0,
+            bonusSpent: 0,
+            discountCapApplied: 0,
+            productDiscountAmount: 0,
+          },
         },
         pendingOrder: null,
       });
@@ -876,6 +910,23 @@ router.get(
           slugLimit: requestedPlan === "premium" ? 3 : 1,
           userSlugsCount: 0,
         },
+        referral: {
+          enabled: referralSettings.enabled,
+          source: attribution.refSource,
+          offer: attribution.refOffer,
+          walletBalance: 0,
+          hasReferrer: false,
+          firstOrderEligible: false,
+          inviteeDiscountCandidate: 0,
+          bonusSpendCandidate: 0,
+          capPercent: referralSettings.discountCapPercent,
+          breakdown: {
+            inviteeDiscountApplied: 0,
+            bonusSpent: 0,
+            discountCapApplied: 0,
+            productDiscountAmount: 0,
+          },
+        },
         pendingOrder: null,
       });
       return;
@@ -888,7 +939,7 @@ router.get(
     });
     const slugLimit = resolvedPlan === "premium" ? 3 : 1;
 
-    const [activeOrdersCount, userSlugsCount, latestActiveOrder, supportTelegramRaw] = await Promise.all([
+    const [activeOrdersCount, userSlugsCount, latestActiveOrder, supportTelegramRaw, walletBalance, firstApprovedOrderExists, referrerLink] = await Promise.all([
       prisma.slugRequest.count({
         where: {
           userId: user.id,
@@ -916,11 +967,21 @@ router.get(
           requestedPlan: true,
           slugPrice: true,
           planPrice: true,
+          inviteeDiscountApplied: true,
+          bonusSpent: true,
+          discountCapApplied: true,
           bracelet: true,
           createdAt: true,
         },
       }),
       getSetting("contact_support_telegram", `@${FALLBACK_SUPPORT_TELEGRAM}`),
+      getWalletBalance(user.id),
+      hasApprovedSlugPurchase(user.id),
+      resolveReferrerForUser({
+        userId: user.id,
+        explicitRefCode: attribution.refCode,
+        sessionRefCode: req.session?.pendingRefCode,
+      }),
     ]);
     const supportTelegram = normalizeTelegramUsername(supportTelegramRaw);
     const fullName = [user.firstName, user.lastName].map((x) => String(x || "").trim()).filter(Boolean).join(" ") || String(user.displayName || "").trim();
@@ -946,10 +1007,18 @@ router.get(
           paymentReference: getOrderPaymentReference(latestActiveOrder.id),
           slugPrice: Number(latestActiveOrder.slugPrice || 0),
           planPrice: Number(latestActiveOrder.planPrice || 0),
+          inviteeDiscountApplied: Number(latestActiveOrder.inviteeDiscountApplied || 0),
+          bonusSpent: Number(latestActiveOrder.bonusSpent || 0),
+          discountCapApplied: Number(latestActiveOrder.discountCapApplied || 0),
           bracelet: Boolean(latestActiveOrder.bracelet),
           braceletPrice: Number(braceletPrice || 0),
           totalOneTime:
-            Number(latestActiveOrder.slugPrice || 0) +
+            Math.max(
+              0,
+              Number(latestActiveOrder.slugPrice || 0) -
+                Number(latestActiveOrder.inviteeDiscountApplied || 0) -
+                Number(latestActiveOrder.bonusSpent || 0),
+            ) +
             Number(latestActiveOrder.planPrice || 0) +
             (latestActiveOrder.bracelet ? Number(braceletPrice || 0) : 0),
           paymentUrl: buildManualTelegramPaymentUrl({
@@ -962,10 +1031,17 @@ router.get(
             email: user.email || "",
             slugPrice: latestActiveOrder.slugPrice,
             planPrice: latestActiveOrder.planPrice,
+            inviteeDiscountApplied: latestActiveOrder.inviteeDiscountApplied,
+            bonusSpent: latestActiveOrder.bonusSpent,
             bracelet: Boolean(latestActiveOrder.bracelet),
             braceletPrice,
             totalAmount:
-              Number(latestActiveOrder.slugPrice || 0) +
+              Math.max(
+                0,
+                Number(latestActiveOrder.slugPrice || 0) -
+                  Number(latestActiveOrder.inviteeDiscountApplied || 0) -
+                  Number(latestActiveOrder.bonusSpent || 0),
+              ) +
               Number(latestActiveOrder.planPrice || 0) +
               (latestActiveOrder.bracelet ? Number(braceletPrice || 0) : 0),
           }),
@@ -1009,6 +1085,16 @@ router.get(
       message = "Доступно обновление до тарифа Премиум.";
     }
 
+    const firstOrderEligible = referralSettings.enabled && !firstApprovedOrderExists && Boolean(referrerLink?.referrerId);
+    const inviteeDiscountCandidate = firstOrderEligible ? referralSettings.inviteeDiscount : 0;
+    const referralPreview = computeDiscountAllocation({
+      slugBasePrice: 0,
+      slugPriceAfterProductDiscount: 0,
+      inviteeDiscountCandidate,
+      walletBalance,
+      discountCapPercent: referralSettings.discountCapPercent,
+    });
+
     res.json({
       authenticated: true,
       accountStatus: user.status || "active",
@@ -1032,6 +1118,24 @@ router.get(
         activeOrdersCount,
         slugLimit,
         userSlugsCount,
+      },
+      referral: {
+        enabled: referralSettings.enabled,
+        source: attribution.refSource,
+        offer: attribution.refOffer,
+        refCode: referrerLink?.refCode || attribution.refCode || "",
+        hasReferrer: Boolean(referrerLink?.referrerId),
+        firstOrderEligible,
+        walletBalance,
+        inviteeDiscountCandidate,
+        bonusSpendCandidate: Math.max(0, Math.round(Number(walletBalance || 0))),
+        capPercent: referralSettings.discountCapPercent,
+        breakdown: {
+          inviteeDiscountApplied: referralPreview.inviteeDiscountApplied,
+          bonusSpent: referralPreview.bonusSpent,
+          discountCapApplied: referralPreview.discountCapApplied,
+          productDiscountAmount: referralPreview.productDiscountAmount,
+        },
       },
       pendingOrder,
     });
@@ -1106,7 +1210,22 @@ router.post(
       return;
     }
 
-    const pricing = await getPricingSettings();
+    const attribution = resolveOrderAttribution({
+      body: payload,
+      query: req.query || {},
+      path: req.path || req.originalUrl || "",
+    });
+    const [pricing, referralSettings, walletBalance, firstApprovedOrderExists, referrerLink] = await Promise.all([
+      getPricingSettings(),
+      getReferralV1Settings(),
+      getWalletBalance(user.id),
+      hasApprovedSlugPurchase(user.id),
+      resolveReferrerForUser({
+        userId: user.id,
+        explicitRefCode: attribution.refCode || payload.refCode,
+        sessionRefCode: req.session?.pendingRefCode,
+      }),
+    ]);
     const requestedPlan = resolveRequestedPlanForOrder({
       currentPlan: user.plan,
       requestedPlan: payload.tariff,
@@ -1177,7 +1296,17 @@ router.post(
       basePrice: basePricing.total,
       sale: activeFlashSale,
     });
-    const finalSlugPrice = flashApplied.finalPrice;
+    const slugPriceAfterProductDiscount = flashApplied.finalPrice;
+    const firstOrderEligible = referralSettings.enabled && !firstApprovedOrderExists && Boolean(referrerLink?.referrerId);
+    const inviteeDiscountCandidate = firstOrderEligible ? referralSettings.inviteeDiscount : 0;
+    const referralPricing = computeDiscountAllocation({
+      slugBasePrice: basePricing.total,
+      slugPriceAfterProductDiscount,
+      inviteeDiscountCandidate,
+      walletBalance,
+      discountCapPercent: referralSettings.discountCapPercent,
+    });
+    const finalSlugPrice = referralPricing.finalSlugPayable;
     const planPrice = getPlanCharge({
       currentPlan: user.plan,
       requestedPlan,
@@ -1255,6 +1384,12 @@ router.post(
             dropId: drop ? drop.id : null,
             flashSaleId: flashApplied.hasDiscount ? activeFlashSale.id : null,
             flashDiscountAmount: flashApplied.discountAmount,
+            refCode: referrerLink?.refCode || attribution.refCode || null,
+            refSource: attribution.refSource || null,
+            refOffer: attribution.refOffer || null,
+            inviteeDiscountApplied: referralPricing.inviteeDiscountApplied,
+            bonusSpent: referralPricing.bonusSpent,
+            discountCapApplied: referralPricing.discountCapApplied,
           },
           select: { id: true, status: true },
         });
@@ -1294,6 +1429,9 @@ router.post(
       fullName,
       email: user.email || "",
       slugPrice: finalSlugPrice,
+      slugPriceBeforeDiscount: slugPriceAfterProductDiscount,
+      inviteeDiscountApplied: referralPricing.inviteeDiscountApplied,
+      bonusSpent: referralPricing.bonusSpent,
       planPrice,
       bracelet: Boolean(payload.products.bracelet),
       braceletPrice,
@@ -1354,10 +1492,27 @@ router.post(
       pendingExpiresAt,
       telegramDelivered,
       pricing: {
+        slugBasePrice: Math.max(0, Math.round(Number(basePricing.total || 0))),
+        slugPriceAfterProductDiscount: slugPriceAfterProductDiscount,
+        productDiscountAmount: referralPricing.productDiscountAmount,
+        inviteeDiscountApplied: referralPricing.inviteeDiscountApplied,
+        bonusSpent: referralPricing.bonusSpent,
+        discountCapApplied: referralPricing.discountCapApplied,
         slugPrice: finalSlugPrice,
         planPrice,
         braceletPrice,
         totalOneTime,
+      },
+      referral: {
+        enabled: referralSettings.enabled,
+        source: attribution.refSource,
+        offer: attribution.refOffer,
+        refCode: referrerLink?.refCode || attribution.refCode || "",
+        hasReferrer: Boolean(referrerLink?.referrerId),
+        firstOrderEligible,
+        walletBalance,
+        capPercent: referralSettings.discountCapPercent,
+        rewardAmount: referralSettings.referrerReward,
       },
       payment,
       paymentLinks: {

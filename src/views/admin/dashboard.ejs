@@ -488,28 +488,59 @@
         <section id="tab-referrals" class="<%= pageActiveTab === 'referrals' ? '' : 'hidden' %> space-y-4">
           <div id="referrals-stats" class="grid gap-3 md:grid-cols-3"></div>
           <form id="referrals-settings-form"
-            class="grid gap-3 rounded-2xl border border-neutral-200 bg-white p-4 md:grid-cols-3">
-            <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="enabled" /> Включить
-              программу</label>
-            <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="requirePaid" /> Учитывать только
-              оплативших</label>
+            class="grid gap-3 rounded-2xl border border-neutral-200 bg-white p-4 md:grid-cols-5">
+            <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="enabled" /> Enable program</label>
+            <label class="block text-sm">
+              <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Reward to referrer (sum)</span>
+              <input type="number" min="0" step="1000" name="referrerReward"
+                class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+            </label>
+            <label class="block text-sm">
+              <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Discount for invitee (sum)</span>
+              <input type="number" min="0" step="1000" name="inviteeDiscount"
+                class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+            </label>
+            <label class="block text-sm">
+              <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Discount cap (%)</span>
+              <input type="number" min="0" max="100" step="1" name="discountCapPercent"
+                class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+            </label>
             <button type="submit"
-              class="rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">Сохранить</button>
+              class="rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">Save</button>
           </form>
           <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
             <div class="overflow-x-auto">
               <table class="min-w-[980px] w-full text-left text-sm">
                 <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
                   <tr>
-                    <th class="px-4 py-3">Реферер</th>
-                    <th class="px-4 py-3">Приглашённый</th>
-                    <th class="px-4 py-3">Дата</th>
-                    <th class="px-4 py-3">Статус</th>
-                    <th class="px-4 py-3">Награда</th>
-                    <th class="px-4 py-3">Действие</th>
+                    <th class="px-4 py-3">Referrer</th>
+                    <th class="px-4 py-3">Invitee</th>
+                    <th class="px-4 py-3">Date</th>
+                    <th class="px-4 py-3">Status</th>
+                    <th class="px-4 py-3">Source/Offer</th>
+                    <th class="px-4 py-3">Reward</th>
+                    <th class="px-4 py-3">Action</th>
                   </tr>
                 </thead>
                 <tbody id="referrals-table"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
+            <div class="overflow-x-auto">
+              <table class="min-w-[980px] w-full text-left text-sm">
+                <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
+                  <tr>
+                    <th class="px-4 py-3">Date</th>
+                    <th class="px-4 py-3">User</th>
+                    <th class="px-4 py-3">Direction</th>
+                    <th class="px-4 py-3">Kind</th>
+                    <th class="px-4 py-3">Amount</th>
+                    <th class="px-4 py-3">Balance After</th>
+                    <th class="px-4 py-3">Idempotency</th>
+                  </tr>
+                </thead>
+                <tbody id="referrals-ledger-table"></tbody>
               </table>
             </div>
           </div>

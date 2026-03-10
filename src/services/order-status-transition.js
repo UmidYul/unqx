@@ -4,6 +4,11 @@ const { buildOrderPaymentDraft } = require("./payment-flow");
 const { logPaymentEvent } = require("./payment-events");
 const { sendSlugApprovedToUser, sendSlugAwaitingPaymentToUser, sendSlugRejectedToUser } = require("./telegram");
 const { recalculateAndRefreshPercentiles } = require("./unq-score");
+const {
+    getReferralV1Settings,
+    resolveReferrerForUser,
+    recordBonusLedger,
+} = require("./referral-v1");
 
 function makeTransitionError(code, message) {
     const error = new Error(message);
@@ -80,6 +85,7 @@ async function applyOrderStatusTransition({
 
         if (nextStatus === "approved") {
             const now = new Date();
+            const referralSettings = await getReferralV1Settings();
             await tx.slug.upsert({
                 where: { fullSlug: row.slug },
                 create: {
@@ -146,7 +152,7 @@ async function applyOrderStatusTransition({
             }
 
             if (order.status !== "approved" && tx.purchase && typeof tx.purchase.create === "function") {
-                await tx.purchase.create({
+                const slugPurchase = await tx.purchase.create({
                     data: {
                         userId: row.userId,
                         type: "slug",
@@ -156,7 +162,14 @@ async function applyOrderStatusTransition({
                         approvedByAdmin: actor,
                         approvedAt: now,
                         note: `order:${row.id};payment:${paymentAuditNote}`,
+                        refCode: order.refCode || null,
+                        refSource: order.refSource || null,
+                        refOffer: order.refOffer || null,
+                        inviteeDiscountApplied: Number(order.inviteeDiscountApplied || 0),
+                        bonusSpent: Number(order.bonusSpent || 0),
+                        discountCapApplied: Number(order.discountCapApplied || 0),
                     },
+                    select: { id: true },
                 });
 
                 const planPurchaseType = getPlanPurchaseType({
@@ -192,6 +205,80 @@ async function applyOrderStatusTransition({
                             note: `order:${row.id};payment:${paymentAuditNote}`,
                         },
                     });
+                }
+
+                const shouldProcessReferral =
+                    referralSettings.enabled ||
+                    Number(order.inviteeDiscountApplied || 0) > 0 ||
+                    Number(order.bonusSpent || 0) > 0 ||
+                    Boolean(order.refCode);
+
+                if (shouldProcessReferral && tx.referralConversion) {
+                    const referrer = await resolveReferrerForUser({
+                        userId: row.userId,
+                        explicitRefCode: order.refCode || "",
+                        sessionRefCode: "",
+                        tx,
+                    });
+
+                    let conversion = null;
+                    if (referrer?.referrerId) {
+                        conversion = await tx.referralConversion.upsert({
+                            where: { orderId: row.id },
+                            create: {
+                                referrerId: referrer.referrerId,
+                                referredId: row.userId,
+                                refCode: referrer.refCode || order.refCode || null,
+                                refSource: order.refSource || null,
+                                refOffer: order.refOffer || null,
+                                status: "approved",
+                                rewardAmount: referralSettings.referrerReward,
+                                inviteeDiscountApplied: Number(order.inviteeDiscountApplied || 0),
+                                bonusSpent: Number(order.bonusSpent || 0),
+                                orderId: row.id,
+                                purchaseId: slugPurchase.id,
+                                approvedAt: now,
+                            },
+                            update: {
+                                status: "approved",
+                                rewardAmount: referralSettings.referrerReward,
+                                inviteeDiscountApplied: Number(order.inviteeDiscountApplied || 0),
+                                bonusSpent: Number(order.bonusSpent || 0),
+                                purchaseId: slugPurchase.id,
+                                approvedAt: now,
+                            },
+                            select: { id: true, referrerId: true },
+                        });
+                    }
+
+                    const bonusSpent = Math.max(0, Number(order.bonusSpent || 0));
+                    if (bonusSpent > 0) {
+                        await recordBonusLedger({
+                            tx,
+                            userId: row.userId,
+                            delta: -bonusSpent,
+                            kind: "bonus_spend",
+                            idempotencyKey: `order:${row.id}:bonus_spend`,
+                            orderId: row.id,
+                            purchaseId: slugPurchase.id,
+                            conversionId: conversion?.id || null,
+                            note: "Bonus spent for approved order",
+                        });
+                    }
+
+                    if (conversion?.referrerId && Number(referralSettings.referrerReward || 0) > 0) {
+                        await recordBonusLedger({
+                            tx,
+                            userId: conversion.referrerId,
+                            delta: Number(referralSettings.referrerReward || 0),
+                            kind: "referral_reward",
+                            idempotencyKey: `refconv:${conversion.id}:reward`,
+                            orderId: row.id,
+                            purchaseId: slugPurchase.id,
+                            conversionId: conversion.id,
+                            note: `Referral reward for order ${row.id}`,
+                        });
+                    }
                 }
             }
         }

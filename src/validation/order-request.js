@@ -18,6 +18,9 @@ const OrderRequestSchema = z.object({
     bracelet: z.boolean(),
   }),
   dropId: z.string().uuid().optional(),
+  refCode: z.string().trim().max(40).optional(),
+  refSource: z.string().trim().max(40).optional(),
+  refOffer: z.string().trim().max(80).optional(),
 });
 
 module.exports = {

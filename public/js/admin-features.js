@@ -178,24 +178,39 @@
   async function loadReferralsAdmin() {
     const stats = document.getElementById("referrals-stats");
     const table = document.getElementById("referrals-table");
+    const ledgerTable = document.getElementById("referrals-ledger-table");
     const settingsForm = document.getElementById("referrals-settings-form");
     if (!(stats instanceof HTMLElement) || !(table instanceof HTMLElement)) return;
 
-    const [statPayload, rowsPayload, settingsPayload] = await Promise.all([
+    const [statPayload, rowsPayload, ledgerPayload, settingsPayload] = await Promise.all([
       jsonFetch("/api/admin/referrals/stats"),
       jsonFetch("/api/admin/referrals"),
+      jsonFetch("/api/admin/referrals/ledger"),
       jsonFetch("/api/admin/referrals/settings"),
     ]);
+
     if (settingsForm instanceof HTMLFormElement) {
       const enabled = settingsForm.elements.namedItem("enabled");
-      const requirePaid = settingsForm.elements.namedItem("requirePaid");
-      if (enabled instanceof HTMLInputElement) enabled.checked = Boolean(settingsPayload.settings?.enabled);
-      if (requirePaid instanceof HTMLInputElement) requirePaid.checked = Boolean(settingsPayload.settings?.requirePaid);
+      const referrerReward = settingsForm.elements.namedItem("referrerReward");
+      const inviteeDiscount = settingsForm.elements.namedItem("inviteeDiscount");
+      const discountCapPercent = settingsForm.elements.namedItem("discountCapPercent");
+
+      if (enabled instanceof HTMLInputElement) enabled.checked = Boolean(settingsPayload.settings?.feature_referrals);
+      if (referrerReward instanceof HTMLInputElement) {
+        referrerReward.value = String(settingsPayload.settings?.referral_v1_referrer_reward || 50000);
+      }
+      if (inviteeDiscount instanceof HTMLInputElement) {
+        inviteeDiscount.value = String(settingsPayload.settings?.referral_v1_invitee_discount || 100000);
+      }
+      if (discountCapPercent instanceof HTMLInputElement) {
+        discountCapPercent.value = String(settingsPayload.settings?.referral_v1_discount_cap_percent || 30);
+      }
     }
+
     stats.innerHTML = [
-      ["Всего реф-регистраций", statPayload.totalRegistrations],
-      ["Конверсия в оплату", `${statPayload.conversionPaid}%`],
-      ["Выдано наград", statPayload.rewarded],
+      ["Total conversions", statPayload.totalRegistrations],
+      ["Paid conversion", `${statPayload.conversionPaid}%`],
+      ["Bonuses credited", P(statPayload.rewardAmount || 0)],
     ]
       .map(([title, value]) => `<article class="rounded-2xl border border-neutral-200 bg-white p-4"><p class="text-xs uppercase tracking-wide text-neutral-500">${title}</p><p class="mt-2 text-2xl font-black">${value}</p></article>`)
       .join("");
@@ -203,10 +218,20 @@
     table.innerHTML = (rowsPayload.items || []).length
       ? rowsPayload.items
         .map(
-          (item) => `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3">${item.referrer?.username ? `@${item.referrer.username}` : item.referrerTelegramId}</td><td class="px-4 py-3">${item.referred?.username ? `@${item.referred.username}` : item.referredTelegramId}</td><td class="px-4 py-3">${D(item.createdAt)}</td><td class="px-4 py-3">${item.status}</td><td class="px-4 py-3">${item.rewardType || "—"}</td><td class="px-4 py-3"><div class="admin-row-actions">${menuWrap(menuItem({ label: "Выдать награду вручную", icon: "gift", attrs: `data-a="reward-ref" data-id="${item.id}"` }))}</div></td></tr>`,
+          (item) => `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3">${item.referrer?.username ? `@${item.referrer.username}` : item.referrer?.firstName || item.referrerId}</td><td class="px-4 py-3">${item.referred?.username ? `@${item.referred.username}` : item.referred?.firstName || item.referredId}</td><td class="px-4 py-3">${D(item.createdAt)}</td><td class="px-4 py-3">${item.status || "pending"}</td><td class="px-4 py-3">${item.refSource || "direct"} / ${item.refOffer || "-"}</td><td class="px-4 py-3">${P(item.rewardAmount || 0)}</td><td class="px-4 py-3"><div class="admin-row-actions">${menuWrap(menuItem({ label: "Grant reward manually", icon: "gift", attrs: `data-a="reward-ref" data-id="${item.id}"` }))}</div></td></tr>`,
         )
         .join("")
-      : '<tr><td colspan="6" class="px-3 py-8 text-center text-neutral-500">Нет данных</td></tr>';
+      : '<tr><td colspan="7" class="px-3 py-8 text-center text-neutral-500">No data</td></tr>';
+
+    if (ledgerTable instanceof HTMLElement) {
+      ledgerTable.innerHTML = (ledgerPayload.items || []).length
+        ? ledgerPayload.items
+          .map(
+            (item) => `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3">${D(item.createdAt)}</td><td class="px-4 py-3">${item.user?.username ? `@${item.user.username}` : item.user?.firstName || item.userId}</td><td class="px-4 py-3">${item.direction || "-"}</td><td class="px-4 py-3">${item.kind || "-"}</td><td class="px-4 py-3">${P(item.amount || 0)}</td><td class="px-4 py-3">${P(item.balanceAfter || 0)}</td><td class="px-4 py-3 font-mono text-xs">${item.idempotencyKey || "-"}</td></tr>`,
+          )
+          .join("")
+        : '<tr><td colspan="7" class="px-3 py-8 text-center text-neutral-500">No operations</td></tr>';
+    }
   }
 
   async function loadFlashSalesAdmin() {
@@ -283,15 +308,20 @@
     const form = event.currentTarget;
     if (!(form instanceof HTMLFormElement)) return;
     const enabled = form.elements.namedItem("enabled");
-    const requirePaid = form.elements.namedItem("requirePaid");
+    const referrerReward = form.elements.namedItem("referrerReward");
+    const inviteeDiscount = form.elements.namedItem("inviteeDiscount");
+    const discountCapPercent = form.elements.namedItem("discountCapPercent");
     await jsonFetch("/api/admin/referrals/settings", {
       method: "PATCH",
       headers: headers({ "Content-Type": "application/json" }),
       body: JSON.stringify({
         enabled: enabled instanceof HTMLInputElement ? enabled.checked : true,
-        requirePaid: requirePaid instanceof HTMLInputElement ? requirePaid.checked : true,
+        referrerReward: referrerReward instanceof HTMLInputElement ? Number(referrerReward.value || 0) : 0,
+        inviteeDiscount: inviteeDiscount instanceof HTMLInputElement ? Number(inviteeDiscount.value || 0) : 0,
+        discountCapPercent: discountCapPercent instanceof HTMLInputElement ? Number(discountCapPercent.value || 0) : 0,
       }),
     });
+    await loadReferralsAdmin();
   });
 
   document.getElementById("flash-sales-create-form")?.addEventListener("submit", async (event) => {
@@ -396,7 +426,7 @@
         await jsonFetch(`/api/admin/referrals/${encodeURIComponent(id)}/reward`, {
           method: "POST",
           headers: headers({ "Content-Type": "application/json" }),
-          body: JSON.stringify({ rewardType: "discount" }),
+          body: JSON.stringify({ amount: 50000 }),
         });
         await loadReferralsAdmin();
       }
