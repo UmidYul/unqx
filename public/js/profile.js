@@ -58,6 +58,7 @@
 
 
     const DRAFT_KEY = "unqx_profile_card_draft";
+    const DRAFT_CLOCK_SKEW_TOLERANCE_MS = 1000 * 60 * 60 * 6;
 
     function saveDraft() {
       const draft = {
@@ -93,13 +94,19 @@
         return null;
       }
     }
+
+    function isDraftNewerThanCard(draftUpdatedAt, cardUpdatedAt) {
+      if (!draftUpdatedAt) return false;
+      if (!cardUpdatedAt) return true;
+      return draftUpdatedAt > cardUpdatedAt - DRAFT_CLOCK_SKEW_TOLERANCE_MS;
+    }
+
     function hasPendingDraft() {
       const draft = readDraft();
       if (!draft) return false;
       const draftUpdatedAt = Number(draft.updatedAt || 0);
       const cardUpdatedAt = s.card?.updatedAt ? new Date(s.card.updatedAt).getTime() : 0;
-      if (draftUpdatedAt && cardUpdatedAt && draftUpdatedAt <= cardUpdatedAt) return false;
-      return true;
+      return isDraftNewerThanCard(draftUpdatedAt, cardUpdatedAt);
     }
 
     function restoreDraft() {
@@ -107,7 +114,7 @@
       if (!draft) return;
       const cardUpdatedAt = s.card?.updatedAt ? new Date(s.card.updatedAt).getTime() : 0;
       const draftUpdatedAt = Number(draft.updatedAt || 0);
-      if (cardUpdatedAt && draftUpdatedAt && draftUpdatedAt <= cardUpdatedAt) return;
+      if (!isDraftNewerThanCard(draftUpdatedAt, cardUpdatedAt)) return;
       if (draftUpdatedAt && s.draftRestoredAt && draftUpdatedAt <= s.draftRestoredAt) return;
 
       const hasOwn = (key) => Object.prototype.hasOwnProperty.call(draft, key);
