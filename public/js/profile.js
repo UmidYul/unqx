@@ -38,6 +38,11 @@
       "midnight_obsidian",
     ];
     const PREMIUM_ONLY_THEMES = new Set(PROFILE_THEMES.filter((theme) => theme !== "default_dark"));
+    const TELEGRAM_PAYMENT_USERNAME = String(root.getAttribute("data-telegram-bot-username") || "")
+      .replace(/^@+/, "")
+      .trim();
+    const DEFAULT_PROFILE_AVATAR = "/brand/profile-thin.svg";
+    const DEFAULT_BRACELET_PRICE = 300000;
 
 
     const DRAFT_KEY = "unqx_profile_card_draft";
