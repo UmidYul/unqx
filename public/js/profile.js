@@ -1514,7 +1514,12 @@ Email: ${userEmail}
           email: el.cEmail?.value || "",
           extraPhone: el.cExtraPhone?.value || "",
           tags: s.tags,
-          buttons: s.buttons,
+          buttons: (s.buttons || []).map((b) => ({
+            type: b.type || 'other',
+            label: b.label || '',
+            href: typeof b.url === 'string' ? b.url : (typeof b.href === 'string' ? b.href : ''),
+            value: typeof b.url === 'string' ? b.url : (typeof b.value === 'string' ? b.value : ''),
+          })),
           theme: s.theme,
           customColor: el.cColor?.value || null,
           showBranding: el.cBranding ? !el.cBranding.checked : true,
