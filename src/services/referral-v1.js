@@ -1,6 +1,13 @@
 const { prisma } = require("../db/prisma");
 const { getManySettings } = require("./platform-settings");
-const { normalizeRefCode } = require("./referrals");
+
+function normalizeRefCode(value) {
+  return String(value || "")
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9_]/g, "")
+    .slice(0, 40);
+}
 
 const DEFAULTS = {
   enabled: true,
