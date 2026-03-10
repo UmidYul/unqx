@@ -1017,15 +1017,22 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     return "form";
   }
 
-  function showConfirm(message) {
+  function showConfirm(message, options = {}) {
+    const title = String(options.title || "Подтверждение");
+    const confirmText = String(options.confirmText || "Подтвердить");
+    const cancelText = String(options.cancelText || "Отмена");
     if (window.UNQSiteDialog?.confirm) {
       return window.UNQSiteDialog.confirm(message, {
-        title: "Подтверждение",
-        confirmText: "Закрыть",
-        cancelText: "Остаться",
+        title,
+        confirmText,
+        cancelText,
       });
     }
-    return Promise.resolve(false);
+    try {
+      return Promise.resolve(window.confirm(String(message || "")));
+    } catch {
+      return Promise.resolve(false);
+    }
   }
 
   function setSlugMode(pricing) {
@@ -1486,7 +1493,11 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     }
     if (!force && dom.stepForm && !dom.stepForm.classList.contains("hidden") && isFormDirty()) {
       isCloseConfirming = true;
-      const ok = await showConfirm("Закрыть? Данные не сохранятся");
+      const ok = await showConfirm("Закрыть? Данные не сохранятся", {
+        title: "Подтверждение",
+        confirmText: "Закрыть",
+        cancelText: "Остаться",
+      });
       isCloseConfirming = false;
       if (!ok || !isOpen || isClosing) {
         return;
@@ -1824,7 +1835,11 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
       setPendingStatus("Не удалось определить заказ для отмены.", "error");
       return;
     }
-    const confirmed = await showConfirm("Отменить текущий заказ и освободить UNQ?");
+    const confirmed = await showConfirm("Отменить текущий заказ и освободить UNQ?", {
+      title: "Отмена заказа",
+      confirmText: "Отменить заказ",
+      cancelText: "Оставить как есть",
+    });
     if (!confirmed) {
       return;
     }
