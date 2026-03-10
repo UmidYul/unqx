@@ -5,22 +5,7 @@
 
   const $ = (s) => document.querySelector(s);
   const $$ = (s) => Array.from(document.querySelectorAll(s));
-  // ...удалено дублирующее определение saveCard...
-  tags: [],
-    buttons: [],
-      theme: "default_dark",
-        referrals: null,
-          score: null,
-            pricing: {
-    premiumUpgradePrice: 80_000,
-    },
-  verification: null,
-    analyticsBootstrap: null,
-      analyticsPayload: null,
-        analyticsSelectedSlug: "",
-          analyticsSelectedPeriod: 7,
-            draftRestored: false,
-  };
+
 
 const DRAFT_KEY = "unqx_profile_card_draft";
 
