@@ -1509,6 +1509,16 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     dom.root.classList.remove("is-open");
     document.body.classList.remove("modal-open");
     setStatus("", "neutral");
+    // Сбросить состояние формы и lastOpenOptions
+    state.lastOpenOptions = {};
+    if (dom.letters) dom.letters.value = "";
+    if (dom.digits) dom.digits.value = "";
+    if (dom.name) dom.name.value = "";
+    if (dom.planBasic) dom.planBasic.checked = false;
+    if (dom.planPremium) dom.planPremium.checked = false;
+    if (dom.bracelet) dom.bracelet.checked = false;
+    if (dom.promoCode) dom.promoCode.value = "";
+    // Добавьте очистку других полей по необходимости
     window.setTimeout(() => {
       dom.root.style.display = "none";
       dom.root.classList.remove("block");
