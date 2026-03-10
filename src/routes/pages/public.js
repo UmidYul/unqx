@@ -1,5 +1,6 @@
 const fs = require("node:fs");
 const path = require("node:path");
+const { randomUUID } = require("node:crypto");
 const express = require("express");
 
 const { prisma } = require("../../db/prisma");
@@ -15,6 +16,7 @@ const { normalizeRefCode } = require("../../services/referrals");
 const { getPricingSettings } = require("../../services/pricing-settings");
 const { getManySettings } = require("../../services/platform-settings");
 const { sendTapPushNotification } = require("../../services/push");
+const { detectDevice } = require("../../services/ua");
 const { seoHub, getSeoPage } = require("../../content/seo-pages");
 
 const router = express.Router();
@@ -231,6 +233,20 @@ function pickClientIp(req) {
   return normalizeIp(firstForwarded) || normalizeIp(realIp) || normalizeIp(req.ip);
 }
 
+function getAnalyticsSessionId(req, res) {
+  const rawCookie = String(req.get("cookie") || "");
+  const match = rawCookie.match(/(?:^|;\s*)unqx_sid=([^;]+)/);
+  const existing = match ? decodeURIComponent(match[1]) : "";
+  if (existing && /^[a-zA-Z0-9_-]{16,80}$/.test(existing)) {
+    return existing;
+  }
+  const next = randomUUID().replace(/-/g, "").slice(0, 32);
+  if (res && typeof res.append === "function") {
+    res.append("Set-Cookie", `unqx_sid=${next}; Max-Age=31536000; Path=/; SameSite=Lax; HttpOnly`);
+  }
+  return next;
+}
+
 async function getPrimarySlugForUser(userId) {
   if (!userId) return null;
   const row = await prisma.slug.findFirst({
@@ -244,108 +260,147 @@ async function getPrimarySlugForUser(userId) {
   return row?.fullSlug || null;
 }
 
-async function logTapEventFromPageRequest({ req, ownerSlug, ownerId }) {
+async function logTapEventFromPageRequest({ req, res, ownerSlug, ownerId }) {
   const source = resolveTapSource(req);
+  const device = detectDevice(req.get("user-agent"));
+  const sessionId = getAnalyticsSessionId(req, res);
+  const visitorIp = pickClientIp(req);
   const userSession = getUserSession(req);
   const visitorUserId = userSession?.userId ? String(userSession.userId) : null;
   const visitorSlug = visitorUserId ? await getPrimarySlugForUser(visitorUserId) : null;
 
   try {
-    await prisma.$executeRaw`
-      INSERT INTO tap_events (
-        owner_slug,
-        visitor_slug,
-        visitor_user_id,
-        visitor_ip,
-        user_agent,
-        source,
-        city,
-        country
-      )
-      SELECT
-        ${ownerSlug},
-        ${visitorSlug || null},
-        ${visitorUserId || null},
-        ${pickClientIp(req) || null},
-        ${String(req.get("user-agent") || "") || null},
-        ${source},
-        ${null},
-        ${null}
-      WHERE NOT EXISTS (
-        SELECT 1
-        FROM tap_events te
-        WHERE te.owner_slug = ${ownerSlug}
-          AND te.source = ${source}
-          AND te.visitor_slug IS NOT DISTINCT FROM ${visitorSlug || null}
-          AND te.visitor_user_id IS NOT DISTINCT FROM ${visitorUserId || null}
-          AND te.visitor_ip IS NOT DISTINCT FROM ${pickClientIp(req) || null}
-          AND te.created_at >= now() - interval '5 seconds'
-      )
-    `;
+    await prisma.$transaction(async (tx) => {
+      let isUniqueSessionView = true;
+      if (tx.analyticsView) {
+        const exists = await tx.analyticsView.findFirst({
+          where: {
+            slug: ownerSlug,
+            sessionId,
+          },
+          select: { id: true },
+        });
+        isUniqueSessionView = !exists;
+      }
 
-    if (visitorUserId && ownerId && visitorUserId !== ownerId && visitorSlug) {
-      await prisma.$executeRaw`
-        INSERT INTO user_contacts (
-          owner_id,
-          contact_slug,
-          contact_user_id,
-          saved,
-          subscribed,
-          first_tap_at,
-          last_tap_at,
-          tap_count
-        )
-        VALUES (
-          ${ownerId},
-          ${visitorSlug},
-          ${visitorUserId},
-          false,
-          false,
-          now(),
-          now(),
-          1
-        )
-        ON CONFLICT (owner_id, contact_slug)
-        DO UPDATE SET
-          contact_user_id = EXCLUDED.contact_user_id,
-          last_tap_at = now(),
-          tap_count = user_contacts.tap_count + 1
-      `;
+      if (tx.slug && isUniqueSessionView) {
+        await tx.slug.update({
+          where: { fullSlug: ownerSlug },
+          data: { analyticsViewsCount: { increment: 1 } },
+        });
+      }
 
-      await prisma.$executeRaw`
-        INSERT INTO notifications (
-          user_id,
-          type,
-          title,
-          body,
-          data
+      if (tx.analyticsView) {
+        await tx.analyticsView.create({
+          data: {
+            slug: ownerSlug,
+            source,
+            city: "Неизвестно",
+            device,
+            sessionId,
+          },
+        });
+      }
+
+      await tx.$executeRaw`
+        INSERT INTO tap_events (
+          owner_slug,
+          visitor_slug,
+          visitor_user_id,
+          visitor_ip,
+          user_agent,
+          source,
+          city,
+          country
         )
-        VALUES (
-          ${ownerId},
-          'tap',
-          'Новый тап',
-          ${`${visitorSlug} открыл вашу визитку`},
-          ${JSON.stringify({ ownerSlug, visitorSlug, source })}
+        SELECT
+          ${ownerSlug},
+          ${visitorSlug || null},
+          ${visitorUserId || null},
+          ${visitorIp || null},
+          ${String(req.get("user-agent") || "") || null},
+          ${source},
+          ${null},
+          ${null}
+        WHERE NOT EXISTS (
+          SELECT 1
+          FROM tap_events te
+          WHERE te.owner_slug = ${ownerSlug}
+            AND te.source = ${source}
+            AND te.visitor_slug IS NOT DISTINCT FROM ${visitorSlug || null}
+            AND te.visitor_user_id IS NOT DISTINCT FROM ${visitorUserId || null}
+            AND te.visitor_ip IS NOT DISTINCT FROM ${visitorIp || null}
+            AND te.created_at >= now() - interval '5 seconds'
         )
       `;
 
-      void sendTapPushNotification({
-        ownerId,
-        ownerSlug,
-        visitorSlug,
-        source,
-      }).catch((pushError) => {
-        console.error("[push] failed to send tap notification", {
+      if (visitorUserId && ownerId && visitorUserId !== ownerId && visitorSlug) {
+        await tx.$executeRaw`
+          INSERT INTO user_contacts (
+            owner_id,
+            contact_slug,
+            contact_user_id,
+            saved,
+            subscribed,
+            first_tap_at,
+            last_tap_at,
+            tap_count
+          )
+          VALUES (
+            ${ownerId},
+            ${visitorSlug},
+            ${visitorUserId},
+            false,
+            false,
+            now(),
+            now(),
+            1
+          )
+          ON CONFLICT (owner_id, contact_slug)
+          DO UPDATE SET
+            contact_user_id = EXCLUDED.contact_user_id,
+            last_tap_at = now(),
+            tap_count = user_contacts.tap_count + 1
+        `;
+
+        await tx.$executeRaw`
+          INSERT INTO notifications (
+            user_id,
+            type,
+            title,
+            body,
+            data
+          )
+          VALUES (
+            ${ownerId},
+            'tap',
+            'Новый тап',
+            ${`${visitorSlug} открыл вашу визитку`},
+            ${JSON.stringify({ ownerSlug, visitorSlug, source })}
+          )
+        `;
+
+        void sendTapPushNotification({
           ownerId,
           ownerSlug,
           visitorSlug,
           source,
-          message: pushError?.message || String(pushError),
+        }).catch((pushError) => {
+          console.error("[push] failed to send tap notification", {
+            ownerId,
+            ownerSlug,
+            visitorSlug,
+            source,
+            message: pushError?.message || String(pushError),
+          });
         });
-      });
-    }
+      }
+    });
   } catch (error) {
     if (error && (String(error.code || "") === "42P01" || String(error.code || "") === "42703")) {
+      return;
+    }
+    if (error && String(error.code || "") === "P2025") {
       return;
     }
     throw error;
@@ -1850,6 +1905,7 @@ router.get(
         try {
           await logTapEventFromPageRequest({
             req,
+            res,
             ownerSlug: slug,
             ownerId: slugRow.ownerId,
           });

@@ -21,6 +21,7 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@google-cloud/storage": "^7.17.2",
     "@prisma/adapter-pg": "6.19.2",
     "@prisma/client": "6.19.2",
     "bcryptjs": "^3.0.3",

@@ -1099,6 +1099,24 @@ router.post(
   }),
 );
 
+router.delete(
+  "/flash-sales/:id",
+  asyncHandler(async (req, res) => {
+    const existing = await prisma.flashSale.findUnique({
+      where: { id: req.params.id },
+      select: { id: true },
+    });
+    if (!existing) {
+      res.status(404).json({ error: "Not found" });
+      return;
+    }
+    await prisma.flashSale.delete({
+      where: { id: req.params.id },
+    });
+    res.json({ ok: true });
+  }),
+);
+
 router.get(
   "/flash-sales/:id/stats",
   asyncHandler(async (req, res) => {
@@ -1229,6 +1247,25 @@ router.post(
     });
     await releaseUnsoldDropSlugs(updated.id);
     res.json({ ok: true, item: updated });
+  }),
+);
+
+router.delete(
+  "/drops/:id",
+  asyncHandler(async (req, res) => {
+    const existing = await prisma.drop.findUnique({
+      where: { id: req.params.id },
+      select: { id: true },
+    });
+    if (!existing) {
+      res.status(404).json({ error: "Not found" });
+      return;
+    }
+    await releaseUnsoldDropSlugs(req.params.id);
+    await prisma.drop.delete({
+      where: { id: req.params.id },
+    });
+    res.json({ ok: true });
   }),
 );
 

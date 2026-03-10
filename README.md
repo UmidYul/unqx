@@ -27,7 +27,7 @@ npm run start
 
 Default URL: `http://127.0.0.1:3100`
 
-## DB Backup (Google Drive + Telegram status)
+## DB Backup (Google Drive/GCS + Telegram)
 
 Run manual backup:
 
@@ -38,22 +38,48 @@ npm run backup:db
 What it does:
 
 - Creates PostgreSQL dump via `pg_dump` (custom format).
-- Uploads dump to Google Drive via `rclone` remote.
+- Upload target is selected automatically:
+  - `BACKUP_RCLONE_REMOTE` -> Google Drive via `rclone`
+  - otherwise `BACKUP_GCS_BUCKET` -> Google Cloud Storage
 - Deletes local temp file after upload.
 - Applies retention by count (`BACKUP_KEEP_FILES`).
-- Sends Telegram message on success/failure.
+- Sends Telegram status on success/failure.
+- Optionally sends the dump file to Telegram (`sendDocument`) if size fits the limit.
 
-Required setup:
+Google Drive (simple free option):
 
-1. Install `rclone` on server.
-2. Run `rclone config` and create remote (example name: `gdrive`).
+1. Install `rclone`.
+2. Run `rclone config` and create remote (for example `gdrive`).
 3. Set env:
 
 ```env
 BACKUP_RCLONE_REMOTE="gdrive:unqx-backups"
+BACKUP_RCLONE_BIN="rclone"
 BACKUP_KEEP_FILES=14
 BACKUP_NOTIFY_TELEGRAM=true
 BACKUP_TELEGRAM_CHAT_ID="-1001234567890"
+BACKUP_TELEGRAM_SEND_FILE=true
+BACKUP_TELEGRAM_MAX_FILE_MB=45
+BACKUP_STATUS_URL="https://your-domain.com/admin/dashboard"
+```
+
+Google Cloud Storage (alternative):
+
+1. Create GCS bucket.
+2. Provide credentials via default auth OR service account key.
+3. Set env:
+
+```env
+BACKUP_GCS_BUCKET="unqx-backups"
+BACKUP_GCS_PREFIX="db"
+BACKUP_GCS_PROJECT_ID="your-gcp-project-id"
+BACKUP_GCS_KEY_FILE="/abs/path/to/service-account.json"
+# or BACKUP_GCS_KEY_JSON_BASE64="base64(json-key)"
+BACKUP_KEEP_FILES=14
+BACKUP_NOTIFY_TELEGRAM=true
+BACKUP_TELEGRAM_CHAT_ID="-1001234567890"
+BACKUP_TELEGRAM_SEND_FILE=true
+BACKUP_TELEGRAM_MAX_FILE_MB=45
 BACKUP_STATUS_URL="https://your-domain.com/admin/dashboard"
 ```
 

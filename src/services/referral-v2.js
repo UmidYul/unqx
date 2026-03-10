@@ -14,6 +14,35 @@ const DEFAULTS = {
   defaultPerUserCap: 1,
 };
 
+function isMissingModelTable(error, modelName) {
+  return (
+    Boolean(error) &&
+    error.code === "P2021" &&
+    (!modelName || String(error?.meta?.modelName || "") === modelName)
+  );
+}
+
+function isMissingModelColumn(error, modelName) {
+  if (!error || error.code !== "P2022") return false;
+  if (!modelName) return true;
+  const targetModel = String(error?.meta?.modelName || "");
+  if (!targetModel) return true;
+  return targetModel === modelName;
+}
+
+function isMissingModelDelegateError(error) {
+  if (!error || error.name !== "TypeError") return false;
+  const message = String(error.message || "");
+  return (
+    message.includes("Cannot read properties of undefined") &&
+    (message.includes("findMany") || message.includes("findUnique") || message.includes("count") || message.includes("aggregate") || message.includes("create"))
+  );
+}
+
+function isMissingReferralStorageError(error, modelName) {
+  return isMissingModelTable(error, modelName) || isMissingModelColumn(error, modelName) || isMissingModelDelegateError(error);
+}
+
 function hashValue(value) {
   const raw = String(value || "").trim();
   if (!raw) return "";
@@ -81,12 +110,19 @@ function chooseCampaign(campaigns = []) {
 async function getActiveCampaignsSafe() {
   if (!prisma.referralCampaign) return [];
   const now = new Date();
-  const rows = await prisma.referralCampaign.findMany({
-    where: { status: "active" },
-    orderBy: [{ priority: "desc" }, { updatedAt: "desc" }],
-    take: 200,
-  });
-  return rows.filter((item) => isCampaignActiveNow(item, now));
+  try {
+    const rows = await prisma.referralCampaign.findMany({
+      where: { status: "active" },
+      orderBy: [{ priority: "desc" }, { updatedAt: "desc" }],
+      take: 200,
+    });
+    return rows.filter((item) => isCampaignActiveNow(item, now));
+  } catch (error) {
+    if (isMissingReferralStorageError(error, "ReferralCampaign")) {
+      return [];
+    }
+    throw error;
+  }
 }
 
 async function resolveCampaignForCheckout({
@@ -119,16 +155,23 @@ async function resolveCampaignForCheckout({
         : []),
     ],
   };
-  const rows = await prisma.referralCampaign.findMany({
-    where,
-    orderBy: [{ priority: "desc" }, { updatedAt: "desc" }],
-    take: 50,
-  });
-  const activeRows = rows.filter((item) => isCampaignActiveNow(item, now));
-  return {
-    campaign: chooseCampaign(activeRows),
-    normalizedPromoCode,
-  };
+  try {
+    const rows = await prisma.referralCampaign.findMany({
+      where,
+      orderBy: [{ priority: "desc" }, { updatedAt: "desc" }],
+      take: 50,
+    });
+    const activeRows = rows.filter((item) => isCampaignActiveNow(item, now));
+    return {
+      campaign: chooseCampaign(activeRows),
+      normalizedPromoCode,
+    };
+  } catch (error) {
+    if (isMissingReferralStorageError(error, "ReferralCampaign")) {
+      return { campaign: null, normalizedPromoCode };
+    }
+    throw error;
+  }
 }
 
 async function countCampaignUsagesByUser({
@@ -136,25 +179,39 @@ async function countCampaignUsagesByUser({
   userId,
 }) {
   if (!prisma.referralCampaignUsage || !campaignId || !userId) return 0;
-  return prisma.referralCampaignUsage.count({
-    where: {
-      campaignId,
-      userId,
-      status: { in: ["reserved", "finalized"] },
-    },
-  });
+  try {
+    return await prisma.referralCampaignUsage.count({
+      where: {
+        campaignId,
+        userId,
+        status: { in: ["reserved", "finalized"] },
+      },
+    });
+  } catch (error) {
+    if (isMissingReferralStorageError(error, "ReferralCampaignUsage")) {
+      return 0;
+    }
+    throw error;
+  }
 }
 
 async function sumCampaignUsageAmount(campaignId) {
   if (!prisma.referralCampaignUsage || !campaignId) return 0;
-  const agg = await prisma.referralCampaignUsage.aggregate({
-    where: {
-      campaignId,
-      status: "finalized",
-    },
-    _sum: { amountSpent: true },
-  });
-  return Math.max(0, Number(agg?._sum?.amountSpent || 0));
+  try {
+    const agg = await prisma.referralCampaignUsage.aggregate({
+      where: {
+        campaignId,
+        status: "finalized",
+      },
+      _sum: { amountSpent: true },
+    });
+    return Math.max(0, Number(agg?._sum?.amountSpent || 0));
+  } catch (error) {
+    if (isMissingReferralStorageError(error, "ReferralCampaignUsage")) {
+      return 0;
+    }
+    throw error;
+  }
 }
 
 function buildCampaignSnapshot({
@@ -233,14 +290,24 @@ async function runFraudCheck({
   };
   const [ipCount, deviceCount] = await Promise.all([
     tx.referralFraudCheck
-      ? tx.referralFraudCheck.count({
-          where: { ...whereBase, ipHash: ipHash || "__none__" },
-        })
+      ? tx.referralFraudCheck
+          .count({
+            where: { ...whereBase, ipHash: ipHash || "__none__" },
+          })
+          .catch((error) => {
+            if (isMissingReferralStorageError(error, "ReferralFraudCheck")) return 0;
+            throw error;
+          })
       : Promise.resolve(0),
     tx.referralFraudCheck
-      ? tx.referralFraudCheck.count({
-          where: { ...whereBase, deviceHash: deviceHash || "__none__" },
-        })
+      ? tx.referralFraudCheck
+          .count({
+            where: { ...whereBase, deviceHash: deviceHash || "__none__" },
+          })
+          .catch((error) => {
+            if (isMissingReferralStorageError(error, "ReferralFraudCheck")) return 0;
+            throw error;
+          })
       : Promise.resolve(0),
   ]);
 
@@ -263,19 +330,25 @@ async function runFraudCheck({
 
   const note = reasons.length ? reasons.join(",") : "ok";
   if (persist && tx.referralFraudCheck) {
-    await tx.referralFraudCheck.create({
-      data: {
-        orderId: orderId || null,
-        userId,
-        ipHash: ipHash || null,
-        deviceHash: deviceHash || null,
-        velocityIpCount: ipCount,
-        velocityDeviceCount: deviceCount,
-        score,
-        reason: note,
-        verdict,
-      },
-    });
+    try {
+      await tx.referralFraudCheck.create({
+        data: {
+          orderId: orderId || null,
+          userId,
+          ipHash: ipHash || null,
+          deviceHash: deviceHash || null,
+          velocityIpCount: ipCount,
+          velocityDeviceCount: deviceCount,
+          score,
+          reason: note,
+          verdict,
+        },
+      });
+    } catch (error) {
+      if (!isMissingReferralStorageError(error, "ReferralFraudCheck")) {
+        throw error;
+      }
+    }
   }
 
   return {
