@@ -1,0 +1,133 @@
+<%
+  const pageTitle = typeof title === "string" && title ? title : "Визитка пользователя";
+  const pageUserId = typeof userId === "string" ? userId : "";
+%>
+<!doctype html>
+<html lang="ru">
+<head>
+  <%- include('../partials/head', { title: pageTitle, styles: ['/css/admin.css'] }) %>
+</head>
+<body class="antialiased" data-admin-layout="1" data-page="admin-user-card" data-user-id="<%= pageUserId %>">
+  <%- include('../partials/admin-layout-start', { activeTab: 'users' }) %>
+  <div class="mx-auto w-full max-w-6xl space-y-4">
+    <div class="border-b border-neutral-200 pb-4">
+      <h1 id="user-card-title" class="text-2xl font-black">Визитка пользователя</h1>
+      <p id="user-card-subtitle" class="mt-1 text-sm text-neutral-500">Загрузка данных...</p>
+    </div>
+
+    <div id="user-card-error" class="hidden rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"></div>
+
+    <form id="user-card-form" class="space-y-5" novalidate>
+      <section class="rounded-2xl border border-neutral-200 bg-white p-4">
+        <h2 class="text-lg font-bold">Аватар</h2>
+        <div class="mt-4 flex flex-wrap items-center gap-4">
+          <div class="flex h-20 w-20 items-center justify-center overflow-hidden rounded-full border border-neutral-200 bg-neutral-100">
+            <img id="user-card-avatar-preview" src="" alt="avatar" class="hidden h-full w-full object-cover" />
+            <span id="user-card-avatar-fallback" class="text-xs font-semibold text-neutral-500">Нет</span>
+          </div>
+          <div class="space-y-2">
+            <input id="user-card-avatar-file" type="file" accept="image/png,image/jpeg,image/webp" class="text-sm" />
+            <div class="flex flex-wrap gap-2">
+              <button id="user-card-avatar-upload" type="button" class="rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold transition hover:bg-neutral-100">Загрузить</button>
+              <button id="user-card-avatar-remove" type="button" class="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-600 transition hover:bg-red-50">Удалить</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="rounded-2xl border border-neutral-200 bg-white p-4">
+        <h2 class="text-lg font-bold">Основные данные</h2>
+        <div class="mt-4 grid gap-3 md:grid-cols-2">
+          <label class="text-sm font-medium text-neutral-700">
+            Имя
+            <input id="user-card-name" type="text" class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2" required />
+          </label>
+          <label class="text-sm font-medium text-neutral-700">
+            Роль / должность
+            <input id="user-card-role" type="text" class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2" />
+          </label>
+          <label class="text-sm font-medium text-neutral-700 md:col-span-2">
+            Био
+            <textarea id="user-card-bio" rows="3" maxlength="120" class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2"></textarea>
+          </label>
+          <label class="text-sm font-medium text-neutral-700">
+            Нижний хэштег
+            <input id="user-card-hashtag" type="text" class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2" />
+          </label>
+        </div>
+      </section>
+
+      <section class="rounded-2xl border border-neutral-200 bg-white p-4">
+        <h2 class="text-lg font-bold">Контакты</h2>
+        <div class="mt-4 grid gap-3 md:grid-cols-2">
+          <label class="text-sm font-medium text-neutral-700">
+            Адрес
+            <input id="user-card-address" type="text" class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2" />
+          </label>
+          <label class="text-sm font-medium text-neutral-700">
+            Индекс
+            <input id="user-card-postcode" type="text" class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2" />
+          </label>
+          <label class="text-sm font-medium text-neutral-700">
+            Email
+            <input id="user-card-email" type="email" class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2" />
+          </label>
+          <label class="text-sm font-medium text-neutral-700">
+            Доп. телефон
+            <input id="user-card-extra-phone" type="text" class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2" />
+          </label>
+        </div>
+      </section>
+
+      <section class="rounded-2xl border border-neutral-200 bg-white p-4">
+        <div class="flex items-center justify-between gap-4">
+          <h2 class="text-lg font-bold">Теги</h2>
+          <p id="user-card-tags-limit" class="text-xs text-neutral-500"></p>
+        </div>
+        <div class="mt-3 flex flex-wrap gap-2">
+          <input id="user-card-tag-input" type="text" class="flex-1 rounded-xl border border-neutral-300 px-3 py-2 text-sm" placeholder="#Дизайнер" />
+          <button id="user-card-tag-add" type="button" class="rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold transition hover:bg-neutral-100">Добавить</button>
+        </div>
+        <div id="user-card-tags-list" class="mt-3 flex flex-wrap gap-2"></div>
+      </section>
+
+      <section class="rounded-2xl border border-neutral-200 bg-white p-4">
+        <div class="flex items-center justify-between gap-4">
+          <h2 class="text-lg font-bold">Кнопки</h2>
+          <p id="user-card-buttons-limit" class="text-xs text-neutral-500"></p>
+        </div>
+        <div class="mt-3 flex flex-wrap justify-between gap-3">
+          <button id="user-card-button-add" type="button" class="rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold transition hover:bg-neutral-100">Добавить кнопку</button>
+        </div>
+        <div id="user-card-buttons-list" class="mt-4 space-y-2"></div>
+      </section>
+
+      <section class="rounded-2xl border border-neutral-200 bg-white p-4">
+        <h2 class="text-lg font-bold">Оформление</h2>
+        <div class="mt-4 grid gap-3 md:grid-cols-2">
+          <label class="text-sm font-medium text-neutral-700">
+            Тема
+            <select id="user-card-theme" class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm"></select>
+          </label>
+          <label class="text-sm font-medium text-neutral-700">
+            Кастомный цвет
+            <input id="user-card-custom-color" type="color" class="mt-2 h-10 w-16 rounded-lg border border-neutral-200 p-1" />
+          </label>
+          <label class="inline-flex items-center gap-2 text-sm md:col-span-2">
+            <input id="user-card-show-branding" type="checkbox" />
+            Скрыть брендинг UNQX
+          </label>
+        </div>
+      </section>
+
+      <div class="flex items-center justify-end gap-2">
+        <button id="user-card-save" type="button" class="rounded-xl bg-neutral-900 px-5 py-2 text-sm font-semibold text-white">Сохранить</button>
+      </div>
+    </form>
+  </div>
+  <%- include('../partials/admin-layout-end') %>
+  <script nonce="<%= cspNonce %>" src="/js/admin-layout.js"></script>
+  <script nonce="<%= cspNonce %>" src="/js/admin-dialogs.js"></script>
+  <script nonce="<%= cspNonce %>" src="/js/admin-user-card.js"></script>
+</body>
+</html>

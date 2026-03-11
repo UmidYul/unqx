@@ -1,4 +1,5 @@
 const express = require("express");
+const multer = require("multer");
 const { addDays, format, startOfDay, subDays } = require("date-fns");
 const { fromZonedTime, toZonedTime } = require("date-fns-tz");
 const { Prisma } = require("@prisma/client");
@@ -24,6 +25,18 @@ const {
 } = require("../../services/pricing-settings");
 const { buildOrderPaymentDraft } = require("../../services/payment-flow");
 const {
+  PROFILE_THEMES,
+  getEffectivePlan,
+  getTagLimit,
+  getButtonLimit,
+  canCreateCard,
+  normalizeThemeByPlan,
+  normalizeColor,
+  normalizeTags,
+  normalizeButtons,
+} = require("../../services/profile");
+const { isSupportedAvatarBuffer, saveAvatarFromBuffer, deleteAvatarByPublicPath } = require("../../services/avatar");
+const {
   getPaymentStatistics,
   getPaymentAlerts,
   getConversionFunnel,
@@ -31,6 +44,24 @@ const {
 } = require("../../services/payment-analytics");
 
 const router = express.Router();
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
+});
+const ALLOWED_MIME = new Set(["image/jpeg", "image/png", "image/webp"]);
+const PROFILE_CARD_BASE_COLUMNS = [
+  "owner_id",
+  "name",
+  "role",
+  "bio",
+  "email",
+  "avatar_url",
+  "tags",
+  "buttons",
+  "theme",
+  "custom_color",
+  "show_branding",
+];
 const PUSH_PRIORITY_SET = new Set(["default", "normal", "high"]);
 const PUSH_SOUND_SET = new Set(["default", "none"]);
 const BROADCAST_CHUNK_USERS = 400;
@@ -50,6 +81,257 @@ function normalizeAnalyticsPattern(value) {
     .toUpperCase()
     .replace(/[^A-Z0-9_*\-]/g, "")
     .slice(0, 32);
+}
+
+function parseJsonArray(value) {
+  if (!value) return [];
+  if (Array.isArray(value)) return value;
+  if (typeof value === "string" && value.trim()) {
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
+function toBool(value, fallback = false) {
+  if (typeof value === "boolean") return value;
+  if (value === 1 || value === "1" || value === "t" || value === "true") return true;
+  if (value === 0 || value === "0" || value === "f" || value === "false") return false;
+  return fallback;
+}
+
+function mapProfileCardRow(row) {
+  if (!row) return null;
+  const ownerId = row.ownerId ?? row.owner_id ?? null;
+  const avatarUrl = row.avatarUrl ?? row.avatar_url ?? "";
+  const customColor = row.customColor ?? row.custom_color ?? "";
+  const extraPhone = row.extraPhone ?? row.extra_phone ?? "";
+  const createdAt = row.createdAt ?? row.created_at ?? null;
+  const updatedAt = row.updatedAt ?? row.updated_at ?? null;
+  const showBrandingRaw = row.showBranding ?? row.show_branding;
+  return {
+    id: row.id,
+    ownerId,
+    name: row.name,
+    role: row.role || "",
+    bio: row.bio || "",
+    hashtag: row.hashtag || "",
+    address: row.address || "",
+    postcode: row.postcode || "",
+    email: row.email || "",
+    extraPhone: extraPhone || "",
+    avatarUrl: avatarUrl || "",
+    tags: parseJsonArray(row.tags),
+    buttons: parseJsonArray(row.buttons),
+    theme: typeof row.theme === "string" && PROFILE_THEMES.has(row.theme) ? row.theme : "default_dark",
+    customColor: customColor || "",
+    showBranding: toBool(showBrandingRaw, true),
+    createdAt,
+    updatedAt,
+  };
+}
+
+async function findProfileCardByOwnerId(ownerId) {
+  if (!ownerId) return null;
+  const rows = await prisma.$queryRaw`
+    SELECT *
+    FROM profile_cards
+    WHERE owner_id = ${ownerId}
+    LIMIT 1
+  `;
+  const row = Array.isArray(rows) ? rows[0] || null : null;
+  return mapProfileCardRow(row);
+}
+
+function buildProfileCardColumnValues(input) {
+  return {
+    owner_id: input.ownerId,
+    name: input.name,
+    role: input.role,
+    bio: input.bio,
+    email: input.email,
+    avatar_url: input.avatarUrl,
+    tags: JSON.stringify(Array.isArray(input.tags) ? input.tags : []),
+    buttons: JSON.stringify(Array.isArray(input.buttons) ? input.buttons : []),
+    theme: input.theme,
+    custom_color: input.customColor,
+    show_branding: Boolean(input.showBranding),
+  };
+}
+
+function buildRawErrorText(error) {
+  if (!error || typeof error !== "object") {
+    return "";
+  }
+  const parts = [];
+  const push = (value) => {
+    if (value === undefined || value === null) return;
+    const text = String(value);
+    if (text.trim()) parts.push(text);
+  };
+
+  push(error.message);
+  push(error.code);
+  push(error?.meta?.message);
+  push(error?.meta?.code);
+  push(error?.meta?.dbErrorCode);
+  push(error?.meta?.driverAdapterError?.message);
+  push(error?.meta?.driverAdapterError?.cause?.message);
+
+  try {
+    push(JSON.stringify(error.meta || {}));
+  } catch {
+    // ignore non-serializable meta
+  }
+
+  return parts.join("\n");
+}
+
+function extractMissingColumnName(error) {
+  const message = buildRawErrorText(error);
+  if (!message) return null;
+  const patterns = [
+    /column\s+"?([a-z0-9_]+)"?\s+does not exist/i,
+    /column\s+profile_cards\."?([a-z0-9_]+)"?\s+does not exist/i,
+  ];
+  for (const pattern of patterns) {
+    const match = message.match(pattern);
+    if (match && match[1]) {
+      return String(match[1]).toLowerCase();
+    }
+  }
+  return null;
+}
+
+function isCardThemeEnumValueError(error) {
+  if (!error || typeof error !== "object") return false;
+  const code = String(error.code || "");
+  const mergedMessage = buildRawErrorText(error);
+  const enumInputFailure =
+    code === "P2010" || code === "22P02" || /invalid input value for enum/i.test(mergedMessage);
+  return enumInputFailure && /cardtheme/i.test(mergedMessage);
+}
+
+function isMissingColumnError(error) {
+  if (!error || typeof error !== "object") return false;
+  const code = String(error.code || "");
+  const message = String(error.message || "");
+  return code === "42703" || /column .* does not exist/i.test(message);
+}
+
+function isMissingStorageError(error) {
+  if (!error || typeof error !== "object") return false;
+  const code = String(error.code || "");
+  const message = String(error.message || "");
+  const metaCode = String(error?.meta?.code || error?.meta?.dbErrorCode || "");
+  return (
+    code === "42P01" ||
+    code === "42703" ||
+    metaCode === "42P01" ||
+    metaCode === "42703" ||
+    /relation .* does not exist/i.test(message) ||
+    /column .* does not exist/i.test(message)
+  );
+}
+
+async function upsertProfileCardCompat(db, input) {
+  const requiredColumns = new Set(["owner_id", "name"]);
+  const baseValues = buildProfileCardColumnValues(input);
+  let enabledColumns = PROFILE_CARD_BASE_COLUMNS.filter((column) => {
+    return requiredColumns.has(column) || baseValues[column] !== undefined;
+  });
+  let effectiveTheme = input.theme;
+
+  for (let attempt = 0; attempt < PROFILE_CARD_BASE_COLUMNS.length + 4; attempt += 1) {
+    const valuesMap = buildProfileCardColumnValues({
+      ...input,
+      theme: effectiveTheme,
+    });
+    const entries = enabledColumns.map((column) => [column, valuesMap[column]]);
+    const columns = entries.map(([column]) => column);
+    const values = entries.map(([, value]) => value);
+    const placeholders = columns.map((column, index) => {
+      const n = index + 1;
+      if (column === "tags" || column === "buttons") {
+        return `$${n}::jsonb`;
+      }
+      return `$${n}`;
+    });
+    const updates = columns
+      .filter((column) => column !== "owner_id")
+      .map((column) => `"${column}" = EXCLUDED."${column}"`);
+
+    const query = `
+      INSERT INTO profile_cards (${columns.map((column) => `"${column}"`).join(", ")})
+      VALUES (${placeholders.join(", ")})
+      ON CONFLICT (owner_id) DO UPDATE
+        SET ${updates.join(", ")}
+      RETURNING *
+    `;
+
+    try {
+      const rows = await db.$queryRawUnsafe(query, ...values);
+      const row = Array.isArray(rows) ? rows[0] || null : null;
+      return mapProfileCardRow(row);
+    } catch (error) {
+      if (isCardThemeEnumValueError(error) && String(effectiveTheme || "") !== "default_dark" && columns.includes("theme")) {
+        console.warn(
+          `[express-app] unsupported CardTheme value "${String(effectiveTheme || "")}" in DB enum; fallback to default_dark`,
+        );
+        effectiveTheme = "default_dark";
+        continue;
+      }
+
+      const missingColumn = extractMissingColumnName(error);
+      if (missingColumn && enabledColumns.includes(missingColumn) && !requiredColumns.has(missingColumn)) {
+        console.warn(`[express-app] profile_cards column "${missingColumn}" is missing; retrying without it`);
+        enabledColumns = enabledColumns.filter((column) => column !== missingColumn);
+        continue;
+      }
+      throw error;
+    }
+  }
+
+  throw new Error("Failed to upsert profile card with available schema");
+}
+
+async function patchOptionalProfileCardFields(db, ownerId, fields) {
+  const optionalColumns = {
+    hashtag: fields.hashtag ?? null,
+    address: fields.address ?? null,
+    postcode: fields.postcode ?? null,
+    extra_phone: fields.extraPhone ?? null,
+  };
+
+  for (const [column, value] of Object.entries(optionalColumns)) {
+    try {
+      await db.$executeRawUnsafe(`UPDATE profile_cards SET "${column}" = $1 WHERE owner_id = $2`, value, ownerId);
+    } catch (error) {
+      if (isMissingColumnError(error)) {
+        continue;
+      }
+      throw error;
+    }
+  }
+}
+
+function parseProfileCardRow(row) {
+  if (!row) {
+    return null;
+  }
+  return mapProfileCardRow(row);
+}
+
+async function safeRecalculateScore(userId) {
+  try {
+    await recalculateAndRefreshPercentiles(userId);
+  } catch (error) {
+    console.error("[express-app] failed to recalculate score", error);
+  }
 }
 
 function isPushStorageError(error) {
@@ -1239,6 +1521,284 @@ router.get(
         totalPages: Math.max(1, Math.ceil(total / pageSize)),
       },
     });
+  }),
+);
+
+router.get(
+  "/users/:userId/card",
+  asyncHandler(async (req, res) => {
+    const userId = String(req.params.userId || "").trim();
+    if (!userId) {
+      res.status(400).json({ error: "User id is required" });
+      return;
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        firstName: true,
+        displayName: true,
+        username: true,
+        email: true,
+        plan: true,
+        status: true,
+        isVerified: true,
+        verifiedCompany: true,
+        createdAt: true,
+      },
+    });
+    if (!user) {
+      res.status(404).json({ error: "User not found" });
+      return;
+    }
+
+    let card;
+    try {
+      card = await findProfileCardByOwnerId(user.id);
+    } catch (error) {
+      if (isMissingStorageError(error)) {
+        res.status(503).json({ error: "Cards storage unavailable", code: "CARDS_STORAGE_UNAVAILABLE" });
+        return;
+      }
+      throw error;
+    }
+
+    const effective = getEffectivePlan(user);
+    res.json({
+      user,
+      card: parseProfileCardRow(card),
+      limits: {
+        tags: getTagLimit(effective.plan),
+        buttons: getButtonLimit(effective.plan),
+      },
+      themes: Array.from(PROFILE_THEMES),
+    });
+  }),
+);
+
+router.put(
+  "/users/:userId/card",
+  asyncHandler(async (req, res) => {
+    const userId = String(req.params.userId || "").trim();
+    if (!userId) {
+      res.status(400).json({ error: "User id is required" });
+      return;
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        plan: true,
+        status: true,
+      },
+    });
+    if (!user) {
+      res.status(404).json({ error: "User not found" });
+      return;
+    }
+
+    if (!canCreateCard(user)) {
+      res.status(403).json({ error: "Тариф не активирован", code: "PLAN_REQUIRED" });
+      return;
+    }
+
+    const effective = getEffectivePlan(user);
+    const body = req.body && typeof req.body === "object" ? req.body : {};
+
+    const name = String(body.name || "").trim().slice(0, 120);
+    if (!name) {
+      res.status(400).json({ error: "Name is required" });
+      return;
+    }
+
+    const role = String(body.role || "").trim().slice(0, 120) || null;
+    const bio = String(body.bio || "").trim().slice(0, 120) || null;
+    const hashtag = String(body.hashtag || "").trim().slice(0, 50) || null;
+    const address = String(body.address || "").trim() || null;
+    const postcode = String(body.postcode || "").trim().slice(0, 20) || null;
+    const email = String(body.email || "").trim().slice(0, 100) || null;
+    const extraPhone = String(body.extraPhone || "").trim().slice(0, 30) || null;
+
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      res.status(400).json({ error: "Invalid email" });
+      return;
+    }
+
+    const rawTags = Array.isArray(body.tags) ? body.tags : [];
+    const rawButtons = Array.isArray(body.buttons) ? body.buttons : [];
+    if (effective.plan !== "premium" && rawTags.length > getTagLimit("basic")) {
+      res.status(403).json({ error: "Upgrade required", code: "UPGRADE_REQUIRED" });
+      return;
+    }
+    if (effective.plan !== "premium" && rawButtons.length > getButtonLimit("basic")) {
+      res.status(403).json({ error: "Upgrade required", code: "UPGRADE_REQUIRED" });
+      return;
+    }
+    const tags = normalizeTags(body.tags, effective.plan);
+    const buttons = normalizeButtons(body.buttons, effective.plan);
+    const theme = normalizeThemeByPlan(body.theme, effective.plan);
+    const customColor = effective.plan === "premium" ? normalizeColor(body.customColor) : null;
+    const showBranding = effective.plan === "premium" ? Boolean(body.showBranding) : true;
+
+    if (effective.plan !== "premium") {
+      const requestedTheme = String(body.theme || "").trim();
+      if (requestedTheme && requestedTheme !== "default_dark") {
+        res.status(403).json({ error: "Upgrade required", code: "UPGRADE_REQUIRED" });
+        return;
+      }
+    }
+
+    let saved;
+    try {
+      saved = await prisma.$transaction(async (tx) => {
+        await upsertProfileCardCompat(tx, {
+          ownerId: user.id,
+          name,
+          role,
+          bio,
+          hashtag,
+          address,
+          postcode,
+          email,
+          extraPhone,
+          tags,
+          buttons,
+          theme,
+          customColor,
+          showBranding,
+        });
+        await patchOptionalProfileCardFields(tx, user.id, {
+          hashtag,
+          address,
+          postcode,
+          extraPhone,
+        });
+
+        await tx.slug.updateMany({
+          where: {
+            ownerId: user.id,
+            status: "approved",
+          },
+          data: {
+            status: "active",
+            activatedAt: new Date(),
+          },
+        });
+
+        return findProfileCardByOwnerId(user.id);
+      });
+    } catch (error) {
+      if (isMissingStorageError(error)) {
+        res.status(503).json({ error: "Cards storage unavailable", code: "CARDS_STORAGE_UNAVAILABLE" });
+        return;
+      }
+      throw error;
+    }
+
+    await safeRecalculateScore(user.id);
+    res.json({ ok: true, card: parseProfileCardRow(saved) });
+  }),
+);
+
+router.post(
+  "/users/:userId/card/avatar",
+  upload.single("file"),
+  asyncHandler(async (req, res) => {
+    const userId = String(req.params.userId || "").trim();
+    if (!userId) {
+      res.status(400).json({ error: "User id is required" });
+      return;
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, plan: true, status: true },
+    });
+    if (!user) {
+      res.status(404).json({ error: "User not found" });
+      return;
+    }
+    if (!canCreateCard(user)) {
+      res.status(403).json({ error: "Тариф не активирован", code: "PLAN_REQUIRED" });
+      return;
+    }
+
+    const card = await findProfileCardByOwnerId(user.id);
+    if (!card) {
+      res.status(400).json({ error: "Сначала сохрани визитку" });
+      return;
+    }
+
+    if (!req.file || !ALLOWED_MIME.has(req.file.mimetype)) {
+      res.status(400).json({ error: "Unsupported file type" });
+      return;
+    }
+
+    const okBuffer = await isSupportedAvatarBuffer(req.file.buffer);
+    if (!okBuffer) {
+      res.status(400).json({ error: "Invalid image payload" });
+      return;
+    }
+
+    const avatarUrl = await saveAvatarFromBuffer(
+      `profile_${String(user.id).replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 24)}`,
+      req.file.buffer,
+    );
+    if (card.avatarUrl && card.avatarUrl !== avatarUrl) {
+      await deleteAvatarByPublicPath(card.avatarUrl);
+    }
+
+    await prisma.$executeRaw`
+      UPDATE profile_cards
+      SET avatar_url = ${avatarUrl}
+      WHERE owner_id = ${user.id}
+    `;
+
+    res.json({ ok: true, avatarUrl });
+  }),
+);
+
+router.delete(
+  "/users/:userId/card/avatar",
+  asyncHandler(async (req, res) => {
+    const userId = String(req.params.userId || "").trim();
+    if (!userId) {
+      res.status(400).json({ error: "User id is required" });
+      return;
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, plan: true, status: true },
+    });
+    if (!user) {
+      res.status(404).json({ error: "User not found" });
+      return;
+    }
+    if (!canCreateCard(user)) {
+      res.status(403).json({ error: "Тариф не активирован", code: "PLAN_REQUIRED" });
+      return;
+    }
+
+    const card = await findProfileCardByOwnerId(user.id);
+    if (!card) {
+      res.status(404).json({ error: "Card not found" });
+      return;
+    }
+
+    if (card.avatarUrl) {
+      await deleteAvatarByPublicPath(card.avatarUrl);
+    }
+
+    await prisma.$executeRaw`
+      UPDATE profile_cards
+      SET avatar_url = NULL
+      WHERE owner_id = ${user.id}
+    `;
+
+    res.json({ ok: true, avatarUrl: "" });
   }),
 );
 

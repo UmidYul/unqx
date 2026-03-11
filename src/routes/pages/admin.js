@@ -105,6 +105,19 @@ router.get(
   }),
 );
 
+router.get(
+  "/admin/users/:userId/card",
+  requireAdminPage,
+  asyncHandler(async (req, res) => {
+    const userId = typeof req.params.userId === "string" ? req.params.userId.trim() : "";
+    res.render("admin/user-card", {
+      title: "Визитка пользователя",
+      adminSession: getAdminSession(req),
+      userId,
+    });
+  }),
+);
+
 module.exports = {
   adminPagesRouter: router,
 };
