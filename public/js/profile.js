@@ -848,7 +848,7 @@ Email: ${userEmail}
 
     const currentTab = () => {
       const raw = (location.hash || "#slugs").replace("#", "");
-      return ["slugs", "card", "analytics", "requests", "referrals", "settings"].includes(raw) ? raw : "slugs";
+      return ["slugs", "card", "analytics", "requests", "settings"].includes(raw) ? raw : "slugs";
     };
 
     const setTab = () => {
@@ -866,9 +866,6 @@ Email: ${userEmail}
       }
       if (active === "analytics") {
         void refreshAnalytics();
-      }
-      if (active === "referrals") {
-        renderReferrals();
       }
     };
 
