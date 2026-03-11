@@ -499,6 +499,11 @@
       return input;
     }
 
+    const cardDigits = parseCardDigits(input);
+    if (cardDigits) {
+      return `card:${cardDigits}`;
+    }
+
     if (kind === "card") {
       const digits = parseCardDigits(input);
       return digits ? `card:${digits}` : "";
@@ -581,13 +586,15 @@
       : [];
     const buttons = Array.isArray(card.buttons)
       ? card.buttons
-        .map((button) => ({
-          type: String(button?.type || "other")
+        .map((button) => {
+          const rawType = String(button?.type || "other")
             .trim()
-            .toLowerCase(),
-          label: String(button?.label || "").trim(),
-          url: normalizeButtonUrl(button?.url || button?.href || "", button?.type || "other", button?.label || ""),
-        }))
+            .toLowerCase();
+          const label = String(button?.label || "").trim();
+          const url = normalizeButtonUrl(button?.url || button?.href || "", rawType, label);
+          const type = url.startsWith("card:") ? "card" : rawType;
+          return { type, label, url };
+        })
         .filter((button) => button.label && isSupportedButtonHref(button.url))
         .slice(0, buttonLimit)
       : [];

@@ -662,11 +662,12 @@ function mapProfileButtons(rawButtons) {
       const label = String(obj.label || "").trim().slice(0, 50);
       const href = String(obj.href || obj.url || obj.value || "").trim();
       const normalizedHref = normalizeButtonUrl(href, type, label);
+      const effectiveType = normalizedHref.startsWith("card:") ? "card" : type;
       if (!label || !normalizedHref || !isSupportedButtonHref(normalizedHref)) {
         return null;
       }
       return {
-        type,
+        type: effectiveType,
         label,
         url: normalizedHref,
         isActive: true,
@@ -715,6 +716,10 @@ function normalizeButtonUrl(rawUrl, type, label) {
   const mapLikeLabel = /(карта|map|maps|geo|location|локац)/i.test(labelRaw);
   if (!input) return "";
   if (isSupportedButtonHref(input)) return input;
+  const cardDigits = parseCardDigits(input);
+  if (cardDigits) {
+    return `card:${cardDigits}`;
+  }
   if (kind === "card") {
     const digits = parseCardDigits(input);
     return digits ? `card:${digits}` : "";
