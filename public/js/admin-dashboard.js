@@ -639,6 +639,7 @@
           menuItem({ label: "Активировать", icon: "checkCircle", attrs: `data-act="sa" data-slug="${x.slug}"` }),
           menuItem({ label: x.state === "BLOCKED" ? "Разблокировать" : "Заблокировать", icon: x.state === "BLOCKED" ? "toggleRight" : "toggleLeft", attrs: `data-act="st" data-slug="${x.slug}" data-ns="${x.state === "BLOCKED" ? "free" : "blocked"}"` }),
           menuItem({ label: "Изменить цену", icon: "pen", attrs: `data-act="sp" data-slug="${x.slug}" data-p="${x.priceOverride ?? ""}"` }),
+          ...(x.ownerId ? [menuItem({ label: "Удалить slug", icon: "trash", attrs: `data-act="sd" data-slug="${x.slug}" data-owner-id="${X(x.ownerId)}" data-owner-name="${X(x.ownerName || "")}"`, danger: true })] : []),
           menuSeparator(),
           menuItem({ label: "Открыть визитку", icon: "external", attrs: `data-act="open-url" data-url="/${encodeURIComponent(x.slug)}"` }),
         ].join(""));
@@ -1516,6 +1517,26 @@
       const freedSlugs = Number(payload?.freedSlugs || 0);
       await showAlert(`Пользователь удален. Освобождено slug: ${freedSlugs}.`);
       void loadUsers();
+      closeAllRowMenus();
+      return;
+    }
+    if (a === "sd") {
+      const slug = n.getAttribute("data-slug");
+      const ownerId = n.getAttribute("data-owner-id");
+      const ownerName = n.getAttribute("data-owner-name") || "пользователя";
+      if (!slug || !ownerId) return;
+      const ok = await showConfirm(`Удалить slug ${slug} у ${ownerName}?\n\nБудут удалены аналитические записи по этому slug.`);
+      if (!ok) return;
+      const r = await fetch(`/api/admin/users/${encodeURIComponent(ownerId)}/slugs/${encodeURIComponent(slug)}`, { method: "DELETE", headers: H() });
+      if (!r.ok) {
+        await showAlert(await E(r));
+        return;
+      }
+      const payload = await r.json().catch(() => ({}));
+      const nextPrimary = payload?.nextPrimarySlug ? `\nНовый основной: ${payload.nextPrimarySlug}` : "";
+      await showAlert(`Slug ${slug} удален.${nextPrimary}`);
+      void loadUsers();
+      void loadSlugs();
       closeAllRowMenus();
       return;
     }
