@@ -2020,6 +2020,21 @@ Email: ${userEmail}
       saveDraft();
     });
 
+    el.cTags?.addEventListener("click", (event) => {
+      const target = event.target instanceof HTMLElement ? event.target : null;
+      const removeBtn = target?.closest('[data-a="rm-tag"]');
+      if (!(removeBtn instanceof HTMLElement)) return;
+      event.preventDefault();
+
+      const index = Number(removeBtn.getAttribute("data-i"));
+      if (!Number.isFinite(index) || index < 0 || index >= s.tags.length) return;
+
+      s.tags.splice(index, 1);
+      renderTags();
+      renderPreview();
+      saveDraft();
+    });
+
     el.cBtnAdd?.addEventListener("click", () => {
       const limit = getButtonLimit();
       if (Number.isFinite(limit) && s.buttons.length >= limit) {
@@ -2035,6 +2050,21 @@ Email: ${userEmail}
         value: "",
       });
 
+      renderButtons();
+      renderPreview();
+      saveDraft();
+    });
+
+    el.cBtns?.addEventListener("click", (event) => {
+      const target = event.target instanceof HTMLElement ? event.target : null;
+      const removeBtn = target?.closest('[data-a="rm-btn"]');
+      if (!(removeBtn instanceof HTMLElement)) return;
+      event.preventDefault();
+
+      const index = Number(removeBtn.getAttribute("data-i"));
+      if (!Number.isFinite(index) || index < 0 || index >= s.buttons.length) return;
+
+      s.buttons.splice(index, 1);
       renderButtons();
       renderPreview();
       saveDraft();
