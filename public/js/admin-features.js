@@ -376,18 +376,14 @@
     let conditionValue = null;
     if (conditionType === "custom") {
       const customRaw = String(fd.get("conditionPatternInput") || "");
-      const custom = buildFlashCustomConditionValue(customRaw);
-      if (!custom.allowedSlugs.length && !custom.slugPatterns.length) {
-        await showAlert("Добавьте хотя бы один кастомный slug или паттерн");
+      if (!customRaw.trim()) {
+        await showAlert("Add at least one custom rule");
         return;
       }
       conditionValue = {
-        allowedSlugs: custom.allowedSlugs,
-        slugPatterns: custom.slugPatterns,
+        matchMode: String(fd.get("conditionMatchMode") || "any"),
+        patternsInput: customRaw,
       };
-      if (custom.droppedCount > 0) {
-        await showAlert(`Часть значений пропущена (${custom.droppedCount}) - оставлены только валидные slug/паттерны.`);
-      }
     }
 
     await jsonFetch("/api/admin/flash-sales", {
@@ -518,14 +514,17 @@
           const currentPatternInput = conditionValueToInput(conditionValue);
           const nextPatternInput = window.prompt("Кастомные slug/маски через пробел или запятую", currentPatternInput);
           if (nextPatternInput == null) return;
-          const custom = buildFlashCustomConditionValue(nextPatternInput);
-          if (!custom.allowedSlugs.length && !custom.slugPatterns.length) {
-            await showAlert("Добавьте хотя бы один кастомный slug или паттерн");
+          if (!nextPatternInput.trim()) {
+            await showAlert("Add at least one custom rule");
             return;
           }
+          const currentMode = String(conditionValue?.matchMode || "any").toLowerCase() === "all" ? "all" : "any";
+          const nextModeRaw = window.prompt("Mode: any | all", currentMode);
+          if (nextModeRaw == null) return;
+          const nextMode = String(nextModeRaw || "").trim().toLowerCase() === "all" ? "all" : "any";
           nextConditionValue = {
-            allowedSlugs: custom.allowedSlugs,
-            slugPatterns: custom.slugPatterns,
+            matchMode: nextMode,
+            patternsInput: nextPatternInput,
           };
         }
         const nextStartsAt = window.prompt("Дата старта (YYYY-MM-DDTHH:mm)", currentStartsAt);
@@ -639,4 +638,5 @@
   if (tab === "drops") void loadDropsAdmin();
   setupFlashCreateForm();
 })();
+
 

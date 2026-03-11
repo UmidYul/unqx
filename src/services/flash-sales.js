@@ -4,6 +4,9 @@ const SLUG_PATTERN = /^[A-Z]{3}[0-9]{3}$/;
 const SLUG_MASK_PATTERN = /^[A-Z0-9*?]{6}$/;
 const SHORT_LETTER_MASK_PATTERN = /^[A-Z*?]{3}$/;
 const SHORT_DIGIT_MASK_PATTERN = /^[0-9*?]{3}$/;
+const LETTERS_PATTERN = /^[A-Z]{3}$/;
+const DIGITS_PATTERN = /^[0-9]{3}$/;
+const FLASH_MATCH_MODES = new Set(["any", "all"]);
 const ALPHABET_SIZE = 26;
 const DIGIT_VARIANTS = 1000;
 const SEQUENTIAL_DIGITS = ["012", "123", "234", "345", "456", "567", "678", "789"];
@@ -13,6 +16,21 @@ function normalizeSlug(value) {
     .toUpperCase()
     .replace(/[^A-Z0-9]/g, "")
     .slice(0, 6);
+}
+
+function normalizeLetters(value) {
+  const cleaned = String(value || "")
+    .toUpperCase()
+    .replace(/[^A-Z]/g, "")
+    .slice(0, 3);
+  return LETTERS_PATTERN.test(cleaned) ? cleaned : "";
+}
+
+function normalizeDigits(value) {
+  const cleaned = String(value || "")
+    .replace(/\D/g, "")
+    .slice(0, 3);
+  return DIGITS_PATTERN.test(cleaned) ? cleaned : "";
 }
 
 function hasSequentialDigits(digits) {
@@ -45,34 +63,123 @@ function isSlugMatchingMask(slug, mask) {
   return true;
 }
 
+function normalizeRule(type, value) {
+  const normalizedType = String(type || "").trim().toLowerCase();
+  if (normalizedType === "slug") {
+    const slug = normalizeSlug(value);
+    return SLUG_PATTERN.test(slug) ? { type: "slug", value: slug } : null;
+  }
+  if (normalizedType === "mask") {
+    const mask = normalizeCustomPattern(value);
+    return mask ? { type: "mask", value: mask } : null;
+  }
+  if (normalizedType === "letters") {
+    const letters = normalizeLetters(value);
+    return letters ? { type: "letters", value: letters } : null;
+  }
+  if (normalizedType === "digits") {
+    const digits = normalizeDigits(value);
+    return digits ? { type: "digits", value: digits } : null;
+  }
+  return null;
+}
+
+function normalizeFlashCustomPayload(rawPayload) {
+  const payload = rawPayload && typeof rawPayload === "object" ? rawPayload : {};
+  const includeRules = [];
+  const excludeRules = [];
+  const seen = new Set();
+
+  const pushRule = (rawRule, fallbackTarget) => {
+    const src = rawRule && typeof rawRule === "object" ? rawRule : {};
+    const normalized = normalizeRule(src.type, src.value);
+    if (!normalized) return;
+    const target = src.exclude ? "exclude" : fallbackTarget;
+    const dedupeKey = `${target}:${normalized.type}:${normalized.value}`;
+    if (seen.has(dedupeKey)) return;
+    seen.add(dedupeKey);
+    if (target === "exclude") excludeRules.push(normalized);
+    else includeRules.push(normalized);
+  };
+
+  if (Array.isArray(payload.includeRules)) {
+    payload.includeRules.forEach((rule) => pushRule(rule, "include"));
+  }
+  if (Array.isArray(payload.excludeRules)) {
+    payload.excludeRules.forEach((rule) => pushRule(rule, "exclude"));
+  }
+  if (Array.isArray(payload.rules)) {
+    payload.rules.forEach((rule) => {
+      const op = String(rule?.op || "").trim().toLowerCase();
+      pushRule(rule, op === "exclude" ? "exclude" : "include");
+    });
+  }
+
+  const allowed = Array.isArray(payload.allowedSlugs)
+    ? Array.from(
+        new Set(
+          payload.allowedSlugs
+            .map((item) => normalizeSlug(item))
+            .filter((item) => SLUG_PATTERN.test(item)),
+        ),
+      )
+    : [];
+  const patterns = Array.isArray(payload.slugPatterns)
+    ? Array.from(new Set(payload.slugPatterns.map((item) => normalizeCustomPattern(item)).filter(Boolean)))
+    : [];
+
+  for (const slug of allowed) {
+    pushRule({ type: "slug", value: slug }, "include");
+  }
+  for (const mask of patterns) {
+    pushRule({ type: "mask", value: mask }, "include");
+  }
+
+  const matchMode = FLASH_MATCH_MODES.has(String(payload.matchMode || "").toLowerCase())
+    ? String(payload.matchMode).toLowerCase()
+    : "any";
+
+  return {
+    matchMode,
+    includeRules,
+    excludeRules,
+  };
+}
+
+function isRuleMatched(slug, rule) {
+  if (!rule || typeof rule !== "object") return false;
+  if (rule.type === "slug") return slug === rule.value;
+  if (rule.type === "mask") return isSlugMatchingMask(slug, rule.value);
+  if (rule.type === "letters") return slug.slice(0, 3) === rule.value;
+  if (rule.type === "digits") return slug.slice(3) === rule.value;
+  return false;
+}
+
 function resolveConditionLabel(sale) {
   if (!sale) return "";
   switch (sale.conditionType) {
     case "all":
-      return "все slug";
+      return "all slugs";
     case "pattern_000":
-      return "slug с 000";
+      return "digits 000";
     case "pattern_aaa":
-      return "slug с одинаковыми буквами";
+      return "same letters (AAA)";
     case "sequential_digits":
-      return "slug с последовательными цифрами";
+      return "sequential digits";
     case "custom": {
-      const payload = sale.conditionValue && typeof sale.conditionValue === "object" ? sale.conditionValue : {};
-      const allowedCount = Array.isArray(payload.allowedSlugs) ? payload.allowedSlugs.length : 0;
-      const patternCount = Array.isArray(payload.slugPatterns) ? payload.slugPatterns.length : 0;
-      if (allowedCount > 0 && patternCount > 0) {
-        return `${allowedCount} точн. slug + ${patternCount} паттернов`;
+      const payload = normalizeFlashCustomPayload(sale.conditionValue);
+      const includeCount = payload.includeRules.length;
+      const excludeCount = payload.excludeRules.length;
+      if (includeCount > 0 && excludeCount > 0) {
+        return `custom: ${includeCount} rules, -${excludeCount} excludes`;
       }
-      if (allowedCount > 0) {
-        return `${allowedCount} выбранных slug`;
+      if (includeCount > 0) {
+        return `custom: ${includeCount} rules`;
       }
-      if (patternCount > 0) {
-        return `${patternCount} кастомных паттернов`;
-      }
-      return "выбранные slug";
+      return "custom rules";
     }
     default:
-      return "выбранные slug";
+      return "custom rules";
   }
 }
 
@@ -88,27 +195,15 @@ function isSlugMatchedByFlashSale({ slug, sale }) {
   if (sale.conditionType === "pattern_aaa") return letters[0] === letters[1] && letters[1] === letters[2];
   if (sale.conditionType === "sequential_digits") return hasSequentialDigits(digits);
   if (sale.conditionType === "custom") {
-    const payload = sale.conditionValue && typeof sale.conditionValue === "object" ? sale.conditionValue : {};
-    const allowed = Array.isArray(payload.allowedSlugs)
-      ? Array.from(
-          new Set(
-            payload.allowedSlugs
-              .map((item) => normalizeSlug(item))
-              .filter((item) => SLUG_PATTERN.test(item)),
-          ),
-        )
-      : [];
-    if (allowed.length && allowed.includes(normalized)) {
-      return true;
+    const payload = normalizeFlashCustomPayload(sale.conditionValue);
+    if (!payload.includeRules.length) return false;
+    if (payload.excludeRules.some((rule) => isRuleMatched(normalized, rule))) {
+      return false;
     }
-
-    const patterns = Array.isArray(payload.slugPatterns)
-      ? Array.from(new Set(payload.slugPatterns.map((item) => normalizeCustomPattern(item)).filter(Boolean)))
-      : [];
-    if (patterns.length) {
-      return patterns.some((pattern) => isSlugMatchingMask(normalized, pattern));
+    if (payload.matchMode === "all") {
+      return payload.includeRules.every((rule) => isRuleMatched(normalized, rule));
     }
-    return false;
+    return payload.includeRules.some((rule) => isRuleMatched(normalized, rule));
   }
 
   return false;
@@ -160,20 +255,14 @@ async function getFlashSaleSlotsLeft(sale) {
 
   try {
     if (sale.conditionType === "custom") {
-      const payload = sale.conditionValue && typeof sale.conditionValue === "object" ? sale.conditionValue : {};
-      const allowed = Array.isArray(payload.allowedSlugs)
-        ? Array.from(
-            new Set(
-              payload.allowedSlugs
-                .map((item) => normalizeSlug(item))
-                .filter((item) => SLUG_PATTERN.test(item)),
-            ),
-          )
-        : [];
-      const hasPatterns = Array.isArray(payload.slugPatterns) && payload.slugPatterns.length > 0;
-      if (hasPatterns) {
+      const payload = normalizeFlashCustomPayload(sale.conditionValue);
+      if (payload.matchMode !== "any" || payload.excludeRules.length > 0) {
         return null;
       }
+      if (!payload.includeRules.length || !payload.includeRules.every((rule) => rule.type === "slug")) {
+        return null;
+      }
+      const allowed = Array.from(new Set(payload.includeRules.map((rule) => rule.value))).filter((item) => SLUG_PATTERN.test(item));
       if (!allowed.length) {
         return null;
       }

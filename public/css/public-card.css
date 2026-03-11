@@ -101,43 +101,99 @@
 
 [data-page="public-home"] .site-flash-sale {
   top: var(--site-header-height);
-  border-bottom: 1px solid var(--site-promo-border);
-  background: linear-gradient(180deg, #f8f4e6 0%, var(--site-promo-bg) 100%);
-  color: var(--site-promo-text);
+  border-bottom: 1px solid #efc66a;
+  background:
+    radial-gradient(circle at 0% 0%, rgba(255, 249, 215, 0.9) 0%, rgba(255, 245, 198, 0.86) 45%, rgba(255, 240, 173, 0.9) 100%),
+    linear-gradient(90deg, #ffe6a6 0%, #ffd37b 100%);
+  box-shadow: 0 8px 26px rgba(138, 84, 0, 0.12);
+  color: #5d3000;
   padding: 0;
 }
 
 [data-page="public-home"] .site-flash-sale-inner {
   max-width: 1160px;
-  min-height: 56px;
-  padding: 8px 24px;
+  min-height: 64px;
+  padding: 10px 24px;
+}
+
+[data-page="public-home"] .site-flash-sale-badge {
+  flex: 0 0 auto;
+  border-radius: 999px;
+  border: 1px solid #d18617;
+  background: #fff7d8;
+  color: #9c4f00;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  padding: 6px 10px;
+}
+
+[data-page="public-home"] .site-flash-sale-main {
+  min-width: 0;
+  flex: 1 1 auto;
 }
 
 [data-page="public-home"] .site-flash-sale-copy {
+  margin: 0;
   font-size: 15px;
-  font-weight: 500;
-  color: var(--site-promo-text);
-}
-
-[data-page="public-home"] .site-flash-sale-copy strong,
-[data-page="public-home"] .site-flash-sale-copy [data-flash-countdown] {
-  font-weight: 800;
+  font-weight: 700;
   color: #7f3e00;
 }
 
+[data-page="public-home"] .site-flash-sale-copy strong {
+  color: #5e1f00;
+}
+
+[data-page="public-home"] .site-flash-sale-meta {
+  margin-left: 8px;
+  font-weight: 600;
+  color: #8d4b00;
+}
+
+[data-page="public-home"] .site-flash-sale-sub {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: rgba(93, 48, 0, 0.86);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+[data-page="public-home"] .site-flash-sale-timer-wrap {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 1.1;
+}
+
+[data-page="public-home"] .site-flash-sale-timer-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(93, 48, 0, 0.72);
+}
+
+[data-page="public-home"] .site-flash-sale-timer {
+  font-variant-numeric: tabular-nums;
+  font-size: 18px;
+  font-weight: 900;
+  color: #5e1f00;
+}
+
 [data-page="public-home"] .site-flash-sale-action {
-  min-height: 42px;
-  border-radius: 10px;
-  border-color: #dfbc4e;
-  background: #fff5cf;
+  min-height: 40px;
+  border-radius: 11px;
+  border: 1px solid #d18617;
+  background: #ffffff;
   color: #8f4900;
-  padding: 0 16px;
-  font-size: 14px;
-  font-weight: 700;
+  padding: 0 14px;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
 }
 
 [data-page="public-home"] .site-flash-sale-action:hover {
-  background: #fff0be;
+  background: #fff4d4;
 }
 
 .scrollbar-hide {
@@ -351,22 +407,41 @@ body[data-page="profile-page"] {
 
   [data-page="public-home"] .site-flash-sale-inner {
     min-height: 0;
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 8px;
+    align-items: stretch;
+    flex-wrap: wrap;
+    gap: 6px 10px;
     padding: 10px 16px;
+  }
+
+  [data-page="public-home"] .site-flash-sale-main {
+    width: 100%;
+    order: 2;
   }
 
   [data-page="public-home"] .site-flash-sale-copy {
     font-size: 13px;
     line-height: 1.35;
-    flex-wrap: wrap;
+  }
+
+  [data-page="public-home"] .site-flash-sale-sub {
+    font-size: 11px;
+  }
+
+  [data-page="public-home"] .site-flash-sale-timer-wrap {
+    align-items: flex-start;
+    order: 1;
+  }
+
+  [data-page="public-home"] .site-flash-sale-timer {
+    font-size: 16px;
   }
 
   [data-page="public-home"] .site-flash-sale-action {
-    min-height: 36px;
-    font-size: 12px;
-    padding: 0 12px;
+    min-height: 34px;
+    font-size: 11px;
+    padding: 0 10px;
+    order: 1;
+    margin-left: auto;
   }
 
   [data-page="public-home"] #calculator {

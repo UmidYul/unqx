@@ -71,15 +71,68 @@ function validateSettingValue(key, value) {
   return null;
 }
 
-function parseFlashPatternToken(value) {
+function normalizeFlashLetters(value) {
   const cleaned = String(value || "")
     .toUpperCase()
-    .replace(/[^A-Z0-9*?]/g, "");
-  if (!cleaned) return null;
-  if (FLASH_SLUG_RE.test(cleaned)) return { kind: "slug", value: cleaned };
-  if (FLASH_FULL_MASK_RE.test(cleaned)) return { kind: "mask", value: cleaned };
-  if (FLASH_LETTER_MASK_RE.test(cleaned)) return { kind: "mask", value: `${cleaned}***` };
-  if (FLASH_DIGIT_MASK_RE.test(cleaned)) return { kind: "mask", value: `***${cleaned}` };
+    .replace(/[^A-Z]/g, "")
+    .slice(0, 3);
+  return /^[A-Z]{3}$/.test(cleaned) ? cleaned : "";
+}
+
+function normalizeFlashDigits(value) {
+  const cleaned = String(value || "")
+    .replace(/\D/g, "")
+    .slice(0, 3);
+  return /^[0-9]{3}$/.test(cleaned) ? cleaned : "";
+}
+
+function normalizeFlashRule(type, value) {
+  const normalizedType = String(type || "").trim().toLowerCase();
+  if (normalizedType === "slug") {
+    const cleaned = String(value || "")
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, "");
+    return FLASH_SLUG_RE.test(cleaned) ? { type: "slug", value: cleaned } : null;
+  }
+  if (normalizedType === "mask") {
+    const cleaned = String(value || "")
+      .toUpperCase()
+      .replace(/[^A-Z0-9*?]/g, "");
+    if (!cleaned) return null;
+    if (FLASH_FULL_MASK_RE.test(cleaned)) return { type: "mask", value: cleaned };
+    if (FLASH_LETTER_MASK_RE.test(cleaned)) return { type: "mask", value: cleaned + "***" };
+    if (FLASH_DIGIT_MASK_RE.test(cleaned)) return { type: "mask", value: "***" + cleaned };
+    return null;
+  }
+  if (normalizedType === "letters") {
+    const letters = normalizeFlashLetters(value);
+    return letters ? { type: "letters", value: letters } : null;
+  }
+  if (normalizedType === "digits") {
+    const digits = normalizeFlashDigits(value);
+    return digits ? { type: "digits", value: digits } : null;
+  }
+  return null;
+}
+
+function parseFlashPatternToken(value) {
+  const rawToken = String(value || "").trim();
+  if (!rawToken) return null;
+  const isExclude = rawToken.startsWith("!") || rawToken.startsWith("-");
+  const token = isExclude ? rawToken.slice(1).trim() : rawToken;
+  if (!token) return null;
+
+  const typed = token.match(/^([a-z_]+):(.*)$/i);
+  if (typed) {
+    const parsed = normalizeFlashRule(typed[1], typed[2]);
+    if (!parsed) return null;
+    return { type: parsed.type, value: parsed.value, exclude: isExclude };
+  }
+
+  const bySlug = normalizeFlashRule("slug", token);
+  if (bySlug) return { type: bySlug.type, value: bySlug.value, exclude: isExclude };
+  const byMask = normalizeFlashRule("mask", token);
+  if (byMask) return { type: byMask.type, value: byMask.value, exclude: isExclude };
   return null;
 }
 
@@ -92,7 +145,12 @@ function tokenizePatternsInput(raw) {
 
 function normalizeFlashConditionValue(conditionType, rawConditionValue) {
   if (conditionType !== "custom") return null;
+
+  const matchModeRaw =
+    rawConditionValue && typeof rawConditionValue === "object" ? String(rawConditionValue.matchMode || "any") : "any";
+  const matchMode = matchModeRaw.toLowerCase() === "all" ? "all" : "any";
   const parsed = [];
+
   if (typeof rawConditionValue === "string") {
     parsed.push(...tokenizePatternsInput(rawConditionValue));
   } else if (rawConditionValue && typeof rawConditionValue === "object") {
@@ -102,33 +160,54 @@ function normalizeFlashConditionValue(conditionType, rawConditionValue) {
     if (Array.isArray(rawConditionValue.slugPatterns)) {
       parsed.push(...rawConditionValue.slugPatterns.map((item) => String(item || "")));
     }
+    if (Array.isArray(rawConditionValue.includeRules)) {
+      for (const rule of rawConditionValue.includeRules) {
+        if (rule && typeof rule === "object") {
+          parsed.push(String(rule.type || "").trim() + ":" + String(rule.value || "").trim());
+        }
+      }
+    }
+    if (Array.isArray(rawConditionValue.excludeRules)) {
+      for (const rule of rawConditionValue.excludeRules) {
+        if (rule && typeof rule === "object") {
+          parsed.push("!" + String(rule.type || "").trim() + ":" + String(rule.value || "").trim());
+        }
+      }
+    }
     if (typeof rawConditionValue.patternsInput === "string") {
       parsed.push(...tokenizePatternsInput(rawConditionValue.patternsInput));
     }
   }
 
-  const allowedSlugs = [];
-  const slugPatterns = [];
+  const includeRules = [];
+  const excludeRules = [];
   const seen = new Set();
   for (const token of parsed) {
     const normalized = parseFlashPatternToken(token);
     if (!normalized) continue;
-    const dedupeKey = `${normalized.kind}:${normalized.value}`;
+    const target = normalized.exclude ? "exclude" : "include";
+    const dedupeKey = target + ":" + normalized.type + ":" + normalized.value;
     if (seen.has(dedupeKey)) continue;
     seen.add(dedupeKey);
-    if (normalized.kind === "slug") {
-      allowedSlugs.push(normalized.value);
+    if (normalized.exclude) {
+      excludeRules.push({ type: normalized.type, value: normalized.value });
     } else {
-      slugPatterns.push(normalized.value);
+      includeRules.push({ type: normalized.type, value: normalized.value });
     }
   }
 
-  if (!allowedSlugs.length && !slugPatterns.length) {
-    return { error: "Для custom-условия укажите хотя бы один slug или паттерн" };
+  if (!includeRules.length) {
+    return { error: "Р”Р»СЏ custom-СѓСЃР»РѕРІРёСЏ СѓРєР°Р¶РёС‚Рµ С…РѕС‚СЏ Р±С‹ РѕРґРёРЅ slug РёР»Рё РїР°С‚С‚РµСЂРЅ" };
   }
+
+  const allowedSlugs = includeRules.filter((item) => item.type === "slug").map((item) => item.value);
+  const slugPatterns = includeRules.filter((item) => item.type === "mask").map((item) => item.value);
 
   return {
     value: {
+      matchMode,
+      includeRules,
+      excludeRules,
       allowedSlugs,
       slugPatterns,
     },
@@ -1342,3 +1421,4 @@ router.post(
 module.exports = {
   adminFeaturesApiRouter: router,
 };
+
