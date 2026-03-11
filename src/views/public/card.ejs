@@ -14,9 +14,10 @@
   };
   const normalizeButtonUrl = (rawUrl, type, label) => {
   const input = String(rawUrl || "").trim();
-  const kind = String(type || "other")
+  const kindRaw = String(type || "other")
   .trim()
   .toLowerCase();
+  const kind = kindRaw === "карта" ? "card" : kindRaw;
   const labelRaw = String(label || "").trim().toLowerCase();
   const cardLikeLabel = /(карта|card)/i.test(labelRaw);
   const mapLikeLabel = /(map|maps|geo|location|локац)/i.test(labelRaw);

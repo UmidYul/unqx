@@ -60,8 +60,23 @@
     const DRAFT_KEY = "unqx_profile_card_draft";
     const DRAFT_CLOCK_SKEW_TOLERANCE_MS = 1000 * 60 * 60 * 6;
 
+    const getDraftOwnerKey = () => {
+      if (s.user?.id) return `id:${s.user.id}`;
+      if (s.user?.username) return `u:${s.user.username}`;
+      if (s.user?.email) return `e:${s.user.email}`;
+      return "";
+    };
+
+    const getDraftStorageKey = () => {
+      const ownerKey = getDraftOwnerKey();
+      return ownerKey ? `${DRAFT_KEY}:${ownerKey}` : DRAFT_KEY;
+    };
+
     function saveDraft() {
+      const ownerKey = getDraftOwnerKey();
+      if (!ownerKey) return;
       const draft = {
+        ownerKey,
         name: el.cName?.value || "",
         role: el.cRole?.value || "",
         bio: el.cBio?.value || "",
@@ -77,16 +92,32 @@
         showBranding: el.cBranding ? !el.cBranding.checked : true,
         updatedAt: Date.now(),
       };
-      localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+      localStorage.setItem(getDraftStorageKey(), JSON.stringify(draft));
     }
 
     function clearDraft() {
-      localStorage.removeItem(DRAFT_KEY);
+      const key = getDraftStorageKey();
+      localStorage.removeItem(key);
+      if (key !== DRAFT_KEY) {
+        localStorage.removeItem(DRAFT_KEY);
+      }
     }
 
     function readDraft() {
-      const draftRaw = localStorage.getItem(DRAFT_KEY);
-      if (!draftRaw) return null;
+      const draftRaw = localStorage.getItem(getDraftStorageKey());
+      if (!draftRaw) {
+        const legacyRaw = localStorage.getItem(DRAFT_KEY);
+        if (!legacyRaw) return null;
+        try {
+          const legacy = JSON.parse(legacyRaw);
+          const ownerKey = getDraftOwnerKey();
+          if (!legacy || typeof legacy !== "object") return null;
+          if (legacy.ownerKey && ownerKey && legacy.ownerKey === ownerKey) return legacy;
+          return null;
+        } catch {
+          return null;
+        }
+      }
       try {
         const draft = JSON.parse(draftRaw);
         return typeof draft === "object" && draft ? draft : null;
@@ -110,8 +141,11 @@
     }
 
     function restoreDraft() {
+      if (!s.user) return;
       const draft = readDraft();
       if (!draft) return;
+      const ownerKey = getDraftOwnerKey();
+      if (draft.ownerKey && ownerKey && draft.ownerKey !== ownerKey) return;
       const cardUpdatedAt = s.card?.updatedAt ? new Date(s.card.updatedAt).getTime() : 0;
       const draftUpdatedAt = Number(draft.updatedAt || 0);
       if (!isDraftNewerThanCard(draftUpdatedAt, cardUpdatedAt)) return;

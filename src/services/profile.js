@@ -107,7 +107,8 @@ function normalizeButtons(rawButtons, effectivePlan) {
     }
     const obj = item && typeof item === "object" ? item : {};
     const typeRaw = String(obj.type || "other").trim().toLowerCase();
-    const type = BUTTON_TYPES.has(typeRaw) ? typeRaw : "other";
+    const typeAlias = typeRaw === "карта" ? "card" : typeRaw;
+    const type = BUTTON_TYPES.has(typeAlias) ? typeAlias : "other";
     const label = String(obj.label || "").trim().slice(0, 40);
     const value = String(obj.value || obj.url || "").trim().slice(0, 300);
     const href = String(obj.href || obj.url || "").trim().slice(0, 400);

@@ -586,9 +586,10 @@
           const rawType = String(button?.type || "other")
             .trim()
             .toLowerCase();
+          const normalizedType = rawType === "карта" ? "card" : rawType;
           const label = String(button?.label || "").trim();
-          const url = normalizeButtonUrl(button?.url || button?.href || "", rawType, label);
-          const type = url.startsWith("card:") ? "card" : rawType;
+          const url = normalizeButtonUrl(button?.url || button?.href || "", normalizedType, label);
+          const type = url.startsWith("card:") ? "card" : normalizedType;
           return { type, label, url };
         })
         .filter((button) => button.label && isSupportedButtonHref(button.url))
