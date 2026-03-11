@@ -474,7 +474,7 @@
   function detectCardBrand(digits) {
     const value = String(digits || "");
     if (!value) return "Карта";
-    if (/^8600\d{12}$/.test(value)) return "Uzcard";
+    if (/^(?:8600|5614)\d{12}$/.test(value)) return "Uzcard";
     if (/^9860\d{12}$/.test(value)) return "Humo";
     if (/^220[0-4]\d{12}$/.test(value)) return "Mir";
     if (/^4\d{12}(\d{3})?(\d{3})?$/.test(value)) return "Visa";
