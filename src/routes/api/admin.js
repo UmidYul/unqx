@@ -27,6 +27,7 @@ const { buildOrderPaymentDraft } = require("../../services/payment-flow");
 const {
   PROFILE_THEMES,
   getEffectivePlan,
+  getSlugLimit,
   getTagLimit,
   getButtonLimit,
   canCreateCard,
@@ -1686,7 +1687,7 @@ router.post(
       const result = await prisma.$transaction(async (tx) => {
         const user = await tx.user.findUnique({
           where: { id: userId },
-          select: { id: true },
+          select: { id: true, plan: true },
         });
         if (!user) {
           const error = new Error("User not found");
@@ -1704,13 +1705,29 @@ router.post(
           throw error;
         }
 
+        const slugLimit = getSlugLimit(getEffectivePlan(user).plan);
+        if (ownedSlugs.length >= slugLimit) {
+          const error = new Error("Slug limit reached for current plan");
+          error.code = "SLUG_LIMIT_REACHED";
+          error.slugLimit = slugLimit;
+          error.currentSlugCount = ownedSlugs.length;
+          error.ownedSlugs = ownedSlugs.map((row) => row.fullSlug);
+          throw error;
+        }
+
         const existing = await tx.slug.findUnique({
           where: { fullSlug: nextSlug },
-          select: { fullSlug: true, ownerId: true },
+          select: { fullSlug: true, ownerId: true, status: true },
         });
         if (existing?.ownerId && existing.ownerId !== userId) {
           const error = new Error("Slug is already assigned to another user");
           error.code = "SLUG_TAKEN";
+          throw error;
+        }
+        if (existing && !existing.ownerId && existing.status !== "free") {
+          const error = new Error("Slug is not free right now");
+          error.code = "SLUG_NOT_FREE";
+          error.status = existing.status;
           throw error;
         }
 
@@ -1741,37 +1758,75 @@ router.post(
           activatedAt: nextStatus === "active" ? now : null,
         };
 
-        const slugRow = existing
-          ? await tx.slug.update({
-            where: { fullSlug: nextSlug },
-            data: payload,
-            select: {
-              fullSlug: true,
-              ownerId: true,
-              status: true,
-              isPrimary: true,
-              requestedAt: true,
-              approvedAt: true,
-              activatedAt: true,
-            },
-          })
-          : await tx.slug.create({
-            data: {
-              letters: nextSlug.slice(0, 3),
-              digits: nextSlug.slice(3),
+        const slugSelect = {
+          fullSlug: true,
+          ownerId: true,
+          status: true,
+          isPrimary: true,
+          requestedAt: true,
+          approvedAt: true,
+          activatedAt: true,
+        };
+
+        let slugRow;
+        if (existing) {
+          const claimed = await tx.slug.updateMany({
+            where: {
               fullSlug: nextSlug,
-              ...payload,
+              ownerId: null,
+              status: "free",
             },
-            select: {
-              fullSlug: true,
-              ownerId: true,
-              status: true,
-              isPrimary: true,
-              requestedAt: true,
-              approvedAt: true,
-              activatedAt: true,
-            },
+            data: payload,
           });
+          if (!claimed.count) {
+            const refreshed = await tx.slug.findUnique({
+              where: { fullSlug: nextSlug },
+              select: { ownerId: true, status: true },
+            });
+            if (refreshed?.ownerId && refreshed.ownerId !== userId) {
+              const error = new Error("Slug is already assigned to another user");
+              error.code = "SLUG_TAKEN";
+              throw error;
+            }
+            if (refreshed?.ownerId === userId) {
+              const error = new Error("User already owns this slug");
+              error.code = "SLUG_ALREADY_OWNED";
+              throw error;
+            }
+            const error = new Error("Slug is not free right now");
+            error.code = "SLUG_NOT_FREE";
+            error.status = refreshed?.status || null;
+            throw error;
+          }
+          slugRow = await tx.slug.findUnique({
+            where: { fullSlug: nextSlug },
+            select: slugSelect,
+          });
+          if (!slugRow) {
+            const error = new Error("Slug is not free right now");
+            error.code = "SLUG_NOT_FREE";
+            throw error;
+          }
+        } else {
+          try {
+            slugRow = await tx.slug.create({
+              data: {
+                letters: nextSlug.slice(0, 3),
+                digits: nextSlug.slice(3),
+                fullSlug: nextSlug,
+                ...payload,
+              },
+              select: slugSelect,
+            });
+          } catch (createError) {
+            if (createError?.code === "P2002") {
+              const error = new Error("Slug is already assigned to another user");
+              error.code = "SLUG_TAKEN";
+              throw error;
+            }
+            throw createError;
+          }
+        }
 
         return slugRow;
       });
@@ -1789,6 +1844,24 @@ router.post(
       }
       if (error?.code === "SLUG_TAKEN") {
         res.status(409).json({ error: "Slug is already assigned to another user" });
+        return;
+      }
+      if (error?.code === "SLUG_NOT_FREE") {
+        res.status(409).json({
+          error: "Slug is not free right now",
+          code: "SLUG_NOT_FREE",
+          status: error.status || null,
+        });
+        return;
+      }
+      if (error?.code === "SLUG_LIMIT_REACHED") {
+        res.status(409).json({
+          error: "Slug limit reached for current plan",
+          code: "SLUG_LIMIT_REACHED",
+          slugLimit: Number(error.slugLimit || 0),
+          currentSlugCount: Number(error.currentSlugCount || 0),
+          ownedSlugs: Array.isArray(error.ownedSlugs) ? error.ownedSlugs : [],
+        });
         return;
       }
       throw error;
@@ -1844,7 +1917,6 @@ router.patch(
             approvedAt: true,
             activatedAt: true,
             pendingExpiresAt: true,
-            price: true,
           },
         });
         if (!current || current.ownerId !== userId) {
@@ -1855,7 +1927,7 @@ router.patch(
 
         const target = await tx.slug.findUnique({
           where: { fullSlug: nextSlug },
-          select: { fullSlug: true, ownerId: true },
+          select: { fullSlug: true, ownerId: true, status: true },
         });
         if (target?.ownerId && target.ownerId !== userId) {
           const error = new Error("New slug is already assigned to another user");
@@ -1865,6 +1937,12 @@ router.patch(
         if (target?.ownerId === userId) {
           const error = new Error("User already owns target slug");
           error.code = "TARGET_SLUG_ALREADY_OWNED";
+          throw error;
+        }
+        if (target && !target.ownerId && target.status !== "free") {
+          const error = new Error("New slug is not free right now");
+          error.code = "TARGET_SLUG_NOT_FREE";
+          error.status = target.status;
           throw error;
         }
 
@@ -1879,38 +1957,74 @@ router.patch(
           pendingExpiresAt: current.pendingExpiresAt,
         };
 
-        const replacement = target
-          ? await tx.slug.update({
-            where: { fullSlug: nextSlug },
-            data: transferPayload,
-            select: {
-              fullSlug: true,
-              ownerId: true,
-              status: true,
-              isPrimary: true,
-              requestedAt: true,
-              approvedAt: true,
-              activatedAt: true,
-            },
-          })
-          : await tx.slug.create({
-            data: {
-              letters: nextSlug.slice(0, 3),
-              digits: nextSlug.slice(3),
+        const slugSelect = {
+          fullSlug: true,
+          ownerId: true,
+          status: true,
+          isPrimary: true,
+          requestedAt: true,
+          approvedAt: true,
+          activatedAt: true,
+        };
+        let replacement;
+        if (target) {
+          const claimed = await tx.slug.updateMany({
+            where: {
               fullSlug: nextSlug,
-              price: current.price,
-              ...transferPayload,
+              ownerId: null,
+              status: "free",
             },
-            select: {
-              fullSlug: true,
-              ownerId: true,
-              status: true,
-              isPrimary: true,
-              requestedAt: true,
-              approvedAt: true,
-              activatedAt: true,
-            },
+            data: transferPayload,
           });
+          if (!claimed.count) {
+            const refreshed = await tx.slug.findUnique({
+              where: { fullSlug: nextSlug },
+              select: { ownerId: true, status: true },
+            });
+            if (refreshed?.ownerId && refreshed.ownerId !== userId) {
+              const error = new Error("New slug is already assigned to another user");
+              error.code = "TARGET_SLUG_TAKEN";
+              throw error;
+            }
+            if (refreshed?.ownerId === userId) {
+              const error = new Error("User already owns target slug");
+              error.code = "TARGET_SLUG_ALREADY_OWNED";
+              throw error;
+            }
+            const error = new Error("New slug is not free right now");
+            error.code = "TARGET_SLUG_NOT_FREE";
+            error.status = refreshed?.status || null;
+            throw error;
+          }
+          replacement = await tx.slug.findUnique({
+            where: { fullSlug: nextSlug },
+            select: slugSelect,
+          });
+          if (!replacement) {
+            const error = new Error("New slug is not free right now");
+            error.code = "TARGET_SLUG_NOT_FREE";
+            throw error;
+          }
+        } else {
+          try {
+            replacement = await tx.slug.create({
+              data: {
+                letters: nextSlug.slice(0, 3),
+                digits: nextSlug.slice(3),
+                fullSlug: nextSlug,
+                ...transferPayload,
+              },
+              select: slugSelect,
+            });
+          } catch (createError) {
+            if (createError?.code === "P2002") {
+              const error = new Error("New slug is already assigned to another user");
+              error.code = "TARGET_SLUG_TAKEN";
+              throw error;
+            }
+            throw createError;
+          }
+        }
 
         await tx.slug.update({
           where: { fullSlug: currentSlug },
@@ -1960,6 +2074,14 @@ router.patch(
       }
       if (error?.code === "TARGET_SLUG_ALREADY_OWNED") {
         res.status(409).json({ error: "User already owns target slug" });
+        return;
+      }
+      if (error?.code === "TARGET_SLUG_NOT_FREE") {
+        res.status(409).json({
+          error: "New slug is not free right now",
+          code: "TARGET_SLUG_NOT_FREE",
+          status: error.status || null,
+        });
         return;
       }
       throw error;

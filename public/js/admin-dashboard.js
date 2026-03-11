@@ -587,7 +587,7 @@
           const menu = menuWrap([
             menuItem({ label: "Сменить тариф", icon: "crown", attrs: `data-act="up" data-id="${X(x.telegramId)}" data-current-plan="${X(x.plan)}" data-active-slugs="${Number(x.activeSlugCount || 0)}" data-bracelet-slugs="${X(braceletSlugs)}"` }),
             ...(x.isVerified ? [menuItem({ label: "Снять верификацию", icon: "xCircle", attrs: `data-act="uv" data-id="${X(x.telegramId)}"`, danger: true })] : []),
-            menuItem({ label: "Добавить slug", icon: "link2", attrs: `data-act="us-add" data-id="${X(x.telegramId)}" data-name="${X(x.name)}"` }),
+            menuItem({ label: "Добавить slug", icon: "link2", attrs: `data-act="us-add" data-id="${X(x.telegramId)}" data-name="${X(x.name)}" data-slugs="${X(userSlugsCsv)}"` }),
             menuItem({ label: "Редактировать slug", icon: "pen", attrs: editSlugAttrs }),
             menuSeparator(),
             menuItem({ label: "Редактировать визитку", icon: "pen", attrs: `data-act="open-url" data-url="/admin/users/${encodeURIComponent(String(x.telegramId || ""))}/card"` }),
@@ -1316,6 +1316,11 @@
       const userId = n.getAttribute("data-id");
       const userName = n.getAttribute("data-name") || "пользователь";
       if (!userId) return;
+      const knownSlugs = String(n.getAttribute("data-slugs") || "")
+        .split(",")
+        .map((slug) => normalizeShortSlug(slug))
+        .filter((slug) => isShortSlug(slug));
+
       const entered = await showPrompt(`Новый slug для ${userName} (AAA000)`, "");
       if (entered === null) return;
       const nextSlug = normalizeShortSlug(entered);
@@ -1325,18 +1330,66 @@
       }
       const ok = await showConfirm(`Назначить slug ${nextSlug} пользователю ${userName}?`);
       if (!ok) return;
-      const r = await fetch(`/api/admin/users/${encodeURIComponent(userId)}/slugs`, {
+
+      const createResponse = await fetch(`/api/admin/users/${encodeURIComponent(userId)}/slugs`, {
         method: "POST",
         headers: H({ "Content-Type": "application/json" }),
         body: JSON.stringify({ slug: nextSlug }),
       });
-      if (!r.ok) {
-        await showAlert(await E(r));
+      if (createResponse.ok) {
+        void loadUsers();
+        void loadSlugs();
+        closeAllRowMenus();
         return;
       }
-      void loadUsers();
-      void loadSlugs();
-      closeAllRowMenus();
+
+      let payload = {};
+      try {
+        payload = await createResponse.json();
+      } catch {
+        payload = {};
+      }
+
+      if (createResponse.status === 409 && payload?.code === "SLUG_LIMIT_REACHED") {
+        const slugLimit = Number(payload?.slugLimit || 0);
+        const currentSlugCount = Number(payload?.currentSlugCount || 0);
+        if (slugLimit <= 0 || currentSlugCount <= 0) {
+          await showAlert("Лимит slug для пользователя равен 0. Сначала смени тариф, затем добавь slug.");
+          return;
+        }
+        const candidates = Array.isArray(payload?.ownedSlugs)
+          ? payload.ownedSlugs.map((slug) => normalizeShortSlug(slug)).filter((slug) => isShortSlug(slug))
+          : knownSlugs;
+        const defaultCurrent = candidates[0] || "";
+        const hint = candidates.length ? `\nSlug пользователя: ${candidates.join(", ")}` : "";
+        const enteredCurrent = await showPrompt(
+          `Лимит slug достигнут. Укажи slug, который нужно заменить.${hint}`,
+          defaultCurrent,
+        );
+        if (enteredCurrent === null) return;
+        const currentSlug = normalizeShortSlug(enteredCurrent);
+        if (!isShortSlug(currentSlug)) {
+          await showAlert("Текущий slug должен быть в формате AAA000.");
+          return;
+        }
+        const replaceOk = await showConfirm(`Заменить ${currentSlug} на ${nextSlug} у пользователя ${userName}?`);
+        if (!replaceOk) return;
+        const replaceResponse = await fetch(`/api/admin/users/${encodeURIComponent(userId)}/slugs/${encodeURIComponent(currentSlug)}`, {
+          method: "PATCH",
+          headers: H({ "Content-Type": "application/json" }),
+          body: JSON.stringify({ slug: nextSlug }),
+        });
+        if (!replaceResponse.ok) {
+          await showAlert(await E(replaceResponse));
+          return;
+        }
+        void loadUsers();
+        void loadSlugs();
+        closeAllRowMenus();
+        return;
+      }
+
+      await showAlert(payload?.error || `HTTP ${createResponse.status}`);
       return;
     }
     if (a === "us-edit") {
@@ -1347,20 +1400,17 @@
         .split(",")
         .map((slug) => normalizeShortSlug(slug))
         .filter((slug) => isShortSlug(slug));
-      if (!userSlugs.length) {
-        await showAlert("У этого пользователя нет slug для редактирования.");
+
+      const defaultCurrent = userSlugs[0] || "";
+      const hint = userSlugs.length ? ` (${userSlugs.join(", ")})` : "";
+      const enteredCurrent = await showPrompt(`Текущий slug${hint}`, defaultCurrent);
+      if (enteredCurrent === null) return;
+      const currentSlug = normalizeShortSlug(enteredCurrent);
+      if (!isShortSlug(currentSlug)) {
+        await showAlert("Текущий slug должен быть в формате AAA000.");
         return;
       }
-      let currentSlug = userSlugs[0];
-      if (userSlugs.length > 1) {
-        const enteredCurrent = await showPrompt(`Текущий slug (${userSlugs.join(", ")})`, currentSlug);
-        if (enteredCurrent === null) return;
-        currentSlug = normalizeShortSlug(enteredCurrent);
-        if (!userSlugs.includes(currentSlug)) {
-          await showAlert("Текущий slug должен быть из списка slug пользователя.");
-          return;
-        }
-      }
+
       const enteredNext = await showPrompt(`Новый slug для ${userName} (AAA000)`, currentSlug);
       if (enteredNext === null) return;
       const nextSlug = normalizeShortSlug(enteredNext);
