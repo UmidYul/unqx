@@ -499,6 +499,11 @@
       return input;
     }
 
+    if (kind === "card") {
+      const digits = parseCardDigits(input);
+      return digits ? `card:${digits}` : "";
+    }
+
     if (kind === "map" || mapLikeLabel) {
       return `https://maps.google.com/?q=${encodeURIComponent(input)}`;
     }
@@ -527,11 +532,6 @@
         .replace(/^(?:https?:\/\/)?(?:www\.)?(?:t(?:elegram)?\.me)\//i, "")
         .trim();
       return normalized ? `https://t.me/${normalized}` : "";
-    }
-
-    if (kind === "card") {
-      const digits = parseCardDigits(input);
-      return digits ? `card:${digits}` : "";
     }
 
     if (kind === "instagram") {

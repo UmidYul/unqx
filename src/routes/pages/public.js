@@ -715,6 +715,10 @@ function normalizeButtonUrl(rawUrl, type, label) {
   const mapLikeLabel = /(карта|map|maps|geo|location|локац)/i.test(labelRaw);
   if (!input) return "";
   if (isSupportedButtonHref(input)) return input;
+  if (kind === "card") {
+    const digits = parseCardDigits(input);
+    return digits ? `card:${digits}` : "";
+  }
   if (kind === "map" || mapLikeLabel) {
     return `https://maps.google.com/?q=${encodeURIComponent(input)}`;
   }
@@ -733,10 +737,6 @@ function normalizeButtonUrl(rawUrl, type, label) {
   if (kind === "telegram") {
     const normalized = input.replace(/^@+/, "").replace(/^https?:\/\/t\.me\//i, "").trim();
     return normalized ? `https://t.me/${normalized}` : "";
-  }
-  if (kind === "card") {
-    const digits = parseCardDigits(input);
-    return digits ? `card:${digits}` : "";
   }
   if (kind === "instagram") {
     const normalized = input
