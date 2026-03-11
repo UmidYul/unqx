@@ -2061,9 +2061,46 @@ Email: ${userEmail}
 
     const cycleStatus = (status) => (status === "active" ? "paused" : status === "paused" ? "private" : "active");
 
+    const openOrderModal = (options = {}) => {
+      const modalApi = window.UNQOrderModal;
+      if (modalApi && typeof modalApi.open === "function") {
+        modalApi.open(options);
+        return true;
+      }
 
+      const fallbackRoot = document.getElementById("order-modal-root");
+      if (fallbackRoot instanceof HTMLElement) {
+        if (fallbackRoot.dataset.fallbackBound !== "1") {
+          fallbackRoot.dataset.fallbackBound = "1";
+          const closeFallback = () => {
+            fallbackRoot.classList.remove("is-open", "block");
+            fallbackRoot.classList.add("hidden");
+            fallbackRoot.style.display = "none";
+            document.body.classList.remove("modal-open");
+          };
+          const fallbackBackdrop = document.getElementById("order-modal-backdrop");
+          const fallbackCloseTop = document.getElementById("order-modal-close-top");
+          const fallbackCloseForm = document.getElementById("order-modal-close-form");
+          const fallbackCloseSuccess = document.getElementById("order-modal-close-success");
+          fallbackBackdrop?.addEventListener("click", closeFallback);
+          fallbackCloseTop?.addEventListener("click", closeFallback);
+          fallbackCloseForm?.addEventListener("click", closeFallback);
+          fallbackCloseSuccess?.addEventListener("click", closeFallback);
+        }
+        fallbackRoot.style.display = "block";
+        fallbackRoot.classList.remove("hidden");
+        fallbackRoot.classList.add("block", "is-open");
+        document.body.classList.add("modal-open");
+        const fallbackDialog = document.getElementById("order-modal-dialog");
+        if (fallbackDialog instanceof HTMLElement) {
+          requestAnimationFrame(() => fallbackDialog.focus());
+        }
+        return true;
+      }
 
-
+      showModal("Ошибка", "Не удалось открыть форму заказа. Обновите страницу.");
+      return false;
+    };
 
     el.tabs.forEach((button) =>
       button.addEventListener("click", () => {
@@ -2148,9 +2185,7 @@ Email: ${userEmail}
     });
     el.braceletModalSubmit?.addEventListener("click", () => {
       closeBraceletModal();
-      if (window.UNQOrderModal && typeof window.UNQOrderModal.open === "function") {
-        window.UNQOrderModal.open({ bracelet: true });
-      }
+      openOrderModal({ bracelet: true });
     });
     const trapFocus = (dialog, event) => {
       if (!(dialog instanceof HTMLElement)) return;
@@ -2218,9 +2253,7 @@ Email: ${userEmail}
       const plan = getCurrentPlan();
       const count = s.slugs.length;
       if (plan === "none") {
-        if (window.UNQOrderModal && typeof window.UNQOrderModal.open === "function") {
-          window.UNQOrderModal.open({});
-        }
+        openOrderModal({});
         return;
       }
 
@@ -2236,25 +2269,19 @@ Email: ${userEmail}
           `Открыть Премиум · ${upgradePrice} сум единоразово`,
           "Купить Премиум →",
           () => {
-            if (window.UNQOrderModal && typeof window.UNQOrderModal.open === "function") {
-              window.UNQOrderModal.open({ plan: "premium" });
-            }
+            openOrderModal({ plan: "premium" });
           },
         );
         return;
       }
-      if (window.UNQOrderModal && typeof window.UNQOrderModal.open === "function") {
-        window.UNQOrderModal.open({});
-      }
+      openOrderModal({});
     });
 
     el.reqNewBtn?.addEventListener("click", () => {
       const plan = getCurrentPlan();
       const count = s.slugs.length;
       if (plan === "none") {
-        if (window.UNQOrderModal && typeof window.UNQOrderModal.open === "function") {
-          window.UNQOrderModal.open({});
-        }
+        openOrderModal({});
         return;
       }
       if (plan !== "premium" && count >= 1) {
@@ -2266,9 +2293,7 @@ Email: ${userEmail}
         showModal("Лимит достигнут", "Достигнут лимит 3 slug");
         return;
       }
-      if (window.UNQOrderModal && typeof window.UNQOrderModal.open === "function") {
-        window.UNQOrderModal.open({});
-      }
+      openOrderModal({});
     });
 
     document.addEventListener("click", async (event) => {
@@ -2533,9 +2558,7 @@ Email: ${userEmail}
         target.id === "profile-analytics-order-btn" ||
         target.id === "profile-requests-order-btn"
       ) {
-        if (window.UNQOrderModal && typeof window.UNQOrderModal.open === "function") {
-          window.UNQOrderModal.open({});
-        }
+        openOrderModal({});
       }
     });
 
