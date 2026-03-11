@@ -68,6 +68,22 @@ const BROADCAST_CHUNK_USERS = 400;
 const BROADCAST_JOB_LIMIT = 50;
 const BROADCAST_JOB_TTL_MS = 1000 * 60 * 30;
 const broadcastJobs = new Map();
+const USER_COLUMN_MAP = {
+  id: "id",
+  firstName: "first_name",
+  displayName: "display_name",
+  city: "city",
+  username: "username",
+  isVerified: "is_verified",
+  verifiedCompany: "verified_company",
+  plan: "plan",
+  planPurchasedAt: "plan_purchased_at",
+  planUpgradedAt: "plan_upgraded_at",
+  status: "status",
+  createdAt: "created_at",
+};
+let cachedUserColumns = null;
+let cachedUserColumnsAt = 0;
 
 function sanitizeSlug(value) {
   return String(value || "")
@@ -81,6 +97,31 @@ function normalizeAnalyticsPattern(value) {
     .toUpperCase()
     .replace(/[^A-Z0-9_*\-]/g, "")
     .slice(0, 32);
+}
+
+async function getUserColumns() {
+  const now = Date.now();
+  if (cachedUserColumns && now - cachedUserColumnsAt < 1000 * 60 * 5) {
+    return cachedUserColumns;
+  }
+  try {
+    const rows = await prisma.$queryRaw`
+      SELECT column_name
+      FROM information_schema.columns
+      WHERE table_name = 'users'
+    `;
+    cachedUserColumns = new Set((Array.isArray(rows) ? rows : []).map((row) => String(row.column_name || "")));
+    cachedUserColumnsAt = now;
+    return cachedUserColumns;
+  } catch {
+    return null;
+  }
+}
+
+function hasUserColumn(columns, field) {
+  if (!columns) return true;
+  const columnName = USER_COLUMN_MAP[field] || field;
+  return columns.has(columnName);
 }
 
 function parseJsonArray(value) {
@@ -1346,6 +1387,7 @@ router.get(
       return;
     }
 
+    const userColumns = await getUserColumns();
     const page = Math.max(1, Number(req.query.page || "1") || 1);
     const pageSizeRaw = Number(req.query.pageSize || "20") || 20;
     const pageSize = Math.max(1, Math.min(200, pageSizeRaw));
@@ -1355,22 +1397,47 @@ router.get(
     const planFilter = ["none", "basic", "premium"].includes(rawPlanFilter) ? rawPlanFilter : "all";
 
     const where = {};
-    if (planFilter !== "all") {
+    if (planFilter !== "all" && hasUserColumn(userColumns, "plan")) {
       where.plan = planFilter;
     }
     if (q) {
-      where.OR = [
-        { id: { contains: q, mode: "insensitive" } },
-        { firstName: { contains: q, mode: "insensitive" } },
-        { city: { contains: q, mode: "insensitive" } },
-        { username: { contains: q, mode: "insensitive" } },
-        { displayName: { contains: q, mode: "insensitive" } },
-      ];
+      const or = [];
+      if (hasUserColumn(userColumns, "id")) {
+        or.push({ id: { contains: q, mode: "insensitive" } });
+      }
+      if (hasUserColumn(userColumns, "firstName")) {
+        or.push({ firstName: { contains: q, mode: "insensitive" } });
+      }
+      if (hasUserColumn(userColumns, "city")) {
+        or.push({ city: { contains: q, mode: "insensitive" } });
+      }
+      if (hasUserColumn(userColumns, "username")) {
+        or.push({ username: { contains: q, mode: "insensitive" } });
+      }
+      if (hasUserColumn(userColumns, "displayName")) {
+        or.push({ displayName: { contains: q, mode: "insensitive" } });
+      }
+      if (or.length) {
+        where.OR = or;
+      }
     }
 
     let total;
     let users;
     try {
+      const select = { id: true };
+      if (hasUserColumn(userColumns, "firstName")) select.firstName = true;
+      if (hasUserColumn(userColumns, "displayName")) select.displayName = true;
+      if (hasUserColumn(userColumns, "city")) select.city = true;
+      if (hasUserColumn(userColumns, "username")) select.username = true;
+      if (hasUserColumn(userColumns, "isVerified")) select.isVerified = true;
+      if (hasUserColumn(userColumns, "verifiedCompany")) select.verifiedCompany = true;
+      if (hasUserColumn(userColumns, "plan")) select.plan = true;
+      if (hasUserColumn(userColumns, "planPurchasedAt")) select.planPurchasedAt = true;
+      if (hasUserColumn(userColumns, "planUpgradedAt")) select.planUpgradedAt = true;
+      if (hasUserColumn(userColumns, "status")) select.status = true;
+      if (hasUserColumn(userColumns, "createdAt")) select.createdAt = true;
+
       [total, users] = await Promise.all([
         prisma.user.count({ where }),
         prisma.user.findMany({
@@ -1378,24 +1445,15 @@ router.get(
           orderBy: sort === "created_desc" ? { createdAt: "desc" } : { createdAt: "desc" },
           skip: (page - 1) * pageSize,
           take: pageSize,
-          select: {
-            id: true,
-            firstName: true,
-            displayName: true,
-            city: true,
-            username: true,
-            isVerified: true,
-            verifiedCompany: true,
-            plan: true,
-            planPurchasedAt: true,
-            planUpgradedAt: true,
-            status: true,
-            createdAt: true,
-          },
+          select,
         }),
       ]);
     } catch (error) {
       if (isMissingModelError(error, "User")) {
+        res.status(503).json({ error: "Users storage unavailable", code: "USERS_STORAGE_UNAVAILABLE" });
+        return;
+      }
+      if (isMissingStorageError(error)) {
         res.status(503).json({ error: "Users storage unavailable", code: "USERS_STORAGE_UNAVAILABLE" });
         return;
       }
