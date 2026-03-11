@@ -668,6 +668,17 @@ function normalizeUserPlan(value) {
   return "none";
 }
 
+function normalizeShortSlug(value) {
+  return String(value || "")
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "")
+    .slice(0, 6);
+}
+
+function isShortSlug(value) {
+  return /^[A-Z]{3}[0-9]{3}$/.test(String(value || ""));
+}
+
 function normalizeDirectorySector(value) {
   const normalized = String(value || "")
     .trim()
@@ -1649,6 +1660,310 @@ router.get(
       },
       themes: Array.from(PROFILE_THEMES),
     });
+  }),
+);
+
+router.post(
+  "/users/:userId/slugs",
+  asyncHandler(async (req, res) => {
+    if (!ensureUsersStorageReady(res)) {
+      return;
+    }
+
+    const userId = String(req.params.userId || "").trim();
+    if (!userId) {
+      res.status(400).json({ error: "User id is required" });
+      return;
+    }
+
+    const nextSlug = normalizeShortSlug(req.body?.slug);
+    if (!isShortSlug(nextSlug)) {
+      res.status(400).json({ error: "Slug must be in AAA000 format" });
+      return;
+    }
+
+    try {
+      const result = await prisma.$transaction(async (tx) => {
+        const user = await tx.user.findUnique({
+          where: { id: userId },
+          select: { id: true },
+        });
+        if (!user) {
+          const error = new Error("User not found");
+          error.code = "USER_NOT_FOUND";
+          throw error;
+        }
+
+        const ownedSlugs = await tx.slug.findMany({
+          where: { ownerId: userId },
+          select: { fullSlug: true, isPrimary: true },
+        });
+        if (ownedSlugs.some((row) => row.fullSlug === nextSlug)) {
+          const error = new Error("User already owns this slug");
+          error.code = "SLUG_ALREADY_OWNED";
+          throw error;
+        }
+
+        const existing = await tx.slug.findUnique({
+          where: { fullSlug: nextSlug },
+          select: { fullSlug: true, ownerId: true },
+        });
+        if (existing?.ownerId && existing.ownerId !== userId) {
+          const error = new Error("Slug is already assigned to another user");
+          error.code = "SLUG_TAKEN";
+          throw error;
+        }
+
+        const hasPrimary = ownedSlugs.some((row) => row.isPrimary);
+        const shouldBePrimary = !hasPrimary;
+        const hasCard = await tx.profileCard.findUnique({
+          where: { ownerId: userId },
+          select: { ownerId: true },
+        });
+        const now = new Date();
+        const nextStatus = hasCard ? "active" : "approved";
+
+        if (shouldBePrimary) {
+          await tx.slug.updateMany({
+            where: { ownerId: userId },
+            data: { isPrimary: false },
+          });
+        }
+
+        const payload = {
+          ownerId: userId,
+          status: nextStatus,
+          isPrimary: shouldBePrimary,
+          pauseMessage: null,
+          pendingExpiresAt: null,
+          requestedAt: now,
+          approvedAt: now,
+          activatedAt: nextStatus === "active" ? now : null,
+        };
+
+        const slugRow = existing
+          ? await tx.slug.update({
+            where: { fullSlug: nextSlug },
+            data: payload,
+            select: {
+              fullSlug: true,
+              ownerId: true,
+              status: true,
+              isPrimary: true,
+              requestedAt: true,
+              approvedAt: true,
+              activatedAt: true,
+            },
+          })
+          : await tx.slug.create({
+            data: {
+              letters: nextSlug.slice(0, 3),
+              digits: nextSlug.slice(3),
+              fullSlug: nextSlug,
+              ...payload,
+            },
+            select: {
+              fullSlug: true,
+              ownerId: true,
+              status: true,
+              isPrimary: true,
+              requestedAt: true,
+              approvedAt: true,
+              activatedAt: true,
+            },
+          });
+
+        return slugRow;
+      });
+
+      await safeRecalculateScore(userId);
+      res.json({ ok: true, slug: result });
+    } catch (error) {
+      if (error?.code === "USER_NOT_FOUND") {
+        res.status(404).json({ error: "User not found" });
+        return;
+      }
+      if (error?.code === "SLUG_ALREADY_OWNED") {
+        res.status(409).json({ error: "User already owns this slug" });
+        return;
+      }
+      if (error?.code === "SLUG_TAKEN") {
+        res.status(409).json({ error: "Slug is already assigned to another user" });
+        return;
+      }
+      throw error;
+    }
+  }),
+);
+
+router.patch(
+  "/users/:userId/slugs/:slug",
+  asyncHandler(async (req, res) => {
+    if (!ensureUsersStorageReady(res)) {
+      return;
+    }
+
+    const userId = String(req.params.userId || "").trim();
+    if (!userId) {
+      res.status(400).json({ error: "User id is required" });
+      return;
+    }
+
+    const currentSlug = normalizeShortSlug(req.params.slug);
+    const nextSlug = normalizeShortSlug(req.body?.slug);
+    if (!isShortSlug(currentSlug) || !isShortSlug(nextSlug)) {
+      res.status(400).json({ error: "Slug must be in AAA000 format" });
+      return;
+    }
+    if (currentSlug === nextSlug) {
+      res.status(400).json({ error: "New slug must differ from current slug" });
+      return;
+    }
+
+    try {
+      const result = await prisma.$transaction(async (tx) => {
+        const user = await tx.user.findUnique({
+          where: { id: userId },
+          select: { id: true },
+        });
+        if (!user) {
+          const error = new Error("User not found");
+          error.code = "USER_NOT_FOUND";
+          throw error;
+        }
+
+        const current = await tx.slug.findUnique({
+          where: { fullSlug: currentSlug },
+          select: {
+            fullSlug: true,
+            ownerId: true,
+            status: true,
+            isPrimary: true,
+            pauseMessage: true,
+            requestedAt: true,
+            approvedAt: true,
+            activatedAt: true,
+            pendingExpiresAt: true,
+            price: true,
+          },
+        });
+        if (!current || current.ownerId !== userId) {
+          const error = new Error("User does not own current slug");
+          error.code = "CURRENT_SLUG_NOT_OWNED";
+          throw error;
+        }
+
+        const target = await tx.slug.findUnique({
+          where: { fullSlug: nextSlug },
+          select: { fullSlug: true, ownerId: true },
+        });
+        if (target?.ownerId && target.ownerId !== userId) {
+          const error = new Error("New slug is already assigned to another user");
+          error.code = "TARGET_SLUG_TAKEN";
+          throw error;
+        }
+        if (target?.ownerId === userId) {
+          const error = new Error("User already owns target slug");
+          error.code = "TARGET_SLUG_ALREADY_OWNED";
+          throw error;
+        }
+
+        const transferPayload = {
+          ownerId: userId,
+          status: current.status,
+          isPrimary: current.isPrimary,
+          pauseMessage: current.pauseMessage,
+          requestedAt: current.requestedAt,
+          approvedAt: current.approvedAt,
+          activatedAt: current.activatedAt,
+          pendingExpiresAt: current.pendingExpiresAt,
+        };
+
+        const replacement = target
+          ? await tx.slug.update({
+            where: { fullSlug: nextSlug },
+            data: transferPayload,
+            select: {
+              fullSlug: true,
+              ownerId: true,
+              status: true,
+              isPrimary: true,
+              requestedAt: true,
+              approvedAt: true,
+              activatedAt: true,
+            },
+          })
+          : await tx.slug.create({
+            data: {
+              letters: nextSlug.slice(0, 3),
+              digits: nextSlug.slice(3),
+              fullSlug: nextSlug,
+              price: current.price,
+              ...transferPayload,
+            },
+            select: {
+              fullSlug: true,
+              ownerId: true,
+              status: true,
+              isPrimary: true,
+              requestedAt: true,
+              approvedAt: true,
+              activatedAt: true,
+            },
+          });
+
+        await tx.slug.update({
+          where: { fullSlug: currentSlug },
+          data: {
+            ownerId: null,
+            status: "free",
+            isPrimary: false,
+            pauseMessage: null,
+            requestedAt: null,
+            approvedAt: null,
+            activatedAt: null,
+            pendingExpiresAt: null,
+          },
+        });
+
+        if (replacement.isPrimary) {
+          await tx.slug.updateMany({
+            where: {
+              ownerId: userId,
+              fullSlug: { not: replacement.fullSlug },
+            },
+            data: { isPrimary: false },
+          });
+        }
+
+        return replacement;
+      });
+
+      await safeRecalculateScore(userId);
+      res.json({
+        ok: true,
+        previousSlug: currentSlug,
+        slug: result,
+      });
+    } catch (error) {
+      if (error?.code === "USER_NOT_FOUND") {
+        res.status(404).json({ error: "User not found" });
+        return;
+      }
+      if (error?.code === "CURRENT_SLUG_NOT_OWNED") {
+        res.status(404).json({ error: "Current slug is not owned by this user" });
+        return;
+      }
+      if (error?.code === "TARGET_SLUG_TAKEN") {
+        res.status(409).json({ error: "New slug is already assigned to another user" });
+        return;
+      }
+      if (error?.code === "TARGET_SLUG_ALREADY_OWNED") {
+        res.status(409).json({ error: "User already owns target slug" });
+        return;
+      }
+      throw error;
+    }
   }),
 );
 
