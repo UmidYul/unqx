@@ -589,6 +589,7 @@
             ...(x.isVerified ? [menuItem({ label: "Снять верификацию", icon: "xCircle", attrs: `data-act="uv" data-id="${X(x.telegramId)}"`, danger: true })] : []),
             menuItem({ label: "Добавить slug", icon: "link2", attrs: `data-act="us-add" data-id="${X(x.telegramId)}" data-name="${X(x.name)}" data-slugs="${X(userSlugsCsv)}"` }),
             menuItem({ label: "Редактировать slug", icon: "pen", attrs: editSlugAttrs }),
+            menuItem({ label: "Удалить slug", icon: "trash", attrs: `data-act="us-delete" data-id="${X(x.telegramId)}" data-name="${X(x.name)}" data-slugs="${X(userSlugsCsv)}"`, danger: true }),
             menuSeparator(),
             menuItem({ label: "Редактировать визитку", icon: "pen", attrs: `data-act="open-url" data-url="/admin/users/${encodeURIComponent(String(x.telegramId || ""))}/card"` }),
             menuItem({ label: "Открыть профиль", icon: "external", attrs: profileLink ? `data-act="open-url" data-url="${profileLink}"` : 'disabled="disabled"' }),
@@ -1433,6 +1434,44 @@
         await showAlert(await E(r));
         return;
       }
+      void loadUsers();
+      void loadSlugs();
+      closeAllRowMenus();
+      return;
+    }
+    if (a === "us-delete") {
+      const userId = n.getAttribute("data-id");
+      const userName = n.getAttribute("data-name") || "пользователь";
+      if (!userId) return;
+      const userSlugs = String(n.getAttribute("data-slugs") || "")
+        .split(",")
+        .map((slug) => normalizeShortSlug(slug))
+        .filter((slug) => isShortSlug(slug));
+      if (!userSlugs.length) {
+        await showAlert("У этого пользователя нет slug для удаления.");
+        return;
+      }
+      const defaultSlug = userSlugs[0] || "";
+      const enteredSlug = await showPrompt(`Какой slug удалить? (${userSlugs.join(", ")})`, defaultSlug);
+      if (enteredSlug === null) return;
+      const targetSlug = normalizeShortSlug(enteredSlug);
+      if (!isShortSlug(targetSlug)) {
+        await showAlert("Slug должен быть в формате AAA000.");
+        return;
+      }
+      const ok = await showConfirm(`Удалить slug ${targetSlug} у ${userName}?\n\nБудут удалены аналитические записи по этому slug.`);
+      if (!ok) return;
+      const r = await fetch(`/api/admin/users/${encodeURIComponent(userId)}/slugs/${encodeURIComponent(targetSlug)}`, {
+        method: "DELETE",
+        headers: H(),
+      });
+      if (!r.ok) {
+        await showAlert(await E(r));
+        return;
+      }
+      const payload = await r.json().catch(() => ({}));
+      const nextPrimary = payload?.nextPrimarySlug ? `\nНовый основной: ${payload.nextPrimarySlug}` : "";
+      await showAlert(`Slug ${targetSlug} удален.${nextPrimary}`);
       void loadUsers();
       void loadSlugs();
       closeAllRowMenus();

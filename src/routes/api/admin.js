@@ -1917,6 +1917,7 @@ router.patch(
             approvedAt: true,
             activatedAt: true,
             pendingExpiresAt: true,
+            analyticsViewsCount: true,
           },
         });
         if (!current || current.ownerId !== userId) {
@@ -1965,6 +1966,7 @@ router.patch(
           requestedAt: true,
           approvedAt: true,
           activatedAt: true,
+          analyticsViewsCount: true,
         };
         let replacement;
         if (target) {
@@ -2037,8 +2039,49 @@ router.patch(
             approvedAt: null,
             activatedAt: null,
             pendingExpiresAt: null,
+            analyticsViewsCount: 0,
           },
         });
+
+        if (tx.analyticsView && typeof tx.analyticsView.updateMany === "function") {
+          await tx.analyticsView.updateMany({
+            where: { slug: currentSlug },
+            data: { slug: replacement.fullSlug },
+          });
+        }
+        if (tx.analyticsClick && typeof tx.analyticsClick.updateMany === "function") {
+          await tx.analyticsClick.updateMany({
+            where: { slug: currentSlug },
+            data: { slug: replacement.fullSlug },
+          });
+        }
+        if (typeof tx.$executeRaw === "function") {
+          try {
+            await tx.$executeRaw`UPDATE slug_views SET slug = ${replacement.fullSlug} WHERE slug = ${currentSlug}`;
+          } catch (rawError) {
+            const message = buildRawErrorText(rawError).toLowerCase();
+            if (!message.includes('relation "slug_views" does not exist')) {
+              throw rawError;
+            }
+          }
+          try {
+            await tx.$executeRaw`UPDATE slug_clicks SET slug = ${replacement.fullSlug} WHERE slug = ${currentSlug}`;
+          } catch (rawError) {
+            const message = buildRawErrorText(rawError).toLowerCase();
+            if (!message.includes('relation "slug_clicks" does not exist')) {
+              throw rawError;
+            }
+          }
+        }
+
+        const currentViewsCount = Number(current.analyticsViewsCount || 0);
+        if (currentViewsCount > 0) {
+          await tx.slug.update({
+            where: { fullSlug: replacement.fullSlug },
+            data: { analyticsViewsCount: { increment: currentViewsCount } },
+          });
+          replacement.analyticsViewsCount = Number(replacement.analyticsViewsCount || 0) + currentViewsCount;
+        }
 
         if (replacement.isPrimary) {
           await tx.slug.updateMany({
@@ -2082,6 +2125,220 @@ router.patch(
           code: "TARGET_SLUG_NOT_FREE",
           status: error.status || null,
         });
+        return;
+      }
+      throw error;
+    }
+  }),
+);
+
+router.delete(
+  "/users/:userId/slugs/:slug",
+  asyncHandler(async (req, res) => {
+    if (!ensureUsersStorageReady(res)) {
+      return;
+    }
+
+    const userId = String(req.params.userId || "").trim();
+    if (!userId) {
+      res.status(400).json({ error: "User id is required" });
+      return;
+    }
+
+    const targetSlug = normalizeShortSlug(req.params.slug);
+    if (!isShortSlug(targetSlug)) {
+      res.status(400).json({ error: "Slug must be in AAA000 format" });
+      return;
+    }
+
+    try {
+      const result = await prisma.$transaction(async (tx) => {
+        const user = await tx.user.findUnique({
+          where: { id: userId },
+          select: { id: true },
+        });
+        if (!user) {
+          const error = new Error("User not found");
+          error.code = "USER_NOT_FOUND";
+          throw error;
+        }
+
+        const current = await tx.slug.findUnique({
+          where: { fullSlug: targetSlug },
+          select: {
+            fullSlug: true,
+            ownerId: true,
+            isPrimary: true,
+          },
+        });
+        if (!current || current.ownerId !== userId) {
+          const error = new Error("User does not own target slug");
+          error.code = "TARGET_SLUG_NOT_OWNED";
+          throw error;
+        }
+
+        await tx.slug.update({
+          where: { fullSlug: targetSlug },
+          data: {
+            ownerId: null,
+            status: "free",
+            isPrimary: false,
+            pauseMessage: null,
+            pendingExpiresAt: null,
+            approvedAt: null,
+            requestedAt: null,
+            activatedAt: null,
+            analyticsViewsCount: 0,
+          },
+        });
+
+        let deletedAnalyticsViews = 0;
+        let deletedAnalyticsClicks = 0;
+        if (tx.analyticsView && typeof tx.analyticsView.deleteMany === "function") {
+          const viewsResult = await tx.analyticsView.deleteMany({
+            where: { slug: targetSlug },
+          });
+          deletedAnalyticsViews = Number(viewsResult?.count || 0);
+        }
+        if (tx.analyticsClick && typeof tx.analyticsClick.deleteMany === "function") {
+          const clicksResult = await tx.analyticsClick.deleteMany({
+            where: { slug: targetSlug },
+          });
+          deletedAnalyticsClicks = Number(clicksResult?.count || 0);
+        }
+
+        const rawCleanup = {
+          slugViewsLegacy: 0,
+          slugClicksLegacy: 0,
+          viewsLogLegacy: 0,
+          directoryExclusions: 0,
+          leaderboardExclusions: 0,
+          leaderboardSuspicious: 0,
+        };
+        if (typeof tx.$executeRaw === "function") {
+          try {
+            rawCleanup.slugViewsLegacy = Number(
+              await tx.$executeRaw`DELETE FROM slug_views WHERE slug = ${targetSlug}`,
+            );
+          } catch (rawError) {
+            const message = buildRawErrorText(rawError).toLowerCase();
+            if (!message.includes('relation "slug_views" does not exist')) {
+              throw rawError;
+            }
+          }
+          try {
+            rawCleanup.slugClicksLegacy = Number(
+              await tx.$executeRaw`DELETE FROM slug_clicks WHERE slug = ${targetSlug}`,
+            );
+          } catch (rawError) {
+            const message = buildRawErrorText(rawError).toLowerCase();
+            if (!message.includes('relation "slug_clicks" does not exist')) {
+              throw rawError;
+            }
+          }
+          try {
+            rawCleanup.viewsLogLegacy = Number(
+              await tx.$executeRaw`DELETE FROM views_log WHERE slug = ${targetSlug}`,
+            );
+          } catch (rawError) {
+            const message = buildRawErrorText(rawError).toLowerCase();
+            if (!message.includes('relation "views_log" does not exist')) {
+              throw rawError;
+            }
+          }
+          try {
+            rawCleanup.directoryExclusions = Number(
+              await tx.$executeRaw`DELETE FROM directory_exclusions WHERE slug = ${targetSlug}`,
+            );
+          } catch (rawError) {
+            const message = buildRawErrorText(rawError).toLowerCase();
+            if (!message.includes('relation "directory_exclusions" does not exist')) {
+              throw rawError;
+            }
+          }
+          try {
+            rawCleanup.leaderboardExclusions = Number(
+              await tx.$executeRaw`DELETE FROM leaderboard_exclusions WHERE full_slug = ${targetSlug}`,
+            );
+          } catch (rawError) {
+            const message = buildRawErrorText(rawError).toLowerCase();
+            if (!message.includes('relation "leaderboard_exclusions" does not exist')) {
+              throw rawError;
+            }
+          }
+          try {
+            rawCleanup.leaderboardSuspicious = Number(
+              await tx.$executeRaw`DELETE FROM leaderboard_suspicious_log WHERE full_slug = ${targetSlug}`,
+            );
+          } catch (rawError) {
+            const message = buildRawErrorText(rawError).toLowerCase();
+            if (!message.includes('relation "leaderboard_suspicious_log" does not exist')) {
+              throw rawError;
+            }
+          }
+        }
+
+        const remaining = await tx.slug.findMany({
+          where: { ownerId: userId },
+          select: {
+            fullSlug: true,
+            isPrimary: true,
+            status: true,
+            createdAt: true,
+          },
+        });
+
+        let nextPrimarySlug = null;
+        const hasPrimary = remaining.some((row) => row.isPrimary);
+        if (remaining.length && (current.isPrimary || !hasPrimary)) {
+          const rank = (status) =>
+            status === "active" || status === "private" || status === "paused" || status === "approved" ? 0 : 1;
+          const sorted = [...remaining].sort((left, right) => {
+            const byRank = rank(left.status) - rank(right.status);
+            if (byRank !== 0) return byRank;
+            const byCreatedAt = new Date(left.createdAt).getTime() - new Date(right.createdAt).getTime();
+            if (byCreatedAt !== 0) return byCreatedAt;
+            return String(left.fullSlug).localeCompare(String(right.fullSlug));
+          });
+          const nextPrimary = sorted[0] || null;
+          if (nextPrimary) {
+            await tx.slug.updateMany({
+              where: { ownerId: userId },
+              data: { isPrimary: false },
+            });
+            await tx.slug.update({
+              where: { fullSlug: nextPrimary.fullSlug },
+              data: { isPrimary: true },
+            });
+            nextPrimarySlug = nextPrimary.fullSlug;
+          }
+        } else if (hasPrimary) {
+          nextPrimarySlug = remaining.find((row) => row.isPrimary)?.fullSlug || null;
+        }
+
+        return {
+          deletedSlug: targetSlug,
+          nextPrimarySlug,
+          deletedAnalytics: {
+            analyticsViews: deletedAnalyticsViews,
+            analyticsClicks: deletedAnalyticsClicks,
+            ...rawCleanup,
+          },
+        };
+      });
+
+      await safeRecalculateScore(userId);
+      res.json({
+        ok: true,
+        ...result,
+      });
+    } catch (error) {
+      if (error?.code === "USER_NOT_FOUND") {
+        res.status(404).json({ error: "User not found" });
+        return;
+      }
+      if (error?.code === "TARGET_SLUG_NOT_OWNED") {
+        res.status(404).json({ error: "Target slug is not owned by this user" });
         return;
       }
       throw error;
