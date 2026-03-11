@@ -132,6 +132,8 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
   let lastFocusedElement = null;
   let isCloseConfirming = false;
   let lastTelegramPaymentUrl = "https://t.me/unqx_uz";
+  let quickPayState = null;
+  let quickPayDismissed = false;
   let state = {
     slugLocked: false,
     lockedSlug: "",
@@ -295,6 +297,55 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
       return;
     }
     window.location.href = telegramUrl;
+  }
+
+  function renderQuickPayButton() {
+    let node = document.getElementById("order-modal-quickpay");
+    const shouldShow = Boolean(quickPayState?.url) && !quickPayDismissed && !isOpen;
+
+    if (!shouldShow) {
+      if (node) {
+        node.classList.add("hidden");
+      }
+      return;
+    }
+
+    if (!(node instanceof HTMLElement)) {
+      node = document.createElement("div");
+      node.id = "order-modal-quickpay";
+      node.className =
+        "fixed bottom-4 right-4 z-[90] hidden items-center gap-2 rounded-full border border-neutral-200 bg-white px-3 py-2 text-xs font-semibold text-neutral-800 shadow-lg";
+      node.innerHTML = `
+        <button type="button" data-quickpay-action class="interactive-btn inline-flex items-center gap-2 rounded-full bg-neutral-900 px-3 py-1.5 text-xs font-semibold text-white">
+          Оплатить
+        </button>
+        <button type="button" data-quickpay-dismiss class="interactive-btn inline-flex h-7 w-7 items-center justify-center rounded-full border border-neutral-300 text-neutral-600" aria-label="Скрыть">
+          ×
+        </button>
+      `;
+      document.body.appendChild(node);
+      node.addEventListener("click", (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLElement)) return;
+        if (target.closest("[data-quickpay-action]")) {
+          if (quickPayState?.url) {
+            openTelegramUrl(quickPayState.url);
+          }
+          return;
+        }
+        if (target.closest("[data-quickpay-dismiss]")) {
+          quickPayDismissed = true;
+          renderQuickPayButton();
+        }
+      });
+    }
+
+    const label = quickPayState?.slug ? `Оплатить ${quickPayState.slug}` : "Оплатить";
+    const actionBtn = node.querySelector("[data-quickpay-action]");
+    if (actionBtn instanceof HTMLButtonElement) {
+      actionBtn.textContent = label;
+    }
+    node.classList.remove("hidden");
   }
 
 
@@ -1416,6 +1467,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     isOpen = true;
     isClosing = false;
     stopCountdown();
+    renderQuickPayButton();
     dom.root.style.display = "block";
     dom.root.classList.remove("hidden");
     dom.root.classList.add("block");
@@ -1459,6 +1511,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     isOpen = false;
     isClosing = true;
     stopCountdown();
+    renderQuickPayButton();
     dom.root.classList.remove("is-open");
     document.body.classList.remove("modal-open");
     setStatus("", "neutral");
