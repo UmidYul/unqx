@@ -335,7 +335,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
         }
         if (target.closest("[data-quickpay-dismiss]")) {
           quickPayDismissed = true;
-          renderQuickPayButton();
+          safeRenderQuickPayButton();
         }
       });
     }
@@ -346,6 +346,12 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
       actionBtn.textContent = label;
     }
     node.classList.remove("hidden");
+  }
+
+  function safeRenderQuickPayButton() {
+    if (typeof renderQuickPayButton === "function") {
+      safeRenderQuickPayButton();
+    }
   }
 
 
@@ -885,7 +891,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
       setPendingStatus("", "neutral");
       quickPayState = null;
       quickPayDismissed = false;
-      renderQuickPayButton();
+      safeRenderQuickPayButton();
       if (dom.pendingMeta instanceof HTMLElement) {
         dom.pendingMeta.textContent = "UNQ: —";
       }
@@ -913,7 +919,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
         reference: String(pending.paymentReference || "").trim(),
       };
       quickPayDismissed = false;
-      renderQuickPayButton();
+      safeRenderQuickPayButton();
     }
     if (dom.pendingCancel instanceof HTMLButtonElement) {
       dom.pendingCancel.setAttribute("data-order-id", String(pending.id || ""));
@@ -1467,7 +1473,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     isOpen = true;
     isClosing = false;
     stopCountdown();
-    renderQuickPayButton();
+    safeRenderQuickPayButton();
     dom.root.style.display = "block";
     dom.root.classList.remove("hidden");
     dom.root.classList.add("block");
@@ -1511,7 +1517,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     isOpen = false;
     isClosing = true;
     stopCountdown();
-    renderQuickPayButton();
+    safeRenderQuickPayButton();
     dom.root.classList.remove("is-open");
     document.body.classList.remove("modal-open");
     setStatus("", "neutral");
@@ -1656,7 +1662,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
           reference: String(orderCode || "").trim(),
         };
         quickPayDismissed = false;
-        renderQuickPayButton();
+        safeRenderQuickPayButton();
       }
 
       startCountdown(expiresAtIso);
@@ -1867,7 +1873,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
       if (quickPayState && quickPayState.orderId === orderId) {
         quickPayState = null;
         quickPayDismissed = false;
-        renderQuickPayButton();
+        safeRenderQuickPayButton();
       }
       await refreshCheckoutContext();
       setStatus("Заказ отменен. Теперь можно создать новый.", "success");

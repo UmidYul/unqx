@@ -40,6 +40,30 @@
         })
         : "—";
     };
+    const copyWithFallback = (value) => {
+      const textarea = document.createElement("textarea");
+      textarea.value = value;
+      textarea.setAttribute("readonly", "");
+      textarea.style.position = "fixed";
+      textarea.style.opacity = "0";
+      document.body.appendChild(textarea);
+      textarea.select();
+      textarea.setSelectionRange(0, textarea.value.length);
+      const success = document.execCommand("copy");
+      document.body.removeChild(textarea);
+      return success;
+    };
+    const copyText = async (value) => {
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(value);
+          return true;
+        }
+      } catch {
+        return copyWithFallback(value);
+      }
+      return copyWithFallback(value);
+    };
     const PROFILE_THEMES = [
       "default_dark",
       "arctic",
@@ -194,6 +218,11 @@
     let profileRefreshInFlight = false;
     let braceletModalLastFocused = null;
     let braceletModalOpen = false;
+    let emailModalLastFocused = null;
+    let emailModalOpen = false;
+    let emailModalStep = "request";
+    let passwordModalLastFocused = null;
+    let passwordModalOpen = false;
 
     const toOrderPaymentReference = (orderId) => `UNQX-${String(orderId || "").replace(/[^a-zA-Z0-9]/g, "").slice(0, 10).toUpperCase()}`;
 
@@ -373,6 +402,30 @@ Email: ${userEmail}
       stTg: $("#profile-settings-telegram"),
       stChangeEmail: $("#profile-settings-change-email"),
       stChangePassword: $("#profile-settings-change-password"),
+      emailModal: $("#profile-email-modal"),
+      emailModalDialog: $("#profile-email-modal-dialog"),
+      emailModalCloseTop: $("#profile-email-modal-close-top"),
+      emailModalCancel: $("#profile-email-modal-cancel"),
+      emailModalStepRequest: $("#profile-email-modal-step-request"),
+      emailModalStepVerify: $("#profile-email-modal-step-verify"),
+      emailModalPending: $("#profile-email-modal-pending"),
+      emailModalError: $("#profile-email-modal-error"),
+      emailModalErrorVerify: $("#profile-email-modal-error-verify"),
+      emailModalSubmit: $("#profile-email-modal-submit"),
+      emailModalVerify: $("#profile-email-modal-verify"),
+      emailModalBack: $("#profile-email-modal-back"),
+      emailNewEmail: $("#profile-email-new-email"),
+      emailCurrentPassword: $("#profile-email-current-password"),
+      emailVerifyCode: $("#profile-email-verify-code"),
+      passwordModal: $("#profile-password-modal"),
+      passwordModalDialog: $("#profile-password-modal-dialog"),
+      passwordModalCloseTop: $("#profile-password-modal-close-top"),
+      passwordModalClose: $("#profile-password-modal-close"),
+      passwordModalError: $("#profile-password-modal-error"),
+      passwordModalSubmit: $("#profile-password-modal-submit"),
+      passwordCurrent: $("#profile-password-current"),
+      passwordNew: $("#profile-password-new"),
+      passwordConfirm: $("#profile-password-confirm"),
       stLinkTelegram: $("#profile-settings-link-telegram"),
       stUnlinkTelegram: $("#profile-settings-unlink-telegram"),
       stNotif: $("#profile-settings-notifications"),
@@ -521,6 +574,222 @@ Email: ${userEmail}
       el.modalOk.addEventListener("click", once);
     };
 
+    const setEmailModalError = (message) => {
+      if (!el.emailModalError) return;
+      const value = String(message || "").trim();
+      el.emailModalError.textContent = value;
+      el.emailModalError.classList.toggle("hidden", !value);
+    };
+
+    const setEmailModalVerifyError = (message) => {
+      if (!el.emailModalErrorVerify) return;
+      const value = String(message || "").trim();
+      el.emailModalErrorVerify.textContent = value;
+      el.emailModalErrorVerify.classList.toggle("hidden", !value);
+    };
+
+    const setPasswordModalError = (message) => {
+      if (!el.passwordModalError) return;
+      const value = String(message || "").trim();
+      el.passwordModalError.textContent = value;
+      el.passwordModalError.classList.toggle("hidden", !value);
+    };
+
+    const setEmailModalStep = (step) => {
+      const nextStep = step === "verify" ? "verify" : "request";
+      emailModalStep = nextStep;
+      if (el.emailModalStepRequest) {
+        el.emailModalStepRequest.classList.toggle("hidden", nextStep !== "request");
+      }
+      if (el.emailModalStepVerify) {
+        el.emailModalStepVerify.classList.toggle("hidden", nextStep !== "verify");
+      }
+    };
+
+    const resetEmailModal = () => {
+      if (el.emailNewEmail instanceof HTMLInputElement) el.emailNewEmail.value = "";
+      if (el.emailCurrentPassword instanceof HTMLInputElement) el.emailCurrentPassword.value = "";
+      if (el.emailVerifyCode instanceof HTMLInputElement) el.emailVerifyCode.value = "";
+      if (el.emailModalPending) el.emailModalPending.textContent = "";
+      setEmailModalError("");
+      setEmailModalVerifyError("");
+      setEmailModalStep("request");
+      if (el.emailModalSubmit instanceof HTMLButtonElement) el.emailModalSubmit.disabled = false;
+      if (el.emailModalVerify instanceof HTMLButtonElement) el.emailModalVerify.disabled = false;
+    };
+
+    const openEmailModal = () => {
+      if (!(el.emailModal instanceof HTMLElement)) return;
+      resetEmailModal();
+      emailModalLastFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+      el.emailModal.classList.remove("hidden");
+      el.emailModal.classList.add("flex");
+      emailModalOpen = true;
+      requestAnimationFrame(() => {
+        if (el.emailNewEmail instanceof HTMLInputElement) el.emailNewEmail.focus();
+      });
+    };
+
+    const closeEmailModal = () => {
+      if (!(el.emailModal instanceof HTMLElement)) return;
+      el.emailModal.classList.add("hidden");
+      el.emailModal.classList.remove("flex");
+      emailModalOpen = false;
+      if (emailModalLastFocused instanceof HTMLElement) {
+        emailModalLastFocused.focus();
+      }
+    };
+
+    const resetPasswordModal = () => {
+      if (el.passwordCurrent instanceof HTMLInputElement) el.passwordCurrent.value = "";
+      if (el.passwordNew instanceof HTMLInputElement) el.passwordNew.value = "";
+      if (el.passwordConfirm instanceof HTMLInputElement) el.passwordConfirm.value = "";
+      setPasswordModalError("");
+      if (el.passwordModalSubmit instanceof HTMLButtonElement) el.passwordModalSubmit.disabled = false;
+    };
+
+    const openPasswordModal = () => {
+      if (!(el.passwordModal instanceof HTMLElement)) return;
+      resetPasswordModal();
+      passwordModalLastFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+      el.passwordModal.classList.remove("hidden");
+      el.passwordModal.classList.add("flex");
+      passwordModalOpen = true;
+      requestAnimationFrame(() => {
+        if (el.passwordCurrent instanceof HTMLInputElement) el.passwordCurrent.focus();
+      });
+    };
+
+    const closePasswordModal = () => {
+      if (!(el.passwordModal instanceof HTMLElement)) return;
+      el.passwordModal.classList.add("hidden");
+      el.passwordModal.classList.remove("flex");
+      passwordModalOpen = false;
+      if (passwordModalLastFocused instanceof HTMLElement) {
+        passwordModalLastFocused.focus();
+      }
+    };
+
+    const handleEmailRequest = async () => {
+      const email = String(el.emailNewEmail?.value || "").trim();
+      const currentPassword = String(el.emailCurrentPassword?.value || "");
+      setEmailModalError("");
+
+      if (!email) {
+        setEmailModalError("Введите новый email.");
+        return;
+      }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        setEmailModalError("Введите корректный email.");
+        return;
+      }
+      if (!currentPassword) {
+        setEmailModalError("Введите текущий пароль.");
+        return;
+      }
+
+      if (el.emailModalSubmit instanceof HTMLButtonElement) {
+        el.emailModalSubmit.disabled = true;
+      }
+      try {
+        const payload = await api("/api/auth/change-email/request", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, currentPassword }),
+        });
+        const pendingEmail = String(payload?.pendingEmail || email).trim();
+        if (el.emailModalPending) {
+          el.emailModalPending.textContent = pendingEmail
+            ? `Код отправлен на ${pendingEmail}.`
+            : "Код отправлен на ваш email.";
+        }
+        setEmailModalStep("verify");
+        requestAnimationFrame(() => {
+          if (el.emailVerifyCode instanceof HTMLInputElement) el.emailVerifyCode.focus();
+        });
+      } catch (error) {
+        setEmailModalError(error.message || "Не удалось отправить код");
+      } finally {
+        if (el.emailModalSubmit instanceof HTMLButtonElement) {
+          el.emailModalSubmit.disabled = false;
+        }
+      }
+    };
+
+    const handleEmailVerify = async () => {
+      const rawCode = String(el.emailVerifyCode?.value || "");
+      const code = rawCode.replace(/\D/g, "").slice(0, 6);
+      if (el.emailVerifyCode instanceof HTMLInputElement) {
+        el.emailVerifyCode.value = code;
+      }
+      setEmailModalVerifyError("");
+      if (!code) {
+        setEmailModalVerifyError("Введите код из письма.");
+        return;
+      }
+      if (el.emailModalVerify instanceof HTMLButtonElement) {
+        el.emailModalVerify.disabled = true;
+      }
+      try {
+        const verified = await api("/api/auth/change-email/verify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code }),
+        });
+        if (verified?.user && s.user) {
+          s.user = { ...s.user, ...verified.user };
+        }
+        renderSettings();
+        closeEmailModal();
+        showModal("Готово", "Email обновлён.");
+      } catch (error) {
+        setEmailModalVerifyError(error.message || "Не удалось подтвердить email");
+      } finally {
+        if (el.emailModalVerify instanceof HTMLButtonElement) {
+          el.emailModalVerify.disabled = false;
+        }
+      }
+    };
+
+    const handlePasswordChange = async () => {
+      const currentPassword = String(el.passwordCurrent?.value || "");
+      const newPassword = String(el.passwordNew?.value || "");
+      const confirmPassword = String(el.passwordConfirm?.value || "");
+      setPasswordModalError("");
+
+      if (!currentPassword) {
+        setPasswordModalError("Введите текущий пароль.");
+        return;
+      }
+      if (newPassword.length < 8) {
+        setPasswordModalError("Пароль должен быть минимум 8 символов.");
+        return;
+      }
+      if (newPassword !== confirmPassword) {
+        setPasswordModalError("Пароли не совпадают.");
+        return;
+      }
+
+      if (el.passwordModalSubmit instanceof HTMLButtonElement) {
+        el.passwordModalSubmit.disabled = true;
+      }
+      try {
+        await api("/api/auth/change-password", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ currentPassword, newPassword, confirmPassword }),
+        });
+        closePasswordModal();
+        showModal("Готово", "Пароль обновлён.");
+      } catch (error) {
+        setPasswordModalError(error.message || "Не удалось изменить пароль");
+      } finally {
+        if (el.passwordModalSubmit instanceof HTMLButtonElement) {
+          el.passwordModalSubmit.disabled = false;
+        }
+      }
+    };
+
     const closeBraceletModal = () => {
       if (!(el.braceletModal instanceof HTMLElement)) return;
       el.braceletModal.classList.add("hidden");
@@ -579,7 +848,7 @@ Email: ${userEmail}
 
     const currentTab = () => {
       const raw = (location.hash || "#slugs").replace("#", "");
-      return ["slugs", "card", "analytics", "requests", "settings"].includes(raw) ? raw : "slugs";
+      return ["slugs", "card", "analytics", "requests", "referrals", "settings"].includes(raw) ? raw : "slugs";
     };
 
     const setTab = () => {
@@ -597,6 +866,9 @@ Email: ${userEmail}
       }
       if (active === "analytics") {
         void refreshAnalytics();
+      }
+      if (active === "referrals") {
+        renderReferrals();
       }
     };
 
@@ -1840,6 +2112,35 @@ Email: ${userEmail}
     el.modal?.addEventListener("click", (event) => {
       if (event.target === el.modal) closeModal();
     });
+    el.emailModalCloseTop?.addEventListener("click", closeEmailModal);
+    el.emailModalCancel?.addEventListener("click", closeEmailModal);
+    el.emailModal?.addEventListener("click", (event) => {
+      if (event.target === el.emailModal) closeEmailModal();
+    });
+    el.emailModalSubmit?.addEventListener("click", () => {
+      void handleEmailRequest();
+    });
+    el.emailModalVerify?.addEventListener("click", () => {
+      void handleEmailVerify();
+    });
+    el.emailModalBack?.addEventListener("click", () => {
+      setEmailModalStep("request");
+      requestAnimationFrame(() => {
+        if (el.emailNewEmail instanceof HTMLInputElement) el.emailNewEmail.focus();
+      });
+    });
+    el.emailVerifyCode?.addEventListener("input", () => {
+      if (!(el.emailVerifyCode instanceof HTMLInputElement)) return;
+      el.emailVerifyCode.value = el.emailVerifyCode.value.replace(/\D/g, "").slice(0, 6);
+    });
+    el.passwordModalCloseTop?.addEventListener("click", closePasswordModal);
+    el.passwordModalClose?.addEventListener("click", closePasswordModal);
+    el.passwordModal?.addEventListener("click", (event) => {
+      if (event.target === el.passwordModal) closePasswordModal();
+    });
+    el.passwordModalSubmit?.addEventListener("click", () => {
+      void handlePasswordChange();
+    });
     el.braceletModalClose?.addEventListener("click", closeBraceletModal);
     el.braceletModalCloseTop?.addEventListener("click", closeBraceletModal);
     el.braceletModal?.addEventListener("click", (event) => {
@@ -1851,52 +2152,16 @@ Email: ${userEmail}
         window.UNQOrderModal.open({ bracelet: true });
       }
     });
-    document.addEventListener("keydown", (event) => {
-      if (event.key === "Escape") {
-        if (braceletModalOpen) {
-          closeBraceletModal();
-          return;
-        }
-        if (modalIsOpen) {
-          closeModal();
-        }
-        return;
-      }
-      if (event.key !== "Tab") return;
-      if (braceletModalOpen && el.braceletModalDialog instanceof HTMLElement) {
-        const focusable = Array.from(
-          el.braceletModalDialog.querySelectorAll(
-            'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
-          ),
-        ).filter((item) => item instanceof HTMLElement && item.offsetParent !== null);
-        if (!focusable.length) {
-          event.preventDefault();
-          el.braceletModalDialog.focus();
-          return;
-        }
-        const first = focusable[0];
-        const last = focusable[focusable.length - 1];
-        const current = document.activeElement;
-        if (event.shiftKey && current === first) {
-          event.preventDefault();
-          last.focus();
-          return;
-        }
-        if (!event.shiftKey && current === last) {
-          event.preventDefault();
-          first.focus();
-        }
-        return;
-      }
-      if (!modalIsOpen || !(el.modalDialog instanceof HTMLElement)) return;
+    const trapFocus = (dialog, event) => {
+      if (!(dialog instanceof HTMLElement)) return;
       const focusable = Array.from(
-        el.modalDialog.querySelectorAll(
+        dialog.querySelectorAll(
           'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
         ),
       ).filter((item) => item instanceof HTMLElement && item.offsetParent !== null);
       if (!focusable.length) {
         event.preventDefault();
-        el.modalDialog.focus();
+        dialog.focus();
         return;
       }
       const first = focusable[0];
@@ -1910,6 +2175,42 @@ Email: ${userEmail}
       if (!event.shiftKey && current === last) {
         event.preventDefault();
         first.focus();
+      }
+    };
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        if (emailModalOpen) {
+          closeEmailModal();
+          return;
+        }
+        if (passwordModalOpen) {
+          closePasswordModal();
+          return;
+        }
+        if (braceletModalOpen) {
+          closeBraceletModal();
+          return;
+        }
+        if (modalIsOpen) {
+          closeModal();
+        }
+        return;
+      }
+      if (event.key !== "Tab") return;
+      if (emailModalOpen && el.emailModalDialog instanceof HTMLElement) {
+        trapFocus(el.emailModalDialog, event);
+        return;
+      }
+      if (passwordModalOpen && el.passwordModalDialog instanceof HTMLElement) {
+        trapFocus(el.passwordModalDialog, event);
+        return;
+      }
+      if (braceletModalOpen && el.braceletModalDialog instanceof HTMLElement) {
+        trapFocus(el.braceletModalDialog, event);
+        return;
+      }
+      if (modalIsOpen && el.modalDialog instanceof HTMLElement) {
+        trapFocus(el.modalDialog, event);
       }
     });
 
@@ -1973,6 +2274,216 @@ Email: ${userEmail}
     document.addEventListener("click", async (event) => {
       const target = event.target instanceof HTMLElement ? event.target : null;
       if (!target) return;
+      const actionNode = target.closest("[data-a]");
+      const action = actionNode instanceof HTMLElement ? actionNode.getAttribute("data-a") : "";
+
+      if (action === "open-qr") {
+        const slug = String(actionNode.getAttribute("data-slug") || "").trim();
+        if (!slug) return;
+        try {
+          await openQrModal(slug);
+        } catch (error) {
+          showModal("Ошибка", error.message || "Не удалось открыть QR");
+        }
+        return;
+      }
+
+      if (action === "cycle") {
+        const slug = String(actionNode.getAttribute("data-slug") || "").trim();
+        const current = String(actionNode.getAttribute("data-st") || "").trim().toLowerCase();
+        if (!slug) return;
+        const nextStatus = cycleStatus(current);
+        try {
+          await api(`/api/profile/slugs/${encodeURIComponent(slug)}/status`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ status: nextStatus }),
+          });
+          const slugs = Array.isArray(s.slugs) ? s.slugs : [];
+          slugs.forEach((item) => {
+            if (String(item.fullSlug) === slug) {
+              item.status = nextStatus;
+            }
+          });
+          renderSlugs();
+          renderPreview();
+          showSaveAlert("Статус обновлён");
+        } catch (error) {
+          showModal("Ошибка", error.message || "Не удалось обновить статус");
+        }
+        return;
+      }
+
+      if (action === "primary") {
+        const slug = String(actionNode.getAttribute("data-slug") || "").trim();
+        if (!slug) return;
+        try {
+          await api(`/api/profile/slugs/${encodeURIComponent(slug)}/primary`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({}),
+          });
+          const slugs = Array.isArray(s.slugs) ? s.slugs : [];
+          slugs.forEach((item) => {
+            item.isPrimary = String(item.fullSlug) === slug;
+          });
+          renderSlugs();
+          renderPreview();
+          showSaveAlert("Основной UNQ обновлён");
+        } catch (error) {
+          showModal("Ошибка", error.message || "Не удалось обновить основной UNQ");
+        }
+        return;
+      }
+
+      if (action === "save-pm") {
+        const slug = String(actionNode.getAttribute("data-slug") || "").trim();
+        if (!slug) return;
+        const input = document.querySelector(`[data-pm="${slug.replace(/"/g, "")}"]`);
+        const message = input instanceof HTMLInputElement ? input.value : "";
+        try {
+          const payload = await api(`/api/profile/slugs/${encodeURIComponent(slug)}/pause-message`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ message }),
+          });
+          const slugs = Array.isArray(s.slugs) ? s.slugs : [];
+          slugs.forEach((item) => {
+            if (String(item.fullSlug) === slug) {
+              item.pauseMessage = String(payload?.pauseMessage || "");
+            }
+          });
+          showSaveAlert("Сообщение сохранено");
+        } catch (error) {
+          showModal("Ошибка", error.message || "Не удалось сохранить сообщение");
+        }
+        return;
+      }
+
+      if (action === "goto-card") {
+        location.hash = "#card";
+        return;
+      }
+
+      if (action === "open-bracelet-order-modal") {
+        openBraceletModal();
+        return;
+      }
+
+      if (action === "claim-reward") {
+        const ruleId = String(actionNode.getAttribute("data-rule") || "").trim();
+        if (!ruleId) return;
+        try {
+          await api(`/api/features/referrals/rewards/${encodeURIComponent(ruleId)}/claim`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({}),
+          });
+          try {
+            s.referrals = await api("/api/referrals/bootstrap");
+          } catch {
+            s.referrals = null;
+          }
+          renderReferrals();
+          showSaveAlert("Награда начислена");
+        } catch (error) {
+          showModal("Ошибка", error.message || "Не удалось забрать награду");
+        }
+        return;
+      }
+
+      const shareButton = target.closest("[data-share-card]");
+      if (shareButton instanceof HTMLElement) {
+        const cardRoot = shareButton.closest("[data-card-view]");
+        const shareUrl = String(cardRoot?.getAttribute("data-share-url") || location.href || "").trim();
+        const labelNode = cardRoot?.querySelector("[data-share-label]");
+        let shared = false;
+        try {
+          if (navigator.share && shareUrl) {
+            await navigator.share({ title: document.title, url: shareUrl });
+            shared = true;
+          }
+        } catch {
+          shared = false;
+        }
+
+        if (!shared) {
+          const copied = await copyText(shareUrl);
+          if (labelNode instanceof HTMLElement) {
+            labelNode.textContent = copied ? "Скопировано" : "Ошибка";
+          }
+          if (copied) {
+            showSaveAlert("Ссылка скопирована");
+          } else {
+            showModal("Ошибка", "Не удалось скопировать ссылку");
+          }
+        } else if (labelNode instanceof HTMLElement) {
+          labelNode.textContent = "Отправлено";
+        }
+
+        if (labelNode instanceof HTMLElement) {
+          window.setTimeout(() => {
+            labelNode.textContent = "Поделиться";
+          }, 1600);
+        }
+        return;
+      }
+
+      const saveContactButton = target.closest("[data-save-contact]");
+      if (saveContactButton instanceof HTMLElement) {
+        const { card, primarySlug } = buildPreviewCardData();
+        const cardRoot = saveContactButton.closest("[data-card-view]");
+        const shareUrl = String(cardRoot?.getAttribute("data-share-url") || location.href || "").trim();
+        const fullName = String(card?.name || "UNQX User").trim();
+        const phone = String(card?.extraPhone || "").trim();
+        const email = String(card?.email || "").trim();
+        const safeName = fullName || "UNQX User";
+        const lines = ["BEGIN:VCARD", "VERSION:3.0", `FN:${safeName}`];
+        if (phone) {
+          lines.push(`TEL;TYPE=CELL:${phone}`);
+        }
+        if (email) {
+          lines.push(`EMAIL;TYPE=INTERNET:${email}`);
+        }
+        if (shareUrl) {
+          lines.push(`URL:${shareUrl}`);
+        }
+        lines.push("END:VCARD");
+        const blob = new Blob([`${lines.join("\r\n")}\r\n`], { type: "text/vcard;charset=utf-8" });
+        const downloadUrl = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        const filename = String(primarySlug?.fullSlug || "unq-card").toLowerCase().replace(/[^a-z0-9_-]/g, "");
+        link.href = downloadUrl;
+        link.download = `${filename || "contact"}.vcf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(downloadUrl);
+        showSaveAlert("Контакт сохранён");
+        return;
+      }
+
+      const copyCardButton = target.closest("[data-copy-card]");
+      if (copyCardButton instanceof HTMLElement) {
+        const cardToCopy = String(copyCardButton.getAttribute("data-copy-card") || "").trim();
+        if (!cardToCopy) return;
+        const copied = await copyText(cardToCopy);
+        const labelNode = copyCardButton.querySelector("span");
+        const previousText = labelNode instanceof HTMLElement ? labelNode.textContent || "" : "";
+        if (labelNode instanceof HTMLElement) {
+          labelNode.textContent = copied ? "Скопировано" : "Ошибка копирования";
+          window.setTimeout(() => {
+            labelNode.textContent = previousText;
+          }, 1400);
+        }
+        if (copied) {
+          showSaveAlert("Номер карты скопирован");
+        } else {
+          showModal("Ошибка", "Не удалось скопировать номер карты");
+        }
+        return;
+      }
+
       const payNode = target.closest('[data-a="pay-request"]');
       if (payNode instanceof HTMLElement) {
         const orderId = String(payNode.getAttribute("data-order-id") || "").trim();
@@ -2268,6 +2779,10 @@ Email: ${userEmail}
         showModal("Ошибка", error.message || "Не удалось удалить аватар");
       }
     });
+
+    el.stChangeEmail?.addEventListener("click", openEmailModal);
+
+    el.stChangePassword?.addEventListener("click", openPasswordModal);
 
     el.stSave?.addEventListener("click", async () => {
       if (!el.stStatus) return;

@@ -72,7 +72,7 @@
           <button type="button" data-tab-target="requests"
             class="profile-tab-btn interactive-btn min-h-11 rounded-xl border border-neutral-200 px-3 py-2 text-center text-xs font-medium sm:text-sm lg:text-left">ЗАЯВКИ</button>
           <button type="button" data-tab-target="referrals"
-            class="profile-tab-btn interactive-btn hidden min-h-11 rounded-xl border border-neutral-200 px-3 py-2 text-center text-xs font-medium sm:text-sm lg:text-left">РЕФЕРАЛЫ</button>
+            class="profile-tab-btn interactive-btn min-h-11 rounded-xl border border-neutral-200 px-3 py-2 text-center text-xs font-medium sm:text-sm lg:text-left">РЕФЕРАЛЫ</button>
           <button type="button" data-tab-target="settings"
             class="profile-tab-btn interactive-btn min-h-11 rounded-xl border border-neutral-200 px-3 py-2 text-center text-xs font-medium sm:text-sm lg:text-left">НАСТРОЙКИ</button>
         </nav>
@@ -746,6 +746,93 @@
         <button id="profile-qr-download-png" type="button"
           class="interactive-btn min-h-11 rounded-lg bg-neutral-900 px-3 py-2 text-sm font-semibold text-white">Скачать
           PNG</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="profile-email-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 p-4">
+    <div id="profile-email-modal-dialog" class="w-full max-w-md rounded-2xl bg-white p-5" role="dialog" aria-modal="true"
+      aria-labelledby="profile-email-modal-title" tabindex="-1">
+      <button id="profile-email-modal-close-top" type="button"
+        class="interactive-btn ml-auto inline-flex h-9 w-9 items-center justify-center rounded-lg border border-neutral-300 text-neutral-600"
+        aria-label="Закрыть окно">
+        <svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="m6 6 12 12M18 6 6 18"></path>
+        </svg>
+      </button>
+      <h3 id="profile-email-modal-title" class="text-lg font-bold text-neutral-900">Изменить email</h3>
+      <div id="profile-email-modal-step-request" class="mt-3 grid gap-3">
+        <div>
+          <label class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Новый email</label>
+          <input id="profile-email-new-email" type="email" autocomplete="email" placeholder="you@example.com"
+            class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm" />
+        </div>
+        <div>
+          <label class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Текущий пароль</label>
+          <input id="profile-email-current-password" type="password" autocomplete="current-password"
+            class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm" />
+        </div>
+        <p id="profile-email-modal-error" class="hidden text-xs text-red-700"></p>
+        <div class="mt-2 flex flex-col gap-2 sm:flex-row">
+          <button id="profile-email-modal-submit" type="button"
+            class="interactive-btn min-h-11 rounded-lg bg-neutral-900 px-3 py-2 text-sm font-semibold text-white sm:min-w-[160px]">Отправить
+            код</button>
+          <button id="profile-email-modal-cancel" type="button"
+            class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-3 py-2 text-sm font-semibold sm:min-w-[120px]">Отмена</button>
+        </div>
+      </div>
+      <div id="profile-email-modal-step-verify" class="mt-3 hidden">
+        <p id="profile-email-modal-pending" class="text-xs text-neutral-500"></p>
+        <div class="mt-2">
+          <label class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Код из письма</label>
+          <input id="profile-email-verify-code" type="text" inputmode="numeric" maxlength="6" placeholder="6 цифр"
+            class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm" />
+        </div>
+        <p id="profile-email-modal-error-verify" class="hidden text-xs text-red-700"></p>
+        <div class="mt-3 flex flex-col gap-2 sm:flex-row">
+          <button id="profile-email-modal-verify" type="button"
+            class="interactive-btn min-h-11 rounded-lg bg-neutral-900 px-3 py-2 text-sm font-semibold text-white sm:min-w-[160px]">Подтвердить</button>
+          <button id="profile-email-modal-back" type="button"
+            class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-3 py-2 text-sm font-semibold sm:min-w-[120px]">Назад</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="profile-password-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 p-4">
+    <div id="profile-password-modal-dialog" class="w-full max-w-md rounded-2xl bg-white p-5" role="dialog"
+      aria-modal="true" aria-labelledby="profile-password-modal-title" tabindex="-1">
+      <button id="profile-password-modal-close-top" type="button"
+        class="interactive-btn ml-auto inline-flex h-9 w-9 items-center justify-center rounded-lg border border-neutral-300 text-neutral-600"
+        aria-label="Закрыть окно">
+        <svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="m6 6 12 12M18 6 6 18"></path>
+        </svg>
+      </button>
+      <h3 id="profile-password-modal-title" class="text-lg font-bold text-neutral-900">Изменить пароль</h3>
+      <div class="mt-3 grid gap-3">
+        <div>
+          <label class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Текущий пароль</label>
+          <input id="profile-password-current" type="password" autocomplete="current-password"
+            class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm" />
+        </div>
+        <div>
+          <label class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Новый пароль</label>
+          <input id="profile-password-new" type="password" autocomplete="new-password"
+            class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm" />
+        </div>
+        <div>
+          <label class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Повторите пароль</label>
+          <input id="profile-password-confirm" type="password" autocomplete="new-password"
+            class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm" />
+        </div>
+        <p id="profile-password-modal-error" class="hidden text-xs text-red-700"></p>
+        <div class="mt-2 flex flex-col gap-2 sm:flex-row">
+          <button id="profile-password-modal-submit" type="button"
+            class="interactive-btn min-h-11 rounded-lg bg-neutral-900 px-3 py-2 text-sm font-semibold text-white sm:min-w-[140px]">Сохранить</button>
+          <button id="profile-password-modal-close" type="button"
+            class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-3 py-2 text-sm font-semibold sm:min-w-[120px]">Отмена</button>
+        </div>
       </div>
     </div>
   </div>
