@@ -695,7 +695,15 @@ function classifySectorFromTags(tags) {
 }
 
 function isSupportedButtonHref(value) {
-  return /^(https?:\/\/|mailto:|tel:)/i.test(String(value || "").trim());
+  return /^(https?:\/\/|mailto:|tel:|card:)/i.test(String(value || "").trim());
+}
+
+function parseCardDigits(rawValue) {
+  const digits = String(rawValue || "").replace(/\D/g, "");
+  if (digits.length < 12 || digits.length > 19) {
+    return "";
+  }
+  return digits;
 }
 
 function normalizeButtonUrl(rawUrl, type, label) {
@@ -725,6 +733,10 @@ function normalizeButtonUrl(rawUrl, type, label) {
   if (kind === "telegram") {
     const normalized = input.replace(/^@+/, "").replace(/^https?:\/\/t\.me\//i, "").trim();
     return normalized ? `https://t.me/${normalized}` : "";
+  }
+  if (kind === "card") {
+    const digits = parseCardDigits(input);
+    return digits ? `card:${digits}` : "";
   }
   if (kind === "instagram") {
     const normalized = input
