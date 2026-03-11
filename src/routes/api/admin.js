@@ -2055,25 +2055,6 @@ router.patch(
             data: { slug: replacement.fullSlug },
           });
         }
-        if (typeof tx.$executeRaw === "function") {
-          try {
-            await tx.$executeRaw`UPDATE slug_views SET slug = ${replacement.fullSlug} WHERE slug = ${currentSlug}`;
-          } catch (rawError) {
-            const message = buildRawErrorText(rawError).toLowerCase();
-            if (!message.includes('relation "slug_views" does not exist')) {
-              throw rawError;
-            }
-          }
-          try {
-            await tx.$executeRaw`UPDATE slug_clicks SET slug = ${replacement.fullSlug} WHERE slug = ${currentSlug}`;
-          } catch (rawError) {
-            const message = buildRawErrorText(rawError).toLowerCase();
-            if (!message.includes('relation "slug_clicks" does not exist')) {
-              throw rawError;
-            }
-          }
-        }
-
         const currentViewsCount = Number(current.analyticsViewsCount || 0);
         if (currentViewsCount > 0) {
           await tx.slug.update({
@@ -2095,6 +2076,25 @@ router.patch(
 
         return replacement;
       });
+
+      await safeExecuteRaw(
+        `
+        UPDATE slug_views
+        SET slug = $1
+        WHERE slug = $2
+        `,
+        result.fullSlug,
+        currentSlug,
+      );
+      await safeExecuteRaw(
+        `
+        UPDATE slug_clicks
+        SET slug = $1
+        WHERE slug = $2
+        `,
+        result.fullSlug,
+        currentSlug,
+      );
 
       await safeRecalculateScore(userId);
       res.json({
@@ -2215,69 +2215,6 @@ router.delete(
           leaderboardExclusions: 0,
           leaderboardSuspicious: 0,
         };
-        if (typeof tx.$executeRaw === "function") {
-          try {
-            rawCleanup.slugViewsLegacy = Number(
-              await tx.$executeRaw`DELETE FROM slug_views WHERE slug = ${targetSlug}`,
-            );
-          } catch (rawError) {
-            const message = buildRawErrorText(rawError).toLowerCase();
-            if (!message.includes('relation "slug_views" does not exist')) {
-              throw rawError;
-            }
-          }
-          try {
-            rawCleanup.slugClicksLegacy = Number(
-              await tx.$executeRaw`DELETE FROM slug_clicks WHERE slug = ${targetSlug}`,
-            );
-          } catch (rawError) {
-            const message = buildRawErrorText(rawError).toLowerCase();
-            if (!message.includes('relation "slug_clicks" does not exist')) {
-              throw rawError;
-            }
-          }
-          try {
-            rawCleanup.viewsLogLegacy = Number(
-              await tx.$executeRaw`DELETE FROM views_log WHERE slug = ${targetSlug}`,
-            );
-          } catch (rawError) {
-            const message = buildRawErrorText(rawError).toLowerCase();
-            if (!message.includes('relation "views_log" does not exist')) {
-              throw rawError;
-            }
-          }
-          try {
-            rawCleanup.directoryExclusions = Number(
-              await tx.$executeRaw`DELETE FROM directory_exclusions WHERE slug = ${targetSlug}`,
-            );
-          } catch (rawError) {
-            const message = buildRawErrorText(rawError).toLowerCase();
-            if (!message.includes('relation "directory_exclusions" does not exist')) {
-              throw rawError;
-            }
-          }
-          try {
-            rawCleanup.leaderboardExclusions = Number(
-              await tx.$executeRaw`DELETE FROM leaderboard_exclusions WHERE full_slug = ${targetSlug}`,
-            );
-          } catch (rawError) {
-            const message = buildRawErrorText(rawError).toLowerCase();
-            if (!message.includes('relation "leaderboard_exclusions" does not exist')) {
-              throw rawError;
-            }
-          }
-          try {
-            rawCleanup.leaderboardSuspicious = Number(
-              await tx.$executeRaw`DELETE FROM leaderboard_suspicious_log WHERE full_slug = ${targetSlug}`,
-            );
-          } catch (rawError) {
-            const message = buildRawErrorText(rawError).toLowerCase();
-            if (!message.includes('relation "leaderboard_suspicious_log" does not exist')) {
-              throw rawError;
-            }
-          }
-        }
-
         const remaining = await tx.slug.findMany({
           where: { ownerId: userId },
           select: {
@@ -2326,6 +2263,61 @@ router.delete(
           },
         };
       });
+
+      result.deletedAnalytics.slugViewsLegacy = Number(
+        await safeExecuteRaw(
+          `
+          DELETE FROM slug_views
+          WHERE slug = $1
+          `,
+          targetSlug,
+        ),
+      );
+      result.deletedAnalytics.slugClicksLegacy = Number(
+        await safeExecuteRaw(
+          `
+          DELETE FROM slug_clicks
+          WHERE slug = $1
+          `,
+          targetSlug,
+        ),
+      );
+      result.deletedAnalytics.viewsLogLegacy = Number(
+        await safeExecuteRaw(
+          `
+          DELETE FROM views_log
+          WHERE slug = $1
+          `,
+          targetSlug,
+        ),
+      );
+      result.deletedAnalytics.directoryExclusions = Number(
+        await safeExecuteRaw(
+          `
+          DELETE FROM directory_exclusions
+          WHERE slug = $1
+          `,
+          targetSlug,
+        ),
+      );
+      result.deletedAnalytics.leaderboardExclusions = Number(
+        await safeExecuteRaw(
+          `
+          DELETE FROM leaderboard_exclusions
+          WHERE full_slug = $1
+          `,
+          targetSlug,
+        ),
+      );
+      result.deletedAnalytics.leaderboardSuspicious = Number(
+        await safeExecuteRaw(
+          `
+          DELETE FROM leaderboard_suspicious_log
+          WHERE full_slug = $1
+          `,
+          targetSlug,
+        ),
+      );
 
       await safeRecalculateScore(userId);
       res.json({
