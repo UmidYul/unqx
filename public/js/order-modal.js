@@ -350,7 +350,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
 
   function safeRenderQuickPayButton() {
     if (typeof renderQuickPayButton === "function") {
-      safeRenderQuickPayButton();
+      renderQuickPayButton();
     }
   }
 
