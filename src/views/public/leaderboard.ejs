@@ -144,16 +144,14 @@
               <th class="px-3 py-2">Владелец</th>
               <th class="px-3 py-2">Slug</th>
               <th class="px-3 py-2">Просмотры</th>
-              <th class="px-3 py-2">Топ</th>
               <th class="px-3 py-2">UNQ Score</th>
               <th class="px-3 py-2">Тариф</th>
-              <th class="px-3 py-2">Действие</th>
             </tr>
           </thead>
           <tbody>
             <% if (!rest.length) { %>
               <tr>
-                <td colspan="8" class="px-3 py-8 text-center text-neutral-500">Нет данных</td>
+                <td colspan="6" class="px-3 py-8 text-center text-neutral-500">Нет данных</td>
               </tr>
               <% } %>
                 <% rest.forEach((item)=> { %>
@@ -204,18 +202,11 @@
                     <td class="px-3 py-2">
                       <%= Number(item.views || 0).toLocaleString('ru-RU') %>
                     </td>
-                    <td class="px-3 py-2">Топ <%= Number(item.topPercent || 100) %>%</td>
                     <td class="px-3 py-2">
                       <%= Number(item.score || 0).toLocaleString('ru-RU') %>
                     </td>
                     <td class="px-3 py-2">
                       <%= item.plan==='premium' ? 'ПРЕМИУМ' : 'БАЗОВЫЙ' %>
-                    </td>
-                    <td class="px-3 py-2">
-                      <% if (currentTelegramId && item.telegramId===currentTelegramId) { %>
-                        <button type="button" data-share-slug="<%= item.slug %>" data-share-rank="<%= item.rank %>"
-                          class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-2 py-1 text-xs font-semibold text-neutral-700">Поделиться</button>
-                        <% } %>
                     </td>
                   </tr>
                   <% }) %>
