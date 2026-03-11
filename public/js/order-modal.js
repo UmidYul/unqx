@@ -148,6 +148,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     initialFormSnapshot: null,
     pricing: { ...DEFAULT_PRICING, userPlan: "none" },
     slugPricing: { ...DEFAULT_SLUG_PRICING },
+    forceAuth: false,
   };
 
   const STEP_PROGRESS = {
@@ -904,8 +905,14 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
       };
     }
 
-    const forceAuth = Boolean(currentUser) && document.body?.getAttribute("data-page") === "profile-page";
+    const forceAuth = Boolean(state.forceAuth) && document.body?.getAttribute("data-page") === "profile-page";
     if (forceAuth && (!precheck.authenticated || precheck.nextAction === "login")) {
+      if (!currentUser) {
+        currentUser = getProfileUserFallback();
+      }
+      if (currentUser?.plan) {
+        precheck.currentPlan = currentUser.plan;
+      }
       precheck.authenticated = true;
       precheck.nextAction = "checkout";
       precheck.canPurchase = true;
@@ -1404,6 +1411,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
 
   async function open(options = {}) {
     state.lastOpenOptions = options && typeof options === "object" ? { ...options } : {};
+    state.forceAuth = document.body?.getAttribute("data-page") === "profile-page";
     lastFocusedElement = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     isOpen = true;
     isClosing = false;
