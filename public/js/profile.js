@@ -56,6 +56,14 @@
     const DEFAULT_PROFILE_AVATAR = "/brand/profile-thin.svg";
     const DEFAULT_BRACELET_PRICE = 300000;
 
+    const avatarSrc = (url) => {
+      const base = String(url || "").trim() || DEFAULT_PROFILE_AVATAR;
+      const version = Number(s.avatarVersion || 0);
+      if (!version || base === DEFAULT_PROFILE_AVATAR) return base;
+      const joiner = base.includes("?") ? "&" : "?";
+      return `${base}${joiner}v=${version}`;
+    };
+
 
     const DRAFT_KEY = "unqx_profile_card_draft";
     const DRAFT_CLOCK_SKEW_TOLERANCE_MS = 1000 * 60 * 60 * 6;
@@ -627,8 +635,8 @@ Email: ${userEmail}
     const renderSidebar = () => {
       if (!s.user) return;
       if (el.av) {
-        const sidebarAvatar = s.card?.avatarUrl || s.user.photoUrl || DEFAULT_PROFILE_AVATAR;
-        el.av.src = sidebarAvatar;
+        const sidebarAvatar = s.card?.avatarUrl || s.user.photoUrl;
+        el.av.src = avatarSrc(sidebarAvatar);
       }
       if (el.nm) el.nm.textContent = s.user.displayName || s.user.firstName || "UNQX User";
       if (el.un) el.un.textContent = s.user.username ? `@${s.user.username}` : "@—";
@@ -927,7 +935,7 @@ Email: ${userEmail}
 
       const card = s.card || {};
 
-      if (el.cAv) el.cAv.src = card.avatarUrl || s.user?.photoUrl || DEFAULT_PROFILE_AVATAR;
+      if (el.cAv) el.cAv.src = avatarSrc(card.avatarUrl || s.user?.photoUrl);
       if (el.cName) el.cName.value = card.name || s.user?.displayName || s.user?.firstName || "";
       if (el.cRole) el.cRole.value = card.role || "";
       if (el.cBio) el.cBio.value = card.bio || "";
@@ -942,14 +950,22 @@ Email: ${userEmail}
       s.tags = Array.isArray(card.tags) ? card.tags.slice(0) : [];
       // Normalize all button objects to always have 'url' for editing
       s.buttons = Array.isArray(card.buttons)
-        ? card.buttons.map((b) => ({
-          ...b,
-          url: typeof b.url === 'string' && b.url.length > 0
-            ? b.url
-            : (typeof b.href === 'string' && b.href.length > 0
-              ? b.href
-              : (typeof b.value === 'string' ? b.value : ''))
-        }))
+        ? card.buttons.map((b) => {
+          const urlValue =
+            typeof b.url === "string" && b.url.length > 0
+              ? b.url
+              : typeof b.href === "string" && b.href.length > 0
+                ? b.href
+                : typeof b.value === "string"
+                  ? b.value
+                  : "";
+          return {
+            ...b,
+            href: typeof b.href === "string" && b.href.length > 0 ? b.href : urlValue,
+            value: typeof b.value === "string" && b.value.length > 0 ? b.value : urlValue,
+            url: urlValue,
+          };
+        })
         : [];
       s.theme = PROFILE_THEMES.includes(card.theme) ? card.theme : "default_dark";
       if (plan !== "premium" && PREMIUM_ONLY_THEMES.has(s.theme)) {
@@ -1599,6 +1615,7 @@ Email: ${userEmail}
     const load = async () => {
       setLoading(true);
       try {
+        const prevAvatarUrl = s.card?.avatarUrl || "";
         const payload = await api("/api/profile/bootstrap");
         s.user = payload.user || null;
         if (typeof window !== "undefined") {
@@ -1610,6 +1627,10 @@ Email: ${userEmail}
         s.limits = payload.limits || {};
         s.slugs = payload.slugs || [];
         s.card = payload.card || null;
+        const nextAvatarUrl = s.card?.avatarUrl || "";
+        if (nextAvatarUrl !== prevAvatarUrl) {
+          s.avatarVersion = Date.now();
+        }
         s.requests = payload.requests || [];
         s.score = payload.score || null;
         s.pricing = payload.pricing || s.pricing;
@@ -2147,6 +2168,7 @@ Email: ${userEmail}
         label,
         href,
         value: href,
+        url: href,
       };
 
       renderPreview();

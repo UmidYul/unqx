@@ -588,7 +588,7 @@
             .toLowerCase();
           const normalizedType = rawType === "карта" ? "card" : rawType;
           const label = String(button?.label || "").trim();
-          const url = normalizeButtonUrl(button?.url || button?.href || "", normalizedType, label);
+          const url = normalizeButtonUrl(button?.href || button?.value || button?.url || "", normalizedType, label);
           const type = url.startsWith("card:") ? "card" : normalizedType;
           return { type, label, url };
         })

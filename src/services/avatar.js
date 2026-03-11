@@ -1,5 +1,6 @@
 const fs = require("node:fs/promises");
 const path = require("node:path");
+const crypto = require("node:crypto");
 const sharp = require("sharp");
 
 const { env } = require("../config/env");
@@ -15,7 +16,10 @@ function getAvatarDiskPathBySlug(slug) {
 }
 
 function getDiskPathFromPublicPath(publicPath) {
-  const normalized = publicPath.replace(/^\//, "");
+  const normalized = String(publicPath || "")
+    .split("?")[0]
+    .split("#")[0]
+    .replace(/^\//, "");
   return path.join(env.PUBLIC_DIR, normalized.replace(/^public\//, ""));
 }
 
@@ -81,16 +85,37 @@ async function renameAvatarBySlug(oldSlug, newSlug) {
 }
 
 function getAvatarFileNameFromPublicPath(publicPath) {
-  if (typeof publicPath !== "string" || !publicPath.startsWith("/uploads/avatars/")) {
+  if (typeof publicPath !== "string") {
     return null;
   }
 
-  const basename = path.basename(publicPath);
+  const cleanPath = publicPath.split("?")[0].split("#")[0];
+  if (!cleanPath.startsWith("/uploads/avatars/")) {
+    return null;
+  }
+
+  const basename = path.basename(cleanPath);
   if (!basename.endsWith(".webp")) {
     return null;
   }
 
   return basename;
+}
+
+function sanitizeAvatarSlugPart(value) {
+  return String(value || "")
+    .replace(/[^a-zA-Z0-9_-]/g, "")
+    .slice(0, 48);
+}
+
+function buildAvatarSlug(prefix) {
+  const base = sanitizeAvatarSlugPart(prefix) || "profile";
+  const nonceSource = typeof crypto.randomUUID === "function"
+    ? crypto.randomUUID()
+    : crypto.randomBytes(16).toString("hex");
+  const nonce = nonceSource.replace(/-/g, "").slice(0, 12);
+  const stamp = Date.now().toString(36);
+  return `${base}_${stamp}_${nonce}`;
 }
 
 async function cleanupOrphanAvatars(referencedPublicPaths = []) {
@@ -123,4 +148,5 @@ module.exports = {
   deleteAvatarByPublicPath,
   renameAvatarBySlug,
   cleanupOrphanAvatars,
+  buildAvatarSlug,
 };

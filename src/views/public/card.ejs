@@ -113,7 +113,7 @@
   type: typeof button.type === "string" ? button.type.trim().toLowerCase() : "other",
   label: typeof button.label === "string" ? button.label.trim() : "",
   url: normalizeButtonUrl(
-  button && (button.url || button.href || button.value || ""),
+  button && (button.href || button.value || button.url || ""),
   button?.type || "other",
   button?.label || "",
   ),

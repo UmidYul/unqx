@@ -35,7 +35,12 @@ const {
   normalizeTags,
   normalizeButtons,
 } = require("../../services/profile");
-const { isSupportedAvatarBuffer, saveAvatarFromBuffer, deleteAvatarByPublicPath } = require("../../services/avatar");
+const {
+  isSupportedAvatarBuffer,
+  saveAvatarFromBuffer,
+  deleteAvatarByPublicPath,
+  buildAvatarSlug,
+} = require("../../services/avatar");
 const {
   getPaymentStatistics,
   getPaymentAlerts,
@@ -49,6 +54,18 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 },
 });
 const ALLOWED_MIME = new Set(["image/jpeg", "image/png", "image/webp"]);
+async function safeDeleteAvatarByPublicPath(publicPath) {
+  if (!publicPath) return;
+  try {
+    const refs = await prisma.profileCard.count({ where: { avatarUrl: publicPath } });
+    if (refs > 1) {
+      return;
+    }
+  } catch {
+    return;
+  }
+  await deleteAvatarByPublicPath(publicPath);
+}
 const PROFILE_CARD_BASE_COLUMNS = [
   "owner_id",
   "name",
@@ -1800,17 +1817,16 @@ router.post(
       return;
     }
 
-    const avatarUrl = await saveAvatarFromBuffer(
-      `profile_${String(user.id).replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 24)}`,
-      req.file.buffer,
-    );
+    const avatarSlug = buildAvatarSlug(`profile_${String(user.id)}`);
+    const avatarUrl = await saveAvatarFromBuffer(avatarSlug, req.file.buffer);
     if (card.avatarUrl && card.avatarUrl !== avatarUrl) {
-      await deleteAvatarByPublicPath(card.avatarUrl);
+      await safeDeleteAvatarByPublicPath(card.avatarUrl);
     }
 
     await prisma.$executeRaw`
       UPDATE profile_cards
-      SET avatar_url = ${avatarUrl}
+      SET avatar_url = ${avatarUrl},
+          updated_at = now()
       WHERE owner_id = ${user.id}
     `;
 
@@ -1847,12 +1863,13 @@ router.delete(
     }
 
     if (card.avatarUrl) {
-      await deleteAvatarByPublicPath(card.avatarUrl);
+      await safeDeleteAvatarByPublicPath(card.avatarUrl);
     }
 
     await prisma.$executeRaw`
       UPDATE profile_cards
-      SET avatar_url = NULL
+      SET avatar_url = NULL,
+          updated_at = now()
       WHERE owner_id = ${user.id}
     `;
 

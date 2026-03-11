@@ -661,7 +661,7 @@ function mapProfileButtons(rawButtons) {
       const typeAlias = typeRaw === "карта" ? "card" : typeRaw;
       const type = allowedTypes.has(typeAlias) ? typeAlias : "other";
       const label = String(obj.label || "").trim().slice(0, 50);
-      const href = String(obj.href || obj.url || obj.value || "").trim();
+      const href = String(obj.href || obj.value || obj.url || "").trim();
       const normalizedHref = normalizeButtonUrl(href, type, label);
       const effectiveType = normalizedHref.startsWith("card:") ? "card" : type;
       if (!label || !normalizedHref || !isSupportedButtonHref(normalizedHref)) {
