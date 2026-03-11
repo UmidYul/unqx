@@ -4,16 +4,28 @@
   {}; const pageBaseUrl=typeof baseUrl==="string" && baseUrl ? baseUrl : "" ; const pageCanonicalUrl=typeof
   canonicalUrl==="string" && canonicalUrl ? canonicalUrl : `${pageBaseUrl}/${pageCardRaw.slug || "unknown" }`; const
   pageShareUrl=pageCanonicalUrl.includes("?") ? `${pageCanonicalUrl}&src=share` : `${pageCanonicalUrl}?src=share`; const
-  isSupportedButtonHref=(value)=> /^(https?:\/\/|mailto:|tel:)/i.test(String(value || "").trim());
+  isSupportedButtonHref=(value)=> /^(https?:\/\/|mailto:|tel:|card:)/i.test(String(value || "").trim());
+  const parseCardDigits = (rawValue) => {
+  const digits = String(rawValue || "").replace(/\D/g, "");
+  if (digits.length < 12 || digits.length > 19) {
+  return "";
+  }
+  return digits;
+  };
   const normalizeButtonUrl = (rawUrl, type, label) => {
   const input = String(rawUrl || "").trim();
   const kind = String(type || "other")
   .trim()
   .toLowerCase();
   const labelRaw = String(label || "").trim().toLowerCase();
-  const mapLikeLabel = /(карта|map|maps|geo|location|локац)/i.test(labelRaw);
+  const cardLikeLabel = /(карта|card)/i.test(labelRaw);
+  const mapLikeLabel = /(map|maps|geo|location|локац)/i.test(labelRaw);
   if (!input) return "";
   if (isSupportedButtonHref(input)) return input;
+  if (kind === "card" || cardLikeLabel) {
+  const digits = parseCardDigits(input);
+  return digits ? `card:${digits}` : "";
+  }
   if (kind === "map" || mapLikeLabel) {
   if (/^-?\d{1,2}(?:\.\d+)?\s*,\s*-?\d{1,3}(?:\.\d+)?$/.test(input)) {
   return `https://maps.google.com/?q=${encodeURIComponent(input)}`;

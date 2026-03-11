@@ -427,6 +427,15 @@ Email: ${userEmail}
       return payload;
     };
 
+    const uploadAvatarBlob = async (blob) => {
+      const form = new FormData();
+      form.append("file", blob, "avatar.webp");
+      return api("/api/profile/card/avatar", {
+        method: "POST",
+        body: form,
+      });
+    };
+
     const closeModal = () => {
       if (!el.modal) return;
       el.modal.classList.add("hidden");

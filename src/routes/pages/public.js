@@ -713,14 +713,11 @@ function normalizeButtonUrl(rawUrl, type, label) {
     .trim()
     .toLowerCase();
   const labelRaw = String(label || "").trim().toLowerCase();
-  const mapLikeLabel = /(карта|map|maps|geo|location|локац)/i.test(labelRaw);
+  const cardLikeLabel = /(карта|card)/i.test(labelRaw);
+  const mapLikeLabel = /(map|maps|geo|location|локац)/i.test(labelRaw);
   if (!input) return "";
   if (isSupportedButtonHref(input)) return input;
-  const cardDigits = parseCardDigits(input);
-  if (cardDigits) {
-    return `card:${cardDigits}`;
-  }
-  if (kind === "card") {
+  if (kind === "card" || cardLikeLabel) {
     const digits = parseCardDigits(input);
     return digits ? `card:${digits}` : "";
   }
