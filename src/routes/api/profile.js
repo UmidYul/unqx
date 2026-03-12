@@ -41,7 +41,7 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 },
 });
 const ALLOWED_MIME = new Set(["image/jpeg", "image/png", "image/webp"]);
-const CARD_THEMES = new Set(["default_dark", "arctic", "linen", "marble", "forest", "sage_luxe", "midnight_obsidian", "golden_noir"]);
+const CARD_THEMES = new Set(["default_dark", "arctic", "linen", "marble", "forest", "sage_luxe", "midnight_obsidian", "golden_noir", "aurora_codex", "nebula_glass"]);
 const normalizeCardThemeKey = (value) => {
   const raw = String(value || "").trim();
   if (raw === "royal_ivory") return "sage_luxe";

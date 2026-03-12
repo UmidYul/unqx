@@ -10,9 +10,9 @@ dotenv.config({ path: path.join(ROOT_DIR, ".env"), override: false, quiet: true 
 
 const REQUIRED_ENUMS = {
   tariff: ["basic", "premium"],
-  cardtheme: ["default_dark", "arctic", "linen", "marble", "forest", "sage_luxe", "midnight_obsidian", "golden_noir"],
+  cardtheme: ["default_dark", "arctic", "linen", "marble", "forest", "sage_luxe", "midnight_obsidian", "golden_noir", "aurora_codex", "nebula_glass"],
   // Compatibility with Prisma enum type naming in some environments.
-  CardTheme: ["default_dark", "arctic", "linen", "marble", "forest", "sage_luxe", "midnight_obsidian", "golden_noir"],
+  CardTheme: ["default_dark", "arctic", "linen", "marble", "forest", "sage_luxe", "midnight_obsidian", "golden_noir", "aurora_codex", "nebula_glass"],
   orderstatus: ["NEW", "CONTACTED", "PAID", "ACTIVATED", "REJECTED"],
   slugstate: ["TAKEN", "BLOCKED"],
   checkerresult: ["AVAILABLE", "TAKEN", "BLOCKED", "INVALID"],

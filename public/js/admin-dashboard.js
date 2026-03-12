@@ -138,8 +138,11 @@
     linen: { label: "Imperial Linen", fill: "#f2ede6", border: "#c8a882", text: "#3a2e24" },
     marble: { label: "Carrara Prestige", fill: "#ffffff", border: "#0a0a0a", text: "#0a0a0a" },
     forest: { label: "Emerald Reserve", fill: "#1f5335", border: "#e7dbbf", text: "#e7dbbf" },
-    royal_ivory: { label: "Royal Ivory", fill: "#f7efdc", border: "#b89150", text: "#644b22" },
+    sage_luxe: { label: "Verdant Luxe", fill: "#f7faf7", border: "#8ca18f", text: "#2f4034" },
     midnight_obsidian: { label: "Midnight Obsidian", fill: "#111927", border: "#5374a6", text: "#d6e6ff" },
+    golden_noir: { label: "Noir Aureate", fill: "#161b28", border: "#c9ad6a", text: "#dfc98e" },
+    aurora_codex: { label: "Aurora Scriptum", fill: "#f5ecd8", border: "#8a2a26", text: "#2b1f15" },
+    nebula_glass: { label: "Nebula Glass", fill: "#13213f", border: "#8cc4ff", text: "#e8f5ff" },
   };
   function themePill(theme) {
     const id = String(theme || "default_dark").trim();

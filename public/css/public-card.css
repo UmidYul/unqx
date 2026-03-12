@@ -230,6 +230,13 @@
   font-family: var(--theme-font-family, inherit);
 }
 
+[data-card-theme="nebula_glass"] .public-card-shell {
+  background: var(--theme-card-bg, rgba(18, 31, 61, 0.56));
+  -webkit-backdrop-filter: blur(24px) saturate(120%);
+  backdrop-filter: blur(24px) saturate(120%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 26px 58px rgba(4, 10, 25, 0.62);
+}
+
 [data-card-theme] .public-card-button {
   background: var(--theme-button-primary-bg, #171717) !important;
   color: var(--theme-button-primary-text, #ffffff) !important;
@@ -665,6 +672,16 @@ body[data-card-theme] #card-view-root>[data-card-view] {
   mix-blend-mode: screen;
 }
 
+[data-card-theme="aurora_codex"] .unq-ref-overlay-svg {
+  opacity: 0.26;
+  mix-blend-mode: multiply;
+}
+
+[data-card-theme="nebula_glass"] .unq-ref-overlay-svg {
+  opacity: 0.3;
+  mix-blend-mode: screen;
+}
+
 .unq-ref-top-badge {
   width: fit-content;
   margin: 0 auto 12px;
@@ -795,6 +812,10 @@ body[data-card-theme] #card-view-root>[data-card-view] {
   max-width: min(100%, 420px);
 }
 
+[data-card-theme="aurora_codex"] .unq-ref-role {
+  font-style: italic;
+}
+
 .unq-ref-bio {
   margin: 8px 0 0;
   color: var(--theme-name-color, #242424);
@@ -918,6 +939,52 @@ body[data-card-theme] #card-view-root>[data-card-view] {
   background: var(--theme-divider-color, #e6e6e6);
 }
 
+[data-card-theme="aurora_codex"] .unq-ref-divider {
+  position: relative;
+  margin: 22px 6px;
+  background: linear-gradient(90deg, transparent, rgba(114, 84, 58, 0.44), transparent);
+}
+
+[data-card-theme="aurora_codex"] .unq-ref-divider::after {
+  content: "♦";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  color: #8f2820;
+  font-size: 11px;
+  line-height: 1;
+  background: #f7eedc;
+  padding: 0 5px;
+}
+
+[data-card-theme="aurora_codex"] .public-card-shell {
+  position: relative;
+}
+
+[data-card-theme="aurora_codex"] .public-card-shell::before,
+[data-card-theme="aurora_codex"] .public-card-shell::after {
+  content: "";
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border-color: rgba(140, 106, 73, 0.76);
+  border-style: solid;
+  pointer-events: none;
+}
+
+[data-card-theme="aurora_codex"] .public-card-shell::before {
+  top: 10px;
+  left: 10px;
+  border-width: 1px 0 0 1px;
+}
+
+[data-card-theme="aurora_codex"] .public-card-shell::after {
+  right: 10px;
+  bottom: 10px;
+  border-width: 0 1px 1px 0;
+}
+
 .unq-ref-actions {
   display: flex;
   flex-direction: column;
@@ -962,6 +1029,19 @@ body[data-card-theme] #card-view-root>[data-card-view] {
   z-index: 1;
 }
 
+[data-card-theme="nebula_glass"] .unq-ref-action-btn::after {
+  animation-duration: 3.2s;
+}
+
+[data-card-theme="nebula_glass"] .unq-ref-card-overlay::after {
+  content: "";
+  position: absolute;
+  inset: -30% -45%;
+  background: linear-gradient(105deg, transparent 46%, rgba(231, 245, 255, 0.18) 50%, transparent 54%);
+  animation: unqGlassSweep 7.5s linear infinite;
+  pointer-events: none;
+}
+
 .unq-ref-action-btn:hover {
   filter: brightness(0.96);
 }
@@ -989,6 +1069,15 @@ body[data-card-theme] #card-view-root>[data-card-view] {
 
   100% {
     left: 130%;
+  }
+}
+
+@keyframes unqGlassSweep {
+  0% {
+    transform: translateX(-58%);
+  }
+  100% {
+    transform: translateX(58%);
   }
 }
 
@@ -1406,6 +1495,50 @@ body[data-card-theme="golden_noir"]::before {
   z-index: 0;
 }
 
+body[data-card-theme="aurora_codex"] {
+  background: linear-gradient(160deg, #f4ead2 0%, #efe1c2 56%, #f9f0dc 100%);
+  position: relative;
+  --theme-screen-opacity: 0.44;
+  --theme-screen-pattern:
+    radial-gradient(circle at 14% 16%, rgba(148, 41, 33, 0.1) 0%, transparent 36%),
+    radial-gradient(circle at 84% 76%, rgba(126, 97, 68, 0.12) 0%, transparent 42%),
+    repeating-linear-gradient(128deg, transparent 0 64px, rgba(131, 102, 74, 0.06) 64px 66px);
+}
+
+body[data-card-theme="aurora_codex"]::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    repeating-linear-gradient(0deg, transparent 0 12px, rgba(152, 123, 90, 0.06) 12px 13px),
+    radial-gradient(circle at 18% 24%, rgba(252, 244, 228, 0.38) 0%, transparent 42%),
+    radial-gradient(circle at 82% 72%, rgba(179, 143, 101, 0.12) 0%, transparent 40%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+body[data-card-theme="nebula_glass"] {
+  background: radial-gradient(circle at 12% 14%, rgba(100, 210, 255, 0.26) 0%, transparent 36%),
+    radial-gradient(circle at 84% 82%, rgba(168, 116, 255, 0.18) 0%, transparent 40%),
+    linear-gradient(150deg, #070f21 0%, #101d3a 52%, #070f22 100%);
+  position: relative;
+  --theme-screen-opacity: 0.58;
+  --theme-screen-pattern:
+    repeating-linear-gradient(122deg, transparent 0 54px, rgba(130, 176, 228, 0.08) 54px 56px),
+    repeating-linear-gradient(58deg, transparent 0 80px, rgba(87, 126, 198, 0.09) 80px 82px);
+}
+
+body[data-card-theme="nebula_glass"]::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    radial-gradient(circle at 10% 18%, rgba(123, 220, 255, 0.22) 0%, transparent 34%),
+    radial-gradient(circle at 90% 80%, rgba(174, 115, 255, 0.2) 0%, transparent 38%);
+  pointer-events: none;
+  z-index: 0;
+}
+
 [data-card-theme="sage_luxe"] .interactive-btn:hover {
   background: rgba(236, 244, 237, 0.95) !important;
 }
@@ -1432,6 +1565,33 @@ body[data-card-theme="golden_noir"]::before {
 
 [data-card-theme="golden_noir"] .interactive-btn:hover {
   background: rgba(29, 36, 54, 0.94) !important;
+}
+
+[data-card-theme="aurora_codex"] .interactive-btn,
+[data-card-theme="aurora_codex"] #card-slug-search-form>div {
+  background: rgba(251, 244, 232, 0.92) !important;
+  border-color: rgba(137, 103, 73, 0.36) !important;
+  color: #4c3727 !important;
+  backdrop-filter: blur(4px);
+}
+
+[data-card-theme="aurora_codex"] .interactive-btn:hover {
+  background: rgba(248, 236, 214, 0.96) !important;
+}
+
+[data-card-theme="nebula_glass"] .interactive-btn,
+[data-card-theme="nebula_glass"] #card-slug-search-form>div {
+  background: rgba(22, 41, 76, 0.5) !important;
+  border-color: rgba(132, 183, 231, 0.44) !important;
+  color: #e8f4ff !important;
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+}
+
+[data-card-theme="nebula_glass"] .interactive-btn:hover {
+  background: rgba(30, 55, 96, 0.6) !important;
+  border-color: rgba(100, 210, 255, 0.64) !important;
+  transform: translateY(-1px);
 }
 
 [data-card-theme="forest"] #card-slug-search-form input {
@@ -1494,6 +1654,38 @@ body[data-card-theme="golden_noir"]::before {
   color: rgba(201, 173, 106, 0.62) !important;
 }
 
+[data-card-theme="aurora_codex"] svg {
+  color: #6a4b35 !important;
+}
+
+[data-card-theme="aurora_codex"] #card-slug-search-form input {
+  color: #4d3625 !important;
+}
+
+[data-card-theme="aurora_codex"] #card-slug-search-form input::placeholder {
+  color: rgba(111, 86, 65, 0.52) !important;
+}
+
+[data-card-theme="aurora_codex"] #card-slug-search-form span {
+  color: rgba(127, 97, 74, 0.68) !important;
+}
+
+[data-card-theme="nebula_glass"] svg {
+  color: #d8edff !important;
+}
+
+[data-card-theme="nebula_glass"] #card-slug-search-form input {
+  color: #e8f5ff !important;
+}
+
+[data-card-theme="nebula_glass"] #card-slug-search-form input::placeholder {
+  color: rgba(200, 227, 255, 0.56) !important;
+}
+
+[data-card-theme="nebula_glass"] #card-slug-search-form span {
+  color: rgba(184, 221, 255, 0.72) !important;
+}
+
 /* РЎС‚РёР»Рё РґР»СЏ СЂРµР·СѓР»СЊС‚Р°С‚РѕРІ РїРѕРёСЃРєР° */
 [data-card-theme="default_dark"] #card-slug-search-results {
   background: rgba(255, 255, 255, 0.95) !important;
@@ -1543,4 +1735,19 @@ body[data-card-theme="golden_noir"]::before {
   border-color: rgba(201, 173, 106, 0.34) !important;
   color: #d8c184 !important;
   backdrop-filter: blur(8px);
+}
+
+[data-card-theme="aurora_codex"] #card-slug-search-results {
+  background: rgba(251, 244, 232, 0.96) !important;
+  border-color: rgba(137, 103, 73, 0.36) !important;
+  color: #4d3625 !important;
+  backdrop-filter: blur(4px);
+}
+
+[data-card-theme="nebula_glass"] #card-slug-search-results {
+  background: rgba(20, 39, 72, 0.62) !important;
+  border-color: rgba(132, 183, 231, 0.44) !important;
+  color: #e8f5ff !important;
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
 }

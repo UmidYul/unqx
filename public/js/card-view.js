@@ -1,5 +1,5 @@
 (function initCardViewGlobal() {
-  const THEME_KEYS = ["default_dark", "arctic", "linen", "marble", "forest", "sage_luxe", "midnight_obsidian", "golden_noir"];
+  const THEME_KEYS = ["default_dark", "arctic", "linen", "marble", "forest", "sage_luxe", "midnight_obsidian", "golden_noir", "aurora_codex", "nebula_glass"];
   const THEME_CONFIG = {
     default_dark: {
       cardBg: "#ffffff",
@@ -314,6 +314,84 @@
       buttonShineGradient:
         "linear-gradient(90deg, rgba(234,214,161,0) 0%, rgba(234,214,161,0.18) 45%, rgba(234,214,161,0.3) 50%, rgba(234,214,161,0.18) 55%, rgba(234,214,161,0) 100%)",
     },
+    aurora_codex: {
+      cardBg: "linear-gradient(166deg, #fbf4e6 0%, #f4ead3 50%, #fcf7ea 100%)",
+      cardBgOverlay: "codex_corner_lines",
+      surfaceBg: "rgba(255, 251, 243, 0.86)",
+      cardBorder: "1px solid #bfa781",
+      surfaceBorder: "1px solid #c6af88",
+      dividerColor: "#b69a73",
+      nameColor: "#1f1711",
+      roleColor: "#5c4636",
+      mutedColor: "#866a54",
+      accentColor: "#8f2820",
+      emailColor: "#4a382c",
+      buttonPrimaryBg: "linear-gradient(135deg, rgba(143, 40, 32, 0.92), rgba(173, 58, 41, 0.9))",
+      buttonPrimaryText: "#fff7ea",
+      buttonPrimaryBorder: "#8f2820",
+      buttonSecondaryBg: "rgba(143, 40, 32, 0.07)",
+      buttonSecondaryText: "#61241e",
+      buttonSecondaryBorder: "#b89f79",
+      badgeText: "#6f5440",
+      badgeBg: "rgba(255, 250, 241, 0.86)",
+      badgeBorder: "1px solid rgba(122, 86, 58, 0.24)",
+      topLineGradient: "linear-gradient(90deg, #7e1f1d, #c54e3d, #7e1f1d)",
+      avatarBg: "linear-gradient(135deg, #4d3222, #2f2017)",
+      avatarText: "#f4e3cb",
+      avatarBorder: "1px solid rgba(120, 76, 48, 0.66)",
+      cardBorderRadius: "3px",
+      fontFamily: "'Cormorant Garamond', 'Iowan Old Style', 'Times New Roman', serif",
+      nameFontStyle: "normal",
+      nameFontWeight: "700",
+      roleLetterSpacing: "0.05em",
+      scoreLabelColor: "#7e624d",
+      scoreValueColor: "#2d1f15",
+      scoreBarFill: "#8f2820",
+      scoreBarTrack: "#e8dcc6",
+      scorePercentileColor: "#8f7258",
+      cardShadow: "0 18px 34px rgba(86, 59, 33, 0.18)",
+      buttonShineGradient:
+        "linear-gradient(90deg, rgba(255,248,232,0) 0%, rgba(255,248,232,0.2) 45%, rgba(255,248,232,0.36) 50%, rgba(255,248,232,0.2) 55%, rgba(255,248,232,0) 100%)",
+    },
+    nebula_glass: {
+      cardBg: "linear-gradient(145deg, rgba(18, 31, 61, 0.56) 0%, rgba(34, 54, 92, 0.42) 100%)",
+      cardBgOverlay: "glass_shimmer",
+      surfaceBg: "rgba(16, 30, 56, 0.46)",
+      cardBorder: "1px solid rgba(223, 238, 255, 0.34)",
+      surfaceBorder: "1px solid rgba(169, 201, 235, 0.32)",
+      dividerColor: "rgba(185, 217, 255, 0.34)",
+      nameColor: "#eef7ff",
+      roleColor: "#b8d3ef",
+      mutedColor: "rgba(212, 233, 255, 0.72)",
+      accentColor: "#64d2ff",
+      emailColor: "#dbeeff",
+      buttonPrimaryBg: "linear-gradient(135deg, rgba(62, 100, 150, 0.52), rgba(46, 125, 171, 0.46))",
+      buttonPrimaryText: "#eff8ff",
+      buttonPrimaryBorder: "rgba(136, 188, 232, 0.5)",
+      buttonSecondaryBg: "rgba(20, 45, 79, 0.36)",
+      buttonSecondaryText: "#dbeeff",
+      buttonSecondaryBorder: "rgba(125, 170, 214, 0.46)",
+      badgeText: "#d8edff",
+      badgeBg: "rgba(28, 57, 99, 0.38)",
+      badgeBorder: "1px solid rgba(155, 200, 245, 0.42)",
+      topLineGradient: "linear-gradient(90deg, transparent, rgba(100, 210, 255, 0.9), transparent)",
+      avatarBg: "linear-gradient(135deg, rgba(129, 177, 236, 0.56), rgba(88, 129, 210, 0.4))",
+      avatarText: "#ffffff",
+      avatarBorder: "1px solid rgba(214, 235, 255, 0.9)",
+      cardBorderRadius: "22px",
+      fontFamily: "'SF Pro Display', 'Helvetica Neue', 'Segoe UI', sans-serif",
+      nameFontStyle: "normal",
+      nameFontWeight: "600",
+      roleLetterSpacing: "0.12em",
+      scoreLabelColor: "#b9d8f6",
+      scoreValueColor: "#edf7ff",
+      scoreBarFill: "#64d2ff",
+      scoreBarTrack: "rgba(64, 93, 130, 0.62)",
+      scorePercentileColor: "#8cb6df",
+      cardShadow: "0 26px 58px rgba(4, 10, 25, 0.62)",
+      buttonShineGradient:
+        "linear-gradient(90deg, rgba(225,245,255,0) 0%, rgba(225,245,255,0.24) 45%, rgba(225,245,255,0.42) 50%, rgba(225,245,255,0.24) 55%, rgba(225,245,255,0) 100%)",
+    },
   };
 
   function resolveTheme(themeKey) {
@@ -492,6 +570,55 @@
         <path d="M0 110C74 88 148 94 220 116C284 136 324 136 360 124" stroke="url(#gn-line)" stroke-width="0.78" fill="none"></path>
         <path d="M0 322C72 300 146 308 216 330C280 350 322 350 360 338" stroke="url(#gn-line)" stroke-width="0.7" fill="none"></path>
         <path d="M0 536C74 514 148 522 218 544C282 562 324 566 360 552" stroke="url(#gn-line)" stroke-width="0.64" fill="none"></path>
+      </svg>`;
+    }
+    if (themeKey === "aurora_codex") {
+      return `<svg class="unq-ref-overlay-svg" viewBox="0 0 360 600" preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <filter id="ac-paper-noise">
+            <feTurbulence type="fractalNoise" baseFrequency="0.78" numOctaves="2" stitchTiles="stitch"></feTurbulence>
+            <feColorMatrix type="saturate" values="0"></feColorMatrix>
+          </filter>
+          <linearGradient id="ac-red-line" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#a93225"></stop>
+            <stop offset="100%" stop-color="#8f2820"></stop>
+          </linearGradient>
+          <linearGradient id="ac-ink-line" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#6d533d"></stop>
+            <stop offset="100%" stop-color="#b09066"></stop>
+          </linearGradient>
+        </defs>
+        <rect width="100%" height="100%" filter="url(#ac-paper-noise)" opacity="0.14"></rect>
+        <rect x="0" y="0" width="360" height="3" fill="url(#ac-red-line)" opacity="0.88"></rect>
+        <path d="M24 62h22v10M24 62v22" stroke="#9f7b54" stroke-width="1.1" fill="none"></path>
+        <path d="M336 62h-22v10M336 62v22" stroke="#9f7b54" stroke-width="1.1" fill="none"></path>
+        <path d="M24 538h22v-10M24 538v-22" stroke="#9f7b54" stroke-width="1.1" fill="none"></path>
+        <path d="M336 538h-22v-10M336 538v-22" stroke="#9f7b54" stroke-width="1.1" fill="none"></path>
+        <path d="M0 106C78 90 154 96 226 118C286 136 326 136 360 126" stroke="url(#ac-ink-line)" stroke-width="0.76" fill="none"></path>
+        <path d="M0 320C80 304 154 312 226 334C288 352 326 352 360 342" stroke="url(#ac-ink-line)" stroke-width="0.68" fill="none"></path>
+        <path d="M0 526C80 510 154 518 226 540C288 558 326 560 360 550" stroke="url(#ac-ink-line)" stroke-width="0.62" fill="none"></path>
+      </svg>`;
+    }
+    if (themeKey === "nebula_glass") {
+      return `<svg class="unq-ref-overlay-svg" viewBox="0 0 360 600" preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <filter id="ng-glass-noise">
+            <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch"></feTurbulence>
+            <feColorMatrix type="saturate" values="0"></feColorMatrix>
+          </filter>
+          <linearGradient id="ng-streak" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="rgba(177, 225, 255, 0.52)"></stop>
+            <stop offset="100%" stop-color="rgba(120, 189, 255, 0.08)"></stop>
+          </linearGradient>
+        </defs>
+        <rect width="100%" height="100%" filter="url(#ng-glass-noise)" opacity="0.12"></rect>
+        <circle cx="310" cy="118" r="150" fill="rgba(100, 210, 255, 0.18)"></circle>
+        <circle cx="56" cy="514" r="130" fill="rgba(174, 115, 255, 0.14)"></circle>
+        <rect x="-38" y="92" width="230" height="34" rx="17" fill="rgba(203, 232, 255, 0.1)"></rect>
+        <rect x="170" y="296" width="228" height="30" rx="15" fill="rgba(203, 232, 255, 0.09)"></rect>
+        <rect x="36" y="462" width="252" height="26" rx="13" fill="rgba(203, 232, 255, 0.08)"></rect>
+        <path d="M0 122C76 100 150 106 220 130C284 150 324 152 360 140" stroke="url(#ng-streak)" stroke-width="0.88" fill="none"></path>
+        <path d="M0 350C74 328 148 336 220 358C284 378 324 382 360 368" stroke="url(#ng-streak)" stroke-width="0.74" fill="none"></path>
       </svg>`;
     }
     return "";

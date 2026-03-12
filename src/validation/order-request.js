@@ -12,7 +12,7 @@ const OrderRequestSchema = z.object({
     .trim()
     .regex(/^[0-9]{3}$/, "Slug РґРѕР»Р¶РµРЅ Р±С‹С‚СЊ РІ С„РѕСЂРјР°С‚Рµ AAA000"),
   tariff: z.enum(["basic", "premium"]),
-  theme: z.enum(["default_dark", "arctic", "linen", "marble", "forest", "sage_luxe", "midnight_obsidian", "golden_noir"]).optional(),
+  theme: z.enum(["default_dark", "arctic", "linen", "marble", "forest", "sage_luxe", "midnight_obsidian", "golden_noir", "aurora_codex", "nebula_glass"]).optional(),
   products: z.object({
     digitalCard: z.boolean(),
     bracelet: z.boolean(),

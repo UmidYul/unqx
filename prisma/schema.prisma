@@ -23,6 +23,8 @@ enum CardTheme {
   sage_luxe
   midnight_obsidian
   golden_noir
+  aurora_codex
+  nebula_glass
 }
 
 enum CheckerResult {

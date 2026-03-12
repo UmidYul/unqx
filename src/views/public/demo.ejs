@@ -89,6 +89,28 @@
       avatarText: "#d9c184",
       radius: "20px",
     },
+    aurora_codex: {
+      cardBg: "linear-gradient(165deg, #faf4e6 0%, #f6edd8 52%, #fdf8eb 100%)",
+      cardBorder: "1px solid #b79c76",
+      buttonBg: "linear-gradient(135deg, #6c1718, #8f2820)",
+      buttonText: "#fdf5e8",
+      nameColor: "#1d1610",
+      mutedColor: "#7d5f45",
+      avatarBg: "linear-gradient(135deg, #4a2f20, #2f2017)",
+      avatarText: "#f6e5ce",
+      radius: "3px",
+    },
+    nebula_glass: {
+      cardBg: "linear-gradient(145deg, rgba(20, 32, 62, 0.54) 0%, rgba(34, 52, 86, 0.44) 100%)",
+      cardBorder: "1px solid rgba(216, 235, 255, 0.32)",
+      buttonBg: "linear-gradient(135deg, rgba(54, 90, 138, 0.55), rgba(42, 124, 173, 0.5))",
+      buttonText: "#eef7ff",
+      nameColor: "#eef7ff",
+      mutedColor: "#b8d2ee",
+      avatarBg: "linear-gradient(135deg, rgba(121, 172, 231, 0.5), rgba(86, 121, 198, 0.42))",
+      avatarText: "#ffffff",
+      radius: "22px",
+    },
   };
   const pageTheme = typeof theme === "string" && themeTokens[theme] ? theme : "default_dark";
   const tokens = themeTokens[pageTheme];
@@ -113,9 +135,11 @@
     sage_luxe: "background: linear-gradient(160deg, #eef4ef 0%, #e2ebe4 55%, #d5e0d8 100%); position: relative;",
     midnight_obsidian: "background: radial-gradient(circle at 12% 14%, rgba(58, 89, 143, 0.35) 0%, transparent 40%), linear-gradient(150deg, #090f16 0%, #101827 48%, #0a0f15 100%); position: relative;",
     golden_noir: "background: radial-gradient(circle at 14% 16%, rgba(201, 173, 106, 0.14) 0%, transparent 44%), linear-gradient(150deg, #0b0e16 0%, #141a27 50%, #0b0f17 100%); position: relative;",
+    aurora_codex: "background: radial-gradient(circle at 12% 14%, rgba(170, 34, 30, 0.08) 0%, transparent 34%), linear-gradient(160deg, #f4ead2 0%, #efe1c2 56%, #f9f0dc 100%); position: relative;",
+    nebula_glass: "background: radial-gradient(circle at 12% 14%, rgba(100, 210, 255, 0.26) 0%, transparent 36%), radial-gradient(circle at 84% 82%, rgba(168, 116, 255, 0.18) 0%, transparent 40%), linear-gradient(150deg, #070f21 0%, #101d3a 52%, #070f22 100%); position: relative;",
   };
   const pageMainStyle = isEmbed ? "" : pageMainStyleMap[pageTheme] || pageMainStyleMap.default_dark;
-  const headingClass = pageTheme === "forest" || pageTheme === "midnight_obsidian" || pageTheme === "golden_noir" ? "text-neutral-100" : "text-neutral-900";
+  const headingClass = pageTheme === "forest" || pageTheme === "midnight_obsidian" || pageTheme === "golden_noir" || pageTheme === "nebula_glass" ? "text-neutral-100" : "text-neutral-900";
 %>
 <!doctype html>
 <html lang="ru">
