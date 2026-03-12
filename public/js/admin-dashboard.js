@@ -44,6 +44,20 @@
   autofillObserver.observe(body, { childList: true, subtree: true });
 
   const tab = body.getAttribute("data-active-tab") || "analytics";
+  const tabAliases = { slug: "slugs" };
+  const normalizedTab = tabAliases[tab] || tab;
+  const tabSections = Array.from(document.querySelectorAll('section[id^="tab-"]'));
+  const activeSection =
+    document.getElementById(`tab-${normalizedTab}`) ||
+    document.getElementById("tab-analytics");
+  if (activeSection instanceof HTMLElement) {
+    activeSection.classList.remove("hidden");
+  }
+  if (!tabSections.some((node) => node instanceof HTMLElement && !node.classList.contains("hidden"))) {
+    tabSections.forEach((node) => {
+      if (node instanceof HTMLElement) node.classList.remove("hidden");
+    });
+  }
   const base = (body.getAttribute("data-public-base-url") || location.origin).replace(/\/$/, "");
   const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "";
   const showAlert = (message) => {
