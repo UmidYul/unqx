@@ -66,6 +66,14 @@
   if (activeSection instanceof HTMLElement) {
     activeSection.classList.remove("hidden");
     dbg("active-section-unhidden", activeSection.id);
+    dbg("active-section-state", {
+      id: activeSection.id,
+      className: activeSection.className,
+      hiddenClass: activeSection.classList.contains("hidden"),
+      display: window.getComputedStyle(activeSection).display,
+      childCount: activeSection.children.length,
+      innerHtmlLength: activeSection.innerHTML.length,
+    });
   }
   if (!tabSections.some((node) => node instanceof HTMLElement && !node.classList.contains("hidden"))) {
     dbg("no-visible-sections-fallback", "unhiding all sections");
@@ -73,6 +81,16 @@
       if (node instanceof HTMLElement) node.classList.remove("hidden");
     });
   }
+  dbg(
+    "sections-after-init",
+    JSON.stringify(
+      tabSections.map((node) => ({
+        id: node.id,
+        hiddenClass: node.classList.contains("hidden"),
+        display: window.getComputedStyle(node).display,
+      })),
+    ),
+  );
   const base = (body.getAttribute("data-public-base-url") || location.origin).replace(/\/$/, "");
   const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "";
   const showAlert = (message) => {
