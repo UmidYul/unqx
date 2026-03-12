@@ -171,7 +171,7 @@
     if (!(table instanceof HTMLElement) || !(susp instanceof HTMLElement) || !(form instanceof HTMLFormElement)) return;
 
     const [board, suspicious] = await Promise.all([
-      jsonFetch("/api/admin/leaderboard?period=week"),
+      jsonFetch("/api/admin/leaderboard?period=all"),
       jsonFetch("/api/admin/leaderboard/suspicious"),
     ]);
 
