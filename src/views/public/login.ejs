@@ -28,9 +28,14 @@
           class="mt-1 w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm" required />
       </label>
 
-      <label class="mt-3 inline-flex items-center gap-2 text-sm text-neutral-700">
-        <input id="remember-me" type="checkbox" />
-        Запомнить меня
+            <label class="mt-3 inline-flex w-full cursor-pointer items-center justify-between gap-3 text-sm text-neutral-700">
+        <span>Запомнить меня</span>
+        <span class="relative inline-flex h-6 w-11 shrink-0 items-center">
+          <input id="remember-me" type="checkbox" class="peer sr-only" />
+          <span class="h-6 w-11 rounded-full bg-neutral-300 transition-colors peer-checked:bg-neutral-900"></span>
+          <span
+            class="pointer-events-none absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform peer-checked:translate-x-5"></span>
+        </span>
       </label>
 
       <p id="login-error" class="mt-3 hidden text-sm text-red-700"></p>

@@ -1218,8 +1218,8 @@ router.get(
       })
       : null;
     const latestStatus = String(latest?.status || "").toLowerCase();
-    const canSubmitRequest = !user.isVerified && (!latest || latestStatus === "rejected");
-    const canSendCorrection = !user.isVerified && latestStatus === "pending";
+    const canSubmitRequest = latestStatus !== "pending";
+    const canSendCorrection = latestStatus === "pending";
     res.json({
       isVerified: Boolean(user.isVerified),
       latestRequest: latest,
@@ -1238,26 +1238,13 @@ router.post(
       res.status(503).json({ error: "Verification storage unavailable" });
       return;
     }
-    if (user.isVerified) {
-      res.status(409).json({ error: "Account is already verified", code: "VERIFICATION_ALREADY_APPROVED" });
-      return;
-    }
-
     const latest = await prisma.verificationRequest.findFirst({
       where: { userId: user.id },
       orderBy: { requestedAt: "desc" },
     });
     const latestStatus = String(latest?.status || "").toLowerCase();
-    if (latest && latestStatus !== "rejected") {
-      if (latestStatus === "pending") {
-        res.status(409).json({ error: "Verification request already submitted", code: "VERIFICATION_ALREADY_SUBMITTED" });
-        return;
-      }
-      if (latestStatus === "approved") {
-        res.status(409).json({ error: "Account is already verified", code: "VERIFICATION_ALREADY_APPROVED" });
-        return;
-      }
-      res.status(409).json({ error: "Verification request cannot be submitted now", code: "VERIFICATION_LOCKED" });
+    if (latest && latestStatus === "pending") {
+      res.status(409).json({ error: "Verification request already submitted", code: "VERIFICATION_ALREADY_SUBMITTED" });
       return;
     }
 
@@ -1321,11 +1308,6 @@ router.post(
       res.status(503).json({ error: "Verification storage unavailable" });
       return;
     }
-    if (user.isVerified) {
-      res.status(409).json({ error: "Account is already verified", code: "VERIFICATION_ALREADY_APPROVED" });
-      return;
-    }
-
     const correction = String(req.body?.comment || "").trim().slice(0, 1000);
     if (correction.length < 5) {
       res.status(400).json({ error: "Correction text is too short" });

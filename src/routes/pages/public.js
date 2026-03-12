@@ -627,6 +627,34 @@ async function findProfileCardByOwnerId(ownerId) {
   return Array.isArray(rows) ? rows[0] || null : null;
 }
 
+async function findLatestApprovedVerificationByUserId(userId) {
+  if (!userId || !prisma.verificationRequest) {
+    return null;
+  }
+  try {
+    return await prisma.verificationRequest.findFirst({
+      where: {
+        userId,
+        status: "approved",
+      },
+      orderBy: [{ reviewedAt: "desc" }, { requestedAt: "desc" }],
+      select: {
+        companyName: true,
+        role: true,
+      },
+    });
+  } catch (error) {
+    if (
+      isMissingModelTable(error, "VerificationRequest") ||
+      isMissingModelColumn(error, "VerificationRequest") ||
+      isMissingModelDelegateError(error)
+    ) {
+      return null;
+    }
+    throw error;
+  }
+}
+
 function mapProfileButtons(rawButtons) {
   const allowedTypes = new Set([
     "phone",
@@ -776,8 +804,15 @@ function normalizeDirectorySector(value) {
   return ["design", "sales", "marketing", "it", "other"].includes(normalized) ? normalized : "";
 }
 
-function buildPublicCardFromProfile({ slug, user, profileCard, viewsCount, allSlugs = [] }) {
+function buildPublicCardFromProfile({ slug, user, profileCard, verifiedIdentity, viewsCount, allSlugs = [] }) {
   const plan = getEffectivePlan(user).plan;
+  const isCurrentlyVerified = Boolean(user?.isVerified);
+  const verifiedCompany =
+    String(isCurrentlyVerified ? (verifiedIdentity?.companyName || user?.verifiedCompany || "") : "")
+      .trim();
+  const verifiedRole =
+    String(isCurrentlyVerified ? (verifiedIdentity?.role || "") : "")
+      .trim();
   const normalizedSlugs = Array.isArray(allSlugs)
     ? allSlugs
       .map((value) => String(value || "").trim().toUpperCase())
@@ -789,10 +824,10 @@ function buildPublicCardFromProfile({ slug, user, profileCard, viewsCount, allSl
     slugPrice: Number.isFinite(Number(profileCard.slugPrice)) ? Number(profileCard.slugPrice) : null,
     avatarUrl: profileCard.avatarUrl || null,
     name: profileCard.name,
-    role: profileCard.role || "",
+    role: verifiedRole,
     bio: profileCard.bio || "",
-    verified: Boolean(user?.isVerified),
-    verifiedCompany: user?.verifiedCompany || "",
+    verified: isCurrentlyVerified,
+    verifiedCompany,
     tariff: plan,
     theme: typeof profileCard.theme === "string" && CARD_THEMES.has(profileCard.theme) ? profileCard.theme : "default_dark",
     customColor: profileCard.customColor || "",
@@ -1915,7 +1950,7 @@ router.get(
           return;
         }
 
-        const [owner, profileCard, views, ownerSlugs] = await Promise.all([
+        const [owner, profileCard, views, ownerSlugs, verifiedIdentity] = await Promise.all([
           findUserByTelegramIdWithLegacyFallback(slugRow.ownerId),
           findProfileCardByOwnerId(slugRow.ownerId),
           prisma.analyticsView
@@ -1934,6 +1969,7 @@ router.get(
             orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
             select: { fullSlug: true },
           }),
+          findLatestApprovedVerificationByUserId(slugRow.ownerId),
         ]);
 
         if (!owner || !profileCard) {
@@ -1971,6 +2007,7 @@ router.get(
             ...profileCard,
             slugPrice: typeof slugRow.price === "number" ? slugRow.price : null,
           },
+          verifiedIdentity,
           viewsCount: views,
           allSlugs: ownerSlugs.map((item) => item.fullSlug),
         });

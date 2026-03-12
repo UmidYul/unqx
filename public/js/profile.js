@@ -110,7 +110,6 @@
       const draft = {
         ownerKey,
         name: el.cName?.value || "",
-        role: el.cRole?.value || "",
         bio: el.cBio?.value || "",
         hashtag: el.cHashtag?.value || "",
         address: el.cAddress?.value || "",
@@ -185,7 +184,6 @@
 
       const hasOwn = (key) => Object.prototype.hasOwnProperty.call(draft, key);
       if (el.cName && hasOwn("name")) el.cName.value = draft.name ?? "";
-      if (el.cRole && hasOwn("role")) el.cRole.value = draft.role ?? "";
       if (el.cBio && hasOwn("bio")) el.cBio.value = draft.bio ?? "";
       if (el.cHashtag && hasOwn("hashtag")) el.cHashtag.value = draft.hashtag ?? "";
       if (el.cAddress && hasOwn("address")) el.cAddress.value = draft.address ?? "";
@@ -330,7 +328,6 @@ Email: ${userEmail}
       cAvCropImage: $("#profile-card-avatar-crop-image"),
       cAvCropSave: $("#profile-card-avatar-crop-save"),
       cName: $("#profile-card-name"),
-      cRole: $("#profile-card-role"),
       cBio: $("#profile-card-bio"),
       cBioC: $("#profile-card-bio-counter"),
       cHashtag: $("#profile-card-hashtag"),
@@ -1134,6 +1131,11 @@ Email: ${userEmail}
         card: {
           slug: primarySlug?.fullSlug || "UNQ",
           name: el.cName?.value || s.user?.displayName || s.user?.firstName || "UNQX User",
+          role:
+            Boolean(s.user?.isVerified) &&
+              String(s.verification?.latestRequest?.status || "").toLowerCase() === "approved"
+              ? String(s.verification?.latestRequest?.role || "").trim()
+              : "",
           phone: "",
           hashtag: String(el.cHashtag?.value || "").trim(),
           address: String(el.cAddress?.value || "").trim(),
@@ -1206,7 +1208,6 @@ Email: ${userEmail}
 
       if (el.cAv) el.cAv.src = avatarSrc(card.avatarUrl || s.user?.photoUrl);
       if (el.cName) el.cName.value = card.name || s.user?.displayName || s.user?.firstName || "";
-      if (el.cRole) el.cRole.value = card.role || "";
       if (el.cBio) el.cBio.value = card.bio || "";
       if (el.cHashtag) el.cHashtag.value = card.hashtag || "";
       if (el.cAddress) el.cAddress.value = card.address || "";
@@ -1464,10 +1465,10 @@ Email: ${userEmail}
         const latest = s.verification?.latestRequest;
         const latestStatus = String(latest?.status || "").toLowerCase();
         let label = "Статус: не запрошено";
-        if (s.user.isVerified) {
-          label = "Статус: верифицировано";
-        } else if (latestStatus === "pending") {
+        if (latestStatus === "pending") {
           label = "Статус: на проверке";
+        } else if (s.user.isVerified) {
+          label = "Статус: верифицировано";
         } else if (latestStatus === "rejected") {
           label = "Статус: отклонено";
         }
@@ -1475,7 +1476,7 @@ Email: ${userEmail}
 
         if (el.verificationNote instanceof HTMLElement) {
           if (latestStatus === "pending") {
-            el.verificationNote.textContent = "Повторная подача недоступна до решения администратора. Для правок используйте форму исправления ниже.";
+            el.verificationNote.textContent = "Новая заявка недоступна до решения администратора. Для правок используйте форму исправления ниже.";
             el.verificationNote.classList.remove("hidden");
           } else if (latestStatus === "rejected" && latest?.adminNote) {
             el.verificationNote.textContent = `Причина отклонения: ${latest.adminNote}`;
@@ -1493,13 +1494,13 @@ Email: ${userEmail}
         const canSubmit =
           typeof s.verification?.canSubmitRequest === "boolean"
             ? s.verification.canSubmitRequest
-            : !s.user.isVerified && (!latest || latestStatus === "rejected");
+            : latestStatus !== "pending";
         el.verificationOpen.disabled = !canSubmit;
         el.verificationOpen.classList.toggle("opacity-60", !canSubmit);
-        if (s.user.isVerified) {
-          el.verificationOpen.textContent = "Уже верифицировано";
-        } else if (latestStatus === "pending") {
+        if (latestStatus === "pending") {
           el.verificationOpen.textContent = "Заявка отправлена";
+        } else if (s.user.isVerified) {
+          el.verificationOpen.textContent = "Запросить повторно";
         } else if (latestStatus === "rejected") {
           el.verificationOpen.textContent = "Подать повторно";
         } else {
@@ -1512,7 +1513,7 @@ Email: ${userEmail}
         const canSendCorrection =
           typeof s.verification?.canSendCorrection === "boolean"
             ? s.verification.canSendCorrection
-            : !s.user.isVerified && latestStatus === "pending";
+            : latestStatus === "pending";
         el.verificationCorrectionWrap.classList.toggle("hidden", !canSendCorrection);
       }
     };
@@ -1950,7 +1951,6 @@ Email: ${userEmail}
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             name: el.cName?.value || "",
-            role: el.cRole?.value || "",
             bio: el.cBio?.value || "",
             hashtag: el.cHashtag?.value || "",
             address: el.cAddress?.value || "",
@@ -2588,7 +2588,6 @@ Email: ${userEmail}
       renderPreview();
       saveDraft();
     });
-    el.cRole?.addEventListener("input", () => { renderPreview(); saveDraft(); });
     el.cColor?.addEventListener("input", () => { renderPreview(); saveDraft(); });
     el.cBranding?.addEventListener("change", () => { renderPreview(); saveDraft(); });
     el.cHashtag?.addEventListener("input", () => { renderPreview(); saveDraft(); });

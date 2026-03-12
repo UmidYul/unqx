@@ -145,9 +145,7 @@
             </div>
 
             <label
-              class="flex cursor-pointer items-start gap-3 rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-700">
-              <input id="order-modal-bracelet" type="checkbox" <%=modalBraceletInStock ? '' : 'disabled' %>
-              class="mt-0.5 h-4 w-4 rounded border-neutral-300 text-neutral-900 focus:ring-neutral-400" />
+              class="flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-700">
               <span>
                 <span class="block">
                   <%= modalBraceletInStock ? `Добавить NFC-браслет (+${modalBraceletPrice.toLocaleString("ru-RU")} сум)`
@@ -156,6 +154,14 @@
                 <span class="mt-0.5 block text-xs text-neutral-500">
                   <%= modalBraceletCtaText %>
                 </span>
+              </span>
+              <span class="relative inline-flex h-6 w-11 shrink-0 items-center">
+                <input id="order-modal-bracelet" type="checkbox" <%=modalBraceletInStock ? '' : 'disabled' %>
+                  class="peer sr-only" />
+                <span
+                  class="h-6 w-11 rounded-full bg-neutral-300 transition-colors peer-checked:bg-neutral-900 peer-disabled:opacity-50"></span>
+                <span
+                  class="pointer-events-none absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform peer-checked:translate-x-5 peer-disabled:opacity-80"></span>
               </span>
             </label>
 

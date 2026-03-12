@@ -140,12 +140,6 @@
                 </div>
                 <div>
                   <label
-                    class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Должность</label>
-                  <input id="profile-card-role" type="text" placeholder="Founder"
-                    class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm" />
-                </div>
-                <div>
-                  <label
                     class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Bio</label>
                   <textarea id="profile-card-bio" maxlength="120" rows="3"
                     class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm"></textarea>
@@ -338,9 +332,14 @@
                     class="h-10 w-14 rounded-lg border border-neutral-200 p-1" />
                 </div>
 
-                <label class="inline-flex items-center gap-2 text-sm">
-                  <input id="profile-card-show-branding" type="checkbox" checked />
-                  Скрыть брендинг UNQX
+                <label class="inline-flex cursor-pointer items-center justify-between gap-3 text-sm">
+                  <span>Скрыть брендинг UNQX</span>
+                  <span class="relative inline-flex h-6 w-11 shrink-0 items-center">
+                    <input id="profile-card-show-branding" type="checkbox" checked class="peer sr-only" />
+                    <span class="h-6 w-11 rounded-full bg-neutral-300 transition-colors peer-checked:bg-neutral-900"></span>
+                    <span
+                      class="pointer-events-none absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform peer-checked:translate-x-5"></span>
+                  </span>
                 </label>
 
                 <div class="mt-2 flex justify-end">
@@ -631,15 +630,23 @@
               </div>
             </div>
             <div class="flex flex-col gap-3">
-              <label class="inline-flex items-center gap-3 text-sm cursor-pointer select-none">
-                <input id="profile-settings-notifications" type="checkbox"
-                  class="h-5 w-5 rounded border-neutral-300 text-neutral-900 shadow-sm focus:ring-2 focus:ring-neutral-900 focus:ring-offset-0 cursor-pointer accent-neutral-900" />
-                Получать уведомления от бота
+              <label class="inline-flex cursor-pointer items-center justify-between gap-3 text-sm select-none">
+                <span>Получать уведомления от бота</span>
+                <span class="relative inline-flex h-6 w-11 shrink-0 items-center">
+                  <input id="profile-settings-notifications" type="checkbox" class="peer sr-only" />
+                  <span class="h-6 w-11 rounded-full bg-neutral-300 transition-colors peer-checked:bg-neutral-900"></span>
+                  <span
+                    class="pointer-events-none absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform peer-checked:translate-x-5"></span>
+                </span>
               </label>
-              <label class="inline-flex items-center gap-3 text-sm cursor-pointer select-none">
-                <input id="profile-settings-directory" type="checkbox"
-                  class="h-5 w-5 rounded border-neutral-300 text-neutral-900 shadow-sm focus:ring-2 focus:ring-neutral-900 focus:ring-offset-0 cursor-pointer accent-neutral-900" />
-                Показывать мою визитку в Directory
+              <label class="inline-flex cursor-pointer items-center justify-between gap-3 text-sm select-none">
+                <span>Показывать мою визитку в Directory</span>
+                <span class="relative inline-flex h-6 w-11 shrink-0 items-center">
+                  <input id="profile-settings-directory" type="checkbox" class="peer sr-only" />
+                  <span class="h-6 w-11 rounded-full bg-neutral-300 transition-colors peer-checked:bg-neutral-900"></span>
+                  <span
+                    class="pointer-events-none absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform peer-checked:translate-x-5"></span>
+                </span>
               </label>
             </div>
             <div class="rounded-xl border border-neutral-200 bg-neutral-50 p-3">
