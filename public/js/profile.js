@@ -1170,6 +1170,7 @@ Email: ${userEmail}
     const renderPreview = () => {
       if (!(el.cPrev instanceof HTMLElement) || typeof window.CardView === "undefined") return;
       const { card, primarySlug } = buildPreviewCardData();
+      el.cPrev.dataset.previewTheme = String(card.theme || "default_dark");
       const slugLabel = primarySlug?.fullSlug || "[UNQ]";
       if (el.cPrevLabel) {
         el.cPrevLabel.textContent = `unqx.uz/${slugLabel}`;

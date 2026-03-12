@@ -384,7 +384,29 @@ body[data-page="profile-page"] {
   overflow: hidden;
 }
 
+#profile-card-live-preview[data-preview-theme="nebula_glass"] {
+  position: relative;
+  isolation: isolate;
+  border-color: rgba(255, 255, 255, 0.14);
+  background: #1c1c1e;
+}
+
+#profile-card-live-preview[data-preview-theme="nebula_glass"]::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.62;
+  background-image:
+    radial-gradient(circle at 14% 16%, rgba(255, 255, 255, 0.11) 0%, transparent 40%),
+    radial-gradient(circle at 84% 82%, rgba(255, 255, 255, 0.08) 0%, transparent 38%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0));
+}
+
 #profile-card-live-preview [data-card-view] {
+  position: relative;
+  z-index: 1;
   max-width: 480px;
   margin: 0 auto;
 }
