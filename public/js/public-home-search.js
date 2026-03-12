@@ -944,7 +944,7 @@ function initSlugCalculator(orderApi) {
     const maxTotal = Math.max(minTotal, Math.round(basePrice * 8));
     const candidates = [];
     const seen = new Set();
-    const attempts = 550;
+    const attempts = 280;
 
     for (let i = 0; i < attempts; i += 1) {
       const letters = buildRandomLetters();
@@ -981,8 +981,8 @@ function initSlugCalculator(orderApi) {
       return "";
     }
 
-    const maxChecks = 48;
-    const batchSize = 16;
+    const maxChecks = 24;
+    const batchSize = 24;
     const shortlist = candidates.slice(0, maxChecks);
 
     for (let offset = 0; offset < shortlist.length; offset += batchSize) {
@@ -1053,7 +1053,7 @@ function initSlugCalculator(orderApi) {
         if (parsed) {
           lettersInput.value = parsed.letters;
           digitsInput.value = parsed.digits;
-          await updateResult();
+          void updateResult();
           return;
         }
       }

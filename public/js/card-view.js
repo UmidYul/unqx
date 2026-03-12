@@ -907,11 +907,11 @@
       `--theme-button-shine:${esc(theme.tokens.buttonShineGradient)}`,
     ];
     const rootStyle = ` style="${styleTokens.join(";")};"`;
-    const companyRoleText = [card.verifiedCompany, card.role].filter(Boolean).join(" • ");
-    const companyRoleHtml =
-      companyRoleText || card.verified
-        ? `<p class="unq-ref-verified-company"><span class="unq-ref-verified-text">${esc(companyRoleText)}</span>${card.verified ? `<span class="unq-ref-verified-icon">${iconSvg("verified")}</span>` : ""}</p>`
+    const companyHtml =
+      card.verifiedCompany || card.verified
+        ? `<p class="unq-ref-verified-company"><span class="unq-ref-verified-text">${esc(card.verifiedCompany)}</span>${card.verified ? `<span class="unq-ref-verified-icon">${iconSvg("verified")}</span>` : ""}</p>`
         : "";
+    const roleHtml = card.role ? `<p class="unq-ref-role">${esc(card.role)}</p>` : "";
 
     return `
       <div data-card-view data-card-theme="${esc(theme.key)}" data-slug="${esc(card.slug)}" data-share-url="${esc(shareUrl)}"${rootStyle}>
@@ -950,7 +950,8 @@
             </div>
             <div class="unq-ref-name-wrap">
               <h1 class="unq-ref-name">${esc(card.name)}</h1>
-              ${companyRoleHtml}
+              ${companyHtml}
+              ${roleHtml}
               ${card.bio ? `<p class="unq-ref-bio">${esc(card.bio)}</p>` : ""}
               ${card.phone ? `<a href="tel:${esc(card.phone.replace(/\s+/g, ""))}" class="unq-ref-phone">${iconSvg("phone")}<span>${esc(card.phone)}</span></a>` : ""}
             </div>
