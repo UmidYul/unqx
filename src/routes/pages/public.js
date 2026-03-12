@@ -8,7 +8,7 @@ const { asyncHandler } = require("../../middleware/async");
 const { getAdminSession, requireVerifiedUserPage, getUserSession, logoutUserSession } = require("../../middleware/auth");
 const { getEffectivePlan } = require("../../services/profile");
 const { absoluteUrl } = require("../../utils/url");
-const { buildLeaderboard, normalizePeriod, getPeriodRange, getSlugTopBadge, getUserLeaderboardSummary } = require("../../services/leaderboard");
+const { buildLeaderboard, normalizePeriod, getSlugTopBadge, getUserLeaderboardSummary } = require("../../services/leaderboard");
 const { getFeatureSetting } = require("../../services/feature-settings");
 const { getActiveFlashSale, resolveConditionLabel, getFlashSaleSlotsLeft } = require("../../services/flash-sales");
 const { normalizeRefCode } = require("../../services/referrals");
@@ -645,7 +645,6 @@ function buildPublicCardFromProfile({ slug, user, profileCard, verifiedIdentity,
 router.get(
   "/",
   asyncHandler(async (req, res) => {
-    const weekRange = getPeriodRange("week");
     const userSession = getUserSession(req);
     const userId = userSession?.userId ? String(userSession.userId) : "";
     const [leaderboardSettings, activeFlashSale, nextDrop, pricing, publicSettingsRaw, topWeeklyViews, authPhotoUrl] = await Promise.all([
@@ -688,127 +687,17 @@ router.get(
         "pending_expiry_hours",
       ]),
       (async () => {
-        if (!prisma.analyticsView || typeof prisma.analyticsView.groupBy !== "function") {
-          return [];
-        }
-
-        const grouped = await prisma.analyticsView.groupBy({
-          by: ["slug", "sessionId"],
-          where: {
-            visitedAt: {
-              gte: weekRange.startUtc,
-              lt: weekRange.endUtc,
-            },
-          },
-          _count: { _all: true },
-        });
-
-        const uniqueBySlug = new Map();
-        for (const row of grouped) {
-          const slugValue = String(row.slug || "").trim().toUpperCase();
-          if (!slugValue) continue;
-          uniqueBySlug.set(slugValue, (uniqueBySlug.get(slugValue) || 0) + 1);
-        }
-
-        const ranked = Array.from(uniqueBySlug.entries())
-          .map(([slugValue, views]) => ({ slug: slugValue, views: Number(views || 0) }))
-          .filter((row) => row.views > 0)
-          .sort((a, b) => b.views - a.views);
-
-        if (!ranked.length) return [];
-
-        const slugs = ranked.map((item) => item.slug);
-        const slugRows = await prisma.slug.findMany({
-          where: {
-            fullSlug: { in: slugs },
-            status: { in: ["active", "private"] },
-          },
-          include: {
-            owner: {
-              select: {
-                id: true,
-                displayName: true,
-                firstName: true,
-                isVerified: true,
-                verifiedCompany: true,
-                profileCard: {
-                  select: {
-                    name: true,
-                    role: true,
-                    avatarUrl: true,
-                  },
-                },
-              },
-            },
-          },
-        });
-
-        const slugMap = new Map(slugRows.map((row) => [String(row.fullSlug || "").toUpperCase(), row]));
-        const owners = new Map();
-
-        for (const item of ranked) {
-          const row = slugMap.get(item.slug);
-          const owner = row?.owner;
-          const ownerId = owner?.id ? String(owner.id) : "";
-          if (!ownerId) continue;
-
-          const existing = owners.get(ownerId);
-          if (!existing) {
-            owners.set(ownerId, {
-              ownerId,
-              name: owner.profileCard?.name || owner.displayName || owner.firstName || "UNQX User",
-              role: owner.profileCard?.role || "",
-              company: owner.verifiedCompany || owner.profileCard?.role || "",
-              isVerified: Boolean(owner.isVerified),
-              avatarUrl: owner.profileCard?.avatarUrl || null,
-              views: item.views,
-            });
-            continue;
-          }
-
-          existing.views += item.views;
-        }
-
-        const topOwners = Array.from(owners.values())
-          .sort((a, b) => b.views - a.views)
-          .slice(0, 3);
-
-        if (!topOwners.length) return [];
-
-        const ownerSlugs = await prisma.slug.findMany({
-          where: {
-            ownerId: { in: topOwners.map((item) => item.ownerId) },
-            status: { in: ["approved", "active", "private", "paused"] },
-          },
-          orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
-          select: {
-            ownerId: true,
-            fullSlug: true,
-          },
-        });
-
-        const slugsByOwner = new Map();
-        for (const row of ownerSlugs) {
-          const ownerId = String(row.ownerId || "");
-          if (!ownerId) continue;
-          const current = slugsByOwner.get(ownerId) || [];
-          current.push(String(row.fullSlug || "").toUpperCase());
-          slugsByOwner.set(ownerId, current);
-        }
-
-        return topOwners.map((item) => {
-          const allSlugs = slugsByOwner.get(item.ownerId) || [];
-          return {
-            primarySlug: allSlugs[0] || "",
-            slugs: allSlugs,
-            views: item.views,
-            name: item.name,
-            role: item.role,
-            company: item.company,
-            isVerified: item.isVerified,
-            avatarUrl: item.avatarUrl,
-          };
-        });
+        const board = await buildLeaderboard("week");
+        return (Array.isArray(board.items) ? board.items : []).slice(0, 3).map((item) => ({
+          primarySlug: String(item.slug || "").toUpperCase(),
+          slugs: Array.isArray(item.slugs) ? item.slugs : [],
+          views: Number(item.views || 0),
+          name: String(item.ownerName || "UNQX User"),
+          role: String(item.ownerRole || ""),
+          company: String(item.ownerCompany || ""),
+          isVerified: Boolean(item.isVerified),
+          avatarUrl: item.avatarUrl || null,
+        }));
       })(),
       userId
         ? findProfileCardByOwnerId(userId)

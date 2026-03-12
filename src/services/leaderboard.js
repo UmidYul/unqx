@@ -58,7 +58,7 @@ async function buildLeaderboard(period = "week") {
   const range = getPeriodRange(period);
   const groupedViews = prisma.analyticsView && typeof prisma.analyticsView.groupBy === "function"
     ? await prisma.analyticsView.groupBy({
-      by: ["slug", "sessionId"],
+      by: ["slug"],
       where:
         range.period === "all"
           ? undefined
@@ -72,15 +72,12 @@ async function buildLeaderboard(period = "week") {
     })
     : [];
 
-  const uniqueBySlug = new Map();
-  for (const row of groupedViews) {
-    const slug = String(row.slug || "").trim().toUpperCase();
-    if (!slug) continue;
-    uniqueBySlug.set(slug, (uniqueBySlug.get(slug) || 0) + 1);
-  }
-
-  const rankedByViews = Array.from(uniqueBySlug.entries())
-    .map(([slug, views]) => ({ slug, views: Number(views || 0) }))
+  const rankedByViews = groupedViews
+    .map((row) => ({
+      slug: String(row.slug || "").trim().toUpperCase(),
+      views: Number(row?._count?._all || 0),
+    }))
+    .filter((row) => row.slug)
     .filter((row) => row.views > 0)
     .sort((a, b) => b.views - a.views)
     .slice(0, 1000);
@@ -100,9 +97,11 @@ async function buildLeaderboard(period = "week") {
             displayName: true,
             plan: true,
             isVerified: true,
+            verifiedCompany: true,
             profileCard: {
               select: {
                 name: true,
+                role: true,
                 avatarUrl: true,
               },
             },
@@ -136,6 +135,8 @@ async function buildLeaderboard(period = "week") {
       owners.set(ownerId, {
         views: entry.views,
         ownerName: owner.profileCard?.name || owner.displayName || owner.firstName || "UNQX User",
+        ownerRole: owner.profileCard?.role || "",
+        ownerCompany: owner.verifiedCompany || owner.profileCard?.role || "",
         avatarUrl: owner.profileCard?.avatarUrl || null,
         plan: owner.plan || "none",
         userId: ownerId,
