@@ -1099,10 +1099,11 @@ router.get(
   "/slug-generate-affordable",
   asyncHandler(async (req, res) => {
     const source = typeof req.query.source === "string" ? req.query.source.slice(0, 20).toLowerCase() : "calculator";
+    const bypassPickCache = source === "calculator_generate";
     const now = Date.now();
     const adaptiveTtlMs = getAdaptiveAffordableTtlMs();
 
-    if (affordablePickCache.expiresAt > now && SLUG_REGEX.test(affordablePickCache.slug)) {
+    if (!bypassPickCache && affordablePickCache.expiresAt > now && SLUG_REGEX.test(affordablePickCache.slug)) {
       const cachedMap = await getSlugStatesBulk([affordablePickCache.slug]);
       if (cachedMap.get(affordablePickCache.slug)?.available === true) {
         res.json({
@@ -1124,7 +1125,19 @@ router.get(
     const candidates = await getAffordableCandidatesCached({ limit: 140 });
     const slugs = candidates.map((item) => item.slug).slice(0, 80);
     const states = await getSlugStatesBulk(slugs);
-    const picked = candidates.find((item) => states.get(item.slug)?.available === true) || null;
+    const availableCandidates = candidates.filter((item) => states.get(item.slug)?.available === true);
+    let picked = null;
+    if (availableCandidates.length > 0) {
+      if (bypassPickCache) {
+        // Rotate generated slugs for calculator clicks instead of returning the same first candidate.
+        const pool = availableCandidates.slice(0, Math.min(24, availableCandidates.length));
+        const withoutPrevious = pool.filter((item) => item.slug !== affordablePickCache.slug);
+        const bag = withoutPrevious.length > 0 ? withoutPrevious : pool;
+        picked = bag[Math.floor(Math.random() * bag.length)] || null;
+      } else {
+        picked = availableCandidates[0] || null;
+      }
+    }
 
     if (!picked) {
       res.json({
@@ -1153,11 +1166,15 @@ router.get(
       ttlMs: adaptiveTtlMs,
     });
 
-    affordablePickCache.expiresAt = now + adaptiveTtlMs;
-    affordablePickCache.slug = picked.slug;
-    affordablePickCache.estimatedPrice = picked.price;
-    if (affordableCandidatesCache.expiresAt < now + adaptiveTtlMs) {
-      affordableCandidatesCache.expiresAt = now + adaptiveTtlMs;
+    if (!bypassPickCache) {
+      affordablePickCache.expiresAt = now + adaptiveTtlMs;
+      affordablePickCache.slug = picked.slug;
+      affordablePickCache.estimatedPrice = picked.price;
+      if (affordableCandidatesCache.expiresAt < now + adaptiveTtlMs) {
+        affordableCandidatesCache.expiresAt = now + adaptiveTtlMs;
+      }
+    } else {
+      affordablePickCache.slug = picked.slug;
     }
   }),
 );
