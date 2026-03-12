@@ -208,23 +208,32 @@
     const stats = document.getElementById("referrals-stats");
     const table = document.getElementById("referrals-table");
     const ledgerTable = document.getElementById("referrals-ledger-table");
+    const campaignsTable = document.getElementById("referrals-campaigns-table");
     const settingsForm = document.getElementById("referrals-settings-form");
     if (!(stats instanceof HTMLElement) || !(table instanceof HTMLElement)) return;
 
-    const [statPayload, rowsPayload, ledgerPayload, settingsPayload] = await Promise.all([
+    const [statPayload, rowsPayload, ledgerPayload, settingsPayload, campaignsPayload] = await Promise.all([
       jsonFetch("/api/admin/referrals/stats"),
       jsonFetch("/api/admin/referrals"),
       jsonFetch("/api/admin/referrals/ledger"),
       jsonFetch("/api/admin/referrals/settings"),
+      jsonFetch("/api/admin/referrals/campaigns"),
     ]);
 
     if (settingsForm instanceof HTMLFormElement) {
       const enabled = settingsForm.elements.namedItem("enabled");
+      const promoCodesEnabled = settingsForm.elements.namedItem("promoCodesEnabled");
+      const promoRequireReferrer = settingsForm.elements.namedItem("promoRequireReferrer");
+      const promoFirstOrderOnly = settingsForm.elements.namedItem("promoFirstOrderOnly");
       const referrerReward = settingsForm.elements.namedItem("referrerReward");
       const inviteeDiscount = settingsForm.elements.namedItem("inviteeDiscount");
       const discountCapPercent = settingsForm.elements.namedItem("discountCapPercent");
+      const defaultPerUserCap = settingsForm.elements.namedItem("defaultPerUserCap");
 
       if (enabled instanceof HTMLInputElement) enabled.checked = Boolean(settingsPayload.settings?.feature_referrals);
+      if (promoCodesEnabled instanceof HTMLInputElement) promoCodesEnabled.checked = settingsPayload.settings?.feature_promo_codes !== undefined ? Boolean(settingsPayload.settings?.feature_promo_codes) : true;
+      if (promoRequireReferrer instanceof HTMLInputElement) promoRequireReferrer.checked = settingsPayload.settings?.promo_codes_require_referrer !== undefined ? Boolean(settingsPayload.settings?.promo_codes_require_referrer) : false;
+      if (promoFirstOrderOnly instanceof HTMLInputElement) promoFirstOrderOnly.checked = settingsPayload.settings?.promo_codes_first_order_only !== undefined ? Boolean(settingsPayload.settings?.promo_codes_first_order_only) : true;
       if (referrerReward instanceof HTMLInputElement) {
         referrerReward.value = String(settingsPayload.settings?.referral_v1_referrer_reward || 50000);
       }
@@ -233,6 +242,9 @@
       }
       if (discountCapPercent instanceof HTMLInputElement) {
         discountCapPercent.value = String(settingsPayload.settings?.referral_v1_discount_cap_percent || 30);
+      }
+      if (defaultPerUserCap instanceof HTMLInputElement) {
+        defaultPerUserCap.value = String(settingsPayload.settings?.referral_v2_default_per_user_cap || 1);
       }
     }
 
@@ -260,6 +272,39 @@
           )
           .join("")
         : '<tr><td colspan="7" class="px-3 py-8 text-center text-neutral-500">No operations</td></tr>';
+    }
+
+    if (campaignsTable instanceof HTMLElement) {
+      campaignsTable.innerHTML = (campaignsPayload.items || []).length
+        ? (campaignsPayload.items || [])
+          .map((item) => {
+            const status = String(item.status || "draft");
+            const statusAction = status === "active" ? "paused" : "active";
+            const statusLabel = status === "active" ? "Pause" : "Activate";
+            return `<tr class="admin-table-row border-t border-neutral-100">
+              <td class="px-4 py-3">${item.name || "-"}</td>
+              <td class="px-4 py-3 font-mono">${item.promoCode || "-"}</td>
+              <td class="px-4 py-3">${status}</td>
+              <td class="px-4 py-3">${P(item.inviteeDiscountOverride || 0)}</td>
+              <td class="px-4 py-3">${P(item.rewardAmountOverride || 0)}</td>
+              <td class="px-4 py-3">${Number(item.discountCapPercentOverride || 0)}%</td>
+              <td class="px-4 py-3">${Number(item.priority || 0)}</td>
+              <td class="px-4 py-3">${P(item.budgetAmount || 0)}</td>
+              <td class="px-4 py-3">${D(item.startsAt)} - ${D(item.endsAt)}</td>
+              <td class="px-4 py-3"><div class="admin-row-actions">${menuWrap([
+                menuItem({ label: statusLabel, icon: "refresh", attrs: `data-a="promo-status" data-id="${item.id}" data-status="${statusAction}"` }),
+                menuItem({
+                  label: "Edit",
+                  icon: "pen",
+                  attrs: `data-a="promo-edit" data-id="${item.id}" data-name="${encodeAttr(item.name || "")}" data-promo="${encodeAttr(item.promoCode || "")}" data-status="${encodeAttr(status)}" data-invitee="${Number(item.inviteeDiscountOverride || 0)}" data-reward="${Number(item.rewardAmountOverride || 0)}" data-cap="${Number(item.discountCapPercentOverride || 0)}" data-priority="${Number(item.priority || 0)}" data-budget="${Number(item.budgetAmount || 0)}" data-per-user-cap="${Number(item.perUserCap || 1)}" data-starts-at="${encodeAttr(item.startsAt || "")}" data-ends-at="${encodeAttr(item.endsAt || "")}"`,
+                }),
+                menuSeparator(),
+                menuItem({ label: "Delete", icon: "trash", attrs: `data-a="promo-delete" data-id="${item.id}"`, danger: true }),
+              ].join(""))}</div></td>
+            </tr>`;
+          })
+          .join("")
+        : '<tr><td colspan="10" class="px-3 py-8 text-center text-neutral-500">No promo campaigns</td></tr>';
     }
   }
 
@@ -346,19 +391,54 @@
     const form = event.currentTarget;
     if (!(form instanceof HTMLFormElement)) return;
     const enabled = form.elements.namedItem("enabled");
+    const promoCodesEnabled = form.elements.namedItem("promoCodesEnabled");
+    const promoRequireReferrer = form.elements.namedItem("promoRequireReferrer");
+    const promoFirstOrderOnly = form.elements.namedItem("promoFirstOrderOnly");
     const referrerReward = form.elements.namedItem("referrerReward");
     const inviteeDiscount = form.elements.namedItem("inviteeDiscount");
     const discountCapPercent = form.elements.namedItem("discountCapPercent");
+    const defaultPerUserCap = form.elements.namedItem("defaultPerUserCap");
     await jsonFetch("/api/admin/referrals/settings", {
       method: "PATCH",
       headers: headers({ "Content-Type": "application/json" }),
       body: JSON.stringify({
         enabled: enabled instanceof HTMLInputElement ? enabled.checked : true,
+        promoCodesEnabled: promoCodesEnabled instanceof HTMLInputElement ? promoCodesEnabled.checked : true,
+        promoRequireReferrer: promoRequireReferrer instanceof HTMLInputElement ? promoRequireReferrer.checked : false,
+        promoFirstOrderOnly: promoFirstOrderOnly instanceof HTMLInputElement ? promoFirstOrderOnly.checked : true,
         referrerReward: referrerReward instanceof HTMLInputElement ? Number(referrerReward.value || 0) : 0,
         inviteeDiscount: inviteeDiscount instanceof HTMLInputElement ? Number(inviteeDiscount.value || 0) : 0,
         discountCapPercent: discountCapPercent instanceof HTMLInputElement ? Number(discountCapPercent.value || 0) : 0,
+        defaultPerUserCap: defaultPerUserCap instanceof HTMLInputElement ? Number(defaultPerUserCap.value || 1) : 1,
       }),
     });
+    await loadReferralsAdmin();
+  });
+
+  document.getElementById("referrals-campaign-create-form")?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    if (!(form instanceof HTMLFormElement)) return;
+    const fd = new FormData(form);
+    await jsonFetch("/api/admin/referrals/campaigns", {
+      method: "POST",
+      headers: headers({ "Content-Type": "application/json" }),
+      body: JSON.stringify({
+        type: "promo_code",
+        name: String(fd.get("name") || "").trim(),
+        promoCode: String(fd.get("promoCode") || "").trim().toUpperCase(),
+        status: String(fd.get("status") || "draft").trim().toLowerCase(),
+        rewardAmountOverride: Number(fd.get("rewardAmountOverride") || 0),
+        inviteeDiscountOverride: Number(fd.get("inviteeDiscountOverride") || 0),
+        discountCapPercentOverride: Number(fd.get("discountCapPercentOverride") || 0),
+        priority: Number(fd.get("priority") || 0),
+        budgetAmount: Number(fd.get("budgetAmount") || 0),
+        perUserCap: Number(fd.get("perUserCap") || 1),
+        startsAt: fd.get("startsAt") ? new Date(String(fd.get("startsAt"))).toISOString() : null,
+        endsAt: fd.get("endsAt") ? new Date(String(fd.get("endsAt"))).toISOString() : null,
+      }),
+    });
+    form.reset();
     await loadReferralsAdmin();
   });
 
@@ -461,6 +541,87 @@
           method: "POST",
           headers: headers({ "Content-Type": "application/json" }),
           body: JSON.stringify({ amount: 50000 }),
+        });
+        await loadReferralsAdmin();
+      }
+      if (action === "promo-status") {
+        const id = target.getAttribute("data-id");
+        const status = target.getAttribute("data-status");
+        if (!id || !status) return;
+        await jsonFetch(`/api/admin/referrals/campaigns/${encodeURIComponent(id)}`, {
+          method: "PATCH",
+          headers: headers({ "Content-Type": "application/json" }),
+          body: JSON.stringify({ status }),
+        });
+        await loadReferralsAdmin();
+      }
+      if (action === "promo-delete") {
+        const id = target.getAttribute("data-id");
+        if (!id) return;
+        const ok = await showConfirm("Delete promo campaign permanently?");
+        if (!ok) return;
+        await jsonFetch(`/api/admin/referrals/campaigns/${encodeURIComponent(id)}`, {
+          method: "DELETE",
+          headers: headers({ "Content-Type": "application/json" }),
+          body: JSON.stringify({}),
+        });
+        await loadReferralsAdmin();
+      }
+      if (action === "promo-edit") {
+        const id = target.getAttribute("data-id");
+        if (!id) return;
+        const currentName = decodeAttr(target.getAttribute("data-name"));
+        const currentPromo = decodeAttr(target.getAttribute("data-promo"));
+        const currentStatus = decodeAttr(target.getAttribute("data-status")) || "draft";
+        const currentInvitee = Number(target.getAttribute("data-invitee") || 0);
+        const currentReward = Number(target.getAttribute("data-reward") || 0);
+        const currentCap = Number(target.getAttribute("data-cap") || 0);
+        const currentPriority = Number(target.getAttribute("data-priority") || 0);
+        const currentBudget = Number(target.getAttribute("data-budget") || 0);
+        const currentPerUserCap = Number(target.getAttribute("data-per-user-cap") || 1);
+        const currentStartsAt = toDateInputValue(decodeAttr(target.getAttribute("data-starts-at")));
+        const currentEndsAt = toDateInputValue(decodeAttr(target.getAttribute("data-ends-at")));
+
+        const nextName = window.prompt("Campaign name", currentName);
+        if (nextName == null) return;
+        const nextPromo = window.prompt("Promo code", currentPromo);
+        if (nextPromo == null) return;
+        const nextStatus = window.prompt("Status: draft|active|paused|archived", currentStatus);
+        if (nextStatus == null) return;
+        const nextInviteeRaw = window.prompt("Invitee discount override", String(currentInvitee));
+        if (nextInviteeRaw == null) return;
+        const nextRewardRaw = window.prompt("Referrer reward override", String(currentReward));
+        if (nextRewardRaw == null) return;
+        const nextCapRaw = window.prompt("Cap percent override", String(currentCap));
+        if (nextCapRaw == null) return;
+        const nextPriorityRaw = window.prompt("Priority", String(currentPriority));
+        if (nextPriorityRaw == null) return;
+        const nextBudgetRaw = window.prompt("Budget amount", String(currentBudget));
+        if (nextBudgetRaw == null) return;
+        const nextPerUserCapRaw = window.prompt("Per user cap", String(currentPerUserCap));
+        if (nextPerUserCapRaw == null) return;
+        const nextStartsAt = window.prompt("Starts at (YYYY-MM-DDTHH:mm or empty)", currentStartsAt);
+        if (nextStartsAt == null) return;
+        const nextEndsAt = window.prompt("Ends at (YYYY-MM-DDTHH:mm or empty)", currentEndsAt);
+        if (nextEndsAt == null) return;
+
+        await jsonFetch(`/api/admin/referrals/campaigns/${encodeURIComponent(id)}`, {
+          method: "PATCH",
+          headers: headers({ "Content-Type": "application/json" }),
+          body: JSON.stringify({
+            type: "promo_code",
+            name: String(nextName || "").trim(),
+            promoCode: String(nextPromo || "").trim().toUpperCase(),
+            status: String(nextStatus || "").trim().toLowerCase(),
+            inviteeDiscountOverride: Number(nextInviteeRaw || 0),
+            rewardAmountOverride: Number(nextRewardRaw || 0),
+            discountCapPercentOverride: Number(nextCapRaw || 0),
+            priority: Number(nextPriorityRaw || 0),
+            budgetAmount: Number(nextBudgetRaw || 0),
+            perUserCap: Number(nextPerUserCapRaw || 1),
+            startsAt: String(nextStartsAt || "").trim() ? new Date(String(nextStartsAt)).toISOString() : null,
+            endsAt: String(nextEndsAt || "").trim() ? new Date(String(nextEndsAt)).toISOString() : null,
+          }),
         });
         await loadReferralsAdmin();
       }

@@ -593,6 +593,7 @@
             menuSeparator(),
             menuItem({ label: "Редактировать визитку", icon: "pen", attrs: `data-act="open-url" data-url="/admin/users/${encodeURIComponent(String(x.telegramId || ""))}/card"` }),
             menuItem({ label: "Открыть профиль", icon: "external", attrs: profileLink ? `data-act="open-url" data-url="${profileLink}"` : 'disabled="disabled"' }),
+            menuItem({ label: "Накрутить просмотры", icon: "eye", attrs: `data-act="uvb" data-id="${X(x.telegramId)}" data-name="${X(x.name)}" data-slugs="${X(userSlugsCsv)}"` }),
             menuSeparator(),
             menuItem({ label: x.status === "blocked" ? "Разблокировать" : "Заблокировать", icon: "shieldOff", attrs: `data-act="ub" data-id="${X(x.telegramId)}" data-status="${X(x.status)}"`, danger: x.status !== "blocked" }),
             menuItem({ label: "Удалить пользователя полностью", icon: "trash", attrs: `data-act="ud" data-id="${X(x.telegramId)}" data-name="${X(x.name)}"`, danger: true }),
@@ -1490,6 +1491,52 @@
       });
       if (!r.ok) showAlert(await E(r));
       else void loadUsers();
+      closeAllRowMenus();
+      return;
+    }
+    if (a === "uvb") {
+      const userId = n.getAttribute("data-id");
+      const userName = n.getAttribute("data-name") || "пользователя";
+      if (!userId) return;
+      const userSlugs = String(n.getAttribute("data-slugs") || "")
+        .split(",")
+        .map((slug) => normalizeShortSlug(slug))
+        .filter((slug) => isShortSlug(slug));
+      if (!userSlugs.length) {
+        await showAlert("У пользователя нет slug для накрутки просмотров.");
+        return;
+      }
+      const enteredCount = await showPrompt(`Сколько просмотров добавить для ${userName}? (1-5000)`, "100");
+      if (enteredCount === null) return;
+      const count = Number.parseInt(String(enteredCount || "").trim(), 10);
+      if (!Number.isFinite(count) || count < 1 || count > 5000) {
+        await showAlert("Количество должно быть числом от 1 до 5000.");
+        return;
+      }
+      let targetSlug = userSlugs[0];
+      if (userSlugs.length > 1) {
+        const enteredSlug = await showPrompt(`На какой slug начислить просмотры? (${userSlugs.join(", ")})`, targetSlug);
+        if (enteredSlug === null) return;
+        targetSlug = normalizeShortSlug(enteredSlug);
+        if (!isShortSlug(targetSlug)) {
+          await showAlert("Slug должен быть в формате AAA000.");
+          return;
+        }
+      }
+      const ok = await showConfirm(`Добавить ${count} просмотров на ${targetSlug} для ${userName}?`);
+      if (!ok) return;
+      const r = await fetch(`/api/admin/users/${encodeURIComponent(userId)}/views`, {
+        method: "POST",
+        headers: H({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ count, slug: targetSlug }),
+      });
+      if (!r.ok) {
+        await showAlert(await E(r));
+        return;
+      }
+      const payload = await r.json().catch(() => ({}));
+      await showAlert(`Добавлено просмотров: ${Number(payload?.addedViews || count)} (slug: ${payload?.slug || targetSlug}).`);
+      void loadUsers();
       closeAllRowMenus();
       return;
     }

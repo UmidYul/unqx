@@ -29,7 +29,7 @@ const { requireCsrfToken } = require("../../middleware/csrf");
 const { publicOrderRateLimit } = require("../../middleware/rate-limit");
 const { getUserSession, requireUserApi } = require("../../middleware/auth");
 const { OrderRequestSchema } = require("../../validation/order-request");
-const { getSetting } = require("../../services/platform-settings");
+const { getSetting, getManySettings } = require("../../services/platform-settings");
 const { sendTapPushNotification } = require("../../services/push");
 const { resolveUzbekistanCity } = require("../../constants/uzbekistan-cities");
 const { logPaymentEvent } = require("../../services/payment-events");
@@ -255,6 +255,42 @@ async function safeResolveReferrerForUser(params) {
     }
     throw error;
   }
+}
+
+async function getPromoPolicySettings() {
+  const settings = await getManySettings([
+    "feature_promo_codes",
+    "promo_codes_require_referrer",
+    "promo_codes_first_order_only",
+  ]);
+  return {
+    enabled: settings.feature_promo_codes !== undefined ? Boolean(settings.feature_promo_codes) : true,
+    requireReferrer: settings.promo_codes_require_referrer !== undefined ? Boolean(settings.promo_codes_require_referrer) : false,
+    firstOrderOnly: settings.promo_codes_first_order_only !== undefined ? Boolean(settings.promo_codes_first_order_only) : true,
+  };
+}
+
+function resolveInviteeDiscountCandidate({
+  referralEnabled,
+  campaignSnapshot,
+  promoPolicy,
+  hasReferrer,
+  firstApprovedOrderExists,
+}) {
+  const isPromoCampaign = String(campaignSnapshot?.campaignType || "") === "promo_code";
+  const isFirstOrder = !firstApprovedOrderExists;
+  if (isPromoCampaign) {
+    if (!promoPolicy.enabled) return { allowed: false, reason: "promo_disabled", amount: 0 };
+    if (promoPolicy.requireReferrer && !hasReferrer) return { allowed: false, reason: "promo_requires_referrer", amount: 0 };
+    if (promoPolicy.firstOrderOnly && !isFirstOrder) return { allowed: false, reason: "promo_first_order_only", amount: 0 };
+    return { allowed: true, reason: "", amount: Math.max(0, Number(campaignSnapshot?.inviteeDiscount || 0)) };
+  }
+  const referralEligible = Boolean(referralEnabled) && isFirstOrder && hasReferrer;
+  return {
+    allowed: referralEligible,
+    reason: referralEligible ? "" : "referral_not_eligible",
+    amount: referralEligible ? Math.max(0, Number(campaignSnapshot?.inviteeDiscount || 0)) : 0,
+  };
 }
 
 function toOrderStatusLabel(status) {
@@ -1277,8 +1313,9 @@ router.get(
     let referralSettings;
     let referralV2Settings;
     let campaignResolved;
+    let promoPolicy;
     try {
-      [pricing, braceletPrice, referralSettings, referralV2Settings, campaignResolved] = await Promise.all([
+      [pricing, braceletPrice, referralSettings, referralV2Settings, campaignResolved, promoPolicy] = await Promise.all([
         getPricingSettings(),
         getBraceletPrice(),
         getReferralV1Settings(),
@@ -1288,6 +1325,7 @@ router.get(
           offer: attribution.refOffer,
           promoCode: promoCodeInput,
         }),
+        getPromoPolicySettings(),
       ]);
     } catch (error) {
       console.error("[express-app] order-precheck base load failed", error);
@@ -1565,8 +1603,15 @@ router.get(
       message = "Доступно обновление до тарифа Премиум.";
     }
 
-    const firstOrderEligible = referralSettings.enabled && !firstApprovedOrderExists && Boolean(referrerLink?.referrerId);
-    const inviteeDiscountCandidate = firstOrderEligible ? campaignSnapshot.inviteeDiscount : 0;
+    const discountCandidate = resolveInviteeDiscountCandidate({
+      referralEnabled: referralSettings.enabled,
+      campaignSnapshot,
+      promoPolicy,
+      hasReferrer: Boolean(referrerLink?.referrerId),
+      firstApprovedOrderExists,
+    });
+    const firstOrderEligible = discountCandidate.allowed;
+    const inviteeDiscountCandidate = discountCandidate.amount;
     const referralPreview = computeDiscountAllocation({
       slugBasePrice: 0,
       slugPriceAfterProductDiscount: 0,
@@ -1614,8 +1659,9 @@ router.get(
         inviteeDiscountCandidate,
         bonusSpendCandidate: Math.max(0, Math.round(Number(walletBalance || 0))),
         capPercent: campaignSnapshot.discountCapPercent,
+        promoPolicy,
         fraudVerdict: "allow",
-        fraudHint: campaignEligibility.reason || "",
+        fraudHint: discountCandidate.reason || campaignEligibility.reason || "",
         breakdown: {
           inviteeDiscountApplied: referralPreview.inviteeDiscountApplied,
           bonusSpent: referralPreview.bonusSpent,
@@ -1702,7 +1748,7 @@ router.post(
       path: req.path || req.originalUrl || "",
     });
     const promoCodeInput = normalizePromoCode(payload.promoCode || req.query?.promoCode || "");
-    const [pricing, referralSettings, referralV2Settings, walletBalance, firstApprovedOrderExists, referrerLink, campaignResolved] = await Promise.all([
+    const [pricing, referralSettings, referralV2Settings, walletBalance, firstApprovedOrderExists, referrerLink, campaignResolved, promoPolicy] = await Promise.all([
       getPricingSettings(),
       getReferralV1Settings(),
       getReferralV2Settings(),
@@ -1718,6 +1764,7 @@ router.post(
         offer: attribution.refOffer,
         promoCode: promoCodeInput,
       }),
+      getPromoPolicySettings(),
     ]);
     const campaignEligibility = await safeEvaluateCampaignEligibility({
       campaign: campaignResolved.campaign,
@@ -1822,8 +1869,15 @@ router.post(
       });
     }
 
-    const firstOrderEligible = referralSettings.enabled && !firstApprovedOrderExists && Boolean(referrerLink?.referrerId);
-    const inviteeDiscountCandidate = firstOrderEligible ? campaignSnapshotForOrder.inviteeDiscount : 0;
+    const discountCandidate = resolveInviteeDiscountCandidate({
+      referralEnabled: referralSettings.enabled,
+      campaignSnapshot: campaignSnapshotForOrder,
+      promoPolicy,
+      hasReferrer: Boolean(referrerLink?.referrerId),
+      firstApprovedOrderExists,
+    });
+    const firstOrderEligible = discountCandidate.allowed;
+    const inviteeDiscountCandidate = discountCandidate.amount;
     const referralPricing = computeDiscountAllocation({
       slugBasePrice: basePricing.total,
       slugPriceAfterProductDiscount,
@@ -2081,8 +2135,9 @@ router.post(
         walletBalance,
         capPercent: campaignSnapshotForOrder.discountCapPercent,
         rewardAmount: campaignSnapshotForOrder.referrerReward,
+        promoPolicy,
         fraudVerdict: fraudCheck.verdict || "allow",
-        fraudHint: fraudCheck.reason || "",
+        fraudHint: discountCandidate.reason || fraudCheck.reason || "",
       },
       payment,
       paymentLinks: {

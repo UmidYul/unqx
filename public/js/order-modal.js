@@ -1241,11 +1241,28 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
       const campaignApplied = Boolean(referral?.campaignApplied);
       const campaignName = String(referral?.campaignName || "").trim();
       const promoCodeApplied = String(referral?.promoCodeApplied || "").trim();
+      const referralHint = String(referral?.fraudHint || "").trim();
       if (campaignApplied) {
         dom.campaignHint.classList.remove("hidden");
         dom.campaignHint.textContent = campaignName
           ? `Применена кампания: ${campaignName}${promoCodeApplied ? ` (${promoCodeApplied})` : ""}`
           : `Применена акция${promoCodeApplied ? ` (${promoCodeApplied})` : ""}`;
+      } else if (referralHint && (state.promoCode || promoCodeApplied)) {
+        const reasonLabel =
+          referralHint === "promo_disabled"
+            ? "Промокоды временно отключены."
+            : referralHint === "promo_requires_referrer"
+            ? "Промокод доступен только при заказе по реферальной ссылке."
+            : referralHint === "promo_first_order_only"
+            ? "Промокод доступен только для первого заказа."
+            : "";
+        if (reasonLabel) {
+          dom.campaignHint.classList.remove("hidden");
+          dom.campaignHint.textContent = reasonLabel;
+        } else {
+          dom.campaignHint.classList.add("hidden");
+          dom.campaignHint.textContent = "";
+        }
       } else if (state.promoValidationHint) {
         dom.campaignHint.classList.remove("hidden");
         dom.campaignHint.textContent = state.promoValidationHint;
@@ -1307,10 +1324,16 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
         state.promoValidationHint = "";
         if (dom.campaignHint instanceof HTMLElement) {
           dom.campaignHint.classList.remove("hidden");
-          dom.campaignHint.textContent = `Промокод применен: ${promoCode}${payload?.campaignName ? ` · ${payload.campaignName}` : ""}`;
+          const policyHints = [];
+          if (payload?.policy?.requireReferrer) policyHints.push("нужен реферер");
+          if (payload?.policy?.firstOrderOnly) policyHints.push("только первый заказ");
+          dom.campaignHint.textContent = `Промокод применен: ${promoCode}${payload?.campaignName ? ` · ${payload.campaignName}` : ""}${policyHints.length ? ` (${policyHints.join(", ")})` : ""}`;
         }
       } else {
-        state.promoValidationHint = "Промокод не найден или не активен.";
+        const reason = String(payload?.reason || "").trim().toLowerCase();
+        state.promoValidationHint = reason === "promo_disabled"
+          ? "Промокоды временно отключены."
+          : "Промокод не найден или не активен.";
         if (dom.campaignHint instanceof HTMLElement) {
           dom.campaignHint.classList.remove("hidden");
           dom.campaignHint.textContent = state.promoValidationHint;

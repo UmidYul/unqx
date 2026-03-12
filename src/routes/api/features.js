@@ -11,6 +11,7 @@ const { getActiveFlashSale, resolveConditionLabel } = require("../../services/fl
 const { getDropLiveStats } = require("../../services/drops");
 const { getReferralBootstrap, claimReferralReward } = require("../../services/referrals");
 const { getWalletBalance } = require("../../services/referral-v1");
+const { getManySettings } = require("../../services/platform-settings");
 const {
   normalizePromoCode,
   getActiveCampaignsSafe,
@@ -351,14 +352,29 @@ router.post(
       res.status(400).json({ error: "PROMO_CODE_REQUIRED" });
       return;
     }
-    const [v1Settings, resolved] = await Promise.all([
+    const [v1Settings, resolved, promoSettings] = await Promise.all([
       getReferralV1Settings(),
       resolveCampaignForCheckout({
         source: String(req.body?.refSource || "order_modal"),
         offer: String(req.body?.refOffer || "default"),
         promoCode,
       }),
+      getManySettings([
+        "feature_promo_codes",
+        "promo_codes_require_referrer",
+        "promo_codes_first_order_only",
+      ]),
     ]);
+    const promoEnabled = promoSettings.feature_promo_codes !== undefined ? Boolean(promoSettings.feature_promo_codes) : true;
+    if (!promoEnabled) {
+      res.json({
+        ok: false,
+        promoCode,
+        valid: false,
+        reason: "promo_disabled",
+      });
+      return;
+    }
     const snapshot = buildCampaignSnapshot({
       campaign: resolved.campaign,
       referrerReward: v1Settings.referrerReward,
@@ -371,6 +387,7 @@ router.post(
         ok: false,
         promoCode,
         valid: false,
+        reason: "promo_not_active",
       });
       return;
     }
@@ -384,6 +401,14 @@ router.post(
       inviteeDiscount: snapshot.inviteeDiscount,
       referrerReward: snapshot.referrerReward,
       capPercent: snapshot.discountCapPercent,
+      policy: {
+        requireReferrer: promoSettings.promo_codes_require_referrer !== undefined
+          ? Boolean(promoSettings.promo_codes_require_referrer)
+          : false,
+        firstOrderOnly: promoSettings.promo_codes_first_order_only !== undefined
+          ? Boolean(promoSettings.promo_codes_first_order_only)
+          : true,
+      },
     });
   }),
 );

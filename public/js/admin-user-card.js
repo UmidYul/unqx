@@ -24,6 +24,7 @@
     error: $("#user-card-error"),
     form: $("#user-card-form"),
     name: $("#user-card-name"),
+    company: $("#user-card-company"),
     role: $("#user-card-role"),
     bio: $("#user-card-bio"),
     hashtag: $("#user-card-hashtag"),
@@ -235,6 +236,7 @@
     const fallbackName =
       state.user?.displayName || state.user?.firstName || state.user?.username || state.user?.email || "";
     if (el.name) el.name.value = card.name || fallbackName || "";
+    if (el.company) el.company.value = state.user?.verifiedCompany || "";
     if (el.role) el.role.value = card.role || "";
     if (el.bio) el.bio.value = card.bio || "";
     if (el.hashtag) el.hashtag.value = card.hashtag || "";
@@ -302,6 +304,7 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name,
+          company: el.company?.value || "",
           role: el.role?.value || "",
           bio: el.bio?.value || "",
           hashtag: el.hashtag?.value || "",
@@ -324,6 +327,7 @@
       });
       if (payload.card) {
         state.card = payload.card;
+        state.user = { ...(state.user || {}), verifiedCompany: payload.user?.verifiedCompany || el.company?.value || "" };
         state.tags = Array.isArray(payload.card.tags) ? payload.card.tags.slice(0) : [];
         state.buttons = Array.isArray(payload.card.buttons) ? payload.card.buttons.slice(0) : [];
         state.theme = typeof payload.card.theme === "string" ? payload.card.theme : state.theme;

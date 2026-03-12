@@ -38,7 +38,7 @@ const GROUP_KEY_PREFIX = {
   algorithm: ["slug_"],
   bracelet: ["bracelet_"],
   contacts: ["contact_"],
-  platform: ["platform_", "feature_", "pending_", "score_", "leaderboard_", "referral_", "maintenance_"],
+  platform: ["platform_", "feature_", "pending_", "score_", "leaderboard_", "referral_", "promo_", "maintenance_"],
 };
 
 function isKnownGroup(group) {
@@ -228,6 +228,16 @@ function parseIsoDate(value, fieldName) {
     return { error: `${fieldName} должен быть валидной датой` };
   }
   return { value: date };
+}
+
+function normalizeCampaignType(value, fallback = "promo_code") {
+  const type = String(value || "").trim().toLowerCase();
+  return type === "source_offer" || type === "promo_code" ? type : fallback;
+}
+
+function normalizeCampaignStatus(value, fallback = "draft") {
+  const status = String(value || "").trim().toLowerCase();
+  return ["draft", "active", "paused", "archived"].includes(status) ? status : fallback;
 }
 
 router.get(
@@ -516,19 +526,45 @@ router.post(
       res.status(503).json({ error: "Referral campaign storage unavailable" });
       return;
     }
-    const type = String(req.body.type || "").trim().toLowerCase();
-    if (!["source_offer", "promo_code"].includes(type)) {
+    const type = normalizeCampaignType(req.body.type, "");
+    if (!type) {
       res.status(400).json({ error: "Invalid campaign type" });
+      return;
+    }
+    const status = normalizeCampaignStatus(req.body.status, "draft");
+    const promoCode = type === "promo_code" ? normalizePromoCode(req.body.promoCode || "") : "";
+    const source = type === "source_offer" ? normalizeSource(req.body.source || "") : "";
+    const offer = type === "source_offer" ? normalizeOffer(req.body.offer || "") : "";
+    if (type === "promo_code" && !promoCode) {
+      res.status(400).json({ error: "Promo code is required for promo campaign" });
+      return;
+    }
+    if (type === "source_offer" && (!source || !offer)) {
+      res.status(400).json({ error: "Source and offer are required for source/offer campaign" });
+      return;
+    }
+    const startsAt = req.body.startsAt ? new Date(req.body.startsAt) : null;
+    const endsAt = req.body.endsAt ? new Date(req.body.endsAt) : null;
+    if (startsAt && Number.isNaN(startsAt.getTime())) {
+      res.status(400).json({ error: "Invalid startsAt" });
+      return;
+    }
+    if (endsAt && Number.isNaN(endsAt.getTime())) {
+      res.status(400).json({ error: "Invalid endsAt" });
+      return;
+    }
+    if (startsAt && endsAt && startsAt > endsAt) {
+      res.status(400).json({ error: "startsAt must be before endsAt" });
       return;
     }
     const created = await prisma.referralCampaign.create({
       data: {
         name: String(req.body.name || "").trim() || "Referral campaign",
         type,
-        status: String(req.body.status || "draft").trim().toLowerCase(),
-        source: type === "source_offer" ? normalizeSource(req.body.source || "") : null,
-        offer: type === "source_offer" ? normalizeOffer(req.body.offer || "") : null,
-        promoCode: type === "promo_code" ? normalizePromoCode(req.body.promoCode || "") : null,
+        status,
+        source: type === "source_offer" ? source : null,
+        offer: type === "source_offer" ? offer : null,
+        promoCode: type === "promo_code" ? promoCode : null,
         rewardAmountOverride:
           req.body.rewardAmountOverride === undefined ? null : Math.max(0, Math.round(Number(req.body.rewardAmountOverride || 0))),
         inviteeDiscountOverride:
@@ -538,8 +574,8 @@ router.post(
         priority: Math.round(Number(req.body.priority || 0)),
         budgetAmount: Math.max(0, Math.round(Number(req.body.budgetAmount || 0))),
         perUserCap: Math.max(1, Math.round(Number(req.body.perUserCap || 1))),
-        startsAt: req.body.startsAt ? new Date(req.body.startsAt) : null,
-        endsAt: req.body.endsAt ? new Date(req.body.endsAt) : null,
+        startsAt,
+        endsAt,
         createdBy: req.session?.admin?.login || "admin",
       },
     });
@@ -559,27 +595,72 @@ router.patch(
       res.status(404).json({ error: "Campaign not found" });
       return;
     }
-    const nextType = req.body.type ? String(req.body.type).trim().toLowerCase() : existing.type;
+    const nextType = req.body.type !== undefined ? normalizeCampaignType(req.body.type, existing.type) : existing.type;
+    const nextPromoCode = req.body.promoCode !== undefined ? normalizePromoCode(req.body.promoCode || "") : String(existing.promoCode || "");
+    const nextSource = req.body.source !== undefined ? normalizeSource(req.body.source || "") : String(existing.source || "");
+    const nextOffer = req.body.offer !== undefined ? normalizeOffer(req.body.offer || "") : String(existing.offer || "");
+    if (nextType === "promo_code" && !nextPromoCode) {
+      res.status(400).json({ error: "Promo code is required for promo campaign" });
+      return;
+    }
+    if (nextType === "source_offer" && (!nextSource || !nextOffer)) {
+      res.status(400).json({ error: "Source and offer are required for source/offer campaign" });
+      return;
+    }
+    const startsAt = req.body.startsAt !== undefined ? (req.body.startsAt ? new Date(req.body.startsAt) : null) : existing.startsAt;
+    const endsAt = req.body.endsAt !== undefined ? (req.body.endsAt ? new Date(req.body.endsAt) : null) : existing.endsAt;
+    if (startsAt && Number.isNaN(new Date(startsAt).getTime())) {
+      res.status(400).json({ error: "Invalid startsAt" });
+      return;
+    }
+    if (endsAt && Number.isNaN(new Date(endsAt).getTime())) {
+      res.status(400).json({ error: "Invalid endsAt" });
+      return;
+    }
+    if (startsAt && endsAt && new Date(startsAt) > new Date(endsAt)) {
+      res.status(400).json({ error: "startsAt must be before endsAt" });
+      return;
+    }
     const updated = await prisma.referralCampaign.update({
       where: { id: existing.id },
       data: {
         ...(req.body.name !== undefined ? { name: String(req.body.name || "").trim() || existing.name } : {}),
         ...(req.body.type !== undefined ? { type: nextType } : {}),
-        ...(req.body.status !== undefined ? { status: String(req.body.status || "").trim().toLowerCase() } : {}),
-        ...(req.body.source !== undefined ? { source: nextType === "source_offer" ? normalizeSource(req.body.source || "") : null } : {}),
-        ...(req.body.offer !== undefined ? { offer: nextType === "source_offer" ? normalizeOffer(req.body.offer || "") : null } : {}),
-        ...(req.body.promoCode !== undefined ? { promoCode: nextType === "promo_code" ? normalizePromoCode(req.body.promoCode || "") : null } : {}),
+        ...(req.body.status !== undefined ? { status: normalizeCampaignStatus(req.body.status, existing.status) } : {}),
+        ...(req.body.source !== undefined ? { source: nextType === "source_offer" ? nextSource : null } : {}),
+        ...(req.body.offer !== undefined ? { offer: nextType === "source_offer" ? nextOffer : null } : {}),
+        ...(req.body.promoCode !== undefined ? { promoCode: nextType === "promo_code" ? nextPromoCode : null } : {}),
         ...(req.body.rewardAmountOverride !== undefined ? { rewardAmountOverride: Math.max(0, Math.round(Number(req.body.rewardAmountOverride || 0))) } : {}),
         ...(req.body.inviteeDiscountOverride !== undefined ? { inviteeDiscountOverride: Math.max(0, Math.round(Number(req.body.inviteeDiscountOverride || 0))) } : {}),
         ...(req.body.discountCapPercentOverride !== undefined ? { discountCapPercentOverride: Math.max(0, Math.min(100, Number(req.body.discountCapPercentOverride || 0))) } : {}),
         ...(req.body.priority !== undefined ? { priority: Math.round(Number(req.body.priority || 0)) } : {}),
         ...(req.body.budgetAmount !== undefined ? { budgetAmount: Math.max(0, Math.round(Number(req.body.budgetAmount || 0))) } : {}),
         ...(req.body.perUserCap !== undefined ? { perUserCap: Math.max(1, Math.round(Number(req.body.perUserCap || 1))) } : {}),
-        ...(req.body.startsAt !== undefined ? { startsAt: req.body.startsAt ? new Date(req.body.startsAt) : null } : {}),
-        ...(req.body.endsAt !== undefined ? { endsAt: req.body.endsAt ? new Date(req.body.endsAt) : null } : {}),
+        ...(req.body.startsAt !== undefined ? { startsAt: startsAt ? new Date(startsAt) : null } : {}),
+        ...(req.body.endsAt !== undefined ? { endsAt: endsAt ? new Date(endsAt) : null } : {}),
       },
     });
     res.json({ ok: true, item: updated });
+  }),
+);
+
+router.delete(
+  "/referrals/campaigns/:id",
+  asyncHandler(async (req, res) => {
+    if (!prisma.referralCampaign) {
+      res.status(503).json({ error: "Referral campaign storage unavailable" });
+      return;
+    }
+    const existing = await prisma.referralCampaign.findUnique({
+      where: { id: req.params.id },
+      select: { id: true },
+    });
+    if (!existing) {
+      res.status(404).json({ error: "Campaign not found" });
+      return;
+    }
+    await prisma.referralCampaign.delete({ where: { id: existing.id } });
+    res.json({ ok: true, deleted: true });
   }),
 );
 
@@ -861,9 +942,15 @@ router.patch(
     if (req.body.fraudReviewScoreThreshold !== undefined) payload.referral_v2_review_score_threshold = Math.max(1, Math.round(Number(req.body.fraudReviewScoreThreshold || 60)));
     if (req.body.fraudBlockScoreThreshold !== undefined) payload.referral_v2_block_score_threshold = Math.max(1, Math.round(Number(req.body.fraudBlockScoreThreshold || 100)));
     if (req.body.defaultPerUserCap !== undefined) payload.referral_v2_default_per_user_cap = Math.max(1, Math.round(Number(req.body.defaultPerUserCap || 1)));
+    if (req.body.promoCodesEnabled !== undefined) payload.feature_promo_codes = Boolean(req.body.promoCodesEnabled);
+    if (req.body.promoRequireReferrer !== undefined) payload.promo_codes_require_referrer = Boolean(req.body.promoRequireReferrer);
+    if (req.body.promoFirstOrderOnly !== undefined) payload.promo_codes_first_order_only = Boolean(req.body.promoFirstOrderOnly);
     await setSettingsBatch("platform", payload, req.session?.admin?.login || "admin");
     const next = await getManySettings([
       "feature_referrals",
+      "feature_promo_codes",
+      "promo_codes_require_referrer",
+      "promo_codes_first_order_only",
       "referral_v1_referrer_reward",
       "referral_v1_invitee_discount",
       "referral_v1_discount_cap_percent",
@@ -884,6 +971,9 @@ router.get(
   asyncHandler(async (_req, res) => {
     const settings = await getManySettings([
       "feature_referrals",
+      "feature_promo_codes",
+      "promo_codes_require_referrer",
+      "promo_codes_first_order_only",
       "referral_v1_referrer_reward",
       "referral_v1_invitee_discount",
       "referral_v1_discount_cap_percent",

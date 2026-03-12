@@ -1,3 +1,4 @@
+const { randomUUID } = require("node:crypto");
 const express = require("express");
 const multer = require("multer");
 const { addDays, format, startOfDay, subDays } = require("date-fns");
@@ -48,6 +49,7 @@ const {
   getConversionFunnel,
   isPaymentEventsStorageError: isPaymentEventsStorageErrorAnalytics,
 } = require("../../services/payment-analytics");
+const { detectDevice } = require("../../services/ua");
 
 const router = express.Router();
 const upload = multer({
@@ -85,6 +87,8 @@ const PUSH_SOUND_SET = new Set(["default", "none"]);
 const BROADCAST_CHUNK_USERS = 400;
 const BROADCAST_JOB_LIMIT = 50;
 const BROADCAST_JOB_TTL_MS = 1000 * 60 * 30;
+const MAX_ADMIN_BOOST_VIEWS = 5000;
+const MAX_ADMIN_BOOST_PERIOD_DAYS = 90;
 const broadcastJobs = new Map();
 const USER_COLUMN_MAP = {
   id: "id",
@@ -678,6 +682,76 @@ function normalizeShortSlug(value) {
 
 function isShortSlug(value) {
   return /^[A-Z]{3}[0-9]{3}$/.test(String(value || ""));
+}
+
+function clampInteger(value, min, max, fallback) {
+  const parsed = Number.parseInt(String(value ?? ""), 10);
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.max(min, Math.min(max, parsed));
+}
+
+function pickWeightedSource() {
+  const roll = Math.random();
+  if (roll < 0.52) return "direct";
+  if (roll < 0.74) return "share";
+  if (roll < 0.9) return "qr";
+  if (roll < 0.97) return "nfc";
+  return "widget";
+}
+
+function pickRandomUserAgentForSource(source) {
+  if (source === "nfc") {
+    return Math.random() < 0.7
+      ? "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0 Mobile Safari/537.36"
+      : "Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1";
+  }
+  const roll = Math.random();
+  if (roll < 0.46) {
+    return "Mozilla/5.0 (Linux; Android 13; SM-S918B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0 Mobile Safari/537.36";
+  }
+  if (roll < 0.7) {
+    return "Mozilla/5.0 (iPhone; CPU iPhone OS 17_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.3 Mobile/15E148 Safari/604.1";
+  }
+  return "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36";
+}
+
+function pickSyntheticCity(preferredCity) {
+  const cityPool = [
+    "Tashkent",
+    "Samarkand",
+    "Bukhara",
+    "Namangan",
+    "Fergana",
+    "Andijan",
+    "Nukus",
+    "Khiva",
+    "Unknown",
+  ];
+  if (preferredCity && Math.random() < 0.2) {
+    return preferredCity;
+  }
+  return cityPool[Math.floor(Math.random() * cityPool.length)] || "Unknown";
+}
+
+function buildSyntheticViewRows({ slug, count, periodDays, preferredCity }) {
+  const rows = [];
+  const nowMs = Date.now();
+  const windowMs = Math.max(1, periodDays) * 24 * 60 * 60 * 1000;
+  for (let index = 0; index < count; index += 1) {
+    const source = pickWeightedSource();
+    const userAgent = pickRandomUserAgentForSource(source);
+    const skewedFactor = Math.pow(Math.random(), 1.85);
+    const visitedAt = new Date(nowMs - Math.floor(windowMs * skewedFactor));
+    rows.push({
+      slug,
+      visitedAt,
+      source,
+      city: pickSyntheticCity(preferredCity),
+      device: detectDevice(userAgent),
+      sessionId: randomUUID().replace(/-/g, ""),
+    });
+  }
+  return rows;
 }
 
 function normalizeDirectorySector(value) {
@@ -2353,6 +2427,7 @@ router.put(
         id: true,
         plan: true,
         status: true,
+        verifiedCompany: true,
       },
     });
     if (!user) {
@@ -2375,6 +2450,7 @@ router.put(
     }
 
     const role = String(body.role || "").trim().slice(0, 120) || null;
+    const company = String(body.company || "").trim().slice(0, 160) || null;
     const bio = String(body.bio || "").trim().slice(0, 120) || null;
     const hashtag = String(body.hashtag || "").trim().slice(0, 50) || null;
     const address = String(body.address || "").trim() || null;
@@ -2414,6 +2490,11 @@ router.put(
     let saved;
     try {
       saved = await prisma.$transaction(async (tx) => {
+        await tx.user.update({
+          where: { id: user.id },
+          data: { verifiedCompany: company },
+          select: { id: true, verifiedCompany: true },
+        });
         await upsertProfileCardCompat(tx, {
           ownerId: user.id,
           name,
@@ -2459,7 +2540,14 @@ router.put(
     }
 
     await safeRecalculateScore(user.id);
-    res.json({ ok: true, card: parseProfileCardRow(saved) });
+    res.json({
+      ok: true,
+      card: parseProfileCardRow(saved),
+      user: {
+        id: user.id,
+        verifiedCompany: company,
+      },
+    });
   }),
 );
 
@@ -2717,6 +2805,106 @@ router.patch(
       userId: updated.id,
       isVerified: updated.isVerified,
       verifiedCompany: updated.verifiedCompany,
+    });
+  }),
+);
+
+router.post(
+  "/users/:userId/views",
+  asyncHandler(async (req, res) => {
+    if (!ensureUsersStorageReady(res)) {
+      return;
+    }
+    if (!prisma.analyticsView || !prisma.slug) {
+      res.status(503).json({ error: "Analytics storage unavailable", code: "ANALYTICS_STORAGE_UNAVAILABLE" });
+      return;
+    }
+
+    const userId = String(req.params.userId || "").trim();
+    if (!userId) {
+      res.status(400).json({ error: "User id is required" });
+      return;
+    }
+
+    const count = clampInteger(req.body?.count, 1, MAX_ADMIN_BOOST_VIEWS, 0);
+    if (!count) {
+      res.status(400).json({ error: `Count must be an integer from 1 to ${MAX_ADMIN_BOOST_VIEWS}` });
+      return;
+    }
+    const periodDays = clampInteger(req.body?.periodDays, 1, MAX_ADMIN_BOOST_PERIOD_DAYS, 7);
+    const requestedSlug = normalizeShortSlug(req.body?.slug);
+
+    const [user, ownedSlugs] = await Promise.all([
+      prisma.user.findUnique({
+        where: { id: userId },
+        select: { id: true, city: true },
+      }),
+      prisma.slug.findMany({
+        where: { ownerId: userId },
+        select: { fullSlug: true, status: true, isPrimary: true },
+      }),
+    ]);
+
+    if (!user) {
+      res.status(404).json({ error: "User not found" });
+      return;
+    }
+
+    const isViewableSlug = (slugRow) => ["active", "private"].includes(String(slugRow?.status || ""));
+    let targetSlug = null;
+    if (requestedSlug) {
+      targetSlug = ownedSlugs.find((row) => row.fullSlug === requestedSlug) || null;
+      if (!targetSlug) {
+        res.status(404).json({ error: "Requested slug is not owned by user" });
+        return;
+      }
+    } else {
+      targetSlug =
+        ownedSlugs.find((row) => row.isPrimary && isViewableSlug(row)) ||
+        ownedSlugs.find((row) => isViewableSlug(row)) ||
+        null;
+    }
+
+    if (!targetSlug) {
+      res.status(409).json({ error: "User does not have an active/public slug for views" });
+      return;
+    }
+
+    if (!isViewableSlug(targetSlug)) {
+      res.status(409).json({ error: "Only active/private slug can receive realistic views" });
+      return;
+    }
+
+    const rows = buildSyntheticViewRows({
+      slug: targetSlug.fullSlug,
+      count,
+      periodDays,
+      preferredCity: String(user.city || "").trim().slice(0, 120) || null,
+    });
+
+    await prisma.$transaction(async (tx) => {
+      if (!tx.analyticsView || typeof tx.analyticsView.createMany !== "function") {
+        throw new Error("Analytics storage unavailable");
+      }
+      for (let offset = 0; offset < rows.length; offset += 500) {
+        const chunk = rows.slice(offset, offset + 500);
+        if (chunk.length) {
+          await tx.analyticsView.createMany({ data: chunk });
+        }
+      }
+      await tx.slug.update({
+        where: { fullSlug: targetSlug.fullSlug },
+        data: { analyticsViewsCount: { increment: count } },
+      });
+    });
+
+    await safeRecalculateScore(userId);
+    res.json({
+      ok: true,
+      userId,
+      slug: targetSlug.fullSlug,
+      addedViews: count,
+      periodDays,
     });
   }),
 );
