@@ -525,7 +525,7 @@
 
   function detectCardBrand(digits) {
     const value = String(digits || "");
-    if (!value) return "Р В РЎв„ўР В Р’В°Р РЋР вЂљР РЋРІР‚С™Р В Р’В°";
+    if (!value) return "Карта";
     if (/^(?:8600|5614)\d{12}$/.test(value)) return "Uzcard";
     if (/^9860\d{12}$/.test(value)) return "Humo";
     if (/^220[0-4]\d{12}$/.test(value)) return "Mir";
@@ -535,7 +535,7 @@
     if (/^62\d{14,17}$/.test(value)) return "UnionPay";
     if (/^(?:2131|1800|35\d{3})\d{11,14}$/.test(value)) return "JCB";
     if (/^(?:50|5[6-9]|6\d)\d{10,17}$/.test(value)) return "Maestro";
-    return "Р В РЎв„ўР В Р’В°Р РЋР вЂљР РЋРІР‚С™Р В Р’В°";
+    return "Карта";
   }
 
   function normalizeButtonUrl(rawUrl, type, label) {
@@ -544,8 +544,8 @@
       .trim()
       .toLowerCase();
     const labelRaw = String(label || "").trim().toLowerCase();
-    const cardLikeLabel = /(Р В РЎвЂќР В Р’В°Р РЋР вЂљР РЋРІР‚С™Р В Р’В°|card)/i.test(labelRaw);
-    const mapLikeLabel = /(map|maps|geo|location|Р В Р’В»Р В РЎвЂўР В РЎвЂќР В Р’В°Р РЋРІР‚В )/i.test(labelRaw);
+    const cardLikeLabel = /(карта|card)/i.test(labelRaw);
+    const mapLikeLabel = /(map|maps|geo|location|локац)/i.test(labelRaw);
     if (!input) return "";
 
     if (isSupportedButtonHref(input)) {
@@ -638,7 +638,7 @@
           const rawType = String(button?.type || "other")
             .trim()
             .toLowerCase();
-          const normalizedType = rawType === "Р В РЎвЂќР В Р’В°Р РЋР вЂљР РЋРІР‚С™Р В Р’В°" ? "card" : rawType;
+          const normalizedType = rawType === "карта" ? "card" : rawType;
           const label = String(button?.label || "").trim();
           const url = normalizeButtonUrl(button?.href || button?.value || button?.url || "", normalizedType, label);
           const type = url.startsWith("card:") ? "card" : normalizedType;
@@ -802,7 +802,7 @@
     if (/(site|web|link|globe|www)/.test(signature)) {
       return "globe";
     }
-    if (/(Р В РЎвЂќР В Р’В°Р РЋР вЂљР РЋРІР‚С™Р В Р’В°|map|maps|geo|location|loc)/.test(signature)) {
+    if (/(карта|map|maps|geo|location|loc)/.test(signature)) {
       return "location";
     }
     if (/(click|pay|payment|card|merchant)/.test(signature)) {
@@ -831,11 +831,11 @@
     const theme = resolveTheme(card.theme);
     const shareUrl = String(options.shareUrl || "").trim() || window.location.href;
     const showPausedBanner = Boolean(options.showPausedBanner);
-    const pausedText = String(options.pausedText || "Р В РІР‚в„ўР В РЎвЂР В Р’В·Р В РЎвЂР РЋРІР‚С™Р В РЎвЂќР В Р’В° Р В Р вЂ¦Р В Р’В° Р В РЎвЂ”Р В Р’В°Р РЋРЎвЂњР В Р’В·Р В Р’Вµ - Р В РЎвЂ”Р В РЎвЂўР РЋР С“Р В Р’ВµР РЋРІР‚С™Р В РЎвЂР РЋРІР‚С™Р В Р’ВµР В Р’В»Р В РЎвЂ Р В Р вЂ Р В РЎвЂР В РўвЂР РЋР РЏР РЋРІР‚С™ Р В Р’В·Р В Р’В°Р В РЎвЂ“Р В Р’В»Р РЋРЎвЂњР РЋРІвЂљВ¬Р В РЎвЂќР РЋРЎвЂњ");
-    const viewsLabel = String(options.viewsLabel || card.viewsLabel || "0 Р В РЎвЂ”Р РЋР вЂљР В РЎвЂўР РЋР С“Р В РЎВР В РЎвЂўР РЋРІР‚С™Р РЋР вЂљР В РЎвЂўР В Р вЂ ");
+    const pausedText = String(options.pausedText || "Визитка на паузе - посетители видят заглушку");
+    const viewsLabel = String(options.viewsLabel || card.viewsLabel || "0 просмотров");
     const slugPriceLabel =
       Number.isFinite(Number(card.slugPrice)) && Number(card.slugPrice) > 0
-        ? `${Number(card.slugPrice).toLocaleString("ru-RU")} Р РЋР С“Р РЋРЎвЂњР В РЎВ`
+        ? `${Number(card.slugPrice).toLocaleString("ru-RU")} сум`
         : "";
     const slugItems = card.slugs.length > 0 ? card.slugs : [card.slug];
     const score = options.score && typeof options.score === "object" ? options.score : null;
@@ -858,7 +858,7 @@
                 return "";
               }
               const brand = detectCardBrand(cardDigits);
-              const baseLabel = String(button.label || "").trim() || "Р В РЎв„ўР В Р’В°Р РЋР вЂљР РЋРІР‚С™Р В Р’В°";
+              const baseLabel = String(button.label || "").trim() || "Карта";
               const buttonLabel = baseLabel.includes(brand) ? baseLabel : `${baseLabel} (${brand})`;
               return `<button type="button" data-track-action data-button-type="card" data-copy-card="${esc(cardDigits)}" class="public-card-button unq-ref-action-btn ${toneClass}">${iconSvg("card")}<span>${esc(buttonLabel)}</span></button>`;
             }
@@ -866,7 +866,7 @@
           })
           .filter(Boolean)
           .join("")
-        : '<p class="unq-ref-empty-buttons">Р В РІР‚в„ўР В Р’В»Р В Р’В°Р В РўвЂР В Р’ВµР В Р’В»Р В Р’ВµР РЋРІР‚В  Р В РЎвЂ”Р В РЎвЂўР В РЎвЂќР В Р’В° Р В Р вЂ¦Р В Р’Вµ Р В РўвЂР В РЎвЂўР В Р’В±Р В Р’В°Р В Р вЂ Р В РЎвЂР В Р’В» Р В РЎвЂќР В РЎвЂўР В Р вЂ¦Р РЋРІР‚С™Р В Р’В°Р В РЎвЂќР РЋРІР‚С™Р В Р вЂ¦Р РЋРІР‚в„–Р В Р’Вµ Р В РЎвЂќР В Р вЂ¦Р В РЎвЂўР В РЎвЂ”Р В РЎвЂќР В РЎвЂ.</p>';
+        : '<p class="unq-ref-empty-buttons">Владелец пока не добавил контактные кнопки.</p>';
     const scoreBlock = score
       ? `<div class="unq-score-block">
           <div class="unq-score-head">
@@ -875,10 +875,10 @@
           </div>
           <div class="unq-score-row">
             <span class="unq-score-value">${Number(score.score || 0)}</span>
-            <span class="unq-score-top">Р В РЎС›Р В РЎвЂўР В РЎвЂ” ${Number(score.topPercent || 100)}%</span>
+            <span class="unq-score-top">Топ ${Number(score.topPercent || 100)}%</span>
           </div>
           ${score.isForming
-        ? '<p class="unq-score-note">UNQ Score Р РЋРІР‚С›Р В РЎвЂўР РЋР вЂљР В РЎВР В РЎвЂР РЋР вЂљР РЋРЎвЂњР В Р’ВµР РЋРІР‚С™Р РЋР С“Р РЋР РЏ Р вЂ™Р’В· Р В РЎвЂўР В Р’В±Р В Р вЂ¦Р В РЎвЂўР В Р вЂ Р В Р’В»Р РЋР РЏР В Р’ВµР РЋРІР‚С™Р РЋР С“Р РЋР РЏ Р В РЎвЂќР В Р’В°Р В Р’В¶Р В РўвЂР РЋРІР‚в„–Р В Р’Вµ 24Р РЋРІР‚РЋ</p>'
+        ? '<p class="unq-score-note">UNQ Score формируется · обновляется каждые 24ч</p>'
         : `<div class="unq-score-progress"><span style="width:${Math.max(0, Math.min(100, (Number(score.score || 0) / 999) * 100)).toFixed(2)}%"></span></div>`
       }
         </div>`
@@ -908,13 +908,13 @@
     const aboutHtml =
       aboutItems.length > 0
         ? `<div class="unq-ref-about">
-            <p class="unq-ref-about-title">Р В РЎв„ўР В РЎвЂєР В РЎСљР В РЎС›Р В РЎвЂ™Р В РЎв„ўР В РЎС›Р В Р’В«</p>
+            <p class="unq-ref-about-title">КОНТАКТЫ</p>
             ${aboutItems.join("")}
           </div>`
         : "";
     const topBadgeHtml =
       topBadge && Number.isFinite(Number(topBadge.rank)) && Number(topBadge.rank) > 0
-        ? `<div class="unq-ref-top-badge">Р В РЎС›Р В РЎвЂўР В РЎвЂ” #${Math.round(Number(topBadge.rank))} Р РЋР РЉР РЋРІР‚С™Р В РЎвЂўР В РІвЂћвЂ“ Р В Р вЂ¦Р В Р’ВµР В РўвЂР В Р’ВµР В Р’В»Р В РЎвЂ</div>`
+        ? `<div class="unq-ref-top-badge">Топ #${Math.round(Number(topBadge.rank))} этой недели</div>`
         : "";
     const useCustomColor = card.tariff === "premium" && Boolean(card.customColor);
     const topLineValue =
@@ -980,9 +980,9 @@
             </div>
             ${slugPriceLabel ? `<span class="unq-ref-slug-price">${esc(slugPriceLabel)}</span>` : ""}
           </div>
-          <button type="button" data-share-card class="unq-ref-share" aria-label="Р В РЎСџР В РЎвЂўР В РўвЂР В Р’ВµР В Р’В»Р В РЎвЂР РЋРІР‚С™Р РЋР Р‰Р РЋР С“Р РЋР РЏ">
+          <button type="button" data-share-card class="unq-ref-share" aria-label="Поделиться">
             ${iconSvg("share")}
-            <span class="sr-only" data-share-label>Р В РЎСџР В РЎвЂўР В РўвЂР В Р’ВµР В Р’В»Р В РЎвЂР РЋРІР‚С™Р РЋР Р‰Р РЋР С“Р РЋР РЏ</span>
+            <span class="sr-only" data-share-label>Поделиться</span>
           </button>
         </div>
         <div class="public-card-shell unq-ref-shell">
@@ -1016,11 +1016,11 @@
           <p class="unq-ref-hashtag">${esc(mainHashtag)}</p>
           ${aboutHtml}
           ${activeSocialLinks.length ? `<div class="unq-ref-social">${activeSocialLinks.map(renderSocialLink).join("")}</div>` : ""}
-          <button type="button" class="unq-ref-save interactive-btn" data-save-contact>${iconSvg("save")}<span>Р В Р Р‹Р В РЎвЂўР РЋРІР‚В¦Р РЋР вЂљР В Р’В°Р В Р вЂ¦Р В РЎвЂР РЋРІР‚С™Р РЋР Р‰ Р В РЎвЂќР В РЎвЂўР В Р вЂ¦Р РЋРІР‚С™Р В Р’В°Р В РЎвЂќР РЋРІР‚С™ (.vcf)</span></button>
+          <button type="button" class="unq-ref-save interactive-btn" data-save-contact>${iconSvg("save")}<span>Сохранить контакт (.vcf)</span></button>
         </div>
         <div class="unq-ref-footline">
-          <div>Р вЂ™Р’В© ${esc(viewsLabel)}</div>
-          <div>${card.showBranding ? "Р Р†Р вЂљРЎС› UNQX" : ""}</div>
+          <div>© ${esc(viewsLabel)}</div>
+          <div>${card.showBranding ? "• UNQX" : ""}</div>
         </div>
       </div>
     `;
