@@ -478,6 +478,10 @@
 }
 
 .admin-kpi-card {
+  display: flex;
+  min-height: 168px;
+  height: 100%;
+  flex-direction: column;
   border: 1px solid #e5e7eb;
   border-radius: 16px;
   background: #fff;
@@ -513,6 +517,11 @@
   font-size: 16px;
   font-weight: 700;
   line-height: 1.45;
+}
+
+.analytics-empty {
+  border: 1px dashed #d4d4d8;
+  border-radius: 12px;
 }
 
 .admin-table-row {

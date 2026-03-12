@@ -1112,6 +1112,16 @@ router.delete(
 
 function buildOrdersWhere(query) {
   const where = {};
+  if (typeof query.q === "string" && query.q.trim()) {
+    const term = query.q.trim();
+    where.OR = [
+      { slug: { contains: term, mode: "insensitive" } },
+      { userId: { contains: term, mode: "insensitive" } },
+      { user: { username: { contains: term, mode: "insensitive" } } },
+      { user: { firstName: { contains: term, mode: "insensitive" } } },
+      { user: { displayName: { contains: term, mode: "insensitive" } } },
+    ];
+  }
   if (query.status && query.status !== "all") {
     where.status = toOrderStatus(query.status);
   }
@@ -4032,13 +4042,38 @@ router.delete(
 
 router.get(
   "/analytics",
-  asyncHandler(async (_req, res) => {
+  asyncHandler(async (req, res) => {
     const timezone = env.TIMEZONE;
     const now = new Date();
     const nowInZone = toZonedTime(now, timezone);
     const todayStart = fromZonedTime(startOfDay(nowInZone), timezone);
-    const monthStart = subDays(todayStart, 29);
+    const defaultFrom = subDays(todayStart, 29);
     const canUsePurchases = Boolean(prisma.purchase);
+    const rawDateFrom = String(req.query.dateFrom || "").trim();
+    const rawDateTo = String(req.query.dateTo || "").trim();
+    const groupBy = ["day", "week", "month"].includes(String(req.query.groupBy || "").trim().toLowerCase())
+      ? String(req.query.groupBy || "").trim().toLowerCase()
+      : "day";
+
+    const parseDateStart = (value) => {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+      return fromZonedTime(startOfDay(new Date(`${value}T00:00:00`)), timezone);
+    };
+    const parseDateEnd = (value) => {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+      return fromZonedTime(new Date(`${value}T23:59:59.999`), timezone);
+    };
+
+    let rangeFrom = parseDateStart(rawDateFrom) || defaultFrom;
+    let rangeTo = parseDateEnd(rawDateTo) || now;
+    if (rangeFrom > rangeTo) {
+      const swap = rangeFrom;
+      rangeFrom = rangeTo;
+      rangeTo = swap;
+    }
+    if ((rangeTo.getTime() - rangeFrom.getTime()) / (1000 * 60 * 60 * 24) > 365) {
+      rangeFrom = subDays(rangeTo, 365);
+    }
 
     const [
       purchasesTodayAgg,
@@ -4053,13 +4088,13 @@ router.get(
     ] = await Promise.all([
       canUsePurchases
         ? prisma.purchase.aggregate({
-          where: { purchasedAt: { gte: todayStart } },
+          where: { purchasedAt: { gte: rangeFrom, lte: rangeTo } },
           _sum: { amount: true },
         })
         : Promise.resolve({ _sum: { amount: 0 } }),
       canUsePurchases
         ? prisma.purchase.aggregate({
-          where: { purchasedAt: { gte: monthStart } },
+          where: { purchasedAt: { gte: rangeFrom, lte: rangeTo } },
           _sum: { amount: true },
         })
         : Promise.resolve({ _sum: { amount: 0 } }),
@@ -4070,7 +4105,7 @@ router.get(
         : Promise.resolve({ _sum: { amount: 0 } }),
       canUsePurchases
         ? prisma.purchase.findMany({
-          where: { purchasedAt: { gte: monthStart } },
+          where: { purchasedAt: { gte: rangeFrom, lte: rangeTo } },
           select: { purchasedAt: true, amount: true, type: true },
         })
         : Promise.resolve([]),
@@ -4080,7 +4115,7 @@ router.get(
         })
         : Promise.resolve([]),
       prisma.slugCheckerLog.findMany({
-        where: { source: "hero", checkedAt: { gte: monthStart } },
+        where: { source: "hero", checkedAt: { gte: rangeFrom, lte: rangeTo } },
         orderBy: { checkedAt: "desc" },
         take: 1000,
         select: { slug: true, pattern: true, checkedAt: true },
@@ -4096,10 +4131,10 @@ router.get(
         })
         : Promise.resolve([]),
       prisma.slugRequest.count({
-        where: { createdAt: { gte: todayStart } },
+        where: { createdAt: { gte: rangeFrom, lte: rangeTo } },
       }),
       prisma.slugRequest.findMany({
-        where: { createdAt: { gte: monthStart } },
+        where: { createdAt: { gte: rangeFrom, lte: rangeTo } },
         select: { slug: true, createdAt: true },
       }),
     ]);
@@ -4122,10 +4157,28 @@ router.get(
       if (item.type === "bracelet") breakdown.bracelet += amount;
     }
 
-    const { keys } = computeDateRangeKey(timezone, 30);
+    const keyFromLocalDate = (localDate) => {
+      if (groupBy === "week") return format(localDate, "yyyy-'W'II");
+      if (groupBy === "month") return format(localDate, "yyyy-MM");
+      return format(localDate, "yyyy-MM-dd");
+    };
+    const orderedKeys = [];
+    const seenKeys = new Set();
+    let cursor = startOfDay(toZonedTime(rangeFrom, timezone));
+    const endLocal = startOfDay(toZonedTime(rangeTo, timezone));
+    while (cursor <= endLocal) {
+      const key = keyFromLocalDate(cursor);
+      if (!seenKeys.has(key)) {
+        seenKeys.add(key);
+        orderedKeys.push(key);
+      }
+      cursor = addDays(cursor, 1);
+    }
+
+    const keys = orderedKeys;
     const revenueBuckets = new Map(keys.map((key) => [key, 0]));
     for (const row of purchases30d) {
-      const key = format(toZonedTime(row.purchasedAt, timezone), "yyyy-MM-dd");
+      const key = keyFromLocalDate(toZonedTime(row.purchasedAt, timezone));
       if (revenueBuckets.has(key)) {
         revenueBuckets.set(key, (revenueBuckets.get(key) || 0) + Number(row.amount || 0));
       }
@@ -4182,6 +4235,11 @@ router.get(
     });
 
     res.json({
+      meta: {
+        dateFrom: format(toZonedTime(rangeFrom, timezone), "yyyy-MM-dd"),
+        dateTo: format(toZonedTime(rangeTo, timezone), "yyyy-MM-dd"),
+        groupBy,
+      },
       kpis: {
         newOrdersToday,
         revenueToday,

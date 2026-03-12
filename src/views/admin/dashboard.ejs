@@ -37,21 +37,69 @@
         </div>
 
         <section id="tab-analytics" class="<%= pageActiveTab === 'analytics' ? '' : 'hidden' %> space-y-4">
-          <div id="analytics-kpis" class="grid gap-3 md:grid-cols-4"></div>
+          <header class="rounded-2xl border border-neutral-200 bg-white p-4">
+            <h2 class="text-base font-bold text-neutral-900">Аналитика</h2>
+            <p class="mt-1 text-sm text-neutral-600">Ключевые метрики и динамика продаж платформы.</p>
+          </header>
+          <section class="rounded-2xl border border-neutral-200 bg-white p-4">
+            <form id="analytics-filters" class="grid gap-3 md:grid-cols-[220px_220px_220px_auto_auto]">
+              <label class="block text-sm">
+                <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Период с</span>
+                <input type="date" name="dateFrom" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+              </label>
+              <label class="block text-sm">
+                <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">По</span>
+                <input type="date" name="dateTo" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+              </label>
+              <label class="block text-sm">
+                <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Группировка</span>
+                <select name="groupBy" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm">
+                  <option value="day">По дням</option>
+                  <option value="week">По неделям</option>
+                  <option value="month">По месяцам</option>
+                </select>
+              </label>
+              <button type="submit"
+                class="self-end inline-flex min-h-11 items-center justify-center rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">Применить</button>
+              <button type="reset"
+                class="self-end inline-flex min-h-11 items-center justify-center rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">Сбросить</button>
+            </form>
+          </section>
+          <section class="space-y-2">
+            <h3 class="text-sm font-semibold text-neutral-900">Ключевые метрики</h3>
+            <div id="analytics-kpis" class="grid gap-3 md:grid-cols-2 xl:grid-cols-3"></div>
+          </section>
+          <section class="space-y-2">
+            <h3 class="text-sm font-semibold text-neutral-900">Графики</h3>
           <div class="grid gap-4 lg:grid-cols-2">
             <article class="rounded-2xl border border-neutral-200 bg-white p-4">
               <h2 class="text-sm font-semibold text-neutral-900">Выручка по дням (30 дней)</h2>
-              <div class="mt-3 h-[280px]"><canvas id="analytics-orders-chart"></canvas></div>
+              <div class="mt-3 h-[280px]">
+                <canvas id="analytics-orders-chart"></canvas>
+                <div id="analytics-orders-empty"
+                  class="analytics-empty hidden h-full items-center justify-center text-center text-neutral-500"></div>
+              </div>
             </article>
             <article class="rounded-2xl border border-neutral-200 bg-white p-4">
               <h2 class="text-sm font-semibold text-neutral-900">Разбивка выручки</h2>
-              <div class="mt-3 h-[280px]"><canvas id="analytics-tariff-chart"></canvas></div>
+              <div class="mt-3 h-[280px]">
+                <canvas id="analytics-tariff-chart"></canvas>
+                <div id="analytics-tariff-empty"
+                  class="analytics-empty hidden h-full items-center justify-center text-center text-neutral-500"></div>
+              </div>
             </article>
           </div>
           <article class="rounded-2xl border border-neutral-200 bg-white p-4">
             <h2 class="text-sm font-semibold text-neutral-900">Распределение UNQ Score</h2>
-            <div class="mt-3 h-[260px]"><canvas id="analytics-score-distribution-chart"></canvas></div>
+            <div class="mt-3 h-[260px]">
+              <canvas id="analytics-score-distribution-chart"></canvas>
+              <div id="analytics-score-empty"
+                class="analytics-empty hidden h-full items-center justify-center text-center text-neutral-500"></div>
+            </div>
           </article>
+          </section>
+          <section class="space-y-2">
+            <h3 class="text-sm font-semibold text-neutral-900">Инсайты</h3>
           <article class="rounded-2xl border border-neutral-200 bg-white p-4">
             <h2 class="text-sm font-semibold text-neutral-900">Топ-10 паттернов ищут, но не покупают</h2>
             <div class="mt-3 overflow-hidden rounded-xl border border-neutral-200">
@@ -69,60 +117,91 @@
         </section>
 
         <section id="tab-orders" class="<%= pageActiveTab === 'orders' ? '' : 'hidden' %> space-y-4">
-          <form id="orders-filters"
-            class="grid gap-3 rounded-2xl border border-neutral-200 bg-white p-4 md:grid-cols-6">
-            <select name="status" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">
-              <option value="all">Все статусы</option>
-              <option value="new">Новая</option>
-              <option value="contacted">Связались</option>
-              <option value="paid">Оплачено</option>
-              <option value="approved">Активировано</option>
-              <option value="rejected">Отклонено</option>
-            </select>
-            <select name="tariff" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">
-              <option value="all">Все тарифы</option>
-              <option value="basic">Базовый</option>
-              <option value="premium">Премиум</option>
-            </select>
-            <select name="bracelet" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">
-              <option value="all">Браслет: все</option>
-              <option value="yes">С браслетом</option>
-              <option value="no">Без браслета</option>
-            </select>
-            <input type="date" name="dateFrom" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
-            <input type="date" name="dateTo" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
-            <input type="hidden" name="page" value="1" />
-            <button type="submit"
-              class="inline-flex min-h-11 w-full items-center justify-center justify-self-start rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100 md:w-auto">Применить</button>
-          </form>
-          <div class="flex justify-end">
-            <a id="orders-export-link" href="/api/admin/orders/export.csv"
-              class="rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">
-              Скачать CSV
-            </a>
-          </div>
-          <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
-            <div class="overflow-x-auto">
-              <table class="min-w-[980px] w-full text-left text-sm">
-                <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
-                  <tr>
-                    <th class="px-4 py-3">Дата</th>
-                    <th class="px-4 py-3">Имя</th>
-                    <th class="px-4 py-3">Slug</th>
-                    <th class="px-4 py-3">Цена slug</th>
-                    <th class="px-4 py-3">Сумма</th>
-                    <th class="px-4 py-3">Тариф</th>
-                    <th class="px-4 py-3">Браслет</th>
-                    <th class="px-4 py-3">Контакт</th>
-                    <th class="px-4 py-3">Статус</th>
-                    <th class="px-4 py-3">Действия</th>
-                  </tr>
-                </thead>
-                <tbody id="orders-table"></tbody>
-              </table>
+          <header class="rounded-2xl border border-neutral-200 bg-white p-4">
+            <h2 class="text-base font-bold text-neutral-900">Orders</h2>
+            <p class="mt-1 text-sm text-neutral-600">Manage slug and plan purchase requests.</p>
+          </header>
+          <section class="rounded-2xl border border-neutral-200 bg-white p-4">
+            <h3 class="text-sm font-semibold text-neutral-900">Order Filters</h3>
+            <form id="orders-filters" class="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+              <label class="block text-sm">
+                <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Search</span>
+                <input name="q" type="text" placeholder="Name, slug, contact"
+                  class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+              </label>
+              <label class="block text-sm">
+                <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Status</span>
+                <select name="status" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm">
+                  <option value="all">All statuses</option>
+                  <option value="new">New</option>
+                  <option value="contacted">Contacted</option>
+                  <option value="paid">Paid</option>
+                  <option value="approved">Activated</option>
+                  <option value="rejected">Rejected</option>
+                </select>
+              </label>
+              <label class="block text-sm">
+                <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Plan</span>
+                <select name="tariff" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm">
+                  <option value="all">All plans</option>
+                  <option value="basic">Basic</option>
+                  <option value="premium">Premium</option>
+                </select>
+              </label>
+              <label class="block text-sm">
+                <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Bracelet</span>
+                <select name="bracelet" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm">
+                  <option value="all">Any</option>
+                  <option value="yes">With bracelet</option>
+                  <option value="no">Without bracelet</option>
+                </select>
+              </label>
+              <label class="block text-sm">
+                <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Date from</span>
+                <input type="date" name="dateFrom" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+              </label>
+              <label class="block text-sm">
+                <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Date to</span>
+                <input type="date" name="dateTo" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+              </label>
+              <input type="hidden" name="page" value="1" />
+              <div class="col-span-full flex flex-wrap items-end justify-end gap-2">
+                <button type="submit"
+                  class="inline-flex min-h-11 items-center justify-center rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">Apply</button>
+                <button type="reset"
+                  class="inline-flex min-h-11 items-center justify-center rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">Reset</button>
+                <a id="orders-export-link" href="/api/admin/orders/export.csv"
+                  class="inline-flex min-h-11 items-center justify-center rounded-xl border border-neutral-300 bg-white px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">
+                  Download CSV
+                </a>
+              </div>
+            </form>
+          </section>
+          <section class="space-y-2">
+            <h3 class="text-sm font-semibold text-neutral-900">Orders Table</h3>
+            <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
+              <div class="overflow-x-auto">
+                <table class="min-w-[980px] w-full text-left text-sm">
+                  <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
+                    <tr>
+                      <th class="px-4 py-3">Date</th>
+                      <th class="px-4 py-3">User</th>
+                      <th class="px-4 py-3">Slug</th>
+                      <th class="px-4 py-3 text-right">Slug price</th>
+                      <th class="px-4 py-3 text-right">Amount</th>
+                      <th class="px-4 py-3">Plan</th>
+                      <th class="px-4 py-3">Bracelet</th>
+                      <th class="px-4 py-3">Contact</th>
+                      <th class="px-4 py-3">Status</th>
+                      <th class="px-4 py-3 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="orders-table"></tbody>
+                </table>
+              </div>
             </div>
-          </div>
-          <div id="orders-pagination" class="flex items-center justify-end gap-2 text-sm text-neutral-600"></div>
+            <div id="orders-pagination" class="flex items-center justify-end gap-2 text-sm text-neutral-600"></div>
+          </section>
         </section>
 
         <section id="tab-purchases" class="<%= pageActiveTab === 'purchases' ? '' : 'hidden' %> space-y-4">

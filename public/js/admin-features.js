@@ -210,6 +210,7 @@
     const ledgerTable = document.getElementById("referrals-ledger-table");
     const campaignsTable = document.getElementById("referrals-campaigns-table");
     const settingsForm = document.getElementById("referrals-settings-form");
+    const historyFiltersForm = document.getElementById("referrals-history-filters");
     if (!(stats instanceof HTMLElement) || !(table instanceof HTMLElement)) return;
 
     const [statPayload, rowsPayload, ledgerPayload, settingsPayload, campaignsPayload] = await Promise.all([
@@ -249,20 +250,27 @@
     }
 
     stats.innerHTML = [
-      ["Total conversions", statPayload.totalRegistrations],
-      ["Paid conversion", `${statPayload.conversionPaid}%`],
-      ["Bonuses credited", P(statPayload.rewardAmount || 0)],
+      ["Всего конверсий", statPayload.totalRegistrations],
+      ["Оплаченные конверсии", `${statPayload.conversionPaid}%`],
+      ["Начислено бонусов", P(statPayload.rewardAmount || 0)],
     ]
       .map(([title, value]) => `<article class="rounded-2xl border border-neutral-200 bg-white p-4"><p class="text-xs uppercase tracking-wide text-neutral-500">${title}</p><p class="mt-2 text-2xl font-black">${value}</p></article>`)
       .join("");
 
-    table.innerHTML = (rowsPayload.items || []).length
-      ? rowsPayload.items
+    const statusFilterControl = historyFiltersForm instanceof HTMLFormElement ? historyFiltersForm.elements.namedItem("status") : null;
+    const selectedStatus = statusFilterControl instanceof HTMLSelectElement ? String(statusFilterControl.value || "all").toLowerCase() : "all";
+    const rows = Array.isArray(rowsPayload.items) ? rowsPayload.items : [];
+    const filteredRows = selectedStatus === "all"
+      ? rows
+      : rows.filter((item) => String(item.status || "pending").toLowerCase() === selectedStatus);
+
+    table.innerHTML = filteredRows.length
+      ? filteredRows
         .map(
-          (item) => `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3">${item.referrer?.username ? `@${item.referrer.username}` : item.referrer?.firstName || item.referrerId}</td><td class="px-4 py-3">${item.referred?.username ? `@${item.referred.username}` : item.referred?.firstName || item.referredId}</td><td class="px-4 py-3">${D(item.createdAt)}</td><td class="px-4 py-3">${item.status || "pending"}</td><td class="px-4 py-3">${item.refSource || "direct"} / ${item.refOffer || "-"}</td><td class="px-4 py-3">${P(item.rewardAmount || 0)}</td><td class="px-4 py-3"><div class="admin-row-actions">${menuWrap(menuItem({ label: "Grant reward manually", icon: "gift", attrs: `data-a="reward-ref" data-id="${item.id}"` }))}</div></td></tr>`,
+          (item) => `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3">${item.referrer?.username ? `@${item.referrer.username}` : item.referrer?.firstName || item.referrerId}</td><td class="px-4 py-3">${item.referred?.username ? `@${item.referred.username}` : item.referred?.firstName || item.referredId}</td><td class="px-4 py-3">${D(item.createdAt)}</td><td class="px-4 py-3">${statusChip(String(item.status || "pending").toLowerCase())}</td><td class="px-4 py-3">${item.refSource || "direct"} / ${item.refOffer || "-"}</td><td class="px-4 py-3">${P(item.rewardAmount || 0)}</td><td class="px-4 py-3"><div class="admin-row-actions">${menuWrap(menuItem({ label: "Начислить вручную", icon: "gift", attrs: `data-a="reward-ref" data-id="${item.id}"` }))}</div></td></tr>`,
         )
         .join("")
-      : '<tr><td colspan="7" class="px-3 py-8 text-center text-neutral-500">No data</td></tr>';
+      : `<tr><td colspan="7" class="px-3 py-10 text-center text-neutral-500"><div class="inline-flex flex-col items-center gap-2">${I("userCheck", 44)}<span>Нет записей по выбранному статусу</span><span class="text-xs text-neutral-400">Измените фильтр или дождитесь новых конверсий.</span></div></td></tr>`;
 
     if (ledgerTable instanceof HTMLElement) {
       ledgerTable.innerHTML = (ledgerPayload.items || []).length
@@ -280,11 +288,12 @@
           .map((item) => {
             const status = String(item.status || "draft");
             const statusAction = status === "active" ? "paused" : "active";
-            const statusLabel = status === "active" ? "Pause" : "Activate";
+            const statusLabel = status === "active" ? "Пауза" : "Активировать";
+            const statusView = status === "active" ? "Активна" : status === "paused" ? "Пауза" : status === "archived" ? "Архив" : "Черновик";
             return `<tr class="admin-table-row border-t border-neutral-100">
               <td class="px-4 py-3">${item.name || "-"}</td>
               <td class="px-4 py-3 font-mono">${item.promoCode || "-"}</td>
-              <td class="px-4 py-3">${status}</td>
+              <td class="px-4 py-3">${statusView}</td>
               <td class="px-4 py-3">${P(item.inviteeDiscountOverride || 0)}</td>
               <td class="px-4 py-3">${P(item.rewardAmountOverride || 0)}</td>
               <td class="px-4 py-3">${Number(item.discountCapPercentOverride || 0)}%</td>
@@ -294,17 +303,17 @@
               <td class="px-4 py-3"><div class="admin-row-actions">${menuWrap([
                 menuItem({ label: statusLabel, icon: "refresh", attrs: `data-a="promo-status" data-id="${item.id}" data-status="${statusAction}"` }),
                 menuItem({
-                  label: "Edit",
+                  label: "Редактировать",
                   icon: "pen",
                   attrs: `data-a="promo-edit" data-id="${item.id}" data-name="${encodeAttr(item.name || "")}" data-promo="${encodeAttr(item.promoCode || "")}" data-status="${encodeAttr(status)}" data-invitee="${Number(item.inviteeDiscountOverride || 0)}" data-reward="${Number(item.rewardAmountOverride || 0)}" data-cap="${Number(item.discountCapPercentOverride || 0)}" data-priority="${Number(item.priority || 0)}" data-budget="${Number(item.budgetAmount || 0)}" data-per-user-cap="${Number(item.perUserCap || 1)}" data-starts-at="${encodeAttr(item.startsAt || "")}" data-ends-at="${encodeAttr(item.endsAt || "")}"`,
                 }),
                 menuSeparator(),
-                menuItem({ label: "Delete", icon: "trash", attrs: `data-a="promo-delete" data-id="${item.id}"`, danger: true }),
+                menuItem({ label: "Удалить", icon: "trash", attrs: `data-a="promo-delete" data-id="${item.id}"`, danger: true }),
               ].join(""))}</div></td>
             </tr>`;
           })
           .join("")
-        : '<tr><td colspan="10" class="px-3 py-8 text-center text-neutral-500">No promo campaigns</td></tr>';
+        : `<tr><td colspan="10" class="px-3 py-10 text-center text-neutral-500"><div class="inline-flex flex-col items-center gap-2">${I("gift", 44)}<span>Нет активных кампаний</span><span class="text-xs text-neutral-400">Создайте первую кампанию в форме выше.</span></div></td></tr>`;
     }
   }
 
@@ -442,6 +451,11 @@
     await loadReferralsAdmin();
   });
 
+  document.getElementById("referrals-history-filters")?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    await loadReferralsAdmin();
+  });
+
   document.getElementById("flash-sales-create-form")?.addEventListener("submit", async (event) => {
     event.preventDefault();
     const form = event.currentTarget;
@@ -558,7 +572,7 @@
       if (action === "promo-delete") {
         const id = target.getAttribute("data-id");
         if (!id) return;
-        const ok = await showConfirm("Delete promo campaign permanently?");
+        const ok = await showConfirm("Удалить промокампанию без возможности восстановления?");
         if (!ok) return;
         await jsonFetch(`/api/admin/referrals/campaigns/${encodeURIComponent(id)}`, {
           method: "DELETE",
@@ -582,27 +596,27 @@
         const currentStartsAt = toDateInputValue(decodeAttr(target.getAttribute("data-starts-at")));
         const currentEndsAt = toDateInputValue(decodeAttr(target.getAttribute("data-ends-at")));
 
-        const nextName = window.prompt("Campaign name", currentName);
+        const nextName = window.prompt("Название кампании", currentName);
         if (nextName == null) return;
-        const nextPromo = window.prompt("Promo code", currentPromo);
+        const nextPromo = window.prompt("Промокод", currentPromo);
         if (nextPromo == null) return;
-        const nextStatus = window.prompt("Status: draft|active|paused|archived", currentStatus);
+        const nextStatus = window.prompt("Статус: draft|active|paused|archived", currentStatus);
         if (nextStatus == null) return;
-        const nextInviteeRaw = window.prompt("Invitee discount override", String(currentInvitee));
+        const nextInviteeRaw = window.prompt("Скидка для приглашенного (override)", String(currentInvitee));
         if (nextInviteeRaw == null) return;
-        const nextRewardRaw = window.prompt("Referrer reward override", String(currentReward));
+        const nextRewardRaw = window.prompt("Вознаграждение рефереру (override)", String(currentReward));
         if (nextRewardRaw == null) return;
-        const nextCapRaw = window.prompt("Cap percent override", String(currentCap));
+        const nextCapRaw = window.prompt("Лимит скидки (%) override", String(currentCap));
         if (nextCapRaw == null) return;
-        const nextPriorityRaw = window.prompt("Priority", String(currentPriority));
+        const nextPriorityRaw = window.prompt("Приоритет", String(currentPriority));
         if (nextPriorityRaw == null) return;
-        const nextBudgetRaw = window.prompt("Budget amount", String(currentBudget));
+        const nextBudgetRaw = window.prompt("Бюджет кампании", String(currentBudget));
         if (nextBudgetRaw == null) return;
-        const nextPerUserCapRaw = window.prompt("Per user cap", String(currentPerUserCap));
+        const nextPerUserCapRaw = window.prompt("Лимит на пользователя", String(currentPerUserCap));
         if (nextPerUserCapRaw == null) return;
-        const nextStartsAt = window.prompt("Starts at (YYYY-MM-DDTHH:mm or empty)", currentStartsAt);
+        const nextStartsAt = window.prompt("Дата начала (YYYY-MM-DDTHH:mm или пусто)", currentStartsAt);
         if (nextStartsAt == null) return;
-        const nextEndsAt = window.prompt("Ends at (YYYY-MM-DDTHH:mm or empty)", currentEndsAt);
+        const nextEndsAt = window.prompt("Дата конца (YYYY-MM-DDTHH:mm или пусто)", currentEndsAt);
         if (nextEndsAt == null) return;
 
         await jsonFetch(`/api/admin/referrals/campaigns/${encodeURIComponent(id)}`, {
