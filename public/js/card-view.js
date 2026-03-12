@@ -354,43 +354,42 @@
         "linear-gradient(90deg, rgba(255,248,232,0) 0%, rgba(255,248,232,0.2) 45%, rgba(255,248,232,0.36) 50%, rgba(255,248,232,0.2) 55%, rgba(255,248,232,0) 100%)",
     },
     nebula_glass: {
-      cardBg: "linear-gradient(145deg, rgba(18, 31, 61, 0.56) 0%, rgba(34, 54, 92, 0.42) 100%)",
-      cardBgOverlay: "glass_shimmer",
-      surfaceBg: "rgba(16, 30, 56, 0.46)",
-      cardBorder: "1px solid rgba(223, 238, 255, 0.34)",
-      surfaceBorder: "1px solid rgba(169, 201, 235, 0.32)",
-      dividerColor: "rgba(185, 217, 255, 0.34)",
-      nameColor: "#eef7ff",
-      roleColor: "#b8d3ef",
-      mutedColor: "rgba(212, 233, 255, 0.72)",
-      accentColor: "#64d2ff",
-      emailColor: "#dbeeff",
-      buttonPrimaryBg: "linear-gradient(135deg, rgba(62, 100, 150, 0.52), rgba(46, 125, 171, 0.46))",
-      buttonPrimaryText: "#eff8ff",
-      buttonPrimaryBorder: "rgba(136, 188, 232, 0.5)",
-      buttonSecondaryBg: "rgba(20, 45, 79, 0.36)",
-      buttonSecondaryText: "#dbeeff",
-      buttonSecondaryBorder: "rgba(125, 170, 214, 0.46)",
-      badgeText: "#d8edff",
-      badgeBg: "rgba(28, 57, 99, 0.38)",
-      badgeBorder: "1px solid rgba(155, 200, 245, 0.42)",
-      topLineGradient: "linear-gradient(90deg, transparent, rgba(100, 210, 255, 0.9), transparent)",
-      avatarBg: "linear-gradient(135deg, rgba(129, 177, 236, 0.56), rgba(88, 129, 210, 0.4))",
+      cardBg: "rgba(255, 255, 255, 0.09)",
+      cardBgOverlay: "none",
+      surfaceBg: "rgba(255, 255, 255, 0.08)",
+      cardBorder: "1px solid rgba(255, 255, 255, 0.15)",
+      surfaceBorder: "1px solid rgba(255, 255, 255, 0.1)",
+      dividerColor: "rgba(255, 255, 255, 0.08)",
+      nameColor: "#ffffff",
+      roleColor: "rgba(255, 255, 255, 0.62)",
+      mutedColor: "rgba(255, 255, 255, 0.5)",
+      accentColor: "#ffffff",
+      emailColor: "rgba(255, 255, 255, 0.76)",
+      buttonPrimaryBg: "rgba(255, 255, 255, 0.07)",
+      buttonPrimaryText: "#ffffff",
+      buttonPrimaryBorder: "rgba(255, 255, 255, 0.1)",
+      buttonSecondaryBg: "rgba(255, 255, 255, 0.06)",
+      buttonSecondaryText: "#ffffff",
+      buttonSecondaryBorder: "rgba(255, 255, 255, 0.1)",
+      badgeText: "#ffffff",
+      badgeBg: "rgba(255, 255, 255, 0.08)",
+      badgeBorder: "1px solid rgba(255, 255, 255, 0.15)",
+      topLineGradient: "linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,0.34), rgba(255,255,255,0))",
+      avatarBg: "rgba(255, 255, 255, 0.08)",
       avatarText: "#ffffff",
-      avatarBorder: "1px solid rgba(214, 235, 255, 0.9)",
-      cardBorderRadius: "22px",
+      avatarBorder: "1px solid rgba(255, 255, 255, 0.25)",
+      cardBorderRadius: "21px",
       fontFamily: "'SF Pro Display', 'Helvetica Neue', 'Segoe UI', sans-serif",
       nameFontStyle: "normal",
       nameFontWeight: "600",
-      roleLetterSpacing: "0.12em",
-      scoreLabelColor: "#b9d8f6",
-      scoreValueColor: "#edf7ff",
-      scoreBarFill: "#64d2ff",
-      scoreBarTrack: "rgba(64, 93, 130, 0.62)",
-      scorePercentileColor: "#8cb6df",
-      cardShadow: "0 26px 58px rgba(4, 10, 25, 0.62)",
-      buttonShineGradient:
-        "linear-gradient(90deg, rgba(225,245,255,0) 0%, rgba(225,245,255,0.24) 45%, rgba(225,245,255,0.42) 50%, rgba(225,245,255,0.24) 55%, rgba(225,245,255,0) 100%)",
+      roleLetterSpacing: "0.08em",
+      scoreLabelColor: "rgba(255, 255, 255, 0.62)",
+      scoreValueColor: "#ffffff",
+      scoreBarFill: "rgba(255, 255, 255, 0.68)",
+      scoreBarTrack: "rgba(255, 255, 255, 0.18)",
+      scorePercentileColor: "rgba(255, 255, 255, 0.6)",
+      cardShadow: "0 18px 48px rgba(0, 0, 0, 0.44)",
+      buttonShineGradient: "none",
     },
   };
 
@@ -600,26 +599,7 @@
       </svg>`;
     }
     if (themeKey === "nebula_glass") {
-      return `<svg class="unq-ref-overlay-svg" viewBox="0 0 360 600" preserveAspectRatio="none" aria-hidden="true">
-        <defs>
-          <filter id="ng-glass-noise">
-            <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch"></feTurbulence>
-            <feColorMatrix type="saturate" values="0"></feColorMatrix>
-          </filter>
-          <linearGradient id="ng-streak" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="rgba(177, 225, 255, 0.52)"></stop>
-            <stop offset="100%" stop-color="rgba(120, 189, 255, 0.08)"></stop>
-          </linearGradient>
-        </defs>
-        <rect width="100%" height="100%" filter="url(#ng-glass-noise)" opacity="0.12"></rect>
-        <circle cx="310" cy="118" r="150" fill="rgba(100, 210, 255, 0.18)"></circle>
-        <circle cx="56" cy="514" r="130" fill="rgba(174, 115, 255, 0.14)"></circle>
-        <rect x="-38" y="92" width="230" height="34" rx="17" fill="rgba(203, 232, 255, 0.1)"></rect>
-        <rect x="170" y="296" width="228" height="30" rx="15" fill="rgba(203, 232, 255, 0.09)"></rect>
-        <rect x="36" y="462" width="252" height="26" rx="13" fill="rgba(203, 232, 255, 0.08)"></rect>
-        <path d="M0 122C76 100 150 106 220 130C284 150 324 152 360 140" stroke="url(#ng-streak)" stroke-width="0.88" fill="none"></path>
-        <path d="M0 350C74 328 148 336 220 358C284 378 324 382 360 368" stroke="url(#ng-streak)" stroke-width="0.74" fill="none"></path>
-      </svg>`;
+      return "";
     }
     return "";
   }

@@ -142,7 +142,7 @@
     midnight_obsidian: { label: "Midnight Obsidian", fill: "#111927", border: "#5374a6", text: "#d6e6ff" },
     golden_noir: { label: "Noir Aureate", fill: "#161b28", border: "#c9ad6a", text: "#dfc98e" },
     aurora_codex: { label: "Aurora Scriptum", fill: "#f5ecd8", border: "#8a2a26", text: "#2b1f15" },
-    nebula_glass: { label: "Nebula Glass", fill: "#13213f", border: "#8cc4ff", text: "#e8f5ff" },
+    nebula_glass: { label: "Liquid Glass", fill: "#1c1c1e", border: "#9a9a9c", text: "#f1f1f1" },
   };
   function themePill(theme) {
     const id = String(theme || "default_dark").trim();
