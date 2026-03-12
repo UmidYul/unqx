@@ -2,7 +2,7 @@
 <html lang="ru">
 
 <head>
-  <%- include('../partials/head', { title: title || "Войти | UNQX" , description: typeof description==='string' ?
+  <%- include('../partials/head', { title: title || "Р’РѕР№С‚Рё | UNQX" , description: typeof description==='string' ?
     description : undefined, noindex: true }) %>
 </head>
 
@@ -15,21 +15,21 @@
         <img src="/brand/logo.PNG" alt="UNQX" class="h-6 w-6 rounded-md border border-neutral-200 object-cover" />
         <span>UNQX</span>
       </a>
-      <h1 class="mt-4 text-2xl font-bold text-neutral-900">Войти</h1>
-      <p class="mt-1 text-sm text-neutral-500">Вход в UNQX по email и паролю</p>
+      <h1 class="mt-4 text-2xl font-bold text-neutral-900">Р’РѕР№С‚Рё</h1>
+      <p class="mt-1 text-sm text-neutral-500">Р’С…РѕРґ РІ UNQX РїРѕ email Рё РїР°СЂРѕР»СЋ</p>
 
       <label class="mt-4 block text-sm font-medium text-neutral-700">Email
         <input id="email" type="email" autocomplete="email" placeholder="you@example.com"
           class="mt-1 w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm" required />
       </label>
 
-      <label class="mt-3 block text-sm font-medium text-neutral-700">Пароль
+      <label class="mt-3 block text-sm font-medium text-neutral-700">РџР°СЂРѕР»СЊ
         <input id="password" type="password" autocomplete="current-password"
           class="mt-1 w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm" required />
       </label>
 
             <label class="mt-3 inline-flex w-full cursor-pointer items-center justify-between gap-3 text-sm text-neutral-700">
-        <span>Запомнить меня</span>
+        <span>Р—Р°РїРѕРјРЅРёС‚СЊ РјРµРЅСЏ</span>
         <span class="relative inline-flex h-6 w-11 shrink-0 items-center">
           <input id="remember-me" type="checkbox" class="peer sr-only" />
           <span class="h-6 w-11 rounded-full bg-neutral-300 transition-colors peer-checked:bg-neutral-900"></span>
@@ -40,11 +40,11 @@
 
       <p id="login-error" class="mt-3 hidden text-sm text-red-700"></p>
       <button type="submit"
-        class="interactive-btn mt-4 min-h-11 w-full rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white">Войти</button>
+        class="interactive-btn mt-4 min-h-11 w-full rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white">Р’РѕР№С‚Рё</button>
 
       <div class="mt-4 flex items-center justify-between text-sm">
-        <a href="/forgot-password" class="text-neutral-700 underline">Забыл пароль?</a>
-        <a href="/register" class="text-neutral-700 underline">Нет аккаунта? Зарегистрироваться</a>
+        <a href="/forgot-password" class="text-neutral-700 underline">Р—Р°Р±С‹Р» РїР°СЂРѕР»СЊ?</a>
+        <a href="/register" class="text-neutral-700 underline">РќРµС‚ Р°РєРєР°СѓРЅС‚Р°? Р—Р°СЂРµРіРёСЃС‚СЂРёСЂРѕРІР°С‚СЊСЃСЏ</a>
       </div>
     </form>
   </main>
@@ -53,18 +53,18 @@
     const form = document.getElementById("login-form");
     const errorNode = document.getElementById("login-error");
     const loginErrorByCode = {
-      ACCOUNT_DISABLED: "Аккаунт отключен. Обратитесь в поддержку.",
-      ACCOUNT_DEACTIVATED: "Аккаунт деактивирован. Перейди к восстановлению.",
-      ACCOUNT_DELETED: "Аккаунт удален. Нужна новая регистрация.",
-      LOCKED: "Слишком много попыток. Попробуйте позже.",
-      UNVERIFIED: "Сначала подтвердите email.",
+      ACCOUNT_DISABLED: "РђРєРєР°СѓРЅС‚ РѕС‚РєР»СЋС‡РµРЅ. РћР±СЂР°С‚РёС‚РµСЃСЊ РІ РїРѕРґРґРµСЂР¶РєСѓ.",
+      ACCOUNT_DEACTIVATED: "РђРєРєР°СѓРЅС‚ РґРµР°РєС‚РёРІРёСЂРѕРІР°РЅ. РџРµСЂРµР№РґРё Рє РІРѕСЃСЃС‚Р°РЅРѕРІР»РµРЅРёСЋ.",
+      ACCOUNT_DELETED: "РђРєРєР°СѓРЅС‚ СѓРґР°Р»РµРЅ. РќСѓР¶РЅР° РЅРѕРІР°СЏ СЂРµРіРёСЃС‚СЂР°С†РёСЏ.",
+      LOCKED: "РЎР»РёС€РєРѕРј РјРЅРѕРіРѕ РїРѕРїС‹С‚РѕРє. РџРѕРїСЂРѕР±СѓР№С‚Рµ РїРѕР·Р¶Рµ.",
+      UNVERIFIED: "РЎРЅР°С‡Р°Р»Р° РїРѕРґС‚РІРµСЂРґРёС‚Рµ email.",
     };
 
     function resolveLoginError(payload) {
       if (payload && typeof payload.code === "string" && loginErrorByCode[payload.code]) {
         return loginErrorByCode[payload.code];
       }
-      return payload?.error || "Неверный email или пароль";
+      return payload?.error || "РќРµРІРµСЂРЅС‹Р№ email РёР»Рё РїР°СЂРѕР»СЊ";
     }
 
     form?.addEventListener("submit", async (event) => {

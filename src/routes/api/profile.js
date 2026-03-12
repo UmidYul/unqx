@@ -1,4 +1,4 @@
-﻿const express = require("express");
+const express = require("express");
 const multer = require("multer");
 
 const { prisma } = require("../../db/prisma");
@@ -41,7 +41,12 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 },
 });
 const ALLOWED_MIME = new Set(["image/jpeg", "image/png", "image/webp"]);
-const CARD_THEMES = new Set(["default_dark", "arctic", "linen", "marble", "forest", "royal_ivory", "midnight_obsidian"]);
+const CARD_THEMES = new Set(["default_dark", "arctic", "linen", "marble", "forest", "sage_luxe", "midnight_obsidian"]);
+const normalizeCardThemeKey = (value) => {
+  const raw = String(value || "").trim();
+  if (raw === "royal_ivory") return "sage_luxe";
+  return raw;
+};
 const DIRECTORY_SECTORS = new Set(["design", "sales", "marketing", "it", "other"]);
 const ACCOUNT_REACTIVATION_WINDOW_DAYS = Number(env.ACCOUNT_REACTIVATION_WINDOW_DAYS || 30);
 const UNKNOWN_CITY_LABEL = "Неизвестно";
@@ -245,7 +250,10 @@ function mapProfileCardRow(row) {
     avatarUrl: avatarUrl || "",
     tags: parseJsonArray(row.tags),
     buttons: parseJsonArray(row.buttons),
-    theme: typeof row.theme === "string" && CARD_THEMES.has(row.theme) ? row.theme : "default_dark",
+    theme: (() => {
+      const nextTheme = normalizeCardThemeKey(row.theme);
+      return CARD_THEMES.has(nextTheme) ? nextTheme : "default_dark";
+    })(),
     customColor: customColor || "",
     showBranding: toBool(showBrandingRaw, true),
     createdAt,

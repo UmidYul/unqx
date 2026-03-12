@@ -17,10 +17,10 @@
   const kindRaw = String(type || "other")
   .trim()
   .toLowerCase();
-  const kind = kindRaw === "карта" ? "card" : kindRaw;
+  const kind = kindRaw === "РєР°СЂС‚Р°" ? "card" : kindRaw;
   const labelRaw = String(label || "").trim().toLowerCase();
-  const cardLikeLabel = /(карта|card)/i.test(labelRaw);
-  const mapLikeLabel = /(map|maps|geo|location|локац)/i.test(labelRaw);
+  const cardLikeLabel = /(РєР°СЂС‚Р°|card)/i.test(labelRaw);
+  const mapLikeLabel = /(map|maps|geo|location|Р»РѕРєР°С†)/i.test(labelRaw);
   if (!input) return "";
   if (isSupportedButtonHref(input)) return input;
   if (kind === "card" || cardLikeLabel) {
@@ -92,7 +92,7 @@
   tariff: pageCardRaw.tariff === "premium" ? "premium" : "basic",
   theme:
   typeof pageCardRaw.theme === "string" &&
-  ["default_dark", "arctic", "linen", "marble", "forest", "royal_ivory",
+  ["default_dark", "arctic", "linen", "marble", "forest", "sage_luxe",
   "midnight_obsidian"].includes(pageCardRaw.theme)
   ? pageCardRaw.theme
   : "default_dark",
@@ -222,11 +222,11 @@
             <svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
               <path d="M15 18 9 12l6-6"></path>
             </svg>
-            На главную
+            РќР° РіР»Р°РІРЅСѓСЋ
           </a>
           <form id="card-slug-search-form" class="ml-auto flex w-full max-w-[220px] items-center gap-2 sm:max-w-[340px]"
             action="/" method="get" novalidate>
-            <label for="card-slug-search-input" class="sr-only">Поиск UNQ</label>
+            <label for="card-slug-search-input" class="sr-only">РџРѕРёСЃРє UNQ</label>
             <div class="flex min-w-0 flex-1 items-center rounded-lg border border-neutral-200 bg-white px-3 py-2">
               <span class="mr-2 text-xs text-neutral-400">unqx.uz/</span>
               <input id="card-slug-search-input" type="text" inputmode="text" autocomplete="off" spellcheck="false"
@@ -235,7 +235,7 @@
             </div>
             <button type="submit"
               class="interactive-btn inline-flex min-h-11 items-center justify-center rounded-lg border border-neutral-300 px-3 py-2 text-neutral-700"
-              aria-label="Искать">
+              aria-label="РСЃРєР°С‚СЊ">
               <svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
                 <circle cx="11" cy="11" r="7"></circle>
                 <path d="m20 20-3.5-3.5"></path>
@@ -255,7 +255,7 @@
       bio: pageCard.bio,
     },
     shareUrl: pageShareUrl,
-    viewsLabel: `${formattedViews} просмотров`,
+    viewsLabel: `${formattedViews} РїСЂРѕСЃРјРѕС‚СЂРѕРІ`,
     slug: pageCard.slug,
     score: pageScore,
     topBadge: pageTopBadge,

@@ -56,16 +56,16 @@
       avatarText: "#e7dbbf",
       radius: "20px",
     },
-    royal_ivory: {
-      cardBg: "linear-gradient(165deg, #fffdf7 0%, #f7efdc 52%, #eedfbd 100%)",
-      cardBorder: "1px solid #d8bf8c",
-      buttonBg: "linear-gradient(135deg, #9f7a3e, #c69a55)",
-      buttonText: "#fff8e8",
-      nameColor: "#3e2f1a",
-      mutedColor: "#8b6f42",
-      avatarBg: "linear-gradient(135deg, #f1e3c5, #dec391)",
-      avatarText: "#644b22",
-      radius: "22px",
+    sage_luxe: {
+      cardBg: "linear-gradient(165deg, #f7faf7 0%, #edf2ee 54%, #e6ece7 100%)",
+      cardBorder: "1px solid #cfd8cf",
+      buttonBg: "linear-gradient(135deg, #243129, #33443a)",
+      buttonText: "#f1f6f2",
+      nameColor: "#1f2a23",
+      mutedColor: "#667569",
+      avatarBg: "linear-gradient(135deg, #dce5dd, #c7d3c9)",
+      avatarText: "#3f5143",
+      radius: "24px",
     },
     midnight_obsidian: {
       cardBg: "linear-gradient(160deg, #0c1118 0%, #111927 45%, #0a0f15 100%)",
@@ -99,7 +99,7 @@
     linen: "background: linear-gradient(160deg, #f3ecdf 0%, #e9ddcb 52%, #dcccb7 100%); position: relative;",
     marble: "background: linear-gradient(135deg, #ffffff 0%, #f8f8f8 100%); position: relative;",
     forest: "background: #071a10; position: relative;",
-    royal_ivory: "background: linear-gradient(160deg, #f8f2e6 0%, #efe3cc 55%, #e5d3ae 100%); position: relative;",
+    sage_luxe: "background: linear-gradient(160deg, #eef4ef 0%, #e2ebe4 55%, #d5e0d8 100%); position: relative;",
     midnight_obsidian: "background: radial-gradient(circle at 12% 14%, rgba(58, 89, 143, 0.35) 0%, transparent 40%), linear-gradient(150deg, #090f16 0%, #101827 48%, #0a0f15 100%); position: relative;",
   };
   const pageMainStyle = isEmbed ? "" : pageMainStyleMap[pageTheme] || pageMainStyleMap.default_dark;
@@ -114,7 +114,7 @@
   <main class="<%= isEmbed ? 'p-2' : 'min-h-screen p-8' %>" style="<%= pageMainStyle %>">
     <div class="<%= isEmbed ? '' : 'mx-auto max-w-3xl' %>">
       <% if (!isEmbed) { %>
-        <h1 class="mb-6 text-3xl font-bold <%= headingClass %>">Живой пример темы: <%= pageTheme %></h1>
+        <h1 class="mb-6 text-3xl font-bold <%= headingClass %>">Р–РёРІРѕР№ РїСЂРёРјРµСЂ С‚РµРјС‹: <%= pageTheme %></h1>
       <% } %>
 
       <article class="public-card-shell overflow-hidden rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm" style="<%= cardStyle %>">

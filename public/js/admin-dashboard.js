@@ -85,17 +85,17 @@
 
   const H = (h = {}) => (csrf ? { ...h, "X-CSRF-Token": csrf } : h);
   const D = (v) => (v ? new Date(v).toLocaleString("ru-RU") : "-");
-  const P = (v) => `${Number(v || 0).toLocaleString("ru-RU")} сум`;
+  const P = (v) => `${Number(v || 0).toLocaleString("ru-RU")} СЃСѓРј`;
   const formatPendingCountdown = (iso) => {
     if (!iso) return "";
     const target = new Date(iso);
     if (Number.isNaN(target.getTime())) return "";
     const diffMs = target.getTime() - Date.now();
-    if (diffMs <= 0) return "время вышло";
+    if (diffMs <= 0) return "РІСЂРµРјСЏ РІС‹С€Р»Рѕ";
     const totalMinutes = Math.floor(diffMs / 60000);
     const hours = Math.floor(totalMinutes / 60);
     const minutes = totalMinutes % 60;
-    return `осталось ${hours}ч ${minutes}мин`;
+    return `РѕСЃС‚Р°Р»РѕСЃСЊ ${hours}С‡ ${minutes}РјРёРЅ`;
   };
   const X = (v) => String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\"/g, "&quot;").replace(/'/g, "&#39;");
   const Q = (o) => {
@@ -138,7 +138,7 @@
     linen: { label: "Imperial Linen", fill: "#f2ede6", border: "#c8a882", text: "#3a2e24" },
     marble: { label: "Carrara Prestige", fill: "#ffffff", border: "#0a0a0a", text: "#0a0a0a" },
     forest: { label: "Emerald Reserve", fill: "#1f5335", border: "#e7dbbf", text: "#e7dbbf" },
-    royal_ivory: { label: "Royal Ivory", fill: "#f7efdc", border: "#b89150", text: "#644b22" },
+    sage_luxe: { label: "Verdant Luxe", fill: "#ecf2ee", border: "#7f927f", text: "#2f3e33" },
     midnight_obsidian: { label: "Midnight Obsidian", fill: "#111927", border: "#5374a6", text: "#d6e6ff" },
   };
   function themePill(theme) {
@@ -149,26 +149,26 @@
   }
   const I = (name, size = 14) => `<svg class="admin-i" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" aria-hidden="true">${ICONS[name] || ""}</svg>`;
   const statusMeta = {
-    pending: { label: "На рассмотрении", tone: "warning" },
-    verification_approved: { label: "Одобрено", tone: "success" },
-    verification_rejected: { label: "Отклонено", tone: "danger" },
-    new: { label: "Новая", tone: "info" },
-    contacted: { label: "Связались", tone: "muted" },
-    paid: { label: "Оплачено", tone: "warning" },
-    approved: { label: "Активировано", tone: "success" },
-    rejected: { label: "Отклонено", tone: "danger" },
-    expired: { label: "Отклонено", tone: "muted" },
-    muted: { label: "Скрыт", tone: "muted" },
-    ORDERED: { label: "Заказан", tone: "warning" },
-    SHIPPED: { label: "Отправлен", tone: "info" },
-    DELIVERED: { label: "Доставлен", tone: "success" },
+    pending: { label: "РќР° СЂР°СЃСЃРјРѕС‚СЂРµРЅРёРё", tone: "warning" },
+    verification_approved: { label: "РћРґРѕР±СЂРµРЅРѕ", tone: "success" },
+    verification_rejected: { label: "РћС‚РєР»РѕРЅРµРЅРѕ", tone: "danger" },
+    new: { label: "РќРѕРІР°СЏ", tone: "info" },
+    contacted: { label: "РЎРІСЏР·Р°Р»РёСЃСЊ", tone: "muted" },
+    paid: { label: "РћРїР»Р°С‡РµРЅРѕ", tone: "warning" },
+    approved: { label: "РђРєС‚РёРІРёСЂРѕРІР°РЅРѕ", tone: "success" },
+    rejected: { label: "РћС‚РєР»РѕРЅРµРЅРѕ", tone: "danger" },
+    expired: { label: "РћС‚РєР»РѕРЅРµРЅРѕ", tone: "muted" },
+    muted: { label: "РЎРєСЂС‹С‚", tone: "muted" },
+    ORDERED: { label: "Р—Р°РєР°Р·Р°РЅ", tone: "warning" },
+    SHIPPED: { label: "РћС‚РїСЂР°РІР»РµРЅ", tone: "info" },
+    DELIVERED: { label: "Р”РѕСЃС‚Р°РІР»РµРЅ", tone: "success" },
   };
   function statusChip(code) {
     const m = statusMeta[code] || { label: String(code || "-"), tone: "muted" };
     return `<span class="admin-status-chip is-${m.tone}"><span class="admin-status-dot"></span>${X(m.label)}</span>`;
   }
   function kebabButton() {
-    return `<button type="button" class="admin-kebab-btn" data-kebab-toggle aria-label="Действия" aria-haspopup="menu" aria-expanded="false">${I("more", 16)}</button>`;
+    return `<button type="button" class="admin-kebab-btn" data-kebab-toggle aria-label="Р”РµР№СЃС‚РІРёСЏ" aria-haspopup="menu" aria-expanded="false">${I("more", 16)}</button>`;
   }
   function menuItem({ label, icon, attrs = "", danger = false }) {
     return `<button type="button" class="admin-menu-item${danger ? " is-danger" : ""}" ${attrs}>${I(icon, 16)}<span>${X(label)}</span></button>`;
@@ -201,14 +201,14 @@
 
     const prev = document.createElement("button");
     prev.type = "button";
-    prev.textContent = "← Назад";
+    prev.textContent = "в†ђ РќР°Р·Р°Рґ";
     prev.disabled = page <= 1;
     prev.className = "rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-50";
     prev.addEventListener("click", () => onPage(page - 1));
 
     const next = document.createElement("button");
     next.type = "button";
-    next.textContent = "Вперёд";
+    next.textContent = "Р’РїРµСЂС‘Рґ";
     next.disabled = page >= totalPages;
     next.className = "rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-50";
     next.addEventListener("click", () => onPage(page + 1));
@@ -292,7 +292,7 @@
       banner.classList.toggle("hidden", !enabled);
       const message = String(asMap.get("maintenance_message") || "").trim();
       textNode.textContent = enabled
-        ? `Режим обслуживания включён - сайт недоступен для пользователей${message ? `. ${message}` : ""}`
+        ? `Р РµР¶РёРј РѕР±СЃР»СѓР¶РёРІР°РЅРёСЏ РІРєР»СЋС‡С‘РЅ - СЃР°Р№С‚ РЅРµРґРѕСЃС‚СѓРїРµРЅ РґР»СЏ РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№${message ? `. ${message}` : ""}`
         : "";
       disableBtn.onclick = async () => {
         disableBtn.disabled = true;
@@ -374,18 +374,18 @@
     const breakdown = s.breakdown || {};
     const breakdownLines = [
       `Slug: ${P(breakdown.slug || 0)}`,
-      `Базовый: ${P(breakdown.basicPlan || 0)}`,
-      `Премиум: ${P(breakdown.premiumPlan || 0)}`,
-      `Браслеты: ${P(breakdown.bracelet || 0)}`,
+      `Р‘Р°Р·РѕРІС‹Р№: ${P(breakdown.basicPlan || 0)}`,
+      `РџСЂРµРјРёСѓРј: ${P(breakdown.premiumPlan || 0)}`,
+      `Р‘СЂР°СЃР»РµС‚С‹: ${P(breakdown.bracelet || 0)}`,
     ];
     kpi.innerHTML = [
-      { n: "Новых заявок сегодня", v: s.newOrdersToday || 0, i: "userCheck" },
-      { n: "Выручка сегодня", v: P(s.revenueToday || 0), i: "creditCard" },
-      { n: "Выручка за 30 дней", v: P(s.revenue30Days || 0), i: "calendar" },
-      { n: "Выручка всего", v: P(s.revenueTotal || 0), i: "link2" },
-      { n: "Средний UNQ Score", v: Number(s.averageUnqScore || 0).toLocaleString("ru-RU"), i: "chart" },
+      { n: "РќРѕРІС‹С… Р·Р°СЏРІРѕРє СЃРµРіРѕРґРЅСЏ", v: s.newOrdersToday || 0, i: "userCheck" },
+      { n: "Р’С‹СЂСѓС‡РєР° СЃРµРіРѕРґРЅСЏ", v: P(s.revenueToday || 0), i: "creditCard" },
+      { n: "Р’С‹СЂСѓС‡РєР° Р·Р° 30 РґРЅРµР№", v: P(s.revenue30Days || 0), i: "calendar" },
+      { n: "Р’С‹СЂСѓС‡РєР° РІСЃРµРіРѕ", v: P(s.revenueTotal || 0), i: "link2" },
+      { n: "РЎСЂРµРґРЅРёР№ UNQ Score", v: Number(s.averageUnqScore || 0).toLocaleString("ru-RU"), i: "chart" },
       {
-        n: "Разбивка",
+        n: "Р Р°Р·Р±РёРІРєР°",
         lines: breakdownLines,
         i: "package",
       },
@@ -398,18 +398,18 @@
       })
       .join("");
     const top = p.topUnboughtPatterns || [];
-    table.innerHTML = top.length ? top.map((x) => `<tr class="border-t border-neutral-100"><td class="px-3 py-2 font-mono">${X(x.pattern)}</td><td class="px-3 py-2 font-semibold">${x.count}</td></tr>`).join("") : '<tr><td colspan="2" class="px-3 py-8 text-center text-neutral-500">Нет данных</td></tr>';
+    table.innerHTML = top.length ? top.map((x) => `<tr class="border-t border-neutral-100"><td class="px-3 py-2 font-mono">${X(x.pattern)}</td><td class="px-3 py-2 font-semibold">${x.count}</td></tr>`).join("") : '<tr><td colspan="2" class="px-3 py-8 text-center text-neutral-500">РќРµС‚ РґР°РЅРЅС‹С…</td></tr>';
     if (typeof Chart !== "undefined") {
       const d = p.revenueDaily || [];
       new Chart(document.getElementById("analytics-orders-chart"), {
         type: "line",
-        data: { labels: d.map((x) => x.date), datasets: [{ label: "Выручка", data: d.map((x) => x.amount), borderColor: "#111827", tension: 0.25 }] },
+        data: { labels: d.map((x) => x.date), datasets: [{ label: "Р’С‹СЂСѓС‡РєР°", data: d.map((x) => x.amount), borderColor: "#111827", tension: 0.25 }] },
         options: { responsive: true, maintainAspectRatio: false },
       });
       new Chart(document.getElementById("analytics-tariff-chart"), {
         type: "pie",
         data: {
-          labels: ["Slug", "Базовый тариф", "Премиум тариф", "Браслеты"],
+          labels: ["Slug", "Р‘Р°Р·РѕРІС‹Р№ С‚Р°СЂРёС„", "РџСЂРµРјРёСѓРј С‚Р°СЂРёС„", "Р‘СЂР°СЃР»РµС‚С‹"],
           datasets: [
             {
               data: [
@@ -464,19 +464,19 @@
       const countdownTone = remainingMs <= 30 * 60 * 1000 ? "text-red-700 font-semibold" : remainingMs <= 2 * 60 * 60 * 1000 ? "text-red-700" : "text-neutral-500";
       const statusBlock = `${statusChip(x.status)}${countdown ? `<div class="mt-1 inline-flex items-center gap-1 text-[11px] ${countdownTone}">${I("clock", 14)}<span>${X(countdown)}</span></div>` : ""}`;
       const menu = menuWrap([
-        menuItem({ label: "Одобрить", icon: "userCheck", attrs: `data-act="os" data-id="${x.id}" data-status="approved" data-note="${X(x.adminNote || "")}"` }),
-        menuItem({ label: "Связались", icon: "message", attrs: `data-act="os" data-id="${x.id}" data-status="contacted" data-note="${X(x.adminNote || "")}"` }),
-        menuItem({ label: "Оплачено", icon: "creditCard", attrs: `data-act="os" data-id="${x.id}" data-status="paid" data-note="${X(x.adminNote || "")}"` }),
-        menuItem({ label: "Отклонить", icon: "xCircle", attrs: `data-act="os" data-id="${x.id}" data-status="rejected" data-note="${X(x.adminNote || "")}"`, danger: true }),
+        menuItem({ label: "РћРґРѕР±СЂРёС‚СЊ", icon: "userCheck", attrs: `data-act="os" data-id="${x.id}" data-status="approved" data-note="${X(x.adminNote || "")}"` }),
+        menuItem({ label: "РЎРІСЏР·Р°Р»РёСЃСЊ", icon: "message", attrs: `data-act="os" data-id="${x.id}" data-status="contacted" data-note="${X(x.adminNote || "")}"` }),
+        menuItem({ label: "РћРїР»Р°С‡РµРЅРѕ", icon: "creditCard", attrs: `data-act="os" data-id="${x.id}" data-status="paid" data-note="${X(x.adminNote || "")}"` }),
+        menuItem({ label: "РћС‚РєР»РѕРЅРёС‚СЊ", icon: "xCircle", attrs: `data-act="os" data-id="${x.id}" data-status="rejected" data-note="${X(x.adminNote || "")}"`, danger: true }),
         menuSeparator(),
-        menuItem({ label: "Открыть профиль", icon: "external", attrs: profileHref ? `data-act="open-url" data-url="${profileHref}"` : 'disabled="disabled"' }),
-        menuItem({ label: "Написать в Telegram", icon: "send", attrs: username ? `data-act="open-url" data-url="https://t.me/${encodeURIComponent(username)}"` : 'disabled="disabled"' }),
-        x.slugState === "pending" && x.status !== "expired" ? menuItem({ label: "Добавить 24 часа", icon: "clock", attrs: `data-act="ope" data-id="${x.id}"` }) : "",
+        menuItem({ label: "РћС‚РєСЂС‹С‚СЊ РїСЂРѕС„РёР»СЊ", icon: "external", attrs: profileHref ? `data-act="open-url" data-url="${profileHref}"` : 'disabled="disabled"' }),
+        menuItem({ label: "РќР°РїРёСЃР°С‚СЊ РІ Telegram", icon: "send", attrs: username ? `data-act="open-url" data-url="https://t.me/${encodeURIComponent(username)}"` : 'disabled="disabled"' }),
+        x.slugState === "pending" && x.status !== "expired" ? menuItem({ label: "Р”РѕР±Р°РІРёС‚СЊ 24 С‡Р°СЃР°", icon: "clock", attrs: `data-act="ope" data-id="${x.id}"` }) : "",
         menuSeparator(),
-        menuItem({ label: "Удалить", icon: "trash", attrs: `data-act="od" data-id="${x.id}"`, danger: true }),
+        menuItem({ label: "РЈРґР°Р»РёС‚СЊ", icon: "trash", attrs: `data-act="od" data-id="${x.id}"`, danger: true }),
       ].join(""));
-      return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3">${D(x.createdAt)}</td><td class="px-4 py-3">${X(x.name)}</td><td class="px-4 py-3 font-mono">${X(x.slug)}</td><td class="px-4 py-3">${P(x.slugPrice)}</td><td class="px-4 py-3 font-semibold">${P(x.amount || 0)}</td><td class="px-4 py-3">${x.tariff === "premium" ? "Премиум" : "Базовый"}</td><td class="px-4 py-3">${x.bracelet ? "Да" : "Нет"}</td><td class="px-4 py-3">${X(x.contact)}</td><td class="px-4 py-3">${statusBlock}</td><td class="px-4 py-3"><div class="admin-row-actions">${menu}</div></td></tr>`;
-    }).join("") : `<tr><td colspan="10" class="px-3 py-10 text-center text-neutral-500"><div class="inline-flex flex-col items-center gap-2">${I("creditCard", 48)}<span>Нет заявок</span></div></td></tr>`;
+      return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3">${D(x.createdAt)}</td><td class="px-4 py-3">${X(x.name)}</td><td class="px-4 py-3 font-mono">${X(x.slug)}</td><td class="px-4 py-3">${P(x.slugPrice)}</td><td class="px-4 py-3 font-semibold">${P(x.amount || 0)}</td><td class="px-4 py-3">${x.tariff === "premium" ? "РџСЂРµРјРёСѓРј" : "Р‘Р°Р·РѕРІС‹Р№"}</td><td class="px-4 py-3">${x.bracelet ? "Р”Р°" : "РќРµС‚"}</td><td class="px-4 py-3">${X(x.contact)}</td><td class="px-4 py-3">${statusBlock}</td><td class="px-4 py-3"><div class="admin-row-actions">${menu}</div></td></tr>`;
+    }).join("") : `<tr><td colspan="10" class="px-3 py-10 text-center text-neutral-500"><div class="inline-flex flex-col items-center gap-2">${I("creditCard", 48)}<span>РќРµС‚ Р·Р°СЏРІРѕРє</span></div></td></tr>`;
     renderPager("orders-pagination", payload.pagination, (nextPage) => {
       setFormValue(form, "page", String(nextPage));
       void loadOrders();
@@ -503,24 +503,24 @@
 
     const r = await fetch(`/api/admin/purchases?${Q(q)}`);
     if (!r.ok) {
-      table.innerHTML = `<tr><td colspan="6" class="px-3 py-8 text-center text-red-700">Не удалось загрузить покупки</td></tr>`;
+      table.innerHTML = `<tr><td colspan="6" class="px-3 py-8 text-center text-red-700">РќРµ СѓРґР°Р»РѕСЃСЊ Р·Р°РіСЂСѓР·РёС‚СЊ РїРѕРєСѓРїРєРё</td></tr>`;
       return;
     }
     const payload = await r.json();
-    totalNode.textContent = `Общая выручка: ${P(payload.totalRevenue || 0)}`;
+    totalNode.textContent = `РћР±С‰Р°СЏ РІС‹СЂСѓС‡РєР°: ${P(payload.totalRevenue || 0)}`;
 
     const typeLabel = (type) => {
       if (type === "slug") return "Slug";
-      if (type === "basic_plan") return "Базовый тариф";
-      if (type === "premium_plan") return "Премиум тариф";
-      if (type === "upgrade_to_premium") return "Апгрейд до Премиум";
-      if (type === "bracelet") return "Браслет";
+      if (type === "basic_plan") return "Р‘Р°Р·РѕРІС‹Р№ С‚Р°СЂРёС„";
+      if (type === "premium_plan") return "РџСЂРµРјРёСѓРј С‚Р°СЂРёС„";
+      if (type === "upgrade_to_premium") return "РђРїРіСЂРµР№Рґ РґРѕ РџСЂРµРјРёСѓРј";
+      if (type === "bracelet") return "Р‘СЂР°СЃР»РµС‚";
       return type;
     };
     const rows = payload.items || [];
     table.innerHTML = rows.length
-      ? rows.map((x) => `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3">${D(x.purchasedAt)}</td><td class="px-4 py-3">${X(x.username ? `@${x.username}` : x.userName)}</td><td class="px-4 py-3"><span class="inline-flex rounded-full border border-neutral-200 px-2 py-1 text-xs font-medium">${X(typeLabel(x.type))}</span></td><td class="px-4 py-3 font-mono">${X(x.slug || "—")}</td><td class="px-4 py-3 font-semibold">${P(x.amount || 0)}</td><td class="px-4 py-3">${X(x.approvedByAdmin || "—")}</td></tr>`).join("")
-      : `<tr><td colspan="6" class="px-3 py-10 text-center text-neutral-500"><div class="inline-flex flex-col items-center gap-2">${I("creditCard", 48)}<span>Нет покупок</span></div></td></tr>`;
+      ? rows.map((x) => `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3">${D(x.purchasedAt)}</td><td class="px-4 py-3">${X(x.username ? `@${x.username}` : x.userName)}</td><td class="px-4 py-3"><span class="inline-flex rounded-full border border-neutral-200 px-2 py-1 text-xs font-medium">${X(typeLabel(x.type))}</span></td><td class="px-4 py-3 font-mono">${X(x.slug || "вЂ”")}</td><td class="px-4 py-3 font-semibold">${P(x.amount || 0)}</td><td class="px-4 py-3">${X(x.approvedByAdmin || "вЂ”")}</td></tr>`).join("")
+      : `<tr><td colspan="6" class="px-3 py-10 text-center text-neutral-500"><div class="inline-flex flex-col items-center gap-2">${I("creditCard", 48)}<span>РќРµС‚ РїРѕРєСѓРїРѕРє</span></div></td></tr>`;
 
     renderPager("purchases-pagination", payload.pagination, (nextPage) => {
       setFormValue(form, "page", String(nextPage));
@@ -555,7 +555,7 @@
     const r = await fetch(`/api/admin/users?${Q(q)}`);
     if (!r.ok) {
       const msg = await E(r);
-      table.innerHTML = `<tr><td colspan="9" class="px-3 py-8 text-center text-red-700">Не удалось загрузить пользователей: ${X(msg)}</td></tr>`;
+      table.innerHTML = `<tr><td colspan="9" class="px-3 py-8 text-center text-red-700">РќРµ СѓРґР°Р»РѕСЃСЊ Р·Р°РіСЂСѓР·РёС‚СЊ РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№: ${X(msg)}</td></tr>`;
       return;
     }
     const payload = await r.json();
@@ -570,7 +570,7 @@
             ? allSlugs.length > 2
               ? `${allSlugs.slice(0, 2).join(", ")} +${allSlugs.length - 2}`
               : allSlugs.join(", ")
-            : "—";
+            : "вЂ”";
           const slugTitle = allSlugs.length ? allSlugs.join(", ") : "";
           const primarySlug =
             Array.isArray(x.slugs) && x.slugs.length
@@ -585,28 +585,28 @@
           const score = Number(x.unqScore?.score || 0);
           const scoreBreakdown = x.unqScore?.breakdown || {};
           const menu = menuWrap([
-            menuItem({ label: "Сменить тариф", icon: "crown", attrs: `data-act="up" data-id="${X(x.telegramId)}" data-current-plan="${X(x.plan)}" data-active-slugs="${Number(x.activeSlugCount || 0)}" data-bracelet-slugs="${X(braceletSlugs)}"` }),
-            ...(x.isVerified ? [menuItem({ label: "Снять верификацию", icon: "xCircle", attrs: `data-act="uv" data-id="${X(x.telegramId)}"`, danger: true })] : []),
-            menuItem({ label: "Добавить slug", icon: "link2", attrs: `data-act="us-add" data-id="${X(x.telegramId)}" data-name="${X(x.name)}" data-slugs="${X(userSlugsCsv)}"` }),
-            menuItem({ label: "Редактировать slug", icon: "pen", attrs: editSlugAttrs }),
-            menuItem({ label: "Удалить slug", icon: "trash", attrs: `data-act="us-delete" data-id="${X(x.telegramId)}" data-name="${X(x.name)}" data-slugs="${X(userSlugsCsv)}"`, danger: true }),
+            menuItem({ label: "РЎРјРµРЅРёС‚СЊ С‚Р°СЂРёС„", icon: "crown", attrs: `data-act="up" data-id="${X(x.telegramId)}" data-current-plan="${X(x.plan)}" data-active-slugs="${Number(x.activeSlugCount || 0)}" data-bracelet-slugs="${X(braceletSlugs)}"` }),
+            ...(x.isVerified ? [menuItem({ label: "РЎРЅСЏС‚СЊ РІРµСЂРёС„РёРєР°С†РёСЋ", icon: "xCircle", attrs: `data-act="uv" data-id="${X(x.telegramId)}"`, danger: true })] : []),
+            menuItem({ label: "Р”РѕР±Р°РІРёС‚СЊ slug", icon: "link2", attrs: `data-act="us-add" data-id="${X(x.telegramId)}" data-name="${X(x.name)}" data-slugs="${X(userSlugsCsv)}"` }),
+            menuItem({ label: "Р РµРґР°РєС‚РёСЂРѕРІР°С‚СЊ slug", icon: "pen", attrs: editSlugAttrs }),
+            menuItem({ label: "РЈРґР°Р»РёС‚СЊ slug", icon: "trash", attrs: `data-act="us-delete" data-id="${X(x.telegramId)}" data-name="${X(x.name)}" data-slugs="${X(userSlugsCsv)}"`, danger: true }),
             menuSeparator(),
-            menuItem({ label: "Редактировать визитку", icon: "pen", attrs: `data-act="open-url" data-url="/admin/users/${encodeURIComponent(String(x.telegramId || ""))}/card"` }),
-            menuItem({ label: "Открыть профиль", icon: "external", attrs: profileLink ? `data-act="open-url" data-url="${profileLink}"` : 'disabled="disabled"' }),
-            menuItem({ label: "Накрутить просмотры", icon: "eye", attrs: `data-act="uvb" data-id="${X(x.telegramId)}" data-name="${X(x.name)}" data-slugs="${X(userSlugsCsv)}"` }),
+            menuItem({ label: "Р РµРґР°РєС‚РёСЂРѕРІР°С‚СЊ РІРёР·РёС‚РєСѓ", icon: "pen", attrs: `data-act="open-url" data-url="/admin/users/${encodeURIComponent(String(x.telegramId || ""))}/card"` }),
+            menuItem({ label: "РћС‚РєСЂС‹С‚СЊ РїСЂРѕС„РёР»СЊ", icon: "external", attrs: profileLink ? `data-act="open-url" data-url="${profileLink}"` : 'disabled="disabled"' }),
+            menuItem({ label: "РќР°РєСЂСѓС‚РёС‚СЊ РїСЂРѕСЃРјРѕС‚СЂС‹", icon: "eye", attrs: `data-act="uvb" data-id="${X(x.telegramId)}" data-name="${X(x.name)}" data-slugs="${X(userSlugsCsv)}"` }),
             menuSeparator(),
-            menuItem({ label: x.status === "blocked" ? "Разблокировать" : "Заблокировать", icon: "shieldOff", attrs: `data-act="ub" data-id="${X(x.telegramId)}" data-status="${X(x.status)}"`, danger: x.status !== "blocked" }),
-            menuItem({ label: "Удалить пользователя полностью", icon: "trash", attrs: `data-act="ud" data-id="${X(x.telegramId)}" data-name="${X(x.name)}"`, danger: true }),
+            menuItem({ label: x.status === "blocked" ? "Р Р°Р·Р±Р»РѕРєРёСЂРѕРІР°С‚СЊ" : "Р—Р°Р±Р»РѕРєРёСЂРѕРІР°С‚СЊ", icon: "shieldOff", attrs: `data-act="ub" data-id="${X(x.telegramId)}" data-status="${X(x.status)}"`, danger: x.status !== "blocked" }),
+            menuItem({ label: "РЈРґР°Р»РёС‚СЊ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РїРѕР»РЅРѕСЃС‚СЊСЋ", icon: "trash", attrs: `data-act="ud" data-id="${X(x.telegramId)}" data-name="${X(x.name)}"`, danger: true }),
           ].join(""));
-          const planLabel = x.plan === "premium" ? "Премиум" : x.plan === "basic" ? "Базовый" : "Без тарифа";
+          const planLabel = x.plan === "premium" ? "РџСЂРµРјРёСѓРј" : x.plan === "basic" ? "Р‘Р°Р·РѕРІС‹Р№" : "Р‘РµР· С‚Р°СЂРёС„Р°";
           const planChipClass =
             x.plan === "none"
               ? "border-amber-300 bg-amber-50 text-amber-800 whitespace-nowrap"
               : "border-neutral-200 whitespace-nowrap";
-          return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3">${X(x.name)}</td><td class="px-4 py-3">${X(x.city || "—")}</td><td class="px-4 py-3"><span class="inline-flex rounded-full border px-2.5 py-1 text-xs font-medium ${planChipClass}">${planLabel}</span></td><td class="hidden px-4 py-3 text-xs text-neutral-600 xl:table-cell">${x.planPurchasedAt ? D(x.planPurchasedAt) : "—"}</td><td class="admin-col-slugs px-4 py-3 text-xs" title="${X(slugTitle)}">${X(slugText)}</td><td class="px-4 py-3"><button type="button" data-act="toggle-score" data-id="${X(x.telegramId)}" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-2.5 py-1 text-sm font-semibold">${score}</button></td><td class="px-4 py-3">${statusChip(x.status === "blocked" ? "rejected" : "approved")}</td><td class="px-4 py-3">${D(x.createdAt)}</td><td class="px-4 py-3"><div class="admin-row-actions">${menu}</div></td></tr><tr class="border-t border-neutral-100 hidden" data-score-row="${X(x.telegramId)}"><td colspan="9" class="px-4 py-2 text-xs text-neutral-600">Просмотры: ${Number(scoreBreakdown.views || 0)} | Редкость: ${Number(scoreBreakdown.slugRarity || 0)} | Срок: ${Number(scoreBreakdown.tenure || 0)} | CTR: ${Number(scoreBreakdown.ctr || 0)} | Браслет: ${Number(scoreBreakdown.bracelet || 0)} | Тариф: ${Number(scoreBreakdown.plan || 0)}</td></tr>`;
+          return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3">${X(x.name)}</td><td class="px-4 py-3">${X(x.city || "вЂ”")}</td><td class="px-4 py-3"><span class="inline-flex rounded-full border px-2.5 py-1 text-xs font-medium ${planChipClass}">${planLabel}</span></td><td class="hidden px-4 py-3 text-xs text-neutral-600 xl:table-cell">${x.planPurchasedAt ? D(x.planPurchasedAt) : "вЂ”"}</td><td class="admin-col-slugs px-4 py-3 text-xs" title="${X(slugTitle)}">${X(slugText)}</td><td class="px-4 py-3"><button type="button" data-act="toggle-score" data-id="${X(x.telegramId)}" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-2.5 py-1 text-sm font-semibold">${score}</button></td><td class="px-4 py-3">${statusChip(x.status === "blocked" ? "rejected" : "approved")}</td><td class="px-4 py-3">${D(x.createdAt)}</td><td class="px-4 py-3"><div class="admin-row-actions">${menu}</div></td></tr><tr class="border-t border-neutral-100 hidden" data-score-row="${X(x.telegramId)}"><td colspan="9" class="px-4 py-2 text-xs text-neutral-600">РџСЂРѕСЃРјРѕС‚СЂС‹: ${Number(scoreBreakdown.views || 0)} | Р РµРґРєРѕСЃС‚СЊ: ${Number(scoreBreakdown.slugRarity || 0)} | РЎСЂРѕРє: ${Number(scoreBreakdown.tenure || 0)} | CTR: ${Number(scoreBreakdown.ctr || 0)} | Р‘СЂР°СЃР»РµС‚: ${Number(scoreBreakdown.bracelet || 0)} | РўР°СЂРёС„: ${Number(scoreBreakdown.plan || 0)}</td></tr>`;
         })
         .join("")
-      : `<tr><td colspan="9" class="px-3 py-10 text-center text-neutral-500"><div class="inline-flex flex-col items-center gap-2">${I("userCheck", 48)}<span>Нет пользователей</span></div></td></tr>`;
+      : `<tr><td colspan="9" class="px-3 py-10 text-center text-neutral-500"><div class="inline-flex flex-col items-center gap-2">${I("userCheck", 48)}<span>РќРµС‚ РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№</span></div></td></tr>`;
     renderPager("users-pagination", payload.pagination, (nextPage) => {
       setFormValue(form, "page", String(nextPage));
       void loadUsers();
@@ -621,7 +621,7 @@
     const sr = await fetch("/api/admin/slugs/stats");
     if (sr.ok) {
       const s = await sr.json();
-      stats.innerHTML = [["Всего slugов", s.total], ["Занято", s.taken], ["Свободно", s.free], ["Заблокировано", s.blocked]].map(([n, v]) => `<div class="rounded-2xl border border-neutral-200 bg-white p-4"><p class="text-xs uppercase tracking-wide text-neutral-500">${n}</p><p class="mt-2 text-2xl font-black">${Number(v || 0).toLocaleString("ru-RU")}</p></div>`).join("");
+      stats.innerHTML = [["Р’СЃРµРіРѕ slugРѕРІ", s.total], ["Р—Р°РЅСЏС‚Рѕ", s.taken], ["РЎРІРѕР±РѕРґРЅРѕ", s.free], ["Р—Р°Р±Р»РѕРєРёСЂРѕРІР°РЅРѕ", s.blocked]].map(([n, v]) => `<div class="rounded-2xl border border-neutral-200 bg-white p-4"><p class="text-xs uppercase tracking-wide text-neutral-500">${n}</p><p class="mt-2 text-2xl font-black">${Number(v || 0).toLocaleString("ru-RU")}</p></div>`).join("");
     }
 
     const q = { q: getFormValue(form, "q", ""), state: getFormValue(form, "state", "all"), page: getFormValue(form, "page", "1") };
@@ -637,23 +637,23 @@
         const priceValue = typeof x.effectivePrice === "number" ? P(x.effectivePrice) : "-";
         const priceCell = `<span>${priceValue}</span>`;
         const menu = menuWrap([
-          menuItem({ label: "Активировать", icon: "checkCircle", attrs: `data-act="sa" data-slug="${x.slug}"` }),
-          menuItem({ label: x.state === "BLOCKED" ? "Разблокировать" : "Заблокировать", icon: x.state === "BLOCKED" ? "toggleRight" : "toggleLeft", attrs: `data-act="st" data-slug="${x.slug}" data-ns="${x.state === "BLOCKED" ? "free" : "blocked"}"` }),
-          menuItem({ label: "Изменить цену", icon: "pen", attrs: `data-act="sp" data-slug="${x.slug}" data-p="${x.priceOverride ?? ""}"` }),
-          ...(x.ownerId ? [menuItem({ label: "Удалить slug", icon: "trash", attrs: `data-act="sd" data-slug="${x.slug}" data-owner-id="${X(x.ownerId)}" data-owner-name="${X(x.ownerName || "")}"`, danger: true })] : []),
+          menuItem({ label: "РђРєС‚РёРІРёСЂРѕРІР°С‚СЊ", icon: "checkCircle", attrs: `data-act="sa" data-slug="${x.slug}"` }),
+          menuItem({ label: x.state === "BLOCKED" ? "Р Р°Р·Р±Р»РѕРєРёСЂРѕРІР°С‚СЊ" : "Р—Р°Р±Р»РѕРєРёСЂРѕРІР°С‚СЊ", icon: x.state === "BLOCKED" ? "toggleRight" : "toggleLeft", attrs: `data-act="st" data-slug="${x.slug}" data-ns="${x.state === "BLOCKED" ? "free" : "blocked"}"` }),
+          menuItem({ label: "РР·РјРµРЅРёС‚СЊ С†РµРЅСѓ", icon: "pen", attrs: `data-act="sp" data-slug="${x.slug}" data-p="${x.priceOverride ?? ""}"` }),
+          ...(x.ownerId ? [menuItem({ label: "РЈРґР°Р»РёС‚СЊ slug", icon: "trash", attrs: `data-act="sd" data-slug="${x.slug}" data-owner-id="${X(x.ownerId)}" data-owner-name="${X(x.ownerName || "")}"`, danger: true })] : []),
           menuSeparator(),
-          menuItem({ label: "Открыть визитку", icon: "external", attrs: `data-act="open-url" data-url="/${encodeURIComponent(x.slug)}"` }),
+          menuItem({ label: "РћС‚РєСЂС‹С‚СЊ РІРёР·РёС‚РєСѓ", icon: "external", attrs: `data-act="open-url" data-url="/${encodeURIComponent(x.slug)}"` }),
         ].join(""));
-        return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3 font-mono">${X(x.slug)}</td><td class="px-4 py-3">${statusChip(x.state === "BLOCKED" ? "rejected" : x.state === "TAKEN" ? "approved" : "new")}</td><td class="px-4 py-3">${X(x.ownerName || "-")}</td><td class="px-4 py-3">${x.isPrimary ? "Да" : "Нет"}</td><td class="px-4 py-3">${priceCell}</td><td class="px-4 py-3">${x.requestedAt ? D(x.requestedAt) : "-"}</td><td class="px-4 py-3">${x.approvedAt ? D(x.approvedAt) : "-"}</td><td class="px-4 py-3">${x.activatedAt ? D(x.activatedAt) : "-"}</td><td class="px-4 py-3"><div class="admin-row-actions">${menu}</div></td></tr>`;
+        return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3 font-mono">${X(x.slug)}</td><td class="px-4 py-3">${statusChip(x.state === "BLOCKED" ? "rejected" : x.state === "TAKEN" ? "approved" : "new")}</td><td class="px-4 py-3">${X(x.ownerName || "-")}</td><td class="px-4 py-3">${x.isPrimary ? "Р”Р°" : "РќРµС‚"}</td><td class="px-4 py-3">${priceCell}</td><td class="px-4 py-3">${x.requestedAt ? D(x.requestedAt) : "-"}</td><td class="px-4 py-3">${x.approvedAt ? D(x.approvedAt) : "-"}</td><td class="px-4 py-3">${x.activatedAt ? D(x.activatedAt) : "-"}</td><td class="px-4 py-3"><div class="admin-row-actions">${menu}</div></td></tr>`;
       }).join("")
       : canCreateBySearch
         ? (() => {
           const menu = menuWrap(
-            menuItem({ label: "Изменить цену", icon: "pen", attrs: `data-act="sp" data-slug="${searchedSlug}" data-p=""` }),
+            menuItem({ label: "РР·РјРµРЅРёС‚СЊ С†РµРЅСѓ", icon: "pen", attrs: `data-act="sp" data-slug="${searchedSlug}" data-p=""` }),
           );
-          return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3 font-mono">${X(searchedSlug)}</td><td class="px-4 py-3">${statusChip("new")}</td><td class="px-4 py-3">-</td><td class="px-4 py-3">Нет</td><td class="px-4 py-3"><span>-</span></td><td class="px-4 py-3">-</td><td class="px-4 py-3">-</td><td class="px-4 py-3">-</td><td class="px-4 py-3"><div class="admin-row-actions">${menu}</div></td></tr>`;
+          return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3 font-mono">${X(searchedSlug)}</td><td class="px-4 py-3">${statusChip("new")}</td><td class="px-4 py-3">-</td><td class="px-4 py-3">РќРµС‚</td><td class="px-4 py-3"><span>-</span></td><td class="px-4 py-3">-</td><td class="px-4 py-3">-</td><td class="px-4 py-3">-</td><td class="px-4 py-3"><div class="admin-row-actions">${menu}</div></td></tr>`;
         })()
-        : `<tr><td colspan="9" class="px-3 py-10 text-center text-neutral-500"><div class="inline-flex flex-col items-center gap-2">${I("link2", 48)}<span>Нет данных</span></div></td></tr>`;
+        : `<tr><td colspan="9" class="px-3 py-10 text-center text-neutral-500"><div class="inline-flex flex-col items-center gap-2">${I("link2", 48)}<span>РќРµС‚ РґР°РЅРЅС‹С…</span></div></td></tr>`;
     renderPager("slugs-pagination", payload.pagination, (nextPage) => {
       setFormValue(form, "page", String(nextPage));
       void loadSlugs();
@@ -673,16 +673,16 @@
     table.innerHTML = rows.length
       ? rows.map((x) => {
         const menu = menuWrap([
-          menuItem({ label: "Открыть визитку", icon: "eye", attrs: `data-act="open-url" data-url="/${encodeURIComponent(x.slug)}"` }),
-          menuItem({ label: "Редактировать", icon: "pen", attrs: `data-act="open-url" data-url="/admin/cards/${x.id}/edit"` }),
-          menuItem({ label: "Сменить тариф", icon: "crown", attrs: `data-act="ct" data-id="${x.id}"` }),
+          menuItem({ label: "РћС‚РєСЂС‹С‚СЊ РІРёР·РёС‚РєСѓ", icon: "eye", attrs: `data-act="open-url" data-url="/${encodeURIComponent(x.slug)}"` }),
+          menuItem({ label: "Р РµРґР°РєС‚РёСЂРѕРІР°С‚СЊ", icon: "pen", attrs: `data-act="open-url" data-url="/admin/cards/${x.id}/edit"` }),
+          menuItem({ label: "РЎРјРµРЅРёС‚СЊ С‚Р°СЂРёС„", icon: "crown", attrs: `data-act="ct" data-id="${x.id}"` }),
           menuSeparator(),
-          menuItem({ label: x.isActive ? "Выключить" : "Включить", icon: x.isActive ? "toggleLeft" : "toggleRight", attrs: `data-act="cg" data-id="${x.id}" data-n="${x.isActive ? 0 : 1}"` }),
-          menuItem({ label: "QR-код", icon: "qr", attrs: `data-act="qr" data-slug="${x.slug}"` }),
+          menuItem({ label: x.isActive ? "Р’С‹РєР»СЋС‡РёС‚СЊ" : "Р’РєР»СЋС‡РёС‚СЊ", icon: x.isActive ? "toggleLeft" : "toggleRight", attrs: `data-act="cg" data-id="${x.id}" data-n="${x.isActive ? 0 : 1}"` }),
+          menuItem({ label: "QR-РєРѕРґ", icon: "qr", attrs: `data-act="qr" data-slug="${x.slug}"` }),
         ].join(""));
-        return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3 font-mono">#${X(x.slug)}</td><td class="px-4 py-3">${X(x.name)}</td><td class="px-4 py-3">${x.tariff === "premium" ? "Премиум" : "Базовый"}</td><td class="px-4 py-3">${statusChip(x.isActive ? "approved" : "rejected")}</td><td class="px-4 py-3">${Number(x.viewsCount || 0).toLocaleString("ru-RU")}</td><td class="px-4 py-3">${new Date(x.createdAt).toLocaleDateString("ru-RU")}</td><td class="px-4 py-3">${themePill(x.theme || "default_dark")}</td><td class="px-4 py-3"><div class="admin-row-actions">${menu}</div></td></tr>`;
+        return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3 font-mono">#${X(x.slug)}</td><td class="px-4 py-3">${X(x.name)}</td><td class="px-4 py-3">${x.tariff === "premium" ? "РџСЂРµРјРёСѓРј" : "Р‘Р°Р·РѕРІС‹Р№"}</td><td class="px-4 py-3">${statusChip(x.isActive ? "approved" : "rejected")}</td><td class="px-4 py-3">${Number(x.viewsCount || 0).toLocaleString("ru-RU")}</td><td class="px-4 py-3">${new Date(x.createdAt).toLocaleDateString("ru-RU")}</td><td class="px-4 py-3">${themePill(x.theme || "default_dark")}</td><td class="px-4 py-3"><div class="admin-row-actions">${menu}</div></td></tr>`;
       }).join("")
-      : `<tr><td colspan="8" class="px-3 py-10 text-center text-neutral-500"><div class="inline-flex flex-col items-center gap-2">${I("creditCard", 48)}<span>Нет данных</span></div></td></tr>`;
+      : `<tr><td colspan="8" class="px-3 py-10 text-center text-neutral-500"><div class="inline-flex flex-col items-center gap-2">${I("creditCard", 48)}<span>РќРµС‚ РґР°РЅРЅС‹С…</span></div></td></tr>`;
     renderPager("cards-pagination", payload.pagination, (nextPage) => {
       setFormValue(form, "page", String(nextPage));
       void loadCards();
@@ -692,7 +692,7 @@
   async function applySlugPriceOverride(slugRaw, priceRaw) {
     const slug = String(slugRaw || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6);
     if (!/^[A-Z]{3}[0-9]{3}$/.test(slug)) {
-      await showAlert("Slug должен быть в формате AAA000");
+      await showAlert("Slug РґРѕР»Р¶РµРЅ Р±С‹С‚СЊ РІ С„РѕСЂРјР°С‚Рµ AAA000");
       return false;
     }
 
@@ -702,7 +702,7 @@
         : Number(String(priceRaw).trim());
 
     if (!(payloadPrice === null || Number.isFinite(payloadPrice))) {
-      await showAlert("Некорректная цена override");
+      await showAlert("РќРµРєРѕСЂСЂРµРєС‚РЅР°СЏ С†РµРЅР° override");
       return false;
     }
 
@@ -721,12 +721,12 @@
     const statusNode = document.getElementById("slugs-price-override-status");
     if (statusNode instanceof HTMLElement) {
       if (ignoredForPurchasedSlug) {
-        statusNode.textContent = `Slug ${slug} уже куплен/активирован. Override не применен, цена не изменена.`;
+        statusNode.textContent = `Slug ${slug} СѓР¶Рµ РєСѓРїР»РµРЅ/Р°РєС‚РёРІРёСЂРѕРІР°РЅ. Override РЅРµ РїСЂРёРјРµРЅРµРЅ, С†РµРЅР° РЅРµ РёР·РјРµРЅРµРЅР°.`;
       } else {
         statusNode.textContent =
           payloadPrice === null
-            ? `Override для ${slug} удален`
-            : `Цена для ${slug} сохранена: ${Number(payloadPrice).toLocaleString("ru-RU")} сум`;
+            ? `Override РґР»СЏ ${slug} СѓРґР°Р»РµРЅ`
+            : `Р¦РµРЅР° РґР»СЏ ${slug} СЃРѕС…СЂР°РЅРµРЅР°: ${Number(payloadPrice).toLocaleString("ru-RU")} СЃСѓРј`;
       }
     }
 
@@ -752,13 +752,13 @@
     table.innerHTML = rows.length
       ? rows.map((x) => {
         const menu = menuWrap([
-          menuItem({ label: "Заказан", icon: "package", attrs: `data-act="bs" data-id="${x.id}" data-status="ORDERED"` }),
-          menuItem({ label: "Отправлен", icon: "truck", attrs: `data-act="bs" data-id="${x.id}" data-status="SHIPPED"` }),
-          menuItem({ label: "Доставлен", icon: "checkCircle", attrs: `data-act="bs" data-id="${x.id}" data-status="DELIVERED"` }),
+          menuItem({ label: "Р—Р°РєР°Р·Р°РЅ", icon: "package", attrs: `data-act="bs" data-id="${x.id}" data-status="ORDERED"` }),
+          menuItem({ label: "РћС‚РїСЂР°РІР»РµРЅ", icon: "truck", attrs: `data-act="bs" data-id="${x.id}" data-status="SHIPPED"` }),
+          menuItem({ label: "Р”РѕСЃС‚Р°РІР»РµРЅ", icon: "checkCircle", attrs: `data-act="bs" data-id="${x.id}" data-status="DELIVERED"` }),
         ].join(""));
         return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3">${D(x.createdAt)}</td><td class="px-4 py-3">${X(x.name)}</td><td class="px-4 py-3 font-mono">${X(x.slug)}</td><td class="px-4 py-3">${X(x.contact)}</td><td class="px-4 py-3"><div class="flex items-center justify-between gap-2">${statusChip(x.deliveryStatus)}<div class="admin-row-actions">${menu}</div></div></td></tr>`;
       }).join("")
-      : `<tr><td colspan="5" class="px-3 py-10 text-center text-neutral-500"><div class="inline-flex flex-col items-center gap-2">${I("package", 48)}<span>Нет заказов</span></div></td></tr>`;
+      : `<tr><td colspan="5" class="px-3 py-10 text-center text-neutral-500"><div class="inline-flex flex-col items-center gap-2">${I("package", 48)}<span>РќРµС‚ Р·Р°РєР°Р·РѕРІ</span></div></td></tr>`;
     renderPager("bracelets-pagination", payload.pagination, (nextPage) => {
       setFormValue(form, "page", String(nextPage));
       void loadBracelets();
@@ -777,13 +777,13 @@
     table.innerHTML = rows.length ? rows.map((x) => {
       const data = encodeURIComponent(JSON.stringify({ id: x.id, name: x.name, slug: x.slug, tariff: x.tariff, text: x.text }));
       const menu = menuWrap([
-        menuItem({ label: x.isVisible ? "Скрыть" : "Показать", icon: "eye", attrs: `data-act="tv" data-id="${x.id}" data-n="${x.isVisible ? 0 : 1}"` }),
-        menuItem({ label: "Редактировать", icon: "pen", attrs: `data-act="te" data-json="${data}"` }),
+        menuItem({ label: x.isVisible ? "РЎРєСЂС‹С‚СЊ" : "РџРѕРєР°Р·Р°С‚СЊ", icon: "eye", attrs: `data-act="tv" data-id="${x.id}" data-n="${x.isVisible ? 0 : 1}"` }),
+        menuItem({ label: "Р РµРґР°РєС‚РёСЂРѕРІР°С‚СЊ", icon: "pen", attrs: `data-act="te" data-json="${data}"` }),
         menuSeparator(),
-        menuItem({ label: "Удалить", icon: "trash", attrs: `data-act="td" data-id="${x.id}"`, danger: true }),
+        menuItem({ label: "РЈРґР°Р»РёС‚СЊ", icon: "trash", attrs: `data-act="td" data-id="${x.id}"`, danger: true }),
       ].join(""));
-      return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3">${X(x.name)}</td><td class="px-4 py-3 font-mono">${X(x.slug)}</td><td class="px-4 py-3">${x.tariff === "premium" ? "Премиум" : "Базовый"}</td><td class="px-4 py-3">${X(x.text)}</td><td class="px-4 py-3">${statusChip(x.isVisible ? "approved" : "muted")}</td><td class="px-4 py-3"><div class="admin-row-actions">${menu}</div></td></tr>`;
-    }).join("") : `<tr><td colspan="6" class="px-3 py-10 text-center text-neutral-500"><div class="inline-flex flex-col items-center gap-2">${I("message", 48)}<span>Нет отзывов</span></div></td></tr>`;
+      return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3">${X(x.name)}</td><td class="px-4 py-3 font-mono">${X(x.slug)}</td><td class="px-4 py-3">${x.tariff === "premium" ? "РџСЂРµРјРёСѓРј" : "Р‘Р°Р·РѕРІС‹Р№"}</td><td class="px-4 py-3">${X(x.text)}</td><td class="px-4 py-3">${statusChip(x.isVisible ? "approved" : "muted")}</td><td class="px-4 py-3"><div class="admin-row-actions">${menu}</div></td></tr>`;
+    }).join("") : `<tr><td colspan="6" class="px-3 py-10 text-center text-neutral-500"><div class="inline-flex flex-col items-center gap-2">${I("message", 48)}<span>РќРµС‚ РѕС‚Р·С‹РІРѕРІ</span></div></td></tr>`;
     renderPager("testimonials-pagination", payload.pagination, (nextPage) => {
       initialQuery.t_page = String(nextPage);
       void loadTestimonials();
@@ -795,7 +795,7 @@
     const table = document.getElementById("verification-table");
     if (!(form instanceof HTMLFormElement) || !(table instanceof HTMLElement)) return;
     syncVerificationFiltersFromLocation(form);
-    table.innerHTML = '<tr><td colspan="11" class="px-3 py-8 text-center text-neutral-500">Загрузка...</td></tr>';
+    table.innerHTML = '<tr><td colspan="11" class="px-3 py-8 text-center text-neutral-500">Р—Р°РіСЂСѓР·РєР°...</td></tr>';
     try {
       const q = {
         status: getFormValue(form, "status", "all"),
@@ -804,7 +804,7 @@
       setDashboardQuery({ v_status: q.status, v_page: q.page });
       const r = await fetch(`/api/admin/verification-requests?${Q(q)}`);
       if (!r.ok) {
-        table.innerHTML = '<tr><td colspan="11" class="px-3 py-8 text-center text-rose-600">Не удалось загрузить заявки на верификацию</td></tr>';
+        table.innerHTML = '<tr><td colspan="11" class="px-3 py-8 text-center text-rose-600">РќРµ СѓРґР°Р»РѕСЃСЊ Р·Р°РіСЂСѓР·РёС‚СЊ Р·Р°СЏРІРєРё РЅР° РІРµСЂРёС„РёРєР°С†РёСЋ</td></tr>';
         return;
       }
       const payload = await r.json();
@@ -817,42 +817,42 @@
               linkedin: "LinkedIn",
               website: "Website",
             };
-            const proofType = proofTypeMap[String(x.proofType || "").toLowerCase()] || String(x.proofType || "—");
+            const proofType = proofTypeMap[String(x.proofType || "").toLowerCase()] || String(x.proofType || "вЂ”");
             const sectorMap = {
-              design: "Дизайн",
-              sales: "Продажи",
-              marketing: "Маркетинг",
+              design: "Р”РёР·Р°Р№РЅ",
+              sales: "РџСЂРѕРґР°Р¶Рё",
+              marketing: "РњР°СЂРєРµС‚РёРЅРі",
               it: "IT",
-              other: "Другое",
+              other: "Р”СЂСѓРіРѕРµ",
             };
-            const sector = sectorMap[String(x.sector || "").toLowerCase()] || "Другое";
+            const sector = sectorMap[String(x.sector || "").toLowerCase()] || "Р”СЂСѓРіРѕРµ";
             const proofValueRaw = String(x.proofValue || "").trim();
             const proofValue = /^https?:\/\//i.test(proofValueRaw)
               ? `<a href="${X(proofValueRaw)}" target="_blank" rel="noopener noreferrer" class="text-xs text-neutral-700 underline break-all">${X(proofValueRaw)}</a>`
-              : `<span class="text-xs break-all">${X(proofValueRaw || "—")}</span>`;
-            const userName = String(x.user?.displayName || x.user?.firstName || x.user?.username || "—");
+              : `<span class="text-xs break-all">${X(proofValueRaw || "вЂ”")}</span>`;
+            const userName = String(x.user?.displayName || x.user?.firstName || x.user?.username || "вЂ”");
             const userLogin = String(x.user?.username || "").trim();
             const userCell = `${X(userName)}${userLogin ? `<div class="text-xs text-neutral-500">@${X(userLogin)}</div>` : ""}`;
-            const reviewCell = x.reviewedAt ? D(x.reviewedAt) : "—";
+            const reviewCell = x.reviewedAt ? D(x.reviewedAt) : "вЂ”";
             const canReview = String(x.status || "").toLowerCase() === "pending";
             const menu = canReview
               ? menuWrap(
                 [
-                  menuItem({ label: "Одобрить", icon: "checkCircle", attrs: `data-act="vr-approve" data-id="${X(x.id)}"` }),
-                  menuItem({ label: "Отклонить", icon: "xCircle", attrs: `data-act="vr-reject" data-id="${X(x.id)}"`, danger: true }),
+                  menuItem({ label: "РћРґРѕР±СЂРёС‚СЊ", icon: "checkCircle", attrs: `data-act="vr-approve" data-id="${X(x.id)}"` }),
+                  menuItem({ label: "РћС‚РєР»РѕРЅРёС‚СЊ", icon: "xCircle", attrs: `data-act="vr-reject" data-id="${X(x.id)}"`, danger: true }),
                 ].join(""),
               )
-              : "—";
+              : "вЂ”";
             const verificationStatusCode =
               x.status === "approved" ? "verification_approved" : x.status === "rejected" ? "verification_rejected" : "pending";
             return `<tr class="admin-table-row border-t border-neutral-100">
               <td class="px-4 py-3">${userCell}</td>
-              <td class="px-4 py-3 font-mono">${X(x.slug || "—")}</td>
-              <td class="px-4 py-3">${X(x.companyName || "—")}</td>
-              <td class="px-4 py-3">${X(x.role || "—")}</td>
+              <td class="px-4 py-3 font-mono">${X(x.slug || "вЂ”")}</td>
+              <td class="px-4 py-3">${X(x.companyName || "вЂ”")}</td>
+              <td class="px-4 py-3">${X(x.role || "вЂ”")}</td>
               <td class="px-4 py-3">${X(sector)}</td>
               <td class="px-4 py-3"><div class="text-xs text-neutral-500">${X(proofType)}</div>${proofValue}</td>
-              <td class="px-4 py-3 text-xs">${X(x.comment || "—")}</td>
+              <td class="px-4 py-3 text-xs">${X(x.comment || "вЂ”")}</td>
               <td class="px-4 py-3">${statusChip(verificationStatusCode)}</td>
               <td class="px-4 py-3 text-xs">${D(x.requestedAt)}</td>
               <td class="px-4 py-3 text-xs">${reviewCell}</td>
@@ -860,13 +860,13 @@
             </tr>`;
           })
           .join("")
-        : '<tr><td colspan="11" class="px-3 py-8 text-center text-neutral-500">Заявок на верификацию нет</td></tr>';
+        : '<tr><td colspan="11" class="px-3 py-8 text-center text-neutral-500">Р—Р°СЏРІРѕРє РЅР° РІРµСЂРёС„РёРєР°С†РёСЋ РЅРµС‚</td></tr>';
       renderPager("verification-pagination", payload.pagination, (nextPage) => {
         setFormValue(form, "page", String(nextPage));
         void loadVerificationRequests();
       });
     } catch {
-      table.innerHTML = '<tr><td colspan="11" class="px-3 py-8 text-center text-rose-600">Не удалось загрузить заявки на верификацию</td></tr>';
+      table.innerHTML = '<tr><td colspan="11" class="px-3 py-8 text-center text-rose-600">РќРµ СѓРґР°Р»РѕСЃСЊ Р·Р°РіСЂСѓР·РёС‚СЊ Р·Р°СЏРІРєРё РЅР° РІРµСЂРёС„РёРєР°С†РёСЋ</td></tr>';
     }
   }
 
@@ -880,7 +880,7 @@
     if (!r.ok) return;
     const payload = await r.json();
     const rows = payload.items || [];
-    table.innerHTML = rows.length ? rows.map((x) => `<tr class="border-t border-neutral-100"><td class="px-4 py-3">${X(x.type)}</td><td class="px-4 py-3 font-mono text-xs">${X(x.path)}</td><td class="px-4 py-3 text-xs">${X(x.message || "-")}</td><td class="px-4 py-3 text-xs">${X(x.userAgent || "-")}</td><td class="px-4 py-3 text-xs">${D(x.occurredAt)}</td></tr>`).join("") : '<tr><td colspan="5" class="px-3 py-8 text-center text-neutral-500">Логи не найдены</td></tr>';
+    table.innerHTML = rows.length ? rows.map((x) => `<tr class="border-t border-neutral-100"><td class="px-4 py-3">${X(x.type)}</td><td class="px-4 py-3 font-mono text-xs">${X(x.path)}</td><td class="px-4 py-3 text-xs">${X(x.message || "-")}</td><td class="px-4 py-3 text-xs">${X(x.userAgent || "-")}</td><td class="px-4 py-3 text-xs">${D(x.occurredAt)}</td></tr>`).join("") : '<tr><td colspan="5" class="px-3 py-8 text-center text-neutral-500">Р›РѕРіРё РЅРµ РЅР°Р№РґРµРЅС‹</td></tr>';
     renderPager("logs-pagination", payload.pagination, (nextPage) => {
       setFormValue(form, "page", String(nextPage));
       void loadLogs();
@@ -904,12 +904,12 @@
     const settings = settingsRes.ok ? await settingsRes.json() : { settings: { enabledOnCards: true } };
 
     table.innerHTML = (overview.items || []).length
-      ? overview.items.map((x) => `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3">${X(x.userName)}</td><td class="px-4 py-3 font-mono">${X(x.slug || "—")}</td><td class="px-4 py-3 text-lg font-black">${Number(x.score || 0)}</td><td class="px-4 py-3">Топ ${Math.max(1, Math.ceil(100 - Number(x.percentile || 0)))}%</td><td class="px-4 py-3 text-xs">${D(x.calculatedAt)}</td><td class="px-4 py-3"><button type="button" data-act="score-recalc-one" data-id="${X(x.telegramId)}" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold">Пересчитать</button></td></tr>`).join("")
-      : '<tr><td colspan="6" class="px-3 py-8 text-center text-neutral-500">Нет данных</td></tr>';
+      ? overview.items.map((x) => `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3">${X(x.userName)}</td><td class="px-4 py-3 font-mono">${X(x.slug || "вЂ”")}</td><td class="px-4 py-3 text-lg font-black">${Number(x.score || 0)}</td><td class="px-4 py-3">РўРѕРї ${Math.max(1, Math.ceil(100 - Number(x.percentile || 0)))}%</td><td class="px-4 py-3 text-xs">${D(x.calculatedAt)}</td><td class="px-4 py-3"><button type="button" data-act="score-recalc-one" data-id="${X(x.telegramId)}" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold">РџРµСЂРµСЃС‡РёС‚Р°С‚СЊ</button></td></tr>`).join("")
+      : '<tr><td colspan="6" class="px-3 py-8 text-center text-neutral-500">РќРµС‚ РґР°РЅРЅС‹С…</td></tr>';
 
     runsTable.innerHTML = (runs.items || []).length
-      ? runs.items.map((x) => `<tr class="border-t border-neutral-100"><td class="px-3 py-2">${D(x.startedAt)}</td><td class="px-3 py-2">${Number(x.processedUsers || 0)}</td><td class="px-3 py-2">${Number(x.averageMsPerUser || 0).toFixed(2)} мс</td></tr>`).join("")
-      : '<tr><td colspan="3" class="px-3 py-8 text-center text-neutral-500">Запусков пока нет</td></tr>';
+      ? runs.items.map((x) => `<tr class="border-t border-neutral-100"><td class="px-3 py-2">${D(x.startedAt)}</td><td class="px-3 py-2">${Number(x.processedUsers || 0)}</td><td class="px-3 py-2">${Number(x.averageMsPerUser || 0).toFixed(2)} РјСЃ</td></tr>`).join("")
+      : '<tr><td colspan="3" class="px-3 py-8 text-center text-neutral-500">Р—Р°РїСѓСЃРєРѕРІ РїРѕРєР° РЅРµС‚</td></tr>';
 
     if (visibilityToggle instanceof HTMLInputElement) {
       visibilityToggle.checked = Boolean(settings.settings?.enabledOnCards);
@@ -1153,7 +1153,7 @@
       const previousNote = t.getAttribute("data-note") || "";
       let adminNote = previousNote;
       if (t.value === "rejected") {
-        const entered = await showPrompt("Причина отклонения (будет отправлена в Telegram)", previousNote);
+        const entered = await showPrompt("РџСЂРёС‡РёРЅР° РѕС‚РєР»РѕРЅРµРЅРёСЏ (Р±СѓРґРµС‚ РѕС‚РїСЂР°РІР»РµРЅР° РІ Telegram)", previousNote);
         if (entered === null) return;
         adminNote = entered;
       }
@@ -1178,7 +1178,7 @@
       if (!telegramId) return;
       const prevPlan = t.getAttribute("data-current-plan") || "none";
       if (t.value === prevPlan) return;
-      const manualWarningOk = await showConfirm("Ручная смена тарифа без оплаты. Использовать только для корректировок. Продолжить?");
+      const manualWarningOk = await showConfirm("Р СѓС‡РЅР°СЏ СЃРјРµРЅР° С‚Р°СЂРёС„Р° Р±РµР· РѕРїР»Р°С‚С‹. РСЃРїРѕР»СЊР·РѕРІР°С‚СЊ С‚РѕР»СЊРєРѕ РґР»СЏ РєРѕСЂСЂРµРєС‚РёСЂРѕРІРѕРє. РџСЂРѕРґРѕР»Р¶РёС‚СЊ?");
       if (!manualWarningOk) {
         t.value = prevPlan;
         return;
@@ -1190,16 +1190,16 @@
         .filter(Boolean);
       const downgradeToBasic = prevPlan === "premium" && t.value === "basic" && activeSlugs > 1;
       if (downgradeToBasic) {
-        const braceletNote = braceletSlugs.length ? `\nБраслет привязан к: ${braceletSlugs.join(", ")}.` : "";
-        const ok = await showConfirm(`У пользователя ${activeSlugs} slug. При переходе на Базовый будет активен только основной. Продолжить?${braceletNote}`);
+        const braceletNote = braceletSlugs.length ? `\nР‘СЂР°СЃР»РµС‚ РїСЂРёРІСЏР·Р°РЅ Рє: ${braceletSlugs.join(", ")}.` : "";
+        const ok = await showConfirm(`РЈ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ ${activeSlugs} slug. РџСЂРё РїРµСЂРµС…РѕРґРµ РЅР° Р‘Р°Р·РѕРІС‹Р№ Р±СѓРґРµС‚ Р°РєС‚РёРІРµРЅ С‚РѕР»СЊРєРѕ РѕСЃРЅРѕРІРЅРѕР№. РџСЂРѕРґРѕР»Р¶РёС‚СЊ?${braceletNote}`);
         if (!ok) {
           t.value = prevPlan;
           return;
         }
       }
-      const reason = String(await showPrompt("Причина ручной смены тарифа", "") || "").trim();
+      const reason = String(await showPrompt("РџСЂРёС‡РёРЅР° СЂСѓС‡РЅРѕР№ СЃРјРµРЅС‹ С‚Р°СЂРёС„Р°", "") || "").trim();
       if (!reason) {
-        showAlert("Укажи причину смены тарифа");
+        showAlert("РЈРєР°Р¶Рё РїСЂРёС‡РёРЅСѓ СЃРјРµРЅС‹ С‚Р°СЂРёС„Р°");
         t.value = prevPlan;
         return;
       }
@@ -1208,8 +1208,8 @@
         const payload = await r.json().catch(() => ({}));
         if (payload.code === "PLAN_DOWNGRADE_CONFIRMATION_REQUIRED") {
           const cnt = Number(payload.activeSlugCount || activeSlugs || 2);
-          const braceletNote = braceletSlugs.length ? `\nБраслет привязан к: ${braceletSlugs.join(", ")}.` : "";
-          const ok = await showConfirm(`У пользователя ${cnt} slug. При переходе на Базовый будет активен только основной. Продолжить?${braceletNote}`);
+          const braceletNote = braceletSlugs.length ? `\nР‘СЂР°СЃР»РµС‚ РїСЂРёРІСЏР·Р°РЅ Рє: ${braceletSlugs.join(", ")}.` : "";
+          const ok = await showConfirm(`РЈ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ ${cnt} slug. РџСЂРё РїРµСЂРµС…РѕРґРµ РЅР° Р‘Р°Р·РѕРІС‹Р№ Р±СѓРґРµС‚ Р°РєС‚РёРІРµРЅ С‚РѕР»СЊРєРѕ РѕСЃРЅРѕРІРЅРѕР№. РџСЂРѕРґРѕР»Р¶РёС‚СЊ?${braceletNote}`);
           if (!ok) {
             t.value = prevPlan;
             return;
@@ -1247,17 +1247,17 @@
       if (status === "approved") {
         const row = n.closest("tr");
         const cells = row ? Array.from(row.querySelectorAll("td")) : [];
-        const userText = cells[1]?.textContent?.trim() || "—";
-        const slugText = cells[2]?.textContent?.trim() || "—";
-        const amountText = cells[4]?.textContent?.trim() || "—";
-        const tariffText = cells[5]?.textContent?.trim() || "—";
+        const userText = cells[1]?.textContent?.trim() || "вЂ”";
+        const slugText = cells[2]?.textContent?.trim() || "вЂ”";
+        const amountText = cells[4]?.textContent?.trim() || "вЂ”";
+        const tariffText = cells[5]?.textContent?.trim() || "вЂ”";
         const ok = await showConfirm(
-          `Подтвердить одобрение заявки?\n\nПользователь: ${userText}\nSlug: ${slugText}\nТариф: ${tariffText}\nОплата: ${amountText} получена\n\nПосле подтверждения:\n· Slug ${slugText} будет закреплён за пользователем\n· Тариф ${tariffText} будет активирован\n· Пользователь получит уведомление в Telegram`,
+          `РџРѕРґС‚РІРµСЂРґРёС‚СЊ РѕРґРѕР±СЂРµРЅРёРµ Р·Р°СЏРІРєРё?\n\nРџРѕР»СЊР·РѕРІР°С‚РµР»СЊ: ${userText}\nSlug: ${slugText}\nРўР°СЂРёС„: ${tariffText}\nРћРїР»Р°С‚Р°: ${amountText} РїРѕР»СѓС‡РµРЅР°\n\nРџРѕСЃР»Рµ РїРѕРґС‚РІРµСЂР¶РґРµРЅРёСЏ:\nВ· Slug ${slugText} Р±СѓРґРµС‚ Р·Р°РєСЂРµРїР»С‘РЅ Р·Р° РїРѕР»СЊР·РѕРІР°С‚РµР»РµРј\nВ· РўР°СЂРёС„ ${tariffText} Р±СѓРґРµС‚ Р°РєС‚РёРІРёСЂРѕРІР°РЅ\nВ· РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ РїРѕР»СѓС‡РёС‚ СѓРІРµРґРѕРјР»РµРЅРёРµ РІ Telegram`,
         );
         if (!ok) return;
       }
       if (status === "rejected") {
-        const entered = await showPrompt("Причина отклонения (будет отправлена в Telegram)", previousNote);
+        const entered = await showPrompt("РџСЂРёС‡РёРЅР° РѕС‚РєР»РѕРЅРµРЅРёСЏ (Р±СѓРґРµС‚ РѕС‚РїСЂР°РІР»РµРЅР° РІ Telegram)", previousNote);
         if (entered === null) return;
         adminNote = entered;
       }
@@ -1280,7 +1280,7 @@
     if (a === "ct") {
       const id = n.getAttribute("data-id");
       if (!id) return;
-      const tariff = String(await showPrompt("Новый тариф: basic или premium", "basic") || "").trim().toLowerCase();
+      const tariff = String(await showPrompt("РќРѕРІС‹Р№ С‚Р°СЂРёС„: basic РёР»Рё premium", "basic") || "").trim().toLowerCase();
       if (!["basic", "premium"].includes(tariff)) return;
       const r = await fetch(`/api/admin/cards/${id}/tariff`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({ tariff }) });
       if (!r.ok) showAlert(await E(r));
@@ -1294,19 +1294,19 @@
       const prevPlan = n.getAttribute("data-current-plan") || "none";
       const activeSlugs = Number(n.getAttribute("data-active-slugs") || "0");
       const braceletSlugs = String(n.getAttribute("data-bracelet-slugs") || "").split(",").map((x) => x.trim()).filter(Boolean);
-      const entered = String(await showPrompt("Новый тариф: none, basic или premium", prevPlan) || "").trim().toLowerCase();
+      const entered = String(await showPrompt("РќРѕРІС‹Р№ С‚Р°СЂРёС„: none, basic РёР»Рё premium", prevPlan) || "").trim().toLowerCase();
       if (!["none", "basic", "premium"].includes(entered) || entered === prevPlan) return;
-      const manualWarningOk = await showConfirm("Ручная смена тарифа без оплаты. Использовать только для корректировок. Продолжить?");
+      const manualWarningOk = await showConfirm("Р СѓС‡РЅР°СЏ СЃРјРµРЅР° С‚Р°СЂРёС„Р° Р±РµР· РѕРїР»Р°С‚С‹. РСЃРїРѕР»СЊР·РѕРІР°С‚СЊ С‚РѕР»СЊРєРѕ РґР»СЏ РєРѕСЂСЂРµРєС‚РёСЂРѕРІРѕРє. РџСЂРѕРґРѕР»Р¶РёС‚СЊ?");
       if (!manualWarningOk) return;
-      const reason = String(await showPrompt("Причина ручной смены тарифа", "") || "").trim();
+      const reason = String(await showPrompt("РџСЂРёС‡РёРЅР° СЂСѓС‡РЅРѕР№ СЃРјРµРЅС‹ С‚Р°СЂРёС„Р°", "") || "").trim();
       if (!reason) {
-        showAlert("Укажи причину смены тарифа");
+        showAlert("РЈРєР°Р¶Рё РїСЂРёС‡РёРЅСѓ СЃРјРµРЅС‹ С‚Р°СЂРёС„Р°");
         return;
       }
       const downgradeToBasic = prevPlan === "premium" && entered === "basic" && activeSlugs > 1;
       if (downgradeToBasic) {
-        const braceletNote = braceletSlugs.length ? `\nБраслет привязан к: ${braceletSlugs.join(", ")}.` : "";
-        const ok = await showConfirm(`У пользователя ${activeSlugs} slug. При переходе на Базовый будет активен только основной. Продолжить?${braceletNote}`);
+        const braceletNote = braceletSlugs.length ? `\nР‘СЂР°СЃР»РµС‚ РїСЂРёРІСЏР·Р°РЅ Рє: ${braceletSlugs.join(", ")}.` : "";
+        const ok = await showConfirm(`РЈ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ ${activeSlugs} slug. РџСЂРё РїРµСЂРµС…РѕРґРµ РЅР° Р‘Р°Р·РѕРІС‹Р№ Р±СѓРґРµС‚ Р°РєС‚РёРІРµРЅ С‚РѕР»СЊРєРѕ РѕСЃРЅРѕРІРЅРѕР№. РџСЂРѕРґРѕР»Р¶РёС‚СЊ?${braceletNote}`);
         if (!ok) return;
       }
       const r = await fetch(`/api/admin/users/${encodeURIComponent(telegramId)}/plan`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({ plan: entered, reason, force: downgradeToBasic }) });
@@ -1317,21 +1317,21 @@
     }
     if (a === "us-add") {
       const userId = n.getAttribute("data-id");
-      const userName = n.getAttribute("data-name") || "пользователь";
+      const userName = n.getAttribute("data-name") || "РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ";
       if (!userId) return;
       const knownSlugs = String(n.getAttribute("data-slugs") || "")
         .split(",")
         .map((slug) => normalizeShortSlug(slug))
         .filter((slug) => isShortSlug(slug));
 
-      const entered = await showPrompt(`Новый slug для ${userName} (AAA000)`, "");
+      const entered = await showPrompt(`РќРѕРІС‹Р№ slug РґР»СЏ ${userName} (AAA000)`, "");
       if (entered === null) return;
       const nextSlug = normalizeShortSlug(entered);
       if (!isShortSlug(nextSlug)) {
-        await showAlert("Slug должен быть в формате AAA000.");
+        await showAlert("Slug РґРѕР»Р¶РµРЅ Р±С‹С‚СЊ РІ С„РѕСЂРјР°С‚Рµ AAA000.");
         return;
       }
-      const ok = await showConfirm(`Назначить slug ${nextSlug} пользователю ${userName}?`);
+      const ok = await showConfirm(`РќР°Р·РЅР°С‡РёС‚СЊ slug ${nextSlug} РїРѕР»СЊР·РѕРІР°С‚РµР»СЋ ${userName}?`);
       if (!ok) return;
 
       const createResponse = await fetch(`/api/admin/users/${encodeURIComponent(userId)}/slugs`, {
@@ -1357,25 +1357,25 @@
         const slugLimit = Number(payload?.slugLimit || 0);
         const currentSlugCount = Number(payload?.currentSlugCount || 0);
         if (slugLimit <= 0 || currentSlugCount <= 0) {
-          await showAlert("Лимит slug для пользователя равен 0. Сначала смени тариф, затем добавь slug.");
+          await showAlert("Р›РёРјРёС‚ slug РґР»СЏ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ СЂР°РІРµРЅ 0. РЎРЅР°С‡Р°Р»Р° СЃРјРµРЅРё С‚Р°СЂРёС„, Р·Р°С‚РµРј РґРѕР±Р°РІСЊ slug.");
           return;
         }
         const candidates = Array.isArray(payload?.ownedSlugs)
           ? payload.ownedSlugs.map((slug) => normalizeShortSlug(slug)).filter((slug) => isShortSlug(slug))
           : knownSlugs;
         const defaultCurrent = candidates[0] || "";
-        const hint = candidates.length ? `\nSlug пользователя: ${candidates.join(", ")}` : "";
+        const hint = candidates.length ? `\nSlug РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ: ${candidates.join(", ")}` : "";
         const enteredCurrent = await showPrompt(
-          `Лимит slug достигнут. Укажи slug, который нужно заменить.${hint}`,
+          `Р›РёРјРёС‚ slug РґРѕСЃС‚РёРіРЅСѓС‚. РЈРєР°Р¶Рё slug, РєРѕС‚РѕСЂС‹Р№ РЅСѓР¶РЅРѕ Р·Р°РјРµРЅРёС‚СЊ.${hint}`,
           defaultCurrent,
         );
         if (enteredCurrent === null) return;
         const currentSlug = normalizeShortSlug(enteredCurrent);
         if (!isShortSlug(currentSlug)) {
-          await showAlert("Текущий slug должен быть в формате AAA000.");
+          await showAlert("РўРµРєСѓС‰РёР№ slug РґРѕР»Р¶РµРЅ Р±С‹С‚СЊ РІ С„РѕСЂРјР°С‚Рµ AAA000.");
           return;
         }
-        const replaceOk = await showConfirm(`Заменить ${currentSlug} на ${nextSlug} у пользователя ${userName}?`);
+        const replaceOk = await showConfirm(`Р—Р°РјРµРЅРёС‚СЊ ${currentSlug} РЅР° ${nextSlug} Сѓ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ ${userName}?`);
         if (!replaceOk) return;
         const replaceResponse = await fetch(`/api/admin/users/${encodeURIComponent(userId)}/slugs/${encodeURIComponent(currentSlug)}`, {
           method: "PATCH",
@@ -1397,7 +1397,7 @@
     }
     if (a === "us-edit") {
       const userId = n.getAttribute("data-id");
-      const userName = n.getAttribute("data-name") || "пользователь";
+      const userName = n.getAttribute("data-name") || "РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ";
       if (!userId) return;
       const userSlugs = String(n.getAttribute("data-slugs") || "")
         .split(",")
@@ -1406,26 +1406,26 @@
 
       const defaultCurrent = userSlugs[0] || "";
       const hint = userSlugs.length ? ` (${userSlugs.join(", ")})` : "";
-      const enteredCurrent = await showPrompt(`Текущий slug${hint}`, defaultCurrent);
+      const enteredCurrent = await showPrompt(`РўРµРєСѓС‰РёР№ slug${hint}`, defaultCurrent);
       if (enteredCurrent === null) return;
       const currentSlug = normalizeShortSlug(enteredCurrent);
       if (!isShortSlug(currentSlug)) {
-        await showAlert("Текущий slug должен быть в формате AAA000.");
+        await showAlert("РўРµРєСѓС‰РёР№ slug РґРѕР»Р¶РµРЅ Р±С‹С‚СЊ РІ С„РѕСЂРјР°С‚Рµ AAA000.");
         return;
       }
 
-      const enteredNext = await showPrompt(`Новый slug для ${userName} (AAA000)`, currentSlug);
+      const enteredNext = await showPrompt(`РќРѕРІС‹Р№ slug РґР»СЏ ${userName} (AAA000)`, currentSlug);
       if (enteredNext === null) return;
       const nextSlug = normalizeShortSlug(enteredNext);
       if (!isShortSlug(nextSlug)) {
-        await showAlert("Slug должен быть в формате AAA000.");
+        await showAlert("Slug РґРѕР»Р¶РµРЅ Р±С‹С‚СЊ РІ С„РѕСЂРјР°С‚Рµ AAA000.");
         return;
       }
       if (nextSlug === currentSlug) {
-        await showAlert("Новый slug должен отличаться от текущего.");
+        await showAlert("РќРѕРІС‹Р№ slug РґРѕР»Р¶РµРЅ РѕС‚Р»РёС‡Р°С‚СЊСЃСЏ РѕС‚ С‚РµРєСѓС‰РµРіРѕ.");
         return;
       }
-      const ok = await showConfirm(`Заменить ${currentSlug} на ${nextSlug} у пользователя ${userName}?`);
+      const ok = await showConfirm(`Р—Р°РјРµРЅРёС‚СЊ ${currentSlug} РЅР° ${nextSlug} Сѓ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ ${userName}?`);
       if (!ok) return;
       const r = await fetch(`/api/admin/users/${encodeURIComponent(userId)}/slugs/${encodeURIComponent(currentSlug)}`, {
         method: "PATCH",
@@ -1443,25 +1443,25 @@
     }
     if (a === "us-delete") {
       const userId = n.getAttribute("data-id");
-      const userName = n.getAttribute("data-name") || "пользователь";
+      const userName = n.getAttribute("data-name") || "РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ";
       if (!userId) return;
       const userSlugs = String(n.getAttribute("data-slugs") || "")
         .split(",")
         .map((slug) => normalizeShortSlug(slug))
         .filter((slug) => isShortSlug(slug));
       if (!userSlugs.length) {
-        await showAlert("У этого пользователя нет slug для удаления.");
+        await showAlert("РЈ СЌС‚РѕРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РЅРµС‚ slug РґР»СЏ СѓРґР°Р»РµРЅРёСЏ.");
         return;
       }
       const defaultSlug = userSlugs[0] || "";
-      const enteredSlug = await showPrompt(`Какой slug удалить? (${userSlugs.join(", ")})`, defaultSlug);
+      const enteredSlug = await showPrompt(`РљР°РєРѕР№ slug СѓРґР°Р»РёС‚СЊ? (${userSlugs.join(", ")})`, defaultSlug);
       if (enteredSlug === null) return;
       const targetSlug = normalizeShortSlug(enteredSlug);
       if (!isShortSlug(targetSlug)) {
-        await showAlert("Slug должен быть в формате AAA000.");
+        await showAlert("Slug РґРѕР»Р¶РµРЅ Р±С‹С‚СЊ РІ С„РѕСЂРјР°С‚Рµ AAA000.");
         return;
       }
-      const ok = await showConfirm(`Удалить slug ${targetSlug} у ${userName}?\n\nБудут удалены аналитические записи по этому slug.`);
+      const ok = await showConfirm(`РЈРґР°Р»РёС‚СЊ slug ${targetSlug} Сѓ ${userName}?\n\nР‘СѓРґСѓС‚ СѓРґР°Р»РµРЅС‹ Р°РЅР°Р»РёС‚РёС‡РµСЃРєРёРµ Р·Р°РїРёСЃРё РїРѕ СЌС‚РѕРјСѓ slug.`);
       if (!ok) return;
       const r = await fetch(`/api/admin/users/${encodeURIComponent(userId)}/slugs/${encodeURIComponent(targetSlug)}`, {
         method: "DELETE",
@@ -1472,8 +1472,8 @@
         return;
       }
       const payload = await r.json().catch(() => ({}));
-      const nextPrimary = payload?.nextPrimarySlug ? `\nНовый основной: ${payload.nextPrimarySlug}` : "";
-      await showAlert(`Slug ${targetSlug} удален.${nextPrimary}`);
+      const nextPrimary = payload?.nextPrimarySlug ? `\nРќРѕРІС‹Р№ РѕСЃРЅРѕРІРЅРѕР№: ${payload.nextPrimarySlug}` : "";
+      await showAlert(`Slug ${targetSlug} СѓРґР°Р»РµРЅ.${nextPrimary}`);
       void loadUsers();
       void loadSlugs();
       closeAllRowMenus();
@@ -1482,7 +1482,7 @@
     if (a === "uv") {
       const telegramId = n.getAttribute("data-id");
       if (!telegramId) return;
-      const ok = await showConfirm("Снять верификацию у пользователя?");
+      const ok = await showConfirm("РЎРЅСЏС‚СЊ РІРµСЂРёС„РёРєР°С†РёСЋ Сѓ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ?");
       if (!ok) return;
       const r = await fetch(`/api/admin/users/${encodeURIComponent(telegramId)}/unverify`, {
         method: "PATCH",
@@ -1496,34 +1496,34 @@
     }
     if (a === "uvb") {
       const userId = n.getAttribute("data-id");
-      const userName = n.getAttribute("data-name") || "пользователя";
+      const userName = n.getAttribute("data-name") || "РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ";
       if (!userId) return;
       const userSlugs = String(n.getAttribute("data-slugs") || "")
         .split(",")
         .map((slug) => normalizeShortSlug(slug))
         .filter((slug) => isShortSlug(slug));
       if (!userSlugs.length) {
-        await showAlert("У пользователя нет slug для накрутки просмотров.");
+        await showAlert("РЈ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РЅРµС‚ slug РґР»СЏ РЅР°РєСЂСѓС‚РєРё РїСЂРѕСЃРјРѕС‚СЂРѕРІ.");
         return;
       }
-      const enteredCount = await showPrompt(`Сколько просмотров добавить для ${userName}? (1-5000)`, "100");
+      const enteredCount = await showPrompt(`РЎРєРѕР»СЊРєРѕ РїСЂРѕСЃРјРѕС‚СЂРѕРІ РґРѕР±Р°РІРёС‚СЊ РґР»СЏ ${userName}? (1-5000)`, "100");
       if (enteredCount === null) return;
       const count = Number.parseInt(String(enteredCount || "").trim(), 10);
       if (!Number.isFinite(count) || count < 1 || count > 5000) {
-        await showAlert("Количество должно быть числом от 1 до 5000.");
+        await showAlert("РљРѕР»РёС‡РµСЃС‚РІРѕ РґРѕР»Р¶РЅРѕ Р±С‹С‚СЊ С‡РёСЃР»РѕРј РѕС‚ 1 РґРѕ 5000.");
         return;
       }
       let targetSlug = userSlugs[0];
       if (userSlugs.length > 1) {
-        const enteredSlug = await showPrompt(`На какой slug начислить просмотры? (${userSlugs.join(", ")})`, targetSlug);
+        const enteredSlug = await showPrompt(`РќР° РєР°РєРѕР№ slug РЅР°С‡РёСЃР»РёС‚СЊ РїСЂРѕСЃРјРѕС‚СЂС‹? (${userSlugs.join(", ")})`, targetSlug);
         if (enteredSlug === null) return;
         targetSlug = normalizeShortSlug(enteredSlug);
         if (!isShortSlug(targetSlug)) {
-          await showAlert("Slug должен быть в формате AAA000.");
+          await showAlert("Slug РґРѕР»Р¶РµРЅ Р±С‹С‚СЊ РІ С„РѕСЂРјР°С‚Рµ AAA000.");
           return;
         }
       }
-      const ok = await showConfirm(`Добавить ${count} просмотров на ${targetSlug} для ${userName}?`);
+      const ok = await showConfirm(`Р”РѕР±Р°РІРёС‚СЊ ${count} РїСЂРѕСЃРјРѕС‚СЂРѕРІ РЅР° ${targetSlug} РґР»СЏ ${userName}?`);
       if (!ok) return;
       const r = await fetch(`/api/admin/users/${encodeURIComponent(userId)}/views`, {
         method: "POST",
@@ -1535,24 +1535,24 @@
         return;
       }
       const payload = await r.json().catch(() => ({}));
-      await showAlert(`Добавлено просмотров: ${Number(payload?.addedViews || count)} (slug: ${payload?.slug || targetSlug}).`);
+      await showAlert(`Р”РѕР±Р°РІР»РµРЅРѕ РїСЂРѕСЃРјРѕС‚СЂРѕРІ: ${Number(payload?.addedViews || count)} (slug: ${payload?.slug || targetSlug}).`);
       void loadUsers();
       closeAllRowMenus();
       return;
     }
     if (a === "oa") openA(n.getAttribute("data-id") || "", n.getAttribute("data-t") || "basic", n.getAttribute("data-th") || "default_dark");
-    if (a === "od") { const id = n.getAttribute("data-id"); if (!id || !await showConfirm("Удалить заявку?")) return; const r = await fetch(`/api/admin/orders/${id}`, { method: "DELETE", headers: H() }); if (!r.ok) showAlert(await E(r)); else void loadOrders(); }
+    if (a === "od") { const id = n.getAttribute("data-id"); if (!id || !await showConfirm("РЈРґР°Р»РёС‚СЊ Р·Р°СЏРІРєСѓ?")) return; const r = await fetch(`/api/admin/orders/${id}`, { method: "DELETE", headers: H() }); if (!r.ok) showAlert(await E(r)); else void loadOrders(); }
     if (a === "ope") { const id = n.getAttribute("data-id"); if (!id) return; const r = await fetch(`/api/admin/orders/${id}/extend-pending`, { method: "POST", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({}) }); if (!r.ok) showAlert(await E(r)); else void loadOrders(); }
-    if (a === "ub") { const telegramId = n.getAttribute("data-id"); const status = n.getAttribute("data-status"); if (!telegramId) return; const isBlocked = status === "blocked"; if (!isBlocked && !await showConfirm("Заблокировать пользователя и деактивировать его slug?")) return; if (isBlocked && !await showConfirm("Разблокировать пользователя и восстановить статусы slug?")) return; const r = await fetch(`/api/admin/users/${encodeURIComponent(telegramId)}/${isBlocked ? "unblock" : "block"}`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({}) }); if (!r.ok) showAlert(await E(r)); else void loadUsers(); }
+    if (a === "ub") { const telegramId = n.getAttribute("data-id"); const status = n.getAttribute("data-status"); if (!telegramId) return; const isBlocked = status === "blocked"; if (!isBlocked && !await showConfirm("Р—Р°Р±Р»РѕРєРёСЂРѕРІР°С‚СЊ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ Рё РґРµР°РєС‚РёРІРёСЂРѕРІР°С‚СЊ РµРіРѕ slug?")) return; if (isBlocked && !await showConfirm("Р Р°Р·Р±Р»РѕРєРёСЂРѕРІР°С‚СЊ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ Рё РІРѕСЃСЃС‚Р°РЅРѕРІРёС‚СЊ СЃС‚Р°С‚СѓСЃС‹ slug?")) return; const r = await fetch(`/api/admin/users/${encodeURIComponent(telegramId)}/${isBlocked ? "unblock" : "block"}`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({}) }); if (!r.ok) showAlert(await E(r)); else void loadUsers(); }
     if (a === "ud") {
       const userId = n.getAttribute("data-id");
-      const userName = n.getAttribute("data-name") || "пользователя";
+      const userName = n.getAttribute("data-name") || "РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ";
       if (!userId) return;
-      const hardConfirm = await showConfirm(`Полностью удалить ${userName} и все связанные записи?\n\nДействие необратимо.`);
+      const hardConfirm = await showConfirm(`РџРѕР»РЅРѕСЃС‚СЊСЋ СѓРґР°Р»РёС‚СЊ ${userName} Рё РІСЃРµ СЃРІСЏР·Р°РЅРЅС‹Рµ Р·Р°РїРёСЃРё?\n\nР”РµР№СЃС‚РІРёРµ РЅРµРѕР±СЂР°С‚РёРјРѕ.`);
       if (!hardConfirm) return;
-      const keyword = String(await showPrompt("Введите DELETE для подтверждения", "") || "").trim();
+      const keyword = String(await showPrompt("Р’РІРµРґРёС‚Рµ DELETE РґР»СЏ РїРѕРґС‚РІРµСЂР¶РґРµРЅРёСЏ", "") || "").trim();
       if (keyword !== "DELETE") {
-        await showAlert("Удаление отменено: неверное подтверждение.");
+        await showAlert("РЈРґР°Р»РµРЅРёРµ РѕС‚РјРµРЅРµРЅРѕ: РЅРµРІРµСЂРЅРѕРµ РїРѕРґС‚РІРµСЂР¶РґРµРЅРёРµ.");
         return;
       }
       const r = await fetch(`/api/admin/users/${encodeURIComponent(userId)}/purge`, { method: "DELETE", headers: H() });
@@ -1562,7 +1562,7 @@
       }
       const payload = await r.json().catch(() => ({}));
       const freedSlugs = Number(payload?.freedSlugs || 0);
-      await showAlert(`Пользователь удален. Освобождено slug: ${freedSlugs}.`);
+      await showAlert(`РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ СѓРґР°Р»РµРЅ. РћСЃРІРѕР±РѕР¶РґРµРЅРѕ slug: ${freedSlugs}.`);
       void loadUsers();
       closeAllRowMenus();
       return;
@@ -1570,9 +1570,9 @@
     if (a === "sd") {
       const slug = n.getAttribute("data-slug");
       const ownerId = n.getAttribute("data-owner-id");
-      const ownerName = n.getAttribute("data-owner-name") || "пользователя";
+      const ownerName = n.getAttribute("data-owner-name") || "РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ";
       if (!slug || !ownerId) return;
-      const ok = await showConfirm(`Удалить slug ${slug} у ${ownerName}?\n\nБудут удалены аналитические записи по этому slug.`);
+      const ok = await showConfirm(`РЈРґР°Р»РёС‚СЊ slug ${slug} Сѓ ${ownerName}?\n\nР‘СѓРґСѓС‚ СѓРґР°Р»РµРЅС‹ Р°РЅР°Р»РёС‚РёС‡РµСЃРєРёРµ Р·Р°РїРёСЃРё РїРѕ СЌС‚РѕРјСѓ slug.`);
       if (!ok) return;
       const r = await fetch(`/api/admin/users/${encodeURIComponent(ownerId)}/slugs/${encodeURIComponent(slug)}`, { method: "DELETE", headers: H() });
       if (!r.ok) {
@@ -1580,8 +1580,8 @@
         return;
       }
       const payload = await r.json().catch(() => ({}));
-      const nextPrimary = payload?.nextPrimarySlug ? `\nНовый основной: ${payload.nextPrimarySlug}` : "";
-      await showAlert(`Slug ${slug} удален.${nextPrimary}`);
+      const nextPrimary = payload?.nextPrimarySlug ? `\nРќРѕРІС‹Р№ РѕСЃРЅРѕРІРЅРѕР№: ${payload.nextPrimarySlug}` : "";
+      await showAlert(`Slug ${slug} СѓРґР°Р»РµРЅ.${nextPrimary}`);
       void loadUsers();
       void loadSlugs();
       closeAllRowMenus();
@@ -1589,13 +1589,13 @@
     }
     if (a === "st") { const slug = n.getAttribute("data-slug"), state = n.getAttribute("data-ns"); if (!slug || !state) return; const r = await fetch(`/api/admin/slugs/${encodeURIComponent(slug)}/state`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({ state }) }); if (!r.ok) showAlert(await E(r)); else void loadSlugs(); }
     if (a === "sa") { const slug = n.getAttribute("data-slug"); if (!slug) return; const r = await fetch(`/api/admin/slugs/${encodeURIComponent(slug)}/activate`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({}) }); if (!r.ok) showAlert(await E(r)); else void loadSlugs(); }
-    if (a === "sp") { const slug = n.getAttribute("data-slug"), cur = n.getAttribute("data-p") || ""; if (!slug) return; const x = await showPrompt("Новая цена slug (пусто = убрать override)", cur); if (x === null) return; await applySlugPriceOverride(slug, x); }
+    if (a === "sp") { const slug = n.getAttribute("data-slug"), cur = n.getAttribute("data-p") || ""; if (!slug) return; const x = await showPrompt("РќРѕРІР°СЏ С†РµРЅР° slug (РїСѓСЃС‚Рѕ = СѓР±СЂР°С‚СЊ override)", cur); if (x === null) return; await applySlugPriceOverride(slug, x); }
     if (a === "cg") { const id = n.getAttribute("data-id"), isActive = n.getAttribute("data-n") === "1"; if (!id) return; const r = await fetch(`/api/admin/cards/${id}/toggle-active`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({ isActive }) }); if (!r.ok) showAlert(await E(r)); else void loadCards(); }
     if (a === "qr") { const slug = n.getAttribute("data-slug"); if (slug) await openQ(slug); }
     if (a === "tv") { const id = n.getAttribute("data-id"), isVisible = n.getAttribute("data-n") === "1"; if (!id) return; const r = await fetch(`/api/admin/testimonials/${id}/visibility`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({ isVisible }) }); if (!r.ok) showAlert(await E(r)); else void loadTestimonials(); }
     if (a === "td") {
       const id = n.getAttribute("data-id");
-      if (!id || !await showConfirm("Удалить отзыв?")) return;
+      if (!id || !await showConfirm("РЈРґР°Р»РёС‚СЊ РѕС‚Р·С‹РІ?")) return;
       const r = await fetch(`/api/admin/testimonials/${encodeURIComponent(id)}`, {
         method: "DELETE",
         headers: H(),
@@ -1635,7 +1635,7 @@
     if (a === "vr-approve") {
       const id = n.getAttribute("data-id");
       if (!id) return;
-      const ok = await showConfirm("Одобрить заявку на верификацию?");
+      const ok = await showConfirm("РћРґРѕР±СЂРёС‚СЊ Р·Р°СЏРІРєСѓ РЅР° РІРµСЂРёС„РёРєР°С†РёСЋ?");
       if (!ok) return;
       const r = await fetch(`/api/admin/verification-requests/${encodeURIComponent(id)}/approve`, {
         method: "POST",
@@ -1650,7 +1650,7 @@
     if (a === "vr-reject") {
       const id = n.getAttribute("data-id");
       if (!id) return;
-      const adminNote = String(await showPrompt("Причина отклонения", "") || "").trim();
+      const adminNote = String(await showPrompt("РџСЂРёС‡РёРЅР° РѕС‚РєР»РѕРЅРµРЅРёСЏ", "") || "").trim();
       if (!adminNote) return;
       const r = await fetch(`/api/admin/verification-requests/${encodeURIComponent(id)}/reject`, {
         method: "POST",
@@ -1684,7 +1684,7 @@
     if (!r.ok) showAlert(await E(r));
     else {
       await loadPricingSettings();
-      showAlert("Тарифы обновлены");
+      showAlert("РўР°СЂРёС„С‹ РѕР±РЅРѕРІР»РµРЅС‹");
     }
   });
   document.getElementById("users-filters")?.addEventListener("submit", (e) => { e.preventDefault(); const f = e.currentTarget; if (f instanceof HTMLFormElement) setFormValue(f, "page", "1"); void loadUsers(); });
@@ -1753,7 +1753,7 @@
         const r = await fetch(`/api/admin/push/broadcast/jobs/${encodeURIComponent(jobId)}`, { headers: H() });
         if (!r.ok) {
           stopPushBroadcastPolling();
-          setPushBroadcastStatus("Не удалось получить статус рассылки", "error");
+          setPushBroadcastStatus("РќРµ СѓРґР°Р»РѕСЃСЊ РїРѕР»СѓС‡РёС‚СЊ СЃС‚Р°С‚СѓСЃ СЂР°СЃСЃС‹Р»РєРё", "error");
           if (onDone) onDone(false);
           return;
         }
@@ -1771,7 +1771,7 @@
         const inAppInserted = Number(progress.inAppInserted || 0);
 
         if (status === "queued" || status === "running") {
-          setPushBroadcastStatus(`Рассылка выполняется: ${processed}/${total} (${percent}%), sent: ${sent}, tokens: ${tokens}, cleaned: ${cleaned}, in-app: ${inAppInserted}`, "progress");
+          setPushBroadcastStatus(`Р Р°СЃСЃС‹Р»РєР° РІС‹РїРѕР»РЅСЏРµС‚СЃСЏ: ${processed}/${total} (${percent}%), sent: ${sent}, tokens: ${tokens}, cleaned: ${cleaned}, in-app: ${inAppInserted}`, "progress");
           pushBroadcastPollTimer = setTimeout(() => {
             void tick();
           }, 1500);
@@ -1781,20 +1781,20 @@
         stopPushBroadcastPolling();
         if (status === "completed") {
           if (job?.dryRun) {
-            setPushBroadcastStatus(`Dry-run завершён: найдено получателей ${total}`, "success");
+            setPushBroadcastStatus(`Dry-run Р·Р°РІРµСЂС€С‘РЅ: РЅР°Р№РґРµРЅРѕ РїРѕР»СѓС‡Р°С‚РµР»РµР№ ${total}`, "success");
           } else {
-            setPushBroadcastStatus(`Рассылка завершена: ${processed}/${total}, sent: ${sent}, tokens: ${tokens}, cleaned: ${cleaned}, in-app: ${inAppInserted}`, "success");
+            setPushBroadcastStatus(`Р Р°СЃСЃС‹Р»РєР° Р·Р°РІРµСЂС€РµРЅР°: ${processed}/${total}, sent: ${sent}, tokens: ${tokens}, cleaned: ${cleaned}, in-app: ${inAppInserted}`, "success");
           }
           if (onDone) onDone(true);
           return;
         }
 
-        const errorMessage = String(job?.error || "Ошибка выполнения рассылки");
-        setPushBroadcastStatus(`Ошибка рассылки: ${errorMessage}`, "error");
+        const errorMessage = String(job?.error || "РћС€РёР±РєР° РІС‹РїРѕР»РЅРµРЅРёСЏ СЂР°СЃСЃС‹Р»РєРё");
+        setPushBroadcastStatus(`РћС€РёР±РєР° СЂР°СЃСЃС‹Р»РєРё: ${errorMessage}`, "error");
         if (onDone) onDone(false);
       } catch {
         stopPushBroadcastPolling();
-        setPushBroadcastStatus("Сбой сети при проверке статуса рассылки", "error");
+        setPushBroadcastStatus("РЎР±РѕР№ СЃРµС‚Рё РїСЂРё РїСЂРѕРІРµСЂРєРµ СЃС‚Р°С‚СѓСЃР° СЂР°СЃСЃС‹Р»РєРё", "error");
         if (onDone) onDone(false);
       }
     };
@@ -1814,11 +1814,11 @@
     const rawData = getFormValue(form, "data", "").trim();
 
     if (!userId && !slug) {
-      showAlert("Укажите userId или slug");
+      showAlert("РЈРєР°Р¶РёС‚Рµ userId РёР»Рё slug");
       return;
     }
     if (!title || !bodyText) {
-      showAlert("Заполните заголовок и текст");
+      showAlert("Р—Р°РїРѕР»РЅРёС‚Рµ Р·Р°РіРѕР»РѕРІРѕРє Рё С‚РµРєСЃС‚");
       return;
     }
 
@@ -1831,7 +1831,7 @@
         }
         data = parsed;
       } catch {
-        showAlert("Поле JSON data должно быть валидным JSON-объектом");
+        showAlert("РџРѕР»Рµ JSON data РґРѕР»Р¶РЅРѕ Р±С‹С‚СЊ РІР°Р»РёРґРЅС‹Рј JSON-РѕР±СЉРµРєС‚РѕРј");
         return;
       }
     }
@@ -1850,7 +1850,7 @@
     const sent = Number(payload?.result?.sent || 0);
     const tokens = Number(payload?.result?.tokens || 0);
     const inserted = Number(payload?.inAppInserted || 0);
-    showAlert(`Тест отправлен. userId: ${payload?.userId || "-"}, sent: ${sent}, tokens: ${tokens}, in-app: ${inserted}`);
+    showAlert(`РўРµСЃС‚ РѕС‚РїСЂР°РІР»РµРЅ. userId: ${payload?.userId || "-"}, sent: ${sent}, tokens: ${tokens}, in-app: ${inserted}`);
   });
   document.getElementById("push-broadcast-form")?.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -1860,7 +1860,7 @@
     const title = getFormValue(form, "title", "").trim();
     const bodyText = getFormValue(form, "body", "").trim();
     if (!title || !bodyText) {
-      showAlert("Заполните заголовок и текст рассылки");
+      showAlert("Р—Р°РїРѕР»РЅРёС‚Рµ Р·Р°РіРѕР»РѕРІРѕРє Рё С‚РµРєСЃС‚ СЂР°СЃСЃС‹Р»РєРё");
       return;
     }
 
@@ -1881,14 +1881,14 @@
         }
         data = parsed;
       } catch {
-        showAlert("Поле JSON data должно быть валидным JSON-объектом");
+        showAlert("РџРѕР»Рµ JSON data РґРѕР»Р¶РЅРѕ Р±С‹С‚СЊ РІР°Р»РёРґРЅС‹Рј JSON-РѕР±СЉРµРєС‚РѕРј");
         return;
       }
     }
 
     const warning = dryRun
-      ? "Сделать dry-run рассылки?"
-      : "Отправить push-рассылку выбранной аудитории?";
+      ? "РЎРґРµР»Р°С‚СЊ dry-run СЂР°СЃСЃС‹Р»РєРё?"
+      : "РћС‚РїСЂР°РІРёС‚СЊ push-СЂР°СЃСЃС‹Р»РєСѓ РІС‹Р±СЂР°РЅРЅРѕР№ Р°СѓРґРёС‚РѕСЂРёРё?";
     if (!await showConfirm(warning)) {
       return;
     }
@@ -1897,7 +1897,7 @@
     if (submitButton instanceof HTMLButtonElement) {
       submitButton.disabled = true;
     }
-    setPushBroadcastStatus("Инициализация рассылки...", "progress");
+    setPushBroadcastStatus("РРЅРёС†РёР°Р»РёР·Р°С†РёСЏ СЂР°СЃСЃС‹Р»РєРё...", "progress");
 
     const r = await fetch("/api/admin/push/broadcast/start", {
       method: "POST",
@@ -1928,7 +1928,7 @@
       if (submitButton instanceof HTMLButtonElement) {
         submitButton.disabled = false;
       }
-      setPushBroadcastStatus("Не удалось запустить рассылку", "error");
+      setPushBroadcastStatus("РќРµ СѓРґР°Р»РѕСЃСЊ Р·Р°РїСѓСЃС‚РёС‚СЊ СЂР°СЃСЃС‹Р»РєСѓ", "error");
       return;
     }
 
@@ -1938,7 +1938,7 @@
         submitButton.disabled = false;
       }
       if (!success) {
-        showAlert("Рассылка завершилась с ошибкой");
+        showAlert("Р Р°СЃСЃС‹Р»РєР° Р·Р°РІРµСЂС€РёР»Р°СЃСЊ СЃ РѕС€РёР±РєРѕР№");
       }
     });
   });

@@ -1,4 +1,4 @@
-﻿const { createHash, randomUUID } = require("node:crypto");
+const { createHash, randomUUID } = require("node:crypto");
 
 const express = require("express");
 
@@ -53,7 +53,7 @@ const {
 
 const router = express.Router();
 const SLUG_REGEX = /^[A-Z]{3}[0-9]{3}$/;
-const THEMES = new Set(["default_dark", "arctic", "linen", "marble", "forest", "royal_ivory", "midnight_obsidian"]);
+const THEMES = new Set(["default_dark", "arctic", "linen", "marble", "forest", "sage_luxe", "midnight_obsidian"]);
 const FALLBACK_SUPPORT_TELEGRAM = "unqx_uz";
 const AFFORDABLE_CACHE_TTL_LOW_LOAD_MS = 10_000;
 const AFFORDABLE_CACHE_TTL_MEDIUM_LOAD_MS = 8_000;
@@ -477,7 +477,7 @@ async function resolveGeoByIp(ip) {
     const cityRaw = String(payload?.city || "").trim();
     const country = String(payload?.country_name || payload?.country || "").trim();
 
-    // Нормализуем город через маппинг узбекских городов (Tashkent → Ташкент)
+    // Нормализуем город через маппинг узбекских городов (Tashkent > Ташкент)
     const normalizedCity = resolveUzbekistanCity(cityRaw);
     const city = normalizedCity || (cityRaw ? cityRaw.slice(0, 120) : "Неизвестно");
 

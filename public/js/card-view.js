@@ -1,5 +1,5 @@
 (function initCardViewGlobal() {
-  const THEME_KEYS = ["default_dark", "arctic", "linen", "marble", "forest", "royal_ivory", "midnight_obsidian"];
+  const THEME_KEYS = ["default_dark", "arctic", "linen", "marble", "forest", "sage_luxe", "midnight_obsidian"];
   const THEME_CONFIG = {
     default_dark: {
       cardBg: "#ffffff",
@@ -197,44 +197,44 @@
       buttonShineGradient:
         "linear-gradient(90deg, rgba(231,219,191,0) 0%, rgba(231,219,191,0.11) 45%, rgba(231,219,191,0.18) 50%, rgba(231,219,191,0.11) 55%, rgba(231,219,191,0) 100%)",
     },
-    royal_ivory: {
-      cardBg: "linear-gradient(165deg, #fffdf7 0%, #f7efdc 52%, #eedfbd 100%)",
-      cardBgOverlay: "royal_filigree",
-      surfaceBg: "#fbf4e4",
-      cardBorder: "1px solid #d8bf8c",
-      surfaceBorder: "1px solid #dec79a",
-      dividerColor: "#d7be8d",
-      nameColor: "#3e2f1a",
-      roleColor: "#8b6f42",
-      mutedColor: "#aa9168",
-      accentColor: "#b08a4a",
-      emailColor: "#6e5836",
-      buttonPrimaryBg: "linear-gradient(135deg, #9f7a3e, #c69a55)",
-      buttonPrimaryText: "#fff8e8",
-      buttonPrimaryBorder: "#b89150",
-      buttonSecondaryBg: "transparent",
-      buttonSecondaryText: "#775b32",
-      buttonSecondaryBorder: "#c8ae7a",
-      badgeText: "#8c6b3c",
-      badgeBg: "rgba(255, 249, 235, 0.9)",
-      badgeBorder: "1px solid rgba(184, 146, 79, 0.38)",
-      topLineGradient: "linear-gradient(90deg, transparent, #bd9554, transparent)",
-      avatarBg: "linear-gradient(135deg, #f1e3c5, #dec391)",
-      avatarText: "#644b22",
-      avatarBorder: "2px solid rgba(167, 130, 70, 0.35)",
-      cardBorderRadius: "22px",
-      fontFamily: "'Fraunces', 'Cormorant Garamond', Georgia, serif",
+    sage_luxe: {
+      cardBg: "linear-gradient(165deg, #f7faf7 0%, #edf2ee 54%, #e6ece7 100%)",
+      cardBgOverlay: "sage_geometry",
+      surfaceBg: "#f3f7f3",
+      cardBorder: "1px solid #cfd8cf",
+      surfaceBorder: "1px solid #d8e0d8",
+      dividerColor: "#c9d3c9",
+      nameColor: "#1f2a23",
+      roleColor: "#667569",
+      mutedColor: "#8a988d",
+      accentColor: "#7f927f",
+      emailColor: "#4f5e54",
+      buttonPrimaryBg: "linear-gradient(135deg, #243129, #33443a)",
+      buttonPrimaryText: "#f1f6f2",
+      buttonPrimaryBorder: "#2e3e34",
+      buttonSecondaryBg: "rgba(249, 252, 249, 0.72)",
+      buttonSecondaryText: "#425245",
+      buttonSecondaryBorder: "#c6d0c6",
+      badgeText: "#5f6d62",
+      badgeBg: "rgba(245, 250, 245, 0.85)",
+      badgeBorder: "1px solid rgba(122, 140, 124, 0.28)",
+      topLineGradient: "linear-gradient(90deg, transparent, #94a492, transparent)",
+      avatarBg: "linear-gradient(135deg, #dce5dd, #c7d3c9)",
+      avatarText: "#3f5143",
+      avatarBorder: "2px solid rgba(109, 126, 110, 0.3)",
+      cardBorderRadius: "24px",
+      fontFamily: "'Manrope', 'Avenir Next', 'Segoe UI', sans-serif",
       nameFontStyle: "normal",
-      nameFontWeight: "500",
-      roleLetterSpacing: "1.5px",
-      scoreLabelColor: "#8b6f42",
-      scoreValueColor: "#3e2f1a",
-      scoreBarFill: "#b08a4a",
-      scoreBarTrack: "#ead8b8",
-      scorePercentileColor: "#aa9168",
-      cardShadow: "0 14px 34px rgba(85, 60, 20, 0.14)",
+      nameFontWeight: "600",
+      roleLetterSpacing: "1.2px",
+      scoreLabelColor: "#627164",
+      scoreValueColor: "#243228",
+      scoreBarFill: "#758976",
+      scoreBarTrack: "#d9e2d9",
+      scorePercentileColor: "#7d8d80",
+      cardShadow: "0 16px 40px rgba(58, 76, 63, 0.14)",
       buttonShineGradient:
-        "linear-gradient(90deg, rgba(255,248,232,0) 0%, rgba(255,248,232,0.2) 45%, rgba(255,248,232,0.34) 50%, rgba(255,248,232,0.2) 55%, rgba(255,248,232,0) 100%)",
+        "linear-gradient(90deg, rgba(241,246,242,0) 0%, rgba(241,246,242,0.18) 45%, rgba(241,246,242,0.32) 50%, rgba(241,246,242,0.18) 55%, rgba(241,246,242,0) 100%)",
     },
     midnight_obsidian: {
       cardBg: "linear-gradient(160deg, #0c1118 0%, #111927 45%, #0a0f15 100%)",
@@ -278,7 +278,8 @@
   };
 
   function resolveTheme(themeKey) {
-    const key = typeof themeKey === "string" && THEME_KEYS.includes(themeKey) ? themeKey : "default_dark";
+    const resolvedKey = themeKey === "royal_ivory" ? "sage_luxe" : themeKey;
+    const key = typeof resolvedKey === "string" && THEME_KEYS.includes(resolvedKey) ? resolvedKey : "default_dark";
     return { key, tokens: THEME_CONFIG[key] || THEME_CONFIG.default_dark };
   }
 
@@ -397,23 +398,30 @@
         <path d="M0 530C70 506 142 514 212 536C272 554 320 556 360 544" stroke="url(#fr-vein)" stroke-width="0.76" fill="none"></path>
       </svg>`;
     }
-    if (themeKey === "royal_ivory") {
+    if (themeKey === "sage_luxe") {
       return `<svg class="unq-ref-overlay-svg" viewBox="0 0 360 600" preserveAspectRatio="none" aria-hidden="true">
         <defs>
-          <pattern id="ri-lattice" width="28" height="28" patternUnits="userSpaceOnUse">
-            <path d="M14 0V28M0 14H28" stroke="#c49d5a" stroke-width="0.34"></path>
-            <path d="M0 0L28 28M28 0L0 28" stroke="#dfc48f" stroke-width="0.16"></path>
+          <pattern id="sg-grid" width="36" height="36" patternUnits="userSpaceOnUse">
+            <path d="M0 0H36V36H0Z" fill="none" stroke="#a4b3a5" stroke-width="0.26"></path>
+            <circle cx="18" cy="18" r="1.2" fill="#93a394" opacity="0.7"></circle>
           </pattern>
-          <linearGradient id="ri-line" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="#a77b37"></stop>
-            <stop offset="100%" stop-color="#ccab71"></stop>
+          <linearGradient id="sg-flow" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#8b9d8e"></stop>
+            <stop offset="100%" stop-color="#c3cdc4"></stop>
+          </linearGradient>
+          <radialGradient id="sg-glow" cx="50%" cy="38%" r="72%">
+            <stop offset="0%" stop-color="#f7fbf7"></stop>
+            <stop offset="100%" stop-color="#dfe8e1"></stop>
           </linearGradient>
         </defs>
-        <rect width="100%" height="100%" fill="url(#ri-lattice)"></rect>
-        <path d="M0 92C72 64 148 72 220 94C282 112 322 114 360 102" stroke="url(#ri-line)" stroke-width="0.82" fill="none"></path>
-        <path d="M0 300C70 272 144 282 214 304C278 324 322 326 360 314" stroke="url(#ri-line)" stroke-width="0.72" fill="none"></path>
-        <path d="M0 514C74 486 148 496 218 518C282 538 324 542 360 528" stroke="url(#ri-line)" stroke-width="0.66" fill="none"></path>
-        <path d="M20 38Q40 18 60 38M300 38Q320 18 340 38M20 562Q40 582 60 562M300 562Q320 582 340 562" stroke="#b89253" stroke-width="0.52" fill="none"></path>
+        <rect width="100%" height="100%" fill="url(#sg-grid)"></rect>
+        <circle cx="288" cy="124" r="154" fill="url(#sg-glow)" opacity="0.3"></circle>
+        <rect x="24" y="70" width="146" height="20" rx="10" fill="#dce6dd" opacity="0.34"></rect>
+        <rect x="8" y="312" width="186" height="18" rx="9" fill="#d2ddd3" opacity="0.28"></rect>
+        <rect x="122" y="472" width="202" height="16" rx="8" fill="#d7e1d8" opacity="0.26"></rect>
+        <path d="M0 104C76 84 150 90 222 112C284 130 324 132 360 122" stroke="url(#sg-flow)" stroke-width="0.82" fill="none"></path>
+        <path d="M0 318C72 296 146 304 216 326C280 346 322 348 360 336" stroke="url(#sg-flow)" stroke-width="0.72" fill="none"></path>
+        <path d="M0 532C74 510 148 518 218 540C282 558 324 562 360 548" stroke="url(#sg-flow)" stroke-width="0.66" fill="none"></path>
       </svg>`;
     }
     if (themeKey === "midnight_obsidian") {
@@ -473,7 +481,7 @@
 
   function detectCardBrand(digits) {
     const value = String(digits || "");
-    if (!value) return "Карта";
+    if (!value) return "РљР°СЂС‚Р°";
     if (/^(?:8600|5614)\d{12}$/.test(value)) return "Uzcard";
     if (/^9860\d{12}$/.test(value)) return "Humo";
     if (/^220[0-4]\d{12}$/.test(value)) return "Mir";
@@ -483,7 +491,7 @@
     if (/^62\d{14,17}$/.test(value)) return "UnionPay";
     if (/^(?:2131|1800|35\d{3})\d{11,14}$/.test(value)) return "JCB";
     if (/^(?:50|5[6-9]|6\d)\d{10,17}$/.test(value)) return "Maestro";
-    return "Карта";
+    return "РљР°СЂС‚Р°";
   }
 
   function normalizeButtonUrl(rawUrl, type, label) {
@@ -492,8 +500,8 @@
       .trim()
       .toLowerCase();
     const labelRaw = String(label || "").trim().toLowerCase();
-    const cardLikeLabel = /(карта|card)/i.test(labelRaw);
-    const mapLikeLabel = /(map|maps|geo|location|локац)/i.test(labelRaw);
+    const cardLikeLabel = /(РєР°СЂС‚Р°|card)/i.test(labelRaw);
+    const mapLikeLabel = /(map|maps|geo|location|Р»РѕРєР°С†)/i.test(labelRaw);
     if (!input) return "";
 
     if (isSupportedButtonHref(input)) {
@@ -586,7 +594,7 @@
           const rawType = String(button?.type || "other")
             .trim()
             .toLowerCase();
-          const normalizedType = rawType === "карта" ? "card" : rawType;
+          const normalizedType = rawType === "РєР°СЂС‚Р°" ? "card" : rawType;
           const label = String(button?.label || "").trim();
           const url = normalizeButtonUrl(button?.href || button?.value || button?.url || "", normalizedType, label);
           const type = url.startsWith("card:") ? "card" : normalizedType;
@@ -612,11 +620,11 @@
         : [],
       slugPrice: Number.isFinite(Number(card.slugPrice)) ? Number(card.slugPrice) : null,
       tariff: plan,
-      theme:
-        typeof card.theme === "string" &&
-          THEME_KEYS.includes(card.theme)
-          ? card.theme
-          : "default_dark",
+      theme: (() => {
+        const rawTheme = typeof card.theme === "string" ? card.theme : "";
+        const normalizedTheme = rawTheme === "royal_ivory" ? "sage_luxe" : rawTheme;
+        return THEME_KEYS.includes(normalizedTheme) ? normalizedTheme : "default_dark";
+      })(),
       customColor: normalizeHexColor(card.customColor),
       name,
       role: String(card.role || "").trim(),
@@ -750,7 +758,7 @@
     if (/(site|web|link|globe|www)/.test(signature)) {
       return "globe";
     }
-    if (/(карта|map|maps|geo|location|loc)/.test(signature)) {
+    if (/(РєР°СЂС‚Р°|map|maps|geo|location|loc)/.test(signature)) {
       return "location";
     }
     if (/(click|pay|payment|card|merchant)/.test(signature)) {
@@ -779,11 +787,11 @@
     const theme = resolveTheme(card.theme);
     const shareUrl = String(options.shareUrl || "").trim() || window.location.href;
     const showPausedBanner = Boolean(options.showPausedBanner);
-    const pausedText = String(options.pausedText || "Визитка на паузе - посетители видят заглушку");
-    const viewsLabel = String(options.viewsLabel || card.viewsLabel || "0 просмотров");
+    const pausedText = String(options.pausedText || "Р’РёР·РёС‚РєР° РЅР° РїР°СѓР·Рµ - РїРѕСЃРµС‚РёС‚РµР»Рё РІРёРґСЏС‚ Р·Р°РіР»СѓС€РєСѓ");
+    const viewsLabel = String(options.viewsLabel || card.viewsLabel || "0 РїСЂРѕСЃРјРѕС‚СЂРѕРІ");
     const slugPriceLabel =
       Number.isFinite(Number(card.slugPrice)) && Number(card.slugPrice) > 0
-        ? `${Number(card.slugPrice).toLocaleString("ru-RU")} сум`
+        ? `${Number(card.slugPrice).toLocaleString("ru-RU")} СЃСѓРј`
         : "";
     const slugItems = card.slugs.length > 0 ? card.slugs : [card.slug];
     const score = options.score && typeof options.score === "object" ? options.score : null;
@@ -806,7 +814,7 @@
                 return "";
               }
               const brand = detectCardBrand(cardDigits);
-              const baseLabel = String(button.label || "").trim() || "Карта";
+              const baseLabel = String(button.label || "").trim() || "РљР°СЂС‚Р°";
               const buttonLabel = baseLabel.includes(brand) ? baseLabel : `${baseLabel} (${brand})`;
               return `<button type="button" data-track-action data-button-type="card" data-copy-card="${esc(cardDigits)}" class="public-card-button unq-ref-action-btn ${toneClass}">${iconSvg("card")}<span>${esc(buttonLabel)}</span></button>`;
             }
@@ -814,7 +822,7 @@
           })
           .filter(Boolean)
           .join("")
-        : '<p class="unq-ref-empty-buttons">Владелец пока не добавил контактные кнопки.</p>';
+        : '<p class="unq-ref-empty-buttons">Р’Р»Р°РґРµР»РµС† РїРѕРєР° РЅРµ РґРѕР±Р°РІРёР» РєРѕРЅС‚Р°РєС‚РЅС‹Рµ РєРЅРѕРїРєРё.</p>';
     const scoreBlock = score
       ? `<div class="unq-score-block">
           <div class="unq-score-head">
@@ -823,10 +831,10 @@
           </div>
           <div class="unq-score-row">
             <span class="unq-score-value">${Number(score.score || 0)}</span>
-            <span class="unq-score-top">Топ ${Number(score.topPercent || 100)}%</span>
+            <span class="unq-score-top">РўРѕРї ${Number(score.topPercent || 100)}%</span>
           </div>
           ${score.isForming
-        ? '<p class="unq-score-note">UNQ Score формируется · обновляется каждые 24ч</p>'
+        ? '<p class="unq-score-note">UNQ Score С„РѕСЂРјРёСЂСѓРµС‚СЃСЏ В· РѕР±РЅРѕРІР»СЏРµС‚СЃСЏ РєР°Р¶РґС‹Рµ 24С‡</p>'
         : `<div class="unq-score-progress"><span style="width:${Math.max(0, Math.min(100, (Number(score.score || 0) / 999) * 100)).toFixed(2)}%"></span></div>`
       }
         </div>`
@@ -856,13 +864,13 @@
     const aboutHtml =
       aboutItems.length > 0
         ? `<div class="unq-ref-about">
-            <p class="unq-ref-about-title">КОНТАКТЫ</p>
+            <p class="unq-ref-about-title">РљРћРќРўРђРљРўР«</p>
             ${aboutItems.join("")}
           </div>`
         : "";
     const topBadgeHtml =
       topBadge && Number.isFinite(Number(topBadge.rank)) && Number(topBadge.rank) > 0
-        ? `<div class="unq-ref-top-badge">Топ #${Math.round(Number(topBadge.rank))} этой недели</div>`
+        ? `<div class="unq-ref-top-badge">РўРѕРї #${Math.round(Number(topBadge.rank))} СЌС‚РѕР№ РЅРµРґРµР»Рё</div>`
         : "";
     const useCustomColor = card.tariff === "premium" && Boolean(card.customColor);
     const topLineValue =
@@ -928,9 +936,9 @@
             </div>
             ${slugPriceLabel ? `<span class="unq-ref-slug-price">${esc(slugPriceLabel)}</span>` : ""}
           </div>
-          <button type="button" data-share-card class="unq-ref-share" aria-label="Поделиться">
+          <button type="button" data-share-card class="unq-ref-share" aria-label="РџРѕРґРµР»РёС‚СЊСЃСЏ">
             ${iconSvg("share")}
-            <span class="sr-only" data-share-label>Поделиться</span>
+            <span class="sr-only" data-share-label>РџРѕРґРµР»РёС‚СЊСЃСЏ</span>
           </button>
         </div>
         <div class="public-card-shell unq-ref-shell">
@@ -964,11 +972,11 @@
           <p class="unq-ref-hashtag">${esc(mainHashtag)}</p>
           ${aboutHtml}
           ${activeSocialLinks.length ? `<div class="unq-ref-social">${activeSocialLinks.map(renderSocialLink).join("")}</div>` : ""}
-          <button type="button" class="unq-ref-save interactive-btn" data-save-contact>${iconSvg("save")}<span>Сохранить контакт (.vcf)</span></button>
+          <button type="button" class="unq-ref-save interactive-btn" data-save-contact>${iconSvg("save")}<span>РЎРѕС…СЂР°РЅРёС‚СЊ РєРѕРЅС‚Р°РєС‚ (.vcf)</span></button>
         </div>
         <div class="unq-ref-footline">
-          <div>© ${esc(viewsLabel)}</div>
-          <div>${card.showBranding ? "• UNQX" : ""}</div>
+          <div>В© ${esc(viewsLabel)}</div>
+          <div>${card.showBranding ? "вЂў UNQX" : ""}</div>
         </div>
       </div>
     `;

@@ -1,12 +1,12 @@
 <%
-  const pageTitle = typeof title === "string" && title ? title : "Темы Премиум";
+  const pageTitle = typeof title === "string" && title ? title : "РўРµРјС‹ РџСЂРµРјРёСѓРј";
   const themeCards = [
     { id: "default_dark", name: "Obsidian Noir" },
     { id: "arctic", name: "Glacier Platinum" },
     { id: "linen", name: "Imperial Linen" },
     { id: "marble", name: "Carrara Prestige" },
     { id: "forest", name: "Emerald Reserve" },
-    { id: "royal_ivory", name: "Royal Ivory" },
+    { id: "sage_luxe", name: "Verdant Luxe" },
     { id: "midnight_obsidian", name: "Midnight Obsidian" },
   ];
 %>
@@ -19,8 +19,8 @@
   <main class="min-h-screen bg-neutral-50 px-6 py-16">
     <div class="mx-auto max-w-6xl">
       <div class="mb-10">
-        <p class="font-mono text-xs uppercase tracking-[0.18em] text-neutral-400">ПРЕМИУМ</p>
-        <h1 class="mt-3 text-3xl font-bold tracking-tight text-neutral-900 md:text-4xl">Выбери тему для Премиум визитки</h1>
+        <p class="font-mono text-xs uppercase tracking-[0.18em] text-neutral-400">РџР Р•РњРРЈРњ</p>
+        <h1 class="mt-3 text-3xl font-bold tracking-tight text-neutral-900 md:text-4xl">Р’С‹Р±РµСЂРё С‚РµРјСѓ РґР»СЏ РџСЂРµРјРёСѓРј РІРёР·РёС‚РєРё</h1>
       </div>
 
       <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -43,7 +43,7 @@
               data-order-theme="<%= theme.id %>"
               class="btn-shimmer inline-flex items-center gap-2 rounded-xl bg-neutral-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-neutral-800"
             >
-              Выбрать
+              Р’С‹Р±СЂР°С‚СЊ
               <svg class="icon-stroke h-3.5 w-3.5" viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M5 12h14M13 5l7 7-7 7"></path>
               </svg>
@@ -53,14 +53,14 @@
         <% }) %>
       </div>
 
-      <p class="mt-8 text-sm text-neutral-500">Темы доступны только на тарифе Премиум</p>
+      <p class="mt-8 text-sm text-neutral-500">РўРµРјС‹ РґРѕСЃС‚СѓРїРЅС‹ С‚РѕР»СЊРєРѕ РЅР° С‚Р°СЂРёС„Рµ РџСЂРµРјРёСѓРј</p>
       <a
         href="#"
         data-order-link
         data-order-plan="premium"
         class="btn-shimmer mt-4 inline-flex items-center gap-2 rounded-xl bg-neutral-900 px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-neutral-800"
       >
-        Перейти на Премиум
+        РџРµСЂРµР№С‚Рё РЅР° РџСЂРµРјРёСѓРј
         <svg class="icon-stroke h-3.5 w-3.5" viewBox="0 0 24 24" aria-hidden="true">
           <path d="M5 12h14M13 5l7 7-7 7"></path>
         </svg>

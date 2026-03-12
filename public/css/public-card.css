@@ -650,8 +650,8 @@ body[data-card-theme] #card-view-root>[data-card-view] {
   mix-blend-mode: screen;
 }
 
-[data-card-theme="royal_ivory"] .unq-ref-overlay-svg {
-  opacity: 0.24;
+[data-card-theme="sage_luxe"] .unq-ref-overlay-svg {
+  opacity: 0.18;
   mix-blend-mode: multiply;
 }
 
@@ -1264,26 +1264,26 @@ body[data-card-theme="forest"]::before {
   z-index: 0;
 }
 
-body[data-card-theme="royal_ivory"] {
-  background: linear-gradient(160deg, #f8f2e6 0%, #efe3cc 55%, #e5d3ae 100%);
+body[data-card-theme="sage_luxe"] {
+  background: linear-gradient(160deg, #eef4ef 0%, #e2ebe4 55%, #d5e0d8 100%);
   position: relative;
   --theme-screen-opacity: 0.5;
   --theme-screen-pattern:
-    radial-gradient(circle at 15% 18%, rgba(255, 248, 233, 0.36) 0%, transparent 36%),
-    radial-gradient(circle at 86% 78%, rgba(167, 123, 56, 0.13) 0%, transparent 42%),
-    repeating-linear-gradient(134deg, transparent 0 36px, rgba(150, 112, 50, 0.07) 36px 38px),
-    repeating-linear-gradient(46deg, transparent 0 62px, rgba(230, 208, 168, 0.21) 62px 64px);
+    radial-gradient(circle at 14% 18%, rgba(246, 251, 247, 0.42) 0%, transparent 38%),
+    radial-gradient(circle at 86% 78%, rgba(112, 136, 116, 0.14) 0%, transparent 42%),
+    repeating-linear-gradient(136deg, transparent 0 42px, rgba(116, 134, 119, 0.06) 42px 44px),
+    repeating-linear-gradient(52deg, transparent 0 66px, rgba(226, 234, 227, 0.22) 66px 68px);
 }
 
-body[data-card-theme="royal_ivory"]::before {
+body[data-card-theme="sage_luxe"]::before {
   content: '';
   position: fixed;
   inset: 0;
   background-image:
-    repeating-linear-gradient(45deg, transparent 0 12px, rgba(146, 111, 56, 0.055) 12px 13px),
-    repeating-linear-gradient(-45deg, transparent 0 12px, rgba(176, 138, 74, 0.04) 12px 13px),
-    radial-gradient(circle at 18% 24%, rgba(255, 247, 231, 0.4) 0%, transparent 40%),
-    radial-gradient(circle at 82% 76%, rgba(196, 154, 84, 0.14) 0%, transparent 42%);
+    repeating-linear-gradient(46deg, transparent 0 14px, rgba(116, 134, 119, 0.045) 14px 15px),
+    repeating-linear-gradient(-46deg, transparent 0 14px, rgba(94, 115, 98, 0.035) 14px 15px),
+    radial-gradient(circle at 18% 24%, rgba(248, 252, 249, 0.45) 0%, transparent 42%),
+    radial-gradient(circle at 82% 76%, rgba(129, 148, 131, 0.15) 0%, transparent 44%);
   pointer-events: none;
   z-index: 0;
 }
@@ -1311,9 +1311,9 @@ body[data-card-theme="midnight_obsidian"]::before {
   z-index: 0;
 }
 
-/* Адаптация элементов интерфейса под темы */
+/* РђРґР°РїС‚Р°С†РёСЏ СЌР»РµРјРµРЅС‚РѕРІ РёРЅС‚РµСЂС„РµР№СЃР° РїРѕРґ С‚РµРјС‹ */
 
-/* Default Dark - светлые кнопки */
+/* Default Dark - СЃРІРµС‚Р»С‹Рµ РєРЅРѕРїРєРё */
 [data-card-theme="default_dark"] .interactive-btn,
 [data-card-theme="default_dark"] #card-slug-search-form>div {
   background: rgba(255, 255, 255, 0.95) !important;
@@ -1321,7 +1321,7 @@ body[data-card-theme="midnight_obsidian"]::before {
   color: #404040 !important;
 }
 
-/* Arctic - холодные голубоватые тона */
+/* Arctic - С…РѕР»РѕРґРЅС‹Рµ РіРѕР»СѓР±РѕРІР°С‚С‹Рµ С‚РѕРЅР° */
 [data-card-theme="arctic"] .interactive-btn,
 [data-card-theme="arctic"] #card-slug-search-form>div {
   background: rgba(248, 250, 252, 0.95) !important;
@@ -1334,7 +1334,7 @@ body[data-card-theme="midnight_obsidian"]::before {
   background: rgba(240, 246, 255, 0.98) !important;
 }
 
-/* Linen - теплые бежевые тона */
+/* Linen - С‚РµРїР»С‹Рµ Р±РµР¶РµРІС‹Рµ С‚РѕРЅР° */
 [data-card-theme="linen"] .interactive-btn,
 [data-card-theme="linen"] #card-slug-search-form>div {
   background: rgba(250, 248, 244, 0.95) !important;
@@ -1347,7 +1347,7 @@ body[data-card-theme="midnight_obsidian"]::before {
   background: rgba(245, 240, 232, 0.98) !important;
 }
 
-/* Marble - чистый белый */
+/* Marble - С‡РёСЃС‚С‹Р№ Р±РµР»С‹Р№ */
 [data-card-theme="marble"] .interactive-btn,
 [data-card-theme="marble"] #card-slug-search-form>div {
   background: rgba(255, 255, 255, 0.98) !important;
@@ -1359,7 +1359,7 @@ body[data-card-theme="midnight_obsidian"]::before {
   background: rgba(250, 250, 250, 1) !important;
 }
 
-/* Forest - темно-зеленые с золотистым текстом */
+/* Forest - С‚РµРјРЅРѕ-Р·РµР»РµРЅС‹Рµ СЃ Р·РѕР»РѕС‚РёСЃС‚С‹Рј С‚РµРєСЃС‚РѕРј */
 [data-card-theme="forest"] .interactive-btn,
 [data-card-theme="forest"] #card-slug-search-form>div {
   background: rgba(20, 62, 41, 0.84) !important;
@@ -1372,16 +1372,16 @@ body[data-card-theme="midnight_obsidian"]::before {
   background: rgba(29, 78, 51, 0.92) !important;
 }
 
-[data-card-theme="royal_ivory"] .interactive-btn,
-[data-card-theme="royal_ivory"] #card-slug-search-form>div {
-  background: rgba(252, 245, 231, 0.9) !important;
-  border-color: rgba(176, 138, 74, 0.3) !important;
-  color: #5d4520 !important;
+[data-card-theme="sage_luxe"] .interactive-btn,
+[data-card-theme="sage_luxe"] #card-slug-search-form>div {
+  background: rgba(244, 249, 245, 0.9) !important;
+  border-color: rgba(116, 134, 119, 0.28) !important;
+  color: #33453a !important;
   backdrop-filter: blur(6px);
 }
 
-[data-card-theme="royal_ivory"] .interactive-btn:hover {
-  background: rgba(249, 238, 215, 0.95) !important;
+[data-card-theme="sage_luxe"] .interactive-btn:hover {
+  background: rgba(236, 244, 237, 0.95) !important;
 }
 
 [data-card-theme="midnight_obsidian"] .interactive-btn,
@@ -1440,7 +1440,7 @@ body[data-card-theme="midnight_obsidian"]::before {
   color: rgba(176, 201, 240, 0.62) !important;
 }
 
-/* Стили для результатов поиска */
+/* РЎС‚РёР»Рё РґР»СЏ СЂРµР·СѓР»СЊС‚Р°С‚РѕРІ РїРѕРёСЃРєР° */
 [data-card-theme="default_dark"] #card-slug-search-results {
   background: rgba(255, 255, 255, 0.95) !important;
   border-color: rgba(0, 0, 0, 0.1) !important;
@@ -1470,10 +1470,10 @@ body[data-card-theme="midnight_obsidian"]::before {
   backdrop-filter: blur(8px);
 }
 
-[data-card-theme="royal_ivory"] #card-slug-search-results {
-  background: rgba(252, 245, 231, 0.92) !important;
-  border-color: rgba(176, 138, 74, 0.3) !important;
-  color: #5d4520 !important;
+[data-card-theme="sage_luxe"] #card-slug-search-results {
+  background: rgba(244, 249, 245, 0.94) !important;
+  border-color: rgba(116, 134, 119, 0.28) !important;
+  color: #33453a !important;
   backdrop-filter: blur(6px);
 }
 

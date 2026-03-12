@@ -176,6 +176,8 @@ function mapProfileCardRow(row) {
   const createdAt = row.createdAt ?? row.created_at ?? null;
   const updatedAt = row.updatedAt ?? row.updated_at ?? null;
   const showBrandingRaw = row.showBranding ?? row.show_branding;
+  const rawTheme = String(row.theme || "").trim();
+  const normalizedTheme = rawTheme === "royal_ivory" ? "sage_luxe" : rawTheme;
   return {
     id: row.id,
     ownerId,
@@ -190,7 +192,7 @@ function mapProfileCardRow(row) {
     avatarUrl: avatarUrl || "",
     tags: parseJsonArray(row.tags),
     buttons: parseJsonArray(row.buttons),
-    theme: typeof row.theme === "string" && PROFILE_THEMES.has(row.theme) ? row.theme : "default_dark",
+    theme: PROFILE_THEMES.has(normalizedTheme) ? normalizedTheme : "default_dark",
     customColor: customColor || "",
     showBranding: toBool(showBrandingRaw, true),
     createdAt,

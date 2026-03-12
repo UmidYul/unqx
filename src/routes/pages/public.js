@@ -21,7 +21,7 @@ const { seoHub, getSeoPage } = require("../../content/seo-pages");
 
 const router = express.Router();
 const defaultSocialImage = absoluteUrl("/brand/logo.PNG");
-const CARD_THEMES = new Set(["default_dark", "arctic", "linen", "marble", "forest", "royal_ivory", "midnight_obsidian"]);
+const CARD_THEMES = new Set(["default_dark", "arctic", "linen", "marble", "forest", "sage_luxe", "midnight_obsidian"]);
 const LEGAL_DOCS_DIR = path.join(env.EXPRESS_APP_DIR, "docs");
 
 function isMissingModelTable(error, modelName) {
@@ -354,7 +354,7 @@ async function logTapEventFromPageRequest({ req, res, ownerSlug, ownerId }) {
           data: {
             slug: ownerSlug,
             source,
-            city: "Неизвестно",
+            city: "РќРµРёР·РІРµСЃС‚РЅРѕ",
             device,
             sessionId,
           },
@@ -433,8 +433,8 @@ async function logTapEventFromPageRequest({ req, res, ownerSlug, ownerId }) {
           VALUES (
             ${ownerId},
             'tap',
-            'Новый тап',
-            ${`${visitorSlug} открыл вашу визитку`},
+            'РќРѕРІС‹Р№ С‚Р°Рї',
+            ${`${visitorSlug} РѕС‚РєСЂС‹Р» РІР°С€Сѓ РІРёР·РёС‚РєСѓ`},
             ${JSON.stringify({ ownerSlug, visitorSlug, source })}
           )
         `;
@@ -686,7 +686,7 @@ function mapProfileButtons(rawButtons) {
       const typeRaw = String(obj.type || "other")
         .trim()
         .toLowerCase();
-      const typeAlias = typeRaw === "карта" ? "card" : typeRaw;
+      const typeAlias = typeRaw === "РєР°СЂС‚Р°" ? "card" : typeRaw;
       const type = allowedTypes.has(typeAlias) ? typeAlias : "other";
       const label = String(obj.label || "").trim().slice(0, 50);
       const href = String(obj.href || obj.value || obj.url || "").trim();
@@ -717,9 +717,9 @@ function classifySectorFromTags(tags) {
   const joined = (Array.isArray(tags) ? tags : [])
     .map((tag) => String(tag || "").toLowerCase())
     .join(" ");
-  if (/(дизайн|design|ux|ui|product)/i.test(joined)) return "design";
-  if (/(продаж|sales|account|bizdev)/i.test(joined)) return "sales";
-  if (/(маркет|marketing|smm|seo|brand)/i.test(joined)) return "marketing";
+  if (/(РґРёР·Р°Р№РЅ|design|ux|ui|product)/i.test(joined)) return "design";
+  if (/(РїСЂРѕРґР°Р¶|sales|account|bizdev)/i.test(joined)) return "sales";
+  if (/(РјР°СЂРєРµС‚|marketing|smm|seo|brand)/i.test(joined)) return "marketing";
   if (/(it|dev|developer|frontend|backend|qa|data|ai)/i.test(joined)) return "it";
   return "other";
 }
@@ -742,8 +742,8 @@ function normalizeButtonUrl(rawUrl, type, label) {
     .trim()
     .toLowerCase();
   const labelRaw = String(label || "").trim().toLowerCase();
-  const cardLikeLabel = /(карта|card)/i.test(labelRaw);
-  const mapLikeLabel = /(map|maps|geo|location|локац)/i.test(labelRaw);
+  const cardLikeLabel = /(РєР°СЂС‚Р°|card)/i.test(labelRaw);
+  const mapLikeLabel = /(map|maps|geo|location|Р»РѕРєР°С†)/i.test(labelRaw);
   if (!input) return "";
   if (isSupportedButtonHref(input)) return input;
   if (kind === "card" || cardLikeLabel) {
@@ -807,6 +807,8 @@ function normalizeDirectorySector(value) {
 function buildPublicCardFromProfile({ slug, user, profileCard, verifiedIdentity, viewsCount, allSlugs = [] }) {
   const plan = getEffectivePlan(user).plan;
   const isCurrentlyVerified = Boolean(user?.isVerified);
+  const rawCardTheme = String(profileCard?.theme || "").trim();
+  const normalizedCardTheme = rawCardTheme === "royal_ivory" ? "sage_luxe" : rawCardTheme;
   const verifiedCompany =
     String(isCurrentlyVerified ? (verifiedIdentity?.companyName || user?.verifiedCompany || "") : "")
       .trim();
@@ -829,7 +831,7 @@ function buildPublicCardFromProfile({ slug, user, profileCard, verifiedIdentity,
     verified: isCurrentlyVerified,
     verifiedCompany,
     tariff: plan,
-    theme: typeof profileCard.theme === "string" && CARD_THEMES.has(profileCard.theme) ? profileCard.theme : "default_dark",
+    theme: CARD_THEMES.has(normalizedCardTheme) ? normalizedCardTheme : "default_dark",
     customColor: profileCard.customColor || "",
     phone: "",
     tags: mapProfileTags(profileCard.tags),
@@ -1067,8 +1069,8 @@ router.get(
     }
 
     res.render("public/home", {
-      title: "UNQX | Цифровая визитка за 1 минуту",
-      description: "Одна ссылка вместо тысячи слов. Создай свою цифровую визитку на unqx.uz",
+      title: "UNQX | Р¦РёС„СЂРѕРІР°СЏ РІРёР·РёС‚РєР° Р·Р° 1 РјРёРЅСѓС‚Сѓ",
+      description: "РћРґРЅР° СЃСЃС‹Р»РєР° РІРјРµСЃС‚Рѕ С‚С‹СЃСЏС‡Рё СЃР»РѕРІ. РЎРѕР·РґР°Р№ СЃРІРѕСЋ С†РёС„СЂРѕРІСѓСЋ РІРёР·РёС‚РєСѓ РЅР° unqx.uz",
       image: defaultSocialImage,
       testimonials,
       slugTotalLimit: Number(publicSettingsRaw.platform_total_slugs || env.SLUG_TOTAL_LIMIT),
@@ -1109,8 +1111,8 @@ router.get(
       return;
     }
     res.render("public/login", {
-      title: "Вход | UNQX",
-      description: "Войди в UNQX по email и паролю",
+      title: "Р’С…РѕРґ | UNQX",
+      description: "Р’РѕР№РґРё РІ UNQX РїРѕ email Рё РїР°СЂРѕР»СЋ",
       image: defaultSocialImage,
       next: typeof req.query.next === "string" ? req.query.next : "/profile",
       adminSession: getAdminSession(req),
@@ -1126,8 +1128,8 @@ router.get(
       return;
     }
     res.render("public/register", {
-      title: "Регистрация | UNQX",
-      description: "Создай аккаунт UNQX",
+      title: "Р РµРіРёСЃС‚СЂР°С†РёСЏ | UNQX",
+      description: "РЎРѕР·РґР°Р№ Р°РєРєР°СѓРЅС‚ UNQX",
       image: defaultSocialImage,
       adminSession: getAdminSession(req),
     });
@@ -1138,8 +1140,8 @@ router.get(
   "/verify-email",
   asyncHandler(async (req, res) => {
     res.render("public/verify-email", {
-      title: "Подтверждение email | UNQX",
-      description: "Подтверди email и заверши регистрацию",
+      title: "РџРѕРґС‚РІРµСЂР¶РґРµРЅРёРµ email | UNQX",
+      description: "РџРѕРґС‚РІРµСЂРґРё email Рё Р·Р°РІРµСЂС€Рё СЂРµРіРёСЃС‚СЂР°С†РёСЋ",
       image: defaultSocialImage,
       adminSession: getAdminSession(req),
     });
@@ -1150,8 +1152,8 @@ router.get(
   "/forgot-password",
   asyncHandler(async (req, res) => {
     res.render("public/forgot-password", {
-      title: "Сброс пароля | UNQX",
-      description: "Запрос кода для сброса пароля",
+      title: "РЎР±СЂРѕСЃ РїР°СЂРѕР»СЏ | UNQX",
+      description: "Р—Р°РїСЂРѕСЃ РєРѕРґР° РґР»СЏ СЃР±СЂРѕСЃР° РїР°СЂРѕР»СЏ",
       image: defaultSocialImage,
       adminSession: getAdminSession(req),
     });
@@ -1162,8 +1164,8 @@ router.get(
   "/reset-password",
   asyncHandler(async (req, res) => {
     res.render("public/reset-password", {
-      title: "Новый пароль | UNQX",
-      description: "Установи новый пароль",
+      title: "РќРѕРІС‹Р№ РїР°СЂРѕР»СЊ | UNQX",
+      description: "РЈСЃС‚Р°РЅРѕРІРё РЅРѕРІС‹Р№ РїР°СЂРѕР»СЊ",
       image: defaultSocialImage,
       email: typeof req.query.email === "string" ? req.query.email : "",
       adminSession: getAdminSession(req),
@@ -1179,8 +1181,8 @@ router.get(
       return;
     }
     res.render("public/reactivate-account", {
-      title: "Восстановление аккаунта | UNQX",
-      description: "Восстанови деактивированный аккаунт UNQX",
+      title: "Р’РѕСЃСЃС‚Р°РЅРѕРІР»РµРЅРёРµ Р°РєРєР°СѓРЅС‚Р° | UNQX",
+      description: "Р’РѕСЃСЃС‚Р°РЅРѕРІРё РґРµР°РєС‚РёРІРёСЂРѕРІР°РЅРЅС‹Р№ Р°РєРєР°СѓРЅС‚ UNQX",
       image: defaultSocialImage,
       email: typeof req.query.email === "string" ? req.query.email : "",
       adminSession: getAdminSession(req),
@@ -1207,8 +1209,8 @@ router.get(
     const referrerUsername = referrer?.username ? `@${referrer.username}` : "";
 
     res.render("public/referral", {
-      title: "Вас пригласили в UNQX",
-      description: "Зарегистрируйтесь в UNQX и получите доступ к цифровой визитке по приглашению.",
+      title: "Р’Р°СЃ РїСЂРёРіР»Р°СЃРёР»Рё РІ UNQX",
+      description: "Р—Р°СЂРµРіРёСЃС‚СЂРёСЂСѓР№С‚РµСЃСЊ РІ UNQX Рё РїРѕР»СѓС‡РёС‚Рµ РґРѕСЃС‚СѓРї Рє С†РёС„СЂРѕРІРѕР№ РІРёР·РёС‚РєРµ РїРѕ РїСЂРёРіР»Р°С€РµРЅРёСЋ.",
       image: defaultSocialImage,
       refCode,
       referrerName,
@@ -1223,8 +1225,8 @@ router.get(
   "/themes",
   asyncHandler(async (req, res) => {
     res.render("public/themes", {
-      title: "Темы Премиум | UNQX",
-      description: "Каталог премиум-тем UNQX: выбери стиль визитки, цвета и оформление под свой бренд.",
+      title: "РўРµРјС‹ РџСЂРµРјРёСѓРј | UNQX",
+      description: "РљР°С‚Р°Р»РѕРі РїСЂРµРјРёСѓРј-С‚РµРј UNQX: РІС‹Р±РµСЂРё СЃС‚РёР»СЊ РІРёР·РёС‚РєРё, С†РІРµС‚Р° Рё РѕС„РѕСЂРјР»РµРЅРёРµ РїРѕРґ СЃРІРѕР№ Р±СЂРµРЅРґ.",
       image: defaultSocialImage,
       adminSession: getAdminSession(req),
     });
@@ -1234,13 +1236,15 @@ router.get(
 router.get(
   "/demo",
   asyncHandler(async (req, res) => {
-    const allowedThemes = new Set(["default_dark", "arctic", "linen", "marble", "forest", "royal_ivory", "midnight_obsidian"]);
-    const theme = typeof req.query.theme === "string" && allowedThemes.has(req.query.theme) ? req.query.theme : "default_dark";
+    const allowedThemes = new Set(["default_dark", "arctic", "linen", "marble", "forest", "sage_luxe", "midnight_obsidian"]);
+    const rawTheme = typeof req.query.theme === "string" ? req.query.theme : "";
+    const normalizedTheme = rawTheme === "royal_ivory" ? "sage_luxe" : rawTheme;
+    const theme = allowedThemes.has(normalizedTheme) ? normalizedTheme : "default_dark";
     const embed = req.query.embed === "1";
 
     res.render("public/demo", {
       title: "UNQX Demo",
-      description: "Демо цифровой визитки UNQX: посмотри как выглядит карточка до покупки и настройки профиля.",
+      description: "Р”РµРјРѕ С†РёС„СЂРѕРІРѕР№ РІРёР·РёС‚РєРё UNQX: РїРѕСЃРјРѕС‚СЂРё РєР°Рє РІС‹РіР»СЏРґРёС‚ РєР°СЂС‚РѕС‡РєР° РґРѕ РїРѕРєСѓРїРєРё Рё РЅР°СЃС‚СЂРѕР№РєРё РїСЂРѕС„РёР»СЏ.",
       image: defaultSocialImage,
       theme,
       embed,
@@ -1264,8 +1268,8 @@ router.get(
     }
 
     res.render("public/profile", {
-      title: "Мой профиль | UNQX",
-      description: "Личный кабинет UNQX: управляй визиткой, UNQ, аналитикой, заявками и настройками профиля.",
+      title: "РњРѕР№ РїСЂРѕС„РёР»СЊ | UNQX",
+      description: "Р›РёС‡РЅС‹Р№ РєР°Р±РёРЅРµС‚ UNQX: СѓРїСЂР°РІР»СЏР№ РІРёР·РёС‚РєРѕР№, UNQ, Р°РЅР°Р»РёС‚РёРєРѕР№, Р·Р°СЏРІРєР°РјРё Рё РЅР°СЃС‚СЂРѕР№РєР°РјРё РїСЂРѕС„РёР»СЏ.",
       image: defaultSocialImage,
       telegramBotUsername: String(env.TELEGRAM_BOT_USERNAME || "").replace(/^@+/, "").trim(),
       reactivationWindowDays: Number(env.ACCOUNT_REACTIVATION_WINDOW_DAYS || 30),
@@ -1280,7 +1284,7 @@ router.get(
     const settings = await getFeatureSetting("leaderboard");
     if (!settings.enabled) {
       res.status(404).render("public/not-found", {
-        title: "Страница не найдена",
+        title: "РЎС‚СЂР°РЅРёС†Р° РЅРµ РЅР°Р№РґРµРЅР°",
         slug: "leaderboard",
         adminSession: getAdminSession(req),
       });
@@ -1301,8 +1305,8 @@ router.get(
     ]);
 
     res.render("public/leaderboard", {
-      title: "Топ визиток по просмотрам · UNQX",
-      description: "Лидерборд визиток UNQX по просмотрам",
+      title: "РўРѕРї РІРёР·РёС‚РѕРє РїРѕ РїСЂРѕСЃРјРѕС‚СЂР°Рј В· UNQX",
+      description: "Р›РёРґРµСЂР±РѕСЂРґ РІРёР·РёС‚РѕРє UNQX РїРѕ РїСЂРѕСЃРјРѕС‚СЂР°Рј",
       image: defaultSocialImage,
       period: board.period,
       items: board.publicItems,
@@ -1366,8 +1370,8 @@ router.get(
     );
 
     res.render("public/drops", {
-      title: "Релизы slug · UNQX",
-      description: "Актуальные и прошедшие релизы slug на UNQX",
+      title: "Р РµР»РёР·С‹ slug В· UNQX",
+      description: "РђРєС‚СѓР°Р»СЊРЅС‹Рµ Рё РїСЂРѕС€РµРґС€РёРµ СЂРµР»РёР·С‹ slug РЅР° UNQX",
       image: defaultSocialImage,
       drops: rows,
       dropsSummary: summary,
@@ -1392,8 +1396,8 @@ router.get(
         url: canonical,
       },
       buildBreadcrumbJsonLd([
-        { name: "Главная", url: absoluteUrl("/") },
-        { name: "Гайды", url: canonical },
+        { name: "Р“Р»Р°РІРЅР°СЏ", url: absoluteUrl("/") },
+        { name: "Р“Р°Р№РґС‹", url: canonical },
       ]),
     ];
 
@@ -1434,7 +1438,7 @@ router.get(
         },
       },
       buildBreadcrumbJsonLd([
-        { name: "Главная", url: absoluteUrl("/") },
+        { name: "Р“Р»Р°РІРЅР°СЏ", url: absoluteUrl("/") },
         { name: "FAQ", url: canonical },
       ]),
       buildFaqJsonLd(page.faqs),
@@ -1463,7 +1467,7 @@ router.get(
     const page = getSeoPage(slug);
     if (!page) {
       res.status(404).render("public/not-found", {
-        title: "Гайд не найден",
+        title: "Р“Р°Р№Рґ РЅРµ РЅР°Р№РґРµРЅ",
         slug,
         adminSession: getAdminSession(req),
       });
@@ -1485,8 +1489,8 @@ router.get(
         },
       },
       buildBreadcrumbJsonLd([
-        { name: "Главная", url: absoluteUrl("/") },
-        { name: "Гайды", url: absoluteUrl("/guides") },
+        { name: "Р“Р»Р°РІРЅР°СЏ", url: absoluteUrl("/") },
+        { name: "Р“Р°Р№РґС‹", url: absoluteUrl("/guides") },
         { name: page.heading, url: canonical },
       ]),
       buildFaqJsonLd(page.faqs),
@@ -1525,7 +1529,7 @@ router.get(
         dateModified: updatedAt,
       },
       buildBreadcrumbJsonLd([
-        { name: "Главная", url: absoluteUrl("/") },
+        { name: "Р“Р»Р°РІРЅР°СЏ", url: absoluteUrl("/") },
         { name: "Terms", url: canonical },
       ]),
     ];
@@ -1576,7 +1580,7 @@ router.get(
         dateModified: updatedAt,
       },
       buildBreadcrumbJsonLd([
-        { name: "Главная", url: absoluteUrl("/") },
+        { name: "Р“Р»Р°РІРЅР°СЏ", url: absoluteUrl("/") },
         { name: "Policy", url: canonical },
       ]),
     ];
@@ -1603,7 +1607,7 @@ router.get(
     const directorySettings = await getFeatureSetting("directory");
     if (!directorySettings.enabled) {
       res.status(404).render("public/not-found", {
-        title: "Страница не найдена",
+        title: "РЎС‚СЂР°РЅРёС†Р° РЅРµ РЅР°Р№РґРµРЅР°",
         slug: "directory",
         adminSession: getAdminSession(req),
       });
@@ -1763,7 +1767,7 @@ router.get(
 
     res.render("public/directory", {
       title: "UNQ Directory",
-      description: "Публичный каталог визиток UNQX",
+      description: "РџСѓР±Р»РёС‡РЅС‹Р№ РєР°С‚Р°Р»РѕРі РІРёР·РёС‚РѕРє UNQX",
       image: defaultSocialImage,
       items,
       pagination: { page: safePage, totalPages, total },
@@ -1781,7 +1785,7 @@ router.get(
     const slugRow = await findSlugByFullSlugWithLegacyFallback(slug);
     if (!slugRow || !["active", "private"].includes(slugRow.status) || !slugRow.ownerId) {
       res.status(404).render("public/not-found", {
-        title: "Визитка не найдена",
+        title: "Р’РёР·РёС‚РєР° РЅРµ РЅР°Р№РґРµРЅР°",
         slug,
         adminSession: getAdminSession(req),
       });
@@ -1796,7 +1800,7 @@ router.get(
     if (!owner || owner.status !== "active") {
       res.status(200).render("public/qr", {
         title: `QR ${slug}`,
-        description: `QR-визитка UNQ ${slug} временно недоступна.`,
+        description: `QR-РІРёР·РёС‚РєР° UNQ ${slug} РІСЂРµРјРµРЅРЅРѕ РЅРµРґРѕСЃС‚СѓРїРЅР°.`,
         image: defaultSocialImage,
         slug,
         unavailable: true,
@@ -1807,7 +1811,7 @@ router.get(
 
     res.render("public/qr", {
       title: `QR ${slug}`,
-      description: `QR-визитка UNQ ${slug}. Открой цифровую карточку владельца по ссылке и поделись за секунду.`,
+      description: `QR-РІРёР·РёС‚РєР° UNQ ${slug}. РћС‚РєСЂРѕР№ С†РёС„СЂРѕРІСѓСЋ РєР°СЂС‚РѕС‡РєСѓ РІР»Р°РґРµР»СЊС†Р° РїРѕ СЃСЃС‹Р»РєРµ Рё РїРѕРґРµР»РёСЃСЊ Р·Р° СЃРµРєСѓРЅРґСѓ.`,
       slug,
       image: defaultSocialImage,
       url: absoluteUrl(`/${slug}?src=qr`),
@@ -1831,10 +1835,10 @@ router.get(
     if (slugRow) {
       if (slugRow.status === "blocked") {
         res.status(200).render("public/slug-state", {
-          title: "Недоступно",
+          title: "РќРµРґРѕСЃС‚СѓРїРЅРѕ",
           slug,
-          heading: "Недоступно",
-          message: "Этот UNQ сейчас недоступен.",
+          heading: "РќРµРґРѕСЃС‚СѓРїРЅРѕ",
+          message: "Р­С‚РѕС‚ UNQ СЃРµР№С‡Р°СЃ РЅРµРґРѕСЃС‚СѓРїРµРЅ.",
           ctaLabel: "",
           ctaHref: "",
           noindex: true,
@@ -1845,11 +1849,11 @@ router.get(
 
       if (slugRow.status === "free") {
         res.status(200).render("public/slug-state", {
-          title: "UNQ свободен",
+          title: "UNQ СЃРІРѕР±РѕРґРµРЅ",
           slug,
-          heading: "Этот UNQ пока свободен",
-          message: "Ты можешь занять его прямо сейчас.",
-          ctaLabel: "Занять",
+          heading: "Р­С‚РѕС‚ UNQ РїРѕРєР° СЃРІРѕР±РѕРґРµРЅ",
+          message: "РўС‹ РјРѕР¶РµС€СЊ Р·Р°РЅСЏС‚СЊ РµРіРѕ РїСЂСЏРјРѕ СЃРµР№С‡Р°СЃ.",
+          ctaLabel: "Р—Р°РЅСЏС‚СЊ",
           ctaHref: "#",
           ctaOrderLink: true,
           ctaOrderPrefill: slug,
@@ -1861,11 +1865,11 @@ router.get(
 
       if (slugRow.status === "pending" || slugRow.status === "reserved") {
         res.status(200).render("public/slug-state", {
-          title: `UNQ занят: ${slug}`,
+          title: `UNQ Р·Р°РЅСЏС‚: ${slug}`,
           slug,
-          heading: "Этот UNQ уже занят",
-          message: "Сейчас он на рассмотрении. Встань в wishlist и мы сообщим, если он освободится.",
-          ctaLabel: "Встать в wishlist",
+          heading: "Р­С‚РѕС‚ UNQ СѓР¶Рµ Р·Р°РЅСЏС‚",
+          message: "РЎРµР№С‡Р°СЃ РѕРЅ РЅР° СЂР°СЃСЃРјРѕС‚СЂРµРЅРёРё. Р’СЃС‚Р°РЅСЊ РІ wishlist Рё РјС‹ СЃРѕРѕР±С‰РёРј, РµСЃР»Рё РѕРЅ РѕСЃРІРѕР±РѕРґРёС‚СЃСЏ.",
+          ctaLabel: "Р’СЃС‚Р°С‚СЊ РІ wishlist",
           ctaHref: "#",
           ctaWaitlistSlug: slug,
           noindex: true,
@@ -1876,11 +1880,11 @@ router.get(
 
       if (slugRow.status === "reserved_drop") {
         res.status(200).render("public/slug-state", {
-          title: `UNQ доступен в дропе`,
+          title: `UNQ РґРѕСЃС‚СѓРїРµРЅ РІ РґСЂРѕРїРµ`,
           slug,
-          heading: "Этот UNQ доступен в дропе",
-          message: "Подпишись на ближайший дроп и забери этот slug в момент старта.",
-          ctaLabel: "Перейти к дропам",
+          heading: "Р­С‚РѕС‚ UNQ РґРѕСЃС‚СѓРїРµРЅ РІ РґСЂРѕРїРµ",
+          message: "РџРѕРґРїРёС€РёСЃСЊ РЅР° Р±Р»РёР¶Р°Р№С€РёР№ РґСЂРѕРї Рё Р·Р°Р±РµСЂРё СЌС‚РѕС‚ slug РІ РјРѕРјРµРЅС‚ СЃС‚Р°СЂС‚Р°.",
+          ctaLabel: "РџРµСЂРµР№С‚Рё Рє РґСЂРѕРїР°Рј",
           ctaHref: "/drops",
           noindex: true,
           adminSession: getAdminSession(req),
@@ -1896,10 +1900,10 @@ router.get(
             : null;
         if (owner && (owner.status === "blocked" || owner.status === "deactivated")) {
           res.status(200).render("public/slug-state", {
-            title: "Недоступно",
+            title: "РќРµРґРѕСЃС‚СѓРїРЅРѕ",
             slug,
-            heading: "Недоступно",
-            message: "Эта визитка временно недоступна.",
+            heading: "РќРµРґРѕСЃС‚СѓРїРЅРѕ",
+            message: "Р­С‚Р° РІРёР·РёС‚РєР° РІСЂРµРјРµРЅРЅРѕ РЅРµРґРѕСЃС‚СѓРїРЅР°.",
             ctaLabel: "",
             ctaHref: "",
             noindex: true,
@@ -1922,12 +1926,12 @@ router.get(
           socialButtons.find((item) => item.type === "telegram") || socialButtons[0] || telegramFallback;
 
         res.status(200).render("public/slug-paused", {
-          title: `${slug} | Пауза`,
+          title: `${slug} | РџР°СѓР·Р°`,
           slug,
           ownerName: owner?.displayName || owner?.firstName || "UNQX User",
           ownerUsername: owner?.username ? `@${owner.username}` : "",
           ownerAvatar: profileCard?.avatarUrl || "",
-          pauseMessage: slugRow.pauseMessage || "Скоро вернусь · Пишите в Telegram",
+          pauseMessage: slugRow.pauseMessage || "РЎРєРѕСЂРѕ РІРµСЂРЅСѓСЃСЊ В· РџРёС€РёС‚Рµ РІ Telegram",
           primarySocial,
           noindex: true,
           adminSession: getAdminSession(req),
@@ -1938,10 +1942,10 @@ router.get(
       if (slugRow.status === "approved" || slugRow.status === "active" || slugRow.status === "private") {
         if (!slugRow.ownerId) {
           res.status(200).render("public/slug-state", {
-            title: "Скоро",
+            title: "РЎРєРѕСЂРѕ",
             slug,
-            heading: "Скоро появится",
-            message: "Визитка для этого UNQ ещё не опубликована.",
+            heading: "РЎРєРѕСЂРѕ РїРѕСЏРІРёС‚СЃСЏ",
+            message: "Р’РёР·РёС‚РєР° РґР»СЏ СЌС‚РѕРіРѕ UNQ РµС‰С‘ РЅРµ РѕРїСѓР±Р»РёРєРѕРІР°РЅР°.",
             ctaLabel: "",
             ctaHref: "",
             noindex: true,
@@ -1974,10 +1978,10 @@ router.get(
 
         if (!owner || !profileCard) {
           res.status(200).render("public/slug-state", {
-            title: "Скоро",
+            title: "РЎРєРѕСЂРѕ",
             slug,
-            heading: "Скоро появится",
-            message: "Визитка для этого UNQ ещё не опубликована.",
+            heading: "РЎРєРѕСЂРѕ РїРѕСЏРІРёС‚СЃСЏ",
+            message: "Р’РёР·РёС‚РєР° РґР»СЏ СЌС‚РѕРіРѕ UNQ РµС‰С‘ РЅРµ РѕРїСѓР±Р»РёРєРѕРІР°РЅР°.",
             ctaLabel: "",
             ctaHref: "",
             noindex: true,
@@ -1988,10 +1992,10 @@ router.get(
 
         if (owner.status === "blocked" || owner.status === "deactivated") {
           res.status(200).render("public/slug-state", {
-            title: "Недоступно",
+            title: "РќРµРґРѕСЃС‚СѓРїРЅРѕ",
             slug,
-            heading: "Недоступно",
-            message: "Эта визитка временно недоступна.",
+            heading: "РќРµРґРѕСЃС‚СѓРїРЅРѕ",
+            message: "Р­С‚Р° РІРёР·РёС‚РєР° РІСЂРµРјРµРЅРЅРѕ РЅРµРґРѕСЃС‚СѓРїРЅР°.",
             ctaLabel: "",
             ctaHref: "",
             noindex: true,
@@ -2027,7 +2031,7 @@ router.get(
         const topBadge = await getSlugTopBadge(slug);
         res.render("public/card", {
           title: `${card.name} | UNQX`,
-          description: `Цифровая визитка ${card.name} на UNQX: контакты, соцсети, QR и быстрый обмен ссылкой.`,
+          description: `Р¦РёС„СЂРѕРІР°СЏ РІРёР·РёС‚РєР° ${card.name} РЅР° UNQX: РєРѕРЅС‚Р°РєС‚С‹, СЃРѕС†СЃРµС‚Рё, QR Рё Р±С‹СЃС‚СЂС‹Р№ РѕР±РјРµРЅ СЃСЃС‹Р»РєРѕР№.`,
           image,
           card,
           topBadge,
@@ -2052,7 +2056,7 @@ router.get(
     }
 
     res.status(404).render("public/not-found", {
-      title: "Визитка не найдена",
+      title: "Р’РёР·РёС‚РєР° РЅРµ РЅР°Р№РґРµРЅР°",
       slug: req.params.slug,
       adminSession: getAdminSession(req),
     });

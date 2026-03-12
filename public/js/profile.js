@@ -1,4 +1,4 @@
-﻿(function () {
+(function () {
   let s = {};
   let csrf = null;
   (function () {
@@ -70,7 +70,7 @@
       "linen",
       "marble",
       "forest",
-      "royal_ivory",
+      "sage_luxe",
       "midnight_obsidian",
     ];
     const PREMIUM_ONLY_THEMES = new Set(PROFILE_THEMES.filter((theme) => theme !== "default_dark"));
@@ -239,7 +239,7 @@
       const total = Number(requestItem?.totalOneTime || slugPrice + planPrice + braceletPrice);
       const userName = String(s.user?.displayName || s.user?.firstName || "").trim() || "не указано";
       const userEmail = String(s.user?.email || "").trim() || "не указан";
-      const message = `Здравствуйте! Хочу оплатить заказ #️⃣ ${orderCode}\n\nUNQ: ${slug}\nФИО: ${userName}\nEmail: ${userEmail}\n\n💳 Детализация оплаты:\n• Slug ${slug}: ${Number(slugPrice).toLocaleString("ru-RU")} сум\n• Тариф ${planLabel(requestItem?.requestedPlan)}: ${Number(planPrice).toLocaleString("ru-RU")} сум\n• Браслет: ${Number(braceletPrice).toLocaleString("ru-RU")} сум\n\nИтого к оплате: ${Number(total).toLocaleString("ru-RU")} сум`;
+      const message = `Здравствуйте! Хочу оплатить заказ #?? ${orderCode}\n\nUNQ: ${slug}\nФИО: ${userName}\nEmail: ${userEmail}\n\n?? Детализация оплаты:\n• Slug ${slug}: ${Number(slugPrice).toLocaleString("ru-RU")} сум\n• Тариф ${planLabel(requestItem?.requestedPlan)}: ${Number(planPrice).toLocaleString("ru-RU")} сум\n• Браслет: ${Number(braceletPrice).toLocaleString("ru-RU")} сум\n\nИтого к оплате: ${Number(total).toLocaleString("ru-RU")} сум`;
       return `https://t.me/${TELEGRAM_PAYMENT_USERNAME}?text=${encodeURIComponent(message)}`;
     };
 
@@ -275,13 +275,13 @@
       const total = Number(order?.totalOneTime || slugPrice + planPrice + braceletPrice);
       const userName = String(s.user?.displayName || s.user?.firstName || "").trim() || "не указано";
       const userEmail = String(s.user?.email || "").trim() || "не указан";
-      const message = `Здравствуйте! Хочу оплатить заказ #️⃣ ${reference}
+      const message = `Здравствуйте! Хочу оплатить заказ #?? ${reference}
 
 UNQ: ${slug}
 ФИО: ${userName}
 Email: ${userEmail}
 
-💳 Детализация оплаты:
+?? Детализация оплаты:
 • Slug ${slug}: ${Number(slugPrice).toLocaleString("ru-RU")} сум
 • Тариф ${planLabel(order?.requestedPlan)}: ${Number(planPrice).toLocaleString("ru-RU")} сум
 • Браслет: ${Number(braceletPrice).toLocaleString("ru-RU")} сум
@@ -937,7 +937,7 @@ Email: ${userEmail}
           messageNode.textContent = `Открыть Премиум · ${upgradePrice} сум единоразово. `;
         }
         if (link instanceof HTMLElement) {
-          link.textContent = "Купить Премиум →";
+          link.textContent = "Купить Премиум >";
         }
         el.upg.classList.toggle("hidden", plan !== "basic");
       }
@@ -959,7 +959,7 @@ Email: ${userEmail}
           title: "Сначала выбери тариф",
           text: "Чтобы занять slug и создать визитку - купи Базовый или Премиум тариф.",
           buttonId: "profile-slugs-order-btn",
-          buttonLabel: "Занять slug →",
+          buttonLabel: "Занять slug >",
         });
         return;
       }
@@ -1196,7 +1196,7 @@ Email: ${userEmail}
             title: "Визитка недоступна",
             text: "Создать визитку можно после покупки тарифа и активации slug.",
             buttonId: "profile-card-order-btn",
-            buttonLabel: "Выбрать тариф →",
+            buttonLabel: "Выбрать тариф >",
           });
         }
         return;
@@ -1291,7 +1291,7 @@ Email: ${userEmail}
             title: "Заявок пока нет",
             text: "Подай заявку на slug чтобы начать.",
             buttonId: "profile-requests-order-btn",
-            buttonLabel: "Занять slug →",
+            buttonLabel: "Занять slug >",
           });
         }
         return;
@@ -1632,7 +1632,7 @@ Email: ${userEmail}
       }
       if (Number(score.scorePlan || 0) === 0) {
         const price = Number(s.pricing?.premiumUpgradePrice || 80_000).toLocaleString("ru-RU");
-        tips.push(`<div class="flex items-center justify-between gap-2"><span>Открыть Премиум · ${price} сум единоразово · +49 к Score</span><button type="button" data-order-link data-order-plan="premium" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold">Купить Премиум →</button></div>`);
+        tips.push(`<div class="flex items-center justify-between gap-2"><span>Открыть Премиум · ${price} сум единоразово · +49 к Score</span><button type="button" data-order-link data-order-plan="premium" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold">Купить Премиум ></button></div>`);
       }
       if (Number(score.scoreViews || 0) < 150) tips.push("<p>Поделись визиткой чтобы получить больше просмотров</p>");
       if (Number(score.scoreTenure || 0) < 100) tips.push("<p>Score растёт каждый месяц автоматически</p>");
@@ -1727,7 +1727,7 @@ Email: ${userEmail}
             title: "Нет данных",
             text: "Аналитика появится после активации визитки.",
             buttonId: "profile-analytics-order-btn",
-            buttonLabel: "Выбрать тариф →",
+            buttonLabel: "Выбрать тариф >",
           });
         }
         return;
@@ -2264,7 +2264,7 @@ Email: ${userEmail}
         showModal(
           "Нужен Премиум",
           `Открыть Премиум · ${upgradePrice} сум единоразово`,
-          "Купить Премиум →",
+          "Купить Премиум >",
           () => {
             openOrderModal({ plan: "premium" });
           },
