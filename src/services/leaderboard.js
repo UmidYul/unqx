@@ -58,27 +58,28 @@ async function buildLeaderboard(period = "week") {
   const range = getPeriodRange(period);
   const groupedViews = prisma.analyticsView && typeof prisma.analyticsView.groupBy === "function"
     ? await prisma.analyticsView.groupBy({
-      by: ["slug"],
+      by: ["slug", "sessionId"],
       where:
         range.period === "all"
           ? undefined
           : {
-            visitedAt: {
-              gte: range.startUtc,
-              lt: range.endUtc,
+              visitedAt: {
+                gte: range.startUtc,
+                lt: range.endUtc,
+              },
             },
-          },
-      _count: { _all: true },
     })
     : [];
 
-  const rankedByViews = groupedViews
-    .map((row) => ({
-      slug: String(row.slug || "").trim().toUpperCase(),
-      views: Number(row?._count?._all || 0),
-    }))
-    .filter((row) => row.slug)
-    .filter((row) => row.views > 0)
+  const uniqueViewsBySlug = new Map();
+  groupedViews.forEach((row) => {
+    const slug = String(row?.slug || "").trim().toUpperCase();
+    if (!slug) return;
+    uniqueViewsBySlug.set(slug, (uniqueViewsBySlug.get(slug) || 0) + 1);
+  });
+
+  const rankedByViews = Array.from(uniqueViewsBySlug.entries())
+    .map(([slug, views]) => ({ slug, views }))
     .sort((a, b) => b.views - a.views)
     .slice(0, 1000);
 
