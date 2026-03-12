@@ -48,13 +48,27 @@
   const tabAliases = { slug: "slugs" };
   const normalizedTab = tabAliases[tab] || tab;
   const tabSections = Array.from(document.querySelectorAll('section[id^="tab-"]'));
+  const dbg = (...args) => console.log("[admin-dashboard]", ...args);
+  dbg("init", {
+    href: window.location.href,
+    urlTab,
+    bodyActiveTab: body.getAttribute("data-active-tab"),
+    tab,
+    normalizedTab,
+    sections: tabSections.map((node) => ({
+      id: node.id,
+      hidden: node.classList.contains("hidden"),
+    })),
+  });
   const activeSection =
     document.getElementById(`tab-${normalizedTab}`) ||
     document.getElementById("tab-analytics");
   if (activeSection instanceof HTMLElement) {
     activeSection.classList.remove("hidden");
+    dbg("active-section-unhidden", activeSection.id);
   }
   if (!tabSections.some((node) => node instanceof HTMLElement && !node.classList.contains("hidden"))) {
+    dbg("no-visible-sections-fallback", "unhiding all sections");
     tabSections.forEach((node) => {
       if (node instanceof HTMLElement) node.classList.remove("hidden");
     });
@@ -2199,23 +2213,52 @@
 
   void loadMaintenanceBanner();
 
-  if (tab === "analytics") void loadAnalytics();
-  if (tab === "orders") void loadOrders();
+  if (tab === "analytics") {
+    dbg("load", "analytics");
+    void loadAnalytics();
+  }
+  if (tab === "orders") {
+    dbg("load", "orders");
+    void loadOrders();
+  }
   if (tab === "purchases") {
+    dbg("load", "purchases");
     void loadPurchases();
     void loadPricingSettings();
   }
-  if (tab === "users") void loadUsers();
-  if (tab === "slugs") void loadSlugs();
-  if (tab === "cards") void loadCards();
-  if (tab === "bracelets") void loadBracelets();
-  if (tab === "testimonials") void loadTestimonials();
-  if (tab === "logs") void loadLogs();
+  if (tab === "users") {
+    dbg("load", "users");
+    void loadUsers();
+  }
+  if (tab === "slugs") {
+    dbg("load", "slugs");
+    void loadSlugs();
+  }
+  if (tab === "cards") {
+    dbg("load", "cards");
+    void loadCards();
+  }
+  if (tab === "bracelets") {
+    dbg("load", "bracelets");
+    void loadBracelets();
+  }
+  if (tab === "testimonials") {
+    dbg("load", "testimonials");
+    void loadTestimonials();
+  }
+  if (tab === "logs") {
+    dbg("load", "logs");
+    void loadLogs();
+  }
   const verificationSection = document.getElementById("tab-verification");
   if (tab === "verification" || (verificationSection instanceof HTMLElement && !verificationSection.classList.contains("hidden"))) {
+    dbg("load", "verification");
     void loadVerificationRequests();
   }
-  if (tab === "score") void loadScoreManagement();
+  if (tab === "score") {
+    dbg("load", "score");
+    void loadScoreManagement();
+  }
 })();
 
 
