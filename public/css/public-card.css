@@ -384,21 +384,134 @@ body[data-page="profile-page"] {
   overflow: hidden;
 }
 
-#profile-card-live-preview[data-preview-theme="nebula_glass"] {
+#profile-card-live-preview[data-preview-theme] {
   position: relative;
   isolation: isolate;
-  border-color: rgba(255, 255, 255, 0.14);
-  background: #1c1c1e;
+  border-color: var(--preview-border-color, #d4d4d8);
+  background: var(--preview-page-bg, #f3f4f6);
 }
 
-#profile-card-live-preview[data-preview-theme="nebula_glass"]::before {
+#profile-card-live-preview[data-preview-theme]::before {
   content: "";
   position: absolute;
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  opacity: 0.62;
-  background-image:
+  opacity: var(--preview-screen-opacity, 0.42);
+  background-image: var(--preview-screen-pattern, none);
+}
+
+#profile-card-live-preview[data-preview-theme]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: var(--preview-overlay-opacity, 0.5);
+  background-image: var(--preview-overlay-pattern, none);
+}
+
+#profile-card-live-preview[data-preview-theme="default_dark"] {
+  --preview-border-color: #d8dee8;
+  --preview-page-bg: linear-gradient(140deg, #f7f8fa 0%, #eceff3 52%, #e5e9ef 100%);
+  --preview-screen-opacity: 0.42;
+  --preview-screen-pattern:
+    radial-gradient(circle at 14% 16%, rgba(255, 255, 255, 0.34) 0%, transparent 42%),
+    radial-gradient(circle at 84% 82%, rgba(96, 108, 130, 0.12) 0%, transparent 44%),
+    repeating-linear-gradient(90deg, transparent 0 54px, rgba(58, 70, 92, 0.045) 54px 56px);
+}
+
+#profile-card-live-preview[data-preview-theme="arctic"] {
+  --preview-border-color: #cfdbe6;
+  --preview-page-bg: linear-gradient(160deg, #e8f3f9 0%, #d4e8f2 50%, #c4dce8 100%);
+  --preview-screen-opacity: 0.5;
+  --preview-screen-pattern:
+    radial-gradient(circle at 14% 18%, rgba(233, 245, 255, 0.38) 0%, transparent 36%),
+    radial-gradient(circle at 86% 78%, rgba(132, 166, 194, 0.16) 0%, transparent 40%),
+    repeating-linear-gradient(120deg, transparent 0 44px, rgba(114, 146, 173, 0.06) 44px 46px);
+}
+
+#profile-card-live-preview[data-preview-theme="linen"] {
+  --preview-border-color: #ddceb9;
+  --preview-page-bg: linear-gradient(160deg, #f3ecdf 0%, #e9ddcb 52%, #dcccb7 100%);
+  --preview-screen-opacity: 0.52;
+  --preview-screen-pattern:
+    radial-gradient(circle at 12% 20%, rgba(255, 247, 233, 0.34) 0%, transparent 34%),
+    radial-gradient(circle at 84% 82%, rgba(165, 126, 84, 0.12) 0%, transparent 42%),
+    repeating-linear-gradient(124deg, transparent 0 38px, rgba(131, 96, 61, 0.055) 38px 40px);
+  --preview-overlay-opacity: 0.45;
+  --preview-overlay-pattern:
+    repeating-linear-gradient(45deg, transparent 0 10px, rgba(166, 130, 92, 0.08) 10px 11px),
+    repeating-linear-gradient(-45deg, transparent 0 10px, rgba(136, 105, 75, 0.06) 10px 11px);
+}
+
+#profile-card-live-preview[data-preview-theme="marble"] {
+  --preview-border-color: #dfdfdf;
+  --preview-page-bg: linear-gradient(135deg, #ffffff 0%, #f8f8f8 100%);
+  --preview-screen-opacity: 0.46;
+  --preview-screen-pattern:
+    radial-gradient(circle at 18% 16%, rgba(255, 255, 255, 0.26) 0%, transparent 36%),
+    radial-gradient(circle at 84% 78%, rgba(0, 0, 0, 0.045) 0%, transparent 40%),
+    repeating-linear-gradient(112deg, transparent 0 52px, rgba(35, 35, 35, 0.028) 52px 54px);
+}
+
+#profile-card-live-preview[data-preview-theme="forest"] {
+  --preview-border-color: #20422f;
+  --preview-page-bg: #071a10;
+  --preview-screen-opacity: 0.54;
+  --preview-screen-pattern:
+    radial-gradient(circle at 14% 22%, rgba(43, 104, 68, 0.32) 0%, transparent 34%),
+    radial-gradient(circle at 88% 76%, rgba(32, 74, 50, 0.3) 0%, transparent 40%),
+    repeating-linear-gradient(128deg, transparent 0 42px, rgba(198, 184, 147, 0.065) 42px 44px);
+}
+
+#profile-card-live-preview[data-preview-theme="sage_luxe"] {
+  --preview-border-color: #c7d3c9;
+  --preview-page-bg: linear-gradient(160deg, #eef4ef 0%, #e2ebe4 55%, #d5e0d8 100%);
+  --preview-screen-opacity: 0.5;
+  --preview-screen-pattern:
+    radial-gradient(circle at 14% 18%, rgba(246, 251, 247, 0.42) 0%, transparent 38%),
+    radial-gradient(circle at 86% 78%, rgba(112, 136, 116, 0.14) 0%, transparent 42%),
+    repeating-linear-gradient(136deg, transparent 0 42px, rgba(116, 134, 119, 0.06) 42px 44px);
+}
+
+#profile-card-live-preview[data-preview-theme="midnight_obsidian"] {
+  --preview-border-color: #26364f;
+  --preview-page-bg: linear-gradient(150deg, #090f16 0%, #101827 48%, #0a0f15 100%);
+  --preview-screen-opacity: 0.52;
+  --preview-screen-pattern:
+    radial-gradient(circle at 12% 16%, rgba(72, 108, 170, 0.34) 0%, transparent 36%),
+    radial-gradient(circle at 86% 74%, rgba(47, 77, 126, 0.3) 0%, transparent 42%),
+    repeating-linear-gradient(118deg, transparent 0 40px, rgba(126, 161, 226, 0.09) 40px 42px);
+}
+
+#profile-card-live-preview[data-preview-theme="golden_noir"] {
+  --preview-border-color: #394052;
+  --preview-page-bg: linear-gradient(150deg, #0b0e16 0%, #141a27 50%, #0b0f17 100%);
+  --preview-screen-opacity: 0.54;
+  --preview-screen-pattern:
+    radial-gradient(circle at 14% 16%, rgba(201, 173, 106, 0.14) 0%, transparent 44%),
+    radial-gradient(circle at 84% 80%, rgba(178, 154, 96, 0.12) 0%, transparent 40%),
+    repeating-linear-gradient(132deg, transparent 0 56px, rgba(201, 173, 106, 0.04) 56px 58px);
+}
+
+#profile-card-live-preview[data-preview-theme="aurora_codex"] {
+  --preview-border-color: #c7b090;
+  --preview-page-bg: linear-gradient(160deg, #f4ead2 0%, #efe1c2 56%, #f9f0dc 100%);
+  --preview-screen-opacity: 0.5;
+  --preview-screen-pattern:
+    radial-gradient(circle at 14% 16%, rgba(148, 41, 33, 0.1) 0%, transparent 36%),
+    radial-gradient(circle at 84% 76%, rgba(126, 97, 68, 0.12) 0%, transparent 42%),
+    repeating-linear-gradient(128deg, transparent 0 64px, rgba(131, 102, 74, 0.06) 64px 66px);
+}
+
+#profile-card-live-preview[data-preview-theme="nebula_glass"] {
+  --preview-border-color: rgba(255, 255, 255, 0.14);
+  --preview-page-bg: #1c1c1e;
+  --preview-screen-opacity: 0;
+  --preview-screen-pattern: none;
+  --preview-overlay-opacity: 0.62;
+  --preview-overlay-pattern:
     radial-gradient(circle at 14% 16%, rgba(255, 255, 255, 0.11) 0%, transparent 40%),
     radial-gradient(circle at 84% 82%, rgba(255, 255, 255, 0.08) 0%, transparent 38%),
     linear-gradient(145deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0));
