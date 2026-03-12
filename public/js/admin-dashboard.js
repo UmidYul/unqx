@@ -44,10 +44,6 @@
   autofillObserver.observe(body, { childList: true, subtree: true });
 
   const tab = body.getAttribute("data-active-tab") || "analytics";
-  // Temporary emergency fallback: keep all admin tabs visible.
-  document.querySelectorAll('section[id^="tab-"]').forEach((node) => {
-    if (node instanceof HTMLElement) node.classList.remove("hidden");
-  });
   const base = (body.getAttribute("data-public-base-url") || location.origin).replace(/\/$/, "");
   const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "";
   const showAlert = (message) => {
