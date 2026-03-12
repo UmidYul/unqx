@@ -6,10 +6,10 @@ const { env } = require("../config/env");
 const { getFeatureSetting } = require("./feature-settings");
 
 function normalizePeriod(period) {
-  if (period === "month" || period === "all") {
+  if (period === "week" || period === "month" || period === "all") {
     return period;
   }
-  return "week";
+  return "all";
 }
 
 function getPeriodRange(period, timezone = env.TIMEZONE) {
@@ -186,6 +186,8 @@ async function buildLeaderboard(period = "week") {
         slugs,
         views: item.views,
         ownerName: item.ownerName,
+        ownerRole: item.ownerRole,
+        ownerCompany: item.ownerCompany,
         avatarUrl: item.avatarUrl,
         plan: item.plan,
         userId: item.userId,
