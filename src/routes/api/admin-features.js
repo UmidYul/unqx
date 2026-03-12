@@ -197,7 +197,7 @@ function normalizeFlashConditionValue(conditionType, rawConditionValue) {
   }
 
   if (!includeRules.length) {
-    return { error: "Р”Р»СЏ custom-СѓСЃР»РѕРІРёСЏ СѓРєР°Р¶РёС‚Рµ С…РѕС‚СЏ Р±С‹ РѕРґРёРЅ slug РёР»Рё РїР°С‚С‚РµСЂРЅ" };
+    return { error: "Для custom-условия укажите хотя бы один slug или паттерн" };
   }
 
   const allowedSlugs = includeRules.filter((item) => item.type === "slug").map((item) => item.value);

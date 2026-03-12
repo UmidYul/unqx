@@ -564,7 +564,7 @@ model AnalyticsView {
   slug      String   @db.VarChar(20)
   visitedAt DateTime @default(now()) @map("visited_at")
   source    String   @default("direct") @db.VarChar(20)
-  city      String   @default("РќРµРёР·РІРµСЃС‚РЅРѕ") @db.VarChar(120)
+  city      String   @default("Неизвестно") @db.VarChar(120)
   device    String   @default("desktop") @db.VarChar(20)
   sessionId String   @map("session_id") @db.VarChar(80)
   fingerprint String? @db.VarChar(64)

@@ -116,7 +116,7 @@ function normalizeButtons(rawButtons, effectivePlan) {
     }
     const obj = item && typeof item === "object" ? item : {};
     const typeRaw = String(obj.type || "other").trim().toLowerCase();
-    const typeAlias = typeRaw === "РєР°СЂС‚Р°" ? "card" : typeRaw;
+    const typeAlias = typeRaw === "карта" ? "card" : typeRaw;
     const type = BUTTON_TYPES.has(typeAlias) ? typeAlias : "other";
     const label = String(obj.label || "").trim().slice(0, 40);
     const value = String(obj.value || obj.url || "").trim().slice(0, 300);
@@ -147,9 +147,9 @@ function normalizeDisplayName(value, fallback) {
 }
 
 function getPlanBadgeLabel(plan) {
-  if (plan === "premium") return "РџР Р•РњРРЈРњ";
-  if (plan === "basic") return "Р‘РђР—РћР’Р«Р™";
-  return "РўРђР РР¤ РќР• Р’Р«Р‘Р РђРќ";
+  if (plan === "premium") return "ПРЕМИУМ";
+  if (plan === "basic") return "БАЗОВЫЙ";
+  return "ТАРИФ НЕ ВЫБРАН";
 }
 
 module.exports = {
