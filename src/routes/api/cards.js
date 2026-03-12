@@ -53,7 +53,7 @@ const {
 
 const router = express.Router();
 const SLUG_REGEX = /^[A-Z]{3}[0-9]{3}$/;
-const THEMES = new Set(["default_dark", "arctic", "linen", "marble", "forest", "sage_luxe", "midnight_obsidian"]);
+const THEMES = new Set(["default_dark", "arctic", "linen", "marble", "forest", "sage_luxe", "midnight_obsidian", "golden_noir"]);
 const FALLBACK_SUPPORT_TELEGRAM = "unqx_uz";
 const AFFORDABLE_CACHE_TTL_LOW_LOAD_MS = 10_000;
 const AFFORDABLE_CACHE_TTL_MEDIUM_LOAD_MS = 8_000;

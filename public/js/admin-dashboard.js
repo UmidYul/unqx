@@ -140,6 +140,7 @@
     forest: { label: "Emerald Reserve", fill: "#1f5335", border: "#e7dbbf", text: "#e7dbbf" },
     sage_luxe: { label: "Verdant Luxe", fill: "#ecf2ee", border: "#7f927f", text: "#2f3e33" },
     midnight_obsidian: { label: "Midnight Obsidian", fill: "#111927", border: "#5374a6", text: "#d6e6ff" },
+    golden_noir: { label: "Noir Aureate", fill: "#161822", border: "#c9ad6a", text: "#d9c184" },
   };
   function themePill(theme) {
     const id = String(theme || "default_dark").trim();

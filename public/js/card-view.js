@@ -1,5 +1,5 @@
 (function initCardViewGlobal() {
-  const THEME_KEYS = ["default_dark", "arctic", "linen", "marble", "forest", "sage_luxe", "midnight_obsidian"];
+  const THEME_KEYS = ["default_dark", "arctic", "linen", "marble", "forest", "sage_luxe", "midnight_obsidian", "golden_noir"];
   const THEME_CONFIG = {
     default_dark: {
       cardBg: "#ffffff",
@@ -275,6 +275,45 @@
       buttonShineGradient:
         "linear-gradient(90deg, rgba(205,225,255,0) 0%, rgba(205,225,255,0.16) 45%, rgba(205,225,255,0.28) 50%, rgba(205,225,255,0.16) 55%, rgba(205,225,255,0) 100%)",
     },
+    golden_noir: {
+      cardBg: "linear-gradient(160deg, #0f121b 0%, #161b28 46%, #0d1018 100%)",
+      cardBgOverlay: "noir_gold_dust",
+      surfaceBg: "#121724",
+      cardBorder: "1px solid #2e3444",
+      surfaceBorder: "1px solid #30384a",
+      dividerColor: "#394257",
+      nameColor: "#d8c184",
+      roleColor: "#bba56f",
+      mutedColor: "#8b7c57",
+      accentColor: "#c9ad6a",
+      emailColor: "#cdb67f",
+      buttonPrimaryBg: "linear-gradient(135deg, #b89d63, #d8c184)",
+      buttonPrimaryText: "#11151f",
+      buttonPrimaryBorder: "#cdb375",
+      buttonSecondaryBg: "transparent",
+      buttonSecondaryText: "#cdb67f",
+      buttonSecondaryBorder: "#6e603f",
+      badgeText: "#d6bf85",
+      badgeBg: "rgba(36, 29, 16, 0.38)",
+      badgeBorder: "1px solid rgba(201, 173, 106, 0.36)",
+      topLineGradient: "linear-gradient(90deg, transparent, #c9ad6a, transparent)",
+      avatarBg: "linear-gradient(135deg, #2a2f3e, #171b26)",
+      avatarText: "#d9c184",
+      avatarBorder: "2px solid rgba(201, 173, 106, 0.3)",
+      cardBorderRadius: "20px",
+      fontFamily: "'DM Serif Display', 'Cormorant Garamond', Georgia, serif",
+      nameFontStyle: "normal",
+      nameFontWeight: "500",
+      roleLetterSpacing: "1.4px",
+      scoreLabelColor: "#bba56f",
+      scoreValueColor: "#dfc98e",
+      scoreBarFill: "#c9ad6a",
+      scoreBarTrack: "#2e3444",
+      scorePercentileColor: "#8b7c57",
+      cardShadow: "0 18px 42px rgba(6, 8, 13, 0.62)",
+      buttonShineGradient:
+        "linear-gradient(90deg, rgba(234,214,161,0) 0%, rgba(234,214,161,0.18) 45%, rgba(234,214,161,0.3) 50%, rgba(234,214,161,0.18) 55%, rgba(234,214,161,0) 100%)",
+    },
   };
 
   function resolveTheme(themeKey) {
@@ -287,16 +326,6 @@
     if (themeKey === "default_dark") {
       return `<svg class="unq-ref-overlay-svg" viewBox="0 0 360 600" preserveAspectRatio="none" aria-hidden="true">
         <defs>
-          <pattern id="dd-bands" width="52" height="52" patternUnits="userSpaceOnUse">
-            <path d="M0 12H52M0 36H52" stroke="#cfd6e2" stroke-width="0.38"></path>
-            <rect x="8" y="22" width="14" height="4" rx="2" fill="#dce2ec" opacity="0.44"></rect>
-            <rect x="30" y="44" width="10" height="3.4" rx="1.7" fill="#c8d0dd" opacity="0.38"></rect>
-          </pattern>
-          <pattern id="dd-figures" width="70" height="70" patternUnits="userSpaceOnUse">
-            <circle cx="14" cy="16" r="1.6" fill="#c7cfdb" opacity="0.48"></circle>
-            <circle cx="48" cy="28" r="1.2" fill="#bac4d3" opacity="0.42"></circle>
-            <rect x="22" y="50" width="12" height="5" rx="2.5" fill="#d4dbe6" opacity="0.34"></rect>
-          </pattern>
           <linearGradient id="dd-flow" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stop-color="#b0bbcb"></stop>
             <stop offset="100%" stop-color="#dfe4ec"></stop>
@@ -306,8 +335,6 @@
             <stop offset="100%" stop-color="#d7deea"></stop>
           </radialGradient>
         </defs>
-        <rect width="100%" height="100%" fill="url(#dd-bands)"></rect>
-        <rect width="100%" height="100%" fill="url(#dd-figures)"></rect>
         <circle cx="286" cy="130" r="164" fill="url(#dd-halo)" opacity="0.2"></circle>
         <path d="M0 112C78 94 150 98 222 118C282 136 324 136 360 126" stroke="url(#dd-flow)" stroke-width="0.88" fill="none"></path>
         <path d="M0 324C74 306 146 312 216 332C278 350 322 352 360 342" stroke="url(#dd-flow)" stroke-width="0.78" fill="none"></path>
@@ -317,10 +344,10 @@
     if (themeKey === "arctic") {
       return `<svg class="unq-ref-overlay-svg" viewBox="0 0 360 600" preserveAspectRatio="none" aria-hidden="true">
         <defs>
-          <pattern id="ar-frost-grid" width="28" height="28" patternUnits="userSpaceOnUse">
-            <path d="M0 14H28M14 0V28" stroke="#aec5d9" stroke-width="0.24"></path>
-            <circle cx="14" cy="14" r="0.65" fill="#b9cfe2"></circle>
-          </pattern>
+          <filter id="ar-frost-noise">
+            <feTurbulence type="fractalNoise" baseFrequency="0.86" numOctaves="2" stitchTiles="stitch"></feTurbulence>
+            <feColorMatrix type="saturate" values="0"></feColorMatrix>
+          </filter>
           <linearGradient id="ar-frost-line" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stop-color="#9cb8cf"></stop>
             <stop offset="100%" stop-color="#d3e0ec"></stop>
@@ -328,10 +355,13 @@
           <radialGradient id="ar-frost-glow" cx="50%" cy="30%" r="70%">
             <stop offset="0%" stop-color="#e8f3fd"></stop>
             <stop offset="100%" stop-color="#cfdcea"></stop>
-          </linearGradient>
+          </radialGradient>
         </defs>
-        <rect width="100%" height="100%" fill="url(#ar-frost-grid)"></rect>
+        <rect width="100%" height="100%" filter="url(#ar-frost-noise)" opacity="0.18"></rect>
         <circle cx="302" cy="104" r="160" fill="url(#ar-frost-glow)" opacity="0.34"></circle>
+        <path d="M0 58C74 42 146 52 216 76C278 96 322 98 360 86" stroke="#c6d7e6" stroke-width="0.56" fill="none"></path>
+        <path d="M0 188C74 170 146 180 216 202C278 222 322 224 360 212" stroke="#c6d7e6" stroke-width="0.5" fill="none"></path>
+        <path d="M0 420C72 402 144 410 214 432C278 450 322 452 360 440" stroke="#c6d7e6" stroke-width="0.48" fill="none"></path>
         <path d="M0 94C64 72 130 78 198 102C262 124 316 124 360 112" stroke="url(#ar-frost-line)" stroke-width="0.84" fill="none"></path>
         <path d="M0 284C62 262 128 268 196 292C262 316 316 318 360 304" stroke="url(#ar-frost-line)" stroke-width="0.74" fill="none"></path>
         <path d="M0 488C64 466 132 472 198 496C262 518 316 522 360 508" stroke="url(#ar-frost-line)" stroke-width="0.68" fill="none"></path>
@@ -340,10 +370,6 @@
     if (themeKey === "linen") {
       return `<svg class="unq-ref-overlay-svg" viewBox="0 0 360 600" preserveAspectRatio="none" aria-hidden="true">
         <defs>
-          <pattern id="ln-weave" width="20" height="20" patternUnits="userSpaceOnUse">
-            <path d="M0 10H20M10 0V20" stroke="#be9a72" stroke-width="0.42"></path>
-            <path d="M0 0H20M0 20H20M0 0V20M20 0V20" stroke="#dec9b1" stroke-width="0.2"></path>
-          </pattern>
           <pattern id="ln-stitch" width="26" height="26" patternUnits="userSpaceOnUse">
             <path d="M0 13H26" stroke="#c5a07a" stroke-width="0.28" stroke-dasharray="3 6"></path>
           </pattern>
@@ -352,7 +378,6 @@
             <stop offset="100%" stop-color="#c9ab87"></stop>
           </linearGradient>
         </defs>
-        <rect width="100%" height="100%" fill="url(#ln-weave)"></rect>
         <rect width="100%" height="100%" fill="url(#ln-stitch)"></rect>
         <path d="M0 96C72 70 146 78 214 98C278 116 322 116 360 104" stroke="url(#ln-wave)" stroke-width="0.82" fill="none"></path>
         <path d="M0 288C70 262 140 270 208 290C274 308 322 310 360 296" stroke="url(#ln-wave)" stroke-width="0.72" fill="none"></path>
@@ -371,8 +396,6 @@
         <path d="M0 84C88 50 164 64 236 100C286 124 330 126 360 110" stroke="#5f5f5f" stroke-width="1.2" fill="none"></path>
         <path d="M0 222C78 192 150 204 222 236C286 264 328 264 360 252" stroke="#4a4a4a" stroke-width="0.95" fill="none"></path>
         <path d="M0 402C84 374 160 388 234 418C294 444 334 446 360 434" stroke="#616161" stroke-width="0.86" fill="none"></path>
-        <path d="M58 0C82 130 44 246 72 364C94 454 78 530 98 600" stroke="#6d6d6d" stroke-width="0.76" fill="none"></path>
-        <path d="M270 0C296 128 254 244 284 366C306 456 290 534 314 600" stroke="#6b6b6b" stroke-width="0.7" fill="none"></path>
       </svg>`;
     }
     if (themeKey === "forest") {
@@ -382,16 +405,11 @@
             <feTurbulence type="fractalNoise" baseFrequency="0.84" numOctaves="3" stitchTiles="stitch"></feTurbulence>
             <feColorMatrix type="saturate" values="0"></feColorMatrix>
           </filter>
-          <pattern id="fr-rings" width="32" height="32" patternUnits="userSpaceOnUse">
-            <circle cx="16" cy="16" r="12" fill="none" stroke="#406f53" stroke-width="0.46"></circle>
-            <circle cx="16" cy="16" r="5.8" fill="none" stroke="#2f5e44" stroke-width="0.34"></circle>
-          </pattern>
           <linearGradient id="fr-vein" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stop-color="#7fa283"></stop>
             <stop offset="100%" stop-color="#cad6b5"></stop>
           </linearGradient>
         </defs>
-        <rect width="100%" height="100%" fill="url(#fr-rings)"></rect>
         <rect width="100%" height="100%" filter="url(#fr-grain)" opacity="0.34"></rect>
         <path d="M0 118C70 98 140 104 210 126C272 146 318 146 360 132" stroke="url(#fr-vein)" stroke-width="0.94" fill="none"></path>
         <path d="M0 326C72 302 144 308 214 330C276 350 322 350 360 338" stroke="url(#fr-vein)" stroke-width="0.86" fill="none"></path>
@@ -401,10 +419,10 @@
     if (themeKey === "sage_luxe") {
       return `<svg class="unq-ref-overlay-svg" viewBox="0 0 360 600" preserveAspectRatio="none" aria-hidden="true">
         <defs>
-          <pattern id="sg-grid" width="36" height="36" patternUnits="userSpaceOnUse">
-            <path d="M0 0H36V36H0Z" fill="none" stroke="#a4b3a5" stroke-width="0.26"></path>
-            <circle cx="18" cy="18" r="1.2" fill="#93a394" opacity="0.7"></circle>
-          </pattern>
+          <filter id="sg-silk-noise">
+            <feTurbulence type="fractalNoise" baseFrequency="0.72" numOctaves="2" stitchTiles="stitch"></feTurbulence>
+            <feColorMatrix type="saturate" values="0"></feColorMatrix>
+          </filter>
           <linearGradient id="sg-flow" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stop-color="#8b9d8e"></stop>
             <stop offset="100%" stop-color="#c3cdc4"></stop>
@@ -412,34 +430,34 @@
           <radialGradient id="sg-glow" cx="50%" cy="38%" r="72%">
             <stop offset="0%" stop-color="#f7fbf7"></stop>
             <stop offset="100%" stop-color="#dfe8e1"></stop>
-          </linearGradient>
+          </radialGradient>
         </defs>
-        <rect width="100%" height="100%" fill="url(#sg-grid)"></rect>
+        <rect width="100%" height="100%" filter="url(#sg-silk-noise)" opacity="0.16"></rect>
         <circle cx="288" cy="124" r="154" fill="url(#sg-glow)" opacity="0.3"></circle>
         <rect x="24" y="70" width="146" height="20" rx="10" fill="#dce6dd" opacity="0.34"></rect>
         <rect x="8" y="312" width="186" height="18" rx="9" fill="#d2ddd3" opacity="0.28"></rect>
         <rect x="122" y="472" width="202" height="16" rx="8" fill="#d7e1d8" opacity="0.26"></rect>
-        <path d="M0 104C76 84 150 90 222 112C284 130 324 132 360 122" stroke="url(#sg-flow)" stroke-width="0.82" fill="none"></path>
-        <path d="M0 318C72 296 146 304 216 326C280 346 322 348 360 336" stroke="url(#sg-flow)" stroke-width="0.72" fill="none"></path>
-        <path d="M0 532C74 510 148 518 218 540C282 558 324 562 360 548" stroke="url(#sg-flow)" stroke-width="0.66" fill="none"></path>
+        <path d="M0 46C70 32 142 38 212 56C276 74 320 78 360 68" stroke="#b6c4b8" stroke-width="0.5" fill="none"></path>
+        <path d="M0 238C72 224 144 232 214 248C276 266 320 270 360 260" stroke="#b6c4b8" stroke-width="0.48" fill="none"></path>
+        <path d="M0 422C74 408 146 416 216 434C278 450 320 454 360 446" stroke="#b6c4b8" stroke-width="0.46" fill="none"></path>
       </svg>`;
     }
     if (themeKey === "midnight_obsidian") {
       return `<svg class="unq-ref-overlay-svg" viewBox="0 0 360 600" preserveAspectRatio="none" aria-hidden="true">
         <defs>
-          <pattern id="mo-grid" width="22" height="22" patternUnits="userSpaceOnUse">
-            <path d="M0 0H22V22H0Z" fill="none" stroke="#3b5274" stroke-width="0.32"></path>
-          </pattern>
+          <filter id="mo-mist">
+            <feTurbulence type="fractalNoise" baseFrequency="0.96" numOctaves="2" stitchTiles="stitch"></feTurbulence>
+            <feColorMatrix type="saturate" values="0"></feColorMatrix>
+          </filter>
           <radialGradient id="mo-star" cx="50%" cy="50%" r="70%">
             <stop offset="0%" stop-color="#9bc2ff"></stop>
             <stop offset="100%" stop-color="#1a2740"></stop>
           </radialGradient>
         </defs>
-        <rect width="100%" height="100%" fill="url(#mo-grid)"></rect>
-        <path d="M52 92L128 144L214 110L296 164" stroke="#769edb" stroke-width="0.72" fill="none"></path>
-        <path d="M62 334L142 300L224 346L308 320" stroke="#6f99d9" stroke-width="0.72" fill="none"></path>
-        <path d="M0 120C70 98 140 104 210 124C272 142 320 140 360 126" stroke="#6f99d9" stroke-width="0.88" fill="none"></path>
-        <path d="M0 344C68 320 138 326 208 344C272 362 318 362 360 348" stroke="#6f99d9" stroke-width="0.78" fill="none"></path>
+        <rect width="100%" height="100%" filter="url(#mo-mist)" opacity="0.16"></rect>
+        <path d="M0 72C78 54 150 60 222 82C284 100 324 100 360 90" stroke="#3e5b86" stroke-width="0.46" fill="none"></path>
+        <path d="M0 264C76 246 148 254 220 274C284 292 324 294 360 282" stroke="#3e5b86" stroke-width="0.44" fill="none"></path>
+        <path d="M0 468C76 450 148 458 220 478C284 496 324 498 360 486" stroke="#3e5b86" stroke-width="0.42" fill="none"></path>
         <circle cx="52" cy="92" r="1.8" fill="url(#mo-star)"></circle>
         <circle cx="128" cy="144" r="1.4" fill="url(#mo-star)"></circle>
         <circle cx="214" cy="110" r="1.6" fill="url(#mo-star)"></circle>
@@ -448,6 +466,32 @@
         <circle cx="142" cy="300" r="1.4" fill="url(#mo-star)"></circle>
         <circle cx="224" cy="346" r="1.5" fill="url(#mo-star)"></circle>
         <circle cx="308" cy="320" r="1.7" fill="url(#mo-star)"></circle>
+      </svg>`;
+    }
+    if (themeKey === "golden_noir") {
+      return `<svg class="unq-ref-overlay-svg" viewBox="0 0 360 600" preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <filter id="gn-grain">
+            <feTurbulence type="fractalNoise" baseFrequency="0.82" numOctaves="2" stitchTiles="stitch"></feTurbulence>
+            <feColorMatrix type="saturate" values="0"></feColorMatrix>
+          </filter>
+          <linearGradient id="gn-line" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#8e7847"></stop>
+            <stop offset="100%" stop-color="#d2b777"></stop>
+          </linearGradient>
+          <radialGradient id="gn-glow" cx="50%" cy="50%" r="68%">
+            <stop offset="0%" stop-color="#d7c086"></stop>
+            <stop offset="100%" stop-color="#191e2b"></stop>
+          </radialGradient>
+        </defs>
+        <rect width="100%" height="100%" filter="url(#gn-grain)" opacity="0.18"></rect>
+        <circle cx="286" cy="132" r="164" fill="url(#gn-glow)" opacity="0.16"></circle>
+        <rect x="18" y="74" width="134" height="14" rx="7" fill="#362f22" opacity="0.34"></rect>
+        <rect x="202" y="220" width="140" height="12" rx="6" fill="#342d20" opacity="0.3"></rect>
+        <rect x="48" y="438" width="186" height="14" rx="7" fill="#362f22" opacity="0.28"></rect>
+        <path d="M0 110C74 88 148 94 220 116C284 136 324 136 360 124" stroke="url(#gn-line)" stroke-width="0.78" fill="none"></path>
+        <path d="M0 322C72 300 146 308 216 330C280 350 322 350 360 338" stroke="url(#gn-line)" stroke-width="0.7" fill="none"></path>
+        <path d="M0 536C74 514 148 522 218 544C282 562 324 566 360 552" stroke="url(#gn-line)" stroke-width="0.64" fill="none"></path>
       </svg>`;
     }
     return "";
@@ -481,7 +525,7 @@
 
   function detectCardBrand(digits) {
     const value = String(digits || "");
-    if (!value) return "РљР°СЂС‚Р°";
+    if (!value) return "Р В РЎв„ўР В Р’В°Р РЋР вЂљР РЋРІР‚С™Р В Р’В°";
     if (/^(?:8600|5614)\d{12}$/.test(value)) return "Uzcard";
     if (/^9860\d{12}$/.test(value)) return "Humo";
     if (/^220[0-4]\d{12}$/.test(value)) return "Mir";
@@ -491,7 +535,7 @@
     if (/^62\d{14,17}$/.test(value)) return "UnionPay";
     if (/^(?:2131|1800|35\d{3})\d{11,14}$/.test(value)) return "JCB";
     if (/^(?:50|5[6-9]|6\d)\d{10,17}$/.test(value)) return "Maestro";
-    return "РљР°СЂС‚Р°";
+    return "Р В РЎв„ўР В Р’В°Р РЋР вЂљР РЋРІР‚С™Р В Р’В°";
   }
 
   function normalizeButtonUrl(rawUrl, type, label) {
@@ -500,8 +544,8 @@
       .trim()
       .toLowerCase();
     const labelRaw = String(label || "").trim().toLowerCase();
-    const cardLikeLabel = /(РєР°СЂС‚Р°|card)/i.test(labelRaw);
-    const mapLikeLabel = /(map|maps|geo|location|Р»РѕРєР°С†)/i.test(labelRaw);
+    const cardLikeLabel = /(Р В РЎвЂќР В Р’В°Р РЋР вЂљР РЋРІР‚С™Р В Р’В°|card)/i.test(labelRaw);
+    const mapLikeLabel = /(map|maps|geo|location|Р В Р’В»Р В РЎвЂўР В РЎвЂќР В Р’В°Р РЋРІР‚В )/i.test(labelRaw);
     if (!input) return "";
 
     if (isSupportedButtonHref(input)) {
@@ -594,7 +638,7 @@
           const rawType = String(button?.type || "other")
             .trim()
             .toLowerCase();
-          const normalizedType = rawType === "РєР°СЂС‚Р°" ? "card" : rawType;
+          const normalizedType = rawType === "Р В РЎвЂќР В Р’В°Р РЋР вЂљР РЋРІР‚С™Р В Р’В°" ? "card" : rawType;
           const label = String(button?.label || "").trim();
           const url = normalizeButtonUrl(button?.href || button?.value || button?.url || "", normalizedType, label);
           const type = url.startsWith("card:") ? "card" : normalizedType;
@@ -758,7 +802,7 @@
     if (/(site|web|link|globe|www)/.test(signature)) {
       return "globe";
     }
-    if (/(РєР°СЂС‚Р°|map|maps|geo|location|loc)/.test(signature)) {
+    if (/(Р В РЎвЂќР В Р’В°Р РЋР вЂљР РЋРІР‚С™Р В Р’В°|map|maps|geo|location|loc)/.test(signature)) {
       return "location";
     }
     if (/(click|pay|payment|card|merchant)/.test(signature)) {
@@ -787,11 +831,11 @@
     const theme = resolveTheme(card.theme);
     const shareUrl = String(options.shareUrl || "").trim() || window.location.href;
     const showPausedBanner = Boolean(options.showPausedBanner);
-    const pausedText = String(options.pausedText || "Р’РёР·РёС‚РєР° РЅР° РїР°СѓР·Рµ - РїРѕСЃРµС‚РёС‚РµР»Рё РІРёРґСЏС‚ Р·Р°РіР»СѓС€РєСѓ");
-    const viewsLabel = String(options.viewsLabel || card.viewsLabel || "0 РїСЂРѕСЃРјРѕС‚СЂРѕРІ");
+    const pausedText = String(options.pausedText || "Р В РІР‚в„ўР В РЎвЂР В Р’В·Р В РЎвЂР РЋРІР‚С™Р В РЎвЂќР В Р’В° Р В Р вЂ¦Р В Р’В° Р В РЎвЂ”Р В Р’В°Р РЋРЎвЂњР В Р’В·Р В Р’Вµ - Р В РЎвЂ”Р В РЎвЂўР РЋР С“Р В Р’ВµР РЋРІР‚С™Р В РЎвЂР РЋРІР‚С™Р В Р’ВµР В Р’В»Р В РЎвЂ Р В Р вЂ Р В РЎвЂР В РўвЂР РЋР РЏР РЋРІР‚С™ Р В Р’В·Р В Р’В°Р В РЎвЂ“Р В Р’В»Р РЋРЎвЂњР РЋРІвЂљВ¬Р В РЎвЂќР РЋРЎвЂњ");
+    const viewsLabel = String(options.viewsLabel || card.viewsLabel || "0 Р В РЎвЂ”Р РЋР вЂљР В РЎвЂўР РЋР С“Р В РЎВР В РЎвЂўР РЋРІР‚С™Р РЋР вЂљР В РЎвЂўР В Р вЂ ");
     const slugPriceLabel =
       Number.isFinite(Number(card.slugPrice)) && Number(card.slugPrice) > 0
-        ? `${Number(card.slugPrice).toLocaleString("ru-RU")} СЃСѓРј`
+        ? `${Number(card.slugPrice).toLocaleString("ru-RU")} Р РЋР С“Р РЋРЎвЂњР В РЎВ`
         : "";
     const slugItems = card.slugs.length > 0 ? card.slugs : [card.slug];
     const score = options.score && typeof options.score === "object" ? options.score : null;
@@ -814,7 +858,7 @@
                 return "";
               }
               const brand = detectCardBrand(cardDigits);
-              const baseLabel = String(button.label || "").trim() || "РљР°СЂС‚Р°";
+              const baseLabel = String(button.label || "").trim() || "Р В РЎв„ўР В Р’В°Р РЋР вЂљР РЋРІР‚С™Р В Р’В°";
               const buttonLabel = baseLabel.includes(brand) ? baseLabel : `${baseLabel} (${brand})`;
               return `<button type="button" data-track-action data-button-type="card" data-copy-card="${esc(cardDigits)}" class="public-card-button unq-ref-action-btn ${toneClass}">${iconSvg("card")}<span>${esc(buttonLabel)}</span></button>`;
             }
@@ -822,7 +866,7 @@
           })
           .filter(Boolean)
           .join("")
-        : '<p class="unq-ref-empty-buttons">Р’Р»Р°РґРµР»РµС† РїРѕРєР° РЅРµ РґРѕР±Р°РІРёР» РєРѕРЅС‚Р°РєС‚РЅС‹Рµ РєРЅРѕРїРєРё.</p>';
+        : '<p class="unq-ref-empty-buttons">Р В РІР‚в„ўР В Р’В»Р В Р’В°Р В РўвЂР В Р’ВµР В Р’В»Р В Р’ВµР РЋРІР‚В  Р В РЎвЂ”Р В РЎвЂўР В РЎвЂќР В Р’В° Р В Р вЂ¦Р В Р’Вµ Р В РўвЂР В РЎвЂўР В Р’В±Р В Р’В°Р В Р вЂ Р В РЎвЂР В Р’В» Р В РЎвЂќР В РЎвЂўР В Р вЂ¦Р РЋРІР‚С™Р В Р’В°Р В РЎвЂќР РЋРІР‚С™Р В Р вЂ¦Р РЋРІР‚в„–Р В Р’Вµ Р В РЎвЂќР В Р вЂ¦Р В РЎвЂўР В РЎвЂ”Р В РЎвЂќР В РЎвЂ.</p>';
     const scoreBlock = score
       ? `<div class="unq-score-block">
           <div class="unq-score-head">
@@ -831,10 +875,10 @@
           </div>
           <div class="unq-score-row">
             <span class="unq-score-value">${Number(score.score || 0)}</span>
-            <span class="unq-score-top">РўРѕРї ${Number(score.topPercent || 100)}%</span>
+            <span class="unq-score-top">Р В РЎС›Р В РЎвЂўР В РЎвЂ” ${Number(score.topPercent || 100)}%</span>
           </div>
           ${score.isForming
-        ? '<p class="unq-score-note">UNQ Score С„РѕСЂРјРёСЂСѓРµС‚СЃСЏ В· РѕР±РЅРѕРІР»СЏРµС‚СЃСЏ РєР°Р¶РґС‹Рµ 24С‡</p>'
+        ? '<p class="unq-score-note">UNQ Score Р РЋРІР‚С›Р В РЎвЂўР РЋР вЂљР В РЎВР В РЎвЂР РЋР вЂљР РЋРЎвЂњР В Р’ВµР РЋРІР‚С™Р РЋР С“Р РЋР РЏ Р вЂ™Р’В· Р В РЎвЂўР В Р’В±Р В Р вЂ¦Р В РЎвЂўР В Р вЂ Р В Р’В»Р РЋР РЏР В Р’ВµР РЋРІР‚С™Р РЋР С“Р РЋР РЏ Р В РЎвЂќР В Р’В°Р В Р’В¶Р В РўвЂР РЋРІР‚в„–Р В Р’Вµ 24Р РЋРІР‚РЋ</p>'
         : `<div class="unq-score-progress"><span style="width:${Math.max(0, Math.min(100, (Number(score.score || 0) / 999) * 100)).toFixed(2)}%"></span></div>`
       }
         </div>`
@@ -864,13 +908,13 @@
     const aboutHtml =
       aboutItems.length > 0
         ? `<div class="unq-ref-about">
-            <p class="unq-ref-about-title">РљРћРќРўРђРљРўР«</p>
+            <p class="unq-ref-about-title">Р В РЎв„ўР В РЎвЂєР В РЎСљР В РЎС›Р В РЎвЂ™Р В РЎв„ўР В РЎС›Р В Р’В«</p>
             ${aboutItems.join("")}
           </div>`
         : "";
     const topBadgeHtml =
       topBadge && Number.isFinite(Number(topBadge.rank)) && Number(topBadge.rank) > 0
-        ? `<div class="unq-ref-top-badge">РўРѕРї #${Math.round(Number(topBadge.rank))} СЌС‚РѕР№ РЅРµРґРµР»Рё</div>`
+        ? `<div class="unq-ref-top-badge">Р В РЎС›Р В РЎвЂўР В РЎвЂ” #${Math.round(Number(topBadge.rank))} Р РЋР РЉР РЋРІР‚С™Р В РЎвЂўР В РІвЂћвЂ“ Р В Р вЂ¦Р В Р’ВµР В РўвЂР В Р’ВµР В Р’В»Р В РЎвЂ</div>`
         : "";
     const useCustomColor = card.tariff === "premium" && Boolean(card.customColor);
     const topLineValue =
@@ -936,9 +980,9 @@
             </div>
             ${slugPriceLabel ? `<span class="unq-ref-slug-price">${esc(slugPriceLabel)}</span>` : ""}
           </div>
-          <button type="button" data-share-card class="unq-ref-share" aria-label="РџРѕРґРµР»РёС‚СЊСЃСЏ">
+          <button type="button" data-share-card class="unq-ref-share" aria-label="Р В РЎСџР В РЎвЂўР В РўвЂР В Р’ВµР В Р’В»Р В РЎвЂР РЋРІР‚С™Р РЋР Р‰Р РЋР С“Р РЋР РЏ">
             ${iconSvg("share")}
-            <span class="sr-only" data-share-label>РџРѕРґРµР»РёС‚СЊСЃСЏ</span>
+            <span class="sr-only" data-share-label>Р В РЎСџР В РЎвЂўР В РўвЂР В Р’ВµР В Р’В»Р В РЎвЂР РЋРІР‚С™Р РЋР Р‰Р РЋР С“Р РЋР РЏ</span>
           </button>
         </div>
         <div class="public-card-shell unq-ref-shell">
@@ -972,11 +1016,11 @@
           <p class="unq-ref-hashtag">${esc(mainHashtag)}</p>
           ${aboutHtml}
           ${activeSocialLinks.length ? `<div class="unq-ref-social">${activeSocialLinks.map(renderSocialLink).join("")}</div>` : ""}
-          <button type="button" class="unq-ref-save interactive-btn" data-save-contact>${iconSvg("save")}<span>РЎРѕС…СЂР°РЅРёС‚СЊ РєРѕРЅС‚Р°РєС‚ (.vcf)</span></button>
+          <button type="button" class="unq-ref-save interactive-btn" data-save-contact>${iconSvg("save")}<span>Р В Р Р‹Р В РЎвЂўР РЋРІР‚В¦Р РЋР вЂљР В Р’В°Р В Р вЂ¦Р В РЎвЂР РЋРІР‚С™Р РЋР Р‰ Р В РЎвЂќР В РЎвЂўР В Р вЂ¦Р РЋРІР‚С™Р В Р’В°Р В РЎвЂќР РЋРІР‚С™ (.vcf)</span></button>
         </div>
         <div class="unq-ref-footline">
-          <div>В© ${esc(viewsLabel)}</div>
-          <div>${card.showBranding ? "вЂў UNQX" : ""}</div>
+          <div>Р вЂ™Р’В© ${esc(viewsLabel)}</div>
+          <div>${card.showBranding ? "Р Р†Р вЂљРЎС› UNQX" : ""}</div>
         </div>
       </div>
     `;

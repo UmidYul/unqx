@@ -72,6 +72,7 @@
       "forest",
       "sage_luxe",
       "midnight_obsidian",
+      "golden_noir",
     ];
     const PREMIUM_ONLY_THEMES = new Set(PROFILE_THEMES.filter((theme) => theme !== "default_dark"));
     const TELEGRAM_PAYMENT_USERNAME = String(root.getAttribute("data-telegram-bot-username") || "")

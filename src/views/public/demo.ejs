@@ -78,6 +78,17 @@
       avatarText: "#d6e6ff",
       radius: "20px",
     },
+    golden_noir: {
+      cardBg: "linear-gradient(160deg, #0f121b 0%, #161b28 46%, #0d1018 100%)",
+      cardBorder: "1px solid #2e3444",
+      buttonBg: "linear-gradient(135deg, #b89d63, #d8c184)",
+      buttonText: "#11151f",
+      nameColor: "#d8c184",
+      mutedColor: "#bba56f",
+      avatarBg: "linear-gradient(135deg, #2a2f3e, #171b26)",
+      avatarText: "#d9c184",
+      radius: "20px",
+    },
   };
   const pageTheme = typeof theme === "string" && themeTokens[theme] ? theme : "default_dark";
   const tokens = themeTokens[pageTheme];
@@ -101,9 +112,10 @@
     forest: "background: #071a10; position: relative;",
     sage_luxe: "background: linear-gradient(160deg, #eef4ef 0%, #e2ebe4 55%, #d5e0d8 100%); position: relative;",
     midnight_obsidian: "background: radial-gradient(circle at 12% 14%, rgba(58, 89, 143, 0.35) 0%, transparent 40%), linear-gradient(150deg, #090f16 0%, #101827 48%, #0a0f15 100%); position: relative;",
+    golden_noir: "background: radial-gradient(circle at 14% 16%, rgba(201, 173, 106, 0.14) 0%, transparent 44%), linear-gradient(150deg, #0b0e16 0%, #141a27 50%, #0b0f17 100%); position: relative;",
   };
   const pageMainStyle = isEmbed ? "" : pageMainStyleMap[pageTheme] || pageMainStyleMap.default_dark;
-  const headingClass = pageTheme === "forest" || pageTheme === "midnight_obsidian" ? "text-neutral-100" : "text-neutral-900";
+  const headingClass = pageTheme === "forest" || pageTheme === "midnight_obsidian" || pageTheme === "golden_noir" ? "text-neutral-100" : "text-neutral-900";
 %>
 <!doctype html>
 <html lang="ru">

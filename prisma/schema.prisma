@@ -22,6 +22,7 @@ enum CardTheme {
   forest
   sage_luxe
   midnight_obsidian
+  golden_noir
 }
 
 enum CheckerResult {
