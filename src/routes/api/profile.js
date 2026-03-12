@@ -1183,8 +1183,20 @@ router.get(
 
     const uniqueVisitors = new Set(views.map((item) => item.sessionId)).size;
     const prevUniqueVisitors = new Set(prevViews.map((item) => item.sessionId)).size;
-    const ctr = uniqueVisitors ? Number(((clicks.length / uniqueVisitors) * 100).toFixed(1)) : 0;
-    const prevCtr = prevUniqueVisitors ? Number(((prevClicks.length / prevUniqueVisitors) * 100).toFixed(1)) : 0;
+    const uniqueClickers = new Set(
+      clicks.map((item) => {
+        const sessionId = String(item.sessionId || "").trim();
+        return sessionId || `legacy:${item.id}`;
+      }),
+    ).size;
+    const prevUniqueClickers = new Set(
+      prevClicks.map((item) => {
+        const sessionId = String(item.sessionId || "").trim();
+        return sessionId || `legacy:${item.id}`;
+      }),
+    ).size;
+    const ctr = uniqueVisitors ? Number(((uniqueClickers / uniqueVisitors) * 100).toFixed(1)) : 0;
+    const prevCtr = prevUniqueVisitors ? Number(((prevUniqueClickers / prevUniqueVisitors) * 100).toFixed(1)) : 0;
 
     const byDaySessions = new Map();
     const bySourceSessions = new Map();
@@ -1243,12 +1255,12 @@ router.get(
       kpi: {
         views: uniqueVisitors,
         uniqueVisitors,
-        clicks: clicks.length,
+        clicks: uniqueClickers,
         ctr,
         trends: {
           views: uniqueVisitors - prevUniqueVisitors,
           uniqueVisitors: uniqueVisitors - prevUniqueVisitors,
-          clicks: clicks.length - prevClicks.length,
+          clicks: uniqueClickers - prevUniqueClickers,
           ctr: Number((ctr - prevCtr).toFixed(1)),
         },
       },

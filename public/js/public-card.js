@@ -422,7 +422,30 @@
     return;
   }
 
+  function readCookie(name) {
+    const raw = String(document.cookie || "");
+    const escapedName = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const match = raw.match(new RegExp(`(?:^|;\\s*)${escapedName}=([^;]*)`));
+    return match ? decodeURIComponent(match[1]) : "";
+  }
+
+  function isOwnerSlug(currentSlug) {
+    const raw = readCookie("unqx_owner_slugs");
+    if (!raw) return false;
+    const owned = new Set(
+      raw
+        .split(",")
+        .map((item) => String(item || "").trim().toUpperCase())
+        .filter(Boolean),
+    );
+    return owned.has(String(currentSlug || "").trim().toUpperCase());
+  }
+
   if (payload && payload.trackViaPageRequest) {
+    return;
+  }
+
+  if (isOwnerSlug(slug)) {
     return;
   }
 

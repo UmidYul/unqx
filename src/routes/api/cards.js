@@ -1,10 +1,9 @@
-const { createHash, randomUUID } = require("node:crypto");
+const { createHash } = require("node:crypto");
 
 const express = require("express");
 
 const { prisma } = require("../../db/prisma");
 const { env } = require("../../config/env");
-const { detectDevice } = require("../../services/ua");
 const { generateVCard } = require("../../services/vcard");
 const { calculateSlugPrice, calculateSlugPriceFromSettings, getSlugPricingConfig } = require("../../services/slug-pricing");
 const { sendOrderRequestToTelegram, TelegramConfigError, TelegramDeliveryError } = require("../../services/telegram");
@@ -30,8 +29,8 @@ const { publicOrderRateLimit } = require("../../middleware/rate-limit");
 const { getUserSession, requireUserApi } = require("../../middleware/auth");
 const { OrderRequestSchema } = require("../../validation/order-request");
 const { getSetting, getManySettings } = require("../../services/platform-settings");
-const { sendTapPushNotification } = require("../../services/push");
-const { resolveUzbekistanCity } = require("../../constants/uzbekistan-cities");
+const { normalizeButtonType, getAnalyticsSessionId, recordView } = require("../../services/tap-tracker");
+const { resolveClientIp, buildViewerFingerprint } = require("../../services/request-ip");
 const { logPaymentEvent } = require("../../services/payment-events");
 const {
   getReferralV1Settings,
@@ -310,197 +309,13 @@ function toOrderStatusLabel(status) {
   }
 }
 
-function normalizeIp(value) {
-  if (!value || typeof value !== "string") {
-    return null;
-  }
-
-  const raw = value.trim().toLowerCase();
-  if (!raw) {
-    return null;
-  }
-
-  if (raw.startsWith("::ffff:")) {
-    return raw.slice(7);
-  }
-
-  if (raw === "::1") {
-    return "127.0.0.1";
-  }
-
-  return raw;
-}
-
 function pickClientIdentity(req) {
-  const forwardedFor = req.get("x-forwarded-for");
-  const realIp = req.get("x-real-ip");
-
-  const forwardedIp = forwardedFor ? forwardedFor.split(",")[0].trim() : null;
-  const directIp = normalizeIp(forwardedIp) || normalizeIp(realIp) || normalizeIp(req.ip);
-
-  if (directIp) {
-    return `ip:${directIp}`;
+  const resolvedIp = resolveClientIp(req);
+  const fingerprint = buildViewerFingerprint(req, resolvedIp);
+  if (fingerprint) {
+    return fingerprint;
   }
-
-  const userAgent = (req.get("user-agent") || "").trim();
-  const acceptLanguage = (req.get("accept-language") || "").trim();
-
-  if (!userAgent && !acceptLanguage) {
-    return null;
-  }
-
-  return `fp:${userAgent}|${acceptLanguage}`;
-}
-
-const TRACKED_SOURCES = new Set(["nfc", "qr", "direct", "share", "widget"]);
-const TRACKED_BUTTON_TYPES = new Set([
-  "telegram",
-  "phone",
-  "website",
-  "card",
-  "whatsapp",
-  "instagram",
-  "youtube",
-  "email",
-  "tiktok",
-  "other",
-]);
-
-function normalizeSource(value) {
-  const raw = String(value || "")
-    .trim()
-    .toLowerCase();
-  if (!raw) return "direct";
-  if (raw === "nfc_scan" || raw === "nfc_write") return "nfc";
-  if (raw === "telegram") return "share";
-  if (TRACKED_SOURCES.has(raw)) return raw;
-
-  if (raw.includes("nfc")) return "nfc";
-  if (raw.includes("qr")) return "qr";
-  if (raw.includes("telegram") || raw.includes("share") || raw.includes("ref")) return "share";
-  if (raw.includes("widget")) return "widget";
-  if (raw.includes("direct") || raw.includes("link") || raw.includes("web") || raw.includes("site")) return "direct";
-
-  return "direct";
-}
-
-function isMobileUA(ua) {
-  return /android|iphone|ipad|mobile/i.test(String(ua || ""));
-}
-
-function resolveTapSource(req, rawSource) {
-  const hasExplicitSource = rawSource !== undefined && rawSource !== null && String(rawSource).trim() !== "";
-  if (hasExplicitSource) {
-    return normalizeSource(rawSource);
-  }
-
-  const referer = String(req.get("referer") || "").trim();
-  const userAgent = String(req.get("user-agent") || "");
-  if (!referer && isMobileUA(userAgent)) {
-    return "nfc";
-  }
-  return "direct";
-}
-
-function normalizeButtonType(value) {
-  const raw = String(value || "")
-    .trim()
-    .toLowerCase();
-  if (!raw) return "other";
-  return TRACKED_BUTTON_TYPES.has(raw) ? raw : "other";
-}
-
-function getAnalyticsSessionId(req, res) {
-  const rawCookie = String(req.get("cookie") || "");
-  const match = rawCookie.match(/(?:^|;\s*)unqx_sid=([^;]+)/);
-  const existing = match ? decodeURIComponent(match[1]) : "";
-  if (existing && /^[a-zA-Z0-9_-]{16,80}$/.test(existing)) {
-    return existing;
-  }
-
-  const next = randomUUID().replace(/-/g, "").slice(0, 32);
-  if (res && typeof res.append === "function") {
-    res.append("Set-Cookie", `unqx_sid=${next}; Max-Age=31536000; Path=/; SameSite=Lax; HttpOnly`);
-  }
-  return next;
-}
-
-function pickIpForGeo(req) {
-  const forwardedFor = req.get("x-forwarded-for");
-  const realIp = req.get("x-real-ip");
-  const forwardedIp = forwardedFor ? forwardedFor.split(",")[0].trim() : "";
-  return normalizeIp(forwardedIp) || normalizeIp(realIp) || normalizeIp(req.ip) || "";
-}
-
-function withTimeout(promise, ms) {
-  return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error("timeout")), ms);
-    promise
-      .then((value) => {
-        clearTimeout(timer);
-        resolve(value);
-      })
-      .catch((error) => {
-        clearTimeout(timer);
-        reject(error);
-      });
-  });
-}
-
-async function resolveCityByIp(ip) {
-  if (!ip || ip === "127.0.0.1" || ip === "::1") {
-    return "Неизвестно";
-  }
-  try {
-    const response = await withTimeout(fetch(`https://ipapi.co/${encodeURIComponent(ip)}/json/`), 700);
-    if (!response.ok) {
-      return "Неизвестно";
-    }
-    const payload = await response.json().catch(() => ({}));
-    const city = String(payload?.city || "").trim();
-    return city ? city.slice(0, 120) : "Неизвестно";
-  } catch {
-    return "Неизвестно";
-  }
-}
-
-async function resolveGeoByIp(ip) {
-  if (!ip || ip === "127.0.0.1" || ip === "::1") {
-    return { city: "Неизвестно", country: "" };
-  }
-  try {
-    const response = await withTimeout(fetch(`https://ipapi.co/${encodeURIComponent(ip)}/json/`), 2000);
-    if (!response.ok) {
-      return { city: "Неизвестно", country: "" };
-    }
-    const payload = await response.json().catch(() => ({}));
-    const cityRaw = String(payload?.city || "").trim();
-    const country = String(payload?.country_name || payload?.country || "").trim();
-
-    // Нормализуем город через маппинг узбекских городов (Tashkent > Ташкент)
-    const normalizedCity = resolveUzbekistanCity(cityRaw);
-    const city = normalizedCity || (cityRaw ? cityRaw.slice(0, 120) : "Неизвестно");
-
-    return {
-      city,
-      country: country ? country.slice(0, 120) : "",
-    };
-  } catch {
-    return { city: "Неизвестно", country: "" };
-  }
-}
-
-async function getPrimarySlugForUser(userId) {
-  if (!userId) return null;
-  const row = await prisma.slug.findFirst({
-    where: {
-      ownerId: userId,
-      status: { in: ["active", "private", "paused", "approved"] },
-    },
-    orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
-    select: { fullSlug: true },
-  });
-  return row?.fullSlug || null;
+  return resolvedIp ? `ip:${resolvedIp}` : null;
 }
 
 function isMissingStorageError(error) {
@@ -2301,6 +2116,7 @@ router.post(
   asyncHandler(async (req, res) => {
     const requestedSlug = sanitizeSlug(req.params.slug);
     const buttonType = normalizeButtonType(req.body?.buttonType);
+    const sessionId = getAnalyticsSessionId(req, res);
 
     const slugRow = await withMissingTableFallback("Slug", null, () =>
       prisma.slug.findUnique({
@@ -2315,13 +2131,39 @@ router.post(
     }
 
     await prisma.$transaction(async (tx) => {
-      if (tx.analyticsClick) {
-        await tx.analyticsClick.create({
-          data: {
-            slug: slugRow.fullSlug,
-            buttonType,
-          },
-        });
+      const dedupeSince = new Date(Date.now() - 30 * 1000);
+      try {
+        await tx.$executeRaw`
+          INSERT INTO analytics_clicks (
+            slug,
+            button_type,
+            session_id
+          )
+          SELECT
+            ${slugRow.fullSlug},
+            ${buttonType},
+            ${sessionId}
+          WHERE NOT EXISTS (
+            SELECT 1
+            FROM analytics_clicks ac
+            WHERE ac.slug = ${slugRow.fullSlug}
+              AND ac.button_type = ${buttonType}
+              AND ac.session_id = ${sessionId}
+              AND ac.clicked_at >= ${dedupeSince}
+          )
+        `;
+      } catch (error) {
+        if (!isMissingStorageError(error) && !isMissingModelColumn(error, "AnalyticsClick")) {
+          throw error;
+        }
+        if (tx.analyticsClick) {
+          await tx.analyticsClick.create({
+            data: {
+              slug: slugRow.fullSlug,
+              buttonType,
+            },
+          });
+        }
       }
     });
 
@@ -2333,198 +2175,31 @@ router.post(
   "/:slug/view",
   asyncHandler(async (req, res) => {
     const requestedSlug = sanitizeSlug(req.params.slug);
-    const device = detectDevice(req.get("user-agent"));
-    const source = resolveTapSource(req, req.query?.src || req.body?.src);
-    const sessionId = getAnalyticsSessionId(req, res);
 
     const slugRow = await withMissingTableFallback("Slug", null, () =>
       prisma.slug.findUnique({
         where: { fullSlug: requestedSlug },
-        select: { fullSlug: true, status: true },
+        select: { fullSlug: true, status: true, ownerId: true },
       }),
     );
 
-    if (slugRow) {
-      if (!["active", "private"].includes(slugRow.status)) {
-        res.status(404).json({ error: "Card not found" });
-        return;
-      }
-
-      res.json({ ok: true });
-      const ipForGeo = pickIpForGeo(req);
-      const userSession = getUserSession(req);
-      const viewerUserId = userSession?.userId ? String(userSession.userId) : null;
-      void withMissingTableFallback("Slug", null, () =>
-        prisma.$transaction(async (tx) => {
-          let resolvedCity = "Неизвестно";
-
-          // Для авторизованных пользователей сначала пытаемся использовать город из профиля
-          if (viewerUserId && tx.user) {
-            const viewer = await tx.user.findUnique({
-              where: { id: viewerUserId },
-              select: { city: true },
-            });
-            if (viewer?.city) {
-              resolvedCity = String(viewer.city).trim().slice(0, 120);
-            }
-          }
-
-          // Если город не определен из профиля, используем геолокацию по IP
-          if (resolvedCity === "Неизвестно") {
-            const geo = await resolveGeoByIp(ipForGeo);
-            resolvedCity = geo.city;
-          }
-
-          let isUniqueSessionView = true;
-          if (tx.analyticsView) {
-            const exists = await tx.analyticsView.findFirst({
-              where: {
-                slug: slugRow.fullSlug,
-                sessionId,
-              },
-              select: { id: true },
-            });
-            isUniqueSessionView = !exists;
-          }
-
-          if (tx.slug && isUniqueSessionView) {
-            await tx.slug.update({
-              where: { fullSlug: slugRow.fullSlug },
-              data: { analyticsViewsCount: { increment: 1 } },
-            });
-          }
-
-          if (tx.analyticsView) {
-            await tx.analyticsView.create({
-              data: {
-                slug: slugRow.fullSlug,
-                source,
-                city: resolvedCity,
-                device,
-                sessionId,
-              },
-            });
-          }
-
-          try {
-            const geo = resolvedCity !== "Неизвестно" ? { city: resolvedCity, country: "" } : await resolveGeoByIp(ipForGeo);
-            await tx.$executeRaw`
-              INSERT INTO tap_events (
-                owner_slug,
-                visitor_slug,
-                visitor_user_id,
-                visitor_ip,
-                user_agent,
-                source,
-                city,
-                country
-              )
-              SELECT
-                ${slugRow.fullSlug},
-                ${viewerUserId ? await getPrimarySlugForUser(viewerUserId) : null},
-                ${viewerUserId || null},
-                ${ipForGeo || null},
-                ${String(req.get("user-agent") || "") || null},
-                ${source},
-                ${geo.city || null},
-                ${geo.country || null}
-              WHERE NOT EXISTS (
-                SELECT 1
-                FROM tap_events te
-                WHERE te.owner_slug = ${slugRow.fullSlug}
-                  AND te.source = ${source}
-                  AND te.visitor_user_id IS NOT DISTINCT FROM ${viewerUserId || null}
-                  AND te.visitor_ip IS NOT DISTINCT FROM ${ipForGeo || null}
-                  AND te.created_at >= now() - interval '5 seconds'
-              )
-            `;
-          } catch (error) {
-            if (!isMissingStorageError(error)) {
-              throw error;
-            }
-          }
-
-          if (viewerUserId && slugRow.ownerId && viewerUserId !== slugRow.ownerId) {
-            const viewerSlug = await getPrimarySlugForUser(viewerUserId);
-            if (viewerSlug) {
-              try {
-                await tx.$executeRaw`
-                  INSERT INTO user_contacts (
-                    owner_id,
-                    contact_slug,
-                    contact_user_id,
-                    saved,
-                    subscribed,
-                    first_tap_at,
-                    last_tap_at,
-                    tap_count
-                  )
-                  VALUES (
-                    ${slugRow.ownerId},
-                    ${viewerSlug},
-                    ${viewerUserId},
-                    false,
-                    false,
-                    now(),
-                    now(),
-                    1
-                  )
-                  ON CONFLICT (owner_id, contact_slug)
-                  DO UPDATE SET
-                    contact_user_id = EXCLUDED.contact_user_id,
-                    last_tap_at = now(),
-                    tap_count = user_contacts.tap_count + 1
-                `;
-
-                await tx.$executeRaw`
-                  INSERT INTO notifications (
-                    user_id,
-                    type,
-                    title,
-                    body,
-                    data
-                  )
-                  VALUES (
-                    ${slugRow.ownerId},
-                    'tap',
-                    'Новый тап',
-                    ${`${viewerSlug} открыл вашу визитку`},
-                    ${JSON.stringify({ ownerSlug: slugRow.fullSlug, visitorSlug: viewerSlug, source })}
-                  )
-                `;
-
-                void sendTapPushNotification({
-                  ownerId: slugRow.ownerId,
-                  ownerSlug: slugRow.fullSlug,
-                  visitorSlug: viewerSlug,
-                  source,
-                }).catch((pushError) => {
-                  console.error("[push] failed to send tap notification", {
-                    ownerId: slugRow.ownerId,
-                    ownerSlug: slugRow.fullSlug,
-                    visitorSlug: viewerSlug,
-                    source,
-                    message: pushError?.message || String(pushError),
-                  });
-                });
-              } catch (error) {
-                if (!isMissingStorageError(error)) {
-                  throw error;
-                }
-              }
-            }
-          }
-        }).catch((error) => {
-          console.error("[express-app] failed to write slug analytics view", error);
-        }),
-      );
+    if (!slugRow || !["active", "private"].includes(slugRow.status)) {
+      res.status(404).json({ error: "Card not found" });
       return;
     }
 
-    res.status(404).json({ error: "Card not found" });
+    res.json({ ok: true });
+    void recordView({
+      req,
+      res,
+      ownerSlug: slugRow.fullSlug,
+      ownerId: slugRow.ownerId || null,
+      sourceInput: req.query?.src || req.body?.src,
+    }).catch((error) => {
+      console.error("[express-app] failed to write slug analytics view", error);
+    });
   }),
 );
-
 router.get(
   "/:slug/vcf",
   asyncHandler(async (req, res) => {

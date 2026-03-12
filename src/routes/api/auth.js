@@ -209,6 +209,26 @@ function userToClientPayload(user) {
   };
 }
 
+async function setOwnerSlugsCookie(res, userId) {
+  if (!res || typeof res.append !== "function" || !userId) return;
+  const slugs = await prisma.slug.findMany({
+    where: {
+      ownerId: userId,
+      status: { in: ["active", "private", "paused", "approved"] },
+    },
+    orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
+    select: { fullSlug: true },
+  });
+  const serialized = slugs
+    .map((item) => String(item.fullSlug || "").trim().toUpperCase())
+    .filter(Boolean)
+    .join(",");
+  res.append(
+    "Set-Cookie",
+    `unqx_owner_slugs=${encodeURIComponent(serialized)}; Max-Age=2592000; Path=/; SameSite=Lax`,
+  );
+}
+
 router.post(
   "/register",
   authRegisterRateLimit,
@@ -373,6 +393,7 @@ router.post(
     });
 
     await loginUserSession(req, userToSessionPayload(updated), { rememberMe: true });
+    await setOwnerSlugsCookie(res, updated.id);
     await sendWelcomeEmail({ email: updated.email, firstName: updated.firstName });
 
     res.json({ ok: true, redirectTo: "/profile", user: userToClientPayload(updated) });
@@ -483,6 +504,7 @@ router.post(
     }
 
     await loginUserSession(req, userToSessionPayload(user), { rememberMe });
+    await setOwnerSlugsCookie(res, user.id);
     res.json({ ok: true, redirectTo: "/profile", user: userToClientPayload(user) });
   }),
 );
@@ -593,6 +615,7 @@ router.post(
     });
 
     await loginUserSession(req, userToSessionPayload(updated), { rememberMe: true });
+    await setOwnerSlugsCookie(res, updated.id);
     void sendAccountReactivatedEmail({ email: updated.email, firstName: updated.firstName }).catch((error) => {
       console.error("[express-app] failed to send account reactivated email", error);
     });
@@ -801,6 +824,7 @@ router.post(
     });
 
     await loginUserSession(req, userToSessionPayload(updated), { rememberMe: true });
+    await setOwnerSlugsCookie(res, updated.id);
     res.json({ ok: true, user: userToClientPayload(updated) });
   }),
 );
@@ -957,6 +981,7 @@ router.post(
       sameSite: "lax",
       secure: env.SESSION_COOKIE_SECURE === true,
     });
+    res.append("Set-Cookie", "unqx_owner_slugs=; Max-Age=0; Path=/; SameSite=Lax");
     const csrfToken = ensureCsrfToken(req);
     res.json({ ok: true, csrfToken });
   }),

@@ -1,6 +1,5 @@
 const fs = require("node:fs");
 const path = require("node:path");
-const { randomUUID } = require("node:crypto");
 const express = require("express");
 
 const { prisma } = require("../../db/prisma");
@@ -15,8 +14,7 @@ const { getActiveFlashSale, resolveConditionLabel, getFlashSaleSlotsLeft } = req
 const { normalizeRefCode } = require("../../services/referrals");
 const { getPricingSettings } = require("../../services/pricing-settings");
 const { getManySettings } = require("../../services/platform-settings");
-const { sendTapPushNotification } = require("../../services/push");
-const { detectDevice } = require("../../services/ua");
+const { recordView } = require("../../services/tap-tracker");
 const { seoHub, getSeoPage } = require("../../content/seo-pages");
 
 const router = express.Router();
@@ -243,217 +241,14 @@ function sanitizeSlug(value) {
     .slice(0, 20);
 }
 
-function normalizeTapSource(value) {
-  const raw = String(value || "")
-    .trim()
-    .toLowerCase();
-  if (!raw) return "direct";
-  if (raw === "telegram") return "share";
-  if (["nfc", "qr", "direct", "share", "widget"].includes(raw)) {
-    return raw;
-  }
-  return "direct";
-}
-
-function isMobileUA(ua) {
-  return /android|iphone|ipad|mobile/i.test(String(ua || ""));
-}
-
-function resolveTapSource(req) {
-  const explicit = req.query?.src;
-  if (explicit !== undefined && explicit !== null && String(explicit).trim() !== "") {
-    return normalizeTapSource(explicit);
-  }
-
-  const referer = String(req.get("referer") || "").trim();
-  const userAgent = String(req.get("user-agent") || "");
-  if (!referer && isMobileUA(userAgent)) {
-    return "nfc";
-  }
-  return "direct";
-}
-
-function normalizeIp(value) {
-  const raw = String(value || "").trim();
-  if (!raw) return "";
-  if (raw.startsWith("::ffff:")) {
-    return raw.slice(7);
-  }
-  if (raw === "::1") {
-    return "127.0.0.1";
-  }
-  return raw;
-}
-
-function pickClientIp(req) {
-  const forwardedFor = String(req.get("x-forwarded-for") || "");
-  const realIp = String(req.get("x-real-ip") || "");
-  const firstForwarded = forwardedFor ? forwardedFor.split(",")[0].trim() : "";
-  return normalizeIp(firstForwarded) || normalizeIp(realIp) || normalizeIp(req.ip);
-}
-
-function getAnalyticsSessionId(req, res) {
-  const rawCookie = String(req.get("cookie") || "");
-  const match = rawCookie.match(/(?:^|;\s*)unqx_sid=([^;]+)/);
-  const existing = match ? decodeURIComponent(match[1]) : "";
-  if (existing && /^[a-zA-Z0-9_-]{16,80}$/.test(existing)) {
-    return existing;
-  }
-  const next = randomUUID().replace(/-/g, "").slice(0, 32);
-  if (res && typeof res.append === "function") {
-    res.append("Set-Cookie", `unqx_sid=${next}; Max-Age=31536000; Path=/; SameSite=Lax; HttpOnly`);
-  }
-  return next;
-}
-
-async function getPrimarySlugForUser(userId) {
-  if (!userId) return null;
-  const row = await prisma.slug.findFirst({
-    where: {
-      ownerId: userId,
-      status: { in: ["active", "private", "paused", "approved"] },
-    },
-    orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
-    select: { fullSlug: true },
-  });
-  return row?.fullSlug || null;
-}
-
 async function logTapEventFromPageRequest({ req, res, ownerSlug, ownerId }) {
-  const source = resolveTapSource(req);
-  const device = detectDevice(req.get("user-agent"));
-  const sessionId = getAnalyticsSessionId(req, res);
-  const visitorIp = pickClientIp(req);
-  const userSession = getUserSession(req);
-  const visitorUserId = userSession?.userId ? String(userSession.userId) : null;
-  const visitorSlug = visitorUserId ? await getPrimarySlugForUser(visitorUserId) : null;
-
   try {
-    await prisma.$transaction(async (tx) => {
-      let isUniqueSessionView = true;
-      if (tx.analyticsView) {
-        const exists = await tx.analyticsView.findFirst({
-          where: {
-            slug: ownerSlug,
-            sessionId,
-          },
-          select: { id: true },
-        });
-        isUniqueSessionView = !exists;
-      }
-
-      if (tx.slug && isUniqueSessionView) {
-        await tx.slug.update({
-          where: { fullSlug: ownerSlug },
-          data: { analyticsViewsCount: { increment: 1 } },
-        });
-      }
-
-      if (tx.analyticsView) {
-        await tx.analyticsView.create({
-          data: {
-            slug: ownerSlug,
-            source,
-            city: "Р В Р’В Р вЂ™Р’В Р В Р Р‹Р РЋРЎв„ўР В Р’В Р вЂ™Р’В Р В РІР‚в„ўР вЂ™Р’ВµР В Р’В Р вЂ™Р’В Р В Р Р‹Р Р†Р вЂљР’ВР В Р’В Р вЂ™Р’В Р В РІР‚в„ўР вЂ™Р’В·Р В Р’В Р вЂ™Р’В Р В Р’В Р Р†Р вЂљР’В Р В Р’В Р вЂ™Р’В Р В РІР‚в„ўР вЂ™Р’ВµР В Р’В Р В Р вЂ№Р В Р’В Р РЋРІР‚СљР В Р’В Р В Р вЂ№Р В Р вЂ Р В РІР‚С™Р РЋРІвЂћСћР В Р’В Р вЂ™Р’В Р В Р’В Р Р†Р вЂљР’В¦Р В Р’В Р вЂ™Р’В Р В Р Р‹Р Р†Р вЂљРЎС›",
-            device,
-            sessionId,
-          },
-        });
-      }
-
-      await tx.$executeRaw`
-        INSERT INTO tap_events (
-          owner_slug,
-          visitor_slug,
-          visitor_user_id,
-          visitor_ip,
-          user_agent,
-          source,
-          city,
-          country
-        )
-        SELECT
-          ${ownerSlug},
-          ${visitorSlug || null},
-          ${visitorUserId || null},
-          ${visitorIp || null},
-          ${String(req.get("user-agent") || "") || null},
-          ${source},
-          ${null},
-          ${null}
-        WHERE NOT EXISTS (
-          SELECT 1
-          FROM tap_events te
-          WHERE te.owner_slug = ${ownerSlug}
-            AND te.source = ${source}
-            AND te.visitor_slug IS NOT DISTINCT FROM ${visitorSlug || null}
-            AND te.visitor_user_id IS NOT DISTINCT FROM ${visitorUserId || null}
-            AND te.visitor_ip IS NOT DISTINCT FROM ${visitorIp || null}
-            AND te.created_at >= now() - interval '5 seconds'
-        )
-      `;
-
-      if (visitorUserId && ownerId && visitorUserId !== ownerId && visitorSlug) {
-        await tx.$executeRaw`
-          INSERT INTO user_contacts (
-            owner_id,
-            contact_slug,
-            contact_user_id,
-            saved,
-            subscribed,
-            first_tap_at,
-            last_tap_at,
-            tap_count
-          )
-          VALUES (
-            ${ownerId},
-            ${visitorSlug},
-            ${visitorUserId},
-            false,
-            false,
-            now(),
-            now(),
-            1
-          )
-          ON CONFLICT (owner_id, contact_slug)
-          DO UPDATE SET
-            contact_user_id = EXCLUDED.contact_user_id,
-            last_tap_at = now(),
-            tap_count = user_contacts.tap_count + 1
-        `;
-
-        await tx.$executeRaw`
-          INSERT INTO notifications (
-            user_id,
-            type,
-            title,
-            body,
-            data
-          )
-          VALUES (
-            ${ownerId},
-            'tap',
-            'Р В Р’В Р вЂ™Р’В Р В Р Р‹Р РЋРЎв„ўР В Р’В Р вЂ™Р’В Р В Р Р‹Р Р†Р вЂљРЎС›Р В Р’В Р вЂ™Р’В Р В Р’В Р Р†Р вЂљР’В Р В Р’В Р В Р вЂ№Р В Р вЂ Р В РІР‚С™Р Р†РІР‚С›РІР‚вЂњР В Р’В Р вЂ™Р’В Р В Р вЂ Р Р†Р вЂљРЎвЂєР Р†Р вЂљРІР‚Сљ Р В Р’В Р В Р вЂ№Р В Р вЂ Р В РІР‚С™Р РЋРІвЂћСћР В Р’В Р вЂ™Р’В Р В РІР‚в„ўР вЂ™Р’В°Р В Р’В Р вЂ™Р’В Р В Р Р‹Р Р†Р вЂљРІР‚Сњ',
-            ${`${visitorSlug} Р В Р’В Р вЂ™Р’В Р В Р Р‹Р Р†Р вЂљРЎС›Р В Р’В Р В Р вЂ№Р В Р вЂ Р В РІР‚С™Р РЋРІвЂћСћР В Р’В Р вЂ™Р’В Р В Р Р‹Р Р†Р вЂљРЎСљР В Р’В Р В Р вЂ№Р В Р’В Р Р†Р вЂљРЎв„ўР В Р’В Р В Р вЂ№Р В Р вЂ Р В РІР‚С™Р Р†РІР‚С›РІР‚вЂњР В Р’В Р вЂ™Р’В Р В РІР‚в„ўР вЂ™Р’В» Р В Р’В Р вЂ™Р’В Р В Р’В Р Р†Р вЂљР’В Р В Р’В Р вЂ™Р’В Р В РІР‚в„ўР вЂ™Р’В°Р В Р’В Р В Р вЂ№Р В Р вЂ Р Р†Р вЂљРЎв„ўР вЂ™Р’В¬Р В Р’В Р В Р вЂ№Р В Р Р‹Р Р†Р вЂљРЎС™ Р В Р’В Р вЂ™Р’В Р В Р’В Р Р†Р вЂљР’В Р В Р’В Р вЂ™Р’В Р В Р Р‹Р Р†Р вЂљР’ВР В Р’В Р вЂ™Р’В Р В РІР‚в„ўР вЂ™Р’В·Р В Р’В Р вЂ™Р’В Р В Р Р‹Р Р†Р вЂљР’ВР В Р’В Р В Р вЂ№Р В Р вЂ Р В РІР‚С™Р РЋРІвЂћСћР В Р’В Р вЂ™Р’В Р В Р Р‹Р Р†Р вЂљРЎСљР В Р’В Р В Р вЂ№Р В Р Р‹Р Р†Р вЂљРЎС™`},
-            ${JSON.stringify({ ownerSlug, visitorSlug, source })}
-          )
-        `;
-
-        void sendTapPushNotification({
-          ownerId,
-          ownerSlug,
-          visitorSlug,
-          source,
-        }).catch((pushError) => {
-          console.error("[push] failed to send tap notification", {
-            ownerId,
-            ownerSlug,
-            visitorSlug,
-            source,
-            message: pushError?.message || String(pushError),
-          });
-        });
-      }
+    await recordView({
+      req,
+      res,
+      ownerSlug,
+      ownerId: ownerId || null,
+      sourceInput: req.query?.src,
     });
   } catch (error) {
     if (error && (String(error.code || "") === "42P01" || String(error.code || "") === "42703")) {
@@ -465,6 +260,7 @@ async function logTapEventFromPageRequest({ req, res, ownerSlug, ownerId }) {
     throw error;
   }
 }
+
 
 function isSlugStatusDecodeError(error) {
   if (!error || typeof error !== "object") return false;

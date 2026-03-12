@@ -63,8 +63,17 @@
   const activeSection =
     document.getElementById(`tab-${normalizedTab}`) ||
     document.getElementById("tab-analytics");
+  tabSections.forEach((node) => {
+    if (node instanceof HTMLElement) node.classList.add("hidden");
+  });
   if (activeSection instanceof HTMLElement) {
-    activeSection.classList.remove("hidden");
+    let cursor = activeSection;
+    while (cursor instanceof HTMLElement) {
+      if (cursor.id && cursor.id.startsWith("tab-")) {
+        cursor.classList.remove("hidden");
+      }
+      cursor = cursor.parentElement;
+    }
     dbg("active-section-unhidden", activeSection.id);
     dbg("active-section-state", {
       id: activeSection.id,

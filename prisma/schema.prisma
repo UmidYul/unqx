@@ -567,10 +567,12 @@ model AnalyticsView {
   city      String   @default("РќРµРёР·РІРµСЃС‚РЅРѕ") @db.VarChar(120)
   device    String   @default("desktop") @db.VarChar(20)
   sessionId String   @map("session_id") @db.VarChar(80)
+  fingerprint String? @db.VarChar(64)
 
   @@index([slug, visitedAt])
   @@index([visitedAt])
   @@index([slug, sessionId, visitedAt])
+  @@index([slug, fingerprint, visitedAt])
   @@map("analytics_views")
 }
 
@@ -578,10 +580,12 @@ model AnalyticsClick {
   id         String   @id @default(uuid())
   slug       String   @db.VarChar(20)
   buttonType String   @default("other") @map("button_type") @db.VarChar(40)
+  sessionId  String?  @map("session_id") @db.VarChar(80)
   clickedAt  DateTime @default(now()) @map("clicked_at")
 
   @@index([slug, clickedAt])
   @@index([buttonType, clickedAt])
+  @@index([slug, buttonType, sessionId, clickedAt])
   @@map("analytics_clicks")
 }
 

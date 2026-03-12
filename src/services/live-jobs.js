@@ -6,15 +6,18 @@ const { processDropsSchedule } = require("./drops");
 const { detectSuspiciousActivity } = require("./leaderboard");
 const { markReferralPaidByReferredUserId } = require("./referrals");
 const { ensureDailyRecalculation } = require("./unq-score");
+const { reconcileAnalyticsViewCounters } = require("./analytics-reconciliation");
 const {
   sendAccountDeletedEmail,
   sendAccountReactivationReminderEmail,
 } = require("./email");
 
 const LOOP_MS = 60 * 1000;
+const HOURLY_MS = 60 * 60 * 1000;
 
 let started = false;
 let timer = null;
+let lastAnalyticsReconciliationAt = 0;
 
 async function processFlashSalesSchedule() {
   const now = new Date();
@@ -266,6 +269,13 @@ async function runJobsOnce() {
   await cleanupStaleUnverifiedAccounts();
   await processDeactivatedAccountLifecycle();
   await ensureDailyRecalculation();
+  if (Date.now() - lastAnalyticsReconciliationAt >= HOURLY_MS) {
+    const updated = await reconcileAnalyticsViewCounters();
+    lastAnalyticsReconciliationAt = Date.now();
+    if (updated > 0) {
+      console.info(`[express-app] reconciled analytics_views_count for ${updated} slug(s)`);
+    }
+  }
 }
 
 function startLiveJobs() {
