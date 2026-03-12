@@ -43,7 +43,8 @@
   });
   autofillObserver.observe(body, { childList: true, subtree: true });
 
-  const tab = body.getAttribute("data-active-tab") || "analytics";
+  const urlTab = new URLSearchParams(window.location.search).get("tab") || "";
+  const tab = String(urlTab || body.getAttribute("data-active-tab") || "analytics").trim();
   const tabAliases = { slug: "slugs" };
   const normalizedTab = tabAliases[tab] || tab;
   const tabSections = Array.from(document.querySelectorAll('section[id^="tab-"]'));
