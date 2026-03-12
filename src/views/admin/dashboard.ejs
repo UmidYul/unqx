@@ -1,4 +1,4 @@
-<% const pageTitle=typeof title==="string" && title ? title : "Дашборд" ; const pageActiveTab=typeof
+﻿<% const pageTitle=typeof title==="string" && title ? title : "Р”Р°С€Р±РѕСЂРґ" ; const pageActiveTab=typeof
   activeTab==="string" && activeTab ? activeTab : "analytics" ; const pagePublicBaseUrl=typeof publicBaseUrl==="string"
   && publicBaseUrl ? publicBaseUrl : "" ; const pageQuery=typeof query==="object" && query ? query : {}; %>
   <!doctype html>
@@ -16,65 +16,65 @@
         <div id="admin-maintenance-banner"
           class="hidden rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
           <div class="flex flex-wrap items-center justify-between gap-3">
-            <p id="admin-maintenance-text" class="font-semibold">Режим обслуживания включён — сайт недоступен для
-              пользователей</p>
+            <p id="admin-maintenance-text" class="font-semibold">Р РµР¶РёРј РѕР±СЃР»СѓР¶РёРІР°РЅРёСЏ РІРєР»СЋС‡С‘РЅ вЂ” СЃР°Р№С‚ РЅРµРґРѕСЃС‚СѓРїРµРЅ РґР»СЏ
+              РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№</p>
             <button id="admin-maintenance-disable" type="button"
-              class="interactive-btn min-h-11 rounded-xl border border-rose-300 px-3 py-1.5 text-xs font-semibold text-rose-800 hover:bg-rose-100">Отключить</button>
+              class="interactive-btn min-h-11 rounded-xl border border-rose-300 px-3 py-1.5 text-xs font-semibold text-rose-800 hover:bg-rose-100">РћС‚РєР»СЋС‡РёС‚СЊ</button>
           </div>
         </div>
         <div class="flex flex-wrap items-start justify-between gap-3 border-b border-neutral-200 pb-4">
           <div>
-            <h1 class="text-2xl font-black">Управление платформой</h1>
-            <p class="mt-1 text-sm text-neutral-600">Мониторинг заявок, пользователей и маркетинговых инструментов</p>
+            <h1 class="text-2xl font-black">РЈРїСЂР°РІР»РµРЅРёРµ РїР»Р°С‚С„РѕСЂРјРѕР№</h1>
+            <p class="mt-1 text-sm text-neutral-600">РњРѕРЅРёС‚РѕСЂРёРЅРі Р·Р°СЏРІРѕРє, РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№ Рё РјР°СЂРєРµС‚РёРЅРіРѕРІС‹С… РёРЅСЃС‚СЂСѓРјРµРЅС‚РѕРІ</p>
           </div>
           <a href="/admin/dashboard?tab=slugs"
             class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-neutral-900 px-4 py-2 text-center text-sm font-semibold text-white transition hover:bg-neutral-700 sm:w-auto">
             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
             </svg>
-            <span>Управлять slug</span>
+            <span>РЈРїСЂР°РІР»СЏС‚СЊ slug</span>
           </a>
         </div>
 
         <section id="tab-analytics" class="<%= pageActiveTab === 'analytics' ? '' : 'hidden' %> space-y-4">
           <header class="rounded-2xl border border-neutral-200 bg-white p-4">
-            <h2 class="text-base font-bold text-neutral-900">Аналитика</h2>
-            <p class="mt-1 text-sm text-neutral-600">Ключевые метрики и динамика продаж платформы.</p>
+            <h2 class="text-base font-bold text-neutral-900">РђРЅР°Р»РёС‚РёРєР°</h2>
+            <p class="mt-1 text-sm text-neutral-600">РљР»СЋС‡РµРІС‹Рµ РјРµС‚СЂРёРєРё Рё РґРёРЅР°РјРёРєР° РїСЂРѕРґР°Р¶ РїР»Р°С‚С„РѕСЂРјС‹.</p>
           </header>
           <section class="rounded-2xl border border-neutral-200 bg-white p-4">
-            <h3 class="text-sm font-semibold text-neutral-900">Фильтры аналитики</h3>
+            <h3 class="text-sm font-semibold text-neutral-900">Р¤РёР»СЊС‚СЂС‹ Р°РЅР°Р»РёС‚РёРєРё</h3>
             <form id="analytics-filters" class="mt-3 grid gap-3 md:grid-cols-[220px_220px_220px_auto_auto]">
               <label class="block text-sm">
-                <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Период с</span>
+                <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">РџРµСЂРёРѕРґ СЃ</span>
                 <input type="date" name="dateFrom" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
               </label>
               <label class="block text-sm">
-                <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">По</span>
+                <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">РџРѕ</span>
                 <input type="date" name="dateTo" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
               </label>
               <label class="block text-sm">
-                <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Группировка</span>
+                <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Р“СЂСѓРїРїРёСЂРѕРІРєР°</span>
                 <select name="groupBy" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm">
-                  <option value="day">По дням</option>
-                  <option value="week">По неделям</option>
-                  <option value="month">По месяцам</option>
+                  <option value="day">РџРѕ РґРЅСЏРј</option>
+                  <option value="week">РџРѕ РЅРµРґРµР»СЏРј</option>
+                  <option value="month">РџРѕ РјРµСЃСЏС†Р°Рј</option>
                 </select>
               </label>
               <button type="submit"
-                class="self-end inline-flex min-h-11 items-center justify-center rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">Применить</button>
+                class="self-end inline-flex min-h-11 items-center justify-center rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">РџСЂРёРјРµРЅРёС‚СЊ</button>
               <button type="reset"
-                class="self-end inline-flex min-h-11 items-center justify-center rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">Сбросить</button>
+                class="self-end inline-flex min-h-11 items-center justify-center rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">РЎР±СЂРѕСЃРёС‚СЊ</button>
             </form>
           </section>
           <section class="space-y-2">
-            <h3 class="text-sm font-semibold text-neutral-900">Ключевые метрики</h3>
+            <h3 class="text-sm font-semibold text-neutral-900">РљР»СЋС‡РµРІС‹Рµ РјРµС‚СЂРёРєРё</h3>
             <div id="analytics-kpis" class="grid gap-3 md:grid-cols-2 xl:grid-cols-3"></div>
           </section>
           <section class="space-y-2">
-            <h3 class="text-sm font-semibold text-neutral-900">Графики</h3>
+            <h3 class="text-sm font-semibold text-neutral-900">Р“СЂР°С„РёРєРё</h3>
           <div class="grid gap-4 lg:grid-cols-2">
             <article class="rounded-2xl border border-neutral-200 bg-white p-4">
-              <h2 class="text-sm font-semibold text-neutral-900">Выручка по дням (30 дней)</h2>
+              <h2 class="text-sm font-semibold text-neutral-900">Р’С‹СЂСѓС‡РєР° РїРѕ РґРЅСЏРј (30 РґРЅРµР№)</h2>
               <div class="mt-3 h-[280px]">
                 <canvas id="analytics-orders-chart"></canvas>
                 <div id="analytics-orders-empty"
@@ -82,7 +82,7 @@
               </div>
             </article>
             <article class="rounded-2xl border border-neutral-200 bg-white p-4">
-              <h2 class="text-sm font-semibold text-neutral-900">Разбивка выручки</h2>
+              <h2 class="text-sm font-semibold text-neutral-900">Р Р°Р·Р±РёРІРєР° РІС‹СЂСѓС‡РєРё</h2>
               <div class="mt-3 h-[280px]">
                 <canvas id="analytics-tariff-chart"></canvas>
                 <div id="analytics-tariff-empty"
@@ -91,7 +91,7 @@
             </article>
           </div>
           <article class="rounded-2xl border border-neutral-200 bg-white p-4">
-            <h2 class="text-sm font-semibold text-neutral-900">Распределение UNQ Score</h2>
+            <h2 class="text-sm font-semibold text-neutral-900">Р Р°СЃРїСЂРµРґРµР»РµРЅРёРµ UNQ Score</h2>
             <div class="mt-3 h-[260px]">
               <canvas id="analytics-score-distribution-chart"></canvas>
               <div id="analytics-score-empty"
@@ -100,15 +100,15 @@
           </article>
           </section>
           <section class="space-y-2">
-            <h3 class="text-sm font-semibold text-neutral-900">Инсайты</h3>
+            <h3 class="text-sm font-semibold text-neutral-900">РРЅСЃР°Р№С‚С‹</h3>
           <article class="rounded-2xl border border-neutral-200 bg-white p-4">
-            <h2 class="text-sm font-semibold text-neutral-900">Топ-10 паттернов ищут, но не покупают</h2>
+            <h2 class="text-sm font-semibold text-neutral-900">РўРѕРї-10 РїР°С‚С‚РµСЂРЅРѕРІ РёС‰СѓС‚, РЅРѕ РЅРµ РїРѕРєСѓРїР°СЋС‚</h2>
             <div class="mt-3 overflow-hidden rounded-xl border border-neutral-200">
               <table class="min-w-full text-left text-sm">
                 <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
                   <tr>
-                    <th class="px-3 py-2">Паттерн</th>
-                    <th class="px-3 py-2">Проверок</th>
+                    <th class="px-3 py-2">РџР°С‚С‚РµСЂРЅ</th>
+                    <th class="px-3 py-2">РџСЂРѕРІРµСЂРѕРє</th>
                   </tr>
                 </thead>
                 <tbody id="analytics-checker-table"></tbody>
@@ -119,82 +119,82 @@
 
         <section id="tab-orders" class="<%= pageActiveTab === 'orders' ? '' : 'hidden' %> space-y-4">
           <header class="rounded-2xl border border-neutral-200 bg-white p-4">
-            <h2 class="text-base font-bold text-neutral-900">Заявки</h2>
-            <p class="mt-1 text-sm text-neutral-600">Управление заявками на покупку slug, тарифа и браслета.</p>
+            <h2 class="text-base font-bold text-neutral-900">Р—Р°СЏРІРєРё</h2>
+            <p class="mt-1 text-sm text-neutral-600">РЈРїСЂР°РІР»РµРЅРёРµ Р·Р°СЏРІРєР°РјРё РЅР° РїРѕРєСѓРїРєСѓ slug, С‚Р°СЂРёС„Р° Рё Р±СЂР°СЃР»РµС‚Р°.</p>
           </header>
           <section class="rounded-2xl border border-neutral-200 bg-white p-4">
-            <h3 class="text-sm font-semibold text-neutral-900">Фильтры заявок</h3>
+            <h3 class="text-sm font-semibold text-neutral-900">Р¤РёР»СЊС‚СЂС‹ Р·Р°СЏРІРѕРє</h3>
             <form id="orders-filters" class="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
               <label class="block text-sm">
-                <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Поиск</span>
-                <input name="q" type="text" placeholder="Имя, slug, контакт"
+                <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">РџРѕРёСЃРє</span>
+                <input name="q" type="text" placeholder="РРјСЏ, slug, РєРѕРЅС‚Р°РєС‚"
                   class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
               </label>
               <label class="block text-sm">
-                <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Статус</span>
+                <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">РЎС‚Р°С‚СѓСЃ</span>
                 <select name="status" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm">
-                  <option value="all">Все статусы</option>
-                  <option value="new">Новая</option>
-                  <option value="contacted">Связались</option>
-                  <option value="paid">Оплачена</option>
-                  <option value="approved">Активирована</option>
-                  <option value="rejected">Отклонена</option>
+                  <option value="all">Р’СЃРµ СЃС‚Р°С‚СѓСЃС‹</option>
+                  <option value="new">РќРѕРІР°СЏ</option>
+                  <option value="contacted">РЎРІСЏР·Р°Р»РёСЃСЊ</option>
+                  <option value="paid">РћРїР»Р°С‡РµРЅР°</option>
+                  <option value="approved">РђРєС‚РёРІРёСЂРѕРІР°РЅР°</option>
+                  <option value="rejected">РћС‚РєР»РѕРЅРµРЅР°</option>
                 </select>
               </label>
               <label class="block text-sm">
-                <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Тариф</span>
+                <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">РўР°СЂРёС„</span>
                 <select name="tariff" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm">
-                  <option value="all">Все тарифы</option>
-                  <option value="basic">Базовый</option>
-                  <option value="premium">Премиум</option>
+                  <option value="all">Р’СЃРµ С‚Р°СЂРёС„С‹</option>
+                  <option value="basic">Р‘Р°Р·РѕРІС‹Р№</option>
+                  <option value="premium">РџСЂРµРјРёСѓРј</option>
                 </select>
               </label>
               <label class="block text-sm">
-                <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Браслет</span>
+                <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Р‘СЂР°СЃР»РµС‚</span>
                 <select name="bracelet" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm">
-                  <option value="all">Любой</option>
-                  <option value="yes">С браслетом</option>
-                  <option value="no">Без браслета</option>
+                  <option value="all">Р›СЋР±РѕР№</option>
+                  <option value="yes">РЎ Р±СЂР°СЃР»РµС‚РѕРј</option>
+                  <option value="no">Р‘РµР· Р±СЂР°СЃР»РµС‚Р°</option>
                 </select>
               </label>
               <label class="block text-sm">
-                <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Дата с</span>
+                <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Р”Р°С‚Р° СЃ</span>
                 <input type="date" name="dateFrom" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
               </label>
               <label class="block text-sm">
-                <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Дата по</span>
+                <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Р”Р°С‚Р° РїРѕ</span>
                 <input type="date" name="dateTo" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
               </label>
               <input type="hidden" name="page" value="1" />
               <div class="col-span-full flex flex-wrap items-end justify-end gap-2">
                 <button type="submit"
-                  class="inline-flex min-h-11 items-center justify-center rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">Применить</button>
+                  class="inline-flex min-h-11 items-center justify-center rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">РџСЂРёРјРµРЅРёС‚СЊ</button>
                 <button type="reset"
-                  class="inline-flex min-h-11 items-center justify-center rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">Сбросить</button>
+                  class="inline-flex min-h-11 items-center justify-center rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">РЎР±СЂРѕСЃРёС‚СЊ</button>
                 <a id="orders-export-link" href="/api/admin/orders/export.csv"
                   class="inline-flex min-h-11 items-center justify-center rounded-xl border border-neutral-300 bg-white px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">
-                  Скачать CSV
+                  РЎРєР°С‡Р°С‚СЊ CSV
                 </a>
               </div>
             </form>
           </section>
           <section class="space-y-2">
-            <h3 class="text-sm font-semibold text-neutral-900">Список заявок</h3>
+            <h3 class="text-sm font-semibold text-neutral-900">РЎРїРёСЃРѕРє Р·Р°СЏРІРѕРє</h3>
             <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
               <div class="overflow-x-auto">
                 <table class="min-w-[980px] w-full text-left text-sm">
                   <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
                     <tr>
-                      <th class="px-4 py-3">Дата</th>
-                      <th class="px-4 py-3">Пользователь</th>
+                      <th class="px-4 py-3">Р”Р°С‚Р°</th>
+                      <th class="px-4 py-3">РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ</th>
                       <th class="px-4 py-3">Slug</th>
-                      <th class="px-4 py-3 text-right">Цена slug</th>
-                      <th class="px-4 py-3 text-right">Сумма</th>
-                      <th class="px-4 py-3">Тариф</th>
-                      <th class="px-4 py-3">Браслет</th>
-                      <th class="px-4 py-3">Контакт</th>
-                      <th class="px-4 py-3">Статус</th>
-                      <th class="px-4 py-3 text-right">Действия</th>
+                      <th class="px-4 py-3 text-right">Р¦РµРЅР° slug</th>
+                      <th class="px-4 py-3 text-right">РЎСѓРјРјР°</th>
+                      <th class="px-4 py-3">РўР°СЂРёС„</th>
+                      <th class="px-4 py-3">Р‘СЂР°СЃР»РµС‚</th>
+                      <th class="px-4 py-3">РљРѕРЅС‚Р°РєС‚</th>
+                      <th class="px-4 py-3">РЎС‚Р°С‚СѓСЃ</th>
+                      <th class="px-4 py-3 text-right">Р”РµР№СЃС‚РІРёСЏ</th>
                     </tr>
                   </thead>
                   <tbody id="orders-table"></tbody>
@@ -206,82 +206,102 @@
         </section>
 
         <section id="tab-purchases" class="<%= pageActiveTab === 'purchases' ? '' : 'hidden' %> space-y-4">
-          <form id="purchases-filters"
-            class="grid gap-3 rounded-2xl border border-neutral-200 bg-white p-4 md:grid-cols-5">
-            <select name="type" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">
-              <option value="all">Все типы</option>
-              <option value="slug">Slug</option>
-              <option value="basic_plan">Базовый тариф</option>
-              <option value="premium_plan">Премиум тариф</option>
-              <option value="upgrade_to_premium">Апгрейд до Премиум</option>
-              <option value="bracelet">Браслет</option>
-            </select>
-            <input name="user" type="text" placeholder="Пользователь"
-              class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
-            <input type="date" name="dateFrom" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
-            <input type="date" name="dateTo" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
-            <input type="hidden" name="page" value="1" />
-            <button type="submit"
-              class="inline-flex min-h-11 w-full items-center justify-center justify-self-start rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100 md:w-auto">Применить</button>
-          </form>
-          <div class="flex items-center justify-between gap-3">
-            <p id="purchases-total" class="text-sm font-semibold text-neutral-800">Общая выручка: 0 сум</p>
-            <a id="purchases-export-link" href="/api/admin/purchases/export.csv"
-              class="rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">Скачать
-              CSV</a>
-          </div>
-          <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
-            <div class="overflow-x-auto">
-              <table class="min-w-[980px] w-full text-left text-sm">
-                <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
-                  <tr>
-                    <th class="px-4 py-3">Дата</th>
-                    <th class="px-4 py-3">Пользователь</th>
-                    <th class="px-4 py-3">Тип</th>
-                    <th class="px-4 py-3">Slug</th>
-                    <th class="px-4 py-3">Сумма</th>
-                    <th class="px-4 py-3">Одобрил</th>
-                  </tr>
-                </thead>
-                <tbody id="purchases-table"></tbody>
-              </table>
-            </div>
-          </div>
-          <div id="purchases-pagination" class="flex items-center justify-end gap-2 text-sm text-neutral-600"></div>
-          <form id="pricing-settings-form"
+  <header class="rounded-2xl border border-neutral-200 bg-white p-4">
+    <h2 class="text-base font-bold text-neutral-900">Покупки</h2>
+    <p class="mt-1 text-sm text-neutral-600">Список всех оплаченных операций и сводка по выручке.</p>
+  </header>
+  <section class="rounded-2xl border border-neutral-200 bg-white p-4">
+    <h3 class="text-sm font-semibold text-neutral-900">Фильтры покупок</h3>
+    <form id="purchases-filters" class="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+      <label class="block text-sm">
+        <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Тип покупки</span>
+        <select name="type" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm">
+          <option value="all">Все типы</option>
+          <option value="slug">Slug</option>
+          <option value="basic_plan">Базовый тариф</option>
+          <option value="premium_plan">Премиум тариф</option>
+          <option value="upgrade_to_premium">Апгрейд до Премиум</option>
+          <option value="bracelet">Браслет</option>
+        </select>
+      </label>
+      <label class="block text-sm">
+        <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Пользователь</span>
+        <input name="user" type="text" placeholder="Имя или @username" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+      </label>
+      <label class="block text-sm">
+        <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Дата с</span>
+        <input type="date" name="dateFrom" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+      </label>
+      <label class="block text-sm">
+        <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Дата по</span>
+        <input type="date" name="dateTo" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+      </label>
+      <input type="hidden" name="page" value="1" />
+      <div class="md:col-span-2 xl:col-span-5 flex flex-wrap items-end justify-end gap-2">
+        <button type="submit" class="inline-flex min-h-11 items-center justify-center rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">Применить</button>
+        <a id="purchases-export-link" href="/api/admin/purchases/export.csv" class="inline-flex min-h-11 items-center justify-center rounded-xl border border-neutral-300 bg-white px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">Скачать CSV</a>
+      </div>
+    </form>
+  </section>
+  <section class="space-y-2">
+    <div class="flex items-center justify-between gap-3">
+      <h3 class="text-sm font-semibold text-neutral-900">Список покупок</h3>
+      <p id="purchases-total" class="text-sm font-semibold text-neutral-800">Общая выручка: 0 сум</p>
+    </div>
+    <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
+      <div class="overflow-x-auto">
+        <table class="min-w-[980px] w-full text-left text-sm">
+          <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
+            <tr>
+              <th class="px-4 py-3">Дата</th>
+              <th class="px-4 py-3">Пользователь</th>
+              <th class="px-4 py-3">Тип</th>
+              <th class="px-4 py-3">Slug</th>
+              <th class="px-4 py-3 text-right">Сумма</th>
+              <th class="px-4 py-3">Одобрил</th>
+              <th class="px-4 py-3 text-right">Действия</th>
+            </tr>
+          </thead>
+          <tbody id="purchases-table"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+  <div id="purchases-pagination" class="flex items-center justify-end gap-2 text-sm text-neutral-600"></div>
+  <form id="pricing-settings-form"
             class="grid gap-3 rounded-2xl border border-neutral-200 bg-white p-4 md:grid-cols-2">
             <label class="block">
-              <span class="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">Цена Базового
-                тарифа (сум)</span>
+              <span class="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">Р¦РµРЅР° Р‘Р°Р·РѕРІРѕРіРѕ
+                С‚Р°СЂРёС„Р° (СЃСѓРј)</span>
               <input type="number" min="0" name="planBasicPrice"
                 class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
-              <span class="mt-1 block text-xs text-neutral-500">Единоразовая стоимость</span>
+              <span class="mt-1 block text-xs text-neutral-500">Р•РґРёРЅРѕСЂР°Р·РѕРІР°СЏ СЃС‚РѕРёРјРѕСЃС‚СЊ</span>
             </label>
             <label class="block">
-              <span class="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">Цена Премиум
-                тарифа (сум)</span>
+              <span class="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">Р¦РµРЅР° РџСЂРµРјРёСѓРј
+                С‚Р°СЂРёС„Р° (СЃСѓРј)</span>
               <input type="number" min="0" name="planPremiumPrice"
                 class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
-              <span class="mt-1 block text-xs text-neutral-500">Единоразовая стоимость</span>
+              <span class="mt-1 block text-xs text-neutral-500">Р•РґРёРЅРѕСЂР°Р·РѕРІР°СЏ СЃС‚РѕРёРјРѕСЃС‚СЊ</span>
             </label>
             <label class="block">
-              <span class="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">Цена апгрейда
-                Базовый → Премиум (сум)</span>
+              <span class="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">Р¦РµРЅР° Р°РїРіСЂРµР№РґР°
+                Р‘Р°Р·РѕРІС‹Р№ в†’ РџСЂРµРјРёСѓРј (СЃСѓРј)</span>
               <input type="number" min="0" name="premiumUpgradePrice"
                 class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
-              <span class="mt-1 block text-xs text-neutral-500">Сколько доплачивает пользователь с Базовым
-                тарифом</span>
+              <span class="mt-1 block text-xs text-neutral-500">РЎРєРѕР»СЊРєРѕ РґРѕРїР»Р°С‡РёРІР°РµС‚ РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ СЃ Р‘Р°Р·РѕРІС‹Рј
+                С‚Р°СЂРёС„РѕРј</span>
             </label>
             <label class="block">
-              <span class="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">Подпись под
-                тарифами</span>
+              <span class="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">РџРѕРґРїРёСЃСЊ РїРѕРґ
+                С‚Р°СЂРёС„Р°РјРё</span>
               <input type="text" name="pricingFootnote"
                 class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
             </label>
             <div class="md:col-span-2">
               <button type="submit"
-                class="interactive-btn min-h-11 rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-neutral-800">Сохранить
-                тарифы</button>
+                class="interactive-btn min-h-11 rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-neutral-800">РЎРѕС…СЂР°РЅРёС‚СЊ
+                С‚Р°СЂРёС„С‹</button>
             </div>
           </form>
         </section>
@@ -289,36 +309,36 @@
         <section id="tab-users" class="<%= pageActiveTab === 'users' ? '' : 'hidden' %> space-y-4">
           <form id="users-filters"
             class="grid gap-3 rounded-2xl border border-neutral-200 bg-white p-4 md:grid-cols-[1fr_180px_180px_auto]">
-            <input type="text" name="q" placeholder="Поиск по Telegram или имени"
+            <input type="text" name="q" placeholder="РџРѕРёСЃРє РїРѕ Telegram РёР»Рё РёРјРµРЅРё"
               class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
             <select name="plan" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">
-              <option value="all">Все тарифы</option>
-              <option value="none">Без тарифа</option>
-              <option value="basic">Базовый</option>
-              <option value="premium">Премиум</option>
+              <option value="all">Р’СЃРµ С‚Р°СЂРёС„С‹</option>
+              <option value="none">Р‘РµР· С‚Р°СЂРёС„Р°</option>
+              <option value="basic">Р‘Р°Р·РѕРІС‹Р№</option>
+              <option value="premium">РџСЂРµРјРёСѓРј</option>
             </select>
             <select name="sort" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">
-              <option value="created_desc">Сначала новые</option>
-              <option value="score_desc">По UNQ Score</option>
+              <option value="created_desc">РЎРЅР°С‡Р°Р»Р° РЅРѕРІС‹Рµ</option>
+              <option value="score_desc">РџРѕ UNQ Score</option>
             </select>
             <input type="hidden" name="page" value="1" />
             <button type="submit"
-              class="inline-flex min-h-11 w-full items-center justify-center justify-self-start rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100 md:w-auto">Применить</button>
+              class="inline-flex min-h-11 w-full items-center justify-center justify-self-start rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100 md:w-auto">РџСЂРёРјРµРЅРёС‚СЊ</button>
           </form>
           <div class="overflow-visible rounded-2xl border border-neutral-200 bg-white shadow-sm">
             <div class="admin-users-table-wrap overflow-x-auto overflow-y-visible">
               <table class="admin-users-table w-full table-fixed text-left text-sm">
                 <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
                   <tr>
-                    <th class="w-[13%] px-4 py-3">Имя</th>
-                    <th class="w-[12%] px-4 py-3">Город</th>
-                    <th class="w-[11%] px-4 py-3">Тариф</th>
-                    <th class="hidden w-[11%] px-4 py-3 xl:table-cell">Дата покупки</th>
-                    <th class="w-[18%] px-4 py-3">Slug(и)</th>
+                    <th class="w-[13%] px-4 py-3">РРјСЏ</th>
+                    <th class="w-[12%] px-4 py-3">Р“РѕСЂРѕРґ</th>
+                    <th class="w-[11%] px-4 py-3">РўР°СЂРёС„</th>
+                    <th class="hidden w-[11%] px-4 py-3 xl:table-cell">Р”Р°С‚Р° РїРѕРєСѓРїРєРё</th>
+                    <th class="w-[18%] px-4 py-3">Slug(Рё)</th>
                     <th class="w-[10%] px-4 py-3">UNQ Score</th>
-                    <th class="w-[11%] px-4 py-3">Статус</th>
-                    <th class="w-[11%] px-4 py-3">Дата регистрации</th>
-                    <th class="w-[8%] px-4 py-3">Действия</th>
+                    <th class="w-[11%] px-4 py-3">РЎС‚Р°С‚СѓСЃ</th>
+                    <th class="w-[11%] px-4 py-3">Р”Р°С‚Р° СЂРµРіРёСЃС‚СЂР°С†РёРё</th>
+                    <th class="w-[8%] px-4 py-3">Р”РµР№СЃС‚РІРёСЏ</th>
                   </tr>
                 </thead>
                 <tbody id="users-table"></tbody>
@@ -331,29 +351,29 @@
         <section id="tab-slugs" class="<%= pageActiveTab === 'slugs' ? '' : 'hidden' %> space-y-4">
           <div id="slugs-stats" class="grid gap-3 md:grid-cols-4"></div>
           <form id="slugs-filters" class="grid gap-3 rounded-2xl border border-neutral-200 bg-white p-4 md:grid-cols-4">
-            <input type="text" name="q" placeholder="Поиск slug"
+            <input type="text" name="q" placeholder="РџРѕРёСЃРє slug"
               class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
             <select name="state" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">
-              <option value="all">Все статусы</option>
-              <option value="free">Свободен</option>
-              <option value="taken">Занят</option>
-              <option value="blocked">Заблокирован</option>
+              <option value="all">Р’СЃРµ СЃС‚Р°С‚СѓСЃС‹</option>
+              <option value="free">РЎРІРѕР±РѕРґРµРЅ</option>
+              <option value="taken">Р—Р°РЅСЏС‚</option>
+              <option value="blocked">Р—Р°Р±Р»РѕРєРёСЂРѕРІР°РЅ</option>
             </select>
             <input type="hidden" name="page" value="1" />
             <button type="submit"
-              class="inline-flex min-h-11 w-full items-center justify-center justify-self-start rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100 md:w-auto">Применить</button>
+              class="inline-flex min-h-11 w-full items-center justify-center justify-self-start rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100 md:w-auto">РџСЂРёРјРµРЅРёС‚СЊ</button>
           </form>
           <form id="slugs-price-override-form"
             class="grid gap-3 rounded-2xl border border-neutral-200 bg-white p-4 md:grid-cols-[180px_220px_auto_auto]">
             <input type="text" name="slug" placeholder="AAA000" maxlength="6"
               class="min-h-11 rounded-xl border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm font-semibold uppercase tracking-[0.08em] text-neutral-900 shadow-sm transition placeholder:text-neutral-400 focus:border-neutral-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-neutral-200 font-mono" />
-            <input type="number" min="0" step="1" name="priceOverride" placeholder="Цена override"
+            <input type="number" min="0" step="1" name="priceOverride" placeholder="Р¦РµРЅР° override"
               class="min-h-11 rounded-xl border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm font-semibold text-neutral-900 shadow-sm transition placeholder:text-neutral-400 focus:border-neutral-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-neutral-200" />
             <button type="submit"
-              class="inline-flex min-h-11 w-full items-center justify-center justify-self-start rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100 md:w-auto">Сохранить
-              цену</button>
+              class="inline-flex min-h-11 w-full items-center justify-center justify-self-start rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100 md:w-auto">РЎРѕС…СЂР°РЅРёС‚СЊ
+              С†РµРЅСѓ</button>
             <button type="button" id="slugs-price-override-reset"
-              class="inline-flex min-h-11 w-full items-center justify-center justify-self-start rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100 md:w-auto">Сбросить
+              class="inline-flex min-h-11 w-full items-center justify-center justify-self-start rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100 md:w-auto">РЎР±СЂРѕСЃРёС‚СЊ
               override</button>
           </form>
           <p id="slugs-price-override-status" class="text-xs text-neutral-500"></p>
@@ -363,14 +383,14 @@
                 <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
                   <tr>
                     <th class="px-4 py-3">Slug</th>
-                    <th class="px-4 py-3">Статус</th>
-                    <th class="px-4 py-3">Владелец</th>
-                    <th class="px-4 py-3">Основной</th>
-                    <th class="px-4 py-3">Цена</th>
-                    <th class="px-4 py-3">Запрошен</th>
-                    <th class="px-4 py-3">Одобрен</th>
-                    <th class="px-4 py-3">Активирован</th>
-                    <th class="px-4 py-3">Действия</th>
+                    <th class="px-4 py-3">РЎС‚Р°С‚СѓСЃ</th>
+                    <th class="px-4 py-3">Р’Р»Р°РґРµР»РµС†</th>
+                    <th class="px-4 py-3">РћСЃРЅРѕРІРЅРѕР№</th>
+                    <th class="px-4 py-3">Р¦РµРЅР°</th>
+                    <th class="px-4 py-3">Р—Р°РїСЂРѕС€РµРЅ</th>
+                    <th class="px-4 py-3">РћРґРѕР±СЂРµРЅ</th>
+                    <th class="px-4 py-3">РђРєС‚РёРІРёСЂРѕРІР°РЅ</th>
+                    <th class="px-4 py-3">Р”РµР№СЃС‚РІРёСЏ</th>
                   </tr>
                 </thead>
                 <tbody id="slugs-table"></tbody>
@@ -383,16 +403,16 @@
         <section id="tab-cards" class="<%= pageActiveTab === 'cards' ? '' : 'hidden' %> space-y-4">
           <form id="cards-filters"
             class="grid gap-3 rounded-2xl border border-neutral-200 bg-white p-4 md:grid-cols-[1fr_180px_auto]">
-            <input type="text" name="q" placeholder="Поиск по slug или имени"
+            <input type="text" name="q" placeholder="РџРѕРёСЃРє РїРѕ slug РёР»Рё РёРјРµРЅРё"
               class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
             <select name="status" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">
-              <option value="all">Все</option>
-              <option value="active">Активные</option>
-              <option value="inactive">Выключенные</option>
+              <option value="all">Р’СЃРµ</option>
+              <option value="active">РђРєС‚РёРІРЅС‹Рµ</option>
+              <option value="inactive">Р’С‹РєР»СЋС‡РµРЅРЅС‹Рµ</option>
             </select>
             <input type="hidden" name="page" value="1" />
             <button type="submit"
-              class="inline-flex min-h-11 w-full items-center justify-center justify-self-start rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100 md:w-auto">Применить</button>
+              class="inline-flex min-h-11 w-full items-center justify-center justify-self-start rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100 md:w-auto">РџСЂРёРјРµРЅРёС‚СЊ</button>
           </form>
           <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
             <div class="overflow-x-auto">
@@ -400,13 +420,13 @@
                 <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
                   <tr>
                     <th class="px-4 py-3">Slug</th>
-                    <th class="px-4 py-3">Имя владельца</th>
-                    <th class="px-4 py-3">Тариф</th>
-                    <th class="px-4 py-3">Статус</th>
-                    <th class="px-4 py-3">Просмотры</th>
-                    <th class="px-4 py-3">Дата создания</th>
-                    <th class="px-4 py-3">Тема</th>
-                    <th class="px-4 py-3">Действия</th>
+                    <th class="px-4 py-3">РРјСЏ РІР»Р°РґРµР»СЊС†Р°</th>
+                    <th class="px-4 py-3">РўР°СЂРёС„</th>
+                    <th class="px-4 py-3">РЎС‚Р°С‚СѓСЃ</th>
+                    <th class="px-4 py-3">РџСЂРѕСЃРјРѕС‚СЂС‹</th>
+                    <th class="px-4 py-3">Р”Р°С‚Р° СЃРѕР·РґР°РЅРёСЏ</th>
+                    <th class="px-4 py-3">РўРµРјР°</th>
+                    <th class="px-4 py-3">Р”РµР№СЃС‚РІРёСЏ</th>
                   </tr>
                 </thead>
                 <tbody id="cards-table"></tbody>
@@ -420,25 +440,25 @@
           <form id="bracelets-filters"
             class="grid gap-3 rounded-2xl border border-neutral-200 bg-white p-4 md:grid-cols-[220px_auto]">
             <select name="status" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">
-              <option value="all">Все статусы</option>
-              <option value="ORDERED">Заказан</option>
-              <option value="SHIPPED">Отправлен</option>
-              <option value="DELIVERED">Доставлен</option>
+              <option value="all">Р’СЃРµ СЃС‚Р°С‚СѓСЃС‹</option>
+              <option value="ORDERED">Р—Р°РєР°Р·Р°РЅ</option>
+              <option value="SHIPPED">РћС‚РїСЂР°РІР»РµРЅ</option>
+              <option value="DELIVERED">Р”РѕСЃС‚Р°РІР»РµРЅ</option>
             </select>
             <input type="hidden" name="page" value="1" />
             <button type="submit"
-              class="inline-flex min-h-11 w-full items-center justify-center justify-self-start rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100 md:w-auto">Применить</button>
+              class="inline-flex min-h-11 w-full items-center justify-center justify-self-start rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100 md:w-auto">РџСЂРёРјРµРЅРёС‚СЊ</button>
           </form>
           <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
             <div class="overflow-x-auto">
               <table class="min-w-[860px] w-full text-left text-sm">
                 <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
                   <tr>
-                    <th class="px-4 py-3">Дата</th>
-                    <th class="px-4 py-3">Имя</th>
+                    <th class="px-4 py-3">Р”Р°С‚Р°</th>
+                    <th class="px-4 py-3">РРјСЏ</th>
                     <th class="px-4 py-3">Slug</th>
-                    <th class="px-4 py-3">Контакт</th>
-                    <th class="px-4 py-3">Статус доставки</th>
+                    <th class="px-4 py-3">РљРѕРЅС‚Р°РєС‚</th>
+                    <th class="px-4 py-3">РЎС‚Р°С‚СѓСЃ РґРѕСЃС‚Р°РІРєРё</th>
                   </tr>
                 </thead>
                 <tbody id="bracelets-table"></tbody>
@@ -452,12 +472,12 @@
           <div
             class="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-neutral-200 bg-white p-4">
             <button id="score-recalculate-all-btn" type="button"
-              class="interactive-btn min-h-11 rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white">Пересчитать
-              всех</button>
+              class="interactive-btn min-h-11 rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white">РџРµСЂРµСЃС‡РёС‚Р°С‚СЊ
+              РІСЃРµС…</button>
             <label class="inline-flex items-center gap-2 text-sm text-neutral-700">
               <input id="score-visibility-toggle" type="checkbox"
                 class="h-4 w-4 rounded border-neutral-300 text-neutral-900" />
-              Показывать Score на визитках
+              РџРѕРєР°Р·С‹РІР°С‚СЊ Score РЅР° РІРёР·РёС‚РєР°С…
             </label>
           </div>
           <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
@@ -465,12 +485,12 @@
               <table class="min-w-[980px] w-full text-left text-sm">
                 <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
                   <tr>
-                    <th class="px-4 py-3">Пользователь</th>
+                    <th class="px-4 py-3">РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ</th>
                     <th class="px-4 py-3">Slug</th>
                     <th class="px-4 py-3">Score</th>
                     <th class="px-4 py-3">Percentile</th>
-                    <th class="px-4 py-3">Последний расчёт</th>
-                    <th class="px-4 py-3">Действие</th>
+                    <th class="px-4 py-3">РџРѕСЃР»РµРґРЅРёР№ СЂР°СЃС‡С‘С‚</th>
+                    <th class="px-4 py-3">Р”РµР№СЃС‚РІРёРµ</th>
                   </tr>
                 </thead>
                 <tbody id="score-table"></tbody>
@@ -478,14 +498,14 @@
             </div>
           </div>
           <article class="rounded-2xl border border-neutral-200 bg-white p-4">
-            <h2 class="text-sm font-semibold text-neutral-900">Последние 10 запусков пересчёта</h2>
+            <h2 class="text-sm font-semibold text-neutral-900">РџРѕСЃР»РµРґРЅРёРµ 10 Р·Р°РїСѓСЃРєРѕРІ РїРµСЂРµСЃС‡С‘С‚Р°</h2>
             <div class="mt-3 overflow-auto">
               <table class="min-w-full text-left text-sm">
                 <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
                   <tr>
-                    <th class="px-3 py-2">Время</th>
-                    <th class="px-3 py-2">Пользователей обработано</th>
-                    <th class="px-3 py-2">Среднее время</th>
+                    <th class="px-3 py-2">Р’СЂРµРјСЏ</th>
+                    <th class="px-3 py-2">РџРѕР»СЊР·РѕРІР°С‚РµР»РµР№ РѕР±СЂР°Р±РѕС‚Р°РЅРѕ</th>
+                    <th class="px-3 py-2">РЎСЂРµРґРЅРµРµ РІСЂРµРјСЏ</th>
                   </tr>
                 </thead>
                 <tbody id="score-runs-table"></tbody>
@@ -500,26 +520,26 @@
               <label
                 class="flex min-h-11 items-center gap-2 rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm font-medium text-neutral-800 lg:col-span-4">
                 <input type="checkbox" name="enabled" class="h-4 w-4 rounded border-neutral-300 text-neutral-900" />
-                Показать лидерборд
+                РџРѕРєР°Р·Р°С‚СЊ Р»РёРґРµСЂР±РѕСЂРґ
               </label>
 
               <label class="block">
-                <span class="mb-1.5 block text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">Лимит
-                  публичных позиций</span>
+                <span class="mb-1.5 block text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">Р›РёРјРёС‚
+                  РїСѓР±Р»РёС‡РЅС‹С… РїРѕР·РёС†РёР№</span>
                 <input type="number" name="publicLimit" min="1" max="200"
                   class="min-h-11 w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm text-neutral-900 outline-none transition-colors focus:border-neutral-500" />
               </label>
 
               <label class="block">
-                <span class="mb-1.5 block text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">Порог
-                  всплеска</span>
+                <span class="mb-1.5 block text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">РџРѕСЂРѕРі
+                  РІСЃРїР»РµСЃРєР°</span>
                 <input type="number" name="suspiciousThreshold" min="1"
                   class="min-h-11 w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm text-neutral-900 outline-none transition-colors focus:border-neutral-500" />
               </label>
 
               <label class="block">
-                <span class="mb-1.5 block text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">Окно
-                  (минуты)</span>
+                <span class="mb-1.5 block text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">РћРєРЅРѕ
+                  (РјРёРЅСѓС‚С‹)</span>
                 <input type="number" name="suspiciousWindowMinutes" min="1"
                   class="min-h-11 w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm text-neutral-900 outline-none transition-colors focus:border-neutral-500" />
               </label>
@@ -527,7 +547,7 @@
               <div class="flex items-end">
                 <button type="submit"
                   class="interactive-btn min-h-11 w-full rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-neutral-800">
-                  Сохранить
+                  РЎРѕС…СЂР°РЅРёС‚СЊ
                 </button>
               </div>
             </div>
@@ -539,11 +559,11 @@
                   <tr>
                     <th class="px-4 py-3">#</th>
                     <th class="px-4 py-3">Slug</th>
-                    <th class="px-4 py-3">Владелец</th>
-                    <th class="px-4 py-3">Просмотры</th>
-                    <th class="px-4 py-3">Динамика</th>
-                    <th class="px-4 py-3">Тариф</th>
-                    <th class="px-4 py-3">Действия</th>
+                    <th class="px-4 py-3">Р’Р»Р°РґРµР»РµС†</th>
+                    <th class="px-4 py-3">РџСЂРѕСЃРјРѕС‚СЂС‹</th>
+                    <th class="px-4 py-3">Р”РёРЅР°РјРёРєР°</th>
+                    <th class="px-4 py-3">РўР°СЂРёС„</th>
+                    <th class="px-4 py-3">Р”РµР№СЃС‚РІРёСЏ</th>
                   </tr>
                 </thead>
                 <tbody id="leaderboard-table"></tbody>
@@ -554,10 +574,10 @@
             <table class="min-w-full text-left text-sm">
               <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
                 <tr>
-                  <th class="px-4 py-3">Подозрительная активность</th>
-                  <th class="px-4 py-3">Просмотры</th>
-                  <th class="px-4 py-3">Окно</th>
-                  <th class="px-4 py-3">Время</th>
+                  <th class="px-4 py-3">РџРѕРґРѕР·СЂРёС‚РµР»СЊРЅР°СЏ Р°РєС‚РёРІРЅРѕСЃС‚СЊ</th>
+                  <th class="px-4 py-3">РџСЂРѕСЃРјРѕС‚СЂС‹</th>
+                  <th class="px-4 py-3">РћРєРЅРѕ</th>
+                  <th class="px-4 py-3">Р’СЂРµРјСЏ</th>
                 </tr>
               </thead>
               <tbody id="leaderboard-suspicious-table"></tbody>
@@ -567,67 +587,67 @@
 
         <section id="tab-referrals" class="<%= pageActiveTab === 'referrals' ? '' : 'hidden' %> space-y-4">
           <header class="rounded-2xl border border-neutral-200 bg-white p-4">
-            <h2 class="text-base font-bold text-neutral-900">Рефералы</h2>
-            <p class="mt-1 text-sm text-neutral-600">Управление реферальной программой, промокампаниями и начислениями.</p>
+            <h2 class="text-base font-bold text-neutral-900">Р РµС„РµСЂР°Р»С‹</h2>
+            <p class="mt-1 text-sm text-neutral-600">РЈРїСЂР°РІР»РµРЅРёРµ СЂРµС„РµСЂР°Р»СЊРЅРѕР№ РїСЂРѕРіСЂР°РјРјРѕР№, РїСЂРѕРјРѕРєР°РјРїР°РЅРёСЏРјРё Рё РЅР°С‡РёСЃР»РµРЅРёСЏРјРё.</p>
           </header>
 
           <section class="space-y-3">
-            <h3 class="text-sm font-semibold text-neutral-900">Сводка</h3>
+            <h3 class="text-sm font-semibold text-neutral-900">РЎРІРѕРґРєР°</h3>
             <div id="referrals-stats" class="grid gap-3 md:grid-cols-3"></div>
           </section>
 
           <section class="rounded-2xl border border-neutral-200 bg-white p-4">
-            <h3 class="text-sm font-semibold text-neutral-900">Настройки реферальной программы</h3>
+            <h3 class="text-sm font-semibold text-neutral-900">РќР°СЃС‚СЂРѕР№РєРё СЂРµС„РµСЂР°Р»СЊРЅРѕР№ РїСЂРѕРіСЂР°РјРјС‹</h3>
             <form id="referrals-settings-form" class="mt-3 space-y-4">
               <div class="grid gap-3 md:grid-cols-2">
                 <label class="block rounded-xl border border-neutral-200 p-3 text-sm">
                   <span class="flex items-center gap-2">
                     <input type="checkbox" name="enabled" />
-                    <span class="font-medium text-neutral-900">Включить реферальную программу</span>
+                    <span class="font-medium text-neutral-900">Р’РєР»СЋС‡РёС‚СЊ СЂРµС„РµСЂР°Р»СЊРЅСѓСЋ РїСЂРѕРіСЂР°РјРјСѓ</span>
                   </span>
-                  <span class="mt-1 block text-xs text-neutral-500">Разрешает начисление вознаграждений за приглашения.</span>
+                  <span class="mt-1 block text-xs text-neutral-500">Р Р°Р·СЂРµС€Р°РµС‚ РЅР°С‡РёСЃР»РµРЅРёРµ РІРѕР·РЅР°РіСЂР°Р¶РґРµРЅРёР№ Р·Р° РїСЂРёРіР»Р°С€РµРЅРёСЏ.</span>
                 </label>
                 <label class="block rounded-xl border border-neutral-200 p-3 text-sm">
                   <span class="flex items-center gap-2">
                     <input type="checkbox" name="promoCodesEnabled" />
-                    <span class="font-medium text-neutral-900">Разрешить промокоды</span>
+                    <span class="font-medium text-neutral-900">Р Р°Р·СЂРµС€РёС‚СЊ РїСЂРѕРјРѕРєРѕРґС‹</span>
                   </span>
-                  <span class="mt-1 block text-xs text-neutral-500">Включает использование промокодов в реферальных кампаниях.</span>
+                  <span class="mt-1 block text-xs text-neutral-500">Р’РєР»СЋС‡Р°РµС‚ РёСЃРїРѕР»СЊР·РѕРІР°РЅРёРµ РїСЂРѕРјРѕРєРѕРґРѕРІ РІ СЂРµС„РµСЂР°Р»СЊРЅС‹С… РєР°РјРїР°РЅРёСЏС….</span>
                 </label>
                 <label class="block rounded-xl border border-neutral-200 p-3 text-sm">
                   <span class="flex items-center gap-2">
                     <input type="checkbox" name="promoRequireReferrer" />
-                    <span class="font-medium text-neutral-900">Промокод требует реферера</span>
+                    <span class="font-medium text-neutral-900">РџСЂРѕРјРѕРєРѕРґ С‚СЂРµР±СѓРµС‚ СЂРµС„РµСЂРµСЂР°</span>
                   </span>
-                  <span class="mt-1 block text-xs text-neutral-500">Промокод доступен только при наличии привязки к рефереру.</span>
+                  <span class="mt-1 block text-xs text-neutral-500">РџСЂРѕРјРѕРєРѕРґ РґРѕСЃС‚СѓРїРµРЅ С‚РѕР»СЊРєРѕ РїСЂРё РЅР°Р»РёС‡РёРё РїСЂРёРІСЏР·РєРё Рє СЂРµС„РµСЂРµСЂСѓ.</span>
                 </label>
                 <label class="block rounded-xl border border-neutral-200 p-3 text-sm">
                   <span class="flex items-center gap-2">
                     <input type="checkbox" name="promoFirstOrderOnly" />
-                    <span class="font-medium text-neutral-900">Промокод только для первого заказа</span>
+                    <span class="font-medium text-neutral-900">РџСЂРѕРјРѕРєРѕРґ С‚РѕР»СЊРєРѕ РґР»СЏ РїРµСЂРІРѕРіРѕ Р·Р°РєР°Р·Р°</span>
                   </span>
-                  <span class="mt-1 block text-xs text-neutral-500">Ограничивает применение промокода первой покупкой.</span>
+                  <span class="mt-1 block text-xs text-neutral-500">РћРіСЂР°РЅРёС‡РёРІР°РµС‚ РїСЂРёРјРµРЅРµРЅРёРµ РїСЂРѕРјРѕРєРѕРґР° РїРµСЂРІРѕР№ РїРѕРєСѓРїРєРѕР№.</span>
                 </label>
               </div>
 
               <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
                 <label class="block text-sm">
-                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Скидка для приглашённого (сум)</span>
+                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">РЎРєРёРґРєР° РґР»СЏ РїСЂРёРіР»Р°С€С‘РЅРЅРѕРіРѕ (СЃСѓРј)</span>
                   <input type="number" min="0" step="1000" name="inviteeDiscount"
                     class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
                 </label>
                 <label class="block text-sm">
-                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Максимальная скидка (%)</span>
+                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">РњР°РєСЃРёРјР°Р»СЊРЅР°СЏ СЃРєРёРґРєР° (%)</span>
                   <input type="number" min="0" max="100" step="1" name="discountCapPercent"
                     class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
                 </label>
                 <label class="block text-sm">
-                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Лимит использований на пользователя</span>
+                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Р›РёРјРёС‚ РёСЃРїРѕР»СЊР·РѕРІР°РЅРёР№ РЅР° РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ</span>
                   <input type="number" min="1" step="1" name="defaultPerUserCap"
                     class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
                 </label>
                 <label class="block text-sm">
-                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Вознаграждение рефереру (сум)</span>
+                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Р’РѕР·РЅР°РіСЂР°Р¶РґРµРЅРёРµ СЂРµС„РµСЂРµСЂСѓ (СЃСѓРј)</span>
                   <input type="number" min="0" step="1000" name="referrerReward"
                     class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
                 </label>
@@ -635,107 +655,107 @@
 
               <div class="flex justify-end">
                 <button type="submit"
-                  class="rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">Сохранить настройки</button>
+                  class="rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">РЎРѕС…СЂР°РЅРёС‚СЊ РЅР°СЃС‚СЂРѕР№РєРё</button>
               </div>
             </form>
           </section>
 
           <section class="rounded-2xl border border-neutral-200 bg-white p-4">
-            <h3 class="text-sm font-semibold text-neutral-900">Создать промокампанию</h3>
+            <h3 class="text-sm font-semibold text-neutral-900">РЎРѕР·РґР°С‚СЊ РїСЂРѕРјРѕРєР°РјРїР°РЅРёСЋ</h3>
             <form id="referrals-campaign-create-form" class="mt-3 space-y-3">
               <div class="grid gap-3 md:grid-cols-4">
                 <label class="block text-sm md:col-span-2">
-                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Название кампании</span>
-                  <input name="name" type="text" placeholder="например: Весенний бонус"
+                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">РќР°Р·РІР°РЅРёРµ РєР°РјРїР°РЅРёРё</span>
+                  <input name="name" type="text" placeholder="РЅР°РїСЂРёРјРµСЂ: Р’РµСЃРµРЅРЅРёР№ Р±РѕРЅСѓСЃ"
                     class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" required />
                 </label>
                 <label class="block text-sm">
-                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Промокод</span>
-                  <input name="promoCode" type="text" maxlength="32" placeholder="например: PROMO2026"
+                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">РџСЂРѕРјРѕРєРѕРґ</span>
+                  <input name="promoCode" type="text" maxlength="32" placeholder="РЅР°РїСЂРёРјРµСЂ: PROMO2026"
                     class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm uppercase" required />
                 </label>
                 <label class="block text-sm">
-                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Статус</span>
+                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">РЎС‚Р°С‚СѓСЃ</span>
                   <select name="status" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm">
-                    <option value="draft">Черновик</option>
-                    <option value="active">Активная</option>
-                    <option value="paused">Пауза</option>
-                    <option value="archived">Архив</option>
+                    <option value="draft">Р§РµСЂРЅРѕРІРёРє</option>
+                    <option value="active">РђРєС‚РёРІРЅР°СЏ</option>
+                    <option value="paused">РџР°СѓР·Р°</option>
+                    <option value="archived">РђСЂС…РёРІ</option>
                   </select>
                 </label>
               </div>
 
               <div class="grid gap-3 md:grid-cols-3">
                 <label class="block text-sm">
-                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Скидка для приглашённого (override)</span>
-                  <input name="inviteeDiscountOverride" type="number" min="0" step="1000" placeholder="например: 100000"
+                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">РЎРєРёРґРєР° РґР»СЏ РїСЂРёРіР»Р°С€С‘РЅРЅРѕРіРѕ (override)</span>
+                  <input name="inviteeDiscountOverride" type="number" min="0" step="1000" placeholder="РЅР°РїСЂРёРјРµСЂ: 100000"
                     class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
                 </label>
                 <label class="block text-sm">
-                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Вознаграждение (override)</span>
-                  <input name="rewardAmountOverride" type="number" min="0" step="1000" placeholder="например: 50000"
+                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Р’РѕР·РЅР°РіСЂР°Р¶РґРµРЅРёРµ (override)</span>
+                  <input name="rewardAmountOverride" type="number" min="0" step="1000" placeholder="РЅР°РїСЂРёРјРµСЂ: 50000"
                     class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
                 </label>
                 <label class="block text-sm">
-                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Лимит скидки (%)</span>
-                  <input name="discountCapPercentOverride" type="number" min="0" max="100" step="1" placeholder="например: 30"
+                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Р›РёРјРёС‚ СЃРєРёРґРєРё (%)</span>
+                  <input name="discountCapPercentOverride" type="number" min="0" max="100" step="1" placeholder="РЅР°РїСЂРёРјРµСЂ: 30"
                     class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
                 </label>
               </div>
 
               <div class="grid gap-3 md:grid-cols-3">
                 <label class="block text-sm">
-                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Бюджет кампании (сум)</span>
-                  <input name="budgetAmount" type="number" min="0" step="1000" value="0" placeholder="например: 5000000"
+                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Р‘СЋРґР¶РµС‚ РєР°РјРїР°РЅРёРё (СЃСѓРј)</span>
+                  <input name="budgetAmount" type="number" min="0" step="1000" value="0" placeholder="РЅР°РїСЂРёРјРµСЂ: 5000000"
                     class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
                 </label>
                 <label class="block text-sm">
-                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Дата начала</span>
+                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Р”Р°С‚Р° РЅР°С‡Р°Р»Р°</span>
                   <input name="startsAt" type="datetime-local" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
                 </label>
                 <label class="block text-sm">
-                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Дата конца</span>
+                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Р”Р°С‚Р° РєРѕРЅС†Р°</span>
                   <input name="endsAt" type="datetime-local" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
                 </label>
               </div>
 
               <div class="grid gap-3 md:grid-cols-2">
                 <label class="block text-sm">
-                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Приоритет кампании</span>
-                  <input name="priority" type="number" step="1" value="0" placeholder="например: 0"
+                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">РџСЂРёРѕСЂРёС‚РµС‚ РєР°РјРїР°РЅРёРё</span>
+                  <input name="priority" type="number" step="1" value="0" placeholder="РЅР°РїСЂРёРјРµСЂ: 0"
                     class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
                 </label>
                 <label class="block text-sm">
-                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Лимит использований на пользователя</span>
-                  <input name="perUserCap" type="number" min="1" step="1" value="1" placeholder="например: 1"
+                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Р›РёРјРёС‚ РёСЃРїРѕР»СЊР·РѕРІР°РЅРёР№ РЅР° РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ</span>
+                  <input name="perUserCap" type="number" min="1" step="1" value="1" placeholder="РЅР°РїСЂРёРјРµСЂ: 1"
                     class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
                 </label>
               </div>
 
               <div class="flex justify-end">
                 <button type="submit"
-                  class="rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">Создать кампанию</button>
+                  class="rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">РЎРѕР·РґР°С‚СЊ РєР°РјРїР°РЅРёСЋ</button>
               </div>
             </form>
           </section>
 
           <section class="space-y-2">
-            <h3 class="text-sm font-semibold text-neutral-900">Промокампании</h3>
+            <h3 class="text-sm font-semibold text-neutral-900">РџСЂРѕРјРѕРєР°РјРїР°РЅРёРё</h3>
             <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
               <div class="overflow-x-auto">
                 <table class="min-w-[1200px] w-full text-left text-sm">
                   <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
                     <tr>
-                      <th class="px-4 py-3">Название</th>
-                      <th class="px-4 py-3">Промокод</th>
-                      <th class="px-4 py-3">Статус</th>
-                      <th class="px-4 py-3">Скидка</th>
-                      <th class="px-4 py-3">Вознаграждение</th>
-                      <th class="px-4 py-3">Лимит %</th>
-                      <th class="px-4 py-3">Приоритет</th>
-                      <th class="px-4 py-3">Бюджет</th>
-                      <th class="px-4 py-3">Период</th>
-                      <th class="px-4 py-3">Действия</th>
+                      <th class="px-4 py-3">РќР°Р·РІР°РЅРёРµ</th>
+                      <th class="px-4 py-3">РџСЂРѕРјРѕРєРѕРґ</th>
+                      <th class="px-4 py-3">РЎС‚Р°С‚СѓСЃ</th>
+                      <th class="px-4 py-3">РЎРєРёРґРєР°</th>
+                      <th class="px-4 py-3">Р’РѕР·РЅР°РіСЂР°Р¶РґРµРЅРёРµ</th>
+                      <th class="px-4 py-3">Р›РёРјРёС‚ %</th>
+                      <th class="px-4 py-3">РџСЂРёРѕСЂРёС‚РµС‚</th>
+                      <th class="px-4 py-3">Р‘СЋРґР¶РµС‚</th>
+                      <th class="px-4 py-3">РџРµСЂРёРѕРґ</th>
+                      <th class="px-4 py-3">Р”РµР№СЃС‚РІРёСЏ</th>
                     </tr>
                   </thead>
                   <tbody id="referrals-campaigns-table"></tbody>
@@ -746,20 +766,20 @@
 
           <section class="space-y-2">
             <div class="flex flex-wrap items-end justify-between gap-3">
-              <h3 class="text-sm font-semibold text-neutral-900">История рефералов</h3>
+              <h3 class="text-sm font-semibold text-neutral-900">РСЃС‚РѕСЂРёСЏ СЂРµС„РµСЂР°Р»РѕРІ</h3>
               <form id="referrals-history-filters" class="flex items-end gap-2">
                 <label class="block text-sm">
-                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Статус</span>
+                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">РЎС‚Р°С‚СѓСЃ</span>
                   <select name="status" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">
-                    <option value="all">Все</option>
-                    <option value="pending">В ожидании</option>
-                    <option value="approved">Одобрено</option>
-                    <option value="paid">Оплачено</option>
-                    <option value="rejected">Отклонено</option>
+                    <option value="all">Р’СЃРµ</option>
+                    <option value="pending">Р’ РѕР¶РёРґР°РЅРёРё</option>
+                    <option value="approved">РћРґРѕР±СЂРµРЅРѕ</option>
+                    <option value="paid">РћРїР»Р°С‡РµРЅРѕ</option>
+                    <option value="rejected">РћС‚РєР»РѕРЅРµРЅРѕ</option>
                   </select>
                 </label>
                 <button type="submit"
-                  class="rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">Применить</button>
+                  class="rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">РџСЂРёРјРµРЅРёС‚СЊ</button>
               </form>
             </div>
             <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
@@ -767,13 +787,13 @@
                 <table class="min-w-[980px] w-full text-left text-sm">
                   <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
                     <tr>
-                      <th class="px-4 py-3">Реферер</th>
-                      <th class="px-4 py-3">Приглашённый</th>
-                      <th class="px-4 py-3">Дата</th>
-                      <th class="px-4 py-3">Статус</th>
-                      <th class="px-4 py-3">Источник</th>
-                      <th class="px-4 py-3">Вознаграждение</th>
-                      <th class="px-4 py-3">Действие</th>
+                      <th class="px-4 py-3">Р РµС„РµСЂРµСЂ</th>
+                      <th class="px-4 py-3">РџСЂРёРіР»Р°С€С‘РЅРЅС‹Р№</th>
+                      <th class="px-4 py-3">Р”Р°С‚Р°</th>
+                      <th class="px-4 py-3">РЎС‚Р°С‚СѓСЃ</th>
+                      <th class="px-4 py-3">РСЃС‚РѕС‡РЅРёРє</th>
+                      <th class="px-4 py-3">Р’РѕР·РЅР°РіСЂР°Р¶РґРµРЅРёРµ</th>
+                      <th class="px-4 py-3">Р”РµР№СЃС‚РІРёРµ</th>
                     </tr>
                   </thead>
                   <tbody id="referrals-table"></tbody>
@@ -783,18 +803,18 @@
           </section>
 
           <section class="space-y-2">
-            <h3 class="text-sm font-semibold text-neutral-900">Операции по кошельку рефералов</h3>
+            <h3 class="text-sm font-semibold text-neutral-900">РћРїРµСЂР°С†РёРё РїРѕ РєРѕС€РµР»СЊРєСѓ СЂРµС„РµСЂР°Р»РѕРІ</h3>
             <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
               <div class="overflow-x-auto">
                 <table class="min-w-[980px] w-full text-left text-sm">
                   <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
                     <tr>
-                      <th class="px-4 py-3">Дата</th>
-                      <th class="px-4 py-3">Пользователь</th>
-                      <th class="px-4 py-3">Направление</th>
-                      <th class="px-4 py-3">Тип операции</th>
-                      <th class="px-4 py-3">Сумма</th>
-                      <th class="px-4 py-3">Баланс после</th>
+                      <th class="px-4 py-3">Р”Р°С‚Р°</th>
+                      <th class="px-4 py-3">РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ</th>
+                      <th class="px-4 py-3">РќР°РїСЂР°РІР»РµРЅРёРµ</th>
+                      <th class="px-4 py-3">РўРёРї РѕРїРµСЂР°С†РёРё</th>
+                      <th class="px-4 py-3">РЎСѓРјРјР°</th>
+                      <th class="px-4 py-3">Р‘Р°Р»Р°РЅСЃ РїРѕСЃР»Рµ</th>
                       <th class="px-4 py-3">Idempotency</th>
                     </tr>
                   </thead>
@@ -808,48 +828,48 @@
         <section id="tab-flash-sales" class="<%= pageActiveTab === 'flash-sales' ? '' : 'hidden' %> space-y-4">
           <form id="flash-sales-create-form"
             class="grid gap-3 rounded-2xl border border-neutral-200 bg-white p-4 md:grid-cols-4">
-            <input name="title" type="text" placeholder="Название"
+            <input name="title" type="text" placeholder="РќР°Р·РІР°РЅРёРµ"
               class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" required />
-            <input name="description" type="text" placeholder="Текст баннера"
+            <input name="description" type="text" placeholder="РўРµРєСЃС‚ Р±Р°РЅРЅРµСЂР°"
               class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
-            <input name="discountPercent" type="number" min="1" max="95" placeholder="Скидка %"
+            <input name="discountPercent" type="number" min="1" max="95" placeholder="РЎРєРёРґРєР° %"
               class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" required />
             <select name="conditionType" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">
-              <option value="all">Все slug</option>
+              <option value="all">Р’СЃРµ slug</option>
               <option value="pattern_000">000</option>
               <option value="pattern_aaa">AAA</option>
               <option value="sequential_digits">123/456</option>
-              <option value="custom">Кастом</option>
+              <option value="custom">РљР°СЃС‚РѕРј</option>
             </select>
             <div class="hidden md:col-span-2" data-flash-custom-wrap>
               <textarea name="conditionPatternInput" rows="2"
-                placeholder="Кастомные правила: AAA000, AAA***, ***777, A*A12? (через запятую, пробел или новую строку)"
+                placeholder="РљР°СЃС‚РѕРјРЅС‹Рµ РїСЂР°РІРёР»Р°: AAA000, AAA***, ***777, A*A12? (С‡РµСЂРµР· Р·Р°РїСЏС‚СѓСЋ, РїСЂРѕР±РµР» РёР»Рё РЅРѕРІСѓСЋ СЃС‚СЂРѕРєСѓ)"
                 class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm font-mono uppercase"></textarea>
               <p class="mt-1 text-xs text-neutral-500">
-                Для `custom`: точный slug или маска 6 символов. `*` = любой символ, `?` = один символ.
+                Р”Р»СЏ `custom`: С‚РѕС‡РЅС‹Р№ slug РёР»Рё РјР°СЃРєР° 6 СЃРёРјРІРѕР»РѕРІ. `*` = Р»СЋР±РѕР№ СЃРёРјРІРѕР», `?` = РѕРґРёРЅ СЃРёРјРІРѕР».
               </p>
             </div>
             <input name="startsAt" type="datetime-local" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm"
               required />
             <input name="endsAt" type="datetime-local" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm"
               required />
-            <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="notifyTelegram" /> Уведомить
+            <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="notifyTelegram" /> РЈРІРµРґРѕРјРёС‚СЊ
               Telegram</label>
-            <input name="telegramTarget" type="text" placeholder="@channel или chat_id"
+            <input name="telegramTarget" type="text" placeholder="@channel РёР»Рё chat_id"
               class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
             <button type="submit"
-              class="rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">Запустить</button>
+              class="rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">Р—Р°РїСѓСЃС‚РёС‚СЊ</button>
           </form>
           <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
             <table class="min-w-full text-left text-sm">
               <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
                 <tr>
-                  <th class="px-4 py-3">Название</th>
-                  <th class="px-4 py-3">Скидка</th>
-                  <th class="px-4 py-3">Период</th>
-                  <th class="px-4 py-3">Статус</th>
-                  <th class="px-4 py-3">Статистика</th>
-                  <th class="px-4 py-3">Действие</th>
+                  <th class="px-4 py-3">РќР°Р·РІР°РЅРёРµ</th>
+                  <th class="px-4 py-3">РЎРєРёРґРєР°</th>
+                  <th class="px-4 py-3">РџРµСЂРёРѕРґ</th>
+                  <th class="px-4 py-3">РЎС‚Р°С‚СѓСЃ</th>
+                  <th class="px-4 py-3">РЎС‚Р°С‚РёСЃС‚РёРєР°</th>
+                  <th class="px-4 py-3">Р”РµР№СЃС‚РІРёРµ</th>
                 </tr>
               </thead>
               <tbody id="flash-sales-table"></tbody>
@@ -860,39 +880,39 @@
         <section id="tab-drops" class="<%= pageActiveTab === 'drops' ? '' : 'hidden' %> space-y-4">
           <form id="drops-create-form"
             class="grid gap-3 rounded-2xl border border-neutral-200 bg-white p-4 md:grid-cols-4">
-            <input name="title" type="text" placeholder="Название дропа"
+            <input name="title" type="text" placeholder="РќР°Р·РІР°РЅРёРµ РґСЂРѕРїР°"
               class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" required />
-            <input name="description" type="text" placeholder="Описание"
+            <input name="description" type="text" placeholder="РћРїРёСЃР°РЅРёРµ"
               class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
             <input name="dropAt" type="datetime-local" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm"
               required />
-            <input name="slugCount" type="number" min="1" max="500" placeholder="Количество slug"
+            <input name="slugCount" type="number" min="1" max="500" placeholder="РљРѕР»РёС‡РµСЃС‚РІРѕ slug"
               class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" required />
             <select name="slugPatternType" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">
-              <option value="random">Случайные</option>
-              <option value="sequential">Последовательные</option>
-              <option value="manual">Вручную</option>
+              <option value="random">РЎР»СѓС‡Р°Р№РЅС‹Рµ</option>
+              <option value="sequential">РџРѕСЃР»РµРґРѕРІР°С‚РµР»СЊРЅС‹Рµ</option>
+              <option value="manual">Р’СЂСѓС‡РЅСѓСЋ</option>
             </select>
-            <textarea name="manualSlugs" rows="2" placeholder="Slug по одному в строке (для manual)"
+            <textarea name="manualSlugs" rows="2" placeholder="Slug РїРѕ РѕРґРЅРѕРјСѓ РІ СЃС‚СЂРѕРєРµ (РґР»СЏ manual)"
               class="rounded-xl border border-neutral-300 px-3 py-2 text-sm md:col-span-2"></textarea>
-            <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="notifyTelegram" /> Уведомить
+            <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="notifyTelegram" /> РЈРІРµРґРѕРјРёС‚СЊ
               Telegram</label>
-            <input name="telegramTarget" type="text" placeholder="@channel или chat_id"
+            <input name="telegramTarget" type="text" placeholder="@channel РёР»Рё chat_id"
               class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
             <button type="submit"
-              class="rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">Создать
-              дроп</button>
+              class="rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">РЎРѕР·РґР°С‚СЊ
+              РґСЂРѕРї</button>
           </form>
           <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
             <table class="min-w-full text-left text-sm">
               <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
                 <tr>
-                  <th class="px-4 py-3">Название</th>
-                  <th class="px-4 py-3">Дата</th>
+                  <th class="px-4 py-3">РќР°Р·РІР°РЅРёРµ</th>
+                  <th class="px-4 py-3">Р”Р°С‚Р°</th>
                   <th class="px-4 py-3">Slug</th>
-                  <th class="px-4 py-3">Статус</th>
-                  <th class="px-4 py-3">Итоги</th>
-                  <th class="px-4 py-3">Действие</th>
+                  <th class="px-4 py-3">РЎС‚Р°С‚СѓСЃ</th>
+                  <th class="px-4 py-3">РС‚РѕРіРё</th>
+                  <th class="px-4 py-3">Р”РµР№СЃС‚РІРёРµ</th>
                 </tr>
               </thead>
               <tbody id="drops-table"></tbody>
@@ -902,20 +922,20 @@
 
         <section id="tab-testimonials" class="<%= pageActiveTab === 'testimonials' ? '' : 'hidden' %> space-y-4">
           <form id="testimonial-create-form" class="rounded-2xl border border-neutral-200 bg-white p-4">
-            <h2 class="text-sm font-semibold text-neutral-900">Добавить отзыв</h2>
+            <h2 class="text-sm font-semibold text-neutral-900">Р”РѕР±Р°РІРёС‚СЊ РѕС‚Р·С‹РІ</h2>
             <div class="mt-3 grid gap-3 md:grid-cols-4">
-              <input name="name" type="text" placeholder="Имя"
+              <input name="name" type="text" placeholder="РРјСЏ"
                 class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" required />
               <input name="slug" type="text" placeholder="Slug" maxlength="6"
                 class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" required />
               <select name="tariff" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">
-                <option value="basic">Базовый</option>
-                <option value="premium">Премиум</option>
+                <option value="basic">Р‘Р°Р·РѕРІС‹Р№</option>
+                <option value="premium">РџСЂРµРјРёСѓРј</option>
               </select>
               <button type="submit"
-                class="rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-neutral-700">Добавить</button>
+                class="rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-neutral-700">Р”РѕР±Р°РІРёС‚СЊ</button>
             </div>
-            <textarea name="text" rows="3" placeholder="Текст отзыва"
+            <textarea name="text" rows="3" placeholder="РўРµРєСЃС‚ РѕС‚Р·С‹РІР°"
               class="mt-3 w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" required></textarea>
           </form>
           <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
@@ -923,12 +943,12 @@
               <table class="min-w-[860px] w-full text-left text-sm">
                 <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
                   <tr>
-                    <th class="px-4 py-3">Имя</th>
+                    <th class="px-4 py-3">РРјСЏ</th>
                     <th class="px-4 py-3">Slug</th>
-                    <th class="px-4 py-3">Тариф</th>
-                    <th class="px-4 py-3">Текст</th>
-                    <th class="px-4 py-3">Видимость</th>
-                    <th class="px-4 py-3">Действия</th>
+                    <th class="px-4 py-3">РўР°СЂРёС„</th>
+                    <th class="px-4 py-3">РўРµРєСЃС‚</th>
+                    <th class="px-4 py-3">Р’РёРґРёРјРѕСЃС‚СЊ</th>
+                    <th class="px-4 py-3">Р”РµР№СЃС‚РІРёСЏ</th>
                   </tr>
                 </thead>
                 <tbody id="testimonials-table"></tbody>
@@ -943,15 +963,15 @@
             class="grid gap-3 rounded-2xl border border-neutral-200 bg-white p-4 md:grid-cols-[220px_auto]">
             <input type="hidden" name="tab" value="verification" />
             <select name="status" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">
-              <option value="all">Все статусы</option>
-              <option value="pending">На рассмотрении</option>
-              <option value="approved">Одобрено</option>
-              <option value="rejected">Отклонено</option>
+              <option value="all">Р’СЃРµ СЃС‚Р°С‚СѓСЃС‹</option>
+              <option value="pending">РќР° СЂР°СЃСЃРјРѕС‚СЂРµРЅРёРё</option>
+              <option value="approved">РћРґРѕР±СЂРµРЅРѕ</option>
+              <option value="rejected">РћС‚РєР»РѕРЅРµРЅРѕ</option>
             </select>
             <input type="hidden" name="page" value="1" />
             <button type="submit"
               class="inline-flex min-h-11 w-full items-center justify-center justify-self-start rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100 md:w-auto">
-              Применить
+              РџСЂРёРјРµРЅРёС‚СЊ
             </button>
           </form>
           <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
@@ -959,17 +979,17 @@
               <table class="min-w-[1200px] w-full text-left text-sm">
                 <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
                   <tr>
-                    <th class="px-4 py-3">Пользователь</th>
+                    <th class="px-4 py-3">РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ</th>
                     <th class="px-4 py-3">Slug</th>
-                    <th class="px-4 py-3">Компания</th>
-                    <th class="px-4 py-3">Роль</th>
-                    <th class="px-4 py-3">Сфера</th>
-                    <th class="px-4 py-3">Доказательство</th>
-                    <th class="px-4 py-3">Комментарий</th>
-                    <th class="px-4 py-3">Статус</th>
-                    <th class="px-4 py-3">Запрошено</th>
-                    <th class="px-4 py-3">Решение</th>
-                    <th class="px-4 py-3">Действия</th>
+                    <th class="px-4 py-3">РљРѕРјРїР°РЅРёСЏ</th>
+                    <th class="px-4 py-3">Р РѕР»СЊ</th>
+                    <th class="px-4 py-3">РЎС„РµСЂР°</th>
+                    <th class="px-4 py-3">Р”РѕРєР°Р·Р°С‚РµР»СЊСЃС‚РІРѕ</th>
+                    <th class="px-4 py-3">РљРѕРјРјРµРЅС‚Р°СЂРёР№</th>
+                    <th class="px-4 py-3">РЎС‚Р°С‚СѓСЃ</th>
+                    <th class="px-4 py-3">Р—Р°РїСЂРѕС€РµРЅРѕ</th>
+                    <th class="px-4 py-3">Р РµС€РµРЅРёРµ</th>
+                    <th class="px-4 py-3">Р”РµР№СЃС‚РІРёСЏ</th>
                   </tr>
                 </thead>
                 <tbody id="verification-table"></tbody>
@@ -981,22 +1001,22 @@
 
         <section id="tab-logs" class="<%= pageActiveTab === 'logs' ? '' : 'hidden' %> space-y-4">
           <div class="flex items-center justify-between gap-3">
-            <h2 class="text-lg font-bold">Логи ошибок</h2>
+            <h2 class="text-lg font-bold">Р›РѕРіРё РѕС€РёР±РѕРє</h2>
             <button id="cleanup-logs-btn" type="button"
-              class="rounded-xl border border-neutral-300 px-3 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">Очистить
-              старше 30 дней</button>
+              class="rounded-xl border border-neutral-300 px-3 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">РћС‡РёСЃС‚РёС‚СЊ
+              СЃС‚Р°СЂС€Рµ 30 РґРЅРµР№</button>
           </div>
 
           <article class="rounded-2xl border border-neutral-200 bg-white p-4 space-y-4">
             <div>
-              <h3 class="text-sm font-semibold text-neutral-900">Push-центр</h3>
-              <p class="mt-1 text-xs text-neutral-500">Тестовая отправка на одного пользователя и массовая рассылка по
-                аудитории.</p>
+              <h3 class="text-sm font-semibold text-neutral-900">Push-С†РµРЅС‚СЂ</h3>
+              <p class="mt-1 text-xs text-neutral-500">РўРµСЃС‚РѕРІР°СЏ РѕС‚РїСЂР°РІРєР° РЅР° РѕРґРЅРѕРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ Рё РјР°СЃСЃРѕРІР°СЏ СЂР°СЃСЃС‹Р»РєР° РїРѕ
+                Р°СѓРґРёС‚РѕСЂРёРё.</p>
             </div>
 
             <form id="push-test-form" class="space-y-3">
               <div class="rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-xs text-neutral-600">
-                Укажите один идентификатор получателя: <span class="font-semibold text-neutral-800">User ID</span> или
+                РЈРєР°Р¶РёС‚Рµ РѕРґРёРЅ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂ РїРѕР»СѓС‡Р°С‚РµР»СЏ: <span class="font-semibold text-neutral-800">User ID</span> РёР»Рё
                 <span class="font-semibold text-neutral-800">Slug</span>.
               </div>
 
@@ -1004,74 +1024,74 @@
                 <label class="block">
                   <span class="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">User
                     ID</span>
-                  <input name="userId" type="text" placeholder="Например: 123456789"
+                  <input name="userId" type="text" placeholder="РќР°РїСЂРёРјРµСЂ: 123456789"
                     class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
                 </label>
 
                 <label class="block">
                   <span
                     class="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">Slug</span>
-                  <input name="slug" type="text" placeholder="Например: SSS555"
+                  <input name="slug" type="text" placeholder="РќР°РїСЂРёРјРµСЂ: SSS555"
                     class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm uppercase" />
                 </label>
 
                 <label class="block">
                   <span
-                    class="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">Заголовок</span>
-                  <input name="title" type="text" placeholder="Заголовок" value="Тестовое уведомление"
+                    class="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">Р—Р°РіРѕР»РѕРІРѕРє</span>
+                  <input name="title" type="text" placeholder="Р—Р°РіРѕР»РѕРІРѕРє" value="РўРµСЃС‚РѕРІРѕРµ СѓРІРµРґРѕРјР»РµРЅРёРµ"
                     class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" required />
                 </label>
               </div>
 
               <div class="grid gap-3 md:grid-cols-3">
-                <textarea name="body" rows="2" placeholder="Текст"
+                <textarea name="body" rows="2" placeholder="РўРµРєСЃС‚"
                   class="rounded-xl border border-neutral-300 px-3 py-2 text-sm md:col-span-2"
-                  required>Проверка доставки push-уведомления</textarea>
+                  required>РџСЂРѕРІРµСЂРєР° РґРѕСЃС‚Р°РІРєРё push-СѓРІРµРґРѕРјР»РµРЅРёСЏ</textarea>
                 <input name="data" type="text"
-                  placeholder='JSON data, например {"type":"admin_test","targetPath":"/notifications"}'
+                  placeholder='JSON data, РЅР°РїСЂРёРјРµСЂ {"type":"admin_test","targetPath":"/notifications"}'
                   class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
               </div>
 
               <div class="grid gap-3 md:grid-cols-3 md:items-center">
                 <label class="inline-flex items-center gap-2 text-sm text-neutral-700"><input type="checkbox"
-                    name="includeInApp" checked /> Добавить во внутренние уведомления</label>
+                    name="includeInApp" checked /> Р”РѕР±Р°РІРёС‚СЊ РІРѕ РІРЅСѓС‚СЂРµРЅРЅРёРµ СѓРІРµРґРѕРјР»РµРЅРёСЏ</label>
                 <button type="submit"
-                  class="interactive-btn min-h-11 rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">Отправить
-                  тест</button>
+                  class="interactive-btn min-h-11 rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">РћС‚РїСЂР°РІРёС‚СЊ
+                  С‚РµСЃС‚</button>
               </div>
             </form>
 
             <div class="h-px bg-neutral-200"></div>
 
             <form id="push-broadcast-form" class="grid gap-3 md:grid-cols-4">
-              <input name="title" type="text" placeholder="Заголовок рассылки"
+              <input name="title" type="text" placeholder="Р—Р°РіРѕР»РѕРІРѕРє СЂР°СЃСЃС‹Р»РєРё"
                 class="rounded-xl border border-neutral-300 px-3 py-2 text-sm md:col-span-2" required />
-              <input name="body" type="text" placeholder="Текст рассылки"
+              <input name="body" type="text" placeholder="РўРµРєСЃС‚ СЂР°СЃСЃС‹Р»РєРё"
                 class="rounded-xl border border-neutral-300 px-3 py-2 text-sm md:col-span-2" required />
               <select name="plan" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">
-                <option value="all">Тариф: все</option>
-                <option value="none">Без тарифа</option>
-                <option value="basic">Базовый</option>
-                <option value="premium">Премиум</option>
+                <option value="all">РўР°СЂРёС„: РІСЃРµ</option>
+                <option value="none">Р‘РµР· С‚Р°СЂРёС„Р°</option>
+                <option value="basic">Р‘Р°Р·РѕРІС‹Р№</option>
+                <option value="premium">РџСЂРµРјРёСѓРј</option>
               </select>
               <select name="status" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">
-                <option value="all">Статус: все</option>
-                <option value="active">Только активные</option>
-                <option value="blocked">Только заблокированные</option>
+                <option value="all">РЎС‚Р°С‚СѓСЃ: РІСЃРµ</option>
+                <option value="active">РўРѕР»СЊРєРѕ Р°РєС‚РёРІРЅС‹Рµ</option>
+                <option value="blocked">РўРѕР»СЊРєРѕ Р·Р°Р±Р»РѕРєРёСЂРѕРІР°РЅРЅС‹Рµ</option>
               </select>
               <input name="limit" type="number" min="1" max="20000" value="20000"
                 class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
-              <input name="data" type="text" placeholder='JSON data, например {"type":"marketing","targetPath":"/home"}'
+              <input name="data" type="text" placeholder='JSON data, РЅР°РїСЂРёРјРµСЂ {"type":"marketing","targetPath":"/home"}'
                 class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
               <label class="inline-flex items-center gap-2 text-sm text-neutral-700"><input type="checkbox"
-                  name="onlyWithPushTokens" checked /> Только с push-токенами</label>
+                  name="onlyWithPushTokens" checked /> РўРѕР»СЊРєРѕ СЃ push-С‚РѕРєРµРЅР°РјРё</label>
               <label class="inline-flex items-center gap-2 text-sm text-neutral-700"><input type="checkbox"
-                  name="includeInApp" checked /> Добавить во внутренние уведомления</label>
+                  name="includeInApp" checked /> Р”РѕР±Р°РІРёС‚СЊ РІРѕ РІРЅСѓС‚СЂРµРЅРЅРёРµ СѓРІРµРґРѕРјР»РµРЅРёСЏ</label>
               <label class="inline-flex items-center gap-2 text-sm text-neutral-700"><input type="checkbox"
-                  name="dryRun" /> Dry-run (без отправки)</label>
+                  name="dryRun" /> Dry-run (Р±РµР· РѕС‚РїСЂР°РІРєРё)</label>
               <button type="submit"
-                class="interactive-btn min-h-11 rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-neutral-800">Запустить
-                рассылку</button>
+                class="interactive-btn min-h-11 rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-neutral-800">Р—Р°РїСѓСЃС‚РёС‚СЊ
+                СЂР°СЃСЃС‹Р»РєСѓ</button>
             </form>
 
             <div id="push-broadcast-status" class="hidden rounded-xl border px-3 py-2 text-sm"></div>
@@ -1080,14 +1100,14 @@
           <form id="logs-filters"
             class="grid gap-3 rounded-2xl border border-neutral-200 bg-white p-4 md:grid-cols-[220px_1fr_auto] md:items-end">
             <select name="type" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">
-              <option value="all">Все типы</option>
+              <option value="all">Р’СЃРµ С‚РёРїС‹</option>
               <option value="not_found">Not found</option>
               <option value="server_error">Server error</option>
             </select>
             <input type="hidden" name="page" value="1" />
             <button type="submit"
               class="inline-flex min-h-11 w-full items-center justify-center justify-self-start rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100 md:w-auto">
-              Применить
+              РџСЂРёРјРµРЅРёС‚СЊ
             </button>
           </form>
           <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
@@ -1095,11 +1115,11 @@
               <table class="min-w-[860px] w-full text-left text-sm">
                 <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
                   <tr>
-                    <th class="px-4 py-3">Тип</th>
-                    <th class="px-4 py-3">Путь</th>
-                    <th class="px-4 py-3">Сообщение</th>
-                    <th class="px-4 py-3">Браузер</th>
-                    <th class="px-4 py-3">Время</th>
+                    <th class="px-4 py-3">РўРёРї</th>
+                    <th class="px-4 py-3">РџСѓС‚СЊ</th>
+                    <th class="px-4 py-3">РЎРѕРѕР±С‰РµРЅРёРµ</th>
+                    <th class="px-4 py-3">Р‘СЂР°СѓР·РµСЂ</th>
+                    <th class="px-4 py-3">Р’СЂРµРјСЏ</th>
                   </tr>
                 </thead>
                 <tbody id="logs-table"></tbody>
@@ -1112,97 +1132,97 @@
         <section id="tab-settings" class="<%= pageActiveTab === 'settings' ? '' : 'hidden' %>">
           <div class="settings-grid grid gap-4 xl:grid-cols-[280px_minmax(0,1fr)]">
             <aside class="settings-subtabs-aside rounded-2xl border border-neutral-200 bg-white p-3">
-              <p class="mb-3 text-xs text-neutral-500">Выберите раздел и сохраните изменения внизу формы.</p>
+              <p class="mb-3 text-xs text-neutral-500">Р’С‹Р±РµСЂРёС‚Рµ СЂР°Р·РґРµР» Рё СЃРѕС…СЂР°РЅРёС‚Рµ РёР·РјРµРЅРµРЅРёСЏ РІРЅРёР·Сѓ С„РѕСЂРјС‹.</p>
               <nav class="settings-subtabs-nav flex gap-2 overflow-x-auto pb-1 xl:block xl:space-y-1" id="settings-subtabs">
                 <button type="button" data-settings-subtab="pricing"
-                  class="settings-subtab-btn flex shrink-0 items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-semibold xl:w-full">Тарифы
+                  class="settings-subtab-btn flex shrink-0 items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-semibold xl:w-full">РўР°СЂРёС„С‹
                   <span data-settings-unsaved-dot="pricing"
                     class="hidden h-2 w-2 rounded-full bg-amber-500"></span></button>
                 <button type="button" data-settings-subtab="algorithm"
-                  class="settings-subtab-btn flex shrink-0 items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-semibold xl:w-full">Алгоритм
-                  цены slug <span data-settings-unsaved-dot="algorithm"
+                  class="settings-subtab-btn flex shrink-0 items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-semibold xl:w-full">РђР»РіРѕСЂРёС‚Рј
+                  С†РµРЅС‹ slug <span data-settings-unsaved-dot="algorithm"
                     class="hidden h-2 w-2 rounded-full bg-amber-500"></span></button>
                 <button type="button" data-settings-subtab="bracelet"
-                  class="settings-subtab-btn flex shrink-0 items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-semibold xl:w-full">Браслет
+                  class="settings-subtab-btn flex shrink-0 items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-semibold xl:w-full">Р‘СЂР°СЃР»РµС‚
                   <span data-settings-unsaved-dot="bracelet"
                     class="hidden h-2 w-2 rounded-full bg-amber-500"></span></button>
                 <button type="button" data-settings-subtab="contacts"
-                  class="settings-subtab-btn flex shrink-0 items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-semibold xl:w-full">Контакты
+                  class="settings-subtab-btn flex shrink-0 items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-semibold xl:w-full">РљРѕРЅС‚Р°РєС‚С‹
                   <span data-settings-unsaved-dot="contacts"
                     class="hidden h-2 w-2 rounded-full bg-amber-500"></span></button>
                 <button type="button" data-settings-subtab="platform"
-                  class="settings-subtab-btn flex shrink-0 items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-semibold xl:w-full">Платформа
+                  class="settings-subtab-btn flex shrink-0 items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-semibold xl:w-full">РџР»Р°С‚С„РѕСЂРјР°
                   <span data-settings-unsaved-dot="platform"
                     class="hidden h-2 w-2 rounded-full bg-amber-500"></span></button>
                 <button type="button" data-settings-subtab="changes"
-                  class="settings-subtab-btn flex shrink-0 items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-semibold xl:w-full">Логи
-                  изменений</button>
+                  class="settings-subtab-btn flex shrink-0 items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-semibold xl:w-full">Р›РѕРіРё
+                  РёР·РјРµРЅРµРЅРёР№</button>
               </nav>
             </aside>
             <div class="space-y-4">
               <article data-settings-panel="pricing" class="rounded-2xl border border-neutral-200 bg-white p-4">
-                <h2 class="text-base font-bold text-neutral-900">Тарифы</h2>
+                <h2 class="text-base font-bold text-neutral-900">РўР°СЂРёС„С‹</h2>
                 <form id="settings-form-pricing" class="mt-4 grid gap-3 md:grid-cols-2"></form>
                 <div class="mt-3"><button type="button" data-settings-save="pricing"
-                    class="interactive-btn min-h-11 rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800">Сохранить
-                    тарифы</button></div>
+                    class="interactive-btn min-h-11 rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800">РЎРѕС…СЂР°РЅРёС‚СЊ
+                    С‚Р°СЂРёС„С‹</button></div>
               </article>
               <article data-settings-panel="algorithm"
                 class="hidden rounded-2xl border border-neutral-200 bg-white p-4">
-                <h2 class="text-base font-bold text-neutral-900">Алгоритм цены slug</h2>
+                <h2 class="text-base font-bold text-neutral-900">РђР»РіРѕСЂРёС‚Рј С†РµРЅС‹ slug</h2>
                 <form id="settings-form-algorithm" class="mt-4 grid gap-3 md:grid-cols-2"></form>
                 <div class="mt-3"><button type="button" data-settings-save="algorithm"
-                    class="interactive-btn min-h-11 rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800">Сохранить
-                    алгоритм</button></div>
+                    class="interactive-btn min-h-11 rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800">РЎРѕС…СЂР°РЅРёС‚СЊ
+                    Р°Р»РіРѕСЂРёС‚Рј</button></div>
                 <div id="settings-algorithm-preview" class="mt-4 overflow-hidden rounded-xl border border-neutral-200">
                 </div>
               </article>
               <article data-settings-panel="bracelet" class="hidden rounded-2xl border border-neutral-200 bg-white p-4">
-                <h2 class="text-base font-bold text-neutral-900">Браслет</h2>
+                <h2 class="text-base font-bold text-neutral-900">Р‘СЂР°СЃР»РµС‚</h2>
                 <form id="settings-form-bracelet" class="mt-4 grid gap-3 md:grid-cols-2"></form>
                 <div class="mt-3"><button type="button" data-settings-save="bracelet"
-                    class="interactive-btn min-h-11 rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800">Сохранить</button>
+                    class="interactive-btn min-h-11 rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800">РЎРѕС…СЂР°РЅРёС‚СЊ</button>
                 </div>
               </article>
               <article data-settings-panel="contacts" class="hidden rounded-2xl border border-neutral-200 bg-white p-4">
-                <h2 class="text-base font-bold text-neutral-900">Контакты</h2>
+                <h2 class="text-base font-bold text-neutral-900">РљРѕРЅС‚Р°РєС‚С‹</h2>
                 <form id="settings-form-contacts" class="mt-4 grid gap-3 md:grid-cols-2"></form>
                 <div class="mt-3"><button type="button" data-settings-save="contacts"
-                    class="interactive-btn min-h-11 rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800">Сохранить
-                    контакты</button></div>
+                    class="interactive-btn min-h-11 rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800">РЎРѕС…СЂР°РЅРёС‚СЊ
+                    РєРѕРЅС‚Р°РєС‚С‹</button></div>
               </article>
               <article data-settings-panel="platform" class="hidden rounded-2xl border border-neutral-200 bg-white p-4">
-                <h2 class="text-base font-bold text-neutral-900">Платформа</h2>
+                <h2 class="text-base font-bold text-neutral-900">РџР»Р°С‚С„РѕСЂРјР°</h2>
                 <form id="settings-form-platform" class="mt-4 grid gap-3 md:grid-cols-2"></form>
                 <div class="mt-3"><button type="button" data-settings-save="platform"
-                    class="interactive-btn min-h-11 rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800">Сохранить
-                    платформу</button></div>
+                    class="interactive-btn min-h-11 rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800">РЎРѕС…СЂР°РЅРёС‚СЊ
+                    РїР»Р°С‚С„РѕСЂРјСѓ</button></div>
               </article>
               <article data-settings-panel="changes" class="hidden rounded-2xl border border-neutral-200 bg-white p-4">
-                <h2 class="text-base font-bold text-neutral-900">Логи изменений</h2>
+                <h2 class="text-base font-bold text-neutral-900">Р›РѕРіРё РёР·РјРµРЅРµРЅРёР№</h2>
                 <form id="settings-changes-filters" class="mt-3 grid gap-3 md:grid-cols-4">
                   <select name="group" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">
-                    <option value="">Все группы</option>
-                    <option value="pricing">Тарифы</option>
-                    <option value="algorithm">Алгоритм</option>
-                    <option value="bracelet">Браслет</option>
-                    <option value="contacts">Контакты</option>
-                    <option value="platform">Платформа</option>
+                    <option value="">Р’СЃРµ РіСЂСѓРїРїС‹</option>
+                    <option value="pricing">РўР°СЂРёС„С‹</option>
+                    <option value="algorithm">РђР»РіРѕСЂРёС‚Рј</option>
+                    <option value="bracelet">Р‘СЂР°СЃР»РµС‚</option>
+                    <option value="contacts">РљРѕРЅС‚Р°РєС‚С‹</option>
+                    <option value="platform">РџР»Р°С‚С„РѕСЂРјР°</option>
                   </select>
                   <input type="date" name="dateFrom" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
                   <input type="date" name="dateTo" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
                   <button type="submit"
-                    class="interactive-btn min-h-11 rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 hover:bg-neutral-100">Фильтр</button>
+                    class="interactive-btn min-h-11 rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 hover:bg-neutral-100">Р¤РёР»СЊС‚СЂ</button>
                 </form>
                 <div class="mt-4 overflow-x-auto rounded-xl border border-neutral-200">
                   <table class="min-w-full text-left text-sm">
                     <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
                       <tr>
-                        <th class="px-3 py-2">Дата</th>
-                        <th class="px-3 py-2">Настройка</th>
-                        <th class="px-3 py-2">Было</th>
-                        <th class="px-3 py-2">Стало</th>
-                        <th class="px-3 py-2">Кто изменил</th>
+                        <th class="px-3 py-2">Р”Р°С‚Р°</th>
+                        <th class="px-3 py-2">РќР°СЃС‚СЂРѕР№РєР°</th>
+                        <th class="px-3 py-2">Р‘С‹Р»Рѕ</th>
+                        <th class="px-3 py-2">РЎС‚Р°Р»Рѕ</th>
+                        <th class="px-3 py-2">РљС‚Рѕ РёР·РјРµРЅРёР»</th>
                       </tr>
                     </thead>
                     <tbody id="settings-changes-table"></tbody>
@@ -1221,10 +1241,10 @@
           aria-hidden="true">
           <div class="w-full max-w-md rounded-2xl bg-white p-5" role="dialog" aria-modal="true">
             <div class="flex items-center justify-between">
-              <h3 class="text-lg font-bold">Активация заявки</h3>
+              <h3 class="text-lg font-bold">РђРєС‚РёРІР°С†РёСЏ Р·Р°СЏРІРєРё</h3>
               <button type="button" id="activation-close-btn"
                 class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-neutral-300 text-neutral-500 hover:text-neutral-900"
-                aria-label="Закрыть">
+                aria-label="Р—Р°РєСЂС‹С‚СЊ">
                 <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                   <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
                 </svg>
@@ -1233,14 +1253,14 @@
             <form id="activation-form" class="mt-4 space-y-3">
               <input type="hidden" name="orderId" />
               <label class="block text-sm font-medium text-neutral-700">
-                Тариф
+                РўР°СЂРёС„
                 <select name="tariff" class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm">
-                  <option value="basic">Базовый</option>
-                  <option value="premium">Премиум</option>
+                  <option value="basic">Р‘Р°Р·РѕРІС‹Р№</option>
+                  <option value="premium">РџСЂРµРјРёСѓРј</option>
                 </select>
               </label>
               <label class="block text-sm font-medium text-neutral-700">
-                Тема
+                РўРµРјР°
                 <select name="theme" class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm">
                   <option value="default_dark">Obsidian Noir</option>
                   <option value="arctic">Glacier Platinum</option>
@@ -1255,7 +1275,7 @@
                 </select>
               </label>
               <button type="submit"
-                class="w-full rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-neutral-700">Активировать</button>
+                class="w-full rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-neutral-700">РђРєС‚РёРІРёСЂРѕРІР°С‚СЊ</button>
             </form>
           </div>
         </div>
@@ -1267,11 +1287,11 @@
               <h3 class="flex items-center gap-2 text-lg font-bold">
                 <img src="/brand/logo.PNG" alt="UNQX"
                   class="h-6 w-6 rounded-md border border-neutral-200 bg-white p-0.5" />
-                <span>QR-код <span id="qr-title-slug"></span></span>
+                <span>QR-РєРѕРґ <span id="qr-title-slug"></span></span>
               </h3>
               <button type="button"
                 class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-neutral-300 text-neutral-500 hover:text-neutral-900"
-                data-close-modal aria-label="Закрыть">
+                data-close-modal aria-label="Р—Р°РєСЂС‹С‚СЊ">
                 <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                   <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
                 </svg>
@@ -1287,11 +1307,11 @@
             <div class="mt-4 flex flex-col gap-2 sm:flex-row">
               <button type="button" id="download-qr-png"
                 class="w-full rounded-xl bg-neutral-900 px-3 py-2 text-sm font-semibold text-white transition hover:bg-neutral-700">
-                Скачать PNG 1000x1000
+                РЎРєР°С‡Р°С‚СЊ PNG 1000x1000
               </button>
               <button type="button" id="download-qr-svg"
                 class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm font-semibold text-neutral-800 transition hover:bg-neutral-100">
-                Скачать SVG
+                РЎРєР°С‡Р°С‚СЊ SVG
               </button>
             </div>
 
@@ -1305,10 +1325,10 @@
           aria-hidden="true">
           <div class="w-full max-w-lg rounded-2xl bg-white p-5" role="dialog" aria-modal="true">
             <div class="flex items-center justify-between">
-              <h3 class="text-lg font-bold">Редактировать отзыв</h3>
+              <h3 class="text-lg font-bold">Р РµРґР°РєС‚РёСЂРѕРІР°С‚СЊ РѕС‚Р·С‹РІ</h3>
               <button type="button" id="testimonial-edit-close-btn"
                 class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-neutral-300 text-neutral-500 hover:text-neutral-900"
-                aria-label="Закрыть">
+                aria-label="Р—Р°РєСЂС‹С‚СЊ">
                 <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                   <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
                 </svg>
@@ -1317,7 +1337,7 @@
             <form id="testimonial-edit-form" class="mt-4 space-y-3">
               <input type="hidden" name="id" />
               <label class="block text-sm font-medium text-neutral-700">
-                Имя
+                РРјСЏ
                 <input name="name" type="text"
                   class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" required />
               </label>
@@ -1328,19 +1348,19 @@
                   required />
               </label>
               <label class="block text-sm font-medium text-neutral-700">
-                Тариф
+                РўР°СЂРёС„
                 <select name="tariff" class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm">
-                  <option value="basic">Базовый</option>
-                  <option value="premium">Премиум</option>
+                  <option value="basic">Р‘Р°Р·РѕРІС‹Р№</option>
+                  <option value="premium">РџСЂРµРјРёСѓРј</option>
                 </select>
               </label>
               <label class="block text-sm font-medium text-neutral-700">
-                Текст
+                РўРµРєСЃС‚
                 <textarea name="text" rows="3"
                   class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" required></textarea>
               </label>
               <button type="submit"
-                class="w-full rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-neutral-700">Сохранить</button>
+                class="w-full rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-neutral-700">РЎРѕС…СЂР°РЅРёС‚СЊ</button>
             </form>
           </div>
         </div>
@@ -1358,3 +1378,4 @@
   </body>
 
   </html>
+

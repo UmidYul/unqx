@@ -44,6 +44,10 @@
   autofillObserver.observe(body, { childList: true, subtree: true });
 
   const tab = body.getAttribute("data-active-tab") || "analytics";
+  // Temporary emergency fallback: keep all admin tabs visible.
+  document.querySelectorAll('section[id^="tab-"]').forEach((node) => {
+    if (node instanceof HTMLElement) node.classList.remove("hidden");
+  });
   const base = (body.getAttribute("data-public-base-url") || location.origin).replace(/\/$/, "");
   const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "";
   const showAlert = (message) => {
@@ -654,8 +658,13 @@
     };
     const rows = payload.items || [];
     table.innerHTML = rows.length
-      ? rows.map((x) => `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3">${D(x.purchasedAt)}</td><td class="px-4 py-3">${X(x.username ? `@${x.username}` : x.userName)}</td><td class="px-4 py-3"><span class="inline-flex rounded-full border border-neutral-200 px-2 py-1 text-xs font-medium">${X(typeLabel(x.type))}</span></td><td class="px-4 py-3 font-mono">${X(x.slug || "—")}</td><td class="px-4 py-3 font-semibold">${P(x.amount || 0)}</td><td class="px-4 py-3">${X(x.approvedByAdmin || "—")}</td></tr>`).join("")
-      : `<tr><td colspan="6" class="px-3 py-10 text-center text-neutral-500"><div class="inline-flex flex-col items-center gap-2">${I("creditCard", 48)}<span>Нет покупок</span></div></td></tr>`;
+      ? rows.map((x) => {
+        const openSlug = x.slug
+          ? menuWrap(menuItem({ label: "Открыть slug", icon: "external", attrs: `data-act="open-url" data-url="/${encodeURIComponent(String(x.slug || ""))}"` }))
+          : `<span class="text-xs text-neutral-400">—</span>`;
+        return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3">${D(x.purchasedAt)}</td><td class="px-4 py-3">${X(x.username ? `@${x.username}` : x.userName)}</td><td class="px-4 py-3"><span class="inline-flex rounded-full border border-neutral-200 px-2 py-1 text-xs font-medium">${X(typeLabel(x.type))}</span></td><td class="px-4 py-3 font-mono">${X(x.slug || "—")}</td><td class="px-4 py-3 text-right font-semibold">${P(x.amount || 0)}</td><td class="px-4 py-3">${X(x.approvedByAdmin || "—")}</td><td class="px-4 py-3 text-right"><div class="admin-row-actions justify-end">${openSlug}</div></td></tr>`;
+      }).join("")
+      : `<tr><td colspan="7" class="px-3 py-10 text-center text-neutral-500"><div class="inline-flex flex-col items-center gap-2">${I("creditCard", 48)}<span>Нет покупок</span><span class="text-xs text-neutral-400">Покупки появятся после оплаты заказов пользователями.</span></div></td></tr>`;
 
     renderPager("purchases-pagination", payload.pagination, (nextPage) => {
       setFormValue(form, "page", String(nextPage));
