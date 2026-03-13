@@ -3066,6 +3066,111 @@ router.post(
   }),
 );
 
+router.post(
+  "/users/:userId/views/reduce",
+  asyncHandler(async (req, res) => {
+    if (!ensureUsersStorageReady(res)) {
+      return;
+    }
+    if (!prisma.analyticsView || !prisma.slug) {
+      res.status(503).json({ error: "Analytics storage unavailable", code: "ANALYTICS_STORAGE_UNAVAILABLE" });
+      return;
+    }
+
+    const userId = String(req.params.userId || "").trim();
+    if (!userId) {
+      res.status(400).json({ error: "User id is required" });
+      return;
+    }
+
+    const count = clampInteger(req.body?.count, 1, MAX_ADMIN_BOOST_VIEWS, 0);
+    if (!count) {
+      res.status(400).json({ error: `Count must be an integer from 1 to ${MAX_ADMIN_BOOST_VIEWS}` });
+      return;
+    }
+    const requestedSlug = normalizeShortSlug(req.body?.slug);
+
+    const [user, ownedSlugs] = await Promise.all([
+      prisma.user.findUnique({
+        where: { id: userId },
+        select: { id: true },
+      }),
+      prisma.slug.findMany({
+        where: { ownerId: userId },
+        select: { fullSlug: true, status: true, isPrimary: true },
+      }),
+    ]);
+
+    if (!user) {
+      res.status(404).json({ error: "User not found" });
+      return;
+    }
+
+    const isReducibleSlug = (slugRow) => ["active", "private", "paused", "approved"].includes(String(slugRow?.status || ""));
+    let targetSlug = null;
+    if (requestedSlug) {
+      targetSlug = ownedSlugs.find((row) => row.fullSlug === requestedSlug) || null;
+      if (!targetSlug) {
+        res.status(404).json({ error: "Requested slug is not owned by user" });
+        return;
+      }
+    } else {
+      targetSlug =
+        ownedSlugs.find((row) => row.isPrimary && isReducibleSlug(row)) ||
+        ownedSlugs.find((row) => isReducibleSlug(row)) ||
+        null;
+    }
+
+    if (!targetSlug) {
+      res.status(409).json({ error: "User does not have slug eligible for view reduction" });
+      return;
+    }
+
+    const removedViews = await prisma.$transaction(async (tx) => {
+      if (!tx.analyticsView || !tx.slug) {
+        throw new Error("Analytics storage unavailable");
+      }
+
+      const rowsToDelete = await tx.analyticsView.findMany({
+        where: { slug: targetSlug.fullSlug },
+        orderBy: { visitedAt: "desc" },
+        take: count,
+        select: { id: true },
+      });
+      const ids = rowsToDelete.map((row) => String(row.id || "")).filter(Boolean);
+      const removed = ids.length;
+      if (!removed) return 0;
+
+      await tx.analyticsView.deleteMany({
+        where: {
+          id: { in: ids },
+        },
+      });
+
+      const currentSlug = await tx.slug.findUnique({
+        where: { fullSlug: targetSlug.fullSlug },
+        select: { analyticsViewsCount: true },
+      });
+      const nextViewsCount = Math.max(0, Number(currentSlug?.analyticsViewsCount || 0) - removed);
+      await tx.slug.update({
+        where: { fullSlug: targetSlug.fullSlug },
+        data: { analyticsViewsCount: nextViewsCount },
+      });
+
+      return removed;
+    });
+
+    await safeRecalculateScore(userId);
+    res.json({
+      ok: true,
+      userId,
+      slug: targetSlug.fullSlug,
+      removedViews,
+      requestedCount: count,
+    });
+  }),
+);
+
 router.patch(
   "/users/:userId/block",
   asyncHandler(async (req, res) => {
