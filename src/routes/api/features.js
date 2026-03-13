@@ -21,6 +21,34 @@ const {
 const { getReferralV1Settings } = require("../../services/referral-v1");
 
 const router = express.Router();
+const ONLINE_WINDOW_SECONDS = 90;
+const SYNTHETIC_FINGERPRINT_PREFIX = "synthetic:";
+
+async function countOnlineSessionsSince(onlineSince) {
+  if (!prisma.analyticsView) return 0;
+  try {
+    const rows = await prisma.analyticsView.findMany({
+      where: { visitedAt: { gte: onlineSince } },
+      select: { sessionId: true, fingerprint: true },
+    });
+    return new Set(
+      rows
+        .filter((row) => !String(row.fingerprint || "").startsWith(SYNTHETIC_FINGERPRINT_PREFIX))
+        .map((row) => String(row.sessionId || "").trim())
+        .filter(Boolean),
+    ).size;
+  } catch (error) {
+    const knownColumnErrors = new Set(["P2021", "P2022", "42703"]);
+    if (!knownColumnErrors.has(String(error?.code || ""))) {
+      throw error;
+    }
+    const rows = await prisma.analyticsView.findMany({
+      where: { visitedAt: { gte: onlineSince } },
+      select: { sessionId: true },
+    });
+    return new Set(rows.map((row) => String(row.sessionId || "").trim()).filter(Boolean)).size;
+  }
+}
 
 function requireUser(req, res) {
   const userSession = getUserSession(req);
@@ -36,7 +64,7 @@ router.get(
   asyncHandler(async (_req, res) => {
     const now = new Date();
     const todayStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0));
-    const onlineSince = new Date(now.getTime() - 5 * 60 * 1000);
+    const onlineSince = new Date(now.getTime() - ONLINE_WINDOW_SECONDS * 1000);
 
     const [activeCardsTotal, todayCreated, todayActivated, todayTotal, onlineNow] = await Promise.all([
       prisma.slug.count({ where: { status: "active" } }),
@@ -47,14 +75,7 @@ router.get(
           OR: [{ createdAt: { gte: todayStart } }, { activatedAt: { gte: todayStart } }],
         },
       }),
-      prisma.analyticsView
-        ? prisma.analyticsView
-            .findMany({
-              where: { visitedAt: { gte: onlineSince } },
-              select: { sessionId: true },
-            })
-            .then((rows) => new Set(rows.map((row) => row.sessionId)).size)
-        : Promise.resolve(0),
+      countOnlineSessionsSince(onlineSince),
     ]);
 
     res.json({

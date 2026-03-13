@@ -52,6 +52,8 @@ const {
 const { detectDevice } = require("../../services/ua");
 
 const router = express.Router();
+const ONLINE_WINDOW_SECONDS = 90;
+const SYNTHETIC_FINGERPRINT_PREFIX = "synthetic:";
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 },
@@ -751,6 +753,7 @@ function buildSyntheticViewRows({ slug, count, periodDays, preferredCity }) {
       city: pickSyntheticCity(preferredCity),
       device: detectDevice(userAgent),
       sessionId: randomUUID().replace(/-/g, ""),
+      fingerprint: `synthetic:${randomUUID().replace(/-/g, "").slice(0, 54)}`,
     });
   }
   return rows;
@@ -4470,7 +4473,7 @@ router.get(
     const from = new Date(Date.now() - period * 24 * 60 * 60 * 1000);
     const todayStart = new Date();
     todayStart.setUTCHours(0, 0, 0, 0);
-    const onlineFrom = new Date(Date.now() - 5 * 60 * 1000);
+    const onlineFrom = new Date(Date.now() - ONLINE_WINDOW_SECONDS * 1000);
 
     const [views, clicks, activeCards, todayCreated, todayActivated, onlineRows, topSlugRows] = await Promise.all([
       prisma.analyticsView ? prisma.analyticsView.findMany({ where: { visitedAt: { gte: from } } }) : Promise.resolve([]),
@@ -4479,7 +4482,7 @@ router.get(
       prisma.slug.count({ where: { createdAt: { gte: todayStart } } }),
       prisma.slug.count({ where: { activatedAt: { gte: todayStart } } }),
       prisma.analyticsView
-        ? prisma.analyticsView.findMany({ where: { visitedAt: { gte: onlineFrom } }, select: { sessionId: true } })
+        ? prisma.analyticsView.findMany({ where: { visitedAt: { gte: onlineFrom } }, select: { sessionId: true, fingerprint: true } })
         : Promise.resolve([]),
       prisma.analyticsView
         ? prisma.analyticsView.groupBy({
@@ -4542,7 +4545,12 @@ router.get(
         activeCards,
         todayCreated,
         todayActivated,
-        onlineNow: new Set(onlineRows.map((row) => row.sessionId)).size,
+        onlineNow: new Set(
+          onlineRows
+            .filter((row) => !String(row.fingerprint || "").startsWith(SYNTHETIC_FINGERPRINT_PREFIX))
+            .map((row) => String(row.sessionId || "").trim())
+            .filter(Boolean),
+        ).size,
       },
     });
   }),

@@ -219,6 +219,38 @@
   background: #ffffff !important;
 }
 
+.profile-dashboard article[data-tab-panel="settings"] .interactive-btn {
+  min-height: 44px !important;
+  padding: 0.55rem 1rem !important;
+  font-size: 14px !important;
+  line-height: 1.2 !important;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.profile-dashboard article[data-tab-panel="settings"] > .mt-4 > div:nth-child(3) .flex {
+  align-items: stretch;
+}
+
+.profile-dashboard #profile-settings-change-email {
+  min-width: 170px;
+}
+
+.profile-dashboard #profile-settings-change-password {
+  width: 100%;
+}
+
+.profile-dashboard #profile-settings-link-telegram,
+.profile-dashboard #profile-settings-unlink-telegram {
+  min-width: 220px;
+}
+
+.profile-dashboard #profile-verification-open {
+  min-width: 170px;
+}
+
 .profile-dashboard .status-dot.is-active {
   background: #1a7a45;
 }
@@ -284,5 +316,12 @@
 
   .profile-dashboard .profile-header-kpis {
     grid-template-columns: 1fr;
+  }
+
+  .profile-dashboard #profile-settings-change-email,
+  .profile-dashboard #profile-settings-link-telegram,
+  .profile-dashboard #profile-settings-unlink-telegram,
+  .profile-dashboard #profile-verification-open {
+    min-width: 100%;
   }
 }

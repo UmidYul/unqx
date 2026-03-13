@@ -96,5 +96,5 @@
   }
 
   void loadLiveStats();
-  setInterval(loadLiveStats, 60_000);
+  setInterval(loadLiveStats, 20_000);
 })();
