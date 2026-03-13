@@ -19,6 +19,7 @@
   let inputNode = null;
   let cancelButton = null;
   let confirmButton = null;
+  let lastFocusedElement = null;
 
   function ensureDialog() {
     if (layer instanceof HTMLElement) {
@@ -32,6 +33,7 @@
     layer = document.createElement("div");
     layer.className = "admin-alert-layer is-hidden";
     layer.setAttribute("aria-hidden", "true");
+    layer.setAttribute("inert", "");
     layer.innerHTML = [
       '<div class="admin-alert-backdrop" data-admin-alert-close="1"></div>',
       '<div class="admin-alert-dialog" role="dialog" aria-modal="true" aria-labelledby="admin-alert-title">',
@@ -128,8 +130,24 @@
     if (!(layer instanceof HTMLElement)) {
       return;
     }
+    const activeElement = document.activeElement;
+    if (activeElement instanceof HTMLElement && layer.contains(activeElement)) {
+      const canRestore =
+        lastFocusedElement instanceof HTMLElement &&
+        document.contains(lastFocusedElement) &&
+        !layer.contains(lastFocusedElement);
+      const fallback =
+        canRestore
+          ? lastFocusedElement
+          : document.querySelector(".admin-sidebar-link.is-active, .admin-topbar, main");
+      if (fallback instanceof HTMLElement) {
+        if (!fallback.hasAttribute("tabindex")) fallback.setAttribute("tabindex", "-1");
+        fallback.focus({ preventScroll: true });
+      }
+    }
     layer.classList.add("is-hidden");
     layer.setAttribute("aria-hidden", "true");
+    layer.setAttribute("inert", "");
     isOpen = false;
     currentItem = null;
   }
@@ -239,6 +257,7 @@
 
     currentItem = item;
     isOpen = true;
+    lastFocusedElement = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     titleNode.textContent = item.title;
     messageNode.textContent = item.message;
     confirmButton.textContent = item.confirmText;
@@ -259,6 +278,7 @@
 
     layer.classList.remove("is-hidden");
     layer.setAttribute("aria-hidden", "false");
+    layer.removeAttribute("inert");
 
     requestAnimationFrame(() => {
       if (needInput) {

@@ -889,10 +889,17 @@
       return false;
     }
 
-    const payloadPrice =
-      priceRaw === null || priceRaw === undefined || String(priceRaw).trim() === ""
-        ? null
-        : Number(String(priceRaw).trim());
+    const payloadPrice = (() => {
+      if (priceRaw === null || priceRaw === undefined) return null;
+      const raw = String(priceRaw).trim();
+      if (!raw) return null;
+      const normalized = raw
+        .replace(/\s+/g, "")
+        .replace(/[^\d.,-]/g, "")
+        .replace(",", ".");
+      const parsedPrice = Number(normalized);
+      return Number.isFinite(parsedPrice) ? parsedPrice : Number.NaN;
+    })();
 
     if (!(payloadPrice === null || Number.isFinite(payloadPrice))) {
       await showAlert("Некорректная цена override");
@@ -1112,6 +1119,20 @@
   const af = document.getElementById("activation-form");
   const at = af instanceof HTMLFormElement ? af.elements.namedItem("tariff") : null;
   const ath = af instanceof HTMLFormElement ? af.elements.namedItem("theme") : null;
+  const moveFocusOutBeforeHide = (container) => {
+    if (!(container instanceof HTMLElement)) return;
+    const active = document.activeElement;
+    if (!(active instanceof HTMLElement) || !container.contains(active)) return;
+    const fallback = document.querySelector(".admin-sidebar-link.is-active, .admin-topbar, main");
+    if (fallback instanceof HTMLElement) {
+      if (!fallback.hasAttribute("tabindex")) fallback.setAttribute("tabindex", "-1");
+      fallback.focus({ preventScroll: true });
+      return;
+    }
+    if (document.body instanceof HTMLElement) {
+      document.body.focus();
+    }
+  };
   function syncATheme() {
     if (!(at instanceof HTMLSelectElement) || !(ath instanceof HTMLSelectElement)) return;
     const premium = at.value === "premium";
@@ -1120,6 +1141,7 @@
   }
   function closeA() {
     if (am instanceof HTMLElement) {
+      moveFocusOutBeforeHide(am);
       am.classList.add("hidden");
       am.classList.remove("flex");
       am.setAttribute("aria-hidden", "true");
@@ -1217,6 +1239,7 @@
 
   function closeQ() {
     if (qm instanceof HTMLElement) {
+      moveFocusOutBeforeHide(qm);
       qm.classList.add("hidden");
       qm.classList.remove("flex");
       qm.setAttribute("aria-hidden", "true");
@@ -1262,6 +1285,7 @@
   const tef = document.getElementById("testimonial-edit-form");
   function closeTe() {
     if (!(tem instanceof HTMLElement)) return;
+    moveFocusOutBeforeHide(tem);
     tem.classList.add("hidden");
     tem.classList.remove("flex");
     tem.setAttribute("aria-hidden", "true");

@@ -3921,10 +3921,21 @@ router.patch(
       res.status(400).json({ error: "Slug must be in AAA000 format" });
       return;
     }
+    const parsePriceOverride = (rawValue) => {
+      if (rawValue === null || rawValue === undefined || rawValue === "") return null;
+      const normalized = String(rawValue)
+        .trim()
+        .replace(/\s+/g, "")
+        .replace(/[^\d.,-]/g, "")
+        .replace(",", ".");
+      if (!normalized) return Number.NaN;
+      const numeric = Number(normalized);
+      return Number.isFinite(numeric) ? numeric : Number.NaN;
+    };
     const value = req.body.priceOverride;
     let priceOverride = null;
     if (!(value === null || value === "")) {
-      const numeric = Number(value);
+      const numeric = parsePriceOverride(value);
       if (!Number.isFinite(numeric)) {
         res.status(400).json({ error: "Invalid price override" });
         return;
@@ -3966,26 +3977,20 @@ router.patch(
         where: { fullSlug: slug },
         select: {
           fullSlug: true,
-          status: true,
           price: true,
         },
       });
-      const hasPurchasedOwner = Boolean(
-        existingSlug && ["approved", "active", "paused", "private"].includes(existingSlug.status),
-      );
 
       const updatedSlug = existingSlug
-        ? hasPurchasedOwner
-          ? existingSlug
-          : await tx.slug.update({
-            where: { fullSlug: slug },
-            data: { price: priceOverride },
-            select: {
-              fullSlug: true,
-              status: true,
-              price: true,
-            },
-          })
+        ? await tx.slug.update({
+          where: { fullSlug: slug },
+          data: { price: priceOverride },
+          select: {
+            fullSlug: true,
+            status: true,
+            price: true,
+          },
+        })
         : await tx.slug.create({
           data: {
             letters: parsed[1],
@@ -4004,7 +4009,7 @@ router.patch(
 
       // Apply override only to not yet purchased requests; keep approved/history immutable.
       const slugRequestsResult =
-        !hasPurchasedOwner && typeof resolvedPrice === "number"
+        typeof resolvedPrice === "number"
           ? await tx.slugRequest.updateMany({
             where: {
               slug,
@@ -4020,7 +4025,7 @@ router.patch(
           slugRequestsUpdated: Number(slugRequestsResult?.count || 0),
           slugPurchasesUpdated: 0,
           effectiveSlugPrice: typeof resolvedPrice === "number" ? resolvedPrice : null,
-          appliedToPurchasedSlug: hasPurchasedOwner,
+          appliedToPurchasedSlug: false,
         },
       ];
     });
