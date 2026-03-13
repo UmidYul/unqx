@@ -239,6 +239,7 @@ function initTelegramAuth(pageNode) {
   const profileNames = Array.from(document.querySelectorAll("[data-auth-name]"));
   const profileAvatars = Array.from(document.querySelectorAll("[data-auth-avatar]"));
   let currentUser = null;
+  let authRetryAfter = 0;
 
   function getSafeNextPath(rawValue) {
     const raw = String(rawValue || "").trim();
@@ -269,6 +270,10 @@ function initTelegramAuth(pageNode) {
   }
 
   async function refreshUser() {
+    if (Date.now() < authRetryAfter) {
+      renderAuthUi();
+      return currentUser;
+    }
     try {
       const response = await fetch("/api/auth/me", {
         method: "GET",
@@ -277,8 +282,10 @@ function initTelegramAuth(pageNode) {
       });
       const payload = await response.json().catch(() => ({}));
       currentUser = payload && payload.authenticated ? payload.user : null;
+      authRetryAfter = 0;
     } catch {
       currentUser = null;
+      authRetryAfter = Date.now() + 30_000;
     }
     renderAuthUi();
     window.dispatchEvent(

@@ -54,6 +54,8 @@
   const totalNode = document.getElementById("home-live-total");
   const todayNode = document.getElementById("home-live-today");
   const onlineNode = document.getElementById("home-live-online");
+  let liveStatsTimer = null;
+  let liveStatsFailureCount = 0;
 
   function animateNumber(node, value) {
     if (!(node instanceof HTMLElement)) return;
@@ -90,11 +92,23 @@
       animateNumber(todayNode, todayValue);
       animateNumber(onlineNode, payload.onlineNow || 0);
       bar.classList.remove("hidden");
+      liveStatsFailureCount = 0;
     } catch {
       bar.classList.add("hidden");
+      liveStatsFailureCount += 1;
     }
   }
 
-  void loadLiveStats();
-  setInterval(loadLiveStats, 20_000);
+  function scheduleLiveStatsPoll() {
+    if (liveStatsTimer) {
+      clearTimeout(liveStatsTimer);
+    }
+    const delayMs = liveStatsFailureCount >= 3 ? 120_000 : 20_000;
+    liveStatsTimer = setTimeout(async () => {
+      await loadLiveStats();
+      scheduleLiveStatsPoll();
+    }, delayMs);
+  }
+
+  void loadLiveStats().finally(scheduleLiveStatsPoll);
 })();
