@@ -568,67 +568,46 @@
 
         <section id="tab-referrals" class="<%= pageActiveTab === 'referrals' ? '' : 'hidden' %> space-y-4">
           <header class="rounded-2xl border border-neutral-200 bg-white p-4">
-            <h2 class="text-base font-bold text-neutral-900">Рефералы</h2>
-            <p class="mt-1 text-sm text-neutral-600">Управление реферальной программой, промокампаниями и начислениями.</p>
+            <h2 class="text-base font-bold text-neutral-900">Referrals</h2>
+            <p class="mt-1 text-sm text-neutral-600">Manage referral program settings and rewards.</p>
           </header>
 
           <section class="space-y-3">
-            <h3 class="text-sm font-semibold text-neutral-900">Сводка</h3>
+            <h3 class="text-sm font-semibold text-neutral-900">Summary</h3>
             <div id="referrals-stats" class="grid gap-3 md:grid-cols-3"></div>
           </section>
 
           <section class="rounded-2xl border border-neutral-200 bg-white p-4">
-            <h3 class="text-sm font-semibold text-neutral-900">Настройки реферальной программы</h3>
+            <h3 class="text-sm font-semibold text-neutral-900">Referral Settings</h3>
             <form id="referrals-settings-form" class="mt-3 space-y-4">
               <div class="grid gap-3 md:grid-cols-2">
                 <label class="block rounded-xl border border-neutral-200 p-3 text-sm">
                   <span class="flex items-center gap-2">
                     <input type="checkbox" name="enabled" />
-                    <span class="font-medium text-neutral-900">Включить реферальную программу</span>
+                    <span class="font-medium text-neutral-900">Enable referral program</span>
                   </span>
-                  <span class="mt-1 block text-xs text-neutral-500">Разрешает начисление вознаграждений за приглашения.</span>
-                </label>
-                <label class="block rounded-xl border border-neutral-200 p-3 text-sm">
-                  <span class="flex items-center gap-2">
-                    <input type="checkbox" name="promoCodesEnabled" />
-                    <span class="font-medium text-neutral-900">Разрешить промокоды</span>
-                  </span>
-                  <span class="mt-1 block text-xs text-neutral-500">Включает использование промокодов в реферальных кампаниях.</span>
-                </label>
-                <label class="block rounded-xl border border-neutral-200 p-3 text-sm">
-                  <span class="flex items-center gap-2">
-                    <input type="checkbox" name="promoRequireReferrer" />
-                    <span class="font-medium text-neutral-900">Промокод требует реферера</span>
-                  </span>
-                  <span class="mt-1 block text-xs text-neutral-500">Промокод доступен только при наличии привязки к рефереру.</span>
-                </label>
-                <label class="block rounded-xl border border-neutral-200 p-3 text-sm">
-                  <span class="flex items-center gap-2">
-                    <input type="checkbox" name="promoFirstOrderOnly" />
-                    <span class="font-medium text-neutral-900">Промокод только для первого заказа</span>
-                  </span>
-                  <span class="mt-1 block text-xs text-neutral-500">Ограничивает применение промокода первой покупкой.</span>
+                  <span class="mt-1 block text-xs text-neutral-500">Allows rewards for invited users.</span>
                 </label>
               </div>
 
               <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
                 <label class="block text-sm">
-                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Скидка для приглашённого (сум)</span>
+                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Invitee discount (sum)</span>
                   <input type="number" min="0" step="1000" name="inviteeDiscount"
                     class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
                 </label>
                 <label class="block text-sm">
-                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Максимальная скидка (%)</span>
+                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Max discount (%)</span>
                   <input type="number" min="0" max="100" step="1" name="discountCapPercent"
                     class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
                 </label>
                 <label class="block text-sm">
-                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Лимит использований на пользователя</span>
+                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Per-user usage limit</span>
                   <input type="number" min="1" step="1" name="defaultPerUserCap"
                     class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
                 </label>
                 <label class="block text-sm">
-                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Вознаграждение рефереру (сум)</span>
+                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Referrer reward (sum)</span>
                   <input type="number" min="0" step="1000" name="referrerReward"
                     class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
                 </label>
@@ -636,131 +615,27 @@
 
               <div class="flex justify-end">
                 <button type="submit"
-                  class="rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">Сохранить настройки</button>
+                  class="rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">Save settings</button>
               </div>
             </form>
-          </section>
-
-          <section class="rounded-2xl border border-neutral-200 bg-white p-4">
-            <h3 class="text-sm font-semibold text-neutral-900">Создать промокампанию</h3>
-            <form id="referrals-campaign-create-form" class="mt-3 space-y-3">
-              <div class="grid gap-3 md:grid-cols-4">
-                <label class="block text-sm md:col-span-2">
-                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Название кампании</span>
-                  <input name="name" type="text" placeholder="например: Весенний бонус"
-                    class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" required />
-                </label>
-                <label class="block text-sm">
-                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Промокод</span>
-                  <input name="promoCode" type="text" maxlength="32" placeholder="например: PROMO2026"
-                    class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm uppercase" required />
-                </label>
-                <label class="block text-sm">
-                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Статус</span>
-                  <select name="status" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm">
-                    <option value="draft">Черновик</option>
-                    <option value="active">Активная</option>
-                    <option value="paused">Пауза</option>
-                    <option value="archived">Архив</option>
-                  </select>
-                </label>
-              </div>
-
-              <div class="grid gap-3 md:grid-cols-3">
-                <label class="block text-sm">
-                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Скидка для приглашённого (override)</span>
-                  <input name="inviteeDiscountOverride" type="number" min="0" step="1000" placeholder="например: 100000"
-                    class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
-                </label>
-                <label class="block text-sm">
-                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Вознаграждение (override)</span>
-                  <input name="rewardAmountOverride" type="number" min="0" step="1000" placeholder="например: 50000"
-                    class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
-                </label>
-                <label class="block text-sm">
-                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Лимит скидки (%)</span>
-                  <input name="discountCapPercentOverride" type="number" min="0" max="100" step="1" placeholder="например: 30"
-                    class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
-                </label>
-              </div>
-
-              <div class="grid gap-3 md:grid-cols-3">
-                <label class="block text-sm">
-                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Бюджет кампании (сум)</span>
-                  <input name="budgetAmount" type="number" min="0" step="1000" value="0" placeholder="например: 5000000"
-                    class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
-                </label>
-                <label class="block text-sm">
-                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Дата начала</span>
-                  <input name="startsAt" type="datetime-local" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
-                </label>
-                <label class="block text-sm">
-                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Дата конца</span>
-                  <input name="endsAt" type="datetime-local" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
-                </label>
-              </div>
-
-              <div class="grid gap-3 md:grid-cols-2">
-                <label class="block text-sm">
-                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Приоритет кампании</span>
-                  <input name="priority" type="number" step="1" value="0" placeholder="например: 0"
-                    class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
-                </label>
-                <label class="block text-sm">
-                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Лимит использований на пользователя</span>
-                  <input name="perUserCap" type="number" min="1" step="1" value="1" placeholder="например: 1"
-                    class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
-                </label>
-              </div>
-
-              <div class="flex justify-end">
-                <button type="submit"
-                  class="rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">Создать кампанию</button>
-              </div>
-            </form>
-          </section>
-
-          <section class="space-y-2">
-            <h3 class="text-sm font-semibold text-neutral-900">Промокампании</h3>
-            <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
-              <div class="overflow-x-auto">
-                <table class="min-w-[1200px] w-full text-left text-sm">
-                  <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
-                    <tr>
-                      <th class="px-4 py-3">Название</th>
-                      <th class="px-4 py-3">Промокод</th>
-                      <th class="px-4 py-3">Статус</th>
-                      <th class="px-4 py-3">Скидка</th>
-                      <th class="px-4 py-3">Вознаграждение</th>
-                      <th class="px-4 py-3">Лимит %</th>
-                      <th class="px-4 py-3">Приоритет</th>
-                      <th class="px-4 py-3">Бюджет</th>
-                      <th class="px-4 py-3">Период</th>
-                      <th class="px-4 py-3">Действия</th>
-                    </tr>
-                  </thead>
-                  <tbody id="referrals-campaigns-table"></tbody>
-                </table>
-              </div>
-            </div>
           </section>
 
           <section class="space-y-2">
             <div class="flex flex-wrap items-end justify-between gap-3">
-              <h3 class="text-sm font-semibold text-neutral-900">История рефералов</h3>
+              <h3 class="text-sm font-semibold text-neutral-900">Referral History</h3>
               <form id="referrals-history-filters" class="flex items-end gap-2">
                 <label class="block text-sm">
-                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Статус</span>
+                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Status</span>
                   <select name="status" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">
-                    <option value="all">Все</option>
-                    <option value="pending">В ожидании</option>
-                    <option value="approved">Одобрено</option>
-                    <option value="paid">Оплачено</option>
-                    <option value="rejected">Отклонено</option>
+                    <option value="all">All</option>
+                    <option value="pending">Pending</option>
+                    <option value="approved">Approved</option>
+                    <option value="paid">Paid</option>
+                    <option value="rejected">Rejected</option>
                   </select>
                 </label>
                 <button type="submit"
-                  class="rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">Применить</button>
+                  class="rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">Apply</button>
               </form>
             </div>
             <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
@@ -768,13 +643,13 @@
                 <table class="min-w-[980px] w-full text-left text-sm">
                   <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
                     <tr>
-                      <th class="px-4 py-3">Реферер</th>
-                      <th class="px-4 py-3">Приглашённый</th>
-                      <th class="px-4 py-3">Дата</th>
-                      <th class="px-4 py-3">Статус</th>
-                      <th class="px-4 py-3">Источник</th>
-                      <th class="px-4 py-3">Вознаграждение</th>
-                      <th class="px-4 py-3">Действие</th>
+                      <th class="px-4 py-3">Referrer</th>
+                      <th class="px-4 py-3">Invitee</th>
+                      <th class="px-4 py-3">Date</th>
+                      <th class="px-4 py-3">Status</th>
+                      <th class="px-4 py-3">Source</th>
+                      <th class="px-4 py-3">Reward</th>
+                      <th class="px-4 py-3">Action</th>
                     </tr>
                   </thead>
                   <tbody id="referrals-table"></tbody>
@@ -784,22 +659,166 @@
           </section>
 
           <section class="space-y-2">
-            <h3 class="text-sm font-semibold text-neutral-900">Операции по кошельку рефералов</h3>
+            <h3 class="text-sm font-semibold text-neutral-900">Referral Wallet Operations</h3>
             <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
               <div class="overflow-x-auto">
                 <table class="min-w-[980px] w-full text-left text-sm">
                   <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
                     <tr>
-                      <th class="px-4 py-3">Дата</th>
-                      <th class="px-4 py-3">Пользователь</th>
-                      <th class="px-4 py-3">Направление</th>
-                      <th class="px-4 py-3">Тип операции</th>
-                      <th class="px-4 py-3">Сумма</th>
-                      <th class="px-4 py-3">Баланс после</th>
+                      <th class="px-4 py-3">Date</th>
+                      <th class="px-4 py-3">User</th>
+                      <th class="px-4 py-3">Direction</th>
+                      <th class="px-4 py-3">Operation type</th>
+                      <th class="px-4 py-3">Amount</th>
+                      <th class="px-4 py-3">Balance after</th>
                       <th class="px-4 py-3">Idempotency</th>
                     </tr>
                   </thead>
                   <tbody id="referrals-ledger-table"></tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+        </section>
+
+        <section id="tab-promocodes" class="<%= pageActiveTab === 'promocodes' ? '' : 'hidden' %> space-y-4">
+          <header class="rounded-2xl border border-neutral-200 bg-white p-4">
+            <h2 class="text-base font-bold text-neutral-900">Promo Codes</h2>
+            <p class="mt-1 text-sm text-neutral-600">Manage promo-code settings and promo campaigns.</p>
+          </header>
+
+          <section class="rounded-2xl border border-neutral-200 bg-white p-4">
+            <h3 class="text-sm font-semibold text-neutral-900">Promo-code Settings</h3>
+            <form id="promocodes-settings-form" class="mt-3 space-y-4">
+              <div class="grid gap-3 md:grid-cols-3">
+                <label class="block rounded-xl border border-neutral-200 p-3 text-sm">
+                  <span class="flex items-center gap-2">
+                    <input type="checkbox" name="promoCodesEnabled" />
+                    <span class="font-medium text-neutral-900">Enable promo codes</span>
+                  </span>
+                  <span class="mt-1 block text-xs text-neutral-500">Allows promo codes in referral campaigns.</span>
+                </label>
+                <label class="block rounded-xl border border-neutral-200 p-3 text-sm">
+                  <span class="flex items-center gap-2">
+                    <input type="checkbox" name="promoRequireReferrer" />
+                    <span class="font-medium text-neutral-900">Require referrer link</span>
+                  </span>
+                  <span class="mt-1 block text-xs text-neutral-500">Promo code works only when a referrer is linked.</span>
+                </label>
+                <label class="block rounded-xl border border-neutral-200 p-3 text-sm">
+                  <span class="flex items-center gap-2">
+                    <input type="checkbox" name="promoFirstOrderOnly" />
+                    <span class="font-medium text-neutral-900">First order only</span>
+                  </span>
+                  <span class="mt-1 block text-xs text-neutral-500">Restricts promo-code usage to the first purchase.</span>
+                </label>
+              </div>
+              <div class="flex justify-end">
+                <button type="submit"
+                  class="rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">Save settings</button>
+              </div>
+            </form>
+          </section>
+
+          <section class="rounded-2xl border border-neutral-200 bg-white p-4">
+            <h3 class="text-sm font-semibold text-neutral-900">Create Promo Campaign</h3>
+            <form id="promocodes-campaign-create-form" class="mt-3 space-y-3">
+              <div class="grid gap-3 md:grid-cols-4">
+                <label class="block text-sm md:col-span-2">
+                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Campaign name</span>
+                  <input name="name" type="text" placeholder="e.g. Spring Bonus"
+                    class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" required />
+                </label>
+                <label class="block text-sm">
+                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Promo code</span>
+                  <input name="promoCode" type="text" maxlength="32" placeholder="e.g. PROMO2026"
+                    class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm uppercase" required />
+                </label>
+                <label class="block text-sm">
+                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Status</span>
+                  <select name="status" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm">
+                    <option value="draft">Draft</option>
+                    <option value="active">Active</option>
+                    <option value="paused">Paused</option>
+                    <option value="archived">Archived</option>
+                  </select>
+                </label>
+              </div>
+
+              <div class="grid gap-3 md:grid-cols-3">
+                <label class="block text-sm">
+                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Invitee discount (override)</span>
+                  <input name="inviteeDiscountOverride" type="number" min="0" step="1000" placeholder="e.g. 100000"
+                    class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+                </label>
+                <label class="block text-sm">
+                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Referrer reward (override)</span>
+                  <input name="rewardAmountOverride" type="number" min="0" step="1000" placeholder="e.g. 50000"
+                    class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+                </label>
+                <label class="block text-sm">
+                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Discount cap (%)</span>
+                  <input name="discountCapPercentOverride" type="number" min="0" max="100" step="1" placeholder="e.g. 30"
+                    class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+                </label>
+              </div>
+
+              <div class="grid gap-3 md:grid-cols-3">
+                <label class="block text-sm">
+                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Campaign budget (sum)</span>
+                  <input name="budgetAmount" type="number" min="0" step="1000" value="0" placeholder="e.g. 5000000"
+                    class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+                </label>
+                <label class="block text-sm">
+                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Start date</span>
+                  <input name="startsAt" type="datetime-local" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+                </label>
+                <label class="block text-sm">
+                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">End date</span>
+                  <input name="endsAt" type="datetime-local" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+                </label>
+              </div>
+
+              <div class="grid gap-3 md:grid-cols-2">
+                <label class="block text-sm">
+                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Priority</span>
+                  <input name="priority" type="number" step="1" value="0" placeholder="e.g. 0"
+                    class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+                </label>
+                <label class="block text-sm">
+                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Per-user usage limit</span>
+                  <input name="perUserCap" type="number" min="1" step="1" value="1" placeholder="e.g. 1"
+                    class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+                </label>
+              </div>
+
+              <div class="flex justify-end">
+                <button type="submit"
+                  class="rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">Create campaign</button>
+              </div>
+            </form>
+          </section>
+
+          <section class="space-y-2">
+            <h3 class="text-sm font-semibold text-neutral-900">Promo Campaigns</h3>
+            <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
+              <div class="overflow-x-auto">
+                <table class="min-w-[1200px] w-full text-left text-sm">
+                  <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
+                    <tr>
+                      <th class="px-4 py-3">Name</th>
+                      <th class="px-4 py-3">Promo code</th>
+                      <th class="px-4 py-3">Status</th>
+                      <th class="px-4 py-3">Discount</th>
+                      <th class="px-4 py-3">Reward</th>
+                      <th class="px-4 py-3">Cap %</th>
+                      <th class="px-4 py-3">Priority</th>
+                      <th class="px-4 py-3">Budget</th>
+                      <th class="px-4 py-3">Period</th>
+                      <th class="px-4 py-3">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="promocodes-campaigns-table"></tbody>
                 </table>
               </div>
             </div>
@@ -1111,32 +1130,31 @@
         </section>
 
         <section id="tab-settings" class="<%= pageActiveTab === 'settings' ? '' : 'hidden' %>">
-          <div class="settings-grid grid gap-4 xl:grid-cols-[280px_minmax(0,1fr)]">
+          <div class="settings-grid grid gap-4">
             <aside class="settings-subtabs-aside rounded-2xl border border-neutral-200 bg-white p-3">
-              <p class="mb-3 text-xs text-neutral-500">Выберите раздел и сохраните изменения внизу формы.</p>
-              <nav class="settings-subtabs-nav flex gap-2 overflow-x-auto pb-1 xl:block xl:space-y-1" id="settings-subtabs">
+              <nav class="settings-subtabs-nav flex flex-wrap gap-2" id="settings-subtabs">
                 <button type="button" data-settings-subtab="pricing"
-                  class="settings-subtab-btn flex shrink-0 items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-semibold xl:w-full">Тарифы
+                  class="settings-subtab-btn flex shrink-0 items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-semibold">Тарифы
                   <span data-settings-unsaved-dot="pricing"
                     class="hidden h-2 w-2 rounded-full bg-amber-500"></span></button>
                 <button type="button" data-settings-subtab="algorithm"
-                  class="settings-subtab-btn flex shrink-0 items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-semibold xl:w-full">Алгоритм
+                  class="settings-subtab-btn flex shrink-0 items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-semibold">Алгоритм
                   цены slug <span data-settings-unsaved-dot="algorithm"
                     class="hidden h-2 w-2 rounded-full bg-amber-500"></span></button>
                 <button type="button" data-settings-subtab="bracelet"
-                  class="settings-subtab-btn flex shrink-0 items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-semibold xl:w-full">Браслет
+                  class="settings-subtab-btn flex shrink-0 items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-semibold">Браслет
                   <span data-settings-unsaved-dot="bracelet"
                     class="hidden h-2 w-2 rounded-full bg-amber-500"></span></button>
                 <button type="button" data-settings-subtab="contacts"
-                  class="settings-subtab-btn flex shrink-0 items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-semibold xl:w-full">Контакты
+                  class="settings-subtab-btn flex shrink-0 items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-semibold">Контакты
                   <span data-settings-unsaved-dot="contacts"
                     class="hidden h-2 w-2 rounded-full bg-amber-500"></span></button>
                 <button type="button" data-settings-subtab="platform"
-                  class="settings-subtab-btn flex shrink-0 items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-semibold xl:w-full">Платформа
+                  class="settings-subtab-btn flex shrink-0 items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-semibold">Платформа
                   <span data-settings-unsaved-dot="platform"
                     class="hidden h-2 w-2 rounded-full bg-amber-500"></span></button>
                 <button type="button" data-settings-subtab="changes"
-                  class="settings-subtab-btn flex shrink-0 items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-semibold xl:w-full">Логи
+                  class="settings-subtab-btn flex shrink-0 items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-semibold">Логи
                   изменений</button>
               </nav>
             </aside>
@@ -1359,3 +1377,5 @@
   </body>
 
   </html>
+
+

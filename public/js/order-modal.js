@@ -133,7 +133,6 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
   let isCloseConfirming = false;
   let lastTelegramPaymentUrl = "https://t.me/unqx_uz";
   let quickPayState = null;
-  let quickPayDismissed = false;
   let state = {
     slugLocked: false,
     lockedSlug: "",
@@ -301,7 +300,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
 
   function renderQuickPayButton() {
     let node = document.getElementById("order-modal-quickpay");
-    const shouldShow = Boolean(quickPayState?.url) && !quickPayDismissed && !isOpen;
+    const shouldShow = Boolean(quickPayState?.url) && !isOpen;
 
     if (!shouldShow) {
       if (node) {
@@ -319,9 +318,6 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
         <button type="button" data-quickpay-action class="interactive-btn inline-flex items-center gap-2 rounded-full bg-neutral-900 px-3 py-1.5 text-xs font-semibold text-white">
           Оплатить
         </button>
-        <button type="button" data-quickpay-dismiss class="interactive-btn inline-flex h-7 w-7 items-center justify-center rounded-full border border-neutral-300 text-neutral-600" aria-label="Скрыть">
-          ×
-        </button>
       `;
       document.body.appendChild(node);
       node.addEventListener("click", (event) => {
@@ -331,11 +327,6 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
           if (quickPayState?.url) {
             openTelegramUrl(quickPayState.url);
           }
-          return;
-        }
-        if (target.closest("[data-quickpay-dismiss]")) {
-          quickPayDismissed = true;
-          safeRenderQuickPayButton();
         }
       });
     }
@@ -346,6 +337,27 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
       actionBtn.textContent = label;
     }
     node.classList.remove("hidden");
+  }
+
+  function getPendingPaymentUrl() {
+    if (!(dom.pendingContinue instanceof HTMLAnchorElement)) return "";
+    const href = String(dom.pendingContinue.href || "").trim();
+    if (!href || href === "#") return "";
+    return href;
+  }
+
+  function getRequiredPaymentUrl() {
+    if (currentStep === "success" && quickPayState?.url) {
+      return String(quickPayState.url).trim();
+    }
+    if (currentStep === "pending") {
+      return getPendingPaymentUrl();
+    }
+    return "";
+  }
+
+  function hasPaymentStepLock() {
+    return Boolean(getRequiredPaymentUrl());
   }
 
   function safeRenderQuickPayButton() {
@@ -794,6 +806,15 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     dom.stepPending?.classList.toggle("hidden", step !== "pending");
     dom.stepForm.classList.toggle("hidden", step !== "form");
     dom.stepSuccess.classList.toggle("hidden", step !== "success");
+
+    const lockClose = step === "success" || step === "pending";
+    if (dom.closeTop instanceof HTMLButtonElement) {
+      dom.closeTop.classList.toggle("opacity-0", lockClose);
+      dom.closeTop.classList.toggle("pointer-events-none", lockClose);
+    }
+    if (dom.closeSuccess instanceof HTMLButtonElement) {
+      dom.closeSuccess.classList.toggle("hidden", step === "success");
+    }
   }
 
   function setProgress() {
@@ -890,7 +911,6 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     if (!visible) {
       setPendingStatus("", "neutral");
       quickPayState = null;
-      quickPayDismissed = false;
       safeRenderQuickPayButton();
       if (dom.pendingMeta instanceof HTMLElement) {
         dom.pendingMeta.textContent = "UNQ: —";
@@ -918,7 +938,6 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
         slug: String(pending.slug || "").trim().toUpperCase(),
         reference: String(pending.paymentReference || "").trim(),
       };
-      quickPayDismissed = false;
       safeRenderQuickPayButton();
     }
     if (dom.pendingCancel instanceof HTMLButtonElement) {
@@ -1525,6 +1544,13 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     if (!isOpen || isClosing || isCloseConfirming) {
       return;
     }
+    if (!force && hasPaymentStepLock()) {
+      const paymentUrl = getRequiredPaymentUrl();
+      if (paymentUrl) {
+        openTelegramUrl(paymentUrl);
+      }
+      return;
+    }
     if (!force && dom.stepForm && !dom.stepForm.classList.contains("hidden") && isFormDirty()) {
       isCloseConfirming = true;
       const ok = await showConfirm("Закрыть? Данные не сохранятся", {
@@ -1684,12 +1710,13 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
           slug: String(pricing.slug || "").trim().toUpperCase(),
           reference: String(orderCode || "").trim(),
         };
-        quickPayDismissed = false;
         safeRenderQuickPayButton();
       }
 
       startCountdown(expiresAtIso);
       setStep("success");
+      const requiredUrl = String(quickPayState?.url || "").trim() || lastTelegramPaymentUrl;
+      openTelegramUrl(requiredUrl);
       window.dispatchEvent(new CustomEvent("unqx:order:submitted", { detail: payload }));
     } catch (error) {
       if (error.code === "AUTH_REQUIRED") {
@@ -1865,7 +1892,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
   dom.backdrop.addEventListener("click", () => close(false));
   dom.closeTop?.addEventListener("click", () => close(false));
   dom.closeForm?.addEventListener("click", () => close(false));
-  dom.closeSuccess?.addEventListener("click", () => close(true));
+  dom.closeSuccess?.addEventListener("click", () => close(false));
   dom.pendingContinue?.addEventListener("click", (event) => {
     event.preventDefault();
     const href = dom.pendingContinue instanceof HTMLAnchorElement ? String(dom.pendingContinue.href || "").trim() : "";
@@ -1895,7 +1922,6 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
       await postJson(`/api/cards/order-request/${encodeURIComponent(orderId)}/cancel`, {});
       if (quickPayState && quickPayState.orderId === orderId) {
         quickPayState = null;
-        quickPayDismissed = false;
         safeRenderQuickPayButton();
       }
       await refreshCheckoutContext();

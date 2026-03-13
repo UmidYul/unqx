@@ -2129,18 +2129,124 @@ router.patch(
           },
         });
 
+        const safeTxUpdateMany = async (fn) => {
+          try {
+            return await fn();
+          } catch (error) {
+            if (isTableOrColumnMissing(error)) {
+              return { count: 0 };
+            }
+            throw error;
+          }
+        };
+
         if (tx.analyticsView && typeof tx.analyticsView.updateMany === "function") {
-          await tx.analyticsView.updateMany({
-            where: { slug: currentSlug },
-            data: { slug: replacement.fullSlug },
-          });
+          await safeTxUpdateMany(() =>
+            tx.analyticsView.updateMany({
+              where: { slug: currentSlug },
+              data: { slug: replacement.fullSlug },
+            }),
+          );
         }
         if (tx.analyticsClick && typeof tx.analyticsClick.updateMany === "function") {
-          await tx.analyticsClick.updateMany({
-            where: { slug: currentSlug },
-            data: { slug: replacement.fullSlug },
-          });
+          await safeTxUpdateMany(() =>
+            tx.analyticsClick.updateMany({
+              where: { slug: currentSlug },
+              data: { slug: replacement.fullSlug },
+            }),
+          );
         }
+        if (tx.slugRequest && typeof tx.slugRequest.updateMany === "function") {
+          await safeTxUpdateMany(() =>
+            tx.slugRequest.updateMany({
+              where: { slug: currentSlug },
+              data: { slug: replacement.fullSlug },
+            }),
+          );
+        }
+        if (tx.purchase && typeof tx.purchase.updateMany === "function") {
+          await safeTxUpdateMany(() =>
+            tx.purchase.updateMany({
+              where: { slug: currentSlug },
+              data: { slug: replacement.fullSlug },
+            }),
+          );
+        }
+        if (tx.braceletOrder && typeof tx.braceletOrder.updateMany === "function") {
+          await safeTxUpdateMany(() =>
+            tx.braceletOrder.updateMany({
+              where: { slug: currentSlug },
+              data: { slug: replacement.fullSlug },
+            }),
+          );
+        }
+        if (tx.verificationRequest && typeof tx.verificationRequest.updateMany === "function") {
+          await safeTxUpdateMany(() =>
+            tx.verificationRequest.updateMany({
+              where: { slug: currentSlug },
+              data: { slug: replacement.fullSlug },
+            }),
+          );
+        }
+        if (tx.testimonial && typeof tx.testimonial.updateMany === "function") {
+          await safeTxUpdateMany(() =>
+            tx.testimonial.updateMany({
+              where: { slug: currentSlug },
+              data: { slug: replacement.fullSlug },
+            }),
+          );
+        }
+        if (tx.slugCheckerLog && typeof tx.slugCheckerLog.updateMany === "function") {
+          await safeTxUpdateMany(() =>
+            tx.slugCheckerLog.updateMany({
+              where: { slug: currentSlug },
+              data: { slug: replacement.fullSlug },
+            }),
+          );
+        }
+        if (tx.leaderboardSuspiciousLog && typeof tx.leaderboardSuspiciousLog.updateMany === "function") {
+          await safeTxUpdateMany(() =>
+            tx.leaderboardSuspiciousLog.updateMany({
+              where: { fullSlug: currentSlug },
+              data: { fullSlug: replacement.fullSlug },
+            }),
+          );
+        }
+
+        if (tx.directoryExclusion && typeof tx.directoryExclusion.findUnique === "function") {
+          const [currentDir, targetDir] = await Promise.all([
+            tx.directoryExclusion.findUnique({ where: { slug: currentSlug }, select: { slug: true } }),
+            tx.directoryExclusion.findUnique({ where: { slug: replacement.fullSlug }, select: { slug: true } }),
+          ]);
+          if (currentDir && targetDir) {
+            await safeTxUpdateMany(() => tx.directoryExclusion.deleteMany({ where: { slug: currentSlug } }));
+          } else if (currentDir) {
+            await safeTxUpdateMany(() =>
+              tx.directoryExclusion.updateMany({
+                where: { slug: currentSlug },
+                data: { slug: replacement.fullSlug },
+              }),
+            );
+          }
+        }
+
+        if (tx.leaderboardExclusion && typeof tx.leaderboardExclusion.findUnique === "function") {
+          const [currentLb, targetLb] = await Promise.all([
+            tx.leaderboardExclusion.findUnique({ where: { fullSlug: currentSlug }, select: { fullSlug: true } }),
+            tx.leaderboardExclusion.findUnique({ where: { fullSlug: replacement.fullSlug }, select: { fullSlug: true } }),
+          ]);
+          if (currentLb && targetLb) {
+            await safeTxUpdateMany(() => tx.leaderboardExclusion.deleteMany({ where: { fullSlug: currentSlug } }));
+          } else if (currentLb) {
+            await safeTxUpdateMany(() =>
+              tx.leaderboardExclusion.updateMany({
+                where: { fullSlug: currentSlug },
+                data: { fullSlug: replacement.fullSlug },
+              }),
+            );
+          }
+        }
+
         const currentViewsCount = Number(current.analyticsViewsCount || 0);
         if (currentViewsCount > 0) {
           await tx.slug.update({
@@ -2177,6 +2283,42 @@ router.patch(
         UPDATE slug_clicks
         SET slug = $1
         WHERE slug = $2
+        `,
+        result.fullSlug,
+        currentSlug,
+      );
+      await safeExecuteRaw(
+        `
+        UPDATE views_log
+        SET slug = $1
+        WHERE slug = $2
+        `,
+        result.fullSlug,
+        currentSlug,
+      );
+      await safeExecuteRaw(
+        `
+        UPDATE tap_events
+        SET owner_slug = $1
+        WHERE owner_slug = $2
+        `,
+        result.fullSlug,
+        currentSlug,
+      );
+      await safeExecuteRaw(
+        `
+        UPDATE tap_events
+        SET visitor_slug = $1
+        WHERE visitor_slug = $2
+        `,
+        result.fullSlug,
+        currentSlug,
+      );
+      await safeExecuteRaw(
+        `
+        UPDATE user_contacts
+        SET contact_slug = $1
+        WHERE contact_slug = $2
         `,
         result.fullSlug,
         currentSlug,
@@ -3894,6 +4036,39 @@ router.patch(
 router.get(
   "/bracelet-orders",
   asyncHandler(async (req, res) => {
+    const braceletSeedRows = await prisma.slugRequest.findMany({
+      where: {
+        bracelet: true,
+        status: { in: ["paid", "approved"] },
+      },
+      select: {
+        id: true,
+        slug: true,
+        createdAt: true,
+        user: {
+          select: {
+            firstName: true,
+            displayName: true,
+          },
+        },
+      },
+    });
+
+    if (braceletSeedRows.length && prisma.braceletOrder?.createMany) {
+      await prisma.braceletOrder.createMany({
+        data: braceletSeedRows
+          .map((row) => ({
+            orderId: row.id,
+            name: row.user?.displayName || row.user?.firstName || "UNQX User",
+            slug: row.slug,
+            deliveryStatus: "ORDERED",
+            createdAt: row.createdAt,
+          }))
+          .filter((row) => row.slug),
+        skipDuplicates: true,
+      });
+    }
+
     const page = Math.max(1, Number(req.query.page || "1") || 1);
     const pageSizeRaw = Number(req.query.pageSize || "20") || 20;
     const pageSize = Math.max(1, Math.min(200, pageSizeRaw));
@@ -3917,8 +4092,36 @@ router.get(
         },
       }),
     ]);
+
+    const slugSet = Array.from(new Set(rows.map((row) => String(row.slug || "").trim()).filter(Boolean)));
+    const ownersBySlug = new Map();
+    if (slugSet.length) {
+      const slugRows = await prisma.slug.findMany({
+        where: { fullSlug: { in: slugSet } },
+        select: {
+          fullSlug: true,
+          owner: {
+            select: {
+              id: true,
+              telegramChatId: true,
+              username: true,
+            },
+          },
+        },
+      });
+      slugRows.forEach((row) => {
+        const contact = row.owner?.username
+          ? `@${row.owner.username}`
+          : row.owner?.telegramChatId || row.owner?.id || "";
+        ownersBySlug.set(row.fullSlug, contact);
+      });
+    }
+
     res.json({
-      items: rows,
+      items: rows.map((row) => ({
+        ...row,
+        contact: ownersBySlug.get(row.slug) || "",
+      })),
       pagination: {
         page,
         pageSize,

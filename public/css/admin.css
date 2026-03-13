@@ -673,12 +673,12 @@
 
 .settings-subtabs-nav {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .settings-subtab-btn {
-  width: 100%;
+  width: auto;
   border: 1px solid transparent;
   background: #ffffff;
   color: #374151;

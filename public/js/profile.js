@@ -319,10 +319,17 @@ Email: ${userEmail}
       pl: $("#profile-sidebar-plan"),
       ex: $("#profile-sidebar-expiry"),
       choosePlan: $("#profile-sidebar-choose-plan"),
+      hdrViews: $("#profile-header-stat-views"),
+      hdrCards: $("#profile-header-stat-cards"),
+      hdrCtr: $("#profile-header-stat-ctr"),
 
       slugs: $("#profile-slugs-list"),
       addSlug: $("#profile-add-slug-btn"),
       addSlugNote: $("#profile-add-slug-note"),
+      slugsKpiViews: $("#profile-slugs-kpi-views"),
+      slugsKpiUnique: $("#profile-slugs-kpi-unique"),
+      slugsMiniBars: $("#profile-slugs-mini-bars"),
+      slugsSourceBars: $("#profile-slugs-source-bars"),
 
       cAv: $("#profile-card-avatar-preview"),
       cAvFile: $("#profile-card-avatar-file"),
@@ -855,8 +862,7 @@ Email: ${userEmail}
       const active = currentTab();
       el.tabs.forEach((button) => {
         const on = button.getAttribute("data-tab-target") === active;
-        button.classList.toggle("bg-neutral-900", on);
-        button.classList.toggle("text-white", on);
+        button.classList.toggle("profile-tab-btn--active", on);
       });
       el.panels.forEach((panel) => panel.classList.toggle("hidden", panel.getAttribute("data-tab-panel") !== active));
       // Не вызываем load() или renderAll() при переключении вкладок, чтобы не сбрасывать прогресс
@@ -911,6 +917,7 @@ Email: ${userEmail}
       if (el.un) el.un.textContent = s.user.username ? `@${s.user.username}` : "@—";
       const plan = s.user.plan || "none";
       if (el.pl) {
+        el.pl.dataset.plan = plan;
         el.pl.textContent = plan === "premium" ? "ПРЕМИУМ" : plan === "basic" ? "БАЗОВЫЙ" : "Тариф не выбран";
         el.pl.className = "inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold";
         if (plan === "none") {
@@ -943,6 +950,45 @@ Email: ${userEmail}
           link.textContent = "Купить Премиум >";
         }
         el.upg.classList.toggle("hidden", plan !== "basic");
+      }
+    };
+
+    const renderHeaderStats = () => {
+      const slugItems = Array.isArray(s.slugs) ? s.slugs : [];
+      const totalViews = slugItems.reduce((sum, item) => sum + Number(item?.stats?.views || 0), 0);
+      const cardsCount = slugItems.length;
+      const ctrRaw = Number(s.analyticsPayload?.kpi?.ctr || 0);
+      const unique = Number(s.analyticsPayload?.kpi?.uniqueVisitors || 0);
+      const bestViews = Math.max(
+        1,
+        ...slugItems.map((item) => Number(item?.stats?.views || 0)),
+      );
+      const bars = slugItems.length
+        ? slugItems.slice(0, 8).map((item) => {
+          const ratio = Math.max(0.15, Number(item?.stats?.views || 0) / bestViews);
+          return `<span class="${ratio > 0.75 ? "is-active" : ""}" style="height:${Math.round(ratio * 44)}px"></span>`;
+        })
+        : ['<span style="height:14px"></span>', '<span style="height:20px"></span>', '<span class="is-active" style="height:34px"></span>', '<span style="height:18px"></span>'];
+
+      if (el.hdrViews) el.hdrViews.textContent = Number(totalViews).toLocaleString("ru-RU");
+      if (el.hdrCards) el.hdrCards.textContent = String(cardsCount);
+      if (el.hdrCtr) el.hdrCtr.textContent = `${Number(ctrRaw).toLocaleString("ru-RU")}%`;
+      if (el.slugsKpiViews) el.slugsKpiViews.textContent = Number(totalViews).toLocaleString("ru-RU");
+      if (el.slugsKpiUnique) el.slugsKpiUnique.textContent = Number(unique).toLocaleString("ru-RU");
+      if (el.slugsMiniBars) el.slugsMiniBars.innerHTML = bars.join("");
+      if (el.slugsSourceBars) {
+        const sources = Object.entries(s.analyticsPayload?.chart?.trafficSources || {}).slice(0, 3);
+        if (sources.length) {
+          const total = Math.max(1, sources.reduce((sum, entry) => sum + Number(entry[1] || 0), 0));
+          el.slugsSourceBars.innerHTML = sources
+            .map((entry) => {
+              const width = Math.max(8, Math.round((Number(entry[1] || 0) / total) * 100));
+              return `<div class="source-track"><div class="source-fill" style="width:${width}%"></div></div>`;
+            })
+            .join("");
+        } else {
+          el.slugsSourceBars.innerHTML = '<div class="source-track"><div class="source-fill" style="width:60%"></div></div><div class="source-track"><div class="source-fill" style="width:36%"></div></div><div class="source-track"><div class="source-fill" style="width:22%"></div></div>';
+        }
       }
     };
 
@@ -1745,6 +1791,7 @@ Email: ${userEmail}
       if (el.analyticsUnique) el.analyticsUnique.textContent = String(Number(payload.kpi?.uniqueVisitors || 0));
       if (el.analyticsCtr) el.analyticsCtr.textContent = `${Number(payload.kpi?.ctr || 0)}%`;
       if (el.analyticsLock) el.analyticsLock.classList.toggle("hidden", Boolean(payload.flags?.isPremium));
+      renderHeaderStats();
 
       const viewsByDay = Array.isArray(payload.chart?.viewsByDay) ? payload.chart.viewsByDay : [];
       const sourceEntries = Object.entries(payload.chart?.trafficSources || {});
@@ -1867,6 +1914,7 @@ Email: ${userEmail}
     const renderAll = () => {
       renderWelcomeBanner();
       renderSidebar();
+      renderHeaderStats();
       renderSlugs();
       renderCard();
       renderAnalytics();
@@ -3115,21 +3163,4 @@ Email: ${userEmail}
     load().catch((error) => showModal("Ошибка", error.message || "Не удалось загрузить профиль"));
   })();
 })();
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

@@ -28,15 +28,36 @@ const DEFAULTS = {
 async function getFeatureSetting(key, fallback = {}) {
   const normalizedKey = String(key || "");
   if (normalizedKey === "leaderboard") {
-    const values = await getManySettings(["feature_leaderboard", "leaderboard_public_count"]);
+    const values = await getManySettings([
+      "feature_leaderboard",
+      "leaderboard_public_count",
+      "leaderboard_suspicious_threshold",
+      "leaderboard_suspicious_window_minutes",
+    ]);
     const base = DEFAULTS.leaderboard || {};
+    const fallbackThreshold =
+      fallback && Object.prototype.hasOwnProperty.call(fallback, "suspiciousThreshold")
+        ? Number(fallback.suspiciousThreshold)
+        : NaN;
+    const fallbackWindow =
+      fallback && Object.prototype.hasOwnProperty.call(fallback, "suspiciousWindowMinutes")
+        ? Number(fallback.suspiciousWindowMinutes)
+        : NaN;
+    const suspiciousThreshold = Math.max(
+      1,
+      Number(values.leaderboard_suspicious_threshold ?? fallbackThreshold ?? base.suspiciousThreshold ?? 50) || 50,
+    );
+    const suspiciousWindowMinutes = Math.max(
+      1,
+      Number(values.leaderboard_suspicious_window_minutes ?? fallbackWindow ?? base.suspiciousWindowMinutes ?? 10) || 10,
+    );
     return {
       ...base,
       ...fallback,
       enabled: values.feature_leaderboard ?? base.enabled,
       publicLimit: Number(values.leaderboard_public_count ?? base.publicLimit ?? 20),
-      suspiciousThreshold: base.suspiciousThreshold,
-      suspiciousWindowMinutes: base.suspiciousWindowMinutes,
+      suspiciousThreshold,
+      suspiciousWindowMinutes,
     };
   }
   if (normalizedKey === "referrals") {
@@ -78,6 +99,8 @@ async function setFeatureSetting(key, value) {
     await setSettingsBatch("platform", {
       feature_leaderboard: Boolean(nextValue.enabled),
       leaderboard_public_count: Number(nextValue.publicLimit || 20),
+      leaderboard_suspicious_threshold: Math.max(1, Number(nextValue.suspiciousThreshold || 50)),
+      leaderboard_suspicious_window_minutes: Math.max(1, Number(nextValue.suspiciousWindowMinutes || 10)),
     });
     return getFeatureSetting("leaderboard");
   }

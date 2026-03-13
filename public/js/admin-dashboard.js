@@ -652,6 +652,9 @@
             remainingMs <= 30 * 60 * 1000 ? "text-red-700 font-semibold" : remainingMs <= 2 * 60 * 60 * 1000 ? "text-red-700" : "text-neutral-500";
           const statusBlock = `${statusChip(x.status)}${countdown ? `<div class="mt-1 inline-flex items-center gap-1 text-[11px] ${countdownTone}">${I("clock", 14)}<span>${X(countdown)}</span></div>` : ""}`;
           const menu = menuWrap([
+            menuItem({ label: "Одобрить", icon: "checkCircle", attrs: `data-act="os" data-id="${x.id}" data-status="approved" data-note="${X(x.adminNote || "")}"` }),
+            menuItem({ label: "Отклонить", icon: "xCircle", attrs: `data-act="os" data-id="${x.id}" data-status="rejected" data-note="${X(x.adminNote || "")}"`, danger: true }),
+            menuSeparator(),
             menuItem({ label: "Отметить: Связались", icon: "message", attrs: `data-act="os" data-id="${x.id}" data-status="contacted" data-note="${X(x.adminNote || "")}"` }),
             menuItem({ label: "Отметить: Оплачена", icon: "creditCard", attrs: `data-act="os" data-id="${x.id}" data-status="paid" data-note="${X(x.adminNote || "")}"` }),
             menuSeparator(),
@@ -661,10 +664,7 @@
             menuSeparator(),
             menuItem({ label: "Удалить", icon: "trash", attrs: `data-act="od" data-id="${x.id}"`, danger: true }),
           ].join(""));
-          const quickApprove = `<button type="button" data-act="os" data-id="${x.id}" data-status="approved" data-note="${X(x.adminNote || "")}" class="interactive-btn min-h-9 rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold">Одобрить</button>`;
-          const quickReject = `<button type="button" data-act="os" data-id="${x.id}" data-status="rejected" data-note="${X(x.adminNote || "")}" class="interactive-btn min-h-9 rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold">Отклонить</button>`;
-          const quickMenu = `${quickApprove}${quickReject}${menu}`;
-          return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3">${D(x.createdAt)}</td><td class="px-4 py-3">${X(x.name)}</td><td class="px-4 py-3 font-mono">${X(x.slug)}</td><td class="px-4 py-3 text-right">${P(x.slugPrice)}</td><td class="px-4 py-3 text-right font-semibold">${P(x.amount || 0)}</td><td class="px-4 py-3">${x.tariff === "premium" ? "Премиум" : "Базовый"}</td><td class="px-4 py-3">${x.bracelet ? "Да" : "Нет"}</td><td class="px-4 py-3">${X(x.contact)}</td><td class="px-4 py-3">${statusBlock}</td><td class="px-4 py-3 text-right"><div class="admin-row-actions justify-end">${quickMenu}</div></td></tr>`;
+          return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3">${D(x.createdAt)}</td><td class="px-4 py-3">${X(x.name)}</td><td class="px-4 py-3 font-mono">${X(x.slug)}</td><td class="px-4 py-3 text-right">${P(x.slugPrice)}</td><td class="px-4 py-3 text-right font-semibold">${P(x.amount || 0)}</td><td class="px-4 py-3">${x.tariff === "premium" ? "Премиум" : "Базовый"}</td><td class="px-4 py-3">${x.bracelet ? "Да" : "Нет"}</td><td class="px-4 py-3">${X(x.contact)}</td><td class="px-4 py-3">${statusBlock}</td><td class="px-4 py-3 text-right"><div class="admin-row-actions justify-end">${menu}</div></td></tr>`;
         })
         .join("")
       : `<tr><td colspan="10" class="px-3 py-10 text-center text-neutral-500"><div class="inline-flex flex-col items-center gap-2">${I("creditCard", 48)}<span>Нет заявок</span><span class="text-xs text-neutral-400">Измените фильтры или сбросьте поиск.</span></div></td></tr>`;
@@ -711,12 +711,9 @@
     const rows = payload.items || [];
     table.innerHTML = rows.length
       ? rows.map((x) => {
-        const openSlug = x.slug
-          ? menuWrap(menuItem({ label: "Открыть slug", icon: "external", attrs: `data-act="open-url" data-url="/${encodeURIComponent(String(x.slug || ""))}"` }))
-          : `<span class="text-xs text-neutral-400">—</span>`;
-        return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3">${D(x.purchasedAt)}</td><td class="px-4 py-3">${X(x.username ? `@${x.username}` : x.userName)}</td><td class="px-4 py-3"><span class="inline-flex rounded-full border border-neutral-200 px-2 py-1 text-xs font-medium">${X(typeLabel(x.type))}</span></td><td class="px-4 py-3 font-mono">${X(x.slug || "—")}</td><td class="px-4 py-3 text-right font-semibold">${P(x.amount || 0)}</td><td class="px-4 py-3">${X(x.approvedByAdmin || "—")}</td><td class="px-4 py-3 text-right"><div class="admin-row-actions justify-end">${openSlug}</div></td></tr>`;
+        return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3">${D(x.purchasedAt)}</td><td class="px-4 py-3">${X(x.username ? `@${x.username}` : x.userName)}</td><td class="px-4 py-3"><span class="inline-flex rounded-full border border-neutral-200 px-2 py-1 text-xs font-medium">${X(typeLabel(x.type))}</span></td><td class="px-4 py-3 font-mono">${X(x.slug || "-")}</td><td class="px-4 py-3 text-right font-semibold">${P(x.amount || 0)}</td><td class="px-4 py-3">${X(x.approvedByAdmin || "-")}</td></tr>`;
       }).join("")
-      : `<tr><td colspan="7" class="px-3 py-10 text-center text-neutral-500"><div class="inline-flex flex-col items-center gap-2">${I("creditCard", 48)}<span>Нет покупок</span><span class="text-xs text-neutral-400">Покупки появятся после оплаты заказов пользователями.</span></div></td></tr>`;
+      : `<tr><td colspan="6" class="px-3 py-10 text-center text-neutral-500"><div class="inline-flex flex-col items-center gap-2">${I("creditCard", 48)}<span>Нет покупок</span><span class="text-xs text-neutral-400">Покупки появятся после оплаты заказов пользователями.</span></div></td></tr>`;
 
     renderPager("purchases-pagination", payload.pagination, (nextPage) => {
       setFormValue(form, "page", String(nextPage));

@@ -69,9 +69,10 @@
                 <p
                   class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-bold <%= rankBadgeByPlace[item.rank] || 'border-neutral-300 bg-neutral-100 text-neutral-800' %>">
                   <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor"
-                    stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="8.5" r="4.25"></circle>
-                    <path d="m9.2 13.8-1.4 5.6L12 17l4.2 2.4-1.4-5.6"></path>
+                    stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M8.2 13.7 6.6 21l5.4-3.2L17.4 21l-1.6-7.3"></path>
+                    <circle cx="12" cy="8.5" r="4.6"></circle>
+                    <path d="m12 5.9.9 1.8 2 .3-1.4 1.4.3 2-1.8-.9-1.8.9.3-2-1.4-1.4 2-.3.9-1.8Z"></path>
                   </svg>
                   <span>
                     <%= item.rank %>
@@ -92,7 +93,7 @@
                       <img src="<%= item.avatarUrl %>" alt="avatar"
                         class="h-12 w-12 rounded-full border border-neutral-200 object-cover" />
                       <% } %>
-                        <div>
+                        <div class="flex min-w-0 flex-1 flex-col">
                           <p class="inline-flex items-center gap-1.5 font-semibold text-neutral-900">
                             <span>
                               <%= item.ownerName %>
@@ -106,7 +107,7 @@
                               </svg>
                               <% } %>
                           </p>
-                          <a href="/<%= item.slug %>" class="text-sm text-neutral-500 hover:underline">unqx.uz/<%=
+                          <a href="/<%= item.slug %>" class="mt-0.5 block text-sm text-neutral-500 hover:underline">unqx.uz/<%=
                               item.slug %></a>
                         </div>
                 </div>

@@ -208,33 +208,25 @@
     const stats = document.getElementById("referrals-stats");
     const table = document.getElementById("referrals-table");
     const ledgerTable = document.getElementById("referrals-ledger-table");
-    const campaignsTable = document.getElementById("referrals-campaigns-table");
     const settingsForm = document.getElementById("referrals-settings-form");
     const historyFiltersForm = document.getElementById("referrals-history-filters");
     if (!(stats instanceof HTMLElement) || !(table instanceof HTMLElement)) return;
 
-    const [statPayload, rowsPayload, ledgerPayload, settingsPayload, campaignsPayload] = await Promise.all([
+    const [statPayload, rowsPayload, ledgerPayload, settingsPayload] = await Promise.all([
       jsonFetch("/api/admin/referrals/stats"),
       jsonFetch("/api/admin/referrals"),
       jsonFetch("/api/admin/referrals/ledger"),
       jsonFetch("/api/admin/referrals/settings"),
-      jsonFetch("/api/admin/referrals/campaigns"),
     ]);
 
     if (settingsForm instanceof HTMLFormElement) {
       const enabled = settingsForm.elements.namedItem("enabled");
-      const promoCodesEnabled = settingsForm.elements.namedItem("promoCodesEnabled");
-      const promoRequireReferrer = settingsForm.elements.namedItem("promoRequireReferrer");
-      const promoFirstOrderOnly = settingsForm.elements.namedItem("promoFirstOrderOnly");
       const referrerReward = settingsForm.elements.namedItem("referrerReward");
       const inviteeDiscount = settingsForm.elements.namedItem("inviteeDiscount");
       const discountCapPercent = settingsForm.elements.namedItem("discountCapPercent");
       const defaultPerUserCap = settingsForm.elements.namedItem("defaultPerUserCap");
 
       if (enabled instanceof HTMLInputElement) enabled.checked = Boolean(settingsPayload.settings?.feature_referrals);
-      if (promoCodesEnabled instanceof HTMLInputElement) promoCodesEnabled.checked = settingsPayload.settings?.feature_promo_codes !== undefined ? Boolean(settingsPayload.settings?.feature_promo_codes) : true;
-      if (promoRequireReferrer instanceof HTMLInputElement) promoRequireReferrer.checked = settingsPayload.settings?.promo_codes_require_referrer !== undefined ? Boolean(settingsPayload.settings?.promo_codes_require_referrer) : false;
-      if (promoFirstOrderOnly instanceof HTMLInputElement) promoFirstOrderOnly.checked = settingsPayload.settings?.promo_codes_first_order_only !== undefined ? Boolean(settingsPayload.settings?.promo_codes_first_order_only) : true;
       if (referrerReward instanceof HTMLInputElement) {
         referrerReward.value = String(settingsPayload.settings?.referral_v1_referrer_reward || 50000);
       }
@@ -281,10 +273,29 @@
           .join("")
         : '<tr><td colspan="7" class="px-3 py-8 text-center text-neutral-500">No operations</td></tr>';
     }
+  }
 
-    if (campaignsTable instanceof HTMLElement) {
-      campaignsTable.innerHTML = (campaignsPayload.items || []).length
-        ? (campaignsPayload.items || [])
+  async function loadPromoCodesAdmin() {
+    const campaignsTable = document.getElementById("promocodes-campaigns-table");
+    const settingsForm = document.getElementById("promocodes-settings-form");
+    if (!(campaignsTable instanceof HTMLElement)) return;
+
+    const [settingsPayload, campaignsPayload] = await Promise.all([
+      jsonFetch("/api/admin/referrals/settings"),
+      jsonFetch("/api/admin/referrals/campaigns"),
+    ]);
+
+    if (settingsForm instanceof HTMLFormElement) {
+      const promoCodesEnabled = settingsForm.elements.namedItem("promoCodesEnabled");
+      const promoRequireReferrer = settingsForm.elements.namedItem("promoRequireReferrer");
+      const promoFirstOrderOnly = settingsForm.elements.namedItem("promoFirstOrderOnly");
+      if (promoCodesEnabled instanceof HTMLInputElement) promoCodesEnabled.checked = settingsPayload.settings?.feature_promo_codes !== undefined ? Boolean(settingsPayload.settings?.feature_promo_codes) : true;
+      if (promoRequireReferrer instanceof HTMLInputElement) promoRequireReferrer.checked = settingsPayload.settings?.promo_codes_require_referrer !== undefined ? Boolean(settingsPayload.settings?.promo_codes_require_referrer) : false;
+      if (promoFirstOrderOnly instanceof HTMLInputElement) promoFirstOrderOnly.checked = settingsPayload.settings?.promo_codes_first_order_only !== undefined ? Boolean(settingsPayload.settings?.promo_codes_first_order_only) : true;
+    }
+
+    campaignsTable.innerHTML = (campaignsPayload.items || []).length
+      ? (campaignsPayload.items || [])
           .map((item) => {
             const status = String(item.status || "draft");
             const statusAction = status === "active" ? "paused" : "active";
@@ -313,10 +324,8 @@
             </tr>`;
           })
           .join("")
-        : `<tr><td colspan="10" class="px-3 py-10 text-center text-neutral-500"><div class="inline-flex flex-col items-center gap-2">${I("gift", 44)}<span>Нет активных кампаний</span><span class="text-xs text-neutral-400">Создайте первую кампанию в форме выше.</span></div></td></tr>`;
-    }
+      : `<tr><td colspan="10" class="px-3 py-10 text-center text-neutral-500"><div class="inline-flex flex-col items-center gap-2">${I("gift", 44)}<span>Нет активных кампаний</span><span class="text-xs text-neutral-400">Создайте первую кампанию в форме выше.</span></div></td></tr>`;
   }
-
   async function loadFlashSalesAdmin() {
     const table = document.getElementById("flash-sales-table");
     if (!(table instanceof HTMLElement)) return;
@@ -400,9 +409,6 @@
     const form = event.currentTarget;
     if (!(form instanceof HTMLFormElement)) return;
     const enabled = form.elements.namedItem("enabled");
-    const promoCodesEnabled = form.elements.namedItem("promoCodesEnabled");
-    const promoRequireReferrer = form.elements.namedItem("promoRequireReferrer");
-    const promoFirstOrderOnly = form.elements.namedItem("promoFirstOrderOnly");
     const referrerReward = form.elements.namedItem("referrerReward");
     const inviteeDiscount = form.elements.namedItem("inviteeDiscount");
     const discountCapPercent = form.elements.namedItem("discountCapPercent");
@@ -412,9 +418,6 @@
       headers: headers({ "Content-Type": "application/json" }),
       body: JSON.stringify({
         enabled: enabled instanceof HTMLInputElement ? enabled.checked : true,
-        promoCodesEnabled: promoCodesEnabled instanceof HTMLInputElement ? promoCodesEnabled.checked : true,
-        promoRequireReferrer: promoRequireReferrer instanceof HTMLInputElement ? promoRequireReferrer.checked : false,
-        promoFirstOrderOnly: promoFirstOrderOnly instanceof HTMLInputElement ? promoFirstOrderOnly.checked : true,
         referrerReward: referrerReward instanceof HTMLInputElement ? Number(referrerReward.value || 0) : 0,
         inviteeDiscount: inviteeDiscount instanceof HTMLInputElement ? Number(inviteeDiscount.value || 0) : 0,
         discountCapPercent: discountCapPercent instanceof HTMLInputElement ? Number(discountCapPercent.value || 0) : 0,
@@ -424,7 +427,26 @@
     await loadReferralsAdmin();
   });
 
-  document.getElementById("referrals-campaign-create-form")?.addEventListener("submit", async (event) => {
+  document.getElementById("promocodes-settings-form")?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    if (!(form instanceof HTMLFormElement)) return;
+    const promoCodesEnabled = form.elements.namedItem("promoCodesEnabled");
+    const promoRequireReferrer = form.elements.namedItem("promoRequireReferrer");
+    const promoFirstOrderOnly = form.elements.namedItem("promoFirstOrderOnly");
+    await jsonFetch("/api/admin/referrals/settings", {
+      method: "PATCH",
+      headers: headers({ "Content-Type": "application/json" }),
+      body: JSON.stringify({
+        promoCodesEnabled: promoCodesEnabled instanceof HTMLInputElement ? promoCodesEnabled.checked : true,
+        promoRequireReferrer: promoRequireReferrer instanceof HTMLInputElement ? promoRequireReferrer.checked : false,
+        promoFirstOrderOnly: promoFirstOrderOnly instanceof HTMLInputElement ? promoFirstOrderOnly.checked : true,
+      }),
+    });
+    await loadPromoCodesAdmin();
+  });
+
+  document.getElementById("promocodes-campaign-create-form")?.addEventListener("submit", async (event) => {
     event.preventDefault();
     const form = event.currentTarget;
     if (!(form instanceof HTMLFormElement)) return;
@@ -448,7 +470,7 @@
       }),
     });
     form.reset();
-    await loadReferralsAdmin();
+    await loadPromoCodesAdmin();
   });
 
   document.getElementById("referrals-history-filters")?.addEventListener("submit", async (event) => {
@@ -567,7 +589,7 @@
           headers: headers({ "Content-Type": "application/json" }),
           body: JSON.stringify({ status }),
         });
-        await loadReferralsAdmin();
+        await loadPromoCodesAdmin();
       }
       if (action === "promo-delete") {
         const id = target.getAttribute("data-id");
@@ -579,7 +601,7 @@
           headers: headers({ "Content-Type": "application/json" }),
           body: JSON.stringify({}),
         });
-        await loadReferralsAdmin();
+        await loadPromoCodesAdmin();
       }
       if (action === "promo-edit") {
         const id = target.getAttribute("data-id");
@@ -637,7 +659,7 @@
             endsAt: String(nextEndsAt || "").trim() ? new Date(String(nextEndsAt)).toISOString() : null,
           }),
         });
-        await loadReferralsAdmin();
+        await loadPromoCodesAdmin();
       }
       if (action === "stop-flash") {
         const id = target.getAttribute("data-id");
@@ -809,9 +831,11 @@
 
   if (tab === "leaderboard") void loadLeaderboardAdmin();
   if (tab === "referrals") void loadReferralsAdmin();
+  if (tab === "promocodes") void loadPromoCodesAdmin();
   if (tab === "flash-sales") void loadFlashSalesAdmin();
   if (tab === "drops") void loadDropsAdmin();
   setupFlashCreateForm();
 })();
+
 
 

@@ -3,7 +3,7 @@
 
 <head>
   <%- include('../partials/head', { title: title || "Мой профиль | UNQX" , description: typeof description==='string' ?
-    description : undefined, image: typeof image==='string' ? image : undefined, styles: ['/css/public-card.css'],
+    description : undefined, image: typeof image==='string' ? image : undefined, styles: ['/css/public-card.css', '/css/profile-dashboard.css'],
     noindex: true }) %>
     <link rel="stylesheet" href="/vendor/cropperjs/cropper.min.css" />
 </head>
@@ -11,7 +11,7 @@
 <body class="antialiased" data-page="profile-page" data-telegram-bot-username="<%= telegramBotUsername || '' %>"
   data-reactivation-window-days="<%= Number.isFinite(Number(reactivationWindowDays)) ? Number(reactivationWindowDays) : 30 %>"
   data-bwignore="true" data-lpignore="true" data-1p-ignore="true">
-  <main class="min-h-screen bg-neutral-50 px-3 py-4 sm:px-4 sm:py-6 md:px-6">
+  <main class="profile-dashboard min-h-screen bg-neutral-50 px-3 py-4 sm:px-4 sm:py-6 md:px-6">
     <div class="mx-auto mb-3 w-full max-w-6xl sm:mb-4">
       <a href="/"
         class="interactive-btn inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-neutral-200 bg-white px-3 py-1.5 text-xs font-semibold text-neutral-700">
@@ -41,44 +41,69 @@
         class="interactive-btn mt-3 min-h-11 rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white">Занять
         slug →</button>
     </section>
-    <div class="mx-auto grid min-w-0 w-full max-w-6xl gap-4 md:gap-6 lg:grid-cols-[300px_1fr]">
-      <aside class="min-w-0 rounded-2xl border border-neutral-200 bg-white p-4 sm:p-5">
-        <div class="flex items-center gap-3">
+    <div class="mx-auto w-full max-w-6xl min-w-0 space-y-4 md:space-y-5">
+      <section class="profile-header-card">
+        <div class="profile-header-main">
           <img id="profile-sidebar-avatar" src="/brand/profile-thin.svg" alt="avatar"
-            class="h-14 w-14 rounded-full border border-neutral-200 object-cover" />
-          <div>
+            class="profile-header-avatar h-14 w-14 rounded-full border border-neutral-200 object-cover" />
+          <div class="profile-header-identity">
             <p id="profile-sidebar-name" class="text-base font-semibold text-neutral-900">Загрузка...</p>
-            <p id="profile-sidebar-username" class="text-sm text-neutral-500">@—</p>
+            <div class="profile-header-meta">
+              <p id="profile-sidebar-username" class="text-sm text-neutral-500">@—</p>
+              <p id="profile-sidebar-plan"
+                class="inline-flex rounded-full border border-neutral-300 px-2.5 py-1 text-xs font-semibold">БАЗОВЫЙ</p>
+            </div>
+            <p id="profile-sidebar-expiry" class="hidden text-xs text-neutral-500">Куплено: —</p>
           </div>
         </div>
-        <div class="mt-4 space-y-2 rounded-xl border border-neutral-200 bg-neutral-50 p-3">
-          <p id="profile-sidebar-plan"
-            class="inline-flex rounded-full border border-neutral-300 px-2.5 py-1 text-xs font-semibold">БАЗОВЫЙ</p>
-          <p id="profile-sidebar-expiry" class="hidden text-xs text-neutral-500">Куплено: —</p>
+        <div class="profile-header-kpis">
+          <article class="profile-header-kpi">
+            <p class="profile-ui-label">Views</p>
+            <p id="profile-header-stat-views" class="profile-kpi-value">0</p>
+          </article>
+          <article class="profile-header-kpi">
+            <p class="profile-ui-label">Cards</p>
+            <p id="profile-header-stat-cards" class="profile-kpi-value">0</p>
+          </article>
+          <article class="profile-header-kpi">
+            <p class="profile-ui-label">CTR</p>
+            <p id="profile-header-stat-ctr" class="profile-kpi-value">0%</p>
+          </article>
+        </div>
+        <div class="profile-header-actions">
           <button id="profile-sidebar-choose-plan" type="button" data-order-link data-order-plan="basic"
             class="interactive-btn hidden min-h-11 rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold text-left">
-            Купить тариф →
+            Купить тариф
+          </button>
+          <button id="profile-logout-btn" type="button"
+            class="interactive-btn min-h-11 rounded-xl border border-red-200 px-3 py-2 text-sm font-semibold text-red-700">
+            Выйти
           </button>
         </div>
-        <nav class="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:mt-5 lg:grid-cols-1">
-          <button type="button" data-tab-target="slugs"
-            class="profile-tab-btn interactive-btn min-h-11 rounded-xl border border-neutral-200 px-3 py-2 text-center text-xs font-medium sm:text-sm lg:text-left">МОИ
-            UNQ</button>
-          <button type="button" data-tab-target="card"
-            class="profile-tab-btn interactive-btn min-h-11 rounded-xl border border-neutral-200 px-3 py-2 text-center text-xs font-medium sm:text-sm lg:text-left">МОЯ
-            ВИЗИТКА</button>
-          <button type="button" data-tab-target="analytics"
-            class="profile-tab-btn interactive-btn min-h-11 rounded-xl border border-neutral-200 px-3 py-2 text-center text-xs font-medium sm:text-sm lg:text-left">АНАЛИТИКА</button>
-          <button type="button" data-tab-target="requests"
-            class="profile-tab-btn interactive-btn min-h-11 rounded-xl border border-neutral-200 px-3 py-2 text-center text-xs font-medium sm:text-sm lg:text-left">ЗАЯВКИ</button>
-          <button type="button" data-tab-target="settings"
-            class="profile-tab-btn interactive-btn min-h-11 rounded-xl border border-neutral-200 px-3 py-2 text-center text-xs font-medium sm:text-sm lg:text-left">НАСТРОЙКИ</button>
-        </nav>
-        <button id="profile-logout-btn" type="button"
-          class="interactive-btn mt-4 min-h-11 w-full rounded-xl border border-red-200 px-3 py-2 text-sm font-semibold text-red-700 lg:mt-5">
-          Выйти
+      </section>
+
+      <nav class="profile-tab-nav">
+        <button type="button" data-tab-target="slugs"
+          class="profile-tab-btn interactive-btn min-h-11 px-1 py-2 text-center text-xs font-medium sm:text-sm">
+          Мои UNQ
         </button>
-      </aside>
+        <button type="button" data-tab-target="card"
+          class="profile-tab-btn interactive-btn min-h-11 px-1 py-2 text-center text-xs font-medium sm:text-sm">
+          Визитка
+        </button>
+        <button type="button" data-tab-target="analytics"
+          class="profile-tab-btn interactive-btn min-h-11 px-1 py-2 text-center text-xs font-medium sm:text-sm">
+          Аналитика
+        </button>
+        <button type="button" data-tab-target="requests"
+          class="profile-tab-btn interactive-btn min-h-11 px-1 py-2 text-center text-xs font-medium sm:text-sm">
+          Заявки
+        </button>
+        <button type="button" data-tab-target="settings"
+          class="profile-tab-btn interactive-btn min-h-11 px-1 py-2 text-center text-xs font-medium sm:text-sm">
+          Настройки
+        </button>
+      </nav>
 
       <section class="min-w-0 space-y-4">
         <div id="profile-upgrade-banner"
@@ -96,6 +121,18 @@
               UNQ</button>
           </div>
           <p id="profile-add-slug-note" class="mt-2 text-xs text-neutral-500"></p>
+          <div class="profile-slugs-overview mt-4">
+            <article class="profile-surface-muted">
+              <p class="profile-ui-label">ПРОСМОТРЫ</p>
+              <p id="profile-slugs-kpi-views" class="profile-kpi-value">0</p>
+              <div id="profile-slugs-mini-bars" class="profile-mini-bars" aria-hidden="true"></div>
+            </article>
+            <article class="profile-surface-muted">
+              <p class="profile-ui-label">УНИКАЛЬНЫЕ</p>
+              <p id="profile-slugs-kpi-unique" class="profile-kpi-value">0</p>
+              <div id="profile-slugs-source-bars" class="profile-source-bars" aria-hidden="true"></div>
+            </article>
+          </div>
           <div id="profile-slugs-list" class="mt-4 flex flex-col gap-2"></div>
         </article>
 
@@ -105,7 +142,7 @@
           <section id="profile-card-empty-state"
             class="hidden mt-5 rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-10 text-center"></section>
           <div id="profile-card-content">
-            <div class="mt-4 grid items-start gap-4 2xl:grid-cols-[minmax(0,1fr)_340px]">
+            <div class="profile-form-grid mt-4 grid items-start gap-4 2xl:grid-cols-[minmax(0,1fr)_340px]">
               <div class="space-y-4">
                 <div>
                   <label
