@@ -1,4 +1,4 @@
-const fs = require("node:fs");
+﻿const fs = require("node:fs");
 const path = require("node:path");
 const express = require("express");
 
@@ -1629,8 +1629,8 @@ router.get(
           res.status(200).render("public/slug-state", {
             title: "Скоро",
             slug,
-            heading: "Скоро появтся",
-            message: "Взтка ля этого UNQ ещ не опублкована.",
+            heading: "Скоро появится",
+            message: "Визитка для этого UNQ пока не опубликована.",
             ctaLabel: "",
             ctaHref: "",
             noindex: true,
@@ -1665,8 +1665,8 @@ router.get(
           res.status(200).render("public/slug-state", {
             title: "Скоро",
             slug,
-            heading: "Скоро появтся",
-            message: "Взтка ля этого UNQ ещ не опублкована.",
+            heading: "Скоро появится",
+            message: "Визитка для этого UNQ пока не опубликована.",
             ctaLabel: "",
             ctaHref: "",
             noindex: true,
@@ -1752,3 +1752,4 @@ router.get(
 module.exports = {
   publicPagesRouter: router,
 };
+
