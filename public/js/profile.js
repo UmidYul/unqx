@@ -1107,7 +1107,7 @@ Email: ${userEmail}
       <select data-bf="type" class="min-w-0 w-full rounded-lg border border-neutral-200 px-2.5 py-2 text-sm">${options}</select>
       <input data-bf="label" value="${esc(button.label || "")}" class="min-w-0 w-full rounded-lg border border-neutral-200 px-2.5 py-2 text-sm">
       <input data-bf="href" value="${esc(url)}" class="min-w-0 w-full rounded-lg border border-neutral-200 px-2.5 py-2 text-sm">
-      <button data-a="rm-btn" data-i="${index}" class="rounded-lg border border-red-200 px-3 py-2 text-xs font-semibold text-red-700">Удалить</button>
+      <button data-a="rm-btn" data-i="${index}" class="rounded-lg border border-red-200 px-3 py-2 text-xs font-semibold text-red-700" aria-label="Удалить">×</button>
     </div>`;
     };
 

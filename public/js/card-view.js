@@ -958,7 +958,7 @@
         ? card.buttons
           .map((button, index) => {
             const buttonKind = classifyButton(button);
-            const toneClass = index === 0 && buttonKind !== "telegram" ? "is-primary" : "is-secondary";
+            const toneClass = "is-secondary";
             if (button.type === "card") {
               const cardDigits = parseCardDigits(String(button.url || "").replace(/^card:/i, ""));
               if (!cardDigits) {
