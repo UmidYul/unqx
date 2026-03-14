@@ -213,6 +213,22 @@
   gap: 1rem;
 }
 
+.profile-dashboard .profile-settings-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.profile-dashboard .profile-settings-item.is-full {
+  grid-column: 1 / -1;
+}
+
+.profile-dashboard .profile-settings-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
 .profile-dashboard article[data-tab-panel="settings"] > .mt-8 {
   margin-top: 1rem !important;
   border-color: #e0e0e0 !important;
@@ -310,7 +326,8 @@
   .profile-dashboard .profile-slugs-overview,
   .profile-dashboard .profile-form-grid,
   .profile-dashboard article[data-tab-panel="analytics"] .grid.gap-4.sm\:grid-cols-3,
-  .profile-dashboard article[data-tab-panel="settings"] > .mt-4 {
+  .profile-dashboard article[data-tab-panel="settings"] > .mt-4,
+  .profile-dashboard .profile-settings-grid {
     grid-template-columns: 1fr;
   }
 
