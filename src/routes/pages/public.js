@@ -687,7 +687,7 @@ router.get(
         "pending_expiry_hours",
       ]),
       (async () => {
-        const board = await buildLeaderboard("week");
+        const board = await buildLeaderboard("day");
         return (Array.isArray(board.items) ? board.items : []).slice(0, 3).map((item) => ({
           primarySlug: String(item.slug || "").toUpperCase(),
           slugs: Array.isArray(item.slugs) ? item.slugs : [],
@@ -988,9 +988,16 @@ router.get(
         });
       })(),
     ]);
+    const periodTitleMap = {
+      day: "Топ визиток дня",
+      week: "Топ визиток недели",
+      month: "Топ визиток месяца",
+      all: "Топ визиток за всё время",
+    };
+    const pageTitle = `${periodTitleMap[period] || "Топ визиток"} | UNQX`;
 
     res.render("public/leaderboard", {
-      title: "Топ визиток недели | UNQX",
+      title: pageTitle,
       description: "UNQX personal dashboard: card settings, UNQ, analytics, requests and profile settings.",
       image: defaultSocialImage,
       period: board.period,

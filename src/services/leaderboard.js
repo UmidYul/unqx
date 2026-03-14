@@ -6,10 +6,10 @@ const { env } = require("../config/env");
 const { getFeatureSetting } = require("./feature-settings");
 
 function normalizePeriod(period) {
-  if (period === "week" || period === "month" || period === "all") {
+  if (period === "day" || period === "week" || period === "month" || period === "all") {
     return period;
   }
-  return "all";
+  return "day";
 }
 
 function getPeriodRange(period, timezone = env.TIMEZONE) {
@@ -41,6 +41,18 @@ function getPeriodRange(period, timezone = env.TIMEZONE) {
   }
 
   const dayStart = startOfDay(zonedNow);
+  if (normalized === "day") {
+    const next = addDays(dayStart, 1);
+    const prevStart = subDays(dayStart, 1);
+    return {
+      period: normalized,
+      startUtc: fromZonedTime(dayStart, timezone),
+      endUtc: fromZonedTime(next, timezone),
+      previousStartUtc: fromZonedTime(prevStart, timezone),
+      previousEndUtc: fromZonedTime(dayStart, timezone),
+    };
+  }
+
   const weekStart = subDays(dayStart, 6);
   const next = addDays(dayStart, 1);
   const prevStart = subDays(weekStart, 7);
@@ -53,7 +65,7 @@ function getPeriodRange(period, timezone = env.TIMEZONE) {
   };
 }
 
-async function buildLeaderboard(period = "week") {
+async function buildLeaderboard(period = "day") {
   const settings = await getFeatureSetting("leaderboard");
   const range = getPeriodRange(period);
   const groupedViews = prisma.analyticsView && typeof prisma.analyticsView.groupBy === "function"
@@ -219,7 +231,7 @@ async function buildLeaderboard(period = "week") {
   };
 }
 
-async function getUserLeaderboardSummary({ userId, telegramId, period = "week" }) {
+async function getUserLeaderboardSummary({ userId, telegramId, period = "day" }) {
   const targetId = userId || telegramId;
   if (!targetId) return null;
   const board = await buildLeaderboard(period);
