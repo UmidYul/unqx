@@ -67,7 +67,7 @@ router.get(
     const onlineSince = new Date(now.getTime() - ONLINE_WINDOW_SECONDS * 1000);
 
     const [activeCardsTotal, todayCreated, todayActivated, todayTotal, onlineNow] = await Promise.all([
-      prisma.slug.count({ where: { status: "active" } }),
+      prisma.slug.count({ where: { status: { not: "free" } } }),
       prisma.slug.count({ where: { createdAt: { gte: todayStart } } }),
       prisma.slug.count({ where: { activatedAt: { gte: todayStart } } }),
       prisma.slug.count({
