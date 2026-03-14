@@ -968,10 +968,10 @@
               const rawLabel = String(button.label || "").trim();
               const labelLower = rawLabel.toLowerCase();
               const useDefaultLabel = !rawLabel || labelLower === "карта" || labelLower === "card";
-              const localizedBrand = brand === "Humo" ? "Хумо" : brand;
+              const brandUpper = brand ? String(brand).toUpperCase() : "";
               const buttonLabel = useDefaultLabel
                 ? brand && brand !== "Карта"
-                  ? `Карта ${localizedBrand}`
+                  ? `Карта (${brandUpper})`
                   : "Карта"
                 : rawLabel;
               return `<button type="button" data-track-action data-button-type="card" data-copy-card="${esc(cardDigits)}" class="public-card-button unq-ref-action-btn ${toneClass}">${iconSvg("card")}<span>${esc(buttonLabel)}</span></button>`;
