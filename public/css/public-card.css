@@ -1158,6 +1158,10 @@ body[data-card-theme] #card-view-root>[data-card-view] {
   text-transform: uppercase;
 }
 
+.profile-dashboard .unq-ref-action-btn {
+  border-radius: 9999px;
+}
+
 .unq-ref-action-btn>* {
   position: relative;
   z-index: 2;
