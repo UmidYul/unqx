@@ -966,12 +966,14 @@
               }
               const brand = detectCardBrand(cardDigits);
               const rawLabel = String(button.label || "").trim();
+              const labelLower = rawLabel.toLowerCase();
+              const useDefaultLabel = !rawLabel || labelLower === "карта" || labelLower === "card";
               const localizedBrand = brand === "Humo" ? "Хумо" : brand;
-              const buttonLabel = rawLabel
-                ? rawLabel
-                : brand && brand !== "Карта"
+              const buttonLabel = useDefaultLabel
+                ? brand && brand !== "Карта"
                   ? `Карта ${localizedBrand}`
-                  : "Карта";
+                  : "Карта"
+                : rawLabel;
               return `<button type="button" data-track-action data-button-type="card" data-copy-card="${esc(cardDigits)}" class="public-card-button unq-ref-action-btn ${toneClass}">${iconSvg("card")}<span>${esc(buttonLabel)}</span></button>`;
             }
             return `<a href="${esc(button.url)}" target="_blank" rel="noopener noreferrer" data-track-action data-button-type="${esc(button.type || "other")}" class="public-card-button unq-ref-action-btn ${toneClass}">${iconSvg(buttonKind)}<span>${esc(button.label)}</span></a>`;
