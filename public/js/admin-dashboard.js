@@ -787,7 +787,7 @@
             menuItem({ label: "Р РµРґР°РєС‚РёСЂРѕРІР°С‚СЊ РІРёР·РёС‚РєСѓ", icon: "pen", attrs: `data-act="open-url" data-url="/admin/users/${encodeURIComponent(String(x.telegramId || ""))}/card"` }),
             menuItem({ label: "РћС‚РєСЂС‹С‚СЊ РїСЂРѕС„РёР»СЊ", icon: "external", attrs: profileLink ? `data-act="open-url" data-url="${profileLink}"` : 'disabled="disabled"' }),
             menuItem({ label: "РќР°РєСЂСѓС‚РёС‚СЊ РїСЂРѕСЃРјРѕС‚СЂС‹", icon: "eye", attrs: `data-act="uvb" data-id="${X(x.telegramId)}" data-name="${X(x.name)}" data-slugs="${X(userSlugsCsv)}"` }),
-            menuItem({ label: "Уменьшить просмотры", icon: "xCircle", attrs: `data-act="uvd" data-id="${X(x.telegramId)}" data-name="${X(x.name)}" data-slugs="${X(userSlugsCsv)}"`, danger: true }),
+            menuItem({ label: "РЈРјРµРЅСЊС€РёС‚СЊ РїСЂРѕСЃРјРѕС‚СЂС‹", icon: "xCircle", attrs: `data-act="uvd" data-id="${X(x.telegramId)}" data-name="${X(x.name)}" data-slugs="${X(userSlugsCsv)}"`, danger: true }),
             menuSeparator(),
             menuItem({ label: x.status === "blocked" ? "Р Р°Р·Р±Р»РѕРєРёСЂРѕРІР°С‚СЊ" : "Р—Р°Р±Р»РѕРєРёСЂРѕРІР°С‚СЊ", icon: "shieldOff", attrs: `data-act="ub" data-id="${X(x.telegramId)}" data-status="${X(x.status)}"`, danger: x.status !== "blocked" }),
             menuItem({ label: "РЈРґР°Р»РёС‚СЊ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РїРѕР»РЅРѕСЃС‚СЊСЋ", icon: "trash", attrs: `data-act="ud" data-id="${X(x.telegramId)}" data-name="${X(x.name)}"`, danger: true }),
@@ -1760,34 +1760,34 @@
     }
     if (a === "uvd") {
       const userId = n.getAttribute("data-id");
-      const userName = n.getAttribute("data-name") || "пользователя";
+      const userName = n.getAttribute("data-name") || "РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ";
       if (!userId) return;
       const userSlugs = String(n.getAttribute("data-slugs") || "")
         .split(",")
         .map((slug) => normalizeShortSlug(slug))
         .filter((slug) => isShortSlug(slug));
       if (!userSlugs.length) {
-        await showAlert("У пользователя нет slug для списания просмотров.");
+        await showAlert("РЈ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РЅРµС‚ slug РґР»СЏ СѓРјРµРЅСЊС€РµРЅРёСЏ РїСЂРѕСЃРјРѕС‚СЂРѕРІ.");
         return;
       }
-      const enteredCount = await showPrompt(`Сколько просмотров убрать для ${userName}? (1-5000)`, "100");
+      const enteredCount = await showPrompt(`РЎРєРѕР»СЊРєРѕ РїСЂРѕСЃРјРѕС‚СЂРѕРІ СѓР±СЂР°С‚СЊ РґР»СЏ ${userName}? (1-5000)`, "100");
       if (enteredCount === null) return;
       const count = Number.parseInt(String(enteredCount || "").trim(), 10);
       if (!Number.isFinite(count) || count < 1 || count > 5000) {
-        await showAlert("Количество должно быть числом от 1 до 5000.");
+        await showAlert("РљРѕР»РёС‡РµСЃС‚РІРѕ РґРѕР»Р¶РЅРѕ Р±С‹С‚СЊ С‡РёСЃР»РѕРј РѕС‚ 1 РґРѕ 5000.");
         return;
       }
       let targetSlug = userSlugs[0];
       if (userSlugs.length > 1) {
-        const enteredSlug = await showPrompt(`С какого slug списать просмотры? (${userSlugs.join(", ")})`, targetSlug);
+        const enteredSlug = await showPrompt(`РЎ РєР°РєРѕРіРѕ slug СѓРјРµРЅСЊС€РёС‚СЊ РїСЂРѕСЃРјРѕС‚СЂС‹? (${userSlugs.join(", ")})`, targetSlug);
         if (enteredSlug === null) return;
         targetSlug = normalizeShortSlug(enteredSlug);
         if (!isShortSlug(targetSlug)) {
-          await showAlert("Slug должен быть в формате AAA000.");
+          await showAlert("Slug РґРѕР»Р¶РµРЅ Р±С‹С‚СЊ РІ С„РѕСЂРјР°С‚Рµ AAA000.");
           return;
         }
       }
-      const ok = await showConfirm(`Уменьшить на ${count} просмотров для ${targetSlug} пользователя ${userName}?`);
+      const ok = await showConfirm(`РЈРјРµРЅСЊС€РёС‚СЊ РЅР° ${count} РїСЂРѕСЃРјРѕС‚СЂРѕРІ РґР»СЏ ${targetSlug} РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ ${userName}?`);
       if (!ok) return;
       const r = await fetch(`/api/admin/users/${encodeURIComponent(userId)}/views/reduce`, {
         method: "POST",
@@ -1799,7 +1799,7 @@
         return;
       }
       const payload = await r.json().catch(() => ({}));
-      await showAlert(`Списано просмотров: ${Number(payload?.removedViews || 0)} (slug: ${payload?.slug || targetSlug}).`);
+      await showAlert(`РЈРјРµРЅСЊС€РµРЅРѕ РїСЂРѕСЃРјРѕС‚СЂРѕРІ: ${Number(payload?.removedViews || 0)} (slug: ${payload?.slug || targetSlug}).`);
       void loadUsers();
       closeAllRowMenus();
       return;
