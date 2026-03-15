@@ -7,7 +7,8 @@
 <head>
   <%- include('../partials/head', { title: pageTitle, styles: ['/css/admin.css'] }) %>
 </head>
-<body class="antialiased" data-admin-layout="1" data-page="admin-user-card" data-user-id="<%= pageUserId %>">
+<body class="antialiased" data-admin-layout="1" data-page="admin-user-card" data-user-id="<%= pageUserId %>"
+  data-admin-role="<%= adminSession?.role || 'admin' %>">
   <%- include('../partials/admin-layout-start', { activeTab: 'users' }) %>
   <div class="mx-auto w-full max-w-6xl space-y-4">
     <div class="border-b border-neutral-200 pb-4">
@@ -16,6 +17,45 @@
     </div>
 
     <div id="user-card-error" class="hidden rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"></div>
+
+    <form id="user-profile-form" class="space-y-4" novalidate>
+      <section class="rounded-2xl border border-neutral-200 bg-white p-4">
+        <h2 class="text-lg font-bold">Профиль</h2>
+        <div class="mt-4 grid gap-3 md:grid-cols-2">
+          <label class="text-sm font-medium text-neutral-700">
+            Имя
+            <input id="user-profile-first-name" type="text" maxlength="120"
+              class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2" required />
+          </label>
+          <label class="text-sm font-medium text-neutral-700">
+            Имя отображения
+            <input id="user-profile-display-name" type="text" maxlength="120"
+              class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2" />
+          </label>
+          <label class="text-sm font-medium text-neutral-700">
+            Город
+            <input id="user-profile-city" type="text" maxlength="120"
+              class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2" />
+          </label>
+          <label class="text-sm font-medium text-neutral-700">
+            Telegram
+            <input id="user-profile-telegram" type="text" maxlength="120" placeholder="@username"
+              class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2" />
+          </label>
+          <label class="text-sm font-medium text-neutral-700 md:col-span-2">
+            Email для восстановления
+            <input id="user-profile-email" type="email" maxlength="190"
+              class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2" />
+          </label>
+        </div>
+        <div class="mt-4 flex flex-wrap items-center gap-3">
+          <button id="user-profile-save" type="submit"
+            class="rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-neutral-800">Сохранить
+            профиль</button>
+          <p id="user-profile-status" class="text-xs text-neutral-500"></p>
+        </div>
+      </section>
+    </form>
 
     <form id="user-card-form" class="space-y-5" novalidate>
       <section class="rounded-2xl border border-neutral-200 bg-white p-4">

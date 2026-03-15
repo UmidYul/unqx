@@ -24,6 +24,7 @@ const {
 } = require("../../services/email");
 const { linkReferralOnRegistration } = require("../../services/referrals");
 const { resolveUzbekistanCity } = require("../../constants/uzbekistan-cities");
+const { normalizeLogin, isValidLogin } = require("../../utils/login");
 
 const router = express.Router();
 const OTP_LENGTH = 6;
@@ -43,6 +44,7 @@ const USER_AUTH_SELECT = {
   resetPasswordToken: true,
   resetPasswordExpiresAt: true,
   email: true,
+  login: true,
   emailVerified: true,
   firstName: true,
   lastName: true,
@@ -177,6 +179,7 @@ function userToSessionPayload(user) {
   return {
     userId: user.id,
     email: user.email || null,
+    login: user.login || null,
     emailVerified: Boolean(user.emailVerified),
     firstName: user.firstName,
     lastName: user.lastName || null,
@@ -195,6 +198,7 @@ function userToClientPayload(user) {
   return {
     id: user.id,
     email: user.email || null,
+    login: user.login || null,
     emailVerified: Boolean(user.emailVerified),
     firstName: user.firstName,
     lastName: user.lastName || null,
@@ -238,21 +242,37 @@ router.post(
     const firstName = String(req.body?.firstName || "").trim().slice(0, 120);
     const city = normalizeCity(req.body?.city);
     const email = normalizeEmail(req.body?.email);
+    const login = normalizeLogin(req.body?.login);
     const password = String(req.body?.password || "");
     const confirmPassword = String(req.body?.confirmPassword || "");
 
-    if (!firstName || !city || !email || !password || password.length < 8 || password !== confirmPassword) {
+    if (!firstName || !city || !login || !isValidLogin(login) || !password || password.length < 8 || password !== confirmPassword) {
       res.status(400).json({ error: "Validation failed", code: "VALIDATION_ERROR" });
       return;
     }
 
     const existing = await prisma.user.findFirst({
-      where: { email },
-      select: { id: true, emailVerified: true, refCode: true },
+      where: { login },
+      select: { id: true, emailVerified: true, refCode: true, email: true },
     });
-    if (existing?.emailVerified) {
-      res.status(409).json({ error: "Этот email уже зарегистрирован. Войти →", code: "EMAIL_TAKEN" });
-      return;
+    if (existing) {
+      const hasEmail = typeof existing.email === "string" && existing.email.length > 0;
+      const emailMatches = hasEmail && email && normalizeEmail(existing.email) === email;
+      if (existing.emailVerified || !hasEmail || !emailMatches) {
+        res.status(409).json({ error: "Этот логин уже занят. Войти →", code: "LOGIN_TAKEN" });
+        return;
+      }
+    }
+
+    if (email) {
+      const existingEmail = await prisma.user.findFirst({
+        where: { email, ...(existing?.id ? { id: { not: existing.id } } : {}) },
+        select: { id: true },
+      });
+      if (existingEmail) {
+        res.status(409).json({ error: "Этот email уже зарегистрирован. Войти →", code: "EMAIL_TAKEN" });
+        return;
+      }
     }
 
     const passwordHash = await bcrypt.hash(password, PASSWORD_ROUNDS);
@@ -263,6 +283,7 @@ router.post(
         data: {
           firstName,
           city,
+          login,
           passwordHash,
           emailVerified: false,
           plan: "none",
@@ -281,7 +302,8 @@ router.post(
         data: {
           firstName,
           city,
-          email,
+          email: email || null,
+          login,
           passwordHash,
           emailVerified: false,
           plan: "none",
@@ -292,18 +314,20 @@ router.post(
       });
     }
 
-    const { code } = await setVerificationOtp(user.id);
+    const codePayload = email ? await setVerificationOtp(user.id) : null;
     if (req.session?.pendingRefCode) {
       await linkReferralOnRegistration({
         referredUserId: user.id,
         refCode: req.session.pendingRefCode,
       });
     }
-    await sendEmailVerificationOtp({ email: user.email, firstName: user.firstName, code });
+    if (email && codePayload) {
+      await sendEmailVerificationOtp({ email: user.email, firstName: user.firstName, code: codePayload.code });
+    }
 
     res.json({
       ok: true,
-      redirectTo: "/verify-email",
+      redirectTo: email ? "/verify-email" : "/profile",
       email: user.email,
     });
   }),
@@ -406,13 +430,17 @@ router.post(
   requireSameOrigin,
   requireCsrfToken,
   asyncHandler(async (req, res) => {
-    const email = normalizeEmail(req.body?.email);
+    const login = normalizeLogin(req.body?.login);
     const password = String(req.body?.password || "");
     const rememberMe = Boolean(req.body?.rememberMe);
 
-    const genericError = { error: "Неверный email или пароль", code: "INVALID_CREDENTIALS" };
+    const genericError = { error: "Неверный логин или пароль", code: "INVALID_CREDENTIALS" };
+    if (!login || !isValidLogin(login)) {
+      res.status(401).json(genericError);
+      return;
+    }
     const user = await prisma.user.findFirst({
-      where: { email },
+      where: { login },
       select: {
         ...USER_AUTH_SELECT,
         passwordHash: true,
@@ -498,7 +526,7 @@ router.post(
       return;
     }
 
-    if (!user.emailVerified) {
+    if (user.email && !user.emailVerified) {
       res.status(403).json({ error: "Сначала подтверди email.", code: "UNVERIFIED", email: user.email });
       return;
     }

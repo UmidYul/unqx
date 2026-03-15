@@ -46,10 +46,10 @@
         <span>UNQX</span>
       </a>
       <h1 class="mt-4 text-2xl font-bold text-neutral-900">Войти</h1>
-      <p class="mt-1 text-sm text-neutral-500">Вход в UNQX по email и паролю</p>
+      <p class="mt-1 text-sm text-neutral-500">Вход в UNQX по логину и паролю</p>
 
-      <label class="mt-4 block text-sm font-medium text-neutral-700">Email
-        <input id="email" type="email" autocomplete="email" placeholder="you@example.com"
+      <label class="mt-4 block text-sm font-medium text-neutral-700">Логин
+        <input id="login" type="text" autocomplete="username" placeholder="your-login"
           class="mt-1 w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm" required />
       </label>
 
@@ -107,7 +107,7 @@
       if (payload && typeof payload.code === "string" && loginErrorByCode[payload.code]) {
         return loginErrorByCode[payload.code];
       }
-      return payload?.error || "Неверный email или пароль";
+      return payload?.error || "Неверный логин или пароль";
     }
 
     function setPasswordVisibility(visible) {
@@ -130,7 +130,7 @@
     form?.addEventListener("submit", async (event) => {
       event.preventDefault();
       errorNode.classList.add("hidden");
-      const email = document.getElementById("email").value;
+      const login = document.getElementById("login").value;
       const password = document.getElementById("password").value;
       const rememberMe = document.getElementById("remember-me").checked;
       const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "";
@@ -140,12 +140,12 @@
           "Content-Type": "application/json",
           "x-csrf-token": csrf,
         },
-        body: JSON.stringify({ email, password, rememberMe }),
+        body: JSON.stringify({ login, password, rememberMe }),
       });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) {
         if (payload?.code === "ACCOUNT_DEACTIVATED") {
-          const reactivationEmail = String(payload?.email || email || "").trim();
+          const reactivationEmail = String(payload?.email || "").trim();
           window.location.href = `/reactivate-account?email=${encodeURIComponent(reactivationEmail)}`;
           return;
         }

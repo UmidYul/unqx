@@ -53,6 +53,11 @@ enum UserStatus {
   deleted
 }
 
+enum StaffRole {
+  admin
+  manager
+}
+
 enum SlugStatus {
   free
   pending
@@ -213,6 +218,7 @@ model User {
   telegramChatId         String?               @unique @map("telegram_chat_id") @db.VarChar(40)
   telegramUsername       String?               @map("telegram_username") @db.VarChar(120)
   email                  String?               @unique @db.VarChar(190)
+  login                  String?               @unique @db.VarChar(190)
   pendingEmail           String?               @map("pending_email") @db.VarChar(190)
   passwordHash           String?               @map("password_hash")
   emailVerified          Boolean               @default(false) @map("email_verified")
@@ -273,6 +279,20 @@ model User {
   @@index([status])
   @@index([status, reactivationDeadlineAt])
   @@map("users")
+}
+
+model StaffUser {
+  id          String    @id @default(uuid())
+  login       String    @unique @db.VarChar(190)
+  passwordHash String   @map("password_hash")
+  role        StaffRole @default(manager)
+  isActive    Boolean   @default(true) @map("is_active")
+  name        String?   @db.VarChar(120)
+  lastLoginAt DateTime? @map("last_login_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  @@map("staff_users")
 }
 
 model Slug {

@@ -130,6 +130,7 @@ async function finalizeDeletedAccount(user) {
         deletionReminder7SentAt: null,
         deletionReminder1SentAt: null,
         email: null,
+        login: null,
         pendingEmail: null,
         passwordHash: null,
         otpCode: null,

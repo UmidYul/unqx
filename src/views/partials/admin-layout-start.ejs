@@ -1,6 +1,9 @@
 <%
   const layoutActiveTab = typeof activeTab === "string" && activeTab ? activeTab : "analytics";
   const layoutCurrentPath = typeof currentPath === "string" && currentPath ? currentPath : "";
+  const adminRole = adminSession && adminSession.role ? adminSession.role : "admin";
+  const adminName = adminSession && adminSession.name ? adminSession.name : (adminRole === "manager" ? "Manager" : "Admin");
+  const allowedTabs = adminRole === "manager" ? new Set(["users"]) : null;
   const isDashboardRoute = layoutCurrentPath === "/admin/dashboard";
 
   const dashboardLink = (tab) => `/admin/dashboard?tab=${tab}`;
@@ -33,10 +36,20 @@
         { id: "verification", label: "Верификация", href: dashboardLink("verification"), icon: "userCheck" },
         { id: "settings", label: "Настройки", href: dashboardLink("settings"), icon: "settings" },
         { id: "testimonials", label: "Отзывы", href: dashboardLink("testimonials"), icon: "testimonials" },
+        { id: "managers", label: "Менеджеры", href: dashboardLink("managers"), icon: "users" },
         { id: "logs", label: "Логи", href: dashboardLink("logs"), icon: "logs" },
       ],
     },
   ];
+
+  const visibleGroups = allowedTabs
+    ? sectionGroups
+      .map((group) => ({
+        ...group,
+        items: group.items.filter((item) => allowedTabs.has(item.id)),
+      }))
+      .filter((group) => group.items.length > 0)
+    : sectionGroups;
 
   function itemIsActive(item) {
     if (isDashboardRoute) {
@@ -66,7 +79,7 @@
     </div>
 
     <nav class="admin-sidebar-scroll">
-      <% sectionGroups.forEach((group) => { %>
+      <% visibleGroups.forEach((group) => { %>
       <section class="admin-sidebar-group">
         <h2 class="admin-sidebar-label"><%= group.label %></h2>
         <ul class="admin-sidebar-list">
@@ -124,7 +137,8 @@
     <div class="admin-sidebar-footer">
       <div class="admin-sidebar-user">
         <span class="admin-sidebar-avatar" aria-hidden="true">A</span>
-        <span class="admin-sidebar-user-name">Admin</span>
+        <span class="admin-sidebar-user-name"><%= adminName %></span>
+        <span class="text-xs text-neutral-500"><%= adminRole === "manager" ? "Менеджер" : "Админ" %></span>
       </div>
       <form method="post" action="/admin/logout">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>" />

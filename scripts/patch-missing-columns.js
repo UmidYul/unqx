@@ -124,6 +124,7 @@ const EXPECTED_COLUMNS = {
     first_name: "VARCHAR(120)",
     last_name: "VARCHAR(120)",
     username: "VARCHAR(120)",
+    login: "VARCHAR(190)",
     photo_url: "TEXT",
     display_name: "VARCHAR(120)",
     plan: "userplan NOT NULL DEFAULT 'none'",

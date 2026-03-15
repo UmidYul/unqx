@@ -4,15 +4,17 @@ const multer = require("multer");
 const { addDays, format, startOfDay, subDays } = require("date-fns");
 const { fromZonedTime, toZonedTime } = require("date-fns-tz");
 const { Prisma } = require("@prisma/client");
+const bcrypt = require("bcryptjs");
 
 const { prisma } = require("../../db/prisma");
 const { env } = require("../../config/env");
-const { requireAdminApi } = require("../../middleware/auth");
+const { requireStaffApi } = require("../../middleware/auth");
 const { asyncHandler } = require("../../middleware/async");
 const { adminApiRateLimit } = require("../../middleware/rate-limit");
 const { requireSameOrigin } = require("../../middleware/same-origin");
 const { requireCsrfToken } = require("../../middleware/csrf");
 const { parsePositiveInt } = require("../../utils/http");
+const { normalizeLogin, isValidLogin } = require("../../utils/login");
 const { generateNextSlug } = require("../../services/cards");
 const { getGlobalStats } = require("../../services/stats");
 const { calculateSlugPrice, getSlugPricingConfig } = require("../../services/slug-pricing");
@@ -36,6 +38,7 @@ const {
   normalizeColor,
   normalizeTags,
   normalizeButtons,
+  normalizeDisplayName,
 } = require("../../services/profile");
 const {
   isSupportedAvatarBuffer,
@@ -91,6 +94,7 @@ const BROADCAST_JOB_LIMIT = 50;
 const BROADCAST_JOB_TTL_MS = 1000 * 60 * 30;
 const MAX_ADMIN_BOOST_VIEWS = 5000;
 const MAX_ADMIN_BOOST_PERIOD_DAYS = 90;
+const PASSWORD_ROUNDS = 12;
 const broadcastJobs = new Map();
 const USER_COLUMN_MAP = {
   id: "id",
@@ -98,6 +102,8 @@ const USER_COLUMN_MAP = {
   displayName: "display_name",
   city: "city",
   username: "username",
+  telegramUsername: "telegram_username",
+  login: "login",
   isVerified: "is_verified",
   verifiedCompany: "verified_company",
   plan: "plan",
@@ -121,6 +127,38 @@ function normalizeAnalyticsPattern(value) {
     .toUpperCase()
     .replace(/[^A-Z0-9_*\-]/g, "")
     .slice(0, 32);
+}
+
+function normalizeEmail(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function normalizeCityOptional(value) {
+  const raw = String(value || "").trim().slice(0, 120);
+  return raw || null;
+}
+
+function generateRefCode() {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  let out = "";
+  for (let i = 0; i < 8; i += 1) {
+    out += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return out;
+}
+
+async function generateUniqueRefCode() {
+  for (let i = 0; i < 20; i += 1) {
+    const candidate = generateRefCode();
+    const existing = await prisma.user.findFirst({
+      where: { refCode: candidate },
+      select: { id: true },
+    });
+    if (!existing) {
+      return candidate;
+    }
+  }
+  return `${generateRefCode()}${generateRefCode().slice(0, 2)}`;
 }
 
 async function getUserColumns() {
@@ -975,9 +1013,35 @@ async function safeExecuteRaw(sql, ...params) {
 }
 
 router.use(adminApiRateLimit);
-router.use(requireAdminApi);
+router.use(requireStaffApi);
 router.use(requireSameOrigin);
 router.use(requireCsrfToken);
+
+const MANAGER_ALLOWED_ROUTES = [
+  { method: "GET", re: /^\/users\/?$/ },
+  { method: "POST", re: /^\/users\/?$/ },
+  { method: "GET", re: /^\/users\/[^/]+\/card\/?$/ },
+  { method: "PUT", re: /^\/users\/[^/]+\/card\/?$/ },
+  { method: "POST", re: /^\/users\/[^/]+\/card\/avatar\/?$/ },
+  { method: "DELETE", re: /^\/users\/[^/]+\/card\/avatar\/?$/ },
+  { method: "PATCH", re: /^\/users\/[^/]+\/profile\/?$/ },
+];
+
+router.use((req, res, next) => {
+  const role = String(req.session?.admin?.role || "admin");
+  if (role !== "manager") {
+    next();
+    return;
+  }
+  const method = String(req.method || "GET").toUpperCase();
+  const path = String(req.path || "");
+  const allowed = MANAGER_ALLOWED_ROUTES.some((rule) => rule.method === method && rule.re.test(path));
+  if (!allowed) {
+    res.status(403).json({ error: "Forbidden", code: "MANAGER_FORBIDDEN" });
+    return;
+  }
+  next();
+});
 
 router.get(
   "/navigation-summary",
@@ -1037,6 +1101,156 @@ router.get(
       },
       events: mergedEvents,
     });
+  }),
+);
+
+router.get(
+  "/staff",
+  asyncHandler(async (_req, res) => {
+    const items = await prisma.staffUser.findMany({
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        login: true,
+        role: true,
+        name: true,
+        isActive: true,
+        lastLoginAt: true,
+        createdAt: true,
+      },
+    });
+    res.json({ items });
+  }),
+);
+
+router.post(
+  "/staff",
+  asyncHandler(async (req, res) => {
+    const name = String(req.body?.name || "").trim().slice(0, 120);
+    const login = normalizeLogin(req.body?.login);
+    const password = String(req.body?.password || "");
+
+    if (!name || !login || !isValidLogin(login) || !password || password.length < 8) {
+      res.status(400).json({ error: "Invalid payload", code: "VALIDATION_ERROR" });
+      return;
+    }
+
+    const adminLogin = normalizeLogin(env.ADMIN_EMAIL || env.ADMIN_LOGIN || "");
+    if (adminLogin && adminLogin === login) {
+      res.status(409).json({ error: "Login already reserved", code: "LOGIN_RESERVED" });
+      return;
+    }
+
+    const existing = await prisma.staffUser.findFirst({
+      where: { login },
+      select: { id: true },
+    });
+    if (existing) {
+      res.status(409).json({ error: "Login already taken", code: "LOGIN_TAKEN" });
+      return;
+    }
+
+    const passwordHash = await bcrypt.hash(password, PASSWORD_ROUNDS);
+    const created = await prisma.staffUser.create({
+      data: {
+        login,
+        passwordHash,
+        role: "manager",
+        isActive: true,
+        name,
+      },
+      select: {
+        id: true,
+        login: true,
+        role: true,
+        name: true,
+        isActive: true,
+        createdAt: true,
+        lastLoginAt: true,
+      },
+    });
+    res.json({ ok: true, staff: created });
+  }),
+);
+
+router.patch(
+  "/staff/:id",
+  asyncHandler(async (req, res) => {
+    const staffId = String(req.params.id || "").trim();
+    if (!staffId) {
+      res.status(400).json({ error: "Invalid staff id" });
+      return;
+    }
+
+    const isActive = typeof req.body?.isActive === "boolean" ? req.body.isActive : null;
+    const name = typeof req.body?.name === "string" ? req.body.name.trim().slice(0, 120) : null;
+
+    if (isActive === null && name === null) {
+      res.status(400).json({ error: "Nothing to update", code: "NO_CHANGES" });
+      return;
+    }
+
+    try {
+      const updated = await prisma.staffUser.update({
+        where: { id: staffId },
+        data: {
+          ...(isActive !== null ? { isActive } : {}),
+          ...(name !== null ? { name: name || null } : {}),
+        },
+        select: {
+          id: true,
+          login: true,
+          role: true,
+          name: true,
+          isActive: true,
+          createdAt: true,
+          lastLoginAt: true,
+        },
+      });
+      res.json({ ok: true, staff: updated });
+    } catch (error) {
+      if (isMissingModelError(error, "StaffUser")) {
+        res.status(404).json({ error: "Staff not found", code: "STAFF_NOT_FOUND" });
+        return;
+      }
+      if (String(error?.code || "") === "P2025") {
+        res.status(404).json({ error: "Staff not found", code: "STAFF_NOT_FOUND" });
+        return;
+      }
+      throw error;
+    }
+  }),
+);
+
+router.patch(
+  "/staff/:id/password",
+  asyncHandler(async (req, res) => {
+    const staffId = String(req.params.id || "").trim();
+    const password = String(req.body?.password || "");
+    if (!staffId || !password || password.length < 8) {
+      res.status(400).json({ error: "Invalid password", code: "VALIDATION_ERROR" });
+      return;
+    }
+
+    try {
+      const passwordHash = await bcrypt.hash(password, PASSWORD_ROUNDS);
+      await prisma.staffUser.update({
+        where: { id: staffId },
+        data: { passwordHash },
+        select: { id: true },
+      });
+      res.json({ ok: true });
+    } catch (error) {
+      if (isMissingModelError(error, "StaffUser")) {
+        res.status(404).json({ error: "Staff not found", code: "STAFF_NOT_FOUND" });
+        return;
+      }
+      if (String(error?.code || "") === "P2025") {
+        res.status(404).json({ error: "Staff not found", code: "STAFF_NOT_FOUND" });
+        return;
+      }
+      throw error;
+    }
   }),
 );
 
@@ -1532,6 +1746,12 @@ router.get(
       if (hasUserColumn(userColumns, "username")) {
         or.push({ username: { contains: q, mode: "insensitive" } });
       }
+      if (hasUserColumn(userColumns, "telegramUsername")) {
+        or.push({ telegramUsername: { contains: q, mode: "insensitive" } });
+      }
+      if (hasUserColumn(userColumns, "login")) {
+        or.push({ login: { contains: q, mode: "insensitive" } });
+      }
       if (hasUserColumn(userColumns, "displayName")) {
         or.push({ displayName: { contains: q, mode: "insensitive" } });
       }
@@ -1548,6 +1768,8 @@ router.get(
       if (hasUserColumn(userColumns, "displayName")) select.displayName = true;
       if (hasUserColumn(userColumns, "city")) select.city = true;
       if (hasUserColumn(userColumns, "username")) select.username = true;
+      if (hasUserColumn(userColumns, "telegramUsername")) select.telegramUsername = true;
+      if (hasUserColumn(userColumns, "login")) select.login = true;
       if (hasUserColumn(userColumns, "isVerified")) select.isVerified = true;
       if (hasUserColumn(userColumns, "verifiedCompany")) select.verifiedCompany = true;
       if (hasUserColumn(userColumns, "plan")) select.plan = true;
@@ -1646,43 +1868,49 @@ router.get(
     }
     const scoreByUser = new Map(unqScores.map((row) => [row.userId, row]));
 
-    const items = users.map((user) => ({
-      unqScore: scoreByUser.get(user.id)
-        ? {
-          score: scoreByUser.get(user.id).score,
-          percentile: scoreByUser.get(user.id).percentile,
-          calculatedAt: scoreByUser.get(user.id).calculatedAt,
-          breakdown: {
-            views: scoreByUser.get(user.id).scoreViews,
-            slugRarity: scoreByUser.get(user.id).scoreSlugRarity,
-            tenure: scoreByUser.get(user.id).scoreTenure,
-            ctr: scoreByUser.get(user.id).scoreCtr,
-            bracelet: scoreByUser.get(user.id).scoreBracelet,
-            plan: scoreByUser.get(user.id).scorePlan,
-          },
-        }
-        : null,
-      telegramId: user.id,
-      name: user.displayName || user.firstName,
-      city: user.city || "",
-      username: user.username || null,
-      isVerified: Boolean(user.isVerified),
-      verifiedCompany: user.verifiedCompany || "",
-      plan: user.plan,
-      planPurchasedAt: user.planPurchasedAt,
-      planUpgradedAt: user.planUpgradedAt,
-      slugs: (slugsByUser.get(user.id) || []).map((slug) => ({
-        ...slug,
-        hasBracelet: Boolean(braceletByUser.get(user.id)?.has(slug.fullSlug)),
-      })),
-      activeSlugCount: (slugsByUser.get(user.id) || []).filter((slug) =>
-        ["approved", "active", "paused", "private"].includes(slug.status),
-      ).length,
-      hasCard: cardsSet.has(user.id),
-      theme: cardThemeByUser.get(user.id) || "default_dark",
-      status: user.status,
-      createdAt: user.createdAt,
-    }));
+    const items = users.map((user) => {
+      const telegramUsername = user.telegramUsername || null;
+      const username = user.username || null;
+      return {
+        unqScore: scoreByUser.get(user.id)
+          ? {
+            score: scoreByUser.get(user.id).score,
+            percentile: scoreByUser.get(user.id).percentile,
+            calculatedAt: scoreByUser.get(user.id).calculatedAt,
+            breakdown: {
+              views: scoreByUser.get(user.id).scoreViews,
+              slugRarity: scoreByUser.get(user.id).scoreSlugRarity,
+              tenure: scoreByUser.get(user.id).scoreTenure,
+              ctr: scoreByUser.get(user.id).scoreCtr,
+              bracelet: scoreByUser.get(user.id).scoreBracelet,
+              plan: scoreByUser.get(user.id).scorePlan,
+            },
+          }
+          : null,
+        telegramId: user.id,
+        name: user.displayName || user.firstName,
+        city: user.city || "",
+        username,
+        telegramUsername,
+        login: user.login || null,
+        isVerified: Boolean(user.isVerified),
+        verifiedCompany: user.verifiedCompany || "",
+        plan: user.plan,
+        planPurchasedAt: user.planPurchasedAt,
+        planUpgradedAt: user.planUpgradedAt,
+        slugs: (slugsByUser.get(user.id) || []).map((slug) => ({
+          ...slug,
+          hasBracelet: Boolean(braceletByUser.get(user.id)?.has(slug.fullSlug)),
+        })),
+        activeSlugCount: (slugsByUser.get(user.id) || []).filter((slug) =>
+          ["approved", "active", "paused", "private"].includes(slug.status),
+        ).length,
+        hasCard: cardsSet.has(user.id),
+        theme: cardThemeByUser.get(user.id) || "default_dark",
+        status: user.status,
+        createdAt: user.createdAt,
+      };
+    });
 
     if (sort === "score_desc") {
       items.sort((a, b) => (Number(b.unqScore?.score || 0) - Number(a.unqScore?.score || 0)));
@@ -1697,6 +1925,96 @@ router.get(
         totalPages: Math.max(1, Math.ceil(total / pageSize)),
       },
     });
+  }),
+);
+
+router.post(
+  "/users",
+  asyncHandler(async (req, res) => {
+    if (!ensureUsersStorageReady(res)) {
+      return;
+    }
+
+    const firstName = String(req.body?.firstName || req.body?.name || "").trim().slice(0, 120);
+    const login = normalizeLogin(req.body?.login);
+    const password = String(req.body?.password || "");
+    const email = normalizeEmail(req.body?.email);
+    const displayNameRaw = String(req.body?.displayName || "").trim().slice(0, 120);
+    const city = normalizeCityOptional(req.body?.city);
+    const telegramUsername = String(req.body?.telegramUsername || "")
+      .replace(/^@+/, "")
+      .trim()
+      .slice(0, 120) || null;
+
+    if (!firstName || !login || !isValidLogin(login) || !password || password.length < 8) {
+      res.status(400).json({ error: "Validation failed", code: "VALIDATION_ERROR" });
+      return;
+    }
+
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      res.status(400).json({ error: "Invalid email", code: "EMAIL_INVALID" });
+      return;
+    }
+
+    const existingLogin = await prisma.user.findFirst({
+      where: { login },
+      select: { id: true },
+    });
+    if (existingLogin) {
+      res.status(409).json({ error: "Login already taken", code: "LOGIN_TAKEN" });
+      return;
+    }
+
+    if (email) {
+      const existingEmail = await prisma.user.findFirst({
+        where: { email },
+        select: { id: true },
+      });
+      if (existingEmail) {
+        res.status(409).json({ error: "Email already taken", code: "EMAIL_TAKEN" });
+        return;
+      }
+    }
+
+    const passwordHash = await bcrypt.hash(password, PASSWORD_ROUNDS);
+    const refCode = await generateUniqueRefCode();
+    const displayName = normalizeDisplayName(displayNameRaw, firstName);
+    const created = await prisma.user.create({
+      data: {
+        firstName,
+        displayName,
+        city,
+        login,
+        passwordHash,
+        email: email || null,
+        emailVerified: Boolean(email),
+        pendingEmail: null,
+        otpCode: null,
+        otpExpiresAt: null,
+        otpAttempts: 0,
+        resetPasswordToken: null,
+        resetPasswordExpiresAt: null,
+        loginAttempts: 0,
+        lockedUntil: null,
+        plan: "none",
+        status: "active",
+        refCode,
+        telegramUsername,
+      },
+      select: {
+        id: true,
+        login: true,
+        email: true,
+        emailVerified: true,
+        firstName: true,
+        displayName: true,
+        city: true,
+        username: true,
+        telegramUsername: true,
+      },
+    });
+
+    res.json({ ok: true, user: created });
   }),
 );
 
@@ -1716,7 +2034,10 @@ router.get(
         firstName: true,
         displayName: true,
         username: true,
+        telegramUsername: true,
         email: true,
+        login: true,
+        city: true,
         plan: true,
         status: true,
         isVerified: true,
@@ -1728,6 +2049,11 @@ router.get(
       res.status(404).json({ error: "User not found" });
       return;
     }
+
+    const normalizedUser = {
+      ...user,
+      username: user.username || user.telegramUsername || null,
+    };
 
     let card;
     try {
@@ -1742,7 +2068,7 @@ router.get(
 
     const effective = getEffectivePlan(user);
     res.json({
-      user,
+      user: normalizedUser,
       card: parseProfileCardRow(card),
       limits: {
         tags: getTagLimit(effective.plan),
@@ -1750,6 +2076,90 @@ router.get(
       },
       themes: Array.from(PROFILE_THEMES),
     });
+  }),
+);
+
+router.patch(
+  "/users/:userId/profile",
+  asyncHandler(async (req, res) => {
+    if (!ensureUsersStorageReady(res)) {
+      return;
+    }
+    const userId = String(req.params.userId || "").trim();
+    if (!userId) {
+      res.status(400).json({ error: "User id is required" });
+      return;
+    }
+
+    const firstName = String(req.body?.firstName || "").trim().slice(0, 120);
+    if (!firstName) {
+      res.status(400).json({ error: "Name is required", code: "NAME_REQUIRED" });
+      return;
+    }
+
+    const displayNameRaw = String(req.body?.displayName || "").trim().slice(0, 120);
+    const displayName = normalizeDisplayName(displayNameRaw, firstName);
+    const city = normalizeCityOptional(req.body?.city);
+    const telegramUsername = String(req.body?.telegramUsername || "")
+      .replace(/^@+/, "")
+      .trim()
+      .slice(0, 120) || null;
+    const email = normalizeEmail(req.body?.email);
+
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      res.status(400).json({ error: "Invalid email", code: "EMAIL_INVALID" });
+      return;
+    }
+
+    const existingUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, email: true, username: true },
+    });
+    if (!existingUser) {
+      res.status(404).json({ error: "User not found", code: "USER_NOT_FOUND" });
+      return;
+    }
+
+    if (email) {
+      const existingEmail = await prisma.user.findFirst({
+        where: { email, id: { not: userId } },
+        select: { id: true },
+      });
+      if (existingEmail) {
+        res.status(409).json({ error: "Email already taken", code: "EMAIL_TAKEN" });
+        return;
+      }
+    }
+
+    const nextUsername = existingUser.username || telegramUsername || null;
+    const updated = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        firstName,
+        displayName,
+        city,
+        telegramUsername,
+        username: nextUsername,
+        email: email || null,
+        emailVerified: Boolean(email),
+        pendingEmail: null,
+        otpCode: null,
+        otpExpiresAt: null,
+        otpAttempts: 0,
+      },
+      select: {
+        id: true,
+        firstName: true,
+        displayName: true,
+        city: true,
+        email: true,
+        emailVerified: true,
+        username: true,
+        telegramUsername: true,
+      },
+    });
+
+    res.json({ ok: true, user: updated });
   }),
 );
 
@@ -2805,6 +3215,46 @@ router.delete(
     `;
 
     res.json({ ok: true, avatarUrl: "" });
+  }),
+);
+
+router.patch(
+  "/users/:userId/login",
+  asyncHandler(async (req, res) => {
+    if (!ensureUsersStorageReady(res)) {
+      return;
+    }
+    const userId = String(req.params.userId || "").trim();
+    const login = normalizeLogin(req.body?.login);
+    if (!userId || !login || !isValidLogin(login)) {
+      res.status(400).json({ error: "Invalid login", code: "LOGIN_INVALID" });
+      return;
+    }
+
+    const existing = await prisma.user.findFirst({
+      where: { login },
+      select: { id: true },
+    });
+    if (existing && existing.id !== userId) {
+      res.status(409).json({ error: "Login already taken", code: "LOGIN_TAKEN" });
+      return;
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true },
+    });
+    if (!user) {
+      res.status(404).json({ error: "User not found", code: "USER_NOT_FOUND" });
+      return;
+    }
+
+    const updated = await prisma.user.update({
+      where: { id: userId },
+      data: { login },
+      select: { id: true, login: true },
+    });
+    res.json({ ok: true, user: updated });
   }),
 );
 

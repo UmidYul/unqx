@@ -9,7 +9,8 @@
   </head>
 
   <body class="antialiased" data-admin-layout="1" data-page="admin-dashboard"
-    data-public-base-url="<%= pagePublicBaseUrl %>" data-active-tab="<%= pageActiveTab %>" data-bwignore="true"
+    data-public-base-url="<%= pagePublicBaseUrl %>" data-active-tab="<%= pageActiveTab %>"
+    data-admin-role="<%= adminSession?.role || 'admin' %>" data-bwignore="true"
     data-lpignore="true" data-1p-ignore="true">
     <%- include('../partials/admin-layout-start', { activeTab: pageActiveTab }) %>
       <div class="mx-auto w-full max-w-6xl space-y-5">
@@ -27,6 +28,7 @@
             <h1 class="text-2xl font-black">Управление платформой</h1>
             <p class="mt-1 text-sm text-neutral-600">Мониторинг заявок, пользователей и маркетинговых инструментов</p>
           </div>
+          <% if (adminSession?.role !== 'manager') { %>
           <a href="/admin/dashboard?tab=slugs"
             class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-neutral-900 px-4 py-2 text-center text-sm font-semibold text-white transition hover:bg-neutral-700 sm:w-auto">
             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -34,6 +36,7 @@
             </svg>
             <span>Управлять slug</span>
           </a>
+          <% } %>
         </div>
 
         <section id="tab-analytics" class="<%= pageActiveTab === 'analytics' ? '' : 'hidden' %> space-y-4">
@@ -288,6 +291,12 @@
         </section>
 
         <section id="tab-users" class="<%= pageActiveTab === 'users' ? '' : 'hidden' %> space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <p class="text-sm text-neutral-500">Управляйте пользователями и их данными.</p>
+            <button id="users-create-open" type="button"
+              class="interactive-btn min-h-11 rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-neutral-800">Создать
+              пользователя</button>
+          </div>
           <form id="users-filters"
             class="grid gap-3 rounded-2xl border border-neutral-200 bg-white p-4 md:grid-cols-[1fr_180px_180px_auto]">
             <input type="text" name="q" placeholder="Поиск по Telegram или имени"
@@ -328,6 +337,53 @@
           </div>
           <div id="users-pagination" class="flex items-center justify-end gap-2 text-sm text-neutral-600"></div>
         </section>
+
+        <% if (adminSession?.role !== 'manager') { %>
+        <section id="tab-managers" class="<%= pageActiveTab === 'managers' ? '' : 'hidden' %> space-y-4">
+          <form id="managers-create-form"
+            class="grid gap-3 rounded-2xl border border-neutral-200 bg-white p-4 md:grid-cols-[1fr_180px_180px_auto]">
+            <label class="block text-sm font-medium text-neutral-700">
+              Имя
+              <input name="name" type="text" maxlength="120"
+                class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" required />
+            </label>
+            <label class="block text-sm font-medium text-neutral-700">
+              Логин
+              <input name="login" type="text" maxlength="190"
+                class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" required />
+            </label>
+            <label class="block text-sm font-medium text-neutral-700">
+              Пароль
+              <input name="password" type="password" minlength="8"
+                class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" required />
+            </label>
+            <div class="flex items-end">
+              <button type="submit"
+                class="inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">Создать
+                менеджера</button>
+            </div>
+            <p id="managers-create-status" class="md:col-span-4 text-xs text-neutral-500"></p>
+          </form>
+          <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
+            <div class="overflow-x-auto">
+              <table class="min-w-[860px] w-full text-left text-sm">
+                <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
+                  <tr>
+                    <th class="px-4 py-3">Имя</th>
+                    <th class="px-4 py-3">Логин</th>
+                    <th class="px-4 py-3">Роль</th>
+                    <th class="px-4 py-3">Статус</th>
+                    <th class="px-4 py-3">Последний вход</th>
+                    <th class="px-4 py-3">Создан</th>
+                    <th class="px-4 py-3">Действия</th>
+                  </tr>
+                </thead>
+                <tbody id="managers-table"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+        <% } %>
 
         <section id="tab-slugs" class="<%= pageActiveTab === 'slugs' ? '' : 'hidden' %> space-y-4">
           <div id="slugs-stats" class="grid gap-3 md:grid-cols-4"></div>
@@ -1364,6 +1420,47 @@
           </div>
         </div>
 
+        <div id="user-create-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 p-4"
+          aria-hidden="true">
+          <div class="w-full max-w-md rounded-2xl bg-white p-5" role="dialog" aria-modal="true">
+            <div class="flex items-center justify-between">
+              <h3 class="text-lg font-bold">Создать пользователя</h3>
+              <button type="button" id="user-create-close"
+                class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-neutral-300 text-neutral-500 hover:text-neutral-900"
+                aria-label="Закрыть">
+                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                </svg>
+              </button>
+            </div>
+            <form id="user-create-form" class="mt-4 space-y-3">
+              <label class="block text-sm font-medium text-neutral-700">
+                Имя
+                <input name="name" type="text" maxlength="120"
+                  class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" required />
+              </label>
+              <label class="block text-sm font-medium text-neutral-700">
+                Логин
+                <input name="login" type="text" maxlength="190"
+                  class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" required />
+              </label>
+              <label class="block text-sm font-medium text-neutral-700">
+                Пароль
+                <input name="password" type="password" minlength="8"
+                  class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" required />
+              </label>
+              <label class="block text-sm font-medium text-neutral-700">
+                Email для восстановления (опционально)
+                <input name="email" type="email" maxlength="190"
+                  class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+              </label>
+              <p id="user-create-error" class="hidden text-xs text-red-700"></p>
+              <button type="submit"
+                class="w-full rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-neutral-700">Создать</button>
+            </form>
+          </div>
+        </div>
+
         <script nonce="<%= cspNonce %>" id="admin-dashboard-query"
           type="application/json"><%- JSON.stringify(pageQuery) %></script>
         <script nonce="<%= cspNonce %>" src="/js/admin-layout.js"></script>
@@ -1372,8 +1469,10 @@
         <script nonce="<%= cspNonce %>" src="/vendor/qrcode/qrcode.min.js"></script>
         <script nonce="<%= cspNonce %>" src="/vendor/chartjs/chart.umd.min.js"></script>
         <script nonce="<%= cspNonce %>" src="/js/admin-dashboard.js"></script>
+        <% if (adminSession?.role !== 'manager') { %>
         <script nonce="<%= cspNonce %>" src="/js/admin-features.js"></script>
         <script nonce="<%= cspNonce %>" src="/js/admin-settings.js"></script>
+        <% } %>
   </body>
 
   </html>

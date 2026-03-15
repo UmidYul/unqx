@@ -28,9 +28,13 @@
           <%- include('../partials/city-options') %>
         </select>
       </label>
-      <label class="mt-3 block text-sm font-medium text-neutral-700">Email
-        <input id="email" type="email" autocomplete="email" placeholder="you@example.com"
+      <label class="mt-3 block text-sm font-medium text-neutral-700">Логин
+        <input id="login" type="text" autocomplete="username" placeholder="your-login"
           class="mt-1 w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm" required />
+      </label>
+      <label class="mt-3 block text-sm font-medium text-neutral-700">Email для восстановления (опционально)
+        <input id="email" type="email" autocomplete="email" placeholder="you@example.com"
+          class="mt-1 w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm" />
       </label>
       <label class="mt-3 block text-sm font-medium text-neutral-700">Пароль
         <input id="password" type="password" autocomplete="new-password" placeholder="Минимум 8 символов"
@@ -58,6 +62,7 @@
       const body = {
         firstName: document.getElementById("firstName").value,
         city: document.getElementById("city").value,
+        login: document.getElementById("login").value,
         email: document.getElementById("email").value,
         password: document.getElementById("password").value,
         confirmPassword: document.getElementById("confirmPassword").value,
@@ -76,7 +81,13 @@
         errorNode.classList.remove("hidden");
         return;
       }
-      window.location.href = `/verify-email?email=${encodeURIComponent(payload.email || body.email)}`;
+      const redirectTo = typeof payload.redirectTo === "string" && payload.redirectTo ? payload.redirectTo : "/profile";
+      if (redirectTo.includes("verify-email")) {
+        const nextEmail = String(payload.email || body.email || "").trim();
+        window.location.href = nextEmail ? `/verify-email?email=${encodeURIComponent(nextEmail)}` : redirectTo;
+        return;
+      }
+      window.location.href = redirectTo;
     });
   </script>
 </body>

@@ -22,6 +22,14 @@
     title: $("#user-card-title"),
     subtitle: $("#user-card-subtitle"),
     error: $("#user-card-error"),
+    profileForm: $("#user-profile-form"),
+    profileFirstName: $("#user-profile-first-name"),
+    profileDisplayName: $("#user-profile-display-name"),
+    profileCity: $("#user-profile-city"),
+    profileTelegram: $("#user-profile-telegram"),
+    profileEmail: $("#user-profile-email"),
+    profileSave: $("#user-profile-save"),
+    profileStatus: $("#user-profile-status"),
     form: $("#user-card-form"),
     name: $("#user-card-name"),
     company: $("#user-card-company"),
@@ -114,6 +122,12 @@
     el.form.classList.toggle("pointer-events-none", loading);
   }
 
+  function setProfileLoading(loading) {
+    if (!(el.profileForm instanceof HTMLElement)) return;
+    el.profileForm.classList.toggle("opacity-60", loading);
+    el.profileForm.classList.toggle("pointer-events-none", loading);
+  }
+
   async function api(url, options = {}) {
     const headers = { ...(options.headers || {}) };
     if (csrf) {
@@ -146,6 +160,7 @@
       state.user?.displayName ||
       state.user?.firstName ||
       state.user?.username ||
+      state.user?.telegramUsername ||
       state.user?.email ||
       state.user?.id ||
       "Пользователь";
@@ -252,8 +267,19 @@
     }
   }
 
+  function setProfileValues() {
+    if (!state.user) return;
+    const tg = String(state.user.telegramUsername || state.user.username || "").replace(/^@+/, "");
+    if (el.profileFirstName) el.profileFirstName.value = state.user.firstName || "";
+    if (el.profileDisplayName) el.profileDisplayName.value = state.user.displayName || "";
+    if (el.profileCity) el.profileCity.value = state.user.city || "";
+    if (el.profileTelegram) el.profileTelegram.value = tg;
+    if (el.profileEmail) el.profileEmail.value = state.user.email || "";
+  }
+
   async function load() {
     setLoading(true);
+    setProfileLoading(true);
     setError("");
     try {
       const payload = await api(`/api/admin/users/${encodeURIComponent(userId)}/card`);
@@ -272,6 +298,7 @@
         : [];
 
       setFormValues();
+      setProfileValues();
       updateHeader();
       updateAvatar(state.card?.avatarUrl || "");
       renderThemes();
@@ -282,6 +309,57 @@
       setError(error.message || "Не удалось загрузить визитку");
     } finally {
       setLoading(false);
+      setProfileLoading(false);
+    }
+  }
+
+  async function saveProfile() {
+    const firstName = String(el.profileFirstName?.value || "").trim();
+    if (!firstName) {
+      await showAlert("Имя обязательно для профиля.", "Проверь поля");
+      return;
+    }
+    const email = String(el.profileEmail?.value || "").trim();
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      await showAlert("Некорректный email.", "Проверь поля");
+      return;
+    }
+    const telegramUsername = String(el.profileTelegram?.value || "").replace(/^@+/, "").trim();
+    try {
+      if (el.profileStatus) {
+        el.profileStatus.textContent = "";
+        el.profileStatus.className = "text-xs text-neutral-500";
+      }
+      setProfileLoading(true);
+      const payload = await api(`/api/admin/users/${encodeURIComponent(userId)}/profile`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          firstName,
+          displayName: el.profileDisplayName?.value || "",
+          city: el.profileCity?.value || "",
+          telegramUsername,
+          email,
+        }),
+      });
+      if (payload.user) {
+        state.user = { ...(state.user || {}), ...payload.user };
+        setProfileValues();
+        updateHeader();
+      }
+      if (el.profileStatus) {
+        el.profileStatus.textContent = "Профиль сохранён";
+        el.profileStatus.className = "text-xs text-emerald-700";
+      }
+    } catch (error) {
+      if (el.profileStatus) {
+        el.profileStatus.textContent = error.message || "Не удалось сохранить профиль";
+        el.profileStatus.className = "text-xs text-red-700";
+      } else {
+        await showAlert(error.message || "Не удалось сохранить профиль");
+      }
+    } finally {
+      setProfileLoading(false);
     }
   }
 
@@ -495,6 +573,11 @@
   el.theme?.addEventListener("change", () => {
     if (!(el.theme instanceof HTMLSelectElement)) return;
     state.theme = el.theme.value || "default_dark";
+  });
+
+  el.profileForm?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    void saveProfile();
   });
 
   el.save?.addEventListener("click", saveCard);

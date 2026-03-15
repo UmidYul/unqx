@@ -3,6 +3,9 @@
   const body = document.body;
   if (!body || body.getAttribute("data-page") !== "admin-dashboard") return;
 
+  const adminRole = String(body.getAttribute("data-admin-role") || "admin").toLowerCase();
+  const isManager = adminRole === "manager";
+
   const autofillIgnoreSelectors = "form,input,textarea,select";
   const autofillIgnoreAttrs = ["data-bwignore", "data-lpignore", "data-1p-ignore"];
 
@@ -44,7 +47,8 @@
   autofillObserver.observe(body, { childList: true, subtree: true });
 
   const urlTab = new URLSearchParams(window.location.search).get("tab") || "";
-  const tab = String(urlTab || body.getAttribute("data-active-tab") || "analytics").trim();
+  const bodyTab = String(body.getAttribute("data-active-tab") || "analytics").trim();
+  const tab = String((isManager ? bodyTab : (urlTab || bodyTab || "analytics"))).trim();
   const tabAliases = { slug: "slugs" };
   const normalizedTab = tabAliases[tab] || tab;
   const tabSections = Array.from(document.querySelectorAll('section[id^="tab-"]'));
@@ -238,6 +242,85 @@
   function menuWrap(content) {
     return `${kebabButton()}<div class="admin-row-menu is-hidden">${content}</div>`;
   }
+
+  const userCreateModal = document.getElementById("user-create-modal");
+  const userCreateOpen = document.getElementById("users-create-open");
+  const userCreateClose = document.getElementById("user-create-close");
+  const userCreateForm = document.getElementById("user-create-form");
+  const userCreateError = document.getElementById("user-create-error");
+
+  function setUserCreateError(message) {
+    if (!(userCreateError instanceof HTMLElement)) return;
+    const text = String(message || "").trim();
+    if (!text) {
+      userCreateError.classList.add("hidden");
+      userCreateError.textContent = "";
+      return;
+    }
+    userCreateError.textContent = text;
+    userCreateError.classList.remove("hidden");
+  }
+
+  function openUserCreate() {
+    if (!(userCreateModal instanceof HTMLElement)) return;
+    setUserCreateError("");
+    userCreateModal.classList.remove("hidden");
+    userCreateModal.classList.add("flex");
+    userCreateModal.setAttribute("aria-hidden", "false");
+  }
+
+  function closeUserCreate() {
+    if (!(userCreateModal instanceof HTMLElement)) return;
+    userCreateModal.classList.add("hidden");
+    userCreateModal.classList.remove("flex");
+    userCreateModal.setAttribute("aria-hidden", "true");
+  }
+
+  userCreateOpen?.addEventListener("click", openUserCreate);
+  userCreateClose?.addEventListener("click", closeUserCreate);
+  userCreateModal?.addEventListener("click", (e) => {
+    if (e.target === userCreateModal) closeUserCreate();
+  });
+  userCreateForm?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (!(userCreateForm instanceof HTMLFormElement)) return;
+    setUserCreateError("");
+    const name = userCreateForm.elements.namedItem("name");
+    const login = userCreateForm.elements.namedItem("login");
+    const password = userCreateForm.elements.namedItem("password");
+    const email = userCreateForm.elements.namedItem("email");
+    if (
+      !(name instanceof HTMLInputElement) ||
+      !(login instanceof HTMLInputElement) ||
+      !(password instanceof HTMLInputElement) ||
+      !(email instanceof HTMLInputElement)
+    ) {
+      return;
+    }
+    const payload = {
+      firstName: name.value || "",
+      login: login.value || "",
+      password: password.value || "",
+      email: email.value || "",
+    };
+    try {
+      const r = await fetch("/api/admin/users", {
+        method: "POST",
+        headers: H({ "Content-Type": "application/json" }),
+        body: JSON.stringify(payload),
+      });
+      if (!r.ok) {
+        setUserCreateError(await E(r));
+        return;
+      }
+      userCreateForm.reset();
+      closeUserCreate();
+      await showAlert("Пользователь создан.");
+      void loadUsers();
+    } catch (error) {
+      setUserCreateError(error?.message || "Не удалось создать пользователя");
+    }
+  });
 
   function setDashboardQuery(values) {
     const url = new URL(location.href);
@@ -769,35 +852,52 @@
             Array.isArray(x.slugs) && x.slugs.length
               ? x.slugs.find((s) => ["active", "private", "paused", "approved"].includes(s.status))?.fullSlug || x.slugs[0].fullSlug
               : null;
-          const profileLink = primarySlug ? `/${encodeURIComponent(primarySlug)}` : x.username ? `https://t.me/${encodeURIComponent(x.username)}` : null;
+          const contactUsername = String(x.username || x.telegramUsername || "").replace(/^@+/, "");
+          const profileLink = primarySlug
+            ? `/${encodeURIComponent(primarySlug)}`
+            : contactUsername
+              ? `https://t.me/${encodeURIComponent(contactUsername)}`
+              : null;
           const braceletSlugs = Array.isArray(x.slugs) ? x.slugs.filter((s) => s.hasBracelet).map((s) => s.fullSlug).join(",") : "";
           const userSlugsCsv = allSlugs.join(",");
+          const loginLabel = x.login ? `<div class="text-xs text-neutral-500 font-mono">${X(x.login)}</div>` : "";
+          const userCell = `${X(x.name)}${loginLabel}`;
           const editSlugAttrs = allSlugs.length
             ? `data-act="us-edit" data-id="${X(x.telegramId)}" data-name="${X(x.name)}" data-slugs="${X(userSlugsCsv)}"`
             : 'disabled="disabled"';
           const score = Number(x.unqScore?.score || 0);
           const scoreBreakdown = x.unqScore?.breakdown || {};
-          const menu = menuWrap([
-            menuItem({ label: "Сменить тариф", icon: "crown", attrs: `data-act="up" data-id="${X(x.telegramId)}" data-current-plan="${X(x.plan)}" data-active-slugs="${Number(x.activeSlugCount || 0)}" data-bracelet-slugs="${X(braceletSlugs)}"` }),
-            ...(x.isVerified ? [menuItem({ label: "Снять верификацию", icon: "xCircle", attrs: `data-act="uv" data-id="${X(x.telegramId)}"`, danger: true })] : []),
-            menuItem({ label: "Добавить slug", icon: "link2", attrs: `data-act="us-add" data-id="${X(x.telegramId)}" data-name="${X(x.name)}" data-slugs="${X(userSlugsCsv)}"` }),
-            menuItem({ label: "Редактировать slug", icon: "pen", attrs: editSlugAttrs }),
-            menuItem({ label: "Удалить slug", icon: "trash", attrs: `data-act="us-delete" data-id="${X(x.telegramId)}" data-name="${X(x.name)}" data-slugs="${X(userSlugsCsv)}"`, danger: true }),
-            menuSeparator(),
-            menuItem({ label: "Редактировать визитку", icon: "pen", attrs: `data-act="open-url" data-url="/admin/users/${encodeURIComponent(String(x.telegramId || ""))}/card"` }),
-            menuItem({ label: "Открыть профиль", icon: "external", attrs: profileLink ? `data-act="open-url" data-url="${profileLink}"` : 'disabled="disabled"' }),
-            menuItem({ label: "Накрутить просмотры", icon: "eye", attrs: `data-act="uvb" data-id="${X(x.telegramId)}" data-name="${X(x.name)}" data-slugs="${X(userSlugsCsv)}"` }),
-            menuItem({ label: "Уменьшить просмотры", icon: "xCircle", attrs: `data-act="uvd" data-id="${X(x.telegramId)}" data-name="${X(x.name)}" data-slugs="${X(userSlugsCsv)}"`, danger: true }),
-            menuSeparator(),
-            menuItem({ label: x.status === "blocked" ? "Разблокировать" : "Заблокировать", icon: "shieldOff", attrs: `data-act="ub" data-id="${X(x.telegramId)}" data-status="${X(x.status)}"`, danger: x.status !== "blocked" }),
-            menuItem({ label: "Удалить пользователя полностью", icon: "trash", attrs: `data-act="ud" data-id="${X(x.telegramId)}" data-name="${X(x.name)}"`, danger: true }),
-          ].join(""));
+          const menuItems = [];
+          if (!isManager) {
+            menuItems.push(menuItem({ label: "Сменить логин", icon: "pen", attrs: `data-act="ul" data-id="${X(x.telegramId)}" data-login="${X(x.login || "")}" data-name="${X(x.name)}"` }));
+            menuItems.push(menuItem({ label: "Сменить тариф", icon: "crown", attrs: `data-act="up" data-id="${X(x.telegramId)}" data-current-plan="${X(x.plan)}" data-active-slugs="${Number(x.activeSlugCount || 0)}" data-bracelet-slugs="${X(braceletSlugs)}"` }));
+            if (x.isVerified) {
+              menuItems.push(menuItem({ label: "Снять верификацию", icon: "xCircle", attrs: `data-act="uv" data-id="${X(x.telegramId)}"`, danger: true }));
+            }
+            menuItems.push(menuItem({ label: "Добавить slug", icon: "link2", attrs: `data-act="us-add" data-id="${X(x.telegramId)}" data-name="${X(x.name)}" data-slugs="${X(userSlugsCsv)}"` }));
+            menuItems.push(menuItem({ label: "Редактировать slug", icon: "pen", attrs: editSlugAttrs }));
+            menuItems.push(menuItem({ label: "Удалить slug", icon: "trash", attrs: `data-act="us-delete" data-id="${X(x.telegramId)}" data-name="${X(x.name)}" data-slugs="${X(userSlugsCsv)}"`, danger: true }));
+            menuItems.push(menuSeparator());
+          }
+
+          menuItems.push(menuItem({ label: "Профиль и визитка", icon: "pen", attrs: `data-act="open-url" data-url="/admin/users/${encodeURIComponent(String(x.telegramId || ""))}/card"` }));
+          menuItems.push(menuItem({ label: "Открыть профиль", icon: "external", attrs: profileLink ? `data-act="open-url" data-url="${profileLink}"` : 'disabled="disabled"' }));
+
+          if (!isManager) {
+            menuItems.push(menuItem({ label: "Накрутить просмотры", icon: "eye", attrs: `data-act="uvb" data-id="${X(x.telegramId)}" data-name="${X(x.name)}" data-slugs="${X(userSlugsCsv)}"` }));
+            menuItems.push(menuItem({ label: "Уменьшить просмотры", icon: "xCircle", attrs: `data-act="uvd" data-id="${X(x.telegramId)}" data-name="${X(x.name)}" data-slugs="${X(userSlugsCsv)}"`, danger: true }));
+            menuItems.push(menuSeparator());
+            menuItems.push(menuItem({ label: x.status === "blocked" ? "Разблокировать" : "Заблокировать", icon: "shieldOff", attrs: `data-act="ub" data-id="${X(x.telegramId)}" data-status="${X(x.status)}"`, danger: x.status !== "blocked" }));
+            menuItems.push(menuItem({ label: "Удалить пользователя полностью", icon: "trash", attrs: `data-act="ud" data-id="${X(x.telegramId)}" data-name="${X(x.name)}"`, danger: true }));
+          }
+
+          const menu = menuWrap(menuItems.join(""));
           const planLabel = x.plan === "premium" ? "Премиум" : x.plan === "basic" ? "Базовый" : "Без тарифа";
           const planChipClass =
             x.plan === "none"
               ? "border-amber-300 bg-amber-50 text-amber-800 whitespace-nowrap"
               : "border-neutral-200 whitespace-nowrap";
-          return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3">${X(x.name)}</td><td class="px-4 py-3">${X(x.city || "—")}</td><td class="px-4 py-3"><span class="inline-flex rounded-full border px-2.5 py-1 text-xs font-medium ${planChipClass}">${planLabel}</span></td><td class="hidden px-4 py-3 text-xs text-neutral-600 xl:table-cell">${x.planPurchasedAt ? D(x.planPurchasedAt) : "—"}</td><td class="admin-col-slugs px-4 py-3 text-xs" title="${X(slugTitle)}">${X(slugText)}</td><td class="px-4 py-3"><button type="button" data-act="toggle-score" data-id="${X(x.telegramId)}" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-2.5 py-1 text-sm font-semibold">${score}</button></td><td class="px-4 py-3">${statusChip(x.status === "blocked" ? "rejected" : "approved")}</td><td class="px-4 py-3">${D(x.createdAt)}</td><td class="px-4 py-3"><div class="admin-row-actions">${menu}</div></td></tr><tr class="border-t border-neutral-100 hidden" data-score-row="${X(x.telegramId)}"><td colspan="9" class="px-4 py-2 text-xs text-neutral-600">Просмотры: ${Number(scoreBreakdown.views || 0)} | Редкость: ${Number(scoreBreakdown.slugRarity || 0)} | Срок: ${Number(scoreBreakdown.tenure || 0)} | CTR: ${Number(scoreBreakdown.ctr || 0)} | Браслет: ${Number(scoreBreakdown.bracelet || 0)} | Тариф: ${Number(scoreBreakdown.plan || 0)}</td></tr>`;
+          return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3">${userCell}</td><td class="px-4 py-3">${X(x.city || "—")}</td><td class="px-4 py-3"><span class="inline-flex rounded-full border px-2.5 py-1 text-xs font-medium ${planChipClass}">${planLabel}</span></td><td class="hidden px-4 py-3 text-xs text-neutral-600 xl:table-cell">${x.planPurchasedAt ? D(x.planPurchasedAt) : "—"}</td><td class="admin-col-slugs px-4 py-3 text-xs" title="${X(slugTitle)}">${X(slugText)}</td><td class="px-4 py-3"><button type="button" data-act="toggle-score" data-id="${X(x.telegramId)}" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-2.5 py-1 text-sm font-semibold">${score}</button></td><td class="px-4 py-3">${statusChip(x.status === "blocked" ? "rejected" : "approved")}</td><td class="px-4 py-3">${D(x.createdAt)}</td><td class="px-4 py-3"><div class="admin-row-actions">${menu}</div></td></tr><tr class="border-t border-neutral-100 hidden" data-score-row="${X(x.telegramId)}"><td colspan="9" class="px-4 py-2 text-xs text-neutral-600">Просмотры: ${Number(scoreBreakdown.views || 0)} | Редкость: ${Number(scoreBreakdown.slugRarity || 0)} | Срок: ${Number(scoreBreakdown.tenure || 0)} | CTR: ${Number(scoreBreakdown.ctr || 0)} | Браслет: ${Number(scoreBreakdown.bracelet || 0)} | Тариф: ${Number(scoreBreakdown.plan || 0)}</td></tr>`;
         })
         .join("")
       : `<tr><td colspan="9" class="px-3 py-10 text-center text-neutral-500"><div class="inline-flex flex-col items-center gap-2">${I("userCheck", 48)}<span>Нет пользователей</span></div></td></tr>`;
@@ -805,6 +905,31 @@
       setFormValue(form, "page", String(nextPage));
       void loadUsers();
     });
+  }
+
+  async function loadManagers() {
+    const table = document.getElementById("managers-table");
+    if (!(table instanceof HTMLElement)) return;
+    const r = await fetch("/api/admin/staff");
+    if (!r.ok) {
+      table.innerHTML = `<tr><td colspan="7" class="px-3 py-8 text-center text-red-700">Не удалось загрузить менеджеров</td></tr>`;
+      return;
+    }
+    const payload = await r.json();
+    const rows = payload.items || [];
+    table.innerHTML = rows.length
+      ? rows.map((x) => {
+        const statusLabel = x.isActive ? "Активен" : "Отключён";
+        const roleLabel = x.role === "admin" ? "Админ" : "Менеджер";
+        const toggleLabel = x.isActive ? "Отключить" : "Включить";
+        const toggleIcon = x.isActive ? "toggleLeft" : "toggleRight";
+        const menu = menuWrap([
+          menuItem({ label: toggleLabel, icon: toggleIcon, attrs: `data-act="manager-toggle" data-id="${X(x.id)}" data-next="${x.isActive ? 0 : 1}" data-name="${X(x.name || x.login || "")}"` }),
+          menuItem({ label: "Сбросить пароль", icon: "pen", attrs: `data-act="manager-reset" data-id="${X(x.id)}" data-name="${X(x.name || x.login || "")}"` }),
+        ].join(""));
+        return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3">${X(x.name || "—")}</td><td class="px-4 py-3 font-mono">${X(x.login || "")}</td><td class="px-4 py-3">${X(roleLabel)}</td><td class="px-4 py-3">${X(statusLabel)}</td><td class="px-4 py-3">${D(x.lastLoginAt)}</td><td class="px-4 py-3">${D(x.createdAt)}</td><td class="px-4 py-3"><div class="admin-row-actions">${menu}</div></td></tr>`;
+      }).join("")
+      : `<tr><td colspan="7" class="px-3 py-10 text-center text-neutral-500"><div class="inline-flex flex-col items-center gap-2">${I("userCheck", 48)}<span>Нет менеджеров</span></div></td></tr>`;
   }
   async function loadSlugs() {
     const stats = document.getElementById("slugs-stats");
@@ -1456,6 +1581,45 @@
       closeAllRowMenus();
       return;
     }
+    if (a === "manager-toggle") {
+      if (isManager) return;
+      const id = n.getAttribute("data-id");
+      const next = n.getAttribute("data-next");
+      const name = n.getAttribute("data-name") || "менеджера";
+      if (!id || next === null) return;
+      const enable = next === "1";
+      const ok = await showConfirm(`${enable ? "Включить" : "Отключить"} ${name}?`);
+      if (!ok) return;
+      const r = await fetch(`/api/admin/staff/${encodeURIComponent(id)}`, {
+        method: "PATCH",
+        headers: H({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ isActive: enable }),
+      });
+      if (!r.ok) showAlert(await E(r));
+      else void loadManagers();
+      return;
+    }
+    if (a === "manager-reset") {
+      if (isManager) return;
+      const id = n.getAttribute("data-id");
+      const name = n.getAttribute("data-name") || "менеджера";
+      if (!id) return;
+      const entered = await showPrompt(`Новый пароль для ${name}`, "");
+      if (entered === null) return;
+      const password = String(entered || "").trim();
+      if (!password || password.length < 8) {
+        showAlert("Пароль должен быть не короче 8 символов.");
+        return;
+      }
+      const r = await fetch(`/api/admin/staff/${encodeURIComponent(id)}/password`, {
+        method: "PATCH",
+        headers: H({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ password }),
+      });
+      if (!r.ok) showAlert(await E(r));
+      else showAlert("Пароль обновлён.");
+      return;
+    }
     if (a === "os") {
       const id = n.getAttribute("data-id");
       const status = n.getAttribute("data-status");
@@ -1528,6 +1692,19 @@
         if (!ok) return;
       }
       const r = await fetch(`/api/admin/users/${encodeURIComponent(telegramId)}/plan`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({ plan: entered, reason, force: downgradeToBasic }) });
+      if (!r.ok) showAlert(await E(r));
+      else void loadUsers();
+      closeAllRowMenus();
+      return;
+    }
+    if (a === "ul") {
+      const userId = n.getAttribute("data-id");
+      if (!userId) return;
+      const prevLogin = String(n.getAttribute("data-login") || "").trim();
+      const userName = n.getAttribute("data-name") || "пользователь";
+      const entered = String(await showPrompt(`Новый логин для ${userName}`, prevLogin) || "").trim().toLowerCase();
+      if (!entered || entered === prevLogin) return;
+      const r = await fetch(`/api/admin/users/${encodeURIComponent(userId)}/login`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({ login: entered }) });
       if (!r.ok) showAlert(await E(r));
       else void loadUsers();
       closeAllRowMenus();
@@ -1966,6 +2143,44 @@
     }
   });
   document.getElementById("users-filters")?.addEventListener("submit", (e) => { e.preventDefault(); const f = e.currentTarget; if (f instanceof HTMLFormElement) setFormValue(f, "page", "1"); void loadUsers(); });
+  const managersCreateForm = document.getElementById("managers-create-form");
+  const managersCreateStatus = document.getElementById("managers-create-status");
+  managersCreateForm?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (isManager) return;
+    if (!(managersCreateForm instanceof HTMLFormElement)) return;
+    if (managersCreateStatus instanceof HTMLElement) {
+      managersCreateStatus.textContent = "";
+    }
+    const name = managersCreateForm.elements.namedItem("name");
+    const login = managersCreateForm.elements.namedItem("login");
+    const password = managersCreateForm.elements.namedItem("password");
+    if (!(name instanceof HTMLInputElement) || !(login instanceof HTMLInputElement) || !(password instanceof HTMLInputElement)) return;
+    const payload = {
+      name: name.value || "",
+      login: login.value || "",
+      password: password.value || "",
+    };
+    const r = await fetch("/api/admin/staff", {
+      method: "POST",
+      headers: H({ "Content-Type": "application/json" }),
+      body: JSON.stringify(payload),
+    });
+    if (!r.ok) {
+      const msg = await E(r);
+      if (managersCreateStatus instanceof HTMLElement) {
+        managersCreateStatus.textContent = `Ошибка: ${msg}`;
+        managersCreateStatus.className = "md:col-span-4 text-xs text-red-700";
+      }
+      return;
+    }
+    managersCreateForm.reset();
+    if (managersCreateStatus instanceof HTMLElement) {
+      managersCreateStatus.textContent = "Менеджер создан";
+      managersCreateStatus.className = "md:col-span-4 text-xs text-emerald-700";
+    }
+    void loadManagers();
+  });
   document.getElementById("slugs-filters")?.addEventListener("submit", (e) => { e.preventDefault(); const f = e.currentTarget; if (f instanceof HTMLFormElement) setFormValue(f, "page", "1"); void loadSlugs(); });
   document.getElementById("slugs-price-override-form")?.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -2324,6 +2539,10 @@
   if (tab === "users") {
     dbg("load", "users");
     void loadUsers();
+  }
+  if (tab === "managers") {
+    dbg("load", "managers");
+    void loadManagers();
   }
   if (tab === "slugs") {
     dbg("load", "slugs");

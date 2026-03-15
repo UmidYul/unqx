@@ -529,6 +529,7 @@ async function getCurrentUser(req) {
     select: {
       id: true,
       email: true,
+      login: true,
       pendingEmail: true,
       emailVerified: true,
       firstName: true,
@@ -552,10 +553,10 @@ async function getCurrentUser(req) {
     },
   });
   if (!row) return null;
-  return {
-    ...row,
-    username: row.username || row.telegramUsername || null,
-  };
+    return {
+      ...row,
+      username: row.username || row.telegramUsername || null,
+    };
 }
 
 function assertUserActive(user, res) {
@@ -690,6 +691,7 @@ router.get(
       user: {
         id: user.id,
         email: user.email || "",
+        login: user.login || "",
         pendingEmail: user.pendingEmail || "",
         emailVerified: Boolean(user.emailVerified),
         firstName: user.firstName,

@@ -97,6 +97,7 @@
 
     const getDraftOwnerKey = () => {
       if (s.user?.id) return `id:${s.user.id}`;
+      if (s.user?.login) return `l:${s.user.login}`;
       if (s.user?.username) return `u:${s.user.username}`;
       if (s.user?.email) return `e:${s.user.email}`;
       return "";
@@ -222,6 +223,7 @@
     let emailModalLastFocused = null;
     let emailModalOpen = false;
     let emailModalStep = "request";
+    let emailRequiredModalShown = false;
     let passwordModalLastFocused = null;
     let passwordModalOpen = false;
 
@@ -405,6 +407,7 @@ Email: ${userEmail}
 
       stName: $("#profile-settings-display-name"),
       stCity: $("#profile-settings-city"),
+      stLogin: $("#profile-settings-login"),
       stEmail: $("#profile-settings-email"),
       stTg: $("#profile-settings-telegram"),
       stChangeEmail: $("#profile-settings-change-email"),
@@ -424,6 +427,10 @@ Email: ${userEmail}
       emailNewEmail: $("#profile-email-new-email"),
       emailCurrentPassword: $("#profile-email-current-password"),
       emailVerifyCode: $("#profile-email-verify-code"),
+      emailRequiredModal: $("#profile-email-required-modal"),
+      emailRequiredClose: $("#profile-email-required-close"),
+      emailRequiredLater: $("#profile-email-required-later"),
+      emailRequiredOpen: $("#profile-email-required-open"),
       passwordModal: $("#profile-password-modal"),
       passwordModalDialog: $("#profile-password-modal-dialog"),
       passwordModalCloseTop: $("#profile-password-modal-close-top"),
@@ -645,6 +652,19 @@ Email: ${userEmail}
       if (emailModalLastFocused instanceof HTMLElement) {
         emailModalLastFocused.focus();
       }
+    };
+
+    const openEmailRequiredModal = () => {
+      if (!(el.emailRequiredModal instanceof HTMLElement)) return;
+      el.emailRequiredModal.classList.remove("hidden");
+      el.emailRequiredModal.classList.add("flex");
+      emailRequiredModalShown = true;
+    };
+
+    const closeEmailRequiredModal = () => {
+      if (!(el.emailRequiredModal instanceof HTMLElement)) return;
+      el.emailRequiredModal.classList.add("hidden");
+      el.emailRequiredModal.classList.remove("flex");
     };
 
     const resetPasswordModal = () => {
@@ -1497,6 +1517,7 @@ Email: ${userEmail}
       if (!s.user) return;
       if (el.stName) el.stName.value = s.user.displayName || s.user.firstName || "";
       if (el.stCity) el.stCity.value = String(s.user.city || "");
+      if (el.stLogin) el.stLogin.value = String(s.user.login || "").trim() || "—";
       if (el.stEmail) {
         const accountEmail = String(s.user.email || "").trim();
         const pendingEmail = String(s.user.pendingEmail || "").trim();
@@ -1565,6 +1586,13 @@ Email: ${userEmail}
             ? s.verification.canSendCorrection
             : latestStatus === "pending";
         el.verificationCorrectionWrap.classList.toggle("hidden", !canSendCorrection);
+      }
+
+      if (!emailRequiredModalShown) {
+        const hasEmail = Boolean(String(s.user.email || s.user.pendingEmail || "").trim());
+        if (!hasEmail) {
+          openEmailRequiredModal();
+        }
       }
     };
 
@@ -2202,6 +2230,15 @@ Email: ${userEmail}
     el.emailModalCancel?.addEventListener("click", closeEmailModal);
     el.emailModal?.addEventListener("click", (event) => {
       if (event.target === el.emailModal) closeEmailModal();
+    });
+    el.emailRequiredClose?.addEventListener("click", closeEmailRequiredModal);
+    el.emailRequiredLater?.addEventListener("click", closeEmailRequiredModal);
+    el.emailRequiredOpen?.addEventListener("click", () => {
+      closeEmailRequiredModal();
+      openEmailModal();
+    });
+    el.emailRequiredModal?.addEventListener("click", (event) => {
+      if (event.target === el.emailRequiredModal) closeEmailRequiredModal();
     });
     el.emailModalSubmit?.addEventListener("click", () => {
       void handleEmailRequest();
