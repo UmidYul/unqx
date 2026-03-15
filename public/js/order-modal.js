@@ -869,6 +869,23 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     else dom.pendingStatus.classList.add("text-neutral-600");
   }
 
+  function setCampaignHint(text, tone) {
+    if (!(dom.campaignHint instanceof HTMLElement)) {
+      return;
+    }
+    const normalized = String(text || "").trim();
+    if (!normalized) {
+      dom.campaignHint.textContent = "";
+      dom.campaignHint.className = "mt-2 hidden text-xs";
+      return;
+    }
+    dom.campaignHint.textContent = normalized;
+    dom.campaignHint.className = "mt-2 text-xs";
+    if (tone === "error") dom.campaignHint.classList.add("text-red-600");
+    else if (tone === "success") dom.campaignHint.classList.add("text-emerald-700");
+    else dom.campaignHint.classList.add("text-neutral-600");
+  }
+
   function formatPendingDateTime(value) {
     try {
       if (!value) return "—";
@@ -1317,7 +1334,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     if (dom.totalMonthly instanceof HTMLElement) {
       dom.totalMonthly.textContent = "Единоразово · больше не платишь";
     }
-    if (dom.campaignHint instanceof HTMLElement) {
+    {
       const campaignApplied = Boolean(referral?.campaignApplied);
       const campaignName = String(referral?.campaignName || "").trim();
       const promo = state.checkoutContext?.promo && typeof state.checkoutContext.promo === "object" ? state.checkoutContext.promo : null;
@@ -1326,8 +1343,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
       const promoReason = String(promo?.reason || "").trim();
       const promoHasInput = Boolean(state.promoCode || promoCodeApplied);
       if (promoApplied && promoCodeApplied) {
-        dom.campaignHint.classList.remove("hidden");
-        dom.campaignHint.textContent = `Промокод применен: ${promoCodeApplied}`;
+        setCampaignHint(`Промокод применен: ${promoCodeApplied}`, "success");
       } else if (promoHasInput && promoReason) {
         const reasonLabel =
           promoReason === "promo_disabled"
@@ -1339,19 +1355,13 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
             : promoReason === "promo_budget_exhausted"
             ? "Бюджет промокода исчерпан."
             : "Промокод не найден или не активен.";
-        dom.campaignHint.classList.remove("hidden");
-        dom.campaignHint.textContent = reasonLabel;
+        setCampaignHint(reasonLabel, "error");
       } else if (campaignApplied) {
-        dom.campaignHint.classList.remove("hidden");
-        dom.campaignHint.textContent = campaignName
-          ? `Применена кампания: ${campaignName}`
-          : "Применена акция";
+        setCampaignHint(campaignName ? `Применена кампания: ${campaignName}` : "Применена акция", "success");
       } else if (state.promoValidationHint) {
-        dom.campaignHint.classList.remove("hidden");
-        dom.campaignHint.textContent = state.promoValidationHint;
+        setCampaignHint(state.promoValidationHint, "error");
       } else {
-        dom.campaignHint.classList.add("hidden");
-        dom.campaignHint.textContent = "";
+        setCampaignHint("");
       }
     }
     if (dom.fraudHint instanceof HTMLElement) {
@@ -1397,6 +1407,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
       dom.promoCheck.disabled = true;
       dom.promoCheck.textContent = "Проверка...";
     }
+    let shouldRefresh = true;
     try {
       const payload = await postJson("/api/referrals/promo/validate", {
         promoCode,
@@ -1405,24 +1416,24 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
       });
       if (payload?.valid) {
         state.promoValidationHint = "";
-        if (dom.campaignHint instanceof HTMLElement) {
-          dom.campaignHint.classList.remove("hidden");
-          const policyHints = [];
-          if (payload?.policy?.firstOrderOnly) policyHints.push("только первый заказ");
-          const discountType = String(payload?.discountType || "").trim().toLowerCase();
-          const discountValue = Math.max(0, Math.round(Number(payload?.discountValue || 0)));
-          const discountLabel =
-            discountValue > 0
-              ? discountType === "fixed_price"
-                ? `фикс. цена ${formatPrice(discountValue)} сум`
-                : discountType === "discount_percent"
-                ? `скидка ${discountValue}%`
-                : `скидка ${formatPrice(discountValue)} сум`
-              : "";
-          const namePart = payload?.name ? ` · ${payload.name}` : "";
-          const discountPart = discountLabel ? ` · ${discountLabel}` : "";
-          dom.campaignHint.textContent = `Промокод применен: ${promoCode}${namePart}${discountPart}${policyHints.length ? ` (${policyHints.join(", ")})` : ""}`;
-        }
+        const policyHints = [];
+        if (payload?.policy?.firstOrderOnly) policyHints.push("только первый заказ");
+        const discountType = String(payload?.discountType || "").trim().toLowerCase();
+        const discountValue = Math.max(0, Math.round(Number(payload?.discountValue || 0)));
+        const discountLabel =
+          discountValue > 0
+            ? discountType === "fixed_price"
+              ? `фикс. цена ${formatPrice(discountValue)} сум`
+              : discountType === "discount_percent"
+              ? `скидка ${discountValue}%`
+              : `скидка ${formatPrice(discountValue)} сум`
+            : "";
+        const namePart = payload?.name ? ` · ${payload.name}` : "";
+        const discountPart = discountLabel ? ` · ${discountLabel}` : "";
+        setCampaignHint(
+          `Промокод применен: ${promoCode}${namePart}${discountPart}${policyHints.length ? ` (${policyHints.join(", ")})` : ""}`,
+          "success",
+        );
       } else {
         const reason = String(payload?.reason || "").trim().toLowerCase();
         state.promoValidationHint =
@@ -1435,24 +1446,45 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
             : reason === "promo_budget_exhausted"
             ? "Бюджет промокода исчерпан."
             : "Промокод не найден или не активен.";
-        if (dom.campaignHint instanceof HTMLElement) {
-          dom.campaignHint.classList.remove("hidden");
-          dom.campaignHint.textContent = state.promoValidationHint;
+        shouldRefresh = false;
+        if (state.checkoutContext && typeof state.checkoutContext === "object") {
+          state.checkoutContext.promo = {
+            ...(state.checkoutContext.promo && typeof state.checkoutContext.promo === "object" ? state.checkoutContext.promo : {}),
+            code: promoCode,
+            applied: false,
+            name: "",
+            discountType: "",
+            discountValue: 0,
+            reason,
+            policy: payload?.policy && typeof payload.policy === "object" ? payload.policy : (state.checkoutContext.promo?.policy || {}),
+          };
         }
+        setCampaignHint(state.promoValidationHint, "error");
       }
     } catch (error) {
       state.promoValidationHint = "Промокод не найден или не активен.";
-      if (dom.campaignHint instanceof HTMLElement) {
-        dom.campaignHint.classList.remove("hidden");
-        dom.campaignHint.textContent = state.promoValidationHint;
+      shouldRefresh = false;
+      if (state.checkoutContext && typeof state.checkoutContext === "object") {
+        state.checkoutContext.promo = {
+          ...(state.checkoutContext.promo && typeof state.checkoutContext.promo === "object" ? state.checkoutContext.promo : {}),
+          code: promoCode,
+          applied: false,
+          name: "",
+          discountType: "",
+          discountValue: 0,
+          reason: "promo_not_active",
+        };
       }
+      setCampaignHint(state.promoValidationHint, "error");
       setStatus(error?.message || "Промокод недействителен", "error");
     } finally {
       if (dom.promoCheck instanceof HTMLButtonElement) {
         dom.promoCheck.disabled = false;
         dom.promoCheck.textContent = originalText || "Проверить";
       }
-      await refreshCheckoutContext();
+      if (shouldRefresh) {
+        await refreshCheckoutContext();
+      }
       await updateTotals();
     }
   }
