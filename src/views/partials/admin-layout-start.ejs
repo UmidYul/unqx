@@ -6,10 +6,11 @@
   const brandLabel = adminRole === "manager" ? "UNQX Manager" : "UNQX Admin";
   const avatarLetter = String(adminName || (adminRole === "manager" ? "Manager" : "Admin")).trim().slice(0, 1).toUpperCase() || (adminRole === "manager" ? "M" : "A");
   const allowedTabs = adminRole === "manager" ? new Set(["users"]) : null;
-  const dashboardBasePath = typeof dashboardBasePath === "string" && dashboardBasePath ? dashboardBasePath : "/admin/dashboard";
-  const isDashboardRoute = layoutCurrentPath === dashboardBasePath;
+  const resolvedDashboardBasePath =
+    typeof dashboardBasePath === "string" && dashboardBasePath ? dashboardBasePath : "/admin/dashboard";
+  const isDashboardRoute = layoutCurrentPath === resolvedDashboardBasePath;
 
-  const dashboardLink = (tab) => `${dashboardBasePath}?tab=${tab}`;
+  const dashboardLink = (tab) => `${resolvedDashboardBasePath}?tab=${tab}`;
   const sectionGroups = [
     {
       label: "ОСНОВНОЕ",
@@ -70,7 +71,7 @@
 <div class="admin-shell">
   <aside id="admin-sidebar" class="admin-sidebar" aria-label="Навигация админ-панели">
     <div class="admin-sidebar-head">
-      <a href="<%= dashboardBasePath %>" class="admin-brand" aria-label="<%= brandLabel %>">
+      <a href="<%= resolvedDashboardBasePath %>" class="admin-brand" aria-label="<%= brandLabel %>">
         <img src="/brand/logo.PNG" alt="" class="admin-brand-mark" />
         <span class="admin-brand-text"><%= brandLabel %></span>
       </a>
@@ -161,7 +162,7 @@
               <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
             </svg>
           </button>
-          <a href="<%= dashboardBasePath %>" class="admin-topbar-brand">
+          <a href="<%= resolvedDashboardBasePath %>" class="admin-topbar-brand">
             <img src="/brand/logo.PNG" alt="UNQX" class="admin-topbar-brand-mark" />
             <span><%= brandLabel %></span>
           </a>
