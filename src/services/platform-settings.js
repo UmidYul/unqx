@@ -157,7 +157,6 @@ const DEFAULT_SETTINGS = [
   { key: "feature_leaderboard", group: "platform", type: "boolean", label: "Лидерборд включен", value: true },
   { key: "feature_referrals", group: "platform", type: "boolean", label: "Рефералы включены", value: true },
   { key: "feature_promo_codes", group: "platform", type: "boolean", label: "Промокоды включены", value: true },
-  { key: "promo_codes_require_referrer", group: "platform", type: "boolean", label: "Промокод требует реферера", value: false },
   { key: "promo_codes_first_order_only", group: "platform", type: "boolean", label: "Промокод только для первого заказа", value: true },
   { key: "referral_v1_referrer_reward", group: "platform", type: "number", label: "Реферальная награда (сум)", value: 50_000 },
   { key: "referral_v1_invitee_discount", group: "platform", type: "number", label: "Скидка приглашенному (сум)", value: 100_000 },

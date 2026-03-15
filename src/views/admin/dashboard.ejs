@@ -747,26 +747,19 @@
         <section id="tab-promocodes" class="<%= pageActiveTab === 'promocodes' ? '' : 'hidden' %> space-y-4">
           <header class="rounded-2xl border border-neutral-200 bg-white p-4">
             <h2 class="text-base font-bold text-neutral-900">Promo Codes</h2>
-            <p class="mt-1 text-sm text-neutral-600">Manage promo-code settings and promo campaigns.</p>
+            <p class="mt-1 text-sm text-neutral-600">Manage promo-code settings and promo codes.</p>
           </header>
 
           <section class="rounded-2xl border border-neutral-200 bg-white p-4">
             <h3 class="text-sm font-semibold text-neutral-900">Promo-code Settings</h3>
             <form id="promocodes-settings-form" class="mt-3 space-y-4">
-              <div class="grid gap-3 md:grid-cols-3">
+              <div class="grid gap-3 md:grid-cols-2">
                 <label class="block rounded-xl border border-neutral-200 p-3 text-sm">
                   <span class="flex items-center gap-2">
                     <input type="checkbox" name="promoCodesEnabled" />
                     <span class="font-medium text-neutral-900">Enable promo codes</span>
                   </span>
-                  <span class="mt-1 block text-xs text-neutral-500">Allows promo codes in referral campaigns.</span>
-                </label>
-                <label class="block rounded-xl border border-neutral-200 p-3 text-sm">
-                  <span class="flex items-center gap-2">
-                    <input type="checkbox" name="promoRequireReferrer" />
-                    <span class="font-medium text-neutral-900">Require referrer link</span>
-                  </span>
-                  <span class="mt-1 block text-xs text-neutral-500">Promo code works only when a referrer is linked.</span>
+                  <span class="mt-1 block text-xs text-neutral-500">Allows promo codes at checkout.</span>
                 </label>
                 <label class="block rounded-xl border border-neutral-200 p-3 text-sm">
                   <span class="flex items-center gap-2">
@@ -784,12 +777,12 @@
           </section>
 
           <section class="rounded-2xl border border-neutral-200 bg-white p-4">
-            <h3 class="text-sm font-semibold text-neutral-900">Create Promo Campaign</h3>
+            <h3 class="text-sm font-semibold text-neutral-900">Create Promo Code</h3>
             <form id="promocodes-campaign-create-form" class="mt-3 space-y-3">
-              <div class="grid gap-3 md:grid-cols-4">
+              <div class="grid gap-3 md:grid-cols-5">
                 <label class="block text-sm md:col-span-2">
-                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Campaign name</span>
-                  <input name="name" type="text" placeholder="e.g. Spring Bonus"
+                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Promo name</span>
+                  <input name="name" type="text" placeholder="e.g. Spring Offer"
                     class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" required />
                 </label>
                 <label class="block text-sm">
@@ -806,32 +799,34 @@
                     <option value="archived">Archived</option>
                   </select>
                 </label>
-              </div>
-
-              <div class="grid gap-3 md:grid-cols-3">
                 <label class="block text-sm">
-                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Invitee discount (override)</span>
-                  <input name="inviteeDiscountOverride" type="number" min="0" step="1000" placeholder="e.g. 100000"
-                    class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
-                </label>
-                <label class="block text-sm">
-                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Referrer reward (override)</span>
-                  <input name="rewardAmountOverride" type="number" min="0" step="1000" placeholder="e.g. 50000"
-                    class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
-                </label>
-                <label class="block text-sm">
-                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Discount cap (%)</span>
-                  <input name="discountCapPercentOverride" type="number" min="0" max="100" step="1" placeholder="e.g. 30"
-                    class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Discount type</span>
+                  <select name="discountType" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm">
+                    <option value="discount_amount">Discount amount</option>
+                    <option value="fixed_price">Fixed price</option>
+                  </select>
                 </label>
               </div>
 
               <div class="grid gap-3 md:grid-cols-3">
+                <label class="block text-sm">
+                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Discount value (sum)</span>
+                  <input name="discountValue" type="number" min="0" step="1000" placeholder="e.g. 100000"
+                    class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+                </label>
                 <label class="block text-sm">
                   <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Campaign budget (sum)</span>
                   <input name="budgetAmount" type="number" min="0" step="1000" value="0" placeholder="e.g. 5000000"
                     class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
                 </label>
+                <label class="block text-sm">
+                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Per-user usage limit</span>
+                  <input name="perUserCap" type="number" min="1" step="1" value="1" placeholder="e.g. 1"
+                    class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+                </label>
+              </div>
+
+              <div class="grid gap-3 md:grid-cols-2">
                 <label class="block text-sm">
                   <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Start date</span>
                   <input name="startsAt" type="datetime-local" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
@@ -842,41 +837,26 @@
                 </label>
               </div>
 
-              <div class="grid gap-3 md:grid-cols-2">
-                <label class="block text-sm">
-                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Priority</span>
-                  <input name="priority" type="number" step="1" value="0" placeholder="e.g. 0"
-                    class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
-                </label>
-                <label class="block text-sm">
-                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Per-user usage limit</span>
-                  <input name="perUserCap" type="number" min="1" step="1" value="1" placeholder="e.g. 1"
-                    class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
-                </label>
-              </div>
-
               <div class="flex justify-end">
                 <button type="submit"
-                  class="rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">Create campaign</button>
+                  class="rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">Create promo code</button>
               </div>
             </form>
           </section>
 
           <section class="space-y-2">
-            <h3 class="text-sm font-semibold text-neutral-900">Promo Campaigns</h3>
+            <h3 class="text-sm font-semibold text-neutral-900">Promo Codes</h3>
             <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
               <div class="overflow-x-auto">
-                <table class="min-w-[1200px] w-full text-left text-sm">
+                <table class="min-w-[980px] w-full text-left text-sm">
                   <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
                     <tr>
                       <th class="px-4 py-3">Name</th>
                       <th class="px-4 py-3">Promo code</th>
                       <th class="px-4 py-3">Status</th>
                       <th class="px-4 py-3">Discount</th>
-                      <th class="px-4 py-3">Reward</th>
-                      <th class="px-4 py-3">Cap %</th>
-                      <th class="px-4 py-3">Priority</th>
                       <th class="px-4 py-3">Budget</th>
+                      <th class="px-4 py-3">Per-user</th>
                       <th class="px-4 py-3">Period</th>
                       <th class="px-4 py-3">Actions</th>
                     </tr>

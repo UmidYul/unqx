@@ -10,15 +10,14 @@ const { getFeatureSetting } = require("../../services/feature-settings");
 const { getActiveFlashSale, resolveConditionLabel } = require("../../services/flash-sales");
 const { getDropLiveStats } = require("../../services/drops");
 const { getReferralBootstrap, claimReferralReward } = require("../../services/referrals");
-const { getWalletBalance } = require("../../services/referral-v1");
-const { getManySettings } = require("../../services/platform-settings");
+const { getWalletBalance, hasApprovedSlugPurchase } = require("../../services/referral-v1");
+const { getActiveCampaignsSafe } = require("../../services/referral-v2");
 const {
   normalizePromoCode,
-  getActiveCampaignsSafe,
-  resolveCampaignForCheckout,
-  buildCampaignSnapshot,
-} = require("../../services/referral-v2");
-const { getReferralV1Settings } = require("../../services/referral-v1");
+  getPromoPolicySettings,
+  resolvePromoForCheckout,
+  evaluatePromoEligibility,
+} = require("../../services/promo-codes");
 
 const router = express.Router();
 const ONLINE_WINDOW_SECONDS = 90;
@@ -373,62 +372,45 @@ router.post(
       res.status(400).json({ error: "PROMO_CODE_REQUIRED" });
       return;
     }
-    const [v1Settings, resolved, promoSettings] = await Promise.all([
-      getReferralV1Settings(),
-      resolveCampaignForCheckout({
-        source: String(req.body?.refSource || "order_modal"),
-        offer: String(req.body?.refOffer || "default"),
-        promoCode,
-      }),
-      getManySettings([
-        "feature_promo_codes",
-        "promo_codes_require_referrer",
-        "promo_codes_first_order_only",
-      ]),
+    const userSession = getUserSession(req);
+    const userId = userSession?.userId ? String(userSession.userId) : null;
+    const [promoPolicy, resolved, firstApprovedOrderExists] = await Promise.all([
+      getPromoPolicySettings(),
+      resolvePromoForCheckout({ promoCode }),
+      userId ? hasApprovedSlugPurchase(userId) : Promise.resolve(false),
     ]);
-    const promoEnabled = promoSettings.feature_promo_codes !== undefined ? Boolean(promoSettings.feature_promo_codes) : true;
-    if (!promoEnabled) {
-      res.json({
-        ok: false,
-        promoCode,
-        valid: false,
-        reason: "promo_disabled",
-      });
-      return;
-    }
-    const snapshot = buildCampaignSnapshot({
-      campaign: resolved.campaign,
-      referrerReward: v1Settings.referrerReward,
-      inviteeDiscount: v1Settings.inviteeDiscount,
-      discountCapPercent: v1Settings.discountCapPercent,
-      normalizedPromoCode: resolved.normalizedPromoCode,
+
+    const eligibility = await evaluatePromoEligibility({
+      promo: resolved.promo || null,
+      userId,
+      firstApprovedOrderExists,
+      policy: promoPolicy,
     });
-    if (!snapshot.campaignApplied || snapshot.campaignType !== "promo_code") {
+
+    if (!eligibility.allowed) {
       res.json({
         ok: false,
         promoCode,
         valid: false,
-        reason: "promo_not_active",
+        reason: eligibility.reason || "promo_not_active",
+        policy: {
+          enabled: promoPolicy.enabled,
+          firstOrderOnly: promoPolicy.firstOrderOnly,
+        },
       });
       return;
     }
+
     res.json({
       ok: true,
       valid: true,
       promoCode,
-      campaignApplied: snapshot.campaignApplied,
-      campaignType: snapshot.campaignType,
-      campaignName: snapshot.campaignName,
-      inviteeDiscount: snapshot.inviteeDiscount,
-      referrerReward: snapshot.referrerReward,
-      capPercent: snapshot.discountCapPercent,
+      name: String(resolved.promo?.name || ""),
+      discountType: String(resolved.promo?.discountType || ""),
+      discountValue: Math.max(0, Math.round(Number(resolved.promo?.discountValue || 0))),
       policy: {
-        requireReferrer: promoSettings.promo_codes_require_referrer !== undefined
-          ? Boolean(promoSettings.promo_codes_require_referrer)
-          : false,
-        firstOrderOnly: promoSettings.promo_codes_first_order_only !== undefined
-          ? Boolean(promoSettings.promo_codes_first_order_only)
-          : true,
+        enabled: promoPolicy.enabled,
+        firstOrderOnly: promoPolicy.firstOrderOnly,
       },
     });
   }),

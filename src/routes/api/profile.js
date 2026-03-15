@@ -123,14 +123,16 @@ function mapProfileRequest(item, options = {}) {
   const planPrice = Number(item.planPrice || 0);
   const hasBracelet = Boolean(item.bracelet);
   const inviteeDiscountApplied = Math.max(0, Number(item.inviteeDiscountApplied || 0));
+  const promoDiscountApplied = Math.max(0, Number(item.promoDiscountApplied || 0));
+  const promoCode = String(item.promoCode || "").trim();
   const bonusSpent = Math.max(0, Number(item.bonusSpent || 0));
-  const slugPayable = Math.max(0, slugPrice - inviteeDiscountApplied - bonusSpent);
+  const slugPayable = Math.max(0, slugPrice);
   const totalAmount = slugPayable + planPrice + (hasBracelet ? braceletPrice : 0);
+  const slugPriceBeforeDiscount = slugPayable + inviteeDiscountApplied + promoDiscountApplied + bonusSpent;
   const paymentReference = getOrderPaymentReference(item.id);
   return {
     id: item.id,
     slug: item.slug,
-    slugPrice: item.slugPrice,
     requestedPlan: item.requestedPlan,
     planPrice: item.planPrice,
     bracelet: item.bracelet,
@@ -149,14 +151,23 @@ function mapProfileRequest(item, options = {}) {
       fullName,
       email,
       slugPrice: slugPayable,
-      slugPriceBeforeDiscount: slugPrice,
+      slugPriceBeforeDiscount,
       inviteeDiscountApplied,
+      promoDiscountApplied,
+      promoCode,
       bonusSpent,
       planPrice,
       bracelet: hasBracelet,
       braceletPrice,
       totalAmount,
     }),
+    promoCode,
+    promoDiscountApplied,
+    inviteeDiscountApplied,
+    bonusSpent,
+    slugPriceBeforeDiscount,
+    slugPrice: slugPayable,
+    totalOneTime: totalAmount,
   };
 }
 

@@ -281,16 +281,14 @@
     if (!(campaignsTable instanceof HTMLElement)) return;
 
     const [settingsPayload, campaignsPayload] = await Promise.all([
-      jsonFetch("/api/admin/referrals/settings"),
-      jsonFetch("/api/admin/referrals/campaigns"),
+      jsonFetch("/api/admin/promocodes/settings"),
+      jsonFetch("/api/admin/promocodes"),
     ]);
 
     if (settingsForm instanceof HTMLFormElement) {
       const promoCodesEnabled = settingsForm.elements.namedItem("promoCodesEnabled");
-      const promoRequireReferrer = settingsForm.elements.namedItem("promoRequireReferrer");
       const promoFirstOrderOnly = settingsForm.elements.namedItem("promoFirstOrderOnly");
       if (promoCodesEnabled instanceof HTMLInputElement) promoCodesEnabled.checked = settingsPayload.settings?.feature_promo_codes !== undefined ? Boolean(settingsPayload.settings?.feature_promo_codes) : true;
-      if (promoRequireReferrer instanceof HTMLInputElement) promoRequireReferrer.checked = settingsPayload.settings?.promo_codes_require_referrer !== undefined ? Boolean(settingsPayload.settings?.promo_codes_require_referrer) : false;
       if (promoFirstOrderOnly instanceof HTMLInputElement) promoFirstOrderOnly.checked = settingsPayload.settings?.promo_codes_first_order_only !== undefined ? Boolean(settingsPayload.settings?.promo_codes_first_order_only) : true;
     }
 
@@ -301,22 +299,22 @@
             const statusAction = status === "active" ? "paused" : "active";
             const statusLabel = status === "active" ? "Пауза" : "Активировать";
             const statusView = status === "active" ? "Активна" : status === "paused" ? "Пауза" : status === "archived" ? "Архив" : "Черновик";
+            const discountType = String(item.discountType || "discount_amount");
+            const discountLabel = discountType === "fixed_price" ? "Фикс цена" : "Скидка";
             return `<tr class="admin-table-row border-t border-neutral-100">
               <td class="px-4 py-3">${item.name || "-"}</td>
-              <td class="px-4 py-3 font-mono">${item.promoCode || "-"}</td>
+              <td class="px-4 py-3 font-mono">${item.code || "-"}</td>
               <td class="px-4 py-3">${statusView}</td>
-              <td class="px-4 py-3">${P(item.inviteeDiscountOverride || 0)}</td>
-              <td class="px-4 py-3">${P(item.rewardAmountOverride || 0)}</td>
-              <td class="px-4 py-3">${Number(item.discountCapPercentOverride || 0)}%</td>
-              <td class="px-4 py-3">${Number(item.priority || 0)}</td>
+              <td class="px-4 py-3">${discountLabel} ${P(item.discountValue || 0)}</td>
               <td class="px-4 py-3">${P(item.budgetAmount || 0)}</td>
+              <td class="px-4 py-3">${Number(item.perUserCap || 1)}</td>
               <td class="px-4 py-3">${D(item.startsAt)} - ${D(item.endsAt)}</td>
               <td class="px-4 py-3"><div class="admin-row-actions">${menuWrap([
                 menuItem({ label: statusLabel, icon: "refresh", attrs: `data-a="promo-status" data-id="${item.id}" data-status="${statusAction}"` }),
                 menuItem({
                   label: "Редактировать",
                   icon: "pen",
-                  attrs: `data-a="promo-edit" data-id="${item.id}" data-name="${encodeAttr(item.name || "")}" data-promo="${encodeAttr(item.promoCode || "")}" data-status="${encodeAttr(status)}" data-invitee="${Number(item.inviteeDiscountOverride || 0)}" data-reward="${Number(item.rewardAmountOverride || 0)}" data-cap="${Number(item.discountCapPercentOverride || 0)}" data-priority="${Number(item.priority || 0)}" data-budget="${Number(item.budgetAmount || 0)}" data-per-user-cap="${Number(item.perUserCap || 1)}" data-starts-at="${encodeAttr(item.startsAt || "")}" data-ends-at="${encodeAttr(item.endsAt || "")}"`,
+                  attrs: `data-a="promo-edit" data-id="${item.id}" data-name="${encodeAttr(item.name || "")}" data-promo="${encodeAttr(item.code || "")}" data-status="${encodeAttr(status)}" data-discount-type="${encodeAttr(discountType)}" data-discount-value="${Number(item.discountValue || 0)}" data-budget="${Number(item.budgetAmount || 0)}" data-per-user-cap="${Number(item.perUserCap || 1)}" data-starts-at="${encodeAttr(item.startsAt || "")}" data-ends-at="${encodeAttr(item.endsAt || "")}"`,
                 }),
                 menuSeparator(),
                 menuItem({ label: "Удалить", icon: "trash", attrs: `data-a="promo-delete" data-id="${item.id}"`, danger: true }),
@@ -324,7 +322,7 @@
             </tr>`;
           })
           .join("")
-      : `<tr><td colspan="10" class="px-3 py-10 text-center text-neutral-500"><div class="inline-flex flex-col items-center gap-2">${I("gift", 44)}<span>Нет активных кампаний</span><span class="text-xs text-neutral-400">Создайте первую кампанию в форме выше.</span></div></td></tr>`;
+      : `<tr><td colspan="8" class="px-3 py-10 text-center text-neutral-500"><div class="inline-flex flex-col items-center gap-2">${I("gift", 44)}<span>Нет промокодов</span><span class="text-xs text-neutral-400">Создайте первый промокод в форме выше.</span></div></td></tr>`;
   }
   async function loadFlashSalesAdmin() {
     const table = document.getElementById("flash-sales-table");
@@ -432,14 +430,12 @@
     const form = event.currentTarget;
     if (!(form instanceof HTMLFormElement)) return;
     const promoCodesEnabled = form.elements.namedItem("promoCodesEnabled");
-    const promoRequireReferrer = form.elements.namedItem("promoRequireReferrer");
     const promoFirstOrderOnly = form.elements.namedItem("promoFirstOrderOnly");
-    await jsonFetch("/api/admin/referrals/settings", {
+    await jsonFetch("/api/admin/promocodes/settings", {
       method: "PATCH",
       headers: headers({ "Content-Type": "application/json" }),
       body: JSON.stringify({
         promoCodesEnabled: promoCodesEnabled instanceof HTMLInputElement ? promoCodesEnabled.checked : true,
-        promoRequireReferrer: promoRequireReferrer instanceof HTMLInputElement ? promoRequireReferrer.checked : false,
         promoFirstOrderOnly: promoFirstOrderOnly instanceof HTMLInputElement ? promoFirstOrderOnly.checked : true,
       }),
     });
@@ -451,18 +447,15 @@
     const form = event.currentTarget;
     if (!(form instanceof HTMLFormElement)) return;
     const fd = new FormData(form);
-    await jsonFetch("/api/admin/referrals/campaigns", {
+    await jsonFetch("/api/admin/promocodes", {
       method: "POST",
       headers: headers({ "Content-Type": "application/json" }),
       body: JSON.stringify({
-        type: "promo_code",
         name: String(fd.get("name") || "").trim(),
         promoCode: String(fd.get("promoCode") || "").trim().toUpperCase(),
         status: String(fd.get("status") || "draft").trim().toLowerCase(),
-        rewardAmountOverride: Number(fd.get("rewardAmountOverride") || 0),
-        inviteeDiscountOverride: Number(fd.get("inviteeDiscountOverride") || 0),
-        discountCapPercentOverride: Number(fd.get("discountCapPercentOverride") || 0),
-        priority: Number(fd.get("priority") || 0),
+        discountType: String(fd.get("discountType") || "discount_amount").trim().toLowerCase(),
+        discountValue: Number(fd.get("discountValue") || 0),
         budgetAmount: Number(fd.get("budgetAmount") || 0),
         perUserCap: Number(fd.get("perUserCap") || 1),
         startsAt: fd.get("startsAt") ? new Date(String(fd.get("startsAt"))).toISOString() : null,
@@ -584,7 +577,7 @@
         const id = target.getAttribute("data-id");
         const status = target.getAttribute("data-status");
         if (!id || !status) return;
-        await jsonFetch(`/api/admin/referrals/campaigns/${encodeURIComponent(id)}`, {
+        await jsonFetch(`/api/admin/promocodes/${encodeURIComponent(id)}`, {
           method: "PATCH",
           headers: headers({ "Content-Type": "application/json" }),
           body: JSON.stringify({ status }),
@@ -594,9 +587,9 @@
       if (action === "promo-delete") {
         const id = target.getAttribute("data-id");
         if (!id) return;
-        const ok = await showConfirm("Удалить промокампанию без возможности восстановления?");
+        const ok = await showConfirm("Удалить промокод без возможности восстановления?");
         if (!ok) return;
-        await jsonFetch(`/api/admin/referrals/campaigns/${encodeURIComponent(id)}`, {
+        await jsonFetch(`/api/admin/promocodes/${encodeURIComponent(id)}`, {
           method: "DELETE",
           headers: headers({ "Content-Type": "application/json" }),
           body: JSON.stringify({}),
@@ -609,29 +602,23 @@
         const currentName = decodeAttr(target.getAttribute("data-name"));
         const currentPromo = decodeAttr(target.getAttribute("data-promo"));
         const currentStatus = decodeAttr(target.getAttribute("data-status")) || "draft";
-        const currentInvitee = Number(target.getAttribute("data-invitee") || 0);
-        const currentReward = Number(target.getAttribute("data-reward") || 0);
-        const currentCap = Number(target.getAttribute("data-cap") || 0);
-        const currentPriority = Number(target.getAttribute("data-priority") || 0);
+        const currentDiscountType = decodeAttr(target.getAttribute("data-discount-type")) || "discount_amount";
+        const currentDiscountValue = Number(target.getAttribute("data-discount-value") || 0);
         const currentBudget = Number(target.getAttribute("data-budget") || 0);
         const currentPerUserCap = Number(target.getAttribute("data-per-user-cap") || 1);
         const currentStartsAt = toDateInputValue(decodeAttr(target.getAttribute("data-starts-at")));
         const currentEndsAt = toDateInputValue(decodeAttr(target.getAttribute("data-ends-at")));
 
-        const nextName = window.prompt("Название кампании", currentName);
+        const nextName = window.prompt("Название промокода", currentName);
         if (nextName == null) return;
         const nextPromo = window.prompt("Промокод", currentPromo);
         if (nextPromo == null) return;
         const nextStatus = window.prompt("Статус: draft|active|paused|archived", currentStatus);
         if (nextStatus == null) return;
-        const nextInviteeRaw = window.prompt("Скидка для приглашенного (override)", String(currentInvitee));
-        if (nextInviteeRaw == null) return;
-        const nextRewardRaw = window.prompt("Вознаграждение рефереру (override)", String(currentReward));
-        if (nextRewardRaw == null) return;
-        const nextCapRaw = window.prompt("Лимит скидки (%) override", String(currentCap));
-        if (nextCapRaw == null) return;
-        const nextPriorityRaw = window.prompt("Приоритет", String(currentPriority));
-        if (nextPriorityRaw == null) return;
+        const nextDiscountType = window.prompt("Тип скидки: discount_amount | fixed_price", currentDiscountType);
+        if (nextDiscountType == null) return;
+        const nextDiscountValueRaw = window.prompt("Значение скидки/цены (сум)", String(currentDiscountValue));
+        if (nextDiscountValueRaw == null) return;
         const nextBudgetRaw = window.prompt("Бюджет кампании", String(currentBudget));
         if (nextBudgetRaw == null) return;
         const nextPerUserCapRaw = window.prompt("Лимит на пользователя", String(currentPerUserCap));
@@ -641,18 +628,15 @@
         const nextEndsAt = window.prompt("Дата конца (YYYY-MM-DDTHH:mm или пусто)", currentEndsAt);
         if (nextEndsAt == null) return;
 
-        await jsonFetch(`/api/admin/referrals/campaigns/${encodeURIComponent(id)}`, {
+        await jsonFetch(`/api/admin/promocodes/${encodeURIComponent(id)}`, {
           method: "PATCH",
           headers: headers({ "Content-Type": "application/json" }),
           body: JSON.stringify({
-            type: "promo_code",
             name: String(nextName || "").trim(),
             promoCode: String(nextPromo || "").trim().toUpperCase(),
             status: String(nextStatus || "").trim().toLowerCase(),
-            inviteeDiscountOverride: Number(nextInviteeRaw || 0),
-            rewardAmountOverride: Number(nextRewardRaw || 0),
-            discountCapPercentOverride: Number(nextCapRaw || 0),
-            priority: Number(nextPriorityRaw || 0),
+            discountType: String(nextDiscountType || "").trim().toLowerCase(),
+            discountValue: Number(nextDiscountValueRaw || 0),
             budgetAmount: Number(nextBudgetRaw || 0),
             perUserCap: Number(nextPerUserCapRaw || 1),
             startsAt: String(nextStartsAt || "").trim() ? new Date(String(nextStartsAt)).toISOString() : null,

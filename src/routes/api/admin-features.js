@@ -19,7 +19,12 @@ const { getSlugPricingConfig } = require("../../services/slug-pricing");
 const { buildDropSlugPool, reserveDropSlugs, getDropLiveStats, releaseUnsoldDropSlugs } = require("../../services/drops");
 const { sendTelegramMessage } = require("../../services/telegram");
 const { recalculateAllScores, recalculateAndRefreshPercentiles } = require("../../services/unq-score");
-const { normalizePromoCode, normalizeSource, normalizeOffer } = require("../../services/referral-v2");
+const { normalizeSource, normalizeOffer } = require("../../services/referral-v2");
+const {
+  normalizePromoCode,
+  normalizePromoStatus,
+  normalizePromoDiscountType,
+} = require("../../services/promo-codes");
 const { recordBonusLedger } = require("../../services/referral-v1");
 
 const router = express.Router();
@@ -682,6 +687,208 @@ router.get(
 );
 
 router.get(
+  "/promocodes",
+  asyncHandler(async (_req, res) => {
+    const items = prisma.promoCode
+      ? await prisma.promoCode.findMany({
+          orderBy: [{ status: "asc" }, { updatedAt: "desc" }],
+          take: 500,
+        })
+      : [];
+    res.json({ items });
+  }),
+);
+
+router.post(
+  "/promocodes",
+  asyncHandler(async (req, res) => {
+    if (!prisma.promoCode) {
+      res.status(503).json({ error: "Promo-code storage unavailable" });
+      return;
+    }
+    const name = String(req.body.name || "").trim();
+    const promoCode = normalizePromoCode(req.body.promoCode || req.body.code || "");
+    const status = normalizePromoStatus(req.body.status, "draft");
+    const discountType = normalizePromoDiscountType(req.body.discountType, "discount_amount");
+    const discountValue = Math.max(0, Math.round(Number(req.body.discountValue || 0)));
+    if (!name) {
+      res.status(400).json({ error: "Promo name is required" });
+      return;
+    }
+    if (!promoCode) {
+      res.status(400).json({ error: "Promo code is required" });
+      return;
+    }
+    if (discountType === "discount_amount" && discountValue <= 0) {
+      res.status(400).json({ error: "Discount value must be greater than 0" });
+      return;
+    }
+    const startsAt = req.body.startsAt ? new Date(req.body.startsAt) : null;
+    const endsAt = req.body.endsAt ? new Date(req.body.endsAt) : null;
+    if (startsAt && Number.isNaN(startsAt.getTime())) {
+      res.status(400).json({ error: "Invalid startsAt" });
+      return;
+    }
+    if (endsAt && Number.isNaN(endsAt.getTime())) {
+      res.status(400).json({ error: "Invalid endsAt" });
+      return;
+    }
+    if (startsAt && endsAt && startsAt > endsAt) {
+      res.status(400).json({ error: "startsAt must be before endsAt" });
+      return;
+    }
+    const budgetAmount = Math.max(0, Math.round(Number(req.body.budgetAmount || 0)));
+    const perUserCap = Math.max(1, Math.round(Number(req.body.perUserCap || 1)));
+
+    try {
+      const item = await prisma.promoCode.create({
+        data: {
+          code: promoCode,
+          name,
+          status,
+          discountType,
+          discountValue,
+          budgetAmount,
+          perUserCap,
+          startsAt,
+          endsAt,
+          createdBy: req.session?.admin?.login || "admin",
+        },
+      });
+      res.json({ ok: true, item });
+    } catch (error) {
+      if (error?.code === "P2002") {
+        res.status(409).json({ error: "Promo code already exists" });
+        return;
+      }
+      throw error;
+    }
+  }),
+);
+
+router.patch(
+  "/promocodes/:id",
+  asyncHandler(async (req, res) => {
+    if (!prisma.promoCode) {
+      res.status(503).json({ error: "Promo-code storage unavailable" });
+      return;
+    }
+    const existing = await prisma.promoCode.findUnique({
+      where: { id: req.params.id },
+    });
+    if (!existing) {
+      res.status(404).json({ error: "Promo code not found" });
+      return;
+    }
+    const nextCode = req.body.promoCode !== undefined || req.body.code !== undefined
+      ? normalizePromoCode(req.body.promoCode || req.body.code || "")
+      : String(existing.code || "");
+    if ((req.body.promoCode !== undefined || req.body.code !== undefined) && !nextCode) {
+      res.status(400).json({ error: "Promo code is required" });
+      return;
+    }
+    const nextDiscountType =
+      req.body.discountType !== undefined
+        ? normalizePromoDiscountType(req.body.discountType, existing.discountType)
+        : existing.discountType;
+    const nextDiscountValue =
+      req.body.discountValue !== undefined
+        ? Math.max(0, Math.round(Number(req.body.discountValue || 0)))
+        : Number(existing.discountValue || 0);
+    if (nextDiscountType === "discount_amount" && nextDiscountValue <= 0) {
+      res.status(400).json({ error: "Discount value must be greater than 0" });
+      return;
+    }
+    const startsAt =
+      req.body.startsAt !== undefined ? (req.body.startsAt ? new Date(req.body.startsAt) : null) : existing.startsAt;
+    const endsAt =
+      req.body.endsAt !== undefined ? (req.body.endsAt ? new Date(req.body.endsAt) : null) : existing.endsAt;
+    if (startsAt && Number.isNaN(new Date(startsAt).getTime())) {
+      res.status(400).json({ error: "Invalid startsAt" });
+      return;
+    }
+    if (endsAt && Number.isNaN(new Date(endsAt).getTime())) {
+      res.status(400).json({ error: "Invalid endsAt" });
+      return;
+    }
+    if (startsAt && endsAt && new Date(startsAt) > new Date(endsAt)) {
+      res.status(400).json({ error: "startsAt must be before endsAt" });
+      return;
+    }
+
+    try {
+      const item = await prisma.promoCode.update({
+        where: { id: existing.id },
+        data: {
+          ...(req.body.name !== undefined ? { name: String(req.body.name || "").trim() || existing.name } : {}),
+          ...(req.body.status !== undefined ? { status: normalizePromoStatus(req.body.status, existing.status) } : {}),
+          ...(req.body.promoCode !== undefined || req.body.code !== undefined ? { code: nextCode } : {}),
+          ...(req.body.discountType !== undefined ? { discountType: nextDiscountType } : {}),
+          ...(req.body.discountValue !== undefined ? { discountValue: nextDiscountValue } : {}),
+          ...(req.body.budgetAmount !== undefined ? { budgetAmount: Math.max(0, Math.round(Number(req.body.budgetAmount || 0))) } : {}),
+          ...(req.body.perUserCap !== undefined ? { perUserCap: Math.max(1, Math.round(Number(req.body.perUserCap || 1))) } : {}),
+          ...(req.body.startsAt !== undefined ? { startsAt: startsAt ? new Date(startsAt) : null } : {}),
+          ...(req.body.endsAt !== undefined ? { endsAt: endsAt ? new Date(endsAt) : null } : {}),
+        },
+      });
+      res.json({ ok: true, item });
+    } catch (error) {
+      if (error?.code === "P2002") {
+        res.status(409).json({ error: "Promo code already exists" });
+        return;
+      }
+      throw error;
+    }
+  }),
+);
+
+router.delete(
+  "/promocodes/:id",
+  asyncHandler(async (req, res) => {
+    if (!prisma.promoCode) {
+      res.status(503).json({ error: "Promo-code storage unavailable" });
+      return;
+    }
+    const existing = await prisma.promoCode.findUnique({
+      where: { id: req.params.id },
+      select: { id: true },
+    });
+    if (!existing) {
+      res.status(404).json({ error: "Promo code not found" });
+      return;
+    }
+    await prisma.promoCode.delete({ where: { id: existing.id } });
+    res.json({ ok: true, deleted: true });
+  }),
+);
+
+router.get(
+  "/promocodes/settings",
+  asyncHandler(async (_req, res) => {
+    const settings = await getManySettings([
+      "feature_promo_codes",
+      "promo_codes_first_order_only",
+    ]);
+    res.json({ settings });
+  }),
+);
+
+router.patch(
+  "/promocodes/settings",
+  asyncHandler(async (req, res) => {
+    const payload = {};
+    if (req.body.promoCodesEnabled !== undefined) payload.feature_promo_codes = Boolean(req.body.promoCodesEnabled);
+    if (req.body.promoFirstOrderOnly !== undefined) payload.promo_codes_first_order_only = Boolean(req.body.promoFirstOrderOnly);
+    await setSettingsBatch("platform", payload, req.session?.admin?.login || "admin");
+    const next = await getManySettings([
+      "feature_promo_codes",
+      "promo_codes_first_order_only",
+    ]);
+    res.json({ ok: true, settings: next });
+  }),
+);
+
+router.get(
   "/referrals/fraud",
   asyncHandler(async (req, res) => {
     const where = {};
@@ -942,15 +1149,9 @@ router.patch(
     if (req.body.fraudReviewScoreThreshold !== undefined) payload.referral_v2_review_score_threshold = Math.max(1, Math.round(Number(req.body.fraudReviewScoreThreshold || 60)));
     if (req.body.fraudBlockScoreThreshold !== undefined) payload.referral_v2_block_score_threshold = Math.max(1, Math.round(Number(req.body.fraudBlockScoreThreshold || 100)));
     if (req.body.defaultPerUserCap !== undefined) payload.referral_v2_default_per_user_cap = Math.max(1, Math.round(Number(req.body.defaultPerUserCap || 1)));
-    if (req.body.promoCodesEnabled !== undefined) payload.feature_promo_codes = Boolean(req.body.promoCodesEnabled);
-    if (req.body.promoRequireReferrer !== undefined) payload.promo_codes_require_referrer = Boolean(req.body.promoRequireReferrer);
-    if (req.body.promoFirstOrderOnly !== undefined) payload.promo_codes_first_order_only = Boolean(req.body.promoFirstOrderOnly);
     await setSettingsBatch("platform", payload, req.session?.admin?.login || "admin");
     const next = await getManySettings([
       "feature_referrals",
-      "feature_promo_codes",
-      "promo_codes_require_referrer",
-      "promo_codes_first_order_only",
       "referral_v1_referrer_reward",
       "referral_v1_invitee_discount",
       "referral_v1_discount_cap_percent",
@@ -971,9 +1172,6 @@ router.get(
   asyncHandler(async (_req, res) => {
     const settings = await getManySettings([
       "feature_referrals",
-      "feature_promo_codes",
-      "promo_codes_require_referrer",
-      "promo_codes_first_order_only",
       "referral_v1_referrer_reward",
       "referral_v1_invitee_discount",
       "referral_v1_discount_cap_percent",

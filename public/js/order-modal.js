@@ -83,6 +83,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     totalProductDiscountRow: document.getElementById("order-modal-total-product-discount-row"),
     totalProductDiscountValue: document.getElementById("order-modal-total-product-discount-value"),
     totalInviteeDiscountRow: document.getElementById("order-modal-total-invitee-discount-row"),
+    totalInviteeDiscountLabel: document.getElementById("order-modal-total-invitee-discount-label"),
     totalInviteeDiscountValue: document.getElementById("order-modal-total-invitee-discount-value"),
     totalBonusRow: document.getElementById("order-modal-total-bonus-row"),
     totalBonusValue: document.getElementById("order-modal-total-bonus-value"),
@@ -596,6 +597,18 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
             productDiscountAmount: 0,
           },
         },
+        promo: {
+          code: promoCode,
+          applied: false,
+          name: "",
+          discountType: "",
+          discountValue: 0,
+          reason: "",
+          policy: {
+            enabled: true,
+            firstOrderOnly: true,
+          },
+        },
       };
     }
   }
@@ -889,13 +902,27 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     const slug = String(order.slug || "").trim().toUpperCase();
     const slugPrice = Number(order.slugPrice || 0);
     const inviteeDiscountApplied = Number(order.inviteeDiscountApplied || 0);
+    const promoDiscountApplied = Number(order.promoDiscountApplied || 0);
+    const promoCodeApplied = String(order.promoCodeApplied || "").trim();
     const bonusSpent = Number(order.bonusSpent || 0);
     const planPriceValue = Number(order.planPrice || 0);
     const braceletPriceValue = order.bracelet ? Number(order.braceletPrice || 300000) : 0;
-    const totalAmount = Number(order.totalOneTime || Math.max(0, slugPrice - inviteeDiscountApplied - bonusSpent) + planPriceValue + braceletPriceValue);
+    const totalAmount = Number(order.totalOneTime || slugPrice + planPriceValue + braceletPriceValue);
     const userName = (currentUser?.displayName || currentUser?.firstName || "").trim() || "не указано";
     const userEmail = (currentUser?.email || "").trim() || "не указан";
-    const message = `Здравствуйте! Хочу оплатить заказ #️⃣ ${reference}\n\nUNQ: ${slug}\nФИО: ${userName}\nEmail: ${userEmail}\n\n💳 Детализация оплаты:\n• Slug ${slug}: ${formatPrice(slugPrice)} сум\n• Скидка по рефералке: -${formatPrice(inviteeDiscountApplied)} сум\n• Списано бонусов: -${formatPrice(bonusSpent)} сум\n• Тариф ${planLabel(order.requestedPlan)}: ${formatPrice(planPriceValue)} сум\n• Браслет: ${formatPrice(braceletPriceValue)} сум\n\nИтого к оплате: ${formatPrice(totalAmount)} сум`;
+    const message =
+      `Здравствуйте! Хочу оплатить заказ #️⃣ ${reference}\n\n` +
+      `UNQ: ${slug}\n` +
+      `ФИО: ${userName}\n` +
+      `Email: ${userEmail}\n\n` +
+      `💳 Детализация оплаты:\n` +
+      `• Slug ${slug}: ${formatPrice(slugPrice)} сум\n` +
+      (inviteeDiscountApplied > 0 ? `• Скидка по рефералке: -${formatPrice(inviteeDiscountApplied)} сум\n` : "") +
+      (promoDiscountApplied > 0 ? `• Скидка по промокоду${promoCodeApplied ? ` (${promoCodeApplied})` : ""}: -${formatPrice(promoDiscountApplied)} сум\n` : "") +
+      (bonusSpent > 0 ? `• Списано бонусов: -${formatPrice(bonusSpent)} сум\n` : "") +
+      `• Тариф ${planLabel(order.requestedPlan)}: ${formatPrice(planPriceValue)} сум\n` +
+      `• Браслет: ${formatPrice(braceletPriceValue)} сум\n\n` +
+      `Итого к оплате: ${formatPrice(totalAmount)} сум`;
     return `https://t.me/unqx_uz?text=${encodeURIComponent(message)}`;
   }
 
@@ -1110,16 +1137,41 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     const slugBaseForCap = server?.flash?.basePrice ? Number(server.flash.basePrice || slugPrice) : slugPrice;
     const productDiscountAmount = Math.max(0, Math.round(slugBaseForCap - slugPrice));
     const referral = state.checkoutContext?.referral && typeof state.checkoutContext.referral === "object" ? state.checkoutContext.referral : null;
-    const capPercent = Number(referral?.capPercent || 0);
-    const inviteeCandidate = Number(referral?.inviteeDiscountCandidate || 0);
-    const walletBalance = Number(referral?.walletBalance || 0);
-    const capAmount = Math.max(0, Math.floor((Math.max(0, slugBaseForCap) * capPercent) / 100));
-    const capRemaining = Math.max(0, capAmount - productDiscountAmount);
-    const inviteeDiscountApplied = Math.max(0, Math.min(inviteeCandidate, capRemaining, slugPrice));
-    const afterInvitee = Math.max(0, slugPrice - inviteeDiscountApplied);
-    const bonusSpent = Math.max(0, Math.min(walletBalance, Math.max(0, capRemaining - inviteeDiscountApplied), afterInvitee));
-    const slugPayable = Math.max(0, afterInvitee - bonusSpent);
-    const discountCapApplied = Math.max(0, (inviteeCandidate - inviteeDiscountApplied) + Math.max(0, walletBalance - bonusSpent));
+    const promo = state.checkoutContext?.promo && typeof state.checkoutContext.promo === "object" ? state.checkoutContext.promo : null;
+    const promoApplied = Boolean(promo?.applied);
+    const promoDiscountType = String(promo?.discountType || "").trim().toLowerCase();
+    const promoDiscountValue = Math.max(0, Math.round(Number(promo?.discountValue || 0)));
+    const applyPromo = (price) => {
+      const base = Math.max(0, Math.round(Number(price || 0)));
+      if (!promoApplied) {
+        return { finalPrice: base, discountApplied: 0 };
+      }
+      if (promoDiscountType === "fixed_price") {
+        const finalPrice = Math.max(0, Math.min(base, promoDiscountValue));
+        return { finalPrice, discountApplied: Math.max(0, base - finalPrice) };
+      }
+      const discountApplied = Math.min(base, promoDiscountValue);
+      return { finalPrice: Math.max(0, base - discountApplied), discountApplied };
+    };
+    const promoPricing = applyPromo(slugPrice);
+    const promoDiscountApplied = promoPricing.discountApplied;
+    const slugAfterPromo = promoPricing.finalPrice;
+    let inviteeDiscountApplied = 0;
+    let bonusSpent = 0;
+    let discountCapApplied = 0;
+    let slugPayable = slugAfterPromo;
+    if (!promoApplied) {
+      const capPercent = Number(referral?.capPercent || 0);
+      const inviteeCandidate = Number(referral?.inviteeDiscountCandidate || 0);
+      const walletBalance = Number(referral?.walletBalance || 0);
+      const capAmount = Math.max(0, Math.floor((Math.max(0, slugBaseForCap) * capPercent) / 100));
+      const capRemaining = Math.max(0, capAmount - productDiscountAmount);
+      inviteeDiscountApplied = Math.max(0, Math.min(inviteeCandidate, capRemaining, slugPrice));
+      const afterInvitee = Math.max(0, slugPrice - inviteeDiscountApplied);
+      bonusSpent = Math.max(0, Math.min(walletBalance, Math.max(0, capRemaining - inviteeDiscountApplied), afterInvitee));
+      slugPayable = Math.max(0, afterInvitee - bonusSpent);
+      discountCapApplied = Math.max(0, (inviteeCandidate - inviteeDiscountApplied) + Math.max(0, walletBalance - bonusSpent));
+    }
     const braceletPrice = bracelet ? pricingSettings.braceletPrice : 0;
     const oneTime = slugPayable + planCharge + braceletPrice;
     const slugLabel = pricing ? pricing.slug : "___ ___";
@@ -1229,12 +1281,16 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     if (dom.totalProductDiscountValue instanceof HTMLElement) {
       dom.totalProductDiscountValue.textContent = `-${formatPrice(productDiscountAmount)} сум`;
     }
+    const discountRowAmount = promoApplied ? promoDiscountApplied : inviteeDiscountApplied;
     if (dom.totalInviteeDiscountRow instanceof HTMLElement) {
-      dom.totalInviteeDiscountRow.classList.toggle("hidden", inviteeDiscountApplied <= 0);
-      dom.totalInviteeDiscountRow.classList.toggle("flex", inviteeDiscountApplied > 0);
+      dom.totalInviteeDiscountRow.classList.toggle("hidden", discountRowAmount <= 0);
+      dom.totalInviteeDiscountRow.classList.toggle("flex", discountRowAmount > 0);
+    }
+    if (dom.totalInviteeDiscountLabel instanceof HTMLElement) {
+      dom.totalInviteeDiscountLabel.textContent = promoApplied ? "Скидка по промокоду" : "Скидка по рефералке";
     }
     if (dom.totalInviteeDiscountValue instanceof HTMLElement) {
-      dom.totalInviteeDiscountValue.textContent = `-${formatPrice(inviteeDiscountApplied)} сум`;
+      dom.totalInviteeDiscountValue.textContent = `-${formatPrice(discountRowAmount)} сум`;
     }
     if (dom.totalBonusRow instanceof HTMLElement) {
       dom.totalBonusRow.classList.toggle("hidden", bonusSpent <= 0);
@@ -1259,29 +1315,32 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     if (dom.campaignHint instanceof HTMLElement) {
       const campaignApplied = Boolean(referral?.campaignApplied);
       const campaignName = String(referral?.campaignName || "").trim();
-      const promoCodeApplied = String(referral?.promoCodeApplied || "").trim();
-      const referralHint = String(referral?.fraudHint || "").trim();
-      if (campaignApplied) {
+      const promo = state.checkoutContext?.promo && typeof state.checkoutContext.promo === "object" ? state.checkoutContext.promo : null;
+      const promoCodeApplied = String(promo?.code || "").trim();
+      const promoApplied = Boolean(promo?.applied);
+      const promoReason = String(promo?.reason || "").trim();
+      const promoHasInput = Boolean(state.promoCode || promoCodeApplied);
+      if (promoApplied && promoCodeApplied) {
+        dom.campaignHint.classList.remove("hidden");
+        dom.campaignHint.textContent = `Промокод применен: ${promoCodeApplied}`;
+      } else if (promoHasInput && promoReason) {
+        const reasonLabel =
+          promoReason === "promo_disabled"
+            ? "Промокоды временно отключены."
+            : promoReason === "promo_first_order_only"
+            ? "Промокод доступен только для первого заказа."
+            : promoReason === "per_user_cap_reached"
+            ? "Лимит использования промокода исчерпан."
+            : promoReason === "promo_budget_exhausted"
+            ? "Бюджет промокода исчерпан."
+            : "Промокод не найден или не активен.";
+        dom.campaignHint.classList.remove("hidden");
+        dom.campaignHint.textContent = reasonLabel;
+      } else if (campaignApplied) {
         dom.campaignHint.classList.remove("hidden");
         dom.campaignHint.textContent = campaignName
-          ? `Применена кампания: ${campaignName}${promoCodeApplied ? ` (${promoCodeApplied})` : ""}`
-          : `Применена акция${promoCodeApplied ? ` (${promoCodeApplied})` : ""}`;
-      } else if (referralHint && (state.promoCode || promoCodeApplied)) {
-        const reasonLabel =
-          referralHint === "promo_disabled"
-            ? "Промокоды временно отключены."
-            : referralHint === "promo_requires_referrer"
-            ? "Промокод доступен только при заказе по реферальной ссылке."
-            : referralHint === "promo_first_order_only"
-            ? "Промокод доступен только для первого заказа."
-            : "";
-        if (reasonLabel) {
-          dom.campaignHint.classList.remove("hidden");
-          dom.campaignHint.textContent = reasonLabel;
-        } else {
-          dom.campaignHint.classList.add("hidden");
-          dom.campaignHint.textContent = "";
-        }
+          ? `Применена кампания: ${campaignName}`
+          : "Применена акция";
       } else if (state.promoValidationHint) {
         dom.campaignHint.classList.remove("hidden");
         dom.campaignHint.textContent = state.promoValidationHint;
@@ -1344,15 +1403,31 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
         if (dom.campaignHint instanceof HTMLElement) {
           dom.campaignHint.classList.remove("hidden");
           const policyHints = [];
-          if (payload?.policy?.requireReferrer) policyHints.push("нужен реферер");
           if (payload?.policy?.firstOrderOnly) policyHints.push("только первый заказ");
-          dom.campaignHint.textContent = `Промокод применен: ${promoCode}${payload?.campaignName ? ` · ${payload.campaignName}` : ""}${policyHints.length ? ` (${policyHints.join(", ")})` : ""}`;
+          const discountType = String(payload?.discountType || "").trim().toLowerCase();
+          const discountValue = Math.max(0, Math.round(Number(payload?.discountValue || 0)));
+          const discountLabel =
+            discountValue > 0
+              ? discountType === "fixed_price"
+                ? `фикс. цена ${formatPrice(discountValue)} сум`
+                : `скидка ${formatPrice(discountValue)} сум`
+              : "";
+          const namePart = payload?.name ? ` · ${payload.name}` : "";
+          const discountPart = discountLabel ? ` · ${discountLabel}` : "";
+          dom.campaignHint.textContent = `Промокод применен: ${promoCode}${namePart}${discountPart}${policyHints.length ? ` (${policyHints.join(", ")})` : ""}`;
         }
       } else {
         const reason = String(payload?.reason || "").trim().toLowerCase();
-        state.promoValidationHint = reason === "promo_disabled"
-          ? "Промокоды временно отключены."
-          : "Промокод не найден или не активен.";
+        state.promoValidationHint =
+          reason === "promo_disabled"
+            ? "Промокоды временно отключены."
+            : reason === "promo_first_order_only"
+            ? "Промокод доступен только для первого заказа."
+            : reason === "per_user_cap_reached"
+            ? "Лимит использования промокода исчерпан."
+            : reason === "promo_budget_exhausted"
+            ? "Бюджет промокода исчерпан."
+            : "Промокод не найден или не активен.";
         if (dom.campaignHint instanceof HTMLElement) {
           dom.campaignHint.classList.remove("hidden");
           dom.campaignHint.textContent = state.promoValidationHint;
@@ -1469,7 +1544,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     state.dropId = typeof options.dropId === "string" && options.dropId ? options.dropId : null;
     state.refSource = attribution.refSource;
     state.refOffer = attribution.refOffer;
-    state.promoCode = String(options.promoCode || precheck?.referral?.promoCodeApplied || "").trim().toUpperCase().replace(/[^A-Z0-9_-]/g, "").slice(0, 32);
+    state.promoCode = String(options.promoCode || precheck?.promo?.code || "").trim().toUpperCase().replace(/[^A-Z0-9_-]/g, "").slice(0, 32);
     if (dom.promoCode instanceof HTMLInputElement) {
       dom.promoCode.value = state.promoCode;
     }
@@ -1678,12 +1753,18 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
         const slugPrice = Number(payload?.pricing?.slugPrice || 0);
         const slugBasePrice = Number(payload?.pricing?.slugBasePrice || slugPrice);
         const inviteeDiscountApplied = Number(payload?.pricing?.inviteeDiscountApplied || 0);
+        const promoDiscountApplied = Number(payload?.pricing?.promoDiscountApplied || 0);
+        const promoCodeApplied = String(payload?.pricing?.promoCodeApplied || "").trim();
         const bonusSpent = Number(payload?.pricing?.bonusSpent || 0);
         const planPrice = Number(payload?.pricing?.planPrice || 0);
         const braceletPrice = Number(payload?.pricing?.braceletPrice || 0);
         const totalAmount = Number(payload?.pricing?.totalOneTime || 0);
         const orderCode = String(payload?.payment?.reference || "").trim() || `UNQX-${String(payload.orderId).replace(/[^a-zA-Z0-9]/g, "").slice(0, 10).toUpperCase()}`;
         const planLabel = plan === "premium" ? "Тариф Премиум" : "Тариф Базовый";
+        const baseLine = slugBasePrice > slugPrice ? `• База slug ${pricing.slug}: ${formatPrice(slugBasePrice)} сум\n` : "";
+        const referralLine = inviteeDiscountApplied > 0 ? `• Скидка по рефералке: -${formatPrice(inviteeDiscountApplied)} сум\n` : "";
+        const promoLine = promoDiscountApplied > 0 ? `• Скидка по промокоду${promoCodeApplied ? ` (${promoCodeApplied})` : ""}: -${formatPrice(promoDiscountApplied)} сум\n` : "";
+        const bonusLine = bonusSpent > 0 ? `• Списано бонусов: -${formatPrice(bonusSpent)} сум\n` : "";
         const message = `Здравствуйте! Хочу оплатить заказ #️⃣ ${orderCode}
 
       UNQ: ${pricing.slug}
@@ -1692,11 +1773,8 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
 
       ━━━━━━━━━━━━
       💳 Детализация оплаты:
-      • База slug ${pricing.slug}: ${formatPrice(slugBasePrice)} сум
-      • Slug ${pricing.slug}: ${formatPrice(slugPrice)} сум
-      • Скидка по рефералке: -${formatPrice(inviteeDiscountApplied)} сум
-      • Списано бонусов: -${formatPrice(bonusSpent)} сум
-      • ${planLabel}: ${formatPrice(planPrice)} сум
+      ${baseLine}• Slug ${pricing.slug}: ${formatPrice(slugPrice)} сум
+      ${referralLine}${promoLine}${bonusLine}• ${planLabel}: ${formatPrice(planPrice)} сум
       • Браслет: ${formatPrice(braceletPrice)} сум
       ━━━━━━━━━━━━
       Итого к оплате: ${formatPrice(totalAmount)} сум`;

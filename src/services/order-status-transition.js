@@ -172,6 +172,7 @@ async function applyOrderStatusTransition({
                         fraudReason: order.fraudReason || null,
                         campaignSnapshot: order.campaignSnapshot || null,
                         inviteeDiscountApplied: Number(order.inviteeDiscountApplied || 0),
+                        promoDiscountApplied: Number(order.promoDiscountApplied || 0),
                         bonusSpent: Number(order.bonusSpent || 0),
                         discountCapApplied: Number(order.discountCapApplied || 0),
                     },
@@ -214,15 +215,18 @@ async function applyOrderStatusTransition({
                 }
 
                 const isFraudAllowed = String(order.fraudVerdict || "allow") === "allow";
+                const promoApplied =
+                    Number(order.promoDiscountApplied || 0) > 0 || Boolean(order.promoCode);
                 const rewardAmountFromSnapshot = Math.max(
                     0,
                     Math.round(Number(order?.campaignSnapshot?.referrerReward || referralSettings.referrerReward || 0)),
                 );
                 const shouldProcessReferral =
-                    referralSettings.enabled ||
-                    Number(order.inviteeDiscountApplied || 0) > 0 ||
-                    Number(order.bonusSpent || 0) > 0 ||
-                    Boolean(order.refCode);
+                    !promoApplied &&
+                    (referralSettings.enabled ||
+                        Number(order.inviteeDiscountApplied || 0) > 0 ||
+                        Number(order.bonusSpent || 0) > 0 ||
+                        Boolean(order.refCode));
 
                 if (shouldProcessReferral && tx.referralConversion) {
                     const referrer = await resolveReferrerForUser({
@@ -292,12 +296,14 @@ async function applyOrderStatusTransition({
                     }
                 }
 
-                await finalizeCampaignUsage({
-                    tx,
-                    orderId: row.id,
-                    purchaseId: slugPurchase.id,
-                    amountSpent: Number(order.inviteeDiscountApplied || 0),
-                });
+                if (!promoApplied) {
+                    await finalizeCampaignUsage({
+                        tx,
+                        orderId: row.id,
+                        purchaseId: slugPurchase.id,
+                        amountSpent: Number(order.inviteeDiscountApplied || 0),
+                    });
+                }
             }
         }
 

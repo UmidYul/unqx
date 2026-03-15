@@ -152,6 +152,18 @@ enum ReferralCampaignStatus {
   archived
 }
 
+enum PromoCodeStatus {
+  draft
+  active
+  paused
+  archived
+}
+
+enum PromoCodeDiscountType {
+  discount_amount
+  fixed_price
+}
+
 enum ReferralFraudVerdict {
   allow
   block
@@ -384,6 +396,7 @@ model SlugRequest {
   fraudReason        String?           @map("fraud_reason")
   campaignSnapshot   Json?             @map("campaign_snapshot")
   inviteeDiscountApplied Int           @default(0) @map("invitee_discount_applied")
+  promoDiscountApplied Int             @default(0) @map("promo_discount_applied")
   bonusSpent         Int               @default(0) @map("bonus_spent")
   discountCapApplied Int               @default(0) @map("discount_cap_applied")
   conversion         ReferralConversion?
@@ -423,6 +436,7 @@ model Purchase {
   fraudReason     String?      @map("fraud_reason")
   campaignSnapshot Json?       @map("campaign_snapshot")
   inviteeDiscountApplied Int   @default(0) @map("invitee_discount_applied")
+  promoDiscountApplied Int     @default(0) @map("promo_discount_applied")
   bonusSpent      Int          @default(0) @map("bonus_spent")
   discountCapApplied Int       @default(0) @map("discount_cap_applied")
   conversion      ReferralConversion?
@@ -530,6 +544,26 @@ model ReferralCampaign {
   @@index([source, offer, status, priority(sort: Desc)])
   @@index([promoCode, status, priority(sort: Desc)])
   @@map("referral_campaigns")
+}
+
+model PromoCode {
+  id           String                @id @default(uuid())
+  code         String                @unique @db.VarChar(32)
+  name         String                @db.VarChar(180)
+  status       PromoCodeStatus       @default(draft)
+  discountType PromoCodeDiscountType @map("discount_type")
+  discountValue Int                  @map("discount_value")
+  budgetAmount Int                   @default(0) @map("budget_amount")
+  perUserCap   Int                   @default(1) @map("per_user_cap")
+  startsAt     DateTime?             @map("starts_at")
+  endsAt       DateTime?             @map("ends_at")
+  createdBy    String?               @map("created_by") @db.VarChar(80)
+  createdAt    DateTime              @default(now()) @map("created_at")
+  updatedAt    DateTime              @updatedAt @map("updated_at")
+
+  @@index([status, startsAt, endsAt])
+  @@index([code, status, discountType])
+  @@map("promo_codes")
 }
 
 model ReferralCampaignUsage {
