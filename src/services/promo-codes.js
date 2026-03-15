@@ -23,6 +23,7 @@ function normalizePromoDiscountType(value, fallback = "discount_amount") {
   const type = String(value || "").trim().toLowerCase();
   if (["discount", "discount_amount", "amount", "fixed_discount"].includes(type)) return "discount_amount";
   if (["fixed", "fixed_price", "price"].includes(type)) return "fixed_price";
+  if (["percent", "percentage", "discount_percent", "percent_off"].includes(type)) return "discount_percent";
   return fallback;
 }
 
@@ -195,6 +196,14 @@ function applyPromoToPrice({ basePrice, promo }) {
     return {
       finalPrice,
       discountApplied: Math.max(0, price - finalPrice),
+    };
+  }
+  if (discountType === "discount_percent") {
+    const percent = Math.max(0, Math.min(100, discountValue));
+    const discountApplied = Math.min(price, Math.round((price * percent) / 100));
+    return {
+      finalPrice: Math.max(0, price - discountApplied),
+      discountApplied,
     };
   }
   const discountApplied = Math.min(price, discountValue);

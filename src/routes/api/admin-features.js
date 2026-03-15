@@ -723,6 +723,10 @@ router.post(
       res.status(400).json({ error: "Discount value must be greater than 0" });
       return;
     }
+    if (discountType === "discount_percent" && (discountValue <= 0 || discountValue > 100)) {
+      res.status(400).json({ error: "Discount percent must be between 1 and 100" });
+      return;
+    }
     const startsAt = req.body.startsAt ? new Date(req.body.startsAt) : null;
     const endsAt = req.body.endsAt ? new Date(req.body.endsAt) : null;
     if (startsAt && Number.isNaN(startsAt.getTime())) {
@@ -797,6 +801,10 @@ router.patch(
         : Number(existing.discountValue || 0);
     if (nextDiscountType === "discount_amount" && nextDiscountValue <= 0) {
       res.status(400).json({ error: "Discount value must be greater than 0" });
+      return;
+    }
+    if (nextDiscountType === "discount_percent" && (nextDiscountValue <= 0 || nextDiscountValue > 100)) {
+      res.status(400).json({ error: "Discount percent must be between 1 and 100" });
       return;
     }
     const startsAt =

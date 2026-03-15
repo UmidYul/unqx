@@ -300,12 +300,17 @@
             const statusLabel = status === "active" ? "Пауза" : "Активировать";
             const statusView = status === "active" ? "Активна" : status === "paused" ? "Пауза" : status === "archived" ? "Архив" : "Черновик";
             const discountType = String(item.discountType || "discount_amount");
-            const discountLabel = discountType === "fixed_price" ? "Фикс цена" : "Скидка";
+            const discountLabel =
+              discountType === "fixed_price"
+                ? `Фикс цена ${P(item.discountValue || 0)}`
+                : discountType === "discount_percent"
+                ? `Скидка ${Number(item.discountValue || 0)}%`
+                : `Скидка ${P(item.discountValue || 0)}`;
             return `<tr class="admin-table-row border-t border-neutral-100">
               <td class="px-4 py-3">${item.name || "-"}</td>
               <td class="px-4 py-3 font-mono">${item.code || "-"}</td>
               <td class="px-4 py-3">${statusView}</td>
-              <td class="px-4 py-3">${discountLabel} ${P(item.discountValue || 0)}</td>
+              <td class="px-4 py-3">${discountLabel}</td>
               <td class="px-4 py-3">${P(item.budgetAmount || 0)}</td>
               <td class="px-4 py-3">${Number(item.perUserCap || 1)}</td>
               <td class="px-4 py-3">${D(item.startsAt)} - ${D(item.endsAt)}</td>
@@ -615,9 +620,9 @@
         if (nextPromo == null) return;
         const nextStatus = window.prompt("Статус: draft|active|paused|archived", currentStatus);
         if (nextStatus == null) return;
-        const nextDiscountType = window.prompt("Тип скидки: discount_amount | fixed_price", currentDiscountType);
+        const nextDiscountType = window.prompt("Тип скидки: discount_amount | fixed_price | discount_percent", currentDiscountType);
         if (nextDiscountType == null) return;
-        const nextDiscountValueRaw = window.prompt("Значение скидки/цены (сум)", String(currentDiscountValue));
+        const nextDiscountValueRaw = window.prompt("Значение скидки/цены (сум или %)", String(currentDiscountValue));
         if (nextDiscountValueRaw == null) return;
         const nextBudgetRaw = window.prompt("Бюджет кампании", String(currentBudget));
         if (nextBudgetRaw == null) return;

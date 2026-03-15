@@ -1150,6 +1150,11 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
         const finalPrice = Math.max(0, Math.min(base, promoDiscountValue));
         return { finalPrice, discountApplied: Math.max(0, base - finalPrice) };
       }
+      if (promoDiscountType === "discount_percent") {
+        const percent = Math.max(0, Math.min(100, promoDiscountValue));
+        const discountApplied = Math.min(base, Math.round((base * percent) / 100));
+        return { finalPrice: Math.max(0, base - discountApplied), discountApplied };
+      }
       const discountApplied = Math.min(base, promoDiscountValue);
       return { finalPrice: Math.max(0, base - discountApplied), discountApplied };
     };
@@ -1410,6 +1415,8 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
             discountValue > 0
               ? discountType === "fixed_price"
                 ? `фикс. цена ${formatPrice(discountValue)} сум`
+                : discountType === "discount_percent"
+                ? `скидка ${discountValue}%`
                 : `скидка ${formatPrice(discountValue)} сум`
               : "";
           const namePart = payload?.name ? ` · ${payload.name}` : "";

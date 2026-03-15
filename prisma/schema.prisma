@@ -162,6 +162,7 @@ enum PromoCodeStatus {
 enum PromoCodeDiscountType {
   discount_amount
   fixed_price
+  discount_percent
 }
 
 enum ReferralFraudVerdict {
