@@ -1529,7 +1529,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     return currentUser;
   }
 
-  function prefillFromOpenOptions(options = {}, precheck = null) {
+  function prefillFromOpenOptions(options = {}, precheck = null, preserveSlug = false) {
     const params = new URLSearchParams(window.location.search);
     const queryPlan = params.get("tariff");
     const queryTheme = params.get("theme");
@@ -1577,7 +1577,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     if (parsed) {
       dom.letters.value = parsed.letters;
       dom.digits.value = parsed.digits;
-    } else {
+    } else if (!preserveSlug) {
       dom.letters.value = "";
       dom.digits.value = "";
     }
@@ -1616,7 +1616,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
 
   async function refreshCheckoutContext() {
     const precheck = await fetchOrderPrecheck(state.lastOpenOptions || {});
-    prefillFromOpenOptions(state.lastOpenOptions || {}, precheck);
+    prefillFromOpenOptions(state.lastOpenOptions || {}, precheck, true);
     const step = applyOrderPrecheck(precheck);
     setStep(step);
     return precheck;
