@@ -153,7 +153,7 @@ router.get(
 );
 
 router.get(
-  "/manager",
+  ["/manager", "/manager/"],
   asyncHandler(async (req, res) => {
     const adminSession = getAdminSession(req);
     if (adminSession) {
@@ -165,7 +165,7 @@ router.get(
 );
 
 router.get(
-  "/manager/login",
+  ["/manager/login", "/manager/login/"],
   asyncHandler(async (req, res) => {
     const adminSession = getAdminSession(req);
     if (adminSession) {
@@ -181,7 +181,7 @@ router.get(
 );
 
 router.get(
-  "/manager/dashboard",
+  ["/manager/dashboard", "/manager/dashboard/"],
   requireStaffPage,
   asyncHandler(async (req, res) => {
     const adminSession = getAdminSession(req);
