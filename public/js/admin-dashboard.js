@@ -5,6 +5,7 @@
 
   const adminRole = String(body.getAttribute("data-admin-role") || "admin").toLowerCase();
   const isManager = adminRole === "manager";
+  const userCardBasePath = isManager ? "/manager/users" : "/admin/users";
 
   const autofillIgnoreSelectors = "form,input,textarea,select";
   const autofillIgnoreAttrs = ["data-bwignore", "data-lpignore", "data-1p-ignore"];
@@ -880,7 +881,7 @@
             menuItems.push(menuSeparator());
           }
 
-          menuItems.push(menuItem({ label: "Профиль и визитка", icon: "pen", attrs: `data-act="open-url" data-url="/admin/users/${encodeURIComponent(String(x.telegramId || ""))}/card"` }));
+          menuItems.push(menuItem({ label: "Профиль и визитка", icon: "pen", attrs: `data-act="open-url" data-url="${userCardBasePath}/${encodeURIComponent(String(x.telegramId || ""))}/card"` }));
           menuItems.push(menuItem({ label: "Открыть профиль", icon: "external", attrs: profileLink ? `data-act="open-url" data-url="${profileLink}"` : 'disabled="disabled"' }));
 
           if (!isManager) {

@@ -9,6 +9,13 @@ const { getBaseUrl } = require("../../utils/url");
 
 const router = express.Router();
 
+function resolveStaffHome(adminSession) {
+  if (!adminSession) {
+    return "/admin/login";
+  }
+  return adminSession.role === "manager" ? "/manager/dashboard" : "/admin/dashboard";
+}
+
 function buildQuery(basePath, params) {
   const search = new URLSearchParams();
 
@@ -25,8 +32,9 @@ function buildQuery(basePath, params) {
 router.get(
   "/admin",
   asyncHandler(async (req, res) => {
-    if (getAdminSession(req)) {
-      res.redirect("/admin/dashboard");
+    const adminSession = getAdminSession(req);
+    if (adminSession) {
+      res.redirect(resolveStaffHome(adminSession));
       return;
     }
 
@@ -41,8 +49,9 @@ router.get(
 router.get(
   "/admin/login",
   asyncHandler(async (req, res) => {
-    if (getAdminSession(req)) {
-      res.redirect("/admin/dashboard");
+    const adminSession = getAdminSession(req);
+    if (adminSession) {
+      res.redirect(resolveStaffHome(adminSession));
       return;
     }
     res.render("admin/login", {
@@ -77,7 +86,7 @@ router.post(
         data: { lastLoginAt: new Date() },
       }).catch(() => {});
     }
-    res.redirect("/admin/dashboard");
+    res.redirect(resolveStaffHome(staffPayload));
   }),
 );
 
@@ -100,6 +109,10 @@ router.get(
   asyncHandler(async (req, res) => {
     const adminSession = getAdminSession(req);
     const role = adminSession?.role || "admin";
+    if (role === "manager") {
+      res.redirect("/manager/dashboard");
+      return;
+    }
     const adminTabs = new Set([
       "analytics",
       "orders",
@@ -134,6 +147,58 @@ router.get(
       activeTab: tab,
       query: req.query || {},
       buildDashboardUrl: (next) => buildQuery("/admin/dashboard", next),
+      dashboardBasePath: "/admin/dashboard",
+    });
+  }),
+);
+
+router.get(
+  "/manager",
+  asyncHandler(async (req, res) => {
+    const adminSession = getAdminSession(req);
+    if (adminSession) {
+      res.redirect(resolveStaffHome(adminSession));
+      return;
+    }
+    res.redirect("/manager/login");
+  }),
+);
+
+router.get(
+  "/manager/login",
+  asyncHandler(async (req, res) => {
+    const adminSession = getAdminSession(req);
+    if (adminSession) {
+      res.redirect(resolveStaffHome(adminSession));
+      return;
+    }
+    res.render("manager/login", {
+      title: "Вход менеджера",
+      error: "",
+      adminSession: null,
+    });
+  }),
+);
+
+router.get(
+  "/manager/dashboard",
+  requireStaffPage,
+  asyncHandler(async (req, res) => {
+    const adminSession = getAdminSession(req);
+    const role = adminSession?.role || "admin";
+    if (role !== "manager") {
+      res.redirect("/admin/dashboard");
+      return;
+    }
+    const tab = "users";
+    res.render("manager/dashboard", {
+      title: "Дашборд менеджера",
+      adminSession,
+      publicBaseUrl: getBaseUrl(),
+      activeTab: tab,
+      query: req.query || {},
+      buildDashboardUrl: (next) => buildQuery("/manager/dashboard", next),
+      dashboardBasePath: "/manager/dashboard",
     });
   }),
 );
@@ -142,10 +207,33 @@ router.get(
   "/admin/users/:userId/card",
   requireStaffPage,
   asyncHandler(async (req, res) => {
+    const adminSession = getAdminSession(req);
+    if (adminSession?.role === "manager") {
+      res.redirect("/manager/users/" + encodeURIComponent(String(req.params.userId || "")) + "/card");
+      return;
+    }
     const userId = typeof req.params.userId === "string" ? req.params.userId.trim() : "";
     res.render("admin/user-card", {
       title: "Визитка пользователя",
-      adminSession: getAdminSession(req),
+      adminSession,
+      userId,
+    });
+  }),
+);
+
+router.get(
+  "/manager/users/:userId/card",
+  requireStaffPage,
+  asyncHandler(async (req, res) => {
+    const adminSession = getAdminSession(req);
+    if (!adminSession || adminSession.role !== "manager") {
+      res.redirect("/admin/users/" + encodeURIComponent(String(req.params.userId || "")) + "/card");
+      return;
+    }
+    const userId = typeof req.params.userId === "string" ? req.params.userId.trim() : "";
+    res.render("admin/user-card", {
+      title: "Визитка пользователя",
+      adminSession,
       userId,
     });
   }),

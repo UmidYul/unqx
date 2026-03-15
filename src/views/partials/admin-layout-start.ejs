@@ -3,10 +3,13 @@
   const layoutCurrentPath = typeof currentPath === "string" && currentPath ? currentPath : "";
   const adminRole = adminSession && adminSession.role ? adminSession.role : "admin";
   const adminName = adminSession && adminSession.name ? adminSession.name : (adminRole === "manager" ? "Manager" : "Admin");
+  const brandLabel = adminRole === "manager" ? "UNQX Manager" : "UNQX Admin";
+  const avatarLetter = String(adminName || (adminRole === "manager" ? "Manager" : "Admin")).trim().slice(0, 1).toUpperCase() || (adminRole === "manager" ? "M" : "A");
   const allowedTabs = adminRole === "manager" ? new Set(["users"]) : null;
-  const isDashboardRoute = layoutCurrentPath === "/admin/dashboard";
+  const dashboardBasePath = typeof dashboardBasePath === "string" && dashboardBasePath ? dashboardBasePath : "/admin/dashboard";
+  const isDashboardRoute = layoutCurrentPath === dashboardBasePath;
 
-  const dashboardLink = (tab) => `/admin/dashboard?tab=${tab}`;
+  const dashboardLink = (tab) => `${dashboardBasePath}?tab=${tab}`;
   const sectionGroups = [
     {
       label: "ОСНОВНОЕ",
@@ -67,9 +70,9 @@
 <div class="admin-shell">
   <aside id="admin-sidebar" class="admin-sidebar" aria-label="Навигация админ-панели">
     <div class="admin-sidebar-head">
-      <a href="/admin/dashboard" class="admin-brand" aria-label="UNQX Admin">
+      <a href="<%= dashboardBasePath %>" class="admin-brand" aria-label="<%= brandLabel %>">
         <img src="/brand/logo.PNG" alt="" class="admin-brand-mark" />
-        <span class="admin-brand-text">UNQX Admin</span>
+        <span class="admin-brand-text"><%= brandLabel %></span>
       </a>
       <button type="button" id="admin-sidebar-close" class="admin-sidebar-close" aria-label="Закрыть меню">
         <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -136,7 +139,7 @@
 
     <div class="admin-sidebar-footer">
       <div class="admin-sidebar-user">
-        <span class="admin-sidebar-avatar" aria-hidden="true">A</span>
+        <span class="admin-sidebar-avatar" aria-hidden="true"><%= avatarLetter %></span>
         <span class="admin-sidebar-user-name"><%= adminName %></span>
         <span class="text-xs text-neutral-500"><%= adminRole === "manager" ? "Менеджер" : "Админ" %></span>
       </div>
@@ -158,9 +161,9 @@
               <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
             </svg>
           </button>
-          <a href="/admin/dashboard" class="admin-topbar-brand">
+          <a href="<%= dashboardBasePath %>" class="admin-topbar-brand">
             <img src="/brand/logo.PNG" alt="UNQX" class="admin-topbar-brand-mark" />
-            <span>UNQX Admin</span>
+            <span><%= brandLabel %></span>
           </a>
         </div>
 

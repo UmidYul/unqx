@@ -1,6 +1,7 @@
 <%
   const pageTitle = typeof title === "string" && title ? title : "Визитка пользователя";
   const pageUserId = typeof userId === "string" ? userId : "";
+  const dashboardBasePath = adminSession?.role === "manager" ? "/manager/dashboard" : "/admin/dashboard";
 %>
 <!doctype html>
 <html lang="ru">
@@ -9,7 +10,7 @@
 </head>
 <body class="antialiased" data-admin-layout="1" data-page="admin-user-card" data-user-id="<%= pageUserId %>"
   data-admin-role="<%= adminSession?.role || 'admin' %>">
-  <%- include('../partials/admin-layout-start', { activeTab: 'users' }) %>
+  <%- include('../partials/admin-layout-start', { activeTab: 'users', dashboardBasePath }) %>
   <div class="mx-auto w-full max-w-6xl space-y-4">
     <div class="border-b border-neutral-200 pb-4">
       <h1 id="user-card-title" class="text-2xl font-black">Визитка пользователя</h1>

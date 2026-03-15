@@ -12,6 +12,7 @@ router.get("/robots.txt", (_req, res) => {
     "User-agent: *",
     "Allow: /",
     "Disallow: /admin",
+    "Disallow: /manager",
     "Disallow: /api/",
     "Disallow: /profile",
     `Sitemap: ${getBaseUrl()}/sitemap.xml`,

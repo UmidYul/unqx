@@ -260,7 +260,7 @@ function createApp() {
     res.locals.currentPath = req.path;
     res.locals.baseUrl = baseUrl;
     res.locals.canonicalUrl = canonicalUrl;
-    res.locals.noindex = req.path.startsWith("/admin");
+    res.locals.noindex = req.path.startsWith("/admin") || req.path.startsWith("/manager");
     res.locals.csrfToken = csrfToken;
 
     res.setHeader("X-Content-Type-Options", "nosniff");
@@ -268,7 +268,7 @@ function createApp() {
     res.setHeader("X-Frame-Options", "SAMEORIGIN");
     res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
 
-    if (req.path.startsWith("/admin")) {
+    if (req.path.startsWith("/admin") || req.path.startsWith("/manager")) {
       res.setHeader("X-Robots-Tag", "noindex, nofollow, noarchive");
     }
 
