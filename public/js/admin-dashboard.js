@@ -265,6 +265,22 @@
   function openUserCreate() {
     if (!(userCreateModal instanceof HTMLElement)) return;
     setUserCreateError("");
+    if (userCreateForm instanceof HTMLFormElement) {
+      const plan = userCreateForm.elements.namedItem("plan");
+      if (plan instanceof HTMLSelectElement) {
+        const noneOption = plan.querySelector('option[value="none"]');
+        if (noneOption instanceof HTMLOptionElement) {
+          noneOption.disabled = isManager;
+        }
+        if (isManager && plan.value === "none") {
+          plan.value = "basic";
+        }
+      }
+      const slug = userCreateForm.elements.namedItem("slug");
+      if (slug instanceof HTMLInputElement) {
+        slug.value = normalizeShortSlug(slug.value);
+      }
+    }
     userCreateModal.classList.remove("hidden");
     userCreateModal.classList.add("flex");
     userCreateModal.setAttribute("aria-hidden", "false");
@@ -282,6 +298,13 @@
   userCreateModal?.addEventListener("click", (e) => {
     if (e.target === userCreateModal) closeUserCreate();
   });
+  userCreateForm?.addEventListener("input", (event) => {
+    if (!(userCreateForm instanceof HTMLFormElement)) return;
+    const slug = userCreateForm.elements.namedItem("slug");
+    if (!(slug instanceof HTMLInputElement)) return;
+    if (event.target !== slug) return;
+    slug.value = normalizeShortSlug(slug.value);
+  });
   userCreateForm?.addEventListener("submit", async (e) => {
     e.preventDefault();
     if (!(userCreateForm instanceof HTMLFormElement)) return;
@@ -290,19 +313,38 @@
     const login = userCreateForm.elements.namedItem("login");
     const password = userCreateForm.elements.namedItem("password");
     const email = userCreateForm.elements.namedItem("email");
+    const plan = userCreateForm.elements.namedItem("plan");
+    const slug = userCreateForm.elements.namedItem("slug");
     if (
       !(name instanceof HTMLInputElement) ||
       !(login instanceof HTMLInputElement) ||
       !(password instanceof HTMLInputElement) ||
-      !(email instanceof HTMLInputElement)
+      !(email instanceof HTMLInputElement) ||
+      !(plan instanceof HTMLSelectElement) ||
+      !(slug instanceof HTMLInputElement)
     ) {
       return;
     }
+    const selectedPlan = plan.value === "premium" ? "premium" : plan.value === "basic" ? "basic" : "none";
+    const normalizedSlug = normalizeShortSlug(slug.value);
+    const hasSlugInput = Boolean(String(slug.value || "").trim());
+    const requiresInlineActivation = isManager || selectedPlan !== "none" || hasSlugInput;
+    if (requiresInlineActivation && selectedPlan === "none") {
+      setUserCreateError("Для мгновенной активации выберите тариф.");
+      return;
+    }
+    if (requiresInlineActivation && !isShortSlug(normalizedSlug)) {
+      setUserCreateError("Slug должен быть в формате AAA000.");
+      return;
+    }
+    slug.value = normalizedSlug;
     const payload = {
       firstName: name.value || "",
       login: login.value || "",
       password: password.value || "",
       email: email.value || "",
+      plan: selectedPlan,
+      slug: normalizedSlug,
     };
     try {
       const r = await fetch("/api/admin/users", {
@@ -314,8 +356,25 @@
         setUserCreateError(await E(r));
         return;
       }
+      const createdPayload = await r.json().catch(() => ({}));
       userCreateForm.reset();
+      if (isManager) {
+        const planField = userCreateForm.elements.namedItem("plan");
+        if (planField instanceof HTMLSelectElement) {
+          planField.value = "basic";
+        }
+      }
       closeUserCreate();
+      if (isManager) {
+        const createdUserId = String(createdPayload?.user?.id || "").trim();
+        if (createdUserId) {
+          const shouldOpenCard = await showConfirm("Пользователь создан. Открыть редактор визитки сейчас?");
+          if (shouldOpenCard) {
+            window.location.assign(`${userCardBasePath}/${encodeURIComponent(createdUserId)}/card`);
+            return;
+          }
+        }
+      }
       await showAlert("Пользователь создан.");
       void loadUsers();
     } catch (error) {
@@ -886,7 +945,10 @@
           const braceletSlugs = Array.isArray(x.slugs) ? x.slugs.filter((s) => s.hasBracelet).map((s) => s.fullSlug).join(",") : "";
           const userSlugsCsv = allSlugs.join(",");
           const loginLabel = x.login ? `<div class="text-xs text-neutral-500 font-mono">${X(x.login)}</div>` : "";
-          const userCell = `${X(x.name)}${loginLabel}`;
+          const cardStateLabel = x.hasCard
+            ? '<div class="mt-1 text-[11px] font-semibold text-emerald-700">Визитка готова</div>'
+            : '<div class="mt-1 text-[11px] font-semibold text-amber-700">Визитка не создана</div>';
+          const userCell = `${X(x.name)}${loginLabel}${cardStateLabel}`;
           const creatorName = x.createdBy?.name || x.createdBy?.login || "—";
           const creatorLogin = x.createdBy?.login ? `<div class="text-xs text-neutral-500 font-mono">${X(x.createdBy.login)}</div>` : "";
           const creatorCell = x.createdBy ? `${X(creatorName)}${creatorLogin}` : "—";
@@ -908,7 +970,9 @@
             menuItems.push(menuSeparator());
           }
 
-          menuItems.push(menuItem({ label: "Profile & card", icon: "pen", attrs: `data-act="open-url" data-url="${userCardBasePath}/${encodeURIComponent(String(x.telegramId || ""))}/card"` }));
+          const cardEditorUrl = `${userCardBasePath}/${encodeURIComponent(String(x.telegramId || ""))}/card`;
+          const cardEditorLabel = x.hasCard ? "Редактировать визитку" : "Создать визитку";
+          menuItems.push(menuItem({ label: cardEditorLabel, icon: "pen", attrs: `data-act="open-card" data-url="${cardEditorUrl}"` }));
           menuItems.push(menuItem({ label: "Open profile", icon: "external", attrs: profileLink ? `data-act="open-url" data-url="${profileLink}"` : 'disabled="disabled"' }));
 
           if (!isManager) {
@@ -1623,6 +1687,12 @@
     if (a === "open-url") {
       const url = n.getAttribute("data-url");
       if (url) window.open(url, "_blank", "noopener,noreferrer");
+      closeAllRowMenus();
+      return;
+    }
+    if (a === "open-card") {
+      const url = n.getAttribute("data-url");
+      if (url) window.location.assign(url);
       closeAllRowMenus();
       return;
     }

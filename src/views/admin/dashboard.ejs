@@ -1442,6 +1442,21 @@
                   class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" required />
               </label>
               <label class="block text-sm font-medium text-neutral-700">
+                Тариф
+                <select name="plan" class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm">
+                  <option value="none">Без тарифа</option>
+                  <option value="basic">Базовый</option>
+                  <option value="premium">Премиум</option>
+                </select>
+              </label>
+              <label class="block text-sm font-medium text-neutral-700">
+                Slug (AAA000)
+                <input name="slug" type="text" maxlength="6" autocapitalize="characters" autocomplete="off"
+                  placeholder="ABC123"
+                  class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2 font-mono text-sm uppercase tracking-wide" />
+                <span class="mt-1 block text-xs text-neutral-500">Для менеджера тариф и slug обязательны для мгновенной активации.</span>
+              </label>
+              <label class="block text-sm font-medium text-neutral-700">
                 Email для восстановления (опционально)
                 <input name="email" type="email" maxlength="190"
                   class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />

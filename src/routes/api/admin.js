@@ -24,6 +24,9 @@ const { sendExpoPushToUser, sendExpoPushToUsers } = require("../../services/push
 const { applyOrderStatusTransition } = require("../../services/order-status-transition");
 const {
   getBraceletPrice,
+  getPlanCharge,
+  getPlanPurchaseType,
+  getPricingSettings,
   normalizePlan,
 } = require("../../services/pricing-settings");
 const { buildOrderPaymentDraft } = require("../../services/payment-flow");
@@ -2229,6 +2232,11 @@ router.post(
       .replace(/^@+/, "")
       .trim()
       .slice(0, 120) || null;
+    const requestedPlan = normalizeUserPlan(req.body?.plan);
+    const requestedSlug = normalizeShortSlug(req.body?.slug);
+    const hasSlugInput = Boolean(String(req.body?.slug || "").trim());
+    const requesterRole = String(adminSession?.role || "admin");
+    const requiresInlineActivation = requesterRole === "manager" || requestedPlan !== "none" || hasSlugInput;
 
     if (!firstName || !login || !isValidLogin(login) || !password || password.length < 8) {
       res.status(400).json({ error: "Validation failed", code: "VALIDATION_ERROR" });
@@ -2237,6 +2245,22 @@ router.post(
 
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       res.status(400).json({ error: "Invalid email", code: "EMAIL_INVALID" });
+      return;
+    }
+
+    if (requiresInlineActivation && requestedPlan === "none") {
+      res.status(400).json({
+        error: "Plan is required for immediate activation",
+        code: "PLAN_REQUIRED_FOR_ACTIVATION",
+      });
+      return;
+    }
+
+    if (requiresInlineActivation && !isShortSlug(requestedSlug)) {
+      res.status(400).json({
+        error: "Slug must be in AAA000 format",
+        code: "SLUG_INVALID",
+      });
       return;
     }
 
@@ -2263,45 +2287,239 @@ router.post(
     const passwordHash = await bcrypt.hash(password, PASSWORD_ROUNDS);
     const refCode = await generateUniqueRefCode();
     const displayName = normalizeDisplayName(displayNameRaw, firstName);
-    const created = await prisma.user.create({
-      data: {
-        firstName,
-        displayName,
-        city,
-        login,
-        passwordHash,
-        email: email || null,
-        emailVerified: Boolean(email),
-        pendingEmail: null,
-        otpCode: null,
-        otpExpiresAt: null,
-        otpAttempts: 0,
-        resetPasswordToken: null,
-        resetPasswordExpiresAt: null,
-        loginAttempts: 0,
-        lockedUntil: null,
-        plan: "none",
-        status: "active",
-        refCode,
-        telegramUsername,
-        ...(hasCreatorColumn && createdByManagerId
-          ? { createdByStaffId: createdByManagerId }
-          : {}),
-      },
-      select: {
-        id: true,
-        login: true,
-        email: true,
-        emailVerified: true,
-        firstName: true,
-        displayName: true,
-        city: true,
-        username: true,
-        telegramUsername: true,
-      },
-    });
+    const now = new Date();
+    const selectedPlan = requiresInlineActivation ? requestedPlan : "none";
+    const adminActor = String(adminSession?.login || "").trim() || null;
 
-    res.json({ ok: true, user: created });
+    let planCharge = 0;
+    let planPurchaseType = null;
+    let slugCharge = 0;
+    if (requiresInlineActivation) {
+      const pricingSettings = await getPricingSettings();
+      planCharge = getPlanCharge({
+        currentPlan: "none",
+        requestedPlan: selectedPlan,
+        pricing: pricingSettings,
+      });
+      planPurchaseType = getPlanPurchaseType({
+        currentPlan: "none",
+        requestedPlan: selectedPlan,
+      });
+      const slugPricingConfig = await getSlugPricingConfig();
+      const slugQuote = calculateSlugPrice({
+        letters: requestedSlug.slice(0, 3),
+        digits: requestedSlug.slice(3),
+        config: slugPricingConfig,
+      });
+      slugCharge = Number(slugQuote?.total || 0);
+    }
+
+    try {
+      const result = await prisma.$transaction(async (tx) => {
+        if (requiresInlineActivation) {
+          const existingSlug = await tx.slug.findUnique({
+            where: { fullSlug: requestedSlug },
+            select: { fullSlug: true, ownerId: true, status: true },
+          });
+          if (existingSlug?.ownerId) {
+            const error = new Error("Slug is already assigned to another user");
+            error.code = "SLUG_TAKEN";
+            throw error;
+          }
+          if (existingSlug && existingSlug.status !== "free") {
+            const error = new Error("Slug is not free right now");
+            error.code = "SLUG_NOT_FREE";
+            error.status = existingSlug.status;
+            throw error;
+          }
+        }
+
+        const createdUser = await tx.user.create({
+          data: {
+            firstName,
+            displayName,
+            city,
+            login,
+            passwordHash,
+            email: email || null,
+            emailVerified: Boolean(email),
+            pendingEmail: null,
+            otpCode: null,
+            otpExpiresAt: null,
+            otpAttempts: 0,
+            resetPasswordToken: null,
+            resetPasswordExpiresAt: null,
+            loginAttempts: 0,
+            lockedUntil: null,
+            plan: selectedPlan,
+            planPurchasedAt: selectedPlan === "none" ? null : now,
+            planUpgradedAt: null,
+            status: "active",
+            refCode,
+            telegramUsername,
+            ...(hasCreatorColumn && createdByManagerId
+              ? { createdByStaffId: createdByManagerId }
+              : {}),
+          },
+          select: {
+            id: true,
+            login: true,
+            email: true,
+            emailVerified: true,
+            firstName: true,
+            displayName: true,
+            city: true,
+            username: true,
+            telegramUsername: true,
+            plan: true,
+            planPurchasedAt: true,
+          },
+        });
+
+        let activatedSlug = null;
+        if (requiresInlineActivation) {
+          const slugPayload = {
+            ownerId: createdUser.id,
+            status: "active",
+            isPrimary: true,
+            pauseMessage: null,
+            pendingExpiresAt: null,
+            requestedAt: now,
+            approvedAt: now,
+            activatedAt: now,
+            price: slugCharge,
+          };
+          const existingSlug = await tx.slug.findUnique({
+            where: { fullSlug: requestedSlug },
+            select: { fullSlug: true, ownerId: true, status: true },
+          });
+          if (existingSlug) {
+            const claimed = await tx.slug.updateMany({
+              where: {
+                fullSlug: requestedSlug,
+                ownerId: null,
+                status: "free",
+              },
+              data: slugPayload,
+            });
+            if (!claimed.count) {
+              const refreshed = await tx.slug.findUnique({
+                where: { fullSlug: requestedSlug },
+                select: { ownerId: true, status: true },
+              });
+              if (refreshed?.ownerId) {
+                const error = new Error("Slug is already assigned to another user");
+                error.code = "SLUG_TAKEN";
+                throw error;
+              }
+              const error = new Error("Slug is not free right now");
+              error.code = "SLUG_NOT_FREE";
+              error.status = refreshed?.status || null;
+              throw error;
+            }
+          } else {
+            try {
+              await tx.slug.create({
+                data: {
+                  letters: requestedSlug.slice(0, 3),
+                  digits: requestedSlug.slice(3),
+                  fullSlug: requestedSlug,
+                  ...slugPayload,
+                },
+              });
+            } catch (createError) {
+              if (createError?.code === "P2002") {
+                const error = new Error("Slug is already assigned to another user");
+                error.code = "SLUG_TAKEN";
+                throw error;
+              }
+              throw createError;
+            }
+          }
+
+          activatedSlug = await tx.slug.findUnique({
+            where: { fullSlug: requestedSlug },
+            select: {
+              fullSlug: true,
+              ownerId: true,
+              status: true,
+              isPrimary: true,
+              price: true,
+              requestedAt: true,
+              approvedAt: true,
+              activatedAt: true,
+            },
+          });
+
+          if (tx.purchase && typeof tx.purchase.create === "function") {
+            await tx.purchase.create({
+              data: {
+                userId: createdUser.id,
+                type: "slug",
+                amount: slugCharge,
+                slug: requestedSlug,
+                purchasedAt: now,
+                approvedByAdmin: adminActor,
+                approvedAt: now,
+                note: "user-create:inline-activation",
+              },
+            });
+            if (planPurchaseType && planCharge > 0) {
+              await tx.purchase.create({
+                data: {
+                  userId: createdUser.id,
+                  type: planPurchaseType,
+                  amount: planCharge,
+                  slug: null,
+                  purchasedAt: now,
+                  approvedByAdmin: adminActor,
+                  approvedAt: now,
+                  note: "user-create:inline-activation",
+                },
+              });
+            }
+          }
+        }
+
+        return {
+          user: createdUser,
+          activatedSlug,
+          charges: {
+            slug: slugCharge,
+            plan: planCharge,
+          },
+        };
+      });
+
+      res.json({
+        ok: true,
+        user: result.user,
+        activation: result.activatedSlug
+          ? {
+            slug: result.activatedSlug,
+            charges: result.charges,
+          }
+          : null,
+      });
+    } catch (error) {
+      if (error?.code === "SLUG_TAKEN") {
+        res.status(409).json({ error: "Slug is already assigned to another user", code: "SLUG_TAKEN" });
+        return;
+      }
+      if (error?.code === "SLUG_NOT_FREE") {
+        res.status(409).json({
+          error: "Slug is not free right now",
+          code: "SLUG_NOT_FREE",
+          status: error.status || null,
+        });
+        return;
+      }
+      if (error?.code === "P2002") {
+        res.status(409).json({ error: "Login or email already taken", code: "LOGIN_OR_EMAIL_TAKEN" });
+        return;
+      }
+      throw error;
+    }
   }),
 );
 
