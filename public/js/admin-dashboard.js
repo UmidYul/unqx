@@ -745,8 +745,12 @@
             menuItem({ label: "Открыть профиль", icon: "external", attrs: profileHref ? `data-act="open-url" data-url="${profileHref}"` : 'disabled="disabled"' }),
             menuItem({ label: "Написать в Telegram", icon: "send", attrs: username ? `data-act="open-url" data-url="https://t.me/${encodeURIComponent(username)}"` : 'disabled="disabled"' }),
             x.slugState === "pending" && x.status !== "expired" ? menuItem({ label: "Добавить 24 часа", icon: "clock", attrs: `data-act="ope" data-id="${x.id}"` }) : "",
-            menuSeparator(),
-            menuItem({ label: "Удалить", icon: "trash", attrs: `data-act="od" data-id="${x.id}"`, danger: true }),
+            ...(!isManager
+              ? [
+                menuSeparator(),
+                menuItem({ label: "Удалить", icon: "trash", attrs: `data-act="od" data-id="${x.id}"`, danger: true }),
+              ]
+              : []),
           ].join(""));
           return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3">${D(x.createdAt)}</td><td class="px-4 py-3">${X(x.name)}</td><td class="px-4 py-3 font-mono">${X(x.slug)}</td><td class="px-4 py-3 text-right">${P(x.slugPrice)}</td><td class="px-4 py-3 text-right font-semibold">${P(x.amount || 0)}</td><td class="px-4 py-3">${x.tariff === "premium" ? "Премиум" : "Базовый"}</td><td class="px-4 py-3">${x.bracelet ? "Да" : "Нет"}</td><td class="px-4 py-3">${X(x.contact)}</td><td class="px-4 py-3">${statusBlock}</td><td class="px-4 py-3 text-right"><div class="admin-row-actions justify-end">${menu}</div></td></tr>`;
         })
@@ -833,7 +837,7 @@
     const r = await fetch(`/api/admin/users?${Q(q)}`);
     if (!r.ok) {
       const msg = await E(r);
-      table.innerHTML = `<tr><td colspan="10" class="px-3 py-8 text-center text-red-700">Failed to load users: ${X(msg)}</td></tr>`;
+      table.innerHTML = `<tr><td colspan="10" class="px-3 py-8 text-center text-red-700">Не удалось загрузить пользователей: ${X(msg)}</td></tr>`;
       if (managerStatsNode instanceof HTMLElement) {
         managerStatsNode.classList.add("hidden");
         managerStatsNode.textContent = "";
@@ -846,9 +850,9 @@
         const trackingEnabled = payload?.managerStats?.trackingEnabled !== false;
         if (trackingEnabled) {
           const createdCount = Number(payload?.managerStats?.createdAccountsCount || 0);
-          managerStatsNode.textContent = `Accounts created by you: ${createdCount.toLocaleString("ru-RU")}`;
+          managerStatsNode.textContent = `Создано аккаунтов вами: ${createdCount.toLocaleString("ru-RU")}`;
         } else {
-          managerStatsNode.textContent = "Manager stats will appear after DB migration.";
+          managerStatsNode.textContent = "Статистика менеджера появится после применения миграции БД.";
         }
         managerStatsNode.classList.remove("hidden");
       } else {
@@ -2023,7 +2027,7 @@
       return;
     }
     if (a === "oa") openA(n.getAttribute("data-id") || "", n.getAttribute("data-t") || "basic", n.getAttribute("data-th") || "default_dark");
-    if (a === "od") { const id = n.getAttribute("data-id"); if (!id || !await showConfirm("Удалить заявку?")) return; const r = await fetch(`/api/admin/orders/${id}`, { method: "DELETE", headers: H() }); if (!r.ok) showAlert(await E(r)); else void loadOrders(); }
+    if (a === "od") { if (isManager) return; const id = n.getAttribute("data-id"); if (!id || !await showConfirm("Удалить заявку?")) return; const r = await fetch(`/api/admin/orders/${id}`, { method: "DELETE", headers: H() }); if (!r.ok) showAlert(await E(r)); else void loadOrders(); }
     if (a === "ope") { const id = n.getAttribute("data-id"); if (!id) return; const r = await fetch(`/api/admin/orders/${id}/extend-pending`, { method: "POST", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({}) }); if (!r.ok) showAlert(await E(r)); else void loadOrders(); }
     if (a === "ub") { const telegramId = n.getAttribute("data-id"); const status = n.getAttribute("data-status"); if (!telegramId) return; const isBlocked = status === "blocked"; if (!isBlocked && !await showConfirm("Заблокировать пользователя и деактивировать его slug?")) return; if (isBlocked && !await showConfirm("Разблокировать пользователя и восстановить статусы slug?")) return; const r = await fetch(`/api/admin/users/${encodeURIComponent(telegramId)}/${isBlocked ? "unblock" : "block"}`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({}) }); if (!r.ok) showAlert(await E(r)); else void loadUsers(); }
     if (a === "ud") {

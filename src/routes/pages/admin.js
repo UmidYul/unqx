@@ -1,7 +1,15 @@
-const express = require("express");
+﻿const express = require("express");
 
 const { asyncHandler } = require("../../middleware/async");
-const { getAdminSession, loginAdmin, logoutAdmin, requireStaffPage, verifyStaffCredentials } = require("../../middleware/auth");
+const {
+  getAdminSession,
+  loginAdmin,
+  logoutAdmin,
+  requireStaffPage,
+  requireManagerPage,
+  verifyAdminCredentials,
+  verifyManagerCredentials,
+} = require("../../middleware/auth");
 const { prisma } = require("../../db/prisma");
 const { loginRateLimit } = require("../../middleware/rate-limit");
 const { requireCsrfToken } = require("../../middleware/csrf");
@@ -39,7 +47,7 @@ router.get(
     }
 
     res.render("admin/login", {
-      title: "Вход в админ-панель",
+      title: "Р’С…РѕРґ РІ Р°РґРјРёРЅ-РїР°РЅРµР»СЊ",
       error: "",
       adminSession: null,
     });
@@ -55,7 +63,7 @@ router.get(
       return;
     }
     res.render("admin/login", {
-      title: "Вход в админ-панель",
+      title: "Р’С…РѕРґ РІ Р°РґРјРёРЅ-РїР°РЅРµР»СЊ",
       error: "",
       adminSession: null,
     });
@@ -68,25 +76,19 @@ router.post(
   requireCsrfToken,
   asyncHandler(async (req, res) => {
     const loginInput = req.body.login || req.body.email;
-    const staffPayload = await verifyStaffCredentials(loginInput, req.body.password);
+    const adminPayload = await verifyAdminCredentials(loginInput, req.body.password);
 
-    if (!staffPayload) {
+    if (!adminPayload) {
       res.status(401).render("admin/login", {
-        title: "Вход в админ-панель",
+        title: "Р’С…РѕРґ РІ Р°РґРјРёРЅ-РїР°РЅРµР»СЊ",
         error: "Неверный логин или пароль",
         adminSession: null,
       });
       return;
     }
 
-    await loginAdmin(req, staffPayload);
-    if (staffPayload.role === "manager") {
-      await prisma.staffUser.update({
-        where: { id: staffPayload.id },
-        data: { lastLoginAt: new Date() },
-      }).catch(() => {});
-    }
-    res.redirect(resolveStaffHome(staffPayload));
+    await loginAdmin(req, adminPayload);
+    res.redirect(resolveStaffHome(adminPayload));
   }),
 );
 
@@ -109,8 +111,13 @@ router.get(
   asyncHandler(async (req, res) => {
     const adminSession = getAdminSession(req);
     const role = adminSession?.role || "admin";
+    const managerTabs = new Set(["users", "orders", "verification"]);
     if (role === "manager") {
-      res.redirect("/manager/dashboard");
+      const nextTab =
+        typeof req.query.tab === "string" && managerTabs.has(req.query.tab)
+          ? req.query.tab
+          : "";
+      res.redirect(nextTab ? `/manager/dashboard?tab=${encodeURIComponent(nextTab)}` : "/manager/dashboard");
       return;
     }
     const adminTabs = new Set([
@@ -133,7 +140,6 @@ router.get(
       "settings",
       "managers",
     ]);
-    const managerTabs = new Set(["users"]);
     const allowedTabs = role === "manager" ? managerTabs : adminTabs;
     const tab =
       typeof req.query.tab === "string" && allowedTabs.has(req.query.tab)
@@ -141,7 +147,7 @@ router.get(
         : (role === "manager" ? "users" : "analytics");
 
     res.render("admin/dashboard", {
-      title: "Дашборд",
+      title: "Р”Р°С€Р±РѕСЂРґ",
       adminSession,
       publicBaseUrl: getBaseUrl(),
       activeTab: tab,
@@ -173,16 +179,43 @@ router.get(
       return;
     }
     res.render("manager/login", {
-      title: "Вход менеджера",
+      title: "Р’С…РѕРґ РјРµРЅРµРґР¶РµСЂР°",
       error: "",
       adminSession: null,
     });
   }),
 );
 
+router.post(
+  ["/manager/login", "/manager/login/"],
+  loginRateLimit,
+  requireCsrfToken,
+  asyncHandler(async (req, res) => {
+    const loginInput = req.body.login || req.body.email;
+    const managerPayload = await verifyManagerCredentials(loginInput, req.body.password);
+
+    if (!managerPayload) {
+      res.status(401).render("manager/login", {
+        title: "Вход менеджера",
+        error: "Неверный логин или пароль",
+        adminSession: null,
+      });
+      return;
+    }
+
+    await loginAdmin(req, managerPayload);
+    await prisma.staffUser.update({
+      where: { id: managerPayload.id },
+      data: { lastLoginAt: new Date() },
+    }).catch(() => {});
+
+    res.redirect(resolveStaffHome(managerPayload));
+  }),
+);
+
 router.get(
   ["/manager/dashboard", "/manager/dashboard/"],
-  requireStaffPage,
+  requireManagerPage,
   asyncHandler(async (req, res) => {
     const adminSession = getAdminSession(req);
     const role = adminSession?.role || "admin";
@@ -190,9 +223,13 @@ router.get(
       res.redirect("/admin/dashboard");
       return;
     }
-    const tab = "users";
+    const managerTabs = new Set(["users", "orders", "verification"]);
+    const tab =
+      typeof req.query.tab === "string" && managerTabs.has(req.query.tab)
+        ? req.query.tab
+        : "users";
     res.render("manager/dashboard", {
-      title: "Дашборд менеджера",
+      title: "Р”Р°С€Р±РѕСЂРґ РјРµРЅРµРґР¶РµСЂР°",
       adminSession,
       publicBaseUrl: getBaseUrl(),
       activeTab: tab,
@@ -214,7 +251,7 @@ router.get(
     }
     const userId = typeof req.params.userId === "string" ? req.params.userId.trim() : "";
     res.render("admin/user-card", {
-      title: "Визитка пользователя",
+      title: "Р’РёР·РёС‚РєР° РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ",
       adminSession,
       userId,
     });
@@ -223,7 +260,7 @@ router.get(
 
 router.get(
   "/manager/users/:userId/card",
-  requireStaffPage,
+  requireManagerPage,
   asyncHandler(async (req, res) => {
     const adminSession = getAdminSession(req);
     if (!adminSession || adminSession.role !== "manager") {
@@ -232,7 +269,7 @@ router.get(
     }
     const userId = typeof req.params.userId === "string" ? req.params.userId.trim() : "";
     res.render("admin/user-card", {
-      title: "Визитка пользователя",
+      title: "Р’РёР·РёС‚РєР° РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ",
       adminSession,
       userId,
     });
@@ -242,3 +279,5 @@ router.get(
 module.exports = {
   adminPagesRouter: router,
 };
+
+

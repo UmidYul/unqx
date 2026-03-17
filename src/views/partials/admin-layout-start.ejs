@@ -5,7 +5,7 @@
   const adminName = adminSession && adminSession.name ? adminSession.name : (adminRole === "manager" ? "Manager" : "Admin");
   const brandLabel = adminRole === "manager" ? "UNQX Manager" : "UNQX Admin";
   const avatarLetter = String(adminName || (adminRole === "manager" ? "Manager" : "Admin")).trim().slice(0, 1).toUpperCase() || (adminRole === "manager" ? "M" : "A");
-  const allowedTabs = adminRole === "manager" ? new Set(["users"]) : null;
+  const allowedTabs = adminRole === "manager" ? new Set(["users", "orders", "verification"]) : null;
   const resolvedDashboardBasePath =
     typeof dashboardBasePath === "string" && dashboardBasePath ? dashboardBasePath : "/admin/dashboard";
   const isDashboardRoute = layoutCurrentPath === resolvedDashboardBasePath;

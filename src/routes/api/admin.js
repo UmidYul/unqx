@@ -822,6 +822,101 @@ function ensureUsersStorageReady(res) {
   return true;
 }
 
+function isManagerSession(req) {
+  return String(req.session?.admin?.role || "admin") === "manager";
+}
+
+async function getManagerScope(req) {
+  if (!isManagerSession(req)) {
+    return {
+      isManager: false,
+      managerId: "",
+      hasCreatorColumn: true,
+    };
+  }
+
+  const managerId = String(req.session?.admin?.id || "").trim();
+  const userColumns = await getUserColumns();
+  const hasCreatorColumn = Boolean(userColumns) && hasUserColumn(userColumns, "createdByStaffId");
+  return {
+    isManager: true,
+    managerId,
+    hasCreatorColumn,
+  };
+}
+
+function isManagerScopeBlocked(scope) {
+  return Boolean(scope?.isManager) && (!scope.managerId || !scope.hasCreatorColumn);
+}
+
+function andWhere(baseWhere, extraWhere) {
+  if (!extraWhere) return baseWhere || {};
+  if (!baseWhere || Object.keys(baseWhere).length === 0) {
+    return extraWhere;
+  }
+  return {
+    AND: [baseWhere, extraWhere],
+  };
+}
+
+async function managerOwnsUser(req, userId) {
+  const scope = await getManagerScope(req);
+  if (!scope.isManager) {
+    return true;
+  }
+  if (isManagerScopeBlocked(scope)) {
+    return false;
+  }
+  const row = await prisma.user.findFirst({
+    where: {
+      id: String(userId || "").trim(),
+      createdByStaffId: scope.managerId,
+    },
+    select: { id: true },
+  });
+  return Boolean(row);
+}
+
+async function managerOwnsOrder(req, orderId) {
+  const scope = await getManagerScope(req);
+  if (!scope.isManager) {
+    return true;
+  }
+  if (isManagerScopeBlocked(scope)) {
+    return false;
+  }
+  const row = await prisma.slugRequest.findFirst({
+    where: {
+      id: String(orderId || "").trim(),
+      user: {
+        createdByStaffId: scope.managerId,
+      },
+    },
+    select: { id: true },
+  });
+  return Boolean(row);
+}
+
+async function managerOwnsVerificationRequest(req, verificationRequestId) {
+  const scope = await getManagerScope(req);
+  if (!scope.isManager) {
+    return true;
+  }
+  if (isManagerScopeBlocked(scope)) {
+    return false;
+  }
+  const row = await prisma.verificationRequest.findFirst({
+    where: {
+      id: String(verificationRequestId || "").trim(),
+      user: {
+        createdByStaffId: scope.managerId,
+      },
+    },
+    select: { id: true },
+  });
+  return Boolean(row);
+}
+
 function toOrderStatus(value) {
   const normalized = String(value || "").trim().toLowerCase();
   switch (normalized) {
@@ -1019,6 +1114,7 @@ router.use(requireSameOrigin);
 router.use(requireCsrfToken);
 
 const MANAGER_ALLOWED_ROUTES = [
+  { method: "GET", re: /^\/navigation-summary\/?$/ },
   { method: "GET", re: /^\/users\/?$/ },
   { method: "POST", re: /^\/users\/?$/ },
   { method: "GET", re: /^\/users\/[^/]+\/card\/?$/ },
@@ -1026,6 +1122,13 @@ const MANAGER_ALLOWED_ROUTES = [
   { method: "POST", re: /^\/users\/[^/]+\/card\/avatar\/?$/ },
   { method: "DELETE", re: /^\/users\/[^/]+\/card\/avatar\/?$/ },
   { method: "PATCH", re: /^\/users\/[^/]+\/profile\/?$/ },
+  { method: "GET", re: /^\/orders\/?$/ },
+  { method: "PATCH", re: /^\/orders\/[^/]+\/status\/?$/ },
+  { method: "POST", re: /^\/orders\/[^/]+\/extend-pending\/?$/ },
+  { method: "GET", re: /^\/orders\/export\.csv\/?$/ },
+  { method: "GET", re: /^\/verification-requests\/?$/ },
+  { method: "POST", re: /^\/verification-requests\/[^/]+\/approve\/?$/ },
+  { method: "POST", re: /^\/verification-requests\/[^/]+\/reject\/?$/ },
 ];
 
 router.use((req, res, next) => {
@@ -1046,15 +1149,37 @@ router.use((req, res, next) => {
 
 router.get(
   "/navigation-summary",
-  asyncHandler(async (_req, res) => {
+  asyncHandler(async (req, res) => {
+    const managerScope = await getManagerScope(req);
+    if (isManagerScopeBlocked(managerScope)) {
+      res.json({
+        badges: {
+          orders: 0,
+          bracelets: 0,
+        },
+        events: [],
+      });
+      return;
+    }
+    const isScopedManager = managerScope.isManager && !isManagerScopeBlocked(managerScope);
+    const managerOrdersWhere = isScopedManager
+      ? { user: { createdByStaffId: managerScope.managerId } }
+      : null;
+    const managerOrderHref = "/manager/dashboard?tab=orders";
+    const adminOrderHref = "/admin/dashboard?tab=orders";
+    const adminBraceletHref = "/admin/dashboard?tab=bracelets";
+
     const [newOrdersCount, orderedBraceletsCount, orderEvents, braceletEvents] = await Promise.all([
       prisma.slugRequest.count({
-        where: { status: "new" },
+        where: andWhere({ status: "new" }, managerOrdersWhere),
       }),
-      prisma.braceletOrder.count({
-        where: { deliveryStatus: "ORDERED" },
-      }),
+      isScopedManager
+        ? Promise.resolve(0)
+        : prisma.braceletOrder.count({
+          where: { deliveryStatus: "ORDERED" },
+        }),
       prisma.slugRequest.findMany({
+        where: managerOrdersWhere || undefined,
         orderBy: { updatedAt: "desc" },
         take: 5,
         select: {
@@ -1064,16 +1189,18 @@ router.get(
           updatedAt: true,
         },
       }),
-      prisma.braceletOrder.findMany({
-        orderBy: { updatedAt: "desc" },
-        take: 5,
-        select: {
-          id: true,
-          slug: true,
-          deliveryStatus: true,
-          updatedAt: true,
-        },
-      }),
+      isScopedManager
+        ? Promise.resolve([])
+        : prisma.braceletOrder.findMany({
+          orderBy: { updatedAt: "desc" },
+          take: 5,
+          select: {
+            id: true,
+            slug: true,
+            deliveryStatus: true,
+            updatedAt: true,
+          },
+        }),
     ]);
 
     const mergedEvents = [
@@ -1082,14 +1209,14 @@ router.get(
         title: orderStatusEventTitle(item.status),
         slug: item.slug,
         at: item.updatedAt,
-        href: "/admin/dashboard?tab=orders",
+        href: isScopedManager ? managerOrderHref : adminOrderHref,
       })),
       ...braceletEvents.map((item) => ({
         id: `bracelet:${item.id}`,
         title: braceletStatusEventTitle(item.deliveryStatus),
         slug: item.slug,
         at: item.updatedAt,
-        href: "/admin/dashboard?tab=bracelets",
+        href: adminBraceletHref,
       })),
     ]
       .sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())
@@ -1564,10 +1691,27 @@ router.get(
   "/orders",
   asyncHandler(async (req, res) => {
     const braceletPriceValue = await getBraceletPrice();
-    const where = buildOrdersWhere(req.query);
     const page = Math.max(1, Number(req.query.page || "1") || 1);
     const pageSizeRaw = Number(req.query.pageSize || "20") || 20;
     const pageSize = Math.max(1, Math.min(200, pageSizeRaw));
+    const managerScope = await getManagerScope(req);
+    if (isManagerScopeBlocked(managerScope)) {
+      res.json({
+        items: [],
+        pagination: {
+          page,
+          pageSize,
+          total: 0,
+          totalPages: 1,
+        },
+      });
+      return;
+    }
+
+    const baseWhere = buildOrdersWhere(req.query);
+    const where = managerScope.isManager
+      ? andWhere(baseWhere, { user: { createdByStaffId: managerScope.managerId } })
+      : baseWhere;
     const [total, rows] = await Promise.all([
       prisma.slugRequest.count({ where }),
       prisma.slugRequest.findMany({
@@ -1645,6 +1789,13 @@ router.get(
 router.patch(
   "/orders/:id/status",
   asyncHandler(async (req, res) => {
+    if (isManagerSession(req)) {
+      const ownsOrder = await managerOwnsOrder(req, req.params.id);
+      if (!ownsOrder) {
+        res.status(404).json({ error: "Order not found" });
+        return;
+      }
+    }
     const status = toOrderStatus(req.body.status);
     const adminNote = String(req.body.adminNote || "").trim();
     const adminLogin = String(req.session?.admin?.login || "").trim() || null;
@@ -1674,6 +1825,14 @@ router.patch(
 router.post(
   "/orders/:id/extend-pending",
   asyncHandler(async (req, res) => {
+    if (isManagerSession(req)) {
+      const ownsOrder = await managerOwnsOrder(req, req.params.id);
+      if (!ownsOrder) {
+        res.status(404).json({ error: "Order not found" });
+        return;
+      }
+    }
+
     const order = await prisma.slugRequest.findUnique({
       where: { id: req.params.id },
       select: { id: true, slug: true, status: true },
@@ -1789,8 +1948,28 @@ router.get(
     const requesterRole = String(adminSession?.role || "admin");
     const requesterManagerId = requesterRole === "manager" ? String(adminSession?.id || "").trim() : "";
     const hasCreatorColumn = Boolean(userColumns) && hasUserColumn(userColumns, "createdByStaffId");
+    const managerScopeBlocked = requesterRole === "manager" && (!requesterManagerId || !hasCreatorColumn);
 
     const where = {};
+    if (requesterRole === "manager") {
+      if (managerScopeBlocked) {
+        res.json({
+          items: [],
+          managerStats: {
+            createdAccountsCount: 0,
+            trackingEnabled: hasCreatorColumn,
+          },
+          pagination: {
+            page,
+            pageSize,
+            total: 0,
+            totalPages: 1,
+          },
+        });
+        return;
+      }
+      where.createdByStaffId = requesterManagerId;
+    }
     if (planFilter !== "all" && hasUserColumn(userColumns, "plan")) {
       where.plan = planFilter;
     }
@@ -2134,6 +2313,13 @@ router.get(
       res.status(400).json({ error: "User id is required" });
       return;
     }
+    if (isManagerSession(req)) {
+      const ownsUser = await managerOwnsUser(req, userId);
+      if (!ownsUser) {
+        res.status(404).json({ error: "User not found" });
+        return;
+      }
+    }
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -2197,6 +2383,13 @@ router.patch(
     if (!userId) {
       res.status(400).json({ error: "User id is required" });
       return;
+    }
+    if (isManagerSession(req)) {
+      const ownsUser = await managerOwnsUser(req, userId);
+      if (!ownsUser) {
+        res.status(404).json({ error: "User not found", code: "USER_NOT_FOUND" });
+        return;
+      }
     }
 
     const firstName = String(req.body?.firstName || "").trim().slice(0, 120);
@@ -3095,6 +3288,13 @@ router.put(
       res.status(400).json({ error: "User id is required" });
       return;
     }
+    if (isManagerSession(req)) {
+      const ownsUser = await managerOwnsUser(req, userId);
+      if (!ownsUser) {
+        res.status(404).json({ error: "User not found" });
+        return;
+      }
+    }
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -3235,6 +3435,13 @@ router.post(
       res.status(400).json({ error: "User id is required" });
       return;
     }
+    if (isManagerSession(req)) {
+      const ownsUser = await managerOwnsUser(req, userId);
+      if (!ownsUser) {
+        res.status(404).json({ error: "User not found" });
+        return;
+      }
+    }
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -3290,6 +3497,13 @@ router.delete(
     if (!userId) {
       res.status(400).json({ error: "User id is required" });
       return;
+    }
+    if (isManagerSession(req)) {
+      const ownsUser = await managerOwnsUser(req, userId);
+      if (!ownsUser) {
+        res.status(404).json({ error: "User not found" });
+        return;
+      }
     }
 
     const user = await prisma.user.findUnique({
@@ -4059,21 +4273,28 @@ router.get(
   "/orders/export.csv",
   asyncHandler(async (req, res) => {
     const braceletPriceValue = await getBraceletPrice();
-    const where = buildOrdersWhere(req.query);
-    const rows = await prisma.slugRequest.findMany({
-      where,
-      orderBy: { createdAt: "desc" },
-      include: {
-        user: {
-          select: {
-            firstName: true,
-            displayName: true,
-            username: true,
-            telegramChatId: true,
+    const managerScope = await getManagerScope(req);
+    const managerBlocked = isManagerScopeBlocked(managerScope);
+    const baseWhere = buildOrdersWhere(req.query);
+    const where = managerScope.isManager
+      ? andWhere(baseWhere, { user: { createdByStaffId: managerScope.managerId } })
+      : baseWhere;
+    const rows = managerBlocked
+      ? []
+      : await prisma.slugRequest.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        include: {
+          user: {
+            select: {
+              firstName: true,
+              displayName: true,
+              username: true,
+              telegramChatId: true,
+            },
           },
         },
-      },
-    });
+      });
 
     const lines = [
       "Дата,Имя,Slug,Цена slug,Цена тарифа,Браслет,Сумма,Контакт,Статус",
@@ -5226,10 +5447,18 @@ router.get(
       res.json({ items: [], pagination: { page: 1, totalPages: 1, total: 0 } });
       return;
     }
+    const managerScope = await getManagerScope(req);
+    if (isManagerScopeBlocked(managerScope)) {
+      res.json({ items: [], pagination: { page: 1, totalPages: 1, total: 0 } });
+      return;
+    }
     const status = String(req.query.status || "all").toLowerCase();
     const page = Math.max(1, Number(req.query.page || 1) || 1);
     const pageSize = 20;
-    const where = status === "all" ? {} : { status };
+    const baseWhere = status === "all" ? {} : { status };
+    const where = managerScope.isManager
+      ? andWhere(baseWhere, { user: { createdByStaffId: managerScope.managerId } })
+      : baseWhere;
 
     const [total, rows] = await Promise.all([
       prisma.verificationRequest.count({ where }),
@@ -5267,6 +5496,13 @@ router.post(
       res.status(503).json({ error: "Verification storage unavailable" });
       return;
     }
+    if (isManagerSession(req)) {
+      const ownsVerification = await managerOwnsVerificationRequest(req, req.params.id);
+      if (!ownsVerification) {
+        res.status(404).json({ error: "Request not found" });
+        return;
+      }
+    }
     const target = await prisma.verificationRequest.findUnique({ where: { id: req.params.id } });
     if (!target) {
       res.status(404).json({ error: "Request not found" });
@@ -5302,6 +5538,13 @@ router.post(
     if (!prisma.verificationRequest) {
       res.status(503).json({ error: "Verification storage unavailable" });
       return;
+    }
+    if (isManagerSession(req)) {
+      const ownsVerification = await managerOwnsVerificationRequest(req, req.params.id);
+      if (!ownsVerification) {
+        res.status(404).json({ error: "Request not found" });
+        return;
+      }
     }
     const adminNote = String(req.body?.adminNote || "").trim().slice(0, 1000);
     const target = await prisma.verificationRequest.findUnique({ where: { id: req.params.id } });

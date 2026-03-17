@@ -84,6 +84,14 @@ function requireStaffPage(req, res, next) {
   return next();
 }
 
+function requireManagerPage(req, res, next) {
+  if (!getAdminSession(req)) {
+    return res.redirect("/manager/login");
+  }
+
+  return next();
+}
+
 function requireStaffApi(req, res, next) {
   if (!getAdminSession(req)) {
     return res.status(401).json({ error: "Unauthorized" });
@@ -97,7 +105,7 @@ function resolveAdminLogin() {
   return raw;
 }
 
-async function verifyStaffCredentials(login, password) {
+function normalizeCredentialsInput(login, password) {
   const normalizedLogin = normalizeLogin(login);
   const normalizedPassword = typeof password === "string" ? password : "";
 
@@ -105,29 +113,58 @@ async function verifyStaffCredentials(login, password) {
     return null;
   }
 
+  return {
+    normalizedLogin,
+    normalizedPassword,
+  };
+}
+
+async function verifyAdminCredentials(login, password) {
+  const normalizedInput = normalizeCredentialsInput(login, password);
+  if (!normalizedInput) {
+    return null;
+  }
+  const { normalizedLogin, normalizedPassword } = normalizedInput;
+
   const adminLogin = resolveAdminLogin();
-  if (adminLogin) {
-    const adminLoginNormalized = normalizeLogin(adminLogin) || adminLogin.trim().toLowerCase();
-    if (normalizedLogin === adminLoginNormalized) {
-      try {
-        const ok = await bcrypt.compare(normalizedPassword, env.ADMIN_PASSWORD_HASH);
-        if (ok) {
-          return {
-            id: "admin",
-            login: adminLogin,
-            role: "admin",
-            name: "Admin",
-          };
-        }
-      } catch {
-        return null;
-      }
-    }
+  if (!adminLogin) {
+    return null;
+  }
+
+  const adminLoginNormalized = normalizeLogin(adminLogin) || adminLogin.trim().toLowerCase();
+  if (normalizedLogin !== adminLoginNormalized) {
+    return null;
   }
 
   try {
+    const ok = await bcrypt.compare(normalizedPassword, env.ADMIN_PASSWORD_HASH);
+    if (ok) {
+      return {
+        id: "admin",
+        login: adminLogin,
+        role: "admin",
+        name: "Admin",
+      };
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
+
+async function verifyManagerCredentials(login, password) {
+  const normalizedInput = normalizeCredentialsInput(login, password);
+  if (!normalizedInput) {
+    return null;
+  }
+  const { normalizedLogin, normalizedPassword } = normalizedInput;
+
+  try {
     const staff = await prisma.staffUser.findFirst({
-      where: { login: normalizedLogin },
+      where: {
+        login: normalizedLogin,
+        role: "manager",
+      },
       select: {
         id: true,
         login: true,
@@ -147,7 +184,7 @@ async function verifyStaffCredentials(login, password) {
     return {
       id: staff.id,
       login: staff.login,
-      role: staff.role || "manager",
+      role: "manager",
       name: staff.name || "Manager",
     };
   } catch {
@@ -261,8 +298,10 @@ module.exports = {
   requireAdminPage,
   requireAdminApi,
   requireStaffPage,
+  requireManagerPage,
   requireStaffApi,
-  verifyStaffCredentials,
+  verifyAdminCredentials,
+  verifyManagerCredentials,
   loginAdmin,
   logoutAdmin,
   loginUserSession,
