@@ -821,6 +821,7 @@
   async function loadUsers() {
     const form = document.getElementById("users-filters");
     const table = document.getElementById("users-table");
+    const managerStatsNode = document.getElementById("users-manager-created-stats");
     if (!(form instanceof HTMLFormElement) || !(table instanceof HTMLElement)) return;
     const q = {
       q: getFormValue(form, "q", ""),
@@ -832,10 +833,29 @@
     const r = await fetch(`/api/admin/users?${Q(q)}`);
     if (!r.ok) {
       const msg = await E(r);
-      table.innerHTML = `<tr><td colspan="9" class="px-3 py-8 text-center text-red-700">Не удалось загрузить пользователей: ${X(msg)}</td></tr>`;
+      table.innerHTML = `<tr><td colspan="10" class="px-3 py-8 text-center text-red-700">Failed to load users: ${X(msg)}</td></tr>`;
+      if (managerStatsNode instanceof HTMLElement) {
+        managerStatsNode.classList.add("hidden");
+        managerStatsNode.textContent = "";
+      }
       return;
     }
     const payload = await r.json();
+    if (managerStatsNode instanceof HTMLElement) {
+      if (isManager) {
+        const trackingEnabled = payload?.managerStats?.trackingEnabled !== false;
+        if (trackingEnabled) {
+          const createdCount = Number(payload?.managerStats?.createdAccountsCount || 0);
+          managerStatsNode.textContent = `Accounts created by you: ${createdCount.toLocaleString("ru-RU")}`;
+        } else {
+          managerStatsNode.textContent = "Manager stats will appear after DB migration.";
+        }
+        managerStatsNode.classList.remove("hidden");
+      } else {
+        managerStatsNode.classList.add("hidden");
+        managerStatsNode.textContent = "";
+      }
+    }
     const rows = payload.items || [];
     table.innerHTML = rows.length
       ? rows
@@ -863,6 +883,9 @@
           const userSlugsCsv = allSlugs.join(",");
           const loginLabel = x.login ? `<div class="text-xs text-neutral-500 font-mono">${X(x.login)}</div>` : "";
           const userCell = `${X(x.name)}${loginLabel}`;
+          const creatorName = x.createdBy?.name || x.createdBy?.login || "—";
+          const creatorLogin = x.createdBy?.login ? `<div class="text-xs text-neutral-500 font-mono">${X(x.createdBy.login)}</div>` : "";
+          const creatorCell = x.createdBy ? `${X(creatorName)}${creatorLogin}` : "—";
           const editSlugAttrs = allSlugs.length
             ? `data-act="us-edit" data-id="${X(x.telegramId)}" data-name="${X(x.name)}" data-slugs="${X(userSlugsCsv)}"`
             : 'disabled="disabled"';
@@ -870,38 +893,38 @@
           const scoreBreakdown = x.unqScore?.breakdown || {};
           const menuItems = [];
           if (!isManager) {
-            menuItems.push(menuItem({ label: "Сменить логин", icon: "pen", attrs: `data-act="ul" data-id="${X(x.telegramId)}" data-login="${X(x.login || "")}" data-name="${X(x.name)}"` }));
-            menuItems.push(menuItem({ label: "Сменить тариф", icon: "crown", attrs: `data-act="up" data-id="${X(x.telegramId)}" data-current-plan="${X(x.plan)}" data-active-slugs="${Number(x.activeSlugCount || 0)}" data-bracelet-slugs="${X(braceletSlugs)}"` }));
+            menuItems.push(menuItem({ label: "Change login", icon: "pen", attrs: `data-act="ul" data-id="${X(x.telegramId)}" data-login="${X(x.login || "")}" data-name="${X(x.name)}"` }));
+            menuItems.push(menuItem({ label: "Change plan", icon: "crown", attrs: `data-act="up" data-id="${X(x.telegramId)}" data-current-plan="${X(x.plan)}" data-active-slugs="${Number(x.activeSlugCount || 0)}" data-bracelet-slugs="${X(braceletSlugs)}"` }));
             if (x.isVerified) {
-              menuItems.push(menuItem({ label: "Снять верификацию", icon: "xCircle", attrs: `data-act="uv" data-id="${X(x.telegramId)}"`, danger: true }));
+              menuItems.push(menuItem({ label: "Remove verification", icon: "xCircle", attrs: `data-act="uv" data-id="${X(x.telegramId)}"`, danger: true }));
             }
-            menuItems.push(menuItem({ label: "Добавить slug", icon: "link2", attrs: `data-act="us-add" data-id="${X(x.telegramId)}" data-name="${X(x.name)}" data-slugs="${X(userSlugsCsv)}"` }));
-            menuItems.push(menuItem({ label: "Редактировать slug", icon: "pen", attrs: editSlugAttrs }));
-            menuItems.push(menuItem({ label: "Удалить slug", icon: "trash", attrs: `data-act="us-delete" data-id="${X(x.telegramId)}" data-name="${X(x.name)}" data-slugs="${X(userSlugsCsv)}"`, danger: true }));
+            menuItems.push(menuItem({ label: "Add slug", icon: "link2", attrs: `data-act="us-add" data-id="${X(x.telegramId)}" data-name="${X(x.name)}" data-slugs="${X(userSlugsCsv)}"` }));
+            menuItems.push(menuItem({ label: "Edit slug", icon: "pen", attrs: editSlugAttrs }));
+            menuItems.push(menuItem({ label: "Delete slug", icon: "trash", attrs: `data-act="us-delete" data-id="${X(x.telegramId)}" data-name="${X(x.name)}" data-slugs="${X(userSlugsCsv)}"`, danger: true }));
             menuItems.push(menuSeparator());
           }
 
-          menuItems.push(menuItem({ label: "Профиль и визитка", icon: "pen", attrs: `data-act="open-url" data-url="${userCardBasePath}/${encodeURIComponent(String(x.telegramId || ""))}/card"` }));
-          menuItems.push(menuItem({ label: "Открыть профиль", icon: "external", attrs: profileLink ? `data-act="open-url" data-url="${profileLink}"` : 'disabled="disabled"' }));
+          menuItems.push(menuItem({ label: "Profile & card", icon: "pen", attrs: `data-act="open-url" data-url="${userCardBasePath}/${encodeURIComponent(String(x.telegramId || ""))}/card"` }));
+          menuItems.push(menuItem({ label: "Open profile", icon: "external", attrs: profileLink ? `data-act="open-url" data-url="${profileLink}"` : 'disabled="disabled"' }));
 
           if (!isManager) {
-            menuItems.push(menuItem({ label: "Накрутить просмотры", icon: "eye", attrs: `data-act="uvb" data-id="${X(x.telegramId)}" data-name="${X(x.name)}" data-slugs="${X(userSlugsCsv)}"` }));
-            menuItems.push(menuItem({ label: "Уменьшить просмотры", icon: "xCircle", attrs: `data-act="uvd" data-id="${X(x.telegramId)}" data-name="${X(x.name)}" data-slugs="${X(userSlugsCsv)}"`, danger: true }));
+            menuItems.push(menuItem({ label: "Boost views", icon: "eye", attrs: `data-act="uvb" data-id="${X(x.telegramId)}" data-name="${X(x.name)}" data-slugs="${X(userSlugsCsv)}"` }));
+            menuItems.push(menuItem({ label: "Reduce views", icon: "xCircle", attrs: `data-act="uvd" data-id="${X(x.telegramId)}" data-name="${X(x.name)}" data-slugs="${X(userSlugsCsv)}"`, danger: true }));
             menuItems.push(menuSeparator());
-            menuItems.push(menuItem({ label: x.status === "blocked" ? "Разблокировать" : "Заблокировать", icon: "shieldOff", attrs: `data-act="ub" data-id="${X(x.telegramId)}" data-status="${X(x.status)}"`, danger: x.status !== "blocked" }));
-            menuItems.push(menuItem({ label: "Удалить пользователя полностью", icon: "trash", attrs: `data-act="ud" data-id="${X(x.telegramId)}" data-name="${X(x.name)}"`, danger: true }));
+            menuItems.push(menuItem({ label: x.status === "blocked" ? "Unblock" : "Block", icon: "shieldOff", attrs: `data-act="ub" data-id="${X(x.telegramId)}" data-status="${X(x.status)}"`, danger: x.status !== "blocked" }));
+            menuItems.push(menuItem({ label: "Delete user permanently", icon: "trash", attrs: `data-act="ud" data-id="${X(x.telegramId)}" data-name="${X(x.name)}"`, danger: true }));
           }
 
           const menu = menuWrap(menuItems.join(""));
-          const planLabel = x.plan === "premium" ? "Премиум" : x.plan === "basic" ? "Базовый" : "Без тарифа";
+          const planLabel = x.plan === "premium" ? "Premium" : x.plan === "basic" ? "Basic" : "No plan";
           const planChipClass =
             x.plan === "none"
               ? "border-amber-300 bg-amber-50 text-amber-800 whitespace-nowrap"
               : "border-neutral-200 whitespace-nowrap";
-          return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3">${userCell}</td><td class="px-4 py-3">${X(x.city || "—")}</td><td class="px-4 py-3"><span class="inline-flex rounded-full border px-2.5 py-1 text-xs font-medium ${planChipClass}">${planLabel}</span></td><td class="hidden px-4 py-3 text-xs text-neutral-600 xl:table-cell">${x.planPurchasedAt ? D(x.planPurchasedAt) : "—"}</td><td class="admin-col-slugs px-4 py-3 text-xs" title="${X(slugTitle)}">${X(slugText)}</td><td class="px-4 py-3"><button type="button" data-act="toggle-score" data-id="${X(x.telegramId)}" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-2.5 py-1 text-sm font-semibold">${score}</button></td><td class="px-4 py-3">${statusChip(x.status === "blocked" ? "rejected" : "approved")}</td><td class="px-4 py-3">${D(x.createdAt)}</td><td class="px-4 py-3"><div class="admin-row-actions">${menu}</div></td></tr><tr class="border-t border-neutral-100 hidden" data-score-row="${X(x.telegramId)}"><td colspan="9" class="px-4 py-2 text-xs text-neutral-600">Просмотры: ${Number(scoreBreakdown.views || 0)} | Редкость: ${Number(scoreBreakdown.slugRarity || 0)} | Срок: ${Number(scoreBreakdown.tenure || 0)} | CTR: ${Number(scoreBreakdown.ctr || 0)} | Браслет: ${Number(scoreBreakdown.bracelet || 0)} | Тариф: ${Number(scoreBreakdown.plan || 0)}</td></tr>`;
+          return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3">${userCell}</td><td class="px-4 py-3">${creatorCell}</td><td class="px-4 py-3">${X(x.city || "—")}</td><td class="px-4 py-3"><span class="inline-flex rounded-full border px-2.5 py-1 text-xs font-medium ${planChipClass}">${planLabel}</span></td><td class="hidden px-4 py-3 text-xs text-neutral-600 xl:table-cell">${x.planPurchasedAt ? D(x.planPurchasedAt) : "—"}</td><td class="admin-col-slugs px-4 py-3 text-xs" title="${X(slugTitle)}">${X(slugText)}</td><td class="px-4 py-3"><button type="button" data-act="toggle-score" data-id="${X(x.telegramId)}" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-2.5 py-1 text-sm font-semibold">${score}</button></td><td class="px-4 py-3">${statusChip(x.status === "blocked" ? "rejected" : "approved")}</td><td class="px-4 py-3">${D(x.createdAt)}</td><td class="px-4 py-3"><div class="admin-row-actions">${menu}</div></td></tr><tr class="border-t border-neutral-100 hidden" data-score-row="${X(x.telegramId)}"><td colspan="10" class="px-4 py-2 text-xs text-neutral-600">Views: ${Number(scoreBreakdown.views || 0)} | Slug rarity: ${Number(scoreBreakdown.slugRarity || 0)} | Tenure: ${Number(scoreBreakdown.tenure || 0)} | CTR: ${Number(scoreBreakdown.ctr || 0)} | Bracelet: ${Number(scoreBreakdown.bracelet || 0)} | Plan: ${Number(scoreBreakdown.plan || 0)}</td></tr>`;
         })
         .join("")
-      : `<tr><td colspan="9" class="px-3 py-10 text-center text-neutral-500"><div class="inline-flex flex-col items-center gap-2">${I("userCheck", 48)}<span>Нет пользователей</span></div></td></tr>`;
+      : `<tr><td colspan="10" class="px-3 py-10 text-center text-neutral-500"><div class="inline-flex flex-col items-center gap-2">${I("userCheck", 48)}<span>No users found</span></div></td></tr>`;
     renderPager("users-pagination", payload.pagination, (nextPage) => {
       setFormValue(form, "page", String(nextPage));
       void loadUsers();
@@ -913,25 +936,42 @@
     if (!(table instanceof HTMLElement)) return;
     const r = await fetch("/api/admin/staff");
     if (!r.ok) {
-      table.innerHTML = `<tr><td colspan="7" class="px-3 py-8 text-center text-red-700">Не удалось загрузить менеджеров</td></tr>`;
+      table.innerHTML = `<tr><td colspan="9" class="px-3 py-8 text-center text-red-700">Failed to load managers</td></tr>`;
       return;
     }
     const payload = await r.json();
     const rows = payload.items || [];
     table.innerHTML = rows.length
       ? rows.map((x) => {
-        const statusLabel = x.isActive ? "Активен" : "Отключён";
-        const roleLabel = x.role === "admin" ? "Админ" : "Менеджер";
-        const toggleLabel = x.isActive ? "Отключить" : "Включить";
+        const statusLabel = x.isActive ? "Active" : "Disabled";
+        const roleLabel = x.role === "admin" ? "Admin" : "Manager";
+        const toggleLabel = x.isActive ? "Disable" : "Enable";
         const toggleIcon = x.isActive ? "toggleLeft" : "toggleRight";
+        const createdAccounts = Array.isArray(x.createdAccounts) ? x.createdAccounts : [];
+        const createdAccountsCount = Number(x.createdAccountsCount ?? createdAccounts.length ?? 0);
+        const accountLabels = createdAccounts
+          .map((account) => {
+            const login = String(account?.login || "").trim();
+            if (login) return `@${login}`;
+            const name = String(account?.name || "").trim();
+            return name || String(account?.id || "").trim();
+          })
+          .filter(Boolean);
+        const accountPreview = accountLabels.length
+          ? accountLabels.length > 4
+            ? `${accountLabels.slice(0, 4).join(", ")} +${accountLabels.length - 4}`
+            : accountLabels.join(", ")
+          : "—";
+        const accountTitle = accountLabels.join(", ");
         const menu = menuWrap([
           menuItem({ label: toggleLabel, icon: toggleIcon, attrs: `data-act="manager-toggle" data-id="${X(x.id)}" data-next="${x.isActive ? 0 : 1}" data-name="${X(x.name || x.login || "")}"` }),
-          menuItem({ label: "Сбросить пароль", icon: "pen", attrs: `data-act="manager-reset" data-id="${X(x.id)}" data-name="${X(x.name || x.login || "")}"` }),
+          menuItem({ label: "Reset password", icon: "pen", attrs: `data-act="manager-reset" data-id="${X(x.id)}" data-name="${X(x.name || x.login || "")}"` }),
         ].join(""));
-        return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3">${X(x.name || "—")}</td><td class="px-4 py-3 font-mono">${X(x.login || "")}</td><td class="px-4 py-3">${X(roleLabel)}</td><td class="px-4 py-3">${X(statusLabel)}</td><td class="px-4 py-3">${D(x.lastLoginAt)}</td><td class="px-4 py-3">${D(x.createdAt)}</td><td class="px-4 py-3"><div class="admin-row-actions">${menu}</div></td></tr>`;
+        return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3">${X(x.name || "—")}</td><td class="px-4 py-3 font-mono">${X(x.login || "")}</td><td class="px-4 py-3">${X(roleLabel)}</td><td class="px-4 py-3">${X(statusLabel)}</td><td class="px-4 py-3">${D(x.lastLoginAt)}</td><td class="px-4 py-3">${D(x.createdAt)}</td><td class="px-4 py-3 font-semibold">${createdAccountsCount.toLocaleString("ru-RU")}</td><td class="px-4 py-3 text-xs text-neutral-600" title="${X(accountTitle)}">${X(accountPreview)}</td><td class="px-4 py-3"><div class="admin-row-actions">${menu}</div></td></tr>`;
       }).join("")
-      : `<tr><td colspan="7" class="px-3 py-10 text-center text-neutral-500"><div class="inline-flex flex-col items-center gap-2">${I("userCheck", 48)}<span>Нет менеджеров</span></div></td></tr>`;
+      : `<tr><td colspan="9" class="px-3 py-10 text-center text-neutral-500"><div class="inline-flex flex-col items-center gap-2">${I("userCheck", 48)}<span>No managers found</span></div></td></tr>`;
   }
+
   async function loadSlugs() {
     const stats = document.getElementById("slugs-stats");
     const table = document.getElementById("slugs-table");
@@ -2575,5 +2615,4 @@
     void loadScoreManagement();
   }
 })();
-
 

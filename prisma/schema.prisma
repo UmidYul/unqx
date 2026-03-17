@@ -267,6 +267,8 @@ model User {
   verifiedAt             DateTime?             @map("verified_at")
   showInDirectory        Boolean               @default(true) @map("show_in_directory")
   directorySector        String?               @map("directory_sector") @db.VarChar(20)
+  createdByStaffId       String?               @map("created_by_staff_id") @db.Uuid
+  createdByStaff         StaffUser?            @relation("StaffCreatedUsers", fields: [createdByStaffId], references: [id], onDelete: SetNull)
   refCode                String?               @unique @map("ref_code") @db.VarChar(40)
   createdAt              DateTime              @default(now()) @map("created_at")
   updatedAt              DateTime              @updatedAt @map("updated_at")
@@ -304,6 +306,7 @@ model StaffUser {
   lastLoginAt DateTime? @map("last_login_at")
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
+  createdUsers User[]   @relation("StaffCreatedUsers")
 
   @@map("staff_users")
 }

@@ -109,6 +109,7 @@ const USER_COLUMN_MAP = {
   plan: "plan",
   planPurchasedAt: "plan_purchased_at",
   planUpgradedAt: "plan_upgraded_at",
+  createdByStaffId: "created_by_staff_id",
   status: "status",
   createdAt: "created_at",
 };
@@ -1119,7 +1120,64 @@ router.get(
         createdAt: true,
       },
     });
-    res.json({ items });
+
+    const userColumns = await getUserColumns();
+    const hasCreatorColumn = Boolean(userColumns) && hasUserColumn(userColumns, "createdByStaffId");
+    const staffIds = items.map((item) => item.id);
+    const createdAccountsByStaff = new Map();
+
+    if (hasCreatorColumn && staffIds.length > 0) {
+      const userSelect = {
+        id: true,
+        createdByStaffId: true,
+        createdAt: true,
+      };
+      if (hasUserColumn(userColumns, "login")) userSelect.login = true;
+      if (hasUserColumn(userColumns, "firstName")) userSelect.firstName = true;
+      if (hasUserColumn(userColumns, "displayName")) userSelect.displayName = true;
+
+      let createdUsers = [];
+      try {
+        createdUsers = await prisma.user.findMany({
+          where: {
+            createdByStaffId: { in: staffIds },
+          },
+          orderBy: { createdAt: "desc" },
+          select: userSelect,
+        });
+      } catch (error) {
+        if (!isMissingModelError(error, "User") && !isMissingStorageError(error)) {
+          throw error;
+        }
+      }
+
+      for (const row of createdUsers) {
+        const managerId = row.createdByStaffId;
+        if (!managerId) {
+          continue;
+        }
+        if (!createdAccountsByStaff.has(managerId)) {
+          createdAccountsByStaff.set(managerId, []);
+        }
+        createdAccountsByStaff.get(managerId).push({
+          id: row.id,
+          login: row.login || null,
+          name: row.displayName || row.firstName || row.login || row.id,
+          createdAt: row.createdAt || null,
+        });
+      }
+    }
+
+    const enrichedItems = items.map((item) => {
+      const createdAccounts = createdAccountsByStaff.get(item.id) || [];
+      return {
+        ...item,
+        createdAccountsCount: createdAccounts.length,
+        createdAccounts,
+      };
+    });
+
+    res.json({ items: enrichedItems });
   }),
 );
 
@@ -1727,6 +1785,10 @@ router.get(
     const sort = req.query.sort === "score_desc" ? "score_desc" : "created_desc";
     const rawPlanFilter = typeof req.query.plan === "string" ? req.query.plan.trim() : "";
     const planFilter = ["none", "basic", "premium"].includes(rawPlanFilter) ? rawPlanFilter : "all";
+    const adminSession = req.session?.admin || null;
+    const requesterRole = String(adminSession?.role || "admin");
+    const requesterManagerId = requesterRole === "manager" ? String(adminSession?.id || "").trim() : "";
+    const hasCreatorColumn = Boolean(userColumns) && hasUserColumn(userColumns, "createdByStaffId");
 
     const where = {};
     if (planFilter !== "all" && hasUserColumn(userColumns, "plan")) {
@@ -1762,6 +1824,7 @@ router.get(
 
     let total;
     let users;
+    let managerCreatedAccountsCount = null;
     try {
       const select = { id: true };
       if (hasUserColumn(userColumns, "firstName")) select.firstName = true;
@@ -1775,10 +1838,11 @@ router.get(
       if (hasUserColumn(userColumns, "plan")) select.plan = true;
       if (hasUserColumn(userColumns, "planPurchasedAt")) select.planPurchasedAt = true;
       if (hasUserColumn(userColumns, "planUpgradedAt")) select.planUpgradedAt = true;
+      if (hasCreatorColumn) select.createdByStaffId = true;
       if (hasUserColumn(userColumns, "status")) select.status = true;
       if (hasUserColumn(userColumns, "createdAt")) select.createdAt = true;
 
-      [total, users] = await Promise.all([
+      [total, users, managerCreatedAccountsCount] = await Promise.all([
         prisma.user.count({ where }),
         prisma.user.findMany({
           where,
@@ -1787,6 +1851,11 @@ router.get(
           take: pageSize,
           select,
         }),
+        requesterManagerId && hasCreatorColumn
+          ? prisma.user.count({
+            where: { createdByStaffId: requesterManagerId },
+          })
+          : Promise.resolve(null),
       ]);
     } catch (error) {
       if (isMissingModelError(error, "User")) {
@@ -1801,7 +1870,10 @@ router.get(
     }
 
     const userIds = users.map((item) => item.id);
-    const [slugs, cards, braceletRequests, unqScores] = await Promise.all([
+    const creatorIds = hasCreatorColumn
+      ? Array.from(new Set(users.map((item) => item.createdByStaffId).filter(Boolean)))
+      : [];
+    const [slugs, cards, braceletRequests, unqScores, creatorStaff] = await Promise.all([
       prisma.slug.findMany({
         where: { ownerId: { in: userIds } },
         select: {
@@ -1841,6 +1913,16 @@ router.get(
           },
         })
         : Promise.resolve([]),
+      creatorIds.length
+        ? prisma.staffUser.findMany({
+          where: { id: { in: creatorIds } },
+          select: {
+            id: true,
+            login: true,
+            name: true,
+          },
+        })
+        : Promise.resolve([]),
     ]);
 
     const slugsByUser = new Map();
@@ -1867,10 +1949,13 @@ router.get(
       braceletByUser.get(row.userId).add(row.slug);
     }
     const scoreByUser = new Map(unqScores.map((row) => [row.userId, row]));
+    const staffById = new Map(creatorStaff.map((row) => [row.id, row]));
 
     const items = users.map((user) => {
       const telegramUsername = user.telegramUsername || null;
       const username = user.username || null;
+      const createdByStaffId = user.createdByStaffId || null;
+      const creator = createdByStaffId ? staffById.get(createdByStaffId) || null : null;
       return {
         unqScore: scoreByUser.get(user.id)
           ? {
@@ -1893,6 +1978,13 @@ router.get(
         username,
         telegramUsername,
         login: user.login || null,
+        createdBy: createdByStaffId
+          ? {
+            id: createdByStaffId,
+            login: creator?.login || null,
+            name: creator?.name || null,
+          }
+          : null,
         isVerified: Boolean(user.isVerified),
         verifiedCompany: user.verifiedCompany || "",
         plan: user.plan,
@@ -1918,6 +2010,12 @@ router.get(
 
     res.json({
       items,
+      managerStats: requesterRole === "manager"
+        ? {
+          createdAccountsCount: Number(managerCreatedAccountsCount || 0),
+          trackingEnabled: hasCreatorColumn,
+        }
+        : null,
       pagination: {
         page,
         pageSize,
@@ -1934,6 +2032,13 @@ router.post(
     if (!ensureUsersStorageReady(res)) {
       return;
     }
+
+    const userColumns = await getUserColumns();
+    const hasCreatorColumn = Boolean(userColumns) && hasUserColumn(userColumns, "createdByStaffId");
+    const adminSession = req.session?.admin || null;
+    const createdByManagerId = adminSession?.role === "manager"
+      ? String(adminSession?.id || "").trim()
+      : "";
 
     const firstName = String(req.body?.firstName || req.body?.name || "").trim().slice(0, 120);
     const login = normalizeLogin(req.body?.login);
@@ -2000,6 +2105,9 @@ router.post(
         status: "active",
         refCode,
         telegramUsername,
+        ...(hasCreatorColumn && createdByManagerId
+          ? { createdByStaffId: createdByManagerId }
+          : {}),
       },
       select: {
         id: true,
