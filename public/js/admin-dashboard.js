@@ -53,7 +53,12 @@
   const tabAliases = { slug: "slugs" };
   const normalizedTab = tabAliases[tab] || tab;
   const tabSections = Array.from(document.querySelectorAll('section[id^="tab-"]'));
-  const dbg = (...args) => console.log("[admin-dashboard]", ...args);
+  const dashboardDebugEnabled =
+    new URLSearchParams(window.location.search).get("debug") === "admin-dashboard" ||
+    window.localStorage?.getItem("debug.admin-dashboard") === "1";
+  const dbg = dashboardDebugEnabled
+    ? (...args) => console.log("[admin-dashboard]", ...args)
+    : () => {};
   dbg("init", {
     href: window.location.href,
     urlTab,
@@ -2645,7 +2650,9 @@
     }
   }
 
-  void loadMaintenanceBanner();
+  if (!isManager) {
+    void loadMaintenanceBanner();
+  }
 
   if (tab === "analytics") {
     dbg("load", "analytics");

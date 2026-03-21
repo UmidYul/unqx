@@ -829,13 +829,17 @@ function isManagerSession(req) {
   return String(req.session?.admin?.role || "admin") === "manager";
 }
 
+function isUuid(value) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value || "").trim());
+}
+
 async function resolveManagerId(req) {
   if (!isManagerSession(req)) {
     return "";
   }
 
   const directId = String(req.session?.admin?.id || "").trim();
-  if (directId) {
+  if (directId && isUuid(directId)) {
     return directId;
   }
 
