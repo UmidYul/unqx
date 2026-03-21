@@ -174,6 +174,13 @@
   };
   const normalizeShortSlug = (value) => String(value || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6);
   const isShortSlug = (value) => /^[A-Z]{3}[0-9]{3}$/.test(String(value || ""));
+  const normalizeVerificationStatusInput = (value, fallback = null) => {
+    const raw = String(value ?? "").trim().toLowerCase();
+    if (!raw) return fallback;
+    if (["verified", "verify", "active", "on", "1", "true", "yes", "да", "вкл", "включить"].includes(raw)) return true;
+    if (["unverified", "off", "0", "false", "no", "нет", "выкл", "снять", "remove"].includes(raw)) return false;
+    return null;
+  };
   const ICONS = {
     more: '<circle cx="12" cy="5" r="1.7" fill="currentColor"/><circle cx="12" cy="12" r="1.7" fill="currentColor"/><circle cx="12" cy="19" r="1.7" fill="currentColor"/>',
     clock: '<circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M12 7v5l3 2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
@@ -1407,14 +1414,20 @@
           if (!isManager) {
             menuItems.push(menuItem({ label: "Change login", icon: "pen", attrs: `data-act="ul" data-id="${X(x.telegramId)}" data-login="${X(x.login || "")}" data-name="${X(x.name)}"` }));
             menuItems.push(menuItem({ label: "Change plan", icon: "crown", attrs: `data-act="up" data-id="${X(x.telegramId)}" data-current-plan="${X(x.plan)}" data-active-slugs="${Number(x.activeSlugCount || 0)}" data-bracelet-slugs="${X(braceletSlugs)}"` }));
-            if (x.isVerified) {
-              menuItems.push(menuItem({ label: "Remove verification", icon: "xCircle", attrs: `data-act="uv" data-id="${X(x.telegramId)}"`, danger: true }));
-            }
             menuItems.push(menuItem({ label: "Add slug", icon: "link2", attrs: `data-act="us-add" data-id="${X(x.telegramId)}" data-name="${X(x.name)}" data-slugs="${X(userSlugsCsv)}"` }));
             menuItems.push(menuItem({ label: "Edit slug", icon: "pen", attrs: editSlugAttrs }));
             menuItems.push(menuItem({ label: "Delete slug", icon: "trash", attrs: `data-act="us-delete" data-id="${X(x.telegramId)}" data-name="${X(x.name)}" data-slugs="${X(userSlugsCsv)}"`, danger: true }));
             menuItems.push(menuSeparator());
           }
+
+          const verificationLabel = x.isVerified ? "Верификация: активна" : "Верифицировать";
+          menuItems.push(
+            menuItem({
+              label: verificationLabel,
+              icon: "checkCircle",
+              attrs: `data-act="uvm" data-id="${X(x.telegramId)}" data-name="${X(x.name)}" data-verified="${x.isVerified ? "1" : "0"}" data-company="${X(x.verifiedCompany || "")}" data-role="${X(x.verifiedRole || "")}"`,
+            }),
+          );
 
           const cardEditorUrl = `${userCardBasePath}/${encodeURIComponent(String(x.telegramId || ""))}/card`;
           const cardEditorLabel = x.hasCard ? "Редактировать визитку" : "Создать визитку";
@@ -2432,6 +2445,83 @@
       await showAlert(`Slug ${targetSlug} удален.${nextPrimary}`);
       void loadUsers();
       void loadSlugs();
+      closeAllRowMenus();
+      return;
+    }
+    if (a === "uvm") {
+      const userId = n.getAttribute("data-id");
+      const userName = n.getAttribute("data-name") || "пользователя";
+      if (!userId) return;
+
+      const currentVerified = String(n.getAttribute("data-verified") || "") === "1";
+      let currentCompany = String(n.getAttribute("data-company") || "").trim();
+      let currentRole = String(n.getAttribute("data-role") || "").trim();
+
+      try {
+        const profileResponse = await fetch(`/api/admin/users/${encodeURIComponent(userId)}/card`, {
+          headers: { Accept: "application/json" },
+          cache: "no-store",
+        });
+        if (profileResponse.ok) {
+          const profilePayload = await profileResponse.json().catch(() => ({}));
+          currentRole = String(profilePayload?.card?.role || "").trim();
+          if (!currentCompany) {
+            currentCompany = String(profilePayload?.user?.verifiedCompany || "").trim();
+          }
+        }
+      } catch {
+        // ignore and keep defaults
+      }
+
+      const enteredStatus = await showPrompt(
+        `Статус верификации для ${userName}: verified или unverified`,
+        currentVerified ? "verified" : "unverified",
+      );
+      if (enteredStatus === null) return;
+      const nextVerified = normalizeVerificationStatusInput(enteredStatus, null);
+      if (nextVerified === null) {
+        await showAlert("Введите статус verified или unverified.");
+        return;
+      }
+
+      let company = currentCompany;
+      let role = currentRole;
+      if (nextVerified) {
+        const enteredCompany = await showPrompt(`Место работы для ${userName}`, currentCompany);
+        if (enteredCompany === null) return;
+        company = String(enteredCompany || "").trim();
+        if (!company) {
+          await showAlert("Укажите место работы.");
+          return;
+        }
+
+        const enteredRole = await showPrompt(`Должность для ${userName}`, currentRole);
+        if (enteredRole === null) return;
+        role = String(enteredRole || "").trim();
+        if (!role) {
+          await showAlert("Укажите должность.");
+          return;
+        }
+      } else {
+        const ok = await showConfirm(`Снять верификацию у пользователя ${userName}?`);
+        if (!ok) return;
+      }
+
+      const response = await fetch(`/api/admin/users/${encodeURIComponent(userId)}/verification`, {
+        method: "PATCH",
+        headers: H({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          status: nextVerified ? "verified" : "unverified",
+          company: nextVerified ? company : "",
+          role: nextVerified ? role : "",
+        }),
+      });
+      if (!response.ok) {
+        await showAlert(await E(response));
+        return;
+      }
+      await showAlert(nextVerified ? "Верификация обновлена." : "Верификация снята.");
+      void loadUsers();
       closeAllRowMenus();
       return;
     }

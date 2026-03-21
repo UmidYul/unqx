@@ -719,6 +719,23 @@ function normalizeUserPlan(value) {
   return "none";
 }
 
+function normalizeVerificationStatusInput(value) {
+  if (typeof value === "boolean") {
+    return value;
+  }
+  const raw = String(value ?? "").trim().toLowerCase();
+  if (!raw) {
+    return null;
+  }
+  if (["verified", "verify", "active", "on", "1", "true", "yes", "да", "вкл", "включить"].includes(raw)) {
+    return true;
+  }
+  if (["unverified", "off", "0", "false", "no", "нет", "выкл", "снять", "remove"].includes(raw)) {
+    return false;
+  }
+  return null;
+}
+
 function normalizeShortSlug(value) {
   return String(value || "")
     .toUpperCase()
@@ -1176,6 +1193,7 @@ const MANAGER_ALLOWED_ROUTES = [
   { method: "POST", re: /^\/users\/[^/]+\/card\/avatar\/?$/ },
   { method: "DELETE", re: /^\/users\/[^/]+\/card\/avatar\/?$/ },
   { method: "PATCH", re: /^\/users\/[^/]+\/profile\/?$/ },
+  { method: "PATCH", re: /^\/users\/[^/]+\/verification\/?$/ },
   { method: "GET", re: /^\/orders\/?$/ },
   { method: "PATCH", re: /^\/orders\/[^/]+\/status\/?$/ },
   { method: "POST", re: /^\/orders\/[^/]+\/extend-pending\/?$/ },
@@ -2106,7 +2124,7 @@ router.get(
     const creatorIds = hasCreatorColumn
       ? Array.from(new Set(users.map((item) => item.createdByStaffId).filter(Boolean)))
       : [];
-    const [slugs, cards, braceletRequests, unqScores, creatorStaff] = await Promise.all([
+    const [slugs, cards, braceletRequests, unqScores, creatorStaff, approvedVerificationRows] = await Promise.all([
       prisma.slug.findMany({
         where: { ownerId: { in: userIds } },
         select: {
@@ -2119,7 +2137,7 @@ router.get(
       }),
       prisma.profileCard.findMany({
         where: { ownerId: { in: userIds } },
-        select: { ownerId: true, id: true, theme: true },
+        select: { ownerId: true, id: true, theme: true, role: true },
       }),
       prisma.slugRequest.findMany({
         where: {
@@ -2156,6 +2174,22 @@ router.get(
           },
         })
         : Promise.resolve([]),
+      modelDelegateExists("VerificationRequest")
+        ? prisma.verificationRequest.findMany({
+          where: {
+            userId: { in: userIds },
+            status: "approved",
+          },
+          orderBy: [
+            { reviewedAt: "desc" },
+            { requestedAt: "desc" },
+          ],
+          select: {
+            userId: true,
+            role: true,
+          },
+        })
+        : Promise.resolve([]),
     ]);
 
     const slugsByUser = new Map();
@@ -2174,6 +2208,15 @@ router.get(
     const cardThemeByUser = new Map(
       cards.map((item) => [item.ownerId, item.theme || "default_dark"]),
     );
+    const cardRoleByUser = new Map(
+      cards.map((item) => [item.ownerId, String(item.role || "").trim()]),
+    );
+    const verificationRoleByUser = new Map();
+    for (const row of approvedVerificationRows) {
+      if (!verificationRoleByUser.has(row.userId)) {
+        verificationRoleByUser.set(row.userId, String(row.role || "").trim());
+      }
+    }
     const braceletByUser = new Map();
     for (const row of braceletRequests) {
       if (!braceletByUser.has(row.userId)) {
@@ -2220,6 +2263,7 @@ router.get(
           : null,
         isVerified: Boolean(user.isVerified),
         verifiedCompany: user.verifiedCompany || "",
+        verifiedRole: cardRoleByUser.get(user.id) || verificationRoleByUser.get(user.id) || "",
         plan: user.plan,
         planPurchasedAt: user.planPurchasedAt,
         planUpgradedAt: user.planUpgradedAt,
@@ -4055,12 +4099,174 @@ router.patch(
 );
 
 router.patch(
+  "/users/:userId/verification",
+  asyncHandler(async (req, res) => {
+    if (!ensureUsersStorageReady(res)) {
+      return;
+    }
+
+    const userId = String(req.params.userId || "").trim();
+    if (!userId) {
+      res.status(400).json({ error: "User id is required", code: "USER_ID_REQUIRED" });
+      return;
+    }
+
+    if (isManagerSession(req)) {
+      const ownsUser = await managerOwnsUser(req, userId);
+      if (!ownsUser) {
+        res.status(404).json({ error: "User not found", code: "USER_NOT_FOUND" });
+        return;
+      }
+    }
+
+    const status = normalizeVerificationStatusInput(req.body?.status ?? req.body?.isVerified);
+    if (status === null) {
+      res.status(400).json({ error: "Invalid verification status", code: "VERIFICATION_STATUS_INVALID" });
+      return;
+    }
+
+    const company = String(req.body?.company || "").trim().slice(0, 160);
+    const role = String(req.body?.role || "").trim().slice(0, 120);
+    if (status && (!company || !role)) {
+      res.status(400).json({
+        error: "Company and role are required to verify user",
+        code: "VERIFICATION_PROFILE_REQUIRED",
+      });
+      return;
+    }
+
+    const now = new Date();
+    const actorLogin = String(req.session?.admin?.login || "").trim() || "staff";
+
+    try {
+      const result = await prisma.$transaction(async (tx) => {
+        const targetUser = await tx.user.findUnique({
+          where: { id: userId },
+          select: { id: true, isVerified: true, verifiedCompany: true },
+        });
+        if (!targetUser) {
+          const error = new Error("User not found");
+          error.code = "USER_NOT_FOUND";
+          throw error;
+        }
+
+        const updatedUser = await tx.user.update({
+          where: { id: userId },
+          data: {
+            isVerified: status,
+            verifiedCompany: status ? company : null,
+            verifiedAt: status ? now : null,
+          },
+          select: {
+            id: true,
+            isVerified: true,
+            verifiedCompany: true,
+            verifiedAt: true,
+          },
+        });
+
+        let appliedRole = status ? role : null;
+        if (tx.profileCard && typeof tx.profileCard.updateMany === "function") {
+          try {
+            await tx.profileCard.updateMany({
+              where: { ownerId: userId },
+              data: {
+                role: status ? role : null,
+              },
+            });
+          } catch (error) {
+            if (!isMissingStorageError(error)) {
+              throw error;
+            }
+          }
+        }
+
+        if (status && tx.verificationRequest && typeof tx.verificationRequest.create === "function") {
+          let requestSlug = "PROFILE";
+          try {
+            const primarySlug = await tx.slug.findFirst({
+              where: { ownerId: userId, isPrimary: true },
+              select: { fullSlug: true },
+            });
+            if (primarySlug?.fullSlug) {
+              requestSlug = String(primarySlug.fullSlug);
+            }
+          } catch (error) {
+            if (!isMissingStorageError(error)) {
+              throw error;
+            }
+          }
+
+          try {
+            await tx.verificationRequest.create({
+              data: {
+                userId,
+                slug: requestSlug,
+                companyName: company,
+                role,
+                sector: "other",
+                proofType: "manager",
+                proofValue: `manager:${actorLogin}`,
+                comment: "Verified from manager dashboard",
+                status: "approved",
+                adminNote: "Approved by manager from users table",
+                requestedAt: now,
+                reviewedAt: now,
+              },
+            });
+          } catch (error) {
+            if (!isMissingStorageError(error)) {
+              throw error;
+            }
+          }
+        }
+
+        return {
+          user: updatedUser,
+          role: appliedRole,
+        };
+      });
+
+      res.json({
+        ok: true,
+        userId: result.user.id,
+        isVerified: result.user.isVerified,
+        verifiedCompany: result.user.verifiedCompany,
+        verifiedAt: result.user.verifiedAt,
+        role: result.role,
+      });
+    } catch (error) {
+      if (error?.code === "USER_NOT_FOUND") {
+        res.status(404).json({ error: "User not found", code: "USER_NOT_FOUND" });
+        return;
+      }
+      if (isMissingModelError(error, "User") || isMissingStorageError(error)) {
+        res.status(503).json({ error: "Users storage unavailable", code: "USERS_STORAGE_UNAVAILABLE" });
+        return;
+      }
+      throw error;
+    }
+  }),
+);
+
+router.patch(
   "/users/:userId/unverify",
   asyncHandler(async (req, res) => {
     if (!ensureUsersStorageReady(res)) {
       return;
     }
-    const userId = String(req.params.userId || "");
+    const userId = String(req.params.userId || "").trim();
+    if (!userId) {
+      res.status(400).json({ error: "User id is required", code: "USER_ID_REQUIRED" });
+      return;
+    }
+    if (isManagerSession(req)) {
+      const ownsUser = await managerOwnsUser(req, userId);
+      if (!ownsUser) {
+        res.status(404).json({ error: "User not found", code: "USER_NOT_FOUND" });
+        return;
+      }
+    }
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: { id: true, isVerified: true },
