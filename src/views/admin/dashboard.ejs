@@ -1432,6 +1432,13 @@
                   class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" required />
               </label>
               <label class="block text-sm font-medium text-neutral-700">
+                Город
+                <select name="city" class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" required>
+                  <option value="">Выберите город</option>
+                  <%- include('../partials/city-options') %>
+                </select>
+              </label>
+              <label class="block text-sm font-medium text-neutral-700">
                 Логин
                 <input name="login" type="text" maxlength="190"
                   class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" required />

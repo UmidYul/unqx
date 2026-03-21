@@ -525,7 +525,7 @@
 
   function mapUserCreateSubmitError(payload, fallbackStatus) {
     const code = String(payload?.code || "").trim();
-    if (code === "VALIDATION_ERROR") return "Проверьте форму: имя, логин и пароль обязательны, пароль минимум 8 символов.";
+    if (code === "VALIDATION_ERROR") return "Проверьте форму: имя, город, логин и пароль обязательны, пароль минимум 8 символов.";
     if (code === "EMAIL_INVALID") return "Email указан в неверном формате.";
     if (code === "PLAN_REQUIRED_FOR_ACTIVATION") return "Для мгновенной активации выберите тариф.";
     if (code === "SLUG_INVALID") return "Slug должен быть в формате AAA000: 3 буквы и 3 цифры.";
@@ -562,12 +562,14 @@
   function resetUserCreateFieldTones() {
     if (!(userCreateForm instanceof HTMLFormElement)) return;
     const name = userCreateForm.elements.namedItem("name");
+    const city = userCreateForm.elements.namedItem("city");
     const login = userCreateForm.elements.namedItem("login");
     const password = userCreateForm.elements.namedItem("password");
     const email = userCreateForm.elements.namedItem("email");
     const plan = userCreateForm.elements.namedItem("plan");
     const slug = userCreateForm.elements.namedItem("slug");
     setCreateInputTone(name, "neutral");
+    setCreateInputTone(city, "neutral");
     setCreateInputTone(login, "neutral");
     setCreateInputTone(password, "neutral");
     setCreateInputTone(email, "neutral");
@@ -677,6 +679,7 @@
     if (!(userCreateForm instanceof HTMLFormElement)) return;
     setUserCreateError("");
     const name = userCreateForm.elements.namedItem("name");
+    const city = userCreateForm.elements.namedItem("city");
     const login = userCreateForm.elements.namedItem("login");
     const password = userCreateForm.elements.namedItem("password");
     const email = userCreateForm.elements.namedItem("email");
@@ -684,6 +687,7 @@
     const slug = userCreateForm.elements.namedItem("slug");
     if (
       !(name instanceof HTMLInputElement) ||
+      !(city instanceof HTMLSelectElement) ||
       !(login instanceof HTMLInputElement) ||
       !(password instanceof HTMLInputElement) ||
       !(email instanceof HTMLInputElement) ||
@@ -694,6 +698,7 @@
     }
 
     const firstName = String(name.value || "").trim();
+    const selectedCity = String(city.value || "").trim();
     const normalizedLogin = normalizeUserCreateLogin(login.value);
     const normalizedEmail = normalizeUserCreateEmail(email.value);
     const normalizedSlug = normalizeUserCreateSlug(slug.value);
@@ -708,6 +713,12 @@
       return;
     }
     setCreateInputTone(name, "neutral");
+    if (!selectedCity) {
+      setCreateInputTone(city, "error");
+      setUserCreateError("Выберите город пользователя.");
+      return;
+    }
+    setCreateInputTone(city, "neutral");
     if (!normalizedLogin) {
       setCreateInputTone(login, "error");
       setUserCreateError("Введите логин.");
@@ -766,6 +777,7 @@
 
     const payload = {
       firstName,
+      city: selectedCity,
       login: normalizedLogin,
       password: password.value || "",
       email: normalizedEmail,
@@ -1384,19 +1396,13 @@
               : null;
           const braceletSlugs = Array.isArray(x.slugs) ? x.slugs.filter((s) => s.hasBracelet).map((s) => s.fullSlug).join(",") : "";
           const userSlugsCsv = allSlugs.join(",");
-          const loginLabel = x.login ? `<div class="text-xs text-neutral-500 font-mono">${X(x.login)}</div>` : "";
-          const cardStateLabel = x.hasCard
-            ? '<div class="mt-1 text-[11px] font-semibold text-emerald-700">Визитка готова</div>'
-            : '<div class="mt-1 text-[11px] font-semibold text-amber-700">Визитка не создана</div>';
-          const userCell = `${X(x.name)}${loginLabel}${cardStateLabel}`;
+          const userCell = X(x.name);
           const creatorName = x.createdBy?.name || x.createdBy?.login || "—";
-          const creatorLogin = x.createdBy?.login ? `<div class="text-xs text-neutral-500 font-mono">${X(x.createdBy.login)}</div>` : "";
-          const creatorCell = x.createdBy ? `${X(creatorName)}${creatorLogin}` : "—";
+          const creatorCell = x.createdBy ? X(creatorName) : "—";
           const editSlugAttrs = allSlugs.length
             ? `data-act="us-edit" data-id="${X(x.telegramId)}" data-name="${X(x.name)}" data-slugs="${X(userSlugsCsv)}"`
             : 'disabled="disabled"';
           const score = Number(x.unqScore?.score || 0);
-          const scoreBreakdown = x.unqScore?.breakdown || {};
           const menuItems = [];
           if (!isManager) {
             menuItems.push(menuItem({ label: "Change login", icon: "pen", attrs: `data-act="ul" data-id="${X(x.telegramId)}" data-login="${X(x.login || "")}" data-name="${X(x.name)}"` }));
@@ -1429,7 +1435,7 @@
             x.plan === "none"
               ? "border-amber-300 bg-amber-50 text-amber-800 whitespace-nowrap"
               : "border-neutral-200 whitespace-nowrap";
-          return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3">${userCell}</td><td class="px-4 py-3">${creatorCell}</td><td class="px-4 py-3">${X(x.city || "—")}</td><td class="px-4 py-3"><span class="inline-flex rounded-full border px-2.5 py-1 text-xs font-medium ${planChipClass}">${planLabel}</span></td><td class="hidden px-4 py-3 text-xs text-neutral-600 xl:table-cell">${x.planPurchasedAt ? D(x.planPurchasedAt) : "—"}</td><td class="admin-col-slugs px-4 py-3 text-xs" title="${X(slugTitle)}">${X(slugText)}</td><td class="px-4 py-3"><button type="button" data-act="toggle-score" data-id="${X(x.telegramId)}" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-2.5 py-1 text-sm font-semibold">${score}</button></td><td class="px-4 py-3">${statusChip(x.status === "blocked" ? "rejected" : "approved")}</td><td class="px-4 py-3">${D(x.createdAt)}</td><td class="px-4 py-3"><div class="admin-row-actions">${menu}</div></td></tr><tr class="border-t border-neutral-100 hidden" data-score-row="${X(x.telegramId)}"><td colspan="10" class="px-4 py-2 text-xs text-neutral-600">Views: ${Number(scoreBreakdown.views || 0)} | Slug rarity: ${Number(scoreBreakdown.slugRarity || 0)} | Tenure: ${Number(scoreBreakdown.tenure || 0)} | CTR: ${Number(scoreBreakdown.ctr || 0)} | Bracelet: ${Number(scoreBreakdown.bracelet || 0)} | Plan: ${Number(scoreBreakdown.plan || 0)}</td></tr>`;
+          return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3">${userCell}</td><td class="px-4 py-3">${creatorCell}</td><td class="px-4 py-3">${X(x.city || "—")}</td><td class="px-4 py-3"><span class="inline-flex rounded-full border px-2.5 py-1 text-xs font-medium ${planChipClass}">${planLabel}</span></td><td class="hidden px-4 py-3 text-xs text-neutral-600 xl:table-cell">${x.planPurchasedAt ? D(x.planPurchasedAt) : "—"}</td><td class="admin-col-slugs px-4 py-3 text-xs" title="${X(slugTitle)}">${X(slugText)}</td><td class="px-4 py-3"><span class="inline-flex min-h-11 min-w-14 items-center justify-center rounded-lg border border-neutral-300 px-2.5 py-1 text-sm font-semibold">${score}</span></td><td class="px-4 py-3">${statusChip(x.status === "blocked" ? "rejected" : "approved")}</td><td class="px-4 py-3">${D(x.createdAt)}</td><td class="px-4 py-3"><div class="admin-row-actions">${menu}</div></td></tr>`;
         })
         .join("")
       : `<tr><td colspan="10" class="px-3 py-10 text-center text-neutral-500"><div class="inline-flex flex-col items-center gap-2">${I("userCheck", 48)}<span>No users found</span></div></td></tr>`;
@@ -2604,15 +2610,6 @@
       return;
     }
     if (a === "te") { const encoded = n.getAttribute("data-json"); if (!encoded) return; try { openTe(JSON.parse(decodeURIComponent(encoded))); } catch { } }
-    if (a === "toggle-score") {
-      const id = n.getAttribute("data-id");
-      if (!id) return;
-      const row = document.querySelector(`[data-score-row="${id}"]`);
-      if (row instanceof HTMLElement) {
-        row.classList.toggle("hidden");
-      }
-      return;
-    }
     if (a === "score-recalc-one") {
       const id = n.getAttribute("data-id");
       if (!id) return;
