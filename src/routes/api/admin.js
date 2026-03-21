@@ -840,7 +840,7 @@ async function getManagerScope(req) {
 
   const managerId = String(req.session?.admin?.id || "").trim();
   const userColumns = await getUserColumns();
-  const hasCreatorColumn = Boolean(userColumns) && hasUserColumn(userColumns, "createdByStaffId");
+  const hasCreatorColumn = hasUserColumn(userColumns, "createdByStaffId");
   return {
     isManager: true,
     managerId,
@@ -1252,7 +1252,7 @@ router.get(
     });
 
     const userColumns = await getUserColumns();
-    const hasCreatorColumn = Boolean(userColumns) && hasUserColumn(userColumns, "createdByStaffId");
+    const hasCreatorColumn = hasUserColumn(userColumns, "createdByStaffId");
     const staffIds = items.map((item) => item.id);
     const createdAccountsByStaff = new Map();
 
@@ -1950,7 +1950,7 @@ router.get(
     const adminSession = req.session?.admin || null;
     const requesterRole = String(adminSession?.role || "admin");
     const requesterManagerId = requesterRole === "manager" ? String(adminSession?.id || "").trim() : "";
-    const hasCreatorColumn = Boolean(userColumns) && hasUserColumn(userColumns, "createdByStaffId");
+    const hasCreatorColumn = hasUserColumn(userColumns, "createdByStaffId");
     const managerScopeBlocked = requesterRole === "manager" && (!requesterManagerId || !hasCreatorColumn);
 
     const where = {};
@@ -2216,7 +2216,7 @@ router.post(
     }
 
     const userColumns = await getUserColumns();
-    const hasCreatorColumn = Boolean(userColumns) && hasUserColumn(userColumns, "createdByStaffId");
+    const hasCreatorColumn = hasUserColumn(userColumns, "createdByStaffId");
     const adminSession = req.session?.admin || null;
     const createdByManagerId = adminSession?.role === "manager"
       ? String(adminSession?.id || "").trim()

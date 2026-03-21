@@ -376,6 +376,14 @@
         }
       }
       await showAlert("Пользователь создан.");
+      const usersFiltersForm = document.getElementById("users-filters");
+      if (usersFiltersForm instanceof HTMLFormElement) {
+        setFormValue(usersFiltersForm, "page", "1");
+        const createdLogin = String(createdPayload?.user?.login || "").trim();
+        if (createdLogin) {
+          setFormValue(usersFiltersForm, "q", createdLogin);
+        }
+      }
       void loadUsers();
     } catch (error) {
       setUserCreateError(error?.message || "Не удалось создать пользователя");

@@ -1028,7 +1028,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     const forceAuth = Boolean(state.forceAuth) && document.body?.getAttribute("data-page") === "profile-page";
     if (forceAuth && (!precheck.authenticated || precheck.nextAction === "login")) {
       if (!currentUser) {
-        currentUser = getProfileUserFallback();
+        currentUser = getSessionUserFallback();
       }
       if (currentUser?.plan) {
         precheck.currentPlan = currentUser.plan;
@@ -1525,13 +1525,17 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     window.setTimeout(apply, 1200);
   }
 
-  function getProfileUserFallback() {
+  function getSessionUserFallback() {
+    const sessionCandidate = window.UNQOrderModalSessionUser;
+    if (sessionCandidate && typeof sessionCandidate === "object") {
+      return sessionCandidate;
+    }
     const isProfilePage = document.body?.getAttribute("data-page") === "profile-page";
     if (!isProfilePage) {
       return null;
     }
-    const candidate = window.UNQProfileUser;
-    return candidate && typeof candidate === "object" ? candidate : null;
+    const profileCandidate = window.UNQProfileUser;
+    return profileCandidate && typeof profileCandidate === "object" ? profileCandidate : null;
   }
 
   async function refreshUser() {
@@ -1551,7 +1555,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
       currentUser = null;
     }
     if (!currentUser) {
-      const fallbackUser = getProfileUserFallback();
+      const fallbackUser = getSessionUserFallback();
       if (fallbackUser) {
         currentUser = fallbackUser;
       }

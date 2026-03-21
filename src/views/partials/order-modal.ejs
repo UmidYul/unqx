@@ -3,7 +3,23 @@
   modalBraceletInStock=modalPublicSettings.bracelet_in_stock !==false; const
   modalBraceletCtaText=String(modalPublicSettings.bracelet_cta_text || "Заказать браслет" ); const
   modalResponseTime=String(modalPublicSettings.contact_response_time || "в течение 15 минут" ); const
-  pendingHours=Number(modalPublicSettings.pending_expiry_hours || 24); %>
+  pendingHours=Number(modalPublicSettings.pending_expiry_hours || 24); const
+  modalSessionUser = userSession && userSession.userId
+    ? {
+      id: userSession.userId,
+      userId: userSession.userId,
+      firstName: userSession.firstName || "",
+      displayName: userSession.displayName || "",
+      username: userSession.username || "",
+      email: userSession.email || "",
+      plan: userSession.plan || "none",
+      photoUrl: userSession.avatarUrl || "",
+    }
+    : null; const
+  modalSessionUserJson=JSON.stringify(modalSessionUser).replace(/</g, "\\u003c"); %>
+  <script nonce="<%= cspNonce %>">
+    window.UNQOrderModalSessionUser = <%- modalSessionUserJson %>;
+  </script>
   <div id="order-modal-root" class="fixed inset-0 z-[70] hidden">
     <div id="order-modal-backdrop" class="absolute inset-0 bg-black/50"></div>
     <div id="order-modal-wrap" class="relative flex min-h-full items-center justify-center p-4">
