@@ -1435,10 +1435,11 @@
                 Логин
                 <input name="login" type="text" maxlength="190"
                   class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" required />
+                <span id="user-create-login-status" class="mt-1 block text-xs text-neutral-500"></span>
               </label>
               <label class="block text-sm font-medium text-neutral-700">
                 Пароль
-                <input name="password" type="password" minlength="8"
+                <input name="password" type="password" minlength="8" autocomplete="new-password"
                   class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" required />
               </label>
               <label class="block text-sm font-medium text-neutral-700">
@@ -1450,16 +1451,19 @@
                 </select>
               </label>
               <label class="block text-sm font-medium text-neutral-700">
-                Slug (AAA000)
-                <input name="slug" type="text" maxlength="6" autocapitalize="characters" autocomplete="off"
-                  placeholder="ABC123"
+                Slug (три буквы и три цифры: AAA000)
+                <input name="slug" type="text" maxlength="6" autocapitalize="characters" autocomplete="off" inputmode="text"
+                  pattern="[A-Za-z]{3}[0-9]{3}" placeholder="ABC123"
                   class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2 font-mono text-sm uppercase tracking-wide" />
+                <span id="user-create-slug-status" class="mt-1 block text-xs text-neutral-500"></span>
+                <span id="user-create-slug-price" class="mt-1 block text-xs text-neutral-500"></span>
                 <span class="mt-1 block text-xs text-neutral-500">Для менеджера тариф и slug обязательны для мгновенной активации.</span>
               </label>
               <label class="block text-sm font-medium text-neutral-700">
                 Email для восстановления (опционально)
                 <input name="email" type="email" maxlength="190"
                   class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+                <span id="user-create-email-status" class="mt-1 block text-xs text-neutral-500"></span>
               </label>
               <p id="user-create-error" class="hidden text-xs text-red-700"></p>
               <button type="submit"

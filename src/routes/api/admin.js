@@ -840,7 +840,20 @@ async function resolveManagerId(req) {
 
   const directId = String(req.session?.admin?.id || "").trim();
   if (directId && isUuid(directId)) {
-    return directId;
+    try {
+      const managerById = await prisma.staffUser.findFirst({
+        where: {
+          id: directId,
+          role: "manager",
+        },
+        select: { id: true },
+      });
+      if (String(managerById?.id || "").trim()) {
+        return directId;
+      }
+    } catch {
+      // ignore and fallback to resolving by login below
+    }
   }
 
   const sessionLogin = normalizeLogin(req.session?.admin?.login);
@@ -1156,6 +1169,7 @@ router.use(requireCsrfToken);
 const MANAGER_ALLOWED_ROUTES = [
   { method: "GET", re: /^\/navigation-summary\/?$/ },
   { method: "GET", re: /^\/users\/?$/ },
+  { method: "GET", re: /^\/users\/check\/?$/ },
   { method: "POST", re: /^\/users\/?$/ },
   { method: "GET", re: /^\/users\/[^/]+\/card\/?$/ },
   { method: "PUT", re: /^\/users\/[^/]+\/card\/?$/ },
@@ -2242,6 +2256,93 @@ router.get(
         totalPages: Math.max(1, Math.ceil(total / pageSize)),
       },
     });
+  }),
+);
+
+router.get(
+  "/users/check",
+  asyncHandler(async (req, res) => {
+    if (!ensureUsersStorageReady(res)) {
+      return;
+    }
+
+    const userColumns = await getUserColumns();
+    const login = normalizeLogin(req.query?.login);
+    const email = normalizeEmail(req.query?.email);
+
+    const response = {
+      login: {
+        provided: Boolean(login),
+        valid: true,
+        available: true,
+        checked: false,
+        message: "",
+      },
+      email: {
+        provided: Boolean(email),
+        valid: true,
+        available: true,
+        checked: false,
+        message: "",
+      },
+    };
+
+    if (login) {
+      if (!isValidLogin(login)) {
+        response.login.valid = false;
+        response.login.available = false;
+        response.login.message = "Логин может содержать только латиницу, цифры и символы . _ @ + -";
+      } else if (hasUserColumn(userColumns, "login")) {
+        response.login.checked = true;
+      }
+    }
+
+    if (email) {
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        response.email.valid = false;
+        response.email.available = false;
+        response.email.message = "Введите email в формате name@example.com";
+      } else if (hasUserColumn(userColumns, "email")) {
+        response.email.checked = true;
+      }
+    }
+
+    try {
+      const checks = await Promise.all([
+        response.login.checked
+          ? prisma.user.findFirst({
+            where: { login },
+            select: { id: true },
+          })
+          : Promise.resolve(null),
+        response.email.checked
+          ? prisma.user.findFirst({
+            where: { email },
+            select: { id: true },
+          })
+          : Promise.resolve(null),
+      ]);
+
+      if (response.login.checked && checks[0]) {
+        response.login.available = false;
+        response.login.message = "Этот логин уже занят";
+      }
+      if (response.email.checked && checks[1]) {
+        response.email.available = false;
+        response.email.message = "Этот email уже используется";
+      }
+
+      res.json(response);
+    } catch (error) {
+      if (isMissingModelError(error, "User") || isMissingStorageError(error)) {
+        res.status(503).json({
+          error: "Users storage unavailable",
+          code: "USERS_STORAGE_UNAVAILABLE",
+        });
+        return;
+      }
+      throw error;
+    }
   }),
 );
 

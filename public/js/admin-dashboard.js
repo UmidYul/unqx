@@ -54,8 +54,7 @@
   const normalizedTab = tabAliases[tab] || tab;
   const tabSections = Array.from(document.querySelectorAll('section[id^="tab-"]'));
   const dashboardDebugEnabled =
-    new URLSearchParams(window.location.search).get("debug") === "admin-dashboard" ||
-    window.localStorage?.getItem("debug.admin-dashboard") === "1";
+    new URLSearchParams(window.location.search).get("debug") === "admin-dashboard";
   const dbg = dashboardDebugEnabled
     ? (...args) => console.log("[admin-dashboard]", ...args)
     : () => {};
@@ -254,6 +253,20 @@
   const userCreateClose = document.getElementById("user-create-close");
   const userCreateForm = document.getElementById("user-create-form");
   const userCreateError = document.getElementById("user-create-error");
+  const userCreateLoginStatus = document.getElementById("user-create-login-status");
+  const userCreateSlugStatus = document.getElementById("user-create-slug-status");
+  const userCreateSlugPrice = document.getElementById("user-create-slug-price");
+  const userCreateEmailStatus = document.getElementById("user-create-email-status");
+  const USER_CREATE_LOGIN_REGEX = /^[a-z0-9._@+-]+$/;
+  const USER_CREATE_EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const userCreateState = {
+    slugCheckSeq: 0,
+    loginCheckSeq: 0,
+    emailCheckSeq: 0,
+    slugDebounceTimer: null,
+    loginDebounceTimer: null,
+    emailDebounceTimer: null,
+  };
 
   function setUserCreateError(message) {
     if (!(userCreateError instanceof HTMLElement)) return;
@@ -267,8 +280,305 @@
     userCreateError.classList.remove("hidden");
   }
 
+  function setCreateInlineStatus(node, text, tone = "muted") {
+    if (!(node instanceof HTMLElement)) return;
+    const value = String(text || "").trim();
+    const toneClass =
+      tone === "error"
+        ? "text-red-700"
+        : tone === "success"
+          ? "text-emerald-700"
+          : tone === "info"
+            ? "text-blue-700"
+            : "text-neutral-500";
+    node.className = `mt-1 block text-xs ${toneClass}`;
+    node.textContent = value;
+  }
+
+  function setCreateInputTone(input, tone = "neutral") {
+    if (!(input instanceof HTMLInputElement || input instanceof HTMLSelectElement || input instanceof HTMLTextAreaElement)) return;
+    input.classList.remove("border-red-400", "focus:border-red-500", "focus:ring-red-100");
+    input.classList.remove("border-emerald-400", "focus:border-emerald-500", "focus:ring-emerald-100");
+    if (tone === "error") {
+      input.classList.add("border-red-400", "focus:border-red-500", "focus:ring-red-100");
+      return;
+    }
+    if (tone === "success") {
+      input.classList.add("border-emerald-400", "focus:border-emerald-500", "focus:ring-emerald-100");
+    }
+  }
+
+  function normalizeUserCreateSlug(value) {
+    const raw = String(value || "").toUpperCase();
+    const letters = raw.replace(/[^A-Z]/g, "").slice(0, 3);
+    const digits = raw.replace(/[^0-9]/g, "").slice(0, 3);
+    return `${letters}${digits}`;
+  }
+
+  function normalizeUserCreateLogin(value) {
+    return String(value || "").trim().toLowerCase();
+  }
+
+  function normalizeUserCreateEmail(value) {
+    return String(value || "").trim().toLowerCase();
+  }
+
+  function formatUserCreatePrice(value) {
+    return `${Number(value || 0).toLocaleString("ru-RU")} сум`;
+  }
+
+  function mapSlugAvailabilityReason(reason) {
+    switch (String(reason || "").toLowerCase()) {
+      case "available":
+        return "Slug свободен";
+      case "invalid_format":
+        return "Slug должен быть в формате AAA000";
+      case "pending":
+        return "Slug временно забронирован другим пользователем";
+      case "blocked":
+        return "Slug временно недоступен";
+      case "reserved_drop":
+      case "drop_reserved":
+        return "Slug доступен только в активном дропе";
+      case "taken":
+      case "approved":
+      case "active":
+      case "private":
+      case "paused":
+        return "Slug уже занят";
+      default:
+        return "Slug недоступен";
+    }
+  }
+
+  async function fetchUserCreateIdentityCheck({ login, email }) {
+    const params = new URLSearchParams();
+    if (login) params.set("login", login);
+    if (email) params.set("email", email);
+    if (!params.toString()) return null;
+    const response = await fetch(`/api/admin/users/check?${params.toString()}`, {
+      headers: { Accept: "application/json" },
+      cache: "no-store",
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const err = new Error(String(payload?.error || `HTTP ${response.status}`));
+      err.code = String(payload?.code || "");
+      throw err;
+    }
+    return payload && typeof payload === "object" ? payload : null;
+  }
+
+  async function fetchUserCreateSlugInfo(slugValue) {
+    const slug = normalizeUserCreateSlug(slugValue);
+    if (!isShortSlug(slug)) {
+      return {
+        slug,
+        validFormat: false,
+        available: false,
+        reason: "invalid_format",
+        price: null,
+      };
+    }
+    const [availabilityResponse, priceResponse] = await Promise.all([
+      fetch(`/api/cards/availability?slug=${encodeURIComponent(slug)}&source=admin_create`, {
+        headers: { Accept: "application/json" },
+        cache: "no-store",
+      }),
+      fetch(`/api/cards/slug-price?slug=${encodeURIComponent(slug)}`, {
+        headers: { Accept: "application/json" },
+        cache: "no-store",
+      }),
+    ]);
+    const availabilityPayload = await availabilityResponse.json().catch(() => ({}));
+    const pricePayload = await priceResponse.json().catch(() => ({}));
+    if (!availabilityResponse.ok) {
+      const err = new Error(String(availabilityPayload?.error || `HTTP ${availabilityResponse.status}`));
+      err.code = String(availabilityPayload?.code || "");
+      throw err;
+    }
+    return {
+      slug: String(availabilityPayload?.slug || slug),
+      validFormat: Boolean(availabilityPayload?.validFormat),
+      available: Boolean(availabilityPayload?.available),
+      reason: String(availabilityPayload?.reason || ""),
+      price: priceResponse.ok && pricePayload?.validFormat ? Number(pricePayload?.price || 0) : null,
+    };
+  }
+
+  async function validateUserCreateLoginLive(loginInput) {
+    const normalized = normalizeUserCreateLogin(loginInput.value);
+    loginInput.value = normalized;
+    const seq = ++userCreateState.loginCheckSeq;
+    if (!normalized) {
+      setCreateInputTone(loginInput, "neutral");
+      setCreateInlineStatus(userCreateLoginStatus, "");
+      return { ok: false, code: "LOGIN_REQUIRED" };
+    }
+    if (normalized.length < 3) {
+      setCreateInputTone(loginInput, "error");
+      setCreateInlineStatus(userCreateLoginStatus, "Минимум 3 символа", "error");
+      return { ok: false, code: "LOGIN_TOO_SHORT" };
+    }
+    if (!USER_CREATE_LOGIN_REGEX.test(normalized)) {
+      setCreateInputTone(loginInput, "error");
+      setCreateInlineStatus(userCreateLoginStatus, "Разрешены только a-z, 0-9 и символы . _ @ + -", "error");
+      return { ok: false, code: "LOGIN_INVALID_FORMAT" };
+    }
+    setCreateInlineStatus(userCreateLoginStatus, "Проверяем логин...", "info");
+    try {
+      const payload = await fetchUserCreateIdentityCheck({ login: normalized });
+      if (seq !== userCreateState.loginCheckSeq) return null;
+      const loginCheck = payload?.login || {};
+      if (loginCheck.available === false) {
+        setCreateInputTone(loginInput, "error");
+        setCreateInlineStatus(userCreateLoginStatus, loginCheck.message || "Этот логин уже занят", "error");
+        return { ok: false, code: "LOGIN_TAKEN" };
+      }
+      setCreateInputTone(loginInput, "success");
+      setCreateInlineStatus(userCreateLoginStatus, "Логин свободен", "success");
+      return { ok: true };
+    } catch {
+      if (seq !== userCreateState.loginCheckSeq) return null;
+      setCreateInputTone(loginInput, "neutral");
+      setCreateInlineStatus(userCreateLoginStatus, "Не удалось проверить логин. Можно продолжить.", "muted");
+      return { ok: true, unchecked: true };
+    }
+  }
+
+  async function validateUserCreateEmailLive(emailInput) {
+    const normalized = normalizeUserCreateEmail(emailInput.value);
+    emailInput.value = normalized;
+    const seq = ++userCreateState.emailCheckSeq;
+    if (!normalized) {
+      setCreateInputTone(emailInput, "neutral");
+      setCreateInlineStatus(userCreateEmailStatus, "Email не обязателен, но поможет восстановить доступ.");
+      return { ok: true };
+    }
+    if (!USER_CREATE_EMAIL_REGEX.test(normalized)) {
+      setCreateInputTone(emailInput, "error");
+      setCreateInlineStatus(userCreateEmailStatus, "Введите email в формате name@example.com", "error");
+      return { ok: false, code: "EMAIL_INVALID" };
+    }
+    setCreateInlineStatus(userCreateEmailStatus, "Проверяем email...", "info");
+    try {
+      const payload = await fetchUserCreateIdentityCheck({ email: normalized });
+      if (seq !== userCreateState.emailCheckSeq) return null;
+      const emailCheck = payload?.email || {};
+      if (emailCheck.available === false) {
+        setCreateInputTone(emailInput, "error");
+        setCreateInlineStatus(userCreateEmailStatus, emailCheck.message || "Этот email уже используется", "error");
+        return { ok: false, code: "EMAIL_TAKEN" };
+      }
+      setCreateInputTone(emailInput, "success");
+      setCreateInlineStatus(userCreateEmailStatus, "Email свободен", "success");
+      return { ok: true };
+    } catch {
+      if (seq !== userCreateState.emailCheckSeq) return null;
+      setCreateInputTone(emailInput, "neutral");
+      setCreateInlineStatus(userCreateEmailStatus, "Не удалось проверить email. Можно продолжить.", "muted");
+      return { ok: true, unchecked: true };
+    }
+  }
+
+  async function validateUserCreateSlugLive(slugInput) {
+    const normalized = normalizeUserCreateSlug(slugInput.value);
+    slugInput.value = normalized;
+    const seq = ++userCreateState.slugCheckSeq;
+    if (!normalized) {
+      setCreateInputTone(slugInput, "neutral");
+      setCreateInlineStatus(userCreateSlugStatus, "");
+      setCreateInlineStatus(userCreateSlugPrice, "");
+      return { ok: false, empty: true };
+    }
+    if (!isShortSlug(normalized)) {
+      setCreateInputTone(slugInput, "error");
+      setCreateInlineStatus(userCreateSlugStatus, "Slug должен состоять из 3 букв и 3 цифр (AAA000)", "error");
+      setCreateInlineStatus(userCreateSlugPrice, "");
+      return { ok: false, code: "SLUG_INVALID" };
+    }
+    setCreateInlineStatus(userCreateSlugStatus, "Проверяем slug...", "info");
+    try {
+      const payload = await fetchUserCreateSlugInfo(normalized);
+      if (seq !== userCreateState.slugCheckSeq) return null;
+      if (!payload.available) {
+        setCreateInputTone(slugInput, "error");
+        setCreateInlineStatus(userCreateSlugStatus, mapSlugAvailabilityReason(payload.reason), "error");
+        setCreateInlineStatus(userCreateSlugPrice, payload.price != null ? `Цена: ${formatUserCreatePrice(payload.price)}` : "");
+        return { ok: false, code: "SLUG_TAKEN", payload };
+      }
+      setCreateInputTone(slugInput, "success");
+      setCreateInlineStatus(userCreateSlugStatus, "Slug свободен", "success");
+      setCreateInlineStatus(
+        userCreateSlugPrice,
+        payload.price != null ? `Текущая цена: ${formatUserCreatePrice(payload.price)}` : "",
+      );
+      return { ok: true, payload };
+    } catch {
+      if (seq !== userCreateState.slugCheckSeq) return null;
+      setCreateInputTone(slugInput, "neutral");
+      setCreateInlineStatus(userCreateSlugStatus, "Не удалось проверить slug. Попробуйте ещё раз.", "error");
+      setCreateInlineStatus(userCreateSlugPrice, "");
+      return { ok: false, code: "SLUG_CHECK_FAILED" };
+    }
+  }
+
+  function mapUserCreateSubmitError(payload, fallbackStatus) {
+    const code = String(payload?.code || "").trim();
+    if (code === "VALIDATION_ERROR") return "Проверьте форму: имя, логин и пароль обязательны, пароль минимум 8 символов.";
+    if (code === "EMAIL_INVALID") return "Email указан в неверном формате.";
+    if (code === "PLAN_REQUIRED_FOR_ACTIVATION") return "Для мгновенной активации выберите тариф.";
+    if (code === "SLUG_INVALID") return "Slug должен быть в формате AAA000: 3 буквы и 3 цифры.";
+    if (code === "LOGIN_TAKEN") return "Этот логин уже занят. Укажите другой.";
+    if (code === "EMAIL_TAKEN") return "Этот email уже используется. Укажите другой.";
+    if (code === "SLUG_TAKEN") return "Этот slug уже занят. Выберите свободный.";
+    if (code === "SLUG_NOT_FREE") return "Этот slug сейчас недоступен. Выберите другой.";
+    if (code === "LOGIN_OR_EMAIL_TAKEN") return "Логин или email уже используются.";
+    const fallback = String(payload?.error || "").trim();
+    if (fallback.toLowerCase() === "validation failed") {
+      return "Форма заполнена с ошибками. Проверьте поля и попробуйте снова.";
+    }
+    return fallback || `Не удалось создать пользователя (HTTP ${fallbackStatus || 500}).`;
+  }
+
+  function clearUserCreateValidationState() {
+    userCreateState.slugCheckSeq += 1;
+    userCreateState.loginCheckSeq += 1;
+    userCreateState.emailCheckSeq += 1;
+    if (userCreateState.slugDebounceTimer) {
+      clearTimeout(userCreateState.slugDebounceTimer);
+      userCreateState.slugDebounceTimer = null;
+    }
+    if (userCreateState.loginDebounceTimer) {
+      clearTimeout(userCreateState.loginDebounceTimer);
+      userCreateState.loginDebounceTimer = null;
+    }
+    if (userCreateState.emailDebounceTimer) {
+      clearTimeout(userCreateState.emailDebounceTimer);
+      userCreateState.emailDebounceTimer = null;
+    }
+  }
+
+  function resetUserCreateFieldTones() {
+    if (!(userCreateForm instanceof HTMLFormElement)) return;
+    const name = userCreateForm.elements.namedItem("name");
+    const login = userCreateForm.elements.namedItem("login");
+    const password = userCreateForm.elements.namedItem("password");
+    const email = userCreateForm.elements.namedItem("email");
+    const plan = userCreateForm.elements.namedItem("plan");
+    const slug = userCreateForm.elements.namedItem("slug");
+    setCreateInputTone(name, "neutral");
+    setCreateInputTone(login, "neutral");
+    setCreateInputTone(password, "neutral");
+    setCreateInputTone(email, "neutral");
+    setCreateInputTone(plan, "neutral");
+    setCreateInputTone(slug, "neutral");
+  }
+
   function openUserCreate() {
     if (!(userCreateModal instanceof HTMLElement)) return;
+    clearUserCreateValidationState();
+    resetUserCreateFieldTones();
     setUserCreateError("");
     if (userCreateForm instanceof HTMLFormElement) {
       const plan = userCreateForm.elements.namedItem("plan");
@@ -283,9 +593,21 @@
       }
       const slug = userCreateForm.elements.namedItem("slug");
       if (slug instanceof HTMLInputElement) {
-        slug.value = normalizeShortSlug(slug.value);
+        slug.value = normalizeUserCreateSlug(slug.value);
+      }
+      const login = userCreateForm.elements.namedItem("login");
+      if (login instanceof HTMLInputElement) {
+        login.value = normalizeUserCreateLogin(login.value);
+      }
+      const email = userCreateForm.elements.namedItem("email");
+      if (email instanceof HTMLInputElement) {
+        email.value = normalizeUserCreateEmail(email.value);
       }
     }
+    setCreateInlineStatus(userCreateLoginStatus, "");
+    setCreateInlineStatus(userCreateSlugStatus, "");
+    setCreateInlineStatus(userCreateSlugPrice, "");
+    setCreateInlineStatus(userCreateEmailStatus, "Email не обязателен, но поможет восстановить доступ.");
     userCreateModal.classList.remove("hidden");
     userCreateModal.classList.add("flex");
     userCreateModal.setAttribute("aria-hidden", "false");
@@ -293,6 +615,7 @@
 
   function closeUserCreate() {
     if (!(userCreateModal instanceof HTMLElement)) return;
+    clearUserCreateValidationState();
     userCreateModal.classList.add("hidden");
     userCreateModal.classList.remove("flex");
     userCreateModal.setAttribute("aria-hidden", "true");
@@ -306,9 +629,48 @@
   userCreateForm?.addEventListener("input", (event) => {
     if (!(userCreateForm instanceof HTMLFormElement)) return;
     const slug = userCreateForm.elements.namedItem("slug");
-    if (!(slug instanceof HTMLInputElement)) return;
-    if (event.target !== slug) return;
-    slug.value = normalizeShortSlug(slug.value);
+    const login = userCreateForm.elements.namedItem("login");
+    const email = userCreateForm.elements.namedItem("email");
+    if (event.target === slug && slug instanceof HTMLInputElement) {
+      slug.value = normalizeUserCreateSlug(slug.value);
+      if (userCreateState.slugDebounceTimer) clearTimeout(userCreateState.slugDebounceTimer);
+      userCreateState.slugDebounceTimer = window.setTimeout(() => {
+        void validateUserCreateSlugLive(slug);
+      }, 320);
+      return;
+    }
+    if (event.target === login && login instanceof HTMLInputElement) {
+      login.value = normalizeUserCreateLogin(login.value);
+      if (userCreateState.loginDebounceTimer) clearTimeout(userCreateState.loginDebounceTimer);
+      userCreateState.loginDebounceTimer = window.setTimeout(() => {
+        void validateUserCreateLoginLive(login);
+      }, 320);
+      return;
+    }
+    if (event.target === email && email instanceof HTMLInputElement) {
+      email.value = normalizeUserCreateEmail(email.value);
+      if (userCreateState.emailDebounceTimer) clearTimeout(userCreateState.emailDebounceTimer);
+      userCreateState.emailDebounceTimer = window.setTimeout(() => {
+        void validateUserCreateEmailLive(email);
+      }, 350);
+    }
+  });
+  userCreateForm?.addEventListener("focusout", (event) => {
+    if (!(userCreateForm instanceof HTMLFormElement)) return;
+    const slug = userCreateForm.elements.namedItem("slug");
+    const login = userCreateForm.elements.namedItem("login");
+    const email = userCreateForm.elements.namedItem("email");
+    if (event.target === slug && slug instanceof HTMLInputElement) {
+      void validateUserCreateSlugLive(slug);
+      return;
+    }
+    if (event.target === login && login instanceof HTMLInputElement) {
+      void validateUserCreateLoginLive(login);
+      return;
+    }
+    if (event.target === email && email instanceof HTMLInputElement) {
+      void validateUserCreateEmailLive(email);
+    }
   });
   userCreateForm?.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -330,24 +692,83 @@
     ) {
       return;
     }
+
+    const firstName = String(name.value || "").trim();
+    const normalizedLogin = normalizeUserCreateLogin(login.value);
+    const normalizedEmail = normalizeUserCreateEmail(email.value);
+    const normalizedSlug = normalizeUserCreateSlug(slug.value);
+    name.value = firstName;
+    login.value = normalizedLogin;
+    email.value = normalizedEmail;
+    slug.value = normalizedSlug;
+
+    if (!firstName) {
+      setCreateInputTone(name, "error");
+      setUserCreateError("Введите имя пользователя.");
+      return;
+    }
+    setCreateInputTone(name, "neutral");
+    if (!normalizedLogin) {
+      setCreateInputTone(login, "error");
+      setUserCreateError("Введите логин.");
+      return;
+    }
+    if (normalizedLogin.length < 3 || !USER_CREATE_LOGIN_REGEX.test(normalizedLogin)) {
+      setCreateInputTone(login, "error");
+      setUserCreateError("Логин должен быть не короче 3 символов и содержать только a-z, 0-9, . _ @ + -");
+      return;
+    }
+    if (!password.value || String(password.value).length < 8) {
+      setCreateInputTone(password, "error");
+      setUserCreateError("Пароль должен содержать минимум 8 символов.");
+      return;
+    }
+    setCreateInputTone(password, "neutral");
+    if (normalizedEmail && !USER_CREATE_EMAIL_REGEX.test(normalizedEmail)) {
+      setCreateInputTone(email, "error");
+      setUserCreateError("Введите email в формате name@example.com");
+      return;
+    }
+
     const selectedPlan = plan.value === "premium" ? "premium" : plan.value === "basic" ? "basic" : "none";
-    const normalizedSlug = normalizeShortSlug(slug.value);
-    const hasSlugInput = Boolean(String(slug.value || "").trim());
+    const hasSlugInput = Boolean(normalizedSlug);
     const requiresInlineActivation = isManager || selectedPlan !== "none" || hasSlugInput;
     if (requiresInlineActivation && selectedPlan === "none") {
+      setCreateInputTone(plan, "error");
       setUserCreateError("Для мгновенной активации выберите тариф.");
       return;
     }
+    setCreateInputTone(plan, "neutral");
     if (requiresInlineActivation && !isShortSlug(normalizedSlug)) {
-      setUserCreateError("Slug должен быть в формате AAA000.");
+      setCreateInputTone(slug, "error");
+      setUserCreateError("Slug должен быть в формате AAA000: 3 буквы и 3 цифры.");
       return;
     }
-    slug.value = normalizedSlug;
+
+    const [loginCheckResult, emailCheckResult, slugCheckResult] = await Promise.all([
+      validateUserCreateLoginLive(login),
+      validateUserCreateEmailLive(email),
+      requiresInlineActivation ? validateUserCreateSlugLive(slug) : Promise.resolve({ ok: true }),
+    ]);
+
+    if (loginCheckResult && loginCheckResult.ok === false) {
+      setUserCreateError(userCreateLoginStatus instanceof HTMLElement ? userCreateLoginStatus.textContent || "Проверьте логин." : "Проверьте логин.");
+      return;
+    }
+    if (emailCheckResult && emailCheckResult.ok === false) {
+      setUserCreateError(userCreateEmailStatus instanceof HTMLElement ? userCreateEmailStatus.textContent || "Проверьте email." : "Проверьте email.");
+      return;
+    }
+    if (slugCheckResult && slugCheckResult.ok === false) {
+      setUserCreateError(userCreateSlugStatus instanceof HTMLElement ? userCreateSlugStatus.textContent || "Проверьте slug." : "Проверьте slug.");
+      return;
+    }
+
     const payload = {
-      firstName: name.value || "",
-      login: login.value || "",
+      firstName,
+      login: normalizedLogin,
       password: password.value || "",
-      email: email.value || "",
+      email: normalizedEmail,
       plan: selectedPlan,
       slug: normalizedSlug,
     };
@@ -358,11 +779,17 @@
         body: JSON.stringify(payload),
       });
       if (!r.ok) {
-        setUserCreateError(await E(r));
+        const errorPayload = await r.json().catch(() => ({}));
+        setUserCreateError(mapUserCreateSubmitError(errorPayload, r.status));
         return;
       }
       const createdPayload = await r.json().catch(() => ({}));
       userCreateForm.reset();
+      resetUserCreateFieldTones();
+      setCreateInlineStatus(userCreateLoginStatus, "");
+      setCreateInlineStatus(userCreateSlugStatus, "");
+      setCreateInlineStatus(userCreateSlugPrice, "");
+      setCreateInlineStatus(userCreateEmailStatus, "Email не обязателен, но поможет восстановить доступ.");
       if (isManager) {
         const planField = userCreateForm.elements.namedItem("plan");
         if (planField instanceof HTMLSelectElement) {
@@ -391,10 +818,9 @@
       }
       void loadUsers();
     } catch (error) {
-      setUserCreateError(error?.message || "Не удалось создать пользователя");
+      setUserCreateError(error?.message || "Не удалось создать пользователя. Проверьте соединение и попробуйте снова.");
     }
   });
-
   function setDashboardQuery(values) {
     const url = new URL(location.href);
     url.searchParams.set("tab", tab);
