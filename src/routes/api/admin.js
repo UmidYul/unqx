@@ -829,6 +829,39 @@ function isManagerSession(req) {
   return String(req.session?.admin?.role || "admin") === "manager";
 }
 
+async function resolveManagerId(req) {
+  if (!isManagerSession(req)) {
+    return "";
+  }
+
+  const directId = String(req.session?.admin?.id || "").trim();
+  if (directId) {
+    return directId;
+  }
+
+  const sessionLogin = normalizeLogin(req.session?.admin?.login);
+  if (!sessionLogin) {
+    return "";
+  }
+
+  try {
+    const manager = await prisma.staffUser.findFirst({
+      where: {
+        login: sessionLogin,
+        role: "manager",
+      },
+      select: { id: true },
+    });
+    const resolvedId = String(manager?.id || "").trim();
+    if (resolvedId && req.session?.admin) {
+      req.session.admin.id = resolvedId;
+    }
+    return resolvedId;
+  } catch {
+    return "";
+  }
+}
+
 async function getManagerScope(req) {
   if (!isManagerSession(req)) {
     return {
@@ -838,7 +871,7 @@ async function getManagerScope(req) {
     };
   }
 
-  const managerId = String(req.session?.admin?.id || "").trim();
+  const managerId = await resolveManagerId(req);
   const userColumns = await getUserColumns();
   const hasCreatorColumn = hasUserColumn(userColumns, "createdByStaffId");
   return {
@@ -1949,7 +1982,7 @@ router.get(
     const planFilter = ["none", "basic", "premium"].includes(rawPlanFilter) ? rawPlanFilter : "all";
     const adminSession = req.session?.admin || null;
     const requesterRole = String(adminSession?.role || "admin");
-    const requesterManagerId = requesterRole === "manager" ? String(adminSession?.id || "").trim() : "";
+    const requesterManagerId = requesterRole === "manager" ? await resolveManagerId(req) : "";
     const hasCreatorColumn = hasUserColumn(userColumns, "createdByStaffId");
     const managerScopeBlocked = requesterRole === "manager" && (!requesterManagerId || !hasCreatorColumn);
 
@@ -2218,9 +2251,7 @@ router.post(
     const userColumns = await getUserColumns();
     const hasCreatorColumn = hasUserColumn(userColumns, "createdByStaffId");
     const adminSession = req.session?.admin || null;
-    const createdByManagerId = adminSession?.role === "manager"
-      ? String(adminSession?.id || "").trim()
-      : "";
+    const createdByManagerId = adminSession?.role === "manager" ? await resolveManagerId(req) : "";
 
     const firstName = String(req.body?.firstName || req.body?.name || "").trim().slice(0, 120);
     const login = normalizeLogin(req.body?.login);

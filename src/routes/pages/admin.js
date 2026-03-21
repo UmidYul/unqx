@@ -47,7 +47,7 @@ router.get(
     }
 
     res.render("admin/login", {
-      title: "Р’С…РѕРґ РІ Р°РґРјРёРЅ-РїР°РЅРµР»СЊ",
+      title: "Вход в админ-панель",
       error: "",
       adminSession: null,
     });
@@ -63,7 +63,7 @@ router.get(
       return;
     }
     res.render("admin/login", {
-      title: "Р’С…РѕРґ РІ Р°РґРјРёРЅ-РїР°РЅРµР»СЊ",
+      title: "Вход в админ-панель",
       error: "",
       adminSession: null,
     });
@@ -80,7 +80,7 @@ router.post(
 
     if (!adminPayload) {
       res.status(401).render("admin/login", {
-        title: "Р’С…РѕРґ РІ Р°РґРјРёРЅ-РїР°РЅРµР»СЊ",
+        title: "Вход в админ-панель",
         error: "Неверный логин или пароль",
         adminSession: null,
       });
@@ -147,7 +147,7 @@ router.get(
         : (role === "manager" ? "users" : "analytics");
 
     res.render("admin/dashboard", {
-      title: "Р”Р°С€Р±РѕСЂРґ",
+      title: "Дашборд",
       adminSession,
       publicBaseUrl: getBaseUrl(),
       activeTab: tab,
@@ -179,7 +179,7 @@ router.get(
       return;
     }
     res.render("manager/login", {
-      title: "Р’С…РѕРґ РјРµРЅРµРґР¶РµСЂР°",
+      title: "Вход менеджера",
       error: "",
       adminSession: null,
     });
@@ -229,7 +229,7 @@ router.get(
         ? req.query.tab
         : "users";
     res.render("manager/dashboard", {
-      title: "Р”Р°С€Р±РѕСЂРґ РјРµРЅРµРґР¶РµСЂР°",
+      title: "Дашборд менеджера",
       adminSession,
       publicBaseUrl: getBaseUrl(),
       activeTab: tab,
@@ -251,7 +251,7 @@ router.get(
     }
     const userId = typeof req.params.userId === "string" ? req.params.userId.trim() : "";
     res.render("admin/user-card", {
-      title: "Р’РёР·РёС‚РєР° РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ",
+      title: "Визитка пользователя",
       adminSession,
       userId,
     });
@@ -269,7 +269,7 @@ router.get(
     }
     const userId = typeof req.params.userId === "string" ? req.params.userId.trim() : "";
     res.render("admin/user-card", {
-      title: "Р’РёР·РёС‚РєР° РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ",
+      title: "Визитка пользователя",
       adminSession,
       userId,
     });

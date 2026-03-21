@@ -488,6 +488,7 @@
   }
 
   async function loadMaintenanceBanner() {
+    if (isManager) return;
     const banner = document.getElementById("admin-maintenance-banner");
     const textNode = document.getElementById("admin-maintenance-text");
     const disableBtn = document.getElementById("admin-maintenance-disable");
