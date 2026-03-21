@@ -174,13 +174,6 @@
   };
   const normalizeShortSlug = (value) => String(value || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6);
   const isShortSlug = (value) => /^[A-Z]{3}[0-9]{3}$/.test(String(value || ""));
-  const normalizeVerificationStatusInput = (value, fallback = null) => {
-    const raw = String(value ?? "").trim().toLowerCase();
-    if (!raw) return fallback;
-    if (["verified", "verify", "active", "on", "1", "true", "yes", "да", "вкл", "включить"].includes(raw)) return true;
-    if (["unverified", "off", "0", "false", "no", "нет", "выкл", "снять", "remove"].includes(raw)) return false;
-    return null;
-  };
   const ICONS = {
     more: '<circle cx="12" cy="5" r="1.7" fill="currentColor"/><circle cx="12" cy="12" r="1.7" fill="currentColor"/><circle cx="12" cy="19" r="1.7" fill="currentColor"/>',
     clock: '<circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M12 7v5l3 2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
@@ -264,6 +257,11 @@
   const userCreateSlugStatus = document.getElementById("user-create-slug-status");
   const userCreateSlugPrice = document.getElementById("user-create-slug-price");
   const userCreateEmailStatus = document.getElementById("user-create-email-status");
+  const userVerificationModal = document.getElementById("user-verification-modal");
+  const userVerificationClose = document.getElementById("user-verification-close");
+  const userVerificationForm = document.getElementById("user-verification-form");
+  const userVerificationError = document.getElementById("user-verification-error");
+  const userVerificationUser = document.getElementById("user-verification-user");
   const USER_CREATE_LOGIN_REGEX = /^[a-z0-9._@+-]+$/;
   const USER_CREATE_EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const userCreateState = {
@@ -630,10 +628,160 @@
     userCreateModal.setAttribute("aria-hidden", "true");
   }
 
+  function setUserVerificationError(message) {
+    if (!(userVerificationError instanceof HTMLElement)) return;
+    const text = String(message || "").trim();
+    if (!text) {
+      userVerificationError.textContent = "";
+      userVerificationError.classList.add("hidden");
+      return;
+    }
+    userVerificationError.textContent = text;
+    userVerificationError.classList.remove("hidden");
+  }
+
+  function syncUserVerificationFields() {
+    if (!(userVerificationForm instanceof HTMLFormElement)) return;
+    const statusField = userVerificationForm.elements.namedItem("status");
+    const companyField = userVerificationForm.elements.namedItem("company");
+    const roleField = userVerificationForm.elements.namedItem("role");
+    if (!(statusField instanceof HTMLSelectElement)) return;
+    if (!(companyField instanceof HTMLInputElement)) return;
+    if (!(roleField instanceof HTMLInputElement)) return;
+
+    const shouldVerify = statusField.value === "verified";
+    companyField.disabled = !shouldVerify;
+    roleField.disabled = !shouldVerify;
+    companyField.required = shouldVerify;
+    roleField.required = shouldVerify;
+    if (!shouldVerify) {
+      setCreateInputTone(companyField, "neutral");
+      setCreateInputTone(roleField, "neutral");
+    }
+  }
+
+  function openUserVerificationModal({ userId, userName, isVerified, company, role }) {
+    if (!(userVerificationModal instanceof HTMLElement)) return;
+    if (!(userVerificationForm instanceof HTMLFormElement)) return;
+    const userIdField = userVerificationForm.elements.namedItem("userId");
+    const statusField = userVerificationForm.elements.namedItem("status");
+    const companyField = userVerificationForm.elements.namedItem("company");
+    const roleField = userVerificationForm.elements.namedItem("role");
+    if (!(userIdField instanceof HTMLInputElement)) return;
+    if (!(statusField instanceof HTMLSelectElement)) return;
+    if (!(companyField instanceof HTMLInputElement)) return;
+    if (!(roleField instanceof HTMLInputElement)) return;
+
+    setUserVerificationError("");
+    userIdField.value = String(userId || "").trim();
+    statusField.value = isVerified ? "verified" : "unverified";
+    companyField.value = String(company || "").trim();
+    roleField.value = String(role || "").trim();
+    setCreateInputTone(statusField, "neutral");
+    setCreateInputTone(companyField, "neutral");
+    setCreateInputTone(roleField, "neutral");
+    if (userVerificationUser instanceof HTMLElement) {
+      userVerificationUser.textContent = `Пользователь: ${String(userName || "—").trim() || "—"}`;
+    }
+    syncUserVerificationFields();
+
+    userVerificationModal.classList.remove("hidden");
+    userVerificationModal.classList.add("flex");
+    userVerificationModal.setAttribute("aria-hidden", "false");
+  }
+
+  function closeUserVerificationModal() {
+    if (!(userVerificationModal instanceof HTMLElement)) return;
+    userVerificationModal.classList.add("hidden");
+    userVerificationModal.classList.remove("flex");
+    userVerificationModal.setAttribute("aria-hidden", "true");
+    setUserVerificationError("");
+  }
+
   userCreateOpen?.addEventListener("click", openUserCreate);
   userCreateClose?.addEventListener("click", closeUserCreate);
   userCreateModal?.addEventListener("click", (e) => {
     if (e.target === userCreateModal) closeUserCreate();
+  });
+  userVerificationClose?.addEventListener("click", closeUserVerificationModal);
+  userVerificationModal?.addEventListener("click", (e) => {
+    if (e.target === userVerificationModal) closeUserVerificationModal();
+  });
+  userVerificationForm?.elements?.namedItem?.("status")?.addEventListener?.("change", () => {
+    syncUserVerificationFields();
+    setUserVerificationError("");
+  });
+  userVerificationForm?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (!(userVerificationForm instanceof HTMLFormElement)) return;
+    const userIdField = userVerificationForm.elements.namedItem("userId");
+    const statusField = userVerificationForm.elements.namedItem("status");
+    const companyField = userVerificationForm.elements.namedItem("company");
+    const roleField = userVerificationForm.elements.namedItem("role");
+    if (!(userIdField instanceof HTMLInputElement)) return;
+    if (!(statusField instanceof HTMLSelectElement)) return;
+    if (!(companyField instanceof HTMLInputElement)) return;
+    if (!(roleField instanceof HTMLInputElement)) return;
+
+    const userId = String(userIdField.value || "").trim();
+    const status = statusField.value === "verified" ? "verified" : "unverified";
+    const company = String(companyField.value || "").trim();
+    const role = String(roleField.value || "").trim();
+
+    setUserVerificationError("");
+    setCreateInputTone(statusField, "neutral");
+    setCreateInputTone(companyField, "neutral");
+    setCreateInputTone(roleField, "neutral");
+
+    if (!userId) {
+      setUserVerificationError("Не удалось определить пользователя. Обновите страницу и попробуйте снова.");
+      return;
+    }
+    if (status === "verified") {
+      if (!company) {
+        setCreateInputTone(companyField, "error");
+        setUserVerificationError("Укажите место работы.");
+        return;
+      }
+      if (!role) {
+        setCreateInputTone(roleField, "error");
+        setUserVerificationError("Укажите должность.");
+        return;
+      }
+    }
+
+    const response = await fetch(`/api/admin/users/${encodeURIComponent(userId)}/verification`, {
+      method: "PATCH",
+      headers: H({ "Content-Type": "application/json" }),
+      body: JSON.stringify({
+        status,
+        company: status === "verified" ? company : "",
+        role: status === "verified" ? role : "",
+      }),
+    });
+    if (!response.ok) {
+      const payload = await response.json().catch(() => ({}));
+      const code = String(payload?.code || "").trim();
+      if (code === "VERIFICATION_PROFILE_REQUIRED") {
+        setUserVerificationError("Для активации верификации заполните место работы и должность.");
+      } else if (code === "VERIFICATION_STATUS_INVALID") {
+        setUserVerificationError("Выберите корректный статус верификации.");
+      } else if (code === "USER_NOT_FOUND") {
+        setUserVerificationError("Пользователь не найден.");
+      } else if (code === "USERS_STORAGE_UNAVAILABLE") {
+        setUserVerificationError("Хранилище пользователей временно недоступно. Попробуйте позже.");
+      } else if (code === "MANAGER_FORBIDDEN") {
+        setUserVerificationError("У вас нет доступа к этой операции.");
+      } else {
+        setUserVerificationError(`Не удалось сохранить изменения (HTTP ${response.status}).`);
+      }
+      return;
+    }
+
+    closeUserVerificationModal();
+    await showAlert(status === "verified" ? "Верификация активирована." : "Верификация снята.");
+    void loadUsers();
+    closeAllRowMenus();
   });
   userCreateForm?.addEventListener("input", (event) => {
     if (!(userCreateForm instanceof HTMLFormElement)) return;
@@ -2454,90 +2602,15 @@
       if (!userId) return;
 
       const currentVerified = String(n.getAttribute("data-verified") || "") === "1";
-      let currentCompany = String(n.getAttribute("data-company") || "").trim();
-      let currentRole = String(n.getAttribute("data-role") || "").trim();
-
-      try {
-        const profileResponse = await fetch(`/api/admin/users/${encodeURIComponent(userId)}/card`, {
-          headers: { Accept: "application/json" },
-          cache: "no-store",
-        });
-        if (profileResponse.ok) {
-          const profilePayload = await profileResponse.json().catch(() => ({}));
-          currentRole = String(profilePayload?.card?.role || "").trim();
-          if (!currentCompany) {
-            currentCompany = String(profilePayload?.user?.verifiedCompany || "").trim();
-          }
-        }
-      } catch {
-        // ignore and keep defaults
-      }
-
-      const enteredStatus = await showPrompt(
-        `Статус верификации для ${userName}: verified или unverified`,
-        currentVerified ? "verified" : "unverified",
-      );
-      if (enteredStatus === null) return;
-      const nextVerified = normalizeVerificationStatusInput(enteredStatus, null);
-      if (nextVerified === null) {
-        await showAlert("Введите статус verified или unverified.");
-        return;
-      }
-
-      let company = currentCompany;
-      let role = currentRole;
-      if (nextVerified) {
-        const enteredCompany = await showPrompt(`Место работы для ${userName}`, currentCompany);
-        if (enteredCompany === null) return;
-        company = String(enteredCompany || "").trim();
-        if (!company) {
-          await showAlert("Укажите место работы.");
-          return;
-        }
-
-        const enteredRole = await showPrompt(`Должность для ${userName}`, currentRole);
-        if (enteredRole === null) return;
-        role = String(enteredRole || "").trim();
-        if (!role) {
-          await showAlert("Укажите должность.");
-          return;
-        }
-      } else {
-        const ok = await showConfirm(`Снять верификацию у пользователя ${userName}?`);
-        if (!ok) return;
-      }
-
-      const response = await fetch(`/api/admin/users/${encodeURIComponent(userId)}/verification`, {
-        method: "PATCH",
-        headers: H({ "Content-Type": "application/json" }),
-        body: JSON.stringify({
-          status: nextVerified ? "verified" : "unverified",
-          company: nextVerified ? company : "",
-          role: nextVerified ? role : "",
-        }),
+      const currentCompany = String(n.getAttribute("data-company") || "").trim();
+      const currentRole = String(n.getAttribute("data-role") || "").trim();
+      openUserVerificationModal({
+        userId,
+        userName,
+        isVerified: currentVerified,
+        company: currentCompany,
+        role: currentRole,
       });
-      if (!response.ok) {
-        await showAlert(await E(response));
-        return;
-      }
-      await showAlert(nextVerified ? "Верификация обновлена." : "Верификация снята.");
-      void loadUsers();
-      closeAllRowMenus();
-      return;
-    }
-    if (a === "uv") {
-      const telegramId = n.getAttribute("data-id");
-      if (!telegramId) return;
-      const ok = await showConfirm("Снять верификацию у пользователя?");
-      if (!ok) return;
-      const r = await fetch(`/api/admin/users/${encodeURIComponent(telegramId)}/unverify`, {
-        method: "PATCH",
-        headers: H({ "Content-Type": "application/json" }),
-        body: JSON.stringify({}),
-      });
-      if (!r.ok) showAlert(await E(r));
-      else void loadUsers();
-      closeAllRowMenus();
       return;
     }
     if (a === "uvb") {
