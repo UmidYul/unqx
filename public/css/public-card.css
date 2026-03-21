@@ -1167,6 +1167,14 @@ body[data-card-theme] #card-view-root>[data-card-view] {
   z-index: 2;
 }
 
+.unq-ref-action-btn > svg,
+.unq-ref-social-link > svg,
+.unq-ref-save > svg {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+}
+
 .unq-ref-action-btn::after {
   content: "";
   position: absolute;
