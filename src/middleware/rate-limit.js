@@ -48,6 +48,14 @@ const authRegisterRateLimit = rateLimit({
   message: { error: "Too many requests", code: "RATE_LIMITED" },
 });
 
+const authCheckAvailabilityRateLimit = rateLimit({
+  windowMs: 60 * 1000,
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many requests", code: "RATE_LIMITED" },
+});
+
 const authSendOtpRateLimit = rateLimit({
   windowMs: 60 * 60 * 1000,
   max: 3,
@@ -72,6 +80,7 @@ module.exports = {
   publicOrderRateLimit,
   authLoginRateLimit,
   authRegisterRateLimit,
+  authCheckAvailabilityRateLimit,
   authSendOtpRateLimit,
   authForgotPasswordRateLimit,
 };

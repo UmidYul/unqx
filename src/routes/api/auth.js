@@ -9,6 +9,7 @@ const { requireSameOrigin } = require("../../middleware/same-origin");
 const { getUserSession, loginUserSession, logoutUserSession } = require("../../middleware/auth");
 const {
   authForgotPasswordRateLimit,
+  authCheckAvailabilityRateLimit,
   authLoginRateLimit,
   authRegisterRateLimit,
   authSendOtpRateLimit,
@@ -70,6 +71,16 @@ function normalizeEmail(value) {
 
 function normalizeCity(value) {
   return resolveUzbekistanCity(value);
+}
+
+function buildAvailabilityField(provided) {
+  return {
+    provided: Boolean(provided),
+    valid: true,
+    available: true,
+    checked: false,
+    message: "",
+  };
 }
 
 function generateOtp() {
@@ -232,6 +243,67 @@ async function setOwnerSlugsCookie(res, userId) {
     `unqx_owner_slugs=${encodeURIComponent(serialized)}; Max-Age=2592000; Path=/; SameSite=Lax`,
   );
 }
+
+router.get(
+  "/check-availability",
+  authCheckAvailabilityRateLimit,
+  asyncHandler(async (req, res) => {
+    const login = normalizeLogin(req.query?.login);
+    const email = normalizeEmail(req.query?.email);
+
+    const response = {
+      login: buildAvailabilityField(login),
+      email: buildAvailabilityField(email),
+    };
+
+    if (login) {
+      if (!isValidLogin(login)) {
+        response.login.valid = false;
+        response.login.available = false;
+        response.login.message = "Логин может содержать только латиницу, цифры и символы . _ -";
+      } else {
+        response.login.checked = true;
+      }
+    }
+
+    if (email) {
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        response.email.valid = false;
+        response.email.available = false;
+        response.email.message = "Введите email в формате name@example.com";
+      } else {
+        response.email.checked = true;
+      }
+    }
+
+    const [existingLogin, existingEmail] = await Promise.all([
+      response.login.checked
+        ? prisma.user.findFirst({
+          where: { login },
+          select: { id: true },
+        })
+        : Promise.resolve(null),
+      response.email.checked
+        ? prisma.user.findFirst({
+          where: { email },
+          select: { id: true },
+        })
+        : Promise.resolve(null),
+    ]);
+
+    if (response.login.checked && existingLogin) {
+      response.login.available = false;
+      response.login.message = "Этот логин уже занят";
+    }
+
+    if (response.email.checked && existingEmail) {
+      response.email.available = false;
+      response.email.message = "Этот email уже используется";
+    }
+
+    res.json(response);
+  }),
+);
 
 router.post(
   "/register",
