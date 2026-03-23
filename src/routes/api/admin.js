@@ -102,6 +102,7 @@ const BROADCAST_JOB_LIMIT = 50;
 const BROADCAST_JOB_TTL_MS = 1000 * 60 * 30;
 const MAX_ADMIN_BOOST_VIEWS = 5000;
 const MAX_ADMIN_BOOST_PERIOD_DAYS = 90;
+const MAX_DB_INT = 2_147_483_647;
 const PASSWORD_ROUNDS = 12;
 const broadcastJobs = new Map();
 const USER_COLUMN_MAP = {
@@ -805,6 +806,19 @@ function normalizeShortSlug(value) {
 
 function isShortSlug(value) {
   return /^[A-Z]{3}[0-9]{3}$/.test(String(value || ""));
+}
+
+async function getCalculatedShortSlugPrice(slug) {
+  if (!isShortSlug(slug)) return 0;
+  const slugPricingConfig = await getSlugPricingConfig();
+  const quote = calculateSlugPrice({
+    letters: slug.slice(0, 3),
+    digits: slug.slice(3),
+    config: slugPricingConfig,
+  });
+  const numeric = Number(quote?.total || 0);
+  if (!Number.isFinite(numeric)) return 0;
+  return Math.max(0, Math.min(MAX_DB_INT, Math.round(numeric)));
 }
 
 function clampInteger(value, min, max, fallback) {
@@ -2940,6 +2954,7 @@ router.post(
       res.status(400).json({ error: "Slug must be in AAA000 format" });
       return;
     }
+    const calculatedSlugPrice = await getCalculatedShortSlugPrice(nextSlug);
 
     try {
       const result = await prisma.$transaction(async (tx) => {
@@ -3009,6 +3024,7 @@ router.post(
           ownerId: userId,
           status: nextStatus,
           isPrimary: shouldBePrimary,
+          price: calculatedSlugPrice,
           pauseMessage: null,
           pendingExpiresAt: null,
           requestedAt: now,
@@ -3150,6 +3166,7 @@ router.patch(
       res.status(400).json({ error: "New slug must differ from current slug" });
       return;
     }
+    const calculatedSlugPrice = await getCalculatedShortSlugPrice(nextSlug);
 
     try {
       const result = await prisma.$transaction(async (tx) => {
@@ -3209,6 +3226,7 @@ router.patch(
           ownerId: userId,
           status: current.status,
           isPrimary: current.isPrimary,
+          price: calculatedSlugPrice,
           pauseMessage: current.pauseMessage,
           requestedAt: current.requestedAt,
           approvedAt: current.approvedAt,
@@ -5422,7 +5440,6 @@ router.patch(
 router.patch(
   "/slugs/:slug/price-override",
   asyncHandler(async (req, res) => {
-    const MAX_DB_INT = 2_147_483_647;
     const slug = String(req.params.slug || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 20);
     const parsed = /^([A-Z]{3})([0-9]{3})$/.exec(slug);
     if (!parsed) {
