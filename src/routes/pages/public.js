@@ -913,38 +913,6 @@ router.get(
 );
 
 router.get(
-  "/themes",
-  asyncHandler(async (req, res) => {
-    res.render("public/themes", {
-      title: "Темы Премиум | UNQX",
-      description: "UNQX personal dashboard: card settings, UNQ, analytics, requests and profile settings.",
-      image: defaultSocialImage,
-      adminSession: getAdminSession(req),
-    });
-  }),
-);
-
-router.get(
-  "/demo",
-  asyncHandler(async (req, res) => {
-    const allowedThemes = new Set(["default_dark", "arctic", "linen", "marble", "forest", "sage_luxe", "midnight_obsidian", "golden_noir", "aurora_codex", "nebula_glass", "velours"]);
-    const rawTheme = typeof req.query.theme === "string" ? req.query.theme : "";
-    const normalizedTheme = rawTheme === "royal_ivory" ? "sage_luxe" : rawTheme;
-    const theme = allowedThemes.has(normalizedTheme) ? normalizedTheme : "default_dark";
-    const embed = req.query.embed === "1";
-
-    res.render("public/demo", {
-      title: "UNQX Demo",
-      description: "UNQX personal dashboard: card settings, UNQ, analytics, requests and profile settings.",
-      image: defaultSocialImage,
-      theme,
-      embed,
-      adminSession: getAdminSession(req),
-    });
-  }),
-);
-
-router.get(
   "/profile",
   requireVerifiedUserPage,
   asyncHandler(async (req, res) => {

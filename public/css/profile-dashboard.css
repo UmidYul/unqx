@@ -29,7 +29,6 @@
 .profile-dashboard #profile-upgrade-banner,
 .profile-dashboard #profile-analytics-content,
 .profile-dashboard #profile-score-panel,
-.profile-dashboard #profile-card-live-preview,
 .profile-dashboard #profile-requests-table-wrap,
 .profile-dashboard .rounded-xl.border,
 .profile-dashboard .rounded-2xl.border {
@@ -38,6 +37,19 @@
   border-width: 0.5px !important;
   border-radius: 14px !important;
   box-shadow: none !important;
+}
+
+.profile-dashboard #profile-card-live-preview {
+  background: #f3f4f6 !important;
+  border-color: #e0e0e0 !important;
+  border-width: 0.5px !important;
+  border-radius: 14px !important;
+  box-shadow: none !important;
+}
+
+.profile-dashboard #profile-card-live-preview[data-preview-theme] {
+  background: var(--preview-page-bg, #f3f4f6) !important;
+  border-color: var(--preview-border-color, #d4d4d8) !important;
 }
 
 .profile-dashboard .profile-header-card {

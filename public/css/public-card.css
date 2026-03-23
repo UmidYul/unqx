@@ -1812,8 +1812,8 @@ body[data-card-theme="velours"]::before {
 }
 
 [data-card-theme="nebula_glass"] .interactive-btn:hover {
-  background: rgba(255, 255, 255, 0.12) !important;
-  border-color: rgba(255, 255, 255, 0.1) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(255, 255, 255, 0.14) !important;
 }
 
 [data-card-theme="velours"] .interactive-btn,

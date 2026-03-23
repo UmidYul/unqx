@@ -230,6 +230,7 @@
     let privatePasswordChangeModalLastFocused = null;
     let privatePasswordChangeModalOpen = false;
     let privatePasswordChangeId = "";
+    const PROFILE_SAVE_SUCCESS_MESSAGE = "Изменения сохранены";
 
     const toOrderPaymentReference = (orderId) => `UNQX-${String(orderId || "").replace(/[^a-zA-Z0-9]/g, "").slice(0, 10).toUpperCase()}`;
 
@@ -2368,7 +2369,7 @@ Email: ${userEmail}
         });
 
         clearDraft();
-        showSaveAlert("Успешно сохранено");
+        showSaveAlert(PROFILE_SAVE_SUCCESS_MESSAGE);
         await load();
       } catch (error) {
         if (error.code === "UPGRADE_REQUIRED") {
@@ -2815,7 +2816,7 @@ Email: ${userEmail}
           });
 
           renderSlugs();
-          showSaveAlert("Сообщение паузы сохранено");
+          showSaveAlert(PROFILE_SAVE_SUCCESS_MESSAGE);
         } catch (error) {
           showModal("Ошибка", error.message || "Не удалось сохранить сообщение паузы");
         }
@@ -3318,8 +3319,9 @@ Email: ${userEmail}
 
         renderSidebar();
         renderTelegramNotificationActions(Boolean(payload?.user?.notificationsEnabled));
-        el.stStatus.textContent = "Сохранено";
+        el.stStatus.textContent = PROFILE_SAVE_SUCCESS_MESSAGE;
         el.stStatus.className = "text-sm text-emerald-700";
+        showSaveAlert(PROFILE_SAVE_SUCCESS_MESSAGE);
       } catch (error) {
         el.stStatus.textContent = `${error.message}`;
         el.stStatus.className = "text-sm text-red-700";
