@@ -1045,16 +1045,30 @@ Email: ${userEmail}
       if (!(node instanceof HTMLElement)) {
         node = document.createElement("div");
         node.id = "profile-save-success-alert";
-        node.className =
-          "pointer-events-none fixed bottom-4 right-4 z-[90] rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800 shadow-xl";
-        node.style.maxWidth = "min(92vw, 420px)";
-        node.style.opacity = "0";
-        node.style.transform = "translateY(10px) scale(0.98)";
-        node.style.transition = "opacity 180ms ease, transform 180ms ease";
         node.setAttribute("role", "status");
         node.setAttribute("aria-live", "polite");
         document.body.appendChild(node);
       }
+      node.className = "";
+      node.style.position = "fixed";
+      node.style.right = "16px";
+      node.style.bottom = "16px";
+      node.style.zIndex = "9999";
+      node.style.pointerEvents = "none";
+      node.style.maxWidth = "min(92vw, 420px)";
+      node.style.border = "1px solid #6ee7b7";
+      node.style.borderRadius = "12px";
+      node.style.background = "#ecfdf5";
+      node.style.padding = "12px 14px";
+      node.style.color = "#065f46";
+      node.style.fontSize = "14px";
+      node.style.fontWeight = "600";
+      node.style.boxShadow = "0 10px 30px rgba(6, 95, 70, 0.18)";
+      node.style.opacity = "0";
+      node.style.transform = "translateY(10px) scale(0.98)";
+      node.style.transition = "opacity 180ms ease, transform 180ms ease";
+      node.style.display = "block";
+      node.style.visibility = "visible";
       node.textContent = message;
       node.style.opacity = "1";
       node.style.transform = "translateY(0) scale(1)";
@@ -1063,6 +1077,10 @@ Email: ${userEmail}
         if (!node) return;
         node.style.opacity = "0";
         node.style.transform = "translateY(10px) scale(0.98)";
+        window.setTimeout(() => {
+          if (!node) return;
+          node.style.visibility = "hidden";
+        }, 180);
       }, 4000);
     };
 
