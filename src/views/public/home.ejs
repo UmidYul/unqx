@@ -1,23 +1,23 @@
-<% const pageTitle=typeof title==="string" && title ? title : "UNQX | Р¦РёС„СЂРѕРІР°СЏ РІРёР·РёС‚РєР° Р·Р° 1 РјРёРЅСѓС‚Сѓ" ; const
+<% const pageTitle=typeof title==="string" && title ? title : "UNQX | Цифровая визитка за 1 минуту" ; const
   pageDescription=typeof description==="string" && description ? description
-  : "РћРґРЅР° СЃСЃС‹Р»РєР° РІРјРµСЃС‚Рѕ С‚С‹СЃСЏС‡Рё СЃР»РѕРІ. РЎРѕР·РґР°Р№ СЃРІРѕСЋ С†РёС„СЂРѕРІСѓСЋ РІРёР·РёС‚РєСѓ РЅР° unqx.uz" ; const pageBaseUrl=typeof
+  : "Одна ссылка вместо тысячи слов. Создай свою цифровую визитку на unqx.uz" ; const pageBaseUrl=typeof
   baseUrl==="string" && baseUrl ? baseUrl : "" ; const pageCanonicalUrl=typeof canonicalUrl==="string" && canonicalUrl ?
   canonicalUrl : `${pageBaseUrl}/`; const pagePublicSettings=typeof publicSettings==="object" && publicSettings ?
   publicSettings : {}; const platformName=String(pagePublicSettings.platform_name || "UNQX" ); const
-  platformTagline=String(pagePublicSettings.platform_tagline || "РўРІРѕР№ UNQ. РўРІРѕР№ Р±СЂРµРЅРґ. РќР°РІСЃРµРіРґР°." ); const
+  platformTagline=String(pagePublicSettings.platform_tagline || "Твой UNQ. Твой бренд. Навсегда." ); const
   platformHeroSubtitle=String(pagePublicSettings.platform_hero_subtitle
-  || "Р¦РёС„СЂРѕРІР°СЏ РІРёР·РёС‚РєР° Р·Р° 1 РјРёРЅСѓС‚Сѓ - РѕРґРЅР° СЃСЃС‹Р»РєР° РІРјРµСЃС‚Рѕ С‚С‹СЃСЏС‡Рё СЃР»РѕРІ." ); const
+  || "Цифровая визитка за 1 минуту - одна ссылка вместо тысячи слов." ); const
   pricingVisible=Boolean(pagePublicSettings.pricing_section_visible ?? true); const
-  braceletName=String(pagePublicSettings.bracelet_name || "NFC-СЃС‚РёРєРµСЂ" ); const
+  braceletName=String(pagePublicSettings.bracelet_name || "NFC-стикер" ); const
   braceletOldPrice=Number(pagePublicSettings.bracelet_old_price || 400000); const
   braceletPrice=Number(pagePublicSettings.bracelet_price || 250000); const
   braceletDiscountPercent=braceletOldPrice > braceletPrice ? Math.round((1 - braceletPrice / braceletOldPrice) * 100)
   : 0; const
   braceletFeaturesFromSettings=Array.isArray(pagePublicSettings.bracelet_features) ?
   pagePublicSettings.bracelet_features : null; const braceletDescription=String(pagePublicSettings.bracelet_description
-  || "РљРѕРјРїР°РєС‚РЅС‹Р№ NFC-СЃС‚РёРєРµСЂ, РєРѕС‚РѕСЂС‹Р№ РєР»РµРёС‚СЃСЏ РЅР° Р»СЋР±СѓСЋ РїРѕРІРµСЂС…РЅРѕСЃС‚СЊ Рё РѕС‚РєСЂС‹РІР°РµС‚ С‚РІРѕСЋ С†РёС„СЂРѕРІСѓСЋ РІРёР·РёС‚РєСѓ РІ РѕРґРёРЅ С‚Р°Рї." ); const
+  || "Компактный NFC-стикер, который клеится на любую поверхность и открывает твою цифровую визитку в один тап." ); const
   braceletNote=String(pagePublicSettings.bracelet_note
-  || "РЎС‚РёРєРµСЂ РїСЂРёРІСЏР·Р°РЅ Рє С‚РІРѕРµРјСѓ UNQ - СЂР°Р±РѕС‚Р°РµС‚ С‚РѕР»СЊРєРѕ СЃ Р°РєС‚РёРІРЅРѕР№ РІРёР·РёС‚РєРѕР№ UNQX" ); const
+  || "Стикер привязан к твоему UNQ - работает только с активной визиткой UNQX" ); const
   supportTelegram=String(pagePublicSettings.contact_support_telegram || "@unqx_uz" ); const
   supportPhone=String(pagePublicSettings.contact_phone || "" ).trim(); const
   supportPhoneHref=supportPhone.replace(/[^\d+]/g, "" ); const pageJsonLd=[{ "@context" : "https://schema.org" , "@type"
@@ -28,10 +28,10 @@
   pageUserSession=typeof userSession !=="undefined" ? userSession : null; const hasAuthSession=Boolean(pageUserSession
   && pageUserSession.userId); const hasBasicPlan=hasAuthSession && pageUserSession && pageUserSession.plan==="basic" ;
   const pricingSettings=typeof pricing==="object" && pricing ? pricing : { planBasicPrice: 50000, planPremiumPrice:
-  130000, premiumUpgradePrice: 80000, pricingFootnote: "РўР°СЂРёС„С‹ РѕРїР»Р°С‡РёРІР°СЋС‚СЃСЏ РѕРґРёРЅ СЂР°Р·. Р‘РµР· РїРѕРґРїРёСЃРєРё Рё СЃРєСЂС‹С‚С‹С… РїР»Р°С‚РµР¶РµР№."
+  130000, premiumUpgradePrice: 80000, pricingFootnote: "Тарифы оплачиваются один раз. Без подписки и скрытых платежей."
   , }; const pricingFootnote=String(pricingSettings.pricingFootnote || "" ).trim()
-  || "РўР°СЂРёС„С‹ РѕРїР»Р°С‡РёРІР°СЋС‚СЃСЏ РѕРґРёРЅ СЂР°Р·. Р‘РµР· РїРѕРґРїРёСЃРєРё Рё СЃРєСЂС‹С‚С‹С… РїР»Р°С‚РµР¶РµР№." ; const authDisplayName=hasAuthSession ?
-  `${(pageUserSession.firstName || pageUserSession.displayName || "РњРѕР№ РїСЂРѕС„РёР»СЊ" )} В· РњРѕР№ РїСЂРѕС„РёР»СЊ` : "РњРѕР№ РїСЂРѕС„РёР»СЊ" ;
+  || "Тарифы оплачиваются один раз. Без подписки и скрытых платежей." ; const authDisplayName=hasAuthSession ?
+  `${(pageUserSession.firstName || pageUserSession.displayName || "Мой профиль" )} · Мой профиль` : "Мой профиль" ;
   const authPhotoUrlFromServer=typeof authPhotoUrl==="string" && authPhotoUrl.trim() ? authPhotoUrl.trim() : "" ; const
   authNavPhotoUrl=authPhotoUrlFromServer || (hasAuthSession && pageUserSession.avatarUrl ? pageUserSession.avatarUrl
   : "/brand/profile-user.svg" ) ; const demos=[ { name: "Alex Karimov" , role: "Product Designer" , slug: "alex" }, {
@@ -42,83 +42,83 @@
   ? testimonials
   : [
   {
-  name: "РђР»РёС€РµСЂ",
+  name: "Алишер",
   slug: "ALI001",
   tariff: "premium",
-  text: "Р Р°Р·РґР°СЋ Р±СЂР°СЃР»РµС‚ РЅР° РєР°Р¶РґРѕР№ РІСЃС‚СЂРµС‡Рµ - Р»СЋРґРё СЂРµР°РіРёСЂСѓСЋС‚ РєР°Рє РЅР° РјР°РіРёСЋ. " +
-  "Р’РёР·РёС‚РєСѓ РѕР±РЅРѕРІРёР» СѓР¶Рµ С‚СЂРё СЂР°Р·Р°, Р±СЂР°СЃР»РµС‚ СЂР°Р±РѕС‚Р°РµС‚ РєР°Рє С‡Р°СЃС‹.",
+  text: "Раздаю браслет на каждой встрече - люди реагируют как на магию. " +
+  "Визитку обновил уже три раза, браслет работает как часы.",
   },
   {
-  name: "РњР°Р»РёРєР°",
+  name: "Малика",
   slug: "MLK007",
   tariff: "basic",
-  text: "РџРѕСЃС‚Р°РІРёР»Р° СЃСЃС‹Р»РєСѓ РІ Instagram bio Рё РЅР° РІРёР·РёС‚РєРµ. " +
-  "РћС‡РµРЅСЊ СѓРґРѕР±РЅРѕ С‡С‚Рѕ РІСЃС‘ РІ РѕРґРЅРѕРј РјРµСЃС‚Рµ Рё РјРѕР¶РЅРѕ РјРµРЅСЏС‚СЊ.",
+  text: "Поставила ссылку в Instagram bio и на визитке. " +
+  "Очень удобно что всё в одном месте и можно менять.",
   },
   {
-  name: "РўРёРјСѓСЂ",
+  name: "Тимур",
   slug: "TMR000",
   tariff: "premium",
-  text: "Р’Р·СЏР» РґР»СЏ РІСЃРµР№ РєРѕРјР°РЅРґС‹. РћС‚РґРµР»СЊРЅС‹Р№ UNQ РєР°Р¶РґРѕРјСѓ СЃРѕС‚СЂСѓРґРЅРёРєСѓ - " +
-  "РІС‹РіР»СЏРґРёС‚ РїСЂРѕС„РµСЃСЃРёРѕРЅР°Р»СЊРЅРѕ РЅР° РїРµСЂРµРіРѕРІРѕСЂР°С….",
+  text: "Взял для всей команды. Отдельный UNQ каждому сотруднику - " +
+  "выглядит профессионально на переговорах.",
   },
   ];
 
   const weeklyViewsTopList = Array.isArray(topWeeklyViews) ? topWeeklyViews.slice(0, 3) : [];
 
   const steps = [
-  { title: "Р’С‹Р±РµСЂРё UNQ", description: "РќР°Р№РґРё СЃРІРѕР№ СѓРЅРёРєР°Р»СЊРЅС‹Р№ Р°РґСЂРµСЃ" },
-  { title: "Р—Р°РїРѕР»РЅРё РєР°СЂС‚РѕС‡РєСѓ", description: "Р¤РѕС‚Рѕ, РєРѕРЅС‚Р°РєС‚С‹, СЃСЃС‹Р»РєРё Р·Р° 2 РјРёРЅСѓС‚С‹" },
-  { title: "Р”РµР»РёСЃСЊ РІРµР·РґРµ", description: "QR, СЃСЃС‹Р»РєР°, NFC - РіРґРµ СѓРіРѕРґРЅРѕ" },
+  { title: "Выбери UNQ", description: "Найди свой уникальный адрес" },
+  { title: "Заполни карточку", description: "Фото, контакты, ссылки за 2 минуты" },
+  { title: "Делись везде", description: "QR, ссылка, NFC - где угодно" },
   ];
 
   const wristbandFeatures = braceletFeaturesFromSettings || [
-  "РўР°Рї РїРѕ СЃС‚РёРєРµСЂСѓ - РјРѕРјРµРЅС‚Р°Р»СЊРЅРѕ РѕС‚РєСЂС‹РІР°РµС‚СЃСЏ unqx.uz/UNQ",
-  "Р Р°Р±РѕС‚Р°РµС‚ СЃ Р»СЋР±С‹Рј СЃРјР°СЂС‚С„РѕРЅРѕРј - iOS Рё Android",
-  "РќРµ РЅСѓР¶РЅРѕ Р·Р°СЂСЏР¶Р°С‚СЊ - NFC СЂР°Р±РѕС‚Р°РµС‚ РїР°СЃСЃРёРІРЅРѕ",
-  "РўРѕРЅРєРёР№ С„РѕСЂРјР°С‚ СЃ РєР»РµРµРІРѕР№ РѕСЃРЅРѕРІРѕР№ - РјРѕР¶РЅРѕ Р·Р°РєСЂРµРїРёС‚СЊ РіРґРµ СѓРґРѕР±РЅРѕ",
-  "РћР±РЅРѕРІРёР» РІРёР·РёС‚РєСѓ РЅР° СЃР°Р№С‚Рµ - СЃС‚РёРєРµСЂ Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРё Р°РєС‚СѓР°Р»РµРЅ",
-  "РРґРµР°Р»СЊРЅРѕ РґР»СЏ РЅРµС‚РІРѕСЂРєРёРЅРіР°, СЃСЉС‘РјРѕРє Рё СЃС‚СѓРґРµРЅС‡РµСЃРєРёС… РјРµСЂРѕРїСЂРёСЏС‚РёР№",
+  "Тап по стикеру - моментально открывается unqx.uz/UNQ",
+  "Работает с любым смартфоном - iOS и Android",
+  "Не нужно заряжать - NFC работает пассивно",
+  "Тонкий формат с клеевой основой - можно закрепить где удобно",
+  "Обновил визитку на сайте - стикер автоматически актуален",
+  "Идеально для нетворкинга, съёмок и студенческих мероприятий",
   ];
 
   const plans = [
   {
-  name: String(pagePublicSettings.plan_basic_name || "Р‘Р°Р·РѕРІС‹Р№"),
+  name: String(pagePublicSettings.plan_basic_name || "Базовый"),
   price: Number(pricingSettings.planBasicPrice || 50000).toLocaleString("ru-RU"),
-  priceNote: "РѕРґРёРЅ СЂР°Р· В· РЅР°РІСЃРµРіРґР°",
+  priceNote: "один раз · навсегда",
   highlighted: false,
   badge: null,
   included: Array.isArray(pagePublicSettings.plan_basic_features) ? pagePublicSettings.plan_basic_features : [
-  "1 С†РёС„СЂРѕРІР°СЏ РІРёР·РёС‚РєР°",
-  "РЎС‚Р°РЅРґР°СЂС‚РЅС‹Р№ С€Р°Р±Р»РѕРЅ",
-  "Р”Рѕ 3 РєРЅРѕРїРѕРє (Р·РІРѕРЅРѕРє, telegram, СЃР°Р№С‚)",
-  "QR-РєРѕРґ",
-  "Р‘Р°Р·РѕРІР°СЏ Р°РЅР°Р»РёС‚РёРєР°",
+  "1 цифровая визитка",
+  "Стандартный шаблон",
+  "До 3 кнопок (звонок, telegram, сайт)",
+  "QR-код",
+  "Базовая аналитика",
   ],
   excluded: Array.isArray(pagePublicSettings.plan_basic_excluded_features) ? pagePublicSettings.plan_basic_excluded_features : [
-  "Р’С‹Р±РѕСЂ С‚РµРјС‹",
-  "РљР°СЃС‚РѕРјРЅС‹Рµ С†РІРµС‚Р°",
-  "РЎРєСЂС‹С‚СЊ Р±СЂРµРЅРґРёРЅРі UNQX",
-  "Р‘РѕР»СЊС€Рµ 9 РєРЅРѕРїРѕРє",
+  "Выбор темы",
+  "Кастомные цвета",
+  "Скрыть брендинг UNQX",
+  "Больше 9 кнопок",
   ],
   },
   {
-  name: String(pagePublicSettings.plan_premium_name || "РџСЂРµРјРёСѓРј"),
+  name: String(pagePublicSettings.plan_premium_name || "Премиум"),
   price: Number(
   hasBasicPlan ? pricingSettings.premiumUpgradePrice || 80000 : pricingSettings.planPremiumPrice || 130000,
   ).toLocaleString("ru-RU"),
-  priceNote: hasBasicPlan ? "РїСЂРё РЅР°Р»РёС‡РёРё Р‘Р°Р·РѕРІРѕРіРѕ С‚Р°СЂРёС„Р°" : "РѕРґРёРЅ СЂР°Р· В· РЅР°РІСЃРµРіРґР°",
+  priceNote: hasBasicPlan ? "при наличии Базового тарифа" : "один раз · навсегда",
   highlighted: true,
-  badge: pagePublicSettings.plan_premium_popular_badge === false ? null : "РџРѕРїСѓР»СЏСЂРЅС‹Р№",
+  badge: pagePublicSettings.plan_premium_popular_badge === false ? null : "Популярный",
   included: Array.isArray(pagePublicSettings.plan_premium_features) ? pagePublicSettings.plan_premium_features : [
-  "1 С†РёС„СЂРѕРІР°СЏ РІРёР·РёС‚РєР°",
-  "Р’С‹Р±РѕСЂ С‚РµРјС‹ (5+ С‚РµРј)",
-  "РљР°СЃС‚РѕРјРЅС‹Рµ С†РІРµС‚Р° Рё С„РѕРЅ",
-  "Р”Рѕ 9 РєРЅРѕРїРѕРє",
-  "Р Р°СЃС€РёСЂРµРЅРЅР°СЏ Р°РЅР°Р»РёС‚РёРєР° (РґРёРЅР°РјРёРєР° РїРѕ РґРЅСЏРј)",
-  "РЎРєСЂС‹С‚СЊ Р±СЂРµРЅРґРёРЅРі UNQX",
-  "QR-РєРѕРґ + NFC РїРѕРґРґРµСЂР¶РєР°",
-  "РџСЂРёРѕСЂРёС‚РµС‚РЅР°СЏ РїРѕРґРґРµСЂР¶РєР°",
+  "1 цифровая визитка",
+  "Выбор темы (5+ тем)",
+  "Кастомные цвета и фон",
+  "До 9 кнопок",
+  "Расширенная аналитика (динамика по дням)",
+  "Скрыть брендинг UNQX",
+  "QR-код + NFC поддержка",
+  "Приоритетная поддержка",
   ],
   excluded: Array.isArray(pagePublicSettings.plan_premium_excluded_features) ? pagePublicSettings.plan_premium_excluded_features : [],
   },
@@ -126,28 +126,28 @@
 
   const faqItems = [
   {
-  q: "РњРѕР¶РЅРѕ Р»Рё СЃРјРµРЅРёС‚СЊ UNQ РїРѕСЃР»Рµ РїРѕРєСѓРїРєРё?",
-  a: "РќРµС‚ - UNQ РїРѕРєСѓРїР°РµС‚СЃСЏ РЅР°РІСЃРµРіРґР° Рё РїСЂРёРІСЏР·С‹РІР°РµС‚СЃСЏ Рє С‚РµР±Рµ. РўС‹ РјРѕР¶РµС€СЊ РѕР±РЅРѕРІР»СЏС‚СЊ СЃРѕРґРµСЂР¶РёРјРѕРµ РІРёР·РёС‚РєРё СЃРєРѕР»СЊРєРѕ СѓРіРѕРґРЅРѕ СЂР°Р·.",
+  q: "Можно ли сменить UNQ после покупки?",
+  a: "Нет - UNQ покупается навсегда и привязывается к тебе. Ты можешь обновлять содержимое визитки сколько угодно раз.",
   },
   {
-  q: "Р§С‚Рѕ РµСЃР»Рё СЏ РїРѕС‚РµСЂСЏСЋ Р±СЂР°СЃР»РµС‚?",
-  a: "Р—Р°РєР°Р¶Рё РЅРѕРІС‹Р№ - UNQ РѕСЃС‚Р°С‘С‚СЃСЏ С‚РІРѕРёРј. Р”РѕСЃС‚Р°С‚РѕС‡РЅРѕ РїРѕРІС‚РѕСЂРЅРѕ Р·Р°РєР°Р·Р°С‚СЊ Р±СЂР°СЃР»РµС‚ Рё РїСЂРёРІСЏР·Р°С‚СЊ Рє С‚РѕРјСѓ Р¶Рµ UNQ.",
+  q: "Что если я потеряю браслет?",
+  a: "Закажи новый - UNQ остаётся твоим. Достаточно повторно заказать браслет и привязать к тому же UNQ.",
   },
   {
-  q: "Р Р°Р±РѕС‚Р°РµС‚ Р»Рё Р±СЂР°СЃР»РµС‚ Р±РµР· РёРЅС‚РµСЂРЅРµС‚Р° Сѓ РІР»Р°РґРµР»СЊС†Р°?",
-  a: "Р”Р°. NFC РЅР° Р±СЂР°СЃР»РµС‚Рµ РЅРµ С‚СЂРµР±СѓРµС‚ РёРЅС‚РµСЂРЅРµС‚Р° СЃ С‚РІРѕРµР№ СЃС‚РѕСЂРѕРЅС‹. РўРµР»РµС„РѕРЅ С‚РѕРіРѕ, РєС‚Рѕ С‚Р°РїРЅСѓР», РїСЂРѕСЃС‚Рѕ РѕС‚РєСЂС‹РІР°РµС‚ СЃСЃС‹Р»РєСѓ.",
+  q: "Работает ли браслет без интернета у владельца?",
+  a: "Да. NFC на браслете не требует интернета с твоей стороны. Телефон того, кто тапнул, просто открывает ссылку.",
   },
   {
-  q: "Р§РµРј РѕС‚Р»РёС‡Р°РµС‚СЃСЏ Р‘Р°Р·РѕРІС‹Р№ РѕС‚ РџСЂРµРјРёСѓРј?",
-  a: "Р‘Р°Р·РѕРІС‹Р№ - СЃС‚Р°РЅРґР°СЂС‚РЅС‹Р№ С€Р°Р±Р»РѕРЅ, РґРѕ 3 РєРЅРѕРїРѕРє. РџСЂРµРјРёСѓРј - РІС‹Р±РѕСЂ С‚РµРј, РєР°СЃС‚РѕРјРЅС‹Рµ С†РІРµС‚Р°, РґРѕ 9 РєРЅРѕРїРѕРє.",
+  q: "Чем отличается Базовый от Премиум?",
+  a: "Базовый - стандартный шаблон, до 3 кнопок. Премиум - выбор тем, кастомные цвета, до 9 кнопок.",
   },
   {
-  q: "РљР°Рє РїСЂРѕРёСЃС…РѕРґРёС‚ РѕРїР»Р°С‚Р°?",
-  a: "РџРѕСЃР»Рµ Р·Р°СЏРІРєРё РјС‹ РїРёС€РµРј С‚РµР±Рµ РІ Telegram Рё РІС‹СЃС‹Р»Р°РµРј СЂРµРєРІРёР·РёС‚С‹ Payme РёР»Рё Click. РђРєС‚РёРІРёСЂСѓРµРј РїРѕСЃР»Рµ РѕРїР»Р°С‚С‹.",
+  q: "Как происходит оплата?",
+  a: "После заявки мы пишем тебе в Telegram и высылаем реквизиты Payme или Click. Активируем после оплаты.",
   },
   {
-  q: "Р•СЃС‚СЊ Р»Рё РІРѕР·РІСЂР°С‚?",
-  a: "Р‘СЂР°СЃР»РµС‚ РІРѕР·РІСЂР°С‚Сѓ РЅРµ РїРѕРґР»РµР¶РёС‚.",
+  q: "Есть ли возврат?",
+  a: "Браслет возврату не подлежит.",
   },
   ];
   %>
@@ -180,19 +180,19 @@
             </a>
 
             <div class="site-header-links hidden items-center gap-8 md:flex">
-              <a href="#pricing" class="site-header-link text-sm text-neutral-500 transition-colors hover:text-neutral-900">Р”РѕСЃС‚СѓРї</a>
+              <a href="#pricing" class="site-header-link text-sm text-neutral-500 transition-colors hover:text-neutral-900">Доступ</a>
               <a href="/directory"
-                class="site-header-link text-sm text-neutral-500 transition-colors hover:text-neutral-900">Р РµР·РёРґРµРЅС‚С‹</a>
+                class="site-header-link text-sm text-neutral-500 transition-colors hover:text-neutral-900">Резиденты</a>
               <% if (leaderboardEnabled) { %><a href="/leaderboard"
                   class="site-header-link whitespace-nowrap text-sm text-neutral-500 transition-colors hover:text-neutral-900">UNQ&nbsp;ELITE</a>
                 <% } %>
-                  <a href="/drops" class="site-header-link text-sm text-neutral-500 transition-colors hover:text-neutral-900">Р РµР»РёР·С‹</a>
+                  <a href="/drops" class="site-header-link text-sm text-neutral-500 transition-colors hover:text-neutral-900">Релизы</a>
                   <div id="home-auth-nav-desktop" class="flex items-center gap-2">
                     <a href="/login" data-auth-login
-                      class="site-header-login interactive-btn inline-flex min-h-11 items-center justify-center rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100 <%= hasAuthSession ? 'hidden' : '' %>">Р’РѕР№С‚Рё</a>
+                      class="site-header-login interactive-btn inline-flex min-h-11 items-center justify-center rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100 <%= hasAuthSession ? 'hidden' : '' %>">Войти</a>
                     <a href="/profile" data-auth-profile
                       class="site-header-profile <%= hasAuthSession ? 'inline-flex' : 'hidden' %> h-9 w-9 items-center justify-center rounded-full border border-neutral-300 text-neutral-700 transition hover:bg-neutral-100"
-                      aria-label="РњРѕР№ РїСЂРѕС„РёР»СЊ">
+                      aria-label="Мой профиль">
                       <img data-auth-avatar src="<%= authNavPhotoUrl %>" alt="avatar"
                         class="h-7 w-7 rounded-full border border-neutral-200 bg-white object-cover" />
                     </a>
@@ -201,14 +201,14 @@
 
             <a href="#" data-order-link
               class="site-header-cta interactive-btn hidden min-h-11 items-center gap-2 rounded-xl bg-neutral-900 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-neutral-800 md:flex">
-              Р—Р°РЅСЏС‚СЊ UNQ
+              Занять UNQ
               <svg class="icon-stroke h-3.5 w-3.5" viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M5 12h14M13 5l7 7-7 7"></path>
               </svg>
             </a>
 
             <button type="button" class="site-header-mobile-toggle text-neutral-900 md:hidden" data-menu-toggle aria-expanded="false"
-              aria-controls="mobile-menu" aria-label="РћС‚РєСЂС‹С‚СЊ РјРµРЅСЋ">
+              aria-controls="mobile-menu" aria-label="Открыть меню">
               <svg data-menu-open-icon class="icon-stroke h-5 w-5" viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M4 6h16M4 12h16M4 18h16"></path>
               </svg>
@@ -221,25 +221,25 @@
           <div id="mobile-menu" class="site-mobile-menu hidden border-t border-neutral-200 bg-white px-6 pb-6 pt-4 md:hidden"
             data-mobile-menu>
             <div class="flex flex-col gap-4">
-              <a href="#pricing" class="site-mobile-link text-sm text-neutral-500">Р”РѕСЃС‚СѓРї</a>
-              <a href="/directory" class="site-mobile-link text-sm text-neutral-500">Р РµР·РёРґРµРЅС‚С‹</a>
+              <a href="#pricing" class="site-mobile-link text-sm text-neutral-500">Доступ</a>
+              <a href="/directory" class="site-mobile-link text-sm text-neutral-500">Резиденты</a>
               <% if (leaderboardEnabled) { %><a href="/leaderboard"
                   class="site-mobile-link whitespace-nowrap text-sm text-neutral-500">UNQ&nbsp;ELITE</a>
                 <% } %>
-                  <a href="/drops" class="site-mobile-link text-sm text-neutral-500">Р РµР»РёР·С‹</a>
+                  <a href="/drops" class="site-mobile-link text-sm text-neutral-500">Релизы</a>
                   <div id="home-auth-nav-mobile" class="flex w-full items-center justify-center gap-2">
                     <a href="/login" data-auth-login
-                      class="site-header-login inline-flex min-h-11 items-center justify-center rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100 <%= hasAuthSession ? 'hidden' : '' %>">Р’РѕР№С‚Рё</a>
+                      class="site-header-login inline-flex min-h-11 items-center justify-center rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100 <%= hasAuthSession ? 'hidden' : '' %>">Войти</a>
                     <a href="/profile" data-auth-profile
                       class="site-header-profile <%= hasAuthSession ? 'inline-flex' : 'hidden' %> h-9 w-9 items-center justify-center rounded-full border border-neutral-300 text-neutral-700 transition hover:bg-neutral-100"
-                      aria-label="РњРѕР№ РїСЂРѕС„РёР»СЊ">
+                      aria-label="Мой профиль">
                       <img data-auth-avatar src="<%= authNavPhotoUrl %>" alt="avatar"
                         class="h-7 w-7 rounded-full border border-neutral-200 bg-white object-cover" />
                     </a>
                   </div>
                   <a href="#" data-order-link
                     class="site-header-cta mt-2 flex items-center justify-center gap-2 rounded-xl bg-neutral-900 px-4 py-2.5 text-sm font-medium text-white">
-                    Р—Р°РЅСЏС‚СЊ UNQ
+                    Занять UNQ
                     <svg class="icon-stroke h-3.5 w-3.5" viewBox="0 0 24 24" aria-hidden="true">
                       <path d="M5 12h14M13 5l7 7-7 7"></path>
                     </svg>
@@ -256,19 +256,19 @@
                 <svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
                   <path d="M13 2 3 14h7l-1 8 10-12h-7z"></path>
                 </svg>
-                FLASH SALE В· РЎРєРёРґРєР° <strong>
+                FLASH SALE · Скидка <strong>
                   <%= activeFlashSale.discountPercent %>%
-                </strong> РЅР° <%= activeFlashSale.conditionLabel %>
+                </strong> на <%= activeFlashSale.conditionLabel %>
                   <% if (typeof activeFlashSale.slotsLeft==='number' ) { %>
-                    В· РћСЃС‚Р°Р»РѕСЃСЊ <strong>
+                    · Осталось <strong>
                       <%= activeFlashSale.slotsLeft.toLocaleString('ru-RU') %>
-                    </strong> РјРµСЃС‚/UNQ
+                    </strong> мест/UNQ
                     <% } %>
-                      В· РћСЃС‚Р°Р»РѕСЃСЊ <span data-flash-countdown>--:--:--</span>
+                      · Осталось <span data-flash-countdown>--:--:--</span>
               </p>
               <a href="/#hero-check" data-flash-sale-action data-flash-scroll-target="hero-check"
-                class="site-flash-sale-action interactive-btn min-h-11 rounded-lg border border-amber-300 px-2.5 py-1 text-xs font-semibold">РЈР·РЅР°С‚СЊ
-                РїРѕРґСЂРѕР±РЅРµРµ</a>
+                class="site-flash-sale-action interactive-btn min-h-11 rounded-lg border border-amber-300 px-2.5 py-1 text-xs font-semibold">Узнать
+                подробнее</a>
             </div>
           </section>
           <% } %>
@@ -293,9 +293,9 @@
                 </p>
                 <div id="home-live-stats"
                   class="mx-auto mt-4 hidden w-full max-w-2xl rounded-xl border border-neutral-200 bg-white/90 px-4 py-2 text-sm text-neutral-700">
-                  <span id="home-live-total">0</span> РІРёР·РёС‚РѕРє СЃРѕР·РґР°РЅРѕ В·
-                  <span id="home-live-today">0</span> СЃРµРіРѕРґРЅСЏ В·
-                  <span id="home-live-online">0</span> РѕРЅР»Р°Р№РЅ
+                  <span id="home-live-total">0</span> визиток создано ·
+                  <span id="home-live-today">0</span> сегодня ·
+                  <span id="home-live-online">0</span> онлайн
                 </div>
 
                 <div id="hero-check" class="mx-auto mt-10 flex max-w-md flex-col gap-3 sm:flex-row motion-fade-up"
@@ -306,11 +306,11 @@
                     <input id="home-slug-input" type="text" placeholder="AAA001"
                       class="w-full bg-transparent text-sm uppercase text-neutral-900 outline-none placeholder:text-neutral-300"
                       autocomplete="off" spellcheck="false" maxlength="6" pattern="[A-Za-z]{3}[0-9]{3}"
-                      title="Р¤РѕСЂРјР°С‚: 3 Р»Р°С‚РёРЅСЃРєРёРµ Р±СѓРєРІС‹ Рё 3 С†РёС„СЂС‹ (РЅР°РїСЂРёРјРµСЂ AAA001)" />
+                      title="Формат: 3 латинские буквы и 3 цифры (например AAA001)" />
                   </div>
                   <button id="home-slug-check" type="button"
                     class="interactive-btn btn-shimmer min-h-11 flex items-center justify-center gap-2 rounded-xl bg-neutral-900 px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-neutral-800">
-                    РџСЂРѕРІРµСЂРёС‚СЊ
+                    Проверить
                     <svg class="icon-stroke h-3.5 w-3.5" viewBox="0 0 24 24" aria-hidden="true">
                       <path d="M5 12h14M13 5l7 7-7 7"></path>
                     </svg>
@@ -327,21 +327,21 @@
                     <div
                       class="mx-auto flex w-full max-w-md items-center justify-between gap-3 rounded-xl border border-neutral-200 bg-white px-3 py-2">
                       <div class="flex min-w-0 items-center gap-3">
-                        <img id="home-slug-taken-owner-photo" src="/brand/logo.PNG" alt="Р¤РѕС‚Рѕ РІР»Р°РґРµР»СЊС†Р°"
+                        <img id="home-slug-taken-owner-photo" src="/brand/logo.PNG" alt="Фото владельца"
                           class="h-9 w-9 rounded-full border border-neutral-200 object-cover" />
                         <p id="home-slug-taken-owner-name" class="truncate text-sm font-semibold text-neutral-900">UNQX
                           User</p>
                       </div>
                       <a id="home-slug-taken-owner-view" href="#"
                         class="interactive-btn inline-flex min-h-11 items-center rounded-lg border border-neutral-200 bg-white px-3 py-1.5 text-xs font-semibold text-neutral-700 transition-colors hover:bg-neutral-50">
-                        РџРѕСЃРјРѕС‚СЂРµС‚СЊ
+                        Посмотреть
                       </a>
                     </div>
                   </div>
 
                   <div id="home-slug-suggestions-wrap" class="mt-3 hidden">
                     <p class="text-xs text-neutral-500">
-                      РџРѕРїСЂРѕР±СѓР№:
+                      Попробуй:
                       <span id="home-slug-suggestions" class="ml-1 inline-flex flex-wrap items-center gap-2"></span>
                     </p>
                   </div>
@@ -349,7 +349,7 @@
                   <div class="mt-4 flex items-center justify-center gap-3">
                     <a id="home-slug-primary-action" href="#" data-order-link
                       class="btn-shimmer inline-flex items-center gap-2 rounded-xl bg-neutral-900 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-neutral-800">
-                      РљСѓРїРёС‚СЊ
+                      Купить
                       <svg class="icon-stroke h-3.5 w-3.5" viewBox="0 0 24 24" aria-hidden="true">
                         <path d="M5 12h14M13 5l7 7-7 7"></path>
                       </svg>
@@ -360,7 +360,7 @@
                         <rect x="4" y="3" width="16" height="18" rx="2"></rect>
                         <path d="M8 7h8M8 11h2M12 11h2M16 11h0M8 15h2M12 15h2M16 15h0"></path>
                       </svg>
-                      РЈР·РЅР°С‚СЊ С†РµРЅСѓ
+                      Узнать цену
                     </a>
                   </div>
 
@@ -384,19 +384,19 @@
                         d="M12 22a3 3 0 0 0 3-3c0-1.4-.8-2.3-1.6-3.2-.7-.7-1.4-1.5-1.4-2.8-1.4 1.2-3 3-3 5a3 3 0 0 0 3 4z">
                       </path>
                     </svg>
-                    РЎР»РµРґСѓСЋС‰РёР№ РґСЂРѕРї: <strong>
+                    Следующий дроп: <strong>
                       <%= nextDrop.title %>
-                    </strong> В· <%= new Date(nextDrop.dropAt).toLocaleString('ru-RU') %> В· <%= nextDrop.slugCount %>
+                    </strong> · <%= new Date(nextDrop.dropAt).toLocaleString('ru-RU') %> · <%= nextDrop.slugCount %>
                         UNQ
                   </p>
                   <div class="flex flex-wrap items-center gap-2">
                     <button type="button" data-next-drop-waitlist
                       class="interactive-btn min-h-11 rounded-lg border border-red-300 bg-red-100 px-3 py-1.5 text-xs font-semibold text-red-900">
-                      Р—Р°Р±СЂРѕРЅРёСЂРѕРІР°С‚СЊ СѓРІРµРґРѕРјР»РµРЅРёРµ РІ 1 РєР»РёРє
+                      Забронировать уведомление в 1 клик
                     </button>
                     <a href="/drops"
-                      class="interactive-btn min-h-11 rounded-lg border border-red-300 px-3 py-1.5 text-xs font-semibold text-red-900">РџРѕРґРїРёСЃР°С‚СЊСЃСЏ
-                      РЅР° СѓРІРµРґРѕРјР»РµРЅРёРµ</a>
+                      class="interactive-btn min-h-11 rounded-lg border border-red-300 px-3 py-1.5 text-xs font-semibold text-red-900">Подписаться
+                      на уведомление</a>
                   </div>
                 </div>
               </section>
@@ -405,10 +405,10 @@
                 <section id="calculator" class="px-6 py-24" data-observe-reveal>
                   <div class="mx-auto max-w-3xl">
                     <p class="mb-3 font-mono text-xs uppercase tracking-widest text-neutral-400">UNQ Pricing Engine</p>
-                    <h2 class="text-3xl font-bold tracking-tight text-neutral-900 md:text-4xl">РЈР·РЅР°Р№ С†РµРЅСѓ СЃРІРѕРµРіРѕ UNQ
+                    <h2 class="text-3xl font-bold tracking-tight text-neutral-900 md:text-4xl">Узнай цену своего UNQ
                     </h2>
-                    <p class="mt-3 text-base text-neutral-500">Р¤РѕСЂРјР°С‚: AAA000 - 3 Р±СѓРєРІС‹ + 3 С†РёС„СЂС‹. Р¦РµРЅР° СЃС‡РёС‚Р°РµС‚СЃСЏ
-                      Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРё.</p>
+                    <p class="mt-3 text-base text-neutral-500">Формат: AAA000 - 3 буквы + 3 цифры. Цена считается
+                      автоматически.</p>
 
                     <div class="mt-10 flex items-center gap-3">
                       <input id="calc-letters" type="text" maxlength="3" placeholder="AAA"
@@ -420,7 +420,7 @@
                         autocomplete="off" />
                       <button id="calc-generate-button" type="button"
                         class="interactive-btn inline-flex h-12 w-12 items-center justify-center rounded-xl border border-neutral-200 bg-white text-neutral-700 transition-colors hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-60"
-                        title="РЎРіРµРЅРµСЂРёСЂРѕРІР°С‚СЊ СЃРІРѕР±РѕРґРЅС‹Р№ UNQ (РЅРёР·РєРёР№/СЃСЂРµРґРЅРёР№ СЃРµРіРјРµРЅС‚)" aria-label="РЎРіРµРЅРµСЂРёСЂРѕРІР°С‚СЊ СЃРІРѕР±РѕРґРЅС‹Р№ UNQ">
+                        title="Сгенерировать свободный UNQ (низкий/средний сегмент)" aria-label="Сгенерировать свободный UNQ">
                         <svg class="icon-stroke h-5 w-5" viewBox="0 0 24 24" aria-hidden="true">
                           <path d="M21 12a9 9 0 1 1-2.64-6.36"></path>
                           <path d="M21 4v6h-6"></path>
@@ -435,19 +435,19 @@
                       <div class="flex items-center justify-between gap-3">
                         <span
                           class="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-500">
-                          РџСЂРµРґРїСЂРѕСЃРјРѕС‚СЂ С†РµРЅС‹
+                          Предпросмотр цены
                         </span>
-                        <span class="text-xs text-neutral-400">Р’РІРµРґРёС‚Рµ 3 Р±СѓРєРІС‹ + 3 С†РёС„СЂС‹</span>
+                        <span class="text-xs text-neutral-400">Введите 3 буквы + 3 цифры</span>
                       </div>
                       <p class="mt-5 font-mono text-2xl font-bold tracking-wider text-neutral-900">AAA000</p>
                       <div class="mt-4 flex items-end gap-2">
                         <span class="text-3xl font-bold text-neutral-900">100 000</span>
-                        <span class="pb-1 text-sm text-neutral-400">СЃСѓРј РѕС‚</span>
+                        <span class="pb-1 text-sm text-neutral-400">сум от</span>
                       </div>
-                      <p class="mt-2 text-xs text-neutral-400">Р¦РµРЅР° Р·Р°РІРёСЃРёС‚ РѕС‚ РїР°С‚С‚РµСЂРЅР° Р±СѓРєРІ, С†РёС„СЂ Рё flash-СЃРєРёРґРѕРє.</p>
+                      <p class="mt-2 text-xs text-neutral-400">Цена зависит от паттерна букв, цифр и flash-скидок.</p>
                       <div class="mt-4 grid gap-2 text-sm text-neutral-600 sm:grid-cols-2">
-                        <div class="rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2">Р‘СѓРєРІС‹: С€Р°Р±Р»РѕРЅ x1..x10</div>
-                        <div class="rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2">Р¦РёС„СЂС‹: С€Р°Р±Р»РѕРЅ x1..x6</div>
+                        <div class="rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2">Буквы: шаблон x1..x10</div>
+                        <div class="rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2">Цифры: шаблон x1..x6</div>
                       </div>
                     </div>
 
@@ -467,33 +467,33 @@
 
                       <div class="mt-4 flex items-baseline gap-2">
                         <span id="calc-result-price" class="text-3xl font-bold text-neutral-900">0</span>
-                        <span class="text-sm text-neutral-400">СЃСѓРј</span>
+                        <span class="text-sm text-neutral-400">сум</span>
                       </div>
                       <div id="calc-similar-wrap"
                         class="mt-4 hidden rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2.5">
                         <p class="text-xs text-neutral-500">
-                          РџРѕС…РѕР¶РёРµ СЃРІРѕР±РѕРґРЅС‹Рµ:
+                          Похожие свободные:
                           <span id="calc-similar-items" class="ml-1 inline-flex flex-wrap items-center gap-2"></span>
                         </p>
                       </div>
 
                       <p id="calc-result-formula" class="mt-2 font-mono text-xs text-neutral-400">100 000 x 1 x 1 = 100
-                        000 СЃСѓРј</p>
+                        000 сум</p>
 
                       <div class="mt-6 flex gap-6">
                         <div>
-                          <p class="text-xs text-neutral-400">Р‘СѓРєРІС‹</p>
-                          <p id="calc-letter-meta" class="mt-1 text-sm font-medium text-neutral-700">РћР±С‹С‡РЅС‹Рµ x1</p>
+                          <p class="text-xs text-neutral-400">Буквы</p>
+                          <p id="calc-letter-meta" class="mt-1 text-sm font-medium text-neutral-700">Обычные x1</p>
                         </div>
                         <div>
-                          <p class="text-xs text-neutral-400">Р¦РёС„СЂС‹</p>
-                          <p id="calc-digit-meta" class="mt-1 text-sm font-medium text-neutral-700">РћР±С‹С‡РЅС‹Рµ x1</p>
+                          <p class="text-xs text-neutral-400">Цифры</p>
+                          <p id="calc-digit-meta" class="mt-1 text-sm font-medium text-neutral-700">Обычные x1</p>
                         </div>
                       </div>
 
                       <a id="calc-reserve-link" href="#" data-order-link
                         class="interactive-btn btn-shimmer mt-8 inline-flex min-h-11 items-center gap-2 rounded-xl bg-neutral-900 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-neutral-800">
-                        Р—Р°РЅСЏС‚СЊ AAA000
+                        Занять AAA000
                         <svg class="icon-stroke h-3.5 w-3.5" viewBox="0 0 24 24" aria-hidden="true">
                           <path d="M5 12h14M13 5l7 7-7 7"></path>
                         </svg>
@@ -504,11 +504,13 @@
 
 
 
+
+
                 <section id="testimonials" class="px-6 py-16" data-observe-reveal>
                   <div class="mx-auto max-w-6xl">
-                    <p class="font-mono text-xs uppercase tracking-[0.18em] text-neutral-400">РћРўР—Р«Р’Р«</p>
-                    <h2 class="mt-3 text-3xl font-bold tracking-tight text-neutral-900 md:text-4xl">Р§С‚Рѕ РіРѕРІРѕСЂСЏС‚ РїРµСЂРІС‹Рµ
-                      РєР»РёРµРЅС‚С‹</h2>
+                    <p class="font-mono text-xs uppercase tracking-[0.18em] text-neutral-400">ОТЗЫВЫ</p>
+                    <h2 class="mt-3 text-3xl font-bold tracking-tight text-neutral-900 md:text-4xl">Что говорят первые
+                      клиенты</h2>
 
                     <div class="mt-8 grid gap-4 md:grid-cols-3">
                       <% testimonialsList.forEach((item)=> { %>
@@ -530,7 +532,7 @@
                               </div>
                             </div>
                             <span class="rounded-full border border-neutral-200 px-2.5 py-1 text-[11px] font-medium text-neutral-600">
-                              <%= item.tariff==='premium' ? 'РџСЂРµРјРёСѓРј' : 'Р‘Р°Р·РѕРІС‹Р№' %>
+                              <%= item.tariff==='premium' ? 'Премиум' : 'Базовый' %>
                             </span>
                           </div>
                           <p class="mt-4 text-sm leading-relaxed text-neutral-600"><%= item.text %></p>
@@ -542,38 +544,38 @@
 
                 <section id="b2b" class="px-6 py-16" data-observe-reveal>
                   <div class="mx-auto max-w-6xl">
-                    <p class="font-mono text-xs uppercase tracking-[0.18em] text-neutral-400">Р”Р›РЇ Р‘РР—РќР•РЎРђ</p>
-                    <h2 class="mt-3 text-3xl font-bold tracking-tight text-neutral-900 md:text-4xl">Р”Р»СЏ РєРѕРјР°РЅРґ Рё
-                      Р°РіРµРЅС‚СЃС‚РІ</h2>
+                    <p class="font-mono text-xs uppercase tracking-[0.18em] text-neutral-400">ДЛЯ БИЗНЕСА</p>
+                    <h2 class="mt-3 text-3xl font-bold tracking-tight text-neutral-900 md:text-4xl">Для команд и
+                      агентств</h2>
                     <p class="mt-3 max-w-2xl text-base text-neutral-500">
-                      Р”Р°Р№ РєР°Р¶РґРѕРјСѓ СЃРѕС‚СЂСѓРґРЅРёРєСѓ СЃРІРѕР№ UNQ - РѕРґРёРЅ СЂР°Р· РЅР°СЃС‚СЂРѕРёР», РѕР±РЅРѕРІР»СЏРµС‚Рµ РєРѕРіРґР° СѓРіРѕРґРЅРѕ.
+                      Дай каждому сотруднику свой UNQ - один раз настроил, обновляете когда угодно.
                     </p>
 
                     <div class="mt-8 grid gap-4 md:grid-cols-3">
                       <article class="interactive-card rounded-2xl border border-neutral-200 bg-white p-5">
-                        <h3 class="text-base font-semibold text-neutral-900">Р•РґРёРЅС‹Р№ СЃС‚РёР»СЊ</h3>
-                        <p class="mt-2 text-sm text-neutral-600">РІСЃРµ РІРёР·РёС‚РєРё РєРѕРјР°РЅРґС‹ РІ РѕРґРЅРѕРј Р±СЂРµРЅРґРµ</p>
+                        <h3 class="text-base font-semibold text-neutral-900">Единый стиль</h3>
+                        <p class="mt-2 text-sm text-neutral-600">все визитки команды в одном бренде</p>
                       </article>
                       <article class="interactive-card rounded-2xl border border-neutral-200 bg-white p-5">
-                        <h3 class="text-base font-semibold text-neutral-900">Р¦РµРЅС‚СЂР°Р»РёР·РѕРІР°РЅРЅРѕРµ СѓРїСЂР°РІР»РµРЅРёРµ</h3>
-                        <p class="mt-2 text-sm text-neutral-600">РјРµРЅСЏР№ РґР°РЅРЅС‹Рµ СЃРѕС‚СЂСѓРґРЅРёРєРѕРІ РёР· РѕРґРЅРѕРіРѕ РєР°Р±РёРЅРµС‚Р°</p>
+                        <h3 class="text-base font-semibold text-neutral-900">Централизованное управление</h3>
+                        <p class="mt-2 text-sm text-neutral-600">меняй данные сотрудников из одного кабинета</p>
                       </article>
                       <article class="interactive-card rounded-2xl border border-neutral-200 bg-white p-5">
-                        <h3 class="text-base font-semibold text-neutral-900">РћРїС‚РѕРІР°СЏ С†РµРЅР°</h3>
-                        <p class="mt-2 text-sm text-neutral-600">СЃРєРёРґРєР° РѕС‚ 5 UNQ</p>
+                        <h3 class="text-base font-semibold text-neutral-900">Оптовая цена</h3>
+                        <p class="mt-2 text-sm text-neutral-600">скидка от 5 UNQ</p>
                       </article>
                     </div>
 
                     <a href="https://t.me/unqx_uz" target="_blank" rel="noopener noreferrer"
                       class="interactive-btn btn-shimmer mt-6 inline-flex min-h-11 items-center gap-2 rounded-xl bg-neutral-900 px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-neutral-800">
-                      РћР±СЃСѓРґРёС‚СЊ СѓСЃР»РѕРІРёСЏ
+                      Обсудить условия
                     </a>
                   </div>
                 </section>
 
                 <section class="px-6 py-24" data-observe-reveal>
                   <div class="mx-auto max-w-6xl">
-                    <h2 class="mb-16 text-2xl font-bold tracking-tight text-neutral-900">РљР°Рє СЌС‚Рѕ СЂР°Р±РѕС‚Р°РµС‚</h2>
+                    <h2 class="mb-16 text-2xl font-bold tracking-tight text-neutral-900">Как это работает</h2>
 
                     <div class="grid gap-6 md:grid-cols-3">
                       <% steps.forEach((step, index)=> { %>
@@ -618,19 +620,19 @@
 
                 <section id="weekly-top-views" class="px-6 py-16" data-observe-reveal>
                   <div class="mx-auto max-w-6xl">
-                    <p class="font-mono text-xs uppercase tracking-[0.18em] text-neutral-400">РўРѕРї 3 РґРЅСЏ</p>
-                    <h2 class="mt-3 text-3xl font-bold tracking-tight text-neutral-900 md:text-4xl">Р РµР№С‚РёРЅРі РїРѕ
-                      РїСЂРѕСЃРјРѕС‚СЂР°Рј</h2>
+                    <p class="font-mono text-xs uppercase tracking-[0.18em] text-neutral-400">Топ 3 дня</p>
+                    <h2 class="mt-3 text-3xl font-bold tracking-tight text-neutral-900 md:text-4xl">Рейтинг по
+                      просмотрам</h2>
 
                     <% if (!weeklyViewsTopList.length) { %>
                       <div class="mt-8 rounded-2xl border border-neutral-200 bg-white p-6 text-sm text-neutral-500">
-                        Р—Р° СЌС‚Сѓ РЅРµРґРµР»СЋ РїРѕРєР° РЅРµС‚ РґР°РЅРЅС‹С… РїРѕ РїСЂРѕСЃРјРѕС‚СЂР°Рј.
+                        За эту неделю пока нет данных по просмотрам.
                       </div>
                       <% } else { %>
                         <div class="mt-8 grid gap-4 md:grid-cols-3">
                           <% weeklyViewsTopList.forEach((item, index)=> { %>
                             <a href="/<%= encodeURIComponent(item.primarySlug || (Array.isArray(item.slugs) ? item.slugs[0] : '')) %>"
-                              aria-label="РћС‚РєСЂС‹С‚СЊ РїСЂРѕС„РёР»СЊ <%= item.name %>"
+                              aria-label="Открыть профиль <%= item.name %>"
                               class="interactive-card block rounded-2xl border border-neutral-200 bg-white p-5 transition-colors hover:border-neutral-300">
                               <div class="flex items-start justify-between gap-3">
                                 <span
@@ -653,7 +655,7 @@
                                   </p>
                                   <% if (item.isVerified) { %>
                                     <svg class="h-4 w-4 text-neutral-500" viewBox="0 0 24 24" aria-hidden="true"
-                                      fill="currentColor" title="Р’РµСЂРёС„РёС†РёСЂРѕРІР°РЅРЅС‹Р№ Р°РєРєР°СѓРЅС‚">
+                                      fill="currentColor" title="Верифицированный аккаунт">
                                       <path
                                         d="M12 2.5l2.2 1.8 2.8-.3 1.2 2.5 2.5 1.2-.3 2.8L21.5 12l-1.8 2.2.3 2.8-2.5 1.2-1.2 2.5-2.8-.3L12 21.5l-2.2-1.8-2.8.3-1.2-2.5-2.5-1.2.3-2.8L2.5 12l1.8-2.2-.3-2.8 2.5-1.2 1.2-2.5 2.8.3L12 2.5Zm-1.1 13.1 5-5-1.1-1.1-3.9 3.9-1.8-1.8-1.1 1.1 2.9 2.9Z">
                                       </path>
@@ -675,7 +677,7 @@
                                         </span></span>
                                       <% }) %>
                                   </div>
-                                  <p class="mt-3 text-sm text-neutral-600">РџСЂРѕСЃРјРѕС‚СЂС‹: <strong>
+                                  <p class="mt-3 text-sm text-neutral-600">Просмотры: <strong>
                                       <%= Number(item.views || 0).toLocaleString('ru-RU') %>
                                     </strong></p>
                             </a>
@@ -691,19 +693,19 @@
                         <p class="mb-3 font-mono text-xs uppercase tracking-widest text-neutral-400">
                           <%= platformName %> STICKER
                         </p>
-                        <h2 class="text-3xl font-bold tracking-tight text-neutral-900 md:text-4xl">РџСЂРёРєР»РµР№ СЃС‚РёРєРµСЂ. Р С‚С‹
-                          СѓР¶Рµ<br />РІ
-                          С‚РµР»РµС„РѕРЅРµ СЃРѕР±РµСЃРµРґРЅРёРєР°.</h2>
+                        <h2 class="text-3xl font-bold tracking-tight text-neutral-900 md:text-4xl">Приклей стикер. И ты
+                          уже<br />в
+                          телефоне собеседника.</h2>
                         <p class="mt-4 text-base leading-relaxed text-neutral-500">
                           <%= braceletDescription %>
                         </p>
 
                         <div class="mt-6 flex items-end gap-3">
                           <span class="text-lg text-neutral-400 line-through">
-                            <%= braceletOldPrice.toLocaleString("ru-RU") %> СЃСѓРј
+                            <%= braceletOldPrice.toLocaleString("ru-RU") %> сум
                           </span>
                           <span class="text-3xl font-bold text-neutral-900">
-                            <%= braceletPrice.toLocaleString("ru-RU") %> СЃСѓРј
+                            <%= braceletPrice.toLocaleString("ru-RU") %> сум
                           </span>
                           <% if (braceletDiscountPercent > 0) { %>
                             <span
@@ -713,7 +715,7 @@
                             <% } %>
                         </div>
 
-                        <p class="mt-2 text-sm text-neutral-400">Р Р°Р·РѕРІР°СЏ РїРѕРєСѓРїРєР° В· Р”РѕСЃС‚Р°РІРєР° РїРѕ РўР°С€РєРµРЅС‚Сѓ</p>
+                        <p class="mt-2 text-sm text-neutral-400">Разовая покупка · Доставка по Ташкенту</p>
 
                         <ul class="mt-8 flex flex-col gap-3">
                           <% wristbandFeatures.forEach((feature)=> { %>
@@ -730,7 +732,7 @@
                         <div class="mt-8 flex flex-wrap items-center gap-3">
                           <a href="#" data-order-link data-order-bracelet="true"
                             class="interactive-btn btn-shimmer inline-flex min-h-11 items-center gap-2 rounded-xl bg-neutral-900 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-neutral-800">
-                            <%= String(pagePublicSettings.bracelet_cta_text || "Р—Р°РєР°Р·Р°С‚СЊ СЃС‚РёРєРµСЂ" ) %>
+                            <%= String(pagePublicSettings.bracelet_cta_text || "Заказать стикер" ) %>
                           </a>
 
                           <span
@@ -738,7 +740,7 @@
                             <svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
                               <path d="m20 6-11 11-5-5"></path>
                             </svg>
-                            <%= pagePublicSettings.bracelet_in_stock===false ? "РќРµС‚ РІ РЅР°Р»РёС‡РёРё" : "Р’ РЅР°Р»РёС‡РёРё" %>
+                            <%= pagePublicSettings.bracelet_in_stock===false ? "Нет в наличии" : "В наличии" %>
                           </span>
                         </div>
                         <p class="mt-3 text-xs text-neutral-500">
@@ -762,7 +764,7 @@
 
                 <section id="pricing" class="<%= pricingVisible ? '' : 'hidden' %> px-6 py-24" data-observe-reveal>
                   <div class="mx-auto max-w-4xl">
-                    <h2 class="mb-16 text-2xl font-bold tracking-tight text-neutral-900">РўР°СЂРёС„С‹</h2>
+                    <h2 class="mb-16 text-2xl font-bold tracking-tight text-neutral-900">Тарифы</h2>
 
                     <div class="grid gap-6 md:grid-cols-2">
                       <% plans.forEach((plan)=> { %>
@@ -783,7 +785,7 @@
                                 <span class="text-3xl font-bold">
                                   <%= plan.price %>
                                 </span>
-                                <span class="text-sm text-neutral-400">СЃСѓРј</span>
+                                <span class="text-sm text-neutral-400">сум</span>
                               </div>
 
                               <p class="mt-1 text-xs <%= plan.highlighted ? 'text-neutral-400' : 'text-neutral-500' %>">
@@ -791,7 +793,7 @@
                               </p>
 
                               <p class="mt-1 text-xs <%= plan.highlighted ? 'text-neutral-500' : 'text-neutral-400' %>">
-                                + СЃС‚РѕРёРјРѕСЃС‚СЊ UNQ РїРѕ РєР°Р»СЊРєСѓР»СЏС‚РѕСЂСѓ
+                                + стоимость UNQ по калькулятору
                               </p>
 
                               <ul class="mt-8 flex flex-1 flex-col gap-2.5">
@@ -820,7 +822,7 @@
 
                               <a href="#" data-order-link data-order-plan="<%= plan.highlighted ? 'premium' : 'basic' %>"
                                 class="interactive-btn btn-shimmer mt-8 flex min-h-11 items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-medium transition-colors <%= plan.highlighted ? 'bg-white text-neutral-900 hover:bg-neutral-100' : 'bg-neutral-900 text-white hover:bg-neutral-800' %>">
-                                РљСѓРїРёС‚СЊ С‚Р°СЂРёС„
+                                Купить тариф
                                 <svg class="icon-stroke h-3.5 w-3.5" viewBox="0 0 24 24" aria-hidden="true">
                                   <path d="M5 12h14M13 5l7 7-7 7"></path>
                                 </svg>
@@ -837,8 +839,8 @@
 
                 <section id="faq" class="px-6 py-24" data-observe-reveal>
                   <div class="mx-auto max-w-4xl">
-                    <p class="font-mono text-xs uppercase tracking-[0.18em] text-neutral-400">Р’РћРџР РћРЎР«</p>
-                    <h2 class="mt-3 text-3xl font-bold tracking-tight text-neutral-900 md:text-4xl">Р§Р°СЃС‚Рѕ СЃРїСЂР°С€РёРІР°СЋС‚
+                    <p class="font-mono text-xs uppercase tracking-[0.18em] text-neutral-400">ВОПРОСЫ</p>
+                    <h2 class="mt-3 text-3xl font-bold tracking-tight text-neutral-900 md:text-4xl">Часто спрашивают
                     </h2>
 
                     <div class="mt-8 space-y-3">
@@ -873,19 +875,19 @@
                               <%= platformName %>
                             </span>
                           </a>
-                          <p class="mt-2 text-sm text-neutral-400">Р¦РёС„СЂРѕРІР°СЏ РІРёР·РёС‚РєР° РЅРѕРІРѕРіРѕ РїРѕРєРѕР»РµРЅРёСЏ</p>
+                          <p class="mt-2 text-sm text-neutral-400">Цифровая визитка нового поколения</p>
                         </div>
 
                         <div class="flex flex-wrap gap-8 text-sm text-neutral-400">
-                          <a href="#pricing" class="transition-colors hover:text-neutral-900">Р”РѕСЃС‚СѓРї</a>
-                          <a href="/directory" class="transition-colors hover:text-neutral-900">Р РµР·РёРґРµРЅС‚С‹</a>
-                          <a href="/guides" class="transition-colors hover:text-neutral-900">РРЅСЃС‚СЂСѓРєС†РёРё</a>
+                          <a href="#pricing" class="transition-colors hover:text-neutral-900">Доступ</a>
+                          <a href="/directory" class="transition-colors hover:text-neutral-900">Резиденты</a>
+                          <a href="/guides" class="transition-colors hover:text-neutral-900">Инструкции</a>
                           <% if (leaderboardEnabled) { %><a href="/leaderboard"
                               class="whitespace-nowrap transition-colors hover:text-neutral-900">UNQ&nbsp;ELITE</a>
                             <% } %>
-                              <a href="/drops" class="transition-colors hover:text-neutral-900">Р РµР»РёР·С‹</a>
-                              <a href="/terms" class="transition-colors hover:text-neutral-900">РЈСЃР»РѕРІРёСЏ</a>
-                              <a href="/policy" class="transition-colors hover:text-neutral-900">РџРѕР»РёС‚РёРєР°</a>
+                              <a href="/drops" class="transition-colors hover:text-neutral-900">Релизы</a>
+                              <a href="/terms" class="transition-colors hover:text-neutral-900">Условия</a>
+                              <a href="/policy" class="transition-colors hover:text-neutral-900">Политика</a>
                         </div>
 
                         <p class="hidden text-4xl font-bold tracking-tight text-neutral-200 md:block">unqx.uz</p>
@@ -893,13 +895,13 @@
 
                       <div class="mt-12 border-t border-neutral-200 pt-6">
                         <% if (supportPhone) { %>
-                          <p class="mb-2 text-xs text-neutral-400">РўРµР»РµС„РѕРЅ: <a href="tel:<%= supportPhoneHref %>"
+                          <p class="mb-2 text-xs text-neutral-400">Телефон: <a href="tel:<%= supportPhoneHref %>"
                               class="underline transition-colors hover:text-neutral-700">
                               <%= supportPhone %>
                             </a></p>
                           <% } %>
-                            <p class="text-xs text-neutral-400">&copy; 2026 <%= platformName %> В· <%=
-                                  String(pagePublicSettings.contact_address || "РўР°С€РєРµРЅС‚, РЈР·Р±РµРєРёСЃС‚Р°РЅ" ) %>
+                            <p class="text-xs text-neutral-400">&copy; 2026 <%= platformName %> · <%=
+                                  String(pagePublicSettings.contact_address || "Ташкент, Узбекистан" ) %>
                             </p>
                       </div>
                     </div>
