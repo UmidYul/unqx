@@ -769,7 +769,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
   function getFormStages() {
     const stages = [];
     if (!state.slugLocked) {
-      stages.push("Slug");
+      stages.push("UNQ");
     }
     if (dom.planSection instanceof HTMLElement && !dom.planSection.classList.contains("hidden")) {
       stages.push("Тариф");
@@ -933,7 +933,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
       `ФИО: ${userName}\n` +
       `Email: ${userEmail}\n\n` +
       `💳 Детализация оплаты:\n` +
-      `• Slug ${slug}: ${formatPrice(slugPrice)} сум\n` +
+      `• UNQ ${slug}: ${formatPrice(slugPrice)} сум\n` +
       (inviteeDiscountApplied > 0 ? `• Скидка по рефералке: -${formatPrice(inviteeDiscountApplied)} сум\n` : "") +
       (promoDiscountApplied > 0 ? `• Скидка по промокоду${promoCodeApplied ? ` (${promoCodeApplied})` : ""}: -${formatPrice(promoDiscountApplied)} сум\n` : "") +
       (bonusSpent > 0 ? `• Списано бонусов: -${formatPrice(bonusSpent)} сум\n` : "") +
@@ -1220,7 +1220,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
             : "один раз · навсегда";
     }
     if (dom.planActivationNote instanceof HTMLElement) {
-      dom.planActivationNote.textContent = "После оплаты мы активируем твой тариф и slug.";
+      dom.planActivationNote.textContent = "После оплаты мы активируем твой тариф и UNQ.";
     }
     syncPlanVisibilityByUserPlan(userPlan);
 
@@ -1276,7 +1276,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
       dom.rarity.textContent = rarity.label;
     }
     if (dom.totalSlugTitle instanceof HTMLElement) {
-      dom.totalSlugTitle.textContent = `Slug ${pricing ? pricing.slug : "AAA000"}`;
+      dom.totalSlugTitle.textContent = `UNQ ${pricing ? pricing.slug : "AAA000"}`;
     }
     if (dom.totalSlugValue instanceof HTMLElement) {
       dom.totalSlugValue.textContent = `${formatPrice(slugPayable)} сум`;
@@ -1744,7 +1744,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     }
     const pricing = calculateSlugPricing(dom.letters.value, dom.digits.value);
     if (!pricing) {
-      setStatus("Заполни slug в формате AAA000", "error");
+      setStatus("Заполни UNQ в формате AAA000", "error");
       return;
     }
     if (!dom.name.value.trim()) {
@@ -1804,7 +1804,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
         const totalAmount = Number(payload?.pricing?.totalOneTime || 0);
         const orderCode = String(payload?.payment?.reference || "").trim() || `UNQX-${String(payload.orderId).replace(/[^a-zA-Z0-9]/g, "").slice(0, 10).toUpperCase()}`;
         const planLabel = plan === "premium" ? "Тариф Премиум" : "Тариф Базовый";
-        const baseLine = slugBasePrice > slugPrice ? `• База slug ${pricing.slug}: ${formatPrice(slugBasePrice)} сум\n` : "";
+        const baseLine = slugBasePrice > slugPrice ? `• База UNQ ${pricing.slug}: ${formatPrice(slugBasePrice)} сум\n` : "";
         const referralLine = inviteeDiscountApplied > 0 ? `• Скидка по рефералке: -${formatPrice(inviteeDiscountApplied)} сум\n` : "";
         const promoLine = promoDiscountApplied > 0 ? `• Скидка по промокоду${promoCodeApplied ? ` (${promoCodeApplied})` : ""}: -${formatPrice(promoDiscountApplied)} сум\n` : "";
         const bonusLine = bonusSpent > 0 ? `• Списано бонусов: -${formatPrice(bonusSpent)} сум\n` : "";
@@ -1816,7 +1816,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
 
       ━━━━━━━━━━━━
       💳 Детализация оплаты:
-      ${baseLine}• Slug ${pricing.slug}: ${formatPrice(slugPrice)} сум
+      ${baseLine}• UNQ ${pricing.slug}: ${formatPrice(slugPrice)} сум
       ${referralLine}${promoLine}${bonusLine}• ${planLabel}: ${formatPrice(planPrice)} сум
       • Браслет: ${formatPrice(braceletPrice)} сум
       ━━━━━━━━━━━━
@@ -1845,11 +1845,11 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
         return;
       }
       if (error.code === "BASIC_SLUG_LIMIT_REACHED") {
-        setStatus("Купи Премиум чтобы добавить slug", "error");
+        setStatus("Купи Премиум чтобы добавить UNQ", "error");
         return;
       }
       if (error.code === "PREMIUM_SLUG_LIMIT_REACHED") {
-        setStatus("Достигнут лимит 3 slug", "error");
+        setStatus("Достигнут лимит 3 UNQ", "error");
         return;
       }
       if (error.code === "TOO_MANY_ACTIVE_ORDERS") {
@@ -1874,7 +1874,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
           setStatus("Этот UNQ уже активирован другим пользователем.", "error");
           return;
         }
-        setStatus("Этот slug уже занят. Выбери другой.", "error");
+        setStatus("Этот UNQ уже занят. Выбери другой.", "error");
         return;
       }
       setStatus(error.message || "Ошибка отправки заявки", "error");

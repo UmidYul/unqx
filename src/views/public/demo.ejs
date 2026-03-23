@@ -111,6 +111,17 @@
       avatarText: "#ffffff",
       radius: "21px",
     },
+    velours: {
+      cardBg: "linear-gradient(165deg, #2d0a12 0%, #2a0911 54%, #380d18 100%)",
+      cardBorder: "1px solid #5a1828",
+      buttonBg: "linear-gradient(135deg, #5a1828, #3a0e18)",
+      buttonText: "#f5e8e8",
+      nameColor: "#f5e8e8",
+      mutedColor: "#6b2030",
+      avatarBg: "linear-gradient(135deg, #3a0e18, #220609)",
+      avatarText: "#c9a55a",
+      radius: "22px",
+    },
   };
   const pageTheme = typeof theme === "string" && themeTokens[theme] ? theme : "default_dark";
   const tokens = themeTokens[pageTheme];
@@ -137,9 +148,10 @@
     golden_noir: "background: radial-gradient(circle at 14% 16%, rgba(201, 173, 106, 0.14) 0%, transparent 44%), linear-gradient(150deg, #0b0e16 0%, #141a27 50%, #0b0f17 100%); position: relative;",
     aurora_codex: "background: radial-gradient(circle at 12% 14%, rgba(170, 34, 30, 0.08) 0%, transparent 34%), linear-gradient(160deg, #f4ead2 0%, #efe1c2 56%, #f9f0dc 100%); position: relative;",
     nebula_glass: "background: #1c1c1e; position: relative;",
+    velours: "background: radial-gradient(circle at 18% 18%, rgba(196, 53, 74, 0.12) 0%, transparent 40%), radial-gradient(circle at 80% 82%, rgba(139, 26, 42, 0.1) 0%, transparent 45%), linear-gradient(160deg, #2d0a12 0%, #2a0911 52%, #380d18 100%); position: relative;",
   };
   const pageMainStyle = isEmbed ? "" : pageMainStyleMap[pageTheme] || pageMainStyleMap.default_dark;
-  const headingClass = pageTheme === "forest" || pageTheme === "midnight_obsidian" || pageTheme === "golden_noir" || pageTheme === "nebula_glass" ? "text-neutral-100" : "text-neutral-900";
+  const headingClass = pageTheme === "forest" || pageTheme === "midnight_obsidian" || pageTheme === "golden_noir" || pageTheme === "nebula_glass" || pageTheme === "velours" ? "text-neutral-100" : "text-neutral-900";
 %>
 <!doctype html>
 <html lang="ru">

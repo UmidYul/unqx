@@ -273,7 +273,7 @@
           }
           const target = document.getElementById("drop-order");
           target?.scrollIntoView({ behavior: "smooth", block: "start" });
-          showToast("Дроп уже в LIVE. Выбери slug в блоке ниже.", "neutral");
+          showToast("Дроп уже в LIVE. Выбери UNQ в блоке ниже.", "neutral");
           return;
         }
         if (code === "DROP_CLOSED") {
@@ -342,7 +342,7 @@
                 `<button type="button" data-order-link data-order-prefill="${escapeHtml(slug)}" data-drop-id="${escapeHtml(drop.id)}" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold text-neutral-700 hover:text-neutral-900">${escapeHtml(slug)}</button>`,
             )
             .join("")
-          : '<span class="text-xs text-neutral-500">Все slug уже заняты</span>';
+          : '<span class="text-xs text-neutral-500">Все UNQ уже заняты</span>';
 
         return `
           <div class="drops-live-row mb-3 rounded-xl border border-neutral-200 p-4">

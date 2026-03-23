@@ -17,7 +17,7 @@
   pagePublicSettings.bracelet_features : null; const braceletDescription=String(pagePublicSettings.bracelet_description
   || "Компактный NFC-стикер, который клеится на любую поверхность и открывает твою цифровую визитку в один тап." ); const
   braceletNote=String(pagePublicSettings.bracelet_note
-  || "Стикер привязан к твоему slug - работает только с активной визиткой UNQX" ); const
+  || "Стикер привязан к твоему UNQ - работает только с активной визиткой UNQX" ); const
   supportTelegram=String(pagePublicSettings.contact_support_telegram || "@unqx_uz" ); const
   supportPhone=String(pagePublicSettings.contact_phone || "" ).trim(); const
   supportPhoneHref=supportPhone.replace(/[^\d+]/g, "" ); const pageJsonLd=[{ "@context" : "https://schema.org" , "@type"
@@ -262,7 +262,7 @@
                   <% if (typeof activeFlashSale.slotsLeft==='number' ) { %>
                     · Осталось <strong>
                       <%= activeFlashSale.slotsLeft.toLocaleString('ru-RU') %>
-                    </strong> мест/slug
+                    </strong> мест/UNQ
                     <% } %>
                       · Осталось <span data-flash-countdown>--:--:--</span>
               </p>
@@ -387,7 +387,7 @@
                     Следующий дроп: <strong>
                       <%= nextDrop.title %>
                     </strong> · <%= new Date(nextDrop.dropAt).toLocaleString('ru-RU') %> · <%= nextDrop.slugCount %>
-                        slug
+                        UNQ
                   </p>
                   <div class="flex flex-wrap items-center gap-2">
                     <button type="button" data-next-drop-waitlist
@@ -601,7 +601,7 @@
                         autocomplete="off" />
                       <button id="calc-generate-button" type="button"
                         class="interactive-btn inline-flex h-12 w-12 items-center justify-center rounded-xl border border-neutral-200 bg-white text-neutral-700 transition-colors hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-60"
-                        title="Сгенерировать свободный slug (низкий/средний сегмент)" aria-label="Сгенерировать свободный slug">
+                        title="Сгенерировать свободный UNQ (низкий/средний сегмент)" aria-label="Сгенерировать свободный UNQ">
                         <svg class="icon-stroke h-5 w-5" viewBox="0 0 24 24" aria-hidden="true">
                           <path d="M21 12a9 9 0 1 1-2.64-6.36"></path>
                           <path d="M21 4v6h-6"></path>

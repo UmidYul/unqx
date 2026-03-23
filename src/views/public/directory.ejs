@@ -35,7 +35,7 @@
 
       <form class="mb-4 grid gap-2 rounded-xl border border-neutral-200 bg-white p-3 md:grid-cols-4" method="get"
         action="/directory">
-        <input name="q" value="<%= f.q %>" placeholder="Поиск по имени, роли, slug"
+        <input name="q" value="<%= f.q %>" placeholder="Поиск по имени, роли, UNQ"
           class="rounded-lg border border-neutral-200 px-3 py-2 text-sm" />
         <select name="sector" class="rounded-lg border border-neutral-200 px-3 py-2 text-sm">
           <option value="all" <%=f.sector==='all' ? 'selected' : '' %>>Все сферы</option>

@@ -4,6 +4,7 @@
   const pageOwnerName = typeof ownerName === "string" && ownerName ? ownerName : "UNQX User";
   const pageOwnerUsername = typeof ownerUsername === "string" ? ownerUsername : "";
   const pageOwnerAvatar = typeof ownerAvatar === "string" ? ownerAvatar : "";
+  const pageOwnerIsVerified = Boolean(ownerIsVerified);
   const rawTheme = typeof theme === "string" && theme ? theme : "default_dark";
   const pageTheme = rawTheme === "royal_ivory" ? "sage_luxe" : rawTheme;
   const pageLockedReason = typeof lockedReason === "string" ? lockedReason : "";
@@ -129,6 +130,18 @@
       avatarText: "#ffffff",
       radius: "21px",
     },
+    velours: {
+      cardBg: "linear-gradient(165deg, #2d0a12 0%, #2a0911 54%, #380d18 100%)",
+      cardBorder: "#5a1828",
+      buttonPrimaryBg: "linear-gradient(135deg, #5a1828, #3a0e18)",
+      buttonPrimaryText: "#f5e8e8",
+      buttonSecondaryBg: "#14040a",
+      nameColor: "#f5e8e8",
+      mutedColor: "#6b2030",
+      avatarBg: "linear-gradient(135deg, #3a0e18, #220609)",
+      avatarText: "#c9a55a",
+      radius: "22px",
+    },
   };
   const activePrivateTokens = privateThemeTokens[pageTheme] || privateThemeTokens.default_dark;
   const privateShellStyle = [
@@ -173,7 +186,14 @@
           <div class="private-card-avatar-fallback inline-flex h-12 w-12 items-center justify-center rounded-full border text-sm font-semibold"><%= initials %></div>
         <% } %>
         <div class="min-w-0">
-          <p class="truncate text-sm font-semibold"><%= pageOwnerName %></p>
+          <p class="inline-flex max-w-full items-center gap-1.5 truncate text-sm font-semibold">
+            <span class="truncate"><%= pageOwnerName %></span>
+            <% if (pageOwnerIsVerified) { %>
+              <svg class="h-4 w-4 shrink-0 text-neutral-500" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor" title="Верифицированный аккаунт">
+                <path d="M12 2.5l2.2 1.8 2.8-.3 1.2 2.5 2.5 1.2-.3 2.8L21.5 12l-1.8 2.2.3 2.8-2.5 1.2-1.2 2.5-2.8-.3L12 21.5l-2.2-1.8-2.8.3-1.2-2.5-2.5-1.2.3-2.8L2.5 12l1.8-2.2-.3-2.8 2.5-1.2 1.2-2.5 2.8.3L12 2.5Zm-1.1 13.1 5-5-1.1-1.1-3.9 3.9-1.8-1.8-1.1 1.1 2.9 2.9Z"></path>
+              </svg>
+            <% } %>
+          </p>
           <% if (pageOwnerUsername) { %>
             <p class="truncate text-xs opacity-80"><%= pageOwnerUsername %></p>
           <% } %>

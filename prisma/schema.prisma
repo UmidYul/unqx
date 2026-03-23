@@ -25,6 +25,7 @@ enum CardTheme {
   golden_noir
   aurora_codex
   nebula_glass
+  velours
 }
 
 enum CheckerResult {

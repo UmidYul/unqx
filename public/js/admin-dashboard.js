@@ -208,11 +208,12 @@
     golden_noir: { label: "Noir Aureate", fill: "#161b28", border: "#c9ad6a", text: "#dfc98e" },
     aurora_codex: { label: "Aurora Scriptum", fill: "#f5ecd8", border: "#8a2a26", text: "#2b1f15" },
     nebula_glass: { label: "Liquid Glass", fill: "#1c1c1e", border: "#9a9a9c", text: "#f1f1f1" },
+    velours: { label: "Velours", fill: "#2d0a12", border: "#5a1828", text: "#c9a55a", bg: "#2d0a12" },
   };
   function themePill(theme) {
     const id = String(theme || "default_dark").trim();
     const meta = THEME_META[id] || THEME_META.default_dark;
-    const bg = `linear-gradient(90deg, ${meta.fill} 0%, ${meta.fill} 14px, transparent 14px, transparent 100%)`;
+    const bg = meta.bg || `linear-gradient(90deg, ${meta.fill} 0%, ${meta.fill} 14px, transparent 14px, transparent 100%)`;
     return `<span class="inline-flex items-center rounded-full border px-2 py-1 text-[11px] font-semibold" style="border-color:${meta.border};color:${meta.text};background:${bg};">${X(meta.label)}</span>`;
   }
   const I = (name, size = 14) => `<svg class="admin-i" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" aria-hidden="true">${ICONS[name] || ""}</svg>`;

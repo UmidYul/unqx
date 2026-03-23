@@ -24,7 +24,7 @@ const { seoHub, getSeoPage } = require("../../content/seo-pages");
 
 const router = express.Router();
 const defaultSocialImage = absoluteUrl("/brand/logo.PNG");
-const CARD_THEMES = new Set(["default_dark", "arctic", "linen", "marble", "forest", "sage_luxe", "midnight_obsidian", "golden_noir", "aurora_codex", "nebula_glass"]);
+const CARD_THEMES = new Set(["default_dark", "arctic", "linen", "marble", "forest", "sage_luxe", "midnight_obsidian", "golden_noir", "aurora_codex", "nebula_glass", "velours"]);
 const LEGAL_DOCS_DIR = path.join(env.EXPRESS_APP_DIR, "docs");
 
 function isMissingModelTable(error, modelName) {
@@ -927,7 +927,7 @@ router.get(
 router.get(
   "/demo",
   asyncHandler(async (req, res) => {
-    const allowedThemes = new Set(["default_dark", "arctic", "linen", "marble", "forest", "sage_luxe", "midnight_obsidian", "golden_noir", "aurora_codex", "nebula_glass"]);
+    const allowedThemes = new Set(["default_dark", "arctic", "linen", "marble", "forest", "sage_luxe", "midnight_obsidian", "golden_noir", "aurora_codex", "nebula_glass", "velours"]);
     const rawTheme = typeof req.query.theme === "string" ? req.query.theme : "";
     const normalizedTheme = rawTheme === "royal_ivory" ? "sage_luxe" : rawTheme;
     const theme = allowedThemes.has(normalizedTheme) ? normalizedTheme : "default_dark";
@@ -1706,6 +1706,7 @@ router.get(
                 ownerName: profileCard?.name || owner.displayName || owner.firstName || "UNQX User",
                 ownerUsername: owner?.username ? `@${owner.username}` : "",
                 ownerAvatar: profileCard?.avatarUrl || "",
+                ownerIsVerified: Boolean(owner?.isVerified),
                 theme: profileCard?.theme || "default_dark",
                 customColor: profileCard?.customColor || "",
                 lockedReason: lockedQuery === "expired" ? "expired" : "",

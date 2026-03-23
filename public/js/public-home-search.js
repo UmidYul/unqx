@@ -1298,7 +1298,7 @@ function initNextDropOneClick() {
           return;
         }
         if (code === "DROP_ALREADY_LIVE") {
-          showToast("Дроп уже стартовал. Перейди в раздел релизов и выбери slug.", "info");
+          showToast("Дроп уже стартовал. Перейди в раздел релизов и выбери UNQ.", "info");
           cta.disabled = false;
           cta.textContent = previous;
           return;

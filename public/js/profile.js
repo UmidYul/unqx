@@ -75,6 +75,7 @@
       "golden_noir",
       "aurora_codex",
       "nebula_glass",
+      "velours",
     ];
     const PREMIUM_ONLY_THEMES = new Set(PROFILE_THEMES.filter((theme) => theme !== "default_dark"));
     const TELEGRAM_PAYMENT_USERNAME = String(root.getAttribute("data-telegram-bot-username") || "")
@@ -247,7 +248,7 @@
       const total = Number(requestItem?.totalOneTime || slugPrice + planPrice + braceletPrice);
       const userName = String(s.user?.displayName || s.user?.firstName || "").trim() || "не указано";
       const userEmail = String(s.user?.email || "").trim() || "не указан";
-      const message = `Здравствуйте! Хочу оплатить заказ #?? ${orderCode}\n\nUNQ: ${slug}\nФИО: ${userName}\nEmail: ${userEmail}\n\n?? Детализация оплаты:\n• Slug ${slug}: ${Number(slugPrice).toLocaleString("ru-RU")} сум\n• Тариф ${planLabel(requestItem?.requestedPlan)}: ${Number(planPrice).toLocaleString("ru-RU")} сум\n• Браслет: ${Number(braceletPrice).toLocaleString("ru-RU")} сум\n\nИтого к оплате: ${Number(total).toLocaleString("ru-RU")} сум`;
+      const message = `Здравствуйте! Хочу оплатить заказ #?? ${orderCode}\n\nUNQ: ${slug}\nФИО: ${userName}\nEmail: ${userEmail}\n\n?? Детализация оплаты:\n• UNQ ${slug}: ${Number(slugPrice).toLocaleString("ru-RU")} сум\n• Тариф ${planLabel(requestItem?.requestedPlan)}: ${Number(planPrice).toLocaleString("ru-RU")} сум\n• Браслет: ${Number(braceletPrice).toLocaleString("ru-RU")} сум\n\nИтого к оплате: ${Number(total).toLocaleString("ru-RU")} сум`;
       return `https://t.me/${TELEGRAM_PAYMENT_USERNAME}?text=${encodeURIComponent(message)}`;
     };
 
@@ -290,7 +291,7 @@ UNQ: ${slug}
 Email: ${userEmail}
 
 ?? Детализация оплаты:
-• Slug ${slug}: ${Number(slugPrice).toLocaleString("ru-RU")} сум
+• UNQ ${slug}: ${Number(slugPrice).toLocaleString("ru-RU")} сум
 • Тариф ${planLabel(order?.requestedPlan)}: ${Number(planPrice).toLocaleString("ru-RU")} сум
 • Браслет: ${Number(braceletPrice).toLocaleString("ru-RU")} сум
 
@@ -1261,9 +1262,9 @@ Email: ${userEmail}
         el.slugs.innerHTML = renderStateCard({
           icon: "shopping",
           title: "Сначала выбери тариф",
-          text: "Чтобы занять slug и создать визитку - купи Базовый или Премиум тариф.",
+          text: "Чтобы занять UNQ и создать визитку - купи Базовый или Премиум тариф.",
           buttonId: "profile-slugs-order-btn",
-          buttonLabel: "Занять slug >",
+          buttonLabel: "Занять UNQ >",
         });
         return;
       }
@@ -1284,9 +1285,9 @@ Email: ${userEmail}
             <div class="flex flex-wrap items-start justify-between gap-2">
               <div>
                 <p class="text-sm font-semibold text-neutral-900">Статус визитки</p>
-                <p class="mt-1 text-xs text-neutral-500">Выбранный статус применяется сразу ко всем вашим slug.</p>
+                <p class="mt-1 text-xs text-neutral-500">Выбранный статус применяется сразу ко всем вашим UNQ.</p>
               </div>
-              ${visibility.mixed ? '<span class="rounded-full border border-amber-300 bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-800">Разные статусы у slug</span>' : ""}
+              ${visibility.mixed ? '<span class="rounded-full border border-amber-300 bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-800">Разные статусы у UNQ</span>' : ""}
             </div>
             <div class="mt-3 flex flex-wrap gap-2">
               ${["active", "paused", "private"]
@@ -1516,7 +1517,7 @@ Email: ${userEmail}
           el.cEmpty.innerHTML = renderStateCard({
             icon: "credit-card",
             title: "Визитка недоступна",
-            text: "Создать визитку можно после покупки тарифа и активации slug.",
+            text: "Создать визитку можно после покупки тарифа и активации UNQ.",
             buttonId: "profile-card-order-btn",
             buttonLabel: "Выбрать тариф >",
           });
@@ -1610,9 +1611,9 @@ Email: ${userEmail}
           el.reqEmpty.innerHTML = renderStateCard({
             icon: "file-text",
             title: "Заявок пока нет",
-            text: "Подай заявку на slug чтобы начать.",
+            text: "Подай заявку на UNQ чтобы начать.",
             buttonId: "profile-requests-order-btn",
-            buttonLabel: "Занять slug >",
+            buttonLabel: "Занять UNQ >",
           });
         }
         return;
@@ -1723,7 +1724,7 @@ Email: ${userEmail}
           el.reqNewBtn.title = `Купить Премиум · ${price} сум единоразово`;
         } else if (plan === "premium" && count >= 3) {
           el.reqNewBtn.disabled = true;
-          el.reqNewBtn.title = "Достигнут лимит 3 slug";
+          el.reqNewBtn.title = "Достигнут лимит 3 UNQ";
         } else {
           el.reqNewBtn.disabled = false;
           el.reqNewBtn.title = "";
@@ -1984,7 +1985,7 @@ Email: ${userEmail}
       const score = s.score || {};
       const rows = [
         ["Просмотры", Number(score.scoreViews || 0), 300],
-        ["Редкость slug", Number(score.scoreSlugRarity || 0), 200],
+        ["Редкость UNQ", Number(score.scoreSlugRarity || 0), 200],
         ["Срок владения", Number(score.scoreTenure || 0), 150],
         ["Активность", Number(score.scoreCtr || 0), 200],
         ["Браслет", Number(score.scoreBracelet || 0), 100],
@@ -2732,7 +2733,7 @@ Email: ${userEmail}
         return;
       }
       if (plan === "premium" && count >= 3) {
-        showModal("Лимит достигнут", "Достигнут лимит 3 slug");
+        showModal("Лимит достигнут", "Достигнут лимит 3 UNQ");
         return;
       }
       openOrderModal({});
@@ -2759,7 +2760,7 @@ Email: ${userEmail}
         const requested = normalizeCardVisibilityStatus(actionNode.getAttribute("data-status"));
         const slugs = Array.isArray(s.slugs) ? s.slugs : [];
         if (!slugs.length) {
-          showModal("Ошибка", "Slug не найден");
+          showModal("Ошибка", "UNQ не найден");
           return;
         }
 

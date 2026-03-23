@@ -1,5 +1,5 @@
 (function initCardViewGlobal() {
-  const THEME_KEYS = ["default_dark", "arctic", "linen", "marble", "forest", "sage_luxe", "midnight_obsidian", "golden_noir", "aurora_codex", "nebula_glass"];
+  const THEME_KEYS = ["default_dark", "arctic", "linen", "marble", "forest", "sage_luxe", "midnight_obsidian", "golden_noir", "aurora_codex", "nebula_glass", "velours"];
   const THEME_CONFIG = {
     default_dark: {
       cardBg: "#ffffff",
@@ -391,6 +391,44 @@
       cardShadow: "0 18px 48px rgba(0, 0, 0, 0.44)",
       buttonShineGradient: "none",
     },
+    velours: {
+      cardBg: "linear-gradient(165deg, #2d0a12 0%, #2a0911 52%, #380d18 100%)",
+      cardBgOverlay: "velvet_weave",
+      surfaceBg: "#14040a",
+      cardBorder: "1px solid #5a1828",
+      surfaceBorder: "1px solid #4a1220",
+      dividerColor: "#5a1828",
+      nameColor: "#f5e8e8",
+      roleColor: "#6b2030",
+      mutedColor: "#4a1220",
+      accentColor: "#c9a55a",
+      emailColor: "#6b2030",
+      buttonPrimaryBg: "linear-gradient(135deg, #5a1828, #3a0e18)",
+      buttonPrimaryText: "#f5e8e8",
+      buttonPrimaryBorder: "#8b2a3a",
+      buttonSecondaryBg: "transparent",
+      buttonSecondaryText: "#5a1828",
+      buttonSecondaryBorder: "#4a1220",
+      badgeText: "#c9a55a",
+      badgeBg: "transparent",
+      badgeBorder: "1px solid rgba(201, 165, 90, 0.26)",
+      topLineGradient: "linear-gradient(90deg, transparent, rgba(201, 165, 90, 0.5), transparent)",
+      avatarBg: "linear-gradient(135deg, #3a0e18, #220609)",
+      avatarText: "#c9a55a",
+      avatarBorder: "2px solid rgba(201, 165, 90, 0.19)",
+      cardBorderRadius: "22px",
+      fontFamily: "'Cormorant Garamond', 'Iowan Old Style', 'Times New Roman', serif",
+      nameFontStyle: "normal",
+      nameFontWeight: "600",
+      roleLetterSpacing: "1.4px",
+      scoreLabelColor: "#6b2030",
+      scoreValueColor: "#f5e8e8",
+      scoreBarFill: "#c9a55a",
+      scoreBarTrack: "#3a0e18",
+      scorePercentileColor: "#6b2030",
+      cardShadow: "0 18px 44px rgba(24, 3, 9, 0.62)",
+      buttonShineGradient: "none",
+    },
   };
 
   function resolveTheme(themeKey) {
@@ -600,6 +638,55 @@
     }
     if (themeKey === "nebula_glass") {
       return "";
+    }
+    if (themeKey === "velours") {
+      return `<svg class="unq-ref-overlay-svg" viewBox="0 0 360 600" preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <pattern id="vl-fiber-light" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(35)">
+            <line x1="0" y1="0" x2="0" y2="8" stroke="#ffffff" stroke-opacity="0.08" stroke-width="0.42"></line>
+          </pattern>
+          <pattern id="vl-fiber-dark" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(-38)">
+            <line x1="0" y1="0" x2="0" y2="10" stroke="#000000" stroke-opacity="0.11" stroke-width="0.46"></line>
+          </pattern>
+          <linearGradient id="vl-sheen-a" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#ffffff" stop-opacity="0"></stop>
+            <stop offset="52%" stop-color="#ffffff" stop-opacity="0.06"></stop>
+            <stop offset="100%" stop-color="#ffffff" stop-opacity="0"></stop>
+          </linearGradient>
+          <linearGradient id="vl-sheen-b" x1="100%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#4a1220" stop-opacity="0"></stop>
+            <stop offset="50%" stop-color="#4a1220" stop-opacity="0.08"></stop>
+            <stop offset="100%" stop-color="#4a1220" stop-opacity="0"></stop>
+          </linearGradient>
+          <radialGradient id="vl-crush-a" cx="0%" cy="0%" r="70%">
+            <stop offset="0%" stop-color="#c4354a" stop-opacity="0.12"></stop>
+            <stop offset="100%" stop-color="#c4354a" stop-opacity="0"></stop>
+          </radialGradient>
+          <radialGradient id="vl-crush-b" cx="100%" cy="100%" r="72%">
+            <stop offset="0%" stop-color="#8b1a2a" stop-opacity="0.1"></stop>
+            <stop offset="100%" stop-color="#8b1a2a" stop-opacity="0"></stop>
+          </radialGradient>
+          <pattern id="vl-avatar-fiber-light" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(34)">
+            <line x1="0" y1="0" x2="0" y2="5" stroke="#ffffff" stroke-opacity="0.06" stroke-width="0.34"></line>
+          </pattern>
+          <pattern id="vl-avatar-fiber-dark" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(-36)">
+            <line x1="0" y1="0" x2="0" y2="6" stroke="#000000" stroke-opacity="0.08" stroke-width="0.36"></line>
+          </pattern>
+          <clipPath id="vl-avatar-clip">
+            <circle cx="180" cy="206" r="52"></circle>
+          </clipPath>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#vl-fiber-light)" opacity="0.34"></rect>
+        <rect width="100%" height="100%" fill="url(#vl-fiber-dark)" opacity="0.28"></rect>
+        <rect width="100%" height="100%" fill="url(#vl-sheen-a)"></rect>
+        <rect width="100%" height="100%" fill="url(#vl-sheen-b)"></rect>
+        <circle cx="76" cy="84" r="178" fill="url(#vl-crush-a)"></circle>
+        <circle cx="292" cy="518" r="184" fill="url(#vl-crush-b)"></circle>
+        <g clip-path="url(#vl-avatar-clip)">
+          <rect x="128" y="154" width="104" height="104" fill="url(#vl-avatar-fiber-light)" opacity="0.26"></rect>
+          <rect x="128" y="154" width="104" height="104" fill="url(#vl-avatar-fiber-dark)" opacity="0.22"></rect>
+        </g>
+      </svg>`;
     }
     return "";
   }
@@ -1078,6 +1165,7 @@
         ? `<p class="unq-ref-verified-company"><span class="unq-ref-verified-text">${esc(card.verifiedCompany)}</span>${card.verified ? `<span class="unq-ref-verified-icon">${iconSvg("verified")}</span>` : ""}</p>`
         : "";
     const roleHtml = card.role ? `<p class="unq-ref-role">${esc(card.role)}</p>` : "";
+    const footBrandingLabel = card.showBranding ? (theme.key === "velours" ? "◆ UNQX" : "• UNQX") : "";
 
     return `
       <div data-card-view data-card-theme="${esc(theme.key)}" data-slug="${esc(card.slug)}" data-share-url="${esc(shareUrl)}"${rootStyle}>
@@ -1134,7 +1222,7 @@
         </div>
         <div class="unq-ref-footline">
           <div>© ${esc(viewsLabel)}</div>
-          <div>${card.showBranding ? "• UNQX" : ""}</div>
+          <div>${footBrandingLabel}</div>
         </div>
       </div>
     `;
