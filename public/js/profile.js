@@ -1458,6 +1458,14 @@ Email: ${userEmail}
         button.classList.toggle("bg-neutral-900", on);
         button.classList.toggle("text-white", on);
         button.disabled = locked;
+        const swatchNode = button.querySelector("[data-theme-swatch]");
+        if (swatchNode instanceof HTMLElement) {
+          swatchNode.style.boxShadow = on
+            ? "0 0 0 2px rgba(255, 255, 255, 0.85), 0 0 0 4px rgba(17, 24, 39, 0.35)"
+            : "none";
+          swatchNode.style.transform = on ? "scale(1.06)" : "scale(1)";
+          swatchNode.style.transition = "transform 140ms ease, box-shadow 140ms ease";
+        }
         const lockNode = button.querySelector("[data-theme-lock]");
         if (lockNode instanceof HTMLElement) {
           lockNode.classList.toggle("hidden", !locked);
