@@ -1250,7 +1250,10 @@ router.put(
     const theme = normalizeThemeByPlan(body.theme, effective.plan);
     const themeForDatabase = await normalizeCardThemeForDatabase(theme);
     const customColor = effective.plan === "premium" ? normalizeColor(body.customColor) : null;
-    const showBranding = effective.plan === "premium" ? Boolean(body.showBranding) : true;
+    const showBranding =
+      effective.plan === "premium"
+        ? (typeof body.showBranding === "boolean" ? body.showBranding : true)
+        : true;
 
     if (effective.plan !== "premium") {
       const requestedTheme = String(body.theme || "").trim();

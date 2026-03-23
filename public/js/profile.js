@@ -1536,7 +1536,7 @@ Email: ${userEmail}
       if (el.cPostcode) el.cPostcode.value = card.postcode || "";
       if (el.cEmail) el.cEmail.value = card.email || "";
       if (el.cExtraPhone) el.cExtraPhone.value = card.extraPhone || "";
-      if (el.cBranding) el.cBranding.checked = !card.showBranding;
+      if (el.cBranding) el.cBranding.checked = card.showBranding === false;
 
       s.tags = Array.isArray(card.tags) ? card.tags.slice(0) : [];
       // Normalize all button objects to always have 'url' for editing
