@@ -1,0 +1,92 @@
+<%
+  const pageTitle = typeof title === "string" && title ? title : "Закрытая визитка | UNQX";
+  const pageSlug = typeof slug === "string" ? slug : "";
+  const pageOwnerName = typeof ownerName === "string" && ownerName ? ownerName : "UNQX User";
+  const pageOwnerUsername = typeof ownerUsername === "string" ? ownerUsername : "";
+  const pageOwnerAvatar = typeof ownerAvatar === "string" ? ownerAvatar : "";
+  const pageTheme = typeof theme === "string" && theme ? theme : "default_dark";
+  const pageLockedReason = typeof lockedReason === "string" ? lockedReason : "";
+  const pageImage = pageOwnerAvatar || image || null;
+  const initials = pageOwnerName
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => (part[0] ? part[0].toUpperCase() : ""))
+    .join("") || "U";
+%>
+<!doctype html>
+<html lang="ru">
+
+<head>
+  <%- include('../partials/head', {
+    title: pageTitle,
+    description: 'Введите пароль, чтобы открыть закрытую визитку на UNQX',
+    image: pageImage,
+    styles: ['/css/public-card.css'],
+    noindex: true,
+  }) %>
+</head>
+
+<body class="antialiased" data-card-theme="<%= pageTheme %>">
+  <main class="private-card-screen relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-12">
+    <section id="private-card-shell" class="private-card-shell w-full max-w-[520px] rounded-3xl border p-6 sm:p-8">
+      <header class="private-card-owner flex items-center gap-3 rounded-2xl border px-3 py-2.5">
+        <% if (pageOwnerAvatar) { %>
+          <img src="<%= pageOwnerAvatar %>" alt="Аватар" class="h-12 w-12 rounded-full border object-cover" />
+        <% } else { %>
+          <div class="private-card-avatar-fallback inline-flex h-12 w-12 items-center justify-center rounded-full border text-sm font-semibold"><%= initials %></div>
+        <% } %>
+        <div class="min-w-0">
+          <p class="truncate text-sm font-semibold"><%= pageOwnerName %></p>
+          <% if (pageOwnerUsername) { %>
+            <p class="truncate text-xs opacity-80"><%= pageOwnerUsername %></p>
+          <% } %>
+        </div>
+      </header>
+
+      <div class="mt-6 flex justify-center">
+        <div class="private-card-lock-circle inline-flex h-16 w-16 items-center justify-center rounded-full border">
+          <svg class="icon-stroke h-7 w-7" viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="5" y="10" width="14" height="10" rx="2"></rect>
+            <path d="M8 10V7a4 4 0 1 1 8 0v3"></path>
+          </svg>
+        </div>
+      </div>
+
+      <h1 class="mt-5 text-center text-2xl font-black">Это закрытая визитка</h1>
+      <p class="mt-2 text-center text-sm opacity-85">Введите пароль, чтобы просмотреть контактные данные</p>
+
+      <p id="private-card-expired" class="<%= pageLockedReason === 'expired' ? '' : 'hidden' %> mt-3 rounded-xl border px-3 py-2 text-center text-sm">
+        Время сеанса истекло. Введите пароль снова.
+      </p>
+
+      <form id="private-card-form" class="mt-5 space-y-3" novalidate>
+        <div id="private-card-field-wrap" class="private-card-field-wrap">
+          <input
+            id="private-card-password"
+            type="password"
+            autocomplete="off"
+            placeholder="Пароль"
+            class="w-full rounded-xl border px-3 py-3 text-sm outline-none"
+          />
+        </div>
+        <button
+          id="private-card-submit"
+          type="submit"
+          class="interactive-btn private-card-submit min-h-11 w-full rounded-xl border px-3 py-2 text-sm font-semibold"
+        >
+          Открыть
+        </button>
+      </form>
+      <p id="private-card-error" class="mt-3 hidden text-center text-sm font-semibold"></p>
+    </section>
+  </main>
+
+  <script nonce="<%= cspNonce %>" id="private-card-data" type="application/json"><%- JSON.stringify({
+    slug: pageSlug,
+    lockedReason: pageLockedReason,
+  }) %></script>
+  <script nonce="<%= cspNonce %>" src="/js/public-private-card.js"></script>
+</body>
+
+</html>

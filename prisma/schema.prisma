@@ -289,6 +289,8 @@ model User {
   scoreHistory           ScoreHistory[]
   purchases              Purchase[]
   verificationRequests   VerificationRequest[]
+  privatePasswords       CardPrivatePassword[] @relation("CardPrivatePasswords")
+  privateAccessLogs      CardPrivateAccessLog[] @relation("CardPrivateAccessLogs")
 
   @@index([plan, planPurchasedAt])
   @@index([status])
@@ -372,6 +374,41 @@ model ProfileCard {
   updatedAt    DateTime  @updatedAt @map("updated_at")
 
   @@map("profile_cards")
+}
+
+model CardPrivatePassword {
+  id           String               @id @default(uuid())
+  ownerId      String               @map("owner_id")
+  owner        User                 @relation("CardPrivatePasswords", fields: [ownerId], references: [id], onDelete: Cascade)
+  label        String?              @db.VarChar(80)
+  passwordHash String               @map("password_hash")
+  createdAt    DateTime             @default(now()) @map("created_at")
+  updatedAt    DateTime             @updatedAt @map("updated_at")
+  lastUsedAt   DateTime?            @map("last_used_at")
+  deletedAt    DateTime?            @map("deleted_at")
+  accessLogs   CardPrivateAccessLog[] @relation("CardPrivatePasswordLogs")
+
+  @@index([ownerId, createdAt(sort: Desc)])
+  @@index([ownerId, deletedAt])
+  @@map("card_private_passwords")
+}
+
+model CardPrivateAccessLog {
+  id           String              @id @default(uuid())
+  ownerId      String              @map("owner_id")
+  owner        User                @relation("CardPrivateAccessLogs", fields: [ownerId], references: [id], onDelete: Cascade)
+  slug         String              @db.VarChar(20)
+  passwordId   String?             @map("password_id")
+  password     CardPrivatePassword? @relation("CardPrivatePasswordLogs", fields: [passwordId], references: [id], onDelete: SetNull)
+  passwordLabel String?            @map("password_label") @db.VarChar(80)
+  viewerDevice String?             @map("viewer_device") @db.VarChar(220)
+  viewerIpHash String?             @map("viewer_ip_hash") @db.VarChar(64)
+  userAgent    String?             @map("user_agent")
+  createdAt    DateTime            @default(now()) @map("created_at")
+
+  @@index([ownerId, createdAt(sort: Desc)])
+  @@index([slug, createdAt(sort: Desc)])
+  @@map("card_private_access_logs")
 }
 
 model SlugRequest {

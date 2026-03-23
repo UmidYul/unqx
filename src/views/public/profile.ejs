@@ -729,6 +729,28 @@
               </label>
             </div>
             <div class="profile-settings-item is-full rounded-xl border border-neutral-200 bg-neutral-50 p-3">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <p class="text-sm font-semibold text-neutral-900">Приватный доступ к визитке</p>
+                  <p class="text-xs text-neutral-500">Можно добавить до 10 паролей. Каждый пароль открывает визитку на 5 минут.</p>
+                </div>
+              </div>
+              <div class="mt-3 grid gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
+                <input id="profile-private-password-label" type="text" maxlength="80" placeholder="Метка (необязательно)"
+                  class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm" />
+                <input id="profile-private-password-value" type="password" minlength="4" maxlength="128" placeholder="Новый пароль"
+                  class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm" />
+                <button id="profile-private-password-add" type="button"
+                  class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-3 py-2 text-xs font-semibold">Добавить пароль</button>
+              </div>
+              <p class="mt-2 text-xs text-neutral-500">Минимум 4 символа. Используйте разные пароли для разных людей.</p>
+              <div id="profile-private-passwords-list" class="mt-3 space-y-2"></div>
+              <div class="mt-4">
+                <p class="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Кто открывал</p>
+                <div id="profile-private-access-logs" class="mt-2 space-y-2"></div>
+              </div>
+            </div>
+            <div class="profile-settings-item is-full rounded-xl border border-neutral-200 bg-neutral-50 p-3">
               <div class="flex items-center justify-between gap-3">
                 <div>
                   <p class="text-sm font-semibold text-neutral-900">Верификация</p>

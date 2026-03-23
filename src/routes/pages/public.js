@@ -15,6 +15,11 @@ const { normalizeRefCode } = require("../../services/referrals");
 const { getPricingSettings } = require("../../services/pricing-settings");
 const { getManySettings } = require("../../services/platform-settings");
 const { recordView } = require("../../services/tap-tracker");
+const {
+  verifyPrivateAccessToken,
+  extractPrivateAccessToken,
+  clearPrivateAccessCookie,
+} = require("../../services/private-access");
 const { seoHub, getSeoPage } = require("../../content/seo-pages");
 
 const router = express.Router();
@@ -1646,26 +1651,9 @@ router.get(
           return;
         }
 
-        const [owner, profileCard, views, ownerSlugs, verifiedIdentity] = await Promise.all([
+        const [owner, profileCard] = await Promise.all([
           findUserByTelegramIdWithLegacyFallback(slugRow.ownerId),
           findProfileCardByOwnerId(slugRow.ownerId),
-          prisma.analyticsView
-            ? prisma.analyticsView
-              .findMany({
-                where: { slug },
-                select: { sessionId: true },
-              })
-              .then((rows) => new Set(rows.map((row) => row.sessionId)).size)
-            : Promise.resolve(0),
-          prisma.slug.findMany({
-            where: {
-              ownerId: slugRow.ownerId,
-              status: { not: "free" },
-            },
-            orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
-            select: { fullSlug: true },
-          }),
-          findLatestApprovedVerificationByUserId(slugRow.ownerId),
         ]);
 
         if (!owner || !profileCard) {
@@ -1695,6 +1683,59 @@ router.get(
           });
           return;
         }
+
+        let privateAccessExpiry = null;
+        if (slugRow.status === "private") {
+          const sessionUser = getUserSession(req);
+          const isOwnerViewer = sessionUser?.userId && String(sessionUser.userId) === String(slugRow.ownerId);
+          if (!isOwnerViewer) {
+            const accessToken = extractPrivateAccessToken(req);
+            const accessPayload = verifyPrivateAccessToken(accessToken, {
+              slug,
+              ownerId: slugRow.ownerId,
+            });
+            if (!accessPayload) {
+              clearPrivateAccessCookie(req, res);
+              const lockedQuery = String(req.query.locked || "")
+                .trim()
+                .toLowerCase();
+              res.status(200).render("public/slug-private", {
+                title: `${slug} | Закрытая визитка`,
+                slug,
+                ownerName: profileCard?.name || owner.displayName || owner.firstName || "UNQX User",
+                ownerUsername: owner?.username ? `@${owner.username}` : "",
+                ownerAvatar: profileCard?.avatarUrl || "",
+                theme: profileCard?.theme || "default_dark",
+                customColor: profileCard?.customColor || "",
+                lockedReason: lockedQuery === "expired" ? "expired" : "",
+                noindex: true,
+                adminSession: getAdminSession(req),
+              });
+              return;
+            }
+            privateAccessExpiry = accessPayload.exp;
+          }
+        }
+
+        const [views, ownerSlugs, verifiedIdentity] = await Promise.all([
+          prisma.analyticsView
+            ? prisma.analyticsView
+              .findMany({
+                where: { slug },
+                select: { sessionId: true },
+              })
+              .then((rows) => new Set(rows.map((row) => row.sessionId)).size)
+            : Promise.resolve(0),
+          prisma.slug.findMany({
+            where: {
+              ownerId: slugRow.ownerId,
+              status: { not: "free" },
+            },
+            orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
+            select: { fullSlug: true },
+          }),
+          findLatestApprovedVerificationByUserId(slugRow.ownerId),
+        ]);
 
         const card = buildPublicCardFromProfile({
           slug,
@@ -1729,6 +1770,12 @@ router.get(
           topBadge,
           score,
           noindex: slugRow.status === "private",
+          privateAccess: slugRow.status === "private"
+            ? {
+              slug,
+              expiresAt: privateAccessExpiry,
+            }
+            : null,
           adminSession: getAdminSession(req),
         });
         return;

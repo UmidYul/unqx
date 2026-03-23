@@ -55,6 +55,18 @@ const {
   evaluatePromoEligibility,
   applyPromoToPrice,
 } = require("../../services/promo-codes");
+const {
+  PRIVATE_ACCESS_TTL_MS,
+  createPrivateAccessToken,
+  verifyPrivateAccessToken,
+  setPrivateAccessCookie,
+  clearPrivateAccessCookie,
+  extractPrivateAccessToken,
+} = require("../../services/private-access");
+const {
+  verifyPrivatePasswordForOwner,
+  recordPrivateAccessLog,
+} = require("../../services/private-access-store");
 
 const router = express.Router();
 const SLUG_REGEX = /^[A-Z]{3}[0-9]{3}$/;
@@ -352,6 +364,33 @@ function sanitizeSlug(value) {
     .toUpperCase()
     .replace(/[^A-Z0-9]/g, "")
     .slice(0, 20);
+}
+
+async function findSlugForPrivateAccess(fullSlug) {
+  if (!fullSlug) return null;
+  return prisma.slug.findUnique({
+    where: { fullSlug },
+    select: {
+      fullSlug: true,
+      status: true,
+      ownerId: true,
+      owner: {
+        select: {
+          status: true,
+        },
+      },
+    },
+  });
+}
+
+function buildPrivateAccessResponsePayload({ token, expiresAt }) {
+  return {
+    ok: true,
+    granted: true,
+    token,
+    expiresAt: new Date(expiresAt).toISOString(),
+    ttlSeconds: Math.max(1, Math.floor((Number(expiresAt) - Date.now()) / 1000)),
+  };
 }
 
 function normalizeTheme(value) {
@@ -2212,6 +2251,106 @@ router.post(
       orderId: order.id,
       slug: order.slug,
     });
+  }),
+);
+
+router.post(
+  "/private-access/:slug/unlock",
+  requireSameOrigin,
+  asyncHandler(async (req, res) => {
+    const slug = sanitizeSlug(req.params.slug);
+    if (!slug) {
+      res.status(400).json({ error: "Slug is required", code: "VALIDATION_ERROR" });
+      return;
+    }
+
+    const slugRow = await findSlugForPrivateAccess(slug);
+    if (!slugRow || !slugRow.ownerId || slugRow.owner?.status !== "active") {
+      clearPrivateAccessCookie(req, res);
+      res.status(404).json({ error: "Card not found", code: "NOT_FOUND" });
+      return;
+    }
+
+    if (slugRow.status !== "private") {
+      clearPrivateAccessCookie(req, res);
+      res.json({ ok: true, granted: true, token: null, expiresAt: null, ttlSeconds: 0 });
+      return;
+    }
+
+    const password = String(req.body?.password || "");
+    const matchedPassword = await verifyPrivatePasswordForOwner(slugRow.ownerId, password);
+    if (!matchedPassword) {
+      res.status(401).json({ error: "Неверный пароль", code: "PRIVATE_ACCESS_INVALID_PASSWORD" });
+      return;
+    }
+
+    const expiresAt = Date.now() + PRIVATE_ACCESS_TTL_MS;
+    const token = createPrivateAccessToken({
+      slug,
+      ownerId: slugRow.ownerId,
+      passwordId: matchedPassword.passwordId,
+      exp: expiresAt,
+      iat: Date.now(),
+    });
+
+    setPrivateAccessCookie(req, res, token, expiresAt);
+    await recordPrivateAccessLog({
+      req,
+      ownerId: slugRow.ownerId,
+      slug,
+      passwordId: matchedPassword.passwordId,
+      passwordLabel: matchedPassword.label,
+    });
+
+    res.json(buildPrivateAccessResponsePayload({ token, expiresAt }));
+  }),
+);
+
+router.post(
+  "/private-access/:slug/resume",
+  requireSameOrigin,
+  asyncHandler(async (req, res) => {
+    const slug = sanitizeSlug(req.params.slug);
+    if (!slug) {
+      res.status(400).json({ error: "Slug is required", code: "VALIDATION_ERROR" });
+      return;
+    }
+
+    const slugRow = await findSlugForPrivateAccess(slug);
+    if (!slugRow || !slugRow.ownerId || slugRow.owner?.status !== "active") {
+      clearPrivateAccessCookie(req, res);
+      res.status(404).json({ error: "Card not found", code: "NOT_FOUND" });
+      return;
+    }
+
+    if (slugRow.status !== "private") {
+      clearPrivateAccessCookie(req, res);
+      res.json({ ok: true, granted: true, token: null, expiresAt: null, ttlSeconds: 0 });
+      return;
+    }
+
+    const providedToken = String(req.body?.token || "").trim() || extractPrivateAccessToken(req);
+    const payload = verifyPrivateAccessToken(providedToken, {
+      slug,
+      ownerId: slugRow.ownerId,
+    });
+    if (!payload) {
+      clearPrivateAccessCookie(req, res);
+      res.status(401).json({ error: "Сеанс истек", code: "PRIVATE_ACCESS_SESSION_EXPIRED" });
+      return;
+    }
+
+    setPrivateAccessCookie(req, res, providedToken, payload.exp);
+    res.json(buildPrivateAccessResponsePayload({ token: providedToken, expiresAt: payload.exp }));
+  }),
+);
+
+router.post(
+  "/private-access/:slug/lock",
+  requireSameOrigin,
+  asyncHandler(async (_req, res) => {
+    clearPrivateAccessCookie(_req, res);
+    res.json({ ok: true });
   }),
 );
 

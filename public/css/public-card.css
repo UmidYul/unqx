@@ -1891,3 +1891,89 @@ body[data-card-theme="nebula_glass"]::before {
   -webkit-backdrop-filter: blur(14px);
   backdrop-filter: blur(14px);
 }
+
+.private-card-screen {
+  background:
+    radial-gradient(circle at 0% 0%, rgba(255, 255, 255, 0.32), transparent 52%),
+    radial-gradient(circle at 100% 0%, rgba(255, 255, 255, 0.16), transparent 48%),
+    linear-gradient(160deg, rgba(17, 17, 17, 0.06), rgba(17, 17, 17, 0.02));
+}
+
+.private-card-shell {
+  background: var(--theme-card-bg, #111111);
+  border-color: var(--theme-card-border, rgba(255, 255, 255, 0.22));
+  color: var(--theme-name-color, #f4f4f5);
+  box-shadow: 0 24px 68px rgba(17, 17, 17, 0.28);
+  transition: opacity 180ms ease, transform 180ms ease;
+}
+
+.private-card-shell.is-unlocking {
+  opacity: 0;
+  transform: scale(0.985);
+}
+
+.private-card-owner,
+.private-card-lock-circle,
+#private-card-expired,
+.private-card-submit,
+.private-card-field-wrap input {
+  border-color: var(--theme-card-border, rgba(255, 255, 255, 0.25));
+}
+
+.private-card-avatar-fallback {
+  background: var(--theme-avatar-bg, rgba(255, 255, 255, 0.12));
+  color: var(--theme-avatar-text, #ffffff);
+}
+
+.private-card-lock-circle {
+  background: var(--theme-button-secondary-bg, rgba(255, 255, 255, 0.07));
+}
+
+.private-card-submit {
+  background: var(--theme-button-primary-bg, #ffffff);
+  color: var(--theme-button-primary-text, #111111);
+}
+
+.private-card-field-wrap input {
+  background: var(--theme-button-secondary-bg, rgba(255, 255, 255, 0.02));
+  color: var(--theme-name-color, #ffffff);
+}
+
+.private-card-field-wrap input::placeholder {
+  color: var(--theme-muted, rgba(255, 255, 255, 0.7));
+}
+
+#private-card-expired {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+#private-card-error {
+  color: #ff6767;
+}
+
+.private-card-field-wrap.is-shake {
+  animation: privateCardShake 360ms cubic-bezier(0.36, 0.07, 0.19, 0.97);
+}
+
+@keyframes privateCardShake {
+  10%,
+  90% {
+    transform: translate3d(-1px, 0, 0);
+  }
+
+  20%,
+  80% {
+    transform: translate3d(2px, 0, 0);
+  }
+
+  30%,
+  50%,
+  70% {
+    transform: translate3d(-4px, 0, 0);
+  }
+
+  40%,
+  60% {
+    transform: translate3d(4px, 0, 0);
+  }
+}

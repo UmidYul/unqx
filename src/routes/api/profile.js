@@ -34,6 +34,15 @@ const { sendAccountDeactivatedEmail } = require("../../services/email");
 const { resolveUzbekistanCity } = require("../../constants/uzbekistan-cities");
 const { getSetting } = require("../../services/platform-settings");
 const { getOrderPaymentReference, buildManualTelegramPaymentUrl, normalizeTelegramUsername } = require("../../services/payment-flow");
+const {
+  PRIVATE_PASSWORD_MIN_LENGTH,
+  PRIVATE_PASSWORD_MAX_COUNT,
+  normalizePrivatePasswordLabel,
+  normalizePrivatePasswordValue,
+  validatePrivatePasswordValue,
+  hashPrivatePassword,
+  comparePrivatePassword,
+} = require("../../services/private-access");
 
 const router = express.Router();
 const upload = multer({
@@ -68,6 +77,7 @@ const PROFILE_CARD_BASE_COLUMNS = [
   "show_branding",
 ];
 const CARD_THEME_ENUM_CACHE_TTL_MS = 5 * 60 * 1000;
+const PRIVATE_ACCESS_LOG_LIMIT = 50;
 let cardThemeEnumCache = {
   checkedAt: 0,
   values: null,
@@ -607,6 +617,77 @@ async function safeRecalculateScore(userId) {
   }
 }
 
+function isPrivateAccessStorageMissing(error) {
+  if (!error || typeof error !== "object") return false;
+  const code = String(error.code || "");
+  return code === "42P01" || code === "42703" || code === "P2021" || code === "P2022";
+}
+
+function mapPrivatePasswordRow(row) {
+  if (!row) return null;
+  return {
+    id: String(row.id),
+    label: String(row.label || ""),
+    createdAt: row.created_at || row.createdAt || null,
+    lastUsedAt: row.last_used_at || row.lastUsedAt || null,
+  };
+}
+
+function mapPrivateAccessLogRow(row) {
+  if (!row) return null;
+  const userAgent = String(row.user_agent || row.userAgent || "").trim();
+  return {
+    id: String(row.id),
+    slug: sanitizeSlug(row.slug),
+    passwordLabel: String(row.password_label || row.passwordLabel || "").trim(),
+    device: String(row.viewer_device || row.viewerDevice || "").trim() || userAgent.slice(0, 180),
+    userAgent: userAgent || null,
+    createdAt: row.created_at || row.createdAt || null,
+  };
+}
+
+async function listOwnerPrivatePasswords(ownerId) {
+  try {
+    const rows = await prisma.$queryRaw`
+      SELECT id, label, created_at, last_used_at
+      FROM card_private_passwords
+      WHERE owner_id = ${ownerId}
+        AND deleted_at IS NULL
+      ORDER BY created_at DESC
+      LIMIT ${PRIVATE_PASSWORD_MAX_COUNT}
+    `;
+    return (Array.isArray(rows) ? rows : [])
+      .map((row) => mapPrivatePasswordRow(row))
+      .filter(Boolean);
+  } catch (error) {
+    if (isPrivateAccessStorageMissing(error)) {
+      return [];
+    }
+    throw error;
+  }
+}
+
+async function listOwnerPrivateAccessLogs(ownerId, limit = PRIVATE_ACCESS_LOG_LIMIT) {
+  const safeLimit = Math.min(100, Math.max(1, Number(limit) || PRIVATE_ACCESS_LOG_LIMIT));
+  try {
+    const rows = await prisma.$queryRaw`
+      SELECT id, slug, password_label, viewer_device, user_agent, created_at
+      FROM card_private_access_logs
+      WHERE owner_id = ${ownerId}
+      ORDER BY created_at DESC
+      LIMIT ${safeLimit}
+    `;
+    return (Array.isArray(rows) ? rows : [])
+      .map((row) => mapPrivateAccessLogRow(row))
+      .filter(Boolean);
+  } catch (error) {
+    if (isPrivateAccessStorageMissing(error)) {
+      return [];
+    }
+    throw error;
+  }
+}
+
 async function getUserSlugsWithStats(userId) {
   const slugs = await prisma.slug.findMany({
     where: { ownerId: userId },
@@ -682,7 +763,7 @@ router.get(
       return;
     }
 
-    const [slugs, card, requests, score, pricing, supportTelegramRaw, braceletPrice] = await Promise.all([
+    const [slugs, card, requests, score, pricing, supportTelegramRaw, braceletPrice, privatePasswords, privateAccessLogs] = await Promise.all([
       getUserSlugsWithStats(user.id),
       findProfileCardByOwnerId(user.id),
       prisma.slugRequest.findMany({
@@ -693,6 +774,8 @@ router.get(
       getPricingSettings(),
       getSetting("contact_support_telegram", `@${FALLBACK_SUPPORT_TELEGRAM}`),
       getBraceletPrice(),
+      listOwnerPrivatePasswords(user.id),
+      listOwnerPrivateAccessLogs(user.id, 20),
     ]);
     const supportTelegram = normalizeTelegramUsername(supportTelegramRaw);
 
@@ -745,6 +828,12 @@ router.get(
         canCreateCard: canCreateCard(user),
         canAccessAnalytics: canAccessAnalytics(user),
       },
+      privacy: {
+        passwordMinLength: PRIVATE_PASSWORD_MIN_LENGTH,
+        passwordLimit: PRIVATE_PASSWORD_MAX_COUNT,
+        passwords: privatePasswords,
+        accessLogs: privateAccessLogs,
+      },
     });
   }),
 );
@@ -763,6 +852,54 @@ router.get(
 
     const slugs = await getUserSlugsWithStats(user.id);
     res.json({ items: slugs });
+  }),
+);
+
+router.patch(
+  "/card/status",
+  asyncHandler(async (req, res) => {
+    const user = await getCurrentUser(req);
+    if (!assertUserActive(user, res)) {
+      return;
+    }
+    if (!assertPlanAllowsSlugManagement(user, res)) {
+      return;
+    }
+
+    const nextStatus = String(req.body.status || "").trim().toLowerCase();
+    if (!["active", "paused", "private"].includes(nextStatus)) {
+      res.status(400).json({ error: "Invalid status" });
+      return;
+    }
+
+    const ownedSlugs = await prisma.slug.findMany({
+      where: {
+        ownerId: user.id,
+        status: { in: ["active", "private", "paused", "approved"] },
+      },
+      select: { fullSlug: true },
+    });
+
+    if (!ownedSlugs.length) {
+      res.status(404).json({ error: "UNQ not found" });
+      return;
+    }
+
+    await prisma.slug.updateMany({
+      where: {
+        ownerId: user.id,
+        fullSlug: { in: ownedSlugs.map((item) => item.fullSlug) },
+      },
+      data: { status: nextStatus },
+    });
+    await safeRecalculateScore(user.id);
+
+    res.json({
+      ok: true,
+      status: nextStatus,
+      count: ownedSlugs.length,
+      slugs: ownedSlugs.map((item) => item.fullSlug),
+    });
   }),
 );
 
@@ -865,6 +1002,226 @@ router.patch(
     });
 
     res.json({ ok: true, slug: updated.fullSlug, pauseMessage: updated.pauseMessage || "" });
+  }),
+);
+
+router.get(
+  "/privacy/passwords",
+  asyncHandler(async (req, res) => {
+    const user = await getCurrentUser(req);
+    if (!assertUserActive(user, res)) {
+      return;
+    }
+    if (!assertPlanAllowsSlugManagement(user, res)) {
+      return;
+    }
+
+    const items = await listOwnerPrivatePasswords(user.id);
+    res.json({
+      items,
+      minLength: PRIVATE_PASSWORD_MIN_LENGTH,
+      limit: PRIVATE_PASSWORD_MAX_COUNT,
+    });
+  }),
+);
+
+router.get(
+  "/privacy/access-logs",
+  asyncHandler(async (req, res) => {
+    const user = await getCurrentUser(req);
+    if (!assertUserActive(user, res)) {
+      return;
+    }
+    if (!assertPlanAllowsSlugManagement(user, res)) {
+      return;
+    }
+
+    const limit = Math.min(100, Math.max(1, Number(req.query.limit || PRIVATE_ACCESS_LOG_LIMIT) || PRIVATE_ACCESS_LOG_LIMIT));
+    const items = await listOwnerPrivateAccessLogs(user.id, limit);
+    res.json({ items });
+  }),
+);
+
+router.post(
+  "/privacy/passwords",
+  asyncHandler(async (req, res) => {
+    const user = await getCurrentUser(req);
+    if (!assertUserActive(user, res)) {
+      return;
+    }
+    if (!assertPlanAllowsSlugManagement(user, res)) {
+      return;
+    }
+
+    const label = normalizePrivatePasswordLabel(req.body?.label);
+    const password = normalizePrivatePasswordValue(req.body?.password);
+    if (!validatePrivatePasswordValue(password)) {
+      res.status(400).json({
+        error: `Пароль должен содержать минимум ${PRIVATE_PASSWORD_MIN_LENGTH} символа`,
+        code: "PRIVATE_PASSWORD_TOO_SHORT",
+      });
+      return;
+    }
+
+    try {
+      const countRows = await prisma.$queryRaw`
+        SELECT COUNT(*)::int AS count
+        FROM card_private_passwords
+        WHERE owner_id = ${user.id}
+          AND deleted_at IS NULL
+      `;
+      const currentCount = Number(Array.isArray(countRows) ? countRows[0]?.count || 0 : 0);
+      if (currentCount >= PRIVATE_PASSWORD_MAX_COUNT) {
+        res.status(400).json({
+          error: `Доступно максимум ${PRIVATE_PASSWORD_MAX_COUNT} паролей`,
+          code: "PRIVATE_PASSWORD_LIMIT_REACHED",
+        });
+        return;
+      }
+
+      const passwordHash = await hashPrivatePassword(password);
+      const inserted = await prisma.$queryRaw`
+        INSERT INTO card_private_passwords (
+          owner_id,
+          label,
+          password_hash,
+          created_at,
+          updated_at
+        )
+        VALUES (
+          ${user.id},
+          ${label || null},
+          ${passwordHash},
+          now(),
+          now()
+        )
+        RETURNING id, label, created_at, last_used_at
+      `;
+      const row = Array.isArray(inserted) ? inserted[0] : null;
+      res.status(201).json({
+        ok: true,
+        item: mapPrivatePasswordRow(row),
+      });
+    } catch (error) {
+      if (isPrivateAccessStorageMissing(error)) {
+        res.status(503).json({ error: "Хранилище приватного доступа недоступно", code: "PRIVATE_ACCESS_UNAVAILABLE" });
+        return;
+      }
+      throw error;
+    }
+  }),
+);
+
+router.post(
+  "/privacy/passwords/:passwordId/change",
+  asyncHandler(async (req, res) => {
+    const user = await getCurrentUser(req);
+    if (!assertUserActive(user, res)) {
+      return;
+    }
+    if (!assertPlanAllowsSlugManagement(user, res)) {
+      return;
+    }
+
+    const passwordId = String(req.params.passwordId || "").trim();
+    if (!passwordId) {
+      res.status(400).json({ error: "Пароль не найден", code: "PRIVATE_PASSWORD_INVALID_ID" });
+      return;
+    }
+
+    const oldPassword = normalizePrivatePasswordValue(req.body?.oldPassword);
+    const nextPassword = normalizePrivatePasswordValue(req.body?.newPassword);
+    if (!validatePrivatePasswordValue(nextPassword)) {
+      res.status(400).json({
+        error: `Новый пароль должен содержать минимум ${PRIVATE_PASSWORD_MIN_LENGTH} символа`,
+        code: "PRIVATE_PASSWORD_TOO_SHORT",
+      });
+      return;
+    }
+
+    try {
+      const rows = await prisma.$queryRaw`
+        SELECT id, label, password_hash, created_at, last_used_at
+        FROM card_private_passwords
+        WHERE id = ${passwordId}
+          AND owner_id = ${user.id}
+          AND deleted_at IS NULL
+        LIMIT 1
+      `;
+      const row = Array.isArray(rows) ? rows[0] : null;
+      if (!row) {
+        res.status(404).json({ error: "Пароль не найден", code: "PRIVATE_PASSWORD_NOT_FOUND" });
+        return;
+      }
+
+      const oldMatches = await comparePrivatePassword(oldPassword, row.password_hash);
+      if (!oldMatches) {
+        res.status(400).json({ error: "Старый пароль неверный", code: "PRIVATE_PASSWORD_OLD_INVALID" });
+        return;
+      }
+
+      const nextHash = await hashPrivatePassword(nextPassword);
+      const updated = await prisma.$queryRaw`
+        UPDATE card_private_passwords
+        SET password_hash = ${nextHash},
+            updated_at = now()
+        WHERE id = ${passwordId}
+          AND owner_id = ${user.id}
+          AND deleted_at IS NULL
+        RETURNING id, label, created_at, last_used_at
+      `;
+      const updatedRow = Array.isArray(updated) ? updated[0] : null;
+      res.json({ ok: true, item: mapPrivatePasswordRow(updatedRow) });
+    } catch (error) {
+      if (isPrivateAccessStorageMissing(error)) {
+        res.status(503).json({ error: "Хранилище приватного доступа недоступно", code: "PRIVATE_ACCESS_UNAVAILABLE" });
+        return;
+      }
+      throw error;
+    }
+  }),
+);
+
+router.delete(
+  "/privacy/passwords/:passwordId",
+  asyncHandler(async (req, res) => {
+    const user = await getCurrentUser(req);
+    if (!assertUserActive(user, res)) {
+      return;
+    }
+    if (!assertPlanAllowsSlugManagement(user, res)) {
+      return;
+    }
+
+    const passwordId = String(req.params.passwordId || "").trim();
+    if (!passwordId) {
+      res.status(400).json({ error: "Пароль не найден", code: "PRIVATE_PASSWORD_INVALID_ID" });
+      return;
+    }
+
+    try {
+      const rows = await prisma.$queryRaw`
+        UPDATE card_private_passwords
+        SET deleted_at = now(),
+            updated_at = now()
+        WHERE id = ${passwordId}
+          AND owner_id = ${user.id}
+          AND deleted_at IS NULL
+        RETURNING id
+      `;
+      const deleted = Array.isArray(rows) ? rows[0] : null;
+      if (!deleted) {
+        res.status(404).json({ error: "Пароль не найден", code: "PRIVATE_PASSWORD_NOT_FOUND" });
+        return;
+      }
+      res.json({ ok: true, id: String(deleted.id) });
+    } catch (error) {
+      if (isPrivateAccessStorageMissing(error)) {
+        res.status(503).json({ error: "Хранилище приватного доступа недоступно", code: "PRIVATE_ACCESS_UNAVAILABLE" });
+        return;
+      }
+      throw error;
+    }
   }),
 );
 

@@ -8,6 +8,16 @@ const { getUserSession } = require("../../middleware/auth");
 const { requireCsrfToken } = require("../../middleware/csrf");
 const { requireSameOrigin } = require("../../middleware/same-origin");
 const { sendTapPushNotification, sendExpoPushToUser } = require("../../services/push");
+const {
+  PRIVATE_ACCESS_TTL_MS,
+  createPrivateAccessToken,
+  verifyPrivateAccessToken,
+  extractPrivateAccessToken,
+} = require("../../services/private-access");
+const {
+  verifyPrivatePasswordForOwner,
+  recordPrivateAccessLog,
+} = require("../../services/private-access-store");
 
 const router = express.Router();
 const WRITE_OPERATIONS = new Set(["write", "lock"]);
@@ -284,6 +294,30 @@ function normalizeProfileButtons(value) {
       };
     })
     .filter(Boolean);
+}
+
+function resolvePrivateAccessFromRequest(req, { slug, ownerId }) {
+  const token = extractPrivateAccessToken(req);
+  if (!token) return null;
+  return verifyPrivateAccessToken(token, {
+    slug: sanitizeSlug(slug),
+    ownerId: String(ownerId || ""),
+  });
+}
+
+function mapLockedResidentProfile(row) {
+  return {
+    slug: sanitizeSlug(row.slug),
+    slugs: [sanitizeSlug(row.slug)],
+    name: String(row.name || "Unknown"),
+    avatarUrl: row.avatarUrl || null,
+    username: String(row.username || "").trim(),
+    role: String(row.role || ""),
+    city: String(row.city || ""),
+    isPrivate: true,
+    isLocked: true,
+    lockedMessage: "Введите пароль для просмотра",
+  };
 }
 
 async function getOwnedSlugs(userId) {
@@ -1253,10 +1287,12 @@ router.get(
         `
           SELECT
             s.full_slug AS slug,
+            s.status AS status,
             s.owner_id AS "ownerId",
             s.price AS "slugPrice",
             COALESCE(pc.name, u.display_name, u.first_name, 'Unknown') AS name,
             pc.avatar_url AS "avatarUrl",
+            COALESCE(u.username, u.telegram_username, '') AS username,
             COALESCE(u.verified_company, '') AS city,
             COALESCE(u.plan, 'basic') AS tag,
             COALESCE(s.analytics_views_count, 0) AS taps,
@@ -1292,6 +1328,27 @@ router.get(
     if (!row) {
       res.status(404).json({ error: "Resident not found", code: "NOT_FOUND" });
       return;
+    }
+
+    const rowStatus = String(row.status || "").trim().toLowerCase();
+    const isOwnerViewer = String(row.ownerId || "") === String(userId || "");
+    let privateAccessPayload = null;
+    if (rowStatus === "private" && !isOwnerViewer) {
+      privateAccessPayload = resolvePrivateAccessFromRequest(req, {
+        slug: row.slug,
+        ownerId: row.ownerId,
+      });
+      if (!privateAccessPayload) {
+        res.json({
+          profile: mapLockedResidentProfile(row),
+          privateAccess: {
+            required: true,
+            granted: false,
+            expiresAt: null,
+          },
+        });
+        return;
+      }
     }
 
     let slugRows = [];
@@ -1335,7 +1392,103 @@ router.get(
         tags: normalizeStringList(row.tags),
         subscribed: Boolean(row.subscribed),
         saved: Boolean(row.saved),
+        username: String(row.username || "").trim(),
+        isPrivate: rowStatus === "private",
+        isLocked: false,
+        privateAccessExpiresAt: privateAccessPayload ? new Date(privateAccessPayload.exp).toISOString() : null,
       },
+      privateAccess: rowStatus === "private"
+        ? {
+          required: true,
+          granted: true,
+          expiresAt: privateAccessPayload ? new Date(privateAccessPayload.exp).toISOString() : null,
+        }
+        : {
+          required: false,
+          granted: true,
+          expiresAt: null,
+        },
+    });
+  }),
+);
+
+router.post(
+  "/directory/:slug/unlock",
+  requireSameOrigin,
+  requireCsrfToken,
+  asyncHandler(async (req, res) => {
+    const userSession = getUserSession(req);
+    const userId = userSession?.userId;
+    if (!userId) {
+      res.status(401).json({ error: "Unauthorized", code: "AUTH_REQUIRED" });
+      return;
+    }
+
+    const slug = sanitizeSlug(req.params.slug);
+    const password = String(req.body?.password || "");
+    if (!slug || !password) {
+      res.status(400).json({ error: "Slug and password are required", code: "VALIDATION_ERROR" });
+      return;
+    }
+
+    const slugRow = await prisma.slug.findUnique({
+      where: { fullSlug: slug },
+      select: {
+        fullSlug: true,
+        ownerId: true,
+        status: true,
+        owner: {
+          select: {
+            status: true,
+          },
+        },
+      },
+    });
+    if (!slugRow || !slugRow.ownerId || slugRow.owner?.status !== "active") {
+      res.status(404).json({ error: "Resident not found", code: "NOT_FOUND" });
+      return;
+    }
+
+    if (slugRow.status !== "private" || String(slugRow.ownerId) === String(userId)) {
+      res.json({
+        ok: true,
+        granted: true,
+        token: null,
+        expiresAt: null,
+        ttlSeconds: 0,
+      });
+      return;
+    }
+
+    const matchedPassword = await verifyPrivatePasswordForOwner(slugRow.ownerId, password);
+    if (!matchedPassword) {
+      res.status(401).json({ error: "Неверный пароль", code: "PRIVATE_ACCESS_INVALID_PASSWORD" });
+      return;
+    }
+
+    const expiresAt = Date.now() + PRIVATE_ACCESS_TTL_MS;
+    const token = createPrivateAccessToken({
+      slug,
+      ownerId: slugRow.ownerId,
+      passwordId: matchedPassword.passwordId,
+      exp: expiresAt,
+      iat: Date.now(),
+    });
+
+    await recordPrivateAccessLog({
+      req,
+      ownerId: slugRow.ownerId,
+      slug,
+      passwordId: matchedPassword.passwordId,
+      passwordLabel: matchedPassword.label,
+    });
+
+    res.json({
+      ok: true,
+      granted: true,
+      token,
+      expiresAt: new Date(expiresAt).toISOString(),
+      ttlSeconds: Math.max(1, Math.floor((expiresAt - Date.now()) / 1000)),
     });
   }),
 );

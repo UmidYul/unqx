@@ -444,6 +444,11 @@ Email: ${userEmail}
       stUnlinkTelegram: $("#profile-settings-unlink-telegram"),
       stNotif: $("#profile-settings-notifications"),
       stDirectory: $("#profile-settings-directory"),
+      privatePasswordLabel: $("#profile-private-password-label"),
+      privatePasswordValue: $("#profile-private-password-value"),
+      privatePasswordAdd: $("#profile-private-password-add"),
+      privatePasswordsList: $("#profile-private-passwords-list"),
+      privateAccessLogs: $("#profile-private-access-logs"),
       stSave: $("#profile-settings-save"),
       stStatus: $("#profile-settings-status"),
       stDeact: $("#profile-settings-deactivate"),
@@ -902,6 +907,45 @@ Email: ${userEmail}
       return raw === "premium" || raw === "basic" ? raw : "none";
     };
 
+    const normalizeCardVisibilityStatus = (status) => {
+      const normalized = String(status || "")
+        .trim()
+        .toLowerCase();
+      if (normalized === "paused") return "paused";
+      if (normalized === "private") return "private";
+      return "active";
+    };
+
+    const cardVisibilityLabel = (status) => {
+      const normalized = normalizeCardVisibilityStatus(status);
+      if (normalized === "paused") return "Пауза";
+      if (normalized === "private") return "Приватная";
+      return "Активная";
+    };
+
+    const cardVisibilityTone = (status) => {
+      const normalized = normalizeCardVisibilityStatus(status);
+      if (normalized === "paused") return "is-paused";
+      if (normalized === "private") return "is-private";
+      return "is-active";
+    };
+
+    const resolveCardVisibility = () => {
+      const slugItems = Array.isArray(s.slugs) ? s.slugs : [];
+      if (!slugItems.length) {
+        return { status: "active", mixed: false };
+      }
+
+      const normalizedStatuses = slugItems.map((item) => normalizeCardVisibilityStatus(item?.status));
+      const uniqueStatuses = Array.from(new Set(normalizedStatuses));
+      const primarySlug = slugItems.find((item) => item?.isPrimary) || slugItems[0];
+      const primaryStatus = normalizeCardVisibilityStatus(primarySlug?.status);
+      return {
+        status: primaryStatus,
+        mixed: uniqueStatuses.length > 1,
+      };
+    };
+
     const stateIcon = (name) => {
       if (name === "shopping") {
         return '<svg class="mx-auto h-12 w-12 text-neutral-400" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 8h12l-1.3 10.5a2 2 0 0 1-2 1.5H9.3a2 2 0 0 1-2-1.5L6 8Zm3-2a3 3 0 1 1 6 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
@@ -1041,18 +1085,39 @@ Email: ${userEmail}
           ? (slug) =>
             `<button data-a="open-qr" data-slug="${esc(slug)}" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold">Мой QR</button>`
           : () => "";
+        const visibility = resolveCardVisibility();
+        const primarySlug = s.slugs.find((item) => item?.isPrimary) || s.slugs[0];
+        const pauseMessage = String(primarySlug?.pauseMessage || "");
+        const controls = `
+          <article class="rounded-xl border border-neutral-200 bg-neutral-50 p-4">
+            <div class="flex flex-wrap items-start justify-between gap-2">
+              <div>
+                <p class="text-sm font-semibold text-neutral-900">Статус визитки</p>
+                <p class="mt-1 text-xs text-neutral-500">Выбранный статус применяется сразу ко всем вашим slug.</p>
+              </div>
+              ${visibility.mixed ? '<span class="rounded-full border border-amber-300 bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-800">Разные статусы у slug</span>' : ""}
+            </div>
+            <div class="mt-3 flex flex-wrap gap-2">
+              ${["active", "paused", "private"]
+                .map((status) => {
+                  const isActive = visibility.status === status && !visibility.mixed;
+                  const statusLabel = cardVisibilityLabel(status);
+                  const statusTone = cardVisibilityTone(status);
+                  return `<button data-a="card-status" data-status="${status}" class="interactive-btn inline-flex min-h-11 items-center gap-2 rounded-lg border px-3 py-1.5 text-xs font-semibold ${isActive ? "border-neutral-900 bg-neutral-900 text-white" : "border-neutral-300 bg-white text-neutral-900"}"><span class="status-dot ${statusTone}" aria-hidden="true"></span>${statusLabel}</button>`;
+                })
+                .join("")}
+            </div>
+            ${visibility.status === "paused"
+              ? `<div class="mt-3 flex gap-2"><input data-card-pm value="${esc(pauseMessage)}" placeholder="Скоро вернусь · Пишите в Telegram" class="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm"><button data-a="save-card-pm" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-3 py-2 text-sm">Сохранить сообщение</button></div>`
+              : ""}
+          </article>
+        `;
 
-        el.slugs.innerHTML = s.slugs
+        const slugCards = s.slugs
           .map((slugItem) => {
-            const statusLabel = slugItem.statusLabel || slugItem.status;
-            const statusTone =
-              slugItem.status === "active"
-                ? "is-active"
-                : slugItem.status === "paused"
-                  ? "is-paused"
-                  : slugItem.status === "private"
-                    ? "is-private"
-                    : "";
+            const normalizedStatus = normalizeCardVisibilityStatus(slugItem.status);
+            const statusLabel = cardVisibilityLabel(normalizedStatus);
+            const statusTone = cardVisibilityTone(normalizedStatus);
 
             return `<article class="interactive-card rounded-xl border border-neutral-200 p-4">
             <div class="flex flex-wrap items-center justify-between gap-2">
@@ -1062,11 +1127,11 @@ Email: ${userEmail}
               </div>
               <div class="flex items-center gap-2">
                 ${slugItem.isPrimary ? '<span class="rounded-full border border-neutral-300 px-2 py-1 text-xs font-semibold">Основной</span>' : ""}
-                <button data-a="cycle" data-slug="${esc(slugItem.fullSlug)}" data-st="${esc(slugItem.status)}" class="interactive-btn inline-flex min-h-11 items-center gap-2 rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold"><span class="status-dot ${statusTone}" aria-hidden="true"></span>${statusLabel}</button>
+                <span class="inline-flex min-h-11 items-center gap-2 rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold"><span class="status-dot ${statusTone}" aria-hidden="true"></span>${statusLabel}</span>
               </div>
             </div>
-            ${slugItem.status === "paused"
-                ? `<div class="mt-3 flex gap-2"><input data-pm="${esc(slugItem.fullSlug)}" value="${esc(slugItem.pauseMessage || "")}" placeholder="Скоро вернусь · Пишите в Telegram" class="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm"><button data-a="save-pm" data-slug="${esc(slugItem.fullSlug)}" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-3 py-2 text-sm">Сохранить</button></div>`
+            ${normalizedStatus === "paused" && slugItem.pauseMessage
+                ? `<p class="mt-3 text-xs text-neutral-500">Сообщение паузы: ${esc(slugItem.pauseMessage)}</p>`
                 : ""
               }
             <div class="mt-3 flex flex-wrap gap-3 text-xs text-neutral-500">
@@ -1078,6 +1143,8 @@ Email: ${userEmail}
           </article>`;
           })
           .join("");
+
+        el.slugs.innerHTML = `${controls}${slugCards}`;
       }
 
       const count = s.slugs.length;
@@ -1513,6 +1580,79 @@ Email: ${userEmail}
       }
     };
 
+    const renderPrivateAccessSettings = () => {
+      const passwords = Array.isArray(s.privatePasswords) ? s.privatePasswords : [];
+      const logs = Array.isArray(s.privateAccessLogs) ? s.privateAccessLogs : [];
+      const limit = Number.isFinite(Number(s.privatePasswordLimit)) ? Number(s.privatePasswordLimit) : 10;
+      const minLength = Number.isFinite(Number(s.privatePasswordMinLength)) ? Number(s.privatePasswordMinLength) : 4;
+
+      if (el.privatePasswordValue instanceof HTMLInputElement) {
+        el.privatePasswordValue.minLength = minLength;
+      }
+      if (el.privatePasswordAdd instanceof HTMLButtonElement) {
+        const reached = passwords.length >= limit;
+        el.privatePasswordAdd.disabled = reached;
+        el.privatePasswordAdd.classList.toggle("opacity-60", reached);
+        el.privatePasswordAdd.title = reached ? `Достигнут лимит ${limit} паролей` : "";
+      }
+
+      if (el.privatePasswordsList instanceof HTMLElement) {
+        if (!passwords.length) {
+          el.privatePasswordsList.innerHTML = '<p class="rounded-xl border border-neutral-200 bg-white px-3 py-3 text-xs text-neutral-500">Пока нет паролей. Добавьте первый пароль для приватного режима.</p>';
+        } else {
+          el.privatePasswordsList.innerHTML = passwords
+            .map((item) => {
+              const id = String(item?.id || "");
+              const label = String(item?.label || "").trim() || "Без метки";
+              const createdAt = item?.createdAt ? fdt(item.createdAt) : "—";
+              const lastUsed = item?.lastUsedAt ? fdt(item.lastUsedAt) : "ещё не использовался";
+              return `<article class="rounded-xl border border-neutral-200 bg-white p-3" data-private-password-row="${esc(id)}">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                  <div class="min-w-0">
+                    <p class="text-sm font-semibold text-neutral-900">${esc(label)}</p>
+                    <p class="text-xs text-neutral-500">Создан: ${esc(createdAt)} · Открывали: ${esc(lastUsed)}</p>
+                  </div>
+                  <div class="flex flex-wrap gap-1.5">
+                    <button data-a="toggle-private-change" data-password-id="${esc(id)}" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold">Сменить пароль</button>
+                    <button data-a="delete-private-password" data-password-id="${esc(id)}" class="interactive-btn min-h-11 rounded-lg border border-red-200 px-2.5 py-1 text-xs font-semibold text-red-700">Удалить</button>
+                  </div>
+                </div>
+                <div data-private-change-form="${esc(id)}" class="mt-2 hidden rounded-lg border border-neutral-200 bg-neutral-50 p-2">
+                  <div class="grid gap-2 sm:grid-cols-2">
+                    <input data-private-old-password="${esc(id)}" type="password" placeholder="Старый пароль" class="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm">
+                    <input data-private-new-password="${esc(id)}" type="password" placeholder="Новый пароль" minlength="${minLength}" class="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm">
+                  </div>
+                  <div class="mt-2 flex flex-wrap gap-2">
+                    <button data-a="save-private-change" data-password-id="${esc(id)}" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-3 py-2 text-xs font-semibold">Сохранить</button>
+                    <button data-a="cancel-private-change" data-password-id="${esc(id)}" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-3 py-2 text-xs">Отмена</button>
+                  </div>
+                </div>
+              </article>`;
+            })
+            .join("");
+        }
+      }
+
+      if (el.privateAccessLogs instanceof HTMLElement) {
+        if (!logs.length) {
+          el.privateAccessLogs.innerHTML = '<p class="rounded-xl border border-neutral-200 bg-white px-3 py-3 text-xs text-neutral-500">Пока нет открытий приватной визитки.</p>';
+        } else {
+          el.privateAccessLogs.innerHTML = logs
+            .map((item) => {
+              const when = item?.createdAt ? fdt(item.createdAt) : "—";
+              const device = String(item?.device || item?.userAgent || "Неизвестное устройство").trim();
+              const label = String(item?.passwordLabel || "").trim() || "Без метки";
+              return `<div class="rounded-xl border border-neutral-200 bg-white px-3 py-2">
+                <p class="text-xs font-semibold text-neutral-900">${esc(when)}</p>
+                <p class="text-xs text-neutral-600">Пароль: ${esc(label)}</p>
+                <p class="text-xs text-neutral-500">${esc(device)}</p>
+              </div>`;
+            })
+            .join("");
+        }
+      }
+    };
+
     const renderSettings = () => {
       if (!s.user) return;
       if (el.stName) el.stName.value = s.user.displayName || s.user.firstName || "";
@@ -1594,6 +1734,8 @@ Email: ${userEmail}
           openEmailRequiredModal();
         }
       }
+
+      renderPrivateAccessSettings();
     };
 
     const renderReferrals = () => {
@@ -1984,6 +2126,10 @@ Email: ${userEmail}
         s.requests = payload.requests || [];
         s.score = payload.score || null;
         s.pricing = payload.pricing || s.pricing;
+        s.privatePasswords = Array.isArray(payload?.privacy?.passwords) ? payload.privacy.passwords : [];
+        s.privateAccessLogs = Array.isArray(payload?.privacy?.accessLogs) ? payload.privacy.accessLogs : [];
+        s.privatePasswordMinLength = Number(payload?.privacy?.passwordMinLength || 4) || 4;
+        s.privatePasswordLimit = Number(payload?.privacy?.passwordLimit || 10) || 10;
         if (!s.slugs.find((item) => item.fullSlug === s.analyticsSelectedSlug)) {
           s.analyticsBootstrap = null;
           s.analyticsPayload = null;
@@ -2011,6 +2157,33 @@ Email: ${userEmail}
       } finally {
         setLoading(false);
       }
+    };
+
+    const refreshPrivateAccessData = async () => {
+      try {
+        const [passwordsPayload, logsPayload] = await Promise.all([
+          api("/api/profile/privacy/passwords"),
+          api("/api/profile/privacy/access-logs?limit=20"),
+        ]);
+        s.privatePasswords = Array.isArray(passwordsPayload?.items) ? passwordsPayload.items : [];
+        s.privateAccessLogs = Array.isArray(logsPayload?.items) ? logsPayload.items : [];
+        s.privatePasswordMinLength = Number(passwordsPayload?.minLength || s.privatePasswordMinLength || 4) || 4;
+        s.privatePasswordLimit = Number(passwordsPayload?.limit || s.privatePasswordLimit || 10) || 10;
+        renderPrivateAccessSettings();
+      } catch (error) {
+        console.error("[profile] failed to refresh private access data", error);
+      }
+    };
+
+    const closePrivateChangeForm = (passwordId) => {
+      const id = String(passwordId || "");
+      const form = document.querySelector(`[data-private-change-form=\"${id}\"]`);
+      if (!(form instanceof HTMLElement)) return;
+      form.classList.add("hidden");
+      const oldInput = form.querySelector(`[data-private-old-password=\"${id}\"]`);
+      const newInput = form.querySelector(`[data-private-new-password=\"${id}\"]`);
+      if (oldInput instanceof HTMLInputElement) oldInput.value = "";
+      if (newInput instanceof HTMLInputElement) newInput.value = "";
     };
 
     const saveCard = async () => {
@@ -2135,8 +2308,6 @@ Email: ${userEmail}
         }
       }
     };
-
-    const cycleStatus = (status) => (status === "active" ? "paused" : status === "paused" ? "private" : "active");
 
     const openOrderModal = (options = {}) => {
       const modalApi = window.UNQOrderModal;
@@ -2399,28 +2570,68 @@ Email: ${userEmail}
         return;
       }
 
-      if (action === "cycle") {
-        const slug = String(actionNode.getAttribute("data-slug") || "").trim();
-        const current = String(actionNode.getAttribute("data-st") || "").trim().toLowerCase();
-        if (!slug) return;
-        const nextStatus = cycleStatus(current);
+      if (action === "card-status") {
+        const requested = normalizeCardVisibilityStatus(actionNode.getAttribute("data-status"));
+        const slugs = Array.isArray(s.slugs) ? s.slugs : [];
+        if (!slugs.length) {
+          showModal("Ошибка", "Slug не найден");
+          return;
+        }
+
+        const visibility = resolveCardVisibility();
+        if (!visibility.mixed && visibility.status === requested) {
+          return;
+        }
+
         try {
-          await api(`/api/profile/slugs/${encodeURIComponent(slug)}/status`, {
+          await api("/api/profile/card/status", {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ status: nextStatus }),
+            body: JSON.stringify({ status: requested }),
           });
-          const slugs = Array.isArray(s.slugs) ? s.slugs : [];
+
           slugs.forEach((item) => {
-            if (String(item.fullSlug) === slug) {
-              item.status = nextStatus;
-            }
+            item.status = requested;
+            item.statusLabel = cardVisibilityLabel(requested);
           });
+
           renderSlugs();
           renderPreview();
-          showSaveAlert("Статус обновлён");
+          showSaveAlert("Статус визитки обновлён");
         } catch (error) {
-          showModal("Ошибка", error.message || "Не удалось обновить статус");
+          showModal("Ошибка", error.message || "Не удалось обновить статус визитки");
+        }
+        return;
+      }
+
+      if (action === "save-card-pm") {
+        const slugs = Array.isArray(s.slugs) ? s.slugs : [];
+        const pausedSlugs = slugs.filter((item) => normalizeCardVisibilityStatus(item?.status) === "paused");
+        if (!pausedSlugs.length) {
+          showModal("Ошибка", "Сначала включите статус Пауза");
+          return;
+        }
+        const input = document.querySelector("[data-card-pm]");
+        const message = input instanceof HTMLInputElement ? String(input.value || "").trim() : "";
+
+        try {
+          await Promise.all(
+            pausedSlugs.map((item) =>
+              api(`/api/profile/slugs/${encodeURIComponent(item.fullSlug)}/pause-message`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ message }),
+              })),
+          );
+
+          pausedSlugs.forEach((item) => {
+            item.pauseMessage = message;
+          });
+
+          renderSlugs();
+          showSaveAlert("Сообщение паузы сохранено");
+        } catch (error) {
+          showModal("Ошибка", error.message || "Не удалось сохранить сообщение паузы");
         }
         return;
       }
@@ -2447,27 +2658,78 @@ Email: ${userEmail}
         return;
       }
 
-      if (action === "save-pm") {
-        const slug = String(actionNode.getAttribute("data-slug") || "").trim();
-        if (!slug) return;
-        const input = document.querySelector(`[data-pm="${slug.replace(/"/g, "")}"]`);
-        const message = input instanceof HTMLInputElement ? input.value : "";
-        try {
-          const payload = await api(`/api/profile/slugs/${encodeURIComponent(slug)}/pause-message`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ message }),
-          });
-          const slugs = Array.isArray(s.slugs) ? s.slugs : [];
-          slugs.forEach((item) => {
-            if (String(item.fullSlug) === slug) {
-              item.pauseMessage = String(payload?.pauseMessage || "");
-            }
-          });
-          showSaveAlert("Сообщение сохранено");
-        } catch (error) {
-          showModal("Ошибка", error.message || "Не удалось сохранить сообщение");
+      if (action === "toggle-private-change") {
+        const passwordId = String(actionNode.getAttribute("data-password-id") || "").trim();
+        if (!passwordId) return;
+        const form = document.querySelector(`[data-private-change-form="${passwordId}"]`);
+        if (!(form instanceof HTMLElement)) return;
+        const nextHidden = !form.classList.contains("hidden");
+        document
+          .querySelectorAll("[data-private-change-form]")
+          .forEach((node) => node.classList.add("hidden"));
+        if (nextHidden) {
+          form.classList.add("hidden");
+          closePrivateChangeForm(passwordId);
+        } else {
+          form.classList.remove("hidden");
+          const oldInput = form.querySelector(`[data-private-old-password="${passwordId}"]`);
+          if (oldInput instanceof HTMLInputElement) {
+            oldInput.focus();
+          }
         }
+        return;
+      }
+
+      if (action === "cancel-private-change") {
+        const passwordId = String(actionNode.getAttribute("data-password-id") || "").trim();
+        if (!passwordId) return;
+        closePrivateChangeForm(passwordId);
+        return;
+      }
+
+      if (action === "save-private-change") {
+        const passwordId = String(actionNode.getAttribute("data-password-id") || "").trim();
+        if (!passwordId) return;
+        const oldInput = document.querySelector(`[data-private-old-password="${passwordId}"]`);
+        const newInput = document.querySelector(`[data-private-new-password="${passwordId}"]`);
+        const oldPassword = oldInput instanceof HTMLInputElement ? String(oldInput.value || "").trim() : "";
+        const newPassword = newInput instanceof HTMLInputElement ? String(newInput.value || "").trim() : "";
+        const minLength = Number.isFinite(Number(s.privatePasswordMinLength)) ? Number(s.privatePasswordMinLength) : 4;
+        if (!oldPassword || newPassword.length < minLength) {
+          showModal("Проверь данные", `Введите старый пароль и новый минимум ${minLength} символа.`);
+          return;
+        }
+        try {
+          await api(`/api/profile/privacy/passwords/${encodeURIComponent(passwordId)}/change`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ oldPassword, newPassword }),
+          });
+          closePrivateChangeForm(passwordId);
+          await refreshPrivateAccessData();
+          showSaveAlert("Пароль обновлён");
+        } catch (error) {
+          showModal("Ошибка", error.message || "Не удалось сменить пароль");
+        }
+        return;
+      }
+
+      if (action === "delete-private-password") {
+        const passwordId = String(actionNode.getAttribute("data-password-id") || "").trim();
+        if (!passwordId) return;
+        showModal("Удалить пароль?", "Этот пароль больше не будет открывать приватную визитку.", "Удалить", async () => {
+          try {
+            await api(`/api/profile/privacy/passwords/${encodeURIComponent(passwordId)}`, {
+              method: "DELETE",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({}),
+            });
+            await refreshPrivateAccessData();
+            showSaveAlert("Пароль удалён");
+          } catch (error) {
+            showModal("Ошибка", error.message || "Не удалось удалить пароль");
+          }
+        });
         return;
       }
 
@@ -2891,6 +3153,39 @@ Email: ${userEmail}
     el.stChangeEmail?.addEventListener("click", openEmailModal);
 
     el.stChangePassword?.addEventListener("click", openPasswordModal);
+
+    el.privatePasswordAdd?.addEventListener("click", async () => {
+      const password = String(el.privatePasswordValue?.value || "").trim();
+      const label = String(el.privatePasswordLabel?.value || "").trim();
+      const minLength = Number.isFinite(Number(s.privatePasswordMinLength)) ? Number(s.privatePasswordMinLength) : 4;
+
+      if (password.length < minLength) {
+        showModal("Проверь пароль", `Минимальная длина пароля: ${minLength} символа.`);
+        return;
+      }
+
+      const button = el.privatePasswordAdd;
+      if (button instanceof HTMLButtonElement) {
+        button.disabled = true;
+      }
+      try {
+        await api("/api/profile/privacy/passwords", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ label, password }),
+        });
+        if (el.privatePasswordLabel instanceof HTMLInputElement) el.privatePasswordLabel.value = "";
+        if (el.privatePasswordValue instanceof HTMLInputElement) el.privatePasswordValue.value = "";
+        await refreshPrivateAccessData();
+        showSaveAlert("Пароль добавлен");
+      } catch (error) {
+        showModal("Ошибка", error.message || "Не удалось добавить пароль");
+      } finally {
+        if (button instanceof HTMLButtonElement) {
+          button.disabled = false;
+        }
+      }
+    });
 
     el.stSave?.addEventListener("click", async () => {
       if (!el.stStatus) return;
