@@ -123,7 +123,6 @@
         tags: Array.isArray(s.tags) ? [...s.tags] : [],
         buttons: Array.isArray(s.buttons) ? JSON.parse(JSON.stringify(s.buttons)) : [],
         theme: s.theme,
-        customColor: el.cColor?.value || null,
         showBranding: el.cBranding ? !el.cBranding.checked : true,
         updatedAt: Date.now(),
       };
@@ -200,7 +199,6 @@
       if (getCurrentPlan() !== "premium" && PREMIUM_ONLY_THEMES.has(s.theme)) {
         s.theme = "default_dark";
       }
-      if (el.cColor && hasOwn("customColor")) el.cColor.value = draft.customColor || "";
       if (el.cBranding && hasOwn("showBranding")) el.cBranding.checked = draft.showBranding === false;
       if (el.cBioC) el.cBioC.textContent = `${el.cBio?.value.length || 0}/120`;
 
@@ -226,6 +224,11 @@
     let emailRequiredModalShown = false;
     let passwordModalLastFocused = null;
     let passwordModalOpen = false;
+    let privatePasswordAddModalLastFocused = null;
+    let privatePasswordAddModalOpen = false;
+    let privatePasswordChangeModalLastFocused = null;
+    let privatePasswordChangeModalOpen = false;
+    let privatePasswordChangeId = "";
 
     const toOrderPaymentReference = (orderId) => `UNQX-${String(orderId || "").replace(/[^a-zA-Z0-9]/g, "").slice(0, 10).toUpperCase()}`;
 
@@ -355,7 +358,6 @@ Email: ${userEmail}
       cThemes: $$(".profile-theme-btn"),
       cThemeLock: $("#profile-card-theme-lock-note"),
       cThemeWrap: $("#profile-card-theme-wrap"),
-      cColor: $("#profile-card-custom-color"),
       cBranding: $("#profile-card-show-branding"),
       cSave: $("#profile-card-save"),
       cContent: $("#profile-card-content"),
@@ -444,11 +446,25 @@ Email: ${userEmail}
       stUnlinkTelegram: $("#profile-settings-unlink-telegram"),
       stNotif: $("#profile-settings-notifications"),
       stDirectory: $("#profile-settings-directory"),
-      privatePasswordLabel: $("#profile-private-password-label"),
-      privatePasswordValue: $("#profile-private-password-value"),
-      privatePasswordAdd: $("#profile-private-password-add"),
+      privatePasswordOpenAdd: $("#profile-private-password-open-add"),
       privatePasswordsList: $("#profile-private-passwords-list"),
-      privateAccessLogs: $("#profile-private-access-logs"),
+      privatePasswordAddModal: $("#profile-private-password-add-modal"),
+      privatePasswordAddDialog: $("#profile-private-password-add-dialog"),
+      privatePasswordAddCloseTop: $("#profile-private-password-add-close-top"),
+      privatePasswordAddCancel: $("#profile-private-password-add-cancel"),
+      privatePasswordAddSubmit: $("#profile-private-password-add-submit"),
+      privatePasswordAddLabel: $("#profile-private-password-add-label"),
+      privatePasswordAddValue: $("#profile-private-password-add-value"),
+      privatePasswordAddError: $("#profile-private-password-add-error"),
+      privatePasswordChangeModal: $("#profile-private-password-change-modal"),
+      privatePasswordChangeDialog: $("#profile-private-password-change-dialog"),
+      privatePasswordChangeCloseTop: $("#profile-private-password-change-close-top"),
+      privatePasswordChangeCancel: $("#profile-private-password-change-cancel"),
+      privatePasswordChangeSubmit: $("#profile-private-password-change-submit"),
+      privatePasswordChangeOld: $("#profile-private-password-change-old"),
+      privatePasswordChangeNew: $("#profile-private-password-change-new"),
+      privatePasswordChangeMeta: $("#profile-private-password-change-meta"),
+      privatePasswordChangeError: $("#profile-private-password-change-error"),
       stSave: $("#profile-settings-save"),
       stStatus: $("#profile-settings-status"),
       stDeact: $("#profile-settings-deactivate"),
@@ -612,6 +628,108 @@ Email: ${userEmail}
       const value = String(message || "").trim();
       el.passwordModalError.textContent = value;
       el.passwordModalError.classList.toggle("hidden", !value);
+    };
+
+    const setPrivatePasswordAddError = (message) => {
+      if (!(el.privatePasswordAddError instanceof HTMLElement)) return;
+      const value = String(message || "").trim();
+      el.privatePasswordAddError.textContent = value;
+      el.privatePasswordAddError.classList.toggle("hidden", !value);
+    };
+
+    const setPrivatePasswordChangeError = (message) => {
+      if (!(el.privatePasswordChangeError instanceof HTMLElement)) return;
+      const value = String(message || "").trim();
+      el.privatePasswordChangeError.textContent = value;
+      el.privatePasswordChangeError.classList.toggle("hidden", !value);
+    };
+
+    const resetPrivatePasswordAddModal = () => {
+      if (el.privatePasswordAddLabel instanceof HTMLInputElement) el.privatePasswordAddLabel.value = "";
+      if (el.privatePasswordAddValue instanceof HTMLInputElement) el.privatePasswordAddValue.value = "";
+      setPrivatePasswordAddError("");
+      if (el.privatePasswordAddSubmit instanceof HTMLButtonElement) {
+        el.privatePasswordAddSubmit.disabled = false;
+      }
+    };
+
+    const openPrivatePasswordAddModal = () => {
+      if (!(el.privatePasswordAddModal instanceof HTMLElement)) return;
+      const limit = Number.isFinite(Number(s.privatePasswordLimit)) ? Number(s.privatePasswordLimit) : 10;
+      const passwords = Array.isArray(s.privatePasswords) ? s.privatePasswords : [];
+      if (passwords.length >= limit) {
+        showModal("Лимит достигнут", `Доступно максимум ${limit} паролей.`);
+        return;
+      }
+      resetPrivatePasswordAddModal();
+      privatePasswordAddModalLastFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+      el.privatePasswordAddModal.classList.remove("hidden");
+      el.privatePasswordAddModal.classList.add("flex");
+      privatePasswordAddModalOpen = true;
+      requestAnimationFrame(() => {
+        if (el.privatePasswordAddLabel instanceof HTMLInputElement) {
+          el.privatePasswordAddLabel.focus();
+        }
+      });
+    };
+
+    const closePrivatePasswordAddModal = () => {
+      if (!(el.privatePasswordAddModal instanceof HTMLElement)) return;
+      el.privatePasswordAddModal.classList.add("hidden");
+      el.privatePasswordAddModal.classList.remove("flex");
+      privatePasswordAddModalOpen = false;
+      if (privatePasswordAddModalLastFocused instanceof HTMLElement) {
+        privatePasswordAddModalLastFocused.focus();
+      }
+    };
+
+    const resetPrivatePasswordChangeModal = () => {
+      privatePasswordChangeId = "";
+      if (el.privatePasswordChangeOld instanceof HTMLInputElement) el.privatePasswordChangeOld.value = "";
+      if (el.privatePasswordChangeNew instanceof HTMLInputElement) el.privatePasswordChangeNew.value = "";
+      if (el.privatePasswordChangeMeta instanceof HTMLElement) el.privatePasswordChangeMeta.textContent = "";
+      setPrivatePasswordChangeError("");
+      if (el.privatePasswordChangeSubmit instanceof HTMLButtonElement) {
+        el.privatePasswordChangeSubmit.disabled = false;
+      }
+    };
+
+    const openPrivatePasswordChangeModal = (passwordId) => {
+      if (!(el.privatePasswordChangeModal instanceof HTMLElement)) return;
+      const id = String(passwordId || "").trim();
+      if (!id) return;
+      const passwords = Array.isArray(s.privatePasswords) ? s.privatePasswords : [];
+      const item = passwords.find((candidate) => String(candidate?.id || "") === id);
+      if (!item) {
+        showModal("Ошибка", "Пароль не найден.");
+        return;
+      }
+      resetPrivatePasswordChangeModal();
+      privatePasswordChangeId = id;
+      const label = String(item?.label || "").trim() || "Без метки";
+      if (el.privatePasswordChangeMeta instanceof HTMLElement) {
+        el.privatePasswordChangeMeta.textContent = `Метка: ${label}`;
+      }
+      privatePasswordChangeModalLastFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+      el.privatePasswordChangeModal.classList.remove("hidden");
+      el.privatePasswordChangeModal.classList.add("flex");
+      privatePasswordChangeModalOpen = true;
+      requestAnimationFrame(() => {
+        if (el.privatePasswordChangeOld instanceof HTMLInputElement) {
+          el.privatePasswordChangeOld.focus();
+        }
+      });
+    };
+
+    const closePrivatePasswordChangeModal = () => {
+      if (!(el.privatePasswordChangeModal instanceof HTMLElement)) return;
+      el.privatePasswordChangeModal.classList.add("hidden");
+      el.privatePasswordChangeModal.classList.remove("flex");
+      privatePasswordChangeModalOpen = false;
+      resetPrivatePasswordChangeModal();
+      if (privatePasswordChangeModalLastFocused instanceof HTMLElement) {
+        privatePasswordChangeModalLastFocused.focus();
+      }
     };
 
     const setEmailModalStep = (step) => {
@@ -818,6 +936,79 @@ Email: ${userEmail}
       } finally {
         if (el.passwordModalSubmit instanceof HTMLButtonElement) {
           el.passwordModalSubmit.disabled = false;
+        }
+      }
+    };
+
+    const handlePrivatePasswordAdd = async () => {
+      const password = String(el.privatePasswordAddValue?.value || "").trim();
+      const label = String(el.privatePasswordAddLabel?.value || "").trim();
+      const minLength = Number.isFinite(Number(s.privatePasswordMinLength)) ? Number(s.privatePasswordMinLength) : 4;
+      setPrivatePasswordAddError("");
+
+      if (password.length < minLength) {
+        setPrivatePasswordAddError(`Минимальная длина пароля: ${minLength} символа.`);
+        return;
+      }
+
+      if (el.privatePasswordAddSubmit instanceof HTMLButtonElement) {
+        el.privatePasswordAddSubmit.disabled = true;
+      }
+      try {
+        await api("/api/profile/privacy/passwords", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ label, password }),
+        });
+        closePrivatePasswordAddModal();
+        await refreshPrivateAccessData();
+        showSaveAlert("Пароль добавлен");
+      } catch (error) {
+        setPrivatePasswordAddError(error.message || "Не удалось добавить пароль");
+      } finally {
+        if (el.privatePasswordAddSubmit instanceof HTMLButtonElement) {
+          el.privatePasswordAddSubmit.disabled = false;
+        }
+      }
+    };
+
+    const handlePrivatePasswordChange = async () => {
+      const passwordId = String(privatePasswordChangeId || "").trim();
+      if (!passwordId) {
+        setPrivatePasswordChangeError("Пароль не найден.");
+        return;
+      }
+      const oldPassword = String(el.privatePasswordChangeOld?.value || "").trim();
+      const newPassword = String(el.privatePasswordChangeNew?.value || "").trim();
+      const minLength = Number.isFinite(Number(s.privatePasswordMinLength)) ? Number(s.privatePasswordMinLength) : 4;
+      setPrivatePasswordChangeError("");
+
+      if (!oldPassword) {
+        setPrivatePasswordChangeError("Введите текущий пароль.");
+        return;
+      }
+      if (newPassword.length < minLength) {
+        setPrivatePasswordChangeError(`Новый пароль должен быть минимум ${minLength} символа.`);
+        return;
+      }
+
+      if (el.privatePasswordChangeSubmit instanceof HTMLButtonElement) {
+        el.privatePasswordChangeSubmit.disabled = true;
+      }
+      try {
+        await api(`/api/profile/privacy/passwords/${encodeURIComponent(passwordId)}/change`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ oldPassword, newPassword }),
+        });
+        closePrivatePasswordChangeModal();
+        await refreshPrivateAccessData();
+        showSaveAlert("Пароль обновлён");
+      } catch (error) {
+        setPrivatePasswordChangeError(error.message || "Не удалось сменить пароль");
+      } finally {
+        if (el.privatePasswordChangeSubmit instanceof HTMLButtonElement) {
+          el.privatePasswordChangeSubmit.disabled = false;
         }
       }
     };
@@ -1115,9 +1306,7 @@ Email: ${userEmail}
 
         const slugCards = s.slugs
           .map((slugItem) => {
-            const normalizedStatus = normalizeCardVisibilityStatus(slugItem.status);
-            const statusLabel = cardVisibilityLabel(normalizedStatus);
-            const statusTone = cardVisibilityTone(normalizedStatus);
+            const isPaused = normalizeCardVisibilityStatus(slugItem.status) === "paused";
 
             return `<article class="interactive-card rounded-xl border border-neutral-200 p-4">
             <div class="flex flex-wrap items-center justify-between gap-2">
@@ -1127,10 +1316,9 @@ Email: ${userEmail}
               </div>
               <div class="flex items-center gap-2">
                 ${slugItem.isPrimary ? '<span class="rounded-full border border-neutral-300 px-2 py-1 text-xs font-semibold">Основной</span>' : ""}
-                <span class="inline-flex min-h-11 items-center gap-2 rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold"><span class="status-dot ${statusTone}" aria-hidden="true"></span>${statusLabel}</span>
               </div>
             </div>
-            ${normalizedStatus === "paused" && slugItem.pauseMessage
+            ${isPaused && slugItem.pauseMessage
                 ? `<p class="mt-3 text-xs text-neutral-500">Сообщение паузы: ${esc(slugItem.pauseMessage)}</p>`
                 : ""
               }
@@ -1248,7 +1436,6 @@ Email: ${userEmail}
         }
       });
 
-      if (el.cColor) el.cColor.disabled = !premium;
       if (el.cBranding) el.cBranding.disabled = !premium;
     };
 
@@ -1291,8 +1478,6 @@ Email: ${userEmail}
           verifiedCompany: String(s.user?.verifiedCompany || "").trim(),
           tariff: effectivePlan,
           theme: effectiveTheme,
-          customColor:
-            effectivePlan === "premium" && el.cColor instanceof HTMLInputElement ? String(el.cColor.value || "").trim() : "",
           showBranding: el.cBranding ? !el.cBranding.checked : true,
           bio: String(el.cBio?.value || "").trim(),
         },
@@ -1351,7 +1536,6 @@ Email: ${userEmail}
       if (el.cPostcode) el.cPostcode.value = card.postcode || "";
       if (el.cEmail) el.cEmail.value = card.email || "";
       if (el.cExtraPhone) el.cExtraPhone.value = card.extraPhone || "";
-      if (el.cColor) el.cColor.value = card.customColor || "#111111";
       if (el.cBranding) el.cBranding.checked = !card.showBranding;
 
       s.tags = Array.isArray(card.tags) ? card.tags.slice(0) : [];
@@ -1585,18 +1769,20 @@ Email: ${userEmail}
 
     const renderPrivateAccessSettings = () => {
       const passwords = Array.isArray(s.privatePasswords) ? s.privatePasswords : [];
-      const logs = Array.isArray(s.privateAccessLogs) ? s.privateAccessLogs : [];
       const limit = Number.isFinite(Number(s.privatePasswordLimit)) ? Number(s.privatePasswordLimit) : 10;
       const minLength = Number.isFinite(Number(s.privatePasswordMinLength)) ? Number(s.privatePasswordMinLength) : 4;
 
-      if (el.privatePasswordValue instanceof HTMLInputElement) {
-        el.privatePasswordValue.minLength = minLength;
+      if (el.privatePasswordAddValue instanceof HTMLInputElement) {
+        el.privatePasswordAddValue.minLength = minLength;
       }
-      if (el.privatePasswordAdd instanceof HTMLButtonElement) {
+      if (el.privatePasswordChangeNew instanceof HTMLInputElement) {
+        el.privatePasswordChangeNew.minLength = minLength;
+      }
+      if (el.privatePasswordOpenAdd instanceof HTMLButtonElement) {
         const reached = passwords.length >= limit;
-        el.privatePasswordAdd.disabled = reached;
-        el.privatePasswordAdd.classList.toggle("opacity-60", reached);
-        el.privatePasswordAdd.title = reached ? `Достигнут лимит ${limit} паролей` : "";
+        el.privatePasswordOpenAdd.disabled = reached;
+        el.privatePasswordOpenAdd.classList.toggle("opacity-60", reached);
+        el.privatePasswordOpenAdd.title = reached ? `Достигнут лимит ${limit} паролей` : "";
       }
 
       if (el.privatePasswordsList instanceof HTMLElement) {
@@ -1613,43 +1799,14 @@ Email: ${userEmail}
                 <div class="flex flex-wrap items-center justify-between gap-2">
                   <div class="min-w-0">
                     <p class="text-sm font-semibold text-neutral-900">${esc(label)}</p>
-                    <p class="text-xs text-neutral-500">Создан: ${esc(createdAt)} · Открывали: ${esc(lastUsed)}</p>
+                    <p class="text-xs text-neutral-500">Создан: ${esc(createdAt)} · Последнее открытие: ${esc(lastUsed)}</p>
                   </div>
                   <div class="flex flex-wrap gap-1.5">
-                    <button data-a="toggle-private-change" data-password-id="${esc(id)}" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold">Сменить пароль</button>
+                    <button data-a="open-private-change" data-password-id="${esc(id)}" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold">Сменить пароль</button>
                     <button data-a="delete-private-password" data-password-id="${esc(id)}" class="interactive-btn min-h-11 rounded-lg border border-red-200 px-2.5 py-1 text-xs font-semibold text-red-700">Удалить</button>
                   </div>
                 </div>
-                <div data-private-change-form="${esc(id)}" class="mt-2 hidden rounded-lg border border-neutral-200 bg-neutral-50 p-2">
-                  <div class="grid gap-2 sm:grid-cols-2">
-                    <input data-private-old-password="${esc(id)}" type="password" placeholder="Старый пароль" class="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm">
-                    <input data-private-new-password="${esc(id)}" type="password" placeholder="Новый пароль" minlength="${minLength}" class="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm">
-                  </div>
-                  <div class="mt-2 flex flex-wrap gap-2">
-                    <button data-a="save-private-change" data-password-id="${esc(id)}" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-3 py-2 text-xs font-semibold">Сохранить</button>
-                    <button data-a="cancel-private-change" data-password-id="${esc(id)}" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-3 py-2 text-xs">Отмена</button>
-                  </div>
-                </div>
               </article>`;
-            })
-            .join("");
-        }
-      }
-
-      if (el.privateAccessLogs instanceof HTMLElement) {
-        if (!logs.length) {
-          el.privateAccessLogs.innerHTML = '<p class="rounded-xl border border-neutral-200 bg-white px-3 py-3 text-xs text-neutral-500">Пока нет открытий приватной визитки.</p>';
-        } else {
-          el.privateAccessLogs.innerHTML = logs
-            .map((item) => {
-              const when = item?.createdAt ? fdt(item.createdAt) : "—";
-              const device = String(item?.device || item?.userAgent || "Неизвестное устройство").trim();
-              const label = String(item?.passwordLabel || "").trim() || "Без метки";
-              return `<div class="rounded-xl border border-neutral-200 bg-white px-3 py-2">
-                <p class="text-xs font-semibold text-neutral-900">${esc(when)}</p>
-                <p class="text-xs text-neutral-600">Пароль: ${esc(label)}</p>
-                <p class="text-xs text-neutral-500">${esc(device)}</p>
-              </div>`;
             })
             .join("");
         }
@@ -2130,7 +2287,6 @@ Email: ${userEmail}
         s.score = payload.score || null;
         s.pricing = payload.pricing || s.pricing;
         s.privatePasswords = Array.isArray(payload?.privacy?.passwords) ? payload.privacy.passwords : [];
-        s.privateAccessLogs = Array.isArray(payload?.privacy?.accessLogs) ? payload.privacy.accessLogs : [];
         s.privatePasswordMinLength = Number(payload?.privacy?.passwordMinLength || 4) || 4;
         s.privatePasswordLimit = Number(payload?.privacy?.passwordLimit || 10) || 10;
         if (!s.slugs.find((item) => item.fullSlug === s.analyticsSelectedSlug)) {
@@ -2164,29 +2320,14 @@ Email: ${userEmail}
 
     const refreshPrivateAccessData = async () => {
       try {
-        const [passwordsPayload, logsPayload] = await Promise.all([
-          api("/api/profile/privacy/passwords"),
-          api("/api/profile/privacy/access-logs?limit=20"),
-        ]);
+        const passwordsPayload = await api("/api/profile/privacy/passwords");
         s.privatePasswords = Array.isArray(passwordsPayload?.items) ? passwordsPayload.items : [];
-        s.privateAccessLogs = Array.isArray(logsPayload?.items) ? logsPayload.items : [];
         s.privatePasswordMinLength = Number(passwordsPayload?.minLength || s.privatePasswordMinLength || 4) || 4;
         s.privatePasswordLimit = Number(passwordsPayload?.limit || s.privatePasswordLimit || 10) || 10;
         renderPrivateAccessSettings();
       } catch (error) {
         console.error("[profile] failed to refresh private access data", error);
       }
-    };
-
-    const closePrivateChangeForm = (passwordId) => {
-      const id = String(passwordId || "");
-      const form = document.querySelector(`[data-private-change-form=\"${id}\"]`);
-      if (!(form instanceof HTMLElement)) return;
-      form.classList.add("hidden");
-      const oldInput = form.querySelector(`[data-private-old-password=\"${id}\"]`);
-      const newInput = form.querySelector(`[data-private-new-password=\"${id}\"]`);
-      if (oldInput instanceof HTMLInputElement) oldInput.value = "";
-      if (newInput instanceof HTMLInputElement) newInput.value = "";
     };
 
     const saveCard = async () => {
@@ -2221,7 +2362,6 @@ Email: ${userEmail}
               value: typeof b.url === 'string' ? b.url : (typeof b.value === 'string' ? b.value : ''),
             })),
             theme: s.theme,
-            customColor: el.cColor?.value || null,
             showBranding: el.cBranding ? !el.cBranding.checked : true,
           }),
         });
@@ -2438,6 +2578,32 @@ Email: ${userEmail}
     el.passwordModalSubmit?.addEventListener("click", () => {
       void handlePasswordChange();
     });
+    el.privatePasswordAddCloseTop?.addEventListener("click", closePrivatePasswordAddModal);
+    el.privatePasswordAddCancel?.addEventListener("click", closePrivatePasswordAddModal);
+    el.privatePasswordAddModal?.addEventListener("click", (event) => {
+      if (event.target === el.privatePasswordAddModal) closePrivatePasswordAddModal();
+    });
+    el.privatePasswordAddSubmit?.addEventListener("click", () => {
+      void handlePrivatePasswordAdd();
+    });
+    el.privatePasswordAddValue?.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter") return;
+      event.preventDefault();
+      void handlePrivatePasswordAdd();
+    });
+    el.privatePasswordChangeCloseTop?.addEventListener("click", closePrivatePasswordChangeModal);
+    el.privatePasswordChangeCancel?.addEventListener("click", closePrivatePasswordChangeModal);
+    el.privatePasswordChangeModal?.addEventListener("click", (event) => {
+      if (event.target === el.privatePasswordChangeModal) closePrivatePasswordChangeModal();
+    });
+    el.privatePasswordChangeSubmit?.addEventListener("click", () => {
+      void handlePrivatePasswordChange();
+    });
+    el.privatePasswordChangeNew?.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter") return;
+      event.preventDefault();
+      void handlePrivatePasswordChange();
+    });
     el.braceletModalClose?.addEventListener("click", closeBraceletModal);
     el.braceletModalCloseTop?.addEventListener("click", closeBraceletModal);
     el.braceletModal?.addEventListener("click", (event) => {
@@ -2482,6 +2648,14 @@ Email: ${userEmail}
           closePasswordModal();
           return;
         }
+        if (privatePasswordChangeModalOpen) {
+          closePrivatePasswordChangeModal();
+          return;
+        }
+        if (privatePasswordAddModalOpen) {
+          closePrivatePasswordAddModal();
+          return;
+        }
         if (braceletModalOpen) {
           closeBraceletModal();
           return;
@@ -2498,6 +2672,14 @@ Email: ${userEmail}
       }
       if (passwordModalOpen && el.passwordModalDialog instanceof HTMLElement) {
         trapFocus(el.passwordModalDialog, event);
+        return;
+      }
+      if (privatePasswordChangeModalOpen && el.privatePasswordChangeDialog instanceof HTMLElement) {
+        trapFocus(el.privatePasswordChangeDialog, event);
+        return;
+      }
+      if (privatePasswordAddModalOpen && el.privatePasswordAddDialog instanceof HTMLElement) {
+        trapFocus(el.privatePasswordAddDialog, event);
         return;
       }
       if (braceletModalOpen && el.braceletModalDialog instanceof HTMLElement) {
@@ -2661,59 +2843,10 @@ Email: ${userEmail}
         return;
       }
 
-      if (action === "toggle-private-change") {
+      if (action === "open-private-change") {
         const passwordId = String(actionNode.getAttribute("data-password-id") || "").trim();
         if (!passwordId) return;
-        const form = document.querySelector(`[data-private-change-form="${passwordId}"]`);
-        if (!(form instanceof HTMLElement)) return;
-        const nextHidden = !form.classList.contains("hidden");
-        document
-          .querySelectorAll("[data-private-change-form]")
-          .forEach((node) => node.classList.add("hidden"));
-        if (nextHidden) {
-          form.classList.add("hidden");
-          closePrivateChangeForm(passwordId);
-        } else {
-          form.classList.remove("hidden");
-          const oldInput = form.querySelector(`[data-private-old-password="${passwordId}"]`);
-          if (oldInput instanceof HTMLInputElement) {
-            oldInput.focus();
-          }
-        }
-        return;
-      }
-
-      if (action === "cancel-private-change") {
-        const passwordId = String(actionNode.getAttribute("data-password-id") || "").trim();
-        if (!passwordId) return;
-        closePrivateChangeForm(passwordId);
-        return;
-      }
-
-      if (action === "save-private-change") {
-        const passwordId = String(actionNode.getAttribute("data-password-id") || "").trim();
-        if (!passwordId) return;
-        const oldInput = document.querySelector(`[data-private-old-password="${passwordId}"]`);
-        const newInput = document.querySelector(`[data-private-new-password="${passwordId}"]`);
-        const oldPassword = oldInput instanceof HTMLInputElement ? String(oldInput.value || "").trim() : "";
-        const newPassword = newInput instanceof HTMLInputElement ? String(newInput.value || "").trim() : "";
-        const minLength = Number.isFinite(Number(s.privatePasswordMinLength)) ? Number(s.privatePasswordMinLength) : 4;
-        if (!oldPassword || newPassword.length < minLength) {
-          showModal("Проверь данные", `Введите старый пароль и новый минимум ${minLength} символа.`);
-          return;
-        }
-        try {
-          await api(`/api/profile/privacy/passwords/${encodeURIComponent(passwordId)}/change`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ oldPassword, newPassword }),
-          });
-          closePrivateChangeForm(passwordId);
-          await refreshPrivateAccessData();
-          showSaveAlert("Пароль обновлён");
-        } catch (error) {
-          showModal("Ошибка", error.message || "Не удалось сменить пароль");
-        }
+        openPrivatePasswordChangeModal(passwordId);
         return;
       }
 
@@ -2942,7 +3075,6 @@ Email: ${userEmail}
       renderPreview();
       saveDraft();
     });
-    el.cColor?.addEventListener("input", () => { renderPreview(); saveDraft(); });
     el.cBranding?.addEventListener("change", () => { renderPreview(); saveDraft(); });
     el.cHashtag?.addEventListener("input", () => { renderPreview(); saveDraft(); });
     el.cAddress?.addEventListener("input", () => { renderPreview(); saveDraft(); });
@@ -3157,38 +3289,7 @@ Email: ${userEmail}
 
     el.stChangePassword?.addEventListener("click", openPasswordModal);
 
-    el.privatePasswordAdd?.addEventListener("click", async () => {
-      const password = String(el.privatePasswordValue?.value || "").trim();
-      const label = String(el.privatePasswordLabel?.value || "").trim();
-      const minLength = Number.isFinite(Number(s.privatePasswordMinLength)) ? Number(s.privatePasswordMinLength) : 4;
-
-      if (password.length < minLength) {
-        showModal("Проверь пароль", `Минимальная длина пароля: ${minLength} символа.`);
-        return;
-      }
-
-      const button = el.privatePasswordAdd;
-      if (button instanceof HTMLButtonElement) {
-        button.disabled = true;
-      }
-      try {
-        await api("/api/profile/privacy/passwords", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ label, password }),
-        });
-        if (el.privatePasswordLabel instanceof HTMLInputElement) el.privatePasswordLabel.value = "";
-        if (el.privatePasswordValue instanceof HTMLInputElement) el.privatePasswordValue.value = "";
-        await refreshPrivateAccessData();
-        showSaveAlert("Пароль добавлен");
-      } catch (error) {
-        showModal("Ошибка", error.message || "Не удалось добавить пароль");
-      } finally {
-        if (button instanceof HTMLButtonElement) {
-          button.disabled = false;
-        }
-      }
-    });
+    el.privatePasswordOpenAdd?.addEventListener("click", openPrivatePasswordAddModal);
 
     el.stSave?.addEventListener("click", async () => {
       if (!el.stStatus) return;

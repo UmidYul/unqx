@@ -386,6 +386,19 @@ body.motion-ready [data-observe-reveal].is-visible {
   display: none;
 }
 
+/* Fallbacks for peer-based switches when utility CSS is stale/missing variants. */
+.peer:checked ~ .peer-checked\:translate-x-5 {
+  transform: translateX(1.25rem);
+}
+
+.peer:disabled ~ .peer-disabled\:opacity-50 {
+  opacity: 0.5;
+}
+
+.peer:disabled ~ .peer-disabled\:opacity-80 {
+  opacity: 0.8;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

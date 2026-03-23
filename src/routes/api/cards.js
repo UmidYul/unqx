@@ -65,7 +65,6 @@ const {
 } = require("../../services/private-access");
 const {
   verifyPrivatePasswordForOwner,
-  recordPrivateAccessLog,
 } = require("../../services/private-access-store");
 
 const router = express.Router();
@@ -2256,7 +2255,6 @@ router.post(
 
 router.post(
   "/private-access/:slug/unlock",
-  requireSameOrigin,
   asyncHandler(async (req, res) => {
     const slug = sanitizeSlug(req.params.slug);
     if (!slug) {
@@ -2294,21 +2292,12 @@ router.post(
     });
 
     setPrivateAccessCookie(req, res, token, expiresAt);
-    await recordPrivateAccessLog({
-      req,
-      ownerId: slugRow.ownerId,
-      slug,
-      passwordId: matchedPassword.passwordId,
-      passwordLabel: matchedPassword.label,
-    });
-
     res.json(buildPrivateAccessResponsePayload({ token, expiresAt }));
   }),
 );
 
 router.post(
   "/private-access/:slug/resume",
-  requireSameOrigin,
   asyncHandler(async (req, res) => {
     const slug = sanitizeSlug(req.params.slug);
     if (!slug) {

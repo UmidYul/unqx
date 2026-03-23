@@ -16,7 +16,6 @@ const {
 } = require("../../services/private-access");
 const {
   verifyPrivatePasswordForOwner,
-  recordPrivateAccessLog,
 } = require("../../services/private-access-store");
 
 const router = express.Router();
@@ -1473,14 +1472,6 @@ router.post(
       passwordId: matchedPassword.passwordId,
       exp: expiresAt,
       iat: Date.now(),
-    });
-
-    await recordPrivateAccessLog({
-      req,
-      ownerId: slugRow.ownerId,
-      slug,
-      passwordId: matchedPassword.passwordId,
-      passwordLabel: matchedPassword.label,
     });
 
     res.json({

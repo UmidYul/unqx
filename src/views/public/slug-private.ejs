@@ -4,9 +4,145 @@
   const pageOwnerName = typeof ownerName === "string" && ownerName ? ownerName : "UNQX User";
   const pageOwnerUsername = typeof ownerUsername === "string" ? ownerUsername : "";
   const pageOwnerAvatar = typeof ownerAvatar === "string" ? ownerAvatar : "";
-  const pageTheme = typeof theme === "string" && theme ? theme : "default_dark";
+  const rawTheme = typeof theme === "string" && theme ? theme : "default_dark";
+  const pageTheme = rawTheme === "royal_ivory" ? "sage_luxe" : rawTheme;
   const pageLockedReason = typeof lockedReason === "string" ? lockedReason : "";
   const pageImage = pageOwnerAvatar || image || null;
+  const privateThemeTokens = {
+    default_dark: {
+      cardBg: "#ffffff",
+      cardBorder: "#d8d8d8",
+      buttonPrimaryBg: "#151515",
+      buttonPrimaryText: "#ffffff",
+      buttonSecondaryBg: "#f5f5f5",
+      nameColor: "#242424",
+      mutedColor: "#9a9a9a",
+      avatarBg: "#ededed",
+      avatarText: "#4a4a4a",
+      radius: "20px",
+    },
+    arctic: {
+      cardBg: "linear-gradient(160deg, #f8fafc 0%, #eef2f7 100%)",
+      cardBorder: "#dce4ed",
+      buttonPrimaryBg: "#1a2a3a",
+      buttonPrimaryText: "#f0f6ff",
+      buttonSecondaryBg: "rgba(248, 251, 255, 0.85)",
+      nameColor: "#1a2a3a",
+      mutedColor: "#7a9db8",
+      avatarBg: "linear-gradient(135deg, #e0eaf4, #c4d6e8)",
+      avatarText: "#4a6880",
+      radius: "24px",
+    },
+    linen: {
+      cardBg: "linear-gradient(160deg, #faf8f4 0%, #f2ede6 100%)",
+      cardBorder: "#e0d8ce",
+      buttonPrimaryBg: "#3a2e24",
+      buttonPrimaryText: "#f2ede6",
+      buttonSecondaryBg: "rgba(250, 246, 240, 0.86)",
+      nameColor: "#3a2e24",
+      mutedColor: "#a08060",
+      avatarBg: "linear-gradient(135deg, #ede8e0, #d8cfc4)",
+      avatarText: "#7a6650",
+      radius: "20px",
+    },
+    marble: {
+      cardBg: "#ffffff",
+      cardBorder: "#ebebeb",
+      buttonPrimaryBg: "#0a0a0a",
+      buttonPrimaryText: "#ffffff",
+      buttonSecondaryBg: "#ffffff",
+      nameColor: "#0a0a0a",
+      mutedColor: "#aaaaaa",
+      avatarBg: "linear-gradient(135deg, #f5f5f5, #e8e8e8)",
+      avatarText: "#555555",
+      radius: "0px",
+    },
+    forest: {
+      cardBg: "linear-gradient(170deg, #153c27 0%, #1f5335 56%, #112f20 100%)",
+      cardBorder: "#2f6b47",
+      buttonPrimaryBg: "linear-gradient(135deg, #18472d, #245f3d)",
+      buttonPrimaryText: "#e7dbbf",
+      buttonSecondaryBg: "rgba(16, 46, 30, 0.76)",
+      nameColor: "#e7dbbf",
+      mutedColor: "#e7dbbf",
+      avatarBg: "linear-gradient(135deg, #18472d, #235b3a)",
+      avatarText: "#e7dbbf",
+      radius: "20px",
+    },
+    sage_luxe: {
+      cardBg: "linear-gradient(165deg, #f7faf7 0%, #edf2ee 54%, #e6ece7 100%)",
+      cardBorder: "#cfd8cf",
+      buttonPrimaryBg: "linear-gradient(135deg, #243129, #33443a)",
+      buttonPrimaryText: "#f1f6f2",
+      buttonSecondaryBg: "rgba(249, 252, 249, 0.72)",
+      nameColor: "#1f2a23",
+      mutedColor: "#667569",
+      avatarBg: "linear-gradient(135deg, #dce5dd, #c7d3c9)",
+      avatarText: "#3f5143",
+      radius: "24px",
+    },
+    midnight_obsidian: {
+      cardBg: "linear-gradient(160deg, #0c1118 0%, #111927 45%, #0a0f15 100%)",
+      cardBorder: "#2b3547",
+      buttonPrimaryBg: "linear-gradient(135deg, #1b2f4f, #284c78)",
+      buttonPrimaryText: "#ecf3ff",
+      buttonSecondaryBg: "rgba(17, 27, 41, 0.78)",
+      nameColor: "#d5e4ff",
+      mutedColor: "#8ea7cf",
+      avatarBg: "linear-gradient(135deg, #172238, #0f1829)",
+      avatarText: "#d6e6ff",
+      radius: "20px",
+    },
+    golden_noir: {
+      cardBg: "linear-gradient(160deg, #0f121b 0%, #161b28 46%, #0d1018 100%)",
+      cardBorder: "#2e3444",
+      buttonPrimaryBg: "linear-gradient(135deg, #b89d63, #d8c184)",
+      buttonPrimaryText: "#11151f",
+      buttonSecondaryBg: "rgba(19, 23, 35, 0.72)",
+      nameColor: "#d8c184",
+      mutedColor: "#bba56f",
+      avatarBg: "linear-gradient(135deg, #2a2f3e, #171b26)",
+      avatarText: "#d9c184",
+      radius: "20px",
+    },
+    aurora_codex: {
+      cardBg: "linear-gradient(166deg, #fbf4e6 0%, #f4ead3 50%, #fcf7ea 100%)",
+      cardBorder: "#bfa781",
+      buttonPrimaryBg: "linear-gradient(135deg, rgba(143, 40, 32, 0.92), rgba(173, 58, 41, 0.9))",
+      buttonPrimaryText: "#fff7ea",
+      buttonSecondaryBg: "rgba(143, 40, 32, 0.07)",
+      nameColor: "#1f1711",
+      mutedColor: "#5c4636",
+      avatarBg: "linear-gradient(135deg, #4d3222, #2f2017)",
+      avatarText: "#f4e3cb",
+      radius: "3px",
+    },
+    nebula_glass: {
+      cardBg: "rgba(255, 255, 255, 0.09)",
+      cardBorder: "rgba(255, 255, 255, 0.15)",
+      buttonPrimaryBg: "rgba(255, 255, 255, 0.07)",
+      buttonPrimaryText: "#ffffff",
+      buttonSecondaryBg: "rgba(255, 255, 255, 0.06)",
+      nameColor: "#ffffff",
+      mutedColor: "rgba(255, 255, 255, 0.62)",
+      avatarBg: "rgba(255, 255, 255, 0.08)",
+      avatarText: "#ffffff",
+      radius: "21px",
+    },
+  };
+  const activePrivateTokens = privateThemeTokens[pageTheme] || privateThemeTokens.default_dark;
+  const privateShellStyle = [
+    `--theme-card-bg:${activePrivateTokens.cardBg}`,
+    `--theme-card-border:${activePrivateTokens.cardBorder}`,
+    `--theme-button-primary-bg:${activePrivateTokens.buttonPrimaryBg}`,
+    `--theme-button-primary-text:${activePrivateTokens.buttonPrimaryText}`,
+    `--theme-button-secondary-bg:${activePrivateTokens.buttonSecondaryBg}`,
+    `--theme-name-color:${activePrivateTokens.nameColor}`,
+    `--theme-muted-color:${activePrivateTokens.mutedColor}`,
+    `--theme-avatar-bg:${activePrivateTokens.avatarBg}`,
+    `--theme-avatar-text:${activePrivateTokens.avatarText}`,
+    `--theme-card-radius:${activePrivateTokens.radius}`,
+  ].join(";");
   const initials = pageOwnerName
     .split(/\s+/)
     .filter(Boolean)
@@ -29,7 +165,7 @@
 
 <body class="antialiased" data-card-theme="<%= pageTheme %>">
   <main class="private-card-screen relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-12">
-    <section id="private-card-shell" class="private-card-shell w-full max-w-[520px] rounded-3xl border p-6 sm:p-8">
+    <section id="private-card-shell" class="private-card-shell w-full max-w-[520px] rounded-3xl border p-6 sm:p-8" style="<%= privateShellStyle %>">
       <header class="private-card-owner flex items-center gap-3 rounded-2xl border px-3 py-2.5">
         <% if (pageOwnerAvatar) { %>
           <img src="<%= pageOwnerAvatar %>" alt="Аватар" class="h-12 w-12 rounded-full border object-cover" />

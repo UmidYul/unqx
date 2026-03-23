@@ -77,7 +77,6 @@ const PROFILE_CARD_BASE_COLUMNS = [
   "show_branding",
 ];
 const CARD_THEME_ENUM_CACHE_TTL_MS = 5 * 60 * 1000;
-const PRIVATE_ACCESS_LOG_LIMIT = 50;
 let cardThemeEnumCache = {
   checkedAt: 0,
   values: null,
@@ -633,19 +632,6 @@ function mapPrivatePasswordRow(row) {
   };
 }
 
-function mapPrivateAccessLogRow(row) {
-  if (!row) return null;
-  const userAgent = String(row.user_agent || row.userAgent || "").trim();
-  return {
-    id: String(row.id),
-    slug: sanitizeSlug(row.slug),
-    passwordLabel: String(row.password_label || row.passwordLabel || "").trim(),
-    device: String(row.viewer_device || row.viewerDevice || "").trim() || userAgent.slice(0, 180),
-    userAgent: userAgent || null,
-    createdAt: row.created_at || row.createdAt || null,
-  };
-}
-
 async function listOwnerPrivatePasswords(ownerId) {
   try {
     const rows = await prisma.$queryRaw`
@@ -658,27 +644,6 @@ async function listOwnerPrivatePasswords(ownerId) {
     `;
     return (Array.isArray(rows) ? rows : [])
       .map((row) => mapPrivatePasswordRow(row))
-      .filter(Boolean);
-  } catch (error) {
-    if (isPrivateAccessStorageMissing(error)) {
-      return [];
-    }
-    throw error;
-  }
-}
-
-async function listOwnerPrivateAccessLogs(ownerId, limit = PRIVATE_ACCESS_LOG_LIMIT) {
-  const safeLimit = Math.min(100, Math.max(1, Number(limit) || PRIVATE_ACCESS_LOG_LIMIT));
-  try {
-    const rows = await prisma.$queryRaw`
-      SELECT id, slug, password_label, viewer_device, user_agent, created_at
-      FROM card_private_access_logs
-      WHERE owner_id = ${ownerId}
-      ORDER BY created_at DESC
-      LIMIT ${safeLimit}
-    `;
-    return (Array.isArray(rows) ? rows : [])
-      .map((row) => mapPrivateAccessLogRow(row))
       .filter(Boolean);
   } catch (error) {
     if (isPrivateAccessStorageMissing(error)) {
@@ -763,7 +728,7 @@ router.get(
       return;
     }
 
-    const [slugs, card, requests, score, pricing, supportTelegramRaw, braceletPrice, privatePasswords, privateAccessLogs] = await Promise.all([
+    const [slugs, card, requests, score, pricing, supportTelegramRaw, braceletPrice, privatePasswords] = await Promise.all([
       getUserSlugsWithStats(user.id),
       findProfileCardByOwnerId(user.id),
       prisma.slugRequest.findMany({
@@ -775,7 +740,6 @@ router.get(
       getSetting("contact_support_telegram", `@${FALLBACK_SUPPORT_TELEGRAM}`),
       getBraceletPrice(),
       listOwnerPrivatePasswords(user.id),
-      listOwnerPrivateAccessLogs(user.id, 20),
     ]);
     const supportTelegram = normalizeTelegramUsername(supportTelegramRaw);
 
@@ -832,7 +796,6 @@ router.get(
         passwordMinLength: PRIVATE_PASSWORD_MIN_LENGTH,
         passwordLimit: PRIVATE_PASSWORD_MAX_COUNT,
         passwords: privatePasswords,
-        accessLogs: privateAccessLogs,
       },
     });
   }),
@@ -1036,9 +999,7 @@ router.get(
       return;
     }
 
-    const limit = Math.min(100, Math.max(1, Number(req.query.limit || PRIVATE_ACCESS_LOG_LIMIT) || PRIVATE_ACCESS_LOG_LIMIT));
-    const items = await listOwnerPrivateAccessLogs(user.id, limit);
-    res.json({ items });
+    res.json({ items: [] });
   }),
 );
 

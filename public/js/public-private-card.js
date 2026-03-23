@@ -150,7 +150,7 @@
     event.preventDefault();
     setError("");
 
-    const password = String(input.value || "").trim();
+    const password = String(input.value || "");
     if (!password) {
       setError("Введите пароль");
       shakeField();
@@ -167,18 +167,24 @@
       const unlocked = await callPrivateAccessApi(`/api/cards/private-access/${encodeURIComponent(slug)}/unlock`, {
         password,
       });
-      const token = String(unlocked.token || "").trim();
-      const expiresAt = Date.parse(String(unlocked.expiresAt || ""));
-      if (!token || !Number.isFinite(expiresAt) || expiresAt <= Date.now()) {
-        throw new Error("Сеанс не выдан");
-      }
+      const granted = Boolean(unlocked?.granted || unlocked?.ok);
+      const token = String(unlocked?.token || "").trim();
+      const expiresAt = Date.parse(String(unlocked?.expiresAt || ""));
 
-      writeStoredAccess(token, expiresAt);
+      if (token && Number.isFinite(expiresAt) && expiresAt > Date.now()) {
+        writeStoredAccess(token, expiresAt);
+      } else if (!granted) {
+        throw new Error("Сеанс не выдан");
+      } else {
+        clearStoredAccess();
+      }
       navigateToUnlockedCard();
     } catch (error) {
       const code = String(error?.code || "").trim().toUpperCase();
       if (code === "PRIVATE_ACCESS_INVALID_PASSWORD") {
         setError("Неверный пароль");
+      } else if (code === "FORBIDDEN") {
+        setError("Браузер заблокировал проверку. Откройте ссылку напрямую в браузере.");
       } else {
         setError("Не удалось открыть визитку. Попробуйте ещё раз.");
       }
