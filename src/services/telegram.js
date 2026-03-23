@@ -42,7 +42,7 @@ async function sendOrderRequestToTelegram(payload) {
   }
 
   const tariffLabel = payload.tariff === "premium" ? "ПРЕМИУМ" : "БАЗОВЫЙ";
-  const braceletPrice = Number(payload.braceletPrice || (await getSetting("bracelet_price", 300_000)) || 300_000);
+  const braceletPrice = Number(payload.braceletPrice || (await getSetting("bracelet_price", 250_000)) || 250_000);
   const braceletLabel = payload.bracelet ? `Да (+${braceletPrice.toLocaleString("ru-RU")} сум)` : "Нет";
   const usernameLabel = payload.username ? `@${escapeHtml(payload.username.replace(/^@/, ""))}` : "@—";
   const emailLabel = payload.email ? escapeHtml(payload.email) : "—";

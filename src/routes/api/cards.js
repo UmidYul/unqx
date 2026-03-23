@@ -1131,7 +1131,7 @@ router.get(
           planBasicPrice: 50_000,
           planPremiumPrice: 130_000,
           premiumUpgradePrice: 80_000,
-          braceletPrice: 300_000,
+          braceletPrice: 250_000,
           planChargePreview: requestedPlan === "premium" ? 130_000 : 50_000,
         },
         limits: {

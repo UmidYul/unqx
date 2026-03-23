@@ -21,7 +21,7 @@ const DEFAULT_PRICING = {
   planBasicPrice: 50_000,
   planPremiumPrice: 130_000,
   premiumUpgradePrice: 80_000,
-  braceletPrice: 300_000,
+  braceletPrice: 250_000,
 };
 const PENDING_PURCHASE_INTENT_KEY = "unqx.pendingPurchaseIntent.v1";
 const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
@@ -923,7 +923,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     const promoCodeApplied = String(order.promoCodeApplied || "").trim();
     const bonusSpent = Number(order.bonusSpent || 0);
     const planPriceValue = Number(order.planPrice || 0);
-    const braceletPriceValue = order.bracelet ? Number(order.braceletPrice || 300000) : 0;
+    const braceletPriceValue = order.bracelet ? Number(order.braceletPrice || DEFAULT_PRICING.braceletPrice) : 0;
     const totalAmount = Number(order.totalOneTime || slugPrice + planPriceValue + braceletPriceValue);
     const userName = (currentUser?.displayName || currentUser?.firstName || "").trim() || "не указано";
     const userEmail = (currentUser?.email || "").trim() || "не указан";

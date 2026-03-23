@@ -1,7 +1,7 @@
 <% const modalPublicSettings=typeof publicSettings==="object" && publicSettings ? publicSettings : {}; const
-  modalBraceletPrice=Number(modalPublicSettings.bracelet_price || 300000); const
+  modalBraceletPrice=Number(modalPublicSettings.bracelet_price || 250000); const
   modalBraceletInStock=modalPublicSettings.bracelet_in_stock !==false; const
-  modalBraceletCtaText=String(modalPublicSettings.bracelet_cta_text || "Заказать браслет" ); const
+  modalBraceletCtaText=String(modalPublicSettings.bracelet_cta_text || "Заказать стикер" ); const
   modalResponseTime=String(modalPublicSettings.contact_response_time || "в течение 15 минут" ); const
   pendingHours=Number(modalPublicSettings.pending_expiry_hours || 24); const
   modalSessionUser = userSession && userSession.userId
@@ -162,11 +162,11 @@
 
             <label
               class="flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-700">
-              <span>
-                <span class="block">
-                  <%= modalBraceletInStock ? `Добавить NFC-браслет (+${modalBraceletPrice.toLocaleString("ru-RU")} сум)`
+                <span>
+                  <span class="block">
+                  <%= modalBraceletInStock ? `Добавить NFC-стикер (+${modalBraceletPrice.toLocaleString("ru-RU")} сум)`
                     : "Временно нет в наличии" %>
-                </span>
+                  </span>
                 <span class="mt-0.5 block text-xs text-neutral-500">
                   <%= modalBraceletCtaText %>
                 </span>
@@ -230,7 +230,7 @@
                 <span id="order-modal-total-cap-value">+0 сум</span>
               </div>
               <div id="order-modal-total-bracelet-row" class="mt-1 hidden items-center justify-between gap-3">
-                <span>Браслет</span>
+                <span>Стикер</span>
                 <span>
                   <%= modalBraceletPrice.toLocaleString("ru-RU") %> сум
                 </span>

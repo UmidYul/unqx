@@ -81,7 +81,7 @@
       .replace(/^@+/, "")
       .trim();
     const DEFAULT_PROFILE_AVATAR = "/brand/profile-thin.svg";
-    const DEFAULT_BRACELET_PRICE = 300000;
+    const DEFAULT_BRACELET_PRICE = 250000;
 
     const avatarSrc = (url) => {
       const base = String(url || "").trim() || DEFAULT_PROFILE_AVATAR;
@@ -240,7 +240,7 @@
       const slug = String(requestItem?.slug || "").toUpperCase();
       const slugPrice = Number(requestItem?.slugPrice || 0);
       const planPrice = Number(requestItem?.planPrice || 0);
-      const braceletPrice = requestItem?.bracelet ? Number(requestItem?.braceletPrice || 300_000) : 0;
+      const braceletPrice = requestItem?.bracelet ? Number(requestItem?.braceletPrice || DEFAULT_BRACELET_PRICE) : 0;
       const total = Number(requestItem?.totalOneTime || slugPrice + planPrice + braceletPrice);
       const userName = String(s.user?.displayName || s.user?.firstName || "").trim() || "не указано";
       const userEmail = String(s.user?.email || "").trim() || "не указан";
@@ -276,7 +276,7 @@
       const slug = String(order?.slug || "").trim().toUpperCase();
       const slugPrice = Number(order?.slugPrice || 0);
       const planPrice = Number(order?.planPrice || 0);
-      const braceletPrice = order?.bracelet ? Number(order?.braceletPrice || 300_000) : 0;
+      const braceletPrice = order?.bracelet ? Number(order?.braceletPrice || DEFAULT_BRACELET_PRICE) : 0;
       const total = Number(order?.totalOneTime || slugPrice + planPrice + braceletPrice);
       const userName = String(s.user?.displayName || s.user?.firstName || "").trim() || "не указано";
       const userEmail = String(s.user?.email || "").trim() || "не указан";
@@ -1444,7 +1444,10 @@ Email: ${userEmail}
               const normalizedStatus = String(requestItem.status || "").toLowerCase();
               const showNote = ["rejected", "expired"].includes(normalizedStatus);
               const canResumePayment = normalizedStatus === "new" || normalizedStatus === "contacted";
-              const totalPrice = Number(requestItem.slugPrice || 0) + Number(requestItem.planPrice || 0) + (requestItem.bracelet ? 300000 : 0);
+              const totalPrice =
+                Number(requestItem.slugPrice || 0) +
+                Number(requestItem.planPrice || 0) +
+                (requestItem.bracelet ? Number(requestItem.braceletPrice || DEFAULT_BRACELET_PRICE) : 0);
               const payActionButton = canResumePayment
                 ? `<button type="button" data-a="pay-request" data-order-id="${esc(requestItem.id)}" class="interactive-btn min-h-11 w-full rounded-lg bg-neutral-900 px-3 py-2 text-xs font-semibold text-white">Оплатить</button>`
                 : "";
@@ -1514,7 +1517,7 @@ Email: ${userEmail}
               <td class="px-3 py-2">${fdt(requestItem.createdAt)}</td>
               <td class="px-3 py-2">${requestItem.purchasedAt ? fdt(requestItem.purchasedAt) : "—"}</td>
               <td class="px-3 py-2 font-mono">${esc(requestItem.slug)}</td>
-              <td class="px-3 py-2">${fp(Number(requestItem.slugPrice || 0) + Number(requestItem.planPrice || 0) + (requestItem.bracelet ? 300000 : 0))}<div class="text-[11px] text-neutral-500">${requestItem.purchasedAt ? `Единоразовая покупка · ${fd(requestItem.purchasedAt)}` : "Единоразовая покупка"}</div></td>
+              <td class="px-3 py-2">${fp(Number(requestItem.slugPrice || 0) + Number(requestItem.planPrice || 0) + (requestItem.bracelet ? Number(requestItem.braceletPrice || DEFAULT_BRACELET_PRICE) : 0))}<div class="text-[11px] text-neutral-500">${requestItem.purchasedAt ? `Единоразовая покупка · ${fd(requestItem.purchasedAt)}` : "Единоразовая покупка"}</div></td>
               <td class="px-3 py-2">${requestItem.requestedPlan === "premium" ? "Премиум" : "Базовый"}</td>
               <td class="px-3 py-2">${requestItem.bracelet ? "Да" : "Нет"}</td>
               <td class="px-3 py-2">${esc(requestItem.statusBadge || requestItem.status)}</td>
@@ -1848,7 +1851,7 @@ Email: ${userEmail}
 
       const tips = [];
       if (Number(score.scoreBracelet || 0) === 0) {
-        tips.push('<div class="flex items-center justify-between gap-2"><span>Добавь NFC-браслет - +100 к Score</span><button type="button" data-a="open-bracelet-order-modal" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold">Заказать браслет</button></div>');
+        tips.push('<div class="flex items-center justify-between gap-2"><span>Добавь NFC-стикер - +100 к Score</span><button type="button" data-a="open-bracelet-order-modal" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold">Заказать стикер</button></div>');
       }
       if (Number(score.scorePlan || 0) === 0) {
         const price = Number(s.pricing?.premiumUpgradePrice || 80_000).toLocaleString("ru-RU");

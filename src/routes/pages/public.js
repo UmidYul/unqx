@@ -679,6 +679,7 @@ router.get(
         "plan_premium_excluded_features",
         "plan_premium_popular_badge",
         "bracelet_name",
+        "bracelet_old_price",
         "bracelet_price",
         "bracelet_in_stock",
         "bracelet_cta_text",

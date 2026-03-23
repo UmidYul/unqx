@@ -99,6 +99,7 @@
       ],
       bracelet: [
         "bracelet_name",
+        "bracelet_old_price",
         "bracelet_price",
         "bracelet_in_stock",
         "bracelet_cta_text",

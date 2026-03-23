@@ -8,13 +8,16 @@
   platformHeroSubtitle=String(pagePublicSettings.platform_hero_subtitle
   || "Цифровая визитка за 1 минуту - одна ссылка вместо тысячи слов." ); const
   pricingVisible=Boolean(pagePublicSettings.pricing_section_visible ?? true); const
-  braceletName=String(pagePublicSettings.bracelet_name || "NFC-браслет" ); const
-  braceletPrice=Number(pagePublicSettings.bracelet_price || 300000); const
+  braceletName=String(pagePublicSettings.bracelet_name || "NFC-стикер" ); const
+  braceletOldPrice=Number(pagePublicSettings.bracelet_old_price || 400000); const
+  braceletPrice=Number(pagePublicSettings.bracelet_price || 250000); const
+  braceletDiscountPercent=braceletOldPrice > braceletPrice ? Math.round((1 - braceletPrice / braceletOldPrice) * 100)
+  : 0; const
   braceletFeaturesFromSettings=Array.isArray(pagePublicSettings.bracelet_features) ?
   pagePublicSettings.bracelet_features : null; const braceletDescription=String(pagePublicSettings.bracelet_description
-  || "Стильный тканевый браслет с NFC, который открывает твою цифровую визитку в один тап." ); const
+  || "Компактный NFC-стикер, который клеится на любую поверхность и открывает твою цифровую визитку в один тап." ); const
   braceletNote=String(pagePublicSettings.bracelet_note
-  || "Браслет привязан к твоему slug - работает только с активной визиткой UNQX" ); const
+  || "Стикер привязан к твоему slug - работает только с активной визиткой UNQX" ); const
   supportTelegram=String(pagePublicSettings.contact_support_telegram || "@unqx_uz" ); const
   supportPhone=String(pagePublicSettings.contact_phone || "" ).trim(); const
   supportPhoneHref=supportPhone.replace(/[^\d+]/g, "" ); const pageJsonLd=[{ "@context" : "https://schema.org" , "@type"
@@ -70,11 +73,11 @@
   ];
 
   const wristbandFeatures = braceletFeaturesFromSettings || [
-  "Тап, моментально открывается unqx.uz/UNQ",
+  "Тап по стикеру - моментально открывается unqx.uz/UNQ",
   "Работает с любым смартфоном - iOS и Android",
   "Не нужно заряжать - NFC работает пассивно",
-  "Мягкий тканевый браслет - удобно носить каждый день",
-  "Обновил визитку на сайте - браслет автоматически актуален",
+  "Тонкий формат с клеевой основой - можно закрепить где удобно",
+  "Обновил визитку на сайте - стикер автоматически актуален",
   "Идеально для нетворкинга, съёмок и студенческих мероприятий",
   ];
 
@@ -685,18 +688,28 @@
                     <div class="grid items-center gap-16 md:grid-cols-2">
                       <div>
                         <p class="mb-3 font-mono text-xs uppercase tracking-widest text-neutral-400">
-                          <%= platformName %> WRISTBAND
+                          <%= platformName %> STICKER
                         </p>
-                        <h2 class="text-3xl font-bold tracking-tight text-neutral-900 md:text-4xl">Тап. И ты уже<br />в
+                        <h2 class="text-3xl font-bold tracking-tight text-neutral-900 md:text-4xl">Приклей стикер. И ты
+                          уже<br />в
                           телефоне собеседника.</h2>
                         <p class="mt-4 text-base leading-relaxed text-neutral-500">
                           <%= braceletDescription %>
                         </p>
 
-                        <div class="mt-6 flex items-baseline gap-2">
+                        <div class="mt-6 flex items-end gap-3">
+                          <span class="text-lg text-neutral-400 line-through">
+                            <%= braceletOldPrice.toLocaleString("ru-RU") %> сум
+                          </span>
                           <span class="text-3xl font-bold text-neutral-900">
                             <%= braceletPrice.toLocaleString("ru-RU") %> сум
                           </span>
+                          <% if (braceletDiscountPercent > 0) { %>
+                            <span
+                              class="inline-flex items-center rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+                              -<%= braceletDiscountPercent %>%
+                            </span>
+                            <% } %>
                         </div>
 
                         <p class="mt-2 text-sm text-neutral-400">Разовая покупка · Доставка по Ташкенту</p>
@@ -716,7 +729,7 @@
                         <div class="mt-8 flex flex-wrap items-center gap-3">
                           <a href="#" data-order-link data-order-bracelet="true"
                             class="interactive-btn btn-shimmer inline-flex min-h-11 items-center gap-2 rounded-xl bg-neutral-900 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-neutral-800">
-                            <%= String(pagePublicSettings.bracelet_cta_text || "Заказать браслет" ) %>
+                            <%= String(pagePublicSettings.bracelet_cta_text || "Заказать стикер" ) %>
                           </a>
 
                           <span
@@ -736,9 +749,9 @@
                         <div class="w-full overflow-hidden rounded-2xl border border-neutral-200 bg-white p-8">
                           <div
                             class="absolute right-8 top-8 rounded-full bg-neutral-100 px-3 py-1 font-mono text-[10px] uppercase tracking-wider text-neutral-500">
-                            UNQX WRISTBAND
+                            UNQX STICKER
                           </div>
-                          <img src="/images/wristband.png" alt="<%= platformName %> <%= braceletName %>"
+                          <img src="/images/card.png" alt="<%= platformName %> <%= braceletName %>"
                             class="h-auto w-full object-contain" loading="lazy" />
                         </div>
                       </div>

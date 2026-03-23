@@ -1,7 +1,7 @@
 const { getFeatureSetting, setFeatureSetting, DEFAULTS } = require("./feature-settings");
 const { getManySettings, setSettingsBatch, getSetting } = require("./platform-settings");
 
-const BRACELET_PRICE = 300_000;
+const BRACELET_PRICE = 250_000;
 
 function normalizePlan(value) {
   if (value === "premium") return "premium";
