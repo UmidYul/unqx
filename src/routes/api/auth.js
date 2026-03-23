@@ -26,6 +26,7 @@ const {
 const { linkReferralOnRegistration } = require("../../services/referrals");
 const { resolveUzbekistanCity } = require("../../constants/uzbekistan-cities");
 const { normalizeLogin, isValidLogin } = require("../../utils/login");
+const { createUserAccessToken } = require("../../services/user-access-token");
 
 const router = express.Router();
 const OTP_LENGTH = 6;
@@ -221,6 +222,27 @@ function userToClientPayload(user) {
     planPurchasedAt: user.planPurchasedAt ? user.planPurchasedAt.toISOString() : null,
     planUpgradedAt: user.planUpgradedAt ? user.planUpgradedAt.toISOString() : null,
     status: user.status,
+  };
+}
+
+function buildAuthSuccessPayload(user, options = {}) {
+  const rememberMe = Boolean(options.rememberMe);
+  const includeRedirect = options.includeRedirect !== false;
+  const redirectTo = options.redirectTo || "/profile";
+  const sessionPayload = userToSessionPayload(user);
+  const tokenPayload = createUserAccessToken(sessionPayload, { rememberMe });
+
+  return {
+    ok: true,
+    authenticated: true,
+    ...(includeRedirect ? { redirectTo } : {}),
+    ...(tokenPayload
+      ? {
+        accessToken: tokenPayload.token,
+        accessTokenExpiresAt: new Date(tokenPayload.expiresAt).toISOString(),
+      }
+      : {}),
+    user: userToClientPayload(user),
   };
 }
 
@@ -492,7 +514,7 @@ router.post(
     await setOwnerSlugsCookie(res, updated.id);
     await sendWelcomeEmail({ email: updated.email, firstName: updated.firstName });
 
-    res.json({ ok: true, redirectTo: "/profile", user: userToClientPayload(updated) });
+    res.json(buildAuthSuccessPayload(updated, { rememberMe: true, redirectTo: "/profile" }));
   }),
 );
 
@@ -615,7 +637,7 @@ router.post(
 
     await loginUserSession(req, userToSessionPayload(user), { rememberMe });
     await setOwnerSlugsCookie(res, user.id);
-    res.json({ ok: true, redirectTo: "/profile", user: userToClientPayload(user) });
+    res.json(buildAuthSuccessPayload(user, { rememberMe, redirectTo: "/profile" }));
   }),
 );
 
@@ -730,7 +752,7 @@ router.post(
       console.error("[express-app] failed to send account reactivated email", error);
     });
 
-    res.json({ ok: true, redirectTo: "/profile", user: userToClientPayload(updated) });
+    res.json(buildAuthSuccessPayload(updated, { rememberMe: true, redirectTo: "/profile" }));
   }),
 );
 
@@ -935,7 +957,7 @@ router.post(
 
     await loginUserSession(req, userToSessionPayload(updated), { rememberMe: true });
     await setOwnerSlugsCookie(res, updated.id);
-    res.json({ ok: true, user: userToClientPayload(updated) });
+    res.json(buildAuthSuccessPayload(updated, { rememberMe: true, includeRedirect: false }));
   }),
 );
 

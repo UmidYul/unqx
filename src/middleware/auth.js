@@ -3,12 +3,37 @@ const bcrypt = require("bcryptjs");
 const { env } = require("../config/env");
 const { prisma } = require("../db/prisma");
 const { normalizeLogin, isValidLogin } = require("../utils/login");
+const { verifyUserAccessToken } = require("../services/user-access-token");
 
 const SESSION_MAX_AGE_7_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 const SESSION_MAX_AGE_30_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 
 function getUserSession(req) {
-  return req.session && req.session.user ? req.session.user : null;
+  if (req.session && req.session.user) {
+    return req.session.user;
+  }
+
+  if (req._authUserFromToken) {
+    return req._authUserFromToken;
+  }
+
+  const authorization = String(req.get("authorization") || req.headers?.authorization || "").trim();
+  if (!authorization.toLowerCase().startsWith("bearer ")) {
+    return null;
+  }
+
+  const token = authorization.slice(7).trim();
+  if (!token) {
+    return null;
+  }
+
+  const payload = verifyUserAccessToken(token);
+  if (!payload) {
+    return null;
+  }
+
+  req._authUserFromToken = payload;
+  return payload;
 }
 
 function getAdminSession(req) {
