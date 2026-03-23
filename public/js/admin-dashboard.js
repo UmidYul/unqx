@@ -208,7 +208,7 @@
     golden_noir: { label: "Noir Aureate", fill: "#161b28", border: "#c9ad6a", text: "#dfc98e" },
     aurora_codex: { label: "Aurora Scriptum", fill: "#f5ecd8", border: "#8a2a26", text: "#2b1f15" },
     nebula_glass: { label: "Liquid Glass", fill: "#1c1c1e", border: "#9a9a9c", text: "#f1f1f1" },
-    velours: { label: "Velours", fill: "#2d0a12", border: "#5a1828", text: "#c9a55a", bg: "#2d0a12" },
+    velours: { label: "Velours Luxe", fill: "#2d0a12", border: "#5a1828", text: "#c9a55a", bg: "#2d0a12" },
   };
   function themePill(theme) {
     const id = String(theme || "default_dark").trim();
