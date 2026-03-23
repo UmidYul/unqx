@@ -1369,7 +1369,7 @@ body[data-card-theme] #card-view-root>[data-card-view] {
 }
 
 [data-card-theme="velours"] .unq-ref-footline {
-  color: #4a1220;
+  color: #b58a94;
 }
 
 [data-card-theme="velours"] .unq-ref-footline div:last-child {
@@ -1930,11 +1930,11 @@ body[data-card-theme="velours"]::before {
 }
 
 [data-card-theme="velours"] #card-slug-search-form input::placeholder {
-  color: rgba(107, 32, 48, 0.7) !important;
+  color: rgba(245, 232, 232, 0.52) !important;
 }
 
 [data-card-theme="velours"] #card-slug-search-form span {
-  color: rgba(107, 32, 48, 0.8) !important;
+  color: rgba(201, 165, 90, 0.82) !important;
 }
 
 /* Стили для результатов поиска */
@@ -2023,6 +2023,9 @@ body[data-card-theme] main.private-card-screen {
 }
 
 .private-card-shell {
+  width: min(100%, 560px);
+  max-width: 560px;
+  margin-inline: auto;
   background: var(--theme-card-bg, #111111);
   border-color: var(--theme-card-border, rgba(255, 255, 255, 0.22));
   color: var(--theme-name-color, #f4f4f5);
