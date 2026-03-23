@@ -511,15 +511,25 @@ router.post(
       res.status(401).json(genericError);
       return;
     }
-    const user = await prisma.user.findFirst({
+    const userSelect = {
+      ...USER_AUTH_SELECT,
+      passwordHash: true,
+      loginAttempts: true,
+      lockedUntil: true,
+    };
+
+    let user = await prisma.user.findFirst({
       where: { login },
-      select: {
-        ...USER_AUTH_SELECT,
-        passwordHash: true,
-        loginAttempts: true,
-        lockedUntil: true,
-      },
+      select: userSelect,
     });
+
+    // Backward-compatible fallback: allow login by email for legacy users.
+    if (!user && login.includes("@")) {
+      user = await prisma.user.findFirst({
+        where: { email: login },
+        select: userSelect,
+      });
+    }
     if (!user || !user.passwordHash) {
       res.status(401).json(genericError);
       return;
