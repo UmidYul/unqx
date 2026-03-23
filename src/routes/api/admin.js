@@ -90,6 +90,11 @@ const PROFILE_CARD_BASE_COLUMNS = [
   "custom_color",
   "show_branding",
 ];
+const CARD_THEME_ENUM_CACHE_TTL_MS = 5 * 60 * 1000;
+let cardThemeEnumCache = {
+  checkedAt: 0,
+  values: null,
+};
 const PUSH_PRIORITY_SET = new Set(["default", "normal", "high"]);
 const PUSH_SOUND_SET = new Set(["default", "none"]);
 const BROADCAST_CHUNK_USERS = 400;
@@ -298,6 +303,61 @@ function buildRawErrorText(error) {
   }
 
   return parts.join("\n");
+}
+
+async function getSupportedCardThemeEnumValues() {
+  const now = Date.now();
+  if (
+    cardThemeEnumCache.values instanceof Set &&
+    now - Number(cardThemeEnumCache.checkedAt || 0) < CARD_THEME_ENUM_CACHE_TTL_MS
+  ) {
+    return cardThemeEnumCache.values;
+  }
+  try {
+    const rows = await prisma.$queryRaw`
+      SELECT e.enumlabel::text AS value
+      FROM pg_type t
+      JOIN pg_enum e ON t.oid = e.enumtypid
+      WHERE lower(t.typname::text) = 'cardtheme'
+      ORDER BY e.enumsortorder
+    `;
+    const values = new Set(
+      (Array.isArray(rows) ? rows : [])
+        .map((row) => String(row?.value || "").trim())
+        .filter(Boolean),
+    );
+    cardThemeEnumCache = {
+      checkedAt: now,
+      values,
+    };
+    return values;
+  } catch {
+    return null;
+  }
+}
+
+async function normalizeCardThemeForDatabase(theme) {
+  const requested = String(theme || "default_dark").trim() || "default_dark";
+  if (requested === "default_dark") {
+    return requested;
+  }
+  if (!PROFILE_THEMES.has(requested)) {
+    return "default_dark";
+  }
+  const supported = await getSupportedCardThemeEnumValues();
+  if (!supported || supported.size === 0) {
+    console.warn(
+      `[express-app] failed to read CardTheme enum values; fallback "${requested}" -> "default_dark"`,
+    );
+    return "default_dark";
+  }
+  if (supported.has(requested)) {
+    return requested;
+  }
+  if (requested === "sage_luxe" && supported.has("royal_ivory")) {
+    return "royal_ivory";
+  }
+  return "default_dark";
 }
 
 function extractMissingColumnName(error) {
@@ -3749,6 +3809,7 @@ router.put(
     const tags = normalizeTags(body.tags, effective.plan);
     const buttons = normalizeButtons(body.buttons, effective.plan);
     const theme = normalizeThemeByPlan(body.theme, effective.plan);
+    const themeForDatabase = await normalizeCardThemeForDatabase(theme);
     const customColor = effective.plan === "premium" ? normalizeColor(body.customColor) : null;
     const showBranding = effective.plan === "premium" ? Boolean(body.showBranding) : true;
 
@@ -3780,7 +3841,7 @@ router.put(
           extraPhone,
           tags,
           buttons,
-          theme,
+          theme: themeForDatabase,
           customColor,
           showBranding,
         });

@@ -365,10 +365,10 @@ async function getSupportedCardThemeEnumValues() {
   }
   try {
     const rows = await prisma.$queryRaw`
-      SELECT e.enumlabel AS value
+      SELECT e.enumlabel::text AS value
       FROM pg_type t
       JOIN pg_enum e ON t.oid = e.enumtypid
-      WHERE lower(t.typname) = 'cardtheme'
+      WHERE lower(t.typname::text) = 'cardtheme'
       ORDER BY e.enumsortorder
     `;
     const values = new Set(
@@ -393,7 +393,10 @@ async function normalizeCardThemeForDatabase(theme) {
   }
   const supported = await getSupportedCardThemeEnumValues();
   if (!supported || supported.size === 0) {
-    return requested;
+    console.warn(
+      `[express-app] failed to read CardTheme enum values; fallback "${requested}" -> "default_dark"`,
+    );
+    return "default_dark";
   }
   if (supported.has(requested)) {
     return requested;
