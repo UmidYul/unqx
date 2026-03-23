@@ -1046,15 +1046,24 @@ Email: ${userEmail}
         node = document.createElement("div");
         node.id = "profile-save-success-alert";
         node.className =
-          "fixed bottom-4 right-4 z-[80] hidden rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-800 shadow";
+          "pointer-events-none fixed bottom-4 right-4 z-[90] rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800 shadow-xl";
+        node.style.maxWidth = "min(92vw, 420px)";
+        node.style.opacity = "0";
+        node.style.transform = "translateY(10px) scale(0.98)";
+        node.style.transition = "opacity 180ms ease, transform 180ms ease";
+        node.setAttribute("role", "status");
+        node.setAttribute("aria-live", "polite");
         document.body.appendChild(node);
       }
       node.textContent = message;
-      node.classList.remove("hidden");
+      node.style.opacity = "1";
+      node.style.transform = "translateY(0) scale(1)";
       if (saveAlertTimer) clearTimeout(saveAlertTimer);
       saveAlertTimer = setTimeout(() => {
-        node?.classList.add("hidden");
-      }, 2600);
+        if (!node) return;
+        node.style.opacity = "0";
+        node.style.transform = "translateY(10px) scale(0.98)";
+      }, 4000);
     };
 
     const destroyCropper = () => {
@@ -2369,8 +2378,12 @@ Email: ${userEmail}
         });
 
         clearDraft();
+        try {
+          await load();
+        } catch (loadError) {
+          console.error("[profile] reload after card save failed", loadError);
+        }
         showSaveAlert(PROFILE_SAVE_SUCCESS_MESSAGE);
-        await load();
       } catch (error) {
         if (error.code === "UPGRADE_REQUIRED") {
           showModal("Доступно на Премиум", "Эта функция доступна только для Премиум тарифа.");
