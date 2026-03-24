@@ -1695,6 +1695,10 @@ router.get(
             privateAccessExpiry = accessPayload.exp;
           }
         }
+        if (slugRow.status === "private" && privateAccessExpiry) {
+          // One-time access: force password prompt again on next page refresh.
+          clearPrivateAccessCookie(req, res);
+        }
 
         const [views, ownerSlugs, verifiedIdentity] = await Promise.all([
           prisma.analyticsView
@@ -1749,12 +1753,7 @@ router.get(
           topBadge,
           score,
           noindex: slugRow.status === "private",
-          privateAccess: slugRow.status === "private"
-            ? {
-              slug,
-              expiresAt: privateAccessExpiry,
-            }
-            : null,
+          privateAccess: null,
           adminSession: getAdminSession(req),
         });
         return;

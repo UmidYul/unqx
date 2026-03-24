@@ -29,6 +29,13 @@
 
   const storageKey = `unqx.private_access.${slug}`;
   const csrfToken = String(document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "");
+
+  try {
+    sessionStorage.removeItem(storageKey);
+  } catch {
+    // ignore
+  }
+
   if (backButton instanceof HTMLAnchorElement) {
     backButton.addEventListener("click", (event) => {
       if (window.history.length > 1) {
@@ -52,40 +59,6 @@
       fieldWrap.classList.add("is-shake");
       window.setTimeout(() => fieldWrap.classList.remove("is-shake"), 420);
     });
-  };
-
-  const readStoredAccess = () => {
-    try {
-      const raw = sessionStorage.getItem(storageKey);
-      if (!raw) return null;
-      const parsed = JSON.parse(raw);
-      if (!parsed || typeof parsed !== "object") return null;
-      const token = String(parsed.token || "").trim();
-      const expiresAt = Number(parsed.expiresAt || 0);
-      if (!token || !expiresAt) return null;
-      return { token, expiresAt };
-    } catch {
-      return null;
-    }
-  };
-
-  const clearStoredAccess = () => {
-    try {
-      sessionStorage.removeItem(storageKey);
-    } catch {
-      // ignore
-    }
-  };
-
-  const writeStoredAccess = (token, expiresAt) => {
-    try {
-      sessionStorage.setItem(storageKey, JSON.stringify({
-        token,
-        expiresAt,
-      }));
-    } catch {
-      // ignore
-    }
   };
 
   const callPrivateAccessApi = async (endpoint, body) => {
@@ -116,45 +89,6 @@
     }, 180);
   };
 
-  const tryResume = async () => {
-    const stored = readStoredAccess();
-    if (!stored) {
-      return;
-    }
-
-    if (stored.expiresAt <= Date.now()) {
-      clearStoredAccess();
-      return;
-    }
-
-    if (submitButton instanceof HTMLButtonElement) {
-      submitButton.disabled = true;
-      submitButton.textContent = "Проверяем...";
-    }
-
-    try {
-      const resumed = await callPrivateAccessApi(`/api/cards/private-access/${encodeURIComponent(slug)}/resume`, {
-        token: stored.token,
-      });
-      const expiresAt = Date.parse(String(resumed.expiresAt || "")) || stored.expiresAt;
-      if (resumed.token && expiresAt > Date.now()) {
-        writeStoredAccess(String(resumed.token), expiresAt);
-        navigateToUnlockedCard();
-        return;
-      }
-      clearStoredAccess();
-    } catch {
-      clearStoredAccess();
-    } finally {
-      if (submitButton instanceof HTMLButtonElement) {
-        submitButton.disabled = false;
-        submitButton.textContent = "Открыть";
-      }
-    }
-  };
-
-  void tryResume();
-
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
     setError("");
@@ -177,15 +111,8 @@
         password,
       });
       const granted = Boolean(unlocked?.granted || unlocked?.ok);
-      const token = String(unlocked?.token || "").trim();
-      const expiresAt = Date.parse(String(unlocked?.expiresAt || ""));
-
-      if (token && Number.isFinite(expiresAt) && expiresAt > Date.now()) {
-        writeStoredAccess(token, expiresAt);
-      } else if (!granted) {
+      if (!granted) {
         throw new Error("Сеанс не выдан");
-      } else {
-        clearStoredAccess();
       }
       navigateToUnlockedCard();
     } catch (error) {

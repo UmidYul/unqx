@@ -214,7 +214,7 @@
         <div class="mt-4">
           <div class="flex flex-wrap items-center justify-center gap-2">
             <% pageOwnerSlugs.forEach((ownerSlug) => { %>
-              <a href="/<%= encodeURIComponent(ownerSlug) %>" class="private-card-slug-chip inline-flex min-h-8 items-center rounded-full border px-3 text-xs font-semibold">
+              <a href="/<%= encodeURIComponent(ownerSlug) %>" class="private-card-slug-chip inline-flex items-center rounded-full border">
                 <%= ownerSlug %>
               </a>
             <% }) %>

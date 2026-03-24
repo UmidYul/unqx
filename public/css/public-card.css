@@ -2066,12 +2066,29 @@ body[data-card-theme] main.private-card-screen {
 .private-card-back,
 .private-card-slug-chip {
   background: var(--theme-button-secondary-bg, rgba(255, 255, 255, 0.07));
-  color: var(--theme-name-color, #ffffff);
   text-decoration: none;
 }
 
-.private-card-slug-chip:hover {
-  transform: translateY(-1px);
+.private-card-back {
+  color: var(--theme-name-color, #ffffff);
+}
+
+.private-card-slug-chip {
+  white-space: nowrap;
+  padding: 2px 8px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0.09em;
+  line-height: 1.2;
+  color: var(--theme-muted-color, #9a9a9a);
+}
+
+@media (max-width: 640px) {
+  .private-card-slug-chip {
+    font-size: 11px;
+    padding: 2px 7px;
+  }
 }
 
 .private-card-field-wrap input {
