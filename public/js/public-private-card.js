@@ -5,6 +5,7 @@
   const fieldWrap = document.getElementById("private-card-field-wrap");
   const errorNode = document.getElementById("private-card-error");
   const submitButton = document.getElementById("private-card-submit");
+  const backButton = document.getElementById("private-card-back");
   const shell = document.getElementById("private-card-shell");
 
   if (!(dataNode instanceof HTMLScriptElement) || !(form instanceof HTMLFormElement) || !(input instanceof HTMLInputElement)) {
@@ -28,6 +29,14 @@
 
   const storageKey = `unqx.private_access.${slug}`;
   const csrfToken = String(document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "");
+  if (backButton instanceof HTMLAnchorElement) {
+    backButton.addEventListener("click", (event) => {
+      if (window.history.length > 1) {
+        event.preventDefault();
+        window.history.back();
+      }
+    });
+  }
 
   const setError = (message) => {
     if (!(errorNode instanceof HTMLElement)) return;

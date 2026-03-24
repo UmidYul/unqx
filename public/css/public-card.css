@@ -2043,6 +2043,8 @@ body[data-card-theme] main.private-card-screen {
 .private-card-lock-circle,
 #private-card-expired,
 .private-card-submit,
+.private-card-back,
+.private-card-slug-chip,
 .private-card-field-wrap input {
   border-color: var(--theme-card-border, rgba(255, 255, 255, 0.25));
 }
@@ -2059,6 +2061,17 @@ body[data-card-theme] main.private-card-screen {
 .private-card-submit {
   background: var(--theme-button-primary-bg, #ffffff);
   color: var(--theme-button-primary-text, #111111);
+}
+
+.private-card-back,
+.private-card-slug-chip {
+  background: var(--theme-button-secondary-bg, rgba(255, 255, 255, 0.07));
+  color: var(--theme-name-color, #ffffff);
+  text-decoration: none;
+}
+
+.private-card-slug-chip:hover {
+  transform: translateY(-1px);
 }
 
 .private-card-field-wrap input {

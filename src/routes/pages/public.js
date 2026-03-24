@@ -1668,9 +1668,18 @@ router.get(
               const lockedQuery = String(req.query.locked || "")
                 .trim()
                 .toLowerCase();
+              const ownerSlugRows = await prisma.slug.findMany({
+                where: { ownerId: slugRow.ownerId },
+                orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
+                select: { fullSlug: true },
+              });
+              const ownerSlugs = ownerSlugRows
+                .map((item) => String(item.fullSlug || "").trim().toUpperCase())
+                .filter(Boolean);
               res.status(200).render("public/slug-private", {
                 title: `${slug} | Закрытая визитка`,
                 slug,
+                ownerSlugs,
                 ownerName: profileCard?.name || owner.displayName || owner.firstName || "UNQX User",
                 ownerUsername: owner?.username ? `@${owner.username}` : "",
                 ownerAvatar: profileCard?.avatarUrl || "",
