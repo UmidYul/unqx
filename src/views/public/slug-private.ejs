@@ -212,8 +212,7 @@
       </header>
       <% if (pageOwnerSlugs.length) { %>
         <div class="mt-4">
-          <p class="text-center text-[11px] font-semibold uppercase tracking-[0.14em] opacity-65">Slug</p>
-          <div class="mt-2 flex flex-wrap items-center justify-center gap-2">
+          <div class="flex flex-wrap items-center justify-center gap-2">
             <% pageOwnerSlugs.forEach((ownerSlug) => { %>
               <a href="/<%= encodeURIComponent(ownerSlug) %>" class="private-card-slug-chip inline-flex min-h-8 items-center rounded-full border px-3 text-xs font-semibold">
                 <%= ownerSlug %>
