@@ -652,7 +652,7 @@ router.get(
   asyncHandler(async (req, res) => {
     const userSession = getUserSession(req);
     const userId = userSession?.userId ? String(userSession.userId) : "";
-    const [leaderboardSettings, activeFlashSale, nextDrop, pricing, publicSettingsRaw, topWeeklyViews, authPhotoUrl] = await Promise.all([
+    const [leaderboardSettings, activeFlashSale, nextDrop, pricing, publicSettingsRaw, topWeeklyViews, latestCreatedCard, authPhotoUrl] = await Promise.all([
       getFeatureSetting("leaderboard"),
       getActiveFlashSale(),
       prisma.drop.findFirst({
@@ -704,6 +704,57 @@ router.get(
           isVerified: Boolean(item.isVerified),
           avatarUrl: item.avatarUrl || null,
         }));
+      })(),
+      (async () => {
+        const rows = await withMissingTableFallback("Slug", [], () =>
+          prisma.slug.findMany({
+            where: {
+              ownerId: { not: null },
+              status: { in: ["approved", "active", "private", "paused"] },
+            },
+            orderBy: [{ createdAt: "desc" }],
+            take: 24,
+            select: {
+              fullSlug: true,
+              createdAt: true,
+              owner: {
+                select: {
+                  status: true,
+                  firstName: true,
+                  displayName: true,
+                  profileCard: {
+                    select: {
+                      name: true,
+                      role: true,
+                      bio: true,
+                      avatarUrl: true,
+                    },
+                  },
+                },
+              },
+            },
+          }),
+        );
+
+        for (const row of rows) {
+          const slug = String(row?.fullSlug || "").trim().toUpperCase();
+          const owner = row?.owner;
+          const card = owner?.profileCard;
+          if (!slug || !owner || owner.status !== "active" || !card) {
+            continue;
+          }
+
+          return {
+            slug,
+            createdAt: row.createdAt,
+            name: String(card.name || owner.displayName || owner.firstName || "UNQX User").trim() || "UNQX User",
+            role: String(card.role || "").trim(),
+            bio: String(card.bio || "").trim(),
+            avatarUrl: String(card.avatarUrl || "").trim(),
+          };
+        }
+
+        return null;
       })(),
       userId
         ? findProfileCardByOwnerId(userId)
@@ -786,6 +837,7 @@ router.get(
         }
         : null,
       topWeeklyViews,
+      latestCreatedCard,
       pricing,
       authPhotoUrl,
       publicSettings: publicSettingsRaw,
