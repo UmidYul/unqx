@@ -54,6 +54,11 @@ enum UserStatus {
   deleted
 }
 
+enum UserProfileType {
+  person
+  company
+}
+
 enum StaffRole {
   admin
   manager
@@ -255,6 +260,7 @@ model User {
   welcomeDismissed       Boolean               @default(false) @map("welcome_dismissed")
   notificationsEnabled   Boolean               @default(true) @map("notifications_enabled")
   status                 UserStatus            @default(active)
+  profileType            UserProfileType       @default(person) @map("profile_type")
   deactivatedAt          DateTime?             @map("deactivated_at")
   reactivationDeadlineAt DateTime?             @map("reactivation_deadline_at")
   reactivationOtpCode    String?               @map("reactivation_otp_code")

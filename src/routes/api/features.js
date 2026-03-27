@@ -5,7 +5,7 @@ const { asyncHandler } = require("../../middleware/async");
 const { requireSameOrigin } = require("../../middleware/same-origin");
 const { requireCsrfToken } = require("../../middleware/csrf");
 const { getUserSession } = require("../../middleware/auth");
-const { buildLeaderboard, getUserLeaderboardSummary, normalizePeriod } = require("../../services/leaderboard");
+const { buildLeaderboard, getUserLeaderboardSummary, normalizePeriod, normalizeLeaderboardType } = require("../../services/leaderboard");
 const { getFeatureSetting } = require("../../services/feature-settings");
 const { getActiveFlashSale, resolveConditionLabel } = require("../../services/flash-sales");
 const { getDropLiveStats } = require("../../services/drops");
@@ -94,9 +94,11 @@ router.get(
       return;
     }
     const period = normalizePeriod(req.query.period);
-    const board = await buildLeaderboard(period);
+    const type = normalizeLeaderboardType(req.query.type);
+    const board = await buildLeaderboard(period, type);
     res.json({
       period: board.period,
+      type: board.type,
       generatedAt: board.generatedAt,
       items: board.publicItems,
       limit: Number(board.settings.publicLimit) || 20,
@@ -110,7 +112,8 @@ router.get(
     const user = requireUser(req, res);
     if (!user) return;
     const period = normalizePeriod(req.query.period);
-    const payload = await getUserLeaderboardSummary({ userId: user.userId, period });
+    const type = normalizeLeaderboardType(req.query.type);
+    const payload = await getUserLeaderboardSummary({ userId: user.userId, period, type });
     res.json({ item: payload });
   }),
 );

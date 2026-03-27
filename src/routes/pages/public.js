@@ -8,7 +8,7 @@ const { asyncHandler } = require("../../middleware/async");
 const { getAdminSession, requireVerifiedUserPage, getUserSession, logoutUserSession } = require("../../middleware/auth");
 const { getEffectivePlan } = require("../../services/profile");
 const { absoluteUrl } = require("../../utils/url");
-const { buildLeaderboard, normalizePeriod, getSlugTopBadge, getUserLeaderboardSummary } = require("../../services/leaderboard");
+const { buildLeaderboard, normalizePeriod, normalizeLeaderboardType, getSlugTopBadge, getUserLeaderboardSummary } = require("../../services/leaderboard");
 const { getFeatureSetting } = require("../../services/feature-settings");
 const { getActiveFlashSale, resolveConditionLabel, getFlashSaleSlotsLeft } = require("../../services/flash-sales");
 const { normalizeRefCode } = require("../../services/referrals");
@@ -1003,14 +1003,16 @@ router.get(
     }
 
     const period = normalizePeriod(req.query.period);
+    const type = normalizeLeaderboardType(req.query.type);
     const [board, userSummary] = await Promise.all([
-      buildLeaderboard(period),
+      buildLeaderboard(period, type),
       (() => {
         const user = getUserSession(req);
         if (!user?.userId) return Promise.resolve(null);
         return getUserLeaderboardSummary({
           userId: user.userId,
           period,
+          type,
         });
       })(),
     ]);
@@ -1027,6 +1029,7 @@ router.get(
       description: "UNQX personal dashboard: card settings, UNQ, analytics, requests and profile settings.",
       image: defaultSocialImage,
       period: board.period,
+      type: board.type,
       items: board.publicItems,
       viewerTelegramId: getUserSession(req)?.userId || "",
       userSummary,

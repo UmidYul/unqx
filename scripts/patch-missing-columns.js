@@ -19,6 +19,8 @@ const REQUIRED_ENUMS = {
   braceletdeliverystatus: ["ORDERED", "SHIPPED", "DELIVERED"],
   userplan: ["none", "basic", "premium"],
   userstatus: ["active", "blocked", "deactivated"],
+  userprofiletype: ["person", "company"],
+  UserProfileType: ["person", "company"],
   slugstatus: ["free", "pending", "approved", "active", "paused", "private", "blocked"],
   slugrequeststatus: ["new", "contacted", "paid", "approved", "rejected", "expired"],
 };
@@ -132,6 +134,7 @@ const EXPECTED_COLUMNS = {
     plan_upgraded_at: "TIMESTAMPTZ",
     notifications_enabled: "BOOLEAN NOT NULL DEFAULT TRUE",
     status: "userstatus NOT NULL DEFAULT 'active'",
+    profile_type: "userprofiletype NOT NULL DEFAULT 'person'",
     created_at: "TIMESTAMPTZ NOT NULL DEFAULT now()",
     updated_at: "TIMESTAMPTZ NOT NULL DEFAULT now()",
   },

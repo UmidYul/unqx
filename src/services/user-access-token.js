@@ -51,6 +51,7 @@ function sanitizeUserPayload(userPayload) {
     plan: userPayload.plan || "none",
     planPurchasedAt: userPayload.planPurchasedAt || null,
     planUpgradedAt: userPayload.planUpgradedAt || null,
+    profileType: userPayload.profileType || "person",
     status: userPayload.status || "active",
   };
 }

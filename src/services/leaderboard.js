@@ -4,12 +4,17 @@ const { fromZonedTime, toZonedTime } = require("date-fns-tz");
 const { prisma } = require("../db/prisma");
 const { env } = require("../config/env");
 const { getFeatureSetting } = require("./feature-settings");
+const { normalizeProfileType } = require("./profile");
 
 function normalizePeriod(period) {
   if (period === "day" || period === "week" || period === "month" || period === "all") {
     return period;
   }
   return "day";
+}
+
+function normalizeLeaderboardType(type) {
+  return normalizeProfileType(type, { fallback: "all", allowAll: true });
 }
 
 function getPeriodRange(period, timezone = env.TIMEZONE) {
@@ -65,9 +70,10 @@ function getPeriodRange(period, timezone = env.TIMEZONE) {
   };
 }
 
-async function buildLeaderboard(period = "day") {
+async function buildLeaderboard(period = "day", type = "all") {
   const settings = await getFeatureSetting("leaderboard");
   const range = getPeriodRange(period);
+  const leaderboardType = normalizeLeaderboardType(type);
   const groupedViews = prisma.analyticsView && typeof prisma.analyticsView.groupBy === "function"
     ? await prisma.analyticsView.groupBy({
       by: ["slug", "sessionId"],
@@ -111,6 +117,7 @@ async function buildLeaderboard(period = "day") {
             plan: true,
             isVerified: true,
             verifiedCompany: true,
+            profileType: true,
             profileCard: {
               select: {
                 name: true,
@@ -142,6 +149,8 @@ async function buildLeaderboard(period = "day") {
     const owner = row?.owner;
     const ownerId = owner?.id ? String(owner.id) : "";
     if (!row || !owner || !ownerId) continue;
+    const ownerProfileType = normalizeProfileType(owner.profileType, { fallback: "person" });
+    if (leaderboardType !== "all" && ownerProfileType !== leaderboardType) continue;
 
     const existing = owners.get(ownerId);
     if (!existing) {
@@ -156,6 +165,7 @@ async function buildLeaderboard(period = "day") {
         telegramId: ownerId,
         score: Number(owner.unqScore?.score || 0),
         isVerified: Boolean(owner.isVerified),
+        profileType: ownerProfileType,
         rankedSlugs: [entry.slug],
       });
       continue;
@@ -206,6 +216,7 @@ async function buildLeaderboard(period = "day") {
         telegramId: item.telegramId,
         score: item.score,
         isVerified: item.isVerified,
+        profileType: item.profileType,
       };
     })
     .filter((item) => item.slug)
@@ -224,6 +235,7 @@ async function buildLeaderboard(period = "day") {
 
   return {
     period: range.period,
+    type: leaderboardType,
     generatedAt: new Date().toISOString(),
     settings,
     items,
@@ -231,10 +243,10 @@ async function buildLeaderboard(period = "day") {
   };
 }
 
-async function getUserLeaderboardSummary({ userId, telegramId, period = "day" }) {
+async function getUserLeaderboardSummary({ userId, telegramId, period = "day", type = "all" }) {
   const targetId = userId || telegramId;
   if (!targetId) return null;
-  const board = await buildLeaderboard(period);
+  const board = await buildLeaderboard(period, type);
   const target = board.items.find((item) => item.userId === targetId || item.telegramId === targetId);
   if (!target) return null;
 
@@ -296,7 +308,7 @@ async function detectSuspiciousActivity() {
 }
 
 async function getSlugTopBadge(slug) {
-  const board = await buildLeaderboard("week");
+  const board = await buildLeaderboard("week", "all");
   const limit = Math.max(1, Number(board.settings.publicLimit) || 20);
   const targetSlug = String(slug || "").toUpperCase();
   const found = board.items.find((item) => Array.isArray(item.slugs) && item.slugs.includes(targetSlug));
@@ -314,6 +326,7 @@ module.exports = {
   getUserLeaderboardSummary,
   getPeriodRange,
   normalizePeriod,
+  normalizeLeaderboardType,
   detectSuspiciousActivity,
   getSlugTopBadge,
 };

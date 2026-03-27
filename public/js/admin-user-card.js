@@ -26,6 +26,7 @@
     profileFirstName: $("#user-profile-first-name"),
     profileDisplayName: $("#user-profile-display-name"),
     profileCity: $("#user-profile-city"),
+    profileType: $("#user-profile-type"),
     profileTelegram: $("#user-profile-telegram"),
     profileEmail: $("#user-profile-email"),
     profileSave: $("#user-profile-save"),
@@ -155,6 +156,10 @@
     return "Без тарифа";
   }
 
+  function normalizeProfileTypeValue(value) {
+    return String(value || "").trim().toLowerCase() === "company" ? "company" : "person";
+  }
+
   function updateHeader() {
     const name =
       state.user?.displayName ||
@@ -273,6 +278,7 @@
     if (el.profileFirstName) el.profileFirstName.value = state.user.firstName || "";
     if (el.profileDisplayName) el.profileDisplayName.value = state.user.displayName || "";
     if (el.profileCity) el.profileCity.value = state.user.city || "";
+    if (el.profileType instanceof HTMLSelectElement) el.profileType.value = normalizeProfileTypeValue(state.user.profileType);
     if (el.profileTelegram) el.profileTelegram.value = tg;
     if (el.profileEmail) el.profileEmail.value = state.user.email || "";
   }
@@ -325,6 +331,7 @@
       return;
     }
     const telegramUsername = String(el.profileTelegram?.value || "").replace(/^@+/, "").trim();
+    const profileType = normalizeProfileTypeValue(el.profileType?.value || "person");
     try {
       if (el.profileStatus) {
         el.profileStatus.textContent = "";
@@ -338,6 +345,7 @@
           firstName,
           displayName: el.profileDisplayName?.value || "",
           city: el.profileCity?.value || "",
+          profileType,
           telegramUsername,
           email,
         }),

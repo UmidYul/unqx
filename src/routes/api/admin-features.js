@@ -4,7 +4,7 @@ const { prisma } = require("../../db/prisma");
 const { asyncHandler } = require("../../middleware/async");
 const { requireAdminApi } = require("../../middleware/auth");
 const { adminApiRateLimit } = require("../../middleware/rate-limit");
-const { buildLeaderboard, normalizePeriod } = require("../../services/leaderboard");
+const { buildLeaderboard, normalizePeriod, normalizeLeaderboardType } = require("../../services/leaderboard");
 const { getFeatureSetting, setFeatureSetting } = require("../../services/feature-settings");
 const { getPricingSettings, setPricingSettings } = require("../../services/pricing-settings");
 const {
@@ -248,9 +248,13 @@ function normalizeCampaignStatus(value, fallback = "draft") {
 router.get(
   "/leaderboard",
   asyncHandler(async (req, res) => {
-    const board = await buildLeaderboard(normalizePeriod(req.query.period));
+    const board = await buildLeaderboard(
+      normalizePeriod(req.query.period),
+      normalizeLeaderboardType(req.query.type),
+    );
     res.json({
       period: board.period,
+      type: board.type,
       settings: board.settings,
       items: board.items,
     });

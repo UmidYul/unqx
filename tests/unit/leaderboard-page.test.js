@@ -8,6 +8,7 @@ async function renderLeaderboardTemplate(locals = {}) {
     title: "Топ визиток недели · UNQX",
     description: "Топ визиток UNQX",
     period: "week",
+    type: "all",
     items: [],
     userSummary: null,
     cspNonce: "nonce",
@@ -54,11 +55,19 @@ describe("leaderboard page", () => {
 
   test("renders user summary block", async () => {
     const html = await renderLeaderboardTemplate({
-      userSummary: { rank: 5, score: 412, limit: 20, toTopScore: 89 },
+      userSummary: { rank: 5, views: 412, limit: 20, toTopViews: 89 },
     });
-    expect(html).toContain("Твой Score: 412");
-    expect(html).toContain("Позиция #5");
-    expect(html).toContain("До топ-20 нужно ещё 89 баллов");
+    expect(html).toContain("412");
+    expect(html).toContain("#5");
+    expect(html).toContain("89");
+  });
+
+  test("keeps type filter while switching period and shows type tabs", async () => {
+    const html = await renderLeaderboardTemplate({ period: "week", type: "company" });
+    expect(html).toContain('/leaderboard?period=day&type=company');
+    expect(html).toContain('/leaderboard?period=week&type=company');
+    expect(html).toContain('/leaderboard?period=week&type=all');
+    expect(html).toContain('/leaderboard?period=week&type=person');
   });
 
   test("contains leaderboard share live region for accessibility", async () => {

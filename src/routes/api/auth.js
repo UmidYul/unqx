@@ -14,7 +14,7 @@ const {
   authRegisterRateLimit,
   authSendOtpRateLimit,
 } = require("../../middleware/rate-limit");
-const { getEffectivePlan, normalizeDisplayName } = require("../../services/profile");
+const { getEffectivePlan, normalizeDisplayName, normalizeProfileType } = require("../../services/profile");
 const {
   sendChangeEmailOtp,
   sendAccountReactivationOtp,
@@ -56,6 +56,7 @@ const USER_AUTH_SELECT = {
   plan: true,
   planPurchasedAt: true,
   planUpgradedAt: true,
+  profileType: true,
   status: true,
   pendingEmail: true,
   deactivatedAt: true,
@@ -201,6 +202,7 @@ function userToSessionPayload(user) {
     plan: user.plan,
     planPurchasedAt: user.planPurchasedAt ? user.planPurchasedAt.toISOString() : null,
     planUpgradedAt: user.planUpgradedAt ? user.planUpgradedAt.toISOString() : null,
+    profileType: normalizeProfileType(user.profileType, { fallback: "person" }),
     status: user.status,
   };
 }
@@ -221,6 +223,7 @@ function userToClientPayload(user) {
     effectivePlan: effective.plan,
     planPurchasedAt: user.planPurchasedAt ? user.planPurchasedAt.toISOString() : null,
     planUpgradedAt: user.planUpgradedAt ? user.planUpgradedAt.toISOString() : null,
+    profileType: normalizeProfileType(user.profileType, { fallback: "person" }),
     status: user.status,
   };
 }
@@ -339,6 +342,7 @@ router.post(
     const login = normalizeLogin(req.body?.login);
     const password = String(req.body?.password || "");
     const confirmPassword = String(req.body?.confirmPassword || "");
+    const profileType = normalizeProfileType(req.body?.profileType, { fallback: "person" });
 
     if (!firstName || !city || !login || !isValidLogin(login) || !password || password.length < 8 || password !== confirmPassword) {
       res.status(400).json({ error: "Validation failed", code: "VALIDATION_ERROR" });
@@ -381,6 +385,7 @@ router.post(
           passwordHash,
           emailVerified: false,
           plan: "none",
+          profileType,
           status: "active",
           resetPasswordToken: null,
           resetPasswordExpiresAt: null,
@@ -401,6 +406,7 @@ router.post(
           passwordHash,
           emailVerified: false,
           plan: "none",
+          profileType,
           status: "active",
           refCode,
         },

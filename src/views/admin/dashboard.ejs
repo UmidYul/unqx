@@ -306,7 +306,7 @@
           </div>
           <p id="users-manager-created-stats" class="hidden text-sm font-medium text-neutral-700"></p>
           <form id="users-filters"
-            class="grid gap-3 rounded-2xl border border-neutral-200 bg-white p-4 md:grid-cols-[1fr_180px_180px_auto]">
+            class="grid gap-3 rounded-2xl border border-neutral-200 bg-white p-4 md:grid-cols-[1fr_170px_170px_170px_auto]">
             <input type="text" name="q" placeholder="Поиск по Telegram или имени"
               class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
             <select name="plan" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">
@@ -314,6 +314,11 @@
               <option value="none">Без тарифа</option>
               <option value="basic">Базовый</option>
               <option value="premium">Премиум</option>
+            </select>
+            <select name="profileType" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">
+              <option value="all">Все типы</option>
+              <option value="person">Личность</option>
+              <option value="company">Компания</option>
             </select>
             <select name="sort" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">
               <option value="created_desc">Сначала новые</option>
@@ -328,15 +333,16 @@
               <table class="admin-users-table w-full table-fixed text-center text-sm">
                 <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
                   <tr>
-                    <th class="w-[12%] px-4 py-3">Name</th>
-                    <th class="w-[12%] px-4 py-3">Created by</th>
-                    <th class="w-[10%] px-4 py-3">City</th>
-                    <th class="w-[10%] px-4 py-3">Plan</th>
+                    <th class="w-[11%] px-4 py-3">Name</th>
+                    <th class="w-[11%] px-4 py-3">Created by</th>
+                    <th class="w-[9%] px-4 py-3">City</th>
+                    <th class="w-[9%] px-4 py-3">Type</th>
+                    <th class="w-[9%] px-4 py-3">Plan</th>
                     <th class="hidden w-[10%] px-4 py-3 xl:table-cell">Purchase date</th>
-                    <th class="w-[16%] px-4 py-3">Slug(s)</th>
+                    <th class="w-[15%] px-4 py-3">Slug(s)</th>
                     <th class="w-[8%] px-4 py-3">UNQ Score</th>
-                    <th class="w-[9%] px-4 py-3">Status</th>
-                    <th class="w-[9%] px-4 py-3">Registered</th>
+                    <th class="w-[8%] px-4 py-3">Status</th>
+                    <th class="w-[8%] px-4 py-3">Registered</th>
                     <th class="w-[8%] px-4 py-3">Actions</th>
                   </tr>
                 </thead>
@@ -1449,6 +1455,13 @@
                 Пароль
                 <input name="password" type="password" minlength="8" autocomplete="new-password"
                   class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" required />
+              </label>
+              <label class="block text-sm font-medium text-neutral-700">
+                Тип профиля
+                <select name="profileType" class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm">
+                  <option value="person" selected>Личность</option>
+                  <option value="company">Компания</option>
+                </select>
               </label>
               <label class="block text-sm font-medium text-neutral-700">
                 Тариф

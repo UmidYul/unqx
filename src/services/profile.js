@@ -1,4 +1,5 @@
 const PROFILE_THEMES = new Set(["default_dark", "arctic", "linen", "marble", "forest", "sage_luxe", "midnight_obsidian", "golden_noir", "aurora_codex", "nebula_glass", "velours"]);
+const PROFILE_TYPES = new Set(["person", "company"]);
 const BUTTON_TYPES = new Set([
   "phone",
   "telegram",
@@ -152,8 +153,22 @@ function getPlanBadgeLabel(plan) {
   return "ТАРИФ НЕ ВЫБРАН";
 }
 
+function normalizeProfileType(value, options = {}) {
+  const fallbackRaw = String(options.fallback || "person").trim().toLowerCase();
+  const allowAll = Boolean(options.allowAll);
+  const fallback = allowAll && fallbackRaw === "all"
+    ? "all"
+    : (PROFILE_TYPES.has(fallbackRaw) ? fallbackRaw : "person");
+  const normalized = String(value || "").trim().toLowerCase();
+  if (allowAll && normalized === "all") {
+    return "all";
+  }
+  return PROFILE_TYPES.has(normalized) ? normalized : fallback;
+}
+
 module.exports = {
   PROFILE_THEMES,
+  PROFILE_TYPES,
   BUTTON_TYPES,
   getEffectivePlan,
   getSlugLimit,
@@ -168,5 +183,6 @@ module.exports = {
   normalizeTags,
   normalizeButtons,
   normalizeDisplayName,
+  normalizeProfileType,
   getPlanBadgeLabel,
 };

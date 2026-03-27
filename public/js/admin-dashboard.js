@@ -329,6 +329,10 @@
     return String(value || "").trim().toLowerCase();
   }
 
+  function normalizeUserCreateProfileType(value) {
+    return String(value || "").trim().toLowerCase() === "company" ? "company" : "person";
+  }
+
   function formatUserCreatePrice(value) {
     return `${Number(value || 0).toLocaleString("ru-RU")} сум`;
   }
@@ -572,6 +576,7 @@
     const login = userCreateForm.elements.namedItem("login");
     const password = userCreateForm.elements.namedItem("password");
     const email = userCreateForm.elements.namedItem("email");
+    const profileType = userCreateForm.elements.namedItem("profileType");
     const plan = userCreateForm.elements.namedItem("plan");
     const slug = userCreateForm.elements.namedItem("slug");
     setCreateInputTone(name, "neutral");
@@ -579,6 +584,7 @@
     setCreateInputTone(login, "neutral");
     setCreateInputTone(password, "neutral");
     setCreateInputTone(email, "neutral");
+    setCreateInputTone(profileType, "neutral");
     setCreateInputTone(plan, "neutral");
     setCreateInputTone(slug, "neutral");
   }
@@ -610,6 +616,10 @@
       const email = userCreateForm.elements.namedItem("email");
       if (email instanceof HTMLInputElement) {
         email.value = normalizeUserCreateEmail(email.value);
+      }
+      const profileType = userCreateForm.elements.namedItem("profileType");
+      if (profileType instanceof HTMLSelectElement) {
+        profileType.value = normalizeUserCreateProfileType(profileType.value);
       }
     }
     setCreateInlineStatus(userCreateLoginStatus, "");
@@ -839,6 +849,7 @@
     const login = userCreateForm.elements.namedItem("login");
     const password = userCreateForm.elements.namedItem("password");
     const email = userCreateForm.elements.namedItem("email");
+    const profileType = userCreateForm.elements.namedItem("profileType");
     const plan = userCreateForm.elements.namedItem("plan");
     const slug = userCreateForm.elements.namedItem("slug");
     if (
@@ -847,6 +858,7 @@
       !(login instanceof HTMLInputElement) ||
       !(password instanceof HTMLInputElement) ||
       !(email instanceof HTMLInputElement) ||
+      !(profileType instanceof HTMLSelectElement) ||
       !(plan instanceof HTMLSelectElement) ||
       !(slug instanceof HTMLInputElement)
     ) {
@@ -857,10 +869,12 @@
     const selectedCity = String(city.value || "").trim();
     const normalizedLogin = normalizeUserCreateLogin(login.value);
     const normalizedEmail = normalizeUserCreateEmail(email.value);
+    const normalizedProfileType = normalizeUserCreateProfileType(profileType.value);
     const normalizedSlug = normalizeUserCreateSlug(slug.value);
     name.value = firstName;
     login.value = normalizedLogin;
     email.value = normalizedEmail;
+    profileType.value = normalizedProfileType;
     slug.value = normalizedSlug;
 
     if (!firstName) {
@@ -937,6 +951,7 @@
       login: normalizedLogin,
       password: password.value || "",
       email: normalizedEmail,
+      profileType: normalizedProfileType,
       plan: selectedPlan,
       slug: normalizedSlug,
     };
@@ -1497,14 +1512,15 @@
     const q = {
       q: getFormValue(form, "q", ""),
       plan: getFormValue(form, "plan", "all"),
+      profileType: getFormValue(form, "profileType", "all"),
       sort: getFormValue(form, "sort", "created_desc"),
       page: getFormValue(form, "page", "1"),
     };
-    setDashboardQuery({ u_q: q.q, u_plan: q.plan, u_sort: q.sort, u_page: q.page });
+    setDashboardQuery({ u_q: q.q, u_plan: q.plan, u_type: q.profileType, u_sort: q.sort, u_page: q.page });
     const r = await fetch(`/api/admin/users?${Q(q)}`);
     if (!r.ok) {
       const msg = await E(r);
-      table.innerHTML = `<tr><td colspan="10" class="px-3 py-8 text-center text-red-700">Не удалось загрузить пользователей: ${X(msg)}</td></tr>`;
+      table.innerHTML = `<tr><td colspan="11" class="px-3 py-8 text-center text-red-700">Не удалось загрузить пользователей: ${X(msg)}</td></tr>`;
       if (managerStatsNode instanceof HTMLElement) {
         managerStatsNode.classList.add("hidden");
         managerStatsNode.textContent = "";
@@ -1597,10 +1613,14 @@
             x.plan === "none"
               ? "border-amber-300 bg-amber-50 text-amber-800 whitespace-nowrap"
               : "border-neutral-200 whitespace-nowrap";
-          return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3">${userCell}</td><td class="px-4 py-3">${creatorCell}</td><td class="px-4 py-3">${X(x.city || "—")}</td><td class="px-4 py-3"><span class="inline-flex rounded-full border px-2.5 py-1 text-xs font-medium ${planChipClass}">${planLabel}</span></td><td class="hidden px-4 py-3 text-xs text-neutral-600 xl:table-cell">${x.planPurchasedAt ? D(x.planPurchasedAt) : "—"}</td><td class="admin-col-slugs px-4 py-3 text-xs" title="${X(slugTitle)}">${X(slugText)}</td><td class="px-4 py-3"><span class="inline-flex min-h-11 min-w-14 items-center justify-center rounded-lg border border-neutral-300 px-2.5 py-1 text-sm font-semibold">${score}</span></td><td class="px-4 py-3">${statusChip(x.status === "blocked" ? "rejected" : "approved")}</td><td class="px-4 py-3">${D(x.createdAt)}</td><td class="px-4 py-3 text-center"><div class="admin-row-actions justify-center">${menu}</div></td></tr>`;
+          const profileTypeLabel = x.profileType === "company" ? "Компания" : "Личность";
+          const profileTypeChipClass = x.profileType === "company"
+            ? "border-sky-300 bg-sky-50 text-sky-800 whitespace-nowrap"
+            : "border-neutral-200 bg-white text-neutral-700 whitespace-nowrap";
+          return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3">${userCell}</td><td class="px-4 py-3">${creatorCell}</td><td class="px-4 py-3">${X(x.city || "—")}</td><td class="px-4 py-3"><span class="inline-flex rounded-full border px-2.5 py-1 text-xs font-medium ${profileTypeChipClass}">${profileTypeLabel}</span></td><td class="px-4 py-3"><span class="inline-flex rounded-full border px-2.5 py-1 text-xs font-medium ${planChipClass}">${planLabel}</span></td><td class="hidden px-4 py-3 text-xs text-neutral-600 xl:table-cell">${x.planPurchasedAt ? D(x.planPurchasedAt) : "—"}</td><td class="admin-col-slugs px-4 py-3 text-xs" title="${X(slugTitle)}">${X(slugText)}</td><td class="px-4 py-3"><span class="inline-flex min-h-11 min-w-14 items-center justify-center rounded-lg border border-neutral-300 px-2.5 py-1 text-sm font-semibold">${score}</span></td><td class="px-4 py-3">${statusChip(x.status === "blocked" ? "rejected" : "approved")}</td><td class="px-4 py-3">${D(x.createdAt)}</td><td class="px-4 py-3 text-center"><div class="admin-row-actions justify-center">${menu}</div></td></tr>`;
         })
         .join("")
-      : `<tr><td colspan="10" class="px-3 py-10 text-center text-neutral-500"><div class="inline-flex flex-col items-center gap-2">${I("userCheck", 48)}<span>No users found</span></div></td></tr>`;
+      : `<tr><td colspan="11" class="px-3 py-10 text-center text-neutral-500"><div class="inline-flex flex-col items-center gap-2">${I("userCheck", 48)}<span>No users found</span></div></td></tr>`;
     renderPager("users-pagination", payload.pagination, (nextPage) => {
       setFormValue(form, "page", String(nextPage));
       void loadUsers();
@@ -3202,6 +3222,7 @@
     if (form instanceof HTMLFormElement) {
       setFormValue(form, "q", getInitial("u_q", "q") || "");
       setFormValue(form, "plan", getInitial("u_plan", "plan") || "all");
+      setFormValue(form, "profileType", getInitial("u_type", "profileType") || "all");
       setFormValue(form, "sort", getInitial("u_sort", "sort") || "created_desc");
       setFormValue(form, "page", getInitial("u_page", "page") || "1");
     }

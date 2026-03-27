@@ -42,6 +42,7 @@ const {
   normalizeTags,
   normalizeButtons,
   normalizeDisplayName,
+  normalizeProfileType,
 } = require("../../services/profile");
 const {
   isSupportedAvatarBuffer,
@@ -118,6 +119,7 @@ const USER_COLUMN_MAP = {
   plan: "plan",
   planPurchasedAt: "plan_purchased_at",
   planUpgradedAt: "plan_upgraded_at",
+  profileType: "profile_type",
   createdByStaffId: "created_by_staff_id",
   status: "status",
   createdAt: "created_at",
@@ -2090,6 +2092,10 @@ router.get(
     const sort = req.query.sort === "score_desc" ? "score_desc" : "created_desc";
     const rawPlanFilter = typeof req.query.plan === "string" ? req.query.plan.trim() : "";
     const planFilter = ["none", "basic", "premium"].includes(rawPlanFilter) ? rawPlanFilter : "all";
+    const rawProfileTypeFilter = typeof req.query.profileType === "string"
+      ? req.query.profileType
+      : req.query.type;
+    const profileTypeFilter = normalizeProfileType(rawProfileTypeFilter, { fallback: "all", allowAll: true });
     const adminSession = req.session?.admin || null;
     const requesterRole = String(adminSession?.role || "admin");
     const requesterManagerId = requesterRole === "manager" ? await resolveManagerId(req) : "";
@@ -2118,6 +2124,9 @@ router.get(
     }
     if (planFilter !== "all" && hasUserColumn(userColumns, "plan")) {
       where.plan = planFilter;
+    }
+    if (profileTypeFilter !== "all" && hasUserColumn(userColumns, "profileType")) {
+      where.profileType = profileTypeFilter;
     }
     if (q) {
       const or = [];
@@ -2163,6 +2172,7 @@ router.get(
       if (hasUserColumn(userColumns, "plan")) select.plan = true;
       if (hasUserColumn(userColumns, "planPurchasedAt")) select.planPurchasedAt = true;
       if (hasUserColumn(userColumns, "planUpgradedAt")) select.planUpgradedAt = true;
+      if (hasUserColumn(userColumns, "profileType")) select.profileType = true;
       if (hasCreatorColumn) select.createdByStaffId = true;
       if (hasUserColumn(userColumns, "status")) select.status = true;
       if (hasUserColumn(userColumns, "createdAt")) select.createdAt = true;
@@ -2341,6 +2351,7 @@ router.get(
         plan: user.plan,
         planPurchasedAt: user.planPurchasedAt,
         planUpgradedAt: user.planUpgradedAt,
+        profileType: normalizeProfileType(user.profileType, { fallback: "person" }),
         slugs: (slugsByUser.get(user.id) || []).map((slug) => ({
           ...slug,
           hasBracelet: Boolean(braceletByUser.get(user.id)?.has(slug.fullSlug)),
@@ -2488,6 +2499,7 @@ router.post(
       .slice(0, 120) || null;
     const requestedPlan = normalizeUserPlan(req.body?.plan);
     const requestedSlug = normalizeShortSlug(req.body?.slug);
+    const profileType = normalizeProfileType(req.body?.profileType, { fallback: "person" });
     const hasSlugInput = Boolean(String(req.body?.slug || "").trim());
     const requesterRole = String(adminSession?.role || "admin");
     const requiresInlineActivation = requesterRole === "manager" || requestedPlan !== "none" || hasSlugInput;
@@ -2608,6 +2620,7 @@ router.post(
             plan: selectedPlan,
             planPurchasedAt: selectedPlan === "none" ? null : now,
             planUpgradedAt: null,
+            ...(hasUserColumn(userColumns, "profileType") ? { profileType } : {}),
             status: "active",
             refCode,
             telegramUsername,
@@ -2627,6 +2640,7 @@ router.post(
             telegramUsername: true,
             plan: true,
             planPurchasedAt: true,
+            ...(hasUserColumn(userColumns, "profileType") ? { profileType: true } : {}),
           },
         });
 
@@ -2793,23 +2807,29 @@ router.get(
       }
     }
 
+    const userColumns = await getUserColumns();
+    const userSelect = {
+      id: true,
+      firstName: true,
+      displayName: true,
+      username: true,
+      telegramUsername: true,
+      email: true,
+      login: true,
+      city: true,
+      plan: true,
+      status: true,
+      isVerified: true,
+      verifiedCompany: true,
+      createdAt: true,
+    };
+    if (hasUserColumn(userColumns, "profileType")) {
+      userSelect.profileType = true;
+    }
+
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: {
-        id: true,
-        firstName: true,
-        displayName: true,
-        username: true,
-        telegramUsername: true,
-        email: true,
-        login: true,
-        city: true,
-        plan: true,
-        status: true,
-        isVerified: true,
-        verifiedCompany: true,
-        createdAt: true,
-      },
+      select: userSelect,
     });
     if (!user) {
       res.status(404).json({ error: "User not found" });
@@ -2819,6 +2839,7 @@ router.get(
     const normalizedUser = {
       ...user,
       username: user.username || user.telegramUsername || null,
+      profileType: normalizeProfileType(user.profileType, { fallback: "person" }),
     };
 
     let card;
@@ -2869,6 +2890,8 @@ router.patch(
       res.status(400).json({ error: "Name is required", code: "NAME_REQUIRED" });
       return;
     }
+    const userColumns = await getUserColumns();
+    const hasProfileTypeColumn = hasUserColumn(userColumns, "profileType");
 
     const displayNameRaw = String(req.body?.displayName || "").trim().slice(0, 120);
     const displayName = normalizeDisplayName(displayNameRaw, firstName);
@@ -2886,7 +2909,12 @@ router.patch(
 
     const existingUser = await prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, email: true, username: true },
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        ...(hasProfileTypeColumn ? { profileType: true } : {}),
+      },
     });
     if (!existingUser) {
       res.status(404).json({ error: "User not found", code: "USER_NOT_FOUND" });
@@ -2905,6 +2933,9 @@ router.patch(
     }
 
     const nextUsername = existingUser.username || telegramUsername || null;
+    const nextProfileType = normalizeProfileType(req.body?.profileType, {
+      fallback: normalizeProfileType(existingUser.profileType, { fallback: "person" }),
+    });
     const updated = await prisma.user.update({
       where: { id: userId },
       data: {
@@ -2919,6 +2950,7 @@ router.patch(
         otpCode: null,
         otpExpiresAt: null,
         otpAttempts: 0,
+        ...(hasProfileTypeColumn ? { profileType: nextProfileType } : {}),
       },
       select: {
         id: true,
@@ -2929,10 +2961,17 @@ router.patch(
         emailVerified: true,
         username: true,
         telegramUsername: true,
+        ...(hasProfileTypeColumn ? { profileType: true } : {}),
       },
     });
 
-    res.json({ ok: true, user: updated });
+    res.json({
+      ok: true,
+      user: {
+        ...updated,
+        profileType: normalizeProfileType(updated.profileType, { fallback: "person" }),
+      },
+    });
   }),
 );
 

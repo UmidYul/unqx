@@ -28,6 +28,12 @@
           <%- include('../partials/city-options') %>
         </select>
       </label>
+      <label class="mt-3 block text-sm font-medium text-neutral-700">Тип профиля
+        <select id="profileType" class="mt-1 w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm" required>
+          <option value="person" selected>Личность</option>
+          <option value="company">Компания</option>
+        </select>
+      </label>
       <label class="mt-3 block text-sm font-medium text-neutral-700">Логин
         <input id="login" type="text" autocomplete="username"
           class="mt-1 w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm" required />
@@ -62,6 +68,7 @@
       const body = {
         firstName: document.getElementById("firstName").value,
         city: document.getElementById("city").value,
+        profileType: document.getElementById("profileType").value,
         login: document.getElementById("login").value,
         email: document.getElementById("email").value,
         password: document.getElementById("password").value,
