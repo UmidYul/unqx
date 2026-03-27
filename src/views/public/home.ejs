@@ -64,6 +64,15 @@
   },
   ];
 
+  const homeProfileFeedList = (Array.isArray(topWeeklyViews) ? topWeeklyViews : [])
+  .map((item) => {
+  const primarySlug = String(item?.primarySlug || (Array.isArray(item?.slugs) ? item.slugs[0] : "") || "").trim().toUpperCase();
+  const name = String(item?.name || "UNQX User").trim() || "UNQX User";
+  const avatarUrl = String(item?.avatarUrl || "").trim();
+  return { primarySlug, name, avatarUrl };
+  })
+  .filter((item) => item.primarySlug);
+
   const weeklyViewsTopList = Array.isArray(topWeeklyViews) ? topWeeklyViews.slice(0, 3) : [];
 
   const steps = [
@@ -506,7 +515,46 @@
 
 
 
-                <section id="testimonials" class="px-6 py-16" data-observe-reveal>
+                <section id="home-profile-feed" class="px-6 py-16" data-observe-reveal>
+                  <div class="mx-auto max-w-6xl">
+                    <p class="font-mono text-xs uppercase tracking-[0.18em] text-neutral-400">UNQ FEED</p>
+                    <h2 class="mt-3 text-3xl font-bold tracking-tight text-neutral-900 md:text-4xl">Live profiles</h2>
+
+                    <% if (!homeProfileFeedList.length) { %>
+                      <div class="mt-8 rounded-2xl border border-neutral-200 bg-white p-6 text-sm text-neutral-500">
+                        Feed is temporarily unavailable.
+                      </div>
+                      <% } else { %>
+                        <div class="home-profile-marquee mt-8" aria-label="UNQ profile feed">
+                          <div class="home-profile-marquee-track">
+                            <% [0, 1].forEach((dupIndex)=> { %>
+                              <div class="home-profile-marquee-group" <%= dupIndex === 1 ? 'aria-hidden="true"' : '' %>>
+                                <% homeProfileFeedList.forEach((item)=> { %>
+                                  <a href="/<%= encodeURIComponent(item.primarySlug) %>" class="home-profile-marquee-item">
+                                    <div class="home-profile-marquee-avatar-wrap">
+                                      <% if (item.avatarUrl) { %>
+                                        <img src="<%= item.avatarUrl %>" alt="<%= item.name %>" class="home-profile-marquee-avatar" loading="lazy" />
+                                      <% } else { %>
+                                        <div class="home-profile-marquee-avatar-fallback">
+                                          <%= item.name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase() %>
+                                        </div>
+                                      <% } %>
+                                    </div>
+                                    <div class="min-w-0">
+                                      <p class="truncate text-sm font-semibold text-neutral-900"><%= item.name %></p>
+                                      <p class="truncate font-mono text-xs text-neutral-500">unqx.uz/<%= item.primarySlug %></p>
+                                    </div>
+                                  </a>
+                                  <% }) %>
+                              </div>
+                              <% }) %>
+                          </div>
+                        </div>
+                        <% } %>
+                  </div>
+                </section>
+
+                <section id="testimonials" class="hidden px-6 py-16" data-observe-reveal>
                   <div class="mx-auto max-w-6xl">
                     <p class="font-mono text-xs uppercase tracking-[0.18em] text-neutral-400">ОТЗЫВЫ</p>
                     <h2 class="mt-3 text-3xl font-bold tracking-tight text-neutral-900 md:text-4xl">Что говорят первые

@@ -694,7 +694,7 @@ router.get(
       ]),
       (async () => {
         const board = await buildLeaderboard("day");
-        return (Array.isArray(board.items) ? board.items : []).slice(0, 3).map((item) => ({
+        return (Array.isArray(board.publicItems) ? board.publicItems : board.items || []).map((item) => ({
           primarySlug: String(item.slug || "").toUpperCase(),
           slugs: Array.isArray(item.slugs) ? item.slugs : [],
           views: Number(item.views || 0),

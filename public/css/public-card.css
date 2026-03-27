@@ -196,6 +196,103 @@
   background: #fff4d4;
 }
 
+.home-profile-marquee {
+  position: relative;
+  overflow: hidden;
+  border-radius: 20px;
+  border: 1px solid #e5e5e5;
+  background: linear-gradient(180deg, #ffffff 0%, #fafafa 100%);
+  padding: 14px;
+}
+
+.home-profile-marquee-track {
+  display: flex;
+  width: max-content;
+  animation: homeProfileMarqueeScroll 28s linear infinite;
+  will-change: transform;
+}
+
+.home-profile-marquee-group {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 12px;
+  padding-right: 12px;
+}
+
+.home-profile-marquee-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 220px;
+  max-width: 300px;
+  border-radius: 14px;
+  border: 1px solid #e5e5e5;
+  background: #ffffff;
+  padding: 10px 12px;
+  text-decoration: none;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.home-profile-marquee-item:hover,
+.home-profile-marquee-item:focus-visible {
+  border-color: #cfcfcf;
+  background: #fcfcfc;
+}
+
+.home-profile-marquee-avatar-wrap {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 auto;
+  overflow: hidden;
+  border-radius: 9999px;
+  border: 1px solid #e5e5e5;
+  background: #f5f5f5;
+}
+
+.home-profile-marquee-avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.home-profile-marquee-avatar-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: #525252;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.home-profile-marquee:hover .home-profile-marquee-track,
+.home-profile-marquee:focus-within .home-profile-marquee-track {
+  animation-play-state: paused;
+}
+
+@keyframes homeProfileMarqueeScroll {
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-profile-marquee {
+    overflow-x: auto;
+    padding-bottom: 8px;
+  }
+
+  .home-profile-marquee-track {
+    animation: none;
+  }
+}
+
 .scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;
@@ -629,6 +726,21 @@ body[data-page="profile-page"] {
 
   .home-slug-counter-value {
     font-size: 30px;
+  }
+
+  .home-profile-marquee {
+    padding: 10px;
+  }
+
+  .home-profile-marquee-group {
+    gap: 10px;
+    padding-right: 10px;
+  }
+
+  .home-profile-marquee-item {
+    min-width: 190px;
+    max-width: 230px;
+    padding: 9px 10px;
   }
 }
 
