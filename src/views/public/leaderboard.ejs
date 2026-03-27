@@ -22,42 +22,54 @@
   <% const activePeriod = period === "week" || period === "month" || period === "all" ? period : "day"; %>
   <% const activeType = type === "company" || type === "person" ? type : "all"; %>
   <main class="mx-auto w-full max-w-6xl px-4 py-8">
-    <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <a href="/"
-        class="interactive-btn inline-flex min-h-11 w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-neutral-300 px-3 py-1.5 text-center text-sm font-semibold text-neutral-600 hover:text-neutral-900 sm:w-auto sm:justify-start">
-        <svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M15 18 9 12l6-6"></path>
-        </svg>
-        На главную
-      </a>
-      <div class="flex w-full overflow-x-auto rounded-xl border border-neutral-200 bg-white p-1 text-sm sm:w-auto" role="tablist"
-        aria-label="Период рейтинга">
-        <a href="/leaderboard?period=day&type=<%= activeType %>"
-          class="interactive-btn inline-flex min-h-11 shrink-0 items-center justify-center whitespace-nowrap rounded-lg px-3 py-1.5 text-center leading-none <%= activePeriod === 'day' ? 'bg-neutral-900 text-white' : 'text-neutral-600' %>"
-          role="tab" aria-selected="<%= activePeriod === 'day' ? 'true' : 'false' %>">День</a>
-        <a href="/leaderboard?period=week&type=<%= activeType %>"
-          class="interactive-btn inline-flex min-h-11 shrink-0 items-center justify-center whitespace-nowrap rounded-lg px-3 py-1.5 text-center leading-none <%= activePeriod === 'week' ? 'bg-neutral-900 text-white' : 'text-neutral-600' %>"
-          role="tab" aria-selected="<%= activePeriod === 'week' ? 'true' : 'false' %>">Неделя</a>
-        <a href="/leaderboard?period=month&type=<%= activeType %>"
-          class="interactive-btn inline-flex min-h-11 shrink-0 items-center justify-center whitespace-nowrap rounded-lg px-3 py-1.5 text-center leading-none <%= activePeriod === 'month' ? 'bg-neutral-900 text-white' : 'text-neutral-600' %>"
-          role="tab" aria-selected="<%= activePeriod === 'month' ? 'true' : 'false' %>">Месяц</a>
-        <a href="/leaderboard?period=all&type=<%= activeType %>"
-          class="interactive-btn inline-flex min-h-11 shrink-0 items-center justify-center whitespace-nowrap rounded-lg px-3 py-1.5 text-center leading-none <%= activePeriod === 'all' ? 'bg-neutral-900 text-white' : 'text-neutral-600' %>"
-          role="tab" aria-selected="<%= activePeriod === 'all' ? 'true' : 'false' %>">Всё время</a>
+    <section class="mb-6 rounded-2xl border border-neutral-200 bg-white p-3 shadow-sm sm:p-4">
+      <div class="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+        <a href="/"
+          class="interactive-btn inline-flex min-h-11 w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border border-neutral-300 bg-white px-3 py-1.5 text-center text-sm font-semibold text-neutral-700 hover:text-neutral-900 sm:w-auto sm:justify-start">
+          <svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M15 18 9 12l6-6"></path>
+          </svg>
+          На главную
+        </a>
+
+        <div class="grid gap-3 lg:grid-cols-2 lg:gap-4">
+          <div>
+            <p class="mb-1 px-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-neutral-500">Период</p>
+            <div class="flex w-full overflow-x-auto rounded-xl border border-neutral-200 bg-neutral-50 p-1 text-sm" role="tablist"
+              aria-label="Период рейтинга">
+              <a href="/leaderboard?period=day&type=<%= activeType %>"
+                class="interactive-btn inline-flex min-h-11 shrink-0 items-center justify-center whitespace-nowrap rounded-lg px-3 py-1.5 text-center leading-none <%= activePeriod === 'day' ? 'bg-neutral-900 text-white shadow-sm' : 'text-neutral-600 hover:text-neutral-900' %>"
+                role="tab" aria-selected="<%= activePeriod === 'day' ? 'true' : 'false' %>">День</a>
+              <a href="/leaderboard?period=week&type=<%= activeType %>"
+                class="interactive-btn inline-flex min-h-11 shrink-0 items-center justify-center whitespace-nowrap rounded-lg px-3 py-1.5 text-center leading-none <%= activePeriod === 'week' ? 'bg-neutral-900 text-white shadow-sm' : 'text-neutral-600 hover:text-neutral-900' %>"
+                role="tab" aria-selected="<%= activePeriod === 'week' ? 'true' : 'false' %>">Неделя</a>
+              <a href="/leaderboard?period=month&type=<%= activeType %>"
+                class="interactive-btn inline-flex min-h-11 shrink-0 items-center justify-center whitespace-nowrap rounded-lg px-3 py-1.5 text-center leading-none <%= activePeriod === 'month' ? 'bg-neutral-900 text-white shadow-sm' : 'text-neutral-600 hover:text-neutral-900' %>"
+                role="tab" aria-selected="<%= activePeriod === 'month' ? 'true' : 'false' %>">Месяц</a>
+              <a href="/leaderboard?period=all&type=<%= activeType %>"
+                class="interactive-btn inline-flex min-h-11 shrink-0 items-center justify-center whitespace-nowrap rounded-lg px-3 py-1.5 text-center leading-none <%= activePeriod === 'all' ? 'bg-neutral-900 text-white shadow-sm' : 'text-neutral-600 hover:text-neutral-900' %>"
+                role="tab" aria-selected="<%= activePeriod === 'all' ? 'true' : 'false' %>">Всё время</a>
+            </div>
+          </div>
+
+          <div>
+            <p class="mb-1 px-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-neutral-500">Сегмент</p>
+            <div class="flex w-full overflow-x-auto rounded-xl border border-neutral-200 bg-neutral-50 p-1 text-sm" role="tablist"
+              aria-label="Тип профиля в лидерборде">
+              <a href="/leaderboard?period=<%= activePeriod %>&type=all"
+                class="interactive-btn inline-flex min-h-11 shrink-0 items-center justify-center whitespace-nowrap rounded-lg px-3 py-1.5 text-center leading-none <%= activeType === 'all' ? 'bg-neutral-900 text-white shadow-sm' : 'text-neutral-600 hover:text-neutral-900' %>"
+                role="tab" aria-selected="<%= activeType === 'all' ? 'true' : 'false' %>">Все</a>
+              <a href="/leaderboard?period=<%= activePeriod %>&type=company"
+                class="interactive-btn inline-flex min-h-11 shrink-0 items-center justify-center whitespace-nowrap rounded-lg px-3 py-1.5 text-center leading-none <%= activeType === 'company' ? 'bg-neutral-900 text-white shadow-sm' : 'text-neutral-600 hover:text-neutral-900' %>"
+                role="tab" aria-selected="<%= activeType === 'company' ? 'true' : 'false' %>">Компании</a>
+              <a href="/leaderboard?period=<%= activePeriod %>&type=person"
+                class="interactive-btn inline-flex min-h-11 shrink-0 items-center justify-center whitespace-nowrap rounded-lg px-3 py-1.5 text-center leading-none <%= activeType === 'person' ? 'bg-neutral-900 text-white shadow-sm' : 'text-neutral-600 hover:text-neutral-900' %>"
+                role="tab" aria-selected="<%= activeType === 'person' ? 'true' : 'false' %>">Личности</a>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
-    <div class="mb-6 flex w-full overflow-x-auto rounded-xl border border-neutral-200 bg-white p-1 text-sm" role="tablist"
-      aria-label="Тип профиля в лидерборде">
-      <a href="/leaderboard?period=<%= activePeriod %>&type=all"
-        class="interactive-btn inline-flex min-h-11 shrink-0 items-center justify-center whitespace-nowrap rounded-lg px-3 py-1.5 text-center leading-none <%= activeType === 'all' ? 'bg-neutral-900 text-white' : 'text-neutral-600' %>"
-        role="tab" aria-selected="<%= activeType === 'all' ? 'true' : 'false' %>">Все</a>
-      <a href="/leaderboard?period=<%= activePeriod %>&type=company"
-        class="interactive-btn inline-flex min-h-11 shrink-0 items-center justify-center whitespace-nowrap rounded-lg px-3 py-1.5 text-center leading-none <%= activeType === 'company' ? 'bg-neutral-900 text-white' : 'text-neutral-600' %>"
-        role="tab" aria-selected="<%= activeType === 'company' ? 'true' : 'false' %>">Компании</a>
-      <a href="/leaderboard?period=<%= activePeriod %>&type=person"
-        class="interactive-btn inline-flex min-h-11 shrink-0 items-center justify-center whitespace-nowrap rounded-lg px-3 py-1.5 text-center leading-none <%= activeType === 'person' ? 'bg-neutral-900 text-white' : 'text-neutral-600' %>"
-        role="tab" aria-selected="<%= activeType === 'person' ? 'true' : 'false' %>">Личности</a>
-    </div>
+    </section>
 
     <header class="mb-6 rounded-2xl border border-neutral-200 bg-white p-6">
       <h1 class="inline-flex items-center gap-2 text-3xl font-black tracking-tight text-neutral-900">
