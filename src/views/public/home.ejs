@@ -72,6 +72,10 @@
   return { primarySlug, name, avatarUrl };
   })
   .filter((item) => item.primarySlug);
+  for (let i = homeProfileFeedList.length - 1; i > 0; i -= 1) {
+  const j = Math.floor(Math.random() * (i + 1));
+  [homeProfileFeedList[i], homeProfileFeedList[j]] = [homeProfileFeedList[j], homeProfileFeedList[i]];
+  }
 
   const weeklyViewsTopList = Array.isArray(topWeeklyViews) ? topWeeklyViews.slice(0, 3) : [];
   const latestSlackCard = latestCreatedCard && typeof latestCreatedCard === "object" ? latestCreatedCard : null;
