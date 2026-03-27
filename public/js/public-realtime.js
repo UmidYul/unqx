@@ -53,7 +53,7 @@
   const bar = document.getElementById("home-live-stats");
   const totalNode = document.getElementById("home-live-total");
   const todayNode = document.getElementById("home-live-today");
-  const onlineNode = document.getElementById("home-live-online");
+  const visitorsNode = document.getElementById("home-live-visitors");
   let liveStatsTimer = null;
   let liveStatsFailureCount = 0;
 
@@ -90,7 +90,7 @@
           ? Number(payload.todayTotal)
           : Number(payload.todayCreated || 0) + Number(payload.todayActivated || 0);
       animateNumber(todayNode, todayValue);
-      animateNumber(onlineNode, payload.onlineNow || 0);
+      animateNumber(visitorsNode, payload.todayVisitors || 0);
       bar.classList.remove("hidden");
       liveStatsFailureCount = 0;
     } catch {

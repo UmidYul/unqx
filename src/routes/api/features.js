@@ -20,14 +20,13 @@ const {
 } = require("../../services/promo-codes");
 
 const router = express.Router();
-const ONLINE_WINDOW_SECONDS = 90;
 const SYNTHETIC_FINGERPRINT_PREFIX = "synthetic:";
 
-async function countOnlineSessionsSince(onlineSince) {
+async function countUniqueVisitorsSince(sinceDate) {
   if (!prisma.analyticsView) return 0;
   try {
     const rows = await prisma.analyticsView.findMany({
-      where: { visitedAt: { gte: onlineSince } },
+      where: { visitedAt: { gte: sinceDate } },
       select: { sessionId: true, fingerprint: true },
     });
     return new Set(
@@ -42,7 +41,7 @@ async function countOnlineSessionsSince(onlineSince) {
       throw error;
     }
     const rows = await prisma.analyticsView.findMany({
-      where: { visitedAt: { gte: onlineSince } },
+      where: { visitedAt: { gte: sinceDate } },
       select: { sessionId: true },
     });
     return new Set(rows.map((row) => String(row.sessionId || "").trim()).filter(Boolean)).size;
@@ -63,9 +62,8 @@ router.get(
   asyncHandler(async (_req, res) => {
     const now = new Date();
     const todayStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0));
-    const onlineSince = new Date(now.getTime() - ONLINE_WINDOW_SECONDS * 1000);
 
-    const [activeCardsTotal, todayCreated, todayActivated, todayTotal, onlineNow] = await Promise.all([
+    const [activeCardsTotal, todayCreated, todayActivated, todayTotal, todayVisitors] = await Promise.all([
       prisma.slug.count({ where: { status: { not: "free" } } }),
       prisma.slug.count({ where: { createdAt: { gte: todayStart } } }),
       prisma.slug.count({ where: { activatedAt: { gte: todayStart } } }),
@@ -74,7 +72,7 @@ router.get(
           OR: [{ createdAt: { gte: todayStart } }, { activatedAt: { gte: todayStart } }],
         },
       }),
-      countOnlineSessionsSince(onlineSince),
+      countUniqueVisitorsSince(todayStart),
     ]);
 
     res.json({
@@ -82,7 +80,7 @@ router.get(
       todayCreated,
       todayActivated,
       todayTotal,
-      onlineNow,
+      todayVisitors,
     });
   }),
 );
