@@ -4,7 +4,7 @@
     return;
   }
 
-  const HISTORY_LIMIT = 10;
+  const HISTORY_LIMIT = 5;
   const HISTORY_REFRESH_MS = 12_000;
   const SLOT_LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
   const SLOT_DIGITS = "0123456789";
@@ -16,8 +16,10 @@
 
   const spinButton = document.getElementById("unqx-game-spin-button");
   const refreshButton = document.getElementById("unqx-game-history-refresh");
+  const infoButton = document.getElementById("unqx-game-info-button");
   const statusNode = document.getElementById("unqx-game-status");
   const reelNode = document.getElementById("unqx-game-reel");
+  const resultMetaNode = document.getElementById("unqx-game-result-meta");
   const resultSlugNode = document.getElementById("unqx-game-result-slug");
   const resultPriceNode = document.getElementById("unqx-game-result-price");
   const resultTimeNode = document.getElementById("unqx-game-result-time");
@@ -38,8 +40,10 @@
   if (
     !(spinButton instanceof HTMLButtonElement) ||
     !(refreshButton instanceof HTMLButtonElement) ||
+    !(infoButton instanceof HTMLButtonElement) ||
     !(statusNode instanceof HTMLElement) ||
     !(reelNode instanceof HTMLElement) ||
+    !(resultMetaNode instanceof HTMLElement) ||
     !(resultSlugNode instanceof HTMLElement) ||
     !(resultPriceNode instanceof HTMLElement) ||
     !(resultTimeNode instanceof HTMLElement) ||
@@ -89,7 +93,7 @@
   function formatDateTime(value) {
     const date = value instanceof Date ? value : new Date(value || "");
     if (!Number.isFinite(date.getTime())) {
-      return "---";
+      return "";
     }
     return date.toLocaleString("ru-RU", {
       hour12: false,
@@ -111,9 +115,7 @@
   }
 
   function normalizeWinner(rawWinner) {
-    const profileSlug = String(rawWinner?.profileSlug || "")
-      .trim()
-      .toUpperCase();
+    const profileSlug = String(rawWinner?.profileSlug || "").trim().toUpperCase();
     const profileUrlRaw = String(rawWinner?.profileUrl || "").trim();
     const profileUrl = profileUrlRaw || (profileSlug ? `/${profileSlug}` : "");
     return {
@@ -155,12 +157,10 @@
     };
   }
 
-  function openModal({ title, message, tone = "neutral", actionLabel = "Понятно" } = {}) {
-    modalTitleNode.textContent = String(title || "Уведомление");
+  function openModal({ title, message } = {}) {
+    modalTitleNode.textContent = String(title || "UNQX Lucky");
     modalMessageNode.textContent = String(message || "");
-    modalActionNode.textContent = String(actionLabel || "Понятно");
-    modalNode.setAttribute("data-tone", String(tone || "neutral"));
-    modalOverlayNode.classList.remove("hidden");
+    modalOverlayNode.classList.add("is-open");
     modalOverlayNode.setAttribute("aria-hidden", "false");
     window.setTimeout(() => {
       modalActionNode.focus();
@@ -168,14 +168,12 @@
   }
 
   function closeModal() {
-    modalOverlayNode.classList.add("hidden");
+    modalOverlayNode.classList.remove("is-open");
     modalOverlayNode.setAttribute("aria-hidden", "true");
-    modalNode.removeAttribute("data-tone");
   }
 
-  function setStatus(message, tone = "neutral") {
+  function setStatus(message) {
     statusNode.textContent = String(message || "");
-    statusNode.setAttribute("data-tone", tone === "error" ? "error" : tone === "success" ? "success" : "neutral");
   }
 
   function getSlotPool(index) {
@@ -282,12 +280,7 @@
   function setSpinLock(nextSpinAt) {
     const lockDate = nextSpinAt instanceof Date ? nextSpinAt : new Date(nextSpinAt || "");
     spinLockedUntil = Number.isFinite(lockDate.getTime()) ? lockDate.getTime() : 0;
-    if (isSpinLocked()) {
-      spinLimitNode.textContent = `Лимит на сегодня. Следующая попытка: ${formatDateTime(lockDate)}`;
-    } else {
-      spinLockedUntil = 0;
-      spinLimitNode.textContent = "1 попытка в день (Asia/Tashkent)";
-    }
+    spinLimitNode.textContent = isSpinLocked() ? "Попытка на сегодня использована" : "1 попытка в день";
   }
 
   function setSpinning(nextState) {
@@ -297,6 +290,8 @@
     }
     spinButton.disabled = isSpinning || isSpinLocked();
     refreshButton.disabled = isSpinning;
+    infoButton.disabled = isSpinning;
+
     if (isSpinning) {
       spinButton.textContent = "Крутим...";
     } else if (isSpinLocked()) {
@@ -304,6 +299,7 @@
     } else {
       spinButton.textContent = "Крутить";
     }
+
     reelNode.classList.toggle("is-spinning", isSpinning);
   }
 
@@ -314,8 +310,8 @@
       return;
     }
 
-    const untilLabel = lucky.validUntil ? formatDateTime(lucky.validUntil) : "---";
-    luckyTextNode.textContent = `Lucky-бонус: -${lucky.discountPercent}% на ${lucky.targetSlug} до ${untilLabel}`;
+    const untilLabel = lucky.validUntil ? formatDateTime(lucky.validUntil) : "";
+    luckyTextNode.textContent = `Lucky-бонус: -${lucky.discountPercent}% на ${lucky.targetSlug}${untilLabel ? ` до ${untilLabel}` : ""}`;
     luckyBoxNode.classList.remove("hidden");
 
     if (lucky.validUntil) {
@@ -324,8 +320,9 @@
   }
 
   function renderResult(entry) {
+    resultMetaNode.classList.remove("hidden");
     applySlugToSlots(entry.slug, { stopped: true });
-    resultSlugNode.textContent = entry.slug || "---";
+    resultSlugNode.textContent = entry.slug || "";
     resultPriceNode.textContent = `Цена: ${formatPrice(entry.price)}`;
     resultTimeNode.textContent = `Время: ${formatDateTime(entry.createdAt)}`;
   }
@@ -376,9 +373,17 @@
     window.location.href = `/login?next=${next}`;
   }
 
+  function openInfoModal() {
+    openModal({
+      title: "Как это работает",
+      message:
+        "Нажмите «Крутить», все 6 слотов начнут вращение и остановятся по очереди. Вы получаете только свободный slug. Доступна 1 попытка в день, а на выпавший slug действует авто-скидка 10% до полуночи.",
+    });
+  }
+
   async function loadHistory({ silent = false } = {}) {
     if (!silent) {
-      setStatus("Обновляем историю...", "neutral");
+      setStatus("Обновляем историю");
     }
     try {
       const response = await fetch(`/api/cards/unqx-game/history?limit=${HISTORY_LIMIT}`, {
@@ -394,12 +399,9 @@
       const payload = await response.json().catch(() => ({}));
       if (!response.ok || !payload?.ok) {
         if (!silent) {
-          const message = String(payload?.error || "Не удалось загрузить историю.");
-          setStatus(message, "error");
           openModal({
-            title: "Ошибка обновления",
-            message,
-            tone: "error",
+            title: "Ошибка",
+            message: String(payload?.error || "Не удалось загрузить историю."),
           });
         }
         return;
@@ -407,15 +409,13 @@
 
       applyEntries(Array.isArray(payload.items) ? payload.items : []);
       if (!silent) {
-        setStatus("История обновлена.", "success");
+        setStatus("История обновлена");
       }
     } catch {
       if (!silent) {
-        setStatus("Ошибка сети при обновлении истории.", "error");
         openModal({
-          title: "Сеть недоступна",
-          message: "Не удалось обновить историю. Проверьте интернет и попробуйте снова.",
-          tone: "error",
+          title: "Ошибка сети",
+          message: "Не удалось обновить историю. Попробуйте снова.",
         });
       }
     }
@@ -433,14 +433,11 @@
         return;
       }
       const payload = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        return;
-      }
-      if (payload?.lucky && payload.lucky.active) {
+      if (response.ok && payload?.lucky && payload.lucky.active) {
         renderLucky(payload.lucky);
       }
     } catch {
-      // ignore preload network errors
+      // ignore preload errors
     }
   }
 
@@ -448,13 +445,11 @@
     if (isSpinning) {
       return;
     }
+
     if (isSpinLocked()) {
-      const nextLabel = formatDateTime(spinLockedUntil);
-      setStatus(`Лимит на сегодня. Следующая попытка: ${nextLabel}.`, "error");
       openModal({
-        title: "Лимит исчерпан",
-        message: `Вы уже использовали спин сегодня. Следующая попытка будет: ${nextLabel}.`,
-        tone: "error",
+        title: "Лимит на сегодня",
+        message: `Следующая попытка: ${formatDateTime(spinLockedUntil)}.`,
       });
       setSpinning(false);
       return;
@@ -464,7 +459,7 @@
     const animationId = startSlotMachineSpin();
     const spinStartedAt = Date.now();
     let spinSucceeded = false;
-    setStatus("Идёт спин...", "neutral");
+    setStatus("Идёт спин");
 
     try {
       const response = await fetch("/api/cards/unqx-game/spin", {
@@ -485,26 +480,21 @@
       const payload = await response.json().catch(() => ({}));
       if (response.status === 429 && payload?.code === "DAILY_SPIN_LIMIT") {
         setSpinLock(payload?.nextSpinAt);
-        setStatus(`Лимит на сегодня. Следующая попытка: ${formatDateTime(payload?.nextSpinAt)}.`, "error");
         if (payload?.lucky) {
           renderLucky(payload.lucky);
         }
         openModal({
-          title: "Лимит исчерпан",
-          message: `Сегодня доступна только 1 попытка. Следующая будет: ${formatDateTime(payload?.nextSpinAt)}.`,
-          tone: "error",
+          title: "Лимит на сегодня",
+          message: `Следующая попытка: ${formatDateTime(payload?.nextSpinAt)}.`,
         });
         stopSlotMachineInstant();
         return;
       }
 
       if (!response.ok || !payload?.ok || !payload?.entry) {
-        const message = String(payload?.error || "Не удалось выполнить спин. Попробуйте ещё раз.");
-        setStatus(message, "error");
         openModal({
           title: "Спин не выполнен",
-          message,
-          tone: "error",
+          message: String(payload?.error || "Попробуйте ещё раз."),
         });
         stopSlotMachineInstant();
         return;
@@ -519,21 +509,18 @@
 
       renderResult(entry);
       prependEntry(entry);
-      setStatus("Новая комбинация получена.", "success");
       renderLucky(payload?.lucky, entry.slug);
       openModal({
         title: `Ваш slug: ${entry.slug}`,
-        message: `Цена комбинации: ${formatPrice(entry.price)}. История обновлена и lucky-бонус уже активирован.`,
-        tone: "success",
+        message: `Цена: ${formatPrice(entry.price)}.`,
       });
 
       spinSucceeded = true;
+      setStatus("Спин завершён");
     } catch {
-      setStatus("Ошибка сети. Повторите попытку.", "error");
       openModal({
-        title: "Сеть недоступна",
-        message: "Во время спина произошла ошибка сети. Попробуйте снова через несколько секунд.",
-        tone: "error",
+        title: "Ошибка сети",
+        message: "Во время спина произошла ошибка. Попробуйте снова.",
       });
     } finally {
       if (!spinSucceeded) {
@@ -551,6 +538,8 @@
     void loadHistory({ silent: false });
   });
 
+  infoButton.addEventListener("click", openInfoModal);
+
   modalActionNode.addEventListener("click", closeModal);
   modalCloseNode.addEventListener("click", closeModal);
   modalOverlayNode.addEventListener("click", (event) => {
@@ -560,7 +549,7 @@
   });
 
   document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && !modalOverlayNode.classList.contains("hidden")) {
+    if (event.key === "Escape" && modalOverlayNode.classList.contains("is-open")) {
       closeModal();
     }
   });
@@ -573,10 +562,12 @@
     void loadHistory({ silent: true });
   }, HISTORY_REFRESH_MS);
 
+  resultMetaNode.classList.add("hidden");
+  luckyBoxNode.classList.add("hidden");
   applySlugToSlots("AAA000", { stopped: false });
   setSpinLock(null);
   setSpinning(false);
-  setStatus("Готово к запуску.", "neutral");
+  setStatus("Готово");
   void loadLuckyState();
   void loadHistory({ silent: false });
 })();

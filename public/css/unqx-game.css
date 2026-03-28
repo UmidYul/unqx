@@ -1,86 +1,26 @@
 ﻿[data-page="unqx-game"] {
-  --lucky-bg-1: #f7f8fc;
-  --lucky-bg-2: #eef3f8;
-  --lucky-surface: rgba(255, 255, 255, 0.82);
-  --lucky-border: rgba(15, 23, 42, 0.12);
-  --lucky-text: #0f172a;
-  --lucky-subtle: #4b5563;
-  --lucky-accent: #0ea5e9;
-  --lucky-accent-2: #f59e0b;
-  background:
-    radial-gradient(1200px 460px at -8% -20%, rgba(14, 165, 233, 0.22), transparent 68%),
-    radial-gradient(1100px 460px at 108% -14%, rgba(245, 158, 11, 0.2), transparent 70%),
-    linear-gradient(170deg, var(--lucky-bg-1) 0%, var(--lucky-bg-2) 100%);
-  color: var(--lucky-text);
-  font-family: "Sora", "Space Grotesk", "Manrope", sans-serif;
+  background: #eeece6;
+  color: #171717;
+  font-family: "Sora", "Manrope", "Space Grotesk", sans-serif;
 }
 
 .unqx-lucky-page {
   position: relative;
 }
 
-.unqx-lucky-hero,
 .unqx-lucky-card {
-  background: var(--lucky-surface);
-  backdrop-filter: blur(8px);
-  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.08);
-}
-
-.unqx-lucky-brand {
-  font-weight: 700;
-}
-
-.unqx-lucky-pills {
-  align-self: center;
-}
-
-.unqx-lucky-pill {
-  border: 1px solid rgba(15, 23, 42, 0.14);
-  background: rgba(255, 255, 255, 0.74);
-  color: #1f2937;
-  border-radius: 999px;
-  padding: 8px 12px;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  background: #f6f4ee;
+  box-shadow: none;
 }
 
 .unqx-game-reel {
-  position: relative;
-  overflow: hidden;
-  border-color: var(--lucky-border);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(250, 251, 252, 0.82) 100%);
-  transition: transform 220ms ease, box-shadow 220ms ease, border-color 220ms ease;
-}
-
-.unqx-game-reel::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  pointer-events: none;
-  background: linear-gradient(
-    120deg,
-    transparent 24%,
-    rgba(255, 255, 255, 0.35) 44%,
-    rgba(255, 255, 255, 0.9) 50%,
-    rgba(255, 255, 255, 0.35) 56%,
-    transparent 76%
-  );
-  transform: translateX(-130%);
+  background: #f3f1ea;
+  box-shadow: none;
+  transition: border-color 180ms ease;
 }
 
 .unqx-game-reel.is-spinning {
-  transform: translateY(-2px);
-  border-color: rgba(14, 165, 233, 0.4);
-  box-shadow: 0 24px 44px rgba(14, 165, 233, 0.14);
-}
-
-.unqx-game-reel.is-spinning::before {
-  opacity: 1;
-  animation: unqx-game-reel-sweep 0.88s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+  border-color: #9ca3af;
 }
 
 .unqx-game-slot-row {
@@ -90,31 +30,19 @@
 }
 
 .unqx-game-slot {
-  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 60px;
+  min-height: 58px;
   border-radius: 12px;
-  border: 1px solid rgba(15, 23, 42, 0.18);
-  background: linear-gradient(180deg, #ffffff 0%, #f3f4f6 100%);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.92), 0 8px 18px rgba(15, 23, 42, 0.08);
+  border: 1px solid rgba(31, 41, 55, 0.24);
+  background: #f7f5ef;
   color: #0f172a;
-  font-size: 1.75rem;
+  font-size: 1.72rem;
   font-weight: 900;
   letter-spacing: 0.06em;
   font-variant-numeric: tabular-nums;
-  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease, color 180ms ease;
-}
-
-.unqx-game-slot::before {
-  content: "";
-  position: absolute;
-  left: 12%;
-  right: 12%;
-  top: 8px;
-  height: 1px;
-  background: rgba(15, 23, 42, 0.1);
+  transition: border-color 150ms ease, transform 150ms ease;
 }
 
 .unqx-game-slot.is-divider {
@@ -122,52 +50,27 @@
 }
 
 .unqx-game-slot.is-spinning {
-  animation: unqx-game-slot-jitter 96ms linear infinite;
-  color: #1d4ed8;
-  border-color: rgba(29, 78, 216, 0.32);
+  animation: unqx-game-slot-jitter 95ms linear infinite;
+  border-color: rgba(17, 24, 39, 0.45);
 }
 
 .unqx-game-slot.is-stopped {
-  border-color: rgba(16, 185, 129, 0.42);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.95), 0 10px 24px rgba(16, 185, 129, 0.18);
-  color: #065f46;
-  animation: unqx-game-slot-stop-pop 220ms cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-#unqx-game-result-slug {
-  font-family: "Space Grotesk", "Sora", sans-serif;
-}
-
-.unqx-game-lucky-box {
-  box-shadow: 0 10px 20px rgba(16, 185, 129, 0.14);
-}
-
-.unqx-game-status[data-tone="success"] {
-  color: #047857;
-}
-
-.unqx-game-status[data-tone="error"] {
-  color: #dc2626;
-}
-
-.unqx-game-status[data-tone="neutral"] {
-  color: #6b7280;
+  border-color: rgba(17, 24, 39, 0.36);
 }
 
 .unqx-game-history-item {
-  border: 1px solid rgba(15, 23, 42, 0.11);
+  border: 1px solid rgba(15, 23, 42, 0.14);
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.92);
-  padding: 12px;
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+  background: #f6f4ee;
+  padding: 11px 12px;
   display: grid;
-  grid-template-columns: minmax(105px, 1fr) minmax(120px, 1fr) auto auto;
+  grid-template-columns: minmax(100px, 1fr) minmax(120px, 1fr) auto auto;
   gap: 10px;
   align-items: center;
 }
 
 .unqx-game-history-item.is-new {
-  animation: unqx-game-history-enter 0.34s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: unqx-game-history-enter 0.25s ease;
 }
 
 .unqx-game-history-slug {
@@ -183,10 +86,8 @@
 }
 
 .unqx-game-history-winner-link {
-  display: inline-flex;
-  align-items: center;
-  border-bottom: 1px dashed rgba(17, 24, 39, 0.3);
-  color: #0f172a;
+  color: #111827;
+  border-bottom: 1px dashed rgba(17, 24, 39, 0.35);
   font-weight: 700;
 }
 
@@ -206,7 +107,7 @@
 }
 
 .unqx-game-history-time {
-  font-size: 0.76rem;
+  font-size: 0.75rem;
   color: #6b7280;
   text-align: right;
 }
@@ -215,106 +116,71 @@
   position: fixed;
   inset: 0;
   z-index: 80;
-  display: grid;
-  place-items: center;
+  display: none;
+  align-items: center;
+  justify-content: center;
   padding: 16px;
-  background: rgba(2, 6, 23, 0.58);
-  backdrop-filter: blur(4px);
+  background: rgba(17, 24, 39, 0.34);
 }
 
-.unqx-game-modal-overlay.hidden {
-  display: none;
+.unqx-game-modal-overlay.is-open {
+  display: flex;
 }
 
 .unqx-game-modal {
-  width: min(100%, 430px);
-  position: relative;
-  border-radius: 20px;
-  border: 1px solid rgba(148, 163, 184, 0.36);
-  background:
-    radial-gradient(420px 210px at 100% -20%, rgba(14, 165, 233, 0.16), transparent 70%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.97) 100%);
-  padding: 20px;
-  box-shadow: 0 28px 64px rgba(15, 23, 42, 0.3);
-  animation: unqx-game-modal-in 220ms cubic-bezier(0.16, 1, 0.3, 1);
+  width: min(100%, 420px);
+  border-radius: 18px;
+  border: 1px solid rgba(17, 24, 39, 0.24);
+  background: #f6f4ee;
+  padding: 18px;
 }
 
 .unqx-game-modal-close {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  width: 34px;
-  height: 34px;
+  float: right;
+  width: 32px;
+  height: 32px;
   border-radius: 999px;
-  border: 1px solid rgba(15, 23, 42, 0.16);
-  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(15, 23, 42, 0.22);
+  background: transparent;
   color: #111827;
   font-size: 20px;
   line-height: 1;
 }
 
-.unqx-game-modal-badge {
-  margin-right: 36px;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: #4b5563;
-}
-
 .unqx-game-modal-title {
-  margin-top: 6px;
-  font-size: 1.35rem;
+  margin-top: 2px;
+  font-size: 1.25rem;
   font-weight: 900;
-  color: #0f172a;
+  color: #111827;
 }
 
 .unqx-game-modal-message {
   margin-top: 8px;
   color: #374151;
-  font-size: 0.95rem;
+  font-size: 0.94rem;
   line-height: 1.55;
 }
 
-.unqx-game-modal-actions {
-  margin-top: 16px;
-  display: flex;
-  justify-content: flex-end;
-}
-
 .unqx-game-modal-action {
-  min-height: 42px;
-  border-radius: 12px;
-  border: 1px solid rgba(15, 23, 42, 0.18);
-  background: #0f172a;
+  min-height: 40px;
+  border-radius: 11px;
+  border: 1px solid rgba(15, 23, 42, 0.2);
+  background: #111827;
   color: #ffffff;
   font-weight: 700;
   padding: 0 14px;
 }
 
-.unqx-game-modal[data-tone="error"] {
-  border-color: rgba(239, 68, 68, 0.34);
-}
-
-.unqx-game-modal[data-tone="error"] .unqx-game-modal-title {
-  color: #b91c1c;
-}
-
-.unqx-game-modal[data-tone="success"] {
-  border-color: rgba(16, 185, 129, 0.34);
-}
-
-.unqx-game-modal[data-tone="success"] .unqx-game-modal-title {
-  color: #065f46;
-}
-
-@keyframes unqx-game-reel-sweep {
-  0% {
-    transform: translateX(-130%);
-  }
-  100% {
-    transform: translateX(130%);
-  }
+.unqx-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 @keyframes unqx-game-slot-jitter {
@@ -329,34 +195,14 @@
   }
 }
 
-@keyframes unqx-game-slot-stop-pop {
-  0% {
-    transform: scale(0.92);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
-
 @keyframes unqx-game-history-enter {
   0% {
     opacity: 0;
-    transform: translateY(10px) scale(0.98);
+    transform: translateY(6px);
   }
   100% {
     opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-@keyframes unqx-game-modal-in {
-  0% {
-    opacity: 0;
-    transform: translateY(10px) scale(0.98);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translateY(0);
   }
 }
 
@@ -377,9 +223,5 @@
 
   .unqx-game-history-time {
     text-align: left;
-  }
-
-  .unqx-game-modal {
-    padding: 18px;
   }
 }
