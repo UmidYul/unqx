@@ -1,10 +1,10 @@
-(function initUnqxGame() {
+﻿(function initUnqxGame() {
   const root = document.body;
   if (!(root instanceof HTMLElement) || root.getAttribute("data-page") !== "unqx-game") {
     return;
   }
 
-  const HISTORY_LIMIT = 30;
+  const HISTORY_LIMIT = 10;
   const HISTORY_REFRESH_MS = 12_000;
   const SLOT_LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
   const SLOT_DIGITS = "0123456789";
@@ -27,7 +27,13 @@
   const spinLimitNode = document.getElementById("unqx-game-spin-limit");
   const historyList = document.getElementById("unqx-game-history-list");
   const historyEmpty = document.getElementById("unqx-game-history-empty");
-  const toastNode = document.getElementById("unqx-game-toast");
+
+  const modalOverlayNode = document.getElementById("unqx-game-modal-overlay");
+  const modalNode = document.getElementById("unqx-game-modal");
+  const modalTitleNode = document.getElementById("unqx-game-modal-title");
+  const modalMessageNode = document.getElementById("unqx-game-modal-message");
+  const modalActionNode = document.getElementById("unqx-game-modal-action");
+  const modalCloseNode = document.getElementById("unqx-game-modal-close");
 
   if (
     !(spinButton instanceof HTMLButtonElement) ||
@@ -43,24 +49,36 @@
     !(luckyTextNode instanceof HTMLElement) ||
     !(spinLimitNode instanceof HTMLElement) ||
     !(historyList instanceof HTMLElement) ||
-    !(historyEmpty instanceof HTMLElement)
+    !(historyEmpty instanceof HTMLElement) ||
+    !(modalOverlayNode instanceof HTMLElement) ||
+    !(modalNode instanceof HTMLElement) ||
+    !(modalTitleNode instanceof HTMLElement) ||
+    !(modalMessageNode instanceof HTMLElement) ||
+    !(modalActionNode instanceof HTMLButtonElement) ||
+    !(modalCloseNode instanceof HTMLButtonElement)
   ) {
     return;
   }
 
   let isSpinning = false;
   let historyItems = [];
-  let toastTimer = null;
   let spinLockedUntil = 0;
   let spinAnimationGeneration = 0;
   const slotIntervals = new Array(6).fill(0);
+
+  function wait(ms) {
+    const duration = Math.max(0, Number(ms) || 0);
+    return new Promise((resolve) => {
+      window.setTimeout(resolve, duration);
+    });
+  }
 
   function escapeHtml(value) {
     return String(value || "")
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
+      .replace(/\"/g, "&quot;")
       .replace(/'/g, "&#39;");
   }
 
@@ -84,6 +102,14 @@
     });
   }
 
+  function normalizeSlugForSlots(value) {
+    const normalized = String(value || "")
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, "")
+      .slice(0, 6);
+    return /^[A-Z]{3}[0-9]{3}$/.test(normalized) ? normalized : "";
+  }
+
   function normalizeWinner(rawWinner) {
     const profileSlug = String(rawWinner?.profileSlug || "")
       .trim()
@@ -98,54 +124,58 @@
   }
 
   function normalizeLucky(rawLucky, currentSlug = "") {
-    const targetSlug = String(rawLucky?.targetSlug || "")
-      .trim()
-      .toUpperCase();
-    const validUntilRaw = rawLucky?.validUntil;
-    const validUntilDate = validUntilRaw instanceof Date ? validUntilRaw : new Date(validUntilRaw || "");
+    const targetSlug = normalizeSlugForSlots(rawLucky?.targetSlug || "");
+    const validUntilDate = new Date(rawLucky?.validUntil || "");
     const validUntil = Number.isFinite(validUntilDate.getTime()) ? validUntilDate.toISOString() : "";
     const activeFromPayload = rawLucky && Object.prototype.hasOwnProperty.call(rawLucky, "active")
       ? Boolean(rawLucky.active)
       : null;
     const active = activeFromPayload === null ? Boolean(targetSlug && validUntil) : activeFromPayload;
-    const current = String(currentSlug || "").trim().toUpperCase();
+    const current = normalizeSlugForSlots(currentSlug);
     const appliesToCurrentSlug = rawLucky && Object.prototype.hasOwnProperty.call(rawLucky, "appliesToCurrentSlug")
       ? Boolean(rawLucky.appliesToCurrentSlug)
       : Boolean(active && targetSlug && current && targetSlug === current);
     return {
       active,
       discountPercent: Math.max(0, Math.round(Number(rawLucky?.discountPercent || 10))),
-      targetSlug: /^[A-Z]{3}[0-9]{3}$/.test(targetSlug) ? targetSlug : "",
+      targetSlug,
       validUntil,
       appliesToCurrentSlug,
     };
   }
 
   function normalizeEntry(raw) {
-    const createdAtRaw = raw?.createdAt;
-    const createdAt = createdAtRaw instanceof Date ? createdAtRaw : new Date(createdAtRaw || "");
+    const createdAt = new Date(raw?.createdAt || "");
     return {
       id: String(raw?.id || ""),
-      slug: String(raw?.slug || "").toUpperCase(),
+      slug: normalizeSlugForSlots(raw?.slug || ""),
       price: Math.max(0, Math.round(Number(raw?.price || 0))),
       createdAt: Number.isFinite(createdAt.getTime()) ? createdAt.toISOString() : new Date().toISOString(),
       winner: normalizeWinner(raw?.winner || {}),
     };
   }
 
-  function wait(ms) {
-    const duration = Math.max(0, Number(ms) || 0);
-    return new Promise((resolve) => {
-      window.setTimeout(resolve, duration);
-    });
+  function openModal({ title, message, tone = "neutral", actionLabel = "Понятно" } = {}) {
+    modalTitleNode.textContent = String(title || "Уведомление");
+    modalMessageNode.textContent = String(message || "");
+    modalActionNode.textContent = String(actionLabel || "Понятно");
+    modalNode.setAttribute("data-tone", String(tone || "neutral"));
+    modalOverlayNode.classList.remove("hidden");
+    modalOverlayNode.setAttribute("aria-hidden", "false");
+    window.setTimeout(() => {
+      modalActionNode.focus();
+    }, 0);
   }
 
-  function normalizeSlugForSlots(value) {
-    const normalized = String(value || "")
-      .toUpperCase()
-      .replace(/[^A-Z0-9]/g, "")
-      .slice(0, 6);
-    return /^[A-Z]{3}[0-9]{3}$/.test(normalized) ? normalized : "";
+  function closeModal() {
+    modalOverlayNode.classList.add("hidden");
+    modalOverlayNode.setAttribute("aria-hidden", "true");
+    modalNode.removeAttribute("data-tone");
+  }
+
+  function setStatus(message, tone = "neutral") {
+    statusNode.textContent = String(message || "");
+    statusNode.setAttribute("data-tone", tone === "error" ? "error" : tone === "success" ? "success" : "neutral");
   }
 
   function getSlotPool(index) {
@@ -174,10 +204,7 @@
     const fallback = "AAA000";
     const target = (normalized || fallback).split("");
     for (let i = 0; i < 6; i += 1) {
-      setSlotChar(i, target[i], {
-        spinning: false,
-        stopped,
-      });
+      setSlotChar(i, target[i], { spinning: false, stopped });
     }
   }
 
@@ -233,12 +260,7 @@
       setSlotChar(i, chars[i], { spinning: false, stopped: true });
     }
 
-    for (let i = 0; i < slotIntervals.length; i += 1) {
-      if (slotIntervals[i]) {
-        window.clearInterval(slotIntervals[i]);
-        slotIntervals[i] = 0;
-      }
-    }
+    stopAllSlotIntervals();
   }
 
   function stopSlotMachineInstant() {
@@ -261,79 +283,11 @@
     const lockDate = nextSpinAt instanceof Date ? nextSpinAt : new Date(nextSpinAt || "");
     spinLockedUntil = Number.isFinite(lockDate.getTime()) ? lockDate.getTime() : 0;
     if (isSpinLocked()) {
-      spinLimitNode.textContent = `Попытка использована. Следующая: ${formatDateTime(lockDate)}`;
+      spinLimitNode.textContent = `Лимит на сегодня. Следующая попытка: ${formatDateTime(lockDate)}`;
     } else {
       spinLockedUntil = 0;
       spinLimitNode.textContent = "1 попытка в день (Asia/Tashkent)";
     }
-  }
-
-  function renderLucky(rawLucky, currentSlug = "") {
-    const lucky = normalizeLucky(rawLucky, currentSlug);
-    if (!lucky.active || !lucky.targetSlug) {
-      luckyBoxNode.classList.add("hidden");
-      return;
-    }
-
-    const untilLabel = lucky.validUntil ? formatDateTime(lucky.validUntil) : "---";
-    luckyTextNode.textContent = `Lucky-бонус: -${lucky.discountPercent}% на ${lucky.targetSlug} до ${untilLabel}`;
-    luckyBoxNode.classList.remove("hidden");
-
-    if (lucky.validUntil) {
-      setSpinLock(lucky.validUntil);
-    }
-  }
-
-  function redirectToLogin() {
-    const next = encodeURIComponent(window.location.pathname + window.location.search + window.location.hash);
-    window.location.href = `/login?next=${next}`;
-  }
-
-  function showToast(message, tone = "neutral") {
-    if (!(toastNode instanceof HTMLElement)) {
-      return;
-    }
-    const text = String(message || "").trim();
-    if (!text) {
-      return;
-    }
-
-    toastNode.textContent = text;
-    toastNode.classList.remove("hidden");
-    toastNode.classList.add("is-visible");
-    toastNode.classList.remove("border-red-200", "bg-red-50", "text-red-700");
-    toastNode.classList.remove("border-emerald-200", "bg-emerald-50", "text-emerald-700");
-    toastNode.classList.remove("border-neutral-200", "bg-white", "text-neutral-700");
-
-    if (tone === "error") {
-      toastNode.classList.add("border-red-200", "bg-red-50", "text-red-700");
-    } else if (tone === "success") {
-      toastNode.classList.add("border-emerald-200", "bg-emerald-50", "text-emerald-700");
-    } else {
-      toastNode.classList.add("border-neutral-200", "bg-white", "text-neutral-700");
-    }
-
-    if (toastTimer) {
-      window.clearTimeout(toastTimer);
-    }
-    toastTimer = window.setTimeout(() => {
-      toastNode.classList.remove("is-visible");
-      toastNode.classList.add("hidden");
-    }, 2600);
-  }
-
-  function setStatus(message, tone = "neutral") {
-    statusNode.textContent = String(message || "");
-    statusNode.classList.remove("text-neutral-500", "text-red-600", "text-emerald-700");
-    if (tone === "error") {
-      statusNode.classList.add("text-red-600");
-      return;
-    }
-    if (tone === "success") {
-      statusNode.classList.add("text-emerald-700");
-      return;
-    }
-    statusNode.classList.add("text-neutral-500");
   }
 
   function setSpinning(nextState) {
@@ -351,6 +305,22 @@
       spinButton.textContent = "Крутить";
     }
     reelNode.classList.toggle("is-spinning", isSpinning);
+  }
+
+  function renderLucky(rawLucky, currentSlug = "") {
+    const lucky = normalizeLucky(rawLucky, currentSlug);
+    if (!lucky.active || !lucky.targetSlug) {
+      luckyBoxNode.classList.add("hidden");
+      return;
+    }
+
+    const untilLabel = lucky.validUntil ? formatDateTime(lucky.validUntil) : "---";
+    luckyTextNode.textContent = `Lucky-бонус: -${lucky.discountPercent}% на ${lucky.targetSlug} до ${untilLabel}`;
+    luckyBoxNode.classList.remove("hidden");
+
+    if (lucky.validUntil) {
+      setSpinLock(lucky.validUntil);
+    }
   }
 
   function renderResult(entry) {
@@ -401,6 +371,11 @@
     applyEntries(next, entry.id);
   }
 
+  function redirectToLogin() {
+    const next = encodeURIComponent(window.location.pathname + window.location.search + window.location.hash);
+    window.location.href = `/login?next=${next}`;
+  }
+
   async function loadHistory({ silent = false } = {}) {
     if (!silent) {
       setStatus("Обновляем историю...", "neutral");
@@ -415,14 +390,21 @@
         redirectToLogin();
         return;
       }
+
       const payload = await response.json().catch(() => ({}));
       if (!response.ok || !payload?.ok) {
         if (!silent) {
-          setStatus(payload?.error || "Не удалось загрузить историю.", "error");
-          showToast(payload?.error || "Не удалось загрузить историю.", "error");
+          const message = String(payload?.error || "Не удалось загрузить историю.");
+          setStatus(message, "error");
+          openModal({
+            title: "Ошибка обновления",
+            message,
+            tone: "error",
+          });
         }
         return;
       }
+
       applyEntries(Array.isArray(payload.items) ? payload.items : []);
       if (!silent) {
         setStatus("История обновлена.", "success");
@@ -430,7 +412,11 @@
     } catch {
       if (!silent) {
         setStatus("Ошибка сети при обновлении истории.", "error");
-        showToast("Ошибка сети при обновлении истории.", "error");
+        openModal({
+          title: "Сеть недоступна",
+          message: "Не удалось обновить историю. Проверьте интернет и попробуйте снова.",
+          tone: "error",
+        });
       }
     }
   }
@@ -454,7 +440,7 @@
         renderLucky(payload.lucky);
       }
     } catch {
-      // ignore lucky preload network errors
+      // ignore preload network errors
     }
   }
 
@@ -463,8 +449,13 @@
       return;
     }
     if (isSpinLocked()) {
-      setStatus(`Лимит на сегодня достигнут. Следующая попытка: ${formatDateTime(spinLockedUntil)}.`, "error");
-      showToast("Попробуйте снова после полуночи по Ташкенту.", "error");
+      const nextLabel = formatDateTime(spinLockedUntil);
+      setStatus(`Лимит на сегодня. Следующая попытка: ${nextLabel}.`, "error");
+      openModal({
+        title: "Лимит исчерпан",
+        message: `Вы уже использовали спин сегодня. Следующая попытка будет: ${nextLabel}.`,
+        tone: "error",
+      });
       setSpinning(false);
       return;
     }
@@ -494,14 +485,15 @@
       const payload = await response.json().catch(() => ({}));
       if (response.status === 429 && payload?.code === "DAILY_SPIN_LIMIT") {
         setSpinLock(payload?.nextSpinAt);
-        setStatus(
-          `Попытка уже использована. Следующая будет: ${formatDateTime(payload?.nextSpinAt)}.`,
-          "error",
-        );
-        showToast("На сегодня лимит 1 попытка. Возвращайся после полуночи.", "error");
+        setStatus(`Лимит на сегодня. Следующая попытка: ${formatDateTime(payload?.nextSpinAt)}.`, "error");
         if (payload?.lucky) {
           renderLucky(payload.lucky);
         }
+        openModal({
+          title: "Лимит исчерпан",
+          message: `Сегодня доступна только 1 попытка. Следующая будет: ${formatDateTime(payload?.nextSpinAt)}.`,
+          tone: "error",
+        });
         stopSlotMachineInstant();
         return;
       }
@@ -509,7 +501,11 @@
       if (!response.ok || !payload?.ok || !payload?.entry) {
         const message = String(payload?.error || "Не удалось выполнить спин. Попробуйте ещё раз.");
         setStatus(message, "error");
-        showToast(message, "error");
+        openModal({
+          title: "Спин не выполнен",
+          message,
+          tone: "error",
+        });
         stopSlotMachineInstant();
         return;
       }
@@ -520,15 +516,25 @@
         await wait(SLOT_MIN_VISIBLE_SPIN_MS - elapsed);
       }
       await settleSlotMachineToSlug(entry.slug, animationId);
+
       renderResult(entry);
       prependEntry(entry);
       setStatus("Новая комбинация получена.", "success");
       renderLucky(payload?.lucky, entry.slug);
+      openModal({
+        title: `Ваш slug: ${entry.slug}`,
+        message: `Цена комбинации: ${formatPrice(entry.price)}. История обновлена и lucky-бонус уже активирован.`,
+        tone: "success",
+      });
+
       spinSucceeded = true;
-      showToast("Lucky-спин сохранён в общей истории.", "success");
     } catch {
       setStatus("Ошибка сети. Повторите попытку.", "error");
-      showToast("Ошибка сети. Повторите попытку.", "error");
+      openModal({
+        title: "Сеть недоступна",
+        message: "Во время спина произошла ошибка сети. Попробуйте снова через несколько секунд.",
+        tone: "error",
+      });
     } finally {
       if (!spinSucceeded) {
         stopSlotMachineInstant();
@@ -545,6 +551,20 @@
     void loadHistory({ silent: false });
   });
 
+  modalActionNode.addEventListener("click", closeModal);
+  modalCloseNode.addEventListener("click", closeModal);
+  modalOverlayNode.addEventListener("click", (event) => {
+    if (event.target === modalOverlayNode) {
+      closeModal();
+    }
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !modalOverlayNode.classList.contains("hidden")) {
+      closeModal();
+    }
+  });
+
   window.setInterval(() => {
     if (!isSpinning && spinLockedUntil && spinLockedUntil <= Date.now()) {
       setSpinLock(null);
@@ -556,6 +576,7 @@
   applySlugToSlots("AAA000", { stopped: false });
   setSpinLock(null);
   setSpinning(false);
+  setStatus("Готово к запуску.", "neutral");
   void loadLuckyState();
   void loadHistory({ silent: false });
 })();
