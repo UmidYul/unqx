@@ -137,6 +137,7 @@ router.get(
       "drops",
       "directory",
       "verification",
+      "reports",
       "settings",
       "managers",
     ]);

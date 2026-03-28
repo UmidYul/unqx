@@ -6257,6 +6257,133 @@ router.post(
 );
 
 router.get(
+  "/violation-reports",
+  asyncHandler(async (req, res) => {
+    const statusRaw = String(req.query.status || "all").trim().toLowerCase();
+    const status = ["all", "new", "processed"].includes(statusRaw) ? statusRaw : "all";
+    const page = Math.max(1, Number(req.query.page || 1) || 1);
+    const pageSize = 20;
+    const offset = (page - 1) * pageSize;
+    const whereSql = status === "all" ? Prisma.empty : Prisma.sql`WHERE vr.status = ${status}`;
+
+    try {
+      const [countRows, rows] = await Promise.all([
+        prisma.$queryRaw`
+          SELECT COUNT(*)::int AS total
+          FROM violation_reports vr
+          ${whereSql}
+        `,
+        prisma.$queryRaw`
+          SELECT
+            vr.id,
+            vr.user_id,
+            vr.violation_type,
+            vr.message,
+            vr.status,
+            vr.user_snapshot,
+            vr.reporter_ip,
+            vr.user_agent,
+            vr.created_at,
+            vr.updated_at,
+            u.display_name,
+            u.first_name,
+            u.login,
+            u.email,
+            u.telegram_username
+          FROM violation_reports vr
+          LEFT JOIN users u ON u.id = vr.user_id
+          ${whereSql}
+          ORDER BY vr.created_at DESC
+          LIMIT ${pageSize}
+          OFFSET ${offset}
+        `,
+      ]);
+
+      const total = Number(Array.isArray(countRows) ? countRows[0]?.total || 0 : 0);
+      const items = (Array.isArray(rows) ? rows : []).map((row) => {
+        const snapshot = row?.user_snapshot && typeof row.user_snapshot === "object" ? row.user_snapshot : {};
+        return {
+          id: String(row?.id || ""),
+          userId: String(row?.user_id || ""),
+          type: String(row?.violation_type || "other"),
+          message: String(row?.message || ""),
+          status: String(row?.status || "new"),
+          reporterIp: String(row?.reporter_ip || ""),
+          userAgent: String(row?.user_agent || ""),
+          createdAt: row?.created_at || null,
+          updatedAt: row?.updated_at || null,
+          user: {
+            displayName: String(snapshot?.displayName || row?.display_name || row?.first_name || ""),
+            login: String(snapshot?.login || row?.login || ""),
+            email: String(snapshot?.email || row?.email || ""),
+            telegramUsername: String(snapshot?.telegramUsername || row?.telegram_username || ""),
+            city: String(snapshot?.city || ""),
+            plan: String(snapshot?.plan || ""),
+            status: String(snapshot?.status || ""),
+          },
+        };
+      });
+
+      res.json({
+        items,
+        pagination: {
+          page,
+          total,
+          totalPages: Math.max(1, Math.ceil(total / pageSize)),
+        },
+      });
+    } catch (error) {
+      if (isTableOrColumnMissing(error)) {
+        res.json({ items: [], pagination: { page: 1, total: 0, totalPages: 1 } });
+        return;
+      }
+      throw error;
+    }
+  }),
+);
+
+router.post(
+  "/violation-reports/:id/process",
+  asyncHandler(async (req, res) => {
+    const id = String(req.params.id || "").trim();
+    if (!isUuid(id)) {
+      res.status(400).json({ error: "Invalid report id", code: "VALIDATION_ERROR" });
+      return;
+    }
+
+    try {
+      const rows = await prisma.$queryRaw`
+        UPDATE violation_reports
+        SET status = 'processed',
+            updated_at = now()
+        WHERE id = ${id}
+        RETURNING id, status, updated_at
+      `;
+      const row = Array.isArray(rows) ? rows[0] || null : null;
+      if (!row) {
+        res.status(404).json({ error: "Report not found", code: "NOT_FOUND" });
+        return;
+      }
+
+      res.json({
+        ok: true,
+        item: {
+          id: String(row.id || ""),
+          status: String(row.status || "processed"),
+          updatedAt: row.updated_at || null,
+        },
+      });
+    } catch (error) {
+      if (isTableOrColumnMissing(error)) {
+        res.status(503).json({ error: "Reports storage unavailable", code: "REPORTS_STORAGE_UNAVAILABLE" });
+        return;
+      }
+      throw error;
+    }
+  }),
+);
+
+router.get(
   "/directory-exclusions",
   asyncHandler(async (_req, res) => {
     if (!prisma.directoryExclusion) {

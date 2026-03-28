@@ -1041,6 +1041,48 @@
           <div id="verification-pagination" class="flex items-center justify-end gap-2 text-sm text-neutral-600"></div>
         </section>
 
+        <section id="tab-reports" class="<%= pageActiveTab === 'reports' ? '' : 'hidden' %> space-y-4">
+          <header class="rounded-2xl border border-neutral-200 bg-white p-4">
+            <h2 class="text-base font-bold text-neutral-900">Репорты о правонарушениях</h2>
+            <p class="mt-1 text-sm text-neutral-600">Жалобы пользователей из приложения. Проверяйте и помечайте обработанные.</p>
+          </header>
+          <form id="reports-filters" action="<%= pageDashboardBase %>" method="get"
+            class="grid gap-3 rounded-2xl border border-neutral-200 bg-white p-4 md:grid-cols-[220px_auto]">
+            <input type="hidden" name="tab" value="reports" />
+            <select name="status" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">
+              <option value="all">Все статусы</option>
+              <option value="new">Новые</option>
+              <option value="processed">Обработанные</option>
+            </select>
+            <input type="hidden" name="page" value="1" />
+            <button type="submit"
+              class="inline-flex min-h-11 w-full items-center justify-center justify-self-start rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100 md:w-auto">
+              Применить
+            </button>
+          </form>
+          <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
+            <div class="overflow-x-auto">
+              <table class="min-w-[1280px] w-full text-left text-sm">
+                <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
+                  <tr>
+                    <th class="px-4 py-3">Тип</th>
+                    <th class="px-4 py-3">Пользователь</th>
+                    <th class="px-4 py-3">Контакты</th>
+                    <th class="px-4 py-3">Описание</th>
+                    <th class="px-4 py-3">IP / Устройство</th>
+                    <th class="px-4 py-3">Статус</th>
+                    <th class="px-4 py-3">Создано</th>
+                    <th class="px-4 py-3">Обновлено</th>
+                    <th class="px-4 py-3">Действия</th>
+                  </tr>
+                </thead>
+                <tbody id="reports-table"></tbody>
+              </table>
+            </div>
+          </div>
+          <div id="reports-pagination" class="flex items-center justify-end gap-2 text-sm text-neutral-600"></div>
+        </section>
+
         <section id="tab-logs" class="<%= pageActiveTab === 'logs' ? '' : 'hidden' %> space-y-4">
           <div class="flex items-center justify-between gap-3">
             <h2 class="text-lg font-bold">Логи ошибок</h2>

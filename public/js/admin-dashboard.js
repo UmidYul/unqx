@@ -222,6 +222,7 @@
     verification_approved: { label: "Одобрено", tone: "success" },
     verification_rejected: { label: "Отклонено", tone: "danger" },
     new: { label: "Новая", tone: "info" },
+    processed: { label: "Обработано", tone: "success" },
     contacted: { label: "Связались", tone: "muted" },
     paid: { label: "Оплачено", tone: "warning" },
     approved: { label: "Активировано", tone: "success" },
@@ -235,6 +236,19 @@
   function statusChip(code) {
     const m = statusMeta[code] || { label: String(code || "-"), tone: "muted" };
     return `<span class="admin-status-chip is-${m.tone}"><span class="admin-status-dot"></span>${X(m.label)}</span>`;
+  }
+  function reportTypeLabel(value) {
+    const key = String(value || "").trim().toLowerCase();
+    const labels = {
+      child_safety: "Безопасность детей",
+      sexual_content: "Сексуальный контент",
+      violence: "Насилие",
+      fraud: "Мошенничество",
+      hate_or_harassment: "Ненависть/травля",
+      illegal_goods: "Незаконные товары/услуги",
+      other: "Другое",
+    };
+    return labels[key] || "Другое";
   }
   function kebabButton() {
     return `<button type="button" class="admin-kebab-btn" data-kebab-toggle aria-label="Действия" aria-haspopup="menu" aria-expanded="false">${I("more", 16)}</button>`;
@@ -1101,6 +1115,16 @@
     setFormValue(form, "page", /^\d+$/.test(pageFromUrl) ? pageFromUrl : "1");
   }
 
+  function syncReportsFiltersFromLocation(form) {
+    if (!(form instanceof HTMLFormElement)) return;
+    const params = new URLSearchParams(location.search);
+    const statusFromUrl = String(params.get("r_status") || params.get("status") || "all").trim().toLowerCase();
+    const pageFromUrl = String(params.get("r_page") || params.get("page") || "1").trim();
+    const allowedStatuses = new Set(["all", "new", "processed"]);
+    setFormValue(form, "status", allowedStatuses.has(statusFromUrl) ? statusFromUrl : "all");
+    setFormValue(form, "page", /^\d+$/.test(pageFromUrl) ? pageFromUrl : "1");
+  }
+
   async function loadMaintenanceBanner() {
     if (isManager) return;
     const banner = document.getElementById("admin-maintenance-banner");
@@ -1930,6 +1954,71 @@
       });
     } catch {
       table.innerHTML = '<tr><td colspan="11" class="px-3 py-8 text-center text-rose-600">Не удалось загрузить заявки на верификацию</td></tr>';
+    }
+  }
+
+  async function loadViolationReports() {
+    const form = document.getElementById("reports-filters");
+    const table = document.getElementById("reports-table");
+    if (!(form instanceof HTMLFormElement) || !(table instanceof HTMLElement)) return;
+    table.innerHTML = '<tr><td colspan="9" class="px-3 py-8 text-center text-neutral-500">Загрузка...</td></tr>';
+
+    try {
+      const q = {
+        status: getFormValue(form, "status", "all"),
+        page: getFormValue(form, "page", "1"),
+      };
+      setDashboardQuery({ r_status: q.status, r_page: q.page });
+      const response = await fetch(`/api/admin/violation-reports?${Q(q)}`);
+      if (!response.ok) {
+        table.innerHTML = '<tr><td colspan="9" class="px-3 py-8 text-center text-rose-600">Не удалось загрузить репорты</td></tr>';
+        return;
+      }
+
+      const payload = await response.json();
+      const rows = Array.isArray(payload.items) ? payload.items : [];
+      table.innerHTML = rows.length
+        ? rows
+          .map((item) => {
+            const user = item.user || {};
+            const displayName = String(user.displayName || "—");
+            const login = String(user.login || "").trim();
+            const userCell = `${X(displayName)}${login ? `<div class="text-xs text-neutral-500">@${X(login)}</div>` : ""}`;
+            const contacts = [
+              user.email ? `<div class="text-xs break-all">${X(String(user.email))}</div>` : "",
+              user.telegramUsername ? `<div class="text-xs text-neutral-500">@${X(String(user.telegramUsername).replace(/^@+/, ""))}</div>` : "",
+            ].filter(Boolean).join("");
+            const ipCell = [
+              item.reporterIp ? `<div class="text-xs font-mono">${X(String(item.reporterIp))}</div>` : "—",
+              item.userAgent ? `<div class="mt-1 max-w-[260px] break-words text-xs text-neutral-500">${X(String(item.userAgent))}</div>` : "",
+            ].join("");
+            const menu = String(item.status || "").toLowerCase() === "processed"
+              ? "—"
+              : menuWrap([
+                menuItem({ label: "Пометить обработанным", icon: "checkCircle", attrs: `data-act="rr-process" data-id="${X(item.id)}"` }),
+              ].join(""));
+
+            return `<tr class="admin-table-row border-t border-neutral-100">
+              <td class="px-4 py-3">${X(reportTypeLabel(item.type))}</td>
+              <td class="px-4 py-3">${userCell}</td>
+              <td class="px-4 py-3">${contacts || "—"}</td>
+              <td class="px-4 py-3"><div class="max-w-[320px] whitespace-pre-wrap break-words text-xs">${X(String(item.message || "—"))}</div></td>
+              <td class="px-4 py-3">${ipCell}</td>
+              <td class="px-4 py-3">${statusChip(item.status || "new")}</td>
+              <td class="px-4 py-3 text-xs">${D(item.createdAt)}</td>
+              <td class="px-4 py-3 text-xs">${D(item.updatedAt)}</td>
+              <td class="px-4 py-3"><div class="admin-row-actions">${menu}</div></td>
+            </tr>`;
+          })
+          .join("")
+        : '<tr><td colspan="9" class="px-3 py-8 text-center text-neutral-500">Репортов нет</td></tr>';
+
+      renderPager("reports-pagination", payload.pagination, (nextPage) => {
+        setFormValue(form, "page", String(nextPage));
+        void loadViolationReports();
+      });
+    } catch {
+      table.innerHTML = '<tr><td colspan="9" class="px-3 py-8 text-center text-rose-600">Не удалось загрузить репорты</td></tr>';
     }
   }
 
@@ -2804,6 +2893,21 @@
       closeAllRowMenus();
       return;
     }
+    if (a === "rr-process") {
+      const id = n.getAttribute("data-id");
+      if (!id) return;
+      const ok = await showConfirm("Пометить репорт как обработанный?");
+      if (!ok) return;
+      const r = await fetch(`/api/admin/violation-reports/${encodeURIComponent(id)}/process`, {
+        method: "POST",
+        headers: H({ "Content-Type": "application/json" }),
+        body: JSON.stringify({}),
+      });
+      if (!r.ok) showAlert(await E(r));
+      else void loadViolationReports();
+      closeAllRowMenus();
+      return;
+    }
   });
 
   document.getElementById("orders-filters")?.addEventListener("submit", (e) => { e.preventDefault(); const f = e.currentTarget; if (f instanceof HTMLFormElement) setFormValue(f, "page", "1"); void loadOrders(); });
@@ -2907,6 +3011,14 @@
     if (!(target instanceof HTMLSelectElement) || !(form instanceof HTMLFormElement)) return;
     setFormValue(form, "page", "1");
     void loadVerificationRequests();
+  });
+  document.getElementById("reports-filters")?.addEventListener("submit", (e) => { e.preventDefault(); const f = e.currentTarget; if (f instanceof HTMLFormElement) setFormValue(f, "page", "1"); void loadViolationReports(); });
+  document.getElementById("reports-filters")?.elements?.namedItem?.("status")?.addEventListener?.("change", (e) => {
+    const target = e.currentTarget;
+    const form = document.getElementById("reports-filters");
+    if (!(target instanceof HTMLSelectElement) || !(form instanceof HTMLFormElement)) return;
+    setFormValue(form, "page", "1");
+    void loadViolationReports();
   });
   document.getElementById("testimonial-create-form")?.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -3221,6 +3333,14 @@
       syncVerificationFiltersFromLocation(form);
     }
   }
+  if (tab === "reports") {
+    const form = document.getElementById("reports-filters");
+    if (form instanceof HTMLFormElement) {
+      setFormValue(form, "status", getInitial("r_status", "status") || "all");
+      setFormValue(form, "page", getInitial("r_page", "page") || "1");
+      syncReportsFiltersFromLocation(form);
+    }
+  }
 
   if (!isManager) {
     void loadMaintenanceBanner();
@@ -3271,6 +3391,11 @@
   if (tab === "verification" || (verificationSection instanceof HTMLElement && !verificationSection.classList.contains("hidden"))) {
     dbg("load", "verification");
     void loadVerificationRequests();
+  }
+  const reportsSection = document.getElementById("tab-reports");
+  if (tab === "reports" || (reportsSection instanceof HTMLElement && !reportsSection.classList.contains("hidden"))) {
+    dbg("load", "reports");
+    void loadViolationReports();
   }
   if (tab === "score") {
     dbg("load", "score");

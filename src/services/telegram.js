@@ -341,8 +341,8 @@ async function sendViolationReportToAdmin(payload) {
     chatId,
     text,
     parseMode: "HTML",
-    inlineButtonText: "Открыть админку",
-    inlineButtonUrl: buildAppUrl("/admin/dashboard"),
+    inlineButtonText: "Открыть репорты",
+    inlineButtonUrl: buildAppUrl("/admin/dashboard?tab=reports"),
   });
 }
 
