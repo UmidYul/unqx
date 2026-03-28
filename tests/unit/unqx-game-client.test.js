@@ -14,6 +14,10 @@ describe("unqx game client script", () => {
     expect(source).toContain('spinButton.textContent = "Крутим..."');
     expect(source).toContain('spinButton.textContent = "Крутить"');
     expect(source).toContain('spinButton.textContent = "Лимит на сегодня"');
+    expect(source).toContain("SLOT_STOP_STEP_MS");
+    expect(source).toContain("startSlotMachineSpin");
+    expect(source).toContain("settleSlotMachineToSlug");
+    expect(source).toContain("data-slot-index");
     expect(source).toContain("window.setInterval");
     expect(source).toContain("HISTORY_REFRESH_MS");
   });

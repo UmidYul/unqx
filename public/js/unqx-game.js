@@ -6,6 +6,12 @@
 
   const HISTORY_LIMIT = 30;
   const HISTORY_REFRESH_MS = 12_000;
+  const SLOT_LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const SLOT_DIGITS = "0123456789";
+  const SLOT_SPIN_INTERVAL_MS = 46;
+  const SLOT_STOP_INITIAL_DELAY_MS = 260;
+  const SLOT_STOP_STEP_MS = 210;
+  const SLOT_MIN_VISIBLE_SPIN_MS = 900;
   const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "";
 
   const spinButton = document.getElementById("unqx-game-spin-button");
@@ -15,6 +21,7 @@
   const resultSlugNode = document.getElementById("unqx-game-result-slug");
   const resultPriceNode = document.getElementById("unqx-game-result-price");
   const resultTimeNode = document.getElementById("unqx-game-result-time");
+  const slotNodes = Array.from(document.querySelectorAll("[data-slot-index]"));
   const luckyBoxNode = document.getElementById("unqx-game-lucky-box");
   const luckyTextNode = document.getElementById("unqx-game-lucky-text");
   const spinLimitNode = document.getElementById("unqx-game-spin-limit");
@@ -30,6 +37,8 @@
     !(resultSlugNode instanceof HTMLElement) ||
     !(resultPriceNode instanceof HTMLElement) ||
     !(resultTimeNode instanceof HTMLElement) ||
+    slotNodes.length !== 6 ||
+    !slotNodes.every((node) => node instanceof HTMLElement) ||
     !(luckyBoxNode instanceof HTMLElement) ||
     !(luckyTextNode instanceof HTMLElement) ||
     !(spinLimitNode instanceof HTMLElement) ||
@@ -43,6 +52,8 @@
   let historyItems = [];
   let toastTimer = null;
   let spinLockedUntil = 0;
+  let spinAnimationGeneration = 0;
+  const slotIntervals = new Array(6).fill(0);
 
   function escapeHtml(value) {
     return String(value || "")
@@ -120,6 +131,126 @@
       createdAt: Number.isFinite(createdAt.getTime()) ? createdAt.toISOString() : new Date().toISOString(),
       winner: normalizeWinner(raw?.winner || {}),
     };
+  }
+
+  function wait(ms) {
+    const duration = Math.max(0, Number(ms) || 0);
+    return new Promise((resolve) => {
+      window.setTimeout(resolve, duration);
+    });
+  }
+
+  function normalizeSlugForSlots(value) {
+    const normalized = String(value || "")
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, "")
+      .slice(0, 6);
+    return /^[A-Z]{3}[0-9]{3}$/.test(normalized) ? normalized : "";
+  }
+
+  function getSlotPool(index) {
+    return index < 3 ? SLOT_LETTERS : SLOT_DIGITS;
+  }
+
+  function randomPoolChar(index) {
+    const pool = getSlotPool(index);
+    const pickIndex = Math.floor(Math.random() * pool.length);
+    return pool[pickIndex] || (index < 3 ? "A" : "0");
+  }
+
+  function setSlotChar(index, char, { spinning = false, stopped = false } = {}) {
+    const node = slotNodes[index];
+    if (!(node instanceof HTMLElement)) {
+      return;
+    }
+    const safeValue = String(char || "").slice(0, 1) || randomPoolChar(index);
+    node.textContent = safeValue;
+    node.classList.toggle("is-spinning", Boolean(spinning));
+    node.classList.toggle("is-stopped", Boolean(stopped));
+  }
+
+  function applySlugToSlots(slug, { stopped = false } = {}) {
+    const normalized = normalizeSlugForSlots(slug);
+    const fallback = "AAA000";
+    const target = (normalized || fallback).split("");
+    for (let i = 0; i < 6; i += 1) {
+      setSlotChar(i, target[i], {
+        spinning: false,
+        stopped,
+      });
+    }
+  }
+
+  function stopAllSlotIntervals() {
+    for (let i = 0; i < slotIntervals.length; i += 1) {
+      if (slotIntervals[i]) {
+        window.clearInterval(slotIntervals[i]);
+      }
+      slotIntervals[i] = 0;
+    }
+  }
+
+  function startSlotMachineSpin() {
+    spinAnimationGeneration += 1;
+    const animationId = spinAnimationGeneration;
+    stopAllSlotIntervals();
+
+    for (let i = 0; i < 6; i += 1) {
+      setSlotChar(i, randomPoolChar(i), { spinning: true, stopped: false });
+      slotIntervals[i] = window.setInterval(() => {
+        if (animationId !== spinAnimationGeneration) {
+          return;
+        }
+        setSlotChar(i, randomPoolChar(i), { spinning: true, stopped: false });
+      }, SLOT_SPIN_INTERVAL_MS);
+    }
+
+    return animationId;
+  }
+
+  async function settleSlotMachineToSlug(targetSlug, animationId) {
+    const normalized = normalizeSlugForSlots(targetSlug);
+    if (!normalized || animationId !== spinAnimationGeneration) {
+      stopAllSlotIntervals();
+      applySlugToSlots(normalized, { stopped: false });
+      return;
+    }
+
+    const chars = normalized.split("");
+    for (let i = 0; i < chars.length; i += 1) {
+      if (animationId !== spinAnimationGeneration) {
+        return;
+      }
+      const stopDelay = i === 0 ? SLOT_STOP_INITIAL_DELAY_MS : SLOT_STOP_STEP_MS;
+      await wait(stopDelay);
+      if (animationId !== spinAnimationGeneration) {
+        return;
+      }
+      if (slotIntervals[i]) {
+        window.clearInterval(slotIntervals[i]);
+        slotIntervals[i] = 0;
+      }
+      setSlotChar(i, chars[i], { spinning: false, stopped: true });
+    }
+
+    for (let i = 0; i < slotIntervals.length; i += 1) {
+      if (slotIntervals[i]) {
+        window.clearInterval(slotIntervals[i]);
+        slotIntervals[i] = 0;
+      }
+    }
+  }
+
+  function stopSlotMachineInstant() {
+    spinAnimationGeneration += 1;
+    stopAllSlotIntervals();
+    slotNodes.forEach((node, index) => {
+      if (!(node instanceof HTMLElement)) {
+        return;
+      }
+      const existing = String(node.textContent || "").trim().slice(0, 1);
+      setSlotChar(index, existing || randomPoolChar(index), { spinning: false, stopped: false });
+    });
   }
 
   function isSpinLocked() {
@@ -223,6 +354,7 @@
   }
 
   function renderResult(entry) {
+    applySlugToSlots(entry.slug, { stopped: true });
     resultSlugNode.textContent = entry.slug || "---";
     resultPriceNode.textContent = `Цена: ${formatPrice(entry.price)}`;
     resultTimeNode.textContent = `Время: ${formatDateTime(entry.createdAt)}`;
@@ -338,6 +470,9 @@
     }
 
     setSpinning(true);
+    const animationId = startSlotMachineSpin();
+    const spinStartedAt = Date.now();
+    let spinSucceeded = false;
     setStatus("Идёт спин...", "neutral");
 
     try {
@@ -351,6 +486,7 @@
         body: JSON.stringify({}),
       });
       if (response.status === 401) {
+        stopSlotMachineInstant();
         redirectToLogin();
         return;
       }
@@ -366,6 +502,7 @@
         if (payload?.lucky) {
           renderLucky(payload.lucky);
         }
+        stopSlotMachineInstant();
         return;
       }
 
@@ -373,19 +510,29 @@
         const message = String(payload?.error || "Не удалось выполнить спин. Попробуйте ещё раз.");
         setStatus(message, "error");
         showToast(message, "error");
+        stopSlotMachineInstant();
         return;
       }
 
       const entry = normalizeEntry(payload.entry);
+      const elapsed = Date.now() - spinStartedAt;
+      if (elapsed < SLOT_MIN_VISIBLE_SPIN_MS) {
+        await wait(SLOT_MIN_VISIBLE_SPIN_MS - elapsed);
+      }
+      await settleSlotMachineToSlug(entry.slug, animationId);
       renderResult(entry);
       prependEntry(entry);
       setStatus("Новая комбинация получена.", "success");
       renderLucky(payload?.lucky, entry.slug);
+      spinSucceeded = true;
       showToast("Lucky-спин сохранён в общей истории.", "success");
     } catch {
       setStatus("Ошибка сети. Повторите попытку.", "error");
       showToast("Ошибка сети. Повторите попытку.", "error");
     } finally {
+      if (!spinSucceeded) {
+        stopSlotMachineInstant();
+      }
       setSpinning(false);
     }
   }
@@ -406,6 +553,7 @@
     void loadHistory({ silent: true });
   }, HISTORY_REFRESH_MS);
 
+  applySlugToSlots("AAA000", { stopped: false });
   setSpinLock(null);
   setSpinning(false);
   void loadLuckyState();

@@ -24,6 +24,9 @@ describe("unqx game page", () => {
   test("contains spin button and result block", async () => {
     const html = await renderUnqxGameTemplate();
     expect(html).toContain('id="unqx-game-spin-button"');
+    expect(html).toContain('id="unqx-game-slot-machine"');
+    expect(html).toContain('data-slot-index="0"');
+    expect(html).toContain('data-slot-index="5"');
     expect(html).toContain("Крутить");
     expect(html).toContain('id="unqx-game-result-slug"');
     expect(html).toContain('id="unqx-game-result-price"');
