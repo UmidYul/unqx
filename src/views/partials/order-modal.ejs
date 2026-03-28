@@ -113,7 +113,7 @@
               <div class="flex items-center justify-between gap-3">
                 <span id="order-modal-rarity"
                   class="inline-flex rounded-full border border-neutral-200 bg-white px-2.5 py-1 text-[11px] font-semibold tracking-wider text-neutral-600">COMMON</span>
-                <span class="text-xs text-neutral-500">разово</span>
+                <span class="text-xs text-neutral-500">оплата сейчас</span>
               </div>
               <p class="mt-2 text-sm font-semibold text-neutral-900">Стоимость UNQ: <span
                   id="order-modal-slug-price">0</span> сум</p>
@@ -123,15 +123,15 @@
             <div id="order-modal-plan-section">
               <p class="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Тариф</p>
               <div class="grid gap-3 sm:grid-cols-2">
-                <label id="order-modal-plan-basic-card" class="block cursor-pointer">
+                <label id="order-modal-plan-basic-card" class="hidden">
                   <input id="order-modal-plan-basic" type="radio" name="order-modal-plan" value="basic"
                     class="peer sr-only" />
                   <span
                     class="block rounded-xl border border-neutral-200 bg-white p-4 transition peer-checked:border-neutral-900 peer-checked:bg-neutral-900 peer-checked:text-white">
                     <span
-                      class="block text-[11px] font-mono uppercase tracking-wider text-neutral-400 peer-checked:text-neutral-400">БАЗОВЫЙ</span>
+                      class="block text-[11px] font-mono uppercase tracking-wider text-neutral-400 peer-checked:text-neutral-400">LEGACY</span>
                     <span id="order-modal-plan-basic-price" class="mt-1 block text-sm font-semibold">50 000 сум</span>
-                    <span id="order-modal-plan-basic-note" class="mt-1 block text-xs">один раз · навсегда</span>
+                    <span id="order-modal-plan-basic-note" class="mt-1 block text-xs">legacy</span>
                     <span class="mt-2 block text-xs">· 1 визитка</span>
                     <span class="block text-xs">· До 3 кнопок</span>
                     <span class="block text-xs">· Стандартный шаблон</span>
@@ -148,7 +148,7 @@
                       class="block text-[11px] font-mono uppercase tracking-wider text-neutral-400 peer-checked:text-neutral-400">ПРЕМИУМ</span>
                     <span id="order-modal-plan-premium-price" class="mt-1 block text-sm font-semibold">130 000
                       сум</span>
-                    <span id="order-modal-plan-premium-note" class="mt-1 block text-xs">один раз · навсегда</span>
+                    <span id="order-modal-plan-premium-note" class="mt-1 block text-xs">ежемесячно · $2/мес</span>
                     <span class="mt-2 block text-xs">· До 3 UNQ</span>
                     <span class="block text-xs">· Любые темы</span>
                     <span class="block text-xs">· До 9 кнопок</span>
@@ -210,7 +210,7 @@
                 <span id="order-modal-total-slug-value">0 сум</span>
               </div>
               <div id="order-modal-total-plan-row" class="mt-1 flex items-center justify-between gap-3">
-                <span id="order-modal-total-plan-title">Тариф Базовый</span>
+                <span id="order-modal-total-plan-title">Premium monthly</span>
                 <span id="order-modal-total-plan-value">50 000 сум</span>
               </div>
               <div id="order-modal-total-product-discount-row" class="mt-1 hidden items-center justify-between gap-3 text-emerald-700">
@@ -241,7 +241,7 @@
                 <span id="order-modal-total-now">0 сум</span>
               </div>
               <div class="mt-1 text-xs text-neutral-600">
-                <span id="order-modal-total-monthly">Единоразово · больше не платишь</span>
+                <span id="order-modal-total-monthly">Подписка Premium · $2/мес · продление вручную</span>
               </div>
             </div>
           </div>

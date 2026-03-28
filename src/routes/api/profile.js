@@ -28,7 +28,11 @@ const {
   buildAvatarSlug,
 } = require("../../services/avatar");
 const { getProfileScoreByUserId, recalculateAndRefreshPercentiles } = require("../../services/unq-score");
-const { getPricingSettings, getBraceletPrice } = require("../../services/pricing-settings");
+const { getPricingSettings, getBraceletPrice, getPlanCharge } = require("../../services/pricing-settings");
+const {
+  getSubscriptionSnapshot,
+  getSubscriptionRenewalWindow,
+} = require("../../services/subscription");
 const { sendVerificationRequestToAdmin } = require("../../services/telegram");
 const { sendAccountDeactivatedEmail } = require("../../services/email");
 const { resolveUzbekistanCity } = require("../../constants/uzbekistan-cities");
@@ -573,6 +577,9 @@ async function getCurrentUser(req) {
       welcomeDismissed: true,
       planPurchasedAt: true,
       planUpgradedAt: true,
+      subscriptionStartedAt: true,
+      subscriptionExpiresAt: true,
+      subscriptionRenewedAt: true,
     },
   });
   if (!row) return null;
@@ -764,6 +771,9 @@ router.get(
         effectivePlan: effective.plan,
         planPurchasedAt: user.planPurchasedAt,
         planUpgradedAt: user.planUpgradedAt,
+        subscriptionStartedAt: user.subscriptionStartedAt || null,
+        subscriptionExpiresAt: user.subscriptionExpiresAt || null,
+        subscriptionRenewedAt: user.subscriptionRenewedAt || null,
         welcomeDismissed: Boolean(user.welcomeDismissed),
         planBadge: getPlanBadgeLabel(effective.plan),
         notificationsEnabled: Boolean(user.notificationsEnabled),
@@ -773,6 +783,14 @@ router.get(
         verifiedAt: user.verifiedAt || null,
         showInDirectory: typeof user.showInDirectory === "boolean" ? user.showInDirectory : true,
         directorySector: normalizeDirectorySector(user.directorySector),
+      },
+      subscription: {
+        isActive: effective.subscription.isActive,
+        isExpired: effective.subscription.isExpired,
+        startedAt: effective.subscription.startedAt || null,
+        renewedAt: effective.subscription.renewedAt || null,
+        expiresAt: effective.subscription.expiresAt || null,
+        daysLeft: effective.subscription.daysLeft,
       },
       limits: {
         slugs: getSlugLimit(effective.plan),
@@ -800,6 +818,178 @@ router.get(
         passwordLimit: PRIVATE_PASSWORD_MAX_COUNT,
         passwords: privatePasswords,
       },
+    });
+  }),
+);
+
+router.post(
+  "/subscription/renew",
+  asyncHandler(async (req, res) => {
+    const user = await getCurrentUser(req);
+    if (!assertUserActive(user, res)) {
+      return;
+    }
+
+    const pricing = await getPricingSettings();
+    const monthlyCharge = getPlanCharge({
+      currentPlan: user.plan,
+      pricing,
+      user,
+      forceSubscriptionCharge: true,
+    });
+    if (!Number.isFinite(monthlyCharge) || monthlyCharge <= 0) {
+      res.status(409).json({
+        error: "Subscription renewal is unavailable",
+        code: "SUBSCRIPTION_RENEWAL_UNAVAILABLE",
+      });
+      return;
+    }
+
+    const existingOpenOrder = await prisma.slugRequest.findFirst({
+      where: {
+        userId: user.id,
+        orderKind: "subscription_renewal",
+        status: { in: ["new", "contacted", "paid"] },
+      },
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        slug: true,
+        status: true,
+        createdAt: true,
+        updatedAt: true,
+        requestedPlan: true,
+        slugPrice: true,
+        planPrice: true,
+        bracelet: true,
+        adminNote: true,
+        promoCode: true,
+        promoDiscountApplied: true,
+        inviteeDiscountApplied: true,
+        bonusSpent: true,
+      },
+    });
+
+    const supportTelegram = normalizeTelegramUsername(
+      await getSetting("contact_support_telegram", `@${FALLBACK_SUPPORT_TELEGRAM}`),
+    );
+    const braceletPrice = await getBraceletPrice();
+
+    if (existingOpenOrder) {
+      const payment = await getOrderPaymentReference(existingOpenOrder.id);
+      const paymentUrl = buildManualTelegramPaymentUrl({
+        orderId: existingOpenOrder.id,
+        slug: existingOpenOrder.slug,
+        requestedPlan: "premium",
+        reference: payment,
+        telegramUsername: supportTelegram,
+        fullName: normalizeDisplayName(user.displayName, user.firstName),
+        email: user.email || "",
+        slugPrice: 0,
+        slugPriceBeforeDiscount: 0,
+        inviteeDiscountApplied: 0,
+        promoDiscountApplied: 0,
+        promoCode: "",
+        bonusSpent: 0,
+        planPrice: Number(existingOpenOrder.planPrice || monthlyCharge),
+        bracelet: false,
+        braceletPrice,
+        totalAmount: Number(existingOpenOrder.planPrice || monthlyCharge),
+      });
+      res.status(409).json({
+        error: "You already have an open renewal order",
+        code: "SUBSCRIPTION_RENEWAL_PENDING",
+        order: mapProfileRequest(existingOpenOrder, {
+          supportTelegram,
+          fullName: normalizeDisplayName(user.displayName, user.firstName),
+          email: user.email || "",
+          braceletPrice,
+        }),
+        paymentUrl,
+      });
+      return;
+    }
+
+    const primarySlug = await prisma.slug.findFirst({
+      where: {
+        ownerId: user.id,
+        status: { in: ["approved", "active", "paused", "private"] },
+      },
+      orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
+      select: { fullSlug: true },
+    });
+    const fallbackSlug = `SUB${String(Date.now()).slice(-3).padStart(3, "0")}`;
+    const slugContext = sanitizeSlug(primarySlug?.fullSlug || fallbackSlug) || "SUB000";
+
+    const order = await prisma.slugRequest.create({
+      data: {
+        userId: user.id,
+        slug: slugContext,
+        slugPrice: 0,
+        requestedPlan: "premium",
+        orderKind: "subscription_renewal",
+        subscriptionMonths: 1,
+        planPrice: monthlyCharge,
+        bracelet: false,
+        status: "new",
+      },
+      select: {
+        id: true,
+        slug: true,
+        status: true,
+        createdAt: true,
+        updatedAt: true,
+        requestedPlan: true,
+        slugPrice: true,
+        planPrice: true,
+        bracelet: true,
+        adminNote: true,
+        promoCode: true,
+        promoDiscountApplied: true,
+        inviteeDiscountApplied: true,
+        bonusSpent: true,
+      },
+    });
+
+    const paymentReference = await getOrderPaymentReference(order.id);
+    const paymentUrl = buildManualTelegramPaymentUrl({
+      orderId: order.id,
+      slug: order.slug,
+      requestedPlan: "premium",
+      reference: paymentReference,
+      telegramUsername: supportTelegram,
+      fullName: normalizeDisplayName(user.displayName, user.firstName),
+      email: user.email || "",
+      slugPrice: 0,
+      slugPriceBeforeDiscount: 0,
+      inviteeDiscountApplied: 0,
+      promoDiscountApplied: 0,
+      promoCode: "",
+      bonusSpent: 0,
+      planPrice: monthlyCharge,
+      bracelet: false,
+      braceletPrice,
+      totalAmount: monthlyCharge,
+    });
+
+    res.status(201).json({
+      ok: true,
+      order: mapProfileRequest(order, {
+        supportTelegram,
+        fullName: normalizeDisplayName(user.displayName, user.firstName),
+        email: user.email || "",
+        braceletPrice,
+      }),
+      paymentUrl,
+      monthlyCharge,
+      renewalWindow: (() => {
+        const nextWindow = getSubscriptionRenewalWindow(user, { months: 1 });
+        return {
+          startAt: nextWindow.startAt,
+          endAt: nextWindow.endAt,
+          months: nextWindow.months,
+        };
+      })(),
     });
   }),
 );
@@ -1240,11 +1430,11 @@ router.put(
 
     const rawTags = Array.isArray(body.tags) ? body.tags : [];
     const rawButtons = Array.isArray(body.buttons) ? body.buttons : [];
-    if (effective.plan !== "premium" && rawTags.length > getTagLimit("basic")) {
+    if (effective.plan !== "premium" && rawTags.length > getTagLimit("none")) {
       res.status(403).json({ error: "Upgrade required", code: "UPGRADE_REQUIRED" });
       return;
     }
-    if (effective.plan !== "premium" && rawButtons.length > getButtonLimit("basic")) {
+    if (effective.plan !== "premium" && rawButtons.length > getButtonLimit("none")) {
       res.status(403).json({ error: "Upgrade required", code: "UPGRADE_REQUIRED" });
       return;
     }

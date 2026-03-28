@@ -15,10 +15,12 @@ const DEFAULTS = {
     enabledOnCards: true,
   },
   pricing: {
-    planBasicPrice: 50_000,
+    planPremiumMonthlyPriceUsd: 2,
+    planPremiumMonthlyPriceUzs: 130_000,
+    planBasicPrice: 130_000,
     planPremiumPrice: 130_000,
-    premiumUpgradePrice: 80_000,
-    pricingFootnote: "Тарифы оплачиваются один раз. Без подписки и скрытых платежей.",
+    premiumUpgradePrice: 130_000,
+    pricingFootnote: "Premium subscription is billed monthly.",
   },
   directory: {
     enabled: true,

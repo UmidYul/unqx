@@ -47,7 +47,7 @@ const DEFAULT_TESTIMONIALS = [
   {
     name: "Малика",
     slug: "MLK007",
-    tariff: "basic",
+    tariff: "premium",
     text: "Поставила ссылку в Instagram bio и на визитке. Очень удобно что всё в одном месте и можно менять.",
     sortOrder: 1,
   },

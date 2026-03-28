@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="ru">
+
+<head>
+  <%- include('../partials/head', {
+    title: title || 'UNQX Game | Крути комбинации',
+    description: description || 'UNQX Game: крути случайные свободные комбинации и смотри цену по правилам UNQX.',
+    image: typeof image === 'string' ? image : undefined,
+    styles: ['/css/public-card.css', '/css/unqx-game.css'],
+  }) %>
+</head>
+
+<body class="antialiased bg-neutral-50" data-page="unqx-game">
+  <main class="unqx-game-page mx-auto w-full max-w-6xl px-4 py-8">
+    <div class="mb-6 flex items-center justify-between gap-3">
+      <a href="/"
+        class="interactive-btn inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-neutral-300 px-3 py-1.5 text-sm font-semibold text-neutral-600 hover:text-neutral-900">
+        <svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M15 18 9 12l6-6"></path>
+        </svg>
+        На главную
+      </a>
+      <p class="text-xs uppercase tracking-[0.16em] text-neutral-500">UNQX GAME</p>
+    </div>
+
+    <section class="unqx-game-hero rounded-2xl border border-neutral-200 bg-white p-6">
+      <h1 class="text-3xl font-black tracking-tight text-neutral-900">UNQX Game</h1>
+      <p class="mt-2 max-w-2xl text-sm text-neutral-600">
+        Нажми «Крутить», получи случайную свободную комбинацию формата AAA000 и увидь цену по текущей логике UNQX.
+      </p>
+      <p id="unqx-game-status" class="mt-3 text-xs text-neutral-500" aria-live="polite">Готово к запуску.</p>
+    </section>
+
+    <section class="mt-6 grid gap-4 lg:grid-cols-[1.2fr_1fr]">
+      <article class="unqx-game-panel rounded-2xl border border-neutral-200 bg-white p-6">
+        <p class="text-xs uppercase tracking-[0.16em] text-neutral-500">Рулетка комбинаций</p>
+        <div id="unqx-game-reel" class="unqx-game-reel mt-4 rounded-xl border border-neutral-200 bg-neutral-50 p-4">
+          <p class="text-[11px] uppercase tracking-[0.16em] text-neutral-500">Текущий результат</p>
+          <p id="unqx-game-result-slug" class="mt-2 text-4xl font-black tracking-[0.08em] text-neutral-900">---</p>
+          <p id="unqx-game-result-price" class="mt-2 text-lg font-semibold text-neutral-700">Цена: ---</p>
+          <p id="unqx-game-result-time" class="mt-1 text-xs text-neutral-500">Время: ---</p>
+        </div>
+
+        <div class="mt-5 flex flex-wrap items-center gap-3">
+          <button type="button" id="unqx-game-spin-button"
+            class="interactive-btn min-h-11 rounded-xl bg-neutral-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-neutral-800">
+            Крутить
+          </button>
+          <span class="text-xs text-neutral-500">1 спин = 1 комбинация</span>
+        </div>
+      </article>
+
+      <article class="unqx-game-side rounded-2xl border border-neutral-200 bg-white p-6">
+        <p class="text-xs uppercase tracking-[0.16em] text-neutral-500">Как это работает</p>
+        <ul class="mt-3 space-y-2 text-sm text-neutral-700">
+          <li>Формат: только валидные AAA000.</li>
+          <li>Выдача: только свободные комбинации.</li>
+          <li>Цена: реальный расчёт UNQX + активные скидки.</li>
+          <li>История: общая серверная лента выпадений.</li>
+        </ul>
+      </article>
+    </section>
+
+    <section class="mt-6 rounded-2xl border border-neutral-200 bg-white p-6">
+      <div class="flex items-center justify-between gap-3">
+        <h2 class="text-lg font-bold text-neutral-900">История выпадений</h2>
+        <button type="button" id="unqx-game-history-refresh"
+          class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold text-neutral-700">
+          Обновить
+        </button>
+      </div>
+      <p class="mt-1 text-xs text-neutral-500">Лента обновляется автоматически каждые 12 секунд.</p>
+
+      <ul id="unqx-game-history-list" class="mt-4 space-y-2"></ul>
+      <p id="unqx-game-history-empty" class="rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-500">
+        История пока пуста. Сделайте первый спин.
+      </p>
+    </section>
+  </main>
+
+  <div id="unqx-game-toast"
+    class="pointer-events-none fixed bottom-4 right-4 z-50 hidden max-w-sm rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-700 shadow-lg"
+    aria-live="polite"></div>
+
+  <script nonce="<%= cspNonce %>" src="/js/unqx-game.js"></script>
+</body>
+
+</html>

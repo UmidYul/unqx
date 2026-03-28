@@ -1,12 +1,11 @@
 const { getFeatureSetting, setFeatureSetting, DEFAULTS } = require("./feature-settings");
 const { getManySettings, setSettingsBatch, getSetting } = require("./platform-settings");
+const { getSubscriptionSnapshot, normalizeSubscriptionPlan } = require("./subscription");
 
 const BRACELET_PRICE = 250_000;
 
 function normalizePlan(value) {
-  if (value === "premium") return "premium";
-  if (value === "basic") return "basic";
-  return "none";
+  return normalizeSubscriptionPlan(value);
 }
 
 function toPrice(value, fallback) {
@@ -19,25 +18,36 @@ function toPrice(value, fallback) {
 
 function normalizePricingSettings(raw) {
   const defaults = DEFAULTS.pricing || {};
+  const legacyPremiumPrice = toPrice(raw?.planPremiumPrice, defaults.planPremiumPrice || 130_000);
+  const monthlyUzs = toPrice(raw?.planPremiumMonthlyPriceUzs, legacyPremiumPrice);
+  const monthlyUsd = Math.max(0, Number(raw?.planPremiumMonthlyPriceUsd ?? 2) || 2);
   return {
-    planBasicPrice: toPrice(raw?.planBasicPrice, defaults.planBasicPrice || 50_000),
-    planPremiumPrice: toPrice(raw?.planPremiumPrice, defaults.planPremiumPrice || 130_000),
-    premiumUpgradePrice: toPrice(raw?.premiumUpgradePrice, defaults.premiumUpgradePrice || 80_000),
-    pricingFootnote: String(raw?.pricingFootnote || defaults.pricingFootnote || "").trim(),
+    // New monthly model
+    planPremiumMonthlyPriceUsd: monthlyUsd,
+    planPremiumMonthlyPriceUzs: monthlyUzs,
+    // Backward-compatible aliases for old consumers
+    planBasicPrice: monthlyUzs,
+    planPremiumPrice: monthlyUzs,
+    premiumUpgradePrice: monthlyUzs,
+    pricingFootnote: String(
+      raw?.pricingFootnote ||
+        defaults.pricingFootnote ||
+        "Подписка Premium оплачивается ежемесячно. Без автосписаний.",
+    ).trim(),
   };
 }
 
 async function getPricingSettings() {
   const values = await getManySettings([
-    "plan_basic_price",
+    "plan_premium_monthly_price_usd",
+    "plan_premium_monthly_price_uzs",
     "plan_premium_price",
-    "plan_premium_upgrade_price",
     "pricing_footnote",
   ]);
   const raw = {
-    planBasicPrice: values.plan_basic_price,
+    planPremiumMonthlyPriceUsd: values.plan_premium_monthly_price_usd,
+    planPremiumMonthlyPriceUzs: values.plan_premium_monthly_price_uzs,
     planPremiumPrice: values.plan_premium_price,
-    premiumUpgradePrice: values.plan_premium_upgrade_price,
     pricingFootnote: values.pricing_footnote,
   };
   const normalized = normalizePricingSettings(raw);
@@ -45,7 +55,11 @@ async function getPricingSettings() {
     return normalized;
   }
   const legacy = await getFeatureSetting("pricing");
-  return normalizePricingSettings(legacy);
+  return normalizePricingSettings({
+    ...legacy,
+    planPremiumMonthlyPriceUzs: legacy?.planPremiumMonthlyPriceUzs ?? legacy?.planPremiumPrice,
+    planPremiumMonthlyPriceUsd: legacy?.planPremiumMonthlyPriceUsd ?? 2,
+  });
 }
 
 async function setPricingSettings(nextPatch) {
@@ -55,9 +69,10 @@ async function setPricingSettings(nextPatch) {
     ...(nextPatch && typeof nextPatch === "object" ? nextPatch : {}),
   });
   await setSettingsBatch("pricing", {
-    plan_basic_price: next.planBasicPrice,
-    plan_premium_price: next.planPremiumPrice,
-    plan_premium_upgrade_price: next.premiumUpgradePrice,
+    plan_premium_monthly_price_usd: next.planPremiumMonthlyPriceUsd,
+    plan_premium_monthly_price_uzs: next.planPremiumMonthlyPriceUzs,
+    // Keep legacy key in sync to avoid breaking old dashboard widgets
+    plan_premium_price: next.planPremiumMonthlyPriceUzs,
     pricing_footnote: next.pricingFootnote,
   });
   await setFeatureSetting("pricing", next);
@@ -70,43 +85,34 @@ async function getBraceletPrice() {
   return Number.isFinite(parsed) ? Math.max(0, Math.round(parsed)) : BRACELET_PRICE;
 }
 
-function resolveRequestedPlanForOrder({ currentPlan, requestedPlan }) {
-  const current = normalizePlan(currentPlan);
-  const requested = requestedPlan === "premium" ? "premium" : "basic";
-
-  if (current === "premium") {
-    return "premium";
-  }
-  if (current === "none") {
-    return requested;
-  }
-  if (current === "basic" && requested === "premium") {
-    return "premium";
-  }
-  return "basic";
+function resolveRequestedPlanForOrder() {
+  return "premium";
 }
 
-function getPlanCharge({ currentPlan, requestedPlan, pricing }) {
-  const current = normalizePlan(currentPlan);
-  const requested = resolveRequestedPlanForOrder({ currentPlan: current, requestedPlan });
+function getPlanCharge({
+  currentPlan,
+  pricing,
+  user = null,
+  forceSubscriptionCharge = false,
+}) {
   const settings = normalizePricingSettings(pricing || {});
-
-  if (current === "none") {
-    return requested === "premium" ? settings.planPremiumPrice : settings.planBasicPrice;
+  if (forceSubscriptionCharge) {
+    return settings.planPremiumMonthlyPriceUzs;
   }
-  if (current === "basic" && requested === "premium") {
-    return settings.premiumUpgradePrice;
+  const snapshot = getSubscriptionSnapshot(
+    user || {
+      plan: currentPlan,
+    },
+  );
+  if (snapshot.isActive) {
+    return 0;
   }
-  return 0;
+  return settings.planPremiumMonthlyPriceUzs;
 }
 
-function getPlanPurchaseType({ currentPlan, requestedPlan }) {
-  const current = normalizePlan(currentPlan);
-  const requested = resolveRequestedPlanForOrder({ currentPlan: current, requestedPlan });
-  if (current === "none" && requested === "basic") return "basic_plan";
-  if (current === "none" && requested === "premium") return "premium_plan";
-  if (current === "basic" && requested === "premium") return "upgrade_to_premium";
-  return null;
+function getPlanPurchaseType({ forceSubscriptionCharge = false } = {}) {
+  if (forceSubscriptionCharge) return "premium_subscription_monthly";
+  return "premium_subscription_monthly";
 }
 
 module.exports = {

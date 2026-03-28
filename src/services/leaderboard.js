@@ -5,6 +5,7 @@ const { prisma } = require("../db/prisma");
 const { env } = require("../config/env");
 const { getFeatureSetting } = require("./feature-settings");
 const { normalizeProfileType } = require("./profile");
+const { isPublicProfileVisible } = require("./subscription");
 
 function normalizePeriod(period) {
   if (period === "day" || period === "week" || period === "month" || period === "all") {
@@ -112,9 +113,12 @@ async function buildLeaderboard(period = "day", type = "all") {
         owner: {
           select: {
             id: true,
+            status: true,
             firstName: true,
             displayName: true,
             plan: true,
+            subscriptionStartedAt: true,
+            subscriptionExpiresAt: true,
             isVerified: true,
             verifiedCompany: true,
             profileType: true,
@@ -149,6 +153,7 @@ async function buildLeaderboard(period = "day", type = "all") {
     const owner = row?.owner;
     const ownerId = owner?.id ? String(owner.id) : "";
     if (!row || !owner || !ownerId) continue;
+    if (!isPublicProfileVisible(owner)) continue;
     const ownerProfileType = normalizeProfileType(owner.profileType, { fallback: "person" });
     if (leaderboardType !== "all" && ownerProfileType !== leaderboardType) continue;
 

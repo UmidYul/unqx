@@ -470,7 +470,7 @@ async function getScoreLeaderboard(limit = 100) {
       slug,
       ownerName: row.user?.profileCard?.name || row.user?.firstName || row.user?.username || "UNQX User",
       avatarUrl: row.user?.profileCard?.avatarUrl || "/brand/logo.PNG",
-      plan: row.user?.plan || "basic",
+      plan: row.user?.plan === "premium" || row.user?.plan === "basic" ? "premium" : "none",
       score: row.score,
       percentile: row.percentile,
       topPercent: asTopPercent(row.percentile),

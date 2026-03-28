@@ -151,8 +151,7 @@
   }
 
   function planLabel(plan) {
-    if (plan === "premium") return "Премиум";
-    if (plan === "basic") return "Базовый";
+    if (plan === "premium" || plan === "basic") return "Премиум";
     return "Без тарифа";
   }
 

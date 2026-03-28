@@ -602,7 +602,7 @@
           noneOption.disabled = isManager;
         }
         if (isManager && plan.value === "none") {
-          plan.value = "basic";
+          plan.value = "premium";
         }
       }
       const slug = userCreateForm.elements.namedItem("slug");
@@ -911,7 +911,7 @@
       return;
     }
 
-    const selectedPlan = plan.value === "premium" ? "premium" : plan.value === "basic" ? "basic" : "none";
+    const selectedPlan = plan.value === "premium" ? "premium" : "none";
     const hasSlugInput = Boolean(normalizedSlug);
     const requiresInlineActivation = isManager || selectedPlan !== "none" || hasSlugInput;
     if (requiresInlineActivation && selectedPlan === "none") {
@@ -976,7 +976,7 @@
       if (isManager) {
         const planField = userCreateForm.elements.namedItem("plan");
         if (planField instanceof HTMLSelectElement) {
-          planField.value = "basic";
+          planField.value = "premium";
         }
       }
       closeUserCreate();
@@ -1237,7 +1237,7 @@
     const breakdown = s.breakdown || {};
     const breakdownLines = [
       `Slug: ${P(breakdown.slug || 0)}`,
-      `Базовый: ${P(breakdown.basicPlan || 0)}`,
+      `Legacy basic: ${P(breakdown.basicPlan || 0)}`,
       `Премиум: ${P(breakdown.premiumPlan || 0)}`,
       `Браслеты: ${P(breakdown.bracelet || 0)}`,
     ];
@@ -1321,7 +1321,7 @@
         analyticsCharts.tariff = new Chart(tariffCanvas, {
         type: "pie",
         data: {
-          labels: ["Slug", "Базовый тариф", "Премиум тариф", "Браслеты"],
+          labels: ["Slug", "Legacy basic", "Премиум тариф", "Браслеты"],
           datasets: [
             {
               data: [
@@ -1434,7 +1434,7 @@
               ]
               : []),
           ].join(""));
-          return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3">${D(x.createdAt)}</td><td class="px-4 py-3">${X(x.name)}</td><td class="px-4 py-3 font-mono">${X(x.slug)}</td><td class="px-4 py-3 text-right">${P(x.slugPrice)}</td><td class="px-4 py-3 text-right font-semibold">${P(x.amount || 0)}</td><td class="px-4 py-3">${x.tariff === "premium" ? "Премиум" : "Базовый"}</td><td class="px-4 py-3">${x.bracelet ? "Да" : "Нет"}</td><td class="px-4 py-3">${X(x.contact)}</td><td class="px-4 py-3">${statusBlock}</td><td class="px-4 py-3 text-right"><div class="admin-row-actions justify-end">${menu}</div></td></tr>`;
+          return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3">${D(x.createdAt)}</td><td class="px-4 py-3">${X(x.name)}</td><td class="px-4 py-3 font-mono">${X(x.slug)}</td><td class="px-4 py-3 text-right">${P(x.slugPrice)}</td><td class="px-4 py-3 text-right font-semibold">${P(x.amount || 0)}</td><td class="px-4 py-3">${x.tariff === "premium" ? "Премиум" : "Legacy"}</td><td class="px-4 py-3">${x.bracelet ? "Да" : "Нет"}</td><td class="px-4 py-3">${X(x.contact)}</td><td class="px-4 py-3">${statusBlock}</td><td class="px-4 py-3 text-right"><div class="admin-row-actions justify-end">${menu}</div></td></tr>`;
         })
         .join("")
       : `<tr><td colspan="10" class="px-3 py-10 text-center text-neutral-500"><div class="inline-flex flex-col items-center gap-2">${I("creditCard", 48)}<span>Нет заявок</span><span class="text-xs text-neutral-400">Измените фильтры или сбросьте поиск.</span></div></td></tr>`;
@@ -1472,9 +1472,10 @@
 
     const typeLabel = (type) => {
       if (type === "slug") return "Slug";
-      if (type === "basic_plan") return "Базовый тариф";
-      if (type === "premium_plan") return "Премиум тариф";
-      if (type === "upgrade_to_premium") return "Апгрейд до Премиум";
+      if (type === "premium_subscription_monthly") return "Premium monthly";
+      if (type === "basic_plan") return "Базовый тариф (legacy)";
+      if (type === "premium_plan") return "Премиум тариф (legacy)";
+      if (type === "upgrade_to_premium") return "Апгрейд до Премиум (legacy)";
       if (type === "bracelet") return "Браслет";
       return type;
     };
@@ -1498,9 +1499,8 @@
     if (!r.ok) return;
     const payload = await r.json();
     const settings = payload.settings || {};
-    setFormValue(form, "planBasicPrice", String(Number(settings.planBasicPrice || 50000)));
-    setFormValue(form, "planPremiumPrice", String(Number(settings.planPremiumPrice || 130000)));
-    setFormValue(form, "premiumUpgradePrice", String(Number(settings.premiumUpgradePrice || 80000)));
+    setFormValue(form, "planPremiumMonthlyPriceUsd", String(Number(settings.planPremiumMonthlyPriceUsd || 2)));
+    setFormValue(form, "planPremiumMonthlyPriceUzs", String(Number(settings.planPremiumMonthlyPriceUzs || settings.planPremiumPrice || 130000)));
     setFormValue(form, "pricingFootnote", String(settings.pricingFootnote || ""));
   }
 
@@ -1608,7 +1608,7 @@
           }
 
           const menu = menuWrap(menuItems.join(""));
-          const planLabel = x.plan === "premium" ? "Premium" : x.plan === "basic" ? "Basic" : "No plan";
+          const planLabel = x.plan === "premium" || x.plan === "basic" ? "Premium" : "No plan";
           const planChipClass =
             x.plan === "none"
               ? "border-amber-300 bg-amber-50 text-amber-800 whitespace-nowrap"
@@ -1736,7 +1736,7 @@
           menuItem({ label: x.isActive ? "Выключить" : "Включить", icon: x.isActive ? "toggleLeft" : "toggleRight", attrs: `data-act="cg" data-id="${x.id}" data-n="${x.isActive ? 0 : 1}"` }),
           menuItem({ label: "QR-код", icon: "qr", attrs: `data-act="qr" data-slug="${x.slug}"` }),
         ].join(""));
-        return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3 font-mono">#${X(x.slug)}</td><td class="px-4 py-3">${X(x.name)}</td><td class="px-4 py-3">${x.tariff === "premium" ? "Премиум" : "Базовый"}</td><td class="px-4 py-3">${statusChip(x.isActive ? "approved" : "rejected")}</td><td class="px-4 py-3">${Number(x.viewsCount || 0).toLocaleString("ru-RU")}</td><td class="px-4 py-3">${new Date(x.createdAt).toLocaleDateString("ru-RU")}</td><td class="px-4 py-3">${themePill(x.theme || "default_dark")}</td><td class="px-4 py-3"><div class="admin-row-actions">${menu}</div></td></tr>`;
+        return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3 font-mono">#${X(x.slug)}</td><td class="px-4 py-3">${X(x.name)}</td><td class="px-4 py-3">${x.tariff === "premium" ? "Премиум" : "Legacy"}</td><td class="px-4 py-3">${statusChip(x.isActive ? "approved" : "rejected")}</td><td class="px-4 py-3">${Number(x.viewsCount || 0).toLocaleString("ru-RU")}</td><td class="px-4 py-3">${new Date(x.createdAt).toLocaleDateString("ru-RU")}</td><td class="px-4 py-3">${themePill(x.theme || "default_dark")}</td><td class="px-4 py-3"><div class="admin-row-actions">${menu}</div></td></tr>`;
       }).join("")
       : `<tr><td colspan="8" class="px-3 py-10 text-center text-neutral-500"><div class="inline-flex flex-col items-center gap-2">${I("creditCard", 48)}<span>Нет данных</span></div></td></tr>`;
     renderPager("cards-pagination", payload.pagination, (nextPage) => {
@@ -1845,7 +1845,7 @@
         menuSeparator(),
         menuItem({ label: "Удалить", icon: "trash", attrs: `data-act="td" data-id="${x.id}"`, danger: true }),
       ].join(""));
-      return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3">${X(x.name)}</td><td class="px-4 py-3 font-mono">${X(x.slug)}</td><td class="px-4 py-3">${x.tariff === "premium" ? "Премиум" : "Базовый"}</td><td class="px-4 py-3">${X(x.text)}</td><td class="px-4 py-3">${statusChip(x.isVisible ? "approved" : "muted")}</td><td class="px-4 py-3"><div class="admin-row-actions">${menu}</div></td></tr>`;
+      return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3">${X(x.name)}</td><td class="px-4 py-3 font-mono">${X(x.slug)}</td><td class="px-4 py-3">${x.tariff === "premium" ? "Премиум" : "Legacy"}</td><td class="px-4 py-3">${X(x.text)}</td><td class="px-4 py-3">${statusChip(x.isVisible ? "approved" : "muted")}</td><td class="px-4 py-3"><div class="admin-row-actions">${menu}</div></td></tr>`;
     }).join("") : `<tr><td colspan="6" class="px-3 py-10 text-center text-neutral-500"><div class="inline-flex flex-col items-center gap-2">${I("message", 48)}<span>Нет отзывов</span></div></td></tr>`;
     renderPager("testimonials-pagination", payload.pagination, (nextPage) => {
       initialQuery.t_page = String(nextPage);
@@ -2014,7 +2014,7 @@
     if (!(am instanceof HTMLElement) || !(af instanceof HTMLFormElement)) return;
     const idField = af.elements.namedItem("orderId");
     if (idField instanceof HTMLInputElement) idField.value = id;
-    if (at instanceof HTMLSelectElement) at.value = tariff === "premium" ? "premium" : "basic";
+    if (at instanceof HTMLSelectElement) at.value = "premium";
     if (ath instanceof HTMLSelectElement) ath.value = theme || "default_dark";
     syncATheme();
     am.classList.remove("hidden");
@@ -2164,7 +2164,7 @@
     id.value = String(data.id || "");
     name.value = String(data.name || "");
     slug.value = String(data.slug || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6);
-    tariff.value = data.tariff === "premium" ? "premium" : "basic";
+    tariff.value = "premium";
     text.value = String(data.text || "");
     tem.classList.remove("hidden");
     tem.classList.add("flex");
@@ -2183,7 +2183,7 @@
     const tariff = tef.elements.namedItem("tariff");
     const text = tef.elements.namedItem("text");
     if (!(id instanceof HTMLInputElement) || !(name instanceof HTMLInputElement) || !(slug instanceof HTMLInputElement) || !(tariff instanceof HTMLSelectElement) || !(text instanceof HTMLTextAreaElement)) return;
-    const r = await fetch(`/api/admin/testimonials/${id.value}`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({ name: name.value.trim(), slug: slug.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6), tariff: tariff.value === "premium" ? "premium" : "basic", text: text.value.trim() }) });
+    const r = await fetch(`/api/admin/testimonials/${id.value}`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({ name: name.value.trim(), slug: slug.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6), tariff: "premium", text: text.value.trim() }) });
     if (!r.ok) return showAlert(await E(r));
     closeTe();
     void loadTestimonials();
@@ -2263,40 +2263,13 @@
         t.value = prevPlan;
         return;
       }
-      const activeSlugs = Number(t.getAttribute("data-active-slugs") || "0");
-      const braceletSlugs = String(t.getAttribute("data-bracelet-slugs") || "")
-        .split(",")
-        .map((x) => x.trim())
-        .filter(Boolean);
-      const downgradeToBasic = prevPlan === "premium" && t.value === "basic" && activeSlugs > 1;
-      if (downgradeToBasic) {
-        const braceletNote = braceletSlugs.length ? `\nБраслет привязан к: ${braceletSlugs.join(", ")}.` : "";
-        const ok = await showConfirm(`У пользователя ${activeSlugs} slug. При переходе на Базовый будет активен только основной. Продолжить?${braceletNote}`);
-        if (!ok) {
-          t.value = prevPlan;
-          return;
-        }
-      }
       const reason = String(await showPrompt("Причина ручной смены тарифа", "") || "").trim();
       if (!reason) {
         showAlert("Укажи причину смены тарифа");
         t.value = prevPlan;
         return;
       }
-      let r = await fetch(`/api/admin/users/${encodeURIComponent(telegramId)}/plan`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({ plan: t.value, reason, force: downgradeToBasic }) });
-      if (r.status === 409 && !downgradeToBasic) {
-        const payload = await r.json().catch(() => ({}));
-        if (payload.code === "PLAN_DOWNGRADE_CONFIRMATION_REQUIRED") {
-          const cnt = Number(payload.activeSlugCount || activeSlugs || 2);
-          const braceletNote = braceletSlugs.length ? `\nБраслет привязан к: ${braceletSlugs.join(", ")}.` : "";
-          const ok = await showConfirm(`У пользователя ${cnt} slug. При переходе на Базовый будет активен только основной. Продолжить?${braceletNote}`);
-          if (!ok) {
-            t.value = prevPlan;
-            return;
-          }
-          r = await fetch(`/api/admin/users/${encodeURIComponent(telegramId)}/plan`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({ plan: "basic", reason, force: true }) });
-        }
-      }
+      const r = await fetch(`/api/admin/users/${encodeURIComponent(telegramId)}/plan`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({ plan: t.value, reason, force: false }) });
       if (!r.ok) {
         showAlert(await E(r));
         t.value = prevPlan;
@@ -2405,8 +2378,8 @@
     if (a === "ct") {
       const id = n.getAttribute("data-id");
       if (!id) return;
-      const tariff = String(await showPrompt("Новый тариф: basic или premium", "basic") || "").trim().toLowerCase();
-      if (!["basic", "premium"].includes(tariff)) return;
+      const tariff = String(await showPrompt("Новый тариф: premium", "premium") || "").trim().toLowerCase();
+      if (tariff !== "premium") return;
       const r = await fetch(`/api/admin/cards/${id}/tariff`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({ tariff }) });
       if (!r.ok) showAlert(await E(r));
       else void loadCards();
@@ -2417,10 +2390,8 @@
       const telegramId = n.getAttribute("data-id");
       if (!telegramId) return;
       const prevPlan = n.getAttribute("data-current-plan") || "none";
-      const activeSlugs = Number(n.getAttribute("data-active-slugs") || "0");
-      const braceletSlugs = String(n.getAttribute("data-bracelet-slugs") || "").split(",").map((x) => x.trim()).filter(Boolean);
-      const entered = String(await showPrompt("Новый тариф: none, basic или premium", prevPlan) || "").trim().toLowerCase();
-      if (!["none", "basic", "premium"].includes(entered) || entered === prevPlan) return;
+      const entered = String(await showPrompt("Новый тариф: none или premium", prevPlan) || "").trim().toLowerCase();
+      if (!["none", "premium"].includes(entered) || entered === prevPlan) return;
       const manualWarningOk = await showConfirm("Ручная смена тарифа без оплаты. Использовать только для корректировок. Продолжить?");
       if (!manualWarningOk) return;
       const reason = String(await showPrompt("Причина ручной смены тарифа", "") || "").trim();
@@ -2428,13 +2399,7 @@
         showAlert("Укажи причину смены тарифа");
         return;
       }
-      const downgradeToBasic = prevPlan === "premium" && entered === "basic" && activeSlugs > 1;
-      if (downgradeToBasic) {
-        const braceletNote = braceletSlugs.length ? `\nБраслет привязан к: ${braceletSlugs.join(", ")}.` : "";
-        const ok = await showConfirm(`У пользователя ${activeSlugs} slug. При переходе на Базовый будет активен только основной. Продолжить?${braceletNote}`);
-        if (!ok) return;
-      }
-      const r = await fetch(`/api/admin/users/${encodeURIComponent(telegramId)}/plan`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({ plan: entered, reason, force: downgradeToBasic }) });
+      const r = await fetch(`/api/admin/users/${encodeURIComponent(telegramId)}/plan`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({ plan: entered, reason, force: false }) });
       if (!r.ok) showAlert(await E(r));
       else void loadUsers();
       closeAllRowMenus();
@@ -2726,7 +2691,7 @@
       closeAllRowMenus();
       return;
     }
-    if (a === "oa") openA(n.getAttribute("data-id") || "", n.getAttribute("data-t") || "basic", n.getAttribute("data-th") || "default_dark");
+    if (a === "oa") openA(n.getAttribute("data-id") || "", n.getAttribute("data-t") || "premium", n.getAttribute("data-th") || "default_dark");
     if (a === "od") { if (isManager) return; const id = n.getAttribute("data-id"); if (!id || !await showConfirm("Удалить заявку?")) return; const r = await fetch(`/api/admin/orders/${id}`, { method: "DELETE", headers: H() }); if (!r.ok) showAlert(await E(r)); else void loadOrders(); }
     if (a === "ope") { const id = n.getAttribute("data-id"); if (!id) return; const r = await fetch(`/api/admin/orders/${id}/extend-pending`, { method: "POST", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({}) }); if (!r.ok) showAlert(await E(r)); else void loadOrders(); }
     if (a === "ub") { const telegramId = n.getAttribute("data-id"); const status = n.getAttribute("data-status"); if (!telegramId) return; const isBlocked = status === "blocked"; if (!isBlocked && !await showConfirm("Заблокировать пользователя и деактивировать его slug?")) return; if (isBlocked && !await showConfirm("Разблокировать пользователя и восстановить статусы slug?")) return; const r = await fetch(`/api/admin/users/${encodeURIComponent(telegramId)}/${isBlocked ? "unblock" : "block"}`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({}) }); if (!r.ok) showAlert(await E(r)); else void loadUsers(); }
@@ -2862,9 +2827,8 @@
     const form = e.currentTarget;
     if (!(form instanceof HTMLFormElement)) return;
     const body = {
-      planBasicPrice: Number(getFormValue(form, "planBasicPrice", "50000")),
-      planPremiumPrice: Number(getFormValue(form, "planPremiumPrice", "130000")),
-      premiumUpgradePrice: Number(getFormValue(form, "premiumUpgradePrice", "80000")),
+      planPremiumMonthlyPriceUsd: Number(getFormValue(form, "planPremiumMonthlyPriceUsd", "2")),
+      planPremiumMonthlyPriceUzs: Number(getFormValue(form, "planPremiumMonthlyPriceUzs", "130000")),
       pricingFootnote: getFormValue(form, "pricingFootnote", ""),
     };
     const r = await fetch("/api/admin/pricing/settings", {
@@ -2949,7 +2913,7 @@
     const f = e.currentTarget;
     if (!(f instanceof HTMLFormElement)) return;
     const d = new FormData(f);
-    const p = { name: String(d.get("name") || "").trim(), slug: String(d.get("slug") || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6), tariff: String(d.get("tariff") || "basic"), text: String(d.get("text") || "").trim() };
+    const p = { name: String(d.get("name") || "").trim(), slug: String(d.get("slug") || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6), tariff: String(d.get("tariff") || "premium"), text: String(d.get("text") || "").trim() };
     const r = await fetch("/api/admin/testimonials", { method: "POST", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify(p) });
     if (!r.ok) showAlert(await E(r)); else { f.reset(); initialQuery.t_page = "1"; void loadTestimonials(); }
   });

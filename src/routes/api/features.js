@@ -64,7 +64,16 @@ router.get(
     const todayStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0));
 
     const [activeCardsTotal, todayCreated, todayActivated, todayTotal, todayVisitors] = await Promise.all([
-      prisma.slug.count({ where: { status: { not: "free" } } }),
+      prisma.slug.count({
+        where: {
+          status: { in: ["active", "private", "approved"] },
+          owner: {
+            status: "active",
+            plan: { in: ["basic", "premium"] },
+            OR: [{ subscriptionExpiresAt: null }, { subscriptionExpiresAt: { gt: now } }],
+          },
+        },
+      }),
       prisma.slug.count({ where: { createdAt: { gte: todayStart } } }),
       prisma.slug.count({ where: { activatedAt: { gte: todayStart } } }),
       prisma.slug.count({

@@ -1,0 +1,142 @@
+[data-page="unqx-game"] {
+  background:
+    radial-gradient(900px 420px at -10% -20%, rgba(245, 158, 11, 0.16), transparent 70%),
+    radial-gradient(880px 420px at 110% -10%, rgba(14, 165, 233, 0.16), transparent 68%),
+    linear-gradient(180deg, #f8fafc 0%, #f5f5f5 100%);
+}
+
+.unqx-game-page {
+  position: relative;
+}
+
+.unqx-game-hero,
+.unqx-game-panel,
+.unqx-game-side {
+  border-color: rgba(15, 23, 42, 0.12);
+  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.08);
+}
+
+.unqx-game-reel {
+  position: relative;
+  overflow: hidden;
+  transition: transform 220ms ease, box-shadow 220ms ease, border-color 220ms ease;
+}
+
+.unqx-game-reel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    120deg,
+    transparent 25%,
+    rgba(255, 255, 255, 0.4) 44%,
+    rgba(255, 255, 255, 0.88) 50%,
+    rgba(255, 255, 255, 0.4) 56%,
+    transparent 75%
+  );
+  transform: translateX(-130%);
+}
+
+.unqx-game-reel.is-spinning {
+  transform: translateY(-2px) scale(1.01);
+  border-color: rgba(14, 165, 233, 0.35);
+  box-shadow: 0 22px 46px rgba(14, 165, 233, 0.16);
+}
+
+.unqx-game-reel.is-spinning::before {
+  opacity: 1;
+  animation: unqx-game-reel-sweep 0.85s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+}
+
+.unqx-game-reel.is-spinning #unqx-game-result-slug {
+  animation: unqx-game-text-flicker 0.18s linear infinite;
+}
+
+.unqx-game-history-item {
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 12px;
+  background: #fff;
+  padding: 12px;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) auto auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.unqx-game-history-item.is-new {
+  animation: unqx-game-history-enter 0.36s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.unqx-game-history-slug {
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: #111827;
+}
+
+.unqx-game-history-price {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.unqx-game-history-time {
+  font-size: 0.75rem;
+  color: #6b7280;
+  text-align: right;
+}
+
+#unqx-game-toast {
+  transition: transform 180ms ease, opacity 180ms ease;
+}
+
+#unqx-game-toast.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@keyframes unqx-game-reel-sweep {
+  0% {
+    transform: translateX(-130%);
+  }
+  100% {
+    transform: translateX(130%);
+  }
+}
+
+@keyframes unqx-game-text-flicker {
+  0% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.76;
+  }
+}
+
+@keyframes unqx-game-history-enter {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (max-width: 760px) {
+  .unqx-game-history-item {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .unqx-game-history-time {
+    text-align: left;
+  }
+}

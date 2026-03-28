@@ -156,7 +156,6 @@
                 <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Тариф</span>
                 <select name="tariff" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm">
                   <option value="all">Все тарифы</option>
-                  <option value="basic">Базовый</option>
                   <option value="premium">Премиум</option>
                 </select>
               </label>
@@ -222,9 +221,10 @@
             <select name="type" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">
               <option value="all">Все типы</option>
               <option value="slug">Slug</option>
-              <option value="basic_plan">Базовый тариф</option>
-              <option value="premium_plan">Премиум тариф</option>
-              <option value="upgrade_to_premium">Апгрейд до Премиум</option>
+              <option value="premium_subscription_monthly">Premium monthly</option>
+              <option value="basic_plan">Базовый тариф (legacy)</option>
+              <option value="premium_plan">Премиум тариф (legacy)</option>
+              <option value="upgrade_to_premium">Апгрейд до Премиум (legacy)</option>
               <option value="bracelet">Браслет</option>
             </select>
             <input name="user" type="text" placeholder="Пользователь"
@@ -261,27 +261,17 @@
           <div id="purchases-pagination" class="flex items-center justify-end gap-2 text-sm text-neutral-600"></div>
           <form id="pricing-settings-form"
             class="grid gap-3 rounded-2xl border border-neutral-200 bg-white p-4 md:grid-cols-2">
-            <label class="block">
-              <span class="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">Цена Базового
-                тарифа (сум)</span>
-              <input type="number" min="0" name="planBasicPrice"
+                        <label class="block">
+              <span class="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">Premium monthly (USD)</span>
+              <input type="number" min="0" step="0.01" name="planPremiumMonthlyPriceUsd"
                 class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
-              <span class="mt-1 block text-xs text-neutral-500">Единоразовая стоимость</span>
+              <span class="mt-1 block text-xs text-neutral-500">$2 по умолчанию</span>
             </label>
             <label class="block">
-              <span class="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">Цена Премиум
-                тарифа (сум)</span>
-              <input type="number" min="0" name="planPremiumPrice"
+              <span class="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">Premium monthly (UZS)</span>
+              <input type="number" min="0" name="planPremiumMonthlyPriceUzs"
                 class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
-              <span class="mt-1 block text-xs text-neutral-500">Единоразовая стоимость</span>
-            </label>
-            <label class="block">
-              <span class="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">Цена апгрейда
-                Базовый → Премиум (сум)</span>
-              <input type="number" min="0" name="premiumUpgradePrice"
-                class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
-              <span class="mt-1 block text-xs text-neutral-500">Сколько доплачивает пользователь с Базовым
-                тарифом</span>
+              <span class="mt-1 block text-xs text-neutral-500">Цена за 1 месяц Premium</span>
             </label>
             <label class="block">
               <span class="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">Подпись под
@@ -312,7 +302,6 @@
             <select name="plan" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">
               <option value="all">Все тарифы</option>
               <option value="none">Без тарифа</option>
-              <option value="basic">Базовый</option>
               <option value="premium">Премиум</option>
             </select>
             <select name="profileType" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">
@@ -983,7 +972,6 @@
               <input name="slug" type="text" placeholder="Slug" maxlength="6"
                 class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" required />
               <select name="tariff" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">
-                <option value="basic">Базовый</option>
                 <option value="premium">Премиум</option>
               </select>
               <button type="submit"
@@ -1125,7 +1113,6 @@
               <select name="plan" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">
                 <option value="all">Тариф: все</option>
                 <option value="none">Без тарифа</option>
-                <option value="basic">Базовый</option>
                 <option value="premium">Премиум</option>
               </select>
               <select name="status" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">
@@ -1308,7 +1295,6 @@
               <label class="block text-sm font-medium text-neutral-700">
                 Тариф
                 <select name="tariff" class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm">
-                  <option value="basic">Базовый</option>
                   <option value="premium">Премиум</option>
                 </select>
               </label>
@@ -1404,7 +1390,6 @@
               <label class="block text-sm font-medium text-neutral-700">
                 Тариф
                 <select name="tariff" class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm">
-                  <option value="basic">Базовый</option>
                   <option value="premium">Премиум</option>
                 </select>
               </label>
@@ -1467,7 +1452,6 @@
                 Тариф
                 <select name="plan" class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm">
                   <option value="none">Без тарифа</option>
-                  <option value="basic">Базовый</option>
                   <option value="premium">Премиум</option>
                 </select>
               </label>

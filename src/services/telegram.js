@@ -41,7 +41,7 @@ async function sendOrderRequestToTelegram(payload) {
     throw new TelegramConfigError("Telegram credentials are not configured");
   }
 
-  const tariffLabel = payload.tariff === "premium" ? "ПРЕМИУМ" : "БАЗОВЫЙ";
+  const tariffLabel = "ПРЕМИУМ";
   const braceletPrice = Number(payload.braceletPrice || (await getSetting("bracelet_price", 250_000)) || 250_000);
   const braceletLabel = payload.bracelet ? `Да (+${braceletPrice.toLocaleString("ru-RU")} сум)` : "Нет";
   const usernameLabel = payload.username ? `@${escapeHtml(payload.username.replace(/^@/, ""))}` : "@—";
@@ -62,8 +62,8 @@ async function sendOrderRequestToTelegram(payload) {
     `<b>Тариф:</b> ${tariffLabel} · ${escapeHtml(payload.tariffPriceLabel)} сум`,
     `<b>Браслет:</b> ${braceletLabel}`,
     "",
-    `<b>Итого разово:</b> ${escapeHtml(payload.totalOneTimeLabel)} сум`,
-    "Единоразовая покупка",
+    `<b>Итого к оплате:</b> ${escapeHtml(payload.totalOneTimeLabel)} сум`,
+    "Premium подписка · месяц",
     `<b>Провайдер оплаты:</b> ${escapeHtml(paymentProviderLabel)}`,
     paymentInstructions ? `Инструкция: ${escapeHtml(paymentInstructions)}` : "",
     "",
@@ -180,13 +180,13 @@ async function sendTelegramCallbackAnswer({ callbackQueryId, text = "Готов�
 }
 
 async function sendSlugApprovedToUser({ telegramId, slug, plan, hasBracelet = false }) {
-  const planLabel = plan === "premium" ? "Премиум" : "Базовый";
+  const planLabel = plan === "premium" ? "Премиум" : "Тариф";
   const completionLine = hasBracelet ? "Slug и браслет - всё готово." : "";
   const text = [
     "Заявка одобрена.",
     "",
     `Slug: unqx.uz/${slug}`,
-    `Тариф: ${planLabel} - активирован навсегда.`,
+    `Тариф: ${planLabel} - активирован на 30 дней.`,
     completionLine,
     "",
     "Войди в профиль и создай свою визитку:",

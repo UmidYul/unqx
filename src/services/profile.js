@@ -1,4 +1,18 @@
-const PROFILE_THEMES = new Set(["default_dark", "arctic", "linen", "marble", "forest", "sage_luxe", "midnight_obsidian", "golden_noir", "aurora_codex", "nebula_glass", "velours"]);
+const { getSubscriptionSnapshot, normalizeSubscriptionPlan } = require("./subscription");
+
+const PROFILE_THEMES = new Set([
+  "default_dark",
+  "arctic",
+  "linen",
+  "marble",
+  "forest",
+  "sage_luxe",
+  "midnight_obsidian",
+  "golden_noir",
+  "aurora_codex",
+  "nebula_glass",
+  "velours",
+]);
 const PROFILE_TYPES = new Set(["person", "company"]);
 const BUTTON_TYPES = new Set([
   "phone",
@@ -14,39 +28,39 @@ const BUTTON_TYPES = new Set([
 ]);
 
 function getEffectivePlan(user) {
-  const rawPlan = user && typeof user.plan === "string" ? user.plan : "none";
-  const normalizedPlan = rawPlan === "premium" || rawPlan === "basic" ? rawPlan : "none";
+  const subscription = getSubscriptionSnapshot(user);
+  const normalizedPlan = subscription.effectivePlan;
   return {
     plan: normalizedPlan,
     isPremium: normalizedPlan === "premium",
-    isExpiredPremium: false,
+    isExpiredPremium: subscription.isExpired,
+    subscription,
   };
 }
 
 function getSlugLimit(plan) {
-  if (plan === "none") {
+  if (normalizeSubscriptionPlan(plan) !== "premium") {
     return 0;
   }
-  return plan === "premium" ? 3 : 1;
+  return 3;
 }
 
 function getTagLimit(plan) {
-  if (plan === "none") {
+  if (normalizeSubscriptionPlan(plan) !== "premium") {
     return 0;
   }
-  return plan === "premium" ? 5 : 3;
+  return 5;
 }
 
 function getButtonLimit(plan) {
-  if (plan === "none") {
+  if (normalizeSubscriptionPlan(plan) !== "premium") {
     return 0;
   }
-  return plan === "premium" ? 6 : 3;
+  return 6;
 }
 
 function canCreateCard(user) {
-  const plan = getEffectivePlan(user).plan;
-  return plan === "basic" || plan === "premium";
+  return getEffectivePlan(user).plan === "premium";
 }
 
 function canAccessAnalytics(user) {
@@ -56,7 +70,6 @@ function canAccessAnalytics(user) {
 function canAddSlug({ user, currentSlugCount = 0 }) {
   const plan = getEffectivePlan(user).plan;
   if (plan === "none") return false;
-  if (plan === "basic") return Number(currentSlugCount || 0) < 1;
   return Number(currentSlugCount || 0) < 3;
 }
 
@@ -96,7 +109,9 @@ function normalizeTags(rawTags, effectivePlan) {
     if (out.length >= max) {
       break;
     }
-    const label = String(item || "").trim().replace(/^#+/, "");
+    const label = String(item || "")
+      .trim()
+      .replace(/^#+/, "");
     if (!label) {
       continue;
     }
@@ -116,7 +131,9 @@ function normalizeButtons(rawButtons, effectivePlan) {
       break;
     }
     const obj = item && typeof item === "object" ? item : {};
-    const typeRaw = String(obj.type || "other").trim().toLowerCase();
+    const typeRaw = String(obj.type || "other")
+      .trim()
+      .toLowerCase();
     const typeAlias = typeRaw === "карта" ? "card" : typeRaw;
     const type = BUTTON_TYPES.has(typeAlias) ? typeAlias : "other";
     const label = String(obj.label || "").trim().slice(0, 40);
@@ -148,17 +165,19 @@ function normalizeDisplayName(value, fallback) {
 }
 
 function getPlanBadgeLabel(plan) {
-  if (plan === "premium") return "ПРЕМИУМ";
-  if (plan === "basic") return "БАЗОВЫЙ";
+  if (normalizeSubscriptionPlan(plan) === "premium") return "ПРЕМИУМ";
   return "ТАРИФ НЕ ВЫБРАН";
 }
 
 function normalizeProfileType(value, options = {}) {
   const fallbackRaw = String(options.fallback || "person").trim().toLowerCase();
   const allowAll = Boolean(options.allowAll);
-  const fallback = allowAll && fallbackRaw === "all"
-    ? "all"
-    : (PROFILE_TYPES.has(fallbackRaw) ? fallbackRaw : "person");
+  const fallback =
+    allowAll && fallbackRaw === "all"
+      ? "all"
+      : PROFILE_TYPES.has(fallbackRaw)
+        ? fallbackRaw
+        : "person";
   const normalized = String(value || "").trim().toLowerCase();
   if (allowAll && normalized === "all") {
     return "all";

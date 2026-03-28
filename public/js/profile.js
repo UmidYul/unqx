@@ -234,7 +234,10 @@
 
     const toOrderPaymentReference = (orderId) => `UNQX-${String(orderId || "").replace(/[^a-zA-Z0-9]/g, "").slice(0, 10).toUpperCase()}`;
 
-    const planLabel = (value) => (String(value || "").toLowerCase() === "premium" ? "Премиум" : "Базовый");
+    const planLabel = (value) => {
+      const plan = String(value || "").toLowerCase();
+      return plan === "premium" || plan === "basic" ? "Премиум" : "Без тарифа";
+    };
 
     const buildTelegramPaymentUrl = (requestItem) => {
       const serverUrl = String(requestItem?.paymentUrl || "").trim();
@@ -1124,7 +1127,7 @@ Email: ${userEmail}
       const raw = String(s.user?.effectivePlan || s.user?.plan || "none")
         .trim()
         .toLowerCase();
-      return raw === "premium" || raw === "basic" ? raw : "none";
+      return raw === "premium" ? "premium" : "none";
     };
 
     const normalizeCardVisibilityStatus = (status) => {
@@ -1199,10 +1202,10 @@ Email: ${userEmail}
       }
       if (el.nm) el.nm.textContent = s.user.displayName || s.user.firstName || "UNQX User";
       if (el.un) el.un.textContent = s.user.username ? `@${s.user.username}` : "@—";
-      const plan = s.user.plan || "none";
+      const plan = getCurrentPlan();
       if (el.pl) {
         el.pl.dataset.plan = plan;
-        el.pl.textContent = plan === "premium" ? "ПРЕМИУМ" : plan === "basic" ? "БАЗОВЫЙ" : "Тариф не выбран";
+        el.pl.textContent = plan === "premium" ? "PREMIUM" : "No plan";
         el.pl.className = "inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold";
         if (plan === "none") {
           el.pl.classList.add("border-neutral-300", "bg-neutral-100", "text-neutral-700");
@@ -1211,11 +1214,14 @@ Email: ${userEmail}
         }
       }
       if (el.ex) {
-        const hasSelectedPlan = plan !== "none";
-        el.ex.classList.toggle("hidden", !hasSelectedPlan);
-        el.ex.textContent = s.user.planPurchasedAt ? `Куплено: ${fd(s.user.planPurchasedAt)}` : "Куплено: —";
-        if (s.user.planPurchasedAt && hasSelectedPlan) {
-          el.ex.title = `Куплено ${fd(s.user.planPurchasedAt)}`;
+        const expiresAt = s.subscription?.expiresAt || s.user.subscriptionExpiresAt || null;
+        const isActive = plan === "premium";
+        el.ex.classList.remove("hidden");
+        el.ex.textContent = isActive
+          ? (expiresAt ? `Active until: ${fd(expiresAt)}` : "Subscription active")
+          : "Subscription inactive";
+        if (isActive && expiresAt) {
+          el.ex.title = `Subscription active until ${fd(expiresAt)}`;
         } else {
           el.ex.removeAttribute("title");
         }
@@ -1224,16 +1230,15 @@ Email: ${userEmail}
         el.choosePlan.classList.toggle("hidden", plan !== "none");
       }
       if (el.upg) {
-        const upgradePrice = Number(s.pricing?.premiumUpgradePrice || 80_000).toLocaleString("ru-RU");
         const link = el.upg.querySelector('[data-order-link][data-order-plan="premium"]');
         const messageNode = el.upg.firstChild;
         if (messageNode && messageNode.nodeType === Node.TEXT_NODE) {
-          messageNode.textContent = `Открыть Премиум · ${upgradePrice} сум единоразово. `;
+          messageNode.textContent = "Renew Premium - $2/month. ";
         }
         if (link instanceof HTMLElement) {
-          link.textContent = "Купить Премиум >";
+          link.textContent = "Renew Premium >";
         }
-        el.upg.classList.toggle("hidden", plan !== "basic");
+        el.upg.classList.toggle("hidden", plan !== "none");
       }
     };
 
@@ -1289,10 +1294,10 @@ Email: ${userEmail}
         }
         el.slugs.innerHTML = renderStateCard({
           icon: "shopping",
-          title: "Сначала выбери тариф",
-          text: "Чтобы занять UNQ и создать визитку - купи Базовый или Премиум тариф.",
+          title: "Activate Premium first",
+          text: "To reserve UNQ and publish your card, activate Premium.",
           buttonId: "profile-slugs-order-btn",
-          buttonLabel: "Занять UNQ >",
+          buttonLabel: "Activate Premium >",
         });
         return;
       }
@@ -1370,9 +1375,8 @@ Email: ${userEmail}
         el.addSlug.classList.remove("hidden");
         if (plan !== "premium" && count >= 1) {
           el.addSlug.disabled = true;
-          el.addSlug.textContent = "Доступно только на Премиум";
-          const price = Number(s.pricing?.premiumUpgradePrice || 80_000).toLocaleString("ru-RU");
-          el.addSlugNote.textContent = `Открыть Премиум · ${price} сум единоразово`;
+          el.addSlug.textContent = "Premium required";
+          el.addSlugNote.textContent = "Renew Premium - $2/month";
         } else if (plan === "premium" && count >= 3) {
           el.addSlug.disabled = true;
           el.addSlug.textContent = "Добавить UNQ";
@@ -1484,7 +1488,7 @@ Email: ${userEmail}
         slugs.find((item) => ["active", "approved", "paused", "private"].includes(item.status)) ||
         slugs[0] ||
         null;
-      const effectivePlan = getCurrentPlan() === "premium" ? "premium" : "basic";
+      const effectivePlan = getCurrentPlan() === "premium" ? "premium" : "none";
       const effectiveTheme =
         effectivePlan === "premium" && PROFILE_THEMES.includes(s.theme) ? s.theme : "default_dark";
       return {
@@ -1698,7 +1702,7 @@ Email: ${userEmail}
                 </div>
                 <div>
                   <p class="text-[11px] uppercase tracking-[0.12em] text-neutral-500">Тариф</p>
-                  <p>${requestItem.requestedPlan === "premium" ? "Премиум" : "Базовый"}</p>
+                  <p>${requestItem.requestedPlan === "premium" ? "Premium" : "—"}</p>
                 </div>
                 <div>
                   <p class="text-[11px] uppercase tracking-[0.12em] text-neutral-500">Браслет</p>
@@ -1708,7 +1712,7 @@ Email: ${userEmail}
               <div class="mt-3 rounded-lg border border-neutral-200 bg-neutral-50 px-2.5 py-2">
                 <p class="text-[11px] uppercase tracking-[0.12em] text-neutral-500">Цена</p>
                 <p class="text-sm font-semibold text-neutral-900">${fp(totalPrice)}</p>
-                <p class="text-[11px] text-neutral-500">${requestItem.purchasedAt ? `Единоразовая покупка · ${fd(requestItem.purchasedAt)}` : "Единоразовая покупка"}</p>
+                <p class="text-[11px] text-neutral-500">${requestItem.purchasedAt ? `Subscription payment · ${fd(requestItem.purchasedAt)}` : "Subscription payment"}</p>
               </div>
               ${showNote ? `<p class="mt-3 text-xs text-rose-700">Примечание: ${esc(requestItem.adminNote || "—")}</p>` : ""}
               ${actionButtons ? `<div class="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">${actionButtons}</div>` : ""}
@@ -1738,8 +1742,8 @@ Email: ${userEmail}
               <td class="px-3 py-2">${fdt(requestItem.createdAt)}</td>
               <td class="px-3 py-2">${requestItem.purchasedAt ? fdt(requestItem.purchasedAt) : "—"}</td>
               <td class="px-3 py-2 font-mono">${esc(requestItem.slug)}</td>
-              <td class="px-3 py-2">${fp(Number(requestItem.slugPrice || 0) + Number(requestItem.planPrice || 0) + (requestItem.bracelet ? Number(requestItem.braceletPrice || DEFAULT_BRACELET_PRICE) : 0))}<div class="text-[11px] text-neutral-500">${requestItem.purchasedAt ? `Единоразовая покупка · ${fd(requestItem.purchasedAt)}` : "Единоразовая покупка"}</div></td>
-              <td class="px-3 py-2">${requestItem.requestedPlan === "premium" ? "Премиум" : "Базовый"}</td>
+              <td class="px-3 py-2">${fp(Number(requestItem.slugPrice || 0) + Number(requestItem.planPrice || 0) + (requestItem.bracelet ? Number(requestItem.braceletPrice || DEFAULT_BRACELET_PRICE) : 0))}<div class="text-[11px] text-neutral-500">${requestItem.purchasedAt ? `Subscription payment · ${fd(requestItem.purchasedAt)}` : "Subscription payment"}</div></td>
+              <td class="px-3 py-2">${requestItem.requestedPlan === "premium" ? "Premium" : "—"}</td>
               <td class="px-3 py-2">${requestItem.bracelet ? "Да" : "Нет"}</td>
               <td class="px-3 py-2">${esc(requestItem.statusBadge || requestItem.status)}</td>
               <td class="px-3 py-2">${showNote ? esc(requestItem.adminNote || "—") : ""}${actionButtons ? `<div class="mt-2">${actionButtons}</div>` : ""}</td>
@@ -1756,8 +1760,7 @@ Email: ${userEmail}
       if (el.reqNewBtn instanceof HTMLButtonElement) {
         if (plan !== "premium" && count >= 1) {
           el.reqNewBtn.disabled = false;
-          const price = Number(s.pricing?.premiumUpgradePrice || 80_000).toLocaleString("ru-RU");
-          el.reqNewBtn.title = `Купить Премиум · ${price} сум единоразово`;
+          el.reqNewBtn.title = "Renew Premium - $2/month";
         } else if (plan === "premium" && count >= 3) {
           el.reqNewBtn.disabled = true;
           el.reqNewBtn.title = "Достигнут лимит 3 UNQ";
@@ -2048,8 +2051,7 @@ Email: ${userEmail}
         tips.push('<div class="flex items-center justify-between gap-2"><span>Добавь NFC-стикер - +100 к Score</span><button type="button" data-a="open-bracelet-order-modal" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold">Заказать стикер</button></div>');
       }
       if (Number(score.scorePlan || 0) === 0) {
-        const price = Number(s.pricing?.premiumUpgradePrice || 80_000).toLocaleString("ru-RU");
-        tips.push(`<div class="flex items-center justify-between gap-2"><span>Открыть Премиум · ${price} сум единоразово · +49 к Score</span><button type="button" data-order-link data-order-plan="premium" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold">Купить Премиум ></button></div>`);
+        tips.push('<div class="flex items-center justify-between gap-2"><span>Renew Premium - $2/month - +49 to Score</span><button type="button" data-order-link data-order-plan="premium" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold">Renew Premium ></button></div>');
       }
       if (Number(score.scoreViews || 0) < 150) tips.push("<p>Поделись визиткой чтобы получить больше просмотров</p>");
       if (Number(score.scoreTenure || 0) < 100) tips.push("<p>Score растёт каждый месяц автоматически</p>");
@@ -2746,11 +2748,10 @@ Email: ${userEmail}
       }
 
       if (plan !== "premium" && count >= 1) {
-        const upgradePrice = Number(s.pricing?.premiumUpgradePrice || 80_000).toLocaleString("ru-RU");
         showModal(
-          "Нужен Премиум",
-          `Открыть Премиум · ${upgradePrice} сум единоразово`,
-          "Купить Премиум >",
+          "Premium required",
+          "Renew Premium - $2/month",
+          "Renew Premium >",
           () => {
             openOrderModal({ plan: "premium" });
           },
@@ -2768,8 +2769,7 @@ Email: ${userEmail}
         return;
       }
       if (plan !== "premium" && count >= 1) {
-        const upgradePrice = Number(s.pricing?.premiumUpgradePrice || 80_000).toLocaleString("ru-RU");
-        showModal("Нужен Премиум", `Купить Премиум · ${upgradePrice} сум единоразово`);
+        showModal("Premium required", "Renew Premium - $2/month");
         return;
       }
       if (plan === "premium" && count >= 3) {
@@ -3040,7 +3040,7 @@ Email: ${userEmail}
         const requestItem = s.requests.find((item) => String(item.id) === orderId);
         let url = "";
         try {
-          const requestedPlan = String(requestItem?.requestedPlan || "basic").toLowerCase() === "premium" ? "premium" : "basic";
+          const requestedPlan = String(requestItem?.requestedPlan || "premium").toLowerCase() === "premium" ? "premium" : "premium";
           const precheck = await api(`/api/cards/order-precheck?requestedPlan=${encodeURIComponent(requestedPlan)}`);
           const pending = precheck?.pendingOrder && typeof precheck.pendingOrder === "object" ? precheck.pendingOrder : null;
           if (pending) {
@@ -3050,7 +3050,7 @@ Email: ${userEmail}
           // fallback to local request snapshot
         }
         if (!url) {
-          url = buildTelegramPaymentUrl(requestItem || { id: orderId, slug: "", requestedPlan: "basic" });
+          url = buildTelegramPaymentUrl(requestItem || { id: orderId, slug: "", requestedPlan: "premium" });
         }
         openTelegramUrl(url);
         return;
@@ -3641,4 +3641,3 @@ Email: ${userEmail}
     load().catch((error) => showModal("Ошибка", error.message || "Не удалось загрузить профиль"));
   })();
 })();
-

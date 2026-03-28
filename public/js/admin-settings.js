@@ -8,6 +8,19 @@
   const groups = ["pricing", "algorithm", "bracelet", "contacts", "platform"];
   const uiConfig = {
     hiddenByGroup: {
+      pricing: new Set([
+        "plan_basic_name",
+        "plan_basic_price",
+        "plan_basic_slug_limit",
+        "plan_basic_button_limit",
+        "plan_basic_tag_limit",
+        "plan_basic_themes",
+        "plan_basic_hide_branding",
+        "plan_basic_analytics_days",
+        "plan_basic_features",
+        "plan_basic_excluded_features",
+        "plan_premium_upgrade_price",
+      ]),
       platform: new Set(["referral_tiers", "referral_v1_tiers_enabled"]),
     },
     labelByKey: {
@@ -15,6 +28,8 @@
       plan_basic_price: "Цена тарифа Basic (сум)",
       plan_premium_name: "Название тарифа Premium",
       plan_premium_price: "Цена тарифа Premium (сум)",
+      plan_premium_monthly_price_usd: "Premium monthly price (USD)",
+      plan_premium_monthly_price_uzs: "Premium monthly price (UZS)",
       plan_premium_upgrade_price: "Цена апгрейда до Premium (сум)",
       pricing_section_visible: "Показывать блок тарифов на главной",
       plan_premium_popular_badge: "Показывать бейдж Популярный",
@@ -65,6 +80,8 @@
         "plan_basic_excluded_features",
         "plan_premium_name",
         "plan_premium_price",
+        "plan_premium_monthly_price_usd",
+        "plan_premium_monthly_price_uzs",
         "plan_premium_upgrade_price",
         "plan_premium_slug_limit",
         "plan_premium_button_limit",

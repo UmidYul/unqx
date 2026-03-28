@@ -18,9 +18,11 @@ const DEFAULT_SLUG_PRICING = {
   digitsRandom: 1,
 };
 const DEFAULT_PRICING = {
-  planBasicPrice: 50_000,
+  planBasicPrice: 130_000,
   planPremiumPrice: 130_000,
-  premiumUpgradePrice: 80_000,
+  premiumUpgradePrice: 130_000,
+  planPremiumMonthlyPriceUsd: 2,
+  planPremiumMonthlyPriceUzs: 130_000,
   braceletPrice: 250_000,
 };
 const PENDING_PURCHASE_INTENT_KEY = "unqx.pendingPurchaseIntent.v1";
@@ -172,7 +174,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     const slugParsed = splitSlug(options.slug || "");
     const slug = slugParsed ? slugParsed.slug : "";
     const planRaw = String(options.plan || "").trim().toLowerCase();
-    const plan = planRaw === "premium" ? "premium" : planRaw === "basic" ? "basic" : "";
+    const plan = planRaw === "premium" ? "premium" : "";
     const theme = String(options.theme || "").trim();
     const dropId = String(options.dropId || "").trim();
     const refSource = String(options.refSource || "").trim().toLowerCase().replace(/[^a-z0-9_-]/g, "").slice(0, 40);
@@ -496,16 +498,12 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
   }
 
   function selectedPlan() {
-    const userPlan = currentUserPlan();
-    if (userPlan === "premium") {
-      return "premium";
-    }
-    return dom.planPremium.checked ? "premium" : "basic";
+    return "premium";
   }
 
   function normalizePlan(value) {
     if (value === "premium") return "premium";
-    if (value === "basic") return "basic";
+    if (value === "basic") return "premium";
     return "none";
   }
 
@@ -517,7 +515,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     const params = new URLSearchParams(window.location.search);
     const queryPlan = params.get("tariff");
     const raw = String(options.plan || queryPlan || "").trim().toLowerCase();
-    return raw === "premium" ? "premium" : "basic";
+    return raw === "premium" ? "premium" : "premium";
   }
 
   function resolveFallbackAttribution() {
@@ -615,52 +613,47 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
 
   function getPricing() {
     const raw = state.pricing || {};
+    const premiumMonthlyPriceUzs = Number(
+      raw.planPremiumMonthlyPriceUzs || raw.planPremiumPrice || DEFAULT_PRICING.planPremiumMonthlyPriceUzs,
+    );
     return {
-      planBasicPrice: Number(raw.planBasicPrice || DEFAULT_PRICING.planBasicPrice),
-      planPremiumPrice: Number(raw.planPremiumPrice || DEFAULT_PRICING.planPremiumPrice),
-      premiumUpgradePrice: Number(raw.premiumUpgradePrice || DEFAULT_PRICING.premiumUpgradePrice),
+      planBasicPrice: premiumMonthlyPriceUzs,
+      planPremiumPrice: premiumMonthlyPriceUzs,
+      premiumUpgradePrice: premiumMonthlyPriceUzs,
+      planPremiumMonthlyPriceUsd: Number(raw.planPremiumMonthlyPriceUsd || DEFAULT_PRICING.planPremiumMonthlyPriceUsd),
+      planPremiumMonthlyPriceUzs: premiumMonthlyPriceUzs,
       braceletPrice: Number(raw.braceletPrice || DEFAULT_PRICING.braceletPrice),
       userPlan: normalizePlan(raw.userPlan || "none"),
     };
   }
 
   function resolvePlanCharge(selected, userPlan, pricing) {
-    if (userPlan === "none") {
-      return selected === "premium" ? pricing.planPremiumPrice : pricing.planBasicPrice;
+    if (selected !== "premium") {
+      return 0;
     }
-    if (userPlan === "basic" && selected === "premium") {
-      return pricing.premiumUpgradePrice;
+    if (userPlan === "premium") {
+      return 0;
     }
-    return 0;
+    return Number(pricing.planPremiumMonthlyPriceUzs || pricing.planPremiumPrice || 0);
   }
 
   function syncPlanVisibilityByUserPlan(userPlan) {
-    const isBasic = userPlan === "basic";
     const isPremium = userPlan === "premium";
 
     if (dom.planBasicCard instanceof HTMLElement) {
-      dom.planBasicCard.classList.toggle("hidden", isBasic || isPremium);
+      dom.planBasicCard.classList.add("hidden");
     }
     if (dom.planPremiumCard instanceof HTMLElement) {
-      dom.planPremiumCard.classList.toggle("hidden", isPremium);
+      dom.planPremiumCard.classList.remove("hidden");
     }
     if (dom.planSection instanceof HTMLElement) {
-      const hideWholeSection = isPremium;
-      dom.planSection.classList.toggle("hidden", hideWholeSection);
+      dom.planSection.classList.toggle("hidden", isPremium);
     }
 
-    if (isBasic) {
-      dom.planBasic.checked = false;
-      dom.planPremium.checked = true;
-      dom.planBasic.disabled = true;
-      dom.planPremium.disabled = false;
-    }
-    if (isPremium) {
-      dom.planBasic.checked = false;
-      dom.planPremium.checked = true;
-      dom.planBasic.disabled = true;
-      dom.planPremium.disabled = true;
-    }
+    dom.planBasic.checked = false;
+    dom.planBasic.disabled = true;
+    dom.planPremium.checked = true;
+    dom.planPremium.disabled = isPremium;
   }
 
   async function refreshPricing() {
@@ -755,7 +748,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
       current.digits !== String(baseline.digits || "") ||
       current.name !== String(baseline.name || "") ||
       current.bracelet !== Boolean(baseline.bracelet) ||
-      current.plan !== String(baseline.plan || "basic")
+      current.plan !== String(baseline.plan || "premium")
     );
   }
 
@@ -904,7 +897,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
   }
 
   function planLabel(plan) {
-    return String(plan || "").toLowerCase() === "premium" ? "Премиум" : "Базовый";
+    return "Премиум";
   }
 
   function buildPendingPaymentUrl(order) {
@@ -1064,7 +1057,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     setPendingStatus("", "neutral");
 
     if (message) {
-      const tone = action === "already_basic" || action === "already_premium" || action === "upgrade" ? "neutral" : (canPurchase ? "neutral" : "error");
+      const tone = action === "already_premium" || action === "upgrade" ? "neutral" : (canPurchase ? "neutral" : "error");
       setStatus(message, tone);
     } else {
       setStatus("", "neutral");
@@ -1139,10 +1132,9 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     const requestedPlan = selectedPlan();
     const pricingSettings = getPricing();
     const userPlan = currentUserPlan();
-    const hasExistingPlan = userPlan === "basic" || userPlan === "premium";
     const planCharge = resolvePlanCharge(requestedPlan, userPlan, pricingSettings);
     const planCardBasic = pricingSettings.planBasicPrice;
-    const planCardPremium = userPlan === "basic" ? pricingSettings.premiumUpgradePrice : pricingSettings.planPremiumPrice;
+    const planCardPremium = Number(pricingSettings.planPremiumMonthlyPriceUzs || pricingSettings.planPremiumPrice || 0);
     const bracelet = dom.bracelet.checked;
     const slugBasePrice = Number(state.slugPricing?.basePrice || DEFAULT_SLUG_PRICING.basePrice);
     const fallbackSlugPrice = pricing ? pricing.total : 0;
@@ -1205,22 +1197,16 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
       dom.planBasicPrice.textContent = `${formatPrice(planCardBasic)} сум`;
     }
     if (dom.planBasicNote instanceof HTMLElement) {
-      dom.planBasicNote.textContent =
-        userPlan === "basic" || userPlan === "premium" ? "уже куплен ✓" : "один раз · навсегда";
+      dom.planBasicNote.textContent = "legacy";
     }
     if (dom.planPremiumPrice instanceof HTMLElement) {
       dom.planPremiumPrice.textContent = `${formatPrice(planCardPremium)} сум`;
     }
     if (dom.planPremiumNote instanceof HTMLElement) {
-      dom.planPremiumNote.textContent =
-        userPlan === "premium"
-          ? "уже куплен ✓"
-          : userPlan === "basic"
-            ? `${formatPrice(pricingSettings.premiumUpgradePrice)} сум · апгрейд`
-            : "один раз · навсегда";
+      dom.planPremiumNote.textContent = userPlan === "premium" ? "подписка активна ✓" : "$2/мес";
     }
     if (dom.planActivationNote instanceof HTMLElement) {
-      dom.planActivationNote.textContent = "После оплаты мы активируем твой тариф и UNQ.";
+      dom.planActivationNote.textContent = "После оплаты активируем Premium на 30 дней.";
     }
     syncPlanVisibilityByUserPlan(userPlan);
 
@@ -1282,7 +1268,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
       dom.totalSlugValue.textContent = `${formatPrice(slugPayable)} сум`;
     }
     if (dom.totalPlanTitle instanceof HTMLElement) {
-      dom.totalPlanTitle.textContent = requestedPlan === "premium" ? "Тариф Премиум" : "Тариф Базовый";
+      dom.totalPlanTitle.textContent = "Подписка Premium";
     }
     if (dom.totalPlanValue instanceof HTMLElement) {
       dom.totalPlanValue.textContent =
@@ -1332,7 +1318,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
       dom.totalNow.textContent = `${formatPrice(oneTime)} сум`;
     }
     if (dom.totalMonthly instanceof HTMLElement) {
-      dom.totalMonthly.textContent = "Единоразово · больше не платишь";
+      dom.totalMonthly.textContent = "Premium подписка · $2/мес · продление вручную";
     }
     {
       const campaignApplied = Boolean(referral?.campaignApplied);
@@ -1571,10 +1557,10 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     const queryTheme = params.get("theme");
     const parsed = splitSlug(options.slug || "");
     const currentPlan = normalizePlan(precheck?.currentPlan || currentUserPlan());
-    const defaultPlan = currentPlan === "premium" ? "premium" : "basic";
-    const contextPlan = precheck?.resolvedPlan === "premium" ? "premium" : precheck?.resolvedPlan === "basic" ? "basic" : "";
+    const defaultPlan = "premium";
+    const contextPlan = precheck?.resolvedPlan === "premium" ? "premium" : "";
     const planCandidate = contextPlan || options.plan || queryPlan || defaultPlan;
-    const plan = planCandidate === "premium" ? "premium" : "basic";
+    const plan = planCandidate === "premium" ? "premium" : "premium";
     const attribution = resolveAttributionFromOptions({
       ...options,
       refSource: precheck?.referral?.source || options.refSource,
@@ -1592,21 +1578,14 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
       dom.promoCode.value = state.promoCode;
     }
     if (currentPlan === "none") {
-      dom.planBasic.disabled = false;
       dom.planPremium.disabled = false;
-      dom.planBasic.checked = plan === "basic";
-      dom.planPremium.checked = plan === "premium";
-    } else if (currentPlan === "basic") {
-      dom.planBasic.disabled = true;
-      dom.planPremium.disabled = false;
-      dom.planBasic.checked = plan !== "premium";
       dom.planPremium.checked = plan === "premium";
     } else {
-      dom.planBasic.disabled = true;
       dom.planPremium.disabled = true;
-      dom.planBasic.checked = false;
       dom.planPremium.checked = true;
     }
+    dom.planBasic.disabled = true;
+    dom.planBasic.checked = false;
     syncPlanVisibilityByUserPlan(currentPlan);
     dom.bracelet.checked = state.braceletForced;
     dom.bracelet.disabled = state.braceletForced;
@@ -1803,7 +1782,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
         const braceletPrice = Number(payload?.pricing?.braceletPrice || 0);
         const totalAmount = Number(payload?.pricing?.totalOneTime || 0);
         const orderCode = String(payload?.payment?.reference || "").trim() || `UNQX-${String(payload.orderId).replace(/[^a-zA-Z0-9]/g, "").slice(0, 10).toUpperCase()}`;
-        const planLabel = plan === "premium" ? "Тариф Премиум" : "Тариф Базовый";
+        const planLabel = "Подписка Premium";
         const baseLine = slugBasePrice > slugPrice ? `• База UNQ ${pricing.slug}: ${formatPrice(slugBasePrice)} сум\n` : "";
         const referralLine = inviteeDiscountApplied > 0 ? `• Скидка по рефералке: -${formatPrice(inviteeDiscountApplied)} сум\n` : "";
         const promoLine = promoDiscountApplied > 0 ? `• Скидка по промокоду${promoCodeApplied ? ` (${promoCodeApplied})` : ""}: -${formatPrice(promoDiscountApplied)} сум\n` : "";
@@ -1845,7 +1824,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
         return;
       }
       if (error.code === "BASIC_SLUG_LIMIT_REACHED") {
-        setStatus("Купи Премиум чтобы добавить UNQ", "error");
+        setStatus("Продлите Premium, чтобы добавить UNQ.", "error");
         return;
       }
       if (error.code === "PREMIUM_SLUG_LIMIT_REACHED") {

@@ -17,6 +17,7 @@ const {
 const {
   verifyPrivatePasswordForOwner,
 } = require("../../services/private-access-store");
+const { isSubscriptionActive } = require("../../services/subscription");
 
 const router = express.Router();
 const WRITE_OPERATIONS = new Set(["write", "lock"]);
@@ -121,6 +122,14 @@ function normalizeSource(value) {
   }
 
   return "direct";
+}
+
+function isMobilePublicOwnerVisible(input) {
+  return isSubscriptionActive({
+    plan: input?.plan,
+    subscriptionStartedAt: input?.subscriptionStartedAt || null,
+    subscriptionExpiresAt: input?.subscriptionExpiresAt || null,
+  });
 }
 
 function normalizeCityKey(value) {
@@ -1148,7 +1157,7 @@ router.get(
           taps: Number(item.tap_count || 0),
           saved: Boolean(item.saved),
           subscribed: Boolean(item.subscribed),
-          tag: String(item.tag || "basic"),
+          tag: String(item.tag || "none"),
           lastSeen: toIso(item.last_tap_at),
         })),
       });
@@ -1186,7 +1195,9 @@ router.get(
             COALESCE(pc.name, u.display_name, u.first_name, 'Unknown') AS name,
             pc.avatar_url AS "avatarUrl",
             COALESCE(u.verified_company, '') AS city,
-            COALESCE(u.plan, 'basic') AS tag,
+            COALESCE(u.plan, 'none') AS tag,
+            NULL::timestamptz AS "subscriptionStartedAt",
+            NULL::timestamptz AS "subscriptionExpiresAt",
             COALESCE(s.analytics_views_count, 0) AS taps,
             COALESCE(uc.subscribed, FALSE) AS subscribed,
             COALESCE(uc.saved, FALSE) AS saved
@@ -1222,7 +1233,9 @@ router.get(
             COALESCE(pc.name, u.display_name, u.first_name, 'Unknown') AS name,
             pc.avatar_url AS "avatarUrl",
             COALESCE(u.verified_company, '') AS city,
-            COALESCE(u.plan, 'basic') AS tag,
+            COALESCE(u.plan, 'none') AS tag,
+            u.subscription_started_at AS "subscriptionStartedAt",
+            u.subscription_expires_at AS "subscriptionExpiresAt",
             COALESCE(s.analytics_views_count, 0) AS taps,
             FALSE AS subscribed,
             FALSE AS saved
@@ -1248,16 +1261,24 @@ router.get(
     }
 
     res.json({
-      items: (Array.isArray(rows) ? rows : []).map((item) => ({
-        slug: sanitizeSlug(item.slug),
-        name: String(item.name || "Unknown"),
-        avatarUrl: item.avatarUrl || null,
-        city: String(item.city || ""),
-        tag: String(item.tag || "basic"),
-        taps: Number(item.taps || 0),
-        subscribed: Boolean(item.subscribed),
-        saved: Boolean(item.saved),
-      })),
+      items: (Array.isArray(rows) ? rows : [])
+        .filter((item) =>
+          isMobilePublicOwnerVisible({
+            plan: String(item.tag || "none"),
+            subscriptionStartedAt: item.subscriptionStartedAt,
+            subscriptionExpiresAt: item.subscriptionExpiresAt,
+          }),
+        )
+        .map((item) => ({
+          slug: sanitizeSlug(item.slug),
+          name: String(item.name || "Unknown"),
+          avatarUrl: item.avatarUrl || null,
+          city: String(item.city || ""),
+          tag: String(item.tag || "none"),
+          taps: Number(item.taps || 0),
+          subscribed: Boolean(item.subscribed),
+          saved: Boolean(item.saved),
+        })),
       page,
       limit,
     });
@@ -1293,7 +1314,9 @@ router.get(
             pc.avatar_url AS "avatarUrl",
             COALESCE(u.username, u.telegram_username, '') AS username,
             COALESCE(u.verified_company, '') AS city,
-            COALESCE(u.plan, 'basic') AS tag,
+            COALESCE(u.plan, 'none') AS tag,
+            u.subscription_started_at AS "subscriptionStartedAt",
+            u.subscription_expires_at AS "subscriptionExpiresAt",
             COALESCE(s.analytics_views_count, 0) AS taps,
             COALESCE(pc.role, '') AS role,
             COALESCE(pc.bio, '') AS bio,
@@ -1325,6 +1348,10 @@ router.get(
 
     const row = Array.isArray(rows) ? rows[0] : null;
     if (!row) {
+      res.status(404).json({ error: "Resident not found", code: "NOT_FOUND" });
+      return;
+    }
+    if (!isMobilePublicOwnerVisible(row)) {
       res.status(404).json({ error: "Resident not found", code: "NOT_FOUND" });
       return;
     }
@@ -1381,7 +1408,7 @@ router.get(
         name: String(row.name || "Unknown"),
         avatarUrl: row.avatarUrl || null,
         city: String(row.city || ""),
-        tag: String(row.tag || "basic"),
+        tag: String(row.tag || "none"),
         taps: Number(row.taps || 0),
         role: String(row.role || ""),
         bio: String(row.bio || ""),
@@ -1439,11 +1466,19 @@ router.post(
         owner: {
           select: {
             status: true,
+            plan: true,
+            subscriptionStartedAt: true,
+            subscriptionExpiresAt: true,
           },
         },
       },
     });
-    if (!slugRow || !slugRow.ownerId || slugRow.owner?.status !== "active") {
+    if (
+      !slugRow ||
+      !slugRow.ownerId ||
+      slugRow.owner?.status !== "active" ||
+      !isMobilePublicOwnerVisible(slugRow.owner)
+    ) {
       res.status(404).json({ error: "Resident not found", code: "NOT_FOUND" });
       return;
     }

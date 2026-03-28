@@ -1,5 +1,9 @@
 const { prisma } = require("../db/prisma");
 const { getBraceletPrice, normalizePlan, resolveRequestedPlanForOrder, getPlanPurchaseType } = require("./pricing-settings");
+const {
+    getSubscriptionRenewalWindow,
+    buildSubscriptionRenewalPatch,
+} = require("./subscription");
 const { buildOrderPaymentDraft } = require("./payment-flow");
 const { logPaymentEvent } = require("./payment-events");
 const { sendSlugApprovedToUser, sendSlugAwaitingPaymentToUser, sendSlugRejectedToUser } = require("./telegram");
@@ -87,30 +91,33 @@ async function applyOrderStatusTransition({
         if (nextStatus === "approved") {
             const now = new Date();
             const referralSettings = await getReferralV1Settings();
-            await tx.slug.upsert({
-                where: { fullSlug: row.slug },
-                create: {
-                    letters: row.slug.slice(0, 3),
-                    digits: row.slug.slice(3),
-                    fullSlug: row.slug,
-                    ownerId: row.userId,
-                    status: "active",
-                    approvedAt: now,
-                    activatedAt: now,
-                    requestedAt: order.createdAt,
-                    pendingExpiresAt: null,
-                    isPrimary: false,
-                    price: order.slugPrice,
-                },
-                update: {
-                    ownerId: row.userId,
-                    status: "active",
-                    approvedAt: now,
-                    activatedAt: now,
-                    pendingExpiresAt: null,
-                    price: order.slugPrice,
-                },
-            });
+            const isSubscriptionRenewal = String(order.orderKind || "slug_purchase").toLowerCase() === "subscription_renewal";
+            if (!isSubscriptionRenewal) {
+                await tx.slug.upsert({
+                    where: { fullSlug: row.slug },
+                    create: {
+                        letters: row.slug.slice(0, 3),
+                        digits: row.slug.slice(3),
+                        fullSlug: row.slug,
+                        ownerId: row.userId,
+                        status: "active",
+                        approvedAt: now,
+                        activatedAt: now,
+                        requestedAt: order.createdAt,
+                        pendingExpiresAt: null,
+                        isPrimary: false,
+                        price: order.slugPrice,
+                    },
+                    update: {
+                        ownerId: row.userId,
+                        status: "active",
+                        approvedAt: now,
+                        activatedAt: now,
+                        pendingExpiresAt: null,
+                        price: order.slugPrice,
+                    },
+                });
+            }
 
             const existingUser = await tx.user.findUnique({
                 where: { id: row.userId },
@@ -118,6 +125,9 @@ async function applyOrderStatusTransition({
                     plan: true,
                     planPurchasedAt: true,
                     planUpgradedAt: true,
+                    subscriptionStartedAt: true,
+                    subscriptionExpiresAt: true,
+                    subscriptionRenewedAt: true,
                 },
             });
             const currentPlan = normalizePlan(existingUser?.plan);
@@ -125,66 +135,71 @@ async function applyOrderStatusTransition({
                 currentPlan,
                 requestedPlan: order.requestedPlan,
             });
-            const userPatch = { plan: nextPlan };
-            if (currentPlan === "none" && (nextPlan === "basic" || nextPlan === "premium")) {
-                userPatch.planPurchasedAt = existingUser?.planPurchasedAt || now;
-            }
-            if (currentPlan === "basic" && nextPlan === "premium") {
-                userPatch.planUpgradedAt = now;
-                userPatch.planPurchasedAt = existingUser?.planPurchasedAt || now;
-            }
+            const planPrice = Number(order.planPrice || 0);
+            const shouldRenewSubscription = isSubscriptionRenewal || planPrice > 0;
+            const userPatch = shouldRenewSubscription
+                ? buildSubscriptionRenewalPatch(existingUser, {
+                    now,
+                    months: Math.max(1, Number(order.subscriptionMonths || 1)),
+                })
+                : { plan: nextPlan };
             await tx.user.update({
                 where: { id: row.userId },
                 data: userPatch,
             });
 
-            const hasPrimary = await tx.slug.count({
-                where: {
-                    ownerId: row.userId,
-                    isPrimary: true,
-                    status: { in: ["approved", "active", "paused", "private"] },
-                },
-            });
-            if (!hasPrimary) {
-                await tx.slug.update({
-                    where: { fullSlug: row.slug },
-                    data: { isPrimary: true },
+            if (!isSubscriptionRenewal) {
+                const hasPrimary = await tx.slug.count({
+                    where: {
+                        ownerId: row.userId,
+                        isPrimary: true,
+                        status: { in: ["approved", "active", "paused", "private"] },
+                    },
                 });
+                if (!hasPrimary) {
+                    await tx.slug.update({
+                        where: { fullSlug: row.slug },
+                        data: { isPrimary: true },
+                    });
+                }
             }
 
             if (order.status !== "approved" && tx.purchase && typeof tx.purchase.create === "function") {
-                const slugPurchase = await tx.purchase.create({
-                    data: {
-                        userId: row.userId,
-                        type: "slug",
-                        amount: Number(order.slugPrice || 0),
-                        slug: row.slug,
-                        purchasedAt: now,
-                        approvedByAdmin: actor,
-                        approvedAt: now,
-                        note: `order:${row.id};payment:${paymentAuditNote}`,
-                        refCode: order.refCode || null,
-                        refSource: order.refSource || null,
-                        refOffer: order.refOffer || null,
-                        campaignId: order.campaignId || null,
-                        promoCode: order.promoCode || null,
-                        fraudVerdict: order.fraudVerdict || null,
-                        fraudReason: order.fraudReason || null,
-                        campaignSnapshot: order.campaignSnapshot || null,
-                        inviteeDiscountApplied: Number(order.inviteeDiscountApplied || 0),
-                        promoDiscountApplied: Number(order.promoDiscountApplied || 0),
-                        bonusSpent: Number(order.bonusSpent || 0),
-                        discountCapApplied: Number(order.discountCapApplied || 0),
-                    },
-                    select: { id: true },
-                });
+                const slugPurchase = !isSubscriptionRenewal
+                    ? await tx.purchase.create({
+                        data: {
+                            userId: row.userId,
+                            type: "slug",
+                            amount: Number(order.slugPrice || 0),
+                            slug: row.slug,
+                            purchasedAt: now,
+                            approvedByAdmin: actor,
+                            approvedAt: now,
+                            note: `order:${row.id};payment:${paymentAuditNote}`,
+                            refCode: order.refCode || null,
+                            refSource: order.refSource || null,
+                            refOffer: order.refOffer || null,
+                            campaignId: order.campaignId || null,
+                            promoCode: order.promoCode || null,
+                            fraudVerdict: order.fraudVerdict || null,
+                            fraudReason: order.fraudReason || null,
+                            campaignSnapshot: order.campaignSnapshot || null,
+                            inviteeDiscountApplied: Number(order.inviteeDiscountApplied || 0),
+                            promoDiscountApplied: Number(order.promoDiscountApplied || 0),
+                            bonusSpent: Number(order.bonusSpent || 0),
+                            discountCapApplied: Number(order.discountCapApplied || 0),
+                        },
+                        select: { id: true },
+                    })
+                    : null;
 
-                const planPurchaseType = getPlanPurchaseType({
-                    currentPlan,
-                    requestedPlan: nextPlan,
-                });
                 const planPrice = Number(order.planPrice || 0);
-                if (planPurchaseType && planPrice > 0) {
+                if (planPrice > 0) {
+                    const planPurchaseType = getPlanPurchaseType({ forceSubscriptionCharge: true });
+                    const renewalWindow = getSubscriptionRenewalWindow(existingUser, {
+                        now,
+                        months: Math.max(1, Number(order.subscriptionMonths || 1)),
+                    });
                     await tx.purchase.create({
                         data: {
                             userId: row.userId,
@@ -195,11 +210,13 @@ async function applyOrderStatusTransition({
                             approvedByAdmin: actor,
                             approvedAt: now,
                             note: `order:${row.id};payment:${paymentAuditNote}`,
+                            subscriptionPeriodStart: renewalWindow.startAt,
+                            subscriptionPeriodEnd: renewalWindow.endAt,
                         },
                     });
                 }
 
-                if (order.bracelet) {
+                if (!isSubscriptionRenewal && order.bracelet) {
                     await tx.purchase.create({
                         data: {
                             userId: row.userId,
@@ -214,21 +231,22 @@ async function applyOrderStatusTransition({
                     });
                 }
 
-                const isFraudAllowed = String(order.fraudVerdict || "allow") === "allow";
-                const promoApplied =
-                    Number(order.promoDiscountApplied || 0) > 0 || Boolean(order.promoCode);
-                const rewardAmountFromSnapshot = Math.max(
-                    0,
-                    Math.round(Number(order?.campaignSnapshot?.referrerReward || referralSettings.referrerReward || 0)),
-                );
-                const shouldProcessReferral =
-                    !promoApplied &&
-                    (referralSettings.enabled ||
-                        Number(order.inviteeDiscountApplied || 0) > 0 ||
-                        Number(order.bonusSpent || 0) > 0 ||
-                        Boolean(order.refCode));
+                if (!isSubscriptionRenewal && slugPurchase) {
+                    const isFraudAllowed = String(order.fraudVerdict || "allow") === "allow";
+                    const promoApplied =
+                        Number(order.promoDiscountApplied || 0) > 0 || Boolean(order.promoCode);
+                    const rewardAmountFromSnapshot = Math.max(
+                        0,
+                        Math.round(Number(order?.campaignSnapshot?.referrerReward || referralSettings.referrerReward || 0)),
+                    );
+                    const shouldProcessReferral =
+                        !promoApplied &&
+                        (referralSettings.enabled ||
+                            Number(order.inviteeDiscountApplied || 0) > 0 ||
+                            Number(order.bonusSpent || 0) > 0 ||
+                            Boolean(order.refCode));
 
-                if (shouldProcessReferral && tx.referralConversion) {
+                    if (shouldProcessReferral && tx.referralConversion) {
                     const referrer = await resolveReferrerForUser({
                         userId: row.userId,
                         explicitRefCode: order.refCode || "",
@@ -294,15 +312,16 @@ async function applyOrderStatusTransition({
                             note: `Referral reward for order ${row.id}`,
                         });
                     }
-                }
+                    }
 
-                if (!promoApplied) {
-                    await finalizeCampaignUsage({
-                        tx,
-                        orderId: row.id,
-                        purchaseId: slugPurchase.id,
-                        amountSpent: Number(order.inviteeDiscountApplied || 0),
-                    });
+                    if (!promoApplied) {
+                        await finalizeCampaignUsage({
+                            tx,
+                            orderId: row.id,
+                            purchaseId: slugPurchase.id,
+                            amountSpent: Number(order.inviteeDiscountApplied || 0),
+                        });
+                    }
                 }
             }
         }

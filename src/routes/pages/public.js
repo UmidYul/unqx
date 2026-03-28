@@ -15,6 +15,7 @@ const { normalizeRefCode } = require("../../services/referrals");
 const { getPricingSettings } = require("../../services/pricing-settings");
 const { getManySettings } = require("../../services/platform-settings");
 const { recordView } = require("../../services/tap-tracker");
+const { isPublicProfileVisible } = require("../../services/subscription");
 const {
   verifyPrivateAccessToken,
   extractPrivateAccessToken,
@@ -298,6 +299,8 @@ async function findUserByTelegramIdWithLegacyFallback(userId) {
         displayName: true,
         status: true,
         plan: true,
+        subscriptionStartedAt: true,
+        subscriptionExpiresAt: true,
         isVerified: true,
         verifiedCompany: true,
       },
@@ -322,6 +325,8 @@ async function findUserByTelegramIdWithLegacyFallback(userId) {
       displayName: null,
       status: "active",
       plan: "none",
+      subscriptionStartedAt: null,
+      subscriptionExpiresAt: null,
       isVerified: false,
       verifiedCompany: null,
     };
@@ -671,10 +676,9 @@ router.get(
         "platform_total_slugs",
         "pricing_footnote",
         "pricing_section_visible",
-        "plan_basic_name",
         "plan_premium_name",
-        "plan_basic_features",
-        "plan_basic_excluded_features",
+        "plan_premium_monthly_price_usd",
+        "plan_premium_monthly_price_uzs",
         "plan_premium_features",
         "plan_premium_excluded_features",
         "plan_premium_popular_badge",
@@ -720,6 +724,9 @@ router.get(
               owner: {
                 select: {
                   status: true,
+                  plan: true,
+                  subscriptionStartedAt: true,
+                  subscriptionExpiresAt: true,
                   firstName: true,
                   displayName: true,
                   profileCard: {
@@ -740,7 +747,7 @@ router.get(
           const slug = String(row?.fullSlug || "").trim().toUpperCase();
           const owner = row?.owner;
           const card = owner?.profileCard;
-          if (!slug || !owner || owner.status !== "active" || !card) {
+          if (!slug || !owner || !isPublicProfileVisible(owner) || !card) {
             continue;
           }
 
@@ -959,6 +966,19 @@ router.get(
       referrerName,
       referrerUsername,
       noindex: true,
+      adminSession: getAdminSession(req),
+    });
+  }),
+);
+
+router.get(
+  "/unqx-game",
+  requireVerifiedUserPage,
+  asyncHandler(async (req, res) => {
+    res.render("public/unqx-game", {
+      title: "UNQX Game | Крути комбинации",
+      description: "UNQX Game: крути случайные свободные комбинации и смотри цену по актуальным правилам UNQX.",
+      image: defaultSocialImage,
       adminSession: getAdminSession(req),
     });
   }),
@@ -1372,6 +1392,9 @@ router.get(
             isVerified: true,
             verifiedCompany: true,
             directorySector: true,
+            plan: true,
+            subscriptionStartedAt: true,
+            subscriptionExpiresAt: true,
             unqScore: {
               select: {
                 score: true,
@@ -1412,6 +1435,7 @@ router.get(
     for (const row of rows) {
       const owner = row.owner;
       if (!owner?.id) continue;
+      if (!isPublicProfileVisible(owner)) continue;
 
       const ownerId = String(owner.id);
       const tags = Array.isArray(owner.profileCard?.tags) ? owner.profileCard.tags : [];
@@ -1519,12 +1543,17 @@ router.get(
     ]);
 
     if (!owner || owner.status !== "active") {
-      res.status(200).render("public/qr", {
-        title: `QR ${slug}`,
-        description: `QR-взтка UNQ ${slug} вреенно неоступна.`,
-        image: defaultSocialImage,
+      res.status(404).render("public/not-found", {
+        title: "Страница не найдена",
         slug,
-        unavailable: true,
+        adminSession: getAdminSession(req),
+      });
+      return;
+    }
+    if (!isPublicProfileVisible(owner)) {
+      res.status(404).render("public/not-found", {
+        title: "Страница не найдена",
+        slug,
         adminSession: getAdminSession(req),
       });
       return;
@@ -1632,6 +1661,14 @@ router.get(
           });
           return;
         }
+        if (!isPublicProfileVisible(owner)) {
+          res.status(404).render("public/not-found", {
+            title: "Страница не найдена",
+            slug,
+            adminSession: getAdminSession(req),
+          });
+          return;
+        }
         const profileCard = slugRow.ownerId
           ? await findProfileCardByOwnerId(slugRow.ownerId)
           : null;
@@ -1703,6 +1740,14 @@ router.get(
             ctaLabel: "",
             ctaHref: "",
             noindex: true,
+            adminSession: getAdminSession(req),
+          });
+          return;
+        }
+        if (!isPublicProfileVisible(owner)) {
+          res.status(404).render("public/not-found", {
+            title: "Страница не найдена",
+            slug,
             adminSession: getAdminSession(req),
           });
           return;

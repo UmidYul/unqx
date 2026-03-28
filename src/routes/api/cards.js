@@ -1,4 +1,4 @@
-const { createHash } = require("node:crypto");
+﻿const { createHash } = require("node:crypto");
 
 const express = require("express");
 
@@ -22,10 +22,15 @@ const {
   resolveRequestedPlanForOrder,
   getPlanCharge,
 } = require("../../services/pricing-settings");
+const {
+  isSubscriptionActive,
+  getSubscriptionSnapshot,
+  getSubscriptionRenewalWindow,
+} = require("../../services/subscription");
 const { asyncHandler } = require("../../middleware/async");
 const { requireSameOrigin } = require("../../middleware/same-origin");
 const { requireCsrfToken } = require("../../middleware/csrf");
-const { publicOrderRateLimit } = require("../../middleware/rate-limit");
+const { publicOrderRateLimit, publicGameSpinRateLimit } = require("../../middleware/rate-limit");
 const { getUserSession, requireUserApi } = require("../../middleware/auth");
 const { OrderRequestSchema } = require("../../validation/order-request");
 const { getSetting, getManySettings } = require("../../services/platform-settings");
@@ -74,6 +79,10 @@ const FALLBACK_SUPPORT_TELEGRAM = "unqx_uz";
 const AFFORDABLE_CACHE_TTL_LOW_LOAD_MS = 10_000;
 const AFFORDABLE_CACHE_TTL_MEDIUM_LOAD_MS = 8_000;
 const AFFORDABLE_CACHE_TTL_HIGH_LOAD_MS = 5_000;
+const UNQX_GAME_HISTORY_DEFAULT_LIMIT = 30;
+const UNQX_GAME_HISTORY_MAX_LIMIT = 100;
+const UNQX_GAME_GENERATION_ROUNDS = 12;
+const UNQX_GAME_GENERATION_BATCH_SIZE = 64;
 const affordableCandidatesCache = {
   expiresAt: 0,
   candidates: [],
@@ -294,15 +303,15 @@ function resolveInviteeDiscountCandidate({
 function toOrderStatusLabel(status) {
   switch (status) {
     case "NEW":
-      return "Новая";
+      return "РќРѕРІР°СЏ";
     case "CONTACTED":
-      return "Связались";
+      return "РЎРІСЏР·Р°Р»РёСЃСЊ";
     case "PAID":
-      return "Оплачено";
+      return "РћРїР»Р°С‡РµРЅРѕ";
     case "ACTIVATED":
-      return "Активировано";
+      return "РђРєС‚РёРІРёСЂРѕРІР°РЅРѕ";
     case "REJECTED":
-      return "Отклонено";
+      return "РћС‚РєР»РѕРЅРµРЅРѕ";
     default:
       return status;
   }
@@ -334,12 +343,12 @@ function mapOrderValidationIssues(error) {
     const field = issue.path && issue.path[0];
 
     if (field === "name") {
-      issues.name = issue.message || "Имя обязательно";
+      issues.name = issue.message || "РРјСЏ РѕР±СЏР·Р°С‚РµР»СЊРЅРѕ";
       continue;
     }
 
     if (field === "letters" || field === "digits") {
-      issues.slug = "UNQ должен быть в формате AAA000";
+      issues.slug = "UNQ РґРѕР»Р¶РµРЅ Р±С‹С‚СЊ РІ С„РѕСЂРјР°С‚Рµ AAA000";
       continue;
     }
 
@@ -355,6 +364,74 @@ function splitSlug(slug) {
   return {
     letters: slug.slice(0, 3),
     digits: slug.slice(3),
+  };
+}
+
+function normalizeUnqxGameHistoryLimit(value) {
+  const parsed = Number.parseInt(String(value ?? ""), 10);
+  if (!Number.isFinite(parsed)) {
+    return UNQX_GAME_HISTORY_DEFAULT_LIMIT;
+  }
+  return Math.max(1, Math.min(UNQX_GAME_HISTORY_MAX_LIMIT, parsed));
+}
+
+function mapUnqxGameSpinEntry(entry) {
+  const createdAtRaw = entry?.createdAt;
+  const createdAt = createdAtRaw instanceof Date ? createdAtRaw : new Date(createdAtRaw || "");
+  return {
+    id: String(entry?.id || ""),
+    slug: String(entry?.slug || "").toUpperCase(),
+    price: Math.max(0, Math.round(Number(entry?.price || 0))),
+    createdAt: Number.isFinite(createdAt.getTime()) ? createdAt.toISOString() : new Date().toISOString(),
+  };
+}
+
+async function buildSlugPricePayload(slug) {
+  const parsed = splitSlug(slug);
+  if (!parsed) {
+    return null;
+  }
+
+  const [pricing, slugRow] = await Promise.all([
+    calculateSlugPriceFromSettings({
+      letters: parsed.letters,
+      digits: parsed.digits,
+    }),
+    withMissingTableFallback("Slug", null, () =>
+      prisma.slug.findUnique({
+        where: { fullSlug: slug },
+        select: { price: true },
+      }),
+    ),
+  ]);
+  const hasPriceOverride = typeof slugRow?.price === "number";
+  const basePrice = hasPriceOverride ? Number(slugRow.price) : Number(pricing.total);
+  const activeSale = await getActiveFlashSale();
+  const flash = applyFlashSaleToPrice({
+    slug,
+    basePrice,
+    sale: activeSale,
+  });
+
+  return {
+    slug,
+    validFormat: true,
+    price: flash.finalPrice,
+    basePrice: flash.basePrice,
+    calculatedPrice: Number(pricing.total),
+    calculation: {
+      basePrice: Number(pricing.basePrice || 0),
+      lettersMultiplier: Number(pricing.letters?.multiplier || 1),
+      digitsMultiplier: Number(pricing.digits?.multiplier || 1),
+      multipliedBase: Number(pricing.multipliedBase || 0),
+      customDeltaTotal: Number(pricing.customDeltaTotal || 0),
+      customBreakdown: Array.isArray(pricing.customBreakdown) ? pricing.customBreakdown : [],
+    },
+    hasFlashSale: flash.hasDiscount,
+    discountAmount: flash.discountAmount,
+    discountPercent: flash.discountPercent,
+    flashSaleId: flash.hasDiscount ? activeSale.id : null,
+    source: hasPriceOverride ? "override" : "calculator",
   };
 }
 
@@ -376,10 +453,17 @@ async function findSlugForPrivateAccess(fullSlug) {
       owner: {
         select: {
           status: true,
+          plan: true,
+          subscriptionExpiresAt: true,
+          subscriptionStartedAt: true,
         },
       },
     },
   });
+}
+
+function isPublicOwnerAvailable(owner) {
+  return Boolean(owner && owner.status === "active" && isSubscriptionActive(owner));
 }
 
 function buildPrivateAccessResponsePayload({ token, expiresAt }) {
@@ -410,7 +494,7 @@ function mapSlugRowToState(slug, slugRow) {
   }
 
   const ownerFromSlug =
-    slugRow.owner && ["approved", "active", "private", "paused"].includes(slugRow.status)
+    slugRow.owner && isPublicOwnerAvailable(slugRow.owner) && ["approved", "active", "private", "paused"].includes(slugRow.status)
       ? {
         name: slugRow.owner.profileCard?.name || slugRow.owner.firstName || "UNQX User",
         avatarUrl: slugRow.owner.profileCard?.avatarUrl || null,
@@ -456,6 +540,10 @@ async function getSlugStatesBulk(slugs = []) {
         owner: {
           select: {
             firstName: true,
+            status: true,
+            plan: true,
+            subscriptionExpiresAt: true,
+            subscriptionStartedAt: true,
             profileCard: {
               select: {
                 name: true,
@@ -524,6 +612,32 @@ function randomSlug() {
   const letters = Array.from({ length: 3 }, () => String.fromCharCode(65 + Math.floor(Math.random() * 26))).join("");
   const digits = String(Math.floor(Math.random() * 1000)).padStart(3, "0");
   return `${letters}${digits}`;
+}
+
+async function generateRandomAvailableSlug({
+  rounds = UNQX_GAME_GENERATION_ROUNDS,
+  batchSize = UNQX_GAME_GENERATION_BATCH_SIZE,
+} = {}) {
+  const totalRounds = Math.max(1, Math.min(40, Number(rounds) || UNQX_GAME_GENERATION_ROUNDS));
+  const totalBatchSize = Math.max(10, Math.min(300, Number(batchSize) || UNQX_GAME_GENERATION_BATCH_SIZE));
+
+  for (let i = 0; i < totalRounds; i += 1) {
+    const candidatesSet = new Set();
+    while (candidatesSet.size < totalBatchSize) {
+      candidatesSet.add(randomSlug());
+    }
+    const candidates = Array.from(candidatesSet).filter((item) => SLUG_REGEX.test(item));
+    if (!candidates.length) {
+      continue;
+    }
+    const states = await getSlugStatesBulk(candidates);
+    const available = candidates.filter((candidate) => states.get(candidate)?.available === true);
+    if (available.length) {
+      return available[Math.floor(Math.random() * available.length)] || "";
+    }
+  }
+
+  return "";
 }
 
 function randomFrom(list) {
@@ -702,6 +816,10 @@ router.get(
           owner: {
             select: {
               firstName: true,
+              status: true,
+              plan: true,
+              subscriptionStartedAt: true,
+              subscriptionExpiresAt: true,
               profileCard: {
                 select: {
                   name: true,
@@ -721,6 +839,9 @@ router.get(
 
     const itemsMap = new Map();
     for (const row of newItems) {
+      if (!isPublicOwnerAvailable(row.owner)) {
+        continue;
+      }
       const parts = splitSlug(row.fullSlug);
       const calculatedPrice = parts
         ? Number(
@@ -1025,56 +1146,92 @@ router.get(
   asyncHandler(async (req, res) => {
     const raw = typeof req.query.slug === "string" ? req.query.slug : "";
     const slug = raw.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6);
-    const parsed = splitSlug(slug);
-
-    if (!parsed) {
+    const payload = await buildSlugPricePayload(slug);
+    if (!payload) {
       res.status(400).json({
         slug,
         validFormat: false,
       });
       return;
     }
+    res.json(payload);
+  }),
+);
 
-    const [pricing, slugRow] = await Promise.all([
-      calculateSlugPriceFromSettings({
-        letters: parsed.letters,
-        digits: parsed.digits,
+router.get(
+  "/unqx-game/history",
+  requireUserApi,
+  asyncHandler(async (req, res) => {
+    const limit = normalizeUnqxGameHistoryLimit(req.query.limit);
+    const rows = await withMissingTableFallback("UnqxGameSpin", [], () =>
+      prisma.unqxGameSpin.findMany({
+        orderBy: { createdAt: "desc" },
+        take: limit,
+        select: {
+          id: true,
+          slug: true,
+          price: true,
+          createdAt: true,
+        },
       }),
-      withMissingTableFallback("Slug", null, () =>
-        prisma.slug.findUnique({
-          where: { fullSlug: slug },
-          select: { price: true },
-        }),
-      ),
-    ]);
-    const hasPriceOverride = typeof slugRow?.price === "number";
-    const basePrice = hasPriceOverride ? Number(slugRow.price) : Number(pricing.total);
-    const activeSale = await getActiveFlashSale();
-    const flash = applyFlashSaleToPrice({
-      slug,
-      basePrice,
-      sale: activeSale,
+    );
+
+    res.json({
+      ok: true,
+      items: rows.map((item) => mapUnqxGameSpinEntry(item)),
+    });
+  }),
+);
+
+router.post(
+  "/unqx-game/spin",
+  requireUserApi,
+  publicGameSpinRateLimit,
+  requireSameOrigin,
+  requireCsrfToken,
+  asyncHandler(async (req, res) => {
+    const user = getUserSession(req);
+    const userId = String(user?.userId || "").trim();
+    if (!userId) {
+      res.status(401).json({ error: "Unauthorized", code: "AUTH_REQUIRED" });
+      return;
+    }
+
+    const slug = await generateRandomAvailableSlug();
+    if (!slug) {
+      res.status(503).json({
+        error: "Сейчас нет свободных комбинаций. Попробуйте ещё раз через пару секунд.",
+        code: "NO_AVAILABLE_SLUG",
+      });
+      return;
+    }
+
+    const pricingPayload = await buildSlugPricePayload(slug);
+    if (!pricingPayload) {
+      res.status(500).json({
+        error: "Не удалось рассчитать цену комбинации. Попробуйте ещё раз.",
+        code: "PRICE_RESOLVE_FAILED",
+      });
+      return;
+    }
+
+    const created = await prisma.unqxGameSpin.create({
+      data: {
+        userId,
+        slug,
+        price: Math.max(0, Math.round(Number(pricingPayload.price || 0))),
+      },
+      select: {
+        id: true,
+        slug: true,
+        price: true,
+        createdAt: true,
+      },
     });
 
     res.json({
-      slug,
-      validFormat: true,
-      price: flash.finalPrice,
-      basePrice: flash.basePrice,
-      calculatedPrice: Number(pricing.total),
-      calculation: {
-        basePrice: Number(pricing.basePrice || 0),
-        lettersMultiplier: Number(pricing.letters?.multiplier || 1),
-        digitsMultiplier: Number(pricing.digits?.multiplier || 1),
-        multipliedBase: Number(pricing.multipliedBase || 0),
-        customDeltaTotal: Number(pricing.customDeltaTotal || 0),
-        customBreakdown: Array.isArray(pricing.customBreakdown) ? pricing.customBreakdown : [],
-      },
-      hasFlashSale: flash.hasDiscount,
-      discountAmount: flash.discountAmount,
-      discountPercent: flash.discountPercent,
-      flashSaleId: flash.hasDiscount ? activeSale.id : null,
-      source: hasPriceOverride ? "override" : "calculator",
+      ok: true,
+      entry: mapUnqxGameSpinEntry(created),
     });
   }),
 );
@@ -1089,7 +1246,12 @@ router.get(
       userId
         ? prisma.user.findUnique({
           where: { id: userId },
-          select: { plan: true },
+          select: {
+            plan: true,
+            subscriptionStartedAt: true,
+            subscriptionExpiresAt: true,
+            subscriptionRenewedAt: true,
+          },
         })
         : Promise.resolve(null),
       getBraceletPrice(),
@@ -1099,6 +1261,17 @@ router.get(
       ...pricing,
       braceletPrice,
       userPlan: user?.plan || "none",
+      subscription: user
+        ? (() => {
+          const snapshot = getSubscriptionSnapshot(user);
+          return {
+            isActive: snapshot.isActive,
+            isExpired: snapshot.isExpired,
+            expiresAt: snapshot.expiresAt ? snapshot.expiresAt.toISOString() : null,
+            daysLeft: snapshot.daysLeft,
+          };
+        })()
+        : { isActive: false, isExpired: false, expiresAt: null, daysLeft: 0 },
     });
   }),
 );
@@ -1106,7 +1279,7 @@ router.get(
 router.get(
   "/order-precheck",
   asyncHandler(async (req, res) => {
-    const requestedPlan = String(req.query.requestedPlan || req.query.plan || "").trim().toLowerCase() === "premium" ? "premium" : "basic";
+    const requestedPlan = "premium";
     const activeOrdersLimit = 3;
     const sessionUser = getUserSession(req);
     const promoCodeInput = normalizePromoCode(req.query.promoCode || req.query.promo || "");
@@ -1116,7 +1289,7 @@ router.get(
       path: req.path || req.originalUrl || "",
     });
 
-    const safeFailPrecheck = (message = "Временная ошибка precheck. Попробуйте снова.") => {
+    const safeFailPrecheck = (message = "Р’СЂРµРјРµРЅРЅР°СЏ РѕС€РёР±РєР° precheck. РџРѕРїСЂРѕР±СѓР№С‚Рµ СЃРЅРѕРІР°.") => {
       res.json({
         authenticated: Boolean(sessionUser?.userId),
         accountStatus: sessionUser?.userId ? "active" : "guest",
@@ -1127,17 +1300,25 @@ router.get(
         nextAction: sessionUser?.userId ? "retry" : "login",
         message,
         pricing: {
-          planBasicPrice: 50_000,
+          planBasicPrice: 130_000,
           planPremiumPrice: 130_000,
-          premiumUpgradePrice: 80_000,
+          premiumUpgradePrice: 130_000,
+          planPremiumMonthlyPriceUsd: 2,
+          planPremiumMonthlyPriceUzs: 130_000,
           braceletPrice: 250_000,
-          planChargePreview: requestedPlan === "premium" ? 130_000 : 50_000,
+          planChargePreview: 130_000,
         },
         limits: {
           activeOrdersLimit,
           activeOrdersCount: 0,
-          slugLimit: requestedPlan === "premium" ? 3 : 1,
+          slugLimit: 3,
           userSlugsCount: 0,
+        },
+        subscription: {
+          isActive: false,
+          isExpired: false,
+          expiresAt: null,
+          daysLeft: 0,
         },
         referral: {
           enabled: false,
@@ -1199,7 +1380,7 @@ router.get(
       ]);
     } catch (error) {
       console.error("[express-app] order-precheck base load failed", error);
-      safeFailPrecheck("Не удалось загрузить precheck. Попробуйте снова.");
+      safeFailPrecheck("РќРµ СѓРґР°Р»РѕСЃСЊ Р·Р°РіСЂСѓР·РёС‚СЊ precheck. РџРѕРїСЂРѕР±СѓР№С‚Рµ СЃРЅРѕРІР°.");
       return;
     }
 
@@ -1252,17 +1433,23 @@ router.get(
         resolvedPlan: requestedPlan,
         canPurchase: false,
         nextAction: "login",
-        message: "Войдите в аккаунт, чтобы продолжить покупку тарифа.",
+        message: "Р’РѕР№РґРёС‚Рµ РІ Р°РєРєР°СѓРЅС‚, С‡С‚РѕР±С‹ РїСЂРѕРґРѕР»Р¶РёС‚СЊ РїРѕРєСѓРїРєСѓ С‚Р°СЂРёС„Р°.",
         pricing: {
           ...pricing,
           braceletPrice,
-          planChargePreview: requestedPlan === "premium" ? pricing.planPremiumPrice : pricing.planBasicPrice,
+          planChargePreview: pricing.planPremiumMonthlyPriceUzs || pricing.planPremiumPrice,
         },
         limits: {
           activeOrdersLimit,
           activeOrdersCount: 0,
-          slugLimit: requestedPlan === "premium" ? 3 : 1,
+          slugLimit: 3,
           userSlugsCount: 0,
+        },
+        subscription: {
+          isActive: false,
+          isExpired: false,
+          expiresAt: null,
+          daysLeft: 0,
         },
         referral: {
           enabled: referralSettings.enabled,
@@ -1298,6 +1485,9 @@ router.get(
         id: true,
         status: true,
         plan: true,
+        subscriptionStartedAt: true,
+        subscriptionExpiresAt: true,
+        subscriptionRenewedAt: true,
         firstName: true,
         lastName: true,
         displayName: true,
@@ -1314,17 +1504,23 @@ router.get(
         resolvedPlan: requestedPlan,
         canPurchase: false,
         nextAction: "login",
-        message: "Сессия устарела. Войдите снова.",
+        message: "РЎРµСЃСЃРёСЏ СѓСЃС‚Р°СЂРµР»Р°. Р’РѕР№РґРёС‚Рµ СЃРЅРѕРІР°.",
         pricing: {
           ...pricing,
           braceletPrice,
-          planChargePreview: requestedPlan === "premium" ? pricing.planPremiumPrice : pricing.planBasicPrice,
+          planChargePreview: pricing.planPremiumMonthlyPriceUzs || pricing.planPremiumPrice,
         },
         limits: {
           activeOrdersLimit,
           activeOrdersCount: 0,
-          slugLimit: requestedPlan === "premium" ? 3 : 1,
+          slugLimit: 3,
           userSlugsCount: 0,
+        },
+        subscription: {
+          isActive: false,
+          isExpired: false,
+          expiresAt: null,
+          daysLeft: 0,
         },
         referral: {
           enabled: referralSettings.enabled,
@@ -1354,12 +1550,13 @@ router.get(
       return;
     }
 
-    const currentPlan = normalizePlan(user.plan);
+    const subscription = getSubscriptionSnapshot(user);
+    const currentPlan = normalizePlan(subscription.effectivePlan);
     const resolvedPlan = resolveRequestedPlanForOrder({
       currentPlan,
       requestedPlan,
     });
-    const slugLimit = resolvedPlan === "premium" ? 3 : 1;
+    const slugLimit = 3;
 
     const [
       activeOrdersCount,
@@ -1506,33 +1703,28 @@ router.get(
     if (user.status === "blocked" || user.status === "deactivated") {
       nextAction = "blocked";
       canPurchase = false;
-      message = "Аккаунт временно недоступен. Обратитесь в поддержку.";
+      message = "РђРєРєР°СѓРЅС‚ РІСЂРµРјРµРЅРЅРѕ РЅРµРґРѕСЃС‚СѓРїРµРЅ. РћР±СЂР°С‚РёС‚РµСЃСЊ РІ РїРѕРґРґРµСЂР¶РєСѓ.";
     } else if (pendingOrder) {
       nextAction = "resume_pending";
       canPurchase = false;
-      message = `У вас уже есть незавершённый заказ ${pendingOrder.slug}. Продолжите оплату или отмените заказ.`;
+      message = `РЈ РІР°СЃ СѓР¶Рµ РµСЃС‚СЊ РЅРµР·Р°РІРµСЂС€С‘РЅРЅС‹Р№ Р·Р°РєР°Р· ${pendingOrder.slug}. РџСЂРѕРґРѕР»Р¶РёС‚Рµ РѕРїР»Р°С‚Сѓ РёР»Рё РѕС‚РјРµРЅРёС‚Рµ Р·Р°РєР°Р·.`;
     } else if (activeOrdersCount >= activeOrdersLimit) {
       nextAction = "limit_reached";
       canPurchase = false;
-      message = `У вас уже есть ${activeOrdersLimit} активных заказов. Дождитесь обработки или отмените один.`;
-    } else if (userSlugsCount >= slugLimit) {
+      message = `РЈ РІР°СЃ СѓР¶Рµ РµСЃС‚СЊ ${activeOrdersLimit} Р°РєС‚РёРІРЅС‹С… Р·Р°РєР°Р·РѕРІ. Р”РѕР¶РґРёС‚РµСЃСЊ РѕР±СЂР°Р±РѕС‚РєРё РёР»Рё РѕС‚РјРµРЅРёС‚Рµ РѕРґРёРЅ.`;
+        } else if (userSlugsCount >= slugLimit) {
       nextAction = "slug_limit_reached";
       canPurchase = false;
-      message = slugLimit === 3 ? "Достигнут лимит: 3 UNQ для тарифа Премиум." : "Для нового UNQ требуется переход на Премиум.";
-    } else if (currentPlan === "premium") {
+      message = "Достигнут лимит: 3 UNQ для активной подписки Premium.";
+    } else if (subscription.isActive) {
       nextAction = "checkout";
       canPurchase = true;
-      message = "Тариф Премиум уже активен. Оплачиваются только slug и дополнительные товары.";
-    } else if (currentPlan === "basic" && requestedPlan === "basic") {
-      nextAction = "checkout";
+      message = "Подписка Premium активна. Оплачиваются только slug и дополнительные товары.";
+    } else {
+      nextAction = "renew_required";
       canPurchase = true;
-      message = "Тариф Базовый уже активен. Вы можете выбрать Премиум для расширенных возможностей.";
-    } else if (currentPlan === "basic" && requestedPlan === "premium") {
-      nextAction = "upgrade";
-      canPurchase = true;
-      message = "Доступно обновление до тарифа Премиум.";
+      message = "Подписка Premium неактивна. В заказ будет добавлен 1 месяц подписки.";
     }
-
     const discountCandidate = resolveInviteeDiscountCandidate({
       referralEnabled: referralSettings.enabled,
       campaignSnapshot,
@@ -1566,6 +1758,7 @@ router.get(
           currentPlan,
           requestedPlan: resolvedPlan,
           pricing,
+          user,
         }),
       },
       limits: {
@@ -1573,6 +1766,12 @@ router.get(
         activeOrdersCount,
         slugLimit,
         userSlugsCount,
+      },
+      subscription: {
+        isActive: subscription.isActive,
+        isExpired: subscription.isExpired,
+        expiresAt: subscription.expiresAt ? subscription.expiresAt.toISOString() : null,
+        daysLeft: subscription.daysLeft,
       },
       referral: {
         enabled: referralSettings.enabled,
@@ -1634,12 +1833,15 @@ router.post(
         username: true,
         telegramUsername: true,
         plan: true,
+        subscriptionStartedAt: true,
+        subscriptionExpiresAt: true,
+        subscriptionRenewedAt: true,
         status: true,
       },
     });
 
     if (!user || user.status === "blocked" || user.status === "deactivated") {
-      res.status(403).json({ error: "Аккаунт недоступен", code: "ACCOUNT_DISABLED" });
+      res.status(403).json({ error: "РђРєРєР°СѓРЅС‚ РЅРµРґРѕСЃС‚СѓРїРµРЅ", code: "ACCOUNT_DISABLED" });
       return;
     }
 
@@ -1663,7 +1865,7 @@ router.post(
     });
     if (activeOrdersCount >= activeOrdersLimit) {
       res.status(429).json({
-        error: `У вас уже есть ${activeOrdersLimit} активных заказов. Дождитесь обработки или отмените один.`,
+        error: `РЈ РІР°СЃ СѓР¶Рµ РµСЃС‚СЊ ${activeOrdersLimit} Р°РєС‚РёРІРЅС‹С… Р·Р°РєР°Р·РѕРІ. Р”РѕР¶РґРёС‚РµСЃСЊ РѕР±СЂР°Р±РѕС‚РєРё РёР»Рё РѕС‚РјРµРЅРёС‚Рµ РѕРґРёРЅ.`,
         code: "TOO_MANY_ACTIVE_ORDERS",
         activeOrdersLimit,
       });
@@ -1738,7 +1940,8 @@ router.post(
       currentPlan: user.plan,
       requestedPlan: payload.tariff,
     });
-    const slugLimit = requestedPlan === "premium" ? 3 : 1;
+    const subscription = getSubscriptionSnapshot(user);
+    const slugLimit = 3;
     const userSlugsCount = await withMissingTableFallback("Slug", 0, () =>
       prisma.slug.count({
         where: {
@@ -1749,8 +1952,8 @@ router.post(
     );
     if (userSlugsCount >= slugLimit) {
       res.status(403).json({
-        error: slugLimit === 3 ? "Premium UNQ limit reached" : "Upgrade required",
-        code: slugLimit === 3 ? "PREMIUM_SLUG_LIMIT_REACHED" : "BASIC_SLUG_LIMIT_REACHED",
+        error: "Premium UNQ limit reached",
+        code: "PREMIUM_SLUG_LIMIT_REACHED",
       });
       return;
     }
@@ -1775,14 +1978,14 @@ router.post(
         // allow checkout through active drop flow
       } else if (state.reason === "drop_reserved" && !dropId) {
         res.status(409).json({
-          error: "Этот UNQ доступен только в активном дропе",
+          error: "Р­С‚РѕС‚ UNQ РґРѕСЃС‚СѓРїРµРЅ С‚РѕР»СЊРєРѕ РІ Р°РєС‚РёРІРЅРѕРј РґСЂРѕРїРµ",
           reason: state.reason,
           code: "DROP_ONLY_SLUG",
         });
         return;
       } else {
         res.status(409).json({
-          error: "Этот UNQ только что заняли. Выбери другой.",
+          error: "Р­С‚РѕС‚ UNQ С‚РѕР»СЊРєРѕ С‡С‚Рѕ Р·Р°РЅСЏР»Рё. Р’С‹Р±РµСЂРё РґСЂСѓРіРѕР№.",
           reason: state.reason,
           code: "SLUG_NOT_AVAILABLE",
         });
@@ -1861,21 +2064,15 @@ router.post(
       currentPlan: user.plan,
       requestedPlan,
       pricing,
+      user,
     });
-    const tariffPriceLabelValue =
-      requestedPlan === "premium"
-        ? user.plan === "premium"
-          ? 0
-          : user.plan === "basic"
-            ? pricing.premiumUpgradePrice
-            : pricing.planPremiumPrice
-        : user.plan === "none"
-          ? pricing.planBasicPrice
-          : 0;
+    const tariffPriceLabelValue = subscription.isActive ? 0 : planPrice;
     const braceletPrice = payload.products.bracelet ? braceletPriceValue : 0;
     const totalOneTime = finalSlugPrice + planPrice + braceletPrice;
-    const theme = requestedPlan === "premium" ? normalizeTheme(payload.theme) : undefined;
+    const theme = normalizeTheme(payload.theme);
     const requestedAt = new Date();
+    const requestedOrderKind = "slug_purchase";
+    const subscriptionMonths = planPrice > 0 ? 1 : 0;
     const pendingExpiryHours = Math.max(1, Math.min(168, Number(await getSetting("pending_expiry_hours", 24)) || 24));
     const pendingExpiresAt = new Date(Date.now() + pendingExpiryHours * 60 * 60 * 1000);
     const canUseSlugTable = await withMissingTableFallback("Slug", false, async () => {
@@ -1928,6 +2125,8 @@ router.post(
             slug,
             slugPrice: finalSlugPrice,
             requestedPlan,
+            orderKind: requestedOrderKind,
+            subscriptionMonths,
             planPrice,
             bracelet: Boolean(payload.products.bracelet),
             status: "new",
@@ -1982,7 +2181,7 @@ router.post(
     } catch (error) {
       if (error && error.code === "SLUG_NOT_AVAILABLE") {
         res.status(409).json({
-          error: "Этот UNQ только что заняли. Выбери другой.",
+          error: "Р­С‚РѕС‚ UNQ С‚РѕР»СЊРєРѕ С‡С‚Рѕ Р·Р°РЅСЏР»Рё. Р’С‹Р±РµСЂРё РґСЂСѓРіРѕР№.",
           reason: error.reason || "taken",
           code: "SLUG_NOT_AVAILABLE",
         });
@@ -2170,13 +2369,13 @@ router.post(
     });
 
     if (!order) {
-      res.status(404).json({ error: "Заказ не найден" });
+      res.status(404).json({ error: "Р—Р°РєР°Р· РЅРµ РЅР°Р№РґРµРЅ" });
       return;
     }
 
     // Check ownership
     if (String(order.userId || "") !== sessionUserId) {
-      res.status(403).json({ error: "Это не ваш заказ" });
+      res.status(403).json({ error: "Р­С‚Рѕ РЅРµ РІР°С€ Р·Р°РєР°Р·" });
       return;
     }
 
@@ -2186,7 +2385,7 @@ router.post(
     // Allow cancellation for any unfinished order statuses shown in precheck.
     if (!cancelableStatuses.has(orderStatus)) {
       res.status(400).json({
-        error: "Нельзя отменить заказ в статусе: " + order.status,
+        error: "РќРµР»СЊР·СЏ РѕС‚РјРµРЅРёС‚СЊ Р·Р°РєР°Р· РІ СЃС‚Р°С‚СѓСЃРµ: " + order.status,
         currentStatus: order.status,
       });
       return;
@@ -2199,7 +2398,7 @@ router.post(
         where: { id: order.id },
         data: {
           status: "rejected",
-          adminNote: "Отменено пользователем",
+          adminNote: "РћС‚РјРµРЅРµРЅРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»РµРј",
         },
       });
 
@@ -2246,7 +2445,7 @@ router.post(
 
     res.json({
       ok: true,
-      message: "Заказ отменён, slug освобождён",
+      message: "Р—Р°РєР°Р· РѕС‚РјРµРЅС‘РЅ, slug РѕСЃРІРѕР±РѕР¶РґС‘РЅ",
       orderId: order.id,
       slug: order.slug,
     });
@@ -2263,7 +2462,7 @@ router.post(
     }
 
     const slugRow = await findSlugForPrivateAccess(slug);
-    if (!slugRow || !slugRow.ownerId || slugRow.owner?.status !== "active") {
+    if (!slugRow || !slugRow.ownerId || !isPublicOwnerAvailable(slugRow.owner)) {
       clearPrivateAccessCookie(req, res);
       res.status(404).json({ error: "Card not found", code: "NOT_FOUND" });
       return;
@@ -2278,7 +2477,7 @@ router.post(
     const password = String(req.body?.password || "");
     const matchedPassword = await verifyPrivatePasswordForOwner(slugRow.ownerId, password);
     if (!matchedPassword) {
-      res.status(401).json({ error: "Неверный пароль", code: "PRIVATE_ACCESS_INVALID_PASSWORD" });
+      res.status(401).json({ error: "РќРµРІРµСЂРЅС‹Р№ РїР°СЂРѕР»СЊ", code: "PRIVATE_ACCESS_INVALID_PASSWORD" });
       return;
     }
 
@@ -2306,7 +2505,7 @@ router.post(
     }
 
     const slugRow = await findSlugForPrivateAccess(slug);
-    if (!slugRow || !slugRow.ownerId || slugRow.owner?.status !== "active") {
+    if (!slugRow || !slugRow.ownerId || !isPublicOwnerAvailable(slugRow.owner)) {
       clearPrivateAccessCookie(req, res);
       res.status(404).json({ error: "Card not found", code: "NOT_FOUND" });
       return;
@@ -2325,7 +2524,7 @@ router.post(
     });
     if (!payload) {
       clearPrivateAccessCookie(req, res);
-      res.status(401).json({ error: "Сеанс истек", code: "PRIVATE_ACCESS_SESSION_EXPIRED" });
+      res.status(401).json({ error: "РЎРµР°РЅСЃ РёСЃС‚РµРє", code: "PRIVATE_ACCESS_SESSION_EXPIRED" });
       return;
     }
 
@@ -2353,11 +2552,23 @@ router.post(
     const slugRow = await withMissingTableFallback("Slug", null, () =>
       prisma.slug.findUnique({
         where: { fullSlug: requestedSlug },
-        select: { fullSlug: true, status: true, ownerId: true },
+        select: {
+          fullSlug: true,
+          status: true,
+          ownerId: true,
+          owner: {
+            select: {
+              status: true,
+              plan: true,
+              subscriptionExpiresAt: true,
+              subscriptionStartedAt: true,
+            },
+          },
+        },
       }),
     );
 
-    if (!slugRow || !["active", "private"].includes(slugRow.status)) {
+    if (!slugRow || !["active", "private"].includes(slugRow.status) || !isPublicOwnerAvailable(slugRow.owner)) {
       res.status(404).json({ error: "Card not found" });
       return;
     }
@@ -2411,11 +2622,23 @@ router.post(
     const slugRow = await withMissingTableFallback("Slug", null, () =>
       prisma.slug.findUnique({
         where: { fullSlug: requestedSlug },
-        select: { fullSlug: true, status: true, ownerId: true },
+        select: {
+          fullSlug: true,
+          status: true,
+          ownerId: true,
+          owner: {
+            select: {
+              status: true,
+              plan: true,
+              subscriptionExpiresAt: true,
+              subscriptionStartedAt: true,
+            },
+          },
+        },
       }),
     );
 
-    if (!slugRow || !["active", "private"].includes(slugRow.status)) {
+    if (!slugRow || !["active", "private"].includes(slugRow.status) || !isPublicOwnerAvailable(slugRow.owner)) {
       res.status(404).json({ error: "Card not found" });
       return;
     }
@@ -2439,11 +2662,23 @@ router.get(
     const slugRow = await withMissingTableFallback("Slug", null, () =>
       prisma.slug.findUnique({
         where: { fullSlug: requestedSlug },
-        select: { fullSlug: true, status: true, ownerId: true },
+        select: {
+          fullSlug: true,
+          status: true,
+          ownerId: true,
+          owner: {
+            select: {
+              status: true,
+              plan: true,
+              subscriptionExpiresAt: true,
+              subscriptionStartedAt: true,
+            },
+          },
+        },
       }),
     );
 
-    if (slugRow && ["active", "private"].includes(slugRow.status) && slugRow.ownerId) {
+    if (slugRow && ["active", "private"].includes(slugRow.status) && slugRow.ownerId && isPublicOwnerAvailable(slugRow.owner)) {
       const [user, profileCard] = await Promise.all([
         prisma.user.findUnique({
           where: { id: slugRow.ownerId },
@@ -2506,6 +2741,7 @@ router.get(
 module.exports = {
   publicApiRouter: router,
 };
+
 
 
 

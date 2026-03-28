@@ -544,7 +544,8 @@ function normalizePushSound(value) {
 
 function normalizePlanFilter(value) {
   const plan = String(value || "").trim().toLowerCase();
-  return ["all", "none", "basic", "premium"].includes(plan) ? plan : "all";
+  if (plan === "basic") return "premium";
+  return ["all", "none", "premium"].includes(plan) ? plan : "all";
 }
 
 function normalizeStatusFilter(value) {
@@ -591,7 +592,12 @@ async function listBroadcastRecipientIds({ plan, status, onlyWithPushTokens, lim
     recipientRows = await prisma.$queryRaw`
       SELECT u.id
       FROM users u
-      WHERE (${plan} = 'all' OR coalesce(u.plan, 'none') = ${plan})
+      WHERE (${plan} = 'all' OR (
+        CASE
+          WHEN coalesce(u.plan, 'none') = 'basic' THEN 'premium'
+          ELSE coalesce(u.plan, 'none')
+        END
+      ) = ${plan})
         AND (${status} = 'all' OR coalesce(u.status, 'active') = ${status})
         AND (${onlyWithPushTokens} = false OR EXISTS (
           SELECT 1
@@ -773,12 +779,12 @@ async function runBroadcastJob(jobId) {
 }
 
 function normalizeTariff(value) {
-  return value === "premium" ? "premium" : "basic";
+  return "premium";
 }
 
 function normalizeUserPlan(value) {
   if (value === "premium") return "premium";
-  if (value === "basic") return "basic";
+  if (value === "basic") return "premium";
   return "none";
 }
 
@@ -2091,7 +2097,11 @@ router.get(
     const q = typeof req.query.q === "string" ? req.query.q.trim() : "";
     const sort = req.query.sort === "score_desc" ? "score_desc" : "created_desc";
     const rawPlanFilter = typeof req.query.plan === "string" ? req.query.plan.trim() : "";
-    const planFilter = ["none", "basic", "premium"].includes(rawPlanFilter) ? rawPlanFilter : "all";
+    const planFilter = rawPlanFilter === "basic"
+      ? "premium"
+      : ["none", "premium"].includes(rawPlanFilter)
+        ? rawPlanFilter
+        : "all";
     const rawProfileTypeFilter = typeof req.query.profileType === "string"
       ? req.query.profileType
       : req.query.type;
@@ -2123,7 +2133,7 @@ router.get(
       where.createdByStaffId = requesterManagerId;
     }
     if (planFilter !== "all" && hasUserColumn(userColumns, "plan")) {
-      where.plan = planFilter;
+      where.plan = planFilter === "premium" ? { in: ["premium", "basic"] } : planFilter;
     }
     if (profileTypeFilter !== "all" && hasUserColumn(userColumns, "profileType")) {
       where.profileType = profileTypeFilter;
@@ -3855,11 +3865,11 @@ router.put(
 
     const rawTags = Array.isArray(body.tags) ? body.tags : [];
     const rawButtons = Array.isArray(body.buttons) ? body.buttons : [];
-    if (effective.plan !== "premium" && rawTags.length > getTagLimit("basic")) {
+    if (effective.plan !== "premium" && rawTags.length > getTagLimit("none")) {
       res.status(403).json({ error: "Upgrade required", code: "UPGRADE_REQUIRED" });
       return;
     }
-    if (effective.plan !== "premium" && rawButtons.length > getButtonLimit("basic")) {
+    if (effective.plan !== "premium" && rawButtons.length > getButtonLimit("none")) {
       res.status(403).json({ error: "Upgrade required", code: "UPGRADE_REQUIRED" });
       return;
     }
@@ -4105,8 +4115,17 @@ router.patch(
     const userId = String(req.params.userId || "");
     const plan = normalizeUserPlan(req.body.plan);
     const reason = String(req.body.reason || "").trim();
-    const force = Boolean(req.body.force);
     const now = new Date();
+    const requestedExpiryRaw = req.body.subscriptionExpiresAt;
+    let requestedExpiry = null;
+    if (requestedExpiryRaw !== undefined && requestedExpiryRaw !== null && String(requestedExpiryRaw).trim()) {
+      const parsed = new Date(requestedExpiryRaw);
+      if (!Number.isFinite(parsed.getTime())) {
+        res.status(400).json({ error: "Invalid subscription expiry date", code: "SUBSCRIPTION_EXPIRES_AT_INVALID" });
+        return;
+      }
+      requestedExpiry = parsed;
+    }
     if (!reason) {
       res.status(400).json({ error: "Reason is required", code: "PLAN_CHANGE_REASON_REQUIRED" });
       return;
@@ -4120,6 +4139,9 @@ router.patch(
           plan: true,
           planPurchasedAt: true,
           planUpgradedAt: true,
+          subscriptionStartedAt: true,
+          subscriptionRenewedAt: true,
+          subscriptionExpiresAt: true,
         },
       });
       if (!user) {
@@ -4139,42 +4161,41 @@ router.patch(
         },
       });
 
-      if (plan === "basic" && owned.length > 1 && !force) {
-        return {
-          requiresConfirmation: true,
-          activeSlugCount: owned.length,
-        };
-      }
-
       const currentPlan = normalizePlan(user.plan);
       const userPatch = { plan };
-      if (currentPlan === "none" && (plan === "basic" || plan === "premium")) {
+      if (currentPlan === "none" && plan === "premium") {
         userPatch.planPurchasedAt = user.planPurchasedAt || now;
       }
-      if (currentPlan === "basic" && plan === "premium") {
-        userPatch.planUpgradedAt = now;
+      if (plan === "premium") {
+        const currentExpiry =
+          user.subscriptionExpiresAt && Number.isFinite(new Date(user.subscriptionExpiresAt).getTime())
+            ? new Date(user.subscriptionExpiresAt)
+            : null;
+        const renewalBase = currentExpiry && currentExpiry > now ? currentExpiry : now;
+        userPatch.subscriptionStartedAt = user.subscriptionStartedAt || now;
+        userPatch.subscriptionRenewedAt = now;
+        userPatch.subscriptionExpiresAt = requestedExpiry || addDays(renewalBase, 30);
         userPatch.planPurchasedAt = user.planPurchasedAt || now;
+        if (currentPlan !== "premium") {
+          userPatch.planUpgradedAt = now;
+        }
+      } else {
+        userPatch.subscriptionExpiresAt = now;
       }
       const updatedUser = await tx.user.update({
         where: { id: userId },
         data: userPatch,
-        select: { id: true, plan: true, planPurchasedAt: true, planUpgradedAt: true },
+        select: {
+          id: true,
+          plan: true,
+          planPurchasedAt: true,
+          planUpgradedAt: true,
+          subscriptionStartedAt: true,
+          subscriptionRenewedAt: true,
+          subscriptionExpiresAt: true,
+        },
       });
 
-      if (plan === "basic" && owned.length > 1) {
-        const primary = owned.find((row) => row.isPrimary) || owned[0];
-        const toPause = owned.filter((row) => row.fullSlug !== primary.fullSlug);
-        if (toPause.length > 0) {
-          await tx.slug.updateMany({
-            where: {
-              fullSlug: { in: toPause.map((row) => row.fullSlug) },
-            },
-            data: {
-              status: "paused",
-            },
-          });
-        }
-      }
       if (plan === "none" && owned.length > 0) {
         await tx.slug.updateMany({
           where: { fullSlug: { in: owned.map((row) => row.fullSlug) } },
@@ -4192,15 +4213,6 @@ router.patch(
       res.status(404).json({ error: "User not found" });
       return;
     }
-    if (result.requiresConfirmation) {
-      res.status(409).json({
-        error: "PLAN_DOWNGRADE_CONFIRMATION_REQUIRED",
-        code: "PLAN_DOWNGRADE_CONFIRMATION_REQUIRED",
-        activeSlugCount: result.activeSlugCount,
-      });
-      return;
-    }
-
     try {
       await recalculateAndRefreshPercentiles(result.id);
     } catch (error) {
@@ -4212,6 +4224,9 @@ router.patch(
       plan: result.plan,
       planPurchasedAt: result.planPurchasedAt,
       planUpgradedAt: result.planUpgradedAt,
+      subscriptionStartedAt: result.subscriptionStartedAt,
+      subscriptionRenewedAt: result.subscriptionRenewedAt,
+      subscriptionExpiresAt: result.subscriptionExpiresAt,
     });
   }),
 );

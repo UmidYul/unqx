@@ -1,18 +1,34 @@
 const { z } = require("zod");
 
 const OrderRequestSchema = z.object({
-  name: z.string().trim().min(1, "Имя обязательно").max(100, "Имя слишком длинное"),
+  orderKind: z.enum(["slug_purchase", "subscription_renewal"]).optional(),
+  subscriptionMonths: z.coerce.number().int().min(1).max(12).optional(),
+  name: z.string().trim().min(1, "Name is required").max(100, "Name is too long"),
   letters: z
     .string()
     .trim()
     .toUpperCase()
-    .regex(/^[A-Z]{3}$/, "Slug должен быть в формате AAA000"),
+    .regex(/^[A-Z]{3}$/, "Slug must match AAA000 format"),
   digits: z
     .string()
     .trim()
-    .regex(/^[0-9]{3}$/, "Slug должен быть в формате AAA000"),
-  tariff: z.enum(["basic", "premium"]),
-  theme: z.enum(["default_dark", "arctic", "linen", "marble", "forest", "sage_luxe", "midnight_obsidian", "golden_noir", "aurora_codex", "nebula_glass", "velours"]).optional(),
+    .regex(/^[0-9]{3}$/, "Slug must match AAA000 format"),
+  tariff: z.literal("premium").default("premium"),
+  theme: z
+    .enum([
+      "default_dark",
+      "arctic",
+      "linen",
+      "marble",
+      "forest",
+      "sage_luxe",
+      "midnight_obsidian",
+      "golden_noir",
+      "aurora_codex",
+      "nebula_glass",
+      "velours",
+    ])
+    .optional(),
   products: z.object({
     digitalCard: z.boolean(),
     bracelet: z.boolean(),

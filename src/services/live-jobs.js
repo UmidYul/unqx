@@ -62,6 +62,55 @@ async function processReferralPaidSync() {
   }
 }
 
+async function processExpiredSubscriptions() {
+  const now = new Date();
+  try {
+    const expiredUsers = await prisma.user.findMany({
+      where: {
+        plan: { in: ["basic", "premium"] },
+        subscriptionExpiresAt: { lte: now },
+      },
+      select: { id: true },
+      take: 2000,
+    });
+
+    const expiredUserIds = expiredUsers
+      .map((item) => String(item.id || "").trim())
+      .filter(Boolean);
+    if (!expiredUserIds.length) {
+      return;
+    }
+
+    await prisma.$transaction([
+      prisma.user.updateMany({
+        where: {
+          id: { in: expiredUserIds },
+          plan: { in: ["basic", "premium"] },
+          subscriptionExpiresAt: { lte: now },
+        },
+        data: {
+          plan: "none",
+        },
+      }),
+      prisma.slug.updateMany({
+        where: {
+          ownerId: { in: expiredUserIds },
+          status: { in: ["approved", "active", "private"] },
+        },
+        data: {
+          status: "paused",
+        },
+      }),
+    ]);
+  } catch (error) {
+    const code = String(error?.code || "");
+    if (code === "P2022" || code === "42703") {
+      return;
+    }
+    throw error;
+  }
+}
+
 async function cleanupStaleUnverifiedAccounts() {
   if (!env.UNVERIFIED_ACCOUNT_CLEANUP_ENABLED) {
     return;
@@ -266,6 +315,7 @@ async function runJobsOnce() {
   await processFlashSalesSchedule();
   await processDropsSchedule();
   await detectSuspiciousActivity();
+  await processExpiredSubscriptions();
   await processReferralPaidSync();
   await cleanupStaleUnverifiedAccounts();
   await processDeactivatedAccountLifecycle();
