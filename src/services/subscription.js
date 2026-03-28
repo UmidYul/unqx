@@ -77,7 +77,19 @@ function isPublicProfileVisible(user, options = {}) {
   const status = String(user?.status || "")
     .trim()
     .toLowerCase();
-  return status === "active" && isSubscriptionActive(user, options);
+  if (status !== "active") {
+    return false;
+  }
+
+  const rawPlan = String(user?.plan || "")
+    .trim()
+    .toLowerCase();
+  if (rawPlan !== "premium") {
+    // Keep public pages and directory visible for non-premium users.
+    return true;
+  }
+
+  return isSubscriptionActive(user, options);
 }
 
 function getSubscriptionRenewalWindow(user, options = {}) {

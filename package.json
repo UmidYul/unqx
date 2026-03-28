@@ -12,6 +12,7 @@
     "prisma:generate": "node scripts/prisma-generate.cjs",
     "build:vendor": "node scripts/copy-vendor-assets.cjs",
     "build:css": "tailwindcss -i ./src/styles/tailwind.input.css -o ./public/css/tailwind.generated.css --minify",
+    "check:mojibake": "node scripts/check-mojibake.js",
     "seed:visual": "node scripts/seed-visual-fixture.cjs",
     "test:visual": "node scripts/visual-compare.mjs",
     "test:visual:seed": "npm run seed:visual && npm run test:visual",

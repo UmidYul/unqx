@@ -1,4 +1,4 @@
-﻿const { createHash } = require("node:crypto");
+const { createHash } = require("node:crypto");
 
 const express = require("express");
 
@@ -303,15 +303,15 @@ function resolveInviteeDiscountCandidate({
 function toOrderStatusLabel(status) {
   switch (status) {
     case "NEW":
-      return "РќРѕРІР°СЏ";
+      return "Новая";
     case "CONTACTED":
-      return "РЎРІСЏР·Р°Р»РёСЃСЊ";
+      return "Связались";
     case "PAID":
-      return "РћРїР»Р°С‡РµРЅРѕ";
+      return "Оплачено";
     case "ACTIVATED":
-      return "РђРєС‚РёРІРёСЂРѕРІР°РЅРѕ";
+      return "Активировано";
     case "REJECTED":
-      return "РћС‚РєР»РѕРЅРµРЅРѕ";
+      return "Отклонено";
     default:
       return status;
   }
@@ -343,12 +343,12 @@ function mapOrderValidationIssues(error) {
     const field = issue.path && issue.path[0];
 
     if (field === "name") {
-      issues.name = issue.message || "РРјСЏ РѕР±СЏР·Р°С‚РµР»СЊРЅРѕ";
+      issues.name = issue.message || "Имя обязательно";
       continue;
     }
 
     if (field === "letters" || field === "digits") {
-      issues.slug = "UNQ РґРѕР»Р¶РµРЅ Р±С‹С‚СЊ РІ С„РѕСЂРјР°С‚Рµ AAA000";
+      issues.slug = "UNQ должен быть в формате AAA000";
       continue;
     }
 
@@ -1289,7 +1289,7 @@ router.get(
       path: req.path || req.originalUrl || "",
     });
 
-    const safeFailPrecheck = (message = "Р’СЂРµРјРµРЅРЅР°СЏ РѕС€РёР±РєР° precheck. РџРѕРїСЂРѕР±СѓР№С‚Рµ СЃРЅРѕРІР°.") => {
+    const safeFailPrecheck = (message = "Временная ошибка precheck. Попробуйте снова.") => {
       res.json({
         authenticated: Boolean(sessionUser?.userId),
         accountStatus: sessionUser?.userId ? "active" : "guest",
@@ -1380,7 +1380,7 @@ router.get(
       ]);
     } catch (error) {
       console.error("[express-app] order-precheck base load failed", error);
-      safeFailPrecheck("РќРµ СѓРґР°Р»РѕСЃСЊ Р·Р°РіСЂСѓР·РёС‚СЊ precheck. РџРѕРїСЂРѕР±СѓР№С‚Рµ СЃРЅРѕРІР°.");
+      safeFailPrecheck("Не удалось загрузить precheck. Попробуйте снова.");
       return;
     }
 
@@ -1433,7 +1433,7 @@ router.get(
         resolvedPlan: requestedPlan,
         canPurchase: false,
         nextAction: "login",
-        message: "Р’РѕР№РґРёС‚Рµ РІ Р°РєРєР°СѓРЅС‚, С‡С‚РѕР±С‹ РїСЂРѕРґРѕР»Р¶РёС‚СЊ РїРѕРєСѓРїРєСѓ С‚Р°СЂРёС„Р°.",
+        message: "Войдите в аккаунт, чтобы продолжить покупку тарифа.",
         pricing: {
           ...pricing,
           braceletPrice,
@@ -1504,7 +1504,7 @@ router.get(
         resolvedPlan: requestedPlan,
         canPurchase: false,
         nextAction: "login",
-        message: "РЎРµСЃСЃРёСЏ СѓСЃС‚Р°СЂРµР»Р°. Р’РѕР№РґРёС‚Рµ СЃРЅРѕРІР°.",
+        message: "Сессия устарела. Войдите снова.",
         pricing: {
           ...pricing,
           braceletPrice,
@@ -1703,15 +1703,15 @@ router.get(
     if (user.status === "blocked" || user.status === "deactivated") {
       nextAction = "blocked";
       canPurchase = false;
-      message = "РђРєРєР°СѓРЅС‚ РІСЂРµРјРµРЅРЅРѕ РЅРµРґРѕСЃС‚СѓРїРµРЅ. РћР±СЂР°С‚РёС‚РµСЃСЊ РІ РїРѕРґРґРµСЂР¶РєСѓ.";
+      message = "Аккаунт временно недоступен. Обратитесь в поддержку.";
     } else if (pendingOrder) {
       nextAction = "resume_pending";
       canPurchase = false;
-      message = `РЈ РІР°СЃ СѓР¶Рµ РµСЃС‚СЊ РЅРµР·Р°РІРµСЂС€С‘РЅРЅС‹Р№ Р·Р°РєР°Р· ${pendingOrder.slug}. РџСЂРѕРґРѕР»Р¶РёС‚Рµ РѕРїР»Р°С‚Сѓ РёР»Рё РѕС‚РјРµРЅРёС‚Рµ Р·Р°РєР°Р·.`;
+      message = `У вас уже есть незавершённый заказ ${pendingOrder.slug}. Продолжите оплату или отмените заказ.`;
     } else if (activeOrdersCount >= activeOrdersLimit) {
       nextAction = "limit_reached";
       canPurchase = false;
-      message = `РЈ РІР°СЃ СѓР¶Рµ РµСЃС‚СЊ ${activeOrdersLimit} Р°РєС‚РёРІРЅС‹С… Р·Р°РєР°Р·РѕРІ. Р”РѕР¶РґРёС‚РµСЃСЊ РѕР±СЂР°Р±РѕС‚РєРё РёР»Рё РѕС‚РјРµРЅРёС‚Рµ РѕРґРёРЅ.`;
+      message = `У вас уже есть ${activeOrdersLimit} активных заказов. Дождитесь обработки или отмените один.`;
         } else if (userSlugsCount >= slugLimit) {
       nextAction = "slug_limit_reached";
       canPurchase = false;
@@ -1841,7 +1841,7 @@ router.post(
     });
 
     if (!user || user.status === "blocked" || user.status === "deactivated") {
-      res.status(403).json({ error: "РђРєРєР°СѓРЅС‚ РЅРµРґРѕСЃС‚СѓРїРµРЅ", code: "ACCOUNT_DISABLED" });
+      res.status(403).json({ error: "Аккаунт недоступен", code: "ACCOUNT_DISABLED" });
       return;
     }
 
@@ -1865,7 +1865,7 @@ router.post(
     });
     if (activeOrdersCount >= activeOrdersLimit) {
       res.status(429).json({
-        error: `РЈ РІР°СЃ СѓР¶Рµ РµСЃС‚СЊ ${activeOrdersLimit} Р°РєС‚РёРІРЅС‹С… Р·Р°РєР°Р·РѕРІ. Р”РѕР¶РґРёС‚РµСЃСЊ РѕР±СЂР°Р±РѕС‚РєРё РёР»Рё РѕС‚РјРµРЅРёС‚Рµ РѕРґРёРЅ.`,
+        error: `У вас уже есть ${activeOrdersLimit} активных заказов. Дождитесь обработки или отмените один.`,
         code: "TOO_MANY_ACTIVE_ORDERS",
         activeOrdersLimit,
       });
@@ -1978,14 +1978,14 @@ router.post(
         // allow checkout through active drop flow
       } else if (state.reason === "drop_reserved" && !dropId) {
         res.status(409).json({
-          error: "Р­С‚РѕС‚ UNQ РґРѕСЃС‚СѓРїРµРЅ С‚РѕР»СЊРєРѕ РІ Р°РєС‚РёРІРЅРѕРј РґСЂРѕРїРµ",
+          error: "Этот UNQ доступен только в активном дропе",
           reason: state.reason,
           code: "DROP_ONLY_SLUG",
         });
         return;
       } else {
         res.status(409).json({
-          error: "Р­С‚РѕС‚ UNQ С‚РѕР»СЊРєРѕ С‡С‚Рѕ Р·Р°РЅСЏР»Рё. Р’С‹Р±РµСЂРё РґСЂСѓРіРѕР№.",
+          error: "Этот UNQ только что заняли. Выбери другой.",
           reason: state.reason,
           code: "SLUG_NOT_AVAILABLE",
         });
@@ -2181,7 +2181,7 @@ router.post(
     } catch (error) {
       if (error && error.code === "SLUG_NOT_AVAILABLE") {
         res.status(409).json({
-          error: "Р­С‚РѕС‚ UNQ С‚РѕР»СЊРєРѕ С‡С‚Рѕ Р·Р°РЅСЏР»Рё. Р’С‹Р±РµСЂРё РґСЂСѓРіРѕР№.",
+          error: "Этот UNQ только что заняли. Выбери другой.",
           reason: error.reason || "taken",
           code: "SLUG_NOT_AVAILABLE",
         });
@@ -2369,13 +2369,13 @@ router.post(
     });
 
     if (!order) {
-      res.status(404).json({ error: "Р—Р°РєР°Р· РЅРµ РЅР°Р№РґРµРЅ" });
+      res.status(404).json({ error: "Заказ не найден" });
       return;
     }
 
     // Check ownership
     if (String(order.userId || "") !== sessionUserId) {
-      res.status(403).json({ error: "Р­С‚Рѕ РЅРµ РІР°С€ Р·Р°РєР°Р·" });
+      res.status(403).json({ error: "Это не ваш заказ" });
       return;
     }
 
@@ -2385,7 +2385,7 @@ router.post(
     // Allow cancellation for any unfinished order statuses shown in precheck.
     if (!cancelableStatuses.has(orderStatus)) {
       res.status(400).json({
-        error: "РќРµР»СЊР·СЏ РѕС‚РјРµРЅРёС‚СЊ Р·Р°РєР°Р· РІ СЃС‚Р°С‚СѓСЃРµ: " + order.status,
+        error: "Нельзя отменить заказ в статусе: " + order.status,
         currentStatus: order.status,
       });
       return;
@@ -2398,7 +2398,7 @@ router.post(
         where: { id: order.id },
         data: {
           status: "rejected",
-          adminNote: "РћС‚РјРµРЅРµРЅРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»РµРј",
+          adminNote: "Отменено пользователем",
         },
       });
 
@@ -2445,7 +2445,7 @@ router.post(
 
     res.json({
       ok: true,
-      message: "Р—Р°РєР°Р· РѕС‚РјРµРЅС‘РЅ, slug РѕСЃРІРѕР±РѕР¶РґС‘РЅ",
+      message: "Заказ отменён, slug освобождён",
       orderId: order.id,
       slug: order.slug,
     });
@@ -2477,7 +2477,7 @@ router.post(
     const password = String(req.body?.password || "");
     const matchedPassword = await verifyPrivatePasswordForOwner(slugRow.ownerId, password);
     if (!matchedPassword) {
-      res.status(401).json({ error: "РќРµРІРµСЂРЅС‹Р№ РїР°СЂРѕР»СЊ", code: "PRIVATE_ACCESS_INVALID_PASSWORD" });
+      res.status(401).json({ error: "Неверный пароль", code: "PRIVATE_ACCESS_INVALID_PASSWORD" });
       return;
     }
 
@@ -2524,7 +2524,7 @@ router.post(
     });
     if (!payload) {
       clearPrivateAccessCookie(req, res);
-      res.status(401).json({ error: "РЎРµР°РЅСЃ РёСЃС‚РµРє", code: "PRIVATE_ACCESS_SESSION_EXPIRED" });
+      res.status(401).json({ error: "Сеанс истек", code: "PRIVATE_ACCESS_SESSION_EXPIRED" });
       return;
     }
 
