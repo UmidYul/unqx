@@ -1,6 +1,8 @@
 const { createHash } = require("node:crypto");
 
 const express = require("express");
+const { addDays, startOfDay } = require("date-fns");
+const { fromZonedTime, toZonedTime } = require("date-fns-tz");
 
 const { prisma } = require("../../db/prisma");
 const { env } = require("../../config/env");
@@ -24,6 +26,7 @@ const {
 } = require("../../services/pricing-settings");
 const {
   isSubscriptionActive,
+  isPublicProfileVisible,
   getSubscriptionSnapshot,
   getSubscriptionRenewalWindow,
 } = require("../../services/subscription");
@@ -83,6 +86,7 @@ const UNQX_GAME_HISTORY_DEFAULT_LIMIT = 30;
 const UNQX_GAME_HISTORY_MAX_LIMIT = 100;
 const UNQX_GAME_GENERATION_ROUNDS = 12;
 const UNQX_GAME_GENERATION_BATCH_SIZE = 64;
+const UNQX_LUCKY_DISCOUNT_PERCENT = 10;
 const affordableCandidatesCache = {
   expiresAt: 0,
   candidates: [],
@@ -373,6 +377,97 @@ function normalizeUnqxGameHistoryLimit(value) {
     return UNQX_GAME_HISTORY_DEFAULT_LIMIT;
   }
   return Math.max(1, Math.min(UNQX_GAME_HISTORY_MAX_LIMIT, parsed));
+}
+
+function normalizeLuckySlug(value) {
+  const slug = String(value || "")
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "")
+    .slice(0, 6);
+  return SLUG_REGEX.test(slug) ? slug : "";
+}
+
+function getLuckyDayWindow(now = new Date(), timezone = env.TIMEZONE || "Asia/Tashkent") {
+  const current = now instanceof Date ? now : new Date(now);
+  const zonedNow = toZonedTime(current, timezone);
+  const dayStartLocal = startOfDay(zonedNow);
+  const dayEndLocal = addDays(dayStartLocal, 1);
+  const startUtc = fromZonedTime(dayStartLocal, timezone);
+  const endUtc = fromZonedTime(dayEndLocal, timezone);
+  return {
+    timezone,
+    startUtc,
+    endUtc,
+    nextSpinAt: endUtc.toISOString(),
+    validUntil: endUtc.toISOString(),
+  };
+}
+
+function buildLuckyStatePayload({ spin = null, currentSlug = "", validUntil = null } = {}) {
+  const targetSlug = spin ? normalizeLuckySlug(spin.slug) : "";
+  const normalizedCurrentSlug = normalizeLuckySlug(currentSlug);
+  const isActive = Boolean(targetSlug && validUntil);
+  return {
+    active: isActive,
+    discountPercent: UNQX_LUCKY_DISCOUNT_PERCENT,
+    targetSlug: isActive ? targetSlug : null,
+    validUntil: isActive ? String(validUntil) : null,
+    appliesToCurrentSlug: Boolean(isActive && normalizedCurrentSlug && normalizedCurrentSlug === targetSlug),
+  };
+}
+
+async function findLuckySpinForToday(userId, options = {}) {
+  const normalizedUserId = String(userId || "").trim();
+  const dayWindow = getLuckyDayWindow(options.now);
+  if (!normalizedUserId) {
+    return { spin: null, dayWindow };
+  }
+
+  const spin = await withMissingTableFallback("UnqxGameSpin", null, () =>
+    prisma.unqxGameSpin.findFirst({
+      where: {
+        userId: normalizedUserId,
+        createdAt: {
+          gte: dayWindow.startUtc,
+          lt: dayWindow.endUtc,
+        },
+      },
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        slug: true,
+        price: true,
+        createdAt: true,
+      },
+    }),
+  );
+
+  return { spin, dayWindow };
+}
+
+async function getLuckyStateForUser(userId, options = {}) {
+  const { spin, dayWindow } = await findLuckySpinForToday(userId, options);
+  return buildLuckyStatePayload({
+    spin,
+    currentSlug: options.currentSlug || "",
+    validUntil: spin ? dayWindow.validUntil : null,
+  });
+}
+
+function applyLuckyDiscountToPrice(basePrice, luckyState) {
+  const normalizedBasePrice = Math.max(0, Math.round(Number(basePrice || 0)));
+  const shouldApply = Boolean(luckyState?.active && luckyState?.appliesToCurrentSlug);
+  if (!shouldApply) {
+    return { finalPrice: normalizedBasePrice, discountApplied: 0 };
+  }
+  const discountApplied = Math.min(
+    normalizedBasePrice,
+    Math.round((normalizedBasePrice * UNQX_LUCKY_DISCOUNT_PERCENT) / 100),
+  );
+  return {
+    finalPrice: Math.max(0, normalizedBasePrice - discountApplied),
+    discountApplied,
+  };
 }
 
 function mapUnqxGameSpinEntry(entry) {
@@ -1169,16 +1264,79 @@ router.get(
         take: limit,
         select: {
           id: true,
+          userId: true,
           slug: true,
           price: true,
           createdAt: true,
+          user: {
+            select: {
+              id: true,
+              firstName: true,
+              displayName: true,
+              status: true,
+              plan: true,
+              subscriptionStartedAt: true,
+              subscriptionExpiresAt: true,
+            },
+          },
         },
       }),
     );
 
+    const ownerIds = Array.from(
+      new Set(
+        rows
+          .map((item) => String(item.userId || "").trim())
+          .filter(Boolean),
+      ),
+    );
+
+    const ownerSlugRows = ownerIds.length
+      ? await withMissingTableFallback("Slug", [], () =>
+        prisma.slug.findMany({
+          where: {
+            ownerId: { in: ownerIds },
+            // Public profile links in Lucky history must point to publicly accessible cards.
+            status: { in: ["approved", "active", "paused"] },
+          },
+          orderBy: [{ ownerId: "asc" }, { isPrimary: "desc" }, { createdAt: "asc" }],
+          select: {
+            ownerId: true,
+            fullSlug: true,
+          },
+        }),
+      )
+      : [];
+
+    const primarySlugByOwnerId = new Map();
+    for (const row of ownerSlugRows) {
+      const ownerId = String(row.ownerId || "").trim();
+      const slug = normalizeLuckySlug(row.fullSlug);
+      if (!ownerId || !slug || primarySlugByOwnerId.has(ownerId)) {
+        continue;
+      }
+      primarySlugByOwnerId.set(ownerId, slug);
+    }
+
     res.json({
       ok: true,
-      items: rows.map((item) => mapUnqxGameSpinEntry(item)),
+      items: rows.map((item) => {
+        const owner = item.user || null;
+        const ownerId = String(item.userId || "").trim();
+        const winnerName =
+          String(owner?.displayName || owner?.firstName || "UNQX User").trim() || "UNQX User";
+        const canLinkProfile = Boolean(owner && isPublicProfileVisible(owner));
+        const profileSlug = canLinkProfile ? primarySlugByOwnerId.get(ownerId) || null : null;
+        const profileUrl = profileSlug ? `/${profileSlug}` : null;
+        return {
+          ...mapUnqxGameSpinEntry(item),
+          winner: {
+            name: winnerName,
+            profileSlug,
+            profileUrl,
+          },
+        };
+      }),
     });
   }),
 );
@@ -1194,6 +1352,16 @@ router.post(
     const userId = String(user?.userId || "").trim();
     if (!userId) {
       res.status(401).json({ error: "Unauthorized", code: "AUTH_REQUIRED" });
+      return;
+    }
+
+    const { spin: todaySpin, dayWindow } = await findLuckySpinForToday(userId);
+    if (todaySpin) {
+      res.status(429).json({
+        error: "На сегодня попытка уже использована. Следующий спин будет после полуночи по Ташкенту.",
+        code: "DAILY_SPIN_LIMIT",
+        nextSpinAt: dayWindow.nextSpinAt,
+      });
       return;
     }
 
@@ -1232,6 +1400,11 @@ router.post(
     res.json({
       ok: true,
       entry: mapUnqxGameSpinEntry(created),
+      lucky: {
+        discountPercent: UNQX_LUCKY_DISCOUNT_PERCENT,
+        targetSlug: normalizeLuckySlug(created.slug),
+        validUntil: dayWindow.validUntil,
+      },
     });
   }),
 );
@@ -1283,6 +1456,7 @@ router.get(
     const activeOrdersLimit = 3;
     const sessionUser = getUserSession(req);
     const promoCodeInput = normalizePromoCode(req.query.promoCode || req.query.promo || "");
+    const luckySlugInput = normalizeLuckySlug(req.query.slug || "");
     const attribution = resolveOrderAttribution({
       body: {},
       query: req.query || {},
@@ -1354,6 +1528,7 @@ router.get(
             firstOrderOnly: true,
           },
         },
+        lucky: buildLuckyStatePayload(),
         pendingOrder: null,
       });
     };
@@ -1474,6 +1649,7 @@ router.get(
           },
         },
         promo: promoPreview,
+        lucky: buildLuckyStatePayload(),
         pendingOrder: null,
       });
       return;
@@ -1545,6 +1721,7 @@ router.get(
           },
         },
         promo: promoPreview,
+        lucky: buildLuckyStatePayload(),
         pendingOrder: null,
       });
       return;
@@ -1566,6 +1743,7 @@ router.get(
       walletBalance,
       firstApprovedOrderExists,
       referrerLink,
+      luckyState,
     ] = await Promise.all([
       prisma.slugRequest.count({
         where: {
@@ -1590,6 +1768,7 @@ router.get(
         explicitRefCode: attribution.refCode,
         sessionRefCode: req.session?.pendingRefCode,
       }),
+      getLuckyStateForUser(user.id, { currentSlug: luckySlugInput }),
     ]);
 
     const promoEligibility = await evaluatePromoEligibility({
@@ -1797,6 +1976,7 @@ router.get(
         },
       },
       promo: promoPreviewResolved,
+      lucky: luckyState,
       pendingOrder,
     });
   }),
@@ -1959,6 +2139,7 @@ router.post(
     }
     const slug = `${payload.letters}${payload.digits}`;
     const state = await getSlugState(slug);
+    const luckyState = await getLuckyStateForUser(user.id, { currentSlug: slug });
     const dropId = payload.dropId || null;
     let drop = null;
     if (dropId) {
@@ -2060,6 +2241,9 @@ router.post(
         discountCapPercent: campaignSnapshotForOrder.discountCapPercent,
       });
     const finalSlugPrice = referralPricing.finalSlugPayable;
+    const luckyPricing = applyLuckyDiscountToPrice(finalSlugPrice, luckyState);
+    const luckyDiscountApplied = luckyPricing.discountApplied;
+    const finalSlugPriceWithLucky = luckyPricing.finalPrice;
     const planPrice = getPlanCharge({
       currentPlan: user.plan,
       requestedPlan,
@@ -2068,7 +2252,7 @@ router.post(
     });
     const tariffPriceLabelValue = subscription.isActive ? 0 : planPrice;
     const braceletPrice = payload.products.bracelet ? braceletPriceValue : 0;
-    const totalOneTime = finalSlugPrice + planPrice + braceletPrice;
+    const totalOneTime = finalSlugPriceWithLucky + planPrice + braceletPrice;
     const theme = normalizeTheme(payload.theme);
     const requestedAt = new Date();
     const requestedOrderKind = "slug_purchase";
@@ -2108,13 +2292,13 @@ router.post(
               status: "pending",
               requestedAt,
               pendingExpiresAt,
-              price: finalSlugPrice,
+              price: finalSlugPriceWithLucky,
             },
             update: {
               status: "pending",
               requestedAt,
               pendingExpiresAt,
-              price: finalSlugPrice,
+              price: finalSlugPriceWithLucky,
             },
           });
         }
@@ -2123,7 +2307,7 @@ router.post(
           data: {
             userId: user.id,
             slug,
-            slugPrice: finalSlugPrice,
+            slugPrice: finalSlugPriceWithLucky,
             requestedPlan,
             orderKind: requestedOrderKind,
             subscriptionMonths,
@@ -2210,12 +2394,13 @@ router.post(
       telegramUsername: supportTelegram,
       fullName,
       email: user.email || "",
-      slugPrice: finalSlugPrice,
+      slugPrice: finalSlugPriceWithLucky,
       slugPriceBeforeDiscount: slugPriceAfterProductDiscount,
       inviteeDiscountApplied: referralPricing.inviteeDiscountApplied,
       promoDiscountApplied,
       promoCode: promoApplied ? promoSnapshot.code : "",
       bonusSpent: referralPricing.bonusSpent,
+      luckyDiscountApplied,
       planPrice,
       bracelet: Boolean(payload.products.bracelet),
       braceletPrice,
@@ -2229,7 +2414,7 @@ router.post(
         email: user.email || "",
         username: user.telegramUsername || user.username || "",
         slug,
-        slugPriceLabel: formatPrice(finalSlugPrice),
+        slugPriceLabel: formatPrice(finalSlugPriceWithLucky),
         tariff: requestedPlan,
         tariffPriceLabel: formatPrice(tariffPriceLabelValue),
         bracelet: payload.products.bracelet,
@@ -2287,9 +2472,11 @@ router.post(
         inviteeDiscountApplied: referralPricing.inviteeDiscountApplied,
         bonusSpent: referralPricing.bonusSpent,
         discountCapApplied: referralPricing.discountCapApplied,
+        luckyDiscountApplied,
+        slugPriceBeforeLucky: finalSlugPrice,
         fraudVerdict: fraudCheck.verdict || "allow",
         fraudHint: fraudCheck.reason || "",
-        slugPrice: finalSlugPrice,
+        slugPrice: finalSlugPriceWithLucky,
         planPrice,
         braceletPrice,
         totalOneTime,
@@ -2312,6 +2499,7 @@ router.post(
         fraudHint: promoApplied ? "" : (discountCandidate.reason || fraudCheck.reason || ""),
       },
       promo: promoSnapshot,
+      lucky: luckyState,
       payment,
       paymentLinks: {
         telegramUrl: paymentTelegramUrl,

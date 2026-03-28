@@ -87,6 +87,9 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     totalInviteeDiscountRow: document.getElementById("order-modal-total-invitee-discount-row"),
     totalInviteeDiscountLabel: document.getElementById("order-modal-total-invitee-discount-label"),
     totalInviteeDiscountValue: document.getElementById("order-modal-total-invitee-discount-value"),
+    totalLuckyRow: document.getElementById("order-modal-total-lucky-row"),
+    totalLuckyLabel: document.getElementById("order-modal-total-lucky-label"),
+    totalLuckyValue: document.getElementById("order-modal-total-lucky-value"),
     totalBonusRow: document.getElementById("order-modal-total-bonus-row"),
     totalBonusValue: document.getElementById("order-modal-total-bonus-value"),
     totalCapRow: document.getElementById("order-modal-total-cap-row"),
@@ -559,6 +562,14 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     if (promoCode) {
       params.set("promoCode", promoCode);
     }
+    const fallbackSlugCandidate = splitSlug(
+      `${normalizeLetters(dom.letters instanceof HTMLInputElement ? dom.letters.value : "")}${normalizeDigits(dom.digits instanceof HTMLInputElement ? dom.digits.value : "")}`,
+    );
+    const optionSlugCandidate = splitSlug(options.slug || "");
+    const precheckSlug = optionSlugCandidate?.slug || fallbackSlugCandidate?.slug || "";
+    if (precheckSlug) {
+      params.set("slug", precheckSlug);
+    }
     try {
       const response = await fetch(`/api/cards/order-precheck?${params.toString()}`, {
         headers: { Accept: "application/json" },
@@ -606,6 +617,13 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
             enabled: true,
             firstOrderOnly: true,
           },
+        },
+        lucky: {
+          active: false,
+          discountPercent: 10,
+          targetSlug: null,
+          validUntil: null,
+          appliesToCurrentSlug: false,
         },
       };
     }
@@ -1186,8 +1204,16 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
       slugPayable = Math.max(0, afterInvitee - bonusSpent);
       discountCapApplied = Math.max(0, (inviteeCandidate - inviteeDiscountApplied) + Math.max(0, walletBalance - bonusSpent));
     }
+    const lucky = state.checkoutContext?.lucky && typeof state.checkoutContext.lucky === "object"
+      ? state.checkoutContext.lucky
+      : null;
+    const luckyApplied = Boolean(lucky?.active && lucky?.appliesToCurrentSlug);
+    const luckyPercent = Math.max(0, Math.min(100, Math.round(Number(lucky?.discountPercent || 10))));
+    const luckyTargetSlug = String(lucky?.targetSlug || "").trim().toUpperCase();
+    const luckyDiscountApplied = luckyApplied ? Math.min(slugPayable, Math.round((slugPayable * luckyPercent) / 100)) : 0;
+    const slugAfterLucky = Math.max(0, slugPayable - luckyDiscountApplied);
     const braceletPrice = bracelet ? pricingSettings.braceletPrice : 0;
-    const oneTime = slugPayable + planCharge + braceletPrice;
+    const oneTime = slugAfterLucky + planCharge + braceletPrice;
     const slugLabel = pricing ? pricing.slug : "___ ___";
     const rarity = getRarity(slugPrice);
 
@@ -1265,7 +1291,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
       dom.totalSlugTitle.textContent = `UNQ ${pricing ? pricing.slug : "AAA000"}`;
     }
     if (dom.totalSlugValue instanceof HTMLElement) {
-      dom.totalSlugValue.textContent = `${formatPrice(slugPayable)} сум`;
+      dom.totalSlugValue.textContent = `${formatPrice(slugAfterLucky)} сум`;
     }
     if (dom.totalPlanTitle instanceof HTMLElement) {
       dom.totalPlanTitle.textContent = "Подписка Premium";
@@ -1300,6 +1326,17 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     if (dom.totalInviteeDiscountValue instanceof HTMLElement) {
       dom.totalInviteeDiscountValue.textContent = `-${formatPrice(discountRowAmount)} сум`;
     }
+    if (dom.totalLuckyRow instanceof HTMLElement) {
+      dom.totalLuckyRow.classList.toggle("hidden", luckyDiscountApplied <= 0);
+      dom.totalLuckyRow.classList.toggle("flex", luckyDiscountApplied > 0);
+    }
+    if (dom.totalLuckyLabel instanceof HTMLElement) {
+      const luckyTargetPart = luckyTargetSlug ? ` (${luckyTargetSlug})` : "";
+      dom.totalLuckyLabel.textContent = `UNQX Lucky -${luckyPercent}%${luckyTargetPart}`;
+    }
+    if (dom.totalLuckyValue instanceof HTMLElement) {
+      dom.totalLuckyValue.textContent = `-${formatPrice(luckyDiscountApplied)} сум`;
+    }
     if (dom.totalBonusRow instanceof HTMLElement) {
       dom.totalBonusRow.classList.toggle("hidden", bonusSpent <= 0);
       dom.totalBonusRow.classList.toggle("flex", bonusSpent > 0);
@@ -1328,8 +1365,17 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
       const promoApplied = Boolean(promo?.applied);
       const promoReason = String(promo?.reason || "").trim();
       const promoHasInput = Boolean(state.promoCode || promoCodeApplied);
+      const lucky = state.checkoutContext?.lucky && typeof state.checkoutContext.lucky === "object" ? state.checkoutContext.lucky : null;
+      const luckyApplied = Boolean(lucky?.active && lucky?.appliesToCurrentSlug);
+      const luckyTargetSlug = String(lucky?.targetSlug || "").trim().toUpperCase();
+      const luckyPercent = Math.max(0, Math.min(100, Math.round(Number(lucky?.discountPercent || 10))));
       if (promoApplied && promoCodeApplied) {
         setCampaignHint(`Промокод применен: ${promoCodeApplied}`, "success");
+      } else if (luckyApplied) {
+        setCampaignHint(
+          `Применен UNQX Lucky: -${luckyPercent}%${luckyTargetSlug ? ` на ${luckyTargetSlug}` : ""}`,
+          "success",
+        );
       } else if (promoHasInput && promoReason) {
         const reasonLabel =
           promoReason === "promo_disabled"
@@ -1777,6 +1823,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
         const inviteeDiscountApplied = Number(payload?.pricing?.inviteeDiscountApplied || 0);
         const promoDiscountApplied = Number(payload?.pricing?.promoDiscountApplied || 0);
         const promoCodeApplied = String(payload?.pricing?.promoCodeApplied || "").trim();
+        const luckyDiscountApplied = Number(payload?.pricing?.luckyDiscountApplied || 0);
         const bonusSpent = Number(payload?.pricing?.bonusSpent || 0);
         const planPrice = Number(payload?.pricing?.planPrice || 0);
         const braceletPrice = Number(payload?.pricing?.braceletPrice || 0);
@@ -1786,6 +1833,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
         const baseLine = slugBasePrice > slugPrice ? `• База UNQ ${pricing.slug}: ${formatPrice(slugBasePrice)} сум\n` : "";
         const referralLine = inviteeDiscountApplied > 0 ? `• Скидка по рефералке: -${formatPrice(inviteeDiscountApplied)} сум\n` : "";
         const promoLine = promoDiscountApplied > 0 ? `• Скидка по промокоду${promoCodeApplied ? ` (${promoCodeApplied})` : ""}: -${formatPrice(promoDiscountApplied)} сум\n` : "";
+        const luckyLine = luckyDiscountApplied > 0 ? `• Скидка UNQX Lucky: -${formatPrice(luckyDiscountApplied)} сум\n` : "";
         const bonusLine = bonusSpent > 0 ? `• Списано бонусов: -${formatPrice(bonusSpent)} сум\n` : "";
         const message = `Здравствуйте! Хочу оплатить заказ #️⃣ ${orderCode}
 
@@ -1796,7 +1844,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
       ━━━━━━━━━━━━
       💳 Детализация оплаты:
       ${baseLine}• UNQ ${pricing.slug}: ${formatPrice(slugPrice)} сум
-      ${referralLine}${promoLine}${bonusLine}• ${planLabel}: ${formatPrice(planPrice)} сум
+      ${referralLine}${promoLine}${luckyLine}${bonusLine}• ${planLabel}: ${formatPrice(planPrice)} сум
       • Браслет: ${formatPrice(braceletPrice)} сум
       ━━━━━━━━━━━━
       Итого к оплате: ${formatPrice(totalAmount)} сум`;

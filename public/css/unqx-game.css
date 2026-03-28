@@ -61,7 +61,7 @@
   padding: 12px;
   box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
   display: grid;
-  grid-template-columns: minmax(120px, 1fr) auto auto;
+  grid-template-columns: minmax(110px, 1fr) minmax(120px, 1fr) auto auto;
   gap: 10px;
   align-items: center;
 }
@@ -81,6 +81,28 @@
   font-size: 0.82rem;
   font-weight: 600;
   color: #374151;
+}
+
+.unqx-game-history-winner {
+  font-size: 0.8rem;
+  color: #4b5563;
+}
+
+.unqx-game-history-winner-link {
+  display: inline-flex;
+  align-items: center;
+  border-bottom: 1px dashed rgba(17, 24, 39, 0.3);
+  color: #111827;
+  font-weight: 600;
+}
+
+.unqx-game-history-winner-link:hover {
+  border-bottom-color: rgba(17, 24, 39, 0.8);
+}
+
+.unqx-game-history-winner-name {
+  color: #4b5563;
+  font-weight: 500;
 }
 
 .unqx-game-history-time {

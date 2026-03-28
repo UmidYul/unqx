@@ -1,4 +1,4 @@
-const { getFeatureSetting, setFeatureSetting, DEFAULTS } = require("./feature-settings");
+const { setFeatureSetting, DEFAULTS } = require("./feature-settings");
 const { getManySettings, setSettingsBatch, getSetting } = require("./platform-settings");
 const { getSubscriptionSnapshot, normalizeSubscriptionPlan } = require("./subscription");
 
@@ -30,9 +30,9 @@ function normalizePricingSettings(raw) {
     planPremiumPrice: monthlyUzs,
     premiumUpgradePrice: monthlyUzs,
     pricingFootnote: String(
-      raw?.pricingFootnote ||
-        defaults.pricingFootnote ||
-        "Подписка Premium оплачивается ежемесячно. Без автосписаний.",
+      raw?.pricingFootnote ??
+        defaults.pricingFootnote ??
+        "",
     ).trim(),
   };
 }
@@ -50,16 +50,7 @@ async function getPricingSettings() {
     planPremiumPrice: values.plan_premium_price,
     pricingFootnote: values.pricing_footnote,
   };
-  const normalized = normalizePricingSettings(raw);
-  if (normalized.pricingFootnote) {
-    return normalized;
-  }
-  const legacy = await getFeatureSetting("pricing");
-  return normalizePricingSettings({
-    ...legacy,
-    planPremiumMonthlyPriceUzs: legacy?.planPremiumMonthlyPriceUzs ?? legacy?.planPremiumPrice,
-    planPremiumMonthlyPriceUsd: legacy?.planPremiumMonthlyPriceUsd ?? 2,
-  });
+  return normalizePricingSettings(raw);
 }
 
 async function setPricingSettings(nextPatch) {

@@ -28,9 +28,9 @@
   pageUserSession=typeof userSession !=="undefined" ? userSession : null; const hasAuthSession=Boolean(pageUserSession
   && pageUserSession.userId);
   const pricingSettings=typeof pricing==="object" && pricing ? pricing : { planPremiumMonthlyPriceUsd: 2, planPremiumMonthlyPriceUzs:
-  130000, pricingFootnote: "Premium-подписка оплачивается ежемесячно. Без автосписаний." , }; const
-  pricingFootnote=String(pricingSettings.pricingFootnote || "" ).trim()
-  || "Premium-подписка оплачивается ежемесячно. Без автосписаний." ; const authDisplayName=hasAuthSession ?
+  130000, pricingFootnote: "" , }; const
+  pricingFootnote=String(pricingSettings.pricingFootnote ?? "" ).trim()
+  ; const authDisplayName=hasAuthSession ?
   `${(pageUserSession.firstName || pageUserSession.displayName || "Мой профиль" )} · Мой профиль` : "Мой профиль" ;
   const authPhotoUrlFromServer=typeof authPhotoUrl==="string" && authPhotoUrl.trim() ? authPhotoUrl.trim() : "" ; const
   authNavPhotoUrl=authPhotoUrlFromServer || (hasAuthSession && pageUserSession.avatarUrl ? pageUserSession.avatarUrl
@@ -180,7 +180,7 @@
                   class="site-header-link whitespace-nowrap text-sm text-neutral-500 transition-colors hover:text-neutral-900">UNQ&nbsp;ELITE</a>
                 <% } %>
                   <a href="/drops" class="site-header-link text-sm text-neutral-500 transition-colors hover:text-neutral-900">Релизы</a>
-                  <a href="/unqx-game" class="site-header-link text-sm text-neutral-500 transition-colors hover:text-neutral-900">UNQX&nbsp;GAME</a>
+                  <a href="/unqx-game" class="site-header-link text-sm text-neutral-500 transition-colors hover:text-neutral-900">UNQX&nbsp;LUCKY</a>
                   <div id="home-auth-nav-desktop" class="flex items-center gap-2">
                     <a href="/login" data-auth-login
                       class="site-header-login interactive-btn inline-flex min-h-11 items-center justify-center rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100 <%= hasAuthSession ? 'hidden' : '' %>">Войти</a>
@@ -221,7 +221,7 @@
                   class="site-mobile-link whitespace-nowrap text-sm text-neutral-500">UNQ&nbsp;ELITE</a>
                 <% } %>
                   <a href="/drops" class="site-mobile-link text-sm text-neutral-500">Релизы</a>
-                  <a href="/unqx-game" class="site-mobile-link text-sm text-neutral-500">UNQX GAME</a>
+                  <a href="/unqx-game" class="site-mobile-link text-sm text-neutral-500">UNQX LUCKY</a>
                   <div id="home-auth-nav-mobile" class="flex w-full items-center justify-center gap-2">
                     <a href="/login" data-auth-login
                       class="site-header-login inline-flex min-h-11 items-center justify-center rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100 <%= hasAuthSession ? 'hidden' : '' %>">Войти</a>
@@ -878,9 +878,11 @@
                         <% }); %>
                     </div>
 
-                    <p class="mt-8 text-center text-xs text-neutral-400">
-                      <%= pricingFootnote %>
-                    </p>
+                    <% if (pricingFootnote) { %>
+                      <p class="mt-8 text-center text-xs text-neutral-400">
+                        <%= pricingFootnote %>
+                      </p>
+                    <% } %>
                   </div>
                 </section>
 
@@ -933,7 +935,7 @@
                               class="whitespace-nowrap transition-colors hover:text-neutral-900">UNQ&nbsp;ELITE</a>
                             <% } %>
                               <a href="/drops" class="transition-colors hover:text-neutral-900">Релизы</a>
-                              <a href="/unqx-game" class="transition-colors hover:text-neutral-900">UNQX GAME</a>
+                              <a href="/unqx-game" class="transition-colors hover:text-neutral-900">UNQX LUCKY</a>
                               <a href="/terms" class="transition-colors hover:text-neutral-900">Условия</a>
                               <a href="/policy" class="transition-colors hover:text-neutral-900">Политика</a>
                         </div>
@@ -964,4 +966,3 @@
   </body>
 
   </html>
-

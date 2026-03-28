@@ -4,8 +4,8 @@ const ejs = require("ejs");
 async function renderUnqxGameTemplate(locals = {}) {
   const file = path.join(process.cwd(), "src", "views", "public", "unqx-game.ejs");
   return ejs.renderFile(file, {
-    title: "UNQX Game | Крути комбинации",
-    description: "UNQX Game",
+    title: "UNQX Lucky | Крути комбинации",
+    description: "UNQX Lucky",
     cspNonce: "nonce",
     csrfToken: "csrf",
     baseUrl: "https://unqx.uz",
@@ -18,7 +18,7 @@ describe("unqx game page", () => {
   test("renders page without crashing", async () => {
     const html = await renderUnqxGameTemplate();
     expect(html).toContain("<!doctype html>");
-    expect(html).toContain("UNQX Game");
+    expect(html).toContain("UNQX Lucky");
   });
 
   test("contains spin button and result block", async () => {
@@ -27,6 +27,8 @@ describe("unqx game page", () => {
     expect(html).toContain("Крутить");
     expect(html).toContain('id="unqx-game-result-slug"');
     expect(html).toContain('id="unqx-game-result-price"');
+    expect(html).toContain('id="unqx-game-lucky-box"');
+    expect(html).toContain('id="unqx-game-spin-limit"');
   });
 
   test("contains history list and manual refresh button", async () => {

@@ -11,9 +11,19 @@ describe("unqx game client script", () => {
 
   test("contains loading state and auto refresh", () => {
     const source = fs.readFileSync(path.join(process.cwd(), "public", "js", "unqx-game.js"), "utf-8");
-    expect(source).toContain('spinButton.textContent = isSpinning ? "Крутим..." : "Крутить"');
+    expect(source).toContain('spinButton.textContent = "Крутим..."');
+    expect(source).toContain('spinButton.textContent = "Крутить"');
+    expect(source).toContain('spinButton.textContent = "Лимит на сегодня"');
     expect(source).toContain("window.setInterval");
     expect(source).toContain("HISTORY_REFRESH_MS");
+  });
+
+  test("handles daily limit and winner profile links", () => {
+    const source = fs.readFileSync(path.join(process.cwd(), "public", "js", "unqx-game.js"), "utf-8");
+    expect(source).toContain("DAILY_SPIN_LIMIT");
+    expect(source).toContain("nextSpinAt");
+    expect(source).toContain("unqx-game-history-winner-link");
+    expect(source).toContain("unqx-game-lucky-text");
   });
 
   test("does not include emoji artifacts", () => {

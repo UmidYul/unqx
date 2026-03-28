@@ -976,8 +976,8 @@ router.get(
   requireVerifiedUserPage,
   asyncHandler(async (req, res) => {
     res.render("public/unqx-game", {
-      title: "UNQX Game | Крути комбинации",
-      description: "UNQX Game: крути случайные свободные комбинации и смотри цену по актуальным правилам UNQX.",
+      title: "UNQX Lucky | Крути комбинации",
+      description: "UNQX Lucky: один спин в день и авто-скидка 10% на выпавший slug до конца дня.",
       image: defaultSocialImage,
       adminSession: getAdminSession(req),
     });
