@@ -87,6 +87,12 @@ const UNQX_GAME_HISTORY_MAX_LIMIT = 100;
 const UNQX_GAME_GENERATION_ROUNDS = 12;
 const UNQX_GAME_GENERATION_BATCH_SIZE = 64;
 const UNQX_LUCKY_DISCOUNT_PERCENT = 10;
+const UNQX_LUCKY_SPIN_BYPASS_USERS = new Set(
+  String(env.UNQX_LUCKY_SPIN_BYPASS_USERS || "")
+    .split(",")
+    .map((value) => String(value || "").trim().toLowerCase())
+    .filter(Boolean),
+);
 const affordableCandidatesCache = {
   expiresAt: 0,
   candidates: [],
@@ -385,6 +391,21 @@ function normalizeLuckySlug(value) {
     .replace(/[^A-Z0-9]/g, "")
     .slice(0, 6);
   return SLUG_REGEX.test(slug) ? slug : "";
+}
+
+function isLuckyDailySpinBypassUser(userSession) {
+  if (!userSession || !UNQX_LUCKY_SPIN_BYPASS_USERS.size) {
+    return false;
+  }
+
+  const candidates = [
+    String(userSession.userId || "").trim().toLowerCase(),
+    String(userSession.email || "").trim().toLowerCase(),
+    String(userSession.login || "").trim().toLowerCase(),
+    String(userSession.username || "").trim().toLowerCase(),
+  ];
+
+  return candidates.some((candidate) => candidate && UNQX_LUCKY_SPIN_BYPASS_USERS.has(candidate));
 }
 
 function getLuckyDayWindow(now = new Date(), timezone = env.TIMEZONE || "Asia/Tashkent") {
@@ -1355,8 +1376,9 @@ router.post(
       return;
     }
 
+    const bypassDailySpinLimit = isLuckyDailySpinBypassUser(user);
     const { spin: todaySpin, dayWindow } = await findLuckySpinForToday(userId);
-    if (todaySpin) {
+    if (!bypassDailySpinLimit && todaySpin) {
       res.status(429).json({
         error: "На сегодня попытка уже использована. Следующий спин будет после полуночи по Ташкенту.",
         code: "DAILY_SPIN_LIMIT",

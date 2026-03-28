@@ -117,6 +117,9 @@ NEXT_PUBLIC_APP_URL="http://localhost:3100"
 NEXTAUTH_SECRET="change-me"
 SESSION_SECRET="change-me-better"
 TIMEZONE="Asia/Tashkent"
+# Temporary Lucky daily-spin bypass for selected users
+# Comma-separated identifiers: userId/email/login/username
+UNQX_LUCKY_SPIN_BYPASS_USERS=""
 PORT=3100
 TRUST_PROXY=1
 SESSION_COOKIE_SECURE="auto"

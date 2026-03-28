@@ -151,6 +151,7 @@ const schema = z.object({
   ACCOUNT_REACTIVATION_OTP_TTL_MINUTES: z.coerce.number().int().positive().max(60 * 24).default(10),
   ACCOUNT_REACTIVATION_REMINDER_DAYS_BEFORE: z.coerce.number().int().positive().max(180).default(7),
   ACCOUNT_REACTIVATION_LAST_REMINDER_HOURS: z.coerce.number().int().positive().max(24 * 30).default(24),
+  UNQX_LUCKY_SPIN_BYPASS_USERS: z.string().optional(),
 });
 
 const parsed = schema.parse({
@@ -198,6 +199,7 @@ const parsed = schema.parse({
   ACCOUNT_REACTIVATION_OTP_TTL_MINUTES: process.env.ACCOUNT_REACTIVATION_OTP_TTL_MINUTES,
   ACCOUNT_REACTIVATION_REMINDER_DAYS_BEFORE: process.env.ACCOUNT_REACTIVATION_REMINDER_DAYS_BEFORE,
   ACCOUNT_REACTIVATION_LAST_REMINDER_HOURS: process.env.ACCOUNT_REACTIVATION_LAST_REMINDER_HOURS,
+  UNQX_LUCKY_SPIN_BYPASS_USERS: process.env.UNQX_LUCKY_SPIN_BYPASS_USERS,
 });
 
 const ROOT_DIR = parsed.ROOT_DIR ? path.resolve(parsed.ROOT_DIR) : rootDirDefault;
