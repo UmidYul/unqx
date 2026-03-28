@@ -99,6 +99,7 @@ const legalDocs = {
   terms: readLegalDoc("terms-of-service.md"),
   privacy: readLegalDoc("privacy-policy.md"),
   refund: readLegalDoc("refund-policy.md"),
+  childSafety: readLegalDoc("child-safety-standards.md"),
 };
 
 function buildBreadcrumbJsonLd(items) {
@@ -1335,6 +1336,45 @@ router.get(
       effectiveDate,
       readingMinutes: estimateReadingMinutes(combinedMarkdown),
       contentHtml: markdownToHtml(combinedMarkdown, { stripTitle: true }),
+      image: defaultSocialImage,
+      jsonLd,
+      adminSession: getAdminSession(req),
+    });
+  }),
+);
+
+router.get(
+  "/child-safety",
+  asyncHandler(async (req, res) => {
+    const markdown = legalDocs.childSafety;
+    const heading = extractMarkdownHeading(markdown, "UNQX Child Safety Standards (CSAE)");
+    const updatedAt = extractMarkdownMeta(markdown, "Last updated") || "2026-03-28";
+    const effectiveDate = extractMarkdownMeta(markdown, "Effective date") || "";
+    const canonical = absoluteUrl("/child-safety");
+    const jsonLd = [
+      {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        name: heading,
+        description: "UNQX child safety standards, reporting channels, moderation and enforcement.",
+        url: canonical,
+        dateModified: updatedAt,
+      },
+      buildBreadcrumbJsonLd([
+        { name: "Главная", url: absoluteUrl("/") },
+        { name: "Child Safety", url: canonical },
+      ]),
+    ];
+
+    res.render("public/legal-page", {
+      title: `${heading} | UNQX`,
+      description: "UNQX child safety standards, reporting channels, moderation and enforcement.",
+      heading,
+      lead: "Zero-tolerance standards for CSAM, child exploitation, grooming, and trafficking on UNQX.",
+      updatedAt,
+      effectiveDate,
+      readingMinutes: estimateReadingMinutes(markdown),
+      contentHtml: markdownToHtml(markdown, { stripTitle: true }),
       image: defaultSocialImage,
       jsonLd,
       adminSession: getAdminSession(req),
