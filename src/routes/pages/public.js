@@ -1387,6 +1387,7 @@ router.get(
         owner: {
           select: {
             id: true,
+            status: true,
             firstName: true,
             displayName: true,
             isVerified: true,
