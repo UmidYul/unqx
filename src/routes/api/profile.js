@@ -33,7 +33,7 @@ const {
   getSubscriptionSnapshot,
   getSubscriptionRenewalWindow,
 } = require("../../services/subscription");
-const { sendVerificationRequestToAdmin } = require("../../services/telegram");
+const { sendVerificationRequestToAdmin, sendViolationReportToAdmin } = require("../../services/telegram");
 const { sendAccountDeactivatedEmail } = require("../../services/email");
 const { resolveUzbekistanCity } = require("../../constants/uzbekistan-cities");
 const { getSetting } = require("../../services/platform-settings");
@@ -66,6 +66,15 @@ const UNKNOWN_CITY_LABEL = "Неизвестно";
 const FALLBACK_SUPPORT_TELEGRAM = "unqx_uz";
 const GEO_CITY_NOISE_ALIASES = new Set([
   "the dalles",
+]);
+const VIOLATION_REPORT_TYPES = new Set([
+  "child_safety",
+  "sexual_content",
+  "violence",
+  "fraud",
+  "hate_or_harassment",
+  "illegal_goods",
+  "other",
 ]);
 const PROFILE_CARD_BASE_COLUMNS = [
   "owner_id",
@@ -1941,6 +1950,88 @@ router.post(
     });
 
     res.json({ ok: true, request: updated });
+  }),
+);
+
+router.post(
+  "/report-violation",
+  asyncHandler(async (req, res) => {
+    const user = await getCurrentUser(req);
+    if (!assertUserActive(user, res)) return;
+
+    const violationTypeRaw = String(req.body?.type || "")
+      .trim()
+      .toLowerCase();
+    const violationType = VIOLATION_REPORT_TYPES.has(violationTypeRaw) ? violationTypeRaw : "other";
+    const message = String(req.body?.message || "")
+      .trim()
+      .slice(0, 3000);
+
+    if (message.length < 10) {
+      res.status(400).json({ error: "Message is too short", code: "VALIDATION_ERROR" });
+      return;
+    }
+
+    const userSnapshot = {
+      id: user.id,
+      email: String(user.email || ""),
+      login: String(user.login || ""),
+      displayName: normalizeDisplayName(user.displayName, user.firstName),
+      city: String(user.city || ""),
+      telegramUsername: String(user.telegramUsername || user.username || ""),
+      plan: String(getEffectivePlan(user).plan || "none"),
+      status: String(user.status || "active"),
+    };
+
+    const forwardedFor = String(req.headers["x-forwarded-for"] || "").trim();
+    const reporterIp = (forwardedFor.split(",")[0] || req.ip || "").trim().slice(0, 120);
+    const userAgent = String(req.headers["user-agent"] || "").trim().slice(0, 500);
+
+    const rows = await prisma.$queryRawUnsafe(
+      `
+        INSERT INTO violation_reports (
+          user_id,
+          violation_type,
+          message,
+          user_snapshot,
+          reporter_ip,
+          user_agent
+        )
+        VALUES ($1, $2, $3, $4::jsonb, $5, $6)
+        RETURNING id, created_at
+      `,
+      user.id,
+      violationType,
+      message,
+      JSON.stringify(userSnapshot),
+      reporterIp || null,
+      userAgent || null,
+    );
+    const row = Array.isArray(rows) ? rows[0] || null : null;
+
+    void sendViolationReportToAdmin({
+      type: violationType,
+      message,
+      userId: user.id,
+      displayName: userSnapshot.displayName,
+      email: userSnapshot.email,
+      login: userSnapshot.login,
+      telegramUsername: userSnapshot.telegramUsername,
+      city: userSnapshot.city,
+      reporterIp: reporterIp || "—",
+      userAgent: userAgent || "—",
+    }).catch((error) => {
+      console.error("[express-app] failed to send violation report to telegram", error);
+    });
+
+    res.status(201).json({
+      ok: true,
+      report: {
+        id: String(row?.id || ""),
+        createdAt: row?.created_at || null,
+        type: violationType,
+      },
+    });
   }),
 );
 

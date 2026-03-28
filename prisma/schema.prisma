@@ -306,6 +306,7 @@ model User {
   scoreHistory           ScoreHistory[]
   purchases              Purchase[]
   verificationRequests   VerificationRequest[]
+  violationReports      ViolationReport[]
   privatePasswords       CardPrivatePassword[] @relation("CardPrivatePasswords")
   privateAccessLogs      CardPrivateAccessLog[] @relation("CardPrivateAccessLogs")
 
@@ -727,6 +728,24 @@ model VerificationRequest {
   @@index([userId, status])
   @@index([status, requestedAt(sort: Desc)])
   @@map("verification_requests")
+}
+
+model ViolationReport {
+  id            String   @id @default(uuid())
+  userId        String   @map("user_id")
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  violationType String   @map("violation_type") @db.VarChar(40)
+  message       String
+  status        String   @default("new") @db.VarChar(20)
+  userSnapshot  Json     @default("{}") @map("user_snapshot")
+  reporterIp    String?  @map("reporter_ip") @db.VarChar(120)
+  userAgent     String?  @map("user_agent")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([status, createdAt(sort: Desc)])
+  @@map("violation_reports")
 }
 
 model DirectoryExclusion {

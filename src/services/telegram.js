@@ -291,6 +291,61 @@ async function sendVerificationStatusToUser({ telegramId, status, adminNote }) {
   });
 }
 
+async function sendViolationReportToAdmin(payload) {
+  const settings = await getManySettings(["contact_telegram_chat_id"]);
+  const chatId = String(settings.contact_telegram_chat_id || env.TELEGRAM_CHAT_ID || "").trim();
+  if (!chatId) {
+    throw new TelegramConfigError("Telegram chat id is not configured");
+  }
+
+  const typeLabelMap = {
+    child_safety: "Безопасность детей",
+    sexual_content: "Сексуальный контент",
+    violence: "Насилие",
+    fraud: "Мошенничество",
+    hate_or_harassment: "Ненависть/травля",
+    illegal_goods: "Незаконные товары/услуги",
+    other: "Другое",
+  };
+
+  const typeKey = String(payload?.type || "other").trim().toLowerCase();
+  const typeLabel = typeLabelMap[typeKey] || "Другое";
+  const userId = escapeHtml(payload?.userId || "");
+  const displayName = escapeHtml(payload?.displayName || "—");
+  const email = escapeHtml(payload?.email || "—");
+  const login = escapeHtml(payload?.login || "—");
+  const city = escapeHtml(payload?.city || "—");
+  const telegramUsername = escapeHtml(payload?.telegramUsername || "—");
+  const reporterIp = escapeHtml(payload?.reporterIp || "—");
+  const userAgent = escapeHtml(payload?.userAgent || "—");
+  const message = escapeHtml(payload?.message || "");
+
+  const text = [
+    "<b>НОВЫЙ РЕПОРТ О НАРУШЕНИИ</b>",
+    "",
+    `<b>Тип:</b> ${typeLabel}`,
+    `<b>User ID:</b> ${userId}`,
+    `<b>Имя:</b> ${displayName}`,
+    `<b>Email:</b> ${email}`,
+    `<b>Логин:</b> ${login}`,
+    `<b>Telegram:</b> ${telegramUsername}`,
+    `<b>Город:</b> ${city}`,
+    `<b>IP:</b> ${reporterIp}`,
+    `<b>User-Agent:</b> ${userAgent}`,
+    "",
+    `<b>Сообщение:</b>`,
+    message,
+  ].join("\n");
+
+  return sendTelegramMessage({
+    chatId,
+    text,
+    parseMode: "HTML",
+    inlineButtonText: "Открыть админку",
+    inlineButtonUrl: buildAppUrl("/admin/dashboard"),
+  });
+}
+
 async function sendPaymentAlertsToAdmin(alerts) {
   const settings = await getManySettings(["contact_telegram_chat_id"]);
   const chatId = String(settings.contact_telegram_chat_id || env.TELEGRAM_CHAT_ID || "").trim();
@@ -380,6 +435,7 @@ module.exports = {
   sendSlugExpiredToUser,
   sendVerificationRequestToAdmin,
   sendVerificationStatusToUser,
+  sendViolationReportToAdmin,
   sendPaymentAlertsToAdmin,
 };
 
