@@ -1,5 +1,5 @@
 ﻿[data-page="unqx-game"] {
-  background: #eeece6;
+  background: #fafafa;
   color: #171717;
   font-family: "Sora", "Manrope", "Space Grotesk", sans-serif;
 }
@@ -9,12 +9,12 @@
 }
 
 .unqx-lucky-card {
-  background: #f6f4ee;
+  background: #ffffff;
   box-shadow: none;
 }
 
 .unqx-game-reel {
-  background: #f3f1ea;
+  background: #fcfcfc;
   box-shadow: none;
   transition: border-color 180ms ease;
 }
@@ -36,7 +36,7 @@
   min-height: 58px;
   border-radius: 12px;
   border: 1px solid rgba(31, 41, 55, 0.24);
-  background: #f7f5ef;
+  background: #ffffff;
   color: #0f172a;
   font-size: 1.72rem;
   font-weight: 900;
@@ -61,7 +61,7 @@
 .unqx-game-history-item {
   border: 1px solid rgba(15, 23, 42, 0.14);
   border-radius: 14px;
-  background: #f6f4ee;
+  background: #ffffff;
   padding: 11px 12px;
   display: grid;
   grid-template-columns: minmax(100px, 1fr) minmax(120px, 1fr) auto auto;
@@ -131,7 +131,7 @@
   width: min(100%, 420px);
   border-radius: 18px;
   border: 1px solid rgba(17, 24, 39, 0.24);
-  background: #f6f4ee;
+  background: #ffffff;
   padding: 18px;
 }
 
