@@ -49,6 +49,24 @@ function truncateForLog(value, max = 160) {
 function createAuthApiLogger(routeBase) {
   return (req, res, next) => {
     const startedAt = Date.now();
+    const originalJson = typeof res.json === "function" ? res.json.bind(res) : null;
+    if (originalJson) {
+      res.json = (payload) => {
+        try {
+          if (payload && typeof payload === "object") {
+            res.locals.authResponseCode = typeof payload.code === "string" ? payload.code : "";
+            const message = typeof payload.error === "string"
+              ? payload.error
+              : (typeof payload.message === "string" ? payload.message : "");
+            res.locals.authResponseMessage = message;
+          }
+        } catch {
+          // noop
+        }
+        return originalJson(payload);
+      };
+    }
+
     const path = String(req.path || "/");
     const interestingPath =
       path === "/login" ||
@@ -77,10 +95,14 @@ function createAuthApiLogger(routeBase) {
         const origin = truncateForLog(req.get("origin"));
         const referer = truncateForLog(req.get("referer"));
         const mobileMarker = truncateForLog(req.get("x-unqx-mobile-client"));
+        const authCandidate = truncateForLog(req.get("x-unqx-auth-candidate"));
+        const responseCode = truncateForLog(res.locals.authResponseCode);
+        const responseMessage = truncateForLog(res.locals.authResponseMessage, 220);
         const logLine =
           `[express-app][auth-api] request_id=${requestId} method=${req.method} ` +
           `path=${routeBase}${path} status=${res.statusCode} user_id=${userId} ` +
-          `ip=${clientIp} mobile=${mobileMarker} origin=${origin} referer=${referer} ` +
+          `ip=${clientIp} mobile=${mobileMarker} candidate=${authCandidate} code=${responseCode} ` +
+          `origin=${origin} referer=${referer} msg=${responseMessage} ` +
           `ua=${userAgent} duration_ms=${durationMs}`;
 
         if (res.statusCode >= 500) {
