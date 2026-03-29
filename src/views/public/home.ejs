@@ -105,13 +105,13 @@
   badge: pagePublicSettings.plan_premium_popular_badge === false ? null : "Популярный",
   included: Array.isArray(pagePublicSettings.plan_premium_features) ? pagePublicSettings.plan_premium_features : [
   "1 цифровая визитка",
+  "До 9 кнопок",
+  "Стандартный шаблон",
+  "QR-код + NFC поддержка",
+  "Расширенная аналитика (динамика по дням)",
   "Выбор темы (5+ тем)",
   "Кастомные цвета и фон",
-  "До 9 кнопок",
-  "Расширенная аналитика (динамика по дням)",
   "Скрыть брендинг UNQX",
-  "QR-код + NFC поддержка",
-  "Приоритетная поддержка",
   ],
   excluded: Array.isArray(pagePublicSettings.plan_premium_excluded_features) ? pagePublicSettings.plan_premium_excluded_features : [],
   },
@@ -836,8 +836,8 @@
                                     <%= plan.price %>
                                   </span>
                                   <div class="home-pricing-price-side pb-1 text-left">
-                                    <p class="text-sm font-semibold <%= plan.highlighted ? 'text-neutral-200' : 'text-neutral-700' %>"><%= plan.currency || 'сум' %></p>
-                                    <p class="text-xs <%= plan.highlighted ? 'text-neutral-400' : 'text-neutral-500' %>"><%= plan.priceNote %></p>
+                                    <p class="home-pricing-price-currency text-sm font-semibold <%= plan.highlighted ? 'text-neutral-200' : 'text-neutral-700' %>"><%= plan.currency || 'сум' %></p>
+                                    <p class="home-pricing-price-period text-xs <%= plan.highlighted ? 'text-neutral-400' : 'text-neutral-500' %>"><%= plan.priceNote %></p>
                                   </div>
                                 </div>
 
