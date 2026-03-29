@@ -42,6 +42,7 @@ function createApp() {
   app.set("trust proxy", env.TRUST_PROXY);
   app.set("view engine", "ejs");
   app.set("views", path.join(__dirname, "views"));
+  app.set("etag", false);
 
   app.use(express.urlencoded({ extended: true }));
   app.use(express.json());
@@ -208,6 +209,15 @@ function createApp() {
     }),
   );
 
+  app.use((req, res, next) => {
+    const incomingRequestId = String(req.get("x-request-id") || "").trim();
+    const requestId = incomingRequestId || randomBytes(12).toString("hex");
+    req.requestId = requestId;
+    res.locals.requestId = requestId;
+    res.setHeader("X-Request-Id", requestId);
+    next();
+  });
+
   app.use((req, _res, next) => {
     const refCode = typeof req.query?.ref === "string" ? req.query.ref.trim().toUpperCase() : "";
     const normalizedRefCode = refCode.replace(/[^A-Z0-9_]/g, "").slice(0, 40);
@@ -280,13 +290,41 @@ function createApp() {
       req.path === "/forgot-password" ||
       req.path === "/reset-password" ||
       req.path === "/reactivate-account" ||
-      req.path.startsWith("/api/profile") ||
-      req.path.startsWith("/api/auth")
+      req.path.startsWith("/api/")
     ) {
       res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, private");
       res.setHeader("Pragma", "no-cache");
       res.setHeader("Expires", "0");
+      res.setHeader("Surrogate-Control", "no-store");
+      res.vary("Authorization");
+      res.vary("Cookie");
     }
+
+    next();
+  });
+
+  app.use("/api", (req, res, next) => {
+    const startedAt = Date.now();
+    const path = String(req.path || "/");
+    const shouldLogProfileRequest = path === "/me" || path === "/auth/me" || path.startsWith("/profile");
+    if (!shouldLogProfileRequest) {
+      next();
+      return;
+    }
+
+    res.on("finish", () => {
+      try {
+        const userSession = getUserSession(req);
+        const userId = userSession?.userId ? String(userSession.userId) : "guest";
+        const requestId = String(res.locals.requestId || "-");
+        const durationMs = Date.now() - startedAt;
+        console.log(
+          `[express-app][profile-api] request_id=${requestId} method=${req.method} path=/api${path} status=${res.statusCode} user_id=${userId} duration_ms=${durationMs}`,
+        );
+      } catch {
+        // noop
+      }
+    });
 
     next();
   });
