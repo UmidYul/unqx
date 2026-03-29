@@ -187,6 +187,27 @@ function formatLockUntil(date) {
   return `${hh}:${mm}`;
 }
 
+function parseBooleanFlag(value) {
+  if (typeof value === "boolean") {
+    return value;
+  }
+  const raw = String(value || "").trim().toLowerCase();
+  return raw === "1" || raw === "true" || raw === "yes" || raw === "on";
+}
+
+function resolveLoginInput(body) {
+  const source = body && typeof body === "object" ? body : {};
+  const loginRaw = source.login ?? source.identifier ?? source.idn ?? source.l;
+  const passwordRaw = source.password ?? source.secret ?? source.key ?? source.p;
+  const rememberRaw = source.rememberMe ?? source.remember ?? source.r;
+
+  return {
+    login: normalizeLogin(loginRaw),
+    password: String(passwordRaw || ""),
+    rememberMe: parseBooleanFlag(rememberRaw),
+  };
+}
+
 function userToSessionPayload(user) {
   const displayName = normalizeDisplayName(user.displayName, user.firstName);
   return {
@@ -247,6 +268,224 @@ function buildAuthSuccessPayload(user, options = {}) {
       : {}),
     user: userToClientPayload(user),
   };
+}
+
+async function handleLoginRequest(req, res) {
+  const { login, password, rememberMe } = resolveLoginInput(req.body);
+
+  const genericError = { error: "Неверный логин или пароль", code: "INVALID_CREDENTIALS" };
+  if (!login || !isValidLogin(login)) {
+    res.status(401).json(genericError);
+    return;
+  }
+  const userSelect = {
+    ...USER_AUTH_SELECT,
+    passwordHash: true,
+    loginAttempts: true,
+    lockedUntil: true,
+  };
+
+  let user = await prisma.user.findFirst({
+    where: { login },
+    select: userSelect,
+  });
+
+  // Backward-compatible fallback: allow login by email for legacy users.
+  if (!user && login.includes("@")) {
+    user = await prisma.user.findFirst({
+      where: { email: login },
+      select: userSelect,
+    });
+  }
+  if (!user || !user.passwordHash) {
+    res.status(401).json(genericError);
+    return;
+  }
+
+  if (user.lockedUntil && new Date(user.lockedUntil).getTime() > Date.now()) {
+    res.status(423).json({
+      error: `Аккаунт заблокирован до ${formatLockUntil(user.lockedUntil)}`,
+      code: "LOCKED",
+    });
+    return;
+  }
+
+  const ok = await bcrypt.compare(password, user.passwordHash);
+  if (!ok) {
+    const attempts = Number(user.loginAttempts || 0) + 1;
+    const locked = attempts >= 5 ? new Date(Date.now() + LOGIN_LOCK_MINUTES * 60 * 1000) : null;
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        loginAttempts: attempts >= 5 ? 0 : attempts,
+        lockedUntil: locked,
+      },
+    });
+    if (locked) {
+      res.status(423).json({
+        error: "Слишком много попыток. Попробуй через 15 минут.",
+        code: "LOCKED",
+      });
+      return;
+    }
+    res.status(401).json(genericError);
+    return;
+  }
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      loginAttempts: 0,
+      lockedUntil: null,
+      lastLoginAt: new Date(),
+    },
+  });
+
+  if (user.status === "blocked") {
+    res.status(403).json({
+      error: "Аккаунт отключен. Обратитесь в поддержку.",
+      code: "ACCOUNT_DISABLED",
+    });
+    return;
+  }
+
+  if (user.status === "deleted") {
+    res.status(410).json({
+      error: "Аккаунт удалён. Нужна новая регистрация.",
+      code: "ACCOUNT_DELETED",
+    });
+    return;
+  }
+
+  if (user.status === "deactivated") {
+    const restoreUntil = resolveReactivationDeadline(user);
+    if (restoreUntil.getTime() <= Date.now()) {
+      res.status(410).json({
+        error: "Срок восстановления истёк. Нужна новая регистрация.",
+        code: "ACCOUNT_DELETED",
+      });
+      return;
+    }
+    res.status(403).json({
+      error: "Аккаунт деактивирован. Восстанови его по коду из email.",
+      code: "ACCOUNT_DEACTIVATED",
+      email: user.email,
+      restoreUntil: restoreUntil.toISOString(),
+    });
+    return;
+  }
+
+  if (user.email && !user.emailVerified) {
+    res.status(403).json({ error: "Сначала подтверди email.", code: "UNVERIFIED", email: user.email });
+    return;
+  }
+
+  await loginUserSession(req, userToSessionPayload(user), { rememberMe });
+  await setOwnerSlugsCookie(res, user.id);
+  res.json(buildAuthSuccessPayload(user, { rememberMe, redirectTo: "/profile" }));
+}
+
+async function handleAuthStatusRequest(req, res) {
+  const csrfToken = ensureCsrfToken(req);
+  const sessionUser = getUserSession(req);
+  if (!sessionUser?.userId) {
+    res.json({ authenticated: false, csrfToken });
+    return;
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: sessionUser.userId },
+    select: USER_AUTH_SELECT,
+  });
+
+  if (!user) {
+    res.json({ authenticated: false, csrfToken });
+    return;
+  }
+
+  if (user.status !== "active") {
+    await logoutUserSession(req);
+    res.json({ authenticated: false, csrfToken, accountStatus: user.status });
+    return;
+  }
+
+  const profileCardRows = await prisma.$queryRaw`
+      SELECT avatar_url
+      FROM profile_cards
+      WHERE owner_id = ${user.id}
+      LIMIT 1
+    `;
+  const avatarUrl = Array.isArray(profileCardRows) && profileCardRows[0]?.avatar_url
+    ? String(profileCardRows[0].avatar_url).trim()
+    : "";
+
+  const userPayload = userToClientPayload(user);
+  userPayload.photoUrl = avatarUrl || sessionUser.avatarUrl || "/brand/profile-user.svg";
+
+  res.json({
+    authenticated: true,
+    user: userPayload,
+    csrfToken,
+  });
+}
+
+async function handleLogoutRequest(req, res) {
+  const sessionId = req.sessionID;
+  const hadSession = Boolean(req.session);
+
+  await new Promise((resolve, reject) => {
+    if (!req.session) {
+      resolve();
+      return;
+    }
+    req.session.destroy((error) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+      resolve();
+    });
+  });
+
+  if (!hadSession && sessionId && req.sessionStore && typeof req.sessionStore.destroy === "function") {
+    await new Promise((resolve, reject) => {
+      req.sessionStore.destroy(sessionId, (error) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+        resolve();
+      });
+    });
+  }
+
+  if (req.sessionStore && typeof req.sessionStore.generate === "function") {
+    req.sessionStore.generate(req);
+  } else {
+    await new Promise((resolve, reject) => {
+      if (!req.session || typeof req.session.regenerate !== "function") {
+        resolve();
+        return;
+      }
+      req.session.regenerate((error) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+        resolve();
+      });
+    });
+  }
+
+  res.clearCookie("unqx.sid", {
+    path: "/",
+    httpOnly: true,
+    sameSite: "lax",
+    secure: env.SESSION_COOKIE_SECURE === true,
+  });
+  res.append("Set-Cookie", "unqx_owner_slugs=; Max-Age=0; Path=/; SameSite=Lax");
+  const csrfToken = ensureCsrfToken(req);
+  res.json({ ok: true, csrfToken });
 }
 
 async function setOwnerSlugsCookie(res, userId) {
@@ -529,122 +768,15 @@ router.post(
   authLoginRateLimit,
   requireSameOrigin,
   requireCsrfToken,
-  asyncHandler(async (req, res) => {
-    const login = normalizeLogin(req.body?.login);
-    const password = String(req.body?.password || "");
-    const rememberMe = Boolean(req.body?.rememberMe);
+  asyncHandler(handleLoginRequest),
+);
 
-    const genericError = { error: "Неверный логин или пароль", code: "INVALID_CREDENTIALS" };
-    if (!login || !isValidLogin(login)) {
-      res.status(401).json(genericError);
-      return;
-    }
-    const userSelect = {
-      ...USER_AUTH_SELECT,
-      passwordHash: true,
-      loginAttempts: true,
-      lockedUntil: true,
-    };
-
-    let user = await prisma.user.findFirst({
-      where: { login },
-      select: userSelect,
-    });
-
-    // Backward-compatible fallback: allow login by email for legacy users.
-    if (!user && login.includes("@")) {
-      user = await prisma.user.findFirst({
-        where: { email: login },
-        select: userSelect,
-      });
-    }
-    if (!user || !user.passwordHash) {
-      res.status(401).json(genericError);
-      return;
-    }
-
-    if (user.lockedUntil && new Date(user.lockedUntil).getTime() > Date.now()) {
-      res.status(423).json({
-        error: `Аккаунт заблокирован до ${formatLockUntil(user.lockedUntil)}`,
-        code: "LOCKED",
-      });
-      return;
-    }
-
-    const ok = await bcrypt.compare(password, user.passwordHash);
-    if (!ok) {
-      const attempts = Number(user.loginAttempts || 0) + 1;
-      const locked = attempts >= 5 ? new Date(Date.now() + LOGIN_LOCK_MINUTES * 60 * 1000) : null;
-      await prisma.user.update({
-        where: { id: user.id },
-        data: {
-          loginAttempts: attempts >= 5 ? 0 : attempts,
-          lockedUntil: locked,
-        },
-      });
-      if (locked) {
-        res.status(423).json({
-          error: "Слишком много попыток. Попробуй через 15 минут.",
-          code: "LOCKED",
-        });
-        return;
-      }
-      res.status(401).json(genericError);
-      return;
-    }
-
-    await prisma.user.update({
-      where: { id: user.id },
-      data: {
-        loginAttempts: 0,
-        lockedUntil: null,
-        lastLoginAt: new Date(),
-      },
-    });
-
-    if (user.status === "blocked") {
-      res.status(403).json({
-        error: "Аккаунт отключен. Обратитесь в поддержку.",
-        code: "ACCOUNT_DISABLED",
-      });
-      return;
-    }
-
-    if (user.status === "deleted") {
-      res.status(410).json({
-        error: "Аккаунт удалён. Нужна новая регистрация.",
-        code: "ACCOUNT_DELETED",
-      });
-      return;
-    }
-
-    if (user.status === "deactivated") {
-      const restoreUntil = resolveReactivationDeadline(user);
-      if (restoreUntil.getTime() <= Date.now()) {
-        res.status(410).json({
-          error: "Срок восстановления истёк. Нужна новая регистрация.",
-          code: "ACCOUNT_DELETED",
-        });
-        return;
-      }
-      res.status(403).json({
-        error: "Аккаунт деактивирован. Восстанови его по коду из email.",
-        code: "ACCOUNT_DEACTIVATED",
-        email: user.email,
-        restoreUntil: restoreUntil.toISOString(),
-      });
-      return;
-    }
-
-    if (user.email && !user.emailVerified) {
-      res.status(403).json({ error: "Сначала подтверди email.", code: "UNVERIFIED", email: user.email });
-      return;
-    }
-
-    await loginUserSession(req, userToSessionPayload(user), { rememberMe });
-    await setOwnerSlugsCookie(res, user.id);
-    res.json(buildAuthSuccessPayload(user, { rememberMe, redirectTo: "/profile" }));
-  }),
+router.post(
+  "/open",
+  authLoginRateLimit,
+  requireSameOrigin,
+  requireCsrfToken,
+  asyncHandler(handleLoginRequest),
 );
 
 router.post(
@@ -1016,113 +1148,26 @@ router.post(
 
 router.get(
   "/me",
-  asyncHandler(async (req, res) => {
-    const csrfToken = ensureCsrfToken(req);
-    const sessionUser = getUserSession(req);
-    if (!sessionUser?.userId) {
-      res.json({ authenticated: false, csrfToken });
-      return;
-    }
+  asyncHandler(handleAuthStatusRequest),
+);
 
-    const user = await prisma.user.findUnique({
-      where: { id: sessionUser.userId },
-      select: USER_AUTH_SELECT,
-    });
-
-    if (!user) {
-      res.json({ authenticated: false, csrfToken });
-      return;
-    }
-
-    if (user.status !== "active") {
-      await logoutUserSession(req);
-      res.json({ authenticated: false, csrfToken, accountStatus: user.status });
-      return;
-    }
-
-    const profileCardRows = await prisma.$queryRaw`
-      SELECT avatar_url
-      FROM profile_cards
-      WHERE owner_id = ${user.id}
-      LIMIT 1
-    `;
-    const avatarUrl = Array.isArray(profileCardRows) && profileCardRows[0]?.avatar_url
-      ? String(profileCardRows[0].avatar_url).trim()
-      : "";
-
-    const userPayload = userToClientPayload(user);
-    userPayload.photoUrl = avatarUrl || sessionUser.avatarUrl || "/brand/profile-user.svg";
-
-    res.json({
-      authenticated: true,
-      user: userPayload,
-      csrfToken,
-    });
-  }),
+router.get(
+  "/status",
+  asyncHandler(handleAuthStatusRequest),
 );
 
 router.post(
   "/logout",
   requireSameOrigin,
   requireCsrfToken,
-  asyncHandler(async (req, res) => {
-    const sessionId = req.sessionID;
-    const hadSession = Boolean(req.session);
+  asyncHandler(handleLogoutRequest),
+);
 
-    await new Promise((resolve, reject) => {
-      if (!req.session) {
-        resolve();
-        return;
-      }
-      req.session.destroy((error) => {
-        if (error) {
-          reject(error);
-          return;
-        }
-        resolve();
-      });
-    });
-
-    if (!hadSession && sessionId && req.sessionStore && typeof req.sessionStore.destroy === "function") {
-      await new Promise((resolve, reject) => {
-        req.sessionStore.destroy(sessionId, (error) => {
-          if (error) {
-            reject(error);
-            return;
-          }
-          resolve();
-        });
-      });
-    }
-
-    if (req.sessionStore && typeof req.sessionStore.generate === "function") {
-      req.sessionStore.generate(req);
-    } else {
-      await new Promise((resolve, reject) => {
-        if (!req.session || typeof req.session.regenerate !== "function") {
-          resolve();
-          return;
-        }
-        req.session.regenerate((error) => {
-          if (error) {
-            reject(error);
-            return;
-          }
-          resolve();
-        });
-      });
-    }
-
-    res.clearCookie("unqx.sid", {
-      path: "/",
-      httpOnly: true,
-      sameSite: "lax",
-      secure: env.SESSION_COOKIE_SECURE === true,
-    });
-    res.append("Set-Cookie", "unqx_owner_slugs=; Max-Age=0; Path=/; SameSite=Lax");
-    const csrfToken = ensureCsrfToken(req);
-    res.json({ ok: true, csrfToken });
-  }),
+router.post(
+  "/close",
+  requireSameOrigin,
+  requireCsrfToken,
+  asyncHandler(handleLogoutRequest),
 );
 
 module.exports = {

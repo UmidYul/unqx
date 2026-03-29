@@ -70,9 +70,12 @@ function createAuthApiLogger(routeBase) {
     const path = String(req.path || "/");
     const interestingPath =
       path === "/login" ||
+      path === "/open" ||
       path === "/register" ||
       path === "/me" ||
+      path === "/status" ||
       path === "/logout" ||
+      path === "/close" ||
       path === "/verify-email" ||
       path === "/send-otp" ||
       path === "/forgot-password" ||
@@ -398,7 +401,14 @@ function createApp() {
   app.use("/api", (req, res, next) => {
     const startedAt = Date.now();
     const path = String(req.path || "/");
-    const shouldLogProfileRequest = path === "/me" || path === "/auth/me" || path.startsWith("/profile");
+    const shouldLogProfileRequest =
+      path === "/me" ||
+      path === "/auth/me" ||
+      path === "/mobile-auth/me" ||
+      path === "/account/me" ||
+      path === "/entry/me" ||
+      path === "/access/me" ||
+      path.startsWith("/profile");
     if (!shouldLogProfileRequest) {
       next();
       return;
@@ -426,6 +436,7 @@ function createApp() {
   app.use("/api/mobile-auth", createAuthApiLogger("/api/mobile-auth"), authApiRouter);
   app.use("/api/account", createAuthApiLogger("/api/account"), authApiRouter);
   app.use("/api/entry", createAuthApiLogger("/api/entry"), authApiRouter);
+  app.use("/api/access", createAuthApiLogger("/api/access"), authApiRouter);
   app.use("/api/profile", profileApiRouter);
   app.use("/api/cards", publicApiRouter);
   app.use("/api/payments", paymentsApiRouter);
