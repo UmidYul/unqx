@@ -8,11 +8,19 @@ const { verifyUserAccessToken } = require("../services/user-access-token");
 const SESSION_MAX_AGE_7_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 const SESSION_MAX_AGE_30_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 
+function isMobileTokenOnlyClient(req) {
+  const marker = String(req.get("x-unqx-mobile-client") || req.headers?.["x-unqx-mobile-client"] || "")
+    .trim()
+    .toLowerCase();
+  return marker === "1" || marker === "true" || marker === "yes" || marker === "on";
+}
+
 function getUserSession(req) {
   if (req._authUserFromToken) {
     return req._authUserFromToken;
   }
 
+  const mobileTokenOnly = isMobileTokenOnlyClient(req);
   const authorization = String(req.get("authorization") || req.headers?.authorization || "").trim();
   // Mobile API clients send both cookie and bearer token. Prefer bearer to avoid stale cookie identity override.
   if (authorization.toLowerCase().startsWith("bearer ")) {
@@ -28,6 +36,11 @@ function getUserSession(req) {
 
     req._authUserFromToken = payload;
     return payload;
+  }
+
+  // Mobile app auth must be bearer-token-only. Do not allow cookie fallback.
+  if (mobileTokenOnly) {
+    return null;
   }
 
   if (req.session && req.session.user) {

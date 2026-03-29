@@ -20,4 +20,16 @@ describe("auth session resolution priority", () => {
     expect(source).toContain("return null;");
     expect(source).not.toMatch(/if\s*\(!payload\)\s*\{\s*return req\.session\.user;/);
   });
+
+  test("does not fallback to cookie session for mobile token-only clients", () => {
+    const source = fs.readFileSync(path.join(process.cwd(), "src", "middleware", "auth.js"), "utf-8");
+
+    const mobileBranchIndex = source.indexOf("if (mobileTokenOnly) {");
+    const sessionBranchIndex = source.indexOf("if (req.session && req.session.user)");
+
+    expect(source).toContain("x-unqx-mobile-client");
+    expect(mobileBranchIndex).toBeGreaterThan(-1);
+    expect(sessionBranchIndex).toBeGreaterThan(-1);
+    expect(mobileBranchIndex).toBeLessThan(sessionBranchIndex);
+  });
 });
