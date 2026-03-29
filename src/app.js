@@ -31,6 +31,76 @@ const { startPendingExpiryJob } = require("./services/pending-expiry");
 const { startLiveJobs } = require("./services/live-jobs");
 const { getManySettings } = require("./services/platform-settings");
 
+function getFirstHeaderValue(value) {
+  if (!value || typeof value !== "string") {
+    return "";
+  }
+  return value.split(",")[0].trim();
+}
+
+function truncateForLog(value, max = 160) {
+  const normalized = String(value || "").replace(/\s+/g, " ").trim();
+  if (!normalized) {
+    return "-";
+  }
+  return normalized.length > max ? `${normalized.slice(0, max)}…` : normalized;
+}
+
+function createAuthApiLogger(routeBase) {
+  return (req, res, next) => {
+    const startedAt = Date.now();
+    const path = String(req.path || "/");
+    const interestingPath =
+      path === "/login" ||
+      path === "/register" ||
+      path === "/me" ||
+      path === "/logout" ||
+      path === "/verify-email" ||
+      path === "/send-otp" ||
+      path === "/forgot-password" ||
+      path === "/reset-password";
+
+    if (!interestingPath) {
+      next();
+      return;
+    }
+
+    res.on("finish", () => {
+      try {
+        const requestId = String(res.locals.requestId || req.requestId || "-");
+        const durationMs = Date.now() - startedAt;
+        const userSession = getUserSession(req);
+        const userId = userSession?.userId ? String(userSession.userId) : "guest";
+        const forwardedFor = getFirstHeaderValue(req.get("x-forwarded-for"));
+        const clientIp = truncateForLog(forwardedFor || req.ip || req.socket?.remoteAddress || "-");
+        const userAgent = truncateForLog(req.get("user-agent"));
+        const origin = truncateForLog(req.get("origin"));
+        const referer = truncateForLog(req.get("referer"));
+        const mobileMarker = truncateForLog(req.get("x-unqx-mobile-client"));
+        const logLine =
+          `[express-app][auth-api] request_id=${requestId} method=${req.method} ` +
+          `path=${routeBase}${path} status=${res.statusCode} user_id=${userId} ` +
+          `ip=${clientIp} mobile=${mobileMarker} origin=${origin} referer=${referer} ` +
+          `ua=${userAgent} duration_ms=${durationMs}`;
+
+        if (res.statusCode >= 500) {
+          console.error(logLine);
+          return;
+        }
+        if (res.statusCode >= 400) {
+          console.warn(logLine);
+          return;
+        }
+        console.log(logLine);
+      } catch {
+        // noop
+      }
+    });
+
+    next();
+  };
+}
+
 function createApp() {
   const app = express();
   const pgPool = new pg.Pool({ connectionString: env.DATABASE_URL });
@@ -330,7 +400,8 @@ function createApp() {
   });
 
   app.use("/api/admin", adminApiRouter);
-  app.use("/api/auth", authApiRouter);
+  app.use("/api/auth", createAuthApiLogger("/api/auth"), authApiRouter);
+  app.use("/api/mobile-auth", createAuthApiLogger("/api/mobile-auth"), authApiRouter);
   app.use("/api/profile", profileApiRouter);
   app.use("/api/cards", publicApiRouter);
   app.use("/api/payments", paymentsApiRouter);
