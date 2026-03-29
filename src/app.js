@@ -402,6 +402,8 @@ function createApp() {
   app.use("/api/admin", adminApiRouter);
   app.use("/api/auth", createAuthApiLogger("/api/auth"), authApiRouter);
   app.use("/api/mobile-auth", createAuthApiLogger("/api/mobile-auth"), authApiRouter);
+  app.use("/api/account", createAuthApiLogger("/api/account"), authApiRouter);
+  app.use("/api/entry", createAuthApiLogger("/api/entry"), authApiRouter);
   app.use("/api/profile", profileApiRouter);
   app.use("/api/cards", publicApiRouter);
   app.use("/api/payments", paymentsApiRouter);
