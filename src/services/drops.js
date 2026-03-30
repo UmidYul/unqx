@@ -207,4 +207,5 @@ module.exports = {
   markDropSlugSold,
   releaseUnsoldDropSlugs,
   processDropsSchedule,
+  randomSlug,
 };
