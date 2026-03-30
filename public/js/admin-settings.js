@@ -204,7 +204,8 @@
         official_unq_letter_prefixes: "Префиксы и тексты",
         official_unq_calculator_hint: "Публичные тексты",
         official_unq_purchase_notice_title: "Предупреждение перед покупкой",
-        official_unq_profile_badge_title: "Бейдж в профиле",
+        official_unq_profile_badge_title: "Пометка на визитке",
+        official_unq_profile_badge_line: "Пометка на визитке",
       },
     },
   };

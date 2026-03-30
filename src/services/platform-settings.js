@@ -262,14 +262,14 @@ const DEFAULT_SETTINGS = [
     key: "official_unq_profile_badge_title",
     group: "official_unq",
     type: "text",
-    label: "Заголовок бейджа в профиле",
+    label: "Заголовок пометки на визитке",
     value: "Официальная серия UNQ",
   },
   {
     key: "official_unq_profile_badge_line",
     group: "official_unq",
     type: "textarea",
-    label: "Подпись бейджа в профиле",
+    label: "Текст пометки на визитке",
     value: "Закрепление согласовано с администрацией и руководством платформы.",
   },
 ];

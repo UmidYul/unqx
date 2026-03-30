@@ -1341,17 +1341,6 @@ Email: ${userEmail}
         const slugCards = s.slugs
           .map((slugItem) => {
             const isPaused = normalizeCardVisibilityStatus(slugItem.status) === "paused";
-            const showOfficial =
-              Boolean(slugItem.officialPrefix) ||
-              (window.UNQOfficialLetters &&
-                typeof window.UNQOfficialLetters.isOfficialSlug === "function" &&
-                window.UNQOfficialLetters.isOfficialSlug(slugItem.fullSlug));
-            const officialHtml =
-              showOfficial &&
-              window.UNQOfficialLetters &&
-              typeof window.UNQOfficialLetters.renderProfileOfficialBadgeHtml === "function"
-                ? window.UNQOfficialLetters.renderProfileOfficialBadgeHtml()
-                : "";
 
             return `<article class="interactive-card rounded-xl border border-neutral-200 p-4">
             <div class="flex flex-wrap items-center justify-between gap-2">
@@ -1363,7 +1352,6 @@ Email: ${userEmail}
                 ${slugItem.isPrimary ? '<span class="rounded-full border border-neutral-300 px-2 py-1 text-xs font-semibold">Основной</span>' : ""}
               </div>
             </div>
-            ${officialHtml}
             ${isPaused && slugItem.pauseMessage
                 ? `<p class="mt-3 text-xs text-neutral-500">Сообщение паузы: ${esc(slugItem.pauseMessage)}</p>`
                 : ""

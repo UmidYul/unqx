@@ -36,7 +36,6 @@ const {
 const { sendVerificationRequestToAdmin, sendViolationReportToAdmin } = require("../../services/telegram");
 const { sendAccountDeactivatedEmail } = require("../../services/email");
 const { resolveUzbekistanCity } = require("../../constants/uzbekistan-cities");
-const { getOfficialUnqClientConfig, isOfficialUnqSlugWithPrefixes } = require("../../services/official-unq-config");
 const { getSetting } = require("../../services/platform-settings");
 const { getOrderPaymentReference, buildManualTelegramPaymentUrl, normalizeTelegramUsername } = require("../../services/payment-flow");
 const {
@@ -724,7 +723,6 @@ async function getUserSlugsWithStats(userId) {
       letters: item.letters,
       digits: item.digits,
       fullSlug: item.fullSlug,
-      officialPrefix: isOfficialUnqSlugWithPrefixes(item.fullSlug, prefixSet),
       status: item.status,
       statusLabel: toSlugStatusLabel(item.status),
       isPrimary: item.isPrimary,

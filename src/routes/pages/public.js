@@ -1653,10 +1653,10 @@ router.get(
 
       if (slugRow.status === "free") {
         res.status(200).render("public/slug-state", {
-          title: "UNQ свобоен",
+          title: "UNQ свободен",
           slug,
-          heading: "Этот UNQ пока свобоен",
-          message: "Ты ожешь занять его пряо сейчас.",
+          heading: "Этот UNQ пока свободен",
+          message: "Ты можешь занять его прямо сейчас.",
           ctaLabel: "Занять",
           ctaHref: "#",
           ctaOrderLink: true,
