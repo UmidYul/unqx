@@ -493,22 +493,7 @@ export default function App() {
   const timerRef = useRef(null);
   const digitsRef = useRef(null);
 
-  // Получение случайного свободного slug при каждом обновлении страницы
-  useEffect(() => {
-    async function fetchRandomSlug() {
-      try {
-        const res = await fetch("/api/random-free-slug");
-        if (!res.ok) return;
-        const data = await res.json();
-        if (data.slug && typeof data.slug === "string" && data.slug.length === 6) {
-          setLetters(data.slug.slice(0, 3));
-          setDigits(data.slug.slice(3));
-          setCard(card => ({ ...card, slug: data.slug }));
-        }
-      } catch (e) { }
-    }
-    fetchRandomSlug();
-  }, []);
+
 
   const T = theme === "light" ? LT : DT;
   const isActive = [SCAN.SCANNING, SCAN.WRITING, SCAN.VERIFYING, SCAN.LOCKING].includes(scanState);

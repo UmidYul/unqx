@@ -65,21 +65,7 @@
     return;
   }
 
-  // --- ВСТАВКА СЛУЧАЙНОГО СВОБОДНОГО SLUG ПРИ ЗАГРУЗКЕ ---
-  (async function setRandomFreeSlugOnLoad() {
-    try {
-      const res = await fetch('/api/random-free-slug');
-      if (!res.ok) return;
-      const data = await res.json();
-      if (data.slug && /^[A-Z]{3}[0-9]{3}$/.test(data.slug)) {
-        applySlugToSlots(data.slug, { stopped: true });
-        resultMetaNode.classList.remove("hidden");
-        resultSlugNode.textContent = data.slug;
-        resultPriceNode.textContent = '';
-        resultTimeNode.textContent = '';
-      }
-    } catch (e) { }
-  })();
+
 
   let isSpinning = false;
   let historyItems = [];
