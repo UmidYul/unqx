@@ -78,9 +78,21 @@ function isSameOrigin(value, allowedOrigins, normalizedAllowedOrigins) {
   return normalizedAllowedOrigins.has(normalizeWwwOrigin(parsedOrigin));
 }
 
+function isMobileClient(req) {
+  const marker = String(req.get("x-unqx-mobile-client") || "").trim().toLowerCase();
+  return marker === "1" || marker === "true" || marker === "yes" || marker === "on";
+}
+
 function requireSameOrigin(req, res, next) {
   const method = (req.method || "").toUpperCase();
   if (!["POST", "PUT", "PATCH", "DELETE"].includes(method)) {
+    return next();
+  }
+
+  // Mobile app clients don't send a browser Origin/Referer header.
+  // They are already protected by bearer token + CSRF, so skip the
+  // origin check to prevent WAF / header-mismatch false positives.
+  if (isMobileClient(req)) {
     return next();
   }
 

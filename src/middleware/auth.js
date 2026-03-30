@@ -311,14 +311,14 @@ async function loginUserSession(req, userPayload, options = {}) {
 }
 
 async function logoutUserSession(req) {
-  if (!req.session || !req.session.user) {
+  if (!req.session) {
     return;
   }
 
-  delete req.session.user;
-
+  // Fully destroy the session so the session ID and its CSRF token cannot be
+  // reused by a different user on the same device.
   await new Promise((resolve, reject) => {
-    req.session.save((error) => {
+    req.session.destroy((error) => {
       if (error) {
         reject(error);
         return;

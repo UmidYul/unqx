@@ -42,7 +42,9 @@ const publicGameSpinRateLimit = rateLimit({
 
 const authLoginRateLimit = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 5,
+  // Raised from 5 to 15: shared NAT/VPN addresses serve multiple users and hit
+  // the old limit too quickly, causing spurious WAF-block errors on mobile.
+  max: 15,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: "Too many requests", code: "RATE_LIMITED" },
