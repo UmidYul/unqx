@@ -1478,6 +1478,14 @@ Email: ${userEmail}
           console.log('[renderTheme] lockNode for', themeId, 'hidden:', premium || !locked, 'inline-flex:', !premium && locked);
           lockNode.classList.toggle("hidden", premium || !locked);
           lockNode.classList.toggle("inline-flex", !premium && locked);
+          // Force hide for premium users
+          if (premium) {
+            lockNode.style.display = 'none';
+          } else if (!premium && locked) {
+            lockNode.style.display = 'flex';
+          } else {
+            lockNode.style.display = '';
+          }
         }
       });
 
