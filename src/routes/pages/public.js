@@ -22,6 +22,7 @@ const {
   clearPrivateAccessCookie,
 } = require("../../services/private-access");
 const { seoHub, getSeoPage } = require("../../content/seo-pages");
+const { isValidSlug } = require("../../services/slug");
 
 const router = express.Router();
 const defaultSocialImage = absoluteUrl("/brand/logo.PNG");
@@ -259,6 +260,21 @@ function sanitizeSlug(value) {
     .toUpperCase()
     .replace(/[^A-Z0-9]/g, "")
     .slice(0, 20);
+}
+
+function renderPublicFreeUnqOffer(res, req, slug) {
+  res.status(200).render("public/slug-state", {
+    title: "UNQ свободен",
+    slug,
+    heading: "Этот UNQ пока свободен",
+    message: "Ты можешь занять его прямо сейчас.",
+    ctaLabel: "Занять",
+    ctaHref: "#",
+    ctaOrderLink: true,
+    ctaOrderPrefill: slug,
+    noindex: true,
+    adminSession: getAdminSession(req),
+  });
 }
 
 async function logTapEventFromPageRequest({ req, res, ownerSlug, ownerId }) {
@@ -1636,6 +1652,12 @@ router.get(
 
     const slugRow = await findSlugByFullSlugWithLegacyFallback(slug);
 
+    // Нет строки в slugs, но код валидного UNQ (AAA000) — считаем инвентарь свободным, без предсидирования всех комбинаций.
+    if (!slugRow && isValidSlug(slug)) {
+      renderPublicFreeUnqOffer(res, req, slug);
+      return;
+    }
+
     if (slugRow) {
       if (slugRow.status === "blocked") {
         res.status(200).render("public/slug-state", {
@@ -1652,18 +1674,7 @@ router.get(
       }
 
       if (slugRow.status === "free") {
-        res.status(200).render("public/slug-state", {
-          title: "UNQ свободен",
-          slug,
-          heading: "Этот UNQ пока свободен",
-          message: "Ты можешь занять его прямо сейчас.",
-          ctaLabel: "Занять",
-          ctaHref: "#",
-          ctaOrderLink: true,
-          ctaOrderPrefill: slug,
-          noindex: true,
-          adminSession: getAdminSession(req),
-        });
+        renderPublicFreeUnqOffer(res, req, slug);
         return;
       }
 
