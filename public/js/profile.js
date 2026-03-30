@@ -1324,17 +1324,17 @@ Email: ${userEmail}
             </div>
             <div class="mt-3 flex flex-wrap gap-2">
               ${["active", "paused", "private"]
-                .map((status) => {
-                  const isActive = visibility.status === status && !visibility.mixed;
-                  const statusLabel = cardVisibilityLabel(status);
-                  const statusTone = cardVisibilityTone(status);
-                  return `<button data-a="card-status" data-status="${status}" class="interactive-btn inline-flex min-h-11 items-center gap-2 rounded-lg border px-3 py-1.5 text-xs font-semibold ${isActive ? "border-neutral-900 bg-neutral-900 text-white" : "border-neutral-300 bg-white text-neutral-900"}"><span class="status-dot ${statusTone}" aria-hidden="true"></span>${statusLabel}</button>`;
-                })
-                .join("")}
+            .map((status) => {
+              const isActive = visibility.status === status && !visibility.mixed;
+              const statusLabel = cardVisibilityLabel(status);
+              const statusTone = cardVisibilityTone(status);
+              return `<button data-a="card-status" data-status="${status}" class="interactive-btn inline-flex min-h-11 items-center gap-2 rounded-lg border px-3 py-1.5 text-xs font-semibold ${isActive ? "border-neutral-900 bg-neutral-900 text-white" : "border-neutral-300 bg-white text-neutral-900"}"><span class="status-dot ${statusTone}" aria-hidden="true"></span>${statusLabel}</button>`;
+            })
+            .join("")}
             </div>
             ${visibility.status === "paused"
-              ? `<div class="mt-3 flex gap-2"><input data-card-pm value="${esc(pauseMessage)}" placeholder="Скоро вернусь · Пишите в Telegram" class="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm"><button data-a="save-card-pm" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-3 py-2 text-sm">Сохранить сообщение</button></div>`
-              : ""}
+            ? `<div class="mt-3 flex gap-2"><input data-card-pm value="${esc(pauseMessage)}" placeholder="Скоро вернусь · Пишите в Telegram" class="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm"><button data-a="save-card-pm" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-3 py-2 text-sm">Сохранить сообщение</button></div>`
+            : ""}
           </article>
         `;
 

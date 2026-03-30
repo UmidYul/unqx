@@ -24,21 +24,25 @@
   align-items: center;
   gap: 0.75rem;
 }
+
 .profile-dashboard .profile-theme-btn .min-w-0.flex-1 {
   min-width: 0;
   flex: 1 1 0%;
   display: block;
 }
+
 .profile-dashboard .profile-theme-btn .block.font-semibold {
   font-size: 14px;
   white-space: normal;
   line-height: 1.2;
 }
+
 .profile-dashboard .profile-theme-btn .block.truncate.text-neutral-500 {
   font-size: 11px;
   white-space: normal;
   line-height: 1.2;
 }
+
 .profile-dashboard {
   font-family: "Helvetica Neue", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   background: #f4f4f4 !important;
