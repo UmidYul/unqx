@@ -1458,6 +1458,7 @@ Email: ${userEmail}
         const on = button.getAttribute("data-theme") === s.theme;
         const themeId = button.getAttribute("data-theme") || "default_dark";
         const premiumOnly = PREMIUM_ONLY_THEMES.has(themeId);
+        // FIX: Always unlock for premium users
         const locked = premiumOnly && !premium;
         button.classList.toggle("bg-neutral-900", on);
         button.classList.toggle("text-white", on);
@@ -1472,8 +1473,8 @@ Email: ${userEmail}
         }
         const lockNode = button.querySelector("[data-theme-lock]");
         if (lockNode instanceof HTMLElement) {
-          lockNode.classList.toggle("hidden", !locked);
-          lockNode.classList.toggle("inline-flex", locked);
+          lockNode.classList.toggle("hidden", premium || !locked);
+          lockNode.classList.toggle("inline-flex", !premium && locked);
         }
       });
 
