@@ -24,7 +24,9 @@ let slugPricingConfig = { ...DEFAULT_HOME_SLUG_PRICING };
   // Only for homepage main calculator input (home-slug-input)
   (async function setRandomSlugOnHomeCalculator() {
     const slugInput = document.getElementById("home-slug-input");
-    if (!(slugInput instanceof HTMLInputElement)) return;
+    const lettersInput = document.getElementById("calc-letters");
+    const digitsInput = document.getElementById("calc-digits");
+    if (!(slugInput instanceof HTMLInputElement) || !(lettersInput instanceof HTMLInputElement) || !(digitsInput instanceof HTMLInputElement)) return;
     try {
       const response = await fetch("/api/random-free-slug", {
         method: "GET",
@@ -36,8 +38,12 @@ let slugPricingConfig = { ...DEFAULT_HOME_SLUG_PRICING };
       const slug = typeof payload.slug === "string" ? payload.slug.toUpperCase() : "";
       if (/^[A-Z]{3}[0-9]{3}$/.test(slug)) {
         slugInput.value = slug;
-        // Optionally trigger input event if needed for UI update
         slugInput.dispatchEvent(new Event("input", { bubbles: true }));
+        // Вставляем в калькулятор
+        lettersInput.value = slug.slice(0, 3);
+        digitsInput.value = slug.slice(3);
+        lettersInput.dispatchEvent(new Event("input", { bubbles: true }));
+        digitsInput.dispatchEvent(new Event("input", { bubbles: true }));
       }
     } catch { }
   })();
