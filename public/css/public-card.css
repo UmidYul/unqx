@@ -1363,19 +1363,19 @@ body[data-card-theme] #card-view-root>[data-card-view] {
   line-height: 1.2;
 }
 
+/* Офиц. серия: те же токены, что у .unq-ref-about / чипов — читаемо на светлых и тёмных темах */
 .unq-ref-official-unq {
   box-sizing: border-box;
   width: 100%;
   max-width: 420px;
   margin: 0 auto 14px;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.55);
+  border: var(--theme-surface-border, 1px solid #e5e5e5);
+  border-radius: 16px;
+  background: var(--theme-surface-bg, #f5f5f5);
   padding: 12px 16px;
   text-align: center;
   overflow-wrap: anywhere;
   word-wrap: break-word;
-  box-shadow: 0 2px 14px rgba(0, 0, 0, 0.08);
 }
 
 .unq-ref-official-unq-kicker {
@@ -1385,15 +1385,15 @@ body[data-card-theme] #card-view-root>[data-card-view] {
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--theme-muted-color, #8e8e93);
+  color: var(--theme-accent-color, #202020);
 }
 
 .unq-ref-official-unq-line {
   margin: 8px 0 0;
   max-width: 100%;
   font-size: 12px;
-  line-height: 1.5;
-  color: var(--theme-role-color, #4a4a4a);
+  line-height: 1.55;
+  color: var(--theme-email-color, #4b5563);
 }
 
 .unq-ref-brand {
