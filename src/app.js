@@ -30,6 +30,7 @@ const { runBootstrapTasks } = require("./services/bootstrap");
 const { startPendingExpiryJob } = require("./services/pending-expiry");
 const { startLiveJobs } = require("./services/live-jobs");
 const { getManySettings } = require("./services/platform-settings");
+const { randomFreeSlugApiRouter } = require("./routes/api/random-free-slug-router");
 
 function getFirstHeaderValue(value) {
   if (!value || typeof value !== "string") {
@@ -444,6 +445,7 @@ function createApp() {
   app.use("/api", featuresApiRouter);
   app.use("/api/admin", adminFeaturesApiRouter);
   app.use("/api/telegram", telegramApiRouter);
+  app.use("/api/random-free-slug", randomFreeSlugApiRouter);
 
   app.use(systemRouter);
   app.use(adminPagesRouter);
