@@ -49,6 +49,11 @@ function isOfficialUnqSlugWithPrefixes(fullSlug, prefixes) {
   return m ? set.has(m[1]) : false;
 }
 
+function nonEmptyOr(raw, fallback) {
+  const s = String(raw ?? "").trim();
+  return s || fallback;
+}
+
 async function getOfficialUnqClientConfig() {
   const raw = await getManySettings([
     SETTING_KEYS.prefixes,
@@ -64,8 +69,8 @@ async function getOfficialUnqClientConfig() {
     calculatorHint: String(raw[SETTING_KEYS.calculatorHint] ?? FALLBACK.calculatorHint),
     purchaseNoticeTitle: String(raw[SETTING_KEYS.purchaseTitle] ?? FALLBACK.purchaseNoticeTitle),
     purchaseNoticeBody: String(raw[SETTING_KEYS.purchaseBody] ?? FALLBACK.purchaseNoticeBody),
-    profileBadgeTitle: String(raw[SETTING_KEYS.profileTitle] ?? FALLBACK.profileBadgeTitle),
-    profileBadgeLine: String(raw[SETTING_KEYS.profileLine] ?? FALLBACK.profileBadgeLine),
+    profileBadgeTitle: nonEmptyOr(raw[SETTING_KEYS.profileTitle], FALLBACK.profileBadgeTitle),
+    profileBadgeLine: nonEmptyOr(raw[SETTING_KEYS.profileLine], FALLBACK.profileBadgeLine),
   };
 }
 

@@ -259,6 +259,7 @@
     slug: pageCard.slug,
     score: pageScore,
     topBadge: pageTopBadge,
+    officialUnqBadge: typeof officialUnqBadge === "object" && officialUnqBadge !== null ? officialUnqBadge : null,
     privateAccess: typeof privateAccess === "object" && privateAccess ? privateAccess : null,
     paused: false,
     trackViaPageRequest: true,

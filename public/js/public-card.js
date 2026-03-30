@@ -17,6 +17,7 @@
     viewsLabel: payload.viewsLabel || "",
     score: payload.score || null,
     topBadge: payload.topBadge || null,
+    officialUnqBadge: payload.officialUnqBadge && typeof payload.officialUnqBadge === "object" ? payload.officialUnqBadge : null,
   });
   if (!(root instanceof HTMLElement)) {
     return;

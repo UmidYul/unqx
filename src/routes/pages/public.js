@@ -102,7 +102,7 @@ const legalDocs = {
   childSafety: readLegalDoc("child-safety-standards.md"),
 };
 
-const { getOfficialUnqClientConfig } = require("../../services/official-unq-config");
+const { getOfficialUnqClientConfig, isOfficialUnqSlugWithPrefixes } = require("../../services/official-unq-config");
 
 router.use(
   asyncHandler(async (_req, res, next) => {
@@ -1899,6 +1899,14 @@ router.get(
         }
 
         const topBadge = await getSlugTopBadge(slug);
+        const officialCfg = await getOfficialUnqClientConfig();
+        const allCardSlugs = [slug, ...ownerSlugs.map((item) => item.fullSlug)]
+          .map((value) => String(value || "").trim().toUpperCase())
+          .filter(Boolean);
+        const showOfficialUnqBadge = allCardSlugs.some((value) => isOfficialUnqSlugWithPrefixes(value, officialCfg.prefixes));
+        const officialUnqBadge = showOfficialUnqBadge
+          ? { title: officialCfg.profileBadgeTitle, line: officialCfg.profileBadgeLine }
+          : null;
         res.render("public/card", {
           title: `${card.name} | UNQX`,
           description: `${card.name} on UNQX: digital business card, contacts, links, QR and analytics.`,
@@ -1906,6 +1914,7 @@ router.get(
           card,
           topBadge,
           score,
+          officialUnqBadge,
           noindex: slugRow.status === "private",
           privateAccess: null,
           adminSession: getAdminSession(req),

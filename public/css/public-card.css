@@ -1363,6 +1363,33 @@ body[data-card-theme] #card-view-root>[data-card-view] {
   line-height: 1.2;
 }
 
+.unq-ref-official-unq {
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto 14px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.55);
+  padding: 10px 14px;
+  text-align: center;
+}
+
+.unq-ref-official-unq-kicker {
+  margin: 0;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--theme-muted-color, #8e8e93);
+}
+
+.unq-ref-official-unq-line {
+  margin: 6px 0 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--theme-role-color, #4a4a4a);
+}
+
 .unq-ref-brand {
   text-align: center;
 }

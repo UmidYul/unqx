@@ -1034,6 +1034,7 @@
     const slugItems = card.slugs.length > 0 ? card.slugs : [card.slug];
     const score = options.score && typeof options.score === "object" ? options.score : null;
     const topBadge = options.topBadge && typeof options.topBadge === "object" ? options.topBadge : null;
+    const officialUnqBadge = options.officialUnqBadge && typeof options.officialUnqBadge === "object" ? options.officialUnqBadge : null;
 
     const tagsHtml =
       card.tags.length > 0
@@ -1117,6 +1118,15 @@
       topBadge && Number.isFinite(Number(topBadge.rank)) && Number(topBadge.rank) > 0
         ? `<div class="unq-ref-top-badge">Топ #${Math.round(Number(topBadge.rank))} этой недели</div>`
         : "";
+    const officialUnqLine = officialUnqBadge ? String(officialUnqBadge.line || "").trim() : "";
+    const officialUnqTitle = officialUnqBadge ? String(officialUnqBadge.title || "").trim() : "";
+    const officialUnqHtml =
+      officialUnqLine || officialUnqTitle
+        ? `<div class="unq-ref-official-unq" role="status">
+            ${officialUnqTitle ? `<p class="unq-ref-official-unq-kicker">${esc(officialUnqTitle)}</p>` : ""}
+            ${officialUnqLine ? `<p class="unq-ref-official-unq-line">${esc(officialUnqLine)}</p>` : ""}
+          </div>`
+        : "";
     const useCustomColor = card.tariff === "premium" && Boolean(card.customColor);
     const topLineValue =
       theme.tokens.topLineGradient === "none"
@@ -1190,6 +1200,7 @@
         <div class="public-card-shell unq-ref-shell">
           <div class="unq-ref-card-overlay">${renderThemeOverlay(theme.key)}</div>
           ${topBadgeHtml}
+          ${officialUnqHtml}
           ${card.showBranding
         ? `<div class="unq-ref-brand">
             <h2>UNQX</h2>

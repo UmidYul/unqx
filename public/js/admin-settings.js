@@ -217,8 +217,22 @@
     changesPage: 1,
   };
 
+  function resolveSettingsPanel(group) {
+    if (group === "official_unq") {
+      return document.getElementById("admin-settings-panel-official-unq");
+    }
+    return document.querySelector(`[data-settings-panel="${group}"]`);
+  }
+
+  function resolveSettingsForm(group) {
+    if (group === "official_unq") {
+      return document.getElementById("settings-form-official-unq");
+    }
+    return document.getElementById(`settings-form-${group}`);
+  }
+
   const panelByGroup = Object.fromEntries(
-    ["pricing", "algorithm", "bracelet", "contacts", "platform", "official_unq", "changes"].map((group) => [group, document.querySelector(`[data-settings-panel="${group}"]`)]),
+    ["pricing", "algorithm", "bracelet", "contacts", "platform", "official_unq", "changes"].map((group) => [group, resolveSettingsPanel(group)]),
   );
 
   function esc(value) {
@@ -322,7 +336,7 @@
   }
 
   function updateCurrentFromForm(group) {
-    const form = document.getElementById(`settings-form-${group}`);
+    const form = resolveSettingsForm(group);
     const loaded = state.loaded[group] || [];
     if (!(form instanceof HTMLFormElement)) return;
     const next = {};
@@ -436,7 +450,7 @@
             });
           }, 0);
         }
-    const form = document.getElementById(`settings-form-${group}`);
+    const form = resolveSettingsForm(group);
     if (!(form instanceof HTMLFormElement)) return;
     const preparedItems = prepareGroupItems(group, items);
     state.loaded[group] = preparedItems;
