@@ -1458,8 +1458,8 @@ Email: ${userEmail}
         const on = button.getAttribute("data-theme") === s.theme;
         const themeId = button.getAttribute("data-theme") || "default_dark";
         const premiumOnly = PREMIUM_ONLY_THEMES.has(themeId);
-        // FIX: Always unlock for premium users
-        const locked = premiumOnly && !premium;
+        // Only lock if NOT premium and theme is premium-only
+        const locked = !premium && premiumOnly;
         button.classList.toggle("bg-neutral-900", on);
         button.classList.toggle("text-white", on);
         button.disabled = locked;
@@ -1473,6 +1473,7 @@ Email: ${userEmail}
         }
         const lockNode = button.querySelector("[data-theme-lock]");
         if (lockNode instanceof HTMLElement) {
+          // Hide lock for premium users, show only if not premium and locked
           lockNode.classList.toggle("hidden", premium || !locked);
           lockNode.classList.toggle("inline-flex", !premium && locked);
         }
