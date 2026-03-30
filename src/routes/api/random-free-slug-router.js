@@ -5,7 +5,7 @@ const { getRandomFreeSlug } = require("./random-free-slug");
 const router = express.Router();
 
 // GET /api/random-free-slug
-router.get("/random-free-slug", asyncHandler(getRandomFreeSlug));
+router.get("/", asyncHandler(getRandomFreeSlug));
 
 module.exports = {
     randomFreeSlugApiRouter: router,
