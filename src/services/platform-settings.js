@@ -226,6 +226,52 @@ const DEFAULT_SETTINGS = [
     label: "Дата и время открытия сайта",
     value: "",
   },
+  {
+    key: "official_unq_letter_prefixes",
+    group: "official_unq",
+    type: "json",
+    label: "Префиксы букв UNQ (официальный / гос сегмент)",
+    description: "Три латинские буквы на элемент (DAV, UZB, ...). Учитываются только буквы, цифры любые.",
+    value: ["DAV", "PPP", "PAA", "UZB"],
+  },
+  {
+    key: "official_unq_calculator_hint",
+    group: "official_unq",
+    type: "textarea",
+    label: "Подсказка под калькулятором на главной",
+    description: "Пустое значение скрывает блок.",
+    value:
+      "Серии вроде госномеров (определённые три буквы латиницы) резервируются только по согласованию с администрацией и руководством проекта.",
+  },
+  {
+    key: "official_unq_purchase_notice_title",
+    group: "official_unq",
+    type: "text",
+    label: "Заголовок предупреждения перед покупкой",
+    value: "Официальная серия",
+  },
+  {
+    key: "official_unq_purchase_notice_body",
+    group: "official_unq",
+    type: "textarea",
+    label: "Текст предупреждения перед покупкой",
+    value:
+      "Такой UNQ можно приобрести только после согласования с администрацией и руководством UNQX. Эти буквенные комбинации предназначены для ограниченного круга владельцев.",
+  },
+  {
+    key: "official_unq_profile_badge_title",
+    group: "official_unq",
+    type: "text",
+    label: "Заголовок бейджа в профиле",
+    value: "Официальная серия UNQ",
+  },
+  {
+    key: "official_unq_profile_badge_line",
+    group: "official_unq",
+    type: "textarea",
+    label: "Подпись бейджа в профиле",
+    value: "Закрепление согласовано с администрацией и руководством платформы.",
+  },
 ];
 
 const DEFAULT_MAP = new Map(DEFAULT_SETTINGS.map((item) => [item.key, item]));

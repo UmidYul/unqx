@@ -37,6 +37,7 @@ const { publicOrderRateLimit, publicGameSpinRateLimit } = require("../../middlew
 const { getUserSession, requireUserApi } = require("../../middleware/auth");
 const { OrderRequestSchema } = require("../../validation/order-request");
 const { getSetting, getManySettings } = require("../../services/platform-settings");
+const { getOfficialUnqClientConfig } = require("../../services/official-unq-config");
 const { normalizeButtonType, getAnalyticsSessionId, recordView } = require("../../services/tap-tracker");
 const { resolveClientIp, buildViewerFingerprint } = require("../../services/request-ip");
 const { logPaymentEvent } = require("../../services/payment-events");
@@ -2007,6 +2008,14 @@ router.get(
   "/slug-pricing-config",
   asyncHandler(async (_req, res) => {
     const config = await getSlugPricingConfig();
+    res.json(config);
+  }),
+);
+
+router.get(
+  "/official-unq-public-config",
+  asyncHandler(async (_req, res) => {
+    const config = await getOfficialUnqClientConfig();
     res.json(config);
   }),
 );

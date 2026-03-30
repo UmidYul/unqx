@@ -5,7 +5,7 @@
   if (activeTab !== "settings") return;
 
   const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "";
-  const groups = ["pricing", "algorithm", "bracelet", "contacts", "platform"];
+  const groups = ["pricing", "algorithm", "bracelet", "contacts", "platform", "official_unq"];
   const uiConfig = {
     hiddenByGroup: {
       pricing: new Set([
@@ -58,6 +58,8 @@
       referral_v1_referrer_reward: "Сумма бонуса пользователю, который пригласил друга.",
       referral_v1_invitee_discount: "Скидка новому пользователю по реферальной ссылке.",
       referral_v1_discount_cap_percent: "Максимальный общий дисконт от slug-базы.",
+      official_unq_letter_prefixes: "Например: DAV, UZB, PPP — только три буквы, как на узбекских номерах.",
+      official_unq_calculator_hint: "Показывается на главной под калькулятором. Очистите поле, чтобы скрыть.",
       pending_expiry_hours: "Через сколько часов неоплаченный заказ станет просроченным.",
       score_recalc_interval_hours: "Как часто пересчитывать UNQ Score.",
       leaderboard_min_views: "Минимум просмотров визитки для попадания в рейтинг.",
@@ -160,6 +162,14 @@
         "maintenance_release_report_message",
         "maintenance_release_open_at",
       ],
+      official_unq: [
+        "official_unq_letter_prefixes",
+        "official_unq_calculator_hint",
+        "official_unq_purchase_notice_title",
+        "official_unq_purchase_notice_body",
+        "official_unq_profile_badge_title",
+        "official_unq_profile_badge_line",
+      ],
     },
     sectionByKey: {
       pricing: {
@@ -190,6 +200,12 @@
         pending_expiry_hours: "Лимиты и расчеты",
         maintenance_mode: "Обслуживание",
       },
+      official_unq: {
+        official_unq_letter_prefixes: "Префиксы и тексты",
+        official_unq_calculator_hint: "Публичные тексты",
+        official_unq_purchase_notice_title: "Предупреждение перед покупкой",
+        official_unq_profile_badge_title: "Бейдж в профиле",
+      },
     },
   };
   const state = {
@@ -202,7 +218,7 @@
   };
 
   const panelByGroup = Object.fromEntries(
-    ["pricing", "algorithm", "bracelet", "contacts", "platform", "changes"].map((group) => [group, document.querySelector(`[data-settings-panel="${group}"]`)]),
+    ["pricing", "algorithm", "bracelet", "contacts", "platform", "official_unq", "changes"].map((group) => [group, document.querySelector(`[data-settings-panel="${group}"]`)]),
   );
 
   function esc(value) {

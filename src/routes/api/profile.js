@@ -36,7 +36,7 @@ const {
 const { sendVerificationRequestToAdmin, sendViolationReportToAdmin } = require("../../services/telegram");
 const { sendAccountDeactivatedEmail } = require("../../services/email");
 const { resolveUzbekistanCity } = require("../../constants/uzbekistan-cities");
-const { isOfficialUnqSlug } = require("../../constants/official-unq-letters");
+const { getOfficialUnqClientConfig, isOfficialUnqSlugWithPrefixes } = require("../../services/official-unq-config");
 const { getSetting } = require("../../services/platform-settings");
 const { getOrderPaymentReference, buildManualTelegramPaymentUrl, normalizeTelegramUsername } = require("../../services/payment-flow");
 const {
@@ -674,10 +674,14 @@ async function listOwnerPrivatePasswords(ownerId) {
 }
 
 async function getUserSlugsWithStats(userId) {
-  const slugs = await prisma.slug.findMany({
-    where: { ownerId: userId },
-    orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
-  });
+  const [slugs, officialCfg] = await Promise.all([
+    prisma.slug.findMany({
+      where: { ownerId: userId },
+      orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
+    }),
+    getOfficialUnqClientConfig(),
+  ]);
+  const prefixSet = new Set(officialCfg.prefixes);
   const fullSlugs = slugs.map((item) => item.fullSlug);
 
   let viewsBySlug = new Map();
@@ -720,7 +724,7 @@ async function getUserSlugsWithStats(userId) {
       letters: item.letters,
       digits: item.digits,
       fullSlug: item.fullSlug,
-      officialPrefix: isOfficialUnqSlug(item.fullSlug),
+      officialPrefix: isOfficialUnqSlugWithPrefixes(item.fullSlug, prefixSet),
       status: item.status,
       statusLabel: toSlugStatusLabel(item.status),
       isPrimary: item.isPrimary,

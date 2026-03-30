@@ -408,9 +408,12 @@
                     </h2>
                     <p class="mt-3 text-base text-neutral-500">Формат: AAA000 - 3 буквы + 3 цифры. Цена считается
                       автоматически.</p>
-                    <p class="mt-2 text-xs leading-relaxed text-neutral-400">Отдельные буквенные префиксы (в т.ч.
-                      государственного уровня) резервируются только после согласования с администрацией и руководством
-                      платформы.</p>
+                    <% if (typeof officialUnqClientConfig==='object' && officialUnqClientConfig !==null &&
+                      officialUnqClientConfig.calculatorHint) { %>
+                      <p class="mt-2 text-xs leading-relaxed text-neutral-400">
+                        <%= officialUnqClientConfig.calculatorHint %>
+                      </p>
+                      <% } %>
 
                     <div class="mt-10 flex items-center gap-3">
                       <input id="calc-letters" type="text" maxlength="3" placeholder="AAA"

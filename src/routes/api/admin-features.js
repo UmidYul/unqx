@@ -32,7 +32,7 @@ const router = express.Router();
 router.use(adminApiRateLimit);
 router.use(requireAdminApi);
 
-const SETTINGS_GROUPS = new Set(["pricing", "algorithm", "bracelet", "contacts", "platform"]);
+const SETTINGS_GROUPS = new Set(["pricing", "algorithm", "bracelet", "contacts", "platform", "official_unq"]);
 const FLASH_CONDITION_TYPES = new Set(["all", "pattern_000", "pattern_aaa", "sequential_digits", "custom"]);
 const FLASH_SLUG_RE = /^[A-Z]{3}[0-9]{3}$/;
 const FLASH_FULL_MASK_RE = /^[A-Z0-9*?]{6}$/;
@@ -44,6 +44,7 @@ const GROUP_KEY_PREFIX = {
   bracelet: ["bracelet_"],
   contacts: ["contact_"],
   platform: ["platform_", "feature_", "pending_", "score_", "leaderboard_", "referral_", "promo_", "maintenance_"],
+  official_unq: ["official_unq_"],
 };
 
 function isKnownGroup(group) {
@@ -72,6 +73,17 @@ function validateSettingValue(key, value) {
   if (k.endsWith("_slug_limit") || k.endsWith("_button_limit") || k.endsWith("_tag_limit")) {
     const n = Number(value);
     if (!Number.isFinite(n) || n < 0) return "Лимит не может быть отрицательным";
+  }
+  if (k === "official_unq_letter_prefixes") {
+    if (!Array.isArray(value)) return "Должен быть JSON-массив строк";
+    if (value.length > 64) return "Не более 64 префиксов";
+    for (const item of value) {
+      const L = String(item || "")
+        .toUpperCase()
+        .replace(/[^A-Z]/g, "")
+        .slice(0, 3);
+      if (L.length !== 3) return "Каждый префикс — ровно 3 латинские буквы";
+    }
   }
   return null;
 }
@@ -1285,7 +1297,9 @@ router.patch(
           ? "Изменение цены не затрагивает существующие покупки и активации."
           : group === "algorithm"
             ? "Изменение алгоритма не пересчитывает уже одобренные заявки. Новые цены применяются только к новым заявкам."
-            : null,
+            : group === "official_unq"
+              ? "Изменения применяются на сайте в течение минуты (кэш настроек). Обновите страницу при необходимости."
+              : null,
       items: rows,
     });
   }),

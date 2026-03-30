@@ -20,7 +20,12 @@
   <script nonce="<%= cspNonce %>">
     window.UNQOrderModalSessionUser = <%- modalSessionUserJson %>;
   </script>
-  <div id="order-modal-root" class="fixed inset-0 z-[70] hidden">
+  <% const officialUnqClientJson=JSON.stringify(typeof officialUnqClientConfig==='object' && officialUnqClientConfig
+    !==null ? officialUnqClientConfig : null).replace(/</g, "\\u003c"); %>
+    <script nonce="<%= cspNonce %>">
+      window.__UNQ_OFFICIAL_CLIENT_CONFIG = <%- officialUnqClientJson %>;
+    </script>
+    <div id="order-modal-root" class="fixed inset-0 z-[70] hidden">
     <div id="order-modal-backdrop" class="absolute inset-0 bg-black/50"></div>
     <div id="order-modal-wrap" class="relative flex min-h-full items-center justify-center p-4">
       <section id="order-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="order-modal-title" tabindex="-1"

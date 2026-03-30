@@ -1,4 +1,4 @@
-﻿const fs = require("node:fs");
+const fs = require("node:fs");
 const path = require("node:path");
 const express = require("express");
 
@@ -101,6 +101,19 @@ const legalDocs = {
   refund: readLegalDoc("refund-policy.md"),
   childSafety: readLegalDoc("child-safety-standards.md"),
 };
+
+const { getOfficialUnqClientConfig } = require("../../services/official-unq-config");
+
+router.use(
+  asyncHandler(async (_req, res, next) => {
+    try {
+      res.locals.officialUnqClientConfig = await getOfficialUnqClientConfig();
+    } catch {
+      res.locals.officialUnqClientConfig = null;
+    }
+    next();
+  }),
+);
 
 function buildBreadcrumbJsonLd(items) {
   return {

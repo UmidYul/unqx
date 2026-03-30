@@ -1236,6 +1236,11 @@
                   class="settings-subtab-btn flex shrink-0 items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-semibold">Платформа
                   <span data-settings-unsaved-dot="platform"
                     class="hidden h-2 w-2 rounded-full bg-amber-500"></span></button>
+                <button type="button" data-settings-subtab="official_unq"
+                  class="settings-subtab-btn flex shrink-0 items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-semibold">Офиц.
+                  UNQ / гос
+                  <span data-settings-unsaved-dot="official_unq"
+                    class="hidden h-2 w-2 rounded-full bg-amber-500"></span></button>
                 <button type="button" data-settings-subtab="changes"
                   class="settings-subtab-btn flex shrink-0 items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-semibold">Логи
                   изменений</button>
@@ -1280,6 +1285,15 @@
                     class="interactive-btn min-h-11 rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800">Сохранить
                     платформу</button></div>
               </article>
+              <article data-settings-panel="official_unq" class="hidden rounded-2xl border border-neutral-200 bg-white p-4">
+                <h2 class="text-base font-bold text-neutral-900">Официальные префиксы UNQ</h2>
+                <p class="mt-1 text-sm text-neutral-600">Префиксы (три буквы) и тексты для предупреждений перед покупкой и бейджа в профиле. Хранится в
+                  <span class="font-mono text-xs">platform_settings</span>.</p>
+                <form id="settings-form-official_unq" class="mt-4 grid gap-3 md:grid-cols-2"></form>
+                <div class="mt-3"><button type="button" data-settings-save="official_unq"
+                    class="interactive-btn min-h-11 rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800">Сохранить</button>
+                </div>
+              </article>
               <article data-settings-panel="changes" class="hidden rounded-2xl border border-neutral-200 bg-white p-4">
                 <h2 class="text-base font-bold text-neutral-900">Логи изменений</h2>
                 <form id="settings-changes-filters" class="mt-3 grid gap-3 md:grid-cols-4">
@@ -1290,6 +1304,7 @@
                     <option value="bracelet">Браслет</option>
                     <option value="contacts">Контакты</option>
                     <option value="platform">Платформа</option>
+                    <option value="official_unq">Офиц. UNQ</option>
                   </select>
                   <input type="date" name="dateFrom" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
                   <input type="date" name="dateTo" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
