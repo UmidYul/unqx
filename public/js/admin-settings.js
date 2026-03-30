@@ -573,6 +573,30 @@
         await loadGroup(group, { force: true, override: { [addKey]: arr } });
         return;
       }
+
+      const removeAttr = target.getAttribute("data-array-remove");
+      if (removeAttr !== null) {
+        event.preventDefault();
+        const idx = Number(removeAttr);
+        const listNode = target.closest("[data-array-list]");
+        if (!(listNode instanceof HTMLElement)) return;
+        const arrayKey = listNode.getAttribute("data-array-list");
+        if (!arrayKey) return;
+        const hidden = form.elements.namedItem(arrayKey);
+        if (!(hidden instanceof HTMLTextAreaElement)) return;
+        let arr = [];
+        try {
+          arr = JSON.parse(hidden.value || "[]");
+        } catch {
+          arr = [];
+        }
+        if (!Array.isArray(arr)) arr = [];
+        if (Number.isFinite(idx) && idx >= 0 && idx < arr.length) {
+          arr.splice(idx, 1);
+        }
+        hidden.value = JSON.stringify(arr);
+        await loadGroup(group, { force: true, override: { [arrayKey]: arr } });
+      }
     });
 
     form.querySelectorAll("[data-array-list]").forEach((listNode) => {

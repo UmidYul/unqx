@@ -78,11 +78,11 @@
 
     function renderProfileOfficialBadgeHtml() {
       return (
-        '<div class="mt-3 rounded-xl border border-neutral-200/90 bg-gradient-to-b from-neutral-50 to-white px-3.5 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">' +
-        '<p class="text-[10px] font-semibold uppercase tracking-[0.22em] text-neutral-500">' +
+        '<div class="profile-official-unq-badge mt-3 w-full max-w-full box-border rounded-xl border border-neutral-200/90 bg-gradient-to-b from-neutral-50 to-white px-4 py-3 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">' +
+        '<p class="mb-0 text-[10px] font-semibold uppercase tracking-[0.12em] text-neutral-500">' +
         escHtml(profileTitle) +
         "</p>" +
-        '<p class="mt-1 text-xs leading-snug text-neutral-600">' +
+        '<p class="mb-0 mt-2 max-w-full text-xs leading-relaxed text-neutral-600 break-words">' +
         escHtml(profileLine) +
         "</p>" +
         "</div>"
