@@ -341,6 +341,10 @@
                     </p>
                   </div>
 
+                  <div id="home-slug-official-notice" class="home-official-unq-notice mx-auto mt-4 hidden max-w-md text-left"
+                    role="status">
+                  </div>
+
                   <div class="mt-4 flex items-center justify-center gap-3">
                     <a id="home-slug-primary-action" href="#" data-order-link
                       class="btn-shimmer inline-flex items-center gap-2 rounded-xl bg-neutral-900 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-neutral-800">
@@ -404,6 +408,9 @@
                     </h2>
                     <p class="mt-3 text-base text-neutral-500">Формат: AAA000 - 3 буквы + 3 цифры. Цена считается
                       автоматически.</p>
+                    <p class="mt-2 text-xs leading-relaxed text-neutral-400">Отдельные буквенные префиксы (в т.ч.
+                      государственного уровня) резервируются только после согласования с администрацией и руководством
+                      платформы.</p>
 
                     <div class="mt-10 flex items-center gap-3">
                       <input id="calc-letters" type="text" maxlength="3" placeholder="AAA"
@@ -474,6 +481,8 @@
 
                       <p id="calc-result-formula" class="mt-2 font-mono text-xs text-neutral-400">100 000 x 1 x 1 = 100
                         000 сум</p>
+
+                      <div id="calc-official-notice" class="home-official-unq-notice mt-6 hidden" role="status"></div>
 
                       <div class="mt-6 flex gap-6">
                         <div>
@@ -964,6 +973,7 @@
     </main>
 
     <script nonce="<%= cspNonce %>" src="/js/site-dialogs.js"></script>
+    <script nonce="<%= cspNonce %>" src="/js/official-unq-letters.js"></script>
     <script nonce="<%= cspNonce %>" src="/js/order-modal.js"></script>
     <script nonce="<%= cspNonce %>" src="/js/public-home-search.js"></script>
     <script nonce="<%= cspNonce %>" src="/js/public-realtime.js"></script>

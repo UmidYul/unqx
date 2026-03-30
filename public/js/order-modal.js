@@ -1,4 +1,4 @@
-﻿// Заглушка для syncQuickPayState, чтобы не было ReferenceError
+// Заглушка для syncQuickPayState, чтобы не было ReferenceError
 async function syncQuickPayState() {
   // TODO: реализовать или восстановить логику, если требуется
   return null;
@@ -58,6 +58,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     letters: document.getElementById("order-modal-letters"),
     digits: document.getElementById("order-modal-digits"),
     slugPreview: document.getElementById("order-modal-slug-preview"),
+    officialNotice: document.getElementById("order-modal-official-notice"),
     rarity: document.getElementById("order-modal-rarity"),
     slugPrice: document.getElementById("order-modal-slug-price"),
     formula: document.getElementById("order-modal-formula"),
@@ -1158,6 +1159,10 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     const fallbackSlugPrice = pricing ? pricing.total : 0;
     const server = pricing ? await resolveServerPrice(pricing.slug, fallbackSlugPrice) : { total: 0, flash: null };
     if (pricing && !server) {
+      if (dom.officialNotice instanceof HTMLElement) {
+        dom.officialNotice.innerHTML = "";
+        dom.officialNotice.classList.add("hidden");
+      }
       return;
     }
     const slugPrice = server ? server.total : fallbackSlugPrice;
@@ -1218,6 +1223,24 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     const rarity = getRarity(slugPrice);
 
     setSlugMode(pricing);
+
+    if (dom.officialNotice instanceof HTMLElement) {
+      const api = window.UNQOfficialLetters;
+      const slugForCheck = pricing ? String(pricing.slug || "").replace(/\s/g, "") : "";
+      const show =
+        api &&
+        typeof api.isOfficialSlug === "function" &&
+        typeof api.renderPurchaseNoticeHtml === "function" &&
+        slugForCheck &&
+        api.isOfficialSlug(slugForCheck);
+      if (show) {
+        dom.officialNotice.innerHTML = api.renderPurchaseNoticeHtml();
+        dom.officialNotice.classList.remove("hidden");
+      } else {
+        dom.officialNotice.innerHTML = "";
+        dom.officialNotice.classList.add("hidden");
+      }
+    }
 
     if (dom.planBasicPrice instanceof HTMLElement) {
       dom.planBasicPrice.textContent = `${formatPrice(planCardBasic)} сум`;

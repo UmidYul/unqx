@@ -457,6 +457,7 @@ function initSlugAvailability(orderApi) {
   const takenOwnerView = document.getElementById("home-slug-taken-owner-view");
   const primaryAction = document.getElementById("home-slug-primary-action");
   const calculatorAction = document.getElementById("home-slug-calculator-action");
+  const officialHeroNotice = document.getElementById("home-slug-official-notice");
 
   if (
     !(slugInput instanceof HTMLInputElement) ||
@@ -474,6 +475,29 @@ function initSlugAvailability(orderApi) {
     !(primaryAction instanceof HTMLAnchorElement)
   ) {
     return;
+  }
+
+  function syncHeroOfficialNotice(slug) {
+    if (!(officialHeroNotice instanceof HTMLElement)) {
+      return;
+    }
+    const api = window.UNQOfficialLetters;
+    if (
+      !api ||
+      typeof api.isOfficialSlug !== "function" ||
+      typeof api.renderPurchaseNoticeHtml !== "function"
+    ) {
+      officialHeroNotice.classList.add("hidden");
+      officialHeroNotice.innerHTML = "";
+      return;
+    }
+    if (slug && api.isOfficialSlug(slug)) {
+      officialHeroNotice.innerHTML = api.renderPurchaseNoticeHtml();
+      officialHeroNotice.classList.remove("hidden");
+    } else {
+      officialHeroNotice.classList.add("hidden");
+      officialHeroNotice.innerHTML = "";
+    }
   }
 
   const SLUG_REGEX = /^[A-Z]{3}[0-9]{3}$/;
@@ -561,6 +585,7 @@ function initSlugAvailability(orderApi) {
       renderSuggestions([]);
       setTakenOwner(null);
       setPrimaryAction({ visible: false });
+      syncHeroOfficialNotice("");
       return;
     }
 
@@ -571,6 +596,7 @@ function initSlugAvailability(orderApi) {
       renderSuggestions([]);
       setTakenOwner(null);
       setPrimaryAction({ visible: false });
+      syncHeroOfficialNotice("");
       return;
     }
 
@@ -585,6 +611,7 @@ function initSlugAvailability(orderApi) {
         slug,
         label: "Купить",
       });
+      syncHeroOfficialNotice(slug);
       return;
     }
 
@@ -599,6 +626,7 @@ function initSlugAvailability(orderApi) {
         slug,
         label: "Занять UNQ",
       });
+      syncHeroOfficialNotice(slug);
       return;
     }
 
@@ -615,6 +643,7 @@ function initSlugAvailability(orderApi) {
         href: "#hero-check",
         label: "Уведомить меня",
       });
+      syncHeroOfficialNotice(slug);
       return;
     }
 
@@ -624,6 +653,7 @@ function initSlugAvailability(orderApi) {
     renderSuggestions([]);
     setTakenOwner(null);
     setPrimaryAction({ visible: false });
+    syncHeroOfficialNotice("");
   }
 
   async function verifySlug() {
@@ -632,6 +662,7 @@ function initSlugAvailability(orderApi) {
 
     if (!slug) {
       feedback.classList.add("hidden");
+      syncHeroOfficialNotice("");
       return;
     }
 
@@ -771,6 +802,7 @@ function initSlugCalculator(orderApi) {
   const reserveLink = document.getElementById("calc-reserve-link");
   const similarWrap = document.getElementById("calc-similar-wrap");
   const similarItems = document.getElementById("calc-similar-items");
+  const calcOfficialNotice = document.getElementById("calc-official-notice");
 
   if (
     !(lettersInput instanceof HTMLInputElement) ||
@@ -808,6 +840,10 @@ function initSlugCalculator(orderApi) {
   function showEmptyState() {
     emptyState.classList.remove("hidden");
     resultWrap.classList.add("hidden");
+    if (calcOfficialNotice instanceof HTMLElement) {
+      calcOfficialNotice.innerHTML = "";
+      calcOfficialNotice.classList.add("hidden");
+    }
   }
 
   function showResultState() {
@@ -1204,6 +1240,22 @@ function initSlugCalculator(orderApi) {
     reserveLink.setAttribute("data-order-prefill", pricing.slug);
     reserveLink.innerHTML = `Занять ${pricing.slug}${RESERVE_ICON}`;
     renderSimilarAvailable(similarSuggestions);
+
+    if (calcOfficialNotice instanceof HTMLElement) {
+      const api = window.UNQOfficialLetters;
+      if (
+        api &&
+        typeof api.isOfficialSlug === "function" &&
+        typeof api.renderPurchaseNoticeHtml === "function" &&
+        api.isOfficialSlug(pricing.slug)
+      ) {
+        calcOfficialNotice.innerHTML = api.renderPurchaseNoticeHtml();
+        calcOfficialNotice.classList.remove("hidden");
+      } else {
+        calcOfficialNotice.innerHTML = "";
+        calcOfficialNotice.classList.add("hidden");
+      }
+    }
   }
 
   lettersInput.addEventListener("input", () => {
