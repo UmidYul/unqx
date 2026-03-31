@@ -60,6 +60,39 @@ function parseSessionCookieSecure(value, nodeEnv) {
   return nodeEnv === "production" ? "auto" : false;
 }
 
+
+function isIpLikeHostname(hostname) {
+  if (!hostname) {
+    return false;
+  }
+  if (hostname.includes(":")) {
+    return true;
+  }
+  if (/^\d{1,3}(?:\.\d{1,3}){3}$/.test(hostname)) {
+    return true;
+  }
+  return false;
+}
+
+function parseSessionCookieDomain(value, appUrl) {
+  if (typeof value === "string" && value.trim()) {
+    return value.trim().replace(/^\.+/, "").toLowerCase();
+  }
+
+  try {
+    const hostname = new URL(appUrl).hostname.trim().toLowerCase();
+    if (!hostname || hostname === "localhost" || isIpLikeHostname(hostname)) {
+      return undefined;
+    }
+    if (hostname.startsWith("www.")) {
+      return hostname.slice(4);
+    }
+    return hostname;
+  } catch {
+    return undefined;
+  }
+}
+
 function decodeB64(value) {
   if (!value) {
     return undefined;
@@ -142,6 +175,7 @@ const schema = z.object({
   TRUSTED_PROXY_IPS: z.string().optional(),
   TRUSTED_PROXY_CIDRS: z.string().optional(),
   SESSION_COOKIE_SECURE: z.string().optional(),
+  SESSION_COOKIE_DOMAIN: z.string().optional(),
   SESSION_MAX_AGE_MINUTES: z.coerce.number().int().positive().max(60 * 24 * 30).default(120),
   SESSION_ROLLING: z.string().optional(),
   DISABLE_HTTPS_ENFORCEMENT: z.string().optional(),
@@ -190,6 +224,7 @@ const parsed = schema.parse({
   TRUSTED_PROXY_IPS: process.env.TRUSTED_PROXY_IPS,
   TRUSTED_PROXY_CIDRS: process.env.TRUSTED_PROXY_CIDRS,
   SESSION_COOKIE_SECURE: process.env.SESSION_COOKIE_SECURE,
+  SESSION_COOKIE_DOMAIN: process.env.SESSION_COOKIE_DOMAIN,
   SESSION_MAX_AGE_MINUTES: process.env.SESSION_MAX_AGE_MINUTES,
   SESSION_ROLLING: process.env.SESSION_ROLLING,
   DISABLE_HTTPS_ENFORCEMENT: process.env.DISABLE_HTTPS_ENFORCEMENT,
@@ -209,6 +244,7 @@ const APP_URL = (parsed.APP_URL ?? parsed.NEXT_PUBLIC_APP_URL ?? parsed.NEXTAUTH
 const SESSION_SECRET = parsed.SESSION_SECRET ?? parsed.NEXTAUTH_SECRET ?? "change-me-dev-secret";
 const TRUST_PROXY = parseTrustProxy(parsed.TRUST_PROXY);
 const SESSION_COOKIE_SECURE = parseSessionCookieSecure(parsed.SESSION_COOKIE_SECURE, parsed.NODE_ENV);
+const SESSION_COOKIE_DOMAIN = parseSessionCookieDomain(parsed.SESSION_COOKIE_DOMAIN, APP_URL);
 const SESSION_ROLLING = parseBoolean(parsed.SESSION_ROLLING) ?? true;
 const DISABLE_HTTPS_ENFORCEMENT = parseBoolean(parsed.DISABLE_HTTPS_ENFORCEMENT) ?? false;
 const SMTP_SECURE = parseBoolean(parsed.SMTP_SECURE) ?? (Number(parsed.SMTP_PORT || 0) === 465);
@@ -223,6 +259,7 @@ const env = {
   SESSION_SECRET,
   TRUST_PROXY,
   SESSION_COOKIE_SECURE,
+  SESSION_COOKIE_DOMAIN,
   SESSION_ROLLING,
   DISABLE_HTTPS_ENFORCEMENT,
   SMTP_SECURE,

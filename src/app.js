@@ -300,6 +300,7 @@ function createApp() {
         httpOnly: true,
         sameSite: "lax",
         secure: env.SESSION_COOKIE_SECURE,
+        domain: env.SESSION_COOKIE_DOMAIN || undefined,
         maxAge: 1000 * 60 * env.SESSION_MAX_AGE_MINUTES,
       },
     }),
