@@ -37,6 +37,7 @@ const { sendVerificationRequestToAdmin, sendViolationReportToAdmin } = require("
 const { sendAccountDeactivatedEmail } = require("../../services/email");
 const { resolveUzbekistanCity } = require("../../constants/uzbekistan-cities");
 const { getSetting } = require("../../services/platform-settings");
+const { getOfficialUnqClientConfig } = require("../../services/official-unq-config");
 const { getOrderPaymentReference, buildManualTelegramPaymentUrl, normalizeTelegramUsername } = require("../../services/payment-flow");
 const {
   PRIVATE_PASSWORD_MIN_LENGTH,
