@@ -628,7 +628,7 @@
                         Пока нет созданных визиток для отображения.
                       </div>
                       <% } else { %>
-                        <div class="mt-10 grid gap-5 lg:grid-cols-3">
+                        <div class="mt-10 grid gap-8 lg:grid-cols-3">
                           <% latestSlackCards.forEach((card, index)=> { %>
                             <a href="/<%= encodeURIComponent(card.slug) %>"
                               class="home-latest-card interactive-card flex flex-col rounded-[1.7rem] border border-neutral-200 bg-white p-5 text-left">

@@ -636,6 +636,7 @@
 
 .profile-dashboard .profile-settings-categories {
   display: flex;
+  flex-wrap: nowrap;
   align-items: center;
   gap: 0;
   overflow-x: auto;
