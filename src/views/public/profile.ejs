@@ -683,9 +683,6 @@
               class="interactive-btn profile-settings-category-btn" aria-pressed="false">Безопасность и связь</button>
             <button type="button" data-a="settings-category" data-settings-category="privacy"
               class="interactive-btn profile-settings-category-btn" aria-pressed="false">Приватность и доверие</button>
-            <button type="button" data-a="settings-category" data-settings-category="danger"
-              class="interactive-btn profile-settings-category-btn profile-settings-category-btn--danger"
-              aria-pressed="false">Опасная зона</button>
           </div>
           <div class="mt-4 profile-settings-stack">
             <section class="profile-settings-section" data-settings-panel="account">
@@ -727,6 +724,24 @@
                       class="interactive-btn profile-settings-action-btn profile-settings-action-btn--compact rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold">Изменить
                       email</button>
                   </div>
+                </div>
+              </div>
+
+              <div class="mt-4 profile-settings-section--danger">
+                <div class="profile-settings-section-head">
+                  <div>
+                    <h3 class="profile-settings-section-title">Опасная зона</h3>
+                    <p class="profile-settings-section-text">Действия, которые влияют на доступность всех твоих UNQ.</p>
+                  </div>
+                </div>
+                <div class="profile-settings-danger-card">
+                  <div>
+                    <p class="profile-settings-card-title">Деактивация аккаунта</p>
+                    <p class="profile-settings-card-text">После деактивации твои UNQ и визитка станут недоступны.</p>
+                  </div>
+                  <button id="profile-settings-deactivate" type="button"
+                    class="interactive-btn profile-settings-action-btn rounded-lg border border-red-300 px-3 py-1.5 text-xs font-semibold text-red-700">Деактивировать
+                    аккаунт</button>
                 </div>
               </div>
             </section>
@@ -860,24 +875,6 @@
               <p id="profile-settings-status" class="text-sm"></p>
             </div>
 
-            <section class="profile-settings-section profile-settings-section--danger hidden"
-              data-settings-panel="danger">
-              <div class="profile-settings-section-head">
-                <div>
-                  <h3 class="profile-settings-section-title">Опасная зона</h3>
-                  <p class="profile-settings-section-text">Действия, которые влияют на доступность всех твоих UNQ.</p>
-                </div>
-              </div>
-              <div class="profile-settings-danger-card">
-                <div>
-                  <p class="profile-settings-card-title">Деактивация аккаунта</p>
-                  <p class="profile-settings-card-text">После деактивации твои UNQ и визитка станут недоступны.</p>
-                </div>
-                <button id="profile-settings-deactivate" type="button"
-                  class="interactive-btn profile-settings-action-btn rounded-lg border border-red-300 px-3 py-1.5 text-xs font-semibold text-red-700">Деактивировать
-                  аккаунт</button>
-              </div>
-            </section>
           </div>
         </article>
       </section>

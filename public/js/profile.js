@@ -1897,7 +1897,7 @@ Email: ${userEmail}
 
     const normalizeSettingsCategory = (value) => {
       const normalized = String(value || "").trim().toLowerCase();
-      return ["account", "security", "privacy", "danger"].includes(normalized) ? normalized : "account";
+      return ["account", "security", "privacy"].includes(normalized) ? normalized : "account";
     };
 
     const renderSettingsCategory = () => {
@@ -1923,7 +1923,7 @@ Email: ${userEmail}
       }
 
       if (el.stSaveWrap instanceof HTMLElement) {
-        el.stSaveWrap.classList.toggle("hidden", activeCategory === "danger");
+        el.stSaveWrap.classList.remove("hidden");
       }
     };
 

@@ -2909,62 +2909,15 @@ body[data-card-theme] main.private-card-screen {
 
 /* ---- Home: Latest Created Cards ---- */
 [data-page="public-home"] .home-latest-card {
-  border-color: #e5e7eb;
-  position: relative;
-  overflow: hidden;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
-}
-
-[data-page="public-home"] .home-latest-card::before {
-  content: "";
-  position: absolute;
-  inset: 0 0 auto 0;
-  height: 3px;
-  border-radius: 9999px 9999px 0 0;
-  pointer-events: none;
-}
-
-[data-page="public-home"] .home-latest-card[data-rank="1"]::before {
-  background: linear-gradient(90deg, #f59e0b, #fbbf24);
-}
-
-[data-page="public-home"] .home-latest-card[data-rank="2"]::before {
-  background: linear-gradient(90deg, #94a3b8, #cbd5e1);
-}
-
-[data-page="public-home"] .home-latest-card[data-rank="3"]::before {
-  background: linear-gradient(90deg, #b45309, #d97706);
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.15s ease;
 }
 
 [data-page="public-home"] .home-latest-card:hover {
   border-color: #d1d5db;
-  box-shadow: 0 8px 30px rgba(17, 24, 39, 0.07);
+  box-shadow: 0 6px 24px rgba(17, 24, 39, 0.06);
   transform: translateY(-2px);
 }
 
-[data-page="public-home"] .home-latest-rank[data-rank="1"] {
-  background: #fef3c7;
-  color: #b45309;
-}
-
-[data-page="public-home"] .home-latest-rank[data-rank="2"] {
-  background: #f1f5f9;
-  color: #475569;
-}
-
-[data-page="public-home"] .home-latest-rank[data-rank="3"] {
-  background: #fff7ed;
-  color: #c2410c;
-}
-
-[data-page="public-home"] .home-latest-avatar[data-rank="1"] {
-  box-shadow: 0 0 0 2.5px #f59e0b;
-}
-
-[data-page="public-home"] .home-latest-avatar[data-rank="2"] {
-  box-shadow: 0 0 0 2.5px #94a3b8;
-}
-
-[data-page="public-home"] .home-latest-avatar[data-rank="3"] {
-  box-shadow: 0 0 0 2.5px #b45309;
+[data-page="public-home"] .home-latest-rank {
+  line-height: 1;
 }
