@@ -3,8 +3,8 @@
 
 <head>
   <%- include('../partials/head', { title: title || "Мой профиль | UNQX" , description: typeof description==='string' ?
-    description : undefined, image: typeof image==='string' ? image : undefined, styles: ['/css/public-card.css', '/css/profile-dashboard.css'],
-    noindex: true }) %>
+    description : undefined, image: typeof image==='string' ? image : undefined, styles:
+    ['/css/public-card.css', '/css/profile-dashboard.css' ], noindex: true }) %>
     <link rel="stylesheet" href="/vendor/cropperjs/cropper.min.css" />
 </head>
 
@@ -51,7 +51,8 @@
             <div class="profile-header-meta">
               <p id="profile-sidebar-username" class="text-sm text-neutral-500">@—</p>
               <p id="profile-sidebar-plan"
-                class="inline-flex rounded-full border border-neutral-300 px-2.5 py-1 text-xs font-semibold">ТАРИФ НЕ ВЫБРАН</p>
+                class="inline-flex rounded-full border border-neutral-300 px-2.5 py-1 text-xs font-semibold">ТАРИФ НЕ
+                ВЫБРАН</p>
             </div>
             <p id="profile-sidebar-expiry" class="hidden text-xs text-neutral-500">Куплено: —</p>
           </div>
@@ -238,8 +239,7 @@
                       <span class="flex min-w-0 items-center gap-2">
                         <span
                           class="relative inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md border"
-                          style="border-color:rgba(255,255,255,0.65);background:#0a0a0a;"
-                          data-theme-swatch>
+                          style="border-color:rgba(255,255,255,0.65);background:#0a0a0a;" data-theme-swatch>
                           <span
                             class="pointer-events-none absolute inset-0 hidden items-center justify-center rounded-md bg-black/35 text-[10px] text-white"
                             data-theme-lock>🔒</span>
@@ -429,7 +429,8 @@
                   <span>Скрыть брендинг UNQX</span>
                   <span class="relative inline-flex h-6 w-11 shrink-0 items-center">
                     <input id="profile-card-show-branding" type="checkbox" class="peer sr-only" />
-                    <span class="block h-6 w-11 rounded-full bg-neutral-300 transition-colors peer-checked:bg-neutral-900"></span>
+                    <span
+                      class="block h-6 w-11 rounded-full bg-neutral-300 transition-colors peer-checked:bg-neutral-900"></span>
                     <span
                       class="pointer-events-none absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform peer-checked:translate-x-5"></span>
                   </span>
@@ -542,7 +543,11 @@
         <article data-tab-panel="requests"
           class="profile-tab-panel hidden min-w-0 rounded-2xl border border-neutral-200 bg-white p-4 sm:p-5">
           <div class="flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center">
-            <h2 class="text-lg font-bold">ЗАЯВКИ</h2>
+            <div>
+              <h2 class="text-lg font-bold">ЗАЯВКИ</h2>
+              <p class="mt-1 text-sm text-neutral-500">История заказов, текущие статусы и быстрые действия в одном
+                месте.</p>
+            </div>
             <button id="profile-new-request-btn" type="button"
               class="interactive-btn min-h-11 w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm font-semibold sm:w-auto">Подать
               новую заявку</button>
@@ -552,21 +557,12 @@
           </div>
           <section id="profile-requests-empty-state"
             class="hidden mt-5 rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-10 text-center"></section>
+          <div id="profile-requests-summary" class="mt-4 hidden gap-3 md:grid md:grid-cols-4"></div>
+          <div id="profile-requests-desktop-list" class="mt-4 hidden gap-3 md:grid"></div>
           <div id="profile-requests-mobile-list" class="mt-4 grid gap-3 md:hidden"></div>
-          <div id="profile-requests-table-wrap" class="mt-4 hidden overflow-auto rounded-xl border border-neutral-200 md:block">
+          <div id="profile-requests-table-wrap"
+            class="hidden overflow-auto rounded-xl border border-neutral-200 md:block">
             <table class="w-full text-left text-sm">
-              <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
-                <tr>
-                  <th class="px-3 py-2">Дата</th>
-                  <th class="px-3 py-2">Дата покупки</th>
-                  <th class="px-3 py-2">UNQ</th>
-                  <th class="px-3 py-2">Цена</th>
-                  <th class="px-3 py-2">Тариф</th>
-                  <th class="px-3 py-2">Браслет</th>
-                  <th class="px-3 py-2">Статус</th>
-                  <th class="px-3 py-2">Примечание</th>
-                </tr>
-              </thead>
               <tbody id="profile-requests-table"></tbody>
             </table>
           </div>
@@ -678,126 +674,196 @@
         <article data-tab-panel="settings"
           class="profile-tab-panel hidden min-w-0 rounded-2xl border border-neutral-200 bg-white p-4 sm:p-5">
           <h2 class="text-lg font-bold">НАСТРОЙКИ</h2>
-          <div class="mt-4 profile-settings-grid">
-            <div class="profile-settings-item">
-              <label class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Имя
-                отображения</label>
-              <input id="profile-settings-display-name" type="text"
-                class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm" />
-            </div>
-            <div class="profile-settings-item">
-              <label class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Город</label>
-              <select id="profile-settings-city" class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm">
-                <option value="" selected disabled>Выберите город</option>
-                <%- include('../partials/city-options') %>
-              </select>
-            </div>
-            <div class="profile-settings-item">
-              <label class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Логин</label>
-              <input id="profile-settings-login" type="text" readonly
-                class="w-full rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm" />
-            </div>
-            <div class="profile-settings-item">
-              <label class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Email для восстановления</label>
-              <div class="flex flex-col gap-2 sm:flex-row">
-                <input id="profile-settings-email" type="email" readonly
-                  class="w-full rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm" />
-                <button id="profile-settings-change-email" type="button"
-                  class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold">Изменить
-                  email</button>
-              </div>
-            </div>
-            <div class="profile-settings-item">
-              <label class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Пароль</label>
-              <button id="profile-settings-change-password" type="button"
-                class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold">Изменить
-                пароль</button>
-            </div>
-            <div class="profile-settings-item is-full">
-              <label
-                class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Telegram</label>
-              <input id="profile-settings-telegram" type="text"
-                class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm" placeholder="@username" />
-              <p class="mt-1 text-xs text-neutral-500">Для связи по заявкам. Не используется для входа.</p>
-              <div class="mt-2 flex flex-wrap gap-2">
-                <button id="profile-settings-link-telegram" type="button"
-                  class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold">Подключить
-                  уведомления</button>
-                <button id="profile-settings-unlink-telegram" type="button"
-                  class="interactive-btn hidden min-h-11 rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold">Отключить
-                  уведомления</button>
-              </div>
-            </div>
-            <div class="profile-settings-item is-full flex flex-col gap-3">
-              <label class="inline-flex cursor-pointer items-center justify-between gap-3 text-sm select-none">
-                <span>Получать уведомления от бота</span>
-                <span class="relative inline-flex h-6 w-11 shrink-0 items-center">
-                  <input id="profile-settings-notifications" type="checkbox" class="peer sr-only" />
-                  <span class="block h-6 w-11 rounded-full bg-neutral-300 transition-colors peer-checked:bg-neutral-900"></span>
-                  <span
-                    class="pointer-events-none absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform peer-checked:translate-x-5"></span>
-                </span>
-              </label>
-              <label class="inline-flex cursor-pointer items-center justify-between gap-3 text-sm select-none">
-                <span>Показывать мою визитку в Directory</span>
-                <span class="relative inline-flex h-6 w-11 shrink-0 items-center">
-                  <input id="profile-settings-directory" type="checkbox" class="peer sr-only" />
-                  <span class="block h-6 w-11 rounded-full bg-neutral-300 transition-colors peer-checked:bg-neutral-900"></span>
-                  <span
-                    class="pointer-events-none absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform peer-checked:translate-x-5"></span>
-                </span>
-              </label>
-            </div>
-            <div class="profile-settings-item is-full rounded-xl border border-neutral-200 bg-neutral-50 p-3">
-              <div class="flex flex-wrap items-start justify-between gap-3">
+          <div class="mt-4 profile-settings-stack">
+            <section class="profile-settings-section">
+              <div class="profile-settings-section-head">
                 <div>
-                  <p class="text-sm font-semibold text-neutral-900">Приватный доступ к визитке</p>
-                  <p class="text-xs text-neutral-500">Можно добавить до 10 паролей. Каждый пароль открывает визитку на 5 минут.</p>
-                  <p class="mt-1 text-xs text-neutral-500">Минимум 4 символа. Используйте разные пароли для разных людей.</p>
+                  <h3 class="profile-settings-section-title">Аккаунт</h3>
+                  <p class="profile-settings-section-text">Основные данные профиля и восстановления доступа.</p>
                 </div>
-                <button id="profile-private-password-open-add" type="button"
-                  class="interactive-btn min-h-11 rounded-lg border border-neutral-300 bg-white px-3 py-2 text-xs font-semibold text-neutral-900 shadow-sm">
-                  Добавить пароль
-                </button>
               </div>
-              <div id="profile-private-passwords-list" class="mt-3 space-y-2"></div>
-            </div>
-            <div class="profile-settings-item is-full rounded-xl border border-neutral-200 bg-neutral-50 p-3">
-              <div class="flex items-center justify-between gap-3">
+              <div class="profile-settings-grid">
+                <div class="profile-settings-item">
+                  <label class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Имя
+                    отображения</label>
+                  <input id="profile-settings-display-name" type="text"
+                    class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm" />
+                </div>
+                <div class="profile-settings-item">
+                  <label
+                    class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Город</label>
+                  <select id="profile-settings-city"
+                    class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm">
+                    <option value="" selected disabled>Выберите город</option>
+                    <%- include('../partials/city-options') %>
+                  </select>
+                </div>
+                <div class="profile-settings-item">
+                  <label
+                    class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Логин</label>
+                  <input id="profile-settings-login" type="text" readonly
+                    class="w-full rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm" />
+                </div>
+                <div class="profile-settings-item">
+                  <label class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Email для
+                    восстановления</label>
+                  <div class="profile-settings-inline-actions">
+                    <input id="profile-settings-email" type="email" readonly
+                      class="w-full rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm" />
+                    <button id="profile-settings-change-email" type="button"
+                      class="interactive-btn profile-settings-action-btn profile-settings-action-btn--compact rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold">Изменить
+                      email</button>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section class="profile-settings-section">
+              <div class="profile-settings-section-head">
                 <div>
-                  <p class="text-sm font-semibold text-neutral-900">Верификация</p>
-                  <p id="profile-verification-status" class="text-xs text-neutral-500">Статус: не запрошено</p>
-                  <p id="profile-verification-note" class="mt-1 hidden text-xs text-neutral-500"></p>
+                  <h3 class="profile-settings-section-title">Безопасность и связь</h3>
+                  <p class="profile-settings-section-text">Пароль, Telegram и уведомления по заявкам.</p>
                 </div>
-                <button id="profile-verification-open" type="button"
-                  class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-3 py-2 text-xs font-semibold">
-                  Подать заявку
-                </button>
               </div>
-              <div id="profile-verification-correction-wrap" class="mt-3 hidden">
-                <p class="text-xs text-neutral-600">Если в заявке допущена ошибка, отправьте правку через форму
-                  исправления.</p>
-                <textarea id="profile-verification-correction" rows="2" placeholder="Опишите исправление"
-                  class="mt-2 w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm"></textarea>
-                <button id="profile-verification-correction-submit" type="button"
-                  class="interactive-btn mt-2 min-h-11 rounded-lg border border-neutral-300 px-3 py-2 text-xs font-semibold">
-                  Отправить исправление
-                </button>
+              <div class="profile-settings-grid">
+                <div class="profile-settings-item is-full">
+                  <label
+                    class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Пароль</label>
+                  <div class="profile-settings-action-card">
+                    <div>
+                      <p class="profile-settings-card-title">Изменить пароль</p>
+                      <p class="profile-settings-card-text">Обнови пароль для защиты аккаунта.</p>
+                    </div>
+                    <button id="profile-settings-change-password" type="button"
+                      class="interactive-btn profile-settings-action-btn rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold">Изменить
+                      пароль</button>
+                  </div>
+                </div>
+                <div class="profile-settings-item is-full">
+                  <label
+                    class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Telegram</label>
+                  <input id="profile-settings-telegram" type="text"
+                    class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm" placeholder="@username" />
+                  <p class="mt-1 text-xs text-neutral-500">Для связи по заявкам. Не используется для входа.</p>
+                  <div class="profile-settings-inline-actions mt-2">
+                    <button id="profile-settings-link-telegram" type="button"
+                      class="interactive-btn profile-settings-action-btn rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold">Подключить
+                      уведомления</button>
+                    <button id="profile-settings-unlink-telegram" type="button"
+                      class="interactive-btn profile-settings-action-btn hidden rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold">Отключить
+                      уведомления</button>
+                  </div>
+                </div>
+                <div class="profile-settings-item is-full">
+                  <div class="profile-settings-toggles">
+                    <label
+                      class="profile-settings-toggle-row inline-flex cursor-pointer items-center justify-between gap-3 text-sm select-none">
+                      <span>
+                        <span class="profile-settings-card-title">Получать уведомления от бота</span>
+                        <span class="profile-settings-card-text block">Сообщения о заявках и изменениях статуса.</span>
+                      </span>
+                      <span class="relative inline-flex h-6 w-11 shrink-0 items-center">
+                        <input id="profile-settings-notifications" type="checkbox" class="peer sr-only" />
+                        <span
+                          class="block h-6 w-11 rounded-full bg-neutral-300 transition-colors peer-checked:bg-neutral-900"></span>
+                        <span
+                          class="pointer-events-none absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform peer-checked:translate-x-5"></span>
+                      </span>
+                    </label>
+                    <label
+                      class="profile-settings-toggle-row inline-flex cursor-pointer items-center justify-between gap-3 text-sm select-none">
+                      <span>
+                        <span class="profile-settings-card-title">Показывать визитку в Directory</span>
+                        <span class="profile-settings-card-text block">Разрешить отображение в каталоге
+                          резидентов.</span>
+                      </span>
+                      <span class="relative inline-flex h-6 w-11 shrink-0 items-center">
+                        <input id="profile-settings-directory" type="checkbox" class="peer sr-only" />
+                        <span
+                          class="block h-6 w-11 rounded-full bg-neutral-300 transition-colors peer-checked:bg-neutral-900"></span>
+                        <span
+                          class="pointer-events-none absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform peer-checked:translate-x-5"></span>
+                      </span>
+                    </label>
+                  </div>
+                </div>
               </div>
-            </div>
+            </section>
+
+            <section class="profile-settings-section">
+              <div class="profile-settings-section-head">
+                <div>
+                  <h3 class="profile-settings-section-title">Приватность и доверие</h3>
+                  <p class="profile-settings-section-text">Контроль доступа к визитке и статус верификации.</p>
+                </div>
+              </div>
+              <div class="profile-settings-grid">
+                <div class="profile-settings-item is-full rounded-xl border border-neutral-200 bg-neutral-50 p-3">
+                  <div class="profile-settings-card-head">
+                    <div>
+                      <p class="profile-settings-card-title">Приватный доступ к визитке</p>
+                      <p class="profile-settings-card-text">Можно добавить до 10 паролей. Каждый пароль открывает
+                        визитку на 5 минут.</p>
+                      <p class="mt-1 text-xs text-neutral-500">Минимум 4 символа. Используйте разные пароли для разных
+                        людей.</p>
+                    </div>
+                    <button id="profile-private-password-open-add" type="button"
+                      class="interactive-btn profile-settings-action-btn rounded-lg border border-neutral-300 bg-white px-3 py-2 text-xs font-semibold text-neutral-900 shadow-sm">
+                      Добавить пароль
+                    </button>
+                  </div>
+                  <div id="profile-private-passwords-list" class="mt-3 space-y-2"></div>
+                </div>
+                <div class="profile-settings-item is-full rounded-xl border border-neutral-200 bg-neutral-50 p-3">
+                  <div class="profile-settings-card-head profile-settings-card-head--center">
+                    <div>
+                      <p class="profile-settings-card-title">Верификация</p>
+                      <p id="profile-verification-status" class="text-xs text-neutral-500">Статус: не запрошено</p>
+                      <p id="profile-verification-note" class="mt-1 hidden text-xs text-neutral-500"></p>
+                    </div>
+                    <button id="profile-verification-open" type="button"
+                      class="interactive-btn profile-settings-action-btn rounded-lg border border-neutral-300 px-3 py-2 text-xs font-semibold">
+                      Подать заявку
+                    </button>
+                  </div>
+                  <div id="profile-verification-correction-wrap" class="mt-3 hidden">
+                    <p class="text-xs text-neutral-600">Если в заявке допущена ошибка, отправьте правку через форму
+                      исправления.</p>
+                    <textarea id="profile-verification-correction" rows="2" placeholder="Опишите исправление"
+                      class="mt-2 w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm"></textarea>
+                    <button id="profile-verification-correction-submit" type="button"
+                      class="interactive-btn profile-settings-action-btn mt-2 rounded-lg border border-neutral-300 px-3 py-2 text-xs font-semibold">
+                      Отправить исправление
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </section>
+
             <div class="profile-settings-item is-full profile-settings-actions">
               <button id="profile-settings-save" type="button"
                 class="interactive-btn min-h-11 rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold">Сохранить
                 настройки</button>
               <p id="profile-settings-status" class="text-sm"></p>
             </div>
-          </div>
-          <div class="mt-8 rounded-xl border border-red-200 bg-red-50 p-4">
-            <h3 class="text-sm font-semibold text-red-800">Опасная зона</h3>
-            <p class="mt-1 text-xs text-red-700">Все твои UNQ станут недоступны</p>
-            <button id="profile-settings-deactivate" type="button"
-              class="interactive-btn mt-3 min-h-11 rounded-lg border border-red-300 px-3 py-1.5 text-xs font-semibold text-red-700">Деактивировать
-              аккаунт</button>
+
+            <section class="profile-settings-section profile-settings-section--danger">
+              <div class="profile-settings-section-head">
+                <div>
+                  <h3 class="profile-settings-section-title">Опасная зона</h3>
+                  <p class="profile-settings-section-text">Действия, которые влияют на доступность всех твоих UNQ.</p>
+                </div>
+              </div>
+              <div class="profile-settings-danger-card">
+                <div>
+                  <p class="profile-settings-card-title">Деактивация аккаунта</p>
+                  <p class="profile-settings-card-text">После деактивации твои UNQ и визитка станут недоступны.</p>
+                </div>
+                <button id="profile-settings-deactivate" type="button"
+                  class="interactive-btn profile-settings-action-btn rounded-lg border border-red-300 px-3 py-1.5 text-xs font-semibold text-red-700">Деактивировать
+                  аккаунт</button>
+              </div>
+            </section>
           </div>
         </article>
       </section>
@@ -877,8 +943,8 @@
   </div>
 
   <div id="profile-email-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 p-4">
-    <div id="profile-email-modal-dialog" class="w-full max-w-md rounded-2xl bg-white p-5" role="dialog" aria-modal="true"
-      aria-labelledby="profile-email-modal-title" tabindex="-1">
+    <div id="profile-email-modal-dialog" class="w-full max-w-md rounded-2xl bg-white p-5" role="dialog"
+      aria-modal="true" aria-labelledby="profile-email-modal-title" tabindex="-1">
       <button id="profile-email-modal-close-top" type="button"
         class="interactive-btn ml-auto inline-flex h-9 w-9 items-center justify-center rounded-lg border border-neutral-300 text-neutral-600"
         aria-label="Закрыть окно">
@@ -889,12 +955,14 @@
       <h3 id="profile-email-modal-title" class="text-lg font-bold text-neutral-900">Изменить email</h3>
       <div id="profile-email-modal-step-request" class="mt-3 grid gap-3">
         <div>
-          <label class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Новый email</label>
+          <label class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Новый
+            email</label>
           <input id="profile-email-new-email" type="email" autocomplete="email" placeholder="you@example.com"
             class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm" />
         </div>
         <div>
-          <label class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Текущий пароль</label>
+          <label class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Текущий
+            пароль</label>
           <input id="profile-email-current-password" type="password" autocomplete="current-password"
             class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm" />
         </div>
@@ -910,7 +978,8 @@
       <div id="profile-email-modal-step-verify" class="mt-3 hidden">
         <p id="profile-email-modal-pending" class="text-xs text-neutral-500"></p>
         <div class="mt-2">
-          <label class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Код из письма</label>
+          <label class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Код из
+            письма</label>
           <input id="profile-email-verify-code" type="text" inputmode="numeric" maxlength="6" placeholder="6 цифр"
             class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm" />
         </div>
@@ -963,17 +1032,20 @@
       <h3 id="profile-password-modal-title" class="text-lg font-bold text-neutral-900">Изменить пароль</h3>
       <div class="mt-3 grid gap-3">
         <div>
-          <label class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Текущий пароль</label>
+          <label class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Текущий
+            пароль</label>
           <input id="profile-password-current" type="password" autocomplete="current-password"
             class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm" />
         </div>
         <div>
-          <label class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Новый пароль</label>
+          <label class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Новый
+            пароль</label>
           <input id="profile-password-new" type="password" autocomplete="new-password"
             class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm" />
         </div>
         <div>
-          <label class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Повторите пароль</label>
+          <label class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Повторите
+            пароль</label>
           <input id="profile-password-confirm" type="password" autocomplete="new-password"
             class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm" />
         </div>
@@ -988,7 +1060,8 @@
     </div>
   </div>
 
-  <div id="profile-private-password-add-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 p-4">
+  <div id="profile-private-password-add-modal"
+    class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 p-4">
     <div id="profile-private-password-add-dialog" class="w-full max-w-md rounded-2xl bg-white p-5" role="dialog"
       aria-modal="true" aria-labelledby="profile-private-password-add-title" tabindex="-1">
       <button id="profile-private-password-add-close-top" type="button"
@@ -1024,7 +1097,8 @@
     </div>
   </div>
 
-  <div id="profile-private-password-change-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 p-4">
+  <div id="profile-private-password-change-modal"
+    class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 p-4">
     <div id="profile-private-password-change-dialog" class="w-full max-w-md rounded-2xl bg-white p-5" role="dialog"
       aria-modal="true" aria-labelledby="profile-private-password-change-title" tabindex="-1">
       <button id="profile-private-password-change-close-top" type="button"
@@ -1116,7 +1190,3 @@
 </body>
 
 </html>
-
-
-
-

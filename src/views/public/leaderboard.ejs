@@ -19,195 +19,118 @@
 </head>
 
 <body class="antialiased bg-neutral-50" data-page="leaderboard" data-period="<%= period %>" data-type="<%= type %>">
-  <% const activePeriod = period === "week" || period === "month" || period === "all" ? period : "day"; %>
-  <% const activeType = type === "company" || type === "person" ? type : "all"; %>
-  <main class="mx-auto w-full max-w-6xl px-4 py-8">
-    <section class="mb-6 rounded-2xl border border-neutral-200 bg-white p-3 shadow-sm sm:p-4">
-      <div class="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-        <a href="/"
-          class="interactive-btn inline-flex min-h-11 w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border border-neutral-300 bg-white px-3 py-1.5 text-center text-sm font-semibold text-neutral-700 hover:text-neutral-900 sm:w-auto sm:justify-start">
-          <svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M15 18 9 12l6-6"></path>
-          </svg>
-          На главную
-        </a>
+  <% const activePeriod=period==="week" || period==="month" || period==="all" ? period : "day" ; %>
+    <% const activeType=type==="company" || type==="person" ? type : "all" ; %>
+      <main class="mx-auto w-full max-w-6xl px-4 py-8">
+        <section class="mb-6 rounded-2xl border border-neutral-200 bg-white p-3 shadow-sm sm:p-4">
+          <div class="flex flex-col gap-4 lg:grid lg:grid-cols-[auto_minmax(0,720px)] lg:items-end lg:gap-6">
+            <a href="/"
+              class="interactive-btn inline-flex min-h-11 w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border border-neutral-300 bg-white px-3 py-1.5 text-center text-sm font-semibold text-neutral-700 hover:text-neutral-900 sm:w-auto sm:justify-start">
+              <svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M15 18 9 12l6-6"></path>
+              </svg>
+              На главную
+            </a>
 
-        <div class="grid gap-3 lg:grid-cols-2 lg:gap-4">
-          <div>
-            <p class="mb-1 px-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-neutral-500">Период</p>
-            <div class="flex w-full overflow-x-auto rounded-xl border border-neutral-200 bg-neutral-50 p-1 text-sm" role="tablist"
-              aria-label="Период рейтинга">
-              <a href="/leaderboard?period=day&type=<%= activeType %>"
-                class="interactive-btn inline-flex min-h-11 shrink-0 items-center justify-center whitespace-nowrap rounded-lg px-3 py-1.5 text-center leading-none <%= activePeriod === 'day' ? 'bg-neutral-900 text-white shadow-sm' : 'text-neutral-600 hover:text-neutral-900' %>"
-                role="tab" aria-selected="<%= activePeriod === 'day' ? 'true' : 'false' %>">День</a>
-              <a href="/leaderboard?period=week&type=<%= activeType %>"
-                class="interactive-btn inline-flex min-h-11 shrink-0 items-center justify-center whitespace-nowrap rounded-lg px-3 py-1.5 text-center leading-none <%= activePeriod === 'week' ? 'bg-neutral-900 text-white shadow-sm' : 'text-neutral-600 hover:text-neutral-900' %>"
-                role="tab" aria-selected="<%= activePeriod === 'week' ? 'true' : 'false' %>">Неделя</a>
-              <a href="/leaderboard?period=month&type=<%= activeType %>"
-                class="interactive-btn inline-flex min-h-11 shrink-0 items-center justify-center whitespace-nowrap rounded-lg px-3 py-1.5 text-center leading-none <%= activePeriod === 'month' ? 'bg-neutral-900 text-white shadow-sm' : 'text-neutral-600 hover:text-neutral-900' %>"
-                role="tab" aria-selected="<%= activePeriod === 'month' ? 'true' : 'false' %>">Месяц</a>
-              <a href="/leaderboard?period=all&type=<%= activeType %>"
-                class="interactive-btn inline-flex min-h-11 shrink-0 items-center justify-center whitespace-nowrap rounded-lg px-3 py-1.5 text-center leading-none <%= activePeriod === 'all' ? 'bg-neutral-900 text-white shadow-sm' : 'text-neutral-600 hover:text-neutral-900' %>"
-                role="tab" aria-selected="<%= activePeriod === 'all' ? 'true' : 'false' %>">Всё время</a>
+            <div class="grid gap-3 sm:grid-cols-2 lg:gap-4">
+              <div class="min-w-0">
+                <p class="mb-1 px-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-neutral-500">Период</p>
+                <div
+                  class="grid w-full grid-cols-2 gap-1 rounded-xl border border-neutral-200 bg-neutral-50 p-1 text-xs sm:grid-cols-4 sm:text-sm"
+                  role="tablist" aria-label="Период рейтинга">
+                  <a href="/leaderboard?period=day&type=<%= activeType %>"
+                    class="interactive-btn inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-lg px-3 py-1.5 text-center leading-none <%= activePeriod === 'day' ? 'bg-neutral-900 text-white shadow-sm' : 'text-neutral-600 hover:text-neutral-900' %>"
+                    role="tab" aria-selected="<%= activePeriod === 'day' ? 'true' : 'false' %>">День</a>
+                  <a href="/leaderboard?period=week&type=<%= activeType %>"
+                    class="interactive-btn inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-lg px-3 py-1.5 text-center leading-none <%= activePeriod === 'week' ? 'bg-neutral-900 text-white shadow-sm' : 'text-neutral-600 hover:text-neutral-900' %>"
+                    role="tab" aria-selected="<%= activePeriod === 'week' ? 'true' : 'false' %>">Неделя</a>
+                  <a href="/leaderboard?period=month&type=<%= activeType %>"
+                    class="interactive-btn inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-lg px-3 py-1.5 text-center leading-none <%= activePeriod === 'month' ? 'bg-neutral-900 text-white shadow-sm' : 'text-neutral-600 hover:text-neutral-900' %>"
+                    role="tab" aria-selected="<%= activePeriod === 'month' ? 'true' : 'false' %>">Месяц</a>
+                  <a href="/leaderboard?period=all&type=<%= activeType %>"
+                    class="interactive-btn inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-lg px-3 py-1.5 text-center leading-none <%= activePeriod === 'all' ? 'bg-neutral-900 text-white shadow-sm' : 'text-neutral-600 hover:text-neutral-900' %>"
+                    role="tab" aria-selected="<%= activePeriod === 'all' ? 'true' : 'false' %>">Всё время</a>
+                </div>
+              </div>
+
+              <div class="min-w-0">
+                <p class="mb-1 px-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-neutral-500">Сегмент</p>
+                <div
+                  class="grid w-full grid-cols-3 gap-1 rounded-xl border border-neutral-200 bg-neutral-50 p-1 text-xs sm:text-sm"
+                  role="tablist" aria-label="Тип профиля в лидерборде">
+                  <a href="/leaderboard?period=<%= activePeriod %>&type=all"
+                    class="interactive-btn inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-lg px-3 py-1.5 text-center leading-none <%= activeType === 'all' ? 'bg-neutral-900 text-white shadow-sm' : 'text-neutral-600 hover:text-neutral-900' %>"
+                    role="tab" aria-selected="<%= activeType === 'all' ? 'true' : 'false' %>">Все</a>
+                  <a href="/leaderboard?period=<%= activePeriod %>&type=company"
+                    class="interactive-btn inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-lg px-3 py-1.5 text-center leading-none <%= activeType === 'company' ? 'bg-neutral-900 text-white shadow-sm' : 'text-neutral-600 hover:text-neutral-900' %>"
+                    role="tab" aria-selected="<%= activeType === 'company' ? 'true' : 'false' %>">Компании</a>
+                  <a href="/leaderboard?period=<%= activePeriod %>&type=person"
+                    class="interactive-btn inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-lg px-3 py-1.5 text-center leading-none <%= activeType === 'person' ? 'bg-neutral-900 text-white shadow-sm' : 'text-neutral-600 hover:text-neutral-900' %>"
+                    role="tab" aria-selected="<%= activeType === 'person' ? 'true' : 'false' %>">Личности</a>
+                </div>
+              </div>
             </div>
           </div>
+        </section>
 
-          <div>
-            <p class="mb-1 px-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-neutral-500">Сегмент</p>
-            <div class="flex w-full overflow-x-auto rounded-xl border border-neutral-200 bg-neutral-50 p-1 text-sm" role="tablist"
-              aria-label="Тип профиля в лидерборде">
-              <a href="/leaderboard?period=<%= activePeriod %>&type=all"
-                class="interactive-btn inline-flex min-h-11 shrink-0 items-center justify-center whitespace-nowrap rounded-lg px-3 py-1.5 text-center leading-none <%= activeType === 'all' ? 'bg-neutral-900 text-white shadow-sm' : 'text-neutral-600 hover:text-neutral-900' %>"
-                role="tab" aria-selected="<%= activeType === 'all' ? 'true' : 'false' %>">Все</a>
-              <a href="/leaderboard?period=<%= activePeriod %>&type=company"
-                class="interactive-btn inline-flex min-h-11 shrink-0 items-center justify-center whitespace-nowrap rounded-lg px-3 py-1.5 text-center leading-none <%= activeType === 'company' ? 'bg-neutral-900 text-white shadow-sm' : 'text-neutral-600 hover:text-neutral-900' %>"
-                role="tab" aria-selected="<%= activeType === 'company' ? 'true' : 'false' %>">Компании</a>
-              <a href="/leaderboard?period=<%= activePeriod %>&type=person"
-                class="interactive-btn inline-flex min-h-11 shrink-0 items-center justify-center whitespace-nowrap rounded-lg px-3 py-1.5 text-center leading-none <%= activeType === 'person' ? 'bg-neutral-900 text-white shadow-sm' : 'text-neutral-600 hover:text-neutral-900' %>"
-                role="tab" aria-selected="<%= activeType === 'person' ? 'true' : 'false' %>">Личности</a>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
+        <header class="mb-6 rounded-2xl border border-neutral-200 bg-white p-6">
+          <h1 class="inline-flex items-center gap-2 text-3xl font-black tracking-tight text-neutral-900">
+            <img src="/brand/logo.PNG" alt="UNQX" class="h-8 w-8 rounded-md border border-neutral-200 object-cover" />
+            <span>Лидерборд по просмотрам</span>
+          </h1>
+          <p class="mt-2 text-sm text-neutral-500">Обновляется автоматически по новым просмотрам</p>
+        </header>
 
-    <header class="mb-6 rounded-2xl border border-neutral-200 bg-white p-6">
-      <h1 class="inline-flex items-center gap-2 text-3xl font-black tracking-tight text-neutral-900">
-        <img src="/brand/logo.PNG" alt="UNQX" class="h-8 w-8 rounded-md border border-neutral-200 object-cover" />
-        <span>Лидерборд по просмотрам</span>
-      </h1>
-      <p class="mt-2 text-sm text-neutral-500">Обновляется автоматически по новым просмотрам</p>
-    </header>
-
-    <% const topThree=items.slice(0, 3); const rest=items.slice(3); const currentTelegramId=(typeof
-      viewerTelegramId==="string" && viewerTelegramId) ? viewerTelegramId : (typeof userSession !=="undefined" &&
-      userSession && userSession.telegramId ? userSession.telegramId : "" ); const rankBadgeByPlace={
-      1: "border-neutral-900 bg-neutral-900 text-white" , 2: "border-neutral-400 bg-neutral-200 text-neutral-900" ,
-      3: "border-neutral-300 bg-neutral-100 text-neutral-800" , }; const isMissingAvatar=(url)=> !url ||
-      String(url).trim() === "" || String(url).includes("/brand/logo.PNG");
-      %>
-      <section class="grid gap-4 md:grid-cols-3">
-        <% if (!topThree.length) { %>
-          <article class="col-span-full rounded-2xl border border-neutral-200 bg-white p-8 text-center">
-            <p class="text-sm text-neutral-600">Рейтинг пока пуст. Данные появятся после первых уникальных просмотров.
-            </p>
-          </article>
-          <% } %>
-            <% topThree.forEach((item, idx)=> { %>
-              <article class="interactive-card rounded-2xl border border-neutral-200 bg-white p-5">
-                <p
-                  class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-bold <%= rankBadgeByPlace[item.rank] || 'border-neutral-300 bg-neutral-100 text-neutral-800' %>">
-                  <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor"
-                    stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M8.2 13.7 6.6 21l5.4-3.2L17.4 21l-1.6-7.3"></path>
-                    <circle cx="12" cy="8.5" r="4.6"></circle>
-                    <path d="m12 5.9.9 1.8 2 .3-1.4 1.4.3 2-1.8-.9-1.8.9.3-2-1.4-1.4 2-.3.9-1.8Z"></path>
-                  </svg>
-                  <span>
-                    <%= item.rank %>
-                  </span>
+        <% const topThree=items.slice(0, 3); const rest=items.slice(3); const currentTelegramId=(typeof
+          viewerTelegramId==="string" && viewerTelegramId) ? viewerTelegramId : (typeof userSession !=="undefined" &&
+          userSession && userSession.telegramId ? userSession.telegramId : "" ); const rankBadgeByPlace={
+          1: "border-neutral-900 bg-neutral-900 text-white" , 2: "border-neutral-400 bg-neutral-200 text-neutral-900" ,
+          3: "border-neutral-300 bg-neutral-100 text-neutral-800" , }; const isMissingAvatar=(url)=> !url ||
+          String(url).trim() === "" || String(url).includes("/brand/logo.PNG");
+          %>
+          <section class="grid gap-4 md:grid-cols-3">
+            <% if (!topThree.length) { %>
+              <article class="col-span-full rounded-2xl border border-neutral-200 bg-white p-8 text-center">
+                <p class="text-sm text-neutral-600">Рейтинг пока пуст. Данные появятся после первых уникальных
+                  просмотров.
                 </p>
-                <div class="mt-3 flex items-center gap-3">
-                  <% if (isMissingAvatar(item.avatarUrl)) { %>
-                    <span
-                      class="inline-flex h-12 w-12 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-400"
-                      aria-hidden="true">
-                      <svg class="h-7 w-7" viewBox="0 0 24 24" fill="none">
-                        <circle cx="12" cy="8.5" r="3.75" stroke="currentColor" stroke-width="1.5"></circle>
-                        <path d="M5.5 19c.8-3 3.5-4.8 6.5-4.8s5.7 1.8 6.5 4.8" stroke="currentColor" stroke-width="1.5"
-                          stroke-linecap="round"></path>
-                      </svg>
-                    </span>
-                    <% } else { %>
-                      <img src="<%= item.avatarUrl %>" alt="avatar"
-                        class="h-12 w-12 rounded-full border border-neutral-200 object-cover" />
-                      <% } %>
-                        <div class="flex min-w-0 flex-1 flex-col">
-                          <p class="inline-flex items-center gap-1.5 font-semibold text-neutral-900">
-                            <span>
-                              <%= item.ownerName %>
-                            </span>
-                            <% if (item.isVerified) { %>
-                              <svg class="h-4 w-4 shrink-0 text-neutral-500" viewBox="0 0 24 24" aria-hidden="true"
-                                fill="currentColor">
-                                <path
-                                  d="M12 2.5l2.2 1.8 2.8-.3 1.2 2.5 2.5 1.2-.3 2.8L21.5 12l-1.8 2.2.3 2.8-2.5 1.2-1.2 2.5-2.8-.3L12 21.5l-2.2-1.8-2.8.3-1.2-2.5-2.5-1.2.3-2.8L2.5 12l1.8-2.2-.3-2.8 2.5-1.2 1.2-2.5 2.8.3L12 2.5Zm-1.1 13.1 5-5-1.1-1.1-3.9 3.9-1.8-1.8-1.1 1.1 2.9 2.9Z">
-                                </path>
-                              </svg>
-                              <% } %>
-                          </p>
-                          <a href="/<%= item.slug %>" class="mt-0.5 block text-sm text-neutral-500 hover:underline">unqx.uz/<%=
-                              item.slug %></a>
-                        </div>
-                </div>
-                <div class="mt-4 flex items-center justify-between text-sm">
-                  <span class="text-neutral-500">Просмотры</span>
-                  <span class="text-2xl font-black">
-                    <%= Number(item.views || 0).toLocaleString('ru-RU') %>
-                  </span>
-                </div>
-                <div class="mt-2 h-1.5 w-full rounded-full bg-neutral-200">
-                  <div class="h-1.5 rounded-full bg-neutral-900"
-                    style="width: <%= Math.max(0, Math.min(100, (Number(item.views || 0) / Math.max(1, Number(topThree[0]?.views || 0))) * 100)) %>%">
-                  </div>
-                </div>
-                <div class="mt-2 flex items-center justify-between text-xs text-neutral-500">
-                  <span>За выбранный период</span>
-                  <span>Топ <%= Number(item.topPercent || 100) %>%</span>
-                </div>
-                <p class="mt-1 text-xs text-neutral-500">
-                  UNQ Score: <%= Number(item.score || 0).toLocaleString('ru-RU') %>
-                </p>
-                <% if (currentTelegramId && item.telegramId===currentTelegramId) { %>
-                  <button type="button" data-share-slug="<%= item.slug %>" data-share-rank="<%= item.rank %>"
-                    class="interactive-btn mt-4 min-h-11 rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold text-neutral-700">Поделиться</button>
-                  <% } %>
               </article>
-              <% }) %>
-      </section>
-
-      <section class="mt-6 overflow-hidden rounded-2xl border border-neutral-200 bg-white">
-        <table class="min-w-full text-left text-sm">
-          <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
-            <tr>
-              <th class="px-3 py-2">Место</th>
-              <th class="px-3 py-2">Владелец</th>
-              <th class="px-3 py-2">UNQ</th>
-              <th class="px-3 py-2">Просмотры</th>
-              <th class="px-3 py-2">UNQ Score</th>
-              <th class="px-3 py-2">Тариф</th>
-            </tr>
-          </thead>
-          <tbody>
-            <% if (!rest.length) { %>
-              <tr>
-                <td colspan="6" class="px-3 py-8 text-center text-neutral-500">Нет данных</td>
-              </tr>
               <% } %>
-                <% rest.forEach((item)=> { %>
-                  <tr class="border-t border-neutral-100">
-                    <td class="px-3 py-2">#<%= item.rank %>
-                    </td>
-                    <td class="px-3 py-2">
-                      <div class="flex items-center gap-2">
-                        <% if (isMissingAvatar(item.avatarUrl)) { %>
-                          <span
-                            class="inline-flex h-7 w-7 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-400"
-                            aria-hidden="true">
-                            <svg class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none">
-                              <circle cx="12" cy="8.5" r="3.75" stroke="currentColor" stroke-width="1.5"></circle>
-                              <path d="M5.5 19c.8-3 3.5-4.8 6.5-4.8s5.7 1.8 6.5 4.8" stroke="currentColor"
-                                stroke-width="1.5" stroke-linecap="round"></path>
-                            </svg>
-                          </span>
-                          <% } else { %>
-                            <img src="<%= item.avatarUrl %>" alt="avatar"
-                              class="h-7 w-7 rounded-full border border-neutral-200 object-cover" />
-                            <% } %>
-                              <span class="inline-flex items-center gap-1.5">
-                                <span>
+                <% topThree.forEach((item, idx)=> { %>
+                  <article class="interactive-card rounded-2xl border border-neutral-200 bg-white p-5">
+                    <p
+                      class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-bold <%= rankBadgeByPlace[item.rank] || 'border-neutral-300 bg-neutral-100 text-neutral-800' %>">
+                      <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" aria-hidden="true" fill="none"
+                        stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M8.2 13.7 6.6 21l5.4-3.2L17.4 21l-1.6-7.3"></path>
+                        <circle cx="12" cy="8.5" r="4.6"></circle>
+                        <path d="m12 5.9.9 1.8 2 .3-1.4 1.4.3 2-1.8-.9-1.8.9.3-2-1.4-1.4 2-.3.9-1.8Z"></path>
+                      </svg>
+                      <span>
+                        <%= item.rank %>
+                      </span>
+                    </p>
+                    <div class="mt-3 flex items-center gap-3">
+                      <% if (isMissingAvatar(item.avatarUrl)) { %>
+                        <span
+                          class="inline-flex h-12 w-12 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-400"
+                          aria-hidden="true">
+                          <svg class="h-7 w-7" viewBox="0 0 24 24" fill="none">
+                            <circle cx="12" cy="8.5" r="3.75" stroke="currentColor" stroke-width="1.5"></circle>
+                            <path d="M5.5 19c.8-3 3.5-4.8 6.5-4.8s5.7 1.8 6.5 4.8" stroke="currentColor"
+                              stroke-width="1.5" stroke-linecap="round"></path>
+                          </svg>
+                        </span>
+                        <% } else { %>
+                          <img src="<%= item.avatarUrl %>" alt="avatar"
+                            class="h-12 w-12 rounded-full border border-neutral-200 object-cover" />
+                          <% } %>
+                            <div class="flex min-w-0 flex-1 flex-col">
+                              <p class="inline-flex items-center gap-1.5 font-semibold text-neutral-900">
+                                <a href="/<%= item.slug %>"
+                                  class="truncate transition-colors hover:text-neutral-600 hover:underline">
                                   <%= item.ownerName %>
-                                </span>
+                                </a>
                                 <% if (item.isVerified) { %>
                                   <svg class="h-4 w-4 shrink-0 text-neutral-500" viewBox="0 0 24 24" aria-hidden="true"
                                     fill="currentColor">
@@ -216,51 +139,134 @@
                                     </path>
                                   </svg>
                                   <% } %>
-                              </span>
-                      </div>
-                    </td>
-                    <td class="px-3 py-2">
-                      <% const rowSlugs=Array.isArray(item.slugs) ? item.slugs : [item.slug]; %>
-                        <div class="flex flex-wrap gap-1.5">
-                          <% rowSlugs.forEach((slugValue)=> { %>
-                            <a href="/<%= slugValue %>" class="hover:underline">
-                              <%= slugValue %>
-                            </a>
-                            <% }) %>
-                        </div>
-                    </td>
-                    <td class="px-3 py-2">
-                      <%= Number(item.views || 0).toLocaleString('ru-RU') %>
-                    </td>
-                    <td class="px-3 py-2">
-                      <%= Number(item.score || 0).toLocaleString('ru-RU') %>
-                    </td>
-                    <td class="px-3 py-2">
-                      <%= 'ПРЕМИУМ' %>
-                    </td>
-                  </tr>
-                  <% }) %>
-          </tbody>
-        </table>
-      </section>
-
-      <% if (userSummary) { %>
-        <section class="mt-6 rounded-2xl border border-neutral-200 bg-white p-4 text-sm text-neutral-700">
-          Твои просмотры: <%= Number(userSummary.views || 0).toLocaleString('ru-RU') %> · Позиция #<%= userSummary.rank
-              %> ·
-              До топ-<%= userSummary.limit %> нужно ещё <%= Number(userSummary.toTopViews || 0).toLocaleString('ru-RU')
-                  %> просмотров
-                  <div class="mt-2 h-1.5 w-full rounded-full bg-neutral-200">
-                    <div class="h-1.5 rounded-full bg-neutral-900"
-                      style="width: <%= Math.max(0, Math.min(100, (Number(userSummary.views || 0) / (Number(userSummary.views || 0) + Number(userSummary.toTopViews || 0) || 1)) * 100)) %>%">
+                              </p>
+                              <a href="/<%= item.slug %>"
+                                class="mt-0.5 block text-sm text-neutral-500 hover:underline">unqx.uz/<%= item.slug %>
+                                  </a>
+                            </div>
                     </div>
-                  </div>
-        </section>
-        <% } %>
-  </main>
-  <div id="leaderboard-toast-region" aria-live="polite" class="sr-only"></div>
+                    <div class="mt-4 flex items-center justify-between text-sm">
+                      <span class="text-neutral-500">Просмотры</span>
+                      <span class="text-2xl font-black">
+                        <%= Number(item.views || 0).toLocaleString('ru-RU') %>
+                      </span>
+                    </div>
+                    <div class="mt-2 h-1.5 w-full rounded-full bg-neutral-200">
+                      <div class="h-1.5 rounded-full bg-neutral-900"
+                        style="width: <%= Math.max(0, Math.min(100, (Number(item.views || 0) / Math.max(1, Number(topThree[0]?.views || 0))) * 100)) %>%">
+                      </div>
+                    </div>
+                    <div class="mt-2 flex items-center justify-between text-xs text-neutral-500">
+                      <span>За выбранный период</span>
+                      <span>Топ <%= Number(item.topPercent || 100) %>%</span>
+                    </div>
+                    <p class="mt-1 text-xs text-neutral-500">
+                      UNQ Score: <%= Number(item.score || 0).toLocaleString('ru-RU') %>
+                    </p>
+                    <% if (currentTelegramId && item.telegramId===currentTelegramId) { %>
+                      <button type="button" data-share-slug="<%= item.slug %>" data-share-rank="<%= item.rank %>"
+                        class="interactive-btn mt-4 min-h-11 rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold text-neutral-700">Поделиться</button>
+                      <% } %>
+                  </article>
+                  <% }) %>
+          </section>
 
-  <script nonce="<%= cspNonce %>" src="/js/leaderboard.js"></script>
+          <section class="mt-6 overflow-hidden rounded-2xl border border-neutral-200 bg-white">
+            <table class="min-w-full text-left text-sm">
+              <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
+                <tr>
+                  <th class="px-3 py-2">Место</th>
+                  <th class="px-3 py-2">Владелец</th>
+                  <th class="px-3 py-2">UNQ</th>
+                  <th class="px-3 py-2">Просмотры</th>
+                  <th class="px-3 py-2">UNQ Score</th>
+                  <th class="px-3 py-2">Тариф</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% if (!rest.length) { %>
+                  <tr>
+                    <td colspan="6" class="px-3 py-8 text-center text-neutral-500">Нет данных</td>
+                  </tr>
+                  <% } %>
+                    <% rest.forEach((item)=> { %>
+                      <tr class="border-t border-neutral-100">
+                        <td class="px-3 py-2">#<%= item.rank %>
+                        </td>
+                        <td class="px-3 py-2">
+                          <div class="flex items-center gap-2">
+                            <% if (isMissingAvatar(item.avatarUrl)) { %>
+                              <span
+                                class="inline-flex h-7 w-7 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-400"
+                                aria-hidden="true">
+                                <svg class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none">
+                                  <circle cx="12" cy="8.5" r="3.75" stroke="currentColor" stroke-width="1.5"></circle>
+                                  <path d="M5.5 19c.8-3 3.5-4.8 6.5-4.8s5.7 1.8 6.5 4.8" stroke="currentColor"
+                                    stroke-width="1.5" stroke-linecap="round"></path>
+                                </svg>
+                              </span>
+                              <% } else { %>
+                                <img src="<%= item.avatarUrl %>" alt="avatar"
+                                  class="h-7 w-7 rounded-full border border-neutral-200 object-cover" />
+                                <% } %>
+                                  <span class="inline-flex items-center gap-1.5">
+                                    <a href="/<%= item.slug %>"
+                                      class="transition-colors hover:text-neutral-600 hover:underline">
+                                      <%= item.ownerName %>
+                                    </a>
+                                    <% if (item.isVerified) { %>
+                                      <svg class="h-4 w-4 shrink-0 text-neutral-500" viewBox="0 0 24 24"
+                                        aria-hidden="true" fill="currentColor">
+                                        <path
+                                          d="M12 2.5l2.2 1.8 2.8-.3 1.2 2.5 2.5 1.2-.3 2.8L21.5 12l-1.8 2.2.3 2.8-2.5 1.2-1.2 2.5-2.8-.3L12 21.5l-2.2-1.8-2.8.3-1.2-2.5-2.5-1.2.3-2.8L2.5 12l1.8-2.2-.3-2.8 2.5-1.2 1.2-2.5 2.8.3L12 2.5Zm-1.1 13.1 5-5-1.1-1.1-3.9 3.9-1.8-1.8-1.1 1.1 2.9 2.9Z">
+                                        </path>
+                                      </svg>
+                                      <% } %>
+                                  </span>
+                          </div>
+                        </td>
+                        <td class="px-3 py-2">
+                          <% const rowSlugs=Array.isArray(item.slugs) ? item.slugs : [item.slug]; %>
+                            <div class="flex flex-wrap gap-1.5">
+                              <% rowSlugs.forEach((slugValue)=> { %>
+                                <a href="/<%= slugValue %>" class="hover:underline">
+                                  <%= slugValue %>
+                                </a>
+                                <% }) %>
+                            </div>
+                        </td>
+                        <td class="px-3 py-2">
+                          <%= Number(item.views || 0).toLocaleString('ru-RU') %>
+                        </td>
+                        <td class="px-3 py-2">
+                          <%= Number(item.score || 0).toLocaleString('ru-RU') %>
+                        </td>
+                        <td class="px-3 py-2">
+                          <%= 'ПРЕМИУМ' %>
+                        </td>
+                      </tr>
+                      <% }) %>
+              </tbody>
+            </table>
+          </section>
+
+          <% if (userSummary) { %>
+            <section class="mt-6 rounded-2xl border border-neutral-200 bg-white p-4 text-sm text-neutral-700">
+              Твои просмотры: <%= Number(userSummary.views || 0).toLocaleString('ru-RU') %> · Позиция #<%=
+                  userSummary.rank %> ·
+                  До топ-<%= userSummary.limit %> нужно ещё <%= Number(userSummary.toTopViews ||
+                      0).toLocaleString('ru-RU') %> просмотров
+                      <div class="mt-2 h-1.5 w-full rounded-full bg-neutral-200">
+                        <div class="h-1.5 rounded-full bg-neutral-900"
+                          style="width: <%= Math.max(0, Math.min(100, (Number(userSummary.views || 0) / (Number(userSummary.views || 0) + Number(userSummary.toTopViews || 0) || 1)) * 100)) %>%">
+                        </div>
+                      </div>
+            </section>
+            <% } %>
+      </main>
+      <div id="leaderboard-toast-region" aria-live="polite" class="sr-only"></div>
+
+      <script nonce="<%= cspNonce %>" src="/js/leaderboard.js"></script>
 </body>
 
 </html>

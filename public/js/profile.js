@@ -392,8 +392,10 @@ Email: ${userEmail}
       analyticsLock: $("#profile-analytics-lock"),
 
       reqBanner: $("#profile-requests-banner"),
+      reqSummary: $("#profile-requests-summary"),
       reqTable: $("#profile-requests-table"),
       reqTableWrap: $("#profile-requests-table-wrap"),
+      reqDesktopList: $("#profile-requests-desktop-list"),
       reqMobileList: $("#profile-requests-mobile-list"),
       reqEmpty: $("#profile-requests-empty-state"),
       reqNewBtn: $("#profile-new-request-btn"),
@@ -1459,6 +1461,8 @@ Email: ${userEmail}
         const themeId = button.getAttribute("data-theme") || "default_dark";
         const premiumOnly = PREMIUM_ONLY_THEMES.has(themeId);
         const locked = !premium && premiumOnly;
+        button.setAttribute("aria-pressed", on ? "true" : "false");
+        button.classList.toggle("selected", on);
         button.classList.toggle("bg-neutral-900", on);
         button.classList.toggle("text-white", on);
         button.disabled = locked;
@@ -1623,35 +1627,80 @@ Email: ${userEmail}
 
     const renderRequests = () => {
       if (!el.reqTable) return;
-      const getOrderProgress = (requestItem) => {
+      const getRequestStatusMeta = (requestItem) => {
         const status = String(requestItem?.status || "").trim().toLowerCase();
-        const progressMap = { new: 1, contacted: 2, paid: 3, approved: 4 };
-        const done = Number(progressMap[status] || 0);
-        const labels = ["Создан", "Связались", "Оплачено", "Активирован"];
-
-        if (status === "rejected" || status === "expired") {
-          const failLabel = status === "rejected" ? "Отклонен" : "Истек";
-          return `<div class="inline-flex items-center rounded-full border border-rose-200 bg-rose-50 px-2.5 py-1 text-[11px] font-semibold text-rose-700">${failLabel}</div>`;
+        if (status === "approved") {
+          return { label: "Активировано", className: "is-approved" };
         }
+        if (status === "paid") {
+          return { label: "Оплачено", className: "is-paid" };
+        }
+        if (status === "new" || status === "contacted") {
+          return { label: "Ожидает оплаты", className: "is-pending" };
+        }
+        if (status === "rejected" || status === "expired") {
+          return { label: status === "rejected" ? "Отклонено" : "Истекло", className: "is-rejected" };
+        }
+        return { label: String(requestItem?.statusBadge || requestItem?.status || "В обработке"), className: "is-neutral" };
+      };
 
-        const steps = labels
-          .map((label, index) => {
-            const step = index + 1;
-            const isDone = done >= step;
-            return `<div class="flex items-center gap-1.5 ${index > 0 ? "ml-2" : ""}">
-            ${index > 0 ? `<span class="h-px w-5 ${done >= step ? "bg-emerald-500" : "bg-neutral-300"}"></span>` : ""}
-            <span class="h-2.5 w-2.5 rounded-full ${isDone ? "bg-emerald-500" : "bg-neutral-300"}"></span>
-            <span class="text-[10px] ${isDone ? "text-neutral-800" : "text-neutral-500"}">${label}</span>
-          </div>`;
-          })
-          .join("");
+      const getRequestMetaChips = (requestItem) => {
+        const chips = [];
+        chips.push(`<span class="profile-request-chip">${requestItem.requestedPlan === "premium" ? "Premium" : "Без тарифа"}</span>`);
+        chips.push(`<span class="profile-request-chip">Создано: ${fdt(requestItem.createdAt)}</span>`);
+        if (requestItem.purchasedAt) {
+          chips.push(`<span class="profile-request-chip">Оплачено: ${fdt(requestItem.purchasedAt)}</span>`);
+        }
+        if (requestItem.bracelet) {
+          chips.push(`<span class="profile-request-chip">NFC-стикер добавлен</span>`);
+        }
+        return chips.join("");
+      };
 
-        return `<div class="min-w-[260px]"><div class="flex items-center">${steps}</div></div>`;
+      const renderRequestActions = (requestItem, compact = false) => {
+        const normalizedStatus = String(requestItem.status || "").toLowerCase();
+        const actions = [];
+        if (normalizedStatus === "new" || normalizedStatus === "contacted") {
+          actions.push(`<button type="button" data-a="pay-request" data-order-id="${esc(requestItem.id)}" class="interactive-btn ${compact ? "w-full" : ""} rounded-lg bg-neutral-900 px-3 py-2 text-xs font-semibold text-white">Продолжить оплату</button>`);
+        }
+        if (normalizedStatus === "new") {
+          actions.push(`<button type="button" data-a="cancel-request" data-order-id="${esc(requestItem.id)}" class="interactive-btn ${compact ? "w-full" : ""} rounded-lg border border-red-200 bg-white px-3 py-2 text-xs font-semibold text-red-700">Отменить</button>`);
+        }
+        return actions.length ? `<div class="profile-request-actions">${actions.join("")}</div>` : "";
+      };
+
+      const renderRequestCard = (requestItem, compact = false) => {
+        const normalizedStatus = String(requestItem.status || "").toLowerCase();
+        const totalPrice =
+          Number(requestItem.slugPrice || 0) +
+          Number(requestItem.planPrice || 0) +
+          (requestItem.bracelet ? Number(requestItem.braceletPrice || DEFAULT_BRACELET_PRICE) : 0);
+        const statusMeta = getRequestStatusMeta(requestItem);
+        const note = ["rejected", "expired"].includes(normalizedStatus)
+          ? `<div class="profile-request-note"><strong>Причина:</strong> ${esc(requestItem.adminNote || "Без дополнительного комментария")}</div>`
+          : "";
+        return `<article class="profile-request-card">
+          <div class="profile-request-card-head">
+            <div>
+              <div class="profile-request-kicker">UNQ заявка</div>
+              <div class="profile-request-slug">${esc(requestItem.slug || "—")}</div>
+            </div>
+            <div class="${compact ? "w-full" : "text-right"}">
+              <div class="profile-request-status ${statusMeta.className}">${esc(statusMeta.label)}</div>
+              <div class="${compact ? "mt-3" : "mt-2"} profile-request-amount">${fp(totalPrice)}</div>
+            </div>
+          </div>
+          <div class="profile-request-meta">${getRequestMetaChips(requestItem)}</div>
+          ${note}
+          ${renderRequestActions(requestItem, compact)}
+        </article>`;
       };
 
       const plan = getCurrentPlan();
       if (plan === "none" && !s.requests.length) {
         if (el.reqBanner) el.reqBanner.classList.add("hidden");
+        if (el.reqSummary instanceof HTMLElement) el.reqSummary.classList.add("hidden");
+        if (el.reqDesktopList instanceof HTMLElement) el.reqDesktopList.classList.add("hidden");
         if (el.reqTableWrap instanceof HTMLElement) el.reqTableWrap.classList.add("hidden");
         if (el.reqMobileList instanceof HTMLElement) el.reqMobileList.classList.add("hidden");
         if (el.reqEmpty instanceof HTMLElement) {
@@ -1666,100 +1715,41 @@ Email: ${userEmail}
         }
         return;
       }
+      if (el.reqSummary instanceof HTMLElement) el.reqSummary.classList.remove("hidden");
+      if (el.reqDesktopList instanceof HTMLElement) el.reqDesktopList.classList.remove("hidden");
       if (el.reqTableWrap instanceof HTMLElement) el.reqTableWrap.classList.remove("hidden");
       if (el.reqMobileList instanceof HTMLElement) el.reqMobileList.classList.remove("hidden");
       if (el.reqEmpty instanceof HTMLElement) el.reqEmpty.classList.add("hidden");
 
+      const requestsTotal = s.requests.length;
+      const requestsActive = s.requests.filter((item) => String(item.status || "").toLowerCase() === "approved").length;
+      const requestsPending = s.requests.filter((item) => ["new", "contacted", "paid"].includes(String(item.status || "").toLowerCase())).length;
+      const requestsProblem = s.requests.filter((item) => ["rejected", "expired"].includes(String(item.status || "").toLowerCase())).length;
+
+      if (el.reqSummary) {
+        el.reqSummary.innerHTML = [
+          { label: "Всего", value: requestsTotal, note: "Все заявки по аккаунту" },
+          { label: "Активно", value: requestsActive, note: "UNQ уже активированы" },
+          { label: "В процессе", value: requestsPending, note: "Ждут оплату или подтверждение" },
+          { label: "Нужна реакция", value: requestsProblem, note: "Отклонены или истекли" },
+        ]
+          .map((item) => `<article class="profile-request-summary-card"><p class="profile-request-summary-label">${esc(item.label)}</p><p class="profile-request-summary-value">${esc(String(item.value))}</p><p class="profile-request-summary-note">${esc(item.note)}</p></article>`)
+          .join("");
+      }
+
       if (el.reqMobileList) {
         el.reqMobileList.innerHTML = s.requests.length
           ? s.requests
-            .map((requestItem) => {
-              const normalizedStatus = String(requestItem.status || "").toLowerCase();
-              const showNote = ["rejected", "expired"].includes(normalizedStatus);
-              const canResumePayment = normalizedStatus === "new" || normalizedStatus === "contacted";
-              const totalPrice =
-                Number(requestItem.slugPrice || 0) +
-                Number(requestItem.planPrice || 0) +
-                (requestItem.bracelet ? Number(requestItem.braceletPrice || DEFAULT_BRACELET_PRICE) : 0);
-              const payActionButton = canResumePayment
-                ? `<button type="button" data-a="pay-request" data-order-id="${esc(requestItem.id)}" class="interactive-btn min-h-11 w-full rounded-lg bg-neutral-900 px-3 py-2 text-xs font-semibold text-white">Оплатить</button>`
-                : "";
-              const cancelActionButton = normalizedStatus === "new"
-                ? `<button type="button" data-a="cancel-request" data-order-id="${esc(requestItem.id)}" class="interactive-btn min-h-11 w-full rounded-lg border border-red-200 bg-white px-3 py-2 text-xs font-semibold text-red-700">Отменить</button>`
-                : "";
-              const actionButtons = [payActionButton, cancelActionButton].filter(Boolean).join("");
-              return `<article class="rounded-xl border border-neutral-200 bg-white p-3">
-              <div class="flex items-start justify-between gap-2">
-                <div class="min-w-0">
-                  <p class="text-[11px] uppercase tracking-[0.12em] text-neutral-500">UNQ</p>
-                  <p class="break-all font-mono text-sm font-semibold text-neutral-900">${esc(requestItem.slug)}</p>
-                </div>
-                <div class="shrink-0 text-right">
-                  <p class="text-[11px] uppercase tracking-[0.12em] text-neutral-500">Статус</p>
-                  <p class="text-sm font-semibold text-neutral-800">${esc(requestItem.statusBadge || requestItem.status)}</p>
-                </div>
-              </div>
-              <div class="mt-3 grid grid-cols-1 gap-2 text-xs text-neutral-600 sm:grid-cols-2">
-                <div>
-                  <p class="text-[11px] uppercase tracking-[0.12em] text-neutral-500">Дата</p>
-                  <p class="break-words">${fdt(requestItem.createdAt)}</p>
-                </div>
-                <div>
-                  <p class="text-[11px] uppercase tracking-[0.12em] text-neutral-500">Покупка</p>
-                  <p class="break-words">${requestItem.purchasedAt ? fdt(requestItem.purchasedAt) : "—"}</p>
-                </div>
-                <div>
-                  <p class="text-[11px] uppercase tracking-[0.12em] text-neutral-500">Тариф</p>
-                  <p>${requestItem.requestedPlan === "premium" ? "Premium" : "—"}</p>
-                </div>
-                <div>
-                  <p class="text-[11px] uppercase tracking-[0.12em] text-neutral-500">Браслет</p>
-                  <p>${requestItem.bracelet ? "Да" : "Нет"}</p>
-                </div>
-              </div>
-              <div class="mt-3 rounded-lg border border-neutral-200 bg-neutral-50 px-2.5 py-2">
-                <p class="text-[11px] uppercase tracking-[0.12em] text-neutral-500">Цена</p>
-                <p class="text-sm font-semibold text-neutral-900">${fp(totalPrice)}</p>
-                <p class="text-[11px] text-neutral-500">${requestItem.purchasedAt ? `Subscription payment · ${fd(requestItem.purchasedAt)}` : "Subscription payment"}</p>
-              </div>
-              ${showNote ? `<p class="mt-3 text-xs text-rose-700">Примечание: ${esc(requestItem.adminNote || "—")}</p>` : ""}
-              ${actionButtons ? `<div class="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">${actionButtons}</div>` : ""}
-            </article>`;
-            })
+            .map((requestItem) => renderRequestCard(requestItem, true))
             .join("")
           : '<div class="rounded-xl border border-neutral-200 bg-white px-3 py-5 text-center text-sm text-neutral-500">Заявок пока нет</div>';
       }
-      el.reqTable.innerHTML = s.requests.length
-        ? s.requests
-          .map(
-            (requestItem) => {
-              const normalizedStatus = String(requestItem.status || "").toLowerCase();
-              const showNote = ["rejected", "expired"].includes(normalizedStatus);
-              const canResumePayment = normalizedStatus === "new" || normalizedStatus === "contacted";
-              const actionButtons = [
-                canResumePayment
-                  ? `<button type="button" data-a="pay-request" data-order-id="${esc(requestItem.id)}" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold text-neutral-800">Оплатить</button>`
-                  : "",
-                normalizedStatus === "new"
-                  ? `<button type="button" data-a="cancel-request" data-order-id="${esc(requestItem.id)}" class="interactive-btn min-h-11 rounded-lg border border-red-200 px-2.5 py-1 text-xs font-semibold text-red-700">Отменить</button>`
-                  : "",
-              ]
-                .filter(Boolean)
-                .join('<span class="inline-block w-1"></span>');
-              return `<tr class="border-t border-neutral-100">
-              <td class="px-3 py-2">${fdt(requestItem.createdAt)}</td>
-              <td class="px-3 py-2">${requestItem.purchasedAt ? fdt(requestItem.purchasedAt) : "—"}</td>
-              <td class="px-3 py-2 font-mono">${esc(requestItem.slug)}</td>
-              <td class="px-3 py-2">${fp(Number(requestItem.slugPrice || 0) + Number(requestItem.planPrice || 0) + (requestItem.bracelet ? Number(requestItem.braceletPrice || DEFAULT_BRACELET_PRICE) : 0))}<div class="text-[11px] text-neutral-500">${requestItem.purchasedAt ? `Subscription payment · ${fd(requestItem.purchasedAt)}` : "Subscription payment"}</div></td>
-              <td class="px-3 py-2">${requestItem.requestedPlan === "premium" ? "Premium" : "—"}</td>
-              <td class="px-3 py-2">${requestItem.bracelet ? "Да" : "Нет"}</td>
-              <td class="px-3 py-2">${esc(requestItem.statusBadge || requestItem.status)}</td>
-              <td class="px-3 py-2">${showNote ? esc(requestItem.adminNote || "—") : ""}${actionButtons ? `<div class="mt-2">${actionButtons}</div>` : ""}</td>
-            </tr>`;
-            }
-          )
-          .join("")
-        : '<tr><td colspan="9" class="px-3 py-8 text-center text-neutral-500">Заявок пока нет</td></tr>';
+      if (el.reqDesktopList) {
+        el.reqDesktopList.innerHTML = s.requests.length
+          ? s.requests.map((requestItem) => renderRequestCard(requestItem)).join("")
+          : '<div class="rounded-xl border border-neutral-200 bg-white px-3 py-5 text-center text-sm text-neutral-500">Заявок пока нет</div>';
+      }
+      el.reqTable.innerHTML = "";
 
       const approved = s.requests.find((item) => item.status === "approved");
       const needsPayment = s.requests.find((item) => ["new", "contacted"].includes(String(item.status || "").toLowerCase()));

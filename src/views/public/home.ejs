@@ -10,12 +10,13 @@
   pricingVisible=Boolean(pagePublicSettings.pricing_section_visible ?? true); const
   braceletName=String(pagePublicSettings.bracelet_name || "NFC-стикер" ); const
   braceletOldPrice=Number(pagePublicSettings.bracelet_old_price || 400000); const
-  braceletPrice=Number(pagePublicSettings.bracelet_price || 250000); const
-  braceletDiscountPercent=braceletOldPrice > braceletPrice ? Math.round((1 - braceletPrice / braceletOldPrice) * 100)
+  braceletPrice=Number(pagePublicSettings.bracelet_price || 250000); const braceletDiscountPercent=braceletOldPrice>
+  braceletPrice ? Math.round((1 - braceletPrice / braceletOldPrice) * 100)
   : 0; const
   braceletFeaturesFromSettings=Array.isArray(pagePublicSettings.bracelet_features) ?
   pagePublicSettings.bracelet_features : null; const braceletDescription=String(pagePublicSettings.bracelet_description
-  || "Компактный NFC-стикер, который клеится на любую поверхность и открывает твою цифровую визитку в один тап." ); const
+  || "Компактный NFC-стикер, который клеится на любую поверхность и открывает твою цифровую визитку в один тап." );
+  const
   braceletNote=String(pagePublicSettings.bracelet_note
   || "Стикер привязан к твоему UNQ - работает только с активной визиткой UNQX" ); const
   supportTelegram=String(pagePublicSettings.contact_support_telegram || "@unqx_uz" ); const
@@ -27,7 +28,8 @@
   pageCanonicalUrl, logo: `${pageBaseUrl}/brand/logo.PNG`, sameAs: ["https://t.me/unqx_uz"] }]; const
   pageUserSession=typeof userSession !=="undefined" ? userSession : null; const hasAuthSession=Boolean(pageUserSession
   && pageUserSession.userId);
-  const pricingSettings=typeof pricing==="object" && pricing ? pricing : { planPremiumMonthlyPriceUsd: 2, planPremiumMonthlyPriceUzs:
+  const pricingSettings=typeof pricing==="object" && pricing ? pricing : { planPremiumMonthlyPriceUsd: 2,
+  planPremiumMonthlyPriceUzs:
   130000, pricingFootnote: "" , }; const
   pricingFootnote=String(pricingSettings.pricingFootnote ?? "" ).trim()
   ; const authDisplayName=hasAuthSession ?
@@ -66,7 +68,8 @@
 
   const homeProfileFeedList = (Array.isArray(topWeeklyViews) ? topWeeklyViews : [])
   .map((item) => {
-  const primarySlug = String(item?.primarySlug || (Array.isArray(item?.slugs) ? item.slugs[0] : "") || "").trim().toUpperCase();
+  const primarySlug = String(item?.primarySlug || (Array.isArray(item?.slugs) ? item.slugs[0] : "") ||
+  "").trim().toUpperCase();
   const name = String(item?.name || "UNQX User").trim() || "UNQX User";
   const avatarUrl = String(item?.avatarUrl || "").trim();
   return { primarySlug, name, avatarUrl };
@@ -113,7 +116,8 @@
   "Кастомные цвета и фон",
   "Скрыть брендинг UNQX",
   ],
-  excluded: Array.isArray(pagePublicSettings.plan_premium_excluded_features) ? pagePublicSettings.plan_premium_excluded_features : [],
+  excluded: Array.isArray(pagePublicSettings.plan_premium_excluded_features) ?
+  pagePublicSettings.plan_premium_excluded_features : [],
   },
   ];
 
@@ -162,9 +166,11 @@
       "></div>
 
       <div class="relative z-10">
-        <nav class="site-header fixed left-0 right-0 top-0 z-50 border-b border-neutral-200 bg-white/80 backdrop-blur-md">
+        <nav
+          class="site-header fixed left-0 right-0 top-0 z-50 border-b border-neutral-200 bg-white/80 backdrop-blur-md">
           <div class="site-header-inner mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-4">
-            <a href="/" class="site-logo inline-flex items-center gap-2 text-xl font-black tracking-tight text-neutral-900">
+            <a href="/"
+              class="site-logo inline-flex items-center gap-2 text-xl font-black tracking-tight text-neutral-900">
               <img src="/brand/logo.PNG" alt="<%= platformName %>"
                 class="site-logo-mark h-8 w-8 rounded-md border border-neutral-200 object-cover" />
               <span class="site-logo-name">
@@ -173,14 +179,13 @@
             </a>
 
             <div class="site-header-links hidden items-center gap-8 md:flex">
-              <a href="#pricing" class="site-header-link text-sm text-neutral-500 transition-colors hover:text-neutral-900">Доступ</a>
+              <a href="#pricing"
+                class="site-header-link text-sm text-neutral-500 transition-colors hover:text-neutral-900">Доступ</a>
               <a href="/directory"
                 class="site-header-link text-sm text-neutral-500 transition-colors hover:text-neutral-900">Резиденты</a>
               <% if (leaderboardEnabled) { %><a href="/leaderboard"
                   class="site-header-link whitespace-nowrap text-sm text-neutral-500 transition-colors hover:text-neutral-900">UNQ&nbsp;ELITE</a>
                 <% } %>
-                  <a href="/drops" class="site-header-link text-sm text-neutral-500 transition-colors hover:text-neutral-900">Релизы</a>
-                  <a href="/unqx-game" class="site-header-link text-sm text-neutral-500 transition-colors hover:text-neutral-900">UNQX&nbsp;LUCKY</a>
                   <div id="home-auth-nav-desktop" class="flex items-center gap-2">
                     <a href="/login" data-auth-login
                       class="site-header-login interactive-btn inline-flex min-h-11 items-center justify-center rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100 <%= hasAuthSession ? 'hidden' : '' %>">Войти</a>
@@ -201,8 +206,8 @@
               </svg>
             </a>
 
-            <button type="button" class="site-header-mobile-toggle text-neutral-900 md:hidden" data-menu-toggle aria-expanded="false"
-              aria-controls="mobile-menu" aria-label="Открыть меню">
+            <button type="button" class="site-header-mobile-toggle text-neutral-900 md:hidden" data-menu-toggle
+              aria-expanded="false" aria-controls="mobile-menu" aria-label="Открыть меню">
               <svg data-menu-open-icon class="icon-stroke h-5 w-5" viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M4 6h16M4 12h16M4 18h16"></path>
               </svg>
@@ -212,7 +217,8 @@
             </button>
           </div>
 
-          <div id="mobile-menu" class="site-mobile-menu hidden border-t border-neutral-200 bg-white px-6 pb-6 pt-4 md:hidden"
+          <div id="mobile-menu"
+            class="site-mobile-menu hidden border-t border-neutral-200 bg-white px-6 pb-6 pt-4 md:hidden"
             data-mobile-menu>
             <div class="flex flex-col gap-4">
               <a href="#pricing" class="site-mobile-link text-sm text-neutral-500">Доступ</a>
@@ -220,8 +226,6 @@
               <% if (leaderboardEnabled) { %><a href="/leaderboard"
                   class="site-mobile-link whitespace-nowrap text-sm text-neutral-500">UNQ&nbsp;ELITE</a>
                 <% } %>
-                  <a href="/drops" class="site-mobile-link text-sm text-neutral-500">Релизы</a>
-                  <a href="/unqx-game" class="site-mobile-link text-sm text-neutral-500">UNQX LUCKY</a>
                   <div id="home-auth-nav-mobile" class="flex w-full items-center justify-center gap-2">
                     <a href="/login" data-auth-login
                       class="site-header-login inline-flex min-h-11 items-center justify-center rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100 <%= hasAuthSession ? 'hidden' : '' %>">Войти</a>
@@ -244,7 +248,8 @@
         </nav>
 
         <% if (activeFlashSale) { %>
-          <section class="site-flash-sale sticky z-40 border-b border-amber-200 bg-amber-50 px-6 py-2 text-sm text-amber-900"
+          <section
+            class="site-flash-sale sticky z-40 border-b border-amber-200 bg-amber-50 px-6 py-2 text-sm text-amber-900"
             data-flash-sale-banner data-ends-at="<%= activeFlashSale.endsAt.toISOString() %>">
             <div class="site-flash-sale-inner mx-auto flex w-full max-w-6xl items-center justify-between gap-3">
               <p class="site-flash-sale-copy inline-flex items-center gap-2">
@@ -341,8 +346,8 @@
                     </p>
                   </div>
 
-                  <div id="home-slug-official-notice" class="home-official-unq-notice mx-auto mt-4 hidden max-w-md text-left"
-                    role="status">
+                  <div id="home-slug-official-notice"
+                    class="home-official-unq-notice mx-auto mt-4 hidden max-w-md text-left" role="status">
                   </div>
 
                   <div class="mt-4 flex items-center justify-center gap-3">
@@ -393,9 +398,6 @@
                       class="interactive-btn min-h-11 rounded-lg border border-red-300 bg-red-100 px-3 py-1.5 text-xs font-semibold text-red-900">
                       Забронировать уведомление в 1 клик
                     </button>
-                    <a href="/drops"
-                      class="interactive-btn min-h-11 rounded-lg border border-red-300 px-3 py-1.5 text-xs font-semibold text-red-900">Подписаться
-                      на уведомление</a>
                   </div>
                 </div>
               </section>
@@ -415,97 +417,104 @@
                       </p>
                       <% } %>
 
-                    <div class="mt-10 flex items-center gap-3">
-                      <input id="calc-letters" type="text" maxlength="3" placeholder="AAA"
-                        class="w-28 rounded-xl border border-neutral-200 bg-white px-4 py-3 text-center font-mono text-lg uppercase text-neutral-900 outline-none transition-colors placeholder:text-neutral-300 focus:border-neutral-400"
-                        autocomplete="off" />
-                      <span class="text-neutral-300">-</span>
-                      <input id="calc-digits" type="text" maxlength="3" placeholder="000"
-                        class="w-28 rounded-xl border border-neutral-200 bg-white px-4 py-3 text-center font-mono text-lg text-neutral-900 outline-none transition-colors placeholder:text-neutral-300 focus:border-neutral-400"
-                        autocomplete="off" />
-                      <button id="calc-generate-button" type="button"
-                        class="interactive-btn inline-flex h-12 w-12 items-center justify-center rounded-xl border border-neutral-200 bg-white text-neutral-700 transition-colors hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-60"
-                        title="Сгенерировать свободный UNQ (низкий/средний сегмент)" aria-label="Сгенерировать свободный UNQ">
-                        <svg class="icon-stroke h-5 w-5" viewBox="0 0 24 24" aria-hidden="true">
-                          <path d="M21 12a9 9 0 1 1-2.64-6.36"></path>
-                          <path d="M21 4v6h-6"></path>
-                        </svg>
-                      </button>
-                    </div>
-
-                    <p id="calc-preview" class="mt-3 font-mono text-sm text-neutral-400">unqx.uz/______</p>
-
-                    <div id="calc-empty-state"
-                      class="mt-8 hidden rounded-2xl border border-neutral-200 bg-white/90 p-8 shadow-[0_10px_30px_rgba(15,23,42,0.05)]">
-                      <div class="flex items-center justify-between gap-3">
-                        <span
-                          class="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-500">
-                          Предпросмотр цены
-                        </span>
-                        <span class="text-xs text-neutral-400">Введите 3 буквы + 3 цифры</span>
-                      </div>
-                      <p class="mt-5 font-mono text-2xl font-bold tracking-wider text-neutral-900">AAA000</p>
-                      <div class="mt-4 flex items-end gap-2">
-                        <span class="text-3xl font-bold text-neutral-900">100 000</span>
-                        <span class="pb-1 text-sm text-neutral-400">сум от</span>
-                      </div>
-                      <p class="mt-2 text-xs text-neutral-400">Цена зависит от паттерна букв, цифр и flash-скидок.</p>
-                      <div class="mt-4 grid gap-2 text-sm text-neutral-600 sm:grid-cols-2">
-                        <div class="rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2">Буквы: шаблон x1..x10</div>
-                        <div class="rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2">Цифры: шаблон x1..x6</div>
-                      </div>
-                    </div>
-
-                    <div id="calc-result" class="mt-8 rounded-2xl border border-neutral-200 bg-white p-8">
-                      <div class="flex items-center gap-3">
-                        <span id="calc-rarity-badge"
-                          class="inline-flex items-center gap-1 rounded-full border px-3 py-1 font-mono text-[11px] font-medium tracking-wider">
-                          <svg class="icon-stroke h-3 w-3" viewBox="0 0 24 24" aria-hidden="true">
-                            <path d="m12 3 2.5 5.5L20 10l-4 4 .9 6L12 17l-4.9 3 .9-6-4-4 5.5-1.5L12 3Z"></path>
-                          </svg>
-                          <span id="calc-rarity-text">COMMON</span>
-                        </span>
-                      </div>
-
-                      <p id="calc-result-slug"
-                        class="mt-5 font-mono text-2xl font-bold tracking-wider text-neutral-900">AAA000</p>
-
-                      <div class="mt-4 flex items-baseline gap-2">
-                        <span id="calc-result-price" class="text-3xl font-bold text-neutral-900">0</span>
-                        <span class="text-sm text-neutral-400">сум</span>
-                      </div>
-                      <div id="calc-similar-wrap"
-                        class="mt-4 hidden rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2.5">
-                        <p class="text-xs text-neutral-500">
-                          Похожие свободные:
-                          <span id="calc-similar-items" class="ml-1 inline-flex flex-wrap items-center gap-2"></span>
-                        </p>
-                      </div>
-
-                      <p id="calc-result-formula" class="mt-2 font-mono text-xs text-neutral-400">100 000 x 1 x 1 = 100
-                        000 сум</p>
-
-                      <div id="calc-official-notice" class="home-official-unq-notice mt-6 hidden" role="status"></div>
-
-                      <div class="mt-6 flex gap-6">
-                        <div>
-                          <p class="text-xs text-neutral-400">Буквы</p>
-                          <p id="calc-letter-meta" class="mt-1 text-sm font-medium text-neutral-700">Обычные x1</p>
+                        <div class="mt-10 flex items-center gap-3">
+                          <input id="calc-letters" type="text" maxlength="3" placeholder="AAA"
+                            class="w-28 rounded-xl border border-neutral-200 bg-white px-4 py-3 text-center font-mono text-lg uppercase text-neutral-900 outline-none transition-colors placeholder:text-neutral-300 focus:border-neutral-400"
+                            autocomplete="off" />
+                          <span class="text-neutral-300">-</span>
+                          <input id="calc-digits" type="text" maxlength="3" placeholder="000"
+                            class="w-28 rounded-xl border border-neutral-200 bg-white px-4 py-3 text-center font-mono text-lg text-neutral-900 outline-none transition-colors placeholder:text-neutral-300 focus:border-neutral-400"
+                            autocomplete="off" />
+                          <button id="calc-generate-button" type="button"
+                            class="interactive-btn inline-flex h-12 w-12 items-center justify-center rounded-xl border border-neutral-200 bg-white text-neutral-700 transition-colors hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-60"
+                            title="Сгенерировать свободный UNQ (низкий/средний сегмент)"
+                            aria-label="Сгенерировать свободный UNQ">
+                            <svg class="icon-stroke h-5 w-5" viewBox="0 0 24 24" aria-hidden="true">
+                              <path d="M21 12a9 9 0 1 1-2.64-6.36"></path>
+                              <path d="M21 4v6h-6"></path>
+                            </svg>
+                          </button>
                         </div>
-                        <div>
-                          <p class="text-xs text-neutral-400">Цифры</p>
-                          <p id="calc-digit-meta" class="mt-1 text-sm font-medium text-neutral-700">Обычные x1</p>
-                        </div>
-                      </div>
 
-                      <a id="calc-reserve-link" href="#" data-order-link
-                        class="interactive-btn btn-shimmer mt-8 inline-flex min-h-11 items-center gap-2 rounded-xl bg-neutral-900 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-neutral-800">
-                        Занять AAA000
-                        <svg class="icon-stroke h-3.5 w-3.5" viewBox="0 0 24 24" aria-hidden="true">
-                          <path d="M5 12h14M13 5l7 7-7 7"></path>
-                        </svg>
-                      </a>
-                    </div>
+                        <p id="calc-preview" class="mt-3 font-mono text-sm text-neutral-400">unqx.uz/______</p>
+
+                        <div id="calc-empty-state"
+                          class="mt-8 hidden rounded-2xl border border-neutral-200 bg-white/90 p-8 shadow-[0_10px_30px_rgba(15,23,42,0.05)]">
+                          <div class="flex items-center justify-between gap-3">
+                            <span
+                              class="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-500">
+                              Предпросмотр цены
+                            </span>
+                            <span class="text-xs text-neutral-400">Введите 3 буквы + 3 цифры</span>
+                          </div>
+                          <p class="mt-5 font-mono text-2xl font-bold tracking-wider text-neutral-900">AAA000</p>
+                          <div class="mt-4 flex items-end gap-2">
+                            <span class="text-3xl font-bold text-neutral-900">100 000</span>
+                            <span class="pb-1 text-sm text-neutral-400">сум от</span>
+                          </div>
+                          <p class="mt-2 text-xs text-neutral-400">Цена зависит от паттерна букв, цифр и flash-скидок.
+                          </p>
+                          <div class="mt-4 grid gap-2 text-sm text-neutral-600 sm:grid-cols-2">
+                            <div class="rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2">Буквы: шаблон
+                              x1..x10</div>
+                            <div class="rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2">Цифры: шаблон
+                              x1..x6</div>
+                          </div>
+                        </div>
+
+                        <div id="calc-result" class="mt-8 rounded-2xl border border-neutral-200 bg-white p-8">
+                          <div class="flex items-center gap-3">
+                            <span id="calc-rarity-badge"
+                              class="inline-flex items-center gap-1 rounded-full border px-3 py-1 font-mono text-[11px] font-medium tracking-wider">
+                              <svg class="icon-stroke h-3 w-3" viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="m12 3 2.5 5.5L20 10l-4 4 .9 6L12 17l-4.9 3 .9-6-4-4 5.5-1.5L12 3Z"></path>
+                              </svg>
+                              <span id="calc-rarity-text">COMMON</span>
+                            </span>
+                          </div>
+
+                          <p id="calc-result-slug"
+                            class="mt-5 font-mono text-2xl font-bold tracking-wider text-neutral-900">AAA000</p>
+
+                          <div class="mt-4 flex items-baseline gap-2">
+                            <span id="calc-result-price" class="text-3xl font-bold text-neutral-900">0</span>
+                            <span class="text-sm text-neutral-400">сум</span>
+                          </div>
+                          <div id="calc-similar-wrap"
+                            class="mt-4 hidden rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2.5">
+                            <p class="text-xs text-neutral-500">
+                              Похожие свободные:
+                              <span id="calc-similar-items"
+                                class="ml-1 inline-flex flex-wrap items-center gap-2"></span>
+                            </p>
+                          </div>
+
+                          <p id="calc-result-formula" class="mt-2 font-mono text-xs text-neutral-400">100 000 x 1 x 1 =
+                            100
+                            000 сум</p>
+
+                          <div id="calc-official-notice" class="home-official-unq-notice mt-6 hidden" role="status">
+                          </div>
+
+                          <div class="mt-6 flex gap-6">
+                            <div>
+                              <p class="text-xs text-neutral-400">Буквы</p>
+                              <p id="calc-letter-meta" class="mt-1 text-sm font-medium text-neutral-700">Обычные x1</p>
+                            </div>
+                            <div>
+                              <p class="text-xs text-neutral-400">Цифры</p>
+                              <p id="calc-digit-meta" class="mt-1 text-sm font-medium text-neutral-700">Обычные x1</p>
+                            </div>
+                          </div>
+
+                          <a id="calc-reserve-link" href="#" data-order-link
+                            class="interactive-btn btn-shimmer mt-8 inline-flex min-h-11 items-center gap-2 rounded-xl bg-neutral-900 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-neutral-800">
+                            Занять AAA000
+                            <svg class="icon-stroke h-3.5 w-3.5" viewBox="0 0 24 24" aria-hidden="true">
+                              <path d="M5 12h14M13 5l7 7-7 7"></path>
+                            </svg>
+                          </a>
+                        </div>
                   </div>
                 </section>
 
@@ -526,22 +535,28 @@
                         <div class="home-profile-marquee mt-8" aria-label="UNQ profile feed">
                           <div class="home-profile-marquee-track">
                             <% [0, 1].forEach((dupIndex)=> { %>
-                              <div class="home-profile-marquee-group" <%= dupIndex === 1 ? 'aria-hidden="true"' : '' %>>
+                              <div class="home-profile-marquee-group" <%=dupIndex===1 ? 'aria-hidden="true"' : '' %>>
                                 <% homeProfileFeedList.forEach((item)=> { %>
-                                  <a href="/<%= encodeURIComponent(item.primarySlug) %>" class="home-profile-marquee-item">
+                                  <a href="/<%= encodeURIComponent(item.primarySlug) %>"
+                                    class="home-profile-marquee-item">
                                     <div class="home-profile-marquee-avatar-wrap">
                                       <% if (item.avatarUrl) { %>
-                                        <img src="<%= item.avatarUrl %>" alt="<%= item.name %>" class="home-profile-marquee-avatar" loading="lazy" />
-                                      <% } else { %>
-                                        <div class="home-profile-marquee-avatar-fallback">
-                                          <%= item.name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase() %>
+                                        <img src="<%= item.avatarUrl %>" alt="<%= item.name %>"
+                                          class="home-profile-marquee-avatar" loading="lazy" />
+                                        <% } else { %>
+                                          <div class="home-profile-marquee-avatar-fallback">
+                                            <%= item.name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase() %>
                                         </div>
                                       <% } %>
                                     </div>
-                                    <div class="min-w-0">
-                                      <p class="truncate text-sm font-semibold text-neutral-900"><%= item.name %></p>
-                                      <p class="truncate font-mono text-xs text-neutral-500">unqx.uz/<%= item.primarySlug %></p>
-                                    </div>
+                                    <div class=" min-w-0">
+                                              <p class="truncate text-sm font-semibold text-neutral-900">
+                                                <%= item.name %>
+                                              </p>
+                                              <p class="truncate font-mono text-xs text-neutral-500">unqx.uz/<%=
+                                                  item.primarySlug %>
+                                              </p>
+                                          </div>
                                   </a>
                                   <% }) %>
                               </div>
@@ -560,28 +575,36 @@
 
                     <div class="mt-8 grid gap-4 md:grid-cols-3">
                       <% testimonialsList.forEach((item)=> { %>
-                        <a href="/<%= item.slug %>" class="interactive-card block rounded-2xl border border-neutral-200 bg-white p-5 transition-colors hover:border-neutral-300">
+                        <a href="/<%= item.slug %>"
+                          class="interactive-card block rounded-2xl border border-neutral-200 bg-white p-5 transition-colors hover:border-neutral-300">
                           <div class="flex items-center justify-between gap-3">
                             <div class="flex items-center gap-3">
                               <div class="relative h-10 w-10 overflow-hidden rounded-full bg-neutral-100">
                                 <% if (item.avatarUrl) { %>
-                                  <img src="<%= item.avatarUrl %>" alt="<%= item.name || 'UNQX user' %>" class="h-full w-full object-cover" loading="lazy" />
-                                <% } else { %>
-                                  <div class="flex h-full w-full items-center justify-center text-xs font-semibold text-neutral-700">
-                                    <%= (item.name || "UN").split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase() %>
+                                  <img src="<%= item.avatarUrl %>" alt="<%= item.name || 'UNQX user' %>"
+                                    class="h-full w-full object-cover" loading="lazy" />
+                                  <% } else { %>
+                                    <div
+                                      class="flex h-full w-full items-center justify-center text-xs font-semibold text-neutral-700">
+                                      <%= (item.name || "UN" ).split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase() %>
                                   </div>
                                 <% } %>
                               </div>
-                              <div class="flex flex-col">
-                                <p class="text-sm font-semibold text-neutral-900"><%= item.name %></p>
-                                <span class="text-xs text-neutral-500">unqx.uz/<%= item.slug %></span>
+                              <div class=" flex flex-col">
+                                        <p class="text-sm font-semibold text-neutral-900">
+                                          <%= item.name %>
+                                        </p>
+                                        <span class="text-xs text-neutral-500">unqx.uz/<%= item.slug %></span>
+                                    </div>
                               </div>
+                              <span
+                                class="rounded-full border border-neutral-200 px-2.5 py-1 text-[11px] font-medium text-neutral-600">
+                                <%= 'Премиум' %>
+                              </span>
                             </div>
-                            <span class="rounded-full border border-neutral-200 px-2.5 py-1 text-[11px] font-medium text-neutral-600">
-                              <%= 'Премиум' %>
-                            </span>
-                          </div>
-                          <p class="mt-4 text-sm leading-relaxed text-neutral-600"><%= item.text %></p>
+                            <p class="mt-4 text-sm leading-relaxed text-neutral-600">
+                              <%= item.text %>
+                            </p>
                         </a>
                         <% }) %>
                     </div>
@@ -591,44 +614,58 @@
                 <section id="latest-slack" class="px-6 py-16" data-observe-reveal>
                   <div class="mx-auto max-w-6xl">
                     <p class="font-mono text-xs uppercase tracking-[0.18em] text-neutral-400">LIVE</p>
-                    <h2 class="mt-3 text-3xl font-bold tracking-tight text-neutral-900 md:text-4xl">Последний созданный UNQ</h2>
+                    <h2 class="mt-3 text-3xl font-bold tracking-tight text-neutral-900 md:text-4xl">Последний созданный
+                      UNQ</h2>
                     <p class="mt-3 mx-auto max-w-2xl text-center text-base text-neutral-500">
                       Здесь показывается аккаунт и визитка, которые были созданы последними.
                     </p>
 
                     <% if (!latestSlackCard) { %>
-                      <div class="mt-8 rounded-2xl border border-neutral-200 bg-white p-6 text-center text-sm text-neutral-500">
+                      <div
+                        class="mx-auto mt-8 max-w-3xl rounded-2xl border border-neutral-200 bg-white p-6 text-center text-sm text-neutral-500">
                         Пока нет созданных визиток для отображения.
                       </div>
-                    <% } else { %>
-                      <a href="/<%= encodeURIComponent(latestSlackCard.slug) %>"
-                        class="interactive-card mt-8 block rounded-2xl border border-neutral-200 bg-white p-6 text-center transition-colors hover:border-neutral-300">
-                        <div class="flex flex-col items-center justify-center gap-4">
-                          <div class="relative h-14 w-14 overflow-hidden rounded-full border border-neutral-200 bg-neutral-100">
-                            <% if (latestSlackCard.avatarUrl) { %>
-                              <img src="<%= latestSlackCard.avatarUrl %>" alt="<%= latestSlackCard.name %>" class="h-full w-full object-cover" loading="lazy" />
-                            <% } else { %>
-                              <div class="flex h-full w-full items-center justify-center text-sm font-semibold text-neutral-700">
-                                <%= (latestSlackCard.name || "UN").split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase() %>
+                      <% } else { %>
+                        <a href="/<%= encodeURIComponent(latestSlackCard.slug) %>"
+                          class="interactive-card mx-auto mt-8 block max-w-4xl rounded-2xl border border-neutral-200 bg-white p-6 text-center transition-colors hover:border-neutral-300 lg:p-8">
+                          <div class="flex flex-col items-center justify-center gap-4">
+                            <div
+                              class="relative h-14 w-14 overflow-hidden rounded-full border border-neutral-200 bg-neutral-100">
+                              <% if (latestSlackCard.avatarUrl) { %>
+                                <img src="<%= latestSlackCard.avatarUrl %>" alt="<%= latestSlackCard.name %>"
+                                  class="h-full w-full object-cover" loading="lazy" />
+                                <% } else { %>
+                                  <div
+                                    class="flex h-full w-full items-center justify-center text-sm font-semibold text-neutral-700">
+                                    <%= (latestSlackCard.name || "UN" ).split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase() %>
                               </div>
                             <% } %>
                           </div>
-                          <div class="min-w-0">
-                            <p class="truncate text-lg font-semibold text-neutral-900"><%= latestSlackCard.name %></p>
-                            <% if (latestSlackCard.role) { %>
-                              <p class="truncate text-sm text-neutral-500"><%= latestSlackCard.role %></p>
-                            <% } %>
-                            <p class="mt-1 truncate font-mono text-xs text-neutral-500">unqx.uz/<%= latestSlackCard.slug %></p>
-                          </div>
-                        </div>
-                        <% if (latestSlackCard.bio) { %>
-                          <p class="mt-4 text-sm leading-relaxed text-neutral-600"><%= latestSlackCard.bio %></p>
+                          <div class=" min-w-0">
+                                      <p class="truncate text-lg font-semibold text-neutral-900">
+                                        <%= latestSlackCard.name %>
+                                      </p>
+                                      <% if (latestSlackCard.role) { %>
+                                        <p class="truncate text-sm text-neutral-500">
+                                          <%= latestSlackCard.role %>
+                                        </p>
+                                        <% } %>
+                                          <p class="mt-1 truncate font-mono text-xs text-neutral-500">unqx.uz/<%=
+                                              latestSlackCard.slug %>
+                                          </p>
+                                  </div>
+                            </div>
+                            <% if (latestSlackCard.bio) { %>
+                              <p class="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-neutral-600">
+                                <%= latestSlackCard.bio %>
+                              </p>
+                              <% } %>
+                                <p class="mt-4 text-xs text-neutral-400">
+                                  Создано: <%= latestSlackCard.createdAt ? new
+                                    Date(latestSlackCard.createdAt).toLocaleString("ru-RU") : "недавно" %>
+                                </p>
+                        </a>
                         <% } %>
-                        <p class="mt-4 text-xs text-neutral-400">
-                          Создано: <%= latestSlackCard.createdAt ? new Date(latestSlackCard.createdAt).toLocaleString("ru-RU") : "недавно" %>
-                        </p>
-                      </a>
-                    <% } %>
                   </div>
                 </section>
 
@@ -766,7 +803,7 @@
                           <span class="text-3xl font-bold text-neutral-900">
                             <%= braceletPrice.toLocaleString("ru-RU") %> сум
                           </span>
-                          <% if (braceletDiscountPercent > 0) { %>
+                          <% if (braceletDiscountPercent> 0) { %>
                             <span
                               class="inline-flex items-center rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700">
                               -<%= braceletDiscountPercent %>%
@@ -821,11 +858,11 @@
                   </div>
                 </section>
 
-                <section id="pricing"
-                  class="home-pricing-section <%= pricingVisible ? '' : 'hidden' %> px-6 py-24"
+                <section id="pricing" class="home-pricing-section <%= pricingVisible ? '' : 'hidden' %> px-6 py-24"
                   data-observe-reveal>
                   <div class="mx-auto max-w-4xl">
-                    <h2 class="home-pricing-title mb-14 text-center text-2xl font-bold tracking-tight text-neutral-900">Тарифы</h2>
+                    <h2 class="home-pricing-title mb-14 text-center text-2xl font-bold tracking-tight text-neutral-900">
+                      Тарифы</h2>
 
                     <div class="home-pricing-grid grid gap-6">
                       <% plans.forEach((plan)=> { %>
@@ -838,8 +875,10 @@
                             </span>
                             <% } %>
 
-                              <div class="home-pricing-body mx-auto flex w-full max-w-2xl flex-col items-center text-center">
-                                <p class="home-pricing-name font-mono text-[11px] uppercase tracking-[0.24em] <%= plan.highlighted ? 'text-neutral-400' : 'text-neutral-500' %>">
+                              <div
+                                class="home-pricing-body mx-auto flex w-full max-w-2xl flex-col items-center text-center">
+                                <p
+                                  class="home-pricing-name font-mono text-[11px] uppercase tracking-[0.24em] <%= plan.highlighted ? 'text-neutral-400' : 'text-neutral-500' %>">
                                   <%= plan.name %>
                                 </p>
 
@@ -848,12 +887,19 @@
                                     <%= plan.price %>
                                   </span>
                                   <div class="home-pricing-price-side pb-1 text-left">
-                                    <p class="home-pricing-price-currency text-sm font-semibold <%= plan.highlighted ? 'text-neutral-200' : 'text-neutral-700' %>"><%= plan.currency || 'сум' %></p>
-                                    <p class="home-pricing-price-period text-xs <%= plan.highlighted ? 'text-neutral-400' : 'text-neutral-500' %>"><%= plan.priceNote %></p>
+                                    <p
+                                      class="home-pricing-price-currency text-sm font-semibold <%= plan.highlighted ? 'text-neutral-200' : 'text-neutral-700' %>">
+                                      <%= plan.currency || 'сум' %>
+                                    </p>
+                                    <p
+                                      class="home-pricing-price-period text-xs <%= plan.highlighted ? 'text-neutral-400' : 'text-neutral-500' %>">
+                                      <%= plan.priceNote %>
+                                    </p>
                                   </div>
                                 </div>
 
-                                <p class="home-pricing-note mt-3 text-xs <%= plan.highlighted ? 'text-neutral-500' : 'text-neutral-400' %>">
+                                <p
+                                  class="home-pricing-note mt-3 text-xs <%= plan.highlighted ? 'text-neutral-500' : 'text-neutral-400' %>">
                                   + стоимость UNQ по калькулятору
                                 </p>
 
@@ -897,7 +943,7 @@
                       <p class="mt-8 text-center text-xs text-neutral-400">
                         <%= pricingFootnote %>
                       </p>
-                    <% } %>
+                      <% } %>
                   </div>
                 </section>
 
@@ -949,8 +995,6 @@
                           <% if (leaderboardEnabled) { %><a href="/leaderboard"
                               class="whitespace-nowrap transition-colors hover:text-neutral-900">UNQ&nbsp;ELITE</a>
                             <% } %>
-                              <a href="/drops" class="transition-colors hover:text-neutral-900">Релизы</a>
-                              <a href="/unqx-game" class="transition-colors hover:text-neutral-900">UNQX LUCKY</a>
                               <a href="/terms" class="transition-colors hover:text-neutral-900">Условия</a>
                               <a href="/policy" class="transition-colors hover:text-neutral-900">Политика</a>
                               <a href="/child-safety" class="transition-colors hover:text-neutral-900">Child Safety</a>

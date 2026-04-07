@@ -1005,10 +1005,9 @@ router.get(
   "/unqx-game",
   requireVerifiedUserPage,
   asyncHandler(async (req, res) => {
-    res.render("public/unqx-game", {
-      title: "UNQX Lucky | Крути комбинации",
-      description: "UNQX Lucky: один спин в день и авто-скидка 10% на выпавший slug до конца дня.",
-      image: defaultSocialImage,
+    res.status(404).render("public/not-found", {
+      title: "Страница не найдена",
+      slug: "unqx-game",
       adminSession: getAdminSession(req),
     });
   }),
@@ -1092,63 +1091,9 @@ router.get(
 router.get(
   "/drops",
   asyncHandler(async (req, res) => {
-    const sessionUser = getUserSession(req);
-    const viewerUserId = sessionUser?.userId ? String(sessionUser.userId) : "";
-    const rows = await prisma.drop.findMany({
-      orderBy: { dropAt: "desc" },
-      take: 50,
-    });
-    let joinedDropIds = [];
-    if (viewerUserId && rows.length && prisma.dropWaitlist && typeof prisma.dropWaitlist.findMany === "function") {
-      try {
-        const items = await prisma.dropWaitlist.findMany({
-          where: {
-            userId: viewerUserId,
-            dropId: { in: rows.map((row) => row.id) },
-          },
-          select: { dropId: true },
-        });
-        joinedDropIds = items.map((item) => String(item.dropId || "")).filter(Boolean);
-      } catch (error) {
-        if (!error || (error.code !== "P2021" && error.code !== "P2022")) {
-          throw error;
-        }
-      }
-    }
-    const summary = rows.reduce(
-      (acc, drop) => {
-        const pool = Array.isArray(drop.slugsPool) ? drop.slugsPool : [];
-        const sold = Array.isArray(drop.soldSlugs) ? drop.soldSlugs : [];
-        const total = Number(drop.slugCount) > 0 ? Number(drop.slugCount) : pool.length;
-        const remaining = Math.max(0, total - sold.length);
-        const isPast = Boolean(drop.isFinished || drop.isSoldOut);
-        const isLive = Boolean(drop.isLive) && !isPast;
-        const isUpcoming = !isLive && !isPast;
-
-        acc.total += 1;
-        acc.totalSlots += total;
-        if (isLive) {
-          acc.live += 1;
-          acc.liveRemaining += remaining;
-        } else if (isUpcoming) {
-          acc.upcoming += 1;
-        } else {
-          acc.past += 1;
-        }
-        return acc;
-      },
-      { total: 0, live: 0, upcoming: 0, past: 0, totalSlots: 0, liveRemaining: 0 },
-    );
-
-    res.render("public/drops", {
-      title: "Релзы slug · UNQX",
-      description: "UNQX personal dashboard: card settings, UNQ, analytics, requests and profile settings.",
-      image: defaultSocialImage,
-      drops: rows,
-      dropsSummary: summary,
-      viewerUserId,
-      joinedDropIds,
-      telegramBotUsername: String(env.TELEGRAM_BOT_USERNAME || "").replace(/^@+/, "").trim(),
+    res.status(404).render("public/not-found", {
+      title: "Страница не найдена",
+      slug: "drops",
       adminSession: getAdminSession(req),
     });
   }),
@@ -1699,8 +1644,8 @@ router.get(
           slug,
           heading: "Этот UNQ оступен в ропе",
           message: "Попшсь на блжайшй роп  забер этот slug в оент старта.",
-          ctaLabel: "Перейт к ропа",
-          ctaHref: "/drops",
+          ctaLabel: "На главную",
+          ctaHref: "/",
           noindex: true,
           adminSession: getAdminSession(req),
         });
@@ -1947,7 +1892,7 @@ router.get(
     }
 
     res.status(404).render("public/not-found", {
-        title: "Страница не найдена",
+      title: "Страница не найдена",
       slug: req.params.slug,
       adminSession: getAdminSession(req),
     });
