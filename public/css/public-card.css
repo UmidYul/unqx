@@ -2909,6 +2909,7 @@ body[data-card-theme] main.private-card-screen {
 
 /* ---- Home: Latest Created Cards ---- */
 [data-page="public-home"] .home-latest-card {
+  border-radius: 1.7rem;
   transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.15s ease;
 }
 
