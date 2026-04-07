@@ -21,214 +21,163 @@
 <body class="antialiased bg-neutral-50" data-page="leaderboard" data-period="<%= period %>" data-type="<%= type %>">
   <% const activePeriod=period==="week" || period==="month" || period==="all" ? period : "day" ; %>
     <% const activeType=type==="company" || type==="person" ? type : "all" ; %>
-      <main class="mx-auto w-full max-w-6xl px-4 py-8">
-        <section class="mb-6 rounded-[1.75rem] border border-neutral-200 bg-white p-5 shadow-sm sm:p-6">
-          <div class="flex flex-col gap-5">
-            <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-              <div class="max-w-2xl">
-                <p class="font-mono text-[11px] uppercase tracking-[0.18em] text-neutral-400">RANKING CONTROL</p>
-                <h1 class="mt-2 text-2xl font-black tracking-tight text-neutral-900 sm:text-3xl">Настрой рейтинг под
-                  себя</h1>
-                <p class="mt-2 text-sm leading-relaxed text-neutral-500">Переключай период и сегмент без лишнего пустого
-                  пространства: сверху только нужные фильтры, ниже сразу сам лидерборд.</p>
-              </div>
-
-              <a href="/"
-                class="interactive-btn inline-flex min-h-11 w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border border-neutral-300 bg-white px-4 py-2 text-center text-sm font-semibold text-neutral-700 hover:text-neutral-900 sm:w-auto">
-                <svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M15 18 9 12l6-6"></path>
-                </svg>
-                На главную
-              </a>
-            </div>
-
-            <div class="grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(320px,0.9fr)]">
-              <div class="rounded-2xl border border-neutral-200 bg-neutral-50/80 p-3 sm:p-4">
-                <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-                  <div>
-                    <p class="text-[11px] font-semibold uppercase tracking-[0.12em] text-neutral-500">Период</p>
-                    <p class="mt-1 text-sm text-neutral-500">Выбери срез времени для рейтинга просмотров.</p>
+      <% const activePeriodLabel={ day: 'День' , week: 'Неделя' , month: 'Месяц' , all: 'Всё время' }[activePeriod]
+        || 'День' ; %>
+        <% const activeTypeLabel={ all: 'Все профили' , company: 'Компании' , person: 'Личности' }[activeType]
+          || 'Все профили' ; %>
+          <main class="mx-auto w-full max-w-6xl px-4 py-8">
+            <section
+              class="leaderboard-control-panel mb-6 rounded-[1.75rem] border border-neutral-200 bg-white p-5 shadow-sm sm:p-6">
+              <div class="flex flex-col gap-5">
+                <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                  <div class="max-w-2xl">
+                    <h2 class="text-2xl font-black tracking-tight text-neutral-900 sm:text-3xl">Настрой рейтинг под
+                      себя</h2>
                   </div>
-                </div>
-                <div class="mt-3 grid w-full grid-cols-2 gap-2 sm:grid-cols-4" role="tablist"
-                  aria-label="Период рейтинга">
-                  <a href="/leaderboard?period=day&type=<%= activeType %>"
-                    class="interactive-btn inline-flex min-h-12 w-full items-center justify-center rounded-xl border px-3 py-2 text-center text-sm font-semibold leading-none <%= activePeriod === 'day' ? 'border-neutral-900 bg-neutral-900 text-white shadow-sm' : 'border-transparent bg-white text-neutral-600 hover:border-neutral-200 hover:text-neutral-900' %>"
-                    role="tab" aria-selected="<%= activePeriod === 'day' ? 'true' : 'false' %>">День</a>
-                  <a href="/leaderboard?period=week&type=<%= activeType %>"
-                    class="interactive-btn inline-flex min-h-12 w-full items-center justify-center rounded-xl border px-3 py-2 text-center text-sm font-semibold leading-none <%= activePeriod === 'week' ? 'border-neutral-900 bg-neutral-900 text-white shadow-sm' : 'border-transparent bg-white text-neutral-600 hover:border-neutral-200 hover:text-neutral-900' %>"
-                    role="tab" aria-selected="<%= activePeriod === 'week' ? 'true' : 'false' %>">Неделя</a>
-                  <a href="/leaderboard?period=month&type=<%= activeType %>"
-                    class="interactive-btn inline-flex min-h-12 w-full items-center justify-center rounded-xl border px-3 py-2 text-center text-sm font-semibold leading-none <%= activePeriod === 'month' ? 'border-neutral-900 bg-neutral-900 text-white shadow-sm' : 'border-transparent bg-white text-neutral-600 hover:border-neutral-200 hover:text-neutral-900' %>"
-                    role="tab" aria-selected="<%= activePeriod === 'month' ? 'true' : 'false' %>">Месяц</a>
-                  <a href="/leaderboard?period=all&type=<%= activeType %>"
-                    class="interactive-btn inline-flex min-h-12 w-full items-center justify-center rounded-xl border px-3 py-2 text-center text-sm font-semibold leading-none <%= activePeriod === 'all' ? 'border-neutral-900 bg-neutral-900 text-white shadow-sm' : 'border-transparent bg-white text-neutral-600 hover:border-neutral-200 hover:text-neutral-900' %>"
-                    role="tab" aria-selected="<%= activePeriod === 'all' ? 'true' : 'false' %>">Всё время</a>
-                </div>
-              </div>
 
-              <div class="rounded-2xl border border-neutral-200 bg-neutral-50/80 p-3 sm:p-4">
-                <div>
-                  <p class="text-[11px] font-semibold uppercase tracking-[0.12em] text-neutral-500">Сегмент</p>
-                  <p class="mt-1 text-sm text-neutral-500">Сфокусируйся на всём каталоге, компаниях или личных профилях.
-                  </p>
+                  <a href="/"
+                    class="interactive-btn inline-flex min-h-10 w-full shrink-0 items-center justify-center gap-1.5 self-start whitespace-nowrap rounded-xl border border-neutral-300 bg-white px-3 py-1.5 text-center text-sm font-semibold text-neutral-700 hover:text-neutral-900 sm:w-auto">
+                    <svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M15 18 9 12l6-6"></path>
+                    </svg>
+                    На главную
+                  </a>
                 </div>
-                <div class="mt-3 grid w-full grid-cols-1 gap-2 sm:grid-cols-3" role="tablist"
-                  aria-label="Тип профиля в лидерборде">
-                  <a href="/leaderboard?period=<%= activePeriod %>&type=all"
-                    class="interactive-btn inline-flex min-h-12 w-full items-center justify-center rounded-xl border px-3 py-2 text-center text-sm font-semibold leading-none <%= activeType === 'all' ? 'border-neutral-900 bg-neutral-900 text-white shadow-sm' : 'border-transparent bg-white text-neutral-600 hover:border-neutral-200 hover:text-neutral-900' %>"
-                    role="tab" aria-selected="<%= activeType === 'all' ? 'true' : 'false' %>">Все</a>
-                  <a href="/leaderboard?period=<%= activePeriod %>&type=company"
-                    class="interactive-btn inline-flex min-h-12 w-full items-center justify-center rounded-xl border px-3 py-2 text-center text-sm font-semibold leading-none <%= activeType === 'company' ? 'border-neutral-900 bg-neutral-900 text-white shadow-sm' : 'border-transparent bg-white text-neutral-600 hover:border-neutral-200 hover:text-neutral-900' %>"
-                    role="tab" aria-selected="<%= activeType === 'company' ? 'true' : 'false' %>">Компании</a>
-                  <a href="/leaderboard?period=<%= activePeriod %>&type=person"
-                    class="interactive-btn inline-flex min-h-12 w-full items-center justify-center rounded-xl border px-3 py-2 text-center text-sm font-semibold leading-none <%= activeType === 'person' ? 'border-neutral-900 bg-neutral-900 text-white shadow-sm' : 'border-transparent bg-white text-neutral-600 hover:border-neutral-200 hover:text-neutral-900' %>"
-                    role="tab" aria-selected="<%= activeType === 'person' ? 'true' : 'false' %>">Личности</a>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
 
-        <header class="mb-6 rounded-2xl border border-neutral-200 bg-white p-6">
-          <h1 class="inline-flex items-center gap-2 text-3xl font-black tracking-tight text-neutral-900">
-            <img src="/brand/logo.PNG" alt="UNQX" class="h-8 w-8 rounded-md border border-neutral-200 object-cover" />
-            <span>Лидерборд по просмотрам</span>
-          </h1>
-          <p class="mt-2 text-sm text-neutral-500">Обновляется автоматически по новым просмотрам</p>
-        </header>
-
-        <% const topThree=items.slice(0, 3); const rest=items.slice(3); const currentTelegramId=(typeof
-          viewerTelegramId==="string" && viewerTelegramId) ? viewerTelegramId : (typeof userSession !=="undefined" &&
-          userSession && userSession.telegramId ? userSession.telegramId : "" ); const rankBadgeByPlace={
-          1: "border-neutral-900 bg-neutral-900 text-white" , 2: "border-neutral-400 bg-neutral-200 text-neutral-900" ,
-          3: "border-neutral-300 bg-neutral-100 text-neutral-800" , }; const isMissingAvatar=(url)=> !url ||
-          String(url).trim() === "" || String(url).includes("/brand/logo.PNG");
-          %>
-          <section class="grid gap-4 md:grid-cols-3">
-            <% if (!topThree.length) { %>
-              <article class="col-span-full rounded-2xl border border-neutral-200 bg-white p-8 text-center">
-                <p class="text-sm text-neutral-600">Рейтинг пока пуст. Данные появятся после первых уникальных
-                  просмотров.
-                </p>
-              </article>
-              <% } %>
-                <% topThree.forEach((item, idx)=> { %>
-                  <article class="interactive-card rounded-2xl border border-neutral-200 bg-white p-5">
-                    <p
-                      class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-bold <%= rankBadgeByPlace[item.rank] || 'border-neutral-300 bg-neutral-100 text-neutral-800' %>">
-                      <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" aria-hidden="true" fill="none"
-                        stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M8.2 13.7 6.6 21l5.4-3.2L17.4 21l-1.6-7.3"></path>
-                        <circle cx="12" cy="8.5" r="4.6"></circle>
-                        <path d="m12 5.9.9 1.8 2 .3-1.4 1.4.3 2-1.8-.9-1.8.9.3-2-1.4-1.4 2-.3.9-1.8Z"></path>
-                      </svg>
-                      <span>
-                        <%= item.rank %>
-                      </span>
-                    </p>
-                    <div class="mt-3 flex items-center gap-3">
-                      <% if (isMissingAvatar(item.avatarUrl)) { %>
-                        <span
-                          class="inline-flex h-12 w-12 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-400"
-                          aria-hidden="true">
-                          <svg class="h-7 w-7" viewBox="0 0 24 24" fill="none">
-                            <circle cx="12" cy="8.5" r="3.75" stroke="currentColor" stroke-width="1.5"></circle>
-                            <path d="M5.5 19c.8-3 3.5-4.8 6.5-4.8s5.7 1.8 6.5 4.8" stroke="currentColor"
-                              stroke-width="1.5" stroke-linecap="round"></path>
-                          </svg>
-                        </span>
-                        <% } else { %>
-                          <img src="<%= item.avatarUrl %>" alt="avatar"
-                            class="h-12 w-12 rounded-full border border-neutral-200 object-cover" />
-                          <% } %>
-                            <div class="flex min-w-0 flex-1 flex-col">
-                              <p class="inline-flex items-center gap-1.5 font-semibold text-neutral-900">
-                                <a href="/<%= item.slug %>"
-                                  class="truncate transition-colors hover:text-neutral-600 hover:underline">
-                                  <%= item.ownerName %>
-                                </a>
-                                <% if (item.isVerified) { %>
-                                  <svg class="h-4 w-4 shrink-0 text-neutral-500" viewBox="0 0 24 24" aria-hidden="true"
-                                    fill="currentColor">
-                                    <path
-                                      d="M12 2.5l2.2 1.8 2.8-.3 1.2 2.5 2.5 1.2-.3 2.8L21.5 12l-1.8 2.2.3 2.8-2.5 1.2-1.2 2.5-2.8-.3L12 21.5l-2.2-1.8-2.8.3-1.2-2.5-2.5-1.2.3-2.8L2.5 12l1.8-2.2-.3-2.8 2.5-1.2 1.2-2.5 2.8.3L12 2.5Zm-1.1 13.1 5-5-1.1-1.1-3.9 3.9-1.8-1.8-1.1 1.1 2.9 2.9Z">
-                                    </path>
-                                  </svg>
-                                  <% } %>
-                              </p>
-                              <a href="/<%= item.slug %>"
-                                class="mt-0.5 block text-sm text-neutral-500 hover:underline">unqx.uz/<%= item.slug %>
-                              </a>
-                            </div>
-                    </div>
-                    <div class="mt-4 flex items-center justify-between text-sm">
-                      <span class="text-neutral-500">Просмотры</span>
-                      <span class="text-2xl font-black">
-                        <%= Number(item.views || 0).toLocaleString('ru-RU') %>
-                      </span>
-                    </div>
-                    <div class="mt-2 h-1.5 w-full rounded-full bg-neutral-200">
-                      <div class="h-1.5 rounded-full bg-neutral-900"
-                        style="width: <%= Math.max(0, Math.min(100, (Number(item.views || 0) / Math.max(1, Number(topThree[0]?.views || 0))) * 100)) %>%">
+                <div class="grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(320px,0.9fr)]">
+                  <div
+                    class="leaderboard-filter-card rounded-2xl border border-neutral-200 bg-neutral-50/80 p-3 sm:p-4">
+                    <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                      <div>
+                        <p class="text-[11px] font-semibold uppercase tracking-[0.12em] text-neutral-500">Период</p>
                       </div>
                     </div>
-                    <div class="mt-2 flex items-center justify-between text-xs text-neutral-500">
-                      <span>За выбранный период</span>
-                      <span>Топ <%= Number(item.topPercent || 100) %>%</span>
+                    <div class="mt-3 grid w-full grid-cols-2 gap-2 sm:grid-cols-4" role="tablist"
+                      aria-label="Период рейтинга">
+                      <a href="/leaderboard?period=day&type=<%= activeType %>"
+                        class="leaderboard-tab interactive-btn inline-flex min-h-12 w-full items-center justify-center rounded-xl border px-3 py-2 text-center text-sm font-semibold leading-none <%= activePeriod === 'day' ? 'is-active border-neutral-900 bg-neutral-900 text-white shadow-sm' : 'border-transparent bg-white text-neutral-600 hover:border-neutral-200 hover:text-neutral-900' %>"
+                        role="tab" aria-selected="<%= activePeriod === 'day' ? 'true' : 'false' %>">День</a>
+                      <a href="/leaderboard?period=week&type=<%= activeType %>"
+                        class="leaderboard-tab interactive-btn inline-flex min-h-12 w-full items-center justify-center rounded-xl border px-3 py-2 text-center text-sm font-semibold leading-none <%= activePeriod === 'week' ? 'is-active border-neutral-900 bg-neutral-900 text-white shadow-sm' : 'border-transparent bg-white text-neutral-600 hover:border-neutral-200 hover:text-neutral-900' %>"
+                        role="tab" aria-selected="<%= activePeriod === 'week' ? 'true' : 'false' %>">Неделя</a>
+                      <a href="/leaderboard?period=month&type=<%= activeType %>"
+                        class="leaderboard-tab interactive-btn inline-flex min-h-12 w-full items-center justify-center rounded-xl border px-3 py-2 text-center text-sm font-semibold leading-none <%= activePeriod === 'month' ? 'is-active border-neutral-900 bg-neutral-900 text-white shadow-sm' : 'border-transparent bg-white text-neutral-600 hover:border-neutral-200 hover:text-neutral-900' %>"
+                        role="tab" aria-selected="<%= activePeriod === 'month' ? 'true' : 'false' %>">Месяц</a>
+                      <a href="/leaderboard?period=all&type=<%= activeType %>"
+                        class="leaderboard-tab interactive-btn inline-flex min-h-12 w-full items-center justify-center rounded-xl border px-3 py-2 text-center text-sm font-semibold leading-none <%= activePeriod === 'all' ? 'is-active border-neutral-900 bg-neutral-900 text-white shadow-sm' : 'border-transparent bg-white text-neutral-600 hover:border-neutral-200 hover:text-neutral-900' %>"
+                        role="tab" aria-selected="<%= activePeriod === 'all' ? 'true' : 'false' %>">Всё время</a>
                     </div>
-                    <p class="mt-1 text-xs text-neutral-500">
-                      UNQ Score: <%= Number(item.score || 0).toLocaleString('ru-RU') %>
-                    </p>
-                    <% if (currentTelegramId && item.telegramId===currentTelegramId) { %>
-                      <button type="button" data-share-slug="<%= item.slug %>" data-share-rank="<%= item.rank %>"
-                        class="interactive-btn mt-4 min-h-11 rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold text-neutral-700">Поделиться</button>
-                      <% } %>
-                  </article>
-                  <% }) %>
-          </section>
+                  </div>
 
-          <section class="mt-6 overflow-hidden rounded-2xl border border-neutral-200 bg-white">
-            <table class="min-w-full text-left text-sm">
-              <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
-                <tr>
-                  <th class="px-3 py-2">Место</th>
-                  <th class="px-3 py-2">Владелец</th>
-                  <th class="px-3 py-2">UNQ</th>
-                  <th class="px-3 py-2">Просмотры</th>
-                  <th class="px-3 py-2">UNQ Score</th>
-                  <th class="px-3 py-2">Тариф</th>
-                </tr>
-              </thead>
-              <tbody>
-                <% if (!rest.length) { %>
-                  <tr>
-                    <td colspan="6" class="px-3 py-8 text-center text-neutral-500">Нет данных</td>
-                  </tr>
+                  <div
+                    class="leaderboard-filter-card rounded-2xl border border-neutral-200 bg-neutral-50/80 p-3 sm:p-4">
+                    <div>
+                      <p class="text-[11px] font-semibold uppercase tracking-[0.12em] text-neutral-500">Сегмент</p>
+                    </div>
+                    <div class="mt-3 grid w-full grid-cols-1 gap-2 sm:grid-cols-3" role="tablist"
+                      aria-label="Тип профиля в лидерборде">
+                      <a href="/leaderboard?period=<%= activePeriod %>&type=all"
+                        class="leaderboard-tab interactive-btn inline-flex min-h-12 w-full items-center justify-center rounded-xl border px-3 py-2 text-center text-sm font-semibold leading-none <%= activeType === 'all' ? 'is-active border-neutral-900 bg-neutral-900 text-white shadow-sm' : 'border-transparent bg-white text-neutral-600 hover:border-neutral-200 hover:text-neutral-900' %>"
+                        role="tab" aria-selected="<%= activeType === 'all' ? 'true' : 'false' %>">Все</a>
+                      <a href="/leaderboard?period=<%= activePeriod %>&type=company"
+                        class="leaderboard-tab interactive-btn inline-flex min-h-12 w-full items-center justify-center rounded-xl border px-3 py-2 text-center text-sm font-semibold leading-none <%= activeType === 'company' ? 'is-active border-neutral-900 bg-neutral-900 text-white shadow-sm' : 'border-transparent bg-white text-neutral-600 hover:border-neutral-200 hover:text-neutral-900' %>"
+                        role="tab" aria-selected="<%= activeType === 'company' ? 'true' : 'false' %>">Компании</a>
+                      <a href="/leaderboard?period=<%= activePeriod %>&type=person"
+                        class="leaderboard-tab interactive-btn inline-flex min-h-12 w-full items-center justify-center rounded-xl border px-3 py-2 text-center text-sm font-semibold leading-none <%= activeType === 'person' ? 'is-active border-neutral-900 bg-neutral-900 text-white shadow-sm' : 'border-transparent bg-white text-neutral-600 hover:border-neutral-200 hover:text-neutral-900' %>"
+                        role="tab" aria-selected="<%= activeType === 'person' ? 'true' : 'false' %>">Личности</a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <header class="leaderboard-hero mb-6 rounded-[1.9rem] border border-neutral-200 bg-white p-6 sm:p-8">
+              <div class="leaderboard-hero-grid">
+                <div>
+                  <p class="font-mono text-[11px] uppercase tracking-[0.18em] text-neutral-400">LIVE RANKING</p>
+                  <h1
+                    class="mt-3 inline-flex items-center gap-2 text-3xl font-black tracking-tight text-neutral-900 sm:text-4xl">
+                    <img src="/brand/logo.PNG" alt="UNQX"
+                      class="h-8 w-8 rounded-md border border-neutral-200 object-cover" />
+                    <span>Лидерборд по просмотрам</span>
+                  </h1>
+                  <p class="mt-3 max-w-2xl text-sm leading-relaxed text-neutral-500">Смотри, кто набирает больше всего
+                    внимания прямо сейчас. Период и сегмент уже учтены в текущей выдаче, поэтому ниже только нужные люди
+                    и компании.</p>
+                </div>
+                <div class="leaderboard-hero-stats">
+                  <article class="leaderboard-hero-stat">
+                    <span class="leaderboard-hero-stat-label">Период</span>
+                    <strong class="leaderboard-hero-stat-value">
+                      <%= activePeriodLabel %>
+                    </strong>
+                  </article>
+                  <article class="leaderboard-hero-stat">
+                    <span class="leaderboard-hero-stat-label">Сегмент</span>
+                    <strong class="leaderboard-hero-stat-value">
+                      <%= activeTypeLabel %>
+                    </strong>
+                  </article>
+                  <article class="leaderboard-hero-stat">
+                    <span class="leaderboard-hero-stat-label">Участников</span>
+                    <strong class="leaderboard-hero-stat-value">
+                      <%= Number(items.length || 0).toLocaleString('ru-RU') %>
+                    </strong>
+                  </article>
+                </div>
+              </div>
+            </header>
+
+            <% const topThree=items.slice(0, 3); const rest=items.slice(3); const currentTelegramId=(typeof
+              viewerTelegramId==="string" && viewerTelegramId) ? viewerTelegramId : (typeof userSession !=="undefined"
+              && userSession && userSession.telegramId ? userSession.telegramId : "" ); const rankBadgeByPlace={
+              1: "border-neutral-900 bg-neutral-900 text-white" ,
+              2: "border-neutral-400 bg-neutral-200 text-neutral-900" ,
+              3: "border-neutral-300 bg-neutral-100 text-neutral-800" , }; const isMissingAvatar=(url)=> !url ||
+              String(url).trim() === "" || String(url).includes("/brand/logo.PNG");
+              %>
+              <section class="leaderboard-podium grid gap-4 md:grid-cols-2 xl:grid-cols-[1.15fr_0.925fr_0.925fr]">
+                <% if (!topThree.length) { %>
+                  <article class="col-span-full rounded-2xl border border-neutral-200 bg-white p-8 text-center">
+                    <p class="text-sm text-neutral-600">Рейтинг пока пуст. Данные появятся после первых уникальных
+                      просмотров.
+                    </p>
+                  </article>
                   <% } %>
-                    <% rest.forEach((item)=> { %>
-                      <tr class="border-t border-neutral-100">
-                        <td class="px-3 py-2">#<%= item.rank %>
-                        </td>
-                        <td class="px-3 py-2">
-                          <div class="flex items-center gap-2">
-                            <% if (isMissingAvatar(item.avatarUrl)) { %>
-                              <span
-                                class="inline-flex h-7 w-7 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-400"
-                                aria-hidden="true">
-                                <svg class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none">
-                                  <circle cx="12" cy="8.5" r="3.75" stroke="currentColor" stroke-width="1.5"></circle>
-                                  <path d="M5.5 19c.8-3 3.5-4.8 6.5-4.8s5.7 1.8 6.5 4.8" stroke="currentColor"
-                                    stroke-width="1.5" stroke-linecap="round"></path>
-                                </svg>
-                              </span>
-                              <% } else { %>
-                                <img src="<%= item.avatarUrl %>" alt="avatar"
-                                  class="h-7 w-7 rounded-full border border-neutral-200 object-cover" />
-                                <% } %>
-                                  <span class="inline-flex items-center gap-1.5">
+                    <% topThree.forEach((item, idx)=> { %>
+                      <article
+                        class="interactive-card leaderboard-podium-card rounded-[1.7rem] border border-neutral-200 bg-white p-5 <%= idx === 0 ? 'leaderboard-podium-card--first md:col-span-2 xl:col-span-1' : '' %>">
+                        <p
+                          class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-bold <%= rankBadgeByPlace[item.rank] || 'border-neutral-300 bg-neutral-100 text-neutral-800' %>">
+                          <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" aria-hidden="true" fill="none"
+                            stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M8.2 13.7 6.6 21l5.4-3.2L17.4 21l-1.6-7.3"></path>
+                            <circle cx="12" cy="8.5" r="4.6"></circle>
+                            <path d="m12 5.9.9 1.8 2 .3-1.4 1.4.3 2-1.8-.9-1.8.9.3-2-1.4-1.4 2-.3.9-1.8Z"></path>
+                          </svg>
+                          <span>
+                            <%= item.rank %>
+                          </span>
+                        </p>
+                        <div class="mt-3 flex items-center gap-3">
+                          <% if (isMissingAvatar(item.avatarUrl)) { %>
+                            <span
+                              class="inline-flex h-12 w-12 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-400"
+                              aria-hidden="true">
+                              <svg class="h-7 w-7" viewBox="0 0 24 24" fill="none">
+                                <circle cx="12" cy="8.5" r="3.75" stroke="currentColor" stroke-width="1.5"></circle>
+                                <path d="M5.5 19c.8-3 3.5-4.8 6.5-4.8s5.7 1.8 6.5 4.8" stroke="currentColor"
+                                  stroke-width="1.5" stroke-linecap="round"></path>
+                              </svg>
+                            </span>
+                            <% } else { %>
+                              <img src="<%= item.avatarUrl %>" alt="avatar"
+                                class="h-12 w-12 rounded-full border border-neutral-200 object-cover" />
+                              <% } %>
+                                <div class="flex min-w-0 flex-1 flex-col">
+                                  <p class="inline-flex items-center gap-1.5 font-semibold text-neutral-900">
                                     <a href="/<%= item.slug %>"
-                                      class="transition-colors hover:text-neutral-600 hover:underline">
+                                      class="truncate transition-colors hover:text-neutral-600 hover:underline">
                                       <%= item.ownerName %>
                                     </a>
                                     <% if (item.isVerified) { %>
@@ -239,51 +188,234 @@
                                         </path>
                                       </svg>
                                       <% } %>
-                                  </span>
-                          </div>
-                        </td>
-                        <td class="px-3 py-2">
-                          <% const rowSlugs=Array.isArray(item.slugs) ? item.slugs : [item.slug]; %>
-                            <div class="flex flex-wrap gap-1.5">
-                              <% rowSlugs.forEach((slugValue)=> { %>
-                                <a href="/<%= slugValue %>" class="hover:underline">
-                                  <%= slugValue %>
-                                </a>
-                                <% }) %>
-                            </div>
-                        </td>
-                        <td class="px-3 py-2">
-                          <%= Number(item.views || 0).toLocaleString('ru-RU') %>
-                        </td>
-                        <td class="px-3 py-2">
-                          <%= Number(item.score || 0).toLocaleString('ru-RU') %>
-                        </td>
-                        <td class="px-3 py-2">
-                          <%= 'ПРЕМИУМ' %>
-                        </td>
-                      </tr>
-                      <% }) %>
-              </tbody>
-            </table>
-          </section>
-
-          <% if (userSummary) { %>
-            <section class="mt-6 rounded-2xl border border-neutral-200 bg-white p-4 text-sm text-neutral-700">
-              Твои просмотры: <%= Number(userSummary.views || 0).toLocaleString('ru-RU') %> · Позиция #<%=
-                  userSummary.rank %> ·
-                  До топ-<%= userSummary.limit %> нужно ещё <%= Number(userSummary.toTopViews ||
-                      0).toLocaleString('ru-RU') %> просмотров
-                      <div class="mt-2 h-1.5 w-full rounded-full bg-neutral-200">
-                        <div class="h-1.5 rounded-full bg-neutral-900"
-                          style="width: <%= Math.max(0, Math.min(100, (Number(userSummary.views || 0) / (Number(userSummary.views || 0) + Number(userSummary.toTopViews || 0) || 1)) * 100)) %>%">
+                                  </p>
+                                  <a href="/<%= item.slug %>"
+                                    class="mt-0.5 block text-sm text-neutral-500 hover:underline">unqx.uz/<%= item.slug
+                                      %>
+                                  </a>
+                                </div>
                         </div>
-                      </div>
-            </section>
-            <% } %>
-      </main>
-      <div id="leaderboard-toast-region" aria-live="polite" class="sr-only"></div>
+                        <div class="mt-4 flex items-center justify-between text-sm">
+                          <span class="text-neutral-500">Просмотры</span>
+                          <span class="text-2xl font-black sm:text-3xl">
+                            <%= Number(item.views || 0).toLocaleString('ru-RU') %>
+                          </span>
+                        </div>
+                        <div class="mt-2 h-1.5 w-full rounded-full bg-neutral-200">
+                          <div class="h-1.5 rounded-full bg-neutral-900"
+                            style="width: <%= Math.max(0, Math.min(100, (Number(item.views || 0) / Math.max(1, Number(topThree[0]?.views || 0))) * 100)) %>%">
+                          </div>
+                        </div>
+                        <div class="mt-2 flex items-center justify-between text-xs text-neutral-500">
+                          <span>За выбранный период</span>
+                          <span>Топ <%= Number(item.topPercent || 100) %>%</span>
+                        </div>
+                        <p class="mt-1 text-xs text-neutral-500">
+                          UNQ Score: <%= Number(item.score || 0).toLocaleString('ru-RU') %>
+                        </p>
+                        <% if (currentTelegramId && item.telegramId===currentTelegramId) { %>
+                          <button type="button" data-share-slug="<%= item.slug %>" data-share-rank="<%= item.rank %>"
+                            class="interactive-btn mt-4 min-h-11 rounded-xl border border-neutral-300 px-3 py-1.5 text-xs font-semibold text-neutral-700">Поделиться</button>
+                          <% } %>
+                      </article>
+                      <% }) %>
+              </section>
 
-      <script nonce="<%= cspNonce %>" src="/js/leaderboard.js"></script>
+              <section
+                class="leaderboard-table-shell mt-6 hidden overflow-hidden rounded-[1.7rem] border border-neutral-200 bg-white md:block">
+                <div class="leaderboard-table-intro border-b border-neutral-100 px-5 py-4">
+                  <p class="text-sm font-semibold text-neutral-900">Остальные позиции</p>
+                  <p class="mt-1 text-sm text-neutral-500">Таблица ниже показывает полный срез без визуального шума:
+                    акцент только на владельце, UNQ и метриках.</p>
+                </div>
+                <table class="min-w-full text-left text-sm">
+                  <thead class="bg-neutral-50/80 text-xs uppercase tracking-wide text-neutral-500">
+                    <tr>
+                      <th class="px-5 py-3">Место</th>
+                      <th class="px-5 py-3">Владелец</th>
+                      <th class="px-5 py-3">UNQ</th>
+                      <th class="px-5 py-3">Просмотры</th>
+                      <th class="px-5 py-3">UNQ Score</th>
+                      <th class="px-5 py-3">Тариф</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <% if (!rest.length) { %>
+                      <tr>
+                        <td colspan="6" class="px-5 py-10 text-center text-neutral-500">Нет данных</td>
+                      </tr>
+                      <% } %>
+                        <% rest.forEach((item)=> { %>
+                          <tr class="border-t border-neutral-100 transition-colors hover:bg-neutral-50/70">
+                            <td class="px-5 py-4"><span class="leaderboard-rank-pill">#<%= item.rank %></span>
+                            </td>
+                            <td class="px-5 py-4">
+                              <div class="flex items-center gap-2">
+                                <% if (isMissingAvatar(item.avatarUrl)) { %>
+                                  <span
+                                    class="inline-flex h-7 w-7 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-400"
+                                    aria-hidden="true">
+                                    <svg class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none">
+                                      <circle cx="12" cy="8.5" r="3.75" stroke="currentColor" stroke-width="1.5">
+                                      </circle>
+                                      <path d="M5.5 19c.8-3 3.5-4.8 6.5-4.8s5.7 1.8 6.5 4.8" stroke="currentColor"
+                                        stroke-width="1.5" stroke-linecap="round"></path>
+                                    </svg>
+                                  </span>
+                                  <% } else { %>
+                                    <img src="<%= item.avatarUrl %>" alt="avatar"
+                                      class="h-7 w-7 rounded-full border border-neutral-200 object-cover" />
+                                    <% } %>
+                                      <span class="inline-flex items-center gap-1.5">
+                                        <a href="/<%= item.slug %>"
+                                          class="font-medium text-neutral-900 transition-colors hover:text-neutral-600 hover:underline">
+                                          <%= item.ownerName %>
+                                        </a>
+                                        <% if (item.isVerified) { %>
+                                          <svg class="h-4 w-4 shrink-0 text-neutral-500" viewBox="0 0 24 24"
+                                            aria-hidden="true" fill="currentColor">
+                                            <path
+                                              d="M12 2.5l2.2 1.8 2.8-.3 1.2 2.5 2.5 1.2-.3 2.8L21.5 12l-1.8 2.2.3 2.8-2.5 1.2-1.2 2.5-2.8-.3L12 21.5l-2.2-1.8-2.8.3-1.2-2.5-2.5-1.2.3-2.8L2.5 12l1.8-2.2-.3-2.8 2.5-1.2 1.2-2.5 2.8.3L12 2.5Zm-1.1 13.1 5-5-1.1-1.1-3.9 3.9-1.8-1.8-1.1 1.1 2.9 2.9Z">
+                                            </path>
+                                          </svg>
+                                          <% } %>
+                                      </span>
+                              </div>
+                            </td>
+                            <td class="px-5 py-4">
+                              <% const rowSlugs=Array.isArray(item.slugs) ? item.slugs : [item.slug]; %>
+                                <div class="flex flex-wrap gap-1.5">
+                                  <% rowSlugs.forEach((slugValue)=> { %>
+                                    <a href="/<%= slugValue %>" class="leaderboard-slug-pill hover:underline">
+                                      <%= slugValue %>
+                                    </a>
+                                    <% }) %>
+                                </div>
+                            </td>
+                            <td class="px-5 py-4 font-semibold text-neutral-900">
+                              <%= Number(item.views || 0).toLocaleString('ru-RU') %>
+                            </td>
+                            <td class="px-5 py-4 text-neutral-600">
+                              <%= Number(item.score || 0).toLocaleString('ru-RU') %>
+                            </td>
+                            <td class="px-5 py-4"><span class="leaderboard-plan-pill">
+                                <%= 'ПРЕМИУМ' %>
+                              </span>
+                            </td>
+                          </tr>
+                          <% }) %>
+                  </tbody>
+                </table>
+              </section>
+
+              <section class="mt-6 grid gap-3 md:hidden">
+                <% if (!rest.length) { %>
+                  <article
+                    class="rounded-2xl border border-neutral-200 bg-white px-4 py-6 text-center text-sm text-neutral-500">
+                    Нет данных
+                  </article>
+                  <% } %>
+                    <% rest.forEach((item)=> { %>
+                      <% const rowSlugs=Array.isArray(item.slugs) ? item.slugs : [item.slug]; %>
+                        <article
+                          class="leaderboard-mobile-card rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm">
+                          <div class="flex items-start justify-between gap-3">
+                            <div class="flex min-w-0 items-center gap-3">
+                              <% if (isMissingAvatar(item.avatarUrl)) { %>
+                                <span
+                                  class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-400"
+                                  aria-hidden="true">
+                                  <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none">
+                                    <circle cx="12" cy="8.5" r="3.75" stroke="currentColor" stroke-width="1.5"></circle>
+                                    <path d="M5.5 19c.8-3 3.5-4.8 6.5-4.8s5.7 1.8 6.5 4.8" stroke="currentColor"
+                                      stroke-width="1.5" stroke-linecap="round"></path>
+                                  </svg>
+                                </span>
+                                <% } else { %>
+                                  <img src="<%= item.avatarUrl %>" alt="avatar"
+                                    class="h-10 w-10 rounded-full border border-neutral-200 object-cover" />
+                                  <% } %>
+                                    <div class="min-w-0">
+                                      <a href="/<%= item.slug %>"
+                                        class="block truncate font-semibold text-neutral-900 hover:underline">
+                                        <%= item.ownerName %>
+                                      </a>
+                                      <a href="/<%= item.slug %>"
+                                        class="mt-0.5 block truncate text-xs text-neutral-500 hover:underline">unqx.uz/
+                                        <%= item.slug %>
+                                      </a>
+                                    </div>
+                            </div>
+                            <span class="leaderboard-rank-pill">#<%= item.rank %></span>
+                          </div>
+                          <div
+                            class="mt-4 flex items-center justify-between gap-3 rounded-xl bg-neutral-50 px-3 py-2.5">
+                            <div>
+                              <p class="text-[11px] uppercase tracking-[0.12em] text-neutral-500">Просмотры</p>
+                              <p class="mt-1 text-lg font-black text-neutral-900">
+                                <%= Number(item.views || 0).toLocaleString('ru-RU') %>
+                              </p>
+                            </div>
+                            <div class="text-right">
+                              <p class="text-[11px] uppercase tracking-[0.12em] text-neutral-500">UNQ Score</p>
+                              <p class="mt-1 text-sm font-semibold text-neutral-700">
+                                <%= Number(item.score || 0).toLocaleString('ru-RU') %>
+                              </p>
+                            </div>
+                          </div>
+                          <div class="mt-3 flex flex-wrap gap-1.5">
+                            <% rowSlugs.forEach((slugValue)=> { %>
+                              <a href="/<%= slugValue %>" class="leaderboard-slug-pill hover:underline">
+                                <%= slugValue %>
+                              </a>
+                              <% }) %>
+                          </div>
+                          <div class="mt-3 flex items-center justify-between gap-3">
+                            <span class="leaderboard-plan-pill">
+                              <%= 'ПРЕМИУМ' %>
+                            </span>
+                            <% if (item.isVerified) { %>
+                              <span class="text-xs font-medium text-neutral-500">Верифицировано</span>
+                              <% } %>
+                          </div>
+                        </article>
+                        <% }) %>
+              </section>
+
+              <% if (userSummary) { %>
+                <section
+                  class="leaderboard-user-summary mt-6 rounded-[1.7rem] border border-neutral-200 bg-white p-5 text-sm text-neutral-700">
+                  <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+                    <div>
+                      <p class="text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-500">Твоя позиция</p>
+                      <p class="mt-2 text-base leading-relaxed text-neutral-700">Твои просмотры: <strong
+                          class="text-neutral-900">
+                          <%= Number(userSummary.views || 0).toLocaleString('ru-RU') %>
+                        </strong> · Позиция <strong class="text-neutral-900">#<%= userSummary.rank %></strong> · До топ-
+                        <%= userSummary.limit %> нужно ещё <strong class="text-neutral-900">
+                            <%= Number(userSummary.toTopViews || 0).toLocaleString('ru-RU') %>
+                          </strong> просмотров
+                      </p>
+                    </div>
+                    <div class="rounded-2xl bg-neutral-50 px-4 py-3 text-right">
+                      <p class="text-[11px] uppercase tracking-[0.12em] text-neutral-500">Прогресс</p>
+                      <p class="mt-1 text-xl font-black text-neutral-900">
+                        <%= Math.round(Math.max(0, Math.min(100, (Number(userSummary.views || 0) /
+                          (Number(userSummary.views || 0) + Number(userSummary.toTopViews || 0) || 1)) * 100))) %>%
+                      </p>
+                    </div>
+                  </div>
+                  <div class="mt-4 h-2 w-full rounded-full bg-neutral-200">
+                    <div class="h-2 rounded-full bg-neutral-900"
+                      style="width: <%= Math.max(0, Math.min(100, (Number(userSummary.views || 0) / (Number(userSummary.views || 0) + Number(userSummary.toTopViews || 0) || 1)) * 100)) %>%">
+                    </div>
+                  </div>
+                </section>
+                <% } %>
+          </main>
+          <div id="leaderboard-toast-region" aria-live="polite" class="sr-only"></div>
+
+          <script nonce="<%= cspNonce %>" src="/js/leaderboard.js"></script>
 </body>
 
 </html>

@@ -637,34 +637,54 @@
 .profile-dashboard .profile-settings-categories {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem;
+  align-items: center;
+  gap: 1.5rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid #ececec;
 }
 
 .profile-dashboard .profile-settings-category-btn {
-  min-height: 42px !important;
-  border: 1px solid #e5e7eb !important;
-  border-radius: 999px !important;
-  background: #ffffff !important;
-  padding: 0.65rem 1rem !important;
-  font-size: 13px !important;
+  min-height: auto !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  padding: 0.1rem 0 !important;
+  font-size: 15px !important;
   font-weight: 600 !important;
   color: #4b5563 !important;
+  position: relative;
 }
 
-.profile-dashboard .profile-settings-category-btn.is-active {
-  border-color: #111111 !important;
-  background: #111111 !important;
-  color: #ffffff !important;
+.profile-dashboard .profile-settings-category-btn::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -0.5rem;
+  height: 2px;
+  border-radius: 999px;
+  background: transparent;
+  transition: background-color 0.18s ease;
 }
 
 .profile-dashboard .profile-settings-category-btn--danger {
   color: #a16207 !important;
 }
 
+.profile-dashboard .profile-settings-category-btn.is-active {
+  color: #111111 !important;
+}
+
+.profile-dashboard .profile-settings-category-btn.is-active::after {
+  background: #111111;
+}
+
 .profile-dashboard .profile-settings-category-btn--danger.is-active {
-  border-color: #7f1d1d !important;
-  background: #7f1d1d !important;
-  color: #ffffff !important;
+  color: #7f1d1d !important;
+}
+
+.profile-dashboard .profile-settings-category-btn--danger.is-active::after {
+  background: #7f1d1d;
 }
 
 .profile-dashboard .profile-settings-stack {
@@ -775,9 +795,39 @@
 }
 
 .profile-dashboard .profile-settings-actions {
+  position: fixed;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%);
+  z-index: 30;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  align-items: center;
+  gap: 0.35rem;
+  width: min(420px, calc(100vw - 32px));
+  pointer-events: none;
+}
+
+.profile-dashboard #profile-settings-save {
+  min-height: 40px !important;
+  padding: 0.55rem 1rem !important;
+  border-radius: 999px !important;
+  font-size: 13px !important;
+  box-shadow: 0 14px 34px rgba(17, 24, 39, 0.12);
+  background: rgba(255, 255, 255, 0.96) !important;
+  backdrop-filter: blur(10px);
+  pointer-events: auto;
+}
+
+.profile-dashboard #profile-settings-status {
+  text-align: center;
+  font-size: 12px;
+  color: #6b7280;
+  pointer-events: none;
+}
+
+.profile-dashboard article[data-tab-panel="settings"] {
+  padding-bottom: 6.5rem;
 }
 
 .profile-dashboard article[data-tab-panel="settings"]>.mt-8 {
@@ -894,8 +944,14 @@
   }
 
   .profile-dashboard .profile-settings-categories {
-    display: grid;
-    grid-template-columns: 1fr;
+    gap: 1rem;
+    overflow-x: auto;
+    padding-bottom: 0.65rem;
+    scrollbar-width: none;
+  }
+
+  .profile-dashboard .profile-settings-categories::-webkit-scrollbar {
+    display: none;
   }
 
   .profile-dashboard .profile-header-kpis {
@@ -908,5 +964,10 @@
   .profile-dashboard #profile-verification-open,
   .profile-dashboard .profile-settings-action-btn {
     min-width: 100%;
+  }
+
+  .profile-dashboard .profile-settings-actions {
+    bottom: 12px;
+    width: calc(100vw - 24px);
   }
 }

@@ -631,14 +631,14 @@
                         Пока нет созданных визиток для отображения.
                       </div>
                       <% } else { %>
-                        <div class="mt-10 grid gap-5 lg:grid-cols-3">
+                        <div class="mt-10 grid gap-6 lg:gap-7 lg:grid-cols-3">
                           <% latestSlackCards.forEach((card, index)=> { %>
                             <a href="/<%= encodeURIComponent(card.slug) %>"
-                              class="interactive-card flex h-full flex-col rounded-[2rem] border border-neutral-200 bg-white p-6 text-left transition-colors hover:border-neutral-300 lg:p-7">
-                              <div class="flex items-start justify-between gap-4">
-                                <div class="flex min-w-0 items-center gap-4">
+                              class="interactive-card flex h-full flex-col rounded-[2.25rem] border border-neutral-200 bg-white p-7 text-left transition-colors hover:border-neutral-300 lg:p-8">
+                              <div class="flex items-start justify-between gap-5">
+                                <div class="flex min-w-0 items-center gap-4.5">
                                   <div
-                                    class="relative h-14 w-14 shrink-0 overflow-hidden rounded-full border border-neutral-200 bg-neutral-100">
+                                    class="relative h-14 w-14 shrink-0 overflow-hidden rounded-full border border-neutral-200 bg-neutral-100 shadow-sm">
                                     <% if (card.avatarUrl) { %>
                                       <img src="<%= card.avatarUrl %>" alt="<%= card.name %>"
                                         class="h-full w-full object-cover" loading="lazy" />
@@ -666,20 +666,20 @@
                                   </div>
 
                                   <span
-                                    class="rounded-full bg-neutral-100 px-2.5 py-1 text-[11px] font-medium text-neutral-500">
+                                    class="rounded-full bg-neutral-100 px-3 py-1 text-[11px] font-medium text-neutral-500">
                                     #<%= index + 1 %>
                                   </span>
                                 </div>
 
-                                <div class="mt-5 flex flex-1 flex-col justify-between gap-5">
-                                  <p class="min-h-[5rem] text-sm leading-relaxed text-neutral-600">
+                                <div class="mt-6 flex flex-1 flex-col justify-between gap-6">
+                                  <p class="min-h-[5.5rem] text-sm leading-7 text-neutral-600">
                                     <%= card.bio
                                       || "Новая публичная визитка уже доступна для просмотра, контактов и быстрого перехода по UNQ."
                                       %>
                                   </p>
 
                                   <div
-                                    class="flex items-center justify-between gap-3 border-t border-neutral-100 pt-4 text-xs text-neutral-400">
+                                    class="flex items-center justify-between gap-3 border-t border-neutral-100 pt-5 text-xs text-neutral-400">
                                     <span>Создано: <%= card.createdAt ? new
                                         Date(card.createdAt).toLocaleDateString("ru-RU") : "недавно" %></span>
                                     <span class="font-medium text-neutral-500">Открыть профиль</span>
@@ -896,25 +896,23 @@
                     <div class="home-pricing-grid mt-12 grid gap-6">
                       <% plans.forEach((plan)=> { %>
                         <article
-                          class="home-pricing-card interactive-card relative overflow-hidden rounded-[2rem] border p-7 sm:p-9 lg:p-12 <%= plan.highlighted ? 'border-neutral-900 bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.14),_transparent_34%),linear-gradient(135deg,#2a2a2a_0%,#151515_46%,#0c0c0d_100%)] text-white shadow-[0_30px_90px_rgba(17,17,17,0.18)]' : 'border-neutral-200 bg-white text-neutral-900' %>">
+                          class="home-pricing-card interactive-card relative mx-auto w-full max-w-5xl overflow-hidden rounded-[2rem] border p-7 sm:p-9 lg:p-12 <%= plan.highlighted ? 'border-neutral-900 bg-neutral-900 text-white' : 'border-neutral-200 bg-white text-neutral-900' %>">
                           <% if (plan.badge) { %>
                             <span
-                              class="home-pricing-badge absolute left-5 top-5 rounded-full border border-white/30 bg-white/8 px-3 py-1 text-[11px] font-semibold tracking-wide text-white backdrop-blur-sm sm:left-7 sm:top-7">
+                              class="home-pricing-badge absolute left-5 top-5 rounded-full border border-white/30 bg-black/25 px-3 py-1 text-[11px] font-semibold tracking-wide text-white backdrop-blur-sm sm:left-7 sm:top-7">
                               <%= plan.badge %>
                             </span>
                             <% } %>
 
                               <div
-                                class="home-pricing-body grid gap-10 lg:grid-cols-[minmax(260px,0.9fr)_minmax(0,1.1fr)] lg:items-start">
-                                <div
-                                  class="flex flex-col items-center pt-8 text-center lg:items-start lg:pt-2 lg:text-left">
+                                class="home-pricing-body mx-auto flex w-full max-w-4xl flex-col items-center pt-8 text-center sm:pt-6">
+                                <div class="flex w-full max-w-xl flex-col items-center text-center">
                                   <p
                                     class="home-pricing-name font-mono text-[11px] uppercase tracking-[0.32em] <%= plan.highlighted ? 'text-neutral-400' : 'text-neutral-500' %>">
                                     <%= plan.name %>
                                   </p>
 
-                                  <div
-                                    class="home-pricing-price mt-6 flex items-start justify-center gap-2 lg:justify-start">
+                                  <div class="home-pricing-price mt-6 flex items-start justify-center gap-2">
                                     <span
                                       class="home-pricing-price-value text-6xl font-black leading-none sm:text-7xl lg:text-8xl">
                                       <%= plan.price %>
@@ -932,7 +930,7 @@
                                   </div>
 
                                   <p
-                                    class="home-pricing-note mt-4 max-w-xs text-sm leading-relaxed <%= plan.highlighted ? 'text-neutral-500' : 'text-neutral-400' %>">
+                                    class="home-pricing-note mt-4 max-w-sm text-sm leading-relaxed <%= plan.highlighted ? 'text-neutral-400' : 'text-neutral-400' %>">
                                     + стоимость UNQ по калькулятору
                                   </p>
 
@@ -946,9 +944,9 @@
                                 </div>
 
                                 <div
-                                  class="rounded-[1.75rem] border <%= plan.highlighted ? 'border-white/10 bg-white/[0.03]' : 'border-neutral-200 bg-neutral-50' %> p-6 sm:p-8">
+                                  class="mt-10 w-full rounded-[1.75rem] border <%= plan.highlighted ? 'border-white/10 bg-white/[0.03]' : 'border-neutral-200 bg-neutral-50' %> p-6 sm:p-8">
                                   <p
-                                    class="text-xs font-semibold uppercase tracking-[0.18em] <%= plan.highlighted ? 'text-neutral-500' : 'text-neutral-400' %>">
+                                    class="text-center text-xs font-semibold uppercase tracking-[0.18em] <%= plan.highlighted ? 'text-neutral-500' : 'text-neutral-400' %>">
                                     Что входит</p>
                                   <ul class="home-pricing-features mt-6 grid gap-4 text-left sm:grid-cols-2">
                                     <% plan.included.forEach((feature)=> { %>
