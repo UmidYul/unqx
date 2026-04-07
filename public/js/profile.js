@@ -395,6 +395,7 @@ Email: ${userEmail}
       reqSummary: $("#profile-requests-summary"),
       reqTable: $("#profile-requests-table"),
       reqTableWrap: $("#profile-requests-table-wrap"),
+      reqFilters: $("#profile-requests-filters"),
       reqDesktopList: $("#profile-requests-desktop-list"),
       reqMobileList: $("#profile-requests-mobile-list"),
       reqEmpty: $("#profile-requests-empty-state"),
@@ -415,6 +416,10 @@ Email: ${userEmail}
       refFraud: $("#profile-ref-fraud"),
 
       stName: $("#profile-settings-display-name"),
+      stCategoryNav: $("#profile-settings-categories"),
+      stCategoryButtons: $$("[data-settings-category]"),
+      stCategoryPanels: $$("[data-settings-panel]"),
+      stSaveWrap: $("#profile-settings-save-wrap"),
       stCity: $("#profile-settings-city"),
       stLogin: $("#profile-settings-login"),
       stEmail: $("#profile-settings-email"),
@@ -1627,6 +1632,25 @@ Email: ${userEmail}
 
     const renderRequests = () => {
       if (!el.reqTable) return;
+      const normalizeRequestFilter = (value) => {
+        const normalized = String(value || "").trim().toLowerCase();
+        return ["approved", "pending", "rejected"].includes(normalized) ? normalized : "approved";
+      };
+      const getRequestFilterKey = (requestItem) => {
+        const status = String(requestItem?.status || "").trim().toLowerCase();
+        if (status === "approved") {
+          return "approved";
+        }
+        if (["rejected", "expired"].includes(status)) {
+          return "rejected";
+        }
+        return "pending";
+      };
+      const filterLabels = {
+        approved: "Одобренные",
+        pending: "В процессе",
+        rejected: "Отклонённые",
+      };
       const getRequestStatusMeta = (requestItem) => {
         const status = String(requestItem?.status || "").trim().toLowerCase();
         if (status === "approved") {
@@ -1700,6 +1724,7 @@ Email: ${userEmail}
       if (plan === "none" && !s.requests.length) {
         if (el.reqBanner) el.reqBanner.classList.add("hidden");
         if (el.reqSummary instanceof HTMLElement) el.reqSummary.classList.add("hidden");
+        if (el.reqFilters instanceof HTMLElement) el.reqFilters.classList.add("hidden");
         if (el.reqDesktopList instanceof HTMLElement) el.reqDesktopList.classList.add("hidden");
         if (el.reqTableWrap instanceof HTMLElement) el.reqTableWrap.classList.add("hidden");
         if (el.reqMobileList instanceof HTMLElement) el.reqMobileList.classList.add("hidden");
@@ -1716,15 +1741,19 @@ Email: ${userEmail}
         return;
       }
       if (el.reqSummary instanceof HTMLElement) el.reqSummary.classList.remove("hidden");
+      if (el.reqFilters instanceof HTMLElement) el.reqFilters.classList.remove("hidden");
       if (el.reqDesktopList instanceof HTMLElement) el.reqDesktopList.classList.remove("hidden");
       if (el.reqTableWrap instanceof HTMLElement) el.reqTableWrap.classList.remove("hidden");
       if (el.reqMobileList instanceof HTMLElement) el.reqMobileList.classList.remove("hidden");
       if (el.reqEmpty instanceof HTMLElement) el.reqEmpty.classList.add("hidden");
 
+      s.requestFilter = normalizeRequestFilter(s.requestFilter);
+
       const requestsTotal = s.requests.length;
       const requestsActive = s.requests.filter((item) => String(item.status || "").toLowerCase() === "approved").length;
       const requestsPending = s.requests.filter((item) => ["new", "contacted", "paid"].includes(String(item.status || "").toLowerCase())).length;
       const requestsProblem = s.requests.filter((item) => ["rejected", "expired"].includes(String(item.status || "").toLowerCase())).length;
+      const filteredRequests = s.requests.filter((item) => getRequestFilterKey(item) === s.requestFilter);
 
       if (el.reqSummary) {
         el.reqSummary.innerHTML = [
@@ -1737,17 +1766,32 @@ Email: ${userEmail}
           .join("");
       }
 
+      if (el.reqFilters) {
+        el.reqFilters.innerHTML = [
+          { key: "approved", count: requestsActive },
+          { key: "pending", count: requestsPending },
+          { key: "rejected", count: requestsProblem },
+        ]
+          .map((item) => {
+            const isActive = s.requestFilter === item.key;
+            return `<button type="button" data-a="request-filter" data-filter="${esc(item.key)}" aria-pressed="${isActive ? "true" : "false"}" class="interactive-btn profile-request-filter ${isActive ? "is-active" : ""}"><span>${esc(filterLabels[item.key])}</span><span class="profile-request-filter-count">${esc(String(item.count))}</span></button>`;
+          })
+          .join("");
+      }
+
+      const emptyFilteredState = `<div class="profile-request-filter-empty">В категории \"${esc(filterLabels[s.requestFilter])}\" пока нет заявок.</div>`;
+
       if (el.reqMobileList) {
-        el.reqMobileList.innerHTML = s.requests.length
-          ? s.requests
+        el.reqMobileList.innerHTML = filteredRequests.length
+          ? filteredRequests
             .map((requestItem) => renderRequestCard(requestItem, true))
             .join("")
-          : '<div class="rounded-xl border border-neutral-200 bg-white px-3 py-5 text-center text-sm text-neutral-500">Заявок пока нет</div>';
+          : emptyFilteredState;
       }
       if (el.reqDesktopList) {
-        el.reqDesktopList.innerHTML = s.requests.length
-          ? s.requests.map((requestItem) => renderRequestCard(requestItem)).join("")
-          : '<div class="rounded-xl border border-neutral-200 bg-white px-3 py-5 text-center text-sm text-neutral-500">Заявок пока нет</div>';
+        el.reqDesktopList.innerHTML = filteredRequests.length
+          ? filteredRequests.map((requestItem) => renderRequestCard(requestItem)).join("")
+          : emptyFilteredState;
       }
       el.reqTable.innerHTML = "";
 
@@ -1851,6 +1895,38 @@ Email: ${userEmail}
       }
     };
 
+    const normalizeSettingsCategory = (value) => {
+      const normalized = String(value || "").trim().toLowerCase();
+      return ["account", "security", "privacy", "danger"].includes(normalized) ? normalized : "account";
+    };
+
+    const renderSettingsCategory = () => {
+      s.settingsCategory = normalizeSettingsCategory(s.settingsCategory);
+      const activeCategory = s.settingsCategory;
+
+      if (Array.isArray(el.stCategoryButtons)) {
+        el.stCategoryButtons.forEach((button) => {
+          if (!(button instanceof HTMLElement)) return;
+          const category = normalizeSettingsCategory(button.getAttribute("data-settings-category"));
+          const isActive = category === activeCategory;
+          button.classList.toggle("is-active", isActive);
+          button.setAttribute("aria-pressed", isActive ? "true" : "false");
+        });
+      }
+
+      if (Array.isArray(el.stCategoryPanels)) {
+        el.stCategoryPanels.forEach((panel) => {
+          if (!(panel instanceof HTMLElement)) return;
+          const category = normalizeSettingsCategory(panel.getAttribute("data-settings-panel"));
+          panel.classList.toggle("hidden", category !== activeCategory);
+        });
+      }
+
+      if (el.stSaveWrap instanceof HTMLElement) {
+        el.stSaveWrap.classList.toggle("hidden", activeCategory === "danger");
+      }
+    };
+
     const renderSettings = () => {
       if (!s.user) return;
       if (el.stName) el.stName.value = s.user.displayName || s.user.firstName || "";
@@ -1934,6 +2010,7 @@ Email: ${userEmail}
       }
 
       renderPrivateAccessSettings();
+      renderSettingsCategory();
     };
 
     const renderReferrals = () => {
@@ -2782,6 +2859,20 @@ Email: ${userEmail}
       if (!target) return;
       const actionNode = target.closest("[data-a]");
       const action = actionNode instanceof HTMLElement ? actionNode.getAttribute("data-a") : "";
+
+      if (action === "request-filter") {
+        const nextFilter = actionNode instanceof HTMLElement ? actionNode.getAttribute("data-filter") : "";
+        s.requestFilter = nextFilter;
+        renderRequests();
+        return;
+      }
+
+      if (action === "settings-category") {
+        const nextCategory = actionNode instanceof HTMLElement ? actionNode.getAttribute("data-settings-category") : "";
+        s.settingsCategory = nextCategory;
+        renderSettingsCategory();
+        return;
+      }
 
       if (action === "open-qr") {
         const slug = String(actionNode.getAttribute("data-slug") || "").trim();

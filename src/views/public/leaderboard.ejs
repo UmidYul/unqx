@@ -22,50 +22,67 @@
   <% const activePeriod=period==="week" || period==="month" || period==="all" ? period : "day" ; %>
     <% const activeType=type==="company" || type==="person" ? type : "all" ; %>
       <main class="mx-auto w-full max-w-6xl px-4 py-8">
-        <section class="mb-6 rounded-2xl border border-neutral-200 bg-white p-3 shadow-sm sm:p-4">
-          <div class="flex flex-col gap-4 lg:grid lg:grid-cols-[auto_minmax(0,720px)] lg:items-end lg:gap-6">
-            <a href="/"
-              class="interactive-btn inline-flex min-h-11 w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border border-neutral-300 bg-white px-3 py-1.5 text-center text-sm font-semibold text-neutral-700 hover:text-neutral-900 sm:w-auto sm:justify-start">
-              <svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M15 18 9 12l6-6"></path>
-              </svg>
-              На главную
-            </a>
+        <section class="mb-6 rounded-[1.75rem] border border-neutral-200 bg-white p-5 shadow-sm sm:p-6">
+          <div class="flex flex-col gap-5">
+            <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+              <div class="max-w-2xl">
+                <p class="font-mono text-[11px] uppercase tracking-[0.18em] text-neutral-400">RANKING CONTROL</p>
+                <h1 class="mt-2 text-2xl font-black tracking-tight text-neutral-900 sm:text-3xl">Настрой рейтинг под
+                  себя</h1>
+                <p class="mt-2 text-sm leading-relaxed text-neutral-500">Переключай период и сегмент без лишнего пустого
+                  пространства: сверху только нужные фильтры, ниже сразу сам лидерборд.</p>
+              </div>
 
-            <div class="grid gap-3 sm:grid-cols-2 lg:gap-4">
-              <div class="min-w-0">
-                <p class="mb-1 px-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-neutral-500">Период</p>
-                <div
-                  class="grid w-full grid-cols-2 gap-1 rounded-xl border border-neutral-200 bg-neutral-50 p-1 text-xs sm:grid-cols-4 sm:text-sm"
-                  role="tablist" aria-label="Период рейтинга">
+              <a href="/"
+                class="interactive-btn inline-flex min-h-11 w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border border-neutral-300 bg-white px-4 py-2 text-center text-sm font-semibold text-neutral-700 hover:text-neutral-900 sm:w-auto">
+                <svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M15 18 9 12l6-6"></path>
+                </svg>
+                На главную
+              </a>
+            </div>
+
+            <div class="grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(320px,0.9fr)]">
+              <div class="rounded-2xl border border-neutral-200 bg-neutral-50/80 p-3 sm:p-4">
+                <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                  <div>
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.12em] text-neutral-500">Период</p>
+                    <p class="mt-1 text-sm text-neutral-500">Выбери срез времени для рейтинга просмотров.</p>
+                  </div>
+                </div>
+                <div class="mt-3 grid w-full grid-cols-2 gap-2 sm:grid-cols-4" role="tablist"
+                  aria-label="Период рейтинга">
                   <a href="/leaderboard?period=day&type=<%= activeType %>"
-                    class="interactive-btn inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-lg px-3 py-1.5 text-center leading-none <%= activePeriod === 'day' ? 'bg-neutral-900 text-white shadow-sm' : 'text-neutral-600 hover:text-neutral-900' %>"
+                    class="interactive-btn inline-flex min-h-12 w-full items-center justify-center rounded-xl border px-3 py-2 text-center text-sm font-semibold leading-none <%= activePeriod === 'day' ? 'border-neutral-900 bg-neutral-900 text-white shadow-sm' : 'border-transparent bg-white text-neutral-600 hover:border-neutral-200 hover:text-neutral-900' %>"
                     role="tab" aria-selected="<%= activePeriod === 'day' ? 'true' : 'false' %>">День</a>
                   <a href="/leaderboard?period=week&type=<%= activeType %>"
-                    class="interactive-btn inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-lg px-3 py-1.5 text-center leading-none <%= activePeriod === 'week' ? 'bg-neutral-900 text-white shadow-sm' : 'text-neutral-600 hover:text-neutral-900' %>"
+                    class="interactive-btn inline-flex min-h-12 w-full items-center justify-center rounded-xl border px-3 py-2 text-center text-sm font-semibold leading-none <%= activePeriod === 'week' ? 'border-neutral-900 bg-neutral-900 text-white shadow-sm' : 'border-transparent bg-white text-neutral-600 hover:border-neutral-200 hover:text-neutral-900' %>"
                     role="tab" aria-selected="<%= activePeriod === 'week' ? 'true' : 'false' %>">Неделя</a>
                   <a href="/leaderboard?period=month&type=<%= activeType %>"
-                    class="interactive-btn inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-lg px-3 py-1.5 text-center leading-none <%= activePeriod === 'month' ? 'bg-neutral-900 text-white shadow-sm' : 'text-neutral-600 hover:text-neutral-900' %>"
+                    class="interactive-btn inline-flex min-h-12 w-full items-center justify-center rounded-xl border px-3 py-2 text-center text-sm font-semibold leading-none <%= activePeriod === 'month' ? 'border-neutral-900 bg-neutral-900 text-white shadow-sm' : 'border-transparent bg-white text-neutral-600 hover:border-neutral-200 hover:text-neutral-900' %>"
                     role="tab" aria-selected="<%= activePeriod === 'month' ? 'true' : 'false' %>">Месяц</a>
                   <a href="/leaderboard?period=all&type=<%= activeType %>"
-                    class="interactive-btn inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-lg px-3 py-1.5 text-center leading-none <%= activePeriod === 'all' ? 'bg-neutral-900 text-white shadow-sm' : 'text-neutral-600 hover:text-neutral-900' %>"
+                    class="interactive-btn inline-flex min-h-12 w-full items-center justify-center rounded-xl border px-3 py-2 text-center text-sm font-semibold leading-none <%= activePeriod === 'all' ? 'border-neutral-900 bg-neutral-900 text-white shadow-sm' : 'border-transparent bg-white text-neutral-600 hover:border-neutral-200 hover:text-neutral-900' %>"
                     role="tab" aria-selected="<%= activePeriod === 'all' ? 'true' : 'false' %>">Всё время</a>
                 </div>
               </div>
 
-              <div class="min-w-0">
-                <p class="mb-1 px-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-neutral-500">Сегмент</p>
-                <div
-                  class="grid w-full grid-cols-3 gap-1 rounded-xl border border-neutral-200 bg-neutral-50 p-1 text-xs sm:text-sm"
-                  role="tablist" aria-label="Тип профиля в лидерборде">
+              <div class="rounded-2xl border border-neutral-200 bg-neutral-50/80 p-3 sm:p-4">
+                <div>
+                  <p class="text-[11px] font-semibold uppercase tracking-[0.12em] text-neutral-500">Сегмент</p>
+                  <p class="mt-1 text-sm text-neutral-500">Сфокусируйся на всём каталоге, компаниях или личных профилях.
+                  </p>
+                </div>
+                <div class="mt-3 grid w-full grid-cols-1 gap-2 sm:grid-cols-3" role="tablist"
+                  aria-label="Тип профиля в лидерборде">
                   <a href="/leaderboard?period=<%= activePeriod %>&type=all"
-                    class="interactive-btn inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-lg px-3 py-1.5 text-center leading-none <%= activeType === 'all' ? 'bg-neutral-900 text-white shadow-sm' : 'text-neutral-600 hover:text-neutral-900' %>"
+                    class="interactive-btn inline-flex min-h-12 w-full items-center justify-center rounded-xl border px-3 py-2 text-center text-sm font-semibold leading-none <%= activeType === 'all' ? 'border-neutral-900 bg-neutral-900 text-white shadow-sm' : 'border-transparent bg-white text-neutral-600 hover:border-neutral-200 hover:text-neutral-900' %>"
                     role="tab" aria-selected="<%= activeType === 'all' ? 'true' : 'false' %>">Все</a>
                   <a href="/leaderboard?period=<%= activePeriod %>&type=company"
-                    class="interactive-btn inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-lg px-3 py-1.5 text-center leading-none <%= activeType === 'company' ? 'bg-neutral-900 text-white shadow-sm' : 'text-neutral-600 hover:text-neutral-900' %>"
+                    class="interactive-btn inline-flex min-h-12 w-full items-center justify-center rounded-xl border px-3 py-2 text-center text-sm font-semibold leading-none <%= activeType === 'company' ? 'border-neutral-900 bg-neutral-900 text-white shadow-sm' : 'border-transparent bg-white text-neutral-600 hover:border-neutral-200 hover:text-neutral-900' %>"
                     role="tab" aria-selected="<%= activeType === 'company' ? 'true' : 'false' %>">Компании</a>
                   <a href="/leaderboard?period=<%= activePeriod %>&type=person"
-                    class="interactive-btn inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-lg px-3 py-1.5 text-center leading-none <%= activeType === 'person' ? 'bg-neutral-900 text-white shadow-sm' : 'text-neutral-600 hover:text-neutral-900' %>"
+                    class="interactive-btn inline-flex min-h-12 w-full items-center justify-center rounded-xl border px-3 py-2 text-center text-sm font-semibold leading-none <%= activeType === 'person' ? 'border-neutral-900 bg-neutral-900 text-white shadow-sm' : 'border-transparent bg-white text-neutral-600 hover:border-neutral-200 hover:text-neutral-900' %>"
                     role="tab" aria-selected="<%= activeType === 'person' ? 'true' : 'false' %>">Личности</a>
                 </div>
               </div>
@@ -142,7 +159,7 @@
                               </p>
                               <a href="/<%= item.slug %>"
                                 class="mt-0.5 block text-sm text-neutral-500 hover:underline">unqx.uz/<%= item.slug %>
-                                  </a>
+                              </a>
                             </div>
                     </div>
                     <div class="mt-4 flex items-center justify-between text-sm">

@@ -687,7 +687,7 @@ router.get(
   asyncHandler(async (req, res) => {
     const userSession = getUserSession(req);
     const userId = userSession?.userId ? String(userSession.userId) : "";
-    const [leaderboardSettings, activeFlashSale, nextDrop, pricing, publicSettingsRaw, topWeeklyViews, latestCreatedCard, authPhotoUrl] = await Promise.all([
+    const [leaderboardSettings, activeFlashSale, nextDrop, pricing, publicSettingsRaw, topWeeklyViews, latestCreatedCards, authPhotoUrl] = await Promise.all([
       getFeatureSetting("leaderboard"),
       getActiveFlashSale(),
       prisma.drop.findFirst({
@@ -773,6 +773,8 @@ router.get(
           }),
         );
 
+        const cards = [];
+
         for (const row of rows) {
           const slug = String(row?.fullSlug || "").trim().toUpperCase();
           const owner = row?.owner;
@@ -781,17 +783,21 @@ router.get(
             continue;
           }
 
-          return {
+          cards.push({
             slug,
             createdAt: row.createdAt,
             name: String(card.name || owner.displayName || owner.firstName || "UNQX User").trim() || "UNQX User",
             role: String(card.role || "").trim(),
             bio: String(card.bio || "").trim(),
             avatarUrl: String(card.avatarUrl || "").trim(),
-          };
+          });
+
+          if (cards.length >= 3) {
+            break;
+          }
         }
 
-        return null;
+        return cards;
       })(),
       userId
         ? findProfileCardByOwnerId(userId)
@@ -874,7 +880,8 @@ router.get(
         }
         : null,
       topWeeklyViews,
-      latestCreatedCard,
+      latestCreatedCards,
+      latestCreatedCard: Array.isArray(latestCreatedCards) && latestCreatedCards.length ? latestCreatedCards[0] : null,
       pricing,
       authPhotoUrl,
       publicSettings: publicSettingsRaw,

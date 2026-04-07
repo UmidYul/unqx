@@ -558,8 +558,9 @@
           <section id="profile-requests-empty-state"
             class="hidden mt-5 rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-10 text-center"></section>
           <div id="profile-requests-summary" class="mt-4 hidden gap-3 md:grid md:grid-cols-4"></div>
-          <div id="profile-requests-desktop-list" class="mt-4 hidden gap-3 md:grid"></div>
-          <div id="profile-requests-mobile-list" class="mt-4 grid gap-3 md:hidden"></div>
+          <div id="profile-requests-filters" class="mt-4 hidden"></div>
+          <div id="profile-requests-desktop-list" class="mt-5 hidden gap-4 md:grid"></div>
+          <div id="profile-requests-mobile-list" class="mt-5 grid gap-4 md:hidden"></div>
           <div id="profile-requests-table-wrap"
             class="hidden overflow-auto rounded-xl border border-neutral-200 md:block">
             <table class="w-full text-left text-sm">
@@ -674,8 +675,20 @@
         <article data-tab-panel="settings"
           class="profile-tab-panel hidden min-w-0 rounded-2xl border border-neutral-200 bg-white p-4 sm:p-5">
           <h2 class="text-lg font-bold">НАСТРОЙКИ</h2>
+          <div id="profile-settings-categories" class="mt-4 profile-settings-categories" role="tablist"
+            aria-label="Категории настроек">
+            <button type="button" data-a="settings-category" data-settings-category="account"
+              class="interactive-btn profile-settings-category-btn is-active" aria-pressed="true">Аккаунт</button>
+            <button type="button" data-a="settings-category" data-settings-category="security"
+              class="interactive-btn profile-settings-category-btn" aria-pressed="false">Безопасность и связь</button>
+            <button type="button" data-a="settings-category" data-settings-category="privacy"
+              class="interactive-btn profile-settings-category-btn" aria-pressed="false">Приватность и доверие</button>
+            <button type="button" data-a="settings-category" data-settings-category="danger"
+              class="interactive-btn profile-settings-category-btn profile-settings-category-btn--danger"
+              aria-pressed="false">Опасная зона</button>
+          </div>
           <div class="mt-4 profile-settings-stack">
-            <section class="profile-settings-section">
+            <section class="profile-settings-section" data-settings-panel="account">
               <div class="profile-settings-section-head">
                 <div>
                   <h3 class="profile-settings-section-title">Аккаунт</h3>
@@ -718,7 +731,7 @@
               </div>
             </section>
 
-            <section class="profile-settings-section">
+            <section class="profile-settings-section hidden" data-settings-panel="security">
               <div class="profile-settings-section-head">
                 <div>
                   <h3 class="profile-settings-section-title">Безопасность и связь</h3>
@@ -790,7 +803,7 @@
               </div>
             </section>
 
-            <section class="profile-settings-section">
+            <section class="profile-settings-section hidden" data-settings-panel="privacy">
               <div class="profile-settings-section-head">
                 <div>
                   <h3 class="profile-settings-section-title">Приватность и доверие</h3>
@@ -840,14 +853,15 @@
               </div>
             </section>
 
-            <div class="profile-settings-item is-full profile-settings-actions">
+            <div class="profile-settings-item is-full profile-settings-actions" id="profile-settings-save-wrap">
               <button id="profile-settings-save" type="button"
                 class="interactive-btn min-h-11 rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold">Сохранить
                 настройки</button>
               <p id="profile-settings-status" class="text-sm"></p>
             </div>
 
-            <section class="profile-settings-section profile-settings-section--danger">
+            <section class="profile-settings-section profile-settings-section--danger hidden"
+              data-settings-panel="danger">
               <div class="profile-settings-section-head">
                 <div>
                   <h3 class="profile-settings-section-title">Опасная зона</h3>
