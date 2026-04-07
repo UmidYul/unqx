@@ -37,8 +37,7 @@
             <div class="flex min-w-0 flex-1 flex-col gap-3">
               <div class="min-w-0">
                 <p class="mb-1 px-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-neutral-500">Период</p>
-                <div
-                  class="flex w-full gap-1 rounded-xl border border-neutral-200 bg-neutral-50 p-1 text-xs sm:text-sm"
+                <div class="flex w-full gap-1 rounded-xl border border-neutral-200 bg-neutral-50 p-1 text-xs sm:text-sm"
                   role="tablist" aria-label="Период рейтинга">
                   <a href="/leaderboard?period=day&type=<%= activeType %>"
                     class="interactive-btn inline-flex flex-1 min-h-11 items-center justify-center whitespace-nowrap rounded-lg px-3 py-1.5 text-center leading-none <%= activePeriod === 'day' ? 'bg-neutral-900 text-white shadow-sm' : 'text-neutral-600 hover:text-neutral-900' %>"
@@ -57,8 +56,7 @@
 
               <div class="min-w-0">
                 <p class="mb-1 px-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-neutral-500">Сегмент</p>
-                <div
-                  class="flex w-full gap-1 rounded-xl border border-neutral-200 bg-neutral-50 p-1 text-xs sm:text-sm"
+                <div class="flex w-full gap-1 rounded-xl border border-neutral-200 bg-neutral-50 p-1 text-xs sm:text-sm"
                   role="tablist" aria-label="Тип профиля в лидерборде">
                   <a href="/leaderboard?period=<%= activePeriod %>&type=all"
                     class="interactive-btn inline-flex flex-1 min-h-11 items-center justify-center whitespace-nowrap rounded-lg px-3 py-1.5 text-center leading-none <%= activeType === 'all' ? 'bg-neutral-900 text-white shadow-sm' : 'text-neutral-600 hover:text-neutral-900' %>"
