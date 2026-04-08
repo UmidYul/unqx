@@ -169,6 +169,8 @@
         "official_unq_purchase_notice_body",
         "official_unq_profile_badge_title",
         "official_unq_profile_badge_line",
+        "staff_profile_badge_title",
+        "staff_profile_badge_line",
       ],
     },
     sectionByKey: {
@@ -206,6 +208,8 @@
         official_unq_purchase_notice_title: "Предупреждение перед покупкой",
         official_unq_profile_badge_title: "Пометка на визитке",
         official_unq_profile_badge_line: "Пометка на визитке",
+        staff_profile_badge_title: "Бейдж сотрудника UNQX",
+        staff_profile_badge_line: "Бейдж сотрудника UNQX",
       },
     },
   };
@@ -412,45 +416,45 @@
   }
 
   function renderGroup(group, items) {
-        // Вешаем обработчики на визуальный редактор custom_rules
-        if (group === "algorithm") {
-          setTimeout(() => {
-            const form = document.getElementById(`settings-form-algorithm`);
-            if (!form) return;
-            const addBtn = form.querySelector("#custom-rules-add");
-            if (addBtn) {
-              addBtn.addEventListener("click", () => {
-                const textarea = form.elements.namedItem("slug_pricing_custom_rules");
-                let arr = [];
-                try { arr = JSON.parse(textarea.value || "[]"); } catch { arr = []; }
-                arr.push({ pattern: "", type: "contains", delta: 0, label: "" });
-                textarea.value = JSON.stringify(arr);
-                renderGroup(group, items.map(i => i.key === "slug_pricing_custom_rules" ? { ...i, value: arr } : i));
-                updateCurrentFromForm(group);
-              });
-            }
-            const rows = form.querySelectorAll("#custom-rules-rows [data-rule-remove]");
-            rows.forEach((btn) => {
-              btn.addEventListener("click", () => {
-                const idx = Number(btn.getAttribute("data-rule-remove"));
-                const textarea = form.elements.namedItem("slug_pricing_custom_rules");
-                let arr = [];
-                try { arr = JSON.parse(textarea.value || "[]"); } catch { arr = []; }
-                arr.splice(idx, 1);
-                textarea.value = JSON.stringify(arr);
-                renderGroup(group, items.map(i => i.key === "slug_pricing_custom_rules" ? { ...i, value: arr } : i));
-                updateCurrentFromForm(group);
-              });
-            });
-            // Inline редактирование
-            const inputs = form.querySelectorAll("#custom-rules-rows input, #custom-rules-rows select");
-            inputs.forEach((input) => {
-              input.addEventListener("input", () => {
-                updateCurrentFromForm(group);
-              });
-            });
-          }, 0);
+    // Вешаем обработчики на визуальный редактор custom_rules
+    if (group === "algorithm") {
+      setTimeout(() => {
+        const form = document.getElementById(`settings-form-algorithm`);
+        if (!form) return;
+        const addBtn = form.querySelector("#custom-rules-add");
+        if (addBtn) {
+          addBtn.addEventListener("click", () => {
+            const textarea = form.elements.namedItem("slug_pricing_custom_rules");
+            let arr = [];
+            try { arr = JSON.parse(textarea.value || "[]"); } catch { arr = []; }
+            arr.push({ pattern: "", type: "contains", delta: 0, label: "" });
+            textarea.value = JSON.stringify(arr);
+            renderGroup(group, items.map(i => i.key === "slug_pricing_custom_rules" ? { ...i, value: arr } : i));
+            updateCurrentFromForm(group);
+          });
         }
+        const rows = form.querySelectorAll("#custom-rules-rows [data-rule-remove]");
+        rows.forEach((btn) => {
+          btn.addEventListener("click", () => {
+            const idx = Number(btn.getAttribute("data-rule-remove"));
+            const textarea = form.elements.namedItem("slug_pricing_custom_rules");
+            let arr = [];
+            try { arr = JSON.parse(textarea.value || "[]"); } catch { arr = []; }
+            arr.splice(idx, 1);
+            textarea.value = JSON.stringify(arr);
+            renderGroup(group, items.map(i => i.key === "slug_pricing_custom_rules" ? { ...i, value: arr } : i));
+            updateCurrentFromForm(group);
+          });
+        });
+        // Inline редактирование
+        const inputs = form.querySelectorAll("#custom-rules-rows input, #custom-rules-rows select");
+        inputs.forEach((input) => {
+          input.addEventListener("input", () => {
+            updateCurrentFromForm(group);
+          });
+        });
+      }, 0);
+    }
     const form = resolveSettingsForm(group);
     if (!(form instanceof HTMLFormElement)) return;
     const preparedItems = prepareGroupItems(group, items);
@@ -488,17 +492,17 @@
                 <tbody id="custom-rules-rows">
                   ${item.value.map((rule, idx) => `
                     <tr data-rule-row="${idx}" class="hover:bg-neutral-100 transition">
-                      <td><input type="text" class="border border-neutral-300 rounded-lg px-2 py-1 w-28 focus:border-neutral-500 focus:bg-white transition" data-rule-pattern="${idx}" value="${esc(rule.pattern||"")}" /></td>
+                      <td><input type="text" class="border border-neutral-300 rounded-lg px-2 py-1 w-28 focus:border-neutral-500 focus:bg-white transition" data-rule-pattern="${idx}" value="${esc(rule.pattern || "")}" /></td>
                       <td>
                         <select class="border border-neutral-300 rounded-lg px-2 py-1 focus:border-neutral-500 transition" data-rule-type="${idx}">
-                          <option value="contains" ${rule.type==="contains"?"selected":""}>Содержит</option>
-                          <option value="startsWith" ${rule.type==="startsWith"?"selected":""}>Начинается</option>
-                          <option value="endsWith" ${rule.type==="endsWith"?"selected":""}>Заканчивается</option>
-                          <option value="regex" ${rule.type==="regex"?"selected":""}>RegExp</option>
+                          <option value="contains" ${rule.type === "contains" ? "selected" : ""}>Содержит</option>
+                          <option value="startsWith" ${rule.type === "startsWith" ? "selected" : ""}>Начинается</option>
+                          <option value="endsWith" ${rule.type === "endsWith" ? "selected" : ""}>Заканчивается</option>
+                          <option value="regex" ${rule.type === "regex" ? "selected" : ""}>RegExp</option>
                         </select>
                       </td>
-                      <td><input type="number" class="border border-neutral-300 rounded-lg px-2 py-1 w-20 focus:border-neutral-500 focus:bg-white transition" data-rule-delta="${idx}" value="${esc(rule.delta||0)}" /></td>
-                      <td><input type="text" class="border border-neutral-300 rounded-lg px-2 py-1 w-32 focus:border-neutral-500 focus:bg-white transition" data-rule-label="${idx}" value="${esc(rule.label||"")}" /></td>
+                      <td><input type="number" class="border border-neutral-300 rounded-lg px-2 py-1 w-20 focus:border-neutral-500 focus:bg-white transition" data-rule-delta="${idx}" value="${esc(rule.delta || 0)}" /></td>
+                      <td><input type="text" class="border border-neutral-300 rounded-lg px-2 py-1 w-32 focus:border-neutral-500 focus:bg-white transition" data-rule-label="${idx}" value="${esc(rule.label || "")}" /></td>
                       <td><button type="button" class="text-rose-600 hover:text-rose-800 font-bold text-lg px-2 py-1 rounded transition" data-rule-remove="${idx}" title="Удалить">✕</button></td>
                     </tr>
                   `).join("")}

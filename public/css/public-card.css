@@ -1441,6 +1441,39 @@ body[data-card-theme] #card-view-root>[data-card-view] {
   color: var(--theme-email-color, #4b5563);
 }
 
+/* Бейдж сотрудника UNQX — те же токены, что и у .unq-ref-official-unq */
+.unq-ref-staff-badge {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto 14px;
+  border: var(--theme-surface-border, 1px solid #e5e5e5);
+  border-radius: 16px;
+  background: var(--theme-surface-bg, #f5f5f5);
+  padding: 12px 16px;
+  text-align: center;
+  overflow-wrap: anywhere;
+  word-wrap: break-word;
+}
+
+.unq-ref-staff-badge-kicker {
+  margin: 0;
+  max-width: 100%;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--theme-accent-color, #202020);
+}
+
+.unq-ref-staff-badge-line {
+  margin: 8px 0 0;
+  max-width: 100%;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--theme-email-color, #4b5563);
+}
+
 .unq-ref-brand {
   text-align: center;
 }

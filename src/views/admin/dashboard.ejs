@@ -1,8 +1,8 @@
 <% const pageTitle=typeof title==="string" && title ? title : "Дашборд" ; const pageActiveTab=typeof
   activeTab==="string" && activeTab ? activeTab : "analytics" ; const pagePublicBaseUrl=typeof publicBaseUrl==="string"
-  && publicBaseUrl ? publicBaseUrl : "" ; const pageQuery=typeof query==="object" && query ? query : {};
-  const pageDashboardBase = typeof dashboardBasePath === "string" && dashboardBasePath ? dashboardBasePath : "/admin/dashboard";
-%>
+  && publicBaseUrl ? publicBaseUrl : "" ; const pageQuery=typeof query==="object" && query ? query : {}; const
+  pageDashboardBase=typeof dashboardBasePath==="string" && dashboardBasePath ? dashboardBasePath : "/admin/dashboard" ;
+  %>
   <!doctype html>
   <html lang="ru">
 
@@ -12,8 +12,8 @@
 
   <body class="antialiased" data-admin-layout="1" data-page="admin-dashboard"
     data-public-base-url="<%= pagePublicBaseUrl %>" data-active-tab="<%= pageActiveTab %>"
-    data-admin-role="<%= adminSession?.role || 'admin' %>" data-bwignore="true"
-    data-lpignore="true" data-1p-ignore="true">
+    data-admin-role="<%= adminSession?.role || 'admin' %>" data-bwignore="true" data-lpignore="true"
+    data-1p-ignore="true">
     <%- include('../partials/admin-layout-start', { activeTab: pageActiveTab, dashboardBasePath: pageDashboardBase }) %>
       <div class="mx-auto w-full max-w-6xl space-y-5">
         <div id="admin-maintenance-banner"
@@ -27,23 +27,24 @@
         </div>
         <div class="flex flex-wrap items-start justify-between gap-3 border-b border-neutral-200 pb-4">
           <div>
-            <% if (adminSession?.role === 'manager') { %>
-            <h1 class="text-2xl font-black">Рабочий стол менеджера</h1>
-            <p class="mt-1 text-sm text-neutral-600">Полный user flow: создание аккаунтов, продажи и верификация.</p>
-            <% } else { %>
-            <h1 class="text-2xl font-black">Управление платформой</h1>
-            <p class="mt-1 text-sm text-neutral-600">Мониторинг заявок, пользователей и маркетинговых инструментов</p>
-            <% } %>
+            <% if (adminSession?.role==='manager' ) { %>
+              <h1 class="text-2xl font-black">Рабочий стол менеджера</h1>
+              <p class="mt-1 text-sm text-neutral-600">Полный user flow: создание аккаунтов, продажи и верификация.</p>
+              <% } else { %>
+                <h1 class="text-2xl font-black">Управление платформой</h1>
+                <p class="mt-1 text-sm text-neutral-600">Мониторинг заявок, пользователей и маркетинговых инструментов
+                </p>
+                <% } %>
           </div>
-          <% if (adminSession?.role !== 'manager') { %>
-          <a href="<%= pageDashboardBase %>?tab=slugs"
-            class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-neutral-900 px-4 py-2 text-center text-sm font-semibold text-white transition hover:bg-neutral-700 sm:w-auto">
-            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
-            </svg>
-            <span>Управлять slug</span>
-          </a>
-          <% } %>
+          <% if (adminSession?.role !=='manager' ) { %>
+            <a href="<%= pageDashboardBase %>?tab=slugs"
+              class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-neutral-900 px-4 py-2 text-center text-sm font-semibold text-white transition hover:bg-neutral-700 sm:w-auto">
+              <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+              </svg>
+              <span>Управлять slug</span>
+            </a>
+            <% } %>
         </div>
 
         <section id="tab-analytics" class="<%= pageActiveTab === 'analytics' ? '' : 'hidden' %> space-y-4">
@@ -56,11 +57,13 @@
             <form id="analytics-filters" class="mt-3 grid gap-3 md:grid-cols-[220px_220px_220px_auto_auto]">
               <label class="block text-sm">
                 <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Период с</span>
-                <input type="date" name="dateFrom" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+                <input type="date" name="dateFrom"
+                  class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
               </label>
               <label class="block text-sm">
                 <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">По</span>
-                <input type="date" name="dateTo" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+                <input type="date" name="dateTo"
+                  class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
               </label>
               <label class="block text-sm">
                 <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Группировка</span>
@@ -82,50 +85,52 @@
           </section>
           <section class="space-y-2">
             <h3 class="text-sm font-semibold text-neutral-900">Графики</h3>
-          <div class="grid gap-4 lg:grid-cols-2">
-            <article class="rounded-2xl border border-neutral-200 bg-white p-4">
-              <h2 class="text-sm font-semibold text-neutral-900">Выручка по дням (30 дней)</h2>
-              <div class="mt-3 h-[280px]">
-                <canvas id="analytics-orders-chart"></canvas>
-                <div id="analytics-orders-empty"
-                  class="analytics-empty hidden h-full items-center justify-center text-center text-neutral-500"></div>
-              </div>
-            </article>
-            <article class="rounded-2xl border border-neutral-200 bg-white p-4">
-              <h2 class="text-sm font-semibold text-neutral-900">Разбивка выручки</h2>
-              <div class="mt-3 h-[280px]">
-                <canvas id="analytics-tariff-chart"></canvas>
-                <div id="analytics-tariff-empty"
-                  class="analytics-empty hidden h-full items-center justify-center text-center text-neutral-500"></div>
-              </div>
-            </article>
-          </div>
-          <article class="rounded-2xl border border-neutral-200 bg-white p-4">
-            <h2 class="text-sm font-semibold text-neutral-900">Распределение UNQ Score</h2>
-            <div class="mt-3 h-[260px]">
-              <canvas id="analytics-score-distribution-chart"></canvas>
-              <div id="analytics-score-empty"
-                class="analytics-empty hidden h-full items-center justify-center text-center text-neutral-500"></div>
+            <div class="grid gap-4 lg:grid-cols-2">
+              <article class="rounded-2xl border border-neutral-200 bg-white p-4">
+                <h2 class="text-sm font-semibold text-neutral-900">Выручка по дням (30 дней)</h2>
+                <div class="mt-3 h-[280px]">
+                  <canvas id="analytics-orders-chart"></canvas>
+                  <div id="analytics-orders-empty"
+                    class="analytics-empty hidden h-full items-center justify-center text-center text-neutral-500">
+                  </div>
+                </div>
+              </article>
+              <article class="rounded-2xl border border-neutral-200 bg-white p-4">
+                <h2 class="text-sm font-semibold text-neutral-900">Разбивка выручки</h2>
+                <div class="mt-3 h-[280px]">
+                  <canvas id="analytics-tariff-chart"></canvas>
+                  <div id="analytics-tariff-empty"
+                    class="analytics-empty hidden h-full items-center justify-center text-center text-neutral-500">
+                  </div>
+                </div>
+              </article>
             </div>
-          </article>
+            <article class="rounded-2xl border border-neutral-200 bg-white p-4">
+              <h2 class="text-sm font-semibold text-neutral-900">Распределение UNQ Score</h2>
+              <div class="mt-3 h-[260px]">
+                <canvas id="analytics-score-distribution-chart"></canvas>
+                <div id="analytics-score-empty"
+                  class="analytics-empty hidden h-full items-center justify-center text-center text-neutral-500"></div>
+              </div>
+            </article>
           </section>
           <section class="space-y-2">
             <h3 class="text-sm font-semibold text-neutral-900">Инсайты</h3>
-          <article class="rounded-2xl border border-neutral-200 bg-white p-4">
-            <h2 class="text-sm font-semibold text-neutral-900">Топ-10 паттернов ищут, но не покупают</h2>
-            <div class="mt-3 overflow-hidden rounded-xl border border-neutral-200">
-              <table class="min-w-full text-left text-sm">
-                <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
-                  <tr>
-                    <th class="px-3 py-2">Паттерн</th>
-                    <th class="px-3 py-2">Проверок</th>
-                  </tr>
-                </thead>
-                <tbody id="analytics-checker-table"></tbody>
-              </table>
-            </div>
-          </article>
-        </section>
+            <article class="rounded-2xl border border-neutral-200 bg-white p-4">
+              <h2 class="text-sm font-semibold text-neutral-900">Топ-10 паттернов ищут, но не покупают</h2>
+              <div class="mt-3 overflow-hidden rounded-xl border border-neutral-200">
+                <table class="min-w-full text-left text-sm">
+                  <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
+                    <tr>
+                      <th class="px-3 py-2">Паттерн</th>
+                      <th class="px-3 py-2">Проверок</th>
+                    </tr>
+                  </thead>
+                  <tbody id="analytics-checker-table"></tbody>
+                </table>
+              </div>
+            </article>
+          </section>
 
         </section>
         <section id="tab-orders" class="<%= pageActiveTab === 'orders' ? '' : 'hidden' %> space-y-4">
@@ -169,11 +174,13 @@
               </label>
               <label class="block text-sm">
                 <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Дата с</span>
-                <input type="date" name="dateFrom" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+                <input type="date" name="dateFrom"
+                  class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
               </label>
               <label class="block text-sm">
                 <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Дата по</span>
-                <input type="date" name="dateTo" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+                <input type="date" name="dateTo"
+                  class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
               </label>
               <input type="hidden" name="page" value="1" />
               <div class="col-span-full flex flex-wrap items-end justify-end gap-2">
@@ -261,14 +268,16 @@
           <div id="purchases-pagination" class="flex items-center justify-end gap-2 text-sm text-neutral-600"></div>
           <form id="pricing-settings-form"
             class="grid gap-3 rounded-2xl border border-neutral-200 bg-white p-4 md:grid-cols-2">
-                        <label class="block">
-              <span class="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">Premium monthly (USD)</span>
+            <label class="block">
+              <span class="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">Premium
+                monthly (USD)</span>
               <input type="number" min="0" step="0.01" name="planPremiumMonthlyPriceUsd"
                 class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
               <span class="mt-1 block text-xs text-neutral-500">$2 по умолчанию</span>
             </label>
             <label class="block">
-              <span class="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">Premium monthly (UZS)</span>
+              <span class="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">Premium
+                monthly (UZS)</span>
               <input type="number" min="0" name="planPremiumMonthlyPriceUzs"
                 class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
               <span class="mt-1 block text-xs text-neutral-500">Цена за 1 месяц Premium</span>
@@ -342,996 +351,1068 @@
           <div id="users-pagination" class="flex items-center justify-end gap-2 text-sm text-neutral-600"></div>
         </section>
 
-        <% if (adminSession?.role !== 'manager') { %>
-        <section id="tab-managers" class="<%= pageActiveTab === 'managers' ? '' : 'hidden' %> space-y-4">
-          <form id="managers-create-form"
-            class="grid gap-3 rounded-2xl border border-neutral-200 bg-white p-4 md:grid-cols-[1fr_180px_180px_auto]">
-            <label class="block text-sm font-medium text-neutral-700">
-              Имя
-              <input name="name" type="text" maxlength="120"
-                class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" required />
-            </label>
-            <label class="block text-sm font-medium text-neutral-700">
-              Логин
-              <input name="login" type="text" maxlength="190"
-                class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" required />
-            </label>
-            <label class="block text-sm font-medium text-neutral-700">
-              Пароль
-              <input name="password" type="password" minlength="8"
-                class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" required />
-            </label>
-            <div class="flex items-end">
-              <button type="submit"
-                class="inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">Создать
-                менеджера</button>
-            </div>
-            <p id="managers-create-status" class="md:col-span-4 text-xs text-neutral-500"></p>
-          </form>
-          <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
-            <div class="overflow-x-auto">
-              <table class="min-w-[1160px] w-full text-left text-sm">
-                <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
-                  <tr>
-                    <th class="px-4 py-3">Name</th>
-                    <th class="px-4 py-3">Login</th>
-                    <th class="px-4 py-3">Role</th>
-                    <th class="px-4 py-3">Status</th>
-                    <th class="px-4 py-3">Last login</th>
-                    <th class="px-4 py-3">Created</th>
-                    <th class="px-4 py-3">Accounts created</th>
-                    <th class="px-4 py-3">Accounts</th>
-                    <th class="px-4 py-3">Actions</th>
-                  </tr>
-                </thead>
-                <tbody id="managers-table"></tbody>
-              </table>
-            </div>
-          </div>
-        </section>
-        <% } %>
-
-        <section id="tab-slugs" class="<%= pageActiveTab === 'slugs' ? '' : 'hidden' %> space-y-4">
-          <div id="slugs-stats" class="grid gap-3 md:grid-cols-4"></div>
-          <form id="slugs-filters" class="grid gap-3 rounded-2xl border border-neutral-200 bg-white p-4 md:grid-cols-4">
-            <input type="text" name="q" placeholder="Поиск slug"
-              class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
-            <select name="state" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">
-              <option value="all">Все статусы</option>
-              <option value="free">Свободен</option>
-              <option value="taken">Занят</option>
-              <option value="blocked">Заблокирован</option>
-            </select>
-            <input type="hidden" name="page" value="1" />
-            <button type="submit"
-              class="inline-flex min-h-11 w-full items-center justify-center justify-self-start rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100 md:w-auto">Применить</button>
-          </form>
-          <form id="slugs-price-override-form"
-            class="grid gap-3 rounded-2xl border border-neutral-200 bg-white p-4 md:grid-cols-[180px_220px_auto_auto]">
-            <input type="text" name="slug" placeholder="AAA000" maxlength="6"
-              class="min-h-11 rounded-xl border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm font-semibold uppercase tracking-[0.08em] text-neutral-900 shadow-sm transition placeholder:text-neutral-400 focus:border-neutral-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-neutral-200 font-mono" />
-            <input type="number" min="0" step="1" name="priceOverride" placeholder="Цена override"
-              class="min-h-11 rounded-xl border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm font-semibold text-neutral-900 shadow-sm transition placeholder:text-neutral-400 focus:border-neutral-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-neutral-200" />
-            <button type="submit"
-              class="inline-flex min-h-11 w-full items-center justify-center justify-self-start rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100 md:w-auto">Сохранить
-              цену</button>
-            <button type="button" id="slugs-price-override-reset"
-              class="inline-flex min-h-11 w-full items-center justify-center justify-self-start rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100 md:w-auto">Сбросить
-              override</button>
-          </form>
-          <p id="slugs-price-override-status" class="text-xs text-neutral-500"></p>
-          <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
-            <div class="overflow-x-auto">
-              <table class="min-w-[980px] w-full text-left text-sm">
-                <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
-                  <tr>
-                    <th class="px-4 py-3">Slug</th>
-                    <th class="px-4 py-3">Статус</th>
-                    <th class="px-4 py-3">Владелец</th>
-                    <th class="px-4 py-3">Основной</th>
-                    <th class="px-4 py-3">Цена</th>
-                    <th class="px-4 py-3">Запрошен</th>
-                    <th class="px-4 py-3">Одобрен</th>
-                    <th class="px-4 py-3">Активирован</th>
-                    <th class="px-4 py-3">Действия</th>
-                  </tr>
-                </thead>
-                <tbody id="slugs-table"></tbody>
-              </table>
-            </div>
-          </div>
-          <div id="slugs-pagination" class="flex items-center justify-end gap-2 text-sm text-neutral-600"></div>
-        </section>
-
-        <section id="tab-cards" class="<%= pageActiveTab === 'cards' ? '' : 'hidden' %> space-y-4">
-          <form id="cards-filters"
-            class="grid gap-3 rounded-2xl border border-neutral-200 bg-white p-4 md:grid-cols-[1fr_180px_auto]">
-            <input type="text" name="q" placeholder="Поиск по slug или имени"
-              class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
-            <select name="status" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">
-              <option value="all">Все</option>
-              <option value="active">Активные</option>
-              <option value="inactive">Выключенные</option>
-            </select>
-            <input type="hidden" name="page" value="1" />
-            <button type="submit"
-              class="inline-flex min-h-11 w-full items-center justify-center justify-self-start rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100 md:w-auto">Применить</button>
-          </form>
-          <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
-            <div class="overflow-x-auto">
-              <table class="min-w-[980px] w-full text-left text-sm">
-                <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
-                  <tr>
-                    <th class="px-4 py-3">Slug</th>
-                    <th class="px-4 py-3">Имя владельца</th>
-                    <th class="px-4 py-3">Тариф</th>
-                    <th class="px-4 py-3">Статус</th>
-                    <th class="px-4 py-3">Просмотры</th>
-                    <th class="px-4 py-3">Дата создания</th>
-                    <th class="px-4 py-3">Тема</th>
-                    <th class="px-4 py-3">Действия</th>
-                  </tr>
-                </thead>
-                <tbody id="cards-table"></tbody>
-              </table>
-            </div>
-          </div>
-          <div id="cards-pagination" class="flex items-center justify-end gap-2 text-sm text-neutral-600"></div>
-        </section>
-
-        <section id="tab-bracelets" class="<%= pageActiveTab === 'bracelets' ? '' : 'hidden' %> space-y-4">
-          <form id="bracelets-filters"
-            class="grid gap-3 rounded-2xl border border-neutral-200 bg-white p-4 md:grid-cols-[220px_auto]">
-            <select name="status" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">
-              <option value="all">Все статусы</option>
-              <option value="ORDERED">Заказан</option>
-              <option value="SHIPPED">Отправлен</option>
-              <option value="DELIVERED">Доставлен</option>
-            </select>
-            <input type="hidden" name="page" value="1" />
-            <button type="submit"
-              class="inline-flex min-h-11 w-full items-center justify-center justify-self-start rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100 md:w-auto">Применить</button>
-          </form>
-          <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
-            <div class="overflow-x-auto">
-              <table class="min-w-[860px] w-full text-left text-sm">
-                <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
-                  <tr>
-                    <th class="px-4 py-3">Дата</th>
-                    <th class="px-4 py-3">Имя</th>
-                    <th class="px-4 py-3">Slug</th>
-                    <th class="px-4 py-3">Контакт</th>
-                    <th class="px-4 py-3">Статус доставки</th>
-                  </tr>
-                </thead>
-                <tbody id="bracelets-table"></tbody>
-              </table>
-            </div>
-          </div>
-          <div id="bracelets-pagination" class="flex items-center justify-end gap-2 text-sm text-neutral-600"></div>
-        </section>
-
-        <section id="tab-score" class="<%= pageActiveTab === 'score' ? '' : 'hidden' %> space-y-4">
-          <div
-            class="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-neutral-200 bg-white p-4">
-            <button id="score-recalculate-all-btn" type="button"
-              class="interactive-btn min-h-11 rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white">Пересчитать
-              всех</button>
-            <label class="inline-flex items-center gap-2 text-sm text-neutral-700">
-              <input id="score-visibility-toggle" type="checkbox"
-                class="h-4 w-4 rounded border-neutral-300 text-neutral-900" />
-              Показывать Score на визитках
-            </label>
-          </div>
-          <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
-            <div class="overflow-x-auto">
-              <table class="min-w-[980px] w-full text-left text-sm">
-                <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
-                  <tr>
-                    <th class="px-4 py-3">Пользователь</th>
-                    <th class="px-4 py-3">Slug</th>
-                    <th class="px-4 py-3">Score</th>
-                    <th class="px-4 py-3">Percentile</th>
-                    <th class="px-4 py-3">Последний расчёт</th>
-                    <th class="px-4 py-3">Действие</th>
-                  </tr>
-                </thead>
-                <tbody id="score-table"></tbody>
-              </table>
-            </div>
-          </div>
-          <article class="rounded-2xl border border-neutral-200 bg-white p-4">
-            <h2 class="text-sm font-semibold text-neutral-900">Последние 10 запусков пересчёта</h2>
-            <div class="mt-3 overflow-auto">
-              <table class="min-w-full text-left text-sm">
-                <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
-                  <tr>
-                    <th class="px-3 py-2">Время</th>
-                    <th class="px-3 py-2">Пользователей обработано</th>
-                    <th class="px-3 py-2">Среднее время</th>
-                  </tr>
-                </thead>
-                <tbody id="score-runs-table"></tbody>
-              </table>
-            </div>
-          </article>
-        </section>
-
-        <section id="tab-leaderboard" class="<%= pageActiveTab === 'leaderboard' ? '' : 'hidden' %> space-y-4">
-          <form id="leaderboard-settings-form" class="rounded-2xl border border-neutral-200 bg-white p-4 md:p-5">
-            <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-              <label
-                class="flex min-h-11 items-center gap-2 rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm font-medium text-neutral-800 lg:col-span-4">
-                <input type="checkbox" name="enabled" class="h-4 w-4 rounded border-neutral-300 text-neutral-900" />
-                Показать лидерборд
+        <% if (adminSession?.role !=='manager' ) { %>
+          <section id="tab-managers" class="<%= pageActiveTab === 'managers' ? '' : 'hidden' %> space-y-4">
+            <form id="managers-create-form"
+              class="grid gap-3 rounded-2xl border border-neutral-200 bg-white p-4 md:grid-cols-[1fr_180px_180px_auto]">
+              <label class="block text-sm font-medium text-neutral-700">
+                Имя
+                <input name="name" type="text" maxlength="120"
+                  class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" required />
               </label>
-
-              <label class="block">
-                <span class="mb-1.5 block text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">Лимит
-                  публичных позиций</span>
-                <input type="number" name="publicLimit" min="1" max="200"
-                  class="min-h-11 w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm text-neutral-900 outline-none transition-colors focus:border-neutral-500" />
+              <label class="block text-sm font-medium text-neutral-700">
+                Логин
+                <input name="login" type="text" maxlength="190"
+                  class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" required />
               </label>
-
-              <label class="block">
-                <span class="mb-1.5 block text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">Порог
-                  всплеска</span>
-                <input type="number" name="suspiciousThreshold" min="1"
-                  class="min-h-11 w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm text-neutral-900 outline-none transition-colors focus:border-neutral-500" />
+              <label class="block text-sm font-medium text-neutral-700">
+                Пароль
+                <input name="password" type="password" minlength="8"
+                  class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" required />
               </label>
-
-              <label class="block">
-                <span class="mb-1.5 block text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">Окно
-                  (минуты)</span>
-                <input type="number" name="suspiciousWindowMinutes" min="1"
-                  class="min-h-11 w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm text-neutral-900 outline-none transition-colors focus:border-neutral-500" />
-              </label>
-
               <div class="flex items-end">
                 <button type="submit"
-                  class="interactive-btn min-h-11 w-full rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-neutral-800">
-                  Сохранить
-                </button>
+                  class="inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">Создать
+                  менеджера</button>
               </div>
-            </div>
-          </form>
-          <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
-            <div class="overflow-x-auto">
-              <table class="min-w-[980px] w-full text-left text-sm">
-                <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
-                  <tr>
-                    <th class="px-4 py-3">#</th>
-                    <th class="px-4 py-3">Slug</th>
-                    <th class="px-4 py-3">Владелец</th>
-                    <th class="px-4 py-3">Просмотры</th>
-                    <th class="px-4 py-3">Динамика</th>
-                    <th class="px-4 py-3">Тариф</th>
-                    <th class="px-4 py-3">Действия</th>
-                  </tr>
-                </thead>
-                <tbody id="leaderboard-table"></tbody>
-              </table>
-            </div>
-          </div>
-          <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
-            <table class="min-w-full text-left text-sm">
-              <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
-                <tr>
-                  <th class="px-4 py-3">Подозрительная активность</th>
-                  <th class="px-4 py-3">Просмотры</th>
-                  <th class="px-4 py-3">Окно</th>
-                  <th class="px-4 py-3">Время</th>
-                </tr>
-              </thead>
-              <tbody id="leaderboard-suspicious-table"></tbody>
-            </table>
-          </div>
-        </section>
-
-        <section id="tab-referrals" class="<%= pageActiveTab === 'referrals' ? '' : 'hidden' %> space-y-4">
-          <header class="rounded-2xl border border-neutral-200 bg-white p-4">
-            <h2 class="text-base font-bold text-neutral-900">Referrals</h2>
-            <p class="mt-1 text-sm text-neutral-600">Manage referral program settings and rewards.</p>
-          </header>
-
-          <section class="space-y-3">
-            <h3 class="text-sm font-semibold text-neutral-900">Summary</h3>
-            <div id="referrals-stats" class="grid gap-3 md:grid-cols-3"></div>
-          </section>
-
-          <section class="rounded-2xl border border-neutral-200 bg-white p-4">
-            <h3 class="text-sm font-semibold text-neutral-900">Referral Settings</h3>
-            <form id="referrals-settings-form" class="mt-3 space-y-4">
-              <div class="grid gap-3 md:grid-cols-2">
-                <label class="block rounded-xl border border-neutral-200 p-3 text-sm">
-                  <span class="flex items-center gap-2">
-                    <input type="checkbox" name="enabled" />
-                    <span class="font-medium text-neutral-900">Enable referral program</span>
-                  </span>
-                  <span class="mt-1 block text-xs text-neutral-500">Allows rewards for invited users.</span>
-                </label>
-              </div>
-
-              <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                <label class="block text-sm">
-                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Invitee discount (sum)</span>
-                  <input type="number" min="0" step="1000" name="inviteeDiscount"
-                    class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
-                </label>
-                <label class="block text-sm">
-                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Max discount (%)</span>
-                  <input type="number" min="0" max="100" step="1" name="discountCapPercent"
-                    class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
-                </label>
-                <label class="block text-sm">
-                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Per-user usage limit</span>
-                  <input type="number" min="1" step="1" name="defaultPerUserCap"
-                    class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
-                </label>
-                <label class="block text-sm">
-                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Referrer reward (sum)</span>
-                  <input type="number" min="0" step="1000" name="referrerReward"
-                    class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
-                </label>
-              </div>
-
-              <div class="flex justify-end">
-                <button type="submit"
-                  class="rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">Save settings</button>
-              </div>
+              <p id="managers-create-status" class="md:col-span-4 text-xs text-neutral-500"></p>
             </form>
-          </section>
-
-          <section class="space-y-2">
-            <div class="flex flex-wrap items-end justify-between gap-3">
-              <h3 class="text-sm font-semibold text-neutral-900">Referral History</h3>
-              <form id="referrals-history-filters" class="flex items-end gap-2">
-                <label class="block text-sm">
-                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Status</span>
-                  <select name="status" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">
-                    <option value="all">All</option>
-                    <option value="pending">Pending</option>
-                    <option value="approved">Approved</option>
-                    <option value="paid">Paid</option>
-                    <option value="rejected">Rejected</option>
-                  </select>
-                </label>
-                <button type="submit"
-                  class="rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">Apply</button>
-              </form>
-            </div>
             <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
               <div class="overflow-x-auto">
-                <table class="min-w-[980px] w-full text-left text-sm">
-                  <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
-                    <tr>
-                      <th class="px-4 py-3">Referrer</th>
-                      <th class="px-4 py-3">Invitee</th>
-                      <th class="px-4 py-3">Date</th>
-                      <th class="px-4 py-3">Status</th>
-                      <th class="px-4 py-3">Source</th>
-                      <th class="px-4 py-3">Reward</th>
-                      <th class="px-4 py-3">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody id="referrals-table"></tbody>
-                </table>
-              </div>
-            </div>
-          </section>
-
-          <section class="space-y-2">
-            <h3 class="text-sm font-semibold text-neutral-900">Referral Wallet Operations</h3>
-            <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
-              <div class="overflow-x-auto">
-                <table class="min-w-[980px] w-full text-left text-sm">
-                  <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
-                    <tr>
-                      <th class="px-4 py-3">Date</th>
-                      <th class="px-4 py-3">User</th>
-                      <th class="px-4 py-3">Direction</th>
-                      <th class="px-4 py-3">Operation type</th>
-                      <th class="px-4 py-3">Amount</th>
-                      <th class="px-4 py-3">Balance after</th>
-                      <th class="px-4 py-3">Idempotency</th>
-                    </tr>
-                  </thead>
-                  <tbody id="referrals-ledger-table"></tbody>
-                </table>
-              </div>
-            </div>
-          </section>
-        </section>
-
-        <section id="tab-promocodes" class="<%= pageActiveTab === 'promocodes' ? '' : 'hidden' %> space-y-4">
-          <header class="rounded-2xl border border-neutral-200 bg-white p-4">
-            <h2 class="text-base font-bold text-neutral-900">Promo Codes</h2>
-            <p class="mt-1 text-sm text-neutral-600">Manage promo-code settings and promo codes.</p>
-          </header>
-
-          <section class="rounded-2xl border border-neutral-200 bg-white p-4">
-            <h3 class="text-sm font-semibold text-neutral-900">Promo-code Settings</h3>
-            <form id="promocodes-settings-form" class="mt-3 space-y-4">
-              <div class="grid gap-3 md:grid-cols-2">
-                <label class="block rounded-xl border border-neutral-200 p-3 text-sm">
-                  <span class="flex items-center gap-2">
-                    <input type="checkbox" name="promoCodesEnabled" />
-                    <span class="font-medium text-neutral-900">Enable promo codes</span>
-                  </span>
-                  <span class="mt-1 block text-xs text-neutral-500">Allows promo codes at checkout.</span>
-                </label>
-                <label class="block rounded-xl border border-neutral-200 p-3 text-sm">
-                  <span class="flex items-center gap-2">
-                    <input type="checkbox" name="promoFirstOrderOnly" />
-                    <span class="font-medium text-neutral-900">First order only</span>
-                  </span>
-                  <span class="mt-1 block text-xs text-neutral-500">Restricts promo-code usage to the first purchase.</span>
-                </label>
-              </div>
-              <div class="flex justify-end">
-                <button type="submit"
-                  class="rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">Save settings</button>
-              </div>
-            </form>
-          </section>
-
-          <section class="rounded-2xl border border-neutral-200 bg-white p-4">
-            <h3 class="text-sm font-semibold text-neutral-900">Create Promo Code</h3>
-            <form id="promocodes-campaign-create-form" class="mt-3 space-y-3">
-              <div class="grid gap-3 md:grid-cols-5">
-                <label class="block text-sm md:col-span-2">
-                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Promo name</span>
-                  <input name="name" type="text" placeholder="e.g. Spring Offer"
-                    class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" required />
-                </label>
-                <label class="block text-sm">
-                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Promo code</span>
-                  <input name="promoCode" type="text" maxlength="32" placeholder="e.g. PROMO2026"
-                    class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm uppercase" required />
-                </label>
-                <label class="block text-sm">
-                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Status</span>
-                  <select name="status" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm">
-                    <option value="draft">Draft</option>
-                    <option value="active">Active</option>
-                    <option value="paused">Paused</option>
-                    <option value="archived">Archived</option>
-                  </select>
-                </label>
-                <label class="block text-sm">
-                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Discount type</span>
-                  <select name="discountType" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm">
-                    <option value="discount_amount">Discount amount</option>
-                    <option value="fixed_price">Fixed price</option>
-                    <option value="discount_percent">Discount percent</option>
-                  </select>
-                </label>
-              </div>
-
-              <div class="grid gap-3 md:grid-cols-3">
-                <label class="block text-sm">
-                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Discount value (sum or %)</span>
-                  <input name="discountValue" type="number" min="0" step="1" placeholder="e.g. 100000 or 15"
-                    class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
-                </label>
-                <label class="block text-sm">
-                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Campaign budget (sum)</span>
-                  <input name="budgetAmount" type="number" min="0" step="1000" value="0" placeholder="e.g. 5000000"
-                    class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
-                </label>
-                <label class="block text-sm">
-                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Per-user usage limit</span>
-                  <input name="perUserCap" type="number" min="1" step="1" value="1" placeholder="e.g. 1"
-                    class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
-                </label>
-              </div>
-
-              <div class="grid gap-3 md:grid-cols-2">
-                <label class="block text-sm">
-                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Start date</span>
-                  <input name="startsAt" type="datetime-local" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
-                </label>
-                <label class="block text-sm">
-                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">End date</span>
-                  <input name="endsAt" type="datetime-local" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
-                </label>
-              </div>
-
-              <div class="flex justify-end">
-                <button type="submit"
-                  class="rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">Create promo code</button>
-              </div>
-            </form>
-          </section>
-
-          <section class="space-y-2">
-            <h3 class="text-sm font-semibold text-neutral-900">Promo Codes</h3>
-            <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
-              <div class="overflow-x-auto">
-                <table class="min-w-[980px] w-full text-left text-sm">
+                <table class="min-w-[1160px] w-full text-left text-sm">
                   <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
                     <tr>
                       <th class="px-4 py-3">Name</th>
-                      <th class="px-4 py-3">Promo code</th>
+                      <th class="px-4 py-3">Login</th>
+                      <th class="px-4 py-3">Role</th>
                       <th class="px-4 py-3">Status</th>
-                      <th class="px-4 py-3">Discount</th>
-                      <th class="px-4 py-3">Budget</th>
-                      <th class="px-4 py-3">Per-user</th>
-                      <th class="px-4 py-3">Period</th>
+                      <th class="px-4 py-3">Last login</th>
+                      <th class="px-4 py-3">Created</th>
+                      <th class="px-4 py-3">Accounts created</th>
+                      <th class="px-4 py-3">Accounts</th>
                       <th class="px-4 py-3">Actions</th>
                     </tr>
                   </thead>
-                  <tbody id="promocodes-campaigns-table"></tbody>
+                  <tbody id="managers-table"></tbody>
                 </table>
               </div>
             </div>
           </section>
-        </section>
+          <% } %>
 
-        <section id="tab-flash-sales" class="<%= pageActiveTab === 'flash-sales' ? '' : 'hidden' %> space-y-4">
-          <form id="flash-sales-create-form"
-            class="grid gap-3 rounded-2xl border border-neutral-200 bg-white p-4 md:grid-cols-4">
-            <input name="title" type="text" placeholder="Название"
-              class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" required />
-            <input name="description" type="text" placeholder="Текст баннера"
-              class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
-            <input name="discountPercent" type="number" min="1" max="95" placeholder="Скидка %"
-              class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" required />
-            <select name="conditionType" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">
-              <option value="all">Все slug</option>
-              <option value="pattern_000">000</option>
-              <option value="pattern_aaa">AAA</option>
-              <option value="sequential_digits">123/456</option>
-              <option value="custom">Кастом</option>
-            </select>
-            <div class="hidden md:col-span-2" data-flash-custom-wrap>
-              <textarea name="conditionPatternInput" rows="2"
-                placeholder="Кастомные правила: AAA000, AAA***, ***777, A*A12? (через запятую, пробел или новую строку)"
-                class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm font-mono uppercase"></textarea>
-              <p class="mt-1 text-xs text-neutral-500">
-                Для `custom`: точный slug или маска 6 символов. `*` = любой символ, `?` = один символ.
-              </p>
-            </div>
-            <input name="startsAt" type="datetime-local" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm"
-              required />
-            <input name="endsAt" type="datetime-local" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm"
-              required />
-            <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="notifyTelegram" /> Уведомить
-              Telegram</label>
-            <input name="telegramTarget" type="text" placeholder="@channel или chat_id"
-              class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
-            <button type="submit"
-              class="rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">Запустить</button>
-          </form>
-          <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
-            <table class="min-w-full text-left text-sm">
-              <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
-                <tr>
-                  <th class="px-4 py-3">Название</th>
-                  <th class="px-4 py-3">Скидка</th>
-                  <th class="px-4 py-3">Период</th>
-                  <th class="px-4 py-3">Статус</th>
-                  <th class="px-4 py-3">Статистика</th>
-                  <th class="px-4 py-3">Действие</th>
-                </tr>
-              </thead>
-              <tbody id="flash-sales-table"></tbody>
-            </table>
-          </div>
-        </section>
-
-        <section id="tab-drops" class="<%= pageActiveTab === 'drops' ? '' : 'hidden' %> space-y-4">
-          <form id="drops-create-form"
-            class="grid gap-3 rounded-2xl border border-neutral-200 bg-white p-4 md:grid-cols-4">
-            <input name="title" type="text" placeholder="Название дропа"
-              class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" required />
-            <input name="description" type="text" placeholder="Описание"
-              class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
-            <input name="dropAt" type="datetime-local" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm"
-              required />
-            <input name="slugCount" type="number" min="1" max="500" placeholder="Количество slug"
-              class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" required />
-            <select name="slugPatternType" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">
-              <option value="random">Случайные</option>
-              <option value="sequential">Последовательные</option>
-              <option value="manual">Вручную</option>
-            </select>
-            <textarea name="manualSlugs" rows="2" placeholder="Slug по одному в строке (для manual)"
-              class="rounded-xl border border-neutral-300 px-3 py-2 text-sm md:col-span-2"></textarea>
-            <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="notifyTelegram" /> Уведомить
-              Telegram</label>
-            <input name="telegramTarget" type="text" placeholder="@channel или chat_id"
-              class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
-            <button type="submit"
-              class="rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">Создать
-              дроп</button>
-          </form>
-          <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
-            <table class="min-w-full text-left text-sm">
-              <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
-                <tr>
-                  <th class="px-4 py-3">Название</th>
-                  <th class="px-4 py-3">Дата</th>
-                  <th class="px-4 py-3">Slug</th>
-                  <th class="px-4 py-3">Статус</th>
-                  <th class="px-4 py-3">Итоги</th>
-                  <th class="px-4 py-3">Действие</th>
-                </tr>
-              </thead>
-              <tbody id="drops-table"></tbody>
-            </table>
-          </div>
-        </section>
-
-        <section id="tab-testimonials" class="<%= pageActiveTab === 'testimonials' ? '' : 'hidden' %> space-y-4">
-          <form id="testimonial-create-form" class="rounded-2xl border border-neutral-200 bg-white p-4">
-            <h2 class="text-sm font-semibold text-neutral-900">Добавить отзыв</h2>
-            <div class="mt-3 grid gap-3 md:grid-cols-4">
-              <input name="name" type="text" placeholder="Имя"
-                class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" required />
-              <input name="slug" type="text" placeholder="Slug" maxlength="6"
-                class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" required />
-              <select name="tariff" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">
-                <option value="premium">Премиум</option>
-              </select>
-              <button type="submit"
-                class="rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-neutral-700">Добавить</button>
-            </div>
-            <textarea name="text" rows="3" placeholder="Текст отзыва"
-              class="mt-3 w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" required></textarea>
-          </form>
-          <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
-            <div class="overflow-x-auto">
-              <table class="min-w-[860px] w-full text-left text-sm">
-                <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
-                  <tr>
-                    <th class="px-4 py-3">Имя</th>
-                    <th class="px-4 py-3">Slug</th>
-                    <th class="px-4 py-3">Тариф</th>
-                    <th class="px-4 py-3">Текст</th>
-                    <th class="px-4 py-3">Видимость</th>
-                    <th class="px-4 py-3">Действия</th>
-                  </tr>
-                </thead>
-                <tbody id="testimonials-table"></tbody>
-              </table>
-            </div>
-          </div>
-          <div id="testimonials-pagination" class="flex items-center justify-end gap-2 text-sm text-neutral-600"></div>
-        </section>
-
-        <section id="tab-verification" class="<%= pageActiveTab === 'verification' ? '' : 'hidden' %> space-y-4">
-          <form id="verification-filters" action="<%= pageDashboardBase %>" method="get"
-            class="grid gap-3 rounded-2xl border border-neutral-200 bg-white p-4 md:grid-cols-[220px_auto]">
-            <input type="hidden" name="tab" value="verification" />
-            <select name="status" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">
-              <option value="all">Все статусы</option>
-              <option value="pending">На рассмотрении</option>
-              <option value="approved">Одобрено</option>
-              <option value="rejected">Отклонено</option>
-            </select>
-            <input type="hidden" name="page" value="1" />
-            <button type="submit"
-              class="inline-flex min-h-11 w-full items-center justify-center justify-self-start rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100 md:w-auto">
-              Применить
-            </button>
-          </form>
-          <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
-            <div class="overflow-x-auto">
-              <table class="min-w-[1200px] w-full text-left text-sm">
-                <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
-                  <tr>
-                    <th class="px-4 py-3">Пользователь</th>
-                    <th class="px-4 py-3">Slug</th>
-                    <th class="px-4 py-3">Компания</th>
-                    <th class="px-4 py-3">Роль</th>
-                    <th class="px-4 py-3">Сфера</th>
-                    <th class="px-4 py-3">Доказательство</th>
-                    <th class="px-4 py-3">Комментарий</th>
-                    <th class="px-4 py-3">Статус</th>
-                    <th class="px-4 py-3">Запрошено</th>
-                    <th class="px-4 py-3">Решение</th>
-                    <th class="px-4 py-3">Действия</th>
-                  </tr>
-                </thead>
-                <tbody id="verification-table"></tbody>
-              </table>
-            </div>
-          </div>
-          <div id="verification-pagination" class="flex items-center justify-end gap-2 text-sm text-neutral-600"></div>
-        </section>
-
-        <section id="tab-reports" class="<%= pageActiveTab === 'reports' ? '' : 'hidden' %> space-y-4">
-          <header class="rounded-2xl border border-neutral-200 bg-white p-4">
-            <h2 class="text-base font-bold text-neutral-900">Репорты о правонарушениях</h2>
-            <p class="mt-1 text-sm text-neutral-600">Жалобы пользователей из приложения. Проверяйте и помечайте обработанные.</p>
-          </header>
-          <form id="reports-filters" action="<%= pageDashboardBase %>" method="get"
-            class="grid gap-3 rounded-2xl border border-neutral-200 bg-white p-4 md:grid-cols-[220px_auto]">
-            <input type="hidden" name="tab" value="reports" />
-            <select name="status" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">
-              <option value="all">Все статусы</option>
-              <option value="new">Новые</option>
-              <option value="processed">Обработанные</option>
-            </select>
-            <input type="hidden" name="page" value="1" />
-            <button type="submit"
-              class="inline-flex min-h-11 w-full items-center justify-center justify-self-start rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100 md:w-auto">
-              Применить
-            </button>
-          </form>
-          <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
-            <div class="overflow-x-auto">
-              <table class="min-w-[1280px] w-full text-left text-sm">
-                <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
-                  <tr>
-                    <th class="px-4 py-3">Тип</th>
-                    <th class="px-4 py-3">Пользователь</th>
-                    <th class="px-4 py-3">Контакты</th>
-                    <th class="px-4 py-3">Описание</th>
-                    <th class="px-4 py-3">IP / Устройство</th>
-                    <th class="px-4 py-3">Статус</th>
-                    <th class="px-4 py-3">Создано</th>
-                    <th class="px-4 py-3">Обновлено</th>
-                    <th class="px-4 py-3">Действия</th>
-                  </tr>
-                </thead>
-                <tbody id="reports-table"></tbody>
-              </table>
-            </div>
-          </div>
-          <div id="reports-pagination" class="flex items-center justify-end gap-2 text-sm text-neutral-600"></div>
-        </section>
-
-        <section id="tab-logs" class="<%= pageActiveTab === 'logs' ? '' : 'hidden' %> space-y-4">
-          <div class="flex items-center justify-between gap-3">
-            <h2 class="text-lg font-bold">Логи ошибок</h2>
-            <button id="cleanup-logs-btn" type="button"
-              class="rounded-xl border border-neutral-300 px-3 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">Очистить
-              старше 30 дней</button>
-          </div>
-
-          <article class="rounded-2xl border border-neutral-200 bg-white p-4 space-y-4">
-            <div>
-              <h3 class="text-sm font-semibold text-neutral-900">Push-центр</h3>
-              <p class="mt-1 text-xs text-neutral-500">Тестовая отправка на одного пользователя и массовая рассылка по
-                аудитории.</p>
-            </div>
-
-            <form id="push-test-form" class="space-y-3">
-              <div class="rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-xs text-neutral-600">
-                Укажите один идентификатор получателя: <span class="font-semibold text-neutral-800">User ID</span> или
-                <span class="font-semibold text-neutral-800">Slug</span>.
-              </div>
-
-              <div class="grid gap-3 md:grid-cols-3">
-                <label class="block">
-                  <span class="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">User
-                    ID</span>
-                  <input name="userId" type="text" placeholder="Например: 123456789"
-                    class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
-                </label>
-
-                <label class="block">
-                  <span
-                    class="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">Slug</span>
-                  <input name="slug" type="text" placeholder="Например: SSS555"
-                    class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm uppercase" />
-                </label>
-
-                <label class="block">
-                  <span
-                    class="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">Заголовок</span>
-                  <input name="title" type="text" placeholder="Заголовок" value="Тестовое уведомление"
-                    class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" required />
-                </label>
-              </div>
-
-              <div class="grid gap-3 md:grid-cols-3">
-                <textarea name="body" rows="2" placeholder="Текст"
-                  class="rounded-xl border border-neutral-300 px-3 py-2 text-sm md:col-span-2"
-                  required>Проверка доставки push-уведомления</textarea>
-                <input name="data" type="text"
-                  placeholder='JSON data, например {"type":"admin_test","targetPath":"/notifications"}'
+            <section id="tab-slugs" class="<%= pageActiveTab === 'slugs' ? '' : 'hidden' %> space-y-4">
+              <div id="slugs-stats" class="grid gap-3 md:grid-cols-4"></div>
+              <form id="slugs-filters"
+                class="grid gap-3 rounded-2xl border border-neutral-200 bg-white p-4 md:grid-cols-4">
+                <input type="text" name="q" placeholder="Поиск slug"
                   class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
-              </div>
-
-              <div class="grid gap-3 md:grid-cols-3 md:items-center">
-                <label class="inline-flex items-center gap-2 text-sm text-neutral-700"><input type="checkbox"
-                    name="includeInApp" checked /> Добавить во внутренние уведомления</label>
+                <select name="state" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">
+                  <option value="all">Все статусы</option>
+                  <option value="free">Свободен</option>
+                  <option value="taken">Занят</option>
+                  <option value="blocked">Заблокирован</option>
+                </select>
+                <input type="hidden" name="page" value="1" />
                 <button type="submit"
-                  class="interactive-btn min-h-11 rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">Отправить
-                  тест</button>
+                  class="inline-flex min-h-11 w-full items-center justify-center justify-self-start rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100 md:w-auto">Применить</button>
+              </form>
+              <form id="slugs-price-override-form"
+                class="grid gap-3 rounded-2xl border border-neutral-200 bg-white p-4 md:grid-cols-[180px_220px_auto_auto]">
+                <input type="text" name="slug" placeholder="AAA000" maxlength="6"
+                  class="min-h-11 rounded-xl border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm font-semibold uppercase tracking-[0.08em] text-neutral-900 shadow-sm transition placeholder:text-neutral-400 focus:border-neutral-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-neutral-200 font-mono" />
+                <input type="number" min="0" step="1" name="priceOverride" placeholder="Цена override"
+                  class="min-h-11 rounded-xl border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm font-semibold text-neutral-900 shadow-sm transition placeholder:text-neutral-400 focus:border-neutral-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-neutral-200" />
+                <button type="submit"
+                  class="inline-flex min-h-11 w-full items-center justify-center justify-self-start rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100 md:w-auto">Сохранить
+                  цену</button>
+                <button type="button" id="slugs-price-override-reset"
+                  class="inline-flex min-h-11 w-full items-center justify-center justify-self-start rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100 md:w-auto">Сбросить
+                  override</button>
+              </form>
+              <p id="slugs-price-override-status" class="text-xs text-neutral-500"></p>
+              <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
+                <div class="overflow-x-auto">
+                  <table class="min-w-[980px] w-full text-left text-sm">
+                    <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
+                      <tr>
+                        <th class="px-4 py-3">Slug</th>
+                        <th class="px-4 py-3">Статус</th>
+                        <th class="px-4 py-3">Владелец</th>
+                        <th class="px-4 py-3">Основной</th>
+                        <th class="px-4 py-3">Цена</th>
+                        <th class="px-4 py-3">Запрошен</th>
+                        <th class="px-4 py-3">Одобрен</th>
+                        <th class="px-4 py-3">Активирован</th>
+                        <th class="px-4 py-3">Действия</th>
+                      </tr>
+                    </thead>
+                    <tbody id="slugs-table"></tbody>
+                  </table>
+                </div>
               </div>
-            </form>
+              <div id="slugs-pagination" class="flex items-center justify-end gap-2 text-sm text-neutral-600"></div>
+            </section>
 
-            <div class="h-px bg-neutral-200"></div>
-
-            <form id="push-broadcast-form" class="grid gap-3 md:grid-cols-4">
-              <input name="title" type="text" placeholder="Заголовок рассылки"
-                class="rounded-xl border border-neutral-300 px-3 py-2 text-sm md:col-span-2" required />
-              <input name="body" type="text" placeholder="Текст рассылки"
-                class="rounded-xl border border-neutral-300 px-3 py-2 text-sm md:col-span-2" required />
-              <select name="plan" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">
-                <option value="all">Тариф: все</option>
-                <option value="none">Без тарифа</option>
-                <option value="premium">Премиум</option>
-              </select>
-              <select name="status" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">
-                <option value="all">Статус: все</option>
-                <option value="active">Только активные</option>
-                <option value="blocked">Только заблокированные</option>
-              </select>
-              <input name="limit" type="number" min="1" max="20000" value="20000"
-                class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
-              <input name="data" type="text" placeholder='JSON data, например {"type":"marketing","targetPath":"/home"}'
-                class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
-              <label class="inline-flex items-center gap-2 text-sm text-neutral-700"><input type="checkbox"
-                  name="onlyWithPushTokens" checked /> Только с push-токенами</label>
-              <label class="inline-flex items-center gap-2 text-sm text-neutral-700"><input type="checkbox"
-                  name="includeInApp" checked /> Добавить во внутренние уведомления</label>
-              <label class="inline-flex items-center gap-2 text-sm text-neutral-700"><input type="checkbox"
-                  name="dryRun" /> Dry-run (без отправки)</label>
-              <button type="submit"
-                class="interactive-btn min-h-11 rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-neutral-800">Запустить
-                рассылку</button>
-            </form>
-
-            <div id="push-broadcast-status" class="hidden rounded-xl border px-3 py-2 text-sm"></div>
-          </article>
-
-          <form id="logs-filters"
-            class="grid gap-3 rounded-2xl border border-neutral-200 bg-white p-4 md:grid-cols-[220px_1fr_auto] md:items-end">
-            <select name="type" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">
-              <option value="all">Все типы</option>
-              <option value="not_found">Not found</option>
-              <option value="server_error">Server error</option>
-            </select>
-            <input type="hidden" name="page" value="1" />
-            <button type="submit"
-              class="inline-flex min-h-11 w-full items-center justify-center justify-self-start rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100 md:w-auto">
-              Применить
-            </button>
-          </form>
-          <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
-            <div class="overflow-x-auto">
-              <table class="min-w-[860px] w-full text-left text-sm">
-                <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
-                  <tr>
-                    <th class="px-4 py-3">Тип</th>
-                    <th class="px-4 py-3">Путь</th>
-                    <th class="px-4 py-3">Сообщение</th>
-                    <th class="px-4 py-3">Браузер</th>
-                    <th class="px-4 py-3">Время</th>
-                  </tr>
-                </thead>
-                <tbody id="logs-table"></tbody>
-              </table>
-            </div>
-          </div>
-          <div id="logs-pagination" class="flex items-center justify-end gap-2 text-sm text-neutral-600"></div>
-        </section>
-
-        <section id="tab-settings" class="<%= pageActiveTab === 'settings' ? '' : 'hidden' %>">
-          <div class="settings-grid grid gap-4">
-            <aside class="settings-subtabs-aside rounded-2xl border border-neutral-200 bg-white p-3">
-              <nav class="settings-subtabs-nav flex flex-wrap gap-2" id="settings-subtabs">
-                <button type="button" data-settings-subtab="pricing"
-                  class="settings-subtab-btn flex shrink-0 items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-semibold">Тарифы
-                  <span data-settings-unsaved-dot="pricing"
-                    class="hidden h-2 w-2 rounded-full bg-amber-500"></span></button>
-                <button type="button" data-settings-subtab="algorithm"
-                  class="settings-subtab-btn flex shrink-0 items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-semibold">Алгоритм
-                  цены slug <span data-settings-unsaved-dot="algorithm"
-                    class="hidden h-2 w-2 rounded-full bg-amber-500"></span></button>
-                <button type="button" data-settings-subtab="bracelet"
-                  class="settings-subtab-btn flex shrink-0 items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-semibold">Браслет
-                  <span data-settings-unsaved-dot="bracelet"
-                    class="hidden h-2 w-2 rounded-full bg-amber-500"></span></button>
-                <button type="button" data-settings-subtab="contacts"
-                  class="settings-subtab-btn flex shrink-0 items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-semibold">Контакты
-                  <span data-settings-unsaved-dot="contacts"
-                    class="hidden h-2 w-2 rounded-full bg-amber-500"></span></button>
-                <button type="button" data-settings-subtab="platform"
-                  class="settings-subtab-btn flex shrink-0 items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-semibold">Платформа
-                  <span data-settings-unsaved-dot="platform"
-                    class="hidden h-2 w-2 rounded-full bg-amber-500"></span></button>
-                <button type="button" data-settings-subtab="official_unq"
-                  class="settings-subtab-btn flex shrink-0 items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-semibold">Офиц.
-                  UNQ / гос
-                  <span data-settings-unsaved-dot="official_unq"
-                    class="hidden h-2 w-2 rounded-full bg-amber-500"></span></button>
-                <button type="button" data-settings-subtab="changes"
-                  class="settings-subtab-btn flex shrink-0 items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-semibold">Логи
-                  изменений</button>
-              </nav>
-            </aside>
-            <div class="space-y-4">
-              <article data-settings-panel="pricing" class="rounded-2xl border border-neutral-200 bg-white p-4">
-                <h2 class="text-base font-bold text-neutral-900">Тарифы</h2>
-                <form id="settings-form-pricing" class="mt-4 grid gap-3 md:grid-cols-2"></form>
-                <div class="mt-3"><button type="button" data-settings-save="pricing"
-                    class="interactive-btn min-h-11 rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800">Сохранить
-                    тарифы</button></div>
-              </article>
-              <article data-settings-panel="algorithm"
-                class="hidden rounded-2xl border border-neutral-200 bg-white p-4">
-                <h2 class="text-base font-bold text-neutral-900">Алгоритм цены slug</h2>
-                <form id="settings-form-algorithm" class="mt-4 grid gap-3 md:grid-cols-2"></form>
-                <div class="mt-3"><button type="button" data-settings-save="algorithm"
-                    class="interactive-btn min-h-11 rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800">Сохранить
-                    алгоритм</button></div>
-                <div id="settings-algorithm-preview" class="mt-4 overflow-hidden rounded-xl border border-neutral-200">
+            <section id="tab-cards" class="<%= pageActiveTab === 'cards' ? '' : 'hidden' %> space-y-4">
+              <form id="cards-filters"
+                class="grid gap-3 rounded-2xl border border-neutral-200 bg-white p-4 md:grid-cols-[1fr_180px_auto]">
+                <input type="text" name="q" placeholder="Поиск по slug или имени"
+                  class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+                <select name="status" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">
+                  <option value="all">Все</option>
+                  <option value="active">Активные</option>
+                  <option value="inactive">Выключенные</option>
+                </select>
+                <input type="hidden" name="page" value="1" />
+                <button type="submit"
+                  class="inline-flex min-h-11 w-full items-center justify-center justify-self-start rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100 md:w-auto">Применить</button>
+              </form>
+              <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
+                <div class="overflow-x-auto">
+                  <table class="min-w-[980px] w-full text-left text-sm">
+                    <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
+                      <tr>
+                        <th class="px-4 py-3">Slug</th>
+                        <th class="px-4 py-3">Имя владельца</th>
+                        <th class="px-4 py-3">Тариф</th>
+                        <th class="px-4 py-3">Статус</th>
+                        <th class="px-4 py-3">Просмотры</th>
+                        <th class="px-4 py-3">Дата создания</th>
+                        <th class="px-4 py-3">Тема</th>
+                        <th class="px-4 py-3">Действия</th>
+                      </tr>
+                    </thead>
+                    <tbody id="cards-table"></tbody>
+                  </table>
                 </div>
-              </article>
-              <article data-settings-panel="bracelet" class="hidden rounded-2xl border border-neutral-200 bg-white p-4">
-                <h2 class="text-base font-bold text-neutral-900">Браслет</h2>
-                <form id="settings-form-bracelet" class="mt-4 grid gap-3 md:grid-cols-2"></form>
-                <div class="mt-3"><button type="button" data-settings-save="bracelet"
-                    class="interactive-btn min-h-11 rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800">Сохранить</button>
+              </div>
+              <div id="cards-pagination" class="flex items-center justify-end gap-2 text-sm text-neutral-600"></div>
+            </section>
+
+            <section id="tab-bracelets" class="<%= pageActiveTab === 'bracelets' ? '' : 'hidden' %> space-y-4">
+              <form id="bracelets-filters"
+                class="grid gap-3 rounded-2xl border border-neutral-200 bg-white p-4 md:grid-cols-[220px_auto]">
+                <select name="status" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">
+                  <option value="all">Все статусы</option>
+                  <option value="ORDERED">Заказан</option>
+                  <option value="SHIPPED">Отправлен</option>
+                  <option value="DELIVERED">Доставлен</option>
+                </select>
+                <input type="hidden" name="page" value="1" />
+                <button type="submit"
+                  class="inline-flex min-h-11 w-full items-center justify-center justify-self-start rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100 md:w-auto">Применить</button>
+              </form>
+              <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
+                <div class="overflow-x-auto">
+                  <table class="min-w-[860px] w-full text-left text-sm">
+                    <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
+                      <tr>
+                        <th class="px-4 py-3">Дата</th>
+                        <th class="px-4 py-3">Имя</th>
+                        <th class="px-4 py-3">Slug</th>
+                        <th class="px-4 py-3">Контакт</th>
+                        <th class="px-4 py-3">Статус доставки</th>
+                      </tr>
+                    </thead>
+                    <tbody id="bracelets-table"></tbody>
+                  </table>
                 </div>
-              </article>
-              <article data-settings-panel="contacts" class="hidden rounded-2xl border border-neutral-200 bg-white p-4">
-                <h2 class="text-base font-bold text-neutral-900">Контакты</h2>
-                <form id="settings-form-contacts" class="mt-4 grid gap-3 md:grid-cols-2"></form>
-                <div class="mt-3"><button type="button" data-settings-save="contacts"
-                    class="interactive-btn min-h-11 rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800">Сохранить
-                    контакты</button></div>
-              </article>
-              <article data-settings-panel="platform" class="hidden rounded-2xl border border-neutral-200 bg-white p-4">
-                <h2 class="text-base font-bold text-neutral-900">Платформа</h2>
-                <form id="settings-form-platform" class="mt-4 grid gap-3 md:grid-cols-2"></form>
-                <div class="mt-3"><button type="button" data-settings-save="platform"
-                    class="interactive-btn min-h-11 rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800">Сохранить
-                    платформу</button></div>
-              </article>
-              <article id="admin-settings-panel-official-unq" data-settings-panel="official_unq"
-                class="hidden rounded-2xl border border-neutral-200 bg-white p-4">
-                <h2 class="text-base font-bold text-neutral-900">Официальные префиксы UNQ</h2>
-                <p class="mt-1 text-sm text-neutral-600">Префиксы (три буквы) и тексты для предупреждений перед покупкой и пометки на публичной визитке. Хранится в
-                  <span class="font-mono text-xs">platform_settings</span>.</p>
-                <form id="settings-form-official-unq" class="mt-4 grid gap-3 md:grid-cols-2"></form>
-                <div class="mt-3"><button type="button" data-settings-save="official_unq"
-                    class="interactive-btn min-h-11 rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800">Сохранить</button>
+              </div>
+              <div id="bracelets-pagination" class="flex items-center justify-end gap-2 text-sm text-neutral-600"></div>
+            </section>
+
+            <section id="tab-score" class="<%= pageActiveTab === 'score' ? '' : 'hidden' %> space-y-4">
+              <div
+                class="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-neutral-200 bg-white p-4">
+                <button id="score-recalculate-all-btn" type="button"
+                  class="interactive-btn min-h-11 rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white">Пересчитать
+                  всех</button>
+                <label class="inline-flex items-center gap-2 text-sm text-neutral-700">
+                  <input id="score-visibility-toggle" type="checkbox"
+                    class="h-4 w-4 rounded border-neutral-300 text-neutral-900" />
+                  Показывать Score на визитках
+                </label>
+              </div>
+              <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
+                <div class="overflow-x-auto">
+                  <table class="min-w-[980px] w-full text-left text-sm">
+                    <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
+                      <tr>
+                        <th class="px-4 py-3">Пользователь</th>
+                        <th class="px-4 py-3">Slug</th>
+                        <th class="px-4 py-3">Score</th>
+                        <th class="px-4 py-3">Percentile</th>
+                        <th class="px-4 py-3">Последний расчёт</th>
+                        <th class="px-4 py-3">Действие</th>
+                      </tr>
+                    </thead>
+                    <tbody id="score-table"></tbody>
+                  </table>
                 </div>
-              </article>
-              <article data-settings-panel="changes" class="hidden rounded-2xl border border-neutral-200 bg-white p-4">
-                <h2 class="text-base font-bold text-neutral-900">Логи изменений</h2>
-                <form id="settings-changes-filters" class="mt-3 grid gap-3 md:grid-cols-4">
-                  <select name="group" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">
-                    <option value="">Все группы</option>
-                    <option value="pricing">Тарифы</option>
-                    <option value="algorithm">Алгоритм</option>
-                    <option value="bracelet">Браслет</option>
-                    <option value="contacts">Контакты</option>
-                    <option value="platform">Платформа</option>
-                    <option value="official_unq">Офиц. UNQ</option>
-                  </select>
-                  <input type="date" name="dateFrom" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
-                  <input type="date" name="dateTo" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
-                  <button type="submit"
-                    class="interactive-btn min-h-11 rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 hover:bg-neutral-100">Фильтр</button>
-                </form>
-                <div class="mt-4 overflow-x-auto rounded-xl border border-neutral-200">
+              </div>
+              <article class="rounded-2xl border border-neutral-200 bg-white p-4">
+                <h2 class="text-sm font-semibold text-neutral-900">Последние 10 запусков пересчёта</h2>
+                <div class="mt-3 overflow-auto">
                   <table class="min-w-full text-left text-sm">
                     <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
                       <tr>
-                        <th class="px-3 py-2">Дата</th>
-                        <th class="px-3 py-2">Настройка</th>
-                        <th class="px-3 py-2">Было</th>
-                        <th class="px-3 py-2">Стало</th>
-                        <th class="px-3 py-2">Кто изменил</th>
+                        <th class="px-3 py-2">Время</th>
+                        <th class="px-3 py-2">Пользователей обработано</th>
+                        <th class="px-3 py-2">Среднее время</th>
                       </tr>
                     </thead>
-                    <tbody id="settings-changes-table"></tbody>
+                    <tbody id="score-runs-table"></tbody>
                   </table>
                 </div>
-                <div id="settings-changes-pagination"
-                  class="mt-3 flex items-center justify-end gap-2 text-sm text-neutral-600"></div>
               </article>
-            </div>
-          </div>
-        </section>
+            </section>
+
+            <section id="tab-leaderboard" class="<%= pageActiveTab === 'leaderboard' ? '' : 'hidden' %> space-y-4">
+              <form id="leaderboard-settings-form" class="rounded-2xl border border-neutral-200 bg-white p-4 md:p-5">
+                <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                  <label
+                    class="flex min-h-11 items-center gap-2 rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm font-medium text-neutral-800 lg:col-span-4">
+                    <input type="checkbox" name="enabled" class="h-4 w-4 rounded border-neutral-300 text-neutral-900" />
+                    Показать лидерборд
+                  </label>
+
+                  <label class="block">
+                    <span class="mb-1.5 block text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">Лимит
+                      публичных позиций</span>
+                    <input type="number" name="publicLimit" min="1" max="200"
+                      class="min-h-11 w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm text-neutral-900 outline-none transition-colors focus:border-neutral-500" />
+                  </label>
+
+                  <label class="block">
+                    <span class="mb-1.5 block text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">Порог
+                      всплеска</span>
+                    <input type="number" name="suspiciousThreshold" min="1"
+                      class="min-h-11 w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm text-neutral-900 outline-none transition-colors focus:border-neutral-500" />
+                  </label>
+
+                  <label class="block">
+                    <span class="mb-1.5 block text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">Окно
+                      (минуты)</span>
+                    <input type="number" name="suspiciousWindowMinutes" min="1"
+                      class="min-h-11 w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm text-neutral-900 outline-none transition-colors focus:border-neutral-500" />
+                  </label>
+
+                  <div class="flex items-end">
+                    <button type="submit"
+                      class="interactive-btn min-h-11 w-full rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-neutral-800">
+                      Сохранить
+                    </button>
+                  </div>
+                </div>
+              </form>
+              <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
+                <div class="overflow-x-auto">
+                  <table class="min-w-[980px] w-full text-left text-sm">
+                    <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
+                      <tr>
+                        <th class="px-4 py-3">#</th>
+                        <th class="px-4 py-3">Slug</th>
+                        <th class="px-4 py-3">Владелец</th>
+                        <th class="px-4 py-3">Просмотры</th>
+                        <th class="px-4 py-3">Динамика</th>
+                        <th class="px-4 py-3">Тариф</th>
+                        <th class="px-4 py-3">Действия</th>
+                      </tr>
+                    </thead>
+                    <tbody id="leaderboard-table"></tbody>
+                  </table>
+                </div>
+              </div>
+              <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
+                <table class="min-w-full text-left text-sm">
+                  <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
+                    <tr>
+                      <th class="px-4 py-3">Подозрительная активность</th>
+                      <th class="px-4 py-3">Просмотры</th>
+                      <th class="px-4 py-3">Окно</th>
+                      <th class="px-4 py-3">Время</th>
+                    </tr>
+                  </thead>
+                  <tbody id="leaderboard-suspicious-table"></tbody>
+                </table>
+              </div>
+            </section>
+
+            <section id="tab-referrals" class="<%= pageActiveTab === 'referrals' ? '' : 'hidden' %> space-y-4">
+              <header class="rounded-2xl border border-neutral-200 bg-white p-4">
+                <h2 class="text-base font-bold text-neutral-900">Referrals</h2>
+                <p class="mt-1 text-sm text-neutral-600">Manage referral program settings and rewards.</p>
+              </header>
+
+              <section class="space-y-3">
+                <h3 class="text-sm font-semibold text-neutral-900">Summary</h3>
+                <div id="referrals-stats" class="grid gap-3 md:grid-cols-3"></div>
+              </section>
+
+              <section class="rounded-2xl border border-neutral-200 bg-white p-4">
+                <h3 class="text-sm font-semibold text-neutral-900">Referral Settings</h3>
+                <form id="referrals-settings-form" class="mt-3 space-y-4">
+                  <div class="grid gap-3 md:grid-cols-2">
+                    <label class="block rounded-xl border border-neutral-200 p-3 text-sm">
+                      <span class="flex items-center gap-2">
+                        <input type="checkbox" name="enabled" />
+                        <span class="font-medium text-neutral-900">Enable referral program</span>
+                      </span>
+                      <span class="mt-1 block text-xs text-neutral-500">Allows rewards for invited users.</span>
+                    </label>
+                  </div>
+
+                  <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                    <label class="block text-sm">
+                      <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Invitee discount
+                        (sum)</span>
+                      <input type="number" min="0" step="1000" name="inviteeDiscount"
+                        class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+                    </label>
+                    <label class="block text-sm">
+                      <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Max discount (%)</span>
+                      <input type="number" min="0" max="100" step="1" name="discountCapPercent"
+                        class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+                    </label>
+                    <label class="block text-sm">
+                      <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Per-user usage
+                        limit</span>
+                      <input type="number" min="1" step="1" name="defaultPerUserCap"
+                        class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+                    </label>
+                    <label class="block text-sm">
+                      <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Referrer reward
+                        (sum)</span>
+                      <input type="number" min="0" step="1000" name="referrerReward"
+                        class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+                    </label>
+                  </div>
+
+                  <div class="flex justify-end">
+                    <button type="submit"
+                      class="rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">Save
+                      settings</button>
+                  </div>
+                </form>
+              </section>
+
+              <section class="space-y-2">
+                <div class="flex flex-wrap items-end justify-between gap-3">
+                  <h3 class="text-sm font-semibold text-neutral-900">Referral History</h3>
+                  <form id="referrals-history-filters" class="flex items-end gap-2">
+                    <label class="block text-sm">
+                      <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Status</span>
+                      <select name="status" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">
+                        <option value="all">All</option>
+                        <option value="pending">Pending</option>
+                        <option value="approved">Approved</option>
+                        <option value="paid">Paid</option>
+                        <option value="rejected">Rejected</option>
+                      </select>
+                    </label>
+                    <button type="submit"
+                      class="rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">Apply</button>
+                  </form>
+                </div>
+                <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
+                  <div class="overflow-x-auto">
+                    <table class="min-w-[980px] w-full text-left text-sm">
+                      <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
+                        <tr>
+                          <th class="px-4 py-3">Referrer</th>
+                          <th class="px-4 py-3">Invitee</th>
+                          <th class="px-4 py-3">Date</th>
+                          <th class="px-4 py-3">Status</th>
+                          <th class="px-4 py-3">Source</th>
+                          <th class="px-4 py-3">Reward</th>
+                          <th class="px-4 py-3">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody id="referrals-table"></tbody>
+                    </table>
+                  </div>
+                </div>
+              </section>
+
+              <section class="space-y-2">
+                <h3 class="text-sm font-semibold text-neutral-900">Referral Wallet Operations</h3>
+                <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
+                  <div class="overflow-x-auto">
+                    <table class="min-w-[980px] w-full text-left text-sm">
+                      <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
+                        <tr>
+                          <th class="px-4 py-3">Date</th>
+                          <th class="px-4 py-3">User</th>
+                          <th class="px-4 py-3">Direction</th>
+                          <th class="px-4 py-3">Operation type</th>
+                          <th class="px-4 py-3">Amount</th>
+                          <th class="px-4 py-3">Balance after</th>
+                          <th class="px-4 py-3">Idempotency</th>
+                        </tr>
+                      </thead>
+                      <tbody id="referrals-ledger-table"></tbody>
+                    </table>
+                  </div>
+                </div>
+              </section>
+            </section>
+
+            <section id="tab-promocodes" class="<%= pageActiveTab === 'promocodes' ? '' : 'hidden' %> space-y-4">
+              <header class="rounded-2xl border border-neutral-200 bg-white p-4">
+                <h2 class="text-base font-bold text-neutral-900">Promo Codes</h2>
+                <p class="mt-1 text-sm text-neutral-600">Manage promo-code settings and promo codes.</p>
+              </header>
+
+              <section class="rounded-2xl border border-neutral-200 bg-white p-4">
+                <h3 class="text-sm font-semibold text-neutral-900">Promo-code Settings</h3>
+                <form id="promocodes-settings-form" class="mt-3 space-y-4">
+                  <div class="grid gap-3 md:grid-cols-2">
+                    <label class="block rounded-xl border border-neutral-200 p-3 text-sm">
+                      <span class="flex items-center gap-2">
+                        <input type="checkbox" name="promoCodesEnabled" />
+                        <span class="font-medium text-neutral-900">Enable promo codes</span>
+                      </span>
+                      <span class="mt-1 block text-xs text-neutral-500">Allows promo codes at checkout.</span>
+                    </label>
+                    <label class="block rounded-xl border border-neutral-200 p-3 text-sm">
+                      <span class="flex items-center gap-2">
+                        <input type="checkbox" name="promoFirstOrderOnly" />
+                        <span class="font-medium text-neutral-900">First order only</span>
+                      </span>
+                      <span class="mt-1 block text-xs text-neutral-500">Restricts promo-code usage to the first
+                        purchase.</span>
+                    </label>
+                  </div>
+                  <div class="flex justify-end">
+                    <button type="submit"
+                      class="rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">Save
+                      settings</button>
+                  </div>
+                </form>
+              </section>
+
+              <section class="rounded-2xl border border-neutral-200 bg-white p-4">
+                <h3 class="text-sm font-semibold text-neutral-900">Create Promo Code</h3>
+                <form id="promocodes-campaign-create-form" class="mt-3 space-y-3">
+                  <div class="grid gap-3 md:grid-cols-5">
+                    <label class="block text-sm md:col-span-2">
+                      <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Promo name</span>
+                      <input name="name" type="text" placeholder="e.g. Spring Offer"
+                        class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" required />
+                    </label>
+                    <label class="block text-sm">
+                      <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Promo code</span>
+                      <input name="promoCode" type="text" maxlength="32" placeholder="e.g. PROMO2026"
+                        class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm uppercase" required />
+                    </label>
+                    <label class="block text-sm">
+                      <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Status</span>
+                      <select name="status" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm">
+                        <option value="draft">Draft</option>
+                        <option value="active">Active</option>
+                        <option value="paused">Paused</option>
+                        <option value="archived">Archived</option>
+                      </select>
+                    </label>
+                    <label class="block text-sm">
+                      <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Discount type</span>
+                      <select name="discountType" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm">
+                        <option value="discount_amount">Discount amount</option>
+                        <option value="fixed_price">Fixed price</option>
+                        <option value="discount_percent">Discount percent</option>
+                      </select>
+                    </label>
+                  </div>
+
+                  <div class="grid gap-3 md:grid-cols-3">
+                    <label class="block text-sm">
+                      <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Discount value (sum or
+                        %)</span>
+                      <input name="discountValue" type="number" min="0" step="1" placeholder="e.g. 100000 or 15"
+                        class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+                    </label>
+                    <label class="block text-sm">
+                      <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Campaign budget
+                        (sum)</span>
+                      <input name="budgetAmount" type="number" min="0" step="1000" value="0" placeholder="e.g. 5000000"
+                        class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+                    </label>
+                    <label class="block text-sm">
+                      <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Per-user usage
+                        limit</span>
+                      <input name="perUserCap" type="number" min="1" step="1" value="1" placeholder="e.g. 1"
+                        class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+                    </label>
+                  </div>
+
+                  <div class="grid gap-3 md:grid-cols-2">
+                    <label class="block text-sm">
+                      <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Start date</span>
+                      <input name="startsAt" type="datetime-local"
+                        class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+                    </label>
+                    <label class="block text-sm">
+                      <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">End date</span>
+                      <input name="endsAt" type="datetime-local"
+                        class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+                    </label>
+                  </div>
+
+                  <div class="flex justify-end">
+                    <button type="submit"
+                      class="rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">Create
+                      promo code</button>
+                  </div>
+                </form>
+              </section>
+
+              <section class="space-y-2">
+                <h3 class="text-sm font-semibold text-neutral-900">Promo Codes</h3>
+                <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
+                  <div class="overflow-x-auto">
+                    <table class="min-w-[980px] w-full text-left text-sm">
+                      <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
+                        <tr>
+                          <th class="px-4 py-3">Name</th>
+                          <th class="px-4 py-3">Promo code</th>
+                          <th class="px-4 py-3">Status</th>
+                          <th class="px-4 py-3">Discount</th>
+                          <th class="px-4 py-3">Budget</th>
+                          <th class="px-4 py-3">Per-user</th>
+                          <th class="px-4 py-3">Period</th>
+                          <th class="px-4 py-3">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody id="promocodes-campaigns-table"></tbody>
+                    </table>
+                  </div>
+                </div>
+              </section>
+            </section>
+
+            <section id="tab-flash-sales" class="<%= pageActiveTab === 'flash-sales' ? '' : 'hidden' %> space-y-4">
+              <form id="flash-sales-create-form"
+                class="grid gap-3 rounded-2xl border border-neutral-200 bg-white p-4 md:grid-cols-4">
+                <input name="title" type="text" placeholder="Название"
+                  class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" required />
+                <input name="description" type="text" placeholder="Текст баннера"
+                  class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+                <input name="discountPercent" type="number" min="1" max="95" placeholder="Скидка %"
+                  class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" required />
+                <select name="conditionType" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">
+                  <option value="all">Все slug</option>
+                  <option value="pattern_000">000</option>
+                  <option value="pattern_aaa">AAA</option>
+                  <option value="sequential_digits">123/456</option>
+                  <option value="custom">Кастом</option>
+                </select>
+                <div class="hidden md:col-span-2" data-flash-custom-wrap>
+                  <textarea name="conditionPatternInput" rows="2"
+                    placeholder="Кастомные правила: AAA000, AAA***, ***777, A*A12? (через запятую, пробел или новую строку)"
+                    class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm font-mono uppercase"></textarea>
+                  <p class="mt-1 text-xs text-neutral-500">
+                    Для `custom`: точный slug или маска 6 символов. `*` = любой символ, `?` = один символ.
+                  </p>
+                </div>
+                <input name="startsAt" type="datetime-local"
+                  class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" required />
+                <input name="endsAt" type="datetime-local"
+                  class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" required />
+                <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="notifyTelegram" /> Уведомить
+                  Telegram</label>
+                <input name="telegramTarget" type="text" placeholder="@channel или chat_id"
+                  class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+                <button type="submit"
+                  class="rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">Запустить</button>
+              </form>
+              <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
+                <table class="min-w-full text-left text-sm">
+                  <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
+                    <tr>
+                      <th class="px-4 py-3">Название</th>
+                      <th class="px-4 py-3">Скидка</th>
+                      <th class="px-4 py-3">Период</th>
+                      <th class="px-4 py-3">Статус</th>
+                      <th class="px-4 py-3">Статистика</th>
+                      <th class="px-4 py-3">Действие</th>
+                    </tr>
+                  </thead>
+                  <tbody id="flash-sales-table"></tbody>
+                </table>
+              </div>
+            </section>
+
+            <section id="tab-drops" class="<%= pageActiveTab === 'drops' ? '' : 'hidden' %> space-y-4">
+              <form id="drops-create-form"
+                class="grid gap-3 rounded-2xl border border-neutral-200 bg-white p-4 md:grid-cols-4">
+                <input name="title" type="text" placeholder="Название дропа"
+                  class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" required />
+                <input name="description" type="text" placeholder="Описание"
+                  class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+                <input name="dropAt" type="datetime-local"
+                  class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" required />
+                <input name="slugCount" type="number" min="1" max="500" placeholder="Количество slug"
+                  class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" required />
+                <select name="slugPatternType" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">
+                  <option value="random">Случайные</option>
+                  <option value="sequential">Последовательные</option>
+                  <option value="manual">Вручную</option>
+                </select>
+                <textarea name="manualSlugs" rows="2" placeholder="Slug по одному в строке (для manual)"
+                  class="rounded-xl border border-neutral-300 px-3 py-2 text-sm md:col-span-2"></textarea>
+                <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="notifyTelegram" /> Уведомить
+                  Telegram</label>
+                <input name="telegramTarget" type="text" placeholder="@channel или chat_id"
+                  class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+                <button type="submit"
+                  class="rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">Создать
+                  дроп</button>
+              </form>
+              <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
+                <table class="min-w-full text-left text-sm">
+                  <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
+                    <tr>
+                      <th class="px-4 py-3">Название</th>
+                      <th class="px-4 py-3">Дата</th>
+                      <th class="px-4 py-3">Slug</th>
+                      <th class="px-4 py-3">Статус</th>
+                      <th class="px-4 py-3">Итоги</th>
+                      <th class="px-4 py-3">Действие</th>
+                    </tr>
+                  </thead>
+                  <tbody id="drops-table"></tbody>
+                </table>
+              </div>
+            </section>
+
+            <section id="tab-testimonials" class="<%= pageActiveTab === 'testimonials' ? '' : 'hidden' %> space-y-4">
+              <form id="testimonial-create-form" class="rounded-2xl border border-neutral-200 bg-white p-4">
+                <h2 class="text-sm font-semibold text-neutral-900">Добавить отзыв</h2>
+                <div class="mt-3 grid gap-3 md:grid-cols-4">
+                  <input name="name" type="text" placeholder="Имя"
+                    class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" required />
+                  <input name="slug" type="text" placeholder="Slug" maxlength="6"
+                    class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" required />
+                  <select name="tariff" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">
+                    <option value="premium">Премиум</option>
+                  </select>
+                  <button type="submit"
+                    class="rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-neutral-700">Добавить</button>
+                </div>
+                <textarea name="text" rows="3" placeholder="Текст отзыва"
+                  class="mt-3 w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" required></textarea>
+              </form>
+              <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
+                <div class="overflow-x-auto">
+                  <table class="min-w-[860px] w-full text-left text-sm">
+                    <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
+                      <tr>
+                        <th class="px-4 py-3">Имя</th>
+                        <th class="px-4 py-3">Slug</th>
+                        <th class="px-4 py-3">Тариф</th>
+                        <th class="px-4 py-3">Текст</th>
+                        <th class="px-4 py-3">Видимость</th>
+                        <th class="px-4 py-3">Действия</th>
+                      </tr>
+                    </thead>
+                    <tbody id="testimonials-table"></tbody>
+                  </table>
+                </div>
+              </div>
+              <div id="testimonials-pagination" class="flex items-center justify-end gap-2 text-sm text-neutral-600">
+              </div>
+            </section>
+
+            <section id="tab-verification" class="<%= pageActiveTab === 'verification' ? '' : 'hidden' %> space-y-4">
+              <form id="verification-filters" action="<%= pageDashboardBase %>" method="get"
+                class="grid gap-3 rounded-2xl border border-neutral-200 bg-white p-4 md:grid-cols-[220px_auto]">
+                <input type="hidden" name="tab" value="verification" />
+                <select name="status" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">
+                  <option value="all">Все статусы</option>
+                  <option value="pending">На рассмотрении</option>
+                  <option value="approved">Одобрено</option>
+                  <option value="rejected">Отклонено</option>
+                </select>
+                <input type="hidden" name="page" value="1" />
+                <button type="submit"
+                  class="inline-flex min-h-11 w-full items-center justify-center justify-self-start rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100 md:w-auto">
+                  Применить
+                </button>
+              </form>
+              <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
+                <div class="overflow-x-auto">
+                  <table class="min-w-[1200px] w-full text-left text-sm">
+                    <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
+                      <tr>
+                        <th class="px-4 py-3">Пользователь</th>
+                        <th class="px-4 py-3">Slug</th>
+                        <th class="px-4 py-3">Компания</th>
+                        <th class="px-4 py-3">Роль</th>
+                        <th class="px-4 py-3">Сфера</th>
+                        <th class="px-4 py-3">Доказательство</th>
+                        <th class="px-4 py-3">Комментарий</th>
+                        <th class="px-4 py-3">Статус</th>
+                        <th class="px-4 py-3">Запрошено</th>
+                        <th class="px-4 py-3">Решение</th>
+                        <th class="px-4 py-3">Действия</th>
+                      </tr>
+                    </thead>
+                    <tbody id="verification-table"></tbody>
+                  </table>
+                </div>
+              </div>
+              <div id="verification-pagination" class="flex items-center justify-end gap-2 text-sm text-neutral-600">
+              </div>
+            </section>
+
+            <section id="tab-badges" class="<%= pageActiveTab === 'badges' ? '' : 'hidden' %> space-y-4">
+              <form id="badges-filters" action="<%= pageDashboardBase %>" method="get"
+                class="grid gap-3 rounded-2xl border border-neutral-200 bg-white p-4 md:grid-cols-[220px_220px_auto]">
+                <input type="hidden" name="tab" value="badges" />
+                <select name="status" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">
+                  <option value="all">Все статусы</option>
+                  <option value="pending">На рассмотрении</option>
+                  <option value="approved">Одобрено</option>
+                  <option value="rejected">Отклонено</option>
+                  <option value="revoked">Отозвано</option>
+                </select>
+                <select name="badgeType" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">
+                  <option value="all">Все типы</option>
+                  <option value="government">Гос. служебный</option>
+                  <option value="unqx_staff">Работник UNQX</option>
+                </select>
+                <input type="hidden" name="page" value="1" />
+                <button type="submit"
+                  class="inline-flex min-h-11 w-full items-center justify-center justify-self-start rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100 md:w-auto">
+                  Применить
+                </button>
+              </form>
+              <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
+                <div class="overflow-x-auto">
+                  <table class="min-w-[1200px] w-full text-left text-sm">
+                    <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
+                      <tr>
+                        <th class="px-4 py-3">Пользователь</th>
+                        <th class="px-4 py-3">Тип бейджа</th>
+                        <th class="px-4 py-3">Место работы</th>
+                        <th class="px-4 py-3">Должность</th>
+                        <th class="px-4 py-3">Подтверждение</th>
+                        <th class="px-4 py-3">Статус</th>
+                        <th class="px-4 py-3">Запрошено</th>
+                        <th class="px-4 py-3">Решение</th>
+                        <th class="px-4 py-3">Действия</th>
+                      </tr>
+                    </thead>
+                    <tbody id="badges-table"></tbody>
+                  </table>
+                </div>
+              </div>
+              <div id="badges-pagination" class="flex items-center justify-end gap-2 text-sm text-neutral-600"></div>
+            </section>
+
+            <section id="tab-reports" class="<%= pageActiveTab === 'reports' ? '' : 'hidden' %> space-y-4">
+              <header class="rounded-2xl border border-neutral-200 bg-white p-4">
+                <h2 class="text-base font-bold text-neutral-900">Репорты о правонарушениях</h2>
+                <p class="mt-1 text-sm text-neutral-600">Жалобы пользователей из приложения. Проверяйте и помечайте
+                  обработанные.</p>
+              </header>
+              <form id="reports-filters" action="<%= pageDashboardBase %>" method="get"
+                class="grid gap-3 rounded-2xl border border-neutral-200 bg-white p-4 md:grid-cols-[220px_auto]">
+                <input type="hidden" name="tab" value="reports" />
+                <select name="status" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">
+                  <option value="all">Все статусы</option>
+                  <option value="new">Новые</option>
+                  <option value="processed">Обработанные</option>
+                </select>
+                <input type="hidden" name="page" value="1" />
+                <button type="submit"
+                  class="inline-flex min-h-11 w-full items-center justify-center justify-self-start rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100 md:w-auto">
+                  Применить
+                </button>
+              </form>
+              <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
+                <div class="overflow-x-auto">
+                  <table class="min-w-[1280px] w-full text-left text-sm">
+                    <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
+                      <tr>
+                        <th class="px-4 py-3">Тип</th>
+                        <th class="px-4 py-3">Пользователь</th>
+                        <th class="px-4 py-3">Контакты</th>
+                        <th class="px-4 py-3">Описание</th>
+                        <th class="px-4 py-3">IP / Устройство</th>
+                        <th class="px-4 py-3">Статус</th>
+                        <th class="px-4 py-3">Создано</th>
+                        <th class="px-4 py-3">Обновлено</th>
+                        <th class="px-4 py-3">Действия</th>
+                      </tr>
+                    </thead>
+                    <tbody id="reports-table"></tbody>
+                  </table>
+                </div>
+              </div>
+              <div id="reports-pagination" class="flex items-center justify-end gap-2 text-sm text-neutral-600"></div>
+            </section>
+
+            <section id="tab-logs" class="<%= pageActiveTab === 'logs' ? '' : 'hidden' %> space-y-4">
+              <div class="flex items-center justify-between gap-3">
+                <h2 class="text-lg font-bold">Логи ошибок</h2>
+                <button id="cleanup-logs-btn" type="button"
+                  class="rounded-xl border border-neutral-300 px-3 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">Очистить
+                  старше 30 дней</button>
+              </div>
+
+              <article class="rounded-2xl border border-neutral-200 bg-white p-4 space-y-4">
+                <div>
+                  <h3 class="text-sm font-semibold text-neutral-900">Push-центр</h3>
+                  <p class="mt-1 text-xs text-neutral-500">Тестовая отправка на одного пользователя и массовая рассылка
+                    по
+                    аудитории.</p>
+                </div>
+
+                <form id="push-test-form" class="space-y-3">
+                  <div class="rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-xs text-neutral-600">
+                    Укажите один идентификатор получателя: <span class="font-semibold text-neutral-800">User ID</span>
+                    или
+                    <span class="font-semibold text-neutral-800">Slug</span>.
+                  </div>
+
+                  <div class="grid gap-3 md:grid-cols-3">
+                    <label class="block">
+                      <span class="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">User
+                        ID</span>
+                      <input name="userId" type="text" placeholder="Например: 123456789"
+                        class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+                    </label>
+
+                    <label class="block">
+                      <span
+                        class="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">Slug</span>
+                      <input name="slug" type="text" placeholder="Например: SSS555"
+                        class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm uppercase" />
+                    </label>
+
+                    <label class="block">
+                      <span
+                        class="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">Заголовок</span>
+                      <input name="title" type="text" placeholder="Заголовок" value="Тестовое уведомление"
+                        class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" required />
+                    </label>
+                  </div>
+
+                  <div class="grid gap-3 md:grid-cols-3">
+                    <textarea name="body" rows="2" placeholder="Текст"
+                      class="rounded-xl border border-neutral-300 px-3 py-2 text-sm md:col-span-2"
+                      required>Проверка доставки push-уведомления</textarea>
+                    <input name="data" type="text"
+                      placeholder='JSON data, например {"type":"admin_test","targetPath":"/notifications"}'
+                      class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+                  </div>
+
+                  <div class="grid gap-3 md:grid-cols-3 md:items-center">
+                    <label class="inline-flex items-center gap-2 text-sm text-neutral-700"><input type="checkbox"
+                        name="includeInApp" checked /> Добавить во внутренние уведомления</label>
+                    <button type="submit"
+                      class="interactive-btn min-h-11 rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">Отправить
+                      тест</button>
+                  </div>
+                </form>
+
+                <div class="h-px bg-neutral-200"></div>
+
+                <form id="push-broadcast-form" class="grid gap-3 md:grid-cols-4">
+                  <input name="title" type="text" placeholder="Заголовок рассылки"
+                    class="rounded-xl border border-neutral-300 px-3 py-2 text-sm md:col-span-2" required />
+                  <input name="body" type="text" placeholder="Текст рассылки"
+                    class="rounded-xl border border-neutral-300 px-3 py-2 text-sm md:col-span-2" required />
+                  <select name="plan" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">
+                    <option value="all">Тариф: все</option>
+                    <option value="none">Без тарифа</option>
+                    <option value="premium">Премиум</option>
+                  </select>
+                  <select name="status" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">
+                    <option value="all">Статус: все</option>
+                    <option value="active">Только активные</option>
+                    <option value="blocked">Только заблокированные</option>
+                  </select>
+                  <input name="limit" type="number" min="1" max="20000" value="20000"
+                    class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+                  <input name="data" type="text"
+                    placeholder='JSON data, например {"type":"marketing","targetPath":"/home"}'
+                    class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+                  <label class="inline-flex items-center gap-2 text-sm text-neutral-700"><input type="checkbox"
+                      name="onlyWithPushTokens" checked /> Только с push-токенами</label>
+                  <label class="inline-flex items-center gap-2 text-sm text-neutral-700"><input type="checkbox"
+                      name="includeInApp" checked /> Добавить во внутренние уведомления</label>
+                  <label class="inline-flex items-center gap-2 text-sm text-neutral-700"><input type="checkbox"
+                      name="dryRun" /> Dry-run (без отправки)</label>
+                  <button type="submit"
+                    class="interactive-btn min-h-11 rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-neutral-800">Запустить
+                    рассылку</button>
+                </form>
+
+                <div id="push-broadcast-status" class="hidden rounded-xl border px-3 py-2 text-sm"></div>
+              </article>
+
+              <form id="logs-filters"
+                class="grid gap-3 rounded-2xl border border-neutral-200 bg-white p-4 md:grid-cols-[220px_1fr_auto] md:items-end">
+                <select name="type" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">
+                  <option value="all">Все типы</option>
+                  <option value="not_found">Not found</option>
+                  <option value="server_error">Server error</option>
+                </select>
+                <input type="hidden" name="page" value="1" />
+                <button type="submit"
+                  class="inline-flex min-h-11 w-full items-center justify-center justify-self-start rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100 md:w-auto">
+                  Применить
+                </button>
+              </form>
+              <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
+                <div class="overflow-x-auto">
+                  <table class="min-w-[860px] w-full text-left text-sm">
+                    <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
+                      <tr>
+                        <th class="px-4 py-3">Тип</th>
+                        <th class="px-4 py-3">Путь</th>
+                        <th class="px-4 py-3">Сообщение</th>
+                        <th class="px-4 py-3">Браузер</th>
+                        <th class="px-4 py-3">Время</th>
+                      </tr>
+                    </thead>
+                    <tbody id="logs-table"></tbody>
+                  </table>
+                </div>
+              </div>
+              <div id="logs-pagination" class="flex items-center justify-end gap-2 text-sm text-neutral-600"></div>
+            </section>
+
+            <section id="tab-settings" class="<%= pageActiveTab === 'settings' ? '' : 'hidden' %>">
+              <div class="settings-grid grid gap-4">
+                <aside class="settings-subtabs-aside rounded-2xl border border-neutral-200 bg-white p-3">
+                  <nav class="settings-subtabs-nav flex flex-wrap gap-2" id="settings-subtabs">
+                    <button type="button" data-settings-subtab="pricing"
+                      class="settings-subtab-btn flex shrink-0 items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-semibold">Тарифы
+                      <span data-settings-unsaved-dot="pricing"
+                        class="hidden h-2 w-2 rounded-full bg-amber-500"></span></button>
+                    <button type="button" data-settings-subtab="algorithm"
+                      class="settings-subtab-btn flex shrink-0 items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-semibold">Алгоритм
+                      цены slug <span data-settings-unsaved-dot="algorithm"
+                        class="hidden h-2 w-2 rounded-full bg-amber-500"></span></button>
+                    <button type="button" data-settings-subtab="bracelet"
+                      class="settings-subtab-btn flex shrink-0 items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-semibold">Браслет
+                      <span data-settings-unsaved-dot="bracelet"
+                        class="hidden h-2 w-2 rounded-full bg-amber-500"></span></button>
+                    <button type="button" data-settings-subtab="contacts"
+                      class="settings-subtab-btn flex shrink-0 items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-semibold">Контакты
+                      <span data-settings-unsaved-dot="contacts"
+                        class="hidden h-2 w-2 rounded-full bg-amber-500"></span></button>
+                    <button type="button" data-settings-subtab="platform"
+                      class="settings-subtab-btn flex shrink-0 items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-semibold">Платформа
+                      <span data-settings-unsaved-dot="platform"
+                        class="hidden h-2 w-2 rounded-full bg-amber-500"></span></button>
+                    <button type="button" data-settings-subtab="official_unq"
+                      class="settings-subtab-btn flex shrink-0 items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-semibold">Офиц.
+                      UNQ / гос
+                      <span data-settings-unsaved-dot="official_unq"
+                        class="hidden h-2 w-2 rounded-full bg-amber-500"></span></button>
+                    <button type="button" data-settings-subtab="changes"
+                      class="settings-subtab-btn flex shrink-0 items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-semibold">Логи
+                      изменений</button>
+                  </nav>
+                </aside>
+                <div class="space-y-4">
+                  <article data-settings-panel="pricing" class="rounded-2xl border border-neutral-200 bg-white p-4">
+                    <h2 class="text-base font-bold text-neutral-900">Тарифы</h2>
+                    <form id="settings-form-pricing" class="mt-4 grid gap-3 md:grid-cols-2"></form>
+                    <div class="mt-3"><button type="button" data-settings-save="pricing"
+                        class="interactive-btn min-h-11 rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800">Сохранить
+                        тарифы</button></div>
+                  </article>
+                  <article data-settings-panel="algorithm"
+                    class="hidden rounded-2xl border border-neutral-200 bg-white p-4">
+                    <h2 class="text-base font-bold text-neutral-900">Алгоритм цены slug</h2>
+                    <form id="settings-form-algorithm" class="mt-4 grid gap-3 md:grid-cols-2"></form>
+                    <div class="mt-3"><button type="button" data-settings-save="algorithm"
+                        class="interactive-btn min-h-11 rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800">Сохранить
+                        алгоритм</button></div>
+                    <div id="settings-algorithm-preview"
+                      class="mt-4 overflow-hidden rounded-xl border border-neutral-200">
+                    </div>
+                  </article>
+                  <article data-settings-panel="bracelet"
+                    class="hidden rounded-2xl border border-neutral-200 bg-white p-4">
+                    <h2 class="text-base font-bold text-neutral-900">Браслет</h2>
+                    <form id="settings-form-bracelet" class="mt-4 grid gap-3 md:grid-cols-2"></form>
+                    <div class="mt-3"><button type="button" data-settings-save="bracelet"
+                        class="interactive-btn min-h-11 rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800">Сохранить</button>
+                    </div>
+                  </article>
+                  <article data-settings-panel="contacts"
+                    class="hidden rounded-2xl border border-neutral-200 bg-white p-4">
+                    <h2 class="text-base font-bold text-neutral-900">Контакты</h2>
+                    <form id="settings-form-contacts" class="mt-4 grid gap-3 md:grid-cols-2"></form>
+                    <div class="mt-3"><button type="button" data-settings-save="contacts"
+                        class="interactive-btn min-h-11 rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800">Сохранить
+                        контакты</button></div>
+                  </article>
+                  <article data-settings-panel="platform"
+                    class="hidden rounded-2xl border border-neutral-200 bg-white p-4">
+                    <h2 class="text-base font-bold text-neutral-900">Платформа</h2>
+                    <form id="settings-form-platform" class="mt-4 grid gap-3 md:grid-cols-2"></form>
+                    <div class="mt-3"><button type="button" data-settings-save="platform"
+                        class="interactive-btn min-h-11 rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800">Сохранить
+                        платформу</button></div>
+                  </article>
+                  <article id="admin-settings-panel-official-unq" data-settings-panel="official_unq"
+                    class="hidden rounded-2xl border border-neutral-200 bg-white p-4">
+                    <h2 class="text-base font-bold text-neutral-900">Официальные префиксы UNQ</h2>
+                    <p class="mt-1 text-sm text-neutral-600">Префиксы (три буквы) и тексты для предупреждений перед
+                      покупкой и пометки на публичной визитке. Хранится в
+                      <span class="font-mono text-xs">platform_settings</span>.
+                    </p>
+                    <form id="settings-form-official-unq" class="mt-4 grid gap-3 md:grid-cols-2"></form>
+                    <div class="mt-3"><button type="button" data-settings-save="official_unq"
+                        class="interactive-btn min-h-11 rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800">Сохранить</button>
+                    </div>
+                  </article>
+                  <article data-settings-panel="changes"
+                    class="hidden rounded-2xl border border-neutral-200 bg-white p-4">
+                    <h2 class="text-base font-bold text-neutral-900">Логи изменений</h2>
+                    <form id="settings-changes-filters" class="mt-3 grid gap-3 md:grid-cols-4">
+                      <select name="group" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">
+                        <option value="">Все группы</option>
+                        <option value="pricing">Тарифы</option>
+                        <option value="algorithm">Алгоритм</option>
+                        <option value="bracelet">Браслет</option>
+                        <option value="contacts">Контакты</option>
+                        <option value="platform">Платформа</option>
+                        <option value="official_unq">Офиц. UNQ</option>
+                      </select>
+                      <input type="date" name="dateFrom"
+                        class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+                      <input type="date" name="dateTo" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+                      <button type="submit"
+                        class="interactive-btn min-h-11 rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 hover:bg-neutral-100">Фильтр</button>
+                    </form>
+                    <div class="mt-4 overflow-x-auto rounded-xl border border-neutral-200">
+                      <table class="min-w-full text-left text-sm">
+                        <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
+                          <tr>
+                            <th class="px-3 py-2">Дата</th>
+                            <th class="px-3 py-2">Настройка</th>
+                            <th class="px-3 py-2">Было</th>
+                            <th class="px-3 py-2">Стало</th>
+                            <th class="px-3 py-2">Кто изменил</th>
+                          </tr>
+                        </thead>
+                        <tbody id="settings-changes-table"></tbody>
+                      </table>
+                    </div>
+                    <div id="settings-changes-pagination"
+                      class="mt-3 flex items-center justify-end gap-2 text-sm text-neutral-600"></div>
+                  </article>
+                </div>
+              </div>
+            </section>
       </div>
       <%- include('../partials/admin-layout-end') %>
 
@@ -1515,12 +1596,13 @@
               </label>
               <label class="block text-sm font-medium text-neutral-700">
                 Slug (три буквы и три цифры: AAA000)
-                <input name="slug" type="text" maxlength="6" autocapitalize="characters" autocomplete="off" inputmode="text"
-                  pattern="[A-Za-z]{3}[0-9]{3}" placeholder="ABC123"
+                <input name="slug" type="text" maxlength="6" autocapitalize="characters" autocomplete="off"
+                  inputmode="text" pattern="[A-Za-z]{3}[0-9]{3}" placeholder="ABC123"
                   class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2 font-mono text-sm uppercase tracking-wide" />
                 <span id="user-create-slug-status" class="mt-1 block text-xs text-neutral-500"></span>
                 <span id="user-create-slug-price" class="mt-1 block text-xs text-neutral-500"></span>
-                <span class="mt-1 block text-xs text-neutral-500">Для менеджера тариф и slug обязательны для мгновенной активации.</span>
+                <span class="mt-1 block text-xs text-neutral-500">Для менеджера тариф и slug обязательны для мгновенной
+                  активации.</span>
               </label>
               <label class="block text-sm font-medium text-neutral-700">
                 Email для восстановления (опционально)
@@ -1553,7 +1635,8 @@
               <p id="user-verification-user" class="text-sm font-medium text-neutral-700"></p>
               <label class="block text-sm font-medium text-neutral-700">
                 Статус верификации
-                <select name="status" class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" required>
+                <select name="status" class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm"
+                  required>
                   <option value="verified">Активировать верификацию</option>
                   <option value="unverified">Снять верификацию</option>
                 </select>
@@ -1583,10 +1666,10 @@
         <script nonce="<%= cspNonce %>" src="/vendor/qrcode/qrcode.min.js"></script>
         <script nonce="<%= cspNonce %>" src="/vendor/chartjs/chart.umd.min.js"></script>
         <script nonce="<%= cspNonce %>" src="/js/admin-dashboard.js"></script>
-        <% if (adminSession?.role !== 'manager') { %>
-        <script nonce="<%= cspNonce %>" src="/js/admin-features.js"></script>
-        <script nonce="<%= cspNonce %>" src="/js/admin-settings.js"></script>
-        <% } %>
+        <% if (adminSession?.role !=='manager' ) { %>
+          <script nonce="<%= cspNonce %>" src="/js/admin-features.js"></script>
+          <script nonce="<%= cspNonce %>" src="/js/admin-settings.js"></script>
+          <% } %>
   </body>
 
   </html>

@@ -1221,10 +1221,10 @@ function isTableOrColumnMissing(error) {
 
   const nestedCode = String(
     meta.code ||
-      meta.dbErrorCode ||
-      adapterError.code ||
-      adapterCause.code ||
-      "",
+    meta.dbErrorCode ||
+    adapterError.code ||
+    adapterCause.code ||
+    "",
   );
   if (nestedCode === "42P01" || nestedCode === "42703") {
     return true;
@@ -1283,6 +1283,10 @@ const MANAGER_ALLOWED_ROUTES = [
   { method: "GET", re: /^\/verification-requests\/?$/ },
   { method: "POST", re: /^\/verification-requests\/[^/]+\/approve\/?$/ },
   { method: "POST", re: /^\/verification-requests\/[^/]+\/reject\/?$/ },
+  { method: "GET", re: /^\/badge-applications\/?$/ },
+  { method: "POST", re: /^\/badge-applications\/[^/]+\/approve\/?$/ },
+  { method: "POST", re: /^\/badge-applications\/[^/]+\/reject\/?$/ },
+  { method: "POST", re: /^\/badge-applications\/[^/]+\/revoke\/?$/ },
 ];
 
 router.use((req, res, next) => {
@@ -5270,7 +5274,7 @@ router.post(
   asyncHandler(async (_req, res) => {
     try {
       const alerts = await getPaymentAlerts();
-      
+
       if (alerts.length === 0) {
         res.json({ ok: true, message: "No alerts to send", alertCount: 0 });
         return;
@@ -6380,6 +6384,131 @@ router.post(
       }
       throw error;
     }
+  }),
+);
+
+// ── Badge applications ──────────────────────────────────────────────
+
+router.get(
+  "/badge-applications",
+  asyncHandler(async (req, res) => {
+    if (!prisma.badgeApplication) {
+      res.json({ items: [], pagination: { page: 1, totalPages: 1, total: 0 } });
+      return;
+    }
+    const managerScope = await getManagerScope(req);
+    if (isManagerScopeBlocked(managerScope)) {
+      res.json({ items: [], pagination: { page: 1, totalPages: 1, total: 0 } });
+      return;
+    }
+    const statusRaw = String(req.query.status || "all").toLowerCase();
+    const status = ["all", "pending", "approved", "rejected", "revoked"].includes(statusRaw) ? statusRaw : "all";
+    const badgeTypeRaw = String(req.query.badgeType || "all").toLowerCase();
+    const badgeType = ["all", "government", "unqx_staff"].includes(badgeTypeRaw) ? badgeTypeRaw : "all";
+    const page = Math.max(1, Number(req.query.page || 1) || 1);
+    const pageSize = 20;
+    const baseWhere = {};
+    if (status !== "all") baseWhere.status = status;
+    if (badgeType !== "all") baseWhere.badgeType = badgeType;
+    const where = managerScope.isManager
+      ? andWhere(baseWhere, { user: { createdByStaffId: managerScope.managerId } })
+      : baseWhere;
+    const [total, rows] = await Promise.all([
+      prisma.badgeApplication.count({ where }),
+      prisma.badgeApplication.findMany({
+        where,
+        include: {
+          user: {
+            select: {
+              firstName: true,
+              displayName: true,
+              username: true,
+            },
+          },
+        },
+        orderBy: { requestedAt: "desc" },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+    ]);
+    res.json({
+      items: rows,
+      pagination: { page, total, totalPages: Math.max(1, Math.ceil(total / pageSize)) },
+    });
+  }),
+);
+
+router.post(
+  "/badge-applications/:id/approve",
+  asyncHandler(async (req, res) => {
+    if (!prisma.badgeApplication) {
+      res.status(503).json({ error: "Badge applications unavailable" });
+      return;
+    }
+    const target = await prisma.badgeApplication.findUnique({ where: { id: req.params.id } });
+    if (!target) {
+      res.status(404).json({ error: "Application not found" });
+      return;
+    }
+    if (target.status !== "pending") {
+      res.status(409).json({ error: "Only pending applications can be approved" });
+      return;
+    }
+    await prisma.badgeApplication.update({
+      where: { id: target.id },
+      data: { status: "approved", reviewedAt: new Date(), adminNote: null },
+    });
+    res.json({ ok: true });
+  }),
+);
+
+router.post(
+  "/badge-applications/:id/reject",
+  asyncHandler(async (req, res) => {
+    if (!prisma.badgeApplication) {
+      res.status(503).json({ error: "Badge applications unavailable" });
+      return;
+    }
+    const adminNote = String(req.body?.adminNote || "").trim().slice(0, 1000);
+    const target = await prisma.badgeApplication.findUnique({ where: { id: req.params.id } });
+    if (!target) {
+      res.status(404).json({ error: "Application not found" });
+      return;
+    }
+    if (target.status !== "pending") {
+      res.status(409).json({ error: "Only pending applications can be rejected" });
+      return;
+    }
+    await prisma.badgeApplication.update({
+      where: { id: target.id },
+      data: { status: "rejected", adminNote: adminNote || null, reviewedAt: new Date() },
+    });
+    res.json({ ok: true });
+  }),
+);
+
+router.post(
+  "/badge-applications/:id/revoke",
+  asyncHandler(async (req, res) => {
+    if (!prisma.badgeApplication) {
+      res.status(503).json({ error: "Badge applications unavailable" });
+      return;
+    }
+    const adminNote = String(req.body?.adminNote || "").trim().slice(0, 1000);
+    const target = await prisma.badgeApplication.findUnique({ where: { id: req.params.id } });
+    if (!target) {
+      res.status(404).json({ error: "Application not found" });
+      return;
+    }
+    if (target.status !== "approved") {
+      res.status(409).json({ error: "Only approved applications can be revoked" });
+      return;
+    }
+    await prisma.badgeApplication.update({
+      where: { id: target.id },
+      data: { status: "revoked", adminNote: adminNote || null, reviewedAt: new Date() },
+    });
+    res.json({ ok: true });
   }),
 );
 

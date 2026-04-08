@@ -593,10 +593,10 @@ async function getCurrentUser(req) {
     },
   });
   if (!row) return null;
-    return {
-      ...row,
-      username: row.username || row.telegramUsername || null,
-    };
+  return {
+    ...row,
+    username: row.username || row.telegramUsername || null,
+  };
 }
 
 function assertUserActive(user, res) {
@@ -1955,6 +1955,81 @@ router.post(
     });
 
     res.json({ ok: true, request: updated });
+  }),
+);
+
+// ── Badge applications ──────────────────────────────────────────────
+
+const BADGE_TYPES = new Set(["government", "unqx_staff"]);
+
+router.get(
+  "/badge-applications",
+  asyncHandler(async (req, res) => {
+    const user = await getCurrentUser(req);
+    if (!assertUserActive(user, res)) return;
+    if (!prisma.badgeApplication) {
+      res.json({ items: [] });
+      return;
+    }
+    const rows = await prisma.badgeApplication.findMany({
+      where: { userId: user.id },
+      orderBy: { requestedAt: "desc" },
+    });
+    const byType = {};
+    for (const row of rows) {
+      const t = row.badgeType;
+      if (!byType[t]) byType[t] = row;
+    }
+    res.json({ items: Object.values(byType) });
+  }),
+);
+
+router.post(
+  "/badge-application",
+  asyncHandler(async (req, res) => {
+    const user = await getCurrentUser(req);
+    if (!assertUserActive(user, res)) return;
+    if (!prisma.badgeApplication) {
+      res.status(503).json({ error: "Badge applications unavailable" });
+      return;
+    }
+    const badgeType = String(req.body?.badgeType || "").trim().toLowerCase();
+    if (!BADGE_TYPES.has(badgeType)) {
+      res.status(400).json({ error: "Invalid badge type" });
+      return;
+    }
+    const workplace = String(req.body?.workplace || "").trim().slice(0, 200);
+    const role = String(req.body?.role || "").trim().slice(0, 160);
+    const proofText = String(req.body?.proofText || "").trim().slice(0, 2000);
+    const proofLink = String(req.body?.proofLink || "").trim().slice(0, 500);
+    const comment = String(req.body?.comment || "").trim().slice(0, 1000);
+    if (!workplace || !role) {
+      res.status(400).json({ error: "Workplace and role are required" });
+      return;
+    }
+    if (proofLink && !/^https?:\/\//i.test(proofLink)) {
+      res.status(400).json({ error: "Proof link must be a valid URL" });
+      return;
+    }
+    const pending = await prisma.badgeApplication.findFirst({
+      where: { userId: user.id, badgeType, status: "pending" },
+    });
+    if (pending) {
+      res.status(409).json({ error: "Badge application already pending", code: "BADGE_ALREADY_PENDING" });
+      return;
+    }
+    const record = await prisma.badgeApplication.create({
+      data: {
+        userId: user.id,
+        badgeType,
+        workplace,
+        role,
+        proofText: proofText || null,
+        proofLink: proofLink || null,
+        comment: comment || null,
+      },
+    });
+    res.status(201).json({ ok: true, application: record });
   }),
 );
 

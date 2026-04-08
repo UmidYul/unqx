@@ -18,6 +18,7 @@
     score: payload.score || null,
     topBadge: payload.topBadge || null,
     officialUnqBadge: payload.officialUnqBadge && typeof payload.officialUnqBadge === "object" ? payload.officialUnqBadge : null,
+    staffBadge: payload.staffBadge && typeof payload.staffBadge === "object" ? payload.staffBadge : null,
   });
   if (!(root instanceof HTMLElement)) {
     return;

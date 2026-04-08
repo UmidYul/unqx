@@ -57,7 +57,7 @@
     new URLSearchParams(window.location.search).get("debug") === "admin-dashboard";
   const dbg = dashboardDebugEnabled
     ? (...args) => console.log("[admin-dashboard]", ...args)
-    : () => {};
+    : () => { };
   dbg("init", {
     href: window.location.href,
     urlTab,
@@ -1125,6 +1125,19 @@
     setFormValue(form, "page", /^\d+$/.test(pageFromUrl) ? pageFromUrl : "1");
   }
 
+  function syncBadgesFiltersFromLocation(form) {
+    if (!(form instanceof HTMLFormElement)) return;
+    const params = new URLSearchParams(location.search);
+    const statusFromUrl = String(params.get("ba_status") || params.get("status") || "all").trim().toLowerCase();
+    const badgeTypeFromUrl = String(params.get("ba_type") || params.get("badgeType") || "all").trim().toLowerCase();
+    const pageFromUrl = String(params.get("ba_page") || params.get("page") || "1").trim();
+    const allowedStatuses = new Set(["all", "pending", "approved", "rejected", "revoked"]);
+    const allowedTypes = new Set(["all", "government", "unqx_staff"]);
+    setFormValue(form, "status", allowedStatuses.has(statusFromUrl) ? statusFromUrl : "all");
+    setFormValue(form, "badgeType", allowedTypes.has(badgeTypeFromUrl) ? badgeTypeFromUrl : "all");
+    setFormValue(form, "page", /^\d+$/.test(pageFromUrl) ? pageFromUrl : "1");
+  }
+
   async function loadMaintenanceBanner() {
     if (isManager) return;
     const banner = document.getElementById("admin-maintenance-banner");
@@ -1329,55 +1342,55 @@
     if (typeof Chart !== "undefined") {
       if (hasRevenueTrend && ordersCanvas instanceof HTMLCanvasElement) {
         analyticsCharts.orders = new Chart(ordersCanvas, {
-        type: "line",
-        data: { labels: d.map((x) => x.date), datasets: [{ label: "Выручка", data: d.map((x) => x.amount), borderColor: "#111827", tension: 0.25 }] },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: {
-            x: { title: { display: true, text: "Дата" } },
-            y: { title: { display: true, text: "Сумма (сум)" } },
+          type: "line",
+          data: { labels: d.map((x) => x.date), datasets: [{ label: "Выручка", data: d.map((x) => x.amount), borderColor: "#111827", tension: 0.25 }] },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              x: { title: { display: true, text: "Дата" } },
+              y: { title: { display: true, text: "Сумма (сум)" } },
+            },
           },
-        },
-      });
+        });
       }
       if (hasRevenueBreakdown && tariffCanvas instanceof HTMLCanvasElement) {
         analyticsCharts.tariff = new Chart(tariffCanvas, {
-        type: "pie",
-        data: {
-          labels: ["Slug", "Legacy basic", "Премиум тариф", "Браслеты"],
-          datasets: [
-            {
-              data: [
-                breakdown.slug || 0,
-                breakdown.basicPlan || 0,
-                breakdown.premiumPlan || 0,
-                breakdown.bracelet || 0,
-              ],
-              backgroundColor: ["#111827", "#374151", "#6b7280", "#d1d5db"],
-            },
-          ],
-        },
-        options: { responsive: true, maintainAspectRatio: false },
-      });
+          type: "pie",
+          data: {
+            labels: ["Slug", "Legacy basic", "Премиум тариф", "Браслеты"],
+            datasets: [
+              {
+                data: [
+                  breakdown.slug || 0,
+                  breakdown.basicPlan || 0,
+                  breakdown.premiumPlan || 0,
+                  breakdown.bracelet || 0,
+                ],
+                backgroundColor: ["#111827", "#374151", "#6b7280", "#d1d5db"],
+              },
+            ],
+          },
+          options: { responsive: true, maintainAspectRatio: false },
+        });
       }
       if (hasScoreDistribution && scoreCanvas instanceof HTMLCanvasElement) {
         analyticsCharts.score = new Chart(scoreCanvas, {
-        type: "bar",
-        data: {
-          labels: dScore.map((x) => x.range),
-          datasets: [{ data: dScore.map((x) => x.count), backgroundColor: "#111827" }],
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: {
-            x: { title: { display: true, text: "Диапазон score" } },
-            y: { title: { display: true, text: "Количество пользователей" } },
+          type: "bar",
+          data: {
+            labels: dScore.map((x) => x.range),
+            datasets: [{ data: dScore.map((x) => x.count), backgroundColor: "#111827" }],
           },
-        },
-      });
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+              x: { title: { display: true, text: "Диапазон score" } },
+              y: { title: { display: true, text: "Количество пользователей" } },
+            },
+          },
+        });
       }
     }
   }
@@ -2019,6 +2032,77 @@
       });
     } catch {
       table.innerHTML = '<tr><td colspan="9" class="px-3 py-8 text-center text-rose-600">Не удалось загрузить репорты</td></tr>';
+    }
+  }
+
+  async function loadBadgeApplications() {
+    const form = document.getElementById("badges-filters");
+    const table = document.getElementById("badges-table");
+    if (!(form instanceof HTMLFormElement) || !(table instanceof HTMLElement)) return;
+    syncBadgesFiltersFromLocation(form);
+    table.innerHTML = '<tr><td colspan="9" class="px-3 py-8 text-center text-neutral-500">Загрузка...</td></tr>';
+    try {
+      const q = {
+        status: getFormValue(form, "status", "all"),
+        badgeType: getFormValue(form, "badgeType", "all"),
+        page: getFormValue(form, "page", "1"),
+      };
+      setDashboardQuery({ ba_status: q.status, ba_type: q.badgeType, ba_page: q.page });
+      const r = await fetch(`/api/admin/badge-applications?${Q(q)}`);
+      if (!r.ok) {
+        table.innerHTML = '<tr><td colspan="9" class="px-3 py-8 text-center text-rose-600">Не удалось загрузить заявки на бейджи</td></tr>';
+        return;
+      }
+      const payload = await r.json();
+      const rows = Array.isArray(payload.items) ? payload.items : [];
+      const badgeTypeLabels = { government: "Гос. служебный", unqx_staff: "Работник UNQX" };
+      table.innerHTML = rows.length
+        ? rows
+          .map((x) => {
+            const userName = String(x.user?.displayName || x.user?.firstName || x.user?.username || "—");
+            const userLogin = String(x.user?.username || "").trim();
+            const userCell = `${X(userName)}${userLogin ? `<div class="text-xs text-neutral-500">@${X(userLogin)}</div>` : ""}`;
+            const typeLabel = badgeTypeLabels[x.badgeType] || x.badgeType;
+            const proofParts = [];
+            if (x.proofText) proofParts.push(`<span class="text-xs break-all">${X(x.proofText)}</span>`);
+            if (x.proofLink) {
+              const link = String(x.proofLink).trim();
+              proofParts.push(`<a href="${X(link)}" target="_blank" rel="noopener noreferrer" class="text-xs text-neutral-700 underline break-all">${X(link)}</a>`);
+            }
+            const proofCell = proofParts.length ? proofParts.join("<br>") : "—";
+            const reviewCell = x.reviewedAt ? D(x.reviewedAt) : "—";
+            const statusCode = x.status === "approved" ? "verification_approved" : x.status === "rejected" ? "verification_rejected" : x.status === "revoked" ? "verification_rejected" : "pending";
+            const canApprove = x.status === "pending";
+            const canRevoke = x.status === "approved";
+            const actions = [];
+            if (canApprove) {
+              actions.push(menuItem({ label: "Одобрить", icon: "checkCircle", attrs: `data-act="ba-approve" data-id="${X(x.id)}"` }));
+              actions.push(menuItem({ label: "Отклонить", icon: "xCircle", attrs: `data-act="ba-reject" data-id="${X(x.id)}"`, danger: true }));
+            }
+            if (canRevoke) {
+              actions.push(menuItem({ label: "Отозвать", icon: "xCircle", attrs: `data-act="ba-revoke" data-id="${X(x.id)}"`, danger: true }));
+            }
+            const menu = actions.length ? menuWrap(actions.join("")) : "—";
+            return `<tr class="admin-table-row border-t border-neutral-100">
+              <td class="px-4 py-3">${userCell}</td>
+              <td class="px-4 py-3">${X(typeLabel)}</td>
+              <td class="px-4 py-3">${X(x.workplace || "—")}</td>
+              <td class="px-4 py-3">${X(x.role || "—")}</td>
+              <td class="px-4 py-3">${proofCell}</td>
+              <td class="px-4 py-3">${statusChip(statusCode)}</td>
+              <td class="px-4 py-3 text-xs">${D(x.requestedAt)}</td>
+              <td class="px-4 py-3 text-xs">${reviewCell}</td>
+              <td class="px-4 py-3"><div class="admin-row-actions">${menu}</div></td>
+            </tr>`;
+          })
+          .join("")
+        : '<tr><td colspan="9" class="px-3 py-8 text-center text-neutral-500">Заявок на бейджи нет</td></tr>';
+      renderPager("badges-pagination", payload.pagination, (nextPage) => {
+        setFormValue(form, "page", String(nextPage));
+        void loadBadgeApplications();
+      });
+    } catch {
+      table.innerHTML = '<tr><td colspan="9" class="px-3 py-8 text-center text-rose-600">Не удалось загрузить заявки на бейджи</td></tr>';
     }
   }
 
@@ -2908,6 +2992,51 @@
       closeAllRowMenus();
       return;
     }
+    if (a === "ba-approve") {
+      const id = n.getAttribute("data-id");
+      if (!id) return;
+      const ok = await showConfirm("Одобрить заявку на бейдж?");
+      if (!ok) return;
+      const r = await fetch(`/api/admin/badge-applications/${encodeURIComponent(id)}/approve`, {
+        method: "POST",
+        headers: H({ "Content-Type": "application/json" }),
+        body: JSON.stringify({}),
+      });
+      if (!r.ok) showAlert(await E(r));
+      else void loadBadgeApplications();
+      closeAllRowMenus();
+      return;
+    }
+    if (a === "ba-reject") {
+      const id = n.getAttribute("data-id");
+      if (!id) return;
+      const adminNote = String(await showPrompt("Причина отклонения", "") || "").trim();
+      if (!adminNote) return;
+      const r = await fetch(`/api/admin/badge-applications/${encodeURIComponent(id)}/reject`, {
+        method: "POST",
+        headers: H({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ adminNote }),
+      });
+      if (!r.ok) showAlert(await E(r));
+      else void loadBadgeApplications();
+      closeAllRowMenus();
+      return;
+    }
+    if (a === "ba-revoke") {
+      const id = n.getAttribute("data-id");
+      if (!id) return;
+      const adminNote = String(await showPrompt("Причина отзыва бейджа", "") || "").trim();
+      if (!adminNote) return;
+      const r = await fetch(`/api/admin/badge-applications/${encodeURIComponent(id)}/revoke`, {
+        method: "POST",
+        headers: H({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ adminNote }),
+      });
+      if (!r.ok) showAlert(await E(r));
+      else void loadBadgeApplications();
+      closeAllRowMenus();
+      return;
+    }
   });
 
   document.getElementById("orders-filters")?.addEventListener("submit", (e) => { e.preventDefault(); const f = e.currentTarget; if (f instanceof HTMLFormElement) setFormValue(f, "page", "1"); void loadOrders(); });
@@ -3019,6 +3148,21 @@
     if (!(target instanceof HTMLSelectElement) || !(form instanceof HTMLFormElement)) return;
     setFormValue(form, "page", "1");
     void loadViolationReports();
+  });
+  document.getElementById("badges-filters")?.addEventListener("submit", (e) => { e.preventDefault(); const f = e.currentTarget; if (f instanceof HTMLFormElement) setFormValue(f, "page", "1"); void loadBadgeApplications(); });
+  document.getElementById("badges-filters")?.elements?.namedItem?.("status")?.addEventListener?.("change", (e) => {
+    const target = e.currentTarget;
+    const form = document.getElementById("badges-filters");
+    if (!(target instanceof HTMLSelectElement) || !(form instanceof HTMLFormElement)) return;
+    setFormValue(form, "page", "1");
+    void loadBadgeApplications();
+  });
+  document.getElementById("badges-filters")?.elements?.namedItem?.("badgeType")?.addEventListener?.("change", (e) => {
+    const target = e.currentTarget;
+    const form = document.getElementById("badges-filters");
+    if (!(target instanceof HTMLSelectElement) || !(form instanceof HTMLFormElement)) return;
+    setFormValue(form, "page", "1");
+    void loadBadgeApplications();
   });
   document.getElementById("testimonial-create-form")?.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -3341,6 +3485,15 @@
       syncReportsFiltersFromLocation(form);
     }
   }
+  if (tab === "badges") {
+    const form = document.getElementById("badges-filters");
+    if (form instanceof HTMLFormElement) {
+      setFormValue(form, "status", getInitial("ba_status", "status") || "all");
+      setFormValue(form, "badgeType", getInitial("ba_type", "badgeType") || "all");
+      setFormValue(form, "page", getInitial("ba_page", "page") || "1");
+      syncBadgesFiltersFromLocation(form);
+    }
+  }
 
   if (!isManager) {
     void loadMaintenanceBanner();
@@ -3396,6 +3549,11 @@
   if (tab === "reports" || (reportsSection instanceof HTMLElement && !reportsSection.classList.contains("hidden"))) {
     dbg("load", "reports");
     void loadViolationReports();
+  }
+  const badgesSection = document.getElementById("tab-badges");
+  if (tab === "badges" || (badgesSection instanceof HTMLElement && !badgesSection.classList.contains("hidden"))) {
+    dbg("load", "badges");
+    void loadBadgeApplications();
   }
   if (tab === "score") {
     dbg("load", "score");

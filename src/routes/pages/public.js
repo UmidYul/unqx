@@ -333,6 +333,7 @@ async function findUserByTelegramIdWithLegacyFallback(userId) {
         subscriptionExpiresAt: true,
         isVerified: true,
         verifiedCompany: true,
+        createdByStaffId: true,
       },
     });
   } catch (error) {
@@ -359,6 +360,7 @@ async function findUserByTelegramIdWithLegacyFallback(userId) {
       subscriptionExpiresAt: null,
       isVerified: false,
       verifiedCompany: null,
+      createdByStaffId: null,
     };
   }
 }
@@ -488,6 +490,22 @@ async function findLatestApprovedVerificationByUserId(userId) {
       return null;
     }
     throw error;
+  }
+}
+
+async function findApprovedBadgesByUserId(userId) {
+  if (!userId || !prisma.badgeApplication) {
+    return { government: false, unqx_staff: false };
+  }
+  try {
+    const rows = await prisma.badgeApplication.findMany({
+      where: { userId, status: "approved" },
+      select: { badgeType: true },
+    });
+    const types = new Set(rows.map((r) => r.badgeType));
+    return { government: types.has("government"), unqx_staff: types.has("unqx_staff") };
+  } catch {
+    return { government: false, unqx_staff: false };
   }
 }
 
@@ -1863,12 +1881,17 @@ router.get(
 
         const topBadge = await getSlugTopBadge(slug);
         const officialCfg = await getOfficialUnqClientConfig();
+        const approvedBadges = await findApprovedBadgesByUserId(slugRow.ownerId);
         const allCardSlugs = [slug, ...ownerSlugs.map((item) => item.fullSlug)]
           .map((value) => String(value || "").trim().toUpperCase())
           .filter(Boolean);
-        const showOfficialUnqBadge = allCardSlugs.some((value) => isOfficialUnqSlugWithPrefixes(value, officialCfg.prefixes));
+        const showOfficialUnqBadge = allCardSlugs.some((value) => isOfficialUnqSlugWithPrefixes(value, officialCfg.prefixes)) || approvedBadges.government;
         const officialUnqBadge = showOfficialUnqBadge
           ? { title: officialCfg.profileBadgeTitle, line: officialCfg.profileBadgeLine }
+          : null;
+        const showStaffBadge = (owner && owner.createdByStaffId) || approvedBadges.unqx_staff;
+        const staffBadge = showStaffBadge
+          ? { title: officialCfg.staffProfileBadgeTitle, line: officialCfg.staffProfileBadgeLine }
           : null;
         res.render("public/card", {
           title: `${card.name} | UNQX`,
@@ -1878,6 +1901,7 @@ router.get(
           topBadge,
           score,
           officialUnqBadge,
+          staffBadge,
           noindex: slugRow.status === "private",
           privateAccess: null,
           adminSession: getAdminSession(req),

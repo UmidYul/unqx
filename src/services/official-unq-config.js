@@ -7,6 +7,8 @@ const SETTING_KEYS = {
   purchaseBody: "official_unq_purchase_notice_body",
   profileTitle: "official_unq_profile_badge_title",
   profileLine: "official_unq_profile_badge_line",
+  staffProfileTitle: "staff_profile_badge_title",
+  staffProfileLine: "staff_profile_badge_line",
 };
 
 const FALLBACK = {
@@ -19,6 +21,9 @@ const FALLBACK = {
   profileBadgeTitle: "Официальная серия UNQ",
   profileBadgeLine:
     "Закрепление согласовано с администрацией и руководством платформы.",
+  staffProfileBadgeTitle: "ПРОФИЛЬ СОТРУДНИКА UNQX",
+  staffProfileBadgeLine:
+    "Владелец данного профиля является членом команды UNQX. Данные верифицированы и подтверждены администрацией платформы.",
 };
 
 function normalizeOfficialUnqPrefixes(raw) {
@@ -62,6 +67,8 @@ async function getOfficialUnqClientConfig() {
     SETTING_KEYS.purchaseBody,
     SETTING_KEYS.profileTitle,
     SETTING_KEYS.profileLine,
+    SETTING_KEYS.staffProfileTitle,
+    SETTING_KEYS.staffProfileLine,
   ]);
   const prefixes = normalizeOfficialUnqPrefixes(raw[SETTING_KEYS.prefixes]);
   return {
@@ -71,6 +78,8 @@ async function getOfficialUnqClientConfig() {
     purchaseNoticeBody: String(raw[SETTING_KEYS.purchaseBody] ?? FALLBACK.purchaseNoticeBody),
     profileBadgeTitle: nonEmptyOr(raw[SETTING_KEYS.profileTitle], FALLBACK.profileBadgeTitle),
     profileBadgeLine: nonEmptyOr(raw[SETTING_KEYS.profileLine], FALLBACK.profileBadgeLine),
+    staffProfileBadgeTitle: nonEmptyOr(raw[SETTING_KEYS.staffProfileTitle], FALLBACK.staffProfileBadgeTitle),
+    staffProfileBadgeLine: nonEmptyOr(raw[SETTING_KEYS.staffProfileLine], FALLBACK.staffProfileBadgeLine),
   };
 }
 

@@ -495,6 +495,19 @@ Email: ${userEmail}
       verificationCorrectionWrap: $("#profile-verification-correction-wrap"),
       verificationCorrection: $("#profile-verification-correction"),
       verificationCorrectionSubmit: $("#profile-verification-correction-submit"),
+      badgeOpen: $("#profile-badge-open"),
+      badgeModal: $("#profile-badge-modal"),
+      badgeClose: $("#profile-badge-close"),
+      badgeType: $("#profile-badge-type"),
+      badgeWorkplace: $("#profile-badge-workplace"),
+      badgeRole: $("#profile-badge-role"),
+      badgeProofText: $("#profile-badge-proof-text"),
+      badgeProofLink: $("#profile-badge-proof-link"),
+      badgeSubmit: $("#profile-badge-submit"),
+      badgeGovStatus: $("#profile-badge-gov-status"),
+      badgeGovNote: $("#profile-badge-gov-note"),
+      badgeStaffStatus: $("#profile-badge-staff-status"),
+      badgeStaffNote: $("#profile-badge-staff-note"),
       qrModal: $("#profile-qr-modal"),
       qrClose: $("#profile-qr-close"),
       qrBox: $("#profile-qr-box"),
@@ -2001,6 +2014,8 @@ Email: ${userEmail}
             : latestStatus === "pending";
         el.verificationCorrectionWrap.classList.toggle("hidden", !canSendCorrection);
       }
+
+      renderBadgeStatuses();
 
       if (!emailRequiredModalShown) {
         const hasEmail = Boolean(String(s.user.email || s.user.pendingEmail || "").trim());
@@ -3590,6 +3605,111 @@ Email: ${userEmail}
       link.download = "unq-qr.png";
       link.click();
     });
+
+    // ── Badge application handlers ──────────────────────────────────
+    let badgeApps = [];
+    const BADGE_STATUS_LABELS = {
+      pending: "На рассмотрении",
+      approved: "Одобрено ✓",
+      rejected: "Отклонено",
+      revoked: "Отозвано",
+    };
+    function renderBadgeStatuses() {
+      const govApp = badgeApps.find((a) => a.badgeType === "government");
+      const staffApp = badgeApps.find((a) => a.badgeType === "unqx_staff");
+      if (el.badgeGovStatus instanceof HTMLElement) {
+        el.badgeGovStatus.textContent = govApp ? (BADGE_STATUS_LABELS[govApp.status] || govApp.status) : "Не запрошено";
+      }
+      if (el.badgeGovNote instanceof HTMLElement) {
+        if (govApp?.status === "rejected" && govApp.adminNote) {
+          el.badgeGovNote.textContent = `Причина: ${govApp.adminNote}`;
+          el.badgeGovNote.classList.remove("hidden");
+        } else if (govApp?.status === "revoked" && govApp.adminNote) {
+          el.badgeGovNote.textContent = `Причина отзыва: ${govApp.adminNote}`;
+          el.badgeGovNote.classList.remove("hidden");
+        } else {
+          el.badgeGovNote.textContent = "";
+          el.badgeGovNote.classList.add("hidden");
+        }
+      }
+      if (el.badgeStaffStatus instanceof HTMLElement) {
+        el.badgeStaffStatus.textContent = staffApp ? (BADGE_STATUS_LABELS[staffApp.status] || staffApp.status) : "Не запрошено";
+      }
+      if (el.badgeStaffNote instanceof HTMLElement) {
+        if (staffApp?.status === "rejected" && staffApp.adminNote) {
+          el.badgeStaffNote.textContent = `Причина: ${staffApp.adminNote}`;
+          el.badgeStaffNote.classList.remove("hidden");
+        } else if (staffApp?.status === "revoked" && staffApp.adminNote) {
+          el.badgeStaffNote.textContent = `Причина отзыва: ${staffApp.adminNote}`;
+          el.badgeStaffNote.classList.remove("hidden");
+        } else {
+          el.badgeStaffNote.textContent = "";
+          el.badgeStaffNote.classList.add("hidden");
+        }
+      }
+      if (el.badgeOpen instanceof HTMLButtonElement) {
+        const govPending = govApp?.status === "pending";
+        const staffPending = staffApp?.status === "pending";
+        const bothPending = govPending && staffPending;
+        el.badgeOpen.disabled = bothPending;
+        el.badgeOpen.classList.toggle("opacity-60", bothPending);
+      }
+    }
+    async function loadBadgeApplications() {
+      try {
+        const resp = await api("/api/profile/badge-applications");
+        badgeApps = Array.isArray(resp.items) ? resp.items : [];
+      } catch {
+        badgeApps = [];
+      }
+      renderBadgeStatuses();
+    }
+    const closeBadgeModal = () => {
+      if (!(el.badgeModal instanceof HTMLElement)) return;
+      el.badgeModal.classList.add("hidden");
+      el.badgeModal.classList.remove("flex");
+    };
+    el.badgeOpen?.addEventListener("click", () => {
+      if (el.badgeOpen instanceof HTMLButtonElement && el.badgeOpen.disabled) return;
+      if (!(el.badgeModal instanceof HTMLElement)) return;
+      el.badgeModal.classList.remove("hidden");
+      el.badgeModal.classList.add("flex");
+    });
+    el.badgeClose?.addEventListener("click", closeBadgeModal);
+    el.badgeModal?.addEventListener("click", (event) => {
+      if (event.target === el.badgeModal) closeBadgeModal();
+    });
+    el.badgeSubmit?.addEventListener("click", async () => {
+      if (el.badgeSubmit instanceof HTMLButtonElement) el.badgeSubmit.disabled = true;
+      try {
+        const badgeType = el.badgeType?.value || "government";
+        const workplace = el.badgeWorkplace?.value || "";
+        const role = el.badgeRole?.value || "";
+        const proofText = el.badgeProofText?.value || "";
+        const proofLink = el.badgeProofLink?.value || "";
+        if (!workplace.trim() || !role.trim()) {
+          showModal("Проверь данные", "Укажите место работы и должность.");
+          return;
+        }
+        await api("/api/profile/badge-application", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ badgeType, workplace, role, proofText, proofLink }),
+        });
+        closeBadgeModal();
+        if (el.badgeWorkplace instanceof HTMLInputElement) el.badgeWorkplace.value = "";
+        if (el.badgeRole instanceof HTMLInputElement) el.badgeRole.value = "";
+        if (el.badgeProofText instanceof HTMLTextAreaElement) el.badgeProofText.value = "";
+        if (el.badgeProofLink instanceof HTMLInputElement) el.badgeProofLink.value = "";
+        await loadBadgeApplications();
+        showModal("Готово", "Заявка на бейдж отправлена");
+      } catch (error) {
+        showModal("Ошибка", error.message || "Не удалось отправить заявку");
+      } finally {
+        if (el.badgeSubmit instanceof HTMLButtonElement) el.badgeSubmit.disabled = false;
+      }
+    });
+    void loadBadgeApplications();
 
     const closeVerificationModal = () => {
       if (!(el.verificationModal instanceof HTMLElement)) return;

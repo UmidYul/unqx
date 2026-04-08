@@ -1035,6 +1035,7 @@
     const score = options.score && typeof options.score === "object" ? options.score : null;
     const topBadge = options.topBadge && typeof options.topBadge === "object" ? options.topBadge : null;
     const officialUnqBadge = options.officialUnqBadge && typeof options.officialUnqBadge === "object" ? options.officialUnqBadge : null;
+    const staffBadge = options.staffBadge && typeof options.staffBadge === "object" ? options.staffBadge : null;
 
     const tagsHtml =
       card.tags.length > 0
@@ -1127,6 +1128,15 @@
             ${officialUnqLine ? `<p class="unq-ref-official-unq-line">${esc(officialUnqLine)}</p>` : ""}
           </div>`
         : "";
+    const staffBadgeLine = staffBadge ? String(staffBadge.line || "").trim() : "";
+    const staffBadgeTitle = staffBadge ? String(staffBadge.title || "").trim() : "";
+    const staffBadgeHtml =
+      staffBadgeLine || staffBadgeTitle
+        ? `<div class="unq-ref-staff-badge" role="status">
+            ${staffBadgeTitle ? `<p class="unq-ref-staff-badge-kicker">${esc(staffBadgeTitle)}</p>` : ""}
+            ${staffBadgeLine ? `<p class="unq-ref-staff-badge-line">${esc(staffBadgeLine)}</p>` : ""}
+          </div>`
+        : "";
     const useCustomColor = card.tariff === "premium" && Boolean(card.customColor);
     const topLineValue =
       theme.tokens.topLineGradient === "none"
@@ -1201,6 +1211,7 @@
           <div class="unq-ref-card-overlay">${renderThemeOverlay(theme.key)}</div>
           ${topBadgeHtml}
           ${officialUnqHtml}
+          ${staffBadgeHtml}
           ${card.showBranding
         ? `<div class="unq-ref-brand">
             <h2>UNQX</h2>

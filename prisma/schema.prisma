@@ -64,6 +64,11 @@ enum StaffRole {
   manager
 }
 
+enum BadgeType {
+  government
+  unqx_staff
+}
+
 enum SlugStatus {
   free
   pending
@@ -309,6 +314,7 @@ model User {
   violationReports      ViolationReport[]
   privatePasswords       CardPrivatePassword[] @relation("CardPrivatePasswords")
   privateAccessLogs      CardPrivateAccessLog[] @relation("CardPrivateAccessLogs")
+  badgeApplications      BadgeApplication[]
 
   @@index([plan, planPurchasedAt])
   @@index([subscriptionExpiresAt])
@@ -728,6 +734,26 @@ model VerificationRequest {
   @@index([userId, status])
   @@index([status, requestedAt(sort: Desc)])
   @@map("verification_requests")
+}
+
+model BadgeApplication {
+  id          String    @id @default(uuid())
+  userId      String    @map("user_id")
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badgeType   BadgeType @map("badge_type")
+  workplace   String    @db.VarChar(200)
+  role        String    @db.VarChar(160)
+  proofText   String?   @map("proof_text")
+  proofLink   String?   @map("proof_link") @db.VarChar(500)
+  comment     String?
+  status      String    @default("pending") @db.VarChar(20)
+  adminNote   String?   @map("admin_note")
+  requestedAt DateTime  @default(now()) @map("requested_at")
+  reviewedAt  DateTime? @map("reviewed_at")
+
+  @@index([userId, badgeType, status])
+  @@index([status, requestedAt(sort: Desc)])
+  @@map("badge_applications")
 }
 
 model ViolationReport {
