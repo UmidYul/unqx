@@ -180,9 +180,10 @@ async function getUserColumns() {
   }
   try {
     const rows = await prisma.$queryRaw`
-      SELECT column_name
+      SELECT column_name::text AS column_name
       FROM information_schema.columns
       WHERE table_name = 'users'
+        AND table_schema = current_schema()
     `;
     cachedUserColumns = new Set((Array.isArray(rows) ? rows : []).map((row) => String(row.column_name || "")));
     cachedUserColumnsAt = now;
