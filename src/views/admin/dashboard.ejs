@@ -1588,6 +1588,14 @@
                 </select>
               </label>
               <label class="block text-sm font-medium text-neutral-700">
+                Метка профиля
+                <select name="badgeType" class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm">
+                  <option value="none" selected>Нет</option>
+                  <option value="unqx_staff">Сотрудник UNQX</option>
+                  <option value="government">Гос. служащий</option>
+                </select>
+              </label>
+              <label class="block text-sm font-medium text-neutral-700">
                 Тариф
                 <select name="plan" class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm">
                   <option value="none">Без тарифа</option>
@@ -1650,6 +1658,14 @@
                 Должность
                 <input name="role" type="text" maxlength="120"
                   class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+              </label>
+              <label class="block text-sm font-medium text-neutral-700">
+                Метка профиля
+                <select name="badgeType" class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm">
+                  <option value="none">Нет</option>
+                  <option value="unqx_staff">Сотрудник UNQX</option>
+                  <option value="government">Гос. служащий</option>
+                </select>
               </label>
               <p id="user-verification-error" class="hidden text-xs text-red-700"></p>
               <button type="submit"
