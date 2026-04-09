@@ -2578,6 +2578,23 @@
     }
   });
 
+  function parseAllowedBadgeType(rawValue, fallback = "none") {
+    const raw = String(rawValue || "").trim().toLowerCase();
+    if (["none", "government", "unqx_staff"].includes(raw)) {
+      return raw;
+    }
+    return fallback;
+  }
+
+  function openUserBadgeEditorFromNode(node) {
+    if (!(node instanceof HTMLElement)) return;
+    const userId = node.getAttribute("data-id");
+    const userName = node.getAttribute("data-name") || "пользователя";
+    if (!userId) return;
+    const currentBadgeType = parseAllowedBadgeType(node.getAttribute("data-badge-type"), "none");
+    openUserBadgeModal({ userId, userName, badgeType: currentBadgeType });
+  }
+
   document.addEventListener("click", async (e) => {
     const target = e.target;
     const n = target instanceof Element ? target.closest("[data-act]") : null;
@@ -2947,12 +2964,7 @@
       return;
     }
     if (a === "ubadge") {
-      const userId = n.getAttribute("data-id");
-      const userName = n.getAttribute("data-name") || "пользователя";
-      if (!userId) return;
-      const currentBadgeTypeRaw = String(n.getAttribute("data-badge-type") || "none").trim().toLowerCase();
-      const currentBadgeType = ["none", "government", "unqx_staff"].includes(currentBadgeTypeRaw) ? currentBadgeTypeRaw : "none";
-      openUserBadgeModal({ userId, userName, badgeType: currentBadgeType });
+      openUserBadgeEditorFromNode(n);
       return;
     }
     if (a === "uvd") {
