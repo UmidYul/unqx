@@ -1287,6 +1287,7 @@ const MANAGER_ALLOWED_ROUTES = [
   { method: "DELETE", re: /^\/users\/[^/]+\/card\/avatar\/?$/ },
   { method: "PATCH", re: /^\/users\/[^/]+\/profile\/?$/ },
   { method: "PATCH", re: /^\/users\/[^/]+\/verification\/?$/ },
+  { method: "PATCH", re: /^\/users\/[^/]+\/badge\/?$/ },
   { method: "GET", re: /^\/orders\/?$/ },
   { method: "PATCH", re: /^\/orders\/[^/]+\/status\/?$/ },
   { method: "POST", re: /^\/orders\/[^/]+\/extend-pending\/?$/ },
@@ -4303,6 +4304,68 @@ router.patch(
       subscriptionRenewedAt: result.subscriptionRenewedAt,
       subscriptionExpiresAt: result.subscriptionExpiresAt,
     });
+  }),
+);
+
+router.patch(
+  "/users/:userId/badge",
+  asyncHandler(async (req, res) => {
+    const userId = String(req.params.userId || "").trim();
+    if (!userId) {
+      res.status(400).json({ error: "User id is required", code: "USER_ID_REQUIRED" });
+      return;
+    }
+    if (isManagerSession(req)) {
+      const ownsUser = await managerOwnsUser(req, userId);
+      if (!ownsUser) {
+        res.status(404).json({ error: "User not found", code: "USER_NOT_FOUND" });
+        return;
+      }
+    }
+
+    const badgeType = normalizeManualBadgeTypeInput(req.body?.badgeType, "none");
+    const actorLogin = String(req.session?.admin?.login || "").trim() || "staff";
+    const now = new Date();
+
+    const targetUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true },
+    });
+    if (!targetUser) {
+      res.status(404).json({ error: "User not found", code: "USER_NOT_FOUND" });
+      return;
+    }
+
+    if (!prisma.badgeApplication) {
+      res.status(503).json({ error: "Badge storage unavailable", code: "BADGE_STORAGE_UNAVAILABLE" });
+      return;
+    }
+
+    await prisma.$transaction(async (tx) => {
+      await tx.badgeApplication.deleteMany({
+        where: {
+          userId,
+          badgeType: { in: ["government", "unqx_staff"] },
+        },
+      });
+      if (badgeType !== "none") {
+        await tx.badgeApplication.create({
+          data: {
+            userId,
+            badgeType,
+            workplace: "Установлено менеджером",
+            role: "Системная отметка",
+            proofType: "manager",
+            proofValue: `manager:${actorLogin}`,
+            comment: "Badge updated from users table",
+            status: "approved",
+            reviewedAt: now,
+          },
+        });
+      }
+    });
+
+    res.json({ ok: true, userId, badgeType });
   }),
 );
 

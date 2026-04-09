@@ -1654,6 +1654,13 @@
               attrs: `data-act="uvm" data-id="${X(x.telegramId)}" data-name="${X(x.name)}" data-verified="${x.isVerified ? "1" : "0"}" data-company="${X(x.verifiedCompany || "")}" data-role="${X(x.verifiedRole || "")}" data-badge-type="${X(x.badgeType || "none")}"`,
             }),
           );
+          menuItems.push(
+            menuItem({
+              label: "Изменить бейдж",
+              icon: "pen",
+              attrs: `data-act="ubadge" data-id="${X(x.telegramId)}" data-name="${X(x.name)}" data-badge-type="${X(x.badgeType || "none")}"`,
+            }),
+          );
 
           const cardEditorUrl = `${userCardBasePath}/${encodeURIComponent(String(x.telegramId || ""))}/card`;
           const cardEditorLabel = x.hasCard ? "Редактировать визитку" : "Создать визитку";
@@ -2840,6 +2847,37 @@
       }
       const payload = await r.json().catch(() => ({}));
       await showAlert(`Добавлено просмотров: ${Number(payload?.addedViews || count)} (slug: ${payload?.slug || targetSlug}).`);
+      void loadUsers();
+      closeAllRowMenus();
+      return;
+    }
+    if (a === "ubadge") {
+      const userId = n.getAttribute("data-id");
+      const userName = n.getAttribute("data-name") || "пользователя";
+      if (!userId) return;
+      const currentBadgeTypeRaw = String(n.getAttribute("data-badge-type") || "none").trim().toLowerCase();
+      const currentBadgeType = ["none", "government", "unqx_staff"].includes(currentBadgeTypeRaw) ? currentBadgeTypeRaw : "none";
+      const entered = await showPrompt(
+        `Бейдж для ${userName}: none / government / unqx_staff`,
+        currentBadgeType,
+      );
+      if (entered === null) return;
+      const nextBadgeTypeRaw = String(entered || "").trim().toLowerCase();
+      const nextBadgeType = ["none", "government", "unqx_staff"].includes(nextBadgeTypeRaw) ? nextBadgeTypeRaw : "";
+      if (!nextBadgeType) {
+        await showAlert("Введите одно из значений: none, government, unqx_staff.");
+        return;
+      }
+      const r = await fetch(`/api/admin/users/${encodeURIComponent(userId)}/badge`, {
+        method: "PATCH",
+        headers: H({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ badgeType: nextBadgeType }),
+      });
+      if (!r.ok) {
+        await showAlert(await E(r));
+        return;
+      }
+      await showAlert("Бейдж обновлен.");
       void loadUsers();
       closeAllRowMenus();
       return;
