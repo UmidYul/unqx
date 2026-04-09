@@ -805,6 +805,17 @@ function normalizeVerificationStatusInput(value) {
   return null;
 }
 
+const MANUAL_BADGE_TYPES = new Set(["none", "government", "unqx_staff"]);
+
+function normalizeManualBadgeTypeInput(value, fallback = "none") {
+  const normalizedFallback = MANUAL_BADGE_TYPES.has(String(fallback || "").trim().toLowerCase())
+    ? String(fallback || "").trim().toLowerCase()
+    : "none";
+  const raw = String(value ?? "").trim().toLowerCase();
+  if (!raw) return normalizedFallback;
+  return MANUAL_BADGE_TYPES.has(raw) ? raw : normalizedFallback;
+}
+
 function normalizeShortSlug(value) {
   return String(value || "")
     .toUpperCase()
@@ -1276,6 +1287,7 @@ const MANAGER_ALLOWED_ROUTES = [
   { method: "DELETE", re: /^\/users\/[^/]+\/card\/avatar\/?$/ },
   { method: "PATCH", re: /^\/users\/[^/]+\/profile\/?$/ },
   { method: "PATCH", re: /^\/users\/[^/]+\/verification\/?$/ },
+  { method: "PATCH", re: /^\/users\/[^/]+\/badge\/?$/ },
   { method: "GET", re: /^\/orders\/?$/ },
   { method: "PATCH", re: /^\/orders\/[^/]+\/status\/?$/ },
   { method: "POST", re: /^\/orders\/[^/]+\/extend-pending\/?$/ },
@@ -2222,7 +2234,7 @@ router.get(
     const creatorIds = hasCreatorColumn
       ? Array.from(new Set(users.map((item) => item.createdByStaffId).filter(Boolean)))
       : [];
-    const [slugs, cards, braceletRequests, unqScores, creatorStaff, approvedVerificationRows] = await Promise.all([
+    const [slugs, cards, braceletRequests, unqScores, creatorStaff, approvedVerificationRows, approvedBadges] = await Promise.all([
       prisma.slug.findMany({
         where: { ownerId: { in: userIds } },
         select: {
@@ -2288,6 +2300,20 @@ router.get(
           },
         })
         : Promise.resolve([]),
+      prisma.badgeApplication
+        ? prisma.badgeApplication.findMany({
+          where: {
+            userId: { in: userIds },
+            status: "approved",
+            badgeType: { in: ["government", "unqx_staff"] },
+          },
+          select: {
+            userId: true,
+            badgeType: true,
+          },
+          orderBy: [{ requestedAt: "desc" }],
+        })
+        : Promise.resolve([]),
     ]);
 
     const slugsByUser = new Map();
@@ -2324,6 +2350,20 @@ router.get(
     }
     const scoreByUser = new Map(unqScores.map((row) => [row.userId, row]));
     const staffById = new Map(creatorStaff.map((row) => [row.id, row]));
+    const badgeTypeByUser = new Map();
+    for (const row of approvedBadges) {
+      const userId = String(row?.userId || "").trim();
+      const nextType = String(row?.badgeType || "").trim();
+      if (!userId || !nextType) continue;
+      const current = badgeTypeByUser.get(userId);
+      if (!current) {
+        badgeTypeByUser.set(userId, nextType);
+        continue;
+      }
+      if (current !== "government" && nextType === "government") {
+        badgeTypeByUser.set(userId, "government");
+      }
+    }
 
     const items = users.map((user) => {
       const telegramUsername = user.telegramUsername || null;
@@ -2362,6 +2402,7 @@ router.get(
         isVerified: Boolean(user.isVerified),
         verifiedCompany: user.verifiedCompany || "",
         verifiedRole: cardRoleByUser.get(user.id) || verificationRoleByUser.get(user.id) || "",
+        badgeType: badgeTypeByUser.get(user.id) || "none",
         plan: user.plan,
         planPurchasedAt: user.planPurchasedAt,
         planUpgradedAt: user.planUpgradedAt,
@@ -2514,6 +2555,7 @@ router.post(
     const requestedPlan = normalizeUserPlan(req.body?.plan);
     const requestedSlug = normalizeShortSlug(req.body?.slug);
     const profileType = normalizeProfileType(req.body?.profileType, { fallback: "person" });
+    const badgeType = normalizeManualBadgeTypeInput(req.body?.badgeType, "none");
     const hasSlugInput = Boolean(String(req.body?.slug || "").trim());
     const requesterRole = String(adminSession?.role || "admin");
     const requiresInlineActivation = requesterRole === "manager" || requestedPlan !== "none" || hasSlugInput;
@@ -2759,6 +2801,35 @@ router.post(
                   note: "user-create:inline-activation",
                 },
               });
+            }
+          }
+        }
+
+        if (tx.badgeApplication && typeof tx.badgeApplication.deleteMany === "function") {
+          try {
+            await tx.badgeApplication.deleteMany({
+              where: {
+                userId: createdUser.id,
+                badgeType: { in: ["government", "unqx_staff"] },
+              },
+            });
+            if (badgeType !== "none" && typeof tx.badgeApplication.create === "function") {
+              await tx.badgeApplication.create({
+                data: {
+                  userId: createdUser.id,
+                  badgeType,
+                  workplace: "Установлено менеджером",
+                  role: "Системная отметка",
+                  proofText: `manager:${adminActor || "staff"}`,
+                  comment: "Badge set from user creation form",
+                  status: "approved",
+                  reviewedAt: now,
+                },
+              });
+            }
+          } catch (error) {
+            if (!isMissingStorageError(error)) {
+              throw error;
             }
           }
         }
@@ -4236,6 +4307,67 @@ router.patch(
 );
 
 router.patch(
+  "/users/:userId/badge",
+  asyncHandler(async (req, res) => {
+    const userId = String(req.params.userId || "").trim();
+    if (!userId) {
+      res.status(400).json({ error: "User id is required", code: "USER_ID_REQUIRED" });
+      return;
+    }
+    if (isManagerSession(req)) {
+      const ownsUser = await managerOwnsUser(req, userId);
+      if (!ownsUser) {
+        res.status(404).json({ error: "User not found", code: "USER_NOT_FOUND" });
+        return;
+      }
+    }
+
+    const badgeType = normalizeManualBadgeTypeInput(req.body?.badgeType, "none");
+    const actorLogin = String(req.session?.admin?.login || "").trim() || "staff";
+    const now = new Date();
+
+    const targetUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true },
+    });
+    if (!targetUser) {
+      res.status(404).json({ error: "User not found", code: "USER_NOT_FOUND" });
+      return;
+    }
+
+    if (!prisma.badgeApplication) {
+      res.status(503).json({ error: "Badge storage unavailable", code: "BADGE_STORAGE_UNAVAILABLE" });
+      return;
+    }
+
+    await prisma.$transaction(async (tx) => {
+      await tx.badgeApplication.deleteMany({
+        where: {
+          userId,
+          badgeType: { in: ["government", "unqx_staff"] },
+        },
+      });
+      if (badgeType !== "none") {
+        await tx.badgeApplication.create({
+          data: {
+            userId,
+            badgeType,
+            workplace: "Установлено менеджером",
+            role: "Системная отметка",
+            proofText: `manager:${actorLogin}`,
+            comment: "Badge updated from users table",
+            status: "approved",
+            reviewedAt: now,
+          },
+        });
+      }
+    });
+
+    res.json({ ok: true, userId, badgeType });
+  }),
+);
+
+router.patch(
   "/users/:userId/verification",
   asyncHandler(async (req, res) => {
     if (!ensureUsersStorageReady(res)) {
@@ -4274,6 +4406,7 @@ router.patch(
 
     const now = new Date();
     const actorLogin = String(req.session?.admin?.login || "").trim() || "staff";
+    const badgeType = normalizeManualBadgeTypeInput(req.body?.badgeType, "none");
 
     try {
       const result = await prisma.$transaction(async (tx) => {
@@ -4342,8 +4475,7 @@ router.patch(
                 companyName: company,
                 role,
                 sector: "other",
-                proofType: "manager",
-                proofValue: `manager:${actorLogin}`,
+                proofText: `manager:${actorLogin}`,
                 comment: "Verified from manager dashboard",
                 status: "approved",
                 adminNote: "Approved by manager from users table",
@@ -4358,9 +4490,39 @@ router.patch(
           }
         }
 
+        if (tx.badgeApplication && typeof tx.badgeApplication.deleteMany === "function") {
+          try {
+            await tx.badgeApplication.deleteMany({
+              where: {
+                userId,
+                badgeType: { in: ["government", "unqx_staff"] },
+              },
+            });
+            if (badgeType !== "none" && typeof tx.badgeApplication.create === "function") {
+              await tx.badgeApplication.create({
+                data: {
+                  userId,
+                  badgeType,
+                  workplace: company || "Установлено менеджером",
+                  role: role || "Системная отметка",
+                  proofText: `manager:${actorLogin}`,
+                  comment: "Badge updated from users verification modal",
+                  status: "approved",
+                  reviewedAt: now,
+                },
+              });
+            }
+          } catch (error) {
+            if (!isMissingStorageError(error)) {
+              throw error;
+            }
+          }
+        }
+
         return {
           user: updatedUser,
           role: appliedRole,
+          badgeType,
         };
       });
 
@@ -4371,6 +4533,7 @@ router.patch(
         verifiedCompany: result.user.verifiedCompany,
         verifiedAt: result.user.verifiedAt,
         role: result.role,
+        badgeType: result.badgeType,
       });
     } catch (error) {
       if (error?.code === "USER_NOT_FOUND") {
