@@ -1889,7 +1889,7 @@ router.get(
         const officialUnqBadge = showOfficialUnqBadge
           ? { title: officialCfg.profileBadgeTitle, line: officialCfg.profileBadgeLine }
           : null;
-        const showStaffBadge = (owner && owner.createdByStaffId) || approvedBadges.unqx_staff;
+        const showStaffBadge = approvedBadges.unqx_staff;
         const staffBadge = showStaffBadge
           ? { title: officialCfg.staffProfileBadgeTitle, line: officialCfg.staffProfileBadgeLine }
           : null;
@@ -1934,4 +1934,3 @@ router.get(
 module.exports = {
   publicPagesRouter: router,
 };
-
