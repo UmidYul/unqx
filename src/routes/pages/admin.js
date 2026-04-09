@@ -111,7 +111,7 @@ router.get(
   asyncHandler(async (req, res) => {
     const adminSession = getAdminSession(req);
     const role = adminSession?.role || "admin";
-    const managerTabs = new Set(["users", "orders", "verification"]);
+    const managerTabs = new Set(["users", "orders", "verification", "badges"]);
     if (role === "manager") {
       const nextTab =
         typeof req.query.tab === "string" && managerTabs.has(req.query.tab)
@@ -224,7 +224,7 @@ router.get(
       res.redirect("/admin/dashboard");
       return;
     }
-    const managerTabs = new Set(["users", "orders", "verification"]);
+    const managerTabs = new Set(["users", "orders", "verification", "badges"]);
     const tab =
       typeof req.query.tab === "string" && managerTabs.has(req.query.tab)
         ? req.query.tab
@@ -280,5 +280,4 @@ router.get(
 module.exports = {
   adminPagesRouter: router,
 };
-
 
