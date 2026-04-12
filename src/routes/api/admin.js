@@ -1705,7 +1705,7 @@ function buildOrdersWhere(query) {
     const term = query.q.trim();
     where.OR = [
       { slug: { contains: term, mode: "insensitive" } },
-      { userId: { contains: term, mode: "insensitive" } },
+      { userId: { equals: term } },
       { user: { username: { contains: term, mode: "insensitive" } } },
       { user: { firstName: { contains: term, mode: "insensitive" } } },
       { user: { displayName: { contains: term, mode: "insensitive" } } },
@@ -1766,7 +1766,7 @@ function buildPurchasesWhere(query) {
   if (typeof query.user === "string" && query.user.trim()) {
     const term = query.user.trim();
     where.OR = [
-      { userId: { contains: term, mode: "insensitive" } },
+      { userId: { equals: term } },
       { user: { username: { contains: term, mode: "insensitive" } } },
       { user: { firstName: { contains: term, mode: "insensitive" } } },
       { user: { displayName: { contains: term, mode: "insensitive" } } },
@@ -2174,7 +2174,7 @@ router.get(
     if (q) {
       const or = [];
       if (hasUserColumn(userColumns, "id")) {
-        or.push({ id: { contains: q, mode: "insensitive" } });
+        or.push({ id: { equals: q } });
       }
       if (hasUserColumn(userColumns, "firstName")) {
         or.push({ firstName: { contains: q, mode: "insensitive" } });
