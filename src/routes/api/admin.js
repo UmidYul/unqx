@@ -1703,13 +1703,14 @@ function buildOrdersWhere(query) {
   const where = {};
   if (typeof query.q === "string" && query.q.trim()) {
     const term = query.q.trim();
-    where.OR = [
+    const orClauses = [
       { slug: { contains: term, mode: "insensitive" } },
-      { userId: { equals: term } },
       { user: { username: { contains: term, mode: "insensitive" } } },
       { user: { firstName: { contains: term, mode: "insensitive" } } },
       { user: { displayName: { contains: term, mode: "insensitive" } } },
     ];
+    if (isUuid(term)) orClauses.push({ userId: { equals: term } });
+    where.OR = orClauses;
   }
   if (query.status && query.status !== "all") {
     where.status = toOrderStatus(query.status);
@@ -1765,12 +1766,13 @@ function buildPurchasesWhere(query) {
   }
   if (typeof query.user === "string" && query.user.trim()) {
     const term = query.user.trim();
-    where.OR = [
-      { userId: { equals: term } },
+    const orClauses = [
       { user: { username: { contains: term, mode: "insensitive" } } },
       { user: { firstName: { contains: term, mode: "insensitive" } } },
       { user: { displayName: { contains: term, mode: "insensitive" } } },
     ];
+    if (isUuid(term)) orClauses.push({ userId: { equals: term } });
+    where.OR = orClauses;
   }
   return where;
 }
@@ -2173,7 +2175,7 @@ router.get(
     }
     if (q) {
       const or = [];
-      if (hasUserColumn(userColumns, "id")) {
+      if (hasUserColumn(userColumns, "id") && isUuid(q)) {
         or.push({ id: { equals: q } });
       }
       if (hasUserColumn(userColumns, "firstName")) {
@@ -4187,7 +4189,21 @@ router.get(
       WHERE owner_id = ${userId}
       ORDER BY number ASC
     `;
-    res.json({ ok: true, paymentCards: Array.isArray(rows) ? rows : [] });
+
+    // Load profile card for pre-fill defaults
+    const profileRows = await prisma.$queryRaw`
+      SELECT name, avatar_url AS "avatarUrl"
+      FROM profile_cards
+      WHERE owner_id = ${userId}
+      LIMIT 1
+    `;
+    const profileCard = Array.isArray(profileRows) ? profileRows[0] || null : null;
+
+    res.json({
+      ok: true,
+      paymentCards: Array.isArray(rows) ? rows : [],
+      profileDefaults: profileCard ? { name: profileCard.name || "", avatarUrl: profileCard.avatarUrl || "" } : null,
+    });
   }),
 );
 

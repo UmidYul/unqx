@@ -70,6 +70,7 @@
         editing: null, // null = list mode, "new" = creating, card id = editing
         tags: [],
         buttons: [],
+        profileDefaults: null, // { name, avatarUrl } from profile card
     };
 
     let pendingAvatarFile = null;
@@ -321,6 +322,7 @@
         try {
             const payload = await api(`/api/admin/users/${encodeURIComponent(userId)}/payment-cards`);
             state.cards = Array.isArray(payload.paymentCards) ? payload.paymentCards : [];
+            state.profileDefaults = payload.profileDefaults || null;
             renderList();
             updateHeader();
         } catch (err) {
@@ -449,6 +451,11 @@
     /* ─── Events ─── */
     el.createBtn?.addEventListener("click", () => {
         clearForm();
+        // Pre-fill from profile card
+        if (state.profileDefaults) {
+            if (el.name && state.profileDefaults.name) el.name.value = state.profileDefaults.name;
+            if (state.profileDefaults.avatarUrl) updateAvatar(state.profileDefaults.avatarUrl);
+        }
         showEditor("new");
     });
 

@@ -1688,6 +1688,7 @@ router.get(
     }
 
     const verifiedIdentity = await findLatestApprovedVerificationByUserId(paymentCard.ownerId);
+    const profileCard = await findProfileCardByOwnerId(paymentCard.ownerId);
     const isCurrentlyVerified = Boolean(owner.isVerified);
     const verifiedCompany = String(
       isCurrentlyVerified ? (verifiedIdentity?.companyName || owner.verifiedCompany || "") : ""
@@ -1700,9 +1701,9 @@ router.get(
       slug: `PAYMENT/${num}`,
       slugs: [`PAYMENT/${num}`],
       slugPrice: null,
-      avatarUrl: paymentCard.avatarUrl || null,
+      avatarUrl: paymentCard.avatarUrl || profileCard?.avatarUrl || owner.photoUrl || null,
       name: paymentCard.name,
-      role: verifiedRole,
+      role: paymentCard.role || verifiedRole,
       bio: paymentCard.bio || "",
       verified: isCurrentlyVerified,
       verifiedCompany,

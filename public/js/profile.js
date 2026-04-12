@@ -2408,7 +2408,7 @@ Email: ${userEmail}
     const loadPaymentCards = async () => {
       try {
         const payload = await api("/api/profile/payment-cards");
-        s.paymentCards = Array.isArray(payload.cards) ? payload.cards : [];
+        s.paymentCards = Array.isArray(payload.paymentCards) ? payload.paymentCards : [];
       } catch {
         s.paymentCards = [];
       }
@@ -2559,7 +2559,7 @@ Email: ${userEmail}
     const pcUploadAvatar = async (file) => {
       if (!s.pcEditing || !file) return;
       const fd = new FormData();
-      fd.append("avatar", file);
+      fd.append("file", file);
       try {
         const payload = await api(`/api/profile/payment-cards/${s.pcEditing}/avatar`, { method: "POST", body: fd });
         if (el.pcAvPreview) el.pcAvPreview.src = payload.avatarUrl || "/brand/profile-thin.svg";
@@ -2587,7 +2587,7 @@ Email: ${userEmail}
       const cardId = btn.getAttribute("data-pc-edit");
       try {
         const payload = await api(`/api/profile/payment-cards/${cardId}`);
-        pcShowEditor(payload.card || payload);
+        pcShowEditor(payload.paymentCard || payload);
       } catch (error) {
         showModal("Ошибка", error.message || "Не удалось загрузить карточку");
       }
