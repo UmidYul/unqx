@@ -2306,6 +2306,224 @@ router.post(
   }),
 );
 
+/* ─── Payment Cards (user-facing) ─── */
+
+router.get(
+  "/payment-cards",
+  asyncHandler(async (req, res) => {
+    const user = await getCurrentUser(req);
+    if (!assertUserActive(user, res)) return;
+
+    const rows = await prisma.$queryRaw`
+      SELECT
+        id, number, owner_id AS "ownerId", name, role, bio, hashtag,
+        address, postcode, email, extra_phone AS "extraPhone",
+        avatar_url AS "avatarUrl", tags, buttons, theme,
+        custom_color AS "customColor", show_branding AS "showBranding",
+        views_count AS "viewsCount",
+        created_at AS "createdAt", updated_at AS "updatedAt"
+      FROM payment_cards
+      WHERE owner_id = ${user.id}
+      ORDER BY number ASC
+    `;
+    res.json({ ok: true, paymentCards: Array.isArray(rows) ? rows : [] });
+  }),
+);
+
+router.get(
+  "/payment-cards/:id",
+  asyncHandler(async (req, res) => {
+    const user = await getCurrentUser(req);
+    if (!assertUserActive(user, res)) return;
+
+    const cardId = String(req.params.id || "").trim();
+    if (!cardId) {
+      res.status(400).json({ error: "Card id is required" });
+      return;
+    }
+
+    const rows = await prisma.$queryRaw`
+      SELECT
+        id, number, owner_id AS "ownerId", name, role, bio, hashtag,
+        address, postcode, email, extra_phone AS "extraPhone",
+        avatar_url AS "avatarUrl", tags, buttons, theme,
+        custom_color AS "customColor", show_branding AS "showBranding",
+        views_count AS "viewsCount",
+        created_at AS "createdAt", updated_at AS "updatedAt"
+      FROM payment_cards
+      WHERE id = ${cardId}::uuid AND owner_id = ${user.id}
+      LIMIT 1
+    `;
+    const card = Array.isArray(rows) ? rows[0] || null : null;
+    if (!card) {
+      res.status(404).json({ error: "Payment card not found" });
+      return;
+    }
+    res.json({ ok: true, paymentCard: card });
+  }),
+);
+
+router.put(
+  "/payment-cards/:id",
+  asyncHandler(async (req, res) => {
+    const user = await getCurrentUser(req);
+    if (!assertUserActive(user, res)) return;
+    if (!assertPlanAllowsCard(user, res)) return;
+
+    const cardId = String(req.params.id || "").trim();
+    if (!cardId) {
+      res.status(400).json({ error: "Card id is required" });
+      return;
+    }
+
+    const cardRows = await prisma.$queryRaw`
+      SELECT id, owner_id AS "ownerId" FROM payment_cards
+      WHERE id = ${cardId}::uuid AND owner_id = ${user.id}
+      LIMIT 1
+    `;
+    const card = Array.isArray(cardRows) ? cardRows[0] || null : null;
+    if (!card) {
+      res.status(404).json({ error: "Payment card not found" });
+      return;
+    }
+
+    const body = req.body && typeof req.body === "object" ? req.body : {};
+    const name = String(body.name || "").trim().slice(0, 120);
+    if (!name) {
+      res.status(400).json({ error: "Name is required" });
+      return;
+    }
+
+    const role = String(body.role || "").trim().slice(0, 120) || null;
+    const bio = String(body.bio || "").trim().slice(0, 120) || null;
+    const hashtag = String(body.hashtag || "").trim().slice(0, 50) || null;
+    const address = String(body.address || "").trim() || null;
+    const postcode = String(body.postcode || "").trim().slice(0, 20) || null;
+    const email = String(body.email || "").trim().slice(0, 100) || null;
+    const extraPhone = String(body.extraPhone || "").trim().slice(0, 30) || null;
+
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      res.status(400).json({ error: "Invalid email" });
+      return;
+    }
+
+    const tags = normalizeTags(body.tags, "premium");
+    const buttons = normalizeButtons(body.buttons, "premium");
+
+    await prisma.$executeRaw`
+      UPDATE payment_cards
+      SET name = ${name}, role = ${role}, bio = ${bio}, hashtag = ${hashtag},
+          address = ${address}, postcode = ${postcode}, email = ${email},
+          extra_phone = ${extraPhone},
+          tags = ${JSON.stringify(tags)}::jsonb, buttons = ${JSON.stringify(buttons)}::jsonb,
+          theme = 'marble', updated_at = now()
+      WHERE id = ${cardId}::uuid AND owner_id = ${user.id}
+    `;
+
+    const rows = await prisma.$queryRaw`
+      SELECT
+        id, number, owner_id AS "ownerId", name, role, bio, hashtag,
+        address, postcode, email, extra_phone AS "extraPhone",
+        avatar_url AS "avatarUrl", tags, buttons, theme,
+        custom_color AS "customColor", show_branding AS "showBranding",
+        views_count AS "viewsCount",
+        created_at AS "createdAt", updated_at AS "updatedAt"
+      FROM payment_cards WHERE id = ${cardId}::uuid LIMIT 1
+    `;
+    res.json({ ok: true, paymentCard: rows[0] || null });
+  }),
+);
+
+router.post(
+  "/payment-cards/:id/avatar",
+  upload.single("file"),
+  asyncHandler(async (req, res) => {
+    const user = await getCurrentUser(req);
+    if (!assertUserActive(user, res)) return;
+    if (!assertPlanAllowsCard(user, res)) return;
+
+    const cardId = String(req.params.id || "").trim();
+    if (!cardId) {
+      res.status(400).json({ error: "Card id is required" });
+      return;
+    }
+
+    const cardRows = await prisma.$queryRaw`
+      SELECT id, owner_id AS "ownerId", avatar_url AS "avatarUrl"
+      FROM payment_cards
+      WHERE id = ${cardId}::uuid AND owner_id = ${user.id}
+      LIMIT 1
+    `;
+    const card = Array.isArray(cardRows) ? cardRows[0] || null : null;
+    if (!card) {
+      res.status(404).json({ error: "Payment card not found" });
+      return;
+    }
+
+    if (!req.file || !ALLOWED_MIME.has(req.file.mimetype)) {
+      res.status(400).json({ error: "Unsupported file type" });
+      return;
+    }
+
+    const okBuffer = await isSupportedAvatarBuffer(req.file.buffer);
+    if (!okBuffer) {
+      res.status(400).json({ error: "Invalid image payload" });
+      return;
+    }
+
+    const avatarSlug = buildAvatarSlug(`paycard_${cardId}`);
+    const avatarUrl = await saveAvatarFromBuffer(avatarSlug, req.file.buffer);
+    if (card.avatarUrl && card.avatarUrl !== avatarUrl) {
+      try { await deleteAvatarByPublicPath(card.avatarUrl); } catch { }
+    }
+
+    await prisma.$executeRaw`
+      UPDATE payment_cards SET avatar_url = ${avatarUrl}, updated_at = now()
+      WHERE id = ${cardId}::uuid AND owner_id = ${user.id}
+    `;
+
+    res.json({ ok: true, avatarUrl });
+  }),
+);
+
+router.delete(
+  "/payment-cards/:id/avatar",
+  asyncHandler(async (req, res) => {
+    const user = await getCurrentUser(req);
+    if (!assertUserActive(user, res)) return;
+    if (!assertPlanAllowsCard(user, res)) return;
+
+    const cardId = String(req.params.id || "").trim();
+    if (!cardId) {
+      res.status(400).json({ error: "Card id is required" });
+      return;
+    }
+
+    const cardRows = await prisma.$queryRaw`
+      SELECT id, owner_id AS "ownerId", avatar_url AS "avatarUrl"
+      FROM payment_cards
+      WHERE id = ${cardId}::uuid AND owner_id = ${user.id}
+      LIMIT 1
+    `;
+    const card = Array.isArray(cardRows) ? cardRows[0] || null : null;
+    if (!card) {
+      res.status(404).json({ error: "Payment card not found" });
+      return;
+    }
+
+    if (card.avatarUrl) {
+      try { await deleteAvatarByPublicPath(card.avatarUrl); } catch { }
+    }
+
+    await prisma.$executeRaw`
+      UPDATE payment_cards SET avatar_url = NULL, updated_at = now()
+      WHERE id = ${cardId}::uuid AND owner_id = ${user.id}
+    `;
+
+    res.json({ ok: true, avatarUrl: null });
+  }),
+);
+
 module.exports = {
   profileApiRouter: router,
 };

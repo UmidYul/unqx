@@ -1760,6 +1760,10 @@
           const cardEditorUrl = `${userCardBasePath}/${encodeURIComponent(String(x.telegramId || ""))}/card`;
           const cardEditorLabel = x.hasCard ? "Редактировать визитку" : "Создать визитку";
           menuItems.push(menuItem({ label: cardEditorLabel, icon: "pen", attrs: `data-act="open-card" data-url="${cardEditorUrl}"` }));
+
+          const paymentCardsUrl = `${userCardBasePath}/${encodeURIComponent(String(x.telegramId || ""))}/payment-cards`;
+          menuItems.push(menuItem({ label: "Payment карточки", icon: "pen", attrs: `data-act="open-card" data-url="${paymentCardsUrl}"` }));
+
           menuItems.push(menuItem({ label: "Open profile", icon: "external", attrs: profileLink ? `data-act="open-url" data-url="${profileLink}"` : 'disabled="disabled"' }));
 
           if (!isManager) {

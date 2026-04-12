@@ -208,7 +208,7 @@ router.post(
     await prisma.staffUser.update({
       where: { id: managerPayload.id },
       data: { lastLoginAt: new Date() },
-    }).catch(() => {});
+    }).catch(() => { });
 
     res.redirect(resolveStaffHome(managerPayload));
   }),
@@ -271,6 +271,42 @@ router.get(
     const userId = typeof req.params.userId === "string" ? req.params.userId.trim() : "";
     res.render("admin/user-card", {
       title: "Визитка пользователя",
+      adminSession,
+      userId,
+    });
+  }),
+);
+
+router.get(
+  "/admin/users/:userId/payment-cards",
+  requireStaffPage,
+  asyncHandler(async (req, res) => {
+    const adminSession = getAdminSession(req);
+    if (adminSession?.role === "manager") {
+      res.redirect("/manager/users/" + encodeURIComponent(String(req.params.userId || "")) + "/payment-cards");
+      return;
+    }
+    const userId = typeof req.params.userId === "string" ? req.params.userId.trim() : "";
+    res.render("admin/user-payment-cards", {
+      title: "Payment карточки",
+      adminSession,
+      userId,
+    });
+  }),
+);
+
+router.get(
+  "/manager/users/:userId/payment-cards",
+  requireManagerPage,
+  asyncHandler(async (req, res) => {
+    const adminSession = getAdminSession(req);
+    if (!adminSession || adminSession.role !== "manager") {
+      res.redirect("/admin/users/" + encodeURIComponent(String(req.params.userId || "")) + "/payment-cards");
+      return;
+    }
+    const userId = typeof req.params.userId === "string" ? req.params.userId.trim() : "";
+    res.render("admin/user-payment-cards", {
+      title: "Payment карточки",
       adminSession,
       userId,
     });

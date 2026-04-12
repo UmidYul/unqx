@@ -295,6 +295,7 @@ model User {
   updatedAt              DateTime              @updatedAt @map("updated_at")
   slugs                  Slug[]
   profileCard            ProfileCard?
+  paymentCards           PaymentCard[]
   slugRequests           SlugRequest[]
   slugWaitlistEntries    SlugWaitlist[]
   referralsMade          Referral[]            @relation("ReferrerReferrals")
@@ -400,6 +401,33 @@ model ProfileCard {
   updatedAt    DateTime  @updatedAt @map("updated_at")
 
   @@map("profile_cards")
+}
+
+model PaymentCard {
+  id           String    @id @default(uuid())
+  number       Int       @unique
+  ownerId      String    @map("owner_id")
+  owner        User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  name         String    @db.VarChar(120)
+  role         String?   @db.VarChar(120)
+  bio          String?   @db.VarChar(120)
+  hashtag      String?   @db.VarChar(50)
+  address      String?
+  postcode     String?   @db.VarChar(20)
+  email        String?   @db.VarChar(100)
+  extraPhone   String?   @map("extra_phone") @db.VarChar(30)
+  avatarUrl    String?   @map("avatar_url")
+  tags         Json      @default("[]")
+  buttons      Json      @default("[]")
+  theme        CardTheme @default(marble)
+  customColor  String?   @map("custom_color") @db.VarChar(20)
+  showBranding Boolean   @default(true) @map("show_branding")
+  viewsCount   Int       @default(0) @map("views_count")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  @@index([ownerId])
+  @@map("payment_cards")
 }
 
 model CardPrivatePassword {
