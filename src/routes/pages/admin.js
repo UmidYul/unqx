@@ -75,6 +75,10 @@ router.post(
   loginRateLimit,
   requireCsrfToken,
   asyncHandler(async (req, res) => {
+    // Сбросить пользовательскую сессию, если есть
+    if (req.session && req.session.user) {
+      await require("../../middleware/auth").logoutUserSession(req);
+    }
     const loginInput = req.body.login || req.body.email;
     const adminPayload = await verifyAdminCredentials(loginInput, req.body.password);
 
@@ -192,6 +196,10 @@ router.post(
   loginRateLimit,
   requireCsrfToken,
   asyncHandler(async (req, res) => {
+    // Сбросить пользовательскую сессию, если есть
+    if (req.session && req.session.user) {
+      await require("../../middleware/auth").logoutUserSession(req);
+    }
     const loginInput = req.body.login || req.body.email;
     const managerPayload = await verifyManagerCredentials(loginInput, req.body.password);
 
