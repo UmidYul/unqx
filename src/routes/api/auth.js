@@ -75,6 +75,20 @@ function normalizeCity(value) {
   return resolveUzbekistanCity(value);
 }
 
+function canResumePendingRegistration(existingUser, requestedEmail) {
+  if (!existingUser || existingUser.emailVerified !== false || existingUser.status !== "active") {
+    return false;
+  }
+
+  const existingEmail = normalizeEmail(existingUser.email);
+  const nextEmail = normalizeEmail(requestedEmail);
+  if (!existingEmail || !nextEmail) {
+    return false;
+  }
+
+  return existingEmail === nextEmail;
+}
+
 function buildAvailabilityField(provided) {
   return {
     provided: Boolean(provided),
@@ -590,9 +604,33 @@ router.post(
 
     const existing = await prisma.user.findFirst({
       where: { login },
-      select: { id: true, emailVerified: true, refCode: true, email: true },
+      select: {
+        id: true,
+        email: true,
+        emailVerified: true,
+        firstName: true,
+        status: true,
+      },
     });
     if (existing) {
+      if (canResumePendingRegistration(existing, email)) {
+        const codePayload = await setVerificationOtp(existing.id);
+        await sendEmailVerificationOtp({
+          email: existing.email,
+          firstName: existing.firstName,
+          code: codePayload.code,
+        });
+        res.json({
+          ok: true,
+          redirectTo: "/verify-email",
+          email: existing.email,
+          resumedPendingRegistration: true,
+        });
+        return;
+      }
+
+      res.status(409).json({ error: "Р­С‚РѕС‚ Р»РѕРіРёРЅ СѓР¶Рµ Р·Р°РЅСЏС‚. Р’РѕР№С‚Рё в†’", code: "LOGIN_TAKEN" });
+      return;
       const hasEmail = typeof existing.email === "string" && existing.email.length > 0;
       const emailMatches = hasEmail && email && normalizeEmail(existing.email) === email;
       if (existing.emailVerified || !hasEmail || !emailMatches) {
@@ -603,7 +641,7 @@ router.post(
 
     if (email) {
       const existingEmail = await prisma.user.findFirst({
-        where: { email, ...(existing?.id ? { id: { not: existing.id } } : {}) },
+        where: { email },
         select: { id: true },
       });
       if (existingEmail) {
@@ -613,45 +651,22 @@ router.post(
     }
 
     const passwordHash = await bcrypt.hash(password, PASSWORD_ROUNDS);
-    let user;
-    if (existing) {
-      user = await prisma.user.update({
-        where: { id: existing.id },
-        data: {
-          firstName,
-          city,
-          login,
-          passwordHash,
-          emailVerified: false,
-          plan: "none",
-          profileType,
-          status: "active",
-          resetPasswordToken: null,
-          resetPasswordExpiresAt: null,
-          loginAttempts: 0,
-          lockedUntil: null,
-          ...(existing.refCode ? {} : { refCode: await generateUniqueRefCode() }),
-        },
-        select: USER_AUTH_SELECT,
-      });
-    } else {
-      const refCode = await generateUniqueRefCode();
-      user = await prisma.user.create({
-        data: {
-          firstName,
-          city,
-          email: email || null,
-          login,
-          passwordHash,
-          emailVerified: false,
-          plan: "none",
-          profileType,
-          status: "active",
-          refCode,
-        },
-        select: USER_AUTH_SELECT,
-      });
-    }
+    const refCode = await generateUniqueRefCode();
+    const user = await prisma.user.create({
+      data: {
+        firstName,
+        city,
+        email: email || null,
+        login,
+        passwordHash,
+        emailVerified: false,
+        plan: "none",
+        profileType,
+        status: "active",
+        refCode,
+      },
+      select: USER_AUTH_SELECT,
+    });
 
     const codePayload = email ? await setVerificationOtp(user.id) : null;
     if (req.session?.pendingRefCode) {

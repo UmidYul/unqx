@@ -359,6 +359,16 @@ function createApp() {
     const path = req.path && req.path.startsWith("/") ? req.path : "/";
     const canonicalPath = path === "/" ? "/" : path.replace(/\/+$/, "");
     const canonicalUrl = `${baseUrl}${canonicalPath}`;
+    const acceptsHtml = req.method === "GET" && req.accepts(["html", "json", "text"]) === "html";
+    const isStaticAssetRequest =
+      path.startsWith("/css/") ||
+      path.startsWith("/js/") ||
+      path.startsWith("/images/") ||
+      path.startsWith("/vendor/") ||
+      path.startsWith("/brand/") ||
+      path.startsWith("/uploads/") ||
+      path === "/favicon.ico";
+    const isHtmlPageRequest = acceptsHtml && !isStaticAssetRequest && !path.startsWith("/api/");
     const csrfToken = ensureCsrfToken(req);
 
     res.locals.adminSession = getAdminSession(req);
@@ -379,16 +389,10 @@ function createApp() {
       res.setHeader("X-Robots-Tag", "noindex, nofollow, noarchive");
     }
 
-    if (
-      req.path === "/profile" ||
-      req.path === "/login" ||
-      req.path === "/register" ||
-      req.path === "/verify-email" ||
-      req.path === "/forgot-password" ||
-      req.path === "/reset-password" ||
-      req.path === "/reactivate-account" ||
-      req.path.startsWith("/api/")
-    ) {
+    // Dynamic HTML responses can include personalized markup and session
+    // cookies. Mark them private/no-store so shared proxies can never reuse
+    // one visitor's page or Set-Cookie for another visitor.
+    if (isHtmlPageRequest || req.path.startsWith("/api/")) {
       res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, private");
       res.setHeader("Pragma", "no-cache");
       res.setHeader("Expires", "0");
