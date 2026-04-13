@@ -109,6 +109,18 @@ router.post(
   }),
 );
 
+router.post(
+  "/manager/logout",
+  requireCsrfToken,
+  asyncHandler(async (req, res) => {
+    if (req.session) {
+      await logoutAdmin(req);
+    }
+    res.clearCookie("unqx.sid");
+    res.redirect("/manager/login");
+  }),
+);
+
 router.get(
   "/admin/dashboard",
   requireStaffPage,
