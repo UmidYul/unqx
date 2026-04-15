@@ -5,6 +5,7 @@ const { asyncHandler } = require("../../middleware/async");
 const { prisma } = require("../../db/prisma");
 const { applyOrderStatusTransition } = require("../../services/order-status-transition");
 const { logPaymentEvent } = require("../../services/payment-events");
+const { safeSecretEqual, normalizeAuthorizationSecret } = require("../../utils/secrets");
 
 const router = express.Router();
 
@@ -67,25 +68,33 @@ function extractPaymeWebhookData(payload) {
     };
 }
 
-function isPaymeWebhookAuthorized(req) {
+function resolvePaymeWebhookAuthorization(req) {
     const configuredSecret = String(env.PAYME_WEBHOOK_SECRET || "").trim();
     if (!configuredSecret) {
-        return true;
+        return {
+            authorized: env.NODE_ENV !== "production",
+            misconfigured: env.NODE_ENV === "production",
+        };
     }
 
     const headerSignature = pickString(req.get("x-payme-signature"));
-    const headerAuth = pickString(req.get("authorization"));
-    const querySecret = pickString(req.query?.secret);
-    const pathSecret = pickString(req.params?.secret);
-    const bodySecret = pickString(req.body?.secret, req.body?.key);
-
-    return [headerSignature, headerAuth, querySecret, pathSecret, bodySecret].includes(configuredSecret);
+    const headerAuth = normalizeAuthorizationSecret(req.get("authorization"));
+    const candidates = [headerSignature, headerAuth].filter(Boolean);
+    return {
+        authorized: candidates.some((candidate) => safeSecretEqual(candidate, configuredSecret)),
+        misconfigured: false,
+    };
 }
 
 async function handlePaymeWebhook(req, res) {
-    if (!isPaymeWebhookAuthorized(req)) {
-        console.warn("[payme-webhook] unauthorized request");
-        res.status(401).json({ ok: false, error: "Unauthorized webhook" });
+    const authState = resolvePaymeWebhookAuthorization(req);
+    if (!authState.authorized) {
+        console.warn("[payme-webhook] rejected request", {
+            misconfiguredSecret: authState.misconfigured,
+            hasHeaderSignature: Boolean(req.get("x-payme-signature")),
+            hasAuthorization: Boolean(req.get("authorization")),
+        });
+        res.status(authState.misconfigured ? 503 : 401).json({ ok: false, error: "Unauthorized webhook" });
         return;
     }
 
@@ -174,7 +183,6 @@ async function handlePaymeWebhook(req, res) {
 }
 
 router.post("/payme/webhook", asyncHandler(handlePaymeWebhook));
-router.post("/payme/webhook/:secret", asyncHandler(handlePaymeWebhook));
 
 module.exports = {
     paymentsApiRouter: router,

@@ -8,6 +8,20 @@ function emailKeyGenerator(req) {
   return `ip:${ipKeyGenerator(req)}`;
 }
 
+function authSubjectKeyGenerator(req) {
+  const email = typeof req.body?.email === "string" ? req.body.email.trim().toLowerCase() : "";
+  if (email) {
+    return `email:${email}`;
+  }
+
+  const userId = typeof req.session?.user?.userId === "string" ? req.session.user.userId.trim() : "";
+  if (userId) {
+    return `user:${userId}`;
+  }
+
+  return `ip:${ipKeyGenerator(req)}`;
+}
+
 const loginRateLimit = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,
@@ -84,6 +98,15 @@ const authForgotPasswordRateLimit = rateLimit({
   message: { error: "Too many requests", code: "RATE_LIMITED" },
 });
 
+const authOtpVerifyRateLimit = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  keyGenerator: authSubjectKeyGenerator,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many requests", code: "RATE_LIMITED" },
+});
+
 module.exports = {
   loginRateLimit,
   adminApiRateLimit,
@@ -94,4 +117,5 @@ module.exports = {
   authCheckAvailabilityRateLimit,
   authSendOtpRateLimit,
   authForgotPasswordRateLimit,
+  authOtpVerifyRateLimit,
 };

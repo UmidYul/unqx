@@ -19,6 +19,7 @@ const { isPublicProfileVisible } = require("../../services/subscription");
 const {
   verifyPrivateAccessToken,
   extractPrivateAccessToken,
+  setPrivateAccessCookie,
   clearPrivateAccessCookie,
 } = require("../../services/private-access");
 const { seoHub, getSeoPage } = require("../../content/seo-pages");
@@ -28,6 +29,52 @@ const router = express.Router();
 const defaultSocialImage = absoluteUrl("/brand/logo.PNG");
 const CARD_THEMES = new Set(["default_dark", "arctic", "linen", "marble", "forest", "sage_luxe", "midnight_obsidian", "golden_noir", "aurora_codex", "nebula_glass", "velours"]);
 const LEGAL_DOCS_DIR = path.join(env.EXPRESS_APP_DIR, "docs");
+
+function normalizeSafeNextPath(value, fallback = "/profile") {
+  const raw = String(value || "").trim();
+  if (!raw || !raw.startsWith("/") || raw.startsWith("//") || raw.includes("\\")) {
+    return fallback;
+  }
+
+  try {
+    const parsed = new URL(raw, "http://local.unqx");
+    if (parsed.origin !== "http://local.unqx" || !parsed.pathname.startsWith("/")) {
+      return fallback;
+    }
+    return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+  } catch {
+    return fallback;
+  }
+}
+
+function buildPathWithoutQueryKeys(basePath, query, keysToOmit = []) {
+  const omitted = new Set(
+    (Array.isArray(keysToOmit) ? keysToOmit : [])
+      .map((key) => String(key || "").trim())
+      .filter(Boolean),
+  );
+  const params = new URLSearchParams();
+
+  Object.entries(query || {}).forEach(([key, value]) => {
+    if (omitted.has(String(key || ""))) {
+      return;
+    }
+    if (Array.isArray(value)) {
+      value
+        .filter((item) => typeof item === "string" && item.length > 0)
+        .forEach((item) => {
+          params.append(key, item);
+        });
+      return;
+    }
+    if (typeof value === "string" && value.length > 0) {
+      params.set(key, value);
+    }
+  });
+
+  const serialized = params.toString();
+  return serialized ? `${basePath}?${serialized}` : basePath;
+}
 
 function isMissingModelTable(error, modelName) {
   return (
@@ -919,7 +966,7 @@ router.get(
       title: "Войти | UNQX",
       description: "UNQX personal dashboard: card settings, UNQ, analytics, requests and profile settings.",
       image: defaultSocialImage,
-      next: typeof req.query.next === "string" ? req.query.next : "/profile",
+      next: normalizeSafeNextPath(req.query.next, "/profile"),
       adminSession: getAdminSession(req),
     });
   }),
@@ -1983,6 +2030,11 @@ router.get(
                 noindex: true,
                 adminSession: getAdminSession(req),
               });
+              return;
+            }
+            if (typeof req.query?.accessToken === "string" && req.query.accessToken.trim()) {
+              setPrivateAccessCookie(req, res, accessToken, accessPayload.exp);
+              res.redirect(buildPathWithoutQueryKeys(`/${encodeURIComponent(slug)}`, req.query, ["accessToken"]));
               return;
             }
             privateAccessExpiry = accessPayload.exp;

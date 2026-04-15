@@ -3,6 +3,7 @@ const bcrypt = require("bcryptjs");
 
 const { env } = require("../config/env");
 const { resolveClientIp } = require("./request-ip");
+const { buildCookieOptions } = require("../utils/cookies");
 
 const PRIVATE_ACCESS_COOKIE = "unqx.pacc";
 const PRIVATE_ACCESS_TTL_MS = 5 * 60 * 1000;
@@ -136,40 +137,31 @@ async function comparePrivatePassword(plain, hash) {
   return bcrypt.compare(plain, String(hash || ""));
 }
 
-function resolveCookieSecure(req) {
-  if (env.SESSION_COOKIE_SECURE === true) return true;
-  if (env.SESSION_COOKIE_SECURE === false) return false;
-  if (String(env.SESSION_COOKIE_SECURE).toLowerCase() === "auto") {
-    const forwardedProto = String(req.get?.("x-forwarded-proto") || "").toLowerCase();
-    return Boolean(req.secure) || forwardedProto.includes("https");
-  }
-  return false;
-}
-
 function setPrivateAccessCookie(req, res, token, expiresAt) {
   if (!res || typeof res.cookie !== "function") {
     return;
   }
   const expiresAtDate = new Date(Number(expiresAt || Date.now() + PRIVATE_ACCESS_TTL_MS));
-  res.cookie(PRIVATE_ACCESS_COOKIE, token, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: resolveCookieSecure(req),
-    path: "/",
-    expires: expiresAtDate,
-  });
+  res.cookie(
+    PRIVATE_ACCESS_COOKIE,
+    token,
+    buildCookieOptions(req, {
+      httpOnly: true,
+      expires: expiresAtDate,
+    }),
+  );
 }
 
 function clearPrivateAccessCookie(req, res) {
   if (!res || typeof res.clearCookie !== "function") {
     return;
   }
-  res.clearCookie(PRIVATE_ACCESS_COOKIE, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: resolveCookieSecure(req),
-    path: "/",
-  });
+  res.clearCookie(
+    PRIVATE_ACCESS_COOKIE,
+    buildCookieOptions(req, {
+      httpOnly: true,
+    }),
+  );
 }
 
 function readCookieMap(req) {

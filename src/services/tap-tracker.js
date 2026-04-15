@@ -7,6 +7,7 @@ const { detectDevice } = require("./ua");
 const { sendTapPushNotification } = require("./push");
 const { resolveUzbekistanCity } = require("../constants/uzbekistan-cities");
 const { resolveClientIp, buildViewerFingerprint } = require("./request-ip");
+const { buildCookieOptions } = require("../utils/cookies");
 
 const TRACKED_SOURCES = new Set(["nfc", "qr", "direct", "share", "widget"]);
 const TRACKED_BUTTON_TYPES = new Set([
@@ -91,8 +92,15 @@ function getAnalyticsSessionId(req, res) {
   }
 
   const next = randomUUID().replace(/-/g, "").slice(0, 32);
-  if (res && typeof res.append === "function") {
-    res.append("Set-Cookie", `unqx_sid=${next}; Max-Age=31536000; Path=/; SameSite=Lax; HttpOnly`);
+  if (res && typeof res.cookie === "function") {
+    res.cookie(
+      "unqx_sid",
+      next,
+      buildCookieOptions(req, {
+        httpOnly: true,
+        maxAge: 31536000 * 1000,
+      }),
+    );
   }
   return next;
 }

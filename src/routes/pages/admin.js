@@ -14,6 +14,7 @@ const { prisma } = require("../../db/prisma");
 const { loginRateLimit } = require("../../middleware/rate-limit");
 const { requireCsrfToken } = require("../../middleware/csrf");
 const { getBaseUrl } = require("../../utils/url");
+const { buildCookieOptions } = require("../../utils/cookies");
 
 const router = express.Router();
 
@@ -104,7 +105,7 @@ router.post(
       await logoutAdmin(req);
     }
 
-    res.clearCookie("unqx.sid");
+    res.clearCookie("unqx.sid", buildCookieOptions(req, { httpOnly: true }));
     res.redirect("/admin");
   }),
 );
@@ -116,7 +117,7 @@ router.post(
     if (req.session) {
       await logoutAdmin(req);
     }
-    res.clearCookie("unqx.sid");
+    res.clearCookie("unqx.sid", buildCookieOptions(req, { httpOnly: true }));
     res.redirect("/manager/login");
   }),
 );

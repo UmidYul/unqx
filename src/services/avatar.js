@@ -16,11 +16,26 @@ function getAvatarDiskPathBySlug(slug) {
 }
 
 function getDiskPathFromPublicPath(publicPath) {
-  const normalized = String(publicPath || "")
+  const cleanPath = String(publicPath || "")
     .split("?")[0]
     .split("#")[0]
-    .replace(/^\//, "");
-  return path.join(env.PUBLIC_DIR, normalized.replace(/^public\//, ""));
+    .trim();
+  if (!cleanPath.startsWith("/uploads/avatars/")) {
+    return null;
+  }
+
+  const basename = path.basename(cleanPath);
+  if (!basename || basename !== cleanPath.slice("/uploads/avatars/".length) || !basename.endsWith(".webp")) {
+    return null;
+  }
+
+  const resolved = path.resolve(AVATAR_DIR, basename);
+  const avatarRoot = `${path.resolve(AVATAR_DIR)}${path.sep}`;
+  if (!resolved.startsWith(avatarRoot)) {
+    return null;
+  }
+
+  return resolved;
 }
 
 async function ensureAvatarDir() {
@@ -53,8 +68,13 @@ async function deleteAvatarByPublicPath(publicPath) {
     return;
   }
 
+  const diskPath = getDiskPathFromPublicPath(publicPath);
+  if (!diskPath) {
+    return;
+  }
+
   try {
-    await fs.unlink(getDiskPathFromPublicPath(publicPath));
+    await fs.unlink(diskPath);
   } catch (error) {
     if (error.code !== "ENOENT") {
       throw error;

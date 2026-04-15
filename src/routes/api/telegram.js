@@ -6,6 +6,7 @@ const { prisma } = require("../../db/prisma");
 const { getSetting } = require("../../services/platform-settings");
 const { sendTelegramCallbackAnswer } = require("../../services/telegram");
 const { applyOrderStatusTransition } = require("../../services/order-status-transition");
+const { safeSecretEqual } = require("../../utils/secrets");
 
 const router = express.Router();
 const CALLBACK_TTL_MS = 1000 * 60 * 30;
@@ -47,17 +48,21 @@ function parseOrderAction(value) {
   };
 }
 
-function isWebhookSecretValid(req) {
+function resolveWebhookSecretState(req) {
   const configuredSecret = String(env.TELEGRAM_WEBHOOK_SECRET || "").trim();
   if (!configuredSecret) {
-    return true;
+    return {
+      authorized: env.NODE_ENV !== "production",
+      misconfigured: env.NODE_ENV === "production",
+    };
   }
 
   const headerSecret = String(req.get("x-telegram-bot-api-secret-token") || "").trim();
-  const querySecret = String(req.query?.secret || "").trim();
-  const pathSecret = String(req.params?.secret || "").trim();
-
-  return headerSecret === configuredSecret || querySecret === configuredSecret || pathSecret === configuredSecret;
+  const candidates = [headerSecret].filter(Boolean);
+  return {
+    authorized: candidates.some((candidate) => safeSecretEqual(candidate, configuredSecret)),
+    misconfigured: false,
+  };
 }
 
 function cleanupProcessedCallbacks() {
@@ -235,11 +240,11 @@ async function handleTelegramWebhook(req, res) {
     });
   }
 
-  if (!isWebhookSecretValid(req)) {
+  const secretState = resolveWebhookSecretState(req);
+  if (!secretState.authorized) {
     console.warn("[telegram-webhook] rejected: invalid secret", {
+      misconfiguredSecret: secretState.misconfigured,
       hasHeaderSecret: Boolean(req.get("x-telegram-bot-api-secret-token")),
-      hasQuerySecret: Boolean(req.query?.secret),
-      hasPathSecret: Boolean(req.params?.secret),
     });
     const callbackQueryId = String(callback?.id || "").trim();
     if (callbackQueryId) {
@@ -249,7 +254,7 @@ async function handleTelegramWebhook(req, res) {
         showAlert: true,
       }).catch(() => null);
     }
-    res.status(401).json({ ok: false, error: "Unauthorized webhook" });
+    res.status(secretState.misconfigured ? 503 : 401).json({ ok: false, error: "Unauthorized webhook" });
     return;
   }
 
@@ -339,7 +344,6 @@ async function handleTelegramWebhook(req, res) {
 }
 
 router.post("/webhook", asyncHandler(handleTelegramWebhook));
-router.post("/webhook/:secret", asyncHandler(handleTelegramWebhook));
 
 module.exports = {
   telegramApiRouter: router,
