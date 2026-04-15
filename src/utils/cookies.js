@@ -1,5 +1,8 @@
 const { env } = require("../config/env");
 
+const SESSION_COOKIE_NAME = "unqx.sid.v2";
+const LEGACY_SESSION_COOKIE_NAMES = ["unqx.sid"];
+
 function resolveCookieSecure(req) {
   if (env.SESSION_COOKIE_SECURE === true) return true;
   if (env.SESSION_COOKIE_SECURE === false) return false;
@@ -28,6 +31,8 @@ function buildCookieOptions(req, overrides = {}) {
 }
 
 module.exports = {
+  SESSION_COOKIE_NAME,
+  LEGACY_SESSION_COOKIE_NAMES,
   resolveCookieSecure,
   buildCookieOptions,
 };

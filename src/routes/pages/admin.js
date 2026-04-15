@@ -14,7 +14,7 @@ const { prisma } = require("../../db/prisma");
 const { loginRateLimit } = require("../../middleware/rate-limit");
 const { requireCsrfToken } = require("../../middleware/csrf");
 const { getBaseUrl } = require("../../utils/url");
-const { buildCookieOptions } = require("../../utils/cookies");
+const { SESSION_COOKIE_NAME, LEGACY_SESSION_COOKIE_NAMES, buildCookieOptions } = require("../../utils/cookies");
 
 const router = express.Router();
 
@@ -105,7 +105,16 @@ router.post(
       await logoutAdmin(req);
     }
 
-    res.clearCookie("unqx.sid", buildCookieOptions(req, { httpOnly: true }));
+    res.clearCookie(SESSION_COOKIE_NAME, buildCookieOptions(req, { httpOnly: true }));
+    for (const legacyName of LEGACY_SESSION_COOKIE_NAMES) {
+      res.clearCookie(legacyName, buildCookieOptions(req, { httpOnly: true }));
+      res.clearCookie(legacyName, {
+        path: "/",
+        sameSite: "lax",
+        secure: buildCookieOptions(req).secure,
+        httpOnly: true,
+      });
+    }
     res.redirect("/admin");
   }),
 );
@@ -117,7 +126,16 @@ router.post(
     if (req.session) {
       await logoutAdmin(req);
     }
-    res.clearCookie("unqx.sid", buildCookieOptions(req, { httpOnly: true }));
+    res.clearCookie(SESSION_COOKIE_NAME, buildCookieOptions(req, { httpOnly: true }));
+    for (const legacyName of LEGACY_SESSION_COOKIE_NAMES) {
+      res.clearCookie(legacyName, buildCookieOptions(req, { httpOnly: true }));
+      res.clearCookie(legacyName, {
+        path: "/",
+        sameSite: "lax",
+        secure: buildCookieOptions(req).secure,
+        httpOnly: true,
+      });
+    }
     res.redirect("/manager/login");
   }),
 );

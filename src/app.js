@@ -26,6 +26,7 @@ const { paymentsApiRouter } = require("./routes/api/payments");
 const { systemRouter } = require("./routes/system");
 const { getBaseUrl } = require("./utils/url");
 const { ensureCsrfToken } = require("./middleware/csrf");
+const { SESSION_COOKIE_NAME, LEGACY_SESSION_COOKIE_NAMES, buildCookieOptions } = require("./utils/cookies");
 const { runBootstrapTasks } = require("./services/bootstrap");
 const { startPendingExpiryJob } = require("./services/pending-expiry");
 const { startLiveJobs } = require("./services/live-jobs");
@@ -291,7 +292,7 @@ function createApp() {
         createTableIfMissing: true,
       }),
       proxy: env.TRUST_PROXY !== false,
-      name: "unqx.sid",
+      name: SESSION_COOKIE_NAME,
       secret: env.SESSION_SECRET,
       resave: false,
       saveUninitialized: false,
@@ -305,6 +306,30 @@ function createApp() {
       },
     }),
   );
+
+  app.use((req, res, next) => {
+    const rawCookie = String(req.get("cookie") || "");
+    if (!rawCookie) {
+      next();
+      return;
+    }
+
+    for (const legacyName of LEGACY_SESSION_COOKIE_NAMES) {
+      const escaped = legacyName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      if (new RegExp(`(?:^|;\\s*)${escaped}=`).test(rawCookie)) {
+        res.clearCookie(legacyName, buildCookieOptions(req, { httpOnly: true }));
+        // Also clear host-only legacy cookies left from older deployments.
+        res.clearCookie(legacyName, {
+          path: "/",
+          sameSite: "lax",
+          secure: buildCookieOptions(req).secure,
+          httpOnly: true,
+        });
+      }
+    }
+
+    next();
+  });
 
   app.use((req, res, next) => {
     const incomingRequestId = String(req.get("x-request-id") || "").trim();

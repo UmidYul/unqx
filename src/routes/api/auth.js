@@ -28,7 +28,7 @@ const { linkReferralOnRegistration } = require("../../services/referrals");
 const { resolveUzbekistanCity } = require("../../constants/uzbekistan-cities");
 const { normalizeLogin, isValidLogin } = require("../../utils/login");
 const { createUserAccessToken } = require("../../services/user-access-token");
-const { buildCookieOptions } = require("../../utils/cookies");
+const { SESSION_COOKIE_NAME, LEGACY_SESSION_COOKIE_NAMES, buildCookieOptions } = require("../../utils/cookies");
 
 const router = express.Router();
 const OTP_LENGTH = 6;
@@ -497,7 +497,16 @@ async function handleLogoutRequest(req, res) {
     });
   }
 
-  res.clearCookie("unqx.sid", buildCookieOptions(req, { httpOnly: true }));
+  res.clearCookie(SESSION_COOKIE_NAME, buildCookieOptions(req, { httpOnly: true }));
+  for (const legacyName of LEGACY_SESSION_COOKIE_NAMES) {
+    res.clearCookie(legacyName, buildCookieOptions(req, { httpOnly: true }));
+    res.clearCookie(legacyName, {
+      path: "/",
+      sameSite: "lax",
+      secure: buildCookieOptions(req).secure,
+      httpOnly: true,
+    });
+  }
   res.clearCookie("unqx_owner_slugs", buildCookieOptions(req));
   const csrfToken = ensureCsrfToken(req);
   res.json({ ok: true, csrfToken });
