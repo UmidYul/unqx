@@ -3689,8 +3689,15 @@
   });
   document.addEventListener("click", (e) => {
     const target = e.target;
+    const tabNode = target instanceof Element ? target.closest("[data-payment-panel-tab]") : null;
+    if (tabNode instanceof HTMLElement) {
+      e.preventDefault();
+      setPaymentPanel(tabNode.getAttribute("data-payment-panel-tab") || "profiles");
+      return;
+    }
     const node = target instanceof Element ? target.closest("[data-payment-panel-goto]") : null;
     if (!(node instanceof HTMLElement)) return;
+    e.preventDefault();
     setPaymentPanel(node.getAttribute("data-payment-panel-goto") || "profiles");
   });
   document.getElementById("payment-card-method-add")?.addEventListener("click", () => {
@@ -4103,7 +4110,7 @@
       setFormValue(form, "page", getInitial("p_page", "page") || "1");
     }
   }
-  if (tab === "payment-cards") {
+  if (normalizedTab === "payment-cards") {
     const form = document.getElementById("payment-cards-filters");
     let initialPaymentUserId = "";
     if (form instanceof HTMLFormElement) {
@@ -4198,7 +4205,7 @@
     void loadPurchases();
     void loadPricingSettings();
   }
-  if (tab === "payment-cards") {
+  if (normalizedTab === "payment-cards") {
     dbg("load", "payment-cards");
     void searchPaymentUsers();
     void loadPaymentCards();

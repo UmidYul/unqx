@@ -2,6 +2,8 @@
   activeTab==="string" && activeTab ? activeTab : "analytics" ; const pagePublicBaseUrl=typeof publicBaseUrl==="string"
   && publicBaseUrl ? publicBaseUrl : "" ; const pageQuery=typeof query==="object" && query ? query : {}; const
   pageDashboardBase=typeof dashboardBasePath==="string" && dashboardBasePath ? dashboardBasePath : "/admin/dashboard" ;
+  const pageAssetVersion=typeof assetVersion==="string" && assetVersion ? assetVersion : ""; const withPageAssetVersion=(src)=> {
+  const value=String(src || ""); if (!value || !pageAssetVersion || !value.startsWith("/")) return value; return `${value}${value.includes("?") ? "&" : "?"}v=${encodeURIComponent(pageAssetVersion)}`; };
   %>
   <!doctype html>
   <html lang="ru">
@@ -1921,15 +1923,15 @@
 
         <script nonce="<%= cspNonce %>" id="admin-dashboard-query"
           type="application/json"><%- JSON.stringify(pageQuery) %></script>
-        <script nonce="<%= cspNonce %>" src="/js/admin-layout.js"></script>
-        <script nonce="<%= cspNonce %>" src="/js/admin-dialogs.js"></script>
-        <script nonce="<%= cspNonce %>" src="/vendor/sortablejs/Sortable.min.js"></script>
-        <script nonce="<%= cspNonce %>" src="/vendor/qrcode/qrcode.min.js"></script>
-        <script nonce="<%= cspNonce %>" src="/vendor/chartjs/chart.umd.min.js"></script>
-        <script nonce="<%= cspNonce %>" src="/js/admin-dashboard.js"></script>
+        <script nonce="<%= cspNonce %>" src="<%= withPageAssetVersion('/js/admin-layout.js') %>"></script>
+        <script nonce="<%= cspNonce %>" src="<%= withPageAssetVersion('/js/admin-dialogs.js') %>"></script>
+        <script nonce="<%= cspNonce %>" src="<%= withPageAssetVersion('/vendor/sortablejs/Sortable.min.js') %>"></script>
+        <script nonce="<%= cspNonce %>" src="<%= withPageAssetVersion('/vendor/qrcode/qrcode.min.js') %>"></script>
+        <script nonce="<%= cspNonce %>" src="<%= withPageAssetVersion('/vendor/chartjs/chart.umd.min.js') %>"></script>
+        <script nonce="<%= cspNonce %>" src="<%= withPageAssetVersion('/js/admin-dashboard.js') %>"></script>
         <% if (adminSession?.role !=='manager' ) { %>
-          <script nonce="<%= cspNonce %>" src="/js/admin-features.js"></script>
-          <script nonce="<%= cspNonce %>" src="/js/admin-settings.js"></script>
+          <script nonce="<%= cspNonce %>" src="<%= withPageAssetVersion('/js/admin-features.js') %>"></script>
+          <script nonce="<%= cspNonce %>" src="<%= withPageAssetVersion('/js/admin-settings.js') %>"></script>
           <% } %>
   </body>
 
