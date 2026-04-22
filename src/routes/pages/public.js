@@ -775,7 +775,19 @@ function isPaymentCardStorageError(error) {
   if (!error || typeof error !== "object") return false;
   const code = String(error.code || "");
   const message = String(error.message || "").toLowerCase();
-  return code === "42P01" || code === "42703" || code === "P2021" || message.includes("payment_cards");
+  let meta = "";
+  try {
+    meta = JSON.stringify(error.meta || {}).toLowerCase();
+  } catch {
+    meta = "";
+  }
+  return (
+    code === "42P01" ||
+    code === "42703" ||
+    code === "P2021" ||
+    (code === "P2010" && (message.includes("42703") || meta.includes("42703"))) ||
+    message.includes("payment_cards")
+  );
 }
 
 function mapPublicPaymentMethods(value) {
