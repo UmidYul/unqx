@@ -315,6 +315,7 @@ model User {
   privatePasswords       CardPrivatePassword[] @relation("CardPrivatePasswords")
   privateAccessLogs      CardPrivateAccessLog[] @relation("CardPrivateAccessLogs")
   badgeApplications      BadgeApplication[]
+  paymentCards           PaymentCard[]
 
   @@index([plan, planPurchasedAt])
   @@index([subscriptionExpiresAt])
@@ -335,6 +336,7 @@ model StaffUser {
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
   createdUsers User[]   @relation("StaffCreatedUsers")
+  paymentCards PaymentCard[]
 
   @@map("staff_users")
 }
@@ -400,6 +402,27 @@ model ProfileCard {
   updatedAt    DateTime  @updatedAt @map("updated_at")
 
   @@map("profile_cards")
+}
+
+model PaymentCard {
+  id               String     @id @default(uuid())
+  ownerId          String     @map("owner_id")
+  owner            User       @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  publicSlug       String     @unique @map("public_slug") @db.VarChar(90)
+  title            String     @db.VarChar(140)
+  address          String?
+  postcode         String?    @db.VarChar(20)
+  methods          Json       @default("[]")
+  isPublished      Boolean    @default(true) @map("is_published")
+  createdByStaffId String?    @map("created_by_staff_id") @db.Uuid
+  createdByStaff   StaffUser? @relation(fields: [createdByStaffId], references: [id], onDelete: SetNull)
+  createdAt        DateTime   @default(now()) @map("created_at")
+  updatedAt        DateTime   @updatedAt @map("updated_at")
+
+  @@index([ownerId, createdAt(sort: Desc)])
+  @@index([createdByStaffId])
+  @@index([isPublished])
+  @@map("payment_cards")
 }
 
 model CardPrivatePassword {

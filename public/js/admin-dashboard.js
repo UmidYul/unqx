@@ -6,6 +6,7 @@
   const adminRole = String(body.getAttribute("data-admin-role") || "admin").toLowerCase();
   const isManager = adminRole === "manager";
   const userCardBasePath = isManager ? "/manager/users" : "/admin/users";
+  const dashboardBasePath = isManager ? "/manager/dashboard" : "/admin/dashboard";
 
   const autofillIgnoreSelectors = "form,input,textarea,select";
   const autofillIgnoreAttrs = ["data-bwignore", "data-lpignore", "data-1p-ignore"];
@@ -1634,6 +1635,7 @@
           const cardEditorUrl = `${userCardBasePath}/${encodeURIComponent(String(x.telegramId || ""))}/card`;
           const cardEditorLabel = x.hasCard ? "Редактировать визитку" : "Создать визитку";
           menuItems.push(menuItem({ label: cardEditorLabel, icon: "pen", attrs: `data-act="open-card" data-url="${cardEditorUrl}"` }));
+          menuItems.push(menuItem({ label: "Payment", icon: "creditCard", attrs: `data-act="open-card" data-url="${dashboardBasePath}?tab=payment-cards&userId=${encodeURIComponent(String(x.telegramId || ""))}"` }));
           menuItems.push(menuItem({ label: "Open profile", icon: "external", attrs: profileLink ? `data-act="open-url" data-url="${profileLink}"` : 'disabled="disabled"' }));
 
           if (!isManager) {
@@ -1662,6 +1664,275 @@
       setFormValue(form, "page", String(nextPage));
       void loadUsers();
     });
+  }
+
+  const paymentCardsState = {
+    items: [],
+    selected: null,
+    editing: null,
+    methods: [],
+  };
+
+  function normalizePaymentSlug(value) {
+    return String(value || "")
+      .trim()
+      .replace(/^\/+payment\/+/i, "")
+      .replace(/^\/+/, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 80);
+  }
+
+  function paymentMethodRow(method, index) {
+    const type = String(method?.type || "other");
+    return `<div class="grid gap-2 rounded-xl border border-neutral-200 bg-neutral-50 p-3" data-payment-method-index="${index}">
+      <div class="grid gap-2 sm:grid-cols-[130px_1fr]">
+        <select data-payment-method-field="type" class="rounded-lg border border-neutral-200 px-2.5 py-2 text-sm">
+          <option value="card" ${type === "card" ? "selected" : ""}>Карта</option>
+          <option value="bank" ${type === "bank" ? "selected" : ""}>Банк</option>
+          <option value="payme" ${type === "payme" ? "selected" : ""}>Payme</option>
+          <option value="click" ${type === "click" ? "selected" : ""}>Click</option>
+          <option value="cash" ${type === "cash" ? "selected" : ""}>Наличные</option>
+          <option value="other" ${type === "other" ? "selected" : ""}>Другое</option>
+        </select>
+        <input data-payment-method-field="label" value="${X(method?.label || "")}" placeholder="Название реквизита"
+          class="rounded-lg border border-neutral-200 px-2.5 py-2 text-sm">
+      </div>
+      <input data-payment-method-field="value" value="${X(method?.value || "")}" placeholder="Номер карты, счёт, телефон или инструкция"
+        class="rounded-lg border border-neutral-200 px-2.5 py-2 text-sm">
+      <div class="grid gap-2 sm:grid-cols-[1fr_auto]">
+        <input data-payment-method-field="note" value="${X(method?.note || "")}" placeholder="Комментарий"
+          class="rounded-lg border border-neutral-200 px-2.5 py-2 text-sm">
+        <button type="button" data-payment-method-remove="${index}"
+          class="rounded-lg border border-red-200 px-3 py-2 text-xs font-semibold text-red-700 transition hover:bg-red-50">Удалить</button>
+      </div>
+    </div>`;
+  }
+
+  function renderPaymentMethods() {
+    const list = document.getElementById("payment-card-methods-list");
+    if (!(list instanceof HTMLElement)) return;
+    list.innerHTML = paymentCardsState.methods.length
+      ? paymentCardsState.methods.map(paymentMethodRow).join("")
+      : `<div class="rounded-xl border border-dashed border-neutral-300 p-4 text-center text-xs text-neutral-500">Добавьте реквизиты для этой точки.</div>`;
+  }
+
+  function setPaymentEditorStatus(message, tone = "muted") {
+    const node = document.getElementById("payment-card-editor-status");
+    if (!(node instanceof HTMLElement)) return;
+    node.textContent = String(message || "");
+    node.className = tone === "error" ? "text-xs text-red-700" : tone === "success" ? "text-xs text-emerald-700" : "text-xs text-neutral-500";
+  }
+
+  function renderPaymentPreview(selected) {
+    const preview = selected?.profile || selected?.paymentCard?.profile || {};
+    const user = selected?.user || selected?.paymentCard?.user || {};
+    const avatar = document.getElementById("payment-cards-preview-avatar");
+    const avatarEmpty = document.getElementById("payment-cards-preview-avatar-empty");
+    const name = document.getElementById("payment-cards-preview-name");
+    const role = document.getElementById("payment-cards-preview-role");
+    const meta = document.getElementById("payment-cards-preview-meta");
+    const tags = document.getElementById("payment-cards-preview-tags");
+    const avatarUrl = String(preview.avatarUrl || "");
+    if (avatar instanceof HTMLImageElement && avatarEmpty instanceof HTMLElement) {
+      avatar.src = avatarUrl;
+      avatar.classList.toggle("hidden", !avatarUrl);
+      avatarEmpty.classList.toggle("hidden", Boolean(avatarUrl));
+    }
+    if (name instanceof HTMLElement) name.textContent = preview.name || user.name || "Выберите профиль";
+    if (role instanceof HTMLElement) role.textContent = preview.role || "";
+    if (meta instanceof HTMLElement) {
+      const contact = [preview.email || user.email || "", preview.extraPhone || "", user.city || ""].filter(Boolean).join(" · ");
+      meta.textContent = contact || (preview.hasCard ? "Данные основной визитки" : "У пользователя пока нет основной визитки");
+    }
+    if (tags instanceof HTMLElement) {
+      const values = Array.isArray(preview.tags) ? preview.tags : [];
+      tags.innerHTML = values.slice(0, 6).map((tag) => `<span class="rounded-full border border-neutral-200 px-2 py-1 text-[11px] text-neutral-600">${X(tag)}</span>`).join("");
+    }
+  }
+
+  function renderPaymentSelected(selected) {
+    const box = document.getElementById("payment-cards-selected-user");
+    if (!(box instanceof HTMLElement)) return;
+    if (!selected?.user) {
+      box.classList.add("hidden");
+      box.textContent = "";
+      renderPaymentPreview(null);
+      return;
+    }
+    const profile = selected.profile || {};
+    box.innerHTML = `<div class="flex flex-wrap items-center justify-between gap-2">
+      <div><span class="font-semibold">${X(profile.name || selected.user.name || "UNQX User")}</span>
+      <span class="text-neutral-500"> · ID ${X(selected.user.id || "")}</span></div>
+      <span class="text-xs text-neutral-500">${profile.hasCard ? "Основная визитка найдена" : "Основная визитка не создана"}</span>
+    </div>`;
+    box.classList.remove("hidden");
+    renderPaymentPreview(selected);
+  }
+
+  function renderPaymentUserResults(items) {
+    const box = document.getElementById("payment-user-search-results");
+    if (!(box instanceof HTMLElement)) return;
+    const rows = Array.isArray(items) ? items : [];
+    box.innerHTML = rows.length
+      ? rows.map((user) => {
+        const name = user.name || user.login || user.telegramUsername || "UNQX User";
+        const meta = [user.login ? `@${user.login}` : user.telegramUsername ? `@${user.telegramUsername}` : "", user.city || "", user.hasCard ? "визитка есть" : "без визитки"].filter(Boolean).join(" · ");
+        return `<button type="button" data-act="pc-select-user" data-id="${X(user.telegramId || user.id || "")}"
+          class="flex w-full items-center justify-between gap-3 rounded-xl border border-neutral-200 px-3 py-2 text-left text-sm transition hover:border-neutral-400 hover:bg-neutral-50">
+          <span class="min-w-0"><span class="block truncate font-semibold text-neutral-900">${X(name)}</span><span class="block truncate text-xs text-neutral-500">${X(meta)}</span></span>
+          <span class="shrink-0 text-xs font-semibold text-neutral-500">Выбрать</span>
+        </button>`;
+      }).join("")
+      : `<div class="rounded-xl border border-dashed border-neutral-300 px-3 py-3 text-center text-xs text-neutral-500">Профили не найдены</div>`;
+  }
+
+  async function searchPaymentUsers() {
+    const input = document.getElementById("payment-user-search");
+    const q = input instanceof HTMLInputElement ? input.value.trim() : "";
+    const box = document.getElementById("payment-user-search-results");
+    if (box instanceof HTMLElement) {
+      box.innerHTML = `<div class="rounded-xl border border-neutral-200 px-3 py-3 text-center text-xs text-neutral-500">Загрузка...</div>`;
+    }
+    const r = await fetch(`/api/admin/users?${Q({ q, page: "1", pageSize: "8" })}`);
+    if (!r.ok) {
+      if (box instanceof HTMLElement) {
+        box.innerHTML = `<div class="rounded-xl border border-red-200 px-3 py-3 text-center text-xs text-red-700">${X(await E(r))}</div>`;
+      }
+      return;
+    }
+    const payload = await r.json().catch(() => ({}));
+    renderPaymentUserResults(payload.items || []);
+  }
+
+  function openPaymentEditor(card = null) {
+    const form = document.getElementById("payment-card-editor");
+    if (!(form instanceof HTMLFormElement)) return;
+    const selectedUserId = paymentCardsState.selected?.user?.id || "";
+    const target = card || {
+      id: "",
+      ownerId: selectedUserId,
+      title: "",
+      publicSlug: "",
+      address: "",
+      postcode: "",
+      methods: [],
+      isPublished: true,
+    };
+    paymentCardsState.editing = target;
+    paymentCardsState.methods = Array.isArray(target.methods) ? target.methods.map((x) => ({ ...x })) : [];
+    form.classList.remove("hidden");
+    setFormValue(form, "id", target.id || "");
+    setFormValue(form, "ownerId", target.ownerId || selectedUserId);
+    setFormValue(form, "title", target.title || "");
+    setFormValue(form, "publicSlug", target.publicSlug || "");
+    setFormValue(form, "address", target.address || "");
+    setFormValue(form, "postcode", target.postcode || "");
+    const published = form.elements.namedItem("isPublished");
+    if (published instanceof HTMLInputElement) published.checked = target.isPublished !== false;
+    const titleNode = document.getElementById("payment-card-editor-title");
+    if (titleNode instanceof HTMLElement) titleNode.textContent = target.id ? "Редактировать Payment" : "Новая Payment страница";
+    document.getElementById("payment-card-delete")?.classList.toggle("hidden", !target.id);
+    const publicLink = document.getElementById("payment-cards-open-public");
+    if (publicLink instanceof HTMLAnchorElement) {
+      publicLink.href = target.publicSlug ? `/payment/${encodeURIComponent(target.publicSlug)}` : "#";
+      publicLink.classList.toggle("hidden", !target.publicSlug);
+    }
+    renderPaymentPreview({ user: target.user || paymentCardsState.selected?.user, profile: target.profile || paymentCardsState.selected?.profile });
+    renderPaymentMethods();
+    setPaymentEditorStatus("");
+  }
+
+  async function loadPaymentCards() {
+    const form = document.getElementById("payment-cards-filters");
+    const table = document.getElementById("payment-cards-table");
+    const totalNode = document.getElementById("payment-cards-total");
+    if (!(form instanceof HTMLFormElement) || !(table instanceof HTMLElement)) return;
+    const q = {
+      q: getFormValue(form, "q", ""),
+      userId: getFormValue(form, "userId", ""),
+      page: getFormValue(form, "page", "1"),
+    };
+    setDashboardQuery({ pc_q: q.q, pc_user_id: q.userId, pc_page: q.page });
+    const r = await fetch(`/api/admin/payment-cards?${Q(q)}`);
+    if (!r.ok) {
+      table.innerHTML = `<tr><td colspan="6" class="px-3 py-8 text-center text-red-700">${X(await E(r))}</td></tr>`;
+      return;
+    }
+    const payload = await r.json();
+    paymentCardsState.items = Array.isArray(payload.items) ? payload.items : [];
+    paymentCardsState.selected = payload.selected || null;
+    renderPaymentSelected(paymentCardsState.selected);
+    if (totalNode instanceof HTMLElement) {
+      totalNode.textContent = `${Number(payload.pagination?.total || 0).toLocaleString("ru-RU")} страниц`;
+    }
+    table.innerHTML = paymentCardsState.items.length
+      ? paymentCardsState.items.map((item) => {
+        const menu = menuWrap([
+          menuItem({ label: "Редактировать", icon: "pen", attrs: `data-act="pc-edit" data-id="${X(item.id)}"` }),
+          menuItem({ label: "Открыть", icon: "external", attrs: `data-act="open-url" data-url="/payment/${encodeURIComponent(item.publicSlug)}"` }),
+          menuSeparator(),
+          menuItem({ label: "Удалить", icon: "trash", attrs: `data-act="pc-delete" data-id="${X(item.id)}" data-title="${X(item.title)}"`, danger: true }),
+        ].join(""));
+        return `<tr class="admin-table-row border-t border-neutral-100">
+          <td class="px-4 py-3"><div class="font-semibold">${X(item.profile?.name || item.user?.name || "UNQX User")}</div><div class="text-xs text-neutral-500">${X(item.profile?.role || item.user?.city || "")}</div></td>
+          <td class="px-4 py-3"><div class="font-semibold">${X(item.title || "Payment card")}</div><div class="text-xs text-neutral-500">${X(item.address || "Адрес не указан")}</div></td>
+          <td class="px-4 py-3 font-mono text-xs">/payment/${X(item.publicSlug)}</td>
+          <td class="px-4 py-3">${Number(item.methods?.length || 0)}</td>
+          <td class="px-4 py-3">${statusChip(item.isPublished ? "approved" : "muted")}</td>
+          <td class="px-4 py-3 text-right"><div class="admin-row-actions justify-end">${menu}</div></td>
+        </tr>`;
+      }).join("")
+      : `<tr><td colspan="6" class="px-3 py-10 text-center text-neutral-500"><div class="inline-flex flex-col items-center gap-2">${I("creditCard", 48)}<span>Payment карточек пока нет</span><span class="text-xs text-neutral-400">Откройте Payment из меню пользователя и создайте страницу точки.</span></div></td></tr>`;
+    renderPager("payment-cards-pagination", payload.pagination, (nextPage) => {
+      setFormValue(form, "page", String(nextPage));
+      void loadPaymentCards();
+    });
+    if (q.userId && !paymentCardsState.editing) {
+      openPaymentEditor(paymentCardsState.items[0] || null);
+    }
+  }
+
+  async function savePaymentCard() {
+    const form = document.getElementById("payment-card-editor");
+    if (!(form instanceof HTMLFormElement)) return;
+    const id = getFormValue(form, "id", "");
+    const ownerId = getFormValue(form, "ownerId", "");
+    if (!id && !ownerId) {
+      await showAlert("Сначала выберите пользователя во вкладке Payment.");
+      return;
+    }
+    const published = form.elements.namedItem("isPublished");
+    const payload = {
+      title: getFormValue(form, "title", ""),
+      publicSlug: normalizePaymentSlug(getFormValue(form, "publicSlug", "")),
+      address: getFormValue(form, "address", ""),
+      postcode: getFormValue(form, "postcode", ""),
+      methods: paymentCardsState.methods,
+      isPublished: published instanceof HTMLInputElement ? published.checked : true,
+    };
+    if (!payload.title) {
+      setPaymentEditorStatus("Название точки обязательно.", "error");
+      return;
+    }
+    const url = id ? `/api/admin/payment-cards/${encodeURIComponent(id)}` : `/api/admin/users/${encodeURIComponent(ownerId)}/payment-cards`;
+    const r = await fetch(url, {
+      method: id ? "PATCH" : "POST",
+      headers: H({ "Content-Type": "application/json" }),
+      body: JSON.stringify(payload),
+    });
+    if (!r.ok) {
+      setPaymentEditorStatus(await E(r), "error");
+      return;
+    }
+    const result = await r.json().catch(() => ({}));
+    setPaymentEditorStatus("Сохранено.", "success");
+    if (result.paymentCard) {
+      paymentCardsState.editing = result.paymentCard;
+      openPaymentEditor(result.paymentCard);
+    }
+    await loadPaymentCards();
   }
 
   async function loadManagers() {
@@ -2470,6 +2741,40 @@
       closeAllRowMenus();
       return;
     }
+    if (a === "pc-select-user") {
+      const userId = n.getAttribute("data-id") || "";
+      const form = document.getElementById("payment-cards-filters");
+      if (userId && form instanceof HTMLFormElement) {
+        setFormValue(form, "userId", userId);
+        setFormValue(form, "page", "1");
+        paymentCardsState.editing = null;
+        await loadPaymentCards();
+      }
+      closeAllRowMenus();
+      return;
+    }
+    if (a === "pc-edit") {
+      const id = n.getAttribute("data-id");
+      const item = paymentCardsState.items.find((x) => String(x.id) === String(id));
+      if (item) openPaymentEditor(item);
+      closeAllRowMenus();
+      return;
+    }
+    if (a === "pc-delete") {
+      const id = n.getAttribute("data-id");
+      const title = n.getAttribute("data-title") || "Payment карточку";
+      if (!id) return;
+      const ok = await showConfirm(`Удалить ${title}?`);
+      if (!ok) return;
+      const r = await fetch(`/api/admin/payment-cards/${encodeURIComponent(id)}`, { method: "DELETE", headers: H() });
+      if (!r.ok) await showAlert(await E(r));
+      else {
+        paymentCardsState.editing = null;
+        await loadPaymentCards();
+      }
+      closeAllRowMenus();
+      return;
+    }
     if (a === "manager-toggle") {
       if (isManager) return;
       const id = n.getAttribute("data-id");
@@ -3076,6 +3381,78 @@
     }
   });
   document.getElementById("users-filters")?.addEventListener("submit", (e) => { e.preventDefault(); const f = e.currentTarget; if (f instanceof HTMLFormElement) setFormValue(f, "page", "1"); void loadUsers(); });
+  document.getElementById("payment-cards-filters")?.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const f = e.currentTarget;
+    if (f instanceof HTMLFormElement) setFormValue(f, "page", "1");
+    paymentCardsState.editing = null;
+    void loadPaymentCards();
+  });
+  document.getElementById("payment-cards-create")?.addEventListener("click", async () => {
+    if (!paymentCardsState.selected?.user?.id) {
+      await showAlert("Сначала выберите пользователя во вкладке Payment или откройте Payment из меню пользователя.");
+      return;
+    }
+    openPaymentEditor(null);
+  });
+  document.getElementById("payment-user-search-form")?.addEventListener("submit", (e) => {
+    e.preventDefault();
+    void searchPaymentUsers();
+  });
+  document.getElementById("payment-card-method-add")?.addEventListener("click", () => {
+    paymentCardsState.methods.push({
+      id: `${Date.now()}_${Math.random()}`,
+      type: "card",
+      label: "Карта",
+      value: "",
+      note: "",
+      isActive: true,
+    });
+    renderPaymentMethods();
+  });
+  document.getElementById("payment-card-methods-list")?.addEventListener("input", (e) => {
+    const target = e.target instanceof HTMLElement ? e.target : null;
+    const row = target?.closest("[data-payment-method-index]");
+    if (!(row instanceof HTMLElement)) return;
+    const index = Number(row.getAttribute("data-payment-method-index"));
+    if (!Number.isFinite(index) || !paymentCardsState.methods[index]) return;
+    const field = target?.getAttribute("data-payment-method-field");
+    if (!field) return;
+    paymentCardsState.methods[index] = {
+      ...paymentCardsState.methods[index],
+      [field]: target instanceof HTMLInputElement || target instanceof HTMLSelectElement ? target.value : "",
+    };
+  });
+  document.getElementById("payment-card-methods-list")?.addEventListener("click", (e) => {
+    const target = e.target instanceof HTMLElement ? e.target : null;
+    const remove = target?.closest("[data-payment-method-remove]");
+    if (!(remove instanceof HTMLElement)) return;
+    e.preventDefault();
+    const index = Number(remove.getAttribute("data-payment-method-remove"));
+    if (!Number.isFinite(index) || index < 0 || index >= paymentCardsState.methods.length) return;
+    paymentCardsState.methods.splice(index, 1);
+    renderPaymentMethods();
+  });
+  document.getElementById("payment-card-editor")?.addEventListener("submit", (e) => {
+    e.preventDefault();
+    void savePaymentCard();
+  });
+  document.getElementById("payment-card-delete")?.addEventListener("click", async () => {
+    const form = document.getElementById("payment-card-editor");
+    if (!(form instanceof HTMLFormElement)) return;
+    const id = getFormValue(form, "id", "");
+    if (!id) return;
+    const ok = await showConfirm("Удалить эту Payment карточку?");
+    if (!ok) return;
+    const r = await fetch(`/api/admin/payment-cards/${encodeURIComponent(id)}`, { method: "DELETE", headers: H() });
+    if (!r.ok) {
+      setPaymentEditorStatus(await E(r), "error");
+      return;
+    }
+    form.classList.add("hidden");
+    paymentCardsState.editing = null;
+    await loadPaymentCards();
+  });
   const managersCreateForm = document.getElementById("managers-create-form");
   const managersCreateStatus = document.getElementById("managers-create-status");
   managersCreateForm?.addEventListener("submit", async (e) => {
@@ -3429,6 +3806,14 @@
       setFormValue(form, "page", getInitial("p_page", "page") || "1");
     }
   }
+  if (tab === "payment-cards") {
+    const form = document.getElementById("payment-cards-filters");
+    if (form instanceof HTMLFormElement) {
+      setFormValue(form, "q", getInitial("pc_q", "q") || "");
+      setFormValue(form, "userId", getInitial("pc_user_id", "userId") || "");
+      setFormValue(form, "page", getInitial("pc_page", "page") || "1");
+    }
+  }
   if (tab === "slugs") {
     const form = document.getElementById("slugs-filters");
     if (form instanceof HTMLFormElement) {
@@ -3511,6 +3896,11 @@
     dbg("load", "purchases");
     void loadPurchases();
     void loadPricingSettings();
+  }
+  if (tab === "payment-cards") {
+    dbg("load", "payment-cards");
+    void searchPaymentUsers();
+    void loadPaymentCards();
   }
   if (tab === "users") {
     dbg("load", "users");

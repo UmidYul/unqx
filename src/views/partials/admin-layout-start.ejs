@@ -4,7 +4,7 @@
   adminSession.name : (adminRole==="manager" ? "Manager" : "Admin" ); const brandLabel=adminRole==="manager"
   ? "UNQX Manager" : "UNQX Admin" ; const avatarLetter=String(adminName || (adminRole==="manager" ? "Manager" : "Admin"
   )).trim().slice(0, 1).toUpperCase() || (adminRole==="manager" ? "M" : "A" ); const allowedTabs=adminRole==="manager" ?
-  new Set(["users", "orders" , "verification" , "badges" ]) : null; const resolvedDashboardBasePath=typeof
+  new Set(["users", "orders" , "payment-cards" , "verification" , "badges" ]) : null; const resolvedDashboardBasePath=typeof
   dashboardBasePath==="string" && dashboardBasePath ? dashboardBasePath : "/admin/dashboard" ; const
   isDashboardRoute=layoutCurrentPath===resolvedDashboardBasePath; const dashboardLink=(tab)=>
   `${resolvedDashboardBasePath}?tab=${tab}`;
@@ -15,6 +15,7 @@
   { id: "analytics", label: "Аналитика", href: dashboardLink("analytics"), icon: "chart" },
   { id: "orders", label: "Заявки", href: dashboardLink("orders"), icon: "orders", badge: "orders" },
   { id: "purchases", label: "Покупки", href: dashboardLink("purchases"), icon: "orders" },
+  { id: "payment-cards", label: "Payment", href: dashboardLink("payment-cards"), icon: "cards" },
   { id: "users", label: "Пользователи", href: dashboardLink("users"), icon: "users" },
   { id: "slugs", label: "Slug", href: dashboardLink("slugs"), icon: "slug" },
   { id: "bracelets", label: "Браслеты", href: dashboardLink("bracelets"), icon: "bracelets", badge: "bracelets" },

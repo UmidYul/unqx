@@ -1069,6 +1069,206 @@ async function managerOwnsVerificationRequest(req, verificationRequestId) {
   return Boolean(row);
 }
 
+function isPaymentCardsStorageError(error) {
+  if (!error || typeof error !== "object") return false;
+  const code = String(error.code || "");
+  const message = String(error.message || "").toLowerCase();
+  return code === "42P01" || code === "42703" || code === "P2021" || message.includes("payment_cards");
+}
+
+function normalizePaymentCardPublicSlug(value) {
+  const raw = String(value || "")
+    .trim()
+    .replace(/^\/+payment\/+/i, "")
+    .replace(/^\/+/, "")
+    .toLowerCase();
+  const normalized = raw
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 80);
+  return normalized || "payment";
+}
+
+function normalizePaymentCardMethods(rawMethods) {
+  const source = Array.isArray(rawMethods) ? rawMethods : [];
+  const out = [];
+  for (const item of source) {
+    if (out.length >= 12) break;
+    const obj = item && typeof item === "object" ? item : {};
+    const label = String(obj.label || "").trim().slice(0, 80);
+    const value = String(obj.value || obj.requisite || obj.href || "").trim().slice(0, 240);
+    const note = String(obj.note || "").trim().slice(0, 240);
+    if (!label && !value && !note) continue;
+    out.push({
+      id: String(obj.id || `${Date.now()}_${Math.random()}`).slice(0, 60),
+      type: String(obj.type || "other").trim().toLowerCase().replace(/[^a-z0-9_-]/g, "").slice(0, 30) || "other",
+      label: label || "Реквизит",
+      value,
+      note,
+      isActive: obj.isActive === false ? false : true,
+    });
+  }
+  return out;
+}
+
+function mapPaymentCardRow(row) {
+  if (!row) return null;
+  const methodsRaw = row.methods_json ?? row.methods ?? [];
+  return {
+    id: String(row.id || ""),
+    ownerId: String(row.owner_id || row.ownerId || ""),
+    publicSlug: String(row.public_slug || row.publicSlug || ""),
+    title: String(row.title || ""),
+    address: String(row.address || ""),
+    postcode: String(row.postcode || ""),
+    methods: parseJsonArray(methodsRaw),
+    isPublished: toBool(row.is_published ?? row.isPublished, true),
+    createdByStaffId: row.created_by_staff_id || row.createdByStaffId || null,
+    createdAt: row.created_at || row.createdAt || null,
+    updatedAt: row.updated_at || row.updatedAt || null,
+    user: {
+      id: String(row.owner_id || row.ownerId || ""),
+      name: String(row.user_display_name || row.user_first_name || row.profile_name || "UNQX User"),
+      firstName: String(row.user_first_name || ""),
+      displayName: String(row.user_display_name || ""),
+      username: row.user_username || row.user_telegram_username || null,
+      email: row.user_email || null,
+      city: row.user_city || "",
+      profileType: row.user_profile_type || "person",
+      createdByStaffId: row.user_created_by_staff_id || null,
+    },
+    profile: {
+      hasCard: Boolean(row.profile_card_id),
+      name: String(row.profile_name || row.user_display_name || row.user_first_name || "UNQX User"),
+      role: String(row.profile_role || ""),
+      bio: String(row.profile_bio || ""),
+      hashtag: String(row.profile_hashtag || ""),
+      email: String(row.profile_email || row.user_email || ""),
+      extraPhone: String(row.profile_extra_phone || ""),
+      avatarUrl: String(row.profile_avatar_url || ""),
+      tags: parseJsonArray(row.profile_tags_json ?? row.profile_tags ?? []),
+      theme: String(row.profile_theme || "default_dark"),
+      customColor: String(row.profile_custom_color || ""),
+    },
+    publicUrl: `/payment/${encodeURIComponent(String(row.public_slug || row.publicSlug || ""))}`,
+  };
+}
+
+async function findPaymentCardById(paymentCardId) {
+  const rows = await prisma.$queryRawUnsafe(
+    `
+      SELECT
+        pc.*,
+        pc.methods AS methods_json,
+        u.first_name AS user_first_name,
+        u.display_name AS user_display_name,
+        u.username AS user_username,
+        u.telegram_username AS user_telegram_username,
+        u.email AS user_email,
+        u.city AS user_city,
+        u.profile_type AS user_profile_type,
+        u.created_by_staff_id AS user_created_by_staff_id,
+        pr.id AS profile_card_id,
+        pr.name AS profile_name,
+        pr.role AS profile_role,
+        pr.bio AS profile_bio,
+        pr.hashtag AS profile_hashtag,
+        pr.email AS profile_email,
+        pr.extra_phone AS profile_extra_phone,
+        pr.avatar_url AS profile_avatar_url,
+        pr.tags AS profile_tags_json,
+        pr.theme AS profile_theme,
+        pr.custom_color AS profile_custom_color
+      FROM payment_cards pc
+      JOIN users u ON u.id = pc.owner_id
+      LEFT JOIN profile_cards pr ON pr.owner_id = u.id
+      WHERE pc.id = $1
+      LIMIT 1
+    `,
+    String(paymentCardId || "").trim(),
+  );
+  return mapPaymentCardRow(Array.isArray(rows) ? rows[0] || null : null);
+}
+
+async function findPaymentCardOwnerId(paymentCardId) {
+  const rows = await prisma.$queryRawUnsafe(
+    "SELECT owner_id FROM payment_cards WHERE id = $1 LIMIT 1",
+    String(paymentCardId || "").trim(),
+  );
+  const row = Array.isArray(rows) ? rows[0] || null : null;
+  return row ? String(row.owner_id || "") : "";
+}
+
+async function getPaymentCardUserPreview(userId) {
+  if (!userId) return null;
+  const rows = await prisma.$queryRawUnsafe(
+    `
+      SELECT
+        u.id AS owner_id,
+        u.first_name AS user_first_name,
+        u.display_name AS user_display_name,
+        u.username AS user_username,
+        u.telegram_username AS user_telegram_username,
+        u.email AS user_email,
+        u.city AS user_city,
+        u.profile_type AS user_profile_type,
+        u.created_by_staff_id AS user_created_by_staff_id,
+        pr.id AS profile_card_id,
+        pr.name AS profile_name,
+        pr.role AS profile_role,
+        pr.bio AS profile_bio,
+        pr.hashtag AS profile_hashtag,
+        pr.email AS profile_email,
+        pr.extra_phone AS profile_extra_phone,
+        pr.avatar_url AS profile_avatar_url,
+        pr.tags AS profile_tags_json,
+        pr.theme AS profile_theme,
+        pr.custom_color AS profile_custom_color
+      FROM users u
+      LEFT JOIN profile_cards pr ON pr.owner_id = u.id
+      WHERE u.id = $1
+      LIMIT 1
+    `,
+    String(userId || "").trim(),
+  );
+  const row = Array.isArray(rows) ? rows[0] || null : null;
+  if (!row) return null;
+  const mapped = mapPaymentCardRow({
+    ...row,
+    id: "",
+    owner_id: row.owner_id,
+    public_slug: "",
+    title: "",
+    address: "",
+    postcode: "",
+    methods_json: [],
+    is_published: true,
+  });
+  return mapped ? { user: mapped.user, profile: mapped.profile } : null;
+}
+
+async function ensureUniquePaymentCardSlug(baseSlug, excludeId = "") {
+  const base = normalizePaymentCardPublicSlug(baseSlug);
+  for (let attempt = 0; attempt < 100; attempt += 1) {
+    const candidate = attempt === 0 ? base : `${base.slice(0, 74)}-${attempt + 1}`;
+    const rows = await prisma.$queryRawUnsafe(
+      `
+        SELECT id
+        FROM payment_cards
+        WHERE public_slug = $1
+          AND ($2::uuid IS NULL OR id <> $2::uuid)
+        LIMIT 1
+      `,
+      candidate,
+      excludeId && isUuid(excludeId) ? excludeId : null,
+    );
+    if (!Array.isArray(rows) || rows.length === 0) {
+      return candidate;
+    }
+  }
+  return `${base.slice(0, 62)}-${randomUUID().slice(0, 8)}`;
+}
+
 function toOrderStatus(value) {
   const normalized = String(value || "").trim().toLowerCase();
   switch (normalized) {
@@ -1267,6 +1467,10 @@ router.use(requireCsrfToken);
 
 const MANAGER_ALLOWED_ROUTES = [
   { method: "GET", re: /^\/navigation-summary\/?$/ },
+  { method: "GET", re: /^\/payment-cards\/?$/ },
+  { method: "POST", re: /^\/users\/[^/]+\/payment-cards\/?$/ },
+  { method: "PATCH", re: /^\/payment-cards\/[^/]+\/?$/ },
+  { method: "DELETE", re: /^\/payment-cards\/[^/]+\/?$/ },
   { method: "GET", re: /^\/users\/?$/ },
   { method: "GET", re: /^\/users\/check\/?$/ },
   { method: "POST", re: /^\/users\/?$/ },
@@ -1387,6 +1591,295 @@ router.get(
       },
       events: mergedEvents,
     });
+  }),
+);
+
+router.get(
+  "/payment-cards",
+  asyncHandler(async (req, res) => {
+    const page = Math.max(1, Number(req.query.page || "1") || 1);
+    const pageSizeRaw = Number(req.query.pageSize || "20") || 20;
+    const pageSize = Math.max(1, Math.min(100, pageSizeRaw));
+    const q = typeof req.query.q === "string" ? req.query.q.trim() : "";
+    const userId = typeof req.query.userId === "string" ? req.query.userId.trim() : "";
+    const scope = await getManagerScope(req);
+
+    if (scope.isManager && isManagerScopeBlocked(scope)) {
+      res.json({
+        items: [],
+        selected: null,
+        pagination: { page, pageSize, total: 0, totalPages: 1 },
+      });
+      return;
+    }
+
+    if (scope.isManager && userId && !(await managerOwnsUser(req, userId))) {
+      res.status(403).json({ error: "Forbidden", code: "MANAGER_FORBIDDEN" });
+      return;
+    }
+
+    const where = [];
+    const params = [];
+    const addParam = (value) => {
+      params.push(value);
+      return `$${params.length}`;
+    };
+
+    if (scope.isManager) {
+      where.push(`u.created_by_staff_id = ${addParam(scope.managerId)}::uuid`);
+    }
+    if (userId) {
+      where.push(`pc.owner_id = ${addParam(userId)}::uuid`);
+    }
+    if (q) {
+      const needle = `%${q}%`;
+      const p = addParam(needle);
+      where.push(`(
+        pc.title ILIKE ${p}
+        OR pc.public_slug ILIKE ${p}
+        OR u.first_name ILIKE ${p}
+        OR COALESCE(u.display_name, '') ILIKE ${p}
+        OR COALESCE(u.login, '') ILIKE ${p}
+        OR COALESCE(u.telegram_username, '') ILIKE ${p}
+        OR COALESCE(pr.name, '') ILIKE ${p}
+      )`);
+    }
+
+    const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
+    const offset = (page - 1) * pageSize;
+    try {
+      const countRows = await prisma.$queryRawUnsafe(
+        `
+          SELECT COUNT(*)::int AS total
+          FROM payment_cards pc
+          JOIN users u ON u.id = pc.owner_id
+          LEFT JOIN profile_cards pr ON pr.owner_id = u.id
+          ${whereSql}
+        `,
+        ...params,
+      );
+      const total = Number(Array.isArray(countRows) ? countRows[0]?.total || 0 : 0);
+      const rows = await prisma.$queryRawUnsafe(
+        `
+          SELECT
+            pc.*,
+            pc.methods AS methods_json,
+            u.first_name AS user_first_name,
+            u.display_name AS user_display_name,
+            u.username AS user_username,
+            u.telegram_username AS user_telegram_username,
+            u.email AS user_email,
+            u.city AS user_city,
+            u.profile_type AS user_profile_type,
+            u.created_by_staff_id AS user_created_by_staff_id,
+            pr.id AS profile_card_id,
+            pr.name AS profile_name,
+            pr.role AS profile_role,
+            pr.bio AS profile_bio,
+            pr.hashtag AS profile_hashtag,
+            pr.email AS profile_email,
+            pr.extra_phone AS profile_extra_phone,
+            pr.avatar_url AS profile_avatar_url,
+            pr.tags AS profile_tags_json,
+            pr.theme AS profile_theme,
+            pr.custom_color AS profile_custom_color
+          FROM payment_cards pc
+          JOIN users u ON u.id = pc.owner_id
+          LEFT JOIN profile_cards pr ON pr.owner_id = u.id
+          ${whereSql}
+          ORDER BY pc.updated_at DESC, pc.created_at DESC
+          LIMIT ${addParam(pageSize)} OFFSET ${addParam(offset)}
+        `,
+        ...params,
+      );
+      const selected = userId ? await getPaymentCardUserPreview(userId) : null;
+      res.json({
+        items: (Array.isArray(rows) ? rows : []).map(mapPaymentCardRow).filter(Boolean),
+        selected,
+        pagination: {
+          page,
+          pageSize,
+          total,
+          totalPages: Math.max(1, Math.ceil(total / pageSize)),
+        },
+      });
+    } catch (error) {
+      if (isPaymentCardsStorageError(error)) {
+        res.json({
+          items: [],
+          selected: null,
+          pagination: { page: 1, pageSize, total: 0, totalPages: 1 },
+        });
+        return;
+      }
+      throw error;
+    }
+  }),
+);
+
+router.post(
+  "/users/:userId/payment-cards",
+  asyncHandler(async (req, res) => {
+    const userId = String(req.params.userId || "").trim();
+    if (!userId || !(await managerOwnsUser(req, userId))) {
+      res.status(403).json({ error: "Forbidden", code: "MANAGER_FORBIDDEN" });
+      return;
+    }
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, firstName: true, displayName: true },
+    });
+    if (!user) {
+      res.status(404).json({ error: "User not found", code: "USER_NOT_FOUND" });
+      return;
+    }
+
+    const title = String(req.body?.title || "").trim().slice(0, 140) || "Payment card";
+    const requestedSlug = String(req.body?.publicSlug || req.body?.slug || title || user.displayName || user.firstName || "payment");
+    const publicSlug = await ensureUniquePaymentCardSlug(requestedSlug);
+    const address = String(req.body?.address || "").trim().slice(0, 1000);
+    const postcode = String(req.body?.postcode || "").trim().slice(0, 20);
+    const methods = normalizePaymentCardMethods(req.body?.methods || req.body?.requisites || []);
+    const isPublished = typeof req.body?.isPublished === "boolean" ? req.body.isPublished : true;
+    const createdByStaffId = isManagerSession(req) ? await resolveManagerId(req) : "";
+
+    try {
+      const rows = await prisma.$queryRawUnsafe(
+        `
+          INSERT INTO payment_cards (
+            owner_id,
+            public_slug,
+            title,
+            address,
+            postcode,
+            methods,
+            is_published,
+            created_by_staff_id
+          )
+          VALUES ($1::uuid, $2, $3, $4, $5, $6::jsonb, $7, $8::uuid)
+          RETURNING id
+        `,
+        userId,
+        publicSlug,
+        title,
+        address || null,
+        postcode || null,
+        JSON.stringify(methods),
+        isPublished,
+        createdByStaffId && isUuid(createdByStaffId) ? createdByStaffId : null,
+      );
+      const row = Array.isArray(rows) ? rows[0] || null : null;
+      const paymentCard = await findPaymentCardById(row?.id);
+      res.status(201).json({ ok: true, paymentCard });
+    } catch (error) {
+      if (isPaymentCardsStorageError(error)) {
+        res.status(503).json({ error: "Payment cards storage unavailable", code: "PAYMENT_CARDS_STORAGE_UNAVAILABLE" });
+        return;
+      }
+      throw error;
+    }
+  }),
+);
+
+router.patch(
+  "/payment-cards/:id",
+  asyncHandler(async (req, res) => {
+    const id = String(req.params.id || "").trim();
+    const ownerId = await findPaymentCardOwnerId(id).catch((error) => {
+      if (isPaymentCardsStorageError(error)) return "";
+      throw error;
+    });
+    if (!ownerId) {
+      res.status(404).json({ error: "Payment card not found", code: "PAYMENT_CARD_NOT_FOUND" });
+      return;
+    }
+    if (!(await managerOwnsUser(req, ownerId))) {
+      res.status(403).json({ error: "Forbidden", code: "MANAGER_FORBIDDEN" });
+      return;
+    }
+    const current = await findPaymentCardById(id);
+    if (!current) {
+      res.status(404).json({ error: "Payment card not found", code: "PAYMENT_CARD_NOT_FOUND" });
+      return;
+    }
+
+    const title =
+      Object.prototype.hasOwnProperty.call(req.body || {}, "title")
+        ? String(req.body?.title || "").trim().slice(0, 140) || "Payment card"
+        : current.title;
+    const nextSlug =
+      Object.prototype.hasOwnProperty.call(req.body || {}, "publicSlug") ||
+      Object.prototype.hasOwnProperty.call(req.body || {}, "slug")
+        ? await ensureUniquePaymentCardSlug(req.body?.publicSlug || req.body?.slug || title, id)
+        : current.publicSlug;
+    const address =
+      Object.prototype.hasOwnProperty.call(req.body || {}, "address")
+        ? String(req.body?.address || "").trim().slice(0, 1000)
+        : current.address;
+    const postcode =
+      Object.prototype.hasOwnProperty.call(req.body || {}, "postcode")
+        ? String(req.body?.postcode || "").trim().slice(0, 20)
+        : current.postcode;
+    const methods =
+      Object.prototype.hasOwnProperty.call(req.body || {}, "methods") ||
+      Object.prototype.hasOwnProperty.call(req.body || {}, "requisites")
+        ? normalizePaymentCardMethods(req.body?.methods || req.body?.requisites || [])
+        : current.methods;
+    const isPublished =
+      typeof req.body?.isPublished === "boolean" ? req.body.isPublished : current.isPublished;
+
+    try {
+      await prisma.$executeRawUnsafe(
+        `
+          UPDATE payment_cards
+          SET
+            public_slug = $2,
+            title = $3,
+            address = $4,
+            postcode = $5,
+            methods = $6::jsonb,
+            is_published = $7,
+            updated_at = now()
+          WHERE id = $1::uuid
+        `,
+        id,
+        nextSlug,
+        title,
+        address || null,
+        postcode || null,
+        JSON.stringify(methods),
+        isPublished,
+      );
+      const paymentCard = await findPaymentCardById(id);
+      res.json({ ok: true, paymentCard });
+    } catch (error) {
+      if (isPaymentCardsStorageError(error)) {
+        res.status(503).json({ error: "Payment cards storage unavailable", code: "PAYMENT_CARDS_STORAGE_UNAVAILABLE" });
+        return;
+      }
+      throw error;
+    }
+  }),
+);
+
+router.delete(
+  "/payment-cards/:id",
+  asyncHandler(async (req, res) => {
+    const id = String(req.params.id || "").trim();
+    const ownerId = await findPaymentCardOwnerId(id).catch((error) => {
+      if (isPaymentCardsStorageError(error)) return "";
+      throw error;
+    });
+    if (!ownerId) {
+      res.status(404).json({ error: "Payment card not found", code: "PAYMENT_CARD_NOT_FOUND" });
+      return;
+    }
+    if (!(await managerOwnsUser(req, ownerId))) {
+      res.status(403).json({ error: "Forbidden", code: "MANAGER_FORBIDDEN" });
+      return;
+    }
+    await prisma.$executeRawUnsafe("DELETE FROM payment_cards WHERE id = $1::uuid", id);
+    res.json({ ok: true });
   }),
 );
 

@@ -111,7 +111,7 @@ router.get(
   asyncHandler(async (req, res) => {
     const adminSession = getAdminSession(req);
     const role = adminSession?.role || "admin";
-    const managerTabs = new Set(["users", "orders", "verification"]);
+    const managerTabs = new Set(["users", "orders", "verification", "payment-cards"]);
     if (role === "manager") {
       const nextTab =
         typeof req.query.tab === "string" && managerTabs.has(req.query.tab)
@@ -124,6 +124,7 @@ router.get(
       "analytics",
       "orders",
       "purchases",
+      "payment-cards",
       "users",
       "slugs",
       "bracelets",
@@ -224,7 +225,7 @@ router.get(
       res.redirect("/admin/dashboard");
       return;
     }
-    const managerTabs = new Set(["users", "orders", "verification"]);
+    const managerTabs = new Set(["users", "orders", "verification", "payment-cards"]);
     const tab =
       typeof req.query.tab === "string" && managerTabs.has(req.query.tab)
         ? req.query.tab
@@ -274,6 +275,34 @@ router.get(
       adminSession,
       userId,
     });
+  }),
+);
+
+router.get(
+  "/admin/users/:userId/payment-cards",
+  requireStaffPage,
+  asyncHandler(async (req, res) => {
+    const adminSession = getAdminSession(req);
+    const userId = encodeURIComponent(String(req.params.userId || ""));
+    if (adminSession?.role === "manager") {
+      res.redirect(`/manager/dashboard?tab=payment-cards&userId=${userId}`);
+      return;
+    }
+    res.redirect(`/admin/dashboard?tab=payment-cards&userId=${userId}`);
+  }),
+);
+
+router.get(
+  "/manager/users/:userId/payment-cards",
+  requireManagerPage,
+  asyncHandler(async (req, res) => {
+    const adminSession = getAdminSession(req);
+    const userId = encodeURIComponent(String(req.params.userId || ""));
+    if (!adminSession || adminSession.role !== "manager") {
+      res.redirect(`/admin/dashboard?tab=payment-cards&userId=${userId}`);
+      return;
+    }
+    res.redirect(`/manager/dashboard?tab=payment-cards&userId=${userId}`);
   }),
 );
 

@@ -700,6 +700,89 @@ function buildPublicCardFromProfile({ slug, user, profileCard, verifiedIdentity,
   };
 }
 
+function parsePaymentJsonArray(value) {
+  if (Array.isArray(value)) return value;
+  if (typeof value === "string" && value.trim()) {
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
+function normalizePaymentPublicSlug(value) {
+  return String(value || "")
+    .trim()
+    .replace(/^\/+payment\/+/i, "")
+    .replace(/^\/+/, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 90);
+}
+
+function isPaymentCardStorageError(error) {
+  if (!error || typeof error !== "object") return false;
+  const code = String(error.code || "");
+  const message = String(error.message || "").toLowerCase();
+  return code === "42P01" || code === "42703" || code === "P2021" || message.includes("payment_cards");
+}
+
+function mapPublicPaymentMethods(value) {
+  return parsePaymentJsonArray(value)
+    .map((item) => {
+      const obj = item && typeof item === "object" ? item : {};
+      const label = String(obj.label || "").trim().slice(0, 80);
+      const detail = String(obj.value || obj.requisite || "").trim().slice(0, 240);
+      const note = String(obj.note || "").trim().slice(0, 240);
+      if (obj.isActive === false || (!label && !detail && !note)) return null;
+      return {
+        type: String(obj.type || "other").trim().toLowerCase(),
+        label: label || "Реквизит",
+        value: detail,
+        note,
+      };
+    })
+    .filter(Boolean);
+}
+
+function mapPublicPaymentCardRow(row) {
+  if (!row) return null;
+  const profile = {
+    name: row.profile_name || row.user_display_name || row.user_first_name || "UNQX User",
+    role: row.profile_role || "",
+    bio: row.profile_bio || "",
+    hashtag: row.profile_hashtag || "",
+    email: row.profile_email || row.user_email || "",
+    extraPhone: row.profile_extra_phone || "",
+    avatarUrl: row.profile_avatar_url || "",
+    tags: parsePaymentJsonArray(row.profile_tags_json),
+    theme: (() => {
+      const theme = String(row.profile_theme || "").trim();
+      return CARD_THEMES.has(theme) ? theme : "default_dark";
+    })(),
+    customColor: row.profile_custom_color || "",
+  };
+  return {
+    id: row.id,
+    publicSlug: row.public_slug,
+    title: row.title || "Payment",
+    address: row.address || "",
+    postcode: row.postcode || "",
+    methods: mapPublicPaymentMethods(row.methods_json),
+    profile,
+    owner: {
+      id: row.owner_id,
+      username: row.user_username || row.user_telegram_username || "",
+      city: row.user_city || "",
+    },
+    updatedAt: row.updated_at,
+  };
+}
+
 router.get(
   "/",
   asyncHandler(async (req, res) => {
@@ -1560,6 +1643,85 @@ router.get(
       noindex: false,
       adminSession: getAdminSession(req),
     });
+  }),
+);
+
+router.get(
+  "/payment/:publicSlug",
+  asyncHandler(async (req, res) => {
+    const publicSlug = normalizePaymentPublicSlug(req.params.publicSlug);
+    if (!publicSlug) {
+      res.status(404).render("public/not-found", {
+        title: "Страница не найдена",
+        slug: req.params.publicSlug,
+        adminSession: getAdminSession(req),
+      });
+      return;
+    }
+
+    try {
+      const rows = await prisma.$queryRawUnsafe(
+        `
+          SELECT
+            pc.*,
+            pc.methods AS methods_json,
+            u.first_name AS user_first_name,
+            u.display_name AS user_display_name,
+            u.username AS user_username,
+            u.telegram_username AS user_telegram_username,
+            u.email AS user_email,
+            u.city AS user_city,
+            u.status AS user_status,
+            pr.name AS profile_name,
+            pr.role AS profile_role,
+            pr.bio AS profile_bio,
+            pr.hashtag AS profile_hashtag,
+            pr.email AS profile_email,
+            pr.extra_phone AS profile_extra_phone,
+            pr.avatar_url AS profile_avatar_url,
+            pr.tags AS profile_tags_json,
+            pr.theme AS profile_theme,
+            pr.custom_color AS profile_custom_color
+          FROM payment_cards pc
+          JOIN users u ON u.id = pc.owner_id
+          LEFT JOIN profile_cards pr ON pr.owner_id = u.id
+          WHERE pc.public_slug = $1
+            AND pc.is_published = true
+          LIMIT 1
+        `,
+        publicSlug,
+      );
+      const row = Array.isArray(rows) ? rows[0] || null : null;
+      if (!row || row.user_status === "blocked" || row.user_status === "deactivated" || row.user_status === "deleted") {
+        res.status(404).render("public/not-found", {
+          title: "Страница не найдена",
+          slug: publicSlug,
+          adminSession: getAdminSession(req),
+        });
+        return;
+      }
+
+      const paymentCard = mapPublicPaymentCardRow(row);
+      const image = paymentCard.profile.avatarUrl ? absoluteUrl(paymentCard.profile.avatarUrl) : defaultSocialImage;
+      res.render("public/payment-card", {
+        title: `${paymentCard.title} | ${paymentCard.profile.name}`,
+        description: `Реквизиты оплаты ${paymentCard.title} для ${paymentCard.profile.name}.`,
+        image,
+        paymentCard,
+        noindex: false,
+        adminSession: getAdminSession(req),
+      });
+    } catch (error) {
+      if (isPaymentCardStorageError(error)) {
+        res.status(404).render("public/not-found", {
+          title: "Страница не найдена",
+          slug: publicSlug,
+          adminSession: getAdminSession(req),
+        });
+        return;
+      }
+      throw error;
+    }
   }),
 );
 
