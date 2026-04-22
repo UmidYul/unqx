@@ -173,8 +173,18 @@
     });
     return s.toString();
   };
-  const normalizeShortSlug = (value) => String(value || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6);
-  const isShortSlug = (value) => /^[A-Z]{3}[0-9]{3}$/.test(String(value || ""));
+  const RESERVED_ASSIGNABLE_SLUGS = new Set(["ADMIN", "API", "AUTH", "FAQ", "MANAGER", "PROFILE", "QR", "TERMS"]);
+  const normalizeShortSlug = (value) => String(value || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 20);
+  const isLegacySlug = (value) => /^[A-Z]{3}[0-9]{3}$/.test(String(value || ""));
+  const isManagedUsernameSlug = (value) => {
+    const slug = String(value || "").toUpperCase();
+    return /^(0|[1-9][0-9]{0,2})$/.test(slug) || /^[A-Z]{1,3}$/.test(slug);
+  };
+  const isShortSlug = (value) => {
+    const slug = String(value || "").toUpperCase();
+    return !RESERVED_ASSIGNABLE_SLUGS.has(slug) && (isLegacySlug(slug) || isManagedUsernameSlug(slug));
+  };
+  const assignableSlugHint = "AAA000, 0-999 или A-Z до 3 букв";
   const ICONS = {
     more: '<circle cx="12" cy="5" r="1.7" fill="currentColor"/><circle cx="12" cy="12" r="1.7" fill="currentColor"/><circle cx="12" cy="19" r="1.7" fill="currentColor"/>',
     clock: '<circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M12 7v5l3 2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
@@ -335,10 +345,7 @@
   }
 
   function normalizeUserCreateSlug(value) {
-    const raw = String(value || "").toUpperCase();
-    const letters = raw.replace(/[^A-Z]/g, "").slice(0, 3);
-    const digits = raw.replace(/[^0-9]/g, "").slice(0, 3);
-    return `${letters}${digits}`;
+    return normalizeShortSlug(value);
   }
 
   function normalizeUserCreateLogin(value) {
@@ -362,7 +369,9 @@
       case "available":
         return "Slug свободен";
       case "invalid_format":
-        return "Slug должен быть в формате AAA000";
+        return `Slug должен быть в формате ${assignableSlugHint}`;
+      case "reserved_path":
+        return "Этот slug зарезервирован системным маршрутом";
       case "pending":
         return "Slug временно забронирован другим пользователем";
       case "blocked":
@@ -410,18 +419,11 @@
         price: null,
       };
     }
-    const [availabilityResponse, priceResponse] = await Promise.all([
-      fetch(`/api/cards/availability?slug=${encodeURIComponent(slug)}&source=admin_create`, {
-        headers: { Accept: "application/json" },
-        cache: "no-store",
-      }),
-      fetch(`/api/cards/slug-price?slug=${encodeURIComponent(slug)}`, {
-        headers: { Accept: "application/json" },
-        cache: "no-store",
-      }),
-    ]);
+    const availabilityResponse = await fetch(`/api/admin/slugs/availability/check?slug=${encodeURIComponent(slug)}`, {
+      headers: { Accept: "application/json" },
+      cache: "no-store",
+    });
     const availabilityPayload = await availabilityResponse.json().catch(() => ({}));
-    const pricePayload = await priceResponse.json().catch(() => ({}));
     if (!availabilityResponse.ok) {
       const err = new Error(String(availabilityPayload?.error || `HTTP ${availabilityResponse.status}`));
       err.code = String(availabilityPayload?.code || "");
@@ -432,7 +434,7 @@
       validFormat: Boolean(availabilityPayload?.validFormat),
       available: Boolean(availabilityPayload?.available),
       reason: String(availabilityPayload?.reason || ""),
-      price: priceResponse.ok && pricePayload?.validFormat ? Number(pricePayload?.price || 0) : null,
+      price: availabilityPayload?.price === null || availabilityPayload?.price === undefined ? null : Number(availabilityPayload.price || 0),
     };
   }
 
@@ -523,7 +525,7 @@
     }
     if (!isShortSlug(normalized)) {
       setCreateInputTone(slugInput, "error");
-      setCreateInlineStatus(userCreateSlugStatus, "Slug должен состоять из 3 букв и 3 цифр (AAA000)", "error");
+      setCreateInlineStatus(userCreateSlugStatus, `Slug должен быть в формате ${assignableSlugHint}`, "error");
       setCreateInlineStatus(userCreateSlugPrice, "");
       return { ok: false, code: "SLUG_INVALID" };
     }
@@ -558,7 +560,8 @@
     if (code === "VALIDATION_ERROR") return "Проверьте форму: имя, город, логин и пароль обязательны, пароль минимум 8 символов.";
     if (code === "EMAIL_INVALID") return "Email указан в неверном формате.";
     if (code === "PLAN_REQUIRED_FOR_ACTIVATION") return "Для мгновенной активации выберите тариф.";
-    if (code === "SLUG_INVALID") return "Slug должен быть в формате AAA000: 3 буквы и 3 цифры.";
+    if (code === "SLUG_INVALID") return `Slug должен быть в формате ${assignableSlugHint}.`;
+    if (code === "SLUG_RESERVED") return "Этот slug зарезервирован системным маршрутом.";
     if (code === "LOGIN_TAKEN") return "Этот логин уже занят. Укажите другой.";
     if (code === "EMAIL_TAKEN") return "Этот email уже используется. Укажите другой.";
     if (code === "SLUG_TAKEN") return "Этот slug уже занят. Выберите свободный.";
@@ -1055,7 +1058,7 @@
     setCreateInputTone(plan, "neutral");
     if (requiresInlineActivation && !isShortSlug(normalizedSlug)) {
       setCreateInputTone(slug, "error");
-      setUserCreateError("Slug должен быть в формате AAA000: 3 буквы и 3 цифры.");
+      setUserCreateError(`Slug должен быть в формате ${assignableSlugHint}.`);
       return;
     }
 
@@ -1736,11 +1739,12 @@
           if (!isManager) {
             menuItems.push(menuItem({ label: "Change login", icon: "pen", attrs: `data-act="ul" data-id="${X(x.telegramId)}" data-login="${X(x.login || "")}" data-name="${X(x.name)}"` }));
             menuItems.push(menuItem({ label: "Change plan", icon: "crown", attrs: `data-act="up" data-id="${X(x.telegramId)}" data-current-plan="${X(x.plan)}" data-active-slugs="${Number(x.activeSlugCount || 0)}" data-bracelet-slugs="${X(braceletSlugs)}"` }));
-            menuItems.push(menuItem({ label: "Add slug", icon: "link2", attrs: `data-act="us-add" data-id="${X(x.telegramId)}" data-name="${X(x.name)}" data-slugs="${X(userSlugsCsv)}"` }));
-            menuItems.push(menuItem({ label: "Edit slug", icon: "pen", attrs: editSlugAttrs }));
-            menuItems.push(menuItem({ label: "Delete slug", icon: "trash", attrs: `data-act="us-delete" data-id="${X(x.telegramId)}" data-name="${X(x.name)}" data-slugs="${X(userSlugsCsv)}"`, danger: true }));
             menuItems.push(menuSeparator());
           }
+          menuItems.push(menuItem({ label: "Add slug", icon: "link2", attrs: `data-act="us-add" data-id="${X(x.telegramId)}" data-name="${X(x.name)}" data-slugs="${X(userSlugsCsv)}"` }));
+          menuItems.push(menuItem({ label: "Edit slug", icon: "pen", attrs: editSlugAttrs }));
+          menuItems.push(menuItem({ label: "Delete slug", icon: "trash", attrs: `data-act="us-delete" data-id="${X(x.telegramId)}" data-name="${X(x.name)}" data-slugs="${X(userSlugsCsv)}"`, danger: true }));
+          menuItems.push(menuSeparator());
 
           const verificationLabel = x.isVerified ? "Верификация: активна" : "Верифицировать";
           menuItems.push(
@@ -2240,14 +2244,19 @@
       ? rows.map((x) => {
         const priceValue = typeof x.effectivePrice === "number" ? P(x.effectivePrice) : "-";
         const priceCell = `<span>${priceValue}</span>`;
-        const menu = menuWrap([
+        const rowMenuItems = [
           menuItem({ label: "Активировать", icon: "checkCircle", attrs: `data-act="sa" data-slug="${x.slug}"` }),
           menuItem({ label: x.state === "BLOCKED" ? "Разблокировать" : "Заблокировать", icon: x.state === "BLOCKED" ? "toggleRight" : "toggleLeft", attrs: `data-act="st" data-slug="${x.slug}" data-ns="${x.state === "BLOCKED" ? "free" : "blocked"}"` }),
-          menuItem({ label: "Изменить цену", icon: "pen", attrs: `data-act="sp" data-slug="${x.slug}" data-p="${x.priceOverride ?? ""}"` }),
-          ...(x.ownerId ? [menuItem({ label: "Удалить slug", icon: "trash", attrs: `data-act="sd" data-slug="${x.slug}" data-owner-id="${X(x.ownerId)}" data-owner-name="${X(x.ownerName || "")}"`, danger: true })] : []),
-          menuSeparator(),
-          menuItem({ label: "Открыть визитку", icon: "external", attrs: `data-act="open-url" data-url="/${encodeURIComponent(x.slug)}"` }),
-        ].join(""));
+        ];
+        if (isLegacySlug(x.slug)) {
+          rowMenuItems.push(menuItem({ label: "Изменить цену", icon: "pen", attrs: `data-act="sp" data-slug="${x.slug}" data-p="${x.priceOverride ?? ""}"` }));
+        }
+        if (x.ownerId) {
+          rowMenuItems.push(menuItem({ label: "Удалить slug", icon: "trash", attrs: `data-act="sd" data-slug="${x.slug}" data-owner-id="${X(x.ownerId)}" data-owner-name="${X(x.ownerName || "")}"`, danger: true }));
+        }
+        rowMenuItems.push(menuSeparator());
+        rowMenuItems.push(menuItem({ label: "Открыть визитку", icon: "external", attrs: `data-act="open-url" data-url="/${encodeURIComponent(x.slug)}"` }));
+        const menu = menuWrap(rowMenuItems.join(""));
         return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3 font-mono">${X(x.slug)}</td><td class="px-4 py-3">${statusChip(x.state === "BLOCKED" ? "rejected" : x.state === "TAKEN" ? "approved" : "new")}</td><td class="px-4 py-3">${X(x.ownerName || "-")}</td><td class="px-4 py-3">${x.isPrimary ? "Да" : "Нет"}</td><td class="px-4 py-3">${priceCell}</td><td class="px-4 py-3">${x.requestedAt ? D(x.requestedAt) : "-"}</td><td class="px-4 py-3">${x.approvedAt ? D(x.approvedAt) : "-"}</td><td class="px-4 py-3">${x.activatedAt ? D(x.activatedAt) : "-"}</td><td class="px-4 py-3"><div class="admin-row-actions">${menu}</div></td></tr>`;
       }).join("")
       : canCreateBySearch
@@ -2296,7 +2305,7 @@
   async function applySlugPriceOverride(slugRaw, priceRaw) {
     const slug = String(slugRaw || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6);
     if (!/^[A-Z]{3}[0-9]{3}$/.test(slug)) {
-      await showAlert("Slug должен быть в формате AAA000");
+      await showAlert("Override цены доступен только для slug формата AAA000");
       return false;
     }
 
@@ -3173,11 +3182,11 @@
         .map((slug) => normalizeShortSlug(slug))
         .filter((slug) => isShortSlug(slug));
 
-      const entered = await showPrompt(`Новый slug для ${userName} (AAA000)`, "");
+      const entered = await showPrompt(`Новый slug для ${userName} (${assignableSlugHint})`, "");
       if (entered === null) return;
       const nextSlug = normalizeShortSlug(entered);
       if (!isShortSlug(nextSlug)) {
-        await showAlert("Slug должен быть в формате AAA000.");
+        await showAlert(`Slug должен быть в формате ${assignableSlugHint}.`);
         return;
       }
       const ok = await showConfirm(`Назначить slug ${nextSlug} пользователю ${userName}?`);
@@ -3221,7 +3230,7 @@
         if (enteredCurrent === null) return;
         const currentSlug = normalizeShortSlug(enteredCurrent);
         if (!isShortSlug(currentSlug)) {
-          await showAlert("Текущий slug должен быть в формате AAA000.");
+          await showAlert(`Текущий slug должен быть в формате ${assignableSlugHint}.`);
           return;
         }
         const replaceOk = await showConfirm(`Заменить ${currentSlug} на ${nextSlug} у пользователя ${userName}?`);
@@ -3259,15 +3268,15 @@
       if (enteredCurrent === null) return;
       const currentSlug = normalizeShortSlug(enteredCurrent);
       if (!isShortSlug(currentSlug)) {
-        await showAlert("Текущий slug должен быть в формате AAA000.");
+        await showAlert(`Текущий slug должен быть в формате ${assignableSlugHint}.`);
         return;
       }
 
-      const enteredNext = await showPrompt(`Новый slug для ${userName} (AAA000)`, currentSlug);
+      const enteredNext = await showPrompt(`Новый slug для ${userName} (${assignableSlugHint})`, currentSlug);
       if (enteredNext === null) return;
       const nextSlug = normalizeShortSlug(enteredNext);
       if (!isShortSlug(nextSlug)) {
-        await showAlert("Slug должен быть в формате AAA000.");
+        await showAlert(`Slug должен быть в формате ${assignableSlugHint}.`);
         return;
       }
       if (nextSlug === currentSlug) {
@@ -3307,7 +3316,7 @@
       if (enteredSlug === null) return;
       const targetSlug = normalizeShortSlug(enteredSlug);
       if (!isShortSlug(targetSlug)) {
-        await showAlert("Slug должен быть в формате AAA000.");
+        await showAlert(`Slug должен быть в формате ${assignableSlugHint}.`);
         return;
       }
       const ok = await showConfirm(`Удалить slug ${targetSlug} у ${userName}?\n\nБудут удалены аналитические записи по этому slug.`);
@@ -3372,7 +3381,7 @@
         if (enteredSlug === null) return;
         targetSlug = normalizeShortSlug(enteredSlug);
         if (!isShortSlug(targetSlug)) {
-          await showAlert("Slug должен быть в формате AAA000.");
+          await showAlert(`Slug должен быть в формате ${assignableSlugHint}.`);
           return;
         }
       }
@@ -3422,7 +3431,7 @@
         if (enteredSlug === null) return;
         targetSlug = normalizeShortSlug(enteredSlug);
         if (!isShortSlug(targetSlug)) {
-          await showAlert("Slug должен быть в формате AAA000.");
+          await showAlert(`Slug должен быть в формате ${assignableSlugHint}.`);
           return;
         }
       }

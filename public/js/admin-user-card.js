@@ -31,6 +31,9 @@
     profileEmail: $("#user-profile-email"),
     profileSave: $("#user-profile-save"),
     profileStatus: $("#user-profile-status"),
+    slugsList: $("#user-card-slugs-list"),
+    slugAdd: $("#user-card-slug-add"),
+    slugsStatus: $("#user-card-slugs-status"),
     form: $("#user-card-form"),
     name: $("#user-card-name"),
     company: $("#user-card-company"),
@@ -70,6 +73,18 @@
   }
 
   const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "";
+  const RESERVED_ASSIGNABLE_SLUGS = new Set(["ADMIN", "API", "AUTH", "FAQ", "MANAGER", "PROFILE", "QR", "TERMS"]);
+  const assignableSlugHint = "AAA000, 0-999 или A-Z до 3 букв";
+  const normalizeSlug = (value) => String(value || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 20);
+  const isLegacySlug = (value) => /^[A-Z]{3}[0-9]{3}$/.test(String(value || ""));
+  const isManagedUsernameSlug = (value) => {
+    const slug = String(value || "").toUpperCase();
+    return /^(0|[1-9][0-9]{0,2})$/.test(slug) || /^[A-Z]{1,3}$/.test(slug);
+  };
+  const isAssignableSlug = (value) => {
+    const slug = String(value || "").toUpperCase();
+    return !RESERVED_ASSIGNABLE_SLUGS.has(slug) && (isLegacySlug(slug) || isManagedUsernameSlug(slug));
+  };
 
   const buttonTypeLabels = {
     phone: "Позвонить",
@@ -89,6 +104,7 @@
     card: null,
     tags: [],
     buttons: [],
+    slugs: [],
     limits: { tags: 0, buttons: 0 },
     themes: [],
     plan: "none",
@@ -104,6 +120,22 @@
     }
     alert(message);
     return Promise.resolve();
+  }
+
+  function showConfirm(message, title) {
+    if (window.UNQAdminDialog && typeof window.UNQAdminDialog.confirm === "function") {
+      return window.UNQAdminDialog.confirm(String(message || ""), { title: String(title || "Подтверждение") });
+    }
+    return Promise.resolve(window.confirm(String(message || "")));
+  }
+
+  function showPrompt(message, defaultValue = "", title = "Введите значение") {
+    if (window.UNQAdminDialog && typeof window.UNQAdminDialog.prompt === "function") {
+      return window.UNQAdminDialog.prompt(String(message || ""), String(defaultValue || ""), {
+        title: String(title || "Введите значение"),
+      });
+    }
+    return Promise.resolve(window.prompt(String(message || ""), String(defaultValue || "")));
   }
 
   function setError(message) {
@@ -145,6 +177,7 @@
       const error = new Error((payload && payload.error) || "Ошибка запроса");
       error.status = response.status;
       error.code = payload && payload.code ? payload.code : "";
+      error.payload = payload && typeof payload === "object" ? payload : {};
       throw error;
     }
     return payload || {};
@@ -241,6 +274,52 @@
     }
   }
 
+  function statusLabel(status) {
+    const labels = {
+      active: "Активен",
+      approved: "Одобрен",
+      private: "Приватный",
+      paused: "Пауза",
+      free: "Свободен",
+      blocked: "Заблокирован",
+      reserved: "Зарезервирован",
+      pending: "Ожидает",
+    };
+    return labels[String(status || "").toLowerCase()] || String(status || "—");
+  }
+
+  function renderSlugs() {
+    if (!(el.slugsList instanceof HTMLElement)) return;
+    const rows = Array.isArray(state.slugs) ? state.slugs : [];
+    if (el.slugsStatus instanceof HTMLElement) {
+      el.slugsStatus.textContent = rows.length ? `Всего ссылок: ${rows.length}` : "Ссылок пока нет";
+    }
+    if (!rows.length) {
+      el.slugsList.innerHTML = '<div class="rounded-xl border border-dashed border-neutral-200 px-3 py-4 text-sm text-neutral-500">Нет ссылок</div>';
+      return;
+    }
+    el.slugsList.innerHTML = rows
+      .map((row) => {
+        const slug = normalizeSlug(row.fullSlug || row.slug || "");
+        const primary = row.isPrimary ? '<span class="rounded-full bg-neutral-900 px-2 py-0.5 text-[11px] font-semibold text-white">primary</span>' : "";
+        return `<div class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2" data-slug="${esc(slug)}">
+          <div class="min-w-0">
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="font-mono text-sm font-semibold">${esc(slug)}</span>
+              ${primary}
+              <span class="text-xs text-neutral-500">${esc(statusLabel(row.status))}</span>
+            </div>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button type="button" data-a="open-slug" class="rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold hover:bg-white">Открыть</button>
+            <button type="button" data-a="edit-slug" class="rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold hover:bg-white">Изменить</button>
+            <button type="button" data-a="delete-slug" class="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-50">Удалить</button>
+          </div>
+        </div>`;
+      })
+      .join("");
+  }
+
   function updateLimits() {
     if (el.tagsLimit) {
       el.tagsLimit.textContent = state.limits.tags ? `Лимит: ${state.limits.tags}` : "";
@@ -292,6 +371,7 @@
       state.card = payload.card || null;
       state.limits = payload.limits || { tags: 0, buttons: 0 };
       state.themes = Array.isArray(payload.themes) ? payload.themes : ["default_dark"];
+      state.slugs = Array.isArray(payload.slugs) ? payload.slugs.slice(0) : [];
       state.plan = state.user?.plan || "none";
 
       state.tags = Array.isArray(state.card?.tags) ? state.card.tags.slice(0) : [];
@@ -307,6 +387,7 @@
       updateHeader();
       updateAvatar(state.card?.avatarUrl || "");
       renderThemes();
+      renderSlugs();
       renderTags();
       renderButtons();
       updateLimits();
@@ -367,6 +448,108 @@
       }
     } finally {
       setProfileLoading(false);
+    }
+  }
+
+  function currentUserSlugs() {
+    return (Array.isArray(state.slugs) ? state.slugs : [])
+      .map((row) => normalizeSlug(row.fullSlug || row.slug || ""))
+      .filter(Boolean);
+  }
+
+  async function promptAssignableSlug(message, defaultValue = "") {
+    const entered = await showPrompt(message, defaultValue);
+    if (entered === null) return null;
+    const slug = normalizeSlug(entered);
+    if (!isAssignableSlug(slug)) {
+      await showAlert(`Slug должен быть в формате ${assignableSlugHint}.`);
+      return "";
+    }
+    return slug;
+  }
+
+  async function addUserSlug() {
+    const userName = state.user?.displayName || state.user?.firstName || "пользователь";
+    const nextSlug = await promptAssignableSlug(`Новый slug для ${userName} (${assignableSlugHint})`, "");
+    if (!nextSlug) return;
+    const ok = await showConfirm(`Назначить ${nextSlug} пользователю ${userName}?`);
+    if (!ok) return;
+    try {
+      await api(`/api/admin/users/${encodeURIComponent(userId)}/slugs`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slug: nextSlug }),
+      });
+      await load();
+    } catch (error) {
+      if (error.status === 409 && error.code === "SLUG_LIMIT_REACHED") {
+        const ownedSlugs = Array.isArray(error.payload?.ownedSlugs) && error.payload.ownedSlugs.length
+          ? error.payload.ownedSlugs.map(normalizeSlug).filter(Boolean)
+          : currentUserSlugs();
+        const enteredCurrent = await promptAssignableSlug(
+          `Лимит slug достигнут. Укажи slug, который нужно заменить.${ownedSlugs.length ? `\nСейчас: ${ownedSlugs.join(", ")}` : ""}`,
+          ownedSlugs[0] || "",
+        );
+        if (!enteredCurrent) return;
+        const replaceOk = await showConfirm(`Заменить ${enteredCurrent} на ${nextSlug}?`);
+        if (!replaceOk) return;
+        try {
+          await api(`/api/admin/users/${encodeURIComponent(userId)}/slugs/${encodeURIComponent(enteredCurrent)}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ slug: nextSlug }),
+          });
+          await load();
+        } catch (replaceError) {
+          await showAlert(replaceError.message || "Не удалось заменить slug");
+        }
+        return;
+      }
+      await showAlert(error.message || "Не удалось добавить slug");
+    }
+  }
+
+  async function editUserSlug(currentSlug) {
+    const userName = state.user?.displayName || state.user?.firstName || "пользователь";
+    let selectedCurrent = currentSlug;
+    if (!selectedCurrent) {
+      selectedCurrent = await promptAssignableSlug(`Текущий slug (${currentUserSlugs().join(", ")})`, currentUserSlugs()[0] || "");
+      if (!selectedCurrent) return;
+    }
+    const nextSlug = await promptAssignableSlug(`Новый slug для ${userName} (${assignableSlugHint})`, selectedCurrent);
+    if (!nextSlug) return;
+    if (nextSlug === selectedCurrent) {
+      await showAlert("Новый slug должен отличаться от текущего.");
+      return;
+    }
+    const ok = await showConfirm(`Заменить ${selectedCurrent} на ${nextSlug}?`);
+    if (!ok) return;
+    try {
+      await api(`/api/admin/users/${encodeURIComponent(userId)}/slugs/${encodeURIComponent(selectedCurrent)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slug: nextSlug }),
+      });
+      await load();
+    } catch (error) {
+      await showAlert(error.message || "Не удалось изменить slug");
+    }
+  }
+
+  async function deleteUserSlug(targetSlug) {
+    const slug = targetSlug || (await promptAssignableSlug(`Какой slug удалить? (${currentUserSlugs().join(", ")})`, currentUserSlugs()[0] || ""));
+    if (!slug) return;
+    const ok = await showConfirm(`Удалить slug ${slug}?\n\nБудут удалены аналитические записи по этому slug.`);
+    if (!ok) return;
+    try {
+      const payload = await api(`/api/admin/users/${encodeURIComponent(userId)}/slugs/${encodeURIComponent(slug)}`, {
+        method: "DELETE",
+      });
+      const nextPrimary = payload?.nextPrimarySlug ? ` Новый основной: ${payload.nextPrimarySlug}.` : "";
+      await showAlert(`Slug ${slug} удалён.${nextPrimary}`);
+      await load();
+    } catch (error) {
+      await showAlert(error.message || "Не удалось удалить slug");
     }
   }
 
@@ -585,6 +768,31 @@
   el.profileForm?.addEventListener("submit", (event) => {
     event.preventDefault();
     void saveProfile();
+  });
+
+  el.slugAdd?.addEventListener("click", () => {
+    void addUserSlug();
+  });
+
+  el.slugsList?.addEventListener("click", (event) => {
+    const target = event.target instanceof HTMLElement ? event.target : null;
+    const action = target?.closest("[data-a]");
+    if (!(action instanceof HTMLElement)) return;
+    const row = action.closest("[data-slug]");
+    const slug = row instanceof HTMLElement ? normalizeSlug(row.getAttribute("data-slug")) : "";
+    if (!slug) return;
+    const type = action.getAttribute("data-a");
+    if (type === "open-slug") {
+      window.open(`/${encodeURIComponent(slug)}`, "_blank", "noopener");
+      return;
+    }
+    if (type === "edit-slug") {
+      void editUserSlug(slug);
+      return;
+    }
+    if (type === "delete-slug") {
+      void deleteUserSlug(slug);
+    }
   });
 
   el.save?.addEventListener("click", saveCard);

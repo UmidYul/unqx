@@ -2023,7 +2023,15 @@ router.get(
       }
 
       if (slugRow.status === "free") {
-        renderPublicFreeUnqOffer(res, req, slug);
+        if (isValidSlug(slug)) {
+          renderPublicFreeUnqOffer(res, req, slug);
+          return;
+        }
+        res.status(404).render("public/not-found", {
+          title: "Страница не найдена",
+          slug,
+          adminSession: getAdminSession(req),
+        });
         return;
       }
 

@@ -1819,14 +1819,14 @@
                 </select>
               </label>
               <label class="block text-sm font-medium text-neutral-700">
-                Slug (три буквы и три цифры: AAA000)
+                Slug / username (AAA000, 0-999 или A-Z)
                 <input name="slug" type="text" maxlength="6" autocapitalize="characters" autocomplete="off"
-                  inputmode="text" pattern="[A-Za-z]{3}[0-9]{3}" placeholder="ABC123"
+                  inputmode="text" pattern="([A-Za-z]{3}[0-9]{3}|0|[1-9][0-9]{0,2}|[A-Za-z]{1,3})" placeholder="A или ABC123"
                   class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2 font-mono text-sm uppercase tracking-wide" />
                 <span id="user-create-slug-status" class="mt-1 block text-xs text-neutral-500"></span>
                 <span id="user-create-slug-price" class="mt-1 block text-xs text-neutral-500"></span>
-                <span class="mt-1 block text-xs text-neutral-500">Для менеджера тариф и slug обязательны для мгновенной
-                  активации.</span>
+                <span class="mt-1 block text-xs text-neutral-500">Username выдаётся только админом или менеджером. Для
+                  менеджера тариф и slug обязательны для мгновенной активации.</span>
               </label>
               <label class="block text-sm font-medium text-neutral-700">
                 Email для восстановления (опционально)

@@ -16,6 +16,14 @@ const { requireCsrfToken } = require("../../middleware/csrf");
 const { parsePositiveInt } = require("../../utils/http");
 const { normalizeLogin, isValidLogin } = require("../../utils/login");
 const { generateNextSlug } = require("../../services/cards");
+const {
+  getAssignableSlugType,
+  getSlugStorageParts,
+  isAssignableSlug,
+  isLegacySlug,
+  isReservedSlugPath,
+  normalizeAssignableSlug,
+} = require("../../services/slug");
 const { getGlobalStats } = require("../../services/stats");
 const { calculateSlugPrice, getSlugPricingConfig } = require("../../services/slug-pricing");
 const { sendTelegramMessage, sendPaymentAlertsToAdmin } = require("../../services/telegram");
@@ -828,18 +836,34 @@ function normalizeManualBadgeTypeInput(value, fallback = "none") {
 }
 
 function normalizeShortSlug(value) {
-  return String(value || "")
-    .toUpperCase()
-    .replace(/[^A-Z0-9]/g, "")
-    .slice(0, 6);
+  return normalizeAssignableSlug(value);
 }
 
 function isShortSlug(value) {
-  return /^[A-Z]{3}[0-9]{3}$/.test(String(value || ""));
+  return isAssignableSlug(String(value || "").toUpperCase());
+}
+
+function getAssignableSlugValidationCode(value) {
+  const slug = normalizeShortSlug(value);
+  if (!slug) return "SLUG_REQUIRED";
+  if (isReservedSlugPath(slug)) return "SLUG_RESERVED";
+  if (!isAssignableSlug(slug)) return "SLUG_INVALID";
+  return "";
+}
+
+function sendAssignableSlugValidationError(res, value, options = {}) {
+  const prefix = options.prefix || "SLUG";
+  const code = getAssignableSlugValidationCode(value);
+  const responseCode = prefix === "SLUG" ? code : code.replace(/^SLUG_/, `${prefix}_`);
+  const error =
+    code === "SLUG_RESERVED"
+      ? "Slug is reserved"
+      : "Slug must be AAA000, 0-999, or A-Z up to 3 letters";
+  res.status(400).json({ error, code: responseCode || `${prefix}_INVALID` });
 }
 
 async function getCalculatedShortSlugPrice(slug) {
-  if (!isShortSlug(slug)) return 0;
+  if (!isLegacySlug(slug)) return 0;
   const slugPricingConfig = await getSlugPricingConfig();
   const quote = calculateSlugPrice({
     letters: slug.slice(0, 3),
@@ -3103,10 +3127,7 @@ router.post(
     }
 
     if (requiresInlineActivation && !isShortSlug(requestedSlug)) {
-      res.status(400).json({
-        error: "Slug must be in AAA000 format",
-        code: "SLUG_INVALID",
-      });
+      sendAssignableSlugValidationError(res, requestedSlug);
       return;
     }
 
@@ -3151,13 +3172,7 @@ router.post(
         currentPlan: "none",
         requestedPlan: selectedPlan,
       });
-      const slugPricingConfig = await getSlugPricingConfig();
-      const slugQuote = calculateSlugPrice({
-        letters: requestedSlug.slice(0, 3),
-        digits: requestedSlug.slice(3),
-        config: slugPricingConfig,
-      });
-      slugCharge = Number(slugQuote?.total || 0);
+      slugCharge = await getCalculatedShortSlugPrice(requestedSlug);
     }
 
     try {
@@ -3226,6 +3241,7 @@ router.post(
 
         let activatedSlug = null;
         if (requiresInlineActivation) {
+          const storageParts = getSlugStorageParts(requestedSlug);
           const slugPayload = {
             ownerId: createdUser.id,
             status: "active",
@@ -3235,7 +3251,7 @@ router.post(
             requestedAt: now,
             approvedAt: now,
             activatedAt: now,
-            price: slugCharge,
+            price: isLegacySlug(requestedSlug) ? slugCharge : null,
           };
           const existingSlug = await tx.slug.findUnique({
             where: { fullSlug: requestedSlug },
@@ -3269,8 +3285,8 @@ router.post(
             try {
               await tx.slug.create({
                 data: {
-                  letters: requestedSlug.slice(0, 3),
-                  digits: requestedSlug.slice(3),
+                  letters: storageParts.letters,
+                  digits: storageParts.digits,
                   fullSlug: requestedSlug,
                   ...slugPayload,
                 },
@@ -3462,10 +3478,29 @@ router.get(
       throw error;
     }
 
+    const slugs = await prisma.slug.findMany({
+      where: { ownerId: user.id },
+      orderBy: [
+        { isPrimary: "desc" },
+        { createdAt: "asc" },
+        { fullSlug: "asc" },
+      ],
+      select: {
+        fullSlug: true,
+        status: true,
+        isPrimary: true,
+        requestedAt: true,
+        approvedAt: true,
+        activatedAt: true,
+        createdAt: true,
+      },
+    });
+
     const effective = getEffectivePlan(user);
     res.json({
       user: normalizedUser,
       card: parseProfileCardRow(card),
+      slugs,
       limits: {
         tags: getTagLimit(effective.plan),
         buttons: getButtonLimit(effective.plan),
@@ -3596,13 +3631,21 @@ router.post(
       res.status(400).json({ error: "User id is required" });
       return;
     }
+    if (isManagerSession(req)) {
+      const ownsUser = await managerOwnsUser(req, userId);
+      if (!ownsUser) {
+        res.status(404).json({ error: "User not found", code: "USER_NOT_FOUND" });
+        return;
+      }
+    }
 
     const nextSlug = normalizeShortSlug(req.body?.slug);
     if (!isShortSlug(nextSlug)) {
-      res.status(400).json({ error: "Slug must be in AAA000 format" });
+      sendAssignableSlugValidationError(res, nextSlug);
       return;
     }
     const calculatedSlugPrice = await getCalculatedShortSlugPrice(nextSlug);
+    const storageParts = getSlugStorageParts(nextSlug);
 
     try {
       const result = await prisma.$transaction(async (tx) => {
@@ -3672,7 +3715,7 @@ router.post(
           ownerId: userId,
           status: nextStatus,
           isPrimary: shouldBePrimary,
-          price: calculatedSlugPrice,
+          price: isLegacySlug(nextSlug) ? calculatedSlugPrice : null,
           pauseMessage: null,
           pendingExpiresAt: null,
           requestedAt: now,
@@ -3733,8 +3776,8 @@ router.post(
           try {
             slugRow = await tx.slug.create({
               data: {
-                letters: nextSlug.slice(0, 3),
-                digits: nextSlug.slice(3),
+                letters: storageParts.letters,
+                digits: storageParts.digits,
                 fullSlug: nextSlug,
                 ...payload,
               },
@@ -3757,15 +3800,15 @@ router.post(
       res.json({ ok: true, slug: result });
     } catch (error) {
       if (error?.code === "USER_NOT_FOUND") {
-        res.status(404).json({ error: "User not found" });
+        res.status(404).json({ error: "User not found", code: "USER_NOT_FOUND" });
         return;
       }
       if (error?.code === "SLUG_ALREADY_OWNED") {
-        res.status(409).json({ error: "User already owns this slug" });
+        res.status(409).json({ error: "User already owns this slug", code: "SLUG_ALREADY_OWNED" });
         return;
       }
       if (error?.code === "SLUG_TAKEN") {
-        res.status(409).json({ error: "Slug is already assigned to another user" });
+        res.status(409).json({ error: "Slug is already assigned to another user", code: "SLUG_TAKEN" });
         return;
       }
       if (error?.code === "SLUG_NOT_FREE") {
@@ -3803,11 +3846,22 @@ router.patch(
       res.status(400).json({ error: "User id is required" });
       return;
     }
+    if (isManagerSession(req)) {
+      const ownsUser = await managerOwnsUser(req, userId);
+      if (!ownsUser) {
+        res.status(404).json({ error: "User not found", code: "USER_NOT_FOUND" });
+        return;
+      }
+    }
 
     const currentSlug = normalizeShortSlug(req.params.slug);
     const nextSlug = normalizeShortSlug(req.body?.slug);
-    if (!isShortSlug(currentSlug) || !isShortSlug(nextSlug)) {
-      res.status(400).json({ error: "Slug must be in AAA000 format" });
+    if (!isShortSlug(currentSlug)) {
+      sendAssignableSlugValidationError(res, currentSlug, { prefix: "CURRENT_SLUG" });
+      return;
+    }
+    if (!isShortSlug(nextSlug)) {
+      sendAssignableSlugValidationError(res, nextSlug, { prefix: "TARGET_SLUG" });
       return;
     }
     if (currentSlug === nextSlug) {
@@ -3815,6 +3869,7 @@ router.patch(
       return;
     }
     const calculatedSlugPrice = await getCalculatedShortSlugPrice(nextSlug);
+    const storageParts = getSlugStorageParts(nextSlug);
 
     try {
       const result = await prisma.$transaction(async (tx) => {
@@ -3874,7 +3929,7 @@ router.patch(
           ownerId: userId,
           status: current.status,
           isPrimary: current.isPrimary,
-          price: calculatedSlugPrice,
+          price: isLegacySlug(nextSlug) ? calculatedSlugPrice : null,
           pauseMessage: current.pauseMessage,
           requestedAt: current.requestedAt,
           approvedAt: current.approvedAt,
@@ -3935,8 +3990,8 @@ router.patch(
           try {
             replacement = await tx.slug.create({
               data: {
-                letters: nextSlug.slice(0, 3),
-                digits: nextSlug.slice(3),
+                letters: storageParts.letters,
+                digits: storageParts.digits,
                 fullSlug: nextSlug,
                 ...transferPayload,
               },
@@ -4170,19 +4225,19 @@ router.patch(
       });
     } catch (error) {
       if (error?.code === "USER_NOT_FOUND") {
-        res.status(404).json({ error: "User not found" });
+        res.status(404).json({ error: "User not found", code: "USER_NOT_FOUND" });
         return;
       }
       if (error?.code === "CURRENT_SLUG_NOT_OWNED") {
-        res.status(404).json({ error: "Current slug is not owned by this user" });
+        res.status(404).json({ error: "Current slug is not owned by this user", code: "CURRENT_SLUG_NOT_OWNED" });
         return;
       }
       if (error?.code === "TARGET_SLUG_TAKEN") {
-        res.status(409).json({ error: "New slug is already assigned to another user" });
+        res.status(409).json({ error: "New slug is already assigned to another user", code: "TARGET_SLUG_TAKEN" });
         return;
       }
       if (error?.code === "TARGET_SLUG_ALREADY_OWNED") {
-        res.status(409).json({ error: "User already owns target slug" });
+        res.status(409).json({ error: "User already owns target slug", code: "TARGET_SLUG_ALREADY_OWNED" });
         return;
       }
       if (error?.code === "TARGET_SLUG_NOT_FREE") {
@@ -4210,10 +4265,17 @@ router.delete(
       res.status(400).json({ error: "User id is required" });
       return;
     }
+    if (isManagerSession(req)) {
+      const ownsUser = await managerOwnsUser(req, userId);
+      if (!ownsUser) {
+        res.status(404).json({ error: "User not found", code: "USER_NOT_FOUND" });
+        return;
+      }
+    }
 
     const targetSlug = normalizeShortSlug(req.params.slug);
     if (!isShortSlug(targetSlug)) {
-      res.status(400).json({ error: "Slug must be in AAA000 format" });
+      sendAssignableSlugValidationError(res, targetSlug, { prefix: "TARGET_SLUG" });
       return;
     }
 
@@ -4392,11 +4454,11 @@ router.delete(
       });
     } catch (error) {
       if (error?.code === "USER_NOT_FOUND") {
-        res.status(404).json({ error: "User not found" });
+        res.status(404).json({ error: "User not found", code: "USER_NOT_FOUND" });
         return;
       }
       if (error?.code === "TARGET_SLUG_NOT_OWNED") {
-        res.status(404).json({ error: "Target slug is not owned by this user" });
+        res.status(404).json({ error: "Target slug is not owned by this user", code: "TARGET_SLUG_NOT_OWNED" });
         return;
       }
       throw error;
@@ -6374,7 +6436,7 @@ router.get(
 
     const items = rows.map((row) => {
       const calcPrice =
-        /^[A-Z]{3}[0-9]{3}$/.test(row.fullSlug) &&
+        isLegacySlug(row.fullSlug) &&
           (row.price === null || row.price === undefined)
           ? calculateSlugPrice({ letters: row.fullSlug.slice(0, 3), digits: row.fullSlug.slice(3), config: slugPricingConfig }).total
           : null;
@@ -6412,10 +6474,64 @@ router.get(
   }),
 );
 
+router.get(
+  "/slugs/availability/check",
+  asyncHandler(async (req, res) => {
+    const slug = normalizeShortSlug(req.query.slug);
+    const validationCode = getAssignableSlugValidationCode(slug);
+    if (validationCode) {
+      const reason = validationCode === "SLUG_RESERVED" ? "reserved_path" : "invalid_format";
+      res.json({
+        slug,
+        validFormat: false,
+        available: false,
+        reason,
+        code: validationCode,
+        type: "",
+        price: null,
+      });
+      return;
+    }
+
+    const existing = await prisma.slug.findUnique({
+      where: { fullSlug: slug },
+      select: { fullSlug: true, ownerId: true, status: true, price: true },
+    });
+    const type = getAssignableSlugType(slug);
+    const legacy = type === "legacy";
+    let price = null;
+    if (legacy) {
+      price = typeof existing?.price === "number"
+        ? existing.price
+        : await getCalculatedShortSlugPrice(slug);
+    }
+
+    const available = !existing || (!existing.ownerId && existing.status === "free");
+    let reason = "available";
+    if (!available) {
+      reason = existing?.ownerId ? "taken" : existing?.status || "not_free";
+    }
+
+    res.json({
+      slug,
+      validFormat: true,
+      available,
+      reason,
+      code: available ? "SLUG_AVAILABLE" : existing?.ownerId ? "SLUG_TAKEN" : "SLUG_NOT_FREE",
+      type,
+      isLegacy: legacy,
+      isManagedUsername: type === "username",
+      price,
+      status: existing?.status || null,
+      ownerId: existing?.ownerId || null,
+    });
+  }),
+);
+
 router.patch(
   "/slugs/:slug/state",
   asyncHandler(async (req, res) => {
-    const slug = String(req.params.slug || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 20);
+    const slug = normalizeShortSlug(req.params.slug);
     const next = String(req.body.state || "").trim().toLowerCase();
     if (!["blocked", "free", "active", "paused", "private", "approved"].includes(next)) {
       res.status(400).json({ error: "Invalid state" });
@@ -6487,7 +6603,7 @@ router.patch(
 router.patch(
   "/slugs/:slug/activate",
   asyncHandler(async (req, res) => {
-    const slug = String(req.params.slug || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 20);
+    const slug = normalizeShortSlug(req.params.slug);
     const existing = await prisma.slug.findUnique({
       where: { fullSlug: slug },
       select: { fullSlug: true },
@@ -6520,12 +6636,12 @@ router.patch(
 router.patch(
   "/slugs/:slug/price-override",
   asyncHandler(async (req, res) => {
-    const slug = String(req.params.slug || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 20);
-    const parsed = /^([A-Z]{3})([0-9]{3})$/.exec(slug);
-    if (!parsed) {
+    const slug = normalizeShortSlug(req.params.slug);
+    if (!isLegacySlug(slug)) {
       res.status(400).json({ error: "Slug must be in AAA000 format" });
       return;
     }
+    const parsed = /^([A-Z]{3})([0-9]{3})$/.exec(slug);
     const parsePriceOverride = (rawValue) => {
       if (rawValue === null || rawValue === undefined || rawValue === "") return null;
       const normalized = String(rawValue)
