@@ -1797,7 +1797,34 @@
     selected: null,
     editing: null,
     methods: [],
+    panel: "profiles",
   };
+
+  function setPaymentPanel(panel) {
+    const allowed = new Set(["profiles", "pages", "editor", "preview"]);
+    const nextPanel = allowed.has(panel) ? panel : "profiles";
+    paymentCardsState.panel = nextPanel;
+    document.querySelectorAll("[data-payment-panel]").forEach((node) => {
+      if (!(node instanceof HTMLElement)) return;
+      node.classList.toggle("hidden", node.getAttribute("data-payment-panel") !== nextPanel);
+    });
+    document.querySelectorAll("[data-payment-panel-tab]").forEach((node) => {
+      if (!(node instanceof HTMLElement)) return;
+      const active = node.getAttribute("data-payment-panel-tab") === nextPanel;
+      node.classList.toggle("bg-neutral-900", active);
+      node.classList.toggle("text-white", active);
+      node.classList.toggle("shadow-sm", active);
+      node.classList.toggle("text-neutral-600", !active);
+    });
+  }
+
+  function getEditingPaymentCard() {
+    const editingId = paymentCardsState.editing?.id || "";
+    if (editingId) {
+      return paymentCardsState.items.find((item) => String(item.id) === String(editingId)) || paymentCardsState.editing;
+    }
+    return paymentCardsState.editing || null;
+  }
 
   function normalizePaymentSlug(value) {
     return String(value || "")
@@ -1851,6 +1878,52 @@
     node.className = tone === "error" ? "text-xs text-red-700" : tone === "success" ? "text-xs text-emerald-700" : "text-xs text-neutral-500";
   }
 
+  function renderPaymentPagePreview(card = getEditingPaymentCard()) {
+    const box = document.getElementById("payment-page-preview");
+    const empty = document.getElementById("payment-page-preview-empty");
+    if (!(box instanceof HTMLElement) || !(empty instanceof HTMLElement)) return;
+    if (!card) {
+      box.classList.add("hidden");
+      empty.classList.remove("hidden");
+      return;
+    }
+    empty.classList.add("hidden");
+    box.classList.remove("hidden");
+    const title = document.getElementById("payment-page-preview-title");
+    const url = document.getElementById("payment-page-preview-url");
+    const status = document.getElementById("payment-page-preview-status");
+    const address = document.getElementById("payment-page-preview-address");
+    const methods = document.getElementById("payment-page-preview-methods");
+    if (title instanceof HTMLElement) title.textContent = card.title || "Payment card";
+    if (url instanceof HTMLElement) url.textContent = card.publicSlug ? `/payment/${card.publicSlug}` : "/payment/...";
+    if (status instanceof HTMLElement) {
+      const published = card.isPublished !== false;
+      status.textContent = published ? "Опубликована" : "Черновик";
+      status.className = published
+        ? "inline-flex w-fit rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700"
+        : "inline-flex w-fit rounded-full border border-neutral-200 bg-white px-2.5 py-1 text-xs font-semibold text-neutral-600";
+    }
+    if (address instanceof HTMLElement) {
+      const place = [card.address || "", card.postcode || ""].filter(Boolean).join(", ");
+      address.textContent = place || "Адрес точки не указан";
+    }
+    if (methods instanceof HTMLElement) {
+      const rows = Array.isArray(card.methods) ? card.methods : [];
+      methods.innerHTML = rows.length
+        ? rows.map((method) => {
+          const label = method?.label || method?.type || "Реквизит";
+          const value = method?.value || method?.requisite || "";
+          const note = method?.note || "";
+          return `<div class="rounded-lg border border-neutral-200 bg-white p-3">
+            <div class="text-sm font-semibold text-neutral-900">${X(label)}</div>
+            <div class="mt-1 break-words font-mono text-sm text-neutral-700">${X(value || "Не заполнено")}</div>
+            ${note ? `<div class="mt-1 text-xs text-neutral-500">${X(note)}</div>` : ""}
+          </div>`;
+        }).join("")
+        : `<div class="rounded-lg border border-dashed border-neutral-300 p-4 text-center text-xs text-neutral-500">Реквизиты еще не добавлены</div>`;
+    }
+  }
+
   function renderPaymentPreview(selected) {
     const preview = selected?.profile || selected?.paymentCard?.profile || {};
     const user = selected?.user || selected?.paymentCard?.user || {};
@@ -1888,10 +1961,14 @@
       return;
     }
     const profile = selected.profile || {};
-    box.innerHTML = `<div class="flex flex-wrap items-center justify-between gap-2">
-      <div><span class="font-semibold">${X(profile.name || selected.user.name || "UNQX User")}</span>
-      <span class="text-neutral-500"> · ID ${X(selected.user.id || "")}</span></div>
-      <span class="text-xs text-neutral-500">${profile.hasCard ? "Основная визитка найдена" : "Основная визитка не создана"}</span>
+    box.innerHTML = `<div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+      <div class="min-w-0"><span class="font-semibold text-neutral-900">${X(profile.name || selected.user.name || "UNQX User")}</span>
+      <span class="text-neutral-500"> · ID ${X(selected.user.id || "")}</span>
+      <div class="mt-1 text-xs text-neutral-500">${profile.hasCard ? "Основная визитка найдена" : "Основная визитка не создана"}</div></div>
+      <div class="flex flex-wrap gap-2">
+        <button type="button" data-payment-panel-goto="pages" class="rounded-lg border border-neutral-300 px-3 py-2 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100">Страницы</button>
+        <button type="button" data-act="pc-create-selected" class="rounded-lg bg-neutral-900 px-3 py-2 text-xs font-semibold text-white transition hover:bg-neutral-800">Новая страница</button>
+      </div>
     </div>`;
     box.classList.remove("hidden");
     renderPaymentPreview(selected);
@@ -1906,12 +1983,12 @@
         const name = user.name || user.login || user.telegramUsername || "UNQX User";
         const meta = [user.login ? `@${user.login}` : user.telegramUsername ? `@${user.telegramUsername}` : "", user.city || "", user.hasCard ? "визитка есть" : "без визитки"].filter(Boolean).join(" · ");
         return `<button type="button" data-act="pc-select-user" data-id="${X(user.telegramId || user.id || "")}"
-          class="flex w-full items-center justify-between gap-3 rounded-xl border border-neutral-200 px-3 py-2 text-left text-sm transition hover:border-neutral-400 hover:bg-neutral-50">
+          class="flex min-h-20 w-full items-center justify-between gap-3 rounded-lg border border-neutral-200 px-3 py-3 text-left text-sm transition hover:border-neutral-400 hover:bg-neutral-50">
           <span class="min-w-0"><span class="block truncate font-semibold text-neutral-900">${X(name)}</span><span class="block truncate text-xs text-neutral-500">${X(meta)}</span></span>
           <span class="shrink-0 text-xs font-semibold text-neutral-500">Выбрать</span>
         </button>`;
       }).join("")
-      : `<div class="rounded-xl border border-dashed border-neutral-300 px-3 py-3 text-center text-xs text-neutral-500">Профили не найдены</div>`;
+      : `<div class="rounded-lg border border-dashed border-neutral-300 px-3 py-3 text-center text-xs text-neutral-500 sm:col-span-2 xl:col-span-3">Профили не найдены</div>`;
   }
 
   async function searchPaymentUsers() {
@@ -1949,6 +2026,7 @@
     paymentCardsState.editing = target;
     paymentCardsState.methods = Array.isArray(target.methods) ? target.methods.map((x) => ({ ...x })) : [];
     form.classList.remove("hidden");
+    document.getElementById("payment-card-editor-empty")?.classList.add("hidden");
     setFormValue(form, "id", target.id || "");
     setFormValue(form, "ownerId", target.ownerId || selectedUserId);
     setFormValue(form, "title", target.title || "");
@@ -1967,12 +2045,15 @@
     }
     renderPaymentPreview({ user: target.user || paymentCardsState.selected?.user, profile: target.profile || paymentCardsState.selected?.profile });
     renderPaymentMethods();
+    renderPaymentPagePreview(target);
     setPaymentEditorStatus("");
+    setPaymentPanel("editor");
   }
 
   async function loadPaymentCards() {
     const form = document.getElementById("payment-cards-filters");
     const table = document.getElementById("payment-cards-table");
+    const mobileList = document.getElementById("payment-cards-mobile-list");
     const totalNode = document.getElementById("payment-cards-total");
     if (!(form instanceof HTMLFormElement) || !(table instanceof HTMLElement)) return;
     const q = {
@@ -1984,6 +2065,9 @@
     const r = await fetch(`/api/admin/payment-cards?${Q(q)}`);
     if (!r.ok) {
       table.innerHTML = `<tr><td colspan="6" class="px-3 py-8 text-center text-red-700">${X(await E(r))}</td></tr>`;
+      if (mobileList instanceof HTMLElement) {
+        mobileList.innerHTML = `<div class="rounded-lg border border-red-200 p-4 text-center text-sm text-red-700">Не удалось загрузить Payment-страницы</div>`;
+      }
       return;
     }
     const payload = await r.json();
@@ -1993,6 +2077,8 @@
     if (totalNode instanceof HTMLElement) {
       totalNode.textContent = `${Number(payload.pagination?.total || 0).toLocaleString("ru-RU")} страниц`;
     }
+    const emptyTable = `<tr><td colspan="6" class="px-3 py-10 text-center text-neutral-500"><div class="inline-flex flex-col items-center gap-2">${I("creditCard", 48)}<span>Payment карточек пока нет</span><span class="text-xs text-neutral-400">Выберите профиль и создайте страницу точки.</span></div></td></tr>`;
+    const emptyMobile = `<div class="rounded-lg border border-dashed border-neutral-300 p-6 text-center text-sm text-neutral-500">Payment карточек пока нет</div>`;
     table.innerHTML = paymentCardsState.items.length
       ? paymentCardsState.items.map((item) => {
         const menu = menuWrap([
@@ -2010,13 +2096,41 @@
           <td class="px-4 py-3 text-right"><div class="admin-row-actions justify-end">${menu}</div></td>
         </tr>`;
       }).join("")
-      : `<tr><td colspan="6" class="px-3 py-10 text-center text-neutral-500"><div class="inline-flex flex-col items-center gap-2">${I("creditCard", 48)}<span>Payment карточек пока нет</span><span class="text-xs text-neutral-400">Откройте Payment из меню пользователя и создайте страницу точки.</span></div></td></tr>`;
+      : emptyTable;
+    if (mobileList instanceof HTMLElement) {
+      mobileList.innerHTML = paymentCardsState.items.length
+        ? paymentCardsState.items.map((item) => {
+          const status = item.isPublished ? "Опубликована" : "Черновик";
+          return `<article class="rounded-lg border border-neutral-200 bg-white p-3">
+            <div class="flex items-start justify-between gap-3">
+              <div class="min-w-0">
+                <p class="truncate text-sm font-bold text-neutral-900">${X(item.title || "Payment card")}</p>
+                <p class="mt-1 break-all font-mono text-xs text-neutral-500">/payment/${X(item.publicSlug)}</p>
+              </div>
+              <span class="shrink-0 rounded-full border border-neutral-200 px-2 py-1 text-[11px] font-semibold text-neutral-600">${status}</span>
+            </div>
+            <p class="mt-2 line-clamp-2 text-xs text-neutral-500">${X(item.address || "Адрес не указан")}</p>
+            <div class="mt-3 flex flex-wrap gap-2">
+              <button type="button" data-act="pc-edit" data-id="${X(item.id)}" class="rounded-lg border border-neutral-300 px-3 py-2 text-xs font-semibold text-neutral-700">Редактировать</button>
+              <button type="button" data-act="open-url" data-url="/payment/${encodeURIComponent(item.publicSlug)}" class="rounded-lg border border-neutral-300 px-3 py-2 text-xs font-semibold text-neutral-700">Открыть</button>
+              <button type="button" data-act="pc-delete" data-id="${X(item.id)}" data-title="${X(item.title)}" class="rounded-lg border border-red-200 px-3 py-2 text-xs font-semibold text-red-700">Удалить</button>
+            </div>
+          </article>`;
+        }).join("")
+        : emptyMobile;
+    }
     renderPager("payment-cards-pagination", payload.pagination, (nextPage) => {
       setFormValue(form, "page", String(nextPage));
       void loadPaymentCards();
     });
-    if (q.userId && !paymentCardsState.editing) {
-      openPaymentEditor(paymentCardsState.items[0] || null);
+    if (paymentCardsState.editing?.id) {
+      const refreshed = paymentCardsState.items.find((item) => String(item.id) === String(paymentCardsState.editing.id));
+      if (refreshed) {
+        paymentCardsState.editing = refreshed;
+        renderPaymentPagePreview(refreshed);
+      }
+    } else {
+      renderPaymentPagePreview(null);
     }
   }
 
@@ -2892,6 +3006,14 @@
         setFormValue(form, "page", "1");
         paymentCardsState.editing = null;
         await loadPaymentCards();
+        setPaymentPanel("pages");
+      }
+      closeAllRowMenus();
+      return;
+    }
+    if (a === "pc-create-selected") {
+      if (paymentCardsState.selected?.user?.id) {
+        openPaymentEditor(null);
       }
       closeAllRowMenus();
       return;
@@ -2914,6 +3036,9 @@
       else {
         paymentCardsState.editing = null;
         await loadPaymentCards();
+        document.getElementById("payment-card-editor")?.classList.add("hidden");
+        document.getElementById("payment-card-editor-empty")?.classList.remove("hidden");
+        renderPaymentPagePreview(null);
       }
       closeAllRowMenus();
       return;
@@ -3536,17 +3661,37 @@
     if (f instanceof HTMLFormElement) setFormValue(f, "page", "1");
     paymentCardsState.editing = null;
     void loadPaymentCards();
+    setPaymentPanel("pages");
   });
   document.getElementById("payment-cards-create")?.addEventListener("click", async () => {
     if (!paymentCardsState.selected?.user?.id) {
       await showAlert("Сначала выберите пользователя во вкладке Payment или откройте Payment из меню пользователя.");
+      setPaymentPanel("profiles");
       return;
     }
+    openPaymentEditor(null);
+  });
+  document.getElementById("payment-selected-create")?.addEventListener("click", () => {
+    if (!paymentCardsState.selected?.user?.id) return;
     openPaymentEditor(null);
   });
   document.getElementById("payment-user-search-form")?.addEventListener("submit", (e) => {
     e.preventDefault();
     void searchPaymentUsers();
+  });
+  document.querySelectorAll("[data-payment-panel-tab]").forEach((node) => {
+    if (!(node instanceof HTMLElement)) return;
+    node.addEventListener("click", () => setPaymentPanel(node.getAttribute("data-payment-panel-tab") || "profiles"));
+  });
+  document.querySelectorAll("[data-payment-panel-goto]").forEach((node) => {
+    if (!(node instanceof HTMLElement)) return;
+    node.addEventListener("click", () => setPaymentPanel(node.getAttribute("data-payment-panel-goto") || "profiles"));
+  });
+  document.addEventListener("click", (e) => {
+    const target = e.target;
+    const node = target instanceof Element ? target.closest("[data-payment-panel-goto]") : null;
+    if (!(node instanceof HTMLElement)) return;
+    setPaymentPanel(node.getAttribute("data-payment-panel-goto") || "profiles");
   });
   document.getElementById("payment-card-method-add")?.addEventListener("click", () => {
     paymentCardsState.methods.push({
@@ -3599,8 +3744,11 @@
       return;
     }
     form.classList.add("hidden");
+    document.getElementById("payment-card-editor-empty")?.classList.remove("hidden");
     paymentCardsState.editing = null;
+    renderPaymentPagePreview(null);
     await loadPaymentCards();
+    setPaymentPanel("pages");
   });
   const managersCreateForm = document.getElementById("managers-create-form");
   const managersCreateStatus = document.getElementById("managers-create-status");
@@ -3957,11 +4105,15 @@
   }
   if (tab === "payment-cards") {
     const form = document.getElementById("payment-cards-filters");
+    let initialPaymentUserId = "";
     if (form instanceof HTMLFormElement) {
       setFormValue(form, "q", getInitial("pc_q", "q") || "");
-      setFormValue(form, "userId", getInitial("pc_user_id", "userId") || "");
+      initialPaymentUserId = getInitial("pc_user_id", "userId") || "";
+      setFormValue(form, "userId", initialPaymentUserId);
       setFormValue(form, "page", getInitial("pc_page", "page") || "1");
     }
+    const requestedPanel = getInitial("pc_view", "view") || "";
+    setPaymentPanel(requestedPanel || (initialPaymentUserId ? "pages" : "profiles"));
   }
   if (tab === "slugs") {
     const form = document.getElementById("slugs-filters");
