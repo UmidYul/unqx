@@ -11,6 +11,7 @@ const {
   authForgotPasswordRateLimit,
   authCheckAvailabilityRateLimit,
   authLoginRateLimit,
+  authOtpVerifyRateLimit,
   authRegisterRateLimit,
   authSendOtpRateLimit,
 } = require("../../middleware/rate-limit");
@@ -27,6 +28,7 @@ const { linkReferralOnRegistration } = require("../../services/referrals");
 const { resolveUzbekistanCity } = require("../../constants/uzbekistan-cities");
 const { normalizeLogin, isValidLogin } = require("../../utils/login");
 const { createUserAccessToken } = require("../../services/user-access-token");
+const { SESSION_COOKIE_NAME, LEGACY_SESSION_COOKIE_NAMES, buildCookieOptions } = require("../../utils/cookies");
 
 const router = express.Router();
 const OTP_LENGTH = 6;
@@ -71,8 +73,26 @@ function normalizeEmail(value) {
   return String(value || "").trim().toLowerCase();
 }
 
+function isValidEmailAddress(value) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || "").trim());
+}
+
 function normalizeCity(value) {
   return resolveUzbekistanCity(value);
+}
+
+function canResumePendingRegistration(existingUser, requestedEmail) {
+  if (!existingUser || existingUser.emailVerified !== false || existingUser.status !== "active") {
+    return false;
+  }
+
+  const existingEmail = normalizeEmail(existingUser.email);
+  const nextEmail = normalizeEmail(requestedEmail);
+  if (!existingEmail || !nextEmail) {
+    return false;
+  }
+
+  return existingEmail === nextEmail;
 }
 
 function buildAvailabilityField(provided) {
@@ -381,7 +401,7 @@ async function handleLoginRequest(req, res) {
   }
 
   await loginUserSession(req, userToSessionPayload(user), { rememberMe });
-  await setOwnerSlugsCookie(res, user.id);
+  await setOwnerSlugsCookie(req, res, user.id);
   res.json(buildAuthSuccessPayload(user, { rememberMe, redirectTo: "/profile" }));
 }
 
@@ -477,19 +497,23 @@ async function handleLogoutRequest(req, res) {
     });
   }
 
-  res.clearCookie("unqx.sid", {
-    path: "/",
-    httpOnly: true,
-    sameSite: "lax",
-    secure: env.SESSION_COOKIE_SECURE === true,
-  });
-  res.append("Set-Cookie", "unqx_owner_slugs=; Max-Age=0; Path=/; SameSite=Lax");
+  res.clearCookie(SESSION_COOKIE_NAME, buildCookieOptions(req, { httpOnly: true }));
+  for (const legacyName of LEGACY_SESSION_COOKIE_NAMES) {
+    res.clearCookie(legacyName, buildCookieOptions(req, { httpOnly: true }));
+    res.clearCookie(legacyName, {
+      path: "/",
+      sameSite: "lax",
+      secure: buildCookieOptions(req).secure,
+      httpOnly: true,
+    });
+  }
+  res.clearCookie("unqx_owner_slugs", buildCookieOptions(req));
   const csrfToken = ensureCsrfToken(req);
   res.json({ ok: true, csrfToken });
 }
 
-async function setOwnerSlugsCookie(res, userId) {
-  if (!res || typeof res.append !== "function" || !userId) return;
+async function setOwnerSlugsCookie(req, res, userId) {
+  if (!res || typeof res.cookie !== "function" || !userId) return;
   const slugs = await prisma.slug.findMany({
     where: {
       ownerId: userId,
@@ -502,9 +526,12 @@ async function setOwnerSlugsCookie(res, userId) {
     .map((item) => String(item.fullSlug || "").trim().toUpperCase())
     .filter(Boolean)
     .join(",");
-  res.append(
-    "Set-Cookie",
-    `unqx_owner_slugs=${encodeURIComponent(serialized)}; Max-Age=2592000; Path=/; SameSite=Lax`,
+  res.cookie(
+    "unqx_owner_slugs",
+    serialized,
+    buildCookieOptions(req, {
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+    }),
   );
 }
 
@@ -531,7 +558,7 @@ router.get(
     }
 
     if (email) {
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      if (!isValidEmailAddress(email)) {
         response.email.valid = false;
         response.email.available = false;
         response.email.message = "Введите email в формате name@example.com";
@@ -590,9 +617,33 @@ router.post(
 
     const existing = await prisma.user.findFirst({
       where: { login },
-      select: { id: true, emailVerified: true, refCode: true, email: true },
+      select: {
+        id: true,
+        email: true,
+        emailVerified: true,
+        firstName: true,
+        status: true,
+      },
     });
     if (existing) {
+      if (canResumePendingRegistration(existing, email)) {
+        const codePayload = await setVerificationOtp(existing.id);
+        await sendEmailVerificationOtp({
+          email: existing.email,
+          firstName: existing.firstName,
+          code: codePayload.code,
+        });
+        res.json({
+          ok: true,
+          redirectTo: "/verify-email",
+          email: existing.email,
+          resumedPendingRegistration: true,
+        });
+        return;
+      }
+
+      res.status(409).json({ error: "Р­С‚РѕС‚ Р»РѕРіРёРЅ СѓР¶Рµ Р·Р°РЅСЏС‚. Р’РѕР№С‚Рё в†’", code: "LOGIN_TAKEN" });
+      return;
       const hasEmail = typeof existing.email === "string" && existing.email.length > 0;
       const emailMatches = hasEmail && email && normalizeEmail(existing.email) === email;
       if (existing.emailVerified || !hasEmail || !emailMatches) {
@@ -603,7 +654,7 @@ router.post(
 
     if (email) {
       const existingEmail = await prisma.user.findFirst({
-        where: { email, ...(existing?.id ? { id: { not: existing.id } } : {}) },
+        where: { email },
         select: { id: true },
       });
       if (existingEmail) {
@@ -613,45 +664,22 @@ router.post(
     }
 
     const passwordHash = await bcrypt.hash(password, PASSWORD_ROUNDS);
-    let user;
-    if (existing) {
-      user = await prisma.user.update({
-        where: { id: existing.id },
-        data: {
-          firstName,
-          city,
-          login,
-          passwordHash,
-          emailVerified: false,
-          plan: "none",
-          profileType,
-          status: "active",
-          resetPasswordToken: null,
-          resetPasswordExpiresAt: null,
-          loginAttempts: 0,
-          lockedUntil: null,
-          ...(existing.refCode ? {} : { refCode: await generateUniqueRefCode() }),
-        },
-        select: USER_AUTH_SELECT,
-      });
-    } else {
-      const refCode = await generateUniqueRefCode();
-      user = await prisma.user.create({
-        data: {
-          firstName,
-          city,
-          email: email || null,
-          login,
-          passwordHash,
-          emailVerified: false,
-          plan: "none",
-          profileType,
-          status: "active",
-          refCode,
-        },
-        select: USER_AUTH_SELECT,
-      });
-    }
+    const refCode = await generateUniqueRefCode();
+    const user = await prisma.user.create({
+      data: {
+        firstName,
+        city,
+        email: email || null,
+        login,
+        passwordHash,
+        emailVerified: false,
+        plan: "none",
+        profileType,
+        status: "active",
+        refCode,
+      },
+      select: USER_AUTH_SELECT,
+    });
 
     const codePayload = email ? await setVerificationOtp(user.id) : null;
     if (req.session?.pendingRefCode) {
@@ -683,11 +711,15 @@ router.post(
       res.status(400).json({ error: "Email is required", code: "VALIDATION_ERROR" });
       return;
     }
+    if (!isValidEmailAddress(email)) {
+      res.status(400).json({ error: "Email is invalid", code: "VALIDATION_ERROR" });
+      return;
+    }
     const user = await prisma.user.findFirst({
       where: { email },
       select: USER_AUTH_SELECT,
     });
-    if (!user) {
+    if (!user || user.emailVerified) {
       res.json({ ok: true });
       return;
     }
@@ -700,6 +732,7 @@ router.post(
 
 router.post(
   "/verify-email",
+  authOtpVerifyRateLimit,
   requireSameOrigin,
   requireCsrfToken,
   asyncHandler(async (req, res) => {
@@ -738,6 +771,48 @@ router.post(
         },
       });
       res.status(400).json({
+        error: "РљРѕРґ РЅРµРґРµР№СЃС‚РІРёС‚РµР»РµРЅ. Р—Р°РїСЂРѕСЃРё РЅРѕРІС‹Р№.",
+        code: attempts >= MAX_OTP_ATTEMPTS ? "OTP_INVALIDATED" : "OTP_INVALID",
+      });
+      return;
+    }
+    if (!ok) {
+      const attempts = Number(user.otpAttempts || 0) + 1;
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          otpAttempts: attempts,
+          ...(attempts >= MAX_OTP_ATTEMPTS
+            ? {
+              otpCode: null,
+              otpExpiresAt: null,
+              otpAttempts: 0,
+            }
+            : {}),
+        },
+      });
+      res.status(400).json({
+        error: "РљРѕРґ РЅРµРґРµР№СЃС‚РІРёС‚РµР»РµРЅ. Р—Р°РїСЂРѕСЃРё РЅРѕРІС‹Р№.",
+        code: attempts >= MAX_OTP_ATTEMPTS ? "OTP_INVALIDATED" : "OTP_INVALID",
+      });
+      return;
+    }
+    if (!ok) {
+      const attempts = Number(user.otpAttempts || 0) + 1;
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          otpAttempts: attempts,
+          ...(attempts >= MAX_OTP_ATTEMPTS
+            ? {
+              otpCode: null,
+              otpExpiresAt: null,
+              otpAttempts: 0,
+            }
+            : {}),
+        },
+      });
+      res.status(400).json({
         error: attempts >= MAX_OTP_ATTEMPTS ? "Код недействителен. Запроси новый." : "Неверный код",
         code: attempts >= MAX_OTP_ATTEMPTS ? "OTP_INVALIDATED" : "OTP_INVALID",
       });
@@ -756,7 +831,7 @@ router.post(
     });
 
     await loginUserSession(req, userToSessionPayload(updated), { rememberMe: true });
-    await setOwnerSlugsCookie(res, updated.id);
+    await setOwnerSlugsCookie(req, res, updated.id);
     await sendWelcomeEmail({ email: updated.email, firstName: updated.firstName });
 
     res.json(buildAuthSuccessPayload(updated, { rememberMe: true, redirectTo: "/profile" }));
@@ -828,6 +903,7 @@ router.post(
 
 router.post(
   "/reactivate/confirm",
+  authOtpVerifyRateLimit,
   requireSameOrigin,
   requireCsrfToken,
   asyncHandler(async (req, res) => {
@@ -885,7 +961,7 @@ router.post(
     });
 
     await loginUserSession(req, userToSessionPayload(updated), { rememberMe: true });
-    await setOwnerSlugsCookie(res, updated.id);
+    await setOwnerSlugsCookie(req, res, updated.id);
     void sendAccountReactivatedEmail({ email: updated.email, firstName: updated.firstName }).catch((error) => {
       console.error("[express-app] failed to send account reactivated email", error);
     });
@@ -919,6 +995,7 @@ router.post(
 
 router.post(
   "/reset-password",
+  authOtpVerifyRateLimit,
   requireSameOrigin,
   requireCsrfToken,
   asyncHandler(async (req, res) => {
@@ -993,6 +1070,7 @@ router.post(
 
 router.post(
   "/change-email/request",
+  authSendOtpRateLimit,
   requireSameOrigin,
   requireCsrfToken,
   asyncHandler(async (req, res) => {
@@ -1004,6 +1082,10 @@ router.post(
 
     const newEmail = normalizeEmail(req.body?.email);
     const currentPassword = String(req.body?.currentPassword || "");
+    if (!newEmail || !isValidEmailAddress(newEmail)) {
+      res.status(400).json({ error: "Email is invalid", code: "VALIDATION_ERROR" });
+      return;
+    }
     const user = await prisma.user.findUnique({
       where: { id: sessionUser.userId },
       select: {
@@ -1019,6 +1101,11 @@ router.post(
     const passOk = await bcrypt.compare(currentPassword, user.passwordHash);
     if (!passOk) {
       res.status(401).json({ error: "Неверный email или пароль", code: "INVALID_CREDENTIALS" });
+      return;
+    }
+
+    if (normalizeEmail(user.email) === newEmail) {
+      res.status(400).json({ error: "Email already in use by this account", code: "EMAIL_UNCHANGED" });
       return;
     }
 
@@ -1050,6 +1137,7 @@ router.post(
 
 router.post(
   "/change-email/verify",
+  authOtpVerifyRateLimit,
   requireSameOrigin,
   requireCsrfToken,
   asyncHandler(async (req, res) => {
@@ -1076,6 +1164,36 @@ router.post(
 
     const ok = await bcrypt.compare(code, user.otpCode);
     if (!ok) {
+      const attempts = Number(user.otpAttempts || 0) + 1;
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          otpAttempts: attempts,
+          ...(attempts >= MAX_OTP_ATTEMPTS
+            ? {
+              otpCode: null,
+              otpExpiresAt: null,
+              otpAttempts: 0,
+            }
+            : {}),
+        },
+      });
+      res.status(400).json({
+        error: "РљРѕРґ РЅРµРґРµР№СЃС‚РІРёС‚РµР»РµРЅ. Р—Р°РїСЂРѕСЃРё РЅРѕРІС‹Р№.",
+        code: attempts >= MAX_OTP_ATTEMPTS ? "OTP_INVALIDATED" : "OTP_INVALID",
+      });
+      return;
+    }
+
+    const emailTaken = await prisma.user.findFirst({
+      where: { email: user.pendingEmail, id: { not: user.id } },
+      select: { id: true },
+    });
+    if (emailTaken) {
+      res.status(409).json({ error: "Р­С‚РѕС‚ email СѓР¶Рµ Р·Р°СЂРµРіРёСЃС‚СЂРёСЂРѕРІР°РЅ. Р’РѕР№С‚Рё в†’", code: "EMAIL_TAKEN" });
+      return;
+    }
+    if (!ok) {
       res.status(400).json({ error: "Код недействителен. Запроси новый.", code: "OTP_INVALID" });
       return;
     }
@@ -1094,7 +1212,7 @@ router.post(
     });
 
     await loginUserSession(req, userToSessionPayload(updated), { rememberMe: true });
-    await setOwnerSlugsCookie(res, updated.id);
+    await setOwnerSlugsCookie(req, res, updated.id);
     res.json(buildAuthSuccessPayload(updated, { rememberMe: true, includeRedirect: false }));
   }),
 );

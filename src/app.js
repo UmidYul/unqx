@@ -26,6 +26,7 @@ const { paymentsApiRouter } = require("./routes/api/payments");
 const { systemRouter } = require("./routes/system");
 const { getBaseUrl } = require("./utils/url");
 const { ensureCsrfToken } = require("./middleware/csrf");
+const { SESSION_COOKIE_NAME, LEGACY_SESSION_COOKIE_NAMES, buildCookieOptions } = require("./utils/cookies");
 const { runBootstrapTasks } = require("./services/bootstrap");
 const { startPendingExpiryJob } = require("./services/pending-expiry");
 const { startLiveJobs } = require("./services/live-jobs");
@@ -291,7 +292,7 @@ function createApp() {
         createTableIfMissing: true,
       }),
       proxy: env.TRUST_PROXY !== false,
-      name: "unqx.sid",
+      name: SESSION_COOKIE_NAME,
       secret: env.SESSION_SECRET,
       resave: false,
       saveUninitialized: false,
@@ -305,6 +306,30 @@ function createApp() {
       },
     }),
   );
+
+  app.use((req, res, next) => {
+    const rawCookie = String(req.get("cookie") || "");
+    if (!rawCookie) {
+      next();
+      return;
+    }
+
+    for (const legacyName of LEGACY_SESSION_COOKIE_NAMES) {
+      const escaped = legacyName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      if (new RegExp(`(?:^|;\\s*)${escaped}=`).test(rawCookie)) {
+        res.clearCookie(legacyName, buildCookieOptions(req, { httpOnly: true }));
+        // Also clear host-only legacy cookies left from older deployments.
+        res.clearCookie(legacyName, {
+          path: "/",
+          sameSite: "lax",
+          secure: buildCookieOptions(req).secure,
+          httpOnly: true,
+        });
+      }
+    }
+
+    next();
+  });
 
   app.use((req, res, next) => {
     const incomingRequestId = String(req.get("x-request-id") || "").trim();
@@ -359,6 +384,16 @@ function createApp() {
     const path = req.path && req.path.startsWith("/") ? req.path : "/";
     const canonicalPath = path === "/" ? "/" : path.replace(/\/+$/, "");
     const canonicalUrl = `${baseUrl}${canonicalPath}`;
+    const acceptsHtml = req.method === "GET" && req.accepts(["html", "json", "text"]) === "html";
+    const isStaticAssetRequest =
+      path.startsWith("/css/") ||
+      path.startsWith("/js/") ||
+      path.startsWith("/images/") ||
+      path.startsWith("/vendor/") ||
+      path.startsWith("/brand/") ||
+      path.startsWith("/uploads/") ||
+      path === "/favicon.ico";
+    const isHtmlPageRequest = acceptsHtml && !isStaticAssetRequest && !path.startsWith("/api/");
     const csrfToken = ensureCsrfToken(req);
 
     res.locals.adminSession = getAdminSession(req);
@@ -379,16 +414,10 @@ function createApp() {
       res.setHeader("X-Robots-Tag", "noindex, nofollow, noarchive");
     }
 
-    if (
-      req.path === "/profile" ||
-      req.path === "/login" ||
-      req.path === "/register" ||
-      req.path === "/verify-email" ||
-      req.path === "/forgot-password" ||
-      req.path === "/reset-password" ||
-      req.path === "/reactivate-account" ||
-      req.path.startsWith("/api/")
-    ) {
+    // Dynamic HTML responses can include personalized markup and session
+    // cookies. Mark them private/no-store so shared proxies can never reuse
+    // one visitor's page or Set-Cookie for another visitor.
+    if (isHtmlPageRequest || req.path.startsWith("/api/")) {
       res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, private");
       res.setHeader("Pragma", "no-cache");
       res.setHeader("Expires", "0");

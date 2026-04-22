@@ -104,6 +104,10 @@
           class="profile-tab-btn interactive-btn min-h-11 px-1 py-2 text-center text-xs font-medium sm:text-sm">
           Настройки
         </button>
+        <button type="button" data-tab-target="payment-cards"
+          class="profile-tab-btn interactive-btn min-h-11 px-1 py-2 text-center text-xs font-medium sm:text-sm">
+          Payment
+        </button>
       </nav>
 
       <section class="min-w-0 space-y-4">
@@ -908,6 +912,146 @@
 
           </div>
         </article>
+
+        <!-- ===== Payment Cards Tab ===== -->
+        <article data-tab-panel="payment-cards"
+          class="profile-tab-panel hidden min-w-0 rounded-2xl border border-neutral-200 bg-white p-4 sm:p-5">
+          <h2 class="text-lg font-bold">PAYMENT КАРТОЧКИ</h2>
+
+          <section id="pc-empty-state"
+            class="mt-5 hidden rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-10 text-center text-sm text-neutral-500">
+            У вас пока нет Payment карточек. Их может создать администратор или менеджер.
+          </section>
+
+          <!-- List of cards -->
+          <div id="pc-list" class="mt-4 space-y-3"></div>
+
+          <!-- Editor (hidden by default) -->
+          <div id="pc-editor" class="mt-4 hidden">
+            <div class="mb-3 flex items-center gap-3">
+              <button id="pc-back" type="button"
+                class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold">&larr;
+                Назад</button>
+              <h3 class="text-base font-bold">Редактирование карточки</h3>
+            </div>
+
+            <div class="space-y-4">
+              <div>
+                <label
+                  class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Номер</label>
+                <input id="pc-number" type="text" readonly
+                  class="w-full rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm" />
+              </div>
+
+              <div>
+                <label
+                  class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Тема</label>
+                <input type="text" value="Carrara Prestige" readonly
+                  class="w-full rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm" />
+              </div>
+
+              <div>
+                <label
+                  class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Аватар</label>
+                <div class="flex flex-wrap items-center gap-3">
+                  <img id="pc-avatar-preview" src="/brand/profile-thin.svg" alt="avatar"
+                    class="h-16 w-16 rounded-full border border-neutral-200 object-cover" />
+                  <div class="flex flex-wrap gap-2">
+                    <label for="pc-avatar-file"
+                      class="inline-flex min-h-11 cursor-pointer items-center justify-center rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold">Загрузить</label>
+                    <input id="pc-avatar-file" type="file" accept="image/png,image/jpeg,image/webp" class="hidden" />
+                    <button id="pc-avatar-remove" type="button"
+                      class="interactive-btn min-h-11 rounded-lg border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-700">Удалить</button>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Имя <span
+                    class="text-red-600">*</span></label>
+                <input id="pc-name" type="text" class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm" />
+              </div>
+
+              <div>
+                <label
+                  class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Должность</label>
+                <input id="pc-role" type="text" class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm" />
+              </div>
+
+              <div>
+                <label class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Bio</label>
+                <textarea id="pc-bio" maxlength="120" rows="3"
+                  class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm"></textarea>
+                <p id="pc-bio-counter" class="mt-1 text-xs text-neutral-500">0/120</p>
+              </div>
+
+              <div>
+                <label class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Нижний
+                  хэштег</label>
+                <input id="pc-hashtag" type="text" placeholder="#UnqPower2026"
+                  class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm" />
+              </div>
+
+              <div class="grid gap-3 md:grid-cols-2">
+                <div class="md:col-span-2">
+                  <label
+                    class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Адрес</label>
+                  <input id="pc-address" type="text" placeholder="Farghona, Mustaqillik 13"
+                    class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm" />
+                </div>
+                <div>
+                  <label
+                    class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Индекс</label>
+                  <input id="pc-postcode" type="text" placeholder="150100"
+                    class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm" />
+                </div>
+                <div>
+                  <label
+                    class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Email</label>
+                  <input id="pc-email" type="email" placeholder="unq@uz.com"
+                    class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm" />
+                </div>
+                <div class="md:col-span-2">
+                  <label
+                    class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Дополнительный
+                    телефон</label>
+                  <input id="pc-extra-phone" type="text" placeholder="+998200001360"
+                    class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm" />
+                </div>
+              </div>
+
+              <div>
+                <label
+                  class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Теги</label>
+                <div class="flex flex-col gap-2 sm:flex-row">
+                  <input id="pc-tag-input" type="text" placeholder="#Дизайнер"
+                    class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm" />
+                  <button id="pc-tag-add" type="button"
+                    class="interactive-btn min-h-11 rounded-xl border border-neutral-300 px-3 py-2 text-sm sm:w-auto">Добавить</button>
+                </div>
+                <div id="pc-tags-list" class="mt-2 flex flex-wrap gap-2"></div>
+              </div>
+
+              <div>
+                <div class="mb-2 flex items-center justify-between">
+                  <label class="block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Кнопки</label>
+                  <button id="pc-button-add" type="button"
+                    class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold">Добавить
+                    кнопку</button>
+                </div>
+                <div id="pc-buttons-list" class="space-y-2"></div>
+              </div>
+
+              <div class="mt-2 flex items-center gap-3">
+                <button id="pc-save" type="button"
+                  class="interactive-btn min-h-11 rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white">Сохранить</button>
+                <a id="pc-open-link" href="#" target="_blank" rel="noopener noreferrer"
+                  class="text-xs font-semibold text-neutral-700 hover:underline">Открыть карточку</a>
+              </div>
+            </div>
+          </div>
+        </article>
+
       </section>
     </div>
   </main>

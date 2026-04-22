@@ -61,6 +61,19 @@
   <script nonce="<%= cspNonce %>">
     const form = document.getElementById("register-form");
     const errorNode = document.getElementById("register-error");
+    const registerErrorByCode = {
+      VALIDATION_ERROR: "Проверьте данные формы и попробуйте ещё раз.",
+      LOGIN_TAKEN: "Этот логин уже занят. Войдите или выберите другой.",
+      EMAIL_TAKEN: "Этот email уже зарегистрирован. Войдите или используйте другой.",
+    };
+
+    function resolveRegisterError(payload) {
+      if (payload && typeof payload.code === "string" && registerErrorByCode[payload.code]) {
+        return registerErrorByCode[payload.code];
+      }
+      return payload?.error || "Ошибка регистрации";
+    }
+
     form?.addEventListener("submit", async (event) => {
       event.preventDefault();
       errorNode.classList.add("hidden");
@@ -83,6 +96,9 @@
         body: JSON.stringify(body),
       });
       const payload = await response.json().catch(() => ({}));
+      if (!response.ok && payload && typeof payload === "object") {
+        payload.error = resolveRegisterError(payload);
+      }
       if (!response.ok) {
         errorNode.textContent = payload?.error || "Ошибка регистрации";
         errorNode.classList.remove("hidden");

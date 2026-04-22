@@ -295,6 +295,7 @@ model User {
   updatedAt              DateTime              @updatedAt @map("updated_at")
   slugs                  Slug[]
   profileCard            ProfileCard?
+  paymentCards           PaymentCard[]
   slugRequests           SlugRequest[]
   slugWaitlistEntries    SlugWaitlist[]
   referralsMade          Referral[]            @relation("ReferrerReferrals")
@@ -315,7 +316,6 @@ model User {
   privatePasswords       CardPrivatePassword[] @relation("CardPrivatePasswords")
   privateAccessLogs      CardPrivateAccessLog[] @relation("CardPrivateAccessLogs")
   badgeApplications      BadgeApplication[]
-  paymentCards           PaymentCard[]
 
   @@index([plan, planPurchasedAt])
   @@index([subscriptionExpiresAt])

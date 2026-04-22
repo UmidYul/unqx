@@ -153,7 +153,7 @@
         errorNode.classList.remove("hidden");
         return;
       }
-      window.location.href = "<%= typeof next === 'string' && next ? next : '/profile' %>";
+      window.location.href = <%- JSON.stringify(typeof next === 'string' && next ? next : '/profile') %>;
     });
   </script>
 </body>

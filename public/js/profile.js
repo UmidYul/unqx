@@ -531,6 +531,32 @@ Email: ${userEmail}
       modalClose: $("#profile-modal-close"),
       modalCloseTop: $("#profile-modal-close-top"),
       cardNameError: $("#profile-card-name-error"),
+
+      // Payment cards tab
+      pcEmpty: $("#pc-empty-state"),
+      pcList: $("#pc-list"),
+      pcEditor: $("#pc-editor"),
+      pcBack: $("#pc-back"),
+      pcNumber: $("#pc-number"),
+      pcAvPreview: $("#pc-avatar-preview"),
+      pcAvFile: $("#pc-avatar-file"),
+      pcAvRemove: $("#pc-avatar-remove"),
+      pcName: $("#pc-name"),
+      pcRole: $("#pc-role"),
+      pcBio: $("#pc-bio"),
+      pcBioC: $("#pc-bio-counter"),
+      pcHashtag: $("#pc-hashtag"),
+      pcAddress: $("#pc-address"),
+      pcPostcode: $("#pc-postcode"),
+      pcEmail: $("#pc-email"),
+      pcExtraPhone: $("#pc-extra-phone"),
+      pcTagInput: $("#pc-tag-input"),
+      pcTagAdd: $("#pc-tag-add"),
+      pcTags: $("#pc-tags-list"),
+      pcBtns: $("#pc-buttons-list"),
+      pcBtnAdd: $("#pc-button-add"),
+      pcSave: $("#pc-save"),
+      pcOpenLink: $("#pc-open-link"),
     };
 
     let avatarCropper = null;
@@ -1123,7 +1149,7 @@ Email: ${userEmail}
 
     const currentTab = () => {
       const raw = (location.hash || "#slugs").replace("#", "");
-      return ["slugs", "card", "analytics", "requests", "settings"].includes(raw) ? raw : "slugs";
+      return ["slugs", "card", "analytics", "requests", "settings", "payment-cards"].includes(raw) ? raw : "slugs";
     };
 
     const setTab = () => {
@@ -1140,6 +1166,9 @@ Email: ${userEmail}
       }
       if (active === "analytics") {
         void refreshAnalytics();
+      }
+      if (active === "payment-cards") {
+        void loadPaymentCards();
       }
     };
 
@@ -2370,6 +2399,270 @@ Email: ${userEmail}
       renderAnalytics();
     };
 
+    // ── Payment Cards Tab ─────────────────────────────────────────
+    s.paymentCards = [];
+    s.pcEditing = null; // card id being edited
+    s.pcTags = [];
+    s.pcButtons = [];
+
+    const loadPaymentCards = async () => {
+      try {
+        const payload = await api("/api/profile/payment-cards");
+        s.paymentCards = Array.isArray(payload.paymentCards) ? payload.paymentCards : [];
+      } catch {
+        s.paymentCards = [];
+      }
+      renderPaymentCardsList();
+    };
+
+    const renderPaymentCardsList = () => {
+      if (!el.pcList) return;
+      if (!s.paymentCards.length) {
+        if (el.pcEmpty) el.pcEmpty.classList.remove("hidden");
+        el.pcList.innerHTML = "";
+        return;
+      }
+      if (el.pcEmpty) el.pcEmpty.classList.add("hidden");
+      el.pcList.innerHTML = s.paymentCards
+        .map(
+          (c) =>
+            `<div class="flex items-center justify-between gap-3 rounded-xl border border-neutral-200 bg-neutral-50 p-3">
+              <div class="flex items-center gap-3 min-w-0">
+                <img src="${esc(c.avatarUrl || "/brand/profile-thin.svg")}" alt="" class="h-10 w-10 shrink-0 rounded-full border border-neutral-200 object-cover" />
+                <div class="min-w-0">
+                  <p class="truncate text-sm font-semibold">${esc(c.name || "Без имени")}</p>
+                  <p class="truncate text-xs text-neutral-500">/payment/${esc(c.number)}</p>
+                </div>
+              </div>
+              <div class="flex shrink-0 items-center gap-2">
+                <span class="text-xs text-neutral-400">${Number(c.viewsCount || 0)} просмотров</span>
+                <button data-pc-edit="${esc(c.id)}" class="interactive-btn min-h-9 rounded-lg border border-neutral-300 px-3 py-1 text-xs font-semibold">Редактировать</button>
+              </div>
+            </div>`,
+        )
+        .join("");
+    };
+
+    const pcShowEditor = (card) => {
+      s.pcEditing = card.id;
+      s.pcTags = Array.isArray(card.tags) ? card.tags.slice(0) : [];
+      s.pcButtons = Array.isArray(card.buttons)
+        ? card.buttons.map((b) => {
+          const urlValue = typeof b.url === "string" && b.url.length > 0 ? b.url : typeof b.href === "string" && b.href.length > 0 ? b.href : typeof b.value === "string" ? b.value : "";
+          return { ...b, href: b.href || urlValue, value: b.value || urlValue, url: urlValue };
+        })
+        : [];
+
+      if (el.pcNumber) el.pcNumber.value = card.number;
+      if (el.pcAvPreview) el.pcAvPreview.src = card.avatarUrl || "/brand/profile-thin.svg";
+      if (el.pcName) el.pcName.value = card.name || "";
+      if (el.pcRole) el.pcRole.value = card.role || "";
+      if (el.pcBio) el.pcBio.value = card.bio || "";
+      if (el.pcBioC) el.pcBioC.textContent = `${(card.bio || "").length}/120`;
+      if (el.pcHashtag) el.pcHashtag.value = card.hashtag || "";
+      if (el.pcAddress) el.pcAddress.value = card.address || "";
+      if (el.pcPostcode) el.pcPostcode.value = card.postcode || "";
+      if (el.pcEmail) el.pcEmail.value = card.email || "";
+      if (el.pcExtraPhone) el.pcExtraPhone.value = card.extraPhone || "";
+      if (el.pcOpenLink) el.pcOpenLink.href = `/payment/${card.number}`;
+
+      pcRenderTags();
+      pcRenderButtons();
+
+      if (el.pcList) el.pcList.classList.add("hidden");
+      if (el.pcEmpty) el.pcEmpty.classList.add("hidden");
+      if (el.pcEditor) el.pcEditor.classList.remove("hidden");
+    };
+
+    const pcHideEditor = () => {
+      s.pcEditing = null;
+      if (el.pcEditor) el.pcEditor.classList.add("hidden");
+      if (el.pcList) el.pcList.classList.remove("hidden");
+      renderPaymentCardsList();
+    };
+
+    const pcRenderTags = () => {
+      if (!el.pcTags) return;
+      el.pcTags.innerHTML = s.pcTags
+        .map(
+          (tag, i) =>
+            `<span class="inline-flex items-center gap-1 rounded-full border border-neutral-200 bg-neutral-50 px-2.5 py-1 text-xs">${esc(tag)} <button data-pc-rm-tag="${i}" class="text-neutral-500">x</button></span>`,
+        )
+        .join("");
+    };
+
+    const pcButtonRow = (button, index) => {
+      const url = typeof button.url === "string" && button.url.length > 0 ? button.url : typeof button.href === "string" && button.href.length > 0 ? button.href : typeof button.value === "string" ? button.value : "";
+      const selectedType = Object.prototype.hasOwnProperty.call(buttonTypeLabels, button.type) ? button.type : "other";
+      const options = buttonTypeOptions.map(([value, label]) => `<option value="${value}" ${selectedType === value ? "selected" : ""}>${label}</option>`).join("");
+      return `<div class="grid gap-2 rounded-xl border border-neutral-200 bg-neutral-50 p-3 md:grid-cols-[160px_1fr_1fr_auto]" data-pc-bi="${index}">
+        <select data-pc-bf="type" class="min-w-0 w-full rounded-lg border border-neutral-200 px-2.5 py-2 text-sm">${options}</select>
+        <input data-pc-bf="label" value="${esc(button.label || "")}" class="min-w-0 w-full rounded-lg border border-neutral-200 px-2.5 py-2 text-sm">
+        <input data-pc-bf="href" value="${esc(url)}" class="min-w-0 w-full rounded-lg border border-neutral-200 px-2.5 py-2 text-sm">
+        <button data-pc-rm-btn="${index}" class="rounded-lg border border-red-200 px-3 py-2 text-xs font-semibold text-red-700" aria-label="Удалить">×</button>
+      </div>`;
+    };
+
+    const pcRenderButtons = () => {
+      if (!el.pcBtns) return;
+      el.pcBtns.innerHTML = s.pcButtons.map((b, i) => pcButtonRow(b, i)).join("");
+    };
+
+    const pcSave = async () => {
+      const name = (el.pcName?.value || "").trim();
+      if (!name) {
+        showModal("Проверь поля", "Имя обязательно.");
+        return;
+      }
+      try {
+        // Collect button values from DOM
+        const btns = [];
+        el.pcBtns?.querySelectorAll("[data-pc-bi]").forEach((row) => {
+          const typeField = row.querySelector('[data-pc-bf="type"]');
+          const labelField = row.querySelector('[data-pc-bf="label"]');
+          const hrefField = row.querySelector('[data-pc-bf="href"]');
+          btns.push({
+            type: typeField?.value || "other",
+            label: labelField?.value || "",
+            href: hrefField?.value || "",
+            value: hrefField?.value || "",
+          });
+        });
+
+        await api(`/api/profile/payment-cards/${s.pcEditing}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name,
+            role: el.pcRole?.value || "",
+            bio: el.pcBio?.value || "",
+            hashtag: el.pcHashtag?.value || "",
+            address: el.pcAddress?.value || "",
+            postcode: el.pcPostcode?.value || "",
+            email: el.pcEmail?.value || "",
+            extraPhone: el.pcExtraPhone?.value || "",
+            tags: s.pcTags,
+            buttons: btns,
+          }),
+        });
+        showSaveAlert("Payment карточка сохранена");
+        await loadPaymentCards();
+        // Re-open editor with refreshed data
+        const updated = s.paymentCards.find((c) => c.id === s.pcEditing);
+        if (updated) pcShowEditor(updated);
+        else pcHideEditor();
+      } catch (error) {
+        showModal("Ошибка", error.message || "Не удалось сохранить");
+      }
+    };
+
+    const pcUploadAvatar = async (file) => {
+      if (!s.pcEditing || !file) return;
+      const fd = new FormData();
+      fd.append("file", file);
+      try {
+        const payload = await api(`/api/profile/payment-cards/${s.pcEditing}/avatar`, { method: "POST", body: fd });
+        if (el.pcAvPreview) el.pcAvPreview.src = payload.avatarUrl || "/brand/profile-thin.svg";
+        await loadPaymentCards();
+      } catch (error) {
+        showModal("Ошибка", error.message || "Не удалось загрузить аватар");
+      }
+    };
+
+    const pcRemoveAvatar = async () => {
+      if (!s.pcEditing) return;
+      try {
+        await api(`/api/profile/payment-cards/${s.pcEditing}/avatar`, { method: "DELETE" });
+        if (el.pcAvPreview) el.pcAvPreview.src = "/brand/profile-thin.svg";
+        await loadPaymentCards();
+      } catch (error) {
+        showModal("Ошибка", error.message || "Не удалось удалить аватар");
+      }
+    };
+
+    // Payment cards event listeners
+    el.pcList?.addEventListener("click", async (e) => {
+      const btn = e.target instanceof HTMLElement ? e.target.closest("[data-pc-edit]") : null;
+      if (!btn) return;
+      const cardId = btn.getAttribute("data-pc-edit");
+      try {
+        const payload = await api(`/api/profile/payment-cards/${cardId}`);
+        pcShowEditor(payload.paymentCard || payload);
+      } catch (error) {
+        showModal("Ошибка", error.message || "Не удалось загрузить карточку");
+      }
+    });
+
+    el.pcBack?.addEventListener("click", () => pcHideEditor());
+    el.pcSave?.addEventListener("click", () => pcSave());
+
+    el.pcAvFile?.addEventListener("change", () => {
+      const file = el.pcAvFile?.files?.[0];
+      if (file) pcUploadAvatar(file);
+    });
+    el.pcAvRemove?.addEventListener("click", () => pcRemoveAvatar());
+
+    el.pcBio?.addEventListener("input", () => {
+      if (el.pcBioC) el.pcBioC.textContent = `${(el.pcBio?.value || "").length}/120`;
+    });
+
+    el.pcTagAdd?.addEventListener("click", () => {
+      const raw = (el.pcTagInput?.value || "").trim();
+      if (!raw) return;
+      if (s.pcTags.length >= 5) {
+        showModal("Лимит тегов", "Можно добавить до 5 тегов.");
+        return;
+      }
+      s.pcTags.push((raw.startsWith("#") ? raw : `#${raw}`).slice(0, 32));
+      if (el.pcTagInput) el.pcTagInput.value = "";
+      pcRenderTags();
+    });
+
+    el.pcTags?.addEventListener("click", (e) => {
+      const btn = e.target instanceof HTMLElement ? e.target.closest("[data-pc-rm-tag]") : null;
+      if (!btn) return;
+      const i = Number(btn.getAttribute("data-pc-rm-tag"));
+      if (Number.isFinite(i) && i >= 0 && i < s.pcTags.length) {
+        s.pcTags.splice(i, 1);
+        pcRenderTags();
+      }
+    });
+
+    el.pcBtnAdd?.addEventListener("click", () => {
+      if (s.pcButtons.length >= 6) {
+        showModal("Лимит кнопок", "Можно добавить до 6 кнопок.");
+        return;
+      }
+      s.pcButtons.push({ type: "other", label: buttonTypeLabels.other, href: "", value: "", url: "" });
+      pcRenderButtons();
+    });
+
+    el.pcBtns?.addEventListener("click", (e) => {
+      const btn = e.target instanceof HTMLElement ? e.target.closest("[data-pc-rm-btn]") : null;
+      if (!btn) return;
+      const i = Number(btn.getAttribute("data-pc-rm-btn"));
+      if (Number.isFinite(i) && i >= 0 && i < s.pcButtons.length) {
+        s.pcButtons.splice(i, 1);
+        pcRenderButtons();
+      }
+    });
+
+    el.pcBtns?.addEventListener("input", (e) => {
+      const node = e.target instanceof HTMLElement ? e.target : null;
+      if (!node) return;
+      const row = node.closest("[data-pc-bi]");
+      if (!(row instanceof HTMLElement)) return;
+      const i = Number(row.getAttribute("data-pc-bi"));
+      if (!s.pcButtons[i]) return;
+      const typeField = row.querySelector('[data-pc-bf="type"]');
+      const labelField = row.querySelector('[data-pc-bf="label"]');
+      const hrefField = row.querySelector('[data-pc-bf="href"]');
+      if (typeField instanceof HTMLSelectElement) s.pcButtons[i].type = typeField.value;
+      if (labelField instanceof HTMLInputElement) s.pcButtons[i].label = labelField.value;
+      if (hrefField instanceof HTMLInputElement) s.pcButtons[i].url = hrefField.value;
+    });
+    // ── End Payment Cards Tab ─────────────────────────────────────
+
     const renderAll = () => {
       renderWelcomeBanner();
       renderSidebar();
@@ -2381,6 +2674,7 @@ Email: ${userEmail}
       renderSettings();
       renderReferrals();
       renderScore();
+      renderPaymentCardsList();
     };
 
     const setLoading = (loading) => {

@@ -1732,6 +1732,14 @@
                 </select>
               </label>
               <label class="block text-sm font-medium text-neutral-700">
+                Метка профиля
+                <select name="badgeType" class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm">
+                  <option value="none" selected>Нет</option>
+                  <option value="unqx_staff">Сотрудник UNQX</option>
+                  <option value="government">Гос. служащий</option>
+                </select>
+              </label>
+              <label class="block text-sm font-medium text-neutral-700">
                 Тариф
                 <select name="plan" class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm">
                   <option value="none">Без тарифа</option>
@@ -1795,7 +1803,46 @@
                 <input name="role" type="text" maxlength="120"
                   class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
               </label>
+              <label class="block text-sm font-medium text-neutral-700">
+                Метка профиля
+                <select name="badgeType" class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm">
+                  <option value="none">Нет</option>
+                  <option value="unqx_staff">Сотрудник UNQX</option>
+                  <option value="government">Гос. служащий</option>
+                </select>
+              </label>
               <p id="user-verification-error" class="hidden text-xs text-red-700"></p>
+              <button type="submit"
+                class="w-full rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-neutral-700">Сохранить</button>
+            </form>
+          </div>
+        </div>
+
+        <div id="user-badge-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 p-4"
+          aria-hidden="true">
+          <div class="w-full max-w-md rounded-2xl bg-white p-5" role="dialog" aria-modal="true">
+            <div class="flex items-center justify-between">
+              <h3 class="text-lg font-bold">Изменить бейдж</h3>
+              <button type="button" id="user-badge-close"
+                class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-neutral-300 text-neutral-500 hover:text-neutral-900"
+                aria-label="Закрыть">
+                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                </svg>
+              </button>
+            </div>
+            <form id="user-badge-form" class="mt-4 space-y-3">
+              <input type="hidden" name="userId" />
+              <p id="user-badge-user" class="text-sm font-medium text-neutral-700"></p>
+              <label class="block text-sm font-medium text-neutral-700">
+                Бейдж
+                <select name="badgeType" class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm">
+                  <option value="none">Нет</option>
+                  <option value="unqx_staff">Сотрудник UNQX</option>
+                  <option value="government">Гос. служащий</option>
+                </select>
+              </label>
+              <p id="user-badge-error" class="hidden text-xs text-red-700"></p>
               <button type="submit"
                 class="w-full rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-neutral-700">Сохранить</button>
             </form>

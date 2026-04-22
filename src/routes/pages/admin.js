@@ -14,6 +14,7 @@ const { prisma } = require("../../db/prisma");
 const { loginRateLimit } = require("../../middleware/rate-limit");
 const { requireCsrfToken } = require("../../middleware/csrf");
 const { getBaseUrl } = require("../../utils/url");
+const { SESSION_COOKIE_NAME, LEGACY_SESSION_COOKIE_NAMES, buildCookieOptions } = require("../../utils/cookies");
 
 const router = express.Router();
 
@@ -75,6 +76,10 @@ router.post(
   loginRateLimit,
   requireCsrfToken,
   asyncHandler(async (req, res) => {
+    // Сбросить пользовательскую сессию, если есть
+    if (req.session && req.session.user) {
+      await require("../../middleware/auth").logoutUserSession(req);
+    }
     const loginInput = req.body.login || req.body.email;
     const adminPayload = await verifyAdminCredentials(loginInput, req.body.password);
 
@@ -100,8 +105,38 @@ router.post(
       await logoutAdmin(req);
     }
 
-    res.clearCookie("unqx.sid");
+    res.clearCookie(SESSION_COOKIE_NAME, buildCookieOptions(req, { httpOnly: true }));
+    for (const legacyName of LEGACY_SESSION_COOKIE_NAMES) {
+      res.clearCookie(legacyName, buildCookieOptions(req, { httpOnly: true }));
+      res.clearCookie(legacyName, {
+        path: "/",
+        sameSite: "lax",
+        secure: buildCookieOptions(req).secure,
+        httpOnly: true,
+      });
+    }
     res.redirect("/admin");
+  }),
+);
+
+router.post(
+  "/manager/logout",
+  requireCsrfToken,
+  asyncHandler(async (req, res) => {
+    if (req.session) {
+      await logoutAdmin(req);
+    }
+    res.clearCookie(SESSION_COOKIE_NAME, buildCookieOptions(req, { httpOnly: true }));
+    for (const legacyName of LEGACY_SESSION_COOKIE_NAMES) {
+      res.clearCookie(legacyName, buildCookieOptions(req, { httpOnly: true }));
+      res.clearCookie(legacyName, {
+        path: "/",
+        sameSite: "lax",
+        secure: buildCookieOptions(req).secure,
+        httpOnly: true,
+      });
+    }
+    res.redirect("/manager/login");
   }),
 );
 
@@ -111,7 +146,7 @@ router.get(
   asyncHandler(async (req, res) => {
     const adminSession = getAdminSession(req);
     const role = adminSession?.role || "admin";
-    const managerTabs = new Set(["users", "orders", "verification", "payment-cards"]);
+    const managerTabs = new Set(["users", "orders", "payment-cards", "verification", "badges"]);
     if (role === "manager") {
       const nextTab =
         typeof req.query.tab === "string" && managerTabs.has(req.query.tab)
@@ -138,6 +173,7 @@ router.get(
       "drops",
       "directory",
       "verification",
+      "badges",
       "reports",
       "settings",
       "managers",
@@ -193,6 +229,10 @@ router.post(
   loginRateLimit,
   requireCsrfToken,
   asyncHandler(async (req, res) => {
+    // Сбросить пользовательскую сессию, если есть
+    if (req.session && req.session.user) {
+      await require("../../middleware/auth").logoutUserSession(req);
+    }
     const loginInput = req.body.login || req.body.email;
     const managerPayload = await verifyManagerCredentials(loginInput, req.body.password);
 
@@ -209,7 +249,7 @@ router.post(
     await prisma.staffUser.update({
       where: { id: managerPayload.id },
       data: { lastLoginAt: new Date() },
-    }).catch(() => {});
+    }).catch(() => { });
 
     res.redirect(resolveStaffHome(managerPayload));
   }),
@@ -225,7 +265,7 @@ router.get(
       res.redirect("/admin/dashboard");
       return;
     }
-    const managerTabs = new Set(["users", "orders", "verification", "payment-cards"]);
+    const managerTabs = new Set(["users", "orders", "payment-cards", "verification", "badges"]);
     const tab =
       typeof req.query.tab === "string" && managerTabs.has(req.query.tab)
         ? req.query.tab
@@ -309,5 +349,4 @@ router.get(
 module.exports = {
   adminPagesRouter: router,
 };
-
 

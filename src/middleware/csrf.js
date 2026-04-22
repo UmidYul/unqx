@@ -40,7 +40,11 @@ function requireCsrfToken(req, res, next) {
 
   if (!expected || !submitted || submitted !== expected) {
     if (req.originalUrl.startsWith("/api/")) {
-      return res.status(403).json({ error: "Invalid CSRF token" });
+      return res.status(403).json({
+        error: "Invalid CSRF token",
+        code: "CSRF_INVALID",
+        csrfToken: expected || null,
+      });
     }
 
     return res.status(403).render("public/error-500", {

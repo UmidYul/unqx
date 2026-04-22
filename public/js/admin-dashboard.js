@@ -278,6 +278,11 @@
   const userVerificationForm = document.getElementById("user-verification-form");
   const userVerificationError = document.getElementById("user-verification-error");
   const userVerificationUser = document.getElementById("user-verification-user");
+  const userBadgeModal = document.getElementById("user-badge-modal");
+  const userBadgeClose = document.getElementById("user-badge-close");
+  const userBadgeForm = document.getElementById("user-badge-form");
+  const userBadgeUser = document.getElementById("user-badge-user");
+  const userBadgeError = document.getElementById("user-badge-error");
   const USER_CREATE_LOGIN_REGEX = /^[a-z0-9._@+-]+$/;
   const USER_CREATE_EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const userCreateState = {
@@ -592,6 +597,7 @@
     const password = userCreateForm.elements.namedItem("password");
     const email = userCreateForm.elements.namedItem("email");
     const profileType = userCreateForm.elements.namedItem("profileType");
+    const badgeType = userCreateForm.elements.namedItem("badgeType");
     const plan = userCreateForm.elements.namedItem("plan");
     const slug = userCreateForm.elements.namedItem("slug");
     setCreateInputTone(name, "neutral");
@@ -600,6 +606,7 @@
     setCreateInputTone(password, "neutral");
     setCreateInputTone(email, "neutral");
     setCreateInputTone(profileType, "neutral");
+    setCreateInputTone(badgeType, "neutral");
     setCreateInputTone(plan, "neutral");
     setCreateInputTone(slug, "neutral");
   }
@@ -635,6 +642,11 @@
       const profileType = userCreateForm.elements.namedItem("profileType");
       if (profileType instanceof HTMLSelectElement) {
         profileType.value = normalizeUserCreateProfileType(profileType.value);
+      }
+      const badgeType = userCreateForm.elements.namedItem("badgeType");
+      if (badgeType instanceof HTMLSelectElement) {
+        const normalizedBadgeType = String(badgeType.value || "").trim().toLowerCase();
+        badgeType.value = ["none", "government", "unqx_staff"].includes(normalizedBadgeType) ? normalizedBadgeType : "none";
       }
     }
     setCreateInlineStatus(userCreateLoginStatus, "");
@@ -686,26 +698,31 @@
     }
   }
 
-  function openUserVerificationModal({ userId, userName, isVerified, company, role }) {
+  function openUserVerificationModal({ userId, userName, isVerified, company, role, badgeType }) {
     if (!(userVerificationModal instanceof HTMLElement)) return;
     if (!(userVerificationForm instanceof HTMLFormElement)) return;
     const userIdField = userVerificationForm.elements.namedItem("userId");
     const statusField = userVerificationForm.elements.namedItem("status");
     const companyField = userVerificationForm.elements.namedItem("company");
     const roleField = userVerificationForm.elements.namedItem("role");
+    const badgeTypeField = userVerificationForm.elements.namedItem("badgeType");
     if (!(userIdField instanceof HTMLInputElement)) return;
     if (!(statusField instanceof HTMLSelectElement)) return;
     if (!(companyField instanceof HTMLInputElement)) return;
     if (!(roleField instanceof HTMLInputElement)) return;
+    if (!(badgeTypeField instanceof HTMLSelectElement)) return;
 
     setUserVerificationError("");
     userIdField.value = String(userId || "").trim();
     statusField.value = isVerified ? "verified" : "unverified";
     companyField.value = String(company || "").trim();
     roleField.value = String(role || "").trim();
+    const normalizedBadgeType = String(badgeType || "").trim().toLowerCase();
+    badgeTypeField.value = ["none", "government", "unqx_staff"].includes(normalizedBadgeType) ? normalizedBadgeType : "none";
     setCreateInputTone(statusField, "neutral");
     setCreateInputTone(companyField, "neutral");
     setCreateInputTone(roleField, "neutral");
+    setCreateInputTone(badgeTypeField, "neutral");
     if (userVerificationUser instanceof HTMLElement) {
       userVerificationUser.textContent = `Пользователь: ${String(userName || "—").trim() || "—"}`;
     }
@@ -724,6 +741,47 @@
     setUserVerificationError("");
   }
 
+  function setUserBadgeError(message) {
+    if (!(userBadgeError instanceof HTMLElement)) return;
+    const text = String(message || "").trim();
+    if (!text) {
+      userBadgeError.textContent = "";
+      userBadgeError.classList.add("hidden");
+      return;
+    }
+    userBadgeError.textContent = text;
+    userBadgeError.classList.remove("hidden");
+  }
+
+  function openUserBadgeModal({ userId, userName, badgeType }) {
+    if (!(userBadgeModal instanceof HTMLElement)) return;
+    if (!(userBadgeForm instanceof HTMLFormElement)) return;
+    const userIdField = userBadgeForm.elements.namedItem("userId");
+    const badgeTypeField = userBadgeForm.elements.namedItem("badgeType");
+    if (!(userIdField instanceof HTMLInputElement)) return;
+    if (!(badgeTypeField instanceof HTMLSelectElement)) return;
+
+    userIdField.value = String(userId || "").trim();
+    const normalizedBadgeType = String(badgeType || "").trim().toLowerCase();
+    badgeTypeField.value = ["none", "government", "unqx_staff"].includes(normalizedBadgeType) ? normalizedBadgeType : "none";
+    setCreateInputTone(badgeTypeField, "neutral");
+    setUserBadgeError("");
+    if (userBadgeUser instanceof HTMLElement) {
+      userBadgeUser.textContent = `Пользователь: ${String(userName || "—").trim() || "—"}`;
+    }
+    userBadgeModal.classList.remove("hidden");
+    userBadgeModal.classList.add("flex");
+    userBadgeModal.setAttribute("aria-hidden", "false");
+  }
+
+  function closeUserBadgeModal() {
+    if (!(userBadgeModal instanceof HTMLElement)) return;
+    userBadgeModal.classList.add("hidden");
+    userBadgeModal.classList.remove("flex");
+    userBadgeModal.setAttribute("aria-hidden", "true");
+    setUserBadgeError("");
+  }
+
   userCreateOpen?.addEventListener("click", openUserCreate);
   userCreateClose?.addEventListener("click", closeUserCreate);
   userCreateModal?.addEventListener("click", (e) => {
@@ -732,6 +790,10 @@
   userVerificationClose?.addEventListener("click", closeUserVerificationModal);
   userVerificationModal?.addEventListener("click", (e) => {
     if (e.target === userVerificationModal) closeUserVerificationModal();
+  });
+  userBadgeClose?.addEventListener("click", closeUserBadgeModal);
+  userBadgeModal?.addEventListener("click", (e) => {
+    if (e.target === userBadgeModal) closeUserBadgeModal();
   });
   userVerificationForm?.elements?.namedItem?.("status")?.addEventListener?.("change", () => {
     syncUserVerificationFields();
@@ -744,20 +806,25 @@
     const statusField = userVerificationForm.elements.namedItem("status");
     const companyField = userVerificationForm.elements.namedItem("company");
     const roleField = userVerificationForm.elements.namedItem("role");
+    const badgeTypeField = userVerificationForm.elements.namedItem("badgeType");
     if (!(userIdField instanceof HTMLInputElement)) return;
     if (!(statusField instanceof HTMLSelectElement)) return;
     if (!(companyField instanceof HTMLInputElement)) return;
     if (!(roleField instanceof HTMLInputElement)) return;
+    if (!(badgeTypeField instanceof HTMLSelectElement)) return;
 
     const userId = String(userIdField.value || "").trim();
     const status = statusField.value === "verified" ? "verified" : "unverified";
     const company = String(companyField.value || "").trim();
     const role = String(roleField.value || "").trim();
+    const badgeTypeRaw = String(badgeTypeField.value || "").trim().toLowerCase();
+    const badgeType = ["none", "government", "unqx_staff"].includes(badgeTypeRaw) ? badgeTypeRaw : "none";
 
     setUserVerificationError("");
     setCreateInputTone(statusField, "neutral");
     setCreateInputTone(companyField, "neutral");
     setCreateInputTone(roleField, "neutral");
+    setCreateInputTone(badgeTypeField, "neutral");
 
     if (!userId) {
       setUserVerificationError("Не удалось определить пользователя. Обновите страницу и попробуйте снова.");
@@ -783,6 +850,7 @@
         status,
         company: status === "verified" ? company : "",
         role: status === "verified" ? role : "",
+        badgeType,
       }),
     });
     if (!response.ok) {
@@ -806,6 +874,51 @@
 
     closeUserVerificationModal();
     await showAlert(status === "verified" ? "Верификация активирована." : "Верификация снята.");
+    void loadUsers();
+    closeAllRowMenus();
+  });
+  userBadgeForm?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (!(userBadgeForm instanceof HTMLFormElement)) return;
+    const userIdField = userBadgeForm.elements.namedItem("userId");
+    const badgeTypeField = userBadgeForm.elements.namedItem("badgeType");
+    if (!(userIdField instanceof HTMLInputElement)) return;
+    if (!(badgeTypeField instanceof HTMLSelectElement)) return;
+
+    const userId = String(userIdField.value || "").trim();
+    const badgeTypeRaw = String(badgeTypeField.value || "").trim().toLowerCase();
+    const badgeType = ["none", "government", "unqx_staff"].includes(badgeTypeRaw) ? badgeTypeRaw : "";
+    if (!userId) {
+      setUserBadgeError("Не удалось определить пользователя.");
+      return;
+    }
+    if (!badgeType) {
+      setUserBadgeError("Выберите корректный бейдж.");
+      return;
+    }
+
+    const r = await fetch(`/api/admin/users/${encodeURIComponent(userId)}/badge`, {
+      method: "PATCH",
+      headers: H({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ badgeType }),
+    });
+    if (!r.ok) {
+      const payload = await r.json().catch(() => ({}));
+      const code = String(payload?.code || "").trim();
+      if (code === "BADGE_STORAGE_UNAVAILABLE") {
+        setUserBadgeError("Хранилище бейджей временно недоступно. Попробуйте позже.");
+      } else if (code === "USER_NOT_FOUND") {
+        setUserBadgeError("Пользователь не найден.");
+      } else if (code === "MANAGER_FORBIDDEN") {
+        setUserBadgeError("У вас нет доступа к этой операции.");
+      } else {
+        setUserBadgeError(`Не удалось обновить бейдж (HTTP ${r.status}).`);
+      }
+      return;
+    }
+
+    closeUserBadgeModal();
+    await showAlert("Бейдж обновлен.");
     void loadUsers();
     closeAllRowMenus();
   });
@@ -865,6 +978,7 @@
     const password = userCreateForm.elements.namedItem("password");
     const email = userCreateForm.elements.namedItem("email");
     const profileType = userCreateForm.elements.namedItem("profileType");
+    const badgeType = userCreateForm.elements.namedItem("badgeType");
     const plan = userCreateForm.elements.namedItem("plan");
     const slug = userCreateForm.elements.namedItem("slug");
     if (
@@ -874,6 +988,7 @@
       !(password instanceof HTMLInputElement) ||
       !(email instanceof HTMLInputElement) ||
       !(profileType instanceof HTMLSelectElement) ||
+      !(badgeType instanceof HTMLSelectElement) ||
       !(plan instanceof HTMLSelectElement) ||
       !(slug instanceof HTMLInputElement)
     ) {
@@ -885,11 +1000,14 @@
     const normalizedLogin = normalizeUserCreateLogin(login.value);
     const normalizedEmail = normalizeUserCreateEmail(email.value);
     const normalizedProfileType = normalizeUserCreateProfileType(profileType.value);
+    const normalizedBadgeTypeRaw = String(badgeType.value || "").trim().toLowerCase();
+    const normalizedBadgeType = ["none", "government", "unqx_staff"].includes(normalizedBadgeTypeRaw) ? normalizedBadgeTypeRaw : "none";
     const normalizedSlug = normalizeUserCreateSlug(slug.value);
     name.value = firstName;
     login.value = normalizedLogin;
     email.value = normalizedEmail;
     profileType.value = normalizedProfileType;
+    badgeType.value = normalizedBadgeType;
     slug.value = normalizedSlug;
 
     if (!firstName) {
@@ -967,6 +1085,7 @@
       password: password.value || "",
       email: normalizedEmail,
       profileType: normalizedProfileType,
+      badgeType: normalizedBadgeType,
       plan: selectedPlan,
       slug: normalizedSlug,
     };
@@ -1628,14 +1747,21 @@
             menuItem({
               label: verificationLabel,
               icon: "checkCircle",
-              attrs: `data-act="uvm" data-id="${X(x.telegramId)}" data-name="${X(x.name)}" data-verified="${x.isVerified ? "1" : "0"}" data-company="${X(x.verifiedCompany || "")}" data-role="${X(x.verifiedRole || "")}"`,
+              attrs: `data-act="uvm" data-id="${X(x.telegramId)}" data-name="${X(x.name)}" data-verified="${x.isVerified ? "1" : "0"}" data-company="${X(x.verifiedCompany || "")}" data-role="${X(x.verifiedRole || "")}" data-badge-type="${X(x.badgeType || "none")}"`,
+            }),
+          );
+          menuItems.push(
+            menuItem({
+              label: "Изменить бейдж",
+              icon: "pen",
+              attrs: `data-act="ubadge" data-id="${X(x.telegramId)}" data-name="${X(x.name)}" data-badge-type="${X(x.badgeType || "none")}"`,
             }),
           );
 
           const cardEditorUrl = `${userCardBasePath}/${encodeURIComponent(String(x.telegramId || ""))}/card`;
           const cardEditorLabel = x.hasCard ? "Редактировать визитку" : "Создать визитку";
           menuItems.push(menuItem({ label: cardEditorLabel, icon: "pen", attrs: `data-act="open-card" data-url="${cardEditorUrl}"` }));
-          menuItems.push(menuItem({ label: "Payment", icon: "creditCard", attrs: `data-act="open-card" data-url="${dashboardBasePath}?tab=payment-cards&userId=${encodeURIComponent(String(x.telegramId || ""))}"` }));
+          menuItems.push(menuItem({ label: "Payment карточки", icon: "creditCard", attrs: `data-act="open-card" data-url="${dashboardBasePath}?tab=payment-cards&userId=${encodeURIComponent(String(x.telegramId || ""))}"` }));
           menuItems.push(menuItem({ label: "Open profile", icon: "external", attrs: profileLink ? `data-act="open-url" data-url="${profileLink}"` : 'disabled="disabled"' }));
 
           if (!isManager) {
@@ -2723,6 +2849,23 @@
     }
   });
 
+  function parseAllowedBadgeType(rawValue, fallback = "none") {
+    const raw = String(rawValue || "").trim().toLowerCase();
+    if (["none", "government", "unqx_staff"].includes(raw)) {
+      return raw;
+    }
+    return fallback;
+  }
+
+  function openUserBadgeEditorFromNode(node) {
+    if (!(node instanceof HTMLElement)) return;
+    const userId = node.getAttribute("data-id");
+    const userName = node.getAttribute("data-name") || "пользователя";
+    if (!userId) return;
+    const currentBadgeType = parseAllowedBadgeType(node.getAttribute("data-badge-type"), "none");
+    openUserBadgeModal({ userId, userName, badgeType: currentBadgeType });
+  }
+
   document.addEventListener("click", async (e) => {
     const target = e.target;
     const n = target instanceof Element ? target.closest("[data-act]") : null;
@@ -3068,12 +3211,14 @@
       const currentVerified = String(n.getAttribute("data-verified") || "") === "1";
       const currentCompany = String(n.getAttribute("data-company") || "").trim();
       const currentRole = String(n.getAttribute("data-role") || "").trim();
+      const currentBadgeType = String(n.getAttribute("data-badge-type") || "none").trim().toLowerCase();
       openUserVerificationModal({
         userId,
         userName,
         isVerified: currentVerified,
         company: currentCompany,
         role: currentRole,
+        badgeType: currentBadgeType,
       });
       return;
     }
@@ -3121,6 +3266,10 @@
       await showAlert(`Добавлено просмотров: ${Number(payload?.addedViews || count)} (slug: ${payload?.slug || targetSlug}).`);
       void loadUsers();
       closeAllRowMenus();
+      return;
+    }
+    if (a === "ubadge") {
+      openUserBadgeEditorFromNode(n);
       return;
     }
     if (a === "uvd") {
@@ -3950,4 +4099,3 @@
     void loadScoreManagement();
   }
 })();
-

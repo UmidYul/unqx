@@ -19,6 +19,7 @@ const { isPublicProfileVisible } = require("../../services/subscription");
 const {
   verifyPrivateAccessToken,
   extractPrivateAccessToken,
+  setPrivateAccessCookie,
   clearPrivateAccessCookie,
 } = require("../../services/private-access");
 const { seoHub, getSeoPage } = require("../../content/seo-pages");
@@ -28,6 +29,52 @@ const router = express.Router();
 const defaultSocialImage = absoluteUrl("/brand/logo.PNG");
 const CARD_THEMES = new Set(["default_dark", "arctic", "linen", "marble", "forest", "sage_luxe", "midnight_obsidian", "golden_noir", "aurora_codex", "nebula_glass", "velours"]);
 const LEGAL_DOCS_DIR = path.join(env.EXPRESS_APP_DIR, "docs");
+
+function normalizeSafeNextPath(value, fallback = "/profile") {
+  const raw = String(value || "").trim();
+  if (!raw || !raw.startsWith("/") || raw.startsWith("//") || raw.includes("\\")) {
+    return fallback;
+  }
+
+  try {
+    const parsed = new URL(raw, "http://local.unqx");
+    if (parsed.origin !== "http://local.unqx" || !parsed.pathname.startsWith("/")) {
+      return fallback;
+    }
+    return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+  } catch {
+    return fallback;
+  }
+}
+
+function buildPathWithoutQueryKeys(basePath, query, keysToOmit = []) {
+  const omitted = new Set(
+    (Array.isArray(keysToOmit) ? keysToOmit : [])
+      .map((key) => String(key || "").trim())
+      .filter(Boolean),
+  );
+  const params = new URLSearchParams();
+
+  Object.entries(query || {}).forEach(([key, value]) => {
+    if (omitted.has(String(key || ""))) {
+      return;
+    }
+    if (Array.isArray(value)) {
+      value
+        .filter((item) => typeof item === "string" && item.length > 0)
+        .forEach((item) => {
+          params.append(key, item);
+        });
+      return;
+    }
+    if (typeof value === "string" && value.length > 0) {
+      params.set(key, value);
+    }
+  });
+
+  const serialized = params.toString();
+  return serialized ? `${basePath}?${serialized}` : basePath;
+}
 
 function isMissingModelTable(error, modelName) {
   return (
@@ -1002,7 +1049,7 @@ router.get(
       title: "Войти | UNQX",
       description: "UNQX personal dashboard: card settings, UNQ, analytics, requests and profile settings.",
       image: defaultSocialImage,
-      next: typeof req.query.next === "string" ? req.query.next : "/profile",
+      next: normalizeSafeNextPath(req.query.next, "/profile"),
       adminSession: getAdminSession(req),
     });
   }),
@@ -1777,6 +1824,164 @@ router.get(
   }),
 );
 
+/* ─── Payment Card page: /payment/:number ─── */
+router.get(
+  "/payment/:number",
+  asyncHandler(async (req, res) => {
+    const raw = req.params.number;
+    const num = Number(raw);
+    if (!Number.isInteger(num) || num < 0 || String(num) !== raw) {
+      res.status(404).render("public/not-found", {
+        title: "Страница не найдена",
+        slug: "",
+        adminSession: getAdminSession(req),
+      });
+      return;
+    }
+
+    const cardRows = await prisma.$queryRaw`
+      SELECT
+        id,
+        number,
+        owner_id   AS "ownerId",
+        name,
+        role,
+        bio,
+        hashtag,
+        address,
+        postcode,
+        email,
+        extra_phone  AS "extraPhone",
+        avatar_url   AS "avatarUrl",
+        tags,
+        buttons,
+        theme,
+        custom_color AS "customColor",
+        show_branding AS "showBranding",
+        views_count  AS "viewsCount",
+        created_at   AS "createdAt",
+        updated_at   AS "updatedAt"
+      FROM payment_cards
+      WHERE number = ${num}
+      LIMIT 1
+    `;
+    const paymentCard = Array.isArray(cardRows) ? cardRows[0] || null : null;
+
+    if (!paymentCard) {
+      res.status(404).render("public/not-found", {
+        title: "Страница не найдена",
+        slug: "",
+        adminSession: getAdminSession(req),
+      });
+      return;
+    }
+
+    const owner = await findUserByTelegramIdWithLegacyFallback(paymentCard.ownerId);
+
+    if (!owner || owner.status === "blocked" || owner.status === "deactivated") {
+      res.status(404).render("public/not-found", {
+        title: "Страница не найдена",
+        slug: "",
+        adminSession: getAdminSession(req),
+      });
+      return;
+    }
+
+    if (!isPublicProfileVisible(owner)) {
+      res.status(404).render("public/not-found", {
+        title: "Страница не найдена",
+        slug: "",
+        adminSession: getAdminSession(req),
+      });
+      return;
+    }
+
+    const verifiedIdentity = await findLatestApprovedVerificationByUserId(paymentCard.ownerId);
+    const profileCard = await findProfileCardByOwnerId(paymentCard.ownerId);
+    const isCurrentlyVerified = Boolean(owner.isVerified);
+    const verifiedCompany = String(
+      isCurrentlyVerified ? (verifiedIdentity?.companyName || owner.verifiedCompany || "") : ""
+    ).trim();
+    const verifiedRole = String(
+      isCurrentlyVerified ? (verifiedIdentity?.role || "") : ""
+    ).trim();
+
+    const card = {
+      slug: `PAYMENT/${num}`,
+      slugs: [`PAYMENT/${num}`],
+      slugPrice: null,
+      avatarUrl: paymentCard.avatarUrl || profileCard?.avatarUrl || owner.photoUrl || null,
+      name: paymentCard.name,
+      role: paymentCard.role || verifiedRole,
+      bio: paymentCard.bio || "",
+      verified: isCurrentlyVerified,
+      verifiedCompany,
+      tariff: getEffectivePlan(owner).plan,
+      theme: "marble",
+      customColor: paymentCard.customColor || "",
+      phone: "",
+      tags: mapProfileTags(paymentCard.tags),
+      buttons: mapProfileButtons(paymentCard.buttons),
+      hashtag: paymentCard.hashtag || "",
+      address: paymentCard.address || "",
+      postcode: paymentCard.postcode || "",
+      email: paymentCard.email || "",
+      extraPhone: paymentCard.extraPhone || "",
+      viewsCount: Number(paymentCard.viewsCount || 0),
+      showBranding: Boolean(paymentCard.showBranding),
+    };
+
+    // Increment views count
+    try {
+      await prisma.$executeRaw`
+        UPDATE payment_cards SET views_count = views_count + 1, updated_at = now()
+        WHERE id = ${paymentCard.id}::uuid
+      `;
+    } catch (err) {
+      console.error("[payment-card] failed to increment views_count", err);
+    }
+
+    // Log tap event for analytics
+    try {
+      await logTapEventFromPageRequest({
+        req,
+        res,
+        ownerSlug: `PAYMENT/${num}`,
+        ownerId: paymentCard.ownerId,
+      });
+    } catch (error) {
+      console.error("[payment-card] failed to log page tap event", error);
+    }
+
+    const topBadge = null;
+    const officialCfg = await getOfficialUnqClientConfig();
+    const approvedBadges = await findApprovedBadgesByUserId(paymentCard.ownerId);
+    const showOfficialUnqBadge = approvedBadges.government;
+    const officialUnqBadge = showOfficialUnqBadge
+      ? { title: officialCfg.profileBadgeTitle, line: officialCfg.profileBadgeLine }
+      : null;
+    const showStaffBadge = approvedBadges.unqx_staff;
+    const staffBadge = showStaffBadge
+      ? { title: officialCfg.staffProfileBadgeTitle, line: officialCfg.staffProfileBadgeLine }
+      : null;
+    const image = card.avatarUrl ? absoluteUrl(card.avatarUrl) : absoluteUrl("/brand/logo.PNG");
+
+    res.render("public/card", {
+      title: `${card.name} | UNQX`,
+      description: `${card.name} on UNQX: digital business card, contacts, links, QR and analytics.`,
+      image,
+      card,
+      topBadge,
+      score: null,
+      officialUnqBadge,
+      staffBadge,
+      noindex: true,
+      privateAccess: null,
+      adminSession: getAdminSession(req),
+    });
+  }),
+);
+
 router.get(
   "/:slug",
   asyncHandler(async (req, res) => {
@@ -1989,6 +2194,11 @@ router.get(
               });
               return;
             }
+            if (typeof req.query?.accessToken === "string" && req.query.accessToken.trim()) {
+              setPrivateAccessCookie(req, res, accessToken, accessPayload.exp);
+              res.redirect(buildPathWithoutQueryKeys(`/${encodeURIComponent(slug)}`, req.query, ["accessToken"]));
+              return;
+            }
             privateAccessExpiry = accessPayload.exp;
           }
         }
@@ -2051,7 +2261,7 @@ router.get(
         const officialUnqBadge = showOfficialUnqBadge
           ? { title: officialCfg.profileBadgeTitle, line: officialCfg.profileBadgeLine }
           : null;
-        const showStaffBadge = (owner && owner.createdByStaffId) || approvedBadges.unqx_staff;
+        const showStaffBadge = approvedBadges.unqx_staff;
         const staffBadge = showStaffBadge
           ? { title: officialCfg.staffProfileBadgeTitle, line: officialCfg.staffProfileBadgeLine }
           : null;
@@ -2096,4 +2306,3 @@ router.get(
 module.exports = {
   publicPagesRouter: router,
 };
-
