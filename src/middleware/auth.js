@@ -124,7 +124,8 @@ function requireStaffPage(req, res, next) {
 }
 
 function requireManagerPage(req, res, next) {
-  if (!getAdminSession(req)) {
+  const admin = getAdminSession(req);
+  if (!admin || admin.role !== "manager") {
     return res.redirect("/manager/login");
   }
 

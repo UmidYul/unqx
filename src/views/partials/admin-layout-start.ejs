@@ -7,7 +7,7 @@
   new Set(["users", "orders" , "payment-cards" , "verification" , "badges" ]) : null; const resolvedDashboardBasePath=typeof
   dashboardBasePath==="string" && dashboardBasePath ? dashboardBasePath : "/admin/dashboard" ; const
   isDashboardRoute=layoutCurrentPath===resolvedDashboardBasePath; const dashboardLink=(tab)=>
-  `${resolvedDashboardBasePath}?tab=${tab}`;
+  `${resolvedDashboardBasePath}?tab=${tab}`; const logoutPath=adminRole==="manager" ? "/manager/logout" : "/admin/logout";
   const sectionGroups = [
   {
   label: "ОСНОВНОЕ",
@@ -223,7 +223,7 @@
             <%= adminRole==="manager" ? "Менеджер" : "Админ" %>
           </span>
         </div>
-        <form method="post" action="/admin/logout">
+        <form method="post" action="<%= logoutPath %>">
           <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
           <button type="submit" class="admin-sidebar-logout">Выйти</button>
         </form>
@@ -270,7 +270,7 @@
               </div>
             </div>
 
-            <form method="post" action="/admin/logout">
+            <form method="post" action="<%= logoutPath %>">
               <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
               <button type="submit" class="admin-topbar-logout">Выйти</button>
             </form>

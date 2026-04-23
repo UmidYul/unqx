@@ -1561,6 +1561,7 @@ const MANAGER_ALLOWED_ROUTES = [
   { method: "DELETE", re: /^\/payment-cards\/[^/]+\/?$/ },
   { method: "GET", re: /^\/users\/?$/ },
   { method: "GET", re: /^\/users\/check\/?$/ },
+  { method: "GET", re: /^\/slugs\/availability\/check\/?$/ },
   { method: "POST", re: /^\/users\/?$/ },
   { method: "GET", re: /^\/users\/[^/]+\/card\/?$/ },
   { method: "PUT", re: /^\/users\/[^/]+\/card\/?$/ },

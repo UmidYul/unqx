@@ -955,3 +955,32 @@
   outline: 2px solid #111827;
   outline-offset: 2px;
 }
+
+#user-create-modal {
+  top: var(--admin-topbar-height);
+  right: 0;
+  bottom: 0;
+  left: var(--admin-sidebar-width);
+}
+
+#user-create-modal > div {
+  max-height: calc(100dvh - var(--admin-topbar-height) - 2rem);
+  overflow-y: auto;
+}
+
+@media (min-width: 768px) and (max-width: 1024px) {
+  #user-create-modal {
+    left: var(--admin-sidebar-width-collapsed);
+  }
+}
+
+@media (max-width: 767px) {
+  #user-create-modal {
+    top: 0;
+    left: 0;
+  }
+
+  #user-create-modal > div {
+    max-height: calc(100dvh - 2rem);
+  }
+}

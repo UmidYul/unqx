@@ -25,6 +25,10 @@ function resolveStaffHome(adminSession) {
   return adminSession.role === "manager" ? "/manager/dashboard" : "/admin/dashboard";
 }
 
+function getStaffRole(adminSession) {
+  return String(adminSession?.role || "").trim().toLowerCase();
+}
+
 function buildQuery(basePath, params) {
   const search = new URLSearchParams();
 
@@ -42,7 +46,7 @@ router.get(
   "/admin",
   asyncHandler(async (req, res) => {
     const adminSession = getAdminSession(req);
-    if (adminSession) {
+    if (getStaffRole(adminSession) === "admin") {
       res.redirect(resolveStaffHome(adminSession));
       return;
     }
@@ -59,7 +63,7 @@ router.get(
   "/admin/login",
   asyncHandler(async (req, res) => {
     const adminSession = getAdminSession(req);
-    if (adminSession) {
+    if (getStaffRole(adminSession) === "admin") {
       res.redirect(resolveStaffHome(adminSession));
       return;
     }
@@ -76,10 +80,6 @@ router.post(
   loginRateLimit,
   requireCsrfToken,
   asyncHandler(async (req, res) => {
-    // Сбросить пользовательскую сессию, если есть
-    if (req.session && req.session.user) {
-      await require("../../middleware/auth").logoutUserSession(req);
-    }
     const loginInput = req.body.login || req.body.email;
     const adminPayload = await verifyAdminCredentials(loginInput, req.body.password);
 
@@ -200,7 +200,7 @@ router.get(
   ["/manager", "/manager/"],
   asyncHandler(async (req, res) => {
     const adminSession = getAdminSession(req);
-    if (adminSession) {
+    if (getStaffRole(adminSession) === "manager") {
       res.redirect(resolveStaffHome(adminSession));
       return;
     }
@@ -212,7 +212,7 @@ router.get(
   ["/manager/login", "/manager/login/"],
   asyncHandler(async (req, res) => {
     const adminSession = getAdminSession(req);
-    if (adminSession) {
+    if (getStaffRole(adminSession) === "manager") {
       res.redirect(resolveStaffHome(adminSession));
       return;
     }
@@ -229,10 +229,6 @@ router.post(
   loginRateLimit,
   requireCsrfToken,
   asyncHandler(async (req, res) => {
-    // Сбросить пользовательскую сессию, если есть
-    if (req.session && req.session.user) {
-      await require("../../middleware/auth").logoutUserSession(req);
-    }
     const loginInput = req.body.login || req.body.email;
     const managerPayload = await verifyManagerCredentials(loginInput, req.body.password);
 
@@ -260,11 +256,6 @@ router.get(
   requireManagerPage,
   asyncHandler(async (req, res) => {
     const adminSession = getAdminSession(req);
-    const role = adminSession?.role || "admin";
-    if (role !== "manager") {
-      res.redirect("/admin/dashboard");
-      return;
-    }
     const managerTabs = new Set(["users", "orders", "payment-cards", "verification", "badges"]);
     const tab =
       typeof req.query.tab === "string" && managerTabs.has(req.query.tab)
