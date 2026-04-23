@@ -824,7 +824,9 @@ function normalizeVerificationStatusInput(value) {
   return null;
 }
 
-const MANUAL_BADGE_TYPES = new Set(["none", "government", "unqx_staff"]);
+const MANUAL_ASSIGNABLE_BADGE_TYPES = ["unqx_staff", "government"];
+const MANUAL_ASSIGNABLE_BADGE_TYPE_SET = new Set(MANUAL_ASSIGNABLE_BADGE_TYPES);
+const MANUAL_BADGE_TYPES = new Set(["none", ...MANUAL_ASSIGNABLE_BADGE_TYPES]);
 
 function normalizeManualBadgeTypeInput(value, fallback = "none") {
   const normalizedFallback = MANUAL_BADGE_TYPES.has(String(fallback || "").trim().toLowerCase())
@@ -833,6 +835,34 @@ function normalizeManualBadgeTypeInput(value, fallback = "none") {
   const raw = String(value ?? "").trim().toLowerCase();
   if (!raw) return normalizedFallback;
   return MANUAL_BADGE_TYPES.has(raw) ? raw : normalizedFallback;
+}
+
+function normalizeManualBadgeTypesInput(value, fallback = []) {
+  const source = Array.isArray(value)
+    ? value
+    : String(value ?? "")
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean);
+  const fallbackTypes = Array.isArray(fallback)
+    ? fallback
+    : [normalizeManualBadgeTypeInput(fallback, "none")];
+  const normalizedFallback = fallbackTypes
+    .map((item) => String(item || "").trim().toLowerCase())
+    .filter((item, index, items) => MANUAL_ASSIGNABLE_BADGE_TYPE_SET.has(item) && items.indexOf(item) === index)
+    .slice(0, 2);
+  const normalized = source
+    .map((item) => String(item || "").trim().toLowerCase())
+    .filter((item, index, items) => MANUAL_ASSIGNABLE_BADGE_TYPE_SET.has(item) && items.indexOf(item) === index)
+    .slice(0, 2);
+  return normalized.length ? normalized : normalizedFallback;
+}
+
+function getPrimaryManualBadgeType(badgeTypes) {
+  const types = Array.isArray(badgeTypes) ? badgeTypes : [];
+  if (types.includes("government")) return "government";
+  if (types.includes("unqx_staff")) return "unqx_staff";
+  return "none";
 }
 
 function normalizeShortSlug(value) {
@@ -2898,19 +2928,15 @@ router.get(
     }
     const scoreByUser = new Map(unqScores.map((row) => [row.userId, row]));
     const staffById = new Map(creatorStaff.map((row) => [row.id, row]));
-    const badgeTypeByUser = new Map();
+    const badgeTypesByUser = new Map();
     for (const row of approvedBadges) {
       const userId = String(row?.userId || "").trim();
       const nextType = String(row?.badgeType || "").trim();
-      if (!userId || !nextType) continue;
-      const current = badgeTypeByUser.get(userId);
-      if (!current) {
-        badgeTypeByUser.set(userId, nextType);
-        continue;
+      if (!userId || !MANUAL_ASSIGNABLE_BADGE_TYPE_SET.has(nextType)) continue;
+      if (!badgeTypesByUser.has(userId)) {
+        badgeTypesByUser.set(userId, new Set());
       }
-      if (current !== "government" && nextType === "government") {
-        badgeTypeByUser.set(userId, "government");
-      }
+      badgeTypesByUser.get(userId).add(nextType);
     }
 
     const items = users.map((user) => {
@@ -2918,6 +2944,9 @@ router.get(
       const username = user.username || null;
       const createdByStaffId = user.createdByStaffId || null;
       const creator = createdByStaffId ? staffById.get(createdByStaffId) || null : null;
+      const badgeTypes = MANUAL_ASSIGNABLE_BADGE_TYPES.filter((type) =>
+        badgeTypesByUser.get(user.id)?.has(type),
+      );
       return {
         unqScore: scoreByUser.get(user.id)
           ? {
@@ -2950,7 +2979,8 @@ router.get(
         isVerified: Boolean(user.isVerified),
         verifiedCompany: user.verifiedCompany || "",
         verifiedRole: cardRoleByUser.get(user.id) || verificationRoleByUser.get(user.id) || "",
-        badgeType: badgeTypeByUser.get(user.id) || "none",
+        badgeType: getPrimaryManualBadgeType(badgeTypes),
+        badgeTypes,
         plan: user.plan,
         planPurchasedAt: user.planPurchasedAt,
         planUpgradedAt: user.planUpgradedAt,
@@ -3103,7 +3133,8 @@ router.post(
     const requestedPlan = normalizeUserPlan(req.body?.plan);
     const requestedSlug = normalizeShortSlug(req.body?.slug);
     const profileType = normalizeProfileType(req.body?.profileType, { fallback: "person" });
-    const badgeType = normalizeManualBadgeTypeInput(req.body?.badgeType, "none");
+    const badgeTypes = normalizeManualBadgeTypesInput(req.body?.badgeTypes ?? req.body?.badgeType);
+    const badgeType = getPrimaryManualBadgeType(badgeTypes);
     const hasSlugInput = Boolean(String(req.body?.slug || "").trim());
     const requesterRole = String(adminSession?.role || "admin");
     const requiresInlineActivation = requesterRole === "manager" || requestedPlan !== "none" || hasSlugInput;
@@ -3353,19 +3384,21 @@ router.post(
                 badgeType: { in: ["government", "unqx_staff"] },
               },
             });
-            if (badgeType !== "none" && typeof tx.badgeApplication.create === "function") {
-              await tx.badgeApplication.create({
-                data: {
-                  userId: createdUser.id,
-                  badgeType,
-                  workplace: "Установлено менеджером",
-                  role: "Системная отметка",
-                  proofText: `manager:${adminActor || "staff"}`,
-                  comment: "Badge set from user creation form",
-                  status: "approved",
-                  reviewedAt: now,
-                },
-              });
+            if (badgeTypes.length && typeof tx.badgeApplication.create === "function") {
+              for (const nextBadgeType of badgeTypes) {
+                await tx.badgeApplication.create({
+                  data: {
+                    userId: createdUser.id,
+                    badgeType: nextBadgeType,
+                    workplace: "Установлено менеджером",
+                    role: "Системная отметка",
+                    proofText: `manager:${adminActor || "staff"}`,
+                    comment: "Badge set from user creation form",
+                    status: "approved",
+                    reviewedAt: now,
+                  },
+                });
+              }
             }
           } catch (error) {
             if (!isMissingStorageError(error)) {
@@ -3377,6 +3410,8 @@ router.post(
         return {
           user: createdUser,
           activatedSlug,
+          badgeType,
+          badgeTypes,
           charges: {
             slug: slugCharge,
             plan: planCharge,
@@ -3387,6 +3422,8 @@ router.post(
       res.json({
         ok: true,
         user: result.user,
+        badgeType: result.badgeType,
+        badgeTypes: result.badgeTypes,
         activation: result.activatedSlug
           ? {
             slug: result.activatedSlug,
@@ -5242,7 +5279,8 @@ router.patch(
       }
     }
 
-    const badgeType = normalizeManualBadgeTypeInput(req.body?.badgeType, "none");
+    const badgeTypes = normalizeManualBadgeTypesInput(req.body?.badgeTypes ?? req.body?.badgeType);
+    const badgeType = getPrimaryManualBadgeType(badgeTypes);
     const actorLogin = String(req.session?.admin?.login || "").trim() || "staff";
     const now = new Date();
 
@@ -5267,11 +5305,11 @@ router.patch(
           badgeType: { in: ["government", "unqx_staff"] },
         },
       });
-      if (badgeType !== "none") {
+      for (const nextBadgeType of badgeTypes) {
         await tx.badgeApplication.create({
           data: {
             userId,
-            badgeType,
+            badgeType: nextBadgeType,
             workplace: "Установлено менеджером",
             role: "Системная отметка",
             proofText: `manager:${actorLogin}`,
@@ -5283,7 +5321,7 @@ router.patch(
       }
     });
 
-    res.json({ ok: true, userId, badgeType });
+    res.json({ ok: true, userId, badgeType, badgeTypes });
   }),
 );
 
@@ -5326,7 +5364,8 @@ router.patch(
 
     const now = new Date();
     const actorLogin = String(req.session?.admin?.login || "").trim() || "staff";
-    const badgeType = normalizeManualBadgeTypeInput(req.body?.badgeType, "none");
+    const badgeTypes = normalizeManualBadgeTypesInput(req.body?.badgeTypes ?? req.body?.badgeType);
+    const badgeType = getPrimaryManualBadgeType(badgeTypes);
 
     try {
       const result = await prisma.$transaction(async (tx) => {
@@ -5419,19 +5458,21 @@ router.patch(
                 badgeType: { in: ["government", "unqx_staff"] },
               },
             });
-            if (badgeType !== "none" && typeof tx.badgeApplication.create === "function") {
-              await tx.badgeApplication.create({
-                data: {
-                  userId,
-                  badgeType,
-                  workplace: company || "Установлено менеджером",
-                  role: role || "Системная отметка",
-                  proofText: `manager:${actorLogin}`,
-                  comment: "Badge updated from users verification modal",
-                  status: "approved",
-                  reviewedAt: now,
-                },
-              });
+            if (badgeTypes.length && typeof tx.badgeApplication.create === "function") {
+              for (const nextBadgeType of badgeTypes) {
+                await tx.badgeApplication.create({
+                  data: {
+                    userId,
+                    badgeType: nextBadgeType,
+                    workplace: company || "Установлено менеджером",
+                    role: role || "Системная отметка",
+                    proofText: `manager:${actorLogin}`,
+                    comment: "Badge updated from users verification modal",
+                    status: "approved",
+                    reviewedAt: now,
+                  },
+                });
+              }
             }
           } catch (error) {
             if (!isMissingStorageError(error)) {
@@ -5444,6 +5485,7 @@ router.patch(
           user: updatedUser,
           role: appliedRole,
           badgeType,
+          badgeTypes,
         };
       });
 
@@ -5455,6 +5497,7 @@ router.patch(
         verifiedAt: result.user.verifiedAt,
         role: result.role,
         badgeType: result.badgeType,
+        badgeTypes: result.badgeTypes,
       });
     } catch (error) {
       if (error?.code === "USER_NOT_FOUND") {

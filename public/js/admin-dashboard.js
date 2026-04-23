@@ -7,6 +7,7 @@
   const isManager = adminRole === "manager";
   const userCardBasePath = isManager ? "/manager/users" : "/admin/users";
   const dashboardBasePath = isManager ? "/manager/dashboard" : "/admin/dashboard";
+  const assignableBadgeTypes = ["unqx_staff", "government"];
 
   const autofillIgnoreSelectors = "form,input,textarea,select";
   const autofillIgnoreAttrs = ["data-bwignore", "data-lpignore", "data-1p-ignore"];
@@ -360,6 +361,49 @@
     return String(value || "").trim().toLowerCase() === "company" ? "company" : "person";
   }
 
+  function normalizeBadgeTypesInput(value) {
+    const source = Array.isArray(value)
+      ? value
+      : String(value || "")
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean);
+    const selected = [];
+    source.forEach((item) => {
+      const normalized = String(item || "").trim().toLowerCase();
+      if (assignableBadgeTypes.includes(normalized) && !selected.includes(normalized)) {
+        selected.push(normalized);
+      }
+    });
+    return selected.slice(0, 2);
+  }
+
+  function getPrimaryBadgeType(badgeTypes) {
+    const selected = normalizeBadgeTypesInput(badgeTypes);
+    if (selected.includes("government")) return "government";
+    if (selected.includes("unqx_staff")) return "unqx_staff";
+    return "none";
+  }
+
+  function getBadgeTypeInputs(form) {
+    if (!(form instanceof HTMLFormElement)) return [];
+    return Array.from(form.querySelectorAll('input[name="badgeTypes"][type="checkbox"]'))
+      .filter((input) => input instanceof HTMLInputElement && assignableBadgeTypes.includes(input.value));
+  }
+
+  function getSelectedBadgeTypes(form) {
+    return getBadgeTypeInputs(form)
+      .filter((input) => input.checked)
+      .map((input) => input.value);
+  }
+
+  function setSelectedBadgeTypes(form, badgeTypes) {
+    const selected = normalizeBadgeTypesInput(badgeTypes);
+    getBadgeTypeInputs(form).forEach((input) => {
+      input.checked = selected.includes(input.value);
+    });
+  }
+
   function formatUserCreatePrice(value) {
     return `${Number(value || 0).toLocaleString("ru-RU")} сум`;
   }
@@ -600,7 +644,6 @@
     const password = userCreateForm.elements.namedItem("password");
     const email = userCreateForm.elements.namedItem("email");
     const profileType = userCreateForm.elements.namedItem("profileType");
-    const badgeType = userCreateForm.elements.namedItem("badgeType");
     const plan = userCreateForm.elements.namedItem("plan");
     const slug = userCreateForm.elements.namedItem("slug");
     setCreateInputTone(name, "neutral");
@@ -609,7 +652,6 @@
     setCreateInputTone(password, "neutral");
     setCreateInputTone(email, "neutral");
     setCreateInputTone(profileType, "neutral");
-    setCreateInputTone(badgeType, "neutral");
     setCreateInputTone(plan, "neutral");
     setCreateInputTone(slug, "neutral");
   }
@@ -646,11 +688,7 @@
       if (profileType instanceof HTMLSelectElement) {
         profileType.value = normalizeUserCreateProfileType(profileType.value);
       }
-      const badgeType = userCreateForm.elements.namedItem("badgeType");
-      if (badgeType instanceof HTMLSelectElement) {
-        const normalizedBadgeType = String(badgeType.value || "").trim().toLowerCase();
-        badgeType.value = ["none", "government", "unqx_staff"].includes(normalizedBadgeType) ? normalizedBadgeType : "none";
-      }
+      setSelectedBadgeTypes(userCreateForm, getSelectedBadgeTypes(userCreateForm));
     }
     setCreateInlineStatus(userCreateLoginStatus, "");
     setCreateInlineStatus(userCreateSlugStatus, "");
@@ -701,31 +739,31 @@
     }
   }
 
-  function openUserVerificationModal({ userId, userName, isVerified, company, role, badgeType }) {
+  function openUserVerificationModal({ userId, userName, isVerified, company, role, badgeType, badgeTypes }) {
     if (!(userVerificationModal instanceof HTMLElement)) return;
     if (!(userVerificationForm instanceof HTMLFormElement)) return;
     const userIdField = userVerificationForm.elements.namedItem("userId");
     const statusField = userVerificationForm.elements.namedItem("status");
     const companyField = userVerificationForm.elements.namedItem("company");
     const roleField = userVerificationForm.elements.namedItem("role");
-    const badgeTypeField = userVerificationForm.elements.namedItem("badgeType");
     if (!(userIdField instanceof HTMLInputElement)) return;
     if (!(statusField instanceof HTMLSelectElement)) return;
     if (!(companyField instanceof HTMLInputElement)) return;
     if (!(roleField instanceof HTMLInputElement)) return;
-    if (!(badgeTypeField instanceof HTMLSelectElement)) return;
+    if (!getBadgeTypeInputs(userVerificationForm).length) return;
 
     setUserVerificationError("");
     userIdField.value = String(userId || "").trim();
     statusField.value = isVerified ? "verified" : "unverified";
     companyField.value = String(company || "").trim();
     roleField.value = String(role || "").trim();
-    const normalizedBadgeType = String(badgeType || "").trim().toLowerCase();
-    badgeTypeField.value = ["none", "government", "unqx_staff"].includes(normalizedBadgeType) ? normalizedBadgeType : "none";
+    const selectedBadgeTypes = normalizeBadgeTypesInput(badgeTypes).length
+      ? normalizeBadgeTypesInput(badgeTypes)
+      : normalizeBadgeTypesInput(badgeType);
+    setSelectedBadgeTypes(userVerificationForm, selectedBadgeTypes);
     setCreateInputTone(statusField, "neutral");
     setCreateInputTone(companyField, "neutral");
     setCreateInputTone(roleField, "neutral");
-    setCreateInputTone(badgeTypeField, "neutral");
     if (userVerificationUser instanceof HTMLElement) {
       userVerificationUser.textContent = `Пользователь: ${String(userName || "—").trim() || "—"}`;
     }
@@ -756,18 +794,18 @@
     userBadgeError.classList.remove("hidden");
   }
 
-  function openUserBadgeModal({ userId, userName, badgeType }) {
+  function openUserBadgeModal({ userId, userName, badgeType, badgeTypes }) {
     if (!(userBadgeModal instanceof HTMLElement)) return;
     if (!(userBadgeForm instanceof HTMLFormElement)) return;
     const userIdField = userBadgeForm.elements.namedItem("userId");
-    const badgeTypeField = userBadgeForm.elements.namedItem("badgeType");
     if (!(userIdField instanceof HTMLInputElement)) return;
-    if (!(badgeTypeField instanceof HTMLSelectElement)) return;
+    if (!getBadgeTypeInputs(userBadgeForm).length) return;
 
     userIdField.value = String(userId || "").trim();
-    const normalizedBadgeType = String(badgeType || "").trim().toLowerCase();
-    badgeTypeField.value = ["none", "government", "unqx_staff"].includes(normalizedBadgeType) ? normalizedBadgeType : "none";
-    setCreateInputTone(badgeTypeField, "neutral");
+    const selectedBadgeTypes = normalizeBadgeTypesInput(badgeTypes).length
+      ? normalizeBadgeTypesInput(badgeTypes)
+      : normalizeBadgeTypesInput(badgeType);
+    setSelectedBadgeTypes(userBadgeForm, selectedBadgeTypes);
     setUserBadgeError("");
     if (userBadgeUser instanceof HTMLElement) {
       userBadgeUser.textContent = `Пользователь: ${String(userName || "—").trim() || "—"}`;
@@ -809,25 +847,23 @@
     const statusField = userVerificationForm.elements.namedItem("status");
     const companyField = userVerificationForm.elements.namedItem("company");
     const roleField = userVerificationForm.elements.namedItem("role");
-    const badgeTypeField = userVerificationForm.elements.namedItem("badgeType");
     if (!(userIdField instanceof HTMLInputElement)) return;
     if (!(statusField instanceof HTMLSelectElement)) return;
     if (!(companyField instanceof HTMLInputElement)) return;
     if (!(roleField instanceof HTMLInputElement)) return;
-    if (!(badgeTypeField instanceof HTMLSelectElement)) return;
+    if (!getBadgeTypeInputs(userVerificationForm).length) return;
 
     const userId = String(userIdField.value || "").trim();
     const status = statusField.value === "verified" ? "verified" : "unverified";
     const company = String(companyField.value || "").trim();
     const role = String(roleField.value || "").trim();
-    const badgeTypeRaw = String(badgeTypeField.value || "").trim().toLowerCase();
-    const badgeType = ["none", "government", "unqx_staff"].includes(badgeTypeRaw) ? badgeTypeRaw : "none";
+    const badgeTypes = getSelectedBadgeTypes(userVerificationForm);
+    const badgeType = getPrimaryBadgeType(badgeTypes);
 
     setUserVerificationError("");
     setCreateInputTone(statusField, "neutral");
     setCreateInputTone(companyField, "neutral");
     setCreateInputTone(roleField, "neutral");
-    setCreateInputTone(badgeTypeField, "neutral");
 
     if (!userId) {
       setUserVerificationError("Не удалось определить пользователя. Обновите страницу и попробуйте снова.");
@@ -854,6 +890,7 @@
         company: status === "verified" ? company : "",
         role: status === "verified" ? role : "",
         badgeType,
+        badgeTypes,
       }),
     });
     if (!response.ok) {
@@ -884,26 +921,21 @@
     event.preventDefault();
     if (!(userBadgeForm instanceof HTMLFormElement)) return;
     const userIdField = userBadgeForm.elements.namedItem("userId");
-    const badgeTypeField = userBadgeForm.elements.namedItem("badgeType");
     if (!(userIdField instanceof HTMLInputElement)) return;
-    if (!(badgeTypeField instanceof HTMLSelectElement)) return;
+    if (!getBadgeTypeInputs(userBadgeForm).length) return;
 
     const userId = String(userIdField.value || "").trim();
-    const badgeTypeRaw = String(badgeTypeField.value || "").trim().toLowerCase();
-    const badgeType = ["none", "government", "unqx_staff"].includes(badgeTypeRaw) ? badgeTypeRaw : "";
+    const badgeTypes = getSelectedBadgeTypes(userBadgeForm);
+    const badgeType = getPrimaryBadgeType(badgeTypes);
     if (!userId) {
       setUserBadgeError("Не удалось определить пользователя.");
-      return;
-    }
-    if (!badgeType) {
-      setUserBadgeError("Выберите корректный бейдж.");
       return;
     }
 
     const r = await fetch(`/api/admin/users/${encodeURIComponent(userId)}/badge`, {
       method: "PATCH",
       headers: H({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ badgeType }),
+      body: JSON.stringify({ badgeType, badgeTypes }),
     });
     if (!r.ok) {
       const payload = await r.json().catch(() => ({}));
@@ -921,7 +953,7 @@
     }
 
     closeUserBadgeModal();
-    await showAlert("Бейдж обновлен.");
+    await showAlert("Бейджи обновлены.");
     void loadUsers();
     closeAllRowMenus();
   });
@@ -981,7 +1013,6 @@
     const password = userCreateForm.elements.namedItem("password");
     const email = userCreateForm.elements.namedItem("email");
     const profileType = userCreateForm.elements.namedItem("profileType");
-    const badgeType = userCreateForm.elements.namedItem("badgeType");
     const plan = userCreateForm.elements.namedItem("plan");
     const slug = userCreateForm.elements.namedItem("slug");
     if (
@@ -991,9 +1022,9 @@
       !(password instanceof HTMLInputElement) ||
       !(email instanceof HTMLInputElement) ||
       !(profileType instanceof HTMLSelectElement) ||
-      !(badgeType instanceof HTMLSelectElement) ||
       !(plan instanceof HTMLSelectElement) ||
-      !(slug instanceof HTMLInputElement)
+      !(slug instanceof HTMLInputElement) ||
+      !getBadgeTypeInputs(userCreateForm).length
     ) {
       return;
     }
@@ -1003,14 +1034,14 @@
     const normalizedLogin = normalizeUserCreateLogin(login.value);
     const normalizedEmail = normalizeUserCreateEmail(email.value);
     const normalizedProfileType = normalizeUserCreateProfileType(profileType.value);
-    const normalizedBadgeTypeRaw = String(badgeType.value || "").trim().toLowerCase();
-    const normalizedBadgeType = ["none", "government", "unqx_staff"].includes(normalizedBadgeTypeRaw) ? normalizedBadgeTypeRaw : "none";
+    const normalizedBadgeTypes = getSelectedBadgeTypes(userCreateForm);
+    const normalizedBadgeType = getPrimaryBadgeType(normalizedBadgeTypes);
     const normalizedSlug = normalizeUserCreateSlug(slug.value);
     name.value = firstName;
     login.value = normalizedLogin;
     email.value = normalizedEmail;
     profileType.value = normalizedProfileType;
-    badgeType.value = normalizedBadgeType;
+    setSelectedBadgeTypes(userCreateForm, normalizedBadgeTypes);
     slug.value = normalizedSlug;
 
     if (!firstName) {
@@ -1089,6 +1120,7 @@
       email: normalizedEmail,
       profileType: normalizedProfileType,
       badgeType: normalizedBadgeType,
+      badgeTypes: normalizedBadgeTypes,
       plan: selectedPlan,
       slug: normalizedSlug,
     };
@@ -1105,6 +1137,7 @@
       }
       const createdPayload = await r.json().catch(() => ({}));
       userCreateForm.reset();
+      setSelectedBadgeTypes(userCreateForm, []);
       resetUserCreateFieldTones();
       setCreateInlineStatus(userCreateLoginStatus, "");
       setCreateInlineStatus(userCreateSlugStatus, "");
@@ -1726,6 +1759,9 @@
             : contactUsername
               ? `https://t.me/${encodeURIComponent(contactUsername)}`
               : null;
+          const badgeTypes = normalizeBadgeTypesInput(Array.isArray(x.badgeTypes) ? x.badgeTypes : x.badgeType || "");
+          const primaryBadgeType = getPrimaryBadgeType(badgeTypes);
+          const badgeTypesCsv = badgeTypes.join(",");
           const braceletSlugs = Array.isArray(x.slugs) ? x.slugs.filter((s) => s.hasBracelet).map((s) => s.fullSlug).join(",") : "";
           const userSlugsCsv = allSlugs.join(",");
           const userCell = X(x.name);
@@ -1751,14 +1787,14 @@
             menuItem({
               label: verificationLabel,
               icon: "checkCircle",
-              attrs: `data-act="uvm" data-id="${X(x.telegramId)}" data-name="${X(x.name)}" data-verified="${x.isVerified ? "1" : "0"}" data-company="${X(x.verifiedCompany || "")}" data-role="${X(x.verifiedRole || "")}" data-badge-type="${X(x.badgeType || "none")}"`,
+              attrs: `data-act="uvm" data-id="${X(x.telegramId)}" data-name="${X(x.name)}" data-verified="${x.isVerified ? "1" : "0"}" data-company="${X(x.verifiedCompany || "")}" data-role="${X(x.verifiedRole || "")}" data-badge-type="${X(primaryBadgeType)}" data-badge-types="${X(badgeTypesCsv)}"`,
             }),
           );
           menuItems.push(
             menuItem({
               label: "Изменить бейдж",
               icon: "pen",
-              attrs: `data-act="ubadge" data-id="${X(x.telegramId)}" data-name="${X(x.name)}" data-badge-type="${X(x.badgeType || "none")}"`,
+              attrs: `data-act="ubadge" data-id="${X(x.telegramId)}" data-name="${X(x.name)}" data-badge-type="${X(primaryBadgeType)}" data-badge-types="${X(badgeTypesCsv)}"`,
             }),
           );
 
@@ -2980,13 +3016,20 @@
     return fallback;
   }
 
+  function parseAllowedBadgeTypes(rawValue, fallback = []) {
+    const parsed = normalizeBadgeTypesInput(rawValue);
+    if (parsed.length) return parsed;
+    return normalizeBadgeTypesInput(fallback);
+  }
+
   function openUserBadgeEditorFromNode(node) {
     if (!(node instanceof HTMLElement)) return;
     const userId = node.getAttribute("data-id");
     const userName = node.getAttribute("data-name") || "пользователя";
     if (!userId) return;
     const currentBadgeType = parseAllowedBadgeType(node.getAttribute("data-badge-type"), "none");
-    openUserBadgeModal({ userId, userName, badgeType: currentBadgeType });
+    const currentBadgeTypes = parseAllowedBadgeTypes(node.getAttribute("data-badge-types"), currentBadgeType);
+    openUserBadgeModal({ userId, userName, badgeType: currentBadgeType, badgeTypes: currentBadgeTypes });
   }
 
   document.addEventListener("click", async (e) => {
@@ -3345,7 +3388,8 @@
       const currentVerified = String(n.getAttribute("data-verified") || "") === "1";
       const currentCompany = String(n.getAttribute("data-company") || "").trim();
       const currentRole = String(n.getAttribute("data-role") || "").trim();
-      const currentBadgeType = String(n.getAttribute("data-badge-type") || "none").trim().toLowerCase();
+      const currentBadgeType = parseAllowedBadgeType(n.getAttribute("data-badge-type"), "none");
+      const currentBadgeTypes = parseAllowedBadgeTypes(n.getAttribute("data-badge-types"), currentBadgeType);
       openUserVerificationModal({
         userId,
         userName,
@@ -3353,6 +3397,7 @@
         company: currentCompany,
         role: currentRole,
         badgeType: currentBadgeType,
+        badgeTypes: currentBadgeTypes,
       });
       return;
     }
