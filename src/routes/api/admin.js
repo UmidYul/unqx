@@ -1576,6 +1576,7 @@ const MANAGER_ALLOWED_ROUTES = [
   { method: "GET", re: /^\/verification-requests\/?$/ },
   { method: "POST", re: /^\/verification-requests\/[^/]+\/approve\/?$/ },
   { method: "POST", re: /^\/verification-requests\/[^/]+\/reject\/?$/ },
+  { method: "POST", re: /^\/verification-requests\/[^/]+\/revoke\/?$/ },
   { method: "GET", re: /^\/badge-applications\/?$/ },
   { method: "POST", re: /^\/badge-applications\/[^/]+\/approve\/?$/ },
   { method: "POST", re: /^\/badge-applications\/[^/]+\/reject\/?$/ },
@@ -2746,6 +2747,9 @@ router.get(
       if (hasUserColumn(userColumns, "username")) {
         or.push({ username: { contains: q, mode: "insensitive" } });
       }
+      if (hasUserColumn(userColumns, "email")) {
+        or.push({ email: { contains: q, mode: "insensitive" } });
+      }
       if (hasUserColumn(userColumns, "telegramUsername")) {
         or.push({ telegramUsername: { contains: q, mode: "insensitive" } });
       }
@@ -2769,6 +2773,7 @@ router.get(
       if (hasUserColumn(userColumns, "displayName")) select.displayName = true;
       if (hasUserColumn(userColumns, "city")) select.city = true;
       if (hasUserColumn(userColumns, "username")) select.username = true;
+      if (hasUserColumn(userColumns, "email")) select.email = true;
       if (hasUserColumn(userColumns, "telegramUsername")) select.telegramUsername = true;
       if (hasUserColumn(userColumns, "login")) select.login = true;
       if (hasUserColumn(userColumns, "isVerified")) select.isVerified = true;
@@ -2966,6 +2971,7 @@ router.get(
         telegramId: user.id,
         name: user.displayName || user.firstName,
         city: user.city || "",
+        email: user.email || "",
         username,
         telegramUsername,
         login: user.login || null,
@@ -7437,6 +7443,54 @@ router.post(
         reviewedAt: new Date(),
       },
     });
+    res.json({ ok: true });
+  }),
+);
+
+router.post(
+  "/verification-requests/:id/revoke",
+  asyncHandler(async (req, res) => {
+    if (!prisma.verificationRequest) {
+      res.status(503).json({ error: "Verification storage unavailable" });
+      return;
+    }
+    if (isManagerSession(req)) {
+      const ownsVerification = await managerOwnsVerificationRequest(req, req.params.id);
+      if (!ownsVerification) {
+        res.status(404).json({ error: "Request not found" });
+        return;
+      }
+    }
+    const adminNote = String(req.body?.adminNote || "").trim().slice(0, 1000);
+    const target = await prisma.verificationRequest.findUnique({ where: { id: req.params.id } });
+    if (!target) {
+      res.status(404).json({ error: "Request not found" });
+      return;
+    }
+    if (target.status !== "approved") {
+      res.status(409).json({ error: "Only approved verification can be revoked" });
+      return;
+    }
+    const now = new Date();
+    await prisma.$transaction([
+      prisma.verificationRequest.update({
+        where: { id: target.id },
+        data: {
+          status: "revoked",
+          adminNote: adminNote || null,
+          reviewedAt: now,
+        },
+      }),
+      prisma.user.update({
+        where: { id: target.userId },
+        data: {
+          isVerified: false,
+          verifiedCompany: null,
+          directorySector: null,
+          verifiedAt: null,
+        },
+      }),
+    ]);
     res.json({ ok: true });
   }),
 );

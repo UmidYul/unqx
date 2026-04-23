@@ -152,6 +152,11 @@
 
   const H = (h = {}) => (csrf ? { ...h, "X-CSRF-Token": csrf } : h);
   const D = (v) => (v ? new Date(v).toLocaleString("ru-RU") : "-");
+  const DATE_ONLY = (v) => {
+    if (!v) return "-";
+    const date = new Date(v);
+    return Number.isNaN(date.getTime()) ? "-" : date.toLocaleDateString("ru-RU");
+  };
   const P = (v) => `${Number(v || 0).toLocaleString("ru-RU")} сум`;
   const formatPendingCountdown = (iso) => {
     if (!iso) return "";
@@ -198,6 +203,11 @@
     send: '<path d="m3 12 18-8-6 16-3-7-9-1Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>',
     trash: '<path d="M4 7h16M10 11v6M14 11v6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M7 7l1 12h8l1-12M9 7V5h6v2" stroke="currentColor" stroke-width="1.8"/>',
     pen: '<path d="m4 20 4-.8L20 7a2.2 2.2 0 0 0-3-3L5 16l-1 4Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>',
+    at: '<circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.8"/><path d="M15 9.8v4.4a2.2 2.2 0 0 0 3 2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="11.3" cy="12" r="3.2" stroke="currentColor" stroke-width="1.8"/>',
+    badge: '<path d="M12 3.5 14.3 8l5 .7-3.6 3.5.9 5-4.6-2.4-4.6 2.4.9-5L4.7 8.7l5-.7L12 3.5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>',
+    idCard: '<rect x="3.5" y="5.5" width="17" height="13" rx="2.5" stroke="currentColor" stroke-width="1.8"/><circle cx="9" cy="11" r="2" stroke="currentColor" stroke-width="1.8"/><path d="M6.5 16a3 3 0 0 1 5 0M14 10h4M14 14h3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
+    key: '<circle cx="8" cy="12" r="3.2" stroke="currentColor" stroke-width="1.8"/><path d="M11.2 12H21M17 12v3M14 12v2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
+    linkEdit: '<path d="M10 7h5a4 4 0 0 1 1.7 7.6M14 17H9a4 4 0 0 1-1.7-7.6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="m14.5 19 1.2-.2 4.7-4.7a1.3 1.3 0 0 0-1.8-1.8L14 17l-.3 1.3a.6.6 0 0 0 .8.7Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>',
     eye: '<path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6Z" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="2.6" stroke="currentColor" stroke-width="1.8"/>',
     toggleLeft: '<rect x="3" y="7" width="18" height="10" rx="5" stroke="currentColor" stroke-width="1.8"/><circle cx="8" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/>',
     toggleRight: '<rect x="3" y="7" width="18" height="10" rx="5" stroke="currentColor" stroke-width="1.8"/><circle cx="16" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/>',
@@ -233,6 +243,7 @@
     pending: { label: "На рассмотрении", tone: "warning" },
     verification_approved: { label: "Одобрено", tone: "success" },
     verification_rejected: { label: "Отклонено", tone: "danger" },
+    verification_revoked: { label: "Снято", tone: "muted" },
     new: { label: "Новая", tone: "info" },
     processed: { label: "Обработано", tone: "success" },
     contacted: { label: "Связались", tone: "muted" },
@@ -289,6 +300,11 @@
   const userVerificationForm = document.getElementById("user-verification-form");
   const userVerificationError = document.getElementById("user-verification-error");
   const userVerificationUser = document.getElementById("user-verification-user");
+  const verificationDetailModal = document.getElementById("verification-detail-modal");
+  const verificationDetailClose = document.getElementById("verification-detail-close");
+  const verificationDetailTitle = document.getElementById("verification-detail-title");
+  const verificationDetailBody = document.getElementById("verification-detail-body");
+  const verificationDetailActions = document.getElementById("verification-detail-actions");
   const userBadgeModal = document.getElementById("user-badge-modal");
   const userBadgeClose = document.getElementById("user-badge-close");
   const userBadgeForm = document.getElementById("user-badge-form");
@@ -303,6 +319,10 @@
     slugDebounceTimer: null,
     loginDebounceTimer: null,
     emailDebounceTimer: null,
+  };
+  const verificationRequestsState = {
+    itemsById: new Map(),
+    selectedId: "",
   };
 
   function setUserCreateError(message) {
@@ -832,6 +852,21 @@
   userVerificationModal?.addEventListener("click", (e) => {
     if (e.target === userVerificationModal) closeUserVerificationModal();
   });
+  verificationDetailClose?.addEventListener("click", closeVerificationDetailModal);
+  verificationDetailModal?.addEventListener("click", (e) => {
+    if (e.target === verificationDetailModal) closeVerificationDetailModal();
+  });
+  verificationDetailActions?.addEventListener("click", (event) => {
+    const target = event.target instanceof Element ? event.target.closest("[data-vr-modal-action]") : null;
+    if (!(target instanceof HTMLElement)) return;
+    const action = String(target.getAttribute("data-vr-modal-action") || "").trim();
+    if (action === "close") {
+      closeVerificationDetailModal();
+      return;
+    }
+    const id = verificationRequestsState.selectedId;
+    if (id) void runVerificationRequestAction(action, id);
+  });
   userBadgeClose?.addEventListener("click", closeUserBadgeModal);
   userBadgeModal?.addEventListener("click", (e) => {
     if (e.target === userBadgeModal) closeUserBadgeModal();
@@ -1266,7 +1301,7 @@
     const params = new URLSearchParams(location.search);
     const statusFromUrl = String(params.get("v_status") || params.get("status") || "all").trim().toLowerCase();
     const pageFromUrl = String(params.get("v_page") || params.get("page") || "1").trim();
-    const allowedStatuses = new Set(["all", "pending", "approved", "rejected"]);
+    const allowedStatuses = new Set(["all", "pending", "approved", "rejected", "revoked"]);
     setFormValue(form, "status", allowedStatuses.has(statusFromUrl) ? statusFromUrl : "all");
     setFormValue(form, "page", /^\d+$/.test(pageFromUrl) ? pageFromUrl : "1");
   }
@@ -1704,16 +1739,15 @@
     if (!(form instanceof HTMLFormElement) || !(table instanceof HTMLElement)) return;
     const q = {
       q: getFormValue(form, "q", ""),
-      plan: getFormValue(form, "plan", "all"),
       profileType: getFormValue(form, "profileType", "all"),
       sort: getFormValue(form, "sort", "created_desc"),
       page: getFormValue(form, "page", "1"),
     };
-    setDashboardQuery({ u_q: q.q, u_plan: q.plan, u_type: q.profileType, u_sort: q.sort, u_page: q.page });
+    setDashboardQuery({ u_q: q.q, u_type: q.profileType, u_sort: q.sort, u_page: q.page });
     const r = await fetch(`/api/admin/users?${Q(q)}`);
     if (!r.ok) {
       const msg = await E(r);
-      table.innerHTML = `<tr><td colspan="11" class="px-3 py-8 text-center text-red-700">Не удалось загрузить пользователей: ${X(msg)}</td></tr>`;
+      table.innerHTML = `<tr><td colspan="8" class="px-3 py-8 text-center text-red-700">Не удалось загрузить пользователей: ${X(msg)}</td></tr>`;
       if (managerStatsNode instanceof HTMLElement) {
         managerStatsNode.classList.add("hidden");
         managerStatsNode.textContent = "";
@@ -1765,20 +1799,20 @@
           const braceletSlugs = Array.isArray(x.slugs) ? x.slugs.filter((s) => s.hasBracelet).map((s) => s.fullSlug).join(",") : "";
           const userSlugsCsv = allSlugs.join(",");
           const userCell = X(x.name);
-          const creatorName = x.createdBy?.name || x.createdBy?.login || "—";
-          const creatorCell = x.createdBy ? X(creatorName) : "—";
+          const emailCell = x.email
+            ? `<span class="block break-all text-xs text-neutral-700">${X(x.email)}</span>`
+            : "—";
           const editSlugAttrs = allSlugs.length
             ? `data-act="us-edit" data-id="${X(x.telegramId)}" data-name="${X(x.name)}" data-slugs="${X(userSlugsCsv)}"`
             : 'disabled="disabled"';
-          const score = Number(x.unqScore?.score || 0);
           const menuItems = [];
           if (!isManager) {
-            menuItems.push(menuItem({ label: "Change login", icon: "pen", attrs: `data-act="ul" data-id="${X(x.telegramId)}" data-login="${X(x.login || "")}" data-name="${X(x.name)}"` }));
+            menuItems.push(menuItem({ label: "Change login", icon: "at", attrs: `data-act="ul" data-id="${X(x.telegramId)}" data-login="${X(x.login || "")}" data-name="${X(x.name)}"` }));
             menuItems.push(menuItem({ label: "Change plan", icon: "crown", attrs: `data-act="up" data-id="${X(x.telegramId)}" data-current-plan="${X(x.plan)}" data-active-slugs="${Number(x.activeSlugCount || 0)}" data-bracelet-slugs="${X(braceletSlugs)}"` }));
             menuItems.push(menuSeparator());
           }
           menuItems.push(menuItem({ label: "Add slug", icon: "link2", attrs: `data-act="us-add" data-id="${X(x.telegramId)}" data-name="${X(x.name)}" data-slugs="${X(userSlugsCsv)}"` }));
-          menuItems.push(menuItem({ label: "Edit slug", icon: "pen", attrs: editSlugAttrs }));
+          menuItems.push(menuItem({ label: "Edit slug", icon: "linkEdit", attrs: editSlugAttrs }));
           menuItems.push(menuItem({ label: "Delete slug", icon: "trash", attrs: `data-act="us-delete" data-id="${X(x.telegramId)}" data-name="${X(x.name)}" data-slugs="${X(userSlugsCsv)}"`, danger: true }));
           menuItems.push(menuSeparator());
 
@@ -1793,14 +1827,14 @@
           menuItems.push(
             menuItem({
               label: "Изменить бейдж",
-              icon: "pen",
+              icon: "badge",
               attrs: `data-act="ubadge" data-id="${X(x.telegramId)}" data-name="${X(x.name)}" data-badge-type="${X(primaryBadgeType)}" data-badge-types="${X(badgeTypesCsv)}"`,
             }),
           );
 
           const cardEditorUrl = `${userCardBasePath}/${encodeURIComponent(String(x.telegramId || ""))}/card`;
           const cardEditorLabel = x.hasCard ? "Редактировать визитку" : "Создать визитку";
-          menuItems.push(menuItem({ label: cardEditorLabel, icon: "pen", attrs: `data-act="open-card" data-url="${cardEditorUrl}"` }));
+          menuItems.push(menuItem({ label: cardEditorLabel, icon: "idCard", attrs: `data-act="open-card" data-url="${cardEditorUrl}"` }));
           menuItems.push(menuItem({ label: "Payment карточки", icon: "creditCard", attrs: `data-act="open-card" data-url="${dashboardBasePath}?tab=payment-cards&userId=${encodeURIComponent(String(x.telegramId || ""))}"` }));
           menuItems.push(menuItem({ label: "Open profile", icon: "external", attrs: profileLink ? `data-act="open-url" data-url="${profileLink}"` : 'disabled="disabled"' }));
 
@@ -1813,19 +1847,14 @@
           }
 
           const menu = menuWrap(menuItems.join(""));
-          const planLabel = x.plan === "premium" || x.plan === "basic" ? "Premium" : "No plan";
-          const planChipClass =
-            x.plan === "none"
-              ? "border-amber-300 bg-amber-50 text-amber-800 whitespace-nowrap"
-              : "border-neutral-200 whitespace-nowrap";
           const profileTypeLabel = x.profileType === "company" ? "Компания" : "Личность";
           const profileTypeChipClass = x.profileType === "company"
             ? "border-sky-300 bg-sky-50 text-sky-800 whitespace-nowrap"
             : "border-neutral-200 bg-white text-neutral-700 whitespace-nowrap";
-          return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3">${userCell}</td><td class="px-4 py-3">${creatorCell}</td><td class="px-4 py-3">${X(x.city || "—")}</td><td class="px-4 py-3"><span class="inline-flex rounded-full border px-2.5 py-1 text-xs font-medium ${profileTypeChipClass}">${profileTypeLabel}</span></td><td class="px-4 py-3"><span class="inline-flex rounded-full border px-2.5 py-1 text-xs font-medium ${planChipClass}">${planLabel}</span></td><td class="hidden px-4 py-3 text-xs text-neutral-600 xl:table-cell">${x.planPurchasedAt ? D(x.planPurchasedAt) : "—"}</td><td class="admin-col-slugs px-4 py-3 text-xs" title="${X(slugTitle)}">${X(slugText)}</td><td class="px-4 py-3"><span class="inline-flex min-h-11 min-w-14 items-center justify-center rounded-lg border border-neutral-300 px-2.5 py-1 text-sm font-semibold">${score}</span></td><td class="px-4 py-3">${statusChip(x.status === "blocked" ? "rejected" : "approved")}</td><td class="px-4 py-3">${D(x.createdAt)}</td><td class="px-4 py-3 text-center"><div class="admin-row-actions justify-center">${menu}</div></td></tr>`;
+          return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3">${userCell}</td><td class="px-4 py-3">${emailCell}</td><td class="px-4 py-3"><span class="inline-flex rounded-full border px-2.5 py-1 text-xs font-medium ${profileTypeChipClass}">${profileTypeLabel}</span></td><td class="hidden px-4 py-3 text-xs text-neutral-600 xl:table-cell">${x.planPurchasedAt ? D(x.planPurchasedAt) : "—"}</td><td class="admin-col-slugs px-4 py-3 text-xs" title="${X(slugTitle)}">${X(slugText)}</td><td class="px-4 py-3">${statusChip(x.status === "blocked" ? "rejected" : "approved")}</td><td class="px-4 py-3">${DATE_ONLY(x.createdAt)}</td><td class="px-4 py-3 text-center"><div class="admin-row-actions justify-center">${menu}</div></td></tr>`;
         })
         .join("")
-      : `<tr><td colspan="11" class="px-3 py-10 text-center text-neutral-500"><div class="inline-flex flex-col items-center gap-2">${I("userCheck", 48)}<span>No users found</span></div></td></tr>`;
+      : `<tr><td colspan="8" class="px-3 py-10 text-center text-neutral-500"><div class="inline-flex flex-col items-center gap-2">${I("userCheck", 48)}<span>No users found</span></div></td></tr>`;
     renderPager("users-pagination", payload.pagination, (nextPage) => {
       setFormValue(form, "page", String(nextPage));
       void loadUsers();
@@ -2249,7 +2278,7 @@
         const accountTitle = accountLabels.join(", ");
         const menu = menuWrap([
           menuItem({ label: toggleLabel, icon: toggleIcon, attrs: `data-act="manager-toggle" data-id="${X(x.id)}" data-next="${x.isActive ? 0 : 1}" data-name="${X(x.name || x.login || "")}"` }),
-          menuItem({ label: "Reset password", icon: "pen", attrs: `data-act="manager-reset" data-id="${X(x.id)}" data-name="${X(x.name || x.login || "")}"` }),
+          menuItem({ label: "Reset password", icon: "key", attrs: `data-act="manager-reset" data-id="${X(x.id)}" data-name="${X(x.name || x.login || "")}"` }),
         ].join(""));
         return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3">${X(x.name || "—")}</td><td class="px-4 py-3 font-mono">${X(x.login || "")}</td><td class="px-4 py-3">${X(roleLabel)}</td><td class="px-4 py-3">${X(statusLabel)}</td><td class="px-4 py-3">${D(x.lastLoginAt)}</td><td class="px-4 py-3">${D(x.createdAt)}</td><td class="px-4 py-3 font-semibold">${createdAccountsCount.toLocaleString("ru-RU")}</td><td class="px-4 py-3 text-xs text-neutral-600" title="${X(accountTitle)}">${X(accountPreview)}</td><td class="px-4 py-3"><div class="admin-row-actions">${menu}</div></td></tr>`;
       }).join("")
@@ -2446,12 +2475,174 @@
     });
   }
 
+  function getVerificationStatusCode(status) {
+    const normalized = String(status || "").trim().toLowerCase();
+    if (normalized === "approved") return "verification_approved";
+    if (normalized === "rejected") return "verification_rejected";
+    if (normalized === "revoked") return "verification_revoked";
+    return "pending";
+  }
+
+  function getVerificationSectorLabel(value) {
+    const sectorMap = {
+      design: "Дизайн",
+      sales: "Продажи",
+      marketing: "Маркетинг",
+      it: "IT",
+      other: "Другое",
+    };
+    return sectorMap[String(value || "").toLowerCase()] || "Другое";
+  }
+
+  function getVerificationProofTypeLabel(value) {
+    const proofTypeMap = {
+      email: "Email",
+      linkedin: "LinkedIn",
+      website: "Website",
+    };
+    return proofTypeMap[String(value || "").toLowerCase()] || String(value || "—");
+  }
+
+  function getVerificationUserName(item) {
+    return String(item?.user?.displayName || item?.user?.firstName || item?.user?.username || "—");
+  }
+
+  function renderVerificationProof(item) {
+    const proofType = getVerificationProofTypeLabel(item?.proofType);
+    const proofValueRaw = String(item?.proofValue || "").trim();
+    const proofValue = /^https?:\/\//i.test(proofValueRaw)
+      ? `<a href="${X(proofValueRaw)}" target="_blank" rel="noopener noreferrer" class="text-neutral-700 underline break-all">${X(proofValueRaw)}</a>`
+      : `<span class="break-all">${X(proofValueRaw || "—")}</span>`;
+    return `<div class="text-xs text-neutral-500">${X(proofType)}</div><div>${proofValue}</div>`;
+  }
+
+  function verificationDetailField(label, value, wide = false) {
+    return `<div class="${wide ? "sm:col-span-2 " : ""}rounded-xl border border-neutral-200 px-3 py-2">
+      <p class="text-[11px] font-semibold uppercase tracking-wide text-neutral-500">${X(label)}</p>
+      <div class="mt-1 text-sm text-neutral-900">${value || "—"}</div>
+    </div>`;
+  }
+
+  function verificationActionButton(action, label, icon, danger = false) {
+    const tone = danger
+      ? "border-red-200 text-red-700 hover:bg-red-50"
+      : action === "approve"
+        ? "border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+        : "border-neutral-300 text-neutral-700 hover:bg-neutral-100";
+    return `<button type="button" data-vr-modal-action="${X(action)}" class="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm font-semibold transition ${tone}">${I(icon, 16)}<span>${X(label)}</span></button>`;
+  }
+
+  function renderVerificationDetailActions(item) {
+    if (!(verificationDetailActions instanceof HTMLElement)) return;
+    const status = String(item?.status || "").trim().toLowerCase();
+    const buttons = [];
+    buttons.push(`<button type="button" data-vr-modal-action="close" class="inline-flex min-h-10 items-center justify-center rounded-lg border border-neutral-300 px-3 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">Закрыть</button>`);
+    if (status === "pending") {
+      buttons.push(verificationActionButton("reject", "Отклонить", "xCircle", true));
+      buttons.push(verificationActionButton("approve", "Одобрить", "checkCircle"));
+    }
+    if (status === "approved") {
+      buttons.push(verificationActionButton("revoke", "Снять верификацию", "shieldOff", true));
+    }
+    verificationDetailActions.innerHTML = buttons.join("");
+  }
+
+  function openVerificationDetailModal(id) {
+    const item = verificationRequestsState.itemsById.get(String(id || ""));
+    if (!item || !(verificationDetailModal instanceof HTMLElement)) return;
+    verificationRequestsState.selectedId = String(item.id || "");
+    const userName = getVerificationUserName(item);
+    const userLogin = String(item.user?.username || "").trim();
+    if (verificationDetailTitle instanceof HTMLElement) {
+      verificationDetailTitle.textContent = `Заявка: ${userName}`;
+    }
+    if (verificationDetailBody instanceof HTMLElement) {
+      verificationDetailBody.innerHTML = `<div class="grid gap-3 sm:grid-cols-2">
+        ${verificationDetailField("Пользователь", `${X(userName)}${userLogin ? `<div class="text-xs text-neutral-500">@${X(userLogin)}</div>` : ""}`)}
+        ${verificationDetailField("Slug", `<span class="font-mono">${X(item.slug || "—")}</span>`)}
+        ${verificationDetailField("Компания", X(item.companyName || "—"))}
+        ${verificationDetailField("Роль", X(item.role || "—"))}
+        ${verificationDetailField("Сфера", X(getVerificationSectorLabel(item.sector)))}
+        ${verificationDetailField("Статус", statusChip(getVerificationStatusCode(item.status)))}
+        ${verificationDetailField("Доказательство", renderVerificationProof(item), true)}
+        ${verificationDetailField("Комментарий", X(item.comment || "—"), true)}
+        ${verificationDetailField("Запрошено", D(item.requestedAt))}
+        ${verificationDetailField("Решение", item.reviewedAt ? D(item.reviewedAt) : "—")}
+        ${verificationDetailField("Комментарий админа", X(item.adminNote || "—"), true)}
+      </div>`;
+    }
+    renderVerificationDetailActions(item);
+    verificationDetailModal.classList.remove("hidden");
+    verificationDetailModal.classList.add("flex");
+    verificationDetailModal.setAttribute("aria-hidden", "false");
+  }
+
+  function closeVerificationDetailModal() {
+    if (!(verificationDetailModal instanceof HTMLElement)) return;
+    verificationDetailModal.classList.add("hidden");
+    verificationDetailModal.classList.remove("flex");
+    verificationDetailModal.setAttribute("aria-hidden", "true");
+    verificationRequestsState.selectedId = "";
+  }
+
+  async function runVerificationRequestAction(action, id) {
+    const item = verificationRequestsState.itemsById.get(String(id || ""));
+    if (!item) return;
+    if (action === "details") {
+      openVerificationDetailModal(item.id);
+      return;
+    }
+    if (action === "approve") {
+      const ok = await showConfirm("Одобрить заявку на верификацию?");
+      if (!ok) return;
+      const r = await fetch(`/api/admin/verification-requests/${encodeURIComponent(item.id)}/approve`, {
+        method: "POST",
+        headers: H({ "Content-Type": "application/json" }),
+        body: JSON.stringify({}),
+      });
+      if (!r.ok) {
+        await showAlert(await E(r));
+        return;
+      }
+    } else if (action === "reject") {
+      const adminNote = String(await showPrompt("Причина отклонения", "") || "").trim();
+      if (!adminNote) return;
+      const r = await fetch(`/api/admin/verification-requests/${encodeURIComponent(item.id)}/reject`, {
+        method: "POST",
+        headers: H({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ adminNote }),
+      });
+      if (!r.ok) {
+        await showAlert(await E(r));
+        return;
+      }
+    } else if (action === "revoke") {
+      const adminNote = String(await showPrompt("Причина снятия верификации", "") || "").trim();
+      if (!adminNote) return;
+      const r = await fetch(`/api/admin/verification-requests/${encodeURIComponent(item.id)}/revoke`, {
+        method: "POST",
+        headers: H({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ adminNote }),
+      });
+      if (!r.ok) {
+        await showAlert(await E(r));
+        return;
+      }
+    } else {
+      return;
+    }
+    closeVerificationDetailModal();
+    closeAllRowMenus();
+    await loadVerificationRequests();
+    if (tab === "users") void loadUsers();
+  }
+
   async function loadVerificationRequests() {
     const form = document.getElementById("verification-filters");
     const table = document.getElementById("verification-table");
     if (!(form instanceof HTMLFormElement) || !(table instanceof HTMLElement)) return;
     syncVerificationFiltersFromLocation(form);
-    table.innerHTML = '<tr><td colspan="11" class="px-3 py-8 text-center text-neutral-500">Загрузка...</td></tr>';
+    table.innerHTML = '<tr><td colspan="4" class="px-3 py-8 text-center text-neutral-500">Загрузка...</td></tr>';
     try {
       const q = {
         status: getFormValue(form, "status", "all"),
@@ -2460,69 +2651,48 @@
       setDashboardQuery({ v_status: q.status, v_page: q.page });
       const r = await fetch(`/api/admin/verification-requests?${Q(q)}`);
       if (!r.ok) {
-        table.innerHTML = '<tr><td colspan="11" class="px-3 py-8 text-center text-rose-600">Не удалось загрузить заявки на верификацию</td></tr>';
+        table.innerHTML = '<tr><td colspan="4" class="px-3 py-8 text-center text-rose-600">Не удалось загрузить заявки на верификацию</td></tr>';
         return;
       }
       const payload = await r.json();
       const rows = Array.isArray(payload.items) ? payload.items : [];
+      verificationRequestsState.itemsById = new Map(
+        rows.map((item) => [String(item?.id || ""), item]).filter(([id]) => Boolean(id)),
+      );
       table.innerHTML = rows.length
         ? rows
           .map((x) => {
-            const proofTypeMap = {
-              email: "Email",
-              linkedin: "LinkedIn",
-              website: "Website",
-            };
-            const proofType = proofTypeMap[String(x.proofType || "").toLowerCase()] || String(x.proofType || "—");
-            const sectorMap = {
-              design: "Дизайн",
-              sales: "Продажи",
-              marketing: "Маркетинг",
-              it: "IT",
-              other: "Другое",
-            };
-            const sector = sectorMap[String(x.sector || "").toLowerCase()] || "Другое";
-            const proofValueRaw = String(x.proofValue || "").trim();
-            const proofValue = /^https?:\/\//i.test(proofValueRaw)
-              ? `<a href="${X(proofValueRaw)}" target="_blank" rel="noopener noreferrer" class="text-xs text-neutral-700 underline break-all">${X(proofValueRaw)}</a>`
-              : `<span class="text-xs break-all">${X(proofValueRaw || "—")}</span>`;
-            const userName = String(x.user?.displayName || x.user?.firstName || x.user?.username || "—");
+            const userName = getVerificationUserName(x);
             const userLogin = String(x.user?.username || "").trim();
             const userCell = `${X(userName)}${userLogin ? `<div class="text-xs text-neutral-500">@${X(userLogin)}</div>` : ""}`;
-            const reviewCell = x.reviewedAt ? D(x.reviewedAt) : "—";
-            const canReview = String(x.status || "").toLowerCase() === "pending";
-            const menu = canReview
-              ? menuWrap(
-                [
-                  menuItem({ label: "Одобрить", icon: "checkCircle", attrs: `data-act="vr-approve" data-id="${X(x.id)}"` }),
-                  menuItem({ label: "Отклонить", icon: "xCircle", attrs: `data-act="vr-reject" data-id="${X(x.id)}"`, danger: true }),
-                ].join(""),
-              )
-              : "—";
-            const verificationStatusCode =
-              x.status === "approved" ? "verification_approved" : x.status === "rejected" ? "verification_rejected" : "pending";
+            const status = String(x.status || "").toLowerCase();
+            const actions = [
+              menuItem({ label: "Подробнее", icon: "eye", attrs: `data-act="vr-details" data-id="${X(x.id)}"` }),
+            ];
+            if (status === "pending") {
+              actions.push(menuItem({ label: "Одобрить", icon: "checkCircle", attrs: `data-act="vr-approve" data-id="${X(x.id)}"` }));
+              actions.push(menuItem({ label: "Отклонить", icon: "xCircle", attrs: `data-act="vr-reject" data-id="${X(x.id)}"`, danger: true }));
+            }
+            if (status === "approved") {
+              actions.push(menuItem({ label: "Снять верификацию", icon: "shieldOff", attrs: `data-act="vr-revoke" data-id="${X(x.id)}"`, danger: true }));
+            }
+            const menu = menuWrap(actions.join(""));
+            const verificationStatusCode = getVerificationStatusCode(x.status);
             return `<tr class="admin-table-row border-t border-neutral-100">
               <td class="px-4 py-3">${userCell}</td>
               <td class="px-4 py-3 font-mono">${X(x.slug || "—")}</td>
-              <td class="px-4 py-3">${X(x.companyName || "—")}</td>
-              <td class="px-4 py-3">${X(x.role || "—")}</td>
-              <td class="px-4 py-3">${X(sector)}</td>
-              <td class="px-4 py-3"><div class="text-xs text-neutral-500">${X(proofType)}</div>${proofValue}</td>
-              <td class="px-4 py-3 text-xs">${X(x.comment || "—")}</td>
               <td class="px-4 py-3">${statusChip(verificationStatusCode)}</td>
-              <td class="px-4 py-3 text-xs">${D(x.requestedAt)}</td>
-              <td class="px-4 py-3 text-xs">${reviewCell}</td>
               <td class="px-4 py-3"><div class="admin-row-actions">${menu}</div></td>
             </tr>`;
           })
           .join("")
-        : '<tr><td colspan="11" class="px-3 py-8 text-center text-neutral-500">Заявок на верификацию нет</td></tr>';
+        : '<tr><td colspan="4" class="px-3 py-8 text-center text-neutral-500">Заявок на верификацию нет</td></tr>';
       renderPager("verification-pagination", payload.pagination, (nextPage) => {
         setFormValue(form, "page", String(nextPage));
         void loadVerificationRequests();
       });
     } catch {
-      table.innerHTML = '<tr><td colspan="11" class="px-3 py-8 text-center text-rose-600">Не удалось загрузить заявки на верификацию</td></tr>';
+      table.innerHTML = '<tr><td colspan="4" class="px-3 py-8 text-center text-rose-600">Не удалось загрузить заявки на верификацию</td></tr>';
     }
   }
 
@@ -3580,34 +3750,17 @@
       }
       return;
     }
-    if (a === "vr-approve") {
+    if (a === "vr-details") {
       const id = n.getAttribute("data-id");
       if (!id) return;
-      const ok = await showConfirm("Одобрить заявку на верификацию?");
-      if (!ok) return;
-      const r = await fetch(`/api/admin/verification-requests/${encodeURIComponent(id)}/approve`, {
-        method: "POST",
-        headers: H({ "Content-Type": "application/json" }),
-        body: JSON.stringify({}),
-      });
-      if (!r.ok) showAlert(await E(r));
-      else void loadVerificationRequests();
+      openVerificationDetailModal(id);
       closeAllRowMenus();
       return;
     }
-    if (a === "vr-reject") {
+    if (a === "vr-approve" || a === "vr-reject" || a === "vr-revoke") {
       const id = n.getAttribute("data-id");
       if (!id) return;
-      const adminNote = String(await showPrompt("Причина отклонения", "") || "").trim();
-      if (!adminNote) return;
-      const r = await fetch(`/api/admin/verification-requests/${encodeURIComponent(id)}/reject`, {
-        method: "POST",
-        headers: H({ "Content-Type": "application/json" }),
-        body: JSON.stringify({ adminNote }),
-      });
-      if (!r.ok) showAlert(await E(r));
-      else void loadVerificationRequests();
-      closeAllRowMenus();
+      await runVerificationRequestAction(a.replace("vr-", ""), id);
       return;
     }
     if (a === "rr-process") {
