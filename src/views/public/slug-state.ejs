@@ -49,7 +49,7 @@
     <%- include('../partials/order-modal') %>
       <script nonce="<%= cspNonce %>" src="/js/site-dialogs.js"></script>
       <script nonce="<%= cspNonce %>" src="/js/official-unq-letters.js"></script>
-      <script nonce="<%= cspNonce %>" src="/js/order-modal.js"></script>
+      <script nonce="<%= cspNonce %>" src="/js/order-modal.js?v=<%= encodeURIComponent(assetVersion || '') %>"></script>
   </body>
 
   </html>

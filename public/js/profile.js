@@ -2716,6 +2716,7 @@ Email: ${userEmail}
         s.user = payload.user || null;
         if (typeof window !== "undefined") {
           window.UNQProfileUser = s.user;
+          window.UNQProfileSubscription = payload.subscription || null;
         }
         if (s.user && typeof s.user === "object") {
           s.user.effectivePlan = getCurrentPlan();

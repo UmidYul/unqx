@@ -561,7 +561,33 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     return raw === "premium" ? "premium" : "premium";
   }
 
+  function shouldUseProfileRenewalFallback(options = {}) {
+    if (document.body?.getAttribute("data-page") !== "profile-page") {
+      return false;
+    }
+    const explicitOrderKind = String(options.orderKind || options.mode || "").trim();
+    if (explicitOrderKind) {
+      return normalizeOrderKind(explicitOrderKind) === "subscription_renewal";
+    }
+    const requestedPlan = resolveRequestedPlanFromOpenOptions(options);
+    if (requestedPlan !== "premium") {
+      return false;
+    }
+    if (options.slug || options.dropId || options.bracelet) {
+      return false;
+    }
+    const profileSubscription = window.UNQProfileSubscription;
+    return Boolean(
+      profileSubscription &&
+      typeof profileSubscription === "object" &&
+      (profileSubscription.isExpired || profileSubscription.expiresAt),
+    );
+  }
+
   function resolveOrderKindFromOpenOptions(options = {}) {
+    if (shouldUseProfileRenewalFallback(options)) {
+      return "subscription_renewal";
+    }
     return normalizeOrderKind(options.orderKind || options.mode || "");
   }
 
