@@ -191,6 +191,7 @@ async function findLatestActiveOrderSafe(userId) {
           id: true,
           slug: true,
           status: true,
+          orderKind: true,
           requestedPlan: true,
           slugPrice: true,
           planPrice: true,
@@ -220,6 +221,7 @@ async function findLatestActiveOrderSafe(userId) {
           id: true,
           slug: true,
           status: true,
+          orderKind: true,
           requestedPlan: true,
           slugPrice: true,
           planPrice: true,
@@ -1476,6 +1478,8 @@ router.get(
   "/order-precheck",
   asyncHandler(async (req, res) => {
     const requestedPlan = "premium";
+    const orderKindRaw = String(req.query.orderKind || "").trim().toLowerCase();
+    const orderKind = orderKindRaw === "subscription_renewal" ? "subscription_renewal" : "slug_purchase";
     const activeOrdersLimit = 3;
     const sessionUser = getUserSession(req);
     const promoCodeInput = normalizePromoCode(req.query.promoCode || req.query.promo || "");
@@ -1493,6 +1497,7 @@ router.get(
         currentPlan: "none",
         requestedPlan,
         resolvedPlan: requestedPlan,
+        orderKind,
         canPurchase: false,
         nextAction: sessionUser?.userId ? "retry" : "login",
         message,
@@ -1629,13 +1634,18 @@ router.get(
         currentPlan: "none",
         requestedPlan,
         resolvedPlan: requestedPlan,
+        orderKind,
         canPurchase: false,
         nextAction: "login",
-        message: "Войдите в аккаунт, чтобы продолжить покупку тарифа.",
+        message: orderKind === "subscription_renewal"
+          ? "Войдите в аккаунт, чтобы продолжить продление тарифа."
+          : "Войдите в аккаунт, чтобы продолжить покупку тарифа.",
         pricing: {
           ...pricing,
           braceletPrice,
-          planChargePreview: pricing.planPremiumMonthlyPriceUzs || pricing.planPremiumPrice,
+          planChargePreview: orderKind === "subscription_renewal"
+            ? (pricing.planPremiumMonthlyPriceUzs || pricing.planPremiumPrice)
+            : (pricing.planPremiumMonthlyPriceUzs || pricing.planPremiumPrice),
         },
         limits: {
           activeOrdersLimit,
@@ -1701,6 +1711,7 @@ router.get(
         currentPlan: "none",
         requestedPlan,
         resolvedPlan: requestedPlan,
+        orderKind,
         canPurchase: false,
         nextAction: "login",
         message: "Сессия устарела. Войдите снова.",
@@ -1846,12 +1857,14 @@ router.get(
           },
         }),
       );
+      const isSubscriptionRenewal = String(latestActiveOrder.orderKind || "").toLowerCase() === "subscription_renewal";
       const slugIsPending = String(slugRow?.status || "") === "pending";
-      if (slugIsPending) {
+      if (isSubscriptionRenewal || slugIsPending) {
         pendingOrder = {
           id: latestActiveOrder.id,
           slug: latestActiveOrder.slug,
           status: latestActiveOrder.status,
+          orderKind: latestActiveOrder.orderKind || "slug_purchase",
           requestedPlan: latestActiveOrder.requestedPlan,
           paymentReference: getOrderPaymentReference(latestActiveOrder.id),
           slugPrice: Number(latestActiveOrder.slugPrice || 0),
@@ -1909,15 +1922,23 @@ router.get(
     } else if (pendingOrder) {
       nextAction = "resume_pending";
       canPurchase = false;
-      message = `У вас уже есть незавершённый заказ ${pendingOrder.slug}. Продолжите оплату или отмените заказ.`;
+      message = pendingOrder.orderKind === "subscription_renewal"
+        ? "У вас уже есть незавершённое продление Premium. Продолжите оплату или отмените заказ."
+        : `У вас уже есть незавершённый заказ ${pendingOrder.slug}. Продолжите оплату или отмените заказ.`;
     } else if (activeOrdersCount >= activeOrdersLimit) {
       nextAction = "limit_reached";
       canPurchase = false;
       message = `У вас уже есть ${activeOrdersLimit} активных заказов. Дождитесь обработки или отмените один.`;
-        } else if (userSlugsCount >= slugLimit) {
+    } else if (orderKind !== "subscription_renewal" && userSlugsCount >= slugLimit) {
       nextAction = "slug_limit_reached";
       canPurchase = false;
       message = "Достигнут лимит: 3 UNQ для активной подписки Premium.";
+    } else if (orderKind === "subscription_renewal") {
+      nextAction = "checkout";
+      canPurchase = true;
+      message = subscription.isActive
+        ? "Продление Premium добавит ещё 30 дней после текущего периода."
+        : "После оплаты Premium будет продлён на 30 дней.";
     } else if (subscription.isActive) {
       nextAction = "checkout";
       canPurchase = true;
@@ -1950,6 +1971,7 @@ router.get(
       currentPlan,
       requestedPlan,
       resolvedPlan,
+      orderKind,
       canPurchase,
       nextAction,
       message,
@@ -1961,6 +1983,7 @@ router.get(
           requestedPlan: resolvedPlan,
           pricing,
           user,
+          forceSubscriptionCharge: orderKind === "subscription_renewal",
         }),
       },
       limits: {

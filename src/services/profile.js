@@ -64,7 +64,7 @@ function canCreateCard(user) {
 }
 
 function canAccessAnalytics(user) {
-  return getEffectivePlan(user).plan !== "none";
+  return Boolean(user);
 }
 
 function canAddSlug({ user, currentSlugCount = 0 }) {

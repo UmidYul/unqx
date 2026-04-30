@@ -5,7 +5,7 @@ describe("order request validation", () => {
     name: "Test User",
     letters: "AAA",
     digits: "001",
-    tariff: "basic",
+    tariff: "premium",
     products: {
       digitalCard: true,
       bracelet: false,

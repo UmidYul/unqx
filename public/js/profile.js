@@ -83,6 +83,14 @@
       .trim();
     const DEFAULT_PROFILE_AVATAR = "/brand/profile-thin.svg";
     const DEFAULT_BRACELET_PRICE = 250000;
+    const PREMIUM_REQUIRED_TITLE = "Нужен Премиум";
+    const PREMIUM_CTA_LABEL = "Подключить Премиум →";
+    const PREMIUM_UPSELL_NOTE = "Подключить Премиум · $2/мес";
+    const PREMIUM_ACTIVATION_TITLE = "Сначала подключите Премиум";
+    const PREMIUM_ACTIVATION_TEXT = "Чтобы зарезервировать UNQ и опубликовать визитку, подключите Премиум.";
+    const SUBSCRIPTION_ACTIVE_LABEL = "Подписка активна";
+    const SUBSCRIPTION_INACTIVE_LABEL = "Подписка неактивна";
+    const SUBSCRIPTION_RENEWAL_ORDER_KIND = "subscription_renewal";
 
     const avatarSrc = (url) => {
       const base = String(url || "").trim() || DEFAULT_PROFILE_AVATAR;
@@ -1267,10 +1275,10 @@ Email: ${userEmail}
         const isActive = plan === "premium";
         el.ex.classList.remove("hidden");
         el.ex.textContent = isActive
-          ? (expiresAt ? `Active until: ${fd(expiresAt)}` : "Subscription active")
-          : "Subscription inactive";
+          ? (expiresAt ? `Активна до: ${fd(expiresAt)}` : SUBSCRIPTION_ACTIVE_LABEL)
+          : SUBSCRIPTION_INACTIVE_LABEL;
         if (isActive && expiresAt) {
-          el.ex.title = `Subscription active until ${fd(expiresAt)}`;
+          el.ex.title = `Подписка активна до ${fd(expiresAt)}`;
         } else {
           el.ex.removeAttribute("title");
         }
@@ -1282,10 +1290,10 @@ Email: ${userEmail}
         const link = el.upg.querySelector('[data-order-link][data-order-plan="premium"]');
         const messageNode = el.upg.firstChild;
         if (messageNode && messageNode.nodeType === Node.TEXT_NODE) {
-          messageNode.textContent = "Renew Premium - $2/month. ";
+          messageNode.textContent = `${PREMIUM_UPSELL_NOTE}. `;
         }
         if (link instanceof HTMLElement) {
-          link.textContent = "Renew Premium >";
+          link.textContent = PREMIUM_CTA_LABEL;
         }
         el.upg.classList.toggle("hidden", plan !== "none");
       }
@@ -1293,8 +1301,12 @@ Email: ${userEmail}
 
     const renderHeaderStats = () => {
       const slugItems = Array.isArray(s.slugs) ? s.slugs : [];
-      const totalViews = slugItems.reduce((sum, item) => sum + Number(item?.stats?.views || 0), 0);
-      const cardsCount = slugItems.length;
+      const analyticsSlugItems = Array.isArray(s.analyticsBootstrap?.slugs) ? s.analyticsBootstrap.slugs : [];
+      const hasProfileSlugItems = slugItems.length > 0;
+      const totalViews = hasProfileSlugItems
+        ? slugItems.reduce((sum, item) => sum + Number(item?.stats?.views || 0), 0)
+        : Number(s.analyticsPayload?.kpi?.views || 0);
+      const cardsCount = hasProfileSlugItems ? slugItems.length : analyticsSlugItems.length;
       const ctrRaw = Number(s.analyticsPayload?.kpi?.ctr || 0);
       const unique = Number(s.analyticsPayload?.kpi?.uniqueVisitors || 0);
       const bestViews = Math.max(
@@ -1343,10 +1355,10 @@ Email: ${userEmail}
         }
         el.slugs.innerHTML = renderStateCard({
           icon: "shopping",
-          title: "Activate Premium first",
-          text: "To reserve UNQ and publish your card, activate Premium.",
+          title: PREMIUM_ACTIVATION_TITLE,
+          text: PREMIUM_ACTIVATION_TEXT,
           buttonId: "profile-slugs-order-btn",
-          buttonLabel: "Activate Premium >",
+          buttonLabel: PREMIUM_CTA_LABEL,
         });
         return;
       }
@@ -1424,8 +1436,8 @@ Email: ${userEmail}
         el.addSlug.classList.remove("hidden");
         if (plan !== "premium" && count >= 1) {
           el.addSlug.disabled = true;
-          el.addSlug.textContent = "Premium required";
-          el.addSlugNote.textContent = "Renew Premium - $2/month";
+          el.addSlug.textContent = PREMIUM_REQUIRED_TITLE;
+          el.addSlugNote.textContent = PREMIUM_UPSELL_NOTE;
         } else if (plan === "premium" && count >= 3) {
           el.addSlug.disabled = true;
           el.addSlug.textContent = "Добавить UNQ";
@@ -1712,7 +1724,7 @@ Email: ${userEmail}
 
       const getRequestMetaChips = (requestItem) => {
         const chips = [];
-        chips.push(`<span class="profile-request-chip">${requestItem.requestedPlan === "premium" ? "Premium" : "Без тарифа"}</span>`);
+        chips.push(`<span class="profile-request-chip">${requestItem.requestedPlan === "premium" ? "Премиум" : "Без тарифа"}</span>`);
         chips.push(`<span class="profile-request-chip">Создано: ${fdt(requestItem.createdAt)}</span>`);
         if (requestItem.purchasedAt) {
           chips.push(`<span class="profile-request-chip">Оплачено: ${fdt(requestItem.purchasedAt)}</span>`);
@@ -1844,7 +1856,7 @@ Email: ${userEmail}
       if (el.reqNewBtn instanceof HTMLButtonElement) {
         if (plan !== "premium" && count >= 1) {
           el.reqNewBtn.disabled = false;
-          el.reqNewBtn.title = "Renew Premium - $2/month";
+          el.reqNewBtn.title = PREMIUM_UPSELL_NOTE;
         } else if (plan === "premium" && count >= 3) {
           el.reqNewBtn.disabled = true;
           el.reqNewBtn.title = "Достигнут лимит 3 UNQ";
@@ -2170,7 +2182,7 @@ Email: ${userEmail}
         tips.push('<div class="flex items-center justify-between gap-2"><span>Добавь NFC-стикер - +100 к Score</span><button type="button" data-a="open-bracelet-order-modal" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold">Заказать стикер</button></div>');
       }
       if (Number(score.scorePlan || 0) === 0) {
-        tips.push('<div class="flex items-center justify-between gap-2"><span>Renew Premium - $2/month - +49 to Score</span><button type="button" data-order-link data-order-plan="premium" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold">Renew Premium ></button></div>');
+        tips.push(`<div class="flex items-center justify-between gap-2"><span>${PREMIUM_UPSELL_NOTE} · +49 к Score</span><button type="button" data-order-link data-order-plan="premium" data-order-kind="${SUBSCRIPTION_RENEWAL_ORDER_KIND}" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold">${PREMIUM_CTA_LABEL}</button></div>`);
       }
       if (Number(score.scoreViews || 0) < 150) tips.push("<p>Поделись визиткой чтобы получить больше просмотров</p>");
       if (Number(score.scoreTenure || 0) < 100) tips.push("<p>Score растёт каждый месяц автоматически</p>");
@@ -2253,9 +2265,16 @@ Email: ${userEmail}
       analyticsCharts[key] = new Chart(canvas, config);
     };
 
+    const hasAnalyticsSlugs = () => {
+      const bootstrapSlugs = Array.isArray(s.analyticsBootstrap?.slugs) ? s.analyticsBootstrap.slugs : [];
+      if (bootstrapSlugs.length > 0) return true;
+      const profileSlugs = Array.isArray(s.slugs) ? s.slugs : [];
+      return profileSlugs.length > 0;
+    };
+
     const renderAnalytics = () => {
-      const plan = getCurrentPlan();
-      if (plan === "none") {
+      const hasSlugs = hasAnalyticsSlugs();
+      if (!hasSlugs) {
         destroyAnalyticsCharts();
         if (el.analyticsContent instanceof HTMLElement) el.analyticsContent.classList.add("hidden");
         if (el.analyticsEmpty instanceof HTMLElement) {
@@ -2263,9 +2282,9 @@ Email: ${userEmail}
           el.analyticsEmpty.innerHTML = renderStateCard({
             icon: "bar-chart-2",
             title: "Нет данных",
-            text: "Аналитика появится после активации визитки.",
+            text: "Аналитика появится, когда у вас будут просмотры визитки.",
             buttonId: "profile-analytics-order-btn",
-            buttonLabel: "Выбрать тариф >",
+            buttonLabel: "Занять UNQ >",
           });
         }
         return;
@@ -2273,7 +2292,10 @@ Email: ${userEmail}
       if (el.analyticsContent instanceof HTMLElement) el.analyticsContent.classList.remove("hidden");
       if (el.analyticsEmpty instanceof HTMLElement) el.analyticsEmpty.classList.add("hidden");
       const payload = s.analyticsPayload;
-      if (!payload) return;
+      if (!payload) {
+        destroyAnalyticsCharts();
+        return;
+      }
 
       if (el.analyticsViews) el.analyticsViews.textContent = String(Number(payload.kpi?.views || 0));
       if (el.analyticsUnique) el.analyticsUnique.textContent = String(Number(payload.kpi?.uniqueVisitors || 0));
@@ -2373,7 +2395,6 @@ Email: ${userEmail}
     };
 
     const refreshAnalytics = async () => {
-      if (getCurrentPlan() === "none") return;
       if (!s.analyticsBootstrap) {
         try {
           s.analyticsBootstrap = await api("/api/profile/analytics/bootstrap");
@@ -2545,7 +2566,7 @@ Email: ${userEmail}
             buttons: btns,
           }),
         });
-        showSaveAlert("Payment карточка сохранена");
+        showSaveAlert("Платёжная карта сохранена");
         await loadPaymentCards();
         // Re-open editor with refreshed data
         const updated = s.paymentCards.find((c) => c.id === s.pcEditing);
@@ -2920,6 +2941,12 @@ Email: ${userEmail}
       return false;
     };
 
+    const openPremiumRenewalModal = () =>
+      openOrderModal({
+        plan: "premium",
+        orderKind: SUBSCRIPTION_RENEWAL_ORDER_KIND,
+      });
+
     el.tabs.forEach((button) =>
       button.addEventListener("click", () => {
         location.hash = `#${button.getAttribute("data-tab-target") || "slugs"}`;
@@ -3133,11 +3160,11 @@ Email: ${userEmail}
 
       if (plan !== "premium" && count >= 1) {
         showModal(
-          "Premium required",
-          "Renew Premium - $2/month",
-          "Renew Premium >",
+          PREMIUM_REQUIRED_TITLE,
+          PREMIUM_UPSELL_NOTE,
+          PREMIUM_CTA_LABEL,
           () => {
-            openOrderModal({ plan: "premium" });
+            openPremiumRenewalModal();
           },
         );
         return;
@@ -3153,7 +3180,14 @@ Email: ${userEmail}
         return;
       }
       if (plan !== "premium" && count >= 1) {
-        showModal("Premium required", "Renew Premium - $2/month");
+        showModal(
+          PREMIUM_REQUIRED_TITLE,
+          PREMIUM_UPSELL_NOTE,
+          PREMIUM_CTA_LABEL,
+          () => {
+            openPremiumRenewalModal();
+          },
+        );
         return;
       }
       if (plan === "premium" && count >= 3) {
@@ -3477,9 +3511,14 @@ Email: ${userEmail}
       }
       if (
         target.id === "profile-slugs-order-btn" ||
-        target.id === "profile-card-order-btn" ||
-        target.id === "profile-analytics-order-btn" ||
-        target.id === "profile-requests-order-btn"
+        target.id === "profile-card-order-btn"
+      ) {
+        openPremiumRenewalModal();
+        return;
+      }
+      if (
+        target.id === "profile-requests-order-btn" ||
+        target.id === "profile-analytics-order-btn"
       ) {
         openOrderModal({});
       }

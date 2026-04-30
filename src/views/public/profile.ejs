@@ -72,9 +72,9 @@
           </article>
         </div>
         <div class="profile-header-actions">
-          <button id="profile-sidebar-choose-plan" type="button" data-order-link data-order-plan="premium"
+          <button id="profile-sidebar-choose-plan" type="button" data-order-link data-order-plan="premium" data-order-kind="subscription_renewal"
             class="interactive-btn hidden min-h-11 rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold text-left">
-            Подключить Premium
+            Подключить Премиум
           </button>
           <button id="profile-logout-btn" type="button"
             class="interactive-btn min-h-11 rounded-xl border border-red-200 px-3 py-2 text-sm font-semibold text-red-700">
@@ -106,15 +106,15 @@
         </button>
         <button type="button" data-tab-target="payment-cards"
           class="profile-tab-btn interactive-btn min-h-11 px-1 py-2 text-center text-xs font-medium sm:text-sm">
-          Payment
+          Оплата
         </button>
       </nav>
 
       <section class="min-w-0 space-y-4">
         <div id="profile-upgrade-banner"
           class="hidden rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          Открыть Premium · $2/мес.
-          <a href="#" data-order-link data-order-plan="premium" class="ml-1 underline">Купить Премиум →</a>
+          Подключить Премиум · $2/мес.
+          <a href="#" data-order-link data-order-plan="premium" data-order-kind="subscription_renewal" class="ml-1 underline">Подключить Премиум →</a>
         </div>
 
         <article data-tab-panel="slugs"
@@ -484,9 +484,9 @@
                   <canvas id="profile-score-history-chart" height="120"></canvas>
                   <div id="profile-score-history-lock"
                     class="hidden absolute inset-0 rounded-xl bg-white/80 p-4 backdrop-blur-sm">
-                    <p class="text-sm font-semibold text-neutral-800">Открыть Premium · $2/мес.</p>
-                    <button type="button" data-order-link data-order-plan="premium"
-                      class="interactive-btn mt-2 min-h-11 rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold">Купить
+                    <p class="text-sm font-semibold text-neutral-800">Подключить Премиум · $2/мес.</p>
+                    <button type="button" data-order-link data-order-plan="premium" data-order-kind="subscription_renewal"
+                      class="interactive-btn mt-2 min-h-11 rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold">Подключить
                       Премиум →</button>
                   </div>
                 </div>
@@ -536,7 +536,7 @@
             <div id="profile-analytics-lock"
               class="mt-4 hidden rounded-xl border border-neutral-200 bg-white/80 p-4 text-sm text-neutral-700">
               Расширенные периоды аналитики (30 и 90 дней) доступны на Премиум.
-              <button type="button" data-order-link data-order-plan="premium"
+              <button type="button" data-order-link data-order-plan="premium" data-order-kind="subscription_renewal"
                 class="interactive-btn ml-2 min-h-11 rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold">
                 Улучшить тариф
               </button>
@@ -916,11 +916,11 @@
         <!-- ===== Payment Cards Tab ===== -->
         <article data-tab-panel="payment-cards"
           class="profile-tab-panel hidden min-w-0 rounded-2xl border border-neutral-200 bg-white p-4 sm:p-5">
-          <h2 class="text-lg font-bold">PAYMENT КАРТОЧКИ</h2>
+          <h2 class="text-lg font-bold">ПЛАТЁЖНЫЕ КАРТЫ</h2>
 
           <section id="pc-empty-state"
             class="mt-5 hidden rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-10 text-center text-sm text-neutral-500">
-            У вас пока нет Payment карточек. Их может создать администратор или менеджер.
+            У вас пока нет платёжных карт. Их может создать администратор или менеджер.
           </section>
 
           <!-- List of cards -->

@@ -42,7 +42,10 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     progressLabel: document.getElementById("order-modal-progress-label"),
     progressAuth: document.getElementById("order-modal-progress-auth"),
     progressNoAuth: document.getElementById("order-modal-progress-no-auth"),
+    stepLoading: document.getElementById("order-modal-step-loading"),
     stepAuth: document.getElementById("order-modal-step-auth"),
+    authTitle: document.getElementById("order-modal-title"),
+    authText: document.getElementById("order-modal-auth-text"),
     authLogin: document.getElementById("order-modal-auth-login"),
     authRegister: document.getElementById("order-modal-auth-register"),
     stepPending: document.getElementById("order-modal-step-pending"),
@@ -55,6 +58,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     slugReadonlyWrap: document.getElementById("order-modal-slug-readonly-wrap"),
     slugReadonly: document.getElementById("order-modal-slug-readonly"),
     slugInputsWrap: document.getElementById("order-modal-slug-inputs-wrap"),
+    slugPricingCard: document.getElementById("order-modal-slug-pricing-card"),
     letters: document.getElementById("order-modal-letters"),
     digits: document.getElementById("order-modal-digits"),
     slugPreview: document.getElementById("order-modal-slug-preview"),
@@ -72,12 +76,16 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     planPremiumNote: document.getElementById("order-modal-plan-premium-note"),
     planSection: document.getElementById("order-modal-plan-section"),
     planActivationNote: document.getElementById("order-modal-plan-activation-note"),
+    braceletRow: document.getElementById("order-modal-bracelet-row"),
     bracelet: document.getElementById("order-modal-bracelet"),
+    promoSection: document.getElementById("order-modal-promo-section"),
     promoCode: document.getElementById("order-modal-promo-code"),
     promoCheck: document.getElementById("order-modal-promo-check"),
     campaignHint: document.getElementById("order-modal-campaign-hint"),
     fraudHint: document.getElementById("order-modal-fraud-hint"),
+    nameSection: document.getElementById("order-modal-name-section"),
     name: document.getElementById("order-modal-name"),
+    totalSlugRow: document.getElementById("order-modal-total-slug-row"),
     totalSlugTitle: document.getElementById("order-modal-total-slug-title"),
     totalSlugValue: document.getElementById("order-modal-total-slug-value"),
     totalPlanRow: document.getElementById("order-modal-total-plan-row"),
@@ -104,6 +112,8 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     closeForm: document.getElementById("order-modal-close-form"),
     successSlug: document.getElementById("order-modal-success-slug"),
     countdown: document.getElementById("order-modal-countdown"),
+    successBody: document.getElementById("order-modal-success-body"),
+    successNote: document.getElementById("order-modal-success-note"),
     goProfile: document.getElementById("order-modal-go-profile"),
     closeSuccess: document.getElementById("order-modal-close-success"),
     pendingMeta: document.getElementById("order-modal-pending-meta"),
@@ -127,6 +137,12 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
   ) {
     return;
   }
+
+  const DEFAULT_AUTH_TITLE = dom.authTitle instanceof HTMLElement ? String(dom.authTitle.textContent || "") : "";
+  const DEFAULT_AUTH_TEXT = dom.authText instanceof HTMLElement ? String(dom.authText.textContent || "") : "";
+  const DEFAULT_SUBMIT_LABEL = dom.submit instanceof HTMLButtonElement ? String(dom.submit.textContent || "") : "Отправить заявку";
+  const DEFAULT_SUCCESS_BODY = dom.successBody instanceof HTMLElement ? String(dom.successBody.textContent || "") : "";
+  const DEFAULT_SUCCESS_NOTE = dom.successNote instanceof HTMLElement ? String(dom.successNote.textContent || "") : "";
 
   let csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "";
   let currentUser = null;
@@ -157,9 +173,11 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     pricing: { ...DEFAULT_PRICING, userPlan: "none" },
     slugPricing: { ...DEFAULT_SLUG_PRICING },
     forceAuth: false,
+    orderKind: "slug_purchase",
   };
 
   const STEP_PROGRESS = {
+    loading: { width: "12%" },
     auth: { width: "25%" },
     form: { width: "25%" },
     pending: { width: "100%", label: "Незавершённый заказ", line: "Продолжите оплату или отмените заказ" },
@@ -174,11 +192,21 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     document.querySelector('meta[name="csrf-token"]')?.setAttribute("content", nextToken);
   }
 
+  function normalizeOrderKind(value) {
+    const raw = String(value || "").trim().toLowerCase();
+    return raw === "subscription_renewal" ? "subscription_renewal" : "slug_purchase";
+  }
+
+  function isSubscriptionRenewalMode(orderKind = state.orderKind) {
+    return normalizeOrderKind(orderKind) === "subscription_renewal";
+  }
+
   function normalizeOpenIntent(options = {}) {
     const slugParsed = splitSlug(options.slug || "");
     const slug = slugParsed ? slugParsed.slug : "";
     const planRaw = String(options.plan || "").trim().toLowerCase();
     const plan = planRaw === "premium" ? "premium" : "";
+    const orderKind = normalizeOrderKind(options.orderKind || options.mode || "");
     const theme = String(options.theme || "").trim();
     const dropId = String(options.dropId || "").trim();
     const refSource = String(options.refSource || "").trim().toLowerCase().replace(/[^a-z0-9_-]/g, "").slice(0, 40);
@@ -187,6 +215,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     return {
       slug,
       plan,
+      orderKind,
       theme,
       bracelet: Boolean(options.bracelet),
       dropId,
@@ -198,7 +227,17 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
 
   function hasMeaningfulIntent(intent) {
     if (!intent || typeof intent !== "object") return false;
-    return Boolean(intent.slug || intent.plan || intent.theme || intent.bracelet || intent.dropId || intent.refSource || intent.refOffer || intent.promoCode);
+    return Boolean(
+      intent.slug ||
+      intent.plan ||
+      intent.theme ||
+      intent.bracelet ||
+      intent.dropId ||
+      intent.refSource ||
+      intent.refOffer ||
+      intent.promoCode ||
+      normalizeOrderKind(intent.orderKind) === "subscription_renewal"
+    );
   }
 
   function readPendingPurchaseIntent() {
@@ -522,6 +561,10 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     return raw === "premium" ? "premium" : "premium";
   }
 
+  function resolveOrderKindFromOpenOptions(options = {}) {
+    return normalizeOrderKind(options.orderKind || options.mode || "");
+  }
+
   function resolveFallbackAttribution() {
     const path = String(window.location.pathname || "").toLowerCase();
     if (path.startsWith("/drops")) {
@@ -550,9 +593,11 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
 
   async function fetchOrderPrecheck(options = {}) {
     const requestedPlan = resolveRequestedPlanFromOpenOptions(options);
+    const orderKind = resolveOrderKindFromOpenOptions(options);
     const attribution = resolveAttributionFromOptions(options);
     const params = new URLSearchParams();
     params.set("requestedPlan", requestedPlan);
+    params.set("orderKind", orderKind);
     if (attribution.refSource) params.set("refSource", attribution.refSource);
     if (attribution.refOffer) params.set("refOffer", attribution.refOffer);
     const promoCode = String(state.promoCode || (dom.promoCode instanceof HTMLInputElement ? dom.promoCode.value : "") || "")
@@ -587,6 +632,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
         currentPlan: currentUserPlan(),
         requestedPlan,
         resolvedPlan: requestedPlan,
+        orderKind,
         canPurchase: Boolean(currentUser),
         nextAction: currentUser ? "checkout" : "login",
         message: "",
@@ -646,9 +692,12 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     };
   }
 
-  function resolvePlanCharge(selected, userPlan, pricing) {
+  function resolvePlanCharge(selected, userPlan, pricing, orderKind = state.orderKind) {
     if (selected !== "premium") {
       return 0;
+    }
+    if (isSubscriptionRenewalMode(orderKind)) {
+      return Number(pricing.planPremiumMonthlyPriceUzs || pricing.planPremiumPrice || 0);
     }
     if (userPlan === "premium") {
       return 0;
@@ -656,8 +705,9 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     return Number(pricing.planPremiumMonthlyPriceUzs || pricing.planPremiumPrice || 0);
   }
 
-  function syncPlanVisibilityByUserPlan(userPlan) {
+  function syncPlanVisibilityByUserPlan(userPlan, orderKind = state.orderKind) {
     const isPremium = userPlan === "premium";
+    const renewalMode = isSubscriptionRenewalMode(orderKind);
 
     if (dom.planBasicCard instanceof HTMLElement) {
       dom.planBasicCard.classList.add("hidden");
@@ -666,13 +716,13 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
       dom.planPremiumCard.classList.remove("hidden");
     }
     if (dom.planSection instanceof HTMLElement) {
-      dom.planSection.classList.toggle("hidden", isPremium);
+      dom.planSection.classList.toggle("hidden", isPremium && !renewalMode);
     }
 
     dom.planBasic.checked = false;
     dom.planBasic.disabled = true;
     dom.planPremium.checked = true;
-    dom.planPremium.disabled = isPremium;
+    dom.planPremium.disabled = renewalMode ? true : isPremium;
   }
 
   async function refreshPricing() {
@@ -727,6 +777,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
         error.code = payload.code;
         error.reason = payload.reason;
         error.issues = payload.issues;
+        error.payload = payload;
         throw error;
       }
       if (payload && typeof payload.csrfToken === "string") {
@@ -780,7 +831,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
 
   function getFormStages() {
     const stages = [];
-    if (!state.slugLocked) {
+    if (!isSubscriptionRenewalMode() && !state.slugLocked) {
       stages.push("UNQ");
     }
     if (dom.planSection instanceof HTMLElement && !dom.planSection.classList.contains("hidden")) {
@@ -815,6 +866,10 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
       label = "";
       line = "";
     }
+    if (step === "loading") {
+      label = "";
+      line = "";
+    }
     if (dom.progressLabel instanceof HTMLElement) {
       dom.progressLabel.textContent = label;
       dom.progressLabel.classList.toggle("hidden", !label);
@@ -827,6 +882,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     }
     setProgress();
 
+    dom.stepLoading?.classList.toggle("hidden", step !== "loading");
     dom.stepAuth.classList.toggle("hidden", step !== "auth");
     dom.stepPending?.classList.toggle("hidden", step !== "pending");
     dom.stepForm.classList.toggle("hidden", step !== "form");
@@ -849,7 +905,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     const lineAuth = String(dom.progressAuth.textContent || "").trim();
     const lineNoAuth = String(dom.progressNoAuth.textContent || "").trim();
     const hasLine = Boolean(lineAuth || lineNoAuth);
-    if (currentStep === "auth" || !hasLine) {
+    if (currentStep === "auth" || currentStep === "loading" || !hasLine) {
       dom.progressAuth.classList.add("hidden");
       dom.progressNoAuth.classList.add("hidden");
       return;
@@ -879,6 +935,77 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     if (tone === "error") dom.pendingStatus.classList.add("text-red-700");
     else if (tone === "success") dom.pendingStatus.classList.add("text-emerald-700");
     else dom.pendingStatus.classList.add("text-neutral-600");
+  }
+
+  function syncCheckoutModeCopy() {
+    const renewalMode = isSubscriptionRenewalMode();
+    if (dom.authTitle instanceof HTMLElement) {
+      dom.authTitle.textContent = renewalMode ? "Войдите в аккаунт" : DEFAULT_AUTH_TITLE;
+    }
+    if (dom.authText instanceof HTMLElement) {
+      dom.authText.textContent = renewalMode
+        ? "Нужно, чтобы привязать продление Premium к вашему аккаунту."
+        : DEFAULT_AUTH_TEXT;
+    }
+    if (dom.submit instanceof HTMLButtonElement) {
+      dom.submit.textContent = renewalMode ? "Перейти к оплате" : DEFAULT_SUBMIT_LABEL;
+    }
+    if (dom.successBody instanceof HTMLElement) {
+      dom.successBody.textContent = renewalMode
+        ? "Мы подготовили заявку на продление тарифа. Нажмите кнопку ниже, чтобы открыть Telegram с готовым сообщением для оплаты."
+        : DEFAULT_SUCCESS_BODY;
+    }
+    if (dom.successNote instanceof HTMLElement) {
+      dom.successNote.textContent = renewalMode
+        ? "После оплаты мы продлим Premium на 30 дней."
+        : DEFAULT_SUCCESS_NOTE;
+    }
+    if (dom.countdown instanceof HTMLElement) {
+      dom.countdown.classList.toggle("hidden", renewalMode);
+    }
+  }
+
+  function applyCheckoutModeUi() {
+    const renewalMode = isSubscriptionRenewalMode();
+    if (renewalMode) {
+      state.promoCode = "";
+      state.promoValidationHint = "";
+      if (dom.promoCode instanceof HTMLInputElement) {
+        dom.promoCode.value = "";
+      }
+      if (dom.bracelet instanceof HTMLInputElement) {
+        dom.bracelet.checked = false;
+        dom.bracelet.disabled = true;
+      }
+      if (dom.campaignHint instanceof HTMLElement) {
+        dom.campaignHint.classList.add("hidden");
+        dom.campaignHint.textContent = "";
+      }
+      if (dom.fraudHint instanceof HTMLElement) {
+        dom.fraudHint.classList.add("hidden");
+        dom.fraudHint.textContent = "";
+      }
+      if (dom.name instanceof HTMLInputElement) {
+        dom.name.value = currentUser?.firstName || currentUser?.displayName || dom.name.value || "";
+      }
+    } else if (dom.bracelet instanceof HTMLInputElement) {
+      dom.bracelet.disabled = state.braceletForced;
+      if (state.braceletForced) {
+        dom.bracelet.checked = true;
+      }
+    }
+
+    dom.slugPricingCard?.classList.toggle("hidden", renewalMode);
+    dom.braceletRow?.classList.toggle("hidden", renewalMode);
+    dom.promoSection?.classList.toggle("hidden", renewalMode);
+    dom.nameSection?.classList.toggle("hidden", renewalMode);
+    dom.totalSlugRow?.classList.toggle("hidden", renewalMode);
+    if (renewalMode && dom.officialNotice instanceof HTMLElement) {
+      dom.officialNotice.innerHTML = "";
+      dom.officialNotice.classList.add("hidden");
+    }
+
+    syncCheckoutModeCopy();
   }
 
   function setCampaignHint(text, tone) {
@@ -939,19 +1066,27 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     const totalAmount = Number(order.totalOneTime || slugPrice + planPriceValue + braceletPriceValue);
     const userName = (currentUser?.displayName || currentUser?.firstName || "").trim() || "не указано";
     const userEmail = (currentUser?.email || "").trim() || "не указан";
+    const renewalMode = normalizeOrderKind(order.orderKind) === "subscription_renewal";
     const message =
-      `Здравствуйте! Хочу оплатить заказ #️⃣ ${reference}\n\n` +
-      `UNQ: ${slug}\n` +
-      `ФИО: ${userName}\n` +
-      `Email: ${userEmail}\n\n` +
-      `💳 Детализация оплаты:\n` +
-      `• UNQ ${slug}: ${formatPrice(slugPrice)} сум\n` +
-      (inviteeDiscountApplied > 0 ? `• Скидка по рефералке: -${formatPrice(inviteeDiscountApplied)} сум\n` : "") +
-      (promoDiscountApplied > 0 ? `• Скидка по промокоду${promoCodeApplied ? ` (${promoCodeApplied})` : ""}: -${formatPrice(promoDiscountApplied)} сум\n` : "") +
-      (bonusSpent > 0 ? `• Списано бонусов: -${formatPrice(bonusSpent)} сум\n` : "") +
-      `• Тариф ${planLabel(order.requestedPlan)}: ${formatPrice(planPriceValue)} сум\n` +
-      `• Браслет: ${formatPrice(braceletPriceValue)} сум\n\n` +
-      `Итого к оплате: ${formatPrice(totalAmount)} сум`;
+      renewalMode
+        ? `Здравствуйте! Хочу оплатить продление тарифа #️⃣ ${reference}\n\n` +
+          `ФИО: ${userName}\n` +
+          `Email: ${userEmail}\n\n` +
+          `💳 Детализация оплаты:\n` +
+          `• Продление тарифа ${planLabel(order.requestedPlan)}: ${formatPrice(planPriceValue)} сум\n\n` +
+          `Итого к оплате: ${formatPrice(totalAmount)} сум`
+        : `Здравствуйте! Хочу оплатить заказ #️⃣ ${reference}\n\n` +
+          `UNQ: ${slug}\n` +
+          `ФИО: ${userName}\n` +
+          `Email: ${userEmail}\n\n` +
+          `💳 Детализация оплаты:\n` +
+          `• UNQ ${slug}: ${formatPrice(slugPrice)} сум\n` +
+          (inviteeDiscountApplied > 0 ? `• Скидка по рефералке: -${formatPrice(inviteeDiscountApplied)} сум\n` : "") +
+          (promoDiscountApplied > 0 ? `• Скидка по промокоду${promoCodeApplied ? ` (${promoCodeApplied})` : ""}: -${formatPrice(promoDiscountApplied)} сум\n` : "") +
+          (bonusSpent > 0 ? `• Списано бонусов: -${formatPrice(bonusSpent)} сум\n` : "") +
+          `• Тариф ${planLabel(order.requestedPlan)}: ${formatPrice(planPriceValue)} сум\n` +
+          `• Браслет: ${formatPrice(braceletPriceValue)} сум\n\n` +
+          `Итого к оплате: ${formatPrice(totalAmount)} сум`;
     return `https://t.me/unqx_uz?text=${encodeURIComponent(message)}`;
   }
 
@@ -980,7 +1115,10 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
       return;
     }
 
-    const meta = `UNQ: ${String(pending.slug || "—").toUpperCase()} · Тариф: ${planLabel(pending.requestedPlan)} · Резерв до: ${formatPendingDateTime(pending.pendingExpiresAt)}`;
+    const renewalMode = normalizeOrderKind(pending.orderKind) === "subscription_renewal";
+    const meta = renewalMode
+      ? `Продление тарифа: ${planLabel(pending.requestedPlan)} · Создано: ${formatPendingDateTime(pending.createdAt)}`
+      : `UNQ: ${String(pending.slug || "—").toUpperCase()} · Тариф: ${planLabel(pending.requestedPlan)} · Резерв до: ${formatPendingDateTime(pending.pendingExpiresAt)}`;
     if (dom.pendingMeta instanceof HTMLElement) {
       dom.pendingMeta.textContent = meta;
     }
@@ -991,7 +1129,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
       quickPayState = {
         url,
         orderId: String(pending.id || "").trim(),
-        slug: String(pending.slug || "").trim().toUpperCase(),
+        slug: renewalMode ? "" : String(pending.slug || "").trim().toUpperCase(),
         reference: String(pending.paymentReference || "").trim(),
       };
       safeRenderQuickPayButton();
@@ -1022,11 +1160,16 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     state.checkoutContext = context && typeof context === "object" ? context : null;
     const precheck = state.checkoutContext;
     if (!precheck) {
+      state.orderKind = resolveOrderKindFromOpenOptions(state.lastOpenOptions || {});
+      applyCheckoutModeUi();
       renderPendingOrderState(null);
       setSubmitBlockedMessage("");
       setStatus("", "neutral");
       return "form";
     }
+
+    state.orderKind = normalizeOrderKind(precheck.orderKind || resolveOrderKindFromOpenOptions(state.lastOpenOptions || {}));
+    applyCheckoutModeUi();
 
     if (precheck.pricing && typeof precheck.pricing === "object") {
       state.pricing = {
@@ -1048,7 +1191,9 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
       precheck.authenticated = true;
       precheck.nextAction = "checkout";
       precheck.canPurchase = true;
-      precheck.message = "";
+      precheck.message = isSubscriptionRenewalMode()
+        ? "Подготовим оплату продления Premium после проверки аккаунта."
+        : "";
     }
 
     if (!precheck.authenticated || precheck.nextAction === "login") {
@@ -1062,6 +1207,12 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     renderPendingOrderState(precheck);
 
     const action = String(precheck.nextAction || "checkout");
+    if (isSubscriptionRenewalMode() && action !== "resume_pending") {
+      precheck.message =
+        precheck.canPurchase === false
+          ? String(precheck.message || "Покупка сейчас недоступна.")
+          : "Продление Premium на 30 дней без покупки нового UNQ.";
+    }
     if (action === "resume_pending" && precheck.pendingOrder) {
       setSubmitBlockedMessage("");
       setStatus("", "neutral");
@@ -1105,6 +1256,11 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
   }
 
   function setSlugMode(pricing) {
+    if (isSubscriptionRenewalMode()) {
+      dom.slugReadonlyWrap?.classList.add("hidden");
+      dom.slugInputsWrap?.classList.add("hidden");
+      return;
+    }
     const hasLocked = Boolean(state.slugLocked && pricing);
     dom.slugReadonlyWrap?.classList.toggle("hidden", !hasLocked);
     dom.slugInputsWrap?.classList.toggle("hidden", hasLocked);
@@ -1147,17 +1303,23 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
   async function updateTotals() {
     dom.letters.value = normalizeLetters(dom.letters.value);
     dom.digits.value = normalizeDigits(dom.digits.value);
-    const pricing = calculateSlugPricing(dom.letters.value, dom.digits.value);
+    const renewalMode = isSubscriptionRenewalMode();
+    applyCheckoutModeUi();
+    const pricing = renewalMode ? null : calculateSlugPricing(dom.letters.value, dom.digits.value);
     const requestedPlan = selectedPlan();
     const pricingSettings = getPricing();
     const userPlan = currentUserPlan();
-    const planCharge = resolvePlanCharge(requestedPlan, userPlan, pricingSettings);
+    const planCharge = resolvePlanCharge(requestedPlan, userPlan, pricingSettings, state.orderKind);
     const planCardBasic = pricingSettings.planBasicPrice;
     const planCardPremium = Number(pricingSettings.planPremiumMonthlyPriceUzs || pricingSettings.planPremiumPrice || 0);
-    const bracelet = dom.bracelet.checked;
+    const bracelet = renewalMode ? false : dom.bracelet.checked;
     const slugBasePrice = Number(state.slugPricing?.basePrice || DEFAULT_SLUG_PRICING.basePrice);
     const fallbackSlugPrice = pricing ? pricing.total : 0;
-    const server = pricing ? await resolveServerPrice(pricing.slug, fallbackSlugPrice) : { total: 0, flash: null };
+    const server = renewalMode
+      ? { total: 0, flash: null, source: "renewal", calculation: null }
+      : pricing
+        ? await resolveServerPrice(pricing.slug, fallbackSlugPrice)
+        : { total: 0, flash: null };
     if (pricing && !server) {
       if (dom.officialNotice instanceof HTMLElement) {
         dom.officialNotice.innerHTML = "";
@@ -1170,7 +1332,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     const productDiscountAmount = Math.max(0, Math.round(slugBaseForCap - slugPrice));
     const referral = state.checkoutContext?.referral && typeof state.checkoutContext.referral === "object" ? state.checkoutContext.referral : null;
     const promo = state.checkoutContext?.promo && typeof state.checkoutContext.promo === "object" ? state.checkoutContext.promo : null;
-    const promoApplied = Boolean(promo?.applied);
+    const promoApplied = renewalMode ? false : Boolean(promo?.applied);
     const promoDiscountType = String(promo?.discountType || "").trim().toLowerCase();
     const promoDiscountValue = Math.max(0, Math.round(Number(promo?.discountValue || 0)));
     const applyPromo = (price) => {
@@ -1212,7 +1374,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     const lucky = state.checkoutContext?.lucky && typeof state.checkoutContext.lucky === "object"
       ? state.checkoutContext.lucky
       : null;
-    const luckyApplied = Boolean(lucky?.active && lucky?.appliesToCurrentSlug);
+    const luckyApplied = renewalMode ? false : Boolean(lucky?.active && lucky?.appliesToCurrentSlug);
     const luckyPercent = Math.max(0, Math.min(100, Math.round(Number(lucky?.discountPercent || 10))));
     const luckyTargetSlug = String(lucky?.targetSlug || "").trim().toUpperCase();
     const luckyDiscountApplied = luckyApplied ? Math.min(slugPayable, Math.round((slugPayable * luckyPercent) / 100)) : 0;
@@ -1221,10 +1383,11 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     const oneTime = slugAfterLucky + planCharge + braceletPrice;
     const slugLabel = pricing ? pricing.slug : "___ ___";
     const rarity = getRarity(slugPrice);
+    const hasExistingPlan = !renewalMode && userPlan === "premium" && planCharge <= 0;
 
     setSlugMode(pricing);
 
-    if (dom.officialNotice instanceof HTMLElement) {
+    if (!renewalMode && dom.officialNotice instanceof HTMLElement) {
       const api = window.UNQOfficialLetters;
       const slugForCheck = pricing ? String(pricing.slug || "").replace(/\s/g, "") : "";
       const show =
@@ -1252,24 +1415,26 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
       dom.planPremiumPrice.textContent = `${formatPrice(planCardPremium)} сум`;
     }
     if (dom.planPremiumNote instanceof HTMLElement) {
-      dom.planPremiumNote.textContent = userPlan === "premium" ? "подписка активна ✓" : "$2/мес";
+      dom.planPremiumNote.textContent = renewalMode ? "продление на 30 дней" : (userPlan === "premium" ? "подписка активна ✓" : "$2/мес");
     }
     if (dom.planActivationNote instanceof HTMLElement) {
-      dom.planActivationNote.textContent = "После оплаты активируем Premium на 30 дней.";
+      dom.planActivationNote.textContent = renewalMode
+        ? "После оплаты продлим Premium на 30 дней."
+        : "После оплаты активируем Premium на 30 дней.";
     }
-    syncPlanVisibilityByUserPlan(userPlan);
+    syncPlanVisibilityByUserPlan(userPlan, state.orderKind);
 
-    if (dom.slugPreview instanceof HTMLElement) {
+    if (!renewalMode && dom.slugPreview instanceof HTMLElement) {
       dom.slugPreview.textContent = `unqx.uz/${slugLabel.replace(" ", "")}`;
     }
-    if (dom.slugPrice instanceof HTMLElement) {
+    if (!renewalMode && dom.slugPrice instanceof HTMLElement) {
       if (server?.flash) {
         dom.slugPrice.innerHTML = `<span class=\"line-through text-neutral-400\">${formatPrice(server.flash.basePrice)}</span> <span class=\"text-emerald-700\">${formatPrice(slugPrice)}</span>`;
       } else {
         dom.slugPrice.textContent = formatPrice(slugPrice);
       }
     }
-    if (dom.formula instanceof HTMLElement) {
+    if (!renewalMode && dom.formula instanceof HTMLElement) {
       if (server?.flash) {
         dom.formula.textContent = `Flash sale применён (-${server.flash.discountPercent}%)`;
       } else if (server?.source === "override") {
@@ -1306,14 +1471,14 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
         }
       }
     }
-    if (dom.rarity instanceof HTMLElement) {
+    if (!renewalMode && dom.rarity instanceof HTMLElement) {
       dom.rarity.className = `inline-flex rounded-full border px-2.5 py-1 text-[11px] font-semibold tracking-wider ${rarity.cls}`;
       dom.rarity.textContent = rarity.label;
     }
-    if (dom.totalSlugTitle instanceof HTMLElement) {
+    if (!renewalMode && dom.totalSlugTitle instanceof HTMLElement) {
       dom.totalSlugTitle.textContent = `UNQ ${pricing ? pricing.slug : "AAA000"}`;
     }
-    if (dom.totalSlugValue instanceof HTMLElement) {
+    if (!renewalMode && dom.totalSlugValue instanceof HTMLElement) {
       dom.totalSlugValue.textContent = `${formatPrice(slugAfterLucky)} сум`;
     }
     if (dom.totalPlanTitle instanceof HTMLElement) {
@@ -1378,7 +1543,17 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
       dom.totalNow.textContent = `${formatPrice(oneTime)} сум`;
     }
     if (dom.totalMonthly instanceof HTMLElement) {
-      dom.totalMonthly.textContent = "Premium подписка · $2/мес · продление вручную";
+      dom.totalMonthly.textContent = renewalMode
+        ? "Продление Premium · 30 дней после оплаты"
+        : "Premium подписка · $2/мес · продление вручную";
+    }
+    if (renewalMode) {
+      setCampaignHint("");
+      if (dom.fraudHint instanceof HTMLElement) {
+        dom.fraudHint.classList.add("hidden");
+        dom.fraudHint.textContent = "";
+      }
+      return;
     }
     {
       const campaignApplied = Boolean(referral?.campaignApplied);
@@ -1438,6 +1613,9 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
   }
 
   async function validatePromoCodeManually() {
+    if (isSubscriptionRenewalMode()) {
+      return;
+    }
     if (!(dom.promoCode instanceof HTMLInputElement)) {
       return;
     }
@@ -1594,6 +1772,14 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
   }
 
   async function refreshUser() {
+    if (!currentUser) {
+      const fallbackUser = getSessionUserFallback();
+      if (fallbackUser) {
+        currentUser = fallbackUser;
+      }
+    }
+    renderUser();
+    setProgress();
     const [authResult] = await Promise.allSettled([
       (async () => {
         const response = await fetch("/api/auth/me", {
@@ -1625,6 +1811,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     const queryPlan = params.get("tariff");
     const queryTheme = params.get("theme");
     const parsed = splitSlug(options.slug || "");
+    state.orderKind = normalizeOrderKind(precheck?.orderKind || resolveOrderKindFromOpenOptions(options));
     const currentPlan = normalizePlan(precheck?.currentPlan || currentUserPlan());
     const defaultPlan = "premium";
     const contextPlan = precheck?.resolvedPlan === "premium" ? "premium" : "";
@@ -1642,11 +1829,13 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     state.dropId = typeof options.dropId === "string" && options.dropId ? options.dropId : null;
     state.refSource = attribution.refSource;
     state.refOffer = attribution.refOffer;
-    state.promoCode = String(options.promoCode || precheck?.promo?.code || "").trim().toUpperCase().replace(/[^A-Z0-9_-]/g, "").slice(0, 32);
+    state.promoCode = isSubscriptionRenewalMode()
+      ? ""
+      : String(options.promoCode || precheck?.promo?.code || "").trim().toUpperCase().replace(/[^A-Z0-9_-]/g, "").slice(0, 32);
     if (dom.promoCode instanceof HTMLInputElement) {
       dom.promoCode.value = state.promoCode;
     }
-    if (currentPlan === "none") {
+    if (currentPlan === "none" && !isSubscriptionRenewalMode()) {
       dom.planPremium.disabled = false;
       dom.planPremium.checked = plan === "premium";
     } else {
@@ -1655,10 +1844,10 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     }
     dom.planBasic.disabled = true;
     dom.planBasic.checked = false;
-    syncPlanVisibilityByUserPlan(currentPlan);
-    dom.bracelet.checked = state.braceletForced;
-    dom.bracelet.disabled = state.braceletForced;
-    if (parsed) {
+    syncPlanVisibilityByUserPlan(currentPlan, state.orderKind);
+    dom.bracelet.checked = isSubscriptionRenewalMode() ? false : state.braceletForced;
+    dom.bracelet.disabled = isSubscriptionRenewalMode() ? true : state.braceletForced;
+    if (parsed && !isSubscriptionRenewalMode()) {
       dom.letters.value = parsed.letters;
       dom.digits.value = parsed.digits;
     } else if (!preserveSlug) {
@@ -1668,6 +1857,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     if (currentUser && !dom.name.value.trim()) {
       dom.name.value = currentUser.firstName || currentUser.displayName || "";
     }
+    applyCheckoutModeUi();
     setStatus("", "neutral");
     setSubmitBlockedMessage("");
     state.initialFormSnapshot = getCurrentFormSnapshot();
@@ -1677,11 +1867,14 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
   async function open(options = {}) {
     state.lastOpenOptions = options && typeof options === "object" ? { ...options } : {};
     state.forceAuth = document.body?.getAttribute("data-page") === "profile-page";
+    state.orderKind = normalizeOrderKind(state.lastOpenOptions.orderKind || state.lastOpenOptions.mode || "");
     lastFocusedElement = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     isOpen = true;
     isClosing = false;
     stopCountdown();
     safeRenderQuickPayButton();
+    applyCheckoutModeUi();
+    setStep("loading");
     dom.root.style.display = "block";
     dom.root.classList.remove("hidden");
     dom.root.classList.add("block");
@@ -1738,6 +1931,9 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     setStatus("", "neutral");
     // Сбросить состояние формы и lastOpenOptions
     state.lastOpenOptions = {};
+    state.checkoutContext = null;
+    state.orderKind = "slug_purchase";
+    state.promoValidationHint = "";
     if (dom.letters) dom.letters.value = "";
     if (dom.digits) dom.digits.value = "";
     if (dom.name) dom.name.value = "";
@@ -1790,12 +1986,13 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
       setStatus(state.submitBlockedMessage || String(state.checkoutContext.message || "Покупка сейчас недоступна."), "error");
       return;
     }
-    const pricing = calculateSlugPricing(dom.letters.value, dom.digits.value);
-    if (!pricing) {
+    const renewalMode = isSubscriptionRenewalMode();
+    const pricing = renewalMode ? null : calculateSlugPricing(dom.letters.value, dom.digits.value);
+    if (!renewalMode && !pricing) {
       setStatus("Заполни UNQ в формате AAA000", "error");
       return;
     }
-    if (!dom.name.value.trim()) {
+    if (!renewalMode && !dom.name.value.trim()) {
       setStatus("Имя для визитки обязательно", "error");
       return;
     }
@@ -1806,6 +2003,47 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     dom.submit.textContent = "Отправка...";
 
     try {
+      if (renewalMode) {
+        const payload = await postJson("/api/profile/subscription/renew", {});
+        const paymentUrl = String(payload?.paymentUrl || "").trim();
+        const orderId = String(payload?.order?.id || "").trim();
+        const renewalEndAt = payload?.renewalWindow?.endAt ? new Date(payload.renewalWindow.endAt) : null;
+        if (dom.successSlug instanceof HTMLElement) {
+          dom.successSlug.textContent =
+            renewalEndAt && Number.isFinite(renewalEndAt.getTime())
+              ? `Premium будет продлён до ${renewalEndAt.toLocaleDateString("ru-RU")}`
+              : "Продление Premium готово к оплате";
+        }
+        if (dom.successNote instanceof HTMLElement && renewalEndAt && Number.isFinite(renewalEndAt.getTime())) {
+          dom.successNote.textContent = `После оплаты Premium будет активен до ${renewalEndAt.toLocaleDateString("ru-RU")}.`;
+        }
+        if (dom.countdown instanceof HTMLElement) {
+          stopCountdown();
+          dom.countdown.textContent = "";
+          dom.countdown.classList.add("hidden");
+        }
+        const telegramLink = dom.root.querySelector("#order-modal-telegram-link");
+        if (telegramLink instanceof HTMLAnchorElement) {
+          telegramLink.href = paymentUrl || "#";
+        }
+        if (paymentUrl) {
+          lastTelegramPaymentUrl = paymentUrl;
+          quickPayState = {
+            url: paymentUrl,
+            orderId,
+            slug: "",
+            reference: "",
+          };
+          safeRenderQuickPayButton();
+        }
+        setStep("success");
+        if (paymentUrl) {
+          openTelegramUrl(paymentUrl);
+        }
+        window.dispatchEvent(new CustomEvent("unqx:subscription-renewal:submitted", { detail: payload }));
+        return;
+      }
+
       const payload = await postJson("/api/cards/order-request", {
         name: dom.name.value.trim(),
         letters: pricing.letters,
@@ -1890,6 +2128,29 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
       openTelegramUrl(requiredUrl);
       window.dispatchEvent(new CustomEvent("unqx:order:submitted", { detail: payload }));
     } catch (error) {
+      if (renewalMode && error.code === "SUBSCRIPTION_RENEWAL_PENDING") {
+        const paymentUrl = String(error?.payload?.paymentUrl || "").trim();
+        const orderId = String(error?.payload?.order?.id || "").trim();
+        if (paymentUrl) {
+          lastTelegramPaymentUrl = paymentUrl;
+          quickPayState = {
+            url: paymentUrl,
+            orderId,
+            slug: "",
+            reference: "",
+          };
+          safeRenderQuickPayButton();
+        }
+        await refreshCheckoutContext();
+        if (paymentUrl) {
+          openTelegramUrl(paymentUrl);
+        }
+        return;
+      }
+      if (renewalMode && error.code === "SUBSCRIPTION_RENEWAL_UNAVAILABLE") {
+        setStatus("Продление Premium сейчас недоступно. Попробуйте позже.", "error");
+        return;
+      }
       if (error.code === "AUTH_REQUIRED") {
         setStep("auth");
         return;
@@ -1988,6 +2249,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
         const options = {
           slug: node.getAttribute("data-order-prefill") || "",
           plan: node.getAttribute("data-order-plan") || "",
+          orderKind: node.getAttribute("data-order-kind") || "",
           theme: node.getAttribute("data-order-theme") || "",
           bracelet: node.getAttribute("data-order-bracelet") === "true",
           dropId: node.getAttribute("data-drop-id") || "",
