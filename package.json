@@ -14,6 +14,7 @@
     "build:css": "tailwindcss -i ./src/styles/tailwind.input.css -o ./public/css/tailwind.generated.css --minify",
     "check:mojibake": "node scripts/check-mojibake.js",
     "sessions:clear": "node scripts/clear-user-sessions.js",
+    "subscriptions:restore-paused": "node scripts/restore-auto-paused-cards.js",
     "seed:visual": "node scripts/seed-visual-fixture.cjs",
     "test:visual": "node scripts/visual-compare.mjs",
     "test:visual:seed": "npm run seed:visual && npm run test:visual",
