@@ -14,6 +14,8 @@ const {
   getOrderPaymentReference,
   buildManualTelegramPaymentUrl,
   normalizeTelegramUsername,
+  toTelegramPlanPriceLabel,
+  toTelegramTotalPriceLabel,
 } = require("../../services/payment-flow");
 const { getActiveFlashSale, applyFlashSaleToPrice } = require("../../services/flash-sales");
 const { markDropSlugSold } = require("../../services/drops");
@@ -1900,6 +1902,7 @@ router.get(
             bonusSpent: latestActiveOrder.bonusSpent,
             bracelet: Boolean(latestActiveOrder.bracelet),
             braceletPrice,
+            planMonthlyPriceUsd: Number(pricing?.planPremiumMonthlyPriceUsd || 2),
             totalAmount:
               Number(latestActiveOrder.slugPrice || 0) +
               Number(latestActiveOrder.planPrice || 0) +
@@ -2458,6 +2461,7 @@ router.post(
       planPrice,
       bracelet: Boolean(payload.products.bracelet),
       braceletPrice,
+      planMonthlyPriceUsd: Number(pricing?.planPremiumMonthlyPriceUsd || 2),
       totalAmount: totalOneTime,
     });
     try {
@@ -2468,13 +2472,25 @@ router.post(
         email: user.email || "",
         username: user.telegramUsername || user.username || "",
         slug,
-        slugPriceLabel: formatPrice(finalSlugPriceWithLucky),
+        slugPriceLabel: `${formatPrice(finalSlugPriceWithLucky)} сум`,
         tariff: requestedPlan,
-        tariffPriceLabel: formatPrice(tariffPriceLabelValue),
+        tariffPriceLabel: toTelegramPlanPriceLabel({
+          requestedPlan,
+          planPrice: tariffPriceLabelValue,
+          planMonthlyPriceUsd: Number(pricing?.planPremiumMonthlyPriceUsd || 2),
+        }),
         bracelet: payload.products.bracelet,
         braceletPrice: braceletPriceValue,
         contact: user.username ? `@${user.username}` : `${user.firstName}`,
-        totalOneTimeLabel: formatPrice(totalOneTime),
+        totalOneTimeLabel: toTelegramTotalPriceLabel({
+          requestedPlan,
+          slugPrice: finalSlugPriceWithLucky,
+          planPrice,
+          bracelet: Boolean(payload.products.bracelet),
+          braceletPrice,
+          totalAmount: totalOneTime,
+          planMonthlyPriceUsd: Number(pricing?.planPremiumMonthlyPriceUsd || 2),
+        }),
         statusLabel: toOrderStatusLabel("NEW"),
         themeLabel: theme || "default_dark",
         payment,

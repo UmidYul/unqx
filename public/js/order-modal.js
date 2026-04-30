@@ -417,6 +417,42 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     return Number(number || 0).toLocaleString("ru-RU").replace(/,/g, " ");
   }
 
+  function formatPremiumMonthlyUsdLabel(value = state.pricing?.planPremiumMonthlyPriceUsd || DEFAULT_PRICING.planPremiumMonthlyPriceUsd) {
+    const normalized = Number(value || 0);
+    if (!Number.isFinite(normalized) || normalized <= 0) {
+      return "$2";
+    }
+    const amount = Number.isInteger(normalized)
+      ? String(normalized)
+      : normalized.toLocaleString("en-US", {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2,
+      });
+    return `$${amount}`;
+  }
+
+  function shouldUseTelegramPremiumUsdLabel(requestedPlan, planPrice) {
+    return normalizePlan(requestedPlan) === "premium" && Number(planPrice || 0) > 0;
+  }
+
+  function formatTelegramPlanPriceLabel(planPrice, requestedPlan) {
+    if (shouldUseTelegramPremiumUsdLabel(requestedPlan, planPrice)) {
+      return formatPremiumMonthlyUsdLabel();
+    }
+    return `${formatPrice(planPrice)} сум`;
+  }
+
+  function formatTelegramTotalPriceLabel({ requestedPlan, slugPrice = 0, planPrice = 0, braceletPrice = 0, totalAmount = 0 }) {
+    if (
+      shouldUseTelegramPremiumUsdLabel(requestedPlan, planPrice) &&
+      Number(slugPrice || 0) <= 0 &&
+      Number(braceletPrice || 0) <= 0
+    ) {
+      return formatPremiumMonthlyUsdLabel();
+    }
+    return `${formatPrice(totalAmount)} сум`;
+  }
+
   function formatHoursRu(value) {
     const hours = Math.max(1, Math.round(Number(value) || 0));
     const mod10 = hours % 10;
@@ -1093,14 +1129,22 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     const userName = (currentUser?.displayName || currentUser?.firstName || "").trim() || "не указано";
     const userEmail = (currentUser?.email || "").trim() || "не указан";
     const renewalMode = normalizeOrderKind(order.orderKind) === "subscription_renewal";
+    const planPriceLabel = formatTelegramPlanPriceLabel(planPriceValue, order.requestedPlan);
+    const totalPriceLabel = formatTelegramTotalPriceLabel({
+      requestedPlan: order.requestedPlan,
+      slugPrice,
+      planPrice: planPriceValue,
+      braceletPrice: braceletPriceValue,
+      totalAmount,
+    });
     const message =
       renewalMode
         ? `Здравствуйте! Хочу оплатить продление тарифа #️⃣ ${reference}\n\n` +
           `ФИО: ${userName}\n` +
           `Email: ${userEmail}\n\n` +
           `💳 Детализация оплаты:\n` +
-          `• Продление тарифа ${planLabel(order.requestedPlan)}: ${formatPrice(planPriceValue)} сум\n\n` +
-          `Итого к оплате: ${formatPrice(totalAmount)} сум`
+          `• Продление тарифа ${planLabel(order.requestedPlan)}: ${planPriceLabel}\n\n` +
+          `Итого к оплате: ${totalPriceLabel}`
         : `Здравствуйте! Хочу оплатить заказ #️⃣ ${reference}\n\n` +
           `UNQ: ${slug}\n` +
           `ФИО: ${userName}\n` +
@@ -1110,9 +1154,9 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
           (inviteeDiscountApplied > 0 ? `• Скидка по рефералке: -${formatPrice(inviteeDiscountApplied)} сум\n` : "") +
           (promoDiscountApplied > 0 ? `• Скидка по промокоду${promoCodeApplied ? ` (${promoCodeApplied})` : ""}: -${formatPrice(promoDiscountApplied)} сум\n` : "") +
           (bonusSpent > 0 ? `• Списано бонусов: -${formatPrice(bonusSpent)} сум\n` : "") +
-          `• Тариф ${planLabel(order.requestedPlan)}: ${formatPrice(planPriceValue)} сум\n` +
+          `• Тариф ${planLabel(order.requestedPlan)}: ${planPriceLabel}\n` +
           `• Браслет: ${formatPrice(braceletPriceValue)} сум\n\n` +
-          `Итого к оплате: ${formatPrice(totalAmount)} сум`;
+          `Итого к оплате: ${totalPriceLabel}`;
     return `https://t.me/unqx_uz?text=${encodeURIComponent(message)}`;
   }
 
@@ -2117,6 +2161,14 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
         const totalAmount = Number(payload?.pricing?.totalOneTime || 0);
         const orderCode = String(payload?.payment?.reference || "").trim() || `UNQX-${String(payload.orderId).replace(/[^a-zA-Z0-9]/g, "").slice(0, 10).toUpperCase()}`;
         const planLabel = "Подписка Premium";
+        const planPriceLabel = formatTelegramPlanPriceLabel(planPrice, "premium");
+        const totalPriceLabel = formatTelegramTotalPriceLabel({
+          requestedPlan: "premium",
+          slugPrice,
+          planPrice,
+          braceletPrice,
+          totalAmount,
+        });
         const baseLine = slugBasePrice > slugPrice ? `• База UNQ ${pricing.slug}: ${formatPrice(slugBasePrice)} сум\n` : "";
         const referralLine = inviteeDiscountApplied > 0 ? `• Скидка по рефералке: -${formatPrice(inviteeDiscountApplied)} сум\n` : "";
         const promoLine = promoDiscountApplied > 0 ? `• Скидка по промокоду${promoCodeApplied ? ` (${promoCodeApplied})` : ""}: -${formatPrice(promoDiscountApplied)} сум\n` : "";
@@ -2131,10 +2183,10 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
       ━━━━━━━━━━━━
       💳 Детализация оплаты:
       ${baseLine}• UNQ ${pricing.slug}: ${formatPrice(slugPrice)} сум
-      ${referralLine}${promoLine}${luckyLine}${bonusLine}• ${planLabel}: ${formatPrice(planPrice)} сум
+      ${referralLine}${promoLine}${luckyLine}${bonusLine}• ${planLabel}: ${planPriceLabel}
       • Браслет: ${formatPrice(braceletPrice)} сум
       ━━━━━━━━━━━━
-      Итого к оплате: ${formatPrice(totalAmount)} сум`;
+      Итого к оплате: ${totalPriceLabel}`;
 
         const telegramUrl = String(payload?.paymentLinks?.telegramUrl || "").trim() || `https://t.me/unqx_uz?text=${encodeURIComponent(message)}`;
         telegramLink.href = telegramUrl;

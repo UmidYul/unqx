@@ -247,6 +247,23 @@
       return plan === "premium" || plan === "basic" ? "Премиум" : "Без тарифа";
     };
 
+    const formatTelegramPremiumUsdLabel = () => "$2";
+
+    const shouldUseTelegramPremiumUsdLabel = (requestedPlan, planPrice) =>
+      String(requestedPlan || "").toLowerCase() === "premium" && Number(planPrice || 0) > 0;
+
+    const formatTelegramPlanPriceLabel = (requestedPlan, planPrice) =>
+      shouldUseTelegramPremiumUsdLabel(requestedPlan, planPrice)
+        ? formatTelegramPremiumUsdLabel()
+        : `${Number(planPrice || 0).toLocaleString("ru-RU")} сум`;
+
+    const formatTelegramTotalPriceLabel = ({ requestedPlan, slugPrice = 0, planPrice = 0, braceletPrice = 0, total = 0 }) =>
+      shouldUseTelegramPremiumUsdLabel(requestedPlan, planPrice) &&
+        Number(slugPrice || 0) <= 0 &&
+        Number(braceletPrice || 0) <= 0
+        ? formatTelegramPremiumUsdLabel()
+        : `${Number(total || 0).toLocaleString("ru-RU")} сум`;
+
     const buildTelegramPaymentUrl = (requestItem) => {
       const serverUrl = String(requestItem?.paymentUrl || "").trim();
       if (/^https:\/\/t\.me\/[a-zA-Z0-9_]{4,}(?:\?|$)/i.test(serverUrl)) {
@@ -260,7 +277,15 @@
       const total = Number(requestItem?.totalOneTime || slugPrice + planPrice + braceletPrice);
       const userName = String(s.user?.displayName || s.user?.firstName || "").trim() || "не указано";
       const userEmail = String(s.user?.email || "").trim() || "не указан";
-      const message = `Здравствуйте! Хочу оплатить заказ #?? ${orderCode}\n\nUNQ: ${slug}\nФИО: ${userName}\nEmail: ${userEmail}\n\n?? Детализация оплаты:\n• UNQ ${slug}: ${Number(slugPrice).toLocaleString("ru-RU")} сум\n• Тариф ${planLabel(requestItem?.requestedPlan)}: ${Number(planPrice).toLocaleString("ru-RU")} сум\n• Браслет: ${Number(braceletPrice).toLocaleString("ru-RU")} сум\n\nИтого к оплате: ${Number(total).toLocaleString("ru-RU")} сум`;
+      const planPriceLabel = formatTelegramPlanPriceLabel(requestItem?.requestedPlan, planPrice);
+      const totalPriceLabel = formatTelegramTotalPriceLabel({
+        requestedPlan: requestItem?.requestedPlan,
+        slugPrice,
+        planPrice,
+        braceletPrice,
+        total,
+      });
+      const message = `Здравствуйте! Хочу оплатить заказ #?? ${orderCode}\n\nUNQ: ${slug}\nФИО: ${userName}\nEmail: ${userEmail}\n\n?? Детализация оплаты:\n• UNQ ${slug}: ${Number(slugPrice).toLocaleString("ru-RU")} сум\n• Тариф ${planLabel(requestItem?.requestedPlan)}: ${planPriceLabel}\n• Браслет: ${Number(braceletPrice).toLocaleString("ru-RU")} сум\n\nИтого к оплате: ${totalPriceLabel}`;
       return `https://t.me/${TELEGRAM_PAYMENT_USERNAME}?text=${encodeURIComponent(message)}`;
     };
 
@@ -296,6 +321,14 @@
       const total = Number(order?.totalOneTime || slugPrice + planPrice + braceletPrice);
       const userName = String(s.user?.displayName || s.user?.firstName || "").trim() || "не указано";
       const userEmail = String(s.user?.email || "").trim() || "не указан";
+      const planPriceLabel = formatTelegramPlanPriceLabel(order?.requestedPlan, planPrice);
+      const totalPriceLabel = formatTelegramTotalPriceLabel({
+        requestedPlan: order?.requestedPlan,
+        slugPrice,
+        planPrice,
+        braceletPrice,
+        total,
+      });
       const message = `Здравствуйте! Хочу оплатить заказ #?? ${reference}
 
 UNQ: ${slug}
@@ -304,10 +337,10 @@ Email: ${userEmail}
 
 ?? Детализация оплаты:
 • UNQ ${slug}: ${Number(slugPrice).toLocaleString("ru-RU")} сум
-• Тариф ${planLabel(order?.requestedPlan)}: ${Number(planPrice).toLocaleString("ru-RU")} сум
+• Тариф ${planLabel(order?.requestedPlan)}: ${planPriceLabel}
 • Браслет: ${Number(braceletPrice).toLocaleString("ru-RU")} сум
 
-Итого к оплате: ${Number(total).toLocaleString("ru-RU")} сум`;
+Итого к оплате: ${totalPriceLabel}`;
       return `https://t.me/${TELEGRAM_PAYMENT_USERNAME}?text=${encodeURIComponent(message)}`;
     };
 
