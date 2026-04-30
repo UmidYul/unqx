@@ -8,6 +8,10 @@ const { markReferralPaidByReferredUserId } = require("./referrals");
 const { ensureDailyRecalculation } = require("./unq-score");
 const { reconcileAnalyticsViewCounters } = require("./analytics-reconciliation");
 const {
+  buildSubscriptionAutoRenewPatch,
+  isSubscriptionAutoRenewEnabled,
+} = require("./subscription");
+const {
   sendAccountDeletedEmail,
   sendAccountReactivationReminderEmail,
 } = require("./email");
@@ -65,6 +69,64 @@ async function processReferralPaidSync() {
 async function processExpiredSubscriptions() {
   const now = new Date();
   try {
+    if (isSubscriptionAutoRenewEnabled()) {
+      const renewableUsers = await prisma.user.findMany({
+        where: {
+          OR: [
+            {
+              plan: { in: ["basic", "premium"] },
+              OR: [
+                { subscriptionExpiresAt: null },
+                { subscriptionExpiresAt: { lte: now } },
+              ],
+            },
+            {
+              plan: "none",
+              subscriptionExpiresAt: { lte: now },
+              purchases: {
+                some: {
+                  type: "premium_subscription_monthly",
+                },
+              },
+            },
+          ],
+        },
+        select: {
+          id: true,
+          plan: true,
+          planPurchasedAt: true,
+          subscriptionStartedAt: true,
+          subscriptionExpiresAt: true,
+          subscriptionRenewedAt: true,
+        },
+        take: 2000,
+      });
+
+      const updates = renewableUsers
+        .map((user) => {
+          const patch = buildSubscriptionAutoRenewPatch(user, {
+            now,
+            autoRenew: true,
+            recoverPlan: user.plan === "none",
+          });
+          if (!patch) {
+            return null;
+          }
+          return prisma.user.update({
+            where: { id: user.id },
+            data: patch,
+          });
+        })
+        .filter(Boolean);
+
+      if (!updates.length) {
+        return;
+      }
+
+      await prisma.$transaction(updates);
+      return;
+    }
+
     const expiredUsers = await prisma.user.findMany({
       where: {
         plan: { in: ["basic", "premium"] },
@@ -365,4 +427,5 @@ module.exports = {
   runJobsOnce,
   cleanupStaleUnverifiedAccounts,
   processDeactivatedAccountLifecycle,
+  processExpiredSubscriptions,
 };

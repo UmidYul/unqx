@@ -1,5 +1,21 @@
 const SUBSCRIPTION_TERM_DAYS = 30;
 const MS_IN_DAY = 24 * 60 * 60 * 1000;
+const SUBSCRIPTION_TERM_MS = SUBSCRIPTION_TERM_DAYS * MS_IN_DAY;
+
+function parseBoolean(value) {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+
+  const normalized = value.trim().toLowerCase();
+  if (["1", "true", "yes", "on"].includes(normalized)) {
+    return true;
+  }
+  if (["0", "false", "no", "off"].includes(normalized)) {
+    return false;
+  }
+  return undefined;
+}
 
 function toDate(value) {
   if (!value) return null;
@@ -14,6 +30,13 @@ function addDays(date, days) {
   const base = toDate(date);
   if (!base) return null;
   return new Date(base.getTime() + Number(days || 0) * MS_IN_DAY);
+}
+
+function isSubscriptionAutoRenewEnabled(options = {}) {
+  if (typeof options.autoRenew === "boolean") {
+    return options.autoRenew;
+  }
+  return parseBoolean(process.env.SUBSCRIPTION_AUTO_RENEW_ENABLED) ?? true;
 }
 
 function normalizeSubscriptionPlan(plan) {
@@ -45,10 +68,42 @@ function resolveSubscriptionDates(user) {
   return { startedAt, expiresAt, renewedAt };
 }
 
+function resolveEffectiveSubscriptionDates(user, options = {}) {
+  const now = toDate(options.now) || new Date();
+  const plan = normalizeSubscriptionPlan(options.planOverride ?? user?.plan);
+  const raw = resolveSubscriptionDates(user);
+
+  if (
+    !isSubscriptionAutoRenewEnabled(options) ||
+    plan !== "premium" ||
+    !raw.expiresAt ||
+    raw.expiresAt.getTime() > now.getTime()
+  ) {
+    return {
+      ...raw,
+      autoRenewed: false,
+      autoRenewedPeriods: 0,
+    };
+  }
+
+  const autoRenewedPeriods = Math.floor((now.getTime() - raw.expiresAt.getTime()) / SUBSCRIPTION_TERM_MS) + 1;
+  const expiresAt = addDays(raw.expiresAt, autoRenewedPeriods * SUBSCRIPTION_TERM_DAYS);
+  const renewedAt = addDays(raw.expiresAt, Math.max(0, autoRenewedPeriods - 1) * SUBSCRIPTION_TERM_DAYS) || now;
+
+  return {
+    startedAt: raw.startedAt,
+    expiresAt,
+    renewedAt,
+    autoRenewed: true,
+    autoRenewedPeriods,
+  };
+}
+
 function getSubscriptionSnapshot(user, options = {}) {
   const now = toDate(options.now) || new Date();
   const plan = normalizeSubscriptionPlan(user?.plan);
-  const { startedAt, expiresAt, renewedAt } = resolveSubscriptionDates(user);
+  const { startedAt, expiresAt, renewedAt, autoRenewed, autoRenewedPeriods } =
+    resolveEffectiveSubscriptionDates(user, { now, autoRenew: options.autoRenew });
   const hasPremium = plan === "premium";
   const isActive = hasPremium && (!expiresAt || expiresAt.getTime() > now.getTime());
   const isExpired = hasPremium && Boolean(expiresAt) && expiresAt.getTime() <= now.getTime();
@@ -66,6 +121,8 @@ function getSubscriptionSnapshot(user, options = {}) {
     isExpired,
     effectivePlan: isActive ? "premium" : "none",
     daysLeft,
+    autoRenewed,
+    autoRenewedPeriods,
   };
 }
 
@@ -120,12 +177,58 @@ function buildSubscriptionRenewalPatch(user, options = {}) {
   return patch;
 }
 
+function buildSubscriptionAutoRenewPatch(user, options = {}) {
+  if (!isSubscriptionAutoRenewEnabled(options)) {
+    return null;
+  }
+
+  const now = toDate(options.now) || new Date();
+  const rawDates = resolveSubscriptionDates(user);
+  const effectiveDates = resolveEffectiveSubscriptionDates(user, {
+    now,
+    autoRenew: true,
+    planOverride: options.recoverPlan ? "premium" : undefined,
+  });
+
+  if (!effectiveDates.autoRenewed || !effectiveDates.expiresAt) {
+    if (rawDates.expiresAt) {
+      return null;
+    }
+    if (!rawDates.startedAt) {
+      return null;
+    }
+  }
+
+  const currentExpiresAt = rawDates.expiresAt;
+  const nextExpiresAt = effectiveDates.expiresAt;
+  if (
+    currentExpiresAt &&
+    nextExpiresAt &&
+    currentExpiresAt.getTime() >= nextExpiresAt.getTime()
+  ) {
+    return null;
+  }
+
+  return {
+    plan: "premium",
+    subscriptionStartedAt: rawDates.startedAt || now,
+    subscriptionRenewedAt: effectiveDates.renewedAt || now,
+    subscriptionExpiresAt: nextExpiresAt || addDays(rawDates.startedAt || now, SUBSCRIPTION_TERM_DAYS),
+    planPurchasedAt:
+      readUserDate(user, "planPurchasedAt", "plan_purchased_at") ||
+      rawDates.startedAt ||
+      now,
+  };
+}
+
 module.exports = {
   SUBSCRIPTION_TERM_DAYS,
   normalizeSubscriptionPlan,
+  isSubscriptionAutoRenewEnabled,
   getSubscriptionSnapshot,
   isSubscriptionActive,
   isPublicProfileVisible,
   getSubscriptionRenewalWindow,
   buildSubscriptionRenewalPatch,
+  buildSubscriptionAutoRenewPatch,
 };
