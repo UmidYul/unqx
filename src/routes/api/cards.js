@@ -2621,6 +2621,7 @@ router.post(
         id: true,
         userId: true,
         slug: true,
+        orderKind: true,
         status: true,
         createdAt: true,
       },
@@ -2649,9 +2650,11 @@ router.post(
       return;
     }
 
-    // Update order status to rejected and free the slug
+    const isSubscriptionRenewal = String(order.orderKind || "").toLowerCase() === "subscription_renewal";
+
+    // Update order status to rejected. Only release pending purchase slugs;
+    // renewal orders reuse the owner's current slug as context and must not free it.
     await prisma.$transaction(async (tx) => {
-      // Update order
       await tx.slugRequest.update({
         where: { id: order.id },
         data: {
@@ -2660,15 +2663,24 @@ router.post(
         },
       });
 
-      // Free the slug
-      await tx.slug.update({
-        where: { fullSlug: order.slug },
-        data: {
-          status: "free",
-          ownerId: null,
-          pendingExpiresAt: null,
-        },
-      });
+      if (!isSubscriptionRenewal) {
+        await tx.slug.updateMany({
+          where: {
+            fullSlug: order.slug,
+            status: "pending",
+          },
+          data: {
+            status: "free",
+            ownerId: null,
+            isPrimary: false,
+            pendingExpiresAt: null,
+            requestedAt: null,
+            approvedAt: null,
+            activatedAt: null,
+            pauseMessage: null,
+          },
+        });
+      }
 
       if (tx.referralCampaignUsage) {
         await tx.referralCampaignUsage.updateMany({
