@@ -9,6 +9,7 @@ const { ensureDailyRecalculation } = require("./unq-score");
 const { reconcileAnalyticsViewCounters } = require("./analytics-reconciliation");
 const {
   buildSubscriptionAutoRenewPatch,
+  hasSubscriptionHistoryEvidence,
   isSubscriptionAutoRenewEnabled,
 } = require("./subscription");
 const {
@@ -82,12 +83,12 @@ async function processExpiredSubscriptions() {
             },
             {
               plan: "none",
-              subscriptionExpiresAt: { lte: now },
-              purchases: {
-                some: {
-                  type: "premium_subscription_monthly",
-                },
-              },
+              OR: [
+                { subscriptionExpiresAt: { lte: now } },
+                { subscriptionExpiresAt: null, subscriptionStartedAt: { not: null } },
+                { subscriptionExpiresAt: null, planPurchasedAt: { not: null } },
+                { subscriptionExpiresAt: null, planUpgradedAt: { not: null } },
+              ],
             },
           ],
         },
@@ -95,6 +96,7 @@ async function processExpiredSubscriptions() {
           id: true,
           plan: true,
           planPurchasedAt: true,
+          planUpgradedAt: true,
           subscriptionStartedAt: true,
           subscriptionExpiresAt: true,
           subscriptionRenewedAt: true,
@@ -104,6 +106,9 @@ async function processExpiredSubscriptions() {
 
       const updates = renewableUsers
         .map((user) => {
+          if (user.plan === "none" && !hasSubscriptionHistoryEvidence(user)) {
+            return null;
+          }
           const patch = buildSubscriptionAutoRenewPatch(user, {
             now,
             autoRenew: true,

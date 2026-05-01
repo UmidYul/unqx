@@ -5,6 +5,7 @@ const dotenv = require("dotenv");
 const {
   buildSubscriptionAutoRenewPatch,
   getSubscriptionSnapshot,
+  hasSubscriptionHistoryEvidence,
 } = require("../src/services/subscription");
 
 const APP_DIR = path.join(__dirname, "..");
@@ -107,6 +108,16 @@ function normalizeSlugs(value) {
   return Array.isArray(value) ? value : [];
 }
 
+function canRecoverWithoutPurchaseHistory(row) {
+  return hasSubscriptionHistoryEvidence({
+    planPurchasedAt: row.planPurchasedAt,
+    planUpgradedAt: row.planUpgradedAt,
+    subscriptionStartedAt: row.subscriptionStartedAt,
+    subscriptionExpiresAt: row.subscriptionExpiresAt,
+    subscriptionRenewedAt: row.subscriptionRenewedAt,
+  });
+}
+
 function hasNonEmptyPauseMessage(slug) {
   return Boolean(String(slug?.pauseMessage || "").trim());
 }
@@ -147,22 +158,24 @@ function buildEffectiveUser(candidate, planPatch) {
 function analyzeCandidate(row, options = {}) {
   const slugs = normalizeSlugs(row.slugs);
   if (!slugs.length) {
-    return null;
+    return { candidate: null, reason: "no_slugs" };
   }
 
-  if (!options.allowNoPurchaseHistory && !row.hasPlanPurchase) {
-    return null;
+  const hasSubscriptionEvidence = canRecoverWithoutPurchaseHistory(row);
+  if (!options.allowNoPurchaseHistory && !row.hasPlanPurchase && !hasSubscriptionEvidence) {
+    return { candidate: null, reason: "no_purchase_or_subscription_history" };
   }
 
   const hasPauseMessage = slugs.some(hasNonEmptyPauseMessage);
   if (hasPauseMessage && !options.includePauseMessage) {
-    return null;
+    return { candidate: null, reason: "has_pause_message" };
   }
 
   const planPatch = buildSubscriptionAutoRenewPatch(
     {
       plan: row.plan,
       planPurchasedAt: row.planPurchasedAt,
+      planUpgradedAt: row.planUpgradedAt,
       subscriptionStartedAt: row.subscriptionStartedAt,
       subscriptionExpiresAt: row.subscriptionExpiresAt,
       subscriptionRenewedAt: row.subscriptionRenewedAt,
@@ -175,22 +188,26 @@ function analyzeCandidate(row, options = {}) {
   const effectiveUser = buildEffectiveUser(row, planPatch);
   const subscription = getSubscriptionSnapshot(effectiveUser, { autoRenew: true });
   if (subscription.effectivePlan !== "premium") {
-    return null;
+    return { candidate: null, reason: "effective_plan_not_premium" };
   }
 
   return {
-    userId: row.id,
-    currentPlan: row.plan,
-    nextPlan: effectiveUser.plan,
-    planPatch,
-    hasPlanPurchase: Boolean(row.hasPlanPurchase),
-    hasPrivatePasswords: Boolean(row.hasPrivatePasswords),
-    subscription,
-    slugs,
-    suggestedRestoreStatus: inferSuggestedRestoreStatus({
-      hasPrivatePasswords: row.hasPrivatePasswords,
+    candidate: {
+      userId: row.id,
+      currentPlan: row.plan,
+      nextPlan: effectiveUser.plan,
+      planPatch,
+      hasPlanPurchase: Boolean(row.hasPlanPurchase),
+      hasSubscriptionEvidence,
+      hasPrivatePasswords: Boolean(row.hasPrivatePasswords),
+      subscription,
       slugs,
-    }),
+      suggestedRestoreStatus: inferSuggestedRestoreStatus({
+        hasPrivatePasswords: row.hasPrivatePasswords,
+        slugs,
+      }),
+    },
+    reason: null,
   };
 }
 
@@ -236,6 +253,7 @@ async function loadUsers(client, options = {}) {
       u.id,
       u.plan,
       u.plan_purchased_at AS "planPurchasedAt",
+      u.plan_upgraded_at AS "planUpgradedAt",
       u.subscription_started_at AS "subscriptionStartedAt",
       u.subscription_expires_at AS "subscriptionExpiresAt",
       u.subscription_renewed_at AS "subscriptionRenewedAt",
@@ -379,13 +397,24 @@ async function run() {
 
   try {
     const rows = await loadUsers(client, args);
-    const candidates = rows
-      .map((row) => analyzeCandidate(row, args))
+    const analyzed = rows.map((row) => analyzeCandidate(row, args));
+    const candidates = analyzed
+      .map((item) => item.candidate)
       .filter(Boolean);
+    const skippedByReason = analyzed.reduce((acc, item) => {
+      if (!item.reason) {
+        return acc;
+      }
+      acc[item.reason] = Number(acc[item.reason] || 0) + 1;
+      return acc;
+    }, {});
 
     console.log(
       `[restore-auto-paused-cards] scanned=${rows.length} candidates=${candidates.length} mode=${args.apply ? "apply" : "dry-run"}`,
     );
+    Object.entries(skippedByReason).forEach(([reason, count]) => {
+      console.log(`[restore-auto-paused-cards] skipped ${reason}=${count}`);
+    });
 
     if (!candidates.length) {
       return;
@@ -422,8 +451,18 @@ if (process.argv.includes("--help") || process.argv.includes("-h")) {
   process.exit(0);
 }
 
-run().catch((error) => {
-  printUsage();
-  console.error("[restore-auto-paused-cards] failed:", error.message || error);
-  process.exitCode = 1;
-});
+if (require.main === module) {
+  run().catch((error) => {
+    printUsage();
+    console.error("[restore-auto-paused-cards] failed:", error.message || error);
+    process.exitCode = 1;
+  });
+}
+
+module.exports = {
+  parseArgs,
+  analyzeCandidate,
+  canRecoverWithoutPurchaseHistory,
+  inferSuggestedRestoreStatus,
+  loadUsers,
+};

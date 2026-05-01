@@ -52,6 +52,16 @@ function readUserDate(user, camelKey, snakeKey) {
   return toDate(user[camelKey] ?? user[snakeKey]);
 }
 
+function hasSubscriptionHistoryEvidence(user) {
+  return Boolean(
+    readUserDate(user, "planPurchasedAt", "plan_purchased_at") ||
+    readUserDate(user, "planUpgradedAt", "plan_upgraded_at") ||
+    readUserDate(user, "subscriptionStartedAt", "subscription_started_at") ||
+    readUserDate(user, "subscriptionExpiresAt", "subscription_expires_at") ||
+    readUserDate(user, "subscriptionRenewedAt", "subscription_renewed_at"),
+  );
+}
+
 function resolveSubscriptionDates(user) {
   const startedAt =
     readUserDate(user, "subscriptionStartedAt", "subscription_started_at") ||
@@ -225,6 +235,7 @@ module.exports = {
   SUBSCRIPTION_TERM_DAYS,
   normalizeSubscriptionPlan,
   isSubscriptionAutoRenewEnabled,
+  hasSubscriptionHistoryEvidence,
   getSubscriptionSnapshot,
   isSubscriptionActive,
   isPublicProfileVisible,
