@@ -1,6 +1,7 @@
 const express = require("express");
 
 const { prisma } = require("../../db/prisma");
+const { env } = require("../../config/env");
 const { asyncHandler } = require("../../middleware/async");
 const { requireSameOrigin } = require("../../middleware/same-origin");
 const { requireCsrfToken } = require("../../middleware/csrf");
@@ -62,16 +63,22 @@ router.get(
   asyncHandler(async (_req, res) => {
     const now = new Date();
     const todayStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0));
+    const activeOwnerWhere = env.SUBSCRIPTION_AUTO_RENEW_ENABLED
+      ? {
+          status: "active",
+          plan: { in: ["basic", "premium"] },
+        }
+      : {
+          status: "active",
+          plan: { in: ["basic", "premium"] },
+          OR: [{ subscriptionExpiresAt: null }, { subscriptionExpiresAt: { gt: now } }],
+        };
 
     const [activeCardsTotal, todayCreated, todayActivated, todayTotal, todayVisitors] = await Promise.all([
       prisma.slug.count({
         where: {
           status: { in: ["active", "private", "approved"] },
-          owner: {
-            status: "active",
-            plan: { in: ["basic", "premium"] },
-            OR: [{ subscriptionExpiresAt: null }, { subscriptionExpiresAt: { gt: now } }],
-          },
+          owner: activeOwnerWhere,
         },
       }),
       prisma.slug.count({ where: { createdAt: { gte: todayStart } } }),

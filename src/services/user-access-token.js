@@ -51,6 +51,9 @@ function sanitizeUserPayload(userPayload) {
     plan: userPayload.plan || "none",
     planPurchasedAt: userPayload.planPurchasedAt || null,
     planUpgradedAt: userPayload.planUpgradedAt || null,
+    subscriptionStartedAt: userPayload.subscriptionStartedAt || null,
+    subscriptionExpiresAt: userPayload.subscriptionExpiresAt || null,
+    subscriptionRenewedAt: userPayload.subscriptionRenewedAt || null,
     profileType: userPayload.profileType || "person",
     status: userPayload.status || "active",
   };
