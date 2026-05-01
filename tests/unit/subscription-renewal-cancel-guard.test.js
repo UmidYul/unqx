@@ -25,5 +25,8 @@ describe("subscription renewal cancel guard", () => {
     expect(script).toContain("--from-slug");
     expect(script).toContain("dry-run");
     expect(script).toContain("owner_id = $2");
+    expect(script).toContain('status = $3::"SlugStatus"');
+    expect(script).toContain("WHEN $5 THEN COALESCE(activated_at, now())");
+    expect(script).not.toContain("Promise.all([");
   });
 });

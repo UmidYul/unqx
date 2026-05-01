@@ -105,43 +105,41 @@ async function resolveOwnerId(client, args) {
 }
 
 async function loadState(client, args, ownerId) {
-  const [slugResult, ownerResult, ownerSlugsResult] = await Promise.all([
-    client.query(
-      `
-        SELECT
-          id,
-          full_slug AS "fullSlug",
-          status,
-          owner_id AS "ownerId",
-          is_primary AS "isPrimary",
-          pause_message AS "pauseMessage",
-          approved_at AS "approvedAt",
-          activated_at AS "activatedAt"
-        FROM slugs
-        WHERE full_slug = $1
-        LIMIT 1
-      `,
-      [args.slug],
-    ),
-    client.query(
-      `
-        SELECT id, email, login, status, plan
-        FROM users
-        WHERE id = $1
-        LIMIT 1
-      `,
-      [ownerId],
-    ),
-    client.query(
-      `
-        SELECT full_slug AS "fullSlug", status, is_primary AS "isPrimary"
-        FROM slugs
-        WHERE owner_id = $1
-        ORDER BY is_primary DESC, created_at ASC
-      `,
-      [ownerId],
-    ),
-  ]);
+  const slugResult = await client.query(
+    `
+      SELECT
+        id,
+        full_slug AS "fullSlug",
+        status,
+        owner_id AS "ownerId",
+        is_primary AS "isPrimary",
+        pause_message AS "pauseMessage",
+        approved_at AS "approvedAt",
+        activated_at AS "activatedAt"
+      FROM slugs
+      WHERE full_slug = $1
+      LIMIT 1
+    `,
+    [args.slug],
+  );
+  const ownerResult = await client.query(
+    `
+      SELECT id, email, login, status, plan
+      FROM users
+      WHERE id = $1
+      LIMIT 1
+    `,
+    [ownerId],
+  );
+  const ownerSlugsResult = await client.query(
+    `
+      SELECT full_slug AS "fullSlug", status, is_primary AS "isPrimary"
+      FROM slugs
+      WHERE owner_id = $1
+      ORDER BY is_primary DESC, created_at ASC
+    `,
+    [ownerId],
+  );
 
   return {
     slug: slugResult.rows[0] || null,
@@ -169,19 +167,20 @@ async function applyReclaim(client, args, ownerId, state) {
         UPDATE slugs
         SET
           owner_id = $2,
-          status = $3,
+          status = $3::"SlugStatus",
           is_primary = $4,
+          pause_message = NULL,
           pending_expires_at = NULL,
           requested_at = COALESCE(requested_at, now()),
           approved_at = COALESCE(approved_at, now()),
           activated_at = CASE
-            WHEN $3 = 'active' THEN COALESCE(activated_at, now())
+            WHEN $5 THEN COALESCE(activated_at, now())
             ELSE activated_at
           END,
           updated_at = now()
         WHERE full_slug = $1
       `,
-      [args.slug, ownerId, args.status, args.primary],
+      [args.slug, ownerId, args.status, args.primary, args.status === "active"],
     );
 
     await client.query("COMMIT");
