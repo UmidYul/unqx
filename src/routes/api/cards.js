@@ -77,6 +77,15 @@ const {
 const {
   verifyPrivatePasswordForOwner,
 } = require("../../services/private-access-store");
+const {
+  isWallStorageMissing,
+  listPublicWallPosts,
+  addWallPostLike,
+  removeWallPostLike,
+  resolveWallPage,
+  resolveWallPageSize,
+  WALL_PUBLIC_PAGE_SIZE,
+} = require("../../services/profile-wall");
 
 const router = express.Router();
 const SLUG_REGEX = /^[A-Z]{3}[0-9]{3}$/;
@@ -581,6 +590,28 @@ async function findSlugForPrivateAccess(fullSlug) {
       },
     },
   });
+}
+
+async function findPublicWallSlugOwner(fullSlug) {
+  if (!fullSlug) return null;
+  return withMissingTableFallback("Slug", null, () =>
+    prisma.slug.findUnique({
+      where: { fullSlug },
+      select: {
+        fullSlug: true,
+        status: true,
+        ownerId: true,
+        owner: {
+          select: {
+            status: true,
+            plan: true,
+            subscriptionExpiresAt: true,
+            subscriptionStartedAt: true,
+          },
+        },
+      },
+    }),
+  );
 }
 
 function isPublicOwnerAvailable(owner) {
@@ -2809,6 +2840,115 @@ router.post(
   asyncHandler(async (_req, res) => {
     clearPrivateAccessCookie(_req, res);
     res.json({ ok: true });
+  }),
+);
+
+router.get(
+  "/:slug/wall-posts",
+  asyncHandler(async (req, res) => {
+    const requestedSlug = sanitizeSlug(req.params.slug);
+    const slugRow = await findPublicWallSlugOwner(requestedSlug);
+    if (!slugRow || slugRow.status !== "active" || !slugRow.ownerId || !isPublicOwnerAvailable(slugRow.owner)) {
+      res.status(404).json({ error: "Card not found", code: "CARD_NOT_FOUND" });
+      return;
+    }
+
+    const viewerUserId = String(getUserSession(req)?.userId || "").trim();
+    const page = resolveWallPage(req.query.page);
+    const pageSize = resolveWallPageSize(req.query.pageSize, WALL_PUBLIC_PAGE_SIZE, 20);
+
+    try {
+      const payload = await listPublicWallPosts({
+        ownerId: slugRow.ownerId,
+        viewerUserId,
+        page,
+        pageSize,
+      });
+      res.json(payload);
+    } catch (error) {
+      if (isWallStorageMissing(error)) {
+        res.json({
+          items: [],
+          pagination: { page, pageSize, total: 0, hasMore: false },
+        });
+        return;
+      }
+      throw error;
+    }
+  }),
+);
+
+router.put(
+  "/:slug/wall-posts/:postId/like",
+  requireUserApi,
+  requireSameOrigin,
+  requireCsrfToken,
+  asyncHandler(async (req, res) => {
+    const requestedSlug = sanitizeSlug(req.params.slug);
+    const slugRow = await findPublicWallSlugOwner(requestedSlug);
+    if (!slugRow || slugRow.status !== "active" || !slugRow.ownerId || !isPublicOwnerAvailable(slugRow.owner)) {
+      res.status(404).json({ error: "Card not found", code: "CARD_NOT_FOUND" });
+      return;
+    }
+
+    const viewerUserId = String(getUserSession(req)?.userId || "").trim();
+    try {
+      const post = await addWallPostLike({
+        ownerId: slugRow.ownerId,
+        postId: req.params.postId,
+        viewerUserId,
+      });
+      res.json({ ok: true, post });
+    } catch (error) {
+      if (isWallStorageMissing(error)) {
+        res.status(503).json({ error: "Wall storage unavailable", code: "WALL_STORAGE_UNAVAILABLE" });
+        return;
+      }
+      if (error?.code === "WALL_POST_NOT_FOUND") {
+        res.status(404).json({ error: "Пост не найден", code: error.code });
+        return;
+      }
+      if (error?.code === "WALL_POST_SELF_LIKE_FORBIDDEN") {
+        res.status(403).json({ error: "Нельзя лайкать свой пост", code: error.code });
+        return;
+      }
+      throw error;
+    }
+  }),
+);
+
+router.delete(
+  "/:slug/wall-posts/:postId/like",
+  requireUserApi,
+  requireSameOrigin,
+  requireCsrfToken,
+  asyncHandler(async (req, res) => {
+    const requestedSlug = sanitizeSlug(req.params.slug);
+    const slugRow = await findPublicWallSlugOwner(requestedSlug);
+    if (!slugRow || slugRow.status !== "active" || !slugRow.ownerId || !isPublicOwnerAvailable(slugRow.owner)) {
+      res.status(404).json({ error: "Card not found", code: "CARD_NOT_FOUND" });
+      return;
+    }
+
+    const viewerUserId = String(getUserSession(req)?.userId || "").trim();
+    try {
+      const post = await removeWallPostLike({
+        ownerId: slugRow.ownerId,
+        postId: req.params.postId,
+        viewerUserId,
+      });
+      res.json({ ok: true, post });
+    } catch (error) {
+      if (isWallStorageMissing(error)) {
+        res.status(503).json({ error: "Wall storage unavailable", code: "WALL_STORAGE_UNAVAILABLE" });
+        return;
+      }
+      if (error?.code === "WALL_POST_NOT_FOUND") {
+        res.status(404).json({ error: "Пост не найден", code: error.code });
+        return;
+      }
+      throw error;
+    }
   }),
 );
 

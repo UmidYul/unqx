@@ -69,6 +69,12 @@ enum BadgeType {
   unqx_staff
 }
 
+enum ProfileWallPostStatus {
+  published
+  hidden
+  deleted
+}
+
 enum SlugStatus {
   free
   pending
@@ -316,6 +322,8 @@ model User {
   privatePasswords       CardPrivatePassword[] @relation("CardPrivatePasswords")
   privateAccessLogs      CardPrivateAccessLog[] @relation("CardPrivateAccessLogs")
   badgeApplications      BadgeApplication[]
+  profileWallPosts       ProfileWallPost[]
+  profileWallPostLikes   ProfileWallPostLike[]
 
   @@index([plan, planPurchasedAt])
   @@index([subscriptionExpiresAt])
@@ -423,6 +431,38 @@ model PaymentCard {
   @@index([createdByStaffId])
   @@index([isPublished])
   @@map("payment_cards")
+}
+
+model ProfileWallPost {
+  id        String                @id @default(uuid())
+  ownerId   String                @map("owner_id")
+  owner     User                  @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  content   String                @db.VarChar(280)
+  status    ProfileWallPostStatus @default(published)
+  hiddenAt  DateTime?             @map("hidden_at")
+  deletedAt DateTime?             @map("deleted_at")
+  createdAt DateTime              @default(now()) @map("created_at")
+  updatedAt DateTime              @updatedAt @map("updated_at")
+  likes     ProfileWallPostLike[]
+
+  @@index([ownerId, status, createdAt(sort: Desc)])
+  @@index([ownerId, createdAt(sort: Desc)])
+  @@index([status, createdAt(sort: Desc)])
+  @@map("profile_wall_posts")
+}
+
+model ProfileWallPostLike {
+  id        String          @id @default(uuid())
+  postId    String          @map("post_id")
+  post      ProfileWallPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId    String          @map("user_id")
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime        @default(now()) @map("created_at")
+
+  @@unique([postId, userId])
+  @@index([postId, createdAt(sort: Desc)])
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("profile_wall_post_likes")
 }
 
 model CardPrivatePassword {

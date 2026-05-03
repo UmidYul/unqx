@@ -10,6 +10,9 @@ async function renderView(fileName, locals = {}) {
     baseUrl: "https://unqx.uz",
     canonicalUrl: "https://unqx.uz/ABC123",
     telegramBotUsername: "unqx_bot",
+    assetVersion: "test",
+    userSession: null,
+    publicSettings: {},
     ...locals,
   });
 }
@@ -38,6 +41,19 @@ describe("slug page (:slug) templates", () => {
     });
     expect(html).toContain('"topBadge":{"rank":2}');
     expect(html).not.toContain("🏆");
+  });
+
+  test("passes wall payload to public card renderer", async () => {
+    const html = await renderView("card.ejs", {
+      card: { slug: "ABC123", name: "Alex", tariff: "basic", buttons: [] },
+      wall: {
+        enabled: true,
+        items: [{ id: "post_1", content: "Первый пост", likesCount: 2 }],
+        pagination: { page: 1, pageSize: 10, total: 1, hasMore: false },
+      },
+    });
+    expect(html).toContain('"wall":{"enabled":true');
+    expect(html).toContain('"content":"Первый пост"');
   });
 
   test("renders slug-state with primary CTA and back navigation", async () => {
@@ -106,5 +122,14 @@ describe("slug page (:slug) templates", () => {
     expect(source).toContain("Поделиться");
     expect(source).toContain("Скопировано");
     expect(source).toContain("Контакт сохранен");
+  });
+
+  test("public card sources include posts tab UI without comments UI", () => {
+    const cardViewSource = require("node:fs").readFileSync(path.join(process.cwd(), "public", "js", "card-view.js"), "utf-8");
+    const publicCardSource = require("node:fs").readFileSync(path.join(process.cwd(), "public", "js", "public-card.js"), "utf-8");
+    expect(cardViewSource).toContain("Посты");
+    expect(cardViewSource).toContain("Визитка");
+    expect(publicCardSource).toContain("wall-posts");
+    expect(cardViewSource.includes("Комментарии")).toBe(false);
   });
 });

@@ -188,6 +188,38 @@
         <button id="user-card-save" type="button" class="rounded-xl bg-neutral-900 px-5 py-2 text-sm font-semibold text-white">Сохранить</button>
       </div>
     </form>
+
+    <section class="rounded-2xl border border-neutral-200 bg-white p-4">
+      <div class="flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center">
+        <div>
+          <h2 class="text-lg font-bold">Стена</h2>
+          <p id="admin-wall-status" class="mt-1 text-sm text-neutral-500">Загрузка постов...</p>
+        </div>
+      </div>
+      <div id="admin-wall-editor" class="mt-4 hidden rounded-xl border border-neutral-200 bg-neutral-50 p-4">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h3 id="admin-wall-editor-title" class="text-sm font-semibold text-neutral-900">Редактировать пост</h3>
+            <p class="mt-1 text-xs text-neutral-500">Изменение текста не меняет суточный лимит пользователя.</p>
+          </div>
+          <p id="admin-wall-editor-counter" class="text-xs font-semibold text-neutral-500">0/280</p>
+        </div>
+        <textarea id="admin-wall-editor-body" rows="5" maxlength="280"
+          class="mt-3 w-full rounded-xl border border-neutral-300 px-3 py-3 text-sm text-neutral-900 outline-none"></textarea>
+        <div class="mt-3 flex flex-wrap gap-2">
+          <button id="admin-wall-editor-save" type="button"
+            class="rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-neutral-800">Сохранить</button>
+          <button id="admin-wall-editor-cancel" type="button"
+            class="rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold transition hover:bg-neutral-100">Отмена</button>
+        </div>
+      </div>
+      <div id="admin-wall-list" class="mt-4 space-y-3"></div>
+      <div class="mt-4 flex justify-center">
+        <button id="admin-wall-load-more" type="button"
+          class="hidden rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold transition hover:bg-neutral-100">Показать
+          ещё</button>
+      </div>
+    </section>
   </div>
   <%- include('../partials/admin-layout-end') %>
   <script nonce="<%= cspNonce %>" src="/js/admin-layout.js"></script>

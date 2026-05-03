@@ -24,6 +24,10 @@ const {
 } = require("../../services/private-access");
 const { seoHub, getSeoPage } = require("../../content/seo-pages");
 const { isValidSlug } = require("../../services/slug");
+const {
+  isWallStorageMissing,
+  listPublicWallPosts,
+} = require("../../services/profile-wall");
 
 const router = express.Router();
 const defaultSocialImage = absoluteUrl("/brand/logo.PNG");
@@ -2227,7 +2231,8 @@ router.get(
           clearPrivateAccessCookie(req, res);
         }
 
-        const [views, ownerSlugs, verifiedIdentity] = await Promise.all([
+        const viewerUserId = String(getUserSession(req)?.userId || "").trim();
+        const [views, ownerSlugs, verifiedIdentity, wall] = await Promise.all([
           prisma.analyticsView
             ? prisma.analyticsView
               .findMany({
@@ -2243,8 +2248,22 @@ router.get(
             },
             orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
             select: { fullSlug: true },
-          }),
+              }),
           findLatestApprovedVerificationByUserId(slugRow.ownerId),
+          slugRow.status === "active"
+            ? listPublicWallPosts({
+              ownerId: slugRow.ownerId,
+              viewerUserId,
+            }).catch((error) => {
+              if (isWallStorageMissing(error)) {
+                return {
+                  items: [],
+                  pagination: { page: 1, pageSize: 10, total: 0, hasMore: false },
+                };
+              }
+              throw error;
+            })
+            : Promise.resolve(null),
         ]);
 
         const card = buildPublicCardFromProfile({
@@ -2290,6 +2309,12 @@ router.get(
           description: `${card.name} on UNQX: digital business card, contacts, links, QR and analytics.`,
           image,
           card,
+          wall: wall
+            ? {
+              enabled: true,
+              ...wall,
+            }
+            : null,
           topBadge,
           score,
           officialUnqBadge,

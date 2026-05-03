@@ -22,6 +22,18 @@ const {
   getPlanBadgeLabel,
 } = require("../../services/profile");
 const {
+  isWallStorageMissing,
+  canUseWall,
+  getWallSummary,
+  listWallPostsByOwner,
+  createWallPost,
+  updateWallPostContentAsOwner,
+  deleteWallPostAsOwner,
+  resolveWallPage,
+  resolveWallPageSize,
+  WALL_OWNER_PAGE_SIZE,
+} = require("../../services/profile-wall");
+const {
   isSupportedAvatarBuffer,
   saveAvatarFromBuffer,
   deleteAvatarByPublicPath,
@@ -628,6 +640,14 @@ function assertPlanAllowsSlugManagement(user, res) {
   return true;
 }
 
+function assertPlanAllowsWall(user, res) {
+  if (!canUseWall(user)) {
+    res.status(403).json({ error: "Тариф не активирован", code: "PLAN_REQUIRED" });
+    return false;
+  }
+  return true;
+}
+
 async function safeRecalculateScore(userId) {
   try {
     await recalculateAndRefreshPercentiles(userId);
@@ -768,6 +788,7 @@ router.get(
     const supportTelegram = normalizeTelegramUsername(supportTelegramRaw);
 
     const effective = getEffectivePlan(user);
+    const wallSummary = await getWallSummary(user);
 
     res.json({
       user: {
@@ -832,6 +853,7 @@ router.get(
         passwordLimit: PRIVATE_PASSWORD_MAX_COUNT,
         passwords: privatePasswords,
       },
+      wallSummary,
     });
   }),
 );
@@ -1022,6 +1044,149 @@ router.get(
 
     const slugs = await getUserSlugsWithStats(user.id);
     res.json({ items: slugs });
+  }),
+);
+
+router.get(
+  "/wall-posts",
+  asyncHandler(async (req, res) => {
+    const user = await getCurrentUser(req);
+    if (!assertUserActive(user, res)) {
+      return;
+    }
+    if (!assertPlanAllowsWall(user, res)) {
+      return;
+    }
+
+    const page = resolveWallPage(req.query.page);
+    const pageSize = resolveWallPageSize(req.query.pageSize, WALL_OWNER_PAGE_SIZE, 50);
+    try {
+      const payload = await listWallPostsByOwner({
+        ownerId: user.id,
+        viewerUserId: user.id,
+        page,
+        pageSize,
+      });
+      res.json(payload);
+    } catch (error) {
+      if (isWallStorageMissing(error)) {
+        res.json({
+          items: [],
+          pagination: { page, pageSize, total: 0, hasMore: false },
+        });
+        return;
+      }
+      throw error;
+    }
+  }),
+);
+
+router.post(
+  "/wall-posts",
+  asyncHandler(async (req, res) => {
+    const user = await getCurrentUser(req);
+    if (!assertUserActive(user, res)) {
+      return;
+    }
+    if (!assertPlanAllowsWall(user, res)) {
+      return;
+    }
+
+    try {
+      const post = await createWallPost({
+        ownerId: user.id,
+        content: req.body?.content,
+      });
+      const wallSummary = await getWallSummary(user);
+      res.status(201).json({ ok: true, post, wallSummary });
+    } catch (error) {
+      if (isWallStorageMissing(error)) {
+        res.status(503).json({ error: "Wall storage unavailable", code: "WALL_STORAGE_UNAVAILABLE" });
+        return;
+      }
+      if (error?.code === "WALL_POST_LIMIT_REACHED") {
+        res.status(409).json({
+          error: "Сегодня пост уже опубликован",
+          code: error.code,
+          nextPostAt: error.nextPostAt || null,
+          todayPostCount: Number(error.todayPostCount || 1),
+        });
+        return;
+      }
+      if (error?.code === "WALL_POST_CONTENT_REQUIRED") {
+        res.status(400).json({ error: "Текст поста обязателен", code: error.code });
+        return;
+      }
+      throw error;
+    }
+  }),
+);
+
+router.patch(
+  "/wall-posts/:postId",
+  asyncHandler(async (req, res) => {
+    const user = await getCurrentUser(req);
+    if (!assertUserActive(user, res)) {
+      return;
+    }
+    if (!assertPlanAllowsWall(user, res)) {
+      return;
+    }
+
+    try {
+      const post = await updateWallPostContentAsOwner({
+        ownerId: user.id,
+        postId: req.params.postId,
+        content: req.body?.content,
+      });
+      res.json({ ok: true, post });
+    } catch (error) {
+      if (isWallStorageMissing(error)) {
+        res.status(503).json({ error: "Wall storage unavailable", code: "WALL_STORAGE_UNAVAILABLE" });
+        return;
+      }
+      if (error?.code === "WALL_POST_NOT_FOUND") {
+        res.status(404).json({ error: "Пост не найден", code: error.code });
+        return;
+      }
+      if (error?.code === "WALL_POST_CONTENT_REQUIRED") {
+        res.status(400).json({ error: "Текст поста обязателен", code: error.code });
+        return;
+      }
+      throw error;
+    }
+  }),
+);
+
+router.delete(
+  "/wall-posts/:postId",
+  asyncHandler(async (req, res) => {
+    const user = await getCurrentUser(req);
+    if (!assertUserActive(user, res)) {
+      return;
+    }
+    if (!assertPlanAllowsWall(user, res)) {
+      return;
+    }
+
+    try {
+      const post = await deleteWallPostAsOwner({
+        ownerId: user.id,
+        postId: req.params.postId,
+      });
+      const wallSummary = await getWallSummary(user);
+      res.json({ ok: true, post, wallSummary });
+    } catch (error) {
+      if (isWallStorageMissing(error)) {
+        res.status(503).json({ error: "Wall storage unavailable", code: "WALL_STORAGE_UNAVAILABLE" });
+        return;
+      }
+      if (error?.code === "WALL_POST_NOT_FOUND") {
+        res.status(404).json({ error: "Пост не найден", code: error.code });
+        return;
+      }
+      throw error;
+    }
   }),
 );
 

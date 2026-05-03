@@ -53,6 +53,14 @@ const {
   normalizeProfileType,
 } = require("../../services/profile");
 const {
+  isWallStorageMissing,
+  listAdminWallPosts,
+  updateWallPostAsAdmin,
+  resolveWallPage,
+  resolveWallPageSize,
+  WALL_ADMIN_PAGE_SIZE,
+} = require("../../services/profile-wall");
+const {
   isSupportedAvatarBuffer,
   saveAvatarFromBuffer,
   deleteAvatarByPublicPath,
@@ -3553,6 +3561,131 @@ router.get(
       },
       themes: Array.from(PROFILE_THEMES),
     });
+  }),
+);
+
+router.get(
+  "/users/:userId/wall-posts",
+  asyncHandler(async (req, res) => {
+    const userId = String(req.params.userId || "").trim();
+    if (!userId) {
+      res.status(400).json({ error: "User id is required", code: "USER_ID_REQUIRED" });
+      return;
+    }
+    if (isManagerSession(req)) {
+      const ownsUser = await managerOwnsUser(req, userId);
+      if (!ownsUser) {
+        res.status(404).json({ error: "User not found", code: "USER_NOT_FOUND" });
+        return;
+      }
+    }
+
+    const page = resolveWallPage(req.query.page);
+    const pageSize = resolveWallPageSize(req.query.pageSize, WALL_ADMIN_PAGE_SIZE, 50);
+    try {
+      const payload = await listAdminWallPosts({
+        ownerId: userId,
+        page,
+        pageSize,
+      });
+      res.json(payload);
+    } catch (error) {
+      if (isWallStorageMissing(error)) {
+        res.json({
+          items: [],
+          pagination: { page, pageSize, total: 0, hasMore: false },
+        });
+        return;
+      }
+      throw error;
+    }
+  }),
+);
+
+router.patch(
+  "/users/:userId/wall-posts/:postId",
+  requireSameOrigin,
+  requireCsrfToken,
+  asyncHandler(async (req, res) => {
+    const userId = String(req.params.userId || "").trim();
+    if (!userId) {
+      res.status(400).json({ error: "User id is required", code: "USER_ID_REQUIRED" });
+      return;
+    }
+    if (isManagerSession(req)) {
+      const ownsUser = await managerOwnsUser(req, userId);
+      if (!ownsUser) {
+        res.status(404).json({ error: "User not found", code: "USER_NOT_FOUND" });
+        return;
+      }
+    }
+
+    try {
+      const post = await updateWallPostAsAdmin({
+        ownerId: userId,
+        postId: req.params.postId,
+        content: req.body?.content,
+        status: req.body?.status,
+      });
+      res.json({ ok: true, post });
+    } catch (error) {
+      if (isWallStorageMissing(error)) {
+        res.status(503).json({ error: "Wall storage unavailable", code: "WALL_STORAGE_UNAVAILABLE" });
+        return;
+      }
+      if (error?.code === "WALL_POST_NOT_FOUND") {
+        res.status(404).json({ error: "Пост не найден", code: error.code });
+        return;
+      }
+      if (error?.code === "WALL_POST_CONTENT_REQUIRED") {
+        res.status(400).json({ error: "Текст поста обязателен", code: error.code });
+        return;
+      }
+      if (error?.code === "WALL_POST_STATUS_INVALID" || error?.code === "WALL_POST_NO_CHANGES") {
+        res.status(400).json({ error: error.message || "Некорректное действие", code: error.code });
+        return;
+      }
+      throw error;
+    }
+  }),
+);
+
+router.delete(
+  "/users/:userId/wall-posts/:postId",
+  requireSameOrigin,
+  requireCsrfToken,
+  asyncHandler(async (req, res) => {
+    const userId = String(req.params.userId || "").trim();
+    if (!userId) {
+      res.status(400).json({ error: "User id is required", code: "USER_ID_REQUIRED" });
+      return;
+    }
+    if (isManagerSession(req)) {
+      const ownsUser = await managerOwnsUser(req, userId);
+      if (!ownsUser) {
+        res.status(404).json({ error: "User not found", code: "USER_NOT_FOUND" });
+        return;
+      }
+    }
+
+    try {
+      const post = await updateWallPostAsAdmin({
+        ownerId: userId,
+        postId: req.params.postId,
+        status: "deleted",
+      });
+      res.json({ ok: true, post });
+    } catch (error) {
+      if (isWallStorageMissing(error)) {
+        res.status(503).json({ error: "Wall storage unavailable", code: "WALL_STORAGE_UNAVAILABLE" });
+        return;
+      }
+      if (error?.code === "WALL_POST_NOT_FOUND") {
+        res.status(404).json({ error: "Пост не найден", code: error.code });
+        return;
+      }
+      throw error;
+    }
   }),
 );
 

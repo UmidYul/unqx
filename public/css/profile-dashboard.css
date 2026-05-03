@@ -914,6 +914,51 @@
   background: #fffafa;
 }
 
+.profile-dashboard .profile-wall-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.profile-dashboard .profile-wall-summary-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  background: linear-gradient(180deg, #ffffff 0%, #fafafa 100%);
+  padding: 1rem;
+}
+
+.profile-dashboard .profile-wall-summary-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #8b8b8b;
+}
+
+.profile-dashboard .profile-wall-summary-value {
+  margin-top: 0.55rem;
+  font-size: 30px;
+  line-height: 1;
+  font-weight: 700;
+  color: #111111;
+}
+
+.profile-dashboard .profile-wall-summary-value--small {
+  font-size: 18px;
+  line-height: 1.3;
+}
+
+.profile-dashboard .profile-wall-summary-note {
+  margin-top: 0.45rem;
+  font-size: 12px;
+  line-height: 1.55;
+  color: #6b7280;
+}
+
+.profile-dashboard .profile-wall-post {
+  box-shadow: 0 8px 22px rgba(17, 24, 39, 0.04);
+}
+
 @media (max-width: 980px) {
   .profile-dashboard .profile-header-card {
     grid-template-columns: 1fr;
@@ -930,7 +975,8 @@
   .profile-dashboard .profile-slugs-overview,
   .profile-dashboard .profile-form-grid,
   .profile-dashboard article[data-tab-panel="analytics"] .grid.gap-4.sm\:grid-cols-3,
-  .profile-dashboard .profile-settings-grid {
+  .profile-dashboard .profile-settings-grid,
+  .profile-dashboard .profile-wall-summary-grid {
     grid-template-columns: 1fr;
   }
 

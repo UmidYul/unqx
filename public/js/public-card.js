@@ -12,29 +12,28 @@
     payload = {};
   }
 
-  const root = window.CardView.mountCardView(host, payload.card || {}, {
-    shareUrl: payload.shareUrl || window.location.href,
-    viewsLabel: payload.viewsLabel || "",
+  const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+  const slugSearchForm = document.getElementById("card-slug-search-form");
+  const slugSearchInput = document.getElementById("card-slug-search-input");
+  const slugSearchResults = document.getElementById("card-slug-search-results");
+  const state = {
+    card: payload && typeof payload.card === "object" && payload.card ? payload.card : {},
+    shareUrl: String(payload.shareUrl || window.location.href),
+    viewsLabel: String(payload.viewsLabel || ""),
     score: payload.score || null,
     topBadge: payload.topBadge || null,
     officialUnqBadge: payload.officialUnqBadge && typeof payload.officialUnqBadge === "object" ? payload.officialUnqBadge : null,
     staffBadge: payload.staffBadge && typeof payload.staffBadge === "object" ? payload.staffBadge : null,
-  });
-  if (!(root instanceof HTMLElement)) {
-    return;
-  }
+    trackViaPageRequest: Boolean(payload.trackViaPageRequest),
+    slug: String(payload.slug || payload?.card?.slug || "").trim().toUpperCase(),
+    wall: normalizeWallPayload(payload.wall),
+    activeTab: "card",
+    wallLoadingMore: false,
+    wallBusyLikeIds: new Set(),
+  };
 
-  const slug = String(payload.slug || root.getAttribute("data-slug") || "");
-  const shareUrl = root.getAttribute("data-share-url") || window.location.href;
-  const shareButton = root.querySelector("[data-share-card]");
-  const shareLabel = root.querySelector("[data-share-label]");
-  const avatarImage = root.querySelector("[data-avatar-image]");
-  const avatarFallback = root.querySelector("[data-avatar-fallback]");
-  const saveContactButton = root.querySelector("[data-save-contact]");
-  const actionButtons = Array.from(root.querySelectorAll("[data-track-action]"));
-  const slugSearchForm = document.getElementById("card-slug-search-form");
-  const slugSearchInput = document.getElementById("card-slug-search-input");
-  const slugSearchResults = document.getElementById("card-slug-search-results");
+  state.activeTab = state.wall && window.location.hash === "#posts" ? "posts" : "card";
+
   let searchTimer = null;
   let lastQuery = "";
   let lastItems = [];
@@ -50,6 +49,143 @@
   liveRegion.style.whiteSpace = "nowrap";
   liveRegion.style.border = "0";
   document.body.appendChild(liveRegion);
+
+  function getCsrfToken() {
+    return csrfMeta instanceof HTMLMetaElement ? String(csrfMeta.getAttribute("content") || "") : "";
+  }
+
+  function updateCsrfToken(nextToken) {
+    if (!(csrfMeta instanceof HTMLMetaElement)) return;
+    const value = String(nextToken || "").trim();
+    if (value) {
+      csrfMeta.setAttribute("content", value);
+    }
+  }
+
+  function normalizeWallPayload(rawWall) {
+    if (!rawWall || typeof rawWall !== "object" || rawWall.enabled === false) {
+      return null;
+    }
+    const items = Array.isArray(rawWall.items)
+      ? rawWall.items
+        .map((item) => {
+          if (!item || typeof item !== "object") return null;
+          return {
+            ...item,
+            id: String(item.id || "").trim(),
+            content: String(item.content || ""),
+            status: String(item.status || "published"),
+            likesCount: Number(item.likesCount || 0),
+            viewerHasLiked: Boolean(item.viewerHasLiked),
+            viewerCanLike: Boolean(item.viewerCanLike),
+            isEdited: Boolean(item.isEdited),
+          };
+        })
+        .filter((item) => item && item.id)
+      : [];
+    const pagination = rawWall.pagination && typeof rawWall.pagination === "object" ? rawWall.pagination : {};
+    return {
+      enabled: true,
+      items,
+      pagination: {
+        page: Math.max(1, Number(pagination.page || 1)),
+        pageSize: Math.max(1, Number(pagination.pageSize || 10)),
+        total: Math.max(0, Number(pagination.total || items.length)),
+        hasMore: Boolean(pagination.hasMore),
+      },
+    };
+  }
+
+  function mergeWallItems(currentItems, nextItems) {
+    const existingIds = new Set((Array.isArray(currentItems) ? currentItems : []).map((item) => String(item?.id || "")));
+    const merged = Array.isArray(currentItems) ? currentItems.slice(0) : [];
+    for (const item of Array.isArray(nextItems) ? nextItems : []) {
+      if (!item || !item.id || existingIds.has(item.id)) continue;
+      merged.push(item);
+      existingIds.add(item.id);
+    }
+    return merged;
+  }
+
+  function replaceWallPost(nextPost) {
+    if (!state.wall || !nextPost || !nextPost.id) return;
+    state.wall.items = state.wall.items.map((item) => (item.id === nextPost.id ? nextPost : item));
+  }
+
+  function buildWallOptions() {
+    if (!state.wall) return null;
+    return {
+      enabled: true,
+      activeTab: state.activeTab,
+      items: state.wall.items.map((item) => ({
+        ...item,
+        isBusy: state.wallBusyLikeIds.has(item.id),
+      })),
+      pagination: {
+        ...state.wall.pagination,
+        isLoadingMore: state.wallLoadingMore,
+      },
+    };
+  }
+
+  function renderCard() {
+    const root = window.CardView.mountCardView(host, state.card || {}, {
+      shareUrl: state.shareUrl,
+      viewsLabel: state.viewsLabel,
+      score: state.score,
+      topBadge: state.topBadge,
+      officialUnqBadge: state.officialUnqBadge,
+      staffBadge: state.staffBadge,
+      wall: buildWallOptions(),
+    });
+    syncAvatarFallback(root);
+    return root;
+  }
+
+  function syncAvatarFallback(root) {
+    if (!(root instanceof HTMLElement)) {
+      return;
+    }
+    const avatarImage = root.querySelector("[data-avatar-image]");
+    const avatarFallback = root.querySelector("[data-avatar-fallback]");
+
+    const showFallback = () => {
+      if (avatarImage instanceof HTMLElement) {
+        avatarImage.classList.add("hidden");
+        avatarImage.style.display = "none";
+      }
+      if (avatarFallback instanceof HTMLElement) {
+        avatarFallback.classList.remove("hidden");
+        avatarFallback.style.display = "flex";
+        avatarFallback.setAttribute("aria-hidden", "false");
+      }
+    };
+
+    const hideFallback = () => {
+      if (avatarFallback instanceof HTMLElement) {
+        avatarFallback.classList.add("hidden");
+        avatarFallback.style.display = "none";
+        avatarFallback.setAttribute("aria-hidden", "true");
+      }
+      if (avatarImage instanceof HTMLElement) {
+        avatarImage.classList.remove("hidden");
+        avatarImage.style.display = "";
+      }
+    };
+
+    if (!(avatarImage instanceof HTMLElement)) {
+      showFallback();
+      return;
+    }
+
+    hideFallback();
+    if (avatarImage instanceof HTMLImageElement && avatarImage.complete && avatarImage.naturalWidth > 0) {
+      hideFallback();
+      return;
+    }
+    avatarImage.addEventListener("load", hideFallback, { once: true });
+    avatarImage.addEventListener("error", showFallback, { once: true });
+  }
 
   function copyWithFallback(value) {
     const textarea = document.createElement("textarea");
@@ -114,6 +250,107 @@
     toast.dataset[timerKey] = String(nextTimer);
   }
 
+  async function requestJson(url, options = {}, allowRetry = true) {
+    const headers = { Accept: "application/json", ...(options.headers || {}) };
+    const method = String(options.method || "GET").toUpperCase();
+    const csrfToken = getCsrfToken();
+    if (method !== "GET" && method !== "HEAD" && method !== "OPTIONS" && csrfToken) {
+      headers["X-CSRF-Token"] = csrfToken;
+    }
+    const response = await fetch(url, { ...options, headers });
+    const data = await response.json().catch(() => ({}));
+    if (data && data.csrfToken) {
+      updateCsrfToken(data.csrfToken);
+    }
+    if (!response.ok && allowRetry && data && data.code === "CSRF_INVALID" && data.csrfToken) {
+      return requestJson(url, options, false);
+    }
+    return { response, data: data && typeof data === "object" ? data : {} };
+  }
+
+  function wallLoginUrl() {
+    const nextPath = `/${encodeURIComponent(state.slug || String(state.card?.slug || ""))}#posts`;
+    return `/login?next=${encodeURIComponent(nextPath)}`;
+  }
+
+  async function toggleWallLike(postId) {
+    if (!state.wall || !postId || state.wallBusyLikeIds.has(postId)) {
+      return;
+    }
+    const currentPost = state.wall.items.find((item) => item.id === postId);
+    if (!currentPost) {
+      return;
+    }
+
+    state.wallBusyLikeIds.add(postId);
+    renderCard();
+
+    try {
+      const method = currentPost.viewerHasLiked ? "DELETE" : "PUT";
+      const { response, data } = await requestJson(
+        `/api/cards/${encodeURIComponent(state.slug)}/wall-posts/${encodeURIComponent(postId)}/like`,
+        { method },
+      );
+
+      if (!response.ok) {
+        if (response.status === 401 || data.code === "AUTH_REQUIRED") {
+          window.location.assign(wallLoginUrl());
+          return;
+        }
+        if (data.code === "WALL_POST_SELF_LIKE_FORBIDDEN") {
+          showToast("Нельзя лайкать свои посты", "error");
+          return;
+        }
+        showToast(data.error || "Не удалось обновить лайк", "error");
+        return;
+      }
+
+      if (data.post && typeof data.post === "object") {
+        replaceWallPost(data.post);
+        renderCard();
+      }
+    } catch {
+      showToast("Не удалось обновить лайк", "error");
+    } finally {
+      state.wallBusyLikeIds.delete(postId);
+      renderCard();
+    }
+  }
+
+  async function loadMoreWallPosts() {
+    if (!state.wall || state.wallLoadingMore || !state.wall.pagination.hasMore) {
+      return;
+    }
+    state.wallLoadingMore = true;
+    renderCard();
+    try {
+      const nextPage = Number(state.wall.pagination.page || 1) + 1;
+      const { response, data } = await requestJson(
+        `/api/cards/${encodeURIComponent(state.slug)}/wall-posts?page=${encodeURIComponent(nextPage)}&pageSize=${encodeURIComponent(state.wall.pagination.pageSize || 10)}`,
+      );
+      if (!response.ok) {
+        showToast(data.error || "Не удалось загрузить посты", "error");
+        return;
+      }
+      const nextWall = normalizeWallPayload({
+        enabled: true,
+        items: data.items,
+        pagination: data.pagination,
+      });
+      if (!nextWall) {
+        return;
+      }
+      state.wall.items = mergeWallItems(state.wall.items, nextWall.items);
+      state.wall.pagination = nextWall.pagination;
+      renderCard();
+    } catch {
+      showToast("Не удалось загрузить посты", "error");
+    } finally {
+      state.wallLoadingMore = false;
+      renderCard();
+    }
+  }
+
   function normalizeSearchSlug(value) {
     const raw = String(value || "").toUpperCase();
     let letters = "";
@@ -136,6 +373,7 @@
 
     return `${letters}${digits}`;
   }
+
   const STRICT_SLUG_REGEX = /^[A-Z]{3}[0-9]{3}$/;
 
   function hideResults() {
@@ -206,8 +444,8 @@
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
       }
-      const payload = await response.json();
-      const items = Array.isArray(payload?.items) ? payload.items : [];
+      const nextPayload = await response.json();
+      const items = Array.isArray(nextPayload?.items) ? nextPayload.items : [];
       if (query !== lastQuery) {
         return;
       }
@@ -220,60 +458,59 @@
     }
   }
 
-  function showAvatarFallback() {
-    if (avatarImage instanceof HTMLElement) {
-      avatarImage.classList.add("hidden");
-      avatarImage.style.display = "none";
+  host.addEventListener("click", async (event) => {
+    const target = event.target instanceof HTMLElement ? event.target : null;
+    if (!target) {
+      return;
     }
-    if (avatarFallback instanceof HTMLElement) {
-      avatarFallback.classList.remove("hidden");
-      avatarFallback.style.display = "flex";
-      avatarFallback.setAttribute("aria-hidden", "false");
-    }
-  }
 
-  function hideAvatarFallback() {
-    if (avatarFallback instanceof HTMLElement) {
-      avatarFallback.classList.add("hidden");
-      avatarFallback.style.display = "none";
-      avatarFallback.setAttribute("aria-hidden", "true");
-    }
-    if (avatarImage instanceof HTMLElement) {
-      avatarImage.classList.remove("hidden");
-      avatarImage.style.display = "";
-    }
-  }
-
-  if (avatarImage instanceof HTMLElement) {
-    hideAvatarFallback();
-    if (avatarImage instanceof HTMLImageElement && avatarImage.complete && avatarImage.naturalWidth > 0) {
-      hideAvatarFallback();
-    }
-    avatarImage.addEventListener("load", hideAvatarFallback, { once: true });
-    avatarImage.addEventListener("error", showAvatarFallback, { once: true });
-  }
-
-  if (shareButton instanceof HTMLButtonElement) {
-    let resetTimer = null;
-
-    function setShareLabel(value) {
-      if (!(shareLabel instanceof HTMLElement)) {
-        return;
+    const tabButton = target.closest("[data-card-tab]");
+    if (tabButton instanceof HTMLElement && state.wall) {
+      const nextTab = tabButton.getAttribute("data-card-tab") === "posts" ? "posts" : "card";
+      if (nextTab === "posts") {
+        if (window.location.hash !== "#posts") {
+          window.location.hash = "posts";
+          return;
+        }
+      } else if (window.location.hash) {
+        window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}`);
       }
-      shareLabel.textContent = value;
+      state.activeTab = nextTab;
+      renderCard();
+      return;
     }
 
-    shareButton.addEventListener("click", async () => {
+    const likeButton = target.closest("[data-wall-like]");
+    if (likeButton instanceof HTMLElement) {
+      event.preventDefault();
+      const postId = String(likeButton.getAttribute("data-post-id") || "").trim();
+      await toggleWallLike(postId);
+      return;
+    }
+
+    const loadMoreButton = target.closest("[data-wall-load-more]");
+    if (loadMoreButton instanceof HTMLElement) {
+      event.preventDefault();
+      await loadMoreWallPosts();
+      return;
+    }
+
+    const shareButton = target.closest("[data-share-card]");
+    if (shareButton instanceof HTMLButtonElement) {
+      const root = host.querySelector("[data-card-view]");
+      const shareLabel = root instanceof HTMLElement ? root.querySelector("[data-share-label]") : null;
       let shared = false;
 
       try {
         if (navigator.share) {
           await navigator.share({
             title: document.title,
-            url: shareUrl,
+            url: state.shareUrl,
           });
           shared = true;
-          setShareLabel("Отправлено");
+          if (shareLabel instanceof HTMLElement) {
+            shareLabel.textContent = "Отправлено";
+          }
           announce("Ссылка отправлена");
         }
       } catch {
@@ -281,30 +518,30 @@
       }
 
       if (!shared) {
-        const copied = await copyText(shareUrl);
-        setShareLabel(copied ? "Скопировано" : "Ошибка");
+        const copied = await copyText(state.shareUrl);
+        if (shareLabel instanceof HTMLElement) {
+          shareLabel.textContent = copied ? "Скопировано" : "Ошибка";
+        }
         showToast(copied ? "Ссылка скопирована" : "Не удалось скопировать ссылку", copied ? "success" : "error");
         announce(copied ? "Ссылка скопирована" : "Не удалось скопировать ссылку");
       }
 
-      if (resetTimer) {
-        window.clearTimeout(resetTimer);
-      }
-
-      resetTimer = window.setTimeout(() => {
-        setShareLabel("Поделиться");
+      window.setTimeout(() => {
+        const nextRoot = host.querySelector("[data-card-view]");
+        const nextLabel = nextRoot instanceof HTMLElement ? nextRoot.querySelector("[data-share-label]") : null;
+        if (nextLabel instanceof HTMLElement) {
+          nextLabel.textContent = "Поделиться";
+        }
       }, 1600);
-    });
-  }
+      return;
+    }
 
-  if (saveContactButton instanceof HTMLButtonElement) {
-    saveContactButton.addEventListener("click", () => {
-      const card = payload && typeof payload.card === "object" && payload.card ? payload.card : {};
+    const saveContactButton = target.closest("[data-save-contact]");
+    if (saveContactButton instanceof HTMLButtonElement) {
+      const card = state.card && typeof state.card === "object" ? state.card : {};
       const fullName = String(card.name || "UNQX User").trim();
       const phone = String(card.phone || card.extraPhone || "").trim();
       const email = String(card.email || "").trim();
-      const url = String(payload.shareUrl || shareUrl || window.location.href).trim();
-
       const safeName = fullName || "UNQ User";
       const lines = ["BEGIN:VCARD", "VERSION:3.0", `FN:${safeName}`];
       if (phone) {
@@ -313,60 +550,59 @@
       if (email) {
         lines.push(`EMAIL;TYPE=INTERNET:${email}`);
       }
-      if (url) {
-        lines.push(`URL:${url}`);
+      if (state.shareUrl) {
+        lines.push(`URL:${state.shareUrl}`);
       }
       lines.push("END:VCARD");
 
       const blob = new Blob([`${lines.join("\r\n")}\r\n`], { type: "text/vcard;charset=utf-8" });
       const downloadUrl = URL.createObjectURL(blob);
       const link = document.createElement("a");
-      const filename = (slug || "unq-card").toLowerCase().replace(/[^a-z0-9_-]/g, "");
+      const fileName = (state.slug || "unq-card").toLowerCase().replace(/[^a-z0-9_-]/g, "");
       link.href = downloadUrl;
-      link.download = `${filename || "contact"}.vcf`;
+      link.download = `${fileName || "contact"}.vcf`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(downloadUrl);
       announce("Контакт сохранен");
-    });
-  }
+      return;
+    }
 
-  if (actionButtons.length && slug) {
-    const clickUrl = `/api/cards/${encodeURIComponent(slug)}/click`;
-    actionButtons.forEach((button) => {
-      button.addEventListener("click", async (event) => {
-        const cardToCopy = String(button.getAttribute("data-copy-card") || "").trim();
-        if (cardToCopy) {
-          event.preventDefault();
-          const copied = await copyText(cardToCopy);
-          const labelNode = button.querySelector("span");
-          const previousText = labelNode instanceof HTMLElement ? labelNode.textContent || "" : "";
-          if (labelNode instanceof HTMLElement) {
-            labelNode.textContent = copied ? "Скопировано" : "Ошибка копирования";
-            window.setTimeout(() => {
-              labelNode.textContent = previousText;
-            }, 1400);
-          }
-          showToast(copied ? "Номер карты скопирован" : "Не удалось скопировать номер карты", copied ? "success" : "error");
-          announce(copied ? "Номер карты скопирован" : "Не удалось скопировать номер карты");
+    const actionButton = target.closest("[data-track-action]");
+    if (actionButton instanceof HTMLElement && state.slug) {
+      const clickUrl = `/api/cards/${encodeURIComponent(state.slug)}/click`;
+      const cardToCopy = String(actionButton.getAttribute("data-copy-card") || "").trim();
+      if (cardToCopy) {
+        event.preventDefault();
+        const copied = await copyText(cardToCopy);
+        const labelNode = actionButton.querySelector("span");
+        const previousText = labelNode instanceof HTMLElement ? labelNode.textContent || "" : "";
+        if (labelNode instanceof HTMLElement) {
+          labelNode.textContent = copied ? "Скопировано" : "Ошибка копирования";
+          window.setTimeout(() => {
+            labelNode.textContent = previousText;
+          }, 1400);
         }
-        const buttonType = String(button.getAttribute("data-button-type") || "other").toLowerCase();
-        const bodyText = JSON.stringify({ buttonType });
-        if (navigator.sendBeacon) {
-          const body = new Blob([bodyText], { type: "application/json" });
-          navigator.sendBeacon(clickUrl, body);
-          return;
-        }
-        void fetch(clickUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: bodyText,
-          keepalive: true,
-        });
+        showToast(copied ? "Номер карты скопирован" : "Не удалось скопировать номер карты", copied ? "success" : "error");
+        announce(copied ? "Номер карты скопирован" : "Не удалось скопировать номер карты");
+      }
+
+      const buttonType = String(actionButton.getAttribute("data-button-type") || "other").toLowerCase();
+      const bodyText = JSON.stringify({ buttonType });
+      if (navigator.sendBeacon) {
+        const body = new Blob([bodyText], { type: "application/json" });
+        navigator.sendBeacon(clickUrl, body);
+        return;
+      }
+      void fetch(clickUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: bodyText,
+        keepalive: true,
       });
-    });
-  }
+    }
+  });
 
   if (slugSearchInput instanceof HTMLInputElement) {
     slugSearchInput.addEventListener("input", () => {
@@ -385,6 +621,7 @@
         void searchSlugs(query);
       }, 140);
     });
+
     slugSearchInput.addEventListener("focus", () => {
       if (lastQuery) {
         renderResults(lastItems, lastQuery);
@@ -420,7 +657,19 @@
     }
   });
 
-  if (!slug) {
+  if (state.wall) {
+    window.addEventListener("hashchange", () => {
+      const nextTab = window.location.hash === "#posts" ? "posts" : "card";
+      if (nextTab !== state.activeTab) {
+        state.activeTab = nextTab;
+        renderCard();
+      }
+    });
+  }
+
+  renderCard();
+
+  if (!state.slug) {
     return;
   }
 
@@ -443,20 +692,20 @@
     return owned.has(String(currentSlug || "").trim().toUpperCase());
   }
 
-  if (payload && payload.trackViaPageRequest) {
+  if (state.trackViaPageRequest) {
     return;
   }
 
-  if (isOwnerSlug(slug)) {
+  if (isOwnerSlug(state.slug)) {
     return;
   }
 
   const src = new URLSearchParams(window.location.search).get("src");
-  const viewUrl = `/api/cards/${encodeURIComponent(slug)}/view${src ? `?src=${encodeURIComponent(src)}` : ""}`;
+  const viewUrl = `/api/cards/${encodeURIComponent(state.slug)}/view${src ? `?src=${encodeURIComponent(src)}` : ""}`;
 
   if (navigator.sendBeacon) {
-    const payload = new Blob(["{}"], { type: "application/json" });
-    navigator.sendBeacon(viewUrl, payload);
+    const beaconPayload = new Blob(["{}"], { type: "application/json" });
+    navigator.sendBeacon(viewUrl, beaconPayload);
     return;
   }
 

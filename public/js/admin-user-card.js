@@ -60,6 +60,15 @@
     avatarFile: $("#user-card-avatar-file"),
     avatarUpload: $("#user-card-avatar-upload"),
     avatarRemove: $("#user-card-avatar-remove"),
+    wallStatus: $("#admin-wall-status"),
+    wallEditorWrap: $("#admin-wall-editor"),
+    wallEditorTitle: $("#admin-wall-editor-title"),
+    wallEditorBody: $("#admin-wall-editor-body"),
+    wallEditorCounter: $("#admin-wall-editor-counter"),
+    wallEditorSave: $("#admin-wall-editor-save"),
+    wallEditorCancel: $("#admin-wall-editor-cancel"),
+    wallList: $("#admin-wall-list"),
+    wallLoadMore: $("#admin-wall-load-more"),
   };
 
   if (
@@ -109,10 +118,17 @@
     themes: [],
     plan: "none",
     theme: "default_dark",
+    wallItems: [],
+    wallPagination: { page: 1, pageSize: 20, total: 0, hasMore: false },
+    wallLoading: false,
+    wallEditingId: "",
+    wallDraftContent: "",
   };
 
   let pendingAvatarFile = null;
   let pendingAvatarPreviewUrl = "";
+  const WALL_POST_CONTENT_MAX = 280;
+  const WALL_PAGE_SIZE = 20;
 
   function showAlert(message, title) {
     if (window.UNQAdminDialog && typeof window.UNQAdminDialog.alert === "function") {
@@ -215,6 +231,60 @@
     el.avatarPreview.src = hasUrl ? url : "";
     el.avatarPreview.classList.toggle("hidden", !hasUrl);
     el.avatarFallback.classList.toggle("hidden", hasUrl);
+  }
+
+  function formatWallDateTime(value) {
+    const date = new Date(value || "");
+    if (Number.isNaN(date.getTime())) return "—";
+    const formatter = new Intl.DateTimeFormat("ru-RU", {
+      timeZone: "Asia/Tashkent",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    const parts = Object.create(null);
+    for (const part of formatter.formatToParts(date)) {
+      if (part.type !== "literal") {
+        parts[part.type] = part.value;
+      }
+    }
+    return `${parts.hour || "00"}:${parts.minute || "00"} ${parts.day || "00"}.${parts.month || "00"}.${parts.year || "0000"}`;
+  }
+
+  function normalizeWallPost(item) {
+    if (!item || typeof item !== "object") return null;
+    const id = String(item.id || "").trim();
+    if (!id) return null;
+    return {
+      ...item,
+      id,
+      content: String(item.content || ""),
+      status: String(item.status || "published"),
+      statusLabel: String(item.statusLabel || ""),
+      likesCount: Number(item.likesCount || 0),
+      isEdited: Boolean(item.isEdited),
+    };
+  }
+
+  function normalizeWallPagination(pagination) {
+    const source = pagination && typeof pagination === "object" ? pagination : {};
+    return {
+      page: Math.max(1, Number(source.page || 1)),
+      pageSize: Math.max(1, Number(source.pageSize || WALL_PAGE_SIZE)),
+      total: Math.max(0, Number(source.total || 0)),
+      hasMore: Boolean(source.hasMore),
+    };
+  }
+
+  function resetWallEditor() {
+    state.wallEditingId = "";
+    state.wallDraftContent = "";
+  }
+
+  function currentWallPost() {
+    return (Array.isArray(state.wallItems) ? state.wallItems : []).find((item) => item.id === state.wallEditingId) || null;
   }
 
   function renderTags() {
@@ -329,6 +399,112 @@
     }
   }
 
+  function renderWallEditor() {
+    if (!(el.wallEditorWrap instanceof HTMLElement) || !(el.wallEditorBody instanceof HTMLTextAreaElement)) return;
+    const draftValue = String(state.wallDraftContent || "").slice(0, WALL_POST_CONTENT_MAX);
+    if (el.wallEditorBody.value !== draftValue) {
+      el.wallEditorBody.value = draftValue;
+    }
+    el.wallEditorWrap.classList.toggle("hidden", !state.wallEditingId);
+    if (el.wallEditorTitle instanceof HTMLElement) {
+      el.wallEditorTitle.textContent = "Редактировать пост";
+    }
+    if (el.wallEditorCounter instanceof HTMLElement) {
+      el.wallEditorCounter.textContent = `${draftValue.length}/${WALL_POST_CONTENT_MAX}`;
+    }
+    if (el.wallEditorSave instanceof HTMLButtonElement) {
+      el.wallEditorSave.disabled = draftValue.trim().length === 0 || state.wallLoading;
+    }
+  }
+
+  function renderWallList() {
+    if (!(el.wallList instanceof HTMLElement)) return;
+    const items = Array.isArray(state.wallItems) ? state.wallItems : [];
+    if (el.wallStatus instanceof HTMLElement) {
+      el.wallStatus.textContent = items.length
+        ? `Всего постов: ${state.wallPagination.total || items.length}`
+        : state.wallLoading
+          ? "Загрузка постов..."
+          : "Постов пока нет";
+    }
+
+    if (state.wallLoading && !items.length) {
+      el.wallList.innerHTML = '<div class="rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-6 text-sm text-neutral-500">Загрузка постов...</div>';
+    } else if (!items.length) {
+      el.wallList.innerHTML = '<div class="rounded-xl border border-dashed border-neutral-200 px-4 py-6 text-sm text-neutral-500">У пользователя пока нет постов на стене.</div>';
+    } else {
+      el.wallList.innerHTML = items
+        .map((item) => {
+          const statusClass =
+            item.status === "deleted"
+              ? "border-neutral-300 bg-neutral-100 text-neutral-600"
+              : item.status === "hidden"
+                ? "border-amber-200 bg-amber-50 text-amber-700"
+                : "border-emerald-200 bg-emerald-50 text-emerald-700";
+          const canModerate = item.status !== "deleted";
+          return `<article class="rounded-xl border border-neutral-200 bg-white p-4" data-wall-post-id="${esc(item.id)}">
+            <div class="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <div class="flex flex-wrap items-center gap-2">
+                  <p class="text-sm font-semibold text-neutral-900">${esc(state.user?.displayName || state.user?.firstName || state.user?.username || "Пользователь")}</p>
+                  <span class="inline-flex rounded-full border px-2 py-0.5 text-[11px] font-semibold ${statusClass}">${esc(item.statusLabel || item.status)}</span>
+                </div>
+                <p class="mt-1 text-xs text-neutral-500">Создан: ${esc(formatWallDateTime(item.createdAt))}${item.isEdited ? ` • Обновлён: ${esc(formatWallDateTime(item.updatedAt))}` : ""}</p>
+              </div>
+              <div class="text-right text-xs text-neutral-500">
+                <p>${Number(item.likesCount || 0).toLocaleString("ru-RU")} лайков</p>
+              </div>
+            </div>
+            <div class="mt-3 whitespace-pre-line text-sm leading-6 text-neutral-800">${esc(item.content)}</div>
+            <div class="mt-4 flex flex-wrap gap-2">
+              ${canModerate ? `<button type="button" data-wall-action="edit" data-wall-post-id="${esc(item.id)}" class="rounded-lg border border-neutral-300 px-3 py-2 text-xs font-semibold transition hover:bg-neutral-100">Редактировать</button>` : ""}
+              ${canModerate ? `<button type="button" data-wall-action="${item.status === "hidden" ? "unhide" : "hide"}" data-wall-post-id="${esc(item.id)}" class="rounded-lg border border-neutral-300 px-3 py-2 text-xs font-semibold transition hover:bg-neutral-100">${item.status === "hidden" ? "Показать" : "Скрыть"}</button>` : ""}
+              ${canModerate ? `<button type="button" data-wall-action="delete" data-wall-post-id="${esc(item.id)}" class="rounded-lg border border-red-200 px-3 py-2 text-xs font-semibold text-red-700 transition hover:bg-red-50">Удалить</button>` : ""}
+            </div>
+          </article>`;
+        })
+        .join("");
+    }
+
+    if (el.wallLoadMore instanceof HTMLButtonElement) {
+      el.wallLoadMore.textContent = state.wallLoading && items.length ? "Загрузка..." : "Показать ещё";
+      el.wallLoadMore.disabled = state.wallLoading;
+      el.wallLoadMore.classList.toggle("hidden", !state.wallPagination.hasMore);
+    }
+  }
+
+  function renderWall() {
+    renderWallEditor();
+    renderWallList();
+  }
+
+  async function loadWallPosts({ append = false } = {}) {
+    if (state.wallLoading) return;
+    state.wallLoading = true;
+    renderWallList();
+    try {
+      const nextPage = append ? Number(state.wallPagination.page || 1) + 1 : 1;
+      const payload = await api(`/api/admin/users/${encodeURIComponent(userId)}/wall-posts?page=${encodeURIComponent(nextPage)}&pageSize=${encodeURIComponent(WALL_PAGE_SIZE)}`);
+      const nextItems = Array.isArray(payload.items) ? payload.items.map(normalizeWallPost).filter(Boolean) : [];
+      const current = append ? state.wallItems.slice(0) : [];
+      const knownIds = new Set(current.map((item) => item.id));
+      for (const item of nextItems) {
+        if (!knownIds.has(item.id)) {
+          current.push(item);
+          knownIds.add(item.id);
+        }
+      }
+      state.wallItems = append ? current : nextItems;
+      state.wallPagination = normalizeWallPagination(payload.pagination);
+      renderWall();
+    } catch (error) {
+      setError(error.message || "Не удалось загрузить посты");
+    } finally {
+      state.wallLoading = false;
+      renderWallList();
+    }
+  }
+
   function setFormValues() {
     const card = state.card || {};
     const fallbackName =
@@ -366,13 +542,19 @@
     setProfileLoading(true);
     setError("");
     try {
-      const payload = await api(`/api/admin/users/${encodeURIComponent(userId)}/card`);
+      const [payload, wallPayload] = await Promise.all([
+        api(`/api/admin/users/${encodeURIComponent(userId)}/card`),
+        api(`/api/admin/users/${encodeURIComponent(userId)}/wall-posts?page=1&pageSize=${encodeURIComponent(WALL_PAGE_SIZE)}`),
+      ]);
       state.user = payload.user || null;
       state.card = payload.card || null;
       state.limits = payload.limits || { tags: 0, buttons: 0 };
       state.themes = Array.isArray(payload.themes) ? payload.themes : ["default_dark"];
       state.slugs = Array.isArray(payload.slugs) ? payload.slugs.slice(0) : [];
       state.plan = state.user?.plan || "none";
+      state.wallItems = Array.isArray(wallPayload?.items) ? wallPayload.items.map(normalizeWallPost).filter(Boolean) : [];
+      state.wallPagination = normalizeWallPagination(wallPayload?.pagination);
+      resetWallEditor();
 
       state.tags = Array.isArray(state.card?.tags) ? state.card.tags.slice(0) : [];
       state.buttons = Array.isArray(state.card?.buttons)
@@ -391,9 +573,11 @@
       renderTags();
       renderButtons();
       updateLimits();
+      renderWall();
     } catch (error) {
       setError(error.message || "Не удалось загрузить визитку");
     } finally {
+      state.wallLoading = false;
       setLoading(false);
       setProfileLoading(false);
     }
@@ -670,6 +854,87 @@
     }
   }
 
+  function startWallEdit(postId) {
+    const post = (Array.isArray(state.wallItems) ? state.wallItems : []).find((item) => item.id === postId);
+    if (!post) return;
+    state.wallEditingId = post.id;
+    state.wallDraftContent = String(post.content || "");
+    renderWallEditor();
+    el.wallEditorBody?.focus();
+  }
+
+  async function saveWallEdit() {
+    const postId = String(state.wallEditingId || "").trim();
+    const content = String(state.wallDraftContent || "").trim();
+    if (!postId || !content) return;
+    try {
+      state.wallLoading = true;
+      renderWall();
+      const payload = await api(`/api/admin/users/${encodeURIComponent(userId)}/wall-posts/${encodeURIComponent(postId)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content }),
+      });
+      const nextPost = normalizeWallPost(payload.post);
+      if (nextPost) {
+        state.wallItems = state.wallItems.map((item) => (item.id === nextPost.id ? nextPost : item));
+      }
+      resetWallEditor();
+      renderWall();
+      await showAlert("Пост обновлён.");
+    } catch (error) {
+      await showAlert(error.message || "Не удалось сохранить пост");
+    } finally {
+      state.wallLoading = false;
+      renderWall();
+    }
+  }
+
+  async function updateWallPostStatus(postId, status) {
+    try {
+      state.wallLoading = true;
+      renderWallList();
+      const payload = await api(`/api/admin/users/${encodeURIComponent(userId)}/wall-posts/${encodeURIComponent(postId)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      const nextPost = normalizeWallPost(payload.post);
+      if (nextPost) {
+        state.wallItems = state.wallItems.map((item) => (item.id === nextPost.id ? nextPost : item));
+      }
+      renderWall();
+    } catch (error) {
+      await showAlert(error.message || "Не удалось обновить статус поста");
+    } finally {
+      state.wallLoading = false;
+      renderWallList();
+    }
+  }
+
+  async function deleteWallPost(postId) {
+    const ok = await showConfirm("Удалить пост со стены?", "Удаление поста");
+    if (!ok) return;
+    try {
+      state.wallLoading = true;
+      renderWallList();
+      await api(`/api/admin/users/${encodeURIComponent(userId)}/wall-posts/${encodeURIComponent(postId)}`, {
+        method: "DELETE",
+      });
+      state.wallLoading = false;
+      await loadWallPosts();
+      if (state.wallEditingId === postId) {
+        resetWallEditor();
+      }
+      await showAlert("Пост удалён.");
+    } catch (error) {
+      await showAlert(error.message || "Не удалось удалить пост");
+    } finally {
+      state.wallLoading = false;
+      renderWall();
+    }
+  }
+
   el.tagAdd?.addEventListener("click", async () => {
     const raw = el.tagInput instanceof HTMLInputElement ? el.tagInput.value.trim() : "";
     if (!raw) return;
@@ -810,6 +1075,47 @@
 
   el.avatarUpload?.addEventListener("click", uploadAvatar);
   el.avatarRemove?.addEventListener("click", removeAvatar);
+  el.wallEditorBody?.addEventListener("input", () => {
+    if (!(el.wallEditorBody instanceof HTMLTextAreaElement)) return;
+    state.wallDraftContent = el.wallEditorBody.value.slice(0, WALL_POST_CONTENT_MAX);
+    if (el.wallEditorBody.value !== state.wallDraftContent) {
+      el.wallEditorBody.value = state.wallDraftContent;
+    }
+    renderWallEditor();
+  });
+  el.wallEditorSave?.addEventListener("click", () => {
+    void saveWallEdit();
+  });
+  el.wallEditorCancel?.addEventListener("click", () => {
+    resetWallEditor();
+    renderWallEditor();
+  });
+  el.wallLoadMore?.addEventListener("click", () => {
+    void loadWallPosts({ append: true });
+  });
+  el.wallList?.addEventListener("click", (event) => {
+    const target = event.target instanceof HTMLElement ? event.target : null;
+    const action = target?.closest("[data-wall-action]");
+    if (!(action instanceof HTMLElement)) return;
+    const postId = String(action.getAttribute("data-wall-post-id") || "").trim();
+    if (!postId) return;
+    const type = String(action.getAttribute("data-wall-action") || "");
+    if (type === "edit") {
+      startWallEdit(postId);
+      return;
+    }
+    if (type === "hide") {
+      void updateWallPostStatus(postId, "hidden");
+      return;
+    }
+    if (type === "unhide") {
+      void updateWallPostStatus(postId, "published");
+      return;
+    }
+    if (type === "delete") {
+      void deleteWallPost(postId);
+    }
+  });
 
   load();
 })();

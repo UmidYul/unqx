@@ -913,6 +913,10 @@
         '<svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z"></path><circle cx="12" cy="10" r="2.8"></circle></svg>',
       email: '<svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16v12H4z"></path><path d="m4 7 8 6 8-6"></path></svg>',
       hashtag: '<svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true"><path d="m10 3-2 18M16 3l-2 18M4 9h16M3 15h16"></path></svg>',
+      heart:
+        '<svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 20.5-1.1-1C5.1 14.2 2 11.4 2 7.9 2 5.3 4.1 3.2 6.7 3.2c1.5 0 2.9.7 3.8 1.9.9-1.2 2.3-1.9 3.8-1.9 2.6 0 4.7 2.1 4.7 4.7 0 3.5-3.1 6.3-8.9 11.6L12 20.5Z"></path></svg>',
+      heartFilled:
+        '<svg class="h-4 w-4" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="m12 21.1-1.1-.9C5.3 15.2 2 12.2 2 8.4 2 5.5 4.3 3.2 7.2 3.2c1.8 0 3.5.9 4.6 2.4 1.1-1.5 2.8-2.4 4.6-2.4 2.9 0 5.2 2.3 5.2 5.2 0 3.8-3.3 6.8-8.9 11.8L12 21.1Z"></path></svg>',
       linkedin:
         '<svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"></rect><path d="M8 10v6M8 8.2v.1M12 16v-3.2c0-1.2.9-2.1 2-2.1 1.2 0 2 .9 2 2.1V16"></path></svg>',
       tiktok:
@@ -1020,6 +1024,68 @@
     return `<a href="${esc(link.url)}" target="_blank" rel="noopener noreferrer" class="unq-ref-social-link" aria-label="${esc(link.label)}">${iconSvg(link.icon)}</a>`;
   }
 
+  function formatWallDateTime(value) {
+    const date = new Date(value || "");
+    if (Number.isNaN(date.getTime())) {
+      return "—";
+    }
+    const formatter = new Intl.DateTimeFormat("ru-RU", {
+      timeZone: "Asia/Tashkent",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    const parts = Object.create(null);
+    for (const part of formatter.formatToParts(date)) {
+      if (part.type !== "literal") {
+        parts[part.type] = part.value;
+      }
+    }
+    return `${parts.hour || "00"}:${parts.minute || "00"} ${parts.day || "00"}.${parts.month || "00"}.${parts.year || "0000"}`;
+  }
+
+  function renderWallPostContent(value) {
+    return esc(String(value || "")).replace(/\n/g, "<br>");
+  }
+
+  function normalizeWallForRender(rawWall) {
+    if (!rawWall || typeof rawWall !== "object" || rawWall.enabled === false) {
+      return null;
+    }
+    const items = Array.isArray(rawWall.items)
+      ? rawWall.items
+        .map((item) => {
+          if (!item || typeof item !== "object") return null;
+          return {
+            id: String(item.id || "").trim(),
+            content: String(item.content || ""),
+            createdAt: item.createdAt || null,
+            updatedAt: item.updatedAt || null,
+            likesCount: Number(item.likesCount || 0),
+            viewerHasLiked: Boolean(item.viewerHasLiked),
+            viewerCanLike: Boolean(item.viewerCanLike),
+            isEdited: Boolean(item.isEdited),
+            isBusy: Boolean(item.isBusy),
+          };
+        })
+        .filter((item) => item && item.id)
+      : [];
+    const pagination = rawWall.pagination && typeof rawWall.pagination === "object" ? rawWall.pagination : {};
+    return {
+      activeTab: rawWall.activeTab === "posts" ? "posts" : "card",
+      items,
+      pagination: {
+        page: Math.max(1, Number(pagination.page || 1)),
+        pageSize: Math.max(1, Number(pagination.pageSize || 10)),
+        total: Math.max(0, Number(pagination.total || items.length)),
+        hasMore: Boolean(pagination.hasMore),
+        isLoadingMore: Boolean(pagination.isLoadingMore),
+      },
+    };
+  }
+
   function renderCardView(input, options = {}) {
     const card = normalizeCard(input);
     const theme = resolveTheme(card.theme);
@@ -1036,6 +1102,7 @@
     const topBadge = options.topBadge && typeof options.topBadge === "object" ? options.topBadge : null;
     const officialUnqBadge = options.officialUnqBadge && typeof options.officialUnqBadge === "object" ? options.officialUnqBadge : null;
     const staffBadge = options.staffBadge && typeof options.staffBadge === "object" ? options.staffBadge : null;
+    const wall = normalizeWallForRender(options.wall);
 
     const tagsHtml =
       card.tags.length > 0
@@ -1186,6 +1253,67 @@
         : "";
     const roleHtml = card.role ? `<p class="unq-ref-role">${esc(card.role)}</p>` : "";
     const footBrandingLabel = card.showBranding ? (theme.key === "velours" ? "◆ UNQX" : "• UNQX") : "";
+    const cardDetailsHtml = `
+          ${tagsHtml}
+          ${scoreBlock}
+          <div class="unq-ref-divider"></div>
+          <div class="unq-ref-actions">${buttonsHtml}</div>
+          <div class="unq-ref-divider"></div>
+          <p class="unq-ref-hashtag">${esc(mainHashtag)}</p>
+          ${aboutHtml}
+          ${activeSocialLinks.length ? `<div class="unq-ref-social">${activeSocialLinks.map(renderSocialLink).join("")}</div>` : ""}
+          <button type="button" class="unq-ref-save interactive-btn" data-save-contact>${iconSvg("save")}<span>Сохранить контакт (.vcf)</span></button>
+    `;
+    const wallPostsHtml = wall
+      ? wall.items.length > 0
+        ? wall.items
+          .map((item) => {
+            const likeIcon = item.viewerHasLiked ? iconSvg("heartFilled") : iconSvg("heart");
+            const likeLabel = item.viewerHasLiked ? "Убрать лайк" : "Поставить лайк";
+            return `
+              <article class="unq-wall-post" data-wall-post="${esc(item.id)}">
+                <div class="unq-wall-post-head">
+                  <div class="unq-wall-post-avatar">${card.avatarUrl ? `<img src="${esc(card.avatarUrl)}" alt="${esc(card.name)}" class="unq-wall-post-avatar-img" />` : `<span>${esc(card.initials)}</span>`}</div>
+                  <div class="unq-wall-post-meta">
+                    <div class="unq-wall-post-line">
+                      <span class="unq-wall-post-name">${esc(card.name)}</span>
+                      ${card.verified ? `<span class="unq-wall-post-verified">${iconSvg("verified")}</span>` : ""}
+                      <span class="unq-wall-post-date">${esc(formatWallDateTime(item.createdAt))}</span>
+                    </div>
+                    ${item.isEdited ? '<p class="unq-wall-post-edited">изменено</p>' : ""}
+                  </div>
+                </div>
+                <div class="unq-wall-post-content">${renderWallPostContent(item.content)}</div>
+                <div class="unq-wall-post-actions">
+                  <button type="button" class="unq-wall-like-btn${item.viewerHasLiked ? " is-liked" : ""}" data-wall-like data-post-id="${esc(item.id)}" aria-pressed="${item.viewerHasLiked ? "true" : "false"}" aria-label="${likeLabel}" ${item.isBusy ? "disabled" : ""}>
+                    ${likeIcon}
+                  </button>
+                  <span class="unq-wall-like-count">${Number(item.likesCount || 0).toLocaleString("ru-RU")}</span>
+                </div>
+              </article>
+            `;
+          })
+          .join("")
+        : '<div class="unq-wall-empty">Пока здесь нет постов. Первый пост появится сразу после публикации.</div>'
+      : "";
+    const wallTabsHtml = wall
+      ? `
+          <div class="unq-wall-tabs" role="tablist" aria-label="Вкладки визитки">
+            <button type="button" class="unq-wall-tab${wall.activeTab === "card" ? " is-active" : ""}" data-card-tab="card" role="tab" aria-selected="${wall.activeTab === "card" ? "true" : "false"}">Визитка</button>
+            <button type="button" class="unq-wall-tab${wall.activeTab === "posts" ? " is-active" : ""}" data-card-tab="posts" role="tab" aria-selected="${wall.activeTab === "posts" ? "true" : "false"}">Посты</button>
+          </div>
+          <section class="unq-wall-panel${wall.activeTab === "card" ? " is-active" : ""}" data-card-tab-panel="card" ${wall.activeTab === "card" ? "" : "hidden"}>
+            ${cardDetailsHtml}
+          </section>
+          <section class="unq-wall-panel${wall.activeTab === "posts" ? " is-active" : ""}" data-card-tab-panel="posts" ${wall.activeTab === "posts" ? "" : "hidden"}>
+            <div class="unq-wall-posts">${wallPostsHtml}</div>
+            ${wall.pagination.hasMore
+              ? `<button type="button" class="interactive-btn unq-wall-more-btn" data-wall-load-more ${wall.pagination.isLoadingMore ? "disabled" : ""}>${wall.pagination.isLoadingMore ? "Загрузка..." : "Показать ещё"}</button>`
+              : ""
+            }
+          </section>
+        `
+      : cardDetailsHtml;
 
     return `
       <div data-card-view data-card-theme="${esc(theme.key)}" data-slug="${esc(card.slug)}" data-share-url="${esc(shareUrl)}"${rootStyle}>
@@ -1232,15 +1360,7 @@
               ${card.phone ? `<a href="tel:${esc(card.phone.replace(/\s+/g, ""))}" class="unq-ref-phone">${iconSvg("phone")}<span>${esc(card.phone)}</span></a>` : ""}
             </div>
           </div>
-          ${tagsHtml}
-          ${scoreBlock}
-          <div class="unq-ref-divider"></div>
-          <div class="unq-ref-actions">${buttonsHtml}</div>
-          <div class="unq-ref-divider"></div>
-          <p class="unq-ref-hashtag">${esc(mainHashtag)}</p>
-          ${aboutHtml}
-          ${activeSocialLinks.length ? `<div class="unq-ref-social">${activeSocialLinks.map(renderSocialLink).join("")}</div>` : ""}
-          <button type="button" class="unq-ref-save interactive-btn" data-save-contact>${iconSvg("save")}<span>Сохранить контакт (.vcf)</span></button>
+          ${wallTabsHtml}
         </div>
         <div class="unq-ref-footline">
           <div>© ${esc(viewsLabel)}</div>
