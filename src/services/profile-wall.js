@@ -173,7 +173,7 @@ function mapWallPostItem(row, options = {}) {
     deletedAt: row.deletedAt || null,
     likesCount,
     viewerHasLiked: viewerLikedPostIds.has(postId),
-    viewerCanLike: Boolean(viewerUserId) && viewerUserId !== ownerId && String(row.status || "") === WALL_PUBLIC_STATUS,
+    viewerCanLike: Boolean(viewerUserId) && String(row.status || "") === WALL_PUBLIC_STATUS,
     isEdited: buildEditedFlag(row.createdAt, row.updatedAt),
   };
 }
@@ -597,12 +597,6 @@ async function addWallPostLike({ ownerId, postId, viewerUserId }) {
     postId: normalizedPostId,
     viewerUserId: normalizedViewerUserId,
   });
-
-  if (String(post.ownerId || "") === normalizedViewerUserId) {
-    const error = new Error("Self-like is not allowed");
-    error.code = "WALL_POST_SELF_LIKE_FORBIDDEN";
-    throw error;
-  }
 
   try {
     await prisma.profileWallPostLike.create({

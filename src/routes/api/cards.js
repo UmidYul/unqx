@@ -2908,10 +2908,6 @@ router.put(
         res.status(404).json({ error: "Пост не найден", code: error.code });
         return;
       }
-      if (error?.code === "WALL_POST_SELF_LIKE_FORBIDDEN") {
-        res.status(403).json({ error: "Нельзя лайкать свой пост", code: error.code });
-        return;
-      }
       throw error;
     }
   }),

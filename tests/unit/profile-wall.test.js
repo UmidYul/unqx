@@ -95,27 +95,52 @@ describe("profile wall service", () => {
     ).rejects.toMatchObject({ code: "WALL_POST_LIMIT_REACHED" });
   });
 
-  test("addWallPostLike rejects self-like", async () => {
-    mockPrisma.profileWallPost.findFirst.mockResolvedValue({
-      id: "post_1",
+  test("addWallPostLike allows self-like", async () => {
+    mockPrisma.profileWallPost.findFirst
+      .mockResolvedValueOnce({
+        id: "post_1",
+        ownerId: "user_1",
+        content: "Тест",
+        status: "published",
+        createdAt: new Date("2026-05-03T10:00:00.000Z"),
+        updatedAt: new Date("2026-05-03T10:00:00.000Z"),
+        hiddenAt: null,
+        deletedAt: null,
+        _count: { likes: 0 },
+      })
+      .mockResolvedValueOnce({
+        id: "post_1",
+        ownerId: "user_1",
+        content: "Тест",
+        status: "published",
+        createdAt: new Date("2026-05-03T10:00:00.000Z"),
+        updatedAt: new Date("2026-05-03T10:00:00.000Z"),
+        hiddenAt: null,
+        deletedAt: null,
+        _count: { likes: 1 },
+      });
+    mockPrisma.profileWallPostLike.findMany
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([{ postId: "post_1" }]);
+
+    const result = await wallService.addWallPostLike({
       ownerId: "user_1",
-      content: "Тест",
-      status: "published",
-      createdAt: new Date("2026-05-03T10:00:00.000Z"),
-      updatedAt: new Date("2026-05-03T10:00:00.000Z"),
-      hiddenAt: null,
-      deletedAt: null,
-      _count: { likes: 0 },
+      postId: "post_1",
+      viewerUserId: "user_1",
     });
 
-    await expect(
-      wallService.addWallPostLike({
-        ownerId: "user_1",
+    expect(mockPrisma.profileWallPostLike.create).toHaveBeenCalledWith({
+      data: {
         postId: "post_1",
-        viewerUserId: "user_1",
-      }),
-    ).rejects.toMatchObject({ code: "WALL_POST_SELF_LIKE_FORBIDDEN" });
-
-    expect(mockPrisma.profileWallPostLike.create).not.toHaveBeenCalled();
+        userId: "user_1",
+      },
+    });
+    expect(result).toMatchObject({
+      id: "post_1",
+      ownerId: "user_1",
+      likesCount: 1,
+      viewerHasLiked: true,
+      viewerCanLike: true,
+    });
   });
 });

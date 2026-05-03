@@ -297,10 +297,6 @@
           window.location.assign(wallLoginUrl());
           return;
         }
-        if (data.code === "WALL_POST_SELF_LIKE_FORBIDDEN") {
-          showToast("Нельзя лайкать свои посты", "error");
-          return;
-        }
         showToast(data.error || "Не удалось обновить лайк", "error");
         return;
       }
