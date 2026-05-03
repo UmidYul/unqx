@@ -6,6 +6,7 @@ const { env } = require("../config/env");
 const { canCreateCard } = require("./profile");
 
 const WALL_POST_CONTENT_MAX = 280;
+const WALL_COMMENT_CONTENT_MAX = 1000;
 const WALL_PUBLIC_PAGE_SIZE = 10;
 const WALL_OWNER_PAGE_SIZE = 20;
 const WALL_ADMIN_PAGE_SIZE = 20;
@@ -59,7 +60,8 @@ function isMissingModelDelegateError(error) {
       message.includes("findFirst") ||
       message.includes("count") ||
       message.includes("create") ||
-      message.includes("update"))
+      message.includes("update") ||
+      message.includes("delete"))
   );
 }
 
@@ -69,6 +71,8 @@ function isWallStorageMissing(error) {
     isMissingModelColumn(error, "ProfileWallPost") ||
     isMissingModelTable(error, "ProfileWallPostLike") ||
     isMissingModelColumn(error, "ProfileWallPostLike") ||
+    isMissingModelTable(error, "ProfileWallPostComment") ||
+    isMissingModelColumn(error, "ProfileWallPostComment") ||
     isMissingModelDelegateError(error)
   );
 }
@@ -113,6 +117,16 @@ function normalizeWallPostContent(value) {
     .slice(0, WALL_POST_CONTENT_MAX);
 }
 
+function normalizeWallCommentContent(value) {
+  return String(value || "")
+    .replace(/\r\n?/g, "\n")
+    .split("\n")
+    .map((line) => line.replace(/\s+$/g, ""))
+    .join("\n")
+    .trim()
+    .slice(0, WALL_COMMENT_CONTENT_MAX);
+}
+
 function getWallDayWindow(now = new Date(), timezone = env.TIMEZONE || "Asia/Tashkent") {
   const current = now instanceof Date ? now : new Date(now);
   const zonedNow = toZonedTime(current, timezone);
@@ -154,13 +168,148 @@ function buildEditedFlag(createdAt, updatedAt) {
   return updatedMs - createdMs > 1000;
 }
 
+function getWallPostBaseSelect() {
+  return {
+    id: true,
+    ownerId: true,
+    content: true,
+    status: true,
+    createdAt: true,
+    updatedAt: true,
+    hiddenAt: true,
+    deletedAt: true,
+    _count: {
+      select: {
+        likes: true,
+      },
+    },
+  };
+}
+
+function getWallCommentBaseSelect() {
+  return {
+    id: true,
+    postId: true,
+    userId: true,
+    content: true,
+    createdAt: true,
+    updatedAt: true,
+    user: {
+      select: {
+        id: true,
+        displayName: true,
+        firstName: true,
+        lastName: true,
+        username: true,
+        login: true,
+        profileCard: {
+          select: {
+            avatarUrl: true,
+          },
+        },
+      },
+    },
+  };
+}
+
+function getWallCommentAuthorName(user) {
+  const displayName = String(user?.displayName || "").trim();
+  if (displayName) {
+    return displayName;
+  }
+  const firstName = String(user?.firstName || "").trim();
+  const lastName = String(user?.lastName || "").trim();
+  const fullName = [firstName, lastName].filter(Boolean).join(" ").trim();
+  if (fullName) {
+    return fullName;
+  }
+  const username = String(user?.username || "").trim();
+  if (username) {
+    return username;
+  }
+  const login = String(user?.login || "").trim();
+  if (login) {
+    return login;
+  }
+  return "UNQX User";
+}
+
+function getWallCommentAuthorInitials(name) {
+  const initials = String(name || "")
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => (part[0] ? part[0].toUpperCase() : ""))
+    .join("");
+  return initials || "UN";
+}
+
+function mapWallCommentItem(row, options = {}) {
+  if (!row) return null;
+  const viewerUserId = String(options.viewerUserId || "").trim();
+  const authorName = getWallCommentAuthorName(row.user);
+  const userId = String(row.userId || "").trim();
+  return {
+    id: String(row.id || "").trim(),
+    postId: String(row.postId || "").trim(),
+    userId,
+    content: String(row.content || ""),
+    createdAt: row.createdAt || null,
+    updatedAt: row.updatedAt || null,
+    viewerCanDelete: Boolean(viewerUserId) && viewerUserId === userId,
+    author: {
+      id: String(row.user?.id || userId).trim(),
+      name: authorName,
+      avatarUrl: String(row.user?.profileCard?.avatarUrl || "").trim() || null,
+      initials: getWallCommentAuthorInitials(authorName),
+    },
+  };
+}
+
+async function listWallCommentsByPostIds({ postIds, viewerUserId = "" }) {
+  const normalizedPostIds = Array.isArray(postIds)
+    ? postIds.map((item) => String(item || "").trim()).filter(Boolean)
+    : [];
+  if (!normalizedPostIds.length) {
+    return new Map();
+  }
+
+  const rows = await withMissingTableFallback("ProfileWallPostComment", [], () =>
+    prisma.profileWallPostComment.findMany({
+      where: {
+        postId: { in: normalizedPostIds },
+      },
+      orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+      select: getWallCommentBaseSelect(),
+    }),
+  );
+
+  const grouped = new Map();
+  for (const row of rows) {
+    const postId = String(row.postId || "").trim();
+    if (!postId) {
+      continue;
+    }
+    if (!grouped.has(postId)) {
+      grouped.set(postId, []);
+    }
+    const mapped = mapWallCommentItem(row, { viewerUserId });
+    if (mapped) {
+      grouped.get(postId).push(mapped);
+    }
+  }
+  return grouped;
+}
+
 function mapWallPostItem(row, options = {}) {
   if (!row) return null;
   const likesCount = Number(row?._count?.likes || 0);
   const viewerLikedPostIds = options.viewerLikedPostIds instanceof Set ? options.viewerLikedPostIds : new Set();
+  const commentsByPostId = options.commentsByPostId instanceof Map ? options.commentsByPostId : new Map();
   const viewerUserId = String(options.viewerUserId || "").trim();
   const ownerId = String(row.ownerId || "").trim();
   const postId = String(row.id || "").trim();
+  const comments = Array.isArray(commentsByPostId.get(postId)) ? commentsByPostId.get(postId) : [];
   return {
     id: postId,
     ownerId,
@@ -172,6 +321,8 @@ function mapWallPostItem(row, options = {}) {
     hiddenAt: row.hiddenAt || null,
     deletedAt: row.deletedAt || null,
     likesCount,
+    commentsCount: comments.length,
+    comments,
     viewerHasLiked: viewerLikedPostIds.has(postId),
     viewerCanLike: Boolean(viewerUserId) && String(row.status || "") === WALL_PUBLIC_STATUS,
     isEdited: buildEditedFlag(row.createdAt, row.updatedAt),
@@ -207,40 +358,33 @@ async function listWallPostsByOwner({
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       skip: (normalizedPage - 1) * normalizedPageSize,
       take: normalizedPageSize,
-      select: {
-        id: true,
-        ownerId: true,
-        content: true,
-        status: true,
-        createdAt: true,
-        updatedAt: true,
-        hiddenAt: true,
-        deletedAt: true,
-        _count: {
-          select: {
-            likes: true,
-          },
-        },
-      },
+      select: getWallPostBaseSelect(),
     }),
     prisma.profileWallPost.count({ where }),
   ]);
 
   const postIds = rows.map((item) => item.id);
-  const viewerLikedRows =
+  const [viewerLikedRows, commentsByPostId] = await Promise.all([
     viewerUserId && postIds.length
-      ? await prisma.profileWallPostLike.findMany({
+      ? prisma.profileWallPostLike.findMany({
         where: {
           userId: viewerUserId,
           postId: { in: postIds },
         },
         select: { postId: true },
       })
-      : [];
+      : [],
+    listWallCommentsByPostIds({
+      postIds,
+      viewerUserId,
+    }),
+  ]);
   const viewerLikedPostIds = new Set(viewerLikedRows.map((item) => String(item.postId || "").trim()));
 
   return {
-    items: rows.map((row) => mapWallPostItem(row, { viewerUserId, viewerLikedPostIds })).filter(Boolean),
+    items: rows
+      .map((row) => mapWallPostItem(row, { viewerUserId, viewerLikedPostIds, commentsByPostId }))
+      .filter(Boolean),
     pagination: {
       page: normalizedPage,
       pageSize: normalizedPageSize,
@@ -366,25 +510,14 @@ async function createWallPost({ ownerId, content, now, timezone } = {}) {
         content: normalizedContent,
         status: WALL_PUBLIC_STATUS,
       },
-      select: {
-        id: true,
-        ownerId: true,
-        content: true,
-        status: true,
-        createdAt: true,
-        updatedAt: true,
-        hiddenAt: true,
-        deletedAt: true,
-        _count: {
-          select: {
-            likes: true,
-          },
-        },
-      },
+      select: getWallPostBaseSelect(),
     });
   });
 
-  return mapWallPostItem(created, { viewerUserId: normalizedOwnerId });
+  return mapWallPostItem(created, {
+    viewerUserId: normalizedOwnerId,
+    commentsByPostId: new Map([[String(created.id || "").trim(), []]]),
+  });
 }
 
 async function getOwnerWallPostOrThrow({ postId, ownerId, allowedStatuses = WALL_OWNER_VISIBLE_STATUSES }) {
@@ -397,17 +530,7 @@ async function getOwnerWallPostOrThrow({ postId, ownerId, allowedStatuses = WALL
       ownerId: normalizedOwnerId,
       status: { in: safeStatuses },
     },
-    select: {
-      id: true,
-      ownerId: true,
-      content: true,
-      status: true,
-      createdAt: true,
-      updatedAt: true,
-      hiddenAt: true,
-      deletedAt: true,
-      _count: { select: { likes: true } },
-    },
+    select: getWallPostBaseSelect(),
   });
 
   if (!post) {
@@ -435,20 +558,14 @@ async function updateWallPostContentAsOwner({ postId, ownerId, content }) {
       content: normalizedContent,
       updatedAt: new Date(),
     },
-    select: {
-      id: true,
-      ownerId: true,
-      content: true,
-      status: true,
-      createdAt: true,
-      updatedAt: true,
-      hiddenAt: true,
-      deletedAt: true,
-      _count: { select: { likes: true } },
-    },
+    select: getWallPostBaseSelect(),
   });
 
-  return mapWallPostItem(updated, { viewerUserId: ownerId });
+  const commentsByPostId = await listWallCommentsByPostIds({
+    postIds: [updated.id],
+    viewerUserId: ownerId,
+  });
+  return mapWallPostItem(updated, { viewerUserId: ownerId, commentsByPostId });
 }
 
 async function deleteWallPostAsOwner({ postId, ownerId }) {
@@ -461,20 +578,14 @@ async function deleteWallPostAsOwner({ postId, ownerId }) {
       deletedAt: new Date(),
       updatedAt: new Date(),
     },
-    select: {
-      id: true,
-      ownerId: true,
-      content: true,
-      status: true,
-      createdAt: true,
-      updatedAt: true,
-      hiddenAt: true,
-      deletedAt: true,
-      _count: { select: { likes: true } },
-    },
+    select: getWallPostBaseSelect(),
   });
 
-  return mapWallPostItem(updated, { viewerUserId: ownerId });
+  const commentsByPostId = await listWallCommentsByPostIds({
+    postIds: [updated.id],
+    viewerUserId: ownerId,
+  });
+  return mapWallPostItem(updated, { viewerUserId: ownerId, commentsByPostId });
 }
 
 async function updateWallPostAsAdmin({ postId, ownerId, content, status }) {
@@ -487,7 +598,7 @@ async function updateWallPostAsAdmin({ postId, ownerId, content, status }) {
     throw error;
   }
 
-  const current = await getOwnerWallPostOrThrow({ postId, ownerId });
+  const current = await getOwnerWallPostOrThrow({ postId, ownerId, allowedStatuses: WALL_ADMIN_VISIBLE_STATUSES });
   const data = {};
 
   if (hasContent) {
@@ -520,47 +631,37 @@ async function updateWallPostAsAdmin({ postId, ownerId, content, status }) {
   }
 
   if (!Object.keys(data).length) {
-    return mapWallPostItem(current);
+    const commentsByPostId = await listWallCommentsByPostIds({
+      postIds: [current.id],
+      viewerUserId: "",
+    });
+    return mapWallPostItem(current, { commentsByPostId });
   }
 
   data.updatedAt = new Date();
   const updated = await prisma.profileWallPost.update({
     where: { id: current.id },
     data,
-    select: {
-      id: true,
-      ownerId: true,
-      content: true,
-      status: true,
-      createdAt: true,
-      updatedAt: true,
-      hiddenAt: true,
-      deletedAt: true,
-      _count: { select: { likes: true } },
-    },
+    select: getWallPostBaseSelect(),
   });
 
-  return mapWallPostItem(updated);
+  const commentsByPostId = await listWallCommentsByPostIds({
+    postIds: [updated.id],
+    viewerUserId: "",
+  });
+  return mapWallPostItem(updated, { commentsByPostId });
 }
 
-async function getPublicWallPostItem({ ownerId, postId, viewerUserId = "" }) {
+async function getWallPostItem({ ownerId, postId, viewerUserId = "", statuses = [WALL_PUBLIC_STATUS] }) {
   const post = await prisma.profileWallPost.findFirst({
     where: {
       id: String(postId || "").trim(),
       ownerId: String(ownerId || "").trim(),
-      status: WALL_PUBLIC_STATUS,
+      status: {
+        in: Array.isArray(statuses) && statuses.length ? statuses : [WALL_PUBLIC_STATUS],
+      },
     },
-    select: {
-      id: true,
-      ownerId: true,
-      content: true,
-      status: true,
-      createdAt: true,
-      updatedAt: true,
-      hiddenAt: true,
-      deletedAt: true,
-      _count: { select: { likes: true } },
-    },
+    select: getWallPostBaseSelect(),
   });
   if (!post) {
     const error = new Error("Wall post not found");
@@ -579,7 +680,34 @@ async function getPublicWallPostItem({ ownerId, postId, viewerUserId = "" }) {
       })
       : [];
   const viewerLikedPostIds = new Set(viewerLikedRows.map((item) => String(item.postId || "").trim()));
-  return mapWallPostItem(post, { viewerUserId, viewerLikedPostIds });
+  const commentsByPostId = await listWallCommentsByPostIds({
+    postIds: [post.id],
+    viewerUserId,
+  });
+  return mapWallPostItem(post, { viewerUserId, viewerLikedPostIds, commentsByPostId });
+}
+
+async function getPublicWallPostItem({ ownerId, postId, viewerUserId = "" }) {
+  return getWallPostItem({
+    ownerId,
+    postId,
+    viewerUserId,
+    statuses: [WALL_PUBLIC_STATUS],
+  });
+}
+
+async function getOwnerWallPostItem({
+  ownerId,
+  postId,
+  viewerUserId = "",
+  allowedStatuses = WALL_OWNER_VISIBLE_STATUSES,
+}) {
+  return getWallPostItem({
+    ownerId,
+    postId,
+    viewerUserId,
+    statuses: allowedStatuses,
+  });
 }
 
 async function addWallPostLike({ ownerId, postId, viewerUserId }) {
@@ -592,7 +720,7 @@ async function addWallPostLike({ ownerId, postId, viewerUserId }) {
     throw error;
   }
 
-  const post = await getPublicWallPostItem({
+  await getPublicWallPostItem({
     ownerId: normalizedOwnerId,
     postId: normalizedPostId,
     viewerUserId: normalizedViewerUserId,
@@ -648,8 +776,141 @@ async function removeWallPostLike({ ownerId, postId, viewerUserId }) {
   });
 }
 
+async function getWallPostCommentOrThrow({ postId, commentId }) {
+  const comment = await prisma.profileWallPostComment.findFirst({
+    where: {
+      id: String(commentId || "").trim(),
+      postId: String(postId || "").trim(),
+    },
+    select: {
+      id: true,
+      postId: true,
+      userId: true,
+    },
+  });
+  if (!comment) {
+    const error = new Error("Wall comment not found");
+    error.code = "WALL_COMMENT_NOT_FOUND";
+    throw error;
+  }
+  return comment;
+}
+
+async function addWallPostComment({ ownerId, postId, viewerUserId, content, scope = "public" }) {
+  const normalizedViewerUserId = String(viewerUserId || "").trim();
+  const normalizedOwnerId = String(ownerId || "").trim();
+  const normalizedPostId = String(postId || "").trim();
+  const normalizedContent = normalizeWallCommentContent(content);
+  const normalizedScope = scope === "owner" ? "owner" : "public";
+
+  if (!normalizedViewerUserId) {
+    const error = new Error("Authentication required");
+    error.code = "AUTH_REQUIRED";
+    throw error;
+  }
+  if (!normalizedContent) {
+    const error = new Error("Comment content is required");
+    error.code = "WALL_COMMENT_CONTENT_REQUIRED";
+    throw error;
+  }
+
+  if (normalizedScope === "owner") {
+    const post = await getOwnerWallPostOrThrow({
+      postId: normalizedPostId,
+      ownerId: normalizedOwnerId,
+    });
+    if (String(post.status || "").trim() !== WALL_PUBLIC_STATUS) {
+      const error = new Error("Wall post is not commentable");
+      error.code = "WALL_POST_NOT_COMMENTABLE";
+      throw error;
+    }
+  } else {
+    await getPublicWallPostItem({
+      ownerId: normalizedOwnerId,
+      postId: normalizedPostId,
+      viewerUserId: normalizedViewerUserId,
+    });
+  }
+
+  await prisma.profileWallPostComment.create({
+    data: {
+      postId: normalizedPostId,
+      userId: normalizedViewerUserId,
+      content: normalizedContent,
+    },
+  });
+
+  return normalizedScope === "owner"
+    ? getOwnerWallPostItem({
+      ownerId: normalizedOwnerId,
+      postId: normalizedPostId,
+      viewerUserId: normalizedViewerUserId,
+    })
+    : getPublicWallPostItem({
+      ownerId: normalizedOwnerId,
+      postId: normalizedPostId,
+      viewerUserId: normalizedViewerUserId,
+    });
+}
+
+async function deleteWallPostComment({ ownerId, postId, commentId, viewerUserId, scope = "public" }) {
+  const normalizedViewerUserId = String(viewerUserId || "").trim();
+  const normalizedOwnerId = String(ownerId || "").trim();
+  const normalizedPostId = String(postId || "").trim();
+  const normalizedCommentId = String(commentId || "").trim();
+  const normalizedScope = scope === "owner" ? "owner" : "public";
+
+  if (!normalizedViewerUserId) {
+    const error = new Error("Authentication required");
+    error.code = "AUTH_REQUIRED";
+    throw error;
+  }
+
+  if (normalizedScope === "owner") {
+    await getOwnerWallPostOrThrow({
+      postId: normalizedPostId,
+      ownerId: normalizedOwnerId,
+    });
+  } else {
+    await getPublicWallPostItem({
+      ownerId: normalizedOwnerId,
+      postId: normalizedPostId,
+      viewerUserId: normalizedViewerUserId,
+    });
+  }
+
+  const comment = await getWallPostCommentOrThrow({
+    postId: normalizedPostId,
+    commentId: normalizedCommentId,
+  });
+  if (String(comment.userId || "").trim() !== normalizedViewerUserId) {
+    const error = new Error("Wall comment cannot be deleted by this user");
+    error.code = "WALL_COMMENT_FORBIDDEN";
+    throw error;
+  }
+
+  await prisma.profileWallPostComment.delete({
+    where: {
+      id: normalizedCommentId,
+    },
+  });
+
+  return normalizedScope === "owner"
+    ? getOwnerWallPostItem({
+      ownerId: normalizedOwnerId,
+      postId: normalizedPostId,
+      viewerUserId: normalizedViewerUserId,
+    })
+    : getPublicWallPostItem({
+      ownerId: normalizedOwnerId,
+      postId: normalizedPostId,
+      viewerUserId: normalizedViewerUserId,
+    });
+}
+
 module.exports = {
   WALL_POST_CONTENT_MAX,
+  WALL_COMMENT_CONTENT_MAX,
   WALL_PUBLIC_PAGE_SIZE,
   WALL_OWNER_PAGE_SIZE,
   WALL_ADMIN_PAGE_SIZE,
@@ -661,6 +922,7 @@ module.exports = {
   resolveWallPage,
   resolveWallPageSize,
   normalizeWallPostContent,
+  normalizeWallCommentContent,
   getWallDayWindow,
   canUseWall,
   getWallSummary,
@@ -673,5 +935,8 @@ module.exports = {
   updateWallPostAsAdmin,
   addWallPostLike,
   removeWallPostLike,
+  addWallPostComment,
+  deleteWallPostComment,
   getPublicWallPostItem,
+  getOwnerWallPostItem,
 };

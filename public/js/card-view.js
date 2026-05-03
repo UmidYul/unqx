@@ -917,6 +917,8 @@
         '<svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 20.5-1.1-1C5.1 14.2 2 11.4 2 7.9 2 5.3 4.1 3.2 6.7 3.2c1.5 0 2.9.7 3.8 1.9.9-1.2 2.3-1.9 3.8-1.9 2.6 0 4.7 2.1 4.7 4.7 0 3.5-3.1 6.3-8.9 11.6L12 20.5Z"></path></svg>',
       heartFilled:
         '<svg class="h-4 w-4" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="m12 21.1-1.1-.9C5.3 15.2 2 12.2 2 8.4 2 5.5 4.3 3.2 7.2 3.2c1.8 0 3.5.9 4.6 2.4 1.1-1.5 2.8-2.4 4.6-2.4 2.9 0 5.2 2.3 5.2 5.2 0 3.8-3.3 6.8-8.9 11.8L12 21.1Z"></path></svg>',
+      comment:
+        '<svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 11.5A8.5 8.5 0 0 1 12.5 20H7l-4 2 1.3-4.4A8.5 8.5 0 1 1 21 11.5Z"></path></svg>',
       linkedin:
         '<svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"></rect><path d="M8 10v6M8 8.2v.1M12 16v-3.2c0-1.2.9-2.1 2-2.1 1.2 0 2 .9 2 2.1V16"></path></svg>',
       tiktok:
@@ -1058,16 +1060,44 @@
       ? rawWall.items
         .map((item) => {
           if (!item || typeof item !== "object") return null;
+          const comments = Array.isArray(item.comments)
+            ? item.comments
+              .map((comment) => {
+                if (!comment || typeof comment !== "object") return null;
+                const author = comment.author && typeof comment.author === "object" ? comment.author : {};
+                return {
+                  id: String(comment.id || "").trim(),
+                  postId: String(comment.postId || "").trim(),
+                  userId: String(comment.userId || "").trim(),
+                  content: String(comment.content || ""),
+                  createdAt: comment.createdAt || null,
+                  updatedAt: comment.updatedAt || null,
+                  viewerCanDelete: Boolean(comment.viewerCanDelete),
+                  isBusyDelete: Boolean(comment.isBusyDelete),
+                  author: {
+                    id: String(author.id || comment.userId || "").trim(),
+                    name: String(author.name || "UNQX User").trim() || "UNQX User",
+                    avatarUrl: String(author.avatarUrl || "").trim() || null,
+                    initials: String(author.initials || "").trim() || "UN",
+                  },
+                };
+              })
+              .filter((comment) => comment && comment.id)
+            : [];
           return {
             id: String(item.id || "").trim(),
             content: String(item.content || ""),
             createdAt: item.createdAt || null,
             updatedAt: item.updatedAt || null,
             likesCount: Number(item.likesCount || 0),
+            commentsCount: Math.max(0, Number(item.commentsCount || comments.length)),
+            comments,
             viewerHasLiked: Boolean(item.viewerHasLiked),
             viewerCanLike: Boolean(item.viewerCanLike),
             isEdited: Boolean(item.isEdited),
             isBusy: Boolean(item.isBusy),
+            commentDraft: String(item.commentDraft || ""),
+            isCommentBusy: Boolean(item.isCommentBusy),
           };
         })
         .filter((item) => item && item.id)
@@ -1270,6 +1300,30 @@
           .map((item) => {
             const likeIcon = item.viewerHasLiked ? iconSvg("heartFilled") : iconSvg("heart");
             const likeLabel = item.viewerHasLiked ? "Убрать лайк" : "Поставить лайк";
+            const comments = Array.isArray(item.comments) ? item.comments : [];
+            const commentsHtml = comments.length
+              ? comments
+                .map((comment) => `
+                  <article class="unq-wall-comment" data-wall-comment="${esc(comment.id)}">
+                    <div class="unq-wall-comment-avatar">
+                      ${comment.author?.avatarUrl
+                    ? `<img src="${esc(comment.author.avatarUrl)}" alt="${esc(comment.author.name || "UNQX User")}" class="unq-wall-comment-avatar-img" />`
+                    : `<span>${esc(comment.author?.initials || "UN")}</span>`}
+                    </div>
+                    <div class="unq-wall-comment-body">
+                      <div class="unq-wall-comment-line">
+                        <span class="unq-wall-comment-name">${esc(comment.author?.name || "UNQX User")}</span>
+                        <span class="unq-wall-comment-date">${esc(formatWallDateTime(comment.createdAt))}</span>
+                      </div>
+                      <div class="unq-wall-comment-content">${renderWallPostContent(comment.content)}</div>
+                    </div>
+                    ${comment.viewerCanDelete
+                  ? `<button type="button" class="unq-wall-comment-delete" data-wall-comment-delete data-wall-post-id="${esc(item.id)}" data-wall-comment-id="${esc(comment.id)}" ${comment.isBusyDelete ? "disabled" : ""}>${comment.isBusyDelete ? "..." : "Удалить"}</button>`
+                  : ""}
+                  </article>
+                `)
+                .join("")
+              : '<div class="unq-wall-comment-empty">Комментариев пока нет.</div>';
             return `
               <article class="unq-wall-post" data-wall-post="${esc(item.id)}">
                 <div class="unq-wall-post-head">
@@ -1289,6 +1343,18 @@
                     ${likeIcon}
                   </button>
                   <span class="unq-wall-like-count">${Number(item.likesCount || 0).toLocaleString("ru-RU")}</span>
+                  <span class="unq-wall-comment-pill">${iconSvg("comment")}<span>${Number(item.commentsCount || comments.length).toLocaleString("ru-RU")}</span></span>
+                </div>
+                <div class="unq-wall-comments">
+                  <div class="unq-wall-comments-list">${commentsHtml}</div>
+                  <div class="unq-wall-comment-form">
+                    <label class="sr-only" for="wall-comment-${esc(item.id)}">Комментарий</label>
+                    <textarea id="wall-comment-${esc(item.id)}" data-wall-comment-input data-wall-post-id="${esc(item.id)}" rows="3" maxlength="1000" placeholder="Написать комментарий..." class="unq-wall-comment-input">${esc(item.commentDraft || "")}</textarea>
+                    <div class="unq-wall-comment-form-row">
+                      <span data-wall-comment-counter class="unq-wall-comment-counter">${String(item.commentDraft || "").length}/1000</span>
+                      <button type="button" class="interactive-btn unq-wall-comment-submit" data-wall-comment-submit data-wall-post-id="${esc(item.id)}" ${!String(item.commentDraft || "").trim() || item.isCommentBusy ? "disabled" : ""}>${item.isCommentBusy ? "Отправка..." : "Отправить"}</button>
+                    </div>
+                  </div>
                 </div>
               </article>
             `;

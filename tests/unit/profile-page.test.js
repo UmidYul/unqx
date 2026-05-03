@@ -40,6 +40,7 @@ describe("profile page", () => {
     expect(html).toContain('id="profile-wall-editor"');
     expect(html).toContain('id="profile-wall-submit"');
     expect(html).toContain("1 пост в день");
+    expect(html).toContain("лайки и комментарии уже включены");
   });
 
   test("has modal close button and dialog semantics", async () => {
@@ -68,6 +69,8 @@ describe("profile page", () => {
     expect(source).toContain('event.key === "Escape"');
     expect(source).toContain('event.key !== "Tab"');
     expect(source).toContain("modalIsOpen");
+    expect(source).toContain("data-wall-comment-submit");
+    expect(source).toContain("Комментарий опубликован");
   });
 
   test("profile API labels are emoji-free", () => {

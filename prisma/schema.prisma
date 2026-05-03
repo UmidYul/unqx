@@ -324,6 +324,7 @@ model User {
   badgeApplications      BadgeApplication[]
   profileWallPosts       ProfileWallPost[]
   profileWallPostLikes   ProfileWallPostLike[]
+  profileWallPostComments ProfileWallPostComment[]
 
   @@index([plan, planPurchasedAt])
   @@index([subscriptionExpiresAt])
@@ -444,6 +445,7 @@ model ProfileWallPost {
   createdAt DateTime              @default(now()) @map("created_at")
   updatedAt DateTime              @updatedAt @map("updated_at")
   likes     ProfileWallPostLike[]
+  comments  ProfileWallPostComment[]
 
   @@index([ownerId, status, createdAt(sort: Desc)])
   @@index([ownerId, createdAt(sort: Desc)])
@@ -463,6 +465,21 @@ model ProfileWallPostLike {
   @@index([postId, createdAt(sort: Desc)])
   @@index([userId, createdAt(sort: Desc)])
   @@map("profile_wall_post_likes")
+}
+
+model ProfileWallPostComment {
+  id        String          @id @default(uuid())
+  postId    String          @map("post_id")
+  post      ProfileWallPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId    String          @map("user_id")
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content   String          @db.VarChar(1000)
+  createdAt DateTime        @default(now()) @map("created_at")
+  updatedAt DateTime        @updatedAt @map("updated_at")
+
+  @@index([postId, createdAt(sort: Desc)])
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("profile_wall_post_comments")
 }
 
 model CardPrivatePassword {

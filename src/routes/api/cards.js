@@ -82,6 +82,8 @@ const {
   listPublicWallPosts,
   addWallPostLike,
   removeWallPostLike,
+  addWallPostComment,
+  deleteWallPostComment,
   resolveWallPage,
   resolveWallPageSize,
   WALL_PUBLIC_PAGE_SIZE,
@@ -2941,6 +2943,86 @@ router.delete(
       }
       if (error?.code === "WALL_POST_NOT_FOUND") {
         res.status(404).json({ error: "Пост не найден", code: error.code });
+        return;
+      }
+      throw error;
+    }
+  }),
+);
+
+router.post(
+  "/:slug/wall-posts/:postId/comments",
+  requireUserApi,
+  requireSameOrigin,
+  requireCsrfToken,
+  asyncHandler(async (req, res) => {
+    const requestedSlug = sanitizeSlug(req.params.slug);
+    const slugRow = await findPublicWallSlugOwner(requestedSlug);
+    if (!slugRow || slugRow.status !== "active" || !slugRow.ownerId || !isPublicOwnerAvailable(slugRow.owner)) {
+      res.status(404).json({ error: "Card not found", code: "CARD_NOT_FOUND" });
+      return;
+    }
+
+    const viewerUserId = String(getUserSession(req)?.userId || "").trim();
+    try {
+      const post = await addWallPostComment({
+        ownerId: slugRow.ownerId,
+        postId: req.params.postId,
+        viewerUserId,
+        content: req.body?.content,
+      });
+      res.status(201).json({ ok: true, post });
+    } catch (error) {
+      if (isWallStorageMissing(error)) {
+        res.status(503).json({ error: "Wall storage unavailable", code: "WALL_STORAGE_UNAVAILABLE" });
+        return;
+      }
+      if (error?.code === "WALL_POST_NOT_FOUND" || error?.code === "WALL_COMMENT_NOT_FOUND") {
+        res.status(404).json({ error: "Пост или комментарий не найден", code: error.code });
+        return;
+      }
+      if (error?.code === "WALL_COMMENT_CONTENT_REQUIRED") {
+        res.status(400).json({ error: "Текст комментария обязателен", code: error.code });
+        return;
+      }
+      throw error;
+    }
+  }),
+);
+
+router.delete(
+  "/:slug/wall-posts/:postId/comments/:commentId",
+  requireUserApi,
+  requireSameOrigin,
+  requireCsrfToken,
+  asyncHandler(async (req, res) => {
+    const requestedSlug = sanitizeSlug(req.params.slug);
+    const slugRow = await findPublicWallSlugOwner(requestedSlug);
+    if (!slugRow || slugRow.status !== "active" || !slugRow.ownerId || !isPublicOwnerAvailable(slugRow.owner)) {
+      res.status(404).json({ error: "Card not found", code: "CARD_NOT_FOUND" });
+      return;
+    }
+
+    const viewerUserId = String(getUserSession(req)?.userId || "").trim();
+    try {
+      const post = await deleteWallPostComment({
+        ownerId: slugRow.ownerId,
+        postId: req.params.postId,
+        commentId: req.params.commentId,
+        viewerUserId,
+      });
+      res.json({ ok: true, post });
+    } catch (error) {
+      if (isWallStorageMissing(error)) {
+        res.status(503).json({ error: "Wall storage unavailable", code: "WALL_STORAGE_UNAVAILABLE" });
+        return;
+      }
+      if (error?.code === "WALL_POST_NOT_FOUND" || error?.code === "WALL_COMMENT_NOT_FOUND") {
+        res.status(404).json({ error: "Пост или комментарий не найден", code: error.code });
+        return;
+      }
+      if (error?.code === "WALL_COMMENT_FORBIDDEN") {
+        res.status(403).json({ error: "Можно удалить только свой комментарий", code: error.code });
         return;
       }
       throw error;

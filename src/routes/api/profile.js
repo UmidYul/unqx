@@ -29,6 +29,8 @@ const {
   createWallPost,
   updateWallPostContentAsOwner,
   deleteWallPostAsOwner,
+  addWallPostComment,
+  deleteWallPostComment,
   resolveWallPage,
   resolveWallPageSize,
   WALL_OWNER_PAGE_SIZE,
@@ -1183,6 +1185,86 @@ router.delete(
       }
       if (error?.code === "WALL_POST_NOT_FOUND") {
         res.status(404).json({ error: "Пост не найден", code: error.code });
+        return;
+      }
+      throw error;
+    }
+  }),
+);
+
+router.post(
+  "/wall-posts/:postId/comments",
+  asyncHandler(async (req, res) => {
+    const user = await getCurrentUser(req);
+    if (!assertUserActive(user, res)) {
+      return;
+    }
+    if (!assertPlanAllowsWall(user, res)) {
+      return;
+    }
+
+    try {
+      const post = await addWallPostComment({
+        ownerId: user.id,
+        postId: req.params.postId,
+        viewerUserId: user.id,
+        content: req.body?.content,
+        scope: "owner",
+      });
+      res.status(201).json({ ok: true, post });
+    } catch (error) {
+      if (isWallStorageMissing(error)) {
+        res.status(503).json({ error: "Wall storage unavailable", code: "WALL_STORAGE_UNAVAILABLE" });
+        return;
+      }
+      if (error?.code === "WALL_POST_NOT_FOUND" || error?.code === "WALL_COMMENT_NOT_FOUND") {
+        res.status(404).json({ error: "Пост или комментарий не найден", code: error.code });
+        return;
+      }
+      if (error?.code === "WALL_POST_NOT_COMMENTABLE") {
+        res.status(409).json({ error: "Комментирование доступно только для опубликованных постов", code: error.code });
+        return;
+      }
+      if (error?.code === "WALL_COMMENT_CONTENT_REQUIRED") {
+        res.status(400).json({ error: "Текст комментария обязателен", code: error.code });
+        return;
+      }
+      throw error;
+    }
+  }),
+);
+
+router.delete(
+  "/wall-posts/:postId/comments/:commentId",
+  asyncHandler(async (req, res) => {
+    const user = await getCurrentUser(req);
+    if (!assertUserActive(user, res)) {
+      return;
+    }
+    if (!assertPlanAllowsWall(user, res)) {
+      return;
+    }
+
+    try {
+      const post = await deleteWallPostComment({
+        ownerId: user.id,
+        postId: req.params.postId,
+        commentId: req.params.commentId,
+        viewerUserId: user.id,
+        scope: "owner",
+      });
+      res.json({ ok: true, post });
+    } catch (error) {
+      if (isWallStorageMissing(error)) {
+        res.status(503).json({ error: "Wall storage unavailable", code: "WALL_STORAGE_UNAVAILABLE" });
+        return;
+      }
+      if (error?.code === "WALL_POST_NOT_FOUND" || error?.code === "WALL_COMMENT_NOT_FOUND") {
+        res.status(404).json({ error: "Пост или комментарий не найден", code: error.code });
+        return;
+      }
+      if (error?.code === "WALL_COMMENT_FORBIDDEN") {
+        res.status(403).json({ error: "Можно удалить только свой комментарий", code: error.code });
         return;
       }
       throw error;

@@ -959,6 +959,33 @@
   box-shadow: 0 8px 22px rgba(17, 24, 39, 0.04);
 }
 
+.profile-dashboard .profile-wall-comment-avatar {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 9999px;
+  overflow: hidden;
+  border: 1px solid #d4d4d8;
+  background: #e5e7eb;
+  color: #52525b;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.profile-dashboard .profile-wall-comment-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profile-dashboard .profile-wall-comment-form textarea {
+  resize: vertical;
+  min-height: 5.5rem;
+}
+
 @media (max-width: 980px) {
   .profile-dashboard .profile-header-card {
     grid-template-columns: 1fr;

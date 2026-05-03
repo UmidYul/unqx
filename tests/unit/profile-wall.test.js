@@ -15,6 +15,12 @@ const mockPrisma = {
     create: vi.fn(),
     deleteMany: vi.fn(),
   },
+  profileWallPostComment: {
+    findMany: vi.fn(),
+    findFirst: vi.fn(),
+    create: vi.fn(),
+    delete: vi.fn(),
+  },
   $transaction: vi.fn(),
 };
 
@@ -39,6 +45,44 @@ require.cache[envModulePath] = {
 delete require.cache[wallServiceModulePath];
 const wallService = require("../../src/services/profile-wall");
 
+function buildPost(overrides = {}) {
+  return {
+    id: "post_1",
+    ownerId: "user_1",
+    content: "Тест",
+    status: "published",
+    createdAt: new Date("2026-05-03T10:00:00.000Z"),
+    updatedAt: new Date("2026-05-03T10:00:00.000Z"),
+    hiddenAt: null,
+    deletedAt: null,
+    _count: { likes: 0 },
+    ...overrides,
+  };
+}
+
+function buildComment(overrides = {}) {
+  return {
+    id: "comment_1",
+    postId: "post_1",
+    userId: "user_2",
+    content: "Комментарий",
+    createdAt: new Date("2026-05-03T11:00:00.000Z"),
+    updatedAt: new Date("2026-05-03T11:00:00.000Z"),
+    user: {
+      id: "user_2",
+      displayName: "Ali",
+      firstName: "Ali",
+      lastName: "",
+      username: "ali",
+      login: "ali_login",
+      profileCard: {
+        avatarUrl: "/uploads/comment-avatar.webp",
+      },
+    },
+    ...overrides,
+  };
+}
+
 describe("profile wall service", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -50,6 +94,10 @@ describe("profile wall service", () => {
     mockPrisma.profileWallPostLike.findMany.mockResolvedValue([]);
     mockPrisma.profileWallPostLike.create.mockResolvedValue({});
     mockPrisma.profileWallPostLike.deleteMany.mockResolvedValue({ count: 0 });
+    mockPrisma.profileWallPostComment.findMany.mockResolvedValue([]);
+    mockPrisma.profileWallPostComment.findFirst.mockResolvedValue(null);
+    mockPrisma.profileWallPostComment.create.mockResolvedValue({});
+    mockPrisma.profileWallPostComment.delete.mockResolvedValue({});
     mockPrisma.$transaction.mockReset();
   });
 
@@ -95,30 +143,91 @@ describe("profile wall service", () => {
     ).rejects.toMatchObject({ code: "WALL_POST_LIMIT_REACHED" });
   });
 
+  test("listPublicWallPosts maps comments and viewerCanDelete", async () => {
+    mockPrisma.profileWallPost.findMany.mockResolvedValue([buildPost()]);
+    mockPrisma.profileWallPost.count.mockResolvedValue(1);
+    mockPrisma.profileWallPostComment.findMany.mockResolvedValue([
+      buildComment({
+        userId: "user_1",
+        user: {
+          id: "user_1",
+          displayName: "",
+          firstName: "User",
+          lastName: "One",
+          username: "",
+          login: "",
+          profileCard: { avatarUrl: "" },
+        },
+      }),
+    ]);
+
+    const result = await wallService.listPublicWallPosts({
+      ownerId: "user_1",
+      viewerUserId: "user_1",
+    });
+
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]).toMatchObject({
+      id: "post_1",
+      commentsCount: 1,
+      comments: [
+        {
+          id: "comment_1",
+          viewerCanDelete: true,
+          author: {
+            name: "User One",
+            initials: "UO",
+          },
+        },
+      ],
+    });
+  });
+
+  test("addWallPostComment rejects hidden owner post", async () => {
+    mockPrisma.profileWallPost.findFirst.mockResolvedValue(
+      buildPost({
+        status: "hidden",
+        _count: { likes: 0 },
+      }),
+    );
+
+    await expect(
+      wallService.addWallPostComment({
+        ownerId: "user_1",
+        postId: "post_1",
+        viewerUserId: "user_1",
+        content: "Новый комментарий",
+        scope: "owner",
+      }),
+    ).rejects.toMatchObject({ code: "WALL_POST_NOT_COMMENTABLE" });
+  });
+
+  test("deleteWallPostComment rejects deleting someone else's comment", async () => {
+    mockPrisma.profileWallPost.findFirst.mockResolvedValue(buildPost());
+    mockPrisma.profileWallPostComment.findFirst.mockResolvedValue({
+      id: "comment_1",
+      postId: "post_1",
+      userId: "user_2",
+    });
+
+    await expect(
+      wallService.deleteWallPostComment({
+        ownerId: "user_1",
+        postId: "post_1",
+        commentId: "comment_1",
+        viewerUserId: "user_3",
+      }),
+    ).rejects.toMatchObject({ code: "WALL_COMMENT_FORBIDDEN" });
+  });
+
   test("addWallPostLike allows self-like", async () => {
     mockPrisma.profileWallPost.findFirst
-      .mockResolvedValueOnce({
-        id: "post_1",
-        ownerId: "user_1",
-        content: "Тест",
-        status: "published",
-        createdAt: new Date("2026-05-03T10:00:00.000Z"),
-        updatedAt: new Date("2026-05-03T10:00:00.000Z"),
-        hiddenAt: null,
-        deletedAt: null,
-        _count: { likes: 0 },
-      })
-      .mockResolvedValueOnce({
-        id: "post_1",
-        ownerId: "user_1",
-        content: "Тест",
-        status: "published",
-        createdAt: new Date("2026-05-03T10:00:00.000Z"),
-        updatedAt: new Date("2026-05-03T10:00:00.000Z"),
-        hiddenAt: null,
-        deletedAt: null,
-        _count: { likes: 1 },
-      });
+      .mockResolvedValueOnce(buildPost())
+      .mockResolvedValueOnce(
+        buildPost({
+          _count: { likes: 1 },
+        }),
+      );
     mockPrisma.profileWallPostLike.findMany
       .mockResolvedValueOnce([])
       .mockResolvedValueOnce([{ postId: "post_1" }]);
@@ -141,6 +250,8 @@ describe("profile wall service", () => {
       likesCount: 1,
       viewerHasLiked: true,
       viewerCanLike: true,
+      commentsCount: 0,
+      comments: [],
     });
   });
 });

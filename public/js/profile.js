@@ -111,6 +111,7 @@
     const SUBSCRIPTION_INACTIVE_LABEL = "Подписка неактивна";
     const SUBSCRIPTION_RENEWAL_ORDER_KIND = "subscription_renewal";
     const WALL_POST_CONTENT_MAX = 280;
+    const WALL_COMMENT_CONTENT_MAX = 1000;
     const WALL_POST_PAGE_SIZE = 20;
 
     const avatarSrc = (url) => {
@@ -669,10 +670,32 @@ Email: ${userEmail}
       };
     };
 
+    const normalizeWallComment = (item) => {
+      if (!item || typeof item !== "object") return null;
+      const id = String(item.id || "").trim();
+      if (!id) return null;
+      const authorSource = item.author && typeof item.author === "object" ? item.author : {};
+      return {
+        ...item,
+        id,
+        postId: String(item.postId || "").trim(),
+        userId: String(item.userId || "").trim(),
+        content: String(item.content || ""),
+        viewerCanDelete: Boolean(item.viewerCanDelete),
+        author: {
+          id: String(authorSource.id || item.userId || "").trim(),
+          name: String(authorSource.name || "UNQX User").trim() || "UNQX User",
+          avatarUrl: String(authorSource.avatarUrl || "").trim() || null,
+          initials: String(authorSource.initials || "").trim() || "UN",
+        },
+      };
+    };
+
     const normalizeWallPost = (item) => {
       if (!item || typeof item !== "object") return null;
       const id = String(item.id || "").trim();
       if (!id) return null;
+      const comments = Array.isArray(item.comments) ? item.comments.map(normalizeWallComment).filter(Boolean) : [];
       return {
         ...item,
         id,
@@ -680,6 +703,8 @@ Email: ${userEmail}
         status: String(item.status || "published"),
         statusLabel: String(item.statusLabel || ""),
         likesCount: Number(item.likesCount || 0),
+        commentsCount: Math.max(0, Number(item.commentsCount || comments.length)),
+        comments,
         isEdited: Boolean(item.isEdited),
       };
     };
@@ -702,6 +727,37 @@ Email: ${userEmail}
     const currentWallPost = () => {
       const items = Array.isArray(s.wallPosts) ? s.wallPosts : [];
       return items.find((item) => item.id === s.wallEditingId) || null;
+    };
+
+    const replaceWallPost = (nextPost) => {
+      const normalized = normalizeWallPost(nextPost);
+      if (!normalized) return;
+      const items = Array.isArray(s.wallPosts) ? s.wallPosts : [];
+      const hasExisting = items.some((item) => item.id === normalized.id);
+      s.wallPosts = hasExisting
+        ? items.map((item) => (item.id === normalized.id ? normalized : item))
+        : [normalized, ...items];
+    };
+
+    const getWallCommentDraft = (postId) =>
+      String(s.wallCommentDrafts?.[String(postId || "").trim()] || "");
+
+    const setWallCommentDraft = (postId, value) => {
+      const normalizedPostId = String(postId || "").trim();
+      if (!normalizedPostId) return;
+      const nextValue = String(value || "").slice(0, WALL_COMMENT_CONTENT_MAX);
+      s.wallCommentDrafts = {
+        ...(s.wallCommentDrafts || {}),
+        [normalizedPostId]: nextValue,
+      };
+    };
+
+    const clearWallCommentDraft = (postId) => {
+      const normalizedPostId = String(postId || "").trim();
+      if (!normalizedPostId || !s.wallCommentDrafts) return;
+      const nextDrafts = { ...s.wallCommentDrafts };
+      delete nextDrafts[normalizedPostId];
+      s.wallCommentDrafts = nextDrafts;
     };
 
     const initCsrfFromMeta = () => {
@@ -1826,7 +1882,7 @@ Email: ${userEmail}
         el.wallSummary.innerHTML = renderStateCard({
           icon: "credit-card",
           title: "Стена недоступна без Премиум",
-          text: "Подключи Премиум, чтобы публиковать посты на своей визитке и собирать лайки.",
+          text: "Подключи Премиум, чтобы публиковать посты на своей визитке, собирать лайки и комментарии.",
           buttonId: "profile-posts-order-btn",
           buttonLabel: PREMIUM_CTA_LABEL,
         });
@@ -1875,7 +1931,7 @@ Email: ${userEmail}
         } else if (summary.canUseWall && !summary.canPostNow) {
           el.wallEditorNote.textContent = `Сегодня лимит уже использован. Следующий пост после ${fht(summary.nextPostAt)}.`;
         } else if (summary.canUseWall) {
-          el.wallEditorNote.textContent = "Только plain text, без фото и комментариев.";
+          el.wallEditorNote.textContent = "Только plain text. Лайки и комментарии работают автоматически на визитке.";
         } else {
           el.wallEditorNote.textContent = "Подключи Премиум, чтобы открыть стену.";
         }
@@ -1892,6 +1948,62 @@ Email: ${userEmail}
         el.wallComposer.classList.toggle("opacity-60", !summary.canUseWall);
       }
       el.wallEditor.disabled = !summary.canUseWall || Boolean(s.wallSaving);
+    };
+
+    const renderWallComments = (post) => {
+      const comments = Array.isArray(post.comments) ? post.comments : [];
+      const draftValue = getWallCommentDraft(post.id);
+      const isCommentBusy = s.wallBusyCommentPostIds instanceof Set && s.wallBusyCommentPostIds.has(post.id);
+      const commentsHtml = comments.length
+        ? comments
+          .map((comment) => `
+            <article class="profile-wall-comment rounded-xl border border-neutral-200 bg-neutral-50 p-3" data-wall-comment-id="${esc(comment.id)}">
+              <div class="flex items-start justify-between gap-3">
+                <div class="flex min-w-0 items-start gap-3">
+                  <div class="profile-wall-comment-avatar">
+                    ${comment.author?.avatarUrl
+                ? `<img src="${esc(comment.author.avatarUrl)}" alt="${esc(comment.author.name || "UNQX User")}" class="profile-wall-comment-avatar-img" />`
+                : `<span>${esc(comment.author?.initials || "UN")}</span>`}
+                  </div>
+                  <div class="min-w-0">
+                    <div class="flex flex-wrap items-center gap-2">
+                      <p class="text-sm font-semibold text-neutral-900">${esc(comment.author?.name || "UNQX User")}</p>
+                      <p class="text-xs text-neutral-500">${esc(fht(comment.createdAt))}</p>
+                    </div>
+                    <div class="mt-1 whitespace-pre-line text-sm leading-6 text-neutral-700">${esc(comment.content)}</div>
+                  </div>
+                </div>
+                ${comment.viewerCanDelete
+              ? `<button type="button" data-wall-comment-action="delete" data-wall-post-id="${esc(post.id)}" data-wall-comment-id="${esc(comment.id)}" class="interactive-btn rounded-lg border border-neutral-300 px-3 py-2 text-xs font-semibold text-neutral-700" ${(s.wallBusyCommentIds instanceof Set && s.wallBusyCommentIds.has(comment.id)) ? "disabled" : ""}>${(s.wallBusyCommentIds instanceof Set && s.wallBusyCommentIds.has(comment.id)) ? "Удаление..." : "Удалить"}</button>`
+              : ""}
+              </div>
+            </article>
+          `)
+          .join("")
+        : '<div class="rounded-xl border border-dashed border-neutral-200 px-3 py-4 text-sm text-neutral-500">Комментариев пока нет.</div>';
+      const formHtml =
+        post.status === "published"
+          ? `
+            <div class="profile-wall-comment-form mt-3 rounded-xl border border-neutral-200 bg-neutral-50 p-3">
+              <label class="sr-only" for="profile-wall-comment-${esc(post.id)}">Комментарий</label>
+              <textarea id="profile-wall-comment-${esc(post.id)}" data-wall-comment-input data-wall-post-id="${esc(post.id)}" rows="3" maxlength="${WALL_COMMENT_CONTENT_MAX}" placeholder="Напиши комментарий..." class="w-full rounded-xl border border-neutral-200 bg-white px-3 py-3 text-sm text-neutral-900 outline-none placeholder:text-neutral-400">${esc(draftValue)}</textarea>
+              <div class="mt-3 flex flex-wrap items-center justify-between gap-2">
+                <p data-wall-comment-counter class="text-xs font-semibold text-neutral-500">${draftValue.length}/${WALL_COMMENT_CONTENT_MAX}</p>
+                <button type="button" data-wall-comment-submit data-wall-post-id="${esc(post.id)}" class="interactive-btn min-h-11 rounded-lg bg-neutral-900 px-4 py-2 text-sm font-semibold text-white" ${!draftValue.trim() || isCommentBusy ? "disabled" : ""}>${isCommentBusy ? "Отправка..." : "Отправить"}</button>
+              </div>
+            </div>
+          `
+          : '<p class="mt-3 text-xs text-neutral-500">Новые комментарии доступны только для опубликованных постов.</p>';
+      return `
+        <section class="mt-4 border-t border-neutral-100 pt-4">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <p class="text-xs uppercase tracking-[0.12em] text-neutral-500">Комментарии</p>
+            <p class="text-xs text-neutral-500">${Number(post.commentsCount || comments.length).toLocaleString("ru-RU")} всего</p>
+          </div>
+          <div class="mt-3 space-y-3">${commentsHtml}</div>
+          ${formHtml}
+        </section>
+      `;
     };
 
     const renderWallList = () => {
@@ -1930,9 +2042,11 @@ Email: ${userEmail}
                   </div>
                   <div class="text-right text-xs text-neutral-500">
                     <p>${Number(item.likesCount || 0).toLocaleString("ru-RU")} лайков</p>
+                    <p class="mt-1">${Number(item.commentsCount || 0).toLocaleString("ru-RU")} комментариев</p>
                   </div>
                 </div>
                 <div class="mt-3 whitespace-pre-line text-sm leading-6 text-neutral-800">${esc(item.content)}</div>
+                ${renderWallComments(item)}
                 <div class="mt-4 flex flex-wrap gap-2">
                   <button type="button" data-wall-action="edit" data-wall-post-id="${esc(item.id)}" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-3 py-2 text-sm font-semibold text-neutral-700">Редактировать</button>
                   <button type="button" data-wall-action="delete" data-wall-post-id="${esc(item.id)}" class="interactive-btn min-h-11 rounded-lg border border-red-200 px-3 py-2 text-sm font-semibold text-red-700">Удалить</button>
@@ -2015,10 +2129,7 @@ Email: ${userEmail}
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ content }),
           });
-          const nextPost = normalizeWallPost(payload.post);
-          if (nextPost) {
-            s.wallPosts = Array.isArray(s.wallPosts) ? s.wallPosts.map((item) => (item.id === nextPost.id ? nextPost : item)) : [nextPost];
-          }
+          replaceWallPost(payload.post);
           resetWallComposer();
           renderWall();
           showSaveAlert("Пост обновлён");
@@ -2064,6 +2175,67 @@ Email: ${userEmail}
       }
     };
 
+    const submitWallComment = async (postId) => {
+      const normalizedPostId = String(postId || "").trim();
+      const content = getWallCommentDraft(normalizedPostId).trim();
+      if (!normalizedPostId || !content) {
+        return;
+      }
+
+      if (!(s.wallBusyCommentPostIds instanceof Set)) {
+        s.wallBusyCommentPostIds = new Set();
+      }
+      s.wallBusyCommentPostIds.add(normalizedPostId);
+      renderWall();
+
+      try {
+        const payload = await api(`/api/profile/wall-posts/${encodeURIComponent(normalizedPostId)}/comments`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ content }),
+        });
+        replaceWallPost(payload.post);
+        clearWallCommentDraft(normalizedPostId);
+        renderWall();
+        showSaveAlert("Комментарий опубликован");
+      } catch (error) {
+        if (error.code === "WALL_POST_NOT_COMMENTABLE") {
+          showModal("Комментарии недоступны", error.message || "Комментирование доступно только для опубликованных постов.");
+          return;
+        }
+        showModal("Ошибка", error.message || "Не удалось отправить комментарий");
+      } finally {
+        s.wallBusyCommentPostIds.delete(normalizedPostId);
+        renderWall();
+      }
+    };
+
+    const deleteWallComment = (postId, commentId) => {
+      const normalizedPostId = String(postId || "").trim();
+      const normalizedCommentId = String(commentId || "").trim();
+      if (!normalizedPostId || !normalizedCommentId) return;
+      showModal("Удалить комментарий", "Комментарий будет удалён без возможности восстановления.", "Удалить", async () => {
+        if (!(s.wallBusyCommentIds instanceof Set)) {
+          s.wallBusyCommentIds = new Set();
+        }
+        s.wallBusyCommentIds.add(normalizedCommentId);
+        renderWall();
+        try {
+          const payload = await api(`/api/profile/wall-posts/${encodeURIComponent(normalizedPostId)}/comments/${encodeURIComponent(normalizedCommentId)}`, {
+            method: "DELETE",
+          });
+          replaceWallPost(payload.post);
+          renderWall();
+          showSaveAlert("Комментарий удалён");
+        } catch (error) {
+          showModal("Ошибка", error.message || "Не удалось удалить комментарий");
+        } finally {
+          s.wallBusyCommentIds.delete(normalizedCommentId);
+          renderWall();
+        }
+      });
+    };
+
     const deleteWallPost = (postId) => {
       const post = Array.isArray(s.wallPosts) ? s.wallPosts.find((item) => item.id === postId) : null;
       if (!post) return;
@@ -2082,6 +2254,7 @@ Email: ${userEmail}
           if (s.wallEditingId === postId) {
             resetWallComposer();
           }
+          clearWallCommentDraft(postId);
           renderWall();
           showSaveAlert("Пост удалён");
         } catch (error) {
@@ -3147,6 +3320,9 @@ Email: ${userEmail}
         s.wallLoaded = !s.wallSummary.canUseWall;
         s.wallLoading = false;
         s.wallSaving = false;
+        s.wallCommentDrafts = {};
+        s.wallBusyCommentPostIds = new Set();
+        s.wallBusyCommentIds = new Set();
         resetWallComposer();
         if (!s.slugs.find((item) => item.fullSlug === s.analyticsSelectedSlug)) {
           s.analyticsBootstrap = null;
@@ -3393,8 +3569,47 @@ Email: ${userEmail}
       void loadWallPosts({ append: true });
     });
 
+    el.wallList?.addEventListener("input", (event) => {
+      const target = event.target instanceof HTMLElement ? event.target : null;
+      if (!(target instanceof HTMLTextAreaElement)) return;
+      if (!target.matches("[data-wall-comment-input]")) return;
+      const postId = String(target.getAttribute("data-wall-post-id") || "").trim();
+      if (!postId) return;
+      setWallCommentDraft(postId, target.value);
+      if (target.value !== getWallCommentDraft(postId)) {
+        target.value = getWallCommentDraft(postId);
+      }
+      const form = target.closest(".profile-wall-comment-form");
+      const counter = form instanceof HTMLElement ? form.querySelector("[data-wall-comment-counter]") : null;
+      if (counter instanceof HTMLElement) {
+        counter.textContent = `${getWallCommentDraft(postId).length}/${WALL_COMMENT_CONTENT_MAX}`;
+      }
+      const submit = form instanceof HTMLElement ? form.querySelector("[data-wall-comment-submit]") : null;
+      if (submit instanceof HTMLButtonElement) {
+        const isBusy = s.wallBusyCommentPostIds instanceof Set && s.wallBusyCommentPostIds.has(postId);
+        submit.disabled = !getWallCommentDraft(postId).trim() || isBusy;
+      }
+    });
+
     el.wallList?.addEventListener("click", (event) => {
       const target = event.target instanceof HTMLElement ? event.target : null;
+      const submitComment = target?.closest("[data-wall-comment-submit]");
+      if (submitComment instanceof HTMLElement) {
+        const postId = String(submitComment.getAttribute("data-wall-post-id") || "").trim();
+        if (!postId) return;
+        void submitWallComment(postId);
+        return;
+      }
+      const commentAction = target?.closest("[data-wall-comment-action]");
+      if (commentAction instanceof HTMLElement) {
+        const postId = String(commentAction.getAttribute("data-wall-post-id") || "").trim();
+        const commentId = String(commentAction.getAttribute("data-wall-comment-id") || "").trim();
+        const type = String(commentAction.getAttribute("data-wall-comment-action") || "").trim();
+        if (type === "delete" && postId && commentId) {
+          deleteWallComment(postId, commentId);
+        }
+        return;
+      }
       const action = target?.closest("[data-wall-action]");
       if (!(action instanceof HTMLElement)) return;
       const postId = String(action.getAttribute("data-wall-post-id") || "").trim();

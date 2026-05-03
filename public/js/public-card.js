@@ -30,6 +30,9 @@
     activeTab: "card",
     wallLoadingMore: false,
     wallBusyLikeIds: new Set(),
+    wallCommentDrafts: {},
+    wallBusyCommentPostIds: new Set(),
+    wallBusyCommentIds: new Set(),
   };
 
   state.activeTab = state.wall && window.location.hash === "#posts" ? "posts" : "card";
@@ -66,16 +69,39 @@
     if (!rawWall || typeof rawWall !== "object" || rawWall.enabled === false) {
       return null;
     }
+    const normalizeWallComment = (item) => {
+      if (!item || typeof item !== "object") return null;
+      const id = String(item.id || "").trim();
+      if (!id) return null;
+      const authorSource = item.author && typeof item.author === "object" ? item.author : {};
+      return {
+        ...item,
+        id,
+        postId: String(item.postId || "").trim(),
+        userId: String(item.userId || "").trim(),
+        content: String(item.content || ""),
+        viewerCanDelete: Boolean(item.viewerCanDelete),
+        author: {
+          id: String(authorSource.id || item.userId || "").trim(),
+          name: String(authorSource.name || "UNQX User").trim() || "UNQX User",
+          avatarUrl: String(authorSource.avatarUrl || "").trim() || null,
+          initials: String(authorSource.initials || "").trim() || "UN",
+        },
+      };
+    };
     const items = Array.isArray(rawWall.items)
       ? rawWall.items
         .map((item) => {
           if (!item || typeof item !== "object") return null;
+          const comments = Array.isArray(item.comments) ? item.comments.map(normalizeWallComment).filter(Boolean) : [];
           return {
             ...item,
             id: String(item.id || "").trim(),
             content: String(item.content || ""),
             status: String(item.status || "published"),
             likesCount: Number(item.likesCount || 0),
+            commentsCount: Math.max(0, Number(item.commentsCount || comments.length)),
+            comments,
             viewerHasLiked: Boolean(item.viewerHasLiked),
             viewerCanLike: Boolean(item.viewerCanLike),
             isEdited: Boolean(item.isEdited),
@@ -109,7 +135,14 @@
 
   function replaceWallPost(nextPost) {
     if (!state.wall || !nextPost || !nextPost.id) return;
-    state.wall.items = state.wall.items.map((item) => (item.id === nextPost.id ? nextPost : item));
+    const normalizedWall = normalizeWallPayload({
+      enabled: true,
+      items: [nextPost],
+      pagination: state.wall.pagination,
+    });
+    const normalizedPost = normalizedWall?.items?.[0];
+    if (!normalizedPost) return;
+    state.wall.items = state.wall.items.map((item) => (item.id === normalizedPost.id ? normalizedPost : item));
   }
 
   function buildWallOptions() {
@@ -120,6 +153,14 @@
       items: state.wall.items.map((item) => ({
         ...item,
         isBusy: state.wallBusyLikeIds.has(item.id),
+        commentDraft: String(state.wallCommentDrafts[item.id] || ""),
+        isCommentBusy: state.wallBusyCommentPostIds.has(item.id),
+        comments: Array.isArray(item.comments)
+          ? item.comments.map((comment) => ({
+            ...comment,
+            isBusyDelete: state.wallBusyCommentIds.has(comment.id),
+          }))
+          : [],
       })),
       pagination: {
         ...state.wall.pagination,
@@ -273,6 +314,27 @@
     return `/login?next=${encodeURIComponent(nextPath)}`;
   }
 
+  function getWallCommentDraft(postId) {
+    return String(state.wallCommentDrafts[String(postId || "").trim()] || "");
+  }
+
+  function setWallCommentDraft(postId, value) {
+    const normalizedPostId = String(postId || "").trim();
+    if (!normalizedPostId) return;
+    state.wallCommentDrafts = {
+      ...state.wallCommentDrafts,
+      [normalizedPostId]: String(value || "").slice(0, 1000),
+    };
+  }
+
+  function clearWallCommentDraft(postId) {
+    const normalizedPostId = String(postId || "").trim();
+    if (!normalizedPostId) return;
+    const nextDrafts = { ...state.wallCommentDrafts };
+    delete nextDrafts[normalizedPostId];
+    state.wallCommentDrafts = nextDrafts;
+  }
+
   async function toggleWallLike(postId) {
     if (!state.wall || !postId || state.wallBusyLikeIds.has(postId)) {
       return;
@@ -309,6 +371,91 @@
       showToast("Не удалось обновить лайк", "error");
     } finally {
       state.wallBusyLikeIds.delete(postId);
+      renderCard();
+    }
+  }
+
+  async function submitWallComment(postId) {
+    if (!state.wall || !postId || state.wallBusyCommentPostIds.has(postId)) {
+      return;
+    }
+
+    const currentPost = state.wall.items.find((item) => item.id === postId);
+    if (!currentPost) {
+      return;
+    }
+
+    const content = getWallCommentDraft(postId).trim();
+    if (!content) {
+      return;
+    }
+
+    state.wallBusyCommentPostIds.add(postId);
+    renderCard();
+
+    try {
+      const { response, data } = await requestJson(
+        `/api/cards/${encodeURIComponent(state.slug)}/wall-posts/${encodeURIComponent(postId)}/comments`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ content }),
+        },
+      );
+
+      if (!response.ok) {
+        if (response.status === 401 || data.code === "AUTH_REQUIRED") {
+          window.location.assign(wallLoginUrl());
+          return;
+        }
+        showToast(data.error || "Не удалось отправить комментарий", "error");
+        return;
+      }
+
+      if (data.post && typeof data.post === "object") {
+        replaceWallPost(data.post);
+        clearWallCommentDraft(postId);
+        renderCard();
+      }
+    } catch {
+      showToast("Не удалось отправить комментарий", "error");
+    } finally {
+      state.wallBusyCommentPostIds.delete(postId);
+      renderCard();
+    }
+  }
+
+  async function deleteWallComment(postId, commentId) {
+    if (!state.wall || !postId || !commentId || state.wallBusyCommentIds.has(commentId)) {
+      return;
+    }
+
+    state.wallBusyCommentIds.add(commentId);
+    renderCard();
+
+    try {
+      const { response, data } = await requestJson(
+        `/api/cards/${encodeURIComponent(state.slug)}/wall-posts/${encodeURIComponent(postId)}/comments/${encodeURIComponent(commentId)}`,
+        { method: "DELETE" },
+      );
+
+      if (!response.ok) {
+        if (response.status === 401 || data.code === "AUTH_REQUIRED") {
+          window.location.assign(wallLoginUrl());
+          return;
+        }
+        showToast(data.error || "Не удалось удалить комментарий", "error");
+        return;
+      }
+
+      if (data.post && typeof data.post === "object") {
+        replaceWallPost(data.post);
+        renderCard();
+      }
+    } catch {
+      showToast("Не удалось удалить комментарий", "error");
+    } finally {
+      state.wallBusyCommentIds.delete(commentId);
       renderCard();
     }
   }
@@ -454,6 +601,30 @@
     }
   }
 
+  host.addEventListener("input", (event) => {
+    const target = event.target instanceof HTMLTextAreaElement ? event.target : null;
+    if (!target || !target.matches("[data-wall-comment-input]")) {
+      return;
+    }
+    const postId = String(target.getAttribute("data-wall-post-id") || "").trim();
+    if (!postId) {
+      return;
+    }
+    setWallCommentDraft(postId, target.value);
+    if (target.value !== getWallCommentDraft(postId)) {
+      target.value = getWallCommentDraft(postId);
+    }
+    const form = target.closest(".unq-wall-comment-form");
+    const counter = form instanceof HTMLElement ? form.querySelector("[data-wall-comment-counter]") : null;
+    if (counter instanceof HTMLElement) {
+      counter.textContent = `${getWallCommentDraft(postId).length}/1000`;
+    }
+    const submit = form instanceof HTMLElement ? form.querySelector("[data-wall-comment-submit]") : null;
+    if (submit instanceof HTMLButtonElement) {
+      submit.disabled = !getWallCommentDraft(postId).trim() || state.wallBusyCommentPostIds.has(postId);
+    }
+  });
+
   host.addEventListener("click", async (event) => {
     const target = event.target instanceof Element ? event.target : null;
     if (!target) {
@@ -481,6 +652,23 @@
       event.preventDefault();
       const postId = String(likeButton.getAttribute("data-post-id") || "").trim();
       await toggleWallLike(postId);
+      return;
+    }
+
+    const submitCommentButton = target.closest("[data-wall-comment-submit]");
+    if (submitCommentButton instanceof HTMLElement) {
+      event.preventDefault();
+      const postId = String(submitCommentButton.getAttribute("data-wall-post-id") || "").trim();
+      await submitWallComment(postId);
+      return;
+    }
+
+    const deleteCommentButton = target.closest("[data-wall-comment-delete]");
+    if (deleteCommentButton instanceof HTMLElement) {
+      event.preventDefault();
+      const postId = String(deleteCommentButton.getAttribute("data-wall-post-id") || "").trim();
+      const commentId = String(deleteCommentButton.getAttribute("data-wall-comment-id") || "").trim();
+      await deleteWallComment(postId, commentId);
       return;
     }
 
