@@ -65,6 +65,7 @@ const {
   isPaymentEventsStorageError: isPaymentEventsStorageErrorAnalytics,
 } = require("../../services/payment-analytics");
 const { detectDevice } = require("../../services/ua");
+const { getTodayVisitorsStats, getUtcDayStart, incrementTodayVisitorsAdjustment } = require("../../services/live-stats");
 
 const router = express.Router();
 const ONLINE_WINDOW_SECONDS = 90;
@@ -121,6 +122,7 @@ const BROADCAST_JOB_LIMIT = 50;
 const BROADCAST_JOB_TTL_MS = 1000 * 60 * 30;
 const MAX_ADMIN_BOOST_VIEWS = 5000;
 const MAX_ADMIN_BOOST_PERIOD_DAYS = 90;
+const MAX_TODAY_VISITORS_INCREMENT = 100_000;
 const MAX_DB_INT = 2_147_483_647;
 const PASSWORD_ROUNDS = 12;
 const broadcastJobs = new Map();
@@ -7064,6 +7066,7 @@ router.get(
       scoreRows,
       newOrdersToday,
       allOrdersForChecks,
+      todayVisitorsStats,
     ] = await Promise.all([
       canUsePurchases
         ? prisma.purchase.aggregate({
@@ -7116,6 +7119,7 @@ router.get(
         where: { createdAt: { gte: rangeFrom, lte: rangeTo } },
         select: { slug: true, createdAt: true },
       }),
+      getTodayVisitorsStats(now),
     ]);
 
     const revenueToday = Number(purchasesTodayAgg?._sum?.amount || 0);
@@ -7226,6 +7230,10 @@ router.get(
         revenueTotal,
         averageUnqScore,
         breakdown,
+        todayVisitorsTotal: todayVisitorsStats.total,
+        todayVisitorsRaw: todayVisitorsStats.raw,
+        todayVisitorsManual: todayVisitorsStats.adjustment,
+        todayVisitorsDate: todayVisitorsStats.dateKey,
       },
       revenueDaily,
       topUnboughtPatterns,
@@ -7234,16 +7242,33 @@ router.get(
   }),
 );
 
+router.post(
+  "/analytics/today-visitors/increment",
+  asyncHandler(async (req, res) => {
+    const amount = parsePositiveInt(req.body?.amount, 0);
+    if (!amount || amount > MAX_TODAY_VISITORS_INCREMENT) {
+      res.status(400).json({
+        error: `Укажите целое число от 1 до ${MAX_TODAY_VISITORS_INCREMENT.toLocaleString("ru-RU")}.`,
+        code: "TODAY_VISITORS_INCREMENT_INVALID",
+      });
+      return;
+    }
+
+    const stats = await incrementTodayVisitorsAdjustment(amount, req.session?.admin?.login || "admin");
+    res.json({ ok: true, stats });
+  }),
+);
+
 router.get(
   "/platform-analytics",
   asyncHandler(async (req, res) => {
     const period = [7, 30, 90].includes(Number(req.query.period)) ? Number(req.query.period) : 7;
     const from = new Date(Date.now() - period * 24 * 60 * 60 * 1000);
-    const todayStart = new Date();
-    todayStart.setUTCHours(0, 0, 0, 0);
+    const now = new Date();
+    const todayStart = getUtcDayStart(now);
     const onlineFrom = new Date(Date.now() - ONLINE_WINDOW_SECONDS * 1000);
 
-    const [views, clicks, activeCards, todayCreated, todayActivated, onlineRows, topSlugRows] = await Promise.all([
+    const [views, clicks, activeCards, todayCreated, todayActivated, onlineRows, topSlugRows, todayVisitorsStats] = await Promise.all([
       prisma.analyticsView ? prisma.analyticsView.findMany({ where: { visitedAt: { gte: from } } }) : Promise.resolve([]),
       prisma.analyticsClick ? prisma.analyticsClick.findMany({ where: { clickedAt: { gte: from } } }) : Promise.resolve([]),
       prisma.slug.count({ where: { status: "active" } }),
@@ -7259,6 +7284,7 @@ router.get(
           _count: { _all: true },
         })
         : Promise.resolve([]),
+      getTodayVisitorsStats(now),
     ]);
 
     const dailySessions = new Map();
@@ -7313,6 +7339,9 @@ router.get(
         activeCards,
         todayCreated,
         todayActivated,
+        todayVisitors: todayVisitorsStats.total,
+        todayVisitorsRaw: todayVisitorsStats.raw,
+        todayVisitorsManual: todayVisitorsStats.adjustment,
         onlineNow: new Set(
           onlineRows
             .filter((row) => !String(row.fingerprint || "").startsWith(SYNTHETIC_FINGERPRINT_PREFIX))

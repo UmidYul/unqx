@@ -10,6 +10,7 @@ const { buildLeaderboard, getUserLeaderboardSummary, normalizePeriod, normalizeL
 const { getFeatureSetting } = require("../../services/feature-settings");
 const { getActiveFlashSale, resolveConditionLabel } = require("../../services/flash-sales");
 const { getDropLiveStats } = require("../../services/drops");
+const { getTodayVisitorsStats, getUtcDayStart } = require("../../services/live-stats");
 const { getReferralBootstrap, claimReferralReward } = require("../../services/referrals");
 const { getWalletBalance, hasApprovedSlugPurchase } = require("../../services/referral-v1");
 const { getActiveCampaignsSafe } = require("../../services/referral-v2");
@@ -21,33 +22,6 @@ const {
 } = require("../../services/promo-codes");
 
 const router = express.Router();
-const SYNTHETIC_FINGERPRINT_PREFIX = "synthetic:";
-
-async function countUniqueVisitorsSince(sinceDate) {
-  if (!prisma.analyticsView) return 0;
-  try {
-    const rows = await prisma.analyticsView.findMany({
-      where: { visitedAt: { gte: sinceDate } },
-      select: { sessionId: true, fingerprint: true },
-    });
-    return new Set(
-      rows
-        .filter((row) => !String(row.fingerprint || "").startsWith(SYNTHETIC_FINGERPRINT_PREFIX))
-        .map((row) => String(row.sessionId || "").trim())
-        .filter(Boolean),
-    ).size;
-  } catch (error) {
-    const knownColumnErrors = new Set(["P2021", "P2022", "42703"]);
-    if (!knownColumnErrors.has(String(error?.code || ""))) {
-      throw error;
-    }
-    const rows = await prisma.analyticsView.findMany({
-      where: { visitedAt: { gte: sinceDate } },
-      select: { sessionId: true },
-    });
-    return new Set(rows.map((row) => String(row.sessionId || "").trim()).filter(Boolean)).size;
-  }
-}
 
 function requireUser(req, res) {
   const userSession = getUserSession(req);
@@ -62,7 +36,7 @@ router.get(
   "/public/live-stats",
   asyncHandler(async (_req, res) => {
     const now = new Date();
-    const todayStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0));
+    const todayStart = getUtcDayStart(now);
     const activeOwnerWhere = env.SUBSCRIPTION_AUTO_RENEW_ENABLED
       ? {
           status: "active",
@@ -74,7 +48,7 @@ router.get(
           OR: [{ subscriptionExpiresAt: null }, { subscriptionExpiresAt: { gt: now } }],
         };
 
-    const [activeCardsTotal, todayCreated, todayActivated, todayTotal, todayVisitors] = await Promise.all([
+    const [activeCardsTotal, todayCreated, todayActivated, todayTotal, todayVisitorsStats] = await Promise.all([
       prisma.slug.count({
         where: {
           status: { in: ["active", "private", "approved"] },
@@ -88,7 +62,7 @@ router.get(
           OR: [{ createdAt: { gte: todayStart } }, { activatedAt: { gte: todayStart } }],
         },
       }),
-      countUniqueVisitorsSince(todayStart),
+      getTodayVisitorsStats(now),
     ]);
 
     res.json({
@@ -96,7 +70,7 @@ router.get(
       todayCreated,
       todayActivated,
       todayTotal,
-      todayVisitors,
+      todayVisitors: todayVisitorsStats.total,
     });
   }),
 );

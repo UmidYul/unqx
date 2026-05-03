@@ -1470,7 +1470,7 @@
       `Браслеты: ${P(breakdown.bracelet || 0)}`,
     ];
     const periodLabel = meta.dateFrom && meta.dateTo ? `${meta.dateFrom} - ${meta.dateTo}` : "выбранный период";
-    kpi.innerHTML = [
+    const analyticsCards = [
       { n: `Новых заявок (${periodLabel})`, v: s.newOrdersToday || 0, i: "userCheck" },
       { n: `Выручка (${periodLabel})`, v: P(s.revenueToday || 0), i: "creditCard" },
       { n: "Выручка за период", v: P(s.revenue30Days || 0), i: "calendar" },
@@ -1481,14 +1481,66 @@
         lines: breakdownLines,
         i: "package",
       },
-    ]
+    ];
+    const visitorsDateLabel = String(s.todayVisitorsDate || "").trim();
+    const visitorsCard = `
+      <article class="admin-kpi-card">
+        <div class="admin-kpi-icon">${I("eye", 20)}</div>
+        <p class="admin-kpi-value">${Number(s.todayVisitorsTotal || 0).toLocaleString("ru-RU")}</p>
+        <p class="admin-kpi-label">Посетители сегодня</p>
+        <p class="mt-2 text-sm text-neutral-600">Факт: ${Number(s.todayVisitorsRaw || 0).toLocaleString("ru-RU")} · вручную: +${Number(s.todayVisitorsManual || 0).toLocaleString("ru-RU")}</p>
+        <p class="mt-1 text-xs text-neutral-400">${X(visitorsDateLabel ? `${visitorsDateLabel} UTC` : "Текущие UTC-сутки")}</p>
+        <form id="analytics-visitors-adjust-form" class="mt-auto flex items-end gap-2 pt-4">
+          <label class="min-w-0 flex-1 text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">
+            <span class="mb-1 block">Добавить</span>
+            <input id="analytics-visitors-adjust-amount" name="analytics-visitors-adjust-amount" type="number" min="1" step="1" value="1" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm font-medium text-neutral-900" />
+          </label>
+          <button type="submit" class="interactive-btn min-h-11 rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">Увеличить</button>
+        </form>
+      </article>`;
+    kpi.innerHTML = analyticsCards
       .map((x) => {
         const valueMarkup = Array.isArray(x.lines)
           ? `<ul class="admin-kpi-list">${x.lines.map((line) => `<li>${X(line)}</li>`).join("")}</ul>`
           : `<p class="admin-kpi-value">${X(x.v)}</p>`;
         return `<article class="admin-kpi-card"><div class="admin-kpi-icon">${I(x.i, 20)}</div>${valueMarkup}<p class="admin-kpi-label">${x.n}</p></article>`;
       })
-      .join("");
+      .join("") + visitorsCard;
+    const visitorsAdjustForm = document.getElementById("analytics-visitors-adjust-form");
+    if (visitorsAdjustForm instanceof HTMLFormElement) {
+      visitorsAdjustForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const amountField = visitorsAdjustForm.elements.namedItem("analytics-visitors-adjust-amount");
+        const submitButton = visitorsAdjustForm.querySelector('button[type="submit"]');
+        if (!(amountField instanceof HTMLInputElement) || !(submitButton instanceof HTMLButtonElement)) return;
+
+        const amount = Number(amountField.value || 0);
+        if (!Number.isInteger(amount) || amount < 1) {
+          await showAlert("Укажите целое число больше нуля.");
+          amountField.focus();
+          return;
+        }
+
+        amountField.disabled = true;
+        submitButton.disabled = true;
+        try {
+          const response = await fetch("/api/admin/analytics/today-visitors/increment", {
+            method: "POST",
+            headers: H({ "Content-Type": "application/json" }),
+            body: JSON.stringify({ amount }),
+          });
+          if (!response.ok) {
+            await showAlert(await E(response));
+            return;
+          }
+          amountField.value = "1";
+          await loadAnalytics();
+        } finally {
+          amountField.disabled = false;
+          submitButton.disabled = false;
+        }
+      });
+    }
     const top = p.topUnboughtPatterns || [];
     table.innerHTML = top.length
       ? top.map((x) => `<tr class="border-t border-neutral-100"><td class="px-3 py-2 font-mono">${X(x.pattern)}</td><td class="px-3 py-2 font-semibold">${x.count}</td></tr>`).join("")

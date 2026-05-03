@@ -21,7 +21,7 @@
         "plan_basic_excluded_features",
         "plan_premium_upgrade_price",
       ]),
-      platform: new Set(["referral_tiers", "referral_v1_tiers_enabled"]),
+      platform: new Set(["referral_tiers", "referral_v1_tiers_enabled", "platform_today_visitors_adjustment"]),
     },
     labelByKey: {
       plan_basic_name: "Название тарифа Basic",
