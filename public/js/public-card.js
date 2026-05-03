@@ -16,6 +16,7 @@
   const slugSearchForm = document.getElementById("card-slug-search-form");
   const slugSearchInput = document.getElementById("card-slug-search-input");
   const slugSearchResults = document.getElementById("card-slug-search-results");
+  const WALL_VISIBLE_COMMENT_COUNT = 5;
   const state = {
     card: payload && typeof payload.card === "object" && payload.card ? payload.card : {},
     shareUrl: String(payload.shareUrl || window.location.href),
@@ -33,6 +34,7 @@
     wallCommentDrafts: {},
     wallBusyCommentPostIds: new Set(),
     wallBusyCommentIds: new Set(),
+    wallExpandedCommentPostIds: new Set(),
   };
 
   state.activeTab = state.wall && window.location.hash === "#posts" ? "posts" : "card";
@@ -143,6 +145,7 @@
     const normalizedPost = normalizedWall?.items?.[0];
     if (!normalizedPost) return;
     state.wall.items = state.wall.items.map((item) => (item.id === normalizedPost.id ? normalizedPost : item));
+    syncWallCommentsExpandedState(normalizedPost.id, normalizedPost.commentsCount || normalizedPost.comments?.length || 0);
   }
 
   function buildWallOptions() {
@@ -155,6 +158,7 @@
         isBusy: state.wallBusyLikeIds.has(item.id),
         commentDraft: String(state.wallCommentDrafts[item.id] || ""),
         isCommentBusy: state.wallBusyCommentPostIds.has(item.id),
+        isCommentsExpanded: state.wallExpandedCommentPostIds.has(item.id),
         comments: Array.isArray(item.comments)
           ? item.comments.map((comment) => ({
             ...comment,
@@ -335,6 +339,49 @@
     state.wallCommentDrafts = nextDrafts;
   }
 
+  function getWallCommentInput(postId) {
+    const normalizedPostId = String(postId || "").trim();
+    if (!normalizedPostId) {
+      return null;
+    }
+    const candidates = host.querySelectorAll("[data-wall-comment-input]");
+    for (const candidate of candidates) {
+      if (
+        candidate instanceof HTMLTextAreaElement &&
+        String(candidate.getAttribute("data-wall-post-id") || "").trim() === normalizedPostId
+      ) {
+        return candidate;
+      }
+    }
+    return null;
+  }
+
+  function readWallCommentDraft(postId) {
+    const input = getWallCommentInput(postId);
+    if (input instanceof HTMLTextAreaElement) {
+      return String(input.value || "");
+    }
+    return getWallCommentDraft(postId);
+  }
+
+  function setWallCommentsExpanded(postId, expanded) {
+    const normalizedPostId = String(postId || "").trim();
+    if (!normalizedPostId) {
+      return;
+    }
+    if (expanded) {
+      state.wallExpandedCommentPostIds.add(normalizedPostId);
+    } else {
+      state.wallExpandedCommentPostIds.delete(normalizedPostId);
+    }
+  }
+
+  function syncWallCommentsExpandedState(postId, commentsCount) {
+    if (Number(commentsCount || 0) <= WALL_VISIBLE_COMMENT_COUNT) {
+      setWallCommentsExpanded(postId, false);
+    }
+  }
+
   async function toggleWallLike(postId) {
     if (!state.wall || !postId || state.wallBusyLikeIds.has(postId)) {
       return;
@@ -385,8 +432,17 @@
       return;
     }
 
+    const liveDraft = readWallCommentDraft(postId);
+    if (liveDraft !== getWallCommentDraft(postId)) {
+      setWallCommentDraft(postId, liveDraft);
+    }
     const content = getWallCommentDraft(postId).trim();
     if (!content) {
+      const input = getWallCommentInput(postId);
+      if (input instanceof HTMLTextAreaElement) {
+        input.focus();
+      }
+      showToast("Введите комментарий", "error");
       return;
     }
 
@@ -414,6 +470,7 @@
 
       if (data.post && typeof data.post === "object") {
         replaceWallPost(data.post);
+        setWallCommentsExpanded(postId, true);
         clearWallCommentDraft(postId);
         renderCard();
       }
@@ -621,7 +678,7 @@
     }
     const submit = form instanceof HTMLElement ? form.querySelector("[data-wall-comment-submit]") : null;
     if (submit instanceof HTMLButtonElement) {
-      submit.disabled = !getWallCommentDraft(postId).trim() || state.wallBusyCommentPostIds.has(postId);
+      submit.disabled = state.wallBusyCommentPostIds.has(postId);
     }
   });
 
@@ -652,6 +709,18 @@
       event.preventDefault();
       const postId = String(likeButton.getAttribute("data-post-id") || "").trim();
       await toggleWallLike(postId);
+      return;
+    }
+
+    const toggleCommentsButton = target.closest("[data-wall-comments-toggle]");
+    if (toggleCommentsButton instanceof HTMLElement) {
+      event.preventDefault();
+      const postId = String(toggleCommentsButton.getAttribute("data-wall-post-id") || "").trim();
+      if (!postId) {
+        return;
+      }
+      setWallCommentsExpanded(postId, !state.wallExpandedCommentPostIds.has(postId));
+      renderCard();
       return;
     }
 

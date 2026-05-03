@@ -1052,6 +1052,8 @@
     return esc(String(value || "")).replace(/\n/g, "<br>");
   }
 
+  const WALL_COLLAPSED_COMMENT_COUNT = 5;
+
   function normalizeWallForRender(rawWall) {
     if (!rawWall || typeof rawWall !== "object" || rawWall.enabled === false) {
       return null;
@@ -1098,6 +1100,7 @@
             isBusy: Boolean(item.isBusy),
             commentDraft: String(item.commentDraft || ""),
             isCommentBusy: Boolean(item.isCommentBusy),
+            isCommentsExpanded: Boolean(item.isCommentsExpanded),
           };
         })
         .filter((item) => item && item.id)
@@ -1301,8 +1304,14 @@
             const likeIcon = item.viewerHasLiked ? iconSvg("heartFilled") : iconSvg("heart");
             const likeLabel = item.viewerHasLiked ? "Убрать лайк" : "Поставить лайк";
             const comments = Array.isArray(item.comments) ? item.comments : [];
-            const commentsHtml = comments.length
-              ? comments
+            const hasHiddenComments = comments.length > WALL_COLLAPSED_COMMENT_COUNT;
+            const visibleComments =
+              hasHiddenComments && !item.isCommentsExpanded
+                ? comments.slice(-WALL_COLLAPSED_COMMENT_COUNT)
+                : comments;
+            const hiddenCommentsCount = Math.max(0, comments.length - visibleComments.length);
+            const commentsHtml = visibleComments.length
+              ? visibleComments
                 .map((comment) => `
                   <article class="unq-wall-comment" data-wall-comment="${esc(comment.id)}">
                     <div class="unq-wall-comment-avatar">
@@ -1324,6 +1333,9 @@
                 `)
                 .join("")
               : '<div class="unq-wall-comment-empty">Комментариев пока нет.</div>';
+            const commentsToggleHtml = hasHiddenComments
+              ? `<button type="button" class="interactive-btn unq-wall-comments-toggle" data-wall-comments-toggle data-wall-post-id="${esc(item.id)}" aria-expanded="${item.isCommentsExpanded ? "true" : "false"}">${item.isCommentsExpanded ? "Свернуть комментарии" : `Показать ещё ${hiddenCommentsCount}`}</button>`
+              : "";
             return `
               <article class="unq-wall-post" data-wall-post="${esc(item.id)}">
                 <div class="unq-wall-post-head">
@@ -1346,13 +1358,14 @@
                   <span class="unq-wall-comment-pill">${iconSvg("comment")}<span>${Number(item.commentsCount || comments.length).toLocaleString("ru-RU")}</span></span>
                 </div>
                 <div class="unq-wall-comments">
-                  <div class="unq-wall-comments-list">${commentsHtml}</div>
+                  <div class="unq-wall-comments-list${item.isCommentsExpanded && hasHiddenComments ? " is-scrollable" : ""}">${commentsHtml}</div>
+                  ${commentsToggleHtml}
                   <div class="unq-wall-comment-form">
                     <label class="sr-only" for="wall-comment-${esc(item.id)}">Комментарий</label>
                     <textarea id="wall-comment-${esc(item.id)}" data-wall-comment-input data-wall-post-id="${esc(item.id)}" rows="3" maxlength="1000" placeholder="Написать комментарий..." class="unq-wall-comment-input">${esc(item.commentDraft || "")}</textarea>
                     <div class="unq-wall-comment-form-row">
                       <span data-wall-comment-counter class="unq-wall-comment-counter">${String(item.commentDraft || "").length}/1000</span>
-                      <button type="button" class="interactive-btn unq-wall-comment-submit" data-wall-comment-submit data-wall-post-id="${esc(item.id)}" ${!String(item.commentDraft || "").trim() || item.isCommentBusy ? "disabled" : ""}>${item.isCommentBusy ? "Отправка..." : "Отправить"}</button>
+                      <button type="button" class="interactive-btn unq-wall-comment-submit" data-wall-comment-submit data-wall-post-id="${esc(item.id)}" ${item.isCommentBusy ? "disabled" : ""}>${item.isCommentBusy ? "Отправка..." : "Отправить"}</button>
                     </div>
                   </div>
                 </div>

@@ -112,6 +112,7 @@
     const SUBSCRIPTION_RENEWAL_ORDER_KIND = "subscription_renewal";
     const WALL_POST_CONTENT_MAX = 280;
     const WALL_COMMENT_CONTENT_MAX = 1000;
+    const WALL_VISIBLE_COMMENT_COUNT = 5;
     const WALL_POST_PAGE_SIZE = 20;
 
     const avatarSrc = (url) => {
@@ -737,6 +738,7 @@ Email: ${userEmail}
       s.wallPosts = hasExisting
         ? items.map((item) => (item.id === normalized.id ? normalized : item))
         : [normalized, ...items];
+      syncWallCommentsExpandedState(normalized.id, normalized.commentsCount || normalized.comments?.length || 0);
     };
 
     const getWallCommentDraft = (postId) =>
@@ -758,6 +760,51 @@ Email: ${userEmail}
       const nextDrafts = { ...s.wallCommentDrafts };
       delete nextDrafts[normalizedPostId];
       s.wallCommentDrafts = nextDrafts;
+    };
+
+    const getWallCommentInput = (postId) => {
+      const normalizedPostId = String(postId || "").trim();
+      if (!normalizedPostId || !(el.wallList instanceof HTMLElement)) return null;
+      const candidates = el.wallList.querySelectorAll("[data-wall-comment-input]");
+      for (const candidate of candidates) {
+        if (
+          candidate instanceof HTMLTextAreaElement &&
+          String(candidate.getAttribute("data-wall-post-id") || "").trim() === normalizedPostId
+        ) {
+          return candidate;
+        }
+      }
+      return null;
+    };
+
+    const readWallCommentDraft = (postId) => {
+      const input = getWallCommentInput(postId);
+      if (input instanceof HTMLTextAreaElement) {
+        return String(input.value || "");
+      }
+      return getWallCommentDraft(postId);
+    };
+
+    const isWallCommentsExpanded = (postId) =>
+      s.wallExpandedCommentPostIds instanceof Set && s.wallExpandedCommentPostIds.has(String(postId || "").trim());
+
+    const setWallCommentsExpanded = (postId, expanded) => {
+      const normalizedPostId = String(postId || "").trim();
+      if (!normalizedPostId) return;
+      if (!(s.wallExpandedCommentPostIds instanceof Set)) {
+        s.wallExpandedCommentPostIds = new Set();
+      }
+      if (expanded) {
+        s.wallExpandedCommentPostIds.add(normalizedPostId);
+      } else {
+        s.wallExpandedCommentPostIds.delete(normalizedPostId);
+      }
+    };
+
+    const syncWallCommentsExpandedState = (postId, commentsCount) => {
+      if (Number(commentsCount || 0) <= WALL_VISIBLE_COMMENT_COUNT) {
+        setWallCommentsExpanded(postId, false);
+      }
     };
 
     const initCsrfFromMeta = () => {
@@ -1952,10 +1999,16 @@ Email: ${userEmail}
 
     const renderWallComments = (post) => {
       const comments = Array.isArray(post.comments) ? post.comments : [];
+      const isExpanded = isWallCommentsExpanded(post.id);
+      const hasHiddenComments = comments.length > WALL_VISIBLE_COMMENT_COUNT;
+      const visibleComments =
+        hasHiddenComments && !isExpanded
+          ? comments.slice(-WALL_VISIBLE_COMMENT_COUNT)
+          : comments;
       const draftValue = getWallCommentDraft(post.id);
       const isCommentBusy = s.wallBusyCommentPostIds instanceof Set && s.wallBusyCommentPostIds.has(post.id);
-      const commentsHtml = comments.length
-        ? comments
+      const commentsHtml = visibleComments.length
+        ? visibleComments
           .map((comment) => `
             <article class="profile-wall-comment rounded-xl border border-neutral-200 bg-neutral-50 p-3" data-wall-comment-id="${esc(comment.id)}">
               <div class="flex items-start justify-between gap-3">
@@ -1981,6 +2034,17 @@ Email: ${userEmail}
           `)
           .join("")
         : '<div class="rounded-xl border border-dashed border-neutral-200 px-3 py-4 text-sm text-neutral-500">Комментариев пока нет.</div>';
+      const commentsToggleHtml = hasHiddenComments
+        ? `
+          <button
+            type="button"
+            data-wall-comments-toggle
+            data-wall-post-id="${esc(post.id)}"
+            class="interactive-btn mt-3 inline-flex min-h-9 items-center rounded-full border border-neutral-300 px-3 py-2 text-xs font-semibold text-neutral-700"
+            aria-expanded="${isExpanded ? "true" : "false"}"
+          >${isExpanded ? "Свернуть комментарии" : `Показать ещё ${comments.length - visibleComments.length}`}</button>
+        `
+        : "";
       const formHtml =
         post.status === "published"
           ? `
@@ -1989,7 +2053,7 @@ Email: ${userEmail}
               <textarea id="profile-wall-comment-${esc(post.id)}" data-wall-comment-input data-wall-post-id="${esc(post.id)}" rows="3" maxlength="${WALL_COMMENT_CONTENT_MAX}" placeholder="Напиши комментарий..." class="w-full rounded-xl border border-neutral-200 bg-white px-3 py-3 text-sm text-neutral-900 outline-none placeholder:text-neutral-400">${esc(draftValue)}</textarea>
               <div class="mt-3 flex flex-wrap items-center justify-between gap-2">
                 <p data-wall-comment-counter class="text-xs font-semibold text-neutral-500">${draftValue.length}/${WALL_COMMENT_CONTENT_MAX}</p>
-                <button type="button" data-wall-comment-submit data-wall-post-id="${esc(post.id)}" class="interactive-btn min-h-11 rounded-lg bg-neutral-900 px-4 py-2 text-sm font-semibold text-white" ${!draftValue.trim() || isCommentBusy ? "disabled" : ""}>${isCommentBusy ? "Отправка..." : "Отправить"}</button>
+                <button type="button" data-wall-comment-submit data-wall-post-id="${esc(post.id)}" class="interactive-btn min-h-11 rounded-lg bg-neutral-900 px-4 py-2 text-sm font-semibold text-white" ${isCommentBusy ? "disabled" : ""}>${isCommentBusy ? "Отправка..." : "Отправить"}</button>
               </div>
             </div>
           `
@@ -2000,7 +2064,8 @@ Email: ${userEmail}
             <p class="text-xs uppercase tracking-[0.12em] text-neutral-500">Комментарии</p>
             <p class="text-xs text-neutral-500">${Number(post.commentsCount || comments.length).toLocaleString("ru-RU")} всего</p>
           </div>
-          <div class="mt-3 space-y-3">${commentsHtml}</div>
+          <div class="mt-3 space-y-3${isExpanded && hasHiddenComments ? " overflow-y-auto pr-1" : ""}"${isExpanded && hasHiddenComments ? ' style="max-height:420px;"' : ""}>${commentsHtml}</div>
+          ${commentsToggleHtml}
           ${formHtml}
         </section>
       `;
@@ -2177,8 +2242,17 @@ Email: ${userEmail}
 
     const submitWallComment = async (postId) => {
       const normalizedPostId = String(postId || "").trim();
+      const liveDraft = readWallCommentDraft(normalizedPostId);
+      if (liveDraft !== getWallCommentDraft(normalizedPostId)) {
+        setWallCommentDraft(normalizedPostId, liveDraft);
+      }
       const content = getWallCommentDraft(normalizedPostId).trim();
-      if (!normalizedPostId || !content) {
+      if (!normalizedPostId) {
+        return;
+      }
+      if (!content) {
+        getWallCommentInput(normalizedPostId)?.focus();
+        showModal("Комментарий пустой", "Введите текст комментария перед отправкой.");
         return;
       }
 
@@ -2195,6 +2269,7 @@ Email: ${userEmail}
           body: JSON.stringify({ content }),
         });
         replaceWallPost(payload.post);
+        setWallCommentsExpanded(normalizedPostId, true);
         clearWallCommentDraft(normalizedPostId);
         renderWall();
         showSaveAlert("Комментарий опубликован");
@@ -3323,6 +3398,7 @@ Email: ${userEmail}
         s.wallCommentDrafts = {};
         s.wallBusyCommentPostIds = new Set();
         s.wallBusyCommentIds = new Set();
+        s.wallExpandedCommentPostIds = new Set();
         resetWallComposer();
         if (!s.slugs.find((item) => item.fullSlug === s.analyticsSelectedSlug)) {
           s.analyticsBootstrap = null;
@@ -3587,12 +3663,20 @@ Email: ${userEmail}
       const submit = form instanceof HTMLElement ? form.querySelector("[data-wall-comment-submit]") : null;
       if (submit instanceof HTMLButtonElement) {
         const isBusy = s.wallBusyCommentPostIds instanceof Set && s.wallBusyCommentPostIds.has(postId);
-        submit.disabled = !getWallCommentDraft(postId).trim() || isBusy;
+        submit.disabled = isBusy;
       }
     });
 
     el.wallList?.addEventListener("click", (event) => {
       const target = event.target instanceof HTMLElement ? event.target : null;
+      const toggleComments = target?.closest("[data-wall-comments-toggle]");
+      if (toggleComments instanceof HTMLElement) {
+        const postId = String(toggleComments.getAttribute("data-wall-post-id") || "").trim();
+        if (!postId) return;
+        setWallCommentsExpanded(postId, !isWallCommentsExpanded(postId));
+        renderWallList();
+        return;
+      }
       const submitComment = target?.closest("[data-wall-comment-submit]");
       if (submitComment instanceof HTMLElement) {
         const postId = String(submitComment.getAttribute("data-wall-post-id") || "").trim();

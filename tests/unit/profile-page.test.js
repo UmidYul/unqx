@@ -70,7 +70,9 @@ describe("profile page", () => {
     expect(source).toContain('event.key !== "Tab"');
     expect(source).toContain("modalIsOpen");
     expect(source).toContain("data-wall-comment-submit");
+    expect(source).toContain("data-wall-comments-toggle");
     expect(source).toContain("Комментарий опубликован");
+    expect(source).toContain("Комментарий пустой");
   });
 
   test("profile API labels are emoji-free", () => {

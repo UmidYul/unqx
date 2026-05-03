@@ -133,6 +133,8 @@ describe("slug page (:slug) templates", () => {
     expect(publicCardSource).toContain("wall-posts");
     expect(cardViewSource).toContain("Комментариев пока нет");
     expect(cardViewSource).toContain("data-wall-comment-submit");
+    expect(cardViewSource).toContain("data-wall-comments-toggle");
     expect(publicCardSource).toContain("/comments");
+    expect(publicCardSource).toContain("Введите комментарий");
   });
 });
