@@ -78,7 +78,7 @@ describe("profile wall service", () => {
   test("createWallPost rejects when daily limit is already used", async () => {
     mockPrisma.$transaction.mockImplementation(async (callback) =>
       callback({
-        $queryRaw: vi.fn().mockResolvedValue(undefined),
+        $executeRaw: vi.fn().mockResolvedValue(0),
         profileWallPost: {
           count: vi.fn().mockResolvedValue(1),
           create: vi.fn(),

@@ -321,7 +321,7 @@ async function assertWallPostCreateAllowed(tx, ownerId, options = {}) {
 
   const dayWindow = getWallDayWindow(options.now, options.timezone);
   const lockKey = `profile_wall_post:${normalizedOwnerId}:${dayWindow.startUtc.toISOString().slice(0, 10)}`;
-  await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${lockKey}))`;
+  await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${lockKey}))`;
 
   const todayPostCount = await tx.profileWallPost.count({
     where: {
