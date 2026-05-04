@@ -1066,7 +1066,7 @@
     return `<a href="${esc(normalizedHref)}" class="unq-wall-author-link"${attributeSuffix}>${contentHtml}</a>`;
   }
 
-  const WALL_COLLAPSED_COMMENT_COUNT = 5;
+  const WALL_SCROLLABLE_COMMENT_COUNT = 5;
   const WALL_COMMENT_CONTENT_MAX = 1000;
 
   function normalizeWallForRender(rawWall) {
@@ -1345,12 +1345,6 @@
             const likeIcon = item.viewerHasLiked ? iconSvg("heartFilled") : iconSvg("heart");
             const likeLabel = item.viewerHasLiked ? "Убрать лайк" : "Поставить лайк";
             const comments = Array.isArray(item.comments) ? item.comments : [];
-            const hasHiddenComments = comments.length > WALL_COLLAPSED_COMMENT_COUNT;
-            const visibleComments =
-              hasHiddenComments && !item.isCommentsExpanded
-                ? comments.slice(-WALL_COLLAPSED_COMMENT_COUNT)
-                : comments;
-            const hiddenCommentsCount = Math.max(0, comments.length - visibleComments.length);
             const postAuthorHtml = renderWallAuthorIdentity({
               label: card.wallAuthorLabel || card.name,
               verified: card.verified,
@@ -1359,8 +1353,8 @@
               verifiedClass: "unq-wall-post-verified",
               dataAttr: "data-wall-post-author-link",
             });
-            const commentsHtml = visibleComments.length
-              ? visibleComments
+            const commentsHtml = comments.length
+              ? comments
                 .map((comment) => {
                   const commentAuthorHtml = renderWallAuthorIdentity({
                     label: comment.author?.wallAuthorLabel || comment.author?.name || "UNQX User",
@@ -1392,8 +1386,16 @@
                 })
                 .join("")
               : '<div class="unq-wall-comment-empty">Комментариев пока нет.</div>';
-            const commentsToggleHtml = hasHiddenComments
-              ? `<button type="button" class="interactive-btn unq-wall-comments-toggle" data-wall-comments-toggle data-wall-post-id="${esc(item.id)}" aria-expanded="${item.isCommentsExpanded ? "true" : "false"}">${item.isCommentsExpanded ? "Свернуть комментарии" : `Показать ещё ${hiddenCommentsCount}`}</button>`
+            const commentCount = Number(item.commentsCount || comments.length).toLocaleString("ru-RU");
+            const commentsPanelHtml = item.isCommentsExpanded
+              ? `
+                <div class="unq-wall-comments">
+                  <div class="unq-wall-comments-list${comments.length > WALL_SCROLLABLE_COMMENT_COUNT ? " is-scrollable" : ""}">${commentsHtml}</div>
+                  <button type="button" class="interactive-btn unq-wall-comments-compose" data-wall-comment-compose data-wall-post-id="${esc(item.id)}">
+                    Написать комментарий
+                  </button>
+                </div>
+              `
               : "";
             return `
               <article class="unq-wall-post" data-wall-post="${esc(item.id)}">
@@ -1413,15 +1415,12 @@
                     ${likeIcon}
                   </button>
                   <span class="unq-wall-like-count">${Number(item.likesCount || 0).toLocaleString("ru-RU")}</span>
-                  <button type="button" class="interactive-btn unq-wall-comment-pill" data-wall-comment-open data-wall-post-id="${esc(item.id)}" aria-haspopup="dialog" aria-label="Написать комментарий">
+                  <button type="button" class="interactive-btn unq-wall-comment-pill" data-wall-comment-open data-wall-post-id="${esc(item.id)}" aria-expanded="${item.isCommentsExpanded ? "true" : "false"}" aria-label="${item.isCommentsExpanded ? "Скрыть комментарии" : "Показать комментарии"}">
                     ${iconSvg("comment")}
-                    <span>${Number(item.commentsCount || comments.length).toLocaleString("ru-RU")}</span>
+                    <span>${commentCount}</span>
                   </button>
                 </div>
-                <div class="unq-wall-comments">
-                  <div class="unq-wall-comments-list${item.isCommentsExpanded && hasHiddenComments ? " is-scrollable" : ""}">${commentsHtml}</div>
-                  ${commentsToggleHtml}
-                </div>
+                ${commentsPanelHtml}
               </article>
             `;
           })

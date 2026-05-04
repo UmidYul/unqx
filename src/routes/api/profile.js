@@ -62,6 +62,11 @@ const {
   hashPrivatePassword,
   comparePrivatePassword,
 } = require("../../services/private-access");
+const {
+  applyProfileSettingsSessionUser,
+  buildProfileSettingsUserPayload,
+  resolveProfileSettingsLoginUpdate,
+} = require("../../services/profile-account-settings");
 
 const router = express.Router();
 const upload = multer({
@@ -611,6 +616,22 @@ async function getCurrentUser(req) {
     ...row,
     username: row.username || row.telegramUsername || null,
   };
+}
+
+async function saveSession(req) {
+  if (!req?.session || typeof req.session.save !== "function") {
+    return;
+  }
+
+  await new Promise((resolve, reject) => {
+    req.session.save((error) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+      resolve();
+    });
+  });
 }
 
 function assertUserActive(user, res) {
@@ -2426,9 +2447,31 @@ router.patch(
       .trim()
       .slice(0, 120);
     const city = resolveUzbekistanCity(req.body.city);
+    const hasLoginField = Object.prototype.hasOwnProperty.call(req.body || {}, "login");
 
     if (!city) {
       res.status(400).json({ error: "Город обязателен" });
+      return;
+    }
+
+    let loginUpdate;
+    try {
+      loginUpdate = await resolveProfileSettingsLoginUpdate({
+        viewerUserId: user.id,
+        currentLogin: user.login,
+        requestedLogin: req.body?.login,
+        hasRequestedLogin: hasLoginField,
+        findUserByLogin: (login) =>
+          prisma.user.findFirst({
+            where: { login },
+            select: { id: true },
+          }),
+      });
+    } catch (error) {
+      res.status(error.status || 400).json({
+        error: error.message || "Не удалось сохранить логин",
+        code: error.code || "LOGIN_UPDATE_FAILED",
+      });
       return;
     }
 
@@ -2437,20 +2480,21 @@ router.patch(
       data: {
         displayName,
         city,
+        ...(loginUpdate?.shouldUpdate ? { login: loginUpdate.login } : {}),
         telegramUsername: telegramUsername || null,
         notificationsEnabled,
         showInDirectory,
       },
     });
 
+    if (req.session?.user) {
+      req.session.user = applyProfileSettingsSessionUser(req.session.user, updated);
+      await saveSession(req);
+    }
+
     res.json({
       ok: true,
-      user: {
-        displayName: updated.displayName,
-        city: updated.city || "",
-        notificationsEnabled: updated.notificationsEnabled,
-        showInDirectory: updated.showInDirectory,
-      },
+      user: buildProfileSettingsUserPayload(updated),
     });
   }),
 );
@@ -2773,6 +2817,9 @@ router.delete(
 
 module.exports = {
   profileApiRouter: router,
+  __test: {
+    saveSession,
+  },
 };
 
 

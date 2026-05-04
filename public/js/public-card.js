@@ -16,7 +16,6 @@
   const slugSearchForm = document.getElementById("card-slug-search-form");
   const slugSearchInput = document.getElementById("card-slug-search-input");
   const slugSearchResults = document.getElementById("card-slug-search-results");
-  const WALL_VISIBLE_COMMENT_COUNT = 5;
   const WALL_COMMENT_CONTENT_MAX = 1000;
   const WALL_SEEN_POSTS_STORAGE_KEY_PREFIX = "unqx_wall_seen_posts:";
   const state = {
@@ -525,6 +524,7 @@
       return;
     }
     state.activeTab = "posts";
+    setWallCommentsExpanded(normalizedPostId, true);
     state.wallCommentModalPostId = normalizedPostId;
     state.wallCommentModalReturnFocusPostId = normalizedPostId;
     renderCard();
@@ -559,11 +559,7 @@
     }
   }
 
-  function syncWallCommentsExpandedState(postId, commentsCount) {
-    if (Number(commentsCount || 0) <= WALL_VISIBLE_COMMENT_COUNT) {
-      setWallCommentsExpanded(postId, false);
-    }
-  }
+  function syncWallCommentsExpandedState() {}
 
   async function toggleWallLike(postId) {
     if (!state.wall || !postId || state.wallBusyLikeIds.has(postId)) {
@@ -901,19 +897,22 @@
     if (openCommentButton instanceof HTMLElement) {
       event.preventDefault();
       const postId = String(openCommentButton.getAttribute("data-wall-post-id") || "").trim();
-      openWallCommentModal(postId);
-      return;
-    }
-
-    const toggleCommentsButton = target.closest("[data-wall-comments-toggle]");
-    if (toggleCommentsButton instanceof HTMLElement) {
-      event.preventDefault();
-      const postId = String(toggleCommentsButton.getAttribute("data-wall-post-id") || "").trim();
       if (!postId) {
         return;
       }
+      if (state.wallCommentModalPostId) {
+        closeWallCommentModal({ restoreFocus: false });
+      }
       setWallCommentsExpanded(postId, !state.wallExpandedCommentPostIds.has(postId));
       renderCard();
+      return;
+    }
+
+    const composeCommentButton = target.closest("[data-wall-comment-compose]");
+    if (composeCommentButton instanceof HTMLElement) {
+      event.preventDefault();
+      const postId = String(composeCommentButton.getAttribute("data-wall-post-id") || "").trim();
+      openWallCommentModal(postId);
       return;
     }
 

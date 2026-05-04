@@ -133,10 +133,11 @@ describe("slug page (:slug) templates", () => {
     expect(publicCardSource).toContain("wall-posts");
     expect(cardViewSource).toContain("Комментариев пока нет");
     expect(cardViewSource).toContain("data-wall-comment-open");
+    expect(cardViewSource).toContain("data-wall-comment-compose");
     expect(cardViewSource).toContain("data-wall-comment-modal-submit");
     expect(cardViewSource).not.toContain("data-wall-comment-submit");
     expect(cardViewSource).not.toContain("unq-wall-comment-form");
-    expect(cardViewSource).toContain("data-wall-comments-toggle");
+    expect(cardViewSource).not.toContain("data-wall-comments-toggle");
     expect(cardViewSource).toContain("unq-wall-comment-verified");
     expect(cardViewSource).toContain("comment.author?.verified");
     expect(cardViewSource).toContain("data-wall-post-author-link");
@@ -144,6 +145,7 @@ describe("slug page (:slug) templates", () => {
     expect(cardViewSource).toContain("data-wall-posts-unread-dot");
     expect(publicCardSource).toContain("/comments");
     expect(publicCardSource).toContain("wallCommentModalPostId");
+    expect(publicCardSource).toContain("data-wall-comment-compose");
     expect(publicCardSource).toContain("verified: Boolean(authorSource.verified)");
     expect(publicCardSource).toContain("profileHref: String(authorSource.profileHref || \"\").trim() || null");
     expect(publicCardSource).toContain("unqx_wall_seen_posts:");

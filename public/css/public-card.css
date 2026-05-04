@@ -2452,14 +2452,14 @@ body[data-card-theme] #card-view-root>[data-card-view] {
   cursor: default;
 }
 
-.unq-wall-comments-toggle {
+.unq-wall-comments-compose {
   justify-self: start;
-  min-height: 34px;
+  min-height: 38px;
   border-radius: 999px;
   border: 1px solid var(--theme-button-secondary-border, #d6d6d6);
   background: transparent !important;
   color: var(--theme-button-secondary-text, #202020) !important;
-  padding: 0 12px;
+  padding: 0 14px;
   font-size: 12px;
   font-weight: 700;
 }

@@ -57,6 +57,13 @@ describe("profile page", () => {
     expect(html).toContain('id="profile-card-name-error"');
   });
 
+  test("renders login inline status for one-time login setup", async () => {
+    const html = await renderProfileTemplate();
+    expect(html).toContain('id="profile-settings-login"');
+    expect(html).toContain('id="profile-settings-login-status"');
+    expect(html).toContain("Логин уже задан и недоступен для изменения");
+  });
+
   test("does not contain emoji artifacts in profile template", async () => {
     const html = await renderProfileTemplate();
     const emojiRegex = /[🟢🟡🔴✅❌🎁🕐👁📅]/u;
@@ -73,6 +80,9 @@ describe("profile page", () => {
     expect(source).toContain("data-wall-comments-toggle");
     expect(source).toContain("Комментарий опубликован");
     expect(source).toContain("Комментарий пустой");
+    expect(source).toContain("/api/auth/check-availability?login=");
+    expect(source).toContain("profile-settings-login-status");
+    expect(source).toContain("PROFILE_LOGIN_AVAILABLE_MESSAGE");
   });
 
   test("profile API labels are emoji-free", () => {

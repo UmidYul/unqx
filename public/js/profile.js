@@ -114,6 +114,15 @@
     const WALL_COMMENT_CONTENT_MAX = 1000;
     const WALL_VISIBLE_COMMENT_COUNT = 5;
     const WALL_POST_PAGE_SIZE = 20;
+    const LOGIN_MIN_LENGTH = 3;
+    const LOGIN_MAX_LENGTH = 190;
+    const LOGIN_REGEX = /^[a-z0-9._@+-]+$/;
+    const PROFILE_LOGIN_INVALID_MESSAGE = "Логин может содержать только латиницу, цифры и символы . _ -";
+    const PROFILE_LOGIN_LOCKED_MESSAGE = "Логин уже задан и недоступен для изменения.";
+    const PROFILE_LOGIN_EMPTY_MESSAGE = "Если логина еще нет, его можно задать здесь один раз.";
+    const PROFILE_LOGIN_CHECKING_MESSAGE = "Проверяем логин...";
+    const PROFILE_LOGIN_AVAILABLE_MESSAGE = "Логин свободен.";
+    const PROFILE_LOGIN_CHECK_FAILED_MESSAGE = "Не удалось проверить логин. Попробуй еще раз.";
 
     const avatarSrc = (url) => {
       const base = String(url || "").trim() || DEFAULT_PROFILE_AVATAR;
@@ -261,6 +270,14 @@
     let privatePasswordChangeModalLastFocused = null;
     let privatePasswordChangeModalOpen = false;
     let privatePasswordChangeId = "";
+    let settingsLoginDraft = "";
+    let settingsLoginCheckTimer = null;
+    let settingsLoginRequestId = 0;
+    let settingsLoginAvailability = {
+      state: "idle",
+      login: "",
+      message: "",
+    };
     const PROFILE_SAVE_SUCCESS_MESSAGE = "Изменения сохранены";
 
     const toOrderPaymentReference = (orderId) => `UNQX-${String(orderId || "").replace(/[^a-zA-Z0-9]/g, "").slice(0, 10).toUpperCase()}`;
@@ -496,6 +513,7 @@ Email: ${userEmail}
       stSaveWrap: $("#profile-settings-save-wrap"),
       stCity: $("#profile-settings-city"),
       stLogin: $("#profile-settings-login"),
+      stLoginStatus: $("#profile-settings-login-status"),
       stEmail: $("#profile-settings-email"),
       stTg: $("#profile-settings-telegram"),
       stChangeEmail: $("#profile-settings-change-email"),
@@ -2608,6 +2626,206 @@ Email: ${userEmail}
       return ["account", "security", "privacy"].includes(normalized) ? normalized : "account";
     };
 
+    const normalizeProfileLoginValue = (value) => String(value || "").trim().toLowerCase();
+
+    const isValidProfileLogin = (value) => {
+      const normalized = normalizeProfileLoginValue(value);
+      if (normalized.length < LOGIN_MIN_LENGTH || normalized.length > LOGIN_MAX_LENGTH) {
+        return false;
+      }
+      return LOGIN_REGEX.test(normalized);
+    };
+
+    const canEditProfileLogin = () => !normalizeProfileLoginValue(s.user?.login);
+
+    const setSettingsLoginStatus = (message, tone = "muted") => {
+      if (!(el.stLoginStatus instanceof HTMLElement)) return;
+      const normalizedMessage = String(message || "").trim();
+      el.stLoginStatus.textContent = normalizedMessage;
+      let className = "mt-1 text-xs text-neutral-500";
+      if (tone === "success") {
+        className = "mt-1 text-xs text-emerald-700";
+      } else if (tone === "error") {
+        className = "mt-1 text-xs text-red-700";
+      } else if (tone === "neutral") {
+        className = "mt-1 text-xs text-neutral-600";
+      }
+      el.stLoginStatus.className = className;
+    };
+
+    const renderSettingsLoginField = () => {
+      if (!(el.stLogin instanceof HTMLInputElement)) {
+        return;
+      }
+
+      const savedLogin = normalizeProfileLoginValue(s.user?.login);
+      const editable = !savedLogin;
+
+      el.stLogin.readOnly = !editable;
+      el.stLogin.value = editable ? settingsLoginDraft : savedLogin;
+      el.stLogin.placeholder = editable ? "Придумай логин" : "";
+      el.stLogin.classList.toggle("bg-neutral-50", !editable);
+      el.stLogin.classList.toggle("cursor-not-allowed", !editable);
+
+      if (!editable) {
+        setSettingsLoginStatus(PROFILE_LOGIN_LOCKED_MESSAGE, "muted");
+        return;
+      }
+
+      const normalizedDraft = normalizeProfileLoginValue(settingsLoginDraft);
+      if (!normalizedDraft) {
+        setSettingsLoginStatus(PROFILE_LOGIN_EMPTY_MESSAGE, "muted");
+        return;
+      }
+
+      if (settingsLoginAvailability.login !== normalizedDraft) {
+        settingsLoginAvailability = {
+          state: "idle",
+          login: normalizedDraft,
+          message: "",
+        };
+      }
+
+      switch (settingsLoginAvailability.state) {
+        case "checking":
+          setSettingsLoginStatus(settingsLoginAvailability.message || PROFILE_LOGIN_CHECKING_MESSAGE, "neutral");
+          break;
+        case "available":
+          setSettingsLoginStatus(settingsLoginAvailability.message || PROFILE_LOGIN_AVAILABLE_MESSAGE, "success");
+          break;
+        case "taken":
+        case "invalid":
+        case "error":
+          setSettingsLoginStatus(settingsLoginAvailability.message || PROFILE_LOGIN_CHECK_FAILED_MESSAGE, "error");
+          break;
+        default:
+          if (!isValidProfileLogin(normalizedDraft)) {
+            setSettingsLoginStatus(PROFILE_LOGIN_INVALID_MESSAGE, "error");
+          } else {
+            setSettingsLoginStatus("Логин должен быть уникальным. После сохранения изменить его уже нельзя.", "neutral");
+          }
+          break;
+      }
+    };
+
+    const applySettingsLoginAvailability = (nextState, login, message = "") => {
+      settingsLoginAvailability = {
+        state: nextState,
+        login: normalizeProfileLoginValue(login),
+        message: String(message || "").trim(),
+      };
+      renderSettingsLoginField();
+    };
+
+    const resetSettingsLoginAvailability = () => {
+      settingsLoginAvailability = {
+        state: "idle",
+        login: normalizeProfileLoginValue(settingsLoginDraft),
+        message: "",
+      };
+      renderSettingsLoginField();
+    };
+
+    const checkSettingsLoginAvailability = async (loginValue, options = {}) => {
+      const normalizedLogin = normalizeProfileLoginValue(loginValue);
+      const requestId = Number(options.requestId || 0);
+      if (!normalizedLogin) {
+        applySettingsLoginAvailability("idle", "", "");
+        return { ok: true, available: false, login: "" };
+      }
+
+      if (!isValidProfileLogin(normalizedLogin)) {
+        applySettingsLoginAvailability("invalid", normalizedLogin, PROFILE_LOGIN_INVALID_MESSAGE);
+        return { ok: false, available: false, login: normalizedLogin };
+      }
+
+      applySettingsLoginAvailability("checking", normalizedLogin, PROFILE_LOGIN_CHECKING_MESSAGE);
+
+      try {
+        const payload = await api(`/api/auth/check-availability?login=${encodeURIComponent(normalizedLogin)}`, {
+          method: "GET",
+        });
+        if (requestId && requestId !== settingsLoginRequestId) {
+          return { ok: false, stale: true, login: normalizedLogin };
+        }
+        const loginMeta = payload?.login && typeof payload.login === "object" ? payload.login : {};
+        if (loginMeta.valid === false) {
+          applySettingsLoginAvailability("invalid", normalizedLogin, loginMeta.message || PROFILE_LOGIN_INVALID_MESSAGE);
+          return { ok: false, available: false, login: normalizedLogin };
+        }
+        if (loginMeta.available) {
+          applySettingsLoginAvailability("available", normalizedLogin, PROFILE_LOGIN_AVAILABLE_MESSAGE);
+          return { ok: true, available: true, login: normalizedLogin };
+        }
+        applySettingsLoginAvailability("taken", normalizedLogin, loginMeta.message || "Этот логин уже занят");
+        return { ok: false, available: false, login: normalizedLogin };
+      } catch {
+        if (requestId && requestId !== settingsLoginRequestId) {
+          return { ok: false, stale: true, login: normalizedLogin };
+        }
+        applySettingsLoginAvailability("error", normalizedLogin, PROFILE_LOGIN_CHECK_FAILED_MESSAGE);
+        return { ok: false, available: false, login: normalizedLogin };
+      }
+    };
+
+    const scheduleSettingsLoginAvailabilityCheck = () => {
+      if (!canEditProfileLogin()) {
+        return;
+      }
+
+      const normalizedLogin = normalizeProfileLoginValue(settingsLoginDraft);
+      if (settingsLoginCheckTimer) {
+        window.clearTimeout(settingsLoginCheckTimer);
+      }
+
+      if (!normalizedLogin) {
+        resetSettingsLoginAvailability();
+        return;
+      }
+
+      if (!isValidProfileLogin(normalizedLogin)) {
+        applySettingsLoginAvailability("invalid", normalizedLogin, PROFILE_LOGIN_INVALID_MESSAGE);
+        return;
+      }
+
+      const requestId = ++settingsLoginRequestId;
+      settingsLoginCheckTimer = window.setTimeout(() => {
+        void checkSettingsLoginAvailability(normalizedLogin, { requestId });
+      }, 260);
+    };
+
+    const ensureSettingsLoginReadyForSubmit = async () => {
+      if (!canEditProfileLogin()) {
+        return { ok: true, login: "" };
+      }
+
+      const normalizedLogin = normalizeProfileLoginValue(settingsLoginDraft);
+      if (!normalizedLogin) {
+        return { ok: true, login: "" };
+      }
+
+      if (settingsLoginCheckTimer) {
+        window.clearTimeout(settingsLoginCheckTimer);
+        settingsLoginCheckTimer = null;
+      }
+
+      if (!isValidProfileLogin(normalizedLogin)) {
+        applySettingsLoginAvailability("invalid", normalizedLogin, PROFILE_LOGIN_INVALID_MESSAGE);
+        return { ok: false, login: normalizedLogin };
+      }
+
+      if (settingsLoginAvailability.state === "available" && settingsLoginAvailability.login === normalizedLogin) {
+        return { ok: true, login: normalizedLogin };
+      }
+
+      const requestId = ++settingsLoginRequestId;
+      const result = await checkSettingsLoginAvailability(normalizedLogin, { requestId });
+      return {
+        ok: Boolean(result?.ok && result?.available),
+        login: normalizedLogin,
+      };
+    };
+
     const renderSettingsCategory = () => {
       s.settingsCategory = normalizeSettingsCategory(s.settingsCategory);
       const activeCategory = s.settingsCategory;
@@ -2639,7 +2857,10 @@ Email: ${userEmail}
       if (!s.user) return;
       if (el.stName) el.stName.value = s.user.displayName || s.user.firstName || "";
       if (el.stCity) el.stCity.value = String(s.user.city || "");
-      if (el.stLogin) el.stLogin.value = String(s.user.login || "").trim() || "—";
+      if (settingsLoginDraft !== normalizeProfileLoginValue(s.user.login) && !canEditProfileLogin()) {
+        settingsLoginDraft = normalizeProfileLoginValue(s.user.login);
+      }
+      renderSettingsLoginField();
       if (el.stEmail) {
         const accountEmail = String(s.user.email || "").trim();
         const pendingEmail = String(s.user.pendingEmail || "").trim();
@@ -3373,6 +3594,17 @@ Email: ${userEmail}
           window.UNQProfileUser = s.user;
           window.UNQProfileSubscription = payload.subscription || null;
         }
+        settingsLoginDraft = normalizeProfileLoginValue(s.user?.login);
+        settingsLoginAvailability = {
+          state: "idle",
+          login: settingsLoginDraft,
+          message: "",
+        };
+        if (settingsLoginCheckTimer) {
+          window.clearTimeout(settingsLoginCheckTimer);
+          settingsLoginCheckTimer = null;
+        }
+        settingsLoginRequestId = 0;
         if (s.user && typeof s.user === "object") {
           s.user.effectivePlan = getCurrentPlan();
         }
@@ -4523,6 +4755,39 @@ Email: ${userEmail}
 
     el.stChangePassword?.addEventListener("click", openPasswordModal);
 
+    el.stLogin?.addEventListener("input", (event) => {
+      if (!canEditProfileLogin()) {
+        renderSettingsLoginField();
+        return;
+      }
+      const target = event.target instanceof HTMLInputElement ? event.target : null;
+      if (!target) return;
+      const normalizedValue = normalizeProfileLoginValue(target.value);
+      settingsLoginDraft = normalizedValue;
+      if (target.value !== normalizedValue) {
+        target.value = normalizedValue;
+      }
+      resetSettingsLoginAvailability();
+      scheduleSettingsLoginAvailabilityCheck();
+    });
+
+    el.stLogin?.addEventListener("blur", () => {
+      if (!canEditProfileLogin()) {
+        renderSettingsLoginField();
+        return;
+      }
+      const normalizedValue = normalizeProfileLoginValue(el.stLogin?.value || "");
+      settingsLoginDraft = normalizedValue;
+      if (el.stLogin instanceof HTMLInputElement && el.stLogin.value !== normalizedValue) {
+        el.stLogin.value = normalizedValue;
+      }
+      if (!normalizedValue) {
+        resetSettingsLoginAvailability();
+        return;
+      }
+      void ensureSettingsLoginReadyForSubmit();
+    });
+
     el.privatePasswordOpenAdd?.addEventListener("click", openPrivatePasswordAddModal);
 
     el.stSave?.addEventListener("click", async () => {
@@ -4530,12 +4795,22 @@ Email: ${userEmail}
       el.stStatus.textContent = "";
 
       try {
+        const loginGuard = await ensureSettingsLoginReadyForSubmit();
+        if (!loginGuard.ok) {
+          const loginField = el.stLogin instanceof HTMLInputElement ? el.stLogin : null;
+          loginField?.focus();
+          el.stStatus.textContent = "Проверь логин перед сохранением";
+          el.stStatus.className = "text-sm text-red-700";
+          return;
+        }
+
         const payload = await api("/api/profile/settings", {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             displayName: el.stName?.value || "",
             city: el.stCity?.value || "",
+            login: loginGuard.login,
             telegramUsername: String(el.stTg?.value || "").replace(/^@+/, "").trim(),
             notificationsEnabled: Boolean(el.stNotif?.checked),
             showInDirectory: Boolean(el.stDirectory?.checked),
@@ -4545,16 +4820,31 @@ Email: ${userEmail}
         if (s.user) {
           s.user.displayName = payload.user.displayName;
           s.user.city = payload.user.city;
+          s.user.login = payload.user.login || null;
           s.user.notificationsEnabled = payload.user.notificationsEnabled;
           s.user.showInDirectory = payload.user.showInDirectory;
         }
+        settingsLoginDraft = normalizeProfileLoginValue(payload?.user?.login || "");
+        settingsLoginAvailability = {
+          state: payload?.user?.login ? "locked" : "idle",
+          login: settingsLoginDraft,
+          message: "",
+        };
 
         renderSidebar();
+        renderSettings();
         renderTelegramNotificationActions(Boolean(payload?.user?.notificationsEnabled));
         el.stStatus.textContent = PROFILE_SAVE_SUCCESS_MESSAGE;
         el.stStatus.className = "text-sm text-emerald-700";
         showSaveAlert(PROFILE_SAVE_SUCCESS_MESSAGE);
       } catch (error) {
+        if (String(error?.code || "").startsWith("LOGIN_")) {
+          applySettingsLoginAvailability(
+            error.code === "LOGIN_TAKEN" ? "taken" : "invalid",
+            settingsLoginDraft,
+            error.message || "Не удалось сохранить логин",
+          );
+        }
         el.stStatus.textContent = `${error.message}`;
         el.stStatus.className = "text-sm text-red-700";
       }
