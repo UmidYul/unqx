@@ -2169,7 +2169,7 @@ body[data-card-theme] #card-view-root>[data-card-view] {
 
 .unq-wall-comment-pill {
   border: 0;
-  background: transparent;
+  background: transparent !important;
   color: var(--theme-email-color, #6b7280);
   font-size: 13px;
   font-weight: 600;
@@ -2178,10 +2178,20 @@ body[data-card-theme] #card-view-root>[data-card-view] {
   gap: 6px;
   padding: 0;
   cursor: pointer;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  transition:
+    color 0.18s ease,
+    opacity 0.18s ease,
+    transform 0.16s ease;
 }
 
 .unq-wall-comment-pill:hover {
   color: var(--theme-accent-color, #202020);
+}
+
+.unq-wall-comment-pill:active {
+  transform: scale(0.97);
 }
 
 .unq-wall-comments {
