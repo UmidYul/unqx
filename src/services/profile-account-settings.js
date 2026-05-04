@@ -2,7 +2,6 @@ const { normalizeLogin, isValidLogin } = require("../utils/login");
 
 const PROFILE_LOGIN_INVALID_MESSAGE = "Логин может содержать только латиницу, цифры и символы . _ -";
 const PROFILE_LOGIN_TAKEN_MESSAGE = "Этот логин уже занят";
-const PROFILE_LOGIN_ALREADY_SET_MESSAGE = "Логин уже задан и не может быть изменен";
 
 function createProfileSettingsError(message, code, status = 400) {
   const error = new Error(message);
@@ -34,14 +33,11 @@ async function resolveProfileSettingsLoginUpdate({
     };
   }
 
-  if (normalizedCurrentLogin) {
-    if (normalizedRequestedLogin === normalizedCurrentLogin) {
-      return {
-        shouldUpdate: false,
-        login: normalizedCurrentLogin,
-      };
-    }
-    throw createProfileSettingsError(PROFILE_LOGIN_ALREADY_SET_MESSAGE, "LOGIN_ALREADY_SET", 409);
+  if (normalizedRequestedLogin === normalizedCurrentLogin) {
+    return {
+      shouldUpdate: false,
+      login: normalizedCurrentLogin || normalizedRequestedLogin,
+    };
   }
 
   if (!isValidLogin(normalizedRequestedLogin)) {
@@ -85,7 +81,6 @@ function buildProfileSettingsUserPayload(updatedUser) {
 }
 
 module.exports = {
-  PROFILE_LOGIN_ALREADY_SET_MESSAGE,
   PROFILE_LOGIN_INVALID_MESSAGE,
   PROFILE_LOGIN_TAKEN_MESSAGE,
   applyProfileSettingsSessionUser,

@@ -57,11 +57,11 @@ describe("profile page", () => {
     expect(html).toContain('id="profile-card-name-error"');
   });
 
-  test("renders login inline status for one-time login setup", async () => {
+  test("renders login inline status for editable login setup", async () => {
     const html = await renderProfileTemplate();
     expect(html).toContain('id="profile-settings-login"');
     expect(html).toContain('id="profile-settings-login-status"');
-    expect(html).toContain("Логин уже задан и недоступен для изменения");
+    expect(html).toContain("Логин можно менять в любой момент, если он свободен");
   });
 
   test("does not contain emoji artifacts in profile template", async () => {
@@ -83,6 +83,7 @@ describe("profile page", () => {
     expect(source).toContain("/api/auth/check-availability?login=");
     expect(source).toContain("profile-settings-login-status");
     expect(source).toContain("PROFILE_LOGIN_AVAILABLE_MESSAGE");
+    expect(source).toContain("PROFILE_LOGIN_CURRENT_MESSAGE");
   });
 
   test("profile API labels are emoji-free", () => {

@@ -118,11 +118,12 @@
     const LOGIN_MAX_LENGTH = 190;
     const LOGIN_REGEX = /^[a-z0-9._@+-]+$/;
     const PROFILE_LOGIN_INVALID_MESSAGE = "Логин может содержать только латиницу, цифры и символы . _ -";
-    const PROFILE_LOGIN_LOCKED_MESSAGE = "Логин уже задан и недоступен для изменения.";
-    const PROFILE_LOGIN_EMPTY_MESSAGE = "Если логина еще нет, его можно задать здесь один раз.";
+    const PROFILE_LOGIN_EMPTY_MESSAGE = "Можно задать новый логин или оставить текущий.";
     const PROFILE_LOGIN_CHECKING_MESSAGE = "Проверяем логин...";
     const PROFILE_LOGIN_AVAILABLE_MESSAGE = "Логин свободен.";
     const PROFILE_LOGIN_CHECK_FAILED_MESSAGE = "Не удалось проверить логин. Попробуй еще раз.";
+    const PROFILE_LOGIN_CURRENT_MESSAGE = "Это твой текущий логин.";
+    const PROFILE_LOGIN_REQUIRED_MESSAGE = "Логин не может быть пустым.";
 
     const avatarSrc = (url) => {
       const base = String(url || "").trim() || DEFAULT_PROFILE_AVATAR;
@@ -2636,7 +2637,7 @@ Email: ${userEmail}
       return LOGIN_REGEX.test(normalized);
     };
 
-    const canEditProfileLogin = () => !normalizeProfileLoginValue(s.user?.login);
+    const canEditProfileLogin = () => true;
 
     const setSettingsLoginStatus = (message, tone = "muted") => {
       if (!(el.stLoginStatus instanceof HTMLElement)) return;
@@ -2659,22 +2660,17 @@ Email: ${userEmail}
       }
 
       const savedLogin = normalizeProfileLoginValue(s.user?.login);
-      const editable = !savedLogin;
+      const editable = true;
 
       el.stLogin.readOnly = !editable;
-      el.stLogin.value = editable ? settingsLoginDraft : savedLogin;
-      el.stLogin.placeholder = editable ? "Придумай логин" : "";
+      el.stLogin.value = settingsLoginDraft;
+      el.stLogin.placeholder = savedLogin ? "Измени логин" : "Придумай логин";
       el.stLogin.classList.toggle("bg-neutral-50", !editable);
       el.stLogin.classList.toggle("cursor-not-allowed", !editable);
 
-      if (!editable) {
-        setSettingsLoginStatus(PROFILE_LOGIN_LOCKED_MESSAGE, "muted");
-        return;
-      }
-
       const normalizedDraft = normalizeProfileLoginValue(settingsLoginDraft);
       if (!normalizedDraft) {
-        setSettingsLoginStatus(PROFILE_LOGIN_EMPTY_MESSAGE, "muted");
+        setSettingsLoginStatus(savedLogin ? PROFILE_LOGIN_REQUIRED_MESSAGE : PROFILE_LOGIN_EMPTY_MESSAGE, savedLogin ? "error" : "muted");
         return;
       }
 
@@ -2699,10 +2695,14 @@ Email: ${userEmail}
           setSettingsLoginStatus(settingsLoginAvailability.message || PROFILE_LOGIN_CHECK_FAILED_MESSAGE, "error");
           break;
         default:
+          if (savedLogin && normalizedDraft === savedLogin) {
+            setSettingsLoginStatus(PROFILE_LOGIN_CURRENT_MESSAGE, "neutral");
+            break;
+          }
           if (!isValidProfileLogin(normalizedDraft)) {
             setSettingsLoginStatus(PROFILE_LOGIN_INVALID_MESSAGE, "error");
           } else {
-            setSettingsLoginStatus("Логин должен быть уникальным. После сохранения изменить его уже нельзя.", "neutral");
+            setSettingsLoginStatus("Логин должен быть уникальным. Изменения сохраняются сразу в аккаунте.", "neutral");
           }
           break;
       }
@@ -2728,10 +2728,16 @@ Email: ${userEmail}
 
     const checkSettingsLoginAvailability = async (loginValue, options = {}) => {
       const normalizedLogin = normalizeProfileLoginValue(loginValue);
+      const currentLogin = normalizeProfileLoginValue(s.user?.login);
       const requestId = Number(options.requestId || 0);
       if (!normalizedLogin) {
         applySettingsLoginAvailability("idle", "", "");
         return { ok: true, available: false, login: "" };
+      }
+
+      if (currentLogin && normalizedLogin === currentLogin) {
+        applySettingsLoginAvailability("idle", normalizedLogin, PROFILE_LOGIN_CURRENT_MESSAGE);
+        return { ok: true, available: true, login: normalizedLogin, current: true };
       }
 
       if (!isValidProfileLogin(normalizedLogin)) {
@@ -2795,18 +2801,24 @@ Email: ${userEmail}
     };
 
     const ensureSettingsLoginReadyForSubmit = async () => {
-      if (!canEditProfileLogin()) {
-        return { ok: true, login: "" };
-      }
-
       const normalizedLogin = normalizeProfileLoginValue(settingsLoginDraft);
+      const currentLogin = normalizeProfileLoginValue(s.user?.login);
       if (!normalizedLogin) {
+        if (currentLogin) {
+          applySettingsLoginAvailability("invalid", normalizedLogin, PROFILE_LOGIN_REQUIRED_MESSAGE);
+          return { ok: false, login: normalizedLogin };
+        }
         return { ok: true, login: "" };
       }
 
       if (settingsLoginCheckTimer) {
         window.clearTimeout(settingsLoginCheckTimer);
         settingsLoginCheckTimer = null;
+      }
+
+      if (currentLogin && normalizedLogin === currentLogin) {
+        applySettingsLoginAvailability("idle", normalizedLogin, PROFILE_LOGIN_CURRENT_MESSAGE);
+        return { ok: true, login: normalizedLogin };
       }
 
       if (!isValidProfileLogin(normalizedLogin)) {
@@ -2857,7 +2869,7 @@ Email: ${userEmail}
       if (!s.user) return;
       if (el.stName) el.stName.value = s.user.displayName || s.user.firstName || "";
       if (el.stCity) el.stCity.value = String(s.user.city || "");
-      if (settingsLoginDraft !== normalizeProfileLoginValue(s.user.login) && !canEditProfileLogin()) {
+      if (!settingsLoginDraft && normalizeProfileLoginValue(s.user.login)) {
         settingsLoginDraft = normalizeProfileLoginValue(s.user.login);
       }
       renderSettingsLoginField();
@@ -4756,10 +4768,6 @@ Email: ${userEmail}
     el.stChangePassword?.addEventListener("click", openPasswordModal);
 
     el.stLogin?.addEventListener("input", (event) => {
-      if (!canEditProfileLogin()) {
-        renderSettingsLoginField();
-        return;
-      }
       const target = event.target instanceof HTMLInputElement ? event.target : null;
       if (!target) return;
       const normalizedValue = normalizeProfileLoginValue(target.value);
@@ -4772,10 +4780,6 @@ Email: ${userEmail}
     });
 
     el.stLogin?.addEventListener("blur", () => {
-      if (!canEditProfileLogin()) {
-        renderSettingsLoginField();
-        return;
-      }
       const normalizedValue = normalizeProfileLoginValue(el.stLogin?.value || "");
       settingsLoginDraft = normalizedValue;
       if (el.stLogin instanceof HTMLInputElement && el.stLogin.value !== normalizedValue) {
@@ -4826,7 +4830,7 @@ Email: ${userEmail}
         }
         settingsLoginDraft = normalizeProfileLoginValue(payload?.user?.login || "");
         settingsLoginAvailability = {
-          state: payload?.user?.login ? "locked" : "idle",
+          state: "idle",
           login: settingsLoginDraft,
           message: "",
         };

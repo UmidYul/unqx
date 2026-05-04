@@ -20,18 +20,33 @@ describe("profile account settings", () => {
     });
   });
 
-  test("user with existing login cannot replace it through profile settings", async () => {
-    await expect(
-      resolveProfileSettingsLoginUpdate({
-        viewerUserId: "user_1",
-        currentLogin: "locked_login",
-        requestedLogin: "another_login",
-        hasRequestedLogin: true,
-        findUserByLogin: async () => null,
-      }),
-    ).rejects.toMatchObject({
-      code: "LOGIN_ALREADY_SET",
-      message: "Логин уже задан и не может быть изменен",
+  test("user with existing login can replace it through profile settings", async () => {
+    const result = await resolveProfileSettingsLoginUpdate({
+      viewerUserId: "user_1",
+      currentLogin: "locked_login",
+      requestedLogin: "another_login",
+      hasRequestedLogin: true,
+      findUserByLogin: async () => null,
+    });
+
+    expect(result).toEqual({
+      shouldUpdate: true,
+      login: "another_login",
+    });
+  });
+
+  test("keeping the same login is treated as a no-op", async () => {
+    const result = await resolveProfileSettingsLoginUpdate({
+      viewerUserId: "user_1",
+      currentLogin: "same_login",
+      requestedLogin: "same_login",
+      hasRequestedLogin: true,
+      findUserByLogin: async () => ({ id: "user_1" }),
+    });
+
+    expect(result).toEqual({
+      shouldUpdate: false,
+      login: "same_login",
     });
   });
 
