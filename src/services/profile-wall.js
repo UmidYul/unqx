@@ -202,6 +202,7 @@ function getWallCommentBaseSelect() {
         lastName: true,
         username: true,
         login: true,
+        isVerified: true,
         profileCard: {
           select: {
             avatarUrl: true,
@@ -234,6 +235,24 @@ function getWallCommentAuthorName(user) {
   return "UNQX User";
 }
 
+function formatWallAuthorHandle(value) {
+  const normalized = String(value || "").trim().replace(/^@+/, "");
+  return normalized ? `@${normalized}` : "";
+}
+
+function getWallCommentAuthorPublicLabel(user, fallbackLabel = "") {
+  const usernameLabel = formatWallAuthorHandle(user?.username);
+  if (usernameLabel) {
+    return usernameLabel;
+  }
+  const loginLabel = formatWallAuthorHandle(user?.login);
+  if (loginLabel) {
+    return loginLabel;
+  }
+  const fallback = String(fallbackLabel || "").trim();
+  return fallback || "UNQX User";
+}
+
 function getWallCommentAuthorInitials(name) {
   const initials = String(name || "")
     .split(/\s+/)
@@ -247,6 +266,7 @@ function getWallCommentAuthorInitials(name) {
 function mapWallCommentItem(row, options = {}) {
   if (!row) return null;
   const viewerUserId = String(options.viewerUserId || "").trim();
+  const postOwnerId = String(options.ownerId || "").trim();
   const authorName = getWallCommentAuthorName(row.user);
   const userId = String(row.userId || "").trim();
   return {
@@ -256,20 +276,23 @@ function mapWallCommentItem(row, options = {}) {
     content: String(row.content || ""),
     createdAt: row.createdAt || null,
     updatedAt: row.updatedAt || null,
-    viewerCanDelete: Boolean(viewerUserId) && viewerUserId === userId,
+    viewerCanDelete: Boolean(viewerUserId) && (viewerUserId === userId || viewerUserId === postOwnerId),
     author: {
       id: String(row.user?.id || userId).trim(),
       name: authorName,
+      wallAuthorLabel: getWallCommentAuthorPublicLabel(row.user, authorName),
+      verified: Boolean(row.user?.isVerified),
       avatarUrl: String(row.user?.profileCard?.avatarUrl || "").trim() || null,
       initials: getWallCommentAuthorInitials(authorName),
     },
   };
 }
 
-async function listWallCommentsByPostIds({ postIds, viewerUserId = "" }) {
+async function listWallCommentsByPostIds({ postIds, viewerUserId = "", ownerId = "" }) {
   const normalizedPostIds = Array.isArray(postIds)
     ? postIds.map((item) => String(item || "").trim()).filter(Boolean)
     : [];
+  const normalizedOwnerId = String(ownerId || "").trim();
   if (!normalizedPostIds.length) {
     return new Map();
   }
@@ -293,7 +316,10 @@ async function listWallCommentsByPostIds({ postIds, viewerUserId = "" }) {
     if (!grouped.has(postId)) {
       grouped.set(postId, []);
     }
-    const mapped = mapWallCommentItem(row, { viewerUserId });
+    const mapped = mapWallCommentItem(row, {
+      viewerUserId,
+      ownerId: normalizedOwnerId,
+    });
     if (mapped) {
       grouped.get(postId).push(mapped);
     }
@@ -377,6 +403,7 @@ async function listWallPostsByOwner({
     listWallCommentsByPostIds({
       postIds,
       viewerUserId,
+      ownerId: normalizedOwnerId,
     }),
   ]);
   const viewerLikedPostIds = new Set(viewerLikedRows.map((item) => String(item.postId || "").trim()));
@@ -564,6 +591,7 @@ async function updateWallPostContentAsOwner({ postId, ownerId, content }) {
   const commentsByPostId = await listWallCommentsByPostIds({
     postIds: [updated.id],
     viewerUserId: ownerId,
+    ownerId,
   });
   return mapWallPostItem(updated, { viewerUserId: ownerId, commentsByPostId });
 }
@@ -584,6 +612,7 @@ async function deleteWallPostAsOwner({ postId, ownerId }) {
   const commentsByPostId = await listWallCommentsByPostIds({
     postIds: [updated.id],
     viewerUserId: ownerId,
+    ownerId,
   });
   return mapWallPostItem(updated, { viewerUserId: ownerId, commentsByPostId });
 }
@@ -634,6 +663,7 @@ async function updateWallPostAsAdmin({ postId, ownerId, content, status }) {
     const commentsByPostId = await listWallCommentsByPostIds({
       postIds: [current.id],
       viewerUserId: "",
+      ownerId,
     });
     return mapWallPostItem(current, { commentsByPostId });
   }
@@ -648,6 +678,7 @@ async function updateWallPostAsAdmin({ postId, ownerId, content, status }) {
   const commentsByPostId = await listWallCommentsByPostIds({
     postIds: [updated.id],
     viewerUserId: "",
+    ownerId,
   });
   return mapWallPostItem(updated, { commentsByPostId });
 }
@@ -683,6 +714,7 @@ async function getWallPostItem({ ownerId, postId, viewerUserId = "", statuses = 
   const commentsByPostId = await listWallCommentsByPostIds({
     postIds: [post.id],
     viewerUserId,
+    ownerId: String(post.ownerId || "").trim(),
   });
   return mapWallPostItem(post, { viewerUserId, viewerLikedPostIds, commentsByPostId });
 }
@@ -883,7 +915,10 @@ async function deleteWallPostComment({ ownerId, postId, commentId, viewerUserId,
     postId: normalizedPostId,
     commentId: normalizedCommentId,
   });
-  if (String(comment.userId || "").trim() !== normalizedViewerUserId) {
+  if (
+    String(comment.userId || "").trim() !== normalizedViewerUserId &&
+    normalizedViewerUserId !== normalizedOwnerId
+  ) {
     const error = new Error("Wall comment cannot be deleted by this user");
     error.code = "WALL_COMMENT_FORBIDDEN";
     throw error;

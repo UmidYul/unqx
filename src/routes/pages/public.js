@@ -377,6 +377,7 @@ async function findUserByTelegramIdWithLegacyFallback(userId) {
         id: true,
         firstName: true,
         username: true,
+        login: true,
         displayName: true,
         status: true,
         plan: true,
@@ -395,7 +396,8 @@ async function findUserByTelegramIdWithLegacyFallback(userId) {
       SELECT
         id,
         first_name AS "firstName",
-        username
+        username,
+        login
       FROM users
       WHERE id = ${userId}
       LIMIT 1
@@ -709,6 +711,24 @@ function normalizeDirectorySector(value) {
   return ["design", "sales", "marketing", "it", "other"].includes(normalized) ? normalized : "";
 }
 
+function formatPublicWallAuthorLabel(value) {
+  const normalized = String(value || "").trim().replace(/^@+/, "");
+  return normalized ? `@${normalized}` : "";
+}
+
+function getPublicWallAuthorLabel(user, fallbackLabel = "") {
+  const usernameLabel = formatPublicWallAuthorLabel(user?.username);
+  if (usernameLabel) {
+    return usernameLabel;
+  }
+  const loginLabel = formatPublicWallAuthorLabel(user?.login);
+  if (loginLabel) {
+    return loginLabel;
+  }
+  const fallback = String(fallbackLabel || "").trim();
+  return fallback || "UNQX User";
+}
+
 function buildPublicCardFromProfile({ slug, user, profileCard, verifiedIdentity, viewsCount, allSlugs = [] }) {
   const plan = getEffectivePlan(user).plan;
   const isCurrentlyVerified = Boolean(user?.isVerified);
@@ -725,12 +745,15 @@ function buildPublicCardFromProfile({ slug, user, profileCard, verifiedIdentity,
       .map((value) => String(value || "").trim().toUpperCase())
       .filter(Boolean)
     : [];
+  const cardName =
+    String(profileCard?.name || user?.displayName || user?.firstName || "UNQX User").trim() || "UNQX User";
   return {
     slug,
     slugs: normalizedSlugs.length ? normalizedSlugs : [slug],
     slugPrice: Number.isFinite(Number(profileCard.slugPrice)) ? Number(profileCard.slugPrice) : null,
     avatarUrl: profileCard.avatarUrl || null,
     name: profileCard.name,
+    wallAuthorLabel: getPublicWallAuthorLabel(user, cardName),
     role: verifiedRole,
     bio: profileCard.bio || "",
     verified: isCurrentlyVerified,

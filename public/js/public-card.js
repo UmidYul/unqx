@@ -17,6 +17,7 @@
   const slugSearchInput = document.getElementById("card-slug-search-input");
   const slugSearchResults = document.getElementById("card-slug-search-results");
   const WALL_VISIBLE_COMMENT_COUNT = 5;
+  const WALL_COMMENT_CONTENT_MAX = 1000;
   const state = {
     card: payload && typeof payload.card === "object" && payload.card ? payload.card : {},
     shareUrl: String(payload.shareUrl || window.location.href),
@@ -35,6 +36,8 @@
     wallBusyCommentPostIds: new Set(),
     wallBusyCommentIds: new Set(),
     wallExpandedCommentPostIds: new Set(),
+    wallCommentModalPostId: "",
+    wallCommentModalReturnFocusPostId: "",
   };
 
   state.activeTab = state.wall && window.location.hash === "#posts" ? "posts" : "card";
@@ -86,6 +89,8 @@
         author: {
           id: String(authorSource.id || item.userId || "").trim(),
           name: String(authorSource.name || "UNQX User").trim() || "UNQX User",
+          wallAuthorLabel: String(authorSource.wallAuthorLabel || authorSource.name || "UNQX User").trim() || "UNQX User",
+          verified: Boolean(authorSource.verified),
           avatarUrl: String(authorSource.avatarUrl || "").trim() || null,
           initials: String(authorSource.initials || "").trim() || "UN",
         },
@@ -150,6 +155,12 @@
 
   function buildWallOptions() {
     if (!state.wall) return null;
+    const normalizedModalPostId = String(state.wallCommentModalPostId || "").trim();
+    const activeModalPost =
+      normalizedModalPostId
+        ? state.wall.items.find((item) => item.id === normalizedModalPostId) || null
+        : null;
+    const modalDraft = activeModalPost ? String(state.wallCommentDrafts[activeModalPost.id] || "") : "";
     return {
       enabled: true,
       activeTab: state.activeTab,
@@ -166,6 +177,17 @@
           }))
           : [],
       })),
+      commentModal: activeModalPost
+        ? {
+          isOpen: true,
+          postId: activeModalPost.id,
+          title: "Написать комментарий",
+          draft: modalDraft,
+          currentLength: modalDraft.length,
+          maxLength: WALL_COMMENT_CONTENT_MAX,
+          isBusy: state.wallBusyCommentPostIds.has(activeModalPost.id),
+        }
+        : null,
       pagination: {
         ...state.wall.pagination,
         isLoadingMore: state.wallLoadingMore,
@@ -184,6 +206,10 @@
       wall: buildWallOptions(),
     });
     syncAvatarFallback(root);
+    document.body.classList.toggle("modal-open", Boolean(state.wallCommentModalPostId));
+    if (state.wallCommentModalPostId) {
+      focusWallCommentModalInput(state.wallCommentModalPostId);
+    }
     return root;
   }
 
@@ -327,7 +353,7 @@
     if (!normalizedPostId) return;
     state.wallCommentDrafts = {
       ...state.wallCommentDrafts,
-      [normalizedPostId]: String(value || "").slice(0, 1000),
+      [normalizedPostId]: String(value || "").slice(0, WALL_COMMENT_CONTENT_MAX),
     };
   }
 
@@ -339,12 +365,12 @@
     state.wallCommentDrafts = nextDrafts;
   }
 
-  function getWallCommentInput(postId) {
+  function getWallCommentModalInput(postId) {
     const normalizedPostId = String(postId || "").trim();
     if (!normalizedPostId) {
       return null;
     }
-    const candidates = host.querySelectorAll("[data-wall-comment-input]");
+    const candidates = host.querySelectorAll("[data-wall-comment-modal-input]");
     for (const candidate of candidates) {
       if (
         candidate instanceof HTMLTextAreaElement &&
@@ -357,11 +383,73 @@
   }
 
   function readWallCommentDraft(postId) {
-    const input = getWallCommentInput(postId);
+    const input = getWallCommentModalInput(postId);
     if (input instanceof HTMLTextAreaElement) {
       return String(input.value || "");
     }
     return getWallCommentDraft(postId);
+  }
+
+  function focusWallCommentModalInput(postId) {
+    window.requestAnimationFrame(() => {
+      const input = getWallCommentModalInput(postId);
+      if (!(input instanceof HTMLTextAreaElement)) {
+        return;
+      }
+      input.focus();
+      const valueLength = String(input.value || "").length;
+      input.setSelectionRange(valueLength, valueLength);
+    });
+  }
+
+  function focusWallCommentOpenButton(postId) {
+    window.requestAnimationFrame(() => {
+      const normalizedPostId = String(postId || "").trim();
+      if (!normalizedPostId) {
+        return;
+      }
+      const candidates = host.querySelectorAll("[data-wall-comment-open]");
+      for (const candidate of candidates) {
+        if (
+          candidate instanceof HTMLButtonElement &&
+          String(candidate.getAttribute("data-wall-post-id") || "").trim() === normalizedPostId
+        ) {
+          candidate.focus();
+          return;
+        }
+      }
+    });
+  }
+
+  function openWallCommentModal(postId) {
+    const normalizedPostId = String(postId || "").trim();
+    if (!state.wall || !normalizedPostId) {
+      return;
+    }
+    const post = state.wall.items.find((item) => item.id === normalizedPostId);
+    if (!post) {
+      return;
+    }
+    state.activeTab = "posts";
+    state.wallCommentModalPostId = normalizedPostId;
+    state.wallCommentModalReturnFocusPostId = normalizedPostId;
+    renderCard();
+    focusWallCommentModalInput(normalizedPostId);
+  }
+
+  function closeWallCommentModal(options = {}) {
+    const restoreFocus = Boolean(options.restoreFocus);
+    const normalizedPostId = String(state.wallCommentModalPostId || "").trim();
+    if (!normalizedPostId) {
+      return;
+    }
+    const focusPostId = String(state.wallCommentModalReturnFocusPostId || normalizedPostId).trim();
+    state.wallCommentModalPostId = "";
+    state.wallCommentModalReturnFocusPostId = "";
+    renderCard();
+    if (restoreFocus && focusPostId) {
+      focusWallCommentOpenButton(focusPostId);
+    }
   }
 
   function setWallCommentsExpanded(postId, expanded) {
@@ -438,7 +526,7 @@
     }
     const content = getWallCommentDraft(postId).trim();
     if (!content) {
-      const input = getWallCommentInput(postId);
+      const input = getWallCommentModalInput(postId);
       if (input instanceof HTMLTextAreaElement) {
         input.focus();
       }
@@ -472,6 +560,8 @@
         replaceWallPost(data.post);
         setWallCommentsExpanded(postId, true);
         clearWallCommentDraft(postId);
+        state.wallCommentModalPostId = "";
+        state.wallCommentModalReturnFocusPostId = "";
         renderCard();
       }
     } catch {
@@ -660,7 +750,7 @@
 
   host.addEventListener("input", (event) => {
     const target = event.target instanceof HTMLTextAreaElement ? event.target : null;
-    if (!target || !target.matches("[data-wall-comment-input]")) {
+    if (!target || !target.matches("[data-wall-comment-modal-input]")) {
       return;
     }
     const postId = String(target.getAttribute("data-wall-post-id") || "").trim();
@@ -671,12 +761,12 @@
     if (target.value !== getWallCommentDraft(postId)) {
       target.value = getWallCommentDraft(postId);
     }
-    const form = target.closest(".unq-wall-comment-form");
-    const counter = form instanceof HTMLElement ? form.querySelector("[data-wall-comment-counter]") : null;
+    const dialog = target.closest("[data-wall-comment-modal-dialog]");
+    const counter = dialog instanceof HTMLElement ? dialog.querySelector("[data-wall-comment-modal-counter]") : null;
     if (counter instanceof HTMLElement) {
-      counter.textContent = `${getWallCommentDraft(postId).length}/1000`;
+      counter.textContent = `${getWallCommentDraft(postId).length}/${WALL_COMMENT_CONTENT_MAX}`;
     }
-    const submit = form instanceof HTMLElement ? form.querySelector("[data-wall-comment-submit]") : null;
+    const submit = dialog instanceof HTMLElement ? dialog.querySelector("[data-wall-comment-modal-submit]") : null;
     if (submit instanceof HTMLButtonElement) {
       submit.disabled = state.wallBusyCommentPostIds.has(postId);
     }
@@ -712,6 +802,14 @@
       return;
     }
 
+    const openCommentButton = target.closest("[data-wall-comment-open]");
+    if (openCommentButton instanceof HTMLElement) {
+      event.preventDefault();
+      const postId = String(openCommentButton.getAttribute("data-wall-post-id") || "").trim();
+      openWallCommentModal(postId);
+      return;
+    }
+
     const toggleCommentsButton = target.closest("[data-wall-comments-toggle]");
     if (toggleCommentsButton instanceof HTMLElement) {
       event.preventDefault();
@@ -724,7 +822,14 @@
       return;
     }
 
-    const submitCommentButton = target.closest("[data-wall-comment-submit]");
+    const closeCommentModalButton = target.closest("[data-wall-comment-modal-close]");
+    if (closeCommentModalButton instanceof HTMLElement) {
+      event.preventDefault();
+      closeWallCommentModal({ restoreFocus: true });
+      return;
+    }
+
+    const submitCommentButton = target.closest("[data-wall-comment-modal-submit]");
     if (submitCommentButton instanceof HTMLElement) {
       event.preventDefault();
       const postId = String(submitCommentButton.getAttribute("data-wall-post-id") || "").trim();
@@ -910,11 +1015,23 @@
     }
   });
 
+  document.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape" || !state.wallCommentModalPostId) {
+      return;
+    }
+    event.preventDefault();
+    closeWallCommentModal({ restoreFocus: true });
+  });
+
   if (state.wall) {
     window.addEventListener("hashchange", () => {
       const nextTab = window.location.hash === "#posts" ? "posts" : "card";
       if (nextTab !== state.activeTab) {
         state.activeTab = nextTab;
+        if (nextTab !== "posts" && state.wallCommentModalPostId) {
+          state.wallCommentModalPostId = "";
+          state.wallCommentModalReturnFocusPostId = "";
+        }
         renderCard();
       }
     });

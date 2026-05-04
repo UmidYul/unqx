@@ -865,6 +865,7 @@
       })(),
       customColor: normalizeHexColor(card.customColor),
       name,
+      wallAuthorLabel: String(card.wallAuthorLabel || name).trim() || name,
       role: String(card.role || "").trim(),
       bio: String(card.bio || "").trim(),
       phone: String(card.phone || "").trim(),
@@ -1053,6 +1054,7 @@
   }
 
   const WALL_COLLAPSED_COMMENT_COUNT = 5;
+  const WALL_COMMENT_CONTENT_MAX = 1000;
 
   function normalizeWallForRender(rawWall) {
     if (!rawWall || typeof rawWall !== "object" || rawWall.enabled === false) {
@@ -1079,6 +1081,8 @@
                   author: {
                     id: String(author.id || comment.userId || "").trim(),
                     name: String(author.name || "UNQX User").trim() || "UNQX User",
+                    wallAuthorLabel: String(author.wallAuthorLabel || author.name || "UNQX User").trim() || "UNQX User",
+                    verified: Boolean(author.verified),
                     avatarUrl: String(author.avatarUrl || "").trim() || null,
                     initials: String(author.initials || "").trim() || "UN",
                   },
@@ -1109,6 +1113,15 @@
     return {
       activeTab: rawWall.activeTab === "posts" ? "posts" : "card",
       items,
+      commentModal: {
+        isOpen: Boolean(rawWall.commentModal?.isOpen),
+        postId: String(rawWall.commentModal?.postId || "").trim(),
+        title: String(rawWall.commentModal?.title || "Написать комментарий"),
+        draft: String(rawWall.commentModal?.draft || ""),
+        currentLength: Math.max(0, Number(rawWall.commentModal?.currentLength || 0)),
+        maxLength: Math.max(1, Number(rawWall.commentModal?.maxLength || WALL_COMMENT_CONTENT_MAX)),
+        isBusy: Boolean(rawWall.commentModal?.isBusy),
+      },
       pagination: {
         page: Math.max(1, Number(pagination.page || 1)),
         pageSize: Math.max(1, Number(pagination.pageSize || 10)),
@@ -1136,6 +1149,14 @@
     const officialUnqBadge = options.officialUnqBadge && typeof options.officialUnqBadge === "object" ? options.officialUnqBadge : null;
     const staffBadge = options.staffBadge && typeof options.staffBadge === "object" ? options.staffBadge : null;
     const wall = normalizeWallForRender(options.wall);
+    const activeCommentModal =
+      wall?.commentModal?.isOpen && wall.commentModal.postId
+        ? wall.commentModal
+        : null;
+    const activeCommentPost =
+      activeCommentModal
+        ? wall.items.find((item) => item.id === activeCommentModal.postId) || null
+        : null;
 
     const tagsHtml =
       card.tags.length > 0
@@ -1321,7 +1342,8 @@
                     </div>
                     <div class="unq-wall-comment-body">
                       <div class="unq-wall-comment-line">
-                        <span class="unq-wall-comment-name">${esc(comment.author?.name || "UNQX User")}</span>
+                        <span class="unq-wall-comment-name">${esc(comment.author?.wallAuthorLabel || comment.author?.name || "UNQX User")}</span>
+                        ${comment.author?.verified ? `<span class="unq-wall-comment-verified">${iconSvg("verified")}</span>` : ""}
                         <span class="unq-wall-comment-date">${esc(formatWallDateTime(comment.createdAt))}</span>
                       </div>
                       <div class="unq-wall-comment-content">${renderWallPostContent(comment.content)}</div>
@@ -1342,7 +1364,7 @@
                   <div class="unq-wall-post-avatar">${card.avatarUrl ? `<img src="${esc(card.avatarUrl)}" alt="${esc(card.name)}" class="unq-wall-post-avatar-img" />` : `<span>${esc(card.initials)}</span>`}</div>
                   <div class="unq-wall-post-meta">
                     <div class="unq-wall-post-line">
-                      <span class="unq-wall-post-name">${esc(card.name)}</span>
+                      <span class="unq-wall-post-name">${esc(card.wallAuthorLabel || card.name)}</span>
                       ${card.verified ? `<span class="unq-wall-post-verified">${iconSvg("verified")}</span>` : ""}
                       <span class="unq-wall-post-date">${esc(formatWallDateTime(item.createdAt))}</span>
                     </div>
@@ -1355,19 +1377,14 @@
                     ${likeIcon}
                   </button>
                   <span class="unq-wall-like-count">${Number(item.likesCount || 0).toLocaleString("ru-RU")}</span>
-                  <span class="unq-wall-comment-pill">${iconSvg("comment")}<span>${Number(item.commentsCount || comments.length).toLocaleString("ru-RU")}</span></span>
+                  <button type="button" class="interactive-btn unq-wall-comment-pill" data-wall-comment-open data-wall-post-id="${esc(item.id)}" aria-haspopup="dialog" aria-label="Написать комментарий">
+                    ${iconSvg("comment")}
+                    <span>${Number(item.commentsCount || comments.length).toLocaleString("ru-RU")}</span>
+                  </button>
                 </div>
                 <div class="unq-wall-comments">
                   <div class="unq-wall-comments-list${item.isCommentsExpanded && hasHiddenComments ? " is-scrollable" : ""}">${commentsHtml}</div>
                   ${commentsToggleHtml}
-                  <div class="unq-wall-comment-form">
-                    <label class="sr-only" for="wall-comment-${esc(item.id)}">Комментарий</label>
-                    <textarea id="wall-comment-${esc(item.id)}" data-wall-comment-input data-wall-post-id="${esc(item.id)}" rows="3" maxlength="1000" placeholder="Написать комментарий..." class="unq-wall-comment-input">${esc(item.commentDraft || "")}</textarea>
-                    <div class="unq-wall-comment-form-row">
-                      <span data-wall-comment-counter class="unq-wall-comment-counter">${String(item.commentDraft || "").length}/1000</span>
-                      <button type="button" class="interactive-btn unq-wall-comment-submit" data-wall-comment-submit data-wall-post-id="${esc(item.id)}" ${item.isCommentBusy ? "disabled" : ""}>${item.isCommentBusy ? "Отправка..." : "Отправить"}</button>
-                    </div>
-                  </div>
                 </div>
               </article>
             `;
@@ -1375,6 +1392,36 @@
           .join("")
         : '<div class="unq-wall-empty">Пока здесь нет постов. Первый пост появится сразу после публикации.</div>'
       : "";
+    const commentModalHtml =
+      activeCommentModal && activeCommentPost
+        ? `
+          <div class="unq-wall-comment-modal-layer" data-wall-comment-modal-layer>
+            <button type="button" class="unq-wall-comment-modal-backdrop" data-wall-comment-modal-close aria-label="Закрыть окно комментария"></button>
+            <section class="unq-wall-comment-modal" data-wall-comment-modal-dialog role="dialog" aria-modal="true" aria-labelledby="unq-wall-comment-modal-title">
+              <div class="unq-wall-comment-modal-head">
+                <div>
+                  <p class="unq-wall-comment-modal-kicker">${esc(card.wallAuthorLabel || card.name)}</p>
+                  <h3 id="unq-wall-comment-modal-title" class="unq-wall-comment-modal-title">${esc(activeCommentModal.title)}</h3>
+                </div>
+                <button type="button" class="unq-wall-comment-modal-close" data-wall-comment-modal-close aria-label="Закрыть">
+                  <span aria-hidden="true">×</span>
+                </button>
+              </div>
+              <p class="unq-wall-comment-modal-meta">Пост от ${esc(formatWallDateTime(activeCommentPost.createdAt))}</p>
+              <div class="unq-wall-comment-modal-post">${renderWallPostContent(activeCommentPost.content)}</div>
+              <label class="sr-only" for="wall-comment-modal-${esc(activeCommentPost.id)}">Комментарий</label>
+              <textarea id="wall-comment-modal-${esc(activeCommentPost.id)}" data-wall-comment-modal-input data-wall-post-id="${esc(activeCommentPost.id)}" rows="5" maxlength="${esc(String(activeCommentModal.maxLength || WALL_COMMENT_CONTENT_MAX))}" placeholder="Написать комментарий..." class="unq-wall-comment-modal-input">${esc(activeCommentModal.draft || "")}</textarea>
+              <div class="unq-wall-comment-modal-actions">
+                <span data-wall-comment-modal-counter class="unq-wall-comment-modal-counter">${Number(activeCommentModal.currentLength || 0)}/${Number(activeCommentModal.maxLength || WALL_COMMENT_CONTENT_MAX)}</span>
+                <div class="unq-wall-comment-modal-buttons">
+                  <button type="button" class="interactive-btn unq-wall-comment-modal-cancel" data-wall-comment-modal-close>Отмена</button>
+                  <button type="button" class="interactive-btn unq-wall-comment-modal-submit" data-wall-comment-modal-submit data-wall-post-id="${esc(activeCommentPost.id)}" ${activeCommentModal.isBusy ? "disabled" : ""}>${activeCommentModal.isBusy ? "Отправка..." : "Отправить"}</button>
+                </div>
+              </div>
+            </section>
+          </div>
+        `
+        : "";
     const wallTabsHtml = wall
       ? `
           <div class="unq-wall-tabs" role="tablist" aria-label="Вкладки визитки">
@@ -1445,6 +1492,7 @@
           <div>© ${esc(viewsLabel)}</div>
           <div>${footBrandingLabel}</div>
         </div>
+        ${commentModalHtml}
       </div>
     `;
   }

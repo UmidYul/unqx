@@ -3022,7 +3022,7 @@ router.delete(
         return;
       }
       if (error?.code === "WALL_COMMENT_FORBIDDEN") {
-        res.status(403).json({ error: "Можно удалить только свой комментарий", code: error.code });
+        res.status(403).json({ error: "Можно удалить только свой комментарий или комментарий под своим постом", code: error.code });
         return;
       }
       throw error;

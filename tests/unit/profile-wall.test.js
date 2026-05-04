@@ -75,6 +75,7 @@ function buildComment(overrides = {}) {
       lastName: "",
       username: "ali",
       login: "ali_login",
+      isVerified: false,
       profileCard: {
         avatarUrl: "/uploads/comment-avatar.webp",
       },
@@ -176,10 +177,63 @@ describe("profile wall service", () => {
           viewerCanDelete: true,
           author: {
             name: "User One",
+            wallAuthorLabel: "User One",
             initials: "UO",
           },
         },
       ],
+    });
+  });
+
+  test("listPublicWallPosts uses username label for public comment author", async () => {
+    mockPrisma.profileWallPost.findMany.mockResolvedValue([buildPost()]);
+    mockPrisma.profileWallPost.count.mockResolvedValue(1);
+    mockPrisma.profileWallPostComment.findMany.mockResolvedValue([buildComment()]);
+
+    const result = await wallService.listPublicWallPosts({
+      ownerId: "user_1",
+      viewerUserId: "user_3",
+    });
+
+    expect(result.items[0]?.comments?.[0]).toMatchObject({
+      author: {
+        name: "Ali",
+        wallAuthorLabel: "@ali",
+      },
+    });
+  });
+
+  test("listPublicWallPosts uses login fallback and maps comment author verification", async () => {
+    mockPrisma.profileWallPost.findMany.mockResolvedValue([buildPost()]);
+    mockPrisma.profileWallPost.count.mockResolvedValue(1);
+    mockPrisma.profileWallPostComment.findMany.mockResolvedValue([
+      buildComment({
+        user: {
+          id: "user_2",
+          displayName: "",
+          firstName: "",
+          lastName: "",
+          username: "",
+          login: "ali_login",
+          isVerified: true,
+          profileCard: {
+            avatarUrl: "",
+          },
+        },
+      }),
+    ]);
+
+    const result = await wallService.listPublicWallPosts({
+      ownerId: "user_1",
+      viewerUserId: "user_3",
+    });
+
+    expect(result.items[0]?.comments?.[0]).toMatchObject({
+      author: {
+        name: "ali_login",
+        wallAuthorLabel: "@ali_login",
+        verified: true,
+      },
     });
   });
 
@@ -218,6 +272,37 @@ describe("profile wall service", () => {
         viewerUserId: "user_3",
       }),
     ).rejects.toMatchObject({ code: "WALL_COMMENT_FORBIDDEN" });
+  });
+
+  test("deleteWallPostComment allows owner to delete someone else's comment", async () => {
+    mockPrisma.profileWallPost.findFirst
+      .mockResolvedValueOnce(buildPost())
+      .mockResolvedValueOnce(buildPost({
+        _count: { likes: 0 },
+      }));
+    mockPrisma.profileWallPostComment.findFirst.mockResolvedValue({
+      id: "comment_1",
+      postId: "post_1",
+      userId: "user_2",
+    });
+
+    const result = await wallService.deleteWallPostComment({
+      ownerId: "user_1",
+      postId: "post_1",
+      commentId: "comment_1",
+      viewerUserId: "user_1",
+    });
+
+    expect(mockPrisma.profileWallPostComment.delete).toHaveBeenCalledWith({
+      where: {
+        id: "comment_1",
+      },
+    });
+    expect(result).toMatchObject({
+      id: "post_1",
+      commentsCount: 0,
+      comments: [],
+    });
   });
 
   test("addWallPostLike allows self-like", async () => {
