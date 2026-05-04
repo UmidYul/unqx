@@ -139,9 +139,15 @@ describe("slug page (:slug) templates", () => {
     expect(cardViewSource).toContain("data-wall-comments-toggle");
     expect(cardViewSource).toContain("unq-wall-comment-verified");
     expect(cardViewSource).toContain("comment.author?.verified");
+    expect(cardViewSource).toContain("data-wall-post-author-link");
+    expect(cardViewSource).toContain("data-wall-comment-author-link");
+    expect(cardViewSource).toContain("data-wall-posts-unread-dot");
     expect(publicCardSource).toContain("/comments");
     expect(publicCardSource).toContain("wallCommentModalPostId");
     expect(publicCardSource).toContain("verified: Boolean(authorSource.verified)");
+    expect(publicCardSource).toContain("profileHref: String(authorSource.profileHref || \"\").trim() || null");
+    expect(publicCardSource).toContain("unqx_wall_seen_posts:");
+    expect(publicCardSource).toContain("state.wallExpandedCommentPostIds.clear()");
     expect(publicCardSource).toContain("Введите комментарий");
   });
 });

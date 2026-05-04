@@ -18,6 +18,7 @@
   const slugSearchResults = document.getElementById("card-slug-search-results");
   const WALL_VISIBLE_COMMENT_COUNT = 5;
   const WALL_COMMENT_CONTENT_MAX = 1000;
+  const WALL_SEEN_POSTS_STORAGE_KEY_PREFIX = "unqx_wall_seen_posts:";
   const state = {
     card: payload && typeof payload.card === "object" && payload.card ? payload.card : {},
     shareUrl: String(payload.shareUrl || window.location.href),
@@ -38,6 +39,7 @@
     wallExpandedCommentPostIds: new Set(),
     wallCommentModalPostId: "",
     wallCommentModalReturnFocusPostId: "",
+    wallHasUnreadPosts: false,
   };
 
   state.activeTab = state.wall && window.location.hash === "#posts" ? "posts" : "card";
@@ -91,6 +93,7 @@
           name: String(authorSource.name || "UNQX User").trim() || "UNQX User",
           wallAuthorLabel: String(authorSource.wallAuthorLabel || authorSource.name || "UNQX User").trim() || "UNQX User",
           verified: Boolean(authorSource.verified),
+          profileHref: String(authorSource.profileHref || "").trim() || null,
           avatarUrl: String(authorSource.avatarUrl || "").trim() || null,
           initials: String(authorSource.initials || "").trim() || "UN",
         },
@@ -164,6 +167,7 @@
     return {
       enabled: true,
       activeTab: state.activeTab,
+      hasUnreadPosts: Boolean(state.wallHasUnreadPosts),
       items: state.wall.items.map((item) => ({
         ...item,
         isBusy: state.wallBusyLikeIds.has(item.id),
@@ -195,7 +199,97 @@
     };
   }
 
+  function getWallSeenPostsStorageKey() {
+    const normalizedSlug = String(state.slug || state.card?.slug || "").trim().toUpperCase();
+    return normalizedSlug ? `${WALL_SEEN_POSTS_STORAGE_KEY_PREFIX}${normalizedSlug}` : "";
+  }
+
+  function readWallSeenPostsMarker() {
+    const storageKey = getWallSeenPostsStorageKey();
+    if (!storageKey || !window.localStorage) {
+      return "";
+    }
+    try {
+      return String(window.localStorage.getItem(storageKey) || "").trim();
+    } catch {
+      return "";
+    }
+  }
+
+  function writeWallSeenPostsMarker(value) {
+    const storageKey = getWallSeenPostsStorageKey();
+    if (!storageKey || !window.localStorage) {
+      return;
+    }
+    const normalizedValue = String(value || "").trim();
+    try {
+      if (normalizedValue) {
+        window.localStorage.setItem(storageKey, normalizedValue);
+      } else {
+        window.localStorage.removeItem(storageKey);
+      }
+    } catch {
+      // Ignore storage failures so the wall keeps working in private mode.
+    }
+  }
+
+  function getLatestWallPostMarker() {
+    if (!state.wall || !Array.isArray(state.wall.items) || !state.wall.items.length) {
+      return "";
+    }
+    let latestTime = 0;
+    let latestMarker = "";
+    for (const item of state.wall.items) {
+      const marker = String(item?.createdAt || "").trim();
+      const timestamp = marker ? new Date(marker).getTime() : Number.NaN;
+      if (!Number.isFinite(timestamp) || timestamp <= latestTime) {
+        continue;
+      }
+      latestTime = timestamp;
+      latestMarker = marker;
+    }
+    return latestMarker;
+  }
+
+  function refreshWallUnreadPostsState() {
+    if (!state.wall || state.activeTab === "posts") {
+      state.wallHasUnreadPosts = false;
+      return;
+    }
+    const latestMarker = getLatestWallPostMarker();
+    if (!latestMarker) {
+      state.wallHasUnreadPosts = false;
+      return;
+    }
+    const latestTime = new Date(latestMarker).getTime();
+    const seenTime = new Date(readWallSeenPostsMarker()).getTime();
+    state.wallHasUnreadPosts = Number.isFinite(latestTime) && (!Number.isFinite(seenTime) || latestTime > seenTime);
+  }
+
+  function markWallPostsSeen() {
+    const latestMarker = getLatestWallPostMarker();
+    if (!latestMarker) {
+      state.wallHasUnreadPosts = false;
+      return;
+    }
+    writeWallSeenPostsMarker(latestMarker);
+    state.wallHasUnreadPosts = false;
+  }
+
+  function syncWallSeenState() {
+    if (!state.wall) {
+      state.wallHasUnreadPosts = false;
+      return;
+    }
+    if (state.activeTab === "posts") {
+      markWallPostsSeen();
+      return;
+    }
+    refreshWallUnreadPostsState();
+  }
+
   function renderCard() {
+    syncWallSeenState();
     const root = window.CardView.mountCardView(host, state.card || {}, {
       shareUrl: state.shareUrl,
       viewsLabel: state.viewsLabel,
@@ -458,6 +552,7 @@
       return;
     }
     if (expanded) {
+      state.wallExpandedCommentPostIds.clear();
       state.wallExpandedCommentPostIds.add(normalizedPostId);
     } else {
       state.wallExpandedCommentPostIds.delete(normalizedPostId);

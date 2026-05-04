@@ -76,6 +76,11 @@ function buildComment(overrides = {}) {
       username: "ali",
       login: "ali_login",
       isVerified: false,
+      status: "active",
+      plan: "none",
+      subscriptionStartedAt: null,
+      subscriptionExpiresAt: null,
+      slugs: [{ fullSlug: "ALI001" }],
       profileCard: {
         avatarUrl: "/uploads/comment-avatar.webp",
       },
@@ -199,6 +204,7 @@ describe("profile wall service", () => {
       author: {
         name: "Ali",
         wallAuthorLabel: "@ali",
+        profileHref: "/ALI001",
       },
     });
   });
@@ -216,6 +222,11 @@ describe("profile wall service", () => {
           username: "",
           login: "ali_login",
           isVerified: true,
+          status: "active",
+          plan: "none",
+          subscriptionStartedAt: null,
+          subscriptionExpiresAt: null,
+          slugs: [{ fullSlug: "ALI002" }],
           profileCard: {
             avatarUrl: "",
           },
@@ -233,6 +244,7 @@ describe("profile wall service", () => {
         name: "ali_login",
         wallAuthorLabel: "@ali_login",
         verified: true,
+        profileHref: "/ALI002",
       },
     });
   });

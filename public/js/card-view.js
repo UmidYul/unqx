@@ -1053,6 +1053,19 @@
     return esc(String(value || "")).replace(/\n/g, "<br>");
   }
 
+  function renderWallAuthorIdentity({ label, verified = false, href = "", nameClass = "", verifiedClass = "", dataAttr = "" } = {}) {
+    const normalizedLabel = String(label || "").trim() || "UNQX User";
+    const nameHtml = `<span class="${esc(nameClass)}">${esc(normalizedLabel)}</span>`;
+    const verifiedHtml = verified ? `<span class="${esc(verifiedClass)}">${iconSvg("verified")}</span>` : "";
+    const contentHtml = `${nameHtml}${verifiedHtml}`;
+    const normalizedHref = String(href || "").trim();
+    if (!normalizedHref) {
+      return contentHtml;
+    }
+    const attributeSuffix = dataAttr ? ` ${dataAttr}` : "";
+    return `<a href="${esc(normalizedHref)}" class="unq-wall-author-link"${attributeSuffix}>${contentHtml}</a>`;
+  }
+
   const WALL_COLLAPSED_COMMENT_COUNT = 5;
   const WALL_COMMENT_CONTENT_MAX = 1000;
 
@@ -1083,6 +1096,7 @@
                     name: String(author.name || "UNQX User").trim() || "UNQX User",
                     wallAuthorLabel: String(author.wallAuthorLabel || author.name || "UNQX User").trim() || "UNQX User",
                     verified: Boolean(author.verified),
+                    profileHref: String(author.profileHref || "").trim() || null,
                     avatarUrl: String(author.avatarUrl || "").trim() || null,
                     initials: String(author.initials || "").trim() || "UN",
                   },
@@ -1112,6 +1126,7 @@
     const pagination = rawWall.pagination && typeof rawWall.pagination === "object" ? rawWall.pagination : {};
     return {
       activeTab: rawWall.activeTab === "posts" ? "posts" : "card",
+      hasUnreadPosts: Boolean(rawWall.hasUnreadPosts),
       items,
       commentModal: {
         isOpen: Boolean(rawWall.commentModal?.isOpen),
@@ -1157,6 +1172,11 @@
       activeCommentModal
         ? wall.items.find((item) => item.id === activeCommentModal.postId) || null
         : null;
+    const ownerProfileHrefRaw = card.slug ? `/${encodeURIComponent(card.slug)}` : "";
+    const ownerProfileHref =
+      ownerProfileHrefRaw && String(window.location.pathname || "").trim().toUpperCase() !== ownerProfileHrefRaw.toUpperCase()
+        ? ownerProfileHrefRaw
+        : "";
 
     const tagsHtml =
       card.tags.length > 0
@@ -1331,19 +1351,35 @@
                 ? comments.slice(-WALL_COLLAPSED_COMMENT_COUNT)
                 : comments;
             const hiddenCommentsCount = Math.max(0, comments.length - visibleComments.length);
+            const postAuthorHtml = renderWallAuthorIdentity({
+              label: card.wallAuthorLabel || card.name,
+              verified: card.verified,
+              href: ownerProfileHref,
+              nameClass: "unq-wall-post-name",
+              verifiedClass: "unq-wall-post-verified",
+              dataAttr: "data-wall-post-author-link",
+            });
             const commentsHtml = visibleComments.length
               ? visibleComments
-                .map((comment) => `
+                .map((comment) => {
+                  const commentAuthorHtml = renderWallAuthorIdentity({
+                    label: comment.author?.wallAuthorLabel || comment.author?.name || "UNQX User",
+                    verified: comment.author?.verified,
+                    href: comment.author?.profileHref || "",
+                    nameClass: "unq-wall-comment-name",
+                    verifiedClass: "unq-wall-comment-verified",
+                    dataAttr: "data-wall-comment-author-link",
+                  });
+                  return `
                   <article class="unq-wall-comment" data-wall-comment="${esc(comment.id)}">
                     <div class="unq-wall-comment-avatar">
                       ${comment.author?.avatarUrl
-                    ? `<img src="${esc(comment.author.avatarUrl)}" alt="${esc(comment.author.name || "UNQX User")}" class="unq-wall-comment-avatar-img" />`
+                    ? `<img src="${esc(comment.author.avatarUrl)}" alt="${esc(comment.author?.wallAuthorLabel || comment.author?.name || "UNQX User")}" class="unq-wall-comment-avatar-img" />`
                     : `<span>${esc(comment.author?.initials || "UN")}</span>`}
                     </div>
                     <div class="unq-wall-comment-body">
                       <div class="unq-wall-comment-line">
-                        <span class="unq-wall-comment-name">${esc(comment.author?.wallAuthorLabel || comment.author?.name || "UNQX User")}</span>
-                        ${comment.author?.verified ? `<span class="unq-wall-comment-verified">${iconSvg("verified")}</span>` : ""}
+                        ${commentAuthorHtml}
                         <span class="unq-wall-comment-date">${esc(formatWallDateTime(comment.createdAt))}</span>
                       </div>
                       <div class="unq-wall-comment-content">${renderWallPostContent(comment.content)}</div>
@@ -1352,7 +1388,8 @@
                   ? `<button type="button" class="unq-wall-comment-delete" data-wall-comment-delete data-wall-post-id="${esc(item.id)}" data-wall-comment-id="${esc(comment.id)}" ${comment.isBusyDelete ? "disabled" : ""}>${comment.isBusyDelete ? "..." : "Удалить"}</button>`
                   : ""}
                   </article>
-                `)
+                `;
+                })
                 .join("")
               : '<div class="unq-wall-comment-empty">Комментариев пока нет.</div>';
             const commentsToggleHtml = hasHiddenComments
@@ -1364,8 +1401,7 @@
                   <div class="unq-wall-post-avatar">${card.avatarUrl ? `<img src="${esc(card.avatarUrl)}" alt="${esc(card.name)}" class="unq-wall-post-avatar-img" />` : `<span>${esc(card.initials)}</span>`}</div>
                   <div class="unq-wall-post-meta">
                     <div class="unq-wall-post-line">
-                      <span class="unq-wall-post-name">${esc(card.wallAuthorLabel || card.name)}</span>
-                      ${card.verified ? `<span class="unq-wall-post-verified">${iconSvg("verified")}</span>` : ""}
+                      ${postAuthorHtml}
                       <span class="unq-wall-post-date">${esc(formatWallDateTime(item.createdAt))}</span>
                     </div>
                     ${item.isEdited ? '<p class="unq-wall-post-edited">изменено</p>' : ""}
@@ -1426,7 +1462,10 @@
       ? `
           <div class="unq-wall-tabs" role="tablist" aria-label="Вкладки визитки">
             <button type="button" class="unq-wall-tab${wall.activeTab === "card" ? " is-active" : ""}" data-card-tab="card" role="tab" aria-selected="${wall.activeTab === "card" ? "true" : "false"}">Визитка</button>
-            <button type="button" class="unq-wall-tab${wall.activeTab === "posts" ? " is-active" : ""}" data-card-tab="posts" role="tab" aria-selected="${wall.activeTab === "posts" ? "true" : "false"}">Посты</button>
+            <button type="button" class="unq-wall-tab${wall.activeTab === "posts" ? " is-active" : ""}" data-card-tab="posts" role="tab" aria-selected="${wall.activeTab === "posts" ? "true" : "false"}">
+              <span class="unq-wall-tab-label">Посты</span>
+              ${wall.hasUnreadPosts && wall.activeTab !== "posts" ? '<span class="unq-wall-tab-dot" data-wall-posts-unread-dot aria-hidden="true"></span>' : ""}
+            </button>
           </div>
           <section class="unq-wall-panel${wall.activeTab === "card" ? " is-active" : ""}" data-card-tab-panel="card" ${wall.activeTab === "card" ? "" : "hidden"}>
             ${cardDetailsHtml}

@@ -4,6 +4,7 @@ const { fromZonedTime, toZonedTime } = require("date-fns-tz");
 const { prisma } = require("../db/prisma");
 const { env } = require("../config/env");
 const { canCreateCard } = require("./profile");
+const { isPublicProfileVisible } = require("./subscription");
 
 const WALL_POST_CONTENT_MAX = 280;
 const WALL_COMMENT_CONTENT_MAX = 1000;
@@ -14,6 +15,7 @@ const WALL_PUBLIC_STATUS = "published";
 const WALL_OWNER_VISIBLE_STATUSES = ["published", "hidden"];
 const WALL_ADMIN_VISIBLE_STATUSES = ["published", "hidden", "deleted"];
 const WALL_ALL_STATUSES = ["published", "hidden", "deleted"];
+const WALL_LINKABLE_SLUG_STATUSES = ["approved", "active", "paused"];
 
 function isMissingModelTable(error, modelName) {
   return (
@@ -203,6 +205,22 @@ function getWallCommentBaseSelect() {
         username: true,
         login: true,
         isVerified: true,
+        status: true,
+        plan: true,
+        subscriptionStartedAt: true,
+        subscriptionExpiresAt: true,
+        slugs: {
+          where: {
+            status: {
+              in: WALL_LINKABLE_SLUG_STATUSES,
+            },
+          },
+          orderBy: [{ isPrimary: "desc" }, { updatedAt: "desc" }, { createdAt: "desc" }],
+          take: 1,
+          select: {
+            fullSlug: true,
+          },
+        },
         profileCard: {
           select: {
             avatarUrl: true,
@@ -263,6 +281,17 @@ function getWallCommentAuthorInitials(name) {
   return initials || "UN";
 }
 
+function getWallCommentAuthorProfileHref(user) {
+  if (!user || !isPublicProfileVisible(user)) {
+    return null;
+  }
+  const slug = String(user?.slugs?.[0]?.fullSlug || "").trim().toUpperCase();
+  if (!slug) {
+    return null;
+  }
+  return `/${encodeURIComponent(slug)}`;
+}
+
 function mapWallCommentItem(row, options = {}) {
   if (!row) return null;
   const viewerUserId = String(options.viewerUserId || "").trim();
@@ -282,6 +311,7 @@ function mapWallCommentItem(row, options = {}) {
       name: authorName,
       wallAuthorLabel: getWallCommentAuthorPublicLabel(row.user, authorName),
       verified: Boolean(row.user?.isVerified),
+      profileHref: getWallCommentAuthorProfileHref(row.user),
       avatarUrl: String(row.user?.profileCard?.avatarUrl || "").trim() || null,
       initials: getWallCommentAuthorInitials(authorName),
     },
