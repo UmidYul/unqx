@@ -1134,15 +1134,6 @@
       activeTab: rawWall.activeTab === "posts" ? "posts" : "card",
       hasUnreadPosts: Boolean(rawWall.hasUnreadPosts),
       items,
-      commentModal: {
-        isOpen: Boolean(rawWall.commentModal?.isOpen),
-        postId: String(rawWall.commentModal?.postId || "").trim(),
-        title: String(rawWall.commentModal?.title || "Написать комментарий"),
-        draft: String(rawWall.commentModal?.draft || ""),
-        currentLength: Math.max(0, Number(rawWall.commentModal?.currentLength || 0)),
-        maxLength: Math.max(1, Number(rawWall.commentModal?.maxLength || WALL_COMMENT_CONTENT_MAX)),
-        isBusy: Boolean(rawWall.commentModal?.isBusy),
-      },
       pagination: {
         page: Math.max(1, Number(pagination.page || 1)),
         pageSize: Math.max(1, Number(pagination.pageSize || 10)),
@@ -1179,14 +1170,6 @@
     const officialUnqBadge = options.officialUnqBadge && typeof options.officialUnqBadge === "object" ? options.officialUnqBadge : null;
     const staffBadge = options.staffBadge && typeof options.staffBadge === "object" ? options.staffBadge : null;
     const wall = normalizeWallForRender(options.wall);
-    const activeCommentModal =
-      wall?.commentModal?.isOpen && wall.commentModal.postId
-        ? wall.commentModal
-        : null;
-    const activeCommentPost =
-      activeCommentModal
-        ? wall.items.find((item) => item.id === activeCommentModal.postId) || null
-        : null;
     const ownerProfileHrefRaw = card.slug ? `/${encodeURIComponent(card.slug)}` : "";
     const ownerProfileHref = ownerProfileHrefRaw;
 
@@ -1470,36 +1453,6 @@
           .join("")
         : '<div class="unq-wall-empty">Пока здесь нет постов. Первый пост появится сразу после публикации.</div>'
       : "";
-    const commentModalHtml =
-      activeCommentModal && activeCommentPost
-        ? `
-          <div class="unq-wall-comment-modal-layer" data-wall-comment-modal-layer>
-            <button type="button" class="unq-wall-comment-modal-backdrop" data-wall-comment-modal-close aria-label="Закрыть окно комментария"></button>
-            <section class="unq-wall-comment-modal" data-wall-comment-modal-dialog role="dialog" aria-modal="true" aria-labelledby="unq-wall-comment-modal-title">
-              <div class="unq-wall-comment-modal-head">
-                <div>
-                  <p class="unq-wall-comment-modal-kicker">${esc(card.wallAuthorLabel || card.name)}</p>
-                  <h3 id="unq-wall-comment-modal-title" class="unq-wall-comment-modal-title">${esc(activeCommentModal.title)}</h3>
-                </div>
-                <button type="button" class="unq-wall-comment-modal-close" data-wall-comment-modal-close aria-label="Закрыть">
-                  <span aria-hidden="true">×</span>
-                </button>
-              </div>
-              <p class="unq-wall-comment-modal-meta">Пост от ${esc(formatWallDateTime(activeCommentPost.createdAt))}</p>
-              <div class="unq-wall-comment-modal-post">${renderWallPostContent(activeCommentPost.content)}</div>
-              <label class="sr-only" for="wall-comment-modal-${esc(activeCommentPost.id)}">Комментарий</label>
-              <textarea id="wall-comment-modal-${esc(activeCommentPost.id)}" data-wall-comment-modal-input data-wall-post-id="${esc(activeCommentPost.id)}" rows="5" maxlength="${esc(String(activeCommentModal.maxLength || WALL_COMMENT_CONTENT_MAX))}" placeholder="Написать комментарий..." class="unq-wall-comment-modal-input">${esc(activeCommentModal.draft || "")}</textarea>
-              <div class="unq-wall-comment-modal-actions">
-                <span data-wall-comment-modal-counter class="unq-wall-comment-modal-counter">${Number(activeCommentModal.currentLength || 0)}/${Number(activeCommentModal.maxLength || WALL_COMMENT_CONTENT_MAX)}</span>
-                <div class="unq-wall-comment-modal-buttons">
-                  <button type="button" class="interactive-btn unq-wall-comment-modal-cancel" data-wall-comment-modal-close>Отмена</button>
-                  <button type="button" class="interactive-btn unq-wall-comment-modal-submit" data-wall-comment-modal-submit data-wall-post-id="${esc(activeCommentPost.id)}" ${activeCommentModal.isBusy ? "disabled" : ""}>${activeCommentModal.isBusy ? "Отправка..." : "Отправить"}</button>
-                </div>
-              </div>
-            </section>
-          </div>
-        `
-        : "";
     const wallTabsHtml = wall
       ? `
           <div class="unq-wall-tabs" role="tablist" aria-label="Вкладки визитки">
@@ -1573,7 +1526,6 @@
           <div>© ${esc(viewsLabel)}</div>
           <div>${footBrandingLabel}</div>
         </div>
-        ${commentModalHtml}
       </div>
     `;
   }

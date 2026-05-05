@@ -142,7 +142,8 @@ describe("slug page (:slug) templates", () => {
     expect(cardViewSource).toContain("Комментариев пока нет");
     expect(cardViewSource).toContain("data-wall-comment-open");
     expect(cardViewSource).toContain("data-wall-comment-compose");
-    expect(cardViewSource).toContain("data-wall-comment-modal-submit");
+    expect(cardViewSource).not.toContain("data-wall-comment-modal-submit");
+    expect(cardViewSource).not.toContain("data-wall-comment-modal-input");
     expect(cardViewSource).not.toContain("data-wall-comment-submit");
     expect(cardViewSource).not.toContain("unq-wall-comment-form");
     expect(cardViewSource).not.toContain("data-wall-comments-toggle");
@@ -154,7 +155,8 @@ describe("slug page (:slug) templates", () => {
     expect(cardViewSource).toContain("data-wall-share");
     expect(cardViewSource).toContain("data-wall-posts-unread-dot");
     expect(publicCardSource).toContain("/comments");
-    expect(publicCardSource).toContain("wallCommentModalPostId");
+    expect(publicCardSource).not.toContain("wallCommentModalPostId");
+    expect(publicCardSource).not.toContain("data-wall-comment-modal-submit");
     expect(publicCardSource).toContain("data-wall-comment-compose");
     expect(publicCardSource).toContain("target.closest(\"[data-wall-share]\")");
     expect(publicCardSource).toContain("startsWith(\"#wall-post-\")");

@@ -48,8 +48,6 @@
     wallBusyCommentPostIds: new Set(),
     wallBusyCommentIds: new Set(),
     wallExpandedCommentPostIds: new Set(),
-    wallCommentModalPostId: "",
-    wallCommentModalReturnFocusPostId: "",
     wallHasUnreadPosts: false,
   };
 
@@ -174,12 +172,6 @@
 
   function buildWallOptions() {
     if (!state.wall) return null;
-    const normalizedModalPostId = String(state.wallCommentModalPostId || "").trim();
-    const activeModalPost =
-      normalizedModalPostId
-        ? state.wall.items.find((item) => item.id === normalizedModalPostId) || null
-        : null;
-    const modalDraft = activeModalPost ? String(state.wallCommentDrafts[activeModalPost.id] || "") : "";
     return {
       enabled: true,
       activeTab: state.activeTab,
@@ -197,17 +189,6 @@
           }))
           : [],
       })),
-      commentModal: activeModalPost
-        ? {
-          isOpen: true,
-          postId: activeModalPost.id,
-          title: "Написать комментарий",
-          draft: modalDraft,
-          currentLength: modalDraft.length,
-          maxLength: WALL_COMMENT_CONTENT_MAX,
-          isBusy: state.wallBusyCommentPostIds.has(activeModalPost.id),
-        }
-        : null,
       pagination: {
         ...state.wall.pagination,
         isLoadingMore: state.wallLoadingMore,
@@ -317,10 +298,6 @@
       wall: buildWallOptions(),
     });
     syncAvatarFallback(root);
-    document.body.classList.toggle("modal-open", Boolean(state.wallCommentModalPostId));
-    if (state.wallCommentModalPostId) {
-      focusWallCommentModalInput(state.wallCommentModalPostId);
-    }
     scrollToWallHashTarget();
     return root;
   }
@@ -533,23 +510,6 @@
     state.wallCommentDrafts = nextDrafts;
   }
 
-  function getWallCommentModalInput(postId) {
-    const normalizedPostId = String(postId || "").trim();
-    if (!normalizedPostId) {
-      return null;
-    }
-    const candidates = host.querySelectorAll("[data-wall-comment-modal-input]");
-    for (const candidate of candidates) {
-      if (
-        candidate instanceof HTMLTextAreaElement &&
-        String(candidate.getAttribute("data-wall-post-id") || "").trim() === normalizedPostId
-      ) {
-        return candidate;
-      }
-    }
-    return null;
-  }
-
   function getWallCommentInlineInput(postId) {
     const normalizedPostId = String(postId || "").trim();
     if (!normalizedPostId) {
@@ -568,92 +528,11 @@
   }
 
   function readWallCommentDraft(postId) {
-    const modalInput = getWallCommentModalInput(postId);
-    if (modalInput instanceof HTMLTextAreaElement) {
-      return String(modalInput.value || "");
-    }
     const inlineInput = getWallCommentInlineInput(postId);
     if (inlineInput instanceof HTMLTextAreaElement) {
       return String(inlineInput.value || "");
     }
     return getWallCommentDraft(postId);
-  }
-
-  function focusWallCommentModalInput(postId) {
-    window.requestAnimationFrame(() => {
-      const input = getWallCommentModalInput(postId);
-      if (!(input instanceof HTMLTextAreaElement)) {
-        return;
-      }
-      input.focus();
-      const valueLength = String(input.value || "").length;
-      input.setSelectionRange(valueLength, valueLength);
-    });
-  }
-
-  function focusWallCommentOpenButton(postId) {
-    window.requestAnimationFrame(() => {
-      const normalizedPostId = String(postId || "").trim();
-      if (!normalizedPostId) {
-        return;
-      }
-      const composeCandidates = host.querySelectorAll("[data-wall-comment-compose]");
-      for (const candidate of composeCandidates) {
-        if (
-          candidate instanceof HTMLButtonElement &&
-          String(candidate.getAttribute("data-wall-post-id") || "").trim() === normalizedPostId
-        ) {
-          candidate.focus();
-          return;
-        }
-      }
-      const candidates = host.querySelectorAll("[data-wall-comment-open]");
-      for (const candidate of candidates) {
-        if (
-          candidate instanceof HTMLButtonElement &&
-          String(candidate.getAttribute("data-wall-post-id") || "").trim() === normalizedPostId
-        ) {
-          candidate.focus();
-          return;
-        }
-      }
-    });
-  }
-
-  function openWallCommentModal(postId) {
-    const normalizedPostId = String(postId || "").trim();
-    if (!state.wall || !normalizedPostId) {
-      return;
-    }
-    const post = state.wall.items.find((item) => item.id === normalizedPostId);
-    if (!post) {
-      return;
-    }
-    const liveDraft = readWallCommentDraft(normalizedPostId);
-    if (liveDraft !== getWallCommentDraft(normalizedPostId)) {
-      setWallCommentDraft(normalizedPostId, liveDraft);
-    }
-    state.activeTab = "posts";
-    setWallCommentsExpanded(normalizedPostId, true);
-    state.wallCommentModalPostId = normalizedPostId;
-    state.wallCommentModalReturnFocusPostId = normalizedPostId;
-    renderCard();
-    focusWallCommentModalInput(normalizedPostId);
-  }
-
-  function closeWallCommentModal(options = {}) {
-    const restoreFocus = Boolean(options.restoreFocus);
-    const normalizedPostId = String(state.wallCommentModalPostId || "").trim();
-    if (!normalizedPostId) {
-      return;
-    }
-    const focusPostId = String(state.wallCommentModalReturnFocusPostId || normalizedPostId).trim();
-    state.wallCommentModalPostId = "";
-    state.wallCommentModalReturnFocusPostId = "";
-    renderCard();
-    if (restoreFocus && focusPostId) {
-      focusWallCommentOpenButton(focusPostId);
-    }
   }
 
   function setWallCommentsExpanded(postId, expanded) {
@@ -730,11 +609,6 @@
       const inlineInput = getWallCommentInlineInput(postId);
       if (inlineInput instanceof HTMLTextAreaElement) {
         inlineInput.focus();
-      } else {
-        const modalInput = getWallCommentModalInput(postId);
-        if (modalInput instanceof HTMLTextAreaElement) {
-          modalInput.focus();
-        }
       }
       showToast("Введите комментарий", "error");
       return;
@@ -766,8 +640,6 @@
         replaceWallPost(data.post);
         setWallCommentsExpanded(postId, true);
         clearWallCommentDraft(postId);
-        state.wallCommentModalPostId = "";
-        state.wallCommentModalReturnFocusPostId = "";
         renderCard();
       }
     } catch {
@@ -967,20 +839,8 @@
     if (target.value !== getWallCommentDraft(postId)) {
       target.value = getWallCommentDraft(postId);
     }
-    if (target.matches("[data-wall-comment-inline-input]")) {
+    if (!target.matches("[data-wall-comment-inline-input]")) {
       return;
-    }
-    if (!target.matches("[data-wall-comment-modal-input]")) {
-      return;
-    }
-    const dialog = target.closest("[data-wall-comment-modal-dialog]");
-    const counter = dialog instanceof HTMLElement ? dialog.querySelector("[data-wall-comment-modal-counter]") : null;
-    if (counter instanceof HTMLElement) {
-      counter.textContent = `${getWallCommentDraft(postId).length}/${WALL_COMMENT_CONTENT_MAX}`;
-    }
-    const submit = dialog instanceof HTMLElement ? dialog.querySelector("[data-wall-comment-modal-submit]") : null;
-    if (submit instanceof HTMLButtonElement) {
-      submit.disabled = state.wallBusyCommentPostIds.has(postId);
     }
   });
 
@@ -1021,9 +881,6 @@
       if (!postId) {
         return;
       }
-      if (state.wallCommentModalPostId) {
-        closeWallCommentModal({ restoreFocus: false });
-      }
       setWallCommentsExpanded(postId, !state.wallExpandedCommentPostIds.has(postId));
       renderCard();
       return;
@@ -1033,21 +890,6 @@
     if (composeCommentButton instanceof HTMLElement) {
       event.preventDefault();
       const postId = String(composeCommentButton.getAttribute("data-wall-post-id") || "").trim();
-      await submitWallComment(postId);
-      return;
-    }
-
-    const closeCommentModalButton = target.closest("[data-wall-comment-modal-close]");
-    if (closeCommentModalButton instanceof HTMLElement) {
-      event.preventDefault();
-      closeWallCommentModal({ restoreFocus: true });
-      return;
-    }
-
-    const submitCommentButton = target.closest("[data-wall-comment-modal-submit]");
-    if (submitCommentButton instanceof HTMLElement) {
-      event.preventDefault();
-      const postId = String(submitCommentButton.getAttribute("data-wall-post-id") || "").trim();
       await submitWallComment(postId);
       return;
     }
@@ -1238,23 +1080,11 @@
     }
   });
 
-  document.addEventListener("keydown", (event) => {
-    if (event.key !== "Escape" || !state.wallCommentModalPostId) {
-      return;
-    }
-    event.preventDefault();
-    closeWallCommentModal({ restoreFocus: true });
-  });
-
   if (state.wall) {
     window.addEventListener("hashchange", () => {
       const nextTab = isPostsHash(window.location.hash) ? "posts" : "card";
       if (nextTab !== state.activeTab) {
         state.activeTab = nextTab;
-        if (nextTab !== "posts" && state.wallCommentModalPostId) {
-          state.wallCommentModalPostId = "";
-          state.wallCommentModalReturnFocusPostId = "";
-        }
         renderCard();
         return;
       }
