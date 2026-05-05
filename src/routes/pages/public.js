@@ -369,14 +369,38 @@ function isUserMissingColumnError(error) {
   return error.code === "P2022";
 }
 
+function mapLegacyCompatiblePublicUser(user) {
+  if (!user || typeof user !== "object") {
+    return null;
+  }
+  return {
+    ...user,
+    username: user.login || user.username || null,
+    telegramUsername: user.telegramUsername || null,
+  };
+}
+
+function getPublicUserHandle(user) {
+  return String(user?.login || user?.username || "")
+    .trim()
+    .replace(/^@+/, "");
+}
+
+function getPublicTelegramHandle(user) {
+  return String(user?.telegramUsername || "")
+    .trim()
+    .replace(/^@+/, "");
+}
+
 async function findUserByTelegramIdWithLegacyFallback(userId) {
   try {
-    return await prisma.user.findUnique({
+    const user = await prisma.user.findUnique({
       where: { id: userId },
       select: {
         id: true,
         firstName: true,
         username: true,
+        telegramUsername: true,
         login: true,
         displayName: true,
         status: true,
@@ -388,6 +412,7 @@ async function findUserByTelegramIdWithLegacyFallback(userId) {
         createdByStaffId: true,
       },
     });
+    return mapLegacyCompatiblePublicUser(user);
   } catch (error) {
     if (!isUserMissingColumnError(error)) {
       throw error;
@@ -397,6 +422,7 @@ async function findUserByTelegramIdWithLegacyFallback(userId) {
         id,
         first_name AS "firstName",
         username,
+        telegram_username AS "telegramUsername",
         login
       FROM users
       WHERE id = ${userId}
@@ -404,7 +430,7 @@ async function findUserByTelegramIdWithLegacyFallback(userId) {
     `;
     const row = Array.isArray(rows) ? rows[0] : null;
     if (!row) return null;
-    return {
+    return mapLegacyCompatiblePublicUser({
       ...row,
       displayName: null,
       status: "active",
@@ -414,20 +440,22 @@ async function findUserByTelegramIdWithLegacyFallback(userId) {
       isVerified: false,
       verifiedCompany: null,
       createdByStaffId: null,
-    };
+    });
   }
 }
 
 async function findUserByRefCodeWithLegacyFallback(refCode) {
   try {
-    return await prisma.user.findFirst({
+    const user = await prisma.user.findFirst({
       where: { refCode },
       select: {
         firstName: true,
         displayName: true,
+        login: true,
         username: true,
       },
     });
+    return mapLegacyCompatiblePublicUser(user);
   } catch (error) {
     if (!isUserMissingColumnError(error)) {
       throw error;
@@ -717,13 +745,13 @@ function formatPublicWallAuthorLabel(value) {
 }
 
 function getPublicWallAuthorLabel(user, fallbackLabel = "") {
-  const usernameLabel = formatPublicWallAuthorLabel(user?.username);
-  if (usernameLabel) {
-    return usernameLabel;
-  }
   const loginLabel = formatPublicWallAuthorLabel(user?.login);
   if (loginLabel) {
     return loginLabel;
+  }
+  const usernameLabel = formatPublicWallAuthorLabel(user?.username);
+  if (usernameLabel) {
+    return usernameLabel;
   }
   const fallback = String(fallbackLabel || "").trim();
   return fallback || "UNQX User";
@@ -862,7 +890,9 @@ function mapPublicPaymentCardRow(row) {
     profile,
     owner: {
       id: row.owner_id,
-      username: row.user_username || row.user_telegram_username || "",
+      login: row.user_login || "",
+      username: row.user_login || row.user_username || "",
+      telegramUsername: row.user_telegram_username || "",
       city: row.user_city || "",
     },
     updatedAt: row.updated_at,
@@ -1753,6 +1783,7 @@ router.get(
             pc.methods AS methods_json,
             u.first_name AS user_first_name,
             u.display_name AS user_display_name,
+            u.login AS user_login,
             u.username AS user_username,
             u.telegram_username AS user_telegram_username,
             u.email AS user_email,
@@ -2125,18 +2156,19 @@ router.get(
           profileCard && Array.isArray(profileCard.buttons)
             ? mapProfileButtons(profileCard.buttons)
             : [];
-        const usernameForTelegram = String(owner?.username || "").replace(/^@+/, "").trim();
+        const usernameForTelegram = getPublicTelegramHandle(owner);
         const telegramFallback = usernameForTelegram
           ? { type: "telegram", label: "Telegram", url: `https://t.me/${usernameForTelegram}`, isActive: true }
           : null;
         const primarySocial =
           socialButtons.find((item) => item.type === "telegram") || socialButtons[0] || telegramFallback;
+        const ownerHandle = getPublicUserHandle(owner);
 
         res.status(200).render("public/slug-paused", {
           title: `${slug} | Пауза`,
           slug,
           ownerName: owner?.displayName || owner?.firstName || "UNQX User",
-          ownerUsername: owner?.username ? `@${owner.username}` : "",
+          ownerUsername: ownerHandle ? `@${ownerHandle}` : "",
           ownerAvatar: profileCard?.avatarUrl || "",
           pauseMessage: slugRow.pauseMessage || "Скоро вернусь · Пште в Telegram",
           primarySocial,
@@ -2225,12 +2257,13 @@ router.get(
               const ownerSlugs = ownerSlugRows
                 .map((item) => String(item.fullSlug || "").trim().toUpperCase())
                 .filter(Boolean);
+              const ownerHandle = getPublicUserHandle(owner);
               res.status(200).render("public/slug-private", {
                 title: `${slug} | Закрытая визитка`,
                 slug,
                 ownerSlugs,
                 ownerName: profileCard?.name || owner.displayName || owner.firstName || "UNQX User",
-                ownerUsername: owner?.username ? `@${owner.username}` : "",
+                ownerUsername: ownerHandle ? `@${ownerHandle}` : "",
                 ownerAvatar: profileCard?.avatarUrl || "",
                 ownerIsVerified: Boolean(owner?.isVerified),
                 theme: profileCard?.theme || "default_dark",

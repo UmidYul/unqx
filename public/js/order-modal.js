@@ -854,7 +854,8 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
       return;
     }
     const safeName = currentUser?.firstName || currentUser?.displayName || "Пользователь";
-    const username = currentUser?.username ? ` · @${currentUser.username}` : "";
+    const publicHandle = String(currentUser?.login || currentUser?.username || "").trim().replace(/^@+/, "");
+    const username = publicHandle ? ` · @${publicHandle}` : "";
     dom.userName.textContent = `${safeName}${username}`;
     dom.userAvatar.src = currentUser?.photoUrl || "/brand/logo.PNG";
   }

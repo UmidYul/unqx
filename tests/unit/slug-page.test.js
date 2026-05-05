@@ -1,4 +1,5 @@
 const path = require("node:path");
+const fs = require("node:fs");
 const ejs = require("ejs");
 
 async function renderView(fileName, locals = {}) {
@@ -96,6 +97,13 @@ describe("slug page (:slug) templates", () => {
     expect(html).toContain("На главную");
   });
 
+  test("public page source uses login for public handle and telegramUsername for telegram fallback", () => {
+    const source = fs.readFileSync(path.join(process.cwd(), "src", "routes", "pages", "public.js"), "utf-8");
+    expect(source).toContain("ownerUsername: ownerHandle ? `@${ownerHandle}` : \"\"");
+    expect(source).toContain("const usernameForTelegram = getPublicTelegramHandle(owner);");
+    expect(source).toContain("u.login AS user_login");
+  });
+
   test("renders unavailable page with readable message", async () => {
     const html = await renderView("unavailable.ejs", {
       slug: "ABC123",
@@ -113,21 +121,21 @@ describe("slug page (:slug) templates", () => {
   });
 
   test("card-view source does not contain developer-facing placeholders", () => {
-    const source = require("node:fs").readFileSync(path.join(process.cwd(), "public", "js", "card-view.js"), "utf-8");
+    const source = fs.readFileSync(path.join(process.cwd(), "public", "js", "card-view.js"), "utf-8");
     expect(source.includes("Coming soon")).toBe(false);
     expect(source.includes("ABOUT INFO")).toBe(false);
   });
 
   test("card-view source uses localized share states", () => {
-    const source = require("node:fs").readFileSync(path.join(process.cwd(), "public", "js", "public-card.js"), "utf-8");
+    const source = fs.readFileSync(path.join(process.cwd(), "public", "js", "public-card.js"), "utf-8");
     expect(source).toContain("Поделиться");
     expect(source).toContain("Скопировано");
     expect(source).toContain("Контакт сохранен");
   });
 
   test("public card sources include posts and comments UI", () => {
-    const cardViewSource = require("node:fs").readFileSync(path.join(process.cwd(), "public", "js", "card-view.js"), "utf-8");
-    const publicCardSource = require("node:fs").readFileSync(path.join(process.cwd(), "public", "js", "public-card.js"), "utf-8");
+    const cardViewSource = fs.readFileSync(path.join(process.cwd(), "public", "js", "card-view.js"), "utf-8");
+    const publicCardSource = fs.readFileSync(path.join(process.cwd(), "public", "js", "public-card.js"), "utf-8");
     expect(cardViewSource).toContain("Посты");
     expect(cardViewSource).toContain("Визитка");
     expect(publicCardSource).toContain("wall-posts");

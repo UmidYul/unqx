@@ -1510,12 +1510,13 @@ Email: ${userEmail}
 
     const renderSidebar = () => {
       if (!s.user) return;
+      const publicHandle = normalizeProfileLoginValue(s.user?.login || s.user?.username);
       if (el.av) {
         const sidebarAvatar = s.card?.avatarUrl || s.user.photoUrl;
         el.av.src = avatarSrc(sidebarAvatar);
       }
       if (el.nm) el.nm.textContent = s.user.displayName || s.user.firstName || "UNQX User";
-      if (el.un) el.un.textContent = s.user.username ? `@${s.user.username}` : "@—";
+      if (el.un) el.un.textContent = publicHandle ? `@${publicHandle}` : "@—";
       const plan = getCurrentPlan();
       if (el.pl) {
         el.pl.dataset.plan = plan;
@@ -2883,7 +2884,7 @@ Email: ${userEmail}
           el.stEmail.removeAttribute("title");
         }
       }
-      if (el.stTg) el.stTg.value = s.user.username ? `@${s.user.username}` : "";
+      if (el.stTg) el.stTg.value = s.user.telegramUsername ? `@${s.user.telegramUsername}` : "";
       if (el.stNotif) el.stNotif.checked = Boolean(s.user.notificationsEnabled);
       renderTelegramNotificationActions(Boolean(s.user.notificationsEnabled));
       if (el.stDirectory) el.stDirectory.checked = Boolean(s.user.showInDirectory);
@@ -4825,6 +4826,8 @@ Email: ${userEmail}
           s.user.displayName = payload.user.displayName;
           s.user.city = payload.user.city;
           s.user.login = payload.user.login || null;
+          s.user.username = payload.user.username || payload.user.login || null;
+          s.user.telegramUsername = payload.user.telegramUsername || null;
           s.user.notificationsEnabled = payload.user.notificationsEnabled;
           s.user.showInDirectory = payload.user.showInDirectory;
         }

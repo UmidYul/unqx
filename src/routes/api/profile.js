@@ -614,7 +614,8 @@ async function getCurrentUser(req) {
   if (!row) return null;
   return {
     ...row,
-    username: row.username || row.telegramUsername || null,
+    username: row.login || row.username || null,
+    telegramUsername: row.telegramUsername || null,
   };
 }
 
@@ -823,7 +824,8 @@ router.get(
         firstName: user.firstName,
         lastName: user.lastName,
         city: user.city || "",
-        username: user.username,
+        username: user.login || user.username || "",
+        telegramUsername: user.telegramUsername || "",
         displayName: normalizeDisplayName(user.displayName, user.firstName),
         plan: user.plan,
         effectivePlan: effective.plan,
@@ -2326,7 +2328,7 @@ router.post(
       login: String(user.login || ""),
       displayName: normalizeDisplayName(user.displayName, user.firstName),
       city: String(user.city || ""),
-      telegramUsername: String(user.telegramUsername || user.username || ""),
+      telegramUsername: String(user.telegramUsername || ""),
       plan: String(getEffectivePlan(user).plan || "none"),
       status: String(user.status || "active"),
     };

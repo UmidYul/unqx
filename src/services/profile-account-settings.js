@@ -65,6 +65,8 @@ function applyProfileSettingsSessionUser(sessionUser, updatedUser) {
   return {
     ...sessionUser,
     login: updatedUser.login || null,
+    username: updatedUser.login || updatedUser.username || sessionUser.username || null,
+    telegramUsername: updatedUser.telegramUsername || sessionUser.telegramUsername || null,
     city: updatedUser.city || null,
     displayName: updatedUser.displayName || sessionUser.displayName || null,
   };
@@ -77,6 +79,8 @@ function buildProfileSettingsUserPayload(updatedUser) {
     notificationsEnabled: Boolean(updatedUser?.notificationsEnabled),
     showInDirectory: Boolean(updatedUser?.showInDirectory),
     login: updatedUser?.login || "",
+    username: updatedUser?.login || updatedUser?.username || "",
+    telegramUsername: updatedUser?.telegramUsername || "",
   };
 }
 

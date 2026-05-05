@@ -190,7 +190,7 @@ describe("profile wall service", () => {
     });
   });
 
-  test("listPublicWallPosts uses username label for public comment author", async () => {
+  test("listPublicWallPosts uses login label for public comment author when login exists", async () => {
     mockPrisma.profileWallPost.findMany.mockResolvedValue([buildPost()]);
     mockPrisma.profileWallPost.count.mockResolvedValue(1);
     mockPrisma.profileWallPostComment.findMany.mockResolvedValue([buildComment()]);
@@ -203,13 +203,53 @@ describe("profile wall service", () => {
     expect(result.items[0]?.comments?.[0]).toMatchObject({
       author: {
         name: "Ali",
-        wallAuthorLabel: "@ali",
+        wallAuthorLabel: "@ali_login",
         profileHref: "/ALI001",
       },
     });
   });
 
-  test("listPublicWallPosts uses login fallback and maps comment author verification", async () => {
+  test("listPublicWallPosts falls back to legacy username when login is missing", async () => {
+    mockPrisma.profileWallPost.findMany.mockResolvedValue([buildPost()]);
+    mockPrisma.profileWallPost.count.mockResolvedValue(1);
+    mockPrisma.profileWallPostComment.findMany.mockResolvedValue([
+      buildComment({
+        user: {
+          id: "user_2",
+          displayName: "",
+          firstName: "",
+          lastName: "",
+          username: "legacy_ali",
+          login: "",
+          isVerified: false,
+          status: "active",
+          plan: "none",
+          subscriptionStartedAt: null,
+          subscriptionExpiresAt: null,
+          slugs: [{ fullSlug: "ALI002" }],
+          profileCard: {
+            avatarUrl: "",
+          },
+        },
+      }),
+    ]);
+
+    const result = await wallService.listPublicWallPosts({
+      ownerId: "user_1",
+      viewerUserId: "user_3",
+    });
+
+    expect(result.items[0]?.comments?.[0]).toMatchObject({
+      author: {
+        name: "legacy_ali",
+        wallAuthorLabel: "@legacy_ali",
+        verified: false,
+        profileHref: "/ALI002",
+      },
+    });
+  });
+
+  test("listPublicWallPosts uses login fallback for author name and maps verification", async () => {
     mockPrisma.profileWallPost.findMany.mockResolvedValue([buildPost()]);
     mockPrisma.profileWallPost.count.mockResolvedValue(1);
     mockPrisma.profileWallPostComment.findMany.mockResolvedValue([

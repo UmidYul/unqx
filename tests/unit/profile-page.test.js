@@ -84,6 +84,8 @@ describe("profile page", () => {
     expect(source).toContain("profile-settings-login-status");
     expect(source).toContain("PROFILE_LOGIN_AVAILABLE_MESSAGE");
     expect(source).toContain("PROFILE_LOGIN_CURRENT_MESSAGE");
+    expect(source).toContain('s.user?.login || s.user?.username');
+    expect(source).toContain("s.user.telegramUsername");
   });
 
   test("profile API labels are emoji-free", () => {

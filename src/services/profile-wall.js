@@ -242,13 +242,13 @@ function getWallCommentAuthorName(user) {
   if (fullName) {
     return fullName;
   }
-  const username = String(user?.username || "").trim();
-  if (username) {
-    return username;
-  }
   const login = String(user?.login || "").trim();
   if (login) {
     return login;
+  }
+  const username = String(user?.username || "").trim();
+  if (username) {
+    return username;
   }
   return "UNQX User";
 }
@@ -259,13 +259,13 @@ function formatWallAuthorHandle(value) {
 }
 
 function getWallCommentAuthorPublicLabel(user, fallbackLabel = "") {
-  const usernameLabel = formatWallAuthorHandle(user?.username);
-  if (usernameLabel) {
-    return usernameLabel;
-  }
   const loginLabel = formatWallAuthorHandle(user?.login);
   if (loginLabel) {
     return loginLabel;
+  }
+  const usernameLabel = formatWallAuthorHandle(user?.username);
+  if (usernameLabel) {
+    return usernameLabel;
   }
   const fallback = String(fallbackLabel || "").trim();
   return fallback || "UNQX User";

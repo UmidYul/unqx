@@ -54,6 +54,7 @@ const USER_AUTH_SELECT = {
   lastName: true,
   city: true,
   username: true,
+  telegramUsername: true,
   displayName: true,
   plan: true,
   planPurchasedAt: true,
@@ -231,6 +232,15 @@ function resolveLoginInput(body) {
   };
 }
 
+function resolvePublicUsername(user) {
+  const login = String(user?.login || "").trim();
+  if (login) {
+    return login;
+  }
+  const username = String(user?.username || "").trim();
+  return username || null;
+}
+
 function userToSessionPayload(user) {
   const displayName = normalizeDisplayName(user.displayName, user.firstName);
   return {
@@ -241,7 +251,8 @@ function userToSessionPayload(user) {
     firstName: user.firstName,
     lastName: user.lastName || null,
     city: user.city || null,
-    username: user.username || null,
+    username: resolvePublicUsername(user),
+    telegramUsername: user.telegramUsername || null,
     displayName,
     plan: user.plan,
     planPurchasedAt: user.planPurchasedAt ? user.planPurchasedAt.toISOString() : null,
@@ -264,7 +275,8 @@ function userToClientPayload(user) {
     firstName: user.firstName,
     lastName: user.lastName || null,
     city: user.city || null,
-    username: user.username || null,
+    username: resolvePublicUsername(user),
+    telegramUsername: user.telegramUsername || null,
     displayName: normalizeDisplayName(user.displayName, user.firstName),
     plan: user.plan,
     effectivePlan: effective.plan,

@@ -83,6 +83,7 @@ describe("profile account settings", () => {
   test("successful save payload includes login and session payload is updated", () => {
     const updatedUser = {
       login: "new_login",
+      telegramUsername: "ali_support",
       displayName: "Ali",
       city: "Tashkent",
       notificationsEnabled: true,
@@ -91,6 +92,8 @@ describe("profile account settings", () => {
 
     expect(buildProfileSettingsUserPayload(updatedUser)).toMatchObject({
       login: "new_login",
+      username: "new_login",
+      telegramUsername: "ali_support",
       displayName: "Ali",
       city: "Tashkent",
       notificationsEnabled: true,
@@ -105,6 +108,7 @@ describe("profile account settings", () => {
           displayName: "Old Name",
           city: null,
           username: "ali",
+          telegramUsername: null,
         },
         updatedUser,
       ),
@@ -113,7 +117,8 @@ describe("profile account settings", () => {
       login: "new_login",
       displayName: "Ali",
       city: "Tashkent",
-      username: "ali",
+      username: "new_login",
+      telegramUsername: "ali_support",
     });
   });
 });
