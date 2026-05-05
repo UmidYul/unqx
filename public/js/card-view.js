@@ -1173,10 +1173,7 @@
         ? wall.items.find((item) => item.id === activeCommentModal.postId) || null
         : null;
     const ownerProfileHrefRaw = card.slug ? `/${encodeURIComponent(card.slug)}` : "";
-    const ownerProfileHref =
-      ownerProfileHrefRaw && String(window.location.pathname || "").trim().toUpperCase() !== ownerProfileHrefRaw.toUpperCase()
-        ? ownerProfileHrefRaw
-        : "";
+    const ownerProfileHref = ownerProfileHrefRaw;
 
     const tagsHtml =
       card.tags.length > 0
@@ -1366,6 +1363,7 @@
                   });
                   return `
                   <article class="unq-wall-comment" data-wall-comment="${esc(comment.id)}">
+                    <span class="unq-wall-comment-thread" aria-hidden="true"></span>
                     <div class="unq-wall-comment-avatar">
                       ${comment.author?.avatarUrl
                     ? `<img src="${esc(comment.author.avatarUrl)}" alt="${esc(comment.author?.wallAuthorLabel || comment.author?.name || "UNQX User")}" class="unq-wall-comment-avatar-img" />`
@@ -1397,8 +1395,11 @@
                 </div>
               `
               : "";
+            const hasLikeCount = Number(item.likesCount || 0) > 0;
+            const hasCommentCount = Number(item.commentsCount || comments.length) > 0;
+            const postAnchorId = `wall-post-${encodeURIComponent(String(item.id || "").trim())}`;
             return `
-              <article class="unq-wall-post" data-wall-post="${esc(item.id)}">
+              <article class="unq-wall-post" id="${esc(postAnchorId)}" data-wall-post="${esc(item.id)}">
                 <div class="unq-wall-post-head">
                   <div class="unq-wall-post-avatar">${card.avatarUrl ? `<img src="${esc(card.avatarUrl)}" alt="${esc(card.name)}" class="unq-wall-post-avatar-img" />` : `<span>${esc(card.initials)}</span>`}</div>
                   <div class="unq-wall-post-meta">
@@ -1411,13 +1412,16 @@
                 </div>
                 <div class="unq-wall-post-content">${renderWallPostContent(item.content)}</div>
                 <div class="unq-wall-post-actions">
-                  <button type="button" class="unq-wall-like-btn${item.viewerHasLiked ? " is-liked" : ""}" data-wall-like data-post-id="${esc(item.id)}" aria-pressed="${item.viewerHasLiked ? "true" : "false"}" aria-label="${likeLabel}" ${item.isBusy ? "disabled" : ""}>
+                  <button type="button" class="unq-wall-action-btn unq-wall-like-btn${item.viewerHasLiked ? " is-liked" : ""}" data-wall-like data-post-id="${esc(item.id)}" aria-pressed="${item.viewerHasLiked ? "true" : "false"}" aria-label="${likeLabel}" ${item.isBusy ? "disabled" : ""}>
                     ${likeIcon}
                   </button>
-                  <span class="unq-wall-like-count">${Number(item.likesCount || 0).toLocaleString("ru-RU")}</span>
-                  <button type="button" class="unq-wall-comment-pill" data-wall-comment-open data-wall-post-id="${esc(item.id)}" aria-expanded="${item.isCommentsExpanded ? "true" : "false"}" aria-label="${item.isCommentsExpanded ? "Скрыть комментарии" : "Показать комментарии"}">
+                  ${hasLikeCount ? `<span class="unq-wall-action-count unq-wall-like-count">${Number(item.likesCount || 0).toLocaleString("ru-RU")}</span>` : ""}
+                  <button type="button" class="unq-wall-action-btn unq-wall-comment-pill" data-wall-comment-open data-wall-post-id="${esc(item.id)}" aria-expanded="${item.isCommentsExpanded ? "true" : "false"}" aria-label="${item.isCommentsExpanded ? "Скрыть комментарии" : "Показать комментарии"}">
                     ${iconSvg("comment")}
-                    <span>${commentCount}</span>
+                  </button>
+                  ${hasCommentCount ? `<span class="unq-wall-action-count unq-wall-comment-count">${commentCount}</span>` : ""}
+                  <button type="button" class="unq-wall-action-btn unq-wall-share-btn" data-wall-share data-wall-post-id="${esc(item.id)}" aria-label="Поделиться постом">
+                    ${iconSvg("share")}
                   </button>
                 </div>
                 ${commentsPanelHtml}

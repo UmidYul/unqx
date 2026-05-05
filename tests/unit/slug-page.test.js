@@ -150,10 +150,14 @@ describe("slug page (:slug) templates", () => {
     expect(cardViewSource).toContain("comment.author?.verified");
     expect(cardViewSource).toContain("data-wall-post-author-link");
     expect(cardViewSource).toContain("data-wall-comment-author-link");
+    expect(cardViewSource).toContain("const ownerProfileHref = ownerProfileHrefRaw;");
+    expect(cardViewSource).toContain("data-wall-share");
     expect(cardViewSource).toContain("data-wall-posts-unread-dot");
     expect(publicCardSource).toContain("/comments");
     expect(publicCardSource).toContain("wallCommentModalPostId");
     expect(publicCardSource).toContain("data-wall-comment-compose");
+    expect(publicCardSource).toContain("target.closest(\"[data-wall-share]\")");
+    expect(publicCardSource).toContain("startsWith(\"#wall-post-\")");
     expect(publicCardSource).toContain("verified: Boolean(authorSource.verified)");
     expect(publicCardSource).toContain("profileHref: String(authorSource.profileHref || \"\").trim() || null");
     expect(publicCardSource).toContain("unqx_wall_seen_posts:");

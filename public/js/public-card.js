@@ -41,7 +41,12 @@
     wallHasUnreadPosts: false,
   };
 
-  state.activeTab = state.wall && window.location.hash === "#posts" ? "posts" : "card";
+  function isPostsHash(hashValue) {
+    const normalized = String(hashValue || "").trim().toLowerCase();
+    return normalized === "#posts" || normalized.startsWith("#wall-post-");
+  }
+
+  state.activeTab = state.wall && isPostsHash(window.location.hash) ? "posts" : "card";
 
   let searchTimer = null;
   let lastQuery = "";
@@ -303,7 +308,25 @@
     if (state.wallCommentModalPostId) {
       focusWallCommentModalInput(state.wallCommentModalPostId);
     }
+    scrollToWallHashTarget();
     return root;
+  }
+
+  function scrollToWallHashTarget() {
+    if (!state.wall || state.activeTab !== "posts") {
+      return;
+    }
+    const hash = String(window.location.hash || "").trim();
+    if (!hash || !hash.toLowerCase().startsWith("#wall-post-")) {
+      return;
+    }
+    const targetId = hash.slice(1);
+    window.requestAnimationFrame(() => {
+      const target = document.getElementById(targetId);
+      if (target instanceof HTMLElement) {
+        target.scrollIntoView({ block: "start", behavior: "smooth" });
+      }
+    });
   }
 
   function syncAvatarFallback(root) {
@@ -435,6 +458,45 @@
   function wallLoginUrl() {
     const nextPath = `/${encodeURIComponent(state.slug || String(state.card?.slug || ""))}#posts`;
     return `/login?next=${encodeURIComponent(nextPath)}`;
+  }
+
+  function buildWallShareUrl(postId) {
+    const shareBase = String(state.shareUrl || window.location.href || "").trim() || window.location.href;
+    try {
+      const url = new URL(shareBase, window.location.href);
+      const normalizedPostId = String(postId || "").trim();
+      url.hash = normalizedPostId ? `wall-post-${encodeURIComponent(normalizedPostId)}` : "posts";
+      return url.toString();
+    } catch {
+      return shareBase;
+    }
+  }
+
+  async function shareWallPost(postId) {
+    const shareUrl = buildWallShareUrl(postId);
+    let shared = false;
+
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: document.title,
+          url: shareUrl,
+        });
+        shared = true;
+        showToast("Ссылка на пост отправлена");
+        announce("Ссылка на пост отправлена");
+      }
+    } catch {
+      shared = false;
+    }
+
+    if (shared) {
+      return;
+    }
+
+    const copied = await copyText(shareUrl);
+    showToast(copied ? "Ссылка на пост скопирована" : "Не удалось скопировать ссылку", copied ? "success" : "error");
+    announce(copied ? "Ссылка на пост скопирована" : "Не удалось скопировать ссылку");
   }
 
   function getWallCommentDraft(postId) {
@@ -940,6 +1002,14 @@
       return;
     }
 
+    const wallShareButton = target.closest("[data-wall-share]");
+    if (wallShareButton instanceof HTMLElement) {
+      event.preventDefault();
+      const postId = String(wallShareButton.getAttribute("data-wall-post-id") || "").trim();
+      await shareWallPost(postId);
+      return;
+    }
+
     const loadMoreButton = target.closest("[data-wall-load-more]");
     if (loadMoreButton instanceof HTMLElement) {
       event.preventDefault();
@@ -1119,7 +1189,7 @@
 
   if (state.wall) {
     window.addEventListener("hashchange", () => {
-      const nextTab = window.location.hash === "#posts" ? "posts" : "card";
+      const nextTab = isPostsHash(window.location.hash) ? "posts" : "card";
       if (nextTab !== state.activeTab) {
         state.activeTab = nextTab;
         if (nextTab !== "posts" && state.wallCommentModalPostId) {
@@ -1127,7 +1197,9 @@
           state.wallCommentModalReturnFocusPostId = "";
         }
         renderCard();
+        return;
       }
+      scrollToWallHashTarget();
     });
   }
 
