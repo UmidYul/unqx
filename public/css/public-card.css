@@ -2157,18 +2157,10 @@ body[data-card-theme] #card-view-root>[data-card-view] {
 .unq-wall-post-actions {
   margin-top: 2px;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 10px;
   flex-wrap: wrap;
   padding-left: 0;
-}
-
-.unq-wall-action-stack {
-  display: grid;
-  justify-items: center;
-  align-content: start;
-  gap: 4px;
-  min-width: 28px;
 }
 
 .unq-wall-action-btn {
@@ -2231,16 +2223,8 @@ body[data-card-theme] #card-view-root>[data-card-view] {
   font-size: 12px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
-  line-height: 1;
-  min-height: 12px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.unq-wall-action-count.is-empty,
-.unq-wall-action-count-spacer {
-  visibility: hidden;
+  margin-left: -4px;
+  min-width: 10px;
 }
 
 .unq-wall-comment-pill {
