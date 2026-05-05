@@ -924,6 +924,8 @@
         '<svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"></rect><circle cx="8.2" cy="9" r="1.6"></circle><path d="m6 17 4.6-4.8 3.1 3.1 2.8-2.8L18 14"></path></svg>',
       expand:
         '<svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4h5v5M20 4l-7 7M9 20H4v-5M4 20l7-7"></path></svg>',
+      send:
+        '<svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 2 11 13"></path><path d="M22 2 15 22l-4-9-9-4 20-7Z"></path></svg>',
       linkedin:
         '<svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"></rect><path d="M8 10v6M8 8.2v.1M12 16v-3.2c0-1.2.9-2.1 2-2.1 1.2 0 2 .9 2 2.1V16"></path></svg>',
       tiktok:
@@ -1418,14 +1420,14 @@
                     >${esc(item.commentDraft || "")}</textarea>
                     <button
                       type="button"
-                      class="interactive-btn unq-wall-compose-expand"
+                      class="interactive-btn unq-wall-compose-submit"
                       data-wall-comment-compose
                       data-wall-post-id="${esc(item.id)}"
-                      aria-label="Открыть окно комментария"
-                      title="Открыть окно комментария"
+                      aria-label="Отправить комментарий"
+                      title="Отправить комментарий"
                       ${item.isCommentBusy ? "disabled" : ""}
                     >
-                      ${iconSvg("expand")}
+                      ${iconSvg("send")}
                     </button>
                   </div>
                   <div class="unq-wall-comments-list${comments.length > WALL_SCROLLABLE_COMMENT_COUNT ? " is-scrollable" : ""}">${commentsHtml}</div>
@@ -1445,23 +1447,23 @@
                       <span class="unq-wall-post-date">${esc(formatWallDateTime(item.createdAt))}</span>
                     </div>
                     ${item.isEdited ? '<p class="unq-wall-post-edited">изменено</p>' : ""}
+                    <div class="unq-wall-post-content">${renderWallPostContent(item.content)}</div>
+                    <div class="unq-wall-post-actions">
+                      <button type="button" class="unq-wall-action-btn unq-wall-like-btn${item.viewerHasLiked ? " is-liked" : ""}" data-wall-like data-post-id="${esc(item.id)}" aria-pressed="${item.viewerHasLiked ? "true" : "false"}" aria-label="${likeLabel}" ${item.isBusy ? "disabled" : ""}>
+                        ${likeIcon}
+                      </button>
+                      ${hasLikeCount ? `<span class="unq-wall-action-count unq-wall-like-count">${Number(item.likesCount || 0).toLocaleString("ru-RU")}</span>` : ""}
+                      <button type="button" class="unq-wall-action-btn unq-wall-comment-pill" data-wall-comment-open data-wall-post-id="${esc(item.id)}" aria-expanded="${item.isCommentsExpanded ? "true" : "false"}" aria-label="${item.isCommentsExpanded ? "Скрыть комментарии" : "Показать комментарии"}">
+                        ${iconSvg("comment")}
+                      </button>
+                      ${hasCommentCount ? `<span class="unq-wall-action-count unq-wall-comment-count">${commentCount}</span>` : ""}
+                      <button type="button" class="unq-wall-action-btn unq-wall-share-btn" data-wall-share data-wall-post-id="${esc(item.id)}" aria-label="Поделиться постом">
+                        ${iconSvg("share")}
+                      </button>
+                    </div>
+                    ${commentsPanelHtml}
                   </div>
                 </div>
-                <div class="unq-wall-post-content">${renderWallPostContent(item.content)}</div>
-                <div class="unq-wall-post-actions">
-                  <button type="button" class="unq-wall-action-btn unq-wall-like-btn${item.viewerHasLiked ? " is-liked" : ""}" data-wall-like data-post-id="${esc(item.id)}" aria-pressed="${item.viewerHasLiked ? "true" : "false"}" aria-label="${likeLabel}" ${item.isBusy ? "disabled" : ""}>
-                    ${likeIcon}
-                  </button>
-                  ${hasLikeCount ? `<span class="unq-wall-action-count unq-wall-like-count">${Number(item.likesCount || 0).toLocaleString("ru-RU")}</span>` : ""}
-                  <button type="button" class="unq-wall-action-btn unq-wall-comment-pill" data-wall-comment-open data-wall-post-id="${esc(item.id)}" aria-expanded="${item.isCommentsExpanded ? "true" : "false"}" aria-label="${item.isCommentsExpanded ? "Скрыть комментарии" : "Показать комментарии"}">
-                    ${iconSvg("comment")}
-                  </button>
-                  ${hasCommentCount ? `<span class="unq-wall-action-count unq-wall-comment-count">${commentCount}</span>` : ""}
-                  <button type="button" class="unq-wall-action-btn unq-wall-share-btn" data-wall-share data-wall-post-id="${esc(item.id)}" aria-label="Поделиться постом">
-                    ${iconSvg("share")}
-                  </button>
-                </div>
-                ${commentsPanelHtml}
               </article>
             `;
           })

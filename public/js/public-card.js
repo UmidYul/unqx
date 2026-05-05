@@ -727,9 +727,14 @@
     }
     const content = getWallCommentDraft(postId).trim();
     if (!content) {
-      const input = getWallCommentModalInput(postId);
-      if (input instanceof HTMLTextAreaElement) {
-        input.focus();
+      const inlineInput = getWallCommentInlineInput(postId);
+      if (inlineInput instanceof HTMLTextAreaElement) {
+        inlineInput.focus();
+      } else {
+        const modalInput = getWallCommentModalInput(postId);
+        if (modalInput instanceof HTMLTextAreaElement) {
+          modalInput.focus();
+        }
       }
       showToast("Введите комментарий", "error");
       return;
@@ -1028,7 +1033,7 @@
     if (composeCommentButton instanceof HTMLElement) {
       event.preventDefault();
       const postId = String(composeCommentButton.getAttribute("data-wall-post-id") || "").trim();
-      openWallCommentModal(postId);
+      await submitWallComment(postId);
       return;
     }
 
