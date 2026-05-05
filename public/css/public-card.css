@@ -2163,10 +2163,6 @@ body[data-card-theme] #card-view-root>[data-card-view] {
   padding-left: 0;
 }
 
-.unq-wall-post-actions > .unq-wall-like-btn:first-child {
-  margin-left: -4px;
-}
-
 .unq-wall-action-btn {
   width: 28px;
   height: 28px;
