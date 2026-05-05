@@ -915,9 +915,9 @@
       email: '<svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16v12H4z"></path><path d="m4 7 8 6 8-6"></path></svg>',
       hashtag: '<svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true"><path d="m10 3-2 18M16 3l-2 18M4 9h16M3 15h16"></path></svg>',
       heart:
-        '<svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 20.5-1.1-1C5.1 14.2 2 11.4 2 7.9 2 5.3 4.1 3.2 6.7 3.2c1.5 0 2.9.7 3.8 1.9.9-1.2 2.3-1.9 3.8-1.9 2.6 0 4.7 2.1 4.7 4.7 0 3.5-3.1 6.3-8.9 11.6L12 20.5Z"></path></svg>',
+        '<svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.75 4.9 13.86a5.56 5.56 0 0 1 0-7.94 5.39 5.39 0 0 1 7.67 0L12 6.49l-.57-.57a5.39 5.39 0 0 1 7.67 0 5.56 5.56 0 0 1 0 7.94L12 20.75Z"></path></svg>',
       heartFilled:
-        '<svg class="h-4 w-4" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="m12 21.1-1.1-.9C5.3 15.2 2 12.2 2 8.4 2 5.5 4.3 3.2 7.2 3.2c1.8 0 3.5.9 4.6 2.4 1.1-1.5 2.8-2.4 4.6-2.4 2.9 0 5.2 2.3 5.2 5.2 0 3.8-3.3 6.8-8.9 11.8L12 21.1Z"></path></svg>',
+        '<svg class="h-4 w-4" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M11.457 20.78a.75.75 0 0 0 1.086 0l6.558-6.36a5.56 5.56 0 0 0 0-7.94 5.39 5.39 0 0 0-7.67 0L12 7.05l-.57-.57a5.39 5.39 0 0 0-7.67 0 5.56 5.56 0 0 0 0 7.94l6.558 6.36Z"></path></svg>',
       comment:
         '<svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"></path></svg>',
       image:
