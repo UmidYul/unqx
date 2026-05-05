@@ -29,12 +29,12 @@
     viewerCommentComposer:
       payload.viewerCommentComposer && typeof payload.viewerCommentComposer === "object"
         ? {
-          avatarUrl: String(payload.viewerCommentComposer.avatarUrl || "").trim() || null,
+          avatarUrl: String(payload.viewerCommentComposer.avatarUrl || "").trim() || "/brand/profile-user.svg",
           initials: String(payload.viewerCommentComposer.initials || "").trim() || "UN",
           placeholder: String(payload.viewerCommentComposer.placeholder || "").trim() || "Добавьте ответ...",
         }
         : {
-          avatarUrl: null,
+          avatarUrl: "/brand/profile-user.svg",
           initials: "UN",
           placeholder: "Добавьте ответ...",
         },
@@ -550,10 +550,31 @@
     return null;
   }
 
+  function getWallCommentInlineInput(postId) {
+    const normalizedPostId = String(postId || "").trim();
+    if (!normalizedPostId) {
+      return null;
+    }
+    const candidates = host.querySelectorAll("[data-wall-comment-inline-input]");
+    for (const candidate of candidates) {
+      if (
+        candidate instanceof HTMLTextAreaElement &&
+        String(candidate.getAttribute("data-wall-post-id") || "").trim() === normalizedPostId
+      ) {
+        return candidate;
+      }
+    }
+    return null;
+  }
+
   function readWallCommentDraft(postId) {
-    const input = getWallCommentModalInput(postId);
-    if (input instanceof HTMLTextAreaElement) {
-      return String(input.value || "");
+    const modalInput = getWallCommentModalInput(postId);
+    if (modalInput instanceof HTMLTextAreaElement) {
+      return String(modalInput.value || "");
+    }
+    const inlineInput = getWallCommentInlineInput(postId);
+    if (inlineInput instanceof HTMLTextAreaElement) {
+      return String(inlineInput.value || "");
     }
     return getWallCommentDraft(postId);
   }
@@ -576,6 +597,16 @@
       if (!normalizedPostId) {
         return;
       }
+      const composeCandidates = host.querySelectorAll("[data-wall-comment-compose]");
+      for (const candidate of composeCandidates) {
+        if (
+          candidate instanceof HTMLButtonElement &&
+          String(candidate.getAttribute("data-wall-post-id") || "").trim() === normalizedPostId
+        ) {
+          candidate.focus();
+          return;
+        }
+      }
       const candidates = host.querySelectorAll("[data-wall-comment-open]");
       for (const candidate of candidates) {
         if (
@@ -597,6 +628,10 @@
     const post = state.wall.items.find((item) => item.id === normalizedPostId);
     if (!post) {
       return;
+    }
+    const liveDraft = readWallCommentDraft(normalizedPostId);
+    if (liveDraft !== getWallCommentDraft(normalizedPostId)) {
+      setWallCommentDraft(normalizedPostId, liveDraft);
     }
     state.activeTab = "posts";
     setWallCommentsExpanded(normalizedPostId, true);
@@ -916,7 +951,7 @@
 
   host.addEventListener("input", (event) => {
     const target = event.target instanceof HTMLTextAreaElement ? event.target : null;
-    if (!target || !target.matches("[data-wall-comment-modal-input]")) {
+    if (!target) {
       return;
     }
     const postId = String(target.getAttribute("data-wall-post-id") || "").trim();
@@ -926,6 +961,12 @@
     setWallCommentDraft(postId, target.value);
     if (target.value !== getWallCommentDraft(postId)) {
       target.value = getWallCommentDraft(postId);
+    }
+    if (target.matches("[data-wall-comment-inline-input]")) {
+      return;
+    }
+    if (!target.matches("[data-wall-comment-modal-input]")) {
+      return;
     }
     const dialog = target.closest("[data-wall-comment-modal-dialog]");
     const counter = dialog instanceof HTMLElement ? dialog.querySelector("[data-wall-comment-modal-counter]") : null;

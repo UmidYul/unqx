@@ -2385,26 +2385,14 @@ body[data-card-theme] #card-view-root>[data-card-view] {
   min-height: 68px;
   border: 1px solid var(--theme-divider-color, #d8d8d8);
   border-radius: 9999px;
-  background: var(--theme-surface-bg, rgba(127, 127, 127, 0.08)) !important;
-  color: var(--theme-accent-color, #202020) !important;
+  background: var(--theme-surface-bg, rgba(127, 127, 127, 0.08));
+  color: var(--theme-accent-color, #202020);
   display: flex;
   align-items: center;
   gap: 14px;
   padding: 12px 14px;
-  font-size: 15px;
-  font-weight: 600;
-  box-shadow: none !important;
+  box-shadow: none;
   text-align: left;
-}
-
-.unq-wall-comments-compose:hover {
-  opacity: 0.92;
-  background: rgba(127, 127, 127, 0.12) !important;
-}
-
-.unq-wall-comments-compose:focus-visible {
-  outline: 2px solid var(--theme-accent-color, #202020);
-  outline-offset: 2px;
 }
 
 .unq-wall-compose-avatar {
@@ -2427,51 +2415,73 @@ body[data-card-theme] #card-view-root>[data-card-view] {
   object-fit: cover;
 }
 
-.unq-wall-compose-avatar-fallback {
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-}
-
-.unq-wall-compose-placeholder {
+.unq-wall-compose-input {
   min-width: 0;
   flex: 1 1 auto;
+  min-height: 24px;
+  max-height: 84px;
+  border: 0;
+  background: transparent;
   color: var(--theme-muted-color, #7e7e7e);
   font-size: 15px;
   font-weight: 500;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  line-height: 1.4;
+  padding: 0;
+  resize: none;
+  overflow-y: auto;
+  font-family: inherit;
+  caret-color: var(--theme-accent-color, #202020);
 }
 
-.unq-wall-compose-actions {
-  flex: 0 0 auto;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
+.unq-wall-compose-input::placeholder {
+  color: var(--theme-muted-color, #7e7e7e);
+  opacity: 1;
 }
 
-.unq-wall-compose-icon {
+.unq-wall-compose-input:focus {
+  outline: none;
+}
+
+.unq-wall-comments-compose:focus-within {
+  border-color: var(--theme-accent-color, #202020);
+  box-shadow: 0 0 0 2px rgba(127, 127, 127, 0.14);
+}
+
+.unq-wall-compose-expand {
   width: 38px;
   height: 38px;
+  flex: 0 0 auto;
+  border: 0;
   border-radius: 12px;
+  background: transparent !important;
   color: var(--theme-accent-color, #202020);
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  padding: 0;
   opacity: 0.88;
+  box-shadow: none !important;
 }
 
-.unq-wall-compose-icon svg {
+.unq-wall-compose-expand svg {
   width: 23px;
   height: 23px;
 }
 
-.unq-wall-compose-icon-gif {
-  border: 1px solid var(--theme-divider-color, #d8d8d8);
-  font-size: 14px;
-  font-weight: 800;
-  letter-spacing: 0.04em;
+.unq-wall-compose-expand:hover {
+  opacity: 1;
+  background: rgba(127, 127, 127, 0.12) !important;
+}
+
+.unq-wall-compose-expand:focus-visible {
+  outline: 2px solid var(--theme-accent-color, #202020);
+  outline-offset: 2px;
+}
+
+.unq-wall-compose-expand[disabled],
+.unq-wall-compose-input:disabled {
+  opacity: 0.6;
+  cursor: default;
 }
 
 .unq-wall-comment-modal-layer {
@@ -2834,27 +2844,19 @@ body[data-card-theme] #card-view-root>[data-card-view] {
     height: 36px;
   }
 
-  .unq-wall-compose-placeholder {
+  .unq-wall-compose-input {
     font-size: 14px;
   }
 
-  .unq-wall-compose-actions {
-    gap: 6px;
-  }
-
-  .unq-wall-compose-icon {
+  .unq-wall-compose-expand {
     width: 34px;
     height: 34px;
     border-radius: 10px;
   }
 
-  .unq-wall-compose-icon svg {
+  .unq-wall-compose-expand svg {
     width: 20px;
     height: 20px;
-  }
-
-  .unq-wall-compose-icon-gif {
-    font-size: 13px;
   }
 }
 

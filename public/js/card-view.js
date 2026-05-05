@@ -1163,7 +1163,7 @@
         ? options.viewerCommentComposer
         : null;
     const viewerCommentComposer = {
-      avatarUrl: String(viewerCommentComposerRaw?.avatarUrl || "").trim() || null,
+      avatarUrl: String(viewerCommentComposerRaw?.avatarUrl || "").trim() || "/brand/profile-user.svg",
       initials: String(viewerCommentComposerRaw?.initials || "").trim() || "UN",
       placeholder: String(viewerCommentComposerRaw?.placeholder || "").trim() || "Добавьте ответ...",
     };
@@ -1401,26 +1401,33 @@
             const commentsPanelHtml = item.isCommentsExpanded
               ? `
                 <div class="unq-wall-comments">
-                  <button
-                    type="button"
-                    class="interactive-btn unq-wall-comments-compose"
-                    data-wall-comment-compose
-                    data-wall-post-id="${esc(item.id)}"
-                    aria-label="Написать комментарий"
-                    title="Написать комментарий"
-                  >
+                  <div class="unq-wall-comments-compose">
                     <span class="unq-wall-compose-avatar" aria-hidden="true">
-                      ${viewerCommentComposer.avatarUrl
-                        ? `<img src="${esc(viewerCommentComposer.avatarUrl)}" alt="" class="unq-wall-compose-avatar-img" />`
-                        : `<span class="unq-wall-compose-avatar-fallback">${esc(viewerCommentComposer.initials)}</span>`}
+                      <img src="${esc(viewerCommentComposer.avatarUrl)}" alt="" class="unq-wall-compose-avatar-img" />
                     </span>
-                    <span class="unq-wall-compose-placeholder">${esc(viewerCommentComposer.placeholder)}</span>
-                    <span class="unq-wall-compose-actions" aria-hidden="true">
-                      <span class="unq-wall-compose-icon">${iconSvg("image")}</span>
-                      <span class="unq-wall-compose-icon unq-wall-compose-icon-gif">GIF</span>
-                      <span class="unq-wall-compose-icon">${iconSvg("expand")}</span>
-                    </span>
-                  </button>
+                    <label class="sr-only" for="wall-comment-inline-${esc(item.id)}">Комментарий</label>
+                    <textarea
+                      id="wall-comment-inline-${esc(item.id)}"
+                      class="unq-wall-compose-input"
+                      data-wall-comment-inline-input
+                      data-wall-post-id="${esc(item.id)}"
+                      rows="1"
+                      maxlength="${esc(String(WALL_COMMENT_CONTENT_MAX))}"
+                      placeholder="${esc(viewerCommentComposer.placeholder)}"
+                      ${item.isCommentBusy ? "disabled" : ""}
+                    >${esc(item.commentDraft || "")}</textarea>
+                    <button
+                      type="button"
+                      class="interactive-btn unq-wall-compose-expand"
+                      data-wall-comment-compose
+                      data-wall-post-id="${esc(item.id)}"
+                      aria-label="Открыть окно комментария"
+                      title="Открыть окно комментария"
+                      ${item.isCommentBusy ? "disabled" : ""}
+                    >
+                      ${iconSvg("expand")}
+                    </button>
+                  </div>
                   <div class="unq-wall-comments-list${comments.length > WALL_SCROLLABLE_COMMENT_COUNT ? " is-scrollable" : ""}">${commentsHtml}</div>
                 </div>
               `

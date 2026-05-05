@@ -2376,7 +2376,7 @@ router.get(
           ? { title: officialCfg.staffProfileBadgeTitle, line: officialCfg.staffProfileBadgeLine }
           : null;
         const viewerCommentComposer = {
-          avatarUrl: String(viewerProfileCard?.avatarUrl || "").trim() || null,
+          avatarUrl: String(viewerProfileCard?.avatarUrl || "").trim() || "/brand/profile-user.svg",
           initials: getNameInitials(
             viewerSession?.displayName ||
               [viewerSession?.firstName, viewerSession?.lastName].filter(Boolean).join(" ") ||
