@@ -26,6 +26,18 @@
     topBadge: payload.topBadge || null,
     officialUnqBadge: payload.officialUnqBadge && typeof payload.officialUnqBadge === "object" ? payload.officialUnqBadge : null,
     staffBadge: payload.staffBadge && typeof payload.staffBadge === "object" ? payload.staffBadge : null,
+    viewerCommentComposer:
+      payload.viewerCommentComposer && typeof payload.viewerCommentComposer === "object"
+        ? {
+          avatarUrl: String(payload.viewerCommentComposer.avatarUrl || "").trim() || null,
+          initials: String(payload.viewerCommentComposer.initials || "").trim() || "UN",
+          placeholder: String(payload.viewerCommentComposer.placeholder || "").trim() || "Добавьте ответ...",
+        }
+        : {
+          avatarUrl: null,
+          initials: "UN",
+          placeholder: "Добавьте ответ...",
+        },
     trackViaPageRequest: Boolean(payload.trackViaPageRequest),
     slug: String(payload.slug || payload?.card?.slug || "").trim().toUpperCase(),
     wall: normalizeWallPayload(payload.wall),
@@ -301,6 +313,7 @@
       topBadge: state.topBadge,
       officialUnqBadge: state.officialUnqBadge,
       staffBadge: state.staffBadge,
+      viewerCommentComposer: state.viewerCommentComposer,
       wall: buildWallOptions(),
     });
     syncAvatarFallback(root);

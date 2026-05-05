@@ -919,7 +919,11 @@
       heartFilled:
         '<svg class="h-4 w-4" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="m12 21.1-1.1-.9C5.3 15.2 2 12.2 2 8.4 2 5.5 4.3 3.2 7.2 3.2c1.8 0 3.5.9 4.6 2.4 1.1-1.5 2.8-2.4 4.6-2.4 2.9 0 5.2 2.3 5.2 5.2 0 3.8-3.3 6.8-8.9 11.8L12 21.1Z"></path></svg>',
       comment:
-        '<svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 11.5A8.5 8.5 0 0 1 12.5 20H7l-4 2 1.3-4.4A8.5 8.5 0 1 1 21 11.5Z"></path></svg>',
+        '<svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"></path></svg>',
+      image:
+        '<svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"></rect><circle cx="8.2" cy="9" r="1.6"></circle><path d="m6 17 4.6-4.8 3.1 3.1 2.8-2.8L18 14"></path></svg>',
+      expand:
+        '<svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4h5v5M20 4l-7 7M9 20H4v-5M4 20l7-7"></path></svg>',
       linkedin:
         '<svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"></rect><path d="M8 10v6M8 8.2v.1M12 16v-3.2c0-1.2.9-2.1 2-2.1 1.2 0 2 .9 2 2.1V16"></path></svg>',
       tiktok:
@@ -1154,6 +1158,15 @@
     const showPausedBanner = Boolean(options.showPausedBanner);
     const pausedText = String(options.pausedText || "Визитка на паузе - посетители видят заглушку");
     const viewsLabel = String(options.viewsLabel || card.viewsLabel || "0 просмотров");
+    const viewerCommentComposerRaw =
+      options.viewerCommentComposer && typeof options.viewerCommentComposer === "object"
+        ? options.viewerCommentComposer
+        : null;
+    const viewerCommentComposer = {
+      avatarUrl: String(viewerCommentComposerRaw?.avatarUrl || "").trim() || null,
+      initials: String(viewerCommentComposerRaw?.initials || "").trim() || "UN",
+      placeholder: String(viewerCommentComposerRaw?.placeholder || "").trim() || "Добавьте ответ...",
+    };
     const slugPriceLabel =
       Number.isFinite(Number(card.slugPrice)) && Number(card.slugPrice) > 0
         ? `${Number(card.slugPrice).toLocaleString("ru-RU")} сум`
@@ -1388,10 +1401,27 @@
             const commentsPanelHtml = item.isCommentsExpanded
               ? `
                 <div class="unq-wall-comments">
-                  <div class="unq-wall-comments-list${comments.length > WALL_SCROLLABLE_COMMENT_COUNT ? " is-scrollable" : ""}">${commentsHtml}</div>
-                  <button type="button" class="interactive-btn unq-wall-comments-compose" data-wall-comment-compose data-wall-post-id="${esc(item.id)}">
-                    Написать комментарий
+                  <button
+                    type="button"
+                    class="interactive-btn unq-wall-comments-compose"
+                    data-wall-comment-compose
+                    data-wall-post-id="${esc(item.id)}"
+                    aria-label="Написать комментарий"
+                    title="Написать комментарий"
+                  >
+                    <span class="unq-wall-compose-avatar" aria-hidden="true">
+                      ${viewerCommentComposer.avatarUrl
+                        ? `<img src="${esc(viewerCommentComposer.avatarUrl)}" alt="" class="unq-wall-compose-avatar-img" />`
+                        : `<span class="unq-wall-compose-avatar-fallback">${esc(viewerCommentComposer.initials)}</span>`}
+                    </span>
+                    <span class="unq-wall-compose-placeholder">${esc(viewerCommentComposer.placeholder)}</span>
+                    <span class="unq-wall-compose-actions" aria-hidden="true">
+                      <span class="unq-wall-compose-icon">${iconSvg("image")}</span>
+                      <span class="unq-wall-compose-icon unq-wall-compose-icon-gif">GIF</span>
+                      <span class="unq-wall-compose-icon">${iconSvg("expand")}</span>
+                    </span>
                   </button>
+                  <div class="unq-wall-comments-list${comments.length > WALL_SCROLLABLE_COMMENT_COUNT ? " is-scrollable" : ""}">${commentsHtml}</div>
                 </div>
               `
               : "";

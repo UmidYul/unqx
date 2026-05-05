@@ -369,6 +369,17 @@ function isUserMissingColumnError(error) {
   return error.code === "P2022";
 }
 
+function getNameInitials(value, fallback = "UN") {
+  const initials = String(value || "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => (part[0] ? part[0].toUpperCase() : ""))
+    .join("");
+  return initials || fallback;
+}
+
 function mapLegacyCompatiblePublicUser(user) {
   if (!user || typeof user !== "object") {
     return null;
@@ -2287,8 +2298,9 @@ router.get(
           clearPrivateAccessCookie(req, res);
         }
 
-        const viewerUserId = String(getUserSession(req)?.userId || "").trim();
-        const [views, ownerSlugs, verifiedIdentity, wall] = await Promise.all([
+        const viewerSession = getUserSession(req);
+        const viewerUserId = String(viewerSession?.userId || "").trim();
+        const [views, ownerSlugs, verifiedIdentity, wall, viewerProfileCard] = await Promise.all([
           prisma.analyticsView
             ? prisma.analyticsView
               .findMany({
@@ -2319,6 +2331,9 @@ router.get(
               }
               throw error;
             })
+            : Promise.resolve(null),
+          viewerUserId
+            ? findProfileCardByOwnerId(viewerUserId).catch(() => null)
             : Promise.resolve(null),
         ]);
 
@@ -2360,6 +2375,16 @@ router.get(
         const staffBadge = showStaffBadge
           ? { title: officialCfg.staffProfileBadgeTitle, line: officialCfg.staffProfileBadgeLine }
           : null;
+        const viewerCommentComposer = {
+          avatarUrl: String(viewerProfileCard?.avatarUrl || "").trim() || null,
+          initials: getNameInitials(
+            viewerSession?.displayName ||
+              [viewerSession?.firstName, viewerSession?.lastName].filter(Boolean).join(" ") ||
+              viewerSession?.login ||
+              "",
+          ),
+          placeholder: "Добавьте ответ...",
+        };
         res.render("public/card", {
           title: `${card.name} | UNQX`,
           description: `${card.name} on UNQX: digital business card, contacts, links, QR and analytics.`,
@@ -2375,6 +2400,7 @@ router.get(
           score,
           officialUnqBadge,
           staffBadge,
+          viewerCommentComposer,
           noindex: slugRow.status === "private",
           privateAccess: null,
           adminSession: getAdminSession(req),

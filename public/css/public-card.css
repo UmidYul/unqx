@@ -2239,10 +2239,10 @@ body[data-card-theme] #card-view-root>[data-card-view] {
 }
 
 .unq-wall-comments {
-  margin-top: 14px;
-  margin-left: 60px;
+  margin-top: 10px;
+  margin-left: 40px;
   display: grid;
-  gap: 14px;
+  gap: 10px;
 }
 
 .unq-wall-comments-list {
@@ -2260,14 +2260,14 @@ body[data-card-theme] #card-view-root>[data-card-view] {
 .unq-wall-comment {
   position: relative;
   display: grid;
-  grid-template-columns: 10px auto minmax(0, 1fr) auto;
-  gap: 12px;
+  grid-template-columns: 8px auto minmax(0, 1fr) auto;
+  gap: 10px;
   align-items: start;
   padding: 0;
 }
 
 .unq-wall-comment-empty {
-  padding: 0 0 0 22px;
+  padding: 0 0 0 16px;
   text-align: left;
   color: var(--theme-email-color, #646b78);
   font-size: 13px;
@@ -2380,21 +2380,98 @@ body[data-card-theme] #card-view-root>[data-card-view] {
 }
 
 .unq-wall-comments-compose {
-  justify-self: start;
-  min-height: auto;
-  border: 0;
-  background: transparent !important;
+  justify-self: stretch;
+  width: 100%;
+  min-height: 68px;
+  border: 1px solid var(--theme-divider-color, #d8d8d8);
+  border-radius: 9999px;
+  background: var(--theme-surface-bg, rgba(127, 127, 127, 0.08)) !important;
   color: var(--theme-accent-color, #202020) !important;
-  padding: 0;
-  font-size: 13px;
-  font-weight: 700;
-  text-decoration: underline;
-  text-underline-offset: 0.18em;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  font-size: 15px;
+  font-weight: 600;
   box-shadow: none !important;
+  text-align: left;
 }
 
 .unq-wall-comments-compose:hover {
-  opacity: 0.86;
+  opacity: 0.92;
+  background: rgba(127, 127, 127, 0.12) !important;
+}
+
+.unq-wall-comments-compose:focus-visible {
+  outline: 2px solid var(--theme-accent-color, #202020);
+  outline-offset: 2px;
+}
+
+.unq-wall-compose-avatar {
+  width: 40px;
+  height: 40px;
+  flex: 0 0 auto;
+  border-radius: 9999px;
+  overflow: hidden;
+  border: var(--theme-avatar-border, 1px solid #dcdcdc);
+  background: var(--theme-avatar-bg, #efefef);
+  color: var(--theme-avatar-text, #555555);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.unq-wall-compose-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.unq-wall-compose-avatar-fallback {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.unq-wall-compose-placeholder {
+  min-width: 0;
+  flex: 1 1 auto;
+  color: var(--theme-muted-color, #7e7e7e);
+  font-size: 15px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.unq-wall-compose-actions {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.unq-wall-compose-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  color: var(--theme-accent-color, #202020);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.88;
+}
+
+.unq-wall-compose-icon svg {
+  width: 23px;
+  height: 23px;
+}
+
+.unq-wall-compose-icon-gif {
+  border: 1px solid var(--theme-divider-color, #d8d8d8);
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
 }
 
 .unq-wall-comment-modal-layer {
@@ -2728,12 +2805,12 @@ body[data-card-theme] #card-view-root>[data-card-view] {
   }
 
   .unq-wall-comments {
-    margin-left: 48px;
+    margin-left: 30px;
   }
 
   .unq-wall-comment {
-    grid-template-columns: 8px auto minmax(0, 1fr) auto;
-    gap: 10px;
+    grid-template-columns: 6px auto minmax(0, 1fr) auto;
+    gap: 8px;
   }
 
   .unq-wall-comment-avatar {
@@ -2744,6 +2821,40 @@ body[data-card-theme] #card-view-root>[data-card-view] {
   .unq-wall-comment-name,
   .unq-wall-comment-content {
     font-size: 14px;
+  }
+
+  .unq-wall-comments-compose {
+    min-height: 60px;
+    gap: 10px;
+    padding: 10px 12px;
+  }
+
+  .unq-wall-compose-avatar {
+    width: 36px;
+    height: 36px;
+  }
+
+  .unq-wall-compose-placeholder {
+    font-size: 14px;
+  }
+
+  .unq-wall-compose-actions {
+    gap: 6px;
+  }
+
+  .unq-wall-compose-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+  }
+
+  .unq-wall-compose-icon svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .unq-wall-compose-icon-gif {
+    font-size: 13px;
   }
 }
 
