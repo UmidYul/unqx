@@ -2223,7 +2223,7 @@ body[data-card-theme] #card-view-root>[data-card-view] {
   font-size: 12px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
-  margin-left: -4px;
+  margin-left: -8px;
   min-width: 10px;
 }
 
