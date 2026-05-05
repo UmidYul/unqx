@@ -2116,7 +2116,7 @@ body[data-card-theme] #card-view-root>[data-card-view] {
   text-decoration: none;
   border-radius: 9999px;
   max-width: 100%;
-  padding: 0 2px;
+  padding: 0 2px 0 0;
   transition:
     color 0.18s ease,
     opacity 0.18s ease,
@@ -2667,7 +2667,7 @@ body[data-card-theme] #card-view-root>[data-card-view] {
 [data-card-theme="midnight_obsidian"] .unq-wall-comment-empty,
 [data-card-theme="golden_noir"] .unq-wall-comment-empty,
 [data-card-theme="default_dark"] .unq-wall-comment-empty {
-  background: rgba(255, 255, 255, 0.05);
+  background: transparent;
 }
 
 .unq-wall-empty {
