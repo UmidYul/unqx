@@ -2210,6 +2210,7 @@ body[data-card-theme] #card-view-root>[data-card-view] {
 }
 
 .unq-wall-like-btn {
+  margin-left: -4px;
   color: var(--theme-muted-color, #8f8f8f);
 }
 
