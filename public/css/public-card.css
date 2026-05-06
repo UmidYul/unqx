@@ -2172,7 +2172,7 @@ body[data-card-theme] #card-view-root>[data-card-view] {
 .unq-wall-post-content {
   margin-top: 0;
   color: var(--theme-name-color, #242424);
-  font-size: 16px;
+  font-size: 14px;
   line-height: 1.42;
   overflow-wrap: anywhere;
 }
