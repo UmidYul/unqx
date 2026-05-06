@@ -49,13 +49,14 @@ describe("slug page (:slug) templates", () => {
       card: { slug: "ABC123", name: "Alex", tariff: "basic", buttons: [] },
       wall: {
         enabled: true,
-        items: [{ id: "post_1", content: "Первый пост", likesCount: 2, commentsCount: 1 }],
+        items: [{ id: "post_1", content: "Первый пост", likesCount: 2, commentsCount: 1, commentsEnabled: false }],
         pagination: { page: 1, pageSize: 10, total: 1, hasMore: false },
       },
     });
     expect(html).toContain('"wall":{"enabled":true');
     expect(html).toContain('"content":"Первый пост"');
     expect(html).toContain('"commentsCount":1');
+    expect(html).toContain('"commentsEnabled":false');
   });
 
   test("renders slug-state with primary CTA and back navigation", async () => {
@@ -142,6 +143,7 @@ describe("slug page (:slug) templates", () => {
     expect(cardViewSource).toContain("Комментариев пока нет");
     expect(cardViewSource).toContain("data-wall-comment-open");
     expect(cardViewSource).toContain("data-wall-comment-compose");
+    expect(cardViewSource).toContain("Комментарии отключены автором.");
     expect(cardViewSource).not.toContain("data-wall-comment-modal-submit");
     expect(cardViewSource).not.toContain("data-wall-comment-modal-input");
     expect(cardViewSource).not.toContain("data-wall-comment-submit");
@@ -158,6 +160,7 @@ describe("slug page (:slug) templates", () => {
     expect(publicCardSource).not.toContain("wallCommentModalPostId");
     expect(publicCardSource).not.toContain("data-wall-comment-modal-submit");
     expect(publicCardSource).toContain("data-wall-comment-compose");
+    expect(publicCardSource).toContain("currentPost.commentsEnabled === false");
     expect(publicCardSource).toContain("target.closest(\"[data-wall-share]\")");
     expect(publicCardSource).toContain("startsWith(\"#wall-post-\")");
     expect(publicCardSource).toContain("verified: Boolean(authorSource.verified)");
@@ -165,5 +168,7 @@ describe("slug page (:slug) templates", () => {
     expect(publicCardSource).toContain("unqx_wall_seen_posts:");
     expect(publicCardSource).toContain("state.wallExpandedCommentPostIds.clear()");
     expect(publicCardSource).toContain("Введите комментарий");
+    const cardsApiSource = fs.readFileSync(path.join(process.cwd(), "src", "routes", "api", "cards.js"), "utf-8");
+    expect(cardsApiSource).toContain("Комментарии отключены автором для этого поста");
   });
 });

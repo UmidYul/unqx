@@ -1121,6 +1121,7 @@ router.post(
       const post = await createWallPost({
         ownerId: user.id,
         content: req.body?.content,
+        commentsEnabled: req.body?.commentsEnabled,
       });
       const wallSummary = await getWallSummary(user);
       res.status(201).json({ ok: true, post, wallSummary });
@@ -1163,6 +1164,7 @@ router.patch(
         ownerId: user.id,
         postId: req.params.postId,
         content: req.body?.content,
+        commentsEnabled: req.body?.commentsEnabled,
       });
       res.json({ ok: true, post });
     } catch (error) {
@@ -1245,7 +1247,7 @@ router.post(
         return;
       }
       if (error?.code === "WALL_POST_NOT_COMMENTABLE") {
-        res.status(409).json({ error: "Комментирование доступно только для опубликованных постов", code: error.code });
+        res.status(409).json({ error: error.message || "Комментарии недоступны для этого поста", code: error.code });
         return;
       }
       if (error?.code === "WALL_COMMENT_CONTENT_REQUIRED") {

@@ -129,6 +129,22 @@ function normalizeWallCommentContent(value) {
     .slice(0, WALL_COMMENT_CONTENT_MAX);
 }
 
+function normalizeWallCommentsEnabled(value, fallback = true) {
+  if (typeof value === "boolean") {
+    return value;
+  }
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    if (["true", "1", "on", "yes"].includes(normalized)) {
+      return true;
+    }
+    if (["false", "0", "off", "no"].includes(normalized)) {
+      return false;
+    }
+  }
+  return Boolean(fallback);
+}
+
 function getWallDayWindow(now = new Date(), timezone = env.TIMEZONE || "Asia/Tashkent") {
   const current = now instanceof Date ? now : new Date(now);
   const zonedNow = toZonedTime(current, timezone);
@@ -175,6 +191,7 @@ function getWallPostBaseSelect() {
     id: true,
     ownerId: true,
     content: true,
+    commentsEnabled: true,
     status: true,
     createdAt: true,
     updatedAt: true,
@@ -370,6 +387,7 @@ function mapWallPostItem(row, options = {}) {
     id: postId,
     ownerId,
     content: String(row.content || ""),
+    commentsEnabled: row.commentsEnabled !== false,
     status: String(row.status || "published"),
     statusLabel: toWallStatusLabel(row.status),
     createdAt: row.createdAt || null,
@@ -545,9 +563,10 @@ async function assertWallPostCreateAllowed(tx, ownerId, options = {}) {
   return { todayPostCount, dayWindow };
 }
 
-async function createWallPost({ ownerId, content, now, timezone } = {}) {
+async function createWallPost({ ownerId, content, commentsEnabled, now, timezone } = {}) {
   const normalizedOwnerId = String(ownerId || "").trim();
   const normalizedContent = normalizeWallPostContent(content);
+  const normalizedCommentsEnabled = normalizeWallCommentsEnabled(commentsEnabled, true);
   if (!normalizedOwnerId) {
     const error = new Error("Owner id is required");
     error.code = "WALL_OWNER_REQUIRED";
@@ -565,6 +584,7 @@ async function createWallPost({ ownerId, content, now, timezone } = {}) {
       data: {
         ownerId: normalizedOwnerId,
         content: normalizedContent,
+        commentsEnabled: normalizedCommentsEnabled,
         status: WALL_PUBLIC_STATUS,
       },
       select: getWallPostBaseSelect(),
@@ -599,7 +619,7 @@ async function getOwnerWallPostOrThrow({ postId, ownerId, allowedStatuses = WALL
   return post;
 }
 
-async function updateWallPostContentAsOwner({ postId, ownerId, content }) {
+async function updateWallPostContentAsOwner({ postId, ownerId, content, commentsEnabled }) {
   const normalizedContent = normalizeWallPostContent(content);
   if (!normalizedContent) {
     const error = new Error("Post content is required");
@@ -607,12 +627,14 @@ async function updateWallPostContentAsOwner({ postId, ownerId, content }) {
     throw error;
   }
 
-  await getOwnerWallPostOrThrow({ postId, ownerId });
+  const current = await getOwnerWallPostOrThrow({ postId, ownerId });
+  const normalizedCommentsEnabled = normalizeWallCommentsEnabled(commentsEnabled, current.commentsEnabled !== false);
 
   const updated = await prisma.profileWallPost.update({
     where: { id: postId },
     data: {
       content: normalizedContent,
+      commentsEnabled: normalizedCommentsEnabled,
       updatedAt: new Date(),
     },
     select: getWallPostBaseSelect(),
@@ -886,12 +908,22 @@ async function addWallPostComment({ ownerId, postId, viewerUserId, content, scop
       error.code = "WALL_POST_NOT_COMMENTABLE";
       throw error;
     }
+    if (post.commentsEnabled === false) {
+      const error = new Error("Комментарии отключены автором для этого поста");
+      error.code = "WALL_POST_NOT_COMMENTABLE";
+      throw error;
+    }
   } else {
-    await getPublicWallPostItem({
+    const post = await getPublicWallPostItem({
       ownerId: normalizedOwnerId,
       postId: normalizedPostId,
       viewerUserId: normalizedViewerUserId,
     });
+    if (post.commentsEnabled === false) {
+      const error = new Error("Комментарии отключены автором для этого поста");
+      error.code = "WALL_POST_NOT_COMMENTABLE";
+      throw error;
+    }
   }
 
   await prisma.profileWallPostComment.create({

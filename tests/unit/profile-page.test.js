@@ -38,9 +38,10 @@ describe("profile page", () => {
   test("renders wall composer controls", async () => {
     const html = await renderProfileTemplate();
     expect(html).toContain('id="profile-wall-editor"');
+    expect(html).toContain('id="profile-wall-comments-enabled"');
     expect(html).toContain('id="profile-wall-submit"');
     expect(html).toContain("1 пост в день");
-    expect(html).toContain("лайки и комментарии уже включены");
+    expect(html).toContain("комментарии можно отключать для каждого поста");
   });
 
   test("has modal close button and dialog semantics", async () => {
@@ -80,6 +81,9 @@ describe("profile page", () => {
     expect(source).toContain("data-wall-comments-toggle");
     expect(source).toContain("Комментарий опубликован");
     expect(source).toContain("Комментарий пустой");
+    expect(source).toContain("wallDraftCommentsEnabled");
+    expect(source).toContain("Комментарии отключены автором.");
+    expect(source).toContain("Комментарии отключены автором для этого поста.");
     expect(source).toContain("/api/auth/check-availability?login=");
     expect(source).toContain("profile-settings-login-status");
     expect(source).toContain("PROFILE_LOGIN_AVAILABLE_MESSAGE");
@@ -92,5 +96,7 @@ describe("profile page", () => {
     const source = fs.readFileSync(path.join(process.cwd(), "src", "routes", "api", "profile.js"), "utf-8");
     const emojiRegex = /[🟢🟡🔴✅❌🎁🕐⛔⬜🆕💬💳⏳]/u;
     expect(emojiRegex.test(source)).toBe(false);
+    expect(source).toContain("commentsEnabled: req.body?.commentsEnabled");
+    expect(source).toContain("Комментарии отключены автором для этого поста");
   });
 });

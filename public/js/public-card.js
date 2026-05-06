@@ -122,6 +122,7 @@
             ...item,
             id: String(item.id || "").trim(),
             content: String(item.content || ""),
+            commentsEnabled: item.commentsEnabled !== false,
             status: String(item.status || "published"),
             likesCount: Number(item.likesCount || 0),
             commentsCount: Math.max(0, Number(item.commentsCount || comments.length)),
@@ -597,6 +598,10 @@
 
     const currentPost = state.wall.items.find((item) => item.id === postId);
     if (!currentPost) {
+      return;
+    }
+    if (currentPost.commentsEnabled === false) {
+      showToast("Комментарии отключены автором для этого поста", "error");
       return;
     }
 

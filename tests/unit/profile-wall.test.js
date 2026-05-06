@@ -50,6 +50,7 @@ function buildPost(overrides = {}) {
     id: "post_1",
     ownerId: "user_1",
     content: "Тест",
+    commentsEnabled: true,
     status: "published",
     createdAt: new Date("2026-05-03T10:00:00.000Z"),
     updatedAt: new Date("2026-05-03T10:00:00.000Z"),
@@ -149,6 +150,68 @@ describe("profile wall service", () => {
     ).rejects.toMatchObject({ code: "WALL_POST_LIMIT_REACHED" });
   });
 
+  test("createWallPost enables comments by default", async () => {
+    const createdRow = buildPost();
+    const tx = {
+      $executeRaw: vi.fn().mockResolvedValue(0),
+      profileWallPost: {
+        count: vi.fn().mockResolvedValue(0),
+        create: vi.fn().mockResolvedValue(createdRow),
+      },
+    };
+    mockPrisma.$transaction.mockImplementation(async (callback) => callback(tx));
+
+    const result = await wallService.createWallPost({
+      ownerId: "user_1",
+      content: "Новый пост",
+    });
+
+    expect(tx.profileWallPost.create).toHaveBeenCalledWith({
+      data: {
+        ownerId: "user_1",
+        content: "Новый пост",
+        commentsEnabled: true,
+        status: "published",
+      },
+      select: expect.any(Object),
+    });
+    expect(result).toMatchObject({
+      id: "post_1",
+      commentsEnabled: true,
+    });
+  });
+
+  test("updateWallPostContentAsOwner saves commentsEnabled flag", async () => {
+    mockPrisma.profileWallPost.findFirst.mockResolvedValue(buildPost());
+    mockPrisma.profileWallPost.update.mockResolvedValue(buildPost({
+      content: "Обновлённый пост",
+      commentsEnabled: false,
+      updatedAt: new Date("2026-05-03T12:00:00.000Z"),
+    }));
+    mockPrisma.profileWallPostComment.findMany.mockResolvedValue([]);
+
+    const result = await wallService.updateWallPostContentAsOwner({
+      ownerId: "user_1",
+      postId: "post_1",
+      content: "Обновлённый пост",
+      commentsEnabled: false,
+    });
+
+    expect(mockPrisma.profileWallPost.update).toHaveBeenCalledWith({
+      where: { id: "post_1" },
+      data: {
+        content: "Обновлённый пост",
+        commentsEnabled: false,
+        updatedAt: expect.any(Date),
+      },
+      select: expect.any(Object),
+    });
+    expect(result).toMatchObject({
+      id: "post_1",
+      commentsEnabled: false,
+    });
+  });
+
   test("listPublicWallPosts maps comments and viewerCanDelete", async () => {
     mockPrisma.profileWallPost.findMany.mockResolvedValue([buildPost()]);
     mockPrisma.profileWallPost.count.mockResolvedValue(1);
@@ -175,6 +238,7 @@ describe("profile wall service", () => {
     expect(result.items).toHaveLength(1);
     expect(result.items[0]).toMatchObject({
       id: "post_1",
+      commentsEnabled: true,
       commentsCount: 1,
       comments: [
         {
@@ -308,6 +372,26 @@ describe("profile wall service", () => {
     ).rejects.toMatchObject({ code: "WALL_POST_NOT_COMMENTABLE" });
   });
 
+  test("addWallPostComment rejects when comments are disabled on public post", async () => {
+    mockPrisma.profileWallPost.findFirst
+      .mockResolvedValueOnce(buildPost({ commentsEnabled: false }))
+      .mockResolvedValueOnce(buildPost({ commentsEnabled: false }));
+    mockPrisma.profileWallPostLike.findMany.mockResolvedValue([]);
+    mockPrisma.profileWallPostComment.findMany.mockResolvedValue([]);
+
+    await expect(
+      wallService.addWallPostComment({
+        ownerId: "user_1",
+        postId: "post_1",
+        viewerUserId: "user_3",
+        content: "Новый комментарий",
+      }),
+    ).rejects.toMatchObject({
+      code: "WALL_POST_NOT_COMMENTABLE",
+      message: "Комментарии отключены автором для этого поста",
+    });
+  });
+
   test("deleteWallPostComment rejects deleting someone else's comment", async () => {
     mockPrisma.profileWallPost.findFirst.mockResolvedValue(buildPost());
     mockPrisma.profileWallPostComment.findFirst.mockResolvedValue({
@@ -328,8 +412,9 @@ describe("profile wall service", () => {
 
   test("deleteWallPostComment allows owner to delete someone else's comment", async () => {
     mockPrisma.profileWallPost.findFirst
-      .mockResolvedValueOnce(buildPost())
+      .mockResolvedValueOnce(buildPost({ commentsEnabled: false }))
       .mockResolvedValueOnce(buildPost({
+        commentsEnabled: false,
         _count: { likes: 0 },
       }));
     mockPrisma.profileWallPostComment.findFirst.mockResolvedValue({

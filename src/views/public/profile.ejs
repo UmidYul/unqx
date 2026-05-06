@@ -557,7 +557,7 @@
           <div class="flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center">
             <div>
               <h2 class="text-lg font-bold">ПОСТЫ</h2>
-              <p class="mt-1 text-sm text-neutral-500">1 пост в день, лайки и комментарии уже включены.
+              <p class="mt-1 text-sm text-neutral-500">1 пост в день, лайки включены, комментарии можно отключать для каждого поста.
               </p>
             </div>
           </div>
@@ -573,6 +573,11 @@
             <textarea id="profile-wall-editor" rows="5" maxlength="280"
               placeholder="Напиши короткий пост для своей визитки..."
               class="mt-3 w-full rounded-xl border border-neutral-200 px-3 py-3 text-sm text-neutral-900 outline-none placeholder:text-neutral-400"></textarea>
+            <label for="profile-wall-comments-enabled" class="mt-3 inline-flex items-center gap-3 text-sm text-neutral-700">
+              <input id="profile-wall-comments-enabled" type="checkbox" checked
+                class="h-4 w-4 rounded border border-neutral-300 text-neutral-900 focus:ring-neutral-900">
+              <span>Разрешить комментарии</span>
+            </label>
             <div class="mt-3 flex flex-wrap items-center gap-2">
               <button id="profile-wall-submit" type="button"
                 class="interactive-btn min-h-11 rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white">Опубликовать</button>

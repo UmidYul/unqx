@@ -457,6 +457,7 @@ Email: ${userEmail}
       wallEditorTitle: $("#profile-wall-editor-title"),
       wallEditorNote: $("#profile-wall-editor-note"),
       wallEditor: $("#profile-wall-editor"),
+      wallCommentsEnabled: $("#profile-wall-comments-enabled"),
       wallCounter: $("#profile-wall-counter"),
       wallSubmit: $("#profile-wall-submit"),
       wallCancel: $("#profile-wall-cancel"),
@@ -720,6 +721,7 @@ Email: ${userEmail}
         ...item,
         id,
         content: String(item.content || ""),
+        commentsEnabled: item.commentsEnabled !== false,
         status: String(item.status || "published"),
         statusLabel: String(item.statusLabel || ""),
         likesCount: Number(item.likesCount || 0),
@@ -742,6 +744,7 @@ Email: ${userEmail}
     const resetWallComposer = () => {
       s.wallEditingId = "";
       s.wallDraftContent = "";
+      s.wallDraftCommentsEnabled = true;
     };
 
     const currentWallPost = () => {
@@ -1994,14 +1997,18 @@ Email: ${userEmail}
           el.wallEditorNote.textContent =
             activePost?.status === "hidden"
               ? "Пост скрыт админом. После сохранения текст обновится, но пост останется скрытым."
-              : "Редактирование не тратит дневной лимит.";
+              : "Редактирование не тратит дневной лимит. Комментарии можно включать и отключать для этого поста.";
         } else if (summary.canUseWall && !summary.canPostNow) {
           el.wallEditorNote.textContent = `Сегодня лимит уже использован. Следующий пост после ${fht(summary.nextPostAt)}.`;
         } else if (summary.canUseWall) {
-          el.wallEditorNote.textContent = "Только plain text. Лайки и комментарии работают автоматически на визитке.";
+          el.wallEditorNote.textContent = "Только plain text. Лайки включены, комментарии можно отключать для каждого поста.";
         } else {
           el.wallEditorNote.textContent = "Подключи Премиум, чтобы открыть стену.";
         }
+      }
+      if (el.wallCommentsEnabled instanceof HTMLInputElement) {
+        el.wallCommentsEnabled.checked = s.wallDraftCommentsEnabled !== false;
+        el.wallCommentsEnabled.disabled = !summary.canUseWall || Boolean(s.wallSaving);
       }
       if (el.wallSubmit instanceof HTMLButtonElement) {
         const canSubmit = summary.canUseWall && draftValue.trim().length > 0 && (s.wallEditingId || summary.canPostNow);
@@ -2019,6 +2026,7 @@ Email: ${userEmail}
 
     const renderWallComments = (post) => {
       const comments = Array.isArray(post.comments) ? post.comments : [];
+      const commentsEnabled = post.commentsEnabled !== false;
       const isExpanded = isWallCommentsExpanded(post.id);
       const hasHiddenComments = comments.length > WALL_VISIBLE_COMMENT_COUNT;
       const visibleComments =
@@ -2053,7 +2061,7 @@ Email: ${userEmail}
             </article>
           `)
           .join("")
-        : '<div class="rounded-xl border border-dashed border-neutral-200 px-3 py-4 text-sm text-neutral-500">Комментариев пока нет.</div>';
+        : `<div class="rounded-xl border border-dashed border-neutral-200 px-3 py-4 text-sm text-neutral-500">${commentsEnabled ? "Комментариев пока нет." : "Комментарии отключены автором."}</div>`;
       const commentsToggleHtml = hasHiddenComments
         ? `
           <button
@@ -2066,7 +2074,7 @@ Email: ${userEmail}
         `
         : "";
       const formHtml =
-        post.status === "published"
+        post.status === "published" && commentsEnabled
           ? `
             <div class="profile-wall-comment-form mt-3 rounded-xl border border-neutral-200 bg-neutral-50 p-3">
               <label class="sr-only" for="profile-wall-comment-${esc(post.id)}">Комментарий</label>
@@ -2077,7 +2085,9 @@ Email: ${userEmail}
               </div>
             </div>
           `
-          : '<p class="mt-3 text-xs text-neutral-500">Новые комментарии доступны только для опубликованных постов.</p>';
+          : post.status !== "published"
+            ? '<p class="mt-3 text-xs text-neutral-500">Новые комментарии доступны только для опубликованных постов.</p>'
+            : '<p class="mt-3 text-xs text-neutral-500">Комментарии отключены автором для этого поста.</p>';
       return `
         <section class="mt-4 border-t border-neutral-100 pt-4">
           <div class="flex flex-wrap items-center justify-between gap-2">
@@ -2115,6 +2125,9 @@ Email: ${userEmail}
         el.wallList.innerHTML = items
           .map((item) => {
             const statusTone = item.status === "hidden" ? "text-amber-700 bg-amber-50 border-amber-200" : "text-emerald-700 bg-emerald-50 border-emerald-200";
+            const commentsStatusHtml = item.commentsEnabled === false
+              ? '<span class="inline-flex rounded-full border border-neutral-200 bg-neutral-50 px-2 py-0.5 text-[11px] font-semibold text-neutral-600">Комментарии отключены</span>'
+              : "";
             return `
               <article class="profile-wall-post rounded-xl border border-neutral-200 bg-white p-4" data-wall-post-id="${esc(item.id)}">
                 <div class="flex flex-wrap items-start justify-between gap-3">
@@ -2122,6 +2135,7 @@ Email: ${userEmail}
                     <div class="flex flex-wrap items-center gap-2">
                       <p class="text-sm font-semibold text-neutral-900">${esc(s.user?.displayName || s.user?.firstName || s.user?.username || "UNQX User")}</p>
                       <span class="inline-flex rounded-full border px-2 py-0.5 text-[11px] font-semibold ${statusTone}">${esc(item.statusLabel || (item.status === "hidden" ? "Скрыт" : "Опубликован"))}</span>
+                      ${commentsStatusHtml}
                     </div>
                     <p class="mt-1 text-xs text-neutral-500">${esc(fht(item.createdAt))}${item.isEdited ? " • изменено" : ""}</p>
                   </div>
@@ -2186,6 +2200,7 @@ Email: ${userEmail}
       if (!post) return;
       s.wallEditingId = post.id;
       s.wallDraftContent = String(post.content || "");
+      s.wallDraftCommentsEnabled = post.commentsEnabled !== false;
       updateWallComposerState();
       if (el.wallEditor instanceof HTMLTextAreaElement) {
         el.wallEditor.focus();
@@ -2196,6 +2211,7 @@ Email: ${userEmail}
     const submitWallPost = async () => {
       const summary = normalizeWallSummary(s.wallSummary);
       const content = String(s.wallDraftContent || "").trim();
+      const commentsEnabled = s.wallDraftCommentsEnabled !== false;
       if (!summary.canUseWall || !content) {
         return;
       }
@@ -2212,7 +2228,7 @@ Email: ${userEmail}
           const payload = await api(`/api/profile/wall-posts/${encodeURIComponent(s.wallEditingId)}`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ content }),
+            body: JSON.stringify({ content, commentsEnabled }),
           });
           replaceWallPost(payload.post);
           resetWallComposer();
@@ -2224,7 +2240,7 @@ Email: ${userEmail}
         const payload = await api("/api/profile/wall-posts", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ content }),
+          body: JSON.stringify({ content, commentsEnabled }),
         });
         const nextPost = normalizeWallPost(payload.post);
         s.wallSummary = normalizeWallSummary(payload.wallSummary);
@@ -2262,6 +2278,11 @@ Email: ${userEmail}
 
     const submitWallComment = async (postId) => {
       const normalizedPostId = String(postId || "").trim();
+      const currentPost = Array.isArray(s.wallPosts) ? s.wallPosts.find((item) => item.id === normalizedPostId) : null;
+      if (currentPost && currentPost.commentsEnabled === false) {
+        showModal("Комментарии недоступны", "Комментарии отключены автором для этого поста.");
+        return;
+      }
       const liveDraft = readWallCommentDraft(normalizedPostId);
       if (liveDraft !== getWallCommentDraft(normalizedPostId)) {
         setWallCommentDraft(normalizedPostId, liveDraft);
@@ -3874,6 +3895,12 @@ Email: ${userEmail}
       if (el.wallEditor.value !== s.wallDraftContent) {
         el.wallEditor.value = s.wallDraftContent;
       }
+      updateWallComposerState();
+    });
+
+    el.wallCommentsEnabled?.addEventListener("change", () => {
+      if (!(el.wallCommentsEnabled instanceof HTMLInputElement)) return;
+      s.wallDraftCommentsEnabled = el.wallCommentsEnabled.checked;
       updateWallComposerState();
     });
 

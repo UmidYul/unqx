@@ -439,6 +439,7 @@ model ProfileWallPost {
   ownerId   String                @map("owner_id")
   owner     User                  @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   content   String                @db.VarChar(280)
+  commentsEnabled Boolean         @default(true) @map("comments_enabled")
   status    ProfileWallPostStatus @default(published)
   hiddenAt  DateTime?             @map("hidden_at")
   deletedAt DateTime?             @map("deleted_at")

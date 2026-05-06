@@ -2986,6 +2986,10 @@ router.post(
         res.status(400).json({ error: "Текст комментария обязателен", code: error.code });
         return;
       }
+      if (error?.code === "WALL_POST_NOT_COMMENTABLE") {
+        res.status(409).json({ error: error.message || "Комментарии недоступны для этого поста", code: error.code });
+        return;
+      }
       throw error;
     }
   }),
