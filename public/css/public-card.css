@@ -2084,7 +2084,7 @@ body[data-card-theme] #card-view-root>[data-card-view] {
   min-width: 0;
   flex: 1 1 auto;
   display: grid;
-  gap: 4px;
+  gap: 2px;
 }
 
 .unq-wall-post-top {
@@ -2191,6 +2191,10 @@ body[data-card-theme] #card-view-root>[data-card-view] {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+}
+
+.unq-wall-post-actions .unq-wall-action-group:first-child {
+  margin-left: -3px;
 }
 
 .unq-wall-action-btn {
