@@ -38,4 +38,9 @@ describe("card validation phone", () => {
     const parsed = CardUpsertSchema.parse(basePayload({ extraPhone: "90 123 45 67" }));
     expect(parsed.extraPhone).toBe("+998901234567");
   });
+
+  test("accepts newly added premium card themes", () => {
+    const parsed = CardUpsertSchema.parse(basePayload({ theme: "graffiti_neon" }));
+    expect(parsed.theme).toBe("graffiti_neon");
+  });
 });

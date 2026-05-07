@@ -58,6 +58,18 @@ describe("profile page", () => {
     expect(html).toContain('id="profile-card-name-error"');
   });
 
+  test("renders new theme groups and avatar frame picker", async () => {
+    const html = await renderProfileTemplate();
+    expect(html).toContain("Signature Themes");
+    expect(html).toContain("Graffiti Neon");
+    expect(html).toContain("Color Presets");
+    expect(html).toContain("Рамка аватара");
+    expect(html).toContain('data-theme="graffiti_neon"');
+    expect(html).toContain('data-theme="color_blue"');
+    expect(html).toContain('data-avatar-frame="chrome_ring"');
+    expect(html).toContain('data-avatar-frame="tape_collage"');
+  });
+
   test("renders login inline status for editable login setup", async () => {
     const html = await renderProfileTemplate();
     expect(html).toContain('id="profile-settings-login"');
@@ -90,6 +102,9 @@ describe("profile page", () => {
     expect(source).toContain("PROFILE_LOGIN_CURRENT_MESSAGE");
     expect(source).toContain('s.user?.login || s.user?.username');
     expect(source).toContain("s.user.telegramUsername");
+    expect(source).toContain("PROFILE_AVATAR_FRAMES");
+    expect(source).toContain("avatarFrame: effectiveAvatarFrame");
+    expect(source).toContain('data-avatar-frame');
   });
 
   test("profile API labels are emoji-free", () => {
@@ -97,6 +112,7 @@ describe("profile page", () => {
     const emojiRegex = /[🟢🟡🔴✅❌🎁🕐⛔⬜🆕💬💳⏳]/u;
     expect(emojiRegex.test(source)).toBe(false);
     expect(source).toContain("commentsEnabled: req.body?.commentsEnabled");
-    expect(source).toContain("Комментарии отключены автором для этого поста");
+    expect(source).toContain("normalizeAvatarFrameByPlan");
+    expect(source).toContain("requestedAvatarFrame");
   });
 });

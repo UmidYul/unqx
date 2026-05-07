@@ -1,5 +1,166 @@
 (function initCardViewGlobal() {
-  const THEME_KEYS = ["default_dark", "arctic", "linen", "marble", "forest", "sage_luxe", "midnight_obsidian", "golden_noir", "aurora_codex", "nebula_glass", "velours"];
+  const COLOR_THEME_KEYS = [
+    "color_red",
+    "color_orange",
+    "color_yellow",
+    "color_green",
+    "color_teal",
+    "color_blue",
+    "color_purple",
+    "color_pink",
+  ];
+  const THEME_KEYS = [
+    "default_dark",
+    "arctic",
+    "linen",
+    "marble",
+    "forest",
+    "sage_luxe",
+    "midnight_obsidian",
+    "golden_noir",
+    "aurora_codex",
+    "nebula_glass",
+    "velours",
+    "graffiti_neon",
+    ...COLOR_THEME_KEYS,
+  ];
+  const AVATAR_FRAME_KEYS = [
+    "none",
+    "chrome_ring",
+    "neon_spray",
+    "sticker_bubble",
+    "chain_link",
+    "pixel_glow",
+    "starburst",
+    "drip_outline",
+    "comic_boom",
+    "tape_collage",
+    "orbit_dots",
+  ];
+
+  function hexToRgb(value) {
+    const raw = String(value || "").trim();
+    const match = /^#?([0-9a-f]{6})$/i.exec(raw);
+    if (!match) return null;
+    const normalized = match[1];
+    return {
+      r: Number.parseInt(normalized.slice(0, 2), 16),
+      g: Number.parseInt(normalized.slice(2, 4), 16),
+      b: Number.parseInt(normalized.slice(4, 6), 16),
+    };
+  }
+
+  function rgba(value, alpha) {
+    const rgb = hexToRgb(value);
+    if (!rgb) return value;
+    return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`;
+  }
+
+  function createMonochromeTheme({
+    surfaceBg,
+    base,
+    deep,
+    accent,
+    text,
+    role,
+    muted,
+    buttonText,
+    buttonSecondaryText,
+    badgeText,
+    border,
+    fontFamily = "'Manrope', 'Avenir Next', 'Segoe UI', sans-serif",
+    nameFontWeight = "700",
+    roleLetterSpacing = "0.12em",
+    radius = "24px",
+    isLight = false,
+  }) {
+    return {
+      cardBg: `linear-gradient(165deg, ${deep} 0%, ${base} 54%, ${surfaceBg} 100%)`,
+      cardBgOverlay: "monochrome_flow",
+      surfaceBg: rgba(surfaceBg, isLight ? 0.88 : 0.74),
+      cardBorder: `1px solid ${border}`,
+      surfaceBorder: `1px solid ${rgba(accent, isLight ? 0.26 : 0.24)}`,
+      dividerColor: rgba(accent, isLight ? 0.24 : 0.2),
+      nameColor: text,
+      roleColor: role,
+      mutedColor: muted,
+      accentColor: accent,
+      emailColor: text,
+      buttonPrimaryBg: `linear-gradient(135deg, ${accent}, ${base})`,
+      buttonPrimaryText: buttonText,
+      buttonPrimaryBorder: rgba(accent, 0.78),
+      buttonSecondaryBg: isLight ? rgba("#ffffff", 0.44) : rgba(deep, 0.34),
+      buttonSecondaryText: buttonSecondaryText || text,
+      buttonSecondaryBorder: rgba(accent, isLight ? 0.36 : 0.28),
+      badgeText,
+      badgeBg: isLight ? rgba("#ffffff", 0.22) : rgba("#000000", 0.16),
+      badgeBorder: `1px solid ${rgba(accent, isLight ? 0.3 : 0.24)}`,
+      topLineGradient: `linear-gradient(90deg, transparent, ${rgba(accent, 0.7)}, transparent)`,
+      avatarBg: `linear-gradient(135deg, ${base}, ${surfaceBg})`,
+      avatarText: text,
+      avatarBorder: `2px solid ${rgba(accent, isLight ? 0.42 : 0.28)}`,
+      cardBorderRadius: radius,
+      fontFamily,
+      nameFontStyle: "normal",
+      nameFontWeight,
+      roleLetterSpacing,
+      scoreLabelColor: role,
+      scoreValueColor: text,
+      scoreBarFill: accent,
+      scoreBarTrack: rgba(base, isLight ? 0.18 : 0.4),
+      scorePercentileColor: muted,
+      cardShadow: isLight
+        ? `0 18px 42px ${rgba(base, 0.16)}`
+        : `0 18px 46px ${rgba(deep, 0.52)}`,
+      buttonShineGradient: `linear-gradient(90deg, rgba(255,255,255,0) 0%, ${rgba(text, 0.14)} 45%, ${rgba(
+        text,
+        0.24,
+      )} 50%, ${rgba(text, 0.14)} 55%, rgba(255,255,255,0) 100%)`,
+    };
+  }
+
+  function createGraffitiTheme() {
+    return {
+      cardBg: "linear-gradient(165deg, #12111d 0%, #19142a 48%, #0f1220 100%)",
+      cardBgOverlay: "graffiti_chaos",
+      surfaceBg: "rgba(15, 18, 31, 0.82)",
+      cardBorder: "1px solid rgba(94, 247, 255, 0.28)",
+      surfaceBorder: "1px solid rgba(242, 132, 255, 0.22)",
+      dividerColor: "rgba(139, 255, 94, 0.24)",
+      nameColor: "#f7fbff",
+      roleColor: "#86f7ff",
+      mutedColor: "#f284ff",
+      accentColor: "#9bff62",
+      emailColor: "#dffcff",
+      buttonPrimaryBg: "linear-gradient(135deg, #5ef7ff 0%, #f54fff 52%, #b5ff5e 100%)",
+      buttonPrimaryText: "#11131a",
+      buttonPrimaryBorder: "rgba(94, 247, 255, 0.54)",
+      buttonSecondaryBg: "rgba(16, 20, 32, 0.54)",
+      buttonSecondaryText: "#f5fbff",
+      buttonSecondaryBorder: "rgba(242, 132, 255, 0.34)",
+      badgeText: "#f8a7ff",
+      badgeBg: "rgba(30, 18, 45, 0.52)",
+      badgeBorder: "1px solid rgba(242, 132, 255, 0.34)",
+      topLineGradient: "linear-gradient(90deg, rgba(94,247,255,0), rgba(94,247,255,0.92), rgba(181,255,94,0.9), rgba(245,79,255,0))",
+      avatarBg: "linear-gradient(135deg, #19142a, #10131f)",
+      avatarText: "#f7fbff",
+      avatarBorder: "2px solid rgba(94, 247, 255, 0.26)",
+      cardBorderRadius: "26px",
+      fontFamily: "'Trebuchet MS', 'Arial Black', 'Segoe UI', sans-serif",
+      nameFontStyle: "normal",
+      nameFontWeight: "800",
+      roleLetterSpacing: "0.16em",
+      scoreLabelColor: "#86f7ff",
+      scoreValueColor: "#f7fbff",
+      scoreBarFill: "#9bff62",
+      scoreBarTrack: "rgba(94, 247, 255, 0.18)",
+      scorePercentileColor: "#f284ff",
+      cardShadow: "0 22px 56px rgba(4, 8, 18, 0.7)",
+      buttonShineGradient:
+        "linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.18) 45%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0.18) 55%, rgba(255,255,255,0) 100%)",
+    };
+  }
+
   const THEME_CONFIG = {
     default_dark: {
       cardBg: "#ffffff",
@@ -429,6 +590,104 @@
       cardShadow: "0 18px 44px rgba(24, 3, 9, 0.62)",
       buttonShineGradient: "none",
     },
+    graffiti_neon: createGraffitiTheme(),
+    color_red: createMonochromeTheme({
+      surfaceBg: "#5d0d18",
+      base: "#8e1627",
+      deep: "#3c0710",
+      accent: "#ff6b85",
+      text: "#fff2f5",
+      role: "#ffc5d1",
+      muted: "#ff9eb1",
+      buttonText: "#2b050c",
+      badgeText: "#ffd2db",
+      border: "#8f2438",
+    }),
+    color_orange: createMonochromeTheme({
+      surfaceBg: "#7b3403",
+      base: "#c85600",
+      deep: "#4f2100",
+      accent: "#ffb957",
+      text: "#fff4e5",
+      role: "#ffd39d",
+      muted: "#f5bd6d",
+      buttonText: "#301200",
+      badgeText: "#ffe0b8",
+      border: "#aa4f10",
+    }),
+    color_yellow: createMonochromeTheme({
+      surfaceBg: "#8b6a07",
+      base: "#d1a800",
+      deep: "#5f4600",
+      accent: "#fff3a6",
+      text: "#fffbea",
+      role: "#ffefb7",
+      muted: "#e5ce6e",
+      buttonText: "#332500",
+      badgeText: "#fff7c5",
+      border: "#b18f12",
+      isLight: true,
+    }),
+    color_green: createMonochromeTheme({
+      surfaceBg: "#145726",
+      base: "#1f8f47",
+      deep: "#0d3317",
+      accent: "#b4ff82",
+      text: "#f2fff4",
+      role: "#d7ffd5",
+      muted: "#a7e0a7",
+      buttonText: "#0d2814",
+      badgeText: "#d8ffcc",
+      border: "#2a7d44",
+    }),
+    color_teal: createMonochromeTheme({
+      surfaceBg: "#0b4e54",
+      base: "#0f8c93",
+      deep: "#072f33",
+      accent: "#91f8ff",
+      text: "#ecffff",
+      role: "#c6fbff",
+      muted: "#9ad6da",
+      buttonText: "#07282c",
+      badgeText: "#c8feff",
+      border: "#17727a",
+    }),
+    color_blue: createMonochromeTheme({
+      surfaceBg: "#123d8a",
+      base: "#1d63d6",
+      deep: "#0b234d",
+      accent: "#8fc8ff",
+      text: "#eef6ff",
+      role: "#cde3ff",
+      muted: "#9bbbe5",
+      buttonText: "#0b1f3f",
+      badgeText: "#d4e8ff",
+      border: "#2d5ea8",
+    }),
+    color_purple: createMonochromeTheme({
+      surfaceBg: "#5b2290",
+      base: "#7a2fca",
+      deep: "#33124f",
+      accent: "#d6adff",
+      text: "#fbf4ff",
+      role: "#ecd7ff",
+      muted: "#c8a7e8",
+      buttonText: "#241036",
+      badgeText: "#f0dfff",
+      border: "#6d3ba8",
+    }),
+    color_pink: createMonochromeTheme({
+      surfaceBg: "#8a235f",
+      base: "#d53c84",
+      deep: "#57163b",
+      accent: "#ffb6dc",
+      text: "#fff3f9",
+      role: "#ffd3e8",
+      muted: "#f0aad0",
+      buttonText: "#360d22",
+      badgeText: "#ffdced",
+      border: "#ab3d72",
+    }),
   };
 
   function resolveTheme(themeKey) {
@@ -639,6 +898,58 @@
     if (themeKey === "nebula_glass") {
       return "";
     }
+    if (themeKey === "graffiti_neon") {
+      return `<svg class="unq-ref-overlay-svg" viewBox="0 0 360 600" preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <filter id="gr-noise">
+            <feTurbulence type="fractalNoise" baseFrequency="0.84" numOctaves="2" stitchTiles="stitch"></feTurbulence>
+            <feColorMatrix type="saturate" values="0"></feColorMatrix>
+          </filter>
+          <linearGradient id="gr-cyan" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#5ef7ff" stop-opacity="0"></stop>
+            <stop offset="50%" stop-color="#5ef7ff" stop-opacity="0.88"></stop>
+            <stop offset="100%" stop-color="#5ef7ff" stop-opacity="0"></stop>
+          </linearGradient>
+          <linearGradient id="gr-lime" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#b5ff5e"></stop>
+            <stop offset="100%" stop-color="#5ef7ff"></stop>
+          </linearGradient>
+        </defs>
+        <rect width="100%" height="100%" filter="url(#gr-noise)" opacity="0.14"></rect>
+        <path d="M26 84c52-42 122-46 176-10" stroke="#f284ff" stroke-width="5" stroke-linecap="round" fill="none" opacity="0.34"></path>
+        <path d="M22 96c56-30 126-34 190 2" stroke="url(#gr-cyan)" stroke-width="2.2" stroke-linecap="round" fill="none"></path>
+        <path d="M248 126c18 7 34 18 44 30" stroke="#b5ff5e" stroke-width="3.6" stroke-linecap="round" fill="none" opacity="0.38"></path>
+        <path d="M40 262c72-22 150-12 226 26" stroke="#5ef7ff" stroke-width="2.4" stroke-linecap="round" fill="none" opacity="0.28"></path>
+        <path d="M74 468c72-28 146-30 212-4" stroke="#f284ff" stroke-width="2.1" stroke-linecap="round" fill="none" opacity="0.24"></path>
+        <path d="M294 84c-12 26-14 48-4 70" stroke="#f54fff" stroke-width="3.4" stroke-linecap="round" fill="none" opacity="0.34"></path>
+        <path d="M300 136v34M312 140v22M324 144v30" stroke="url(#gr-lime)" stroke-width="2.5" stroke-linecap="round" opacity="0.55"></path>
+        <path d="M58 168l22-14 14 14 20-20" stroke="#b5ff5e" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.3"></path>
+        <circle cx="54" cy="142" r="5" fill="#5ef7ff" opacity="0.42"></circle>
+        <circle cx="74" cy="138" r="3" fill="#f284ff" opacity="0.5"></circle>
+        <circle cx="90" cy="144" r="2.4" fill="#b5ff5e" opacity="0.52"></circle>
+        <circle cx="286" cy="402" r="3.2" fill="#5ef7ff" opacity="0.44"></circle>
+        <circle cx="304" cy="414" r="2.6" fill="#f284ff" opacity="0.48"></circle>
+        <circle cx="322" cy="398" r="2.4" fill="#b5ff5e" opacity="0.5"></circle>
+        <text x="206" y="96" fill="#f8a7ff" opacity="0.28" font-size="28" font-family="Trebuchet MS, Arial, sans-serif" transform="rotate(-10 206 96)">UNQX</text>
+      </svg>`;
+    }
+    if (COLOR_THEME_KEYS.includes(themeKey)) {
+      return `<svg class="unq-ref-overlay-svg" viewBox="0 0 360 600" preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <linearGradient id="mc-line" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="var(--theme-accent-color)" stop-opacity="0.14"></stop>
+            <stop offset="100%" stop-color="var(--theme-name-color)" stop-opacity="0.36"></stop>
+          </linearGradient>
+        </defs>
+        <circle cx="286" cy="128" r="166" fill="var(--theme-accent-color)" opacity="0.08"></circle>
+        <circle cx="66" cy="498" r="112" fill="var(--theme-name-color)" opacity="0.05"></circle>
+        <path d="M0 100C74 84 150 92 220 116C282 136 322 138 360 126" stroke="url(#mc-line)" stroke-width="0.88" fill="none"></path>
+        <path d="M0 300C72 284 146 292 214 316C278 338 320 340 360 328" stroke="url(#mc-line)" stroke-width="0.78" fill="none"></path>
+        <path d="M0 514C72 498 148 506 216 530C280 552 322 556 360 544" stroke="url(#mc-line)" stroke-width="0.7" fill="none"></path>
+        <rect x="28" y="76" width="138" height="16" rx="8" fill="var(--theme-accent-color)" opacity="0.08"></rect>
+        <rect x="194" y="432" width="134" height="14" rx="7" fill="var(--theme-name-color)" opacity="0.06"></rect>
+      </svg>`;
+    }
     if (themeKey === "velours") {
       return `<svg class="unq-ref-overlay-svg" viewBox="0 0 360 600" preserveAspectRatio="none" aria-hidden="true">
         <defs>
@@ -688,6 +999,128 @@
         </g>
       </svg>`;
     }
+    return "";
+  }
+
+  function renderAvatarFrame(frameKey, themeKey) {
+    const key = AVATAR_FRAME_KEYS.includes(frameKey) ? frameKey : "none";
+    if (key === "none") {
+      return "";
+    }
+    const themeLabel = String(themeKey || "default_dark").replace(/_/g, "-");
+    const frameLabel = key.replace(/_/g, "-");
+    const start = `<span class="unq-ref-avatar-frame unq-ref-avatar-frame--${frameLabel}" data-avatar-frame="${esc(
+      key,
+    )}" data-avatar-frame-theme="${esc(themeLabel)}" aria-hidden="true">`;
+    const end = "</span>";
+
+    if (key === "chrome_ring") {
+      return `${start}
+        <svg class="unq-ref-avatar-frame-svg" viewBox="0 0 140 140" preserveAspectRatio="none">
+          <circle cx="70" cy="70" r="61" class="frame-fill-subtle"></circle>
+          <circle cx="70" cy="70" r="58" class="frame-stroke-thick frame-stroke-metal"></circle>
+          <circle cx="70" cy="70" r="48" class="frame-stroke-thin frame-stroke-glow"></circle>
+          <path d="M28 42c16-12 34-18 54-18" class="frame-stroke-thin frame-stroke-white"></path>
+        </svg>
+      ${end}`;
+    }
+    if (key === "neon_spray") {
+      return `${start}
+        <svg class="unq-ref-avatar-frame-svg" viewBox="0 0 140 140" preserveAspectRatio="none">
+          <circle cx="70" cy="70" r="58" class="frame-stroke-thick frame-stroke-glow"></circle>
+          <circle cx="20" cy="66" r="4" class="frame-fill-accent"></circle>
+          <circle cx="28" cy="52" r="3.2" class="frame-fill-secondary"></circle>
+          <circle cx="32" cy="76" r="2.8" class="frame-fill-primary"></circle>
+          <circle cx="110" cy="26" r="3.6" class="frame-fill-primary"></circle>
+          <circle cx="122" cy="38" r="2.4" class="frame-fill-secondary"></circle>
+          <circle cx="116" cy="52" r="2" class="frame-fill-accent"></circle>
+          <circle cx="104" cy="114" r="4.2" class="frame-fill-secondary"></circle>
+          <circle cx="118" cy="104" r="2.4" class="frame-fill-primary"></circle>
+          <path d="M20 82c9 7 18 11 28 12" class="frame-stroke-thin frame-stroke-primary"></path>
+        </svg>
+      ${end}`;
+    }
+    if (key === "sticker_bubble") {
+      return `${start}
+        <svg class="unq-ref-avatar-frame-svg" viewBox="0 0 140 140" preserveAspectRatio="none">
+          <path class="frame-fill-white" d="M70 12c28 0 50 8 58 28 7 18 6 42-2 58-10 18-32 32-58 32-26 0-48-10-58-28-11-20-8-47 6-64C28 22 47 12 70 12Z"></path>
+          <path class="frame-stroke-thin frame-stroke-primary" d="M70 14c27 0 47 8 55 26 8 17 7 40-1 56-10 18-31 30-54 30-24 0-46-9-56-27C3 80 6 53 20 37 32 22 49 14 70 14Z"></path>
+          <path class="frame-stroke-thin frame-stroke-secondary" d="M24 104c8 8 18 14 30 18"></path>
+        </svg>
+      ${end}`;
+    }
+    if (key === "chain_link") {
+      return `${start}
+        <svg class="unq-ref-avatar-frame-svg" viewBox="0 0 140 140" preserveAspectRatio="none">
+          <circle cx="70" cy="70" r="54" class="frame-stroke-thin frame-stroke-primary frame-dash-chain"></circle>
+          <g class="frame-chain-links">
+            <ellipse cx="70" cy="14" rx="10" ry="6" class="frame-stroke-thin frame-stroke-secondary"></ellipse>
+            <ellipse cx="118" cy="42" rx="10" ry="6" transform="rotate(48 118 42)" class="frame-stroke-thin frame-stroke-secondary"></ellipse>
+            <ellipse cx="126" cy="96" rx="10" ry="6" transform="rotate(90 126 96)" class="frame-stroke-thin frame-stroke-secondary"></ellipse>
+            <ellipse cx="70" cy="126" rx="10" ry="6" class="frame-stroke-thin frame-stroke-secondary"></ellipse>
+            <ellipse cx="18" cy="98" rx="10" ry="6" transform="rotate(130 18 98)" class="frame-stroke-thin frame-stroke-secondary"></ellipse>
+            <ellipse cx="18" cy="42" rx="10" ry="6" transform="rotate(45 18 42)" class="frame-stroke-thin frame-stroke-secondary"></ellipse>
+          </g>
+        </svg>
+      ${end}`;
+    }
+    if (key === "pixel_glow") {
+      return `${start}
+        <svg class="unq-ref-avatar-frame-svg" viewBox="0 0 140 140" preserveAspectRatio="none">
+          <path class="frame-stroke-thick frame-stroke-primary" d="M38 20h64v10h10v18h10v44h-10v18h-10v10H38v-10H28V92H18V48h10V30h10Z"></path>
+          <path class="frame-stroke-thin frame-stroke-glow" d="M44 26h52v8h10v16h8v40h-8v16H96v8H44v-8H34V90h-8V50h8V34h10Z"></path>
+        </svg>
+      ${end}`;
+    }
+    if (key === "starburst") {
+      return `${start}
+        <svg class="unq-ref-avatar-frame-svg" viewBox="0 0 140 140" preserveAspectRatio="none">
+          <path class="frame-fill-subtle" d="M70 6l12 22 25-10-2 26 26 2-18 18 18 18-26 2 2 26-25-10-12 22-12-22-25 10 2-26-26-2 18-18-18-18 26-2-2-26 25 10Z"></path>
+          <path class="frame-stroke-thin frame-stroke-primary" d="M70 8l11 20 24-10-2 24 24 2-18 20 18 18-24 2 2 24-24-10-11 20-11-20-24 10 2-24-24-2 18-18-18-20 24-2-2-24 24 10Z"></path>
+        </svg>
+      ${end}`;
+    }
+    if (key === "drip_outline") {
+      return `${start}
+        <svg class="unq-ref-avatar-frame-svg" viewBox="0 0 140 140" preserveAspectRatio="none">
+          <path class="frame-stroke-thick frame-stroke-secondary" d="M70 14c28 0 50 21 54 47 2 15-2 29-11 40-8 10-10 18-10 26 0 9-7 15-14 15s-12-6-12-13v-14c0-5-3-8-7-8s-7 3-7 8v19c0 6-5 10-11 10s-11-5-11-11c0-13-4-23-11-31C12 92 8 79 10 66c4-30 29-52 60-52Z"></path>
+          <path class="frame-stroke-thin frame-stroke-primary" d="M28 40c12-14 26-20 42-20"></path>
+        </svg>
+      ${end}`;
+    }
+    if (key === "comic_boom") {
+      return `${start}
+        <svg class="unq-ref-avatar-frame-svg" viewBox="0 0 140 140" preserveAspectRatio="none">
+          <path class="frame-fill-white" d="M70 8 82 24 104 16 102 40 126 38 114 58 132 70 114 82 126 102 102 100 104 124 82 116 70 132 58 116 36 124 38 100 14 102 26 82 8 70 26 58 14 38 38 40 36 16 58 24Z"></path>
+          <path class="frame-stroke-thin frame-stroke-primary" d="M70 10 81 26 102 18 100 42 124 40 112 58 130 70 112 82 124 100 100 98 102 122 81 114 70 130 59 114 38 122 40 98 16 100 28 82 10 70 28 58 16 40 40 42 38 18 59 26Z"></path>
+          <text x="70" y="30" text-anchor="middle" class="frame-text-burst">POP</text>
+        </svg>
+      ${end}`;
+    }
+    if (key === "tape_collage") {
+      return `${start}
+        <svg class="unq-ref-avatar-frame-svg" viewBox="0 0 140 140" preserveAspectRatio="none">
+          <rect x="18" y="18" width="38" height="12" rx="3" transform="rotate(-18 18 18)" class="frame-fill-white frame-tape-shadow"></rect>
+          <rect x="92" y="22" width="30" height="12" rx="3" transform="rotate(18 92 22)" class="frame-fill-secondary frame-tape-shadow"></rect>
+          <rect x="18" y="106" width="34" height="12" rx="3" transform="rotate(14 18 106)" class="frame-fill-secondary frame-tape-shadow"></rect>
+          <rect x="92" y="106" width="34" height="12" rx="3" transform="rotate(-12 92 106)" class="frame-fill-white frame-tape-shadow"></rect>
+          <circle cx="70" cy="70" r="54" class="frame-stroke-thin frame-stroke-primary"></circle>
+        </svg>
+      ${end}`;
+    }
+    if (key === "orbit_dots") {
+      return `${start}
+        <svg class="unq-ref-avatar-frame-svg" viewBox="0 0 140 140" preserveAspectRatio="none">
+          <ellipse cx="70" cy="70" rx="58" ry="44" class="frame-stroke-thin frame-stroke-primary"></ellipse>
+          <ellipse cx="70" cy="70" rx="44" ry="58" class="frame-stroke-thin frame-stroke-secondary"></ellipse>
+          <circle cx="22" cy="70" r="5" class="frame-fill-primary"></circle>
+          <circle cx="118" cy="70" r="4.4" class="frame-fill-secondary"></circle>
+          <circle cx="70" cy="18" r="4.6" class="frame-fill-accent"></circle>
+          <circle cx="70" cy="122" r="4" class="frame-fill-white"></circle>
+        </svg>
+      ${end}`;
+    }
+
     return "";
   }
 
@@ -862,6 +1295,10 @@
         const rawTheme = typeof card.theme === "string" ? card.theme : "";
         const normalizedTheme = rawTheme === "royal_ivory" ? "sage_luxe" : rawTheme;
         return THEME_KEYS.includes(normalizedTheme) ? normalizedTheme : "default_dark";
+      })(),
+      avatarFrame: (() => {
+        const rawFrame = String(card.avatarFrame || "").trim().toLowerCase();
+        return plan === "premium" && AVATAR_FRAME_KEYS.includes(rawFrame) ? rawFrame : "none";
       })(),
       customColor: normalizeHexColor(card.customColor),
       name,
@@ -1527,6 +1964,7 @@
             <div class="unq-ref-avatar-wrap">
               ${card.avatarUrl ? `<img src="${esc(card.avatarUrl)}" alt="${esc(card.name)}" class="unq-ref-avatar-img" data-avatar-image />` : ""}
               <div class="unq-ref-avatar-fallback ${card.avatarUrl ? "hidden" : ""}" data-avatar-fallback aria-hidden="${card.avatarUrl ? "true" : "false"}" ${card.avatarUrl ? "hidden" : ""} style="${card.avatarUrl ? "display:none;" : ""}">${esc(card.initials)}</div>
+              ${renderAvatarFrame(card.avatarFrame, theme.key)}
             </div>
             <div class="unq-ref-name-wrap">
               <h1 class="unq-ref-name">${esc(card.name)}</h1>

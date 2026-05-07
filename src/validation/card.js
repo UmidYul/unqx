@@ -1,5 +1,7 @@
 const { z } = require("zod");
 
+const { PROFILE_THEME_KEYS } = require("../services/profile");
+
 const UZ_PHONE_REGEX = /^\+998\d{9}$/;
 
 const optionalString = (max) =>
@@ -116,7 +118,7 @@ const CardUpsertSchema = z.object({
   slug: SlugSchema,
   isActive: z.boolean().default(true),
   tariff: z.enum(["basic", "premium"]).optional(),
-  theme: z.enum(["default_dark", "arctic", "linen", "marble", "forest", "sage_luxe", "midnight_obsidian", "golden_noir", "aurora_codex", "nebula_glass", "velours"]).optional(),
+  theme: z.enum(PROFILE_THEME_KEYS).optional(),
   name: z.string().trim().min(1).max(100),
   phone: requiredUzPhone,
   verified: z.boolean().default(false),

@@ -59,6 +59,22 @@ describe("slug page (:slug) templates", () => {
     expect(html).toContain('"commentsEnabled":false');
   });
 
+  test("passes premium theme and avatar frame through card payload", async () => {
+    const html = await renderView("card.ejs", {
+      card: {
+        slug: "ABC123",
+        name: "Alex",
+        tariff: "premium",
+        theme: "graffiti_neon",
+        avatarFrame: "orbit_dots",
+        buttons: [],
+      },
+    });
+    expect(html).toContain('"theme":"graffiti_neon"');
+    expect(html).toContain('"avatarFrame":"orbit_dots"');
+    expect(html).toContain('data-card-theme="graffiti_neon"');
+  });
+
   test("renders slug-state with primary CTA and back navigation", async () => {
     const html = await renderView("slug-state.ejs", {
       slug: "ABC123",
@@ -98,6 +114,19 @@ describe("slug page (:slug) templates", () => {
     expect(html).toContain("На главную");
   });
 
+  test("renders private slug screen with selected theme and avatar frame", async () => {
+    const html = await renderView("slug-private.ejs", {
+      slug: "ABC123",
+      ownerName: "Owner",
+      ownerAvatar: "https://example.com/avatar.png",
+      theme: "graffiti_neon",
+      avatarFrame: "chrome_ring",
+    });
+    expect(html).toContain('data-card-theme="graffiti_neon"');
+    expect(html).toContain('data-avatar-frame="chrome_ring"');
+    expect(html).toContain("--theme-accent-color:#9bff62");
+  });
+
   test("public page source uses login for public handle and telegramUsername for telegram fallback", () => {
     const source = fs.readFileSync(path.join(process.cwd(), "src", "routes", "pages", "public.js"), "utf-8");
     expect(source).toContain("ownerUsername: ownerHandle ? `@${ownerHandle}` : \"\"");
@@ -125,6 +154,10 @@ describe("slug page (:slug) templates", () => {
     const source = fs.readFileSync(path.join(process.cwd(), "public", "js", "card-view.js"), "utf-8");
     expect(source.includes("Coming soon")).toBe(false);
     expect(source.includes("ABOUT INFO")).toBe(false);
+    expect(source).toContain("graffiti_neon");
+    expect(source).toContain("color_blue");
+    expect(source).toContain("AVATAR_FRAME_KEYS");
+    expect(source).toContain("renderAvatarFrame");
   });
 
   test("card-view source uses localized share states", () => {
@@ -168,7 +201,6 @@ describe("slug page (:slug) templates", () => {
     expect(publicCardSource).toContain("unqx_wall_seen_posts:");
     expect(publicCardSource).toContain("state.wallExpandedCommentPostIds.clear()");
     expect(publicCardSource).toContain("Введите комментарий");
-    const cardsApiSource = fs.readFileSync(path.join(process.cwd(), "src", "routes", "api", "cards.js"), "utf-8");
-    expect(cardsApiSource).toContain("Комментарии отключены автором для этого поста");
+    expect(publicCardSource).toContain("Комментарии отключены автором для этого поста");
   });
 });

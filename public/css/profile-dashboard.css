@@ -1,22 +1,37 @@
-.profile-dashboard #profile-card-theme-options {
+.profile-dashboard .profile-style-choice-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 0.75rem;
 }
 
+.profile-dashboard .profile-style-choice-grid--hero {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.profile-dashboard .profile-style-choice-grid--compact {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
 @media (max-width: 900px) {
-  .profile-dashboard #profile-card-theme-options {
+  .profile-dashboard .profile-style-choice-grid {
     grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  }
+
+  .profile-dashboard .profile-style-choice-grid--compact {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   }
 }
 
 @media (max-width: 600px) {
-  .profile-dashboard #profile-card-theme-options {
+  .profile-dashboard .profile-style-choice-grid,
+  .profile-dashboard .profile-style-choice-grid--compact {
     grid-template-columns: 1fr;
   }
 }
 
-.profile-dashboard .profile-theme-btn {
+.profile-dashboard .profile-style-choice-btn,
+.profile-dashboard .profile-theme-btn,
+.profile-dashboard .profile-avatar-frame-btn {
   min-width: 0;
   max-width: 100%;
   flex-wrap: nowrap;
@@ -25,19 +40,25 @@
   gap: 0.75rem;
 }
 
-.profile-dashboard .profile-theme-btn .min-w-0.flex-1 {
+.profile-dashboard .profile-style-choice-btn .min-w-0.flex-1,
+.profile-dashboard .profile-theme-btn .min-w-0.flex-1,
+.profile-dashboard .profile-avatar-frame-btn .min-w-0.flex-1 {
   min-width: 0;
   flex: 1 1 0%;
   display: block;
 }
 
-.profile-dashboard .profile-theme-btn .block.font-semibold {
+.profile-dashboard .profile-style-choice-btn .block.font-semibold,
+.profile-dashboard .profile-theme-btn .block.font-semibold,
+.profile-dashboard .profile-avatar-frame-btn .block.font-semibold {
   font-size: 14px;
   white-space: normal;
   line-height: 1.2;
 }
 
-.profile-dashboard .profile-theme-btn .block.truncate.text-neutral-500 {
+.profile-dashboard .profile-style-choice-btn .block.truncate.text-neutral-500,
+.profile-dashboard .profile-theme-btn .block.truncate.text-neutral-500,
+.profile-dashboard .profile-avatar-frame-btn .block.truncate.text-neutral-500 {
   font-size: 11px;
   white-space: normal;
   line-height: 1.2;
@@ -85,7 +106,9 @@
 }
 
 /* Add modern styles for theme selection buttons */
-.profile-dashboard .profile-theme-btn {
+.profile-dashboard .profile-style-choice-btn,
+.profile-dashboard .profile-theme-btn,
+.profile-dashboard .profile-avatar-frame-btn {
   display: flex;
   align-items: center;
   width: 100%;
@@ -100,46 +123,76 @@
   gap: 0.75rem;
 }
 
+.profile-dashboard .profile-style-choice-btn:hover,
+.profile-dashboard .profile-style-choice-btn:focus,
 .profile-dashboard .profile-theme-btn:hover,
-.profile-dashboard .profile-theme-btn:focus {
+.profile-dashboard .profile-theme-btn:focus,
+.profile-dashboard .profile-avatar-frame-btn:hover,
+.profile-dashboard .profile-avatar-frame-btn:focus {
   border-color: #bdbdbd;
   background: #f5f7fa;
   box-shadow: 0 2px 8px 0 rgba(60, 60, 60, 0.07);
 }
 
+.profile-dashboard .profile-style-choice-btn[aria-pressed="true"],
+.profile-dashboard .profile-style-choice-btn.selected,
 .profile-dashboard .profile-theme-btn[aria-pressed="true"],
-.profile-dashboard .profile-theme-btn.selected {
+.profile-dashboard .profile-theme-btn.selected,
+.profile-dashboard .profile-avatar-frame-btn[aria-pressed="true"],
+.profile-dashboard .profile-avatar-frame-btn.selected {
   border-color: #111827;
   background: #f0f4ff;
   box-shadow: 0 2px 8px 0 rgba(60, 60, 60, 0.10);
 }
 
+.profile-dashboard .profile-style-choice-btn.bg-neutral-900,
+.profile-dashboard .profile-style-choice-btn[aria-pressed="true"].bg-neutral-900,
+.profile-dashboard .profile-style-choice-btn.selected.bg-neutral-900,
 .profile-dashboard .profile-theme-btn.bg-neutral-900,
 .profile-dashboard .profile-theme-btn[aria-pressed="true"].bg-neutral-900,
-.profile-dashboard .profile-theme-btn.selected.bg-neutral-900 {
+.profile-dashboard .profile-theme-btn.selected.bg-neutral-900,
+.profile-dashboard .profile-avatar-frame-btn.bg-neutral-900,
+.profile-dashboard .profile-avatar-frame-btn[aria-pressed="true"].bg-neutral-900,
+.profile-dashboard .profile-avatar-frame-btn.selected.bg-neutral-900 {
   border-color: #111111;
   background: linear-gradient(135deg, #1f1f22 0%, #101012 100%) !important;
   box-shadow: 0 8px 24px 0 rgba(17, 17, 17, 0.18);
 }
 
-.profile-dashboard .profile-theme-btn .block.font-semibold {
+.profile-dashboard .profile-style-choice-btn .block.font-semibold,
+.profile-dashboard .profile-theme-btn .block.font-semibold,
+.profile-dashboard .profile-avatar-frame-btn .block.font-semibold {
   font-size: 13px;
   color: #222;
 }
 
-.profile-dashboard .profile-theme-btn .block.truncate.text-neutral-500 {
+.profile-dashboard .profile-style-choice-btn .block.truncate.text-neutral-500,
+.profile-dashboard .profile-theme-btn .block.truncate.text-neutral-500,
+.profile-dashboard .profile-avatar-frame-btn .block.truncate.text-neutral-500 {
   color: #888;
 }
 
+.profile-dashboard .profile-style-choice-btn[aria-pressed="true"] .block.font-semibold,
+.profile-dashboard .profile-style-choice-btn.selected .block.font-semibold,
+.profile-dashboard .profile-style-choice-btn.bg-neutral-900 .block.font-semibold,
 .profile-dashboard .profile-theme-btn[aria-pressed="true"] .block.font-semibold,
 .profile-dashboard .profile-theme-btn.selected .block.font-semibold,
-.profile-dashboard .profile-theme-btn.bg-neutral-900 .block.font-semibold {
+.profile-dashboard .profile-theme-btn.bg-neutral-900 .block.font-semibold,
+.profile-dashboard .profile-avatar-frame-btn[aria-pressed="true"] .block.font-semibold,
+.profile-dashboard .profile-avatar-frame-btn.selected .block.font-semibold,
+.profile-dashboard .profile-avatar-frame-btn.bg-neutral-900 .block.font-semibold {
   color: #f8f8f8 !important;
 }
 
+.profile-dashboard .profile-style-choice-btn[aria-pressed="true"] .block.truncate.text-neutral-500,
+.profile-dashboard .profile-style-choice-btn.selected .block.truncate.text-neutral-500,
+.profile-dashboard .profile-style-choice-btn.bg-neutral-900 .block.truncate.text-neutral-500,
 .profile-dashboard .profile-theme-btn[aria-pressed="true"] .block.truncate.text-neutral-500,
 .profile-dashboard .profile-theme-btn.selected .block.truncate.text-neutral-500,
-.profile-dashboard .profile-theme-btn.bg-neutral-900 .block.truncate.text-neutral-500 {
+.profile-dashboard .profile-theme-btn.bg-neutral-900 .block.truncate.text-neutral-500,
+.profile-dashboard .profile-avatar-frame-btn[aria-pressed="true"] .block.truncate.text-neutral-500,
+.profile-dashboard .profile-avatar-frame-btn.selected .block.truncate.text-neutral-500,
+.profile-dashboard .profile-avatar-frame-btn.bg-neutral-900 .block.truncate.text-neutral-500 {
   color: rgba(255, 255, 255, 0.72) !important;
 }
 
@@ -159,12 +212,15 @@
   transition: border-color 0.18s, box-shadow 0.18s;
 }
 
+.profile-dashboard .profile-style-choice-btn[aria-pressed="true"] [data-theme-swatch],
+.profile-dashboard .profile-style-choice-btn.selected [data-theme-swatch],
 .profile-dashboard .profile-theme-btn[aria-pressed="true"] [data-theme-swatch],
 .profile-dashboard .profile-theme-btn.selected [data-theme-swatch] {
   border-color: #2563eb !important;
   box-shadow: 0 2px 8px 0 rgba(37, 99, 235, 0.10);
 }
 
+.profile-dashboard .profile-style-choice-btn.bg-neutral-900 [data-theme-swatch],
 .profile-dashboard .profile-theme-btn.bg-neutral-900 [data-theme-swatch] {
   border-color: rgba(255, 255, 255, 0.88) !important;
   box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.14), 0 8px 18px rgba(0, 0, 0, 0.28) !important;
@@ -182,11 +238,151 @@
   display: none !important;
 }
 
+.profile-dashboard .profile-style-choice-btn[disabled],
+.profile-dashboard .profile-style-choice-btn[aria-disabled="true"],
 .profile-dashboard .profile-theme-btn[disabled],
-.profile-dashboard .profile-theme-btn[aria-disabled="true"] {
+.profile-dashboard .profile-theme-btn[aria-disabled="true"],
+.profile-dashboard .profile-avatar-frame-btn[disabled],
+.profile-dashboard .profile-avatar-frame-btn[aria-disabled="true"] {
   opacity: 0.55;
   cursor: not-allowed;
   filter: grayscale(0.15);
+}
+
+.profile-dashboard [data-frame-lock] {
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+}
+
+.profile-dashboard [data-frame-lock].hidden {
+  display: none !important;
+}
+
+.profile-dashboard .profile-frame-swatch {
+  position: relative;
+  display: inline-flex;
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  min-height: 28px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  border: 2px solid #d4d7dd;
+  background: linear-gradient(145deg, #f5f7fb 0%, #dde3ee 100%);
+  box-shadow: 0 1px 4px rgba(60, 60, 60, 0.12);
+  overflow: hidden;
+}
+
+.profile-dashboard .profile-frame-swatch-core {
+  width: 16px;
+  height: 16px;
+  border-radius: 9999px;
+  background: linear-gradient(145deg, #dfe4ef 0%, #c3cedc 100%);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+}
+
+.profile-dashboard .profile-frame-swatch-deco {
+  position: absolute;
+  inset: 2px;
+  border-radius: 9999px;
+  pointer-events: none;
+}
+
+.profile-dashboard .profile-avatar-frame-btn[aria-pressed="true"] .profile-frame-swatch,
+.profile-dashboard .profile-avatar-frame-btn.selected .profile-frame-swatch {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1), 0 8px 18px rgba(37, 99, 235, 0.16);
+}
+
+.profile-dashboard .profile-frame-swatch--none .profile-frame-swatch-deco {
+  inset: auto 4px 12px;
+  height: 2px;
+  background: rgba(17, 24, 39, 0.24);
+  border-radius: 9999px;
+}
+
+.profile-dashboard .profile-frame-swatch--chrome-ring {
+  border-color: #d4dae7;
+  background: linear-gradient(145deg, #f8fbff 0%, #d7e0ee 100%);
+}
+
+.profile-dashboard .profile-frame-swatch--chrome-ring .profile-frame-swatch-deco {
+  border: 2px solid rgba(229, 236, 247, 0.95);
+  box-shadow: inset 0 0 0 1px rgba(92, 112, 149, 0.22);
+}
+
+.profile-dashboard .profile-frame-swatch--neon-spray {
+  background: linear-gradient(145deg, #1a1730 0%, #111320 100%);
+  border-color: #5ef7ff;
+}
+
+.profile-dashboard .profile-frame-swatch--neon-spray .profile-frame-swatch-core {
+  background: linear-gradient(145deg, #19162f 0%, #0f1020 100%);
+}
+
+.profile-dashboard .profile-frame-swatch--neon-spray .profile-frame-swatch-deco {
+  border: 2px solid rgba(94, 247, 255, 0.86);
+  box-shadow: 0 0 10px rgba(94, 247, 255, 0.72);
+}
+
+.profile-dashboard .profile-frame-swatch--sticker-bubble .profile-frame-swatch-deco {
+  background: rgba(255, 255, 255, 0.92);
+  inset: 0;
+  opacity: 0.5;
+}
+
+.profile-dashboard .profile-frame-swatch--chain-link .profile-frame-swatch-deco {
+  border: 2px dashed rgba(94, 115, 145, 0.58);
+}
+
+.profile-dashboard .profile-frame-swatch--pixel-glow {
+  border-radius: 9px;
+}
+
+.profile-dashboard .profile-frame-swatch--pixel-glow .profile-frame-swatch-deco {
+  inset: 1px;
+  border-radius: 7px;
+  border: 2px solid rgba(92, 112, 149, 0.65);
+  box-shadow: 0 0 10px rgba(37, 99, 235, 0.24);
+}
+
+.profile-dashboard .profile-frame-swatch--starburst .profile-frame-swatch-deco {
+  background: conic-gradient(from 0deg, rgba(255, 187, 0, 0.86), rgba(255, 255, 255, 0) 22%, rgba(255, 187, 0, 0.86) 44%, rgba(255, 255, 255, 0) 66%, rgba(255, 187, 0, 0.86) 88%, rgba(255, 255, 255, 0) 100%);
+  mask: radial-gradient(circle at center, transparent 48%, #000 52%);
+}
+
+.profile-dashboard .profile-frame-swatch--drip-outline {
+  background: linear-gradient(145deg, #2a1430 0%, #171120 100%);
+  border-color: #f284ff;
+}
+
+.profile-dashboard .profile-frame-swatch--drip-outline .profile-frame-swatch-deco {
+  border: 2px solid rgba(242, 132, 255, 0.74);
+  clip-path: polygon(0 0, 100% 0, 100% 66%, 76% 66%, 70% 92%, 56% 66%, 0 66%);
+}
+
+.profile-dashboard .profile-frame-swatch--comic-boom .profile-frame-swatch-deco {
+  inset: -2px;
+  background: radial-gradient(circle at center, rgba(255, 255, 255, 0.92) 0 44%, transparent 46%),
+    conic-gradient(from 0deg, rgba(255, 225, 94, 0.92), rgba(255, 255, 255, 0) 22%, rgba(255, 225, 94, 0.92) 44%, rgba(255, 255, 255, 0) 66%, rgba(255, 225, 94, 0.92) 88%, rgba(255, 255, 255, 0) 100%);
+}
+
+.profile-dashboard .profile-frame-swatch--tape-collage .profile-frame-swatch-deco {
+  inset: 0;
+  background:
+    linear-gradient(22deg, rgba(255, 255, 255, 0.85) 0 26%, transparent 26% 100%),
+    linear-gradient(-25deg, transparent 0 70%, rgba(255, 233, 180, 0.82) 70% 100%);
+}
+
+.profile-dashboard .profile-frame-swatch--orbit-dots .profile-frame-swatch-deco {
+  border: 1.8px solid rgba(92, 112, 149, 0.56);
+  box-shadow:
+    0 -9px 0 -5px rgba(37, 99, 235, 0.7),
+    9px 0 0 -5px rgba(125, 211, 252, 0.76),
+    0 9px 0 -5px rgba(148, 163, 184, 0.72),
+    -9px 0 0 -5px rgba(94, 115, 145, 0.76);
 }
 
 .profile-dashboard #profile-card-live-preview {

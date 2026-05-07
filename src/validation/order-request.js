@@ -1,5 +1,7 @@
 const { z } = require("zod");
 
+const { PROFILE_THEME_KEYS } = require("../services/profile");
+
 const OrderRequestSchema = z.object({
   orderKind: z.enum(["slug_purchase", "subscription_renewal"]).optional(),
   subscriptionMonths: z.coerce.number().int().min(1).max(12).optional(),
@@ -14,21 +16,7 @@ const OrderRequestSchema = z.object({
     .trim()
     .regex(/^[0-9]{3}$/, "Slug must match AAA000 format"),
   tariff: z.literal("premium").default("premium"),
-  theme: z
-    .enum([
-      "default_dark",
-      "arctic",
-      "linen",
-      "marble",
-      "forest",
-      "sage_luxe",
-      "midnight_obsidian",
-      "golden_noir",
-      "aurora_codex",
-      "nebula_glass",
-      "velours",
-    ])
-    .optional(),
+  theme: z.enum(PROFILE_THEME_KEYS).optional(),
   products: z.object({
     digitalCard: z.boolean(),
     bracelet: z.boolean(),

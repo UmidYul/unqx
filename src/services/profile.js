@@ -1,6 +1,6 @@
 const { getSubscriptionSnapshot, normalizeSubscriptionPlan } = require("./subscription");
 
-const PROFILE_THEMES = new Set([
+const PROFILE_THEME_KEYS = [
   "default_dark",
   "arctic",
   "linen",
@@ -12,7 +12,31 @@ const PROFILE_THEMES = new Set([
   "aurora_codex",
   "nebula_glass",
   "velours",
-]);
+  "graffiti_neon",
+  "color_red",
+  "color_orange",
+  "color_yellow",
+  "color_green",
+  "color_teal",
+  "color_blue",
+  "color_purple",
+  "color_pink",
+];
+const PROFILE_THEMES = new Set(PROFILE_THEME_KEYS);
+const PROFILE_AVATAR_FRAME_KEYS = [
+  "none",
+  "chrome_ring",
+  "neon_spray",
+  "sticker_bubble",
+  "chain_link",
+  "pixel_glow",
+  "starburst",
+  "drip_outline",
+  "comic_boom",
+  "tape_collage",
+  "orbit_dots",
+];
+const PROFILE_AVATAR_FRAMES = new Set(PROFILE_AVATAR_FRAME_KEYS);
 const PROFILE_TYPES = new Set(["person", "company"]);
 const BUTTON_TYPES = new Set([
   "phone",
@@ -88,6 +112,17 @@ function normalizeThemeByPlan(theme, effectivePlan) {
   const normalized = normalizeCardThemeKey(theme);
   if (!PROFILE_THEMES.has(normalized)) {
     return "default_dark";
+  }
+  return normalized;
+}
+
+function normalizeAvatarFrameByPlan(frame, effectivePlan) {
+  if (effectivePlan !== "premium") {
+    return "none";
+  }
+  const normalized = String(frame || "").trim().toLowerCase() || "none";
+  if (!PROFILE_AVATAR_FRAMES.has(normalized)) {
+    return "none";
   }
   return normalized;
 }
@@ -186,7 +221,10 @@ function normalizeProfileType(value, options = {}) {
 }
 
 module.exports = {
+  PROFILE_THEME_KEYS,
   PROFILE_THEMES,
+  PROFILE_AVATAR_FRAME_KEYS,
+  PROFILE_AVATAR_FRAMES,
   PROFILE_TYPES,
   BUTTON_TYPES,
   getEffectivePlan,
@@ -198,6 +236,7 @@ module.exports = {
   canAddSlug,
   normalizeCardThemeKey,
   normalizeThemeByPlan,
+  normalizeAvatarFrameByPlan,
   normalizeColor,
   normalizeTags,
   normalizeButtons,

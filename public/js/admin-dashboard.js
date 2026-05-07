@@ -231,6 +231,15 @@
     aurora_codex: { label: "Aurora Scriptum", fill: "#f5ecd8", border: "#8a2a26", text: "#2b1f15" },
     nebula_glass: { label: "Liquid Glass", fill: "#1c1c1e", border: "#9a9a9c", text: "#f1f1f1" },
     velours: { label: "Velours Luxe", fill: "#2d0a12", border: "#5a1828", text: "#c9a55a", bg: "#2d0a12" },
+    graffiti_neon: { label: "Graffiti Neon", fill: "#19142a", border: "#5ef7ff", text: "#9bff62", bg: "#19142a" },
+    color_red: { label: "Color Red", fill: "#8e1627", border: "#ff6b85", text: "#fff2f5", bg: "#8e1627" },
+    color_orange: { label: "Color Orange", fill: "#c85600", border: "#ffb957", text: "#fff4e5", bg: "#c85600" },
+    color_yellow: { label: "Color Yellow", fill: "#d1a800", border: "#fff3a6", text: "#332500", bg: "#d1a800" },
+    color_green: { label: "Color Green", fill: "#1f8f47", border: "#b4ff82", text: "#f2fff4", bg: "#1f8f47" },
+    color_teal: { label: "Color Teal", fill: "#0f8c93", border: "#91f8ff", text: "#ecffff", bg: "#0f8c93" },
+    color_blue: { label: "Color Blue", fill: "#1d63d6", border: "#8fc8ff", text: "#eef6ff", bg: "#1d63d6" },
+    color_purple: { label: "Color Purple", fill: "#7a2fca", border: "#d6adff", text: "#fbf4ff", bg: "#7a2fca" },
+    color_pink: { label: "Color Pink", fill: "#d53c84", border: "#ffb6dc", text: "#fff3f9", bg: "#d53c84" },
   };
   function themePill(theme) {
     const id = String(theme || "default_dark").trim();

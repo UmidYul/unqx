@@ -6,7 +6,7 @@ const { prisma } = require("../../db/prisma");
 const { env } = require("../../config/env");
 const { asyncHandler } = require("../../middleware/async");
 const { getAdminSession, requireVerifiedUserPage, getUserSession, logoutUserSession } = require("../../middleware/auth");
-const { getEffectivePlan } = require("../../services/profile");
+const { getEffectivePlan, PROFILE_THEMES, PROFILE_AVATAR_FRAMES } = require("../../services/profile");
 const { absoluteUrl } = require("../../utils/url");
 const { buildLeaderboard, normalizePeriod, normalizeLeaderboardType, getSlugTopBadge, getUserLeaderboardSummary } = require("../../services/leaderboard");
 const { getFeatureSetting } = require("../../services/feature-settings");
@@ -31,7 +31,7 @@ const {
 
 const router = express.Router();
 const defaultSocialImage = absoluteUrl("/brand/logo.PNG");
-const CARD_THEMES = new Set(["default_dark", "arctic", "linen", "marble", "forest", "sage_luxe", "midnight_obsidian", "golden_noir", "aurora_codex", "nebula_glass", "velours"]);
+const CARD_THEMES = PROFILE_THEMES;
 const LEGAL_DOCS_DIR = path.join(env.EXPRESS_APP_DIR, "docs");
 
 function normalizeSafeNextPath(value, fallback = "/profile") {
@@ -547,6 +547,7 @@ async function findProfileCardByOwnerId(ownerId) {
       buttons,
       theme,
       custom_color AS "customColor",
+      avatar_frame AS "avatarFrame",
       show_branding AS "showBranding",
       created_at AS "createdAt",
       updated_at AS "updatedAt"
@@ -800,6 +801,10 @@ function buildPublicCardFromProfile({ slug, user, profileCard, verifiedIdentity,
     tariff: plan,
     theme: CARD_THEMES.has(normalizedCardTheme) ? normalizedCardTheme : "default_dark",
     customColor: profileCard.customColor || "",
+    avatarFrame: (() => {
+      const nextFrame = String(profileCard?.avatarFrame || "").trim().toLowerCase();
+      return PROFILE_AVATAR_FRAMES.has(nextFrame) ? nextFrame : "none";
+    })(),
     phone: "",
     tags: mapProfileTags(profileCard.tags),
     buttons: mapProfileButtons(profileCard.buttons),
@@ -890,6 +895,10 @@ function mapPublicPaymentCardRow(row) {
       return CARD_THEMES.has(theme) ? theme : "default_dark";
     })(),
     customColor: row.profile_custom_color || "",
+    avatarFrame: (() => {
+      const nextFrame = String(row.profile_avatar_frame || "").trim().toLowerCase();
+      return PROFILE_AVATAR_FRAMES.has(nextFrame) ? nextFrame : "none";
+    })(),
   };
   return {
     id: row.id,
@@ -1809,7 +1818,8 @@ router.get(
             pr.avatar_url AS profile_avatar_url,
             pr.tags AS profile_tags_json,
             pr.theme AS profile_theme,
-            pr.custom_color AS profile_custom_color
+            pr.custom_color AS profile_custom_color,
+            pr.avatar_frame AS profile_avatar_frame
           FROM payment_cards pc
           JOIN users u ON u.id = pc.owner_id
           LEFT JOIN profile_cards pr ON pr.owner_id = u.id
@@ -1938,6 +1948,7 @@ router.get(
         buttons,
         theme,
         custom_color AS "customColor",
+        avatar_frame AS "avatarFrame",
         show_branding AS "showBranding",
         views_count  AS "viewsCount",
         created_at   AS "createdAt",
@@ -2279,6 +2290,7 @@ router.get(
                 ownerIsVerified: Boolean(owner?.isVerified),
                 theme: profileCard?.theme || "default_dark",
                 customColor: profileCard?.customColor || "",
+                avatarFrame: profileCard?.avatarFrame || "none",
                 lockedReason: lockedQuery === "expired" ? "expired" : "",
                 noindex: true,
                 adminSession: getAdminSession(req),

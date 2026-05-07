@@ -95,8 +95,31 @@
       "aurora_codex",
       "nebula_glass",
       "velours",
+      "graffiti_neon",
+      "color_red",
+      "color_orange",
+      "color_yellow",
+      "color_green",
+      "color_teal",
+      "color_blue",
+      "color_purple",
+      "color_pink",
+    ];
+    const PROFILE_AVATAR_FRAMES = [
+      "none",
+      "chrome_ring",
+      "neon_spray",
+      "sticker_bubble",
+      "chain_link",
+      "pixel_glow",
+      "starburst",
+      "drip_outline",
+      "comic_boom",
+      "tape_collage",
+      "orbit_dots",
     ];
     const PREMIUM_ONLY_THEMES = new Set(PROFILE_THEMES.filter((theme) => theme !== "default_dark"));
+    const PREMIUM_ONLY_AVATAR_FRAMES = new Set(PROFILE_AVATAR_FRAMES.filter((frame) => frame !== "none"));
     const TELEGRAM_PAYMENT_USERNAME = String(root.getAttribute("data-telegram-bot-username") || "")
       .replace(/^@+/, "")
       .trim();
@@ -165,6 +188,7 @@
         tags: Array.isArray(s.tags) ? [...s.tags] : [],
         buttons: Array.isArray(s.buttons) ? JSON.parse(JSON.stringify(s.buttons)) : [],
         theme: s.theme,
+        avatarFrame: s.avatarFrame,
         showBranding: el.cBranding ? !el.cBranding.checked : true,
         updatedAt: Date.now(),
       };
@@ -238,8 +262,15 @@
       if (Array.isArray(draft.tags)) s.tags = [...draft.tags];
       if (Array.isArray(draft.buttons)) s.buttons = JSON.parse(JSON.stringify(draft.buttons));
       if (typeof draft.theme === "string" && PROFILE_THEMES.includes(draft.theme)) s.theme = draft.theme;
+      const draftAvatarFrame = String(draft.avatarFrame || "").trim().toLowerCase();
+      if (PROFILE_AVATAR_FRAMES.includes(draftAvatarFrame)) {
+        s.avatarFrame = draftAvatarFrame;
+      }
       if (getCurrentPlan() !== "premium" && PREMIUM_ONLY_THEMES.has(s.theme)) {
         s.theme = "default_dark";
+      }
+      if (getCurrentPlan() !== "premium" && PREMIUM_ONLY_AVATAR_FRAMES.has(s.avatarFrame)) {
+        s.avatarFrame = "none";
       }
       if (el.cBranding && hasOwn("showBranding")) el.cBranding.checked = draft.showBranding === false;
       if (el.cBioC) el.cBioC.textContent = `${el.cBio?.value.length || 0}/120`;
@@ -248,6 +279,7 @@
       renderTags && renderTags();
       renderButtons && renderButtons();
       renderTheme && renderTheme();
+      renderFrame && renderFrame();
       renderPreview && renderPreview();
     }
     let scoreChart = null;
@@ -445,6 +477,9 @@ Email: ${userEmail}
       cThemes: $$(".profile-theme-btn"),
       cThemeLock: $("#profile-card-theme-lock-note"),
       cThemeWrap: $("#profile-card-theme-wrap"),
+      cFrames: $$(".profile-avatar-frame-btn"),
+      cFrameLock: $("#profile-card-frame-lock-note"),
+      cFrameWrap: $("#profile-card-frame-wrap"),
       cBranding: $("#profile-card-show-branding"),
       cSave: $("#profile-card-save"),
       cContent: $("#profile-card-content"),
@@ -1812,6 +1847,37 @@ Email: ${userEmail}
       if (el.cBranding) el.cBranding.disabled = !premium;
     };
 
+    const renderFrame = () => {
+      const premium = getCurrentPlan() === "premium";
+      if (el.cFrameLock) el.cFrameLock.classList.toggle("hidden", premium);
+      if (el.cFrameWrap) el.cFrameWrap.classList.toggle("opacity-60", !premium);
+
+      el.cFrames.forEach((button) => {
+        const frameId = button.getAttribute("data-avatar-frame") || "none";
+        const on = frameId === s.avatarFrame;
+        const premiumOnly = PREMIUM_ONLY_AVATAR_FRAMES.has(frameId);
+        const locked = !premium && premiumOnly;
+        button.setAttribute("aria-pressed", on ? "true" : "false");
+        button.classList.toggle("selected", on);
+        button.classList.toggle("bg-neutral-900", on);
+        button.classList.toggle("text-white", on);
+        button.disabled = locked;
+
+        const lockNode = button.querySelector("[data-frame-lock]");
+        if (lockNode instanceof HTMLElement) {
+          lockNode.classList.toggle("hidden", premium || !locked);
+          lockNode.classList.toggle("inline-flex", !premium && locked);
+          if (premium) {
+            lockNode.style.display = "none";
+          } else if (!premium && locked) {
+            lockNode.style.display = "flex";
+          } else {
+            lockNode.style.display = "";
+          }
+        }
+      });
+    };
+
     function buildPreviewCardData() {
       const avatarUrl = String(el.cAv?.getAttribute("src") || "").trim();
       const slugs = Array.isArray(s.slugs) ? s.slugs : [];
@@ -1823,6 +1889,8 @@ Email: ${userEmail}
       const effectivePlan = getCurrentPlan() === "premium" ? "premium" : "none";
       const effectiveTheme =
         effectivePlan === "premium" && PROFILE_THEMES.includes(s.theme) ? s.theme : "default_dark";
+      const effectiveAvatarFrame =
+        effectivePlan === "premium" && PROFILE_AVATAR_FRAMES.includes(s.avatarFrame) ? s.avatarFrame : "none";
       return {
         card: {
           slug: primarySlug?.fullSlug || "UNQ",
@@ -1851,6 +1919,7 @@ Email: ${userEmail}
           verifiedCompany: String(s.user?.verifiedCompany || "").trim(),
           tariff: effectivePlan,
           theme: effectiveTheme,
+          avatarFrame: effectiveAvatarFrame,
           showBranding: el.cBranding ? !el.cBranding.checked : true,
           bio: String(el.cBio?.value || "").trim(),
         },
@@ -1862,6 +1931,7 @@ Email: ${userEmail}
       if (!(el.cPrev instanceof HTMLElement) || typeof window.CardView === "undefined") return;
       const { card, primarySlug } = buildPreviewCardData();
       el.cPrev.dataset.previewTheme = String(card.theme || "default_dark");
+      el.cPrev.dataset.previewFrame = String(card.avatarFrame || "none");
       const slugLabel = primarySlug?.fullSlug || "[UNQ]";
       if (el.cPrevLabel) {
         el.cPrevLabel.textContent = `unqx.uz/${slugLabel}`;
@@ -1935,12 +2005,18 @@ Email: ${userEmail}
       if (plan !== "premium" && PREMIUM_ONLY_THEMES.has(s.theme)) {
         s.theme = "default_dark";
       }
+      const cardAvatarFrame = String(card.avatarFrame || "").trim().toLowerCase();
+      s.avatarFrame = PROFILE_AVATAR_FRAMES.includes(cardAvatarFrame) ? cardAvatarFrame : "none";
+      if (plan !== "premium" && PREMIUM_ONLY_AVATAR_FRAMES.has(s.avatarFrame)) {
+        s.avatarFrame = "none";
+      }
 
       if (el.cBioC) el.cBioC.textContent = `${el.cBio?.value.length || 0}/120`;
 
       renderTags();
       renderButtons();
       renderTheme();
+      renderFrame();
       renderPreview();
 
     };
@@ -3742,6 +3818,7 @@ Email: ${userEmail}
               value: typeof b.url === 'string' ? b.url : (typeof b.value === 'string' ? b.value : ''),
             })),
             theme: s.theme,
+            avatarFrame: s.avatarFrame || "none",
             showBranding: el.cBranding ? !el.cBranding.checked : true,
           }),
         });
@@ -4708,6 +4785,22 @@ Email: ${userEmail}
         s.theme = PROFILE_THEMES.includes(selectedTheme) ? selectedTheme : "default_dark";
         renderTheme();
         renderPreview();
+        saveDraft();
+      }),
+    );
+
+    el.cFrames.forEach((button) =>
+      button.addEventListener("click", () => {
+        const selectedFrame = button.getAttribute("data-avatar-frame") || "none";
+        const premiumOnly = PREMIUM_ONLY_AVATAR_FRAMES.has(selectedFrame);
+        if (premiumOnly && getCurrentPlan() !== "premium") {
+          showModal("Доступно на Премиум", "Эта рамка доступна только для Премиум тарифа.");
+          return;
+        }
+        s.avatarFrame = PROFILE_AVATAR_FRAMES.includes(selectedFrame) ? selectedFrame : "none";
+        renderFrame();
+        renderPreview();
+        saveDraft();
       }),
     );
 

@@ -8,6 +8,8 @@ const { requireUserApi, getUserSession, logoutUserSession } = require("../../mid
 const { requireSameOrigin } = require("../../middleware/same-origin");
 const { requireCsrfToken } = require("../../middleware/csrf");
 const {
+  PROFILE_THEMES,
+  PROFILE_AVATAR_FRAMES,
   getEffectivePlan,
   getSlugLimit,
   getTagLimit,
@@ -15,6 +17,7 @@ const {
   canCreateCard,
   canAccessAnalytics,
   normalizeThemeByPlan,
+  normalizeAvatarFrameByPlan,
   normalizeColor,
   normalizeTags,
   normalizeButtons,
@@ -74,7 +77,7 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 },
 });
 const ALLOWED_MIME = new Set(["image/jpeg", "image/png", "image/webp"]);
-const CARD_THEMES = new Set(["default_dark", "arctic", "linen", "marble", "forest", "sage_luxe", "midnight_obsidian", "golden_noir", "aurora_codex", "nebula_glass", "velours"]);
+const CARD_THEMES = PROFILE_THEMES;
 const normalizeCardThemeKey = (value) => {
   const raw = String(value || "").trim();
   if (raw === "royal_ivory") return "sage_luxe";
@@ -107,6 +110,7 @@ const PROFILE_CARD_BASE_COLUMNS = [
   "buttons",
   "theme",
   "custom_color",
+  "avatar_frame",
   "show_branding",
 ];
 const CARD_THEME_ENUM_CACHE_TTL_MS = 5 * 60 * 1000;
@@ -290,6 +294,7 @@ function mapProfileCardRow(row) {
   const ownerId = row.ownerId ?? row.owner_id ?? null;
   const avatarUrl = row.avatarUrl ?? row.avatar_url ?? "";
   const customColor = row.customColor ?? row.custom_color ?? "";
+  const avatarFrameRaw = row.avatarFrame ?? row.avatar_frame ?? "";
   const extraPhone = row.extraPhone ?? row.extra_phone ?? "";
   const createdAt = row.createdAt ?? row.created_at ?? null;
   const updatedAt = row.updatedAt ?? row.updated_at ?? null;
@@ -313,6 +318,10 @@ function mapProfileCardRow(row) {
       return CARD_THEMES.has(nextTheme) ? nextTheme : "default_dark";
     })(),
     customColor: customColor || "",
+    avatarFrame: (() => {
+      const nextFrame = String(avatarFrameRaw || "").trim().toLowerCase();
+      return PROFILE_AVATAR_FRAMES.has(nextFrame) ? nextFrame : "none";
+    })(),
     showBranding: toBool(showBrandingRaw, true),
     createdAt,
     updatedAt,
@@ -356,6 +365,7 @@ function buildProfileCardColumnValues(input) {
     buttons: JSON.stringify(Array.isArray(input.buttons) ? input.buttons : []),
     theme: input.theme,
     custom_color: input.customColor,
+    avatar_frame: input.avatarFrame,
     show_branding: Boolean(input.showBranding),
   };
 }
@@ -1729,6 +1739,7 @@ router.put(
     const theme = normalizeThemeByPlan(body.theme, effective.plan);
     const themeForDatabase = await normalizeCardThemeForDatabase(theme);
     const customColor = effective.plan === "premium" ? normalizeColor(body.customColor) : null;
+    const avatarFrame = normalizeAvatarFrameByPlan(body.avatarFrame, effective.plan);
     const showBranding =
       effective.plan === "premium"
         ? (typeof body.showBranding === "boolean" ? body.showBranding : true)
@@ -1737,6 +1748,11 @@ router.put(
     if (effective.plan !== "premium") {
       const requestedTheme = String(body.theme || "").trim();
       if (requestedTheme && requestedTheme !== "default_dark") {
+        res.status(403).json({ error: "Upgrade required", code: "UPGRADE_REQUIRED" });
+        return;
+      }
+      const requestedAvatarFrame = String(body.avatarFrame || "").trim().toLowerCase();
+      if (requestedAvatarFrame && requestedAvatarFrame !== "none") {
         res.status(403).json({ error: "Upgrade required", code: "UPGRADE_REQUIRED" });
         return;
       }
@@ -1757,6 +1773,7 @@ router.put(
         buttons,
         theme: themeForDatabase,
         customColor,
+        avatarFrame,
         showBranding,
       });
       await patchOptionalProfileCardFields(tx, user.id, {
