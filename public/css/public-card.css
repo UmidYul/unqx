@@ -1799,11 +1799,6 @@ body[data-card-theme] #card-view-root>[data-card-view] {
   inset: -11px -12px -16px;
 }
 
-.unq-ref-avatar-frame--comic-boom {
-  inset: -15px;
-  filter: drop-shadow(0 10px 14px rgba(17, 17, 17, 0.14));
-}
-
 .unq-ref-avatar-frame--tape-collage {
   inset: -12px;
 }
@@ -3851,8 +3846,7 @@ body[data-card-theme] main.private-card-screen {
   inset: -7px;
 }
 
-.private-card-owner-avatar-wrap .unq-ref-avatar-frame--starburst,
-.private-card-owner-avatar-wrap .unq-ref-avatar-frame--comic-boom {
+.private-card-owner-avatar-wrap .unq-ref-avatar-frame--starburst {
   inset: -9px;
 }
 

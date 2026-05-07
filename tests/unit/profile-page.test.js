@@ -61,13 +61,15 @@ describe("profile page", () => {
   test("renders new theme groups and avatar frame picker", async () => {
     const html = await renderProfileTemplate();
     expect(html).toContain("Signature Themes");
-    expect(html).toContain("Graffiti Neon");
     expect(html).toContain("Color Presets");
     expect(html).toContain("Рамка аватара");
     expect(html).toContain('data-theme="graffiti_neon"');
     expect(html).toContain('data-theme="color_blue"');
     expect(html).toContain('data-avatar-frame="chrome_ring"');
     expect(html).toContain('data-avatar-frame="tape_collage"');
+    expect(html).not.toContain('data-avatar-frame="comic_boom"');
+    expect(html).not.toContain(">Graffiti Neon</p>");
+    expect(html).not.toContain("Comic Boom");
   });
 
   test("renders login inline status for editable login setup", async () => {
@@ -105,6 +107,13 @@ describe("profile page", () => {
     expect(source).toContain("PROFILE_AVATAR_FRAMES");
     expect(source).toContain("avatarFrame: effectiveAvatarFrame");
     expect(source).toContain('data-avatar-frame');
+  });
+
+  test("profile card draft is kept in memory instead of persistent localStorage writes", () => {
+    const source = fs.readFileSync(path.join(process.cwd(), "public", "js", "profile.js"), "utf-8");
+    expect(source).toContain("s.cardDraftDirty");
+    expect(source).toContain("clearLegacyDraftStorage");
+    expect(source).not.toContain("localStorage.setItem(");
   });
 
   test("profile API labels are emoji-free", () => {

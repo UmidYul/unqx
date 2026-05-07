@@ -11,6 +11,7 @@ describe("profile theme and avatar frame normalization", () => {
     expect(PROFILE_THEME_KEYS).toContain("color_blue");
     expect(PROFILE_AVATAR_FRAME_KEYS).toContain("chrome_ring");
     expect(PROFILE_AVATAR_FRAME_KEYS).toContain("orbit_dots");
+    expect(PROFILE_AVATAR_FRAME_KEYS).not.toContain("comic_boom");
   });
 
   test("keeps premium theme and frame for premium plan", () => {
@@ -21,5 +22,9 @@ describe("profile theme and avatar frame normalization", () => {
   test("forces non-premium users to default theme and no frame", () => {
     expect(normalizeThemeByPlan("graffiti_neon", "none")).toBe("default_dark");
     expect(normalizeAvatarFrameByPlan("orbit_dots", "none")).toBe("none");
+  });
+
+  test("normalizes removed comic boom frame to none", () => {
+    expect(normalizeAvatarFrameByPlan("comic_boom", "premium")).toBe("none");
   });
 });

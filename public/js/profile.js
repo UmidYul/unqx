@@ -114,7 +114,6 @@
       "pixel_glow",
       "starburst",
       "drip_outline",
-      "comic_boom",
       "tape_collage",
       "orbit_dots",
     ];
@@ -157,8 +156,7 @@
     };
 
 
-    const DRAFT_KEY = "unqx_profile_card_draft";
-    const DRAFT_CLOCK_SKEW_TOLERANCE_MS = 1000 * 60 * 60 * 6;
+    const LEGACY_DRAFT_KEY = "unqx_profile_card_draft";
 
     const getDraftOwnerKey = () => {
       if (s.user?.id) return `id:${s.user.id}`;
@@ -170,117 +168,139 @@
 
     const getDraftStorageKey = () => {
       const ownerKey = getDraftOwnerKey();
-      return ownerKey ? `${DRAFT_KEY}:${ownerKey}` : DRAFT_KEY;
+      return ownerKey ? `${LEGACY_DRAFT_KEY}:${ownerKey}` : LEGACY_DRAFT_KEY;
+    };
+
+    const clearLegacyDraftStorage = () => {
+      try {
+        const key = getDraftStorageKey();
+        localStorage.removeItem(key);
+        if (key !== LEGACY_DRAFT_KEY) {
+          localStorage.removeItem(LEGACY_DRAFT_KEY);
+        }
+      } catch {
+        // Ignore storage access issues; drafts are no longer persisted.
+      }
+    };
+
+    const normalizeCardTagsState = (tags) =>
+      Array.isArray(tags)
+        ? tags.map((tag) => String(tag || "").trim()).filter(Boolean)
+        : [];
+
+    const normalizeCardButtonState = (button) => {
+      const type = String(button?.type || "other")
+        .trim()
+        .toLowerCase() || "other";
+      const label = typeof button?.label === "string" ? button.label : "";
+      const url =
+        typeof button?.url === "string" && button.url.length > 0
+          ? button.url
+          : typeof button?.href === "string" && button.href.length > 0
+            ? button.href
+            : typeof button?.value === "string"
+              ? button.value
+              : "";
+
+      return { type, label, url };
+    };
+
+    const normalizeEditorButtons = (buttons) =>
+      Array.isArray(buttons)
+        ? buttons.map((button) => {
+          const normalized = normalizeCardButtonState(button);
+          return {
+            ...button,
+            type: normalized.type,
+            label: normalized.label,
+            href: normalized.url,
+            value: normalized.url,
+            url: normalized.url,
+          };
+        })
+        : [];
+
+    const toComparableButtonStateList = (buttons) =>
+      normalizeEditorButtons(buttons).map(({ type, label, url }) => ({ type, label, url }));
+
+    const resolveEditableTheme = (theme) => {
+      const normalizedTheme = PROFILE_THEMES.includes(theme) ? theme : "default_dark";
+      return getCurrentPlan() === "premium" || !PREMIUM_ONLY_THEMES.has(normalizedTheme)
+        ? normalizedTheme
+        : "default_dark";
+    };
+
+    const resolveEditableAvatarFrame = (frame) => {
+      const normalizedFrame = String(frame || "").trim().toLowerCase();
+      const safeFrame = PROFILE_AVATAR_FRAMES.includes(normalizedFrame) ? normalizedFrame : "none";
+      return getCurrentPlan() === "premium" || !PREMIUM_ONLY_AVATAR_FRAMES.has(safeFrame)
+        ? safeFrame
+        : "none";
+    };
+
+    const getSavedCardDraftState = () => {
+      if (!s.user || getCurrentPlan() === "none") return null;
+      const card = s.card || {};
+      return {
+        name: String(card.name || s.user?.displayName || s.user?.firstName || ""),
+        bio: String(card.bio || ""),
+        hashtag: String(card.hashtag || ""),
+        address: String(card.address || ""),
+        postcode: String(card.postcode || ""),
+        email: String(card.email || ""),
+        extraPhone: String(card.extraPhone || ""),
+        tags: normalizeCardTagsState(card.tags),
+        buttons: toComparableButtonStateList(card.buttons),
+        theme: resolveEditableTheme(card.theme),
+        avatarFrame: resolveEditableAvatarFrame(card.avatarFrame),
+        showBranding: card.showBranding !== false,
+      };
+    };
+
+    const getCurrentCardDraftState = () => {
+      if (!(el.cName instanceof HTMLInputElement) || getCurrentPlan() === "none") return null;
+      return {
+        name: String(el.cName?.value || ""),
+        bio: String(el.cBio?.value || ""),
+        hashtag: String(el.cHashtag?.value || ""),
+        address: String(el.cAddress?.value || ""),
+        postcode: String(el.cPostcode?.value || ""),
+        email: String(el.cEmail?.value || ""),
+        extraPhone: String(el.cExtraPhone?.value || ""),
+        tags: normalizeCardTagsState(s.tags),
+        buttons: toComparableButtonStateList(s.buttons),
+        theme: resolveEditableTheme(s.theme),
+        avatarFrame: resolveEditableAvatarFrame(s.avatarFrame),
+        showBranding: el.cBranding ? !el.cBranding.checked : true,
+      };
+    };
+
+    const syncCardDraftState = () => {
+      const savedState = getSavedCardDraftState();
+      const currentState = getCurrentCardDraftState();
+      const dirty =
+        Boolean(savedState && currentState) &&
+        JSON.stringify(savedState) !== JSON.stringify(currentState);
+      s.cardDraftDirty = dirty;
+      return dirty;
     };
 
     function saveDraft() {
-      const ownerKey = getDraftOwnerKey();
-      if (!ownerKey) return;
-      const draft = {
-        ownerKey,
-        name: el.cName?.value || "",
-        bio: el.cBio?.value || "",
-        hashtag: el.cHashtag?.value || "",
-        address: el.cAddress?.value || "",
-        postcode: el.cPostcode?.value || "",
-        email: el.cEmail?.value || "",
-        extraPhone: el.cExtraPhone?.value || "",
-        tags: Array.isArray(s.tags) ? [...s.tags] : [],
-        buttons: Array.isArray(s.buttons) ? JSON.parse(JSON.stringify(s.buttons)) : [],
-        theme: s.theme,
-        avatarFrame: s.avatarFrame,
-        showBranding: el.cBranding ? !el.cBranding.checked : true,
-        updatedAt: Date.now(),
-      };
-      localStorage.setItem(getDraftStorageKey(), JSON.stringify(draft));
+      syncCardDraftState();
     }
 
     function clearDraft() {
-      const key = getDraftStorageKey();
-      localStorage.removeItem(key);
-      if (key !== DRAFT_KEY) {
-        localStorage.removeItem(DRAFT_KEY);
-      }
-    }
-
-    function readDraft() {
-      const draftRaw = localStorage.getItem(getDraftStorageKey());
-      if (!draftRaw) {
-        const legacyRaw = localStorage.getItem(DRAFT_KEY);
-        if (!legacyRaw) return null;
-        try {
-          const legacy = JSON.parse(legacyRaw);
-          const ownerKey = getDraftOwnerKey();
-          if (!legacy || typeof legacy !== "object") return null;
-          if (legacy.ownerKey && ownerKey && legacy.ownerKey === ownerKey) return legacy;
-          return null;
-        } catch {
-          return null;
-        }
-      }
-      try {
-        const draft = JSON.parse(draftRaw);
-        return typeof draft === "object" && draft ? draft : null;
-      } catch {
-        return null;
-      }
-    }
-
-    function isDraftNewerThanCard(draftUpdatedAt, cardUpdatedAt) {
-      if (!draftUpdatedAt) return false;
-      if (!cardUpdatedAt) return true;
-      return draftUpdatedAt > cardUpdatedAt - DRAFT_CLOCK_SKEW_TOLERANCE_MS;
+      s.cardDraftDirty = false;
+      clearLegacyDraftStorage();
     }
 
     function hasPendingDraft() {
-      const draft = readDraft();
-      if (!draft) return false;
-      const draftUpdatedAt = Number(draft.updatedAt || 0);
-      const cardUpdatedAt = s.card?.updatedAt ? new Date(s.card.updatedAt).getTime() : 0;
-      return isDraftNewerThanCard(draftUpdatedAt, cardUpdatedAt);
+      return syncCardDraftState();
     }
 
     function restoreDraft() {
-      if (!s.user) return;
-      const draft = readDraft();
-      if (!draft) return;
-      const ownerKey = getDraftOwnerKey();
-      if (draft.ownerKey && ownerKey && draft.ownerKey !== ownerKey) return;
-      const cardUpdatedAt = s.card?.updatedAt ? new Date(s.card.updatedAt).getTime() : 0;
-      const draftUpdatedAt = Number(draft.updatedAt || 0);
-      if (!isDraftNewerThanCard(draftUpdatedAt, cardUpdatedAt)) return;
-      if (draftUpdatedAt && s.draftRestoredAt && draftUpdatedAt <= s.draftRestoredAt) return;
-
-      const hasOwn = (key) => Object.prototype.hasOwnProperty.call(draft, key);
-      if (el.cName && hasOwn("name")) el.cName.value = draft.name ?? "";
-      if (el.cBio && hasOwn("bio")) el.cBio.value = draft.bio ?? "";
-      if (el.cHashtag && hasOwn("hashtag")) el.cHashtag.value = draft.hashtag ?? "";
-      if (el.cAddress && hasOwn("address")) el.cAddress.value = draft.address ?? "";
-      if (el.cPostcode && hasOwn("postcode")) el.cPostcode.value = draft.postcode ?? "";
-      if (el.cEmail && hasOwn("email")) el.cEmail.value = draft.email ?? "";
-      if (el.cExtraPhone && hasOwn("extraPhone")) el.cExtraPhone.value = draft.extraPhone ?? "";
-      if (Array.isArray(draft.tags)) s.tags = [...draft.tags];
-      if (Array.isArray(draft.buttons)) s.buttons = JSON.parse(JSON.stringify(draft.buttons));
-      if (typeof draft.theme === "string" && PROFILE_THEMES.includes(draft.theme)) s.theme = draft.theme;
-      const draftAvatarFrame = String(draft.avatarFrame || "").trim().toLowerCase();
-      if (PROFILE_AVATAR_FRAMES.includes(draftAvatarFrame)) {
-        s.avatarFrame = draftAvatarFrame;
-      }
-      if (getCurrentPlan() !== "premium" && PREMIUM_ONLY_THEMES.has(s.theme)) {
-        s.theme = "default_dark";
-      }
-      if (getCurrentPlan() !== "premium" && PREMIUM_ONLY_AVATAR_FRAMES.has(s.avatarFrame)) {
-        s.avatarFrame = "none";
-      }
-      if (el.cBranding && hasOwn("showBranding")) el.cBranding.checked = draft.showBranding === false;
-      if (el.cBioC) el.cBioC.textContent = `${el.cBio?.value.length || 0}/120`;
-
-      s.draftRestoredAt = draftUpdatedAt || Date.now();
-      renderTags && renderTags();
-      renderButtons && renderButtons();
-      renderTheme && renderTheme();
-      renderFrame && renderFrame();
-      renderPreview && renderPreview();
+      clearLegacyDraftStorage();
+      syncCardDraftState();
     }
     let scoreChart = null;
     let analyticsCharts = {};
@@ -1794,6 +1814,7 @@ Email: ${userEmail}
             s.buttons = next;
             renderButtons();
             renderPreview();
+            saveDraft();
           },
         });
       }
@@ -1982,25 +2003,7 @@ Email: ${userEmail}
       if (el.cBranding) el.cBranding.checked = card.showBranding === false;
 
       s.tags = Array.isArray(card.tags) ? card.tags.slice(0) : [];
-      // Normalize all button objects to always have 'url' for editing
-      s.buttons = Array.isArray(card.buttons)
-        ? card.buttons.map((b) => {
-          const urlValue =
-            typeof b.url === "string" && b.url.length > 0
-              ? b.url
-              : typeof b.href === "string" && b.href.length > 0
-                ? b.href
-                : typeof b.value === "string"
-                  ? b.value
-                  : "";
-          return {
-            ...b,
-            href: typeof b.href === "string" && b.href.length > 0 ? b.href : urlValue,
-            value: typeof b.value === "string" && b.value.length > 0 ? b.value : urlValue,
-            url: urlValue,
-          };
-        })
-        : [];
+      s.buttons = normalizeEditorButtons(card.buttons);
       s.theme = PROFILE_THEMES.includes(card.theme) ? card.theme : "default_dark";
       if (plan !== "premium" && PREMIUM_ONLY_THEMES.has(s.theme)) {
         s.theme = "default_dark";
@@ -2018,6 +2021,7 @@ Email: ${userEmail}
       renderTheme();
       renderFrame();
       renderPreview();
+      syncCardDraftState();
 
     };
 
@@ -3761,7 +3765,7 @@ Email: ${userEmail}
         if (s.wallSummary.canUseWall) {
           void loadWallPosts();
         }
-        // Восстановить черновик, если он новее данных профиля
+        // Синхронизировать dirty-state и убрать legacy-черновики из localStorage
         restoreDraft();
       } catch (error) {
         if (error?.code === "AUTH_REQUIRED" || error?.code === "ACCOUNT_DISABLED") {

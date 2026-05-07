@@ -158,6 +158,44 @@ describe("slug page (:slug) templates", () => {
     expect(source).toContain("color_blue");
     expect(source).toContain("AVATAR_FRAME_KEYS");
     expect(source).toContain("renderAvatarFrame");
+    expect(source).not.toContain("comic_boom");
+  });
+
+  test("sticker bubble avatar frame keeps a transparent center", () => {
+    const cardViewSource = fs.readFileSync(path.join(process.cwd(), "public", "js", "card-view.js"), "utf-8");
+    const privateViewSource = fs.readFileSync(path.join(process.cwd(), "src", "views", "public", "slug-private.ejs"), "utf-8");
+    expect(cardViewSource).toContain('fill-rule="evenodd"');
+    expect(privateViewSource).toContain('fill-rule="evenodd"');
+    expect(cardViewSource).toContain('M70 20c14 0 27 4 36 11');
+    expect(privateViewSource).toContain('M70 20c14 0 27 4 36 11');
+  });
+
+  test("starburst avatar frame uses centered symmetric outline geometry", () => {
+    const cardViewSource = fs.readFileSync(path.join(process.cwd(), "public", "js", "card-view.js"), "utf-8");
+    const privateViewSource = fs.readFileSync(path.join(process.cwd(), "src", "views", "public", "slug-private.ejs"), "utf-8");
+    expect(cardViewSource).toContain('M70 6L84 29L111 20L104 47L132 54L113 72');
+    expect(privateViewSource).toContain('M70 6L84 29L111 20L104 47L132 54L113 72');
+    expect(cardViewSource).toContain('<circle cx="70" cy="70" r="51.5"');
+    expect(privateViewSource).toContain('<circle cx="70" cy="70" r="51.5"');
+  });
+
+  test("removed comic boom frame falls back to none in templates", async () => {
+    const publicHtml = await renderView("card.ejs", {
+      card: {
+        slug: "ABC123",
+        name: "Alex",
+        tariff: "premium",
+        avatarFrame: "comic_boom",
+        buttons: [],
+      },
+    });
+    const privateHtml = await renderView("slug-private.ejs", {
+      slug: "ABC123",
+      ownerName: "Owner",
+      avatarFrame: "comic_boom",
+    });
+    expect(publicHtml).not.toContain('data-avatar-frame="comic_boom"');
+    expect(privateHtml).not.toContain('data-avatar-frame="comic_boom"');
   });
 
   test("card-view source uses localized share states", () => {

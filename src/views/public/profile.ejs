@@ -77,8 +77,6 @@
       swatchStyle: "border-width:1.5px;border-color:#c9a55a;background:linear-gradient(145deg,#3b0f1a 0%,#2d0a12 100%);",
       premiumRequired: true,
     },
-  ];
-  const graffitiThemes = [
     {
       id: "graffiti_neon",
       label: "Graffiti Neon",
@@ -106,7 +104,6 @@
     { id: "pixel_glow", label: "Pixel Glow", description: "Пиксельная аура", premiumRequired: true },
     { id: "starburst", label: "Starburst", description: "Звёздный взрыв", premiumRequired: true },
     { id: "drip_outline", label: "Drip Outline", description: "Краска с потёками", premiumRequired: true },
-    { id: "comic_boom", label: "Comic Boom", description: "Комикс-бум рамка", premiumRequired: true },
     { id: "tape_collage", label: "Tape Collage", description: "Коллаж из лент", premiumRequired: true },
     { id: "orbit_dots", label: "Orbit Dots", description: "Орбиты и точки", premiumRequired: true },
   ];
@@ -399,14 +396,6 @@
                       <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-400">Signature Themes</p>
                       <div id="profile-card-theme-options" class="profile-style-choice-grid">
                         <% signatureThemes.forEach((item) => { %>
-                          <%- renderThemeButton(item) %>
-                        <% }) %>
-                      </div>
-                    </div>
-                    <div class="space-y-2">
-                      <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-400">Graffiti Neon</p>
-                      <div class="profile-style-choice-grid profile-style-choice-grid--hero">
-                        <% graffitiThemes.forEach((item) => { %>
                           <%- renderThemeButton(item) %>
                         <% }) %>
                       </div>

@@ -363,12 +363,6 @@
   clip-path: polygon(0 0, 100% 0, 100% 66%, 76% 66%, 70% 92%, 56% 66%, 0 66%);
 }
 
-.profile-dashboard .profile-frame-swatch--comic-boom .profile-frame-swatch-deco {
-  inset: -2px;
-  background: radial-gradient(circle at center, rgba(255, 255, 255, 0.92) 0 44%, transparent 46%),
-    conic-gradient(from 0deg, rgba(255, 225, 94, 0.92), rgba(255, 255, 255, 0) 22%, rgba(255, 225, 94, 0.92) 44%, rgba(255, 255, 255, 0) 66%, rgba(255, 225, 94, 0.92) 88%, rgba(255, 255, 255, 0) 100%);
-}
-
 .profile-dashboard .profile-frame-swatch--tape-collage .profile-frame-swatch-deco {
   inset: 0;
   background:

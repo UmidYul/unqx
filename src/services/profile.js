@@ -32,7 +32,6 @@ const PROFILE_AVATAR_FRAME_KEYS = [
   "pixel_glow",
   "starburst",
   "drip_outline",
-  "comic_boom",
   "tape_collage",
   "orbit_dots",
 ];
