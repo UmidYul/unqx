@@ -72,6 +72,21 @@ describe("profile page", () => {
     expect(html).not.toContain("Comic Boom");
   });
 
+  test("renders card editor categories and sticky preview shell", async () => {
+    const html = await renderProfileTemplate();
+    expect(html).toContain('id="profile-card-categories"');
+    expect(html).toContain('data-card-editor-category="main"');
+    expect(html).toContain('data-card-editor-category="links"');
+    expect(html).toContain('data-card-editor-category="contacts"');
+    expect(html).toContain('data-card-editor-category="design"');
+    expect(html).toContain('data-card-editor-panel="main"');
+    expect(html).toContain('data-card-editor-panel="links"');
+    expect(html).toContain('data-card-editor-panel="contacts"');
+    expect(html).toContain('data-card-editor-panel="design"');
+    expect(html).toContain('id="profile-preview-slug-label"');
+    expect(html).toContain("Live Preview");
+  });
+
   test("renders login inline status for editable login setup", async () => {
     const html = await renderProfileTemplate();
     expect(html).toContain('id="profile-settings-login"');
@@ -107,6 +122,10 @@ describe("profile page", () => {
     expect(source).toContain("PROFILE_AVATAR_FRAMES");
     expect(source).toContain("avatarFrame: effectiveAvatarFrame");
     expect(source).toContain('data-avatar-frame');
+    expect(source).toContain("normalizeCardEditorCategory");
+    expect(source).toContain("renderCardEditorCategory");
+    expect(source).toContain('data-card-editor-category');
+    expect(source).toContain('data-card-editor-panel');
   });
 
   test("profile card draft is kept in memory instead of persistent localStorage writes", () => {

@@ -289,165 +289,242 @@
           <section id="profile-card-empty-state"
             class="hidden mt-5 rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-10 text-center"></section>
           <div id="profile-card-content">
-            <div class="profile-form-grid mt-4 grid items-start gap-4 2xl:grid-cols-[minmax(0,1fr)_340px]">
-              <div class="space-y-4">
-                <div>
-                  <label
-                    class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Аватар</label>
-                  <div class="flex flex-wrap items-center gap-3">
-                    <img id="profile-card-avatar-preview" src="/brand/profile-thin.svg" alt="avatar"
-                      class="h-16 w-16 rounded-full border border-neutral-200 object-cover" />
-                    <div class="flex flex-wrap gap-2">
-                      <label for="profile-card-avatar-file"
-                        class="inline-flex min-h-11 cursor-pointer items-center justify-center rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold">Загрузить</label>
-                      <input id="profile-card-avatar-file" type="file" accept="image/png,image/jpeg,image/webp"
-                        class="hidden" />
-                      <button id="profile-card-avatar-remove" type="button"
-                        class="interactive-btn min-h-11 rounded-lg border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-700">Удалить</button>
+            <div class="profile-card-editor-layout mt-4">
+              <div class="profile-card-preview-column">
+                <div class="profile-card-preview-shell">
+                  <div class="profile-card-preview-head">
+                    <div class="min-w-0">
+                      <p class="profile-card-preview-eyebrow">Live Preview</p>
+                      <p id="profile-preview-slug-label" class="profile-card-preview-slug">unqx.uz/[UNQ]</p>
+                    </div>
+                    <a id="profile-preview-open-link" href="#" target="_blank" rel="noopener noreferrer"
+                      class="text-xs font-semibold text-neutral-700 hover:underline">Открыть</a>
+                  </div>
+                  <div class="profile-card-preview-body">
+                    <div id="profile-card-live-preview" class="rounded-2xl border border-neutral-200 bg-white p-3 sm:p-4">
                     </div>
                   </div>
-                  <div id="profile-card-avatar-crop-wrap"
-                    class="mt-3 hidden rounded-xl border border-neutral-200 bg-neutral-50 p-3">
-                    <img id="profile-card-avatar-crop-image" alt="crop" class="max-h-[320px] w-full object-contain" />
-                    <button id="profile-card-avatar-crop-save" type="button"
-                      class="interactive-btn mt-2 min-h-11 rounded-lg bg-neutral-900 px-3 py-1.5 text-xs font-semibold text-white">Сохранить
-                      обрезку</button>
-                  </div>
-                </div>
-
-                <div>
-                  <label class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Имя <span
-                      class="text-red-600">*</span></label>
-                  <input id="profile-card-name" type="text"
-                    class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm" />
-                  <p id="profile-card-name-error" class="mt-1 hidden text-xs text-red-700">Имя обязательно.</p>
-                </div>
-                <div>
-                  <label
-                    class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Bio</label>
-                  <textarea id="profile-card-bio" maxlength="120" rows="3"
-                    class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm"></textarea>
-                  <p id="profile-card-bio-counter" class="mt-1 text-xs text-neutral-500">0/120</p>
-                </div>
-                <div class="grid gap-3 md:grid-cols-2">
-                  <div class="md:col-span-2">
-                    <label class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Нижний
-                      хэштег</label>
-                    <input id="profile-card-hashtag" type="text" placeholder="#UnqPower2026"
-                      class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm" />
-                  </div>
-                </div>
-                <div>
-                  <label
-                    class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Теги</label>
-                  <div class="flex flex-col gap-2 sm:flex-row">
-                    <input id="profile-card-tag-input" type="text" placeholder="#Дизайнер"
-                      class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm" />
-                    <button id="profile-card-tag-add" type="button"
-                      class="interactive-btn min-h-11 rounded-xl border border-neutral-300 px-3 py-2 text-sm sm:w-auto">Добавить</button>
-                  </div>
-                  <div id="profile-card-tags-list" class="mt-2 flex flex-wrap gap-2"></div>
-                </div>
-
-                <div>
-                  <div class="mb-2 flex items-center justify-between">
-                    <label
-                      class="block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Кнопки</label>
-                    <button id="profile-card-button-add" type="button"
-                      class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold">Добавить
-                      кнопку</button>
-                  </div>
-                  <div id="profile-card-buttons-list" class="space-y-2"></div>
-                </div>
-
-                <div class="grid gap-3 md:grid-cols-2">
-                  <div class="md:col-span-2">
-                    <label
-                      class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Адрес</label>
-                    <input id="profile-card-address" type="text" placeholder="Farghona, Mustaqillik 13"
-                      class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm" />
-                  </div>
-                  <div>
-                    <label
-                      class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Индекс</label>
-                    <input id="profile-card-postcode" type="text" placeholder="150100"
-                      class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm" />
-                  </div>
-                  <div>
-                    <label
-                      class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Email</label>
-                    <input id="profile-card-email" type="email" placeholder="unq@uz.com"
-                      class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm" />
-                  </div>
-                  <div class="md:col-span-2">
-                    <label
-                      class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Дополнительный
-                      телефон</label>
-                    <input id="profile-card-extra-phone" type="text" placeholder="+998200001360"
-                      class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm" />
-                  </div>
-                </div>
-
-                <div id="profile-card-theme-wrap">
-                  <label
-                    class="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Тема</label>
-                  <div class="space-y-3">
-                    <div class="space-y-2">
-                      <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-400">Signature Themes</p>
-                      <div id="profile-card-theme-options" class="profile-style-choice-grid">
-                        <% signatureThemes.forEach((item) => { %>
-                          <%- renderThemeButton(item) %>
-                        <% }) %>
-                      </div>
-                    </div>
-                    <div class="space-y-2">
-                      <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-400">Color Presets</p>
-                      <div id="profile-card-color-theme-options" class="profile-style-choice-grid profile-style-choice-grid--compact">
-                        <% colorThemes.forEach((item) => { %>
-                          <%- renderThemeButton(item) %>
-                        <% }) %>
-                      </div>
-                    </div>
-                  </div>
-                  <p id="profile-card-theme-lock-note" class="mt-1 hidden text-xs text-neutral-500">Доступно на Премиум
-                  </p>
-                </div>
-
-                <div id="profile-card-frame-wrap">
-                  <label
-                    class="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Рамка аватара</label>
-                  <div id="profile-card-frame-options" class="profile-style-choice-grid profile-style-choice-grid--compact">
-                    <% avatarFrames.forEach((item) => { %>
-                      <%- renderFrameButton(item) %>
-                    <% }) %>
-                  </div>
-                  <p id="profile-card-frame-lock-note" class="mt-1 hidden text-xs text-neutral-500">Премиум нужен для декоративных рамок</p>
-                </div>
-
-                <label class="inline-flex cursor-pointer items-center justify-between gap-3 text-sm">
-                  <span>Скрыть брендинг UNQX</span>
-                  <span class="relative inline-flex h-6 w-11 shrink-0 items-center">
-                    <input id="profile-card-show-branding" type="checkbox" class="peer sr-only" />
-                    <span
-                      class="block h-6 w-11 rounded-full bg-neutral-300 transition-colors peer-checked:bg-neutral-900"></span>
-                    <span
-                      class="pointer-events-none absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform peer-checked:translate-x-5"></span>
-                  </span>
-                </label>
-
-                <div class="mt-2 flex justify-end">
-                  <button id="profile-card-save" type="button"
-                    class="interactive-btn min-h-11 rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white">Сохранить
-                    визитку</button>
                 </div>
               </div>
 
-              <div class="xl:mt-2">
-                <div class="mb-2 flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center">
-                  <a id="profile-preview-open-link" href="#" target="_blank" rel="noopener noreferrer"
-                    class="text-xs font-semibold text-neutral-700 hover:underline">Открыть</a>
-                </div>
-                <div id="profile-card-live-preview" class="rounded-2xl border border-neutral-200 bg-white p-3 sm:p-4">
+              <div class="profile-card-editor-column">
+                <div class="profile-card-editor-main">
+                  <div id="profile-card-categories" class="profile-card-categories" role="tablist"
+                    aria-label="Разделы визитки">
+                    <button type="button" data-a="card-editor-category" data-card-editor-category="main"
+                      class="interactive-btn profile-card-category-btn is-active" aria-pressed="true">
+                      <span class="profile-card-category-label">Основное</span>
+                      <span class="profile-card-category-note">Аватар, имя и bio</span>
+                    </button>
+                    <button type="button" data-a="card-editor-category" data-card-editor-category="links"
+                      class="interactive-btn profile-card-category-btn" aria-pressed="false">
+                      <span class="profile-card-category-label">Ссылки и теги</span>
+                      <span class="profile-card-category-note">Кнопки и быстрые метки</span>
+                    </button>
+                    <button type="button" data-a="card-editor-category" data-card-editor-category="contacts"
+                      class="interactive-btn profile-card-category-btn" aria-pressed="false">
+                      <span class="profile-card-category-label">Контакты</span>
+                      <span class="profile-card-category-note">Адрес, почта и телефон</span>
+                    </button>
+                    <button type="button" data-a="card-editor-category" data-card-editor-category="design"
+                      class="interactive-btn profile-card-category-btn" aria-pressed="false">
+                      <span class="profile-card-category-label">Оформление</span>
+                      <span class="profile-card-category-note">Тема, рамка и сохранение</span>
+                    </button>
+                  </div>
+
+                  <div class="profile-card-editor-panels">
+                    <section class="profile-card-editor-panel" data-card-editor-panel="main">
+                      <div class="profile-card-editor-panel-head">
+                        <h3 class="profile-card-editor-panel-title">Основное</h3>
+                        <p class="profile-card-editor-panel-text">Аватар, имя, описание и хэштег, которые сразу формируют
+                          первое впечатление.</p>
+                      </div>
+
+                      <div class="space-y-4">
+                        <div>
+                          <label
+                            class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Аватар</label>
+                          <div class="flex flex-wrap items-center gap-3">
+                            <img id="profile-card-avatar-preview" src="/brand/profile-thin.svg" alt="avatar"
+                              class="h-16 w-16 rounded-full border border-neutral-200 object-cover" />
+                            <div class="flex flex-wrap gap-2">
+                              <label for="profile-card-avatar-file"
+                                class="inline-flex min-h-11 cursor-pointer items-center justify-center rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold">Загрузить</label>
+                              <input id="profile-card-avatar-file" type="file" accept="image/png,image/jpeg,image/webp"
+                                class="hidden" />
+                              <button id="profile-card-avatar-remove" type="button"
+                                class="interactive-btn min-h-11 rounded-lg border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-700">Удалить</button>
+                            </div>
+                          </div>
+                          <div id="profile-card-avatar-crop-wrap"
+                            class="mt-3 hidden rounded-xl border border-neutral-200 bg-neutral-50 p-3">
+                            <img id="profile-card-avatar-crop-image" alt="crop" class="max-h-[320px] w-full object-contain" />
+                            <button id="profile-card-avatar-crop-save" type="button"
+                              class="interactive-btn mt-2 min-h-11 rounded-lg bg-neutral-900 px-3 py-1.5 text-xs font-semibold text-white">Сохранить
+                              обрезку</button>
+                          </div>
+                        </div>
+
+                        <div>
+                          <label class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Имя <span
+                              class="text-red-600">*</span></label>
+                          <input id="profile-card-name" type="text"
+                            class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm" />
+                          <p id="profile-card-name-error" class="mt-1 hidden text-xs text-red-700">Имя обязательно.</p>
+                        </div>
+
+                        <div>
+                          <label
+                            class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Bio</label>
+                          <textarea id="profile-card-bio" maxlength="120" rows="3"
+                            class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm"></textarea>
+                          <p id="profile-card-bio-counter" class="mt-1 text-xs text-neutral-500">0/120</p>
+                        </div>
+
+                        <div class="grid gap-3 md:grid-cols-2">
+                          <div class="md:col-span-2">
+                            <label class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Нижний
+                              хэштег</label>
+                            <input id="profile-card-hashtag" type="text" placeholder="#UnqPower2026"
+                              class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm" />
+                          </div>
+                        </div>
+                      </div>
+                    </section>
+
+                    <section class="profile-card-editor-panel hidden" data-card-editor-panel="links">
+                      <div class="profile-card-editor-panel-head">
+                        <h3 class="profile-card-editor-panel-title">Ссылки и теги</h3>
+                        <p class="profile-card-editor-panel-text">Собери быстрые действия для посетителей и короткие
+                          теги, которые дополняют профиль.</p>
+                      </div>
+
+                      <div class="space-y-4">
+                        <div>
+                          <label
+                            class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Теги</label>
+                          <div class="flex flex-col gap-2 sm:flex-row">
+                            <input id="profile-card-tag-input" type="text" placeholder="#Дизайнер"
+                              class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm" />
+                            <button id="profile-card-tag-add" type="button"
+                              class="interactive-btn min-h-11 rounded-xl border border-neutral-300 px-3 py-2 text-sm sm:w-auto">Добавить</button>
+                          </div>
+                          <div id="profile-card-tags-list" class="mt-2 flex flex-wrap gap-2"></div>
+                        </div>
+
+                        <div>
+                          <div class="mb-2 flex items-center justify-between">
+                            <label
+                              class="block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Кнопки</label>
+                            <button id="profile-card-button-add" type="button"
+                              class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold">Добавить
+                              кнопку</button>
+                          </div>
+                          <div id="profile-card-buttons-list" class="space-y-2"></div>
+                        </div>
+                      </div>
+                    </section>
+
+                    <section class="profile-card-editor-panel hidden" data-card-editor-panel="contacts">
+                      <div class="profile-card-editor-panel-head">
+                        <h3 class="profile-card-editor-panel-title">Контакты</h3>
+                        <p class="profile-card-editor-panel-text">Оставь адрес, индекс, email и дополнительный номер для
+                          тех, кому важна прямая связь.</p>
+                      </div>
+
+                      <div class="grid gap-3 md:grid-cols-2">
+                        <div class="md:col-span-2">
+                          <label
+                            class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Адрес</label>
+                          <input id="profile-card-address" type="text" placeholder="Farghona, Mustaqillik 13"
+                            class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm" />
+                        </div>
+                        <div>
+                          <label
+                            class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Индекс</label>
+                          <input id="profile-card-postcode" type="text" placeholder="150100"
+                            class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm" />
+                        </div>
+                        <div>
+                          <label
+                            class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Email</label>
+                          <input id="profile-card-email" type="email" placeholder="unq@uz.com"
+                            class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm" />
+                        </div>
+                        <div class="md:col-span-2">
+                          <label
+                            class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Дополнительный
+                            телефон</label>
+                          <input id="profile-card-extra-phone" type="text" placeholder="+998200001360"
+                            class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm" />
+                        </div>
+                      </div>
+                    </section>
+
+                    <section class="profile-card-editor-panel hidden" data-card-editor-panel="design">
+                      <div class="profile-card-editor-panel-head">
+                        <h3 class="profile-card-editor-panel-title">Оформление</h3>
+                        <p class="profile-card-editor-panel-text">Выбери визуальный стиль визитки, настрой рамку и затем
+                          сохрани итоговый вариант.</p>
+                      </div>
+
+                      <div class="space-y-4">
+                        <div id="profile-card-theme-wrap">
+                          <label
+                            class="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Тема</label>
+                          <div class="space-y-3">
+                            <div class="space-y-2">
+                              <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-400">Signature Themes</p>
+                              <div id="profile-card-theme-options" class="profile-style-choice-grid">
+                                <% signatureThemes.forEach((item) => { %>
+                                  <%- renderThemeButton(item) %>
+                                <% }) %>
+                              </div>
+                            </div>
+                            <div class="space-y-2">
+                              <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-400">Color Presets</p>
+                              <div id="profile-card-color-theme-options" class="profile-style-choice-grid profile-style-choice-grid--compact">
+                                <% colorThemes.forEach((item) => { %>
+                                  <%- renderThemeButton(item) %>
+                                <% }) %>
+                              </div>
+                            </div>
+                          </div>
+                          <p id="profile-card-theme-lock-note" class="mt-1 hidden text-xs text-neutral-500">Доступно на Премиум
+                          </p>
+                        </div>
+
+                        <div id="profile-card-frame-wrap">
+                          <label
+                            class="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Рамка аватара</label>
+                          <div id="profile-card-frame-options" class="profile-style-choice-grid profile-style-choice-grid--compact">
+                            <% avatarFrames.forEach((item) => { %>
+                              <%- renderFrameButton(item) %>
+                            <% }) %>
+                          </div>
+                          <p id="profile-card-frame-lock-note" class="mt-1 hidden text-xs text-neutral-500">Премиум нужен для декоративных рамок</p>
+                        </div>
+
+                        <label class="inline-flex cursor-pointer items-center justify-between gap-3 text-sm">
+                          <span>Скрыть брендинг UNQX</span>
+                          <span class="relative inline-flex h-6 w-11 shrink-0 items-center">
+                            <input id="profile-card-show-branding" type="checkbox" class="peer sr-only" />
+                            <span
+                              class="block h-6 w-11 rounded-full bg-neutral-300 transition-colors peer-checked:bg-neutral-900"></span>
+                            <span
+                              class="pointer-events-none absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform peer-checked:translate-x-5"></span>
+                          </span>
+                        </label>
+
+                        <div class="mt-2 flex justify-end">
+                          <button id="profile-card-save" type="button"
+                            class="interactive-btn min-h-11 rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white">Сохранить
+                            визитку</button>
+                        </div>
+                      </div>
+                    </section>
+                  </div>
                 </div>
               </div>
             </div>

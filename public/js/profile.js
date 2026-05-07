@@ -494,6 +494,9 @@ Email: ${userEmail}
       cTags: $("#profile-card-tags-list"),
       cBtns: $("#profile-card-buttons-list"),
       cBtnAdd: $("#profile-card-button-add"),
+      cCategoryNav: $("#profile-card-categories"),
+      cCategoryButtons: $$("[data-card-editor-category]"),
+      cCategoryPanels: $$("[data-card-editor-panel]"),
       cThemes: $$(".profile-theme-btn"),
       cThemeLock: $("#profile-card-theme-lock-note"),
       cThemeWrap: $("#profile-card-theme-wrap"),
@@ -1483,6 +1486,7 @@ Email: ${userEmail}
       // Только для вкладки аналитики подгружаем данные
       if (active === "card") {
         restoreDraft();
+        renderCardEditorCategory();
       }
       if (active === "analytics") {
         void refreshAnalytics();
@@ -2018,6 +2022,7 @@ Email: ${userEmail}
 
       renderTags();
       renderButtons();
+      renderCardEditorCategory();
       renderTheme();
       renderFrame();
       renderPreview();
@@ -2729,6 +2734,11 @@ Email: ${userEmail}
       return ["account", "security", "privacy"].includes(normalized) ? normalized : "account";
     };
 
+    const normalizeCardEditorCategory = (value) => {
+      const normalized = String(value || "").trim().toLowerCase();
+      return ["main", "links", "contacts", "design"].includes(normalized) ? normalized : "main";
+    };
+
     const normalizeProfileLoginValue = (value) => String(value || "").trim().toLowerCase();
 
     const isValidProfileLogin = (value) => {
@@ -2964,6 +2974,29 @@ Email: ${userEmail}
 
       if (el.stSaveWrap instanceof HTMLElement) {
         el.stSaveWrap.classList.remove("hidden");
+      }
+    };
+
+    const renderCardEditorCategory = () => {
+      s.cardEditorCategory = normalizeCardEditorCategory(s.cardEditorCategory);
+      const activeCategory = s.cardEditorCategory;
+
+      if (Array.isArray(el.cCategoryButtons)) {
+        el.cCategoryButtons.forEach((button) => {
+          if (!(button instanceof HTMLElement)) return;
+          const category = normalizeCardEditorCategory(button.getAttribute("data-card-editor-category"));
+          const isActive = category === activeCategory;
+          button.classList.toggle("is-active", isActive);
+          button.setAttribute("aria-pressed", isActive ? "true" : "false");
+        });
+      }
+
+      if (Array.isArray(el.cCategoryPanels)) {
+        el.cCategoryPanels.forEach((panel) => {
+          if (!(panel instanceof HTMLElement)) return;
+          const category = normalizeCardEditorCategory(panel.getAttribute("data-card-editor-panel"));
+          panel.classList.toggle("hidden", category !== activeCategory);
+        });
       }
     };
 
@@ -4322,6 +4355,13 @@ Email: ${userEmail}
         const nextCategory = actionNode instanceof HTMLElement ? actionNode.getAttribute("data-settings-category") : "";
         s.settingsCategory = nextCategory;
         renderSettingsCategory();
+        return;
+      }
+
+      if (action === "card-editor-category") {
+        const nextCategory = actionNode instanceof HTMLElement ? actionNode.getAttribute("data-card-editor-category") : "";
+        s.cardEditorCategory = nextCategory;
+        renderCardEditorCategory();
         return;
       }
 
