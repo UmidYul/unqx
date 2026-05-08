@@ -2411,15 +2411,20 @@
     const rows = payload.items || [];
     table.innerHTML = rows.length
       ? rows.map((x) => {
-        const menu = menuWrap([
-          menuItem({ label: "Открыть визитку", icon: "eye", attrs: `data-act="open-url" data-url="/${encodeURIComponent(x.slug)}"` }),
-          menuItem({ label: "Редактировать", icon: "pen", attrs: `data-act="open-url" data-url="/admin/cards/${x.id}/edit"` }),
-          menuItem({ label: "Сменить тариф", icon: "crown", attrs: `data-act="ct" data-id="${x.id}"` }),
-          menuSeparator(),
-          menuItem({ label: x.isActive ? "Выключить" : "Включить", icon: x.isActive ? "toggleLeft" : "toggleRight", attrs: `data-act="cg" data-id="${x.id}" data-n="${x.isActive ? 0 : 1}"` }),
-          menuItem({ label: "QR-код", icon: "qr", attrs: `data-act="qr" data-slug="${x.slug}"` }),
-        ].join(""));
-        return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3 font-mono">#${X(x.slug)}</td><td class="px-4 py-3">${X(x.name)}</td><td class="px-4 py-3">${x.tariff === "premium" ? "Премиум" : "Legacy"}</td><td class="px-4 py-3">${statusChip(x.isActive ? "approved" : "rejected")}</td><td class="px-4 py-3">${Number(x.viewsCount || 0).toLocaleString("ru-RU")}</td><td class="px-4 py-3">${new Date(x.createdAt).toLocaleDateString("ru-RU")}</td><td class="px-4 py-3">${themePill(x.theme || "default_dark")}</td><td class="px-4 py-3"><div class="admin-row-actions">${menu}</div></td></tr>`;
+        const menuItems = [];
+        if (x.slug) {
+          menuItems.push(menuItem({ label: "Открыть визитку", icon: "eye", attrs: `data-act="open-url" data-url="/${encodeURIComponent(x.slug)}"` }));
+        }
+        menuItems.push(menuItem({ label: "Редактировать", icon: "pen", attrs: `data-act="open-url" data-url="/admin/cards/${x.id}/edit"` }));
+        menuItems.push(menuItem({ label: "Сменить тариф", icon: "crown", attrs: `data-act="ct" data-id="${x.id}"` }));
+        menuItems.push(menuSeparator());
+        menuItems.push(menuItem({ label: x.isActive ? "Выключить" : "Включить", icon: x.isActive ? "toggleLeft" : "toggleRight", attrs: `data-act="cg" data-id="${x.id}" data-n="${x.isActive ? 0 : 1}"` }));
+        if (x.slug) {
+          menuItems.push(menuItem({ label: "QR-код", icon: "qr", attrs: `data-act="qr" data-slug="${x.slug}"` }));
+        }
+        const menu = menuWrap(menuItems.join(""));
+        const slugCell = x.slug ? `#${X(x.slug)}` : '<span class="text-neutral-400">—</span>';
+        return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3 font-mono">${slugCell}</td><td class="px-4 py-3">${X(x.name)}</td><td class="px-4 py-3">${x.tariff === "premium" ? "Премиум" : "Legacy"}</td><td class="px-4 py-3">${statusChip(x.isActive ? "approved" : "rejected")}</td><td class="px-4 py-3">${Number(x.viewsCount || 0).toLocaleString("ru-RU")}</td><td class="px-4 py-3">${new Date(x.createdAt).toLocaleDateString("ru-RU")}</td><td class="px-4 py-3">${themePill(x.theme || "default_dark")}</td><td class="px-4 py-3"><div class="admin-row-actions">${menu}</div></td></tr>`;
       }).join("")
       : `<tr><td colspan="8" class="px-3 py-10 text-center text-neutral-500"><div class="inline-flex flex-col items-center gap-2">${I("creditCard", 48)}<span>Нет данных</span></div></td></tr>`;
     renderPager("cards-pagination", payload.pagination, (nextPage) => {

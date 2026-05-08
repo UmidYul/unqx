@@ -1290,7 +1290,7 @@
       })(),
       avatarFrame: (() => {
         const rawFrame = String(card.avatarFrame || "").trim().toLowerCase();
-        return plan === "premium" && AVATAR_FRAME_KEYS.includes(rawFrame) ? rawFrame : "none";
+        return AVATAR_FRAME_KEYS.includes(rawFrame) ? rawFrame : "none";
       })(),
       customColor: normalizeHexColor(card.customColor),
       name,
@@ -1703,7 +1703,7 @@
             ${staffBadgeLine ? `<p class="unq-ref-staff-badge-line">${esc(staffBadgeLine)}</p>` : ""}
           </div>`
         : "";
-    const useCustomColor = card.tariff === "premium" && Boolean(card.customColor);
+    const useCustomColor = Boolean(card.customColor);
     const topLineValue =
       theme.tokens.topLineGradient === "none"
         ? theme.tokens.topLineSolid || theme.tokens.accentColor

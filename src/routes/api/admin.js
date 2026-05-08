@@ -826,6 +826,497 @@ function normalizeUserPlan(value) {
   return "none";
 }
 
+function buildAdminCardOwnerLabel(user) {
+  const raw = [
+    user?.displayName,
+    user?.firstName,
+    user?.username ? `@${user.username}` : "",
+    user?.telegramUsername ? `@${user.telegramUsername}` : "",
+    user?.email,
+  ].find((value) => String(value || "").trim());
+  return String(raw || "UNQX User").trim().slice(0, 120) || "UNQX User";
+}
+
+function isAdminCardActiveStatus(status) {
+  const normalized = String(status || "").trim().toLowerCase();
+  return normalized === "active" || normalized === "private";
+}
+
+function getAdminCardSlugPriority(status) {
+  const normalized = String(status || "").trim().toLowerCase();
+  if (normalized === "active") return 0;
+  if (normalized === "private") return 1;
+  if (normalized === "paused") return 2;
+  if (normalized === "approved") return 3;
+  if (normalized === "blocked") return 4;
+  return 5;
+}
+
+function mapAdminCardSlugRow(row) {
+  if (!row) return null;
+  return {
+    id: String(row.id || "").trim(),
+    fullSlug: String(row.fullSlug || row.full_slug || "").trim(),
+    status: String(row.status || "").trim().toLowerCase(),
+    isPrimary: Boolean(row.isPrimary ?? row.is_primary),
+    viewsCount: Number(row.analyticsViewsCount ?? row.analytics_views_count ?? 0) || 0,
+    createdAt: row.createdAt ?? row.created_at ?? null,
+    activatedAt: row.activatedAt ?? row.activated_at ?? null,
+    updatedAt: row.updatedAt ?? row.updated_at ?? null,
+  };
+}
+
+function pickAdminCardPreviewSlug(slugs) {
+  const items = Array.isArray(slugs) ? slugs.map(mapAdminCardSlugRow).filter(Boolean) : [];
+  if (!items.length) return null;
+  const sorted = items.slice().sort((left, right) => {
+    const primaryDelta = Number(Boolean(right.isPrimary)) - Number(Boolean(left.isPrimary));
+    if (primaryDelta !== 0) {
+      return primaryDelta;
+    }
+    const statusDelta = getAdminCardSlugPriority(left.status) - getAdminCardSlugPriority(right.status);
+    if (statusDelta !== 0) {
+      return statusDelta;
+    }
+    return new Date(left.createdAt || 0).getTime() - new Date(right.createdAt || 0).getTime();
+  });
+  return sorted[0] || null;
+}
+
+function mapAdminCardCompatRecord(record) {
+  if (!record) return null;
+
+  const owner = record.owner && typeof record.owner === "object" ? record.owner : {};
+  const slugs = Array.isArray(owner.slugs) ? owner.slugs.map(mapAdminCardSlugRow).filter(Boolean) : [];
+  const previewSlug = pickAdminCardPreviewSlug(slugs);
+  const planSnapshot = getEffectivePlan(owner);
+  const latestVerificationRequest = Array.isArray(owner.verificationRequests)
+    ? owner.verificationRequests[0] || null
+    : null;
+  const card = parseProfileCardRow({
+    id: record.id,
+    ownerId: record.ownerId,
+    name: record.name,
+    role: record.role,
+    bio: record.bio,
+    hashtag: record.hashtag,
+    address: record.address,
+    postcode: record.postcode,
+    email: record.email,
+    extraPhone: record.extraPhone,
+    avatarUrl: record.avatarUrl,
+    tags: record.tags,
+    buttons: record.buttons,
+    theme: record.theme,
+    customColor: record.customColor,
+    avatarFrame: record.avatarFrame,
+    showBranding: record.showBranding,
+    createdAt: record.createdAt,
+    updatedAt: record.updatedAt,
+  });
+
+  return {
+    id: String(record.id || "").trim(),
+    ownerId: String(record.ownerId || "").trim(),
+    card,
+    slugs,
+    previewSlug,
+    isActive: isAdminCardActiveStatus(previewSlug?.status),
+    publicUrl: previewSlug?.fullSlug ? `/${encodeURIComponent(previewSlug.fullSlug)}` : "",
+    tariff: planSnapshot.plan === "premium" ? "premium" : "legacy",
+    owner: {
+      id: String(owner.id || "").trim(),
+      name: buildAdminCardOwnerLabel(owner),
+      firstName: String(owner.firstName || "").trim(),
+      displayName: String(owner.displayName || "").trim(),
+      username: String(owner.username || "").trim(),
+      telegramUsername: String(owner.telegramUsername || "").trim(),
+      email: String(owner.email || "").trim(),
+      city: String(owner.city || "").trim(),
+      status: String(owner.status || "").trim().toLowerCase() || "active",
+      plan: planSnapshot.plan === "premium" ? "premium" : "none",
+      profileType: normalizeProfileType(owner.profileType, { fallback: "person" }),
+      isVerified: Boolean(owner.isVerified),
+      verifiedCompany: String(owner.verifiedCompany || "").trim(),
+      createdAt: owner.createdAt || null,
+      updatedAt: owner.updatedAt || null,
+      planPurchasedAt: owner.planPurchasedAt || null,
+      planUpgradedAt: owner.planUpgradedAt || null,
+      subscriptionStartedAt: owner.subscriptionStartedAt || null,
+      subscriptionRenewedAt: owner.subscriptionRenewedAt || null,
+      subscriptionExpiresAt: owner.subscriptionExpiresAt || null,
+    },
+    verification: {
+      isVerified: Boolean(owner.isVerified),
+      verifiedCompany: String(owner.verifiedCompany || "").trim(),
+      latestRequest: latestVerificationRequest
+        ? {
+          id: String(latestVerificationRequest.id || "").trim(),
+          slug: String(latestVerificationRequest.slug || "").trim(),
+          companyName: String(latestVerificationRequest.companyName || "").trim(),
+          role: String(latestVerificationRequest.role || "").trim(),
+          sector: String(latestVerificationRequest.sector || "").trim(),
+          status: String(latestVerificationRequest.status || "").trim().toLowerCase(),
+          adminNote: String(latestVerificationRequest.adminNote || "").trim(),
+          requestedAt: latestVerificationRequest.requestedAt || null,
+          reviewedAt: latestVerificationRequest.reviewedAt || null,
+        }
+        : null,
+    },
+    createdAt: record.createdAt || null,
+    updatedAt: record.updatedAt || null,
+  };
+}
+
+function buildAdminCardDetailResponse(record) {
+  const mapped = mapAdminCardCompatRecord(record);
+  if (!mapped) return null;
+  return {
+    ok: true,
+    id: mapped.id,
+    ownerId: mapped.ownerId,
+    card: mapped.card,
+    owner: mapped.owner,
+    slugs: mapped.slugs,
+    previewSlug: mapped.previewSlug,
+    publicUrl: mapped.publicUrl,
+    isActive: mapped.isActive,
+    tariff: mapped.tariff,
+    verification: mapped.verification,
+    createdAt: mapped.createdAt,
+    updatedAt: mapped.updatedAt,
+  };
+}
+
+async function findAdminCardCompatById(cardId) {
+  if (!cardId || !prisma.profileCard) {
+    return null;
+  }
+
+  const row = await prisma.profileCard.findUnique({
+    where: { id: String(cardId || "").trim() },
+    select: {
+      id: true,
+      ownerId: true,
+      name: true,
+      role: true,
+      bio: true,
+      hashtag: true,
+      address: true,
+      postcode: true,
+      email: true,
+      extraPhone: true,
+      avatarUrl: true,
+      tags: true,
+      buttons: true,
+      theme: true,
+      customColor: true,
+      avatarFrame: true,
+      showBranding: true,
+      createdAt: true,
+      updatedAt: true,
+      owner: {
+        select: {
+          id: true,
+          firstName: true,
+          displayName: true,
+          username: true,
+          telegramUsername: true,
+          email: true,
+          city: true,
+          profileType: true,
+          plan: true,
+          status: true,
+          isVerified: true,
+          verifiedCompany: true,
+          createdAt: true,
+          updatedAt: true,
+          planPurchasedAt: true,
+          planUpgradedAt: true,
+          subscriptionStartedAt: true,
+          subscriptionRenewedAt: true,
+          subscriptionExpiresAt: true,
+          slugs: {
+            orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
+            select: {
+              id: true,
+              fullSlug: true,
+              status: true,
+              isPrimary: true,
+              analyticsViewsCount: true,
+              createdAt: true,
+              activatedAt: true,
+              updatedAt: true,
+            },
+          },
+          verificationRequests: {
+            orderBy: { requestedAt: "desc" },
+            take: 1,
+            select: {
+              id: true,
+              slug: true,
+              companyName: true,
+              role: true,
+              sector: true,
+              status: true,
+              adminNote: true,
+              requestedAt: true,
+              reviewedAt: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  return row || null;
+}
+
+function buildAdminCardsListWhere(query) {
+  const search = String(query?.q || "").trim();
+  const statusFilter = String(query?.status || "all").trim().toLowerCase();
+  const and = [];
+
+  if (search) {
+    const or = [
+      { name: { contains: search, mode: "insensitive" } },
+      { owner: { firstName: { contains: search, mode: "insensitive" } } },
+      { owner: { displayName: { contains: search, mode: "insensitive" } } },
+      { owner: { username: { contains: search, mode: "insensitive" } } },
+      { owner: { telegramUsername: { contains: search, mode: "insensitive" } } },
+      { owner: { email: { contains: search, mode: "insensitive" } } },
+      { owner: { slugs: { some: { fullSlug: { contains: search, mode: "insensitive" } } } } },
+    ];
+    if (isUuid(search)) {
+      or.push({ id: search });
+      or.push({ ownerId: search });
+    }
+    and.push({ OR: or });
+  }
+
+  if (statusFilter === "active") {
+    and.push({ owner: { slugs: { some: { status: { in: ["active", "private"] } } } } });
+  } else if (statusFilter === "inactive") {
+    and.push({ NOT: { owner: { slugs: { some: { status: { in: ["active", "private"] } } } } } });
+  }
+
+  return and.length ? { AND: and } : {};
+}
+
+async function listAdminCardCompatRows(query) {
+  if (!prisma.profileCard) {
+    return {
+      items: [],
+      pagination: { page: 1, pageSize: 20, total: 0, totalPages: 1 },
+    };
+  }
+
+  const page = Math.max(1, parsePositiveInt(query?.page, 1) || 1);
+  const pageSize = 20;
+  const where = buildAdminCardsListWhere(query);
+
+  const [total, rows] = await Promise.all([
+    prisma.profileCard.count({ where }),
+    prisma.profileCard.findMany({
+      where,
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+      orderBy: [{ updatedAt: "desc" }, { createdAt: "desc" }],
+      select: {
+        id: true,
+        ownerId: true,
+        name: true,
+        role: true,
+        bio: true,
+        hashtag: true,
+        address: true,
+        postcode: true,
+        email: true,
+        extraPhone: true,
+        avatarUrl: true,
+        tags: true,
+        buttons: true,
+        theme: true,
+        customColor: true,
+        avatarFrame: true,
+        showBranding: true,
+        createdAt: true,
+        updatedAt: true,
+        owner: {
+          select: {
+            id: true,
+            firstName: true,
+            displayName: true,
+            username: true,
+            telegramUsername: true,
+            email: true,
+            city: true,
+            profileType: true,
+            plan: true,
+            status: true,
+            isVerified: true,
+            verifiedCompany: true,
+            createdAt: true,
+            updatedAt: true,
+            planPurchasedAt: true,
+            planUpgradedAt: true,
+            subscriptionStartedAt: true,
+            subscriptionRenewedAt: true,
+            subscriptionExpiresAt: true,
+            slugs: {
+              orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
+              select: {
+                id: true,
+                fullSlug: true,
+                status: true,
+                isPrimary: true,
+                analyticsViewsCount: true,
+                createdAt: true,
+                activatedAt: true,
+                updatedAt: true,
+              },
+            },
+          },
+        },
+      },
+    }),
+  ]);
+
+  return {
+    items: (Array.isArray(rows) ? rows : [])
+      .map(mapAdminCardCompatRecord)
+      .filter(Boolean)
+      .map((item) => ({
+        id: item.id,
+        ownerId: item.ownerId,
+        slug: item.previewSlug?.fullSlug || "",
+        name: item.card?.name || item.owner?.name || "UNQX User",
+        tariff: item.tariff,
+        isActive: item.isActive,
+        viewsCount: Number(item.previewSlug?.viewsCount || 0),
+        createdAt: item.createdAt,
+        theme: item.card?.theme || "default_dark",
+      })),
+    pagination: {
+      page,
+      pageSize,
+      total,
+      totalPages: Math.max(1, Math.ceil(total / pageSize)),
+    },
+  };
+}
+
+async function saveAdminCardCompatForOwner(ownerId, rawBody) {
+  const user = await prisma.user.findUnique({
+    where: { id: String(ownerId || "").trim() },
+    select: {
+      id: true,
+      firstName: true,
+      displayName: true,
+      username: true,
+      telegramUsername: true,
+      email: true,
+      verifiedCompany: true,
+    },
+  });
+
+  if (!user) {
+    return null;
+  }
+
+  const currentCard = await findProfileCardByOwnerId(user.id);
+  const body = rawBody && typeof rawBody === "object" ? rawBody : {};
+  const name = normalizeDisplayName(body.name, currentCard?.name || buildAdminCardOwnerLabel(user));
+  const role = String(body.role ?? currentCard?.role ?? "").trim().slice(0, 120) || null;
+  const bio = String(body.bio ?? currentCard?.bio ?? "").trim().slice(0, 120) || null;
+  const hashtag = String(body.hashtag ?? currentCard?.hashtag ?? "").trim().slice(0, 50) || null;
+  const address = String(body.address ?? currentCard?.address ?? "").trim() || null;
+  const postcode = String(body.postcode ?? currentCard?.postcode ?? "").trim().slice(0, 20) || null;
+  const email = String(body.email ?? currentCard?.email ?? "").trim().slice(0, 100) || null;
+  const extraPhone = String(body.extraPhone ?? currentCard?.extraPhone ?? "").trim().slice(0, 30) || null;
+  const verifiedCompany = String(body.verifiedCompany ?? user.verifiedCompany ?? "").trim().slice(0, 160) || null;
+
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    const error = new Error("Invalid email");
+    error.code = "INVALID_EMAIL";
+    throw error;
+  }
+
+  const theme = normalizeThemeByPlan(body.theme ?? currentCard?.theme, "premium");
+  const themeForDatabase = await normalizeCardThemeForDatabase(theme);
+  const customColor = Object.prototype.hasOwnProperty.call(body, "customColor")
+    ? normalizeColor(body.customColor)
+    : normalizeColor(currentCard?.customColor);
+  const avatarFrame = normalizeAvatarFrameByPlan(
+    Object.prototype.hasOwnProperty.call(body, "avatarFrame") ? body.avatarFrame : currentCard?.avatarFrame,
+    "premium",
+  );
+  const showBranding = Object.prototype.hasOwnProperty.call(body, "showBranding")
+    ? Boolean(body.showBranding)
+    : currentCard?.showBranding !== false;
+  const tags = normalizeTags(
+    Object.prototype.hasOwnProperty.call(body, "tags") ? body.tags : currentCard?.tags,
+    "premium",
+  );
+  const activeButtons = Array.isArray(body.buttons)
+    ? body.buttons.filter((item) => !(item && typeof item === "object" && item.active === false))
+    : currentCard?.buttons;
+  const buttons = normalizeButtons(activeButtons, "premium");
+
+  const savedCard = await prisma.$transaction(async (tx) => {
+    if (verifiedCompany !== String(user.verifiedCompany || "").trim()) {
+      await tx.user.update({
+        where: { id: user.id },
+        data: { verifiedCompany },
+        select: { id: true },
+      });
+    }
+
+    const saved = await upsertProfileCardCompat(tx, {
+      ownerId: user.id,
+      name,
+      role,
+      bio,
+      hashtag,
+      address,
+      postcode,
+      email,
+      extraPhone,
+      tags,
+      buttons,
+      theme: themeForDatabase,
+      customColor,
+      avatarFrame,
+      showBranding,
+      avatarUrl: currentCard?.avatarUrl || null,
+    });
+
+    await patchOptionalProfileCardFields(tx, user.id, {
+      hashtag,
+      address,
+      postcode,
+      extraPhone,
+    });
+
+    return saved;
+  });
+
+  await safeRecalculateScore(user.id);
+  return findAdminCardCompatById(savedCard.id);
+}
+
+function ensureAdminCardsApiAccess(req, res) {
+  if (isManagerSession(req)) {
+    res.status(403).json({ error: "Forbidden", code: "MANAGER_FORBIDDEN" });
+    return false;
+  }
+  if (!prisma.profileCard) {
+    res.status(503).json({ error: "Cards storage unavailable", code: "CARDS_STORAGE_UNAVAILABLE" });
+    return false;
+  }
+  return true;
+}
+
 function normalizeVerificationStatusInput(value) {
   if (typeof value === "boolean") {
     return value;
@@ -2206,76 +2697,334 @@ router.patch(
   }),
 );
 
-function sendLegacyCardsDeprecated(res) {
-  res.status(410).json({
-    error: "Legacy cards API is deprecated",
-    code: "LEGACY_CARDS_DEPRECATED",
-  });
-}
-
 router.get(
   "/cards",
-  asyncHandler(async (_req, res) => {
-    res.json({
-      items: [],
-      pagination: { page: 1, pageSize: 20, total: 0, totalPages: 1 },
-    });
+  asyncHandler(async (req, res) => {
+    if (!ensureAdminCardsApiAccess(req, res)) {
+      return;
+    }
+
+    const payload = await listAdminCardCompatRows(req.query || {});
+    res.json(payload);
   }),
 );
 
 router.post(
   "/cards",
-  asyncHandler(async (_req, res) => {
-    sendLegacyCardsDeprecated(res);
+  asyncHandler(async (req, res) => {
+    if (!ensureAdminCardsApiAccess(req, res)) {
+      return;
+    }
+
+    const ownerId = String(req.body?.ownerId || "").trim();
+    if (!ownerId) {
+      res.status(400).json({ error: "Owner id is required", code: "OWNER_ID_REQUIRED" });
+      return;
+    }
+
+    try {
+      const saved = await saveAdminCardCompatForOwner(ownerId, req.body || {});
+      if (!saved) {
+        res.status(404).json({ error: "User not found", code: "USER_NOT_FOUND" });
+        return;
+      }
+      res.json(buildAdminCardDetailResponse(saved));
+    } catch (error) {
+      if (error?.code === "INVALID_EMAIL") {
+        res.status(400).json({ error: "Invalid email", code: "INVALID_EMAIL" });
+        return;
+      }
+      if (isMissingStorageError(error)) {
+        res.status(503).json({ error: "Cards storage unavailable", code: "CARDS_STORAGE_UNAVAILABLE" });
+        return;
+      }
+      throw error;
+    }
   }),
 );
 
 router.get(
   "/cards/:id",
-  asyncHandler(async (_req, res) => {
-    sendLegacyCardsDeprecated(res);
+  asyncHandler(async (req, res) => {
+    if (!ensureAdminCardsApiAccess(req, res)) {
+      return;
+    }
+
+    const cardId = String(req.params.id || "").trim();
+    const card = await findAdminCardCompatById(cardId);
+    if (!card) {
+      res.status(404).json({ error: "Card not found", code: "CARD_NOT_FOUND" });
+      return;
+    }
+
+    res.json(buildAdminCardDetailResponse(card));
   }),
 );
 
 router.patch(
   "/cards/:id",
-  asyncHandler(async (_req, res) => {
-    sendLegacyCardsDeprecated(res);
+  asyncHandler(async (req, res) => {
+    if (!ensureAdminCardsApiAccess(req, res)) {
+      return;
+    }
+
+    const cardId = String(req.params.id || "").trim();
+    const current = await findAdminCardCompatById(cardId);
+    if (!current) {
+      res.status(404).json({ error: "Card not found", code: "CARD_NOT_FOUND" });
+      return;
+    }
+
+    try {
+      const saved = await saveAdminCardCompatForOwner(current.ownerId, req.body || {});
+      if (!saved) {
+        res.status(404).json({ error: "User not found", code: "USER_NOT_FOUND" });
+        return;
+      }
+      res.json(buildAdminCardDetailResponse(saved));
+    } catch (error) {
+      if (error?.code === "INVALID_EMAIL") {
+        res.status(400).json({ error: "Invalid email", code: "INVALID_EMAIL" });
+        return;
+      }
+      if (isMissingStorageError(error)) {
+        res.status(503).json({ error: "Cards storage unavailable", code: "CARDS_STORAGE_UNAVAILABLE" });
+        return;
+      }
+      throw error;
+    }
   }),
 );
 
 router.delete(
   "/cards/:id",
-  asyncHandler(async (_req, res) => {
-    sendLegacyCardsDeprecated(res);
+  asyncHandler(async (req, res) => {
+    if (!ensureAdminCardsApiAccess(req, res)) {
+      return;
+    }
+
+    const cardId = String(req.params.id || "").trim();
+    const card = await findAdminCardCompatById(cardId);
+    if (!card) {
+      res.status(404).json({ error: "Card not found", code: "CARD_NOT_FOUND" });
+      return;
+    }
+
+    if (card.card?.avatarUrl) {
+      await safeDeleteAvatarByPublicPath(card.card.avatarUrl);
+    }
+
+    await prisma.profileCard.delete({ where: { id: cardId } });
+    await safeRecalculateScore(card.ownerId);
+    res.json({ ok: true });
   }),
 );
 
 router.patch(
   "/cards/:id/toggle-active",
-  asyncHandler(async (_req, res) => {
-    sendLegacyCardsDeprecated(res);
+  asyncHandler(async (req, res) => {
+    if (!ensureAdminCardsApiAccess(req, res)) {
+      return;
+    }
+
+    const cardId = String(req.params.id || "").trim();
+    const card = await findAdminCardCompatById(cardId);
+    if (!card) {
+      res.status(404).json({ error: "Card not found", code: "CARD_NOT_FOUND" });
+      return;
+    }
+
+    const shouldBeActive = Boolean(req.body?.isActive);
+    if (shouldBeActive) {
+      await prisma.slug.updateMany({
+        where: {
+          ownerId: card.ownerId,
+          status: { in: ["approved", "paused"] },
+        },
+        data: {
+          status: "active",
+          activatedAt: new Date(),
+        },
+      });
+    } else {
+      await prisma.slug.updateMany({
+        where: {
+          ownerId: card.ownerId,
+          status: { in: ["active", "private"] },
+        },
+        data: {
+          status: "paused",
+        },
+      });
+    }
+
+    const refreshed = await findAdminCardCompatById(cardId);
+    res.json({
+      ok: true,
+      id: cardId,
+      isActive: refreshed ? buildAdminCardDetailResponse(refreshed).isActive : shouldBeActive,
+    });
   }),
 );
 
 router.patch(
   "/cards/:id/tariff",
-  asyncHandler(async (_req, res) => {
-    sendLegacyCardsDeprecated(res);
+  asyncHandler(async (req, res) => {
+    if (!ensureAdminCardsApiAccess(req, res)) {
+      return;
+    }
+
+    const cardId = String(req.params.id || "").trim();
+    const card = await findAdminCardCompatById(cardId);
+    if (!card) {
+      res.status(404).json({ error: "Card not found", code: "CARD_NOT_FOUND" });
+      return;
+    }
+
+    const nextPlan = normalizeUserPlan(req.body?.tariff || req.body?.plan);
+    const now = new Date();
+
+    const result = await prisma.$transaction(async (tx) => {
+      const user = await tx.user.findUnique({
+        where: { id: card.ownerId },
+        select: {
+          id: true,
+          plan: true,
+          planPurchasedAt: true,
+          planUpgradedAt: true,
+          subscriptionStartedAt: true,
+          subscriptionRenewedAt: true,
+          subscriptionExpiresAt: true,
+        },
+      });
+
+      if (!user) {
+        return null;
+      }
+
+      const userPatch = { plan: nextPlan };
+      if (nextPlan === "premium") {
+        const currentExpiry =
+          user.subscriptionExpiresAt && Number.isFinite(new Date(user.subscriptionExpiresAt).getTime())
+            ? new Date(user.subscriptionExpiresAt)
+            : null;
+        const renewalBase = currentExpiry && currentExpiry > now ? currentExpiry : now;
+        userPatch.planPurchasedAt = user.planPurchasedAt || now;
+        userPatch.planUpgradedAt = user.plan === "premium" ? user.planUpgradedAt : now;
+        userPatch.subscriptionStartedAt = user.subscriptionStartedAt || now;
+        userPatch.subscriptionRenewedAt = now;
+        userPatch.subscriptionExpiresAt = addDays(renewalBase, 30);
+      } else {
+        userPatch.subscriptionExpiresAt = now;
+      }
+
+      const updated = await tx.user.update({
+        where: { id: card.ownerId },
+        data: userPatch,
+        select: {
+          id: true,
+          plan: true,
+          subscriptionExpiresAt: true,
+        },
+      });
+
+      if (nextPlan === "none") {
+        await tx.slug.updateMany({
+          where: {
+            ownerId: card.ownerId,
+            status: { in: ["approved", "active", "paused", "private"] },
+          },
+          data: { status: "paused" },
+        });
+      }
+
+      return updated;
+    });
+
+    if (!result) {
+      res.status(404).json({ error: "User not found", code: "USER_NOT_FOUND" });
+      return;
+    }
+
+    await safeRecalculateScore(card.ownerId);
+    res.json({
+      ok: true,
+      id: cardId,
+      tariff: nextPlan === "premium" ? "premium" : "legacy",
+      subscriptionExpiresAt: result.subscriptionExpiresAt || null,
+    });
   }),
 );
 
 router.post(
   "/cards/:id/avatar",
-  asyncHandler(async (_req, res) => {
-    sendLegacyCardsDeprecated(res);
+  upload.single("file"),
+  asyncHandler(async (req, res) => {
+    if (!ensureAdminCardsApiAccess(req, res)) {
+      return;
+    }
+
+    const cardId = String(req.params.id || "").trim();
+    const card = await findAdminCardCompatById(cardId);
+    if (!card) {
+      res.status(404).json({ error: "Card not found", code: "CARD_NOT_FOUND" });
+      return;
+    }
+
+    if (!req.file || !ALLOWED_MIME.has(req.file.mimetype)) {
+      res.status(400).json({ error: "Unsupported file type", code: "UNSUPPORTED_FILE_TYPE" });
+      return;
+    }
+
+    const okBuffer = await isSupportedAvatarBuffer(req.file.buffer);
+    if (!okBuffer) {
+      res.status(400).json({ error: "Invalid image payload", code: "INVALID_IMAGE_PAYLOAD" });
+      return;
+    }
+
+    const avatarSlug = buildAvatarSlug(`admin_profile_${card.ownerId}`);
+    const avatarUrl = await saveAvatarFromBuffer(avatarSlug, req.file.buffer);
+    if (card.card?.avatarUrl && card.card.avatarUrl !== avatarUrl) {
+      await safeDeleteAvatarByPublicPath(card.card.avatarUrl);
+    }
+
+    await prisma.$executeRaw`
+      UPDATE profile_cards
+      SET avatar_url = ${avatarUrl},
+          updated_at = now()
+      WHERE id = ${cardId}::uuid
+    `;
+
+    res.json({ ok: true, avatarUrl });
   }),
 );
 
 router.delete(
   "/cards/:id/avatar",
-  asyncHandler(async (_req, res) => {
-    sendLegacyCardsDeprecated(res);
+  asyncHandler(async (req, res) => {
+    if (!ensureAdminCardsApiAccess(req, res)) {
+      return;
+    }
+
+    const cardId = String(req.params.id || "").trim();
+    const card = await findAdminCardCompatById(cardId);
+    if (!card) {
+      res.status(404).json({ error: "Card not found", code: "CARD_NOT_FOUND" });
+      return;
+    }
+
+    if (card.card?.avatarUrl) {
+      await safeDeleteAvatarByPublicPath(card.card.avatarUrl);
+    }
+
+    await prisma.$executeRaw`
+      UPDATE profile_cards
+      SET avatar_url = NULL,
+          updated_at = now()
+      WHERE id = ${cardId}::uuid
+    `;
+
+    res.json({ ok: true, avatarUrl: "" });
   }),
 );
 

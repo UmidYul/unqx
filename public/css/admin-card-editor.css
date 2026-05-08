@@ -1,0 +1,927 @@
+.admin-card-editor-page .admin-card-editor-shell {
+  width: 100%;
+  max-width: 1360px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.admin-card-editor-page .admin-card-topbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.admin-card-editor-page .admin-card-topbar h1,
+.admin-card-editor-page .admin-card-topbar p {
+  margin: 0;
+}
+
+.admin-card-editor-page .admin-card-topbar p {
+  margin-top: 0.35rem;
+  color: #6b7280;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  max-width: 720px;
+}
+
+.admin-card-editor-page .admin-card-page-error {
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #b91c1c;
+  border-radius: 18px;
+  padding: 0.9rem 1rem;
+  font-size: 0.95rem;
+}
+
+.admin-card-editor-page .admin-card-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.9rem;
+}
+
+.admin-card-editor-page .admin-card-meta-card {
+  min-width: 0;
+  border: 1px solid #e5e7eb;
+  border-radius: 20px;
+  background: #fff;
+  padding: 1rem 1.05rem;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.admin-card-editor-page .admin-card-meta-label {
+  margin: 0 0 0.6rem;
+  font-size: 0.74rem;
+  line-height: 1.2;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #9ca3af;
+  font-weight: 700;
+}
+
+.admin-card-editor-page .admin-card-meta-card h2,
+.admin-card-editor-page .admin-card-meta-card h3,
+.admin-card-editor-page .admin-card-meta-card p {
+  margin: 0;
+}
+
+.admin-card-editor-page .admin-card-meta-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.28rem;
+}
+
+.admin-card-editor-page .admin-card-meta-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #111827;
+  overflow-wrap: anywhere;
+}
+
+.admin-card-editor-page .admin-card-meta-subtitle,
+.admin-card-editor-page .admin-card-meta-note {
+  color: #6b7280;
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+.admin-card-editor-page .admin-card-meta-note {
+  margin-top: 0.25rem;
+}
+
+.admin-card-editor-page .admin-card-meta-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  margin-top: 0.8rem;
+}
+
+.admin-card-editor-page .admin-card-inline-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.admin-card-editor-page .admin-card-inline-field label,
+.admin-card-editor-page .admin-card-field-label {
+  font-size: 0.73rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #6b7280;
+  font-weight: 700;
+}
+
+.admin-card-editor-page .admin-card-select,
+.admin-card-editor-page .admin-card-input,
+.admin-card-editor-page .admin-card-textarea {
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 14px;
+  background: #fff;
+  color: #111827;
+  padding: 0.85rem 0.95rem;
+  font-size: 0.95rem;
+  line-height: 1.45;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+}
+
+.admin-card-editor-page .admin-card-select:focus,
+.admin-card-editor-page .admin-card-input:focus,
+.admin-card-editor-page .admin-card-textarea:focus {
+  outline: none;
+  border-color: #111827;
+  box-shadow: 0 0 0 3px rgba(17, 24, 39, 0.08);
+}
+
+.admin-card-editor-page .admin-card-textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.admin-card-editor-page .admin-card-editor-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(440px, 560px);
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.admin-card-editor-page .admin-card-editor-column,
+.admin-card-editor-page .admin-card-preview-column {
+  min-width: 0;
+}
+
+.admin-card-editor-page .admin-card-categories {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.8rem;
+  margin-bottom: 1rem;
+}
+
+.admin-card-editor-page .admin-card-category-btn {
+  width: 100%;
+  min-height: 72px;
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  background: linear-gradient(180deg, #ffffff 0%, #fafafa 100%);
+  color: #4b5563;
+  padding: 0.95rem 1rem;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  transition: border-color 0.18s ease, background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+.admin-card-editor-page .admin-card-category-btn:hover,
+.admin-card-editor-page .admin-card-category-btn:focus-visible {
+  border-color: #cbd5e1;
+  background: linear-gradient(180deg, #ffffff 0%, #f6f7fb 100%);
+  transform: translateY(-1px);
+}
+
+.admin-card-editor-page .admin-card-category-btn.is-active,
+.admin-card-editor-page .admin-card-category-btn[aria-pressed="true"] {
+  border-color: #111827;
+  background: linear-gradient(135deg, #202127 0%, #101114 100%);
+  color: #f8fafc;
+  box-shadow: 0 18px 34px rgba(17, 24, 39, 0.12);
+}
+
+.admin-card-editor-page .admin-card-category-label {
+  font-size: 0.92rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.admin-card-editor-page .admin-card-category-note {
+  font-size: 0.78rem;
+  line-height: 1.35;
+  color: #94a3b8;
+}
+
+.admin-card-editor-page .admin-card-category-btn.is-active .admin-card-category-note,
+.admin-card-editor-page .admin-card-category-btn[aria-pressed="true"] .admin-card-category-note {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.admin-card-editor-page .admin-card-panel {
+  border: 1px solid #e5e7eb;
+  border-radius: 22px;
+  background: #fff;
+  padding: 1.2rem;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.admin-card-editor-page .admin-card-panel.hidden {
+  display: none;
+}
+
+.admin-card-editor-page .admin-card-panel-head {
+  margin-bottom: 1rem;
+}
+
+.admin-card-editor-page .admin-card-panel-head h3,
+.admin-card-editor-page .admin-card-panel-head p {
+  margin: 0;
+}
+
+.admin-card-editor-page .admin-card-panel-head h3 {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #111827;
+}
+
+.admin-card-editor-page .admin-card-panel-head p {
+  margin-top: 0.45rem;
+  color: #6b7280;
+  line-height: 1.55;
+}
+
+.admin-card-editor-page .admin-card-editor-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.admin-card-editor-page .admin-card-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.9rem;
+}
+
+.admin-card-editor-page .admin-card-grid-2 .is-span-2 {
+  grid-column: 1 / -1;
+}
+
+.admin-card-editor-page .admin-card-avatar-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.9rem;
+}
+
+.admin-card-editor-page .admin-card-avatar-preview-box {
+  border: 1px solid #e5e7eb;
+  border-radius: 20px;
+  background: linear-gradient(180deg, #fafafa 0%, #f5f5f5 100%);
+  padding: 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+}
+
+.admin-card-editor-page .admin-card-avatar-preview-ring {
+  width: 96px;
+  height: 96px;
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid #d1d5db;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
+.admin-card-editor-page .admin-card-avatar-preview-ring img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.admin-card-editor-page .admin-card-avatar-fallback {
+  color: #6b7280;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.admin-card-editor-page .admin-card-avatar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.admin-card-editor-page .admin-card-crop-wrap {
+  border: 1px solid #e5e7eb;
+  border-radius: 20px;
+  background: #fafafa;
+  padding: 0.9rem;
+}
+
+.admin-card-editor-page .admin-card-crop-stage {
+  width: min(100%, 360px);
+  margin: 0 auto;
+  overflow: hidden;
+  border-radius: 18px;
+  background: #e5e7eb;
+}
+
+.admin-card-editor-page .admin-card-crop-stage img {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+}
+
+.admin-card-editor-page .admin-card-helper {
+  color: #6b7280;
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.admin-card-editor-page .admin-card-counter {
+  color: #6b7280;
+  font-size: 0.75rem;
+  line-height: 1.3;
+}
+
+.admin-card-editor-page .admin-card-tags-toolbar,
+.admin-card-editor-page .admin-card-buttons-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+
+.admin-card-editor-page .admin-card-tags-input-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.7rem;
+}
+
+.admin-card-editor-page .admin-card-tags-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.admin-card-editor-page .admin-card-tag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.55rem 0.7rem 0.55rem 0.8rem;
+  border: 1px solid #dbe2ea;
+  border-radius: 999px;
+  background: #f8fafc;
+  color: #111827;
+  font-size: 0.88rem;
+  line-height: 1.2;
+}
+
+.admin-card-editor-page .admin-card-tag-chip button,
+.admin-card-editor-page .admin-card-icon-btn {
+  border: none;
+  background: transparent;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.admin-card-editor-page .admin-card-tag-chip button:hover,
+.admin-card-editor-page .admin-card-icon-btn:hover {
+  color: #ef4444;
+}
+
+.admin-card-editor-page .admin-card-button-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.admin-card-editor-page .admin-card-button-row {
+  border: 1px solid #e5e7eb;
+  border-radius: 20px;
+  background: #fafafa;
+  padding: 0.85rem;
+  display: grid;
+  grid-template-columns: auto minmax(140px, 170px) minmax(120px, 160px) minmax(0, 1fr) auto auto;
+  gap: 0.65rem;
+  align-items: end;
+}
+
+.admin-card-editor-page .admin-card-drag-handle {
+  width: 40px;
+  height: 46px;
+  border: 1px solid #d1d5db;
+  border-radius: 14px;
+  background: #fff;
+  color: #6b7280;
+  font-size: 1rem;
+  cursor: grab;
+}
+
+.admin-card-editor-page .admin-card-button-active {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  border: 1px solid #d1d5db;
+  border-radius: 14px;
+  background: #fff;
+  min-height: 46px;
+  padding: 0 0.8rem;
+  font-size: 0.88rem;
+  color: #374151;
+}
+
+.admin-card-editor-page .admin-card-style-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+
+.admin-card-editor-page .admin-card-style-grid.is-compact {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.admin-card-editor-page .admin-card-style-btn {
+  width: 100%;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  background: #fff;
+  padding: 0.7rem 0.75rem;
+  color: #111827;
+  text-align: left;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+.admin-card-editor-page .admin-card-style-btn:hover,
+.admin-card-editor-page .admin-card-style-btn:focus-visible {
+  border-color: #cbd5e1;
+  transform: translateY(-1px);
+}
+
+.admin-card-editor-page .admin-card-style-btn.is-selected,
+.admin-card-editor-page .admin-card-style-btn[aria-pressed="true"] {
+  border-color: #111827;
+  box-shadow: 0 0 0 2px rgba(17, 24, 39, 0.06);
+}
+
+.admin-card-editor-page .admin-card-style-btn-main {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  min-width: 0;
+}
+
+.admin-card-editor-page .admin-card-style-swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  flex: 0 0 auto;
+}
+
+.admin-card-editor-page .admin-card-style-copy {
+  min-width: 0;
+}
+
+.admin-card-editor-page .admin-card-style-title {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.admin-card-editor-page .admin-card-style-note {
+  display: block;
+  margin-top: 0.15rem;
+  color: #6b7280;
+  font-size: 0.7rem;
+  line-height: 1.35;
+}
+
+.admin-card-editor-page .admin-card-frame-swatch {
+  position: relative;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+  overflow: hidden;
+  flex: 0 0 auto;
+}
+
+.admin-card-editor-page .admin-card-frame-swatch-core,
+.admin-card-editor-page .admin-card-frame-swatch-deco {
+  position: absolute;
+  inset: 0;
+}
+
+.admin-card-editor-page .admin-card-frame-swatch-core {
+  inset: 4px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #dbe4f0 0%, #f8fafc 100%);
+}
+
+.admin-card-editor-page .admin-card-frame-swatch--none {
+  background: #fff;
+}
+
+.admin-card-editor-page .admin-card-frame-swatch--chrome-ring {
+  background: linear-gradient(135deg, #a0a9b8 0%, #eef2f7 45%, #738199 100%);
+}
+
+.admin-card-editor-page .admin-card-frame-swatch--chrome-ring .admin-card-frame-swatch-deco {
+  inset: 1px;
+  border: 2px solid rgba(255, 255, 255, 0.88);
+  border-radius: 999px;
+}
+
+.admin-card-editor-page .admin-card-frame-swatch--neon-spray {
+  background: radial-gradient(circle at 30% 30%, rgba(94, 247, 255, 0.9), rgba(10, 12, 24, 0.95));
+}
+
+.admin-card-editor-page .admin-card-frame-swatch--neon-spray .admin-card-frame-swatch-deco {
+  inset: 1px;
+  border: 2px dashed rgba(242, 132, 255, 0.88);
+  border-radius: 999px;
+}
+
+.admin-card-editor-page .admin-card-frame-swatch--sticker-bubble {
+  background: linear-gradient(135deg, #fef3c7 0%, #f59e0b 100%);
+}
+
+.admin-card-editor-page .admin-card-frame-swatch--sticker-bubble .admin-card-frame-swatch-deco {
+  inset: 1px;
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.95), 0 0 0 1px rgba(146, 64, 14, 0.18);
+}
+
+.admin-card-editor-page .admin-card-frame-swatch--chain-link {
+  background: linear-gradient(135deg, #d1d5db 0%, #9ca3af 100%);
+}
+
+.admin-card-editor-page .admin-card-frame-swatch--chain-link .admin-card-frame-swatch-deco {
+  inset: 1px;
+  border-radius: 999px;
+  border: 1px dashed rgba(75, 85, 99, 0.9);
+}
+
+.admin-card-editor-page .admin-card-frame-swatch--pixel-glow {
+  background: linear-gradient(135deg, #1e293b 0%, #3b82f6 100%);
+}
+
+.admin-card-editor-page .admin-card-frame-swatch--pixel-glow .admin-card-frame-swatch-deco {
+  inset: 1px;
+  border-radius: 8px;
+  border: 2px solid rgba(125, 211, 252, 0.72);
+}
+
+.admin-card-editor-page .admin-card-frame-swatch--starburst .admin-card-frame-swatch-deco {
+  background: conic-gradient(from 0deg, rgba(255, 187, 0, 0.86), rgba(255, 255, 255, 0) 22%, rgba(255, 187, 0, 0.86) 44%, rgba(255, 255, 255, 0) 66%, rgba(255, 187, 0, 0.86) 88%, rgba(255, 255, 255, 0) 100%);
+  mask: radial-gradient(circle at center, transparent 48%, #000 52%);
+}
+
+.admin-card-editor-page .admin-card-frame-swatch--drip-outline {
+  background: linear-gradient(145deg, #2a1430 0%, #171120 100%);
+  border-color: #f284ff;
+}
+
+.admin-card-editor-page .admin-card-frame-swatch--drip-outline .admin-card-frame-swatch-deco {
+  border: 2px solid rgba(242, 132, 255, 0.74);
+  clip-path: polygon(0 0, 100% 0, 100% 66%, 76% 66%, 70% 92%, 56% 66%, 0 66%);
+}
+
+.admin-card-editor-page .admin-card-frame-swatch--tape-collage .admin-card-frame-swatch-deco {
+  inset: 0;
+  background:
+    linear-gradient(22deg, rgba(255, 255, 255, 0.85) 0 26%, transparent 26% 100%),
+    linear-gradient(-25deg, transparent 0 70%, rgba(255, 233, 180, 0.82) 70% 100%);
+}
+
+.admin-card-editor-page .admin-card-frame-swatch--orbit-dots .admin-card-frame-swatch-deco {
+  border: 1.8px solid rgba(92, 112, 149, 0.56);
+  border-radius: 999px;
+  box-shadow:
+    0 -9px 0 -5px rgba(37, 99, 235, 0.7),
+    9px 0 0 -5px rgba(125, 211, 252, 0.76),
+    0 9px 0 -5px rgba(148, 163, 184, 0.72),
+    -9px 0 0 -5px rgba(94, 115, 145, 0.76);
+}
+
+.admin-card-editor-page .admin-card-color-row {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.admin-card-editor-page .admin-card-color-row input[type="color"] {
+  width: 64px;
+  height: 46px;
+  border-radius: 14px;
+  border: 1px solid #d1d5db;
+  background: #fff;
+  padding: 0.2rem;
+}
+
+.admin-card-editor-page .admin-card-switch {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.9rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  background: #fafafa;
+  padding: 0.9rem 1rem;
+}
+
+.admin-card-editor-page .admin-card-switch-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.admin-card-editor-page .admin-card-switch-copy strong {
+  font-size: 0.95rem;
+  color: #111827;
+}
+
+.admin-card-editor-page .admin-card-switch-copy span {
+  font-size: 0.8rem;
+  color: #6b7280;
+  line-height: 1.4;
+}
+
+.admin-card-editor-page .admin-card-switch-ui {
+  position: relative;
+  display: inline-flex;
+  width: 52px;
+  height: 30px;
+  flex: 0 0 auto;
+}
+
+.admin-card-editor-page .admin-card-switch-ui input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.admin-card-editor-page .admin-card-switch-ui .track {
+  width: 100%;
+  height: 100%;
+  border-radius: 999px;
+  background: #d1d5db;
+  transition: background 0.18s ease;
+}
+
+.admin-card-editor-page .admin-card-switch-ui .thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.16);
+  transition: transform 0.18s ease;
+}
+
+.admin-card-editor-page .admin-card-switch-ui input:checked + .track {
+  background: #111827;
+}
+
+.admin-card-editor-page .admin-card-switch-ui input:checked + .track + .thumb {
+  transform: translateX(22px);
+}
+
+.admin-card-editor-page .admin-card-save-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.8rem;
+}
+
+.admin-card-editor-page .admin-card-save-status {
+  color: #6b7280;
+  font-size: 0.82rem;
+}
+
+.admin-card-editor-page .admin-card-preview-shell {
+  position: sticky;
+  top: 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 24px;
+  background: #fff;
+  padding: 0.9rem;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+}
+
+.admin-card-editor-page .admin-card-preview-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.7rem;
+  margin-bottom: 0.85rem;
+}
+
+.admin-card-editor-page .admin-card-preview-head p {
+  margin: 0;
+}
+
+.admin-card-editor-page .admin-card-preview-eyebrow {
+  font-size: 0.72rem;
+  line-height: 1.2;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #9ca3af;
+  font-weight: 800;
+}
+
+.admin-card-editor-page .admin-card-preview-slug {
+  margin-top: 0.22rem !important;
+  font-size: 0.84rem;
+  color: #111827;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.admin-card-editor-page .admin-card-preview-body {
+  max-height: calc(100vh - 2.75rem);
+  overflow: auto;
+  padding-right: 0.15rem;
+}
+
+.admin-card-editor-page #profile-card-live-preview {
+  border-radius: 18px !important;
+  border: 1px solid #e5e7eb !important;
+  background: #f8fafc !important;
+  box-shadow: none !important;
+  padding: 1rem !important;
+}
+
+.admin-card-editor-page #profile-card-live-preview[data-preview-theme] {
+  background: var(--preview-page-bg, #f8fafc) !important;
+  border-color: var(--preview-border-color, #d1d5db) !important;
+}
+
+.admin-card-editor-page .admin-card-owner-search {
+  border: 1px solid #e5e7eb;
+  border-radius: 24px;
+  background: #fff;
+  padding: 1.25rem;
+}
+
+.admin-card-editor-page .admin-card-owner-search-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.85rem;
+}
+
+.admin-card-editor-page .admin-card-owner-results {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.9rem;
+}
+
+.admin-card-editor-page .admin-card-owner-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 20px;
+  background: linear-gradient(180deg, #ffffff 0%, #fafafa 100%);
+  padding: 1rem;
+  min-width: 0;
+}
+
+.admin-card-editor-page .admin-card-owner-card h3,
+.admin-card-editor-page .admin-card-owner-card p {
+  margin: 0;
+}
+
+.admin-card-editor-page .admin-card-owner-card h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #111827;
+  overflow-wrap: anywhere;
+}
+
+.admin-card-editor-page .admin-card-owner-card p {
+  margin-top: 0.28rem;
+  color: #6b7280;
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.admin-card-editor-page .admin-card-owner-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 0.8rem;
+}
+
+.admin-card-editor-page .admin-card-owner-pill,
+.admin-card-editor-page .admin-card-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  min-height: 28px;
+  padding: 0.35rem 0.65rem;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  background: #f8fafc;
+  color: #374151;
+  font-size: 0.78rem;
+  line-height: 1;
+  font-weight: 600;
+}
+
+.admin-card-editor-page .admin-card-status-pill.is-active {
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+  color: #166534;
+}
+
+.admin-card-editor-page .admin-card-status-pill.is-paused {
+  border-color: #fde68a;
+  background: #fffbeb;
+  color: #92400e;
+}
+
+.admin-card-editor-page .admin-card-status-pill.is-blocked {
+  border-color: #fecaca;
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.admin-card-editor-page .admin-card-empty {
+  border: 1px dashed #cbd5e1;
+  border-radius: 24px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  padding: 2rem;
+  text-align: center;
+  color: #6b7280;
+}
+
+@media (max-width: 1180px) {
+  .admin-card-editor-page .admin-card-meta-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-card-editor-page .admin-card-button-row {
+    grid-template-columns: auto repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-card-editor-page .admin-card-button-row > .admin-card-button-active,
+  .admin-card-editor-page .admin-card-button-row > .admin-card-icon-btn {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 1040px) {
+  .admin-card-editor-page .admin-card-editor-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-card-editor-page .admin-card-preview-shell {
+    position: static;
+  }
+
+  .admin-card-editor-page .admin-card-preview-body {
+    max-height: none;
+    overflow: visible;
+    padding-right: 0;
+  }
+}
+
+@media (max-width: 860px) {
+  .admin-card-editor-page .admin-card-owner-results,
+  .admin-card-editor-page .admin-card-meta-grid,
+  .admin-card-editor-page .admin-card-categories,
+  .admin-card-editor-page .admin-card-grid-2,
+  .admin-card-editor-page .admin-card-style-grid,
+  .admin-card-editor-page .admin-card-style-grid.is-compact {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-card-editor-page .admin-card-button-row {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-card-editor-page .admin-card-drag-handle {
+    width: 100%;
+    height: 42px;
+  }
+}
+
+@media (max-width: 640px) {
+  .admin-card-editor-page .admin-card-owner-search-grid,
+  .admin-card-editor-page .admin-card-tags-input-row {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-card-editor-page .admin-card-meta-actions,
+  .admin-card-editor-page .admin-card-save-row {
+    justify-content: stretch;
+  }
+
+  .admin-card-editor-page .admin-card-meta-actions > *,
+  .admin-card-editor-page .admin-card-save-row > * {
+    width: 100%;
+  }
+}

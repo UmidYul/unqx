@@ -15,6 +15,7 @@ const { loginRateLimit } = require("../../middleware/rate-limit");
 const { requireCsrfToken } = require("../../middleware/csrf");
 const { getBaseUrl } = require("../../utils/url");
 const { SESSION_COOKIE_NAME, LEGACY_SESSION_COOKIE_NAMES, buildCookieOptions } = require("../../utils/cookies");
+const { getProfileEditorPresets } = require("../../services/profile-editor-presets");
 
 const router = express.Router();
 
@@ -40,6 +41,91 @@ function buildQuery(basePath, params) {
 
   const query = search.toString();
   return query ? `${basePath}?${query}` : basePath;
+}
+
+function buildAdminCardOwnerLabel(user) {
+  const raw = [
+    user?.displayName,
+    user?.firstName,
+    user?.username ? `@${user.username}` : "",
+    user?.telegramUsername ? `@${user.telegramUsername}` : "",
+    user?.email,
+  ].find((value) => String(value || "").trim());
+  return String(raw || "UNQX User").trim().slice(0, 120) || "UNQX User";
+}
+
+async function searchAdminCardOwners(query) {
+  const term = String(query || "").trim();
+  if (!term) {
+    return [];
+  }
+
+  const or = [
+    { firstName: { contains: term, mode: "insensitive" } },
+    { displayName: { contains: term, mode: "insensitive" } },
+    { username: { contains: term, mode: "insensitive" } },
+    { telegramUsername: { contains: term, mode: "insensitive" } },
+    { email: { contains: term, mode: "insensitive" } },
+  ];
+  if (/^[0-9a-f-]{12,}$/i.test(term)) {
+    or.push({ id: term });
+  }
+
+  const users = await prisma.user.findMany({
+    where: { OR: or },
+    select: {
+      id: true,
+      firstName: true,
+      displayName: true,
+      username: true,
+      telegramUsername: true,
+      email: true,
+      plan: true,
+      status: true,
+      createdAt: true,
+      profileCard: {
+        select: {
+          id: true,
+          name: true,
+          updatedAt: true,
+        },
+      },
+      slugs: {
+        where: {
+          status: { in: ["approved", "active", "paused", "private"] },
+        },
+        orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
+        take: 3,
+        select: {
+          fullSlug: true,
+          status: true,
+          isPrimary: true,
+        },
+      },
+    },
+    orderBy: [{ updatedAt: "desc" }],
+    take: 20,
+  });
+
+  return users.map((user) => ({
+    id: user.id,
+    name: buildAdminCardOwnerLabel(user),
+    username: String(user.username || "").trim(),
+    telegramUsername: String(user.telegramUsername || "").trim(),
+    email: String(user.email || "").trim(),
+    plan: String(user.plan || "").trim().toLowerCase() === "premium" ? "premium" : "none",
+    status: String(user.status || "").trim().toLowerCase() || "active",
+    profileCardId: String(user.profileCard?.id || "").trim(),
+    profileCardName: String(user.profileCard?.name || "").trim(),
+    profileCardUpdatedAt: user.profileCard?.updatedAt || null,
+    slugs: Array.isArray(user.slugs)
+      ? user.slugs.map((slug) => ({
+        fullSlug: String(slug.fullSlug || "").trim(),
+        status: String(slug.status || "").trim().toLowerCase(),
+        isPrimary: Boolean(slug.isPrimary),
+      }))
+      : [],
+  }));
 }
 
 router.get(
@@ -160,6 +246,7 @@ router.get(
       "orders",
       "purchases",
       "payment-cards",
+      "cards",
       "users",
       "slugs",
       "bracelets",
@@ -269,6 +356,118 @@ router.get(
       query: req.query || {},
       buildDashboardUrl: (next) => buildQuery("/manager/dashboard", next),
       dashboardBasePath: "/manager/dashboard",
+    });
+  }),
+);
+
+router.get(
+  "/admin/cards/new",
+  requireStaffPage,
+  asyncHandler(async (req, res) => {
+    const adminSession = getAdminSession(req);
+    if (adminSession?.role === "manager") {
+      res.redirect("/manager/dashboard");
+      return;
+    }
+
+    const ownerId = String(req.query.ownerId || "").trim();
+    if (ownerId) {
+      const owner = await prisma.user.findUnique({
+        where: { id: ownerId },
+        select: {
+          id: true,
+          firstName: true,
+          displayName: true,
+          username: true,
+          telegramUsername: true,
+          email: true,
+        },
+      });
+
+      if (!owner) {
+        res.status(404).render("admin/card-form", {
+          title: "Выбор владельца визитки",
+          adminSession,
+          dashboardBasePath: "/admin/dashboard",
+          mode: "select-owner",
+          cardId: "",
+          ownerSearchQuery: String(req.query.q || "").trim(),
+          ownerSearchResults: await searchAdminCardOwners(req.query.q),
+          ownerPickerError: "Пользователь не найден",
+          themePresets: getProfileEditorPresets(),
+        });
+        return;
+      }
+
+      const profileCard = await prisma.profileCard.upsert({
+        where: { ownerId: owner.id },
+        update: {},
+        create: {
+          ownerId: owner.id,
+          name: buildAdminCardOwnerLabel(owner),
+        },
+        select: { id: true },
+      });
+
+      res.redirect(`/admin/cards/${encodeURIComponent(profileCard.id)}/edit`);
+      return;
+    }
+
+    res.render("admin/card-form", {
+      title: "Выбор владельца визитки",
+      adminSession,
+      dashboardBasePath: "/admin/dashboard",
+      mode: "select-owner",
+      cardId: "",
+      ownerSearchQuery: String(req.query.q || "").trim(),
+      ownerSearchResults: await searchAdminCardOwners(req.query.q),
+      ownerPickerError: "",
+      themePresets: getProfileEditorPresets(),
+    });
+  }),
+);
+
+router.get(
+  "/admin/cards/:id/edit",
+  requireStaffPage,
+  asyncHandler(async (req, res) => {
+    const adminSession = getAdminSession(req);
+    if (adminSession?.role === "manager") {
+      res.redirect("/manager/dashboard");
+      return;
+    }
+
+    const cardId = String(req.params.id || "").trim();
+    const card = await prisma.profileCard.findUnique({
+      where: { id: cardId },
+      select: { id: true },
+    });
+
+    if (!card) {
+      res.status(404).render("admin/card-form", {
+        title: "Визитка не найдена",
+        adminSession,
+        dashboardBasePath: "/admin/dashboard",
+        mode: "missing",
+        cardId,
+        ownerSearchQuery: "",
+        ownerSearchResults: [],
+        ownerPickerError: "",
+        themePresets: getProfileEditorPresets(),
+      });
+      return;
+    }
+
+    res.render("admin/card-form", {
+      title: "Редактор визитки",
+      adminSession,
+      dashboardBasePath: "/admin/dashboard",
+      mode: "edit",
+      cardId: card.id,
+      ownerSearchQuery: "",
+      ownerSearchResults: [],
+      ownerPickerError: "",
+      themePresets: getProfileEditorPresets(),
     });
   }),
 );

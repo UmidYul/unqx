@@ -1,6 +1,16 @@
-(function initCardEditor() {
+(function initAdminCardEditor() {
   const body = document.body;
   if (!body || body.getAttribute("data-page") !== "admin-card-editor") {
+    return;
+  }
+
+  const mode = String(body.getAttribute("data-mode") || "").trim();
+  if (mode !== "edit") {
+    return;
+  }
+
+  const cardId = String(body.getAttribute("data-card-id") || "").trim();
+  if (!cardId) {
     return;
   }
 
@@ -9,1111 +19,1194 @@
     return;
   }
 
-  const mode = body.getAttribute("data-mode") || "create";
-  let cardId = body.getAttribute("data-card-id") || "";
-  const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "";
+  const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "";
+  const presetsNode = document.getElementById("admin-card-editor-presets");
+  const buttonTypeLabels = {
+    phone: "Позвонить",
+    telegram: "Telegram",
+    instagram: "Instagram",
+    tiktok: "TikTok",
+    youtube: "YouTube",
+    whatsapp: "WhatsApp",
+    website: "Сайт",
+    map: "Карта",
+    card: "Карта NFC",
+    other: "Другое",
+  };
+  const buttonTypeOptions = Object.entries(buttonTypeLabels);
+  const draftStorageKey = `unqx:admin-card-draft:${cardId}`;
 
-  function withCsrfHeaders(headers = {}) {
-    if (!csrfToken) {
-      return headers;
-    }
-
-    return {
-      ...headers,
-      "X-CSRF-Token": csrfToken,
+  let presets = {
+    signatureThemes: [],
+    colorThemes: [],
+    avatarFrames: [],
+  };
+  try {
+    presets = JSON.parse(presetsNode?.textContent || "{}") || presets;
+  } catch {
+    presets = {
+      signatureThemes: [],
+      colorThemes: [],
+      avatarFrames: [],
     };
   }
 
-  const slugInput = document.getElementById("field-slug");
-  const activeInput = document.getElementById("field-is-active");
-  const nameInput = document.getElementById("field-name");
-  const phoneInput = document.getElementById("field-phone");
-  const hashtagInput = document.getElementById("field-hashtag");
-  const verifiedInput = document.getElementById("field-verified");
-  const addressInput = document.getElementById("field-address");
-  const postcodeInput = document.getElementById("field-postcode");
-  const emailInput = document.getElementById("field-email");
-  const extraPhoneInput = document.getElementById("field-extra-phone");
+  const $ = (selector) => document.querySelector(selector);
+  const $$ = (selector) => Array.from(document.querySelectorAll(selector));
 
-  const tagsList = document.getElementById("tags-list");
-  const buttonsList = document.getElementById("buttons-list");
-  const addTagBtn = document.getElementById("add-tag-btn");
-  const addButtonBtn = document.getElementById("add-button-btn");
-  const tagsPreviewNode = document.getElementById("tags-preview");
-
-  const generateSlugBtn = document.getElementById("generate-slug-btn");
-  const previewCardBtn = document.getElementById("preview-card-btn");
-  const saveCardBtn = document.getElementById("save-card-btn");
-  const formErrorNode = document.getElementById("card-form-error");
-
-  const slugErrorNode = document.getElementById("field-slug-error");
-  const nameErrorNode = document.getElementById("field-name-error");
-  const phoneErrorNode = document.getElementById("field-phone-error");
-  const emailErrorNode = document.getElementById("field-email-error");
-
-  const pickAvatarBtn = document.getElementById("pick-avatar-btn");
-  const avatarFileInput = document.getElementById("avatar-file-input");
-  const avatarCropWrap = document.getElementById("avatar-crop-wrap");
-  const avatarCropImage = document.getElementById("avatar-crop-image");
-  const uploadAvatarBtn = document.getElementById("upload-avatar-btn");
-  const removeAvatarBtn = document.getElementById("remove-avatar-btn");
-  const avatarCurrentImage = document.getElementById("avatar-current-image");
-  const avatarFallback = document.getElementById("avatar-fallback");
+  const el = {
+    pageError: $("#admin-card-page-error"),
+    formError: $("#card-form-error"),
+    saveStatus: $("#admin-card-save-status"),
+    saveButton: $("#save-card-btn"),
+    ownerName: $("#admin-card-owner-name"),
+    ownerLogin: $("#admin-card-owner-login"),
+    ownerPlan: $("#admin-card-owner-plan"),
+    ownerLink: $("#admin-card-open-owner-link"),
+    primarySlug: $("#admin-card-primary-slug"),
+    primarySlugStatus: $("#admin-card-primary-slug-status"),
+    primarySlugNote: $("#admin-card-primary-slug-note"),
+    previewSlugSelect: $("#admin-card-preview-slug-select"),
+    publicLink: $("#admin-card-open-public-link"),
+    previewSlugLabel: $("#admin-card-preview-slug-label"),
+    previewOpenLink: $("#admin-card-preview-open-link"),
+    tariffSelect: $("#admin-card-tariff-select"),
+    tariffApply: $("#admin-card-tariff-apply"),
+    activeToggle: $("#admin-card-active-toggle"),
+    operationsNote: $("#admin-card-operations-note"),
+    verificationState: $("#admin-card-verification-state"),
+    verifiedCompany: $("#admin-card-verified-company"),
+    verifiedCompanyInput: $("#admin-card-verified-company-input"),
+    verificationRequest: $("#admin-card-verification-request"),
+    categories: $$(".admin-card-category-btn[data-card-category]"),
+    panels: $$("[data-card-panel]"),
+    avatarFile: $("#admin-card-avatar-file"),
+    avatarCurrent: $("#admin-card-avatar-current"),
+    avatarFallback: $("#admin-card-avatar-fallback"),
+    avatarUpload: $("#admin-card-avatar-upload"),
+    avatarRemove: $("#admin-card-avatar-remove"),
+    avatarCropWrap: $("#admin-card-avatar-crop-wrap"),
+    avatarCropImage: $("#admin-card-avatar-crop-image"),
+    name: $("#admin-card-name"),
+    role: $("#admin-card-role"),
+    bio: $("#admin-card-bio"),
+    bioCounter: $("#admin-card-bio-counter"),
+    hashtag: $("#admin-card-hashtag"),
+    tagInput: $("#admin-card-tag-input"),
+    tagAdd: $("#admin-card-tag-add"),
+    tagsList: $("#admin-card-tags-list"),
+    buttonAdd: $("#admin-card-button-add"),
+    buttonsList: $("#admin-card-buttons-list"),
+    address: $("#admin-card-address"),
+    postcode: $("#admin-card-postcode"),
+    email: $("#admin-card-email"),
+    extraPhone: $("#admin-card-extra-phone"),
+    themeButtons: $$("[data-theme]"),
+    frameButtons: $$("[data-avatar-frame]"),
+    customColor: $("#admin-card-custom-color"),
+    hideBranding: $("#admin-card-hide-branding"),
+    preview: $("#profile-card-live-preview"),
+  };
 
   if (
-    !(slugInput instanceof HTMLInputElement) ||
-    !(activeInput instanceof HTMLInputElement) ||
-    !(nameInput instanceof HTMLInputElement) ||
-    !(phoneInput instanceof HTMLInputElement) ||
-    !(hashtagInput instanceof HTMLInputElement) ||
-    !(verifiedInput instanceof HTMLInputElement) ||
-    !(addressInput instanceof HTMLInputElement) ||
-    !(postcodeInput instanceof HTMLInputElement) ||
-    !(emailInput instanceof HTMLInputElement) ||
-    !(extraPhoneInput instanceof HTMLInputElement) ||
-    !(tagsList instanceof HTMLElement) ||
-    !(buttonsList instanceof HTMLElement)
+    !(el.name instanceof HTMLInputElement) ||
+    !(el.role instanceof HTMLInputElement) ||
+    !(el.bio instanceof HTMLTextAreaElement) ||
+    !(el.hashtag instanceof HTMLInputElement) ||
+    !(el.tagsList instanceof HTMLElement) ||
+    !(el.buttonsList instanceof HTMLElement) ||
+    !(el.address instanceof HTMLInputElement) ||
+    !(el.postcode instanceof HTMLInputElement) ||
+    !(el.email instanceof HTMLInputElement) ||
+    !(el.extraPhone instanceof HTMLInputElement) ||
+    !(el.preview instanceof HTMLElement)
   ) {
     return;
   }
 
+  const state = {
+    loaded: false,
+    category: "main",
+    owner: null,
+    verification: null,
+    slugs: [],
+    selectedPreviewSlug: "",
+    isActive: false,
+    tariff: "legacy",
+    card: {
+      name: "",
+      role: "",
+      bio: "",
+      hashtag: "",
+      address: "",
+      postcode: "",
+      email: "",
+      extraPhone: "",
+      avatarUrl: "",
+      tags: [],
+      buttons: [],
+      theme: "default_dark",
+      customColor: "",
+      avatarFrame: "none",
+      showBranding: true,
+    },
+  };
+
   let cropper = null;
   let sourceObjectUrl = "";
-  let pendingAvatarBlob = null;
   let pendingAvatarPreviewUrl = "";
+  let pendingAvatarBlob = null;
+  let tagsSortable = null;
+  let buttonsSortable = null;
+  let saveStatusTimer = 0;
+
+  function withCsrfHeaders(headers = {}) {
+    return csrf
+      ? {
+        ...headers,
+        "X-CSRF-Token": csrf,
+      }
+      : headers;
+  }
+
+  function api(url, options = {}) {
+    const headers = withCsrfHeaders(options.headers || {});
+    return fetch(url, { ...options, headers }).then(async (response) => {
+      let payload = {};
+      try {
+        payload = await response.json();
+      } catch {
+        payload = {};
+      }
+      if (!response.ok) {
+        const error = new Error(payload?.error || "Request failed");
+        error.status = response.status;
+        error.code = payload?.code || "";
+        error.payload = payload;
+        throw error;
+      }
+      return payload;
+    });
+  }
 
   function setNodeMessage(node, message) {
     if (!(node instanceof HTMLElement)) {
       return;
     }
+    const text = String(message || "").trim();
+    node.textContent = text;
+    node.classList.toggle("hidden", !text);
+  }
 
-    if (!message) {
-      node.textContent = "";
-      node.classList.add("hidden");
+  function showPageError(message) {
+    setNodeMessage(el.pageError, message);
+  }
+
+  function showFormError(message) {
+    setNodeMessage(el.formError, message);
+  }
+
+  function setSaveStatus(message, tone = "neutral") {
+    if (!(el.saveStatus instanceof HTMLElement)) {
       return;
     }
-
-    node.textContent = message;
-    node.classList.remove("hidden");
-  }
-
-  function clearFieldErrors() {
-    setNodeMessage(slugErrorNode, "");
-    setNodeMessage(nameErrorNode, "");
-    setNodeMessage(phoneErrorNode, "");
-    setNodeMessage(emailErrorNode, "");
-  }
-
-  function setFormError(message) {
-    setNodeMessage(formErrorNode, message || "");
-  }
-
-  function setUploadAvatarButtonIdleState() {
-    if (!(uploadAvatarBtn instanceof HTMLButtonElement)) {
-      return;
+    window.clearTimeout(saveStatusTimer);
+    el.saveStatus.textContent = String(message || "");
+    el.saveStatus.style.color =
+      tone === "error" ? "#b91c1c" : tone === "success" ? "#166534" : "#6b7280";
+    if (message) {
+      saveStatusTimer = window.setTimeout(() => {
+        if (el.saveStatus instanceof HTMLElement) {
+          el.saveStatus.textContent = "";
+        }
+      }, 3200);
     }
-
-    uploadAvatarBtn.disabled = false;
-    uploadAvatarBtn.textContent = cardId ? "Сохранить обрезку" : "Подготовить аватар";
   }
 
-  function sanitizeSlug(value) {
-    return (value || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6);
+  function escapeHtml(value) {
+    return String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
   }
 
-  function extractDigits(value) {
-    return (value || "").replace(/\D/g, "");
-  }
-
-  function normalizeUzPhone(value) {
+  function normalizeHexColor(value) {
     const raw = String(value || "").trim();
-    if (!raw) {
-      return null;
-    }
-
-    if (raw.startsWith("+") && !raw.startsWith("+998")) {
-      return null;
-    }
-
-    const digits = extractDigits(raw);
-    let tail = "";
-
-    if (digits.startsWith("998")) {
-      tail = digits.slice(3);
-    } else if (digits.length === 10 && digits.startsWith("0")) {
-      tail = digits.slice(1);
-    } else if (digits.length === 9) {
-      tail = digits;
-    } else {
-      return null;
-    }
-
-    const normalizedTail = tail.slice(0, 9);
-
-    if (normalizedTail.length !== 9) {
-      return null;
-    }
-
-    return `+998${normalizedTail}`;
+    return /^#[0-9a-f]{6}$/i.test(raw) ? raw.toLowerCase() : "";
   }
 
-  function formatUzPhone(value) {
-    const digits = extractDigits(value);
-    let tail = "";
-
-    if (digits.startsWith("998")) {
-      tail = digits.slice(3);
-    } else if (digits.length > 0 && digits[0] === "0") {
-      tail = digits.slice(1);
-    } else {
-      tail = digits;
-    }
-
-    const normalizedTail = tail.slice(0, 9);
-
-    if (!normalizedTail) {
-      return "";
-    }
-
-    const p1 = normalizedTail.slice(0, 2);
-    const p2 = normalizedTail.slice(2, 5);
-    const p3 = normalizedTail.slice(5, 7);
-    const p4 = normalizedTail.slice(7, 9);
-
-    let result = "+998";
-    if (p1) {
-      result += ` (${p1}`;
-      if (p1.length === 2) {
-        result += ")";
-      }
-    }
-    if (p2) {
-      result += ` ${p2}`;
-    }
-    if (p3) {
-      result += `-${p3}`;
-    }
-    if (p4) {
-      result += `-${p4}`;
-    }
-
-    return result;
+  function createEditorButton(data = {}) {
+    const id = String(data.id || `${Date.now()}_${Math.random()}`).slice(0, 80);
+    return {
+      id,
+      type: String(data.type || "other").trim().toLowerCase() || "other",
+      label: String(data.label || "").trim().slice(0, 40),
+      value: String(data.href || data.value || data.url || "").trim().slice(0, 400),
+      active: data.active !== false,
+    };
   }
 
-  function normalizeUrl(value) {
-    const raw = (value || "").trim();
-    if (!raw) {
-      return "";
-    }
-
-    if (/^https?:\/\//i.test(raw)) {
-      return raw;
-    }
-
-    return `https://${raw}`;
-  }
-
-  function isValidHttpUrl(value) {
-    if (!value || !/^https?:\/\//i.test(value)) {
-      return false;
-    }
-
-    try {
-      const parsed = new URL(value);
-      return parsed.protocol === "http:" || parsed.protocol === "https:";
-    } catch {
-      return false;
-    }
-  }
-
-  function createTagRow(data) {
-    const row = document.createElement("div");
-    row.className = "grid gap-2 rounded-xl border border-neutral-200 bg-neutral-50 p-3 md:grid-cols-[auto_1fr_1fr_auto]";
-    row.setAttribute("data-item", "tag");
-
-    row.innerHTML = `
-      <button type="button" class="mt-2 h-7 w-7 rounded-lg border border-neutral-300 text-neutral-500" data-drag-handle>≡</button>
-
-      <label class="text-xs font-medium text-neutral-600">
-        Текст тега
-        <input type="text" class="tag-label mt-1 w-full rounded-lg border border-neutral-300 bg-white px-2.5 py-2 text-sm" placeholder="Top Dawg" />
-      </label>
-
-      <label class="text-xs font-medium text-neutral-600">
-        Ссылка (необязательно)
-        <input type="text" class="tag-url mt-1 w-full rounded-lg border border-neutral-300 bg-white px-2.5 py-2 text-sm" placeholder="https://..." />
-      </label>
-
-      <button type="button" data-remove-row class="mt-6 rounded-lg border border-red-200 px-3 py-2 text-xs font-semibold text-red-700 transition hover:bg-red-50">
-        Удалить
-      </button>
-    `;
-
-    const labelInput = row.querySelector(".tag-label");
-    const urlInput = row.querySelector(".tag-url");
-
-    if (labelInput instanceof HTMLInputElement) {
-      labelInput.value = data && data.label ? String(data.label) : "";
-    }
-
-    if (urlInput instanceof HTMLInputElement) {
-      urlInput.value = data && data.url ? String(data.url) : "";
-    }
-
-    return row;
-  }
-
-  function createButtonRow(data) {
-    const row = document.createElement("div");
-    row.className = "grid gap-2 rounded-xl border border-neutral-200 bg-neutral-50 p-3 md:grid-cols-[auto_1fr_1fr_160px_auto]";
-    row.setAttribute("data-item", "button");
-
-    row.innerHTML = `
-      <button type="button" class="mt-2 h-7 w-7 rounded-lg border border-neutral-300 text-neutral-500" data-drag-handle>≡</button>
-
-      <label class="text-xs font-medium text-neutral-600">
-        Текст кнопки
-        <input type="text" class="button-label mt-1 w-full rounded-lg border border-neutral-300 bg-white px-2.5 py-2 text-sm" placeholder="TELEGRAM" />
-      </label>
-
-      <label class="text-xs font-medium text-neutral-600">
-        Ссылка
-        <input type="text" class="button-url mt-1 w-full rounded-lg border border-neutral-300 bg-white px-2.5 py-2 text-sm" placeholder="https://..." />
-      </label>
-
-      <label class="mt-6 flex items-center gap-2 text-xs font-semibold text-neutral-700">
-        <input type="checkbox" class="button-active" />
-        Показывать
-      </label>
-
-      <button type="button" data-remove-row class="mt-6 rounded-lg border border-red-200 px-3 py-2 text-xs font-semibold text-red-700 transition hover:bg-red-50">
-        Удалить
-      </button>
-
-      <p class="button-row-error hidden text-xs text-red-600 md:col-span-5"></p>
-    `;
-
-    const labelInput = row.querySelector(".button-label");
-    const urlInput = row.querySelector(".button-url");
-    const activeNode = row.querySelector(".button-active");
-
-    if (labelInput instanceof HTMLInputElement) {
-      labelInput.value = data && data.label ? String(data.label) : "";
-    }
-
-    if (urlInput instanceof HTMLInputElement) {
-      urlInput.value = data && data.url ? String(data.url) : "https://";
-    }
-
-    if (activeNode instanceof HTMLInputElement) {
-      activeNode.checked = data && typeof data.isActive === "boolean" ? data.isActive : true;
-    }
-
-    return row;
-  }
-
-  function refreshTagsPreview() {
-    if (!(tagsPreviewNode instanceof HTMLElement)) {
-      return;
-    }
-
-    const labels = Array.from(tagsList.querySelectorAll(".tag-label"))
-      .map((input) => (input instanceof HTMLInputElement ? input.value.trim() : ""))
-      .filter(Boolean);
-
-    tagsPreviewNode.textContent = labels.length ? labels.join(" · ") : "Предпросмотр: теги появятся после ввода";
-  }
-
-  function readTagRows() {
-    return Array.from(tagsList.querySelectorAll('[data-item="tag"]'))
-      .map((row) => {
-        const labelInput = row.querySelector(".tag-label");
-        const urlInput = row.querySelector(".tag-url");
-
-        const label = labelInput instanceof HTMLInputElement ? labelInput.value.trim() : "";
-        const url = urlInput instanceof HTMLInputElement ? urlInput.value.trim() : "";
-
-        return { label, url };
-      })
-      .filter((item) => item.label.length > 0 || item.url.length > 0)
-      .map((item) => ({
-        label: item.label,
-        url: item.url || undefined,
-      }));
-  }
-
-  function readButtonRows() {
-    return Array.from(buttonsList.querySelectorAll('[data-item="button"]'))
-      .map((row) => {
-        const labelInput = row.querySelector(".button-label");
-        const urlInput = row.querySelector(".button-url");
-        const activeNode = row.querySelector(".button-active");
-
-        const label = labelInput instanceof HTMLInputElement ? labelInput.value.trim() : "";
-        const url = urlInput instanceof HTMLInputElement ? normalizeUrl(urlInput.value) : "";
-        const isActive = activeNode instanceof HTMLInputElement ? activeNode.checked : true;
-
-        return { label, url, isActive };
-      })
-      .filter((item) => item.label.length > 0 && item.url.length > 0 && isValidHttpUrl(item.url));
-  }
-
-  function clearButtonRowErrors() {
-    Array.from(buttonsList.querySelectorAll('[data-item="button"]')).forEach((row) => {
-      const errorNode = row.querySelector(".button-row-error");
-      if (errorNode instanceof HTMLElement) {
-        errorNode.textContent = "";
-        errorNode.classList.add("hidden");
-      }
+  function createEmptyButton() {
+    return createEditorButton({
+      type: "other",
+      label: "",
+      value: "",
+      active: true,
     });
   }
 
-  function setButtonRowError(row, message) {
-    const errorNode = row.querySelector(".button-row-error");
-    if (!(errorNode instanceof HTMLElement)) {
+  function normalizeCardPayload(card) {
+    const raw = card && typeof card === "object" ? card : {};
+    return {
+      name: String(raw.name || "").trim(),
+      role: String(raw.role || "").trim(),
+      bio: String(raw.bio || "").trim(),
+      hashtag: String(raw.hashtag || "").trim(),
+      address: String(raw.address || "").trim(),
+      postcode: String(raw.postcode || "").trim(),
+      email: String(raw.email || "").trim(),
+      extraPhone: String(raw.extraPhone || "").trim(),
+      avatarUrl: String(raw.avatarUrl || "").trim(),
+      tags: Array.isArray(raw.tags)
+        ? raw.tags
+          .map((item) => String((item && typeof item === "object" ? item.label : item) || "").trim())
+          .filter(Boolean)
+        : [],
+      buttons: Array.isArray(raw.buttons) ? raw.buttons.map(createEditorButton) : [],
+      theme: String(raw.theme || "default_dark").trim() || "default_dark",
+      customColor: normalizeHexColor(raw.customColor),
+      avatarFrame: String(raw.avatarFrame || "none").trim().toLowerCase() || "none",
+      showBranding: raw.showBranding !== false,
+    };
+  }
+
+  function selectedPreviewSlug() {
+    const items = Array.isArray(state.slugs) ? state.slugs : [];
+    const current = items.find((item) => item.fullSlug === state.selectedPreviewSlug) || items[0] || null;
+    if (current && state.selectedPreviewSlug !== current.fullSlug) {
+      state.selectedPreviewSlug = current.fullSlug;
+    }
+    return current;
+  }
+
+  function slugStatusLabel(status) {
+    const normalized = String(status || "").trim().toLowerCase();
+    if (normalized === "private") return "Private";
+    if (normalized === "active") return "Active";
+    if (normalized === "paused") return "Paused";
+    if (normalized === "approved") return "Approved";
+    if (normalized === "blocked") return "Blocked";
+    return normalized ? normalized : "No slug";
+  }
+
+  function renderCategories() {
+    el.categories.forEach((button) => {
+      const current = button.getAttribute("data-card-category") === state.category;
+      button.classList.toggle("is-active", current);
+      button.setAttribute("aria-pressed", current ? "true" : "false");
+    });
+    el.panels.forEach((panel) => {
+      const current = panel.getAttribute("data-card-panel") === state.category;
+      panel.classList.toggle("hidden", !current);
+    });
+  }
+
+  function syncAvatarPreview() {
+    const avatarUrl = pendingAvatarPreviewUrl || state.card.avatarUrl || "";
+    if (el.avatarCurrent instanceof HTMLImageElement) {
+      el.avatarCurrent.src = avatarUrl;
+      el.avatarCurrent.classList.toggle("hidden", !avatarUrl);
+    }
+    if (el.avatarFallback instanceof HTMLElement) {
+      el.avatarFallback.classList.toggle("hidden", Boolean(avatarUrl));
+    }
+    if (el.avatarRemove instanceof HTMLButtonElement) {
+      el.avatarRemove.disabled = !avatarUrl;
+    }
+  }
+
+  function updateBioCounter() {
+    if (el.bioCounter instanceof HTMLElement) {
+      el.bioCounter.textContent = `${String(el.bio.value || "").length}/120`;
+    }
+  }
+
+  function saveDraft() {
+    if (!state.loaded) {
+      return;
+    }
+    try {
+      window.localStorage.setItem(
+        draftStorageKey,
+        JSON.stringify({
+          savedAt: new Date().toISOString(),
+          category: state.category,
+          selectedPreviewSlug: state.selectedPreviewSlug,
+          card: {
+            ...state.card,
+            name: el.name.value,
+            role: el.role.value,
+            bio: el.bio.value,
+            hashtag: el.hashtag.value,
+            address: el.address.value,
+            postcode: el.postcode.value,
+            email: el.email.value,
+            extraPhone: el.extraPhone.value,
+          },
+        }),
+      );
+    } catch {
+      // Ignore draft storage failures.
+    }
+  }
+
+  function applyDraft() {
+    let draft = null;
+    try {
+      draft = JSON.parse(window.localStorage.getItem(draftStorageKey) || "null");
+    } catch {
+      draft = null;
+    }
+    if (!draft || typeof draft !== "object") {
       return;
     }
 
-    errorNode.textContent = message;
-    errorNode.classList.remove("hidden");
-  }
-
-  function validateButtonsRows() {
-    let ok = true;
-    clearButtonRowErrors();
-
-    Array.from(buttonsList.querySelectorAll('[data-item="button"]')).forEach((row) => {
-      const labelInput = row.querySelector(".button-label");
-      const urlInput = row.querySelector(".button-url");
-
-      const label = labelInput instanceof HTMLInputElement ? labelInput.value.trim() : "";
-      const url = urlInput instanceof HTMLInputElement ? normalizeUrl(urlInput.value) : "";
-      const hasLabel = Boolean(label);
-      const hasUrl = Boolean(url);
-
-      if (urlInput instanceof HTMLInputElement && hasUrl) {
-        urlInput.value = url;
-      }
-
-      if (!hasLabel && !hasUrl) {
-        return;
-      }
-
-      if (!hasLabel || !hasUrl) {
-        setButtonRowError(row, "Заполните и текст кнопки, и ссылку.");
-        ok = false;
-        return;
-      }
-
-      if (!isValidHttpUrl(url)) {
-        setButtonRowError(row, "Введите корректную ссылку (http:// или https://)");
-        ok = false;
-      }
-    });
-
-    return ok;
-  }
-
-  const DRAFT_KEY_BASE = "unqx_admin_card_draft";
-  const DRAFT_TTL_MS = 1000 * 60 * 60 * 24 * 7;
-  let draftSaveTimer = null;
-
-  function getDraftKey() {
-    return `${DRAFT_KEY_BASE}:${cardId || "new"}`;
-  }
-
-  function readDraft() {
-    try {
-      const raw = localStorage.getItem(getDraftKey());
-      if (!raw) {
-        return null;
-      }
-      const draft = JSON.parse(raw);
-      return draft && typeof draft === "object" ? draft : null;
-    } catch {
-      return null;
-    }
+    const draftCard = draft.card && typeof draft.card === "object" ? draft.card : {};
+    const nextCategory = String(draft.category || state.category).trim();
+    state.category = ["main", "links", "contacts", "design"].includes(nextCategory) ? nextCategory : state.category;
+    state.selectedPreviewSlug = String(draft.selectedPreviewSlug || state.selectedPreviewSlug).trim();
+    state.card = {
+      ...state.card,
+      ...normalizeCardPayload(draftCard),
+      avatarUrl: state.card.avatarUrl,
+    };
   }
 
   function clearDraft() {
     try {
-      localStorage.removeItem(getDraftKey());
+      window.localStorage.removeItem(draftStorageKey);
     } catch {
-      // ignore storage errors
+      // Ignore storage failures.
     }
   }
 
-  function isDraftFresh(draft) {
-    const updatedAt = Number(draft?.updatedAt || 0);
-    if (!updatedAt) {
-      return false;
-    }
-    return Date.now() - updatedAt <= DRAFT_TTL_MS;
-  }
-
-  function readTagRowsRaw() {
-    return Array.from(tagsList.querySelectorAll('[data-item="tag"]')).map((row) => {
-      const labelInput = row.querySelector(".tag-label");
-      const urlInput = row.querySelector(".tag-url");
-      return {
-        label: labelInput instanceof HTMLInputElement ? labelInput.value : "",
-        url: urlInput instanceof HTMLInputElement ? urlInput.value : "",
-      };
-    });
-  }
-
-  function readButtonRowsRaw() {
-    return Array.from(buttonsList.querySelectorAll('[data-item="button"]')).map((row) => {
-      const labelInput = row.querySelector(".button-label");
-      const urlInput = row.querySelector(".button-url");
-      const activeNode = row.querySelector(".button-active");
-      return {
-        label: labelInput instanceof HTMLInputElement ? labelInput.value : "",
-        url: urlInput instanceof HTMLInputElement ? urlInput.value : "",
-        isActive: activeNode instanceof HTMLInputElement ? activeNode.checked : true,
-      };
-    });
-  }
-
-  function collectDraft() {
-    return {
-      mode,
-      cardId: cardId || "",
-      slug: slugInput.value,
-      isActive: Boolean(activeInput.checked),
-      name: nameInput.value,
-      phone: phoneInput.value,
-      verified: Boolean(verifiedInput.checked),
-      hashtag: hashtagInput.value,
-      address: addressInput.value,
-      postcode: postcodeInput.value,
-      email: emailInput.value,
-      extraPhone: extraPhoneInput.value,
-      tags: readTagRowsRaw(),
-      buttons: readButtonRowsRaw(),
-      updatedAt: Date.now(),
-    };
-  }
-
-  function saveDraft() {
-    try {
-      localStorage.setItem(getDraftKey(), JSON.stringify(collectDraft()));
-    } catch {
-      // ignore storage errors
-    }
-  }
-
-  function scheduleSaveDraft() {
-    if (draftSaveTimer) {
-      window.clearTimeout(draftSaveTimer);
-    }
-    draftSaveTimer = window.setTimeout(() => {
-      saveDraft();
-      draftSaveTimer = null;
-    }, 300);
-  }
-
-  function restoreDraft() {
-    const draft = readDraft();
-    if (!draft || !isDraftFresh(draft)) {
-      return;
-    }
-    if (draft.mode !== mode) {
-      return;
-    }
-    if (mode === "edit" && String(draft.cardId || "") !== String(cardId || "")) {
-      return;
+  function renderTags() {
+    const tags = Array.isArray(state.card.tags) ? state.card.tags : [];
+    if (!tags.length) {
+      el.tagsList.innerHTML = '<div class="admin-card-helper">Теги ещё не добавлены.</div>';
+    } else {
+      el.tagsList.innerHTML = tags
+        .map(
+          (tag, index) => `
+            <div class="admin-card-tag-chip" data-tag-index="${index}">
+              <span>${escapeHtml(tag)}</span>
+              <button type="button" data-tag-remove="${index}" aria-label="Удалить тег">x</button>
+            </div>
+          `,
+        )
+        .join("");
     }
 
-    if (typeof draft.slug === "string") slugInput.value = draft.slug;
-    if (typeof draft.isActive === "boolean") activeInput.checked = draft.isActive;
-    if (typeof draft.name === "string") nameInput.value = draft.name;
-    if (typeof draft.phone === "string") phoneInput.value = draft.phone;
-    if (typeof draft.verified === "boolean") verifiedInput.checked = draft.verified;
-    if (typeof draft.hashtag === "string") hashtagInput.value = draft.hashtag;
-    if (typeof draft.address === "string") addressInput.value = draft.address;
-    if (typeof draft.postcode === "string") postcodeInput.value = draft.postcode;
-    if (typeof draft.email === "string") emailInput.value = draft.email;
-    if (typeof draft.extraPhone === "string") extraPhoneInput.value = draft.extraPhone;
-
-    if (Array.isArray(draft.tags)) {
-      tagsList.innerHTML = "";
-      draft.tags.forEach((tag) => {
-        tagsList.appendChild(createTagRow(tag));
-      });
-    }
-
-    if (Array.isArray(draft.buttons)) {
-      buttonsList.innerHTML = "";
-      draft.buttons.forEach((button) => {
-        buttonsList.appendChild(createButtonRow(button));
-      });
-    }
-
-    [phoneInput, extraPhoneInput].forEach((inputNode) => {
-      inputNode.value = inputNode.value ? formatUzPhone(inputNode.value) : "";
-    });
-
-    refreshTagsPreview();
-    clearButtonRowErrors();
-  }
-
-  function collectPayload() {
-    return {
-      slug: sanitizeSlug(slugInput.value),
-      isActive: Boolean(activeInput.checked),
-      name: nameInput.value.trim(),
-      phone: normalizeUzPhone(phoneInput.value) || phoneInput.value.trim(),
-      verified: Boolean(verifiedInput.checked),
-      hashtag: hashtagInput.value.trim() || undefined,
-      address: addressInput.value.trim() || undefined,
-      postcode: postcodeInput.value.trim() || undefined,
-      email: emailInput.value.trim() || undefined,
-      extraPhone: (normalizeUzPhone(extraPhoneInput.value) || extraPhoneInput.value.trim()) || undefined,
-      tags: readTagRows(),
-      buttons: readButtonRows(),
-    };
-  }
-
-  function toggleSaving(isSaving) {
-    if (!(saveCardBtn instanceof HTMLButtonElement)) {
-      return;
-    }
-
-    saveCardBtn.disabled = isSaving;
-    saveCardBtn.textContent = isSaving ? "Сохранение..." : "Сохранить";
-  }
-
-  function validateBasic(payload) {
-    clearFieldErrors();
-
-    if (!/^[A-Z]{3}[0-9]{3}$/.test(payload.slug)) {
-      setNodeMessage(slugErrorNode, "Slug должен быть в формате AAA001");
-      return false;
-    }
-
-    if (!payload.name) {
-      setNodeMessage(nameErrorNode, "Введите имя клиента");
-      return false;
-    }
-
-    if (!payload.phone) {
-      setNodeMessage(phoneErrorNode, "Введите телефон");
-      return false;
-    }
-
-    if (!/^\+998\d{9}$/.test(payload.phone)) {
-      setNodeMessage(phoneErrorNode, "Номер должен быть в формате +998XXXXXXXXX");
-      return false;
-    }
-
-    if (payload.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.email)) {
-      setNodeMessage(emailErrorNode, "Введите корректный email");
-      return false;
-    }
-
-    if (payload.extraPhone && !/^\+998\d{9}$/.test(payload.extraPhone)) {
-      setFormError("Дополнительный телефон должен быть в формате +998XXXXXXXXX");
-      return false;
-    }
-
-    if (!validateButtonsRows()) {
-      setFormError("Проверьте заполнение кнопок: текст и ссылка обязательны.");
-      return false;
-    }
-
-    return true;
-  }
-
-  if (generateSlugBtn instanceof HTMLElement) {
-    generateSlugBtn.addEventListener("click", async () => {
-      setFormError("");
-      try {
-        const response = await fetch("/api/admin/slug/next", {
-          method: "POST",
-          headers: withCsrfHeaders(),
-        });
-        if (!response.ok) {
-          setFormError("Не удалось сгенерировать slug");
-          return;
-        }
-
-        const payload = await response.json();
-        slugInput.value = typeof payload.slug === "string" ? payload.slug : "";
-      } catch {
-        setFormError("Не удалось сгенерировать slug");
+    if (typeof window.Sortable === "function" && tags.length > 1) {
+      if (tagsSortable) {
+        tagsSortable.destroy();
       }
-    });
-  }
-
-  if (previewCardBtn instanceof HTMLElement) {
-    previewCardBtn.addEventListener("click", () => {
-      const slug = sanitizeSlug(slugInput.value);
-      if (!/^[A-Z]{3}[0-9]{3}$/.test(slug)) {
-        setNodeMessage(slugErrorNode, "Для предпросмотра нужен корректный slug (AAA001)");
-        return;
-      }
-
-      window.open(`/${slug}`, "_blank", "noopener,noreferrer");
-    });
-  }
-
-  slugInput.addEventListener("input", () => {
-    slugInput.value = sanitizeSlug(slugInput.value);
-    clearFieldErrors();
-  });
-
-  [phoneInput, extraPhoneInput].forEach((inputNode) => {
-    inputNode.addEventListener("input", () => {
-      inputNode.value = formatUzPhone(inputNode.value);
-      if (inputNode === phoneInput) {
-        setNodeMessage(phoneErrorNode, "");
-      }
-    });
-
-    inputNode.value = inputNode.value ? formatUzPhone(inputNode.value) : "";
-  });
-
-  form.addEventListener("input", scheduleSaveDraft);
-  form.addEventListener("change", scheduleSaveDraft);
-
-  if (addTagBtn instanceof HTMLElement) {
-    addTagBtn.addEventListener("click", () => {
-      tagsList.appendChild(createTagRow({ label: "", url: "" }));
-      refreshTagsPreview();
-      scheduleSaveDraft();
-    });
-  }
-
-  if (addButtonBtn instanceof HTMLElement) {
-    addButtonBtn.addEventListener("click", () => {
-      buttonsList.appendChild(createButtonRow({ label: "", url: "https://", isActive: true }));
-      scheduleSaveDraft();
-    });
-  }
-
-  [tagsList, buttonsList].forEach((listNode) => {
-    listNode.addEventListener("click", (event) => {
-      const target = event.target;
-      if (!(target instanceof HTMLElement)) {
-        return;
-      }
-
-      const removeButton = target.closest("[data-remove-row]");
-      if (!(removeButton instanceof HTMLElement)) {
-        return;
-      }
-
-      const row = removeButton.closest("[data-item]");
-      if (row) {
-        row.remove();
-      }
-
-      refreshTagsPreview();
-      scheduleSaveDraft();
-    });
-
-    listNode.addEventListener("input", () => {
-      refreshTagsPreview();
-      if (listNode === buttonsList) {
-        clearButtonRowErrors();
-      }
-      scheduleSaveDraft();
-    });
-
-    listNode.addEventListener("focusout", (event) => {
-      if (listNode !== buttonsList) {
-        return;
-      }
-
-      const target = event.target;
-      if (!(target instanceof HTMLInputElement) || !target.classList.contains("button-url")) {
-        return;
-      }
-
-      const normalized = normalizeUrl(target.value);
-      target.value = normalized;
-      scheduleSaveDraft();
-    });
-  });
-
-  if (typeof Sortable !== "undefined") {
-    new Sortable(tagsList, {
-      animation: 150,
-      handle: "[data-drag-handle]",
-      onEnd: scheduleSaveDraft,
-    });
-
-    new Sortable(buttonsList, {
-      animation: 150,
-      handle: "[data-drag-handle]",
-      onEnd: scheduleSaveDraft,
-    });
-  }
-
-  form.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    setFormError("");
-
-    const payload = collectPayload();
-    if (!validateBasic(payload)) {
-      return;
-    }
-
-    toggleSaving(true);
-    try {
-      const endpoint = mode === "create" ? "/api/admin/cards" : `/api/admin/cards/${cardId}`;
-      const method = mode === "create" ? "POST" : "PATCH";
-
-      const response = await fetch(endpoint, {
-        method,
-        headers: withCsrfHeaders({
-          "Content-Type": "application/json",
-        }),
-        body: JSON.stringify(payload),
-      });
-
-      const data = await response.json().catch(() => ({}));
-
-      if (!response.ok) {
-        setFormError(data.error || "Не удалось сохранить визитку");
-        return;
-      }
-
-      clearDraft();
-
-      if (mode === "create") {
-        cardId = data.id || "";
-
-        if (pendingAvatarBlob && cardId) {
-          try {
-            await uploadAvatarBlob(cardId, pendingAvatarBlob);
-          } catch (error) {
-            sessionStorage.setItem(
-              "card-editor-notice",
-              error instanceof Error && error.message
-                ? `Визитка сохранена, но аватар не загружен: ${error.message}`
-                : "Визитка сохранена, но аватар не загружен",
-            );
+      tagsSortable = new window.Sortable(el.tagsList, {
+        animation: 120,
+        onEnd() {
+          const next = [];
+          Array.from(el.tagsList.querySelectorAll("[data-tag-index]")).forEach((node) => {
+            const index = Number(node.getAttribute("data-tag-index"));
+            if (Number.isInteger(index) && state.card.tags[index]) {
+              next.push(state.card.tags[index]);
+            }
+          });
+          if (next.length) {
+            state.card.tags = next;
+            renderTags();
+            renderPreview();
+            saveDraft();
           }
-          pendingAvatarBlob = null;
-          resetPendingAvatarPreviewUrl();
-        }
-
-        window.location.href = `/admin/cards/${data.id}/edit`;
-        return;
-      }
-
-      window.location.reload();
-    } finally {
-      toggleSaving(false);
+        },
+      });
+    } else if (tagsSortable) {
+      tagsSortable.destroy();
+      tagsSortable = null;
     }
-  });
+  }
+
+  function buttonRow(button, index) {
+    const typeOptions = buttonTypeOptions
+      .map(
+        ([value, label]) =>
+          `<option value="${escapeHtml(value)}"${value === button.type ? " selected" : ""}>${escapeHtml(label)}</option>`,
+      )
+      .join("");
+    return `
+      <div class="admin-card-button-row" data-button-index="${index}">
+        <button type="button" class="admin-card-drag-handle" data-button-drag aria-label="Перетащить">::</button>
+        <label class="block">
+          <span class="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Тип</span>
+          <select class="admin-card-select" data-button-field="type">${typeOptions}</select>
+        </label>
+        <label class="block">
+          <span class="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Label</span>
+          <input type="text" class="admin-card-input" data-button-field="label" value="${escapeHtml(button.label)}" maxlength="40" />
+        </label>
+        <label class="block">
+          <span class="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">URL / Value</span>
+          <input type="text" class="admin-card-input" data-button-field="value" value="${escapeHtml(button.value)}" maxlength="400" placeholder="https://t.me/username" />
+        </label>
+        <label class="admin-card-button-active">
+          <input type="checkbox" data-button-field="active"${button.active ? " checked" : ""} />
+          <span>Показывать</span>
+        </label>
+        <button type="button" class="admin-card-icon-btn text-sm" data-button-remove="${index}" aria-label="Удалить кнопку">x</button>
+      </div>
+    `;
+  }
+
+  function renderButtons() {
+    const buttons = Array.isArray(state.card.buttons) ? state.card.buttons : [];
+    if (!buttons.length) {
+      el.buttonsList.innerHTML = '<div class="admin-card-helper">Кнопки ещё не добавлены.</div>';
+    } else {
+      el.buttonsList.innerHTML = buttons.map(buttonRow).join("");
+    }
+
+    if (typeof window.Sortable === "function" && buttons.length > 1) {
+      if (buttonsSortable) {
+        buttonsSortable.destroy();
+      }
+      buttonsSortable = new window.Sortable(el.buttonsList, {
+        animation: 120,
+        handle: "[data-button-drag]",
+        onEnd() {
+          const next = [];
+          Array.from(el.buttonsList.querySelectorAll("[data-button-index]")).forEach((node) => {
+            const index = Number(node.getAttribute("data-button-index"));
+            if (Number.isInteger(index) && state.card.buttons[index]) {
+              next.push(state.card.buttons[index]);
+            }
+          });
+          if (next.length) {
+            state.card.buttons = next;
+            renderButtons();
+            renderPreview();
+            saveDraft();
+          }
+        },
+      });
+    } else if (buttonsSortable) {
+      buttonsSortable.destroy();
+      buttonsSortable = null;
+    }
+  }
+
+  function renderThemeButtons() {
+    const allThemeButtons = Array.isArray(el.themeButtons) ? el.themeButtons : [];
+    allThemeButtons.forEach((button) => {
+      const current = button.getAttribute("data-theme") === state.card.theme;
+      button.classList.toggle("is-selected", current);
+      button.setAttribute("aria-pressed", current ? "true" : "false");
+    });
+  }
+
+  function renderFrameButtons() {
+    const frameButtons = Array.isArray(el.frameButtons) ? el.frameButtons : [];
+    frameButtons.forEach((button) => {
+      const current = button.getAttribute("data-avatar-frame") === state.card.avatarFrame;
+      button.classList.toggle("is-selected", current);
+      button.setAttribute("aria-pressed", current ? "true" : "false");
+    });
+  }
+
+  function renderMeta() {
+    const owner = state.owner || {};
+    const previewSlug = selectedPreviewSlug();
+    const slugs = Array.isArray(state.slugs) ? state.slugs : [];
+
+    if (el.ownerName instanceof HTMLElement) {
+      el.ownerName.textContent = owner.name || "UNQX User";
+    }
+    if (el.ownerLogin instanceof HTMLElement) {
+      el.ownerLogin.textContent =
+        owner.username ? `@${owner.username}` : owner.telegramUsername ? `@${owner.telegramUsername}` : owner.email || owner.id || "—";
+    }
+    if (el.ownerPlan instanceof HTMLElement) {
+      el.ownerPlan.textContent = `Тариф: ${state.tariff === "premium" ? "Премиум" : "Legacy"} · Тип профиля: ${owner.profileType === "company" ? "Компания" : "Личность"}`;
+    }
+    if (el.ownerLink instanceof HTMLAnchorElement) {
+      el.ownerLink.href = owner.id ? `/admin/users/${encodeURIComponent(owner.id)}/card` : "#";
+      el.ownerLink.classList.toggle("pointer-events-none", !owner.id);
+      el.ownerLink.classList.toggle("opacity-50", !owner.id);
+    }
+
+    if (el.primarySlug instanceof HTMLElement) {
+      el.primarySlug.textContent = previewSlug?.fullSlug || "Нет активного slug";
+    }
+    if (el.primarySlugStatus instanceof HTMLElement) {
+      el.primarySlugStatus.textContent = `Статус slug: ${slugStatusLabel(previewSlug?.status)}`;
+    }
+    if (el.primarySlugNote instanceof HTMLElement) {
+      el.primarySlugNote.textContent =
+        previewSlug
+          ? `Просмотры на выбранном slug: ${Number(previewSlug.viewsCount || 0).toLocaleString("ru-RU")}`
+          : "У пользователя пока нет slug, который можно открыть публично.";
+    }
+
+    if (el.previewSlugSelect instanceof HTMLSelectElement) {
+      el.previewSlugSelect.innerHTML = slugs.length
+        ? slugs
+          .map(
+            (slug) =>
+              `<option value="${escapeHtml(slug.fullSlug)}"${slug.fullSlug === state.selectedPreviewSlug ? " selected" : ""}>${escapeHtml(slug.fullSlug)} · ${escapeHtml(slugStatusLabel(slug.status))}${slug.isPrimary ? " · primary" : ""}</option>`,
+          )
+          .join("")
+        : '<option value="">Нет slug</option>';
+    }
+
+    if (el.publicLink instanceof HTMLAnchorElement) {
+      const href = previewSlug?.fullSlug ? `/${encodeURIComponent(previewSlug.fullSlug)}` : "#";
+      el.publicLink.href = href;
+      el.publicLink.classList.toggle("pointer-events-none", href === "#");
+      el.publicLink.classList.toggle("opacity-50", href === "#");
+    }
+
+    if (el.previewOpenLink instanceof HTMLAnchorElement) {
+      const href = previewSlug?.fullSlug ? `/${encodeURIComponent(previewSlug.fullSlug)}` : "#";
+      el.previewOpenLink.href = href;
+      el.previewOpenLink.classList.toggle("pointer-events-none", href === "#");
+      el.previewOpenLink.classList.toggle("opacity-50", href === "#");
+    }
+
+    if (el.previewSlugLabel instanceof HTMLElement) {
+      el.previewSlugLabel.textContent = previewSlug?.fullSlug ? `unqx.uz/${previewSlug.fullSlug}` : "unqx.uz/[slug]";
+    }
+
+    if (el.tariffSelect instanceof HTMLSelectElement) {
+      el.tariffSelect.value = state.tariff === "premium" ? "premium" : "legacy";
+    }
+
+    if (el.activeToggle instanceof HTMLButtonElement) {
+      el.activeToggle.textContent = state.isActive ? "Выключить визитку" : "Включить визитку";
+    }
+
+    if (el.verificationState instanceof HTMLElement) {
+      const verified = state.verification?.isVerified;
+      const requestStatus = String(state.verification?.latestRequest?.status || "").trim();
+      if (verified) {
+        el.verificationState.textContent = "Пользователь верифицирован";
+      } else if (requestStatus) {
+        el.verificationState.textContent = `Последняя заявка: ${requestStatus}`;
+      } else {
+        el.verificationState.textContent = "Верификация не подтверждена";
+      }
+    }
+
+    if (el.verifiedCompany instanceof HTMLElement) {
+      el.verifiedCompany.textContent = `Компания: ${state.verification?.verifiedCompany || "—"}`;
+    }
+    if (el.verifiedCompanyInput instanceof HTMLInputElement) {
+      el.verifiedCompanyInput.value = String(state.verification?.verifiedCompany || "").trim();
+    }
+
+    if (el.verificationRequest instanceof HTMLElement) {
+      const latest = state.verification?.latestRequest;
+      el.verificationRequest.textContent = latest
+        ? `Slug ${latest.slug || "—"} · ${latest.companyName || "—"} · ${latest.role || "—"}`
+        : "Заявка на верификацию ещё не подавалась.";
+    }
+  }
+
+  function buildPreviewPayload() {
+    const previewSlug = selectedPreviewSlug();
+    const activeButtons = (Array.isArray(state.card.buttons) ? state.card.buttons : [])
+      .filter((button) => button.active !== false)
+      .map((button) => ({
+        type: button.type,
+        label: button.label,
+        href: button.value,
+        value: button.value,
+      }));
+    return {
+      slug: previewSlug?.fullSlug || "UNQ",
+      name: el.name.value || state.owner?.name || "UNQX User",
+      role: el.role.value || "",
+      bio: el.bio.value || "",
+      hashtag: el.hashtag.value || "",
+      address: el.address.value || "",
+      postcode: el.postcode.value || "",
+      email: el.email.value || "",
+      extraPhone: el.extraPhone.value || "",
+      avatarUrl: pendingAvatarPreviewUrl || state.card.avatarUrl || "",
+      tags: state.card.tags.slice(0),
+      buttons: activeButtons,
+      verified: Boolean(state.verification?.isVerified),
+      verifiedCompany: String(state.verification?.verifiedCompany || "").trim(),
+      tariff: state.tariff === "premium" ? "premium" : "none",
+      theme: state.card.theme || "default_dark",
+      customColor: normalizeHexColor(state.card.customColor),
+      avatarFrame: state.card.avatarFrame || "none",
+      showBranding: state.card.showBranding !== false,
+    };
+  }
+
+  function renderPreview() {
+    if (typeof window.CardView === "undefined") {
+      return;
+    }
+    const previewSlug = selectedPreviewSlug();
+    const payload = buildPreviewPayload();
+    el.preview.dataset.previewTheme = payload.theme || "default_dark";
+    el.preview.dataset.previewFrame = payload.avatarFrame || "none";
+    window.CardView.mountCardView(el.preview, payload, {
+      shareUrl: previewSlug?.fullSlug ? `${window.location.origin}/${encodeURIComponent(previewSlug.fullSlug)}` : window.location.href,
+      showPausedBanner: previewSlug?.status === "paused",
+      pausedText: "Slug на паузе. Публичный экран сейчас скрыт для посетителей.",
+      viewsLabel: `${Number(previewSlug?.viewsCount || 0).toLocaleString("ru-RU")} просмотров`,
+    });
+  }
+
+  function syncInputsFromState() {
+    el.name.value = state.card.name || "";
+    el.role.value = state.card.role || "";
+    el.bio.value = state.card.bio || "";
+    el.hashtag.value = state.card.hashtag || "";
+    el.address.value = state.card.address || "";
+    el.postcode.value = state.card.postcode || "";
+    el.email.value = state.card.email || "";
+    el.extraPhone.value = state.card.extraPhone || "";
+    if (el.customColor instanceof HTMLInputElement) {
+      el.customColor.value = state.card.customColor || "#111111";
+    }
+    if (el.hideBranding instanceof HTMLInputElement) {
+      el.hideBranding.checked = state.card.showBranding === false;
+    }
+    updateBioCounter();
+    syncAvatarPreview();
+    renderThemeButtons();
+    renderFrameButtons();
+    renderTags();
+    renderButtons();
+    renderMeta();
+    renderCategories();
+    renderPreview();
+  }
+
+  function readInputsIntoState() {
+    state.card.name = String(el.name.value || "").trim();
+    state.card.role = String(el.role.value || "").trim();
+    state.card.bio = String(el.bio.value || "").trim();
+    state.card.hashtag = String(el.hashtag.value || "").trim();
+    state.card.address = String(el.address.value || "").trim();
+    state.card.postcode = String(el.postcode.value || "").trim();
+    state.card.email = String(el.email.value || "").trim();
+    state.card.extraPhone = String(el.extraPhone.value || "").trim();
+    state.card.customColor = normalizeHexColor(el.customColor?.value);
+    state.card.showBranding = !(el.hideBranding instanceof HTMLInputElement && el.hideBranding.checked);
+    if (el.verifiedCompanyInput instanceof HTMLInputElement) {
+      if (!state.verification || typeof state.verification !== "object") {
+        state.verification = {
+          isVerified: false,
+          latestRequest: null,
+          verifiedCompany: "",
+        };
+      }
+      state.verification.verifiedCompany = String(el.verifiedCompanyInput.value || "").trim();
+    }
+  }
+
+  function handleInputChange() {
+    readInputsIntoState();
+    updateBioCounter();
+    renderPreview();
+    saveDraft();
+  }
+
+  function addTag() {
+    const raw = String(el.tagInput?.value || "").trim().replace(/^#+/, "");
+    if (!raw) {
+      return;
+    }
+    const nextTag = `#${raw.slice(0, 30)}`;
+    if (!state.card.tags.includes(nextTag)) {
+      state.card.tags.push(nextTag);
+      renderTags();
+      renderPreview();
+      saveDraft();
+    }
+    if (el.tagInput instanceof HTMLInputElement) {
+      el.tagInput.value = "";
+      el.tagInput.focus();
+    }
+  }
+
+  function addButton() {
+    state.card.buttons.push(createEmptyButton());
+    renderButtons();
+    renderPreview();
+    saveDraft();
+  }
+
+  function updateButtonField(row, field, value) {
+    const index = Number(row.getAttribute("data-button-index"));
+    if (!Number.isInteger(index) || !state.card.buttons[index]) {
+      return;
+    }
+    const button = state.card.buttons[index];
+    if (field === "active") {
+      button.active = Boolean(value);
+    } else if (field === "type") {
+      button.type = String(value || "other").trim().toLowerCase() || "other";
+    } else if (field === "label") {
+      button.label = String(value || "").trim().slice(0, 40);
+    } else if (field === "value") {
+      button.value = String(value || "").trim().slice(0, 400);
+    }
+    renderPreview();
+    saveDraft();
+  }
 
   function destroyCropper() {
     if (cropper && typeof cropper.destroy === "function") {
       cropper.destroy();
     }
     cropper = null;
+    if (sourceObjectUrl) {
+      URL.revokeObjectURL(sourceObjectUrl);
+      sourceObjectUrl = "";
+    }
+    if (el.avatarCropWrap instanceof HTMLElement) {
+      el.avatarCropWrap.classList.add("hidden");
+    }
   }
 
-  function resetSourceObjectUrl() {
-    if (!sourceObjectUrl) {
+  function setPendingAvatarPreview(url, blob) {
+    if (pendingAvatarPreviewUrl && pendingAvatarPreviewUrl !== url) {
+      URL.revokeObjectURL(pendingAvatarPreviewUrl);
+    }
+    pendingAvatarPreviewUrl = url;
+    pendingAvatarBlob = blob || null;
+    syncAvatarPreview();
+    renderPreview();
+  }
+
+  function prepareAvatar(file) {
+    if (!(file instanceof File)) {
+      return;
+    }
+    destroyCropper();
+    sourceObjectUrl = URL.createObjectURL(file);
+    if (el.avatarCropImage instanceof HTMLImageElement) {
+      el.avatarCropImage.src = sourceObjectUrl;
+    }
+    if (el.avatarCropWrap instanceof HTMLElement) {
+      el.avatarCropWrap.classList.remove("hidden");
+    }
+    const CropperCtor = window.Cropper;
+    if (typeof CropperCtor !== "function" || !(el.avatarCropImage instanceof HTMLImageElement)) {
+      return;
+    }
+    cropper = new CropperCtor(el.avatarCropImage, {
+      aspectRatio: 1,
+      viewMode: 1,
+      background: false,
+      autoCropArea: 1,
+    });
+    if (el.avatarUpload instanceof HTMLButtonElement) {
+      el.avatarUpload.textContent = "Сохранить аватар";
+    }
+  }
+
+  async function uploadAvatar() {
+    showFormError("");
+    if (!(el.avatarUpload instanceof HTMLButtonElement)) {
       return;
     }
 
-    URL.revokeObjectURL(sourceObjectUrl);
-    sourceObjectUrl = "";
-  }
-
-  function resetPendingAvatarPreviewUrl() {
-    if (!pendingAvatarPreviewUrl) {
-      return;
-    }
-
-    URL.revokeObjectURL(pendingAvatarPreviewUrl);
-    pendingAvatarPreviewUrl = "";
-  }
-
-  function showAvatarPreview(previewUrl) {
-    if (avatarCurrentImage instanceof HTMLImageElement) {
-      avatarCurrentImage.src = previewUrl;
-      avatarCurrentImage.hidden = false;
-    }
-
-    if (avatarFallback instanceof HTMLElement) {
-      avatarFallback.hidden = true;
-    }
-
-    if (removeAvatarBtn instanceof HTMLButtonElement) {
-      removeAvatarBtn.disabled = false;
-    }
-  }
-
-  async function buildCroppedAvatarBlob() {
-    if (!cropper) {
-      return null;
-    }
-
-    const canvas = cropper.getCroppedCanvas({
-      width: 400,
-      height: 400,
-      imageSmoothingQuality: "high",
-    });
-
-    const blob = await new Promise((resolve) => {
-      canvas.toBlob(resolve, "image/webp", 0.9);
-    });
-
-    return blob || null;
-  }
-
-  async function uploadAvatarBlob(targetCardId, blob) {
-    const file = new File([blob], "avatar.webp", { type: "image/webp" });
-    const formData = new FormData();
-    formData.append("file", file);
-
-    const response = await fetch(`/api/admin/cards/${targetCardId}/avatar`, {
-      method: "POST",
-      headers: withCsrfHeaders(),
-      body: formData,
-    });
-
-    const payload = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      throw new Error(payload.error || "Не удалось загрузить аватар");
-    }
-
-    return payload;
-  }
-
-  if (avatarFileInput instanceof HTMLInputElement && avatarCropWrap instanceof HTMLElement && avatarCropImage instanceof HTMLImageElement) {
-    avatarFileInput.addEventListener("change", () => {
-      const file = avatarFileInput.files && avatarFileInput.files[0];
-      if (!file) {
-        return;
-      }
-
-      if (file.size > 5 * 1024 * 1024) {
-        setFormError("Файл больше 5MB");
-        return;
-      }
-
-      if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
-        setFormError("Поддерживаются только JPG, PNG, WEBP");
-        return;
-      }
-
-      setFormError("");
-      destroyCropper();
-      resetSourceObjectUrl();
-
-      sourceObjectUrl = URL.createObjectURL(file);
-      avatarCropImage.src = sourceObjectUrl;
-      avatarCropWrap.hidden = false;
-
-      avatarCropImage.onload = () => {
-        if (typeof Cropper === "undefined") {
-          setFormError("CropperJS не загружен");
-          return;
-        }
-
-        destroyCropper();
-        cropper = new Cropper(avatarCropImage, {
-          aspectRatio: 1,
-          viewMode: 2,
-          dragMode: "move",
-          autoCropArea: 1,
-          guides: false,
-          center: false,
-          highlight: false,
-          background: false,
-        });
-      };
-    });
-  }
-
-  if (uploadAvatarBtn instanceof HTMLButtonElement) {
-    uploadAvatarBtn.addEventListener("click", async () => {
-      if (!cropper) {
-        setFormError("Выберите изображение и выполните обрезку");
-        return;
-      }
-
-      setFormError("");
-      uploadAvatarBtn.disabled = true;
-      uploadAvatarBtn.textContent = "Загрузка...";
-
-      try {
-        const blob = await buildCroppedAvatarBlob();
-
-        if (!blob) {
-          setFormError("Не удалось подготовить изображение");
-          return;
-        }
-
-        if (!cardId) {
-          pendingAvatarBlob = blob;
-          resetPendingAvatarPreviewUrl();
-          pendingAvatarPreviewUrl = URL.createObjectURL(blob);
-          showAvatarPreview(pendingAvatarPreviewUrl);
-          setFormError("");
-
-          destroyCropper();
-          avatarCropWrap.hidden = true;
-          avatarCropImage.removeAttribute("src");
-          resetSourceObjectUrl();
-          avatarFileInput.value = "";
-          return;
-        }
-
-        const payload = await uploadAvatarBlob(cardId, blob);
-        pendingAvatarBlob = null;
-        resetPendingAvatarPreviewUrl();
-        showAvatarPreview(payload.avatarUrl);
-
-        destroyCropper();
-        avatarCropWrap.hidden = true;
-        avatarCropImage.removeAttribute("src");
-        resetSourceObjectUrl();
-        avatarFileInput.value = "";
-      } finally {
-        setUploadAvatarButtonIdleState();
-      }
-    });
-  }
-
-  if (removeAvatarBtn instanceof HTMLButtonElement) {
-    removeAvatarBtn.addEventListener("click", async () => {
-      if (!cardId) {
-        pendingAvatarBlob = null;
-        resetPendingAvatarPreviewUrl();
-
-        destroyCropper();
-        if (avatarCropWrap instanceof HTMLElement) {
-          avatarCropWrap.hidden = true;
-        }
-        if (avatarCropImage instanceof HTMLImageElement) {
-          avatarCropImage.removeAttribute("src");
-        }
-        resetSourceObjectUrl();
-        if (avatarFileInput instanceof HTMLInputElement) {
-          avatarFileInput.value = "";
-        }
-
-        if (avatarCurrentImage instanceof HTMLImageElement) {
-          avatarCurrentImage.hidden = true;
-          avatarCurrentImage.removeAttribute("src");
-        }
-        if (avatarFallback instanceof HTMLElement) {
-          avatarFallback.hidden = false;
-        }
-
-        removeAvatarBtn.disabled = true;
-        return;
-      }
-
-      removeAvatarBtn.disabled = true;
-      setFormError("");
-      try {
-        const response = await fetch(`/api/admin/cards/${cardId}/avatar`, {
-          method: "DELETE",
-          headers: withCsrfHeaders(),
-        });
-
-        const payload = await response.json().catch(() => ({}));
-        if (!response.ok) {
-          setFormError(payload.error || "Не удалось удалить аватар");
-          return;
-        }
-
-        if (avatarCurrentImage instanceof HTMLImageElement) {
-          avatarCurrentImage.hidden = true;
-          avatarCurrentImage.removeAttribute("src");
-        }
-
-        if (avatarFallback instanceof HTMLElement) {
-          avatarFallback.hidden = false;
-        }
-
-        removeAvatarBtn.disabled = true;
-
-        destroyCropper();
-        if (avatarCropWrap instanceof HTMLElement) {
-          avatarCropWrap.hidden = true;
-        }
-        if (avatarCropImage instanceof HTMLImageElement) {
-          avatarCropImage.removeAttribute("src");
-        }
-        resetSourceObjectUrl();
-        if (avatarFileInput instanceof HTMLInputElement) {
-          avatarFileInput.value = "";
-        }
-      } finally {
-        if (avatarCurrentImage instanceof HTMLImageElement && !avatarCurrentImage.hidden) {
-          removeAvatarBtn.disabled = false;
-        }
-      }
-    });
-  }
-
-  setUploadAvatarButtonIdleState();
-
-  const statsNode = document.getElementById("card-editor-stats");
-  const statsCanvas = document.getElementById("card-stats-chart");
-  if (statsNode && statsCanvas && typeof Chart !== "undefined") {
-    const stats = JSON.parse(statsNode.textContent || "null");
-    if (stats && Array.isArray(stats.series7d)) {
-      new Chart(statsCanvas, {
-        type: "bar",
-        data: {
-          labels: stats.series7d.map((item) => item.date),
-          datasets: [
-            {
-              label: "Все просмотры",
-              data: stats.series7d.map((item) => item.views),
-              backgroundColor: "#1f2937",
-              borderRadius: 4,
-            },
-            {
-              label: "Уникальные",
-              data: stats.series7d.map((item) => item.uniqueViews),
-              backgroundColor: "#10b981",
-              borderRadius: 4,
-            },
-          ],
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: {
-            y: {
-              beginAtZero: true,
-              ticks: {
-                precision: 0,
-              },
-              grid: {
-                color: "#dddddd",
-                borderDash: [3, 3],
-              },
-            },
-            x: {
-              grid: {
-                display: false,
-              },
-            },
-          },
-        },
+    let blob = pendingAvatarBlob;
+    if (!blob && cropper && typeof cropper.getCroppedCanvas === "function") {
+      blob = await new Promise((resolve) => {
+        cropper.getCroppedCanvas({ width: 720, height: 720 }).toBlob(resolve, "image/webp", 0.92);
       });
     }
+
+    if (!(blob instanceof Blob)) {
+      showFormError("Сначала выбери изображение и подготовь crop.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", blob, "avatar.webp");
+    el.avatarUpload.disabled = true;
+    el.avatarUpload.textContent = "Загрузка...";
+
+    try {
+      const payload = await api(`/api/admin/cards/${encodeURIComponent(cardId)}/avatar`, {
+        method: "POST",
+        body: formData,
+      });
+      state.card.avatarUrl = String(payload.avatarUrl || "").trim();
+      if (pendingAvatarPreviewUrl) {
+        URL.revokeObjectURL(pendingAvatarPreviewUrl);
+      }
+      pendingAvatarPreviewUrl = "";
+      pendingAvatarBlob = null;
+      destroyCropper();
+      syncAvatarPreview();
+      renderPreview();
+      saveDraft();
+      setSaveStatus("Аватар обновлён", "success");
+    } catch (error) {
+      showFormError(error.message || "Не удалось загрузить аватар");
+    } finally {
+      el.avatarUpload.disabled = false;
+      el.avatarUpload.textContent = "Сохранить аватар";
+    }
   }
 
-  const persistedNotice = sessionStorage.getItem("card-editor-notice");
-  if (persistedNotice) {
-    setFormError(persistedNotice);
-    sessionStorage.removeItem("card-editor-notice");
+  async function removeAvatar() {
+    showFormError("");
+    try {
+      await api(`/api/admin/cards/${encodeURIComponent(cardId)}/avatar`, {
+        method: "DELETE",
+      });
+      state.card.avatarUrl = "";
+      if (pendingAvatarPreviewUrl) {
+        URL.revokeObjectURL(pendingAvatarPreviewUrl);
+      }
+      pendingAvatarPreviewUrl = "";
+      pendingAvatarBlob = null;
+      destroyCropper();
+      syncAvatarPreview();
+      renderPreview();
+      saveDraft();
+      setSaveStatus("Аватар удалён", "success");
+    } catch (error) {
+      showFormError(error.message || "Не удалось удалить аватар");
+    }
   }
 
-  restoreDraft();
-  refreshTagsPreview();
+  async function applyTariff() {
+    showFormError("");
+    if (!(el.tariffSelect instanceof HTMLSelectElement) || !(el.tariffApply instanceof HTMLButtonElement)) {
+      return;
+    }
+    const tariff = el.tariffSelect.value === "premium" ? "premium" : "legacy";
+    el.tariffApply.disabled = true;
+    try {
+      const payload = await api(`/api/admin/cards/${encodeURIComponent(cardId)}/tariff`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tariff }),
+      });
+      state.tariff = payload.tariff === "premium" ? "premium" : "legacy";
+      renderMeta();
+      renderPreview();
+      setSaveStatus("Тариф обновлён", "success");
+    } catch (error) {
+      showFormError(error.message || "Не удалось обновить тариф");
+    } finally {
+      el.tariffApply.disabled = false;
+    }
+  }
+
+  async function toggleCardActive() {
+    showFormError("");
+    if (!(el.activeToggle instanceof HTMLButtonElement)) {
+      return;
+    }
+    el.activeToggle.disabled = true;
+    try {
+      const payload = await api(`/api/admin/cards/${encodeURIComponent(cardId)}/toggle-active`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isActive: !state.isActive }),
+      });
+      state.isActive = Boolean(payload.isActive);
+      const fresh = await api(`/api/admin/cards/${encodeURIComponent(cardId)}`);
+      hydrateFromPayload(fresh);
+      setSaveStatus(state.isActive ? "Визитка включена" : "Визитка поставлена на паузу", "success");
+    } catch (error) {
+      showFormError(error.message || "Не удалось обновить статус");
+    } finally {
+      el.activeToggle.disabled = false;
+    }
+  }
+
+  function buildSavePayload() {
+    readInputsIntoState();
+    return {
+      name: state.card.name,
+      role: state.card.role,
+      bio: state.card.bio,
+      hashtag: state.card.hashtag,
+      address: state.card.address,
+      postcode: state.card.postcode,
+      email: state.card.email,
+      extraPhone: state.card.extraPhone,
+      tags: state.card.tags.slice(0),
+      buttons: state.card.buttons.map((button) => ({
+        id: button.id,
+        type: button.type,
+        label: button.label,
+        href: button.value,
+        value: button.value,
+        active: button.active !== false,
+      })),
+      theme: state.card.theme,
+      customColor: normalizeHexColor(state.card.customColor) || null,
+      avatarFrame: state.card.avatarFrame,
+      showBranding: state.card.showBranding !== false,
+      verifiedCompany:
+        state.verification && typeof state.verification === "object"
+          ? String(state.verification.verifiedCompany || "").trim()
+          : "",
+    };
+  }
+
+  async function saveCard() {
+    showPageError("");
+    showFormError("");
+    if (!(el.saveButton instanceof HTMLButtonElement)) {
+      return;
+    }
+    const payload = buildSavePayload();
+    if (!payload.name) {
+      showFormError("Имя обязательно для сохранения визитки.");
+      state.category = "main";
+      renderCategories();
+      return;
+    }
+    el.saveButton.disabled = true;
+    setSaveStatus("Сохраняем...");
+
+    try {
+      const response = await api(`/api/admin/cards/${encodeURIComponent(cardId)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      clearDraft();
+      hydrateFromPayload(response);
+      setSaveStatus("Визитка сохранена", "success");
+    } catch (error) {
+      showFormError(error.message || "Не удалось сохранить визитку");
+      setSaveStatus("Сохранение не удалось", "error");
+    } finally {
+      el.saveButton.disabled = false;
+    }
+  }
+
+  function hydrateFromPayload(payload) {
+    state.owner = payload?.owner || null;
+    state.verification = payload?.verification || null;
+    state.slugs = Array.isArray(payload?.slugs) ? payload.slugs.slice(0) : [];
+    state.isActive = Boolean(payload?.isActive);
+    state.tariff = payload?.tariff === "premium" ? "premium" : "legacy";
+    state.card = normalizeCardPayload(payload?.card);
+    state.selectedPreviewSlug = String(payload?.previewSlug?.fullSlug || state.selectedPreviewSlug || "").trim();
+    if (!state.selectedPreviewSlug && state.slugs[0]?.fullSlug) {
+      state.selectedPreviewSlug = state.slugs[0].fullSlug;
+    }
+    applyDraft();
+    syncInputsFromState();
+    state.loaded = true;
+  }
+
+  async function loadCard() {
+    showPageError("");
+    showFormError("");
+    setSaveStatus("Загрузка...");
+    try {
+      const payload = await api(`/api/admin/cards/${encodeURIComponent(cardId)}`);
+      hydrateFromPayload(payload);
+      setSaveStatus("");
+    } catch (error) {
+      showPageError(error.message || "Не удалось загрузить визитку");
+      setSaveStatus("Загрузка не удалась", "error");
+    }
+  }
+
+  el.categories.forEach((button) => {
+    button.addEventListener("click", () => {
+      state.category = button.getAttribute("data-card-category") || "main";
+      renderCategories();
+      saveDraft();
+    });
+  });
+
+  el.name.addEventListener("input", handleInputChange);
+  el.role.addEventListener("input", handleInputChange);
+  el.bio.addEventListener("input", handleInputChange);
+  el.hashtag.addEventListener("input", handleInputChange);
+  el.address.addEventListener("input", handleInputChange);
+  el.postcode.addEventListener("input", handleInputChange);
+  el.email.addEventListener("input", handleInputChange);
+  el.extraPhone.addEventListener("input", handleInputChange);
+  if (el.verifiedCompanyInput instanceof HTMLInputElement) {
+    el.verifiedCompanyInput.addEventListener("input", handleInputChange);
+  }
+  if (el.customColor instanceof HTMLInputElement) {
+    el.customColor.addEventListener("input", handleInputChange);
+  }
+  if (el.hideBranding instanceof HTMLInputElement) {
+    el.hideBranding.addEventListener("change", handleInputChange);
+  }
+
+  if (el.tagAdd instanceof HTMLButtonElement) {
+    el.tagAdd.addEventListener("click", addTag);
+  }
+  if (el.tagInput instanceof HTMLInputElement) {
+    el.tagInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        addTag();
+      }
+    });
+  }
+  el.tagsList.addEventListener("click", (event) => {
+    const button = event.target instanceof HTMLElement ? event.target.closest("[data-tag-remove]") : null;
+    if (!button) {
+      return;
+    }
+    const index = Number(button.getAttribute("data-tag-remove"));
+    if (!Number.isInteger(index)) {
+      return;
+    }
+    state.card.tags.splice(index, 1);
+    renderTags();
+    renderPreview();
+    saveDraft();
+  });
+
+  if (el.buttonAdd instanceof HTMLButtonElement) {
+    el.buttonAdd.addEventListener("click", addButton);
+  }
+  el.buttonsList.addEventListener("input", (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) {
+      return;
+    }
+    const row = target.closest("[data-button-index]");
+    if (!(row instanceof HTMLElement)) {
+      return;
+    }
+    const field = target.getAttribute("data-button-field");
+    if (!field) {
+      return;
+    }
+    updateButtonField(row, field, target instanceof HTMLInputElement || target instanceof HTMLSelectElement ? target.value : "");
+  });
+  el.buttonsList.addEventListener("change", (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) {
+      return;
+    }
+    const row = target.closest("[data-button-index]");
+    if (!(row instanceof HTMLElement)) {
+      return;
+    }
+    const field = target.getAttribute("data-button-field");
+    if (field === "active" && target instanceof HTMLInputElement) {
+      updateButtonField(row, field, target.checked);
+      return;
+    }
+    if (field && (target instanceof HTMLInputElement || target instanceof HTMLSelectElement)) {
+      updateButtonField(row, field, target.value);
+    }
+  });
+  el.buttonsList.addEventListener("click", (event) => {
+    const target = event.target instanceof HTMLElement ? event.target.closest("[data-button-remove]") : null;
+    if (!target) {
+      return;
+    }
+    const index = Number(target.getAttribute("data-button-remove"));
+    if (!Number.isInteger(index)) {
+      return;
+    }
+    state.card.buttons.splice(index, 1);
+    renderButtons();
+    renderPreview();
+    saveDraft();
+  });
+
+  el.themeButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      const theme = button.getAttribute("data-theme") || "default_dark";
+      state.card.theme = theme;
+      renderThemeButtons();
+      renderPreview();
+      saveDraft();
+    });
+  });
+
+  el.frameButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      const frame = button.getAttribute("data-avatar-frame") || "none";
+      state.card.avatarFrame = frame;
+      renderFrameButtons();
+      renderPreview();
+      saveDraft();
+    });
+  });
+
+  if (el.previewSlugSelect instanceof HTMLSelectElement) {
+    el.previewSlugSelect.addEventListener("change", () => {
+      state.selectedPreviewSlug = el.previewSlugSelect.value;
+      renderMeta();
+      renderPreview();
+      saveDraft();
+    });
+  }
+
+  if (el.avatarFile instanceof HTMLInputElement) {
+    el.avatarFile.addEventListener("change", () => {
+      const file = el.avatarFile.files && el.avatarFile.files[0];
+      if (file) {
+        prepareAvatar(file);
+      }
+    });
+  }
+
+  if (el.avatarUpload instanceof HTMLButtonElement) {
+    el.avatarUpload.addEventListener("click", () => {
+      void uploadAvatar();
+    });
+  }
+
+  if (el.avatarRemove instanceof HTMLButtonElement) {
+    el.avatarRemove.addEventListener("click", () => {
+      void removeAvatar();
+    });
+  }
+
+  if (el.tariffApply instanceof HTMLButtonElement) {
+    el.tariffApply.addEventListener("click", () => {
+      void applyTariff();
+    });
+  }
+
+  if (el.activeToggle instanceof HTMLButtonElement) {
+    el.activeToggle.addEventListener("click", () => {
+      void toggleCardActive();
+    });
+  }
+
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    void saveCard();
+  });
+
+  window.addEventListener("beforeunload", () => {
+    if (pendingAvatarPreviewUrl) {
+      URL.revokeObjectURL(pendingAvatarPreviewUrl);
+    }
+    destroyCropper();
+  });
+
+  void loadCard();
 })();

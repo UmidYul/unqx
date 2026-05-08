@@ -1,361 +1,561 @@
 <%
-  const pageTitle = typeof title === "string" && title ? title : "Форма визитки";
-  const pageMode = typeof mode === "string" && mode ? mode : "create";
+  const pageTitle = typeof title === "string" && title ? title : "Редактор визитки";
+  const pageMode = typeof mode === "string" && mode ? mode : "select-owner";
   const pageCardId = typeof cardId === "string" && cardId ? cardId : "";
-  const pageInitialAvatarUrl = typeof initialAvatarUrl === "string" && initialAvatarUrl ? initialAvatarUrl : "";
+  const pageDashboardBasePath =
+    typeof dashboardBasePath === "string" && dashboardBasePath ? dashboardBasePath : "/admin/dashboard";
 
-  const pageInitialValuesRaw = typeof initialValues === "object" && initialValues ? initialValues : {};
-  const pageInitialValues = {
-    slug: pageInitialValuesRaw.slug || "",
-    isActive: typeof pageInitialValuesRaw.isActive === "boolean" ? pageInitialValuesRaw.isActive : true,
-    name: pageInitialValuesRaw.name || "",
-    phone: pageInitialValuesRaw.phone || "",
-    verified: typeof pageInitialValuesRaw.verified === "boolean" ? pageInitialValuesRaw.verified : false,
-    hashtag: pageInitialValuesRaw.hashtag || "",
-    address: pageInitialValuesRaw.address || "",
-    postcode: pageInitialValuesRaw.postcode || "",
-    email: pageInitialValuesRaw.email || "",
-    extraPhone: pageInitialValuesRaw.extraPhone || "",
-    tags: Array.isArray(pageInitialValuesRaw.tags) ? pageInitialValuesRaw.tags : [],
-    buttons: Array.isArray(pageInitialValuesRaw.buttons) ? pageInitialValuesRaw.buttons : [],
+  const presets = typeof themePresets === "object" && themePresets ? themePresets : {};
+  const signatureThemes = Array.isArray(presets.signatureThemes) ? presets.signatureThemes : [];
+  const colorThemes = Array.isArray(presets.colorThemes) ? presets.colorThemes : [];
+  const avatarFrames = Array.isArray(presets.avatarFrames) ? presets.avatarFrames : [];
+
+  const pageOwnerSearchQuery = typeof ownerSearchQuery === "string" ? ownerSearchQuery : "";
+  const pageOwnerPickerError = typeof ownerPickerError === "string" ? ownerPickerError : "";
+  const pageOwnerSearchResults = Array.isArray(ownerSearchResults) ? ownerSearchResults : [];
+
+  const frameClassName = (value) => String(value || "").replace(/_/g, "-");
+  const ownerPlanLabel = (plan) => (String(plan || "").trim().toLowerCase() === "premium" ? "Премиум" : "Без тарифа");
+  const ownerStatusMeta = (status) => {
+    const normalized = String(status || "").trim().toLowerCase();
+    if (normalized === "blocked") {
+      return { className: "is-blocked", label: "Заблокирован" };
+    }
+    if (normalized === "paused" || normalized === "inactive") {
+      return { className: "is-paused", label: "На паузе" };
+    }
+    return { className: "is-active", label: "Активен" };
   };
 
-  const pageStats = typeof stats === "object" && stats ? stats : null;
+  const renderThemeButton = (item) => `
+    <button type="button" data-theme="${item.id}" class="admin-card-style-btn" aria-pressed="false">
+      <span class="admin-card-style-btn-main">
+        <span class="admin-card-style-swatch" style="${item.swatchStyle}"></span>
+        <span class="admin-card-style-copy">
+          <span class="admin-card-style-title">${item.label}</span>
+          <span class="admin-card-style-note">${item.description}</span>
+        </span>
+      </span>
+    </button>
+  `;
+
+  const renderFrameButton = (item) => `
+    <button type="button" data-avatar-frame="${item.id}" class="admin-card-style-btn" aria-pressed="false">
+      <span class="admin-card-style-btn-main">
+        <span class="admin-card-frame-swatch admin-card-frame-swatch--${frameClassName(item.id)}">
+          <span class="admin-card-frame-swatch-core"></span>
+          <span class="admin-card-frame-swatch-deco"></span>
+        </span>
+        <span class="admin-card-style-copy">
+          <span class="admin-card-style-title">${item.label}</span>
+          <span class="admin-card-style-note">${item.description}</span>
+        </span>
+      </span>
+    </button>
+  `;
 %>
 <!doctype html>
 <html lang="ru">
 <head>
-  <%- include('../partials/head', { title: pageTitle, styles: ['/css/admin.css'] }) %>
+  <%- include('../partials/head', { title: pageTitle, styles: ['/css/admin.css', '/css/public-card.css', '/css/admin-card-editor.css'] }) %>
   <link rel="stylesheet" href="/vendor/cropperjs/cropper.min.css" />
 </head>
-<body class="antialiased" data-admin-layout="1" data-page="admin-card-editor" data-mode="<%= pageMode %>" data-card-id="<%= pageCardId %>">
-  <%- include('../partials/admin-layout-start', { activeTab: 'cards' }) %>
-      <div class="mx-auto w-full max-w-6xl space-y-4">
-        <div class="border-b border-neutral-200 pb-4">
-          <h1 class="text-2xl font-black"><%= pageMode === 'create' ? 'Создать визитку' : `Редактирование #${pageInitialValues.slug}` %></h1>
-          <p class="mt-1 text-sm text-neutral-500"><%= pageMode === 'create' ? 'Создание новой цифровой визитки' : 'Редактирование данных, контента и медиа визитки' %></p>
+<body
+  class="antialiased admin-card-editor-page"
+  data-admin-layout="1"
+  data-page="admin-card-editor"
+  data-mode="<%= pageMode %>"
+  data-card-id="<%= pageCardId %>"
+>
+  <%- include('../partials/admin-layout-start', { activeTab: 'cards', dashboardBasePath: pageDashboardBasePath }) %>
+  <div class="admin-card-editor-shell">
+    <% if (pageMode === 'select-owner') { %>
+      <header class="admin-card-topbar">
+        <div>
+          <h1 class="text-3xl font-black text-neutral-950">Новая админская визитка</h1>
+          <p>Выбери владельца, и мы откроем его modern `profile_card` в новом редакторе с темами, рамками, solid presets и live preview.</p>
         </div>
+        <a
+          href="<%= pageDashboardBasePath %>?tab=cards"
+          class="inline-flex min-h-11 items-center justify-center rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100"
+        >
+          Назад к списку
+        </a>
+      </header>
 
-        <form id="card-editor-form" class="space-y-5" novalidate>
-          <section class="rounded-2xl border border-neutral-200 bg-white p-4">
-            <h2 class="text-lg font-bold">Основные данные</h2>
+      <% if (pageOwnerPickerError) { %>
+        <div class="admin-card-page-error"><%= pageOwnerPickerError %></div>
+      <% } %>
 
-            <div class="mt-4 grid gap-3 md:grid-cols-2">
-              <label class="text-sm font-medium text-neutral-700">
-                Slug
-                <div class="mt-1 flex gap-2">
-                  <input
-                    id="field-slug"
-                    type="text"
-                    value="<%= pageInitialValues.slug %>"
-                    class="w-full rounded-xl border border-neutral-300 px-3 py-2"
-                    placeholder="AAA001"
-                    maxlength="6"
-                    required
-                  />
-                  <button
-                    type="button"
-                    id="generate-slug-btn"
-                    class="rounded-xl border border-neutral-300 px-3 py-2 text-xs font-semibold transition hover:bg-neutral-100"
-                  >
-                    Авто
-                  </button>
-                </div>
-                <p class="mt-1 hidden text-xs text-red-600" id="field-slug-error"></p>
-              </label>
+      <section class="admin-card-owner-search">
+        <form method="get" action="/admin/cards/new" class="admin-card-owner-search-grid">
+          <label class="block">
+            <span class="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Поиск владельца</span>
+            <input
+              type="text"
+              name="q"
+              value="<%= pageOwnerSearchQuery %>"
+              placeholder="Имя, username, email, telegram, UUID"
+              class="admin-card-input"
+              autocomplete="off"
+            />
+          </label>
+          <button
+            type="submit"
+            class="inline-flex min-h-11 items-center justify-center self-end rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-neutral-800"
+          >
+            Найти
+          </button>
+        </form>
 
-              <label class="mt-7 flex items-center gap-2 text-sm font-medium text-neutral-700 md:mt-0 md:self-end">
-                <input id="field-is-active" type="checkbox" <%= pageInitialValues.isActive ? 'checked' : '' %> />
-                Активна
-              </label>
-
-              <label class="text-sm font-medium text-neutral-700">
-                Имя клиента
-                <input id="field-name" type="text" value="<%= pageInitialValues.name %>" class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2" required />
-                <p class="mt-1 hidden text-xs text-red-600" id="field-name-error"></p>
-              </label>
-
-              <label class="text-sm font-medium text-neutral-700">
-                Телефон
-                <input
-                  id="field-phone"
-                  type="text"
-                  value="<%= pageInitialValues.phone %>"
-                  class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2"
-                  inputmode="numeric"
-                  autocomplete="tel"
-                  placeholder="+998 (90) 123-45-67"
-                  required
-                />
-                <p class="mt-1 hidden text-xs text-red-600" id="field-phone-error"></p>
-              </label>
-
-              <label class="text-sm font-medium text-neutral-700">
-                Нижний хэштег
-                <input id="field-hashtag" type="text" value="<%= pageInitialValues.hashtag %>" class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2" />
-              </label>
-
-              <label class="mt-7 flex items-center gap-2 text-sm font-medium text-neutral-700 md:mt-0 md:self-end">
-                <input id="field-verified" type="checkbox" <%= pageInitialValues.verified ? 'checked' : '' %> />
-                Верифицирован
-              </label>
+        <div class="mt-6">
+          <% if (!pageOwnerSearchQuery) { %>
+            <div class="admin-card-empty">
+              <p class="text-base font-semibold text-neutral-900">Сначала найди пользователя</p>
+              <p class="mt-2">Редактор создаёт или открывает `profile_card` конкретного владельца, поэтому шаг выбора обязателен.</p>
             </div>
-
-            <div class="mt-4 space-y-3 rounded-2xl border border-neutral-200 bg-white p-4">
-              <h3 class="text-sm font-semibold text-neutral-800">Аватар</h3>
-
-              <div class="rounded-xl border border-dashed border-neutral-300 bg-neutral-50 p-4 text-center text-sm text-neutral-600">
-                <p>Перетащите файл сюда или выберите вручную</p>
-                <label
-                  for="avatar-file-input"
-                  id="pick-avatar-btn"
-                  class="mt-2 inline-flex cursor-pointer rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold transition hover:bg-neutral-100"
-                >
-                  Выбрать файл
-                </label>
-                <input
-                  id="avatar-file-input"
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp"
-                  class="hidden"
-                />
-              </div>
-
-              <div id="avatar-crop-wrap" class="avatar-crop-wrap rounded-xl border border-neutral-200 bg-neutral-50 p-3" hidden>
-                <div class="avatar-crop-stage mx-auto">
-                  <img id="avatar-crop-image" alt="Crop preview" class="avatar-crop-image" />
-                </div>
-              </div>
-
-              <div class="rounded-xl border border-neutral-200 bg-neutral-50 p-3">
-                <img
-                  id="avatar-current-image"
-                  src="<%= pageInitialAvatarUrl %>"
-                  alt="Avatar"
-                  class="h-24 w-24 rounded-full object-cover"
-                  <%= pageInitialAvatarUrl ? '' : 'hidden' %>
-                />
-                <span id="avatar-fallback" class="text-xs text-neutral-600" <%= pageInitialAvatarUrl ? 'hidden' : '' %>>Нет аватара</span>
-              </div>
-
-              <button
-                type="button"
-                id="upload-avatar-btn"
-                class="rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-neutral-700 disabled:opacity-60"
-              >
-                <%= pageCardId ? 'Сохранить обрезку' : 'Подготовить аватар' %>
-              </button>
-
-              <button
-                type="button"
-                id="remove-avatar-btn"
-                class="rounded-xl border border-red-200 px-4 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-50 disabled:opacity-60"
-                <%= !pageCardId || !pageInitialAvatarUrl ? 'disabled' : '' %>
-              >
-                Удалить аватар
-              </button>
+          <% } else if (!pageOwnerSearchResults.length) { %>
+            <div class="admin-card-empty">
+              <p class="text-base font-semibold text-neutral-900">Ничего не найдено</p>
+              <p class="mt-2">Попробуй другое имя, username, email или UUID пользователя.</p>
             </div>
-          </section>
+          <% } else { %>
+            <div class="admin-card-owner-results">
+              <% pageOwnerSearchResults.forEach((item) => { const statusMeta = ownerStatusMeta(item.status); %>
+                <article class="admin-card-owner-card">
+                  <div class="flex items-start justify-between gap-3">
+                    <div class="min-w-0">
+                      <h3><%= item.name %></h3>
+                      <p><%= item.username ? `@${item.username}` : (item.telegramUsername ? `@${item.telegramUsername}` : (item.email || item.id)) %></p>
+                    </div>
+                    <span class="admin-card-status-pill <%= statusMeta.className %>"><%= statusMeta.label %></span>
+                  </div>
 
-          <section class="rounded-2xl border border-neutral-200 bg-white p-4">
-            <div class="flex flex-wrap items-center justify-between gap-2">
-              <h2 class="text-lg font-bold">Теги-ссылки</h2>
-              <button
-                type="button"
-                id="add-tag-btn"
-                class="w-full rounded-xl border border-neutral-300 px-3 py-1.5 text-xs font-semibold transition hover:bg-neutral-100 sm:w-auto"
-              >
-                + Добавить тег
-              </button>
+                  <div class="admin-card-owner-tags">
+                    <span class="admin-card-owner-pill"><%= ownerPlanLabel(item.plan) %></span>
+                    <span class="admin-card-owner-pill"><%= item.profileCardId ? 'Визитка уже есть' : 'Визитка ещё не создана' %></span>
+                    <% (item.slugs || []).forEach((slug) => { %>
+                      <span class="admin-card-owner-pill"><%= slug.isPrimary ? 'Primary: ' : '' %><%= slug.fullSlug %></span>
+                    <% }) %>
+                  </div>
+
+                  <form method="get" action="/admin/cards/new" class="mt-4">
+                    <input type="hidden" name="ownerId" value="<%= item.id %>" />
+                    <% if (pageOwnerSearchQuery) { %>
+                      <input type="hidden" name="q" value="<%= pageOwnerSearchQuery %>" />
+                    <% } %>
+                    <button
+                      type="submit"
+                      class="inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-neutral-800"
+                    >
+                      <%= item.profileCardId ? 'Открыть редактор' : 'Создать и открыть редактор' %>
+                    </button>
+                  </form>
+                </article>
+              <% }) %>
             </div>
-
-            <div id="tags-list" class="mt-3 space-y-2">
-              <% pageInitialValues.tags.forEach((tag) => { %>
-              <div class="grid gap-2 rounded-xl border border-neutral-200 bg-neutral-50 p-3 md:grid-cols-[auto_1fr_1fr_auto]" data-item="tag">
-                <button type="button" class="mt-2 h-7 w-7 rounded-lg border border-neutral-300 text-neutral-500" data-drag-handle>≡</button>
-
-                <label class="text-xs font-medium text-neutral-600">
-                  Текст тега
-                  <input
-                    type="text"
-                    class="tag-label mt-1 w-full rounded-lg border border-neutral-300 bg-white px-2.5 py-2 text-sm"
-                    value="<%= tag.label || '' %>"
-                    placeholder="Top Dawg"
-                  />
-                </label>
-
-                <label class="text-xs font-medium text-neutral-600">
-                  Ссылка (необязательно)
-                  <input
-                    type="text"
-                    class="tag-url mt-1 w-full rounded-lg border border-neutral-300 bg-white px-2.5 py-2 text-sm"
-                    value="<%= tag.url || '' %>"
-                    placeholder="https://..."
-                  />
-                </label>
-
-                <button
-                  type="button"
-                  data-remove-row
-                  class="mt-6 rounded-lg border border-red-200 px-3 py-2 text-xs font-semibold text-red-700 transition hover:bg-red-50"
-                >
-                  Удалить
-                </button>
-              </div>
-              <% }); %>
-            </div>
-
-            <p id="tags-preview" class="mt-3 text-sm text-blue-700">Предпросмотр: теги появятся после ввода</p>
-          </section>
-
-          <section class="rounded-2xl border border-neutral-200 bg-white p-4">
-            <div class="flex flex-wrap items-center justify-between gap-2">
-              <h2 class="text-lg font-bold">Кнопки</h2>
-              <button
-                type="button"
-                id="add-button-btn"
-                class="w-full rounded-xl border border-neutral-300 px-3 py-1.5 text-xs font-semibold transition hover:bg-neutral-100 sm:w-auto"
-              >
-                + Добавить кнопку
-              </button>
-            </div>
-
-            <div id="buttons-list" class="mt-3 space-y-2">
-              <% pageInitialValues.buttons.forEach((button) => { %>
-              <div class="grid gap-2 rounded-xl border border-neutral-200 bg-neutral-50 p-3 md:grid-cols-[auto_1fr_1fr_160px_auto]" data-item="button">
-                <button type="button" class="mt-2 h-7 w-7 rounded-lg border border-neutral-300 text-neutral-500" data-drag-handle>≡</button>
-
-                <label class="text-xs font-medium text-neutral-600">
-                  Текст кнопки
-                  <input
-                    type="text"
-                    class="button-label mt-1 w-full rounded-lg border border-neutral-300 bg-white px-2.5 py-2 text-sm"
-                    value="<%= button.label || '' %>"
-                    placeholder="TELEGRAM"
-                  />
-                </label>
-
-                <label class="text-xs font-medium text-neutral-600">
-                  Ссылка
-                  <input
-                    type="text"
-                    class="button-url mt-1 w-full rounded-lg border border-neutral-300 bg-white px-2.5 py-2 text-sm"
-                    value="<%= button.url || '' %>"
-                    placeholder="https://..."
-                  />
-                </label>
-
-                <label class="mt-6 flex items-center gap-2 text-xs font-semibold text-neutral-700">
-                  <input type="checkbox" class="button-active" <%= button.isActive ? 'checked' : '' %> />
-                  Показывать
-                </label>
-
-                <button
-                  type="button"
-                  data-remove-row
-                  class="mt-6 rounded-lg border border-red-200 px-3 py-2 text-xs font-semibold text-red-700 transition hover:bg-red-50"
-                >
-                  Удалить
-                </button>
-
-                <p class="button-row-error hidden text-xs text-red-600 md:col-span-5"></p>
-              </div>
-              <% }); %>
-            </div>
-          </section>
-
-          <section class="rounded-2xl border border-neutral-200 bg-white p-4">
-            <h2 class="text-lg font-bold">Контакты</h2>
-            <div class="mt-4 grid gap-3 md:grid-cols-2">
-              <label class="text-sm font-medium text-neutral-700">
-                Адрес
-                <input id="field-address" type="text" value="<%= pageInitialValues.address %>" class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2" />
-              </label>
-
-              <label class="text-sm font-medium text-neutral-700">
-                Индекс
-                <input id="field-postcode" type="text" value="<%= pageInitialValues.postcode %>" class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2" />
-              </label>
-
-              <label class="text-sm font-medium text-neutral-700">
-                Email
-                <input id="field-email" type="email" value="<%= pageInitialValues.email %>" class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2" />
-                <p class="mt-1 hidden text-xs text-red-600" id="field-email-error"></p>
-              </label>
-
-              <label class="text-sm font-medium text-neutral-700">
-                Дополнительный телефон
-                <input
-                  id="field-extra-phone"
-                  type="text"
-                  value="<%= pageInitialValues.extraPhone %>"
-                  class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2"
-                  inputmode="numeric"
-                  autocomplete="tel"
-                  placeholder="+998 (90) 123-45-67"
-                />
-              </label>
-            </div>
-          </section>
-
-          <% if (pageMode === 'edit' && pageStats) { %>
-          <section class="rounded-2xl border border-neutral-200 bg-white p-4">
-            <h2 class="text-lg font-bold">Статистика</h2>
-            <div class="mt-3 grid gap-2 text-sm text-neutral-700 md:grid-cols-3">
-              <p><span class="font-semibold">Всего просмотров:</span> <%= pageStats.totalViews %></p>
-              <p><span class="font-semibold">Уникальные просмотры:</span> <%= pageStats.totalUniqueViews %></p>
-              <p>
-                <span class="font-semibold">Последний просмотр:</span>
-                <%= pageStats.lastViewAt ? new Date(pageStats.lastViewAt).toLocaleString('ru-RU') : 'Нет данных' %>
-              </p>
-              <p>
-                <span class="font-semibold">Mobile/Desktop:</span>
-                <%= pageStats.deviceSplit.mobile %>/<%= pageStats.deviceSplit.desktop %>
-              </p>
-            </div>
-
-            <div class="mt-3 h-[220px]">
-              <canvas id="card-stats-chart"></canvas>
-            </div>
-          </section>
           <% } %>
+        </div>
+      </section>
+    <% } else if (pageMode === 'missing') { %>
+      <header class="admin-card-topbar">
+        <div>
+          <h1 class="text-3xl font-black text-neutral-950">Визитка не найдена</h1>
+          <p>Эта запись `profile_card` уже удалена или ещё не была создана. Можно вернуться в список или открыть новый owner picker.</p>
+        </div>
+      </header>
+      <div class="admin-card-empty">
+        <p class="text-base font-semibold text-neutral-900">ID: <%= pageCardId || '—' %></p>
+        <div class="mt-4 flex flex-wrap justify-center gap-3">
+          <a
+            href="<%= pageDashboardBasePath %>?tab=cards"
+            class="inline-flex min-h-11 items-center justify-center rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100"
+          >
+            К списку визиток
+          </a>
+          <a
+            href="/admin/cards/new"
+            class="inline-flex min-h-11 items-center justify-center rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-neutral-800"
+          >
+            Выбрать другого владельца
+          </a>
+        </div>
+      </div>
+    <% } else { %>
+      <header class="admin-card-topbar">
+        <div>
+          <h1 class="text-3xl font-black text-neutral-950">Admin Card Editor</h1>
+          <p>Один unified editor для modern `profile_cards`: operational meta сверху, category-based content editing слева и широкий sticky live preview справа.</p>
+        </div>
+        <div class="flex flex-wrap gap-3">
+          <a
+            href="/admin/cards/new"
+            class="inline-flex min-h-11 items-center justify-center rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100"
+          >
+            Новая визитка
+          </a>
+          <a
+            href="<%= pageDashboardBasePath %>?tab=cards"
+            class="inline-flex min-h-11 items-center justify-center rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-neutral-800"
+          >
+            К списку визиток
+          </a>
+        </div>
+      </header>
 
-          <p id="card-form-error" class="hidden text-sm text-red-600"></p>
+      <div id="admin-card-page-error" class="admin-card-page-error hidden"></div>
 
-          <div class="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-            <button
-              type="submit"
-              id="save-card-btn"
-              class="w-full rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-neutral-700 disabled:opacity-60 sm:w-auto"
-            >
-              Сохранить
-            </button>
-
-            <button
-              type="button"
-              id="preview-card-btn"
-              class="w-full rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-800 transition hover:bg-neutral-100 sm:w-auto"
-            >
-              Предпросмотр
-            </button>
-
+      <section class="admin-card-meta-grid">
+        <article class="admin-card-meta-card">
+          <p class="admin-card-meta-label">Owner</p>
+          <div class="admin-card-meta-main">
+            <h2 id="admin-card-owner-name" class="admin-card-meta-title">Загружаем владельца...</h2>
+            <p id="admin-card-owner-login" class="admin-card-meta-subtitle">Профиль подгружается</p>
+            <p id="admin-card-owner-plan" class="admin-card-meta-note">Тариф: —</p>
+          </div>
+          <div class="admin-card-meta-actions">
             <a
-              href="/admin/dashboard"
-              class="w-full rounded-xl border border-neutral-300 px-4 py-2 text-center text-sm font-semibold text-neutral-800 transition hover:bg-neutral-100 sm:w-auto"
+              id="admin-card-open-owner-link"
+              href="#"
+              class="inline-flex min-h-11 items-center justify-center rounded-xl border border-neutral-300 px-3 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100"
             >
-              Отмена
+              Открыть профиль
             </a>
           </div>
-        </form>
-      </div>
+        </article>
+
+        <article class="admin-card-meta-card">
+          <p class="admin-card-meta-label">Slug & Status</p>
+          <div class="admin-card-meta-main">
+            <h2 id="admin-card-primary-slug" class="admin-card-meta-title">—</h2>
+            <p id="admin-card-primary-slug-status" class="admin-card-meta-subtitle">Статус slug: —</p>
+            <p id="admin-card-primary-slug-note" class="admin-card-meta-note">Выбери, какой slug использовать для preview и quick-open.</p>
+          </div>
+          <div class="mt-4 admin-card-inline-field">
+            <label for="admin-card-preview-slug-select">Preview slug</label>
+            <select id="admin-card-preview-slug-select" class="admin-card-select">
+              <option value="">Нет slug</option>
+            </select>
+          </div>
+          <div class="admin-card-meta-actions">
+            <a
+              id="admin-card-open-public-link"
+              href="#"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="inline-flex min-h-11 items-center justify-center rounded-xl border border-neutral-300 px-3 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100"
+            >
+              Открыть визитку
+            </a>
+          </div>
+        </article>
+
+        <article class="admin-card-meta-card">
+          <p class="admin-card-meta-label">Operations</p>
+          <div class="grid gap-3">
+            <div class="admin-card-inline-field">
+              <label for="admin-card-tariff-select">Тариф владельца</label>
+              <select id="admin-card-tariff-select" class="admin-card-select">
+                <option value="legacy">Legacy</option>
+                <option value="premium">Премиум</option>
+              </select>
+            </div>
+            <p id="admin-card-operations-note" class="admin-card-meta-note">Редактор не скрывает premium styles. Админ может использовать весь каталог напрямую.</p>
+          </div>
+          <div class="admin-card-meta-actions">
+            <button
+              type="button"
+              id="admin-card-tariff-apply"
+              class="inline-flex min-h-11 items-center justify-center rounded-xl border border-neutral-300 px-3 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100"
+            >
+              Обновить тариф
+            </button>
+            <button
+              type="button"
+              id="admin-card-active-toggle"
+              class="inline-flex min-h-11 items-center justify-center rounded-xl bg-neutral-900 px-3 py-2 text-sm font-semibold text-white transition hover:bg-neutral-800"
+            >
+              Переключить активность
+            </button>
+          </div>
+        </article>
+
+        <article class="admin-card-meta-card">
+          <p class="admin-card-meta-label">Verification</p>
+          <div class="admin-card-meta-main">
+            <h2 id="admin-card-verification-state" class="admin-card-meta-title">—</h2>
+            <p id="admin-card-verified-company" class="admin-card-meta-subtitle">Компания: —</p>
+            <p id="admin-card-verification-request" class="admin-card-meta-note">Последняя заявка на верификацию появится здесь.</p>
+          </div>
+          <div class="mt-4 admin-card-inline-field">
+            <label for="admin-card-verified-company-input">Verified company label</label>
+            <input id="admin-card-verified-company-input" type="text" maxlength="160" class="admin-card-input" />
+          </div>
+        </article>
+      </section>
+
+      <form id="card-editor-form" novalidate>
+        <div class="admin-card-editor-grid">
+          <div class="admin-card-editor-column">
+            <nav id="admin-card-categories" class="admin-card-categories" aria-label="Категории редактора">
+              <button type="button" class="admin-card-category-btn is-active" data-card-category="main" aria-pressed="true">
+                <span class="admin-card-category-label">Основное</span>
+                <span class="admin-card-category-note">Аватар, имя, био и нижний хэштег</span>
+              </button>
+              <button type="button" class="admin-card-category-btn" data-card-category="links" aria-pressed="false">
+                <span class="admin-card-category-label">Ссылки и теги</span>
+                <span class="admin-card-category-note">Кнопки, быстрые действия и теги</span>
+              </button>
+              <button type="button" class="admin-card-category-btn" data-card-category="contacts" aria-pressed="false">
+                <span class="admin-card-category-label">Контакты</span>
+                <span class="admin-card-category-note">Адрес, индекс, email и номер</span>
+              </button>
+              <button type="button" class="admin-card-category-btn" data-card-category="design" aria-pressed="false">
+                <span class="admin-card-category-label">Оформление</span>
+                <span class="admin-card-category-note">Темы, сплошные цвета, рамки и брендинг</span>
+              </button>
+            </nav>
+
+            <div id="card-form-error" class="admin-card-page-error hidden mb-4"></div>
+
+            <section class="admin-card-panel" data-card-panel="main">
+              <div class="admin-card-panel-head">
+                <h3>Основное</h3>
+                <p>Первый экран визитки: фото, identity и короткий контекст, который увидит пользователь сразу после открытия.</p>
+              </div>
+
+              <div class="admin-card-editor-stack">
+                <div class="admin-card-avatar-grid">
+                  <div class="admin-card-avatar-preview-box">
+                    <div class="admin-card-avatar-preview-ring">
+                      <img id="admin-card-avatar-current" src="" alt="Avatar" class="hidden" />
+                      <span id="admin-card-avatar-fallback" class="admin-card-avatar-fallback">Нет аватара</span>
+                    </div>
+                    <div class="min-w-0 flex-1">
+                      <p class="text-sm font-semibold text-neutral-900">Avatar upload + crop</p>
+                      <p class="mt-1 text-sm text-neutral-600">Редактор хранит crop draft локально до сохранения и сразу обновляет live preview после загрузки.</p>
+                    </div>
+                  </div>
+
+                  <div class="admin-card-editor-stack">
+                    <label class="block">
+                      <span class="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Файл аватара</span>
+                      <input id="admin-card-avatar-file" type="file" accept="image/png,image/jpeg,image/webp" class="admin-card-input" />
+                    </label>
+
+                    <div id="admin-card-avatar-crop-wrap" class="admin-card-crop-wrap hidden">
+                      <div class="admin-card-crop-stage">
+                        <img id="admin-card-avatar-crop-image" src="" alt="Crop preview" />
+                      </div>
+                    </div>
+
+                    <div class="admin-card-avatar-actions">
+                      <button type="button" id="admin-card-avatar-upload" class="inline-flex min-h-11 items-center justify-center rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-neutral-800">
+                        Сохранить аватар
+                      </button>
+                      <button type="button" id="admin-card-avatar-remove" class="inline-flex min-h-11 items-center justify-center rounded-xl border border-red-200 px-4 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-50">
+                        Удалить аватар
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="admin-card-grid-2">
+                  <label class="block is-span-2">
+                    <span class="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Имя</span>
+                    <input id="admin-card-name" type="text" maxlength="120" class="admin-card-input" />
+                  </label>
+
+                  <label class="block is-span-2">
+                    <span class="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Роль / заголовок</span>
+                    <input id="admin-card-role" type="text" maxlength="120" class="admin-card-input" />
+                  </label>
+
+                  <label class="block is-span-2">
+                    <span class="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Bio</span>
+                    <textarea id="admin-card-bio" maxlength="120" rows="4" class="admin-card-textarea"></textarea>
+                    <p id="admin-card-bio-counter" class="mt-2 admin-card-counter">0/120</p>
+                  </label>
+
+                  <label class="block is-span-2">
+                    <span class="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Нижний хэштег</span>
+                    <input id="admin-card-hashtag" type="text" maxlength="50" class="admin-card-input" placeholder="#UNQX" />
+                  </label>
+                </div>
+              </div>
+            </section>
+
+            <section class="admin-card-panel hidden" data-card-panel="links">
+              <div class="admin-card-panel-head">
+                <h3>Ссылки и теги</h3>
+                <p>Собери быстрые действия и короткие метки. Теги остаются в modern string-format, а кнопки сохраняются в контракте `type / label / href-value`.</p>
+              </div>
+
+              <div class="admin-card-editor-stack">
+                <div>
+                  <div class="admin-card-tags-toolbar">
+                    <div>
+                      <p class="admin-card-field-label">Теги</p>
+                      <p class="admin-card-helper">Максимум 5 тегов. Порядок можно менять drag-and-drop.</p>
+                    </div>
+                  </div>
+                  <div class="admin-card-tags-input-row mt-3">
+                    <input id="admin-card-tag-input" type="text" class="admin-card-input" placeholder="#Дизайнер" />
+                    <button type="button" id="admin-card-tag-add" class="inline-flex min-h-11 items-center justify-center rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">
+                      Добавить тег
+                    </button>
+                  </div>
+                  <div id="admin-card-tags-list" class="admin-card-tags-list mt-3"></div>
+                </div>
+
+                <div>
+                  <div class="admin-card-buttons-toolbar">
+                    <div>
+                      <p class="admin-card-field-label">Кнопки</p>
+                      <p class="admin-card-helper">Telegram, Instagram, сайт, карта, WhatsApp и любые custom links.</p>
+                    </div>
+                    <button type="button" id="admin-card-button-add" class="inline-flex min-h-11 items-center justify-center rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">
+                      Добавить кнопку
+                    </button>
+                  </div>
+                  <div id="admin-card-buttons-list" class="admin-card-button-list mt-4"></div>
+                </div>
+              </div>
+            </section>
+
+            <section class="admin-card-panel hidden" data-card-panel="contacts">
+              <div class="admin-card-panel-head">
+                <h3>Контакты</h3>
+                <p>Вторичный контактный слой для тех, кому нужна офлайн-связь, email или дополнительный номер.</p>
+              </div>
+
+              <div class="admin-card-grid-2">
+                <label class="block is-span-2">
+                  <span class="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Адрес</span>
+                  <input id="admin-card-address" type="text" class="admin-card-input" />
+                </label>
+
+                <label class="block">
+                  <span class="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Индекс</span>
+                  <input id="admin-card-postcode" type="text" maxlength="20" class="admin-card-input" />
+                </label>
+
+                <label class="block">
+                  <span class="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Email</span>
+                  <input id="admin-card-email" type="email" maxlength="100" class="admin-card-input" />
+                </label>
+
+                <label class="block is-span-2">
+                  <span class="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Дополнительный телефон</span>
+                  <input id="admin-card-extra-phone" type="text" maxlength="30" class="admin-card-input" />
+                </label>
+              </div>
+            </section>
+
+            <section class="admin-card-panel hidden" data-card-panel="design">
+              <div class="admin-card-panel-head">
+                <h3>Оформление</h3>
+                <p>Все signature themes, solid color presets, кастомный accent color для primary CTA и полный каталог рамок без premium lock UI.</p>
+              </div>
+
+              <div class="admin-card-editor-stack">
+                <div>
+                  <p class="admin-card-field-label">Signature Themes</p>
+                  <div id="admin-card-theme-options" class="admin-card-style-grid mt-3">
+                    <% signatureThemes.forEach((item) => { %>
+                      <%- renderThemeButton(item) %>
+                    <% }) %>
+                  </div>
+                </div>
+
+                <div>
+                  <p class="admin-card-field-label">Color Presets</p>
+                  <div id="admin-card-color-theme-options" class="admin-card-style-grid is-compact mt-3">
+                    <% colorThemes.forEach((item) => { %>
+                      <%- renderThemeButton(item) %>
+                    <% }) %>
+                  </div>
+                </div>
+
+                <div>
+                  <p class="admin-card-field-label">Custom CTA Color</p>
+                  <div class="admin-card-color-row mt-3">
+                    <input id="admin-card-custom-color" type="color" value="#111111" />
+                    <div>
+                      <p class="text-sm font-semibold text-neutral-900">Accent override</p>
+                      <p class="admin-card-helper mt-1">Используется для primary button style на самой визитке.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <p class="admin-card-field-label">Avatar Frames</p>
+                  <div id="admin-card-frame-options" class="admin-card-style-grid is-compact mt-3">
+                    <% avatarFrames.forEach((item) => { %>
+                      <%- renderFrameButton(item) %>
+                    <% }) %>
+                  </div>
+                </div>
+
+                <label class="admin-card-switch">
+                  <span class="admin-card-switch-copy">
+                    <strong>Скрыть брендинг UNQX</strong>
+                    <span>Если включено, подпись бренда исчезнет и в preview, и в сохранённой визитке.</span>
+                  </span>
+                  <span class="admin-card-switch-ui">
+                    <input id="admin-card-hide-branding" type="checkbox" />
+                    <span class="track"></span>
+                    <span class="thumb"></span>
+                  </span>
+                </label>
+
+                <div class="admin-card-save-row">
+                  <p id="admin-card-save-status" class="admin-card-save-status"></p>
+                  <button type="submit" id="save-card-btn" class="inline-flex min-h-11 items-center justify-center rounded-xl bg-neutral-900 px-5 py-2 text-sm font-semibold text-white transition hover:bg-neutral-800">
+                    Сохранить визитку
+                  </button>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <aside class="admin-card-preview-column">
+            <div class="admin-card-preview-shell">
+              <div class="admin-card-preview-head">
+                <div class="min-w-0">
+                  <p class="admin-card-preview-eyebrow">Live Preview</p>
+                  <p id="admin-card-preview-slug-label" class="admin-card-preview-slug">unqx.uz/[slug]</p>
+                </div>
+                <a
+                  id="admin-card-preview-open-link"
+                  href="#"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="text-xs font-semibold text-neutral-700 hover:underline"
+                >
+                  Открыть
+                </a>
+              </div>
+              <div class="admin-card-preview-body">
+                <div id="profile-card-live-preview" class="rounded-2xl border border-neutral-200 bg-white p-4"></div>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </form>
+    <% } %>
+  </div>
   <%- include('../partials/admin-layout-end') %>
 
-  <script nonce="<%= cspNonce %>" id="card-editor-initial" type="application/json"><%- JSON.stringify(pageInitialValues) %></script>
-  <script nonce="<%= cspNonce %>" id="card-editor-stats" type="application/json"><%- JSON.stringify(pageStats) %></script>
+  <script nonce="<%= cspNonce %>" id="admin-card-editor-presets" type="application/json"><%- JSON.stringify({
+    signatureThemes,
+    colorThemes,
+    avatarFrames,
+  }) %></script>
   <script nonce="<%= cspNonce %>" src="/js/admin-layout.js"></script>
-  <script nonce="<%= cspNonce %>" src="/vendor/sortablejs/Sortable.min.js"></script>
   <script nonce="<%= cspNonce %>" src="/vendor/cropperjs/cropper.min.js"></script>
-  <script nonce="<%= cspNonce %>" src="/vendor/chartjs/chart.umd.min.js"></script>
+  <script nonce="<%= cspNonce %>" src="/vendor/sortablejs/Sortable.min.js"></script>
+  <script nonce="<%= cspNonce %>" src="/js/card-view.js"></script>
   <script nonce="<%= cspNonce %>" src="/js/admin-card-editor.js"></script>
 </body>
 </html>
