@@ -381,8 +381,8 @@
 
 .profile-dashboard .profile-card-editor-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(300px, 340px);
-  gap: 1.25rem;
+  grid-template-columns: minmax(0, 1fr) minmax(340px, 380px);
+  gap: 1.5rem;
   align-items: start;
 }
 
@@ -397,19 +397,15 @@
 }
 
 .profile-dashboard .profile-card-editor-main {
-  display: grid;
-  grid-template-columns: 190px minmax(0, 1fr);
+  display: flex;
+  flex-direction: column;
   gap: 1rem;
-  align-items: start;
 }
 
 .profile-dashboard .profile-card-categories {
-  display: flex;
-  flex-direction: column;
-  gap: 0.65rem;
-  position: sticky;
-  top: 1rem;
-  align-self: start;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 0.75rem;
 }
 
 .profile-dashboard .profile-card-category-btn {
@@ -553,12 +549,13 @@
   }
 
   .profile-dashboard .profile-card-editor-main {
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: column;
   }
 
   .profile-dashboard .profile-card-categories {
     position: static;
-    flex-direction: row;
+    display: flex;
     gap: 0.75rem;
     overflow-x: auto;
     padding-bottom: 0.25rem;

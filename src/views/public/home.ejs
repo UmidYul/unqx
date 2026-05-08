@@ -7,7 +7,6 @@
   platformTagline=String(pagePublicSettings.platform_tagline || "Твой UNQ. Твой бренд. Каждый месяц в эфире." ); const
   platformHeroSubtitle=String(pagePublicSettings.platform_hero_subtitle
   || "Цифровая визитка за 1 минуту - одна ссылка вместо тысячи слов." ); const
-  pricingVisible=Boolean(pagePublicSettings.pricing_section_visible ?? true); const
   braceletName=String(pagePublicSettings.bracelet_name || "NFC-стикер" ); const
   braceletOldPrice=Number(pagePublicSettings.bracelet_old_price || 400000); const
   braceletPrice=Number(pagePublicSettings.bracelet_price || 250000); const braceletDiscountPercent=braceletOldPrice>
@@ -28,11 +27,7 @@
   pageCanonicalUrl, logo: `${pageBaseUrl}/brand/logo.PNG`, sameAs: ["https://t.me/unqx_uz"] }]; const
   pageUserSession=typeof userSession !=="undefined" ? userSession : null; const hasAuthSession=Boolean(pageUserSession
   && pageUserSession.userId);
-  const pricingSettings=typeof pricing==="object" && pricing ? pricing : { planPremiumMonthlyPriceUsd: 2,
-  planPremiumMonthlyPriceUzs:
-  130000, pricingFootnote: "" , }; const
-  pricingFootnote=String(pricingSettings.pricingFootnote ?? "" ).trim()
-  ; const authDisplayName=hasAuthSession ?
+  const authDisplayName=hasAuthSession ?
   `${(pageUserSession.firstName || pageUserSession.displayName || "Мой профиль" )} · Мой профиль` : "Мой профиль" ;
   const authPhotoUrlFromServer=typeof authPhotoUrl==="string" && authPhotoUrl.trim() ? authPhotoUrl.trim() : "" ; const
   authNavPhotoUrl=authPhotoUrlFromServer || (hasAuthSession && pageUserSession.avatarUrl ? pageUserSession.avatarUrl
@@ -103,29 +98,6 @@
   "Идеально для нетворкинга, съёмок и студенческих мероприятий",
   ];
 
-  const plans = [
-  {
-  name: String(pagePublicSettings.plan_premium_name || "Премиум"),
-  price: "2",
-  currency: "$",
-  priceNote: "/мес",
-  highlighted: true,
-  badge: pagePublicSettings.plan_premium_popular_badge === false ? null : "Популярный",
-  included: Array.isArray(pagePublicSettings.plan_premium_features) ? pagePublicSettings.plan_premium_features : [
-  "1 цифровая визитка",
-  "До 9 кнопок",
-  "Стандартный шаблон",
-  "QR-код + NFC поддержка",
-  "Расширенная аналитика (динамика по дням)",
-  "Выбор темы (5+ тем)",
-  "Кастомные цвета и фон",
-  "Скрыть брендинг UNQX",
-  ],
-  excluded: Array.isArray(pagePublicSettings.plan_premium_excluded_features) ?
-  pagePublicSettings.plan_premium_excluded_features : [],
-  },
-  ];
-
   const faqItems = [
   {
   q: "Можно ли сменить UNQ после покупки?",
@@ -184,8 +156,6 @@
             </a>
 
             <div class="site-header-links hidden items-center gap-8 md:flex">
-              <a href="#pricing"
-                class="site-header-link text-sm text-neutral-500 transition-colors hover:text-neutral-900">Доступ</a>
               <a href="/directory"
                 class="site-header-link text-sm text-neutral-500 transition-colors hover:text-neutral-900">Резиденты</a>
               <% if (leaderboardEnabled) { %><a href="/leaderboard"
@@ -226,7 +196,6 @@
             class="site-mobile-menu hidden border-t border-neutral-200 bg-white px-6 pb-6 pt-4 md:hidden"
             data-mobile-menu>
             <div class="flex flex-col gap-4">
-              <a href="#pricing" class="site-mobile-link text-sm text-neutral-500">Доступ</a>
               <a href="/directory" class="site-mobile-link text-sm text-neutral-500">Резиденты</a>
               <% if (leaderboardEnabled) { %><a href="/leaderboard"
                   class="site-mobile-link whitespace-nowrap text-sm text-neutral-500">UNQ&nbsp;ELITE</a>
@@ -877,119 +846,6 @@
                   </div>
                 </section>
 
-                <section id="pricing" class="home-pricing-section <%= pricingVisible ? '' : 'hidden' %> px-6 py-24"
-                  data-observe-reveal>
-                  <div class="mx-auto max-w-6xl">
-                    <div class="mx-auto max-w-3xl text-center">
-                      <p class="font-mono text-xs uppercase tracking-[0.18em] text-neutral-400">PRICING</p>
-                      <h2
-                        class="home-pricing-title mt-3 text-3xl font-bold tracking-tight text-neutral-900 md:text-4xl">
-                        Тарифы</h2>
-                      <p class="mt-4 text-base leading-relaxed text-neutral-500">Премиум собирает всё главное в одном
-                        тарифе: UNQ, визитка, темы, аналитика и NFC-ready опыт без лишней сложности.</p>
-                    </div>
-
-                    <div class="home-pricing-grid mt-12 grid gap-6">
-                      <% plans.forEach((plan)=> { %>
-                        <article
-                          class="home-pricing-card interactive-card relative mx-auto w-full max-w-5xl overflow-hidden rounded-[2rem] border <%= plan.highlighted ? 'border-neutral-800 bg-neutral-900 text-white' : 'border-neutral-200 bg-white text-neutral-900' %>">
-
-                          <% if (plan.badge) { %>
-                            <span
-                              class="home-pricing-badge absolute left-5 top-5 rounded-full border border-white/25 bg-white/10 px-3 py-1 text-[11px] font-semibold tracking-wide text-white backdrop-blur-sm sm:left-7 sm:top-7">
-                              <%= plan.badge %>
-                            </span>
-                            <% } %>
-
-                              <div class="home-pricing-body flex flex-col lg:flex-row">
-
-                                <!-- Left: price + CTA -->
-                                <div
-                                  class="home-pricing-left flex flex-col items-center p-8 text-center sm:p-10 lg:w-[300px] lg:shrink-0 lg:items-start lg:p-12 lg:text-left">
-
-                                  <p
-                                    class="home-pricing-name font-mono text-[11px] uppercase tracking-[0.32em] <%= plan.highlighted ? 'text-neutral-400' : 'text-neutral-500' %>">
-                                    <%= plan.name %>
-                                  </p>
-
-                                  <div class="home-pricing-price mt-7 flex items-start gap-1.5">
-                                    <span class="home-pricing-price-value font-black leading-none">
-                                      <%= plan.price %>
-                                    </span>
-                                    <div class="home-pricing-price-side">
-                                      <p
-                                        class="home-pricing-price-currency font-semibold leading-none <%= plan.highlighted ? 'text-neutral-100' : 'text-neutral-700' %>">
-                                        <%= plan.currency || 'сум' %>
-                                      </p>
-                                      <p
-                                        class="home-pricing-price-period mt-1 <%= plan.highlighted ? 'text-neutral-400' : 'text-neutral-500' %>">
-                                        <%= plan.priceNote %>
-                                      </p>
-                                    </div>
-                                  </div>
-
-                                  <p
-                                    class="home-pricing-note mt-4 text-sm leading-relaxed <%= plan.highlighted ? 'text-neutral-500' : 'text-neutral-400' %>">
-                                    + стоимость UNQ по калькулятору
-                                  </p>
-
-                                  <a href="#" data-order-link data-order-plan="premium"
-                                    class="home-pricing-cta interactive-btn btn-shimmer mt-8 inline-flex w-full items-center justify-center gap-2 rounded-2xl px-6 text-base font-semibold transition-colors <%= plan.highlighted ? 'bg-white text-neutral-900 hover:bg-neutral-100' : 'bg-neutral-900 text-white hover:bg-neutral-800' %>">
-                                    Купить тариф
-                                    <svg class="icon-stroke h-3.5 w-3.5" viewBox="0 0 24 24" aria-hidden="true">
-                                      <path d="M5 12h14M13 5l7 7-7 7"></path>
-                                    </svg>
-                                  </a>
-                                </div>
-
-                                <!-- Divider -->
-                                <div class="home-pricing-divider mx-8 h-px self-stretch lg:mx-0 lg:h-auto lg:w-px">
-                                </div>
-
-                                <!-- Right: features -->
-                                <div class="home-pricing-right flex-1 p-8 sm:p-10 lg:p-12">
-                                  <p
-                                    class="text-xs font-semibold uppercase tracking-[0.22em] <%= plan.highlighted ? 'text-neutral-500' : 'text-neutral-400' %>">
-                                    Что входит
-                                  </p>
-                                  <ul class="home-pricing-features mt-6 grid gap-3 sm:grid-cols-2">
-                                    <% plan.included.forEach((feature)=> { %>
-                                      <li
-                                        class="home-pricing-feature flex items-start gap-2.5 text-sm leading-relaxed <%= plan.highlighted ? 'text-neutral-200' : 'text-neutral-700' %>">
-                                        <svg
-                                          class="icon-stroke mt-0.5 h-3.5 w-3.5 shrink-0 <%= plan.highlighted ? 'text-emerald-400' : 'text-emerald-600' %>"
-                                          viewBox="0 0 24 24" aria-hidden="true">
-                                          <path d="m20 6-11 11-5-5"></path>
-                                        </svg>
-                                        <%= feature %>
-                                      </li>
-                                      <% }); %>
-                                        <% plan.excluded.forEach((feature)=> { %>
-                                          <li
-                                            class="home-pricing-feature home-pricing-feature-excluded flex items-start gap-2.5 text-sm leading-relaxed <%= plan.highlighted ? 'text-neutral-500' : 'text-neutral-300' %>">
-                                            <svg class="icon-stroke mt-0.5 h-3.5 w-3.5 shrink-0 text-neutral-500"
-                                              viewBox="0 0 24 24" aria-hidden="true">
-                                              <path d="m18 6-12 12M6 6l12 12"></path>
-                                            </svg>
-                                            <%= feature %>
-                                          </li>
-                                          <% }); %>
-                                  </ul>
-                                </div>
-
-                              </div>
-                        </article>
-                        <% }); %>
-                    </div>
-
-                    <% if (pricingFootnote) { %>
-                      <p class="mt-8 text-center text-xs text-neutral-400">
-                        <%= pricingFootnote %>
-                      </p>
-                      <% } %>
-                  </div>
-                </section>
-
                 <section id="faq" class="px-6 py-24" data-observe-reveal>
                   <div class="mx-auto max-w-4xl">
                     <p class="font-mono text-xs uppercase tracking-[0.18em] text-neutral-400">ВОПРОСЫ</p>
@@ -1032,7 +888,6 @@
                         </div>
 
                         <div class="flex flex-wrap gap-8 text-sm text-neutral-400">
-                          <a href="#pricing" class="transition-colors hover:text-neutral-900">Доступ</a>
                           <a href="/directory" class="transition-colors hover:text-neutral-900">Резиденты</a>
                           <a href="/guides" class="transition-colors hover:text-neutral-900">Инструкции</a>
                           <% if (leaderboardEnabled) { %><a href="/leaderboard"
