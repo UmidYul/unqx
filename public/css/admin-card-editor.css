@@ -97,8 +97,14 @@
 .admin-card-editor-page .admin-card-meta-actions {
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   gap: 0.55rem;
   margin-top: 0.8rem;
+}
+
+.admin-card-editor-page .admin-card-meta-actions > * {
+  justify-content: center;
+  text-align: center;
 }
 
 .admin-card-editor-page .admin-card-inline-field {
@@ -170,9 +176,11 @@
   background: linear-gradient(180deg, #ffffff 0%, #fafafa 100%);
   color: #4b5563;
   padding: 0.95rem 1rem;
-  text-align: left;
+  text-align: center;
   display: flex;
   flex-direction: column;
+  align-items: center;
+  justify-content: center;
   gap: 0.3rem;
   transition: border-color 0.18s ease, background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
 }
@@ -446,7 +454,7 @@
   background: #fff;
   padding: 0.7rem 0.75rem;
   color: #111827;
-  text-align: left;
+  text-align: center;
   transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
 }
 
@@ -465,6 +473,7 @@
 .admin-card-editor-page .admin-card-style-btn-main {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0.7rem;
   min-width: 0;
 }
@@ -479,6 +488,7 @@
 
 .admin-card-editor-page .admin-card-style-copy {
   min-width: 0;
+  text-align: center;
 }
 
 .admin-card-editor-page .admin-card-style-title {
