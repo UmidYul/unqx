@@ -33,7 +33,6 @@
         <span class="admin-card-style-swatch" style="${item.swatchStyle}"></span>
         <span class="admin-card-style-copy">
           <span class="admin-card-style-title">${item.label}</span>
-          <span class="admin-card-style-note">${item.description}</span>
         </span>
       </span>
     </button>
@@ -48,7 +47,6 @@
         </span>
         <span class="admin-card-style-copy">
           <span class="admin-card-style-title">${item.label}</span>
-          <span class="admin-card-style-note">${item.description}</span>
         </span>
       </span>
     </button>
@@ -72,8 +70,7 @@
     <% if (pageMode === 'select-owner') { %>
       <header class="admin-card-topbar">
         <div>
-          <h1 class="text-3xl font-black text-neutral-950">Новая админская визитка</h1>
-          <p>Выбери владельца, и мы откроем его modern `profile_card` в новом редакторе с темами, рамками, solid presets и live preview.</p>
+          <h1 class="text-3xl font-black text-neutral-950">Новая визитка</h1>
         </div>
         <a
           href="<%= pageDashboardBasePath %>?tab=cards"
@@ -112,12 +109,10 @@
           <% if (!pageOwnerSearchQuery) { %>
             <div class="admin-card-empty">
               <p class="text-base font-semibold text-neutral-900">Сначала найди пользователя</p>
-              <p class="mt-2">Редактор создаёт или открывает `profile_card` конкретного владельца, поэтому шаг выбора обязателен.</p>
             </div>
           <% } else if (!pageOwnerSearchResults.length) { %>
             <div class="admin-card-empty">
               <p class="text-base font-semibold text-neutral-900">Ничего не найдено</p>
-              <p class="mt-2">Попробуй другое имя, username, email или UUID пользователя.</p>
             </div>
           <% } else { %>
             <div class="admin-card-owner-results">
@@ -148,7 +143,7 @@
                       type="submit"
                       class="inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-neutral-800"
                     >
-                      <%= item.profileCardId ? 'Открыть редактор' : 'Создать и открыть редактор' %>
+                      <%= item.profileCardId ? 'Открыть' : 'Создать' %>
                     </button>
                   </form>
                 </article>
@@ -161,7 +156,6 @@
       <header class="admin-card-topbar">
         <div>
           <h1 class="text-3xl font-black text-neutral-950">Визитка не найдена</h1>
-          <p>Эта запись `profile_card` уже удалена или ещё не была создана. Можно вернуться в список или открыть новый owner picker.</p>
         </div>
       </header>
       <div class="admin-card-empty">
@@ -184,8 +178,7 @@
     <% } else { %>
       <header class="admin-card-topbar">
         <div>
-          <h1 class="text-3xl font-black text-neutral-950">Admin Card Editor</h1>
-          <p>Один unified editor для modern `profile_cards`: operational meta сверху, category-based content editing слева и широкий sticky live preview справа.</p>
+          <h1 class="text-3xl font-black text-neutral-950">Редактор визитки</h1>
         </div>
         <div class="flex flex-wrap gap-3">
           <a
@@ -207,10 +200,10 @@
 
       <section class="admin-card-meta-grid">
         <article class="admin-card-meta-card">
-          <p class="admin-card-meta-label">Owner</p>
+          <p class="admin-card-meta-label">Владелец</p>
           <div class="admin-card-meta-main">
-            <h2 id="admin-card-owner-name" class="admin-card-meta-title">Загружаем владельца...</h2>
-            <p id="admin-card-owner-login" class="admin-card-meta-subtitle">Профиль подгружается</p>
+            <h2 id="admin-card-owner-name" class="admin-card-meta-title">—</h2>
+            <p id="admin-card-owner-login" class="admin-card-meta-subtitle">—</p>
             <p id="admin-card-owner-plan" class="admin-card-meta-note">Тариф: —</p>
           </div>
           <div class="admin-card-meta-actions">
@@ -225,14 +218,14 @@
         </article>
 
         <article class="admin-card-meta-card">
-          <p class="admin-card-meta-label">Slug & Status</p>
+          <p class="admin-card-meta-label">Slug</p>
           <div class="admin-card-meta-main">
             <h2 id="admin-card-primary-slug" class="admin-card-meta-title">—</h2>
             <p id="admin-card-primary-slug-status" class="admin-card-meta-subtitle">Статус slug: —</p>
-            <p id="admin-card-primary-slug-note" class="admin-card-meta-note">Выбери, какой slug использовать для preview и quick-open.</p>
+            <p id="admin-card-primary-slug-note" class="admin-card-meta-note">—</p>
           </div>
           <div class="mt-4 admin-card-inline-field">
-            <label for="admin-card-preview-slug-select">Preview slug</label>
+            <label for="admin-card-preview-slug-select">Slug</label>
             <select id="admin-card-preview-slug-select" class="admin-card-select">
               <option value="">Нет slug</option>
             </select>
@@ -251,16 +244,15 @@
         </article>
 
         <article class="admin-card-meta-card">
-          <p class="admin-card-meta-label">Operations</p>
+          <p class="admin-card-meta-label">Управление</p>
           <div class="grid gap-3">
             <div class="admin-card-inline-field">
               <label for="admin-card-tariff-select">Тариф владельца</label>
               <select id="admin-card-tariff-select" class="admin-card-select">
-                <option value="legacy">Legacy</option>
+                <option value="legacy">Без тарифа</option>
                 <option value="premium">Премиум</option>
               </select>
             </div>
-            <p id="admin-card-operations-note" class="admin-card-meta-note">Редактор не скрывает premium styles. Админ может использовать весь каталог напрямую.</p>
           </div>
           <div class="admin-card-meta-actions">
             <button
@@ -281,14 +273,14 @@
         </article>
 
         <article class="admin-card-meta-card">
-          <p class="admin-card-meta-label">Verification</p>
+          <p class="admin-card-meta-label">Верификация</p>
           <div class="admin-card-meta-main">
             <h2 id="admin-card-verification-state" class="admin-card-meta-title">—</h2>
             <p id="admin-card-verified-company" class="admin-card-meta-subtitle">Компания: —</p>
-            <p id="admin-card-verification-request" class="admin-card-meta-note">Последняя заявка на верификацию появится здесь.</p>
+            <p id="admin-card-verification-request" class="admin-card-meta-note">—</p>
           </div>
           <div class="mt-4 admin-card-inline-field">
-            <label for="admin-card-verified-company-input">Verified company label</label>
+            <label for="admin-card-verified-company-input">Компания</label>
             <input id="admin-card-verified-company-input" type="text" maxlength="160" class="admin-card-input" />
           </div>
         </article>
@@ -300,19 +292,15 @@
             <nav id="admin-card-categories" class="admin-card-categories" aria-label="Категории редактора">
               <button type="button" class="admin-card-category-btn is-active" data-card-category="main" aria-pressed="true">
                 <span class="admin-card-category-label">Основное</span>
-                <span class="admin-card-category-note">Аватар, имя, био и нижний хэштег</span>
               </button>
               <button type="button" class="admin-card-category-btn" data-card-category="links" aria-pressed="false">
                 <span class="admin-card-category-label">Ссылки и теги</span>
-                <span class="admin-card-category-note">Кнопки, быстрые действия и теги</span>
               </button>
               <button type="button" class="admin-card-category-btn" data-card-category="contacts" aria-pressed="false">
                 <span class="admin-card-category-label">Контакты</span>
-                <span class="admin-card-category-note">Адрес, индекс, email и номер</span>
               </button>
               <button type="button" class="admin-card-category-btn" data-card-category="design" aria-pressed="false">
                 <span class="admin-card-category-label">Оформление</span>
-                <span class="admin-card-category-note">Темы, сплошные цвета, рамки и брендинг</span>
               </button>
             </nav>
 
@@ -321,7 +309,6 @@
             <section class="admin-card-panel" data-card-panel="main">
               <div class="admin-card-panel-head">
                 <h3>Основное</h3>
-                <p>Первый экран визитки: фото, identity и короткий контекст, который увидит пользователь сразу после открытия.</p>
               </div>
 
               <div class="admin-card-editor-stack">
@@ -332,8 +319,7 @@
                       <span id="admin-card-avatar-fallback" class="admin-card-avatar-fallback">Нет аватара</span>
                     </div>
                     <div class="min-w-0 flex-1">
-                      <p class="text-sm font-semibold text-neutral-900">Avatar upload + crop</p>
-                      <p class="mt-1 text-sm text-neutral-600">Редактор хранит crop draft локально до сохранения и сразу обновляет live preview после загрузки.</p>
+                      <p class="text-sm font-semibold text-neutral-900">Аватар</p>
                     </div>
                   </div>
 
@@ -388,7 +374,6 @@
             <section class="admin-card-panel hidden" data-card-panel="links">
               <div class="admin-card-panel-head">
                 <h3>Ссылки и теги</h3>
-                <p>Собери быстрые действия и короткие метки. Теги остаются в modern string-format, а кнопки сохраняются в контракте `type / label / href-value`.</p>
               </div>
 
               <div class="admin-card-editor-stack">
@@ -396,7 +381,6 @@
                   <div class="admin-card-tags-toolbar">
                     <div>
                       <p class="admin-card-field-label">Теги</p>
-                      <p class="admin-card-helper">Максимум 5 тегов. Порядок можно менять drag-and-drop.</p>
                     </div>
                   </div>
                   <div class="admin-card-tags-input-row mt-3">
@@ -412,7 +396,6 @@
                   <div class="admin-card-buttons-toolbar">
                     <div>
                       <p class="admin-card-field-label">Кнопки</p>
-                      <p class="admin-card-helper">Telegram, Instagram, сайт, карта, WhatsApp и любые custom links.</p>
                     </div>
                     <button type="button" id="admin-card-button-add" class="inline-flex min-h-11 items-center justify-center rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">
                       Добавить кнопку
@@ -426,7 +409,6 @@
             <section class="admin-card-panel hidden" data-card-panel="contacts">
               <div class="admin-card-panel-head">
                 <h3>Контакты</h3>
-                <p>Вторичный контактный слой для тех, кому нужна офлайн-связь, email или дополнительный номер.</p>
               </div>
 
               <div class="admin-card-grid-2">
@@ -455,12 +437,11 @@
             <section class="admin-card-panel hidden" data-card-panel="design">
               <div class="admin-card-panel-head">
                 <h3>Оформление</h3>
-                <p>Все signature themes, solid color presets, кастомный accent color для primary CTA и полный каталог рамок без premium lock UI.</p>
               </div>
 
               <div class="admin-card-editor-stack">
                 <div>
-                  <p class="admin-card-field-label">Signature Themes</p>
+                  <p class="admin-card-field-label">Темы</p>
                   <div id="admin-card-theme-options" class="admin-card-style-grid mt-3">
                     <% signatureThemes.forEach((item) => { %>
                       <%- renderThemeButton(item) %>
@@ -469,7 +450,7 @@
                 </div>
 
                 <div>
-                  <p class="admin-card-field-label">Color Presets</p>
+                  <p class="admin-card-field-label">Сплошные цвета</p>
                   <div id="admin-card-color-theme-options" class="admin-card-style-grid is-compact mt-3">
                     <% colorThemes.forEach((item) => { %>
                       <%- renderThemeButton(item) %>
@@ -478,18 +459,17 @@
                 </div>
 
                 <div>
-                  <p class="admin-card-field-label">Custom CTA Color</p>
+                  <p class="admin-card-field-label">Цвет кнопки</p>
                   <div class="admin-card-color-row mt-3">
                     <input id="admin-card-custom-color" type="color" value="#111111" />
                     <div>
-                      <p class="text-sm font-semibold text-neutral-900">Accent override</p>
-                      <p class="admin-card-helper mt-1">Используется для primary button style на самой визитке.</p>
+                      <p class="text-sm font-semibold text-neutral-900">Цвет</p>
                     </div>
                   </div>
                 </div>
 
                 <div>
-                  <p class="admin-card-field-label">Avatar Frames</p>
+                  <p class="admin-card-field-label">Рамки</p>
                   <div id="admin-card-frame-options" class="admin-card-style-grid is-compact mt-3">
                     <% avatarFrames.forEach((item) => { %>
                       <%- renderFrameButton(item) %>
@@ -500,7 +480,6 @@
                 <label class="admin-card-switch">
                   <span class="admin-card-switch-copy">
                     <strong>Скрыть брендинг UNQX</strong>
-                    <span>Если включено, подпись бренда исчезнет и в preview, и в сохранённой визитке.</span>
                   </span>
                   <span class="admin-card-switch-ui">
                     <input id="admin-card-hide-branding" type="checkbox" />
@@ -523,7 +502,7 @@
             <div class="admin-card-preview-shell">
               <div class="admin-card-preview-head">
                 <div class="min-w-0">
-                  <p class="admin-card-preview-eyebrow">Live Preview</p>
+                  <p class="admin-card-preview-eyebrow">Предпросмотр</p>
                   <p id="admin-card-preview-slug-label" class="admin-card-preview-slug">unqx.uz/[slug]</p>
                 </div>
                 <a

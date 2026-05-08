@@ -536,7 +536,7 @@
         owner.username ? `@${owner.username}` : owner.telegramUsername ? `@${owner.telegramUsername}` : owner.email || owner.id || "—";
     }
     if (el.ownerPlan instanceof HTMLElement) {
-      el.ownerPlan.textContent = `Тариф: ${state.tariff === "premium" ? "Премиум" : "Legacy"} · Тип профиля: ${owner.profileType === "company" ? "Компания" : "Личность"}`;
+      el.ownerPlan.textContent = `Тариф: ${state.tariff === "premium" ? "Премиум" : "Без тарифа"} · Тип профиля: ${owner.profileType === "company" ? "Компания" : "Личность"}`;
     }
     if (el.ownerLink instanceof HTMLAnchorElement) {
       el.ownerLink.href = owner.id ? `/admin/users/${encodeURIComponent(owner.id)}/card` : "#";
