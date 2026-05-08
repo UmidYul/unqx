@@ -381,7 +381,7 @@
 
 .profile-dashboard .profile-card-editor-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(340px, 380px);
+  grid-template-columns: minmax(0, 1fr) minmax(420px, 520px);
   gap: 1.5rem;
   align-items: start;
 }
@@ -403,9 +403,11 @@
 }
 
 .profile-dashboard .profile-card-categories {
+  grid-column: 1 / -1;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.75rem;
+  align-items: stretch;
 }
 
 .profile-dashboard .profile-card-category-btn {

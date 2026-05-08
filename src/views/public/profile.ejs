@@ -290,49 +290,32 @@
             class="hidden mt-5 rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-10 text-center"></section>
           <div id="profile-card-content">
             <div class="profile-card-editor-layout mt-4">
-              <div class="profile-card-preview-column">
-                <div class="profile-card-preview-shell">
-                  <div class="profile-card-preview-head">
-                    <div class="min-w-0">
-                      <p class="profile-card-preview-eyebrow">Live Preview</p>
-                      <p id="profile-preview-slug-label" class="profile-card-preview-slug">unqx.uz/[UNQ]</p>
-                    </div>
-                    <a id="profile-preview-open-link" href="#" target="_blank" rel="noopener noreferrer"
-                      class="text-xs font-semibold text-neutral-700 hover:underline">Открыть</a>
-                  </div>
-                  <div class="profile-card-preview-body">
-                    <div id="profile-card-live-preview" class="rounded-2xl border border-neutral-200 bg-white p-3 sm:p-4">
-                    </div>
-                  </div>
-                </div>
+              <div id="profile-card-categories" class="profile-card-categories" role="tablist"
+                aria-label="Разделы визитки">
+                <button type="button" data-a="card-editor-category" data-card-editor-category="main"
+                  class="interactive-btn profile-card-category-btn is-active" aria-pressed="true">
+                  <span class="profile-card-category-label">Основное</span>
+                  <span class="profile-card-category-note">Аватар, имя и bio</span>
+                </button>
+                <button type="button" data-a="card-editor-category" data-card-editor-category="links"
+                  class="interactive-btn profile-card-category-btn" aria-pressed="false">
+                  <span class="profile-card-category-label">Ссылки и теги</span>
+                  <span class="profile-card-category-note">Кнопки и быстрые метки</span>
+                </button>
+                <button type="button" data-a="card-editor-category" data-card-editor-category="contacts"
+                  class="interactive-btn profile-card-category-btn" aria-pressed="false">
+                  <span class="profile-card-category-label">Контакты</span>
+                  <span class="profile-card-category-note">Адрес, почта и телефон</span>
+                </button>
+                <button type="button" data-a="card-editor-category" data-card-editor-category="design"
+                  class="interactive-btn profile-card-category-btn" aria-pressed="false">
+                  <span class="profile-card-category-label">Оформление</span>
+                  <span class="profile-card-category-note">Тема, рамка и сохранение</span>
+                </button>
               </div>
 
               <div class="profile-card-editor-column">
                 <div class="profile-card-editor-main">
-                  <div id="profile-card-categories" class="profile-card-categories" role="tablist"
-                    aria-label="Разделы визитки">
-                    <button type="button" data-a="card-editor-category" data-card-editor-category="main"
-                      class="interactive-btn profile-card-category-btn is-active" aria-pressed="true">
-                      <span class="profile-card-category-label">Основное</span>
-                      <span class="profile-card-category-note">Аватар, имя и bio</span>
-                    </button>
-                    <button type="button" data-a="card-editor-category" data-card-editor-category="links"
-                      class="interactive-btn profile-card-category-btn" aria-pressed="false">
-                      <span class="profile-card-category-label">Ссылки и теги</span>
-                      <span class="profile-card-category-note">Кнопки и быстрые метки</span>
-                    </button>
-                    <button type="button" data-a="card-editor-category" data-card-editor-category="contacts"
-                      class="interactive-btn profile-card-category-btn" aria-pressed="false">
-                      <span class="profile-card-category-label">Контакты</span>
-                      <span class="profile-card-category-note">Адрес, почта и телефон</span>
-                    </button>
-                    <button type="button" data-a="card-editor-category" data-card-editor-category="design"
-                      class="interactive-btn profile-card-category-btn" aria-pressed="false">
-                      <span class="profile-card-category-label">Оформление</span>
-                      <span class="profile-card-category-note">Тема, рамка и сохранение</span>
-                    </button>
-                  </div>
-
                   <div class="profile-card-editor-panels">
                     <section class="profile-card-editor-panel" data-card-editor-panel="main">
                       <div class="profile-card-editor-panel-head">
@@ -524,6 +507,23 @@
                         </div>
                       </div>
                     </section>
+                  </div>
+                </div>
+              </div>
+
+              <div class="profile-card-preview-column">
+                <div class="profile-card-preview-shell">
+                  <div class="profile-card-preview-head">
+                    <div class="min-w-0">
+                      <p class="profile-card-preview-eyebrow">Live Preview</p>
+                      <p id="profile-preview-slug-label" class="profile-card-preview-slug">unqx.uz/[UNQ]</p>
+                    </div>
+                    <a id="profile-preview-open-link" href="#" target="_blank" rel="noopener noreferrer"
+                      class="text-xs font-semibold text-neutral-700 hover:underline">Открыть</a>
+                  </div>
+                  <div class="profile-card-preview-body">
+                    <div id="profile-card-live-preview" class="rounded-2xl border border-neutral-200 bg-white p-3 sm:p-4">
+                    </div>
                   </div>
                 </div>
               </div>
