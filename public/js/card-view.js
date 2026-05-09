@@ -1696,7 +1696,7 @@
       ? `
           <button
             type="button"
-            class="unq-ref-follow-toggle${followSummary.viewer.isFollowing ? " is-active" : ""}"
+            class="unq-ref-follow-toggle unq-ref-follow-toggle--hero${followSummary.viewer.isFollowing ? " is-active" : ""}"
             data-follow-toggle
             data-follow-slug="${esc(card.slug)}"
             data-following="${followSummary.viewer.isFollowing ? "true" : "false"}"
@@ -1719,39 +1719,6 @@
           <span class="unq-ref-social-label">Подписки</span>
         </button>
       </div>
-    `;
-    const followingPreviewItems = Array.isArray(followSummary.previews.following)
-      ? followSummary.previews.following.slice(0, 4)
-      : [];
-    const followPreviewHtml = `
-      <section class="unq-follow-preview" aria-label="Подписки владельца">
-        <div class="unq-follow-preview-head">
-          <div>
-            <p class="unq-follow-preview-kicker">Сообщество</p>
-            <h3 class="unq-follow-preview-title">Подписки владельца</h3>
-          </div>
-          <button type="button" class="unq-follow-preview-link" data-follow-open="following">Смотреть все</button>
-        </div>
-        ${followingPreviewItems.length
-          ? `<div class="unq-follow-preview-list">
-              ${followingPreviewItems
-                .map((item) => `
-                  <a href="${esc(item.profileHref || "#")}" class="unq-follow-preview-item">
-                    <span class="unq-follow-preview-avatar">
-                      ${item.avatarUrl
-                        ? `<img src="${esc(item.avatarUrl)}" alt="${esc(item.name)}" class="unq-follow-preview-avatar-img" />`
-                        : `<span>${esc(item.initials)}</span>`}
-                    </span>
-                    <span class="unq-follow-preview-text">
-                      <span class="unq-follow-preview-name">${esc(item.name)}</span>
-                      <span class="unq-follow-preview-slug">${esc(item.primarySlug ? `unqx.uz/${item.primarySlug}` : "Визитка недоступна")}</span>
-                    </span>
-                  </a>
-                `)
-                .join("")}
-            </div>`
-          : '<p class="unq-follow-preview-empty">Пока нет подписок, которые можно показать публично.</p>'}
-      </section>
     `;
 
     const tagsHtml =
@@ -1836,6 +1803,15 @@
       topBadge && Number.isFinite(Number(topBadge.rank)) && Number(topBadge.rank) > 0
         ? `<div class="unq-ref-top-badge">Топ #${Math.round(Number(topBadge.rank))} этой недели</div>`
         : "";
+    const shellMetaHtml =
+      topBadgeHtml || followButtonHtml
+        ? `
+            <div class="unq-ref-shell-meta${topBadgeHtml ? "" : " is-follow-only"}">
+              ${topBadgeHtml || '<span class="unq-ref-shell-meta-spacer" aria-hidden="true"></span>'}
+              ${followButtonHtml}
+            </div>
+          `
+        : "";
     const officialUnqLine = officialUnqBadge ? String(officialUnqBadge.line || "").trim() : "";
     const officialUnqTitle = officialUnqBadge ? String(officialUnqBadge.title || "").trim() : "";
     const officialUnqHtml =
@@ -1903,19 +1879,16 @@
         : "";
     const roleHtml = card.role ? `<p class="unq-ref-role">${esc(card.role)}</p>` : "";
     const footBrandingLabel = card.showBranding ? (theme.key === "velours" ? "◆ UNQX" : "• UNQX") : "";
-    const cardDetailsHtml = `
-          ${followPreviewHtml}
-          <div class="unq-ref-divider"></div>
-          ${tagsHtml}
-          ${scoreBlock}
-          <div class="unq-ref-divider"></div>
-          <div class="unq-ref-actions">${buttonsHtml}</div>
-          <div class="unq-ref-divider"></div>
-          <p class="unq-ref-hashtag">${esc(mainHashtag)}</p>
-          ${aboutHtml}
-          ${activeSocialLinks.length ? `<div class="unq-ref-social">${activeSocialLinks.map(renderSocialLink).join("")}</div>` : ""}
-          <button type="button" class="unq-ref-save interactive-btn" data-save-contact>${iconSvg("save")}<span>Сохранить контакт (.vcf)</span></button>
-    `;
+    const detailSections = [
+      tagsHtml,
+      scoreBlock,
+      `<div class="unq-ref-actions">${buttonsHtml}</div>`,
+      `<p class="unq-ref-hashtag">${esc(mainHashtag)}</p>`,
+      aboutHtml,
+      activeSocialLinks.length ? `<div class="unq-ref-social">${activeSocialLinks.map(renderSocialLink).join("")}</div>` : "",
+      `<button type="button" class="unq-ref-save interactive-btn" data-save-contact>${iconSvg("save")}<span>Сохранить контакт (.vcf)</span></button>`,
+    ].filter((section) => String(section || "").trim());
+    const cardDetailsHtml = detailSections.join('<div class="unq-ref-divider"></div>');
     const wallPostsHtml = wall
       ? wall.items.length > 0
         ? wall.items
@@ -2089,7 +2062,6 @@
             ${slugPriceLabel ? `<span class="unq-ref-slug-price">${esc(slugPriceLabel)}</span>` : ""}
           </div>
           <div class="unq-ref-top-actions">
-            ${followButtonHtml}
             <button type="button" data-share-card class="unq-ref-share" aria-label="Поделиться">
               ${iconSvg("share")}
               <span class="sr-only" data-share-label>Поделиться</span>
@@ -2098,7 +2070,7 @@
         </div>
         <div class="public-card-shell unq-ref-shell">
           <div class="unq-ref-card-overlay">${renderThemeOverlay(theme.key)}</div>
-          ${topBadgeHtml}
+          ${shellMetaHtml}
           ${officialUnqHtml}
           ${staffBadgeHtml}
           ${card.showBranding

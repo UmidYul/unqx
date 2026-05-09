@@ -600,8 +600,8 @@
                       <div class="mt-10 grid gap-6 lg:grid-cols-3">
                         <% latestPublishedPostsList.forEach((post)=> { const author=post && post.author && typeof post.author==="object" ? post.author : {}; const followState=post && post.viewerFollowState && typeof post.viewerFollowState==="object" ? post.viewerFollowState : {}; %>
                           <article class="home-latest-post-card rounded-[1.7rem] border border-neutral-200 bg-white p-5">
-                            <div class="flex items-start justify-between gap-3">
-                              <a href="<%= author.profileHref || post.postHref || '#' %>" class="flex min-w-0 items-center gap-3">
+                            <div class="home-latest-post-head">
+                              <a href="<%= author.profileHref || post.postHref || '#' %>" class="home-latest-post-author">
                                 <% if (author.avatarUrl) { %>
                                   <img src="<%= author.avatarUrl %>" alt="<%= author.name || 'UNQX User' %>"
                                     class="h-12 w-12 shrink-0 rounded-full border border-neutral-200 object-cover" loading="lazy" />
@@ -610,11 +610,11 @@
                                     <%= String(author.name || "UN").split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase() %>
                                   </span>
                                 <% } %>
-                                <span class="min-w-0">
-                                  <span class="block truncate text-sm font-semibold text-neutral-900"><%= author.name || "UNQX User" %></span>
-                                  <span class="block truncate text-xs text-neutral-500">unqx.uz/<%= author.primarySlug || "UNQ" %></span>
+                                <span class="home-latest-post-author-meta">
+                                  <span class="home-latest-post-author-name"><%= author.name || "UNQX User" %></span>
+                                  <span class="home-latest-post-author-slug">unqx.uz/<%= author.primarySlug || "UNQ" %></span>
                                   <% if (author.role) { %>
-                                    <span class="mt-0.5 block truncate text-[11px] uppercase tracking-[0.14em] text-neutral-400"><%= author.role %></span>
+                                    <span class="home-latest-post-author-role"><%= author.role %></span>
                                   <% } %>
                                 </span>
                               </a>
@@ -625,22 +625,22 @@
                                   data-follow-slug="<%= author.primarySlug || '' %>"
                                   data-following="<%= followState.isFollowing ? 'true' : 'false' %>"
                                   data-login-next="<%= post.postHref || author.profileHref || '/' %>"
-                                  class="interactive-btn home-post-follow-btn <%= followState.isFollowing ? 'is-following' : '' %> min-h-11 shrink-0 rounded-full border border-neutral-300 px-3 py-1.5 text-xs font-semibold text-neutral-800">
+                                  class="interactive-btn home-post-follow-btn <%= followState.isFollowing ? 'is-following' : '' %>">
                                   <%= followState.isFollowing ? "Отписаться" : "Подписаться" %>
                                 </button>
                               <% } %>
                             </div>
 
-                            <p class="mt-4 text-sm leading-6 text-neutral-700"><%= post.content %></p>
+                            <p class="home-latest-post-content"><%= post.content %></p>
 
-                            <div class="mt-4 flex items-center justify-between gap-3 border-t border-neutral-100 pt-4">
-                              <div class="flex flex-wrap items-center gap-3 text-xs text-neutral-500">
-                                <span><%= post.createdAt ? new Date(post.createdAt).toLocaleString('ru-RU') : "только что" %></span>
-                                <span><%= Number(post.likesCount || 0).toLocaleString('ru-RU') %> лайков</span>
-                                <span><%= Number(post.commentsCount || 0).toLocaleString('ru-RU') %> комментариев</span>
+                            <div class="home-latest-post-foot">
+                              <div class="home-latest-post-meta">
+                                <span class="home-latest-post-meta-item"><%= post.createdAt ? new Date(post.createdAt).toLocaleString('ru-RU') : "только что" %></span>
+                                <span class="home-latest-post-meta-item"><%= Number(post.likesCount || 0).toLocaleString('ru-RU') %> лайков</span>
+                                <span class="home-latest-post-meta-item"><%= Number(post.commentsCount || 0).toLocaleString('ru-RU') %> комментариев</span>
                               </div>
                               <a href="<%= post.postHref || author.profileHref || '#' %>"
-                                class="interactive-btn inline-flex min-h-11 items-center rounded-lg border border-neutral-300 px-3 py-2 text-xs font-semibold text-neutral-800">
+                                class="interactive-btn home-latest-post-open">
                                 Открыть пост
                               </a>
                             </div>
@@ -671,56 +671,40 @@
                           %>
                             <a href="/<%= encodeURIComponent(card.slug) %>"
                               class="home-latest-card interactive-card rounded-[1.7rem] border border-neutral-200 bg-white p-4 text-left sm:p-5">
-                              <div class="home-latest-card-shell">
-                                <div class="home-latest-card-main">
-                                  <div class="home-latest-card-identity">
-                                    <% if (card.avatarUrl) { %>
-                                      <img src="<%= card.avatarUrl %>" alt="<%= card.name %>"
-                                        class="h-14 w-14 shrink-0 rounded-full border border-neutral-200 object-cover shadow-sm"
-                                        loading="lazy" />
-                                    <% } else { %>
-                                      <span
-                                        class="inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-neutral-200 bg-neutral-100 text-sm font-semibold text-neutral-600 shadow-sm">
-                                        <%= (card.name || "UN" ).split(" ").map((p) => p[0]).join("").slice(0, 2).toUpperCase() %>
-                                      </span>
-                                    <% } %>
-                                    <div class="min-w-0">
-                                      <p class="truncate text-[1.2rem] font-bold leading-tight text-neutral-900">
-                                        <%= card.name %>
-                                      </p>
-                                      <p class="mt-1 truncate text-sm text-neutral-500">
-                                        <%= roleLabel %>
-                                      </p>
-                                    </div>
-                                  </div>
+                              <div class="home-latest-card-head">
+                                <span class="home-latest-rank">#<%= index + 1 %></span>
+                                <span class="home-latest-card-date"><%= createdLabel %></span>
+                              </div>
 
-                                  <div class="home-latest-card-meta">
-                                    <span class="home-latest-card-slug">
-                                      <%= card.slug %>
-                                    </span>
-                                    <p class="home-latest-card-bio">
-                                      <%= bioSnippet || "Свежая цифровая визитка, готовая к обмену в один тап." %>
-                                    </p>
-                                  </div>
-                                </div>
-
-                                <aside class="home-latest-card-side" aria-label="Информация о карточке">
-                                  <span class="home-latest-rank home-latest-card-side-rank">
-                                    #<%= index + 1 %>
+                              <div class="home-latest-card-identity">
+                                <% if (card.avatarUrl) { %>
+                                  <img src="<%= card.avatarUrl %>" alt="<%= card.name %>"
+                                    class="h-14 w-14 shrink-0 rounded-full border border-neutral-200 object-cover shadow-sm"
+                                    loading="lazy" />
+                                <% } else { %>
+                                  <span
+                                    class="inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-neutral-200 bg-neutral-100 text-sm font-semibold text-neutral-600 shadow-sm">
+                                    <%= (card.name || "UN" ).split(" ").map((p) => p[0]).join("").slice(0, 2).toUpperCase() %>
                                   </span>
+                                <% } %>
+                                <div class="home-latest-card-copy">
+                                  <p class="home-latest-card-name"><%= card.name %></p>
+                                  <p class="home-latest-card-role"><%= roleLabel %></p>
+                                </div>
+                              </div>
 
-                                  <div class="home-latest-card-side-block">
-                                    <span class="home-latest-card-side-label">Позиция</span>
-                                    <strong class="home-latest-card-side-value">Новый UNQ</strong>
-                                  </div>
+                              <div class="home-latest-card-row">
+                                <span class="home-latest-card-slug"><%= card.slug %></span>
+                                <span class="home-latest-card-kind">Новый UNQ</span>
+                              </div>
 
-                                  <div class="home-latest-card-side-block">
-                                    <span class="home-latest-card-side-label">Создано</span>
-                                    <strong class="home-latest-card-side-value"><%= createdLabel %></strong>
-                                  </div>
+                              <p class="home-latest-card-bio">
+                                <%= bioSnippet || "Свежая цифровая визитка, готовая к обмену в один тап." %>
+                              </p>
 
-                                  <span class="home-latest-card-side-cta">Открыть</span>
-                                </aside>
+                              <div class="home-latest-card-foot">
+                                <span class="home-latest-card-foot-note">Готов к обмену в один тап</span>
+                                <span class="home-latest-card-link">Открыть <span aria-hidden="true">↗</span></span>
                               </div>
                             </a>
                             <% }) %>
