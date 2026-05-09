@@ -953,6 +953,10 @@ Email: ${userEmail}
         openOrderModal({});
         return;
       }
+      if (mode === "new" && !summary.canPostNow) {
+        showWallLimitReachedModal(summary);
+        return;
+      }
       if (mode === "new" && s.wallEditingId) {
         resetWallComposer();
       }
@@ -2267,6 +2271,7 @@ Email: ${userEmail}
       if (!(el.wallSummary instanceof HTMLElement)) return;
       const summary = normalizeWallSummary(s.wallSummary);
       if (!summary.canUseWall) {
+        el.wallSummary.classList.remove("hidden");
         el.wallSummary.innerHTML = renderStateCard({
           icon: "credit-card",
           title: "Стена недоступна без Премиум",
@@ -2276,24 +2281,16 @@ Email: ${userEmail}
         });
         return;
       }
+      el.wallSummary.innerHTML = "";
+      el.wallSummary.classList.add("hidden");
+    };
 
-      const nextPostText = summary.canPostNow
-        ? "Можно опубликовать новый пост прямо сейчас."
-        : `Следующий пост будет доступен после ${fht(summary.nextPostAt)}.`;
-      el.wallSummary.innerHTML = `
-        <div class="profile-wall-summary-grid">
-          <article class="profile-wall-summary-card">
-            <p class="profile-wall-summary-label">Лимит дня</p>
-            <p class="profile-wall-summary-value">${summary.todayPostCount}/1</p>
-            <p class="profile-wall-summary-note">${summary.canPostNow ? "Лимит свободен" : "Лимит исчерпан"}</p>
-          </article>
-          <article class="profile-wall-summary-card">
-            <p class="profile-wall-summary-label">Следующая публикация</p>
-            <p class="profile-wall-summary-value profile-wall-summary-value--small">${summary.canPostNow ? "Сейчас" : esc(fht(summary.nextPostAt))}</p>
-            <p class="profile-wall-summary-note">${nextPostText}</p>
-          </article>
-        </div>
-      `;
+    const showWallLimitReachedModal = (summaryLike) => {
+      const summary = normalizeWallSummary(summaryLike);
+      showModal(
+        "Лимит дня исчерпан",
+        `Сегодняшний лимит публикаций использован (${Math.max(1, Number(summary.todayPostCount || 1))}/1). Следующий пост можно опубликовать после ${fht(summary.nextPostAt)}.`,
+      );
     };
 
     const updateWallComposerState = () => {
@@ -2356,6 +2353,9 @@ Email: ${userEmail}
     const renderWallComments = (post) => {
       const comments = Array.isArray(post.comments) ? post.comments : [];
       const commentsEnabled = post.commentsEnabled !== false;
+      if (!commentsEnabled) {
+        return "";
+      }
       const isExpanded = isWallCommentsExpanded(post.id);
       const hasHiddenComments = comments.length > WALL_VISIBLE_COMMENT_COUNT;
       const visibleComments =
@@ -2769,7 +2769,7 @@ Email: ${userEmail}
         return;
       }
       if (!s.wallEditingId && !summary.canPostNow) {
-        showModal("Лимит на сегодня", `Следующий пост будет доступен после ${fht(summary.nextPostAt)}.`);
+        showWallLimitReachedModal(summary);
         return;
       }
 
@@ -2821,7 +2821,7 @@ Email: ${userEmail}
             todayPostCount: Math.max(1, Number(error?.payload?.todayPostCount || 1)),
           };
           renderWall();
-          showModal("Лимит на сегодня", error.message || `Следующий пост будет доступен после ${fht(error?.payload?.nextPostAt)}.`);
+          showWallLimitReachedModal(s.wallSummary);
           return;
         }
         showModal("Ошибка", error.message || "Не удалось сохранить пост");

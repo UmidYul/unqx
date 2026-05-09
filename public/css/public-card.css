@@ -866,9 +866,9 @@
 }
 
 .unq-follow-dialog-action.is-active {
-  border: var(--theme-button-primary-border, 1px solid #0f172a);
-  background: var(--theme-button-primary-bg, #0f172a);
-  color: var(--theme-button-primary-text, #fff);
+  border: var(--theme-button-secondary-border, 1px solid #cbd5e1);
+  background: var(--theme-button-secondary-bg, #fff);
+  color: var(--theme-button-secondary-text, #0f172a);
 }
 
 .unq-follow-dialog-empty {
