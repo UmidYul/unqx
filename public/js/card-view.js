@@ -698,36 +698,182 @@
     }),
   };
 
-  const EMOJI_BACKGROUND_SMALL_INSTANCES = [
-    { x: 18, y: 18, size: 16, opacity: 0.22 },
-    { x: 74, y: 10, size: 15, opacity: 0.2, rotate: -6 },
-    { x: 122, y: 22, size: 14, opacity: 0.16 },
-    { x: 188, y: 12, size: 15, opacity: 0.18, rotate: 8 },
-    { x: 240, y: 20, size: 16, opacity: 0.22 },
-    { x: 288, y: 14, size: 14, opacity: 0.16 },
-    { x: 24, y: 72, size: 18, opacity: 0.28, rotate: -8 },
-    { x: 278, y: 76, size: 18, opacity: 0.28, rotate: 8 },
-    { x: 8, y: 132, size: 15, opacity: 0.2 },
-    { x: 296, y: 134, size: 15, opacity: 0.2 },
-    { x: 34, y: 188, size: 18, opacity: 0.24, rotate: -6 },
-    { x: 272, y: 184, size: 18, opacity: 0.24, rotate: 6 },
-  ];
-  const EMOJI_BACKGROUND_ACCENT_INSTANCES = [
-    { x: 98, y: 34, size: 20, opacity: 0.16, rotate: -10 },
-    { x: 206, y: 34, size: 20, opacity: 0.14, rotate: 10 },
-    { x: 82, y: 162, size: 20, opacity: 0.14, rotate: -6 },
-    { x: 224, y: 158, size: 20, opacity: 0.14, rotate: 8 },
-  ];
-  const EMOJI_BACKGROUND_LARGE_INSTANCES = [
-    { x: 18, y: 104, size: 28, opacity: 0.1, rotate: -6 },
-    { x: 274, y: 106, size: 28, opacity: 0.1, rotate: 8 },
-  ];
-  const EMOJI_BACKGROUND_BLOBS = [
-    { cx: 48, cy: 40, r: 20, opacity: 0.055 },
-    { cx: 274, cy: 42, r: 18, opacity: 0.05 },
-    { cx: 34, cy: 164, r: 18, opacity: 0.045 },
-    { cx: 288, cy: 166, r: 18, opacity: 0.045 },
-  ];
+  const EMOJI_BACKGROUND_BASE_SCENE = {
+    small: [
+      { x: 18, y: 18, size: 16, opacity: 0.22 },
+      { x: 74, y: 10, size: 15, opacity: 0.2, rotate: -6 },
+      { x: 122, y: 22, size: 14, opacity: 0.16 },
+      { x: 188, y: 12, size: 15, opacity: 0.18, rotate: 8 },
+      { x: 240, y: 20, size: 16, opacity: 0.22 },
+      { x: 288, y: 14, size: 14, opacity: 0.16 },
+      { x: 24, y: 72, size: 18, opacity: 0.28, rotate: -8 },
+      { x: 278, y: 76, size: 18, opacity: 0.28, rotate: 8 },
+      { x: 8, y: 132, size: 15, opacity: 0.2 },
+      { x: 296, y: 134, size: 15, opacity: 0.2 },
+      { x: 34, y: 188, size: 18, opacity: 0.24, rotate: -6 },
+      { x: 272, y: 184, size: 18, opacity: 0.24, rotate: 6 },
+    ],
+    accent: [
+      { x: 98, y: 34, size: 20, opacity: 0.16, rotate: -10 },
+      { x: 206, y: 34, size: 20, opacity: 0.14, rotate: 10 },
+      { x: 82, y: 162, size: 20, opacity: 0.14, rotate: -6 },
+      { x: 224, y: 158, size: 20, opacity: 0.14, rotate: 8 },
+    ],
+    large: [
+      { x: 18, y: 104, size: 28, opacity: 0.1, rotate: -6 },
+      { x: 274, y: 106, size: 28, opacity: 0.1, rotate: 8 },
+    ],
+    blobs: [
+      { cx: 48, cy: 40, r: 20, opacity: 0.055 },
+      { cx: 274, cy: 42, r: 18, opacity: 0.05 },
+      { cx: 34, cy: 164, r: 18, opacity: 0.045 },
+      { cx: 288, cy: 166, r: 18, opacity: 0.045 },
+    ],
+  };
+  const EMOJI_BACKGROUND_PACK_SCENES = {
+    ghosts: EMOJI_BACKGROUND_BASE_SCENE,
+    stars: {
+      small: [
+        { x: 12, y: 18, size: 14, opacity: 0.18 },
+        { x: 52, y: 12, size: 12, opacity: 0.12 },
+        { x: 90, y: 18, size: 16, opacity: 0.2 },
+        { x: 136, y: 10, size: 13, opacity: 0.12 },
+        { x: 178, y: 16, size: 14, opacity: 0.18 },
+        { x: 228, y: 12, size: 15, opacity: 0.18 },
+        { x: 272, y: 18, size: 13, opacity: 0.12 },
+        { x: 302, y: 10, size: 12, opacity: 0.1 },
+        { x: 18, y: 70, size: 18, opacity: 0.22 },
+        { x: 284, y: 72, size: 18, opacity: 0.22 },
+        { x: 8, y: 132, size: 14, opacity: 0.14 },
+        { x: 298, y: 130, size: 14, opacity: 0.14 },
+        { x: 28, y: 184, size: 16, opacity: 0.16 },
+        { x: 280, y: 182, size: 16, opacity: 0.16 },
+      ],
+      accent: [
+        { x: 112, y: 28, size: 18, opacity: 0.12, rotate: -8 },
+        { x: 194, y: 30, size: 18, opacity: 0.12, rotate: 8 },
+        { x: 78, y: 162, size: 18, opacity: 0.1, rotate: -6 },
+        { x: 226, y: 160, size: 18, opacity: 0.1, rotate: 6 },
+      ],
+      large: [
+        { x: 18, y: 108, size: 24, opacity: 0.08 },
+        { x: 278, y: 106, size: 24, opacity: 0.08 },
+      ],
+      blobs: [
+        { cx: 42, cy: 40, r: 18, opacity: 0.03 },
+        { cx: 278, cy: 44, r: 16, opacity: 0.03 },
+      ],
+    },
+    lightning: {
+      small: [
+        { x: 18, y: 16, size: 16, opacity: 0.18, rotate: -16 },
+        { x: 72, y: 26, size: 14, opacity: 0.16, rotate: -12 },
+        { x: 124, y: 16, size: 16, opacity: 0.18, rotate: -14 },
+        { x: 182, y: 22, size: 15, opacity: 0.16, rotate: 12 },
+        { x: 238, y: 14, size: 17, opacity: 0.2, rotate: 14 },
+        { x: 290, y: 24, size: 14, opacity: 0.16, rotate: 12 },
+        { x: 14, y: 82, size: 18, opacity: 0.24, rotate: -18 },
+        { x: 282, y: 86, size: 18, opacity: 0.24, rotate: 18 },
+        { x: 26, y: 176, size: 16, opacity: 0.18, rotate: -14 },
+        { x: 278, y: 174, size: 16, opacity: 0.18, rotate: 14 },
+      ],
+      accent: [
+        { x: 100, y: 36, size: 24, opacity: 0.14, rotate: -18 },
+        { x: 200, y: 30, size: 24, opacity: 0.14, rotate: 18 },
+        { x: 74, y: 156, size: 22, opacity: 0.12, rotate: -14 },
+        { x: 228, y: 154, size: 22, opacity: 0.12, rotate: 14 },
+      ],
+      large: [
+        { x: 10, y: 110, size: 30, opacity: 0.08, rotate: -20 },
+        { x: 278, y: 106, size: 30, opacity: 0.08, rotate: 20 },
+      ],
+      blobs: [
+        { cx: 34, cy: 86, r: 18, opacity: 0.035 },
+        { cx: 286, cy: 90, r: 18, opacity: 0.035 },
+      ],
+    },
+    crowns: {
+      small: [
+        { x: 18, y: 22, size: 18, opacity: 0.2 },
+        { x: 74, y: 12, size: 17, opacity: 0.18 },
+        { x: 130, y: 20, size: 18, opacity: 0.16 },
+        { x: 188, y: 12, size: 17, opacity: 0.18 },
+        { x: 244, y: 20, size: 18, opacity: 0.2 },
+        { x: 290, y: 12, size: 16, opacity: 0.14 },
+        { x: 24, y: 80, size: 20, opacity: 0.26 },
+        { x: 278, y: 80, size: 20, opacity: 0.26 },
+        { x: 30, y: 184, size: 18, opacity: 0.2 },
+        { x: 274, y: 182, size: 18, opacity: 0.2 },
+      ],
+      accent: [
+        { x: 102, y: 34, size: 20, opacity: 0.12 },
+        { x: 200, y: 34, size: 20, opacity: 0.12 },
+        { x: 82, y: 160, size: 20, opacity: 0.1 },
+        { x: 224, y: 160, size: 20, opacity: 0.1 },
+      ],
+      large: [
+        { x: 16, y: 110, size: 26, opacity: 0.08 },
+        { x: 278, y: 110, size: 26, opacity: 0.08 },
+      ],
+      blobs: [
+        { cx: 48, cy: 42, r: 18, opacity: 0.028 },
+        { cx: 272, cy: 42, r: 18, opacity: 0.028 },
+      ],
+    },
+    webs: {
+      small: [
+        { x: 24, y: 18, size: 18, opacity: 0.16 },
+        { x: 280, y: 18, size: 18, opacity: 0.16 },
+        { x: 12, y: 84, size: 18, opacity: 0.14 },
+        { x: 292, y: 86, size: 18, opacity: 0.14 },
+        { x: 30, y: 180, size: 18, opacity: 0.14 },
+        { x: 274, y: 178, size: 18, opacity: 0.14 },
+      ],
+      accent: [
+        { x: 78, y: 18, size: 26, opacity: 0.12 },
+        { x: 214, y: 20, size: 26, opacity: 0.12 },
+        { x: 80, y: 154, size: 24, opacity: 0.1 },
+        { x: 214, y: 154, size: 24, opacity: 0.1 },
+      ],
+      large: [
+        { x: 0, y: 4, size: 34, opacity: 0.08 },
+        { x: 286, y: 4, size: 34, opacity: 0.08 },
+        { x: 4, y: 152, size: 34, opacity: 0.06 },
+        { x: 282, y: 150, size: 34, opacity: 0.06 },
+      ],
+      blobs: [],
+    },
+    hearts: {
+      small: [
+        { x: 22, y: 20, size: 15, opacity: 0.18 },
+        { x: 68, y: 10, size: 14, opacity: 0.14 },
+        { x: 118, y: 22, size: 16, opacity: 0.18 },
+        { x: 176, y: 10, size: 14, opacity: 0.14 },
+        { x: 228, y: 20, size: 16, opacity: 0.18 },
+        { x: 282, y: 12, size: 14, opacity: 0.14 },
+        { x: 16, y: 74, size: 18, opacity: 0.22, rotate: -10 },
+        { x: 286, y: 74, size: 18, opacity: 0.22, rotate: 10 },
+        { x: 28, y: 184, size: 16, opacity: 0.16, rotate: -8 },
+        { x: 278, y: 182, size: 16, opacity: 0.16, rotate: 8 },
+      ],
+      accent: [
+        { x: 94, y: 36, size: 20, opacity: 0.12, rotate: -8 },
+        { x: 206, y: 34, size: 20, opacity: 0.12, rotate: 8 },
+        { x: 78, y: 158, size: 18, opacity: 0.1, rotate: -8 },
+        { x: 226, y: 156, size: 18, opacity: 0.1, rotate: 8 },
+      ],
+      large: [
+        { x: 12, y: 108, size: 26, opacity: 0.08, rotate: -10 },
+        { x: 282, y: 108, size: 26, opacity: 0.08, rotate: 10 },
+      ],
+      blobs: [
+        { cx: 46, cy: 44, r: 16, opacity: 0.03 },
+        { cx: 276, cy: 44, r: 16, opacity: 0.03 },
+        { cx: 36, cy: 166, r: 16, opacity: 0.024 },
+        { cx: 286, cy: 166, r: 16, opacity: 0.024 },
+      ],
+    },
+  };
   const EMOJI_BACKGROUND_PACK_SYMBOLS = {
     ghosts: `
       <path fill="currentColor" d="M24 5.5c-8.7 0-15.5 6.8-15.5 15.6V40l5.3-4.1 4.2 4.1 5.1-4.7 4.8 4.7 4.4-4.1 5.3 4.1V21.1C39.5 12.3 32.7 5.5 24 5.5Zm-5.5 16a2.7 2.7 0 1 1 0-5.4 2.7 2.7 0 0 1 0 5.4Zm11 0a2.7 2.7 0 1 1 0-5.4 2.7 2.7 0 0 1 0 5.4Z"/>
@@ -782,6 +928,7 @@
     if (!symbolMarkup) {
       return "";
     }
+    const scene = EMOJI_BACKGROUND_PACK_SCENES[normalizedKey] || EMOJI_BACKGROUND_BASE_SCENE;
     const symbolId = `emoji-pack-${normalizedKey}-glyph`;
     const glowFilterId = `emoji-pack-${normalizedKey}-glow`;
     const blurFilterId = `emoji-pack-${normalizedKey}-blur`;
@@ -809,18 +956,18 @@
           </symbol>
         </defs>
         <g mask="url(#emoji-pack-${normalizedKey}-mask)">
-          ${EMOJI_BACKGROUND_BLOBS.map(
+          ${(scene.blobs || []).map(
             (blob) =>
               `<circle cx="${blob.cx}" cy="${blob.cy}" r="${blob.r}" fill="var(--theme-accent-color)" opacity="${blob.opacity}" filter="url(#${blurFilterId})"></circle>`,
           ).join("")}
           <g style="color:var(--theme-role-color)">
-            ${renderEmojiBackgroundUses(symbolId, EMOJI_BACKGROUND_SMALL_INSTANCES)}
+            ${renderEmojiBackgroundUses(symbolId, scene.small)}
           </g>
           <g style="color:var(--theme-accent-color)" filter="url(#${glowFilterId})">
-            ${renderEmojiBackgroundUses(symbolId, EMOJI_BACKGROUND_ACCENT_INSTANCES)}
+            ${renderEmojiBackgroundUses(symbolId, scene.accent)}
           </g>
           <g style="color:var(--theme-role-color)" filter="url(#${blurFilterId})">
-            ${renderEmojiBackgroundUses(symbolId, EMOJI_BACKGROUND_LARGE_INSTANCES)}
+            ${renderEmojiBackgroundUses(symbolId, scene.large)}
           </g>
           <rect x="0" y="0" width="320" height="220" fill="var(--theme-card-bg)" opacity="0.04"></rect>
         </g>
