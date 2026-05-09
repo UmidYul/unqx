@@ -4745,7 +4745,8 @@ body[data-card-theme] main.private-card-screen {
   }
 
   .unq-ref-top-actions {
-    width: 100%;
+    width: auto;
+    flex: 0 0 auto;
     justify-content: flex-end;
   }
 
