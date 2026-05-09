@@ -9,6 +9,10 @@ const { requireCsrfToken } = require("../../middleware/csrf");
 const { requireSameOrigin } = require("../../middleware/same-origin");
 const { sendTapPushNotification, sendExpoPushToUser } = require("../../services/push");
 const {
+  getViewerFollowLookup,
+  toggleFollowBySlug,
+} = require("../../services/follows");
+const {
   PRIVATE_ACCESS_TTL_MS,
   createPrivateAccessToken,
   verifyPrivateAccessToken,
@@ -130,6 +134,24 @@ function isMobilePublicOwnerVisible(input) {
     subscriptionStartedAt: input?.subscriptionStartedAt || null,
     subscriptionExpiresAt: input?.subscriptionExpiresAt || null,
   });
+}
+
+async function buildFollowLookupForRows(userId, rows) {
+  const normalizedUserId = String(userId || "").trim();
+  if (!normalizedUserId) {
+    return new Set();
+  }
+
+  const ownerIds = Array.isArray(rows)
+    ? Array.from(
+      new Set(
+        rows
+          .map((item) => String(item?.ownerId || "").trim())
+          .filter(Boolean),
+      ),
+    )
+    : [];
+  return getViewerFollowLookup(normalizedUserId, ownerIds);
 }
 
 function normalizeCityKey(value) {
@@ -1121,8 +1143,8 @@ router.get(
         `
           SELECT
             uc.contact_slug AS slug,
+            COALESCE(uc.contact_user_id, s.owner_id) AS "ownerId",
             uc.saved,
-            uc.subscribed,
             uc.tap_count,
             uc.first_tap_at,
             uc.last_tap_at,
@@ -1147,6 +1169,7 @@ router.get(
         q,
         `%${q}%`,
       );
+      const followLookup = await buildFollowLookupForRows(userId, rows);
 
       res.json({
         items: (Array.isArray(rows) ? rows : []).map((item) => ({
@@ -1156,7 +1179,7 @@ router.get(
           phone: item.phone || "",
           taps: Number(item.tap_count || 0),
           saved: Boolean(item.saved),
-          subscribed: Boolean(item.subscribed),
+          subscribed: followLookup.has(String(item.ownerId || "").trim()),
           tag: String(item.tag || "none"),
           lastSeen: toIso(item.last_tap_at),
         })),
@@ -1192,6 +1215,7 @@ router.get(
         `
           SELECT
             s.full_slug AS slug,
+            s.owner_id AS "ownerId",
             COALESCE(pc.name, u.display_name, u.first_name, 'Unknown') AS name,
             pc.avatar_url AS "avatarUrl",
             COALESCE(u.verified_company, '') AS city,
@@ -1199,7 +1223,6 @@ router.get(
             NULL::timestamptz AS "subscriptionStartedAt",
             NULL::timestamptz AS "subscriptionExpiresAt",
             COALESCE(s.analytics_views_count, 0) AS taps,
-            COALESCE(uc.subscribed, FALSE) AS subscribed,
             COALESCE(uc.saved, FALSE) AS saved
           FROM slugs s
           JOIN users u ON u.id = s.owner_id
@@ -1230,6 +1253,7 @@ router.get(
         `
           SELECT
             s.full_slug AS slug,
+            s.owner_id AS "ownerId",
             COALESCE(pc.name, u.display_name, u.first_name, 'Unknown') AS name,
             pc.avatar_url AS "avatarUrl",
             COALESCE(u.verified_company, '') AS city,
@@ -1237,7 +1261,6 @@ router.get(
             u.subscription_started_at AS "subscriptionStartedAt",
             u.subscription_expires_at AS "subscriptionExpiresAt",
             COALESCE(s.analytics_views_count, 0) AS taps,
-            FALSE AS subscribed,
             FALSE AS saved
           FROM slugs s
           JOIN users u ON u.id = s.owner_id
@@ -1259,6 +1282,7 @@ router.get(
         offset,
       );
     }
+    const followLookup = await buildFollowLookupForRows(userId, rows);
 
     res.json({
       items: (Array.isArray(rows) ? rows : [])
@@ -1276,7 +1300,7 @@ router.get(
           city: String(item.city || ""),
           tag: String(item.tag || "none"),
           taps: Number(item.taps || 0),
-          subscribed: Boolean(item.subscribed),
+          subscribed: followLookup.has(String(item.ownerId || "").trim()),
           saved: Boolean(item.saved),
         })),
       page,
@@ -1324,7 +1348,6 @@ router.get(
             COALESCE(pc.extra_phone, '') AS phone,
             COALESCE(pc.tags, '[]'::jsonb) AS tags,
             COALESCE(pc.buttons, '[]'::jsonb) AS buttons,
-            COALESCE(uc.subscribed, FALSE) AS subscribed,
             COALESCE(uc.saved, FALSE) AS saved
           FROM slugs s
           JOIN users u ON u.id = s.owner_id
@@ -1355,6 +1378,7 @@ router.get(
       res.status(404).json({ error: "Resident not found", code: "NOT_FOUND" });
       return;
     }
+    const followLookup = await buildFollowLookupForRows(userId, [row]);
 
     const rowStatus = String(row.status || "").trim().toLowerCase();
     const isOwnerViewer = String(row.ownerId || "") === String(userId || "");
@@ -1416,7 +1440,7 @@ router.get(
         phone: String(row.phone || ""),
         buttons: normalizeProfileButtons(row.buttons),
         tags: normalizeStringList(row.tags),
-        subscribed: Boolean(row.subscribed),
+        subscribed: followLookup.has(String(row.ownerId || "").trim()),
         saved: Boolean(row.saved),
         username: String(row.username || "").trim(),
         isPrivate: rowStatus === "private",
@@ -1600,41 +1624,24 @@ router.post(
     }
 
     try {
-      const current = await prisma.$queryRaw`
-        SELECT subscribed
-        FROM user_contacts
-        WHERE owner_id = ${userId} AND contact_slug = ${slug}
-        LIMIT 1
-      `;
-      const subscribedNow = !Boolean(current?.[0]?.subscribed);
-
-      await prisma.$executeRaw`
-        INSERT INTO user_contacts (
-          owner_id,
-          contact_slug,
-          saved,
-          subscribed,
-          first_tap_at,
-          last_tap_at,
-          tap_count
-        )
-        VALUES (
-          ${userId},
-          ${slug},
-          false,
-          ${subscribedNow},
-          now(),
-          now(),
-          0
-        )
-        ON CONFLICT (owner_id, contact_slug)
-        DO UPDATE SET
-          subscribed = ${subscribedNow},
-          last_tap_at = now()
-      `;
-
-      res.json({ ok: true, subscribed: subscribedNow });
+      const result = await toggleFollowBySlug({
+        slug,
+        followerUserId: userId,
+      });
+      res.json({ ok: true, subscribed: Boolean(result?.followed) });
     } catch (error) {
+      if (error?.code === "FOLLOW_TARGET_NOT_FOUND") {
+        res.status(404).json({ error: "Resident not found", code: error.code });
+        return;
+      }
+      if (error?.code === "FOLLOW_SELF_FORBIDDEN") {
+        res.status(409).json({ error: "Нельзя подписаться на себя", code: error.code });
+        return;
+      }
+      if (error?.code === "FOLLOW_STORAGE_UNAVAILABLE") {
+        res.status(503).json({ error: "Follow storage unavailable", code: error.code });
+        return;
+      }
       if (!isMissingStorageError(error)) {
         throw error;
       }

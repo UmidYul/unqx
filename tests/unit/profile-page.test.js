@@ -30,9 +30,19 @@ describe("profile page", () => {
     expect(html).toContain('data-tab-target="slugs"');
     expect(html).toContain('data-tab-target="card"');
     expect(html).toContain('data-tab-target="posts"');
+    expect(html).toContain('data-tab-target="community"');
     expect(html).toContain('data-tab-target="requests"');
     expect(html).toContain('data-tab-target="referrals"');
     expect(html).toContain('data-tab-target="settings"');
+  });
+
+  test("renders community panel and unread badge shell", async () => {
+    const html = await renderProfileTemplate();
+    expect(html).toContain('id="profile-community-tab-unread"');
+    expect(html).toContain('data-tab-panel="community"');
+    expect(html).toContain('id="profile-community-summary"');
+    expect(html).toContain('id="profile-community-filters"');
+    expect(html).toContain('id="profile-community-list"');
   });
 
   test("renders wall composer controls", async () => {
@@ -126,6 +136,11 @@ describe("profile page", () => {
     expect(source).toContain("renderCardEditorCategory");
     expect(source).toContain('data-card-editor-category');
     expect(source).toContain('data-card-editor-panel');
+    expect(source).toContain("/api/profile/follows?type=");
+    expect(source).toContain("/api/profile/follows/notifications/read-all");
+    expect(source).toContain("data-community-follow-toggle");
+    expect(source).toContain("renderCommunity");
+    expect(source).toContain("profile-community-tab-unread");
   });
 
   test("profile card draft is kept in memory instead of persistent localStorage writes", () => {
@@ -142,5 +157,7 @@ describe("profile page", () => {
     expect(source).toContain("commentsEnabled: req.body?.commentsEnabled");
     expect(source).toContain("normalizeAvatarFrameByPlan");
     expect(source).toContain("requestedAvatarFrame");
+    expect(source).toContain('"/follows"');
+    expect(source).toContain('"/follows/notifications/read-all"');
   });
 });

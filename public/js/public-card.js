@@ -18,6 +18,12 @@
   const slugSearchResults = document.getElementById("card-slug-search-results");
   const WALL_COMMENT_CONTENT_MAX = 1000;
   const WALL_SEEN_POSTS_STORAGE_KEY_PREFIX = "unqx_wall_seen_posts:";
+  const emptyFollowPagination = () => ({
+    page: 1,
+    pageSize: 20,
+    total: 0,
+    hasMore: false,
+  });
   const state = {
     card: payload && typeof payload.card === "object" && payload.card ? payload.card : {},
     shareUrl: String(payload.shareUrl || window.location.href),
@@ -41,6 +47,16 @@
     trackViaPageRequest: Boolean(payload.trackViaPageRequest),
     slug: String(payload.slug || payload?.card?.slug || "").trim().toUpperCase(),
     wall: normalizeWallPayload(payload.wall),
+    followSummary: normalizeFollowSummary(payload.followSummary),
+    followBusySlugs: new Set(),
+    followDialog: {
+      open: false,
+      type: "following",
+      loading: false,
+      error: "",
+      items: [],
+      pagination: emptyFollowPagination(),
+    },
     activeTab: "card",
     wallLoadingMore: false,
     wallBusyLikeIds: new Set(),
@@ -145,6 +161,66 @@
         hasMore: Boolean(pagination.hasMore),
       },
     };
+  }
+
+  function normalizeFollowItem(rawItem) {
+    if (!rawItem || typeof rawItem !== "object") {
+      return null;
+    }
+    const name = String(rawItem.name || "UNQX User").trim() || "UNQX User";
+    const primarySlug = String(rawItem.primarySlug || "").trim().toUpperCase() || null;
+    return {
+      userId: String(rawItem.userId || "").trim(),
+      name,
+      initials:
+        String(rawItem.initials || "").trim() ||
+        name
+          .split(/\s+/)
+          .filter(Boolean)
+          .slice(0, 2)
+          .map((part) => (part[0] ? part[0].toUpperCase() : ""))
+          .join("") ||
+        "UN",
+      avatarUrl: String(rawItem.avatarUrl || "").trim() || null,
+      primarySlug,
+      role: String(rawItem.role || "").trim(),
+      verified: Boolean(rawItem.verified),
+      followedAt: rawItem.followedAt || null,
+      isFollowing: Boolean(rawItem.isFollowing),
+      canFollow: rawItem.canFollow !== false && Boolean(primarySlug),
+      requiresAuth: Boolean(rawItem.requiresAuth),
+      isPubliclyReachable: rawItem.isPubliclyReachable !== false && Boolean(primarySlug),
+      profileHref:
+        String(rawItem.profileHref || "").trim() || (primarySlug ? `/${encodeURIComponent(primarySlug)}` : null),
+    };
+  }
+
+  function normalizeFollowSummary(rawSummary) {
+    const summary = rawSummary && typeof rawSummary === "object" ? rawSummary : {};
+    const counts = summary.counts && typeof summary.counts === "object" ? summary.counts : {};
+    const viewer = summary.viewer && typeof summary.viewer === "object" ? summary.viewer : {};
+    const previews = summary.previews && typeof summary.previews === "object" ? summary.previews : {};
+    return {
+      counts: {
+        followers: Math.max(0, Number(counts.followers || 0)),
+        following: Math.max(0, Number(counts.following || 0)),
+      },
+      viewer: {
+        isFollowing: Boolean(viewer.isFollowing),
+        canFollow: Boolean(viewer.canFollow),
+        requiresAuth: Boolean(viewer.requiresAuth),
+      },
+      unreadFollowersCount: Math.max(0, Number(summary.unreadFollowersCount || 0)),
+      previews: {
+        following: Array.isArray(previews.following)
+          ? previews.following.map(normalizeFollowItem).filter(Boolean)
+          : [],
+      },
+    };
+  }
+
+  function syncFollowDialogBodyLock() {
+    document.body.classList.toggle("modal-open", Boolean(state.followDialog?.open));
   }
 
   function mergeWallItems(currentItems, nextItems) {
@@ -296,8 +372,12 @@
       officialUnqBadge: state.officialUnqBadge,
       staffBadge: state.staffBadge,
       viewerCommentComposer: state.viewerCommentComposer,
+      followSummary: state.followSummary,
+      followDialog: state.followDialog,
+      followBusySlugs: Array.from(state.followBusySlugs || []),
       wall: buildWallOptions(),
     });
+    syncFollowDialogBodyLock();
     syncAvatarFallback(root);
     scrollToWallHashTarget();
     return root;
@@ -426,6 +506,181 @@
       delete toast.dataset[timerKey];
     }, 1600);
     toast.dataset[timerKey] = String(nextTimer);
+  }
+
+  function buildLoginUrl(nextPath) {
+    const rawNext =
+      String(nextPath || "").trim() ||
+      `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    return `/login?next=${encodeURIComponent(rawNext.startsWith("/") ? rawNext : `/${rawNext.replace(/^\/+/, "")}`)}`;
+  }
+
+  function applyFollowSummary(summary) {
+    state.followSummary = normalizeFollowSummary(summary);
+  }
+
+  function patchFollowStateCollections(slug, isFollowing) {
+    const normalizedSlug = String(slug || "").trim().toUpperCase();
+    if (!normalizedSlug) {
+      return;
+    }
+
+    if (state.followDialog && Array.isArray(state.followDialog.items)) {
+      state.followDialog.items = state.followDialog.items.map((item) => {
+        if (!item || String(item.primarySlug || "").trim().toUpperCase() !== normalizedSlug) {
+          return item;
+        }
+        return {
+          ...item,
+          isFollowing,
+        };
+      });
+    }
+
+    const previews = Array.isArray(state.followSummary?.previews?.following)
+      ? state.followSummary.previews.following
+      : [];
+    if (previews.length) {
+      state.followSummary = {
+        ...state.followSummary,
+        previews: {
+          ...state.followSummary.previews,
+          following: previews.map((item) => {
+            if (!item || String(item.primarySlug || "").trim().toUpperCase() !== normalizedSlug) {
+              return item;
+            }
+            return {
+              ...item,
+              isFollowing,
+            };
+          }),
+        },
+      };
+    }
+  }
+
+  async function toggleFollow(slug, options = {}) {
+    const normalizedSlug = String(slug || "").trim().toUpperCase();
+    if (!normalizedSlug || state.followBusySlugs.has(normalizedSlug)) {
+      return;
+    }
+
+    const followingNow = Boolean(options.following);
+    const loginNext = String(options.loginNext || "").trim();
+    state.followBusySlugs.add(normalizedSlug);
+    renderCard();
+
+    try {
+      const { response, data } = await requestJson(`/api/cards/${encodeURIComponent(normalizedSlug)}/follow`, {
+        method: followingNow ? "DELETE" : "POST",
+      });
+
+      if (response.status === 401) {
+        window.location.href = buildLoginUrl(loginNext);
+        return;
+      }
+
+      if (!response.ok) {
+        showToast(data.error || "Не удалось обновить подписку", "error");
+        return;
+      }
+
+      if (normalizedSlug === String(state.slug || "").trim().toUpperCase()) {
+        applyFollowSummary(data.summary);
+      }
+      patchFollowStateCollections(normalizedSlug, !followingNow);
+      renderCard();
+      showToast(!followingNow ? "Подписка оформлена" : "Подписка отменена");
+      announce(!followingNow ? "Подписка оформлена" : "Подписка отменена");
+      return data;
+    } catch {
+      showToast("Не удалось обновить подписку", "error");
+    } finally {
+      state.followBusySlugs.delete(normalizedSlug);
+      renderCard();
+    }
+    return null;
+  }
+
+  async function loadFollowDialog(options = {}) {
+    const append = Boolean(options.append);
+    const type = state.followDialog?.type === "followers" ? "followers" : "following";
+    const currentPage = Math.max(1, Number(state.followDialog?.pagination?.page || 1));
+    const nextPage = append ? currentPage + 1 : 1;
+    state.followDialog = {
+      ...state.followDialog,
+      open: true,
+      loading: true,
+      error: "",
+      type,
+      items: append ? state.followDialog.items.slice(0) : [],
+      pagination: append ? state.followDialog.pagination : emptyFollowPagination(),
+    };
+    renderCard();
+
+    try {
+      const { response, data } = await requestJson(
+        `/api/cards/${encodeURIComponent(state.slug)}/follows?type=${encodeURIComponent(type)}&page=${encodeURIComponent(String(nextPage))}`,
+      );
+      if (!response.ok) {
+        state.followDialog = {
+          ...state.followDialog,
+          loading: false,
+          error: data.error || "Не удалось загрузить список",
+        };
+        renderCard();
+        return;
+      }
+
+      const items = Array.isArray(data.items) ? data.items.map(normalizeFollowItem).filter(Boolean) : [];
+      state.followDialog = {
+        ...state.followDialog,
+        open: true,
+        loading: false,
+        error: "",
+        type,
+        items: append ? state.followDialog.items.concat(items) : items,
+        pagination: data.pagination && typeof data.pagination === "object"
+          ? {
+            page: Math.max(1, Number(data.pagination.page || nextPage)),
+            pageSize: Math.max(1, Number(data.pagination.pageSize || 20)),
+            total: Math.max(0, Number(data.pagination.total || 0)),
+            hasMore: Boolean(data.pagination.hasMore),
+          }
+          : emptyFollowPagination(),
+      };
+      if (data.summary) {
+        applyFollowSummary(data.summary);
+      }
+      renderCard();
+    } catch {
+      state.followDialog = {
+        ...state.followDialog,
+        loading: false,
+        error: "Не удалось загрузить список",
+      };
+      renderCard();
+    }
+  }
+
+  function openFollowDialog(type) {
+    state.followDialog = {
+      ...state.followDialog,
+      open: true,
+      type: type === "followers" ? "followers" : "following",
+      error: "",
+    };
+    void loadFollowDialog();
+  }
+
+  function closeFollowDialog() {
+    state.followDialog = {
+      ...state.followDialog,
+      open: false,
+      loading: false,
+      error: "",
+    };
+    renderCard();
   }
 
   async function requestJson(url, options = {}, allowRetry = true) {
@@ -871,6 +1126,39 @@
       return;
     }
 
+    const followOpenButton = target.closest("[data-follow-open]");
+    if (followOpenButton instanceof HTMLElement) {
+      event.preventDefault();
+      openFollowDialog(String(followOpenButton.getAttribute("data-follow-open") || ""));
+      return;
+    }
+
+    const followCloseButton = target.closest("[data-follow-close]");
+    if (followCloseButton instanceof HTMLElement) {
+      event.preventDefault();
+      closeFollowDialog();
+      return;
+    }
+
+    const followLoadMoreButton = target.closest("[data-follow-load-more]");
+    if (followLoadMoreButton instanceof HTMLElement) {
+      event.preventDefault();
+      if (!state.followDialog.loading) {
+        void loadFollowDialog({ append: true });
+      }
+      return;
+    }
+
+    const followToggleButton = target.closest("[data-follow-toggle]");
+    if (followToggleButton instanceof HTMLElement) {
+      event.preventDefault();
+      const followSlug = String(followToggleButton.getAttribute("data-follow-slug") || "").trim();
+      const following = String(followToggleButton.getAttribute("data-following") || "").trim() === "true";
+      const loginNext = String(followToggleButton.getAttribute("data-login-next") || "").trim();
+      await toggleFollow(followSlug, { following, loginNext });
+      return;
+    }
+
     const likeButton = target.closest("[data-wall-like]");
     if (likeButton instanceof HTMLElement) {
       event.preventDefault();
@@ -1029,6 +1317,12 @@
         body: bodyText,
         keepalive: true,
       });
+    }
+  });
+
+  window.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && state.followDialog?.open) {
+      closeFollowDialog();
     }
   });
 

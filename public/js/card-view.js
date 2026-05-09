@@ -1574,6 +1574,87 @@
     };
   }
 
+  function getFollowInitials(name) {
+    const initials = String(name || "")
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => (part[0] ? part[0].toUpperCase() : ""))
+      .join("");
+    return initials || "UN";
+  }
+
+  function normalizeFollowItemForRender(item) {
+    if (!item || typeof item !== "object") {
+      return null;
+    }
+    const name = String(item.name || "UNQX User").trim() || "UNQX User";
+    const primarySlug = String(item.primarySlug || "").trim().toUpperCase() || null;
+    const profileHref =
+      String(item.profileHref || "").trim() || (primarySlug ? `/${encodeURIComponent(primarySlug)}` : null);
+    return {
+      userId: String(item.userId || "").trim(),
+      name,
+      initials: String(item.initials || "").trim() || getFollowInitials(name),
+      avatarUrl: String(item.avatarUrl || "").trim() || null,
+      primarySlug,
+      role: String(item.role || "").trim(),
+      verified: Boolean(item.verified),
+      followedAt: item.followedAt || null,
+      isFollowing: Boolean(item.isFollowing),
+      canFollow: item.canFollow !== false && Boolean(primarySlug),
+      requiresAuth: Boolean(item.requiresAuth),
+      isPubliclyReachable: item.isPubliclyReachable !== false && Boolean(profileHref),
+      profileHref,
+    };
+  }
+
+  function normalizeFollowSummaryForRender(rawSummary) {
+    const summary = rawSummary && typeof rawSummary === "object" ? rawSummary : {};
+    const counts = summary.counts && typeof summary.counts === "object" ? summary.counts : {};
+    const viewer = summary.viewer && typeof summary.viewer === "object" ? summary.viewer : {};
+    const previews = summary.previews && typeof summary.previews === "object" ? summary.previews : {};
+    return {
+      counts: {
+        followers: Math.max(0, Number(counts.followers || 0)),
+        following: Math.max(0, Number(counts.following || 0)),
+      },
+      viewer: {
+        isFollowing: Boolean(viewer.isFollowing),
+        canFollow: Boolean(viewer.canFollow),
+        requiresAuth: Boolean(viewer.requiresAuth),
+      },
+      unreadFollowersCount: Math.max(0, Number(summary.unreadFollowersCount || 0)),
+      previews: {
+        following: Array.isArray(previews.following)
+          ? previews.following.map(normalizeFollowItemForRender).filter(Boolean)
+          : [],
+      },
+    };
+  }
+
+  function normalizeFollowDialogForRender(rawDialog) {
+    const dialog = rawDialog && typeof rawDialog === "object" ? rawDialog : {};
+    const type = dialog.type === "followers" ? "followers" : "following";
+    const pagination = dialog.pagination && typeof dialog.pagination === "object" ? dialog.pagination : {};
+    return {
+      open: Boolean(dialog.open),
+      type,
+      title: type === "followers" ? "Подписчики" : "Подписки",
+      loading: Boolean(dialog.loading),
+      error: String(dialog.error || "").trim(),
+      items: Array.isArray(dialog.items)
+        ? dialog.items.map(normalizeFollowItemForRender).filter(Boolean)
+        : [],
+      pagination: {
+        page: Math.max(1, Number(pagination.page || 1)),
+        pageSize: Math.max(1, Number(pagination.pageSize || 20)),
+        total: Math.max(0, Number(pagination.total || 0)),
+        hasMore: Boolean(pagination.hasMore),
+      },
+    };
+  }
+
   function renderCardView(input, options = {}) {
     const card = normalizeCard(input);
     const theme = resolveTheme(card.theme);
@@ -1600,8 +1681,78 @@
     const officialUnqBadge = options.officialUnqBadge && typeof options.officialUnqBadge === "object" ? options.officialUnqBadge : null;
     const staffBadge = options.staffBadge && typeof options.staffBadge === "object" ? options.staffBadge : null;
     const wall = normalizeWallForRender(options.wall);
+    const followSummary = normalizeFollowSummaryForRender(options.followSummary);
+    const followDialog = normalizeFollowDialogForRender(options.followDialog);
+    const busyFollowSlugs = new Set(
+      Array.isArray(options.followBusySlugs)
+        ? options.followBusySlugs.map((value) => String(value || "").trim().toUpperCase()).filter(Boolean)
+        : [],
+    );
     const ownerProfileHrefRaw = card.slug ? `/${encodeURIComponent(card.slug)}` : "";
     const ownerProfileHref = ownerProfileHrefRaw;
+    const isOwnerFollowBusy = busyFollowSlugs.has(String(card.slug || "").trim().toUpperCase());
+    const followToggleLabel = followSummary.viewer.isFollowing ? "Отписаться" : "Подписаться";
+    const followButtonHtml = followSummary.viewer.canFollow
+      ? `
+          <button
+            type="button"
+            class="unq-ref-follow-toggle${followSummary.viewer.isFollowing ? " is-active" : ""}"
+            data-follow-toggle
+            data-follow-slug="${esc(card.slug)}"
+            data-following="${followSummary.viewer.isFollowing ? "true" : "false"}"
+            data-login-next="${esc(ownerProfileHref || "/")}"
+            aria-pressed="${followSummary.viewer.isFollowing ? "true" : "false"}"
+            ${isOwnerFollowBusy ? "disabled" : ""}
+          >
+            ${esc(isOwnerFollowBusy ? "..." : followToggleLabel)}
+          </button>
+        `
+      : "";
+    const followStatsHtml = `
+      <div class="unq-ref-social-stats" aria-label="Подписки и подписчики">
+        <button type="button" class="unq-ref-social-stat" data-follow-open="followers">
+          <span class="unq-ref-social-value">${Number(followSummary.counts.followers || 0).toLocaleString("ru-RU")}</span>
+          <span class="unq-ref-social-label">Подписчики</span>
+        </button>
+        <button type="button" class="unq-ref-social-stat" data-follow-open="following">
+          <span class="unq-ref-social-value">${Number(followSummary.counts.following || 0).toLocaleString("ru-RU")}</span>
+          <span class="unq-ref-social-label">Подписки</span>
+        </button>
+      </div>
+    `;
+    const followingPreviewItems = Array.isArray(followSummary.previews.following)
+      ? followSummary.previews.following.slice(0, 4)
+      : [];
+    const followPreviewHtml = `
+      <section class="unq-follow-preview" aria-label="Подписки владельца">
+        <div class="unq-follow-preview-head">
+          <div>
+            <p class="unq-follow-preview-kicker">Сообщество</p>
+            <h3 class="unq-follow-preview-title">Подписки владельца</h3>
+          </div>
+          <button type="button" class="unq-follow-preview-link" data-follow-open="following">Смотреть все</button>
+        </div>
+        ${followingPreviewItems.length
+          ? `<div class="unq-follow-preview-list">
+              ${followingPreviewItems
+                .map((item) => `
+                  <a href="${esc(item.profileHref || "#")}" class="unq-follow-preview-item">
+                    <span class="unq-follow-preview-avatar">
+                      ${item.avatarUrl
+                        ? `<img src="${esc(item.avatarUrl)}" alt="${esc(item.name)}" class="unq-follow-preview-avatar-img" />`
+                        : `<span>${esc(item.initials)}</span>`}
+                    </span>
+                    <span class="unq-follow-preview-text">
+                      <span class="unq-follow-preview-name">${esc(item.name)}</span>
+                      <span class="unq-follow-preview-slug">${esc(item.primarySlug ? `unqx.uz/${item.primarySlug}` : "Визитка недоступна")}</span>
+                    </span>
+                  </a>
+                `)
+                .join("")}
+            </div>`
+          : '<p class="unq-follow-preview-empty">Пока нет подписок, которые можно показать публично.</p>'}
+      </section>
+    `;
 
     const tagsHtml =
       card.tags.length > 0
@@ -1753,6 +1904,8 @@
     const roleHtml = card.role ? `<p class="unq-ref-role">${esc(card.role)}</p>` : "";
     const footBrandingLabel = card.showBranding ? (theme.key === "velours" ? "◆ UNQX" : "• UNQX") : "";
     const cardDetailsHtml = `
+          ${followPreviewHtml}
+          <div class="unq-ref-divider"></div>
           ${tagsHtml}
           ${scoreBlock}
           <div class="unq-ref-divider"></div>
@@ -1925,7 +2078,7 @@
         ${showPausedBanner ? `<div class="mb-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">${esc(pausedText)}</div>` : ""}
         <div class="unq-ref-top">
           <div class="unq-ref-slug-wrap">
-            <div class="unq-ref-slugs">
+                <div class="unq-ref-slugs">
               ${slugItems
         .map((value) => {
           const active = value === card.slug;
@@ -1935,10 +2088,13 @@
             </div>
             ${slugPriceLabel ? `<span class="unq-ref-slug-price">${esc(slugPriceLabel)}</span>` : ""}
           </div>
-          <button type="button" data-share-card class="unq-ref-share" aria-label="Поделиться">
-            ${iconSvg("share")}
-            <span class="sr-only" data-share-label>Поделиться</span>
-          </button>
+          <div class="unq-ref-top-actions">
+            ${followButtonHtml}
+            <button type="button" data-share-card class="unq-ref-share" aria-label="Поделиться">
+              ${iconSvg("share")}
+              <span class="sr-only" data-share-label>Поделиться</span>
+            </button>
+          </div>
         </div>
         <div class="public-card-shell unq-ref-shell">
           <div class="unq-ref-card-overlay">${renderThemeOverlay(theme.key)}</div>
@@ -1963,6 +2119,7 @@
               ${companyHtml}
               ${roleHtml}
               ${card.bio ? `<p class="unq-ref-bio">${esc(card.bio)}</p>` : ""}
+              ${followStatsHtml}
               ${card.phone ? `<a href="tel:${esc(card.phone.replace(/\s+/g, ""))}" class="unq-ref-phone">${iconSvg("phone")}<span>${esc(card.phone)}</span></a>` : ""}
             </div>
           </div>
@@ -1971,6 +2128,69 @@
         <div class="unq-ref-footline">
           <div>© ${esc(viewsLabel)}</div>
           <div>${footBrandingLabel}</div>
+        </div>
+        <div class="unq-follow-dialog${followDialog.open ? " is-open" : ""}" data-follows-dialog ${followDialog.open ? "" : "hidden"}>
+          <button type="button" class="unq-follow-dialog-backdrop" data-follow-close aria-label="Закрыть список"></button>
+          <div class="unq-follow-dialog-card" role="dialog" aria-modal="true" aria-label="${esc(followDialog.title)}">
+            <div class="unq-follow-dialog-head">
+              <div>
+                <p class="unq-follow-dialog-kicker">UNQX</p>
+                <h3 class="unq-follow-dialog-title">${esc(followDialog.title)}</h3>
+              </div>
+              <button type="button" class="unq-follow-dialog-close" data-follow-close aria-label="Закрыть">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            ${followDialog.error ? `<div class="unq-follow-dialog-error">${esc(followDialog.error)}</div>` : ""}
+            <div class="unq-follow-dialog-body">
+              ${followDialog.loading
+                ? '<div class="unq-follow-dialog-empty">Загрузка списка...</div>'
+                : followDialog.items.length
+                  ? `<div class="unq-follow-dialog-list">
+                      ${followDialog.items
+                        .map((item) => `
+                          <article class="unq-follow-dialog-item">
+                            <div class="unq-follow-dialog-user">
+                              <span class="unq-follow-dialog-avatar">
+                                ${item.avatarUrl
+                                  ? `<img src="${esc(item.avatarUrl)}" alt="${esc(item.name)}" class="unq-follow-dialog-avatar-img" />`
+                                  : `<span>${esc(item.initials)}</span>`}
+                              </span>
+                              <span class="unq-follow-dialog-text">
+                                ${item.profileHref
+                                  ? `<a href="${esc(item.profileHref)}" class="unq-follow-dialog-name">${esc(item.name)}</a>`
+                                  : `<span class="unq-follow-dialog-name">${esc(item.name)}</span>`}
+                                <span class="unq-follow-dialog-meta">
+                                  ${esc(item.primarySlug ? `unqx.uz/${item.primarySlug}` : "Визитка недоступна")}
+                                  ${item.role ? ` · ${esc(item.role)}` : ""}
+                                </span>
+                                ${!item.isPubliclyReachable ? '<span class="unq-follow-dialog-badge">Визитка недоступна</span>' : ""}
+                              </span>
+                            </div>
+                            ${item.canFollow
+                              ? `<button
+                                  type="button"
+                                  class="unq-follow-dialog-action${item.isFollowing ? " is-active" : ""}"
+                                  data-follow-toggle
+                                  data-follow-slug="${esc(item.primarySlug || "")}"
+                                  data-following="${item.isFollowing ? "true" : "false"}"
+                                  data-login-next="${esc(item.profileHref || ownerProfileHref || "/")}"
+                                  aria-pressed="${item.isFollowing ? "true" : "false"}"
+                                  ${busyFollowSlugs.has(String(item.primarySlug || "").trim().toUpperCase()) ? "disabled" : ""}
+                                >
+                                  ${busyFollowSlugs.has(String(item.primarySlug || "").trim().toUpperCase()) ? "..." : item.isFollowing ? "Отписаться" : "Подписаться"}
+                                </button>`
+                              : ""}
+                          </article>
+                        `)
+                        .join("")}
+                    </div>`
+                  : '<div class="unq-follow-dialog-empty">Список пока пуст.</div>'}
+            </div>
+            ${followDialog.pagination.hasMore
+              ? '<div class="unq-follow-dialog-foot"><button type="button" class="unq-follow-dialog-more" data-follow-load-more>Показать ещё</button></div>'
+              : ""}
+          </div>
         </div>
       </div>
     `;

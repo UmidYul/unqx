@@ -91,6 +91,16 @@ const {
   resolveWallPageSize,
   WALL_PUBLIC_PAGE_SIZE,
 } = require("../../services/profile-wall");
+const {
+  FOLLOW_LIST_PAGE_SIZE,
+  followUserBySlug,
+  unfollowUserBySlug,
+  listFollowItemsByOwner,
+  getFollowSummaryForOwner,
+  normalizeFollowListType,
+  resolveFollowPage,
+  resolveFollowPageSize: resolveFollowListPageSize,
+} = require("../../services/follows");
 
 const router = express.Router();
 const SLUG_REGEX = /^[A-Z]{3}[0-9]{3}$/;
@@ -3035,6 +3045,133 @@ router.delete(
       }
       throw error;
     }
+  }),
+);
+
+router.post(
+  "/:slug/follow",
+  requireUserApi,
+  requireSameOrigin,
+  requireCsrfToken,
+  asyncHandler(async (req, res) => {
+    const requestedSlug = sanitizeSlug(req.params.slug);
+    const viewerUserId = String(getUserSession(req)?.userId || "").trim();
+
+    try {
+      const result = await followUserBySlug({
+        slug: requestedSlug,
+        followerUserId: viewerUserId,
+      });
+      res.json({
+        ok: true,
+        followed: true,
+        summary: result.summary || null,
+      });
+    } catch (error) {
+      if (error?.code === "AUTH_REQUIRED") {
+        res.status(401).json({ error: "Unauthorized", code: error.code });
+        return;
+      }
+      if (error?.code === "FOLLOW_TARGET_NOT_FOUND") {
+        res.status(404).json({ error: "Card not found", code: error.code });
+        return;
+      }
+      if (error?.code === "FOLLOW_SELF_FORBIDDEN") {
+        res.status(409).json({ error: "Нельзя подписаться на себя", code: error.code });
+        return;
+      }
+      if (error?.code === "FOLLOW_STORAGE_UNAVAILABLE") {
+        res.status(503).json({ error: "Follow storage unavailable", code: error.code });
+        return;
+      }
+      throw error;
+    }
+  }),
+);
+
+router.delete(
+  "/:slug/follow",
+  requireUserApi,
+  requireSameOrigin,
+  requireCsrfToken,
+  asyncHandler(async (req, res) => {
+    const requestedSlug = sanitizeSlug(req.params.slug);
+    const viewerUserId = String(getUserSession(req)?.userId || "").trim();
+
+    try {
+      const result = await unfollowUserBySlug({
+        slug: requestedSlug,
+        followerUserId: viewerUserId,
+      });
+      res.json({
+        ok: true,
+        followed: false,
+        summary: result.summary || null,
+      });
+    } catch (error) {
+      if (error?.code === "AUTH_REQUIRED") {
+        res.status(401).json({ error: "Unauthorized", code: error.code });
+        return;
+      }
+      if (error?.code === "FOLLOW_TARGET_NOT_FOUND") {
+        res.status(404).json({ error: "Card not found", code: error.code });
+        return;
+      }
+      if (error?.code === "FOLLOW_SELF_FORBIDDEN") {
+        res.status(409).json({ error: "Нельзя отписаться от себя", code: error.code });
+        return;
+      }
+      if (error?.code === "FOLLOW_STORAGE_UNAVAILABLE") {
+        res.status(503).json({ error: "Follow storage unavailable", code: error.code });
+        return;
+      }
+      throw error;
+    }
+  }),
+);
+
+router.get(
+  "/:slug/follows",
+  asyncHandler(async (req, res) => {
+    const requestedSlug = sanitizeSlug(req.params.slug);
+    const slugRow = await findPublicWallSlugOwner(requestedSlug);
+    if (
+      !slugRow ||
+      !slugRow.ownerId ||
+      !isPublicOwnerAvailable(slugRow.owner) ||
+      !["approved", "active", "private", "paused"].includes(String(slugRow.status || "").trim().toLowerCase())
+    ) {
+      res.status(404).json({ error: "Card not found", code: "CARD_NOT_FOUND" });
+      return;
+    }
+
+    const viewerUserId = String(getUserSession(req)?.userId || "").trim();
+    const type = normalizeFollowListType(req.query.type);
+    const page = resolveFollowPage(req.query.page);
+    const pageSize = resolveFollowListPageSize(req.query.pageSize, FOLLOW_LIST_PAGE_SIZE, 50);
+    const [payload, summary] = await Promise.all([
+      listFollowItemsByOwner({
+        ownerId: slugRow.ownerId,
+        type,
+        viewerUserId,
+        page,
+        pageSize,
+        scope: "public",
+      }),
+      getFollowSummaryForOwner({
+        ownerId: slugRow.ownerId,
+        viewerUserId,
+      }),
+    ]);
+
+    res.json({
+      ok: true,
+      slug: requestedSlug,
+      type,
+      items: Array.isArray(payload?.items) ? payload.items : [],
+      pagination: payload?.pagination || { page, pageSize, total: 0, hasMore: false },
+      summary,
+    });
   }),
 );
 

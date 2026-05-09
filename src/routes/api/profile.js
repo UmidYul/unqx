@@ -39,6 +39,15 @@ const {
   WALL_OWNER_PAGE_SIZE,
 } = require("../../services/profile-wall");
 const {
+  FOLLOW_LIST_PAGE_SIZE,
+  getFollowSummaryForOwner,
+  listFollowItemsByOwner,
+  markFollowNotificationsRead,
+  normalizeFollowListType,
+  resolveFollowPage,
+  resolveFollowPageSize: resolveFollowListPageSize,
+} = require("../../services/follows");
+const {
   isSupportedAvatarBuffer,
   saveAvatarFromBuffer,
   deleteAvatarByPublicPath,
@@ -806,7 +815,7 @@ router.get(
       return;
     }
 
-    const [slugs, card, requests, score, pricing, supportTelegramRaw, braceletPrice, privatePasswords] = await Promise.all([
+    const [slugs, card, requests, score, pricing, supportTelegramRaw, braceletPrice, privatePasswords, followSummary] = await Promise.all([
       getUserSlugsWithStats(user.id),
       findProfileCardByOwnerId(user.id),
       prisma.slugRequest.findMany({
@@ -818,6 +827,10 @@ router.get(
       getSetting("contact_support_telegram", `@${FALLBACK_SUPPORT_TELEGRAM}`),
       getBraceletPrice(),
       listOwnerPrivatePasswords(user.id),
+      getFollowSummaryForOwner({
+        ownerId: user.id,
+        viewerUserId: user.id,
+      }),
     ]);
     const supportTelegram = normalizeTelegramUsername(supportTelegramRaw);
 
@@ -889,7 +902,50 @@ router.get(
         passwords: privatePasswords,
       },
       wallSummary,
+      followSummary,
     });
+  }),
+);
+
+router.get(
+  "/follows",
+  asyncHandler(async (req, res) => {
+    const user = await getCurrentUser(req);
+    if (!assertUserActive(user, res)) {
+      return;
+    }
+
+    const type = normalizeFollowListType(req.query.type);
+    const page = resolveFollowPage(req.query.page);
+    const pageSize = resolveFollowListPageSize(req.query.pageSize, FOLLOW_LIST_PAGE_SIZE, 50);
+    const payload = await listFollowItemsByOwner({
+      ownerId: user.id,
+      type,
+      viewerUserId: user.id,
+      page,
+      pageSize,
+      scope: "owner",
+    });
+
+    res.json({
+      ok: true,
+      type,
+      items: Array.isArray(payload?.items) ? payload.items : [],
+      pagination: payload?.pagination || { page, pageSize, total: 0, hasMore: false },
+    });
+  }),
+);
+
+router.post(
+  "/follows/notifications/read-all",
+  asyncHandler(async (req, res) => {
+    const user = await getCurrentUser(req);
+    if (!assertUserActive(user, res)) {
+      return;
+    }
+
+    const payload = await markFollowNotificationsRead(user.id);
+    res.json(payload);
   }),
 );
 

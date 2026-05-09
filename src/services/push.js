@@ -545,8 +545,26 @@ async function sendTapPushNotification({ ownerId, ownerSlug, visitorSlug, source
     });
 }
 
+async function sendFollowPushNotification({ followeeId, followerName, followerSlug }) {
+    if (!followeeId || !followerName) {
+        return { ok: true, sent: 0, tokens: 0 };
+    }
+
+    return sendExpoPushToUser({
+        userId: followeeId,
+        title: "Новый подписчик",
+        body: `${followerName} подписался на вас`,
+        data: {
+            type: "follow",
+            followerSlug: followerSlug || null,
+            followerName,
+        },
+    });
+}
+
 module.exports = {
     sendExpoPushToUser,
     sendExpoPushToUsers,
     sendTapPushNotification,
+    sendFollowPushNotification,
 };

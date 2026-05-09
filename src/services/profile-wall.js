@@ -248,6 +248,55 @@ function getWallCommentBaseSelect() {
   };
 }
 
+function getHomeWallPostSelect() {
+  return {
+    id: true,
+    ownerId: true,
+    content: true,
+    status: true,
+    createdAt: true,
+    updatedAt: true,
+    _count: {
+      select: {
+        likes: true,
+        comments: true,
+      },
+    },
+    owner: {
+      select: {
+        id: true,
+        status: true,
+        plan: true,
+        subscriptionStartedAt: true,
+        subscriptionExpiresAt: true,
+        displayName: true,
+        firstName: true,
+        isVerified: true,
+        verifiedCompany: true,
+        profileCard: {
+          select: {
+            name: true,
+            role: true,
+            avatarUrl: true,
+          },
+        },
+        slugs: {
+          where: {
+            status: {
+              in: WALL_LINKABLE_SLUG_STATUSES,
+            },
+          },
+          orderBy: [{ isPrimary: "desc" }, { updatedAt: "desc" }, { createdAt: "desc" }],
+          take: 1,
+          select: {
+            fullSlug: true,
+          },
+        },
+      },
+    },
+  };
+}
+
 function getWallCommentAuthorName(user) {
   const displayName = String(user?.displayName || "").trim();
   if (displayName) {
@@ -482,6 +531,60 @@ async function listPublicWallPosts({
     pageSize: resolveWallPageSize(pageSize, WALL_PUBLIC_PAGE_SIZE, 20),
     statuses: [WALL_PUBLIC_STATUS],
   });
+}
+
+async function listLatestHomeWallPosts({ limit = 3 } = {}) {
+  const normalizedLimit = Math.max(1, Math.min(12, Math.round(Number(limit || 3) || 3)));
+  const rows = await withMissingTableFallback("ProfileWallPost", [], () =>
+    prisma.profileWallPost.findMany({
+      where: {
+        status: WALL_PUBLIC_STATUS,
+        owner: {
+          status: "active",
+        },
+      },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      take: Math.max(normalizedLimit * 8, 24),
+      select: getHomeWallPostSelect(),
+    }),
+  );
+
+  const items = [];
+  for (const row of rows) {
+    const owner = row?.owner;
+    const primarySlug = String(owner?.slugs?.[0]?.fullSlug || "").trim().toUpperCase();
+    if (!owner || !primarySlug || !isPublicProfileVisible(owner)) {
+      continue;
+    }
+
+    const authorName =
+      String(owner?.profileCard?.name || owner?.displayName || owner?.firstName || "UNQX User").trim() || "UNQX User";
+    items.push({
+      id: String(row.id || "").trim(),
+      ownerId: String(row.ownerId || "").trim(),
+      content: String(row.content || ""),
+      createdAt: row.createdAt || null,
+      updatedAt: row.updatedAt || null,
+      likesCount: Math.max(0, Number(row?._count?.likes || 0)),
+      commentsCount: Math.max(0, Number(row?._count?.comments || 0)),
+      postHref: `/${encodeURIComponent(primarySlug)}#wall-post-${encodeURIComponent(String(row.id || "").trim())}`,
+      author: {
+        userId: String(owner.id || "").trim(),
+        name: authorName,
+        avatarUrl: String(owner?.profileCard?.avatarUrl || "").trim() || null,
+        primarySlug,
+        role: String(owner?.profileCard?.role || owner?.verifiedCompany || "").trim(),
+        verified: Boolean(owner?.isVerified),
+        profileHref: `/${encodeURIComponent(primarySlug)}`,
+      },
+    });
+
+    if (items.length >= normalizedLimit) {
+      break;
+    }
+  }
+
+  return items;
 }
 
 async function listAdminWallPosts({
@@ -1025,6 +1128,7 @@ module.exports = {
   getWallSummary,
   listWallPostsByOwner,
   listPublicWallPosts,
+  listLatestHomeWallPosts,
   listAdminWallPosts,
   createWallPost,
   updateWallPostContentAsOwner,

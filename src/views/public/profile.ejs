@@ -242,6 +242,14 @@
           class="profile-tab-btn interactive-btn min-h-11 px-1 py-2 text-center text-xs font-medium sm:text-sm">
           Посты
         </button>
+        <button type="button" data-tab-target="community"
+          class="profile-tab-btn interactive-btn min-h-11 px-1 py-2 text-center text-xs font-medium sm:text-sm">
+          <span class="inline-flex items-center gap-2">
+            <span>Сообщество</span>
+            <span id="profile-community-tab-unread"
+              class="hidden min-w-[1.35rem] rounded-full bg-neutral-900 px-1.5 py-0.5 text-[10px] font-semibold leading-none text-white">0</span>
+          </span>
+        </button>
         <button type="button" data-tab-target="analytics"
           class="profile-tab-btn interactive-btn min-h-11 px-1 py-2 text-center text-xs font-medium sm:text-sm">
           Аналитика
@@ -652,6 +660,24 @@
           <div id="profile-wall-list" class="mt-4 space-y-3"></div>
           <div class="mt-4 flex justify-center">
             <button id="profile-wall-load-more" type="button"
+              class="interactive-btn hidden min-h-11 rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700">Показать
+              ещё</button>
+          </div>
+        </article>
+
+        <article data-tab-panel="community"
+          class="profile-tab-panel hidden min-w-0 rounded-2xl border border-neutral-200 bg-white p-4 sm:p-5">
+          <div class="flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center">
+            <div>
+              <h2 class="text-lg font-bold">СООБЩЕСТВО</h2>
+              <p class="mt-1 text-sm text-neutral-500">Подписчики, подписки и быстрые действия для твоего круга на UNQX.</p>
+            </div>
+          </div>
+          <div id="profile-community-summary" class="mt-4 grid gap-3 md:grid-cols-3"></div>
+          <div id="profile-community-filters" class="mt-4 flex flex-wrap gap-2"></div>
+          <div id="profile-community-list" class="mt-4 space-y-3"></div>
+          <div class="mt-4 flex justify-center">
+            <button id="profile-community-load-more" type="button"
               class="interactive-btn hidden min-h-11 rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700">Показать
               ещё</button>
           </div>

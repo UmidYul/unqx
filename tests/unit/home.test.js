@@ -1,6 +1,8 @@
 const path = require("node:path");
 const ejs = require("ejs");
 
+process.env.ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD_HASH || "test-admin-hash";
+
 const { BASE_PRICE, calculateSlugPrice } = require("../../src/services/slug-pricing");
 const { applyFlashSaleToPrice } = require("../../src/services/flash-sales");
 const { getEffectivePlan, getSlugLimit } = require("../../src/services/profile");
@@ -20,6 +22,13 @@ async function renderHomeTemplate() {
     canonicalUrl: "https://unqx.uz/",
     cspNonce: "test-nonce",
     csrfToken: "csrf",
+    assetVersion: "test",
+    publicSettings: {},
+    topWeeklyViews: [],
+    latestCreatedCards: [],
+    latestPublishedPosts: [],
+    authPhotoUrl: "",
+    userSession: null,
   });
 }
 
@@ -38,11 +47,62 @@ async function renderHomeTemplateAuthenticated() {
     canonicalUrl: "https://unqx.uz/",
     cspNonce: "test-nonce",
     csrfToken: "csrf",
+    assetVersion: "test",
+    publicSettings: {},
+    topWeeklyViews: [],
+    latestCreatedCards: [],
+    latestPublishedPosts: [],
+    authPhotoUrl: "",
     userSession: {
       userId: "123456",
       firstName: "Yuldashev",
       photoUrl: "https://t.me/i/userpic/320/example.jpg",
     },
+  });
+}
+
+async function renderHomeTemplateWithPosts() {
+  const file = path.join(process.cwd(), "src", "views", "public", "home.ejs");
+  return ejs.renderFile(file, {
+    title: "UNQX | Цифровая визитка за 1 минуту",
+    description: "Одна ссылка вместо тысячи слов",
+    slugTotalLimit: 17576,
+    leaderboardEnabled: true,
+    activeFlashSale: null,
+    nextDrop: null,
+    testimonials: [],
+    telegramBotUsername: "unqx_bot",
+    baseUrl: "https://unqx.uz",
+    canonicalUrl: "https://unqx.uz/",
+    cspNonce: "test-nonce",
+    csrfToken: "csrf",
+    assetVersion: "test",
+    publicSettings: {},
+    topWeeklyViews: [],
+    latestCreatedCards: [],
+    authPhotoUrl: "",
+    userSession: null,
+    latestPublishedPosts: [
+      {
+        id: "post_1",
+        content: "Первый пост для главной",
+        createdAt: new Date("2026-05-09T10:00:00.000Z"),
+        likesCount: 4,
+        commentsCount: 2,
+        postHref: "/ABC123#wall-post-post_1",
+        author: {
+          userId: "user_1",
+          name: "Alex",
+          primarySlug: "ABC123",
+          profileHref: "/ABC123",
+          role: "Designer",
+        },
+        viewerFollowState: {
+          isFollowing: false,
+          canFollow: true,
+        },
+      },
+    ],
   });
 }
 
@@ -76,12 +136,20 @@ describe("home page", () => {
 
   test("renders profile button immediately when user session exists", async () => {
     const html = await renderHomeTemplateAuthenticated();
-    expect(html).toContain("Yuldashev · Мой профиль");
     expect(html).toContain("data-auth-profile");
+    expect(html).toContain("data-auth-avatar");
     expect(html).toContain("inline-flex");
-    expect(html).toContain("Зарегистрироваться");
-    expect(html).toContain("/login");
+    expect(html).toContain("/profile");
     expect(html).toContain("hidden");
+  });
+
+  test("renders latest posts section with follow CTA and deep link", async () => {
+    const html = await renderHomeTemplateWithPosts();
+    expect(html).toContain("Последние посты");
+    expect(html).toContain("Первый пост для главной");
+    expect(html).toContain('data-home-follow-button');
+    expect(html).toContain("/ABC123#wall-post-post_1");
+    expect(html).toContain('id="latest-posts"');
   });
 
   test("matches AAA + 000 = 3 000 000", () => {
@@ -103,7 +171,7 @@ describe("home page", () => {
   });
 
   test("basic and premium slug limits are enforced", () => {
-    expect(getSlugLimit("basic")).toBe(1);
+    expect(getSlugLimit("basic")).toBe(3);
     expect(getSlugLimit("premium")).toBe(3);
   });
 

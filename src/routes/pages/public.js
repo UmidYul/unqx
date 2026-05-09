@@ -27,7 +27,12 @@ const { isValidSlug } = require("../../services/slug");
 const {
   isWallStorageMissing,
   listPublicWallPosts,
+  listLatestHomeWallPosts,
 } = require("../../services/profile-wall");
+const {
+  getViewerFollowLookup,
+  getFollowSummaryForOwner,
+} = require("../../services/follows");
 
 const router = express.Router();
 const defaultSocialImage = absoluteUrl("/brand/logo.PNG");
@@ -924,7 +929,17 @@ router.get(
   asyncHandler(async (req, res) => {
     const userSession = getUserSession(req);
     const userId = userSession?.userId ? String(userSession.userId) : "";
-    const [leaderboardSettings, activeFlashSale, nextDrop, pricing, publicSettingsRaw, topWeeklyViews, latestCreatedCards, authPhotoUrl] = await Promise.all([
+    const [
+      leaderboardSettings,
+      activeFlashSale,
+      nextDrop,
+      pricing,
+      publicSettingsRaw,
+      topWeeklyViews,
+      latestCreatedCards,
+      latestHomeWallPosts,
+      authPhotoUrl,
+    ] = await Promise.all([
       getFeatureSetting("leaderboard"),
       getActiveFlashSale(),
       prisma.drop.findFirst({
@@ -1036,6 +1051,12 @@ router.get(
 
         return cards;
       })(),
+      listLatestHomeWallPosts({ limit: 3 }).catch((error) => {
+        if (isWallStorageMissing(error)) {
+          return [];
+        }
+        throw error;
+      }),
       userId
         ? findProfileCardByOwnerId(userId)
           .then((card) => String(card?.avatarUrl || "").trim())
@@ -1043,6 +1064,20 @@ router.get(
         : Promise.resolve(""),
     ]);
     const flashSaleSlotsLeft = activeFlashSale ? await getFlashSaleSlotsLeft(activeFlashSale) : null;
+    const latestHomePostOwnerIds = Array.isArray(latestHomeWallPosts)
+      ? latestHomeWallPosts.map((item) => String(item?.author?.userId || item?.ownerId || "").trim()).filter(Boolean)
+      : [];
+    const latestHomePostViewerFollowSet = await getViewerFollowLookup(userId, latestHomePostOwnerIds);
+    const latestPublishedPosts = Array.isArray(latestHomeWallPosts)
+      ? latestHomeWallPosts.map((item) => ({
+        ...item,
+        viewerFollowState: {
+          isFollowing: latestHomePostViewerFollowSet.has(String(item?.author?.userId || item?.ownerId || "").trim()),
+          canFollow: Boolean(item?.author?.userId) && String(item.author.userId).trim() !== userId,
+          requiresAuth: !userId,
+        },
+      }))
+      : [];
 
     let testimonials = [];
     try {
@@ -1118,6 +1153,7 @@ router.get(
         : null,
       topWeeklyViews,
       latestCreatedCards,
+      latestPublishedPosts,
       latestCreatedCard: Array.isArray(latestCreatedCards) && latestCreatedCards.length ? latestCreatedCards[0] : null,
       pricing,
       authPhotoUrl,
@@ -2312,7 +2348,7 @@ router.get(
 
         const viewerSession = getUserSession(req);
         const viewerUserId = String(viewerSession?.userId || "").trim();
-        const [views, ownerSlugs, verifiedIdentity, wall, viewerProfileCard] = await Promise.all([
+        const [views, ownerSlugs, verifiedIdentity, wall, viewerProfileCard, followSummary] = await Promise.all([
           prisma.analyticsView
             ? prisma.analyticsView
               .findMany({
@@ -2347,6 +2383,10 @@ router.get(
           viewerUserId
             ? findProfileCardByOwnerId(viewerUserId).catch(() => null)
             : Promise.resolve(null),
+          getFollowSummaryForOwner({
+            ownerId: slugRow.ownerId,
+            viewerUserId,
+          }),
         ]);
 
         const card = buildPublicCardFromProfile({
@@ -2413,6 +2453,7 @@ router.get(
           officialUnqBadge,
           staffBadge,
           viewerCommentComposer,
+          followSummary,
           noindex: slugRow.status === "private",
           privateAccess: null,
           adminSession: getAdminSession(req),

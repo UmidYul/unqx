@@ -59,6 +59,23 @@ describe("slug page (:slug) templates", () => {
     expect(html).toContain('"commentsEnabled":false');
   });
 
+  test("passes follow summary payload to public card renderer", async () => {
+    const html = await renderView("card.ejs", {
+      card: { slug: "ABC123", name: "Alex", tariff: "basic", buttons: [] },
+      followSummary: {
+        counts: { followers: 12, following: 5 },
+        viewer: { isFollowing: false, canFollow: true, requiresAuth: false },
+        previews: {
+          following: [
+            { userId: "user_2", name: "Mila", primarySlug: "MIL222", isPubliclyReachable: true },
+          ],
+        },
+      },
+    });
+    expect(html).toContain('"followSummary":{"counts":{"followers":12,"following":5}');
+    expect(html).toContain('"primarySlug":"MIL222"');
+  });
+
   test("passes premium theme and avatar frame through card payload", async () => {
     const html = await renderView("card.ejs", {
       card: {
@@ -240,5 +257,13 @@ describe("slug page (:slug) templates", () => {
     expect(publicCardSource).toContain("state.wallExpandedCommentPostIds.clear()");
     expect(publicCardSource).toContain("Введите комментарий");
     expect(publicCardSource).toContain("Комментарии отключены автором для этого поста");
+    expect(cardViewSource).toContain("Подписчики");
+    expect(cardViewSource).toContain("Подписки");
+    expect(cardViewSource).toContain("data-follow-toggle");
+    expect(cardViewSource).toContain("data-follow-open");
+    expect(cardViewSource).toContain("data-follow-load-more");
+    expect(publicCardSource).toContain("/api/cards/${encodeURIComponent(state.slug)}/follows");
+    expect(publicCardSource).toContain("toggleFollow(");
+    expect(publicCardSource).toContain("loadFollowDialog");
   });
 });

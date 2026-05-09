@@ -53,8 +53,109 @@ let slugPricingConfig = { ...DEFAULT_HOME_SLUG_PRICING };
   void loadSlugPricingConfig();
   initNextDropOneClick();
   initOrderLinks(orderApi);
+  initHomeFollowButtons(pageNode, authApi);
   initHomeMotion();
 })();
+
+function initHomeFollowButtons(pageNode, authApi) {
+  const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+
+  function getCsrfToken() {
+    return csrfMeta instanceof HTMLMetaElement ? String(csrfMeta.getAttribute("content") || "") : "";
+  }
+
+  function updateCsrfToken(nextToken) {
+    if (!(csrfMeta instanceof HTMLMetaElement)) return;
+    const value = String(nextToken || "").trim();
+    if (value) {
+      csrfMeta.setAttribute("content", value);
+    }
+  }
+
+  async function requestJson(url, options = {}, allowRetry = true) {
+    const headers = { Accept: "application/json", ...(options.headers || {}) };
+    const method = String(options.method || "GET").toUpperCase();
+    const csrfToken = getCsrfToken();
+    if (method !== "GET" && method !== "HEAD" && method !== "OPTIONS" && csrfToken) {
+      headers["X-CSRF-Token"] = csrfToken;
+    }
+    const response = await fetch(url, { ...options, headers });
+    const data = await response.json().catch(() => ({}));
+    if (data && data.csrfToken) {
+      updateCsrfToken(data.csrfToken);
+    }
+    if (!response.ok && allowRetry && data && data.code === "CSRF_INVALID" && data.csrfToken) {
+      return requestJson(url, options, false);
+    }
+    return { response, data: data && typeof data === "object" ? data : {} };
+  }
+
+  function setButtonsState(slug, following) {
+    const normalizedSlug = String(slug || "").trim().toUpperCase();
+    if (!normalizedSlug) return;
+    const buttons = pageNode.querySelectorAll("[data-home-follow-button]");
+    buttons.forEach((node) => {
+      if (!(node instanceof HTMLButtonElement)) return;
+      if (String(node.getAttribute("data-follow-slug") || "").trim().toUpperCase() !== normalizedSlug) return;
+      node.dataset.following = following ? "true" : "false";
+      node.textContent = following ? "Отписаться" : "Подписаться";
+      node.classList.toggle("is-following", following);
+    });
+  }
+
+  pageNode.addEventListener("click", async (event) => {
+    const target = event.target instanceof HTMLElement ? event.target.closest("[data-home-follow-button]") : null;
+    if (!(target instanceof HTMLButtonElement)) {
+      return;
+    }
+
+    event.preventDefault();
+    const followSlug = String(target.getAttribute("data-follow-slug") || "").trim().toUpperCase();
+    const followingNow = String(target.getAttribute("data-following") || "").trim() === "true";
+    const loginNext = String(target.getAttribute("data-login-next") || "").trim() || window.location.pathname;
+    if (!followSlug || target.disabled) {
+      return;
+    }
+
+    target.disabled = true;
+    target.textContent = "...";
+
+    try {
+      const { response, data } = await requestJson(`/api/cards/${encodeURIComponent(followSlug)}/follow`, {
+        method: followingNow ? "DELETE" : "POST",
+      });
+
+      if (response.status === 401) {
+        const user = authApi && typeof authApi.getUser === "function" ? authApi.getUser() : null;
+        if (!user) {
+          window.location.href = `/login?next=${encodeURIComponent(loginNext)}`;
+          return;
+        }
+      }
+
+      if (!response.ok) {
+        target.textContent = data.error || "Ошибка";
+        window.setTimeout(() => {
+          setButtonsState(followSlug, followingNow);
+        }, 900);
+        return;
+      }
+
+      setButtonsState(followSlug, !followingNow);
+    } catch {
+      setButtonsState(followSlug, followingNow);
+    } finally {
+      window.setTimeout(() => {
+        const buttons = pageNode.querySelectorAll("[data-home-follow-button]");
+        buttons.forEach((node) => {
+          if (!(node instanceof HTMLButtonElement)) return;
+          if (String(node.getAttribute("data-follow-slug") || "").trim().toUpperCase() !== followSlug) return;
+          node.disabled = false;
+        });
+      }, 120);
+    }
+  });
+}
 
 async function loadSlugPricingConfig() {
   try {

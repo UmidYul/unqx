@@ -136,6 +136,7 @@
     const WALL_COMMENT_CONTENT_MAX = 1000;
     const WALL_VISIBLE_COMMENT_COUNT = 5;
     const WALL_POST_PAGE_SIZE = 20;
+    const COMMUNITY_PAGE_SIZE = 20;
     const LOGIN_MIN_LENGTH = 3;
     const LOGIN_MAX_LENGTH = 190;
     const LOGIN_REGEX = /^[a-z0-9._@+-]+$/;
@@ -454,6 +455,7 @@ Email: ${userEmail}
     const el = {
       tabs: $$(".profile-tab-btn"),
       panels: $$(".profile-tab-panel"),
+      communityTabUnread: $("#profile-community-tab-unread"),
       welcomeBanner: $("#profile-welcome-banner"),
       welcomeDismiss: $("#profile-welcome-dismiss"),
       upg: $("#profile-upgrade-banner"),
@@ -521,6 +523,10 @@ Email: ${userEmail}
       wallCancel: $("#profile-wall-cancel"),
       wallList: $("#profile-wall-list"),
       wallLoadMore: $("#profile-wall-load-more"),
+      communitySummary: $("#profile-community-summary"),
+      communityFilters: $("#profile-community-filters"),
+      communityList: $("#profile-community-list"),
+      communityLoadMore: $("#profile-community-load-more"),
       scoreValue: $("#profile-score-value"),
       scoreTop: $("#profile-score-top"),
       scoreUpdated: $("#profile-score-updated"),
@@ -797,6 +803,78 @@ Email: ${userEmail}
         existingIds.add(item.id);
       }
       return merged;
+    };
+
+    const emptyCommunityPagination = () => ({
+      page: 1,
+      pageSize: COMMUNITY_PAGE_SIZE,
+      total: 0,
+      hasMore: false,
+    });
+
+    const normalizeCommunityType = (value) => (String(value || "").trim().toLowerCase() === "followers" ? "followers" : "following");
+
+    const normalizeCommunityPagination = (pagination) => {
+      const source = pagination && typeof pagination === "object" ? pagination : {};
+      return {
+        page: Math.max(1, Number(source.page || 1)),
+        pageSize: Math.max(1, Number(source.pageSize || COMMUNITY_PAGE_SIZE)),
+        total: Math.max(0, Number(source.total || 0)),
+        hasMore: Boolean(source.hasMore),
+      };
+    };
+
+    const normalizeCommunityItem = (item) => {
+      if (!item || typeof item !== "object") return null;
+      const name = String(item.name || "UNQX User").trim() || "UNQX User";
+      const primarySlug = String(item.primarySlug || "").trim().toUpperCase() || "";
+      return {
+        userId: String(item.userId || "").trim(),
+        name,
+        initials:
+          String(item.initials || "").trim() ||
+          name
+            .split(/\s+/)
+            .filter(Boolean)
+            .slice(0, 2)
+            .map((part) => (part[0] ? part[0].toUpperCase() : ""))
+            .join("") ||
+          "UN",
+        avatarUrl: String(item.avatarUrl || "").trim() || null,
+        primarySlug,
+        role: String(item.role || "").trim(),
+        verified: Boolean(item.verified),
+        followedAt: item.followedAt || null,
+        isFollowing: Boolean(item.isFollowing),
+        canFollow: item.canFollow !== false && Boolean(primarySlug),
+        requiresAuth: Boolean(item.requiresAuth),
+        isPubliclyReachable: item.isPubliclyReachable !== false && Boolean(primarySlug),
+        profileHref: String(item.profileHref || "").trim() || (primarySlug ? `/${encodeURIComponent(primarySlug)}` : ""),
+      };
+    };
+
+    const normalizeFollowSummary = (summary) => {
+      const source = summary && typeof summary === "object" ? summary : {};
+      const counts = source.counts && typeof source.counts === "object" ? source.counts : {};
+      const viewer = source.viewer && typeof source.viewer === "object" ? source.viewer : {};
+      const previews = source.previews && typeof source.previews === "object" ? source.previews : {};
+      return {
+        counts: {
+          followers: Math.max(0, Number(counts.followers || 0)),
+          following: Math.max(0, Number(counts.following || 0)),
+        },
+        viewer: {
+          isFollowing: Boolean(viewer.isFollowing),
+          canFollow: Boolean(viewer.canFollow),
+          requiresAuth: Boolean(viewer.requiresAuth),
+        },
+        unreadFollowersCount: Math.max(0, Number(source.unreadFollowersCount || 0)),
+        previews: {
+          following: Array.isArray(previews.following)
+            ? previews.following.map(normalizeCommunityItem).filter(Boolean)
+            : [],
+        },
+      };
     };
 
     const resetWallComposer = () => {
@@ -1472,7 +1550,7 @@ Email: ${userEmail}
 
     const currentTab = () => {
       const raw = (location.hash || "#slugs").replace("#", "");
-      return ["slugs", "card", "posts", "analytics", "requests", "referrals", "settings", "payment-cards"].includes(raw) ? raw : "slugs";
+      return ["slugs", "card", "posts", "community", "analytics", "requests", "referrals", "settings", "payment-cards"].includes(raw) ? raw : "slugs";
     };
 
     const setTab = () => {
@@ -1493,6 +1571,19 @@ Email: ${userEmail}
       }
       if (active === "posts" && !s.wallLoaded && normalizeWallSummary(s.wallSummary).canUseWall) {
         void loadWallPosts();
+      }
+      if (active === "community" && s.user && !s.communityLoaded && !s.communityLoading) {
+        void loadCommunity();
+      }
+      if (active === "community" && Number(s.followSummary?.unreadFollowersCount || 0) > 0 && !s.communityUnreadMarking) {
+        const previousUnreadFollowersCount = Math.max(0, Number(s.followSummary?.unreadFollowersCount || 0));
+        s.followSummary = {
+          ...normalizeFollowSummary(s.followSummary),
+          unreadFollowersCount: 0,
+        };
+        renderCommunity();
+        renderCommunityTabBadge();
+        void markCommunityNotificationsRead(previousUnreadFollowersCount);
       }
       if (active === "payment-cards") {
         void loadPaymentCards();
@@ -2252,6 +2343,233 @@ Email: ${userEmail}
       renderWallSummary();
       updateWallComposerState();
       renderWallList();
+    };
+
+    const renderCommunityTabBadge = () => {
+      if (!(el.communityTabUnread instanceof HTMLElement)) {
+        return;
+      }
+      const unread = Math.max(0, Number(s.followSummary?.unreadFollowersCount || 0));
+      el.communityTabUnread.textContent = unread > 99 ? "99+" : String(unread || "");
+      el.communityTabUnread.classList.toggle("hidden", unread <= 0);
+    };
+
+    const renderCommunity = () => {
+      const summary = normalizeFollowSummary(s.followSummary);
+      const type = normalizeCommunityType(s.communityType);
+      const items = Array.isArray(s.communityItems) ? s.communityItems : [];
+
+      renderCommunityTabBadge();
+
+      if (el.communitySummary instanceof HTMLElement) {
+        el.communitySummary.innerHTML = `
+          <article class="rounded-xl border border-neutral-200 bg-white p-4">
+            <p class="text-xs uppercase tracking-[0.12em] text-neutral-500">Подписчики</p>
+            <p class="mt-2 text-2xl font-black text-neutral-900">${Number(summary.counts.followers || 0).toLocaleString("ru-RU")}</p>
+            <p class="mt-1 text-sm text-neutral-500">Люди, которые следят за твоей визиткой.</p>
+          </article>
+          <article class="rounded-xl border border-neutral-200 bg-white p-4">
+            <p class="text-xs uppercase tracking-[0.12em] text-neutral-500">Подписки</p>
+            <p class="mt-2 text-2xl font-black text-neutral-900">${Number(summary.counts.following || 0).toLocaleString("ru-RU")}</p>
+            <p class="mt-1 text-sm text-neutral-500">Кого ты читаешь и поддерживаешь.</p>
+          </article>
+          <article class="rounded-xl border border-neutral-200 bg-white p-4">
+            <p class="text-xs uppercase tracking-[0.12em] text-neutral-500">Новые подписчики</p>
+            <p class="mt-2 text-2xl font-black text-neutral-900">${Number(summary.unreadFollowersCount || 0).toLocaleString("ru-RU")}</p>
+            <p class="mt-1 text-sm text-neutral-500">Сбрасывается, когда открываешь вкладку сообщества.</p>
+          </article>
+        `;
+      }
+
+      if (el.communityFilters instanceof HTMLElement) {
+        el.communityFilters.innerHTML = `
+          <button type="button" data-community-type="followers" class="interactive-btn min-h-11 rounded-xl border px-4 py-2 text-sm font-semibold ${type === "followers" ? "border-neutral-900 bg-neutral-900 text-white" : "border-neutral-300 text-neutral-700"}">
+            Подписчики
+          </button>
+          <button type="button" data-community-type="following" class="interactive-btn min-h-11 rounded-xl border px-4 py-2 text-sm font-semibold ${type === "following" ? "border-neutral-900 bg-neutral-900 text-white" : "border-neutral-300 text-neutral-700"}">
+            Подписки
+          </button>
+        `;
+      }
+
+      if (el.communityList instanceof HTMLElement) {
+        if (s.communityLoading && !s.communityLoaded) {
+          el.communityList.innerHTML = '<div class="rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-6 text-sm text-neutral-500">Загружаем сообщество...</div>';
+        } else if (!items.length) {
+          el.communityList.innerHTML = `<div class="rounded-xl border border-dashed border-neutral-200 px-4 py-8 text-center text-sm text-neutral-500">${type === "followers" ? "У тебя пока нет подписчиков." : "Ты пока ни на кого не подписан."}</div>`;
+        } else {
+          el.communityList.innerHTML = items
+            .map((item) => {
+              const unavailableBadge = item.isPubliclyReachable
+                ? ""
+                : '<span class="inline-flex rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-700">Визитка недоступна</span>';
+              const isBusyFollow = s.communityBusySlugs instanceof Set && s.communityBusySlugs.has(String(item.primarySlug || "").trim().toUpperCase());
+              const followButton = item.canFollow
+                ? `<button type="button" data-community-follow-toggle data-community-slug="${esc(item.primarySlug)}" data-community-following="${item.isFollowing ? "true" : "false"}" class="interactive-btn min-h-11 rounded-xl border px-4 py-2 text-sm font-semibold ${item.isFollowing ? "border-neutral-900 bg-neutral-900 text-white" : "border-neutral-300 text-neutral-700"}" ${isBusyFollow ? "disabled" : ""}>
+                    ${isBusyFollow ? "..." : item.isFollowing ? "Отписаться" : "Подписаться"}
+                  </button>`
+                : "";
+              return `
+                <article class="rounded-xl border border-neutral-200 bg-white p-4">
+                  <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div class="flex min-w-0 items-center gap-3">
+                      <span class="inline-flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full border border-neutral-200 bg-neutral-100 text-sm font-semibold text-neutral-600">
+                        ${item.avatarUrl
+                          ? `<img src="${esc(item.avatarUrl)}" alt="${esc(item.name)}" class="h-full w-full object-cover" />`
+                          : esc(item.initials)}
+                      </span>
+                      <div class="min-w-0">
+                        <div class="flex flex-wrap items-center gap-2">
+                          ${item.profileHref
+                            ? `<a href="${esc(item.profileHref)}" target="_blank" rel="noopener noreferrer" class="truncate text-sm font-semibold text-neutral-900 hover:underline">${esc(item.name)}</a>`
+                            : `<span class="truncate text-sm font-semibold text-neutral-900">${esc(item.name)}</span>`}
+                          ${unavailableBadge}
+                        </div>
+                        <p class="mt-1 truncate text-xs text-neutral-500">${esc(item.primarySlug ? `unqx.uz/${item.primarySlug}` : "Публичный адрес недоступен")}</p>
+                        <p class="mt-1 text-xs text-neutral-500">${esc(item.role || "Без роли")}</p>
+                        ${item.followedAt ? `<p class="mt-1 text-[11px] uppercase tracking-[0.12em] text-neutral-400">${type === "followers" ? "Подписался" : "Ты подписан"}: ${esc(fdt(item.followedAt))}</p>` : ""}
+                      </div>
+                    </div>
+                    <div class="flex shrink-0 items-center gap-2">
+                      ${followButton}
+                    </div>
+                  </div>
+                </article>
+              `;
+            })
+            .join("");
+        }
+      }
+
+      if (el.communityLoadMore instanceof HTMLButtonElement) {
+        el.communityLoadMore.textContent = s.communityLoading && s.communityLoaded ? "Загрузка..." : "Показать ещё";
+        el.communityLoadMore.disabled = Boolean(s.communityLoading);
+        el.communityLoadMore.classList.toggle("hidden", !s.communityPagination?.hasMore);
+      }
+    };
+
+    const loadCommunity = async ({ append = false } = {}) => {
+      if (s.communityLoading) {
+        return;
+      }
+      s.communityLoading = true;
+      renderCommunity();
+
+      try {
+        const type = normalizeCommunityType(s.communityType);
+        const nextPage = append ? Number(s.communityPagination?.page || 1) + 1 : 1;
+        const payload = await api(`/api/profile/follows?type=${encodeURIComponent(type)}&page=${encodeURIComponent(nextPage)}&pageSize=${encodeURIComponent(COMMUNITY_PAGE_SIZE)}`);
+        const nextItems = Array.isArray(payload.items) ? payload.items.map(normalizeCommunityItem).filter(Boolean) : [];
+        s.communityType = type;
+        s.communityItems = append
+          ? [...(Array.isArray(s.communityItems) ? s.communityItems : []), ...nextItems]
+          : nextItems;
+        s.communityPagination = normalizeCommunityPagination(payload.pagination);
+        s.communityLoaded = true;
+        renderCommunity();
+      } catch (error) {
+        s.communityLoaded = true;
+        showModal("Ошибка", error.message || "Не удалось загрузить подписки");
+      } finally {
+        s.communityLoading = false;
+        renderCommunity();
+      }
+    };
+
+    const markCommunityNotificationsRead = async (fallbackUnreadCount = 0) => {
+      if (s.communityUnreadMarking) {
+        return;
+      }
+      s.communityUnreadMarking = true;
+      try {
+        await api("/api/profile/follows/notifications/read-all", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({}),
+        });
+      } catch (error) {
+        s.followSummary = {
+          ...normalizeFollowSummary(s.followSummary),
+          unreadFollowersCount: Math.max(0, Number(fallbackUnreadCount || 0)),
+        };
+        renderCommunity();
+      } finally {
+        s.communityUnreadMarking = false;
+        renderCommunityTabBadge();
+      }
+    };
+
+    const setCommunityType = (value) => {
+      const nextType = normalizeCommunityType(value);
+      if (nextType === normalizeCommunityType(s.communityType) && s.communityLoaded) {
+        renderCommunity();
+        return;
+      }
+      s.communityType = nextType;
+      s.communityItems = [];
+      s.communityPagination = emptyCommunityPagination();
+      s.communityLoaded = false;
+      renderCommunity();
+      void loadCommunity();
+    };
+
+    const toggleCommunityFollow = async (slug, following) => {
+      const normalizedSlug = String(slug || "").trim().toUpperCase();
+      if (!normalizedSlug) {
+        return;
+      }
+      if (!(s.communityBusySlugs instanceof Set)) {
+        s.communityBusySlugs = new Set();
+      }
+      if (s.communityBusySlugs.has(normalizedSlug)) {
+        return;
+      }
+      s.communityBusySlugs.add(normalizedSlug);
+      renderCommunity();
+
+      try {
+        await api(`/api/cards/${encodeURIComponent(normalizedSlug)}/follow`, {
+          method: following ? "DELETE" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({}),
+        });
+
+        const type = normalizeCommunityType(s.communityType);
+        if (type === "following" && following) {
+          s.communityItems = Array.isArray(s.communityItems)
+            ? s.communityItems.filter((item) => String(item?.primarySlug || "").trim().toUpperCase() !== normalizedSlug)
+            : [];
+          s.communityPagination = {
+            ...normalizeCommunityPagination(s.communityPagination),
+            total: Math.max(0, Number(s.communityPagination?.total || 0) - 1),
+          };
+          s.followSummary = {
+            ...normalizeFollowSummary(s.followSummary),
+            counts: {
+              ...normalizeFollowSummary(s.followSummary).counts,
+              following: Math.max(0, Number(s.followSummary?.counts?.following || 0) - 1),
+            },
+          };
+        } else {
+          s.communityItems = Array.isArray(s.communityItems)
+            ? s.communityItems.map((item) => {
+              if (String(item?.primarySlug || "").trim().toUpperCase() !== normalizedSlug) {
+                return item;
+              }
+              return {
+                ...item,
+                isFollowing: !following,
+              };
+            })
+            : [];
+        }
+        renderCommunity();
+      } catch (error) {
+        showModal("Ошибка", error.message || "Не удалось обновить подписку");
+      } finally {
+        s.communityBusySlugs.delete(normalizedSlug);
+        renderCommunity();
+      }
     };
 
     const loadWallPosts = async ({ append = false } = {}) => {
@@ -3713,6 +4031,7 @@ Email: ${userEmail}
       renderSlugs();
       renderCard();
       renderWall();
+      renderCommunity();
       renderAnalytics();
       renderRequests();
       renderSettings();
@@ -3769,6 +4088,7 @@ Email: ${userEmail}
         s.privatePasswordMinLength = Number(payload?.privacy?.passwordMinLength || 4) || 4;
         s.privatePasswordLimit = Number(payload?.privacy?.passwordLimit || 10) || 10;
         s.wallSummary = normalizeWallSummary(payload.wallSummary);
+        s.followSummary = normalizeFollowSummary(payload.followSummary);
         s.wallPosts = [];
         s.wallPagination = emptyWallPagination();
         s.wallLoaded = !s.wallSummary.canUseWall;
@@ -3778,6 +4098,13 @@ Email: ${userEmail}
         s.wallBusyCommentPostIds = new Set();
         s.wallBusyCommentIds = new Set();
         s.wallExpandedCommentPostIds = new Set();
+        s.communityType = normalizeCommunityType(s.communityType || "followers");
+        s.communityItems = [];
+        s.communityPagination = emptyCommunityPagination();
+        s.communityLoaded = false;
+        s.communityLoading = false;
+        s.communityUnreadMarking = false;
+        s.communityBusySlugs = new Set();
         resetWallComposer();
         if (!s.slugs.find((item) => item.fullSlug === s.analyticsSelectedSlug)) {
           s.analyticsBootstrap = null;
@@ -3797,6 +4124,9 @@ Email: ${userEmail}
         renderAll();
         if (s.wallSummary.canUseWall) {
           void loadWallPosts();
+        }
+        if (currentTab() === "community") {
+          void loadCommunity();
         }
         // Синхронизировать dirty-state и убрать legacy-черновики из localStorage
         restoreDraft();
@@ -4092,6 +4422,25 @@ Email: ${userEmail}
       if (type === "delete") {
         deleteWallPost(postId);
       }
+    });
+
+    el.communityFilters?.addEventListener("click", (event) => {
+      const target = event.target instanceof HTMLElement ? event.target.closest("[data-community-type]") : null;
+      if (!(target instanceof HTMLElement)) return;
+      const type = String(target.getAttribute("data-community-type") || "").trim();
+      setCommunityType(type);
+    });
+
+    el.communityLoadMore?.addEventListener("click", () => {
+      void loadCommunity({ append: true });
+    });
+
+    el.communityList?.addEventListener("click", (event) => {
+      const target = event.target instanceof HTMLElement ? event.target.closest("[data-community-follow-toggle]") : null;
+      if (!(target instanceof HTMLElement)) return;
+      const slug = String(target.getAttribute("data-community-slug") || "").trim();
+      const following = String(target.getAttribute("data-community-following") || "").trim() === "true";
+      void toggleCommunityFollow(slug, following);
     });
 
     el.analyticsSlug?.addEventListener("change", () => {

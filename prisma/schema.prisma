@@ -334,6 +334,8 @@ model User {
   profileWallPosts       ProfileWallPost[]
   profileWallPostLikes   ProfileWallPostLike[]
   profileWallPostComments ProfileWallPostComment[]
+  following              UserFollow[]           @relation("UserFollowFollower")
+  followers              UserFollow[]           @relation("UserFollowFollowee")
 
   @@index([plan, planPurchasedAt])
   @@index([subscriptionExpiresAt])
@@ -491,6 +493,20 @@ model ProfileWallPostComment {
   @@index([postId, createdAt(sort: Desc)])
   @@index([userId, createdAt(sort: Desc)])
   @@map("profile_wall_post_comments")
+}
+
+model UserFollow {
+  id         String   @id @default(uuid())
+  followerId String   @map("follower_id")
+  followeeId String   @map("followee_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+  follower   User     @relation("UserFollowFollower", fields: [followerId], references: [id], onDelete: Cascade)
+  followee   User     @relation("UserFollowFollowee", fields: [followeeId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followeeId])
+  @@index([followerId, createdAt(sort: Desc)])
+  @@index([followeeId, createdAt(sort: Desc)])
+  @@map("user_follows")
 }
 
 model CardPrivatePassword {
