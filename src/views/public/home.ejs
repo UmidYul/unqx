@@ -773,7 +773,7 @@
                           <% weeklyViewsTopList.forEach((item, index)=> {
                             const rankNumber = index + 1;
                             const slugs = (Array.isArray(item.slugs) ? item.slugs : []).filter(Boolean).slice(0, 2);
-                            const patternLabel = String(item.company || item.role || "UNQX").trim() || "UNQX";
+                            const weeklyViewsCount = Number(item.views || 0).toLocaleString('ru-RU');
                           %>
                             <a href="/<%= encodeURIComponent(item.primarySlug || (Array.isArray(item.slugs) ? item.slugs[0] : '')) %>"
                               aria-label="Открыть профиль <%= item.name %>"
@@ -781,53 +781,60 @@
                               <div class="home-weekly-card-content">
                                 <div class="home-weekly-card-top">
                                   <span class="home-weekly-card-rank">#<%= rankNumber %></span>
-                                  <% if (item.company) { %>
-                                    <span class="home-weekly-card-pill"><%= item.company %></span>
-                                  <% } %>
+                                  <span class="home-weekly-card-views-badge"><%= weeklyViewsCount %> просмотров</span>
                                 </div>
 
-                                <div class="home-weekly-card-identity">
-                                  <img src="<%= item.avatarUrl || '/brand/logo.PNG' %>" alt="<%= item.name %>"
-                                    onerror="this.onerror=null;this.src='/brand/logo.PNG';"
-                                    class="home-weekly-card-avatar" />
-                                  <div class="home-weekly-card-copy">
-                                    <div class="home-weekly-card-name-row">
-                                      <p class="home-weekly-card-name"><%= item.name %></p>
-                                      <% if (item.isVerified) { %>
-                                        <svg class="home-weekly-card-verified" viewBox="0 0 24 24" aria-hidden="true"
-                                          fill="currentColor" title="Верифицированный аккаунт">
-                                          <path
-                                            d="M12 2.5l2.2 1.8 2.8-.3 1.2 2.5 2.5 1.2-.3 2.8L21.5 12l-1.8 2.2.3 2.8-2.5 1.2-1.2 2.5-2.8-.3L12 21.5l-2.2-1.8-2.8.3-1.2-2.5-2.5-1.2.3-2.8L2.5 12l1.8-2.2-.3-2.8 2.5-1.2 1.2-2.5 2.8.3L12 2.5Zm-1.1 13.1 5-5-1.1-1.1-3.9 3.9-1.8-1.8-1.1 1.1 2.9 2.9Z">
-                                          </path>
-                                        </svg>
+                                <div class="home-weekly-card-body">
+                                  <div class="home-weekly-card-identity">
+                                    <img src="<%= item.avatarUrl || '/brand/logo.PNG' %>" alt="<%= item.name %>"
+                                      onerror="this.onerror=null;this.src='/brand/logo.PNG';"
+                                      class="home-weekly-card-avatar" />
+                                    <div class="home-weekly-card-copy">
+                                      <div class="home-weekly-card-name-row">
+                                        <p class="home-weekly-card-name"><%= item.name %></p>
+                                        <% if (item.isVerified) { %>
+                                          <svg class="home-weekly-card-verified" viewBox="0 0 24 24" aria-hidden="true"
+                                            fill="currentColor" title="Верифицированный аккаунт">
+                                            <path
+                                              d="M12 2.5l2.2 1.8 2.8-.3 1.2 2.5 2.5 1.2-.3 2.8L21.5 12l-1.8 2.2.3 2.8-2.5 1.2-1.2 2.5-2.8-.3L12 21.5l-2.2-1.8-2.8.3-1.2-2.5-2.5-1.2.3-2.8L2.5 12l1.8-2.2-.3-2.8 2.5-1.2 1.2-2.5 2.8.3L12 2.5Zm-1.1 13.1 5-5-1.1-1.1-3.9 3.9-1.8-1.8-1.1 1.1 2.9 2.9Z">
+                                            </path>
+                                          </svg>
+                                        <% } %>
+                                      </div>
+                                      <% if (item.role || item.company) { %>
+                                        <div class="home-weekly-card-meta">
+                                          <% if (item.role) { %>
+                                            <p class="home-weekly-card-role"><%= item.role %></p>
+                                          <% } %>
+                                          <% if (item.company) { %>
+                                            <p class="home-weekly-card-company"><%= item.company %></p>
+                                          <% } %>
+                                        </div>
                                       <% } %>
                                     </div>
-                                    <% if (item.role) { %>
-                                      <p class="home-weekly-card-role"><%= item.role %></p>
-                                    <% } %>
+                                  </div>
+
+                                  <% if (slugs.length) { %>
+                                    <div class="home-weekly-card-slugs">
+                                      <% slugs.forEach((slug)=> { %>
+                                        <span class="home-weekly-card-slug-chip"><%= slug %></span>
+                                      <% }) %>
+                                    </div>
+                                  <% } %>
+
+                                  <div class="home-weekly-card-foot">
+                                    <div class="home-weekly-card-foot-copy">
+                                      <span class="home-weekly-card-foot-label">Рейтинг недели</span>
+                                      <span class="home-weekly-card-foot-title">Открыть профиль</span>
+                                    </div>
+                                    <span class="home-weekly-card-foot-arrow" aria-hidden="true">
+                                      <svg viewBox="0 0 24 24" fill="none">
+                                        <path d="M7 12h10M13 6l6 6-6 6" stroke="currentColor" stroke-width="2"
+                                          stroke-linecap="round" stroke-linejoin="round"></path>
+                                      </svg>
+                                    </span>
                                   </div>
                                 </div>
-
-                                <% if (slugs.length) { %>
-                                  <div class="home-weekly-card-slugs">
-                                    <% slugs.forEach((slug)=> { %>
-                                      <span class="home-weekly-card-slug-chip"><%= slug %></span>
-                                    <% }) %>
-                                  </div>
-                                <% } %>
-
-                                <p class="home-weekly-card-views">Просмотры: <strong>
-                                    <%= Number(item.views || 0).toLocaleString('ru-RU') %>
-                                  </strong></p>
-                              </div>
-
-                              <div class="home-weekly-card-art" aria-hidden="true">
-                                <div class="home-weekly-card-art-copy">
-                                  <span class="home-weekly-card-art-kicker">Топ дня</span>
-                                  <span class="home-weekly-card-art-rank">0<%= rankNumber %></span>
-                                  <span class="home-weekly-card-art-label"><%= patternLabel %></span>
-                                </div>
-                                <span class="home-weekly-card-art-views"><%= Number(item.views || 0).toLocaleString('ru-RU') %></span>
                               </div>
                             </a>
                             <% }) %>
