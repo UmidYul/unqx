@@ -4721,6 +4721,288 @@ body[data-card-theme] main.private-card-screen {
   }
 }
 
+[data-page="public-home"] .home-weekly-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 170px;
+  gap: 16px;
+  min-height: 236px;
+  overflow: hidden;
+  background: linear-gradient(180deg, #ffffff 0%, #fafafa 100%);
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.06);
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    border-color 0.18s ease;
+}
+
+[data-page="public-home"] .home-weekly-card:hover {
+  transform: translateY(-3px);
+  border-color: #d4dae3;
+  box-shadow: 0 22px 48px rgba(15, 23, 42, 0.1);
+}
+
+[data-page="public-home"] .home-weekly-card-content {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+[data-page="public-home"] .home-weekly-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+[data-page="public-home"] .home-weekly-card-rank {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  min-width: 48px;
+  border-radius: 999px;
+  border: 1px solid #d4d4d8;
+  background: #ffffff;
+  padding: 0.35rem 0.8rem;
+  font-size: 12px;
+  font-weight: 700;
+  color: #3f3f46;
+}
+
+[data-page="public-home"] .home-weekly-card-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border-radius: 999px;
+  background: #f4f4f5;
+  padding: 0.35rem 0.8rem;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #8a8f98;
+}
+
+[data-page="public-home"] .home-weekly-card-identity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+[data-page="public-home"] .home-weekly-card-avatar {
+  height: 54px;
+  width: 54px;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  padding: 2px;
+  object-fit: cover;
+}
+
+[data-page="public-home"] .home-weekly-card-copy {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+[data-page="public-home"] .home-weekly-card-name-row {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+}
+
+[data-page="public-home"] .home-weekly-card-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #171717;
+}
+
+[data-page="public-home"] .home-weekly-card-verified {
+  height: 16px;
+  width: 16px;
+  flex: 0 0 auto;
+  color: #6b7280;
+}
+
+[data-page="public-home"] .home-weekly-card-role {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.94rem;
+  color: #71717a;
+}
+
+[data-page="public-home"] .home-weekly-card-slugs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+[data-page="public-home"] .home-weekly-card-slug-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  border-radius: 999px;
+  border: 1px solid #d4d4d8;
+  background: #fafafa;
+  padding: 0.35rem 0.8rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 11px;
+  color: #5f6672;
+}
+
+[data-page="public-home"] .home-weekly-card-views {
+  margin-top: auto;
+  font-size: 1rem;
+  color: #5b5b61;
+}
+
+[data-page="public-home"] .home-weekly-card-views strong {
+  font-size: 1.18rem;
+  color: #18181b;
+}
+
+[data-page="public-home"] .home-weekly-card-art {
+  position: relative;
+  overflow: hidden;
+  min-height: 100%;
+  border-radius: 22px;
+  border: 1px solid var(--weekly-art-border, rgba(148, 163, 184, 0.18));
+  background: var(--weekly-art-bg, linear-gradient(160deg, #f8fafc 0%, #eef2f7 100%));
+  padding: 18px 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+[data-page="public-home"] .home-weekly-card-art::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--weekly-art-pattern, none);
+  opacity: 0.95;
+}
+
+[data-page="public-home"] .home-weekly-card-art::after {
+  content: "";
+  position: absolute;
+  right: -22px;
+  bottom: -24px;
+  width: 116px;
+  height: 116px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.34);
+  filter: blur(2px);
+}
+
+[data-page="public-home"] .home-weekly-card-art-copy,
+[data-page="public-home"] .home-weekly-card-art-views {
+  position: relative;
+  z-index: 1;
+}
+
+[data-page="public-home"] .home-weekly-card-art-copy {
+  display: grid;
+  gap: 6px;
+}
+
+[data-page="public-home"] .home-weekly-card-art-kicker {
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #7b8494;
+}
+
+[data-page="public-home"] .home-weekly-card-art-rank {
+  font-size: 2.8rem;
+  line-height: 0.95;
+  font-weight: 900;
+  color: #171717;
+}
+
+[data-page="public-home"] .home-weekly-card-art-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #667085;
+}
+
+[data-page="public-home"] .home-weekly-card-art-views {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+[data-page="public-home"] .home-weekly-card--rank-1 {
+  --weekly-art-border: rgba(99, 102, 241, 0.18);
+  --weekly-art-bg: linear-gradient(155deg, #f7f9ff 0%, #eef3ff 100%);
+  --weekly-art-pattern:
+    radial-gradient(circle at 22% 22%, rgba(99, 102, 241, 0.18) 0 18%, transparent 18% 100%),
+    radial-gradient(circle at 82% 72%, rgba(59, 130, 246, 0.16) 0 16%, transparent 16% 100%),
+    linear-gradient(140deg, transparent 0 38%, rgba(99, 102, 241, 0.13) 38% 41%, transparent 41% 100%),
+    repeating-linear-gradient(90deg, transparent 0 28px, rgba(59, 130, 246, 0.08) 28px 30px);
+}
+
+[data-page="public-home"] .home-weekly-card--rank-2 {
+  --weekly-art-border: rgba(16, 185, 129, 0.18);
+  --weekly-art-bg: linear-gradient(155deg, #f3fbf8 0%, #e7f6ef 100%);
+  --weekly-art-pattern:
+    radial-gradient(circle at 20% 78%, rgba(16, 185, 129, 0.16) 0 14%, transparent 14% 100%),
+    radial-gradient(circle at 78% 24%, rgba(34, 197, 94, 0.14) 0 16%, transparent 16% 100%),
+    repeating-linear-gradient(135deg, transparent 0 18px, rgba(16, 185, 129, 0.11) 18px 20px),
+    linear-gradient(180deg, transparent 0 62%, rgba(34, 197, 94, 0.08) 62% 64%, transparent 64% 100%);
+}
+
+[data-page="public-home"] .home-weekly-card--rank-3 {
+  --weekly-art-border: rgba(249, 115, 22, 0.18);
+  --weekly-art-bg: linear-gradient(155deg, #fff8f2 0%, #fff0e2 100%);
+  --weekly-art-pattern:
+    radial-gradient(circle at 24% 24%, rgba(251, 146, 60, 0.16) 0 13%, transparent 13% 100%),
+    radial-gradient(circle at 72% 68%, rgba(249, 115, 22, 0.13) 0 12%, transparent 12% 100%),
+    repeating-linear-gradient(0deg, transparent 0 17px, rgba(249, 115, 22, 0.08) 17px 18px),
+    repeating-linear-gradient(90deg, transparent 0 17px, rgba(251, 146, 60, 0.08) 17px 18px);
+}
+
+@media (max-width: 900px) {
+  [data-page="public-home"] .home-weekly-card {
+    grid-template-columns: 1fr;
+  }
+
+  [data-page="public-home"] .home-weekly-card-art {
+    min-height: 152px;
+  }
+}
+
+@media (max-width: 420px) {
+  [data-page="public-home"] .home-weekly-card {
+    min-height: auto;
+  }
+
+  [data-page="public-home"] .home-weekly-card-top {
+    flex-wrap: wrap;
+  }
+
+  [data-page="public-home"] .home-weekly-card-views strong {
+    font-size: 1.08rem;
+  }
+}
+
 .private-card-field-wrap input {
   background: var(--theme-button-secondary-bg, rgba(255, 255, 255, 0.02));
   color: var(--theme-name-color, #ffffff);
