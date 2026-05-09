@@ -47,11 +47,13 @@ describe("profile page", () => {
 
   test("renders wall composer controls", async () => {
     const html = await renderProfileTemplate();
+    expect(html).toContain('id="profile-wall-open-composer"');
+    expect(html).toContain('id="profile-wall-composer-modal"');
     expect(html).toContain('id="profile-wall-editor"');
     expect(html).toContain('id="profile-wall-comments-enabled"');
     expect(html).toContain('id="profile-wall-submit"');
-    expect(html).toContain("1 пост в день");
-    expect(html).toContain("комментарии можно отключать для каждого поста");
+    expect(html).toContain('id="profile-wall-composer-close"');
+    expect(html).not.toContain("1 пост в день");
   });
 
   test("has modal close button and dialog semantics", async () => {
@@ -141,6 +143,9 @@ describe("profile page", () => {
     expect(source).toContain("data-community-follow-toggle");
     expect(source).toContain("renderCommunity");
     expect(source).toContain("profile-community-tab-unread");
+    expect(source).toContain("wallComposerModalOpen");
+    expect(source).toContain("openWallComposerModal");
+    expect(source).toContain("closeWallComposerModal");
   });
 
   test("profile card draft is kept in memory instead of persistent localStorage writes", () => {

@@ -308,6 +308,8 @@
     let modalLastFocused = null;
     let modalIsOpen = false;
     let modalConfirmHandler = null;
+    let wallComposerModalLastFocused = null;
+    let wallComposerModalOpen = false;
     let saveAlertTimer = null;
     let profileRefreshTimer = null;
     let profileRefreshInFlight = false;
@@ -513,7 +515,12 @@ Email: ${userEmail}
       cPrevLabel: $("#profile-preview-slug-label"),
       cPrevLink: $("#profile-preview-open-link"),
       wallSummary: $("#profile-wall-summary"),
+      wallOpenComposer: $("#profile-wall-open-composer"),
+      wallComposerModal: $("#profile-wall-composer-modal"),
+      wallComposerDialog: $("#profile-wall-composer-dialog"),
       wallComposer: $("#profile-wall-composer"),
+      wallComposerClose: $("#profile-wall-composer-close"),
+      wallComposerCloseTop: $("#profile-wall-composer-close-top"),
       wallEditorTitle: $("#profile-wall-editor-title"),
       wallEditorNote: $("#profile-wall-editor-note"),
       wallEditor: $("#profile-wall-editor"),
@@ -888,6 +895,59 @@ Email: ${userEmail}
       return items.find((item) => item.id === s.wallEditingId) || null;
     };
 
+    const focusWallEditor = () => {
+      if (!(el.wallEditor instanceof HTMLTextAreaElement)) {
+        return;
+      }
+      el.wallEditor.focus();
+      const cursor = el.wallEditor.value.length;
+      el.wallEditor.setSelectionRange(cursor, cursor);
+    };
+
+    const syncModalOpenClass = () => {
+      document.body.classList.toggle("modal-open", modalIsOpen || wallComposerModalOpen);
+    };
+
+    const closeWallComposerModal = ({ restoreFocus = true } = {}) => {
+      if (!(el.wallComposerModal instanceof HTMLElement)) {
+        return;
+      }
+      el.wallComposerModal.classList.add("hidden");
+      el.wallComposerModal.classList.remove("flex");
+      wallComposerModalOpen = false;
+      syncModalOpenClass();
+      if (restoreFocus && wallComposerModalLastFocused instanceof HTMLElement) {
+        wallComposerModalLastFocused.focus();
+      }
+      wallComposerModalLastFocused = null;
+    };
+
+    const openWallComposerModal = ({ mode = "current" } = {}) => {
+      const summary = normalizeWallSummary(s.wallSummary);
+      if (!summary.canUseWall) {
+        openOrderModal({});
+        return;
+      }
+      if (mode === "new" && s.wallEditingId) {
+        resetWallComposer();
+      }
+      if (!(el.wallComposerModal instanceof HTMLElement)) {
+        return;
+      }
+      if (!wallComposerModalOpen) {
+        wallComposerModalLastFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+      }
+      el.wallComposerModal.classList.remove("hidden");
+      el.wallComposerModal.classList.add("flex");
+      wallComposerModalOpen = true;
+      syncModalOpenClass();
+      updateWallComposerState();
+      requestAnimationFrame(() => {
+        el.wallComposerDialog?.focus();
+        focusWallEditor();
+      });
+    };
+
     const replaceWallPost = (nextPost) => {
       const normalized = normalizeWallPost(nextPost);
       if (!normalized) return;
@@ -1022,8 +1082,8 @@ Email: ${userEmail}
       if (!el.modal) return;
       el.modal.classList.add("hidden");
       el.modal.classList.remove("flex");
-      document.body.classList.remove("modal-open");
       modalIsOpen = false;
+      syncModalOpenClass();
       if (modalLastFocused instanceof HTMLElement) {
         modalLastFocused.focus();
       }
@@ -1041,8 +1101,8 @@ Email: ${userEmail}
       modalLastFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
       el.modal.classList.remove("hidden");
       el.modal.classList.add("flex");
-      document.body.classList.add("modal-open");
       modalIsOpen = true;
+      syncModalOpenClass();
       requestAnimationFrame(() => {
         el.modalDialog?.focus();
       });
@@ -1555,6 +1615,9 @@ Email: ${userEmail}
 
     const setTab = () => {
       const active = currentTab();
+      if (active !== "posts" && wallComposerModalOpen) {
+        closeWallComposerModal({ restoreFocus: false });
+      }
       el.tabs.forEach((button) => {
         const on = button.getAttribute("data-tab-target") === active;
         button.classList.toggle("profile-tab-btn--active", on);
@@ -2158,6 +2221,10 @@ Email: ${userEmail}
       if (!(el.wallEditor instanceof HTMLTextAreaElement)) return;
       const summary = normalizeWallSummary(s.wallSummary);
       const draftValue = String(s.wallDraftContent || "").slice(0, WALL_POST_CONTENT_MAX);
+      if (el.wallOpenComposer instanceof HTMLButtonElement) {
+        el.wallOpenComposer.disabled = Boolean(s.wallSaving);
+        el.wallOpenComposer.textContent = summary.canUseWall ? "Добавить пост" : PREMIUM_CTA_LABEL;
+      }
       if (el.wallEditor.value !== draftValue) {
         el.wallEditor.value = draftValue;
       }
@@ -2173,11 +2240,11 @@ Email: ${userEmail}
           el.wallEditorNote.textContent =
             activePost?.status === "hidden"
               ? "Пост скрыт админом. После сохранения текст обновится, но пост останется скрытым."
-              : "Редактирование не тратит дневной лимит. Комментарии можно включать и отключать для этого поста.";
+              : "Редактирование не тратит дневной лимит.";
         } else if (summary.canUseWall && !summary.canPostNow) {
           el.wallEditorNote.textContent = `Сегодня лимит уже использован. Следующий пост после ${fht(summary.nextPostAt)}.`;
         } else if (summary.canUseWall) {
-          el.wallEditorNote.textContent = "Только plain text. Лайки включены, комментарии можно отключать для каждого поста.";
+          el.wallEditorNote.textContent = "Короткий текст без фото, до 280 символов.";
         } else {
           el.wallEditorNote.textContent = "Подключи Премиум, чтобы открыть стену.";
         }
@@ -2193,6 +2260,13 @@ Email: ${userEmail}
       }
       if (el.wallCancel instanceof HTMLButtonElement) {
         el.wallCancel.classList.toggle("hidden", !s.wallEditingId);
+        el.wallCancel.disabled = Boolean(s.wallSaving);
+      }
+      if (el.wallComposerClose instanceof HTMLButtonElement) {
+        el.wallComposerClose.disabled = Boolean(s.wallSaving);
+      }
+      if (el.wallComposerCloseTop instanceof HTMLButtonElement) {
+        el.wallComposerCloseTop.disabled = Boolean(s.wallSaving);
       }
       if (el.wallComposer instanceof HTMLElement) {
         el.wallComposer.classList.toggle("opacity-60", !summary.canUseWall);
@@ -2605,10 +2679,7 @@ Email: ${userEmail}
       s.wallDraftContent = String(post.content || "");
       s.wallDraftCommentsEnabled = post.commentsEnabled !== false;
       updateWallComposerState();
-      if (el.wallEditor instanceof HTMLTextAreaElement) {
-        el.wallEditor.focus();
-        el.wallEditor.setSelectionRange(el.wallEditor.value.length, el.wallEditor.value.length);
-      }
+      openWallComposerModal({ mode: "edit" });
     };
 
     const submitWallPost = async () => {
@@ -2635,6 +2706,7 @@ Email: ${userEmail}
           });
           replaceWallPost(payload.post);
           resetWallComposer();
+          closeWallComposerModal();
           renderWall();
           showSaveAlert("Пост обновлён");
           return;
@@ -2657,6 +2729,7 @@ Email: ${userEmail}
         }
         s.wallLoaded = true;
         resetWallComposer();
+        closeWallComposerModal();
         renderWall();
         showSaveAlert("Пост опубликован");
       } catch (error) {
@@ -2772,6 +2845,7 @@ Email: ${userEmail}
           };
           if (s.wallEditingId === postId) {
             resetWallComposer();
+            closeWallComposerModal({ restoreFocus: false });
           }
           clearWallCommentDraft(postId);
           renderWall();
@@ -4106,6 +4180,7 @@ Email: ${userEmail}
         s.communityUnreadMarking = false;
         s.communityBusySlugs = new Set();
         resetWallComposer();
+        closeWallComposerModal({ restoreFocus: false });
         if (!s.slugs.find((item) => item.fullSlug === s.analyticsSelectedSlug)) {
           s.analyticsBootstrap = null;
           s.analyticsPayload = null;
@@ -4348,6 +4423,27 @@ Email: ${userEmail}
       updateWallComposerState();
     });
 
+    el.wallOpenComposer?.addEventListener("click", () => {
+      openWallComposerModal({ mode: "new" });
+    });
+
+    el.wallComposerClose?.addEventListener("click", () => {
+      if (s.wallSaving) return;
+      closeWallComposerModal();
+    });
+
+    el.wallComposerCloseTop?.addEventListener("click", () => {
+      if (s.wallSaving) return;
+      closeWallComposerModal();
+    });
+
+    el.wallComposerModal?.addEventListener("click", (event) => {
+      if (s.wallSaving) return;
+      if (event.target === el.wallComposerModal) {
+        closeWallComposerModal();
+      }
+    });
+
     el.wallSubmit?.addEventListener("click", () => {
       void submitWallPost();
     });
@@ -4355,6 +4451,7 @@ Email: ${userEmail}
     el.wallCancel?.addEventListener("click", () => {
       resetWallComposer();
       updateWallComposerState();
+      closeWallComposerModal();
     });
 
     el.wallLoadMore?.addEventListener("click", () => {
@@ -4584,6 +4681,10 @@ Email: ${userEmail}
     };
     document.addEventListener("keydown", (event) => {
       if (event.key === "Escape") {
+        if (wallComposerModalOpen && !s.wallSaving) {
+          closeWallComposerModal();
+          return;
+        }
         if (emailModalOpen) {
           closeEmailModal();
           return;
@@ -4610,6 +4711,10 @@ Email: ${userEmail}
         return;
       }
       if (event.key !== "Tab") return;
+      if (wallComposerModalOpen && el.wallComposerDialog instanceof HTMLElement) {
+        trapFocus(el.wallComposerDialog, event);
+        return;
+      }
       if (emailModalOpen && el.emailModalDialog instanceof HTMLElement) {
         trapFocus(el.emailModalDialog, event);
         return;

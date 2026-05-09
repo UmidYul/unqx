@@ -629,34 +629,13 @@
           <div class="flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center">
             <div>
               <h2 class="text-lg font-bold">ПОСТЫ</h2>
-              <p class="mt-1 text-sm text-neutral-500">1 пост в день, лайки включены, комментарии можно отключать для каждого поста.
-              </p>
             </div>
+            <button id="profile-wall-open-composer" type="button"
+              class="interactive-btn min-h-11 rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white">
+              Добавить пост
+            </button>
           </div>
           <div id="profile-wall-summary" class="mt-4 rounded-xl border border-neutral-200 bg-neutral-50 p-4"></div>
-          <div id="profile-wall-composer" class="mt-4 rounded-xl border border-neutral-200 bg-white p-4">
-            <div class="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <h3 id="profile-wall-editor-title" class="text-sm font-semibold text-neutral-900">Новый пост</h3>
-                <p id="profile-wall-editor-note" class="mt-1 text-xs text-neutral-500">Только plain text, без фото.</p>
-              </div>
-              <p id="profile-wall-counter" class="text-xs font-semibold text-neutral-500">0/280</p>
-            </div>
-            <textarea id="profile-wall-editor" rows="5" maxlength="280"
-              placeholder="Напиши короткий пост для своей визитки..."
-              class="mt-3 w-full rounded-xl border border-neutral-200 px-3 py-3 text-sm text-neutral-900 outline-none placeholder:text-neutral-400"></textarea>
-            <label for="profile-wall-comments-enabled" class="mt-3 inline-flex items-center gap-3 text-sm text-neutral-700">
-              <input id="profile-wall-comments-enabled" type="checkbox" checked
-                class="h-4 w-4 rounded border border-neutral-300 text-neutral-900 focus:ring-neutral-900">
-              <span>Разрешить комментарии</span>
-            </label>
-            <div class="mt-3 flex flex-wrap items-center gap-2">
-              <button id="profile-wall-submit" type="button"
-                class="interactive-btn min-h-11 rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white">Опубликовать</button>
-              <button id="profile-wall-cancel" type="button"
-                class="interactive-btn hidden min-h-11 rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700">Отмена</button>
-            </div>
-          </div>
           <div id="profile-wall-list" class="mt-4 space-y-3"></div>
           <div class="mt-4 flex justify-center">
             <button id="profile-wall-load-more" type="button"
@@ -1238,6 +1217,49 @@
           class="interactive-btn min-h-11 rounded-lg bg-neutral-900 px-3 py-1.5 text-sm font-semibold text-white sm:min-w-[120px]">Ок</button>
         <button id="profile-modal-close" type="button"
           class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-3 py-1.5 text-sm font-semibold sm:min-w-[120px]">Закрыть</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="profile-wall-composer-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 p-4">
+    <div id="profile-wall-composer-dialog" class="w-full max-w-2xl rounded-2xl bg-white p-4 sm:p-5" role="dialog"
+      aria-modal="true" aria-labelledby="profile-wall-editor-title" tabindex="-1">
+      <div id="profile-wall-composer" class="rounded-2xl border border-neutral-200 bg-white p-4 sm:p-5">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div class="min-w-0">
+            <p class="text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-400">Редактор поста</p>
+            <h3 id="profile-wall-editor-title" class="mt-1 text-lg font-semibold text-neutral-900">Новый пост</h3>
+            <p id="profile-wall-editor-note" class="mt-1 text-xs text-neutral-500">Короткий текст без фото.</p>
+          </div>
+          <div class="flex items-center gap-3">
+            <p id="profile-wall-counter" class="text-xs font-semibold text-neutral-500">0/280</p>
+            <button id="profile-wall-composer-close-top" type="button"
+              class="interactive-btn inline-flex h-10 w-10 items-center justify-center rounded-xl border border-neutral-300 text-neutral-600"
+              aria-label="Закрыть редактор поста">
+              <svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="m6 6 12 12M18 6 6 18"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <textarea id="profile-wall-editor" rows="6" maxlength="280"
+          placeholder="Напиши короткий пост для своей визитки..."
+          class="mt-4 w-full rounded-xl border border-neutral-200 px-3 py-3 text-sm text-neutral-900 outline-none placeholder:text-neutral-400"></textarea>
+        <label for="profile-wall-comments-enabled" class="mt-4 inline-flex items-center gap-3 text-sm text-neutral-700">
+          <input id="profile-wall-comments-enabled" type="checkbox" checked
+            class="h-4 w-4 rounded border border-neutral-300 text-neutral-900 focus:ring-neutral-900">
+          <span>Разрешить комментарии</span>
+        </label>
+        <div class="mt-4 flex flex-wrap items-center justify-between gap-2">
+          <div class="flex flex-wrap items-center gap-2">
+            <button id="profile-wall-submit" type="button"
+              class="interactive-btn min-h-11 rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white">Опубликовать</button>
+            <button id="profile-wall-cancel" type="button"
+              class="interactive-btn hidden min-h-11 rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700">Отменить редактирование</button>
+          </div>
+          <button id="profile-wall-composer-close" type="button"
+            class="interactive-btn min-h-11 rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700">Закрыть</button>
+        </div>
       </div>
     </div>
   </div>
