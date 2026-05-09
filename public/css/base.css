@@ -30,6 +30,41 @@ body.modal-open {
   overflow: hidden;
 }
 
+.modal-panel {
+  position: relative;
+}
+
+.modal-panel--stacked-close {
+  padding-top: 4.25rem !important;
+}
+
+.modal-header-safe {
+  padding-right: 3.5rem;
+}
+
+.modal-close-corner {
+  position: absolute;
+  top: 1.25rem;
+  right: 1.25rem;
+  z-index: 5;
+  margin-left: 0 !important;
+}
+
+@media (max-width: 640px) {
+  .modal-panel--stacked-close {
+    padding-top: 4rem !important;
+  }
+
+  .modal-header-safe {
+    padding-right: 3.25rem;
+  }
+
+  .modal-close-corner {
+    top: 1rem;
+    right: 1rem;
+  }
+}
+
 .btn-shimmer {
   position: relative;
   overflow: hidden;
