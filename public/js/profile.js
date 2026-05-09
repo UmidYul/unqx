@@ -117,8 +117,20 @@
       "tape_collage",
       "orbit_dots",
     ];
+    const PROFILE_EMOJI_BACKGROUND_PACKS = [
+      "none",
+      "ghosts",
+      "stars",
+      "lightning",
+      "crowns",
+      "webs",
+      "hearts",
+    ];
     const PREMIUM_ONLY_THEMES = new Set(PROFILE_THEMES.filter((theme) => theme !== "default_dark"));
     const PREMIUM_ONLY_AVATAR_FRAMES = new Set(PROFILE_AVATAR_FRAMES.filter((frame) => frame !== "none"));
+    const PREMIUM_ONLY_EMOJI_BACKGROUND_PACKS = new Set(
+      PROFILE_EMOJI_BACKGROUND_PACKS.filter((pack) => pack !== "none"),
+    );
     const TELEGRAM_PAYMENT_USERNAME = String(root.getAttribute("data-telegram-bot-username") || "")
       .replace(/^@+/, "")
       .trim();
@@ -239,6 +251,14 @@
         : "none";
     };
 
+    const resolveEditableEmojiBackgroundPack = (pack) => {
+      const normalizedPack = String(pack || "").trim().toLowerCase();
+      const safePack = PROFILE_EMOJI_BACKGROUND_PACKS.includes(normalizedPack) ? normalizedPack : "none";
+      return getCurrentPlan() === "premium" || !PREMIUM_ONLY_EMOJI_BACKGROUND_PACKS.has(safePack)
+        ? safePack
+        : "none";
+    };
+
     const getSavedCardDraftState = () => {
       if (!s.user || getCurrentPlan() === "none") return null;
       const card = s.card || {};
@@ -254,6 +274,7 @@
         buttons: toComparableButtonStateList(card.buttons),
         theme: resolveEditableTheme(card.theme),
         avatarFrame: resolveEditableAvatarFrame(card.avatarFrame),
+        emojiBackgroundPack: resolveEditableEmojiBackgroundPack(card.emojiBackgroundPack),
         showBranding: card.showBranding !== false,
       };
     };
@@ -272,6 +293,7 @@
         buttons: toComparableButtonStateList(s.buttons),
         theme: resolveEditableTheme(s.theme),
         avatarFrame: resolveEditableAvatarFrame(s.avatarFrame),
+        emojiBackgroundPack: resolveEditableEmojiBackgroundPack(s.emojiBackgroundPack),
         showBranding: el.cBranding ? !el.cBranding.checked : true,
       };
     };
@@ -504,6 +526,9 @@ Email: ${userEmail}
       cThemes: $$(".profile-theme-btn"),
       cThemeLock: $("#profile-card-theme-lock-note"),
       cThemeWrap: $("#profile-card-theme-wrap"),
+      cEmojiPacks: $$(".profile-emoji-pack-btn"),
+      cEmojiPackLock: $("#profile-card-emoji-background-lock-note"),
+      cEmojiPackWrap: $("#profile-card-emoji-background-wrap"),
       cFrames: $$(".profile-avatar-frame-btn"),
       cFrameLock: $("#profile-card-frame-lock-note"),
       cFrameWrap: $("#profile-card-frame-wrap"),
@@ -2057,6 +2082,46 @@ Email: ${userEmail}
       });
     };
 
+    const renderEmojiBackgroundPack = () => {
+      const premium = getCurrentPlan() === "premium";
+      if (el.cEmojiPackLock) el.cEmojiPackLock.classList.toggle("hidden", premium);
+      if (el.cEmojiPackWrap) el.cEmojiPackWrap.classList.toggle("opacity-60", !premium);
+
+      el.cEmojiPacks.forEach((button) => {
+        const packId = button.getAttribute("data-emoji-background-pack") || "none";
+        const on = packId === s.emojiBackgroundPack;
+        const premiumOnly = PREMIUM_ONLY_EMOJI_BACKGROUND_PACKS.has(packId);
+        const locked = !premium && premiumOnly;
+        button.setAttribute("aria-pressed", on ? "true" : "false");
+        button.classList.toggle("selected", on);
+        button.classList.toggle("bg-neutral-900", on);
+        button.classList.toggle("text-white", on);
+        button.disabled = locked;
+
+        const swatchNode = button.querySelector("[data-emoji-pack-swatch]");
+        if (swatchNode instanceof HTMLElement) {
+          swatchNode.style.boxShadow = on
+            ? "0 0 0 2px rgba(255, 255, 255, 0.85), 0 0 0 4px rgba(17, 24, 39, 0.35)"
+            : "none";
+          swatchNode.style.transform = on ? "scale(1.06)" : "scale(1)";
+          swatchNode.style.transition = "transform 140ms ease, box-shadow 140ms ease";
+        }
+
+        const lockNode = button.querySelector("[data-emoji-pack-lock]");
+        if (lockNode instanceof HTMLElement) {
+          lockNode.classList.toggle("hidden", premium || !locked);
+          lockNode.classList.toggle("inline-flex", !premium && locked);
+          if (premium) {
+            lockNode.style.display = "none";
+          } else if (!premium && locked) {
+            lockNode.style.display = "flex";
+          } else {
+            lockNode.style.display = "";
+          }
+        }
+      });
+    };
+
     function buildPreviewCardData() {
       const avatarUrl = String(el.cAv?.getAttribute("src") || "").trim();
       const slugs = Array.isArray(s.slugs) ? s.slugs : [];
@@ -2070,6 +2135,10 @@ Email: ${userEmail}
         effectivePlan === "premium" && PROFILE_THEMES.includes(s.theme) ? s.theme : "default_dark";
       const effectiveAvatarFrame =
         effectivePlan === "premium" && PROFILE_AVATAR_FRAMES.includes(s.avatarFrame) ? s.avatarFrame : "none";
+      const effectiveEmojiBackgroundPack =
+        effectivePlan === "premium" && PROFILE_EMOJI_BACKGROUND_PACKS.includes(s.emojiBackgroundPack)
+          ? s.emojiBackgroundPack
+          : "none";
       return {
         card: {
           slug: primarySlug?.fullSlug || "UNQ",
@@ -2099,6 +2168,7 @@ Email: ${userEmail}
           tariff: effectivePlan,
           theme: effectiveTheme,
           avatarFrame: effectiveAvatarFrame,
+          emojiBackgroundPack: effectiveEmojiBackgroundPack,
           showBranding: el.cBranding ? !el.cBranding.checked : true,
           bio: String(el.cBio?.value || "").trim(),
         },
@@ -2111,6 +2181,7 @@ Email: ${userEmail}
       const { card, primarySlug } = buildPreviewCardData();
       el.cPrev.dataset.previewTheme = String(card.theme || "default_dark");
       el.cPrev.dataset.previewFrame = String(card.avatarFrame || "none");
+      el.cPrev.dataset.previewEmojiBackgroundPack = String(card.emojiBackgroundPack || "none");
       const slugLabel = primarySlug?.fullSlug || "[UNQ]";
       if (el.cPrevLabel) {
         el.cPrevLabel.textContent = `unqx.uz/${slugLabel}`;
@@ -2171,6 +2242,13 @@ Email: ${userEmail}
       if (plan !== "premium" && PREMIUM_ONLY_AVATAR_FRAMES.has(s.avatarFrame)) {
         s.avatarFrame = "none";
       }
+      const cardEmojiBackgroundPack = String(card.emojiBackgroundPack || "").trim().toLowerCase();
+      s.emojiBackgroundPack = PROFILE_EMOJI_BACKGROUND_PACKS.includes(cardEmojiBackgroundPack)
+        ? cardEmojiBackgroundPack
+        : "none";
+      if (plan !== "premium" && PREMIUM_ONLY_EMOJI_BACKGROUND_PACKS.has(s.emojiBackgroundPack)) {
+        s.emojiBackgroundPack = "none";
+      }
 
       if (el.cBioC) el.cBioC.textContent = `${el.cBio?.value.length || 0}/120`;
 
@@ -2178,6 +2256,7 @@ Email: ${userEmail}
       renderButtons();
       renderCardEditorCategory();
       renderTheme();
+      renderEmojiBackgroundPack();
       renderFrame();
       renderPreview();
       syncCardDraftState();
@@ -4261,6 +4340,7 @@ Email: ${userEmail}
             })),
             theme: s.theme,
             avatarFrame: s.avatarFrame || "none",
+            emojiBackgroundPack: s.emojiBackgroundPack || "none",
             showBranding: el.cBranding ? !el.cBranding.checked : true,
           }),
         });
@@ -5282,6 +5362,21 @@ Email: ${userEmail}
         }
         s.theme = PROFILE_THEMES.includes(selectedTheme) ? selectedTheme : "default_dark";
         renderTheme();
+        renderPreview();
+        saveDraft();
+      }),
+    );
+
+    el.cEmojiPacks.forEach((button) =>
+      button.addEventListener("click", () => {
+        const selectedPack = button.getAttribute("data-emoji-background-pack") || "none";
+        const premiumOnly = PREMIUM_ONLY_EMOJI_BACKGROUND_PACKS.has(selectedPack);
+        if (premiumOnly && getCurrentPlan() !== "premium") {
+          showModal("Доступно на Премиум", "Этот фоновый pack доступен только для Премиум тарифа.");
+          return;
+        }
+        s.emojiBackgroundPack = PROFILE_EMOJI_BACKGROUND_PACKS.includes(selectedPack) ? selectedPack : "none";
+        renderEmojiBackgroundPack();
         renderPreview();
         saveDraft();
       }),

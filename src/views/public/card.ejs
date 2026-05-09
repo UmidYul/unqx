@@ -11,6 +11,8 @@
   ]; const pageAvatarFrames = [
   "none", "chrome_ring", "neon_spray", "sticker_bubble", "chain_link", "pixel_glow", "starburst", "drip_outline",
   "tape_collage", "orbit_dots",
+  ]; const pageEmojiBackgroundPacks = [
+  "none", "ghosts", "stars", "lightning", "crowns", "webs", "hearts",
   ]; const
   isSupportedButtonHref=(value)=> /^(https?:\/\/|mailto:|tel:|card:)/i.test(String(value || "").trim());
   const parseCardDigits = (rawValue) => {
@@ -108,6 +110,12 @@
     typeof pageCardRaw.avatarFrame === "string" &&
     pageAvatarFrames.includes(pageCardRaw.avatarFrame)
     ? pageCardRaw.avatarFrame
+    : "none",
+    emojiBackgroundPack:
+    pageCardRaw.tariff === "premium" &&
+    typeof pageCardRaw.emojiBackgroundPack === "string" &&
+    pageEmojiBackgroundPacks.includes(pageCardRaw.emojiBackgroundPack)
+    ? pageCardRaw.emojiBackgroundPack
     : "none",
     customColor: /^#[0-9a-fA-F]{6}$/.test(String(pageCardRaw.customColor || "").trim())
     ? String(pageCardRaw.customColor || "").trim().toLowerCase()

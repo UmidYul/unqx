@@ -76,18 +76,20 @@ describe("slug page (:slug) templates", () => {
     expect(html).toContain('"primarySlug":"MIL222"');
   });
 
-  test("passes premium theme and avatar frame through card payload", async () => {
+  test("passes premium theme, emoji background, and avatar frame through card payload", async () => {
     const html = await renderView("card.ejs", {
       card: {
         slug: "ABC123",
         name: "Alex",
         tariff: "premium",
         theme: "graffiti_neon",
+        emojiBackgroundPack: "ghosts",
         avatarFrame: "orbit_dots",
         buttons: [],
       },
     });
     expect(html).toContain('"theme":"graffiti_neon"');
+    expect(html).toContain('"emojiBackgroundPack":"ghosts"');
     expect(html).toContain('"avatarFrame":"orbit_dots"');
     expect(html).toContain('data-card-theme="graffiti_neon"');
   });
@@ -174,6 +176,9 @@ describe("slug page (:slug) templates", () => {
     expect(source).toContain("graffiti_neon");
     expect(source).toContain("color_blue");
     expect(source).toContain("AVATAR_FRAME_KEYS");
+    expect(source).toContain("EMOJI_BACKGROUND_PACK_KEYS");
+    expect(source).toContain("renderEmojiBackgroundOverlay");
+    expect(source).toContain('data-emoji-background-pack');
     expect(source).toContain("renderAvatarFrame");
     expect(source).not.toContain("comic_boom");
   });

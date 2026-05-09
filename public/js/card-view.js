@@ -36,6 +36,15 @@
     "tape_collage",
     "orbit_dots",
   ];
+  const EMOJI_BACKGROUND_PACK_KEYS = [
+    "none",
+    "ghosts",
+    "stars",
+    "lightning",
+    "crowns",
+    "webs",
+    "hearts",
+  ];
 
   function hexToRgb(value) {
     const raw = String(value || "").trim();
@@ -689,6 +698,128 @@
     }),
   };
 
+  const EMOJI_BACKGROUND_SMALL_INSTANCES = [
+    { x: 18, y: 24, size: 24, opacity: 0.78 },
+    { x: 106, y: 18, size: 22, opacity: 0.68, rotate: -8 },
+    { x: 194, y: 28, size: 24, opacity: 0.72, rotate: 8 },
+    { x: 282, y: 22, size: 22, opacity: 0.7 },
+    { x: 52, y: 118, size: 24, opacity: 0.72 },
+    { x: 150, y: 106, size: 22, opacity: 0.64, rotate: -6 },
+    { x: 250, y: 124, size: 24, opacity: 0.7, rotate: 6 },
+    { x: 18, y: 224, size: 22, opacity: 0.72 },
+    { x: 114, y: 238, size: 24, opacity: 0.74 },
+    { x: 222, y: 220, size: 22, opacity: 0.64, rotate: -8 },
+    { x: 300, y: 236, size: 24, opacity: 0.74, rotate: 8 },
+    { x: 48, y: 348, size: 24, opacity: 0.66 },
+    { x: 164, y: 334, size: 22, opacity: 0.7, rotate: 6 },
+    { x: 270, y: 352, size: 24, opacity: 0.68 },
+    { x: 20, y: 474, size: 22, opacity: 0.74 },
+    { x: 120, y: 492, size: 24, opacity: 0.72 },
+    { x: 220, y: 468, size: 22, opacity: 0.64, rotate: -6 },
+    { x: 304, y: 490, size: 24, opacity: 0.72, rotate: 8 },
+  ];
+  const EMOJI_BACKGROUND_ACCENT_INSTANCES = [
+    { x: 74, y: 70, size: 36, opacity: 0.2, rotate: -10 },
+    { x: 238, y: 88, size: 34, opacity: 0.18, rotate: 9 },
+    { x: 158, y: 266, size: 34, opacity: 0.18 },
+    { x: 58, y: 418, size: 36, opacity: 0.18, rotate: 10 },
+    { x: 252, y: 432, size: 34, opacity: 0.16, rotate: -9 },
+  ];
+  const EMOJI_BACKGROUND_LARGE_INSTANCES = [
+    { x: 244, y: 142, size: 72, opacity: 0.16 },
+    { x: 22, y: 284, size: 64, opacity: 0.14, rotate: -8 },
+    { x: 202, y: 508, size: 68, opacity: 0.14, rotate: 8 },
+  ];
+  const EMOJI_BACKGROUND_BLOBS = [
+    { cx: 290, cy: 104, r: 98, opacity: 0.07 },
+    { cx: 52, cy: 366, r: 82, opacity: 0.05 },
+    { cx: 268, cy: 522, r: 76, opacity: 0.045 },
+  ];
+  const EMOJI_BACKGROUND_PACK_SYMBOLS = {
+    ghosts: `
+      <path fill="currentColor" d="M24 5.5c-8.7 0-15.5 6.8-15.5 15.6V40l5.3-4.1 4.2 4.1 5.1-4.7 4.8 4.7 4.4-4.1 5.3 4.1V21.1C39.5 12.3 32.7 5.5 24 5.5Zm-5.5 16a2.7 2.7 0 1 1 0-5.4 2.7 2.7 0 0 1 0 5.4Zm11 0a2.7 2.7 0 1 1 0-5.4 2.7 2.7 0 0 1 0 5.4Z"/>
+    `,
+    stars: `
+      <path fill="currentColor" d="m24 6.5 4.9 10.2 11.3 1.6-8.2 7.9 1.9 11.3L24 32.2l-9.9 5.3 1.9-11.3-8.2-7.9 11.3-1.6L24 6.5Z"/>
+      <circle cx="11" cy="11" r="2.2" fill="currentColor" opacity="0.72"/>
+      <circle cx="37" cy="15" r="1.8" fill="currentColor" opacity="0.58"/>
+    `,
+    lightning: `
+      <path fill="currentColor" d="M28 4 11 26.5h11.2L18 44l19-24.6H25.8L28 4Z"/>
+    `,
+    crowns: `
+      <path d="M8 34h32L36 15l-8 7-4-11-4 11-8-7-4 19Z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/>
+      <path d="M12 38h24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+      <circle cx="12" cy="14" r="2.1" fill="currentColor"/>
+      <circle cx="24" cy="9.5" r="2.1" fill="currentColor"/>
+      <circle cx="36" cy="14" r="2.1" fill="currentColor"/>
+    `,
+    webs: `
+      <circle cx="24" cy="24" r="16" fill="none" stroke="currentColor" stroke-width="2"/>
+      <circle cx="24" cy="24" r="8" fill="none" stroke="currentColor" stroke-width="1.8"/>
+      <path d="M24 8v32M8 24h32M13 13l22 22M35 13 13 35" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+    `,
+    hearts: `
+      <path fill="currentColor" d="M24 38 9 24.4C5.8 21.5 4 18.3 4 14.8 4 9.9 7.9 6 12.8 6c3.1 0 6 1.4 7.9 3.8C22.6 7.4 25.5 6 28.6 6 33.5 6 37.4 9.9 37.4 14.8c0 3.5-1.8 6.7-5 9.6L24 38Z"/>
+    `,
+  };
+
+  function renderEmojiBackgroundUses(symbolId, items) {
+    return (Array.isArray(items) ? items : [])
+      .map((item) => {
+        const x = Number(item?.x || 0);
+        const y = Number(item?.y || 0);
+        const size = Number(item?.size || 24);
+        const opacity = Number(item?.opacity || 1);
+        const rotate = Number(item?.rotate || 0);
+        const centerX = x + size / 2;
+        const centerY = y + size / 2;
+        const transform = rotate ? ` transform="rotate(${rotate} ${centerX} ${centerY})"` : "";
+        return `<use href="#${symbolId}" x="${x}" y="${y}" width="${size}" height="${size}" opacity="${opacity}"${transform}></use>`;
+      })
+      .join("");
+  }
+
+  function renderEmojiBackgroundOverlay(packKey) {
+    const normalizedKey = String(packKey || "").trim().toLowerCase();
+    if (!normalizedKey || normalizedKey === "none") {
+      return "";
+    }
+    const symbolMarkup = EMOJI_BACKGROUND_PACK_SYMBOLS[normalizedKey];
+    if (!symbolMarkup) {
+      return "";
+    }
+    const symbolId = `emoji-pack-${normalizedKey}-glyph`;
+    const glowFilterId = `emoji-pack-${normalizedKey}-glow`;
+    const blurFilterId = `emoji-pack-${normalizedKey}-blur`;
+    return `<svg class="unq-ref-overlay-svg unq-ref-overlay-svg--emoji-pack" viewBox="0 0 360 600" preserveAspectRatio="none" aria-hidden="true">
+      <defs>
+        <filter id="${glowFilterId}">
+          <feGaussianBlur stdDeviation="1.8"></feGaussianBlur>
+        </filter>
+        <filter id="${blurFilterId}">
+          <feGaussianBlur stdDeviation="3.4"></feGaussianBlur>
+        </filter>
+        <symbol id="${symbolId}" viewBox="0 0 48 48">
+          ${symbolMarkup}
+        </symbol>
+      </defs>
+      ${EMOJI_BACKGROUND_BLOBS.map(
+        (blob) =>
+          `<circle cx="${blob.cx}" cy="${blob.cy}" r="${blob.r}" fill="var(--theme-accent-color)" opacity="${blob.opacity}" filter="url(#${blurFilterId})"></circle>`,
+      ).join("")}
+      <g style="color:var(--theme-role-color)">
+        ${renderEmojiBackgroundUses(symbolId, EMOJI_BACKGROUND_SMALL_INSTANCES)}
+      </g>
+      <g style="color:var(--theme-accent-color)" filter="url(#${glowFilterId})">
+        ${renderEmojiBackgroundUses(symbolId, EMOJI_BACKGROUND_ACCENT_INSTANCES)}
+      </g>
+      <g style="color:var(--theme-role-color)" filter="url(#${blurFilterId})">
+        ${renderEmojiBackgroundUses(symbolId, EMOJI_BACKGROUND_LARGE_INSTANCES)}
+      </g>
+    </svg>`;
+  }
+
   function resolveTheme(themeKey) {
     const resolvedKey = themeKey === "royal_ivory" ? "sage_luxe" : themeKey;
     const key = typeof resolvedKey === "string" && THEME_KEYS.includes(resolvedKey) ? resolvedKey : "default_dark";
@@ -1291,6 +1422,10 @@
       avatarFrame: (() => {
         const rawFrame = String(card.avatarFrame || "").trim().toLowerCase();
         return AVATAR_FRAME_KEYS.includes(rawFrame) ? rawFrame : "none";
+      })(),
+      emojiBackgroundPack: (() => {
+        const rawPack = String(card.emojiBackgroundPack || "").trim().toLowerCase();
+        return EMOJI_BACKGROUND_PACK_KEYS.includes(rawPack) ? rawPack : "none";
       })(),
       customColor: normalizeHexColor(card.customColor),
       name,
@@ -2046,8 +2181,13 @@
         `
       : cardDetailsHtml;
 
+    const overlayHtml =
+      card.emojiBackgroundPack !== "none"
+        ? renderEmojiBackgroundOverlay(card.emojiBackgroundPack)
+        : renderThemeOverlay(theme.key);
+
     return `
-      <div data-card-view data-card-theme="${esc(theme.key)}" data-slug="${esc(card.slug)}" data-share-url="${esc(shareUrl)}"${rootStyle}>
+      <div data-card-view data-card-theme="${esc(theme.key)}" data-emoji-background-pack="${esc(card.emojiBackgroundPack)}" data-slug="${esc(card.slug)}" data-share-url="${esc(shareUrl)}"${rootStyle}>
         ${showPausedBanner ? `<div class="mb-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">${esc(pausedText)}</div>` : ""}
         <div class="unq-ref-top">
           <div class="unq-ref-slug-wrap">
@@ -2069,7 +2209,7 @@
           </div>
         </div>
         <div class="public-card-shell unq-ref-shell">
-          <div class="unq-ref-card-overlay">${renderThemeOverlay(theme.key)}</div>
+          <div class="unq-ref-card-overlay">${overlayHtml}</div>
           ${shellMetaHtml}
           ${officialUnqHtml}
           ${staffBadgeHtml}

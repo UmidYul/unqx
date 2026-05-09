@@ -70,13 +70,16 @@ describe("profile page", () => {
     expect(html).toContain('id="profile-card-name-error"');
   });
 
-  test("renders new theme groups and avatar frame picker", async () => {
+  test("renders new theme groups, emoji backgrounds, and avatar frame picker", async () => {
     const html = await renderProfileTemplate();
     expect(html).toContain("Signature Themes");
     expect(html).toContain("Color Presets");
+    expect(html).toContain("Фоновый emoji");
     expect(html).toContain("Рамка аватара");
     expect(html).toContain('data-theme="graffiti_neon"');
     expect(html).toContain('data-theme="color_blue"');
+    expect(html).toContain('data-emoji-background-pack="ghosts"');
+    expect(html).toContain('data-emoji-background-pack="hearts"');
     expect(html).toContain('data-avatar-frame="chrome_ring"');
     expect(html).toContain('data-avatar-frame="tape_collage"');
     expect(html).not.toContain('data-avatar-frame="comic_boom"');
@@ -132,10 +135,14 @@ describe("profile page", () => {
     expect(source).toContain('s.user?.login || s.user?.username');
     expect(source).toContain("s.user.telegramUsername");
     expect(source).toContain("PROFILE_AVATAR_FRAMES");
+    expect(source).toContain("PROFILE_EMOJI_BACKGROUND_PACKS");
     expect(source).toContain("avatarFrame: effectiveAvatarFrame");
+    expect(source).toContain("emojiBackgroundPack: effectiveEmojiBackgroundPack");
     expect(source).toContain('data-avatar-frame');
+    expect(source).toContain('data-emoji-background-pack');
     expect(source).toContain("normalizeCardEditorCategory");
     expect(source).toContain("renderCardEditorCategory");
+    expect(source).toContain("renderEmojiBackgroundPack");
     expect(source).toContain('data-card-editor-category');
     expect(source).toContain('data-card-editor-panel');
     expect(source).toContain("/api/profile/follows?type=");
@@ -161,7 +168,9 @@ describe("profile page", () => {
     expect(emojiRegex.test(source)).toBe(false);
     expect(source).toContain("commentsEnabled: req.body?.commentsEnabled");
     expect(source).toContain("normalizeAvatarFrameByPlan");
+    expect(source).toContain("normalizeEmojiBackgroundByPlan");
     expect(source).toContain("requestedAvatarFrame");
+    expect(source).toContain("requestedEmojiBackgroundPack");
     expect(source).toContain('"/follows"');
     expect(source).toContain('"/follows/notifications/read-all"');
   });

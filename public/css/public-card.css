@@ -1919,6 +1919,18 @@ body[data-card-theme] #card-view-root>[data-card-view] {
   mix-blend-mode: normal;
 }
 
+[data-card-view][data-emoji-background-pack]:not([data-emoji-background-pack="none"]) .unq-ref-overlay-svg {
+  opacity: 1;
+  display: block;
+  mix-blend-mode: normal;
+}
+
+[data-card-view][data-emoji-background-pack]:not([data-emoji-background-pack="none"]) .unq-ref-overlay-svg--emoji-pack {
+  opacity: 1;
+  display: block;
+  mix-blend-mode: normal;
+}
+
 .unq-ref-top-badge {
   width: fit-content;
   margin: 0 auto 12px;

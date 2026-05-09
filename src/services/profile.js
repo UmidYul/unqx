@@ -36,6 +36,16 @@ const PROFILE_AVATAR_FRAME_KEYS = [
   "orbit_dots",
 ];
 const PROFILE_AVATAR_FRAMES = new Set(PROFILE_AVATAR_FRAME_KEYS);
+const PROFILE_EMOJI_BACKGROUND_KEYS = [
+  "none",
+  "ghosts",
+  "stars",
+  "lightning",
+  "crowns",
+  "webs",
+  "hearts",
+];
+const PROFILE_EMOJI_BACKGROUNDS = new Set(PROFILE_EMOJI_BACKGROUND_KEYS);
 const PROFILE_TYPES = new Set(["person", "company"]);
 const BUTTON_TYPES = new Set([
   "phone",
@@ -121,6 +131,17 @@ function normalizeAvatarFrameByPlan(frame, effectivePlan) {
   }
   const normalized = String(frame || "").trim().toLowerCase() || "none";
   if (!PROFILE_AVATAR_FRAMES.has(normalized)) {
+    return "none";
+  }
+  return normalized;
+}
+
+function normalizeEmojiBackgroundByPlan(pack, effectivePlan) {
+  if (effectivePlan !== "premium") {
+    return "none";
+  }
+  const normalized = String(pack || "").trim().toLowerCase() || "none";
+  if (!PROFILE_EMOJI_BACKGROUNDS.has(normalized)) {
     return "none";
   }
   return normalized;
@@ -224,6 +245,8 @@ module.exports = {
   PROFILE_THEMES,
   PROFILE_AVATAR_FRAME_KEYS,
   PROFILE_AVATAR_FRAMES,
+  PROFILE_EMOJI_BACKGROUND_KEYS,
+  PROFILE_EMOJI_BACKGROUNDS,
   PROFILE_TYPES,
   BUTTON_TYPES,
   getEffectivePlan,
@@ -236,6 +259,7 @@ module.exports = {
   normalizeCardThemeKey,
   normalizeThemeByPlan,
   normalizeAvatarFrameByPlan,
+  normalizeEmojiBackgroundByPlan,
   normalizeColor,
   normalizeTags,
   normalizeButtons,

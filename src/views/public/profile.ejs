@@ -107,6 +107,64 @@
     { id: "tape_collage", label: "Tape Collage", description: "Коллаж из лент", premiumRequired: true },
     { id: "orbit_dots", label: "Orbit Dots", description: "Орбиты и точки", premiumRequired: true },
   ];
+  const emojiBackgroundPacks = [
+    {
+      id: "none",
+      label: "Без фона",
+      description: "Только текущая тема",
+      swatchStyle: "border-color:#d4d4d8;background:linear-gradient(145deg,#ffffff 0%,#f5f5f5 100%);",
+      glyphLabel: "OFF",
+      premiumRequired: false,
+    },
+    {
+      id: "ghosts",
+      label: "Ghosts",
+      description: "Мягкие силуэты",
+      swatchStyle: "border-color:#b7bdd1;background:linear-gradient(145deg,#1a1d27 0%,#2a3040 100%);",
+      glyphLabel: "GH",
+      premiumRequired: true,
+    },
+    {
+      id: "stars",
+      label: "Stars",
+      description: "Звёздная сетка",
+      swatchStyle: "border-color:#b9c3d4;background:linear-gradient(145deg,#181d28 0%,#2a3344 100%);",
+      glyphLabel: "ST",
+      premiumRequired: true,
+    },
+    {
+      id: "lightning",
+      label: "Lightning",
+      description: "Электрический узор",
+      swatchStyle: "border-color:#d9c58b;background:linear-gradient(145deg,#1b1a19 0%,#37312b 100%);",
+      glyphLabel: "LT",
+      premiumRequired: true,
+    },
+    {
+      id: "crowns",
+      label: "Crowns",
+      description: "Короны и prestige",
+      swatchStyle: "border-color:#c5b17c;background:linear-gradient(145deg,#211b13 0%,#3a2f1d 100%);",
+      glyphLabel: "CR",
+      premiumRequired: true,
+    },
+    {
+      id: "webs",
+      label: "Webs",
+      description: "Тонкие web-lines",
+      swatchStyle: "border-color:#bcbec6;background:linear-gradient(145deg,#17181d 0%,#2d3038 100%);",
+      glyphLabel: "WB",
+      premiumRequired: true,
+    },
+    {
+      id: "hearts",
+      label: "Hearts",
+      description: "Ритм и soft luxe",
+      swatchStyle: "border-color:#d4b0ba;background:linear-gradient(145deg,#24161b 0%,#4a2932 100%);",
+      glyphLabel: "HT",
+      premiumRequired: true,
+    },
+  ];
   const frameClassName = (value) => String(value || "").replace(/_/g, "-");
   const renderThemeButton = (item) => `
     <button type="button" data-theme="${item.id}" ${item.premiumRequired ? 'data-premium-required="1"' : ""}
@@ -135,6 +193,24 @@
           <span
             class="pointer-events-none absolute inset-0 hidden items-center justify-center rounded-full bg-black/35 text-[10px] text-white"
             data-frame-lock>🔒</span>
+        </span>
+        <span class="min-w-0 flex-1 text-left">
+          <span class="block font-semibold leading-tight">${item.label}</span>
+          <span class="block truncate text-[10px] text-neutral-500">${item.description}</span>
+        </span>
+      </span>
+    </button>
+  `;
+  const renderEmojiPackButton = (item) => `
+    <button type="button" data-emoji-background-pack="${item.id}" ${item.premiumRequired ? 'data-premium-required="1"' : ""}
+      class="profile-emoji-pack-btn profile-style-choice-btn rounded-lg border border-neutral-200 px-2 py-1.5 text-xs">
+      <span class="flex min-w-0 items-center gap-2">
+        <span class="relative inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md border"
+          style="${item.swatchStyle}" data-emoji-pack-swatch>
+          <span class="text-[8px] font-black uppercase tracking-[0.14em] text-white/92">${item.glyphLabel}</span>
+          <span
+            class="pointer-events-none absolute inset-0 hidden items-center justify-center rounded-md bg-black/35 text-[10px] text-white"
+            data-emoji-pack-lock>🔒</span>
         </span>
         <span class="min-w-0 flex-1 text-left">
           <span class="block font-semibold leading-tight">${item.label}</span>
@@ -484,6 +560,17 @@
                           </div>
                           <p id="profile-card-theme-lock-note" class="mt-1 hidden text-xs text-neutral-500">Доступно на Премиум
                           </p>
+                        </div>
+
+                        <div id="profile-card-emoji-background-wrap">
+                          <label
+                            class="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Фоновый emoji</label>
+                          <div id="profile-card-emoji-background-options" class="profile-style-choice-grid profile-style-choice-grid--compact">
+                            <% emojiBackgroundPacks.forEach((item) => { %>
+                              <%- renderEmojiPackButton(item) %>
+                            <% }) %>
+                          </div>
+                          <p id="profile-card-emoji-background-lock-note" class="mt-1 hidden text-xs text-neutral-500">Премиум нужен для фоновых pack-эффектов</p>
                         </div>
 
                         <div id="profile-card-frame-wrap">

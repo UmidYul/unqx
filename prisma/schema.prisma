@@ -418,6 +418,7 @@ model ProfileCard {
   theme        CardTheme @default(default_dark)
   customColor  String?   @map("custom_color") @db.VarChar(20)
   avatarFrame  String    @default("none") @map("avatar_frame") @db.VarChar(40)
+  emojiBackgroundPack String @default("none") @map("emoji_background_pack") @db.VarChar(40)
   showBranding Boolean   @default(true) @map("show_branding")
   createdAt    DateTime  @default(now()) @map("created_at")
   updatedAt    DateTime  @updatedAt @map("updated_at")

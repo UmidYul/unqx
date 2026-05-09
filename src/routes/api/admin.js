@@ -41,6 +41,7 @@ const { buildOrderPaymentDraft } = require("../../services/payment-flow");
 const {
   PROFILE_THEMES,
   PROFILE_AVATAR_FRAMES,
+  PROFILE_EMOJI_BACKGROUNDS,
   getEffectivePlan,
   getSlugLimit,
   getTagLimit,
@@ -48,6 +49,7 @@ const {
   canCreateCard,
   normalizeThemeByPlan,
   normalizeAvatarFrameByPlan,
+  normalizeEmojiBackgroundByPlan,
   normalizeColor,
   normalizeTags,
   normalizeButtons,
@@ -119,6 +121,7 @@ const PROFILE_CARD_BASE_COLUMNS = [
   "theme",
   "custom_color",
   "avatar_frame",
+  "emoji_background_pack",
   "show_branding",
 ];
 const CARD_THEME_ENUM_CACHE_TTL_MS = 5 * 60 * 1000;
@@ -257,6 +260,7 @@ function mapProfileCardRow(row) {
   const avatarUrl = row.avatarUrl ?? row.avatar_url ?? "";
   const customColor = row.customColor ?? row.custom_color ?? "";
   const avatarFrameRaw = row.avatarFrame ?? row.avatar_frame ?? "";
+  const emojiBackgroundPackRaw = row.emojiBackgroundPack ?? row.emoji_background_pack ?? "";
   const extraPhone = row.extraPhone ?? row.extra_phone ?? "";
   const createdAt = row.createdAt ?? row.created_at ?? null;
   const updatedAt = row.updatedAt ?? row.updated_at ?? null;
@@ -282,6 +286,10 @@ function mapProfileCardRow(row) {
     avatarFrame: (() => {
       const nextFrame = String(avatarFrameRaw || "").trim().toLowerCase();
       return PROFILE_AVATAR_FRAMES.has(nextFrame) ? nextFrame : "none";
+    })(),
+    emojiBackgroundPack: (() => {
+      const nextPack = String(emojiBackgroundPackRaw || "").trim().toLowerCase();
+      return PROFILE_EMOJI_BACKGROUNDS.has(nextPack) ? nextPack : "none";
     })(),
     showBranding: toBool(showBrandingRaw, true),
     createdAt,
@@ -314,6 +322,7 @@ function buildProfileCardColumnValues(input) {
     theme: input.theme,
     custom_color: input.customColor,
     avatar_frame: input.avatarFrame,
+    emoji_background_pack: input.emojiBackgroundPack,
     show_branding: Boolean(input.showBranding),
   };
 }
@@ -1251,6 +1260,12 @@ async function saveAdminCardCompatForOwner(ownerId, rawBody) {
     Object.prototype.hasOwnProperty.call(body, "avatarFrame") ? body.avatarFrame : currentCard?.avatarFrame,
     "premium",
   );
+  const emojiBackgroundPack = normalizeEmojiBackgroundByPlan(
+    Object.prototype.hasOwnProperty.call(body, "emojiBackgroundPack")
+      ? body.emojiBackgroundPack
+      : currentCard?.emojiBackgroundPack,
+    "premium",
+  );
   const showBranding = Object.prototype.hasOwnProperty.call(body, "showBranding")
     ? Boolean(body.showBranding)
     : currentCard?.showBranding !== false;
@@ -1287,6 +1302,7 @@ async function saveAdminCardCompatForOwner(ownerId, rawBody) {
       theme: themeForDatabase,
       customColor,
       avatarFrame,
+      emojiBackgroundPack,
       showBranding,
       avatarUrl: currentCard?.avatarUrl || null,
     });
@@ -5477,10 +5493,15 @@ router.put(
     const themeForDatabase = await normalizeCardThemeForDatabase(theme);
     const customColor = effective.plan === "premium" ? normalizeColor(body.customColor) : null;
     const hasAvatarFrameInput = Object.prototype.hasOwnProperty.call(body, "avatarFrame");
-    const currentCard = hasAvatarFrameInput ? null : await findProfileCardByOwnerId(user.id);
+    const hasEmojiBackgroundPackInput = Object.prototype.hasOwnProperty.call(body, "emojiBackgroundPack");
+    const currentCard =
+      hasAvatarFrameInput && hasEmojiBackgroundPackInput ? null : await findProfileCardByOwnerId(user.id);
     const avatarFrame = hasAvatarFrameInput
       ? normalizeAvatarFrameByPlan(body.avatarFrame, effective.plan)
       : normalizeAvatarFrameByPlan(currentCard?.avatarFrame, effective.plan);
+    const emojiBackgroundPack = hasEmojiBackgroundPackInput
+      ? normalizeEmojiBackgroundByPlan(body.emojiBackgroundPack, effective.plan)
+      : normalizeEmojiBackgroundByPlan(currentCard?.emojiBackgroundPack, effective.plan);
     const showBranding = effective.plan === "premium" ? Boolean(body.showBranding) : true;
 
     if (effective.plan !== "premium") {
@@ -5491,6 +5512,11 @@ router.put(
       }
       const requestedAvatarFrame = String(body.avatarFrame || "").trim().toLowerCase();
       if (requestedAvatarFrame && requestedAvatarFrame !== "none") {
+        res.status(403).json({ error: "Upgrade required", code: "UPGRADE_REQUIRED" });
+        return;
+      }
+      const requestedEmojiBackgroundPack = String(body.emojiBackgroundPack || "").trim().toLowerCase();
+      if (requestedEmojiBackgroundPack && requestedEmojiBackgroundPack !== "none") {
         res.status(403).json({ error: "Upgrade required", code: "UPGRADE_REQUIRED" });
         return;
       }
@@ -5519,6 +5545,7 @@ router.put(
           theme: themeForDatabase,
           customColor,
           avatarFrame,
+          emojiBackgroundPack,
           showBranding,
         });
         await patchOptionalProfileCardFields(tx, user.id, {

@@ -6,7 +6,12 @@ const { prisma } = require("../../db/prisma");
 const { env } = require("../../config/env");
 const { asyncHandler } = require("../../middleware/async");
 const { getAdminSession, requireVerifiedUserPage, getUserSession, logoutUserSession } = require("../../middleware/auth");
-const { getEffectivePlan, PROFILE_THEMES, PROFILE_AVATAR_FRAMES } = require("../../services/profile");
+const {
+  getEffectivePlan,
+  PROFILE_THEMES,
+  PROFILE_AVATAR_FRAMES,
+  PROFILE_EMOJI_BACKGROUNDS,
+} = require("../../services/profile");
 const { absoluteUrl } = require("../../utils/url");
 const { buildLeaderboard, normalizePeriod, normalizeLeaderboardType, getSlugTopBadge, getUserLeaderboardSummary } = require("../../services/leaderboard");
 const { getFeatureSetting } = require("../../services/feature-settings");
@@ -553,6 +558,7 @@ async function findProfileCardByOwnerId(ownerId) {
       theme,
       custom_color AS "customColor",
       avatar_frame AS "avatarFrame",
+      emoji_background_pack AS "emojiBackgroundPack",
       show_branding AS "showBranding",
       created_at AS "createdAt",
       updated_at AS "updatedAt"
@@ -810,6 +816,10 @@ function buildPublicCardFromProfile({ slug, user, profileCard, verifiedIdentity,
       const nextFrame = String(profileCard?.avatarFrame || "").trim().toLowerCase();
       return PROFILE_AVATAR_FRAMES.has(nextFrame) ? nextFrame : "none";
     })(),
+    emojiBackgroundPack: (() => {
+      const nextPack = String(profileCard?.emojiBackgroundPack || "").trim().toLowerCase();
+      return PROFILE_EMOJI_BACKGROUNDS.has(nextPack) ? nextPack : "none";
+    })(),
     phone: "",
     tags: mapProfileTags(profileCard.tags),
     buttons: mapProfileButtons(profileCard.buttons),
@@ -903,6 +913,10 @@ function mapPublicPaymentCardRow(row) {
     avatarFrame: (() => {
       const nextFrame = String(row.profile_avatar_frame || "").trim().toLowerCase();
       return PROFILE_AVATAR_FRAMES.has(nextFrame) ? nextFrame : "none";
+    })(),
+    emojiBackgroundPack: (() => {
+      const nextPack = String(row.profile_emoji_background_pack || "").trim().toLowerCase();
+      return PROFILE_EMOJI_BACKGROUNDS.has(nextPack) ? nextPack : "none";
     })(),
   };
   return {
@@ -1855,7 +1869,8 @@ router.get(
             pr.tags AS profile_tags_json,
             pr.theme AS profile_theme,
             pr.custom_color AS profile_custom_color,
-            pr.avatar_frame AS profile_avatar_frame
+            pr.avatar_frame AS profile_avatar_frame,
+            pr.emoji_background_pack AS profile_emoji_background_pack
           FROM payment_cards pc
           JOIN users u ON u.id = pc.owner_id
           LEFT JOIN profile_cards pr ON pr.owner_id = u.id
