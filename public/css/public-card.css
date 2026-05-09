@@ -4731,6 +4731,11 @@ body[data-card-theme] main.private-card-screen {
 }
 
 [data-page="public-home"] .home-weekly-card {
+  --weekly-accent: #171717;
+  --weekly-soft: rgba(23, 23, 23, 0.06);
+  --weekly-line: rgba(23, 23, 23, 0.14);
+  --weekly-line-soft: rgba(23, 23, 23, 0.1);
+  --weekly-badge-bg: rgba(250, 250, 250, 0.94);
   position: relative;
   isolation: isolate;
   display: block;
@@ -4751,7 +4756,7 @@ body[data-card-theme] main.private-card-screen {
   inset: 0 auto auto 0;
   width: 100%;
   height: 4px;
-  background: linear-gradient(90deg, var(--weekly-accent, #6366f1), transparent 72%);
+  background: linear-gradient(90deg, rgba(23, 23, 23, 0.9), rgba(23, 23, 23, 0.16) 58%, transparent 82%);
   opacity: 0.95;
 }
 
@@ -4972,7 +4977,7 @@ body[data-card-theme] main.private-card-screen {
   border-radius: 999px;
   border: 1px solid var(--weekly-line-soft, #e5e7eb);
   background: #ffffff;
-  color: var(--weekly-accent, #6366f1);
+  color: #171717;
   box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
 }
 
@@ -4983,27 +4988,21 @@ body[data-card-theme] main.private-card-screen {
 }
 
 [data-page="public-home"] .home-weekly-card--rank-1 {
-  --weekly-accent: #6366f1;
-  --weekly-soft: rgba(99, 102, 241, 0.12);
-  --weekly-line: rgba(99, 102, 241, 0.26);
-  --weekly-line-soft: rgba(99, 102, 241, 0.16);
-  --weekly-badge-bg: rgba(239, 242, 255, 0.9);
+  --weekly-soft: rgba(23, 23, 23, 0.08);
+  --weekly-line: rgba(23, 23, 23, 0.18);
+  --weekly-line-soft: rgba(23, 23, 23, 0.12);
 }
 
 [data-page="public-home"] .home-weekly-card--rank-2 {
-  --weekly-accent: #10b981;
-  --weekly-soft: rgba(16, 185, 129, 0.12);
-  --weekly-line: rgba(16, 185, 129, 0.26);
-  --weekly-line-soft: rgba(16, 185, 129, 0.16);
-  --weekly-badge-bg: rgba(236, 253, 245, 0.9);
+  --weekly-soft: rgba(23, 23, 23, 0.06);
+  --weekly-line: rgba(23, 23, 23, 0.14);
+  --weekly-line-soft: rgba(23, 23, 23, 0.1);
 }
 
 [data-page="public-home"] .home-weekly-card--rank-3 {
-  --weekly-accent: #f97316;
-  --weekly-soft: rgba(249, 115, 22, 0.12);
-  --weekly-line: rgba(249, 115, 22, 0.24);
-  --weekly-line-soft: rgba(249, 115, 22, 0.14);
-  --weekly-badge-bg: rgba(255, 247, 237, 0.92);
+  --weekly-soft: rgba(23, 23, 23, 0.045);
+  --weekly-line: rgba(23, 23, 23, 0.12);
+  --weekly-line-soft: rgba(23, 23, 23, 0.08);
 }
 
 @media (max-width: 420px) {
