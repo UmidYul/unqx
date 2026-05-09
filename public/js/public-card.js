@@ -90,6 +90,14 @@
   liveRegion.style.border = "0";
   document.body.appendChild(liveRegion);
 
+  const followDialogPortal = document.createElement("div");
+  followDialogPortal.setAttribute("data-follow-dialog-portal", "");
+  document.body.appendChild(followDialogPortal);
+
+  let followDialogScrollTop = 0;
+  let followDialogLastFocused = null;
+  let followDialogWasOpen = false;
+
   function getCsrfToken() {
     return csrfMeta instanceof HTMLMetaElement ? String(csrfMeta.getAttribute("content") || "") : "";
   }
@@ -221,6 +229,41 @@
 
   function syncFollowDialogBodyLock() {
     document.body.classList.toggle("modal-open", Boolean(state.followDialog?.open));
+  }
+
+  function syncFollowDialogPortal(root) {
+    const currentDialogBody = followDialogPortal.querySelector(".unq-follow-dialog-body");
+    if (currentDialogBody instanceof HTMLElement) {
+      followDialogScrollTop = currentDialogBody.scrollTop;
+    }
+
+    const nextDialog = root instanceof HTMLElement ? root.querySelector("[data-follows-dialog]") : null;
+    if (!(nextDialog instanceof HTMLElement)) {
+      followDialogPortal.replaceChildren();
+      followDialogWasOpen = false;
+      return;
+    }
+
+    const shouldFocusDialog = Boolean(state.followDialog?.open) && !followDialogWasOpen;
+    followDialogPortal.replaceChildren(nextDialog);
+
+    const nextDialogBody = followDialogPortal.querySelector(".unq-follow-dialog-body");
+    if (nextDialogBody instanceof HTMLElement) {
+      nextDialogBody.scrollTop = followDialogScrollTop;
+    }
+
+    followDialogWasOpen = Boolean(state.followDialog?.open);
+
+    if (!shouldFocusDialog) {
+      return;
+    }
+
+    const nextDialogCard = followDialogPortal.querySelector(".unq-follow-dialog-card");
+    if (nextDialogCard instanceof HTMLElement) {
+      window.requestAnimationFrame(() => {
+        nextDialogCard.focus({ preventScroll: true });
+      });
+    }
   }
 
   function mergeWallItems(currentItems, nextItems) {
@@ -377,6 +420,7 @@
       followBusySlugs: Array.from(state.followBusySlugs || []),
       wall: buildWallOptions(),
     });
+    syncFollowDialogPortal(root);
     syncFollowDialogBodyLock();
     syncAvatarFallback(root);
     scrollToWallHashTarget();
@@ -664,6 +708,8 @@
   }
 
   function openFollowDialog(type) {
+    followDialogLastFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    followDialogScrollTop = 0;
     state.followDialog = {
       ...state.followDialog,
       open: true,
@@ -674,13 +720,21 @@
   }
 
   function closeFollowDialog() {
+    const focusTarget = followDialogLastFocused;
     state.followDialog = {
       ...state.followDialog,
       open: false,
       loading: false,
       error: "",
     };
+    followDialogLastFocused = null;
+    followDialogScrollTop = 0;
     renderCard();
+    if (focusTarget instanceof HTMLElement) {
+      window.requestAnimationFrame(() => {
+        focusTarget.focus();
+      });
+    }
   }
 
   async function requestJson(url, options = {}, allowRetry = true) {
@@ -1104,7 +1158,7 @@
     }
   });
 
-  host.addEventListener("click", async (event) => {
+  const handleCardClick = async (event) => {
     const target = event.target instanceof Element ? event.target : null;
     if (!target) {
       return;
@@ -1318,7 +1372,10 @@
         keepalive: true,
       });
     }
-  });
+  };
+
+  host.addEventListener("click", handleCardClick);
+  followDialogPortal.addEventListener("click", handleCardClick);
 
   window.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && state.followDialog?.open) {

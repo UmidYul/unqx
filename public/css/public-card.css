@@ -698,6 +698,11 @@
   align-items: center;
   justify-content: center;
   padding: 20px;
+  padding:
+    max(20px, env(safe-area-inset-top))
+    max(20px, env(safe-area-inset-right))
+    max(20px, env(safe-area-inset-bottom))
+    max(20px, env(safe-area-inset-left));
   overflow-y: auto;
   overscroll-behavior: contain;
 }
@@ -710,16 +715,16 @@
   position: absolute;
   inset: 0;
   border: 0;
-  background: rgba(9, 9, 11, 0.68);
-  backdrop-filter: blur(5px);
+  background: rgba(9, 9, 11, 0.58);
   cursor: pointer;
 }
 
 .unq-follow-dialog-card {
   position: relative;
   z-index: 1;
-  width: min(92vw, 640px);
+  width: min(100%, 640px);
   max-height: min(82vh, 760px);
+  max-height: min(760px, calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 40px));
   margin: auto;
   min-height: 0;
   display: grid;
@@ -832,6 +837,7 @@
 .unq-follow-dialog-meta {
   font-size: 12px;
   color: var(--theme-role-color, #64748b);
+  overflow-wrap: anywhere;
 }
 
 .unq-follow-dialog-badge {
@@ -3480,27 +3486,31 @@ body[data-card-theme] #card-view-root>[data-card-view] {
   }
 
   .unq-ref-slug-wrap {
-    align-items: flex-start;
-    flex-wrap: wrap;
-    gap: 6px 8px;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 6px;
   }
 
   .unq-ref-slugs {
     display: flex;
     flex: 1 1 auto;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 6px;
     max-width: 100%;
-    overflow: visible;
-    padding-bottom: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 2px;
   }
 
   .unq-ref-slug-chip {
+    flex: 0 0 auto;
     font-size: 11px;
     padding: 2px 7px;
   }
 
   .unq-ref-slug-price {
+    flex: 0 0 auto;
+    white-space: nowrap;
     font-size: 10px;
     padding: 2px 7px;
   }
@@ -4746,15 +4756,20 @@ body[data-card-theme] main.private-card-screen {
   }
 
   .unq-follow-dialog-card {
-    width: calc(100vw - 20px);
-    max-height: calc(100vh - 24px);
-    margin-top: 0;
+    width: 100%;
+    max-height: calc(100vh - 16px);
+    max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 16px);
     border-radius: 24px;
   }
 
   .unq-follow-dialog {
-    align-items: flex-start;
-    padding: 12px 10px 20px;
+    align-items: center;
+    padding: 8px 8px 12px;
+    padding:
+      max(8px, env(safe-area-inset-top))
+      max(8px, env(safe-area-inset-right))
+      max(12px, env(safe-area-inset-bottom))
+      max(8px, env(safe-area-inset-left));
   }
 
   .unq-follow-dialog-head,
@@ -4765,7 +4780,7 @@ body[data-card-theme] main.private-card-screen {
   }
 
   .unq-follow-dialog-item {
-    align-items: flex-start;
+    align-items: stretch;
     flex-direction: column;
   }
 

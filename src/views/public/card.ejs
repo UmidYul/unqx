@@ -292,7 +292,7 @@
     trackViaPageRequest: true,
   }) %></script>
       <script nonce="<%= cspNonce %>" src="/js/card-view.js?v=<%= encodeURIComponent(assetVersion || '') %>"></script>
-      <script nonce="<%= cspNonce %>" src="/js/public-card.js"></script>
+      <script nonce="<%= cspNonce %>" src="/js/public-card.js?v=<%= encodeURIComponent(assetVersion || '') %>"></script>
       <script nonce="<%= cspNonce %>" src="/js/public-private-access-session.js"></script>
     </body>
 

@@ -2395,7 +2395,7 @@
         </div>
         <div class="unq-follow-dialog${followDialog.open ? " is-open" : ""}" data-follows-dialog ${followDialog.open ? "" : "hidden"}>
           <button type="button" class="unq-follow-dialog-backdrop" data-follow-close aria-label="Закрыть список"></button>
-          <div class="unq-follow-dialog-card" role="dialog" aria-modal="true" aria-label="${esc(followDialog.title)}">
+          <div class="unq-follow-dialog-card" role="dialog" aria-modal="true" aria-label="${esc(followDialog.title)}" tabindex="-1">
             <div class="unq-follow-dialog-head">
               <div>
                 <p class="unq-follow-dialog-kicker">UNQX</p>
