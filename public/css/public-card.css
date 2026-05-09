@@ -698,6 +698,8 @@
   align-items: center;
   justify-content: center;
   padding: 20px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .unq-follow-dialog[hidden] {
@@ -718,6 +720,8 @@
   z-index: 1;
   width: min(92vw, 640px);
   max-height: min(82vh, 760px);
+  margin: auto;
+  min-height: 0;
   display: grid;
   grid-template-rows: auto auto minmax(0, 1fr) auto;
   overflow: hidden;
@@ -782,7 +786,10 @@
 }
 
 .unq-follow-dialog-body {
-  overflow: auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   padding: 8px 22px 22px;
 }
 
@@ -2064,6 +2071,7 @@ body[data-card-theme] #card-view-root>[data-card-view] {
   z-index: 0;
   display: block;
   pointer-events: none;
+  background: transparent;
 }
 
 .unq-ref-profile-emoji-pack-svg {
@@ -2071,6 +2079,7 @@ body[data-card-theme] #card-view-root>[data-card-view] {
   height: 100%;
   display: block;
   overflow: visible;
+  background: transparent;
 }
 
 .unq-ref-avatar-wrap,
@@ -4741,6 +4750,11 @@ body[data-card-theme] main.private-card-screen {
     max-height: calc(100vh - 24px);
     margin-top: 0;
     border-radius: 24px;
+  }
+
+  .unq-follow-dialog {
+    align-items: flex-start;
+    padding: 12px 10px 20px;
   }
 
   .unq-follow-dialog-head,

@@ -969,7 +969,6 @@
           <g style="color:var(--theme-role-color)" filter="url(#${blurFilterId})">
             ${renderEmojiBackgroundUses(symbolId, scene.large)}
           </g>
-          <rect x="0" y="0" width="320" height="220" fill="var(--theme-card-bg)" opacity="0.04"></rect>
         </g>
       </svg>
     </span>`;
