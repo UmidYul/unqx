@@ -699,41 +699,30 @@
   };
 
   const EMOJI_BACKGROUND_SMALL_INSTANCES = [
-    { x: 18, y: 24, size: 24, opacity: 0.78 },
-    { x: 106, y: 18, size: 22, opacity: 0.68, rotate: -8 },
-    { x: 194, y: 28, size: 24, opacity: 0.72, rotate: 8 },
-    { x: 282, y: 22, size: 22, opacity: 0.7 },
-    { x: 52, y: 118, size: 24, opacity: 0.72 },
-    { x: 150, y: 106, size: 22, opacity: 0.64, rotate: -6 },
-    { x: 250, y: 124, size: 24, opacity: 0.7, rotate: 6 },
-    { x: 18, y: 224, size: 22, opacity: 0.72 },
-    { x: 114, y: 238, size: 24, opacity: 0.74 },
-    { x: 222, y: 220, size: 22, opacity: 0.64, rotate: -8 },
-    { x: 300, y: 236, size: 24, opacity: 0.74, rotate: 8 },
-    { x: 48, y: 348, size: 24, opacity: 0.66 },
-    { x: 164, y: 334, size: 22, opacity: 0.7, rotate: 6 },
-    { x: 270, y: 352, size: 24, opacity: 0.68 },
-    { x: 20, y: 474, size: 22, opacity: 0.74 },
-    { x: 120, y: 492, size: 24, opacity: 0.72 },
-    { x: 220, y: 468, size: 22, opacity: 0.64, rotate: -6 },
-    { x: 304, y: 490, size: 24, opacity: 0.72, rotate: 8 },
+    { x: 14, y: 18, size: 16, opacity: 0.72, rotate: -10 },
+    { x: 78, y: 8, size: 15, opacity: 0.68 },
+    { x: 144, y: 18, size: 16, opacity: 0.72, rotate: 10 },
+    { x: 4, y: 74, size: 15, opacity: 0.66, rotate: -6 },
+    { x: 160, y: 78, size: 15, opacity: 0.66, rotate: 8 },
+    { x: 18, y: 138, size: 16, opacity: 0.7, rotate: -8 },
+    { x: 82, y: 156, size: 15, opacity: 0.68 },
+    { x: 142, y: 138, size: 16, opacity: 0.7, rotate: 8 },
   ];
   const EMOJI_BACKGROUND_ACCENT_INSTANCES = [
-    { x: 74, y: 70, size: 36, opacity: 0.2, rotate: -10 },
-    { x: 238, y: 88, size: 34, opacity: 0.18, rotate: 9 },
-    { x: 158, y: 266, size: 34, opacity: 0.18 },
-    { x: 58, y: 418, size: 36, opacity: 0.18, rotate: 10 },
-    { x: 252, y: 432, size: 34, opacity: 0.16, rotate: -9 },
+    { x: 30, y: 42, size: 22, opacity: 0.22, rotate: -10 },
+    { x: 126, y: 38, size: 22, opacity: 0.2, rotate: 10 },
+    { x: 30, y: 118, size: 22, opacity: 0.2, rotate: 10 },
+    { x: 128, y: 120, size: 22, opacity: 0.18, rotate: -10 },
   ];
   const EMOJI_BACKGROUND_LARGE_INSTANCES = [
-    { x: 244, y: 142, size: 72, opacity: 0.16 },
-    { x: 22, y: 284, size: 64, opacity: 0.14, rotate: -8 },
-    { x: 202, y: 508, size: 68, opacity: 0.14, rotate: 8 },
+    { x: 8, y: 104, size: 30, opacity: 0.1, rotate: -6 },
+    { x: 142, y: 102, size: 30, opacity: 0.1, rotate: 8 },
   ];
   const EMOJI_BACKGROUND_BLOBS = [
-    { cx: 290, cy: 104, r: 98, opacity: 0.07 },
-    { cx: 52, cy: 366, r: 82, opacity: 0.05 },
-    { cx: 268, cy: 522, r: 76, opacity: 0.045 },
+    { cx: 42, cy: 48, r: 18, opacity: 0.08 },
+    { cx: 138, cy: 44, r: 16, opacity: 0.07 },
+    { cx: 38, cy: 136, r: 17, opacity: 0.06 },
+    { cx: 142, cy: 134, r: 18, opacity: 0.06 },
   ];
   const EMOJI_BACKGROUND_PACK_SYMBOLS = {
     ghosts: `
@@ -792,32 +781,36 @@
     const symbolId = `emoji-pack-${normalizedKey}-glyph`;
     const glowFilterId = `emoji-pack-${normalizedKey}-glow`;
     const blurFilterId = `emoji-pack-${normalizedKey}-blur`;
-    return `<svg class="unq-ref-overlay-svg unq-ref-overlay-svg--emoji-pack" viewBox="0 0 360 600" preserveAspectRatio="none" aria-hidden="true">
-      <defs>
-        <filter id="${glowFilterId}">
-          <feGaussianBlur stdDeviation="1.8"></feGaussianBlur>
-        </filter>
-        <filter id="${blurFilterId}">
-          <feGaussianBlur stdDeviation="3.4"></feGaussianBlur>
-        </filter>
-        <symbol id="${symbolId}" viewBox="0 0 48 48">
-          ${symbolMarkup}
-        </symbol>
-      </defs>
-      ${EMOJI_BACKGROUND_BLOBS.map(
-        (blob) =>
-          `<circle cx="${blob.cx}" cy="${blob.cy}" r="${blob.r}" fill="var(--theme-accent-color)" opacity="${blob.opacity}" filter="url(#${blurFilterId})"></circle>`,
-      ).join("")}
-      <g style="color:var(--theme-role-color)">
-        ${renderEmojiBackgroundUses(symbolId, EMOJI_BACKGROUND_SMALL_INSTANCES)}
-      </g>
-      <g style="color:var(--theme-accent-color)" filter="url(#${glowFilterId})">
-        ${renderEmojiBackgroundUses(symbolId, EMOJI_BACKGROUND_ACCENT_INSTANCES)}
-      </g>
-      <g style="color:var(--theme-role-color)" filter="url(#${blurFilterId})">
-        ${renderEmojiBackgroundUses(symbolId, EMOJI_BACKGROUND_LARGE_INSTANCES)}
-      </g>
-    </svg>`;
+    return `<span class="unq-ref-avatar-emoji-pack unq-ref-avatar-emoji-pack--${esc(normalizedKey)}" aria-hidden="true">
+      <svg class="unq-ref-avatar-emoji-pack-svg" viewBox="0 0 180 180" preserveAspectRatio="xMidYMid meet">
+        <defs>
+          <filter id="${glowFilterId}">
+            <feGaussianBlur stdDeviation="1.5"></feGaussianBlur>
+          </filter>
+          <filter id="${blurFilterId}">
+            <feGaussianBlur stdDeviation="3"></feGaussianBlur>
+          </filter>
+          <symbol id="${symbolId}" viewBox="0 0 48 48">
+            ${symbolMarkup}
+          </symbol>
+        </defs>
+        ${EMOJI_BACKGROUND_BLOBS.map(
+          (blob) =>
+            `<circle cx="${blob.cx}" cy="${blob.cy}" r="${blob.r}" fill="var(--theme-accent-color)" opacity="${blob.opacity}" filter="url(#${blurFilterId})"></circle>`,
+        ).join("")}
+        <circle cx="90" cy="90" r="72" fill="none" stroke="var(--theme-accent-color)" stroke-width="1.4" opacity="0.16"></circle>
+        <circle cx="90" cy="90" r="62" fill="none" stroke="var(--theme-role-color)" stroke-width="1" opacity="0.12"></circle>
+        <g style="color:var(--theme-role-color)">
+          ${renderEmojiBackgroundUses(symbolId, EMOJI_BACKGROUND_SMALL_INSTANCES)}
+        </g>
+        <g style="color:var(--theme-accent-color)" filter="url(#${glowFilterId})">
+          ${renderEmojiBackgroundUses(symbolId, EMOJI_BACKGROUND_ACCENT_INSTANCES)}
+        </g>
+        <g style="color:var(--theme-role-color)" filter="url(#${blurFilterId})">
+          ${renderEmojiBackgroundUses(symbolId, EMOJI_BACKGROUND_LARGE_INSTANCES)}
+        </g>
+      </svg>
+    </span>`;
   }
 
   function resolveTheme(themeKey) {
@@ -2181,10 +2174,7 @@
         `
       : cardDetailsHtml;
 
-    const overlayHtml =
-      card.emojiBackgroundPack !== "none"
-        ? renderEmojiBackgroundOverlay(card.emojiBackgroundPack)
-        : renderThemeOverlay(theme.key);
+    const overlayHtml = renderThemeOverlay(theme.key);
 
     return `
       <div data-card-view data-card-theme="${esc(theme.key)}" data-emoji-background-pack="${esc(card.emojiBackgroundPack)}" data-slug="${esc(card.slug)}" data-share-url="${esc(shareUrl)}"${rootStyle}>
@@ -2222,6 +2212,7 @@
       }
           <div class="unq-ref-profile">
             <div class="unq-ref-avatar-wrap">
+              ${renderEmojiBackgroundOverlay(card.emojiBackgroundPack)}
               ${card.avatarUrl ? `<img src="${esc(card.avatarUrl)}" alt="${esc(card.name)}" class="unq-ref-avatar-img" data-avatar-image />` : ""}
               <div class="unq-ref-avatar-fallback ${card.avatarUrl ? "hidden" : ""}" data-avatar-fallback aria-hidden="${card.avatarUrl ? "true" : "false"}" ${card.avatarUrl ? "hidden" : ""} style="${card.avatarUrl ? "display:none;" : ""}">${esc(card.initials)}</div>
               ${renderAvatarFrame(card.avatarFrame, theme.key)}
