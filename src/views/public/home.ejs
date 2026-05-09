@@ -84,12 +84,6 @@
   const latestSlackCards = latestSlackCardsSource.filter((item) => item && typeof item === "object").slice(0, 3);
   const latestPublishedPostsList = Array.isArray(latestPublishedPosts) ? latestPublishedPosts.slice(0, 3) : [];
 
-  const steps = [
-  { title: "Выбери UNQ", description: "Найди свой уникальный адрес" },
-  { title: "Заполни карточку", description: "Фото, контакты, ссылки за 2 минуты" },
-  { title: "Делись везде", description: "QR, ссылка, NFC - где угодно" },
-  ];
-
   const wristbandFeatures = braceletFeaturesFromSettings || [
   "Тап по стикеру - моментально открывается unqx.uz/UNQ",
   "Работает с любым смартфоном - iOS и Android",
@@ -710,51 +704,6 @@
                             <% }) %>
                         </div>
                         <% } %>
-                  </div>
-                </section>
-
-                <section class="px-6 py-24" data-observe-reveal>
-                  <div class="mx-auto max-w-6xl">
-                    <h2 class="mb-16 text-2xl font-bold tracking-tight text-neutral-900">Как это работает</h2>
-
-                    <div class="grid gap-6 md:grid-cols-3">
-                      <% steps.forEach((step, index)=> { %>
-                        <div
-                          class="interactive-card flex flex-col gap-4 rounded-2xl border border-neutral-200 bg-white p-8">
-                          <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-neutral-100">
-                            <% if (index===0) { %>
-                              <svg class="icon-stroke h-4 w-4 text-neutral-900" viewBox="0 0 24 24" aria-hidden="true">
-                                <path d="M10 13a5 5 0 0 1 0-7l1.5-1.5a5 5 0 0 1 7 7L17 13"></path>
-                                <path d="M14 11a5 5 0 0 1 0 7L12.5 19.5a5 5 0 0 1-7-7L7 11"></path>
-                              </svg>
-                              <% } else if (index===1) { %>
-                                <svg class="icon-stroke h-4 w-4 text-neutral-900" viewBox="0 0 24 24"
-                                  aria-hidden="true">
-                                  <path d="M12 20h9"></path>
-                                  <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"></path>
-                                </svg>
-                                <% } else { %>
-                                  <svg class="icon-stroke h-4 w-4 text-neutral-900" viewBox="0 0 24 24"
-                                    aria-hidden="true">
-                                    <circle cx="18" cy="5" r="3"></circle>
-                                    <circle cx="6" cy="12" r="3"></circle>
-                                    <circle cx="18" cy="19" r="3"></circle>
-                                    <path d="M8.8 10.8 15.2 6.2M8.8 13.2l6.4 4.6"></path>
-                                  </svg>
-                                  <% } %>
-                          </div>
-                          <div>
-                            <span class="mb-1 block font-mono text-xs text-neutral-400">0<%= index + 1 %></span>
-                            <h3 class="text-base font-medium text-neutral-900">
-                              <%= step.title %>
-                            </h3>
-                            <p class="mt-2 text-sm leading-relaxed text-neutral-500">
-                              <%= step.description %>
-                            </p>
-                          </div>
-                        </div>
-                        <% }); %>
-                    </div>
                   </div>
                 </section>
 
