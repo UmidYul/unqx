@@ -699,30 +699,34 @@
   };
 
   const EMOJI_BACKGROUND_SMALL_INSTANCES = [
-    { x: 14, y: 18, size: 16, opacity: 0.72, rotate: -10 },
-    { x: 78, y: 8, size: 15, opacity: 0.68 },
-    { x: 144, y: 18, size: 16, opacity: 0.72, rotate: 10 },
-    { x: 4, y: 74, size: 15, opacity: 0.66, rotate: -6 },
-    { x: 160, y: 78, size: 15, opacity: 0.66, rotate: 8 },
-    { x: 18, y: 138, size: 16, opacity: 0.7, rotate: -8 },
-    { x: 82, y: 156, size: 15, opacity: 0.68 },
-    { x: 142, y: 138, size: 16, opacity: 0.7, rotate: 8 },
+    { x: 18, y: 18, size: 16, opacity: 0.22 },
+    { x: 74, y: 10, size: 15, opacity: 0.2, rotate: -6 },
+    { x: 122, y: 22, size: 14, opacity: 0.16 },
+    { x: 188, y: 12, size: 15, opacity: 0.18, rotate: 8 },
+    { x: 240, y: 20, size: 16, opacity: 0.22 },
+    { x: 288, y: 14, size: 14, opacity: 0.16 },
+    { x: 24, y: 72, size: 18, opacity: 0.28, rotate: -8 },
+    { x: 278, y: 76, size: 18, opacity: 0.28, rotate: 8 },
+    { x: 8, y: 132, size: 15, opacity: 0.2 },
+    { x: 296, y: 134, size: 15, opacity: 0.2 },
+    { x: 34, y: 188, size: 18, opacity: 0.24, rotate: -6 },
+    { x: 272, y: 184, size: 18, opacity: 0.24, rotate: 6 },
   ];
   const EMOJI_BACKGROUND_ACCENT_INSTANCES = [
-    { x: 30, y: 42, size: 22, opacity: 0.22, rotate: -10 },
-    { x: 126, y: 38, size: 22, opacity: 0.2, rotate: 10 },
-    { x: 30, y: 118, size: 22, opacity: 0.2, rotate: 10 },
-    { x: 128, y: 120, size: 22, opacity: 0.18, rotate: -10 },
+    { x: 98, y: 34, size: 20, opacity: 0.16, rotate: -10 },
+    { x: 206, y: 34, size: 20, opacity: 0.14, rotate: 10 },
+    { x: 82, y: 162, size: 20, opacity: 0.14, rotate: -6 },
+    { x: 224, y: 158, size: 20, opacity: 0.14, rotate: 8 },
   ];
   const EMOJI_BACKGROUND_LARGE_INSTANCES = [
-    { x: 8, y: 104, size: 30, opacity: 0.1, rotate: -6 },
-    { x: 142, y: 102, size: 30, opacity: 0.1, rotate: 8 },
+    { x: 18, y: 104, size: 28, opacity: 0.1, rotate: -6 },
+    { x: 274, y: 106, size: 28, opacity: 0.1, rotate: 8 },
   ];
   const EMOJI_BACKGROUND_BLOBS = [
-    { cx: 42, cy: 48, r: 18, opacity: 0.08 },
-    { cx: 138, cy: 44, r: 16, opacity: 0.07 },
-    { cx: 38, cy: 136, r: 17, opacity: 0.06 },
-    { cx: 142, cy: 134, r: 18, opacity: 0.06 },
+    { cx: 48, cy: 40, r: 20, opacity: 0.055 },
+    { cx: 274, cy: 42, r: 18, opacity: 0.05 },
+    { cx: 34, cy: 164, r: 18, opacity: 0.045 },
+    { cx: 288, cy: 166, r: 18, opacity: 0.045 },
   ];
   const EMOJI_BACKGROUND_PACK_SYMBOLS = {
     ghosts: `
@@ -781,9 +785,19 @@
     const symbolId = `emoji-pack-${normalizedKey}-glyph`;
     const glowFilterId = `emoji-pack-${normalizedKey}-glow`;
     const blurFilterId = `emoji-pack-${normalizedKey}-blur`;
-    return `<span class="unq-ref-avatar-emoji-pack unq-ref-avatar-emoji-pack--${esc(normalizedKey)}" aria-hidden="true">
-      <svg class="unq-ref-avatar-emoji-pack-svg" viewBox="0 0 180 180" preserveAspectRatio="xMidYMid meet">
+    return `<span class="unq-ref-profile-emoji-pack unq-ref-profile-emoji-pack--${esc(normalizedKey)}" aria-hidden="true">
+      <svg class="unq-ref-profile-emoji-pack-svg" viewBox="0 0 320 220" preserveAspectRatio="xMidYMid meet">
         <defs>
+          <linearGradient id="emoji-pack-${normalizedKey}-fade" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="white" stop-opacity="0.92"></stop>
+            <stop offset="68%" stop-color="white" stop-opacity="0.88"></stop>
+            <stop offset="100%" stop-color="white" stop-opacity="0"></stop>
+          </linearGradient>
+          <mask id="emoji-pack-${normalizedKey}-mask">
+            <rect width="320" height="220" fill="url(#emoji-pack-${normalizedKey}-fade)"></rect>
+            <circle cx="160" cy="86" r="46" fill="black"></circle>
+            <ellipse cx="160" cy="150" rx="92" ry="30" fill="black"></ellipse>
+          </mask>
           <filter id="${glowFilterId}">
             <feGaussianBlur stdDeviation="1.5"></feGaussianBlur>
           </filter>
@@ -794,20 +808,21 @@
             ${symbolMarkup}
           </symbol>
         </defs>
-        ${EMOJI_BACKGROUND_BLOBS.map(
-          (blob) =>
-            `<circle cx="${blob.cx}" cy="${blob.cy}" r="${blob.r}" fill="var(--theme-accent-color)" opacity="${blob.opacity}" filter="url(#${blurFilterId})"></circle>`,
-        ).join("")}
-        <circle cx="90" cy="90" r="72" fill="none" stroke="var(--theme-accent-color)" stroke-width="1.4" opacity="0.16"></circle>
-        <circle cx="90" cy="90" r="62" fill="none" stroke="var(--theme-role-color)" stroke-width="1" opacity="0.12"></circle>
-        <g style="color:var(--theme-role-color)">
-          ${renderEmojiBackgroundUses(symbolId, EMOJI_BACKGROUND_SMALL_INSTANCES)}
-        </g>
-        <g style="color:var(--theme-accent-color)" filter="url(#${glowFilterId})">
-          ${renderEmojiBackgroundUses(symbolId, EMOJI_BACKGROUND_ACCENT_INSTANCES)}
-        </g>
-        <g style="color:var(--theme-role-color)" filter="url(#${blurFilterId})">
-          ${renderEmojiBackgroundUses(symbolId, EMOJI_BACKGROUND_LARGE_INSTANCES)}
+        <g mask="url(#emoji-pack-${normalizedKey}-mask)">
+          ${EMOJI_BACKGROUND_BLOBS.map(
+            (blob) =>
+              `<circle cx="${blob.cx}" cy="${blob.cy}" r="${blob.r}" fill="var(--theme-accent-color)" opacity="${blob.opacity}" filter="url(#${blurFilterId})"></circle>`,
+          ).join("")}
+          <g style="color:var(--theme-role-color)">
+            ${renderEmojiBackgroundUses(symbolId, EMOJI_BACKGROUND_SMALL_INSTANCES)}
+          </g>
+          <g style="color:var(--theme-accent-color)" filter="url(#${glowFilterId})">
+            ${renderEmojiBackgroundUses(symbolId, EMOJI_BACKGROUND_ACCENT_INSTANCES)}
+          </g>
+          <g style="color:var(--theme-role-color)" filter="url(#${blurFilterId})">
+            ${renderEmojiBackgroundUses(symbolId, EMOJI_BACKGROUND_LARGE_INSTANCES)}
+          </g>
+          <rect x="0" y="0" width="320" height="220" fill="var(--theme-card-bg)" opacity="0.04"></rect>
         </g>
       </svg>
     </span>`;
@@ -2210,9 +2225,9 @@
           </div>`
         : ""
       }
-          <div class="unq-ref-profile">
+          <div class="unq-ref-profile${card.emojiBackgroundPack !== "none" ? " has-emoji-pack" : ""}">
+            ${card.emojiBackgroundPack !== "none" ? renderEmojiBackgroundOverlay(card.emojiBackgroundPack) : ""}
             <div class="unq-ref-avatar-wrap">
-              ${renderEmojiBackgroundOverlay(card.emojiBackgroundPack)}
               ${card.avatarUrl ? `<img src="${esc(card.avatarUrl)}" alt="${esc(card.name)}" class="unq-ref-avatar-img" data-avatar-image />` : ""}
               <div class="unq-ref-avatar-fallback ${card.avatarUrl ? "hidden" : ""}" data-avatar-fallback aria-hidden="${card.avatarUrl ? "true" : "false"}" ${card.avatarUrl ? "hidden" : ""} style="${card.avatarUrl ? "display:none;" : ""}">${esc(card.initials)}</div>
               ${renderAvatarFrame(card.avatarFrame, theme.key)}

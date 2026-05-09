@@ -2042,33 +2042,48 @@ body[data-card-theme] #card-view-root>[data-card-view] {
 
 .unq-ref-profile {
   margin-top: 22px;
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
 }
 
-.unq-ref-avatar-wrap {
-  --avatar-size: 104px;
-  position: relative;
-  width: var(--avatar-size);
-  height: var(--avatar-size);
-  border-radius: 9999px;
-  overflow: visible;
+.unq-ref-profile.has-emoji-pack {
+  padding-top: 18px;
+  min-height: 214px;
 }
 
-.unq-ref-avatar-emoji-pack {
+.unq-ref-profile-emoji-pack {
   position: absolute;
-  inset: -34px;
+  top: 0;
+  left: 50%;
+  width: min(100%, 320px);
+  height: 220px;
+  transform: translateX(-50%);
   z-index: 0;
   display: block;
   pointer-events: none;
 }
 
-.unq-ref-avatar-emoji-pack-svg {
+.unq-ref-profile-emoji-pack-svg {
   width: 100%;
   height: 100%;
   display: block;
+  overflow: visible;
+}
+
+.unq-ref-avatar-wrap,
+.unq-ref-name-wrap {
+  position: relative;
+  z-index: 1;
+}
+
+.unq-ref-avatar-wrap {
+  --avatar-size: 104px;
+  width: var(--avatar-size);
+  height: var(--avatar-size);
+  border-radius: 9999px;
   overflow: visible;
 }
 
