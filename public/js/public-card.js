@@ -237,6 +237,20 @@
       followDialogScrollTop = currentDialogBody.scrollTop;
     }
 
+    if (root instanceof HTMLElement) {
+      const themeKey = String(root.getAttribute("data-card-theme") || "").trim();
+      const rootStyleText = String(root.getAttribute("style") || root.style.cssText || "").trim();
+      if (themeKey) {
+        followDialogPortal.setAttribute("data-card-theme", themeKey);
+      } else {
+        followDialogPortal.removeAttribute("data-card-theme");
+      }
+      followDialogPortal.style.cssText = rootStyleText;
+    } else {
+      followDialogPortal.removeAttribute("data-card-theme");
+      followDialogPortal.style.cssText = "";
+    }
+
     const nextDialog = root instanceof HTMLElement ? root.querySelector("[data-follows-dialog]") : null;
     if (!(nextDialog instanceof HTMLElement)) {
       followDialogPortal.replaceChildren();
