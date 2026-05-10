@@ -1656,7 +1656,7 @@
     const pets = getVisibleCardPets(card);
     if (!pets.length) return "";
     const slotNames = getPetSlotNames(pets.length);
-    return `<div class="unq-ref-pets" aria-label="Питомцы визитки">
+    return `<div class="unq-ref-pets" data-pet-count="${esc(String(pets.length))}" aria-label="Питомцы визитки">
       ${pets
         .map((pet, index) => {
           const slot = slotNames[index] || "right";
@@ -2407,6 +2407,7 @@
       : cardDetailsHtml;
 
     const overlayHtml = renderThemeOverlay(theme.key);
+    const visiblePetCount = getVisibleCardPets(card).length;
 
     return `
       <div data-card-view data-card-theme="${esc(theme.key)}" data-emoji-background-pack="${esc(card.emojiBackgroundPack)}" data-slug="${esc(card.slug)}" data-share-url="${esc(shareUrl)}"${rootStyle}>
@@ -2442,7 +2443,7 @@
           </div>`
         : ""
       }
-          <div class="unq-ref-profile${card.emojiBackgroundPack !== "none" ? " has-emoji-pack" : ""}${getVisibleCardPets(card).length ? " has-pets" : ""}">
+          <div class="unq-ref-profile${card.emojiBackgroundPack !== "none" ? " has-emoji-pack" : ""}${visiblePetCount ? ` has-pets has-pets-${visiblePetCount}` : ""}">
             ${card.emojiBackgroundPack !== "none" ? renderEmojiBackgroundOverlay(card.emojiBackgroundPack) : ""}
             ${renderPetDecorations(card)}
             <div class="unq-ref-avatar-wrap">
