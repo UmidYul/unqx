@@ -2382,13 +2382,22 @@ body[data-card-theme] #card-view-root>[data-card-view] {
 }
 
 .unq-ref-profile.has-pets.has-pets-3 {
-  --pet-reserve-top: clamp(64px, 14vw, 84px);
+  --pet-reserve-top: clamp(88px, 18vw, 112px);
+  --pet-slot-offset: clamp(94px, 25vw, 124px);
+  --pet-side-slot-top: clamp(28px, 7vw, 44px);
+  --pet-top-slot-top: 0px;
+  --pet-figure-width: clamp(82px, 22vw, 102px);
+  --pet-visual-size: clamp(62px, 17vw, 76px);
 }
 
 .unq-ref-profile.has-emoji-pack.has-pets {
   min-height: 0;
   padding-top: 18px;
   --pet-top-slot-top: 8px;
+}
+
+.unq-ref-profile.has-emoji-pack.has-pets.has-pets-3 {
+  --pet-top-slot-top: 6px;
 }
 
 .unq-ref-name {
@@ -2468,11 +2477,19 @@ body[data-card-theme] #card-view-root>[data-card-view] {
   }
 
   .unq-ref-profile.has-pets.has-pets-3 {
-    --pet-reserve-top: clamp(52px, 16vw, 68px);
+    --pet-reserve-top: clamp(72px, 23vw, 90px);
+    --pet-slot-offset: clamp(68px, 23vw, 84px);
+    --pet-side-slot-top: clamp(20px, 7vw, 34px);
+    --pet-figure-width: clamp(70px, 24vw, 86px);
+    --pet-visual-size: clamp(54px, 18vw, 66px);
   }
 
   .unq-ref-profile.has-emoji-pack.has-pets {
     --pet-top-slot-top: 10px;
+  }
+
+  .unq-ref-profile.has-emoji-pack.has-pets.has-pets-3 {
+    --pet-top-slot-top: 8px;
   }
 
   .unq-ref-pet-name {
