@@ -157,11 +157,71 @@ const AVATAR_FRAMES = [
   { id: "orbit_dots", label: "Orbit Dots", description: "Орбиты и точки", premiumRequired: true },
 ];
 
+const EMOJI_BACKGROUND_PACKS = [
+  {
+    id: "none",
+    label: "Без фона",
+    description: "Только текущая тема",
+    swatchStyle: "border-color:#d4d4d8;background:linear-gradient(145deg,#ffffff 0%,#f5f5f5 100%);",
+    glyphLabel: "OFF",
+    premiumRequired: false,
+  },
+  {
+    id: "ghosts",
+    label: "Ghosts",
+    description: "Мягкие силуэты",
+    swatchStyle: "border-color:#b7bdd1;background:linear-gradient(145deg,#1a1d27 0%,#2a3040 100%);",
+    glyphLabel: "GH",
+    premiumRequired: true,
+  },
+  {
+    id: "stars",
+    label: "Stars",
+    description: "Звёздная сетка",
+    swatchStyle: "border-color:#b9c3d4;background:linear-gradient(145deg,#181d28 0%,#2a3344 100%);",
+    glyphLabel: "ST",
+    premiumRequired: true,
+  },
+  {
+    id: "lightning",
+    label: "Lightning",
+    description: "Электрический узор",
+    swatchStyle: "border-color:#d9c58b;background:linear-gradient(145deg,#1b1a19 0%,#37312b 100%);",
+    glyphLabel: "LT",
+    premiumRequired: true,
+  },
+  {
+    id: "crowns",
+    label: "Crowns",
+    description: "Короны и prestige",
+    swatchStyle: "border-color:#c5b17c;background:linear-gradient(145deg,#211b13 0%,#3a2f1d 100%);",
+    glyphLabel: "CR",
+    premiumRequired: true,
+  },
+  {
+    id: "webs",
+    label: "Webs",
+    description: "Тонкие web-lines",
+    swatchStyle: "border-color:#bcbec6;background:linear-gradient(145deg,#17181d 0%,#2d3038 100%);",
+    glyphLabel: "WB",
+    premiumRequired: true,
+  },
+  {
+    id: "hearts",
+    label: "Hearts",
+    description: "Ритм и soft luxe",
+    swatchStyle: "border-color:#d4b0ba;background:linear-gradient(145deg,#24161b 0%,#4a2932 100%);",
+    glyphLabel: "HT",
+    premiumRequired: true,
+  },
+];
+
 function getProfileEditorPresets() {
   return {
     signatureThemes: SIGNATURE_THEMES,
     colorThemes: COLOR_THEMES,
     avatarFrames: AVATAR_FRAMES,
+    emojiBackgroundPacks: EMOJI_BACKGROUND_PACKS,
   };
 }
 
@@ -169,5 +229,6 @@ module.exports = {
   SIGNATURE_THEMES,
   COLOR_THEMES,
   AVATAR_FRAMES,
+  EMOJI_BACKGROUND_PACKS,
   getProfileEditorPresets,
 };

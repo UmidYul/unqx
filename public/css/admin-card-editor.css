@@ -506,6 +506,28 @@
   line-height: 1.35;
 }
 
+.admin-card-editor-page .admin-card-emoji-pack-swatch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  overflow: hidden;
+  flex: 0 0 auto;
+}
+
+.admin-card-editor-page .admin-card-emoji-pack-glyph {
+  font-size: 8px;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.92);
+}
+
 .admin-card-editor-page .admin-card-frame-swatch {
   position: relative;
   width: 22px;

@@ -29,6 +29,21 @@
     const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "";
     const errorNode = document.getElementById("verify-error");
     const codeInput = document.getElementById("code");
+    const verifyErrorByCode = {
+      OTP_INVALID: "Неверный код",
+      OTP_INVALIDATED: "Код недействителен. Запроси новый.",
+      OTP_EXPIRED: "Код устарел. Запроси новый.",
+      VALIDATION_ERROR: "Проверь email и код и попробуй ещё раз.",
+      EMAIL_TAKEN: "Этот email уже зарегистрирован. Войти →",
+    };
+
+    function resolveVerifyError(payload) {
+      if (payload && typeof payload.code === "string" && verifyErrorByCode[payload.code]) {
+        return verifyErrorByCode[payload.code];
+      }
+      return payload?.error || "Ошибка подтверждения";
+    }
+
     codeInput?.addEventListener("input", () => {
       codeInput.value = String(codeInput.value || "").replace(/\D/g, "").slice(0, 6);
     });
@@ -52,7 +67,7 @@
       });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) {
-        errorNode.textContent = payload?.error || "Ошибка подтверждения";
+        errorNode.textContent = resolveVerifyError(payload);
         errorNode.classList.remove("hidden");
         return;
       }

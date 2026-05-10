@@ -9,6 +9,7 @@
   const signatureThemes = Array.isArray(presets.signatureThemes) ? presets.signatureThemes : [];
   const colorThemes = Array.isArray(presets.colorThemes) ? presets.colorThemes : [];
   const avatarFrames = Array.isArray(presets.avatarFrames) ? presets.avatarFrames : [];
+  const emojiBackgroundPacks = Array.isArray(presets.emojiBackgroundPacks) ? presets.emojiBackgroundPacks : [];
 
   const pageOwnerSearchQuery = typeof ownerSearchQuery === "string" ? ownerSearchQuery : "";
   const pageOwnerPickerError = typeof ownerPickerError === "string" ? ownerPickerError : "";
@@ -44,6 +45,19 @@
         <span class="admin-card-frame-swatch admin-card-frame-swatch--${frameClassName(item.id)}">
           <span class="admin-card-frame-swatch-core"></span>
           <span class="admin-card-frame-swatch-deco"></span>
+        </span>
+        <span class="admin-card-style-copy">
+          <span class="admin-card-style-title">${item.label}</span>
+        </span>
+      </span>
+    </button>
+  `;
+
+  const renderEmojiPackButton = (item) => `
+    <button type="button" data-emoji-background-pack="${item.id}" class="admin-card-style-btn" aria-pressed="false">
+      <span class="admin-card-style-btn-main">
+        <span class="admin-card-emoji-pack-swatch" style="${item.swatchStyle}">
+          <span class="admin-card-emoji-pack-glyph">${item.glyphLabel}</span>
         </span>
         <span class="admin-card-style-copy">
           <span class="admin-card-style-title">${item.label}</span>
@@ -477,6 +491,15 @@
                   </div>
                 </div>
 
+                <div>
+                  <p class="admin-card-field-label">Фоновый emoji</p>
+                  <div id="admin-card-emoji-background-options" class="admin-card-style-grid is-compact mt-3">
+                    <% emojiBackgroundPacks.forEach((item) => { %>
+                      <%- renderEmojiPackButton(item) %>
+                    <% }) %>
+                  </div>
+                </div>
+
                 <label class="admin-card-switch">
                   <span class="admin-card-switch-copy">
                     <strong>Скрыть брендинг UNQX</strong>
@@ -530,6 +553,7 @@
     signatureThemes,
     colorThemes,
     avatarFrames,
+    emojiBackgroundPacks,
   }) %></script>
   <script nonce="<%= cspNonce %>" src="/js/admin-layout.js"></script>
   <script nonce="<%= cspNonce %>" src="/vendor/cropperjs/cropper.min.js"></script>

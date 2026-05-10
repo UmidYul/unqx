@@ -20,4 +20,15 @@ describe("auth otp rate limits", () => {
     expect(authSource).toContain('"/reset-password",\n  authOtpVerifyRateLimit,');
     expect(authSource).toContain('"/change-email/verify",\n  authOtpVerifyRateLimit,');
   });
+
+  test("keeps auth OTP error copy readable and free of mojibake", () => {
+    const authSource = fs.readFileSync(path.join(process.cwd(), "src", "routes", "api", "auth.js"), "utf-8");
+    const verifyPageSource = fs.readFileSync(path.join(process.cwd(), "src", "views", "public", "verify-email.ejs"), "utf-8");
+    const mojibakePattern = /(?:Р.|С.){3,}|пїЅ|�/u;
+
+    expect(mojibakePattern.test(authSource)).toBe(false);
+    expect(verifyPageSource).toContain("const verifyErrorByCode = {");
+    expect(verifyPageSource).toContain('OTP_INVALID: "Неверный код"');
+    expect(verifyPageSource).toContain("resolveVerifyError(payload)");
+  });
 });

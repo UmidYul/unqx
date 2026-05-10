@@ -5,6 +5,7 @@ const ROOT_DIR = path.resolve(__dirname, "..");
 const TARGETS = [
   "src/services/platform-settings.js",
   "src/routes/api/cards.js",
+  "src/routes/api/auth.js",
 ];
 const MOJIBAKE_PATTERN = /(?:Р.|С.){3,}|пїЅ|�/u;
 

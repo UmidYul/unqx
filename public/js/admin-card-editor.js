@@ -40,6 +40,7 @@
     signatureThemes: [],
     colorThemes: [],
     avatarFrames: [],
+    emojiBackgroundPacks: [],
   };
   try {
     presets = JSON.parse(presetsNode?.textContent || "{}") || presets;
@@ -48,6 +49,7 @@
       signatureThemes: [],
       colorThemes: [],
       avatarFrames: [],
+      emojiBackgroundPacks: [],
     };
   }
 
@@ -103,6 +105,7 @@
     extraPhone: $("#admin-card-extra-phone"),
     themeButtons: $$("[data-theme]"),
     frameButtons: $$("[data-avatar-frame]"),
+    emojiPackButtons: $$("[data-emoji-background-pack]"),
     customColor: $("#admin-card-custom-color"),
     hideBranding: $("#admin-card-hide-branding"),
     preview: $("#profile-card-live-preview"),
@@ -148,6 +151,7 @@
       theme: "default_dark",
       customColor: "",
       avatarFrame: "none",
+      emojiBackgroundPack: "none",
       showBranding: true,
     },
   };
@@ -278,6 +282,7 @@
       theme: String(raw.theme || "default_dark").trim() || "default_dark",
       customColor: normalizeHexColor(raw.customColor),
       avatarFrame: String(raw.avatarFrame || "none").trim().toLowerCase() || "none",
+      emojiBackgroundPack: String(raw.emojiBackgroundPack || "none").trim().toLowerCase() || "none",
       showBranding: raw.showBranding !== false,
     };
   }
@@ -523,6 +528,15 @@
     });
   }
 
+  function renderEmojiPackButtons() {
+    const emojiPackButtons = Array.isArray(el.emojiPackButtons) ? el.emojiPackButtons : [];
+    emojiPackButtons.forEach((button) => {
+      const current = button.getAttribute("data-emoji-background-pack") === state.card.emojiBackgroundPack;
+      button.classList.toggle("is-selected", current);
+      button.setAttribute("aria-pressed", current ? "true" : "false");
+    });
+  }
+
   function renderMeta() {
     const owner = state.owner || {};
     const previewSlug = selectedPreviewSlug();
@@ -650,6 +664,7 @@
       theme: state.card.theme || "default_dark",
       customColor: normalizeHexColor(state.card.customColor),
       avatarFrame: state.card.avatarFrame || "none",
+      emojiBackgroundPack: state.card.emojiBackgroundPack || "none",
       showBranding: state.card.showBranding !== false,
     };
   }
@@ -689,6 +704,7 @@
     syncAvatarPreview();
     renderThemeButtons();
     renderFrameButtons();
+    renderEmojiPackButtons();
     renderTags();
     renderButtons();
     renderMeta();
@@ -960,6 +976,7 @@
       theme: state.card.theme,
       customColor: normalizeHexColor(state.card.customColor) || null,
       avatarFrame: state.card.avatarFrame,
+      emojiBackgroundPack: state.card.emojiBackgroundPack,
       showBranding: state.card.showBranding !== false,
       verifiedCompany:
         state.verification && typeof state.verification === "object"
@@ -1149,6 +1166,16 @@
       const frame = button.getAttribute("data-avatar-frame") || "none";
       state.card.avatarFrame = frame;
       renderFrameButtons();
+      renderPreview();
+      saveDraft();
+    });
+  });
+
+  el.emojiPackButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      const pack = button.getAttribute("data-emoji-background-pack") || "none";
+      state.card.emojiBackgroundPack = pack;
+      renderEmojiPackButtons();
       renderPreview();
       saveDraft();
     });

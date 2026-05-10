@@ -660,14 +660,8 @@ router.post(
         return;
       }
 
-      res.status(409).json({ error: "Р­С‚РѕС‚ Р»РѕРіРёРЅ СѓР¶Рµ Р·Р°РЅСЏС‚. Р’РѕР№С‚Рё в†’", code: "LOGIN_TAKEN" });
+      res.status(409).json({ error: "Этот логин уже занят. Войти →", code: "LOGIN_TAKEN" });
       return;
-      const hasEmail = typeof existing.email === "string" && existing.email.length > 0;
-      const emailMatches = hasEmail && email && normalizeEmail(existing.email) === email;
-      if (existing.emailVerified || !hasEmail || !emailMatches) {
-        res.status(409).json({ error: "Этот логин уже занят. Войти →", code: "LOGIN_TAKEN" });
-        return;
-      }
     }
 
     if (email) {
@@ -773,48 +767,6 @@ router.post(
     }
 
     const ok = await bcrypt.compare(code, user.otpCode);
-    if (!ok) {
-      const attempts = Number(user.otpAttempts || 0) + 1;
-      await prisma.user.update({
-        where: { id: user.id },
-        data: {
-          otpAttempts: attempts,
-          ...(attempts >= MAX_OTP_ATTEMPTS
-            ? {
-              otpCode: null,
-              otpExpiresAt: null,
-              otpAttempts: 0,
-            }
-            : {}),
-        },
-      });
-      res.status(400).json({
-        error: "РљРѕРґ РЅРµРґРµР№СЃС‚РІРёС‚РµР»РµРЅ. Р—Р°РїСЂРѕСЃРё РЅРѕРІС‹Р№.",
-        code: attempts >= MAX_OTP_ATTEMPTS ? "OTP_INVALIDATED" : "OTP_INVALID",
-      });
-      return;
-    }
-    if (!ok) {
-      const attempts = Number(user.otpAttempts || 0) + 1;
-      await prisma.user.update({
-        where: { id: user.id },
-        data: {
-          otpAttempts: attempts,
-          ...(attempts >= MAX_OTP_ATTEMPTS
-            ? {
-              otpCode: null,
-              otpExpiresAt: null,
-              otpAttempts: 0,
-            }
-            : {}),
-        },
-      });
-      res.status(400).json({
-        error: "РљРѕРґ РЅРµРґРµР№СЃС‚РІРёС‚РµР»РµРЅ. Р—Р°РїСЂРѕСЃРё РЅРѕРІС‹Р№.",
-        code: attempts >= MAX_OTP_ATTEMPTS ? "OTP_INVALIDATED" : "OTP_INVALID",
-      });
-      return;
-    }
     if (!ok) {
       const attempts = Number(user.otpAttempts || 0) + 1;
       await prisma.user.update({
@@ -1197,7 +1149,7 @@ router.post(
         },
       });
       res.status(400).json({
-        error: "РљРѕРґ РЅРµРґРµР№СЃС‚РІРёС‚РµР»РµРЅ. Р—Р°РїСЂРѕСЃРё РЅРѕРІС‹Р№.",
+        error: attempts >= MAX_OTP_ATTEMPTS ? "Код недействителен. Запроси новый." : "Неверный код",
         code: attempts >= MAX_OTP_ATTEMPTS ? "OTP_INVALIDATED" : "OTP_INVALID",
       });
       return;
@@ -1208,11 +1160,7 @@ router.post(
       select: { id: true },
     });
     if (emailTaken) {
-      res.status(409).json({ error: "Р­С‚РѕС‚ email СѓР¶Рµ Р·Р°СЂРµРіРёСЃС‚СЂРёСЂРѕРІР°РЅ. Р’РѕР№С‚Рё в†’", code: "EMAIL_TAKEN" });
-      return;
-    }
-    if (!ok) {
-      res.status(400).json({ error: "Код недействителен. Запроси новый.", code: "OTP_INVALID" });
+      res.status(409).json({ error: "Этот email уже зарегистрирован. Войти →", code: "EMAIL_TAKEN" });
       return;
     }
 
