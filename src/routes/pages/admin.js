@@ -232,7 +232,7 @@ router.get(
   asyncHandler(async (req, res) => {
     const adminSession = getAdminSession(req);
     const role = adminSession?.role || "admin";
-    const managerTabs = new Set(["users", "orders", "payment-cards", "verification", "badges"]);
+    const managerTabs = new Set(["users", "orders", "payment-cards", "verification", "badges", "pets"]);
     if (role === "manager") {
       const nextTab =
         typeof req.query.tab === "string" && managerTabs.has(req.query.tab)
@@ -261,6 +261,7 @@ router.get(
       "directory",
       "verification",
       "badges",
+      "pets",
       "reports",
       "settings",
       "managers",
@@ -343,7 +344,7 @@ router.get(
   requireManagerPage,
   asyncHandler(async (req, res) => {
     const adminSession = getAdminSession(req);
-    const managerTabs = new Set(["users", "orders", "payment-cards", "verification", "badges"]);
+    const managerTabs = new Set(["users", "orders", "payment-cards", "verification", "badges", "pets"]);
     const tab =
       typeof req.query.tab === "string" && managerTabs.has(req.query.tab)
         ? req.query.tab

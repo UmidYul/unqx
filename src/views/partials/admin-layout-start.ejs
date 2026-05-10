@@ -4,7 +4,7 @@
   adminSession.name : (adminRole==="manager" ? "Manager" : "Admin" ); const brandLabel=adminRole==="manager"
   ? "UNQX Manager" : "UNQX Admin" ; const avatarLetter=String(adminName || (adminRole==="manager" ? "Manager" : "Admin"
   )).trim().slice(0, 1).toUpperCase() || (adminRole==="manager" ? "M" : "A" ); const allowedTabs=adminRole==="manager" ?
-  new Set(["users", "orders" , "payment-cards" , "verification" , "badges" ]) : null; const resolvedDashboardBasePath=typeof
+  new Set(["users", "orders" , "payment-cards" , "verification" , "badges" , "pets" ]) : null; const resolvedDashboardBasePath=typeof
   dashboardBasePath==="string" && dashboardBasePath ? dashboardBasePath : "/admin/dashboard" ; const
   isDashboardRoute=layoutCurrentPath===resolvedDashboardBasePath; const dashboardLink=(tab)=>
   `${resolvedDashboardBasePath}?tab=${tab}`; const logoutPath=adminRole==="manager" ? "/manager/logout" : "/admin/logout";
@@ -38,6 +38,7 @@
   items: [
   { id: "verification", label: "Верификация", href: dashboardLink("verification"), icon: "userCheck" },
   { id: "badges", label: "Бейджи", href: dashboardLink("badges"), icon: "badge" },
+  { id: "pets", label: "Животные", href: dashboardLink("pets"), icon: "pets", badge: "pets" },
   { id: "reports", label: "Репорты", href: dashboardLink("reports"), icon: "message" },
   { id: "settings", label: "Настройки", href: dashboardLink("settings"), icon: "settings" },
   { id: "testimonials", label: "Отзывы", href: dashboardLink("testimonials"), icon: "testimonials" },
@@ -133,6 +134,13 @@
                                     d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"
                                     stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" />
                                 </svg>
+                                <% } else if (item.icon==="pets" ) { %>
+                                  <svg viewBox="0 0 24 24" fill="none">
+                                    <circle cx="7.2" cy="7.4" r="2.1" stroke="currentColor" stroke-width="1.8" />
+                                    <circle cx="11.6" cy="5.5" r="2" stroke="currentColor" stroke-width="1.8" />
+                                    <circle cx="16.6" cy="7.2" r="2.1" stroke="currentColor" stroke-width="1.8" />
+                                    <path d="M8.4 19.2c-1.8 0-3.1-1.4-3.1-3.1 0-2.7 2.8-4.9 6.2-4.9s6.2 2.2 6.2 4.9c0 1.7-1.4 3.1-3.1 3.1-.9 0-1.7-.3-2.4-.8a1.2 1.2 0 0 0-1.4 0c-.7.5-1.5.8-2.4.8Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" />
+                                  </svg>
                                 <% } else if (item.icon==="slug" ) { %>
                                   <svg viewBox="0 0 24 24" fill="none">
                                     <path d="M9 3 7 21M17 3l-2 18M4 9h18M3 15h18" stroke="currentColor"

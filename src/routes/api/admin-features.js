@@ -39,7 +39,7 @@ const FLASH_FULL_MASK_RE = /^[A-Z0-9*?]{6}$/;
 const FLASH_LETTER_MASK_RE = /^[A-Z*?]{3}$/;
 const FLASH_DIGIT_MASK_RE = /^[0-9*?]{3}$/;
 const GROUP_KEY_PREFIX = {
-  pricing: ["plan_", "pricing_"],
+  pricing: ["plan_", "pricing_", "pet_"],
   algorithm: ["slug_"],
   bracelet: ["bracelet_"],
   contacts: ["contact_"],

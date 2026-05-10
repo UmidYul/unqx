@@ -2062,9 +2062,18 @@ body[data-card-theme] #card-view-root>[data-card-view] {
   text-align: center;
 }
 
+.unq-ref-profile.has-pets {
+  min-height: 320px;
+  padding-top: 12px;
+}
+
 .unq-ref-profile.has-emoji-pack {
   padding-top: 18px;
   min-height: 214px;
+}
+
+.unq-ref-profile.has-emoji-pack.has-pets {
+  min-height: 338px;
 }
 
 .unq-ref-profile-emoji-pack {
@@ -2092,6 +2101,72 @@ body[data-card-theme] #card-view-root>[data-card-view] {
 .unq-ref-name-wrap {
   position: relative;
   z-index: 1;
+}
+
+.unq-ref-pets {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.unq-ref-pet {
+  position: absolute;
+  width: 110px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+  transform: translate(-50%, -50%);
+}
+
+.unq-ref-pet--left {
+  left: calc(50% - 110px);
+  top: 178px;
+}
+
+.unq-ref-pet--right {
+  left: calc(50% + 112px);
+  top: 178px;
+}
+
+.unq-ref-pet--top {
+  left: 50%;
+  top: 50px;
+}
+
+.unq-ref-pet-visual {
+  width: 82px;
+  height: 82px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.unq-ref-pet-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 18px rgba(15, 23, 42, 0.22));
+}
+
+.unq-ref-pet-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.unq-ref-pet-name {
+  font-size: 14px;
+  line-height: 1.1;
+  color: var(--theme-name-color, #242424);
+}
+
+.unq-ref-pet-price {
+  font-size: 12px;
+  line-height: 1.1;
+  color: var(--theme-muted-color, #7d7d7d);
 }
 
 .unq-ref-avatar-wrap {
@@ -2341,6 +2416,47 @@ body[data-card-theme] #card-view-root>[data-card-view] {
   text-align: center;
   width: 100%;
   max-width: min(100%, 420px);
+}
+
+@media (max-width: 480px) {
+  .unq-ref-profile.has-pets {
+    min-height: 292px;
+  }
+
+  .unq-ref-profile.has-emoji-pack.has-pets {
+    min-height: 310px;
+  }
+
+  .unq-ref-pet {
+    width: 96px;
+  }
+
+  .unq-ref-pet--left {
+    left: calc(50% - 96px);
+    top: 170px;
+  }
+
+  .unq-ref-pet--right {
+    left: calc(50% + 96px);
+    top: 170px;
+  }
+
+  .unq-ref-pet--top {
+    top: 52px;
+  }
+
+  .unq-ref-pet-visual {
+    width: 72px;
+    height: 72px;
+  }
+
+  .unq-ref-pet-name {
+    font-size: 13px;
+  }
+
+  .unq-ref-pet-price {
+    font-size: 11px;
+  }
 }
 
 .unq-ref-social-stats {

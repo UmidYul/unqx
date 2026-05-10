@@ -34,6 +34,17 @@
     other: "Другое",
   };
   const buttonTypeOptions = Object.entries(buttonTypeLabels);
+  const PET_TYPES = ["kitten", "puppy", "snake"];
+  const PET_TYPE_LABELS = {
+    kitten: "Котенок",
+    puppy: "Песик",
+    snake: "Змея",
+  };
+  const PET_ASSET_URLS = {
+    kitten: "/assets/pets/kitten.svg",
+    puppy: "/assets/pets/puppy.svg",
+    snake: "/assets/pets/snake.svg",
+  };
   const draftStorageKey = `unqx:admin-card-draft:${cardId}`;
 
   let presets = {
@@ -108,6 +119,7 @@
     emojiPackButtons: $$("[data-emoji-background-pack]"),
     customColor: $("#admin-card-custom-color"),
     hideBranding: $("#admin-card-hide-branding"),
+    petsList: $("#admin-card-pets-list"),
     preview: $("#profile-card-live-preview"),
   };
 
@@ -136,6 +148,8 @@
     selectedPreviewSlug: "",
     isActive: false,
     tariff: "legacy",
+    petCatalog: [],
+    petDrafts: {},
     card: {
       name: "",
       role: "",
@@ -153,6 +167,7 @@
       avatarFrame: "none",
       emojiBackgroundPack: "none",
       showBranding: true,
+      pets: [],
     },
   };
 
@@ -261,6 +276,64 @@
     });
   }
 
+  function normalizePetItem(pet) {
+    const petType = String(pet?.petType || "").trim().toLowerCase();
+    if (!PET_TYPES.includes(petType)) {
+      return null;
+    }
+    return {
+      id: String(pet?.id || "").trim(),
+      petType,
+      label: String(pet?.label || PET_TYPE_LABELS[petType] || petType).trim(),
+      assetUrl: String(pet?.assetUrl || PET_ASSET_URLS[petType]).trim(),
+      displayName: String(pet?.displayName || PET_TYPE_LABELS[petType] || "").trim(),
+      priceSnapshot: Number.isFinite(Number(pet?.priceSnapshot)) ? Number(pet.priceSnapshot) : 0,
+      isVisible: pet?.isVisible !== false,
+      createdAt: pet?.createdAt || null,
+    };
+  }
+
+  function normalizePetCatalog(items) {
+    return (Array.isArray(items) ? items : [])
+      .map((item) => {
+        const petType = String(item?.petType || item?.id || "").trim().toLowerCase();
+        if (!PET_TYPES.includes(petType)) return null;
+        return {
+          petType,
+          label: String(item?.label || PET_TYPE_LABELS[petType] || petType).trim(),
+          description: String(item?.description || "").trim(),
+          assetUrl: String(item?.assetUrl || PET_ASSET_URLS[petType]).trim(),
+          price: Number.isFinite(Number(item?.price)) ? Number(item.price) : 0,
+        };
+      })
+      .filter(Boolean);
+  }
+
+  function sortPets(items) {
+    return (Array.isArray(items) ? items : [])
+      .map(normalizePetItem)
+      .filter(Boolean)
+      .sort((left, right) => {
+        const timeA = new Date(left.createdAt || 0).getTime();
+        const timeB = new Date(right.createdAt || 0).getTime();
+        if (timeA !== timeB) return timeA - timeB;
+        return String(left.id || "").localeCompare(String(right.id || ""));
+      });
+  }
+
+  function buildPetDrafts(catalog, pets, previous) {
+    const next = { ...(previous && typeof previous === "object" ? previous : {}) };
+    const ownedByType = new Map(sortPets(pets).map((pet) => [pet.petType, pet]));
+    normalizePetCatalog(catalog).forEach((item) => {
+      if (ownedByType.has(item.petType)) {
+        next[item.petType] = String(ownedByType.get(item.petType)?.displayName || "").trim();
+      } else if (typeof next[item.petType] !== "string") {
+        next[item.petType] = "";
+      }
+    });
+    return next;
+  }
+
   function normalizeCardPayload(card) {
     const raw = card && typeof card === "object" ? card : {};
     return {
@@ -284,6 +357,7 @@
       avatarFrame: String(raw.avatarFrame || "none").trim().toLowerCase() || "none",
       emojiBackgroundPack: String(raw.emojiBackgroundPack || "none").trim().toLowerCase() || "none",
       showBranding: raw.showBranding !== false,
+      pets: sortPets(raw.pets),
     };
   }
 
@@ -380,7 +454,7 @@
 
     const draftCard = draft.card && typeof draft.card === "object" ? draft.card : {};
     const nextCategory = String(draft.category || state.category).trim();
-    state.category = ["main", "links", "contacts", "design"].includes(nextCategory) ? nextCategory : state.category;
+    state.category = ["main", "links", "contacts", "design", "pets"].includes(nextCategory) ? nextCategory : state.category;
     state.selectedPreviewSlug = String(draft.selectedPreviewSlug || state.selectedPreviewSlug).trim();
     state.card = {
       ...state.card,
@@ -635,6 +709,58 @@
     }
   }
 
+  function renderPetsEditor() {
+    if (!(el.petsList instanceof HTMLElement)) {
+      return;
+    }
+    const catalog = normalizePetCatalog(state.petCatalog);
+    const ownedPets = sortPets(state.card.pets);
+    const ownedByType = new Map(ownedPets.map((pet) => [pet.petType, pet]));
+    state.petDrafts = buildPetDrafts(catalog, ownedPets, state.petDrafts);
+
+    if (!catalog.length) {
+      el.petsList.innerHTML = '<div class="admin-card-helper">Каталог животных пока недоступен.</div>';
+      return;
+    }
+
+    el.petsList.innerHTML = catalog
+      .map((item) => {
+        const pet = ownedByType.get(item.petType) || null;
+        const inputValue = pet ? pet.displayName : String(state.petDrafts?.[item.petType] || "").trim();
+        return `
+          <article class="rounded-2xl border border-neutral-200 bg-neutral-50 p-4" data-admin-pet-card="${escapeHtml(item.petType)}">
+            <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+              <div class="flex items-start gap-3">
+                <img src="${escapeHtml(item.assetUrl)}" alt="${escapeHtml(item.label)}" class="h-20 w-20 shrink-0 object-contain" />
+                <div class="min-w-0">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <h4 class="text-base font-bold text-neutral-900">${escapeHtml(item.label)}</h4>
+                    <span class="rounded-full border ${pet ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-neutral-200 bg-white text-neutral-500"} px-2 py-1 text-[11px] font-semibold">${pet ? "Выдан" : "Не выдан"}</span>
+                  </div>
+                  <p class="mt-1 text-sm text-neutral-500">${escapeHtml(item.description || "Декоративный питомец для профиля.")}</p>
+                  <p class="mt-2 text-sm font-semibold text-neutral-900">${Number(item.price || 0).toLocaleString("ru-RU")} сум</p>
+                </div>
+              </div>
+              <div class="flex w-full flex-col gap-3 md:max-w-[320px]">
+                <label class="block">
+                  <span class="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Имя животного</span>
+                  <input type="text" maxlength="120" value="${escapeHtml(inputValue)}" data-pet-name-input="${escapeHtml(item.petType)}" class="admin-card-input" />
+                </label>
+                ${pet
+                  ? `<label class="inline-flex items-center justify-between gap-3 rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm">
+                      <span>Показывать на визитке</span>
+                      <input type="checkbox" data-pet-visible-toggle="${escapeHtml(pet.id || item.petType)}" ${pet.isVisible ? "checked" : ""} />
+                    </label>`
+                  : `<button type="button" class="inline-flex min-h-11 items-center justify-center rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100" data-pet-grant="${escapeHtml(item.petType)}">Выдать вручную</button>`
+                }
+              </div>
+            </div>
+          </article>
+        `;
+      })
+      .join("");
+  }
+
   function buildPreviewPayload() {
     const previewSlug = selectedPreviewSlug();
     const activeButtons = (Array.isArray(state.card.buttons) ? state.card.buttons : [])
@@ -666,6 +792,7 @@
       avatarFrame: state.card.avatarFrame || "none",
       emojiBackgroundPack: state.card.emojiBackgroundPack || "none",
       showBranding: state.card.showBranding !== false,
+      pets: sortPets(state.card.pets),
     };
   }
 
@@ -707,6 +834,7 @@
     renderEmojiPackButtons();
     renderTags();
     renderButtons();
+    renderPetsEditor();
     renderMeta();
     renderCategories();
     renderPreview();
@@ -978,6 +1106,12 @@
       avatarFrame: state.card.avatarFrame,
       emojiBackgroundPack: state.card.emojiBackgroundPack,
       showBranding: state.card.showBranding !== false,
+      pets: sortPets(state.card.pets).map((pet) => ({
+        id: pet.id || "",
+        petType: pet.petType,
+        displayName: pet.displayName,
+        isVisible: pet.isVisible !== false,
+      })),
       verifiedCompany:
         state.verification && typeof state.verification === "object"
           ? String(state.verification.verifiedCompany || "").trim()
@@ -1024,7 +1158,9 @@
     state.slugs = Array.isArray(payload?.slugs) ? payload.slugs.slice(0) : [];
     state.isActive = Boolean(payload?.isActive);
     state.tariff = payload?.tariff === "premium" ? "premium" : "legacy";
+    state.petCatalog = normalizePetCatalog(payload?.petCatalog);
     state.card = normalizeCardPayload(payload?.card);
+    state.petDrafts = buildPetDrafts(state.petCatalog, state.card.pets, state.petDrafts);
     state.selectedPreviewSlug = String(payload?.previewSlug?.fullSlug || state.selectedPreviewSlug || "").trim();
     if (!state.selectedPreviewSlug && state.slugs[0]?.fullSlug) {
       state.selectedPreviewSlug = state.slugs[0].fullSlug;
@@ -1147,6 +1283,75 @@
     }
     state.card.buttons.splice(index, 1);
     renderButtons();
+    renderPreview();
+    saveDraft();
+  });
+
+  el.petsList?.addEventListener("input", (event) => {
+    const target = event.target instanceof HTMLInputElement ? event.target : null;
+    if (!target) return;
+    const petType = String(target.getAttribute("data-pet-name-input") || "").trim().toLowerCase();
+    if (!PET_TYPES.includes(petType)) return;
+    const value = String(target.value || "").trim().slice(0, 120);
+    const ownedPets = sortPets(state.card.pets);
+    if (ownedPets.some((pet) => pet.petType === petType)) {
+      state.card.pets = ownedPets.map((pet) =>
+        pet.petType === petType
+          ? {
+            ...pet,
+            displayName: value || PET_TYPE_LABELS[petType],
+          }
+          : pet,
+      );
+    } else {
+      state.petDrafts = {
+        ...(state.petDrafts || {}),
+        [petType]: value,
+      };
+    }
+    renderPreview();
+    saveDraft();
+  });
+
+  el.petsList?.addEventListener("change", (event) => {
+    const target = event.target instanceof HTMLInputElement ? event.target : null;
+    if (!target) return;
+    const petId = String(target.getAttribute("data-pet-visible-toggle") || "").trim();
+    if (!petId) return;
+    state.card.pets = sortPets(state.card.pets).map((pet) =>
+      (pet.id || pet.petType) === petId
+        ? {
+          ...pet,
+          isVisible: target.checked,
+        }
+        : pet,
+    );
+    renderPreview();
+    saveDraft();
+  });
+
+  el.petsList?.addEventListener("click", (event) => {
+    const trigger = event.target instanceof HTMLElement ? event.target.closest("[data-pet-grant]") : null;
+    if (!trigger) return;
+    const petType = String(trigger.getAttribute("data-pet-grant") || "").trim().toLowerCase();
+    if (!PET_TYPES.includes(petType)) return;
+    if (sortPets(state.card.pets).some((pet) => pet.petType === petType)) return;
+    const draftName = String(state.petDrafts?.[petType] || "").trim();
+    const catalogItem = normalizePetCatalog(state.petCatalog).find((item) => item.petType === petType) || null;
+    state.card.pets = sortPets([
+      ...sortPets(state.card.pets),
+      {
+        id: "",
+        petType,
+        label: PET_TYPE_LABELS[petType],
+        assetUrl: PET_ASSET_URLS[petType],
+        displayName: draftName || PET_TYPE_LABELS[petType],
+        priceSnapshot: Number(catalogItem?.price || 0),
+        isVisible: true,
+        createdAt: new Date().toISOString(),
+      },
+    ]);
+    renderPetsEditor();
     renderPreview();
     saveDraft();
   });

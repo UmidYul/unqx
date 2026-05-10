@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192" fill="none">
+  <defs>
+    <linearGradient id="puppyFace" x1="32" y1="30" x2="156" y2="164" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#9A8C84"/>
+      <stop offset="1" stop-color="#5C5551"/>
+    </linearGradient>
+  </defs>
+  <path d="M42 73C42 53 58 38 78 38L70 88H56C48 88 42 82 42 73Z" fill="#746A66"/>
+  <path d="M150 73C150 53 134 38 114 38L122 88H136C144 88 150 82 150 73Z" fill="#746A66"/>
+  <circle cx="96" cy="100" r="54" fill="url(#puppyFace)"/>
+  <ellipse cx="96" cy="122" rx="29" ry="24" fill="#FDBD94"/>
+  <circle cx="76" cy="98" r="6" fill="#232020"/>
+  <circle cx="116" cy="98" r="6" fill="#232020"/>
+  <circle cx="74" cy="96" r="2" fill="#fff"/>
+  <circle cx="114" cy="96" r="2" fill="#fff"/>
+  <ellipse cx="96" cy="111" rx="9" ry="7" fill="#232020"/>
+  <path d="M96 118V129" stroke="#232020" stroke-width="4" stroke-linecap="round"/>
+  <path d="M96 129C90 136 84 139 79 140M96 129C102 136 108 139 113 140" stroke="#232020" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="54" cy="111" r="6" fill="#FFB69B"/>
+  <circle cx="138" cy="111" r="6" fill="#FFB69B"/>
+</svg>

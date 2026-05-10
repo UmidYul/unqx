@@ -152,6 +152,19 @@ enum PurchaseType {
   upgrade_to_premium
   premium_subscription_monthly
   bracelet
+  pet
+}
+
+enum PetType {
+  kitten
+  puppy
+  snake
+}
+
+enum PetPurchaseRequestStatus {
+  pending
+  approved
+  rejected
 }
 
 enum BonusLedgerDirection {
@@ -312,6 +325,8 @@ model User {
   profileCard            ProfileCard?
   paymentCards           PaymentCard[]
   slugRequests           SlugRequest[]
+  profileCardPets        ProfileCardPet[]
+  petPurchaseRequests    PetPurchaseRequest[]
   slugWaitlistEntries    SlugWaitlist[]
   referralsMade          Referral[]            @relation("ReferrerReferrals")
   referralsReceived      Referral[]            @relation("ReferredReferrals")
@@ -422,8 +437,52 @@ model ProfileCard {
   showBranding Boolean   @default(true) @map("show_branding")
   createdAt    DateTime  @default(now()) @map("created_at")
   updatedAt    DateTime  @updatedAt @map("updated_at")
+  pets         ProfileCardPet[]
+  petPurchaseRequests PetPurchaseRequest[]
 
   @@map("profile_cards")
+}
+
+model ProfileCardPet {
+  id            String      @id @default(uuid())
+  profileCardId String      @map("profile_card_id")
+  profileCard    ProfileCard @relation(fields: [profileCardId], references: [id], onDelete: Cascade)
+  userId        String      @map("user_id")
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  petType       PetType     @map("pet_type")
+  displayName   String      @map("display_name") @db.VarChar(120)
+  priceSnapshot Int         @map("price_snapshot")
+  isVisible     Boolean     @default(true) @map("is_visible")
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+
+  @@unique([userId, petType])
+  @@index([profileCardId, createdAt(sort: Desc)])
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("profile_card_pets")
+}
+
+model PetPurchaseRequest {
+  id               String                   @id @default(uuid())
+  userId           String                   @map("user_id")
+  user             User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  profileCardId    String                   @map("profile_card_id")
+  profileCard      ProfileCard              @relation(fields: [profileCardId], references: [id], onDelete: Cascade)
+  petType          PetType                  @map("pet_type")
+  displayName      String                   @map("display_name") @db.VarChar(120)
+  priceSnapshot    Int                      @map("price_snapshot")
+  status           PetPurchaseRequestStatus @default(pending)
+  paymentReference String                   @map("payment_reference") @db.VarChar(40)
+  paymentUrl       String                   @map("payment_url")
+  adminNote        String?                  @map("admin_note")
+  requestedAt      DateTime                 @default(now()) @map("requested_at")
+  reviewedAt       DateTime?                @map("reviewed_at")
+
+  @@index([userId, requestedAt(sort: Desc)])
+  @@index([status, requestedAt(sort: Desc)])
+  @@index([profileCardId, requestedAt(sort: Desc)])
+  @@index([userId, petType, status])
+  @@map("pet_purchase_requests")
 }
 
 model PaymentCard {

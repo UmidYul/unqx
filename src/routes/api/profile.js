@@ -1,3 +1,4 @@
+const { randomUUID } = require("node:crypto");
 const express = require("express");
 const multer = require("multer");
 
@@ -67,6 +68,17 @@ const { resolveUzbekistanCity } = require("../../constants/uzbekistan-cities");
 const { getSetting } = require("../../services/platform-settings");
 const { getOfficialUnqClientConfig } = require("../../services/official-unq-config");
 const { getOrderPaymentReference, buildManualTelegramPaymentUrl, normalizeTelegramUsername } = require("../../services/payment-flow");
+const {
+  getPetCatalog,
+  getPetPriceFromCatalog,
+  normalizePetType,
+  normalizePetDisplayName,
+  resolvePetDisplayName,
+  mapProfileCardPet,
+  sortProfileCardPets,
+  buildPetPaymentUrl,
+  mapPetPurchaseRequest,
+} = require("../../services/pets");
 const {
   PRIVATE_PASSWORD_MIN_LENGTH,
   PRIVATE_PASSWORD_MAX_COUNT,
@@ -340,9 +352,57 @@ function mapProfileCardRow(row) {
       return PROFILE_EMOJI_BACKGROUNDS.has(nextPack) ? nextPack : "none";
     })(),
     showBranding: toBool(showBrandingRaw, true),
+    pets: sortProfileCardPets(row.pets),
     createdAt,
     updatedAt,
   };
+}
+
+async function listOwnedPetsByUserId(userId) {
+  if (!userId || !prisma.profileCardPet) {
+    return [];
+  }
+  try {
+    const rows = await prisma.profileCardPet.findMany({
+      where: { userId },
+      orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+    });
+    return sortProfileCardPets(rows);
+  } catch {
+    return [];
+  }
+}
+
+async function listPetPurchaseRequestsByUserId(userId) {
+  if (!userId || !prisma.petPurchaseRequest) {
+    return [];
+  }
+  try {
+    return await prisma.petPurchaseRequest.findMany({
+      where: { userId },
+      orderBy: [{ requestedAt: "desc" }, { id: "desc" }],
+    });
+  } catch {
+    return [];
+  }
+}
+
+function mergeProfileRequests({ slugRequests = [], petRequests = [], slugRequestOptions = {} }) {
+  const items = [
+    ...(Array.isArray(slugRequests)
+      ? slugRequests.map((item) => ({
+        ...mapProfileRequest(item, slugRequestOptions),
+        type: "slug",
+      }))
+      : []),
+    ...(Array.isArray(petRequests) ? petRequests.map((item) => mapPetPurchaseRequest(item)).filter(Boolean) : []),
+  ];
+  return items.sort((a, b) => {
+    const timeA = new Date(a?.createdAt || a?.requestedAt || 0).getTime();
+    const timeB = new Date(b?.createdAt || b?.requestedAt || 0).getTime();
+    if (timeA !== timeB) return timeB - timeA;
+    return String(b?.id || "").localeCompare(String(a?.id || ""));
+  });
 }
 
 async function findProfileCardByOwnerId(ownerId) {
@@ -824,13 +884,16 @@ router.get(
       return;
     }
 
-    const [slugs, card, requests, score, pricing, supportTelegramRaw, braceletPrice, privatePasswords, followSummary] = await Promise.all([
+    const [slugs, card, slugRequests, petRequests, pets, petCatalog, score, pricing, supportTelegramRaw, braceletPrice, privatePasswords, followSummary] = await Promise.all([
       getUserSlugsWithStats(user.id),
       findProfileCardByOwnerId(user.id),
       prisma.slugRequest.findMany({
         where: { userId: user.id },
         orderBy: { createdAt: "desc" },
       }),
+      listPetPurchaseRequestsByUserId(user.id),
+      listOwnedPetsByUserId(user.id),
+      getPetCatalog(),
       getProfileScoreByUserId(user.id),
       getPricingSettings(),
       getSetting("contact_support_telegram", `@${FALLBACK_SUPPORT_TELEGRAM}`),
@@ -845,6 +908,22 @@ router.get(
 
     const effective = getEffectivePlan(user);
     const wallSummary = await getWallSummary(user);
+    const requestItems = mergeProfileRequests({
+      slugRequests,
+      petRequests,
+      slugRequestOptions: {
+        supportTelegram,
+        fullName: normalizeDisplayName(user.displayName, user.firstName),
+        email: user.email || "",
+        braceletPrice,
+      },
+    });
+    const cardPayload = effective.plan === "none" || !card
+      ? null
+      : parseProfileCardRow({
+        ...card,
+        pets,
+      });
 
     res.json({
       user: {
@@ -890,15 +969,10 @@ router.get(
         buttons: getButtonLimit(effective.plan),
       },
       slugs: effective.plan === "none" ? [] : slugs,
-      card: effective.plan === "none" ? null : parseProfileCardRow(card),
-      requests: requests.map((item) =>
-        mapProfileRequest(item, {
-          supportTelegram,
-          fullName: normalizeDisplayName(user.displayName, user.firstName),
-          email: user.email || "",
-          braceletPrice,
-        }),
-      ),
+      card: cardPayload,
+      pets,
+      petCatalog,
+      requests: requestItems,
       score,
       pricing,
       access: {
@@ -1751,8 +1825,11 @@ router.get(
       res.json({ card: null });
       return;
     }
-    const row = await findProfileCardByOwnerId(user.id);
-    res.json({ card: parseProfileCardRow(row) });
+    const [row, pets] = await Promise.all([
+      findProfileCardByOwnerId(user.id),
+      listOwnedPetsByUserId(user.id),
+    ]);
+    res.json({ card: row ? parseProfileCardRow({ ...row, pets }) : null, pets });
   }),
 );
 
@@ -1810,6 +1887,15 @@ router.put(
       effective.plan === "premium"
         ? (typeof body.showBranding === "boolean" ? body.showBranding : true)
         : true;
+    const petPatches = Array.isArray(body.pets)
+      ? body.pets
+        .map((item) => ({
+          id: String(item?.id || "").trim(),
+          displayName: normalizePetDisplayName(item?.displayName),
+          isVisible: typeof item?.isVisible === "boolean" ? item.isVisible : null,
+        }))
+        .filter((item) => item.id)
+      : [];
 
     if (effective.plan !== "premium") {
       const requestedTheme = String(body.theme || "").trim();
@@ -1830,7 +1916,7 @@ router.put(
     }
 
     const saved = await prisma.$transaction(async (tx) => {
-      await upsertProfileCardCompat(tx, {
+      const savedCard = await upsertProfileCardCompat(tx, {
         ownerId: user.id,
         name,
         role,
@@ -1866,11 +1952,158 @@ router.put(
         },
       });
 
-      return findProfileCardByOwnerId(user.id);
+      if (petPatches.length && tx.profileCardPet) {
+        const ownedPets = await tx.profileCardPet.findMany({
+          where: { userId: user.id },
+        });
+        const ownedMap = new Map(ownedPets.map((item) => [String(item.id), item]));
+        for (const patch of petPatches) {
+          const existingPet = ownedMap.get(patch.id);
+          if (!existingPet) {
+            continue;
+          }
+          await tx.profileCardPet.update({
+            where: { id: existingPet.id },
+            data: {
+              displayName: resolvePetDisplayName(patch.displayName, existingPet.petType),
+              isVisible: patch.isVisible == null ? existingPet.isVisible : Boolean(patch.isVisible),
+              profileCardId: savedCard.id,
+            },
+          });
+        }
+      }
+
+      const freshPets = tx.profileCardPet
+        ? await tx.profileCardPet.findMany({
+          where: { userId: user.id },
+          orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+        })
+        : [];
+      return {
+        card: await findProfileCardByOwnerId(user.id),
+        pets: sortProfileCardPets(freshPets),
+      };
     });
     await safeRecalculateScore(user.id);
 
-    res.json({ ok: true, card: parseProfileCardRow(saved) });
+    res.json({
+      ok: true,
+      card: parseProfileCardRow({
+        ...(saved.card || {}),
+        pets: saved.pets,
+      }),
+      pets: saved.pets,
+    });
+  }),
+);
+
+router.post(
+  "/pet-requests",
+  asyncHandler(async (req, res) => {
+    const user = await getCurrentUser(req);
+    if (!assertUserActive(user, res)) {
+      return;
+    }
+    if (!assertPlanAllowsCard(user, res)) {
+      return;
+    }
+
+    const petType = normalizePetType(req.body?.petType);
+    if (!petType) {
+      res.status(400).json({ error: "Некорректный тип питомца", code: "PET_TYPE_INVALID" });
+      return;
+    }
+
+    const displayName = normalizePetDisplayName(req.body?.displayName);
+    if (!displayName) {
+      res.status(400).json({ error: "Имя питомца обязательно", code: "PET_NAME_REQUIRED" });
+      return;
+    }
+
+    const [card, petCatalog, supportTelegramRaw] = await Promise.all([
+      findProfileCardByOwnerId(user.id),
+      getPetCatalog(),
+      getSetting("contact_support_telegram", `@${FALLBACK_SUPPORT_TELEGRAM}`),
+    ]);
+
+    if (!card?.id) {
+      res.status(400).json({ error: "Сначала сохрани визитку", code: "CARD_REQUIRED" });
+      return;
+    }
+
+    const priceSnapshot = getPetPriceFromCatalog(petCatalog, petType);
+    const requestId = randomUUID();
+    const paymentReference = getOrderPaymentReference(requestId);
+    const paymentUrl = buildPetPaymentUrl({
+      requestId,
+      petType,
+      displayName,
+      priceSnapshot,
+      telegramUsername: supportTelegramRaw,
+      fullName: normalizeDisplayName(user.displayName, user.firstName),
+      email: user.email || "",
+      paymentReference,
+    });
+
+    try {
+      const created = await prisma.$transaction(async (tx) => {
+        if (tx.profileCardPet) {
+          const owned = await tx.profileCardPet.findFirst({
+            where: { userId: user.id, petType },
+            select: { id: true },
+          });
+          if (owned) {
+            const error = new Error("Питомец этого вида уже выдан");
+            error.code = "PET_ALREADY_OWNED";
+            throw error;
+          }
+        }
+
+        if (tx.petPurchaseRequest) {
+          const pending = await tx.petPurchaseRequest.findFirst({
+            where: { userId: user.id, petType, status: "pending" },
+            select: { id: true },
+          });
+          if (pending) {
+            const error = new Error("Заявка на этого питомца уже в обработке");
+            error.code = "PET_REQUEST_ALREADY_EXISTS";
+            throw error;
+          }
+        }
+
+        return tx.petPurchaseRequest.create({
+          data: {
+            id: requestId,
+            userId: user.id,
+            profileCardId: card.id,
+            petType,
+            displayName,
+            priceSnapshot,
+            status: "pending",
+            paymentReference,
+            paymentUrl,
+          },
+        });
+      });
+
+      const request = mapPetPurchaseRequest(created);
+      res.status(201).json({
+        ok: true,
+        request,
+        paymentReference: request.paymentReference,
+        paymentUrl: request.paymentUrl,
+      });
+    } catch (error) {
+      if (error?.code === "PET_ALREADY_OWNED") {
+        res.status(409).json({ error: error.message, code: error.code });
+        return;
+      }
+      if (error?.code === "PET_REQUEST_ALREADY_EXISTS") {
+        res.status(409).json({ error: error.message, code: error.code });
+        return;
+      }
+      throw error;
+    }
   }),
 );
 
@@ -2484,24 +2717,27 @@ router.get(
       return;
     }
 
-    const [rows, supportTelegramRaw, braceletPrice] = await Promise.all([
+    const [slugRows, petRows, supportTelegramRaw, braceletPrice] = await Promise.all([
       prisma.slugRequest.findMany({
         where: { userId: user.id },
         orderBy: { createdAt: "desc" },
       }),
+      listPetPurchaseRequestsByUserId(user.id),
       getSetting("contact_support_telegram", `@${FALLBACK_SUPPORT_TELEGRAM}`),
       getBraceletPrice(),
     ]);
     const supportTelegram = normalizeTelegramUsername(supportTelegramRaw);
     res.json({
-      items: rows.map((item) =>
-        mapProfileRequest(item, {
+      items: mergeProfileRequests({
+        slugRequests: slugRows,
+        petRequests: petRows,
+        slugRequestOptions: {
           supportTelegram,
           fullName: normalizeDisplayName(user.displayName, user.firstName),
           email: user.email || "",
           braceletPrice,
-        }),
-      ),
+        },
+      }),
     });
   }),
 );

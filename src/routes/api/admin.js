@@ -78,6 +78,17 @@ const {
 } = require("../../services/payment-analytics");
 const { detectDevice } = require("../../services/ua");
 const { getTodayVisitorsStats, getUtcDayStart, incrementTodayVisitorsAdjustment } = require("../../services/live-stats");
+const {
+  getPetCatalog,
+  getPetPriceFromCatalog,
+  normalizePetType,
+  normalizePetDisplayName,
+  resolvePetDisplayName,
+  getPetTypeLabel,
+  mapProfileCardPet,
+  sortProfileCardPets,
+  mapPetPurchaseRequest,
+} = require("../../services/pets");
 
 const router = express.Router();
 const ONLINE_WINDOW_SECONDS = 90;
@@ -292,8 +303,91 @@ function mapProfileCardRow(row) {
       return PROFILE_EMOJI_BACKGROUNDS.has(nextPack) ? nextPack : "none";
     })(),
     showBranding: toBool(showBrandingRaw, true),
+    pets: sortProfileCardPets(row.pets),
     createdAt,
     updatedAt,
+  };
+}
+
+async function listOwnedPetsByUserId(userId) {
+  if (!userId || !prisma.profileCardPet) {
+    return [];
+  }
+  try {
+    const rows = await prisma.profileCardPet.findMany({
+      where: { userId },
+      orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+    });
+    return sortProfileCardPets(rows);
+  } catch {
+    return [];
+  }
+}
+
+async function listPetRequestsAdmin(where = {}) {
+  if (!prisma.petPurchaseRequest) {
+    return [];
+  }
+  try {
+    return await prisma.petPurchaseRequest.findMany({
+      where,
+      orderBy: [{ requestedAt: "desc" }, { id: "desc" }],
+      include: {
+        user: {
+          select: {
+            id: true,
+            firstName: true,
+            displayName: true,
+            username: true,
+            telegramUsername: true,
+            email: true,
+            login: true,
+            slugs: {
+              orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
+              take: 3,
+              select: {
+                fullSlug: true,
+                isPrimary: true,
+              },
+            },
+          },
+        },
+        profileCard: {
+          select: {
+            id: true,
+            ownerId: true,
+            name: true,
+          },
+        },
+      },
+    });
+  } catch {
+    return [];
+  }
+}
+
+function mapAdminPetRequestRow(row) {
+  if (!row) return null;
+  const base = mapPetPurchaseRequest(row);
+  if (!base) return null;
+  const user = row.user && typeof row.user === "object" ? row.user : {};
+  const slugs = Array.isArray(user.slugs) ? user.slugs : [];
+  const primarySlug = slugs.find((item) => item?.isPrimary) || slugs[0] || null;
+  return {
+    ...base,
+    user: {
+      id: String(user.id || "").trim(),
+      firstName: String(user.firstName || "").trim(),
+      displayName: String(user.displayName || "").trim(),
+      username: String(user.username || user.login || "").trim(),
+      telegramUsername: String(user.telegramUsername || "").trim(),
+      email: String(user.email || "").trim(),
+    },
+    slug: String(primarySlug?.fullSlug || "").trim(),
+    profileCardId: row.profileCardId || row.profile_card_id || row.profileCard?.id || null,
+    profileCardName: String(row.profileCard?.name || "").trim(),
+    requestedAt: row.requestedAt ?? row.requested_at ?? null,
+    reviewedAt: row.reviewedAt ?? row.reviewed_at ?? null,
   };
 }
 
@@ -921,6 +1015,7 @@ function mapAdminCardCompatRecord(record) {
     avatarFrame: record.avatarFrame,
     emojiBackgroundPack: record.emojiBackgroundPack,
     showBranding: record.showBranding,
+    pets: record.pets,
     createdAt: record.createdAt,
     updatedAt: record.updatedAt,
   });
@@ -986,6 +1081,7 @@ function buildAdminCardDetailResponse(record) {
     id: mapped.id,
     ownerId: mapped.ownerId,
     card: mapped.card,
+    pets: mapped.card?.pets || [],
     owner: mapped.owner,
     slugs: mapped.slugs,
     previewSlug: mapped.previewSlug,
@@ -1026,6 +1122,20 @@ async function findAdminCardCompatById(cardId) {
       showBranding: true,
       createdAt: true,
       updatedAt: true,
+      pets: {
+        orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+        select: {
+          id: true,
+          profileCardId: true,
+          userId: true,
+          petType: true,
+          displayName: true,
+          priceSnapshot: true,
+          isVisible: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      },
       owner: {
         select: {
           id: true,
@@ -1236,6 +1346,7 @@ async function saveAdminCardCompatForOwner(ownerId, rawBody) {
   }
 
   const currentCard = await findProfileCardByOwnerId(user.id);
+  const petCatalog = await getPetCatalog();
   const body = rawBody && typeof rawBody === "object" ? rawBody : {};
   const name = normalizeDisplayName(body.name, currentCard?.name || buildAdminCardOwnerLabel(user));
   const role = String(body.role ?? currentCard?.role ?? "").trim().slice(0, 120) || null;
@@ -1279,6 +1390,16 @@ async function saveAdminCardCompatForOwner(ownerId, rawBody) {
     ? body.buttons.filter((item) => !(item && typeof item === "object" && item.active === false))
     : currentCard?.buttons;
   const buttons = normalizeButtons(activeButtons, "premium");
+  const petPatches = Array.isArray(body.pets)
+    ? body.pets
+      .map((item) => ({
+        id: String(item?.id || "").trim(),
+        petType: normalizePetType(item?.petType),
+        displayName: normalizePetDisplayName(item?.displayName),
+        isVisible: typeof item?.isVisible === "boolean" ? item.isVisible : null,
+      }))
+      .filter((item) => item.id || item.petType)
+    : [];
 
   const savedCard = await prisma.$transaction(async (tx) => {
     if (verifiedCompany !== String(user.verifiedCompany || "").trim()) {
@@ -1315,6 +1436,51 @@ async function saveAdminCardCompatForOwner(ownerId, rawBody) {
       postcode,
       extraPhone,
     });
+
+    if (petPatches.length && tx.profileCardPet) {
+      const ownedPets = await tx.profileCardPet.findMany({
+        where: { userId: user.id },
+        orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+      });
+      const ownedById = new Map(ownedPets.map((item) => [String(item.id), item]));
+      const ownedByType = new Map(ownedPets.map((item) => [String(item.petType), item]));
+
+      for (const patch of petPatches) {
+        const existingById = patch.id ? ownedById.get(patch.id) : null;
+        const existingByType = patch.petType ? ownedByType.get(patch.petType) : null;
+        const existingPet = existingById || existingByType || null;
+
+        if (existingPet) {
+          await tx.profileCardPet.update({
+            where: { id: existingPet.id },
+            data: {
+              displayName: resolvePetDisplayName(
+                patch.displayName,
+                patch.petType || existingPet.petType,
+              ),
+              isVisible: patch.isVisible == null ? existingPet.isVisible : Boolean(patch.isVisible),
+              profileCardId: saved.id,
+            },
+          });
+          continue;
+        }
+
+        if (!patch.petType) {
+          continue;
+        }
+
+        await tx.profileCardPet.create({
+          data: {
+            profileCardId: saved.id,
+            userId: user.id,
+            petType: patch.petType,
+            displayName: resolvePetDisplayName(patch.displayName, patch.petType),
+            priceSnapshot: getPetPriceFromCatalog(petCatalog, patch.petType),
+            isVisible: patch.isVisible == null ? true : Boolean(patch.isVisible),
+          },
+        });
+      }
+    }
 
     return saved;
   });
@@ -1664,6 +1830,26 @@ async function managerOwnsVerificationRequest(req, verificationRequestId) {
   const row = await prisma.verificationRequest.findFirst({
     where: {
       id: String(verificationRequestId || "").trim(),
+      user: {
+        createdByStaffId: scope.managerId,
+      },
+    },
+    select: { id: true },
+  });
+  return Boolean(row);
+}
+
+async function managerOwnsPetRequest(req, petRequestId) {
+  const scope = await getManagerScope(req);
+  if (!scope.isManager) {
+    return true;
+  }
+  if (isManagerScopeBlocked(scope)) {
+    return false;
+  }
+  const row = await prisma.petPurchaseRequest.findFirst({
+    where: {
+      id: String(petRequestId || "").trim(),
       user: {
         createdByStaffId: scope.managerId,
       },
@@ -2106,6 +2292,9 @@ const MANAGER_ALLOWED_ROUTES = [
   { method: "POST", re: /^\/verification-requests\/[^/]+\/approve\/?$/ },
   { method: "POST", re: /^\/verification-requests\/[^/]+\/reject\/?$/ },
   { method: "POST", re: /^\/verification-requests\/[^/]+\/revoke\/?$/ },
+  { method: "GET", re: /^\/pet-requests\/?$/ },
+  { method: "POST", re: /^\/pet-requests\/[^/]+\/approve\/?$/ },
+  { method: "POST", re: /^\/pet-requests\/[^/]+\/reject\/?$/ },
   { method: "GET", re: /^\/badge-applications\/?$/ },
   { method: "POST", re: /^\/badge-applications\/[^/]+\/approve\/?$/ },
   { method: "POST", re: /^\/badge-applications\/[^/]+\/reject\/?$/ },
@@ -2143,6 +2332,7 @@ router.get(
         badges: {
           orders: 0,
           bracelets: 0,
+          pets: 0,
         },
         events: [],
       });
@@ -2155,8 +2345,22 @@ router.get(
     const managerOrderHref = "/manager/dashboard?tab=orders";
     const adminOrderHref = "/admin/dashboard?tab=orders";
     const adminBraceletHref = "/admin/dashboard?tab=bracelets";
+    const managerPetsHref = "/manager/dashboard?tab=pets";
+    const adminPetsHref = "/admin/dashboard?tab=pets";
 
-    const [newOrdersCount, orderedBraceletsCount, orderEvents, braceletEvents] = await Promise.all([
+    const petEventTitle = (item) => {
+      const status = String(item?.status || "").trim().toLowerCase();
+      const petLabel = getPetTypeLabel(item?.petType);
+      if (status === "approved") {
+        return `${petLabel} выдан`;
+      }
+      if (status === "rejected") {
+        return `${petLabel} отклонен`;
+      }
+      return `Новая заявка: ${petLabel}`;
+    };
+
+    const [newOrdersCount, orderedBraceletsCount, pendingPetsCount, orderEvents, braceletEvents, petEvents] = await Promise.all([
       prisma.slugRequest.count({
         where: andWhere({ status: "new" }, managerOrdersWhere),
       }),
@@ -2165,6 +2369,14 @@ router.get(
         : prisma.braceletOrder.count({
           where: { deliveryStatus: "ORDERED" },
         }),
+      prisma.petPurchaseRequest
+        ? prisma.petPurchaseRequest.count({
+          where: andWhere(
+            { status: "pending" },
+            isScopedManager ? { user: { createdByStaffId: managerScope.managerId } } : null,
+          ),
+        })
+        : Promise.resolve(0),
       prisma.slugRequest.findMany({
         where: managerOrdersWhere || undefined,
         orderBy: { updatedAt: "desc" },
@@ -2188,6 +2400,21 @@ router.get(
             updatedAt: true,
           },
         }),
+      prisma.petPurchaseRequest
+        ? prisma.petPurchaseRequest.findMany({
+          where: isScopedManager ? { user: { createdByStaffId: managerScope.managerId } } : undefined,
+          orderBy: [{ requestedAt: "desc" }, { updatedAt: "desc" }],
+          take: 5,
+          select: {
+            id: true,
+            petType: true,
+            status: true,
+            displayName: true,
+            requestedAt: true,
+            updatedAt: true,
+          },
+        })
+        : Promise.resolve([]),
     ]);
 
     const mergedEvents = [
@@ -2205,6 +2432,13 @@ router.get(
         at: item.updatedAt,
         href: adminBraceletHref,
       })),
+      ...petEvents.map((item) => ({
+        id: `pet:${item.id}`,
+        title: petEventTitle(item),
+        slug: item.displayName || getPetTypeLabel(item.petType),
+        at: item.updatedAt || item.requestedAt,
+        href: isScopedManager ? managerPetsHref : adminPetsHref,
+      })),
     ]
       .sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())
       .slice(0, 5);
@@ -2213,6 +2447,7 @@ router.get(
       badges: {
         orders: newOrdersCount,
         bracelets: orderedBraceletsCount,
+        pets: pendingPetsCount,
       },
       events: mergedEvents,
     });
@@ -2775,7 +3010,10 @@ router.get(
       return;
     }
 
-    res.json(buildAdminCardDetailResponse(card));
+    res.json({
+      ...buildAdminCardDetailResponse(card),
+      petCatalog: await getPetCatalog(),
+    });
   }),
 );
 
@@ -2799,7 +3037,10 @@ router.patch(
         res.status(404).json({ error: "User not found", code: "USER_NOT_FOUND" });
         return;
       }
-      res.json(buildAdminCardDetailResponse(saved));
+      res.json({
+        ...buildAdminCardDetailResponse(saved),
+        petCatalog: await getPetCatalog(),
+      });
     } catch (error) {
       if (error?.code === "INVALID_EMAIL") {
         res.status(400).json({ error: "Invalid email", code: "INVALID_EMAIL" });
@@ -3091,7 +3332,7 @@ function buildOrdersWhere(query) {
 
 function buildPurchasesWhere(query) {
   const where = {};
-  const allowedTypes = new Set(["slug", "basic_plan", "premium_plan", "upgrade_to_premium", "bracelet"]);
+  const allowedTypes = new Set(["slug", "basic_plan", "premium_plan", "upgrade_to_premium", "bracelet", "pet"]);
 
   if (typeof query.type === "string" && query.type !== "all" && allowedTypes.has(query.type)) {
     where.type = query.type;
@@ -4308,7 +4549,8 @@ router.get(
       throw error;
     }
 
-    const slugs = await prisma.slug.findMany({
+    const [slugs, pets, petCatalog] = await Promise.all([
+      prisma.slug.findMany({
       where: { ownerId: user.id },
       orderBy: [
         { isPrimary: "desc" },
@@ -4324,12 +4566,17 @@ router.get(
         activatedAt: true,
         createdAt: true,
       },
-    });
+      }),
+      listOwnedPetsByUserId(user.id),
+      getPetCatalog(),
+    ]);
 
     const effective = getEffectivePlan(user);
     res.json({
       user: normalizedUser,
-      card: parseProfileCardRow(card),
+      card: card ? parseProfileCardRow({ ...card, pets }) : null,
+      pets,
+      petCatalog,
       slugs,
       limits: {
         tags: getTagLimit(effective.plan),
@@ -5526,49 +5773,36 @@ router.put(
 
     let saved;
     try {
-      saved = await prisma.$transaction(async (tx) => {
-        await tx.user.update({
-          where: { id: user.id },
-          data: { verifiedCompany: company },
-          select: { id: true, verifiedCompany: true },
-        });
-        await upsertProfileCardCompat(tx, {
+      saved = await saveAdminCardCompatForOwner(user.id, {
+        ...body,
+        name,
+        verifiedCompany: company,
+        role,
+        bio,
+        hashtag,
+        address,
+        postcode,
+        email,
+        extraPhone,
+        tags,
+        buttons,
+        theme: themeForDatabase,
+        customColor,
+        avatarFrame,
+        emojiBackgroundPack,
+        showBranding,
+        pets: Array.isArray(body.pets) ? body.pets : [],
+      });
+
+      await prisma.slug.updateMany({
+        where: {
           ownerId: user.id,
-          name,
-          role,
-          bio,
-          hashtag,
-          address,
-          postcode,
-          email,
-          extraPhone,
-          tags,
-          buttons,
-          theme: themeForDatabase,
-          customColor,
-          avatarFrame,
-          emojiBackgroundPack,
-          showBranding,
-        });
-        await patchOptionalProfileCardFields(tx, user.id, {
-          hashtag,
-          address,
-          postcode,
-          extraPhone,
-        });
-
-        await tx.slug.updateMany({
-          where: {
-            ownerId: user.id,
-            status: "approved",
-          },
-          data: {
-            status: "active",
-            activatedAt: new Date(),
-          },
-        });
-
-        return findProfileCardByOwnerId(user.id);
+          status: "approved",
+        },
+        data: {
+          status: "active",
+          activatedAt: new Date(),
+        },
       });
     } catch (error) {
       if (isMissingStorageError(error)) {
@@ -5578,13 +5812,14 @@ router.put(
       throw error;
     }
 
-    await safeRecalculateScore(user.id);
+    const detail = buildAdminCardDetailResponse(saved);
     res.json({
       ok: true,
-      card: parseProfileCardRow(saved),
+      card: detail?.card || null,
+      pets: detail?.pets || [],
       user: {
         id: user.id,
-        verifiedCompany: company,
+        verifiedCompany: detail?.verification?.verifiedCompany || company,
       },
     });
   }),
@@ -8281,6 +8516,206 @@ router.get(
         ).size,
       },
     });
+  }),
+);
+
+router.get(
+  "/pet-requests",
+  asyncHandler(async (req, res) => {
+    if (!prisma.petPurchaseRequest) {
+      res.json({ items: [], pagination: { page: 1, totalPages: 1, total: 0 } });
+      return;
+    }
+    const managerScope = await getManagerScope(req);
+    if (isManagerScopeBlocked(managerScope)) {
+      res.json({ items: [], pagination: { page: 1, totalPages: 1, total: 0 } });
+      return;
+    }
+
+    const status = String(req.query.status || "all").trim().toLowerCase();
+    const petType = normalizePetType(req.query.petType);
+    const page = Math.max(1, Number(req.query.page || 1) || 1);
+    const pageSize = 20;
+
+    const baseWhere = {};
+    if (["pending", "approved", "rejected"].includes(status)) {
+      baseWhere.status = status;
+    }
+    if (petType) {
+      baseWhere.petType = petType;
+    }
+
+    const where = managerScope.isManager
+      ? andWhere(baseWhere, { user: { createdByStaffId: managerScope.managerId } })
+      : baseWhere;
+
+    const [total, rows] = await Promise.all([
+      prisma.petPurchaseRequest.count({ where }),
+      prisma.petPurchaseRequest.findMany({
+        where,
+        include: {
+          user: {
+            select: {
+              id: true,
+              firstName: true,
+              displayName: true,
+              username: true,
+              telegramUsername: true,
+              email: true,
+              login: true,
+              slugs: {
+                orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
+                take: 3,
+                select: {
+                  fullSlug: true,
+                  isPrimary: true,
+                },
+              },
+            },
+          },
+          profileCard: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+        orderBy: [{ requestedAt: "desc" }, { id: "desc" }],
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+    ]);
+
+    res.json({
+      items: rows.map((row) => mapAdminPetRequestRow(row)).filter(Boolean),
+      pagination: {
+        page,
+        total,
+        totalPages: Math.max(1, Math.ceil(total / pageSize)),
+      },
+    });
+  }),
+);
+
+router.post(
+  "/pet-requests/:id/approve",
+  asyncHandler(async (req, res) => {
+    if (!prisma.petPurchaseRequest || !prisma.profileCardPet) {
+      res.status(503).json({ error: "Pets storage unavailable", code: "PETS_STORAGE_UNAVAILABLE" });
+      return;
+    }
+    if (isManagerSession(req)) {
+      const ownsPetRequest = await managerOwnsPetRequest(req, req.params.id);
+      if (!ownsPetRequest) {
+        res.status(404).json({ error: "Request not found", code: "PET_REQUEST_NOT_FOUND" });
+        return;
+      }
+    }
+
+    const target = await prisma.petPurchaseRequest.findUnique({
+      where: { id: String(req.params.id || "").trim() },
+    });
+    if (!target) {
+      res.status(404).json({ error: "Request not found", code: "PET_REQUEST_NOT_FOUND" });
+      return;
+    }
+
+    const now = new Date();
+    const adminActor = String(req.session?.admin?.login || req.session?.admin?.id || "admin").trim() || "admin";
+    const petLabel = getPetTypeLabel(target.petType);
+    const petName = resolvePetDisplayName(target.displayName, target.petType);
+
+    await prisma.$transaction(async (tx) => {
+      const existingPet = await tx.profileCardPet.findFirst({
+        where: {
+          userId: target.userId,
+          petType: target.petType,
+        },
+      });
+
+      if (!existingPet) {
+        await tx.profileCardPet.create({
+          data: {
+            profileCardId: target.profileCardId,
+            userId: target.userId,
+            petType: target.petType,
+            displayName: petName,
+            priceSnapshot: Number(target.priceSnapshot || 0),
+            isVisible: true,
+          },
+        });
+      }
+
+      await tx.petPurchaseRequest.update({
+        where: { id: target.id },
+        data: {
+          status: "approved",
+          adminNote: null,
+          reviewedAt: now,
+        },
+      });
+
+      if (String(target.status || "").trim().toLowerCase() !== "approved") {
+        await tx.purchase.create({
+          data: {
+            userId: target.userId,
+            type: "pet",
+            amount: Number(target.priceSnapshot || 0),
+            purchasedAt: now,
+            approvedByAdmin: adminActor,
+            approvedAt: now,
+            note: `${petLabel}: ${petName} · request:${target.id}`,
+          },
+        });
+      }
+    });
+
+    res.json({ ok: true });
+  }),
+);
+
+router.post(
+  "/pet-requests/:id/reject",
+  asyncHandler(async (req, res) => {
+    if (!prisma.petPurchaseRequest) {
+      res.status(503).json({ error: "Pets storage unavailable", code: "PETS_STORAGE_UNAVAILABLE" });
+      return;
+    }
+    if (isManagerSession(req)) {
+      const ownsPetRequest = await managerOwnsPetRequest(req, req.params.id);
+      if (!ownsPetRequest) {
+        res.status(404).json({ error: "Request not found", code: "PET_REQUEST_NOT_FOUND" });
+        return;
+      }
+    }
+
+    const target = await prisma.petPurchaseRequest.findUnique({
+      where: { id: String(req.params.id || "").trim() },
+      select: {
+        id: true,
+        status: true,
+      },
+    });
+    if (!target) {
+      res.status(404).json({ error: "Request not found", code: "PET_REQUEST_NOT_FOUND" });
+      return;
+    }
+    if (String(target.status || "").trim().toLowerCase() === "approved") {
+      res.status(409).json({ error: "Approved request cannot be rejected", code: "PET_REQUEST_ALREADY_APPROVED" });
+      return;
+    }
+
+    const adminNote = String(req.body?.adminNote || "").trim().slice(0, 1000);
+    await prisma.petPurchaseRequest.update({
+      where: { id: target.id },
+      data: {
+        status: "rejected",
+        adminNote: adminNote || null,
+        reviewedAt: new Date(),
+      },
+    });
+
+    res.json({ ok: true });
   }),
 );
 

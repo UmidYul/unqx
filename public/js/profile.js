@@ -126,6 +126,17 @@
       "webs",
       "hearts",
     ];
+    const PET_TYPES = ["kitten", "puppy", "snake"];
+    const PET_TYPE_LABELS = {
+      kitten: "Котенок",
+      puppy: "Песик",
+      snake: "Змея",
+    };
+    const PET_ASSET_URLS = {
+      kitten: "/assets/pets/kitten.svg",
+      puppy: "/assets/pets/puppy.svg",
+      snake: "/assets/pets/snake.svg",
+    };
     const PREMIUM_ONLY_THEMES = new Set(PROFILE_THEMES.filter((theme) => theme !== "default_dark"));
     const PREMIUM_ONLY_AVATAR_FRAMES = new Set(PROFILE_AVATAR_FRAMES.filter((frame) => frame !== "none"));
     const PREMIUM_ONLY_EMOJI_BACKGROUND_PACKS = new Set(
@@ -233,8 +244,92 @@
         })
         : [];
 
+    const normalizeOwnedPet = (pet) => {
+      const petType = String(pet?.petType || "").trim().toLowerCase();
+      if (!PET_TYPES.includes(petType)) return null;
+      return {
+        id: String(pet?.id || "").trim(),
+        petType,
+        label: String(pet?.label || PET_TYPE_LABELS[petType] || petType).trim(),
+        assetUrl: String(pet?.assetUrl || PET_ASSET_URLS[petType]).trim(),
+        displayName: String(pet?.displayName || PET_TYPE_LABELS[petType] || "").trim(),
+        priceSnapshot: Number.isFinite(Number(pet?.priceSnapshot)) ? Number(pet.priceSnapshot) : 0,
+        isVisible: typeof pet?.isVisible === "boolean" ? pet.isVisible : true,
+        createdAt: pet?.createdAt || null,
+      };
+    };
+
+    const normalizeOwnedPets = (pets) =>
+      (Array.isArray(pets) ? pets : [])
+        .map(normalizeOwnedPet)
+        .filter(Boolean)
+        .sort((left, right) => {
+          const timeA = new Date(left.createdAt || 0).getTime();
+          const timeB = new Date(right.createdAt || 0).getTime();
+          if (timeA !== timeB) return timeA - timeB;
+          return String(left.id || "").localeCompare(String(right.id || ""));
+        });
+
+    const normalizePetCatalog = (items) =>
+      (Array.isArray(items) ? items : [])
+        .map((item) => {
+          const petType = String(item?.petType || item?.id || "").trim().toLowerCase();
+          if (!PET_TYPES.includes(petType)) return null;
+          return {
+            petType,
+            label: String(item?.label || PET_TYPE_LABELS[petType] || petType).trim(),
+            description: String(item?.description || "").trim(),
+            assetUrl: String(item?.assetUrl || PET_ASSET_URLS[petType]).trim(),
+            price: Number.isFinite(Number(item?.price)) ? Number(item.price) : 0,
+          };
+        })
+        .filter(Boolean);
+
+    const normalizePetDraftMap = (drafts) => {
+      const next = {};
+      PET_TYPES.forEach((petType) => {
+        const value = drafts && typeof drafts === "object" ? drafts[petType] : "";
+        next[petType] = String(value || "").trim().slice(0, 120);
+      });
+      return next;
+    };
+
+    const buildPetDraftMap = ({ catalog = [], pets = [], requests = [], previous = {} } = {}) => {
+      const next = normalizePetDraftMap(previous);
+      const ownedByType = new Map((Array.isArray(pets) ? pets : []).map((pet) => [pet.petType, pet]));
+      const pendingByType = new Map(
+        (Array.isArray(requests) ? requests : [])
+          .filter((item) => item?.type === "pet" && String(item?.status || "").toLowerCase() === "pending")
+          .map((item) => [String(item.petType || "").trim().toLowerCase(), item]),
+      );
+      (Array.isArray(catalog) ? catalog : []).forEach((item) => {
+        const petType = String(item?.petType || "").trim().toLowerCase();
+        if (!PET_TYPES.includes(petType)) return;
+        if (ownedByType.has(petType)) {
+          next[petType] = String(ownedByType.get(petType)?.displayName || "").trim();
+          return;
+        }
+        if (pendingByType.has(petType)) {
+          next[petType] = String(pendingByType.get(petType)?.displayName || "").trim();
+          return;
+        }
+        if (!next[petType]) {
+          next[petType] = "";
+        }
+      });
+      return next;
+    };
+
     const toComparableButtonStateList = (buttons) =>
       normalizeEditorButtons(buttons).map(({ type, label, url }) => ({ type, label, url }));
+
+    const toComparablePetStateList = (pets) =>
+      normalizeOwnedPets(pets).map((pet) => ({
+        id: pet.id,
+        petType: pet.petType,
+        displayName: pet.displayName,
+        isVisible: pet.isVisible,
+      }));
 
     const resolveEditableTheme = (theme) => {
       const normalizedTheme = PROFILE_THEMES.includes(theme) ? theme : "default_dark";
@@ -272,6 +367,7 @@
         extraPhone: String(card.extraPhone || ""),
         tags: normalizeCardTagsState(card.tags),
         buttons: toComparableButtonStateList(card.buttons),
+        pets: toComparablePetStateList(card.pets || s.pets),
         theme: resolveEditableTheme(card.theme),
         avatarFrame: resolveEditableAvatarFrame(card.avatarFrame),
         emojiBackgroundPack: resolveEditableEmojiBackgroundPack(card.emojiBackgroundPack),
@@ -291,6 +387,7 @@
         extraPhone: String(el.cExtraPhone?.value || ""),
         tags: normalizeCardTagsState(s.tags),
         buttons: toComparableButtonStateList(s.buttons),
+        pets: toComparablePetStateList(s.pets),
         theme: resolveEditableTheme(s.theme),
         avatarFrame: resolveEditableAvatarFrame(s.avatarFrame),
         emojiBackgroundPack: resolveEditableEmojiBackgroundPack(s.emojiBackgroundPack),
@@ -523,6 +620,7 @@ Email: ${userEmail}
       cCategoryNav: $("#profile-card-categories"),
       cCategoryButtons: $$("[data-card-editor-category]"),
       cCategoryPanels: $$("[data-card-editor-panel]"),
+      cPetsList: $("#profile-card-pets-list"),
       cThemes: $$(".profile-theme-btn"),
       cThemeLock: $("#profile-card-theme-lock-note"),
       cThemeWrap: $("#profile-card-theme-wrap"),
@@ -2014,6 +2112,81 @@ Email: ${userEmail}
       }
     };
 
+    const renderPetsEditor = () => {
+      if (!(el.cPetsList instanceof HTMLElement)) return;
+      const catalog = normalizePetCatalog(s.petCatalog);
+      const ownedPets = normalizeOwnedPets(s.pets);
+      const ownedByType = new Map(ownedPets.map((pet) => [pet.petType, pet]));
+      const pendingByType = new Map(
+        (Array.isArray(s.requests) ? s.requests : [])
+          .filter((item) => item?.type === "pet" && String(item?.status || "").toLowerCase() === "pending")
+          .map((item) => [String(item.petType || "").trim().toLowerCase(), item]),
+      );
+      s.petDrafts = buildPetDraftMap({
+        catalog,
+        pets: ownedPets,
+        requests: s.requests,
+        previous: s.petDrafts,
+      });
+
+      if (!catalog.length) {
+        el.cPetsList.innerHTML = '<div class="rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-6 text-sm text-neutral-500">Каталог животных пока недоступен.</div>';
+        return;
+      }
+
+      el.cPetsList.innerHTML = catalog
+        .map((item) => {
+          const owned = ownedByType.get(item.petType) || null;
+          const pending = pendingByType.get(item.petType) || null;
+          const draftName = String(s.petDrafts?.[item.petType] || "").trim();
+          const inputValue = owned
+            ? String(owned.displayName || "").trim()
+            : pending
+              ? String(pending.displayName || "").trim()
+              : draftName;
+          const stateBadge = owned
+            ? '<span class="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-1 text-[11px] font-semibold text-emerald-700">Уже на визитке</span>'
+            : pending
+              ? '<span class="rounded-full border border-amber-200 bg-amber-50 px-2 py-1 text-[11px] font-semibold text-amber-700">Ожидает оплату</span>'
+              : '<span class="rounded-full border border-neutral-200 bg-white px-2 py-1 text-[11px] font-semibold text-neutral-500">Доступен к покупке</span>';
+          return `<article class="rounded-2xl border border-neutral-200 bg-neutral-50 p-4" data-pet-card="${esc(item.petType)}">
+            <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+              <div class="flex items-start gap-3">
+                <img src="${esc(item.assetUrl)}" alt="${esc(item.label)}" class="h-20 w-20 shrink-0 object-contain" />
+                <div class="min-w-0">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <h4 class="text-base font-bold text-neutral-900">${esc(item.label)}</h4>
+                    ${stateBadge}
+                  </div>
+                  <p class="mt-1 text-sm text-neutral-500">${esc(item.description || "Декоративный питомец для профиля.")}</p>
+                  <p class="mt-2 text-sm font-semibold text-neutral-900">${fp(item.price)}</p>
+                </div>
+              </div>
+              <div class="flex w-full flex-col gap-3 md:max-w-[320px]">
+                <label class="block">
+                  <span class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Имя животного</span>
+                  <input type="text" value="${esc(inputValue)}" maxlength="120" data-a="pet-name-input" data-pet-type="${esc(item.petType)}" class="w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm" placeholder="Например, Барсик" />
+                </label>
+                ${owned
+                  ? `<label class="inline-flex items-center justify-between gap-3 rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm">
+                      <span>Показывать на визитке</span>
+                      <input type="checkbox" data-a="pet-visible-toggle" data-pet-id="${esc(owned.id)}" ${owned.isVisible ? "checked" : ""} />
+                    </label>`
+                  : ""
+                }
+                ${owned
+                  ? '<p class="text-xs text-neutral-500">Имя и видимость сохранятся вместе с визиткой.</p>'
+                  : pending
+                    ? `<button type="button" data-a="pay-request" data-order-id="${esc(pending.id)}" class="interactive-btn min-h-11 rounded-xl bg-neutral-900 px-3 py-2 text-sm font-semibold text-white">Продолжить оплату</button>`
+                    : `<button type="button" data-a="buy-pet" data-pet-type="${esc(item.petType)}" class="interactive-btn min-h-11 rounded-xl bg-neutral-900 px-3 py-2 text-sm font-semibold text-white">Купить</button>`
+                }
+              </div>
+            </div>
+          </article>`;
+        })
+        .join("");
+    };
+
     const renderTheme = () => {
       const premium = getCurrentPlan() === "premium";
       if (el.cThemeLock) el.cThemeLock.classList.toggle("hidden", premium);
@@ -2175,6 +2348,7 @@ Email: ${userEmail}
           emojiBackgroundPack: effectiveEmojiBackgroundPack,
           showBranding: el.cBranding ? !el.cBranding.checked : true,
           bio: String(el.cBio?.value || "").trim(),
+          pets: normalizeOwnedPets(s.pets),
         },
         primarySlug,
       };
@@ -2237,6 +2411,13 @@ Email: ${userEmail}
 
       s.tags = Array.isArray(card.tags) ? card.tags.slice(0) : [];
       s.buttons = normalizeEditorButtons(card.buttons);
+      s.pets = normalizeOwnedPets(card.pets || s.pets);
+      s.petDrafts = buildPetDraftMap({
+        catalog: s.petCatalog,
+        pets: s.pets,
+        requests: s.requests,
+        previous: s.petDrafts,
+      });
       s.theme = PROFILE_THEMES.includes(card.theme) ? card.theme : "default_dark";
       if (plan !== "premium" && PREMIUM_ONLY_THEMES.has(s.theme)) {
         s.theme = "default_dark";
@@ -2258,6 +2439,7 @@ Email: ${userEmail}
 
       renderTags();
       renderButtons();
+      renderPetsEditor();
       renderCardEditorCategory();
       renderTheme();
       renderEmojiBackgroundPack();
@@ -2957,7 +3139,17 @@ Email: ${userEmail}
         rejected: "Отклонённые",
       };
       const getRequestStatusMeta = (requestItem) => {
+        const requestType = String(requestItem?.type || "slug").trim().toLowerCase();
         const status = String(requestItem?.status || "").trim().toLowerCase();
+        if (requestType === "pet") {
+          if (status === "approved") {
+            return { label: "Активировано", className: "is-approved" };
+          }
+          if (status === "rejected") {
+            return { label: "Отклонено", className: "is-rejected" };
+          }
+          return { label: "Ожидает оплаты", className: "is-pending" };
+        }
         if (status === "approved") {
           return { label: "Активировано", className: "is-approved" };
         }
@@ -2975,12 +3167,16 @@ Email: ${userEmail}
 
       const getRequestMetaChips = (requestItem) => {
         const chips = [];
-        chips.push(`<span class="profile-request-chip">${requestItem.requestedPlan === "premium" ? "Премиум" : "Без тарифа"}</span>`);
+        if (requestItem.type === "pet") {
+          chips.push(`<span class="profile-request-chip">${esc(requestItem.petLabel || "Питомец")}</span>`);
+        } else {
+          chips.push(`<span class="profile-request-chip">${requestItem.requestedPlan === "premium" ? "Премиум" : "Без тарифа"}</span>`);
+        }
         chips.push(`<span class="profile-request-chip">Создано: ${fdt(requestItem.createdAt)}</span>`);
         if (requestItem.purchasedAt) {
           chips.push(`<span class="profile-request-chip">Оплачено: ${fdt(requestItem.purchasedAt)}</span>`);
         }
-        if (requestItem.bracelet) {
+        if (requestItem.type !== "pet" && requestItem.bracelet) {
           chips.push(`<span class="profile-request-chip">NFC-стикер добавлен</span>`);
         }
         return chips.join("");
@@ -2989,10 +3185,10 @@ Email: ${userEmail}
       const renderRequestActions = (requestItem, compact = false) => {
         const normalizedStatus = String(requestItem.status || "").toLowerCase();
         const actions = [];
-        if (normalizedStatus === "new" || normalizedStatus === "contacted") {
+        if ((requestItem.type === "pet" && normalizedStatus === "pending") || normalizedStatus === "new" || normalizedStatus === "contacted") {
           actions.push(`<button type="button" data-a="pay-request" data-order-id="${esc(requestItem.id)}" class="interactive-btn ${compact ? "w-full" : ""} rounded-lg bg-neutral-900 px-3 py-2 text-xs font-semibold text-white">Продолжить оплату</button>`);
         }
-        if (normalizedStatus === "new") {
+        if (requestItem.type !== "pet" && normalizedStatus === "new") {
           actions.push(`<button type="button" data-a="cancel-request" data-order-id="${esc(requestItem.id)}" class="interactive-btn ${compact ? "w-full" : ""} rounded-lg border border-red-200 bg-white px-3 py-2 text-xs font-semibold text-red-700">Отменить</button>`);
         }
         return actions.length ? `<div class="profile-request-actions">${actions.join("")}</div>` : "";
@@ -3000,10 +3196,11 @@ Email: ${userEmail}
 
       const renderRequestCard = (requestItem, compact = false) => {
         const normalizedStatus = String(requestItem.status || "").toLowerCase();
-        const totalPrice =
-          Number(requestItem.slugPrice || 0) +
-          Number(requestItem.planPrice || 0) +
-          (requestItem.bracelet ? Number(requestItem.braceletPrice || DEFAULT_BRACELET_PRICE) : 0);
+        const totalPrice = requestItem.type === "pet"
+          ? Number(requestItem.totalOneTime || requestItem.priceSnapshot || 0)
+          : Number(requestItem.slugPrice || 0) +
+            Number(requestItem.planPrice || 0) +
+            (requestItem.bracelet ? Number(requestItem.braceletPrice || DEFAULT_BRACELET_PRICE) : 0);
         const statusMeta = getRequestStatusMeta(requestItem);
         const note = ["rejected", "expired"].includes(normalizedStatus)
           ? `<div class="profile-request-note"><strong>Причина:</strong> ${esc(requestItem.adminNote || "Без дополнительного комментария")}</div>`
@@ -3011,8 +3208,9 @@ Email: ${userEmail}
         return `<article class="profile-request-card">
           <div class="profile-request-card-head">
             <div>
-              <div class="profile-request-kicker">UNQ заявка</div>
-              <div class="profile-request-slug">${esc(requestItem.slug || "—")}</div>
+              <div class="profile-request-kicker">${requestItem.type === "pet" ? "Питомец" : "UNQ заявка"}</div>
+              <div class="profile-request-slug">${esc(requestItem.type === "pet" ? (requestItem.displayName || requestItem.petLabel || "—") : (requestItem.slug || "—"))}</div>
+              ${requestItem.type === "pet" ? `<div class="mt-1 text-xs text-neutral-500">${esc(requestItem.petLabel || "")}</div>` : ""}
             </div>
             <div class="${compact ? "w-full" : "text-right"}">
               <div class="profile-request-status ${statusMeta.className}">${esc(statusMeta.label)}</div>
@@ -3056,7 +3254,7 @@ Email: ${userEmail}
 
       const requestsTotal = s.requests.length;
       const requestsActive = s.requests.filter((item) => String(item.status || "").toLowerCase() === "approved").length;
-      const requestsPending = s.requests.filter((item) => ["new", "contacted", "paid"].includes(String(item.status || "").toLowerCase())).length;
+      const requestsPending = s.requests.filter((item) => ["new", "contacted", "paid", "pending"].includes(String(item.status || "").toLowerCase())).length;
       const requestsProblem = s.requests.filter((item) => ["rejected", "expired"].includes(String(item.status || "").toLowerCase())).length;
       const filteredRequests = s.requests.filter((item) => getRequestFilterKey(item) === s.requestFilter);
 
@@ -3100,8 +3298,9 @@ Email: ${userEmail}
       }
       el.reqTable.innerHTML = "";
 
-      const approved = s.requests.find((item) => item.status === "approved");
-      const needsPayment = s.requests.find((item) => ["new", "contacted"].includes(String(item.status || "").toLowerCase()));
+      const approved = s.requests.find((item) => item.type !== "pet" && item.status === "approved");
+      const approvedPet = s.requests.find((item) => item.type === "pet" && item.status === "approved");
+      const needsPayment = s.requests.find((item) => ["new", "contacted", "pending"].includes(String(item.status || "").toLowerCase()));
       const paid = s.requests.find((item) => item.status === "paid");
       const count = s.slugs.length;
       if (el.reqNewBtn instanceof HTMLButtonElement) {
@@ -3129,7 +3328,9 @@ Email: ${userEmail}
       if (needsPayment) {
         el.reqBanner.classList.remove("hidden");
         el.reqBanner.className = "mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900";
-        el.reqBanner.innerHTML = `Есть незавершенная оплата по заявке <span class="font-mono">${esc(needsPayment.slug || "")}</span>. <button type="button" data-a="pay-request" data-order-id="${esc(needsPayment.id)}" class="underline font-semibold">Продолжить в Telegram</button>`;
+        el.reqBanner.innerHTML = needsPayment.type === "pet"
+          ? `Есть незавершенная оплата по питомцу <span class="font-semibold">${esc(needsPayment.displayName || needsPayment.petLabel || "")}</span>. <button type="button" data-a="pay-request" data-order-id="${esc(needsPayment.id)}" class="underline font-semibold">Продолжить в Telegram</button>`
+          : `Есть незавершенная оплата по заявке <span class="font-mono">${esc(needsPayment.slug || "")}</span>. <button type="button" data-a="pay-request" data-order-id="${esc(needsPayment.id)}" class="underline font-semibold">Продолжить в Telegram</button>`;
         return;
       }
 
@@ -3137,6 +3338,13 @@ Email: ${userEmail}
         el.reqBanner.classList.remove("hidden");
         el.reqBanner.className = "mt-3 rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-700";
         el.reqBanner.textContent = "Ожидаем оплату. Реквизиты отправлены в Telegram.";
+        return;
+      }
+
+      if (approvedPet) {
+        el.reqBanner.classList.remove("hidden");
+        el.reqBanner.className = "mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800";
+        el.reqBanner.textContent = `Питомец ${approvedPet.displayName || approvedPet.petLabel || ""} уже добавлен на визитку.`;
         return;
       }
 
@@ -3207,7 +3415,7 @@ Email: ${userEmail}
 
     const normalizeCardEditorCategory = (value) => {
       const normalized = String(value || "").trim().toLowerCase();
-      return ["main", "links", "contacts", "design"].includes(normalized) ? normalized : "main";
+      return ["main", "links", "contacts", "design", "pets"].includes(normalized) ? normalized : "main";
     };
 
     const normalizeProfileLoginValue = (value) => String(value || "").trim().toLowerCase();
@@ -4235,6 +4443,14 @@ Email: ${userEmail}
           s.avatarVersion = Date.now();
         }
         s.requests = payload.requests || [];
+        s.petCatalog = normalizePetCatalog(payload.petCatalog);
+        s.pets = normalizeOwnedPets(payload.pets || payload.card?.pets);
+        s.petDrafts = buildPetDraftMap({
+          catalog: s.petCatalog,
+          pets: s.pets,
+          requests: s.requests,
+          previous: s.petDrafts,
+        });
         s.score = payload.score || null;
         s.pricing = payload.pricing || s.pricing;
         s.privatePasswords = Array.isArray(payload?.privacy?.passwords) ? payload.privacy.passwords : [];
@@ -4342,6 +4558,11 @@ Email: ${userEmail}
             avatarFrame: s.avatarFrame || "none",
             emojiBackgroundPack: s.emojiBackgroundPack || "none",
             showBranding: el.cBranding ? !el.cBranding.checked : true,
+            pets: normalizeOwnedPets(s.pets).map((pet) => ({
+              id: pet.id,
+              displayName: pet.displayName,
+              isVisible: pet.isVisible,
+            })),
           }),
         });
 
@@ -5148,23 +5369,56 @@ Email: ${userEmail}
         return;
       }
 
+      const buyPetNode = target.closest('[data-a="buy-pet"]');
+      if (buyPetNode instanceof HTMLElement) {
+        const petType = String(buyPetNode.getAttribute("data-pet-type") || "").trim().toLowerCase();
+        const displayName = String(s.petDrafts?.[petType] || "").trim();
+        if (!PET_TYPES.includes(petType)) {
+          showModal("Ошибка", "Не удалось определить тип питомца");
+          return;
+        }
+        if (!displayName) {
+          showModal("Нужно имя", "Сначала задай имя животному.");
+          return;
+        }
+        try {
+          await api("/api/profile/pet-requests", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ petType, displayName }),
+          });
+          await load();
+          location.hash = "#requests";
+          showSaveAlert("Заявка на питомца создана");
+        } catch (error) {
+          showModal("Не удалось создать заявку", error.message || "Попробуйте позже");
+        }
+        return;
+      }
+
       const payNode = target.closest('[data-a="pay-request"]');
       if (payNode instanceof HTMLElement) {
         const orderId = String(payNode.getAttribute("data-order-id") || "").trim();
         const requestItem = s.requests.find((item) => String(item.id) === orderId);
         let url = "";
-        try {
-          const requestedPlan = String(requestItem?.requestedPlan || "premium").toLowerCase() === "premium" ? "premium" : "premium";
-          const precheck = await api(`/api/cards/order-precheck?requestedPlan=${encodeURIComponent(requestedPlan)}`);
-          const pending = precheck?.pendingOrder && typeof precheck.pendingOrder === "object" ? precheck.pendingOrder : null;
-          if (pending) {
-            url = buildPendingPaymentUrl(pending);
+        if (requestItem?.type === "pet") {
+          url = String(requestItem?.paymentUrl || "").trim();
+        } else {
+          try {
+            const requestedPlan = String(requestItem?.requestedPlan || "premium").toLowerCase() === "premium" ? "premium" : "premium";
+            const precheck = await api(`/api/cards/order-precheck?requestedPlan=${encodeURIComponent(requestedPlan)}`);
+            const pending = precheck?.pendingOrder && typeof precheck.pendingOrder === "object" ? precheck.pendingOrder : null;
+            if (pending) {
+              url = buildPendingPaymentUrl(pending);
+            }
+          } catch {
+            // fallback to local request snapshot
           }
-        } catch {
-          // fallback to local request snapshot
         }
         if (!url) {
-          url = buildTelegramPaymentUrl(requestItem || { id: orderId, slug: "", requestedPlan: "premium" });
+          url = requestItem?.type === "pet"
+            ? String(requestItem?.paymentUrl || "").trim()
+            : buildTelegramPaymentUrl(requestItem || { id: orderId, slug: "", requestedPlan: "premium" });
         }
         openTelegramUrl(url);
         return;
@@ -5243,6 +5497,47 @@ Email: ${userEmail}
     el.cEmail?.addEventListener("input", () => { renderPreview(); saveDraft(); });
     el.cExtraPhone?.addEventListener("input", () => { renderPreview(); saveDraft(); });
     el.cSave?.addEventListener("click", saveCard);
+    el.cPetsList?.addEventListener("input", (event) => {
+      const target = event.target instanceof HTMLInputElement ? event.target : null;
+      if (!target || target.getAttribute("data-a") !== "pet-name-input") return;
+      const petType = String(target.getAttribute("data-pet-type") || "").trim().toLowerCase();
+      const value = String(target.value || "").trim().slice(0, 120);
+      if (!PET_TYPES.includes(petType)) return;
+      const ownedPets = normalizeOwnedPets(s.pets);
+      if (ownedPets.some((pet) => pet.petType === petType)) {
+        s.pets = ownedPets.map((pet) =>
+          pet.petType === petType
+            ? {
+              ...pet,
+              displayName: value || (PET_TYPE_LABELS[petType] || ""),
+            }
+            : pet,
+        );
+      } else {
+        s.petDrafts = {
+          ...(s.petDrafts || {}),
+          [petType]: value,
+        };
+      }
+      renderPreview();
+      saveDraft();
+    });
+    el.cPetsList?.addEventListener("change", (event) => {
+      const target = event.target instanceof HTMLInputElement ? event.target : null;
+      if (!target || target.getAttribute("data-a") !== "pet-visible-toggle") return;
+      const petId = String(target.getAttribute("data-pet-id") || "").trim();
+      const nextPets = normalizeOwnedPets(s.pets).map((pet) =>
+        pet.id === petId
+          ? {
+            ...pet,
+            isVisible: target.checked,
+          }
+          : pet,
+      );
+      s.pets = nextPets;
+      renderPreview();
+      saveDraft();
+    });
 
     el.cTagAdd?.addEventListener("click", () => {
       const raw = el.cTagInput instanceof HTMLInputElement ? el.cTagInput.value.trim() : "";

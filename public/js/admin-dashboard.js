@@ -8,6 +8,11 @@
   const userCardBasePath = isManager ? "/manager/users" : "/admin/users";
   const dashboardBasePath = isManager ? "/manager/dashboard" : "/admin/dashboard";
   const assignableBadgeTypes = ["unqx_staff", "government"];
+  const PET_TYPE_LABELS = {
+    kitten: "Котенок",
+    puppy: "Песик",
+    snake: "Змея",
+  };
 
   const autofillIgnoreSelectors = "form,input,textarea,select";
   const autofillIgnoreAttrs = ["data-bwignore", "data-lpignore", "data-1p-ignore"];
@@ -281,6 +286,10 @@
       other: "Другое",
     };
     return labels[key] || "Другое";
+  }
+  function petTypeLabel(value) {
+    const key = String(value || "").trim().toLowerCase();
+    return PET_TYPE_LABELS[key] || "Питомец";
   }
   function kebabButton() {
     return `<button type="button" class="admin-kebab-btn" data-kebab-toggle aria-label="Действия" aria-haspopup="menu" aria-expanded="false">${I("more", 16)}</button>`;
@@ -1335,6 +1344,19 @@
     const allowedTypes = new Set(["all", "government", "unqx_staff"]);
     setFormValue(form, "status", allowedStatuses.has(statusFromUrl) ? statusFromUrl : "all");
     setFormValue(form, "badgeType", allowedTypes.has(badgeTypeFromUrl) ? badgeTypeFromUrl : "all");
+    setFormValue(form, "page", /^\d+$/.test(pageFromUrl) ? pageFromUrl : "1");
+  }
+
+  function syncPetFiltersFromLocation(form) {
+    if (!(form instanceof HTMLFormElement)) return;
+    const params = new URLSearchParams(location.search);
+    const statusFromUrl = String(params.get("pet_status") || params.get("status") || "all").trim().toLowerCase();
+    const petTypeFromUrl = String(params.get("pet_type") || params.get("petType") || "all").trim().toLowerCase();
+    const pageFromUrl = String(params.get("pet_page") || params.get("page") || "1").trim();
+    const allowedStatuses = new Set(["all", "pending", "approved", "rejected"]);
+    const allowedTypes = new Set(["all", "kitten", "puppy", "snake"]);
+    setFormValue(form, "status", allowedStatuses.has(statusFromUrl) ? statusFromUrl : "all");
+    setFormValue(form, "petType", allowedTypes.has(petTypeFromUrl) ? petTypeFromUrl : "all");
     setFormValue(form, "page", /^\d+$/.test(pageFromUrl) ? pageFromUrl : "1");
   }
 
@@ -2898,6 +2920,72 @@
     }
   }
 
+  async function loadPetRequests() {
+    const form = document.getElementById("pets-filters");
+    const table = document.getElementById("pets-table");
+    if (!(form instanceof HTMLFormElement) || !(table instanceof HTMLElement)) return;
+    syncPetFiltersFromLocation(form);
+    table.innerHTML = '<tr><td colspan="9" class="px-3 py-8 text-center text-neutral-500">Загрузка...</td></tr>';
+    try {
+      const q = {
+        status: getFormValue(form, "status", "all"),
+        petType: getFormValue(form, "petType", "all"),
+        page: getFormValue(form, "page", "1"),
+      };
+      setDashboardQuery({ pet_status: q.status, pet_type: q.petType, pet_page: q.page });
+      const response = await fetch(`/api/admin/pet-requests?${Q(q)}`);
+      if (!response.ok) {
+        table.innerHTML = '<tr><td colspan="9" class="px-3 py-8 text-center text-rose-600">Не удалось загрузить заявки на животных</td></tr>';
+        return;
+      }
+      const payload = await response.json();
+      const rows = Array.isArray(payload.items) ? payload.items : [];
+      table.innerHTML = rows.length
+        ? rows
+          .map((item) => {
+            const userName = String(item.user?.displayName || item.user?.firstName || item.user?.username || item.user?.email || "—").trim();
+            const userLogin = String(item.user?.username || "").trim();
+            const userEmail = String(item.user?.email || "").trim();
+            const slugOrLogin = String(item.slug || "").trim();
+            const status = String(item.status || "").trim().toLowerCase();
+            const userCell = `${X(userName)}${userLogin ? `<div class="text-xs text-neutral-500">@${X(userLogin)}</div>` : userEmail ? `<div class="text-xs text-neutral-500">${X(userEmail)}</div>` : ""}`;
+            const slugCell = slugOrLogin
+              ? `<span class="font-mono">${X(slugOrLogin)}</span>${userLogin && slugOrLogin !== `@${userLogin}` ? `<div class="text-xs text-neutral-500">@${X(userLogin)}</div>` : ""}`
+              : userLogin
+                ? `<span class="text-xs text-neutral-500">@${X(userLogin)}</span>`
+                : "—";
+            const actions = [];
+            if (status === "pending") {
+              actions.push(menuItem({ label: "Одобрить", icon: "checkCircle", attrs: `data-act="pr-approve" data-id="${X(item.id)}"` }));
+              actions.push(menuItem({ label: "Отклонить", icon: "xCircle", attrs: `data-act="pr-reject" data-id="${X(item.id)}"`, danger: true }));
+            }
+            if (item.user?.id) {
+              actions.push(menuItem({ label: "Открыть визитку", icon: "idCard", attrs: `data-act="open-card" data-url="${userCardBasePath}/${encodeURIComponent(String(item.user.id))}/card"` }));
+            }
+            const menu = actions.length ? menuWrap(actions.join("")) : "—";
+            return `<tr class="admin-table-row border-t border-neutral-100">
+              <td class="px-4 py-3 text-xs">${D(item.requestedAt)}</td>
+              <td class="px-4 py-3">${userCell}</td>
+              <td class="px-4 py-3">${slugCell}</td>
+              <td class="px-4 py-3">${X(petTypeLabel(item.petType))}</td>
+              <td class="px-4 py-3">${X(item.displayName || item.petLabel || petTypeLabel(item.petType))}</td>
+              <td class="px-4 py-3 text-right font-semibold">${P(item.priceSnapshot)}</td>
+              <td class="px-4 py-3">${statusChip(status)}</td>
+              <td class="px-4 py-3 text-xs">${item.reviewedAt ? D(item.reviewedAt) : "—"}</td>
+              <td class="px-4 py-3"><div class="admin-row-actions">${menu}</div></td>
+            </tr>`;
+          })
+          .join("")
+        : '<tr><td colspan="9" class="px-3 py-8 text-center text-neutral-500">Заявок на животных нет</td></tr>';
+      renderPager("pets-pagination", payload.pagination, (nextPage) => {
+        setFormValue(form, "page", String(nextPage));
+        void loadPetRequests();
+      });
+    } catch {
+      table.innerHTML = '<tr><td colspan="9" class="px-3 py-8 text-center text-rose-600">Не удалось загрузить заявки на животных</td></tr>';
+    }
+  }
+
   async function loadLogs() {
     const form = document.getElementById("logs-filters");
     const table = document.getElementById("logs-table");
@@ -3889,6 +3977,36 @@
       closeAllRowMenus();
       return;
     }
+    if (a === "pr-approve") {
+      const id = n.getAttribute("data-id");
+      if (!id) return;
+      const ok = await showConfirm("Одобрить заявку на животное?");
+      if (!ok) return;
+      const r = await fetch(`/api/admin/pet-requests/${encodeURIComponent(id)}/approve`, {
+        method: "POST",
+        headers: H({ "Content-Type": "application/json" }),
+        body: JSON.stringify({}),
+      });
+      if (!r.ok) showAlert(await E(r));
+      else void loadPetRequests();
+      closeAllRowMenus();
+      return;
+    }
+    if (a === "pr-reject") {
+      const id = n.getAttribute("data-id");
+      if (!id) return;
+      const adminNote = String(await showPrompt("Причина отклонения", "") || "").trim();
+      if (!adminNote) return;
+      const r = await fetch(`/api/admin/pet-requests/${encodeURIComponent(id)}/reject`, {
+        method: "POST",
+        headers: H({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ adminNote }),
+      });
+      if (!r.ok) showAlert(await E(r));
+      else void loadPetRequests();
+      closeAllRowMenus();
+      return;
+    }
   });
 
   document.getElementById("orders-filters")?.addEventListener("submit", (e) => { e.preventDefault(); const f = e.currentTarget; if (f instanceof HTMLFormElement) setFormValue(f, "page", "1"); void loadOrders(); });
@@ -4117,6 +4235,21 @@
     if (!(target instanceof HTMLSelectElement) || !(form instanceof HTMLFormElement)) return;
     setFormValue(form, "page", "1");
     void loadBadgeApplications();
+  });
+  document.getElementById("pets-filters")?.addEventListener("submit", (e) => { e.preventDefault(); const f = e.currentTarget; if (f instanceof HTMLFormElement) setFormValue(f, "page", "1"); void loadPetRequests(); });
+  document.getElementById("pets-filters")?.elements?.namedItem?.("status")?.addEventListener?.("change", (e) => {
+    const target = e.currentTarget;
+    const form = document.getElementById("pets-filters");
+    if (!(target instanceof HTMLSelectElement) || !(form instanceof HTMLFormElement)) return;
+    setFormValue(form, "page", "1");
+    void loadPetRequests();
+  });
+  document.getElementById("pets-filters")?.elements?.namedItem?.("petType")?.addEventListener?.("change", (e) => {
+    const target = e.currentTarget;
+    const form = document.getElementById("pets-filters");
+    if (!(target instanceof HTMLSelectElement) || !(form instanceof HTMLFormElement)) return;
+    setFormValue(form, "page", "1");
+    void loadPetRequests();
   });
   document.getElementById("testimonial-create-form")?.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -4460,6 +4593,15 @@
       syncBadgesFiltersFromLocation(form);
     }
   }
+  if (tab === "pets") {
+    const form = document.getElementById("pets-filters");
+    if (form instanceof HTMLFormElement) {
+      setFormValue(form, "status", getInitial("pet_status", "status") || "all");
+      setFormValue(form, "petType", getInitial("pet_type", "petType") || "all");
+      setFormValue(form, "page", getInitial("pet_page", "page") || "1");
+      syncPetFiltersFromLocation(form);
+    }
+  }
 
   if (!isManager) {
     void loadMaintenanceBanner();
@@ -4525,6 +4667,11 @@
   if (tab === "badges" || (badgesSection instanceof HTMLElement && !badgesSection.classList.contains("hidden"))) {
     dbg("load", "badges");
     void loadBadgeApplications();
+  }
+  const petsSection = document.getElementById("tab-pets");
+  if (tab === "pets" || (petsSection instanceof HTMLElement && !petsSection.classList.contains("hidden"))) {
+    dbg("load", "pets");
+    void loadPetRequests();
   }
   if (tab === "score") {
     dbg("load", "score");

@@ -13,6 +13,8 @@
   "tape_collage", "orbit_dots",
   ]; const pageEmojiBackgroundPacks = [
   "none", "ghosts", "stars", "lightning", "crowns", "webs", "hearts",
+  ]; const pagePetTypes = [
+  "kitten", "puppy", "snake",
   ]; const
   isSupportedButtonHref=(value)=> /^(https?:\/\/|mailto:|tel:|card:)/i.test(String(value || "").trim());
   const parseCardDigits = (rawValue) => {
@@ -149,6 +151,24 @@
     extraPhone: pageCardRaw.extraPhone || "",
     viewsCount: Number(pageCardRaw.viewsCount) || 0,
     showBranding: typeof pageCardRaw.showBranding === "boolean" ? pageCardRaw.showBranding : true,
+    pets: Array.isArray(pageCardRaw.pets)
+    ? pageCardRaw.pets
+    .map((pet) => {
+    const petType = typeof pet?.petType === "string" ? pet.petType.trim().toLowerCase() : "";
+    if (!pagePetTypes.includes(petType)) return null;
+    return {
+    id: typeof pet?.id === "string" ? pet.id.trim() : "",
+    petType,
+    label: typeof pet?.label === "string" ? pet.label.trim() : "",
+    assetUrl: typeof pet?.assetUrl === "string" && pet.assetUrl.trim() ? pet.assetUrl.trim() : `/assets/pets/${petType}.svg`,
+    displayName: typeof pet?.displayName === "string" ? pet.displayName.trim() : "",
+    priceSnapshot: Number.isFinite(Number(pet?.priceSnapshot)) ? Number(pet.priceSnapshot) : 0,
+    isVisible: typeof pet?.isVisible === "boolean" ? pet.isVisible : true,
+    createdAt: pet?.createdAt || null,
+    };
+    })
+    .filter((pet) => pet && pet.displayName.length > 0)
+    : [],
     };
 
     const pageJsonLd = {

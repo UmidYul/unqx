@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192" fill="none">
+  <defs>
+    <linearGradient id="kittenBody" x1="28" y1="28" x2="154" y2="158" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#CFE3FF"/>
+      <stop offset="1" stop-color="#76AFFF"/>
+    </linearGradient>
+  </defs>
+  <path d="M57 35 79 55 74 78 45 77 57 35Z" fill="#CFE3FF"/>
+  <path d="M135 35 147 77 118 78 113 55 135 35Z" fill="#CFE3FF"/>
+  <ellipse cx="96" cy="100" rx="58" ry="52" fill="url(#kittenBody)"/>
+  <ellipse cx="74" cy="86" rx="12" ry="10" fill="#F8FBFF" fill-opacity=".92"/>
+  <ellipse cx="120" cy="86" rx="12" ry="10" fill="#F8FBFF" fill-opacity=".92"/>
+  <ellipse cx="96" cy="119" rx="31" ry="24" fill="#F8FBFF"/>
+  <circle cx="76" cy="101" r="6" fill="#283556"/>
+  <circle cx="116" cy="101" r="6" fill="#283556"/>
+  <circle cx="74" cy="99" r="2" fill="#fff"/>
+  <circle cx="114" cy="99" r="2" fill="#fff"/>
+  <path d="M96 107 104 116H88L96 107Z" fill="#FFB79C"/>
+  <path d="M83 122C87 129 92 132 96 132 100 132 105 129 109 122" stroke="#283556" stroke-width="4" stroke-linecap="round"/>
+  <path d="M73 117 57 112M119 117 135 112" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round"/>
+</svg>

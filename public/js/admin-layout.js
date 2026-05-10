@@ -62,10 +62,12 @@
   }
 
   function renderBadges(badges) {
-    const map = {
-      orders: Number(badges?.orders || 0),
-      bracelets: Number(badges?.bracelets || 0),
-    };
+    const map =
+      badges && typeof badges === "object"
+        ? Object.fromEntries(
+          Object.entries(badges).map(([key, value]) => [key, Number(value || 0)]),
+        )
+        : {};
 
     badgeNodes.forEach((node) => {
       if (!(node instanceof HTMLElement)) return;

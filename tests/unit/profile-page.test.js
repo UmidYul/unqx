@@ -94,10 +94,13 @@ describe("profile page", () => {
     expect(html).toContain('data-card-editor-category="links"');
     expect(html).toContain('data-card-editor-category="contacts"');
     expect(html).toContain('data-card-editor-category="design"');
+    expect(html).toContain('data-card-editor-category="pets"');
     expect(html).toContain('data-card-editor-panel="main"');
     expect(html).toContain('data-card-editor-panel="links"');
     expect(html).toContain('data-card-editor-panel="contacts"');
     expect(html).toContain('data-card-editor-panel="design"');
+    expect(html).toContain('data-card-editor-panel="pets"');
+    expect(html).toContain('id="profile-card-pets-list"');
     expect(html).toContain('id="profile-preview-slug-label"');
     expect(html).toContain("Live Preview");
   });

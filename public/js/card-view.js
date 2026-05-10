@@ -45,6 +45,12 @@
     "webs",
     "hearts",
   ];
+  const PET_TYPE_KEYS = ["kitten", "puppy", "snake"];
+  const PET_TYPE_LABELS = {
+    kitten: "Котенок",
+    puppy: "Песик",
+    snake: "Змея",
+  };
 
   function hexToRgb(value) {
     const raw = String(value || "").trim();
@@ -1553,6 +1559,30 @@
       : [];
     const name = String(card.name || "").trim() || "UNQX User";
     const avatarUrl = String(card.avatarUrl || "").trim();
+    const pets = Array.isArray(card.pets)
+      ? card.pets
+        .map((pet) => {
+          const petType = String(pet?.petType || "").trim().toLowerCase();
+          if (!PET_TYPE_KEYS.includes(petType)) {
+            return null;
+          }
+          const displayName = String(pet?.displayName || "").trim();
+          if (!displayName) {
+            return null;
+          }
+          return {
+            id: String(pet?.id || "").trim(),
+            petType,
+            label: String(pet?.label || PET_TYPE_LABELS[petType] || petType).trim(),
+            assetUrl: String(pet?.assetUrl || `/assets/pets/${petType}.svg`).trim(),
+            displayName,
+            priceSnapshot: Number.isFinite(Number(pet?.priceSnapshot)) ? Number(pet.priceSnapshot) : 0,
+            isVisible: pet?.isVisible !== false,
+            createdAt: pet?.createdAt || null,
+          };
+        })
+        .filter(Boolean)
+      : [];
     const initials = name
       .split(/\s+/)
       .filter(Boolean)
@@ -1600,7 +1630,48 @@
       extraPhone: String(card.extraPhone || "").trim(),
       showBranding: card.showBranding !== false,
       viewsLabel: String(card.viewsLabel || "").trim(),
+      pets,
     };
+  }
+
+  function getVisibleCardPets(card) {
+    const items = Array.isArray(card?.pets) ? card.pets.filter((item) => item && item.isVisible !== false) : [];
+    items.sort((left, right) => {
+      const timeA = new Date(left?.createdAt || 0).getTime();
+      const timeB = new Date(right?.createdAt || 0).getTime();
+      if (timeA !== timeB) return timeA - timeB;
+      return String(left?.id || "").localeCompare(String(right?.id || ""));
+    });
+    return items.slice(0, 3);
+  }
+
+  function getPetSlotNames(count) {
+    if (count >= 3) return ["left", "top", "right"];
+    if (count === 2) return ["left", "right"];
+    if (count === 1) return ["right"];
+    return [];
+  }
+
+  function renderPetDecorations(card) {
+    const pets = getVisibleCardPets(card);
+    if (!pets.length) return "";
+    const slotNames = getPetSlotNames(pets.length);
+    return `<div class="unq-ref-pets" aria-label="Питомцы визитки">
+      ${pets
+        .map((pet, index) => {
+          const slot = slotNames[index] || "right";
+          return `<figure class="unq-ref-pet unq-ref-pet--${esc(slot)}" data-pet-type="${esc(pet.petType)}">
+            <div class="unq-ref-pet-visual">
+              <img src="${esc(pet.assetUrl)}" alt="${esc(pet.displayName)}" class="unq-ref-pet-image" loading="lazy" />
+            </div>
+            <figcaption class="unq-ref-pet-meta">
+              <span class="unq-ref-pet-name">${esc(pet.displayName)}</span>
+              <span class="unq-ref-pet-price">${Number(pet.priceSnapshot || 0).toLocaleString("ru-RU")} UZS</span>
+            </figcaption>
+          </figure>`;
+        })
+        .join("")}
+    </div>`;
   }
 
   function iconSvg(name) {
@@ -2371,8 +2442,9 @@
           </div>`
         : ""
       }
-          <div class="unq-ref-profile${card.emojiBackgroundPack !== "none" ? " has-emoji-pack" : ""}">
+          <div class="unq-ref-profile${card.emojiBackgroundPack !== "none" ? " has-emoji-pack" : ""}${getVisibleCardPets(card).length ? " has-pets" : ""}">
             ${card.emojiBackgroundPack !== "none" ? renderEmojiBackgroundOverlay(card.emojiBackgroundPack) : ""}
+            ${renderPetDecorations(card)}
             <div class="unq-ref-avatar-wrap">
               ${card.avatarUrl ? `<img src="${esc(card.avatarUrl)}" alt="${esc(card.name)}" class="unq-ref-avatar-img" data-avatar-image />` : ""}
               <div class="unq-ref-avatar-fallback ${card.avatarUrl ? "hidden" : ""}" data-avatar-fallback aria-hidden="${card.avatarUrl ? "true" : "false"}" ${card.avatarUrl ? "hidden" : ""} style="${card.avatarUrl ? "display:none;" : ""}">${esc(card.initials)}</div>

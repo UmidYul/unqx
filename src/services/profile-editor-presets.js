@@ -1,3 +1,5 @@
+const { PET_PRESETS } = require("./pets");
+
 const SIGNATURE_THEMES = [
   {
     id: "default_dark",
@@ -222,6 +224,7 @@ function getProfileEditorPresets() {
     colorThemes: COLOR_THEMES,
     avatarFrames: AVATAR_FRAMES,
     emojiBackgroundPacks: EMOJI_BACKGROUND_PACKS,
+    petPresets: PET_PRESETS,
   };
 }
 
@@ -230,5 +233,6 @@ module.exports = {
   COLOR_THEMES,
   AVATAR_FRAMES,
   EMOJI_BACKGROUND_PACKS,
+  PET_PRESETS,
   getProfileEditorPresets,
 };

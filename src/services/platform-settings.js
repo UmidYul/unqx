@@ -71,6 +71,9 @@ const DEFAULT_SETTINGS = [
     value: [],
   },
   { key: "plan_premium_popular_badge", group: "pricing", type: "boolean", label: "Бейдж популярного", value: true },
+  { key: "pet_kitten_price", group: "pricing", type: "number", label: "Цена питомца: Котенок", value: 2_000_000 },
+  { key: "pet_puppy_price", group: "pricing", type: "number", label: "Цена питомца: Песик", value: 5_000_000 },
+  { key: "pet_snake_price", group: "pricing", type: "number", label: "Цена питомца: Змея", value: 7_000_000 },
   { key: "pricing_section_visible", group: "pricing", type: "boolean", label: "Показывать секцию тарифов", value: true },
   {
     key: "pricing_footnote",

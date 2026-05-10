@@ -38,6 +38,7 @@ const {
   getViewerFollowLookup,
   getFollowSummaryForOwner,
 } = require("../../services/follows");
+const { sortProfileCardPets } = require("../../services/pets");
 
 const router = express.Router();
 const defaultSocialImage = absoluteUrl("/brand/logo.PNG");
@@ -569,6 +570,21 @@ async function findProfileCardByOwnerId(ownerId) {
   return Array.isArray(rows) ? rows[0] || null : null;
 }
 
+async function listOwnedPetsByUserId(userId) {
+  if (!userId || !prisma.profileCardPet) {
+    return [];
+  }
+  try {
+    const rows = await prisma.profileCardPet.findMany({
+      where: { userId },
+      orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+    });
+    return sortProfileCardPets(rows);
+  } catch {
+    return [];
+  }
+}
+
 async function findLatestApprovedVerificationByUserId(userId) {
   if (!userId || !prisma.verificationRequest) {
     return null;
@@ -780,7 +796,7 @@ function getPublicWallAuthorLabel(user, fallbackLabel = "") {
   return fallback || "UNQX User";
 }
 
-function buildPublicCardFromProfile({ slug, user, profileCard, verifiedIdentity, viewsCount, allSlugs = [] }) {
+function buildPublicCardFromProfile({ slug, user, profileCard, verifiedIdentity, viewsCount, allSlugs = [], pets = [] }) {
   const plan = getEffectivePlan(user).plan;
   const isCurrentlyVerified = Boolean(user?.isVerified);
   const rawCardTheme = String(profileCard?.theme || "").trim();
@@ -830,6 +846,7 @@ function buildPublicCardFromProfile({ slug, user, profileCard, verifiedIdentity,
     extraPhone: profileCard.extraPhone || "",
     viewsCount: Number(viewsCount || 0),
     showBranding: Boolean(profileCard.showBranding),
+    pets: sortProfileCardPets(pets),
   };
 }
 
@@ -2266,9 +2283,10 @@ router.get(
           return;
         }
 
-        const [owner, profileCard] = await Promise.all([
+        const [owner, profileCard, ownedPets] = await Promise.all([
           findUserByTelegramIdWithLegacyFallback(slugRow.ownerId),
           findProfileCardByOwnerId(slugRow.ownerId),
+          listOwnedPetsByUserId(slugRow.ownerId),
         ]);
 
         if (!owner || !profileCard) {
@@ -2411,6 +2429,7 @@ router.get(
             ...profileCard,
             slugPrice: typeof slugRow.price === "number" ? slugRow.price : null,
           },
+          pets: ownedPets,
           verifiedIdentity,
           viewsCount: views,
           allSlugs: ownerSlugs.map((item) => item.fullSlug),
