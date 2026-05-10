@@ -1,21 +1,52 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192" fill="none">
   <defs>
-    <linearGradient id="puppyFace" x1="32" y1="30" x2="156" y2="164" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#9A8C84"/>
-      <stop offset="1" stop-color="#5C5551"/>
+    <radialGradient id="puppyAura" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(96 108) rotate(90) scale(68)">
+      <stop stop-color="#F9F1E7" stop-opacity=".95"/>
+      <stop offset=".6" stop-color="#E7D3C1" stop-opacity=".42"/>
+      <stop offset="1" stop-color="#E7D3C1" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="puppyFur" x1="52" y1="46" x2="146" y2="154" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#A99990"/>
+      <stop offset=".46" stop-color="#7B6E68"/>
+      <stop offset="1" stop-color="#564D4B"/>
+    </linearGradient>
+    <linearGradient id="puppyEar" x1="42" y1="58" x2="72" y2="114" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#7C716D"/>
+      <stop offset="1" stop-color="#5C5552"/>
+    </linearGradient>
+    <linearGradient id="puppyMuzzle" x1="70" y1="102" x2="125" y2="149" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFD7B7"/>
+      <stop offset="1" stop-color="#F0AA7A"/>
+    </linearGradient>
+    <linearGradient id="puppyCharm" x1="90" y1="138" x2="104" y2="155" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFF0B2"/>
+      <stop offset="1" stop-color="#BF8E37"/>
     </linearGradient>
   </defs>
-  <path d="M42 73C42 53 58 38 78 38L70 88H56C48 88 42 82 42 73Z" fill="#746A66"/>
-  <path d="M150 73C150 53 134 38 114 38L122 88H136C144 88 150 82 150 73Z" fill="#746A66"/>
-  <circle cx="96" cy="100" r="54" fill="url(#puppyFace)"/>
-  <ellipse cx="96" cy="122" rx="29" ry="24" fill="#FDBD94"/>
-  <circle cx="76" cy="98" r="6" fill="#232020"/>
-  <circle cx="116" cy="98" r="6" fill="#232020"/>
-  <circle cx="74" cy="96" r="2" fill="#fff"/>
-  <circle cx="114" cy="96" r="2" fill="#fff"/>
-  <ellipse cx="96" cy="111" rx="9" ry="7" fill="#232020"/>
-  <path d="M96 118V129" stroke="#232020" stroke-width="4" stroke-linecap="round"/>
-  <path d="M96 129C90 136 84 139 79 140M96 129C102 136 108 139 113 140" stroke="#232020" stroke-width="4" stroke-linecap="round"/>
-  <circle cx="54" cy="111" r="6" fill="#FFB69B"/>
-  <circle cx="138" cy="111" r="6" fill="#FFB69B"/>
+
+  <circle cx="96" cy="108" r="68" fill="url(#puppyAura)"/>
+
+  <path d="M56 58C42 62 34 78 37 94C40 109 51 119 64 113L74 74C70 64 63 58 56 58Z" fill="url(#puppyEar)"/>
+  <path d="M136 58C150 62 158 78 155 94C152 109 141 119 128 113L118 74C122 64 129 58 136 58Z" fill="url(#puppyEar)"/>
+
+  <circle cx="96" cy="100" r="49" fill="url(#puppyFur)"/>
+  <ellipse cx="74" cy="84" rx="13" ry="10" fill="#8D807B" opacity=".7"/>
+  <ellipse cx="118" cy="84" rx="13" ry="10" fill="#8D807B" opacity=".7"/>
+  <ellipse cx="96" cy="123" rx="31" ry="25" fill="url(#puppyMuzzle)"/>
+
+  <ellipse cx="77" cy="98" rx="5.7" ry="6.6" fill="#211D1D"/>
+  <ellipse cx="115" cy="98" rx="5.7" ry="6.6" fill="#211D1D"/>
+  <circle cx="79" cy="96" r="1.7" fill="#fff"/>
+  <circle cx="117" cy="96" r="1.7" fill="#fff"/>
+
+  <ellipse cx="96" cy="111" rx="10" ry="8" fill="#211D1D"/>
+  <path d="M96 118V129" stroke="#211D1D" stroke-width="4" stroke-linecap="round"/>
+  <path d="M96 129C91 135 86 138 81 139M96 129C101 135 106 138 111 139" stroke="#211D1D" stroke-width="4" stroke-linecap="round"/>
+
+  <circle cx="58" cy="112" r="5.5" fill="#FFC2AA" opacity=".95"/>
+  <circle cx="134" cy="112" r="5.5" fill="#FFC2AA" opacity=".95"/>
+
+  <path d="M80 144C87 147 93 149 96 149C99 149 105 147 112 144" stroke="#D3A649" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="96" cy="149" r="7.5" fill="url(#puppyCharm)"/>
+  <path d="M96 144.5 97.2 147.2 100.1 147.6 97.9 149.5 98.5 152.3 96 151 93.5 152.3 94.1 149.5 91.9 147.6 94.8 147.2 96 144.5Z" fill="#FFF8D5"/>
 </svg>

@@ -1,21 +1,43 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192" fill="none">
   <defs>
-    <linearGradient id="snakeBody" x1="26" y1="34" x2="162" y2="156" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#B5F36B"/>
-      <stop offset="1" stop-color="#4C9631"/>
+    <radialGradient id="snakeAura" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(96 110) rotate(90) scale(70)">
+      <stop stop-color="#EFFCCF" stop-opacity=".96"/>
+      <stop offset=".58" stop-color="#C6ED8B" stop-opacity=".44"/>
+      <stop offset="1" stop-color="#C6ED8B" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="snakeBody" x1="52" y1="74" x2="149" y2="177" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#A5E35D"/>
+      <stop offset=".48" stop-color="#6EBB3F"/>
+      <stop offset="1" stop-color="#447C2C"/>
     </linearGradient>
+    <linearGradient id="snakeHead" x1="72" y1="35" x2="120" y2="88" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#C7F28B"/>
+      <stop offset="1" stop-color="#5EA836"/>
+    </linearGradient>
+    <mask id="snakeMoonMask">
+      <rect width="192" height="192" fill="#000"/>
+      <circle cx="108" cy="135" r="17" fill="#fff"/>
+      <circle cx="114" cy="130" r="14" fill="#000"/>
+    </mask>
   </defs>
-  <path d="M34 127C34 96 59 73 90 73H102C131 73 154 96 154 125 154 145 138 160 118 160 102 160 89 147 89 131 89 118 100 107 113 107 123 107 131 115 131 125" stroke="url(#snakeBody)" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>
-  <circle cx="82" cy="60" r="28" fill="url(#snakeBody)"/>
-  <circle cx="72" cy="58" r="5" fill="#193321"/>
-  <circle cx="92" cy="58" r="5" fill="#193321"/>
-  <circle cx="70" cy="56" r="2" fill="#fff"/>
-  <circle cx="90" cy="56" r="2" fill="#fff"/>
-  <path d="M82 66C78 72 74 76 68 78" stroke="#193321" stroke-width="4" stroke-linecap="round"/>
-  <path d="M82 66C86 72 90 76 96 78" stroke="#193321" stroke-width="4" stroke-linecap="round"/>
-  <path d="M82 72V87" stroke="#F06A8E" stroke-width="4" stroke-linecap="round"/>
-  <path d="M82 87 75 96M82 87 89 96" stroke="#F06A8E" stroke-width="4" stroke-linecap="round"/>
-  <circle cx="111" cy="107" r="4" fill="#DFF7B8"/>
-  <circle cx="98" cy="126" r="4" fill="#DFF7B8"/>
-  <circle cx="121" cy="139" r="4" fill="#DFF7B8"/>
+
+  <circle cx="96" cy="110" r="70" fill="url(#snakeAura)"/>
+
+  <path d="M96 82C58 82 36 107 36 134C36 159 54 177 80 177C102 177 118 163 118 145C118 128 105 116 88 116C72 116 60 128 60 144C60 161 73 173 91 173C113 173 129 159 136 139" stroke="url(#snakeBody)" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M96 84C125 84 144 105 144 128C144 145 134 159 119 166" stroke="#DFF7B2" stroke-width="8" stroke-linecap="round" opacity=".7"/>
+
+  <circle cx="108" cy="135" r="17" fill="#FFF6CC" mask="url(#snakeMoonMask)"/>
+  <circle cx="126" cy="118" r="3.8" fill="#E8F8BF"/>
+  <circle cx="92" cy="154" r="3.8" fill="#E8F8BF"/>
+
+  <path d="M76 52C80 41 89 34 96 34C103 34 112 41 116 52" stroke="#DDF6AE" stroke-width="6" stroke-linecap="round" opacity=".85"/>
+  <ellipse cx="96" cy="57" rx="26" ry="22" fill="url(#snakeHead)"/>
+  <path d="M78 52C82 44 88 39 96 39C104 39 110 44 114 52" stroke="#EAFAC6" stroke-width="5" stroke-linecap="round" opacity=".8"/>
+  <ellipse cx="87" cy="56" rx="4.6" ry="5.6" fill="#1D3416"/>
+  <ellipse cx="105" cy="56" rx="4.6" ry="5.6" fill="#1D3416"/>
+  <circle cx="88.5" cy="54.5" r="1.5" fill="#fff"/>
+  <circle cx="106.5" cy="54.5" r="1.5" fill="#fff"/>
+  <path d="M96 62C92 66 88 68 83 69M96 62C100 66 104 68 109 69" stroke="#1D3416" stroke-width="3.6" stroke-linecap="round"/>
+  <path d="M96 67V80" stroke="#F1698A" stroke-width="3.6" stroke-linecap="round"/>
+  <path d="M96 80 90 87M96 80 102 87" stroke="#F1698A" stroke-width="3.6" stroke-linecap="round"/>
 </svg>

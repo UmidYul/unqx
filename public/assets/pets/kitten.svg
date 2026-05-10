@@ -1,21 +1,55 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192" fill="none">
   <defs>
-    <linearGradient id="kittenBody" x1="28" y1="28" x2="154" y2="158" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#CFE3FF"/>
-      <stop offset="1" stop-color="#76AFFF"/>
+    <radialGradient id="kittenAura" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(96 104) rotate(90) scale(66)">
+      <stop stop-color="#EAF4FF" stop-opacity=".92"/>
+      <stop offset=".62" stop-color="#B6D1FF" stop-opacity=".38"/>
+      <stop offset="1" stop-color="#B6D1FF" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="kittenFur" x1="54" y1="44" x2="140" y2="152" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#E9F2FF"/>
+      <stop offset=".42" stop-color="#9AC2FF"/>
+      <stop offset="1" stop-color="#5E8EEB"/>
+    </linearGradient>
+    <linearGradient id="kittenEar" x1="58" y1="42" x2="84" y2="82" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#D7E7FF"/>
+      <stop offset="1" stop-color="#8BB0F3"/>
+    </linearGradient>
+    <linearGradient id="kittenMuzzle" x1="72" y1="102" x2="120" y2="144" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFDF9"/>
+      <stop offset="1" stop-color="#F2F7FF"/>
+    </linearGradient>
+    <linearGradient id="kittenCharm" x1="90" y1="136" x2="105" y2="154" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFF2B6"/>
+      <stop offset="1" stop-color="#C69A3D"/>
     </linearGradient>
   </defs>
-  <path d="M57 35 79 55 74 78 45 77 57 35Z" fill="#CFE3FF"/>
-  <path d="M135 35 147 77 118 78 113 55 135 35Z" fill="#CFE3FF"/>
-  <ellipse cx="96" cy="100" rx="58" ry="52" fill="url(#kittenBody)"/>
-  <ellipse cx="74" cy="86" rx="12" ry="10" fill="#F8FBFF" fill-opacity=".92"/>
-  <ellipse cx="120" cy="86" rx="12" ry="10" fill="#F8FBFF" fill-opacity=".92"/>
-  <ellipse cx="96" cy="119" rx="31" ry="24" fill="#F8FBFF"/>
-  <circle cx="76" cy="101" r="6" fill="#283556"/>
-  <circle cx="116" cy="101" r="6" fill="#283556"/>
-  <circle cx="74" cy="99" r="2" fill="#fff"/>
-  <circle cx="114" cy="99" r="2" fill="#fff"/>
-  <path d="M96 107 104 116H88L96 107Z" fill="#FFB79C"/>
-  <path d="M83 122C87 129 92 132 96 132 100 132 105 129 109 122" stroke="#283556" stroke-width="4" stroke-linecap="round"/>
-  <path d="M73 117 57 112M119 117 135 112" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round"/>
+
+  <circle cx="96" cy="104" r="64" fill="url(#kittenAura)"/>
+
+  <path d="M58 53 80 39 82 74 59 79C53 80 48 75 49 68L50 63C51 59 54 55 58 53Z" fill="url(#kittenEar)"/>
+  <path d="M134 53 112 39 110 74 133 79C139 80 144 75 143 68L142 63C141 59 138 55 134 53Z" fill="url(#kittenEar)"/>
+  <path d="M67 59 79 51 80 68 67 70C63 71 60 67 61 63C61 61 63 60 65 59H67Z" fill="#F7D8E6"/>
+  <path d="M125 59 113 51 112 68 125 70C129 71 132 67 131 63C131 61 129 60 127 59H125Z" fill="#F7D8E6"/>
+
+  <circle cx="96" cy="99" r="49" fill="url(#kittenFur)"/>
+  <path d="M63 86C68 72 82 61 96 61C110 61 124 72 129 86" stroke="#F7FBFF" stroke-width="8" stroke-linecap="round" opacity=".7"/>
+  <ellipse cx="96" cy="90" rx="30" ry="23" fill="#F3F8FF" opacity=".55"/>
+
+  <ellipse cx="75" cy="87" rx="11" ry="8" fill="#F8FBFF" opacity=".95"/>
+  <ellipse cx="117" cy="87" rx="11" ry="8" fill="#F8FBFF" opacity=".95"/>
+  <ellipse cx="96" cy="123" rx="32" ry="25" fill="url(#kittenMuzzle)"/>
+
+  <ellipse cx="78" cy="98" rx="5.5" ry="6.5" fill="#233457"/>
+  <ellipse cx="114" cy="98" rx="5.5" ry="6.5" fill="#233457"/>
+  <circle cx="80" cy="96" r="1.8" fill="#fff"/>
+  <circle cx="116" cy="96" r="1.8" fill="#fff"/>
+
+  <path d="M96 104 103 112H89L96 104Z" fill="#F7B49D"/>
+  <path d="M84 119C88 125 92 128 96 128C100 128 104 125 108 119" stroke="#233457" stroke-width="4" stroke-linecap="round"/>
+  <path d="M84 112H72M108 112H120" stroke="#D4A54A" stroke-width="3.4" stroke-linecap="round" opacity=".9"/>
+  <path d="M84 117H70M108 117H122" stroke="#F7FBFF" stroke-width="2.6" stroke-linecap="round" opacity=".92"/>
+
+  <circle cx="96" cy="145" r="8.5" fill="url(#kittenCharm)"/>
+  <path d="M96 138V145" stroke="#C69A3D" stroke-width="3" stroke-linecap="round"/>
+  <path d="M96 141.5 97.7 145.2 101.7 145.7 98.7 148.3 99.5 152.1 96 150.2 92.5 152.1 93.3 148.3 90.3 145.7 94.3 145.2 96 141.5Z" fill="#FFF8D5"/>
 </svg>
