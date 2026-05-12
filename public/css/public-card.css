@@ -1836,9 +1836,10 @@ body[data-card-theme] #card-view-root>[data-card-view] {
 }
 
 .unq-ref-follow-toggle--hero {
-  min-height: 34px;
-  padding: 0 13px;
-  font-size: 10px;
+  min-height: auto;
+  padding: 4px 12px;
+  font-size: 12px;
+  line-height: 1.2;
   letter-spacing: 0.06em;
   box-shadow: 0 8px 20px rgba(17, 17, 17, 0.08);
 }
@@ -4912,6 +4913,13 @@ body[data-card-theme] main.private-card-screen {
     min-height: 38px;
     padding: 0 14px;
     font-size: 11px;
+  }
+
+  .unq-ref-follow-toggle--hero {
+    min-height: auto;
+    padding: 4px 12px;
+    font-size: 12px;
+    line-height: 1.2;
   }
 
   .unq-follow-dialog-card {
