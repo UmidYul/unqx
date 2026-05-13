@@ -1070,6 +1070,92 @@
   color: #b5b5b5;
 }
 
+@media (min-width: 1024px) {
+  .home-latest-post-stack {
+    display: grid;
+    max-width: 1120px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+    align-items: stretch;
+  }
+
+  .home-latest-post-card {
+    min-height: 220px;
+    padding: 18px 16px;
+    border-radius: 1.45rem;
+  }
+
+  .home-latest-post-head {
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .home-latest-post-author {
+    gap: 10px;
+  }
+
+  .home-latest-post-author > :first-child {
+    width: 42px;
+    height: 42px;
+    flex: 0 0 42px;
+  }
+
+  .home-latest-post-author-name {
+    font-size: 0.9rem;
+  }
+
+  .home-latest-post-author-slug {
+    font-size: 0.75rem;
+  }
+
+  .home-latest-post-author-verified {
+    height: 1rem;
+    width: 1rem;
+    flex-basis: 1rem;
+  }
+
+  .home-post-follow-btn {
+    min-height: 38px;
+    width: 38px;
+    max-width: 38px;
+    flex-basis: 38px;
+    font-size: 1.9rem;
+  }
+
+  .home-latest-post-content {
+    margin-top: 12px;
+    min-height: 4.1em;
+    font-size: 0.92rem;
+    line-height: 1.4;
+  }
+
+  .home-latest-post-foot {
+    gap: 10px;
+    padding-top: 14px;
+  }
+
+  .home-latest-post-actions {
+    gap: 12px;
+  }
+
+  .home-latest-post-action-group {
+    gap: 6px;
+  }
+
+  .home-latest-post-action-icon {
+    height: 1.65rem;
+    width: 1.65rem;
+  }
+
+  .home-latest-post-action-value {
+    font-size: 0.88rem;
+  }
+
+  .home-latest-post-date {
+    font-size: 0.74rem;
+  }
+}
+
 @media (max-width: 780px) {
   .home-latest-post-foot {
     flex-direction: column;
@@ -2411,15 +2497,15 @@ body[data-card-theme] #card-view-root>[data-card-view] {
 }
 
 .unq-ref-profile.has-pets {
-  --pet-reserve-top: clamp(84px, 18vw, 108px);
-  --pet-left-offset: clamp(84px, 23vw, 102px);
-  --pet-left-top: clamp(92px, 24vw, 124px);
-  --pet-top-right-offset: clamp(92px, 25vw, 112px);
-  --pet-top-right-top: clamp(8px, 2vw, 16px);
-  --pet-bottom-right-offset: clamp(90px, 25vw, 112px);
-  --pet-bottom-right-top: clamp(176px, 46vw, 214px);
-  --pet-figure-width: clamp(88px, 24vw, 108px);
-  --pet-visual-size: clamp(68px, 18vw, 82px);
+  --pet-reserve-top: clamp(92px, 20vw, 114px);
+  --pet-left-offset: clamp(92px, 24vw, 110px);
+  --pet-left-top: clamp(116px, 29vw, 146px);
+  --pet-top-right-offset: clamp(112px, 29vw, 132px);
+  --pet-top-right-top: clamp(34px, 8vw, 52px);
+  --pet-bottom-right-offset: clamp(112px, 29vw, 132px);
+  --pet-bottom-right-top: clamp(226px, 58vw, 258px);
+  --pet-figure-width: clamp(84px, 22vw, 102px);
+  --pet-visual-size: clamp(64px, 17vw, 78px);
   min-height: 0;
   padding-top: 12px;
 }
@@ -2433,29 +2519,45 @@ body[data-card-theme] #card-view-root>[data-card-view] {
 }
 
 .unq-ref-profile.has-pets.has-pets-1 {
-  --pet-reserve-top: clamp(70px, 16vw, 88px);
-  --pet-top-right-offset: clamp(82px, 22vw, 102px);
-  --pet-top-right-top: clamp(12px, 3vw, 22px);
+  --pet-reserve-top: clamp(78px, 18vw, 96px);
+  --pet-top-right-offset: clamp(96px, 25vw, 116px);
+  --pet-top-right-top: clamp(24px, 6vw, 36px);
 }
 
 .unq-ref-profile.has-pets.has-pets-3 {
-  --pet-reserve-top: clamp(92px, 20vw, 116px);
-  --pet-left-top: clamp(98px, 26vw, 132px);
-  --pet-top-right-top: clamp(2px, 1vw, 10px);
-  --pet-bottom-right-top: clamp(188px, 49vw, 226px);
-  --pet-figure-width: clamp(82px, 22vw, 102px);
-  --pet-visual-size: clamp(62px, 17vw, 76px);
+  --pet-reserve-top: clamp(96px, 21vw, 118px);
+  --pet-left-top: clamp(120px, 30vw, 152px);
+  --pet-top-right-top: clamp(28px, 7vw, 46px);
+  --pet-bottom-right-top: clamp(236px, 60vw, 268px);
+  --pet-figure-width: clamp(82px, 21vw, 100px);
+  --pet-visual-size: clamp(62px, 16vw, 74px);
 }
 
 .unq-ref-profile.has-emoji-pack.has-pets {
   min-height: 0;
   padding-top: 18px;
-  --pet-top-right-top: clamp(18px, 5vw, 28px);
-  --pet-left-top: clamp(108px, 28vw, 138px);
+  --pet-top-right-top: clamp(42px, 10vw, 60px);
+  --pet-left-top: clamp(132px, 34vw, 164px);
 }
 
 .unq-ref-profile.has-emoji-pack.has-pets.has-pets-3 {
-  --pet-bottom-right-top: clamp(196px, 52vw, 232px);
+  --pet-bottom-right-top: clamp(246px, 64vw, 282px);
+}
+
+[data-card-theme="velours"] .unq-ref-profile.has-pets.has-pets-3 {
+  --pet-reserve-top: clamp(92px, 20vw, 112px);
+  --pet-left-offset: clamp(98px, 25vw, 114px);
+  --pet-left-top: clamp(124px, 31vw, 154px);
+  --pet-top-right-offset: clamp(118px, 30vw, 136px);
+  --pet-top-right-top: clamp(36px, 9vw, 56px);
+  --pet-bottom-right-offset: clamp(118px, 30vw, 136px);
+  --pet-bottom-right-top: clamp(232px, 60vw, 266px);
+}
+
+[data-card-theme="velours"] .unq-ref-profile.has-emoji-pack.has-pets.has-pets-3 {
+  --pet-left-top: clamp(136px, 35vw, 168px);
+  --pet-top-right-top: clamp(50px, 12vw, 68px);
+  --pet-bottom-right-top: clamp(252px, 66vw, 288px);
 }
 
 .unq-ref-name {
@@ -2523,37 +2625,54 @@ body[data-card-theme] #card-view-root>[data-card-view] {
 
 @media (max-width: 480px) {
   .unq-ref-profile.has-pets {
-    --pet-reserve-top: clamp(66px, 21vw, 86px);
-    --pet-left-offset: clamp(68px, 23vw, 84px);
-    --pet-left-top: clamp(78px, 26vw, 104px);
-    --pet-top-right-offset: clamp(70px, 24vw, 88px);
-    --pet-top-right-top: clamp(6px, 2vw, 12px);
-    --pet-bottom-right-offset: clamp(70px, 24vw, 88px);
-    --pet-bottom-right-top: clamp(152px, 50vw, 192px);
-    --pet-figure-width: clamp(78px, 26vw, 96px);
-    --pet-visual-size: clamp(58px, 20vw, 72px);
+    --pet-reserve-top: clamp(74px, 24vw, 92px);
+    --pet-left-offset: clamp(74px, 24vw, 90px);
+    --pet-left-top: clamp(98px, 31vw, 120px);
+    --pet-top-right-offset: clamp(82px, 27vw, 98px);
+    --pet-top-right-top: clamp(20px, 6vw, 30px);
+    --pet-bottom-right-offset: clamp(80px, 27vw, 98px);
+    --pet-bottom-right-top: clamp(186px, 60vw, 220px);
+    --pet-figure-width: clamp(74px, 24vw, 90px);
+    --pet-visual-size: clamp(56px, 18vw, 68px);
   }
 
   .unq-ref-profile.has-pets.has-pets-1 {
-    --pet-reserve-top: clamp(56px, 18vw, 72px);
-    --pet-top-right-offset: clamp(64px, 22vw, 80px);
+    --pet-reserve-top: clamp(64px, 20vw, 78px);
+    --pet-top-right-offset: clamp(72px, 24vw, 88px);
+    --pet-top-right-top: clamp(18px, 5vw, 26px);
   }
 
   .unq-ref-profile.has-pets.has-pets-3 {
-    --pet-reserve-top: clamp(76px, 24vw, 96px);
-    --pet-left-top: clamp(84px, 28vw, 110px);
-    --pet-bottom-right-top: clamp(162px, 54vw, 198px);
-    --pet-figure-width: clamp(70px, 24vw, 86px);
-    --pet-visual-size: clamp(54px, 18vw, 66px);
+    --pet-reserve-top: clamp(78px, 25vw, 96px);
+    --pet-left-top: clamp(102px, 33vw, 126px);
+    --pet-top-right-top: clamp(18px, 5vw, 28px);
+    --pet-bottom-right-top: clamp(194px, 63vw, 228px);
+    --pet-figure-width: clamp(72px, 23vw, 88px);
+    --pet-visual-size: clamp(54px, 17vw, 66px);
   }
 
   .unq-ref-profile.has-emoji-pack.has-pets {
-    --pet-top-right-top: clamp(14px, 4vw, 20px);
-    --pet-left-top: clamp(90px, 30vw, 116px);
+    --pet-top-right-top: clamp(30px, 9vw, 42px);
+    --pet-left-top: clamp(112px, 36vw, 138px);
   }
 
   .unq-ref-profile.has-emoji-pack.has-pets.has-pets-3 {
-    --pet-bottom-right-top: clamp(172px, 57vw, 206px);
+    --pet-bottom-right-top: clamp(206px, 67vw, 238px);
+  }
+
+  [data-card-theme="velours"] .unq-ref-profile.has-pets.has-pets-3 {
+    --pet-left-offset: clamp(78px, 25vw, 92px);
+    --pet-top-right-offset: clamp(86px, 28vw, 102px);
+    --pet-bottom-right-offset: clamp(84px, 28vw, 100px);
+    --pet-left-top: clamp(106px, 34vw, 130px);
+    --pet-top-right-top: clamp(24px, 7vw, 34px);
+    --pet-bottom-right-top: clamp(198px, 64vw, 230px);
+  }
+
+  [data-card-theme="velours"] .unq-ref-profile.has-emoji-pack.has-pets.has-pets-3 {
+    --pet-left-top: clamp(116px, 38vw, 142px);
+    --pet-top-right-top: clamp(34px, 10vw, 46px);
+    --pet-bottom-right-top: clamp(214px, 69vw, 244px);
   }
 
   .unq-ref-pet-name {
