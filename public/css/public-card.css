@@ -699,10 +699,7 @@
   justify-content: center;
   padding: 20px;
   padding:
-    max(20px, env(safe-area-inset-top))
-    max(20px, env(safe-area-inset-right))
-    max(20px, env(safe-area-inset-bottom))
-    max(20px, env(safe-area-inset-left));
+    max(20px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(20px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
   overflow-y: auto;
   overscroll-behavior: contain;
 }
@@ -1136,7 +1133,7 @@
     gap: 10px;
   }
 
-  .home-latest-post-author > :first-child {
+  .home-latest-post-author> :first-child {
     width: 42px;
     height: 42px;
     flex: 0 0 42px;
@@ -2551,7 +2548,6 @@ body[data-card-theme] #card-view-root>[data-card-view] {
   --pet-visual-size: clamp(64px, 17vw, 78px);
   min-height: 0;
   padding-top: 12px;
-  padding-bottom: var(--pet-reserve-bottom);
 }
 
 .unq-ref-profile.has-pets .unq-ref-avatar-wrap {
@@ -5327,10 +5323,7 @@ body[data-card-theme] main.private-card-screen {
     align-items: center;
     padding: 8px 8px 12px;
     padding:
-      max(8px, env(safe-area-inset-top))
-      max(8px, env(safe-area-inset-right))
-      max(12px, env(safe-area-inset-bottom))
-      max(8px, env(safe-area-inset-left));
+      max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
   }
 
   .unq-follow-dialog-head,
