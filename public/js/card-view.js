@@ -47,9 +47,14 @@
   ];
   const PET_TYPE_KEYS = ["kitten", "puppy", "snake"];
   const PET_TYPE_LABELS = {
-    kitten: "Котенок",
-    puppy: "Песик",
-    snake: "Змея",
+    kitten: "Коала",
+    puppy: "Котик",
+    snake: "Леопард",
+  };
+  const PET_ASSET_URLS = {
+    kitten: "/assets/pets/pet1.png",
+    puppy: "/assets/pets/pet2.png",
+    snake: "/assets/pets/pet3.png",
   };
 
   function hexToRgb(value) {
@@ -1574,7 +1579,7 @@
             id: String(pet?.id || "").trim(),
             petType,
             label: String(pet?.label || PET_TYPE_LABELS[petType] || petType).trim(),
-            assetUrl: String(pet?.assetUrl || `/assets/pets/${petType}.svg`).trim(),
+            assetUrl: String(pet?.assetUrl || PET_ASSET_URLS[petType] || "").trim(),
             displayName,
             priceSnapshot: Number.isFinite(Number(pet?.priceSnapshot)) ? Number(pet.priceSnapshot) : 0,
             isVisible: pet?.isVisible !== false,
@@ -1646,9 +1651,9 @@
   }
 
   function getPetSlotNames(count) {
-    if (count >= 3) return ["left", "top", "right"];
-    if (count === 2) return ["left", "right"];
-    if (count === 1) return ["right"];
+    if (count >= 3) return ["left", "top-right", "bottom-right"];
+    if (count === 2) return ["left", "top-right"];
+    if (count === 1) return ["top-right"];
     return [];
   }
 
@@ -1666,7 +1671,6 @@
             </div>
             <figcaption class="unq-ref-pet-meta">
               <span class="unq-ref-pet-name">${esc(pet.displayName)}</span>
-              <span class="unq-ref-pet-price">${Number(pet.priceSnapshot || 0).toLocaleString("ru-RU")} UZS</span>
             </figcaption>
           </figure>`;
         })

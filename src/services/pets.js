@@ -4,27 +4,27 @@ const { getOrderPaymentReference, normalizeTelegramUsername } = require("./payme
 const PET_PRESETS = [
   {
     id: "kitten",
-    label: "Котенок",
-    description: "Маленький спутник для визитки",
+    label: "Коала",
+    description: "Спокойный декоративный друг для визитки",
     settingKey: "pet_kitten_price",
     defaultPrice: 2_000_000,
-    assetUrl: "/assets/pets/kitten.svg",
+    assetUrl: "/assets/pets/pet1.png",
   },
   {
     id: "puppy",
-    label: "Песик",
-    description: "Верный друг рядом с профилем",
+    label: "Котик",
+    description: "Игривый компаньон рядом с профилем",
     settingKey: "pet_puppy_price",
     defaultPrice: 5_000_000,
-    assetUrl: "/assets/pets/puppy.svg",
+    assetUrl: "/assets/pets/pet2.png",
   },
   {
     id: "snake",
-    label: "Змея",
-    description: "Редкий декоративный питомец",
+    label: "Леопард",
+    description: "Яркий акцент для профиля",
     settingKey: "pet_snake_price",
     defaultPrice: 7_000_000,
-    assetUrl: "/assets/pets/snake.svg",
+    assetUrl: "/assets/pets/pet3.png",
   },
 ];
 

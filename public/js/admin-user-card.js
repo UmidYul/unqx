@@ -86,14 +86,14 @@
   const RESERVED_ASSIGNABLE_SLUGS = new Set(["ADMIN", "API", "AUTH", "FAQ", "MANAGER", "PROFILE", "QR", "TERMS"]);
   const PET_TYPES = ["kitten", "puppy", "snake"];
   const PET_TYPE_LABELS = {
-    kitten: "Котенок",
-    puppy: "Песик",
-    snake: "Змея",
+    kitten: "Коала",
+    puppy: "Котик",
+    snake: "Леопард",
   };
   const PET_ASSET_URLS = {
-    kitten: "/assets/pets/kitten.svg",
-    puppy: "/assets/pets/puppy.svg",
-    snake: "/assets/pets/snake.svg",
+    kitten: "/assets/pets/pet1.png",
+    puppy: "/assets/pets/pet2.png",
+    snake: "/assets/pets/pet3.png",
   };
   const assignableSlugHint = "AAA000, 0-999 или A-Z до 3 букв";
   const normalizeSlug = (value) => String(value || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 20);

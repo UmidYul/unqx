@@ -128,14 +128,14 @@
     ];
     const PET_TYPES = ["kitten", "puppy", "snake"];
     const PET_TYPE_LABELS = {
-      kitten: "Котенок",
-      puppy: "Песик",
-      snake: "Змея",
+      kitten: "Коала",
+      puppy: "Котик",
+      snake: "Леопард",
     };
     const PET_ASSET_URLS = {
-      kitten: "/assets/pets/kitten.svg",
-      puppy: "/assets/pets/puppy.svg",
-      snake: "/assets/pets/snake.svg",
+      kitten: "/assets/pets/pet1.png",
+      puppy: "/assets/pets/pet2.png",
+      snake: "/assets/pets/pet3.png",
     };
     const PREMIUM_ONLY_THEMES = new Set(PROFILE_THEMES.filter((theme) => theme !== "default_dark"));
     const PREMIUM_ONLY_AVATAR_FRAMES = new Set(PROFILE_AVATAR_FRAMES.filter((frame) => frame !== "none"));
@@ -2159,7 +2159,6 @@ Email: ${userEmail}
                     ${stateBadge}
                   </div>
                   <p class="mt-1 text-sm text-neutral-500">${esc(item.description || "Декоративный питомец для профиля.")}</p>
-                  <p class="mt-2 text-sm font-semibold text-neutral-900">${fp(item.price)}</p>
                 </div>
               </div>
               <div class="flex w-full flex-col gap-3 md:max-w-[320px]">

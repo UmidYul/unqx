@@ -9,9 +9,9 @@
   const dashboardBasePath = isManager ? "/manager/dashboard" : "/admin/dashboard";
   const assignableBadgeTypes = ["unqx_staff", "government"];
   const PET_TYPE_LABELS = {
-    kitten: "Котенок",
-    puppy: "Песик",
-    snake: "Змея",
+    kitten: "Коала",
+    puppy: "Котик",
+    snake: "Леопард",
   };
 
   const autofillIgnoreSelectors = "form,input,textarea,select";

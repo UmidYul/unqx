@@ -2117,24 +2117,24 @@ body[data-card-theme] #card-view-root>[data-card-view] {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   text-align: center;
   transform: translateX(-50%);
 }
 
 .unq-ref-pet--left {
-  left: calc(50% - var(--pet-slot-offset, 112px));
-  top: var(--pet-side-slot-top, 26px);
+  left: calc(50% - var(--pet-left-offset, 92px));
+  top: var(--pet-left-top, 96px);
 }
 
-.unq-ref-pet--right {
-  left: calc(50% + var(--pet-slot-offset, 112px));
-  top: var(--pet-side-slot-top, 26px);
+.unq-ref-pet--top-right {
+  left: calc(50% + var(--pet-top-right-offset, 102px));
+  top: var(--pet-top-right-top, 8px);
 }
 
-.unq-ref-pet--top {
-  left: 50%;
-  top: var(--pet-top-slot-top, 0px);
+.unq-ref-pet--bottom-right {
+  left: calc(50% + var(--pet-bottom-right-offset, 96px));
+  top: var(--pet-bottom-right-top, 188px);
 }
 
 .unq-ref-pet-visual {
@@ -2155,7 +2155,6 @@ body[data-card-theme] #card-view-root>[data-card-view] {
 .unq-ref-pet-meta {
   display: flex;
   flex-direction: column;
-  gap: 2px;
   max-width: 100%;
 }
 
@@ -2164,13 +2163,7 @@ body[data-card-theme] #card-view-root>[data-card-view] {
   line-height: 1.1;
   color: var(--theme-name-color, #242424);
   overflow-wrap: anywhere;
-}
-
-.unq-ref-pet-price {
-  font-size: 12px;
-  line-height: 1.1;
-  color: var(--theme-muted-color, #7d7d7d);
-  overflow-wrap: anywhere;
+  font-weight: 500;
 }
 
 .unq-ref-avatar-wrap {
@@ -2360,11 +2353,14 @@ body[data-card-theme] #card-view-root>[data-card-view] {
 }
 
 .unq-ref-profile.has-pets {
-  --pet-reserve-top: clamp(56px, 12vw, 76px);
-  --pet-slot-offset: clamp(86px, 24vw, 116px);
-  --pet-side-slot-top: clamp(18px, 4vw, 28px);
-  --pet-top-slot-top: 0px;
-  --pet-figure-width: clamp(88px, 24vw, 110px);
+  --pet-reserve-top: clamp(84px, 18vw, 108px);
+  --pet-left-offset: clamp(84px, 23vw, 102px);
+  --pet-left-top: clamp(92px, 24vw, 124px);
+  --pet-top-right-offset: clamp(92px, 25vw, 112px);
+  --pet-top-right-top: clamp(8px, 2vw, 16px);
+  --pet-bottom-right-offset: clamp(90px, 25vw, 112px);
+  --pet-bottom-right-top: clamp(176px, 46vw, 214px);
+  --pet-figure-width: clamp(88px, 24vw, 108px);
   --pet-visual-size: clamp(68px, 18vw, 82px);
   min-height: 0;
   padding-top: 12px;
@@ -2379,14 +2375,16 @@ body[data-card-theme] #card-view-root>[data-card-view] {
 }
 
 .unq-ref-profile.has-pets.has-pets-1 {
-  --pet-slot-offset: clamp(78px, 21vw, 100px);
+  --pet-reserve-top: clamp(70px, 16vw, 88px);
+  --pet-top-right-offset: clamp(82px, 22vw, 102px);
+  --pet-top-right-top: clamp(12px, 3vw, 22px);
 }
 
 .unq-ref-profile.has-pets.has-pets-3 {
-  --pet-reserve-top: clamp(88px, 18vw, 112px);
-  --pet-slot-offset: clamp(94px, 25vw, 124px);
-  --pet-side-slot-top: clamp(28px, 7vw, 44px);
-  --pet-top-slot-top: 0px;
+  --pet-reserve-top: clamp(92px, 20vw, 116px);
+  --pet-left-top: clamp(98px, 26vw, 132px);
+  --pet-top-right-top: clamp(2px, 1vw, 10px);
+  --pet-bottom-right-top: clamp(188px, 49vw, 226px);
   --pet-figure-width: clamp(82px, 22vw, 102px);
   --pet-visual-size: clamp(62px, 17vw, 76px);
 }
@@ -2394,11 +2392,12 @@ body[data-card-theme] #card-view-root>[data-card-view] {
 .unq-ref-profile.has-emoji-pack.has-pets {
   min-height: 0;
   padding-top: 18px;
-  --pet-top-slot-top: 8px;
+  --pet-top-right-top: clamp(18px, 5vw, 28px);
+  --pet-left-top: clamp(108px, 28vw, 138px);
 }
 
 .unq-ref-profile.has-emoji-pack.has-pets.has-pets-3 {
-  --pet-top-slot-top: 6px;
+  --pet-bottom-right-top: clamp(196px, 52vw, 232px);
 }
 
 .unq-ref-name {
@@ -2466,39 +2465,41 @@ body[data-card-theme] #card-view-root>[data-card-view] {
 
 @media (max-width: 480px) {
   .unq-ref-profile.has-pets {
-    --pet-reserve-top: clamp(44px, 14vw, 60px);
-    --pet-slot-offset: clamp(70px, 22vw, 90px);
-    --pet-side-slot-top: clamp(12px, 3vw, 20px);
+    --pet-reserve-top: clamp(66px, 21vw, 86px);
+    --pet-left-offset: clamp(68px, 23vw, 84px);
+    --pet-left-top: clamp(78px, 26vw, 104px);
+    --pet-top-right-offset: clamp(70px, 24vw, 88px);
+    --pet-top-right-top: clamp(6px, 2vw, 12px);
+    --pet-bottom-right-offset: clamp(70px, 24vw, 88px);
+    --pet-bottom-right-top: clamp(152px, 50vw, 192px);
     --pet-figure-width: clamp(78px, 26vw, 96px);
     --pet-visual-size: clamp(58px, 20vw, 72px);
   }
 
   .unq-ref-profile.has-pets.has-pets-1 {
-    --pet-slot-offset: clamp(62px, 20vw, 82px);
+    --pet-reserve-top: clamp(56px, 18vw, 72px);
+    --pet-top-right-offset: clamp(64px, 22vw, 80px);
   }
 
   .unq-ref-profile.has-pets.has-pets-3 {
-    --pet-reserve-top: clamp(72px, 23vw, 90px);
-    --pet-slot-offset: clamp(68px, 23vw, 84px);
-    --pet-side-slot-top: clamp(20px, 7vw, 34px);
+    --pet-reserve-top: clamp(76px, 24vw, 96px);
+    --pet-left-top: clamp(84px, 28vw, 110px);
+    --pet-bottom-right-top: clamp(162px, 54vw, 198px);
     --pet-figure-width: clamp(70px, 24vw, 86px);
     --pet-visual-size: clamp(54px, 18vw, 66px);
   }
 
   .unq-ref-profile.has-emoji-pack.has-pets {
-    --pet-top-slot-top: 10px;
+    --pet-top-right-top: clamp(14px, 4vw, 20px);
+    --pet-left-top: clamp(90px, 30vw, 116px);
   }
 
   .unq-ref-profile.has-emoji-pack.has-pets.has-pets-3 {
-    --pet-top-slot-top: 8px;
+    --pet-bottom-right-top: clamp(172px, 57vw, 206px);
   }
 
   .unq-ref-pet-name {
     font-size: 13px;
-  }
-
-  .unq-ref-pet-price {
-    font-size: 11px;
   }
 }
 
