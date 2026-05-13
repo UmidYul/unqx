@@ -2859,7 +2859,7 @@ body[data-card-theme] #card-view-root>[data-card-view] {
 
   [data-card-theme="velours"] .unq-ref-profile.has-emoji-pack.has-pets.has-pets-3 .unq-ref-pet--top-right {
     left: calc(50% + 4px);
-    top: 78px;
+    top: 54px;
   }
 
   [data-card-theme="velours"] .unq-ref-profile.has-emoji-pack.has-pets.has-pets-3 .unq-ref-pet--bottom-right {
