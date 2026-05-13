@@ -2540,16 +2540,18 @@ body[data-card-theme] #card-view-root>[data-card-view] {
 
 .unq-ref-profile.has-pets {
   --pet-reserve-top: clamp(92px, 20vw, 114px);
+  --pet-reserve-bottom: clamp(34px, 8vw, 52px);
   --pet-left-offset: clamp(92px, 24vw, 110px);
   --pet-left-top: clamp(116px, 29vw, 146px);
   --pet-top-right-offset: clamp(112px, 29vw, 132px);
   --pet-top-right-top: clamp(34px, 8vw, 52px);
   --pet-bottom-right-offset: clamp(112px, 29vw, 132px);
-  --pet-bottom-right-top: clamp(226px, 58vw, 258px);
+  --pet-bottom-right-top: clamp(244px, 62vw, 278px);
   --pet-figure-width: clamp(84px, 22vw, 102px);
   --pet-visual-size: clamp(64px, 17vw, 78px);
   min-height: 0;
   padding-top: 12px;
+  padding-bottom: var(--pet-reserve-bottom);
 }
 
 .unq-ref-profile.has-pets .unq-ref-avatar-wrap {
@@ -2558,6 +2560,7 @@ body[data-card-theme] #card-view-root>[data-card-view] {
 
 .unq-ref-profile.has-pets .unq-ref-name-wrap {
   margin-top: 18px;
+  width: min(100%, 100%);
 }
 
 .unq-ref-profile.has-pets.has-pets-1 {
@@ -2568,9 +2571,10 @@ body[data-card-theme] #card-view-root>[data-card-view] {
 
 .unq-ref-profile.has-pets.has-pets-3 {
   --pet-reserve-top: clamp(96px, 21vw, 118px);
+  --pet-reserve-bottom: clamp(84px, 22vw, 108px);
   --pet-left-top: clamp(120px, 30vw, 152px);
   --pet-top-right-top: clamp(28px, 7vw, 46px);
-  --pet-bottom-right-top: clamp(236px, 60vw, 268px);
+  --pet-bottom-right-top: clamp(258px, 68vw, 294px);
   --pet-figure-width: clamp(82px, 21vw, 100px);
   --pet-visual-size: clamp(62px, 16vw, 74px);
 }
@@ -2583,23 +2587,42 @@ body[data-card-theme] #card-view-root>[data-card-view] {
 }
 
 .unq-ref-profile.has-emoji-pack.has-pets.has-pets-3 {
-  --pet-bottom-right-top: clamp(246px, 64vw, 282px);
+  --pet-reserve-bottom: clamp(92px, 25vw, 120px);
+  --pet-bottom-right-top: clamp(270px, 72vw, 306px);
 }
 
 [data-card-theme="velours"] .unq-ref-profile.has-pets.has-pets-3 {
-  --pet-reserve-top: clamp(92px, 20vw, 112px);
-  --pet-left-offset: clamp(98px, 25vw, 114px);
-  --pet-left-top: clamp(124px, 31vw, 154px);
-  --pet-top-right-offset: clamp(118px, 30vw, 136px);
-  --pet-top-right-top: clamp(36px, 9vw, 56px);
-  --pet-bottom-right-offset: clamp(118px, 30vw, 136px);
-  --pet-bottom-right-top: clamp(232px, 60vw, 266px);
+  --pet-reserve-top: clamp(98px, 23vw, 118px);
+  --pet-reserve-bottom: clamp(94px, 26vw, 124px);
+  --pet-left-offset: clamp(106px, 27vw, 122px);
+  --pet-left-top: clamp(132px, 34vw, 164px);
+  --pet-top-right-offset: clamp(126px, 32vw, 144px);
+  --pet-top-right-top: clamp(40px, 10vw, 58px);
+  --pet-bottom-right-offset: clamp(126px, 33vw, 146px);
+  --pet-bottom-right-top: clamp(266px, 70vw, 304px);
 }
 
 [data-card-theme="velours"] .unq-ref-profile.has-emoji-pack.has-pets.has-pets-3 {
-  --pet-left-top: clamp(136px, 35vw, 168px);
-  --pet-top-right-top: clamp(50px, 12vw, 68px);
-  --pet-bottom-right-top: clamp(252px, 66vw, 288px);
+  --pet-reserve-top: clamp(106px, 27vw, 128px);
+  --pet-reserve-bottom: clamp(112px, 31vw, 142px);
+  --pet-left-offset: clamp(110px, 29vw, 126px);
+  --pet-left-top: clamp(142px, 38vw, 176px);
+  --pet-top-right-offset: clamp(130px, 34vw, 150px);
+  --pet-top-right-top: clamp(56px, 14vw, 76px);
+  --pet-bottom-right-offset: clamp(132px, 35vw, 152px);
+  --pet-bottom-right-top: clamp(286px, 78vw, 326px);
+}
+
+.unq-ref-profile.has-pets .unq-ref-verified-company,
+.unq-ref-profile.has-pets .unq-ref-role,
+.unq-ref-profile.has-pets .unq-ref-bio {
+  max-width: min(100%, 280px);
+}
+
+[data-card-theme="velours"] .unq-ref-profile.has-pets .unq-ref-verified-company,
+[data-card-theme="velours"] .unq-ref-profile.has-pets .unq-ref-role,
+[data-card-theme="velours"] .unq-ref-profile.has-pets .unq-ref-bio {
+  max-width: min(100%, 248px);
 }
 
 .unq-ref-name {
@@ -2668,12 +2691,13 @@ body[data-card-theme] #card-view-root>[data-card-view] {
 @media (max-width: 480px) {
   .unq-ref-profile.has-pets {
     --pet-reserve-top: clamp(74px, 24vw, 92px);
-    --pet-left-offset: clamp(74px, 24vw, 90px);
-    --pet-left-top: clamp(98px, 31vw, 120px);
-    --pet-top-right-offset: clamp(82px, 27vw, 98px);
-    --pet-top-right-top: clamp(20px, 6vw, 30px);
-    --pet-bottom-right-offset: clamp(80px, 27vw, 98px);
-    --pet-bottom-right-top: clamp(186px, 60vw, 220px);
+    --pet-reserve-bottom: clamp(58px, 18vw, 84px);
+    --pet-left-offset: clamp(82px, 26vw, 98px);
+    --pet-left-top: clamp(106px, 34vw, 130px);
+    --pet-top-right-offset: clamp(94px, 30vw, 110px);
+    --pet-top-right-top: clamp(24px, 7vw, 36px);
+    --pet-bottom-right-offset: clamp(92px, 31vw, 110px);
+    --pet-bottom-right-top: clamp(214px, 70vw, 250px);
     --pet-figure-width: clamp(74px, 24vw, 90px);
     --pet-visual-size: clamp(56px, 18vw, 68px);
   }
@@ -2685,40 +2709,55 @@ body[data-card-theme] #card-view-root>[data-card-view] {
   }
 
   .unq-ref-profile.has-pets.has-pets-3 {
-    --pet-reserve-top: clamp(78px, 25vw, 96px);
-    --pet-left-top: clamp(102px, 33vw, 126px);
-    --pet-top-right-top: clamp(18px, 5vw, 28px);
-    --pet-bottom-right-top: clamp(194px, 63vw, 228px);
+    --pet-reserve-top: clamp(84px, 27vw, 102px);
+    --pet-reserve-bottom: clamp(84px, 26vw, 112px);
+    --pet-left-top: clamp(112px, 36vw, 138px);
+    --pet-top-right-top: clamp(22px, 6vw, 32px);
+    --pet-bottom-right-top: clamp(234px, 76vw, 272px);
     --pet-figure-width: clamp(72px, 23vw, 88px);
     --pet-visual-size: clamp(54px, 17vw, 66px);
   }
 
   .unq-ref-profile.has-emoji-pack.has-pets {
-    --pet-top-right-top: clamp(30px, 9vw, 42px);
-    --pet-left-top: clamp(112px, 36vw, 138px);
+    --pet-top-right-top: clamp(36px, 11vw, 48px);
+    --pet-left-top: clamp(122px, 39vw, 148px);
   }
 
   .unq-ref-profile.has-emoji-pack.has-pets.has-pets-3 {
-    --pet-bottom-right-top: clamp(206px, 67vw, 238px);
+    --pet-reserve-bottom: clamp(96px, 30vw, 124px);
+    --pet-bottom-right-top: clamp(248px, 80vw, 286px);
   }
 
   [data-card-theme="velours"] .unq-ref-profile.has-pets.has-pets-3 {
-    --pet-left-offset: clamp(78px, 25vw, 92px);
-    --pet-top-right-offset: clamp(86px, 28vw, 102px);
-    --pet-bottom-right-offset: clamp(84px, 28vw, 100px);
-    --pet-left-top: clamp(106px, 34vw, 130px);
-    --pet-top-right-top: clamp(24px, 7vw, 34px);
-    --pet-bottom-right-top: clamp(198px, 64vw, 230px);
+    --pet-reserve-top: clamp(88px, 29vw, 108px);
+    --pet-reserve-bottom: clamp(104px, 33vw, 132px);
+    --pet-left-offset: clamp(88px, 28vw, 104px);
+    --pet-top-right-offset: clamp(98px, 31vw, 116px);
+    --pet-bottom-right-offset: clamp(100px, 33vw, 120px);
+    --pet-left-top: clamp(114px, 37vw, 140px);
+    --pet-top-right-top: clamp(30px, 9vw, 40px);
+    --pet-bottom-right-top: clamp(244px, 79vw, 282px);
   }
 
   [data-card-theme="velours"] .unq-ref-profile.has-emoji-pack.has-pets.has-pets-3 {
-    --pet-left-top: clamp(116px, 38vw, 142px);
-    --pet-top-right-top: clamp(34px, 10vw, 46px);
-    --pet-bottom-right-top: clamp(214px, 69vw, 244px);
+    --pet-reserve-top: clamp(98px, 32vw, 120px);
+    --pet-reserve-bottom: clamp(118px, 37vw, 146px);
+    --pet-left-offset: clamp(92px, 30vw, 108px);
+    --pet-top-right-offset: clamp(102px, 33vw, 120px);
+    --pet-bottom-right-offset: clamp(104px, 35vw, 124px);
+    --pet-left-top: clamp(126px, 41vw, 154px);
+    --pet-top-right-top: clamp(42px, 13vw, 56px);
+    --pet-bottom-right-top: clamp(260px, 84vw, 300px);
   }
 
   .unq-ref-pet-name {
     font-size: 13px;
+  }
+
+  .unq-ref-profile.has-pets .unq-ref-verified-company,
+  .unq-ref-profile.has-pets .unq-ref-role,
+  .unq-ref-profile.has-pets .unq-ref-bio {
+    max-width: min(100%, 232px);
   }
 }
 
