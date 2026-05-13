@@ -2757,31 +2757,31 @@ body[data-card-theme] #card-view-root>[data-card-view] {
   }
 }
 
-@media (max-width: 420px) {
-  :is(body[data-card-theme="velours"], #profile-card-live-preview[data-preview-theme="velours"]) .unq-ref-shell {
+@media (max-width: 520px) {
+  [data-card-theme="velours"] .unq-ref-shell {
     padding: 18px 16px 22px;
   }
 
-  :is(body[data-card-theme="velours"], #profile-card-live-preview[data-preview-theme="velours"]) .unq-ref-official-unq,
-  :is(body[data-card-theme="velours"], #profile-card-live-preview[data-preview-theme="velours"]) .unq-ref-staff-badge {
+  [data-card-theme="velours"] .unq-ref-official-unq,
+  [data-card-theme="velours"] .unq-ref-staff-badge {
     max-width: 286px;
     margin-bottom: 16px;
     padding: 12px 14px;
     border-radius: 18px;
   }
 
-  :is(body[data-card-theme="velours"], #profile-card-live-preview[data-preview-theme="velours"]) .unq-ref-brand h2 {
+  [data-card-theme="velours"] .unq-ref-brand h2 {
     font-size: 34px;
     line-height: 0.98;
   }
 
-  :is(body[data-card-theme="velours"], #profile-card-live-preview[data-preview-theme="velours"]) .unq-ref-brand p {
+  [data-card-theme="velours"] .unq-ref-brand p {
     margin-top: 8px;
     font-size: 10px;
     letter-spacing: 0.18em;
   }
 
-  :is(body[data-card-theme="velours"], #profile-card-live-preview[data-preview-theme="velours"]) .unq-ref-profile.has-emoji-pack.has-pets.has-pets-3 {
+  [data-card-theme="velours"] .unq-ref-profile.has-emoji-pack.has-pets.has-pets-3 {
     width: 100%;
     max-width: 320px;
     min-height: 548px;
@@ -2790,104 +2790,104 @@ body[data-card-theme] #card-view-root>[data-card-view] {
     padding-bottom: 0;
   }
 
-  :is(body[data-card-theme="velours"], #profile-card-live-preview[data-preview-theme="velours"]) .unq-ref-profile.has-emoji-pack.has-pets.has-pets-3 .unq-ref-profile-emoji-pack {
+  [data-card-theme="velours"] .unq-ref-profile.has-emoji-pack.has-pets.has-pets-3 .unq-ref-profile-emoji-pack {
     top: 44px;
     width: 100%;
     max-width: 320px;
     height: 214px;
   }
 
-  :is(body[data-card-theme="velours"], #profile-card-live-preview[data-preview-theme="velours"]) .unq-ref-profile.has-emoji-pack.has-pets.has-pets-3 .unq-ref-avatar-wrap {
+  [data-card-theme="velours"] .unq-ref-profile.has-emoji-pack.has-pets.has-pets-3 .unq-ref-avatar-wrap {
     --avatar-size: 108px;
     margin-top: 158px;
   }
 
-  :is(body[data-card-theme="velours"], #profile-card-live-preview[data-preview-theme="velours"]) .unq-ref-profile.has-emoji-pack.has-pets.has-pets-3 .unq-ref-name-wrap {
+  [data-card-theme="velours"] .unq-ref-profile.has-emoji-pack.has-pets.has-pets-3 .unq-ref-name-wrap {
     margin-top: 24px;
     max-width: 206px;
   }
 
-  :is(body[data-card-theme="velours"], #profile-card-live-preview[data-preview-theme="velours"]) .unq-ref-profile.has-emoji-pack.has-pets.has-pets-3 .unq-ref-name {
+  [data-card-theme="velours"] .unq-ref-profile.has-emoji-pack.has-pets.has-pets-3 .unq-ref-name {
     font-size: 31px;
     line-height: 1;
   }
 
-  :is(body[data-card-theme="velours"], #profile-card-live-preview[data-preview-theme="velours"]) .unq-ref-profile.has-emoji-pack.has-pets.has-pets-3 .unq-ref-verified-company {
+  [data-card-theme="velours"] .unq-ref-profile.has-emoji-pack.has-pets.has-pets-3 .unq-ref-verified-company {
     margin-top: 10px;
     max-width: 180px;
     font-size: 11px;
     line-height: 1.55;
   }
 
-  :is(body[data-card-theme="velours"], #profile-card-live-preview[data-preview-theme="velours"]) .unq-ref-profile.has-emoji-pack.has-pets.has-pets-3 .unq-ref-role {
+  [data-card-theme="velours"] .unq-ref-profile.has-emoji-pack.has-pets.has-pets-3 .unq-ref-role {
     margin-top: 4px;
     max-width: 180px;
     font-size: 11px;
     line-height: 1.35;
   }
 
-  :is(body[data-card-theme="velours"], #profile-card-live-preview[data-preview-theme="velours"]) .unq-ref-profile.has-emoji-pack.has-pets.has-pets-3 .unq-ref-bio {
+  [data-card-theme="velours"] .unq-ref-profile.has-emoji-pack.has-pets.has-pets-3 .unq-ref-bio {
     margin-top: 8px;
     max-width: 188px;
     font-size: 12px;
     line-height: 1.45;
   }
 
-  :is(body[data-card-theme="velours"], #profile-card-live-preview[data-preview-theme="velours"]) .unq-ref-profile.has-emoji-pack.has-pets.has-pets-3 .unq-ref-pets {
+  [data-card-theme="velours"] .unq-ref-profile.has-emoji-pack.has-pets.has-pets-3 .unq-ref-pets {
     inset: 0;
   }
 
-  :is(body[data-card-theme="velours"], #profile-card-live-preview[data-preview-theme="velours"]) .unq-ref-profile.has-emoji-pack.has-pets.has-pets-3 .unq-ref-pet {
+  [data-card-theme="velours"] .unq-ref-profile.has-emoji-pack.has-pets.has-pets-3 .unq-ref-pet {
     width: 94px;
     gap: 6px;
   }
 
-  :is(body[data-card-theme="velours"], #profile-card-live-preview[data-preview-theme="velours"]) .unq-ref-profile.has-emoji-pack.has-pets.has-pets-3 .unq-ref-pet-visual {
+  [data-card-theme="velours"] .unq-ref-profile.has-emoji-pack.has-pets.has-pets-3 .unq-ref-pet-visual {
     width: 74px;
     height: 74px;
   }
 
-  :is(body[data-card-theme="velours"], #profile-card-live-preview[data-preview-theme="velours"]) .unq-ref-profile.has-emoji-pack.has-pets.has-pets-3 .unq-ref-pet-name {
+  [data-card-theme="velours"] .unq-ref-profile.has-emoji-pack.has-pets.has-pets-3 .unq-ref-pet-name {
     font-size: 13px;
     line-height: 1.12;
   }
 
-  :is(body[data-card-theme="velours"], #profile-card-live-preview[data-preview-theme="velours"]) .unq-ref-profile.has-emoji-pack.has-pets.has-pets-3 .unq-ref-pet--left {
+  [data-card-theme="velours"] .unq-ref-profile.has-emoji-pack.has-pets.has-pets-3 .unq-ref-pet--left {
     left: calc(50% - 118px);
     top: 214px;
   }
 
-  :is(body[data-card-theme="velours"], #profile-card-live-preview[data-preview-theme="velours"]) .unq-ref-profile.has-emoji-pack.has-pets.has-pets-3 .unq-ref-pet--top-right {
+  [data-card-theme="velours"] .unq-ref-profile.has-emoji-pack.has-pets.has-pets-3 .unq-ref-pet--top-right {
     left: calc(50% + 4px);
     top: 78px;
   }
 
-  :is(body[data-card-theme="velours"], #profile-card-live-preview[data-preview-theme="velours"]) .unq-ref-profile.has-emoji-pack.has-pets.has-pets-3 .unq-ref-pet--bottom-right {
+  [data-card-theme="velours"] .unq-ref-profile.has-emoji-pack.has-pets.has-pets-3 .unq-ref-pet--bottom-right {
     left: calc(50% + 118px);
     top: 214px;
   }
 
-  :is(body[data-card-theme="velours"], #profile-card-live-preview[data-preview-theme="velours"]) .unq-ref-profile.has-emoji-pack.has-pets.has-pets-3 .unq-ref-social-stats {
+  [data-card-theme="velours"] .unq-ref-profile.has-emoji-pack.has-pets.has-pets-3 .unq-ref-social-stats {
     margin-top: 18px;
     gap: 36px;
   }
 
-  :is(body[data-card-theme="velours"], #profile-card-live-preview[data-preview-theme="velours"]) .unq-ref-profile.has-emoji-pack.has-pets.has-pets-3 .unq-ref-social-value {
+  [data-card-theme="velours"] .unq-ref-profile.has-emoji-pack.has-pets.has-pets-3 .unq-ref-social-value {
     font-size: 18px;
   }
 
-  :is(body[data-card-theme="velours"], #profile-card-live-preview[data-preview-theme="velours"]) .unq-ref-profile.has-emoji-pack.has-pets.has-pets-3 .unq-ref-social-label {
+  [data-card-theme="velours"] .unq-ref-profile.has-emoji-pack.has-pets.has-pets-3 .unq-ref-social-label {
     font-size: 10px;
     line-height: 1.2;
   }
 
-  :is(body[data-card-theme="velours"], #profile-card-live-preview[data-preview-theme="velours"]) .unq-wall-tabs {
+  [data-card-theme="velours"] .unq-wall-tabs {
     margin-top: 10px;
     gap: 22px;
     padding-bottom: 8px;
   }
 
-  :is(body[data-card-theme="velours"], #profile-card-live-preview[data-preview-theme="velours"]) .unq-wall-tab {
+  [data-card-theme="velours"] .unq-wall-tab {
     font-size: 13px;
   }
 }
