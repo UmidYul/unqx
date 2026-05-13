@@ -2853,8 +2853,8 @@ body[data-card-theme] #card-view-root>[data-card-view] {
   }
 
   :is(body[data-card-theme="velours"], #profile-card-live-preview[data-preview-theme="velours"]) .unq-ref-profile.has-emoji-pack.has-pets.has-pets-3 .unq-ref-pet--left {
-    left: calc(50% - 102px);
-    top: 214px;
+    left: calc(50% - 116px);
+    top: 104px;
   }
 
   :is(body[data-card-theme="velours"], #profile-card-live-preview[data-preview-theme="velours"]) .unq-ref-profile.has-emoji-pack.has-pets.has-pets-3 .unq-ref-pet--top-right {
@@ -2863,8 +2863,8 @@ body[data-card-theme] #card-view-root>[data-card-view] {
   }
 
   :is(body[data-card-theme="velours"], #profile-card-live-preview[data-preview-theme="velours"]) .unq-ref-profile.has-emoji-pack.has-pets.has-pets-3 .unq-ref-pet--bottom-right {
-    left: calc(50% + 108px);
-    top: 398px;
+    left: calc(50% + 122px);
+    top: 270px;
   }
 
   :is(body[data-card-theme="velours"], #profile-card-live-preview[data-preview-theme="velours"]) .unq-ref-profile.has-emoji-pack.has-pets.has-pets-3 .unq-ref-social-stats {
