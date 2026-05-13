@@ -53,11 +53,13 @@ let slugPricingConfig = { ...DEFAULT_HOME_SLUG_PRICING };
   void loadSlugPricingConfig();
   initNextDropOneClick();
   initOrderLinks(orderApi);
-  initHomeFollowButtons(pageNode, authApi);
+  const requestJson = createHomeJsonRequester();
+  initHomeFollowButtons(pageNode, authApi, requestJson);
+  initHomeLatestPostButtons(pageNode, requestJson);
   initHomeMotion();
 })();
 
-function initHomeFollowButtons(pageNode, authApi) {
+function createHomeJsonRequester() {
   const csrfMeta = document.querySelector('meta[name="csrf-token"]');
 
   function getCsrfToken() {
@@ -72,7 +74,7 @@ function initHomeFollowButtons(pageNode, authApi) {
     }
   }
 
-  async function requestJson(url, options = {}, allowRetry = true) {
+  return async function requestJson(url, options = {}, allowRetry = true) {
     const headers = { Accept: "application/json", ...(options.headers || {}) };
     const method = String(options.method || "GET").toUpperCase();
     const csrfToken = getCsrfToken();
@@ -88,8 +90,10 @@ function initHomeFollowButtons(pageNode, authApi) {
       return requestJson(url, options, false);
     }
     return { response, data: data && typeof data === "object" ? data : {} };
-  }
+  };
+}
 
+function initHomeFollowButtons(pageNode, authApi, requestJson) {
   function setButtonsState(slug, following) {
     const normalizedSlug = String(slug || "").trim().toUpperCase();
     if (!normalizedSlug) return;
@@ -156,6 +160,189 @@ function initHomeFollowButtons(pageNode, authApi) {
           node.disabled = false;
         });
       }, 120);
+    }
+  });
+}
+
+function initHomeLatestPostButtons(pageNode, requestJson) {
+  function trimMetricDecimal(value) {
+    return String(value).replace(/\.0$/, "");
+  }
+
+  function formatMetric(value) {
+    const amount = Math.max(0, Number(value || 0));
+    if (!Number.isFinite(amount)) {
+      return "0";
+    }
+    if (amount >= 1_000_000) {
+      return `${trimMetricDecimal((amount / 1_000_000).toFixed(amount >= 10_000_000 ? 0 : 1))}M`;
+    }
+    if (amount >= 1_000) {
+      return `${trimMetricDecimal((amount / 1_000).toFixed(amount >= 10_000 ? 0 : 1))}K`;
+    }
+    return amount.toLocaleString("ru-RU");
+  }
+
+  async function copyText(value) {
+    const normalizedValue = String(value || "").trim();
+    if (!normalizedValue) {
+      return false;
+    }
+    try {
+      if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
+        await navigator.clipboard.writeText(normalizedValue);
+        return true;
+      }
+    } catch { }
+
+    const textarea = document.createElement("textarea");
+    textarea.value = normalizedValue;
+    textarea.setAttribute("readonly", "");
+    textarea.style.position = "fixed";
+    textarea.style.opacity = "0";
+    textarea.style.pointerEvents = "none";
+    document.body.appendChild(textarea);
+    textarea.focus();
+    textarea.select();
+
+    let copied = false;
+    try {
+      copied = document.execCommand("copy");
+    } catch {
+      copied = false;
+    }
+
+    textarea.remove();
+    return copied;
+  }
+
+  function resolvePostUrl(value) {
+    const fallback = window.location.href;
+    try {
+      return new URL(String(value || "").trim() || fallback, window.location.origin).toString();
+    } catch {
+      return fallback;
+    }
+  }
+
+  function updateLikeButton(button, options = {}) {
+    if (!(button instanceof HTMLButtonElement)) {
+      return;
+    }
+    const liked = Boolean(options.liked);
+    const busy = Boolean(options.busy);
+    const disabledByData =
+      !String(button.getAttribute("data-post-id") || "").trim() ||
+      !String(button.getAttribute("data-post-slug") || "").trim();
+    const likesCount = Math.max(
+      0,
+      Number(options.likesCount !== undefined ? options.likesCount : button.getAttribute("data-likes-count") || 0),
+    );
+    button.dataset.liked = liked ? "true" : "false";
+    button.dataset.likesCount = String(likesCount);
+    button.disabled = busy || disabledByData;
+    button.classList.toggle("is-liked", liked);
+    button.classList.toggle("is-busy", busy);
+    button.setAttribute("aria-pressed", liked ? "true" : "false");
+    const label = liked ? "Убрать лайк" : "Поставить лайк";
+    button.setAttribute("aria-label", label);
+    button.setAttribute("title", label);
+    const countNode = button.querySelector("[data-home-post-like-count]");
+    if (countNode instanceof HTMLElement) {
+      countNode.textContent = formatMetric(likesCount);
+    }
+  }
+
+  async function handleLike(button) {
+    const postId = String(button.getAttribute("data-post-id") || "").trim();
+    const postSlug = String(button.getAttribute("data-post-slug") || "").trim().toUpperCase();
+    const loginNext = String(button.getAttribute("data-login-next") || "").trim() || window.location.pathname;
+    const likedNow = String(button.getAttribute("data-liked") || "").trim() === "true";
+    const likesCountNow = Number(button.getAttribute("data-likes-count") || 0);
+    if (!postId || !postSlug || button.disabled) {
+      return;
+    }
+
+    updateLikeButton(button, { liked: likedNow, likesCount: likesCountNow, busy: true });
+
+    try {
+      const { response, data } = await requestJson(
+        `/api/cards/${encodeURIComponent(postSlug)}/wall-posts/${encodeURIComponent(postId)}/like`,
+        { method: likedNow ? "DELETE" : "PUT" },
+      );
+
+      if (response.status === 401 || data.code === "AUTH_REQUIRED") {
+        window.location.assign(`/login?next=${encodeURIComponent(loginNext)}`);
+        return;
+      }
+
+      if (!response.ok || !data || typeof data.post !== "object") {
+        showToast(data.error || "Не удалось обновить лайк", "error");
+        updateLikeButton(button, { liked: likedNow, likesCount: likesCountNow, busy: false });
+        return;
+      }
+
+      updateLikeButton(button, {
+        liked: Boolean(data.post.viewerHasLiked),
+        likesCount: Number(data.post.likesCount || 0),
+        busy: false,
+      });
+    } catch {
+      showToast("Не удалось обновить лайк", "error");
+      updateLikeButton(button, { liked: likedNow, likesCount: likesCountNow, busy: false });
+    }
+  }
+
+  async function handleShare(button) {
+    const shareUrl = resolvePostUrl(button.getAttribute("data-post-href"));
+    let shared = false;
+
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: document.title,
+          url: shareUrl,
+        });
+        shared = true;
+        showToast("Ссылка на пост отправлена", "success");
+      }
+    } catch {
+      shared = false;
+    }
+
+    if (shared) {
+      return;
+    }
+
+    const copied = await copyText(shareUrl);
+    showToast(copied ? "Ссылка на пост скопирована" : "Не удалось скопировать ссылку", copied ? "success" : "error");
+  }
+
+  pageNode.addEventListener("click", async (event) => {
+    const target = event.target instanceof HTMLElement ? event.target : null;
+    if (!target) {
+      return;
+    }
+
+    const likeButton = target.closest("[data-home-post-like]");
+    if (likeButton instanceof HTMLButtonElement) {
+      event.preventDefault();
+      await handleLike(likeButton);
+      return;
+    }
+
+    const commentButton = target.closest("[data-home-post-comment]");
+    if (commentButton instanceof HTMLButtonElement) {
+      event.preventDefault();
+      const postHref = String(commentButton.getAttribute("data-post-href") || "").trim();
+      window.location.assign(postHref || "/");
+      return;
+    }
+
+    const shareButton = target.closest("[data-home-post-share]");
+    if (shareButton instanceof HTMLButtonElement) {
+      event.preventDefault();
+      await handleShare(shareButton);
     }
   });
 }

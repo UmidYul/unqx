@@ -1098,10 +1098,30 @@ router.get(
     const latestHomePostOwnerIds = Array.isArray(latestHomeWallPosts)
       ? latestHomeWallPosts.map((item) => String(item?.author?.userId || item?.ownerId || "").trim()).filter(Boolean)
       : [];
-    const latestHomePostViewerFollowSet = await getViewerFollowLookup(userId, latestHomePostOwnerIds);
+    const latestHomePostIds = Array.isArray(latestHomeWallPosts)
+      ? latestHomeWallPosts.map((item) => String(item?.id || "").trim()).filter(Boolean)
+      : [];
+    const [latestHomePostViewerFollowSet, latestHomePostViewerLikedRows] = await Promise.all([
+      getViewerFollowLookup(userId, latestHomePostOwnerIds),
+      userId && latestHomePostIds.length
+        ? withMissingTableFallback("ProfileWallPostLike", [], () =>
+          prisma.profileWallPostLike.findMany({
+            where: {
+              userId,
+              postId: { in: latestHomePostIds },
+            },
+            select: { postId: true },
+          }),
+        )
+        : Promise.resolve([]),
+    ]);
+    const latestHomePostViewerLikedSet = new Set(
+      latestHomePostViewerLikedRows.map((item) => String(item?.postId || "").trim()).filter(Boolean),
+    );
     const latestPublishedPosts = Array.isArray(latestHomeWallPosts)
       ? latestHomeWallPosts.map((item) => ({
         ...item,
+        viewerHasLiked: latestHomePostViewerLikedSet.has(String(item?.id || "").trim()),
         viewerFollowState: {
           isFollowing: latestHomePostViewerFollowSet.has(String(item?.author?.userId || item?.ownerId || "").trim()),
           canFollow: Boolean(item?.author?.userId) && String(item.author.userId).trim() !== userId,

@@ -89,10 +89,12 @@ async function renderHomeTemplateWithPosts() {
         createdAt: new Date("2026-05-09T10:00:00.000Z"),
         likesCount: 4,
         commentsCount: 2,
+        viewerHasLiked: true,
         postHref: "/ABC123#wall-post-post_1",
         author: {
           userId: "user_1",
           name: "Alex",
+          handle: "alex",
           primarySlug: "ABC123",
           profileHref: "/ABC123",
           role: "Designer",
@@ -148,6 +150,10 @@ describe("home page", () => {
     expect(html).toContain("Последние посты");
     expect(html).toContain("Первый пост для главной");
     expect(html).toContain('data-home-follow-button');
+    expect(html).toContain('data-home-post-like');
+    expect(html).toContain('data-home-post-comment');
+    expect(html).toContain('data-home-post-share');
+    expect(html).toContain('aria-pressed="true"');
     expect(html).toContain("/ABC123#wall-post-post_1");
     expect(html).toContain('id="latest-posts"');
   });

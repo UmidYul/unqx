@@ -1036,8 +1036,45 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  padding: 0;
+  border: 0;
+  background: transparent;
   color: #0f0f0f;
+  font: inherit;
   text-decoration: none;
+}
+
+.home-latest-post-action-button {
+  cursor: pointer;
+  transition: color 0.18s ease, opacity 0.18s ease, transform 0.18s ease;
+}
+
+.home-latest-post-action-button:hover {
+  color: #58b200;
+}
+
+.home-latest-post-action-button:hover .home-latest-post-action-value,
+.home-latest-post-action-button.is-liked .home-latest-post-action-value {
+  color: currentColor;
+}
+
+.home-latest-post-action-button:focus-visible {
+  outline: 2px solid rgba(88, 178, 0, 0.32);
+  outline-offset: 4px;
+  border-radius: 999px;
+}
+
+.home-latest-post-action-button:disabled {
+  cursor: default;
+  opacity: 0.42;
+}
+
+.home-latest-post-action-button.is-busy {
+  opacity: 0.55;
+}
+
+.home-latest-post-action-button.is-liked {
+  color: #58b200;
 }
 
 .home-latest-post-action-group--link {
@@ -1053,6 +1090,11 @@
   stroke-width: 1.8;
   stroke-linecap: round;
   stroke-linejoin: round;
+}
+
+.home-latest-post-action-button.is-liked .home-latest-post-action-icon {
+  fill: currentColor;
+  stroke: currentColor;
 }
 
 .home-latest-post-action-value {
