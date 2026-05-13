@@ -2757,7 +2757,7 @@ body[data-card-theme] #card-view-root>[data-card-view] {
   }
 }
 
-@media (max-width: 520px) {
+/* Fixed velours composition for 3 pets */
   [data-card-theme="velours"] .unq-ref-shell {
     padding: 18px 16px 22px;
   }
@@ -2890,7 +2890,6 @@ body[data-card-theme] #card-view-root>[data-card-view] {
   [data-card-theme="velours"] .unq-wall-tab {
     font-size: 13px;
   }
-}
 
 .unq-ref-social-stats {
   margin-top: 16px;

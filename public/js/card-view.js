@@ -58,8 +58,8 @@
   };
   const PET_RENDER_PRIORITY = {
     kitten: 0,
-    snake: 1,
-    puppy: 2,
+    puppy: 1,
+    snake: 2,
   };
 
   function hexToRgb(value) {
