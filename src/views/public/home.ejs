@@ -83,6 +83,46 @@
   : [];
   const latestSlackCards = latestSlackCardsSource.filter((item) => item && typeof item === "object").slice(0, 3);
   const latestPublishedPostsList = Array.isArray(latestPublishedPosts) ? latestPublishedPosts.slice(0, 3) : [];
+  const trimMetricDecimal = (value) => String(value).replace(/\.0$/, "");
+  const formatHomePostMetric = (value) => {
+  const amount = Math.max(0, Number(value || 0));
+  if (!Number.isFinite(amount)) {
+  return "0";
+  }
+  if (amount >= 1_000_000) {
+  return `${trimMetricDecimal((amount / 1_000_000).toFixed(amount >= 10_000_000 ? 0 : 1))}M`;
+  }
+  if (amount >= 1_000) {
+  return `${trimMetricDecimal((amount / 1_000).toFixed(amount >= 10_000 ? 0 : 1))}K`;
+  }
+  return amount.toLocaleString("ru-RU");
+  };
+  const formatHomePostDateTime = (value) => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+  return "только что";
+  }
+  const datePart = new Intl.DateTimeFormat("ru-RU", {
+  day: "2-digit",
+  month: "2-digit",
+  year: "numeric",
+  }).format(date);
+  const timePart = new Intl.DateTimeFormat("ru-RU", {
+  hour: "2-digit",
+  minute: "2-digit",
+  second: "2-digit",
+  hour12: false,
+  }).format(date);
+  return `${datePart} / ${timePart}`;
+  };
+  const formatHomePostHandle = (author) => {
+  const raw = String(author && typeof author === "object" ? (author.handle || author.name || author.primarySlug || "unqx") : "unqx").trim();
+  const compact = raw.replace(/\s+/g, "");
+  if (!compact) {
+  return "@unqx";
+  }
+  return compact.startsWith("@") ? compact : `@${compact}`;
+  };
 
   const wristbandFeatures = braceletFeaturesFromSettings || [
   "Тап по стикеру - моментально открывается unqx.uz/UNQ",
@@ -591,7 +631,7 @@
                         Пока нет опубликованных постов для отображения.
                       </div>
                     <% } else { %>
-                      <div class="mt-10 grid gap-6 lg:grid-cols-3">
+                      <div class="home-latest-post-stack mt-10">
                         <% latestPublishedPostsList.forEach((post)=> { const author=post && post.author && typeof post.author==="object" ? post.author : {}; const followState=post && post.viewerFollowState && typeof post.viewerFollowState==="object" ? post.viewerFollowState : {}; %>
                           <article class="home-latest-post-card rounded-[1.7rem] border border-neutral-200 bg-white p-5">
                             <div class="home-latest-post-head">
@@ -605,11 +645,17 @@
                                   </span>
                                 <% } %>
                                 <span class="home-latest-post-author-meta">
-                                  <span class="home-latest-post-author-name"><%= author.name || "UNQX User" %></span>
+                                  <span class="home-latest-post-author-line">
+                                    <span class="home-latest-post-author-name"><%= formatHomePostHandle(author) %></span>
+                                    <% if (author.verified) { %>
+                                      <span class="home-latest-post-author-verified" aria-label="Верифицированный аккаунт">
+                                        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                          <path d="M12 2.5l2.2 1.8 2.8-.3 1.2 2.5 2.5 1.2-.3 2.8L21.5 12l-1.8 2.2.3 2.8-2.5 1.2-1.2 2.5-2.8-.3L12 21.5l-2.2-1.8-2.8.3-1.2-2.5-2.5-1.2.3-2.8L2.5 12l1.8-2.2-.3-2.8 2.5-1.2 1.2-2.5 2.8.3L12 2.5Zm-1.1 13.1 5-5-1.1-1.1-3.9 3.9-1.8-1.8-1.1 1.1 2.9 2.9Z"></path>
+                                        </svg>
+                                      </span>
+                                    <% } %>
+                                  </span>
                                   <span class="home-latest-post-author-slug">unqx.uz/<%= author.primarySlug || "UNQ" %></span>
-                                  <% if (author.role) { %>
-                                    <span class="home-latest-post-author-role"><%= author.role %></span>
-                                  <% } %>
                                 </span>
                               </a>
                               <% if (followState.canFollow) { %>
@@ -619,8 +665,10 @@
                                   data-follow-slug="<%= author.primarySlug || '' %>"
                                   data-following="<%= followState.isFollowing ? 'true' : 'false' %>"
                                   data-login-next="<%= post.postHref || author.profileHref || '/' %>"
+                                  aria-label="<%= followState.isFollowing ? 'Отписаться' : 'Подписаться' %>"
+                                  title="<%= followState.isFollowing ? 'Отписаться' : 'Подписаться' %>"
                                   class="interactive-btn home-post-follow-btn <%= followState.isFollowing ? 'is-following' : '' %>">
-                                  <%= followState.isFollowing ? "Отписаться" : "Подписаться" %>
+                                  <span class="home-post-follow-btn-symbol" aria-hidden="true">+</span>
                                 </button>
                               <% } %>
                             </div>
@@ -628,15 +676,27 @@
                             <p class="home-latest-post-content"><%= post.content %></p>
 
                             <div class="home-latest-post-foot">
-                              <div class="home-latest-post-meta">
-                                <span class="home-latest-post-meta-item"><%= post.createdAt ? new Date(post.createdAt).toLocaleString('ru-RU') : "только что" %></span>
-                                <span class="home-latest-post-meta-item"><%= Number(post.likesCount || 0).toLocaleString('ru-RU') %> лайков</span>
-                                <span class="home-latest-post-meta-item"><%= Number(post.commentsCount || 0).toLocaleString('ru-RU') %> комментариев</span>
+                              <div class="home-latest-post-actions" aria-label="Статистика поста">
+                                <span class="home-latest-post-action-group">
+                                  <svg class="home-latest-post-action-icon" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path d="M12 20.75 4.9 13.86a5.56 5.56 0 0 1 0-7.94 5.39 5.39 0 0 1 7.67 0L12 6.49l.57-.57a5.39 5.39 0 0 1 7.67 0 5.56 5.56 0 0 1 0 7.94L12 20.75Z"></path>
+                                  </svg>
+                                  <span class="home-latest-post-action-value"><%= formatHomePostMetric(post.likesCount) %></span>
+                                </span>
+                                <span class="home-latest-post-action-group">
+                                  <svg class="home-latest-post-action-icon" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5A8.7 8.7 0 0 1 8 18.7L3 20.5l1.8-4.8A8.7 8.7 0 0 1 4 11.5a8.5 8.5 0 1 1 17 0Z"></path>
+                                  </svg>
+                                  <span class="home-latest-post-action-value"><%= formatHomePostMetric(post.commentsCount) %></span>
+                                </span>
+                                <a href="<%= post.postHref || author.profileHref || '#' %>" class="home-latest-post-action-group home-latest-post-action-group--link" aria-label="Открыть пост">
+                                  <svg class="home-latest-post-action-icon" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path d="M22 2 11 13"></path>
+                                    <path d="M22 2 15 22l-4-9-9-4 20-7Z"></path>
+                                  </svg>
+                                </a>
                               </div>
-                              <a href="<%= post.postHref || author.profileHref || '#' %>"
-                                class="interactive-btn home-latest-post-open">
-                                Открыть пост
-                              </a>
+                              <span class="home-latest-post-date"><%= formatHomePostDateTime(post.createdAt) %></span>
                             </div>
                           </article>
                         <% }) %>

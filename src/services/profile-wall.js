@@ -271,6 +271,8 @@ function getHomeWallPostSelect() {
         subscriptionExpiresAt: true,
         displayName: true,
         firstName: true,
+        login: true,
+        username: true,
         isVerified: true,
         verifiedCompany: true,
         profileCard: {
@@ -571,6 +573,7 @@ async function listLatestHomeWallPosts({ limit = 3 } = {}) {
       author: {
         userId: String(owner.id || "").trim(),
         name: authorName,
+        handle: String(owner?.login || owner?.username || "").trim(),
         avatarUrl: String(owner?.profileCard?.avatarUrl || "").trim() || null,
         primarySlug,
         role: String(owner?.profileCard?.role || owner?.verifiedCompany || "").trim(),

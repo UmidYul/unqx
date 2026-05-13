@@ -98,8 +98,11 @@ function initHomeFollowButtons(pageNode, authApi) {
       if (!(node instanceof HTMLButtonElement)) return;
       if (String(node.getAttribute("data-follow-slug") || "").trim().toUpperCase() !== normalizedSlug) return;
       node.dataset.following = following ? "true" : "false";
-      node.textContent = following ? "Отписаться" : "Подписаться";
       node.classList.toggle("is-following", following);
+      node.classList.remove("is-busy");
+      const label = following ? "Отписаться" : "Подписаться";
+      node.setAttribute("aria-label", label);
+      node.setAttribute("title", label);
     });
   }
 
@@ -118,7 +121,7 @@ function initHomeFollowButtons(pageNode, authApi) {
     }
 
     target.disabled = true;
-    target.textContent = "...";
+    target.classList.add("is-busy");
 
     try {
       const { response, data } = await requestJson(`/api/cards/${encodeURIComponent(followSlug)}/follow`, {
@@ -134,7 +137,7 @@ function initHomeFollowButtons(pageNode, authApi) {
       }
 
       if (!response.ok) {
-        target.textContent = data.error || "Ошибка";
+        target.classList.remove("is-busy");
         window.setTimeout(() => {
           setButtonsState(followSlug, followingNow);
         }, 900);
