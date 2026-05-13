@@ -949,7 +949,7 @@
     const glowFilterId = `emoji-pack-${normalizedKey}-glow`;
     const blurFilterId = `emoji-pack-${normalizedKey}-blur`;
     return `<span class="unq-ref-profile-emoji-pack unq-ref-profile-emoji-pack--${esc(normalizedKey)}" aria-hidden="true">
-      <svg class="unq-ref-profile-emoji-pack-svg" viewBox="0 0 320 220" preserveAspectRatio="xMidYMid meet">
+      <svg class="unq-ref-profile-emoji-pack-svg" viewBox="0 0 320 220" preserveAspectRatio="none">
         <defs>
           <linearGradient id="emoji-pack-${normalizedKey}-fade" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stop-color="white" stop-opacity="0.92"></stop>

@@ -2784,17 +2784,19 @@ body[data-card-theme] #card-view-root>[data-card-view] {
   [data-card-theme="velours"] .unq-ref-profile.has-emoji-pack.has-pets.has-pets-3 {
     width: 100%;
     max-width: 320px;
-    min-height: 510px;
+    min-height: 486px;
     margin: 8px auto 0;
     padding-top: 0;
     padding-bottom: 0;
   }
 
   [data-card-theme="velours"] .unq-ref-profile.has-emoji-pack.has-pets.has-pets-3 .unq-ref-profile-emoji-pack {
-    top: 28px;
-    width: 100%;
-    max-width: 320px;
-    height: 214px;
+    top: 6px;
+    left: -36px;
+    width: calc(100% + 72px);
+    max-width: none;
+    height: 220px;
+    transform: none;
   }
 
   [data-card-theme="velours"] .unq-ref-profile.has-emoji-pack.has-pets.has-pets-3 .unq-ref-avatar-wrap {
@@ -2859,7 +2861,7 @@ body[data-card-theme] #card-view-root>[data-card-view] {
 
   [data-card-theme="velours"] .unq-ref-profile.has-emoji-pack.has-pets.has-pets-3 .unq-ref-pet--top-right {
     left: calc(50% + 4px);
-    top: 54px;
+    top: 18px;
   }
 
   [data-card-theme="velours"] .unq-ref-profile.has-emoji-pack.has-pets.has-pets-3 .unq-ref-pet--bottom-right {
@@ -2868,7 +2870,7 @@ body[data-card-theme] #card-view-root>[data-card-view] {
   }
 
   [data-card-theme="velours"] .unq-ref-profile.has-emoji-pack.has-pets.has-pets-3 .unq-ref-social-stats {
-    margin-top: 14px;
+    margin-top: 8px;
     gap: 36px;
   }
 
@@ -2882,7 +2884,7 @@ body[data-card-theme] #card-view-root>[data-card-view] {
   }
 
   [data-card-theme="velours"] .unq-wall-tabs {
-    margin-top: 10px;
+    margin-top: 0;
     gap: 22px;
     padding-bottom: 8px;
   }
