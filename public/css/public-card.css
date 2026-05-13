@@ -2853,18 +2853,18 @@ body[data-card-theme] #card-view-root>[data-card-view] {
   }
 
   :is(body[data-card-theme="velours"], #profile-card-live-preview[data-preview-theme="velours"]) .unq-ref-profile.has-emoji-pack.has-pets.has-pets-3 .unq-ref-pet--left {
-    left: calc(50% - 116px);
-    top: 104px;
+    left: calc(50% - 118px);
+    top: 214px;
   }
 
   :is(body[data-card-theme="velours"], #profile-card-live-preview[data-preview-theme="velours"]) .unq-ref-profile.has-emoji-pack.has-pets.has-pets-3 .unq-ref-pet--top-right {
-    left: calc(50% + 108px);
-    top: 98px;
+    left: calc(50% + 4px);
+    top: 78px;
   }
 
   :is(body[data-card-theme="velours"], #profile-card-live-preview[data-preview-theme="velours"]) .unq-ref-profile.has-emoji-pack.has-pets.has-pets-3 .unq-ref-pet--bottom-right {
-    left: calc(50% + 122px);
-    top: 270px;
+    left: calc(50% + 118px);
+    top: 214px;
   }
 
   :is(body[data-card-theme="velours"], #profile-card-live-preview[data-preview-theme="velours"]) .unq-ref-profile.has-emoji-pack.has-pets.has-pets-3 .unq-ref-social-stats {
