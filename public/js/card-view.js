@@ -56,6 +56,11 @@
     puppy: "/assets/pets/pet2.png",
     snake: "/assets/pets/pet3.png",
   };
+  const PET_RENDER_PRIORITY = {
+    kitten: 0,
+    snake: 1,
+    puppy: 2,
+  };
 
   function hexToRgb(value) {
     const raw = String(value || "").trim();
@@ -1642,6 +1647,11 @@
   function getVisibleCardPets(card) {
     const items = Array.isArray(card?.pets) ? card.pets.filter((item) => item && item.isVisible !== false) : [];
     items.sort((left, right) => {
+      const slotA = Number.isFinite(PET_RENDER_PRIORITY[left?.petType]) ? PET_RENDER_PRIORITY[left.petType] : 99;
+      const slotB = Number.isFinite(PET_RENDER_PRIORITY[right?.petType]) ? PET_RENDER_PRIORITY[right.petType] : 99;
+      if (slotA !== slotB) {
+        return slotA - slotB;
+      }
       const timeA = new Date(left?.createdAt || 0).getTime();
       const timeB = new Date(right?.createdAt || 0).getTime();
       if (timeA !== timeB) return timeA - timeB;
