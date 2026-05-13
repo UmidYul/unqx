@@ -2784,14 +2784,14 @@ body[data-card-theme] #card-view-root>[data-card-view] {
   [data-card-theme="velours"] .unq-ref-profile.has-emoji-pack.has-pets.has-pets-3 {
     width: 100%;
     max-width: 320px;
-    min-height: 548px;
-    margin: 18px auto 0;
+    min-height: 510px;
+    margin: 8px auto 0;
     padding-top: 0;
     padding-bottom: 0;
   }
 
   [data-card-theme="velours"] .unq-ref-profile.has-emoji-pack.has-pets.has-pets-3 .unq-ref-profile-emoji-pack {
-    top: 44px;
+    top: 28px;
     width: 100%;
     max-width: 320px;
     height: 214px;
@@ -2799,11 +2799,11 @@ body[data-card-theme] #card-view-root>[data-card-view] {
 
   [data-card-theme="velours"] .unq-ref-profile.has-emoji-pack.has-pets.has-pets-3 .unq-ref-avatar-wrap {
     --avatar-size: 108px;
-    margin-top: 158px;
+    margin-top: 144px;
   }
 
   [data-card-theme="velours"] .unq-ref-profile.has-emoji-pack.has-pets.has-pets-3 .unq-ref-name-wrap {
-    margin-top: 24px;
+    margin-top: 18px;
     max-width: 206px;
   }
 
@@ -2853,8 +2853,8 @@ body[data-card-theme] #card-view-root>[data-card-view] {
   }
 
   [data-card-theme="velours"] .unq-ref-profile.has-emoji-pack.has-pets.has-pets-3 .unq-ref-pet--left {
-    left: calc(50% - 118px);
-    top: 214px;
+    left: calc(50% - 136px);
+    top: 196px;
   }
 
   [data-card-theme="velours"] .unq-ref-profile.has-emoji-pack.has-pets.has-pets-3 .unq-ref-pet--top-right {
@@ -2863,12 +2863,12 @@ body[data-card-theme] #card-view-root>[data-card-view] {
   }
 
   [data-card-theme="velours"] .unq-ref-profile.has-emoji-pack.has-pets.has-pets-3 .unq-ref-pet--bottom-right {
-    left: calc(50% + 118px);
-    top: 214px;
+    left: calc(50% + 136px);
+    top: 196px;
   }
 
   [data-card-theme="velours"] .unq-ref-profile.has-emoji-pack.has-pets.has-pets-3 .unq-ref-social-stats {
-    margin-top: 18px;
+    margin-top: 14px;
     gap: 36px;
   }
 
