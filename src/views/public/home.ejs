@@ -633,7 +633,13 @@
                     <% } else { %>
                       <div class="home-latest-post-stack mt-10">
                         <% latestPublishedPostsList.forEach((post)=> { const author=post && post.author && typeof post.author==="object" ? post.author : {}; const followState=post && post.viewerFollowState && typeof post.viewerFollowState==="object" ? post.viewerFollowState : {}; const postHref=String(post && post.postHref || author.profileHref || "/").trim() || "/"; const postSlug=String(author.primarySlug || "").trim(); const loginNext=postHref || author.profileHref || "/"; const likedNow=Boolean(post && post.viewerHasLiked); %>
-                          <article class="home-latest-post-card rounded-[1.7rem] border border-neutral-200 bg-white p-5">
+                          <article
+                            class="home-latest-post-card rounded-[1.7rem] border border-neutral-200 bg-white p-5"
+                            data-home-post-card
+                            data-post-href="<%= postHref %>"
+                            tabindex="0"
+                            role="link"
+                            aria-label="Открыть пост <%= formatHomePostHandle(author) %>">
                             <div class="home-latest-post-head">
                               <a href="<%= author.profileHref || postHref || '#' %>" class="home-latest-post-author">
                                 <% if (author.avatarUrl) { %>

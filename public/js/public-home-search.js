@@ -225,6 +225,14 @@ function initHomeLatestPostButtons(pageNode, requestJson) {
     }
   }
 
+  function navigateToPost(value) {
+    const postHref = String(value || "").trim();
+    if (!postHref) {
+      return;
+    }
+    window.location.assign(postHref);
+  }
+
   function updateLikeButton(button, options = {}) {
     if (!(button instanceof HTMLButtonElement)) {
       return;
@@ -324,6 +332,14 @@ function initHomeLatestPostButtons(pageNode, requestJson) {
       return;
     }
 
+    const postCard = target.closest("[data-home-post-card]");
+    const interactiveTarget = target.closest("a, button, input, textarea, select, label");
+    if (postCard instanceof HTMLElement && !interactiveTarget) {
+      event.preventDefault();
+      navigateToPost(postCard.getAttribute("data-post-href"));
+      return;
+    }
+
     const likeButton = target.closest("[data-home-post-like]");
     if (likeButton instanceof HTMLButtonElement) {
       event.preventDefault();
@@ -344,6 +360,23 @@ function initHomeLatestPostButtons(pageNode, requestJson) {
       event.preventDefault();
       await handleShare(shareButton);
     }
+  });
+
+  pageNode.addEventListener("keydown", (event) => {
+    const origin = event.target instanceof HTMLElement ? event.target : null;
+    const target = origin ? origin.closest("[data-home-post-card]") : null;
+    if (!(target instanceof HTMLElement)) {
+      return;
+    }
+    const interactiveTarget = origin ? origin.closest("a, button, input, textarea, select, label") : null;
+    if (interactiveTarget && interactiveTarget !== target) {
+      return;
+    }
+    if (event.key !== "Enter" && event.key !== " ") {
+      return;
+    }
+    event.preventDefault();
+    navigateToPost(target.getAttribute("data-post-href"));
   });
 }
 
