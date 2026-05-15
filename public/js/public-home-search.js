@@ -111,7 +111,7 @@ function initHomeFollowButtons(pageNode, authApi, requestJson) {
   }
 
   pageNode.addEventListener("click", async (event) => {
-    const target = event.target instanceof HTMLElement ? event.target.closest("[data-home-follow-button]") : null;
+    const target = event.target instanceof Element ? event.target.closest("[data-home-follow-button]") : null;
     if (!(target instanceof HTMLButtonElement)) {
       return;
     }
@@ -366,7 +366,7 @@ function initHomeLatestPostButtons(pageNode, requestJson) {
   }
 
   pageNode.addEventListener("click", async (event) => {
-    const target = event.target instanceof HTMLElement ? event.target : null;
+    const target = event.target instanceof Element ? event.target : null;
     if (!target) {
       return;
     }

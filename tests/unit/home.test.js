@@ -1,4 +1,5 @@
 const path = require("node:path");
+const fs = require("node:fs");
 const ejs = require("ejs");
 
 process.env.ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD_HASH || "test-admin-hash";
@@ -157,6 +158,17 @@ describe("home page", () => {
     expect(html).toContain("/ABC123#wall-post-post_1");
     expect(html).toContain('data-post-comments-href="/ABC123?comments=1#wall-post-post_1"');
     expect(html).toContain('id="latest-posts"');
+  });
+
+  test("latest posts client source handles SVG clicks and keeps comment/share wiring", () => {
+    const source = fs.readFileSync(path.join(process.cwd(), "public", "js", "public-home-search.js"), "utf-8");
+    const styles = fs.readFileSync(path.join(process.cwd(), "public", "css", "public-card.css"), "utf-8");
+    expect(source).toContain('event.target instanceof Element ? event.target.closest("[data-home-follow-button]") : null');
+    expect(source).toContain("const target = event.target instanceof Element ? event.target : null;");
+    expect(source).toContain('commentButton.getAttribute("data-post-comments-href")');
+    expect(source).toContain('const shareButton = target.closest("[data-home-post-share]");');
+    expect(styles).toContain("--home-post-like-accent: #c45766;");
+    expect(styles).toContain(".home-latest-post-action-button[data-home-post-like]:hover,");
   });
 
   test("matches AAA + 000 = 3 000 000", () => {

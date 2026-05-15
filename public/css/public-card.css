@@ -881,6 +881,10 @@
 .home-latest-post-card {
   --home-post-accent: #8b6b55;
   --home-post-accent-soft: rgba(139, 107, 85, 0.28);
+  --home-post-action-hover: #2a2a2a;
+  --home-post-action-focus: rgba(15, 23, 42, 0.18);
+  --home-post-like-accent: #c45766;
+  --home-post-like-accent-soft: rgba(196, 87, 102, 0.28);
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -1060,7 +1064,7 @@
 }
 
 .home-latest-post-action-button:hover {
-  color: var(--home-post-accent);
+  color: var(--home-post-action-hover);
 }
 
 .home-latest-post-action-button:hover .home-latest-post-action-value,
@@ -1069,7 +1073,7 @@
 }
 
 .home-latest-post-action-button:focus-visible {
-  outline: 2px solid var(--home-post-accent-soft);
+  outline: 2px solid var(--home-post-action-focus);
   outline-offset: 4px;
   border-radius: 999px;
 }
@@ -1083,8 +1087,14 @@
   opacity: 0.55;
 }
 
+.home-latest-post-action-button[data-home-post-like]:hover,
+.home-latest-post-action-button[data-home-post-like]:focus-visible,
 .home-latest-post-action-button.is-liked {
-  color: var(--home-post-accent);
+  color: var(--home-post-like-accent);
+}
+
+.home-latest-post-action-button[data-home-post-like]:focus-visible {
+  outline-color: var(--home-post-like-accent-soft);
 }
 
 .home-latest-post-action-group--link {
