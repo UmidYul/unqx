@@ -21,6 +21,7 @@ const {
 const {
   verifyPrivatePasswordForOwner,
 } = require("../../services/private-access-store");
+const { sortProfileCardPets } = require("../../services/pets");
 const { isSubscriptionActive } = require("../../services/subscription");
 
 const router = express.Router();
@@ -585,7 +586,7 @@ router.get(
       return;
     }
 
-    const [user, slugs, card] = await Promise.all([
+    const [user, slugs, card, pets] = await Promise.all([
       prisma.user.findUnique({
         where: { id: userId },
         select: {
@@ -609,13 +610,27 @@ router.get(
         select: {
           name: true,
           role: true,
+          bio: true,
+          hashtag: true,
+          address: true,
+          postcode: true,
           email: true,
           extraPhone: true,
           avatarUrl: true,
+          tags: true,
           buttons: true,
           theme: true,
+          showBranding: true,
+          avatarFrame: true,
+          emojiBackgroundPack: true,
         },
       }),
+      prisma.profileCardPet
+        ? prisma.profileCardPet.findMany({
+          where: { userId },
+          orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+        })
+        : [],
     ]);
 
     if (!user) {
@@ -634,11 +649,20 @@ router.get(
           ? {
             name: card.name,
             role: card.role,
+            bio: card.bio,
+            hashtag: card.hashtag,
+            address: card.address,
+            postcode: card.postcode,
             email: card.email,
             extraPhone: card.extraPhone,
             avatarUrl: card.avatarUrl,
+            tags: card.tags,
             buttons: card.buttons,
             theme: card.theme,
+            showBranding: typeof card.showBranding === "boolean" ? card.showBranding : true,
+            avatarFrame: card.avatarFrame || "none",
+            emojiBackgroundPack: card.emojiBackgroundPack || "none",
+            pets: sortProfileCardPets(pets),
           }
           : null,
       },
@@ -648,6 +672,7 @@ router.get(
         status: item.status,
       })),
       selectedSlug,
+      pets: sortProfileCardPets(pets),
     });
   }),
 );
@@ -1337,17 +1362,25 @@ router.get(
             COALESCE(pc.name, u.display_name, u.first_name, 'Unknown') AS name,
             pc.avatar_url AS "avatarUrl",
             COALESCE(u.username, u.telegram_username, '') AS username,
-            COALESCE(u.verified_company, '') AS city,
+            COALESCE(u.verified_company, '') AS "verifiedCompany",
+            COALESCE(u.city, '') AS city,
             COALESCE(u.plan, 'none') AS tag,
             u.subscription_started_at AS "subscriptionStartedAt",
             u.subscription_expires_at AS "subscriptionExpiresAt",
             COALESCE(s.analytics_views_count, 0) AS taps,
             COALESCE(pc.role, '') AS role,
             COALESCE(pc.bio, '') AS bio,
+            COALESCE(pc.hashtag, '') AS hashtag,
+            COALESCE(pc.address, '') AS address,
+            COALESCE(pc.postcode, '') AS postcode,
             COALESCE(pc.email, '') AS email,
             COALESCE(pc.extra_phone, '') AS phone,
             COALESCE(pc.tags, '[]'::jsonb) AS tags,
             COALESCE(pc.buttons, '[]'::jsonb) AS buttons,
+            COALESCE(pc.theme, 'default_dark') AS theme,
+            COALESCE(pc.avatar_frame, 'none') AS "avatarFrame",
+            COALESCE(pc.emoji_background_pack, 'none') AS "emojiBackgroundPack",
+            COALESCE(pc.show_branding, TRUE) AS "showBranding",
             COALESCE(uc.saved, FALSE) AS saved
           FROM slugs s
           JOIN users u ON u.id = s.owner_id
@@ -1378,6 +1411,12 @@ router.get(
       res.status(404).json({ error: "Resident not found", code: "NOT_FOUND" });
       return;
     }
+    const pets = prisma.profileCardPet
+      ? await prisma.profileCardPet.findMany({
+        where: { userId: row.ownerId },
+        orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+      })
+      : [];
     const followLookup = await buildFollowLookupForRows(userId, [row]);
 
     const rowStatus = String(row.status || "").trim().toLowerCase();
@@ -1432,14 +1471,23 @@ router.get(
         name: String(row.name || "Unknown"),
         avatarUrl: row.avatarUrl || null,
         city: String(row.city || ""),
+        verifiedCompany: String(row.verifiedCompany || ""),
         tag: String(row.tag || "none"),
         taps: Number(row.taps || 0),
         role: String(row.role || ""),
         bio: String(row.bio || ""),
+        hashtag: String(row.hashtag || ""),
+        address: String(row.address || ""),
+        postcode: String(row.postcode || ""),
         email: String(row.email || ""),
         phone: String(row.phone || ""),
         buttons: normalizeProfileButtons(row.buttons),
         tags: normalizeStringList(row.tags),
+        theme: String(row.theme || "default_dark"),
+        avatarFrame: String(row.avatarFrame || "none"),
+        emojiBackgroundPack: String(row.emojiBackgroundPack || "none"),
+        showBranding: row.showBranding !== false,
+        pets: sortProfileCardPets(pets),
         subscribed: followLookup.has(String(row.ownerId || "").trim()),
         saved: Boolean(row.saved),
         username: String(row.username || "").trim(),

@@ -859,6 +859,7 @@
   color: var(--theme-button-secondary-text, #0f172a);
   font-size: 12px;
   font-weight: 700;
+  text-transform: none;
   cursor: pointer;
 }
 
@@ -2021,7 +2022,7 @@ body[data-card-theme] #card-view-root>[data-card-view] {
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.04em;
-  text-transform: uppercase;
+  text-transform: none;
   cursor: pointer;
   transition:
     transform 0.16s ease,
@@ -2032,8 +2033,8 @@ body[data-card-theme] #card-view-root>[data-card-view] {
 
 .unq-ref-follow-toggle.is-active {
   border-color: var(--theme-accent-color, #202020);
-  background: var(--theme-accent-color, #202020);
-  color: var(--theme-button-primary-text, #fff);
+  background: transparent;
+  color: var(--theme-accent-color, #202020);
 }
 
 .unq-ref-follow-toggle:hover,
