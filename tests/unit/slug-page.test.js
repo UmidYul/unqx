@@ -256,6 +256,9 @@ describe("slug page (:slug) templates", () => {
     expect(publicCardSource).toContain("currentPost.commentsEnabled === false");
     expect(publicCardSource).toContain("target.closest(\"[data-wall-share]\")");
     expect(publicCardSource).toContain("startsWith(\"#wall-post-\")");
+    expect(publicCardSource).toContain('searchParams.get("comments")');
+    expect(publicCardSource).toContain("state.wallExpandedCommentPostIds.add(initialExpandedCommentPostId)");
+    expect(publicCardSource).toContain('url.searchParams.delete("comments")');
     expect(publicCardSource).toContain("verified: Boolean(authorSource.verified)");
     expect(publicCardSource).toContain("profileHref: String(authorSource.profileHref || \"\").trim() || null");
     expect(publicCardSource).toContain("unqx_wall_seen_posts:");

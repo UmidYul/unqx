@@ -18,6 +18,42 @@
   const slugSearchResults = document.getElementById("card-slug-search-results");
   const WALL_COMMENT_CONTENT_MAX = 1000;
   const WALL_SEEN_POSTS_STORAGE_KEY_PREFIX = "unqx_wall_seen_posts:";
+
+  function getWallPostIdFromHash(hashValue) {
+    const normalizedHash = String(hashValue || "").trim();
+    if (!normalizedHash.toLowerCase().startsWith("#wall-post-")) {
+      return "";
+    }
+    const encodedPostId = normalizedHash.slice("#wall-post-".length);
+    if (!encodedPostId) {
+      return "";
+    }
+    try {
+      return decodeURIComponent(encodedPostId);
+    } catch {
+      return encodedPostId;
+    }
+  }
+
+  function shouldOpenHashPostComments(searchValue) {
+    const searchParams = new URLSearchParams(String(searchValue || ""));
+    const rawValue = String(searchParams.get("comments") || "").trim().toLowerCase();
+    return rawValue === "1" || rawValue === "true" || rawValue === "open";
+  }
+
+  function clearHashPostCommentsRequest() {
+    try {
+      const url = new URL(window.location.href);
+      if (!url.searchParams.has("comments")) {
+        return;
+      }
+      url.searchParams.delete("comments");
+      window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
+    } catch {
+      // Ignore history/url failures and keep the wall interactive.
+    }
+  }
+
   const emptyFollowPagination = () => ({
     page: 1,
     pageSize: 20,
@@ -73,6 +109,12 @@
   }
 
   state.activeTab = state.wall && isPostsHash(window.location.hash) ? "posts" : "card";
+  const initialExpandedCommentPostId =
+    state.wall && shouldOpenHashPostComments(window.location.search) ? getWallPostIdFromHash(window.location.hash) : "";
+  if (initialExpandedCommentPostId) {
+    state.wallExpandedCommentPostIds.add(initialExpandedCommentPostId);
+    clearHashPostCommentsRequest();
+  }
 
   let searchTimer = null;
   let lastQuery = "";
@@ -872,7 +914,15 @@
     }
   }
 
-  function syncWallCommentsExpandedState() {}
+  function syncWallCommentsExpandedState(postId) {
+    const normalizedPostId = String(postId || "").trim();
+    if (!normalizedPostId || !state.wall) {
+      return;
+    }
+    if (!state.wall.items.some((item) => item && item.id === normalizedPostId)) {
+      state.wallExpandedCommentPostIds.delete(normalizedPostId);
+    }
+  }
 
   async function toggleWallLike(postId) {
     if (!state.wall || !postId || state.wallBusyLikeIds.has(postId)) {

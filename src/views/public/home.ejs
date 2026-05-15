@@ -123,6 +123,27 @@
   }
   return compact.startsWith("@") ? compact : `@${compact}`;
   };
+  const buildHomeCommentsHref = (href, postId) => {
+  const normalizedHref = String(href || "").trim() || "/";
+  const normalizedPostId = String(postId || "").trim();
+  if (!normalizedPostId) {
+  return normalizedHref;
+  }
+  try {
+  const baseUrlForResolve = pageBaseUrl || pageCanonicalUrl || "https://unqx.uz";
+  const url = new URL(normalizedHref, baseUrlForResolve);
+  url.searchParams.set("comments", "1");
+  url.hash = `wall-post-${encodeURIComponent(normalizedPostId)}`;
+  const isAbsoluteHref = /^[a-zA-Z][a-zA-Z\d+.-]*:/.test(normalizedHref);
+  return isAbsoluteHref ? url.toString() : `${url.pathname}${url.search}${url.hash}`;
+  } catch {
+  const hashIndex = normalizedHref.indexOf("#");
+  const base = hashIndex >= 0 ? normalizedHref.slice(0, hashIndex) : normalizedHref;
+  const hash = hashIndex >= 0 ? normalizedHref.slice(hashIndex) : `#wall-post-${encodeURIComponent(normalizedPostId)}`;
+  const separator = base.includes("?") ? "&" : "?";
+  return `${base}${separator}comments=1${hash}`;
+  }
+  };
 
   const wristbandFeatures = braceletFeaturesFromSettings || [
   "Тап по стикеру - моментально открывается unqx.uz/UNQ",
@@ -632,7 +653,7 @@
                       </div>
                     <% } else { %>
                       <div class="home-latest-post-stack mt-10">
-                        <% latestPublishedPostsList.forEach((post)=> { const author=post && post.author && typeof post.author==="object" ? post.author : {}; const followState=post && post.viewerFollowState && typeof post.viewerFollowState==="object" ? post.viewerFollowState : {}; const postHref=String(post && post.postHref || author.profileHref || "/").trim() || "/"; const postSlug=String(author.primarySlug || "").trim(); const loginNext=postHref || author.profileHref || "/"; const likedNow=Boolean(post && post.viewerHasLiked); %>
+                        <% latestPublishedPostsList.forEach((post)=> { const author=post && post.author && typeof post.author==="object" ? post.author : {}; const followState=post && post.viewerFollowState && typeof post.viewerFollowState==="object" ? post.viewerFollowState : {}; const postHref=String(post && post.postHref || author.profileHref || "/").trim() || "/"; const commentsHref=buildHomeCommentsHref(postHref, post && post.id); const postSlug=String(author.primarySlug || "").trim(); const loginNext=postHref || author.profileHref || "/"; const likedNow=Boolean(post && post.viewerHasLiked); %>
                           <article
                             class="home-latest-post-card rounded-[1.7rem] border border-neutral-200 bg-white p-5"
                             data-home-post-card
@@ -705,7 +726,7 @@
                                   type="button"
                                   class="home-latest-post-action-group home-latest-post-action-button"
                                   data-home-post-comment
-                                  data-post-href="<%= postHref %>"
+                                  data-post-comments-href="<%= commentsHref %>"
                                   aria-label="Открыть комментарии">
                                   <svg class="home-latest-post-action-icon" viewBox="0 0 24 24" aria-hidden="true">
                                     <path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5A8.7 8.7 0 0 1 8 18.7L3 20.5l1.8-4.8A8.7 8.7 0 0 1 4 11.5a8.5 8.5 0 1 1 17 0Z"></path>

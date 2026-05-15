@@ -155,6 +155,7 @@ describe("home page", () => {
     expect(html).toContain('data-home-post-share');
     expect(html).toContain('aria-pressed="true"');
     expect(html).toContain("/ABC123#wall-post-post_1");
+    expect(html).toContain('data-post-comments-href="/ABC123?comments=1#wall-post-post_1"');
     expect(html).toContain('id="latest-posts"');
   });
 

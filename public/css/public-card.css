@@ -879,6 +879,8 @@
 }
 
 .home-latest-post-card {
+  --home-post-accent: #8b6b55;
+  --home-post-accent-soft: rgba(139, 107, 85, 0.28);
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -892,7 +894,7 @@
 }
 
 .home-latest-post-card:focus-visible {
-  outline: 2px solid rgba(88, 178, 0, 0.32);
+  outline: 2px solid var(--home-post-accent-soft);
   outline-offset: 4px;
 }
 
@@ -1001,11 +1003,16 @@
 }
 
 .home-post-follow-btn.is-following {
-  color: #58b200;
+  color: var(--home-post-accent);
 }
 
 .home-post-follow-btn.is-busy {
   opacity: 0.55;
+}
+
+.home-post-follow-btn:focus-visible {
+  outline: 2px solid var(--home-post-accent-soft);
+  outline-offset: 4px;
 }
 
 .home-latest-post-content {
@@ -1053,7 +1060,7 @@
 }
 
 .home-latest-post-action-button:hover {
-  color: #58b200;
+  color: var(--home-post-accent);
 }
 
 .home-latest-post-action-button:hover .home-latest-post-action-value,
@@ -1062,7 +1069,7 @@
 }
 
 .home-latest-post-action-button:focus-visible {
-  outline: 2px solid rgba(88, 178, 0, 0.32);
+  outline: 2px solid var(--home-post-accent-soft);
   outline-offset: 4px;
   border-radius: 999px;
 }
@@ -1077,7 +1084,7 @@
 }
 
 .home-latest-post-action-button.is-liked {
-  color: #58b200;
+  color: var(--home-post-accent);
 }
 
 .home-latest-post-action-group--link {

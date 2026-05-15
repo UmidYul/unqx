@@ -261,6 +261,45 @@ function initHomeLatestPostButtons(pageNode, requestJson) {
     }
   }
 
+  function collectLikeButtons(postId, fallbackButton = null) {
+    const normalizedPostId = String(postId || "").trim();
+    const buttons = [];
+    const seen = new Set();
+
+    const pushButton = (button) => {
+      if (!(button instanceof HTMLButtonElement)) {
+        return;
+      }
+      if (seen.has(button)) {
+        return;
+      }
+      seen.add(button);
+      buttons.push(button);
+    };
+
+    if (normalizedPostId) {
+      pageNode.querySelectorAll("[data-home-post-like]").forEach((node) => {
+        if (!(node instanceof HTMLButtonElement)) {
+          return;
+        }
+        if (String(node.getAttribute("data-post-id") || "").trim() !== normalizedPostId) {
+          return;
+        }
+        pushButton(node);
+      });
+    }
+
+    pushButton(fallbackButton);
+    return buttons;
+  }
+
+  function updateLikeButtons(postId, options = {}, fallbackButton = null) {
+    const buttons = collectLikeButtons(postId, fallbackButton);
+    buttons.forEach((button) => {
+      updateLikeButton(button, options);
+    });
+  }
+
   async function handleLike(button) {
     const postId = String(button.getAttribute("data-post-id") || "").trim();
     const postSlug = String(button.getAttribute("data-post-slug") || "").trim().toUpperCase();
@@ -271,7 +310,7 @@ function initHomeLatestPostButtons(pageNode, requestJson) {
       return;
     }
 
-    updateLikeButton(button, { liked: likedNow, likesCount: likesCountNow, busy: true });
+    updateLikeButtons(postId, { liked: likedNow, likesCount: likesCountNow, busy: true }, button);
 
     try {
       const { response, data } = await requestJson(
@@ -286,18 +325,18 @@ function initHomeLatestPostButtons(pageNode, requestJson) {
 
       if (!response.ok || !data || typeof data.post !== "object") {
         showToast(data.error || "Не удалось обновить лайк", "error");
-        updateLikeButton(button, { liked: likedNow, likesCount: likesCountNow, busy: false });
+        updateLikeButtons(postId, { liked: likedNow, likesCount: likesCountNow, busy: false }, button);
         return;
       }
 
-      updateLikeButton(button, {
+      updateLikeButtons(postId, {
         liked: Boolean(data.post.viewerHasLiked),
         likesCount: Number(data.post.likesCount || 0),
         busy: false,
-      });
+      }, button);
     } catch {
       showToast("Не удалось обновить лайк", "error");
-      updateLikeButton(button, { liked: likedNow, likesCount: likesCountNow, busy: false });
+      updateLikeButtons(postId, { liked: likedNow, likesCount: likesCountNow, busy: false }, button);
     }
   }
 
@@ -350,7 +389,9 @@ function initHomeLatestPostButtons(pageNode, requestJson) {
     const commentButton = target.closest("[data-home-post-comment]");
     if (commentButton instanceof HTMLButtonElement) {
       event.preventDefault();
-      const postHref = String(commentButton.getAttribute("data-post-href") || "").trim();
+      const postHref = String(
+        commentButton.getAttribute("data-post-comments-href") || commentButton.getAttribute("data-post-href") || "",
+      ).trim();
       window.location.assign(postHref || "/");
       return;
     }
