@@ -2808,7 +2808,7 @@ body[data-card-theme] #card-view-root>[data-card-view] {
   [data-card-theme="velours"] .unq-ref-profile.has-emoji-pack.has-pets.has-pets-3 {
     width: 100%;
     max-width: 320px;
-    min-height: 486px;
+    min-height: 0;
     margin: 8px auto 0;
     padding-top: 0;
     padding-bottom: 0;
@@ -2911,6 +2911,10 @@ body[data-card-theme] #card-view-root>[data-card-view] {
     margin-top: 8px;
     gap: 22px;
     padding-bottom: 8px;
+  }
+
+  [data-card-theme="velours"] .unq-ref-profile.has-emoji-pack.has-pets.has-pets-3 + .unq-wall-tabs {
+    margin-top: clamp(-76px, -16vw, -56px);
   }
 
   [data-card-theme="velours"] .unq-wall-tab {
