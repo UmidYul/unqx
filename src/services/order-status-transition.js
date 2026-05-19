@@ -14,6 +14,7 @@ const {
     recordBonusLedger,
 } = require("./referral-v1");
 const { finalizeCampaignUsage, releaseCampaignUsage } = require("./referral-v2");
+const { ensureProfileCardExists } = require("./public-handle");
 
 function makeTransitionError(code, message) {
     const error = new Error(message);
@@ -147,6 +148,21 @@ async function applyOrderStatusTransition({
                 where: { id: row.userId },
                 data: userPatch,
             });
+
+            const profileCardOwner = await tx.user.findUnique({
+                where: { id: row.userId },
+                select: {
+                    id: true,
+                    firstName: true,
+                    displayName: true,
+                },
+            });
+            if (profileCardOwner) {
+                await ensureProfileCardExists({
+                    tx,
+                    user: profileCardOwner,
+                });
+            }
 
             if (!isSubscriptionRenewal) {
                 await tx.user.update({

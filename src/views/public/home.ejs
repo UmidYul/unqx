@@ -7,17 +7,6 @@
   platformTagline=String(pagePublicSettings.platform_tagline || "Твой UNQ. Твой бренд. Каждый месяц в эфире." ); const
   platformHeroSubtitle=String(pagePublicSettings.platform_hero_subtitle
   || "Цифровая визитка за 1 минуту - одна ссылка вместо тысячи слов." ); const
-  braceletName=String(pagePublicSettings.bracelet_name || "NFC-стикер" ); const
-  braceletOldPrice=Number(pagePublicSettings.bracelet_old_price || 400000); const
-  braceletPrice=Number(pagePublicSettings.bracelet_price || 250000); const braceletDiscountPercent=braceletOldPrice>
-  braceletPrice ? Math.round((1 - braceletPrice / braceletOldPrice) * 100)
-  : 0; const
-  braceletFeaturesFromSettings=Array.isArray(pagePublicSettings.bracelet_features) ?
-  pagePublicSettings.bracelet_features : null; const braceletDescription=String(pagePublicSettings.bracelet_description
-  || "Компактный NFC-стикер, который клеится на любую поверхность и открывает твою цифровую визитку в один тап." );
-  const
-  braceletNote=String(pagePublicSettings.bracelet_note
-  || "Стикер привязан к твоему UNQ - работает только с активной визиткой UNQX" ); const
   supportTelegram=String(pagePublicSettings.contact_support_telegram || "@unqx_uz" ); const
   supportPhone=String(pagePublicSettings.contact_phone || "" ).trim(); const
   supportPhoneHref=supportPhone.replace(/[^\d+]/g, "" ); const pageJsonLd=[{ "@context" : "https://schema.org" , "@type"
@@ -42,8 +31,8 @@
   name: "Алишер",
   slug: "ALI001",
   tariff: "premium",
-  text: "Раздаю браслет на каждой встрече - люди реагируют как на магию. " +
-  "Визитку обновил уже три раза, браслет работает как часы.",
+  text: "Ссылка на профиль работает на каждой встрече без лишних объяснений. " +
+  "Обновил визитку уже несколько раз, и всё сразу актуально.",
   },
   {
   name: "Малика",
@@ -145,27 +134,10 @@
   }
   };
 
-  const wristbandFeatures = braceletFeaturesFromSettings || [
-  "Тап по стикеру - моментально открывается unqx.uz/UNQ",
-  "Работает с любым смартфоном - iOS и Android",
-  "Не нужно заряжать - NFC работает пассивно",
-  "Тонкий формат с клеевой основой - можно закрепить где удобно",
-  "Обновил визитку на сайте - стикер автоматически актуален",
-  "Идеально для нетворкинга, съёмок и студенческих мероприятий",
-  ];
-
   const faqItems = [
   {
   q: "Можно ли сменить UNQ после покупки?",
   a: "UNQ закрепляется за тобой, а доступ к публичной визитке и возможностям Premium продлевается ежемесячно.",
-  },
-  {
-  q: "Что если я потеряю браслет?",
-  a: "Закажи новый - UNQ остаётся твоим. Достаточно повторно заказать браслет и привязать к тому же UNQ.",
-  },
-  {
-  q: "Работает ли браслет без интернета у владельца?",
-  a: "Да. NFC на браслете не требует интернета с твоей стороны. Телефон того, кто тапнул, просто открывает ссылку.",
   },
   {
   q: "Что входит в Premium?",
@@ -174,10 +146,6 @@
   {
   q: "Как происходит оплата?",
   a: "После заявки мы пишем тебе в Telegram и высылаем реквизиты Payme или Click. Активируем после оплаты.",
-  },
-  {
-  q: "Есть ли возврат?",
-  a: "Браслет возврату не подлежит.",
   },
   ];
   %>
@@ -900,82 +868,6 @@
                         <% } %>
                   </div>
                 </section>
-                <section id="wristband" class="px-6 py-24" data-observe-reveal>
-                  <div class="mx-auto max-w-6xl">
-                    <div class="grid items-center gap-16 md:grid-cols-2">
-                      <div>
-                        <p class="mb-3 font-mono text-xs uppercase tracking-widest text-neutral-400">
-                          <%= platformName %> STICKER
-                        </p>
-                        <h2 class="text-3xl font-bold tracking-tight text-neutral-900 md:text-4xl">Приклей стикер. И ты
-                          уже<br />в
-                          телефоне собеседника.</h2>
-                        <p class="mt-4 text-base leading-relaxed text-neutral-500">
-                          <%= braceletDescription %>
-                        </p>
-
-                        <div class="mt-6 flex items-end gap-3">
-                          <span class="text-lg text-neutral-400 line-through">
-                            <%= braceletOldPrice.toLocaleString("ru-RU") %> сум
-                          </span>
-                          <span class="text-3xl font-bold text-neutral-900">
-                            <%= braceletPrice.toLocaleString("ru-RU") %> сум
-                          </span>
-                          <% if (braceletDiscountPercent> 0) { %>
-                            <span
-                              class="inline-flex items-center rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700">
-                              -<%= braceletDiscountPercent %>%
-                            </span>
-                            <% } %>
-                        </div>
-
-                        <p class="mt-2 text-sm text-neutral-400">Разовая покупка · Доставка по Ташкенту</p>
-
-                        <ul class="mt-8 flex flex-col gap-3">
-                          <% wristbandFeatures.forEach((feature)=> { %>
-                            <li class="flex items-center gap-3 text-sm text-neutral-600">
-                              <svg class="icon-stroke h-4 w-4 shrink-0 text-neutral-900" viewBox="0 0 24 24"
-                                aria-hidden="true">
-                                <path d="m20 6-11 11-5-5"></path>
-                              </svg>
-                              <%= feature %>
-                            </li>
-                            <% }); %>
-                        </ul>
-
-                        <div class="mt-8 flex flex-wrap items-center gap-3">
-                          <a href="#" data-order-link data-order-bracelet="true"
-                            class="interactive-btn btn-shimmer inline-flex min-h-11 items-center gap-2 rounded-xl bg-neutral-900 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-neutral-800">
-                            <%= String(pagePublicSettings.bracelet_cta_text || "Заказать стикер" ) %>
-                          </a>
-
-                          <span
-                            class="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-xs font-medium text-neutral-600">
-                            <svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
-                              <path d="m20 6-11 11-5-5"></path>
-                            </svg>
-                            <%= pagePublicSettings.bracelet_in_stock===false ? "Нет в наличии" : "В наличии" %>
-                          </span>
-                        </div>
-                        <p class="mt-3 text-xs text-neutral-500">
-                          <%= braceletNote %>
-                        </p>
-                      </div>
-
-                      <div class="relative flex items-center justify-center">
-                        <div class="w-full overflow-hidden rounded-2xl border border-neutral-200 bg-white p-8">
-                          <div
-                            class="absolute right-8 top-8 rounded-full bg-neutral-100 px-3 py-1 font-mono text-[10px] uppercase tracking-wider text-neutral-500">
-                            UNQX STICKER
-                          </div>
-                          <img src="/images/card.png" alt="<%= platformName %> <%= braceletName %>"
-                            class="h-auto w-full object-contain" loading="lazy" />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </section>
-
                 <section id="faq" class="px-6 py-24" data-observe-reveal>
                   <div class="mx-auto max-w-4xl">
                     <p class="font-mono text-xs uppercase tracking-[0.18em] text-neutral-400">ВОПРОСЫ</p>

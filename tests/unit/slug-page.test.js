@@ -153,6 +153,13 @@ describe("slug page (:slug) templates", () => {
     expect(source).toContain("u.login AS user_login");
   });
 
+  test("public page source builds immediate fallback card instead of waiting for manual setup", () => {
+    const source = fs.readFileSync(path.join(process.cwd(), "src", "routes", "pages", "public.js"), "utf-8");
+    expect(source).toContain("function buildImmediatePublicProfileCard(user, profileCard)");
+    expect(source).toContain("const effectiveProfileCard = buildImmediatePublicProfileCard(owner, profileCard);");
+    expect(source).not.toContain("if (!owner || !profileCard) {");
+  });
+
   test("renders unavailable page with readable message", async () => {
     const html = await renderView("unavailable.ejs", {
       slug: "ABC123",

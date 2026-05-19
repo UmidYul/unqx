@@ -834,10 +834,43 @@ function getPublicWallAuthorLabel(user, fallbackLabel = "") {
   return fallback || "UNQX User";
 }
 
+function buildImmediatePublicProfileCard(user, profileCard) {
+  const safeProfileCard = profileCard && typeof profileCard === "object" ? profileCard : {};
+  const cardName =
+    String(
+      safeProfileCard.name ||
+        user?.displayName ||
+        user?.firstName ||
+        user?.username ||
+        "UNQX User",
+    ).trim() || "UNQX User";
+
+  return {
+    ...safeProfileCard,
+    name: cardName,
+    role: String(safeProfileCard.role || "").trim(),
+    bio: String(safeProfileCard.bio || "").trim(),
+    hashtag: String(safeProfileCard.hashtag || "").trim(),
+    address: String(safeProfileCard.address || "").trim(),
+    postcode: String(safeProfileCard.postcode || "").trim(),
+    email: String(safeProfileCard.email || "").trim(),
+    extraPhone: String(safeProfileCard.extraPhone || "").trim(),
+    avatarUrl: String(safeProfileCard.avatarUrl || "").trim(),
+    tags: Array.isArray(safeProfileCard.tags) ? safeProfileCard.tags : [],
+    buttons: Array.isArray(safeProfileCard.buttons) ? safeProfileCard.buttons : [],
+    theme: String(safeProfileCard.theme || "default_dark").trim() || "default_dark",
+    customColor: String(safeProfileCard.customColor || "").trim(),
+    avatarFrame: String(safeProfileCard.avatarFrame || "none").trim().toLowerCase() || "none",
+    emojiBackgroundPack: String(safeProfileCard.emojiBackgroundPack || "none").trim().toLowerCase() || "none",
+    showBranding: typeof safeProfileCard.showBranding === "boolean" ? safeProfileCard.showBranding : true,
+  };
+}
+
 function buildPublicCardFromProfile({ slug, user, profileCard, verifiedIdentity, viewsCount, allSlugs = [], pets = [] }) {
+  const effectiveProfileCard = buildImmediatePublicProfileCard(user, profileCard);
   const plan = getEffectivePlan(user).plan;
   const isCurrentlyVerified = Boolean(user?.isVerified);
-  const rawCardTheme = String(profileCard?.theme || "").trim();
+  const rawCardTheme = String(effectiveProfileCard.theme || "").trim();
   const normalizedCardTheme = rawCardTheme === "royal_ivory" ? "sage_luxe" : rawCardTheme;
   const verifiedCompany =
     String(isCurrentlyVerified ? (verifiedIdentity?.companyName || user?.verifiedCompany || "") : "")
@@ -850,40 +883,38 @@ function buildPublicCardFromProfile({ slug, user, profileCard, verifiedIdentity,
       .map((value) => String(value || "").trim().toUpperCase())
       .filter(Boolean)
     : [];
-  const cardName =
-    String(profileCard?.name || user?.displayName || user?.firstName || "UNQX User").trim() || "UNQX User";
   return {
     slug,
     slugs: normalizedSlugs.length ? normalizedSlugs : [slug],
-    slugPrice: Number.isFinite(Number(profileCard.slugPrice)) ? Number(profileCard.slugPrice) : null,
-    avatarUrl: profileCard.avatarUrl || null,
-    name: profileCard.name,
-    wallAuthorLabel: getPublicWallAuthorLabel(user, cardName),
+    slugPrice: Number.isFinite(Number(effectiveProfileCard.slugPrice)) ? Number(effectiveProfileCard.slugPrice) : null,
+    avatarUrl: effectiveProfileCard.avatarUrl || null,
+    name: effectiveProfileCard.name,
+    wallAuthorLabel: getPublicWallAuthorLabel(user, effectiveProfileCard.name),
     role: verifiedRole,
-    bio: profileCard.bio || "",
+    bio: effectiveProfileCard.bio || "",
     verified: isCurrentlyVerified,
     verifiedCompany,
     tariff: plan,
     theme: CARD_THEMES.has(normalizedCardTheme) ? normalizedCardTheme : "default_dark",
-    customColor: profileCard.customColor || "",
+    customColor: effectiveProfileCard.customColor || "",
     avatarFrame: (() => {
-      const nextFrame = String(profileCard?.avatarFrame || "").trim().toLowerCase();
+      const nextFrame = String(effectiveProfileCard.avatarFrame || "").trim().toLowerCase();
       return PROFILE_AVATAR_FRAMES.has(nextFrame) ? nextFrame : "none";
     })(),
     emojiBackgroundPack: (() => {
-      const nextPack = String(profileCard?.emojiBackgroundPack || "").trim().toLowerCase();
+      const nextPack = String(effectiveProfileCard.emojiBackgroundPack || "").trim().toLowerCase();
       return PROFILE_EMOJI_BACKGROUNDS.has(nextPack) ? nextPack : "none";
     })(),
     phone: "",
-    tags: mapProfileTags(profileCard.tags),
-    buttons: mapProfileButtons(profileCard.buttons),
-    hashtag: profileCard.hashtag || "",
-    address: profileCard.address || "",
-    postcode: profileCard.postcode || "",
-    email: profileCard.email || "",
-    extraPhone: profileCard.extraPhone || "",
+    tags: mapProfileTags(effectiveProfileCard.tags),
+    buttons: mapProfileButtons(effectiveProfileCard.buttons),
+    hashtag: effectiveProfileCard.hashtag || "",
+    address: effectiveProfileCard.address || "",
+    postcode: effectiveProfileCard.postcode || "",
+    email: effectiveProfileCard.email || "",
+    extraPhone: effectiveProfileCard.extraPhone || "",
     viewsCount: Number(viewsCount || 0),
-    showBranding: Boolean(profileCard.showBranding),
+    showBranding: Boolean(effectiveProfileCard.showBranding),
     pets: sortProfileCardPets(pets),
   };
 }
@@ -2426,7 +2457,7 @@ router.get(
           listOwnedPetsByUserId(slugRow.ownerId),
         ]);
 
-        if (!owner || !profileCard) {
+        if (!owner) {
           res.status(200).render("public/slug-state", {
             title: "Скоро",
             slug,
@@ -2439,6 +2470,7 @@ router.get(
           });
           return;
         }
+        const effectiveProfileCard = buildImmediatePublicProfileCard(owner, profileCard);
 
         if (owner.status === "blocked" || owner.status === "deactivated") {
           res.status(200).render("public/slug-state", {
@@ -2493,13 +2525,13 @@ router.get(
                 title: `${slug} | Закрытая визитка`,
                 slug,
                 ownerSlugs,
-                ownerName: profileCard?.name || owner.displayName || owner.firstName || "UNQX User",
+                ownerName: effectiveProfileCard.name,
                 ownerUsername: ownerHandle ? `@${ownerHandle}` : "",
-                ownerAvatar: profileCard?.avatarUrl || "",
+                ownerAvatar: effectiveProfileCard.avatarUrl || "",
                 ownerIsVerified: Boolean(owner?.isVerified),
-                theme: profileCard?.theme || "default_dark",
-                customColor: profileCard?.customColor || "",
-                avatarFrame: profileCard?.avatarFrame || "none",
+                theme: effectiveProfileCard.theme || "default_dark",
+                customColor: effectiveProfileCard.customColor || "",
+                avatarFrame: effectiveProfileCard.avatarFrame || "none",
                 lockedReason: lockedQuery === "expired" ? "expired" : "",
                 noindex: true,
                 adminSession: getAdminSession(req),
@@ -2566,7 +2598,7 @@ router.get(
           slug,
           user: owner,
           profileCard: {
-            ...profileCard,
+            ...effectiveProfileCard,
             slugPrice: typeof slugRow.price === "number" ? slugRow.price : null,
           },
           pets: ownedPets,
