@@ -2913,10 +2913,6 @@ body[data-card-theme] #card-view-root>[data-card-view] {
     padding-bottom: 8px;
   }
 
-  [data-card-theme="velours"] .unq-ref-profile.has-emoji-pack.has-pets.has-pets-3 + .unq-wall-tabs {
-    margin-top: clamp(-76px, -16vw, -56px);
-  }
-
   [data-card-theme="velours"] .unq-wall-tab {
     font-size: 13px;
   }
