@@ -5,7 +5,12 @@ const { prisma } = require("../db/prisma");
 const { env } = require("../config/env");
 const { canCreateCard } = require("./profile");
 const { isPublicProfileVisible } = require("./subscription");
-const { PUBLIC_HANDLE_SLUG_STATUSES, getActivePublicHandle, getFreeProfileUserSelect } = require("./public-handle");
+const {
+  PUBLIC_HANDLE_SLUG_STATUSES,
+  getActivePublicHandle,
+  getFreeProfileUserSelect,
+  hydrateFreeProfileUsers,
+} = require("./public-handle");
 
 const WALL_POST_CONTENT_MAX = 280;
 const WALL_COMMENT_CONTENT_MAX = 1000;
@@ -407,6 +412,12 @@ async function listWallCommentsByPostIds({ postIds, viewerUserId = "", ownerId =
       select: getWallCommentBaseSelect(),
     }),
   );
+  const hydratedUsers = await hydrateFreeProfileUsers(rows.map((row) => row?.user).filter(Boolean));
+  const hydratedUsersById = new Map(
+    hydratedUsers
+      .map((user) => [String(user?.id || "").trim(), user])
+      .filter(([id]) => Boolean(id)),
+  );
 
   const grouped = new Map();
   for (const row of rows) {
@@ -417,7 +428,10 @@ async function listWallCommentsByPostIds({ postIds, viewerUserId = "", ownerId =
     if (!grouped.has(postId)) {
       grouped.set(postId, []);
     }
-    const mapped = mapWallCommentItem(row, {
+    const mapped = mapWallCommentItem({
+      ...row,
+      user: hydratedUsersById.get(String(row?.user?.id || row?.userId || "").trim()) || row.user,
+    }, {
       viewerUserId,
       ownerId: normalizedOwnerId,
     });
@@ -553,10 +567,16 @@ async function listLatestHomeWallPosts({ limit = 3 } = {}) {
       select: getHomeWallPostSelect(),
     }),
   );
+  const hydratedOwners = await hydrateFreeProfileUsers(rows.map((row) => row?.owner).filter(Boolean));
+  const hydratedOwnersById = new Map(
+    hydratedOwners
+      .map((owner) => [String(owner?.id || "").trim(), owner])
+      .filter(([id]) => Boolean(id)),
+  );
 
   const items = [];
   for (const row of rows) {
-    const owner = row?.owner;
+    const owner = hydratedOwnersById.get(String(row?.owner?.id || row?.ownerId || "").trim()) || row?.owner;
     const publicHandle = getActivePublicHandle(owner);
     const primarySlug = String(publicHandle?.value || "").trim().toUpperCase();
     if (!owner || !primarySlug || !isPublicProfileVisible(owner)) {

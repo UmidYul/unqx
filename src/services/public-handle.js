@@ -50,6 +50,93 @@ function getFreeProfileAvailabilityWhere() {
   };
 }
 
+function applyFreeProfileFields(user, row = null) {
+  if (!user || typeof user !== "object") {
+    return user;
+  }
+  return {
+    ...user,
+    freeProfileCode: user.freeProfileCode ?? row?.freeProfileCode ?? null,
+    freeProfileStatus: user.freeProfileStatus ?? row?.freeProfileStatus ?? "active",
+    freeProfilePauseMessage: user.freeProfilePauseMessage ?? row?.freeProfilePauseMessage ?? null,
+    freeProfileDisabledAt: user.freeProfileDisabledAt ?? row?.freeProfileDisabledAt ?? null,
+  };
+}
+
+async function queryFreeProfileRowsByUserIds(userIds, db = prisma) {
+  const normalizedUserIds = [...new Set(
+    (Array.isArray(userIds) ? userIds : [])
+      .map((item) => String(item || "").trim())
+      .filter(Boolean),
+  )];
+  if (!normalizedUserIds.length || supportsFreeProfileUserFields()) {
+    return [];
+  }
+  try {
+    return await db.$queryRaw(Prisma.sql`
+      SELECT
+        id::text AS id,
+        free_profile_code AS "freeProfileCode",
+        free_profile_status AS "freeProfileStatus",
+        free_profile_pause_message AS "freeProfilePauseMessage",
+        free_profile_disabled_at AS "freeProfileDisabledAt"
+      FROM users
+      WHERE id IN (${Prisma.join(normalizedUserIds)})
+    `);
+  } catch {
+    return [];
+  }
+}
+
+async function queryFreeProfileRowByCode(code, db = prisma) {
+  const normalizedCode = normalizeFreeProfileCode(code);
+  if (!normalizedCode || supportsFreeProfileUserFields()) {
+    return null;
+  }
+  try {
+    const rows = await db.$queryRaw(Prisma.sql`
+      SELECT
+        id::text AS id,
+        free_profile_code AS "freeProfileCode",
+        free_profile_status AS "freeProfileStatus",
+        free_profile_pause_message AS "freeProfilePauseMessage",
+        free_profile_disabled_at AS "freeProfileDisabledAt"
+      FROM users
+      WHERE free_profile_code = ${normalizedCode}
+        AND free_profile_disabled_at IS NULL
+      LIMIT 1
+    `);
+    return Array.isArray(rows) && rows.length ? rows[0] : null;
+  } catch {
+    return null;
+  }
+}
+
+async function hydrateFreeProfileUser(user, db = prisma) {
+  if (!user || supportsFreeProfileUserFields()) {
+    return user;
+  }
+  const rows = await queryFreeProfileRowsByUserIds([user.id], db);
+  return applyFreeProfileFields(user, Array.isArray(rows) && rows.length ? rows[0] : null);
+}
+
+async function hydrateFreeProfileUsers(users, db = prisma) {
+  const list = Array.isArray(users) ? users : [];
+  if (!list.length || supportsFreeProfileUserFields()) {
+    return list;
+  }
+  const rows = await queryFreeProfileRowsByUserIds(
+    list.map((item) => item?.id),
+    db,
+  );
+  const rowsById = new Map(
+    (Array.isArray(rows) ? rows : [])
+      .map((row) => [String(row?.id || "").trim(), row])
+      .filter(([id]) => Boolean(id)),
+  );
+  return list.map((user) => applyFreeProfileFields(user, rowsById.get(String(user?.id || "").trim())));
+}
+
 function normalizeDefaultCardName(displayName, firstName) {
   const nextDisplayName = String(displayName || "").trim().slice(0, 120);
   if (nextDisplayName) {
@@ -333,14 +420,39 @@ async function findPublicHandleByValue(value, options = {}) {
   }
 
   if (isFreeProfileCode(normalized)) {
-    const freeProfileWhere = getFreeProfileLookupWhere(normalized);
-    if (!freeProfileWhere) {
+    if (supportsFreeProfileUserFields()) {
+      const freeProfileWhere = getFreeProfileLookupWhere(normalized);
+      if (!freeProfileWhere) {
+        return null;
+      }
+      const owner = await prisma.user.findFirst({
+        where: freeProfileWhere,
+        select: buildPublicHandleUserSelect(options),
+      });
+      if (!owner) {
+        return null;
+      }
+      return {
+        type: "free",
+        value: normalized,
+        status: normalizeFreeProfileStatus(owner.freeProfileStatus, {
+          disabledAt: owner.freeProfileDisabledAt,
+        }),
+        pauseMessage: String(owner.freeProfilePauseMessage || "").trim() || null,
+        ownerId: owner.id,
+        owner,
+      };
+    }
+
+    const freeProfileRow = await queryFreeProfileRowByCode(normalized, prisma);
+    if (!freeProfileRow?.id) {
       return null;
     }
-    const owner = await prisma.user.findFirst({
-      where: freeProfileWhere,
+    const ownerBase = await prisma.user.findUnique({
+      where: { id: String(freeProfileRow.id).trim() },
       select: buildPublicHandleUserSelect(options),
     });
+    const owner = applyFreeProfileFields(ownerBase, freeProfileRow);
     if (!owner) {
       return null;
     }
@@ -401,6 +513,9 @@ module.exports = {
   getFreeProfileUserSelect,
   getFreeProfileLookupWhere,
   getFreeProfileAvailabilityWhere,
+  applyFreeProfileFields,
+  hydrateFreeProfileUser,
+  hydrateFreeProfileUsers,
   normalizePublicHandleValue,
   normalizeFreeProfileCode,
   normalizeFreeProfileStatus,
