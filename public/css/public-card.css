@@ -2277,7 +2277,7 @@ body[data-card-theme] #card-view-root>[data-card-view] {
 
 .unq-ref-profile.has-emoji-pack {
   padding-top: 18px;
-  min-height: 214px;
+  min-height: 0;
 }
 
 .unq-ref-profile.has-emoji-pack.has-pets {

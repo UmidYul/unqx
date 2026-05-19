@@ -87,7 +87,7 @@ module.exports = {
             SELECT 1
             FROM slugs s
             WHERE s.owner_id = u.id
-              AND s.status = ANY($1::text[])
+              AND s.status::text = ANY($1::text[])
           )
       `,
       [ACTIVE_SLUG_STATUSES],
