@@ -22,7 +22,15 @@ const {
   verifyPrivatePasswordForOwner,
 } = require("../../services/private-access-store");
 const { sortProfileCardPets } = require("../../services/pets");
-const { isSubscriptionActive } = require("../../services/subscription");
+const { isPublicProfileVisible } = require("../../services/subscription");
+const {
+  getActivePublicHandle,
+  getAllPublicHandles,
+  findPublicHandleByValue,
+  normalizePublicHandleValue,
+  isFreeProfileCode,
+  PUBLIC_HANDLE_SLUG_STATUSES,
+} = require("../../services/public-handle");
 
 const router = express.Router();
 const WRITE_OPERATIONS = new Set(["write", "lock"]);
@@ -103,10 +111,7 @@ const UZ_CITY_COORDS = {
 };
 
 function sanitizeSlug(value) {
-  return String(value || "")
-    .toUpperCase()
-    .replace(/[^A-Z0-9]/g, "")
-    .slice(0, 20);
+  return normalizePublicHandleValue(value);
 }
 
 function normalizeSource(value) {
@@ -130,11 +135,7 @@ function normalizeSource(value) {
 }
 
 function isMobilePublicOwnerVisible(input) {
-  return isSubscriptionActive({
-    plan: input?.plan,
-    subscriptionStartedAt: input?.subscriptionStartedAt || null,
-    subscriptionExpiresAt: input?.subscriptionExpiresAt || null,
-  });
+  return isPublicProfileVisible(input);
 }
 
 async function buildFollowLookupForRows(userId, rows) {
@@ -277,12 +278,12 @@ function extractSlugFromUrl(rawUrl) {
     const url = new URL(candidate);
     const tail = url.pathname.split("/").filter(Boolean).at(-1);
     const slug = sanitizeSlug(tail);
-    return /^[A-Z]{3}\d{3}$/.test(slug) ? slug : null;
+    return /^[A-Z]{3}\d{3}$/.test(slug) || isFreeProfileCode(slug) ? slug : null;
   } catch {
-    const match = candidate.match(/([A-Za-z]{3}\d{3})/);
+    const match = candidate.match(/([A-Za-z]{3}\d{3}|[1-9]\d{11})/);
     if (!match) return null;
     const slug = sanitizeSlug(match[1]);
-    return /^[A-Z]{3}\d{3}$/.test(slug) ? slug : null;
+    return /^[A-Z]{3}\d{3}$/.test(slug) || isFreeProfileCode(slug) ? slug : null;
   }
 }
 
@@ -352,26 +353,57 @@ function mapLockedResidentProfile(row) {
 }
 
 async function getOwnedSlugs(userId) {
-  const rows = await prisma.slug.findMany({
-    where: {
-      ownerId: userId,
-      status: {
-        in: ["active", "private", "paused", "approved"],
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      freeProfileCode: true,
+      freeProfileStatus: true,
+      freeProfilePauseMessage: true,
+      freeProfileDisabledAt: true,
+      slugs: {
+        where: {
+          status: {
+            in: PUBLIC_HANDLE_SLUG_STATUSES,
+          },
+        },
+        orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
+        select: {
+          fullSlug: true,
+          status: true,
+          pauseMessage: true,
+          isPrimary: true,
+        },
       },
     },
-    orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
-    select: {
-      fullSlug: true,
-      isPrimary: true,
-    },
   });
-
-  return rows.map((row) => row.fullSlug);
+  return getAllPublicHandles(user).map((row) => row.value);
 }
 
 async function getPrimarySlug(userId) {
-  const slugs = await getOwnedSlugs(userId);
-  return slugs[0] || null;
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      freeProfileCode: true,
+      freeProfileStatus: true,
+      freeProfilePauseMessage: true,
+      freeProfileDisabledAt: true,
+      slugs: {
+        where: {
+          status: {
+            in: PUBLIC_HANDLE_SLUG_STATUSES,
+          },
+        },
+        orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
+        select: {
+          fullSlug: true,
+          status: true,
+          pauseMessage: true,
+          isPrimary: true,
+        },
+      },
+    },
+  });
+  return getActivePublicHandle(user)?.value || null;
 }
 
 async function getUserCity(userId) {
@@ -598,6 +630,10 @@ router.get(
           email: true,
           plan: true,
           status: true,
+          freeProfileCode: true,
+          freeProfileStatus: true,
+          freeProfilePauseMessage: true,
+          freeProfileDisabledAt: true,
         },
       }),
       prisma.slug.findMany({
@@ -638,7 +674,13 @@ router.get(
       return;
     }
 
-    const selectedSlug = slugs.find((item) => item.isPrimary)?.fullSlug || slugs[0]?.fullSlug || null;
+    const selectedSlug = getActivePublicHandle({
+      ...user,
+      slugs,
+    })?.value || slugs.find((item) => item.isPrimary)?.fullSlug || slugs[0]?.fullSlug || null;
+    const responseSlugs = selectedSlug && !slugs.some((item) => item.fullSlug === selectedSlug)
+      ? [{ fullSlug: selectedSlug, isPrimary: true, status: String(user.freeProfileStatus || "active").toLowerCase() }, ...slugs]
+      : slugs;
 
     res.json({
       user: {
@@ -666,7 +708,7 @@ router.get(
           }
           : null,
       },
-      slugs: slugs.map((item) => ({
+      slugs: responseSlugs.map((item) => ({
         fullSlug: item.fullSlug,
         isPrimary: item.isPrimary,
         status: item.status,
@@ -983,19 +1025,28 @@ router.get(
             .filter(Boolean),
         ),
       );
-      const names = visitorSlugs.length
-        ? await prisma.$queryRaw`
-            SELECT
-              s.full_slug,
-              COALESCE(pc.name, u.display_name, u.first_name, 'UNQX User') AS name
-            FROM slugs s
-            LEFT JOIN users u ON u.id = s.owner_id
-            LEFT JOIN profile_cards pc ON pc.owner_id = u.id
-            WHERE s.full_slug = ANY(${visitorSlugs}::varchar[])
-          `
+      const visitorHandles = visitorSlugs.length
+        ? await Promise.all(
+          visitorSlugs.map((slugValue) =>
+            findPublicHandleByValue(slugValue, {
+              includeProfileCard: true,
+              includeSlugs: false,
+            }).catch(() => null),
+          ),
+        )
         : [];
       const nameBySlug = new Map(
-        (Array.isArray(names) ? names : []).map((item) => [String(item.full_slug), String(item.name || "UNQX User")]),
+        visitorHandles
+          .filter(Boolean)
+          .map((handle) => [
+            handle.value,
+            String(
+              handle.owner?.profileCard?.name ||
+                handle.owner?.displayName ||
+                handle.owner?.firstName ||
+                "UNQX User",
+            ),
+          ]),
       );
 
       if (Array.isArray(rows) && rows.length === 0 && prisma.analyticsView) {
@@ -1168,24 +1219,25 @@ router.get(
         `
           SELECT
             uc.contact_slug AS slug,
-            COALESCE(uc.contact_user_id, s.owner_id) AS "ownerId",
+            COALESCE(uc.contact_user_id, s.owner_id, uf.id) AS "ownerId",
             uc.saved,
             uc.tap_count,
             uc.first_tap_at,
             uc.last_tap_at,
-            COALESCE(pc.name, u.display_name, u.first_name, 'Unknown') AS name,
+            COALESCE(pc.name, u.display_name, u.first_name, uf.display_name, uf.first_name, 'Unknown') AS name,
             pc.avatar_url AS "avatarUrl",
             pc.extra_phone AS phone,
-            u.plan AS tag
+            COALESCE(u.plan, uf.plan, 'none') AS tag
           FROM user_contacts uc
           LEFT JOIN slugs s ON s.full_slug = uc.contact_slug
-          LEFT JOIN users u ON u.id = s.owner_id
-          LEFT JOIN profile_cards pc ON pc.owner_id = u.id
+          LEFT JOIN users uf ON uf.free_profile_code = uc.contact_slug AND uf.free_profile_disabled_at IS NULL
+          LEFT JOIN users u ON u.id = COALESCE(s.owner_id, uf.id)
+          LEFT JOIN profile_cards pc ON pc.owner_id = COALESCE(s.owner_id, uf.id)
           WHERE uc.owner_id = $1
             AND (
               $2 = ''
               OR lower(uc.contact_slug) LIKE $3
-              OR lower(COALESCE(pc.name, u.display_name, u.first_name, '')) LIKE $3
+              OR lower(COALESCE(pc.name, u.display_name, u.first_name, uf.display_name, uf.first_name, '')) LIKE $3
             )
           ORDER BY uc.last_tap_at DESC
           LIMIT 300
@@ -1238,30 +1290,68 @@ router.get(
     try {
       rows = await prisma.$queryRawUnsafe(
         `
-          SELECT
-            s.full_slug AS slug,
-            s.owner_id AS "ownerId",
-            COALESCE(pc.name, u.display_name, u.first_name, 'Unknown') AS name,
-            pc.avatar_url AS "avatarUrl",
-            COALESCE(u.verified_company, '') AS city,
-            COALESCE(u.plan, 'none') AS tag,
-            NULL::timestamptz AS "subscriptionStartedAt",
-            NULL::timestamptz AS "subscriptionExpiresAt",
-            COALESCE(s.analytics_views_count, 0) AS taps,
-            COALESCE(uc.saved, FALSE) AS saved
-          FROM slugs s
-          JOIN users u ON u.id = s.owner_id
-          LEFT JOIN profile_cards pc ON pc.owner_id = u.id
-          LEFT JOIN user_contacts uc ON uc.owner_id = $1 AND uc.contact_slug = s.full_slug
-          WHERE s.status = 'active'
-            AND u.status = 'active'
-            AND COALESCE(u.show_in_directory, TRUE) = TRUE
-            AND (
-              $2 = ''
-              OR lower(s.full_slug) LIKE $3
-              OR lower(COALESCE(pc.name, u.display_name, u.first_name, '')) LIKE $3
-            )
-          ORDER BY s.analytics_views_count DESC, s.updated_at DESC
+          SELECT *
+          FROM (
+            SELECT
+              s.full_slug AS slug,
+              s.owner_id AS "ownerId",
+              COALESCE(pc.name, u.display_name, u.first_name, 'Unknown') AS name,
+              pc.avatar_url AS "avatarUrl",
+              COALESCE(u.verified_company, '') AS city,
+              COALESCE(u.plan, 'none') AS tag,
+              NULL::timestamptz AS "subscriptionStartedAt",
+              NULL::timestamptz AS "subscriptionExpiresAt",
+              COALESCE(s.analytics_views_count, 0) AS taps,
+              COALESCE(uc.saved, FALSE) AS saved
+            FROM slugs s
+            JOIN users u ON u.id = s.owner_id
+            LEFT JOIN profile_cards pc ON pc.owner_id = u.id
+            LEFT JOIN user_contacts uc ON uc.owner_id = $1 AND uc.contact_slug = s.full_slug
+            WHERE s.status = 'active'
+              AND u.status = 'active'
+              AND COALESCE(u.show_in_directory, TRUE) = TRUE
+              AND (
+                $2 = ''
+                OR lower(s.full_slug) LIKE $3
+                OR lower(COALESCE(pc.name, u.display_name, u.first_name, '')) LIKE $3
+              )
+            UNION ALL
+            SELECT
+              u.free_profile_code AS slug,
+              u.id AS "ownerId",
+              COALESCE(pc.name, u.display_name, u.first_name, 'Unknown') AS name,
+              pc.avatar_url AS "avatarUrl",
+              COALESCE(u.verified_company, '') AS city,
+              COALESCE(u.plan, 'none') AS tag,
+              NULL::timestamptz AS "subscriptionStartedAt",
+              NULL::timestamptz AS "subscriptionExpiresAt",
+              COALESCE((
+                SELECT COUNT(*)::int
+                FROM tap_events te
+                WHERE te.owner_slug = u.free_profile_code
+              ), 0) AS taps,
+              COALESCE(uc.saved, FALSE) AS saved
+            FROM users u
+            LEFT JOIN profile_cards pc ON pc.owner_id = u.id
+            LEFT JOIN user_contacts uc ON uc.owner_id = $1 AND uc.contact_slug = u.free_profile_code
+            WHERE u.status = 'active'
+              AND COALESCE(u.show_in_directory, TRUE) = TRUE
+              AND u.free_profile_code IS NOT NULL
+              AND u.free_profile_disabled_at IS NULL
+              AND COALESCE(u.free_profile_status, 'active') = 'active'
+              AND NOT EXISTS (
+                SELECT 1
+                FROM slugs s2
+                WHERE s2.owner_id = u.id
+                  AND s2.status IN ('active', 'private', 'paused', 'approved')
+              )
+              AND (
+                $2 = ''
+                OR lower(u.free_profile_code) LIKE $3
+                OR lower(COALESCE(pc.name, u.display_name, u.first_name, '')) LIKE $3
+              )
+          ) directory_items
+          ORDER BY taps DESC, slug DESC
           LIMIT $4 OFFSET $5
         `,
         userId,
@@ -1276,29 +1366,66 @@ router.get(
       }
       rows = await prisma.$queryRawUnsafe(
         `
-          SELECT
-            s.full_slug AS slug,
-            s.owner_id AS "ownerId",
-            COALESCE(pc.name, u.display_name, u.first_name, 'Unknown') AS name,
-            pc.avatar_url AS "avatarUrl",
-            COALESCE(u.verified_company, '') AS city,
-            COALESCE(u.plan, 'none') AS tag,
-            u.subscription_started_at AS "subscriptionStartedAt",
-            u.subscription_expires_at AS "subscriptionExpiresAt",
-            COALESCE(s.analytics_views_count, 0) AS taps,
-            FALSE AS saved
-          FROM slugs s
-          JOIN users u ON u.id = s.owner_id
-          LEFT JOIN profile_cards pc ON pc.owner_id = u.id
-          WHERE s.status = 'active'
-            AND u.status = 'active'
-            AND COALESCE(u.show_in_directory, TRUE) = TRUE
-            AND (
-              $1 = ''
-              OR lower(s.full_slug) LIKE $2
-              OR lower(COALESCE(pc.name, u.display_name, u.first_name, '')) LIKE $2
-            )
-          ORDER BY s.analytics_views_count DESC, s.updated_at DESC
+          SELECT *
+          FROM (
+            SELECT
+              s.full_slug AS slug,
+              s.owner_id AS "ownerId",
+              COALESCE(pc.name, u.display_name, u.first_name, 'Unknown') AS name,
+              pc.avatar_url AS "avatarUrl",
+              COALESCE(u.verified_company, '') AS city,
+              COALESCE(u.plan, 'none') AS tag,
+              u.subscription_started_at AS "subscriptionStartedAt",
+              u.subscription_expires_at AS "subscriptionExpiresAt",
+              COALESCE(s.analytics_views_count, 0) AS taps,
+              FALSE AS saved
+            FROM slugs s
+            JOIN users u ON u.id = s.owner_id
+            LEFT JOIN profile_cards pc ON pc.owner_id = u.id
+            WHERE s.status = 'active'
+              AND u.status = 'active'
+              AND COALESCE(u.show_in_directory, TRUE) = TRUE
+              AND (
+                $1 = ''
+                OR lower(s.full_slug) LIKE $2
+                OR lower(COALESCE(pc.name, u.display_name, u.first_name, '')) LIKE $2
+              )
+            UNION ALL
+            SELECT
+              u.free_profile_code AS slug,
+              u.id AS "ownerId",
+              COALESCE(pc.name, u.display_name, u.first_name, 'Unknown') AS name,
+              pc.avatar_url AS "avatarUrl",
+              COALESCE(u.verified_company, '') AS city,
+              COALESCE(u.plan, 'none') AS tag,
+              u.subscription_started_at AS "subscriptionStartedAt",
+              u.subscription_expires_at AS "subscriptionExpiresAt",
+              COALESCE((
+                SELECT COUNT(*)::int
+                FROM tap_events te
+                WHERE te.owner_slug = u.free_profile_code
+              ), 0) AS taps,
+              FALSE AS saved
+            FROM users u
+            LEFT JOIN profile_cards pc ON pc.owner_id = u.id
+            WHERE u.status = 'active'
+              AND COALESCE(u.show_in_directory, TRUE) = TRUE
+              AND u.free_profile_code IS NOT NULL
+              AND u.free_profile_disabled_at IS NULL
+              AND COALESCE(u.free_profile_status, 'active') = 'active'
+              AND NOT EXISTS (
+                SELECT 1
+                FROM slugs s2
+                WHERE s2.owner_id = u.id
+                  AND s2.status IN ('active', 'private', 'paused', 'approved')
+              )
+              AND (
+                $1 = ''
+                OR lower(u.free_profile_code) LIKE $2
+                OR lower(COALESCE(pc.name, u.display_name, u.first_name, '')) LIKE $2
+              )
+          ) directory_items
+          ORDER BY taps DESC, slug DESC
           LIMIT $3 OFFSET $4
         `,
         q,
@@ -1350,86 +1477,83 @@ router.get(
       return;
     }
 
-    let rows = [];
-    try {
-      rows = await prisma.$queryRawUnsafe(
-        `
-          SELECT
-            s.full_slug AS slug,
-            s.status AS status,
-            s.owner_id AS "ownerId",
-            s.price AS "slugPrice",
-            COALESCE(pc.name, u.display_name, u.first_name, 'Unknown') AS name,
-            pc.avatar_url AS "avatarUrl",
-            COALESCE(u.username, u.telegram_username, '') AS username,
-            COALESCE(u.verified_company, '') AS "verifiedCompany",
-            COALESCE(u.city, '') AS city,
-            COALESCE(u.plan, 'none') AS tag,
-            u.subscription_started_at AS "subscriptionStartedAt",
-            u.subscription_expires_at AS "subscriptionExpiresAt",
-            COALESCE(s.analytics_views_count, 0) AS taps,
-            COALESCE(pc.role, '') AS role,
-            COALESCE(pc.bio, '') AS bio,
-            COALESCE(pc.hashtag, '') AS hashtag,
-            COALESCE(pc.address, '') AS address,
-            COALESCE(pc.postcode, '') AS postcode,
-            COALESCE(pc.email, '') AS email,
-            COALESCE(pc.extra_phone, '') AS phone,
-            COALESCE(pc.tags, '[]'::jsonb) AS tags,
-            COALESCE(pc.buttons, '[]'::jsonb) AS buttons,
-            COALESCE(pc.theme, 'default_dark') AS theme,
-            COALESCE(pc.avatar_frame, 'none') AS "avatarFrame",
-            COALESCE(pc.emoji_background_pack, 'none') AS "emojiBackgroundPack",
-            COALESCE(pc.show_branding, TRUE) AS "showBranding",
-            COALESCE(uc.saved, FALSE) AS saved
-          FROM slugs s
-          JOIN users u ON u.id = s.owner_id
-          LEFT JOIN profile_cards pc ON pc.owner_id = u.id
-          LEFT JOIN user_contacts uc ON uc.owner_id = $1 AND uc.contact_slug = s.full_slug
-          WHERE s.full_slug = $2
-            AND s.status IN ('active', 'private', 'paused', 'approved')
-            AND u.status = 'active'
-          LIMIT 1
-        `,
-        userId,
-        slug,
-      );
-    } catch (error) {
-      if (!isMissingStorageError(error)) {
-        throw error;
-      }
+    const publicHandle = await findPublicHandleByValue(slug, {
+      includeProfileCard: true,
+      includeSlugs: true,
+    });
+    if (!publicHandle?.ownerId || !publicHandle.owner) {
+      res.status(404).json({ error: "Resident not found", code: "NOT_FOUND" });
+      return;
+    }
+    if (!isMobilePublicOwnerVisible(publicHandle.owner)) {
       res.status(404).json({ error: "Resident not found", code: "NOT_FOUND" });
       return;
     }
 
-    const row = Array.isArray(rows) ? rows[0] : null;
-    if (!row) {
-      res.status(404).json({ error: "Resident not found", code: "NOT_FOUND" });
-      return;
-    }
-    if (!isMobilePublicOwnerVisible(row)) {
-      res.status(404).json({ error: "Resident not found", code: "NOT_FOUND" });
-      return;
-    }
-    const pets = prisma.profileCardPet
-      ? await prisma.profileCardPet.findMany({
-        where: { userId: row.ownerId },
-        orderBy: [{ createdAt: "asc" }, { id: "asc" }],
-      })
-      : [];
-    const followLookup = await buildFollowLookupForRows(userId, [row]);
+    const [profileCard, pets, savedRows, tapsRows] = await Promise.all([
+      prisma.profileCard.findUnique({
+        where: { ownerId: publicHandle.ownerId },
+        select: {
+          name: true,
+          role: true,
+          bio: true,
+          hashtag: true,
+          address: true,
+          postcode: true,
+          email: true,
+          extraPhone: true,
+          avatarUrl: true,
+          tags: true,
+          buttons: true,
+          theme: true,
+          avatarFrame: true,
+          emojiBackgroundPack: true,
+          showBranding: true,
+        },
+      }),
+      prisma.profileCardPet
+        ? prisma.profileCardPet.findMany({
+            where: { userId: publicHandle.ownerId },
+            orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+          })
+        : [],
+      prisma.$queryRaw`
+        SELECT saved
+        FROM user_contacts
+        WHERE owner_id = ${userId}
+          AND contact_slug = ${publicHandle.value}
+        LIMIT 1
+      `.catch((error) => (isMissingStorageError(error) ? [] : Promise.reject(error))),
+      prisma.$queryRaw`
+        SELECT COUNT(*)::int AS count
+        FROM tap_events
+        WHERE owner_slug = ${publicHandle.value}
+      `.catch((error) => (isMissingStorageError(error) ? [{ count: 0 }] : Promise.reject(error))),
+    ]);
 
-    const rowStatus = String(row.status || "").trim().toLowerCase();
-    const isOwnerViewer = String(row.ownerId || "") === String(userId || "");
+    const followLookup = await buildFollowLookupForRows(userId, [{ ownerId: publicHandle.ownerId }]);
+    const rowStatus = String(publicHandle.status || "").trim().toLowerCase();
+    const isOwnerViewer = String(publicHandle.ownerId || "") === String(userId || "");
     let privateAccessPayload = null;
     if (rowStatus === "private" && !isOwnerViewer) {
       privateAccessPayload = resolvePrivateAccessFromRequest(req, {
-        slug: row.slug,
-        ownerId: row.ownerId,
+        slug: publicHandle.value,
+        ownerId: publicHandle.ownerId,
       });
       if (!privateAccessPayload) {
         res.json({
-          profile: mapLockedResidentProfile(row),
+          profile: mapLockedResidentProfile({
+            slug: publicHandle.value,
+            name:
+              profileCard?.name ||
+              publicHandle.owner.displayName ||
+              publicHandle.owner.firstName ||
+              "Unknown",
+            avatarUrl: profileCard?.avatarUrl || null,
+            username: publicHandle.owner.login || publicHandle.owner.username || "",
+            role: profileCard?.role || "",
+            city: publicHandle.owner.city || "",
+          }),
           privateAccess: {
             required: true,
             granted: false,
@@ -1440,57 +1564,38 @@ router.get(
       }
     }
 
-    let slugRows = [];
-    try {
-      slugRows = await prisma.$queryRawUnsafe(
-        `
-          SELECT full_slug AS slug
-          FROM slugs
-          WHERE owner_id = $1
-            AND status IN ('active', 'private', 'paused', 'approved')
-          ORDER BY is_primary DESC, created_at ASC
-          LIMIT 24
-        `,
-        row.ownerId,
-      );
-    } catch (error) {
-      if (!isMissingStorageError(error)) {
-        throw error;
-      }
-    }
-
-    const slugs = (Array.isArray(slugRows) ? slugRows : [])
-      .map((item) => sanitizeSlug(item.slug))
-      .filter(Boolean);
+    const slugs = getAllPublicHandles(publicHandle.owner).map((item) => item.value);
+    const saved = Boolean(Array.isArray(savedRows) ? savedRows[0]?.saved : false);
+    const taps = Number(Array.isArray(tapsRows) ? tapsRows[0]?.count || 0 : 0);
 
     res.json({
       profile: {
-        slug: sanitizeSlug(row.slug),
-        slugs: slugs.length ? slugs : [sanitizeSlug(row.slug)],
-        slugPrice: Number.isFinite(Number(row.slugPrice)) ? Number(row.slugPrice) : null,
-        name: String(row.name || "Unknown"),
-        avatarUrl: row.avatarUrl || null,
-        city: String(row.city || ""),
-        verifiedCompany: String(row.verifiedCompany || ""),
-        tag: String(row.tag || "none"),
-        taps: Number(row.taps || 0),
-        role: String(row.role || ""),
-        bio: String(row.bio || ""),
-        hashtag: String(row.hashtag || ""),
-        address: String(row.address || ""),
-        postcode: String(row.postcode || ""),
-        email: String(row.email || ""),
-        phone: String(row.phone || ""),
-        buttons: normalizeProfileButtons(row.buttons),
-        tags: normalizeStringList(row.tags),
-        theme: String(row.theme || "default_dark"),
-        avatarFrame: String(row.avatarFrame || "none"),
-        emojiBackgroundPack: String(row.emojiBackgroundPack || "none"),
-        showBranding: row.showBranding !== false,
+        slug: publicHandle.value,
+        slugs: slugs.length ? slugs : [publicHandle.value],
+        slugPrice: Number.isFinite(Number(publicHandle?.slug?.price)) ? Number(publicHandle.slug.price) : null,
+        name: String(profileCard?.name || publicHandle.owner.displayName || publicHandle.owner.firstName || "Unknown"),
+        avatarUrl: profileCard?.avatarUrl || null,
+        city: String(publicHandle.owner.city || ""),
+        verifiedCompany: String(publicHandle.owner.verifiedCompany || ""),
+        tag: String(publicHandle.owner.plan || "none"),
+        taps,
+        role: String(profileCard?.role || ""),
+        bio: String(profileCard?.bio || ""),
+        hashtag: String(profileCard?.hashtag || ""),
+        address: String(profileCard?.address || ""),
+        postcode: String(profileCard?.postcode || ""),
+        email: String(profileCard?.email || ""),
+        phone: String(profileCard?.extraPhone || ""),
+        buttons: normalizeProfileButtons(profileCard?.buttons),
+        tags: normalizeStringList(profileCard?.tags),
+        theme: String(profileCard?.theme || "default_dark"),
+        avatarFrame: String(profileCard?.avatarFrame || "none"),
+        emojiBackgroundPack: String(profileCard?.emojiBackgroundPack || "none"),
+        showBranding: profileCard?.showBranding !== false,
         pets: sortProfileCardPets(pets),
-        subscribed: followLookup.has(String(row.ownerId || "").trim()),
-        saved: Boolean(row.saved),
-        username: String(row.username || "").trim(),
+        subscribed: followLookup.has(String(publicHandle.ownerId || "").trim()),
+        saved,
+        username: String(publicHandle.owner.login || publicHandle.owner.username || "").trim(),
         isPrivate: rowStatus === "private",
         isLocked: false,
         privateAccessExpiresAt: privateAccessPayload ? new Date(privateAccessPayload.exp).toISOString() : null,
@@ -1529,21 +1634,9 @@ router.post(
       return;
     }
 
-    const slugRow = await prisma.slug.findUnique({
-      where: { fullSlug: slug },
-      select: {
-        fullSlug: true,
-        ownerId: true,
-        status: true,
-        owner: {
-          select: {
-            status: true,
-            plan: true,
-            subscriptionStartedAt: true,
-            subscriptionExpiresAt: true,
-          },
-        },
-      },
+    const slugRow = await findPublicHandleByValue(slug, {
+      includeProfileCard: false,
+      includeSlugs: true,
     });
     if (
       !slugRow ||
@@ -1817,9 +1910,9 @@ router.post(
     if (slug && shouldRecordTap) {
       const visitorSlug = await getPrimarySlug(userId);
       const visitorCity = await getUserCity(userId);
-      const ownerSlugRow = await prisma.slug.findUnique({
-        where: { fullSlug: slug },
-        select: { ownerId: true },
+      const ownerSlugRow = await findPublicHandleByValue(slug, {
+        includeProfileCard: false,
+        includeSlugs: false,
       });
       try {
         await createTapEvent({
@@ -1857,15 +1950,15 @@ router.post(
     }
 
     const ownerSlug = sanitizeSlug(req.body?.ownerSlug || req.body?.slug);
-    if (!/^[A-Z]{3}\d{3}$/.test(ownerSlug)) {
+    if (!/^[A-Z]{3}\d{3}$/.test(ownerSlug) && !isFreeProfileCode(ownerSlug)) {
       res.status(400).json({ error: "ownerSlug обязателен", code: "VALIDATION_ERROR" });
       return;
     }
     const source = normalizeSource(req.body?.source || "nfc");
 
-    const ownerSlugRow = await prisma.slug.findUnique({
-      where: { fullSlug: ownerSlug },
-      select: { ownerId: true },
+    const ownerSlugRow = await findPublicHandleByValue(ownerSlug, {
+      includeProfileCard: false,
+      includeSlugs: false,
     });
     if (!ownerSlugRow) {
       res.status(404).json({ error: "Owner slug not found", code: "SLUG_NOT_FOUND" });

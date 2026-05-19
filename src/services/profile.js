@@ -1,4 +1,5 @@
 const { getSubscriptionSnapshot, normalizeSubscriptionPlan } = require("./subscription");
+const { hasActivePublicProfile } = require("./public-handle");
 
 const PROFILE_THEME_KEYS = [
   "default_dark",
@@ -93,7 +94,7 @@ function getButtonLimit(plan) {
 }
 
 function canCreateCard(user) {
-  return getEffectivePlan(user).plan === "premium";
+  return getEffectivePlan(user).plan === "premium" || hasActivePublicProfile(user);
 }
 
 function canAccessAnalytics(user) {

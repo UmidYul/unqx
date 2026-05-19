@@ -3,6 +3,11 @@ const { subDays, differenceInMonths, startOfDay } = require("date-fns");
 const { prisma } = require("../db/prisma");
 const { calculateSlugPrice } = require("./slug-pricing");
 const { getFeatureSetting } = require("./feature-settings");
+const {
+  findPublicHandleByValue,
+  getFreeProfileHandle,
+  getActivePublicHandle,
+} = require("./public-handle");
 
 const MAX_SCORE = 999;
 const VIEW_SCORE_MAX = 300;
@@ -69,6 +74,11 @@ async function getUserScoreInputs(userId, tx = prisma) {
       id: true,
       plan: true,
       status: true,
+      createdAt: true,
+      freeProfileCode: true,
+      freeProfileStatus: true,
+      freeProfilePauseMessage: true,
+      freeProfileDisabledAt: true,
     },
   });
   if (!user) return null;
@@ -86,29 +96,33 @@ async function getUserScoreInputs(userId, tx = prisma) {
       isPrimary: true,
     },
   });
-  const slugNames = slugs.map((item) => item.fullSlug);
+  const freeHandle = getFreeProfileHandle(user);
+  const publicHandles = [
+    ...slugs.map((item) => item.fullSlug),
+    ...(freeHandle?.value ? [freeHandle.value] : []),
+  ];
 
   const [views30d, clicks30d, hasBracelet] = await Promise.all([
-    slugNames.length && tx.analyticsView
+    publicHandles.length && tx.analyticsView
       ? tx.analyticsView.count({
         where: {
-          slug: { in: slugNames },
+          slug: { in: publicHandles },
           visitedAt: { gte: since30d },
         },
       })
       : 0,
-    slugNames.length && tx.analyticsClick
+    publicHandles.length && tx.analyticsClick
       ? tx.analyticsClick.count({
         where: {
-          slug: { in: slugNames },
+          slug: { in: publicHandles },
           clickedAt: { gte: since30d },
         },
       })
       : 0,
-    slugNames.length
+    slugs.length
       ? tx.braceletOrder.count({
         where: {
-          slug: { in: slugNames },
+          slug: { in: slugs.map((item) => item.fullSlug) },
           deliveryStatus: { in: ["ORDERED", "SHIPPED", "DELIVERED"] },
         },
       })
@@ -118,13 +132,19 @@ async function getUserScoreInputs(userId, tx = prisma) {
   const primary = slugs.find((item) => item.isPrimary) || slugs[0] || null;
   const withMultiplier = slugs.map((item) => ({ ...item, multiplier: getSlugMultiplier(item.fullSlug) }));
   const highestRaritySlug = withMultiplier.sort((a, b) => b.multiplier - a.multiplier)[0] || null;
-  const activatedBase = primary?.activatedAt || slugs.find((item) => item.activatedAt)?.activatedAt || null;
+  const activePublicHandle = getActivePublicHandle({
+    ...user,
+    slugs,
+  });
+  const activatedBase = primary?.activatedAt || slugs.find((item) => item.activatedAt)?.activatedAt || user.createdAt || null;
   return {
     user,
     slugs,
-    primarySlug: primary?.fullSlug || null,
+    primarySlug: activePublicHandle?.value || primary?.fullSlug || null,
     highestRaritySlug: highestRaritySlug?.fullSlug || null,
-    rarity: getRarityFromMultiplier(highestRaritySlug?.multiplier || 1),
+    rarity: highestRaritySlug
+      ? getRarityFromMultiplier(highestRaritySlug.multiplier || 1)
+      : { label: freeHandle ? "FREE" : "COMMON", score: 0 },
     views30d,
     clicks30d,
     activatedAt: activatedBase,
@@ -160,11 +180,19 @@ async function updatePercentiles(tx = prisma) {
   const activeUsers = await tx.user.findMany({
     where: {
       status: "active",
-      slugs: {
-        some: {
-          status: { in: ["approved", "active", "paused", "private"] },
+      OR: [
+        {
+          slugs: {
+            some: {
+              status: { in: ["approved", "active", "paused", "private"] },
+            },
+          },
         },
-      },
+        {
+          freeProfileCode: { not: null },
+          freeProfileDisabledAt: null,
+        },
+      ],
     },
     select: { id: true },
   });
@@ -269,11 +297,19 @@ async function recalculateAllScores(options = {}) {
   const users = await prisma.user.findMany({
     where: {
       status: "active",
-      slugs: {
-        some: {
-          status: { in: ["approved", "active", "paused", "private"] },
+      OR: [
+        {
+          slugs: {
+            some: {
+              status: { in: ["approved", "active", "paused", "private"] },
+            },
+          },
         },
-      },
+        {
+          freeProfileCode: { not: null },
+          freeProfileDisabledAt: null,
+        },
+      ],
     },
     select: { id: true },
   });
@@ -327,31 +363,24 @@ async function getScoreByUserId(userId) {
 
 async function getPublicScoreForSlug({ slug, viewerTelegramId = null, viewerUserId = null }) {
   const normalized = String(slug || "").toUpperCase();
-  const slugRow = await prisma.slug.findUnique({
-    where: { fullSlug: normalized },
-    select: {
-      fullSlug: true,
-      ownerId: true,
-      status: true,
-      activatedAt: true,
-    },
-  });
-  if (!slugRow || !slugRow.ownerId) return null;
+  const publicHandle = await findPublicHandleByValue(normalized, { includeProfileCard: false, includeSlugs: true });
+  if (!publicHandle?.ownerId) return null;
 
   const settings = await getFeatureSetting("unqScore");
   const viewerId = viewerUserId || viewerTelegramId;
-  const isOwner = viewerId && viewerId === slugRow.ownerId;
+  const isOwner = viewerId && viewerId === publicHandle.ownerId;
   const cardsEnabled = Boolean(settings.enabledOnCards);
   if (!isOwner && !cardsEnabled) return null;
-  if (!isOwner && slugRow.status === "paused") return null;
-  if (!isOwner && slugRow.status === "private") return null;
+  if (!isOwner && publicHandle.status === "paused") return null;
+  if (!isOwner && publicHandle.status === "private") return null;
 
-  const score = await getScoreByUserId(slugRow.ownerId);
+  const score = await getScoreByUserId(publicHandle.ownerId);
   if (!score && !isOwner) return null;
 
-  const multiplier = getSlugMultiplier(normalized);
-  const rarity = getRarityFromMultiplier(multiplier);
-  const isNew = Boolean(slugRow.activatedAt) && (Date.now() - new Date(slugRow.activatedAt).getTime()) < 7 * 24 * 60 * 60 * 1000;
+  const multiplier = publicHandle.type === "slug" ? getSlugMultiplier(normalized) : 1;
+  const rarity = publicHandle.type === "slug" ? getRarityFromMultiplier(multiplier) : { label: "FREE", score: 0 };
+  const isNew = Boolean(publicHandle?.slug?.activatedAt || publicHandle?.owner?.createdAt) &&
+    (Date.now() - new Date(publicHandle?.slug?.activatedAt || publicHandle?.owner?.createdAt).getTime()) < 7 * 24 * 60 * 60 * 1000;
 
   return {
     score: score?.score || 0,
@@ -408,6 +437,11 @@ async function getScoreLeaderboard(limit = 100) {
     where: {
       user: {
         status: "active",
+        slugs: {
+          some: {
+            status: { in: ["active", "private", "paused", "approved"] },
+          },
+        },
       },
       score: { gt: 0 },
     },

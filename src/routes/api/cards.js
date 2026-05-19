@@ -30,7 +30,6 @@ const {
   PROFILE_THEMES,
 } = require("../../services/profile");
 const {
-  isSubscriptionActive,
   isPublicProfileVisible,
   getSubscriptionSnapshot,
   getSubscriptionRenewalWindow,
@@ -101,6 +100,7 @@ const {
   resolveFollowPage,
   resolveFollowPageSize: resolveFollowListPageSize,
 } = require("../../services/follows");
+const { findPublicHandleByValue, normalizePublicHandleValue } = require("../../services/public-handle");
 
 const router = express.Router();
 const SLUG_REGEX = /^[A-Z]{3}[0-9]{3}$/;
@@ -581,56 +581,31 @@ async function buildSlugPricePayload(slug) {
 }
 
 function sanitizeSlug(value) {
-  return String(value || "")
-    .toUpperCase()
-    .replace(/[^A-Z0-9]/g, "")
-    .slice(0, 20);
+  return normalizePublicHandleValue(value);
 }
 
 async function findSlugForPrivateAccess(fullSlug) {
   if (!fullSlug) return null;
-  return prisma.slug.findUnique({
-    where: { fullSlug },
-    select: {
-      fullSlug: true,
-      status: true,
-      ownerId: true,
-      owner: {
-        select: {
-          status: true,
-          plan: true,
-          subscriptionExpiresAt: true,
-          subscriptionStartedAt: true,
-        },
-      },
-    },
-  });
+  const handle = await findPublicHandleByValue(fullSlug, { includeProfileCard: false, includeSlugs: true });
+  if (!handle) {
+    return null;
+  }
+  return {
+    fullSlug: handle.value,
+    status: handle.status,
+    ownerId: handle.ownerId,
+    owner: handle.owner,
+    type: handle.type,
+  };
 }
 
 async function findPublicWallSlugOwner(fullSlug) {
   if (!fullSlug) return null;
-  return withMissingTableFallback("Slug", null, () =>
-    prisma.slug.findUnique({
-      where: { fullSlug },
-      select: {
-        fullSlug: true,
-        status: true,
-        ownerId: true,
-        owner: {
-          select: {
-            status: true,
-            plan: true,
-            subscriptionExpiresAt: true,
-            subscriptionStartedAt: true,
-          },
-        },
-      },
-    }),
-  );
+  return findSlugForPrivateAccess(fullSlug);
 }
 
 function isPublicOwnerAvailable(owner) {
-  return Boolean(owner && owner.status === "active" && isSubscriptionActive(owner));
+  return Boolean(owner && owner.status === "active" && isPublicProfileVisible(owner));
 }
 
 function buildPrivateAccessResponsePayload({ token, expiresAt }) {
@@ -3182,24 +3157,7 @@ router.post(
     const buttonType = normalizeButtonType(req.body?.buttonType);
     const sessionId = getAnalyticsSessionId(req, res);
 
-    const slugRow = await withMissingTableFallback("Slug", null, () =>
-      prisma.slug.findUnique({
-        where: { fullSlug: requestedSlug },
-        select: {
-          fullSlug: true,
-          status: true,
-          ownerId: true,
-          owner: {
-            select: {
-              status: true,
-              plan: true,
-              subscriptionExpiresAt: true,
-              subscriptionStartedAt: true,
-            },
-          },
-        },
-      }),
-    );
+    const slugRow = await findSlugForPrivateAccess(requestedSlug);
 
     if (!slugRow || !["active", "private"].includes(slugRow.status) || !isPublicOwnerAvailable(slugRow.owner)) {
       res.status(404).json({ error: "Card not found" });
@@ -3252,24 +3210,7 @@ router.post(
   asyncHandler(async (req, res) => {
     const requestedSlug = sanitizeSlug(req.params.slug);
 
-    const slugRow = await withMissingTableFallback("Slug", null, () =>
-      prisma.slug.findUnique({
-        where: { fullSlug: requestedSlug },
-        select: {
-          fullSlug: true,
-          status: true,
-          ownerId: true,
-          owner: {
-            select: {
-              status: true,
-              plan: true,
-              subscriptionExpiresAt: true,
-              subscriptionStartedAt: true,
-            },
-          },
-        },
-      }),
-    );
+    const slugRow = await findSlugForPrivateAccess(requestedSlug);
 
     if (!slugRow || !["active", "private"].includes(slugRow.status) || !isPublicOwnerAvailable(slugRow.owner)) {
       res.status(404).json({ error: "Card not found" });
@@ -3292,24 +3233,7 @@ router.get(
   "/:slug/vcf",
   asyncHandler(async (req, res) => {
     const requestedSlug = sanitizeSlug(req.params.slug);
-    const slugRow = await withMissingTableFallback("Slug", null, () =>
-      prisma.slug.findUnique({
-        where: { fullSlug: requestedSlug },
-        select: {
-          fullSlug: true,
-          status: true,
-          ownerId: true,
-          owner: {
-            select: {
-              status: true,
-              plan: true,
-              subscriptionExpiresAt: true,
-              subscriptionStartedAt: true,
-            },
-          },
-        },
-      }),
-    );
+    const slugRow = await findSlugForPrivateAccess(requestedSlug);
 
     if (slugRow && ["active", "private"].includes(slugRow.status) && slugRow.ownerId && isPublicOwnerAvailable(slugRow.owner)) {
       const [user, profileCard] = await Promise.all([

@@ -66,7 +66,6 @@ const { sendVerificationRequestToAdmin, sendViolationReportToAdmin } = require("
 const { sendAccountDeactivatedEmail } = require("../../services/email");
 const { resolveUzbekistanCity } = require("../../constants/uzbekistan-cities");
 const { getSetting } = require("../../services/platform-settings");
-const { getOfficialUnqClientConfig } = require("../../services/official-unq-config");
 const { getOrderPaymentReference, buildManualTelegramPaymentUrl, normalizeTelegramUsername } = require("../../services/payment-flow");
 const {
   getPetCatalog,
@@ -93,6 +92,12 @@ const {
   buildProfileSettingsUserPayload,
   resolveProfileSettingsLoginUpdate,
 } = require("../../services/profile-account-settings");
+const {
+  PUBLIC_HANDLE_SLUG_STATUSES,
+  getActivePublicHandle,
+  getFreeProfileHandle,
+  hasActivePublicProfile,
+} = require("../../services/public-handle");
 
 const router = express.Router();
 const upload = multer({
@@ -697,6 +702,27 @@ async function getCurrentUser(req) {
       subscriptionStartedAt: true,
       subscriptionExpiresAt: true,
       subscriptionRenewedAt: true,
+      freeProfileCode: true,
+      freeProfileStatus: true,
+      freeProfilePauseMessage: true,
+      freeProfileDisabledAt: true,
+      slugs: {
+        where: {
+          status: {
+            in: PUBLIC_HANDLE_SLUG_STATUSES,
+          },
+        },
+        orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
+        select: {
+          fullSlug: true,
+          status: true,
+          pauseMessage: true,
+          isPrimary: true,
+          createdAt: true,
+          approvedAt: true,
+          activatedAt: true,
+        },
+      },
     },
   });
   if (!row) return null;
@@ -744,8 +770,7 @@ function assertPlanAllowsCard(user, res) {
 }
 
 function assertPlanAllowsSlugManagement(user, res) {
-  const plan = getEffectivePlan(user).plan;
-  if (plan === "none") {
+  if (!hasActivePublicProfile(user)) {
     res.status(403).json({ error: "Тариф не активирован", code: "PLAN_REQUIRED" });
     return false;
   }
@@ -758,6 +783,22 @@ function assertPlanAllowsWall(user, res) {
     return false;
   }
   return true;
+}
+
+function findOwnedSlugRecord(user, fullSlug) {
+  const normalized = sanitizeSlug(fullSlug);
+  return (Array.isArray(user?.slugs) ? user.slugs : []).find(
+    (item) => String(item?.fullSlug || "").trim().toUpperCase() === normalized,
+  ) || null;
+}
+
+function findOwnedFreeHandle(user, fullSlug) {
+  const normalized = sanitizeSlug(fullSlug);
+  const freeHandle = getFreeProfileHandle(user);
+  if (!freeHandle || freeHandle.value !== normalized) {
+    return null;
+  }
+  return freeHandle;
 }
 
 async function safeRecalculateScore(userId) {
@@ -806,15 +847,27 @@ async function listOwnerPrivatePasswords(ownerId) {
 }
 
 async function getUserSlugsWithStats(userId) {
-  const [slugs, officialCfg] = await Promise.all([
+  const [user, slugs] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        createdAt: true,
+        freeProfileCode: true,
+        freeProfileStatus: true,
+        freeProfilePauseMessage: true,
+        freeProfileDisabledAt: true,
+      },
+    }),
     prisma.slug.findMany({
       where: { ownerId: userId },
       orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
     }),
-    getOfficialUnqClientConfig(),
   ]);
-  const prefixSet = new Set(officialCfg.prefixes);
+  const freeHandle = getFreeProfileHandle(user);
   const fullSlugs = slugs.map((item) => item.fullSlug);
+  if (freeHandle?.value) {
+    fullSlugs.push(freeHandle.value);
+  }
 
   let viewsBySlug = new Map();
   if (fullSlugs.length > 0 && prisma.analyticsView) {
@@ -849,7 +902,7 @@ async function getUserSlugsWithStats(userId) {
     );
   }
 
-  return slugs.map((item) => {
+  const slugItems = slugs.map((item) => {
     const stat = viewsBySlug.get(item.fullSlug) || { views: 0, since: item.createdAt };
     return {
       id: item.id,
@@ -870,6 +923,31 @@ async function getUserSlugsWithStats(userId) {
       },
     };
   });
+
+  if (freeHandle?.value) {
+    const stat = viewsBySlug.get(freeHandle.value) || { views: 0, since: user?.createdAt || null };
+    slugItems.push({
+      id: `free:${userId}`,
+      letters: "",
+      digits: freeHandle.value,
+      fullSlug: freeHandle.value,
+      status: freeHandle.status,
+      statusLabel: toSlugStatusLabel(freeHandle.status),
+      isPrimary: !slugs.some((item) => PUBLIC_HANDLE_SLUG_STATUSES.includes(String(item.status || "").trim().toLowerCase())),
+      pauseMessage: freeHandle.pauseMessage || "",
+      requestedAt: null,
+      approvedAt: user?.createdAt || null,
+      activatedAt: user?.createdAt || null,
+      createdAt: user?.createdAt || null,
+      type: "free",
+      stats: {
+        views: stat.views,
+        since: stat.since,
+      },
+    });
+  }
+
+  return slugItems;
 }
 
 router.use(requireUserApi);
@@ -907,6 +985,8 @@ router.get(
     const supportTelegram = normalizeTelegramUsername(supportTelegramRaw);
 
     const effective = getEffectivePlan(user);
+    const publicHandle = getActivePublicHandle(user);
+    const capabilityPlan = canCreateCard(user) ? "premium" : effective.plan;
     const wallSummary = await getWallSummary(user);
     const requestItems = mergeProfileRequests({
       slugRequests,
@@ -918,7 +998,7 @@ router.get(
         braceletPrice,
       },
     });
-    const cardPayload = effective.plan === "none" || !card
+    const cardPayload = !card
       ? null
       : parseProfileCardRow({
         ...card,
@@ -940,6 +1020,7 @@ router.get(
         displayName: normalizeDisplayName(user.displayName, user.firstName),
         plan: user.plan,
         effectivePlan: effective.plan,
+        capabilityPlan,
         planPurchasedAt: user.planPurchasedAt,
         planUpgradedAt: user.planUpgradedAt,
         subscriptionStartedAt: user.subscriptionStartedAt || null,
@@ -954,6 +1035,10 @@ router.get(
         verifiedAt: user.verifiedAt || null,
         showInDirectory: typeof user.showInDirectory === "boolean" ? user.showInDirectory : true,
         directorySector: normalizeDirectorySector(user.directorySector),
+        freeProfileCode: user.freeProfileCode || "",
+        freeProfileStatus: user.freeProfileStatus || "active",
+        publicHandle,
+        hasPublicProfile: Boolean(publicHandle),
       },
       subscription: {
         isActive: effective.subscription.isActive,
@@ -965,10 +1050,10 @@ router.get(
       },
       limits: {
         slugs: getSlugLimit(effective.plan),
-        tags: getTagLimit(effective.plan),
-        buttons: getButtonLimit(effective.plan),
+        tags: getTagLimit(capabilityPlan),
+        buttons: getButtonLimit(capabilityPlan),
       },
-      slugs: effective.plan === "none" ? [] : slugs,
+      slugs,
       card: cardPayload,
       pets,
       petCatalog,
@@ -1120,16 +1205,9 @@ router.post(
       return;
     }
 
-    const primarySlug = await prisma.slug.findFirst({
-      where: {
-        ownerId: user.id,
-        status: { in: ["approved", "active", "paused", "private"] },
-      },
-      orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
-      select: { fullSlug: true },
-    });
+    const primarySlug = getActivePublicHandle(user);
     const fallbackSlug = `SUB${String(Date.now()).slice(-3).padStart(3, "0")}`;
-    const slugContext = sanitizeSlug(primarySlug?.fullSlug || fallbackSlug) || "SUB000";
+    const slugContext = sanitizeSlug(primarySlug?.value || fallbackSlug) || "SUB000";
 
     const order = await prisma.slugRequest.create({
       data: {
@@ -1471,25 +1549,33 @@ router.patch(
       select: { fullSlug: true },
     });
 
-    if (!ownedSlugs.length) {
+    const freeHandle = getFreeProfileHandle(user);
+    if (!ownedSlugs.length && !freeHandle) {
       res.status(404).json({ error: "UNQ not found" });
       return;
     }
 
-    await prisma.slug.updateMany({
-      where: {
-        ownerId: user.id,
-        fullSlug: { in: ownedSlugs.map((item) => item.fullSlug) },
-      },
-      data: { status: nextStatus },
-    });
+    if (ownedSlugs.length) {
+      await prisma.slug.updateMany({
+        where: {
+          ownerId: user.id,
+          fullSlug: { in: ownedSlugs.map((item) => item.fullSlug) },
+        },
+        data: { status: nextStatus },
+      });
+    } else {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { freeProfileStatus: nextStatus },
+      });
+    }
     await safeRecalculateScore(user.id);
 
     res.json({
       ok: true,
       status: nextStatus,
-      count: ownedSlugs.length,
-      slugs: ownedSlugs.map((item) => item.fullSlug),
+      count: ownedSlugs.length || (freeHandle ? 1 : 0),
+      slugs: ownedSlugs.length ? ownedSlugs.map((item) => item.fullSlug) : freeHandle ? [freeHandle.value] : [],
     });
   }),
 );
@@ -1512,21 +1598,27 @@ router.patch(
       return;
     }
 
-    const existing = await prisma.slug.findFirst({
-      where: { fullSlug, ownerId: user.id },
-    });
-    if (!existing) {
+    const existingSlug = findOwnedSlugRecord(user, fullSlug);
+    const existingFreeHandle = findOwnedFreeHandle(user, fullSlug);
+    if (!existingSlug && !existingFreeHandle) {
       res.status(404).json({ error: "UNQ not found" });
       return;
     }
 
-    const updated = await prisma.slug.update({
-      where: { fullSlug },
-      data: { status: nextStatus },
-    });
+    if (existingSlug) {
+      await prisma.slug.update({
+        where: { fullSlug },
+        data: { status: nextStatus },
+      });
+    } else {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { freeProfileStatus: nextStatus },
+      });
+    }
     await safeRecalculateScore(user.id);
 
-    res.json({ ok: true, slug: updated.fullSlug, status: updated.status });
+    res.json({ ok: true, slug: fullSlug, status: nextStatus });
   }),
 );
 
@@ -1542,24 +1634,25 @@ router.patch(
     }
 
     const fullSlug = sanitizeSlug(req.params.slug);
-    const existing = await prisma.slug.findFirst({
-      where: { fullSlug, ownerId: user.id },
-    });
-    if (!existing) {
+    const existingSlug = findOwnedSlugRecord(user, fullSlug);
+    const existingFreeHandle = findOwnedFreeHandle(user, fullSlug);
+    if (!existingSlug && !existingFreeHandle) {
       res.status(404).json({ error: "UNQ not found" });
       return;
     }
 
-    await prisma.$transaction([
-      prisma.slug.updateMany({
-        where: { ownerId: user.id },
-        data: { isPrimary: false },
-      }),
-      prisma.slug.update({
-        where: { fullSlug },
-        data: { isPrimary: true },
-      }),
-    ]);
+    if (existingSlug) {
+      await prisma.$transaction([
+        prisma.slug.updateMany({
+          where: { ownerId: user.id },
+          data: { isPrimary: false },
+        }),
+        prisma.slug.update({
+          where: { fullSlug },
+          data: { isPrimary: true },
+        }),
+      ]);
+    }
     await safeRecalculateScore(user.id);
 
     res.json({ ok: true, slug: fullSlug, isPrimary: true });
@@ -1579,20 +1672,26 @@ router.patch(
 
     const fullSlug = sanitizeSlug(req.params.slug);
     const message = String(req.body.message || "").trim().slice(0, 220);
-    const existing = await prisma.slug.findFirst({
-      where: { fullSlug, ownerId: user.id },
-    });
-    if (!existing) {
+    const existingSlug = findOwnedSlugRecord(user, fullSlug);
+    const existingFreeHandle = findOwnedFreeHandle(user, fullSlug);
+    if (!existingSlug && !existingFreeHandle) {
       res.status(404).json({ error: "UNQ not found" });
       return;
     }
 
-    const updated = await prisma.slug.update({
-      where: { fullSlug },
-      data: { pauseMessage: message || null },
-    });
+    if (existingSlug) {
+      await prisma.slug.update({
+        where: { fullSlug },
+        data: { pauseMessage: message || null },
+      });
+    } else {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { freeProfilePauseMessage: message || null },
+      });
+    }
 
-    res.json({ ok: true, slug: updated.fullSlug, pauseMessage: updated.pauseMessage || "" });
+    res.json({ ok: true, slug: fullSlug, pauseMessage: message || "" });
   }),
 );
 
@@ -2190,27 +2289,35 @@ router.get(
   asyncHandler(async (req, res) => {
     const user = await getCurrentUser(req);
     if (!assertUserActive(user, res)) return;
-    if (getEffectivePlan(user).plan !== "premium") {
-      res.status(403).json({ error: "Upgrade required", code: "UPGRADE_REQUIRED" });
-      return;
-    }
 
     const fullSlug = sanitizeSlug(req.params.slug);
-    const slugRow = await prisma.slug.findFirst({
-      where: { fullSlug, ownerId: user.id },
-      select: {
-        fullSlug: true,
-        status: true,
-        ownerId: true,
-        owner: {
-          select: {
-            firstName: true,
-            displayName: true,
-            profileCard: { select: { name: true, role: true } },
+    const ownedFreeHandle = findOwnedFreeHandle(user, fullSlug);
+    const slugRow = ownedFreeHandle
+      ? {
+          fullSlug,
+          status: ownedFreeHandle.status,
+          ownerId: user.id,
+          owner: {
+            firstName: user.firstName,
+            displayName: user.displayName,
+            profileCard: null,
           },
-        },
-      },
-    });
+        }
+      : await prisma.slug.findFirst({
+          where: { fullSlug, ownerId: user.id },
+          select: {
+            fullSlug: true,
+            status: true,
+            ownerId: true,
+            owner: {
+              select: {
+                firstName: true,
+                displayName: true,
+                profileCard: { select: { name: true, role: true } },
+              },
+            },
+          },
+        });
     if (!slugRow) {
       res.status(404).json({ error: "UNQ not found" });
       return;
@@ -2235,18 +2342,19 @@ router.get(
   asyncHandler(async (req, res) => {
     const user = await getCurrentUser(req);
     if (!assertUserActive(user, res)) return;
-    const slugs = await prisma.slug.findMany({
-      where: { ownerId: user.id, status: { in: ["active", "private", "paused", "approved"] } },
-      orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
-      select: { fullSlug: true, isPrimary: true, status: true },
-    });
+    const slugs = await getUserSlugsWithStats(user.id);
     const effectivePlan = getEffectivePlan(user).plan;
-    const selectedSlug = slugs.find((item) => item.isPrimary)?.fullSlug || slugs[0]?.fullSlug || null;
+    const capabilityPlan = canCreateCard(user) ? "premium" : effectivePlan;
+    const selectedSlug = getActivePublicHandle(user)?.value || slugs.find((item) => item.isPrimary)?.fullSlug || slugs[0]?.fullSlug || null;
     res.json({
-      slugs,
-      currentPlan: effectivePlan,
+      slugs: slugs.map((item) => ({
+        fullSlug: item.fullSlug,
+        isPrimary: item.isPrimary,
+        status: item.status,
+      })),
+      currentPlan: capabilityPlan,
       selectedSlug,
-      periods: effectivePlan === "premium" ? [7, 30, 90] : [7],
+      periods: capabilityPlan === "premium" ? [7, 30, 90] : [7],
     });
   }),
 );
@@ -2261,16 +2369,18 @@ router.get(
       res.status(400).json({ error: "Slug is required" });
       return;
     }
-    const owned = await prisma.slug.findFirst({
-      where: { fullSlug, ownerId: user.id },
-      select: { fullSlug: true },
-    });
+    const owned = findOwnedFreeHandle(user, fullSlug)
+      ? { fullSlug }
+      : await prisma.slug.findFirst({
+          where: { fullSlug, ownerId: user.id },
+          select: { fullSlug: true },
+        });
     if (!owned) {
       res.status(404).json({ error: "UNQ not found" });
       return;
     }
 
-    const effectivePlan = getEffectivePlan(user).plan;
+    const effectivePlan = canCreateCard(user) ? "premium" : getEffectivePlan(user).plan;
     const period = normalizeAnalyticsPeriod(req.query.period, effectivePlan === "premium");
     const now = new Date();
     const from = new Date(now.getTime() - period * 24 * 60 * 60 * 1000);
@@ -2469,15 +2579,8 @@ router.post(
       return;
     }
 
-    const primarySlug = await prisma.slug.findFirst({
-      where: {
-        ownerId: user.id,
-        status: { in: ["active", "private", "paused", "approved"] },
-      },
-      orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
-      select: { fullSlug: true },
-    });
-    const verificationSlug = primarySlug?.fullSlug || "PROFILE";
+    const primarySlug = getActivePublicHandle(user);
+    const verificationSlug = primarySlug?.value || "PROFILE";
 
     const request = await prisma.verificationRequest.create({
       data: {

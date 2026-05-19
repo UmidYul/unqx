@@ -1,10 +1,15 @@
 const { prisma } = require("../db/prisma");
 const { isPublicProfileVisible } = require("./subscription");
 const { sendFollowPushNotification } = require("./push");
+const {
+  PUBLIC_HANDLE_SLUG_STATUSES,
+  getActivePublicHandle,
+  findPublicHandleByValue,
+} = require("./public-handle");
 
 const FOLLOW_LIST_PAGE_SIZE = 20;
 const FOLLOW_PREVIEW_LIMIT = 4;
-const FOLLOW_LINKABLE_SLUG_STATUSES = ["approved", "active", "private", "paused"];
+const FOLLOW_LINKABLE_SLUG_STATUSES = PUBLIC_HANDLE_SLUG_STATUSES;
 const FOLLOW_PUBLIC_BATCH_SIZE = 60;
 
 function isMissingModelTable(error, modelName) {
@@ -146,6 +151,10 @@ function getFollowUserSelect() {
     login: true,
     isVerified: true,
     verifiedCompany: true,
+    freeProfileCode: true,
+    freeProfileStatus: true,
+    freeProfilePauseMessage: true,
+    freeProfileDisabledAt: true,
     profileCard: {
       select: {
         name: true,
@@ -169,11 +178,11 @@ function getFollowUserSelect() {
 }
 
 function getPublicProfileHrefFromUser(user) {
-  const slug = String(user?.slugs?.[0]?.fullSlug || "").trim().toUpperCase();
-  if (!slug || !user || user.status !== "active" || !isPublicProfileVisible(user)) {
+  const publicHandle = getActivePublicHandle(user);
+  if (!publicHandle?.value || !user || user.status !== "active" || !isPublicProfileVisible(user)) {
     return null;
   }
-  return `/${encodeURIComponent(slug)}`;
+  return publicHandle.href;
 }
 
 function mapFollowUserItem(user, options = {}) {
@@ -183,7 +192,8 @@ function mapFollowUserItem(user, options = {}) {
   if (!userId) return null;
 
   const name = getFollowUserName(user);
-  const primarySlug = String(user?.slugs?.[0]?.fullSlug || "").trim().toUpperCase() || null;
+  const publicHandle = getActivePublicHandle(user);
+  const primarySlug = String(publicHandle?.value || "").trim().toUpperCase() || null;
   const isPubliclyReachable = Boolean(getPublicProfileHrefFromUser(user));
   if (options.scope === "public" && !isPubliclyReachable) {
     return null;
@@ -202,7 +212,7 @@ function mapFollowUserItem(user, options = {}) {
     canFollow: isPubliclyReachable && userId !== viewerUserId,
     requiresAuth: !viewerUserId,
     isPubliclyReachable,
-    profileHref: isPubliclyReachable && primarySlug ? `/${encodeURIComponent(primarySlug)}` : null,
+    profileHref: isPubliclyReachable ? getPublicProfileHrefFromUser(user) : null,
   };
 }
 
@@ -275,8 +285,9 @@ async function createFollowNotification({ followeeId, follower }) {
   }
 
   const followerName = getFollowUserName(follower);
-  const followerSlug = String(follower?.slugs?.[0]?.fullSlug || "").trim().toUpperCase() || null;
-  const profileHref = followerSlug ? `/${encodeURIComponent(followerSlug)}` : null;
+  const followerHandle = getActivePublicHandle(follower);
+  const followerSlug = String(followerHandle?.value || "").trim().toUpperCase() || null;
+  const profileHref = followerHandle?.href || null;
   try {
     await prisma.$executeRaw`
       INSERT INTO notifications (
@@ -327,16 +338,9 @@ async function findPublicFollowTargetBySlug(slug) {
 
   let row = null;
   try {
-    row = await prisma.slug.findUnique({
-      where: { fullSlug: normalizedSlug },
-      select: {
-        fullSlug: true,
-        status: true,
-        ownerId: true,
-        owner: {
-          select: getFollowUserSelect(),
-        },
-      },
+    row = await findPublicHandleByValue(normalizedSlug, {
+      includeProfileCard: true,
+      includeSlugs: true,
     });
   } catch (error) {
     if (!isMissingModelTable(error, "Slug") && !isMissingModelColumn(error, "Slug") && !isMissingModelDelegateError(error)) {

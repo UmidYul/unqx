@@ -89,6 +89,7 @@ const {
   sortProfileCardPets,
   mapPetPurchaseRequest,
 } = require("../../services/pets");
+const { buildPublicHandleUserSelect } = require("../../services/public-handle");
 
 const router = express.Router();
 const ONLINE_WINDOW_SECONDS = 90;
@@ -5686,12 +5687,7 @@ router.put(
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: {
-        id: true,
-        plan: true,
-        status: true,
-        verifiedCompany: true,
-      },
+      select: buildPublicHandleUserSelect({ includeProfileCard: false }),
     });
     if (!user) {
       res.status(404).json({ error: "User not found" });
@@ -5844,7 +5840,7 @@ router.post(
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, plan: true, status: true },
+      select: buildPublicHandleUserSelect({ includeProfileCard: false }),
     });
     if (!user) {
       res.status(404).json({ error: "User not found" });
@@ -5907,7 +5903,7 @@ router.delete(
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, plan: true, status: true },
+      select: buildPublicHandleUserSelect({ includeProfileCard: false }),
     });
     if (!user) {
       res.status(404).json({ error: "User not found" });
@@ -6004,7 +6000,7 @@ router.post(
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, plan: true, status: true },
+      select: buildPublicHandleUserSelect({ includeProfileCard: false }),
     });
     if (!user) {
       res.status(404).json({ error: "User not found" });

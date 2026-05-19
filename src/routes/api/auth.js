@@ -29,6 +29,11 @@ const { resolveUzbekistanCity } = require("../../constants/uzbekistan-cities");
 const { normalizeLogin, isValidLogin } = require("../../utils/login");
 const { createUserAccessToken } = require("../../services/user-access-token");
 const { SESSION_COOKIE_NAME, LEGACY_SESSION_COOKIE_NAMES, buildCookieOptions } = require("../../utils/cookies");
+const {
+  ensureFreeProfileForUser,
+  getActivePublicHandle,
+  getAllPublicHandles,
+} = require("../../services/public-handle");
 
 const router = express.Router();
 const OTP_LENGTH = 6;
@@ -71,6 +76,10 @@ const USER_AUTH_SELECT = {
   reactivationOtpExpiresAt: true,
   reactivationOtpSentAt: true,
   deletedAt: true,
+  freeProfileCode: true,
+  freeProfileStatus: true,
+  freeProfilePauseMessage: true,
+  freeProfileDisabledAt: true,
 };
 
 function normalizeEmail(value) {
@@ -243,6 +252,7 @@ function resolvePublicUsername(user) {
 
 function userToSessionPayload(user) {
   const displayName = normalizeDisplayName(user.displayName, user.firstName);
+  const publicHandle = getActivePublicHandle(user);
   return {
     userId: user.id,
     email: user.email || null,
@@ -262,11 +272,15 @@ function userToSessionPayload(user) {
     subscriptionRenewedAt: user.subscriptionRenewedAt ? user.subscriptionRenewedAt.toISOString() : null,
     profileType: normalizeProfileType(user.profileType, { fallback: "person" }),
     status: user.status,
+    freeProfileCode: user.freeProfileCode || null,
+    freeProfileStatus: user.freeProfileStatus || "active",
+    publicHandle: publicHandle?.value || null,
   };
 }
 
 function userToClientPayload(user) {
   const effective = getEffectivePlan(user);
+  const publicHandle = getActivePublicHandle(user);
   return {
     id: user.id,
     email: user.email || null,
@@ -284,6 +298,9 @@ function userToClientPayload(user) {
     planUpgradedAt: user.planUpgradedAt ? user.planUpgradedAt.toISOString() : null,
     profileType: normalizeProfileType(user.profileType, { fallback: "person" }),
     status: user.status,
+    freeProfileCode: user.freeProfileCode || null,
+    freeProfileStatus: user.freeProfileStatus || "active",
+    publicHandle,
   };
 }
 
@@ -532,16 +549,29 @@ async function handleLogoutRequest(req, res) {
 
 async function setOwnerSlugsCookie(req, res, userId) {
   if (!res || typeof res.cookie !== "function" || !userId) return;
-  const slugs = await prisma.slug.findMany({
-    where: {
-      ownerId: userId,
-      status: { in: ["active", "private", "paused", "approved"] },
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      freeProfileCode: true,
+      freeProfileStatus: true,
+      freeProfilePauseMessage: true,
+      freeProfileDisabledAt: true,
+      slugs: {
+        where: {
+          status: { in: ["active", "private", "paused", "approved"] },
+        },
+        orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
+        select: {
+          fullSlug: true,
+          status: true,
+          pauseMessage: true,
+          isPrimary: true,
+        },
+      },
     },
-    orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
-    select: { fullSlug: true },
   });
-  const serialized = slugs
-    .map((item) => String(item.fullSlug || "").trim().toUpperCase())
+  const serialized = getAllPublicHandles(user)
+    .map((item) => String(item?.value || "").trim().toUpperCase())
     .filter(Boolean)
     .join(",");
   res.cookie(
@@ -677,21 +707,35 @@ router.post(
 
     const passwordHash = await bcrypt.hash(password, PASSWORD_ROUNDS);
     const refCode = await generateUniqueRefCode();
-    const user = await prisma.user.create({
-      data: {
-        firstName,
-        city,
-        email: email || null,
-        login,
-        passwordHash,
-        emailVerified: false,
-        plan: "none",
-        profileType,
-        status: "active",
-        refCode,
-      },
-      select: USER_AUTH_SELECT,
+    const user = await prisma.$transaction(async (tx) => {
+      const created = await tx.user.create({
+        data: {
+          firstName,
+          city,
+          email: email || null,
+          login,
+          passwordHash,
+          emailVerified: false,
+          plan: "none",
+          profileType,
+          status: "active",
+          refCode,
+        },
+        select: USER_AUTH_SELECT,
+      });
+      await ensureFreeProfileForUser({
+        tx,
+        user: created,
+        createProfileCard: true,
+      });
+      return tx.user.findUnique({
+        where: { id: created.id },
+        select: USER_AUTH_SELECT,
+      });
     });
+    if (!user) {
+      throw new Error("Failed to create user");
+    }
 
     const codePayload = email ? await setVerificationOtp(user.id) : null;
     if (req.session?.pendingRefCode) {

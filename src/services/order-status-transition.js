@@ -149,6 +149,15 @@ async function applyOrderStatusTransition({
             });
 
             if (!isSubscriptionRenewal) {
+                await tx.user.update({
+                    where: { id: row.userId },
+                    data: {
+                        freeProfileDisabledAt: now,
+                    },
+                });
+            }
+
+            if (!isSubscriptionRenewal) {
                 const hasPrimary = await tx.slug.count({
                     where: {
                         ownerId: row.userId,

@@ -316,6 +316,10 @@ model User {
   verifiedAt             DateTime?             @map("verified_at")
   showInDirectory        Boolean               @default(true) @map("show_in_directory")
   directorySector        String?               @map("directory_sector") @db.VarChar(20)
+  freeProfileCode        String?               @unique @map("free_profile_code") @db.VarChar(12)
+  freeProfileStatus      String                @default("active") @map("free_profile_status") @db.VarChar(20)
+  freeProfilePauseMessage String?              @map("free_profile_pause_message") @db.VarChar(220)
+  freeProfileDisabledAt  DateTime?             @map("free_profile_disabled_at")
   createdByStaffId       String?               @map("created_by_staff_id") @db.Uuid
   createdByStaff         StaffUser?            @relation("StaffCreatedUsers", fields: [createdByStaffId], references: [id], onDelete: SetNull)
   refCode                String?               @unique @map("ref_code") @db.VarChar(40)
@@ -357,6 +361,7 @@ model User {
   @@index([plan, subscriptionExpiresAt])
   @@index([status])
   @@index([status, reactivationDeadlineAt])
+  @@index([freeProfileStatus, freeProfileDisabledAt])
   @@map("users")
 }
 

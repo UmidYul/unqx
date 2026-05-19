@@ -8,6 +8,7 @@ const { sendTapPushNotification } = require("./push");
 const { resolveUzbekistanCity } = require("../constants/uzbekistan-cities");
 const { resolveClientIp, buildViewerFingerprint } = require("./request-ip");
 const { buildCookieOptions } = require("../utils/cookies");
+const { getActivePublicHandle, PUBLIC_HANDLE_SLUG_STATUSES } = require("./public-handle");
 
 const TRACKED_SOURCES = new Set(["nfc", "qr", "direct", "share", "widget"]);
 const TRACKED_BUTTON_TYPES = new Set([
@@ -132,15 +133,28 @@ async function resolveGeoByIp(ip) {
 
 async function getPrimarySlugForUser(userId) {
   if (!userId) return null;
-  const row = await prisma.slug.findFirst({
-    where: {
-      ownerId: userId,
-      status: { in: ["active", "private", "paused", "approved"] },
+  const row = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      freeProfileCode: true,
+      freeProfileStatus: true,
+      freeProfilePauseMessage: true,
+      freeProfileDisabledAt: true,
+      slugs: {
+        where: {
+          status: { in: PUBLIC_HANDLE_SLUG_STATUSES },
+        },
+        orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
+        select: {
+          fullSlug: true,
+          status: true,
+          pauseMessage: true,
+          isPrimary: true,
+        },
+      },
     },
-    orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
-    select: { fullSlug: true },
   });
-  return row?.fullSlug || null;
+  return getActivePublicHandle(row)?.value || null;
 }
 
 async function resolveCityForView({ viewerUserId, visitorIp }) {
@@ -385,7 +399,7 @@ async function recordView({ req, res, ownerSlug, ownerId, sourceInput }) {
     }
 
     if (inserted && tx.slug) {
-      await tx.slug.update({
+      await tx.slug.updateMany({
         where: { fullSlug: ownerSlug },
         data: { analyticsViewsCount: { increment: 1 } },
       });

@@ -5,6 +5,7 @@ const { prisma } = require("../db/prisma");
 const { env } = require("../config/env");
 const { canCreateCard } = require("./profile");
 const { isPublicProfileVisible } = require("./subscription");
+const { PUBLIC_HANDLE_SLUG_STATUSES, getActivePublicHandle } = require("./public-handle");
 
 const WALL_POST_CONTENT_MAX = 280;
 const WALL_COMMENT_CONTENT_MAX = 1000;
@@ -15,7 +16,7 @@ const WALL_PUBLIC_STATUS = "published";
 const WALL_OWNER_VISIBLE_STATUSES = ["published", "hidden"];
 const WALL_ADMIN_VISIBLE_STATUSES = ["published", "hidden", "deleted"];
 const WALL_ALL_STATUSES = ["published", "hidden", "deleted"];
-const WALL_LINKABLE_SLUG_STATUSES = ["approved", "active", "paused"];
+const WALL_LINKABLE_SLUG_STATUSES = PUBLIC_HANDLE_SLUG_STATUSES;
 
 function isMissingModelTable(error, modelName) {
   return (
@@ -226,6 +227,10 @@ function getWallCommentBaseSelect() {
         plan: true,
         subscriptionStartedAt: true,
         subscriptionExpiresAt: true,
+        freeProfileCode: true,
+        freeProfileStatus: true,
+        freeProfilePauseMessage: true,
+        freeProfileDisabledAt: true,
         slugs: {
           where: {
             status: {
@@ -275,6 +280,10 @@ function getHomeWallPostSelect() {
         username: true,
         isVerified: true,
         verifiedCompany: true,
+        freeProfileCode: true,
+        freeProfileStatus: true,
+        freeProfilePauseMessage: true,
+        freeProfileDisabledAt: true,
         profileCard: {
           select: {
             name: true,
@@ -353,11 +362,11 @@ function getWallCommentAuthorProfileHref(user) {
   if (!user || !isPublicProfileVisible(user)) {
     return null;
   }
-  const slug = String(user?.slugs?.[0]?.fullSlug || "").trim().toUpperCase();
-  if (!slug) {
+  const publicHandle = getActivePublicHandle(user);
+  if (!publicHandle?.value) {
     return null;
   }
-  return `/${encodeURIComponent(slug)}`;
+  return publicHandle.href;
 }
 
 function mapWallCommentItem(row, options = {}) {
@@ -554,7 +563,8 @@ async function listLatestHomeWallPosts({ limit = 3 } = {}) {
   const items = [];
   for (const row of rows) {
     const owner = row?.owner;
-    const primarySlug = String(owner?.slugs?.[0]?.fullSlug || "").trim().toUpperCase();
+    const publicHandle = getActivePublicHandle(owner);
+    const primarySlug = String(publicHandle?.value || "").trim().toUpperCase();
     if (!owner || !primarySlug || !isPublicProfileVisible(owner)) {
       continue;
     }
@@ -569,7 +579,7 @@ async function listLatestHomeWallPosts({ limit = 3 } = {}) {
       updatedAt: row.updatedAt || null,
       likesCount: Math.max(0, Number(row?._count?.likes || 0)),
       commentsCount: Math.max(0, Number(row?._count?.comments || 0)),
-      postHref: `/${encodeURIComponent(primarySlug)}#wall-post-${encodeURIComponent(String(row.id || "").trim())}`,
+      postHref: `${publicHandle.href}#wall-post-${encodeURIComponent(String(row.id || "").trim())}`,
       author: {
         userId: String(owner.id || "").trim(),
         name: authorName,
@@ -578,7 +588,7 @@ async function listLatestHomeWallPosts({ limit = 3 } = {}) {
         primarySlug,
         role: String(owner?.profileCard?.role || owner?.verifiedCompany || "").trim(),
         verified: Boolean(owner?.isVerified),
-        profileHref: `/${encodeURIComponent(primarySlug)}`,
+        profileHref: publicHandle.href,
       },
     });
 

@@ -9,6 +9,7 @@ const mockPrisma = {
   },
   user: {
     findUnique: vi.fn(),
+    findFirst: vi.fn(),
   },
   userFollow: {
     findMany: vi.fn(),
@@ -67,7 +68,7 @@ function buildUser(overrides = {}) {
       role: "Designer",
       avatarUrl: "/uploads/user-two.webp",
     },
-    slugs: [{ fullSlug: "TWO222" }],
+    slugs: [{ fullSlug: "TWO222", status: "active", isPrimary: true }],
     ...overrides,
   };
 }
@@ -77,13 +78,15 @@ describe("follows service", () => {
     vi.clearAllMocks();
     mockPrisma.slug.findUnique.mockReset();
     mockPrisma.user.findUnique.mockReset();
+    mockPrisma.user.findFirst.mockReset();
     mockPrisma.userFollow.findMany.mockReset();
     mockPrisma.userFollow.count.mockReset();
     mockPrisma.userFollow.create.mockReset();
     mockPrisma.userFollow.deleteMany.mockReset();
     mockPrisma.$executeRaw.mockReset();
     mockPrisma.slug.findUnique.mockResolvedValue(null);
-    mockPrisma.user.findUnique.mockResolvedValue(buildUser({ id: "user_1", slugs: [{ fullSlug: "ONE111" }] }));
+    mockPrisma.user.findUnique.mockResolvedValue(buildUser({ id: "user_1", slugs: [{ fullSlug: "ONE111", status: "active", isPrimary: true }] }));
+    mockPrisma.user.findFirst.mockResolvedValue(null);
     mockPrisma.userFollow.findMany.mockResolvedValue([]);
     mockPrisma.userFollow.count.mockResolvedValue(0);
     mockPrisma.userFollow.create.mockResolvedValue({ id: "follow_1" });
@@ -139,7 +142,7 @@ describe("follows service", () => {
       fullSlug: "ONE111",
       status: "active",
       ownerId: "user_1",
-      owner: buildUser({ id: "user_1", slugs: [{ fullSlug: "ONE111" }] }),
+      owner: buildUser({ id: "user_1", slugs: [{ fullSlug: "ONE111", status: "active", isPrimary: true }] }),
     });
 
     await expect(
@@ -148,6 +151,43 @@ describe("follows service", () => {
         followerUserId: "user_1",
       }),
     ).rejects.toMatchObject({ code: "FOLLOW_SELF_FORBIDDEN" });
+  });
+
+  test("followUserBySlug supports free profile handles", async () => {
+    mockPrisma.slug.findUnique.mockResolvedValue(null);
+    mockPrisma.user.findFirst.mockResolvedValue(
+      buildUser({
+        id: "user_free",
+        slugs: [],
+        freeProfileCode: "123456789012",
+        freeProfileStatus: "active",
+        freeProfileDisabledAt: null,
+      }),
+    );
+    mockPrisma.userFollow.findMany
+      .mockResolvedValueOnce([{ followeeId: "user_free" }])
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([]);
+    mockPrisma.userFollow.count
+      .mockResolvedValueOnce(1)
+      .mockResolvedValueOnce(0);
+
+    const result = await followsService.followUserBySlug({
+      slug: "123456789012",
+      followerUserId: "user_1",
+    });
+
+    expect(mockPrisma.user.findFirst).toHaveBeenCalled();
+    expect(result).toMatchObject({
+      ok: true,
+      followed: true,
+      summary: {
+        counts: {
+          followers: 1,
+          following: 0,
+        },
+      },
+    });
   });
 
   test("listFollowItemsByOwner public scope hides unavailable profiles and exposes follow flags", async () => {
@@ -159,7 +199,7 @@ describe("follows service", () => {
           followee: buildUser({
             id: "user_visible",
             displayName: "Visible User",
-            slugs: [{ fullSlug: "VIS123" }],
+            slugs: [{ fullSlug: "VIS123", status: "active", isPrimary: true }],
           }),
         },
         {
@@ -169,7 +209,7 @@ describe("follows service", () => {
             id: "user_hidden",
             displayName: "Hidden User",
             isVisible: false,
-            slugs: [{ fullSlug: "HID123" }],
+            slugs: [{ fullSlug: "HID123", status: "active", isPrimary: true }],
           }),
         },
       ])

@@ -39,6 +39,12 @@ const {
   getFollowSummaryForOwner,
 } = require("../../services/follows");
 const { sortProfileCardPets } = require("../../services/pets");
+const {
+  findPublicHandleByValue,
+  getActivePublicHandle,
+  isFreeProfileCode,
+  normalizePublicHandleValue,
+} = require("../../services/public-handle");
 
 const router = express.Router();
 const defaultSocialImage = absoluteUrl("/brand/logo.PNG");
@@ -318,10 +324,7 @@ function markdownToHtml(markdown, { stripTitle = false } = {}) {
 }
 
 function sanitizeSlug(value) {
-  return String(value || "")
-    .toUpperCase()
-    .replace(/[^A-Z0-9]/g, "")
-    .slice(0, 20);
+  return normalizePublicHandleValue(value);
 }
 
 function renderPublicFreeUnqOffer(res, req, slug) {
@@ -568,6 +571,41 @@ async function findProfileCardByOwnerId(ownerId) {
     LIMIT 1
   `;
   return Array.isArray(rows) ? rows[0] || null : null;
+}
+
+async function findPublicHandleForRoute(fullSlug) {
+  const normalized = sanitizeSlug(fullSlug);
+  if (!normalized) {
+    return null;
+  }
+
+  if (isFreeProfileCode(normalized)) {
+    const freeHandle = await findPublicHandleByValue(normalized, {
+      includeProfileCard: true,
+      includeSlugs: true,
+    });
+    if (!freeHandle) {
+      return null;
+    }
+    return {
+      id: `free:${freeHandle.ownerId}`,
+      fullSlug: freeHandle.value,
+      price: null,
+      ownerId: freeHandle.ownerId,
+      status: freeHandle.status,
+      pauseMessage: freeHandle.pauseMessage || null,
+      isPrimary: true,
+      owner: freeHandle.owner || null,
+      createdAt: freeHandle.owner?.createdAt || null,
+      updatedAt: freeHandle.owner?.createdAt || null,
+      approvedAt: freeHandle.owner?.createdAt || null,
+      activatedAt: freeHandle.owner?.createdAt || null,
+      type: "free",
+    };
+  }
+
+  const slugRow = await findSlugByFullSlugWithLegacyFallback(normalized);
+  return slugRow ? { ...slugRow, type: "slug" } : null;
 }
 
 async function listOwnedPetsByUserId(userId) {
@@ -1023,44 +1061,123 @@ router.get(
         }));
       })(),
       (async () => {
-        const rows = await withMissingTableFallback("Slug", [], () =>
-          prisma.slug.findMany({
-            where: {
-              ownerId: { not: null },
-              status: { in: ["approved", "active", "private", "paused"] },
-            },
-            orderBy: [{ createdAt: "desc" }],
-            take: 24,
-            select: {
-              fullSlug: true,
-              createdAt: true,
-              owner: {
-                select: {
-                  status: true,
-                  plan: true,
-                  subscriptionStartedAt: true,
-                  subscriptionExpiresAt: true,
-                  firstName: true,
-                  displayName: true,
-                  profileCard: {
-                    select: {
-                      name: true,
-                      role: true,
-                      bio: true,
-                      avatarUrl: true,
+        const [slugRows, freeUsers] = await Promise.all([
+          withMissingTableFallback("Slug", [], () =>
+            prisma.slug.findMany({
+              where: {
+                ownerId: { not: null },
+                status: { in: ["approved", "active", "private", "paused"] },
+              },
+              orderBy: [{ createdAt: "desc" }],
+              take: 24,
+              select: {
+                fullSlug: true,
+                createdAt: true,
+                owner: {
+                  select: {
+                    id: true,
+                    status: true,
+                    plan: true,
+                    subscriptionStartedAt: true,
+                    subscriptionExpiresAt: true,
+                    firstName: true,
+                    displayName: true,
+                    freeProfileCode: true,
+                    freeProfileStatus: true,
+                    freeProfilePauseMessage: true,
+                    freeProfileDisabledAt: true,
+                    slugs: {
+                      where: {
+                        status: { in: ["approved", "active", "private", "paused"] },
+                      },
+                      orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
+                      select: {
+                        fullSlug: true,
+                        status: true,
+                        pauseMessage: true,
+                        isPrimary: true,
+                      },
+                    },
+                    profileCard: {
+                      select: {
+                        name: true,
+                        role: true,
+                        bio: true,
+                        avatarUrl: true,
+                      },
                     },
                   },
                 },
               },
+            }),
+          ),
+          prisma.user.findMany({
+            where: {
+              status: "active",
+              freeProfileCode: { not: null },
+              freeProfileDisabledAt: null,
+              slugs: {
+                none: {
+                  status: { in: ["approved", "active", "private", "paused"] },
+                },
+              },
+            },
+            orderBy: [{ createdAt: "desc" }],
+            take: 24,
+            select: {
+              id: true,
+              createdAt: true,
+              status: true,
+              plan: true,
+              subscriptionStartedAt: true,
+              subscriptionExpiresAt: true,
+              firstName: true,
+              displayName: true,
+              freeProfileCode: true,
+              freeProfileStatus: true,
+              freeProfilePauseMessage: true,
+              freeProfileDisabledAt: true,
+              slugs: {
+                where: {
+                  status: { in: ["approved", "active", "private", "paused"] },
+                },
+                orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
+                select: {
+                  fullSlug: true,
+                  status: true,
+                  pauseMessage: true,
+                  isPrimary: true,
+                },
+              },
+              profileCard: {
+                select: {
+                  name: true,
+                  role: true,
+                  bio: true,
+                  avatarUrl: true,
+                },
+              },
             },
           }),
-        );
+        ]);
+
+        const candidates = [
+          ...slugRows.map((row) => ({
+            slug: String(row?.fullSlug || "").trim().toUpperCase(),
+            createdAt: row?.createdAt || null,
+            owner: row?.owner || null,
+          })),
+          ...freeUsers.map((owner) => ({
+            slug: String(getActivePublicHandle(owner)?.value || "").trim().toUpperCase(),
+            createdAt: owner?.createdAt || null,
+            owner,
+          })),
+        ];
 
         const cards = [];
-
-        for (const row of rows) {
-          const slug = String(row?.fullSlug || "").trim().toUpperCase();
-          const owner = row?.owner;
+        for (const candidate of candidates) {
+          const slug = String(candidate?.slug || "").trim().toUpperCase();
+          const owner = candidate?.owner;
           const card = owner?.profileCard;
           if (!slug || !owner || !isPublicProfileVisible(owner) || !card) {
             continue;
@@ -1068,7 +1185,7 @@ router.get(
 
           cards.push({
             slug,
-            createdAt: row.createdAt,
+            createdAt: candidate.createdAt,
             name: String(card.name || owner.displayName || owner.firstName || "UNQX User").trim() || "UNQX User",
             role: String(card.role || "").trim(),
             bio: String(card.bio || "").trim(),
@@ -2167,7 +2284,7 @@ router.get(
   asyncHandler(async (req, res) => {
     const slug = sanitizeSlug(req.params.slug);
 
-    const slugRow = await findSlugByFullSlugWithLegacyFallback(slug);
+    const slugRow = await findPublicHandleForRoute(slug);
 
     // Нет строки в slugs, но код валидного UNQ (AAA000) — считаем инвентарь свободным, без предсидирования всех комбинаций.
     if (!slugRow && isValidSlug(slug)) {
@@ -2368,6 +2485,9 @@ router.get(
               const ownerSlugs = ownerSlugRows
                 .map((item) => String(item.fullSlug || "").trim().toUpperCase())
                 .filter(Boolean);
+              if (!ownerSlugs.length) {
+                ownerSlugs.push(slug);
+              }
               const ownerHandle = getPublicUserHandle(owner);
               res.status(200).render("public/slug-private", {
                 title: `${slug} | Закрытая визитка`,
@@ -2468,6 +2588,7 @@ router.get(
         }
 
         const topBadge = await getSlugTopBadge(slug);
+        const resolvedTopBadge = slugRow.type === "free" ? null : topBadge;
         const officialCfg = await getOfficialUnqClientConfig();
         const approvedBadges = await findApprovedBadgesByUserId(slugRow.ownerId);
         const allCardSlugs = [slug, ...ownerSlugs.map((item) => item.fullSlug)]
@@ -2502,7 +2623,7 @@ router.get(
               ...wall,
             }
             : null,
-          topBadge,
+          topBadge: resolvedTopBadge,
           score,
           officialUnqBadge,
           staffBadge,

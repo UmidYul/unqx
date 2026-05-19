@@ -195,6 +195,13 @@
       return ownerKey ? `${LEGACY_DRAFT_KEY}:${ownerKey}` : LEGACY_DRAFT_KEY;
     };
 
+    const hasPublicProfileAccess = () =>
+      Boolean(
+        s.user?.hasPublicProfile ||
+        s.user?.publicHandle?.value ||
+        (Array.isArray(s.slugs) && s.slugs.length > 0),
+      );
+
     const clearLegacyDraftStorage = () => {
       try {
         const key = getDraftStorageKey();
@@ -1781,10 +1788,15 @@ Email: ${userEmail}
     };
 
     const getCurrentPlan = () => {
-      const raw = String(s.user?.effectivePlan || s.user?.plan || "none")
+      const raw = String(s.user?.capabilityPlan || s.user?.effectivePlan || s.user?.plan || "none")
         .trim()
         .toLowerCase();
       return raw === "premium" ? "premium" : "none";
+    };
+
+    const getActualPlan = () => {
+      const raw = String(s.user?.plan || "none").trim().toLowerCase();
+      return raw === "premium" || raw === "basic" ? "premium" : "none";
     };
 
     const normalizeCardVisibilityStatus = (status) => {
@@ -1847,7 +1859,7 @@ Email: ${userEmail}
 
     const renderWelcomeBanner = () => {
       if (!(el.welcomeBanner instanceof HTMLElement)) return;
-      const show = getCurrentPlan() === "none" && !Boolean(s.user?.welcomeDismissed);
+      const show = !hasPublicProfileAccess() && !Boolean(s.user?.welcomeDismissed);
       el.welcomeBanner.classList.toggle("hidden", !show);
     };
 
@@ -1860,10 +1872,10 @@ Email: ${userEmail}
       }
       if (el.nm) el.nm.textContent = s.user.displayName || s.user.firstName || "UNQX User";
       if (el.un) el.un.textContent = publicHandle ? `@${publicHandle}` : "@—";
-      const plan = getCurrentPlan();
+      const plan = getActualPlan();
       if (el.pl) {
         el.pl.dataset.plan = plan;
-        el.pl.textContent = plan === "premium" ? "PREMIUM" : "No plan";
+        el.pl.textContent = plan === "premium" ? "PREMIUM" : hasPublicProfileAccess() ? "FREE" : "No plan";
         el.pl.className = "inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold";
         if (plan === "none") {
           el.pl.classList.add("border-neutral-300", "bg-neutral-100", "text-neutral-700");
