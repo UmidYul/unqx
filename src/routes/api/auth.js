@@ -33,6 +33,7 @@ const {
   ensureFreeProfileForUser,
   getActivePublicHandle,
   getAllPublicHandles,
+  getFreeProfileUserSelect,
 } = require("../../services/public-handle");
 
 const router = express.Router();
@@ -76,10 +77,7 @@ const USER_AUTH_SELECT = {
   reactivationOtpExpiresAt: true,
   reactivationOtpSentAt: true,
   deletedAt: true,
-  freeProfileCode: true,
-  freeProfileStatus: true,
-  freeProfilePauseMessage: true,
-  freeProfileDisabledAt: true,
+  ...getFreeProfileUserSelect(),
 };
 
 function normalizeEmail(value) {
@@ -552,10 +550,7 @@ async function setOwnerSlugsCookie(req, res, userId) {
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: {
-      freeProfileCode: true,
-      freeProfileStatus: true,
-      freeProfilePauseMessage: true,
-      freeProfileDisabledAt: true,
+      ...getFreeProfileUserSelect(),
       slugs: {
         where: {
           status: { in: ["active", "private", "paused", "approved"] },

@@ -42,8 +42,10 @@ const { sortProfileCardPets } = require("../../services/pets");
 const {
   findPublicHandleByValue,
   getActivePublicHandle,
+  getFreeProfileUserSelect,
   isFreeProfileCode,
   normalizePublicHandleValue,
+  supportsFreeProfileUserFields,
 } = require("../../services/public-handle");
 
 const router = express.Router();
@@ -1113,10 +1115,7 @@ router.get(
                     subscriptionExpiresAt: true,
                     firstName: true,
                     displayName: true,
-                    freeProfileCode: true,
-                    freeProfileStatus: true,
-                    freeProfilePauseMessage: true,
-                    freeProfileDisabledAt: true,
+                    ...getFreeProfileUserSelect(),
                     slugs: {
                       where: {
                         status: { in: ["approved", "active", "private", "paused"] },
@@ -1142,54 +1141,53 @@ router.get(
               },
             }),
           ),
-          prisma.user.findMany({
-            where: {
-              status: "active",
-              freeProfileCode: { not: null },
-              freeProfileDisabledAt: null,
-              slugs: {
-                none: {
-                  status: { in: ["approved", "active", "private", "paused"] },
-                },
-              },
-            },
-            orderBy: [{ createdAt: "desc" }],
-            take: 24,
-            select: {
-              id: true,
-              createdAt: true,
-              status: true,
-              plan: true,
-              subscriptionStartedAt: true,
-              subscriptionExpiresAt: true,
-              firstName: true,
-              displayName: true,
-              freeProfileCode: true,
-              freeProfileStatus: true,
-              freeProfilePauseMessage: true,
-              freeProfileDisabledAt: true,
-              slugs: {
+          supportsFreeProfileUserFields()
+            ? prisma.user.findMany({
                 where: {
-                  status: { in: ["approved", "active", "private", "paused"] },
+                  status: "active",
+                  freeProfileCode: { not: null },
+                  freeProfileDisabledAt: null,
+                  slugs: {
+                    none: {
+                      status: { in: ["approved", "active", "private", "paused"] },
+                    },
+                  },
                 },
-                orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
+                orderBy: [{ createdAt: "desc" }],
+                take: 24,
                 select: {
-                  fullSlug: true,
+                  id: true,
+                  createdAt: true,
                   status: true,
-                  pauseMessage: true,
-                  isPrimary: true,
+                  plan: true,
+                  subscriptionStartedAt: true,
+                  subscriptionExpiresAt: true,
+                  firstName: true,
+                  displayName: true,
+                  ...getFreeProfileUserSelect(),
+                  slugs: {
+                    where: {
+                      status: { in: ["approved", "active", "private", "paused"] },
+                    },
+                    orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
+                    select: {
+                      fullSlug: true,
+                      status: true,
+                      pauseMessage: true,
+                      isPrimary: true,
+                    },
+                  },
+                  profileCard: {
+                    select: {
+                      name: true,
+                      role: true,
+                      bio: true,
+                      avatarUrl: true,
+                    },
+                  },
                 },
-              },
-              profileCard: {
-                select: {
-                  name: true,
-                  role: true,
-                  bio: true,
-                  avatarUrl: true,
-                },
-              },
-            },
-          }),
+              })
+            : Promise.resolve([]),
         ]);
 
         const candidates = [

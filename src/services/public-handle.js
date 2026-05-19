@@ -1,3 +1,4 @@
+const { Prisma } = require("@prisma/client");
 const { randomInt } = require("node:crypto");
 
 const { prisma } = require("../db/prisma");
@@ -6,6 +7,48 @@ const { normalizeAssignableSlug } = require("./slug");
 const PUBLIC_HANDLE_SLUG_STATUSES = ["approved", "active", "paused", "private"];
 const FREE_PROFILE_ALLOWED_STATUSES = new Set(["active", "paused", "private"]);
 const FREE_PROFILE_CODE_REGEX = /^[1-9][0-9]{11}$/;
+const FREE_PROFILE_USER_FIELD_NAMES = Object.freeze([
+  "freeProfileCode",
+  "freeProfileStatus",
+  "freeProfilePauseMessage",
+  "freeProfileDisabledAt",
+]);
+const FREE_PROFILE_USER_SELECT = Object.freeze({
+  freeProfileCode: true,
+  freeProfileStatus: true,
+  freeProfilePauseMessage: true,
+  freeProfileDisabledAt: true,
+});
+const USER_SCALAR_FIELD_ENUM = Prisma?.UserScalarFieldEnum || {};
+
+function supportsFreeProfileUserFields() {
+  return FREE_PROFILE_USER_FIELD_NAMES.every((fieldName) => USER_SCALAR_FIELD_ENUM[fieldName] === fieldName);
+}
+
+function getFreeProfileUserSelect() {
+  return supportsFreeProfileUserFields() ? { ...FREE_PROFILE_USER_SELECT } : {};
+}
+
+function getFreeProfileLookupWhere(value) {
+  const normalized = normalizeFreeProfileCode(value);
+  if (!normalized || !supportsFreeProfileUserFields()) {
+    return null;
+  }
+  return {
+    freeProfileCode: normalized,
+    freeProfileDisabledAt: null,
+  };
+}
+
+function getFreeProfileAvailabilityWhere() {
+  if (!supportsFreeProfileUserFields()) {
+    return null;
+  }
+  return {
+    freeProfileCode: { not: null },
+    freeProfileDisabledAt: null,
+  };
+}
 
 function normalizeDefaultCardName(displayName, firstName) {
   const nextDisplayName = String(displayName || "").trim().slice(0, 120);
@@ -52,6 +95,9 @@ function generateFreeProfileCodeCandidate() {
 }
 
 async function generateUniqueFreeProfileCode(db = prisma) {
+  if (!supportsFreeProfileUserFields()) {
+    return "";
+  }
   for (let attempt = 0; attempt < 50; attempt += 1) {
     const candidate = generateFreeProfileCodeCandidate();
     const existing = await db.user.findFirst({
@@ -98,6 +144,21 @@ async function ensureFreeProfileForUser({ tx = prisma, user, createProfileCard =
     throw new Error("User is required to ensure FREE profile");
   }
 
+  if (!supportsFreeProfileUserFields()) {
+    if (createProfileCard) {
+      await ensureProfileCardExists({ tx, user });
+    }
+    return {
+      id: user.id,
+      firstName: user.firstName,
+      displayName: user.displayName,
+      freeProfileCode: null,
+      freeProfileStatus: "active",
+      freeProfilePauseMessage: null,
+      freeProfileDisabledAt: null,
+    };
+  }
+
   const nextCode = normalizeFreeProfileCode(user.freeProfileCode) || (await generateUniqueFreeProfileCode(tx));
   const nextStatus = normalizeFreeProfileStatus(user.freeProfileStatus, {
     disabledAt: null,
@@ -113,10 +174,7 @@ async function ensureFreeProfileForUser({ tx = prisma, user, createProfileCard =
       id: true,
       firstName: true,
       displayName: true,
-      freeProfileCode: true,
-      freeProfileStatus: true,
-      freeProfilePauseMessage: true,
-      freeProfileDisabledAt: true,
+      ...getFreeProfileUserSelect(),
     },
   });
 
@@ -231,10 +289,7 @@ function buildPublicHandleUserSelect(options = {}) {
     emailVerified: true,
     isVerified: true,
     verifiedCompany: true,
-    freeProfileCode: true,
-    freeProfileStatus: true,
-    freeProfilePauseMessage: true,
-    freeProfileDisabledAt: true,
+    ...getFreeProfileUserSelect(),
     ...(includeProfileCard
       ? {
           profileCard: {
@@ -278,11 +333,12 @@ async function findPublicHandleByValue(value, options = {}) {
   }
 
   if (isFreeProfileCode(normalized)) {
+    const freeProfileWhere = getFreeProfileLookupWhere(normalized);
+    if (!freeProfileWhere) {
+      return null;
+    }
     const owner = await prisma.user.findFirst({
-      where: {
-        freeProfileCode: normalized,
-        freeProfileDisabledAt: null,
-      },
+      where: freeProfileWhere,
       select: buildPublicHandleUserSelect(options),
     });
     if (!owner) {
@@ -341,6 +397,10 @@ async function findPublicHandleByValue(value, options = {}) {
 module.exports = {
   PUBLIC_HANDLE_SLUG_STATUSES,
   FREE_PROFILE_CODE_REGEX,
+  supportsFreeProfileUserFields,
+  getFreeProfileUserSelect,
+  getFreeProfileLookupWhere,
+  getFreeProfileAvailabilityWhere,
   normalizePublicHandleValue,
   normalizeFreeProfileCode,
   normalizeFreeProfileStatus,

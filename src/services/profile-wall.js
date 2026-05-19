@@ -5,7 +5,7 @@ const { prisma } = require("../db/prisma");
 const { env } = require("../config/env");
 const { canCreateCard } = require("./profile");
 const { isPublicProfileVisible } = require("./subscription");
-const { PUBLIC_HANDLE_SLUG_STATUSES, getActivePublicHandle } = require("./public-handle");
+const { PUBLIC_HANDLE_SLUG_STATUSES, getActivePublicHandle, getFreeProfileUserSelect } = require("./public-handle");
 
 const WALL_POST_CONTENT_MAX = 280;
 const WALL_COMMENT_CONTENT_MAX = 1000;
@@ -227,10 +227,7 @@ function getWallCommentBaseSelect() {
         plan: true,
         subscriptionStartedAt: true,
         subscriptionExpiresAt: true,
-        freeProfileCode: true,
-        freeProfileStatus: true,
-        freeProfilePauseMessage: true,
-        freeProfileDisabledAt: true,
+        ...getFreeProfileUserSelect(),
         slugs: {
           where: {
             status: {
@@ -280,10 +277,7 @@ function getHomeWallPostSelect() {
         username: true,
         isVerified: true,
         verifiedCompany: true,
-        freeProfileCode: true,
-        freeProfileStatus: true,
-        freeProfilePauseMessage: true,
-        freeProfileDisabledAt: true,
+        ...getFreeProfileUserSelect(),
         profileCard: {
           select: {
             name: true,

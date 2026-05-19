@@ -96,6 +96,7 @@ const {
   PUBLIC_HANDLE_SLUG_STATUSES,
   getActivePublicHandle,
   getFreeProfileHandle,
+  getFreeProfileUserSelect,
   hasActivePublicProfile,
 } = require("../../services/public-handle");
 
@@ -702,10 +703,7 @@ async function getCurrentUser(req) {
       subscriptionStartedAt: true,
       subscriptionExpiresAt: true,
       subscriptionRenewedAt: true,
-      freeProfileCode: true,
-      freeProfileStatus: true,
-      freeProfilePauseMessage: true,
-      freeProfileDisabledAt: true,
+      ...getFreeProfileUserSelect(),
       slugs: {
         where: {
           status: {
@@ -852,10 +850,7 @@ async function getUserSlugsWithStats(userId) {
       where: { id: userId },
       select: {
         createdAt: true,
-        freeProfileCode: true,
-        freeProfileStatus: true,
-        freeProfilePauseMessage: true,
-        freeProfileDisabledAt: true,
+        ...getFreeProfileUserSelect(),
       },
     }),
     prisma.slug.findMany({

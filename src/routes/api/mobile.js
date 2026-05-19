@@ -27,6 +27,7 @@ const {
   getActivePublicHandle,
   getAllPublicHandles,
   findPublicHandleByValue,
+  getFreeProfileUserSelect,
   normalizePublicHandleValue,
   isFreeProfileCode,
   PUBLIC_HANDLE_SLUG_STATUSES,
@@ -356,10 +357,7 @@ async function getOwnedSlugs(userId) {
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: {
-      freeProfileCode: true,
-      freeProfileStatus: true,
-      freeProfilePauseMessage: true,
-      freeProfileDisabledAt: true,
+      ...getFreeProfileUserSelect(),
       slugs: {
         where: {
           status: {
@@ -383,10 +381,7 @@ async function getPrimarySlug(userId) {
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: {
-      freeProfileCode: true,
-      freeProfileStatus: true,
-      freeProfilePauseMessage: true,
-      freeProfileDisabledAt: true,
+      ...getFreeProfileUserSelect(),
       slugs: {
         where: {
           status: {
@@ -630,10 +625,7 @@ router.get(
           email: true,
           plan: true,
           status: true,
-          freeProfileCode: true,
-          freeProfileStatus: true,
-          freeProfilePauseMessage: true,
-          freeProfileDisabledAt: true,
+          ...getFreeProfileUserSelect(),
         },
       }),
       prisma.slug.findMany({

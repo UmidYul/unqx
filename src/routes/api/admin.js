@@ -2404,7 +2404,7 @@ router.get(
       prisma.petPurchaseRequest
         ? prisma.petPurchaseRequest.findMany({
           where: isScopedManager ? { user: { createdByStaffId: managerScope.managerId } } : undefined,
-          orderBy: [{ requestedAt: "desc" }, { updatedAt: "desc" }],
+          orderBy: [{ requestedAt: "desc" }, { id: "desc" }],
           take: 5,
           select: {
             id: true,
@@ -2412,7 +2412,7 @@ router.get(
             status: true,
             displayName: true,
             requestedAt: true,
-            updatedAt: true,
+            reviewedAt: true,
           },
         })
         : Promise.resolve([]),
@@ -2437,7 +2437,7 @@ router.get(
         id: `pet:${item.id}`,
         title: petEventTitle(item),
         slug: item.displayName || getPetTypeLabel(item.petType),
-        at: item.updatedAt || item.requestedAt,
+        at: item.reviewedAt || item.requestedAt,
         href: isScopedManager ? managerPetsHref : adminPetsHref,
       })),
     ]

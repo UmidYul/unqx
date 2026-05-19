@@ -7,6 +7,8 @@ const {
   findPublicHandleByValue,
   getFreeProfileHandle,
   getActivePublicHandle,
+  getFreeProfileUserSelect,
+  supportsFreeProfileUserFields,
 } = require("./public-handle");
 
 const MAX_SCORE = 999;
@@ -75,10 +77,7 @@ async function getUserScoreInputs(userId, tx = prisma) {
       plan: true,
       status: true,
       createdAt: true,
-      freeProfileCode: true,
-      freeProfileStatus: true,
-      freeProfilePauseMessage: true,
-      freeProfileDisabledAt: true,
+      ...getFreeProfileUserSelect(),
     },
   });
   if (!user) return null;
@@ -177,22 +176,27 @@ function buildScoreFromInputs(inputs) {
 
 async function updatePercentiles(tx = prisma) {
   if (!tx.unqScore) return;
+  const activeHandleFilters = [
+    {
+      slugs: {
+        some: {
+          status: { in: ["approved", "active", "paused", "private"] },
+        },
+      },
+    },
+    ...(supportsFreeProfileUserFields()
+      ? [
+          {
+            freeProfileCode: { not: null },
+            freeProfileDisabledAt: null,
+          },
+        ]
+      : []),
+  ];
   const activeUsers = await tx.user.findMany({
     where: {
       status: "active",
-      OR: [
-        {
-          slugs: {
-            some: {
-              status: { in: ["approved", "active", "paused", "private"] },
-            },
-          },
-        },
-        {
-          freeProfileCode: { not: null },
-          freeProfileDisabledAt: null,
-        },
-      ],
+      OR: activeHandleFilters,
     },
     select: { id: true },
   });
@@ -294,22 +298,27 @@ async function recalculateAllScores(options = {}) {
   }
   const now = new Date();
   const startedAt = Date.now();
+  const activeHandleFilters = [
+    {
+      slugs: {
+        some: {
+          status: { in: ["approved", "active", "paused", "private"] },
+        },
+      },
+    },
+    ...(supportsFreeProfileUserFields()
+      ? [
+          {
+            freeProfileCode: { not: null },
+            freeProfileDisabledAt: null,
+          },
+        ]
+      : []),
+  ];
   const users = await prisma.user.findMany({
     where: {
       status: "active",
-      OR: [
-        {
-          slugs: {
-            some: {
-              status: { in: ["approved", "active", "paused", "private"] },
-            },
-          },
-        },
-        {
-          freeProfileCode: { not: null },
-          freeProfileDisabledAt: null,
-        },
-      ],
+      OR: activeHandleFilters,
     },
     select: { id: true },
   });

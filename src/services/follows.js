@@ -5,6 +5,7 @@ const {
   PUBLIC_HANDLE_SLUG_STATUSES,
   getActivePublicHandle,
   findPublicHandleByValue,
+  getFreeProfileUserSelect,
 } = require("./public-handle");
 
 const FOLLOW_LIST_PAGE_SIZE = 20;
@@ -151,10 +152,7 @@ function getFollowUserSelect() {
     login: true,
     isVerified: true,
     verifiedCompany: true,
-    freeProfileCode: true,
-    freeProfileStatus: true,
-    freeProfilePauseMessage: true,
-    freeProfileDisabledAt: true,
+    ...getFreeProfileUserSelect(),
     profileCard: {
       select: {
         name: true,

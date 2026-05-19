@@ -14,7 +14,7 @@ const {
     recordBonusLedger,
 } = require("./referral-v1");
 const { finalizeCampaignUsage, releaseCampaignUsage } = require("./referral-v2");
-const { ensureProfileCardExists } = require("./public-handle");
+const { ensureProfileCardExists, supportsFreeProfileUserFields } = require("./public-handle");
 
 function makeTransitionError(code, message) {
     const error = new Error(message);
@@ -164,7 +164,7 @@ async function applyOrderStatusTransition({
                 });
             }
 
-            if (!isSubscriptionRenewal) {
+            if (!isSubscriptionRenewal && supportsFreeProfileUserFields()) {
                 await tx.user.update({
                     where: { id: row.userId },
                     data: {

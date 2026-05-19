@@ -8,7 +8,7 @@ const { sendTapPushNotification } = require("./push");
 const { resolveUzbekistanCity } = require("../constants/uzbekistan-cities");
 const { resolveClientIp, buildViewerFingerprint } = require("./request-ip");
 const { buildCookieOptions } = require("../utils/cookies");
-const { getActivePublicHandle, PUBLIC_HANDLE_SLUG_STATUSES } = require("./public-handle");
+const { getActivePublicHandle, getFreeProfileUserSelect, PUBLIC_HANDLE_SLUG_STATUSES } = require("./public-handle");
 
 const TRACKED_SOURCES = new Set(["nfc", "qr", "direct", "share", "widget"]);
 const TRACKED_BUTTON_TYPES = new Set([
@@ -136,10 +136,7 @@ async function getPrimarySlugForUser(userId) {
   const row = await prisma.user.findUnique({
     where: { id: userId },
     select: {
-      freeProfileCode: true,
-      freeProfileStatus: true,
-      freeProfilePauseMessage: true,
-      freeProfileDisabledAt: true,
+      ...getFreeProfileUserSelect(),
       slugs: {
         where: {
           status: { in: PUBLIC_HANDLE_SLUG_STATUSES },
