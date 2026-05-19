@@ -243,6 +243,9 @@ function getWallCommentBaseSelect() {
           take: 1,
           select: {
             fullSlug: true,
+            status: true,
+            pauseMessage: true,
+            isPrimary: true,
           },
         },
         profileCard: {
@@ -300,6 +303,9 @@ function getHomeWallPostSelect() {
           take: 1,
           select: {
             fullSlug: true,
+            status: true,
+            pauseMessage: true,
+            isPrimary: true,
           },
         },
       },
