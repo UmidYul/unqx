@@ -102,6 +102,10 @@ function normalizeFollowListType(value) {
   return String(value || "").trim().toLowerCase() === "followers" ? "followers" : "following";
 }
 
+function normalizeFollowScope(value) {
+  return String(value || "").trim().toLowerCase() === "public" ? "public" : "owner";
+}
+
 function resolveFollowPage(rawPage) {
   const parsed = Number(rawPage);
   if (!Number.isFinite(parsed)) {
@@ -490,6 +494,7 @@ async function listFollowItemsByOwner({
   const normalizedType = normalizeFollowListType(type);
   const normalizedPage = resolveFollowPage(page);
   const normalizedPageSize = resolveFollowPageSize(pageSize, FOLLOW_LIST_PAGE_SIZE, 50);
+  const normalizedScope = normalizeFollowScope(scope);
   if (!normalizedOwnerId) {
     return {
       items: [],
@@ -503,12 +508,11 @@ async function listFollowItemsByOwner({
       : { followerId: normalizedOwnerId };
   const relationKey = normalizedType === "followers" ? "follower" : "followee";
 
-  if (scope === "public") {
+  if (normalizedScope === "public") {
     let offset = 0;
     let visibleSeen = 0;
     const visibleTargetStart = (normalizedPage - 1) * normalizedPageSize;
     const collected = [];
-    let hasMore = false;
     let batchRows = [];
 
     do {
@@ -538,7 +542,7 @@ async function listFollowItemsByOwner({
         const mapped = mapFollowRowItem(row, {
           viewerUserId: normalizedViewerUserId,
           viewerFollowingSet,
-          scope: "public",
+          scope: normalizedScope,
         });
         if (!mapped) {
           continue;
@@ -547,11 +551,8 @@ async function listFollowItemsByOwner({
           collected.push(mapped);
         }
         visibleSeen += 1;
-        if (visibleSeen > visibleTargetStart + normalizedPageSize - 1) {
-          hasMore = true;
-        }
       }
-    } while (batchRows.length === FOLLOW_PUBLIC_BATCH_SIZE && (!hasMore || collected.length < normalizedPageSize));
+    } while (batchRows.length === FOLLOW_PUBLIC_BATCH_SIZE);
 
     return {
       items: collected,
@@ -559,7 +560,7 @@ async function listFollowItemsByOwner({
         page: normalizedPage,
         pageSize: normalizedPageSize,
         total: visibleSeen,
-        hasMore: hasMore || (batchRows.length === FOLLOW_PUBLIC_BATCH_SIZE && collected.length >= normalizedPageSize),
+        hasMore: normalizedPage * normalizedPageSize < visibleSeen,
       },
     };
   }
@@ -592,7 +593,7 @@ async function listFollowItemsByOwner({
       mapFollowRowItem(row, {
         viewerUserId: normalizedViewerUserId,
         viewerFollowingSet,
-        scope: "owner",
+        scope: normalizedScope,
       }),
     )
     .filter(Boolean);
@@ -608,9 +609,10 @@ async function listFollowItemsByOwner({
   };
 }
 
-async function getFollowSummaryForOwner({ ownerId, viewerUserId = "" } = {}) {
+async function getFollowSummaryForOwner({ ownerId, viewerUserId = "", scope = "owner" } = {}) {
   const normalizedOwnerId = String(ownerId || "").trim();
   const normalizedViewerUserId = String(viewerUserId || "").trim();
+  const normalizedScope = normalizeFollowScope(scope);
   if (!normalizedOwnerId) {
     return {
       counts: { followers: 0, following: 0 },
@@ -620,19 +622,58 @@ async function getFollowSummaryForOwner({ ownerId, viewerUserId = "" } = {}) {
     };
   }
 
-  const [{ followersCount, followingCount }, viewerFollowingSet, followingPreviewPayload, unreadFollowersCount] = await Promise.all([
-    getFollowCounts(normalizedOwnerId),
-    getViewerFollowLookup(normalizedViewerUserId, [normalizedOwnerId]),
-    listFollowItemsByOwner({
-      ownerId: normalizedOwnerId,
-      type: "following",
-      viewerUserId: normalizedViewerUserId,
-      page: 1,
-      pageSize: FOLLOW_PREVIEW_LIMIT,
-      scope: "public",
-    }),
-    normalizedViewerUserId === normalizedOwnerId ? getUnreadFollowNotificationsCount(normalizedOwnerId) : Promise.resolve(0),
-  ]);
+  let followersCount = 0;
+  let followingCount = 0;
+  let followingPreviewPayload = { items: [] };
+  let viewerFollowingSet = new Set();
+  let unreadFollowersCount = 0;
+
+  if (normalizedScope === "public") {
+    const [followersPayload, nextViewerFollowingSet, nextFollowingPreviewPayload, nextUnreadFollowersCount] = await Promise.all([
+      listFollowItemsByOwner({
+        ownerId: normalizedOwnerId,
+        type: "followers",
+        viewerUserId: normalizedViewerUserId,
+        page: 1,
+        pageSize: 1,
+        scope: normalizedScope,
+      }),
+      getViewerFollowLookup(normalizedViewerUserId, [normalizedOwnerId]),
+      listFollowItemsByOwner({
+        ownerId: normalizedOwnerId,
+        type: "following",
+        viewerUserId: normalizedViewerUserId,
+        page: 1,
+        pageSize: FOLLOW_PREVIEW_LIMIT,
+        scope: normalizedScope,
+      }),
+      normalizedViewerUserId === normalizedOwnerId ? getUnreadFollowNotificationsCount(normalizedOwnerId) : Promise.resolve(0),
+    ]);
+    followersCount = Math.max(0, Number(followersPayload?.pagination?.total || 0));
+    followingCount = Math.max(0, Number(nextFollowingPreviewPayload?.pagination?.total || 0));
+    viewerFollowingSet = nextViewerFollowingSet;
+    followingPreviewPayload = nextFollowingPreviewPayload;
+    unreadFollowersCount = nextUnreadFollowersCount;
+  } else {
+    const [counts, nextViewerFollowingSet, nextFollowingPreviewPayload, nextUnreadFollowersCount] = await Promise.all([
+      getFollowCounts(normalizedOwnerId),
+      getViewerFollowLookup(normalizedViewerUserId, [normalizedOwnerId]),
+      listFollowItemsByOwner({
+        ownerId: normalizedOwnerId,
+        type: "following",
+        viewerUserId: normalizedViewerUserId,
+        page: 1,
+        pageSize: FOLLOW_PREVIEW_LIMIT,
+        scope: "public",
+      }),
+      normalizedViewerUserId === normalizedOwnerId ? getUnreadFollowNotificationsCount(normalizedOwnerId) : Promise.resolve(0),
+    ]);
+    followersCount = Math.max(0, Number(counts?.followersCount || 0));
+    followingCount = Math.max(0, Number(counts?.followingCount || 0));
+    viewerFollowingSet = nextViewerFollowingSet;
+    followingPreviewPayload = nextFollowingPreviewPayload;
+    unreadFollowersCount = nextUnreadFollowersCount;
+  }
 
   const requiresAuth = !normalizedViewerUserId;
   const canFollow = normalizedOwnerId !== normalizedViewerUserId;
@@ -653,7 +694,7 @@ async function getFollowSummaryForOwner({ ownerId, viewerUserId = "" } = {}) {
   };
 }
 
-async function followUserBySlug({ slug, followerUserId } = {}) {
+async function followUserBySlug({ slug, followerUserId, summaryScope = "owner" } = {}) {
   assertFollowStorageWritable();
   const normalizedFollowerUserId = String(followerUserId || "").trim();
   if (!normalizedFollowerUserId) {
@@ -721,11 +762,12 @@ async function followUserBySlug({ slug, followerUserId } = {}) {
     summary: await getFollowSummaryForOwner({
       ownerId: target.ownerId,
       viewerUserId: normalizedFollowerUserId,
+      scope: summaryScope,
     }),
   };
 }
 
-async function unfollowUserBySlug({ slug, followerUserId } = {}) {
+async function unfollowUserBySlug({ slug, followerUserId, summaryScope = "owner" } = {}) {
   assertFollowStorageWritable();
   const normalizedFollowerUserId = String(followerUserId || "").trim();
   if (!normalizedFollowerUserId) {
@@ -776,11 +818,12 @@ async function unfollowUserBySlug({ slug, followerUserId } = {}) {
     summary: await getFollowSummaryForOwner({
       ownerId: target.ownerId,
       viewerUserId: normalizedFollowerUserId,
+      scope: summaryScope,
     }),
   };
 }
 
-async function toggleFollowBySlug({ slug, followerUserId } = {}) {
+async function toggleFollowBySlug({ slug, followerUserId, summaryScope = "owner" } = {}) {
   const target = await findPublicFollowTargetBySlug(slug);
   if (!target?.ownerId) {
     const error = new Error("Profile not found");
@@ -789,9 +832,9 @@ async function toggleFollowBySlug({ slug, followerUserId } = {}) {
   }
   const viewerFollowingSet = await getViewerFollowLookup(followerUserId, [target.ownerId]);
   if (viewerFollowingSet.has(target.ownerId)) {
-    return unfollowUserBySlug({ slug, followerUserId });
+    return unfollowUserBySlug({ slug, followerUserId, summaryScope });
   }
-  return followUserBySlug({ slug, followerUserId });
+  return followUserBySlug({ slug, followerUserId, summaryScope });
 }
 
 module.exports = {

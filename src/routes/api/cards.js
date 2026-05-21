@@ -3036,6 +3036,7 @@ router.post(
       const result = await followUserBySlug({
         slug: requestedSlug,
         followerUserId: viewerUserId,
+        summaryScope: "public",
       });
       res.json({
         ok: true,
@@ -3077,6 +3078,7 @@ router.delete(
       const result = await unfollowUserBySlug({
         slug: requestedSlug,
         followerUserId: viewerUserId,
+        summaryScope: "public",
       });
       res.json({
         ok: true,
@@ -3136,6 +3138,7 @@ router.get(
       getFollowSummaryForOwner({
         ownerId: slugRow.ownerId,
         viewerUserId,
+        scope: "public",
       }),
     ]);
 

@@ -2589,6 +2589,7 @@ router.get(
           getFollowSummaryForOwner({
             ownerId: slugRow.ownerId,
             viewerUserId,
+            scope: "public",
           }),
         ]);
 

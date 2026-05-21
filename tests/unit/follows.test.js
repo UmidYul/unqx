@@ -233,4 +233,122 @@ describe("follows service", () => {
       isPubliclyReachable: true,
     });
   });
+
+  test("listFollowItemsByOwner public scope reports exact total and hasMore for a full last page", async () => {
+    const visibleRows = Array.from({ length: 20 }, (_, index) => ({
+      id: `follow_${index + 1}`,
+      createdAt: new Date(`2026-05-${String((index % 9) + 1).padStart(2, "0")}T08:00:00.000Z`),
+      followee: buildUser({
+        id: `user_visible_${index + 1}`,
+        displayName: `Visible User ${index + 1}`,
+        slugs: [{ fullSlug: `VIS${String(index + 1).padStart(3, "0")}`, status: "active", isPrimary: true }],
+      }),
+    }));
+    mockPrisma.userFollow.findMany
+      .mockResolvedValueOnce(visibleRows)
+      .mockResolvedValueOnce([]);
+
+    const result = await followsService.listFollowItemsByOwner({
+      ownerId: "user_1",
+      type: "following",
+      viewerUserId: "viewer_1",
+      scope: "public",
+      page: 1,
+      pageSize: 20,
+    });
+
+    expect(result.items).toHaveLength(20);
+    expect(result.pagination).toMatchObject({
+      page: 1,
+      pageSize: 20,
+      total: 20,
+      hasMore: false,
+    });
+  });
+
+  test("getFollowSummaryForOwner public scope keeps counts aligned with visible modal items", async () => {
+    const followerRows = [
+      {
+        id: "follow_follower_1",
+        createdAt: new Date("2026-05-09T08:00:00.000Z"),
+        follower: buildUser({
+          id: "user_visible_follower",
+          displayName: "Visible Follower",
+          slugs: [{ fullSlug: "VF123", status: "active", isPrimary: true }],
+        }),
+      },
+      {
+        id: "follow_follower_2",
+        createdAt: new Date("2026-05-09T07:00:00.000Z"),
+        follower: buildUser({
+          id: "user_hidden_follower",
+          displayName: "Hidden Follower",
+          isVisible: false,
+          slugs: [{ fullSlug: "HF123", status: "active", isPrimary: true }],
+        }),
+      },
+    ];
+    const followingRows = [
+      {
+        id: "follow_following_1",
+        createdAt: new Date("2026-05-08T08:00:00.000Z"),
+        followee: buildUser({
+          id: "user_visible_following",
+          displayName: "Visible Following",
+          slugs: [{ fullSlug: "VG123", status: "active", isPrimary: true }],
+        }),
+      },
+      {
+        id: "follow_following_2",
+        createdAt: new Date("2026-05-08T07:00:00.000Z"),
+        followee: buildUser({
+          id: "user_hidden_following",
+          displayName: "Hidden Following",
+          isVisible: false,
+          slugs: [{ fullSlug: "HG123", status: "active", isPrimary: true }],
+        }),
+      },
+    ];
+
+    mockPrisma.userFollow.findMany.mockImplementation(async (args = {}) => {
+      if (args?.select?.followeeId) {
+        const followeeIds = args?.where?.followeeId?.in || [];
+        if (followeeIds.includes("user_2")) {
+          return [{ followeeId: "user_2" }];
+        }
+        return [];
+      }
+      if (args?.select?.follower) {
+        return followerRows;
+      }
+      if (args?.select?.followee) {
+        return followingRows;
+      }
+      return [];
+    });
+
+    const summary = await followsService.getFollowSummaryForOwner({
+      ownerId: "user_2",
+      viewerUserId: "user_1",
+      scope: "public",
+    });
+
+    expect(summary).toMatchObject({
+      counts: {
+        followers: 1,
+        following: 1,
+      },
+      viewer: {
+        isFollowing: true,
+        canFollow: true,
+        requiresAuth: false,
+      },
+    });
+    expect(summary.previews.following).toHaveLength(1);
+    expect(summary.previews.following[0]).toMatchObject({
+      userId: "user_visible_following",
+      primarySlug: "VG123",
+      isPubliclyReachable: true,
+    });
+  });
 });
