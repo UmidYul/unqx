@@ -714,180 +714,76 @@
     }),
   };
 
-  const EMOJI_BACKGROUND_BASE_SCENE = {
-    small: [
-      { x: 18, y: 18, size: 16, opacity: 0.22 },
-      { x: 74, y: 10, size: 15, opacity: 0.2, rotate: -6 },
-      { x: 122, y: 22, size: 14, opacity: 0.16 },
-      { x: 188, y: 12, size: 15, opacity: 0.18, rotate: 8 },
-      { x: 240, y: 20, size: 16, opacity: 0.22 },
-      { x: 288, y: 14, size: 14, opacity: 0.16 },
-      { x: 24, y: 72, size: 18, opacity: 0.28, rotate: -8 },
-      { x: 278, y: 76, size: 18, opacity: 0.28, rotate: 8 },
-      { x: 8, y: 132, size: 15, opacity: 0.2 },
-      { x: 296, y: 134, size: 15, opacity: 0.2 },
-      { x: 34, y: 188, size: 18, opacity: 0.24, rotate: -6 },
-      { x: 272, y: 184, size: 18, opacity: 0.24, rotate: 6 },
-    ],
-    accent: [
-      { x: 98, y: 34, size: 20, opacity: 0.16, rotate: -10 },
-      { x: 206, y: 34, size: 20, opacity: 0.14, rotate: 10 },
-      { x: 82, y: 162, size: 20, opacity: 0.14, rotate: -6 },
-      { x: 224, y: 158, size: 20, opacity: 0.14, rotate: 8 },
-    ],
-    large: [
-      { x: 18, y: 104, size: 28, opacity: 0.1, rotate: -6 },
-      { x: 274, y: 106, size: 28, opacity: 0.1, rotate: 8 },
-    ],
-    blobs: [
-      { cx: 48, cy: 40, r: 20, opacity: 0.055 },
-      { cx: 274, cy: 42, r: 18, opacity: 0.05 },
-      { cx: 34, cy: 164, r: 18, opacity: 0.045 },
-      { cx: 288, cy: 166, r: 18, opacity: 0.045 },
-    ],
-  };
-  const EMOJI_BACKGROUND_PACK_SCENES = {
-    ghosts: EMOJI_BACKGROUND_BASE_SCENE,
+  const EMOJI_BACKGROUND_VIEWBOX_WIDTH = 360;
+  const EMOJI_BACKGROUND_VIEWBOX_HEIGHT = 280;
+  const EMOJI_BACKGROUND_AVATAR_HOLE = { cx: 180, cy: 104, r: 58 };
+  const EMOJI_BACKGROUND_TEXT_HOLE = { cx: 180, cy: 190, rx: 118, ry: 42 };
+  const EMOJI_BACKGROUND_PACK_LAYOUTS = {
+    ghosts: {
+      smallCount: 18,
+      accentCount: 8,
+      largeCount: 5,
+      blobCount: 8,
+      smallSize: [10, 15],
+      accentSize: [13, 18],
+      largeSize: [18, 24],
+      blobRadius: [12, 22],
+      rotation: [-8, 8],
+    },
     stars: {
-      small: [
-        { x: 12, y: 18, size: 14, opacity: 0.18 },
-        { x: 52, y: 12, size: 12, opacity: 0.12 },
-        { x: 90, y: 18, size: 16, opacity: 0.2 },
-        { x: 136, y: 10, size: 13, opacity: 0.12 },
-        { x: 178, y: 16, size: 14, opacity: 0.18 },
-        { x: 228, y: 12, size: 15, opacity: 0.18 },
-        { x: 272, y: 18, size: 13, opacity: 0.12 },
-        { x: 302, y: 10, size: 12, opacity: 0.1 },
-        { x: 18, y: 70, size: 18, opacity: 0.22 },
-        { x: 284, y: 72, size: 18, opacity: 0.22 },
-        { x: 8, y: 132, size: 14, opacity: 0.14 },
-        { x: 298, y: 130, size: 14, opacity: 0.14 },
-        { x: 28, y: 184, size: 16, opacity: 0.16 },
-        { x: 280, y: 182, size: 16, opacity: 0.16 },
-      ],
-      accent: [
-        { x: 112, y: 28, size: 18, opacity: 0.12, rotate: -8 },
-        { x: 194, y: 30, size: 18, opacity: 0.12, rotate: 8 },
-        { x: 78, y: 162, size: 18, opacity: 0.1, rotate: -6 },
-        { x: 226, y: 160, size: 18, opacity: 0.1, rotate: 6 },
-      ],
-      large: [
-        { x: 18, y: 108, size: 24, opacity: 0.08 },
-        { x: 278, y: 106, size: 24, opacity: 0.08 },
-      ],
-      blobs: [
-        { cx: 42, cy: 40, r: 18, opacity: 0.03 },
-        { cx: 278, cy: 44, r: 16, opacity: 0.03 },
-      ],
+      smallCount: 20,
+      accentCount: 9,
+      largeCount: 6,
+      blobCount: 4,
+      smallSize: [9, 14],
+      accentSize: [12, 18],
+      largeSize: [16, 22],
+      blobRadius: [10, 18],
+      rotation: [-14, 14],
     },
     lightning: {
-      small: [
-        { x: 18, y: 16, size: 16, opacity: 0.18, rotate: -16 },
-        { x: 72, y: 26, size: 14, opacity: 0.16, rotate: -12 },
-        { x: 124, y: 16, size: 16, opacity: 0.18, rotate: -14 },
-        { x: 182, y: 22, size: 15, opacity: 0.16, rotate: 12 },
-        { x: 238, y: 14, size: 17, opacity: 0.2, rotate: 14 },
-        { x: 290, y: 24, size: 14, opacity: 0.16, rotate: 12 },
-        { x: 14, y: 82, size: 18, opacity: 0.24, rotate: -18 },
-        { x: 282, y: 86, size: 18, opacity: 0.24, rotate: 18 },
-        { x: 26, y: 176, size: 16, opacity: 0.18, rotate: -14 },
-        { x: 278, y: 174, size: 16, opacity: 0.18, rotate: 14 },
-      ],
-      accent: [
-        { x: 100, y: 36, size: 24, opacity: 0.14, rotate: -18 },
-        { x: 200, y: 30, size: 24, opacity: 0.14, rotate: 18 },
-        { x: 74, y: 156, size: 22, opacity: 0.12, rotate: -14 },
-        { x: 228, y: 154, size: 22, opacity: 0.12, rotate: 14 },
-      ],
-      large: [
-        { x: 10, y: 110, size: 30, opacity: 0.08, rotate: -20 },
-        { x: 278, y: 106, size: 30, opacity: 0.08, rotate: 20 },
-      ],
-      blobs: [
-        { cx: 34, cy: 86, r: 18, opacity: 0.035 },
-        { cx: 286, cy: 90, r: 18, opacity: 0.035 },
-      ],
+      smallCount: 16,
+      accentCount: 8,
+      largeCount: 5,
+      blobCount: 4,
+      smallSize: [10, 16],
+      accentSize: [14, 20],
+      largeSize: [18, 25],
+      blobRadius: [11, 20],
+      rotation: [-22, 22],
     },
     crowns: {
-      small: [
-        { x: 18, y: 22, size: 18, opacity: 0.2 },
-        { x: 74, y: 12, size: 17, opacity: 0.18 },
-        { x: 130, y: 20, size: 18, opacity: 0.16 },
-        { x: 188, y: 12, size: 17, opacity: 0.18 },
-        { x: 244, y: 20, size: 18, opacity: 0.2 },
-        { x: 290, y: 12, size: 16, opacity: 0.14 },
-        { x: 24, y: 80, size: 20, opacity: 0.26 },
-        { x: 278, y: 80, size: 20, opacity: 0.26 },
-        { x: 30, y: 184, size: 18, opacity: 0.2 },
-        { x: 274, y: 182, size: 18, opacity: 0.2 },
-      ],
-      accent: [
-        { x: 102, y: 34, size: 20, opacity: 0.12 },
-        { x: 200, y: 34, size: 20, opacity: 0.12 },
-        { x: 82, y: 160, size: 20, opacity: 0.1 },
-        { x: 224, y: 160, size: 20, opacity: 0.1 },
-      ],
-      large: [
-        { x: 16, y: 110, size: 26, opacity: 0.08 },
-        { x: 278, y: 110, size: 26, opacity: 0.08 },
-      ],
-      blobs: [
-        { cx: 48, cy: 42, r: 18, opacity: 0.028 },
-        { cx: 272, cy: 42, r: 18, opacity: 0.028 },
-      ],
+      smallCount: 18,
+      accentCount: 8,
+      largeCount: 6,
+      blobCount: 5,
+      smallSize: [12, 17],
+      accentSize: [15, 21],
+      largeSize: [20, 26],
+      blobRadius: [10, 18],
+      rotation: [-8, 8],
     },
     webs: {
-      small: [
-        { x: 24, y: 18, size: 18, opacity: 0.16 },
-        { x: 280, y: 18, size: 18, opacity: 0.16 },
-        { x: 12, y: 84, size: 18, opacity: 0.14 },
-        { x: 292, y: 86, size: 18, opacity: 0.14 },
-        { x: 30, y: 180, size: 18, opacity: 0.14 },
-        { x: 274, y: 178, size: 18, opacity: 0.14 },
-      ],
-      accent: [
-        { x: 78, y: 18, size: 26, opacity: 0.12 },
-        { x: 214, y: 20, size: 26, opacity: 0.12 },
-        { x: 80, y: 154, size: 24, opacity: 0.1 },
-        { x: 214, y: 154, size: 24, opacity: 0.1 },
-      ],
-      large: [
-        { x: 0, y: 4, size: 34, opacity: 0.08 },
-        { x: 286, y: 4, size: 34, opacity: 0.08 },
-        { x: 4, y: 152, size: 34, opacity: 0.06 },
-        { x: 282, y: 150, size: 34, opacity: 0.06 },
-      ],
-      blobs: [],
+      smallCount: 12,
+      accentCount: 7,
+      largeCount: 6,
+      blobCount: 0,
+      smallSize: [13, 18],
+      accentSize: [18, 24],
+      largeSize: [24, 32],
+      blobRadius: [0, 0],
+      rotation: [-10, 10],
     },
     hearts: {
-      small: [
-        { x: 22, y: 20, size: 15, opacity: 0.18 },
-        { x: 68, y: 10, size: 14, opacity: 0.14 },
-        { x: 118, y: 22, size: 16, opacity: 0.18 },
-        { x: 176, y: 10, size: 14, opacity: 0.14 },
-        { x: 228, y: 20, size: 16, opacity: 0.18 },
-        { x: 282, y: 12, size: 14, opacity: 0.14 },
-        { x: 16, y: 74, size: 18, opacity: 0.22, rotate: -10 },
-        { x: 286, y: 74, size: 18, opacity: 0.22, rotate: 10 },
-        { x: 28, y: 184, size: 16, opacity: 0.16, rotate: -8 },
-        { x: 278, y: 182, size: 16, opacity: 0.16, rotate: 8 },
-      ],
-      accent: [
-        { x: 94, y: 36, size: 20, opacity: 0.12, rotate: -8 },
-        { x: 206, y: 34, size: 20, opacity: 0.12, rotate: 8 },
-        { x: 78, y: 158, size: 18, opacity: 0.1, rotate: -8 },
-        { x: 226, y: 156, size: 18, opacity: 0.1, rotate: 8 },
-      ],
-      large: [
-        { x: 12, y: 108, size: 26, opacity: 0.08, rotate: -10 },
-        { x: 282, y: 108, size: 26, opacity: 0.08, rotate: 10 },
-      ],
-      blobs: [
-        { cx: 46, cy: 44, r: 16, opacity: 0.03 },
-        { cx: 276, cy: 44, r: 16, opacity: 0.03 },
-        { cx: 36, cy: 166, r: 16, opacity: 0.024 },
-        { cx: 286, cy: 166, r: 16, opacity: 0.024 },
-      ],
+      smallCount: 17,
+      accentCount: 8,
+      largeCount: 5,
+      blobCount: 6,
+      smallSize: [10, 15],
+      accentSize: [13, 19],
+      largeSize: [18, 24],
+      blobRadius: [10, 18],
+      rotation: [-16, 16],
     },
   };
   const EMOJI_BACKGROUND_PACK_SYMBOLS = {
@@ -919,6 +815,226 @@
     `,
   };
 
+  const EMOJI_BACKGROUND_ZONES = {
+    top: {
+      xMin: -26,
+      xMax: EMOJI_BACKGROUND_VIEWBOX_WIDTH - 10,
+      yMin: -14,
+      yMax: 92,
+    },
+    left: {
+      xMin: -28,
+      xMax: 78,
+      yMin: 36,
+      yMax: EMOJI_BACKGROUND_VIEWBOX_HEIGHT - 28,
+    },
+    right: {
+      xMin: EMOJI_BACKGROUND_VIEWBOX_WIDTH - 78,
+      xMax: EMOJI_BACKGROUND_VIEWBOX_WIDTH + 24,
+      yMin: 36,
+      yMax: EMOJI_BACKGROUND_VIEWBOX_HEIGHT - 28,
+    },
+    bottom: {
+      xMin: -8,
+      xMax: EMOJI_BACKGROUND_VIEWBOX_WIDTH - 20,
+      yMin: EMOJI_BACKGROUND_VIEWBOX_HEIGHT - 78,
+      yMax: EMOJI_BACKGROUND_VIEWBOX_HEIGHT + 16,
+    },
+    field: {
+      xMin: 20,
+      xMax: EMOJI_BACKGROUND_VIEWBOX_WIDTH - 44,
+      yMin: 22,
+      yMax: EMOJI_BACKGROUND_VIEWBOX_HEIGHT - 24,
+    },
+  };
+
+  const EMOJI_BACKGROUND_ZONE_WEIGHTS = {
+    small: [
+      ["top", 0.36],
+      ["left", 0.22],
+      ["right", 0.22],
+      ["bottom", 0.12],
+      ["field", 0.08],
+    ],
+    accent: [
+      ["top", 0.28],
+      ["left", 0.24],
+      ["right", 0.24],
+      ["bottom", 0.1],
+      ["field", 0.14],
+    ],
+    large: [
+      ["left", 0.34],
+      ["right", 0.34],
+      ["top", 0.16],
+      ["bottom", 0.08],
+      ["field", 0.08],
+    ],
+    blob: [
+      ["top", 0.24],
+      ["left", 0.28],
+      ["right", 0.28],
+      ["bottom", 0.12],
+      ["field", 0.08],
+    ],
+  };
+
+  function hashStringSeed(value) {
+    const input = String(value || "emoji-pack");
+    let hash = 2166136261;
+    for (let index = 0; index < input.length; index += 1) {
+      hash ^= input.charCodeAt(index);
+      hash = Math.imul(hash, 16777619);
+    }
+    return hash >>> 0;
+  }
+
+  function createSeededRandom(seedValue) {
+    let state = hashStringSeed(seedValue) || 1;
+    return () => {
+      state += 0x6d2b79f5;
+      let result = Math.imul(state ^ (state >>> 15), 1 | state);
+      result ^= result + Math.imul(result ^ (result >>> 7), 61 | result);
+      return ((result ^ (result >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  function randomBetween(rng, min, max) {
+    return min + (max - min) * rng();
+  }
+
+  function roundCoordinate(value) {
+    return Number(value.toFixed(1));
+  }
+
+  function roundOpacity(value) {
+    return Number(value.toFixed(3));
+  }
+
+  function pickWeightedZone(rng, weights) {
+    const pool = Array.isArray(weights) && weights.length > 0 ? weights : EMOJI_BACKGROUND_ZONE_WEIGHTS.small;
+    const total = pool.reduce((sum, [, weight]) => sum + Number(weight || 0), 0) || 1;
+    let cursor = rng() * total;
+    for (const [zoneKey, weightValue] of pool) {
+      cursor -= Number(weightValue || 0);
+      if (cursor <= 0) {
+        return EMOJI_BACKGROUND_ZONES[zoneKey] || EMOJI_BACKGROUND_ZONES.top;
+      }
+    }
+    const fallbackZone = pool[pool.length - 1]?.[0];
+    return EMOJI_BACKGROUND_ZONES[fallbackZone] || EMOJI_BACKGROUND_ZONES.top;
+  }
+
+  function intersectsEmojiHole(centerX, centerY, radius = 0) {
+    const avatarDx = centerX - EMOJI_BACKGROUND_AVATAR_HOLE.cx;
+    const avatarDy = centerY - EMOJI_BACKGROUND_AVATAR_HOLE.cy;
+    if (avatarDx * avatarDx + avatarDy * avatarDy < (EMOJI_BACKGROUND_AVATAR_HOLE.r + radius) ** 2) {
+      return true;
+    }
+    const textDx = (centerX - EMOJI_BACKGROUND_TEXT_HOLE.cx) / Math.max(1, EMOJI_BACKGROUND_TEXT_HOLE.rx + radius * 0.82);
+    const textDy = (centerY - EMOJI_BACKGROUND_TEXT_HOLE.cy) / Math.max(1, EMOJI_BACKGROUND_TEXT_HOLE.ry + radius * 0.58);
+    return textDx * textDx + textDy * textDy < 1;
+  }
+
+  function collidesWithPlacedItems(placedItems, centerX, centerY, visualSize, spacingFactor = 0.44) {
+    return placedItems.some((item) => {
+      const dx = item.cx - centerX;
+      const dy = item.cy - centerY;
+      const minDistance = item.size * 0.46 + visualSize * spacingFactor;
+      return dx * dx + dy * dy < minDistance * minDistance;
+    });
+  }
+
+  function createProceduralEmojiItems(rng, layout, typeKey, placedItems) {
+    const countKey = `${typeKey}Count`;
+    const sizeKey = `${typeKey}Size`;
+    const count = Math.max(0, Number(layout?.[countKey] || 0));
+    const sizeRange = Array.isArray(layout?.[sizeKey]) ? layout[sizeKey] : [12, 18];
+    const [minSize, maxSize] = sizeRange;
+    const weights = EMOJI_BACKGROUND_ZONE_WEIGHTS[typeKey] || EMOJI_BACKGROUND_ZONE_WEIGHTS.small;
+    const items = [];
+    const maxAttempts = Math.max(20, count * 28);
+    const baseOpacity =
+      typeKey === "small" ? [0.08, 0.19] : typeKey === "accent" ? [0.06, 0.13] : [0.035, 0.08];
+    const spacingFactor = typeKey === "small" ? 0.4 : typeKey === "accent" ? 0.46 : 0.54;
+    const rotationRange = Array.isArray(layout?.rotation) ? layout.rotation : [-10, 10];
+
+    for (let attempt = 0; attempt < maxAttempts && items.length < count; attempt += 1) {
+      const zone = pickWeightedZone(rng, weights);
+      const size = randomBetween(rng, minSize, maxSize);
+      const x = randomBetween(rng, zone.xMin, zone.xMax);
+      const y = randomBetween(rng, zone.yMin, zone.yMax);
+      const centerX = x + size / 2;
+      const centerY = y + size / 2;
+      if (intersectsEmojiHole(centerX, centerY, size * 0.64)) {
+        continue;
+      }
+      if (collidesWithPlacedItems(placedItems, centerX, centerY, size, spacingFactor)) {
+        continue;
+      }
+      const rotate =
+        typeKey === "large" && rng() > 0.6
+          ? 0
+          : randomBetween(rng, rotationRange[0], rotationRange[1]);
+      const opacity = randomBetween(rng, baseOpacity[0], baseOpacity[1]);
+      items.push({
+        x: roundCoordinate(x),
+        y: roundCoordinate(y),
+        size: roundCoordinate(size),
+        opacity: roundOpacity(opacity),
+        rotate: Math.abs(rotate) < 1 ? 0 : roundCoordinate(rotate),
+      });
+      placedItems.push({ cx: centerX, cy: centerY, size });
+    }
+
+    return items;
+  }
+
+  function createProceduralEmojiBlobs(rng, layout, placedItems) {
+    const count = Math.max(0, Number(layout?.blobCount || 0));
+    if (!count) {
+      return [];
+    }
+    const [minRadius, maxRadius] = Array.isArray(layout?.blobRadius) ? layout.blobRadius : [10, 18];
+    const weights = EMOJI_BACKGROUND_ZONE_WEIGHTS.blob;
+    const blobs = [];
+    const maxAttempts = Math.max(16, count * 24);
+
+    for (let attempt = 0; attempt < maxAttempts && blobs.length < count; attempt += 1) {
+      const zone = pickWeightedZone(rng, weights);
+      const radius = randomBetween(rng, minRadius, maxRadius);
+      const centerX = randomBetween(rng, zone.xMin + radius, zone.xMax + radius * 0.5);
+      const centerY = randomBetween(rng, zone.yMin + radius, zone.yMax + radius * 0.5);
+      if (intersectsEmojiHole(centerX, centerY, radius * 1.18)) {
+        continue;
+      }
+      if (collidesWithPlacedItems(placedItems, centerX, centerY, radius * 2, 0.7)) {
+        continue;
+      }
+      const opacity = randomBetween(rng, 0.016, 0.038);
+      blobs.push({
+        cx: roundCoordinate(centerX),
+        cy: roundCoordinate(centerY),
+        r: roundCoordinate(radius),
+        opacity: roundOpacity(opacity),
+      });
+      placedItems.push({ cx: centerX, cy: centerY, size: radius * 2 });
+    }
+
+    return blobs;
+  }
+
+  function buildEmojiBackgroundScene(packKey, seedInput) {
+    const layout = EMOJI_BACKGROUND_PACK_LAYOUTS[packKey] || EMOJI_BACKGROUND_PACK_LAYOUTS.ghosts;
+    const rng = createSeededRandom(`emoji-background:${packKey}:${seedInput || "default"}`);
+    const placedItems = [];
+    const small = createProceduralEmojiItems(rng, layout, "small", placedItems);
+    const accent = createProceduralEmojiItems(rng, layout, "accent", placedItems);
+    const large = createProceduralEmojiItems(rng, layout, "large", placedItems);
+    const blobs = createProceduralEmojiBlobs(rng, layout, placedItems);
+    return { small, accent, large, blobs };
+  }
+
   function renderEmojiBackgroundUses(symbolId, items) {
     return (Array.isArray(items) ? items : [])
       .map((item) => {
@@ -935,7 +1051,7 @@
       .join("");
   }
 
-  function renderEmojiBackgroundOverlay(packKey) {
+  function renderEmojiBackgroundOverlay(packKey, seedInput = "") {
     const normalizedKey = String(packKey || "").trim().toLowerCase();
     if (!normalizedKey || normalizedKey === "none") {
       return "";
@@ -944,28 +1060,29 @@
     if (!symbolMarkup) {
       return "";
     }
-    const scene = EMOJI_BACKGROUND_PACK_SCENES[normalizedKey] || EMOJI_BACKGROUND_BASE_SCENE;
+    const scene = buildEmojiBackgroundScene(normalizedKey, seedInput);
     const symbolId = `emoji-pack-${normalizedKey}-glyph`;
     const glowFilterId = `emoji-pack-${normalizedKey}-glow`;
     const blurFilterId = `emoji-pack-${normalizedKey}-blur`;
     return `<span class="unq-ref-profile-emoji-pack unq-ref-profile-emoji-pack--${esc(normalizedKey)}" aria-hidden="true">
-      <svg class="unq-ref-profile-emoji-pack-svg" viewBox="0 0 320 220" preserveAspectRatio="none">
+      <svg class="unq-ref-profile-emoji-pack-svg" viewBox="0 0 ${EMOJI_BACKGROUND_VIEWBOX_WIDTH} ${EMOJI_BACKGROUND_VIEWBOX_HEIGHT}" preserveAspectRatio="xMidYMin slice">
         <defs>
-          <linearGradient id="emoji-pack-${normalizedKey}-fade" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="white" stop-opacity="0.92"></stop>
-            <stop offset="68%" stop-color="white" stop-opacity="0.88"></stop>
+          <radialGradient id="emoji-pack-${normalizedKey}-fade" cx="50%" cy="34%" r="76%">
+            <stop offset="0%" stop-color="white" stop-opacity="1"></stop>
+            <stop offset="54%" stop-color="white" stop-opacity="0.95"></stop>
+            <stop offset="78%" stop-color="white" stop-opacity="0.68"></stop>
             <stop offset="100%" stop-color="white" stop-opacity="0"></stop>
-          </linearGradient>
+          </radialGradient>
           <mask id="emoji-pack-${normalizedKey}-mask">
-            <rect width="320" height="220" fill="url(#emoji-pack-${normalizedKey}-fade)"></rect>
-            <circle cx="160" cy="86" r="46" fill="black"></circle>
-            <ellipse cx="160" cy="150" rx="92" ry="30" fill="black"></ellipse>
+            <rect width="${EMOJI_BACKGROUND_VIEWBOX_WIDTH}" height="${EMOJI_BACKGROUND_VIEWBOX_HEIGHT}" fill="url(#emoji-pack-${normalizedKey}-fade)"></rect>
+            <circle cx="${EMOJI_BACKGROUND_AVATAR_HOLE.cx}" cy="${EMOJI_BACKGROUND_AVATAR_HOLE.cy}" r="${EMOJI_BACKGROUND_AVATAR_HOLE.r}" fill="black"></circle>
+            <ellipse cx="${EMOJI_BACKGROUND_TEXT_HOLE.cx}" cy="${EMOJI_BACKGROUND_TEXT_HOLE.cy}" rx="${EMOJI_BACKGROUND_TEXT_HOLE.rx}" ry="${EMOJI_BACKGROUND_TEXT_HOLE.ry}" fill="black"></ellipse>
           </mask>
           <filter id="${glowFilterId}">
-            <feGaussianBlur stdDeviation="1.5"></feGaussianBlur>
+            <feGaussianBlur stdDeviation="1.3"></feGaussianBlur>
           </filter>
           <filter id="${blurFilterId}">
-            <feGaussianBlur stdDeviation="3"></feGaussianBlur>
+            <feGaussianBlur stdDeviation="2.7"></feGaussianBlur>
           </filter>
           <symbol id="${symbolId}" viewBox="0 0 48 48">
             ${symbolMarkup}
@@ -2458,7 +2575,7 @@
         : ""
       }
           <div class="unq-ref-profile${card.emojiBackgroundPack !== "none" ? " has-emoji-pack" : ""}${visiblePetCount ? ` has-pets has-pets-${visiblePetCount}` : ""}">
-            ${card.emojiBackgroundPack !== "none" ? renderEmojiBackgroundOverlay(card.emojiBackgroundPack) : ""}
+            ${card.emojiBackgroundPack !== "none" ? renderEmojiBackgroundOverlay(card.emojiBackgroundPack, card.slug || card.name || "") : ""}
             ${renderPetDecorations(card)}
             <div class="unq-ref-avatar-wrap">
               ${card.avatarUrl ? `<img src="${esc(card.avatarUrl)}" alt="${esc(card.name)}" class="unq-ref-avatar-img" data-avatar-image />` : ""}

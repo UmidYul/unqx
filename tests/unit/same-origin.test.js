@@ -83,6 +83,24 @@ describe("same-origin middleware", () => {
     expect(res.statusCode).toBe(200);
   });
 
+  test("allows custom-scheme webview origins that resolve to opaque origin", () => {
+    const req = createReq({
+      headers: {
+        host: "unqx.uz",
+        "x-forwarded-proto": "https",
+        origin: "capacitor://localhost",
+        referer: "android-app://com.unqx.app",
+      },
+    });
+    const res = createRes();
+    const next = vi.fn();
+
+    requireSameOrigin(req, res, next);
+
+    expect(next).toHaveBeenCalledTimes(1);
+    expect(res.statusCode).toBe(200);
+  });
+
   test("rejects POST request when origin does not match allowed origins", () => {
     const req = createReq({
       headers: {

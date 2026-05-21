@@ -25,7 +25,13 @@ function parseOrigin(value) {
   }
 
   try {
-    return new URL(trimmed).origin;
+    const parsed = new URL(trimmed);
+    if (parsed.origin === "null") {
+      // Custom-scheme mobile/webview clients (capacitor://, exp://, android-app://)
+      // resolve to an opaque origin in Node. Treat them like other opaque origins.
+      return null;
+    }
+    return parsed.origin;
   } catch {
     return "__invalid_origin__";
   }
