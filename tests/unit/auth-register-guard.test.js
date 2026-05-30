@@ -15,7 +15,8 @@ describe("auth register guard", () => {
     expect(normalizedSource).toContain("function canResumePendingRegistration");
     expect(registerSource).toContain("canResumePendingRegistration(existing, email)");
     expect(registerSource).toContain("resumedPendingRegistration: true");
-    expect(registerSource).toContain("const user = await prisma.user.create({");
+    expect(registerSource).toContain("const user = await prisma.$transaction(async (tx) => {");
+    expect(registerSource).toContain("const created = await tx.user.create({");
     expect(registerSource).not.toContain("user = await prisma.user.update({");
   });
 });

@@ -16,6 +16,7 @@ const { requireCsrfToken } = require("../../middleware/csrf");
 const { getBaseUrl } = require("../../utils/url");
 const { SESSION_COOKIE_NAME, LEGACY_SESSION_COOKIE_NAMES, buildCookieOptions } = require("../../utils/cookies");
 const { getProfileEditorPresets } = require("../../services/profile-editor-presets");
+const { ensureProfileCardExists } = require("../../services/public-handle");
 
 const router = express.Router();
 
@@ -400,14 +401,13 @@ router.get(
         return;
       }
 
-      const profileCard = await prisma.profileCard.upsert({
-        where: { ownerId: owner.id },
-        update: {},
-        create: {
-          ownerId: owner.id,
-          name: buildAdminCardOwnerLabel(owner),
+      const profileCard = await ensureProfileCardExists({
+        tx: prisma,
+        user: {
+          id: owner.id,
+          firstName: owner.firstName,
+          displayName: buildAdminCardOwnerLabel(owner),
         },
-        select: { id: true },
       });
 
       res.redirect(`/admin/cards/${encodeURIComponent(profileCard.id)}/edit`);

@@ -209,6 +209,67 @@ function buildFreeProfileCardDefaults(user) {
   };
 }
 
+function buildProfileCardCompatErrorText(error) {
+  const parts = [];
+  const push = (value) => {
+    if (!value) return;
+    parts.push(String(value));
+  };
+
+  push(error?.message);
+  push(error?.cause?.message);
+  push(error?.meta?.message);
+  push(error?.meta?.driverAdapterError?.message);
+  push(error?.meta?.driverAdapterError?.cause?.message);
+
+  try {
+    push(JSON.stringify(error?.meta || {}));
+  } catch {
+    // ignore non-serializable error metadata
+  }
+
+  return parts.join("\n");
+}
+
+function isProfileCardThemeTypeMismatchError(error) {
+  const message = buildProfileCardCompatErrorText(error);
+  return (
+    /column "theme" is of type cardtheme but expression is of type "CardTheme"/i.test(message) ||
+    (/column "theme" is of type/i.test(message) &&
+      /cardtheme/i.test(message) &&
+      /expression is of type "CardTheme"/i.test(message))
+  );
+}
+
+async function createProfileCardCompat({ tx = prisma, user }) {
+  if (!user?.id || typeof tx?.$queryRawUnsafe !== "function") {
+    return null;
+  }
+
+  const defaults = buildFreeProfileCardDefaults(user);
+  const rows = await tx.$queryRawUnsafe(
+    `
+      WITH inserted AS (
+        INSERT INTO profile_cards (owner_id, name, tags, buttons, show_branding)
+        VALUES ($1::uuid, $2, $3::jsonb, $4::jsonb, $5)
+        ON CONFLICT (owner_id) DO NOTHING
+        RETURNING id
+      )
+      SELECT id FROM inserted
+      UNION ALL
+      SELECT id FROM profile_cards WHERE owner_id = $1::uuid
+      LIMIT 1
+    `,
+    user.id,
+    defaults.name,
+    JSON.stringify(defaults.tags),
+    JSON.stringify(defaults.buttons),
+    defaults.showBranding,
+  );
+
+  return Array.isArray(rows) ? rows[0] || null : null;
+}
+
 async function ensureProfileCardExists({ tx = prisma, user }) {
   if (!user?.id || !tx.profileCard) {
     return null;
@@ -220,10 +281,23 @@ async function ensureProfileCardExists({ tx = prisma, user }) {
   if (existing) {
     return existing;
   }
-  return tx.profileCard.create({
-    data: buildFreeProfileCardDefaults(user),
-    select: { id: true },
-  });
+  try {
+    return await tx.profileCard.create({
+      data: buildFreeProfileCardDefaults(user),
+      select: { id: true },
+    });
+  } catch (error) {
+    if (!isProfileCardThemeTypeMismatchError(error)) {
+      throw error;
+    }
+
+    const compatCard = await createProfileCardCompat({ tx, user });
+    if (compatCard) {
+      return compatCard;
+    }
+
+    throw error;
+  }
 }
 
 async function ensureFreeProfileForUser({ tx = prisma, user, createProfileCard = true } = {}) {
