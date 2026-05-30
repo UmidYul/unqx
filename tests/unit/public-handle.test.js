@@ -141,4 +141,28 @@ describe("public handle helpers", () => {
     expect(buttons).toBe("[]");
     expect(showBranding).toBe(true);
   });
+
+  test("preemptively uses compat profile card insert for legacy cardtheme columns", async () => {
+    const tx = {
+      profileCard: {
+        findUnique: vi.fn().mockResolvedValue(null),
+        create: vi.fn(),
+      },
+      $queryRaw: vi.fn().mockResolvedValue([{ typeName: "cardtheme" }]),
+      $queryRawUnsafe: vi.fn().mockResolvedValue([{ id: "card-legacy" }]),
+    };
+
+    const created = await ensureProfileCardExists({
+      tx,
+      user: {
+        id: "69e6e274-2480-44fb-9eb5-df04ef16465f",
+        firstName: "Ali",
+      },
+    });
+
+    expect(created).toEqual({ id: "card-legacy" });
+    expect(tx.$queryRaw).toHaveBeenCalledTimes(1);
+    expect(tx.profileCard.create).not.toHaveBeenCalled();
+    expect(tx.$queryRawUnsafe).toHaveBeenCalledTimes(1);
+  });
 });

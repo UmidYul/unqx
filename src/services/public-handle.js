@@ -241,6 +241,31 @@ function isProfileCardThemeTypeMismatchError(error) {
   );
 }
 
+async function shouldUseProfileCardCompatInsert(tx = prisma) {
+  if (typeof tx?.$queryRaw !== "function" || typeof tx?.$queryRawUnsafe !== "function") {
+    return false;
+  }
+
+  try {
+    const rows = await tx.$queryRaw(Prisma.sql`
+      SELECT pg_catalog.format_type(a.atttypid, a.atttypmod)::text AS "typeName"
+      FROM pg_attribute a
+      JOIN pg_class c ON c.oid = a.attrelid
+      JOIN pg_namespace n ON n.oid = c.relnamespace
+      WHERE n.nspname = current_schema()
+        AND c.relname = 'profile_cards'
+        AND a.attname = 'theme'
+        AND a.attnum > 0
+        AND NOT a.attisdropped
+      LIMIT 1
+    `);
+
+    return String(rows?.[0]?.typeName || "").trim() === "cardtheme";
+  } catch {
+    return false;
+  }
+}
+
 async function createProfileCardCompat({ tx = prisma, user }) {
   if (!user?.id || typeof tx?.$queryRawUnsafe !== "function") {
     return null;
@@ -281,6 +306,14 @@ async function ensureProfileCardExists({ tx = prisma, user }) {
   if (existing) {
     return existing;
   }
+
+  if (await shouldUseProfileCardCompatInsert(tx)) {
+    const compatCard = await createProfileCardCompat({ tx, user });
+    if (compatCard) {
+      return compatCard;
+    }
+  }
+
   try {
     return await tx.profileCard.create({
       data: buildFreeProfileCardDefaults(user),
