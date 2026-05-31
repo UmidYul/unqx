@@ -280,5 +280,7 @@ describe("slug page (:slug) templates", () => {
     expect(publicCardSource).toContain("/api/cards/${encodeURIComponent(state.slug)}/follows");
     expect(publicCardSource).toContain("toggleFollow(");
     expect(publicCardSource).toContain("loadFollowDialog");
+    expect(publicCardSource).toContain("isViewerOwnPublicCard");
+    expect(publicCardSource).toContain("patchOwnFollowingDialogAfterToggle");
   });
 });

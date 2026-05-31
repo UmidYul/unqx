@@ -619,6 +619,56 @@
     state.followSummary = normalizeFollowSummary(summary);
   }
 
+  function isViewerOwnPublicCard() {
+    const summary = normalizeFollowSummary(state.followSummary);
+    return !summary.viewer.requiresAuth && !summary.viewer.canFollow;
+  }
+
+  function patchOwnFollowingCount(delta) {
+    const normalizedDelta = Number(delta);
+    if (!Number.isFinite(normalizedDelta) || !normalizedDelta) {
+      return;
+    }
+    const summary = normalizeFollowSummary(state.followSummary);
+    state.followSummary = {
+      ...summary,
+      counts: {
+        ...summary.counts,
+        following: Math.max(0, Number(summary.counts.following || 0) + normalizedDelta),
+      },
+    };
+  }
+
+  function patchOwnFollowingDialogAfterToggle(slug, isFollowing) {
+    const normalizedSlug = String(slug || "").trim().toUpperCase();
+    if (!normalizedSlug || !isViewerOwnPublicCard()) {
+      return;
+    }
+
+    patchOwnFollowingCount(isFollowing ? 1 : -1);
+
+    if (state.followDialog?.type !== "following" || isFollowing || !Array.isArray(state.followDialog?.items)) {
+      return;
+    }
+
+    const nextItems = state.followDialog.items.filter(
+      (item) => String(item?.primarySlug || "").trim().toUpperCase() !== normalizedSlug,
+    );
+    const removedCount = state.followDialog.items.length - nextItems.length;
+    if (removedCount <= 0) {
+      return;
+    }
+
+    state.followDialog = {
+      ...state.followDialog,
+      items: nextItems,
+      pagination: {
+        ...state.followDialog.pagination,
+        total: Math.max(0, Number(state.followDialog?.pagination?.total || 0) - removedCount),
+      },
+    };
+  }
+
   function patchFollowStateCollections(slug, isFollowing) {
     const normalizedSlug = String(slug || "").trim().toUpperCase();
     if (!normalizedSlug) {
@@ -688,6 +738,7 @@
       if (normalizedSlug === String(state.slug || "").trim().toUpperCase()) {
         applyFollowSummary(data.summary);
       }
+      patchOwnFollowingDialogAfterToggle(normalizedSlug, !followingNow);
       patchFollowStateCollections(normalizedSlug, !followingNow);
       renderCard();
       showToast(!followingNow ? "Подписка оформлена" : "Подписка отменена");

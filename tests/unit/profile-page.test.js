@@ -153,6 +153,8 @@ describe("profile page", () => {
     expect(source).toContain("data-community-follow-toggle");
     expect(source).toContain("renderCommunity");
     expect(source).toContain("profile-community-tab-unread");
+    expect(source).toContain("patchCommunityFollowingCount");
+    expect(source).toContain("patchCommunityItemsFollowState");
     expect(source).toContain("wallComposerModalOpen");
     expect(source).toContain("openWallComposerModal");
     expect(source).toContain("closeWallComposerModal");

@@ -2859,6 +2859,39 @@ Email: ${userEmail}
       void loadCommunity();
     };
 
+    const patchCommunityFollowingCount = (delta) => {
+      const normalizedDelta = Number(delta);
+      if (!Number.isFinite(normalizedDelta) || !normalizedDelta) {
+        return;
+      }
+      const summary = normalizeFollowSummary(s.followSummary);
+      s.followSummary = {
+        ...summary,
+        counts: {
+          ...summary.counts,
+          following: Math.max(0, Number(summary.counts.following || 0) + normalizedDelta),
+        },
+      };
+    };
+
+    const patchCommunityItemsFollowState = (slug, isFollowing) => {
+      const normalizedSlug = String(slug || "").trim().toUpperCase();
+      if (!normalizedSlug) {
+        return;
+      }
+      s.communityItems = Array.isArray(s.communityItems)
+        ? s.communityItems.map((item) => {
+          if (String(item?.primarySlug || "").trim().toUpperCase() !== normalizedSlug) {
+            return item;
+          }
+          return {
+            ...item,
+            isFollowing,
+          };
+        })
+        : [];
+    };
+
     const toggleCommunityFollow = async (slug, following) => {
       const normalizedSlug = String(slug || "").trim().toUpperCase();
       if (!normalizedSlug) {
@@ -2881,7 +2914,10 @@ Email: ${userEmail}
         });
 
         const type = normalizeCommunityType(s.communityType);
-        if (type === "following" && following) {
+        const nextIsFollowing = !following;
+        patchCommunityFollowingCount(nextIsFollowing ? 1 : -1);
+
+        if (type === "following" && !nextIsFollowing) {
           s.communityItems = Array.isArray(s.communityItems)
             ? s.communityItems.filter((item) => String(item?.primarySlug || "").trim().toUpperCase() !== normalizedSlug)
             : [];
@@ -2889,25 +2925,8 @@ Email: ${userEmail}
             ...normalizeCommunityPagination(s.communityPagination),
             total: Math.max(0, Number(s.communityPagination?.total || 0) - 1),
           };
-          s.followSummary = {
-            ...normalizeFollowSummary(s.followSummary),
-            counts: {
-              ...normalizeFollowSummary(s.followSummary).counts,
-              following: Math.max(0, Number(s.followSummary?.counts?.following || 0) - 1),
-            },
-          };
         } else {
-          s.communityItems = Array.isArray(s.communityItems)
-            ? s.communityItems.map((item) => {
-              if (String(item?.primarySlug || "").trim().toUpperCase() !== normalizedSlug) {
-                return item;
-              }
-              return {
-                ...item,
-                isFollowing: !following,
-              };
-            })
-            : [];
+          patchCommunityItemsFollowState(normalizedSlug, nextIsFollowing);
         }
         renderCommunity();
       } catch (error) {
