@@ -190,7 +190,7 @@ describe("follows service", () => {
     });
   });
 
-  test("listFollowItemsByOwner public scope hides unavailable profiles and exposes follow flags", async () => {
+  test("listFollowItemsByOwner public scope keeps unavailable profiles with safe flags", async () => {
     mockPrisma.userFollow.findMany
       .mockResolvedValueOnce([
         {
@@ -224,13 +224,21 @@ describe("follows service", () => {
       pageSize: 20,
     });
 
-    expect(result.items).toHaveLength(1);
+    expect(result.items).toHaveLength(2);
     expect(result.items[0]).toMatchObject({
       userId: "user_visible",
       primarySlug: "VIS123",
       isFollowing: true,
       canFollow: true,
       isPubliclyReachable: true,
+    });
+    expect(result.items[1]).toMatchObject({
+      userId: "user_hidden",
+      primarySlug: "HID123",
+      isFollowing: false,
+      canFollow: false,
+      isPubliclyReachable: false,
+      profileHref: null,
     });
   });
 
@@ -266,7 +274,7 @@ describe("follows service", () => {
     });
   });
 
-  test("getFollowSummaryForOwner public scope keeps real counts while preview stays public", async () => {
+  test("getFollowSummaryForOwner public scope keeps real counts and includes unavailable preview items safely", async () => {
     const followerRows = [
       {
         id: "follow_follower_1",
@@ -353,11 +361,18 @@ describe("follows service", () => {
         requiresAuth: false,
       },
     });
-    expect(summary.previews.following).toHaveLength(1);
+    expect(summary.previews.following).toHaveLength(2);
     expect(summary.previews.following[0]).toMatchObject({
       userId: "user_visible_following",
       primarySlug: "VG123",
       isPubliclyReachable: true,
+    });
+    expect(summary.previews.following[1]).toMatchObject({
+      userId: "user_hidden_following",
+      primarySlug: "HG123",
+      isPubliclyReachable: false,
+      profileHref: null,
+      canFollow: false,
     });
   });
 });

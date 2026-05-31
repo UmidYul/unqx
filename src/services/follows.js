@@ -197,9 +197,6 @@ function mapFollowUserItem(user, options = {}) {
   const publicHandle = getActivePublicHandle(user);
   const primarySlug = String(publicHandle?.value || "").trim().toUpperCase() || null;
   const isPubliclyReachable = Boolean(getPublicProfileHrefFromUser(user));
-  if (options.scope === "public" && !isPubliclyReachable) {
-    return null;
-  }
 
   const viewerFollowingSet = options.viewerFollowingSet instanceof Set ? options.viewerFollowingSet : new Set();
   return {
