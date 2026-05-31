@@ -629,15 +629,8 @@ async function getFollowSummaryForOwner({ ownerId, viewerUserId = "", scope = "o
   let unreadFollowersCount = 0;
 
   if (normalizedScope === "public") {
-    const [followersPayload, nextViewerFollowingSet, nextFollowingPreviewPayload, nextUnreadFollowersCount] = await Promise.all([
-      listFollowItemsByOwner({
-        ownerId: normalizedOwnerId,
-        type: "followers",
-        viewerUserId: normalizedViewerUserId,
-        page: 1,
-        pageSize: 1,
-        scope: normalizedScope,
-      }),
+    const [counts, nextViewerFollowingSet, nextFollowingPreviewPayload, nextUnreadFollowersCount] = await Promise.all([
+      getFollowCounts(normalizedOwnerId),
       getViewerFollowLookup(normalizedViewerUserId, [normalizedOwnerId]),
       listFollowItemsByOwner({
         ownerId: normalizedOwnerId,
@@ -649,8 +642,8 @@ async function getFollowSummaryForOwner({ ownerId, viewerUserId = "", scope = "o
       }),
       normalizedViewerUserId === normalizedOwnerId ? getUnreadFollowNotificationsCount(normalizedOwnerId) : Promise.resolve(0),
     ]);
-    followersCount = Math.max(0, Number(followersPayload?.pagination?.total || 0));
-    followingCount = Math.max(0, Number(nextFollowingPreviewPayload?.pagination?.total || 0));
+    followersCount = Math.max(0, Number(counts?.followersCount || 0));
+    followingCount = Math.max(0, Number(counts?.followingCount || 0));
     viewerFollowingSet = nextViewerFollowingSet;
     followingPreviewPayload = nextFollowingPreviewPayload;
     unreadFollowersCount = nextUnreadFollowersCount;

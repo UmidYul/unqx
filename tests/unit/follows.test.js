@@ -266,7 +266,7 @@ describe("follows service", () => {
     });
   });
 
-  test("getFollowSummaryForOwner public scope keeps counts aligned with visible modal items", async () => {
+  test("getFollowSummaryForOwner public scope keeps real counts while preview stays public", async () => {
     const followerRows = [
       {
         id: "follow_follower_1",
@@ -326,6 +326,15 @@ describe("follows service", () => {
       }
       return [];
     });
+    mockPrisma.userFollow.count.mockImplementation(async (args = {}) => {
+      if (args?.where?.followeeId === "user_2") {
+        return 2;
+      }
+      if (args?.where?.followerId === "user_2") {
+        return 2;
+      }
+      return 0;
+    });
 
     const summary = await followsService.getFollowSummaryForOwner({
       ownerId: "user_2",
@@ -335,8 +344,8 @@ describe("follows service", () => {
 
     expect(summary).toMatchObject({
       counts: {
-        followers: 1,
-        following: 1,
+        followers: 2,
+        following: 2,
       },
       viewer: {
         isFollowing: true,
