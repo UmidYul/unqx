@@ -174,6 +174,9 @@ function getFollowUserSelect() {
       take: 1,
       select: {
         fullSlug: true,
+        status: true,
+        pauseMessage: true,
+        isPrimary: true,
       },
     },
   };

@@ -242,6 +242,29 @@ describe("follows service", () => {
     });
   });
 
+  test("listFollowItemsByOwner requests slug metadata required for public profile links", async () => {
+    mockPrisma.userFollow.findMany
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([]);
+
+    await followsService.listFollowItemsByOwner({
+      ownerId: "user_1",
+      type: "following",
+      viewerUserId: "viewer_1",
+      scope: "public",
+      page: 1,
+      pageSize: 20,
+    });
+
+    const firstCallArgs = mockPrisma.userFollow.findMany.mock.calls[0]?.[0] || {};
+    expect(firstCallArgs?.select?.followee?.select?.slugs?.select).toMatchObject({
+      fullSlug: true,
+      status: true,
+      pauseMessage: true,
+      isPrimary: true,
+    });
+  });
+
   test("listFollowItemsByOwner public scope reports exact total and hasMore for a full last page", async () => {
     const visibleRows = Array.from({ length: 20 }, (_, index) => ({
       id: `follow_${index + 1}`,
