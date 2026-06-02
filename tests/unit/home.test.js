@@ -109,6 +109,40 @@ async function renderHomeTemplateWithPosts() {
   });
 }
 
+async function renderHomeTemplateWithFlashSale() {
+  const file = path.join(process.cwd(), "src", "views", "public", "home.ejs");
+  return ejs.renderFile(file, {
+    title: "UNQX | Цифровая визитка за 1 минуту",
+    description: "Одна ссылка вместо тысячи слов",
+    slugTotalLimit: 17576,
+    leaderboardEnabled: true,
+    activeFlashSale: {
+      id: "flash_1",
+      title: "Summer drop access",
+      description: "Минус цена на выбранные UNQ, пока идет таймер.",
+      discountPercent: 25,
+      conditionLabel: "digits 000",
+      slotsLeft: 17,
+      startsAt: new Date("2026-06-02T09:00:00.000Z"),
+      endsAt: new Date("2026-06-03T09:00:00.000Z"),
+    },
+    nextDrop: null,
+    testimonials: [],
+    telegramBotUsername: "unqx_bot",
+    baseUrl: "https://unqx.uz",
+    canonicalUrl: "https://unqx.uz/",
+    cspNonce: "test-nonce",
+    csrfToken: "csrf",
+    assetVersion: "test",
+    publicSettings: {},
+    topWeeklyViews: [],
+    latestCreatedCards: [],
+    latestPublishedPosts: [],
+    authPhotoUrl: "",
+    userSession: null,
+  });
+}
+
 describe("home page", () => {
   test("renders page without crashing", async () => {
     const html = await renderHomeTemplate();
@@ -160,6 +194,15 @@ describe("home page", () => {
     expect(html).toContain('id="latest-posts"');
   });
 
+  test("renders flash sale banner, details section, and duplicated marquee content", async () => {
+    const html = await renderHomeTemplateWithFlashSale();
+    expect(html).toContain("data-flash-sale-banner");
+    expect(html).toContain('id="flash-sale-details"');
+    expect(html).toContain('data-flash-scroll-target="flash-sale-details"');
+    expect(html).toContain('data-flash-focus-target="home-slug-input"');
+    expect(html).toMatch(/site-flash-sale-marquee-group"\s+aria-hidden=(?:&#34;|")true(?:&#34;|")/);
+  });
+
   test("latest posts client source handles SVG clicks and keeps comment/share wiring", () => {
     const source = fs.readFileSync(path.join(process.cwd(), "public", "js", "public-home-search.js"), "utf-8");
     const styles = fs.readFileSync(path.join(process.cwd(), "public", "css", "public-card.css"), "utf-8");
@@ -169,6 +212,16 @@ describe("home page", () => {
     expect(source).toContain('const shareButton = target.closest("[data-home-post-share]");');
     expect(styles).toContain("--home-post-like-accent: #c45766;");
     expect(styles).toContain(".home-latest-post-action-button[data-home-post-like]:hover,");
+  });
+
+  test("flash sale client source shares countdown wiring and hero pricing follow-up", () => {
+    const realtimeSource = fs.readFileSync(path.join(process.cwd(), "public", "js", "public-realtime.js"), "utf-8");
+    const homeSource = fs.readFileSync(path.join(process.cwd(), "public", "js", "public-home-search.js"), "utf-8");
+    expect(realtimeSource).toContain('document.querySelectorAll("[data-flash-countdown]")');
+    expect(realtimeSource).toContain('document.querySelectorAll("[data-flash-sale-action]")');
+    expect(realtimeSource).toContain('const focusId = String(action.getAttribute("data-flash-focus-target") || "").trim();');
+    expect(homeSource).toContain('fetch(`/api/cards/slug-price?slug=${encodeURIComponent(slug)}`');
+    expect(homeSource).toContain('label: priceInfo?.hasFlashSale ? "Купить со скидкой" : "Купить"');
   });
 
   test("matches AAA + 000 = 3 000 000", () => {

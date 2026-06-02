@@ -1332,12 +1332,13 @@ router.get(
       activeFlashSale: activeFlashSale
         ? {
           id: activeFlashSale.id,
+          title: activeFlashSale.title,
           discountPercent: activeFlashSale.discountPercent,
           conditionLabel: resolveConditionLabel(activeFlashSale),
           slotsLeft: Number.isFinite(flashSaleSlotsLeft) ? flashSaleSlotsLeft : null,
           startsAt: activeFlashSale.startsAt,
           endsAt: activeFlashSale.endsAt,
-          description: activeFlashSale.description || activeFlashSale.title,
+          description: activeFlashSale.description || "",
         }
         : null,
       nextDrop: nextDrop

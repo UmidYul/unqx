@@ -1,43 +1,57 @@
 (function initPublicRealtime() {
-  const flash = document.querySelector("[data-flash-sale-banner]");
-  if (flash instanceof HTMLElement) {
-    const node = flash.querySelector("[data-flash-countdown]");
-    const action = flash.querySelector("[data-flash-sale-action]");
-    const endsAtRaw = flash.getAttribute("data-ends-at") || "";
-    const target = new Date(endsAtRaw);
+  const flashSurfaces = Array.from(document.querySelectorAll("[data-flash-sale-surface]")).filter(
+    (node) => node instanceof HTMLElement,
+  );
+  const countdownNodes = Array.from(document.querySelectorAll("[data-flash-countdown]")).filter(
+    (node) => node instanceof HTMLElement,
+  );
+  const flashActions = Array.from(document.querySelectorAll("[data-flash-sale-action]")).filter(
+    (node) => node instanceof HTMLAnchorElement,
+  );
 
-    const tick = () => {
-      if (!(node instanceof HTMLElement)) return;
-      if (Number.isNaN(target.getTime())) {
-        node.textContent = "--:--:--";
-        return;
+  function hideFlashSale() {
+    flashSurfaces.forEach((node) => {
+      if (node instanceof HTMLElement) {
+        node.remove();
       }
-      const diff = Math.max(0, target.getTime() - Date.now());
-      const totalSeconds = Math.floor(diff / 1000);
-      const days = Math.floor(totalSeconds / 86400);
-      const hours = Math.floor(totalSeconds / 3600);
-      const minutes = Math.floor((totalSeconds % 3600) / 60);
-      const seconds = totalSeconds % 60;
-      node.textContent =
-        days > 0
-          ? `${days}d ${String(hours % 24).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`
-          : `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
-      if (diff <= 0) {
-        flash.remove();
-      }
-    };
+    });
+  }
 
-    tick();
-    setInterval(tick, 1000);
+  function formatFlashCountdown(diffMs) {
+    const totalSeconds = Math.floor(Math.max(0, diffMs) / 1000);
+    const days = Math.floor(totalSeconds / 86400);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    return days > 0
+      ? `${days}d ${String(hours % 24).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`
+      : `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+  }
 
-    if (action instanceof HTMLAnchorElement) {
+  function bindFlashActions() {
+    flashActions.forEach((action) => {
       action.addEventListener("click", (event) => {
-        const targetId = String(action.getAttribute("data-flash-scroll-target") || "hero-check").trim();
+        const targetId = String(action.getAttribute("data-flash-scroll-target") || "flash-sale-details").trim();
         if (!targetId) return;
         const section = document.getElementById(targetId);
         if (section instanceof HTMLElement) {
           event.preventDefault();
           section.scrollIntoView({ behavior: "smooth", block: "start" });
+          const focusId = String(action.getAttribute("data-flash-focus-target") || "").trim();
+          if (focusId) {
+            window.setTimeout(() => {
+              const focusNode = document.getElementById(focusId);
+              if (!(focusNode instanceof HTMLElement)) return;
+              try {
+                focusNode.focus({ preventScroll: true });
+              } catch {
+                focusNode.focus();
+              }
+              if (focusNode instanceof HTMLInputElement || focusNode instanceof HTMLTextAreaElement) {
+                focusNode.select();
+              }
+            }, 220);
+          }
           try {
             history.replaceState(null, "", `#${encodeURIComponent(targetId)}`);
           } catch {
@@ -47,6 +61,44 @@
         }
         action.href = `/#${encodeURIComponent(targetId)}`;
       });
+    });
+  }
+
+  bindFlashActions();
+
+  if (flashSurfaces.length > 0) {
+    const endsAtRaw = flashSurfaces[0].getAttribute("data-ends-at") || "";
+    const target = new Date(endsAtRaw);
+    let flashTimer = null;
+
+    const tick = () => {
+      if (Number.isNaN(target.getTime())) {
+        countdownNodes.forEach((node) => {
+          node.textContent = "--:--:--";
+        });
+        return false;
+      }
+
+      const diff = Math.max(0, target.getTime() - Date.now());
+      const label = formatFlashCountdown(diff);
+      countdownNodes.forEach((node) => {
+        node.textContent = label;
+      });
+
+      if (diff <= 0) {
+        hideFlashSale();
+        if (flashTimer) {
+          clearInterval(flashTimer);
+          flashTimer = null;
+        }
+        return false;
+      }
+
+      return true;
+    };
+
+    if (tick()) {
+      flashTimer = setInterval(tick, 1000);
     }
   }
 

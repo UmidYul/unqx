@@ -245,28 +245,68 @@
           </div>
         </nav>
 
+        <%
+          const flashSaleTitle = activeFlashSale ? (String(activeFlashSale.title || "").trim() || "Flash Sale") : "";
+          const flashSaleDescription = activeFlashSale ? String(activeFlashSale.description || "").trim() : "";
+          const flashSaleSupportCopy = activeFlashSale
+            ? (flashSaleDescription || `Скидка ${activeFlashSale.discountPercent}% на ${activeFlashSale.conditionLabel} действует до конца таймера.`)
+            : "";
+          const flashSaleTickerItems = activeFlashSale
+            ? [
+              flashSaleTitle,
+              `Скидка ${activeFlashSale.discountPercent}%`,
+              `На ${activeFlashSale.conditionLabel}`,
+              typeof activeFlashSale.slotsLeft === "number"
+                ? `Осталось ${activeFlashSale.slotsLeft.toLocaleString('ru-RU')} UNQ`
+                : null,
+              "Пока идет обратный отсчет",
+              flashSaleSupportCopy,
+            ].filter(Boolean)
+            : [];
+        %>
         <% if (activeFlashSale) { %>
           <section
-            class="site-flash-sale sticky z-40 border-b border-amber-200 bg-amber-50 px-6 py-2 text-sm text-amber-900"
-            data-flash-sale-banner data-ends-at="<%= activeFlashSale.endsAt.toISOString() %>">
-            <div class="site-flash-sale-inner mx-auto flex w-full max-w-6xl items-center justify-between gap-3">
-              <p class="site-flash-sale-copy inline-flex items-center gap-2">
-                <svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M13 2 3 14h7l-1 8 10-12h-7z"></path>
-                </svg>
-                FLASH SALE · Скидка <strong>
-                  <%= activeFlashSale.discountPercent %>%
-                </strong> на <%= activeFlashSale.conditionLabel %>
-                  <% if (typeof activeFlashSale.slotsLeft==='number' ) { %>
-                    · Осталось <strong>
-                      <%= activeFlashSale.slotsLeft.toLocaleString('ru-RU') %>
-                    </strong> мест/UNQ
-                    <% } %>
-                      · Осталось <span data-flash-countdown>--:--:--</span>
-              </p>
-              <a href="/#hero-check" data-flash-sale-action data-flash-scroll-target="hero-check"
-                class="site-flash-sale-action interactive-btn min-h-11 rounded-lg border border-amber-300 px-2.5 py-1 text-xs font-semibold">Узнать
-                подробнее</a>
+            class="site-flash-sale sticky z-40"
+            data-flash-sale-banner
+            data-flash-sale-surface
+            data-ends-at="<%= activeFlashSale.endsAt.toISOString() %>">
+            <div class="site-flash-sale-inner mx-auto w-full max-w-6xl">
+              <div class="site-flash-sale-head">
+                <div class="site-flash-sale-title-wrap">
+                  <span class="site-flash-sale-kicker">Flash Sale</span>
+                  <p class="site-flash-sale-title">
+                    <%= flashSaleTitle %>
+                  </p>
+                  <p class="site-flash-sale-summary">
+                    <%= flashSaleSupportCopy %>
+                  </p>
+                </div>
+                <div class="site-flash-sale-quick" aria-label="Flash sale highlights">
+                  <span class="site-flash-sale-quick-chip">-<%= activeFlashSale.discountPercent %>%</span>
+                  <span class="site-flash-sale-quick-chip">
+                    До конца
+                    <strong data-flash-countdown>--:--:--</strong>
+                  </span>
+                </div>
+                <a href="/#flash-sale-details" data-flash-sale-action data-flash-scroll-target="flash-sale-details"
+                  class="site-flash-sale-action interactive-btn">Узнать подробнее</a>
+              </div>
+              <div class="site-flash-sale-marquee" aria-label="Flash sale feed">
+                <div class="site-flash-sale-marquee-track">
+                  <% [0, 1].forEach((dupIndex)=> { %>
+                    <div class="site-flash-sale-marquee-group" <%=dupIndex===1 ? 'aria-hidden="true"' : '' %>>
+                      <% flashSaleTickerItems.forEach((item)=> { %>
+                        <span class="site-flash-sale-marquee-item">
+                          <span class="site-flash-sale-marquee-bullet" aria-hidden="true"></span>
+                          <span>
+                            <%= item %>
+                          </span>
+                        </span>
+                        <% }) %>
+                    </div>
+                    <% }) %>
+                </div>
+              </div>
             </div>
           </section>
           <% } %>
@@ -373,6 +413,61 @@
 
               </div>
             </section>
+
+            <% if (activeFlashSale) { %>
+              <section id="flash-sale-details" class="px-6 pb-10" data-observe-reveal data-flash-sale-surface
+                data-ends-at="<%= activeFlashSale.endsAt.toISOString() %>">
+                <div class="site-flash-sale-spotlight mx-auto max-w-6xl">
+                  <div class="site-flash-sale-spotlight-grid">
+                    <div class="site-flash-sale-spotlight-copy">
+                      <span class="site-flash-sale-spotlight-kicker">Flash Sale</span>
+                      <h2 class="site-flash-sale-spotlight-title">
+                        <%= flashSaleTitle %>
+                      </h2>
+                      <p class="site-flash-sale-spotlight-text">
+                        <%= flashSaleSupportCopy %>
+                      </p>
+                      <div class="site-flash-sale-spotlight-actions">
+                        <a href="/#hero-check" data-flash-sale-action data-flash-scroll-target="hero-check"
+                          data-flash-focus-target="home-slug-input"
+                          class="site-flash-sale-spotlight-action site-flash-sale-spotlight-action--primary interactive-btn">
+                          Проверить свой UNQ
+                        </a>
+                        <a href="/#calculator" data-flash-sale-action data-flash-scroll-target="calculator"
+                          class="site-flash-sale-spotlight-action site-flash-sale-spotlight-action--secondary interactive-btn">
+                          Открыть калькулятор
+                        </a>
+                      </div>
+                    </div>
+                    <div class="site-flash-sale-spotlight-stats" aria-label="Flash sale stats">
+                      <div class="site-flash-sale-spotlight-stat">
+                        <span class="site-flash-sale-spotlight-stat-label">Скидка</span>
+                        <strong class="site-flash-sale-spotlight-stat-value">-<%= activeFlashSale.discountPercent %>%</strong>
+                      </div>
+                      <div class="site-flash-sale-spotlight-stat">
+                        <span class="site-flash-sale-spotlight-stat-label">Правило</span>
+                        <strong class="site-flash-sale-spotlight-stat-value site-flash-sale-spotlight-stat-value--compact">
+                          <%= activeFlashSale.conditionLabel %>
+                        </strong>
+                      </div>
+                      <div class="site-flash-sale-spotlight-stat">
+                        <span class="site-flash-sale-spotlight-stat-label">До конца</span>
+                        <strong class="site-flash-sale-spotlight-stat-value site-flash-sale-spotlight-stat-value--timer"
+                          data-flash-countdown>--:--:--</strong>
+                      </div>
+                      <% if (typeof activeFlashSale.slotsLeft==='number' ) { %>
+                        <div class="site-flash-sale-spotlight-stat">
+                          <span class="site-flash-sale-spotlight-stat-label">Осталось UNQ</span>
+                          <strong class="site-flash-sale-spotlight-stat-value">
+                            <%= activeFlashSale.slotsLeft.toLocaleString('ru-RU') %>
+                          </strong>
+                        </div>
+                        <% } %>
+                    </div>
+                  </div>
+                </div>
+              </section>
+              <% } %>
 
             <% if (nextDrop) { %>
               <section class="px-6 pb-6" data-observe-reveal>

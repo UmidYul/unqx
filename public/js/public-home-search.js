@@ -877,6 +877,33 @@ function initSlugAvailability(orderApi) {
   const ARROW_ICON =
     '<svg class="icon-stroke h-3.5 w-3.5" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"></path></svg>';
 
+  async function loadHeroPrice(slug) {
+    try {
+      const response = await fetch(`/api/cards/slug-price?slug=${encodeURIComponent(slug)}`, {
+        method: "GET",
+        headers: { Accept: "application/json" },
+      });
+      if (!response.ok) {
+        return null;
+      }
+      const payload = await response.json().catch(() => ({}));
+      const price = Number(payload?.price || 0);
+      const basePrice = Number(payload?.basePrice || price || 0);
+      const discountPercent = Math.max(0, Number(payload?.discountPercent || 0));
+      if (!Number.isFinite(price) || price <= 0) {
+        return null;
+      }
+      return {
+        price,
+        basePrice,
+        discountPercent,
+        hasFlashSale: payload?.hasFlashSale === true && basePrice > price,
+      };
+    } catch {
+      return null;
+    }
+  }
+
   function renderSuggestions(items) {
     suggestionsNode.innerHTML = "";
     if (!Array.isArray(items) || items.length === 0) {
@@ -902,7 +929,7 @@ function initSlugAvailability(orderApi) {
     suggestionsWrap.classList.remove("hidden");
   }
 
-  function setFeedback(state, slug, suggestions = [], owner = null) {
+  function setFeedback(state, slug, suggestions = [], owner = null, priceInfo = null) {
     feedback.classList.remove("hidden");
 
     function setTakenOwner(owner) {
@@ -968,13 +995,15 @@ function initSlugAvailability(orderApi) {
     if (state === "available") {
       statusIcon.innerHTML = ICON_OK;
       statusText.textContent = `Такой UNQ свободен: ${slug}`;
-      statusNote.textContent = "Можешь сразу купить и занять его.";
+      statusNote.textContent = priceInfo?.hasFlashSale
+        ? `Flash sale: вместо ${formatPrice(priceInfo.basePrice)} сум, теперь ${formatPrice(priceInfo.price)} сум (-${priceInfo.discountPercent}%).`
+        : "Можешь сразу купить и занять его.";
       renderSuggestions([]);
       setTakenOwner(null);
       setPrimaryAction({
         visible: true,
         slug,
-        label: "Купить",
+        label: priceInfo?.hasFlashSale ? "Купить со скидкой" : "Купить",
       });
       syncHeroOfficialNotice(slug);
       return;
@@ -1067,11 +1096,13 @@ function initSlugAvailability(orderApi) {
           : payload.reason === "pending"
             ? "pending"
             : "taken";
+      const priceInfo = state === "available" ? await loadHeroPrice(slug) : null;
       setFeedback(
         state,
         slug,
         Array.isArray(payload.suggestions) ? payload.suggestions : [],
         payload.owner && typeof payload.owner === "object" ? payload.owner : null,
+        priceInfo,
       );
     } catch {
       setFeedback("error", slug);
