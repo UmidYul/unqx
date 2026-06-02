@@ -121,10 +121,20 @@ async function renderHomeTemplateWithFlashSale() {
       title: "Summer drop access",
       description: "Минус цена на выбранные UNQ, пока идет таймер.",
       discountPercent: 25,
-      conditionLabel: "digits 000",
+      conditionType: "pattern_000",
+      conditionLabel: "UNQ с цифрами 000",
       slotsLeft: 17,
       startsAt: new Date("2026-06-02T09:00:00.000Z"),
       endsAt: new Date("2026-06-03T09:00:00.000Z"),
+      presentation: {
+        explanation: "Скидка действует на свободные UNQ, у которых последние три цифры равны 000.",
+        purchaseHint: "Введите свой UNQ ниже. Если он участвует в акции, мы сразу покажем цену со скидкой.",
+        matchModeLabel: "Если ваш UNQ подходит под условие, скидка применяется автоматически на этапе покупки.",
+        includeRules: ["Последние 3 цифры: 000"],
+        excludeRules: [],
+        examples: ["AAA000", "UNQ000", "WOW000"],
+        outcomeHint: "Если UNQ не подходит под условия акции, останется обычная цена без скидки.",
+      },
     },
     nextDrop: null,
     testimonials: [],
@@ -201,8 +211,12 @@ describe("home page", () => {
     expect(html).toContain("data-order-link");
     expect(html).toContain('data-order-source="flash"');
     expect(html).toContain('data-order-offer="flash_sale"');
+    expect(html).toContain("data-flash-sale-meta=");
     expect(html).toMatch(/site-flash-sale-marquee-group"\s+aria-hidden=(?:&#34;|")true(?:&#34;|")/);
     expect(html).toContain('id="order-modal-flash-hero"');
+    expect(html).toContain('id="order-modal-flash-story"');
+    expect(html).toContain('id="order-modal-flash-include-list"');
+    expect(html).toContain('id="order-modal-flash-purchase-card"');
     expect(html).toContain('id="order-modal-flash-countdown" data-flash-countdown');
   });
 
@@ -228,8 +242,12 @@ describe("home page", () => {
     expect(orderModalSource).toContain('state.refSource === "flash"');
     expect(orderModalSource).toContain('document.querySelector("[data-flash-sale-banner]")');
     expect(orderModalSource).toContain('dom.root.dataset.modalTone = "flash"');
+    expect(orderModalSource).toContain('payload?.flashSale && typeof payload.flashSale === "object"');
+    expect(orderModalSource).toContain('document.getElementById("order-modal-flash-story")');
     expect(modalStyles).toContain('#order-modal-root[data-modal-tone="flash"] #order-modal-dialog');
     expect(modalStyles).toContain(".order-modal-flash-hero");
+    expect(modalStyles).toContain(".order-modal-flash-story");
+    expect(modalStyles).toContain(".order-modal-flash-eligibility-badge.is-active");
   });
 
   test("matches AAA + 000 = 3 000 000", () => {

@@ -8,7 +8,7 @@ const { requireCsrfToken } = require("../../middleware/csrf");
 const { getUserSession } = require("../../middleware/auth");
 const { buildLeaderboard, getUserLeaderboardSummary, normalizePeriod, normalizeLeaderboardType } = require("../../services/leaderboard");
 const { getFeatureSetting } = require("../../services/feature-settings");
-const { getActiveFlashSale, resolveConditionLabel } = require("../../services/flash-sales");
+const { getActiveFlashSale, resolveConditionLabel, resolveFlashSalePresentation } = require("../../services/flash-sales");
 const { getDropLiveStats } = require("../../services/drops");
 const { getTodayVisitorsStats, getUtcDayStart } = require("../../services/live-stats");
 const { getReferralBootstrap, claimReferralReward } = require("../../services/referrals");
@@ -127,6 +127,7 @@ router.get(
         endsAt: sale.endsAt,
         conditionType: sale.conditionType,
         conditionLabel: resolveConditionLabel(sale),
+        presentation: resolveFlashSalePresentation(sale),
       },
     });
   }),

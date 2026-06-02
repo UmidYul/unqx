@@ -15,7 +15,12 @@ const {
 const { absoluteUrl } = require("../../utils/url");
 const { buildLeaderboard, normalizePeriod, normalizeLeaderboardType, getSlugTopBadge, getUserLeaderboardSummary } = require("../../services/leaderboard");
 const { getFeatureSetting } = require("../../services/feature-settings");
-const { getActiveFlashSale, resolveConditionLabel, getFlashSaleSlotsLeft } = require("../../services/flash-sales");
+const {
+  getActiveFlashSale,
+  resolveConditionLabel,
+  getFlashSaleSlotsLeft,
+  resolveFlashSalePresentation,
+} = require("../../services/flash-sales");
 const { normalizeRefCode } = require("../../services/referrals");
 const { getPricingSettings } = require("../../services/pricing-settings");
 const { getManySettings } = require("../../services/platform-settings");
@@ -1335,10 +1340,12 @@ router.get(
           title: activeFlashSale.title,
           discountPercent: activeFlashSale.discountPercent,
           conditionLabel: resolveConditionLabel(activeFlashSale),
+          conditionType: activeFlashSale.conditionType,
           slotsLeft: Number.isFinite(flashSaleSlotsLeft) ? flashSaleSlotsLeft : null,
           startsAt: activeFlashSale.startsAt,
           endsAt: activeFlashSale.endsAt,
           description: activeFlashSale.description || "",
+          presentation: resolveFlashSalePresentation(activeFlashSale),
         }
         : null,
       nextDrop: nextDrop

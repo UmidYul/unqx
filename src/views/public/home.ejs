@@ -248,14 +248,24 @@
         <%
           const flashSaleTitle = activeFlashSale ? (String(activeFlashSale.title || "").trim() || "Flash Sale") : "";
           const flashSaleDescription = activeFlashSale ? String(activeFlashSale.description || "").trim() : "";
+          const flashSalePresentation = activeFlashSale && activeFlashSale.presentation && typeof activeFlashSale.presentation === "object"
+            ? activeFlashSale.presentation
+            : null;
           const flashSaleSupportCopy = activeFlashSale
-            ? (flashSaleDescription || `Скидка ${activeFlashSale.discountPercent}% на ${activeFlashSale.conditionLabel} действует до конца таймера.`)
+            ? (
+              flashSaleDescription ||
+              String(flashSalePresentation?.explanation || "").trim() ||
+              `Скидка ${activeFlashSale.discountPercent}% по условию «${activeFlashSale.conditionLabel}» действует до конца таймера.`
+            )
+            : "";
+          const flashSalePresentationJson = activeFlashSale
+            ? JSON.stringify(flashSalePresentation || {}).replace(/</g, "\\u003c")
             : "";
           const flashSaleTickerItems = activeFlashSale
             ? [
               flashSaleTitle,
               `Скидка ${activeFlashSale.discountPercent}%`,
-              `На ${activeFlashSale.conditionLabel}`,
+              `Условие: ${activeFlashSale.conditionLabel}`,
               typeof activeFlashSale.slotsLeft === "number"
                 ? `Осталось ${activeFlashSale.slotsLeft.toLocaleString('ru-RU')} UNQ`
                 : null,
@@ -273,6 +283,7 @@
             data-flash-sale-summary="<%= flashSaleSupportCopy %>"
             data-flash-sale-discount="<%= activeFlashSale.discountPercent %>"
             data-flash-sale-rule="<%= activeFlashSale.conditionLabel %>"
+            data-flash-sale-meta="<%= flashSalePresentationJson %>"
             data-ends-at="<%= activeFlashSale.endsAt.toISOString() %>">
             <div class="site-flash-sale-inner mx-auto w-full max-w-6xl">
               <div class="site-flash-sale-head">

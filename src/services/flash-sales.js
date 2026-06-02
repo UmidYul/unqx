@@ -155,32 +155,168 @@ function isRuleMatched(slug, rule) {
   return false;
 }
 
+function pluralizeRu(count, one, few, many) {
+  const abs = Math.abs(Number(count) || 0);
+  const mod10 = abs % 10;
+  const mod100 = abs % 100;
+  if (mod10 === 1 && mod100 !== 11) return one;
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return few;
+  return many;
+}
+
+function buildMaskExample(mask) {
+  const normalizedMask = normalizeCustomPattern(mask);
+  if (!normalizedMask) return "";
+  const letterFallback = ["A", "B", "C"];
+  const digitFallback = ["1", "2", "3"];
+  return normalizedMask
+    .split("")
+    .map((char, index) => {
+      if (char !== "*" && char !== "?") {
+        return char;
+      }
+      return index < 3 ? letterFallback[index] : digitFallback[index - 3];
+    })
+    .join("");
+}
+
+function formatFlashRuleLabel(rule) {
+  if (!rule || typeof rule !== "object") return "";
+  switch (rule.type) {
+    case "slug":
+      return `Точный UNQ: ${rule.value}`;
+    case "mask":
+      return `Маска: ${rule.value}`;
+    case "letters":
+      return `Первые 3 буквы: ${rule.value}`;
+    case "digits":
+      return `Последние 3 цифры: ${rule.value}`;
+    default:
+      return "";
+  }
+}
+
+function buildFlashRuleExample(rule) {
+  if (!rule || typeof rule !== "object") return "";
+  switch (rule.type) {
+    case "slug":
+      return rule.value;
+    case "mask":
+      return buildMaskExample(rule.value);
+    case "letters":
+      return `${rule.value}123`;
+    case "digits":
+      return `ABC${rule.value}`;
+    default:
+      return "";
+  }
+}
+
 function resolveConditionLabel(sale) {
   if (!sale) return "";
   switch (sale.conditionType) {
     case "all":
-      return "all slugs";
+      return "Все UNQ";
     case "pattern_000":
-      return "digits 000";
+      return "UNQ с цифрами 000";
     case "pattern_aaa":
-      return "same letters (AAA)";
+      return "UNQ с одинаковыми буквами (AAA)";
     case "sequential_digits":
-      return "sequential digits";
+      return "UNQ с последовательными цифрами";
     case "custom": {
       const payload = normalizeFlashCustomPayload(sale.conditionValue);
       const includeCount = payload.includeRules.length;
       const excludeCount = payload.excludeRules.length;
       if (includeCount > 0 && excludeCount > 0) {
-        return `custom: ${includeCount} rules, -${excludeCount} excludes`;
+        return `Кастом: ${includeCount} ${pluralizeRu(includeCount, "правило", "правила", "правил")}, ${excludeCount} ${pluralizeRu(excludeCount, "исключение", "исключения", "исключений")}`;
       }
       if (includeCount > 0) {
-        return `custom: ${includeCount} rules`;
+        return `Кастом: ${includeCount} ${pluralizeRu(includeCount, "правило", "правила", "правил")}`;
       }
-      return "custom rules";
+      return "Кастомные правила";
     }
     default:
-      return "custom rules";
+      return "Кастомные правила";
   }
+}
+
+function resolveFlashSalePresentation(sale) {
+  if (!sale) {
+    return {
+      conditionLabel: "",
+      explanation: "",
+      purchaseHint: "",
+      matchModeLabel: "",
+      includeRules: [],
+      excludeRules: [],
+      examples: [],
+      outcomeHint: "",
+    };
+  }
+
+  const conditionLabel = resolveConditionLabel(sale);
+  const payload = sale.conditionType === "custom" ? normalizeFlashCustomPayload(sale.conditionValue) : null;
+  const includeRules = payload ? payload.includeRules.map(formatFlashRuleLabel).filter(Boolean) : [];
+  const excludeRules = payload ? payload.excludeRules.map(formatFlashRuleLabel).filter(Boolean) : [];
+  const baseExamples = [];
+  let explanation = "";
+  let matchModeLabel = "";
+
+  switch (sale.conditionType) {
+    case "all":
+      explanation = "Скидка действует на любой свободный UNQ. Выберите понравившийся slug, и цена уменьшится автоматически.";
+      baseExamples.push("ABC123", "UNQ777", "WOW000");
+      break;
+    case "pattern_000":
+      explanation = "Скидка действует на свободные UNQ, у которых последние три цифры равны 000.";
+      baseExamples.push("AAA000", "UNQ000", "WOW000");
+      break;
+    case "pattern_aaa":
+      explanation = "Скидка действует на свободные UNQ, где первые три буквы одинаковые.";
+      baseExamples.push("AAA123", "WOW777", "ZZZ010");
+      break;
+    case "sequential_digits":
+      explanation = "Скидка действует на свободные UNQ, где последние три цифры идут по порядку: 123, 234, 345 и дальше до 789.";
+      baseExamples.push("ABC123", "WOW456", "UNQ789");
+      break;
+    case "custom": {
+      explanation = "Скидка действует только на UNQ, которые соответствуют правилам акции ниже.";
+      if (payload?.matchMode === "all") {
+        matchModeLabel = "UNQ должен одновременно совпасть со всеми правилами акции.";
+      } else {
+        matchModeLabel = "Достаточно совпасть хотя бы с одним правилом акции.";
+      }
+      payload?.includeRules.forEach((rule) => {
+        const example = buildFlashRuleExample(rule);
+        if (example) {
+          baseExamples.push(example);
+        }
+      });
+      break;
+    }
+    default:
+      explanation = "Скидка действует на выбранные UNQ в рамках активной акции.";
+      break;
+  }
+
+  if (!matchModeLabel && sale.conditionType !== "custom") {
+    matchModeLabel = "Если ваш UNQ подходит под условие, скидка применяется автоматически на этапе покупки.";
+  }
+
+  const examples = Array.from(
+    new Set(baseExamples.map((item) => normalizeSlug(item)).filter((item) => SLUG_PATTERN.test(item))),
+  ).slice(0, 6);
+
+  return {
+    conditionLabel,
+    explanation,
+    purchaseHint: "Введите свой UNQ ниже. Если он участвует в акции, мы сразу покажем цену со скидкой.",
+    matchModeLabel,
+    includeRules,
+    excludeRules,
+    examples,
+    outcomeHint: "Если UNQ не подходит под условия акции, останется обычная цена без скидки.",
+  };
 }
 
 function isSlugMatchedByFlashSale({ slug, sale }) {
@@ -326,4 +462,5 @@ module.exports = {
   isSlugMatchedByFlashSale,
   applyFlashSaleToPrice,
   resolveConditionLabel,
+  resolveFlashSalePresentation,
 };

@@ -17,7 +17,12 @@ const {
   toTelegramPlanPriceLabel,
   toTelegramTotalPriceLabel,
 } = require("../../services/payment-flow");
-const { getActiveFlashSale, applyFlashSaleToPrice } = require("../../services/flash-sales");
+const {
+  getActiveFlashSale,
+  applyFlashSaleToPrice,
+  resolveConditionLabel,
+  resolveFlashSalePresentation,
+} = require("../../services/flash-sales");
 const { markDropSlugSold } = require("../../services/drops");
 const {
   normalizePlan,
@@ -576,6 +581,15 @@ async function buildSlugPricePayload(slug) {
     discountAmount: flash.discountAmount,
     discountPercent: flash.discountPercent,
     flashSaleId: flash.hasDiscount ? activeSale.id : null,
+    flashSale: activeSale
+      ? {
+        saleId: activeSale.id,
+        matchesCurrentSlug: flash.hasDiscount,
+        discountPercent: Number(activeSale.discountPercent || 0),
+        conditionLabel: resolveConditionLabel(activeSale),
+        presentation: resolveFlashSalePresentation(activeSale),
+      }
+      : null,
     source: hasPriceOverride ? "override" : "calculator",
   };
 }

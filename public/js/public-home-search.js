@@ -898,6 +898,7 @@ function initSlugAvailability(orderApi) {
         basePrice,
         discountPercent,
         hasFlashSale: payload?.hasFlashSale === true && basePrice > price,
+        conditionLabel: String(payload?.flashSale?.conditionLabel || "").trim(),
       };
     } catch {
       return null;
@@ -996,7 +997,7 @@ function initSlugAvailability(orderApi) {
       statusIcon.innerHTML = ICON_OK;
       statusText.textContent = `Такой UNQ свободен: ${slug}`;
       statusNote.textContent = priceInfo?.hasFlashSale
-        ? `Flash sale: вместо ${formatPrice(priceInfo.basePrice)} сум, теперь ${formatPrice(priceInfo.price)} сум (-${priceInfo.discountPercent}%).`
+        ? `Flash Sale: вместо ${formatPrice(priceInfo.basePrice)} сум теперь ${formatPrice(priceInfo.price)} сум (-${priceInfo.discountPercent}%).`
         : "Можешь сразу купить и занять его.";
       renderSuggestions([]);
       setTakenOwner(null);
@@ -1270,6 +1271,7 @@ function initSlugCalculator(orderApi) {
       return {
         total,
         flash,
+        flashSale: payload?.flashSale && typeof payload.flashSale === "object" ? payload.flashSale : null,
         source: String(payload?.source || "calculator"),
         calculation: payload?.calculation && typeof payload.calculation === "object" ? payload.calculation : null,
       };
@@ -1603,7 +1605,10 @@ function initSlugCalculator(orderApi) {
       if (flashFinalNode instanceof HTMLElement) {
         animateNumberText(flashFinalNode, lastAnimatedPrice, finalPrice);
       }
-      resultFormula.textContent = `Flash sale применён (-${serverPricing.flash.discountPercent}%)`;
+      const flashRuleLabel = String(serverPricing?.flashSale?.conditionLabel || "").trim();
+      resultFormula.textContent = flashRuleLabel
+        ? `Скидка Flash Sale применена: -${serverPricing.flash.discountPercent}% по условию «${flashRuleLabel}».`
+        : `Скидка Flash Sale применена: -${serverPricing.flash.discountPercent}%.`;
     } else if (serverPricing.source === "override") {
       animateNumberText(resultPrice, lastAnimatedPrice, finalPrice);
       resultFormula.textContent = `Персональная цена: ${formatPrice(finalPrice)} сум`;

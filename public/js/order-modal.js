@@ -48,6 +48,20 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     flashDiscount: document.getElementById("order-modal-flash-discount"),
     flashRule: document.getElementById("order-modal-flash-rule"),
     flashCountdown: document.getElementById("order-modal-flash-countdown"),
+    flashStory: document.getElementById("order-modal-flash-story"),
+    flashStoryText: document.getElementById("order-modal-flash-story-text"),
+    flashMatchMode: document.getElementById("order-modal-flash-match-mode"),
+    flashIncludeWrap: document.getElementById("order-modal-flash-include-wrap"),
+    flashIncludeList: document.getElementById("order-modal-flash-include-list"),
+    flashExcludeWrap: document.getElementById("order-modal-flash-exclude-wrap"),
+    flashExcludeList: document.getElementById("order-modal-flash-exclude-list"),
+    flashExamplesWrap: document.getElementById("order-modal-flash-examples-wrap"),
+    flashExamples: document.getElementById("order-modal-flash-examples"),
+    flashPurchaseCard: document.getElementById("order-modal-flash-purchase-card"),
+    flashPurchaseHint: document.getElementById("order-modal-flash-purchase-hint"),
+    flashEligibilityBadge: document.getElementById("order-modal-flash-eligibility-badge"),
+    flashEligibilityText: document.getElementById("order-modal-flash-eligibility-text"),
+    flashPriceLine: document.getElementById("order-modal-flash-price-line"),
     stepLoading: document.getElementById("order-modal-step-loading"),
     stepAuth: document.getElementById("order-modal-step-auth"),
     authTitle: document.getElementById("order-modal-title"),
@@ -173,6 +187,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     promoCode: "",
     promoValidationHint: "",
     checkoutContext: null,
+    flashSaleMeta: null,
     submitBlockedMessage: "",
     lastOpenOptions: {},
     initialFormSnapshot: null,
@@ -188,6 +203,32 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
       return null;
     }
     const countdownNode = flash.querySelector("[data-flash-countdown]");
+    let presentation = null;
+    try {
+      const rawMeta = String(flash.getAttribute("data-flash-sale-meta") || "").trim();
+      if (rawMeta) {
+        const parsed = JSON.parse(rawMeta);
+        if (parsed && typeof parsed === "object") {
+          presentation = parsed;
+        }
+      }
+    } catch {
+      presentation = null;
+    }
+    if (!presentation || typeof presentation !== "object") {
+      const ruleText = String(flash.getAttribute("data-flash-sale-rule") || "").trim() || "Подходящие UNQ";
+      presentation = {
+        explanation:
+          String(flash.getAttribute("data-flash-sale-summary") || "").trim() ||
+          "Скидка применяется автоматически к UNQ, которые подходят под условия акции.",
+        purchaseHint: "Введите свой UNQ ниже. Если он участвует в акции, мы сразу покажем цену со скидкой.",
+        matchModeLabel: `Условие акции: ${ruleText}.`,
+        includeRules: [ruleText],
+        excludeRules: [],
+        examples: [],
+        outcomeHint: "Если UNQ не подходит под условия акции, останется обычная цена без скидки.",
+      };
+    }
     return {
       title: String(flash.getAttribute("data-flash-sale-title") || "").trim() || "Flash Sale",
       summary:
@@ -196,7 +237,206 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
       discountText: `-${String(flash.getAttribute("data-flash-sale-discount") || "").trim() || "0"}%`,
       ruleText: String(flash.getAttribute("data-flash-sale-rule") || "").trim() || "Подходящие UNQ",
       countdownText: countdownNode instanceof HTMLElement ? String(countdownNode.textContent || "").trim() || "--:--:--" : "--:--:--",
+      presentation,
     };
+  }
+
+  function escapeHtml(value) {
+    return String(value || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  function resolveFlashPresentationContext(preferredMeta = null) {
+    const flashContext = getFlashOfferContext();
+    const rawPresentation =
+      preferredMeta?.presentation && typeof preferredMeta.presentation === "object"
+        ? preferredMeta.presentation
+        : state.flashSaleMeta?.presentation && typeof state.flashSaleMeta.presentation === "object"
+          ? state.flashSaleMeta.presentation
+          : flashContext?.presentation && typeof flashContext.presentation === "object"
+            ? flashContext.presentation
+            : null;
+    const ruleLabel =
+      String(preferredMeta?.conditionLabel || state.flashSaleMeta?.conditionLabel || flashContext?.ruleText || "").trim() ||
+      "Подходящие UNQ";
+    return {
+      explanation:
+        String(rawPresentation?.explanation || flashContext?.summary || "").trim() ||
+        "Скидка применяется автоматически к UNQ, которые подходят под условия акции.",
+      purchaseHint:
+        String(rawPresentation?.purchaseHint || "").trim() ||
+        "Введите свой UNQ ниже. Если он участвует в акции, мы сразу покажем цену со скидкой.",
+      matchModeLabel:
+        String(rawPresentation?.matchModeLabel || "").trim() ||
+        `Условие акции: ${ruleLabel}.`,
+      includeRules:
+        Array.isArray(rawPresentation?.includeRules) && rawPresentation.includeRules.length
+          ? rawPresentation.includeRules.map((item) => String(item || "").trim()).filter(Boolean)
+          : [ruleLabel],
+      excludeRules:
+        Array.isArray(rawPresentation?.excludeRules) && rawPresentation.excludeRules.length
+          ? rawPresentation.excludeRules.map((item) => String(item || "").trim()).filter(Boolean)
+          : [],
+      examples:
+        Array.isArray(rawPresentation?.examples) && rawPresentation.examples.length
+          ? rawPresentation.examples.map((item) => String(item || "").trim().toUpperCase()).filter(Boolean)
+          : [],
+      outcomeHint:
+        String(rawPresentation?.outcomeHint || "").trim() ||
+        "Если UNQ не подходит под условия акции, останется обычная цена без скидки.",
+    };
+  }
+
+  function renderFlashRuleItems(listNode, items) {
+    if (!(listNode instanceof HTMLElement)) {
+      return;
+    }
+    listNode.innerHTML = "";
+    (Array.isArray(items) ? items : []).forEach((item) => {
+      const normalized = String(item || "").trim();
+      if (!normalized) {
+        return;
+      }
+      const node = document.createElement("li");
+      node.className = "order-modal-flash-rule-item";
+      node.textContent = normalized;
+      listNode.appendChild(node);
+    });
+  }
+
+  function applyFlashExampleSlug(slug) {
+    const parsed = splitSlug(slug);
+    if (!parsed || isSubscriptionRenewalMode()) {
+      return;
+    }
+    state.lastOpenOptions = {
+      ...(state.lastOpenOptions && typeof state.lastOpenOptions === "object" ? state.lastOpenOptions : {}),
+      slug: parsed.slug,
+      refSource: state.refSource || "flash",
+      refOffer: state.refOffer || "flash_sale",
+    };
+    state.slugLocked = false;
+    state.lockedSlug = "";
+    dom.slugReadonlyWrap?.classList.add("hidden");
+    dom.slugInputsWrap?.classList.remove("hidden");
+    if (dom.letters instanceof HTMLInputElement) {
+      dom.letters.value = parsed.letters;
+    }
+    if (dom.digits instanceof HTMLInputElement) {
+      dom.digits.value = parsed.digits;
+    }
+    if (!dom.stepForm.classList.contains("hidden")) {
+      dom.letters?.focus();
+    }
+    void updateTotals();
+  }
+
+  function renderFlashExampleButtons(examples) {
+    if (!(dom.flashExamples instanceof HTMLElement) || !(dom.flashExamplesWrap instanceof HTMLElement)) {
+      return;
+    }
+    dom.flashExamples.innerHTML = "";
+    const normalizedExamples = Array.from(
+      new Set((Array.isArray(examples) ? examples : []).map((item) => String(item || "").trim().toUpperCase()).filter(Boolean)),
+    );
+    dom.flashExamplesWrap.classList.toggle("hidden", normalizedExamples.length === 0);
+    normalizedExamples.forEach((example) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "interactive-btn order-modal-flash-example-button";
+      button.textContent = example;
+      button.addEventListener("click", () => {
+        applyFlashExampleSlug(example);
+      });
+      dom.flashExamples.appendChild(button);
+    });
+  }
+
+  function syncFlashStoryUi(preferredMeta = null) {
+    const flashMode = isFlashOfferMode();
+    if (dom.flashStory instanceof HTMLElement) {
+      dom.flashStory.classList.toggle("hidden", !flashMode);
+      dom.flashStory.setAttribute("aria-hidden", flashMode ? "false" : "true");
+    }
+    if (!flashMode) {
+      return;
+    }
+
+    const presentation = resolveFlashPresentationContext(preferredMeta);
+    if (dom.flashStoryText instanceof HTMLElement) {
+      dom.flashStoryText.textContent = presentation.explanation;
+    }
+    if (dom.flashMatchMode instanceof HTMLElement) {
+      dom.flashMatchMode.textContent = presentation.matchModeLabel;
+      dom.flashMatchMode.classList.toggle("hidden", !presentation.matchModeLabel);
+    }
+    if (dom.flashPurchaseHint instanceof HTMLElement) {
+      dom.flashPurchaseHint.textContent = presentation.purchaseHint;
+    }
+    renderFlashRuleItems(dom.flashIncludeList, presentation.includeRules);
+    renderFlashRuleItems(dom.flashExcludeList, presentation.excludeRules);
+    if (dom.flashIncludeWrap instanceof HTMLElement) {
+      dom.flashIncludeWrap.classList.toggle("hidden", presentation.includeRules.length === 0);
+    }
+    if (dom.flashExcludeWrap instanceof HTMLElement) {
+      dom.flashExcludeWrap.classList.toggle("hidden", presentation.excludeRules.length === 0);
+    }
+    renderFlashExampleButtons(presentation.examples);
+  }
+
+  function syncFlashPurchaseStatus({ pricing = null, server = null } = {}) {
+    if (!isFlashOfferMode()) {
+      return;
+    }
+    const presentation = resolveFlashPresentationContext(server?.flashSale || state.flashSaleMeta);
+    if (dom.flashEligibilityBadge instanceof HTMLElement) {
+      dom.flashEligibilityBadge.className = "order-modal-flash-eligibility-badge";
+    }
+
+    if (!(pricing && pricing.slug)) {
+      if (dom.flashEligibilityBadge instanceof HTMLElement) {
+        dom.flashEligibilityBadge.textContent = "Введите UNQ";
+        dom.flashEligibilityBadge.classList.add("is-idle");
+      }
+      if (dom.flashEligibilityText instanceof HTMLElement) {
+        dom.flashEligibilityText.textContent = "Выберите подходящий slug или нажмите на пример из акции.";
+      }
+      if (dom.flashPriceLine instanceof HTMLElement) {
+        dom.flashPriceLine.textContent = presentation.purchaseHint;
+      }
+      return;
+    }
+
+    const slug = String(pricing.slug || "").trim().toUpperCase();
+    const flashInfo = server?.flash && typeof server.flash === "object" ? server.flash : null;
+    if (flashInfo) {
+      if (dom.flashEligibilityBadge instanceof HTMLElement) {
+        dom.flashEligibilityBadge.textContent = "Скидка активна";
+        dom.flashEligibilityBadge.classList.add("is-active");
+      }
+      if (dom.flashEligibilityText instanceof HTMLElement) {
+        dom.flashEligibilityText.textContent = `${slug} подходит под условия акции.`;
+      }
+      if (dom.flashPriceLine instanceof HTMLElement) {
+        dom.flashPriceLine.innerHTML = `Сейчас <strong>${escapeHtml(formatPrice(flashInfo.finalPrice))} сум</strong> вместо ${escapeHtml(formatPrice(flashInfo.basePrice))} сум.`;
+      }
+      return;
+    }
+
+    if (dom.flashEligibilityBadge instanceof HTMLElement) {
+      dom.flashEligibilityBadge.textContent = "Обычная цена";
+      dom.flashEligibilityBadge.classList.add("is-muted");
+    }
+    if (dom.flashEligibilityText instanceof HTMLElement) {
+      dom.flashEligibilityText.textContent = `${slug} не подходит под текущие условия акции.`;
+    }
+    if (dom.flashPriceLine instanceof HTMLElement) {
+      dom.flashPriceLine.textContent = `${presentation.outcomeHint} Для этого UNQ действует обычная цена.`;
+    }
   }
 
   function isFlashOfferMode() {
@@ -205,6 +445,15 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
 
   function syncModalToneUi() {
     const flashMode = isFlashOfferMode();
+    const flashContext = flashMode ? getFlashOfferContext() : null;
+    if (flashMode && flashContext?.presentation) {
+      state.flashSaleMeta = {
+        ...(state.flashSaleMeta && typeof state.flashSaleMeta === "object" ? state.flashSaleMeta : {}),
+        conditionLabel: flashContext.ruleText,
+        discountPercent: Number(String(flashContext.discountText || "").replace(/[^0-9]/g, "") || 0),
+        presentation: flashContext.presentation,
+      };
+    }
     if (flashMode) {
       dom.root.dataset.modalTone = "flash";
       dom.dialog?.setAttribute("data-modal-tone", "flash");
@@ -214,16 +463,17 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     }
 
     if (!(dom.flashHero instanceof HTMLElement)) {
+      syncFlashStoryUi(state.flashSaleMeta);
       return;
     }
 
     dom.flashHero.classList.toggle("hidden", !flashMode);
     dom.flashHero.setAttribute("aria-hidden", flashMode ? "false" : "true");
     if (!flashMode) {
+      syncFlashStoryUi(state.flashSaleMeta);
       return;
     }
 
-    const flashContext = getFlashOfferContext();
     if (dom.flashTitle instanceof HTMLElement) {
       dom.flashTitle.textContent = flashContext?.title || "Flash Sale";
     }
@@ -240,6 +490,8 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     if (dom.flashCountdown instanceof HTMLElement) {
       dom.flashCountdown.textContent = flashContext?.countdownText || "--:--:--";
     }
+    syncFlashStoryUi(state.flashSaleMeta);
+    syncFlashPurchaseStatus();
   }
 
   const STEP_PROGRESS = {
@@ -1073,14 +1325,14 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
       dom.authTitle.textContent = renewalMode
         ? "Войдите в аккаунт"
         : flashMode
-          ? "Flash Sale открыт"
+          ? "Акция Flash Sale активна"
           : DEFAULT_AUTH_TITLE;
     }
     if (dom.authText instanceof HTMLElement) {
       dom.authText.textContent = renewalMode
         ? "Нужно, чтобы привязать продление Premium к вашему аккаунту."
         : flashMode
-          ? "Войдите или зарегистрируйтесь, чтобы оформить UNQ. Если выбранный slug участвует в акции, скидка применится автоматически."
+          ? "Изучите условия акции ниже. После входа вы сможете сразу купить UNQ, а если выбранный slug подходит под акцию, скидка применится автоматически."
           : DEFAULT_AUTH_TEXT;
     }
     if (dom.submit instanceof HTMLButtonElement) {
@@ -1427,7 +1679,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     try {
       const response = await fetch(`/api/cards/slug-price?slug=${encodeURIComponent(slug)}`);
       if (!response.ok) {
-        return { total: fallbackTotal, flash: null };
+        return { total: fallbackTotal, flash: null, flashSale: null };
       }
       const payload = await response.json();
       if (seq !== priceRequestSeq) {
@@ -1445,11 +1697,12 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
       return {
         total,
         flash,
+        flashSale: payload?.flashSale && typeof payload.flashSale === "object" ? payload.flashSale : null,
         source: String(payload.source || "calculator"),
         calculation: payload?.calculation && typeof payload.calculation === "object" ? payload.calculation : null,
       };
     } catch {
-      return { total: fallbackTotal, flash: null, source: "calculator", calculation: null };
+      return { total: fallbackTotal, flash: null, flashSale: null, source: "calculator", calculation: null };
     }
   }
 
@@ -1469,10 +1722,10 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     const slugBasePrice = Number(state.slugPricing?.basePrice || DEFAULT_SLUG_PRICING.basePrice);
     const fallbackSlugPrice = pricing ? pricing.total : 0;
     const server = renewalMode
-      ? { total: 0, flash: null, source: "renewal", calculation: null }
+      ? { total: 0, flash: null, flashSale: null, source: "renewal", calculation: null }
       : pricing
         ? await resolveServerPrice(pricing.slug, fallbackSlugPrice)
-        : { total: 0, flash: null };
+        : { total: 0, flash: null, flashSale: null };
     if (pricing && !server) {
       if (dom.officialNotice instanceof HTMLElement) {
         dom.officialNotice.innerHTML = "";
@@ -1537,8 +1790,13 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     const slugLabel = pricing ? pricing.slug : "___ ___";
     const rarity = getRarity(slugPrice);
     const hasExistingPlan = !renewalMode && userPlan === "premium" && planCharge <= 0;
+    if (server?.flashSale && typeof server.flashSale === "object") {
+      state.flashSaleMeta = server.flashSale;
+    }
 
     setSlugMode(pricing);
+    syncFlashStoryUi(server?.flashSale || state.flashSaleMeta);
+    syncFlashPurchaseStatus({ pricing, server });
 
     if (!renewalMode && dom.officialNotice instanceof HTMLElement) {
       const api = window.UNQOfficialLetters;
@@ -1589,7 +1847,10 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     }
     if (!renewalMode && dom.formula instanceof HTMLElement) {
       if (server?.flash) {
-        dom.formula.textContent = `Flash sale применён (-${server.flash.discountPercent}%)`;
+        const flashRuleLabel = String(server?.flashSale?.conditionLabel || state.flashSaleMeta?.conditionLabel || "").trim();
+        dom.formula.textContent = flashRuleLabel
+          ? `Скидка Flash Sale применена: -${server.flash.discountPercent}% по условию «${flashRuleLabel}».`
+          : `Скидка Flash Sale применена: -${server.flash.discountPercent}%.`;
       } else if (server?.source === "override") {
         dom.formula.textContent = `Персональная цена: ${formatPrice(slugPrice)} сум`;
       } else {
@@ -2085,6 +2346,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     // Сбросить состояние формы и lastOpenOptions
     state.lastOpenOptions = {};
     state.checkoutContext = null;
+    state.flashSaleMeta = null;
     state.orderKind = "slug_purchase";
     state.refSource = "";
     state.refOffer = "";
