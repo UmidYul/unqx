@@ -338,12 +338,12 @@
 [data-page="public-home"] .site-flash-sale {
   top: var(--site-header-height);
   padding: 0 24px 18px;
-  border-bottom: 1px solid #efc66a;
+  border-bottom: 1px solid #dedede;
   background:
-    radial-gradient(circle at 0% 0%, rgba(255, 249, 215, 0.96) 0%, rgba(255, 244, 196, 0.9) 48%, rgba(255, 232, 150, 0.92) 100%),
-    linear-gradient(90deg, #fff2c3 0%, #ffd46f 100%);
-  box-shadow: 0 14px 34px rgba(138, 84, 0, 0.14);
-  color: #5d3000;
+    radial-gradient(circle at 0% 0%, rgba(255, 255, 255, 0.98) 0%, rgba(248, 248, 248, 0.94) 46%, rgba(241, 241, 241, 0.92) 100%),
+    linear-gradient(90deg, #fbfbfb 0%, #f1f1f1 100%);
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.08);
+  color: #171717;
 }
 
 [data-page="public-home"] .site-flash-sale-inner {
@@ -370,15 +370,15 @@
   align-items: center;
   justify-content: center;
   border-radius: 999px;
-  border: 1px solid rgba(146, 89, 0, 0.2);
-  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(23, 23, 23, 0.08);
+  background: rgba(255, 255, 255, 0.94);
   padding: 7px 11px;
   font-size: 11px;
   font-weight: 900;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: #9c4f00;
-  box-shadow: 0 10px 18px rgba(138, 84, 0, 0.08);
+  color: #171717;
+  box-shadow: 0 10px 18px rgba(15, 23, 42, 0.05);
 }
 
 [data-page="public-home"] .site-flash-sale-title {
@@ -386,7 +386,7 @@
   font-size: 18px;
   font-weight: 900;
   letter-spacing: -0.02em;
-  color: #5e1f00;
+  color: #171717;
 }
 
 [data-page="public-home"] .site-flash-sale-summary {
@@ -394,7 +394,7 @@
   flex: 1 1 280px;
   font-size: 13px;
   line-height: 1.4;
-  color: rgba(93, 48, 0, 0.84);
+  color: #5f5f5f;
 }
 
 [data-page="public-home"] .site-flash-sale-quick {
@@ -411,19 +411,19 @@
   align-items: center;
   gap: 8px;
   border-radius: 999px;
-  border: 1px solid rgba(146, 89, 0, 0.16);
-  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(23, 23, 23, 0.08);
+  background: rgba(255, 255, 255, 0.96);
   padding: 8px 12px;
   font-size: 12px;
   font-weight: 800;
-  color: #7f3e00;
+  color: #171717;
   white-space: nowrap;
-  box-shadow: 0 10px 18px rgba(138, 84, 0, 0.08);
+  box-shadow: 0 10px 18px rgba(15, 23, 42, 0.05);
 }
 
 [data-page="public-home"] .site-flash-sale-quick-chip strong {
   font-variant-numeric: tabular-nums;
-  color: #5e1f00;
+  color: #171717;
 }
 
 [data-page="public-home"] .site-flash-sale-action {
@@ -432,14 +432,14 @@
   justify-content: center;
   min-height: 40px;
   border-radius: 14px;
-  border: 1px solid rgba(146, 89, 0, 0.24);
-  background: #fffdf7;
-  color: #8f4900;
+  border: 1px solid #121417;
+  background: #121417;
+  color: #ffffff;
   padding: 0 16px;
   font-size: 13px;
   font-weight: 800;
   white-space: nowrap;
-  box-shadow: 0 10px 20px rgba(138, 84, 0, 0.08);
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.08);
   transition:
     background-color 0.2s ease,
     border-color 0.2s ease,
@@ -447,8 +447,8 @@
 }
 
 [data-page="public-home"] .site-flash-sale-action:hover {
-  background: #fff4d4;
-  border-color: rgba(146, 89, 0, 0.34);
+  background: #1e2329;
+  border-color: #1e2329;
   transform: translateY(-1px);
 }
 
@@ -456,10 +456,14 @@
   position: relative;
   overflow: hidden;
   margin-top: 12px;
-  border-radius: 999px;
-  border: 1px solid rgba(146, 89, 0, 0.1);
-  background: rgba(255, 255, 255, 0.42);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.64);
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  padding-inline: 24px;
+  border-top: 1px solid #e6e6e6;
+  border-bottom: 1px solid #e6e6e6;
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.84);
 }
 
 [data-page="public-home"] .site-flash-sale-marquee-track {
@@ -484,7 +488,7 @@
   padding: 10px 14px;
   font-size: 12px;
   font-weight: 800;
-  color: #714000;
+  color: #2f2f2f;
 }
 
 [data-page="public-home"] .site-flash-sale-marquee-bullet {
@@ -492,8 +496,8 @@
   height: 8px;
   border-radius: 999px;
   flex: 0 0 auto;
-  background: radial-gradient(circle at 35% 35%, #fff7de 0%, #ffd46f 32%, #c77b00 100%);
-  box-shadow: 0 0 0 4px rgba(255, 211, 123, 0.18);
+  background: radial-gradient(circle at 35% 35%, #ffffff 0%, #d7d7d7 34%, #6b7280 100%);
+  box-shadow: 0 0 0 4px rgba(156, 163, 175, 0.16);
 }
 
 [data-page="public-home"] .site-flash-sale-marquee:hover .site-flash-sale-marquee-track,
@@ -2053,7 +2057,7 @@ body[data-page="profile-page"] {
 
   [data-page="public-home"] .site-flash-sale-marquee {
     margin-top: 10px;
-    border-radius: 18px;
+    padding-inline: 16px;
   }
 
   [data-page="public-home"] .site-flash-sale-marquee-item {

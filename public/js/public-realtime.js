@@ -31,7 +31,7 @@
   function bindFlashActions() {
     flashActions.forEach((action) => {
       action.addEventListener("click", (event) => {
-        const targetId = String(action.getAttribute("data-flash-scroll-target") || "flash-sale-details").trim();
+        const targetId = String(action.getAttribute("data-flash-scroll-target") || "hero-check").trim();
         if (!targetId) return;
         const section = document.getElementById(targetId);
         if (section instanceof HTMLElement) {

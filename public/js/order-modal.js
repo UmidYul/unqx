@@ -42,6 +42,12 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     progressLabel: document.getElementById("order-modal-progress-label"),
     progressAuth: document.getElementById("order-modal-progress-auth"),
     progressNoAuth: document.getElementById("order-modal-progress-no-auth"),
+    flashHero: document.getElementById("order-modal-flash-hero"),
+    flashTitle: document.getElementById("order-modal-flash-title"),
+    flashCopy: document.getElementById("order-modal-flash-copy"),
+    flashDiscount: document.getElementById("order-modal-flash-discount"),
+    flashRule: document.getElementById("order-modal-flash-rule"),
+    flashCountdown: document.getElementById("order-modal-flash-countdown"),
     stepLoading: document.getElementById("order-modal-step-loading"),
     stepAuth: document.getElementById("order-modal-step-auth"),
     authTitle: document.getElementById("order-modal-title"),
@@ -175,6 +181,66 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     forceAuth: false,
     orderKind: "slug_purchase",
   };
+
+  function getFlashOfferContext() {
+    const flash = document.querySelector("[data-flash-sale-banner]");
+    if (!(flash instanceof HTMLElement)) {
+      return null;
+    }
+    const countdownNode = flash.querySelector("[data-flash-countdown]");
+    return {
+      title: String(flash.getAttribute("data-flash-sale-title") || "").trim() || "Flash Sale",
+      summary:
+        String(flash.getAttribute("data-flash-sale-summary") || "").trim() ||
+        "Откройте покупку, и скидка применится автоматически к подходящим UNQ.",
+      discountText: `-${String(flash.getAttribute("data-flash-sale-discount") || "").trim() || "0"}%`,
+      ruleText: String(flash.getAttribute("data-flash-sale-rule") || "").trim() || "Подходящие UNQ",
+      countdownText: countdownNode instanceof HTMLElement ? String(countdownNode.textContent || "").trim() || "--:--:--" : "--:--:--",
+    };
+  }
+
+  function isFlashOfferMode() {
+    return !isSubscriptionRenewalMode() && state.refSource === "flash";
+  }
+
+  function syncModalToneUi() {
+    const flashMode = isFlashOfferMode();
+    if (flashMode) {
+      dom.root.dataset.modalTone = "flash";
+      dom.dialog?.setAttribute("data-modal-tone", "flash");
+    } else {
+      delete dom.root.dataset.modalTone;
+      dom.dialog?.removeAttribute("data-modal-tone");
+    }
+
+    if (!(dom.flashHero instanceof HTMLElement)) {
+      return;
+    }
+
+    dom.flashHero.classList.toggle("hidden", !flashMode);
+    dom.flashHero.setAttribute("aria-hidden", flashMode ? "false" : "true");
+    if (!flashMode) {
+      return;
+    }
+
+    const flashContext = getFlashOfferContext();
+    if (dom.flashTitle instanceof HTMLElement) {
+      dom.flashTitle.textContent = flashContext?.title || "Flash Sale";
+    }
+    if (dom.flashCopy instanceof HTMLElement) {
+      dom.flashCopy.textContent =
+        flashContext?.summary || "Откройте покупку, и скидка применится автоматически к подходящим UNQ.";
+    }
+    if (dom.flashDiscount instanceof HTMLElement) {
+      dom.flashDiscount.textContent = flashContext?.discountText || "-0%";
+    }
+    if (dom.flashRule instanceof HTMLElement) {
+      dom.flashRule.textContent = flashContext?.ruleText || "Подходящие UNQ";
+    }
+    if (dom.flashCountdown instanceof HTMLElement) {
+      dom.flashCountdown.textContent = flashContext?.countdownText || "--:--:--";
+    }
+  }
 
   const STEP_PROGRESS = {
     loading: { width: "12%" },
@@ -1002,30 +1068,46 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
 
   function syncCheckoutModeCopy() {
     const renewalMode = isSubscriptionRenewalMode();
+    const flashMode = isFlashOfferMode();
     if (dom.authTitle instanceof HTMLElement) {
-      dom.authTitle.textContent = renewalMode ? "Войдите в аккаунт" : DEFAULT_AUTH_TITLE;
+      dom.authTitle.textContent = renewalMode
+        ? "Войдите в аккаунт"
+        : flashMode
+          ? "Flash Sale открыт"
+          : DEFAULT_AUTH_TITLE;
     }
     if (dom.authText instanceof HTMLElement) {
       dom.authText.textContent = renewalMode
         ? "Нужно, чтобы привязать продление Premium к вашему аккаунту."
-        : DEFAULT_AUTH_TEXT;
+        : flashMode
+          ? "Войдите или зарегистрируйтесь, чтобы оформить UNQ. Если выбранный slug участвует в акции, скидка применится автоматически."
+          : DEFAULT_AUTH_TEXT;
     }
     if (dom.submit instanceof HTMLButtonElement) {
-      dom.submit.textContent = renewalMode ? "Перейти к оплате" : DEFAULT_SUBMIT_LABEL;
+      dom.submit.textContent = renewalMode
+        ? "Перейти к оплате"
+        : flashMode
+          ? "Оформить со скидкой"
+          : DEFAULT_SUBMIT_LABEL;
     }
     if (dom.successBody instanceof HTMLElement) {
       dom.successBody.textContent = renewalMode
         ? "Мы подготовили заявку на продление тарифа. Нажмите кнопку ниже, чтобы открыть Telegram с готовым сообщением для оплаты."
-        : DEFAULT_SUCCESS_BODY;
+        : flashMode
+          ? "Мы подготовили flash-sale заявку. Нажмите кнопку ниже, чтобы открыть Telegram с готовым сообщением для оплаты."
+          : DEFAULT_SUCCESS_BODY;
     }
     if (dom.successNote instanceof HTMLElement) {
       dom.successNote.textContent = renewalMode
         ? "После оплаты мы продлим Premium на 30 дней."
-        : DEFAULT_SUCCESS_NOTE;
+        : flashMode
+          ? "Если выбранный UNQ участвует в акции, скидка уже учтена в итоговой цене."
+          : DEFAULT_SUCCESS_NOTE;
     }
     if (dom.countdown instanceof HTMLElement) {
       dom.countdown.classList.toggle("hidden", renewalMode);
     }
+    syncModalToneUi();
   }
 
   function applyCheckoutModeUi() {
@@ -2004,7 +2086,11 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     state.lastOpenOptions = {};
     state.checkoutContext = null;
     state.orderKind = "slug_purchase";
+    state.refSource = "";
+    state.refOffer = "";
     state.promoValidationHint = "";
+    delete dom.root.dataset.modalTone;
+    dom.dialog?.removeAttribute("data-modal-tone");
     if (dom.letters) dom.letters.value = "";
     if (dom.digits) dom.digits.value = "";
     if (dom.name) dom.name.value = "";

@@ -269,6 +269,10 @@
             class="site-flash-sale sticky z-40"
             data-flash-sale-banner
             data-flash-sale-surface
+            data-flash-sale-title="<%= flashSaleTitle %>"
+            data-flash-sale-summary="<%= flashSaleSupportCopy %>"
+            data-flash-sale-discount="<%= activeFlashSale.discountPercent %>"
+            data-flash-sale-rule="<%= activeFlashSale.conditionLabel %>"
             data-ends-at="<%= activeFlashSale.endsAt.toISOString() %>">
             <div class="site-flash-sale-inner mx-auto w-full max-w-6xl">
               <div class="site-flash-sale-head">
@@ -288,8 +292,8 @@
                     <strong data-flash-countdown>--:--:--</strong>
                   </span>
                 </div>
-                <a href="/#flash-sale-details" data-flash-sale-action data-flash-scroll-target="flash-sale-details"
-                  class="site-flash-sale-action interactive-btn">Узнать подробнее</a>
+                <button type="button" data-order-link data-order-source="flash" data-order-offer="flash_sale"
+                  class="site-flash-sale-action interactive-btn">Узнать подробнее</button>
               </div>
               <div class="site-flash-sale-marquee" aria-label="Flash sale feed">
                 <div class="site-flash-sale-marquee-track">
@@ -413,61 +417,6 @@
 
               </div>
             </section>
-
-            <% if (activeFlashSale) { %>
-              <section id="flash-sale-details" class="px-6 pb-10" data-observe-reveal data-flash-sale-surface
-                data-ends-at="<%= activeFlashSale.endsAt.toISOString() %>">
-                <div class="site-flash-sale-spotlight mx-auto max-w-6xl">
-                  <div class="site-flash-sale-spotlight-grid">
-                    <div class="site-flash-sale-spotlight-copy">
-                      <span class="site-flash-sale-spotlight-kicker">Flash Sale</span>
-                      <h2 class="site-flash-sale-spotlight-title">
-                        <%= flashSaleTitle %>
-                      </h2>
-                      <p class="site-flash-sale-spotlight-text">
-                        <%= flashSaleSupportCopy %>
-                      </p>
-                      <div class="site-flash-sale-spotlight-actions">
-                        <a href="/#hero-check" data-flash-sale-action data-flash-scroll-target="hero-check"
-                          data-flash-focus-target="home-slug-input"
-                          class="site-flash-sale-spotlight-action site-flash-sale-spotlight-action--primary interactive-btn">
-                          Проверить свой UNQ
-                        </a>
-                        <a href="/#calculator" data-flash-sale-action data-flash-scroll-target="calculator"
-                          class="site-flash-sale-spotlight-action site-flash-sale-spotlight-action--secondary interactive-btn">
-                          Открыть калькулятор
-                        </a>
-                      </div>
-                    </div>
-                    <div class="site-flash-sale-spotlight-stats" aria-label="Flash sale stats">
-                      <div class="site-flash-sale-spotlight-stat">
-                        <span class="site-flash-sale-spotlight-stat-label">Скидка</span>
-                        <strong class="site-flash-sale-spotlight-stat-value">-<%= activeFlashSale.discountPercent %>%</strong>
-                      </div>
-                      <div class="site-flash-sale-spotlight-stat">
-                        <span class="site-flash-sale-spotlight-stat-label">Правило</span>
-                        <strong class="site-flash-sale-spotlight-stat-value site-flash-sale-spotlight-stat-value--compact">
-                          <%= activeFlashSale.conditionLabel %>
-                        </strong>
-                      </div>
-                      <div class="site-flash-sale-spotlight-stat">
-                        <span class="site-flash-sale-spotlight-stat-label">До конца</span>
-                        <strong class="site-flash-sale-spotlight-stat-value site-flash-sale-spotlight-stat-value--timer"
-                          data-flash-countdown>--:--:--</strong>
-                      </div>
-                      <% if (typeof activeFlashSale.slotsLeft==='number' ) { %>
-                        <div class="site-flash-sale-spotlight-stat">
-                          <span class="site-flash-sale-spotlight-stat-label">Осталось UNQ</span>
-                          <strong class="site-flash-sale-spotlight-stat-value">
-                            <%= activeFlashSale.slotsLeft.toLocaleString('ru-RU') %>
-                          </strong>
-                        </div>
-                        <% } %>
-                    </div>
-                  </div>
-                </div>
-              </section>
-              <% } %>
 
             <% if (nextDrop) { %>
               <section class="px-6 pb-6" data-observe-reveal>

@@ -194,13 +194,16 @@ describe("home page", () => {
     expect(html).toContain('id="latest-posts"');
   });
 
-  test("renders flash sale banner, details section, and duplicated marquee content", async () => {
+  test("renders flash sale banner with modal CTA and flash order modal content", async () => {
     const html = await renderHomeTemplateWithFlashSale();
     expect(html).toContain("data-flash-sale-banner");
-    expect(html).toContain('id="flash-sale-details"');
-    expect(html).toContain('data-flash-scroll-target="flash-sale-details"');
-    expect(html).toContain('data-flash-focus-target="home-slug-input"');
+    expect(html).not.toContain('id="flash-sale-details"');
+    expect(html).toContain("data-order-link");
+    expect(html).toContain('data-order-source="flash"');
+    expect(html).toContain('data-order-offer="flash_sale"');
     expect(html).toMatch(/site-flash-sale-marquee-group"\s+aria-hidden=(?:&#34;|")true(?:&#34;|")/);
+    expect(html).toContain('id="order-modal-flash-hero"');
+    expect(html).toContain('id="order-modal-flash-countdown" data-flash-countdown');
   });
 
   test("latest posts client source handles SVG clicks and keeps comment/share wiring", () => {
@@ -214,14 +217,19 @@ describe("home page", () => {
     expect(styles).toContain(".home-latest-post-action-button[data-home-post-like]:hover,");
   });
 
-  test("flash sale client source shares countdown wiring and hero pricing follow-up", () => {
+  test("flash sale client source shares countdown wiring, flash modal tone, and hero pricing follow-up", () => {
     const realtimeSource = fs.readFileSync(path.join(process.cwd(), "public", "js", "public-realtime.js"), "utf-8");
     const homeSource = fs.readFileSync(path.join(process.cwd(), "public", "js", "public-home-search.js"), "utf-8");
+    const orderModalSource = fs.readFileSync(path.join(process.cwd(), "public", "js", "order-modal.js"), "utf-8");
+    const modalStyles = fs.readFileSync(path.join(process.cwd(), "public", "css", "base.css"), "utf-8");
     expect(realtimeSource).toContain('document.querySelectorAll("[data-flash-countdown]")');
-    expect(realtimeSource).toContain('document.querySelectorAll("[data-flash-sale-action]")');
-    expect(realtimeSource).toContain('const focusId = String(action.getAttribute("data-flash-focus-target") || "").trim();');
     expect(homeSource).toContain('fetch(`/api/cards/slug-price?slug=${encodeURIComponent(slug)}`');
     expect(homeSource).toContain('label: priceInfo?.hasFlashSale ? "Купить со скидкой" : "Купить"');
+    expect(orderModalSource).toContain('state.refSource === "flash"');
+    expect(orderModalSource).toContain('document.querySelector("[data-flash-sale-banner]")');
+    expect(orderModalSource).toContain('dom.root.dataset.modalTone = "flash"');
+    expect(modalStyles).toContain('#order-modal-root[data-modal-tone="flash"] #order-modal-dialog');
+    expect(modalStyles).toContain(".order-modal-flash-hero");
   });
 
   test("matches AAA + 000 = 3 000 000", () => {

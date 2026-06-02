@@ -59,6 +59,19 @@
           </div>
         </div>
 
+        <div id="order-modal-flash-hero" class="order-modal-flash-hero hidden" aria-hidden="true">
+          <div class="order-modal-flash-hero-copy">
+            <span class="order-modal-flash-kicker">Flash Sale</span>
+            <h3 id="order-modal-flash-title" class="order-modal-flash-title">Заберите свой UNQ со скидкой</h3>
+            <p id="order-modal-flash-copy" class="order-modal-flash-copy">Откройте покупку, и скидка применится автоматически к подходящим UNQ.</p>
+          </div>
+          <div class="order-modal-flash-meta" aria-label="Flash sale details">
+            <span id="order-modal-flash-discount" class="order-modal-flash-chip">-0%</span>
+            <span id="order-modal-flash-rule" class="order-modal-flash-chip">Подходящие UNQ</span>
+            <span id="order-modal-flash-countdown" data-flash-countdown class="order-modal-flash-chip">--:--:--</span>
+          </div>
+        </div>
+
         <div id="order-modal-step-loading" class="hidden flex-1 overflow-auto px-4 py-6 sm:px-6">
           <div class="flex h-full min-h-[220px] flex-col items-center justify-center text-center">
             <div class="h-10 w-10 animate-spin rounded-full border-2 border-neutral-200 border-t-neutral-900"></div>
@@ -126,7 +139,7 @@
 
             <div id="order-modal-official-notice" class="hidden" role="status"></div>
 
-            <div id="order-modal-slug-pricing-card" class="rounded-xl border border-neutral-200 bg-neutral-50 p-4">
+            <div id="order-modal-slug-pricing-card" class="order-modal-surface-card rounded-xl border border-neutral-200 bg-neutral-50 p-4">
               <div class="flex items-center justify-between gap-3">
                 <span id="order-modal-rarity"
                   class="inline-flex rounded-full border border-neutral-200 bg-white px-2.5 py-1 text-[11px] font-semibold tracking-wider text-neutral-600">COMMON</span>
@@ -144,7 +157,8 @@
                   <input id="order-modal-plan-basic" type="radio" name="order-modal-plan" value="basic"
                     class="peer sr-only" />
                   <span
-                    class="block rounded-xl border border-neutral-200 bg-white p-4 transition peer-checked:border-neutral-900 peer-checked:bg-neutral-900 peer-checked:text-white">
+                    class="order-modal-plan-card block rounded-xl border border-neutral-200 bg-white p-4 transition peer-checked:border-neutral-900 peer-checked:bg-neutral-900 peer-checked:text-white"
+                  >
                     <span
                       class="block text-[11px] font-mono uppercase tracking-wider text-neutral-400 peer-checked:text-neutral-400">LEGACY</span>
                     <span id="order-modal-plan-basic-price" class="mt-1 block text-sm font-semibold">50 000 сум</span>
@@ -160,7 +174,8 @@
                   <input id="order-modal-plan-premium" type="radio" name="order-modal-plan" value="premium"
                     class="peer sr-only" />
                   <span
-                    class="block rounded-xl border border-neutral-200 bg-white p-4 transition peer-checked:border-neutral-900 peer-checked:bg-neutral-900 peer-checked:text-white">
+                    class="order-modal-plan-card block rounded-xl border border-neutral-200 bg-white p-4 transition peer-checked:border-neutral-900 peer-checked:bg-neutral-900 peer-checked:text-white"
+                  >
                     <span
                       class="block text-[11px] font-mono uppercase tracking-wider text-neutral-400 peer-checked:text-neutral-400">ПРЕМИУМ</span>
                     <span id="order-modal-plan-premium-price" class="mt-1 block text-sm font-semibold">130 000
@@ -179,7 +194,7 @@
 
             <label
               id="order-modal-bracelet-row"
-              class="flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-700">
+              class="order-modal-surface-card flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-700">
                 <span>
                   <span class="block">
                   <%= modalBraceletInStock ? `Добавить NFC-стикер (+${modalBraceletPrice.toLocaleString("ru-RU")} сум)`
@@ -222,7 +237,7 @@
                 placeholder="Имя для визитки" />
             </div>
 
-            <div class="rounded-xl border border-neutral-200 bg-neutral-50 p-4 text-sm">
+            <div id="order-modal-summary-card" class="order-modal-summary-card rounded-xl border border-neutral-200 bg-neutral-50 p-4 text-sm">
               <div id="order-modal-total-slug-row" class="flex items-center justify-between gap-3">
                 <span id="order-modal-total-slug-title">UNQ AAA000</span>
                 <span id="order-modal-total-slug-value">0 сум</span>
