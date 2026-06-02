@@ -60,12 +60,9 @@
     const pad = (n) => String(n).padStart(2, "0");
     return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
   };
-  const conditionValueToInput = (conditionValue) => {
-    if (!conditionValue || typeof conditionValue !== "object") return "";
-    const allowed = Array.isArray(conditionValue.allowedSlugs) ? conditionValue.allowedSlugs : [];
-    const masks = Array.isArray(conditionValue.slugPatterns) ? conditionValue.slugPatterns : [];
-    return [...allowed, ...masks].join(" ");
-  };
+  const flashEditModal = document.getElementById("flash-sale-edit-modal");
+  const flashEditForm = document.getElementById("flash-sale-edit-form");
+  let flashEditLastFocused = null;
   function closeAllRowMenus() {
     document.querySelectorAll(".admin-row-menu").forEach((node) => node.classList.add("is-hidden"));
     document.querySelectorAll("[data-kebab-toggle]").forEach((node) => node.setAttribute("aria-expanded", "false"));
@@ -78,81 +75,234 @@
       .filter(Boolean);
   }
 
-  function normalizePatternToken(token) {
-    const cleaned = String(token || "")
-      .toUpperCase()
-      .replace(/[^A-Z0-9*?]/g, "");
-    if (!cleaned) return null;
-    if (SLUG_RE.test(cleaned)) return { kind: "slug", value: cleaned };
-    if (FULL_MASK_RE.test(cleaned)) return { kind: "mask", value: cleaned };
-    if (LETTER_MASK_RE.test(cleaned)) return { kind: "mask", value: `${cleaned}***` };
-    if (DIGIT_MASK_RE.test(cleaned)) return { kind: "mask", value: `***${cleaned}` };
-    return null;
+  function conditionValueToFormParts(conditionValue) {
+    const value = conditionValue && typeof conditionValue === "object" ? conditionValue : {};
+    const includeRules = Array.isArray(value.includeRules) ? value.includeRules : [];
+    const excludeRules = Array.isArray(value.excludeRules) ? value.excludeRules : [];
+    const includeTokens = includeRules
+      .map((rule) => {
+        if (!rule || typeof rule !== "object") return "";
+        if (rule.type === "slug" || rule.type === "mask") return String(rule.value || "").trim();
+        return `${String(rule.type || "").trim()}:${String(rule.value || "").trim()}`;
+      })
+      .filter(Boolean);
+    const excludeTokens = excludeRules
+      .map((rule) => {
+        if (!rule || typeof rule !== "object") return "";
+        if (rule.type === "slug" || rule.type === "mask") return String(rule.value || "").trim();
+        return `${String(rule.type || "").trim()}:${String(rule.value || "").trim()}`;
+      })
+      .filter(Boolean);
+    return {
+      matchMode: String(value.matchMode || "any").trim().toLowerCase() === "all" ? "all" : "any",
+      includeInput: includeTokens.join("\n"),
+      excludeInput: excludeTokens.join("\n"),
+    };
   }
 
-  function buildFlashCustomConditionValue(rawPatternInput) {
-    const allowedSlugs = [];
-    const slugPatterns = [];
-    const seen = new Set();
-    let droppedCount = 0;
-
-    for (const token of tokenizePatternInput(rawPatternInput)) {
-      const parsed = normalizePatternToken(token);
-      if (!parsed) {
-        droppedCount += 1;
-        continue;
-      }
-      const key = `${parsed.kind}:${parsed.value}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
-      if (parsed.kind === "slug") {
-        allowedSlugs.push(parsed.value);
-      } else {
-        slugPatterns.push(parsed.value);
-      }
+  function buildFlashCustomConditionValue(includeInput, excludeInput, matchMode) {
+    const includeTokens = tokenizePatternInput(includeInput);
+    const excludeTokens = tokenizePatternInput(excludeInput).map((token) =>
+      token.startsWith("!") || token.startsWith("-") ? token : `!${token}`,
+    );
+    if (!includeTokens.length) {
+      throw new Error("Для custom-условия укажите хотя бы одно правило участия.");
     }
-
     return {
-      allowedSlugs,
-      slugPatterns,
-      droppedCount,
+      matchMode: String(matchMode || "any").trim().toLowerCase() === "all" ? "all" : "any",
+      patternsInput: [...includeTokens, ...excludeTokens].join("\n"),
     };
   }
 
   function resolveFlashConditionLabel(item) {
     const type = String(item?.conditionType || "all");
-    if (type === "all") return "Все slug";
-    if (type === "pattern_000") return "Slug с 000";
-    if (type === "pattern_aaa") return "Slug с одинаковыми буквами";
-    if (type === "sequential_digits") return "Slug с последовательными цифрами";
+    if (type === "all") return "Все UNQ";
+    if (type === "pattern_000") return "UNQ с цифрами 000";
+    if (type === "pattern_aaa") return "UNQ с одинаковыми буквами";
+    if (type === "sequential_digits") return "UNQ с последовательными цифрами";
     if (type !== "custom") return "Кастом";
     const value = item?.conditionValue && typeof item.conditionValue === "object" ? item.conditionValue : {};
-    const slugPatterns = Array.isArray(value.slugPatterns) ? value.slugPatterns.length : 0;
-    const allowedSlugs = Array.isArray(value.allowedSlugs) ? value.allowedSlugs.length : 0;
-    if (slugPatterns && allowedSlugs) return `Кастом: ${slugPatterns} маск., ${allowedSlugs} точн. slug`;
-    if (slugPatterns) return `Кастом: ${slugPatterns} маск.`;
-    if (allowedSlugs) return `Кастом: ${allowedSlugs} точн. slug`;
+    const includeRules = Array.isArray(value.includeRules) ? value.includeRules.length : 0;
+    const excludeRules = Array.isArray(value.excludeRules) ? value.excludeRules.length : 0;
+    if (includeRules && excludeRules) return `Кастом: ${includeRules} правил, ${excludeRules} исключений`;
+    if (includeRules) return `Кастом: ${includeRules} правил`;
     return "Кастом";
   }
 
-  function setupFlashCreateForm() {
-    const form = document.getElementById("flash-sales-create-form");
+  function resolveFlashStatusMeta(item) {
+    const now = Date.now();
+    const startsAt = new Date(item?.startsAt || "").getTime();
+    const endsAt = new Date(item?.endsAt || "").getTime();
+    if (!item?.isActive) {
+      return { label: "Остановлен", chipClass: "is-danger" };
+    }
+    if (Number.isFinite(endsAt) && endsAt <= now) {
+      return { label: "Завершён", chipClass: "is-muted" };
+    }
+    if (Number.isFinite(startsAt) && startsAt > now) {
+      return { label: "Запланирован", chipClass: "is-info" };
+    }
+    return { label: "Активен", chipClass: "is-success" };
+  }
+
+  function syncFlashFormState(form) {
     if (!(form instanceof HTMLFormElement)) return;
     const conditionType = form.elements.namedItem("conditionType");
-    const customInput = form.elements.namedItem("conditionPatternInput");
+    const includeInput = form.elements.namedItem("conditionIncludeInput");
+    const excludeInput = form.elements.namedItem("conditionExcludeInput");
+    const matchMode = form.elements.namedItem("conditionMatchMode");
+    const notifyTelegram = form.elements.namedItem("notifyTelegram");
+    const telegramTarget = form.elements.namedItem("telegramTarget");
     const customWrap = form.querySelector("[data-flash-custom-wrap]");
-    if (!(conditionType instanceof HTMLSelectElement) || !(customInput instanceof HTMLTextAreaElement) || !(customWrap instanceof HTMLElement)) {
+    if (!(conditionType instanceof HTMLSelectElement) || !(customWrap instanceof HTMLElement)) {
       return;
     }
-    const sync = () => {
-      const isCustom = conditionType.value === "custom";
-      customWrap.classList.toggle("hidden", !isCustom);
-      customInput.disabled = !isCustom;
-      customInput.required = isCustom;
-      if (!isCustom) customInput.value = "";
+
+    const isCustom = conditionType.value === "custom";
+    customWrap.classList.toggle("hidden", !isCustom);
+    if (includeInput instanceof HTMLTextAreaElement) {
+      includeInput.disabled = !isCustom;
+      includeInput.required = isCustom;
+    }
+    if (excludeInput instanceof HTMLTextAreaElement) {
+      excludeInput.disabled = !isCustom;
+    }
+    if (matchMode instanceof HTMLSelectElement) {
+      matchMode.disabled = !isCustom;
+    }
+    if (telegramTarget instanceof HTMLInputElement && notifyTelegram instanceof HTMLInputElement) {
+      telegramTarget.disabled = !notifyTelegram.checked;
+    }
+  }
+
+  function bindFlashForm(form) {
+    if (!(form instanceof HTMLFormElement) || form.dataset.flashFormBound === "1") return;
+    form.dataset.flashFormBound = "1";
+    const conditionType = form.elements.namedItem("conditionType");
+    const notifyTelegram = form.elements.namedItem("notifyTelegram");
+    if (conditionType instanceof HTMLSelectElement) {
+      conditionType.addEventListener("change", () => syncFlashFormState(form));
+    }
+    if (notifyTelegram instanceof HTMLInputElement) {
+      notifyTelegram.addEventListener("change", () => syncFlashFormState(form));
+    }
+    syncFlashFormState(form);
+  }
+
+  function resetFlashForm(form) {
+    if (!(form instanceof HTMLFormElement)) return;
+    form.reset();
+    const isActive = form.elements.namedItem("isActive");
+    if (isActive instanceof HTMLInputElement) {
+      isActive.checked = true;
+    }
+    syncFlashFormState(form);
+  }
+
+  function buildFlashSalePayload(form) {
+    if (!(form instanceof HTMLFormElement)) {
+      throw new Error("Форма акции не найдена.");
+    }
+    const fd = new FormData(form);
+    const conditionType = String(fd.get("conditionType") || "all").trim();
+    if (!FLASH_CONDITION_TYPES.has(conditionType)) {
+      throw new Error("Некорректный тип условия flash sale");
+    }
+
+    const startsAtRaw = String(fd.get("startsAt") || "").trim();
+    const endsAtRaw = String(fd.get("endsAt") || "").trim();
+    const startsAt = new Date(startsAtRaw);
+    const endsAt = new Date(endsAtRaw);
+    if (!startsAtRaw || !Number.isFinite(startsAt.getTime())) {
+      throw new Error("Укажите корректную дату старта.");
+    }
+    if (!endsAtRaw || !Number.isFinite(endsAt.getTime())) {
+      throw new Error("Укажите корректную дату окончания.");
+    }
+
+    let conditionValue = null;
+    if (conditionType === "custom") {
+      conditionValue = buildFlashCustomConditionValue(
+        String(fd.get("conditionIncludeInput") || ""),
+        String(fd.get("conditionExcludeInput") || ""),
+        String(fd.get("conditionMatchMode") || "any"),
+      );
+    }
+
+    return {
+      title: String(fd.get("title") || "").trim(),
+      description: String(fd.get("description") || "").trim(),
+      discountPercent: Number(fd.get("discountPercent") || 0),
+      conditionType,
+      conditionValue,
+      startsAt: startsAt.toISOString(),
+      endsAt: endsAt.toISOString(),
+      isActive: fd.get("isActive") === "on",
+      notifyTelegram: fd.get("notifyTelegram") === "on",
+      telegramTarget: String(fd.get("telegramTarget") || "").trim(),
     };
-    conditionType.addEventListener("change", sync);
-    sync();
+  }
+
+  function openFlashEditModal(data) {
+    if (!(flashEditModal instanceof HTMLElement) || !(flashEditForm instanceof HTMLFormElement)) {
+      return;
+    }
+    const conditionValue = data?.conditionValue && typeof data.conditionValue === "object" ? data.conditionValue : null;
+    const parts = conditionValueToFormParts(conditionValue);
+    flashEditLastFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+
+    const id = flashEditForm.elements.namedItem("id");
+    const title = flashEditForm.elements.namedItem("title");
+    const description = flashEditForm.elements.namedItem("description");
+    const discountPercent = flashEditForm.elements.namedItem("discountPercent");
+    const conditionType = flashEditForm.elements.namedItem("conditionType");
+    const conditionMatchMode = flashEditForm.elements.namedItem("conditionMatchMode");
+    const conditionIncludeInput = flashEditForm.elements.namedItem("conditionIncludeInput");
+    const conditionExcludeInput = flashEditForm.elements.namedItem("conditionExcludeInput");
+    const startsAt = flashEditForm.elements.namedItem("startsAt");
+    const endsAt = flashEditForm.elements.namedItem("endsAt");
+    const isActive = flashEditForm.elements.namedItem("isActive");
+    const notifyTelegram = flashEditForm.elements.namedItem("notifyTelegram");
+    const telegramTarget = flashEditForm.elements.namedItem("telegramTarget");
+
+    if (id instanceof HTMLInputElement) id.value = String(data?.id || "");
+    if (title instanceof HTMLInputElement) title.value = String(data?.title || "");
+    if (description instanceof HTMLInputElement || description instanceof HTMLTextAreaElement) {
+      description.value = String(data?.description || "");
+    }
+    if (discountPercent instanceof HTMLInputElement) discountPercent.value = String(Number(data?.discountPercent || 0));
+    if (conditionType instanceof HTMLSelectElement) conditionType.value = String(data?.conditionType || "all");
+    if (conditionMatchMode instanceof HTMLSelectElement) conditionMatchMode.value = parts.matchMode;
+    if (conditionIncludeInput instanceof HTMLTextAreaElement) conditionIncludeInput.value = parts.includeInput;
+    if (conditionExcludeInput instanceof HTMLTextAreaElement) conditionExcludeInput.value = parts.excludeInput;
+    if (startsAt instanceof HTMLInputElement) startsAt.value = toDateInputValue(data?.startsAt);
+    if (endsAt instanceof HTMLInputElement) endsAt.value = toDateInputValue(data?.endsAt);
+    if (isActive instanceof HTMLInputElement) isActive.checked = Boolean(data?.isActive);
+    if (notifyTelegram instanceof HTMLInputElement) notifyTelegram.checked = Boolean(data?.notifyTelegram);
+    if (telegramTarget instanceof HTMLInputElement) telegramTarget.value = String(data?.telegramTarget || "");
+
+    bindFlashForm(flashEditForm);
+    syncFlashFormState(flashEditForm);
+    flashEditModal.classList.remove("hidden");
+    flashEditModal.classList.add("flex");
+    flashEditModal.setAttribute("aria-hidden", "false");
+    window.setTimeout(() => {
+      title instanceof HTMLInputElement && title.focus();
+    }, 0);
+  }
+
+  function closeFlashEditModal() {
+    if (!(flashEditModal instanceof HTMLElement) || !(flashEditForm instanceof HTMLFormElement)) {
+      return;
+    }
+    flashEditModal.classList.remove("flex");
+    flashEditModal.classList.add("hidden");
+    flashEditModal.setAttribute("aria-hidden", "true");
+    flashEditForm.reset();
+    syncFlashFormState(flashEditForm);
+    if (flashEditLastFocused instanceof HTMLElement && document.contains(flashEditLastFocused)) {
+      flashEditLastFocused.focus();
+    }
   }
 
   async function jsonFetch(url, options = {}) {
@@ -342,20 +492,37 @@
           } catch {
             stats = { requestsCount: 0, discountSum: 0 };
           }
+          const statusMeta = resolveFlashStatusMeta(item);
           const conditionRaw = encodeAttr(JSON.stringify(item.conditionValue || null));
-          return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3"><p class="font-semibold">${item.title}</p><p class="mt-1 text-xs text-neutral-500">${resolveFlashConditionLabel(item)}</p></td><td class="px-4 py-3">-${item.discountPercent}%</td><td class="px-4 py-3">${D(item.startsAt)} - ${D(item.endsAt)}</td><td class="px-4 py-3">${item.isActive ? "Активен" : "Остановлен"}</td><td class="px-4 py-3">${stats.requestsCount} заявок · ${P(stats.discountSum)}</td><td class="px-4 py-3"><div class="admin-row-actions">${menuWrap([
+          return `<tr class="admin-table-row border-t border-neutral-100">
+            <td class="px-4 py-3">
+              <p class="font-semibold text-neutral-900">${item.title}</p>
+              <p class="mt-1 text-xs text-neutral-500">${resolveFlashConditionLabel(item)}</p>
+              ${item.description ? `<p class="mt-2 max-w-[320px] text-xs text-neutral-500">${item.description}</p>` : ""}
+            </td>
+            <td class="px-4 py-3 font-semibold text-neutral-900">-${item.discountPercent}%</td>
+            <td class="px-4 py-3 text-neutral-700">${D(item.startsAt)} - ${D(item.endsAt)}</td>
+            <td class="px-4 py-3">
+              <span class="admin-status-chip ${statusMeta.chipClass}">
+                <span class="admin-status-dot"></span>
+                <span>${statusMeta.label}</span>
+              </span>
+            </td>
+            <td class="px-4 py-3 text-neutral-700">${stats.requestsCount} заявок · ${P(stats.discountSum)}</td>
+            <td class="px-4 py-3"><div class="admin-row-actions">${menuWrap([
             menuItem({
               label: "Редактировать",
               icon: "pen",
-              attrs: `data-a="edit-flash" data-id="${item.id}" data-title="${encodeAttr(item.title || "")}" data-description="${encodeAttr(item.description || "")}" data-discount="${item.discountPercent}" data-condition-type="${encodeAttr(item.conditionType || "all")}" data-condition-value="${conditionRaw}" data-starts-at="${encodeAttr(item.startsAt || "")}" data-ends-at="${encodeAttr(item.endsAt || "")}" data-is-active="${item.isActive ? "1" : "0"}" data-telegram-target="${encodeAttr(item.telegramTarget || "")}"`,
+              attrs: `data-a="edit-flash" data-id="${item.id}" data-title="${encodeAttr(item.title || "")}" data-description="${encodeAttr(item.description || "")}" data-discount="${item.discountPercent}" data-condition-type="${encodeAttr(item.conditionType || "all")}" data-condition-value="${conditionRaw}" data-starts-at="${encodeAttr(item.startsAt || "")}" data-ends-at="${encodeAttr(item.endsAt || "")}" data-is-active="${item.isActive ? "1" : "0"}" data-notify-telegram="${item.notifyTelegram ? "1" : "0"}" data-telegram-target="${encodeAttr(item.telegramTarget || "")}"`,
             }),
             menuItem({ label: "Остановить досрочно", icon: "square", attrs: `data-a="stop-flash" data-id="${item.id}"` }),
             menuSeparator(),
             menuItem({ label: "Удалить", icon: "trash", attrs: `data-a="delete-flash" data-id="${item.id}"`, danger: true }),
-          ].join(""))}</div></td></tr>`;
+          ].join(""))}</div></td>
+          </tr>`;
         }),
       ).then((rows) => rows.join(""))
-      : '<tr><td colspan="6" class="px-3 py-8 text-center text-neutral-500">Нет flash sale</td></tr>';
+      : '<tr><td colspan="6" class="px-3 py-10 text-center text-neutral-500"><div class="inline-flex flex-col items-center gap-2"><span class="text-sm font-semibold text-neutral-700">Нет flash sale</span><span class="text-xs text-neutral-400">Создайте первую акцию в builder выше.</span></div></td></tr>';
   }
 
   async function loadDropsAdmin() {
@@ -480,43 +647,61 @@
     event.preventDefault();
     const form = event.currentTarget;
     if (!(form instanceof HTMLFormElement)) return;
-    const fd = new FormData(form);
-    const conditionType = String(fd.get("conditionType") || "all");
-    if (!FLASH_CONDITION_TYPES.has(conditionType)) {
-      await showAlert("Некорректный тип условия flash sale");
+    try {
+      const payload = buildFlashSalePayload(form);
+      await jsonFetch("/api/admin/flash-sales", {
+        method: "POST",
+        headers: headers({ "Content-Type": "application/json" }),
+        body: JSON.stringify(payload),
+      });
+      resetFlashForm(form);
+      await loadFlashSalesAdmin();
+    } catch (error) {
+      await showAlert(error.message || "Не удалось создать flash sale.");
+    }
+  });
+
+  flashEditForm?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    if (!(form instanceof HTMLFormElement)) return;
+    const id = form.elements.namedItem("id");
+    if (!(id instanceof HTMLInputElement) || !id.value.trim()) {
+      await showAlert("Не удалось определить акцию для редактирования.");
       return;
     }
-
-    let conditionValue = null;
-    if (conditionType === "custom") {
-      const customRaw = String(fd.get("conditionPatternInput") || "");
-      if (!customRaw.trim()) {
-        await showAlert("Add at least one custom rule");
-        return;
-      }
-      conditionValue = {
-        matchMode: String(fd.get("conditionMatchMode") || "any"),
-        patternsInput: customRaw,
-      };
+    try {
+      const payload = buildFlashSalePayload(form);
+      await jsonFetch(`/api/admin/flash-sales/${encodeURIComponent(id.value.trim())}`, {
+        method: "PATCH",
+        headers: headers({ "Content-Type": "application/json" }),
+        body: JSON.stringify(payload),
+      });
+      closeFlashEditModal();
+      await loadFlashSalesAdmin();
+    } catch (error) {
+      await showAlert(error.message || "Не удалось сохранить flash sale.");
     }
+  });
 
-    await jsonFetch("/api/admin/flash-sales", {
-      method: "POST",
-      headers: headers({ "Content-Type": "application/json" }),
-      body: JSON.stringify({
-        title: String(fd.get("title") || ""),
-        description: String(fd.get("description") || ""),
-        discountPercent: Number(fd.get("discountPercent") || 0),
-        conditionType,
-        conditionValue,
-        startsAt: new Date(String(fd.get("startsAt") || "")).toISOString(),
-        endsAt: new Date(String(fd.get("endsAt") || "")).toISOString(),
-        notifyTelegram: fd.get("notifyTelegram") === "on",
-        telegramTarget: String(fd.get("telegramTarget") || ""),
-      }),
-    });
-    form.reset();
-    await loadFlashSalesAdmin();
+  document.getElementById("flash-sale-edit-close-btn")?.addEventListener("click", () => {
+    closeFlashEditModal();
+  });
+
+  document.getElementById("flash-sale-edit-cancel")?.addEventListener("click", () => {
+    closeFlashEditModal();
+  });
+
+  flashEditModal?.addEventListener("click", (event) => {
+    if (event.target === flashEditModal) {
+      closeFlashEditModal();
+    }
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && flashEditModal instanceof HTMLElement && !flashEditModal.classList.contains("hidden")) {
+      closeFlashEditModal();
+    }
   });
 
   document.getElementById("drops-create-form")?.addEventListener("submit", async (event) => {
@@ -663,14 +848,7 @@
       if (action === "edit-flash") {
         const id = target.getAttribute("data-id");
         if (!id) return;
-        const currentTitle = decodeAttr(target.getAttribute("data-title"));
-        const currentDescription = decodeAttr(target.getAttribute("data-description"));
-        const currentDiscount = Number(target.getAttribute("data-discount") || 0);
-        const currentType = decodeAttr(target.getAttribute("data-condition-type")) || "all";
-        const currentStartsAt = toDateInputValue(decodeAttr(target.getAttribute("data-starts-at")));
-        const currentEndsAt = toDateInputValue(decodeAttr(target.getAttribute("data-ends-at")));
-        const currentIsActive = target.getAttribute("data-is-active") === "1";
-        const currentTelegramTarget = decodeAttr(target.getAttribute("data-telegram-target"));
+        const currentNotifyTelegram = target.getAttribute("data-notify-telegram") === "1";
         let conditionValueRaw = decodeAttr(target.getAttribute("data-condition-value"));
         let conditionValue = null;
         try {
@@ -678,66 +856,19 @@
         } catch {
           conditionValue = null;
         }
-
-        const nextTitle = window.prompt("Название flash sale", currentTitle);
-        if (nextTitle == null) return;
-        const nextDescription = window.prompt("Описание flash sale", currentDescription);
-        if (nextDescription == null) return;
-        const nextDiscountRaw = window.prompt("Скидка в процентах (1-95)", String(currentDiscount));
-        if (nextDiscountRaw == null) return;
-        const nextDiscount = Number(nextDiscountRaw);
-        if (!Number.isFinite(nextDiscount)) {
-          await showAlert("Некорректная скидка");
-          return;
-        }
-        const nextType = (window.prompt("Тип условия: all | pattern_000 | pattern_aaa | sequential_digits | custom", currentType) || "").trim();
-        if (!FLASH_CONDITION_TYPES.has(nextType)) {
-          await showAlert("Некорректный тип условия");
-          return;
-        }
-        let nextConditionValue = null;
-        if (nextType === "custom") {
-          const currentPatternInput = conditionValueToInput(conditionValue);
-          const nextPatternInput = window.prompt("Кастомные slug/маски через пробел или запятую", currentPatternInput);
-          if (nextPatternInput == null) return;
-          if (!nextPatternInput.trim()) {
-            await showAlert("Add at least one custom rule");
-            return;
-          }
-          const currentMode = String(conditionValue?.matchMode || "any").toLowerCase() === "all" ? "all" : "any";
-          const nextModeRaw = window.prompt("Mode: any | all", currentMode);
-          if (nextModeRaw == null) return;
-          const nextMode = String(nextModeRaw || "").trim().toLowerCase() === "all" ? "all" : "any";
-          nextConditionValue = {
-            matchMode: nextMode,
-            patternsInput: nextPatternInput,
-          };
-        }
-        const nextStartsAt = window.prompt("Дата старта (YYYY-MM-DDTHH:mm)", currentStartsAt);
-        if (nextStartsAt == null) return;
-        const nextEndsAt = window.prompt("Дата окончания (YYYY-MM-DDTHH:mm)", currentEndsAt);
-        if (nextEndsAt == null) return;
-        const nextActiveRaw = window.prompt("Активность: 1 = активен, 0 = остановлен", currentIsActive ? "1" : "0");
-        if (nextActiveRaw == null) return;
-        const nextTelegramTarget = window.prompt("Telegram target (опционально)", currentTelegramTarget);
-        if (nextTelegramTarget == null) return;
-
-        await jsonFetch(`/api/admin/flash-sales/${encodeURIComponent(id)}`, {
-          method: "PATCH",
-          headers: headers({ "Content-Type": "application/json" }),
-          body: JSON.stringify({
-            title: nextTitle.trim(),
-            description: nextDescription.trim(),
-            discountPercent: nextDiscount,
-            conditionType: nextType,
-            conditionValue: nextConditionValue,
-            startsAt: new Date(nextStartsAt).toISOString(),
-            endsAt: new Date(nextEndsAt).toISOString(),
-            isActive: String(nextActiveRaw).trim() !== "0",
-            telegramTarget: String(nextTelegramTarget || "").trim(),
-          }),
+        openFlashEditModal({
+          id,
+          title: decodeAttr(target.getAttribute("data-title")),
+          description: decodeAttr(target.getAttribute("data-description")),
+          discountPercent: Number(target.getAttribute("data-discount") || 0),
+          conditionType: decodeAttr(target.getAttribute("data-condition-type")) || "all",
+          conditionValue,
+          startsAt: decodeAttr(target.getAttribute("data-starts-at")),
+          endsAt: decodeAttr(target.getAttribute("data-ends-at")),
+          isActive: target.getAttribute("data-is-active") === "1",
+          notifyTelegram: currentNotifyTelegram,
+          telegramTarget: decodeAttr(target.getAttribute("data-telegram-target")),
         });
-        await loadFlashSalesAdmin();
       }
       if (action === "delete-flash") {
         const id = target.getAttribute("data-id");
@@ -823,7 +954,8 @@
   if (tab === "promocodes") void loadPromoCodesAdmin();
   if (tab === "flash-sales") void loadFlashSalesAdmin();
   if (tab === "drops") void loadDropsAdmin();
-  setupFlashCreateForm();
+  bindFlashForm(document.getElementById("flash-sales-create-form"));
+  bindFlashForm(flashEditForm);
 })();
 
 

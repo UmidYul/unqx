@@ -1111,55 +1111,151 @@
             </section>
 
             <section id="tab-flash-sales" class="<%= pageActiveTab === 'flash-sales' ? '' : 'hidden' %> space-y-4">
-              <form id="flash-sales-create-form"
-                class="grid gap-3 rounded-2xl border border-neutral-200 bg-white p-4 md:grid-cols-4">
-                <input name="title" type="text" placeholder="Название"
-                  class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" required />
-                <input name="description" type="text" placeholder="Текст баннера"
-                  class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
-                <input name="discountPercent" type="number" min="1" max="95" placeholder="Скидка %"
-                  class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" required />
-                <select name="conditionType" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">
-                  <option value="all">Все slug</option>
-                  <option value="pattern_000">000</option>
-                  <option value="pattern_aaa">AAA</option>
-                  <option value="sequential_digits">123/456</option>
-                  <option value="custom">Кастом</option>
-                </select>
-                <div class="hidden md:col-span-2" data-flash-custom-wrap>
-                  <textarea name="conditionPatternInput" rows="2"
-                    placeholder="Кастомные правила: AAA000, AAA***, ***777, A*A12? (через запятую, пробел или новую строку)"
-                    class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm font-mono uppercase"></textarea>
-                  <p class="mt-1 text-xs text-neutral-500">
-                    Для `custom`: точный slug или маска 6 символов. `*` = любой символ, `?` = один символ.
-                  </p>
+              <section class="admin-flash-builder rounded-[28px] border border-neutral-200 bg-white p-4 shadow-sm md:p-6">
+                <div class="admin-flash-builder-head">
+                  <div class="admin-flash-builder-copy">
+                    <span class="admin-flash-builder-kicker">Flash Sale Builder</span>
+                    <h3 class="admin-flash-builder-title">Создание акций без ручных правок</h3>
+                    <p class="admin-flash-builder-text">
+                      Опишите баннер, выберите тип условия, задайте правила и период. Для кастомных сценариев можно отдельно
+                      указать, что участвует в скидке и что нужно исключить.
+                    </p>
+                  </div>
+                  <div class="admin-flash-builder-note">
+                    <p class="admin-flash-builder-note-title">Как писать правила</p>
+                    <ul class="admin-flash-builder-note-list">
+                      <li>`AAA000` = точный UNQ</li>
+                      <li>`AAA***` или `***777` = маска</li>
+                      <li>`letters:AAA` или `digits:000` = typed rule</li>
+                      <li>Исключения указываются в отдельном блоке ниже</li>
+                    </ul>
+                  </div>
                 </div>
-                <input name="startsAt" type="datetime-local"
-                  class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" required />
-                <input name="endsAt" type="datetime-local"
-                  class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" required />
-                <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="notifyTelegram" /> Уведомить
-                  Telegram</label>
-                <input name="telegramTarget" type="text" placeholder="@channel или chat_id"
-                  class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
-                <button type="submit"
-                  class="rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">Запустить</button>
-              </form>
-              <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
-                <table class="min-w-full text-left text-sm">
-                  <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
-                    <tr>
-                      <th class="px-4 py-3">Название</th>
-                      <th class="px-4 py-3">Скидка</th>
-                      <th class="px-4 py-3">Период</th>
-                      <th class="px-4 py-3">Статус</th>
-                      <th class="px-4 py-3">Статистика</th>
-                      <th class="px-4 py-3">Действие</th>
-                    </tr>
-                  </thead>
-                  <tbody id="flash-sales-table"></tbody>
-                </table>
-              </div>
+
+                <form id="flash-sales-create-form" class="admin-flash-form mt-5 space-y-5">
+                  <div class="admin-flash-form-grid">
+                    <label class="admin-flash-field md:col-span-2">
+                      <span class="admin-flash-label">Название акции</span>
+                      <input name="title" type="text" placeholder="Например: Summer sportivouz"
+                        class="admin-flash-input" required />
+                    </label>
+                    <label class="admin-flash-field">
+                      <span class="admin-flash-label">Скидка</span>
+                      <input name="discountPercent" type="number" min="1" max="95" placeholder="95"
+                        class="admin-flash-input" required />
+                    </label>
+                    <label class="admin-flash-field">
+                      <span class="admin-flash-label">Тип условия</span>
+                      <select name="conditionType" class="admin-flash-input">
+                        <option value="all">Все UNQ</option>
+                        <option value="pattern_000">UNQ с цифрами 000</option>
+                        <option value="pattern_aaa">UNQ с одинаковыми буквами</option>
+                        <option value="sequential_digits">UNQ с последовательными цифрами</option>
+                        <option value="custom">Кастомные правила</option>
+                      </select>
+                    </label>
+                    <label class="admin-flash-field md:col-span-4">
+                      <span class="admin-flash-label">Текст баннера и модалки</span>
+                      <textarea name="description" rows="3"
+                        placeholder="Коротко объясните, что получит пользователь, какие UNQ участвуют и почему акция интересна."
+                        class="admin-flash-textarea"></textarea>
+                      <span class="admin-flash-help">Этот текст увидят пользователи в баннере и в flash sale модалке.</span>
+                    </label>
+                  </div>
+
+                  <div class="admin-flash-subgrid hidden" data-flash-custom-wrap>
+                    <div class="admin-flash-subgrid-head">
+                      <div>
+                        <p class="admin-flash-section-title">Кастомные условия</p>
+                        <p class="admin-flash-section-text">Опишите правила, которые включают скидку, и отдельно укажите исключения.</p>
+                      </div>
+                      <label class="admin-flash-field admin-flash-field--compact">
+                        <span class="admin-flash-label">Совпадение</span>
+                        <select name="conditionMatchMode" class="admin-flash-input">
+                          <option value="any">Достаточно одного правила</option>
+                          <option value="all">Нужно совпасть со всеми правилами</option>
+                        </select>
+                      </label>
+                    </div>
+                    <div class="admin-flash-form-grid">
+                      <label class="admin-flash-field md:col-span-2">
+                        <span class="admin-flash-label">Что участвует в акции</span>
+                        <textarea name="conditionIncludeInput" rows="4"
+                          placeholder="AAA000&#10;AAA***&#10;***777&#10;letters:AAA"
+                          class="admin-flash-textarea font-mono uppercase"></textarea>
+                        <span class="admin-flash-help">Можно писать через новую строку, пробел или запятую.</span>
+                      </label>
+                      <label class="admin-flash-field md:col-span-2">
+                        <span class="admin-flash-label">Что исключить</span>
+                        <textarea name="conditionExcludeInput" rows="4"
+                          placeholder="BBB000&#10;digits:123"
+                          class="admin-flash-textarea font-mono uppercase"></textarea>
+                        <span class="admin-flash-help">Исключения всегда перебивают включающие правила.</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div class="admin-flash-form-grid">
+                    <label class="admin-flash-field">
+                      <span class="admin-flash-label">Старт акции</span>
+                      <input name="startsAt" type="datetime-local" class="admin-flash-input" required />
+                    </label>
+                    <label class="admin-flash-field">
+                      <span class="admin-flash-label">Конец акции</span>
+                      <input name="endsAt" type="datetime-local" class="admin-flash-input" required />
+                    </label>
+                    <label class="admin-flash-toggle">
+                      <input type="checkbox" name="isActive" checked />
+                      <span class="admin-flash-toggle-copy">
+                        <strong>Акция активна сразу</strong>
+                        <small>Если выключить, сохранится как неактивная.</small>
+                      </span>
+                    </label>
+                    <label class="admin-flash-toggle">
+                      <input type="checkbox" name="notifyTelegram" />
+                      <span class="admin-flash-toggle-copy">
+                        <strong>Уведомить Telegram</strong>
+                        <small>Отправить уведомление в чат или канал при старте.</small>
+                      </span>
+                    </label>
+                    <label class="admin-flash-field md:col-span-2">
+                      <span class="admin-flash-label">Telegram target</span>
+                      <input name="telegramTarget" type="text" placeholder="@channel или chat_id"
+                        class="admin-flash-input" />
+                    </label>
+                    <div class="admin-flash-actions md:col-span-2">
+                      <button type="submit"
+                        class="inline-flex min-h-11 items-center justify-center rounded-xl bg-neutral-900 px-5 py-2 text-sm font-semibold text-white transition hover:bg-neutral-700">
+                        Создать flash sale
+                      </button>
+                    </div>
+                  </div>
+                </form>
+              </section>
+
+              <section class="rounded-2xl border border-neutral-200 bg-white shadow-sm">
+                <div class="flex items-center justify-between gap-3 border-b border-neutral-200 px-4 py-4 md:px-6">
+                  <div>
+                    <h3 class="text-sm font-semibold uppercase tracking-[0.16em] text-neutral-500">Активные и прошлые акции</h3>
+                    <p class="mt-1 text-sm text-neutral-600">Редактируйте любые поля через модалку, останавливайте кампании и смотрите эффект по скидкам.</p>
+                  </div>
+                </div>
+                <div class="overflow-x-auto">
+                  <table class="min-w-[980px] w-full text-left text-sm">
+                    <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
+                      <tr>
+                        <th class="px-4 py-3">Название</th>
+                        <th class="px-4 py-3">Скидка</th>
+                        <th class="px-4 py-3">Период</th>
+                        <th class="px-4 py-3">Статус</th>
+                        <th class="px-4 py-3">Статистика</th>
+                        <th class="px-4 py-3">Действие</th>
+                      </tr>
+                    </thead>
+                    <tbody id="flash-sales-table"></tbody>
+                  </table>
+                </div>
+              </section>
             </section>
 
             <section id="tab-drops" class="<%= pageActiveTab === 'drops' ? '' : 'hidden' %> space-y-4">
@@ -1678,6 +1774,128 @@
             </section>
       </div>
       <%- include('../partials/admin-layout-end') %>
+
+        <div id="flash-sale-edit-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 p-4"
+          aria-hidden="true">
+          <div class="modal-panel max-h-[88vh] w-full max-w-4xl overflow-y-auto rounded-2xl bg-white p-5" role="dialog"
+            aria-modal="true" aria-labelledby="flash-sale-edit-title">
+            <div class="modal-header-safe flex items-center justify-between gap-3">
+              <div>
+                <p class="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Flash Sale</p>
+                <h3 id="flash-sale-edit-title" class="mt-1 text-lg font-bold text-neutral-900">Редактирование акции</h3>
+                <p class="mt-1 text-sm text-neutral-600">Меняйте текст, правила, период и способ уведомления в одном окне.</p>
+              </div>
+              <button type="button" id="flash-sale-edit-close-btn"
+                class="modal-close-corner inline-flex h-8 w-8 items-center justify-center rounded-lg border border-neutral-300 text-neutral-500 hover:text-neutral-900"
+                aria-label="Закрыть">
+                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                </svg>
+              </button>
+            </div>
+
+            <form id="flash-sale-edit-form" class="admin-flash-form mt-5 space-y-5">
+              <input type="hidden" name="id" />
+
+              <div class="admin-flash-form-grid">
+                <label class="admin-flash-field md:col-span-2">
+                  <span class="admin-flash-label">Название акции</span>
+                  <input name="title" type="text" placeholder="Название акции" class="admin-flash-input" required />
+                </label>
+                <label class="admin-flash-field">
+                  <span class="admin-flash-label">Скидка</span>
+                  <input name="discountPercent" type="number" min="1" max="95" class="admin-flash-input" required />
+                </label>
+                <label class="admin-flash-field">
+                  <span class="admin-flash-label">Тип условия</span>
+                  <select name="conditionType" class="admin-flash-input">
+                    <option value="all">Все UNQ</option>
+                    <option value="pattern_000">UNQ с цифрами 000</option>
+                    <option value="pattern_aaa">UNQ с одинаковыми буквами</option>
+                    <option value="sequential_digits">UNQ с последовательными цифрами</option>
+                    <option value="custom">Кастомные правила</option>
+                  </select>
+                </label>
+                <label class="admin-flash-field md:col-span-4">
+                  <span class="admin-flash-label">Текст баннера и модалки</span>
+                  <textarea name="description" rows="3"
+                    placeholder="Что увидит пользователь в баннере и модалке"
+                    class="admin-flash-textarea"></textarea>
+                  <span class="admin-flash-help">Здесь лучше сразу объяснить механику акции простым языком.</span>
+                </label>
+              </div>
+
+              <div class="admin-flash-subgrid hidden" data-flash-custom-wrap>
+                <div class="admin-flash-subgrid-head">
+                  <div>
+                    <p class="admin-flash-section-title">Кастомные условия</p>
+                    <p class="admin-flash-section-text">Можно редактировать и включающие правила, и исключения, и режим совпадения.</p>
+                  </div>
+                  <label class="admin-flash-field admin-flash-field--compact">
+                    <span class="admin-flash-label">Совпадение</span>
+                    <select name="conditionMatchMode" class="admin-flash-input">
+                      <option value="any">Достаточно одного правила</option>
+                      <option value="all">Нужно совпасть со всеми правилами</option>
+                    </select>
+                  </label>
+                </div>
+                <div class="admin-flash-form-grid">
+                  <label class="admin-flash-field md:col-span-2">
+                    <span class="admin-flash-label">Что участвует в акции</span>
+                    <textarea name="conditionIncludeInput" rows="5" placeholder="AAA000&#10;AAA***&#10;digits:000"
+                      class="admin-flash-textarea font-mono uppercase"></textarea>
+                  </label>
+                  <label class="admin-flash-field md:col-span-2">
+                    <span class="admin-flash-label">Что исключить</span>
+                    <textarea name="conditionExcludeInput" rows="5" placeholder="BBB000&#10;letters:XYZ"
+                      class="admin-flash-textarea font-mono uppercase"></textarea>
+                  </label>
+                </div>
+              </div>
+
+              <div class="admin-flash-form-grid">
+                <label class="admin-flash-field">
+                  <span class="admin-flash-label">Старт акции</span>
+                  <input name="startsAt" type="datetime-local" class="admin-flash-input" required />
+                </label>
+                <label class="admin-flash-field">
+                  <span class="admin-flash-label">Конец акции</span>
+                  <input name="endsAt" type="datetime-local" class="admin-flash-input" required />
+                </label>
+                <label class="admin-flash-toggle">
+                  <input type="checkbox" name="isActive" />
+                  <span class="admin-flash-toggle-copy">
+                    <strong>Акция включена</strong>
+                    <small>Можно выключить без удаления.</small>
+                  </span>
+                </label>
+                <label class="admin-flash-toggle">
+                  <input type="checkbox" name="notifyTelegram" />
+                  <span class="admin-flash-toggle-copy">
+                    <strong>Уведомлять Telegram</strong>
+                    <small>Отправлять уведомление при старте.</small>
+                  </span>
+                </label>
+                <label class="admin-flash-field md:col-span-4">
+                  <span class="admin-flash-label">Telegram target</span>
+                  <input name="telegramTarget" type="text" placeholder="@channel или chat_id"
+                    class="admin-flash-input" />
+                </label>
+              </div>
+
+              <div class="flex flex-col-reverse gap-2 border-t border-neutral-200 pt-4 sm:flex-row sm:justify-end">
+                <button type="button" id="flash-sale-edit-cancel"
+                  class="inline-flex min-h-11 items-center justify-center rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">
+                  Закрыть
+                </button>
+                <button type="submit"
+                  class="inline-flex min-h-11 items-center justify-center rounded-xl bg-neutral-900 px-5 py-2 text-sm font-semibold text-white transition hover:bg-neutral-700">
+                  Сохранить изменения
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
 
         <div id="activation-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 p-4"
           aria-hidden="true">
