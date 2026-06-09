@@ -961,7 +961,7 @@
   position: absolute;
   inset: 0;
   border: 0;
-  background: rgba(9, 9, 11, 0.58);
+  background: rgba(9, 9, 11, 0.8);
   cursor: pointer;
 }
 
@@ -978,9 +978,10 @@
   overflow: hidden;
   border-radius: 28px;
   border: var(--theme-surface-border, 1px solid rgba(226, 232, 240, 0.85));
-  background: var(--theme-card-bg, rgba(255, 255, 255, 0.96));
+  background: #ffffff;
+  backdrop-filter: none;
   box-shadow: 0 36px 90px rgba(15, 23, 42, 0.24);
-  color: var(--theme-name-color, #0f172a);
+  color: #111827;
   font-family: var(--theme-font-family, inherit);
 }
 
@@ -991,12 +992,12 @@
   justify-content: space-between;
   gap: 12px;
   padding: 20px 22px;
-  border-bottom: 1px solid var(--theme-divider-color, rgba(226, 232, 240, 0.85));
+  border-bottom: 1px solid #e5e7eb;
 }
 
 .unq-follow-dialog-foot {
   justify-content: center;
-  border-top: 1px solid var(--theme-divider-color, rgba(226, 232, 240, 0.85));
+  border-top: 1px solid #e5e7eb;
   border-bottom: 0;
 }
 
@@ -1006,14 +1007,14 @@
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--theme-role-color, #64748b);
+  color: #6b7280;
 }
 
 .unq-follow-dialog-title {
   margin: 4px 0 0;
   font-size: 22px;
   font-weight: 800;
-  color: var(--theme-name-color, #0f172a);
+  color: #111827;
 }
 
 .unq-follow-dialog-close {
@@ -1022,10 +1023,10 @@
   justify-content: center;
   width: 42px;
   height: 42px;
-  border: var(--theme-button-secondary-border, 1px solid rgba(203, 213, 225, 0.9));
+  border: 1px solid #d1d5db;
   border-radius: 9999px;
-  background: var(--theme-button-secondary-bg, #fff);
-  color: var(--theme-button-secondary-text, #0f172a);
+  background: #f9fafb;
+  color: #111827;
   cursor: pointer;
 }
 
@@ -1033,7 +1034,7 @@
   padding: 14px 22px 0;
   font-size: 13px;
   font-weight: 600;
-  color: #f87171;
+  color: #b91c1c;
 }
 
 .unq-follow-dialog-body {
@@ -1054,9 +1055,9 @@
   align-items: center;
   justify-content: space-between;
   gap: 14px;
-  border: var(--theme-surface-border, 1px solid rgba(226, 232, 240, 0.9));
+  border: 1px solid #e5e7eb;
   border-radius: 20px;
-  background: var(--theme-button-secondary-bg, linear-gradient(180deg, rgba(248, 250, 252, 0.94), rgba(255, 255, 255, 0.96)));
+  background: #f8fafc;
   padding: 14px;
 }
 
@@ -1076,13 +1077,13 @@
 .unq-follow-dialog-name {
   font-size: 14px;
   font-weight: 700;
-  color: var(--theme-name-color, #0f172a);
+  color: #111827;
   text-decoration: none;
 }
 
 .unq-follow-dialog-meta {
   font-size: 12px;
-  color: var(--theme-role-color, #64748b);
+  color: #6b7280;
   overflow-wrap: anywhere;
 }
 
@@ -1090,12 +1091,12 @@
   display: inline-flex;
   width: fit-content;
   border-radius: 9999px;
-  border: var(--theme-badge-border, 1px solid rgba(251, 191, 36, 0.45));
-  background: var(--theme-badge-bg, rgba(254, 249, 195, 0.78));
+  border: 1px solid rgba(251, 191, 36, 0.45);
+  background: rgba(254, 249, 195, 0.96);
   padding: 2px 8px;
   font-size: 11px;
   font-weight: 700;
-  color: var(--theme-badge-text, #92400e);
+  color: #92400e;
 }
 
 .unq-follow-dialog-action,
@@ -1103,9 +1104,9 @@
   min-height: 42px;
   padding: 0 16px;
   border-radius: 9999px;
-  border: var(--theme-button-secondary-border, 1px solid #cbd5e1);
-  background: var(--theme-button-secondary-bg, #fff);
-  color: var(--theme-button-secondary-text, #0f172a);
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  color: #111827;
   font-size: 12px;
   font-weight: 700;
   text-transform: none;
@@ -1113,19 +1114,19 @@
 }
 
 .unq-follow-dialog-action.is-active {
-  border: var(--theme-button-secondary-border, 1px solid #cbd5e1);
-  background: var(--theme-button-secondary-bg, #fff);
-  color: var(--theme-button-secondary-text, #0f172a);
+  border: 1px solid #111827;
+  background: #111827;
+  color: #ffffff;
 }
 
 .unq-follow-dialog-empty {
-  border: 1px dashed var(--theme-divider-color, rgba(203, 213, 225, 0.95));
+  border: 1px dashed #d1d5db;
   border-radius: 20px;
-  background: var(--theme-button-secondary-bg, rgba(248, 250, 252, 0.86));
+  background: #f8fafc;
   padding: 28px 16px;
   text-align: center;
   font-size: 14px;
-  color: var(--theme-role-color, #64748b);
+  color: #6b7280;
 }
 
 .home-latest-post-card {
