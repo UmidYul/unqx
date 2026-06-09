@@ -876,6 +876,7 @@ function initSlugAvailability(orderApi) {
     '<svg class="icon-stroke h-4 w-4 animate-spin" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-9-9"></path></svg>';
   const ARROW_ICON =
     '<svg class="icon-stroke h-3.5 w-3.5" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"></path></svg>';
+  let heroCheckSeq = 0;
 
   async function loadHeroPrice(slug) {
     try {
@@ -1071,6 +1072,7 @@ function initSlugAvailability(orderApi) {
     const prevButtonHtml = checkButton.innerHTML;
     checkButton.textContent = "Проверяем...";
     setFeedback("loading", slug);
+    const seq = ++heroCheckSeq;
 
     try {
       const response = await fetch(`/api/cards/availability?slug=${encodeURIComponent(slug)}&source=hero`, {
@@ -1084,7 +1086,15 @@ function initSlugAvailability(orderApi) {
         throw new Error("bad response");
       }
 
+      if (seq !== heroCheckSeq) {
+        return;
+      }
+
       const payload = await response.json();
+
+      if (seq !== heroCheckSeq) {
+        return;
+      }
 
       if (!payload || payload.validFormat !== true) {
         setFeedback("invalid", slug);
@@ -1106,11 +1116,16 @@ function initSlugAvailability(orderApi) {
         priceInfo,
       );
     } catch {
+      if (seq !== heroCheckSeq) {
+        return;
+      }
       setFeedback("error", slug);
     } finally {
-      checkButton.disabled = false;
-      checkButton.classList.remove("opacity-75");
-      checkButton.innerHTML = prevButtonHtml;
+      if (seq === heroCheckSeq) {
+        checkButton.disabled = false;
+        checkButton.classList.remove("opacity-75");
+        checkButton.innerHTML = prevButtonHtml;
+      }
     }
   }
 
@@ -1225,6 +1240,7 @@ function initSlugCalculator(orderApi) {
     '<svg class="icon-stroke h-3.5 w-3.5" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"></path></svg>';
   let hasRevealed = false;
   let requestSeq = 0;
+  let resultSeq = 0;
   let lastAnimatedPrice = 0;
   let isApplyingDefaultSlug = false;
   let isGeneratingSlug = false;
@@ -1563,6 +1579,7 @@ function initSlugCalculator(orderApi) {
   }
 
   async function updateResult() {
+    const seq = ++resultSeq;
     lettersInput.value = normalizeLetters(lettersInput.value);
     digitsInput.value = normalizeDigits(digitsInput.value);
 
@@ -1589,12 +1606,19 @@ function initSlugCalculator(orderApi) {
     showResultState();
 
     const serverPricing = await applyServerPrice(pricing.slug, pricing.total);
-    if (!serverPricing) {
+    if (seq !== resultSeq || !serverPricing) {
       return;
     }
     const similarSuggestions = await loadSimilarAvailable(pricing.slug);
+    if (seq !== resultSeq) {
+      return;
+    }
     const finalPrice = serverPricing.total;
     const rarity = getRarityBadge(finalPrice);
+
+    if (seq !== resultSeq) {
+      return;
+    }
 
     rarityBadge.className = `inline-flex items-center gap-1 rounded-full border px-3 py-1 font-mono text-[11px] font-medium tracking-wider ${rarity.color}`;
     rarityText.textContent = rarity.label;

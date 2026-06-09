@@ -32,6 +32,8 @@ body.modal-open {
 
 .modal-panel {
   position: relative;
+  opacity: 1;
+  background-color: #ffffff;
 }
 
 .modal-panel--stacked-close {
@@ -74,14 +76,12 @@ body.modal-open {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    105deg,
-    transparent 40%,
-    rgba(255, 255, 255, 0.15) 45%,
-    rgba(255, 255, 255, 0.25) 50%,
-    rgba(255, 255, 255, 0.15) 55%,
-    transparent 60%
-  );
+  background: linear-gradient(105deg,
+      transparent 40%,
+      rgba(255, 255, 255, 0.15) 45%,
+      rgba(255, 255, 255, 0.25) 50%,
+      rgba(255, 255, 255, 0.15) 55%,
+      transparent 60%);
   animation: shimmer 3s ease-in-out infinite;
 }
 
@@ -172,13 +172,13 @@ body.motion-ready [data-observe-reveal].is-visible {
   box-shadow: 0 12px 20px -16px rgba(17, 17, 17, 0.35);
 }
 
-.faq-item summary + p {
+.faq-item summary+p {
   overflow: hidden;
   max-height: 0;
   transition: max-height 0.25s ease;
 }
 
-.faq-item[open] summary + p {
+.faq-item[open] summary+p {
   max-height: 240px;
 }
 
@@ -906,23 +906,24 @@ body.motion-ready [data-observe-reveal].is-visible {
   background-color: rgb(212 212 212 / 1);
 }
 
-.peer:checked ~ .peer-checked\:bg-neutral-900 {
+.peer:checked~.peer-checked\:bg-neutral-900 {
   background-color: rgb(23 23 23 / 1);
 }
 
-.peer:checked ~ .peer-checked\:translate-x-5 {
+.peer:checked~.peer-checked\:translate-x-5 {
   transform: translateX(1.25rem);
 }
 
-.peer:disabled ~ .peer-disabled\:opacity-50 {
+.peer:disabled~.peer-disabled\:opacity-50 {
   opacity: 0.5;
 }
 
-.peer:disabled ~ .peer-disabled\:opacity-80 {
+.peer:disabled~.peer-disabled\:opacity-80 {
   opacity: 0.8;
 }
 
 @media (prefers-reduced-motion: reduce) {
+
   *,
   *::before,
   *::after {

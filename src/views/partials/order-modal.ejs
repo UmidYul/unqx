@@ -3,358 +3,365 @@
   modalBraceletInStock=modalPublicSettings.bracelet_in_stock !==false; const
   modalBraceletCtaText=String(modalPublicSettings.bracelet_cta_text || "Заказать стикер" ); const
   modalResponseTime=String(modalPublicSettings.contact_response_time || "в течение 15 минут" ); const
-  pendingHours=Number(modalPublicSettings.pending_expiry_hours || 24); const
-  modalSessionUser = userSession && userSession.userId
-    ? {
-      id: userSession.userId,
-      userId: userSession.userId,
-      firstName: userSession.firstName || "",
-      displayName: userSession.displayName || "",
-      login: userSession.login || "",
-      username: userSession.login || userSession.username || "",
-      telegramUsername: userSession.telegramUsername || "",
-      email: userSession.email || "",
-      plan: userSession.plan || "none",
-      photoUrl: userSession.avatarUrl || "",
-    }
-    : null; const
-  modalSessionUserJson=JSON.stringify(modalSessionUser).replace(/</g, "\\u003c"); %>
+  pendingHours=Number(modalPublicSettings.pending_expiry_hours || 24); const modalSessionUser=userSession &&
+  userSession.userId ? { id: userSession.userId, userId: userSession.userId, firstName: userSession.firstName || "" ,
+  displayName: userSession.displayName || "" , login: userSession.login || "" , username: userSession.login ||
+  userSession.username || "" , telegramUsername: userSession.telegramUsername || "" , email: userSession.email || "" ,
+  plan: userSession.plan || "none" , photoUrl: userSession.avatarUrl || "" , } : null; const
+  modalSessionUserJson=JSON.stringify(modalSessionUser).replace(/</g, "\\u003c" ); %>
   <script nonce="<%= cspNonce %>">
-    window.UNQOrderModalSessionUser = <%- modalSessionUserJson %>;
+    window.UNQOrderModalSessionUser = <% - modalSessionUserJson %>;
   </script>
   <% const officialUnqClientJson=JSON.stringify(typeof officialUnqClientConfig==='object' && officialUnqClientConfig
-    !==null ? officialUnqClientConfig : null).replace(/</g, "\\u003c"); %>
+    !==null ? officialUnqClientConfig : null).replace(/</g, "\\u003c" ); %>
     <script nonce="<%= cspNonce %>">
-      window.__UNQ_OFFICIAL_CLIENT_CONFIG = <%- officialUnqClientJson %>;
+      window.__UNQ_OFFICIAL_CLIENT_CONFIG = <% - officialUnqClientJson %>;
     </script>
     <div id="order-modal-root" class="fixed inset-0 z-[70] hidden">
-    <div id="order-modal-backdrop" class="absolute inset-0 bg-black/50"></div>
-    <div id="order-modal-wrap" class="relative flex min-h-full items-center justify-center p-4">
-      <section id="order-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="order-modal-title" tabindex="-1"
-        class="modal-panel flex w-full max-w-xl flex-col overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-xl max-h-[88vh]">
+      <div id="order-modal-backdrop" class="absolute inset-0 bg-black/75"></div>
+      <div id="order-modal-wrap" class="relative flex min-h-full items-center justify-center p-4">
+        <section id="order-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="order-modal-title"
+          tabindex="-1"
+          class="modal-panel flex w-full max-w-xl flex-col overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-xl max-h-[88vh]">
 
-        <div class="border-b border-neutral-200 px-4 py-3 sm:px-6">
-          <div class="modal-header-safe flex items-center justify-between gap-2">
-            <div class="w-full">
-              <div id="order-modal-progress-bar" class="flex items-center justify-between gap-1 mb-1">
-                <div class="flex-1 h-1 rounded-full bg-neutral-200">
-                  <div id="order-modal-progress-bar-inner"
-                    class="h-1 rounded-full bg-neutral-900 transition-all duration-300" style="width: 25%"></div>
+          <div class="border-b border-neutral-200 px-4 py-3 sm:px-6">
+            <div class="modal-header-safe flex items-center justify-between gap-2">
+              <div class="w-full">
+                <div id="order-modal-progress-bar" class="flex items-center justify-between gap-1 mb-1">
+                  <div class="flex-1 h-1 rounded-full bg-neutral-200">
+                    <div id="order-modal-progress-bar-inner"
+                      class="h-1 rounded-full bg-neutral-900 transition-all duration-300" style="width: 25%"></div>
+                  </div>
+                  <span id="order-modal-progress-label"
+                    class="ml-3 self-center whitespace-nowrap text-xs font-semibold leading-none text-neutral-500">Шаг 1
+                    из 4</span>
                 </div>
-                <span id="order-modal-progress-label"
-                  class="ml-3 self-center whitespace-nowrap text-xs font-semibold leading-none text-neutral-500">Шаг 1 из 4</span>
+                <div id="order-modal-progress-auth" class="text-xs font-semibold text-neutral-500">① UNQ · ② Тариф · ③
+                  Дополнительно · ④ Подтверждение</div>
+                <div id="order-modal-progress-no-auth" class="hidden text-xs font-semibold text-neutral-500">① UNQ · ②
+                  Тариф · ③ Дополнительно · ④ Подтверждение</div>
               </div>
-              <div id="order-modal-progress-auth" class="text-xs font-semibold text-neutral-500">① UNQ · ② Тариф · ③
-                Дополнительно · ④ Подтверждение</div>
-              <div id="order-modal-progress-no-auth" class="hidden text-xs font-semibold text-neutral-500">① UNQ · ②
-                Тариф · ③ Дополнительно · ④ Подтверждение</div>
-            </div>
-            <button id="order-modal-close-top" type="button"
-              class="interactive-btn modal-close-corner inline-flex h-9 w-9 items-center justify-center rounded-lg border border-neutral-300 text-neutral-600"
-              aria-label="Закрыть окно заявки">
-              <svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="m6 6 12 12M18 6 6 18"></path>
-              </svg>
-            </button>
-          </div>
-        </div>
-
-        <div id="order-modal-flash-hero" class="order-modal-flash-hero hidden" aria-hidden="true">
-          <div class="order-modal-flash-hero-copy">
-            <span class="order-modal-flash-kicker">Flash Sale</span>
-            <h3 id="order-modal-flash-title" class="order-modal-flash-title">Заберите свой UNQ со скидкой</h3>
-            <p id="order-modal-flash-copy" class="order-modal-flash-copy">Откройте покупку, и скидка применится автоматически к подходящим UNQ.</p>
-          </div>
-          <div class="order-modal-flash-meta" aria-label="Flash sale details">
-            <span id="order-modal-flash-discount" class="order-modal-flash-chip">-0%</span>
-            <span id="order-modal-flash-rule" class="order-modal-flash-chip">Подходящие UNQ</span>
-            <span id="order-modal-flash-countdown" data-flash-countdown class="order-modal-flash-chip">--:--:--</span>
-          </div>
-        </div>
-
-        <section id="order-modal-flash-story" class="order-modal-flash-story hidden" aria-hidden="true">
-          <div class="order-modal-flash-story-copy">
-            <span class="order-modal-flash-section-label">Условия Flash Sale</span>
-            <p id="order-modal-flash-story-text" class="order-modal-flash-story-text">Скидка применяется автоматически к UNQ, которые подходят под правила акции.</p>
-          </div>
-          <p id="order-modal-flash-match-mode" class="order-modal-flash-inline-note hidden"></p>
-          <div id="order-modal-flash-include-wrap" class="order-modal-flash-rule-card">
-            <p class="order-modal-flash-rule-title">Что участвует</p>
-            <ul id="order-modal-flash-include-list" class="order-modal-flash-rule-list"></ul>
-          </div>
-          <div id="order-modal-flash-exclude-wrap" class="order-modal-flash-rule-card hidden">
-            <p class="order-modal-flash-rule-title">Что не участвует</p>
-            <ul id="order-modal-flash-exclude-list" class="order-modal-flash-rule-list"></ul>
-          </div>
-          <div id="order-modal-flash-examples-wrap" class="order-modal-flash-example-wrap hidden">
-            <div class="order-modal-flash-example-head">
-              <p class="order-modal-flash-rule-title">Примеры UNQ со скидкой</p>
-              <p class="order-modal-flash-example-copy">Нажмите на пример, и мы сразу подставим его в покупку.</p>
-            </div>
-            <div id="order-modal-flash-examples" class="order-modal-flash-example-list"></div>
-          </div>
-          <div id="order-modal-flash-purchase-card" class="order-modal-flash-purchase-card">
-            <div class="order-modal-flash-purchase-copy">
-              <p class="order-modal-flash-rule-title">Покупка по акции</p>
-              <p id="order-modal-flash-purchase-hint" class="order-modal-flash-purchase-hint">Введите свой UNQ ниже. Если он участвует в акции, скидка применится автоматически.</p>
-            </div>
-            <div class="order-modal-flash-purchase-state">
-              <span id="order-modal-flash-eligibility-badge" class="order-modal-flash-eligibility-badge">Введите UNQ</span>
-              <p id="order-modal-flash-eligibility-text" class="order-modal-flash-eligibility-text">Покажем, участвует ли выбранный slug в flash sale.</p>
-              <p id="order-modal-flash-price-line" class="order-modal-flash-price-line">Цена со скидкой появится после выбора подходящего UNQ.</p>
+              <button id="order-modal-close-top" type="button"
+                class="interactive-btn modal-close-corner inline-flex h-9 w-9 items-center justify-center rounded-lg border border-neutral-300 text-neutral-600"
+                aria-label="Закрыть окно заявки">
+                <svg class="icon-stroke h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="m6 6 12 12M18 6 6 18"></path>
+                </svg>
+              </button>
             </div>
           </div>
-        </section>
 
-        <div id="order-modal-step-loading" class="hidden flex-1 overflow-auto px-4 py-6 sm:px-6">
-          <div class="flex h-full min-h-[220px] flex-col items-center justify-center text-center">
-            <div class="h-10 w-10 animate-spin rounded-full border-2 border-neutral-200 border-t-neutral-900"></div>
-            <h3 class="mt-4 text-lg font-semibold text-neutral-900">Подготавливаем форму</h3>
-            <p class="mt-2 text-sm text-neutral-600">Проверяем аккаунт и доступные шаги оформления.</p>
+          <div id="order-modal-flash-hero" class="order-modal-flash-hero hidden" aria-hidden="true">
+            <div class="order-modal-flash-hero-copy">
+              <span class="order-modal-flash-kicker">Flash Sale</span>
+              <h3 id="order-modal-flash-title" class="order-modal-flash-title">Заберите свой UNQ со скидкой</h3>
+              <p id="order-modal-flash-copy" class="order-modal-flash-copy">Откройте покупку, и скидка применится
+                автоматически к подходящим UNQ.</p>
+            </div>
+            <div class="order-modal-flash-meta" aria-label="Flash sale details">
+              <span id="order-modal-flash-discount" class="order-modal-flash-chip">-0%</span>
+              <span id="order-modal-flash-rule" class="order-modal-flash-chip">Подходящие UNQ</span>
+              <span id="order-modal-flash-countdown" data-flash-countdown class="order-modal-flash-chip">--:--:--</span>
+            </div>
           </div>
-        </div>
 
-        <div id="order-modal-step-auth" class="flex-1 overflow-auto px-4 py-6 sm:px-6">
-          <h3 id="order-modal-title" class="text-xl font-bold text-neutral-900">Сначала войди в аккаунт</h3>
-          <p id="order-modal-auth-text" class="mt-2 text-sm text-neutral-600">Нужно чтобы привязать UNQ к твоему аккаунту</p>
-          <div class="mt-6 grid gap-3 sm:grid-cols-2">
-            <a id="order-modal-auth-login" href="/login"
-              class="interactive-btn inline-flex min-h-11 items-center justify-center rounded-xl border border-neutral-300 px-4 text-center text-sm font-semibold leading-none text-neutral-800">Войти</a>
-            <a id="order-modal-auth-register" href="/register"
-              class="interactive-btn inline-flex min-h-11 items-center justify-center rounded-xl bg-neutral-900 px-4 text-center text-sm font-semibold leading-none text-white">Зарегистрироваться</a>
-          </div>
-        </div>
-
-        <section id="order-modal-step-pending" class="hidden flex-1 overflow-auto px-4 py-6 sm:px-6">
-          <h3 class="text-xl font-bold text-neutral-900">У вас есть незавершённый заказ</h3>
-          <p class="mt-2 text-sm text-neutral-600">Завершите текущий заказ или отмените его, чтобы создать новый.</p>
-          <div class="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-            <p id="order-modal-pending-meta" class="text-xs text-amber-800">UNQ: —</p>
-          </div>
-          <p id="order-modal-pending-status" class="mt-3 text-sm text-neutral-600"></p>
-          <div class="mt-5 flex flex-wrap items-center gap-3">
-            <a id="order-modal-pending-continue" href="#" target="_blank" rel="noopener noreferrer"
-              class="interactive-btn inline-flex min-h-11 items-center justify-center rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm font-semibold text-neutral-800">Продолжить оплату</a>
-            <button id="order-modal-pending-cancel" type="button"
-              class="interactive-btn min-h-11 rounded-lg border border-red-200 bg-white px-3 py-2 text-sm font-semibold text-red-700">Отменить и создать новый</button>
-          </div>
-        </section>
-
-        <form id="order-modal-step-form" class="hidden flex-1 overflow-auto px-4 py-6 sm:px-6" novalidate>
-          <div class="rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm text-neutral-700">
-            <div class="flex items-center justify-between gap-3">
-              <div class="flex min-w-0 items-center gap-2">
-                <img id="order-modal-user-avatar" src="/brand/logo.PNG" alt="avatar"
-                  class="h-6 w-6 rounded-full border border-neutral-200 object-cover" />
-                <span id="order-modal-user-name" class="truncate">Пользователь</span>
+          <section id="order-modal-flash-story" class="order-modal-flash-story hidden" aria-hidden="true">
+            <div class="order-modal-flash-story-copy">
+              <span class="order-modal-flash-section-label">Условия Flash Sale</span>
+              <p id="order-modal-flash-story-text" class="order-modal-flash-story-text">Скидка применяется автоматически
+                к UNQ, которые подходят под правила акции.</p>
+            </div>
+            <p id="order-modal-flash-match-mode" class="order-modal-flash-inline-note hidden"></p>
+            <div id="order-modal-flash-include-wrap" class="order-modal-flash-rule-card">
+              <p class="order-modal-flash-rule-title">Что участвует</p>
+              <ul id="order-modal-flash-include-list" class="order-modal-flash-rule-list"></ul>
+            </div>
+            <div id="order-modal-flash-exclude-wrap" class="order-modal-flash-rule-card hidden">
+              <p class="order-modal-flash-rule-title">Что не участвует</p>
+              <ul id="order-modal-flash-exclude-list" class="order-modal-flash-rule-list"></ul>
+            </div>
+            <div id="order-modal-flash-examples-wrap" class="order-modal-flash-example-wrap hidden">
+              <div class="order-modal-flash-example-head">
+                <p class="order-modal-flash-rule-title">Примеры UNQ со скидкой</p>
+                <p class="order-modal-flash-example-copy">Нажмите на пример, и мы сразу подставим его в покупку.</p>
               </div>
-              <button id="order-modal-logout" type="button" class="text-xs font-semibold text-neutral-600 underline">Не
-                ты? Выйти</button>
+              <div id="order-modal-flash-examples" class="order-modal-flash-example-list"></div>
             </div>
-          </div>
-
-          <div class="mt-5 space-y-5">
-            <div id="order-modal-slug-readonly-wrap" class="hidden rounded-xl border border-neutral-200 bg-white p-4">
-              <p id="order-modal-slug-readonly" class="font-mono text-3xl font-bold tracking-wider text-neutral-900">
-                AAA000</p>
-              <p id="order-modal-slug-preview" class="mt-1 text-sm text-neutral-500">unqx.uz/AAA000</p>
-            </div>
-
-            <div id="order-modal-slug-inputs-wrap" class="hidden">
-              <label class="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">UNQ</label>
-              <div class="flex items-center gap-3">
-                <input id="order-modal-letters" type="text" maxlength="3" placeholder="AAA" autocomplete="off"
-                  class="w-28 rounded-xl border border-neutral-200 bg-white px-4 py-3 text-center font-mono text-lg uppercase text-neutral-900 outline-none transition-colors placeholder:text-neutral-300 focus:border-neutral-400" />
-                <span class="text-neutral-300">–</span>
-                <input id="order-modal-digits" type="text" maxlength="3" placeholder="000" autocomplete="off"
-                  class="w-28 rounded-xl border border-neutral-200 bg-white px-4 py-3 text-center font-mono text-lg text-neutral-900 outline-none transition-colors placeholder:text-neutral-300 focus:border-neutral-400" />
+            <div id="order-modal-flash-purchase-card" class="order-modal-flash-purchase-card">
+              <div class="order-modal-flash-purchase-copy">
+                <p class="order-modal-flash-rule-title">Покупка по акции</p>
+                <p id="order-modal-flash-purchase-hint" class="order-modal-flash-purchase-hint">Введите свой UNQ ниже.
+                  Если он участвует в акции, скидка применится автоматически.</p>
+              </div>
+              <div class="order-modal-flash-purchase-state">
+                <span id="order-modal-flash-eligibility-badge" class="order-modal-flash-eligibility-badge">Введите
+                  UNQ</span>
+                <p id="order-modal-flash-eligibility-text" class="order-modal-flash-eligibility-text">Покажем, участвует
+                  ли выбранный slug в flash sale.</p>
+                <p id="order-modal-flash-price-line" class="order-modal-flash-price-line">Цена со скидкой появится после
+                  выбора подходящего UNQ.</p>
               </div>
             </div>
+          </section>
 
-            <div id="order-modal-official-notice" class="hidden" role="status"></div>
+          <div id="order-modal-step-loading" class="hidden flex-1 overflow-auto px-4 py-6 sm:px-6">
+            <div class="flex h-full min-h-[220px] flex-col items-center justify-center text-center">
+              <div class="h-10 w-10 animate-spin rounded-full border-2 border-neutral-200 border-t-neutral-900"></div>
+              <h3 class="mt-4 text-lg font-semibold text-neutral-900">Подготавливаем форму</h3>
+              <p class="mt-2 text-sm text-neutral-600">Проверяем аккаунт и доступные шаги оформления.</p>
+            </div>
+          </div>
 
-            <div id="order-modal-slug-pricing-card" class="order-modal-surface-card rounded-xl border border-neutral-200 bg-neutral-50 p-4">
+          <div id="order-modal-step-auth" class="flex-1 overflow-auto px-4 py-6 sm:px-6">
+            <h3 id="order-modal-title" class="text-xl font-bold text-neutral-900">Сначала войди в аккаунт</h3>
+            <p id="order-modal-auth-text" class="mt-2 text-sm text-neutral-600">Нужно чтобы привязать UNQ к твоему
+              аккаунту</p>
+            <div class="mt-6 grid gap-3 sm:grid-cols-2">
+              <a id="order-modal-auth-login" href="/login"
+                class="interactive-btn inline-flex min-h-11 items-center justify-center rounded-xl border border-neutral-300 px-4 text-center text-sm font-semibold leading-none text-neutral-800">Войти</a>
+              <a id="order-modal-auth-register" href="/register"
+                class="interactive-btn inline-flex min-h-11 items-center justify-center rounded-xl bg-neutral-900 px-4 text-center text-sm font-semibold leading-none text-white">Зарегистрироваться</a>
+            </div>
+          </div>
+
+          <section id="order-modal-step-pending" class="hidden flex-1 overflow-auto px-4 py-6 sm:px-6">
+            <h3 class="text-xl font-bold text-neutral-900">У вас есть незавершённый заказ</h3>
+            <p class="mt-2 text-sm text-neutral-600">Завершите текущий заказ или отмените его, чтобы создать новый.</p>
+            <div class="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+              <p id="order-modal-pending-meta" class="text-xs text-amber-800">UNQ: —</p>
+            </div>
+            <p id="order-modal-pending-status" class="mt-3 text-sm text-neutral-600"></p>
+            <div class="mt-5 flex flex-wrap items-center gap-3">
+              <a id="order-modal-pending-continue" href="#" target="_blank" rel="noopener noreferrer"
+                class="interactive-btn inline-flex min-h-11 items-center justify-center rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm font-semibold text-neutral-800">Продолжить
+                оплату</a>
+              <button id="order-modal-pending-cancel" type="button"
+                class="interactive-btn min-h-11 rounded-lg border border-red-200 bg-white px-3 py-2 text-sm font-semibold text-red-700">Отменить
+                и создать новый</button>
+            </div>
+          </section>
+
+          <form id="order-modal-step-form" class="hidden flex-1 overflow-auto px-4 py-6 sm:px-6" novalidate>
+            <div class="rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm text-neutral-700">
               <div class="flex items-center justify-between gap-3">
-                <span id="order-modal-rarity"
-                  class="inline-flex rounded-full border border-neutral-200 bg-white px-2.5 py-1 text-[11px] font-semibold tracking-wider text-neutral-600">COMMON</span>
-                <span class="text-xs text-neutral-500">оплата сейчас</span>
+                <div class="flex min-w-0 items-center gap-2">
+                  <img id="order-modal-user-avatar" src="/brand/logo.PNG" alt="avatar"
+                    class="h-6 w-6 rounded-full border border-neutral-200 object-cover" />
+                  <span id="order-modal-user-name" class="truncate">Пользователь</span>
+                </div>
+                <button id="order-modal-logout" type="button"
+                  class="text-xs font-semibold text-neutral-600 underline">Не
+                  ты? Выйти</button>
               </div>
-              <p class="mt-2 text-sm font-semibold text-neutral-900">Стоимость UNQ: <span
-                  id="order-modal-slug-price">0</span> сум</p>
-              <p id="order-modal-formula" class="mt-1 text-xs text-neutral-500">100 000 × 1 = 100 000 сум</p>
             </div>
 
-            <div id="order-modal-plan-section">
-              <p class="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Тариф</p>
-              <div class="grid gap-3 sm:grid-cols-2">
-                <label id="order-modal-plan-basic-card" class="hidden">
-                  <input id="order-modal-plan-basic" type="radio" name="order-modal-plan" value="basic"
-                    class="peer sr-only" />
-                  <span
-                    class="order-modal-plan-card block rounded-xl border border-neutral-200 bg-white p-4 transition peer-checked:border-neutral-900 peer-checked:bg-neutral-900 peer-checked:text-white"
-                  >
-                    <span
-                      class="block text-[11px] font-mono uppercase tracking-wider text-neutral-400 peer-checked:text-neutral-400">LEGACY</span>
-                    <span id="order-modal-plan-basic-price" class="mt-1 block text-sm font-semibold">50 000 сум</span>
-                    <span id="order-modal-plan-basic-note" class="mt-1 block text-xs">legacy</span>
-                    <span class="mt-2 block text-xs">· 1 визитка</span>
-                    <span class="block text-xs">· До 3 кнопок</span>
-                    <span class="block text-xs">· Стандартный шаблон</span>
-                    <span class="block text-xs">· QR-код</span>
-                  </span>
-                </label>
-
-                <label id="order-modal-plan-premium-card" class="block cursor-pointer">
-                  <input id="order-modal-plan-premium" type="radio" name="order-modal-plan" value="premium"
-                    class="peer sr-only" />
-                  <span
-                    class="order-modal-plan-card block rounded-xl border border-neutral-200 bg-white p-4 transition peer-checked:border-neutral-900 peer-checked:bg-neutral-900 peer-checked:text-white"
-                  >
-                    <span
-                      class="block text-[11px] font-mono uppercase tracking-wider text-neutral-400 peer-checked:text-neutral-400">ПРЕМИУМ</span>
-                    <span id="order-modal-plan-premium-price" class="mt-1 block text-sm font-semibold">130 000
-                      сум</span>
-                    <span id="order-modal-plan-premium-note" class="mt-1 block text-xs">ежемесячно · $2/мес</span>
-                    <span class="mt-2 block text-xs">· До 3 UNQ</span>
-                    <span class="block text-xs">· Любые темы</span>
-                    <span class="block text-xs">· До 9 кнопок</span>
-                    <span class="block text-xs">· Скрыть брендинг</span>
-                  </span>
-                </label>
+            <div class="mt-5 space-y-5">
+              <div id="order-modal-slug-readonly-wrap" class="hidden rounded-xl border border-neutral-200 bg-white p-4">
+                <p id="order-modal-slug-readonly" class="font-mono text-3xl font-bold tracking-wider text-neutral-900">
+                  AAA000</p>
+                <p id="order-modal-slug-preview" class="mt-1 text-sm text-neutral-500">unqx.uz/AAA000</p>
               </div>
-              <p id="order-modal-plan-activation-note" class="mt-2 text-xs text-neutral-500">После оплаты мы активируем
-                твой тариф и UNQ.</p>
-            </div>
 
-            <label
-              id="order-modal-bracelet-row"
-              class="order-modal-surface-card flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-700">
+              <div id="order-modal-slug-inputs-wrap" class="hidden">
+                <label class="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">UNQ</label>
+                <div class="flex items-center gap-3">
+                  <input id="order-modal-letters" type="text" maxlength="3" placeholder="AAA" autocomplete="off"
+                    class="w-28 rounded-xl border border-neutral-200 bg-white px-4 py-3 text-center font-mono text-lg uppercase text-neutral-900 outline-none transition-colors placeholder:text-neutral-300 focus:border-neutral-400" />
+                  <span class="text-neutral-300">–</span>
+                  <input id="order-modal-digits" type="text" maxlength="3" placeholder="000" autocomplete="off"
+                    class="w-28 rounded-xl border border-neutral-200 bg-white px-4 py-3 text-center font-mono text-lg text-neutral-900 outline-none transition-colors placeholder:text-neutral-300 focus:border-neutral-400" />
+                </div>
+              </div>
+
+              <div id="order-modal-official-notice" class="hidden" role="status"></div>
+
+              <div id="order-modal-slug-pricing-card"
+                class="order-modal-surface-card rounded-xl border border-neutral-200 bg-neutral-50 p-4">
+                <div class="flex items-center justify-between gap-3">
+                  <span id="order-modal-rarity"
+                    class="inline-flex rounded-full border border-neutral-200 bg-white px-2.5 py-1 text-[11px] font-semibold tracking-wider text-neutral-600">COMMON</span>
+                  <span class="text-xs text-neutral-500">оплата сейчас</span>
+                </div>
+                <p class="mt-2 text-sm font-semibold text-neutral-900">Стоимость UNQ: <span
+                    id="order-modal-slug-price">0</span> сум</p>
+                <p id="order-modal-formula" class="mt-1 text-xs text-neutral-500">100 000 × 1 = 100 000 сум</p>
+              </div>
+
+              <div id="order-modal-plan-section">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Тариф</p>
+                <div class="grid gap-3 sm:grid-cols-2">
+                  <label id="order-modal-plan-basic-card" class="hidden">
+                    <input id="order-modal-plan-basic" type="radio" name="order-modal-plan" value="basic"
+                      class="peer sr-only" />
+                    <span
+                      class="order-modal-plan-card block rounded-xl border border-neutral-200 bg-white p-4 transition peer-checked:border-neutral-900 peer-checked:bg-neutral-900 peer-checked:text-white">
+                      <span
+                        class="block text-[11px] font-mono uppercase tracking-wider text-neutral-400 peer-checked:text-neutral-400">LEGACY</span>
+                      <span id="order-modal-plan-basic-price" class="mt-1 block text-sm font-semibold">50 000 сум</span>
+                      <span id="order-modal-plan-basic-note" class="mt-1 block text-xs">legacy</span>
+                      <span class="mt-2 block text-xs">· 1 визитка</span>
+                      <span class="block text-xs">· До 3 кнопок</span>
+                      <span class="block text-xs">· Стандартный шаблон</span>
+                      <span class="block text-xs">· QR-код</span>
+                    </span>
+                  </label>
+
+                  <label id="order-modal-plan-premium-card" class="block cursor-pointer">
+                    <input id="order-modal-plan-premium" type="radio" name="order-modal-plan" value="premium"
+                      class="peer sr-only" />
+                    <span
+                      class="order-modal-plan-card block rounded-xl border border-neutral-200 bg-white p-4 transition peer-checked:border-neutral-900 peer-checked:bg-neutral-900 peer-checked:text-white">
+                      <span
+                        class="block text-[11px] font-mono uppercase tracking-wider text-neutral-400 peer-checked:text-neutral-400">ПРЕМИУМ</span>
+                      <span id="order-modal-plan-premium-price" class="mt-1 block text-sm font-semibold">130 000
+                        сум</span>
+                      <span id="order-modal-plan-premium-note" class="mt-1 block text-xs">ежемесячно · $2/мес</span>
+                      <span class="mt-2 block text-xs">· До 3 UNQ</span>
+                      <span class="block text-xs">· Любые темы</span>
+                      <span class="block text-xs">· До 9 кнопок</span>
+                      <span class="block text-xs">· Скрыть брендинг</span>
+                    </span>
+                  </label>
+                </div>
+                <p id="order-modal-plan-activation-note" class="mt-2 text-xs text-neutral-500">После оплаты мы
+                  активируем
+                  твой тариф и UNQ.</p>
+              </div>
+
+              <label id="order-modal-bracelet-row"
+                class="order-modal-surface-card flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-700">
                 <span>
                   <span class="block">
-                  <%= modalBraceletInStock ? `Добавить NFC-стикер (+${modalBraceletPrice.toLocaleString("ru-RU")} сум)`
-                    : "Временно нет в наличии" %>
+                    <%= modalBraceletInStock ? `Добавить NFC-стикер (+${modalBraceletPrice.toLocaleString("ru-RU")}
+                      сум)` : "Временно нет в наличии" %>
                   </span>
-                <span class="mt-0.5 block text-xs text-neutral-500">
-                  <%= modalBraceletCtaText %>
+                  <span class="mt-0.5 block text-xs text-neutral-500">
+                    <%= modalBraceletCtaText %>
+                  </span>
                 </span>
-              </span>
-              <span class="relative inline-flex h-6 w-11 shrink-0 items-center">
-                <input id="order-modal-bracelet" type="checkbox" <%=modalBraceletInStock ? '' : 'disabled' %>
+                <span class="relative inline-flex h-6 w-11 shrink-0 items-center">
+                  <input id="order-modal-bracelet" type="checkbox" <%=modalBraceletInStock ? '' : 'disabled' %>
                   class="peer sr-only" />
-                <span
-                  class="block h-6 w-11 rounded-full bg-neutral-300 transition-colors peer-checked:bg-neutral-900 peer-disabled:opacity-50"></span>
-                <span
-                  class="pointer-events-none absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform peer-checked:translate-x-5 peer-disabled:opacity-80"></span>
-              </span>
-            </label>
-
-            <div id="order-modal-promo-section">
-              <label for="order-modal-promo-code"
-                class="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Промокод</label>
-              <div class="flex items-center gap-2">
-                <input id="order-modal-promo-code" type="text" maxlength="32"
-                  class="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-900 uppercase outline-none transition-colors placeholder:text-neutral-300 focus:border-neutral-400"
-                  placeholder="PROMO2026" />
-                <button id="order-modal-promo-check" type="button"
-                  class="interactive-btn min-h-11 rounded-xl border border-neutral-300 px-3 py-2 text-xs font-semibold text-neutral-700">Проверить</button>
-              </div>
-              <p id="order-modal-campaign-hint" class="mt-2 hidden text-xs text-emerald-700"></p>
-              <p id="order-modal-fraud-hint" class="mt-1 hidden text-xs text-amber-700"></p>
-            </div>
-
-            <div id="order-modal-name-section">
-              <label for="order-modal-name"
-                class="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Имя для
-                визитки</label>
-              <input id="order-modal-name" type="text"
-                class="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-900 outline-none transition-colors placeholder:text-neutral-300 focus:border-neutral-400"
-                placeholder="Имя для визитки" />
-            </div>
-
-            <div id="order-modal-summary-card" class="order-modal-summary-card rounded-xl border border-neutral-200 bg-neutral-50 p-4 text-sm">
-              <div id="order-modal-total-slug-row" class="flex items-center justify-between gap-3">
-                <span id="order-modal-total-slug-title">UNQ AAA000</span>
-                <span id="order-modal-total-slug-value">0 сум</span>
-              </div>
-              <div id="order-modal-total-plan-row" class="mt-1 flex items-center justify-between gap-3">
-                <span id="order-modal-total-plan-title">Premium monthly</span>
-                <span id="order-modal-total-plan-value">50 000 сум</span>
-              </div>
-              <div id="order-modal-total-product-discount-row" class="mt-1 hidden items-center justify-between gap-3 text-emerald-700">
-                <span>Скидка акции</span>
-                <span id="order-modal-total-product-discount-value">-0 сум</span>
-              </div>
-              <div id="order-modal-total-invitee-discount-row" class="mt-1 hidden items-center justify-between gap-3 text-emerald-700">
-                <span id="order-modal-total-invitee-discount-label">Скидка по рефералке</span>
-                <span id="order-modal-total-invitee-discount-value">-0 сум</span>
-              </div>
-              <div id="order-modal-total-lucky-row" class="mt-1 hidden items-center justify-between gap-3 text-emerald-700">
-                <span id="order-modal-total-lucky-label">UNQX Lucky</span>
-                <span id="order-modal-total-lucky-value">-0 сум</span>
-              </div>
-              <div id="order-modal-total-bonus-row" class="mt-1 hidden items-center justify-between gap-3 text-emerald-700">
-                <span>Списано бонусов</span>
-                <span id="order-modal-total-bonus-value">-0 сум</span>
-              </div>
-              <div id="order-modal-total-cap-row" class="mt-1 hidden items-center justify-between gap-3 text-amber-700">
-                <span>Ограничение скидки</span>
-                <span id="order-modal-total-cap-value">+0 сум</span>
-              </div>
-              <div id="order-modal-total-bracelet-row" class="mt-1 hidden items-center justify-between gap-3">
-                <span>Стикер</span>
-                <span>
-                  <%= modalBraceletPrice.toLocaleString("ru-RU") %> сум
+                  <span
+                    class="block h-6 w-11 rounded-full bg-neutral-300 transition-colors peer-checked:bg-neutral-900 peer-disabled:opacity-50"></span>
+                  <span
+                    class="pointer-events-none absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform peer-checked:translate-x-5 peer-disabled:opacity-80"></span>
                 </span>
+              </label>
+
+              <div id="order-modal-promo-section">
+                <label for="order-modal-promo-code"
+                  class="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Промокод</label>
+                <div class="flex items-center gap-2">
+                  <input id="order-modal-promo-code" type="text" maxlength="32"
+                    class="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-900 uppercase outline-none transition-colors placeholder:text-neutral-300 focus:border-neutral-400"
+                    placeholder="PROMO2026" />
+                  <button id="order-modal-promo-check" type="button"
+                    class="interactive-btn min-h-11 rounded-xl border border-neutral-300 px-3 py-2 text-xs font-semibold text-neutral-700">Проверить</button>
+                </div>
+                <p id="order-modal-campaign-hint" class="mt-2 hidden text-xs text-emerald-700"></p>
+                <p id="order-modal-fraud-hint" class="mt-1 hidden text-xs text-amber-700"></p>
               </div>
-              <div class="my-3 h-px bg-neutral-200"></div>
-              <div class="flex items-center justify-between gap-3 font-semibold text-neutral-900">
-                <span>Итого к оплате:</span>
-                <span id="order-modal-total-now">0 сум</span>
+
+              <div id="order-modal-name-section">
+                <label for="order-modal-name"
+                  class="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Имя для
+                  визитки</label>
+                <input id="order-modal-name" type="text"
+                  class="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-900 outline-none transition-colors placeholder:text-neutral-300 focus:border-neutral-400"
+                  placeholder="Имя для визитки" />
               </div>
-              <div class="mt-1 text-xs text-neutral-600">
-                <span id="order-modal-total-monthly">Подписка Premium · $2/мес · продление вручную</span>
+
+              <div id="order-modal-summary-card"
+                class="order-modal-summary-card rounded-xl border border-neutral-200 bg-neutral-50 p-4 text-sm">
+                <div id="order-modal-total-slug-row" class="flex items-center justify-between gap-3">
+                  <span id="order-modal-total-slug-title">UNQ AAA000</span>
+                  <span id="order-modal-total-slug-value">0 сум</span>
+                </div>
+                <div id="order-modal-total-plan-row" class="mt-1 flex items-center justify-between gap-3">
+                  <span id="order-modal-total-plan-title">Premium monthly</span>
+                  <span id="order-modal-total-plan-value">50 000 сум</span>
+                </div>
+                <div id="order-modal-total-product-discount-row"
+                  class="mt-1 hidden items-center justify-between gap-3 text-emerald-700">
+                  <span>Скидка акции</span>
+                  <span id="order-modal-total-product-discount-value">-0 сум</span>
+                </div>
+                <div id="order-modal-total-invitee-discount-row"
+                  class="mt-1 hidden items-center justify-between gap-3 text-emerald-700">
+                  <span id="order-modal-total-invitee-discount-label">Скидка по рефералке</span>
+                  <span id="order-modal-total-invitee-discount-value">-0 сум</span>
+                </div>
+                <div id="order-modal-total-lucky-row"
+                  class="mt-1 hidden items-center justify-between gap-3 text-emerald-700">
+                  <span id="order-modal-total-lucky-label">UNQX Lucky</span>
+                  <span id="order-modal-total-lucky-value">-0 сум</span>
+                </div>
+                <div id="order-modal-total-bonus-row"
+                  class="mt-1 hidden items-center justify-between gap-3 text-emerald-700">
+                  <span>Списано бонусов</span>
+                  <span id="order-modal-total-bonus-value">-0 сум</span>
+                </div>
+                <div id="order-modal-total-cap-row"
+                  class="mt-1 hidden items-center justify-between gap-3 text-amber-700">
+                  <span>Ограничение скидки</span>
+                  <span id="order-modal-total-cap-value">+0 сум</span>
+                </div>
+                <div id="order-modal-total-bracelet-row" class="mt-1 hidden items-center justify-between gap-3">
+                  <span>Стикер</span>
+                  <span>
+                    <%= modalBraceletPrice.toLocaleString("ru-RU") %> сум
+                  </span>
+                </div>
+                <div class="my-3 h-px bg-neutral-200"></div>
+                <div class="flex items-center justify-between gap-3 font-semibold text-neutral-900">
+                  <span>Итого к оплате:</span>
+                  <span id="order-modal-total-now">0 сум</span>
+                </div>
+                <div class="mt-1 text-xs text-neutral-600">
+                  <span id="order-modal-total-monthly">Подписка Premium · $2/мес · продление вручную</span>
+                </div>
               </div>
             </div>
-          </div>
 
-          <p id="order-modal-status" class="mt-3 text-sm text-red-700"></p>
-          <div class="mt-5 flex items-center gap-3">
-            <button id="order-modal-submit" type="submit"
-              class="inline-flex items-center gap-2 rounded-xl bg-neutral-900 px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-neutral-800">
-              Отправить заявку
-            </button>
-            <button id="order-modal-close-form" type="button"
-              class="text-sm font-semibold text-neutral-600 underline">Закрыть</button>
-          </div>
-        </form>
+            <p id="order-modal-status" class="mt-3 text-sm text-red-700"></p>
+            <div class="mt-5 flex items-center gap-3">
+              <button id="order-modal-submit" type="submit"
+                class="inline-flex items-center gap-2 rounded-xl bg-neutral-900 px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-neutral-800">
+                Отправить заявку
+              </button>
+              <button id="order-modal-close-form" type="button"
+                class="text-sm font-semibold text-neutral-600 underline">Закрыть</button>
+            </div>
+          </form>
 
-        <div id="order-modal-step-success" class="hidden flex-1 overflow-auto px-4 py-6 sm:px-6">
-          <h3 class="flex items-center gap-2 text-2xl font-bold text-neutral-900">
-            <svg class="icon-stroke h-6 w-6 text-emerald-700" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="m20 6-11 11-5-5"></path>
-            </svg>
-            Заявка принята
-          </h3>
-          <p id="order-modal-success-slug" class="mt-3 font-mono text-lg text-neutral-900">AAA000 зарезервирован</p>
-          <p id="order-modal-countdown"
-            class="mt-2 inline-flex rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-1 text-base font-semibold text-neutral-800">
-            24:00:00</p>
-          <p id="order-modal-success-body" class="mt-4 text-sm leading-6 text-neutral-700">Ваш UNQ уже забронирован. Нажмите кнопку ниже, чтобы
-            открыть Telegram с готовым сообщением для оплаты.</p>
-          <a id="order-modal-telegram-link" href="#" target="_blank" rel="noopener noreferrer"
-            class="hidden">Telegram</a>
-          <p id="order-modal-success-note" class="mt-2 text-sm text-neutral-600">После оплаты мы активируем ваш UNQ. Обычно это занимает <%=
-              modalResponseTime %>.</p>
-          <div class="mt-6 flex items-center gap-3">
-            <button id="order-modal-go-profile" type="button"
-              class="inline-flex items-center gap-2 rounded-xl bg-neutral-900 px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-neutral-800">
-              Оплатить
-            </button>
-            <button id="order-modal-close-success" type="button"
-              class="text-sm font-semibold text-neutral-600 underline">Закрыть</button>
+          <div id="order-modal-step-success" class="hidden flex-1 overflow-auto px-4 py-6 sm:px-6">
+            <h3 class="flex items-center gap-2 text-2xl font-bold text-neutral-900">
+              <svg class="icon-stroke h-6 w-6 text-emerald-700" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="m20 6-11 11-5-5"></path>
+              </svg>
+              Заявка принята
+            </h3>
+            <p id="order-modal-success-slug" class="mt-3 font-mono text-lg text-neutral-900">AAA000 зарезервирован</p>
+            <p id="order-modal-countdown"
+              class="mt-2 inline-flex rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-1 text-base font-semibold text-neutral-800">
+              24:00:00</p>
+            <p id="order-modal-success-body" class="mt-4 text-sm leading-6 text-neutral-700">Ваш UNQ уже забронирован.
+              Нажмите кнопку ниже, чтобы
+              открыть Telegram с готовым сообщением для оплаты.</p>
+            <a id="order-modal-telegram-link" href="#" target="_blank" rel="noopener noreferrer"
+              class="hidden">Telegram</a>
+            <p id="order-modal-success-note" class="mt-2 text-sm text-neutral-600">После оплаты мы активируем ваш UNQ.
+              Обычно это занимает <%= modalResponseTime %>.</p>
+            <div class="mt-6 flex items-center gap-3">
+              <button id="order-modal-go-profile" type="button"
+                class="inline-flex items-center gap-2 rounded-xl bg-neutral-900 px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-neutral-800">
+                Оплатить
+              </button>
+              <button id="order-modal-close-success" type="button"
+                class="text-sm font-semibold text-neutral-600 underline">Закрыть</button>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </div>
     </div>
-  </div>
-
