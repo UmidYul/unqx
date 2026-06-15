@@ -61,6 +61,9 @@
     avatarFile: $("#user-card-avatar-file"),
     avatarUpload: $("#user-card-avatar-upload"),
     avatarRemove: $("#user-card-avatar-remove"),
+    setPassword: $("#user-set-password"),
+    setPasswordSave: $("#user-set-password-save"),
+    setPasswordStatus: $("#user-set-password-status"),
     wallStatus: $("#admin-wall-status"),
     wallEditorWrap: $("#admin-wall-editor"),
     wallEditorTitle: $("#admin-wall-editor-title"),
@@ -213,11 +216,6 @@
     return payload || {};
   }
 
-  function planLabel(plan) {
-    if (plan === "premium" || plan === "basic") return "Премиум";
-    return "Без тарифа";
-  }
-
   function normalizeProfileTypeValue(value) {
     return String(value || "").trim().toLowerCase() === "company" ? "company" : "person";
   }
@@ -235,7 +233,7 @@
       el.title.textContent = `Визитка: ${name}`;
     }
     if (el.subtitle) {
-      el.subtitle.textContent = `План: ${planLabel(state.plan)} · ID: ${state.user?.id || userId}`;
+      el.subtitle.textContent = `ID: ${state.user?.id || userId}`;
     }
   }
 
@@ -340,21 +338,19 @@
 
   function renderThemes() {
     if (!(el.theme instanceof HTMLSelectElement)) return;
-    const isPremium = state.plan === "premium";
     const themes = state.themes.length ? state.themes : ["default_dark"];
     el.theme.innerHTML = themes
       .map((theme) => {
-        const disabled = !isPremium && theme !== "default_dark";
         const label = theme.replace(/_/g, " ");
-        return `<option value="${theme}" ${theme === state.theme ? "selected" : ""} ${disabled ? "disabled" : ""}>${label}</option>`;
+        return `<option value="${theme}" ${theme === state.theme ? "selected" : ""}>${label}</option>`;
       })
       .join("");
 
     if (el.customColor instanceof HTMLInputElement) {
-      el.customColor.disabled = !isPremium;
+      el.customColor.disabled = false;
     }
     if (el.branding instanceof HTMLInputElement) {
-      el.branding.disabled = !isPremium;
+      el.branding.disabled = false;
     }
   }
 
@@ -639,9 +635,6 @@
     if (el.customColor) el.customColor.value = card.customColor || "#111111";
     if (el.branding) el.branding.checked = card.showBranding === false;
     state.theme = typeof card.theme === "string" ? card.theme : "default_dark";
-    if (state.plan !== "premium" && state.theme !== "default_dark") {
-      state.theme = "default_dark";
-    }
   }
 
   function setProfileValues() {
@@ -1268,6 +1261,36 @@
     pendingAvatarPreviewUrl = URL.createObjectURL(file);
     updateAvatar(pendingAvatarPreviewUrl);
   });
+
+  async function savePassword() {
+    if (!(el.setPassword instanceof HTMLInputElement) || !(el.setPasswordStatus instanceof HTMLElement)) return;
+    const password = el.setPassword.value.trim();
+    if (password.length < 8) {
+      el.setPasswordStatus.textContent = "Пароль должен содержать минимум 8 символов.";
+      el.setPasswordStatus.style.color = "#dc2626";
+      return;
+    }
+    el.setPasswordStatus.textContent = "Сохранение...";
+    el.setPasswordStatus.style.color = "";
+    if (el.setPasswordSave instanceof HTMLButtonElement) el.setPasswordSave.disabled = true;
+    try {
+      await api(`/api/admin/users/${encodeURIComponent(userId)}/password`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password }),
+      });
+      el.setPassword.value = "";
+      el.setPasswordStatus.textContent = "Пароль успешно изменён.";
+      el.setPasswordStatus.style.color = "#16a34a";
+    } catch (err) {
+      el.setPasswordStatus.textContent = err.message || "Ошибка при сохранении пароля.";
+      el.setPasswordStatus.style.color = "#dc2626";
+    } finally {
+      if (el.setPasswordSave instanceof HTMLButtonElement) el.setPasswordSave.disabled = false;
+    }
+  }
+
+  el.setPasswordSave?.addEventListener("click", () => { void savePassword(); });
 
   el.avatarUpload?.addEventListener("click", uploadAvatar);
   el.avatarRemove?.addEventListener("click", removeAvatar);

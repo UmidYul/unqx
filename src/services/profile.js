@@ -1,6 +1,10 @@
 const { getSubscriptionSnapshot, normalizeSubscriptionPlan } = require("./subscription");
 const { hasActivePublicProfile } = require("./public-handle");
 
+// Временный флаг: все пользователи получают премиум функционал.
+// Чтобы вернуть обратно — поменяй на false.
+const PREMIUM_FOR_ALL = true;
+
 const PROFILE_THEME_KEYS = [
   "default_dark",
   "arctic",
@@ -63,11 +67,11 @@ const BUTTON_TYPES = new Set([
 
 function getEffectivePlan(user) {
   const subscription = getSubscriptionSnapshot(user);
-  const normalizedPlan = subscription.effectivePlan;
+  const normalizedPlan = PREMIUM_FOR_ALL ? "premium" : subscription.effectivePlan;
   return {
     plan: normalizedPlan,
     isPremium: normalizedPlan === "premium",
-    isExpiredPremium: subscription.isExpired,
+    isExpiredPremium: PREMIUM_FOR_ALL ? false : subscription.isExpired,
     subscription,
   };
 }

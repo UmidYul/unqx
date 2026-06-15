@@ -6310,6 +6310,42 @@ router.patch(
 );
 
 router.patch(
+  "/users/:userId/password",
+  asyncHandler(async (req, res) => {
+    if (!ensureUsersStorageReady(res)) {
+      return;
+    }
+    const userId = String(req.params.userId || "").trim();
+    const password = String(req.body?.password || "");
+    if (!userId || !password || password.length < 8) {
+      res.status(400).json({ error: "Invalid password", code: "VALIDATION_ERROR" });
+      return;
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true },
+    });
+    if (!user) {
+      res.status(404).json({ error: "User not found", code: "USER_NOT_FOUND" });
+      return;
+    }
+
+    const passwordHash = await bcrypt.hash(password, PASSWORD_ROUNDS);
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        passwordHash,
+        resetPasswordToken: null,
+        resetPasswordExpiresAt: null,
+      },
+      select: { id: true },
+    });
+    res.json({ ok: true });
+  }),
+);
+
+router.patch(
   "/users/:userId/plan",
   asyncHandler(async (req, res) => {
     if (!ensureUsersStorageReady(res)) {
