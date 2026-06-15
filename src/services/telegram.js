@@ -42,8 +42,6 @@ async function sendOrderRequestToTelegram(payload) {
   }
 
   const tariffLabel = "ПРЕМИУМ";
-  const braceletPrice = Number(payload.braceletPrice || (await getSetting("bracelet_price", 250_000)) || 250_000);
-  const braceletLabel = payload.bracelet ? `Да (+${braceletPrice.toLocaleString("ru-RU")} сум)` : "Нет";
   const usernameLabel = payload.username ? `@${escapeHtml(payload.username.replace(/^@/, ""))}` : "@—";
   const emailLabel = payload.email ? escapeHtml(payload.email) : "—";
   const paymentReference = getOrderPaymentReference(payload.orderId);
@@ -60,7 +58,6 @@ async function sendOrderRequestToTelegram(payload) {
     `<b>Slug:</b> ${escapeHtml(payload.slug)} · unqx.uz/${escapeHtml(payload.slug)}`,
     `<b>Цена slug:</b> ${escapeHtml(payload.slugPriceLabel)}`,
     `<b>Тариф:</b> ${tariffLabel} · ${escapeHtml(payload.tariffPriceLabel)}`,
-    `<b>Браслет:</b> ${braceletLabel}`,
     "",
     `<b>Итого к оплате:</b> ${escapeHtml(payload.totalOneTimeLabel)}`,
     "Premium подписка · месяц",

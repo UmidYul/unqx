@@ -250,7 +250,7 @@ router.get(
       "cards",
       "users",
       "slugs",
-      "bracelets",
+
       "score",
       "testimonials",
       "logs",

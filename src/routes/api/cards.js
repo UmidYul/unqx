@@ -1476,7 +1476,7 @@ router.get(
   asyncHandler(async (req, res) => {
     const sessionUser = getUserSession(req);
     const userId = sessionUser?.userId ? String(sessionUser.userId) : null;
-    const [pricing, user, braceletPrice] = await Promise.all([
+    const [pricing, user] = await Promise.all([
       getPricingSettings(),
       userId
         ? prisma.user.findUnique({
@@ -1489,12 +1489,10 @@ router.get(
           },
         })
         : Promise.resolve(null),
-      getBraceletPrice(),
     ]);
 
     res.json({
       ...pricing,
-      braceletPrice,
       userPlan: user?.plan || "none",
       subscription: user
         ? (() => {
@@ -1544,7 +1542,6 @@ router.get(
           premiumUpgradePrice: 130_000,
           planPremiumMonthlyPriceUsd: 2,
           planPremiumMonthlyPriceUzs: 130_000,
-          braceletPrice: 250_000,
           planChargePreview: 130_000,
         },
         limits: {
@@ -1599,16 +1596,14 @@ router.get(
     };
 
     let pricing;
-    let braceletPrice;
     let referralSettings;
     let referralV2Settings;
     let campaignResolved;
     let promoPolicy;
     let promoResolved;
     try {
-      [pricing, braceletPrice, referralSettings, referralV2Settings, campaignResolved, promoPolicy, promoResolved] = await Promise.all([
+      [pricing, referralSettings, referralV2Settings, campaignResolved, promoPolicy, promoResolved] = await Promise.all([
         getPricingSettings(),
-        getBraceletPrice(),
         getReferralV1Settings(),
         getReferralV2Settings(),
         safeResolveCampaignForCheckout({
@@ -1679,7 +1674,6 @@ router.get(
           : "Войдите в аккаунт, чтобы продолжить покупку тарифа.",
         pricing: {
           ...pricing,
-          braceletPrice,
           planChargePreview: orderKind === "subscription_renewal"
             ? (pricing.planPremiumMonthlyPriceUzs || pricing.planPremiumPrice)
             : (pricing.planPremiumMonthlyPriceUzs || pricing.planPremiumPrice),
@@ -1754,7 +1748,6 @@ router.get(
         message: "Сессия устарела. Войдите снова.",
         pricing: {
           ...pricing,
-          braceletPrice,
           planChargePreview: pricing.planPremiumMonthlyPriceUzs || pricing.planPremiumPrice,
         },
         limits: {
@@ -1915,12 +1908,9 @@ router.get(
           campaignSnapshot: latestActiveOrder.campaignSnapshot || null,
           fraudVerdict: latestActiveOrder.fraudVerdict || "allow",
           fraudHint: latestActiveOrder.fraudReason || "",
-          bracelet: Boolean(latestActiveOrder.bracelet),
-          braceletPrice: Number(braceletPrice || 0),
           totalOneTime:
             Number(latestActiveOrder.slugPrice || 0) +
-            Number(latestActiveOrder.planPrice || 0) +
-            (latestActiveOrder.bracelet ? Number(braceletPrice || 0) : 0),
+            Number(latestActiveOrder.planPrice || 0),
           paymentUrl: buildManualTelegramPaymentUrl({
             orderId: latestActiveOrder.id,
             slug: latestActiveOrder.slug,
@@ -1935,13 +1925,10 @@ router.get(
             promoDiscountApplied: latestActiveOrder.promoDiscountApplied,
             promoCode: latestActiveOrder.promoCode || "",
             bonusSpent: latestActiveOrder.bonusSpent,
-            bracelet: Boolean(latestActiveOrder.bracelet),
-            braceletPrice,
             planMonthlyPriceUsd: Number(pricing?.planPremiumMonthlyPriceUsd || 2),
             totalAmount:
               Number(latestActiveOrder.slugPrice || 0) +
-              Number(latestActiveOrder.planPrice || 0) +
-              (latestActiveOrder.bracelet ? Number(braceletPrice || 0) : 0),
+              Number(latestActiveOrder.planPrice || 0),
           }),
           createdAt: latestActiveOrder.createdAt,
           pendingExpiresAt: slugRow?.pendingExpiresAt || null,
@@ -2015,7 +2002,6 @@ router.get(
       message,
       pricing: {
         ...pricing,
-        braceletPrice,
         planChargePreview: getPlanCharge({
           currentPlan,
           requestedPlan: resolvedPlan,
@@ -2267,7 +2253,6 @@ router.post(
       }
     }
 
-    const braceletPriceValue = await getBraceletPrice();
     const slugPricingConfig = await getSlugPricingConfig();
     const basePricing =
       typeof state.priceOverride === "number"
@@ -2344,8 +2329,7 @@ router.post(
       user,
     });
     const tariffPriceLabelValue = subscription.isActive ? 0 : planPrice;
-    const braceletPrice = payload.products.bracelet ? braceletPriceValue : 0;
-    const totalOneTime = finalSlugPriceWithLucky + planPrice + braceletPrice;
+    const totalOneTime = finalSlugPriceWithLucky + planPrice;
     const theme = normalizeTheme(payload.theme);
     const requestedAt = new Date();
     const requestedOrderKind = "slug_purchase";
@@ -2405,7 +2389,6 @@ router.post(
             orderKind: requestedOrderKind,
             subscriptionMonths,
             planPrice,
-            bracelet: Boolean(payload.products.bracelet),
             status: "new",
             dropId: drop ? drop.id : null,
             flashSaleId: flashApplied.hasDiscount ? activeFlashSale.id : null,
@@ -2495,8 +2478,6 @@ router.post(
       bonusSpent: referralPricing.bonusSpent,
       luckyDiscountApplied,
       planPrice,
-      bracelet: Boolean(payload.products.bracelet),
-      braceletPrice,
       planMonthlyPriceUsd: Number(pricing?.planPremiumMonthlyPriceUsd || 2),
       totalAmount: totalOneTime,
     });
@@ -2515,15 +2496,11 @@ router.post(
           planPrice: tariffPriceLabelValue,
           planMonthlyPriceUsd: Number(pricing?.planPremiumMonthlyPriceUsd || 2),
         }),
-        bracelet: payload.products.bracelet,
-        braceletPrice: braceletPriceValue,
         contact: user.login ? `@${user.login}` : `${user.firstName}`,
         totalOneTimeLabel: toTelegramTotalPriceLabel({
           requestedPlan,
           slugPrice: finalSlugPriceWithLucky,
           planPrice,
-          bracelet: Boolean(payload.products.bracelet),
-          braceletPrice,
           totalAmount: totalOneTime,
           planMonthlyPriceUsd: Number(pricing?.planPremiumMonthlyPriceUsd || 2),
         }),
@@ -2584,7 +2561,6 @@ router.post(
         fraudHint: fraudCheck.reason || "",
         slugPrice: finalSlugPriceWithLucky,
         planPrice,
-        braceletPrice,
         totalOneTime,
       },
       referral: {

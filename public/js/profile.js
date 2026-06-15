@@ -146,7 +146,6 @@
       .replace(/^@+/, "")
       .trim();
     const DEFAULT_PROFILE_AVATAR = "/brand/profile-thin.svg";
-    const DEFAULT_BRACELET_PRICE = 250000;
     const PREMIUM_REQUIRED_TITLE = "Нужен Премиум";
     const PREMIUM_CTA_LABEL = "Подключить Премиум →";
     const PREMIUM_UPSELL_NOTE = "Подключить Премиум · $2/мес";
@@ -439,8 +438,6 @@
     let saveAlertTimer = null;
     let profileRefreshTimer = null;
     let profileRefreshInFlight = false;
-    let braceletModalLastFocused = null;
-    let braceletModalOpen = false;
     let emailModalLastFocused = null;
     let emailModalOpen = false;
     let emailModalStep = "request";
@@ -479,10 +476,9 @@
         ? formatTelegramPremiumUsdLabel()
         : `${Number(planPrice || 0).toLocaleString("ru-RU")} сум`;
 
-    const formatTelegramTotalPriceLabel = ({ requestedPlan, slugPrice = 0, planPrice = 0, braceletPrice = 0, total = 0 }) =>
+    const formatTelegramTotalPriceLabel = ({ requestedPlan, slugPrice = 0, planPrice = 0, total = 0 }) =>
       shouldUseTelegramPremiumUsdLabel(requestedPlan, planPrice) &&
-        Number(slugPrice || 0) <= 0 &&
-        Number(braceletPrice || 0) <= 0
+        Number(slugPrice || 0) <= 0
         ? formatTelegramPremiumUsdLabel()
         : `${Number(total || 0).toLocaleString("ru-RU")} сум`;
 
@@ -495,8 +491,7 @@
       const slug = String(requestItem?.slug || "").toUpperCase();
       const slugPrice = Number(requestItem?.slugPrice || 0);
       const planPrice = Number(requestItem?.planPrice || 0);
-      const braceletPrice = requestItem?.bracelet ? Number(requestItem?.braceletPrice || DEFAULT_BRACELET_PRICE) : 0;
-      const total = Number(requestItem?.totalOneTime || slugPrice + planPrice + braceletPrice);
+      const total = Number(requestItem?.totalOneTime || slugPrice + planPrice);
       const userName = String(s.user?.displayName || s.user?.firstName || "").trim() || "не указано";
       const userEmail = String(s.user?.email || "").trim() || "не указан";
       const planPriceLabel = formatTelegramPlanPriceLabel(requestItem?.requestedPlan, planPrice);
@@ -504,10 +499,9 @@
         requestedPlan: requestItem?.requestedPlan,
         slugPrice,
         planPrice,
-        braceletPrice,
         total,
       });
-      const message = `Здравствуйте! Хочу оплатить заказ #?? ${orderCode}\n\nUNQ: ${slug}\nФИО: ${userName}\nEmail: ${userEmail}\n\n?? Детализация оплаты:\n• UNQ ${slug}: ${Number(slugPrice).toLocaleString("ru-RU")} сум\n• Тариф ${planLabel(requestItem?.requestedPlan)}: ${planPriceLabel}\n• Браслет: ${Number(braceletPrice).toLocaleString("ru-RU")} сум\n\nИтого к оплате: ${totalPriceLabel}`;
+      const message = `Здравствуйте! Хочу оплатить заказ #?? ${orderCode}\n\nUNQ: ${slug}\nФИО: ${userName}\nEmail: ${userEmail}\n\n?? Детализация оплаты:\n• UNQ ${slug}: ${Number(slugPrice).toLocaleString("ru-RU")} сум\n• Тариф ${planLabel(requestItem?.requestedPlan)}: ${planPriceLabel}\n\nИтого к оплате: ${totalPriceLabel}`;
       return `https://t.me/${TELEGRAM_PAYMENT_USERNAME}?text=${encodeURIComponent(message)}`;
     };
 
@@ -539,8 +533,7 @@
       const slug = String(order?.slug || "").trim().toUpperCase();
       const slugPrice = Number(order?.slugPrice || 0);
       const planPrice = Number(order?.planPrice || 0);
-      const braceletPrice = order?.bracelet ? Number(order?.braceletPrice || DEFAULT_BRACELET_PRICE) : 0;
-      const total = Number(order?.totalOneTime || slugPrice + planPrice + braceletPrice);
+      const total = Number(order?.totalOneTime || slugPrice + planPrice);
       const userName = String(s.user?.displayName || s.user?.firstName || "").trim() || "не указано";
       const userEmail = String(s.user?.email || "").trim() || "не указан";
       const planPriceLabel = formatTelegramPlanPriceLabel(order?.requestedPlan, planPrice);
@@ -548,7 +541,6 @@
         requestedPlan: order?.requestedPlan,
         slugPrice,
         planPrice,
-        braceletPrice,
         total,
       });
       const message = `Здравствуйте! Хочу оплатить заказ #?? ${reference}
@@ -560,7 +552,6 @@ Email: ${userEmail}
 ?? Детализация оплаты:
 • UNQ ${slug}: ${Number(slugPrice).toLocaleString("ru-RU")} сум
 • Тариф ${planLabel(order?.requestedPlan)}: ${planPriceLabel}
-• Браслет: ${Number(braceletPrice).toLocaleString("ru-RU")} сум
 
 Итого к оплате: ${totalPriceLabel}`;
       return `https://t.me/${TELEGRAM_PAYMENT_USERNAME}?text=${encodeURIComponent(message)}`;
@@ -811,12 +802,6 @@ Email: ${userEmail}
       qrDownloadPng: $("#profile-qr-download-png"),
       logout: $("#profile-logout-btn"),
 
-      braceletModal: $("#profile-bracelet-modal"),
-      braceletModalDialog: $("#profile-bracelet-modal-dialog"),
-      braceletModalPrice: $("#profile-bracelet-modal-price"),
-      braceletModalSubmit: $("#profile-bracelet-modal-submit"),
-      braceletModalClose: $("#profile-bracelet-modal-close"),
-      braceletModalCloseTop: $("#profile-bracelet-modal-close-top"),
 
       modal: $("#profile-modal"),
       modalDialog: $("#profile-modal-dialog"),
@@ -1657,31 +1642,6 @@ Email: ${userEmail}
           el.privatePasswordChangeSubmit.disabled = false;
         }
       }
-    };
-
-    const closeBraceletModal = () => {
-      if (!(el.braceletModal instanceof HTMLElement)) return;
-      el.braceletModal.classList.add("hidden");
-      el.braceletModal.classList.remove("flex");
-      braceletModalOpen = false;
-      if (braceletModalLastFocused instanceof HTMLElement) {
-        braceletModalLastFocused.focus();
-      }
-    };
-
-    const openBraceletModal = () => {
-      if (!(el.braceletModal instanceof HTMLElement)) return;
-      const priceValue = Number(s.pricing?.braceletPrice || DEFAULT_BRACELET_PRICE);
-      if (el.braceletModalPrice instanceof HTMLElement) {
-        el.braceletModalPrice.textContent = `${priceValue.toLocaleString("ru-RU")} сум`;
-      }
-      braceletModalLastFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-      el.braceletModal.classList.remove("hidden");
-      el.braceletModal.classList.add("flex");
-      braceletModalOpen = true;
-      requestAnimationFrame(() => {
-        el.braceletModalDialog?.focus();
-      });
     };
 
     const showSaveAlert = (message) => {
@@ -3206,9 +3166,6 @@ Email: ${userEmail}
         if (requestItem.purchasedAt) {
           chips.push(`<span class="profile-request-chip">Оплачено: ${fdt(requestItem.purchasedAt)}</span>`);
         }
-        if (requestItem.type !== "pet" && requestItem.bracelet) {
-          chips.push(`<span class="profile-request-chip">NFC-стикер добавлен</span>`);
-        }
         return chips.join("");
       };
 
@@ -3229,8 +3186,7 @@ Email: ${userEmail}
         const totalPrice = requestItem.type === "pet"
           ? Number(requestItem.totalOneTime || requestItem.priceSnapshot || 0)
           : Number(requestItem.slugPrice || 0) +
-            Number(requestItem.planPrice || 0) +
-            (requestItem.bracelet ? Number(requestItem.braceletPrice || DEFAULT_BRACELET_PRICE) : 0);
+            Number(requestItem.planPrice || 0);
         const statusMeta = getRequestStatusMeta(requestItem);
         const note = ["rejected", "expired"].includes(normalizedStatus)
           ? `<div class="profile-request-note"><strong>Причина:</strong> ${esc(requestItem.adminNote || "Без дополнительного комментария")}</div>`
@@ -3909,9 +3865,6 @@ Email: ${userEmail}
       }
 
       const tips = [];
-      if (Number(score.scoreBracelet || 0) === 0) {
-        tips.push('<div class="flex items-center justify-between gap-2"><span>Добавь NFC-стикер - +100 к Score</span><button type="button" data-a="open-bracelet-order-modal" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold">Заказать стикер</button></div>');
-      }
       if (Number(score.scorePlan || 0) === 0) {
         tips.push(`<div class="flex items-center justify-between gap-2"><span>${PREMIUM_UPSELL_NOTE} · +49 к Score</span><button type="button" data-order-link data-order-plan="premium" data-order-kind="${SUBSCRIPTION_RENEWAL_ORDER_KIND}" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-semibold">${PREMIUM_CTA_LABEL}</button></div>`);
       }
@@ -4976,15 +4929,6 @@ Email: ${userEmail}
       event.preventDefault();
       void handlePrivatePasswordChange();
     });
-    el.braceletModalClose?.addEventListener("click", closeBraceletModal);
-    el.braceletModalCloseTop?.addEventListener("click", closeBraceletModal);
-    el.braceletModal?.addEventListener("click", (event) => {
-      if (event.target === el.braceletModal) closeBraceletModal();
-    });
-    el.braceletModalSubmit?.addEventListener("click", () => {
-      closeBraceletModal();
-      openOrderModal({ bracelet: true });
-    });
     const trapFocus = (dialog, event) => {
       if (!(dialog instanceof HTMLElement)) return;
       const focusable = Array.from(
@@ -5032,10 +4976,6 @@ Email: ${userEmail}
           closePrivatePasswordAddModal();
           return;
         }
-        if (braceletModalOpen) {
-          closeBraceletModal();
-          return;
-        }
         if (modalIsOpen) {
           closeModal();
         }
@@ -5060,10 +5000,6 @@ Email: ${userEmail}
       }
       if (privatePasswordAddModalOpen && el.privatePasswordAddDialog instanceof HTMLElement) {
         trapFocus(el.privatePasswordAddDialog, event);
-        return;
-      }
-      if (braceletModalOpen && el.braceletModalDialog instanceof HTMLElement) {
-        trapFocus(el.braceletModalDialog, event);
         return;
       }
       if (modalIsOpen && el.modalDialog instanceof HTMLElement) {
@@ -5277,11 +5213,6 @@ Email: ${userEmail}
 
       if (action === "goto-card") {
         location.hash = "#card";
-        return;
-      }
-
-      if (action === "open-bracelet-order-modal") {
-        openBraceletModal();
         return;
       }
 

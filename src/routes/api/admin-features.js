@@ -32,7 +32,7 @@ const router = express.Router();
 router.use(adminApiRateLimit);
 router.use(requireAdminApi);
 
-const SETTINGS_GROUPS = new Set(["pricing", "algorithm", "bracelet", "contacts", "platform", "official_unq"]);
+const SETTINGS_GROUPS = new Set(["pricing", "algorithm", "contacts", "platform", "official_unq"]);
 const FLASH_CONDITION_TYPES = new Set(["all", "pattern_000", "pattern_aaa", "sequential_digits", "custom"]);
 const FLASH_SLUG_RE = /^[A-Z]{3}[0-9]{3}$/;
 const FLASH_FULL_MASK_RE = /^[A-Z0-9*?]{6}$/;
@@ -41,7 +41,6 @@ const FLASH_DIGIT_MASK_RE = /^[0-9*?]{3}$/;
 const GROUP_KEY_PREFIX = {
   pricing: ["plan_", "pricing_", "pet_"],
   algorithm: ["slug_"],
-  bracelet: ["bracelet_"],
   contacts: ["contact_"],
   platform: ["platform_", "feature_", "pending_", "score_", "leaderboard_", "referral_", "promo_", "maintenance_"],
   official_unq: ["official_unq_"],
@@ -400,7 +399,6 @@ router.get(
           rarity: row.scoreSlugRarity,
           tenure: row.scoreTenure,
           ctr: row.scoreCtr,
-          bracelet: row.scoreBracelet,
           plan: row.scorePlan,
         },
       })),

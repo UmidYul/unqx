@@ -1,7 +1,4 @@
 <% const modalPublicSettings=typeof publicSettings==="object" && publicSettings ? publicSettings : {}; const
-  modalBraceletPrice=Number(modalPublicSettings.bracelet_price || 250000); const
-  modalBraceletInStock=modalPublicSettings.bracelet_in_stock !==false; const
-  modalBraceletCtaText=String(modalPublicSettings.bracelet_cta_text || "Заказать стикер" ); const
   modalResponseTime=String(modalPublicSettings.contact_response_time || "в течение 15 минут" ); const
   pendingHours=Number(modalPublicSettings.pending_expiry_hours || 24); const modalSessionUser=userSession &&
   userSession.userId ? { id: userSession.userId, userId: userSession.userId, firstName: userSession.firstName || "" ,
@@ -228,26 +225,6 @@
                   твой тариф и UNQ.</p>
               </div>
 
-              <label id="order-modal-bracelet-row"
-                class="order-modal-surface-card flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-700">
-                <span>
-                  <span class="block">
-                    <%= modalBraceletInStock ? `Добавить NFC-стикер (+${modalBraceletPrice.toLocaleString("ru-RU")}
-                      сум)` : "Временно нет в наличии" %>
-                  </span>
-                  <span class="mt-0.5 block text-xs text-neutral-500">
-                    <%= modalBraceletCtaText %>
-                  </span>
-                </span>
-                <span class="relative inline-flex h-6 w-11 shrink-0 items-center">
-                  <input id="order-modal-bracelet" type="checkbox" <%=modalBraceletInStock ? '' : 'disabled' %>
-                  class="peer sr-only" />
-                  <span
-                    class="block h-6 w-11 rounded-full bg-neutral-300 transition-colors peer-checked:bg-neutral-900 peer-disabled:opacity-50"></span>
-                  <span
-                    class="pointer-events-none absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform peer-checked:translate-x-5 peer-disabled:opacity-80"></span>
-                </span>
-              </label>
 
               <div id="order-modal-promo-section">
                 <label for="order-modal-promo-code"
@@ -307,12 +284,7 @@
                   <span>Ограничение скидки</span>
                   <span id="order-modal-total-cap-value">+0 сум</span>
                 </div>
-                <div id="order-modal-total-bracelet-row" class="mt-1 hidden items-center justify-between gap-3">
-                  <span>Стикер</span>
-                  <span>
-                    <%= modalBraceletPrice.toLocaleString("ru-RU") %> сум
-                  </span>
-                </div>
+
                 <div class="my-3 h-px bg-neutral-200"></div>
                 <div class="flex items-center justify-between gap-3 font-semibold text-neutral-900">
                   <span>Итого к оплате:</span>
