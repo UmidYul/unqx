@@ -251,7 +251,7 @@ router.get(
       "users",
       "accounts",
       "slugs",
-      "bracelets",
+
       "score",
       "testimonials",
       "logs",

@@ -1498,7 +1498,6 @@
       `Slug: ${P(breakdown.slug || 0)}`,
       `Legacy basic: ${P(breakdown.basicPlan || 0)}`,
       `Премиум: ${P(breakdown.premiumPlan || 0)}`,
-      `Браслеты: ${P(breakdown.bracelet || 0)}`,
     ];
     const periodLabel = meta.dateFrom && meta.dateTo ? `${meta.dateFrom} - ${meta.dateTo}` : "выбранный период";
     const analyticsCards = [
@@ -1584,7 +1583,7 @@
       Number(breakdown.slug || 0) > 0 ||
       Number(breakdown.basicPlan || 0) > 0 ||
       Number(breakdown.premiumPlan || 0) > 0 ||
-      Number(breakdown.bracelet || 0) > 0;
+      false;
     const hasScoreDistribution = dScore.some((x) => Number(x.count || 0) > 0);
 
     renderAnalyticsEmptyState(ordersEmpty, "calendar", "Нет данных", "За выбранный период нет выручки.");
@@ -1632,16 +1631,15 @@
         analyticsCharts.tariff = new Chart(tariffCanvas, {
           type: "pie",
           data: {
-            labels: ["Slug", "Legacy basic", "Премиум тариф", "Браслеты"],
+            labels: ["Slug", "Legacy basic", "Премиум тариф"],
             datasets: [
               {
                 data: [
                   breakdown.slug || 0,
                   breakdown.basicPlan || 0,
                   breakdown.premiumPlan || 0,
-                  breakdown.bracelet || 0,
                 ],
-                backgroundColor: ["#111827", "#374151", "#6b7280", "#d1d5db"],
+                backgroundColor: ["#111827", "#374151", "#6b7280"],
               },
             ],
           },
@@ -1698,7 +1696,6 @@
       q: getFormValue(form, "q", ""),
       status: getFormValue(form, "status", "all"),
       tariff: getFormValue(form, "tariff", "all"),
-      bracelet: getFormValue(form, "bracelet", "all"),
       dateFrom: getFormValue(form, "dateFrom", ""),
       dateTo: getFormValue(form, "dateTo", ""),
       page: getFormValue(form, "page", "1"),
@@ -1707,12 +1704,11 @@
       o_q: q.q,
       o_status: q.status,
       o_tariff: q.tariff,
-      o_bracelet: q.bracelet,
       o_date_from: q.dateFrom,
       o_date_to: q.dateTo,
       o_page: q.page,
     });
-    const filterQs = Q({ q: q.q, status: q.status, tariff: q.tariff, bracelet: q.bracelet, dateFrom: q.dateFrom, dateTo: q.dateTo });
+    const filterQs = Q({ q: q.q, status: q.status, tariff: q.tariff, dateFrom: q.dateFrom, dateTo: q.dateTo });
     csv.href = `/api/admin/orders/export.csv${filterQs ? `?${filterQs}` : ""}`;
     const r = await fetch(`/api/admin/orders?${Q(q)}`);
     if (!r.ok) return;
@@ -1745,7 +1741,7 @@
               ]
               : []),
           ].join(""));
-          return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3">${D(x.createdAt)}</td><td class="px-4 py-3">${X(x.name)}</td><td class="px-4 py-3 font-mono">${X(x.slug)}</td><td class="px-4 py-3 text-right">${P(x.slugPrice)}</td><td class="px-4 py-3 text-right font-semibold">${P(x.amount || 0)}</td><td class="px-4 py-3">${x.tariff === "premium" ? "Премиум" : "Legacy"}</td><td class="px-4 py-3">${x.bracelet ? "Да" : "Нет"}</td><td class="px-4 py-3">${X(x.contact)}</td><td class="px-4 py-3">${statusBlock}</td><td class="px-4 py-3 text-right"><div class="admin-row-actions justify-end">${menu}</div></td></tr>`;
+          return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3">${D(x.createdAt)}</td><td class="px-4 py-3">${X(x.name)}</td><td class="px-4 py-3 font-mono">${X(x.slug)}</td><td class="px-4 py-3 text-right">${P(x.slugPrice)}</td><td class="px-4 py-3 text-right font-semibold">${P(x.amount || 0)}</td><td class="px-4 py-3">${x.tariff === "premium" ? "Премиум" : "Legacy"}</td><td class="px-4 py-3">${X(x.contact)}</td><td class="px-4 py-3">${statusBlock}</td><td class="px-4 py-3 text-right"><div class="admin-row-actions justify-end">${menu}</div></td></tr>`;
         })
         .join("")
       : `<tr><td colspan="10" class="px-3 py-10 text-center text-neutral-500"><div class="inline-flex flex-col items-center gap-2">${I("creditCard", 48)}<span>Нет заявок</span><span class="text-xs text-neutral-400">Измените фильтры или сбросьте поиск.</span></div></td></tr>`;
@@ -1787,7 +1783,6 @@
       if (type === "basic_plan") return "Базовый тариф (legacy)";
       if (type === "premium_plan") return "Премиум тариф (legacy)";
       if (type === "upgrade_to_premium") return "Апгрейд до Премиум (legacy)";
-      if (type === "bracelet") return "Браслет";
       return type;
     };
     const rows = payload.items || [];
@@ -1879,7 +1874,6 @@
           const badgeTypes = normalizeBadgeTypesInput(Array.isArray(x.badgeTypes) ? x.badgeTypes : x.badgeType || "");
           const primaryBadgeType = getPrimaryBadgeType(badgeTypes);
           const badgeTypesCsv = badgeTypes.join(",");
-          const braceletSlugs = Array.isArray(x.slugs) ? x.slugs.filter((s) => s.hasBracelet).map((s) => s.fullSlug).join(",") : "";
           const userSlugsCsv = allSlugs.join(",");
           const userCell = X(x.name);
           const emailCell = x.email
@@ -1891,7 +1885,8 @@
           const menuItems = [];
           if (!isManager) {
             menuItems.push(menuItem({ label: "Change login", icon: "at", attrs: `data-act="ul" data-id="${X(x.telegramId)}" data-login="${X(x.login || "")}" data-name="${X(x.name)}"` }));
-            menuItems.push(menuItem({ label: "Change plan", icon: "crown", attrs: `data-act="up" data-id="${X(x.telegramId)}" data-current-plan="${X(x.plan)}" data-active-slugs="${Number(x.activeSlugCount || 0)}" data-bracelet-slugs="${X(braceletSlugs)}"` }));
+            menuItems.push(menuItem({ label: "Change password", icon: "lock", attrs: `data-act="upwd" data-id="${X(x.telegramId)}" data-name="${X(x.name)}"` }));
+            menuItems.push(menuItem({ label: "Change plan", icon: "crown", attrs: `data-act="up" data-id="${X(x.telegramId)}" data-current-plan="${X(x.plan)}" data-active-slugs="${Number(x.activeSlugCount || 0)}"` }));
             menuItems.push(menuSeparator());
           }
           menuItems.push(menuItem({ label: "Add slug", icon: "link2", attrs: `data-act="us-add" data-id="${X(x.telegramId)}" data-name="${X(x.name)}" data-slugs="${X(userSlugsCsv)}"` }));
@@ -2556,31 +2551,6 @@
     return true;
   }
 
-  async function loadBracelets() {
-    const form = document.getElementById("bracelets-filters");
-    const table = document.getElementById("bracelets-table");
-    if (!(form instanceof HTMLFormElement) || !(table instanceof HTMLElement)) return;
-    const q = { status: getFormValue(form, "status", "all"), page: getFormValue(form, "page", "1") };
-    setDashboardQuery({ b_status: q.status, b_page: q.page });
-    const r = await fetch(`/api/admin/bracelet-orders?${Q(q)}`);
-    if (!r.ok) return;
-    const payload = await r.json();
-    const rows = payload.items || [];
-    table.innerHTML = rows.length
-      ? rows.map((x) => {
-        const menu = menuWrap([
-          menuItem({ label: "Заказан", icon: "package", attrs: `data-act="bs" data-id="${x.id}" data-status="ORDERED"` }),
-          menuItem({ label: "Отправлен", icon: "truck", attrs: `data-act="bs" data-id="${x.id}" data-status="SHIPPED"` }),
-          menuItem({ label: "Доставлен", icon: "checkCircle", attrs: `data-act="bs" data-id="${x.id}" data-status="DELIVERED"` }),
-        ].join(""));
-        return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3">${D(x.createdAt)}</td><td class="px-4 py-3">${X(x.name)}</td><td class="px-4 py-3 font-mono">${X(x.slug)}</td><td class="px-4 py-3">${X(x.contact)}</td><td class="px-4 py-3"><div class="flex items-center justify-between gap-2">${statusChip(x.deliveryStatus)}<div class="admin-row-actions">${menu}</div></div></td></tr>`;
-      }).join("")
-      : `<tr><td colspan="5" class="px-3 py-10 text-center text-neutral-500"><div class="inline-flex flex-col items-center gap-2">${I("package", 48)}<span>Нет заказов</span></div></td></tr>`;
-    renderPager("bracelets-pagination", payload.pagination, (nextPage) => {
-      setFormValue(form, "page", String(nextPage));
-      void loadBracelets();
-    });
-  }
 
   async function loadTestimonials() {
     const table = document.getElementById("testimonials-table");
@@ -3338,12 +3308,6 @@
       if (!r.ok) showAlert(await E(r));
       else void loadOrders();
     }
-    if (t.matches('[data-act="bs"]') && t instanceof HTMLSelectElement) {
-      const id = t.getAttribute("data-id");
-      if (!id) return;
-      const r = await fetch(`/api/admin/bracelet-orders/${id}/status`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({ deliveryStatus: t.value }) });
-      if (!r.ok) showAlert(await E(r));
-    }
     if (t.matches('[data-act="ct"]') && t instanceof HTMLSelectElement) {
       const id = t.getAttribute("data-id");
       if (!id) return;
@@ -3531,16 +3495,6 @@
       closeAllRowMenus();
       return;
     }
-    if (a === "bs") {
-      const id = n.getAttribute("data-id");
-      const deliveryStatus = n.getAttribute("data-status");
-      if (!id || !deliveryStatus) return;
-      const r = await fetch(`/api/admin/bracelet-orders/${id}/status`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({ deliveryStatus }) });
-      if (!r.ok) showAlert(await E(r));
-      else void loadBracelets();
-      closeAllRowMenus();
-      return;
-    }
     if (a === "ct") {
       const id = n.getAttribute("data-id");
       if (!id) return;
@@ -3581,6 +3535,18 @@
       const r = await fetch(`/api/admin/users/${encodeURIComponent(userId)}/login`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({ login: entered }) });
       if (!r.ok) showAlert(await E(r));
       else void loadUsers();
+      closeAllRowMenus();
+      return;
+    }
+    if (a === "upwd") {
+      const userId = n.getAttribute("data-id");
+      if (!userId) return;
+      const userName = n.getAttribute("data-name") || "пользователь";
+      const entered = String(await showPrompt(`Новый пароль для ${userName} (мин. 8 символов)`, "") || "").trim();
+      if (!entered) return;
+      if (entered.length < 8) { await showAlert("Пароль должен содержать минимум 8 символов."); return; }
+      const r = await fetch(`/api/admin/users/${encodeURIComponent(userId)}/password`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({ password: entered }) });
+      if (!r.ok) showAlert(await E(r));
       closeAllRowMenus();
       return;
     }
@@ -4061,7 +4027,7 @@
       setFormValue(form, "q", "");
       setFormValue(form, "status", "all");
       setFormValue(form, "tariff", "all");
-      setFormValue(form, "bracelet", "all");
+
       setFormValue(form, "dateFrom", "");
       setFormValue(form, "dateTo", "");
       setFormValue(form, "page", "1");
@@ -4248,7 +4214,6 @@
     setFormValue(form, "priceOverride", "");
   });
   document.getElementById("cards-filters")?.addEventListener("submit", (e) => { e.preventDefault(); const f = e.currentTarget; if (f instanceof HTMLFormElement) setFormValue(f, "page", "1"); void loadCards(); });
-  document.getElementById("bracelets-filters")?.addEventListener("submit", (e) => { e.preventDefault(); const f = e.currentTarget; if (f instanceof HTMLFormElement) setFormValue(f, "page", "1"); void loadBracelets(); });
   document.getElementById("logs-filters")?.addEventListener("submit", (e) => { e.preventDefault(); const f = e.currentTarget; if (f instanceof HTMLFormElement) setFormValue(f, "page", "1"); void loadLogs(); });
   document.getElementById("verification-filters")?.addEventListener("submit", (e) => { e.preventDefault(); const f = e.currentTarget; if (f instanceof HTMLFormElement) setFormValue(f, "page", "1"); void loadVerificationRequests(); });
   document.getElementById("verification-filters")?.elements?.namedItem?.("status")?.addEventListener?.("change", (e) => {
@@ -4545,7 +4510,7 @@
       setFormValue(form, "q", getInitial("o_q", "q") || "");
       setFormValue(form, "status", getInitial("o_status", "status") || "all");
       setFormValue(form, "tariff", getInitial("o_tariff", "tariff") || "all");
-      setFormValue(form, "bracelet", getInitial("o_bracelet", "bracelet") || "all");
+
       setFormValue(form, "dateFrom", getInitial("o_date_from", "dateFrom") || "");
       setFormValue(form, "dateTo", getInitial("o_date_to", "dateTo") || "");
       setFormValue(form, "page", getInitial("o_page", "page") || "1");
@@ -4599,13 +4564,7 @@
       setFormValue(form, "page", getInitial("c_page", "page") || "1");
     }
   }
-  if (tab === "bracelets") {
-    const form = document.getElementById("bracelets-filters");
-    if (form instanceof HTMLFormElement) {
-      setFormValue(form, "status", getInitial("b_status", "status") || "all");
-      setFormValue(form, "page", getInitial("b_page", "page") || "1");
-    }
-  }
+
   if (tab === "logs") {
     const form = document.getElementById("logs-filters");
     if (form instanceof HTMLFormElement) {
@@ -4686,10 +4645,7 @@
     dbg("load", "cards");
     void loadCards();
   }
-  if (tab === "bracelets") {
-    dbg("load", "bracelets");
-    void loadBracelets();
-  }
+
   if (tab === "testimonials") {
     dbg("load", "testimonials");
     void loadTestimonials();

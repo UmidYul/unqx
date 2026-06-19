@@ -5,7 +5,7 @@
   if (activeTab !== "settings") return;
 
   const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "";
-  const groups = ["pricing", "algorithm", "bracelet", "contacts", "platform", "official_unq"];
+  const groups = ["pricing", "algorithm", "contacts", "platform", "official_unq"];
   const uiConfig = {
     hiddenByGroup: {
       pricing: new Set([
@@ -122,16 +122,6 @@
         "slug_mult_digits_random",
         "slug_pricing_custom_rules",
       ],
-      bracelet: [
-        "bracelet_name",
-        "bracelet_old_price",
-        "bracelet_price",
-        "bracelet_in_stock",
-        "bracelet_cta_text",
-        "bracelet_description",
-        "bracelet_note",
-        "bracelet_features",
-      ],
       contacts: [
         "contact_support_telegram",
         "contact_phone",
@@ -193,10 +183,6 @@
         slug_mult_digits_zeros: "Множители для цифр",
         slug_pricing_custom_rules: "Кастомные паттерны",
       },
-      bracelet: {
-        bracelet_name: "Основные настройки",
-        bracelet_description: "Контент",
-      },
       contacts: {
         contact_support_telegram: "Публичные контакты",
         contact_telegram_bot: "Telegram",
@@ -244,7 +230,7 @@
   }
 
   const panelByGroup = Object.fromEntries(
-    ["pricing", "algorithm", "bracelet", "contacts", "platform", "official_unq", "changes"].map((group) => [group, resolveSettingsPanel(group)]),
+    ["pricing", "algorithm", "contacts", "platform", "official_unq", "changes"].map((group) => [group, resolveSettingsPanel(group)]),
   );
 
   function esc(value) {

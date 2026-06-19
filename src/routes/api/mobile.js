@@ -2344,32 +2344,7 @@ router.get(
       return;
     }
 
-    const latest = await prisma.slugRequest.findFirst({
-      where: { userId, bracelet: true },
-      orderBy: { createdAt: "desc" },
-      select: {
-        id: true,
-        slug: true,
-        status: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-    });
-
-    if (!latest) {
-      res.json({ status: null });
-      return;
-    }
-
-    res.json({
-      status: {
-        status: String(latest.status || "pending").toLowerCase(),
-        linkedSlug: sanitizeSlug(latest.slug),
-        orderId: latest.id,
-        model: "wristband",
-        updatedAt: toIso(latest.updatedAt),
-      },
-    });
+    res.json({ status: null });
   }),
 );
 

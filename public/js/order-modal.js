@@ -23,7 +23,6 @@ const DEFAULT_PRICING = {
   premiumUpgradePrice: 130_000,
   planPremiumMonthlyPriceUsd: 2,
   planPremiumMonthlyPriceUzs: 130_000,
-  braceletPrice: 250_000,
 };
 const PENDING_PURCHASE_INTENT_KEY = "unqx.pendingPurchaseIntent.v1";
 const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
@@ -96,8 +95,6 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     planPremiumNote: document.getElementById("order-modal-plan-premium-note"),
     planSection: document.getElementById("order-modal-plan-section"),
     planActivationNote: document.getElementById("order-modal-plan-activation-note"),
-    braceletRow: document.getElementById("order-modal-bracelet-row"),
-    bracelet: document.getElementById("order-modal-bracelet"),
     promoSection: document.getElementById("order-modal-promo-section"),
     promoCode: document.getElementById("order-modal-promo-code"),
     promoCheck: document.getElementById("order-modal-promo-check"),
@@ -123,7 +120,6 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     totalBonusValue: document.getElementById("order-modal-total-bonus-value"),
     totalCapRow: document.getElementById("order-modal-total-cap-row"),
     totalCapValue: document.getElementById("order-modal-total-cap-value"),
-    totalBraceletRow: document.getElementById("order-modal-total-bracelet-row"),
     totalNow: document.getElementById("order-modal-total-now"),
     totalMonthly: document.getElementById("order-modal-total-monthly"),
     status: document.getElementById("order-modal-status"),
@@ -152,7 +148,6 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     !(dom.name instanceof HTMLInputElement) ||
     !(dom.planBasic instanceof HTMLInputElement) ||
     !(dom.planPremium instanceof HTMLInputElement) ||
-    !(dom.bracelet instanceof HTMLInputElement) ||
     !(dom.submit instanceof HTMLButtonElement)
   ) {
     return;
@@ -180,7 +175,6 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     slugLocked: false,
     lockedSlug: "",
     theme: "default_dark",
-    braceletForced: false,
     dropId: null,
     refSource: "",
     refOffer: "",
@@ -535,7 +529,6 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
       plan,
       orderKind,
       theme,
-      bracelet: Boolean(options.bracelet),
       dropId,
       refSource,
       refOffer,
@@ -549,7 +542,6 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
       intent.slug ||
       intent.plan ||
       intent.theme ||
-      intent.bracelet ||
       intent.dropId ||
       intent.refSource ||
       intent.refOffer ||
@@ -760,11 +752,10 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     return `${formatPrice(planPrice)} сум`;
   }
 
-  function formatTelegramTotalPriceLabel({ requestedPlan, slugPrice = 0, planPrice = 0, braceletPrice = 0, totalAmount = 0 }) {
+  function formatTelegramTotalPriceLabel({ requestedPlan, slugPrice = 0, planPrice = 0, totalAmount = 0 }) {
     if (
       shouldUseTelegramPremiumUsdLabel(requestedPlan, planPrice) &&
-      Number(slugPrice || 0) <= 0 &&
-      Number(braceletPrice || 0) <= 0
+      Number(slugPrice || 0) <= 0
     ) {
       return formatPremiumMonthlyUsdLabel();
     }
@@ -927,7 +918,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     if (requestedPlan !== "premium") {
       return false;
     }
-    if (options.slug || options.dropId || options.bracelet) {
+    if (options.slug || options.dropId) {
       return false;
     }
     const profileSubscription = window.UNQProfileSubscription;
@@ -1067,7 +1058,6 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
       premiumUpgradePrice: premiumMonthlyPriceUzs,
       planPremiumMonthlyPriceUsd: Number(raw.planPremiumMonthlyPriceUsd || DEFAULT_PRICING.planPremiumMonthlyPriceUsd),
       planPremiumMonthlyPriceUzs: premiumMonthlyPriceUzs,
-      braceletPrice: Number(raw.braceletPrice || DEFAULT_PRICING.braceletPrice),
       userPlan: normalizePlan(raw.userPlan || "none"),
     };
   }
@@ -1183,7 +1173,6 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
       letters: normalizeLetters(dom.letters.value),
       digits: normalizeDigits(dom.digits.value),
       name: String(dom.name.value || "").trim(),
-      bracelet: Boolean(dom.bracelet.checked),
       plan: selectedPlan(),
     };
   }
@@ -1192,13 +1181,12 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     const baseline = state.initialFormSnapshot;
     const current = getCurrentFormSnapshot();
     if (!baseline || typeof baseline !== "object") {
-      return Boolean(current.letters || current.digits || current.name || current.bracelet || current.plan === "premium");
+      return Boolean(current.letters || current.digits || current.name || current.plan === "premium");
     }
     return (
       current.letters !== String(baseline.letters || "") ||
       current.digits !== String(baseline.digits || "") ||
       current.name !== String(baseline.name || "") ||
-      current.bracelet !== Boolean(baseline.bracelet) ||
       current.plan !== String(baseline.plan || "premium")
     );
   }
@@ -1217,9 +1205,6 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     }
     if (dom.planSection instanceof HTMLElement && !dom.planSection.classList.contains("hidden")) {
       stages.push("Тариф");
-    }
-    if (dom.bracelet instanceof HTMLInputElement && !dom.bracelet.disabled) {
-      stages.push("Дополнительно");
     }
     stages.push("Подтверждение");
     return stages;
@@ -1370,10 +1355,6 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
       if (dom.promoCode instanceof HTMLInputElement) {
         dom.promoCode.value = "";
       }
-      if (dom.bracelet instanceof HTMLInputElement) {
-        dom.bracelet.checked = false;
-        dom.bracelet.disabled = true;
-      }
       if (dom.campaignHint instanceof HTMLElement) {
         dom.campaignHint.classList.add("hidden");
         dom.campaignHint.textContent = "";
@@ -1385,15 +1366,9 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
       if (dom.name instanceof HTMLInputElement) {
         dom.name.value = currentUser?.firstName || currentUser?.displayName || dom.name.value || "";
       }
-    } else if (dom.bracelet instanceof HTMLInputElement) {
-      dom.bracelet.disabled = state.braceletForced;
-      if (state.braceletForced) {
-        dom.bracelet.checked = true;
-      }
     }
 
     dom.slugPricingCard?.classList.toggle("hidden", renewalMode);
-    dom.braceletRow?.classList.toggle("hidden", renewalMode);
     dom.promoSection?.classList.toggle("hidden", renewalMode);
     dom.nameSection?.classList.toggle("hidden", renewalMode);
     dom.totalSlugRow?.classList.toggle("hidden", renewalMode);
@@ -1459,8 +1434,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     const promoCodeApplied = String(order.promoCodeApplied || "").trim();
     const bonusSpent = Number(order.bonusSpent || 0);
     const planPriceValue = Number(order.planPrice || 0);
-    const braceletPriceValue = order.bracelet ? Number(order.braceletPrice || DEFAULT_PRICING.braceletPrice) : 0;
-    const totalAmount = Number(order.totalOneTime || slugPrice + planPriceValue + braceletPriceValue);
+    const totalAmount = Number(order.totalOneTime || slugPrice + planPriceValue);
     const userName = (currentUser?.displayName || currentUser?.firstName || "").trim() || "не указано";
     const userEmail = (currentUser?.email || "").trim() || "не указан";
     const renewalMode = normalizeOrderKind(order.orderKind) === "subscription_renewal";
@@ -1469,7 +1443,6 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
       requestedPlan: order.requestedPlan,
       slugPrice,
       planPrice: planPriceValue,
-      braceletPrice: braceletPriceValue,
       totalAmount,
     });
     const message =
@@ -1489,8 +1462,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
           (inviteeDiscountApplied > 0 ? `• Скидка по рефералке: -${formatPrice(inviteeDiscountApplied)} сум\n` : "") +
           (promoDiscountApplied > 0 ? `• Скидка по промокоду${promoCodeApplied ? ` (${promoCodeApplied})` : ""}: -${formatPrice(promoDiscountApplied)} сум\n` : "") +
           (bonusSpent > 0 ? `• Списано бонусов: -${formatPrice(bonusSpent)} сум\n` : "") +
-          `• Тариф ${planLabel(order.requestedPlan)}: ${planPriceLabel}\n` +
-          `• Браслет: ${formatPrice(braceletPriceValue)} сум\n\n` +
+          `• Тариф ${planLabel(order.requestedPlan)}: ${planPriceLabel}\n\n` +
           `Итого к оплате: ${totalPriceLabel}`;
     return `https://t.me/unqx_uz?text=${encodeURIComponent(message)}`;
   }
@@ -1718,7 +1690,6 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     const planCharge = resolvePlanCharge(requestedPlan, userPlan, pricingSettings, state.orderKind);
     const planCardBasic = pricingSettings.planBasicPrice;
     const planCardPremium = Number(pricingSettings.planPremiumMonthlyPriceUzs || pricingSettings.planPremiumPrice || 0);
-    const bracelet = renewalMode ? false : dom.bracelet.checked;
     const slugBasePrice = Number(state.slugPricing?.basePrice || DEFAULT_SLUG_PRICING.basePrice);
     const fallbackSlugPrice = pricing ? pricing.total : 0;
     const server = renewalMode
@@ -1785,8 +1756,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     const luckyTargetSlug = String(lucky?.targetSlug || "").trim().toUpperCase();
     const luckyDiscountApplied = luckyApplied ? Math.min(slugPayable, Math.round((slugPayable * luckyPercent) / 100)) : 0;
     const slugAfterLucky = Math.max(0, slugPayable - luckyDiscountApplied);
-    const braceletPrice = bracelet ? pricingSettings.braceletPrice : 0;
-    const oneTime = slugAfterLucky + planCharge + braceletPrice;
+    const oneTime = slugAfterLucky + planCharge;
     const slugLabel = pricing ? pricing.slug : "___ ___";
     const rarity = getRarity(slugPrice);
     const hasExistingPlan = !renewalMode && userPlan === "premium" && planCharge <= 0;
@@ -1905,10 +1875,6 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     if (dom.totalPlanRow instanceof HTMLElement) {
       dom.totalPlanRow.classList.toggle("hidden", hasExistingPlan);
       dom.totalPlanRow.classList.toggle("flex", !hasExistingPlan);
-    }
-    if (dom.totalBraceletRow instanceof HTMLElement) {
-      dom.totalBraceletRow.classList.toggle("hidden", !bracelet);
-      dom.totalBraceletRow.classList.toggle("flex", bracelet);
     }
     if (dom.totalProductDiscountRow instanceof HTMLElement) {
       dom.totalProductDiscountRow.classList.toggle("hidden", productDiscountAmount <= 0);
@@ -2239,7 +2205,6 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     state.theme = typeof options.theme === "string" && options.theme ? options.theme : queryTheme || "default_dark";
     state.slugLocked = Boolean(parsed);
     state.lockedSlug = parsed ? parsed.slug : "";
-    state.braceletForced = options.bracelet === true;
     state.dropId = typeof options.dropId === "string" && options.dropId ? options.dropId : null;
     state.refSource = attribution.refSource;
     state.refOffer = attribution.refOffer;
@@ -2259,8 +2224,6 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     dom.planBasic.disabled = true;
     dom.planBasic.checked = false;
     syncPlanVisibilityByUserPlan(currentPlan, state.orderKind);
-    dom.bracelet.checked = isSubscriptionRenewalMode() ? false : state.braceletForced;
-    dom.bracelet.disabled = isSubscriptionRenewalMode() ? true : state.braceletForced;
     if (parsed && !isSubscriptionRenewalMode()) {
       dom.letters.value = parsed.letters;
       dom.digits.value = parsed.digits;
@@ -2358,7 +2321,6 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     if (dom.name) dom.name.value = "";
     if (dom.planBasic) dom.planBasic.checked = false;
     if (dom.planPremium) dom.planPremium.checked = false;
-    if (dom.bracelet) dom.bracelet.checked = false;
     if (dom.promoCode) dom.promoCode.value = "";
     // Добавьте очистку других полей по необходимости
     window.setTimeout(() => {
@@ -2480,7 +2442,6 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
             .slice(0, 32),
         products: {
           digitalCard: true,
-          bracelet: Boolean(dom.bracelet.checked),
         },
         ...(state.dropId ? { dropId: state.dropId } : {}),
       });
@@ -2506,7 +2467,6 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
         const luckyDiscountApplied = Number(payload?.pricing?.luckyDiscountApplied || 0);
         const bonusSpent = Number(payload?.pricing?.bonusSpent || 0);
         const planPrice = Number(payload?.pricing?.planPrice || 0);
-        const braceletPrice = Number(payload?.pricing?.braceletPrice || 0);
         const totalAmount = Number(payload?.pricing?.totalOneTime || 0);
         const orderCode = String(payload?.payment?.reference || "").trim() || `UNQX-${String(payload.orderId).replace(/[^a-zA-Z0-9]/g, "").slice(0, 10).toUpperCase()}`;
         const planLabel = "Подписка Premium";
@@ -2515,7 +2475,6 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
           requestedPlan: "premium",
           slugPrice,
           planPrice,
-          braceletPrice,
           totalAmount,
         });
         const baseLine = slugBasePrice > slugPrice ? `• База UNQ ${pricing.slug}: ${formatPrice(slugBasePrice)} сум\n` : "";
@@ -2533,7 +2492,6 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
       💳 Детализация оплаты:
       ${baseLine}• UNQ ${pricing.slug}: ${formatPrice(slugPrice)} сум
       ${referralLine}${promoLine}${luckyLine}${bonusLine}• ${planLabel}: ${planPriceLabel}
-      • Браслет: ${formatPrice(braceletPrice)} сум
       ━━━━━━━━━━━━
       Итого к оплате: ${totalPriceLabel}`;
 
@@ -2678,7 +2636,6 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
           plan: node.getAttribute("data-order-plan") || "",
           orderKind: node.getAttribute("data-order-kind") || "",
           theme: node.getAttribute("data-order-theme") || "",
-          bracelet: node.getAttribute("data-order-bracelet") === "true",
           dropId: node.getAttribute("data-drop-id") || "",
           ...inferAttributionFromCta(node),
         };
@@ -2725,7 +2682,6 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
   dom.digits.addEventListener("input", () => void updateTotals());
   dom.planBasic.addEventListener("change", () => void updateTotals());
   dom.planPremium.addEventListener("change", () => void updateTotals());
-  dom.bracelet.addEventListener("change", () => void updateTotals());
   dom.promoCode?.addEventListener("input", () => {
     if (!(dom.promoCode instanceof HTMLInputElement)) return;
     dom.promoCode.value = String(dom.promoCode.value || "")

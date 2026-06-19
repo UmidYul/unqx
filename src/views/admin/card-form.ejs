@@ -280,113 +280,73 @@
 
       <div id="admin-card-page-error" class="admin-card-page-error hidden"></div>
 
-      <section class="admin-card-meta-grid">
-        <article class="admin-card-meta-card">
-          <p class="admin-card-meta-label">Владелец</p>
-          <div class="admin-card-meta-main">
-            <h2 id="admin-card-owner-name" class="admin-card-meta-title">—</h2>
-            <p id="admin-card-owner-login" class="admin-card-meta-subtitle">—</p>
-            <p id="admin-card-owner-plan" class="admin-card-meta-note">Тариф: —</p>
+      <div class="admin-card-info-strip">
+        <div class="admin-card-info-section">
+          <span class="admin-card-info-label">Владелец</span>
+          <h2 id="admin-card-owner-name" class="admin-card-info-title">—</h2>
+          <p id="admin-card-owner-login" class="admin-card-info-sub">—</p>
+          <p id="admin-card-owner-plan" class="admin-card-info-note">Тариф: —</p>
+          <div class="admin-card-info-foot">
+            <a id="admin-card-open-owner-link" href="#"
+              class="admin-card-info-action-btn">Открыть профиль</a>
           </div>
-          <div class="admin-card-meta-actions">
-            <a
-              id="admin-card-open-owner-link"
-              href="#"
-              class="inline-flex min-h-11 items-center justify-center rounded-xl border border-neutral-300 px-3 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100"
-            >
-              Открыть профиль
-            </a>
-          </div>
-        </article>
+        </div>
 
-        <article class="admin-card-meta-card">
-          <p class="admin-card-meta-label">Slug</p>
-          <div class="admin-card-meta-main">
-            <h2 id="admin-card-primary-slug" class="admin-card-meta-title">—</h2>
-            <p id="admin-card-primary-slug-status" class="admin-card-meta-subtitle">Статус slug: —</p>
-            <p id="admin-card-primary-slug-note" class="admin-card-meta-note">—</p>
-          </div>
-          <div class="mt-4 admin-card-inline-field">
-            <label for="admin-card-preview-slug-select">Slug</label>
+        <div class="admin-card-info-section">
+          <span class="admin-card-info-label">Slug</span>
+          <h2 id="admin-card-primary-slug" class="admin-card-info-title">—</h2>
+          <p id="admin-card-primary-slug-status" class="admin-card-info-sub">—</p>
+          <p id="admin-card-primary-slug-note" class="admin-card-info-note">—</p>
+          <div class="admin-card-inline-field" style="margin-top:0.6rem">
+            <label for="admin-card-preview-slug-select">Активный slug</label>
             <select id="admin-card-preview-slug-select" class="admin-card-select">
               <option value="">Нет slug</option>
             </select>
           </div>
-          <div class="admin-card-meta-actions">
-            <a
-              id="admin-card-open-public-link"
-              href="#"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="inline-flex min-h-11 items-center justify-center rounded-xl border border-neutral-300 px-3 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100"
-            >
-              Открыть визитку
-            </a>
+          <div class="admin-card-info-foot">
+            <a id="admin-card-open-public-link" href="#" target="_blank" rel="noopener noreferrer"
+              class="admin-card-info-action-btn">Открыть визитку</a>
           </div>
-        </article>
+        </div>
 
-        <article class="admin-card-meta-card">
-          <p class="admin-card-meta-label">Управление</p>
-          <div class="grid gap-3">
-            <div class="admin-card-inline-field">
-              <label for="admin-card-tariff-select">Тариф владельца</label>
-              <select id="admin-card-tariff-select" class="admin-card-select">
-                <option value="legacy">Без тарифа</option>
-                <option value="premium">Премиум</option>
-              </select>
-            </div>
+        <div class="admin-card-info-section">
+          <span class="admin-card-info-label">Управление</span>
+          <div class="admin-card-inline-field" style="margin-top:0.25rem">
+            <label for="admin-card-tariff-select">Тариф владельца</label>
+            <select id="admin-card-tariff-select" class="admin-card-select">
+              <option value="legacy">Без тарифа</option>
+              <option value="premium">Премиум</option>
+            </select>
           </div>
-          <div class="admin-card-meta-actions">
-            <button
-              type="button"
-              id="admin-card-tariff-apply"
-              class="inline-flex min-h-11 items-center justify-center rounded-xl border border-neutral-300 px-3 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100"
-            >
-              Обновить тариф
-            </button>
-            <button
-              type="button"
-              id="admin-card-active-toggle"
-              class="inline-flex min-h-11 items-center justify-center rounded-xl bg-neutral-900 px-3 py-2 text-sm font-semibold text-white transition hover:bg-neutral-800"
-            >
-              Переключить активность
-            </button>
+          <div class="admin-card-info-foot admin-card-info-foot--col">
+            <button type="button" id="admin-card-tariff-apply"
+              class="admin-card-info-action-btn">Обновить тариф</button>
+            <button type="button" id="admin-card-active-toggle"
+              class="admin-card-info-action-btn admin-card-info-action-btn--dark">Переключить активность</button>
           </div>
-        </article>
+        </div>
 
-        <article class="admin-card-meta-card">
-          <p class="admin-card-meta-label">Верификация</p>
-          <div class="admin-card-meta-main">
-            <h2 id="admin-card-verification-state" class="admin-card-meta-title">—</h2>
-            <p id="admin-card-verified-company" class="admin-card-meta-subtitle">Компания: —</p>
-            <p id="admin-card-verification-request" class="admin-card-meta-note">—</p>
-          </div>
-          <div class="mt-4 admin-card-inline-field">
+        <div class="admin-card-info-section">
+          <span class="admin-card-info-label">Верификация</span>
+          <h2 id="admin-card-verification-state" class="admin-card-info-title">—</h2>
+          <p id="admin-card-verified-company" class="admin-card-info-sub">—</p>
+          <p id="admin-card-verification-request" class="admin-card-info-note">—</p>
+          <div class="admin-card-inline-field" style="margin-top:0.6rem">
             <label for="admin-card-verified-company-input">Компания</label>
             <input id="admin-card-verified-company-input" type="text" maxlength="160" class="admin-card-input" />
           </div>
-        </article>
-      </section>
+        </div>
+      </div>
 
       <form id="card-editor-form" novalidate>
         <div class="admin-card-editor-grid">
           <div class="admin-card-editor-column">
             <nav id="admin-card-categories" class="admin-card-categories" aria-label="Категории редактора">
-              <button type="button" class="admin-card-category-btn is-active" data-card-category="main" aria-pressed="true">
-                <span class="admin-card-category-label">Основное</span>
-              </button>
-              <button type="button" class="admin-card-category-btn" data-card-category="links" aria-pressed="false">
-                <span class="admin-card-category-label">Ссылки и теги</span>
-              </button>
-              <button type="button" class="admin-card-category-btn" data-card-category="contacts" aria-pressed="false">
-                <span class="admin-card-category-label">Контакты</span>
-              </button>
-              <button type="button" class="admin-card-category-btn" data-card-category="design" aria-pressed="false">
-                <span class="admin-card-category-label">Оформление</span>
-              </button>
-              <button type="button" class="admin-card-category-btn" data-card-category="pets" aria-pressed="false">
-                <span class="admin-card-category-label">Животные</span>
-              </button>
+              <button type="button" class="admin-card-category-btn is-active" data-card-category="main" aria-pressed="true">Основное</button>
+              <button type="button" class="admin-card-category-btn" data-card-category="links" aria-pressed="false">Ссылки и теги</button>
+              <button type="button" class="admin-card-category-btn" data-card-category="contacts" aria-pressed="false">Контакты</button>
+              <button type="button" class="admin-card-category-btn" data-card-category="design" aria-pressed="false">Оформление</button>
+              <button type="button" class="admin-card-category-btn" data-card-category="pets" aria-pressed="false">Животные</button>
             </nav>
 
             <div id="card-form-error" class="admin-card-page-error hidden mb-4"></div>

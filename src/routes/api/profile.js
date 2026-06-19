@@ -194,16 +194,14 @@ function mapProfileRequest(item, options = {}) {
   const supportTelegram = normalizeTelegramUsername(options.supportTelegram || FALLBACK_SUPPORT_TELEGRAM);
   const fullName = String(options.fullName || "").trim();
   const email = String(options.email || "").trim();
-  const braceletPrice = Math.max(0, Number(options.braceletPrice || 0));
   const slugPrice = Number(item.slugPrice || 0);
   const planPrice = Number(item.planPrice || 0);
-  const hasBracelet = Boolean(item.bracelet);
   const inviteeDiscountApplied = Math.max(0, Number(item.inviteeDiscountApplied || 0));
   const promoDiscountApplied = Math.max(0, Number(item.promoDiscountApplied || 0));
   const promoCode = String(item.promoCode || "").trim();
   const bonusSpent = Math.max(0, Number(item.bonusSpent || 0));
   const slugPayable = Math.max(0, slugPrice);
-  const totalAmount = slugPayable + planPrice + (hasBracelet ? braceletPrice : 0);
+  const totalAmount = slugPayable + planPrice;
   const slugPriceBeforeDiscount = slugPayable + inviteeDiscountApplied + promoDiscountApplied + bonusSpent;
   const paymentReference = getOrderPaymentReference(item.id);
   return {
@@ -211,7 +209,6 @@ function mapProfileRequest(item, options = {}) {
     slug: item.slug,
     requestedPlan: item.requestedPlan,
     planPrice: item.planPrice,
-    bracelet: item.bracelet,
     status: item.status,
     statusBadge: toRequestStatusBadge(item.status),
     adminNote: item.adminNote,
@@ -233,8 +230,6 @@ function mapProfileRequest(item, options = {}) {
       promoCode,
       bonusSpent,
       planPrice,
-      bracelet: hasBracelet,
-      braceletPrice,
       totalAmount,
     }),
     promoCode,
@@ -957,7 +952,7 @@ router.get(
       return;
     }
 
-    const [slugs, card, slugRequests, petRequests, pets, petCatalog, score, pricing, supportTelegramRaw, braceletPrice, privatePasswords, followSummary] = await Promise.all([
+    const [slugs, card, slugRequests, petRequests, pets, petCatalog, score, pricing, supportTelegramRaw, privatePasswords, followSummary] = await Promise.all([
       getUserSlugsWithStats(user.id),
       findProfileCardByOwnerId(user.id),
       prisma.slugRequest.findMany({
@@ -970,7 +965,6 @@ router.get(
       getProfileScoreByUserId(user.id),
       getPricingSettings(),
       getSetting("contact_support_telegram", `@${FALLBACK_SUPPORT_TELEGRAM}`),
-      getBraceletPrice(),
       listOwnerPrivatePasswords(user.id),
       getFollowSummaryForOwner({
         ownerId: user.id,
@@ -990,7 +984,6 @@ router.get(
         supportTelegram,
         fullName: normalizeDisplayName(user.displayName, user.firstName),
         email: user.email || "",
-        braceletPrice,
       },
     });
     const cardPayload = !card
@@ -1163,8 +1156,6 @@ router.post(
     const supportTelegram = normalizeTelegramUsername(
       await getSetting("contact_support_telegram", `@${FALLBACK_SUPPORT_TELEGRAM}`),
     );
-    const braceletPrice = await getBraceletPrice();
-
     if (existingOpenOrder) {
       const payment = await getOrderPaymentReference(existingOpenOrder.id);
       const paymentUrl = buildManualTelegramPaymentUrl({
@@ -1182,8 +1173,6 @@ router.post(
         promoCode: "",
         bonusSpent: 0,
         planPrice: Number(existingOpenOrder.planPrice || monthlyCharge),
-        bracelet: false,
-        braceletPrice,
         totalAmount: Number(existingOpenOrder.planPrice || monthlyCharge),
       });
       res.status(409).json({
@@ -1193,7 +1182,6 @@ router.post(
           supportTelegram,
           fullName: normalizeDisplayName(user.displayName, user.firstName),
           email: user.email || "",
-          braceletPrice,
         }),
         paymentUrl,
       });
@@ -1213,7 +1201,6 @@ router.post(
         orderKind: "subscription_renewal",
         subscriptionMonths: 1,
         planPrice: monthlyCharge,
-        bracelet: false,
         status: "new",
       },
       select: {
@@ -1250,8 +1237,6 @@ router.post(
       promoCode: "",
       bonusSpent: 0,
       planPrice: monthlyCharge,
-      bracelet: false,
-      braceletPrice,
       totalAmount: monthlyCharge,
     });
 
@@ -1261,7 +1246,6 @@ router.post(
         supportTelegram,
         fullName: normalizeDisplayName(user.displayName, user.firstName),
         email: user.email || "",
-        braceletPrice,
       }),
       paymentUrl,
       monthlyCharge,
@@ -2815,14 +2799,13 @@ router.get(
       return;
     }
 
-    const [slugRows, petRows, supportTelegramRaw, braceletPrice] = await Promise.all([
+    const [slugRows, petRows, supportTelegramRaw] = await Promise.all([
       prisma.slugRequest.findMany({
         where: { userId: user.id },
         orderBy: { createdAt: "desc" },
       }),
       listPetPurchaseRequestsByUserId(user.id),
       getSetting("contact_support_telegram", `@${FALLBACK_SUPPORT_TELEGRAM}`),
-      getBraceletPrice(),
     ]);
     const supportTelegram = normalizeTelegramUsername(supportTelegramRaw);
     res.json({
@@ -2833,7 +2816,6 @@ router.get(
           supportTelegram,
           fullName: normalizeDisplayName(user.displayName, user.firstName),
           email: user.email || "",
-          braceletPrice,
         },
       }),
     });

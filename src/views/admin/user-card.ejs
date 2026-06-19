@@ -77,6 +77,22 @@
       <div id="user-card-slugs-list" class="mt-4 space-y-2"></div>
     </section>
 
+    <section class="rounded-2xl border border-neutral-200 bg-white p-4">
+      <h2 class="text-lg font-bold">Безопасность</h2>
+      <p class="mt-1 text-sm text-neutral-500">Установить новый пароль для пользователя.</p>
+      <div class="mt-4 flex flex-wrap items-end gap-3">
+        <label class="flex-1 text-sm font-medium text-neutral-700">
+          Новый пароль
+          <input id="user-set-password" type="password" minlength="8" autocomplete="new-password"
+            placeholder="Минимум 8 символов"
+            class="mt-1 w-full rounded-xl border border-neutral-300 px-3 py-2" />
+        </label>
+        <button id="user-set-password-save" type="button"
+          class="rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-neutral-800">Сохранить пароль</button>
+      </div>
+      <p id="user-set-password-status" class="mt-2 text-xs text-neutral-500"></p>
+    </section>
+
     <form id="user-card-form" class="space-y-5" novalidate>
       <section class="rounded-2xl border border-neutral-200 bg-white p-4">
         <h2 class="text-lg font-bold">Аватар</h2>

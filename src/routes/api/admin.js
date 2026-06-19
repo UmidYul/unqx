@@ -2153,19 +2153,6 @@ function orderStatusEventTitle(status) {
   }
 }
 
-function braceletStatusEventTitle(status) {
-  switch (status) {
-    case "ORDERED":
-      return "Браслет заказан";
-    case "SHIPPED":
-      return "Браслет отправлен";
-    case "DELIVERED":
-      return "Браслет доставлен";
-    default:
-      return "Обновление браслета";
-  }
-}
-
 function computeDateRangeKey(timezone, days) {
   const nowInZone = toZonedTime(new Date(), timezone);
   const end = startOfDay(nowInZone);
@@ -2332,7 +2319,6 @@ router.get(
       res.json({
         badges: {
           orders: 0,
-          bracelets: 0,
           pets: 0,
         },
         events: [],
@@ -2345,7 +2331,6 @@ router.get(
       : null;
     const managerOrderHref = "/manager/dashboard?tab=orders";
     const adminOrderHref = "/admin/dashboard?tab=orders";
-    const adminBraceletHref = "/admin/dashboard?tab=bracelets";
     const managerPetsHref = "/manager/dashboard?tab=pets";
     const adminPetsHref = "/admin/dashboard?tab=pets";
 
@@ -2361,15 +2346,10 @@ router.get(
       return `Новая заявка: ${petLabel}`;
     };
 
-    const [newOrdersCount, orderedBraceletsCount, pendingPetsCount, orderEvents, braceletEvents, petEvents] = await Promise.all([
+    const [newOrdersCount, pendingPetsCount, orderEvents, petEvents] = await Promise.all([
       prisma.slugRequest.count({
         where: andWhere({ status: "new" }, managerOrdersWhere),
       }),
-      isScopedManager
-        ? Promise.resolve(0)
-        : prisma.braceletOrder.count({
-          where: { deliveryStatus: "ORDERED" },
-        }),
       prisma.petPurchaseRequest
         ? prisma.petPurchaseRequest.count({
           where: andWhere(
@@ -2389,18 +2369,6 @@ router.get(
           updatedAt: true,
         },
       }),
-      isScopedManager
-        ? Promise.resolve([])
-        : prisma.braceletOrder.findMany({
-          orderBy: { updatedAt: "desc" },
-          take: 5,
-          select: {
-            id: true,
-            slug: true,
-            deliveryStatus: true,
-            updatedAt: true,
-          },
-        }),
       prisma.petPurchaseRequest
         ? prisma.petPurchaseRequest.findMany({
           where: isScopedManager ? { user: { createdByStaffId: managerScope.managerId } } : undefined,
@@ -2426,13 +2394,6 @@ router.get(
         at: item.updatedAt,
         href: isScopedManager ? managerOrderHref : adminOrderHref,
       })),
-      ...braceletEvents.map((item) => ({
-        id: `bracelet:${item.id}`,
-        title: braceletStatusEventTitle(item.deliveryStatus),
-        slug: item.slug,
-        at: item.updatedAt,
-        href: adminBraceletHref,
-      })),
       ...petEvents.map((item) => ({
         id: `pet:${item.id}`,
         title: petEventTitle(item),
@@ -2447,7 +2408,6 @@ router.get(
     res.json({
       badges: {
         orders: newOrdersCount,
-        bracelets: orderedBraceletsCount,
         pets: pendingPetsCount,
       },
       events: mergedEvents,
@@ -3307,12 +3267,6 @@ function buildOrdersWhere(query) {
   if (query.tariff && query.tariff !== "all") {
     where.requestedPlan = normalizeTariff(query.tariff);
   }
-  if (query.bracelet === "yes") {
-    where.bracelet = true;
-  }
-  if (query.bracelet === "no") {
-    where.bracelet = false;
-  }
   if (typeof query.dateFrom === "string" && query.dateFrom) {
     const from = new Date(`${query.dateFrom}T00:00:00.000Z`);
     if (!Number.isNaN(from.getTime())) {
@@ -3333,7 +3287,7 @@ function buildOrdersWhere(query) {
 
 function buildPurchasesWhere(query) {
   const where = {};
-  const allowedTypes = new Set(["slug", "basic_plan", "premium_plan", "upgrade_to_premium", "bracelet", "pet"]);
+  const allowedTypes = new Set(["slug", "basic_plan", "premium_plan", "upgrade_to_premium", "pet"]);
 
   if (typeof query.type === "string" && query.type !== "all" && allowedTypes.has(query.type)) {
     where.type = query.type;
@@ -3468,7 +3422,6 @@ async function queryPaymentEvents({ query, page, pageSize }) {
 router.get(
   "/orders",
   asyncHandler(async (req, res) => {
-    const braceletPriceValue = await getBraceletPrice();
     const page = Math.max(1, Number(req.query.page || "1") || 1);
     const pageSizeRaw = Number(req.query.pageSize || "20") || 20;
     const pageSize = Math.max(1, Math.min(200, pageSizeRaw));
@@ -3522,7 +3475,7 @@ router.get(
     const paymentByOrderId = new Map();
     await Promise.all(
       rows.map(async (row) => {
-        const totalAmount = Number(row.slugPrice || 0) + Number(row.planPrice || 0) + (row.bracelet ? braceletPriceValue : 0);
+        const totalAmount = Number(row.slugPrice || 0) + Number(row.planPrice || 0);
         const payment = await buildOrderPaymentDraft({
           orderId: row.id,
           amount: totalAmount,
@@ -3541,10 +3494,9 @@ router.get(
         slug: row.slug,
         slugPrice: row.slugPrice,
         planPrice: row.planPrice || 0,
-        amount: Number(row.slugPrice || 0) + Number(row.planPrice || 0) + (row.bracelet ? braceletPriceValue : 0),
+        amount: Number(row.slugPrice || 0) + Number(row.planPrice || 0),
         tariff: row.requestedPlan,
         theme: null,
-        bracelet: row.bracelet,
         contact: row.user?.username ? `@${row.user.username}` : row.user?.telegramChatId || row.user?.id || "",
         telegramId: row.userId,
         username: row.user?.username || null,
@@ -3846,7 +3798,7 @@ router.get(
     const creatorIds = hasCreatorColumn
       ? Array.from(new Set(users.map((item) => item.createdByStaffId).filter(Boolean)))
       : [];
-    const [slugs, cards, braceletRequests, unqScores, creatorStaff, approvedVerificationRows, approvedBadges] = await Promise.all([
+    const [slugs, cards, unqScores, creatorStaff, approvedVerificationRows, approvedBadges] = await Promise.all([
       prisma.slug.findMany({
         where: { ownerId: { in: userIds } },
         select: {
@@ -3860,14 +3812,6 @@ router.get(
       prisma.profileCard.findMany({
         where: { ownerId: { in: userIds } },
         select: { ownerId: true, id: true, theme: true, role: true },
-      }),
-      prisma.slugRequest.findMany({
-        where: {
-          userId: { in: userIds },
-          bracelet: true,
-          status: "approved",
-        },
-        select: { userId: true, slug: true },
       }),
       modelDelegateExists("UnqScore")
         ? prisma.unqScore.findMany({
@@ -3953,13 +3897,6 @@ router.get(
         verificationRoleByUser.set(row.userId, String(row.role || "").trim());
       }
     }
-    const braceletByUser = new Map();
-    for (const row of braceletRequests) {
-      if (!braceletByUser.has(row.userId)) {
-        braceletByUser.set(row.userId, new Set());
-      }
-      braceletByUser.get(row.userId).add(row.slug);
-    }
     const scoreByUser = new Map(unqScores.map((row) => [row.userId, row]));
     const staffById = new Map(creatorStaff.map((row) => [row.id, row]));
     const badgeTypesByUser = new Map();
@@ -3992,7 +3929,6 @@ router.get(
               slugRarity: scoreByUser.get(user.id).scoreSlugRarity,
               tenure: scoreByUser.get(user.id).scoreTenure,
               ctr: scoreByUser.get(user.id).scoreCtr,
-              bracelet: scoreByUser.get(user.id).scoreBracelet,
               plan: scoreByUser.get(user.id).scorePlan,
             },
           }
@@ -4020,10 +3956,7 @@ router.get(
         planPurchasedAt: user.planPurchasedAt,
         planUpgradedAt: user.planUpgradedAt,
         profileType: normalizeProfileType(user.profileType, { fallback: "person" }),
-        slugs: (slugsByUser.get(user.id) || []).map((slug) => ({
-          ...slug,
-          hasBracelet: Boolean(braceletByUser.get(user.id)?.has(slug.fullSlug)),
-        })),
+        slugs: slugsByUser.get(user.id) || [],
         activeSlugCount: (slugsByUser.get(user.id) || []).filter((slug) =>
           ["approved", "active", "paused", "private"].includes(slug.status),
         ).length,
@@ -6310,6 +6243,42 @@ router.patch(
 );
 
 router.patch(
+  "/users/:userId/password",
+  asyncHandler(async (req, res) => {
+    if (!ensureUsersStorageReady(res)) {
+      return;
+    }
+    const userId = String(req.params.userId || "").trim();
+    const password = String(req.body?.password || "");
+    if (!userId || !password || password.length < 8) {
+      res.status(400).json({ error: "Invalid password", code: "VALIDATION_ERROR" });
+      return;
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true },
+    });
+    if (!user) {
+      res.status(404).json({ error: "User not found", code: "USER_NOT_FOUND" });
+      return;
+    }
+
+    const passwordHash = await bcrypt.hash(password, PASSWORD_ROUNDS);
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        passwordHash,
+        resetPasswordToken: null,
+        resetPasswordExpiresAt: null,
+      },
+      select: { id: true },
+    });
+    res.json({ ok: true });
+  }),
+);
+
+router.patch(
   "/users/:userId/plan",
   asyncHandler(async (req, res) => {
     if (!ensureUsersStorageReady(res)) {
@@ -7267,7 +7236,6 @@ router.delete(
 router.get(
   "/orders/export.csv",
   asyncHandler(async (req, res) => {
-    const braceletPriceValue = await getBraceletPrice();
     const managerScope = await getManagerScope(req);
     const managerBlocked = isManagerScopeBlocked(managerScope);
     const baseWhere = buildOrdersWhere(req.query);
@@ -7292,7 +7260,7 @@ router.get(
       });
 
     const lines = [
-      "Дата,Имя,Slug,Цена slug,Цена тарифа,Браслет,Сумма,Контакт,Статус",
+      "Дата,Имя,Slug,Цена slug,Цена тарифа,Сумма,Контакт,Статус",
       ...rows.map((row) =>
         [
           `"${new Date(row.createdAt).toLocaleString("ru-RU")}"`,
@@ -7300,8 +7268,7 @@ router.get(
           `"${row.slug}"`,
           row.slugPrice,
           Number(row.planPrice || 0),
-          `"${row.bracelet ? "Да" : "Нет"}"`,
-          Number(row.slugPrice || 0) + Number(row.planPrice || 0) + (row.bracelet ? braceletPriceValue : 0),
+          Number(row.slugPrice || 0) + Number(row.planPrice || 0),
           `"${String(row.user?.username ? `@${row.user.username}` : row.user?.telegramChatId || row.userId || "").replace(/"/g, '""')}"`,
           `"${formatOrderStatusLabel(row.status)}"`,
         ].join(","),
@@ -7974,128 +7941,6 @@ router.patch(
 );
 
 router.get(
-  "/bracelet-orders",
-  asyncHandler(async (req, res) => {
-    const braceletSeedRows = await prisma.slugRequest.findMany({
-      where: {
-        bracelet: true,
-        status: { in: ["paid", "approved"] },
-      },
-      select: {
-        id: true,
-        slug: true,
-        createdAt: true,
-        user: {
-          select: {
-            firstName: true,
-            displayName: true,
-          },
-        },
-      },
-    });
-
-    if (braceletSeedRows.length && prisma.braceletOrder?.createMany) {
-      await prisma.braceletOrder.createMany({
-        data: braceletSeedRows
-          .map((row) => ({
-            orderId: row.id,
-            name: row.user?.displayName || row.user?.firstName || "UNQX User",
-            slug: row.slug,
-            deliveryStatus: "ORDERED",
-            createdAt: row.createdAt,
-          }))
-          .filter((row) => row.slug),
-        skipDuplicates: true,
-      });
-    }
-
-    const page = Math.max(1, Number(req.query.page || "1") || 1);
-    const pageSizeRaw = Number(req.query.pageSize || "20") || 20;
-    const pageSize = Math.max(1, Math.min(200, pageSizeRaw));
-    const where = {};
-    if (req.query.status === "ORDERED" || req.query.status === "SHIPPED" || req.query.status === "DELIVERED") {
-      where.deliveryStatus = req.query.status;
-    }
-    const [total, rows] = await Promise.all([
-      prisma.braceletOrder.count({ where }),
-      prisma.braceletOrder.findMany({
-        where,
-        orderBy: { createdAt: "desc" },
-        skip: (page - 1) * pageSize,
-        take: pageSize,
-        select: {
-          id: true,
-          createdAt: true,
-          name: true,
-          slug: true,
-          deliveryStatus: true,
-        },
-      }),
-    ]);
-
-    const slugSet = Array.from(new Set(rows.map((row) => String(row.slug || "").trim()).filter(Boolean)));
-    const ownersBySlug = new Map();
-    if (slugSet.length) {
-      const slugRows = await prisma.slug.findMany({
-        where: { fullSlug: { in: slugSet } },
-        select: {
-          fullSlug: true,
-          owner: {
-            select: {
-              id: true,
-              telegramChatId: true,
-              username: true,
-            },
-          },
-        },
-      });
-      slugRows.forEach((row) => {
-        const contact = row.owner?.username
-          ? `@${row.owner.username}`
-          : row.owner?.telegramChatId || row.owner?.id || "";
-        ownersBySlug.set(row.fullSlug, contact);
-      });
-    }
-
-    res.json({
-      items: rows.map((row) => ({
-        ...row,
-        contact: ownersBySlug.get(row.slug) || "",
-      })),
-      pagination: {
-        page,
-        pageSize,
-        total,
-        totalPages: Math.max(1, Math.ceil(total / pageSize)),
-      },
-    });
-  }),
-);
-
-router.patch(
-  "/bracelet-orders/:id/status",
-  asyncHandler(async (req, res) => {
-    const updated = await prisma.braceletOrder.update({
-      where: { id: req.params.id },
-      data: { deliveryStatus: toDeliveryStatus(req.body.deliveryStatus) },
-      select: { id: true, deliveryStatus: true, slug: true },
-    });
-    const owner = await prisma.slug.findUnique({
-      where: { fullSlug: updated.slug },
-      select: { ownerId: true },
-    });
-    if (owner?.ownerId) {
-      try {
-        await recalculateAndRefreshPercentiles(owner.ownerId);
-      } catch (error) {
-        console.error("[express-app] failed to recalculate score after bracelet update", error);
-      }
-    }
-    res.json(updated);
-  }),
-);
-
-router.get(
   "/testimonials",
   asyncHandler(async (req, res) => {
     const page = Math.max(1, Number(req.query.page || "1") || 1);
@@ -8292,14 +8137,12 @@ router.get(
       slug: 0,
       basicPlan: 0,
       premiumPlan: 0,
-      bracelet: 0,
     };
     for (const item of purchasesAll) {
       const amount = Number(item.amount || 0);
       if (item.type === "slug") breakdown.slug += amount;
       if (item.type === "basic_plan") breakdown.basicPlan += amount;
       if (item.type === "premium_plan" || item.type === "upgrade_to_premium") breakdown.premiumPlan += amount;
-      if (item.type === "bracelet") breakdown.bracelet += amount;
     }
 
     const keyFromLocalDate = (localDate) => {

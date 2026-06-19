@@ -1880,7 +1880,6 @@ function initOrderLinks(orderApi) {
         slug: node.getAttribute("data-order-prefill") || "",
         plan: node.getAttribute("data-order-plan") || "",
         theme: node.getAttribute("data-order-theme") || "",
-        bracelet: node.getAttribute("data-order-bracelet") === "true",
       });
     });
   });

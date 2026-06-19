@@ -4,6 +4,33 @@
   pageDashboardBase=typeof dashboardBasePath==="string" && dashboardBasePath ? dashboardBasePath : "/admin/dashboard" ;
   const pageAssetVersion=typeof assetVersion==="string" && assetVersion ? assetVersion : ""; const withPageAssetVersion=(src)=> {
   const value=String(src || ""); if (!value || !pageAssetVersion || !value.startsWith("/")) return value; return `${value}${value.includes("?") ? "&" : "?"}v=${encodeURIComponent(pageAssetVersion)}`; };
+  const TAB_META = {
+    analytics:       { title: "Аналитика",             desc: "Ключевые метрики, динамика продаж и показатели активности платформы.",      action: { label: "Управлять slug", href: pageDashboardBase + "?tab=slugs" } },
+    orders:          { title: "Заявки",                desc: "Входящие заявки на slug, статусы платежей и история обработки.",             action: null },
+    purchases:       { title: "Покупки",               desc: "Все успешные покупки slug-идентификаторов и подписок.",                       action: null },
+    "payment-cards": { title: "Платёжные карты",       desc: "Привязанные карты пользователей и история транзакций.",                      action: null },
+    cards:           { title: "Визитки",               desc: "Управление профилями и цифровыми карточками пользователей.",                 action: null },
+    users:           { title: "Пользователи",          desc: "База аккаунтов, поиск, управление профилями и смена паролей.",               action: null },
+    slugs:           { title: "Slug-идентификаторы",   desc: "Редактирование, переименование и мониторинг slug.",                          action: null },
+    score:           { title: "UNQ Score",             desc: "Рейтинги пользователей и система начисления баллов.",                        action: null },
+    "flash-sales":   { title: "Flash Sale",            desc: "Акции с ограниченным временем, скидки и настройки распродаж.",               action: null },
+    drops:           { title: "Дропы",                 desc: "Эксклюзивные выпуски slug и управление доступом к ним.",                     action: null },
+    leaderboard:     { title: "Лидерборд",             desc: "Рейтинг пользователей и соревновательная механика платформы.",               action: null },
+    referrals:       { title: "Рефералы",              desc: "Отслеживание реферальных ссылок и партнёрских вознаграждений.",              action: null },
+    promocodes:      { title: "Промокоды",             desc: "Создание и управление акционными кодами для пользователей.",                 action: null },
+    verification:    { title: "Верификация",           desc: "Проверка и подтверждение личности пользователей.",                           action: null },
+    badges:          { title: "Бейджи",                desc: "Управление наградами и значками пользователей.",                             action: null },
+    pets:            { title: "Животные",              desc: "Питомцы пользователей и заявки на добавление новых.",                        action: null },
+    reports:         { title: "Репорты",               desc: "Жалобы, модерация контента и действия по нарушениям.",                      action: null },
+    settings:        { title: "Настройки платформы",   desc: "Конфигурация системы, цены и параметры сервиса.",                            action: null },
+    testimonials:    { title: "Отзывы",                desc: "Модерация и управление отзывами пользователей.",                             action: null },
+    managers:        { title: "Менеджеры",             desc: "Управление доступом и правами менеджеров платформы.",                        action: null },
+    logs:            { title: "Логи системы",          desc: "Журнал событий, ошибок и действий администраторов.",                         action: null },
+  };
+  const _tabMeta = TAB_META[pageActiveTab] || { title: "Управление платформой", desc: "Мониторинг заявок, пользователей и маркетинговых инструментов.", action: null };
+  const pageHeroTitle = adminSession?.role === "manager" ? "Рабочий стол менеджера" : _tabMeta.title;
+  const pageHeroDesc  = adminSession?.role === "manager" ? "Полный user flow: создание аккаунтов, продажи и верификация." : _tabMeta.desc;
+  const pageHeroAction = adminSession?.role === "manager" ? null : _tabMeta.action;
   %>
   <!doctype html>
   <html lang="ru">
@@ -29,24 +56,18 @@
         </div>
         <div class="flex flex-wrap items-start justify-between gap-3 border-b border-neutral-200 pb-4">
           <div>
-            <% if (adminSession?.role==='manager' ) { %>
-              <h1 class="text-2xl font-black">Рабочий стол менеджера</h1>
-              <p class="mt-1 text-sm text-neutral-600">Полный user flow: создание аккаунтов, продажи и верификация.</p>
-              <% } else { %>
-                <h1 class="text-2xl font-black">Управление платформой</h1>
-                <p class="mt-1 text-sm text-neutral-600">Мониторинг заявок, пользователей и маркетинговых инструментов
-                </p>
-                <% } %>
+            <h1 class="text-2xl font-black"><%= pageHeroTitle %></h1>
+            <p class="mt-1 text-sm text-neutral-600"><%= pageHeroDesc %></p>
           </div>
-          <% if (adminSession?.role !=='manager' ) { %>
-            <a href="<%= pageDashboardBase %>?tab=slugs"
+          <% if (pageHeroAction) { %>
+            <a href="<%= pageHeroAction.href %>"
               class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-neutral-900 px-4 py-2 text-center text-sm font-semibold text-white transition hover:bg-neutral-700 sm:w-auto">
               <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                 <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
               </svg>
-              <span>Управлять slug</span>
+              <span><%= pageHeroAction.label %></span>
             </a>
-            <% } %>
+          <% } %>
         </div>
 
         <section id="tab-analytics" class="<%= pageActiveTab === 'analytics' ? '' : 'hidden' %> space-y-4">
@@ -138,7 +159,7 @@
         <section id="tab-orders" class="<%= pageActiveTab === 'orders' ? '' : 'hidden' %> space-y-4">
           <header class="rounded-2xl border border-neutral-200 bg-white p-4">
             <h2 class="text-base font-bold text-neutral-900">Заявки</h2>
-            <p class="mt-1 text-sm text-neutral-600">Управление заявками на покупку slug, тарифа и браслета.</p>
+            <p class="mt-1 text-sm text-neutral-600">Управление заявками на покупку slug и тарифа.</p>
           </header>
           <section class="rounded-2xl border border-neutral-200 bg-white p-4">
             <h3 class="text-sm font-semibold text-neutral-900">Фильтры заявок</h3>
@@ -164,14 +185,6 @@
                 <select name="tariff" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm">
                   <option value="all">Все тарифы</option>
                   <option value="premium">Премиум</option>
-                </select>
-              </label>
-              <label class="block text-sm">
-                <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Браслет</span>
-                <select name="bracelet" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm">
-                  <option value="all">Любой</option>
-                  <option value="yes">С браслетом</option>
-                  <option value="no">Без браслета</option>
                 </select>
               </label>
               <label class="block text-sm">
@@ -234,7 +247,6 @@
               <option value="basic_plan">Базовый тариф (legacy)</option>
               <option value="premium_plan">Премиум тариф (legacy)</option>
               <option value="upgrade_to_premium">Апгрейд до Премиум (legacy)</option>
-              <option value="bracelet">Браслет</option>
             </select>
             <input name="user" type="text" placeholder="Пользователь"
               class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
@@ -709,37 +721,6 @@
               <div id="cards-pagination" class="flex items-center justify-end gap-2 text-sm text-neutral-600"></div>
             </section>
 
-            <section id="tab-bracelets" class="<%= pageActiveTab === 'bracelets' ? '' : 'hidden' %> space-y-4">
-              <form id="bracelets-filters"
-                class="grid gap-3 rounded-2xl border border-neutral-200 bg-white p-4 md:grid-cols-[220px_auto]">
-                <select name="status" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">
-                  <option value="all">Все статусы</option>
-                  <option value="ORDERED">Заказан</option>
-                  <option value="SHIPPED">Отправлен</option>
-                  <option value="DELIVERED">Доставлен</option>
-                </select>
-                <input type="hidden" name="page" value="1" />
-                <button type="submit"
-                  class="inline-flex min-h-11 w-full items-center justify-center justify-self-start rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100 md:w-auto">Применить</button>
-              </form>
-              <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
-                <div class="overflow-x-auto">
-                  <table class="min-w-[860px] w-full text-left text-sm">
-                    <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
-                      <tr>
-                        <th class="px-4 py-3">Дата</th>
-                        <th class="px-4 py-3">Имя</th>
-                        <th class="px-4 py-3">Slug</th>
-                        <th class="px-4 py-3">Контакт</th>
-                        <th class="px-4 py-3">Статус доставки</th>
-                      </tr>
-                    </thead>
-                    <tbody id="bracelets-table"></tbody>
-                  </table>
-                </div>
-              </div>
-              <div id="bracelets-pagination" class="flex items-center justify-end gap-2 text-sm text-neutral-600"></div>
-            </section>
 
             <section id="tab-score" class="<%= pageActiveTab === 'score' ? '' : 'hidden' %> space-y-4">
               <div
@@ -1656,10 +1637,7 @@
                       class="settings-subtab-btn flex shrink-0 items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-semibold">Алгоритм
                       цены slug <span data-settings-unsaved-dot="algorithm"
                         class="hidden h-2 w-2 rounded-full bg-amber-500"></span></button>
-                    <button type="button" data-settings-subtab="bracelet"
-                      class="settings-subtab-btn flex shrink-0 items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-semibold">Браслет
-                      <span data-settings-unsaved-dot="bracelet"
-                        class="hidden h-2 w-2 rounded-full bg-amber-500"></span></button>
+
                     <button type="button" data-settings-subtab="contacts"
                       class="settings-subtab-btn flex shrink-0 items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-semibold">Контакты
                       <span data-settings-unsaved-dot="contacts"
@@ -1697,14 +1675,7 @@
                       class="mt-4 overflow-hidden rounded-xl border border-neutral-200">
                     </div>
                   </article>
-                  <article data-settings-panel="bracelet"
-                    class="hidden rounded-2xl border border-neutral-200 bg-white p-4">
-                    <h2 class="text-base font-bold text-neutral-900">Браслет</h2>
-                    <form id="settings-form-bracelet" class="mt-4 grid gap-3 md:grid-cols-2"></form>
-                    <div class="mt-3"><button type="button" data-settings-save="bracelet"
-                        class="interactive-btn min-h-11 rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800">Сохранить</button>
-                    </div>
-                  </article>
+
                   <article data-settings-panel="contacts"
                     class="hidden rounded-2xl border border-neutral-200 bg-white p-4">
                     <h2 class="text-base font-bold text-neutral-900">Контакты</h2>
@@ -1741,7 +1712,7 @@
                         <option value="">Все группы</option>
                         <option value="pricing">Тарифы</option>
                         <option value="algorithm">Алгоритм</option>
-                        <option value="bracelet">Браслет</option>
+
                         <option value="contacts">Контакты</option>
                         <option value="platform">Платформа</option>
                         <option value="official_unq">Офиц. UNQ</option>
