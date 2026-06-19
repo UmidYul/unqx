@@ -1944,6 +1944,50 @@
     });
   }
 
+  async function loadAccounts() {
+    const form = document.getElementById("accounts-filters");
+    const table = document.getElementById("accounts-table");
+    if (!(form instanceof HTMLFormElement) || !(table instanceof HTMLElement)) return;
+    const q = {
+      q: getFormValue(form, "q", ""),
+      plan: getFormValue(form, "plan", "all"),
+      page: getFormValue(form, "page", "1"),
+    };
+    table.innerHTML = `<tr><td colspan="8" class="px-3 py-8 text-center text-neutral-400">Загрузка...</td></tr>`;
+    const r = await fetch(`/api/admin/accounts?${Q(q)}`);
+    if (!r.ok) {
+      const msg = await E(r);
+      table.innerHTML = `<tr><td colspan="8" class="px-3 py-8 text-center text-red-700">Ошибка: ${X(msg)}</td></tr>`;
+      return;
+    }
+    const payload = await r.json();
+    const rows = payload.items || [];
+    const planLabel = (plan) => {
+      if (plan === "premium" || plan === "basic") return `<span class="inline-flex rounded-full border border-amber-300 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-800">Премиум</span>`;
+      return `<span class="inline-flex rounded-full border border-neutral-200 bg-white px-2.5 py-1 text-xs font-medium text-neutral-600">Бесплатный</span>`;
+    };
+    const typeLabel = (t) => t === "company" ? "Компания" : "Личность";
+    const statusChipAcc = (s) => s === "blocked"
+      ? `<span class="inline-flex rounded-full border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-medium text-red-700">Заблокирован</span>`
+      : `<span class="inline-flex rounded-full border border-green-200 bg-green-50 px-2.5 py-1 text-xs font-medium text-green-700">Активен</span>`;
+    table.innerHTML = rows.length
+      ? rows.map((x) => `<tr class="border-t border-neutral-100 hover:bg-neutral-50">
+          <td class="px-4 py-3 text-xs text-neutral-500 whitespace-nowrap">${DATE_ONLY(x.createdAt)}</td>
+          <td class="px-4 py-3 font-medium text-neutral-900">${X(x.firstName)}</td>
+          <td class="px-4 py-3 text-xs text-neutral-600">${x.login ? `@${X(x.login)}` : "—"}</td>
+          <td class="px-4 py-3 text-xs text-neutral-600 break-all">${x.email ? X(x.email) : "—"}</td>
+          <td class="px-4 py-3 text-xs text-neutral-600">${x.city ? X(x.city) : "—"}</td>
+          <td class="px-4 py-3 text-xs text-neutral-600">${typeLabel(x.profileType)}</td>
+          <td class="px-4 py-3">${planLabel(x.plan)}</td>
+          <td class="px-4 py-3">${statusChipAcc(x.status)}</td>
+        </tr>`).join("")
+      : `<tr><td colspan="8" class="px-3 py-10 text-center text-neutral-500">Аккаунты не найдены</td></tr>`;
+    renderPager("accounts-pagination", payload.pagination, (nextPage) => {
+      setFormValue(form, "page", String(nextPage));
+      void loadAccounts();
+    });
+  }
+
   const paymentCardsState = {
     items: [],
     selected: null,
@@ -4046,6 +4090,7 @@
     }
   });
   document.getElementById("users-filters")?.addEventListener("submit", (e) => { e.preventDefault(); const f = e.currentTarget; if (f instanceof HTMLFormElement) setFormValue(f, "page", "1"); void loadUsers(); });
+  document.getElementById("accounts-filters")?.addEventListener("submit", (e) => { e.preventDefault(); const f = e.currentTarget; if (f instanceof HTMLFormElement) setFormValue(f, "page", "1"); void loadAccounts(); });
   document.getElementById("payment-cards-filters")?.addEventListener("submit", (e) => {
     e.preventDefault();
     const f = e.currentTarget;
@@ -4657,6 +4702,10 @@
   if (tab === "verification" || (verificationSection instanceof HTMLElement && !verificationSection.classList.contains("hidden"))) {
     dbg("load", "verification");
     void loadVerificationRequests();
+  }
+  if (tab === "accounts") {
+    dbg("load", "accounts");
+    void loadAccounts();
   }
   const reportsSection = document.getElementById("tab-reports");
   if (tab === "reports" || (reportsSection instanceof HTMLElement && !reportsSection.classList.contains("hidden"))) {

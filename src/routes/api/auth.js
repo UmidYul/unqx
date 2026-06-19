@@ -25,6 +25,7 @@ const {
   sendWelcomeEmail,
 } = require("../../services/email");
 const { linkReferralOnRegistration } = require("../../services/referrals");
+const { sendNewAccountToAdmin } = require("../../services/telegram");
 const { resolveUzbekistanCity } = require("../../constants/uzbekistan-cities");
 const { normalizeLogin, isValidLogin } = require("../../utils/login");
 const { createUserAccessToken } = require("../../services/user-access-token");
@@ -742,6 +743,14 @@ router.post(
     if (email && codePayload) {
       await sendEmailVerificationOtp({ email: user.email, firstName: user.firstName, code: codePayload.code });
     }
+
+    sendNewAccountToAdmin({
+      firstName: user.firstName,
+      login: user.login,
+      email: user.email,
+      city: user.city,
+      profileType: user.profileType,
+    }).catch((err) => console.error("[telegram] failed to notify admin about new account:", err));
 
     res.json({
       ok: true,

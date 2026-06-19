@@ -249,6 +249,7 @@ router.get(
       "payment-cards",
       "cards",
       "users",
+      "accounts",
       "slugs",
       "bracelets",
       "score",

@@ -9503,6 +9503,73 @@ router.get(
   }),
 );
 
+router.get(
+  "/accounts",
+  asyncHandler(async (req, res) => {
+    const page = Math.max(1, Number(req.query.page || "1") || 1);
+    const pageSize = 25;
+    const q = typeof req.query.q === "string" ? req.query.q.trim() : "";
+    const rawPlan = typeof req.query.plan === "string" ? req.query.plan.trim() : "all";
+    const planFilter = ["free", "premium"].includes(rawPlan) ? rawPlan : "all";
+
+    const where = {};
+    if (planFilter === "free") {
+      where.plan = "none";
+    } else if (planFilter === "premium") {
+      where.plan = { in: ["premium", "basic"] };
+    }
+    if (q) {
+      where.OR = [
+        { firstName: { contains: q, mode: "insensitive" } },
+        { login: { contains: q, mode: "insensitive" } },
+        { email: { contains: q, mode: "insensitive" } },
+        { city: { contains: q, mode: "insensitive" } },
+      ];
+    }
+
+    const [total, rows] = await Promise.all([
+      prisma.user.count({ where }),
+      prisma.user.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+        select: {
+          id: true,
+          firstName: true,
+          login: true,
+          email: true,
+          city: true,
+          plan: true,
+          profileType: true,
+          status: true,
+          createdAt: true,
+        },
+      }),
+    ]);
+
+    res.json({
+      items: rows.map((u) => ({
+        id: u.id,
+        firstName: u.firstName,
+        login: u.login,
+        email: u.email,
+        city: u.city,
+        plan: u.plan,
+        profileType: u.profileType,
+        status: u.status,
+        createdAt: u.createdAt,
+      })),
+      pagination: {
+        page,
+        pageSize,
+        total,
+        totalPages: Math.max(1, Math.ceil(total / pageSize)),
+      },
+    });
+  }),
+);
+
 router.post(
   "/logs/cleanup",
   asyncHandler(async (_req, res) => {

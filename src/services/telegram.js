@@ -423,6 +423,34 @@ async function sendPaymentAlertsToAdmin(alerts) {
   });
 }
 
+async function sendNewAccountToAdmin(payload) {
+  const settings = await getManySettings(["contact_telegram_chat_id"]);
+  const chatId = String(settings.contact_telegram_chat_id || env.TELEGRAM_CHAT_ID || "").trim();
+  if (!env.TELEGRAM_BOT_TOKEN || !chatId) {
+    throw new TelegramConfigError("Telegram credentials are not configured");
+  }
+
+  const profileTypeLabel = payload.profileType === "business" ? "Бизнес" : "Личный";
+  const emailLine = payload.email ? `Email: ${escapeHtml(payload.email)}` : "Email: не указан";
+  const text = [
+    "<b>НОВЫЙ АККАУНТ UNQX</b>",
+    "",
+    `Имя: ${escapeHtml(payload.firstName)}`,
+    `Логин: @${escapeHtml(payload.login)}`,
+    emailLine,
+    `Город: ${escapeHtml(payload.city)}`,
+    `Тип: ${profileTypeLabel}`,
+  ].join("\n");
+
+  return sendTelegramMessage({
+    chatId,
+    text,
+    parseMode: "HTML",
+    inlineButtonText: "Открыть пользователей",
+    inlineButtonUrl: buildAppUrl("/admin/dashboard?tab=users"),
+  });
+}
+
 module.exports = {
   TelegramConfigError,
   TelegramDeliveryError,
@@ -437,5 +465,6 @@ module.exports = {
   sendVerificationStatusToUser,
   sendViolationReportToAdmin,
   sendPaymentAlertsToAdmin,
+  sendNewAccountToAdmin,
 };
 
