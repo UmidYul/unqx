@@ -3067,7 +3067,7 @@
     table.innerHTML = rows.length
       ? rows.map((x) => `<tr class="border-t border-neutral-100 hover:bg-neutral-50">
           <td class="px-4 py-3 text-xs text-neutral-500 whitespace-nowrap">${D(x.createdAt)}</td>
-          <td class="px-4 py-3">${x.userLogin ? `<span class="font-mono text-xs font-medium text-neutral-800">@${X(x.userLogin)}</span>` : '<span class="text-neutral-400 text-xs">—</span>'}</td>
+          <td class="px-4 py-3">${x.userSlug ? `<a href="${base}/${X(x.userSlug)}" target="_blank" rel="noopener noreferrer" class="font-mono text-xs font-semibold text-neutral-900 hover:underline">${X(x.userSlug)}</a>` : x.userLogin ? `<span class="font-mono text-xs text-neutral-500">@${X(x.userLogin)}</span>` : '<span class="text-neutral-400 text-xs">—</span>'}</td>
           <td class="px-4 py-3 text-sm text-neutral-700">${X(uaDescribe(x.action, x.detail))}</td>
         </tr>`).join("")
       : `<tr><td colspan="3" class="px-3 py-10 text-center text-neutral-500">Действия не найдены</td></tr>`;

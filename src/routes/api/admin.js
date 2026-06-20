@@ -9089,15 +9089,26 @@ router.get(
           userLogin: true,
           action: true,
           detail: true,
-          ip: true,
-          userAgent: true,
           createdAt: true,
         },
       }),
     ]);
 
+    const userIds = [...new Set(items.map((i) => i.userId).filter(Boolean))];
+    const slugRows = userIds.length
+      ? await prisma.slug.findMany({
+          where: { ownerId: { in: userIds }, status: "active" },
+          select: { ownerId: true, fullSlug: true, isPrimary: true },
+          orderBy: { isPrimary: "desc" },
+        })
+      : [];
+    const slugByUser = {};
+    for (const s of slugRows) {
+      if (!slugByUser[s.ownerId]) slugByUser[s.ownerId] = s.fullSlug;
+    }
+
     res.json({
-      items,
+      items: items.map((i) => ({ ...i, userSlug: i.userId ? (slugByUser[i.userId] || null) : null })),
       pagination: {
         page,
         pageSize,
