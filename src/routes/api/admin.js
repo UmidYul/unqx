@@ -3763,6 +3763,7 @@ router.get(
       if (hasUserColumn(userColumns, "planPurchasedAt")) select.planPurchasedAt = true;
       if (hasUserColumn(userColumns, "planUpgradedAt")) select.planUpgradedAt = true;
       if (hasUserColumn(userColumns, "profileType")) select.profileType = true;
+      if (hasUserColumn(userColumns, "freeProfileCode")) select.freeProfileCode = true;
       if (hasCreatorColumn) select.createdByStaffId = true;
       if (hasUserColumn(userColumns, "status")) select.status = true;
       if (hasUserColumn(userColumns, "createdAt")) select.createdAt = true;
@@ -3956,6 +3957,7 @@ router.get(
         planPurchasedAt: user.planPurchasedAt,
         planUpgradedAt: user.planUpgradedAt,
         profileType: normalizeProfileType(user.profileType, { fallback: "person" }),
+        freeProfileCode: user.freeProfileCode || null,
         slugs: slugsByUser.get(user.id) || [],
         activeSlugCount: (slugsByUser.get(user.id) || []).filter((slug) =>
           ["approved", "active", "paused", "private"].includes(slug.status),
@@ -9044,6 +9046,69 @@ router.delete(
 );
 
 router.get(
+  "/user-activity",
+  asyncHandler(async (req, res) => {
+    const page = Math.max(1, Number(req.query.page || "1") || 1);
+    const pageSize = 50;
+    const q      = typeof req.query.q      === "string" ? req.query.q.trim()      : "";
+    const action = typeof req.query.action === "string" ? req.query.action.trim() : "";
+    const userId = typeof req.query.userId === "string" ? req.query.userId.trim() : "";
+    const dateFrom = typeof req.query.dateFrom === "string" ? req.query.dateFrom.trim() : "";
+    const dateTo   = typeof req.query.dateTo   === "string" ? req.query.dateTo.trim()   : "";
+
+    const where = {};
+    if (userId) where.userId = userId;
+    if (action && action !== "all") where.action = action;
+    if (q) {
+      where.OR = [
+        { userLogin: { contains: q, mode: "insensitive" } },
+        { detail:    { contains: q, mode: "insensitive" } },
+        { ip:        { contains: q, mode: "insensitive" } },
+      ];
+    }
+    if (dateFrom || dateTo) {
+      where.createdAt = {};
+      if (dateFrom) where.createdAt.gte = new Date(dateFrom);
+      if (dateTo) {
+        const end = new Date(dateTo);
+        end.setDate(end.getDate() + 1);
+        where.createdAt.lt = end;
+      }
+    }
+
+    const [total, items] = await Promise.all([
+      prisma.userActivityLog.count({ where }),
+      prisma.userActivityLog.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+        select: {
+          id: true,
+          userId: true,
+          userLogin: true,
+          action: true,
+          detail: true,
+          ip: true,
+          userAgent: true,
+          createdAt: true,
+        },
+      }),
+    ]);
+
+    res.json({
+      items,
+      pagination: {
+        page,
+        pageSize,
+        total,
+        totalPages: Math.max(1, Math.ceil(total / pageSize)),
+      },
+    });
+  }),
+);
+
+router.get(
   "/logs",
   asyncHandler(async (req, res) => {
     const rawType = req.query.type || "all";
@@ -9381,28 +9446,31 @@ router.get(
           id: true,
           firstName: true,
           login: true,
-          email: true,
-          city: true,
-          plan: true,
-          profileType: true,
-          status: true,
-          createdAt: true,
+          slugs: {
+            where: { status: { in: ["approved", "active", "paused", "private"] } },
+            orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
+            select: { fullSlug: true, isPrimary: true },
+          },
         },
       }),
     ]);
 
+    const isFreeSlug = (s) => /^(0|[1-9][0-9]{0,2}|[A-Za-z]{1,3})$/.test(String(s || ""));
+    const isPaidSlug = (s) => /^[A-Za-z]{3}[0-9]{3}$/.test(String(s || ""));
+
     res.json({
-      items: rows.map((u) => ({
-        id: u.id,
-        firstName: u.firstName,
-        login: u.login,
-        email: u.email,
-        city: u.city,
-        plan: u.plan,
-        profileType: u.profileType,
-        status: u.status,
-        createdAt: u.createdAt,
-      })),
+      items: rows.map((u) => {
+        const primarySlug = (u.slugs.find((s) => s.isPrimary) || u.slugs[0] || null)?.fullSlug || null;
+        const freeSlug = u.slugs.find((s) => isFreeSlug(s.fullSlug))?.fullSlug || null;
+        const paidSlug = u.slugs.find((s) => isPaidSlug(s.fullSlug))?.fullSlug || null;
+        return {
+          id: u.id,
+          firstName: u.firstName,
+          login: u.login,
+          slug: paidSlug || primarySlug,
+          freeSlug: freeSlug,
+        };
+      }),
       pagination: {
         page,
         pageSize,

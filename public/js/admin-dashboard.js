@@ -1817,15 +1817,15 @@
     if (!(form instanceof HTMLFormElement) || !(table instanceof HTMLElement)) return;
     const q = {
       q: getFormValue(form, "q", ""),
-      profileType: getFormValue(form, "profileType", "all"),
+      plan: getFormValue(form, "plan", "all"),
       sort: getFormValue(form, "sort", "created_desc"),
       page: getFormValue(form, "page", "1"),
     };
-    setDashboardQuery({ u_q: q.q, u_type: q.profileType, u_sort: q.sort, u_page: q.page });
+    setDashboardQuery({ u_q: q.q, u_plan: q.plan, u_sort: q.sort, u_page: q.page });
     const r = await fetch(`/api/admin/users?${Q(q)}`);
     if (!r.ok) {
       const msg = await E(r);
-      table.innerHTML = `<tr><td colspan="8" class="px-3 py-8 text-center text-red-700">Не удалось загрузить пользователей: ${X(msg)}</td></tr>`;
+      table.innerHTML = `<tr><td colspan="7" class="px-3 py-8 text-center text-red-700">Не удалось загрузить пользователей: ${X(msg)}</td></tr>`;
       if (managerStatsNode instanceof HTMLElement) {
         managerStatsNode.classList.add("hidden");
         managerStatsNode.textContent = "";
@@ -1855,12 +1855,14 @@
           const allSlugs = Array.isArray(x.slugs)
             ? x.slugs.map((s) => String(s.fullSlug || "").trim()).filter(Boolean)
             : [];
-          const slugText = allSlugs.length
-            ? allSlugs.length > 2
-              ? `${allSlugs.slice(0, 2).join(", ")} +${allSlugs.length - 2}`
-              : allSlugs.join(", ")
+          const freeCode = String(x.freeProfileCode || "").trim();
+          const allHandles = freeCode ? [...allSlugs, freeCode] : allSlugs;
+          const slugText = allHandles.length
+            ? allHandles.length > 2
+              ? `${allHandles.slice(0, 2).join(", ")} +${allHandles.length - 2}`
+              : allHandles.join(", ")
             : "—";
-          const slugTitle = allSlugs.length ? allSlugs.join(", ") : "";
+          const slugTitle = allHandles.length ? allHandles.join(", ") : "";
           const primarySlug =
             Array.isArray(x.slugs) && x.slugs.length
               ? x.slugs.find((s) => ["active", "private", "paused", "approved"].includes(s.status))?.fullSlug || x.slugs[0].fullSlug
@@ -1868,9 +1870,11 @@
           const contactUsername = String(x.username || x.telegramUsername || "").replace(/^@+/, "");
           const profileLink = primarySlug
             ? `/${encodeURIComponent(primarySlug)}`
-            : contactUsername
-              ? `https://t.me/${encodeURIComponent(contactUsername)}`
-              : null;
+            : freeCode
+              ? `/${encodeURIComponent(freeCode)}`
+              : contactUsername
+                ? `https://t.me/${encodeURIComponent(contactUsername)}`
+                : null;
           const badgeTypes = normalizeBadgeTypesInput(Array.isArray(x.badgeTypes) ? x.badgeTypes : x.badgeType || "");
           const primaryBadgeType = getPrimaryBadgeType(badgeTypes);
           const badgeTypesCsv = badgeTypes.join(",");
@@ -1925,14 +1929,15 @@
           }
 
           const menu = menuWrap(menuItems.join(""));
-          const profileTypeLabel = x.profileType === "company" ? "Компания" : "Личность";
-          const profileTypeChipClass = x.profileType === "company"
-            ? "border-sky-300 bg-sky-50 text-sky-800 whitespace-nowrap"
-            : "border-neutral-200 bg-white text-neutral-700 whitespace-nowrap";
-          return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3">${userCell}</td><td class="px-4 py-3">${emailCell}</td><td class="px-4 py-3"><span class="inline-flex rounded-full border px-2.5 py-1 text-xs font-medium ${profileTypeChipClass}">${profileTypeLabel}</span></td><td class="hidden px-4 py-3 text-xs text-neutral-600 xl:table-cell">${x.planPurchasedAt ? D(x.planPurchasedAt) : "—"}</td><td class="admin-col-slugs px-4 py-3 text-xs" title="${X(slugTitle)}">${X(slugText)}</td><td class="px-4 py-3">${statusChip(x.status === "blocked" ? "rejected" : "approved")}</td><td class="px-4 py-3">${DATE_ONLY(x.createdAt)}</td><td class="px-4 py-3 text-center"><div class="admin-row-actions justify-center">${menu}</div></td></tr>`;
+          const isPremium = x.plan === "premium" || x.plan === "basic";
+          const planChipHtml = isPremium
+            ? `<span class="inline-flex rounded-full border border-amber-300 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-800 whitespace-nowrap">Премиум</span>`
+            : `<span class="inline-flex rounded-full border border-neutral-200 bg-white px-2.5 py-1 text-xs font-medium text-neutral-600 whitespace-nowrap">Бесплатный</span>`;
+          const rowProfileUrl = profileLink ? X(profileLink) : "";
+          return `<tr class="admin-table-row border-t border-neutral-100 cursor-pointer hover:bg-neutral-50" data-user-profile-url="${rowProfileUrl}"><td class="px-4 py-3">${userCell}</td><td class="px-4 py-3">${emailCell}</td><td class="px-4 py-3">${planChipHtml}</td><td class="admin-col-slugs px-4 py-3 text-xs" title="${X(slugTitle)}">${X(slugText)}</td><td class="px-4 py-3">${statusChip(x.status === "blocked" ? "rejected" : "approved")}</td><td class="px-4 py-3">${DATE_ONLY(x.createdAt)}</td><td class="px-4 py-3 text-center" onclick="event.stopPropagation()"><div class="admin-row-actions justify-center">${menu}</div></td></tr>`;
         })
         .join("")
-      : `<tr><td colspan="8" class="px-3 py-10 text-center text-neutral-500"><div class="inline-flex flex-col items-center gap-2">${I("userCheck", 48)}<span>No users found</span></div></td></tr>`;
+      : `<tr><td colspan="7" class="px-3 py-10 text-center text-neutral-500"><div class="inline-flex flex-col items-center gap-2">${I("userCheck", 48)}<span>No users found</span></div></td></tr>`;
     renderPager("users-pagination", payload.pagination, (nextPage) => {
       setFormValue(form, "page", String(nextPage));
       void loadUsers();
@@ -1948,35 +1953,26 @@
       plan: getFormValue(form, "plan", "all"),
       page: getFormValue(form, "page", "1"),
     };
-    table.innerHTML = `<tr><td colspan="8" class="px-3 py-8 text-center text-neutral-400">Загрузка...</td></tr>`;
+    table.innerHTML = `<tr><td colspan="4" class="px-3 py-8 text-center text-neutral-400">Загрузка...</td></tr>`;
     const r = await fetch(`/api/admin/accounts?${Q(q)}`);
     if (!r.ok) {
       const msg = await E(r);
-      table.innerHTML = `<tr><td colspan="8" class="px-3 py-8 text-center text-red-700">Ошибка: ${X(msg)}</td></tr>`;
+      table.innerHTML = `<tr><td colspan="4" class="px-3 py-8 text-center text-red-700">Ошибка: ${X(msg)}</td></tr>`;
       return;
     }
     const payload = await r.json();
     const rows = payload.items || [];
-    const planLabel = (plan) => {
-      if (plan === "premium" || plan === "basic") return `<span class="inline-flex rounded-full border border-amber-300 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-800">Премиум</span>`;
-      return `<span class="inline-flex rounded-full border border-neutral-200 bg-white px-2.5 py-1 text-xs font-medium text-neutral-600">Бесплатный</span>`;
-    };
-    const typeLabel = (t) => t === "company" ? "Компания" : "Личность";
-    const statusChipAcc = (s) => s === "blocked"
-      ? `<span class="inline-flex rounded-full border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-medium text-red-700">Заблокирован</span>`
-      : `<span class="inline-flex rounded-full border border-green-200 bg-green-50 px-2.5 py-1 text-xs font-medium text-green-700">Активен</span>`;
+    const slugLink = (slug) => slug
+      ? `<a href="${base}/${X(slug)}" target="_blank" rel="noopener noreferrer" class="font-mono font-semibold text-neutral-900 hover:underline">${X(slug)}</a>`
+      : `<span class="text-neutral-400">—</span>`;
     table.innerHTML = rows.length
       ? rows.map((x) => `<tr class="border-t border-neutral-100 hover:bg-neutral-50">
-          <td class="px-4 py-3 text-xs text-neutral-500 whitespace-nowrap">${DATE_ONLY(x.createdAt)}</td>
           <td class="px-4 py-3 font-medium text-neutral-900">${X(x.firstName)}</td>
           <td class="px-4 py-3 text-xs text-neutral-600">${x.login ? `@${X(x.login)}` : "—"}</td>
-          <td class="px-4 py-3 text-xs text-neutral-600 break-all">${x.email ? X(x.email) : "—"}</td>
-          <td class="px-4 py-3 text-xs text-neutral-600">${x.city ? X(x.city) : "—"}</td>
-          <td class="px-4 py-3 text-xs text-neutral-600">${typeLabel(x.profileType)}</td>
-          <td class="px-4 py-3">${planLabel(x.plan)}</td>
-          <td class="px-4 py-3">${statusChipAcc(x.status)}</td>
+          <td class="px-4 py-3 text-xs">${slugLink(x.slug)}</td>
+          <td class="px-4 py-3 text-xs">${slugLink(x.freeSlug)}</td>
         </tr>`).join("")
-      : `<tr><td colspan="8" class="px-3 py-10 text-center text-neutral-500">Аккаунты не найдены</td></tr>`;
+      : `<tr><td colspan="4" class="px-3 py-10 text-center text-neutral-500">Аккаунты не найдены</td></tr>`;
     renderPager("accounts-pagination", payload.pagination, (nextPage) => {
       setFormValue(form, "page", String(nextPage));
       void loadAccounts();
@@ -3014,6 +3010,53 @@
     renderPager("logs-pagination", payload.pagination, (nextPage) => {
       setFormValue(form, "page", String(nextPage));
       void loadLogs();
+    });
+  }
+
+  const UA_LABELS = {
+    login: "Вход", logout: "Выход", profile_update: "Обновление профиля",
+    avatar_update: "Смена аватара", avatar_delete: "Удаление аватара",
+    password_change: "Смена пароля", card_create: "Создание визитки",
+    card_update: "Обновление визитки", card_delete: "Удаление визитки",
+    slug_request: "Запрос slug", slug_purchase: "Покупка slug",
+    plan_upgrade: "Смена тарифа", email_verify: "Подтверждение email",
+    link_add: "Добавление ссылки", link_remove: "Удаление ссылки",
+    qr_download: "Скачивание QR",
+  };
+
+  async function loadUserActivity() {
+    const form = document.getElementById("user-activity-filters");
+    const table = document.getElementById("user-activity-table");
+    if (!(form instanceof HTMLFormElement) || !(table instanceof HTMLElement)) return;
+    const q = {
+      q:        getFormValue(form, "q", ""),
+      action:   getFormValue(form, "action", "all"),
+      dateFrom: getFormValue(form, "dateFrom", ""),
+      dateTo:   getFormValue(form, "dateTo", ""),
+      page:     getFormValue(form, "page", "1"),
+    };
+    table.innerHTML = `<tr><td colspan="6" class="px-3 py-8 text-center text-neutral-400">Загрузка...</td></tr>`;
+    const r = await fetch(`/api/admin/user-activity?${Q(q)}`);
+    if (!r.ok) {
+      const msg = await E(r);
+      table.innerHTML = `<tr><td colspan="6" class="px-3 py-8 text-center text-red-700">Ошибка: ${X(msg)}</td></tr>`;
+      return;
+    }
+    const payload = await r.json();
+    const rows = payload.items || [];
+    table.innerHTML = rows.length
+      ? rows.map((x) => `<tr class="border-t border-neutral-100 hover:bg-neutral-50">
+          <td class="px-4 py-3 text-xs text-neutral-500 whitespace-nowrap">${D(x.createdAt)}</td>
+          <td class="px-4 py-3 text-sm font-medium text-neutral-900">${x.userLogin ? `<span class="font-mono text-xs">@${X(x.userLogin)}</span>` : '<span class="text-neutral-400">—</span>'}</td>
+          <td class="px-4 py-3 text-xs"><span class="inline-flex items-center rounded-full bg-neutral-100 px-2 py-0.5 text-xs font-medium text-neutral-700">${X(UA_LABELS[x.action] || x.action)}</span></td>
+          <td class="px-4 py-3 text-xs text-neutral-600">${x.detail ? X(x.detail) : '<span class="text-neutral-400">—</span>'}</td>
+          <td class="px-4 py-3 font-mono text-xs text-neutral-500">${x.ip ? X(x.ip) : '<span class="text-neutral-400">—</span>'}</td>
+          <td class="px-4 py-3 text-xs text-neutral-400 max-w-[160px] truncate" title="${x.userAgent ? X(x.userAgent) : ''}">${x.userAgent ? X(x.userAgent.slice(0, 60)) : '—'}</td>
+        </tr>`).join("")
+      : `<tr><td colspan="6" class="px-3 py-10 text-center text-neutral-500">Действия не найдены</td></tr>`;
+    renderPager("user-activity-pagination", payload.pagination, (nextPage) => {
+      setFormValue(form, "page", String(nextPage));
+      void loadUserActivity();
     });
   }
 
@@ -4056,6 +4099,12 @@
     }
   });
   document.getElementById("users-filters")?.addEventListener("submit", (e) => { e.preventDefault(); const f = e.currentTarget; if (f instanceof HTMLFormElement) setFormValue(f, "page", "1"); void loadUsers(); });
+  document.getElementById("users-table")?.addEventListener("click", (e) => {
+    const row = e.target instanceof Element ? e.target.closest("tr[data-user-profile-url]") : null;
+    if (!row) return;
+    const url = row.getAttribute("data-user-profile-url");
+    if (url) window.open(url, "_blank");
+  });
   document.getElementById("accounts-filters")?.addEventListener("submit", (e) => { e.preventDefault(); const f = e.currentTarget; if (f instanceof HTMLFormElement) setFormValue(f, "page", "1"); void loadAccounts(); });
   document.getElementById("payment-cards-filters")?.addEventListener("submit", (e) => {
     e.preventDefault();
@@ -4215,6 +4264,8 @@
   });
   document.getElementById("cards-filters")?.addEventListener("submit", (e) => { e.preventDefault(); const f = e.currentTarget; if (f instanceof HTMLFormElement) setFormValue(f, "page", "1"); void loadCards(); });
   document.getElementById("logs-filters")?.addEventListener("submit", (e) => { e.preventDefault(); const f = e.currentTarget; if (f instanceof HTMLFormElement) setFormValue(f, "page", "1"); void loadLogs(); });
+  document.getElementById("user-activity-filters")?.addEventListener("submit", (e) => { e.preventDefault(); const f = e.currentTarget; if (f instanceof HTMLFormElement) setFormValue(f, "page", "1"); void loadUserActivity(); });
+  document.getElementById("user-activity-filters")?.addEventListener("reset", () => { setTimeout(() => void loadUserActivity(), 0); });
   document.getElementById("verification-filters")?.addEventListener("submit", (e) => { e.preventDefault(); const f = e.currentTarget; if (f instanceof HTMLFormElement) setFormValue(f, "page", "1"); void loadVerificationRequests(); });
   document.getElementById("verification-filters")?.elements?.namedItem?.("status")?.addEventListener?.("change", (e) => {
     const target = e.currentTarget;
@@ -4653,6 +4704,7 @@
   if (tab === "logs") {
     dbg("load", "logs");
     void loadLogs();
+    void loadUserActivity();
   }
   const verificationSection = document.getElementById("tab-verification");
   if (tab === "verification" || (verificationSection instanceof HTMLElement && !verificationSection.classList.contains("hidden"))) {

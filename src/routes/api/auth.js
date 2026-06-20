@@ -7,6 +7,7 @@ const { asyncHandler } = require("../../middleware/async");
 const { requireCsrfToken, ensureCsrfToken } = require("../../middleware/csrf");
 const { requireSameOrigin } = require("../../middleware/same-origin");
 const { getUserSession, loginUserSession, logoutUserSession } = require("../../middleware/auth");
+const { logUserActivity } = require("../../utils/user-activity");
 const {
   authForgotPasswordRateLimit,
   authCheckAvailabilityRateLimit,
@@ -435,6 +436,7 @@ async function handleLoginRequest(req, res) {
   }
 
   await loginUserSession(req, userToSessionPayload(user), { rememberMe });
+  void logUserActivity({ userId: user.id, userLogin: user.login, action: "login", req });
   await setOwnerSlugsCookie(req, res, user.id);
   res.json(buildAuthSuccessPayload(user, { rememberMe, redirectTo: "/profile" }));
 }
@@ -486,6 +488,10 @@ async function handleAuthStatusRequest(req, res) {
 async function handleLogoutRequest(req, res) {
   const sessionId = req.sessionID;
   const hadSession = Boolean(req.session);
+  const _logoutUser = getUserSession(req);
+  if (_logoutUser?.userId) {
+    void logUserActivity({ userId: _logoutUser.userId, userLogin: _logoutUser.login, action: "logout", req });
+  }
 
   await new Promise((resolve, reject) => {
     if (!req.session) {
@@ -1274,6 +1280,7 @@ router.post(
       data: { passwordHash: nextPasswordHash },
     });
     await destroyOtherSessions(req, user.id);
+    void logUserActivity({ userId: user.id, userLogin: user.login, action: "password_change", req });
     res.json({ ok: true });
   }),
 );

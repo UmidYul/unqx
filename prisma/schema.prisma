@@ -229,6 +229,22 @@ model ErrorLog {
   @@map("error_logs")
 }
 
+model UserActivityLog {
+  id        String   @id @default(uuid())
+  userId    String?  @map("user_id") @db.VarChar(36)
+  userLogin String?  @map("user_login") @db.VarChar(200)
+  action    String   @db.VarChar(60)
+  detail    String?  @db.VarChar(500)
+  ip        String?  @db.VarChar(45)
+  userAgent String?  @map("user_agent") @db.VarChar(500)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([action, createdAt(sort: Desc)])
+  @@index([createdAt(sort: Desc)])
+  @@map("user_activity_logs")
+}
+
 model BraceletOrder {
   id             String                 @id @default(uuid())
   orderId        String                 @unique @map("order_id")

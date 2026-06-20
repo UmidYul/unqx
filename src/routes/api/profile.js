@@ -6,6 +6,7 @@ const { prisma } = require("../../db/prisma");
 const { env } = require("../../config/env");
 const { asyncHandler } = require("../../middleware/async");
 const { requireUserApi, getUserSession, logoutUserSession } = require("../../middleware/auth");
+const { logUserActivity } = require("../../utils/user-activity");
 const { requireSameOrigin } = require("../../middleware/same-origin");
 const { requireCsrfToken } = require("../../middleware/csrf");
 const {
@@ -1240,6 +1241,7 @@ router.post(
       totalAmount: monthlyCharge,
     });
 
+    void logUserActivity({ userId: user.id, userLogin: user.login, action: "slug_purchase", detail: `plan=premium order=${order.id}`, req });
     res.status(201).json({
       ok: true,
       order: mapProfileRequest(order, {
@@ -2064,6 +2066,7 @@ router.put(
     });
     await safeRecalculateScore(user.id);
 
+    void logUserActivity({ userId: user.id, userLogin: user.login, action: "card_update", detail: name, req });
     res.json({
       ok: true,
       card: parseProfileCardRow({
@@ -2228,6 +2231,7 @@ router.post(
       WHERE owner_id = ${user.id}
     `;
 
+    void logUserActivity({ userId: user.id, userLogin: user.login, action: "avatar_update", req });
     res.json({ ok: true, avatarUrl });
   }),
 );
@@ -2259,6 +2263,7 @@ router.delete(
       WHERE owner_id = ${user.id}
     `;
 
+    void logUserActivity({ userId: user.id, userLogin: user.login, action: "avatar_delete", req });
     res.json({ ok: true, avatarUrl: null });
   }),
 );
