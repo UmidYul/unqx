@@ -756,6 +756,7 @@ router.post(
       email: user.email,
       city: user.city,
       profileType: user.profileType,
+      freeProfileCode: user.freeProfileCode,
     }).catch((err) => console.error("[telegram] failed to notify admin about new account:", err));
 
     res.json({

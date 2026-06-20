@@ -429,15 +429,18 @@ async function sendNewAccountToAdmin(payload) {
 
   const profileTypeLabel = payload.profileType === "business" ? "Бизнес" : "Личный";
   const emailLine = payload.email ? `Email: ${escapeHtml(payload.email)}` : "Email: не указан";
+  const freeCode = payload.freeProfileCode ? String(payload.freeProfileCode).trim() : null;
   const text = [
     "<b>НОВЫЙ АККАУНТ UNQX</b>",
     "",
     `Имя: ${escapeHtml(payload.firstName)}`,
     `Логин: @${escapeHtml(payload.login)}`,
     emailLine,
+    freeCode ? `<a href="${buildAppUrl(`/${freeCode}`)}">${escapeHtml(freeCode)}</a>` : null,
+    freeCode ? `Фри слаг: ${escapeHtml(freeCode)}` : null,
     `Город: ${escapeHtml(payload.city)}`,
     `Тип: ${profileTypeLabel}`,
-  ].join("\n");
+  ].filter(Boolean).join("\n");
 
   return sendTelegramMessage({
     chatId,
