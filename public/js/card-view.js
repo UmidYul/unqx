@@ -2506,9 +2506,9 @@
                         </button>
                       </span>
                     </div>
-                    ${commentsPanelHtml}
                   </div>
                 </div>
+                ${commentsPanelHtml}
               </article>
             `;
           })
