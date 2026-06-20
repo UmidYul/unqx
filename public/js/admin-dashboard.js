@@ -3013,16 +3013,36 @@
     });
   }
 
-  const UA_LABELS = {
-    login: "Вход", logout: "Выход", profile_update: "Обновление профиля",
-    avatar_update: "Смена аватара", avatar_delete: "Удаление аватара",
-    password_change: "Смена пароля", card_create: "Создание визитки",
-    card_update: "Обновление визитки", card_delete: "Удаление визитки",
-    slug_request: "Запрос slug", slug_purchase: "Покупка slug",
-    plan_upgrade: "Смена тарифа", email_verify: "Подтверждение email",
-    link_add: "Добавление ссылки", link_remove: "Удаление ссылки",
-    qr_download: "Скачивание QR",
-  };
+  function uaDescribe(action, detail) {
+    const d = detail || "";
+    switch (action) {
+      case "login":          return "Вошёл в аккаунт";
+      case "logout":         return "Вышел из аккаунта";
+      case "password_change":return "Сменил пароль";
+      case "avatar_update":  return "Загрузил новый аватар";
+      case "avatar_delete":  return "Удалил аватар";
+      case "email_verify":   return "Подтвердил email";
+      case "qr_download":    return "Скачал QR-код";
+      case "card_create":    return d ? `Создал визитку «${d}»` : "Создал визитку";
+      case "card_update":    return d ? `Обновил визитку «${d}»` : "Обновил визитку";
+      case "card_delete":    return d ? `Удалил визитку «${d}»` : "Удалил визитку";
+      case "profile_update": return d ? `Обновил профиль: ${d}` : "Обновил профиль";
+      case "link_add":       return d ? `Добавил ссылку: ${d}` : "Добавил ссылку в визитку";
+      case "link_remove":    return d ? `Удалил ссылку: ${d}` : "Удалил ссылку из визитки";
+      case "slug_request":   return d ? `Запросил slug «${d}»` : "Запросил slug";
+      case "slug_purchase": {
+        const plan = (d.match(/plan=(\S+)/) || [])[1] || "";
+        const order = (d.match(/order=([a-f0-9-]{8,})/) || [])[1] || "";
+        const planLabel = plan === "premium" ? "Премиум-подписку" : plan ? `план «${plan}»` : "подписку";
+        return order ? `Купил ${planLabel} (заказ #${order.slice(0, 8)}…)` : `Купил ${planLabel}`;
+      }
+      case "plan_upgrade": {
+        const plan = (d.match(/plan=(\S+)/) || [])[1] || d;
+        return plan ? `Сменил тариф на «${plan}»` : "Сменил тариф";
+      }
+      default: return d || action;
+    }
+  }
 
   async function loadUserActivity() {
     const form = document.getElementById("user-activity-filters");
@@ -3035,11 +3055,11 @@
       dateTo:   getFormValue(form, "dateTo", ""),
       page:     getFormValue(form, "page", "1"),
     };
-    table.innerHTML = `<tr><td colspan="6" class="px-3 py-8 text-center text-neutral-400">Загрузка...</td></tr>`;
+    table.innerHTML = `<tr><td colspan="3" class="px-3 py-8 text-center text-neutral-400">Загрузка...</td></tr>`;
     const r = await fetch(`/api/admin/user-activity?${Q(q)}`);
     if (!r.ok) {
       const msg = await E(r);
-      table.innerHTML = `<tr><td colspan="6" class="px-3 py-8 text-center text-red-700">Ошибка: ${X(msg)}</td></tr>`;
+      table.innerHTML = `<tr><td colspan="3" class="px-3 py-8 text-center text-red-700">Ошибка: ${X(msg)}</td></tr>`;
       return;
     }
     const payload = await r.json();
@@ -3047,13 +3067,10 @@
     table.innerHTML = rows.length
       ? rows.map((x) => `<tr class="border-t border-neutral-100 hover:bg-neutral-50">
           <td class="px-4 py-3 text-xs text-neutral-500 whitespace-nowrap">${D(x.createdAt)}</td>
-          <td class="px-4 py-3 text-sm font-medium text-neutral-900">${x.userLogin ? `<span class="font-mono text-xs">@${X(x.userLogin)}</span>` : '<span class="text-neutral-400">—</span>'}</td>
-          <td class="px-4 py-3 text-xs"><span class="inline-flex items-center rounded-full bg-neutral-100 px-2 py-0.5 text-xs font-medium text-neutral-700">${X(UA_LABELS[x.action] || x.action)}</span></td>
-          <td class="px-4 py-3 text-xs text-neutral-600">${x.detail ? X(x.detail) : '<span class="text-neutral-400">—</span>'}</td>
-          <td class="px-4 py-3 font-mono text-xs text-neutral-500">${x.ip ? X(x.ip) : '<span class="text-neutral-400">—</span>'}</td>
-          <td class="px-4 py-3 text-xs text-neutral-400 max-w-[160px] truncate" title="${x.userAgent ? X(x.userAgent) : ''}">${x.userAgent ? X(x.userAgent.slice(0, 60)) : '—'}</td>
+          <td class="px-4 py-3">${x.userLogin ? `<span class="font-mono text-xs font-medium text-neutral-800">@${X(x.userLogin)}</span>` : '<span class="text-neutral-400 text-xs">—</span>'}</td>
+          <td class="px-4 py-3 text-sm text-neutral-700">${X(uaDescribe(x.action, x.detail))}</td>
         </tr>`).join("")
-      : `<tr><td colspan="6" class="px-3 py-10 text-center text-neutral-500">Действия не найдены</td></tr>`;
+      : `<tr><td colspan="3" class="px-3 py-10 text-center text-neutral-500">Действия не найдены</td></tr>`;
     renderPager("user-activity-pagination", payload.pagination, (nextPage) => {
       setFormValue(form, "page", String(nextPage));
       void loadUserActivity();
