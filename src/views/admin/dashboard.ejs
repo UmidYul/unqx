@@ -26,6 +26,7 @@
     settings:        { title: "Настройки платформы",   desc: "Конфигурация системы, цены и параметры сервиса.",                            action: null },
     testimonials:    { title: "Отзывы",                desc: "Модерация и управление отзывами пользователей.",                             action: null },
     managers:        { title: "Менеджеры",             desc: "Управление доступом и правами менеджеров платформы.",                        action: null },
+    activity:        { title: "Активность",             desc: "Лог действий пользователей: входы, обновления визиток, смены паролей.",      action: null },
     logs:            { title: "Логи системы",          desc: "Журнал событий, ошибок и действий администраторов.",                         action: null },
   };
   const _tabMeta = TAB_META[pageActiveTab] || { title: "Управление платформой", desc: "Мониторинг заявок, пользователей и маркетинговых инструментов.", action: null };
@@ -1528,6 +1529,68 @@
               <div id="reports-pagination" class="flex items-center justify-end gap-2 text-sm text-neutral-600"></div>
             </section>
 
+            <section id="tab-activity" class="<%= pageActiveTab === 'activity' ? '' : 'hidden' %> space-y-4">
+              <header class="rounded-2xl border border-neutral-200 bg-white p-4">
+                <h2 class="text-base font-bold text-neutral-900">Активность пользователей</h2>
+                <p class="mt-1 text-sm text-neutral-500">Лог действий: входы, обновления визиток, смены паролей и другие события.</p>
+              </header>
+              <form id="user-activity-filters"
+                class="grid gap-3 rounded-2xl border border-neutral-200 bg-white p-4 md:grid-cols-[1fr_200px_160px_160px_auto] md:items-end">
+                <label class="block text-sm">
+                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Поиск</span>
+                  <input type="text" name="q" placeholder="Логин, IP, детали"
+                    class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+                </label>
+                <label class="block text-sm">
+                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Действие</span>
+                  <select name="action" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm">
+                    <option value="all">Все действия</option>
+                    <option value="login">Вход</option>
+                    <option value="logout">Выход</option>
+                    <option value="card_update">Обновление визитки</option>
+                    <option value="avatar_update">Смена аватара</option>
+                    <option value="avatar_delete">Удаление аватара</option>
+                    <option value="password_change">Смена пароля</option>
+                    <option value="slug_purchase">Покупка slug</option>
+                    <option value="profile_update">Обновление профиля</option>
+                  </select>
+                </label>
+                <label class="block text-sm">
+                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Дата с</span>
+                  <input type="date" name="dateFrom" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+                </label>
+                <label class="block text-sm">
+                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Дата по</span>
+                  <input type="date" name="dateTo" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+                </label>
+                <input type="hidden" name="page" value="1" />
+                <div class="flex items-end gap-2">
+                  <button type="submit"
+                    class="inline-flex min-h-11 items-center justify-center rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">Применить</button>
+                  <button type="reset"
+                    class="inline-flex min-h-11 items-center justify-center rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">Сброс</button>
+                </div>
+              </form>
+              <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
+                <div class="overflow-x-auto">
+                  <table class="min-w-[860px] w-full text-left text-sm">
+                    <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
+                      <tr>
+                        <th class="px-4 py-3">Время</th>
+                        <th class="px-4 py-3">Логин</th>
+                        <th class="px-4 py-3">Действие</th>
+                        <th class="px-4 py-3">Детали</th>
+                        <th class="px-4 py-3">IP</th>
+                        <th class="px-4 py-3">Браузер</th>
+                      </tr>
+                    </thead>
+                    <tbody id="user-activity-table"></tbody>
+                  </table>
+                </div>
+              </div>
+              <div id="user-activity-pagination" class="flex items-center justify-end gap-2 text-sm text-neutral-600"></div>
+            </section>
+
             <section id="tab-logs" class="<%= pageActiveTab === 'logs' ? '' : 'hidden' %> space-y-4">
               <article class="rounded-2xl border border-neutral-200 bg-white p-4 space-y-4">
                 <div>
@@ -1620,65 +1683,6 @@
 
                 <div id="push-broadcast-status" class="hidden rounded-xl border px-3 py-2 text-sm"></div>
               </article>
-
-              <div class="flex items-center gap-3 border-b border-neutral-200 pb-2">
-                <h2 class="text-base font-bold text-neutral-900">Активность пользователей</h2>
-              </div>
-              <form id="user-activity-filters"
-                class="grid gap-3 rounded-2xl border border-neutral-200 bg-white p-4 md:grid-cols-[1fr_200px_160px_160px_auto] md:items-end">
-                <label class="block text-sm">
-                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Поиск</span>
-                  <input type="text" name="q" placeholder="Логин, IP, детали"
-                    class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
-                </label>
-                <label class="block text-sm">
-                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Действие</span>
-                  <select name="action" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm">
-                    <option value="all">Все действия</option>
-                    <option value="login">Вход</option>
-                    <option value="logout">Выход</option>
-                    <option value="card_update">Обновление визитки</option>
-                    <option value="avatar_update">Смена аватара</option>
-                    <option value="avatar_delete">Удаление аватара</option>
-                    <option value="password_change">Смена пароля</option>
-                    <option value="slug_purchase">Покупка slug</option>
-                    <option value="profile_update">Обновление профиля</option>
-                  </select>
-                </label>
-                <label class="block text-sm">
-                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Дата с</span>
-                  <input type="date" name="dateFrom" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
-                </label>
-                <label class="block text-sm">
-                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Дата по</span>
-                  <input type="date" name="dateTo" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
-                </label>
-                <input type="hidden" name="page" value="1" />
-                <div class="flex items-end gap-2">
-                  <button type="submit"
-                    class="inline-flex min-h-11 items-center justify-center rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">Применить</button>
-                  <button type="reset"
-                    class="inline-flex min-h-11 items-center justify-center rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">Сброс</button>
-                </div>
-              </form>
-              <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
-                <div class="overflow-x-auto">
-                  <table class="min-w-[860px] w-full text-left text-sm">
-                    <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
-                      <tr>
-                        <th class="px-4 py-3">Время</th>
-                        <th class="px-4 py-3">Логин</th>
-                        <th class="px-4 py-3">Действие</th>
-                        <th class="px-4 py-3">Детали</th>
-                        <th class="px-4 py-3">IP</th>
-                        <th class="px-4 py-3">Браузер</th>
-                      </tr>
-                    </thead>
-                    <tbody id="user-activity-table"></tbody>
-                  </table>
-                </div>
-              </div>
-              <div id="user-activity-pagination" class="flex items-center justify-end gap-2 text-sm text-neutral-600"></div>
 
               <div class="flex items-center justify-between gap-3 border-b border-neutral-200 pb-2">
                 <h2 class="text-base font-bold text-neutral-900">Логи ошибок</h2>

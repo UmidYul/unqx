@@ -4704,6 +4704,9 @@
   if (tab === "logs") {
     dbg("load", "logs");
     void loadLogs();
+  }
+  if (tab === "activity") {
+    dbg("load", "activity");
     void loadUserActivity();
   }
   const verificationSection = document.getElementById("tab-verification");
