@@ -9457,6 +9457,7 @@ router.get(
           id: true,
           firstName: true,
           login: true,
+          freeProfileCode: true,
           slugs: {
             where: { status: { in: ["approved", "active", "paused", "private"] } },
             orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
@@ -9472,7 +9473,7 @@ router.get(
     res.json({
       items: rows.map((u) => {
         const primarySlug = (u.slugs.find((s) => s.isPrimary) || u.slugs[0] || null)?.fullSlug || null;
-        const freeSlug = u.slugs.find((s) => isFreeSlug(s.fullSlug))?.fullSlug || null;
+        const freeSlug = u.slugs.find((s) => isFreeSlug(s.fullSlug))?.fullSlug || u.freeProfileCode || null;
         const paidSlug = u.slugs.find((s) => isPaidSlug(s.fullSlug))?.fullSlug || null;
         return {
           id: u.id,
