@@ -9095,27 +9095,34 @@ router.get(
     ]);
 
     const userIds = [...new Set(items.map((i) => i.userId).filter(Boolean))];
-    const slugRows = userIds.length
-      ? await prisma.slug.findMany({
-          where: { ownerId: { in: userIds }, status: { in: ["free", "approved", "active", "paused", "private"] } },
-          select: { ownerId: true, fullSlug: true, isPrimary: true },
-          orderBy: { isPrimary: "desc" },
-        })
-      : [];
-    const isFreeSlug = (s) => /^(0|[1-9][0-9]{0,2}|[A-Za-z]{1,3})$/.test(String(s || ""));
     const isPaidSlug = (s) => /^[A-Za-z]{3}[0-9]{3}$/.test(String(s || ""));
+    const [slugRows, userRows] = userIds.length
+      ? await Promise.all([
+          prisma.slug.findMany({
+            where: { ownerId: { in: userIds }, status: { in: ["approved", "active", "paused", "private"] } },
+            select: { ownerId: true, fullSlug: true, isPrimary: true },
+            orderBy: { isPrimary: "desc" },
+          }),
+          prisma.user.findMany({
+            where: { id: { in: userIds } },
+            select: { id: true, freeProfileCode: true },
+          }),
+        ])
+      : [[], []];
     const paidSlugByUser = {};
-    const freeSlugByUser = {};
     for (const s of slugRows) {
       if (isPaidSlug(s.fullSlug) && !paidSlugByUser[s.ownerId]) paidSlugByUser[s.ownerId] = s.fullSlug;
-      if (isFreeSlug(s.fullSlug) && !freeSlugByUser[s.ownerId]) freeSlugByUser[s.ownerId] = s.fullSlug;
+    }
+    const freeCodeByUser = {};
+    for (const u of userRows) {
+      if (u.freeProfileCode) freeCodeByUser[u.id] = u.freeProfileCode;
     }
 
     res.json({
       items: items.map((i) => ({
         ...i,
         userSlug: i.userId ? (paidSlugByUser[i.userId] || null) : null,
-        userFreeSlug: i.userId ? (freeSlugByUser[i.userId] || null) : null,
+        userFreeSlug: i.userId ? (freeCodeByUser[i.userId] || null) : null,
       })),
       pagination: {
         page,
