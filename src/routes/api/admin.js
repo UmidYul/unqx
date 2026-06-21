@@ -9465,6 +9465,7 @@ router.get(
           id: true,
           firstName: true,
           login: true,
+          freeProfileCode: true,
           slugs: {
             where: { status: { in: ["free", "approved", "active", "paused", "private"] } },
             orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
@@ -9474,20 +9475,18 @@ router.get(
       }),
     ]);
 
-    const isFreeSlug = (s) => /^(0|[1-9][0-9]{0,2}|[A-Za-z]{1,3})$/.test(String(s || ""));
     const isPaidSlug = (s) => /^[A-Za-z]{3}[0-9]{3}$/.test(String(s || ""));
 
     res.json({
       items: rows.map((u) => {
         const primarySlug = (u.slugs.find((s) => s.isPrimary) || u.slugs[0] || null)?.fullSlug || null;
-        const freeSlug = u.slugs.find((s) => isFreeSlug(s.fullSlug))?.fullSlug || null;
         const paidSlug = u.slugs.find((s) => isPaidSlug(s.fullSlug))?.fullSlug || null;
         return {
           id: u.id,
           firstName: u.firstName,
           login: u.login,
           slug: paidSlug || primarySlug,
-          freeSlug: freeSlug,
+          freeSlug: u.freeProfileCode || null,
         };
       }),
       pagination: {
