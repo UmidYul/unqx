@@ -244,6 +244,16 @@ describe("home page", () => {
     expect(styles).toContain(".home-latest-post-action-button[data-home-post-like]:hover,");
   });
 
+  test("weekly top badges stay compact", () => {
+    const styles = fs.readFileSync(path.join(process.cwd(), "public", "css", "public-card.css"), "utf-8");
+
+    expect(styles).toContain("[data-page=\"public-home\"] .home-weekly-card-rank");
+    expect(styles).toContain("min-height: 26px;");
+    expect(styles).toContain("[data-page=\"public-home\"] .home-weekly-card-slug-chip");
+    expect(styles).toContain("min-height: 24px;");
+    expect(styles).not.toContain("min-height: 36px;\n  min-width: 52px;");
+  });
+
   test("flash sale client source shares countdown wiring, flash modal tone, and hero pricing follow-up", () => {
     const realtimeSource = fs.readFileSync(path.join(process.cwd(), "public", "js", "public-realtime.js"), "utf-8");
     const homeSource = fs.readFileSync(path.join(process.cwd(), "public", "js", "public-home-search.js"), "utf-8");

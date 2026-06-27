@@ -6825,14 +6825,14 @@ body[data-card-theme] main.private-card-screen {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 36px;
-  min-width: 52px;
+  min-height: 26px;
+  min-width: 38px;
   border-radius: 999px;
   border: 1px solid var(--weekly-line, #d4d4d8);
   background: #ffffff;
-  padding: 0.35rem 0.8rem;
-  font-size: 12px;
-  font-weight: 800;
+  padding: 0.2rem 0.55rem;
+  font-size: 11px;
+  font-weight: 750;
   color: #27272a;
 }
 
@@ -6840,7 +6840,7 @@ body[data-card-theme] main.private-card-screen {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 34px;
+  min-height: 26px;
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -6848,10 +6848,10 @@ body[data-card-theme] main.private-card-screen {
   border-radius: 999px;
   border: 1px solid var(--weekly-line-soft, #e5e7eb);
   background: var(--weekly-badge-bg, rgba(243, 244, 246, 0.86));
-  padding: 0.35rem 0.9rem;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.01em;
+  padding: 0.2rem 0.62rem;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0;
   color: #4b5563;
 }
 
@@ -6941,19 +6941,19 @@ body[data-card-theme] main.private-card-screen {
 [data-page="public-home"] .home-weekly-card-slugs {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
 }
 
 [data-page="public-home"] .home-weekly-card-slug-chip {
   display: inline-flex;
   align-items: center;
-  min-height: 32px;
+  min-height: 24px;
   border-radius: 999px;
   border: 1px solid #dedfe3;
   background: rgba(255, 255, 255, 0.86);
-  padding: 0.35rem 0.8rem;
+  padding: 0.16rem 0.52rem;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  font-size: 11px;
+  font-size: 10px;
   color: #5f6672;
 }
 
