@@ -109,6 +109,46 @@ async function renderHomeTemplateWithPosts() {
   });
 }
 
+async function renderHomeTemplateWithShowcaseCards() {
+  const file = path.join(process.cwd(), "src", "views", "public", "home.ejs");
+  return ejs.renderFile(file, {
+    title: "UNQX | Цифровая визитка за 1 минуту",
+    description: "Одна ссылка вместо тысячи слов",
+    slugTotalLimit: 17576,
+    leaderboardEnabled: true,
+    activeFlashSale: null,
+    nextDrop: null,
+    testimonials: [],
+    telegramBotUsername: "unqx_bot",
+    baseUrl: "https://unqx.uz",
+    canonicalUrl: "https://unqx.uz/",
+    cspNonce: "test-nonce",
+    csrfToken: "csrf",
+    assetVersion: "test",
+    publicSettings: {},
+    authPhotoUrl: "",
+    userSession: null,
+    latestPublishedPosts: [],
+    latestCreatedCards: [
+      {
+        name: "Suxrob Akmalov",
+        slug: "AKL444",
+        avatarUrl: "https://example.com/avatar.jpg",
+      },
+    ],
+    topWeeklyViews: [
+      {
+        name: "Khabib",
+        primarySlug: "KHK007",
+        slugs: ["KHK007"],
+        avatarUrl: "",
+        views: 1289,
+        isVerified: true,
+      },
+    ],
+  });
+}
+
 async function renderHomeTemplateWithFlashSale() {
   const file = path.join(process.cwd(), "src", "views", "public", "home.ejs");
   return ejs.renderFile(file, {
@@ -204,6 +244,19 @@ describe("home page", () => {
     expect(html).toContain('id="latest-posts"');
   });
 
+  test("renders latest UNQ and views ranking with shared showcase UI", async () => {
+    const html = await renderHomeTemplateWithShowcaseCards();
+
+    expect(html).toContain('id="latest-slack"');
+    expect(html).toContain('id="weekly-top-views"');
+    expect(html).toContain("home-showcase-heading");
+    expect(html).toContain("home-showcase-card");
+    expect(html).toContain("home-showcase-score");
+    expect(html).toContain("unqx.uz/AKL444");
+    expect(html).toContain("unqx.uz/KHK007");
+    expect(html).toContain(">1 289<");
+  });
+
   test("renders posts link after UNQ ELITE in public navigation", async () => {
     const html = await renderHomeTemplate();
     const residentsIndex = html.indexOf(">Резиденты</a>");
@@ -244,14 +297,15 @@ describe("home page", () => {
     expect(styles).toContain(".home-latest-post-action-button[data-home-post-like]:hover,");
   });
 
-  test("weekly top badges stay compact", () => {
+  test("home showcase ranking sections use compact reference cards", () => {
     const styles = fs.readFileSync(path.join(process.cwd(), "public", "css", "public-card.css"), "utf-8");
 
-    expect(styles).toContain("[data-page=\"public-home\"] .home-weekly-card-rank");
-    expect(styles).toContain("min-height: 26px;");
-    expect(styles).toContain("[data-page=\"public-home\"] .home-weekly-card-slug-chip");
-    expect(styles).toContain("min-height: 24px;");
-    expect(styles).not.toContain("min-height: 36px;\n  min-width: 52px;");
+    expect(styles).toContain("[data-page=\"public-home\"] .home-showcase-heading");
+    expect(styles).toContain("[data-page=\"public-home\"] .home-showcase-rank");
+    expect(styles).toContain("[data-page=\"public-home\"] .home-showcase-card");
+    expect(styles).toContain("border-radius: 26px;");
+    expect(styles).toContain("[data-page=\"public-home\"] .home-showcase-score");
+    expect(styles).toContain("background: #050505;");
   });
 
   test("flash sale client source shares countdown wiring, flash modal tone, and hero pricing follow-up", () => {

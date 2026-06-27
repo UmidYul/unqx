@@ -782,9 +782,10 @@
 
                 <section id="latest-slack" class="px-6 py-16" data-observe-reveal>
                   <div class="mx-auto max-w-6xl">
-                    <p class="font-mono text-xs uppercase tracking-[0.18em] text-neutral-400">LIVE</p>
-                    <h2 class="mt-3 text-3xl font-bold tracking-tight text-neutral-900 md:text-4xl">Последние созданные
-                      UNQ</h2>
+                    <div class="home-showcase-heading">
+                      <p class="home-showcase-kicker">LIVE</p>
+                      <h2 class="home-showcase-title">Последние созданные UNQ</h2>
+                    </div>
 
                     <% if (!latestSlackCards.length) { %>
                       <div
@@ -792,41 +793,28 @@
                         Пока нет созданных визиток для отображения.
                       </div>
                       <% } else { %>
-                        <div class="mt-10 grid gap-6 lg:grid-cols-3">
+                        <div class="home-showcase-list">
                           <% latestSlackCards.forEach((card, index)=> {
-                            const createdLabel = card.createdAt ? new Date(card.createdAt).toLocaleDateString("ru-RU") : "недавно";
-                            const roleLabel = String(card.role || "").trim() || "Новый участник";
-                            const bioSnippet = String(card.bio || "").trim();
+                            const latestRankNumber = index + 1;
+                            const latestInitials = (card.name || "UN").split(" ").map((p) => p[0]).join("").slice(0, 2).toUpperCase();
                           %>
                             <a href="/<%= encodeURIComponent(card.slug) %>"
-                              class="home-latest-card interactive-card rounded-[1.7rem] border border-neutral-200 bg-white p-4 text-left sm:p-5">
-                              <div class="home-latest-card-head">
-                                <span class="home-latest-rank">#<%= index + 1 %></span>
-                                <span class="home-latest-card-date"><%= createdLabel %></span>
-                              </div>
-
-                              <div class="home-latest-card-identity">
+                              class="home-showcase-item interactive-card"
+                              aria-label="Открыть профиль <%= card.name %>">
+                              <span class="home-showcase-rank"><%= latestRankNumber %></span>
+                              <span class="home-showcase-card">
                                 <% if (card.avatarUrl) { %>
                                   <img src="<%= card.avatarUrl %>" alt="<%= card.name %>"
-                                    class="h-14 w-14 shrink-0 rounded-full border border-neutral-200 object-cover shadow-sm"
+                                    class="home-showcase-avatar"
                                     loading="lazy" />
                                 <% } else { %>
-                                  <span
-                                    class="inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-neutral-200 bg-neutral-100 text-sm font-semibold text-neutral-600 shadow-sm">
-                                    <%= (card.name || "UN" ).split(" ").map((p) => p[0]).join("").slice(0, 2).toUpperCase() %>
-                                  </span>
+                                  <span class="home-showcase-avatar home-showcase-avatar-fallback"><%= latestInitials %></span>
                                 <% } %>
-                                <div class="home-latest-card-copy">
-                                  <p class="home-latest-card-name"><%= card.name %></p>
-                                  <p class="home-latest-card-role"><%= roleLabel %></p>
-                                </div>
-                              </div>
-
-                              <div class="home-latest-card-row">
-                                <span class="home-latest-card-slug"><%= card.slug %></span>
-                                <span class="home-latest-card-kind">Новый UNQ</span>
-                              </div>
-
+                                <span class="home-showcase-copy">
+                                  <span class="home-showcase-name"><%= card.name %></span>
+                                  <span class="home-showcase-slug">unqx.uz/<%= card.slug %></span>
+                                </span>
+                              </span>
                             </a>
                             <% }) %>
                         </div>
@@ -836,70 +824,47 @@
 
                 <section id="weekly-top-views" class="px-6 py-16" data-observe-reveal>
                   <div class="mx-auto max-w-6xl">
-                    <p class="font-mono text-xs uppercase tracking-[0.18em] text-neutral-400">Топ 3 дня</p>
-                    <h2 class="mt-3 text-3xl font-bold tracking-tight text-neutral-900 md:text-4xl">Рейтинг по
-                      просмотрам</h2>
+                    <div class="home-showcase-heading">
+                      <p class="home-showcase-kicker">Топ 3 дня</p>
+                      <h2 class="home-showcase-title">Рейтинг по просмотрам</h2>
+                    </div>
 
                     <% if (!weeklyViewsTopList.length) { %>
                       <div class="mt-8 rounded-2xl border border-neutral-200 bg-white p-6 text-sm text-neutral-500">
                         За эту неделю пока нет данных по просмотрам.
                       </div>
                       <% } else { %>
-                        <div class="mt-8 grid gap-4 lg:grid-cols-3">
+                        <div class="home-showcase-list">
                           <% weeklyViewsTopList.forEach((item, index)=> {
                             const rankNumber = index + 1;
-                            const slugs = (Array.isArray(item.slugs) ? item.slugs : []).filter(Boolean).slice(0, 2);
+                            const slugs = (Array.isArray(item.slugs) ? item.slugs : []).filter(Boolean);
+                            const primaryWeeklySlug = String(item.primarySlug || slugs[0] || "").trim();
                             const weeklyViewsCount = Number(item.views || 0).toLocaleString('ru-RU');
                           %>
                             <a href="/<%= encodeURIComponent(item.primarySlug || (Array.isArray(item.slugs) ? item.slugs[0] : '')) %>"
                               aria-label="Открыть профиль <%= item.name %>"
-                              class="home-weekly-card home-weekly-card--rank-<%= rankNumber %> interactive-card block rounded-2xl border border-neutral-200 bg-white p-5 transition-colors hover:border-neutral-300">
-                              <div class="home-weekly-card-content">
-                                <div class="home-weekly-card-top">
-                                  <span class="home-weekly-card-rank">#<%= rankNumber %></span>
-                                  <span class="home-weekly-card-views-badge"><%= weeklyViewsCount %> просмотров</span>
-                                </div>
-
-                                <div class="home-weekly-card-body">
-                                  <div class="home-weekly-card-identity">
-                                    <img src="<%= item.avatarUrl || '/brand/logo.PNG' %>" alt="<%= item.name %>"
-                                      onerror="this.onerror=null;this.src='/brand/logo.PNG';"
-                                      class="home-weekly-card-avatar" />
-                                    <div class="home-weekly-card-copy">
-                                      <div class="home-weekly-card-name-row">
-                                        <p class="home-weekly-card-name"><%= item.name %></p>
-                                        <% if (item.isVerified) { %>
-                                          <svg class="home-weekly-card-verified" viewBox="0 0 24 24" aria-hidden="true"
-                                            fill="currentColor" title="Верифицированный аккаунт">
-                                            <path
-                                              d="M12 2.5l2.2 1.8 2.8-.3 1.2 2.5 2.5 1.2-.3 2.8L21.5 12l-1.8 2.2.3 2.8-2.5 1.2-1.2 2.5-2.8-.3L12 21.5l-2.2-1.8-2.8.3-1.2-2.5-2.5-1.2.3-2.8L2.5 12l1.8-2.2-.3-2.8 2.5-1.2 1.2-2.5 2.8.3L12 2.5Zm-1.1 13.1 5-5-1.1-1.1-3.9 3.9-1.8-1.8-1.1 1.1 2.9 2.9Z">
-                                            </path>
-                                          </svg>
-                                        <% } %>
-                                      </div>
-                                      <% if (item.role || item.company) { %>
-                                        <div class="home-weekly-card-meta">
-                                          <% if (item.role) { %>
-                                            <p class="home-weekly-card-role"><%= item.role %></p>
-                                          <% } %>
-                                          <% if (item.company) { %>
-                                            <p class="home-weekly-card-company"><%= item.company %></p>
-                                          <% } %>
-                                        </div>
-                                      <% } %>
-                                    </div>
-                                  </div>
-
-                                  <% if (slugs.length) { %>
-                                    <div class="home-weekly-card-slugs">
-                                      <% slugs.forEach((slug)=> { %>
-                                        <span class="home-weekly-card-slug-chip"><%= slug %></span>
-                                      <% }) %>
-                                    </div>
-                                  <% } %>
-
-                                </div>
-                              </div>
+                              class="home-showcase-item home-showcase-item--views interactive-card">
+                              <span class="home-showcase-rank"><%= rankNumber %></span>
+                              <span class="home-showcase-card">
+                                <img src="<%= item.avatarUrl || '/brand/logo.PNG' %>" alt="<%= item.name %>"
+                                  onerror="this.onerror=null;this.src='/brand/logo.PNG';"
+                                  class="home-showcase-avatar" />
+                                <span class="home-showcase-copy">
+                                  <span class="home-showcase-name-row">
+                                    <span class="home-showcase-name"><%= item.name %></span>
+                                    <% if (item.isVerified) { %>
+                                      <svg class="home-showcase-verified" viewBox="0 0 24 24" aria-hidden="true"
+                                        fill="currentColor" title="Верифицированный аккаунт">
+                                        <path
+                                          d="M12 2.5l2.2 1.8 2.8-.3 1.2 2.5 2.5 1.2-.3 2.8L21.5 12l-1.8 2.2.3 2.8-2.5 1.2-1.2 2.5-2.8-.3L12 21.5l-2.2-1.8-2.8.3-1.2-2.5-2.5-1.2.3-2.8L2.5 12l1.8-2.2-.3-2.8 2.5-1.2 1.2-2.5 2.8.3L12 2.5Zm-1.1 13.1 5-5-1.1-1.1-3.9 3.9-1.8-1.8-1.1 1.1 2.9 2.9Z">
+                                        </path>
+                                      </svg>
+                                    <% } %>
+                                  </span>
+                                  <span class="home-showcase-slug">unqx.uz/<%= primaryWeeklySlug || "UNQ" %></span>
+                                </span>
+                                <span class="home-showcase-score"><%= weeklyViewsCount %></span>
+                              </span>
                             </a>
                             <% }) %>
                         </div>
