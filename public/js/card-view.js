@@ -32,6 +32,9 @@
     "basketball_court",
     "football_pitch",
     "olympic_gold",
+    "anime_blush",
+    "cheetah_spots",
+    "serpent_scale",
     ...COLOR_THEME_KEYS,
   ];
   const AVATAR_FRAME_KEYS = [
@@ -757,6 +760,43 @@
       buttonText: "#1b0d25",
       badgeText: "#ffe6a6",
       border: "#8b61d8",
+    }),
+    anime_blush: createMonochromeTheme({
+      surfaceBg: "#ffe6f4",
+      base: "#ff9ed1",
+      deep: "#fff1fa",
+      accent: "#a874ff",
+      text: "#69264d",
+      role: "#a54b7b",
+      muted: "#c66f9a",
+      buttonText: "#ffffff",
+      badgeText: "#873c68",
+      border: "#ff8fc7",
+      isLight: true,
+    }),
+    cheetah_spots: createMonochromeTheme({
+      surfaceBg: "#b66a20",
+      base: "#f5c46b",
+      deep: "#5a2b0d",
+      accent: "#2b1608",
+      text: "#fff0cf",
+      role: "#ffe2a6",
+      muted: "#d8984e",
+      buttonText: "#fff4d8",
+      badgeText: "#ffe3a6",
+      border: "#7b3f13",
+    }),
+    serpent_scale: createMonochromeTheme({
+      surfaceBg: "#0b2a1a",
+      base: "#155332",
+      deep: "#07190f",
+      accent: "#8ee6a8",
+      text: "#ecfff1",
+      role: "#b7f6c4",
+      muted: "#7fcf93",
+      buttonText: "#06160d",
+      badgeText: "#caffd4",
+      border: "#236f43",
     }),
     color_red: createMonochromeTheme({
       surfaceBg: "#5d0d18",
@@ -1676,6 +1716,78 @@
         <path d="M0 118C80 90 158 98 232 130C292 156 330 158 360 148" stroke="#ffd36e" stroke-width="1" fill="none" opacity="0.28"></path>
         <path d="M38 412c82-34 164-26 246 22" stroke="#e7d4ff" stroke-width="0.86" fill="none" opacity="0.2"></path>
         <path d="M282 82l10 30 31 1-25 18 9 30-25-18-25 18 9-30-25-18 31-1 10-30Z" fill="#ffd36e" opacity="0.16"></path>
+      </svg>`;
+    }
+    if (themeKey === "anime_blush") {
+      return `<svg class="unq-ref-overlay-svg" viewBox="0 0 360 600" preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <radialGradient id="ab-glow" cx="50%" cy="20%" r="74%">
+            <stop offset="0%" stop-color="#ffffff" stop-opacity="0.76"></stop>
+            <stop offset="100%" stop-color="#ff9ed1" stop-opacity="0"></stop>
+          </radialGradient>
+          <linearGradient id="ab-hair" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#a874ff" stop-opacity="0.36"></stop>
+            <stop offset="100%" stop-color="#ff62ac" stop-opacity="0.22"></stop>
+          </linearGradient>
+        </defs>
+        <circle cx="182" cy="112" r="190" fill="url(#ab-glow)"></circle>
+        <g transform="translate(246 86)" opacity="0.3">
+          <path d="M30 0c28 0 50 20 50 48 0 26-20 48-50 48S-20 74-20 48C-20 20 2 0 30 0Z" fill="#fff8fc"></path>
+          <path d="M-6 46c8-34 30-50 62-40 22 8 32 24 28 48-24-22-50-28-90-8Z" fill="url(#ab-hair)"></path>
+          <circle cx="15" cy="48" r="4" fill="#69264d"></circle>
+          <circle cx="47" cy="48" r="4" fill="#69264d"></circle>
+          <path d="M22 66c8 6 16 6 24 0" stroke="#ff62ac" stroke-width="3" stroke-linecap="round" fill="none"></path>
+          <path d="M4 30l-18-18M56 24l18-20" stroke="#a874ff" stroke-width="4" stroke-linecap="round"></path>
+        </g>
+        <path d="M54 132c12-18 34-18 46 0 12-18 34-18 46 0-18 34-54 46-92 0Z" fill="#ff62ac" opacity="0.18"></path>
+        <path d="M0 306C78 278 154 288 226 316C288 340 328 342 360 330" stroke="#a874ff" stroke-width="0.9" fill="none" opacity="0.28"></path>
+        <path d="M74 454l8 22 24 1-19 14 7 23-20-13-20 13 7-23-19-14 24-1 8-22Z" fill="#ffffff" opacity="0.28"></path>
+        <circle cx="52" cy="226" r="5" fill="#ff62ac" opacity="0.26"></circle>
+        <circle cx="82" cy="248" r="3" fill="#a874ff" opacity="0.28"></circle>
+      </svg>`;
+    }
+    if (themeKey === "cheetah_spots") {
+      return `<svg class="unq-ref-overlay-svg" viewBox="0 0 360 600" preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <filter id="cs-fur">
+            <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" stitchTiles="stitch"></feTurbulence>
+            <feColorMatrix type="saturate" values="0.55"></feColorMatrix>
+          </filter>
+        </defs>
+        <rect width="100%" height="100%" filter="url(#cs-fur)" opacity="0.2"></rect>
+        <g fill="#2b1608" opacity="0.36">
+          <path d="M38 62c18-16 42-6 40 16-2 22-34 28-48 12-9-10-4-20 8-28Z"></path>
+          <path d="M132 116c24-12 50 3 42 24-8 22-44 20-56 0-7-12 0-20 14-24Z"></path>
+          <path d="M274 84c20-14 46-2 42 20-4 24-40 26-52 8-8-12-2-20 10-28Z"></path>
+          <path d="M62 286c24-18 58-4 52 22-6 26-48 30-64 8-10-14-2-22 12-30Z"></path>
+          <path d="M238 258c22-16 52-3 48 22-4 24-42 28-58 8-10-12-4-22 10-30Z"></path>
+          <path d="M128 430c20-14 48-2 44 22-4 22-40 24-54 6-8-12-2-20 10-28Z"></path>
+          <path d="M282 482c22-14 50 0 44 24-6 22-42 24-54 4-8-12-2-20 10-28Z"></path>
+        </g>
+        <g stroke="#fff0cf" stroke-width="0.8" fill="none" opacity="0.16">
+          <path d="M0 170c70-24 140-18 210 18 62 30 112 34 150 18"></path>
+          <path d="M0 382c74-28 148-20 222 20 58 30 106 32 138 18"></path>
+        </g>
+      </svg>`;
+    }
+    if (themeKey === "serpent_scale") {
+      return `<svg class="unq-ref-overlay-svg" viewBox="0 0 360 600" preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <pattern id="ss-scales" width="42" height="36" patternUnits="userSpaceOnUse">
+            <path d="M0 18C10 2 32 2 42 18C32 34 10 34 0 18Z" fill="none" stroke="#8ee6a8" stroke-width="1" opacity="0.3"></path>
+            <path d="M21 0C31 16 31 20 21 36C11 20 11 16 21 0Z" fill="#8ee6a8" opacity="0.055"></path>
+          </pattern>
+          <linearGradient id="ss-shine" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#8ee6a8" stop-opacity="0"></stop>
+            <stop offset="45%" stop-color="#8ee6a8" stop-opacity="0.24"></stop>
+            <stop offset="100%" stop-color="#8ee6a8" stop-opacity="0"></stop>
+          </linearGradient>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#ss-scales)" opacity="0.72"></rect>
+        <path d="M-20 126C68 78 146 96 220 142C282 180 326 180 382 132" stroke="url(#ss-shine)" stroke-width="18" fill="none" opacity="0.4"></path>
+        <path d="M-18 418C74 364 150 382 226 430C288 468 330 468 382 422" stroke="url(#ss-shine)" stroke-width="14" fill="none" opacity="0.34"></path>
+        <path d="M284 92c22 0 38 16 38 38 0 20-16 36-38 36-20 0-36-16-36-36 0-22 16-38 36-38Z" fill="#07190f" opacity="0.32"></path>
+        <path d="M270 126l24-10 24 10-24 12-24-12Z" fill="#8ee6a8" opacity="0.22"></path>
       </svg>`;
     }
     if (COLOR_THEME_KEYS.includes(themeKey)) {

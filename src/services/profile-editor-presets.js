@@ -155,6 +155,27 @@ const SIGNATURE_THEMES = [
     swatchStyle: "border-color:#ffd36e;background:linear-gradient(145deg,#180825 0%,#6732bd 54%,#ffd36e 100%);",
     premiumRequired: true,
   },
+  {
+    id: "anime_blush",
+    label: "Anime Blush",
+    description: "Pink anime character cameo",
+    swatchStyle: "border-color:#ff8fc7;background:radial-gradient(circle at 72% 28%,#ffffff 0 12%,transparent 13%),linear-gradient(145deg,#fff1fa 0%,#ff9ed1 54%,#caa7ff 100%);",
+    premiumRequired: true,
+  },
+  {
+    id: "cheetah_spots",
+    label: "Cheetah Skin",
+    description: "Wild spotted fur pattern",
+    swatchStyle: "border-color:#2b1608;background:radial-gradient(circle at 28% 32%,#2b1608 0 9%,transparent 10%),radial-gradient(circle at 68% 58%,#2b1608 0 8%,transparent 9%),linear-gradient(145deg,#f5c46b 0%,#b66a20 100%);",
+    premiumRequired: true,
+  },
+  {
+    id: "serpent_scale",
+    label: "Serpent Scale",
+    description: "Deep snake scale armor",
+    swatchStyle: "border-color:#8ee6a8;background:radial-gradient(circle at 50% 16%,rgba(142,230,168,.45) 0 9%,transparent 10%),linear-gradient(145deg,#07190f 0%,#155332 56%,#0b2a1a 100%);",
+    premiumRequired: true,
+  },
 ];
 
 const COLOR_THEMES = [

@@ -13,6 +13,9 @@ describe("profile theme and avatar frame normalization", () => {
     expect(PROFILE_THEME_KEYS).toContain("color_blue");
     expect(PROFILE_THEME_KEYS).toContain("heritage_crest");
     expect(PROFILE_THEME_KEYS).toContain("football_pitch");
+    expect(PROFILE_THEME_KEYS).toContain("anime_blush");
+    expect(PROFILE_THEME_KEYS).toContain("cheetah_spots");
+    expect(PROFILE_THEME_KEYS).toContain("serpent_scale");
     expect(PROFILE_AVATAR_FRAME_KEYS).toContain("chrome_ring");
     expect(PROFILE_AVATAR_FRAME_KEYS).toContain("orbit_dots");
     expect(PROFILE_AVATAR_FRAME_KEYS).toContain("laurel_wreath");
@@ -25,6 +28,7 @@ describe("profile theme and avatar frame normalization", () => {
   test("keeps premium theme, frame, and emoji background for premium plan", () => {
     expect(normalizeThemeByPlan("graffiti_neon", "premium")).toBe("graffiti_neon");
     expect(normalizeThemeByPlan("heritage_crest", "premium")).toBe("heritage_crest");
+    expect(normalizeThemeByPlan("anime_blush", "premium")).toBe("anime_blush");
     expect(normalizeAvatarFrameByPlan("orbit_dots", "premium")).toBe("orbit_dots");
     expect(normalizeAvatarFrameByPlan("laurel_wreath", "premium")).toBe("laurel_wreath");
     expect(normalizeEmojiBackgroundByPlan("ghosts", "premium")).toBe("ghosts");

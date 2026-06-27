@@ -1714,7 +1714,10 @@ body[data-page="profile-page"] {
 #profile-card-live-preview[data-preview-theme="boxing_legend"],
 #profile-card-live-preview[data-preview-theme="basketball_court"],
 #profile-card-live-preview[data-preview-theme="football_pitch"],
-#profile-card-live-preview[data-preview-theme="olympic_gold"] {
+#profile-card-live-preview[data-preview-theme="olympic_gold"],
+#profile-card-live-preview[data-preview-theme="anime_blush"],
+#profile-card-live-preview[data-preview-theme="cheetah_spots"],
+#profile-card-live-preview[data-preview-theme="serpent_scale"] {
   --preview-page-bg:
     radial-gradient(circle at 18% 18%, var(--preview-sport-glow, rgba(255, 255, 255, 0.16)) 0%, transparent 40%),
     radial-gradient(circle at 82% 82%, var(--preview-sport-glow-soft, rgba(255, 255, 255, 0.08)) 0%, transparent 46%),
@@ -1834,6 +1837,39 @@ body[data-page="profile-page"] {
   --preview-sport-line-soft: rgba(231, 212, 255, 0.08);
   --preview-sport-glow: rgba(103, 50, 189, 0.2);
   --preview-sport-glow-soft: rgba(255, 211, 110, 0.12);
+}
+
+#profile-card-live-preview[data-preview-theme="anime_blush"] {
+  --preview-sport-deep: #fff1fa;
+  --preview-sport-base: #ff9ed1;
+  --preview-sport-surface: #ffe6f4;
+  --preview-sport-border: #ff8fc7;
+  --preview-sport-line: rgba(168, 116, 255, 0.16);
+  --preview-sport-line-soft: rgba(255, 255, 255, 0.22);
+  --preview-sport-glow: rgba(255, 98, 172, 0.22);
+  --preview-sport-glow-soft: rgba(202, 167, 255, 0.24);
+}
+
+#profile-card-live-preview[data-preview-theme="cheetah_spots"] {
+  --preview-sport-deep: #5a2b0d;
+  --preview-sport-base: #f5c46b;
+  --preview-sport-surface: #b66a20;
+  --preview-sport-border: #7b3f13;
+  --preview-sport-line: rgba(43, 22, 8, 0.18);
+  --preview-sport-line-soft: rgba(255, 240, 207, 0.1);
+  --preview-sport-glow: rgba(245, 196, 107, 0.2);
+  --preview-sport-glow-soft: rgba(43, 22, 8, 0.12);
+}
+
+#profile-card-live-preview[data-preview-theme="serpent_scale"] {
+  --preview-sport-deep: #07190f;
+  --preview-sport-base: #155332;
+  --preview-sport-surface: #0b2a1a;
+  --preview-sport-border: #236f43;
+  --preview-sport-line: rgba(142, 230, 168, 0.16);
+  --preview-sport-line-soft: rgba(236, 255, 241, 0.08);
+  --preview-sport-glow: rgba(142, 230, 168, 0.16);
+  --preview-sport-glow-soft: rgba(21, 83, 50, 0.18);
 }
 
 #profile-card-live-preview[data-preview-theme^="color_"] {
@@ -2603,7 +2639,8 @@ body[data-card-theme] #card-view-root>[data-card-view] {
 
 [data-card-theme="heritage_crest"] .unq-ref-overlay-svg,
 [data-card-theme="racing_green"] .unq-ref-overlay-svg,
-[data-card-theme="alpine_ski"] .unq-ref-overlay-svg {
+[data-card-theme="alpine_ski"] .unq-ref-overlay-svg,
+[data-card-theme="anime_blush"] .unq-ref-overlay-svg {
   opacity: 0.78;
   mix-blend-mode: normal;
 }
@@ -2611,14 +2648,16 @@ body[data-card-theme] #card-view-root>[data-card-view] {
 [data-card-theme="ivory_tennis"] .unq-ref-overlay-svg,
 [data-card-theme="polo_navy"] .unq-ref-overlay-svg,
 [data-card-theme="basketball_court"] .unq-ref-overlay-svg,
-[data-card-theme="olympic_gold"] .unq-ref-overlay-svg {
+[data-card-theme="olympic_gold"] .unq-ref-overlay-svg,
+[data-card-theme="serpent_scale"] .unq-ref-overlay-svg {
   opacity: 0.9;
   mix-blend-mode: screen;
 }
 
 [data-card-theme="grand_slam_clay"] .unq-ref-overlay-svg,
 [data-card-theme="boxing_legend"] .unq-ref-overlay-svg,
-[data-card-theme="football_pitch"] .unq-ref-overlay-svg {
+[data-card-theme="football_pitch"] .unq-ref-overlay-svg,
+[data-card-theme="cheetah_spots"] .unq-ref-overlay-svg {
   opacity: 0.82;
   mix-blend-mode: normal;
 }
@@ -2987,6 +3026,155 @@ body[data-card-theme] #card-view-root>[data-card-view] {
 
 [data-card-theme="olympic_gold"] .unq-ref-action-btn {
   border-radius: 4px 18px 4px 18px;
+}
+
+[data-card-theme="anime_blush"] .unq-ref-shell {
+  border-radius: 38px 38px 18px 38px;
+  border-width: 2px !important;
+  outline: 8px solid rgba(255, 255, 255, 0.36);
+}
+
+[data-card-theme="anime_blush"] .unq-ref-shell::before {
+  content: "";
+  position: absolute;
+  inset: 10px;
+  z-index: 0;
+  pointer-events: none;
+  border-radius: 30px 30px 14px 30px;
+  border: 1px solid rgba(168, 116, 255, 0.2);
+  background:
+    radial-gradient(circle at 86% 14%, rgba(255, 255, 255, 0.72) 0 22px, transparent 23px),
+    radial-gradient(circle at 17% 20%, rgba(255, 98, 172, 0.2) 0 14px, transparent 15px),
+    radial-gradient(circle at 82% 78%, rgba(168, 116, 255, 0.14) 0 34px, transparent 35px);
+}
+
+[data-card-theme="anime_blush"] .unq-ref-avatar-wrap {
+  transform: rotate(2deg);
+}
+
+[data-card-theme="anime_blush"] .unq-ref-avatar-img,
+[data-card-theme="anime_blush"] .unq-ref-avatar-fallback {
+  border-radius: 999px 999px 36px 36px;
+  box-shadow: 0 0 0 8px rgba(255, 255, 255, 0.46), 0 14px 28px rgba(255, 98, 172, 0.22);
+}
+
+[data-card-theme="anime_blush"] .unq-ref-avatar-wrap::after {
+  content: "";
+  position: absolute;
+  left: -10px;
+  top: 8px;
+  z-index: 4;
+  width: 22px;
+  height: 42px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #a874ff, #ff62ac);
+  transform: rotate(-24deg);
+  box-shadow: 102px 14px 0 -2px rgba(168, 116, 255, 0.72);
+}
+
+[data-card-theme="anime_blush"] .unq-ref-action-btn {
+  border-radius: 22px 22px 8px 22px;
+}
+
+[data-card-theme="anime_blush"] .unq-ref-top-badge::before {
+  content: "☆";
+  margin-right: 6px;
+}
+
+[data-card-theme="cheetah_spots"] .unq-ref-shell {
+  border-radius: 18px 40px 18px 40px;
+  border-width: 2px !important;
+  box-shadow: var(--theme-card-shadow, none), inset 0 0 0 1px rgba(43, 22, 8, 0.26);
+}
+
+[data-card-theme="cheetah_spots"] .unq-ref-shell::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 18% 14%, rgba(43, 22, 8, 0.3) 0 18px, transparent 19px),
+    radial-gradient(ellipse at 82% 20%, rgba(43, 22, 8, 0.24) 0 14px, transparent 15px),
+    radial-gradient(ellipse at 14% 78%, rgba(43, 22, 8, 0.24) 0 20px, transparent 21px),
+    radial-gradient(ellipse at 88% 82%, rgba(43, 22, 8, 0.22) 0 16px, transparent 17px),
+    repeating-linear-gradient(115deg, transparent 0 24px, rgba(255, 240, 207, 0.07) 24px 26px);
+}
+
+[data-card-theme="cheetah_spots"] .unq-ref-avatar-img,
+[data-card-theme="cheetah_spots"] .unq-ref-avatar-fallback {
+  border-radius: 44% 56% 52% 48% / 42% 58% 42% 58%;
+  box-shadow: -9px 9px 0 rgba(43, 22, 8, 0.24), 0 18px 32px rgba(43, 22, 8, 0.24);
+}
+
+[data-card-theme="cheetah_spots"] .unq-ref-avatar-wrap::after {
+  content: "";
+  position: absolute;
+  right: -7px;
+  top: 13px;
+  z-index: 4;
+  width: 18px;
+  height: 38px;
+  border-radius: 999px;
+  background: #2b1608;
+  transform: rotate(18deg);
+  box-shadow: -84px -10px 0 -2px rgba(43, 22, 8, 0.9);
+  opacity: 0.9;
+}
+
+[data-card-theme="cheetah_spots"] .unq-ref-action-btn,
+[data-card-theme="cheetah_spots"] .unq-ref-tag {
+  border-radius: 999px 10px 999px 10px;
+}
+
+[data-card-theme="cheetah_spots"] .unq-ref-name {
+  letter-spacing: 0.02em;
+  text-shadow: 0 2px 0 rgba(43, 22, 8, 0.18);
+}
+
+[data-card-theme="serpent_scale"] .unq-ref-shell {
+  border-radius: 8px 28px 8px 28px;
+  border-width: 2px !important;
+  clip-path: polygon(0 18px, 18px 0, 100% 0, 100% calc(100% - 18px), calc(100% - 18px) 100%, 0 100%);
+}
+
+[data-card-theme="serpent_scale"] .unq-ref-shell::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(142, 230, 168, 0.16) 0 12px, transparent 13px) 0 0 / 42px 32px,
+    linear-gradient(135deg, transparent 0 44%, rgba(142, 230, 168, 0.22) 44% 45%, transparent 45% 100%);
+}
+
+[data-card-theme="serpent_scale"] .unq-ref-avatar-img,
+[data-card-theme="serpent_scale"] .unq-ref-avatar-fallback {
+  border-radius: 14px 999px 14px 999px;
+  box-shadow: 0 0 0 3px rgba(142, 230, 168, 0.32), 0 16px 34px rgba(7, 25, 15, 0.42);
+}
+
+[data-card-theme="serpent_scale"] .unq-ref-avatar-wrap::after {
+  content: "";
+  position: absolute;
+  right: -18px;
+  top: 40px;
+  z-index: 4;
+  width: 36px;
+  height: 12px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #8ee6a8, transparent);
+  transform: rotate(-18deg);
+  filter: blur(0.2px);
+}
+
+[data-card-theme="serpent_scale"] .unq-ref-action-btn {
+  border-radius: 4px 20px 4px 20px;
+}
+
+[data-card-theme="serpent_scale"] .unq-ref-divider {
+  background: linear-gradient(90deg, transparent, rgba(142, 230, 168, 0.5), transparent);
 }
 
 .unq-ref-top-badge {
@@ -5422,7 +5610,10 @@ body[data-card-theme="alpine_ski"],
 body[data-card-theme="boxing_legend"],
 body[data-card-theme="basketball_court"],
 body[data-card-theme="football_pitch"],
-body[data-card-theme="olympic_gold"] {
+body[data-card-theme="olympic_gold"],
+body[data-card-theme="anime_blush"],
+body[data-card-theme="cheetah_spots"],
+body[data-card-theme="serpent_scale"] {
   background:
     radial-gradient(circle at 18% 18%, var(--sport-theme-glow) 0%, transparent 40%),
     radial-gradient(circle at 82% 82%, var(--sport-theme-glow-soft) 0%, transparent 46%),
@@ -5443,7 +5634,10 @@ body[data-card-theme="alpine_ski"]::before,
 body[data-card-theme="boxing_legend"]::before,
 body[data-card-theme="basketball_court"]::before,
 body[data-card-theme="football_pitch"]::before,
-body[data-card-theme="olympic_gold"]::before {
+body[data-card-theme="olympic_gold"]::before,
+body[data-card-theme="anime_blush"]::before,
+body[data-card-theme="cheetah_spots"]::before,
+body[data-card-theme="serpent_scale"]::before {
   content: "";
   position: fixed;
   inset: 0;
@@ -5592,6 +5786,48 @@ body[data-card-theme="olympic_gold"] {
   --sport-theme-ui-hover: rgba(56, 22, 102, 0.94);
   --sport-theme-ui-border: rgba(255, 211, 110, 0.34);
   --sport-theme-ui-text: #fff6d8;
+}
+
+body[data-card-theme="anime_blush"] {
+  --sport-theme-deep: #fff1fa;
+  --sport-theme-base: #ff9ed1;
+  --sport-theme-surface: #ffe6f4;
+  --sport-theme-line: rgba(168, 116, 255, 0.16);
+  --sport-theme-line-soft: rgba(255, 255, 255, 0.22);
+  --sport-theme-glow: rgba(255, 98, 172, 0.22);
+  --sport-theme-glow-soft: rgba(202, 167, 255, 0.24);
+  --sport-theme-ui-bg: rgba(255, 246, 252, 0.92);
+  --sport-theme-ui-hover: rgba(255, 230, 244, 0.98);
+  --sport-theme-ui-border: rgba(168, 116, 255, 0.34);
+  --sport-theme-ui-text: #69264d;
+}
+
+body[data-card-theme="cheetah_spots"] {
+  --sport-theme-deep: #5a2b0d;
+  --sport-theme-base: #f5c46b;
+  --sport-theme-surface: #b66a20;
+  --sport-theme-line: rgba(43, 22, 8, 0.18);
+  --sport-theme-line-soft: rgba(255, 240, 207, 0.1);
+  --sport-theme-glow: rgba(245, 196, 107, 0.2);
+  --sport-theme-glow-soft: rgba(43, 22, 8, 0.12);
+  --sport-theme-ui-bg: rgba(70, 34, 9, 0.88);
+  --sport-theme-ui-hover: rgba(99, 49, 13, 0.94);
+  --sport-theme-ui-border: rgba(43, 22, 8, 0.34);
+  --sport-theme-ui-text: #fff0cf;
+}
+
+body[data-card-theme="serpent_scale"] {
+  --sport-theme-deep: #07190f;
+  --sport-theme-base: #155332;
+  --sport-theme-surface: #0b2a1a;
+  --sport-theme-line: rgba(142, 230, 168, 0.16);
+  --sport-theme-line-soft: rgba(236, 255, 241, 0.08);
+  --sport-theme-glow: rgba(142, 230, 168, 0.16);
+  --sport-theme-glow-soft: rgba(21, 83, 50, 0.18);
+  --sport-theme-ui-bg: rgba(6, 24, 14, 0.88);
+  --sport-theme-ui-hover: rgba(10, 42, 26, 0.94);
+  --sport-theme-ui-border: rgba(142, 230, 168, 0.34);
+  --sport-theme-ui-text: #ecfff1;
 }
 
 body[data-card-theme^="color_"] {
@@ -5845,7 +6081,13 @@ body[data-card-theme="color_pink"] {
 [data-card-theme="football_pitch"] .interactive-btn,
 [data-card-theme="football_pitch"] #card-slug-search-form>div,
 [data-card-theme="olympic_gold"] .interactive-btn,
-[data-card-theme="olympic_gold"] #card-slug-search-form>div {
+[data-card-theme="olympic_gold"] #card-slug-search-form>div,
+[data-card-theme="anime_blush"] .interactive-btn,
+[data-card-theme="anime_blush"] #card-slug-search-form>div,
+[data-card-theme="cheetah_spots"] .interactive-btn,
+[data-card-theme="cheetah_spots"] #card-slug-search-form>div,
+[data-card-theme="serpent_scale"] .interactive-btn,
+[data-card-theme="serpent_scale"] #card-slug-search-form>div {
   background: var(--sport-theme-ui-bg) !important;
   border-color: var(--sport-theme-ui-border) !important;
   color: var(--sport-theme-ui-text) !important;
@@ -5862,7 +6104,10 @@ body[data-card-theme="color_pink"] {
 [data-card-theme="boxing_legend"] .interactive-btn:hover,
 [data-card-theme="basketball_court"] .interactive-btn:hover,
 [data-card-theme="football_pitch"] .interactive-btn:hover,
-[data-card-theme="olympic_gold"] .interactive-btn:hover {
+[data-card-theme="olympic_gold"] .interactive-btn:hover,
+[data-card-theme="anime_blush"] .interactive-btn:hover,
+[data-card-theme="cheetah_spots"] .interactive-btn:hover,
+[data-card-theme="serpent_scale"] .interactive-btn:hover {
   background: var(--sport-theme-ui-hover) !important;
 }
 
