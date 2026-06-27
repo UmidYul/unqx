@@ -85,6 +85,76 @@ const SIGNATURE_THEMES = [
     swatchStyle: "border-color:#5ef7ff;background:linear-gradient(145deg,#12111d 0%,#19142a 48%,#0f1220 100%);box-shadow:0 0 0 1px rgba(242,132,255,0.25) inset;",
     premiumRequired: true,
   },
+  {
+    id: "heritage_crest",
+    label: "Heritage Crest",
+    description: "Classic academy crest",
+    swatchStyle: "border-color:#b69a5f;background:linear-gradient(145deg,#f4ead5 0%,#1e2d24 100%);",
+    premiumRequired: true,
+  },
+  {
+    id: "ivory_tennis",
+    label: "Ivory Tennis",
+    description: "Wimbledon court classic",
+    swatchStyle: "border-color:#7a8f52;background:linear-gradient(145deg,#fbf7e8 0%,#2c5b3f 100%);",
+    premiumRequired: true,
+  },
+  {
+    id: "grand_slam_clay",
+    label: "Grand Slam Clay",
+    description: "Clay court prestige",
+    swatchStyle: "border-color:#f0c37a;background:linear-gradient(145deg,#3f2119 0%,#b65b31 100%);",
+    premiumRequired: true,
+  },
+  {
+    id: "racing_green",
+    label: "Racing Green",
+    description: "Vintage motorsport",
+    swatchStyle: "border-color:#d8b35a;background:linear-gradient(145deg,#071d16 0%,#0f3a2a 100%);",
+    premiumRequired: true,
+  },
+  {
+    id: "polo_navy",
+    label: "Polo Navy",
+    description: "Equestrian club navy",
+    swatchStyle: "border-color:#c8a45b;background:linear-gradient(145deg,#071428 0%,#182c55 100%);",
+    premiumRequired: true,
+  },
+  {
+    id: "alpine_ski",
+    label: "Alpine Ski",
+    description: "Snow sport gloss",
+    swatchStyle: "border-color:#8fb8d8;background:linear-gradient(145deg,#f7fbff 0%,#2c638e 100%);",
+    premiumRequired: true,
+  },
+  {
+    id: "boxing_legend",
+    label: "Boxing Legend",
+    description: "Classic fight night",
+    swatchStyle: "border-color:#c8a24c;background:linear-gradient(145deg,#24090d 0%,#8f1e28 100%);",
+    premiumRequired: true,
+  },
+  {
+    id: "basketball_court",
+    label: "Basketball Court",
+    description: "Hardwood arena",
+    swatchStyle: "border-color:#1f2937;background:linear-gradient(145deg,#f0b05d 0%,#8b4b20 100%);",
+    premiumRequired: true,
+  },
+  {
+    id: "football_pitch",
+    label: "Football Pitch",
+    description: "Stadium grass lines",
+    swatchStyle: "border-color:#ffffff;background:linear-gradient(145deg,#0d4a2b 0%,#38a052 100%);",
+    premiumRequired: true,
+  },
+  {
+    id: "olympic_gold",
+    label: "Olympic Gold",
+    description: "Champion ceremony",
+    swatchStyle: "border-color:#f5d27a;background:linear-gradient(145deg,#22180a 0%,#c7922e 100%);",
+    premiumRequired: true,
+  },
 ];
 
 const COLOR_THEMES = [
@@ -157,6 +227,16 @@ const AVATAR_FRAMES = [
   { id: "drip_outline", label: "Drip Outline", description: "Краска с потёками", premiumRequired: true },
   { id: "tape_collage", label: "Tape Collage", description: "Коллаж из лент", premiumRequired: true },
   { id: "orbit_dots", label: "Orbit Dots", description: "Орбиты и точки", premiumRequired: true },
+  { id: "laurel_wreath", label: "Laurel Wreath", description: "Лавровый венок", premiumRequired: true },
+  { id: "trophy_gold", label: "Trophy Gold", description: "Кубок и золото", premiumRequired: true },
+  { id: "tennis_lines", label: "Tennis Lines", description: "Линии корта", premiumRequired: true },
+  { id: "racing_stripes", label: "Racing Stripes", description: "Гоночные полосы", premiumRequired: true },
+  { id: "varsity_patch", label: "Varsity Patch", description: "Университетский патч", premiumRequired: true },
+  { id: "boxing_rope", label: "Boxing Rope", description: "Ринг и канаты", premiumRequired: true },
+  { id: "basketball_arc", label: "Basketball Arc", description: "Дуга площадки", premiumRequired: true },
+  { id: "football_stitch", label: "Football Stitch", description: "Швы мяча", premiumRequired: true },
+  { id: "stopwatch_ring", label: "Stopwatch Ring", description: "Секундомер", premiumRequired: true },
+  { id: "medal_ribbon", label: "Medal Ribbon", description: "Медальная лента", premiumRequired: true },
 ];
 
 const EMOJI_BACKGROUND_PACKS = [

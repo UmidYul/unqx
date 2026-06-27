@@ -1705,6 +1705,137 @@ body[data-page="profile-page"] {
     radial-gradient(circle at 78% 72%, rgba(242, 132, 255, 0.18) 0 2px, transparent 2px 18px);
 }
 
+#profile-card-live-preview[data-preview-theme="heritage_crest"],
+#profile-card-live-preview[data-preview-theme="ivory_tennis"],
+#profile-card-live-preview[data-preview-theme="grand_slam_clay"],
+#profile-card-live-preview[data-preview-theme="racing_green"],
+#profile-card-live-preview[data-preview-theme="polo_navy"],
+#profile-card-live-preview[data-preview-theme="alpine_ski"],
+#profile-card-live-preview[data-preview-theme="boxing_legend"],
+#profile-card-live-preview[data-preview-theme="basketball_court"],
+#profile-card-live-preview[data-preview-theme="football_pitch"],
+#profile-card-live-preview[data-preview-theme="olympic_gold"] {
+  --preview-page-bg:
+    radial-gradient(circle at 18% 18%, var(--preview-sport-glow, rgba(255, 255, 255, 0.16)) 0%, transparent 40%),
+    radial-gradient(circle at 82% 82%, var(--preview-sport-glow-soft, rgba(255, 255, 255, 0.08)) 0%, transparent 46%),
+    linear-gradient(160deg, var(--preview-sport-deep) 0%, var(--preview-sport-base) 52%, var(--preview-sport-surface) 100%);
+  --preview-border-color: var(--preview-sport-border);
+  --preview-screen-opacity: 0.56;
+  --preview-screen-pattern:
+    repeating-linear-gradient(128deg, transparent 0 48px, var(--preview-sport-line) 48px 50px),
+    repeating-linear-gradient(58deg, transparent 0 72px, var(--preview-sport-line-soft) 72px 74px);
+}
+
+#profile-card-live-preview[data-preview-theme="heritage_crest"] {
+  --preview-sport-deep: #101b15;
+  --preview-sport-base: #2f4938;
+  --preview-sport-surface: #1e2d24;
+  --preview-sport-border: #6f5d36;
+  --preview-sport-line: rgba(182, 154, 95, 0.12);
+  --preview-sport-line-soft: rgba(255, 247, 232, 0.08);
+  --preview-sport-glow: rgba(182, 154, 95, 0.16);
+  --preview-sport-glow-soft: rgba(217, 199, 154, 0.1);
+}
+
+#profile-card-live-preview[data-preview-theme="ivory_tennis"] {
+  --preview-sport-deep: #fbf7e8;
+  --preview-sport-base: #4d7d53;
+  --preview-sport-surface: #2c5b3f;
+  --preview-sport-border: #7a8f52;
+  --preview-sport-line: rgba(122, 143, 82, 0.14);
+  --preview-sport-line-soft: rgba(255, 255, 255, 0.14);
+  --preview-sport-glow: rgba(215, 232, 137, 0.16);
+  --preview-sport-glow-soft: rgba(251, 247, 232, 0.22);
+}
+
+#profile-card-live-preview[data-preview-theme="grand_slam_clay"] {
+  --preview-sport-deep: #3f2119;
+  --preview-sport-base: #b65b31;
+  --preview-sport-surface: #7f3f28;
+  --preview-sport-border: #b56b43;
+  --preview-sport-line: rgba(240, 195, 122, 0.12);
+  --preview-sport-line-soft: rgba(255, 244, 231, 0.08);
+  --preview-sport-glow: rgba(240, 195, 122, 0.15);
+  --preview-sport-glow-soft: rgba(255, 216, 173, 0.1);
+}
+
+#profile-card-live-preview[data-preview-theme="racing_green"] {
+  --preview-sport-deep: #071d16;
+  --preview-sport-base: #13543a;
+  --preview-sport-surface: #0f3a2a;
+  --preview-sport-border: #2e6a4d;
+  --preview-sport-line: rgba(216, 179, 90, 0.12);
+  --preview-sport-line-soft: rgba(244, 240, 221, 0.08);
+  --preview-sport-glow: rgba(216, 179, 90, 0.14);
+  --preview-sport-glow-soft: rgba(216, 201, 149, 0.1);
+}
+
+#profile-card-live-preview[data-preview-theme="polo_navy"] {
+  --preview-sport-deep: #071428;
+  --preview-sport-base: #243d72;
+  --preview-sport-surface: #182c55;
+  --preview-sport-border: #334d83;
+  --preview-sport-line: rgba(200, 164, 91, 0.12);
+  --preview-sport-line-soft: rgba(242, 246, 255, 0.08);
+  --preview-sport-glow: rgba(200, 164, 91, 0.14);
+  --preview-sport-glow-soft: rgba(202, 215, 240, 0.1);
+}
+
+#profile-card-live-preview[data-preview-theme="alpine_ski"] {
+  --preview-sport-deep: #2c638e;
+  --preview-sport-base: #f7fbff;
+  --preview-sport-surface: #dfeef8;
+  --preview-sport-border: #b5d0e3;
+  --preview-sport-line: rgba(143, 184, 216, 0.18);
+  --preview-sport-line-soft: rgba(255, 255, 255, 0.28);
+  --preview-sport-glow: rgba(255, 255, 255, 0.28);
+  --preview-sport-glow-soft: rgba(143, 184, 216, 0.16);
+}
+
+#profile-card-live-preview[data-preview-theme="boxing_legend"] {
+  --preview-sport-deep: #24090d;
+  --preview-sport-base: #8f1e28;
+  --preview-sport-surface: #4c1118;
+  --preview-sport-border: #7a2b30;
+  --preview-sport-line: rgba(200, 162, 76, 0.12);
+  --preview-sport-line-soft: rgba(255, 241, 232, 0.08);
+  --preview-sport-glow: rgba(200, 162, 76, 0.14);
+  --preview-sport-glow-soft: rgba(240, 198, 182, 0.1);
+}
+
+#profile-card-live-preview[data-preview-theme="basketball_court"] {
+  --preview-sport-deep: #4d260f;
+  --preview-sport-base: #f0b05d;
+  --preview-sport-surface: #8b4b20;
+  --preview-sport-border: #b16d35;
+  --preview-sport-line: rgba(31, 41, 55, 0.16);
+  --preview-sport-line-soft: rgba(255, 244, 228, 0.1);
+  --preview-sport-glow: rgba(240, 176, 93, 0.18);
+  --preview-sport-glow-soft: rgba(255, 224, 177, 0.12);
+}
+
+#profile-card-live-preview[data-preview-theme="football_pitch"] {
+  --preview-sport-deep: #062415;
+  --preview-sport-base: #38a052;
+  --preview-sport-surface: #0d4a2b;
+  --preview-sport-border: #4eb76a;
+  --preview-sport-line: rgba(255, 255, 255, 0.14);
+  --preview-sport-line-soft: rgba(207, 255, 240, 0.08);
+  --preview-sport-glow: rgba(255, 255, 255, 0.12);
+  --preview-sport-glow-soft: rgba(154, 213, 166, 0.12);
+}
+
+#profile-card-live-preview[data-preview-theme="olympic_gold"] {
+  --preview-sport-deep: #22180a;
+  --preview-sport-base: #c7922e;
+  --preview-sport-surface: #8a651f;
+  --preview-sport-border: #b98a32;
+  --preview-sport-line: rgba(245, 210, 122, 0.14);
+  --preview-sport-line-soft: rgba(255, 247, 223, 0.08);
+  --preview-sport-glow: rgba(245, 210, 122, 0.16);
+  --preview-sport-glow-soft: rgba(243, 223, 173, 0.1);
+}
+
 #profile-card-live-preview[data-preview-theme^="color_"] {
   --preview-page-bg:
     radial-gradient(circle at 18% 18%, var(--preview-color-glow, rgba(255, 255, 255, 0.16)) 0%, transparent 40%),
@@ -2882,6 +3013,25 @@ body[data-card-theme] #card-view-root>[data-card-view] {
 
 .unq-ref-avatar-frame--orbit-dots {
   inset: -13px;
+}
+
+.unq-ref-avatar-frame--laurel-wreath,
+.unq-ref-avatar-frame--trophy-gold,
+.unq-ref-avatar-frame--tennis-lines,
+.unq-ref-avatar-frame--basketball-arc,
+.unq-ref-avatar-frame--football-stitch,
+.unq-ref-avatar-frame--stopwatch-ring,
+.unq-ref-avatar-frame--medal-ribbon {
+  inset: -14px;
+}
+
+.unq-ref-avatar-frame--racing-stripes {
+  inset: -12px -16px;
+}
+
+.unq-ref-avatar-frame--varsity-patch,
+.unq-ref-avatar-frame--boxing-rope {
+  inset: -15px;
 }
 
 .unq-ref-name-wrap {
@@ -4875,6 +5025,187 @@ body[data-card-theme="graffiti_neon"]::before {
   z-index: 0;
 }
 
+body[data-card-theme="heritage_crest"],
+body[data-card-theme="ivory_tennis"],
+body[data-card-theme="grand_slam_clay"],
+body[data-card-theme="racing_green"],
+body[data-card-theme="polo_navy"],
+body[data-card-theme="alpine_ski"],
+body[data-card-theme="boxing_legend"],
+body[data-card-theme="basketball_court"],
+body[data-card-theme="football_pitch"],
+body[data-card-theme="olympic_gold"] {
+  background:
+    radial-gradient(circle at 18% 18%, var(--sport-theme-glow) 0%, transparent 40%),
+    radial-gradient(circle at 82% 82%, var(--sport-theme-glow-soft) 0%, transparent 46%),
+    linear-gradient(160deg, var(--sport-theme-deep) 0%, var(--sport-theme-base) 52%, var(--sport-theme-surface) 100%);
+  position: relative;
+  --theme-screen-opacity: 0.52;
+  --theme-screen-pattern:
+    repeating-linear-gradient(128deg, transparent 0 48px, var(--sport-theme-line) 48px 50px),
+    repeating-linear-gradient(58deg, transparent 0 72px, var(--sport-theme-line-soft) 72px 74px);
+}
+
+body[data-card-theme="heritage_crest"]::before,
+body[data-card-theme="ivory_tennis"]::before,
+body[data-card-theme="grand_slam_clay"]::before,
+body[data-card-theme="racing_green"]::before,
+body[data-card-theme="polo_navy"]::before,
+body[data-card-theme="alpine_ski"]::before,
+body[data-card-theme="boxing_legend"]::before,
+body[data-card-theme="basketball_court"]::before,
+body[data-card-theme="football_pitch"]::before,
+body[data-card-theme="olympic_gold"]::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-image:
+    radial-gradient(circle at 20% 24%, var(--sport-theme-glow) 0%, transparent 40%),
+    radial-gradient(circle at 82% 78%, var(--sport-theme-glow-soft) 0%, transparent 44%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+body[data-card-theme="heritage_crest"] {
+  --sport-theme-deep: #101b15;
+  --sport-theme-base: #2f4938;
+  --sport-theme-surface: #1e2d24;
+  --sport-theme-line: rgba(182, 154, 95, 0.12);
+  --sport-theme-line-soft: rgba(255, 247, 232, 0.08);
+  --sport-theme-glow: rgba(182, 154, 95, 0.16);
+  --sport-theme-glow-soft: rgba(217, 199, 154, 0.1);
+  --sport-theme-ui-bg: rgba(30, 45, 36, 0.86);
+  --sport-theme-ui-hover: rgba(43, 66, 50, 0.92);
+  --sport-theme-ui-border: rgba(182, 154, 95, 0.34);
+  --sport-theme-ui-text: #fff7e8;
+}
+
+body[data-card-theme="ivory_tennis"] {
+  --sport-theme-deep: #fbf7e8;
+  --sport-theme-base: #4d7d53;
+  --sport-theme-surface: #2c5b3f;
+  --sport-theme-line: rgba(122, 143, 82, 0.14);
+  --sport-theme-line-soft: rgba(255, 255, 255, 0.14);
+  --sport-theme-glow: rgba(215, 232, 137, 0.16);
+  --sport-theme-glow-soft: rgba(251, 247, 232, 0.22);
+  --sport-theme-ui-bg: rgba(251, 247, 232, 0.9);
+  --sport-theme-ui-hover: rgba(246, 239, 220, 0.96);
+  --sport-theme-ui-border: rgba(122, 143, 82, 0.34);
+  --sport-theme-ui-text: #173222;
+}
+
+body[data-card-theme="grand_slam_clay"] {
+  --sport-theme-deep: #3f2119;
+  --sport-theme-base: #b65b31;
+  --sport-theme-surface: #7f3f28;
+  --sport-theme-line: rgba(240, 195, 122, 0.12);
+  --sport-theme-line-soft: rgba(255, 244, 231, 0.08);
+  --sport-theme-glow: rgba(240, 195, 122, 0.15);
+  --sport-theme-glow-soft: rgba(255, 216, 173, 0.1);
+  --sport-theme-ui-bg: rgba(74, 35, 24, 0.86);
+  --sport-theme-ui-hover: rgba(92, 43, 27, 0.94);
+  --sport-theme-ui-border: rgba(240, 195, 122, 0.34);
+  --sport-theme-ui-text: #fff4e7;
+}
+
+body[data-card-theme="racing_green"] {
+  --sport-theme-deep: #071d16;
+  --sport-theme-base: #13543a;
+  --sport-theme-surface: #0f3a2a;
+  --sport-theme-line: rgba(216, 179, 90, 0.12);
+  --sport-theme-line-soft: rgba(244, 240, 221, 0.08);
+  --sport-theme-glow: rgba(216, 179, 90, 0.14);
+  --sport-theme-glow-soft: rgba(216, 201, 149, 0.1);
+  --sport-theme-ui-bg: rgba(11, 41, 30, 0.86);
+  --sport-theme-ui-hover: rgba(16, 55, 40, 0.94);
+  --sport-theme-ui-border: rgba(216, 179, 90, 0.34);
+  --sport-theme-ui-text: #f4f0dd;
+}
+
+body[data-card-theme="polo_navy"] {
+  --sport-theme-deep: #071428;
+  --sport-theme-base: #243d72;
+  --sport-theme-surface: #182c55;
+  --sport-theme-line: rgba(200, 164, 91, 0.12);
+  --sport-theme-line-soft: rgba(242, 246, 255, 0.08);
+  --sport-theme-glow: rgba(200, 164, 91, 0.14);
+  --sport-theme-glow-soft: rgba(202, 215, 240, 0.1);
+  --sport-theme-ui-bg: rgba(14, 28, 56, 0.88);
+  --sport-theme-ui-hover: rgba(23, 45, 86, 0.94);
+  --sport-theme-ui-border: rgba(200, 164, 91, 0.34);
+  --sport-theme-ui-text: #f2f6ff;
+}
+
+body[data-card-theme="alpine_ski"] {
+  --sport-theme-deep: #2c638e;
+  --sport-theme-base: #f7fbff;
+  --sport-theme-surface: #dfeef8;
+  --sport-theme-line: rgba(143, 184, 216, 0.18);
+  --sport-theme-line-soft: rgba(255, 255, 255, 0.28);
+  --sport-theme-glow: rgba(255, 255, 255, 0.28);
+  --sport-theme-glow-soft: rgba(143, 184, 216, 0.16);
+  --sport-theme-ui-bg: rgba(247, 251, 255, 0.92);
+  --sport-theme-ui-hover: rgba(235, 246, 255, 0.98);
+  --sport-theme-ui-border: rgba(87, 133, 166, 0.32);
+  --sport-theme-ui-text: #17334b;
+}
+
+body[data-card-theme="boxing_legend"] {
+  --sport-theme-deep: #24090d;
+  --sport-theme-base: #8f1e28;
+  --sport-theme-surface: #4c1118;
+  --sport-theme-line: rgba(200, 162, 76, 0.12);
+  --sport-theme-line-soft: rgba(255, 241, 232, 0.08);
+  --sport-theme-glow: rgba(200, 162, 76, 0.14);
+  --sport-theme-glow-soft: rgba(240, 198, 182, 0.1);
+  --sport-theme-ui-bg: rgba(48, 11, 16, 0.88);
+  --sport-theme-ui-hover: rgba(69, 14, 22, 0.94);
+  --sport-theme-ui-border: rgba(200, 162, 76, 0.34);
+  --sport-theme-ui-text: #fff1e8;
+}
+
+body[data-card-theme="basketball_court"] {
+  --sport-theme-deep: #4d260f;
+  --sport-theme-base: #f0b05d;
+  --sport-theme-surface: #8b4b20;
+  --sport-theme-line: rgba(31, 41, 55, 0.16);
+  --sport-theme-line-soft: rgba(255, 244, 228, 0.1);
+  --sport-theme-glow: rgba(240, 176, 93, 0.18);
+  --sport-theme-glow-soft: rgba(255, 224, 177, 0.12);
+  --sport-theme-ui-bg: rgba(92, 45, 17, 0.86);
+  --sport-theme-ui-hover: rgba(117, 58, 22, 0.94);
+  --sport-theme-ui-border: rgba(31, 41, 55, 0.28);
+  --sport-theme-ui-text: #fff4e4;
+}
+
+body[data-card-theme="football_pitch"] {
+  --sport-theme-deep: #062415;
+  --sport-theme-base: #38a052;
+  --sport-theme-surface: #0d4a2b;
+  --sport-theme-line: rgba(255, 255, 255, 0.14);
+  --sport-theme-line-soft: rgba(207, 255, 240, 0.08);
+  --sport-theme-glow: rgba(255, 255, 255, 0.12);
+  --sport-theme-glow-soft: rgba(154, 213, 166, 0.12);
+  --sport-theme-ui-bg: rgba(8, 47, 27, 0.86);
+  --sport-theme-ui-hover: rgba(14, 67, 38, 0.94);
+  --sport-theme-ui-border: rgba(255, 255, 255, 0.3);
+  --sport-theme-ui-text: #f4fff5;
+}
+
+body[data-card-theme="olympic_gold"] {
+  --sport-theme-deep: #22180a;
+  --sport-theme-base: #c7922e;
+  --sport-theme-surface: #8a651f;
+  --sport-theme-line: rgba(245, 210, 122, 0.14);
+  --sport-theme-line-soft: rgba(255, 247, 223, 0.08);
+  --sport-theme-glow: rgba(245, 210, 122, 0.16);
+  --sport-theme-glow-soft: rgba(243, 223, 173, 0.1);
+  --sport-theme-ui-bg: rgba(55, 39, 13, 0.88);
+  --sport-theme-ui-hover: rgba(78, 56, 18, 0.94);
+  --sport-theme-ui-border: rgba(245, 210, 122, 0.34);
+  --sport-theme-ui-text: #fff7df;
+}
+
 body[data-card-theme^="color_"] {
   background:
     radial-gradient(circle at 18% 18%, var(--card-theme-glow) 0%, transparent 40%),
@@ -5105,6 +5436,46 @@ body[data-card-theme="color_pink"] {
 [data-card-theme="graffiti_neon"] .interactive-btn:hover {
   background: rgba(22, 26, 40, 0.92) !important;
   border-color: rgba(242, 132, 255, 0.4) !important;
+}
+
+[data-card-theme="heritage_crest"] .interactive-btn,
+[data-card-theme="heritage_crest"] #card-slug-search-form>div,
+[data-card-theme="ivory_tennis"] .interactive-btn,
+[data-card-theme="ivory_tennis"] #card-slug-search-form>div,
+[data-card-theme="grand_slam_clay"] .interactive-btn,
+[data-card-theme="grand_slam_clay"] #card-slug-search-form>div,
+[data-card-theme="racing_green"] .interactive-btn,
+[data-card-theme="racing_green"] #card-slug-search-form>div,
+[data-card-theme="polo_navy"] .interactive-btn,
+[data-card-theme="polo_navy"] #card-slug-search-form>div,
+[data-card-theme="alpine_ski"] .interactive-btn,
+[data-card-theme="alpine_ski"] #card-slug-search-form>div,
+[data-card-theme="boxing_legend"] .interactive-btn,
+[data-card-theme="boxing_legend"] #card-slug-search-form>div,
+[data-card-theme="basketball_court"] .interactive-btn,
+[data-card-theme="basketball_court"] #card-slug-search-form>div,
+[data-card-theme="football_pitch"] .interactive-btn,
+[data-card-theme="football_pitch"] #card-slug-search-form>div,
+[data-card-theme="olympic_gold"] .interactive-btn,
+[data-card-theme="olympic_gold"] #card-slug-search-form>div {
+  background: var(--sport-theme-ui-bg) !important;
+  border-color: var(--sport-theme-ui-border) !important;
+  color: var(--sport-theme-ui-text) !important;
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+
+[data-card-theme="heritage_crest"] .interactive-btn:hover,
+[data-card-theme="ivory_tennis"] .interactive-btn:hover,
+[data-card-theme="grand_slam_clay"] .interactive-btn:hover,
+[data-card-theme="racing_green"] .interactive-btn:hover,
+[data-card-theme="polo_navy"] .interactive-btn:hover,
+[data-card-theme="alpine_ski"] .interactive-btn:hover,
+[data-card-theme="boxing_legend"] .interactive-btn:hover,
+[data-card-theme="basketball_court"] .interactive-btn:hover,
+[data-card-theme="football_pitch"] .interactive-btn:hover,
+[data-card-theme="olympic_gold"] .interactive-btn:hover {
+  background: var(--sport-theme-ui-hover) !important;
 }
 
 [data-card-theme^="color_"] .interactive-btn,

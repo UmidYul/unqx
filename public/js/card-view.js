@@ -22,6 +22,16 @@
     "nebula_glass",
     "velours",
     "graffiti_neon",
+    "heritage_crest",
+    "ivory_tennis",
+    "grand_slam_clay",
+    "racing_green",
+    "polo_navy",
+    "alpine_ski",
+    "boxing_legend",
+    "basketball_court",
+    "football_pitch",
+    "olympic_gold",
     ...COLOR_THEME_KEYS,
   ];
   const AVATAR_FRAME_KEYS = [
@@ -35,6 +45,16 @@
     "drip_outline",
     "tape_collage",
     "orbit_dots",
+    "laurel_wreath",
+    "trophy_gold",
+    "tennis_lines",
+    "racing_stripes",
+    "varsity_patch",
+    "boxing_rope",
+    "basketball_arc",
+    "football_stitch",
+    "stopwatch_ring",
+    "medal_ribbon",
   ];
   const EMOJI_BACKGROUND_PACK_KEYS = [
     "none",
@@ -615,6 +635,128 @@
       buttonShineGradient: "none",
     },
     graffiti_neon: createGraffitiTheme(),
+    heritage_crest: createMonochromeTheme({
+      surfaceBg: "#1e2d24",
+      base: "#2f4938",
+      deep: "#101b15",
+      accent: "#b69a5f",
+      text: "#fff7e8",
+      role: "#d9c79a",
+      muted: "#b9aa83",
+      buttonText: "#17130b",
+      badgeText: "#efe1bd",
+      border: "#6f5d36",
+    }),
+    ivory_tennis: createMonochromeTheme({
+      surfaceBg: "#2c5b3f",
+      base: "#4d7d53",
+      deep: "#fbf7e8",
+      accent: "#d7e889",
+      text: "#173222",
+      role: "#385a3d",
+      muted: "#607a55",
+      buttonText: "#173222",
+      badgeText: "#29492f",
+      border: "#7a8f52",
+      isLight: true,
+    }),
+    grand_slam_clay: createMonochromeTheme({
+      surfaceBg: "#7f3f28",
+      base: "#b65b31",
+      deep: "#3f2119",
+      accent: "#f0c37a",
+      text: "#fff4e7",
+      role: "#ffd8ad",
+      muted: "#d9a078",
+      buttonText: "#31150d",
+      badgeText: "#ffe0bf",
+      border: "#b56b43",
+    }),
+    racing_green: createMonochromeTheme({
+      surfaceBg: "#0f3a2a",
+      base: "#13543a",
+      deep: "#071d16",
+      accent: "#d8b35a",
+      text: "#f4f0dd",
+      role: "#d8c995",
+      muted: "#afa678",
+      buttonText: "#10150c",
+      badgeText: "#ead89e",
+      border: "#2e6a4d",
+    }),
+    polo_navy: createMonochromeTheme({
+      surfaceBg: "#182c55",
+      base: "#243d72",
+      deep: "#071428",
+      accent: "#c8a45b",
+      text: "#f2f6ff",
+      role: "#cad7f0",
+      muted: "#9daed0",
+      buttonText: "#071428",
+      badgeText: "#d8c18a",
+      border: "#334d83",
+    }),
+    alpine_ski: createMonochromeTheme({
+      surfaceBg: "#dfeef8",
+      base: "#f7fbff",
+      deep: "#2c638e",
+      accent: "#8fb8d8",
+      text: "#17334b",
+      role: "#40647e",
+      muted: "#6f91a9",
+      buttonText: "#f7fbff",
+      badgeText: "#315a78",
+      border: "#b5d0e3",
+      isLight: true,
+    }),
+    boxing_legend: createMonochromeTheme({
+      surfaceBg: "#4c1118",
+      base: "#8f1e28",
+      deep: "#24090d",
+      accent: "#c8a24c",
+      text: "#fff1e8",
+      role: "#f0c6b6",
+      muted: "#d7988a",
+      buttonText: "#24090d",
+      badgeText: "#f1d081",
+      border: "#7a2b30",
+    }),
+    basketball_court: createMonochromeTheme({
+      surfaceBg: "#8b4b20",
+      base: "#f0b05d",
+      deep: "#4d260f",
+      accent: "#1f2937",
+      text: "#fff4e4",
+      role: "#ffe0b1",
+      muted: "#d99f65",
+      buttonText: "#fff1dc",
+      badgeText: "#ffe0b1",
+      border: "#b16d35",
+    }),
+    football_pitch: createMonochromeTheme({
+      surfaceBg: "#0d4a2b",
+      base: "#38a052",
+      deep: "#062415",
+      accent: "#ffffff",
+      text: "#f4fff5",
+      role: "#cffff0",
+      muted: "#9ad5a6",
+      buttonText: "#062415",
+      badgeText: "#e8fff0",
+      border: "#4eb76a",
+    }),
+    olympic_gold: createMonochromeTheme({
+      surfaceBg: "#8a651f",
+      base: "#c7922e",
+      deep: "#22180a",
+      accent: "#f5d27a",
+      text: "#fff7df",
+      role: "#f3dfad",
+      muted: "#d0ad68",
+      buttonText: "#22180a",
+      badgeText: "#ffe8a3",
+      border: "#b98a32",
+    }),
     color_red: createMonochromeTheme({
       surfaceBg: "#5d0d18",
       base: "#8e1627",
@@ -1527,6 +1669,91 @@
           <circle cx="118" cy="70" r="4.4" class="frame-fill-secondary"></circle>
           <circle cx="70" cy="18" r="4.6" class="frame-fill-accent"></circle>
           <circle cx="70" cy="122" r="4" class="frame-fill-white"></circle>
+        </svg>
+      ${end}`;
+    }
+    if (key === "laurel_wreath") {
+      return `${start}
+        <svg class="unq-ref-avatar-frame-svg" viewBox="0 0 140 140" preserveAspectRatio="none">
+          <circle cx="70" cy="70" r="54" class="frame-stroke-thin frame-stroke-secondary"></circle>
+          <path d="M42 118c-18-24-18-58 0-86" class="frame-stroke-thin frame-stroke-primary"></path>
+          <path d="M98 118c18-24 18-58 0-86" class="frame-stroke-thin frame-stroke-primary"></path>
+          <g class="frame-fill-primary"><ellipse cx="36" cy="100" rx="4" ry="8" transform="rotate(-32 36 100)"></ellipse><ellipse cx="31" cy="84" rx="4" ry="8" transform="rotate(-58 31 84)"></ellipse><ellipse cx="31" cy="66" rx="4" ry="8" transform="rotate(-76 31 66)"></ellipse><ellipse cx="36" cy="48" rx="4" ry="8" transform="rotate(-106 36 48)"></ellipse><ellipse cx="104" cy="100" rx="4" ry="8" transform="rotate(32 104 100)"></ellipse><ellipse cx="109" cy="84" rx="4" ry="8" transform="rotate(58 109 84)"></ellipse><ellipse cx="109" cy="66" rx="4" ry="8" transform="rotate(76 109 66)"></ellipse><ellipse cx="104" cy="48" rx="4" ry="8" transform="rotate(106 104 48)"></ellipse></g>
+        </svg>
+      ${end}`;
+    }
+    if (key === "trophy_gold") {
+      return `${start}
+        <svg class="unq-ref-avatar-frame-svg" viewBox="0 0 140 140" preserveAspectRatio="none">
+          <circle cx="70" cy="70" r="56" class="frame-stroke-thick frame-stroke-secondary"></circle>
+          <path d="M55 17h30v12c0 13-6 22-15 22S55 42 55 29V17Z" class="frame-stroke-thin frame-stroke-primary"></path>
+          <path d="M55 24H42c0 12 6 18 15 18M85 24h13c0 12-6 18-15 18M70 51v14M58 65h24M54 72h32" class="frame-stroke-thin frame-stroke-primary"></path>
+        </svg>
+      ${end}`;
+    }
+    if (key === "tennis_lines") {
+      return `${start}
+        <svg class="unq-ref-avatar-frame-svg" viewBox="0 0 140 140" preserveAspectRatio="none">
+          <circle cx="70" cy="70" r="58" class="frame-stroke-thick frame-stroke-primary"></circle>
+          <path d="M30 38h80v64H30zM70 38v64M30 70h80M48 38v64M92 38v64" class="frame-stroke-thin frame-stroke-white"></path>
+        </svg>
+      ${end}`;
+    }
+    if (key === "racing_stripes") {
+      return `${start}
+        <svg class="unq-ref-avatar-frame-svg" viewBox="0 0 140 140" preserveAspectRatio="none">
+          <circle cx="70" cy="70" r="55" class="frame-stroke-thin frame-stroke-secondary"></circle>
+          <path d="M18 52h104M18 70h104M18 88h104" class="frame-stroke-thick frame-stroke-primary"></path>
+          <path d="M28 43h84M28 97h84" class="frame-stroke-thin frame-stroke-white"></path>
+        </svg>
+      ${end}`;
+    }
+    if (key === "varsity_patch") {
+      return `${start}
+        <svg class="unq-ref-avatar-frame-svg" viewBox="0 0 140 140" preserveAspectRatio="none">
+          <path d="M70 10l52 22v42c0 27-20 45-52 58-32-13-52-31-52-58V32l52-22Z" class="frame-stroke-thick frame-stroke-primary"></path>
+          <path d="M70 21l41 17v35c0 21-15 35-41 46-26-11-41-25-41-46V38l41-17Z" class="frame-stroke-thin frame-stroke-white"></path>
+        </svg>
+      ${end}`;
+    }
+    if (key === "boxing_rope") {
+      return `${start}
+        <svg class="unq-ref-avatar-frame-svg" viewBox="0 0 140 140" preserveAspectRatio="none">
+          <rect x="20" y="20" width="100" height="100" rx="14" class="frame-stroke-thick frame-stroke-primary"></rect>
+          <path d="M20 44h100M20 70h100M20 96h100M44 20v100M96 20v100" class="frame-stroke-thin frame-stroke-secondary"></path>
+        </svg>
+      ${end}`;
+    }
+    if (key === "basketball_arc") {
+      return `${start}
+        <svg class="unq-ref-avatar-frame-svg" viewBox="0 0 140 140" preserveAspectRatio="none">
+          <circle cx="70" cy="70" r="58" class="frame-stroke-thick frame-stroke-primary"></circle>
+          <path d="M70 12v116M18 70h104M34 28c24 18 24 66 0 84M106 28c-24 18-24 66 0 84" class="frame-stroke-thin frame-stroke-secondary"></path>
+        </svg>
+      ${end}`;
+    }
+    if (key === "football_stitch") {
+      return `${start}
+        <svg class="unq-ref-avatar-frame-svg" viewBox="0 0 140 140" preserveAspectRatio="none">
+          <ellipse cx="70" cy="70" rx="58" ry="44" class="frame-stroke-thick frame-stroke-primary"></ellipse>
+          <path d="M48 70h44M56 60v20M64 58v24M72 58v24M80 58v24M88 60v20" class="frame-stroke-thin frame-stroke-white"></path>
+        </svg>
+      ${end}`;
+    }
+    if (key === "stopwatch_ring") {
+      return `${start}
+        <svg class="unq-ref-avatar-frame-svg" viewBox="0 0 140 140" preserveAspectRatio="none">
+          <circle cx="70" cy="76" r="52" class="frame-stroke-thick frame-stroke-primary"></circle>
+          <path d="M58 14h24M70 14v12M98 30l10-10M70 76V46M70 76l20 14" class="frame-stroke-thin frame-stroke-secondary"></path>
+        </svg>
+      ${end}`;
+    }
+    if (key === "medal_ribbon") {
+      return `${start}
+        <svg class="unq-ref-avatar-frame-svg" viewBox="0 0 140 140" preserveAspectRatio="none">
+          <path d="M48 8h44l-12 42H60L48 8Z" class="frame-fill-secondary"></path>
+          <circle cx="70" cy="76" r="54" class="frame-stroke-thick frame-stroke-primary"></circle>
+          <circle cx="70" cy="76" r="45" class="frame-stroke-thin frame-stroke-white"></circle>
         </svg>
       ${end}`;
     }

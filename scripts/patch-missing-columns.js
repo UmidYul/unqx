@@ -10,9 +10,9 @@ dotenv.config({ path: path.join(ROOT_DIR, ".env"), override: false, quiet: true 
 
 const REQUIRED_ENUMS = {
   tariff: ["basic", "premium"],
-  cardtheme: ["default_dark", "arctic", "linen", "marble", "forest", "sage_luxe", "midnight_obsidian", "golden_noir", "aurora_codex", "nebula_glass"],
+  cardtheme: ["default_dark", "arctic", "linen", "marble", "forest", "sage_luxe", "midnight_obsidian", "golden_noir", "aurora_codex", "nebula_glass", "velours", "graffiti_neon", "heritage_crest", "ivory_tennis", "grand_slam_clay", "racing_green", "polo_navy", "alpine_ski", "boxing_legend", "basketball_court", "football_pitch", "olympic_gold", "color_red", "color_orange", "color_yellow", "color_green", "color_teal", "color_blue", "color_purple", "color_pink"],
   // Compatibility with Prisma enum type naming in some environments.
-  CardTheme: ["default_dark", "arctic", "linen", "marble", "forest", "sage_luxe", "midnight_obsidian", "golden_noir", "aurora_codex", "nebula_glass"],
+  CardTheme: ["default_dark", "arctic", "linen", "marble", "forest", "sage_luxe", "midnight_obsidian", "golden_noir", "aurora_codex", "nebula_glass", "velours", "graffiti_neon", "heritage_crest", "ivory_tennis", "grand_slam_clay", "racing_green", "polo_navy", "alpine_ski", "boxing_legend", "basketball_court", "football_pitch", "olympic_gold", "color_red", "color_orange", "color_yellow", "color_green", "color_teal", "color_blue", "color_purple", "color_pink"],
   orderstatus: ["NEW", "CONTACTED", "PAID", "ACTIVATED", "REJECTED"],
   slugstate: ["TAKEN", "BLOCKED"],
   checkerresult: ["AVAILABLE", "TAKEN", "BLOCKED", "INVALID"],

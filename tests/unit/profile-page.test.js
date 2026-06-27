@@ -73,15 +73,19 @@ describe("profile page", () => {
   test("renders new theme groups, emoji backgrounds, and avatar frame picker", async () => {
     const html = await renderProfileTemplate();
     expect(html).toContain("Signature Themes");
-    expect(html).toContain("Color Presets");
-    expect(html).toContain("Фоновый emoji");
-    expect(html).toContain("Рамка аватара");
+    expect(html).toMatch(/Color\s+Presets/);
+    expect(html).toMatch(/Фоновый\s+emoji/);
+    expect(html).toMatch(/Рамка\s+аватара/);
     expect(html).toContain('data-theme="graffiti_neon"');
     expect(html).toContain('data-theme="color_blue"');
+    expect(html).toContain('data-theme="heritage_crest"');
+    expect(html).toContain('data-theme="football_pitch"');
     expect(html).toContain('data-emoji-background-pack="ghosts"');
     expect(html).toContain('data-emoji-background-pack="hearts"');
     expect(html).toContain('data-avatar-frame="chrome_ring"');
     expect(html).toContain('data-avatar-frame="tape_collage"');
+    expect(html).toContain('data-avatar-frame="laurel_wreath"');
+    expect(html).toContain('data-avatar-frame="medal_ribbon"');
     expect(html).not.toContain('data-avatar-frame="comic_boom"');
     expect(html).not.toContain(">Graffiti Neon</p>");
     expect(html).not.toContain("Comic Boom");
@@ -109,7 +113,7 @@ describe("profile page", () => {
     const html = await renderProfileTemplate();
     expect(html).toContain('id="profile-settings-login"');
     expect(html).toContain('id="profile-settings-login-status"');
-    expect(html).toContain("Логин можно менять в любой момент, если он свободен");
+    expect(html).toMatch(/Логин можно менять в\s+любой момент, если он свободен/);
   });
 
   test("does not contain emoji artifacts in profile template", async () => {

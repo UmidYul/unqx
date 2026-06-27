@@ -11,8 +11,12 @@ describe("profile theme and avatar frame normalization", () => {
   test("exposes newly added theme, frame, and emoji background keys", () => {
     expect(PROFILE_THEME_KEYS).toContain("graffiti_neon");
     expect(PROFILE_THEME_KEYS).toContain("color_blue");
+    expect(PROFILE_THEME_KEYS).toContain("heritage_crest");
+    expect(PROFILE_THEME_KEYS).toContain("football_pitch");
     expect(PROFILE_AVATAR_FRAME_KEYS).toContain("chrome_ring");
     expect(PROFILE_AVATAR_FRAME_KEYS).toContain("orbit_dots");
+    expect(PROFILE_AVATAR_FRAME_KEYS).toContain("laurel_wreath");
+    expect(PROFILE_AVATAR_FRAME_KEYS).toContain("medal_ribbon");
     expect(PROFILE_AVATAR_FRAME_KEYS).not.toContain("comic_boom");
     expect(PROFILE_EMOJI_BACKGROUND_KEYS).toContain("ghosts");
     expect(PROFILE_EMOJI_BACKGROUND_KEYS).toContain("hearts");
@@ -20,7 +24,9 @@ describe("profile theme and avatar frame normalization", () => {
 
   test("keeps premium theme, frame, and emoji background for premium plan", () => {
     expect(normalizeThemeByPlan("graffiti_neon", "premium")).toBe("graffiti_neon");
+    expect(normalizeThemeByPlan("heritage_crest", "premium")).toBe("heritage_crest");
     expect(normalizeAvatarFrameByPlan("orbit_dots", "premium")).toBe("orbit_dots");
+    expect(normalizeAvatarFrameByPlan("laurel_wreath", "premium")).toBe("laurel_wreath");
     expect(normalizeEmojiBackgroundByPlan("ghosts", "premium")).toBe("ghosts");
   });
 

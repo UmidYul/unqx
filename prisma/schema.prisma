@@ -27,6 +27,16 @@ enum CardTheme {
   nebula_glass
   velours
   graffiti_neon
+  heritage_crest
+  ivory_tennis
+  grand_slam_clay
+  racing_green
+  polo_navy
+  alpine_ski
+  boxing_legend
+  basketball_court
+  football_pitch
+  olympic_gold
   color_red
   color_orange
   color_yellow
