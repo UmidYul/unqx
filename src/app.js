@@ -135,6 +135,7 @@ function createApp() {
   const rootPublicDir = env.PUBLIC_DIR;
   const disableHttpsEnforcement = env.DISABLE_HTTPS_ENFORCEMENT === true;
   const staticAssetVersion = String(env.ASSET_VERSION || Date.now());
+  const staticAssetMaxAge = env.NODE_ENV === "development" ? 0 : "7d";
 
   app.set("trust proxy", env.TRUST_PROXY);
   app.set("view engine", "ejs");
@@ -249,7 +250,7 @@ function createApp() {
   app.use(
     express.static(expressPublicDir, {
       etag: true,
-      maxAge: "7d",
+      maxAge: staticAssetMaxAge,
       fallthrough: true,
       index: false,
     }),
@@ -278,7 +279,7 @@ function createApp() {
   app.use(
     express.static(rootPublicDir, {
       etag: true,
-      maxAge: "7d",
+      maxAge: staticAssetMaxAge,
       fallthrough: true,
       index: false,
     }),

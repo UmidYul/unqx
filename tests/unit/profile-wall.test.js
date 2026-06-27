@@ -81,7 +81,7 @@ function buildComment(overrides = {}) {
       plan: "none",
       subscriptionStartedAt: null,
       subscriptionExpiresAt: null,
-      slugs: [{ fullSlug: "ALI001" }],
+      slugs: [{ fullSlug: "ALI001", status: "active", isPrimary: true }],
       profileCard: {
         avatarUrl: "/uploads/comment-avatar.webp",
       },
@@ -114,6 +114,48 @@ describe("profile wall service", () => {
     expect(where.status.in).toContain("published");
     expect(where.status.in).toContain("hidden");
     expect(where.status.in).toContain("deleted");
+  });
+
+  test("global admin wall listing sorts by popularity and maps counts", async () => {
+    mockPrisma.profileWallPost.findMany.mockResolvedValue([
+      buildPost({
+        _count: { likes: 7, comments: 3 },
+        owner: {
+          id: "user_1",
+          status: "active",
+          plan: "premium",
+          subscriptionStartedAt: null,
+          subscriptionExpiresAt: null,
+          displayName: "Owner One",
+          firstName: "Owner",
+          login: "owner",
+          username: "",
+          email: "owner@example.com",
+          isVerified: true,
+          verifiedCompany: "",
+          profileCard: { name: "Owner Card", role: "Creator", avatarUrl: "" },
+          slugs: [{ fullSlug: "OWN001", status: "active", isPrimary: true }],
+        },
+      }),
+    ]);
+    mockPrisma.profileWallPost.count.mockResolvedValue(1);
+
+    const result = await wallService.listAllAdminWallPosts({ sort: "popular", status: "published", q: "owner" });
+    const query = mockPrisma.profileWallPost.findMany.mock.calls[0][0];
+
+    expect(query.orderBy[0]).toEqual({ likes: { _count: "desc" } });
+    expect(query.orderBy[1]).toEqual({ comments: { _count: "desc" } });
+    expect(query.where.status).toBe("published");
+    expect(query.where.OR.length).toBeGreaterThan(0);
+    expect(result.items[0]).toMatchObject({
+      likesCount: 7,
+      commentsCount: 3,
+      popularityScore: 10,
+      author: {
+        name: "Owner Card",
+        primarySlug: "OWN001",
+      },
+    });
   });
 
   test("wall summary blocks second post within the same Tashkent day", async () => {
@@ -290,7 +332,7 @@ describe("profile wall service", () => {
           plan: "none",
           subscriptionStartedAt: null,
           subscriptionExpiresAt: null,
-          slugs: [{ fullSlug: "ALI002" }],
+          slugs: [{ fullSlug: "ALI002", status: "active", isPrimary: true }],
           profileCard: {
             avatarUrl: "",
           },
@@ -330,7 +372,7 @@ describe("profile wall service", () => {
           plan: "none",
           subscriptionStartedAt: null,
           subscriptionExpiresAt: null,
-          slugs: [{ fullSlug: "ALI002" }],
+          slugs: [{ fullSlug: "ALI002", status: "active", isPrimary: true }],
           profileCard: {
             avatarUrl: "",
           },

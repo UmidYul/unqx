@@ -2503,6 +2503,64 @@
     });
   }
 
+  async function loadPosts() {
+    const form = document.getElementById("posts-filters");
+    const table = document.getElementById("posts-table");
+    if (!(form instanceof HTMLFormElement) || !(table instanceof HTMLElement)) return;
+    const q = {
+      q: getFormValue(form, "q", ""),
+      sort: getFormValue(form, "sort", "newest"),
+      status: getFormValue(form, "status", "all"),
+      page: getFormValue(form, "page", "1"),
+    };
+    setDashboardQuery({ post_q: q.q, post_sort: q.sort, post_status: q.status, post_page: q.page });
+    const r = await fetch(`/api/admin/wall-posts?${Q(q)}`);
+    if (!r.ok) return;
+    const payload = await r.json();
+    const rows = Array.isArray(payload.items) ? payload.items : [];
+    table.innerHTML = rows.length
+      ? rows.map((post) => {
+        const author = post.author || {};
+        const postHref = String(post.postHref || "");
+        const commentsHref = String(post.commentsHref || postHref || "");
+        const content = X(post.content || "").replace(/\n/g, "<br>");
+        const slug = String(author.primarySlug || "").trim();
+        const authorLine = [
+          author.handle ? `@${X(String(author.handle).replace(/^@+/, ""))}` : "",
+          slug ? `/${X(slug)}` : "",
+          author.email ? X(author.email) : "",
+        ].filter(Boolean).join(" · ");
+        const postActions = [
+          postHref ? `<a href="${X(postHref)}" target="_blank" rel="noopener noreferrer" class="text-xs font-semibold text-neutral-900 underline underline-offset-2">Открыть</a>` : "",
+          commentsHref ? `<a href="${X(commentsHref)}" target="_blank" rel="noopener noreferrer" class="text-xs font-semibold text-neutral-600 underline underline-offset-2">Комментарии</a>` : "",
+        ].filter(Boolean).join(" ");
+        const status = String(post.status || "published");
+        const statusCode = status === "published" ? "approved" : (status === "hidden" ? "muted" : "rejected");
+        return `<tr class="admin-table-row border-t border-neutral-100 align-top">
+          <td class="max-w-[420px] px-4 py-3">
+            <div class="line-clamp-4 whitespace-normal text-sm text-neutral-900">${content || '<span class="text-neutral-400">—</span>'}</div>
+            <div class="mt-2 font-mono text-[11px] text-neutral-400">${X(post.id || "")}</div>
+          </td>
+          <td class="px-4 py-3">
+            <div class="font-semibold text-neutral-900">${X(author.name || "UNQX User")}${author.verified ? ' <span class="text-sky-600">✓</span>' : ""}</div>
+            <div class="mt-1 text-xs text-neutral-500">${authorLine || "—"}</div>
+            <div class="mt-1 text-xs text-neutral-400">${X(author.plan || "none")}</div>
+          </td>
+          <td class="px-4 py-3">${statusChip(statusCode)}</td>
+          <td class="px-4 py-3 font-semibold">${Number(post.popularityScore || 0).toLocaleString("ru-RU")}</td>
+          <td class="px-4 py-3">${Number(post.likesCount || 0).toLocaleString("ru-RU")}</td>
+          <td class="px-4 py-3">${Number(post.commentsCount || 0).toLocaleString("ru-RU")}</td>
+          <td class="px-4 py-3 text-xs text-neutral-600">${D(post.createdAt)}</td>
+          <td class="px-4 py-3">${postActions || '<span class="text-xs text-neutral-400">Нет ссылки</span>'}</td>
+        </tr>`;
+      }).join("")
+      : '<tr><td colspan="8" class="px-3 py-10 text-center text-neutral-500">Посты не найдены</td></tr>';
+    renderPager("posts-pagination", payload.pagination, (nextPage) => {
+      setFormValue(form, "page", String(nextPage));
+      void loadPosts();
+    });
+  }
+
   async function applySlugPriceOverride(slugRaw, priceRaw) {
     const slug = String(slugRaw || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6);
     if (!/^[A-Z]{3}[0-9]{3}$/.test(slug)) {
@@ -4293,6 +4351,21 @@
     setFormValue(form, "priceOverride", "");
   });
   document.getElementById("cards-filters")?.addEventListener("submit", (e) => { e.preventDefault(); const f = e.currentTarget; if (f instanceof HTMLFormElement) setFormValue(f, "page", "1"); void loadCards(); });
+  document.getElementById("posts-filters")?.addEventListener("submit", (e) => { e.preventDefault(); const f = e.currentTarget; if (f instanceof HTMLFormElement) setFormValue(f, "page", "1"); void loadPosts(); });
+  document.getElementById("posts-filters")?.elements?.namedItem?.("sort")?.addEventListener?.("change", (e) => {
+    const target = e.currentTarget;
+    const form = document.getElementById("posts-filters");
+    if (!(target instanceof HTMLSelectElement) || !(form instanceof HTMLFormElement)) return;
+    setFormValue(form, "page", "1");
+    void loadPosts();
+  });
+  document.getElementById("posts-filters")?.elements?.namedItem?.("status")?.addEventListener?.("change", (e) => {
+    const target = e.currentTarget;
+    const form = document.getElementById("posts-filters");
+    if (!(target instanceof HTMLSelectElement) || !(form instanceof HTMLFormElement)) return;
+    setFormValue(form, "page", "1");
+    void loadPosts();
+  });
   document.getElementById("logs-filters")?.addEventListener("submit", (e) => { e.preventDefault(); const f = e.currentTarget; if (f instanceof HTMLFormElement) setFormValue(f, "page", "1"); void loadLogs(); });
   document.getElementById("user-activity-filters")?.addEventListener("submit", (e) => { e.preventDefault(); const f = e.currentTarget; if (f instanceof HTMLFormElement) setFormValue(f, "page", "1"); void loadUserActivity(); });
   document.getElementById("user-activity-filters")?.addEventListener("reset", () => { setTimeout(() => void loadUserActivity(), 0); });
@@ -4645,6 +4718,15 @@
       setFormValue(form, "page", getInitial("c_page", "page") || "1");
     }
   }
+  if (tab === "posts") {
+    const form = document.getElementById("posts-filters");
+    if (form instanceof HTMLFormElement) {
+      setFormValue(form, "q", getInitial("post_q", "q") || "");
+      setFormValue(form, "sort", getInitial("post_sort", "sort") || "newest");
+      setFormValue(form, "status", getInitial("post_status", "status") || "all");
+      setFormValue(form, "page", getInitial("post_page", "page") || "1");
+    }
+  }
 
   if (tab === "logs") {
     const form = document.getElementById("logs-filters");
@@ -4725,6 +4807,10 @@
   if (tab === "cards") {
     dbg("load", "cards");
     void loadCards();
+  }
+  if (tab === "posts") {
+    dbg("load", "posts");
+    void loadPosts();
   }
 
   if (tab === "testimonials") {

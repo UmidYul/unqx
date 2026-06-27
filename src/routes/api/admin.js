@@ -58,6 +58,7 @@ const {
 } = require("../../services/profile");
 const {
   isWallStorageMissing,
+  listAllAdminWallPosts,
   listAdminWallPosts,
   updateWallPostAsAdmin,
   resolveWallPage,
@@ -502,7 +503,40 @@ async function normalizeCardThemeForDatabase(theme) {
   if (requested === "sage_luxe" && supported.has("royal_ivory")) {
     return "royal_ivory";
   }
+  if (await ensureCardThemeEnumValue(requested)) {
+    return requested;
+  }
   return "default_dark";
+}
+
+async function ensureCardThemeEnumValue(theme) {
+  const requested = String(theme || "").trim();
+  if (!PROFILE_THEMES.has(requested) || !/^[a-z0-9_]+$/.test(requested)) {
+    return false;
+  }
+  const escapedValue = requested.replace(/'/g, "''");
+  const statements = [
+    `ALTER TYPE "CardTheme" ADD VALUE IF NOT EXISTS '${escapedValue}'`,
+    `ALTER TYPE cardtheme ADD VALUE IF NOT EXISTS '${escapedValue}'`,
+  ];
+  let addedOrExists = false;
+  for (const statement of statements) {
+    try {
+      await prisma.$executeRawUnsafe(statement);
+      addedOrExists = true;
+    } catch (error) {
+      const message = buildRawErrorText(error);
+      if (!/does not exist|type .* does not exist/i.test(message)) {
+        console.warn(`[express-app] failed to extend CardTheme enum with "${requested}"`, error);
+      }
+    }
+  }
+  if (addedOrExists) {
+    cardThemeEnumCache = { checkedAt: 0, values: null };
+    const refreshed = await getSupportedCardThemeEnumValues();
+    return Boolean(refreshed?.has(requested));
+  }
+  return false;
 }
 
 function extractMissingColumnName(error) {
@@ -4520,6 +4554,38 @@ router.get(
       },
       themes: Array.from(PROFILE_THEMES),
     });
+  }),
+);
+
+router.get(
+  "/wall-posts",
+  asyncHandler(async (req, res) => {
+    const page = resolveWallPage(req.query.page);
+    const pageSize = resolveWallPageSize(req.query.pageSize, WALL_ADMIN_PAGE_SIZE, 100);
+    try {
+      const payload = await listAllAdminWallPosts({
+        page,
+        pageSize,
+        q: req.query.q,
+        status: req.query.status,
+        sort: req.query.sort,
+      });
+      res.json(payload);
+    } catch (error) {
+      if (isWallStorageMissing(error)) {
+        res.json({
+          items: [],
+          pagination: { page, pageSize, total: 0, totalPages: 1, hasMore: false },
+          filters: {
+            q: String(req.query.q || "").trim(),
+            status: String(req.query.status || "all").trim() || "all",
+            sort: String(req.query.sort || "newest").trim() || "newest",
+          },
+        });
+        return;
+      }
+      throw error;
+    }
   }),
 );
 

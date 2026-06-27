@@ -514,6 +514,9 @@ async function normalizeCardThemeForDatabase(theme) {
   if (requested === "default_dark") {
     return requested;
   }
+  if (!PROFILE_THEMES.has(requested)) {
+    return "default_dark";
+  }
   const supported = await getSupportedCardThemeEnumValues();
   if (!supported || supported.size === 0) {
     console.warn(
@@ -527,7 +530,40 @@ async function normalizeCardThemeForDatabase(theme) {
   if (requested === "sage_luxe" && supported.has("royal_ivory")) {
     return "royal_ivory";
   }
+  if (await ensureCardThemeEnumValue(requested)) {
+    return requested;
+  }
   return "default_dark";
+}
+
+async function ensureCardThemeEnumValue(theme) {
+  const requested = String(theme || "").trim();
+  if (!PROFILE_THEMES.has(requested) || !/^[a-z0-9_]+$/.test(requested)) {
+    return false;
+  }
+  const escapedValue = requested.replace(/'/g, "''");
+  const statements = [
+    `ALTER TYPE "CardTheme" ADD VALUE IF NOT EXISTS '${escapedValue}'`,
+    `ALTER TYPE cardtheme ADD VALUE IF NOT EXISTS '${escapedValue}'`,
+  ];
+  let addedOrExists = false;
+  for (const statement of statements) {
+    try {
+      await prisma.$executeRawUnsafe(statement);
+      addedOrExists = true;
+    } catch (error) {
+      const message = buildRawErrorText(error);
+      if (!/does not exist|type .* does not exist/i.test(message)) {
+        console.warn(`[express-app] failed to extend CardTheme enum with "${requested}"`, error);
+      }
+    }
+  }
+  if (addedOrExists) {
+    cardThemeEnumCache = { checkedAt: 0, values: null };
+    const refreshed = await getSupportedCardThemeEnumValues();
+    return Boolean(refreshed?.has(requested));
+  }
+  return false;
 }
 
 function extractMissingColumnName(error) {
@@ -3235,6 +3271,5 @@ module.exports = {
     saveSession,
   },
 };
-
 
 

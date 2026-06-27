@@ -19,6 +19,27 @@ async function renderAdminDashboard(locals = {}) {
 }
 
 describe("admin dashboard pets", () => {
+  test("renders global posts tab and filters", async () => {
+    const html = await renderAdminDashboard({ activeTab: "posts" });
+
+    expect(html).toContain('id="tab-posts"');
+    expect(html).toContain('id="posts-filters"');
+    expect(html).toContain('id="posts-table"');
+    expect(html).toContain('id="posts-pagination"');
+    expect(html).toContain('value="popular"');
+    expect(html).toContain('value="likes"');
+    expect(html).toContain('value="comments"');
+  });
+
+  test("dashboard script wires global posts table", () => {
+    const source = fs.readFileSync(path.join(process.cwd(), "public", "js", "admin-dashboard.js"), "utf-8");
+
+    expect(source).toContain("loadPosts");
+    expect(source).toContain("/api/admin/wall-posts?");
+    expect(source).toContain("post_sort");
+    expect(source).toContain("posts-pagination");
+  });
+
   test("renders pets queue tab and filters", async () => {
     const html = await renderAdminDashboard();
 

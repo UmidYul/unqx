@@ -248,6 +248,7 @@ router.get(
       "purchases",
       "payment-cards",
       "cards",
+      "posts",
       "users",
       "accounts",
       "slugs",
@@ -541,4 +542,3 @@ router.get(
 module.exports = {
   adminPagesRouter: router,
 };
-

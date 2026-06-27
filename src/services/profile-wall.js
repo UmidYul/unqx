@@ -313,6 +313,65 @@ function getHomeWallPostSelect() {
   };
 }
 
+function getAdminGlobalWallPostSelect() {
+  return {
+    id: true,
+    ownerId: true,
+    content: true,
+    commentsEnabled: true,
+    status: true,
+    createdAt: true,
+    updatedAt: true,
+    hiddenAt: true,
+    deletedAt: true,
+    _count: {
+      select: {
+        likes: true,
+        comments: true,
+      },
+    },
+    owner: {
+      select: {
+        id: true,
+        status: true,
+        plan: true,
+        subscriptionStartedAt: true,
+        subscriptionExpiresAt: true,
+        displayName: true,
+        firstName: true,
+        login: true,
+        username: true,
+        email: true,
+        isVerified: true,
+        verifiedCompany: true,
+        ...getFreeProfileUserSelect(),
+        profileCard: {
+          select: {
+            name: true,
+            role: true,
+            avatarUrl: true,
+          },
+        },
+        slugs: {
+          where: {
+            status: {
+              in: WALL_LINKABLE_SLUG_STATUSES,
+            },
+          },
+          orderBy: [{ isPrimary: "desc" }, { updatedAt: "desc" }, { createdAt: "desc" }],
+          take: 1,
+          select: {
+            fullSlug: true,
+            status: true,
+            pauseMessage: true,
+            isPrimary: true,
+          },
+        },
+      },
+    },
+  };
+}
+
 function getWallCommentAuthorName(user) {
   const displayName = String(user?.displayName || "").trim();
   if (displayName) {
@@ -632,6 +691,153 @@ async function listAdminWallPosts({
     pageSize: resolveWallPageSize(pageSize, WALL_ADMIN_PAGE_SIZE, 50),
     statuses: WALL_ADMIN_VISIBLE_STATUSES,
   });
+}
+
+function normalizeAdminWallPostSort(value) {
+  const normalized = String(value || "").trim().toLowerCase();
+  if (["popular", "likes", "comments", "oldest"].includes(normalized)) {
+    return normalized;
+  }
+  return "newest";
+}
+
+function normalizeAdminWallPostStatus(value) {
+  const normalized = String(value || "").trim().toLowerCase();
+  return WALL_ALL_STATUSES.includes(normalized) ? normalized : "all";
+}
+
+function buildAdminWallPostOrderBy(sort) {
+  switch (normalizeAdminWallPostSort(sort)) {
+    case "popular":
+      return [
+        { likes: { _count: "desc" } },
+        { comments: { _count: "desc" } },
+        { createdAt: "desc" },
+        { id: "desc" },
+      ];
+    case "likes":
+      return [{ likes: { _count: "desc" } }, { createdAt: "desc" }, { id: "desc" }];
+    case "comments":
+      return [{ comments: { _count: "desc" } }, { createdAt: "desc" }, { id: "desc" }];
+    case "oldest":
+      return [{ createdAt: "asc" }, { id: "asc" }];
+    default:
+      return [{ createdAt: "desc" }, { id: "desc" }];
+  }
+}
+
+function mapAdminGlobalWallPost(row) {
+  if (!row) return null;
+  const owner = row.owner || {};
+  const publicHandle = getActivePublicHandle(owner);
+  const authorName =
+    String(owner?.profileCard?.name || owner?.displayName || owner?.firstName || owner?.login || owner?.username || "UNQX User").trim() || "UNQX User";
+  const likesCount = Math.max(0, Number(row?._count?.likes || 0));
+  const commentsCount = Math.max(0, Number(row?._count?.comments || 0));
+  const postId = String(row.id || "").trim();
+  return {
+    id: postId,
+    ownerId: String(row.ownerId || "").trim(),
+    content: String(row.content || ""),
+    commentsEnabled: row.commentsEnabled !== false,
+    status: String(row.status || "published"),
+    statusLabel: toWallStatusLabel(row.status),
+    createdAt: row.createdAt || null,
+    updatedAt: row.updatedAt || null,
+    hiddenAt: row.hiddenAt || null,
+    deletedAt: row.deletedAt || null,
+    likesCount,
+    commentsCount,
+    popularityScore: likesCount + commentsCount,
+    postHref: publicHandle?.href && postId ? `${publicHandle.href}#wall-post-${encodeURIComponent(postId)}` : "",
+    commentsHref: publicHandle?.href && postId ? `${publicHandle.href}?comments=1#wall-post-${encodeURIComponent(postId)}` : "",
+    author: {
+      id: String(owner?.id || row.ownerId || "").trim(),
+      name: authorName,
+      handle: String(owner?.login || owner?.username || "").trim(),
+      email: String(owner?.email || "").trim(),
+      plan: String(owner?.plan || "none"),
+      verified: Boolean(owner?.isVerified),
+      primarySlug: String(publicHandle?.value || "").trim(),
+      profileHref: publicHandle?.href || "",
+      role: String(owner?.profileCard?.role || owner?.verifiedCompany || "").trim(),
+      avatarUrl: String(owner?.profileCard?.avatarUrl || "").trim() || null,
+    },
+  };
+}
+
+async function listAllAdminWallPosts({
+  page = 1,
+  pageSize = WALL_ADMIN_PAGE_SIZE,
+  status = "all",
+  sort = "newest",
+  q = "",
+} = {}) {
+  const normalizedPage = resolveWallPage(page);
+  const normalizedPageSize = resolveWallPageSize(pageSize, WALL_ADMIN_PAGE_SIZE, 100);
+  const normalizedStatus = normalizeAdminWallPostStatus(status);
+  const normalizedSort = normalizeAdminWallPostSort(sort);
+  const query = String(q || "").trim();
+  const where = {};
+  if (normalizedStatus !== "all") {
+    where.status = normalizedStatus;
+  } else {
+    where.status = { in: WALL_ADMIN_VISIBLE_STATUSES };
+  }
+  if (query) {
+    where.OR = [
+      { content: { contains: query, mode: "insensitive" } },
+      { owner: { displayName: { contains: query, mode: "insensitive" } } },
+      { owner: { firstName: { contains: query, mode: "insensitive" } } },
+      { owner: { login: { contains: query, mode: "insensitive" } } },
+      { owner: { username: { contains: query, mode: "insensitive" } } },
+      { owner: { email: { contains: query, mode: "insensitive" } } },
+      { owner: { slugs: { some: { fullSlug: { contains: query.toUpperCase(), mode: "insensitive" } } } } },
+    ];
+  }
+
+  const [rows, total] = await Promise.all([
+    withMissingTableFallback("ProfileWallPost", [], () =>
+      prisma.profileWallPost.findMany({
+        where,
+        orderBy: buildAdminWallPostOrderBy(normalizedSort),
+        skip: (normalizedPage - 1) * normalizedPageSize,
+        take: normalizedPageSize,
+        select: getAdminGlobalWallPostSelect(),
+      }),
+    ),
+    withMissingTableFallback("ProfileWallPost", 0, () => prisma.profileWallPost.count({ where })),
+  ]);
+
+  const hydratedOwners = await hydrateFreeProfileUsers(rows.map((row) => row?.owner).filter(Boolean));
+  const hydratedOwnersById = new Map(
+    hydratedOwners
+      .map((owner) => [String(owner?.id || "").trim(), owner])
+      .filter(([id]) => Boolean(id)),
+  );
+  const items = rows
+    .map((row) => ({
+      ...row,
+      owner: hydratedOwnersById.get(String(row?.owner?.id || row?.ownerId || "").trim()) || row.owner,
+    }))
+    .map(mapAdminGlobalWallPost)
+    .filter(Boolean);
+
+  return {
+    items,
+    pagination: {
+      page: normalizedPage,
+      pageSize: normalizedPageSize,
+      total,
+      totalPages: Math.max(1, Math.ceil(total / normalizedPageSize)),
+      hasMore: normalizedPage * normalizedPageSize < total,
+    },
+    filters: {
+      q: query,
+      sort: normalizedSort,
+      status: normalizedStatus,
+    },
+  };
 }
 
 async function getWallSummary(user, options = {}) {
@@ -1163,6 +1369,7 @@ module.exports = {
   listPublicWallPosts,
   listLatestHomeWallPosts,
   listAdminWallPosts,
+  listAllAdminWallPosts,
   createWallPost,
   updateWallPostContentAsOwner,
   deleteWallPostAsOwner,

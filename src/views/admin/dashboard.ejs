@@ -10,6 +10,7 @@
     purchases:       { title: "Покупки",               desc: "Все успешные покупки slug-идентификаторов и подписок.",                       action: null },
     "payment-cards": { title: "Платёжные карты",       desc: "Привязанные карты пользователей и история транзакций.",                      action: null },
     cards:           { title: "Визитки",               desc: "Управление профилями и цифровыми карточками пользователей.",                 action: null },
+    posts:           { title: "Посты",                 desc: "Все посты сайта: сортировка по популярности, лайкам, времени и комментариям.", action: null },
     users:           { title: "Пользователи",          desc: "База аккаунтов, поиск, управление профилями и смена паролей.",               action: null },
     accounts:        { title: "Аккаунты",              desc: "Все зарегистрированные аккаунты. Новые — сверху.",                           action: null },
     slugs:           { title: "Slug-идентификаторы",   desc: "Редактирование, переименование и мониторинг slug.",                          action: null },
@@ -755,6 +756,67 @@
                 </div>
               </div>
               <div id="cards-pagination" class="flex items-center justify-end gap-2 text-sm text-neutral-600"></div>
+            </section>
+
+            <section id="tab-posts" class="<%= pageActiveTab === 'posts' ? '' : 'hidden' %> space-y-4">
+              <header class="rounded-2xl border border-neutral-200 bg-white p-4">
+                <h2 class="text-base font-bold text-neutral-900">Посты сайта</h2>
+                <p class="mt-1 text-sm text-neutral-600">Единая лента всех постов с фильтрами по популярности, лайкам,
+                  времени и комментариям.</p>
+              </header>
+              <form id="posts-filters" action="<%= pageDashboardBase %>" method="get"
+                class="grid gap-3 rounded-2xl border border-neutral-200 bg-white p-4 md:grid-cols-[1fr_210px_190px_auto] md:items-end">
+                <input type="hidden" name="tab" value="posts" />
+                <label class="block text-sm">
+                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Поиск</span>
+                  <input name="q" type="search" placeholder="Текст, автор, slug, email"
+                    class="min-h-11 w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+                </label>
+                <label class="block text-sm">
+                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Сортировка</span>
+                  <select name="sort" class="min-h-11 w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm">
+                    <option value="newest">По времени: новые</option>
+                    <option value="oldest">По времени: старые</option>
+                    <option value="popular">По популярности</option>
+                    <option value="likes">По лайкам</option>
+                    <option value="comments">По комментариям</option>
+                  </select>
+                </label>
+                <label class="block text-sm">
+                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Статус</span>
+                  <select name="status" class="min-h-11 w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm">
+                    <option value="all">Все статусы</option>
+                    <option value="published">Опубликованные</option>
+                    <option value="hidden">Скрытые</option>
+                    <option value="deleted">Удалённые</option>
+                  </select>
+                </label>
+                <input type="hidden" name="page" value="1" />
+                <button type="submit"
+                  class="inline-flex min-h-11 w-full items-center justify-center justify-self-start rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100 md:w-auto">
+                  Применить
+                </button>
+              </form>
+              <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
+                <div class="overflow-x-auto">
+                  <table class="min-w-[1180px] w-full text-left text-sm">
+                    <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
+                      <tr>
+                        <th class="px-4 py-3">Пост</th>
+                        <th class="px-4 py-3">Автор</th>
+                        <th class="px-4 py-3">Статус</th>
+                        <th class="px-4 py-3">Популярность</th>
+                        <th class="px-4 py-3">Лайки</th>
+                        <th class="px-4 py-3">Комментарии</th>
+                        <th class="px-4 py-3">Создан</th>
+                        <th class="px-4 py-3">Действия</th>
+                      </tr>
+                    </thead>
+                    <tbody id="posts-table"></tbody>
+                  </table>
+                </div>
+              </div>
+              <div id="posts-pagination" class="flex items-center justify-end gap-2 text-sm text-neutral-600"></div>
             </section>
 
 
