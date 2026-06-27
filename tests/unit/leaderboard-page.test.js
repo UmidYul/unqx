@@ -70,6 +70,16 @@ describe("leaderboard page", () => {
     expect(html).toContain('/leaderboard?period=week&type=person');
   });
 
+  test("renders compact filter bar", async () => {
+    const html = await renderLeaderboardTemplate({ period: "day", type: "all" });
+    expect(html).toContain("lg:flex-row");
+    expect(html).toContain("min-h-8");
+    expect(html).toContain("Главная");
+    expect(html).not.toContain(">Период</p>");
+    expect(html).not.toContain(">Сегмент</p>");
+    expect(html).not.toContain("min-h-11 items-center justify-center whitespace-nowrap rounded-lg");
+  });
+
   test("contains leaderboard share live region for accessibility", async () => {
     const html = await renderLeaderboardTemplate();
     expect(html).toContain('id="leaderboard-toast-region"');
