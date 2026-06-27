@@ -38,6 +38,7 @@ const {
   isWallStorageMissing,
   listPublicWallPosts,
   listLatestHomeWallPosts,
+  listPublicSiteWallPosts,
 } = require("../../services/profile-wall");
 const {
   getViewerFollowLookup,
@@ -1355,6 +1356,82 @@ router.get(
       pricing,
       authPhotoUrl,
       publicSettings: publicSettingsRaw,
+      adminSession: getAdminSession(req),
+    });
+  }),
+);
+
+router.get(
+  "/posts",
+  asyncHandler(async (req, res) => {
+    const userSession = getUserSession(req);
+    const userId = String(userSession?.userId || "").trim();
+    const page = Math.max(1, Math.round(Number(req.query.page || 1) || 1));
+    const pageSize = 12;
+    const [leaderboardSettings, postsPayload, authPhotoUrl] = await Promise.all([
+      getFeatureSetting("leaderboard"),
+      listPublicSiteWallPosts({ page, pageSize }).catch((error) => {
+        if (isWallStorageMissing(error)) {
+          return {
+            items: [],
+            pagination: { page, pageSize, total: 0, totalPages: 1, hasMore: false },
+          };
+        }
+        throw error;
+      }),
+      userId
+        ? findProfileCardByOwnerId(userId)
+          .then((card) => String(card?.avatarUrl || "").trim())
+          .catch(() => "")
+        : Promise.resolve(""),
+    ]);
+
+    const postOwnerIds = Array.isArray(postsPayload.items)
+      ? postsPayload.items.map((item) => String(item?.author?.userId || item?.ownerId || "").trim()).filter(Boolean)
+      : [];
+    const postIds = Array.isArray(postsPayload.items)
+      ? postsPayload.items.map((item) => String(item?.id || "").trim()).filter(Boolean)
+      : [];
+    const [viewerFollowSet, viewerLikedRows] = await Promise.all([
+      getViewerFollowLookup(userId, postOwnerIds),
+      userId && postIds.length
+        ? withMissingTableFallback("ProfileWallPostLike", [], () =>
+          prisma.profileWallPostLike.findMany({
+            where: {
+              userId,
+              postId: { in: postIds },
+            },
+            select: { postId: true },
+          }),
+        )
+        : Promise.resolve([]),
+    ]);
+    const viewerLikedSet = new Set(
+      viewerLikedRows.map((item) => String(item?.postId || "").trim()).filter(Boolean),
+    );
+    const posts = Array.isArray(postsPayload.items)
+      ? postsPayload.items.map((item) => ({
+        ...item,
+        viewerHasLiked: viewerLikedSet.has(String(item?.id || "").trim()),
+        viewerFollowState: {
+          isFollowing: viewerFollowSet.has(String(item?.author?.userId || item?.ownerId || "").trim()),
+          canFollow: Boolean(item?.author?.userId) && String(item.author.userId).trim() !== userId,
+          requiresAuth: !userId,
+        },
+      }))
+      : [];
+
+    res.render("public/posts", {
+      title: "Посты | UNQX",
+      description: "Все опубликованные посты пользователей UNQX.",
+      image: defaultSocialImage,
+      baseUrl: absoluteUrl(""),
+      canonicalUrl: absoluteUrl("/posts"),
+      leaderboardEnabled: Boolean(leaderboardSettings.enabled),
+      posts,
+      pagination: postsPayload.pagination,
+      authPhotoUrl,
+      userSession,
       adminSession: getAdminSession(req),
     });
   }),

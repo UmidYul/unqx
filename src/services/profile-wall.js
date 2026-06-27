@@ -679,6 +679,79 @@ async function listLatestHomeWallPosts({ limit = 3 } = {}) {
   return items;
 }
 
+async function listPublicSiteWallPosts({ page = 1, pageSize = 12 } = {}) {
+  const normalizedPage = resolveWallPage(page);
+  const normalizedPageSize = resolveWallPageSize(pageSize, 12, 50);
+  const where = {
+    status: WALL_PUBLIC_STATUS,
+    owner: {
+      status: "active",
+    },
+  };
+  const [rows, total] = await Promise.all([
+    withMissingTableFallback("ProfileWallPost", [], () =>
+      prisma.profileWallPost.findMany({
+        where,
+        orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+        skip: (normalizedPage - 1) * normalizedPageSize,
+        take: normalizedPageSize,
+        select: getHomeWallPostSelect(),
+      }),
+    ),
+    withMissingTableFallback("ProfileWallPost", 0, () => prisma.profileWallPost.count({ where })),
+  ]);
+  const hydratedOwners = await hydrateFreeProfileUsers(rows.map((row) => row?.owner).filter(Boolean));
+  const hydratedOwnersById = new Map(
+    hydratedOwners
+      .map((owner) => [String(owner?.id || "").trim(), owner])
+      .filter(([id]) => Boolean(id)),
+  );
+
+  const items = [];
+  for (const row of rows) {
+    const owner = hydratedOwnersById.get(String(row?.owner?.id || row?.ownerId || "").trim()) || row?.owner;
+    const publicHandle = getActivePublicHandle(owner);
+    const primarySlug = String(publicHandle?.value || "").trim().toUpperCase();
+    if (!owner || !primarySlug || !isPublicProfileVisible(owner)) {
+      continue;
+    }
+
+    const authorName =
+      String(owner?.profileCard?.name || owner?.displayName || owner?.firstName || "UNQX User").trim() || "UNQX User";
+    items.push({
+      id: String(row.id || "").trim(),
+      ownerId: String(row.ownerId || "").trim(),
+      content: String(row.content || ""),
+      createdAt: row.createdAt || null,
+      updatedAt: row.updatedAt || null,
+      likesCount: Math.max(0, Number(row?._count?.likes || 0)),
+      commentsCount: Math.max(0, Number(row?._count?.comments || 0)),
+      postHref: `${publicHandle.href}#wall-post-${encodeURIComponent(String(row.id || "").trim())}`,
+      author: {
+        userId: String(owner.id || "").trim(),
+        name: authorName,
+        handle: String(owner?.login || owner?.username || "").trim(),
+        avatarUrl: String(owner?.profileCard?.avatarUrl || "").trim() || null,
+        primarySlug,
+        role: String(owner?.profileCard?.role || owner?.verifiedCompany || "").trim(),
+        verified: Boolean(owner?.isVerified),
+        profileHref: publicHandle.href,
+      },
+    });
+  }
+
+  return {
+    items,
+    pagination: {
+      page: normalizedPage,
+      pageSize: normalizedPageSize,
+      total,
+      totalPages: Math.max(1, Math.ceil(total / normalizedPageSize)),
+      hasMore: normalizedPage * normalizedPageSize < total,
+    },
+  };
+}
+
 async function listAdminWallPosts({
   ownerId,
   page = 1,
@@ -1368,6 +1441,7 @@ module.exports = {
   listWallPostsByOwner,
   listPublicWallPosts,
   listLatestHomeWallPosts,
+  listPublicSiteWallPosts,
   listAdminWallPosts,
   listAllAdminWallPosts,
   createWallPost,

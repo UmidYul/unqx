@@ -208,7 +208,7 @@ describe("home page", () => {
     const html = await renderHomeTemplate();
     const residentsIndex = html.indexOf(">Резиденты</a>");
     const eliteIndex = html.indexOf("UNQ&nbsp;ELITE");
-    const postsIndex = html.indexOf('href="#latest-posts"');
+    const postsIndex = html.indexOf('href="/posts"');
     const loginIndex = html.indexOf('data-auth-login');
 
     expect(residentsIndex).toBeGreaterThan(-1);
