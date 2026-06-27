@@ -204,6 +204,19 @@ describe("home page", () => {
     expect(html).toContain('id="latest-posts"');
   });
 
+  test("renders posts link after UNQ ELITE in public navigation", async () => {
+    const html = await renderHomeTemplate();
+    const residentsIndex = html.indexOf(">Резиденты</a>");
+    const eliteIndex = html.indexOf("UNQ&nbsp;ELITE");
+    const postsIndex = html.indexOf('href="#latest-posts"');
+    const loginIndex = html.indexOf('data-auth-login');
+
+    expect(residentsIndex).toBeGreaterThan(-1);
+    expect(eliteIndex).toBeGreaterThan(residentsIndex);
+    expect(postsIndex).toBeGreaterThan(eliteIndex);
+    expect(loginIndex).toBeGreaterThan(postsIndex);
+  });
+
   test("renders flash sale banner with modal CTA and flash order modal content", async () => {
     const html = await renderHomeTemplateWithFlashSale();
     expect(html).toContain("data-flash-sale-banner");
