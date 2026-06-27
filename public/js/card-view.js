@@ -636,126 +636,127 @@
     },
     graffiti_neon: createGraffitiTheme(),
     heritage_crest: createMonochromeTheme({
-      surfaceBg: "#1e2d24",
-      base: "#2f4938",
-      deep: "#101b15",
-      accent: "#b69a5f",
-      text: "#fff7e8",
-      role: "#d9c79a",
-      muted: "#b9aa83",
-      buttonText: "#17130b",
-      badgeText: "#efe1bd",
-      border: "#6f5d36",
-    }),
-    ivory_tennis: createMonochromeTheme({
-      surfaceBg: "#2c5b3f",
-      base: "#4d7d53",
-      deep: "#fbf7e8",
-      accent: "#d7e889",
-      text: "#173222",
-      role: "#385a3d",
-      muted: "#607a55",
-      buttonText: "#173222",
-      badgeText: "#29492f",
-      border: "#7a8f52",
+      surfaceBg: "#ffe6f0",
+      base: "#ffc6dd",
+      deep: "#fff5f9",
+      accent: "#ff6fae",
+      text: "#6d2447",
+      role: "#b34d78",
+      muted: "#c97899",
+      buttonText: "#fff7fb",
+      badgeText: "#9d3b66",
+      border: "#ff9fca",
       isLight: true,
     }),
+    ivory_tennis: createMonochromeTheme({
+      surfaceBg: "#15171c",
+      base: "#2b2f36",
+      deep: "#050608",
+      accent: "#f0c84b",
+      text: "#f4f4f5",
+      role: "#b8bdc6",
+      muted: "#858b96",
+      buttonText: "#07080a",
+      badgeText: "#f0c84b",
+      border: "#3d424c",
+    }),
     grand_slam_clay: createMonochromeTheme({
-      surfaceBg: "#7f3f28",
-      base: "#b65b31",
-      deep: "#3f2119",
-      accent: "#f0c37a",
-      text: "#fff4e7",
-      role: "#ffd8ad",
-      muted: "#d9a078",
-      buttonText: "#31150d",
-      badgeText: "#ffe0bf",
-      border: "#b56b43",
+      surfaceBg: "#123b86",
+      base: "#cf1f2d",
+      deep: "#0a1f4d",
+      accent: "#6bb7ff",
+      text: "#ffffff",
+      role: "#cfe4ff",
+      muted: "#8fb8ea",
+      buttonText: "#ffffff",
+      badgeText: "#d7eaff",
+      border: "#224b9c",
     }),
     racing_green: createMonochromeTheme({
-      surfaceBg: "#0f3a2a",
-      base: "#13543a",
-      deep: "#071d16",
-      accent: "#d8b35a",
-      text: "#f4f0dd",
-      role: "#d8c995",
-      muted: "#afa678",
-      buttonText: "#10150c",
-      badgeText: "#ead89e",
-      border: "#2e6a4d",
+      surfaceBg: "#ffeaf3",
+      base: "#ffc8df",
+      deep: "#f5f9ff",
+      accent: "#8ab7ff",
+      text: "#6a2a4b",
+      role: "#956082",
+      muted: "#ba7fa0",
+      buttonText: "#ffffff",
+      badgeText: "#7f4a73",
+      border: "#ffb7d1",
+      isLight: true,
     }),
     polo_navy: createMonochromeTheme({
-      surfaceBg: "#182c55",
-      base: "#243d72",
-      deep: "#071428",
-      accent: "#c8a45b",
-      text: "#f2f6ff",
-      role: "#cad7f0",
-      muted: "#9daed0",
-      buttonText: "#071428",
-      badgeText: "#d8c18a",
-      border: "#334d83",
+      surfaceBg: "#0a3a52",
+      base: "#082033",
+      deep: "#061422",
+      accent: "#4df7ff",
+      text: "#eaffff",
+      role: "#91f8ff",
+      muted: "#65b9cf",
+      buttonText: "#041019",
+      badgeText: "#9ffaff",
+      border: "#1d6f87",
     }),
     alpine_ski: createMonochromeTheme({
-      surfaceBg: "#dfeef8",
-      base: "#f7fbff",
-      deep: "#2c638e",
-      accent: "#8fb8d8",
-      text: "#17334b",
-      role: "#40647e",
-      muted: "#6f91a9",
-      buttonText: "#f7fbff",
-      badgeText: "#315a78",
-      border: "#b5d0e3",
+      surfaceBg: "#f3f5ff",
+      base: "#d8c7ff",
+      deep: "#fff8fe",
+      accent: "#74d9ff",
+      text: "#4a3f7a",
+      role: "#7562a8",
+      muted: "#8b7fb8",
+      buttonText: "#ffffff",
+      badgeText: "#6d5ea0",
+      border: "#c7b5ff",
       isLight: true,
     }),
     boxing_legend: createMonochromeTheme({
-      surfaceBg: "#4c1118",
-      base: "#8f1e28",
-      deep: "#24090d",
-      accent: "#c8a24c",
-      text: "#fff1e8",
-      role: "#f0c6b6",
-      muted: "#d7988a",
-      buttonText: "#24090d",
-      badgeText: "#f1d081",
-      border: "#7a2b30",
+      surfaceBg: "#6f1c08",
+      base: "#d94818",
+      deep: "#2b0900",
+      accent: "#ffd15a",
+      text: "#fff5e8",
+      role: "#ffd0a4",
+      muted: "#e99569",
+      buttonText: "#2b0900",
+      badgeText: "#ffe0a0",
+      border: "#a43512",
     }),
     basketball_court: createMonochromeTheme({
-      surfaceBg: "#8b4b20",
-      base: "#f0b05d",
-      deep: "#4d260f",
-      accent: "#1f2937",
-      text: "#fff4e4",
-      role: "#ffe0b1",
-      muted: "#d99f65",
-      buttonText: "#fff1dc",
-      badgeText: "#ffe0b1",
-      border: "#b16d35",
+      surfaceBg: "#4d1457",
+      base: "#cf2b9f",
+      deep: "#180821",
+      accent: "#61f7ff",
+      text: "#fff3fb",
+      role: "#ffd1f1",
+      muted: "#d889c6",
+      buttonText: "#180821",
+      badgeText: "#bffcff",
+      border: "#9933a8",
     }),
     football_pitch: createMonochromeTheme({
-      surfaceBg: "#0d4a2b",
-      base: "#38a052",
-      deep: "#062415",
-      accent: "#ffffff",
-      text: "#f4fff5",
-      role: "#cffff0",
-      muted: "#9ad5a6",
-      buttonText: "#062415",
-      badgeText: "#e8fff0",
-      border: "#4eb76a",
+      surfaceBg: "#0b5845",
+      base: "#1ba879",
+      deep: "#07251d",
+      accent: "#a8ffd6",
+      text: "#f0fff8",
+      role: "#c9ffe7",
+      muted: "#8ad9bb",
+      buttonText: "#06241b",
+      badgeText: "#d8ffef",
+      border: "#35bd8e",
     }),
     olympic_gold: createMonochromeTheme({
-      surfaceBg: "#8a651f",
-      base: "#c7922e",
-      deep: "#22180a",
-      accent: "#f5d27a",
-      text: "#fff7df",
-      role: "#f3dfad",
-      muted: "#d0ad68",
-      buttonText: "#22180a",
-      badgeText: "#ffe8a3",
-      border: "#b98a32",
+      surfaceBg: "#3a176b",
+      base: "#6732bd",
+      deep: "#180825",
+      accent: "#ffd36e",
+      text: "#fff6d8",
+      role: "#e7d4ff",
+      muted: "#b99ee8",
+      buttonText: "#1b0d25",
+      badgeText: "#ffe6a6",
+      border: "#8b61d8",
     }),
     color_red: createMonochromeTheme({
       surfaceBg: "#5d0d18",
@@ -1490,6 +1491,191 @@
         <circle cx="304" cy="414" r="2.6" fill="#f284ff" opacity="0.48"></circle>
         <circle cx="322" cy="398" r="2.4" fill="#b5ff5e" opacity="0.5"></circle>
         <text x="206" y="96" fill="#f8a7ff" opacity="0.28" font-size="28" font-family="Trebuchet MS, Arial, sans-serif" transform="rotate(-10 206 96)">UNQX</text>
+      </svg>`;
+    }
+    if (themeKey === "heritage_crest") {
+      return `<svg class="unq-ref-overlay-svg" viewBox="0 0 360 600" preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <radialGradient id="sr-soft-glow" cx="50%" cy="28%" r="76%">
+            <stop offset="0%" stop-color="#ffffff" stop-opacity="0.72"></stop>
+            <stop offset="100%" stop-color="#ffc6dd" stop-opacity="0"></stop>
+          </radialGradient>
+          <pattern id="sr-dots" width="28" height="28" patternUnits="userSpaceOnUse">
+            <circle cx="5" cy="5" r="2.1" fill="#ff6fae" opacity="0.16"></circle>
+            <circle cx="21" cy="18" r="1.7" fill="#ffffff" opacity="0.36"></circle>
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#sr-dots)"></rect>
+        <circle cx="292" cy="112" r="170" fill="url(#sr-soft-glow)"></circle>
+        <path d="M36 88c22-22 48-18 64 8 18-26 44-30 66-8-10 28-36 38-66 14-30 24-56 14-64-14Z" fill="#ff6fae" opacity="0.24"></path>
+        <path d="M96 96h8v8h-8z" fill="#ffffff" opacity="0.48"></path>
+        <path d="M272 378c18-18 38-14 50 6 14-20 34-24 52-6-8 23-28 31-52 12-24 19-44 11-50-12Z" fill="#ff9fca" opacity="0.2"></path>
+        <path d="M62 218l9 18 20 3-14 14 3 20-18-9-18 9 3-20-14-14 20-3 9-18Z" fill="#ffffff" opacity="0.22"></path>
+        <path d="M292 124c8-14 28-14 36 0 8 14-2 32-36 50-34-18-44-36-36-50 8-14 28-14 36 0Z" fill="#ff6fae" opacity="0.18"></path>
+      </svg>`;
+    }
+    if (themeKey === "ivory_tennis") {
+      return `<svg class="unq-ref-overlay-svg" viewBox="0 0 360 600" preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <radialGradient id="gs-signal" cx="72%" cy="16%" r="44%">
+            <stop offset="0%" stop-color="#f0c84b" stop-opacity="0.32"></stop>
+            <stop offset="100%" stop-color="#f0c84b" stop-opacity="0"></stop>
+          </radialGradient>
+          <linearGradient id="gs-steel" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#5f6672" stop-opacity="0.26"></stop>
+            <stop offset="100%" stop-color="#0b0c10" stop-opacity="0"></stop>
+          </linearGradient>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#gs-steel)"></rect>
+        <circle cx="272" cy="96" r="120" fill="url(#gs-signal)"></circle>
+        <path d="M0 428h360v172H0z" fill="#050608" opacity="0.24"></path>
+        <path d="M28 428h32v-74h34v74h28v-112h42v112h32v-92h36v92h30v-132h46v132h24" fill="#050608" opacity="0.34"></path>
+        <path d="M112 118c28-30 54-30 80 0 26-30 52-30 80 0-32-8-54 4-80 34-26-30-48-42-80-34Z" fill="#f0c84b" opacity="0.18"></path>
+        <path d="M34 104C96 80 156 82 214 110M18 222c72-30 142-28 210 6M94 520c78-20 154-18 228 4" stroke="#f0c84b" stroke-width="0.9" fill="none" opacity="0.22"></path>
+      </svg>`;
+    }
+    if (themeKey === "grand_slam_clay") {
+      return `<svg class="unq-ref-overlay-svg" viewBox="0 0 360 600" preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <radialGradient id="ws-red" cx="22%" cy="16%" r="50%">
+            <stop offset="0%" stop-color="#ff4052" stop-opacity="0.28"></stop>
+            <stop offset="100%" stop-color="#cf1f2d" stop-opacity="0"></stop>
+          </radialGradient>
+          <radialGradient id="ws-blue" cx="82%" cy="78%" r="56%">
+            <stop offset="0%" stop-color="#6bb7ff" stop-opacity="0.24"></stop>
+            <stop offset="100%" stop-color="#123b86" stop-opacity="0"></stop>
+          </radialGradient>
+        </defs>
+        <circle cx="72" cy="92" r="162" fill="url(#ws-red)"></circle>
+        <circle cx="294" cy="470" r="184" fill="url(#ws-blue)"></circle>
+        <g stroke="#ffffff" stroke-width="0.8" fill="none" opacity="0.18">
+          <path d="M180 0v600M0 150h360M0 300h360M0 450h360"></path>
+          <path d="M180 0C80 130 72 312 180 600M180 0c100 130 108 312 0 600"></path>
+          <path d="M0 72c118 84 238 84 360 0M0 528c118-84 238-84 360 0"></path>
+        </g>
+        <path d="M0 122C84 98 166 112 246 146C292 166 330 168 360 158" stroke="#6bb7ff" stroke-width="1.3" fill="none" opacity="0.28"></path>
+        <path d="M30 492C112 462 194 472 278 506" stroke="#ffffff" stroke-width="1" fill="none" opacity="0.18"></path>
+      </svg>`;
+    }
+    if (themeKey === "racing_green") {
+      return `<svg class="unq-ref-overlay-svg" viewBox="0 0 360 600" preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <radialGradient id="sd-blush" cx="50%" cy="22%" r="72%">
+            <stop offset="0%" stop-color="#ffffff" stop-opacity="0.6"></stop>
+            <stop offset="100%" stop-color="#ffc8df" stop-opacity="0"></stop>
+          </radialGradient>
+        </defs>
+        <circle cx="188" cy="110" r="190" fill="url(#sd-blush)"></circle>
+        <path d="M0 118C70 96 140 104 214 130C280 154 324 154 360 142" stroke="#8ab7ff" stroke-width="0.86" fill="none" opacity="0.32"></path>
+        <path d="M0 370C72 344 146 354 218 382C284 406 326 410 360 398" stroke="#ff8fbd" stroke-width="0.82" fill="none" opacity="0.26"></path>
+        <g fill="#ff8fbd" opacity="0.24">
+          <path d="M70 92c10 2 18 10 20 20-10-2-18-10-20-20Z"></path>
+          <path d="M92 96c-2 10-10 18-20 20 2-10 10-18 20-20Z"></path>
+          <path d="M282 254c12 2 21 11 23 23-12-2-21-11-23-23Z"></path>
+          <path d="M308 258c-2 12-11 21-23 23 2-12 11-21 23-23Z"></path>
+          <path d="M122 472c9 2 16 9 18 18-9-2-16-9-18-18Z"></path>
+          <path d="M142 476c-2 9-9 16-18 18 2-9 9-16 18-18Z"></path>
+        </g>
+      </svg>`;
+    }
+    if (themeKey === "polo_navy") {
+      return `<svg class="unq-ref-overlay-svg" viewBox="0 0 360 600" preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <linearGradient id="nm-circuit" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#4df7ff" stop-opacity="0.06"></stop>
+            <stop offset="52%" stop-color="#4df7ff" stop-opacity="0.34"></stop>
+            <stop offset="100%" stop-color="#4df7ff" stop-opacity="0.04"></stop>
+          </linearGradient>
+        </defs>
+        <path d="M32 86h104v40h72v36h86M52 252h82v-34h72v54h116M28 454h128v-42h64v32h112" stroke="url(#nm-circuit)" stroke-width="2" fill="none"></path>
+        <g fill="#4df7ff" opacity="0.24">
+          <rect x="118" y="78" width="22" height="22" rx="4"></rect>
+          <rect x="196" y="152" width="18" height="18" rx="4"></rect>
+          <rect x="126" y="208" width="18" height="18" rx="4"></rect>
+          <rect x="214" y="404" width="20" height="20" rx="4"></rect>
+        </g>
+        <path d="M70 122l34 18 34-18v54l-34 18-34-18V122ZM236 318l42 22 42-22v66l-42 22-42-22v-66Z" stroke="#91f8ff" stroke-width="1.2" fill="none" opacity="0.2"></path>
+      </svg>`;
+    }
+    if (themeKey === "alpine_ski") {
+      return `<svg class="unq-ref-overlay-svg" viewBox="0 0 360 600" preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <radialGradient id="mp-glow" cx="52%" cy="24%" r="70%">
+            <stop offset="0%" stop-color="#ffffff" stop-opacity="0.72"></stop>
+            <stop offset="100%" stop-color="#d8c7ff" stop-opacity="0"></stop>
+          </radialGradient>
+        </defs>
+        <circle cx="184" cy="128" r="184" fill="url(#mp-glow)"></circle>
+        <path d="M180 58l10 30 31 1-25 18 9 30-25-18-25 18 9-30-25-18 31-1 10-30Z" fill="#74d9ff" opacity="0.18"></path>
+        <path d="M62 328l7 21 22 1-18 13 7 21-18-13-18 13 7-21-18-13 22-1 7-21ZM298 218l6 18 19 1-15 11 6 18-16-11-15 11 6-18-15-11 19-1 5-18Z" fill="#b99cff" opacity="0.2"></path>
+        <path d="M0 160C78 130 154 138 226 166C288 190 328 192 360 180M0 438C82 408 158 416 232 444" stroke="#74d9ff" stroke-width="0.92" fill="none" opacity="0.26"></path>
+        <circle cx="268" cy="94" r="34" fill="none" stroke="#d8c7ff" stroke-width="4" opacity="0.18"></circle>
+      </svg>`;
+    }
+    if (themeKey === "boxing_legend") {
+      return `<svg class="unq-ref-overlay-svg" viewBox="0 0 360 600" preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <radialGradient id="sf-fire" cx="50%" cy="88%" r="74%">
+            <stop offset="0%" stop-color="#ffd15a" stop-opacity="0.28"></stop>
+            <stop offset="100%" stop-color="#d94818" stop-opacity="0"></stop>
+          </radialGradient>
+        </defs>
+        <circle cx="180" cy="526" r="220" fill="url(#sf-fire)"></circle>
+        <path d="M58 540c34-84-16-110 42-176-8 54 54 60 28 132 40-42 24-90 82-138-18 78 80 112 18 196" fill="#ffd15a" opacity="0.12"></path>
+        <path d="M0 102C70 84 138 92 204 118C274 146 322 148 360 136" stroke="#ffd15a" stroke-width="1.1" fill="none" opacity="0.3"></path>
+        <path d="M24 284c70-32 142-22 216 30M114 420c72-22 144-14 216 24" stroke="#fff5e8" stroke-width="0.8" fill="none" opacity="0.18"></path>
+        <path d="M290 84l14 28 31 5-22 22 5 31-28-15-28 15 5-31-22-22 31-5 14-28Z" fill="#ffd15a" opacity="0.16"></path>
+      </svg>`;
+    }
+    if (themeKey === "basketball_court") {
+      return `<svg class="unq-ref-overlay-svg" viewBox="0 0 360 600" preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <linearGradient id="ci-neon" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#61f7ff" stop-opacity="0.08"></stop>
+            <stop offset="50%" stop-color="#ff7ddb" stop-opacity="0.32"></stop>
+            <stop offset="100%" stop-color="#61f7ff" stop-opacity="0.08"></stop>
+          </linearGradient>
+        </defs>
+        <path d="M0 92h360M0 186h360M0 280h360M0 374h360M0 468h360" stroke="#61f7ff" stroke-width="0.7" opacity="0.12"></path>
+        <path d="M42 78l74 74-74 74M318 78l-74 74 74 74M80 432l58-58 58 58 58-58 58 58" stroke="url(#ci-neon)" stroke-width="2.3" fill="none"></path>
+        <circle cx="286" cy="138" r="44" fill="none" stroke="#61f7ff" stroke-width="2" opacity="0.2"></circle>
+        <circle cx="76" cy="344" r="36" fill="none" stroke="#ff9be5" stroke-width="2" opacity="0.18"></circle>
+        <path d="M180 104l8 22 24 1-19 14 7 23-20-13-20 13 7-23-19-14 24-1 8-22Z" fill="#61f7ff" opacity="0.16"></path>
+      </svg>`;
+    }
+    if (themeKey === "football_pitch") {
+      return `<svg class="unq-ref-overlay-svg" viewBox="0 0 360 600" preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <radialGradient id="fs-mist" cx="50%" cy="22%" r="72%">
+            <stop offset="0%" stop-color="#a8ffd6" stop-opacity="0.24"></stop>
+            <stop offset="100%" stop-color="#07251d" stop-opacity="0"></stop>
+          </radialGradient>
+        </defs>
+        <circle cx="178" cy="130" r="190" fill="url(#fs-mist)"></circle>
+        <path d="M0 126C72 96 142 104 212 132C276 156 322 160 360 148" stroke="#a8ffd6" stroke-width="0.9" fill="none" opacity="0.28"></path>
+        <path d="M30 492C106 462 184 468 264 496" stroke="#c9ffe7" stroke-width="0.8" fill="none" opacity="0.18"></path>
+        <g fill="#a8ffd6" opacity="0.16">
+          <path d="M76 92c26 18 30 44 12 76-24-22-28-48-12-76Z"></path>
+          <path d="M278 254c30 12 42 38 34 72-30-14-42-40-34-72Z"></path>
+          <path d="M120 418c22 10 31 30 24 56-23-11-32-31-24-56Z"></path>
+        </g>
+        <circle cx="262" cy="118" r="8" fill="#a8ffd6" opacity="0.18"></circle>
+        <circle cx="286" cy="130" r="4" fill="#ffffff" opacity="0.2"></circle>
+      </svg>`;
+    }
+    if (themeKey === "olympic_gold") {
+      return `<svg class="unq-ref-overlay-svg" viewBox="0 0 360 600" preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <radialGradient id="da-aura" cx="54%" cy="30%" r="72%">
+            <stop offset="0%" stop-color="#ffd36e" stop-opacity="0.22"></stop>
+            <stop offset="100%" stop-color="#6732bd" stop-opacity="0"></stop>
+          </radialGradient>
+        </defs>
+        <circle cx="190" cy="162" r="210" fill="url(#da-aura)"></circle>
+        <path d="M44 172c52-78 132-86 196-24 26 25 36 54 30 88 28-20 48-18 64 6-44 2-74 24-90 66-12-74-66-112-152-114 40-12 80-10 118 8-38-56-96-64-166-30Z" fill="#ffd36e" opacity="0.12"></path>
+        <path d="M0 118C80 90 158 98 232 130C292 156 330 158 360 148" stroke="#ffd36e" stroke-width="1" fill="none" opacity="0.28"></path>
+        <path d="M38 412c82-34 164-26 246 22" stroke="#e7d4ff" stroke-width="0.86" fill="none" opacity="0.2"></path>
+        <path d="M282 82l10 30 31 1-25 18 9 30-25-18-25 18 9-30-25-18 31-1 10-30Z" fill="#ffd36e" opacity="0.16"></path>
       </svg>`;
     }
     if (COLOR_THEME_KEYS.includes(themeKey)) {

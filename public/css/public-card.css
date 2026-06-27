@@ -1727,113 +1727,113 @@ body[data-page="profile-page"] {
 }
 
 #profile-card-live-preview[data-preview-theme="heritage_crest"] {
-  --preview-sport-deep: #101b15;
-  --preview-sport-base: #2f4938;
-  --preview-sport-surface: #1e2d24;
-  --preview-sport-border: #6f5d36;
-  --preview-sport-line: rgba(182, 154, 95, 0.12);
-  --preview-sport-line-soft: rgba(255, 247, 232, 0.08);
-  --preview-sport-glow: rgba(182, 154, 95, 0.16);
-  --preview-sport-glow-soft: rgba(217, 199, 154, 0.1);
+  --preview-sport-deep: #fff5f9;
+  --preview-sport-base: #ffc6dd;
+  --preview-sport-surface: #ffe6f0;
+  --preview-sport-border: #ff9fca;
+  --preview-sport-line: rgba(255, 111, 174, 0.18);
+  --preview-sport-line-soft: rgba(255, 255, 255, 0.2);
+  --preview-sport-glow: rgba(255, 111, 174, 0.2);
+  --preview-sport-glow-soft: rgba(255, 221, 235, 0.34);
 }
 
 #profile-card-live-preview[data-preview-theme="ivory_tennis"] {
-  --preview-sport-deep: #fbf7e8;
-  --preview-sport-base: #4d7d53;
-  --preview-sport-surface: #2c5b3f;
-  --preview-sport-border: #7a8f52;
-  --preview-sport-line: rgba(122, 143, 82, 0.14);
-  --preview-sport-line-soft: rgba(255, 255, 255, 0.14);
-  --preview-sport-glow: rgba(215, 232, 137, 0.16);
-  --preview-sport-glow-soft: rgba(251, 247, 232, 0.22);
+  --preview-sport-deep: #050608;
+  --preview-sport-base: #2b2f36;
+  --preview-sport-surface: #15171c;
+  --preview-sport-border: #3d424c;
+  --preview-sport-line: rgba(240, 200, 75, 0.16);
+  --preview-sport-line-soft: rgba(255, 255, 255, 0.06);
+  --preview-sport-glow: rgba(240, 200, 75, 0.12);
+  --preview-sport-glow-soft: rgba(180, 190, 205, 0.08);
 }
 
 #profile-card-live-preview[data-preview-theme="grand_slam_clay"] {
-  --preview-sport-deep: #3f2119;
-  --preview-sport-base: #b65b31;
-  --preview-sport-surface: #7f3f28;
-  --preview-sport-border: #b56b43;
-  --preview-sport-line: rgba(240, 195, 122, 0.12);
-  --preview-sport-line-soft: rgba(255, 244, 231, 0.08);
-  --preview-sport-glow: rgba(240, 195, 122, 0.15);
-  --preview-sport-glow-soft: rgba(255, 216, 173, 0.1);
+  --preview-sport-deep: #0a1f4d;
+  --preview-sport-base: #cf1f2d;
+  --preview-sport-surface: #123b86;
+  --preview-sport-border: #224b9c;
+  --preview-sport-line: rgba(107, 183, 255, 0.16);
+  --preview-sport-line-soft: rgba(255, 255, 255, 0.08);
+  --preview-sport-glow: rgba(207, 31, 45, 0.18);
+  --preview-sport-glow-soft: rgba(107, 183, 255, 0.14);
 }
 
 #profile-card-live-preview[data-preview-theme="racing_green"] {
-  --preview-sport-deep: #071d16;
-  --preview-sport-base: #13543a;
-  --preview-sport-surface: #0f3a2a;
-  --preview-sport-border: #2e6a4d;
-  --preview-sport-line: rgba(216, 179, 90, 0.12);
-  --preview-sport-line-soft: rgba(244, 240, 221, 0.08);
-  --preview-sport-glow: rgba(216, 179, 90, 0.14);
-  --preview-sport-glow-soft: rgba(216, 201, 149, 0.1);
+  --preview-sport-deep: #f5f9ff;
+  --preview-sport-base: #ffc8df;
+  --preview-sport-surface: #ffeaf3;
+  --preview-sport-border: #ffb7d1;
+  --preview-sport-line: rgba(138, 183, 255, 0.16);
+  --preview-sport-line-soft: rgba(255, 255, 255, 0.2);
+  --preview-sport-glow: rgba(255, 184, 213, 0.22);
+  --preview-sport-glow-soft: rgba(183, 215, 255, 0.24);
 }
 
 #profile-card-live-preview[data-preview-theme="polo_navy"] {
-  --preview-sport-deep: #071428;
-  --preview-sport-base: #243d72;
-  --preview-sport-surface: #182c55;
-  --preview-sport-border: #334d83;
-  --preview-sport-line: rgba(200, 164, 91, 0.12);
-  --preview-sport-line-soft: rgba(242, 246, 255, 0.08);
-  --preview-sport-glow: rgba(200, 164, 91, 0.14);
-  --preview-sport-glow-soft: rgba(202, 215, 240, 0.1);
+  --preview-sport-deep: #061422;
+  --preview-sport-base: #082033;
+  --preview-sport-surface: #0a3a52;
+  --preview-sport-border: #1d6f87;
+  --preview-sport-line: rgba(77, 247, 255, 0.18);
+  --preview-sport-line-soft: rgba(145, 248, 255, 0.08);
+  --preview-sport-glow: rgba(77, 247, 255, 0.14);
+  --preview-sport-glow-soft: rgba(14, 240, 255, 0.12);
 }
 
 #profile-card-live-preview[data-preview-theme="alpine_ski"] {
-  --preview-sport-deep: #2c638e;
-  --preview-sport-base: #f7fbff;
-  --preview-sport-surface: #dfeef8;
-  --preview-sport-border: #b5d0e3;
-  --preview-sport-line: rgba(143, 184, 216, 0.18);
-  --preview-sport-line-soft: rgba(255, 255, 255, 0.28);
-  --preview-sport-glow: rgba(255, 255, 255, 0.28);
-  --preview-sport-glow-soft: rgba(143, 184, 216, 0.16);
+  --preview-sport-deep: #fff8fe;
+  --preview-sport-base: #d8c7ff;
+  --preview-sport-surface: #f3f5ff;
+  --preview-sport-border: #c7b5ff;
+  --preview-sport-line: rgba(116, 217, 255, 0.18);
+  --preview-sport-line-soft: rgba(255, 255, 255, 0.3);
+  --preview-sport-glow: rgba(216, 199, 255, 0.26);
+  --preview-sport-glow-soft: rgba(191, 233, 255, 0.22);
 }
 
 #profile-card-live-preview[data-preview-theme="boxing_legend"] {
-  --preview-sport-deep: #24090d;
-  --preview-sport-base: #8f1e28;
-  --preview-sport-surface: #4c1118;
-  --preview-sport-border: #7a2b30;
-  --preview-sport-line: rgba(200, 162, 76, 0.12);
-  --preview-sport-line-soft: rgba(255, 241, 232, 0.08);
-  --preview-sport-glow: rgba(200, 162, 76, 0.14);
-  --preview-sport-glow-soft: rgba(240, 198, 182, 0.1);
+  --preview-sport-deep: #2b0900;
+  --preview-sport-base: #d94818;
+  --preview-sport-surface: #6f1c08;
+  --preview-sport-border: #a43512;
+  --preview-sport-line: rgba(255, 209, 90, 0.16);
+  --preview-sport-line-soft: rgba(255, 245, 232, 0.08);
+  --preview-sport-glow: rgba(255, 177, 59, 0.2);
+  --preview-sport-glow-soft: rgba(255, 209, 90, 0.12);
 }
 
 #profile-card-live-preview[data-preview-theme="basketball_court"] {
-  --preview-sport-deep: #4d260f;
-  --preview-sport-base: #f0b05d;
-  --preview-sport-surface: #8b4b20;
-  --preview-sport-border: #b16d35;
-  --preview-sport-line: rgba(31, 41, 55, 0.16);
-  --preview-sport-line-soft: rgba(255, 244, 228, 0.1);
-  --preview-sport-glow: rgba(240, 176, 93, 0.18);
-  --preview-sport-glow-soft: rgba(255, 224, 177, 0.12);
+  --preview-sport-deep: #180821;
+  --preview-sport-base: #cf2b9f;
+  --preview-sport-surface: #4d1457;
+  --preview-sport-border: #9933a8;
+  --preview-sport-line: rgba(97, 247, 255, 0.18);
+  --preview-sport-line-soft: rgba(255, 211, 244, 0.08);
+  --preview-sport-glow: rgba(207, 43, 159, 0.2);
+  --preview-sport-glow-soft: rgba(97, 247, 255, 0.12);
 }
 
 #profile-card-live-preview[data-preview-theme="football_pitch"] {
-  --preview-sport-deep: #062415;
-  --preview-sport-base: #38a052;
-  --preview-sport-surface: #0d4a2b;
-  --preview-sport-border: #4eb76a;
-  --preview-sport-line: rgba(255, 255, 255, 0.14);
-  --preview-sport-line-soft: rgba(207, 255, 240, 0.08);
-  --preview-sport-glow: rgba(255, 255, 255, 0.12);
-  --preview-sport-glow-soft: rgba(154, 213, 166, 0.12);
+  --preview-sport-deep: #07251d;
+  --preview-sport-base: #1ba879;
+  --preview-sport-surface: #0b5845;
+  --preview-sport-border: #35bd8e;
+  --preview-sport-line: rgba(168, 255, 214, 0.16);
+  --preview-sport-line-soft: rgba(240, 255, 248, 0.08);
+  --preview-sport-glow: rgba(168, 255, 214, 0.15);
+  --preview-sport-glow-soft: rgba(27, 168, 121, 0.16);
 }
 
 #profile-card-live-preview[data-preview-theme="olympic_gold"] {
-  --preview-sport-deep: #22180a;
-  --preview-sport-base: #c7922e;
-  --preview-sport-surface: #8a651f;
-  --preview-sport-border: #b98a32;
-  --preview-sport-line: rgba(245, 210, 122, 0.14);
-  --preview-sport-line-soft: rgba(255, 247, 223, 0.08);
-  --preview-sport-glow: rgba(245, 210, 122, 0.16);
-  --preview-sport-glow-soft: rgba(243, 223, 173, 0.1);
+  --preview-sport-deep: #180825;
+  --preview-sport-base: #6732bd;
+  --preview-sport-surface: #3a176b;
+  --preview-sport-border: #8b61d8;
+  --preview-sport-line: rgba(255, 211, 110, 0.16);
+  --preview-sport-line-soft: rgba(231, 212, 255, 0.08);
+  --preview-sport-glow: rgba(103, 50, 189, 0.2);
+  --preview-sport-glow-soft: rgba(255, 211, 110, 0.12);
 }
 
 #profile-card-live-preview[data-preview-theme^="color_"] {
@@ -5067,143 +5067,143 @@ body[data-card-theme="olympic_gold"]::before {
 }
 
 body[data-card-theme="heritage_crest"] {
-  --sport-theme-deep: #101b15;
-  --sport-theme-base: #2f4938;
-  --sport-theme-surface: #1e2d24;
-  --sport-theme-line: rgba(182, 154, 95, 0.12);
-  --sport-theme-line-soft: rgba(255, 247, 232, 0.08);
-  --sport-theme-glow: rgba(182, 154, 95, 0.16);
-  --sport-theme-glow-soft: rgba(217, 199, 154, 0.1);
-  --sport-theme-ui-bg: rgba(30, 45, 36, 0.86);
-  --sport-theme-ui-hover: rgba(43, 66, 50, 0.92);
-  --sport-theme-ui-border: rgba(182, 154, 95, 0.34);
-  --sport-theme-ui-text: #fff7e8;
+  --sport-theme-deep: #fff5f9;
+  --sport-theme-base: #ffc6dd;
+  --sport-theme-surface: #ffe6f0;
+  --sport-theme-line: rgba(255, 111, 174, 0.18);
+  --sport-theme-line-soft: rgba(255, 255, 255, 0.2);
+  --sport-theme-glow: rgba(255, 111, 174, 0.2);
+  --sport-theme-glow-soft: rgba(255, 221, 235, 0.34);
+  --sport-theme-ui-bg: rgba(255, 245, 249, 0.92);
+  --sport-theme-ui-hover: rgba(255, 232, 242, 0.98);
+  --sport-theme-ui-border: rgba(255, 111, 174, 0.34);
+  --sport-theme-ui-text: #6d2447;
 }
 
 body[data-card-theme="ivory_tennis"] {
-  --sport-theme-deep: #fbf7e8;
-  --sport-theme-base: #4d7d53;
-  --sport-theme-surface: #2c5b3f;
-  --sport-theme-line: rgba(122, 143, 82, 0.14);
-  --sport-theme-line-soft: rgba(255, 255, 255, 0.14);
-  --sport-theme-glow: rgba(215, 232, 137, 0.16);
-  --sport-theme-glow-soft: rgba(251, 247, 232, 0.22);
-  --sport-theme-ui-bg: rgba(251, 247, 232, 0.9);
-  --sport-theme-ui-hover: rgba(246, 239, 220, 0.96);
-  --sport-theme-ui-border: rgba(122, 143, 82, 0.34);
-  --sport-theme-ui-text: #173222;
+  --sport-theme-deep: #050608;
+  --sport-theme-base: #2b2f36;
+  --sport-theme-surface: #15171c;
+  --sport-theme-line: rgba(240, 200, 75, 0.16);
+  --sport-theme-line-soft: rgba(255, 255, 255, 0.06);
+  --sport-theme-glow: rgba(240, 200, 75, 0.12);
+  --sport-theme-glow-soft: rgba(180, 190, 205, 0.08);
+  --sport-theme-ui-bg: rgba(12, 13, 16, 0.88);
+  --sport-theme-ui-hover: rgba(24, 27, 32, 0.94);
+  --sport-theme-ui-border: rgba(240, 200, 75, 0.28);
+  --sport-theme-ui-text: #f4f4f5;
 }
 
 body[data-card-theme="grand_slam_clay"] {
-  --sport-theme-deep: #3f2119;
-  --sport-theme-base: #b65b31;
-  --sport-theme-surface: #7f3f28;
-  --sport-theme-line: rgba(240, 195, 122, 0.12);
-  --sport-theme-line-soft: rgba(255, 244, 231, 0.08);
-  --sport-theme-glow: rgba(240, 195, 122, 0.15);
-  --sport-theme-glow-soft: rgba(255, 216, 173, 0.1);
-  --sport-theme-ui-bg: rgba(74, 35, 24, 0.86);
-  --sport-theme-ui-hover: rgba(92, 43, 27, 0.94);
-  --sport-theme-ui-border: rgba(240, 195, 122, 0.34);
-  --sport-theme-ui-text: #fff4e7;
+  --sport-theme-deep: #0a1f4d;
+  --sport-theme-base: #cf1f2d;
+  --sport-theme-surface: #123b86;
+  --sport-theme-line: rgba(107, 183, 255, 0.16);
+  --sport-theme-line-soft: rgba(255, 255, 255, 0.08);
+  --sport-theme-glow: rgba(207, 31, 45, 0.18);
+  --sport-theme-glow-soft: rgba(107, 183, 255, 0.14);
+  --sport-theme-ui-bg: rgba(12, 35, 82, 0.86);
+  --sport-theme-ui-hover: rgba(18, 51, 116, 0.94);
+  --sport-theme-ui-border: rgba(107, 183, 255, 0.34);
+  --sport-theme-ui-text: #ffffff;
 }
 
 body[data-card-theme="racing_green"] {
-  --sport-theme-deep: #071d16;
-  --sport-theme-base: #13543a;
-  --sport-theme-surface: #0f3a2a;
-  --sport-theme-line: rgba(216, 179, 90, 0.12);
-  --sport-theme-line-soft: rgba(244, 240, 221, 0.08);
-  --sport-theme-glow: rgba(216, 179, 90, 0.14);
-  --sport-theme-glow-soft: rgba(216, 201, 149, 0.1);
-  --sport-theme-ui-bg: rgba(11, 41, 30, 0.86);
-  --sport-theme-ui-hover: rgba(16, 55, 40, 0.94);
-  --sport-theme-ui-border: rgba(216, 179, 90, 0.34);
-  --sport-theme-ui-text: #f4f0dd;
+  --sport-theme-deep: #f5f9ff;
+  --sport-theme-base: #ffc8df;
+  --sport-theme-surface: #ffeaf3;
+  --sport-theme-line: rgba(138, 183, 255, 0.16);
+  --sport-theme-line-soft: rgba(255, 255, 255, 0.2);
+  --sport-theme-glow: rgba(255, 184, 213, 0.22);
+  --sport-theme-glow-soft: rgba(183, 215, 255, 0.24);
+  --sport-theme-ui-bg: rgba(255, 247, 251, 0.92);
+  --sport-theme-ui-hover: rgba(255, 234, 244, 0.98);
+  --sport-theme-ui-border: rgba(138, 183, 255, 0.34);
+  --sport-theme-ui-text: #6a2a4b;
 }
 
 body[data-card-theme="polo_navy"] {
-  --sport-theme-deep: #071428;
-  --sport-theme-base: #243d72;
-  --sport-theme-surface: #182c55;
-  --sport-theme-line: rgba(200, 164, 91, 0.12);
-  --sport-theme-line-soft: rgba(242, 246, 255, 0.08);
-  --sport-theme-glow: rgba(200, 164, 91, 0.14);
-  --sport-theme-glow-soft: rgba(202, 215, 240, 0.1);
-  --sport-theme-ui-bg: rgba(14, 28, 56, 0.88);
-  --sport-theme-ui-hover: rgba(23, 45, 86, 0.94);
-  --sport-theme-ui-border: rgba(200, 164, 91, 0.34);
-  --sport-theme-ui-text: #f2f6ff;
+  --sport-theme-deep: #061422;
+  --sport-theme-base: #082033;
+  --sport-theme-surface: #0a3a52;
+  --sport-theme-line: rgba(77, 247, 255, 0.18);
+  --sport-theme-line-soft: rgba(145, 248, 255, 0.08);
+  --sport-theme-glow: rgba(77, 247, 255, 0.14);
+  --sport-theme-glow-soft: rgba(14, 240, 255, 0.12);
+  --sport-theme-ui-bg: rgba(4, 16, 25, 0.88);
+  --sport-theme-ui-hover: rgba(9, 39, 56, 0.94);
+  --sport-theme-ui-border: rgba(77, 247, 255, 0.34);
+  --sport-theme-ui-text: #eaffff;
 }
 
 body[data-card-theme="alpine_ski"] {
-  --sport-theme-deep: #2c638e;
-  --sport-theme-base: #f7fbff;
-  --sport-theme-surface: #dfeef8;
-  --sport-theme-line: rgba(143, 184, 216, 0.18);
-  --sport-theme-line-soft: rgba(255, 255, 255, 0.28);
-  --sport-theme-glow: rgba(255, 255, 255, 0.28);
-  --sport-theme-glow-soft: rgba(143, 184, 216, 0.16);
-  --sport-theme-ui-bg: rgba(247, 251, 255, 0.92);
-  --sport-theme-ui-hover: rgba(235, 246, 255, 0.98);
-  --sport-theme-ui-border: rgba(87, 133, 166, 0.32);
-  --sport-theme-ui-text: #17334b;
+  --sport-theme-deep: #fff8fe;
+  --sport-theme-base: #d8c7ff;
+  --sport-theme-surface: #f3f5ff;
+  --sport-theme-line: rgba(116, 217, 255, 0.18);
+  --sport-theme-line-soft: rgba(255, 255, 255, 0.3);
+  --sport-theme-glow: rgba(216, 199, 255, 0.26);
+  --sport-theme-glow-soft: rgba(191, 233, 255, 0.22);
+  --sport-theme-ui-bg: rgba(255, 250, 255, 0.92);
+  --sport-theme-ui-hover: rgba(244, 239, 255, 0.98);
+  --sport-theme-ui-border: rgba(116, 217, 255, 0.32);
+  --sport-theme-ui-text: #4a3f7a;
 }
 
 body[data-card-theme="boxing_legend"] {
-  --sport-theme-deep: #24090d;
-  --sport-theme-base: #8f1e28;
-  --sport-theme-surface: #4c1118;
-  --sport-theme-line: rgba(200, 162, 76, 0.12);
-  --sport-theme-line-soft: rgba(255, 241, 232, 0.08);
-  --sport-theme-glow: rgba(200, 162, 76, 0.14);
-  --sport-theme-glow-soft: rgba(240, 198, 182, 0.1);
-  --sport-theme-ui-bg: rgba(48, 11, 16, 0.88);
-  --sport-theme-ui-hover: rgba(69, 14, 22, 0.94);
-  --sport-theme-ui-border: rgba(200, 162, 76, 0.34);
-  --sport-theme-ui-text: #fff1e8;
+  --sport-theme-deep: #2b0900;
+  --sport-theme-base: #d94818;
+  --sport-theme-surface: #6f1c08;
+  --sport-theme-line: rgba(255, 209, 90, 0.16);
+  --sport-theme-line-soft: rgba(255, 245, 232, 0.08);
+  --sport-theme-glow: rgba(255, 177, 59, 0.2);
+  --sport-theme-glow-soft: rgba(255, 209, 90, 0.12);
+  --sport-theme-ui-bg: rgba(58, 12, 0, 0.88);
+  --sport-theme-ui-hover: rgba(89, 22, 4, 0.94);
+  --sport-theme-ui-border: rgba(255, 209, 90, 0.34);
+  --sport-theme-ui-text: #fff5e8;
 }
 
 body[data-card-theme="basketball_court"] {
-  --sport-theme-deep: #4d260f;
-  --sport-theme-base: #f0b05d;
-  --sport-theme-surface: #8b4b20;
-  --sport-theme-line: rgba(31, 41, 55, 0.16);
-  --sport-theme-line-soft: rgba(255, 244, 228, 0.1);
-  --sport-theme-glow: rgba(240, 176, 93, 0.18);
-  --sport-theme-glow-soft: rgba(255, 224, 177, 0.12);
-  --sport-theme-ui-bg: rgba(92, 45, 17, 0.86);
-  --sport-theme-ui-hover: rgba(117, 58, 22, 0.94);
-  --sport-theme-ui-border: rgba(31, 41, 55, 0.28);
-  --sport-theme-ui-text: #fff4e4;
+  --sport-theme-deep: #180821;
+  --sport-theme-base: #cf2b9f;
+  --sport-theme-surface: #4d1457;
+  --sport-theme-line: rgba(97, 247, 255, 0.18);
+  --sport-theme-line-soft: rgba(255, 211, 244, 0.08);
+  --sport-theme-glow: rgba(207, 43, 159, 0.2);
+  --sport-theme-glow-soft: rgba(97, 247, 255, 0.12);
+  --sport-theme-ui-bg: rgba(35, 9, 48, 0.88);
+  --sport-theme-ui-hover: rgba(72, 16, 84, 0.94);
+  --sport-theme-ui-border: rgba(97, 247, 255, 0.34);
+  --sport-theme-ui-text: #fff3fb;
 }
 
 body[data-card-theme="football_pitch"] {
-  --sport-theme-deep: #062415;
-  --sport-theme-base: #38a052;
-  --sport-theme-surface: #0d4a2b;
-  --sport-theme-line: rgba(255, 255, 255, 0.14);
-  --sport-theme-line-soft: rgba(207, 255, 240, 0.08);
-  --sport-theme-glow: rgba(255, 255, 255, 0.12);
-  --sport-theme-glow-soft: rgba(154, 213, 166, 0.12);
-  --sport-theme-ui-bg: rgba(8, 47, 27, 0.86);
-  --sport-theme-ui-hover: rgba(14, 67, 38, 0.94);
-  --sport-theme-ui-border: rgba(255, 255, 255, 0.3);
-  --sport-theme-ui-text: #f4fff5;
+  --sport-theme-deep: #07251d;
+  --sport-theme-base: #1ba879;
+  --sport-theme-surface: #0b5845;
+  --sport-theme-line: rgba(168, 255, 214, 0.16);
+  --sport-theme-line-soft: rgba(240, 255, 248, 0.08);
+  --sport-theme-glow: rgba(168, 255, 214, 0.15);
+  --sport-theme-glow-soft: rgba(27, 168, 121, 0.16);
+  --sport-theme-ui-bg: rgba(6, 48, 37, 0.86);
+  --sport-theme-ui-hover: rgba(11, 80, 62, 0.94);
+  --sport-theme-ui-border: rgba(168, 255, 214, 0.34);
+  --sport-theme-ui-text: #f0fff8;
 }
 
 body[data-card-theme="olympic_gold"] {
-  --sport-theme-deep: #22180a;
-  --sport-theme-base: #c7922e;
-  --sport-theme-surface: #8a651f;
-  --sport-theme-line: rgba(245, 210, 122, 0.14);
-  --sport-theme-line-soft: rgba(255, 247, 223, 0.08);
-  --sport-theme-glow: rgba(245, 210, 122, 0.16);
-  --sport-theme-glow-soft: rgba(243, 223, 173, 0.1);
-  --sport-theme-ui-bg: rgba(55, 39, 13, 0.88);
-  --sport-theme-ui-hover: rgba(78, 56, 18, 0.94);
-  --sport-theme-ui-border: rgba(245, 210, 122, 0.34);
-  --sport-theme-ui-text: #fff7df;
+  --sport-theme-deep: #180825;
+  --sport-theme-base: #6732bd;
+  --sport-theme-surface: #3a176b;
+  --sport-theme-line: rgba(255, 211, 110, 0.16);
+  --sport-theme-line-soft: rgba(231, 212, 255, 0.08);
+  --sport-theme-glow: rgba(103, 50, 189, 0.2);
+  --sport-theme-glow-soft: rgba(255, 211, 110, 0.12);
+  --sport-theme-ui-bg: rgba(30, 12, 47, 0.88);
+  --sport-theme-ui-hover: rgba(56, 22, 102, 0.94);
+  --sport-theme-ui-border: rgba(255, 211, 110, 0.34);
+  --sport-theme-ui-text: #fff6d8;
 }
 
 body[data-card-theme^="color_"] {
