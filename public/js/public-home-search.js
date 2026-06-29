@@ -241,8 +241,246 @@ function initHomeLatestPostButtons(pageNode, requestJson) {
       const image = new Image();
       image.onload = () => resolve(image);
       image.onerror = reject;
+      if (/^https?:\/\//i.test(String(url || ""))) {
+        image.crossOrigin = "anonymous";
+      }
       image.src = url;
     });
+  }
+
+  function getPostStoryData(postCard) {
+    const authorNode = postCard.querySelector(".home-latest-post-author-name");
+    const contentNode = postCard.querySelector(".home-latest-post-content");
+    const dateNode = postCard.querySelector(".home-latest-post-date");
+    const avatarNode = postCard.querySelector(".home-latest-post-author img");
+    const likeNode = postCard.querySelector("[data-home-post-like-count]");
+    const commentNode = postCard.querySelector("[data-home-post-comment] .home-latest-post-action-value");
+    return {
+      author: String(authorNode?.textContent || "@unqx").trim() || "@unqx",
+      content: String(contentNode?.textContent || "").trim(),
+      date: String(dateNode?.textContent || "").trim(),
+      avatarUrl: avatarNode instanceof HTMLImageElement ? String(avatarNode.currentSrc || avatarNode.src || "").trim() : "",
+      likes: String(likeNode?.textContent || "").trim(),
+      comments: String(commentNode?.textContent || "").trim(),
+      verified: Boolean(postCard.querySelector(".home-latest-post-author-verified")),
+    };
+  }
+
+  function drawRoundRect(ctx, x, y, width, height, radius) {
+    const r = Math.min(radius, width / 2, height / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + width, y, x + width, y + height, r);
+    ctx.arcTo(x + width, y + height, x, y + height, r);
+    ctx.arcTo(x, y + height, x, y, r);
+    ctx.arcTo(x, y, x + width, y, r);
+    ctx.closePath();
+  }
+
+  function drawTextLines(ctx, text, x, y, maxWidth, lineHeight, maxLines) {
+    const words = String(text || "").split(/\s+/).filter(Boolean);
+    const lines = [];
+    let currentLine = "";
+
+    words.forEach((word) => {
+      const testLine = currentLine ? `${currentLine} ${word}` : word;
+      if (ctx.measureText(testLine).width <= maxWidth || !currentLine) {
+        currentLine = testLine;
+        return;
+      }
+      lines.push(currentLine);
+      currentLine = word;
+    });
+    if (currentLine) {
+      lines.push(currentLine);
+    }
+
+    const visibleLines = lines.slice(0, maxLines);
+    if (lines.length > maxLines && visibleLines.length) {
+      let lastLine = visibleLines[visibleLines.length - 1];
+      while (lastLine && ctx.measureText(`${lastLine}...`).width > maxWidth) {
+        lastLine = lastLine.slice(0, -1).trim();
+      }
+      visibleLines[visibleLines.length - 1] = `${lastLine || ""}...`;
+    }
+
+    visibleLines.forEach((line, index) => {
+      ctx.fillText(line, x, y + index * lineHeight);
+    });
+    return visibleLines.length;
+  }
+
+  function drawHeartIcon(ctx, x, y, size) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(size / 24, size / 24);
+    ctx.beginPath();
+    ctx.moveTo(12, 21);
+    ctx.lineTo(4.9, 14.1);
+    ctx.bezierCurveTo(1.6, 10.9, 1.6, 5.8, 4.9, 2.8);
+    ctx.bezierCurveTo(7.1, 0.7, 10.4, 0.8, 12, 3.1);
+    ctx.bezierCurveTo(13.6, 0.8, 16.9, 0.7, 19.1, 2.8);
+    ctx.bezierCurveTo(22.4, 5.8, 22.4, 10.9, 19.1, 14.1);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawCommentIcon(ctx, x, y, size) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(size / 24, size / 24);
+    ctx.beginPath();
+    ctx.arc(12, 11.5, 8.1, 0.1, Math.PI * 1.86);
+    ctx.lineTo(4.2, 20.2);
+    ctx.lineTo(5.8, 15.8);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawPlaneIcon(ctx, x, y, size) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(size / 24, size / 24);
+    ctx.beginPath();
+    ctx.moveTo(22, 2);
+    ctx.lineTo(11, 13);
+    ctx.moveTo(22, 2);
+    ctx.lineTo(15, 22);
+    ctx.lineTo(11, 13);
+    ctx.lineTo(2, 9);
+    ctx.closePath();
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  async function renderStoryCanvasFallback(postCard) {
+    const data = getPostStoryData(postCard);
+    const canvas = document.createElement("canvas");
+    canvas.width = 2160;
+    canvas.height = 3840;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      throw new Error("Canvas is unavailable");
+    }
+
+    ctx.scale(2, 2);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+
+    const template = await waitForImage(STORY_TEMPLATE_URL);
+    ctx.drawImage(template, 0, 0, 1080, 1920);
+
+    const cardWidth = 760;
+    const cardHeight = 374;
+    const cardX = Math.round((1080 - cardWidth) / 2);
+    const cardY = Math.round((1920 - cardHeight) / 2);
+    const radius = 62;
+
+    ctx.save();
+    ctx.shadowColor = "rgba(15, 23, 42, 0.08)";
+    ctx.shadowBlur = 22;
+    ctx.shadowOffsetY = 10;
+    drawRoundRect(ctx, cardX, cardY, cardWidth, cardHeight, radius);
+    ctx.fillStyle = "#ffffff";
+    ctx.fill();
+    ctx.restore();
+
+    drawRoundRect(ctx, cardX, cardY, cardWidth, cardHeight, radius);
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = "#000000";
+    ctx.stroke();
+
+    const logoSize = 34;
+    try {
+      const logo = await waitForImage("/brand/unqlogo.png");
+      ctx.drawImage(logo, cardX + cardWidth - 88, cardY + 58, logoSize, logoSize);
+    } catch {
+      ctx.fillStyle = "#111111";
+      ctx.font = "700 28px Inter, Arial, sans-serif";
+      ctx.fillText("UNQ", cardX + cardWidth - 96, cardY + 83);
+    }
+
+    const avatarX = cardX + 44;
+    const avatarY = cardY + 54;
+    const avatarSize = 60;
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(avatarX + avatarSize / 2, avatarY + avatarSize / 2, avatarSize / 2, 0, Math.PI * 2);
+    ctx.clip();
+    let avatarDrawn = false;
+    if (data.avatarUrl && !/^https?:\/\//i.test(data.avatarUrl)) {
+      try {
+        const avatar = await waitForImage(data.avatarUrl);
+        ctx.drawImage(avatar, avatarX, avatarY, avatarSize, avatarSize);
+        avatarDrawn = true;
+      } catch { }
+    }
+    if (!avatarDrawn) {
+      ctx.fillStyle = "#111111";
+      ctx.fillRect(avatarX, avatarY, avatarSize, avatarSize);
+    }
+    ctx.restore();
+
+    ctx.fillStyle = "#050505";
+    ctx.font = "900 30px Inter, Arial, sans-serif";
+    const authorMaxWidth = cardWidth - 240;
+    let author = data.author;
+    while (author.length > 4 && ctx.measureText(author).width > authorMaxWidth) {
+      author = `${author.slice(0, -4)}...`;
+    }
+    ctx.fillText(author, avatarX + avatarSize + 24, cardY + 94);
+
+    if (data.verified) {
+      const checkX = Math.min(cardX + cardWidth - 150, avatarX + avatarSize + 34 + ctx.measureText(author).width);
+      const checkY = cardY + 76;
+      ctx.fillStyle = "#050505";
+      ctx.beginPath();
+      ctx.arc(checkX + 12, checkY + 12, 12, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(checkX + 6, checkY + 12);
+      ctx.lineTo(checkX + 11, checkY + 17);
+      ctx.lineTo(checkX + 19, checkY + 8);
+      ctx.stroke();
+    }
+
+    ctx.fillStyle = "#111111";
+    ctx.font = "400 34px Inter, Arial, sans-serif";
+    drawTextLines(ctx, data.content, cardX + 44, cardY + 178, cardWidth - 88, 44, 2);
+
+    const actionY = cardY + cardHeight - 74;
+    ctx.fillStyle = "#050505";
+    ctx.strokeStyle = "#050505";
+    ctx.lineWidth = 4;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    drawHeartIcon(ctx, cardX + 46, actionY - 22, 38);
+    let nextX = cardX + 92;
+    if (data.likes) {
+      ctx.font = "900 26px Inter, Arial, sans-serif";
+      ctx.fillText(data.likes, nextX, actionY + 4);
+      nextX += ctx.measureText(data.likes).width + 28;
+    } else {
+      nextX += 14;
+    }
+    drawCommentIcon(ctx, nextX, actionY - 25, 38);
+    nextX += 58;
+    if (data.comments) {
+      ctx.font = "900 26px Inter, Arial, sans-serif";
+      ctx.fillText(data.comments, nextX, actionY + 4);
+      nextX += ctx.measureText(data.comments).width + 28;
+    }
+    drawPlaneIcon(ctx, nextX, actionY - 29, 42);
+
+    ctx.fillStyle = "#9b9b9b";
+    ctx.font = "400 26px Inter, Arial, sans-serif";
+    const dateWidth = ctx.measureText(data.date).width;
+    ctx.fillText(data.date, cardX + cardWidth - 44 - dateWidth, actionY + 4);
+
+    return canvas;
   }
 
   async function waitForRenderAssets(root) {
@@ -324,33 +562,39 @@ function initHomeLatestPostButtons(pageNode, requestJson) {
   }
 
   async function generateAndDownloadStory(postCard) {
-    if (typeof window.html2canvas !== "function") {
-      throw new Error("html2canvas is unavailable");
+    let canvas = null;
+
+    if (typeof window.html2canvas === "function") {
+      const root = createStoryRenderRoot(postCard);
+      document.body.appendChild(root);
+
+      try {
+        await waitForImage(STORY_TEMPLATE_URL);
+        await waitForRenderAssets(root);
+        await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+        canvas = await window.html2canvas(root, {
+          width: 1080,
+          height: 1920,
+          windowWidth: 1080,
+          windowHeight: 1920,
+          scale: 2,
+          useCORS: true,
+          allowTaint: false,
+          backgroundColor: null,
+          logging: false,
+        });
+      } catch {
+        canvas = null;
+      } finally {
+        root.remove();
+      }
     }
 
-    await waitForImage(STORY_TEMPLATE_URL);
-
-    const root = createStoryRenderRoot(postCard);
-    document.body.appendChild(root);
-
-    try {
-      await waitForRenderAssets(root);
-      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-      const canvas = await window.html2canvas(root, {
-        width: 1080,
-        height: 1920,
-        windowWidth: 1080,
-        windowHeight: 1920,
-        scale: 2,
-        useCORS: true,
-        allowTaint: false,
-        backgroundColor: null,
-        logging: false,
-      });
-      await downloadCanvas(canvas, STORY_DOWNLOAD_FILENAME);
-    } finally {
-      root.remove();
+    if (!canvas) {
+      canvas = await renderStoryCanvasFallback(postCard);
     }
+
+    await downloadCanvas(canvas, STORY_DOWNLOAD_FILENAME);
   }
 
   function updateLikeButton(button, options = {}) {
@@ -474,8 +718,8 @@ function initHomeLatestPostButtons(pageNode, requestJson) {
         throw new Error("Post card is unavailable");
       }
 
-      const copied = await copyText(shareUrl);
       await generateAndDownloadStory(postCard);
+      const copied = await copyText(shareUrl);
       showToast(
         copied
           ? "Картинка для сторис сохранена в галерею, а ссылка на пост скопирована!"
