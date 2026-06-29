@@ -273,7 +273,7 @@ describe("home page", () => {
     expect(html).toContain("/ABC123#wall-post-post_1");
     expect(html).toContain('data-post-comments-href="/ABC123?comments=1#wall-post-post_1"');
     expect(html).toContain('id="latest-posts"');
-    expect(html).toContain('src="/brand/unqlogo.png"');
+    expect(html).toContain('src="/brand/unq-logo.svg"');
     expect(html).not.toContain("home-latest-post-meta-row");
     expect(html).not.toContain("comments&nbsp;");
     expect(html).toContain('data-home-post-like-count>4</span>');
@@ -340,10 +340,10 @@ describe("home page", () => {
     expect(source).toContain("const target = event.target instanceof Element ? event.target : null;");
     expect(source).toContain('commentButton.getAttribute("data-post-comments-href")');
     expect(source).toContain('const shareButton = target.closest("[data-home-post-share]");');
-    expect(styles).toContain("--home-post-like-accent: #c45766;");
+    expect(styles).toContain("--home-post-like-accent: #111111;");
     expect(styles).toContain(".home-latest-post-action-button[data-home-post-like]:hover,");
     expect(styles).toContain(".home-latest-post-brand");
-    expect(styles).toContain("border-radius: 34px;");
+    expect(styles).toContain("border-radius: 32px !important;");
     expect(styles).toContain(".home-latest-post-action-value");
     expect(styles).toContain("justify-content: space-between;");
     expect(styles).toContain("[data-page=\"public-home\"] #latest-posts");
