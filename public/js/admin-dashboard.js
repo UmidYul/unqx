@@ -234,7 +234,7 @@
     midnight_obsidian: { label: "Midnight Obsidian", fill: "#111927", border: "#5374a6", text: "#d6e6ff" },
     golden_noir: { label: "Noir Aureate", fill: "#161b28", border: "#c9ad6a", text: "#dfc98e" },
     aurora_codex: { label: "Aurora Scriptum", fill: "#f5ecd8", border: "#8a2a26", text: "#2b1f15" },
-    nebula_glass: { label: "Liquid Glass", fill: "#1c1c1e", border: "#9a9a9c", text: "#f1f1f1" },
+    nebula_glass: { label: "Apple Liquid Glass", fill: "#0a0f24", border: "#a9c7ff", text: "#f1f6ff" },
     velours: { label: "Velours Luxe", fill: "#2d0a12", border: "#5a1828", text: "#c9a55a", bg: "#2d0a12" },
     graffiti_neon: { label: "Graffiti Neon", fill: "#19142a", border: "#5ef7ff", text: "#9bff62", bg: "#19142a" },
     heritage_crest: { label: "Sweet Ribbon", fill: "#ffc6dd", border: "#ff9fca", text: "#7a2446", bg: "#ffc6dd" },

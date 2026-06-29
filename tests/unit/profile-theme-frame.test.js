@@ -6,6 +6,9 @@ const {
   PROFILE_AVATAR_FRAME_KEYS,
   PROFILE_EMOJI_BACKGROUND_KEYS,
 } = require("../../src/services/profile");
+const fs = require("node:fs");
+const path = require("node:path");
+const { getProfileEditorPresets } = require("../../src/services/profile-editor-presets");
 
 describe("profile theme and avatar frame normalization", () => {
   test("exposes newly added theme, frame, and emoji background keys", () => {
@@ -16,6 +19,7 @@ describe("profile theme and avatar frame normalization", () => {
     expect(PROFILE_THEME_KEYS).toContain("anime_blush");
     expect(PROFILE_THEME_KEYS).toContain("cheetah_spots");
     expect(PROFILE_THEME_KEYS).toContain("serpent_scale");
+    expect(PROFILE_THEME_KEYS).toContain("nebula_glass");
     expect(PROFILE_AVATAR_FRAME_KEYS).toContain("chrome_ring");
     expect(PROFILE_AVATAR_FRAME_KEYS).toContain("orbit_dots");
     expect(PROFILE_AVATAR_FRAME_KEYS).toContain("laurel_wreath");
@@ -27,6 +31,7 @@ describe("profile theme and avatar frame normalization", () => {
 
   test("keeps premium theme, frame, and emoji background for premium plan", () => {
     expect(normalizeThemeByPlan("graffiti_neon", "premium")).toBe("graffiti_neon");
+    expect(normalizeThemeByPlan("nebula_glass", "premium")).toBe("nebula_glass");
     expect(normalizeThemeByPlan("heritage_crest", "premium")).toBe("heritage_crest");
     expect(normalizeThemeByPlan("anime_blush", "premium")).toBe("anime_blush");
     expect(normalizeAvatarFrameByPlan("orbit_dots", "premium")).toBe("orbit_dots");
@@ -46,5 +51,22 @@ describe("profile theme and avatar frame normalization", () => {
 
   test("normalizes unsupported emoji background pack to none", () => {
     expect(normalizeEmojiBackgroundByPlan("sparkles", "premium")).toBe("none");
+  });
+
+  test("exposes Apple Liquid Glass preset and animated glass CSS", () => {
+    const presets = getProfileEditorPresets();
+    const liquidGlass = presets.signatureThemes.find((theme) => theme.id === "nebula_glass");
+    const styles = fs.readFileSync(path.join(process.cwd(), "public", "css", "public-card.css"), "utf-8");
+
+    expect(liquidGlass).toMatchObject({
+      label: "Apple Liquid Glass",
+      description: "Animated frosted glass",
+      premiumRequired: true,
+    });
+    expect(styles).toContain("@keyframes unqLiquidGlassGradient");
+    expect(styles).toContain("@keyframes unqLiquidGlassIslands");
+    expect(styles).toContain("background-size: 400% 400%;");
+    expect(styles).toContain("backdrop-filter: blur(25px)");
+    expect(styles).toContain("will-change: background-position;");
   });
 });

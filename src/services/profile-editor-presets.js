@@ -66,9 +66,9 @@ const SIGNATURE_THEMES = [
   },
   {
     id: "nebula_glass",
-    label: "Liquid Glass",
-    description: "Frosted iOS glass",
-    swatchStyle: "border-color:#8f8f92;background:linear-gradient(145deg,#2a2a2d 0%,#1c1c1e 100%);",
+    label: "Apple Liquid Glass",
+    description: "Animated frosted glass",
+    swatchStyle: "border-color:rgba(255,255,255,0.35);background:linear-gradient(135deg,#0a0f24 0%,#1a1c3a 34%,#0d2540 66%,#1e112a 100%);box-shadow:inset 0 0 18px rgba(118,169,255,0.24);",
     premiumRequired: true,
   },
   {
