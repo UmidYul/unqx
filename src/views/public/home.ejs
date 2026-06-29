@@ -70,7 +70,7 @@
   : latestCreatedCard && typeof latestCreatedCard === "object"
   ? [latestCreatedCard]
   : [];
-  const latestSlackCards = latestSlackCardsSource.filter((item) => item && typeof item === "object").slice(0, 3);
+  const latestSlackCards = latestSlackCardsSource.filter((item) => item && typeof item === "object").slice(0, 5);
   const latestPublishedPostsList = Array.isArray(latestPublishedPosts) ? latestPublishedPosts.slice(0, 3) : [];
   const trimMetricDecimal = (value) => String(value).replace(/\.0$/, "");
   const formatHomePostMetric = (value) => {
@@ -796,27 +796,32 @@
                         Пока нет созданных визиток для отображения.
                       </div>
                       <% } else { %>
-                        <div class="home-showcase-list">
+                        <div class="home-latest-unq-list">
                           <% latestSlackCards.forEach((card, index)=> {
-                            const latestRankNumber = index + 1;
                             const latestInitials = (card.name || "UN").split(" ").map((p) => p[0]).join("").slice(0, 2).toUpperCase();
+                            const latestUsernameRaw = String(card.username || card.handle || card.slug || "unqx").trim().replace(/^@+/, "");
+                            const latestUsername = latestUsernameRaw ? `@${latestUsernameRaw}` : "@unqx";
                           %>
                             <a href="/<%= encodeURIComponent(card.slug) %>"
-                              class="home-showcase-item interactive-card"
+                              class="home-latest-unq-card interactive-card"
                               aria-label="Открыть профиль <%= card.name %>">
-                              <span class="home-showcase-rank"><%= latestRankNumber %></span>
-                              <span class="home-showcase-card">
-                                <% if (card.avatarUrl) { %>
-                                  <img src="<%= card.avatarUrl %>" alt="<%= card.name %>"
-                                    class="home-showcase-avatar"
-                                    loading="lazy" />
-                                <% } else { %>
-                                  <span class="home-showcase-avatar home-showcase-avatar-fallback"><%= latestInitials %></span>
-                                <% } %>
-                                <span class="home-showcase-copy">
-                                  <span class="home-showcase-name"><%= card.name %></span>
-                                  <span class="home-showcase-slug">unqx.uz/<%= card.slug %></span>
+                              <% if (card.avatarUrl) { %>
+                                <img src="<%= card.avatarUrl %>" alt="<%= card.name %>"
+                                  class="home-latest-unq-avatar"
+                                  loading="lazy" />
+                              <% } else { %>
+                                <span class="home-latest-unq-avatar home-latest-unq-avatar-fallback"><%= latestInitials %></span>
+                              <% } %>
+                              <span class="home-latest-unq-copy">
+                                <span class="home-latest-unq-name-row">
+                                  <span class="home-latest-unq-name"><%= card.name %></span>
+                                  <% if (card.isVerified || card.verified) { %>
+                                    <svg class="home-latest-unq-verified" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor">
+                                      <path d="M12 2.5l2.2 1.8 2.8-.3 1.2 2.5 2.5 1.2-.3 2.8L21.5 12l-1.8 2.2.3 2.8-2.5 1.2-1.2 2.5-2.8-.3L12 21.5l-2.2-1.8-2.8.3-1.2-2.5-2.5-1.2.3-2.8L2.5 12l1.8-2.2-.3-2.8 2.5-1.2 1.2-2.5 2.8.3L12 2.5Zm-1.1 13.1 5-5-1.1-1.1-3.9 3.9-1.8-1.8-1.1 1.1 2.9 2.9Z"></path>
+                                    </svg>
+                                  <% } %>
                                 </span>
+                                <span class="home-latest-unq-username"><%= latestUsername %></span>
                               </span>
                             </a>
                             <% }) %>

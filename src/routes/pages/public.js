@@ -1113,6 +1113,9 @@ router.get(
                     subscriptionExpiresAt: true,
                     firstName: true,
                     displayName: true,
+                    username: true,
+                    telegramUsername: true,
+                    isVerified: true,
                     ...getFreeProfileUserSelect(),
                     slugs: {
                       where: {
@@ -1162,6 +1165,9 @@ router.get(
                   subscriptionExpiresAt: true,
                   firstName: true,
                   displayName: true,
+                  username: true,
+                  telegramUsername: true,
+                  isVerified: true,
                   ...getFreeProfileUserSelect(),
                   slugs: {
                     where: {
@@ -1214,12 +1220,14 @@ router.get(
             slug,
             createdAt: candidate.createdAt,
             name: String(card.name || owner.displayName || owner.firstName || "UNQX User").trim() || "UNQX User",
+            username: String(owner.username || owner.telegramUsername || slug).trim().replace(/^@+/, ""),
+            isVerified: Boolean(owner.isVerified),
             role: String(card.role || "").trim(),
             bio: String(card.bio || "").trim(),
             avatarUrl: String(card.avatarUrl || "").trim(),
           });
 
-          if (cards.length >= 3) {
+          if (cards.length >= 5) {
             break;
           }
         }

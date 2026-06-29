@@ -133,7 +133,34 @@ async function renderHomeTemplateWithShowcaseCards() {
       {
         name: "Suxrob Akmalov",
         slug: "AKL444",
+        username: "suxrob",
         avatarUrl: "https://example.com/avatar.jpg",
+        isVerified: true,
+      },
+      {
+        name: "Shuhrat",
+        slug: "ZZZ777",
+        username: "scxr1337s",
+        avatarUrl: "",
+        isVerified: true,
+      },
+      {
+        name: "Mukhammadaziz",
+        slug: "MUK111",
+        username: "mukhammadazizbek",
+        avatarUrl: "",
+      },
+      {
+        name: "Eldor",
+        slug: "ELD222",
+        username: "eldorshomurodov",
+        avatarUrl: "",
+      },
+      {
+        name: "Batman",
+        slug: "BAT333",
+        username: "batman",
+        avatarUrl: "",
       },
     ],
     topWeeklyViews: [
@@ -259,11 +286,18 @@ describe("home page", () => {
 
     expect(html).toContain('id="latest-slack"');
     expect(html).toContain('id="weekly-top-views"');
+    expect(html).toContain("home-latest-unq-list");
+    expect(html).toContain("home-latest-unq-card");
     expect(html).toContain("home-showcase-card");
     expect(html).toContain("home-showcase-score");
     expect(html).toContain('class="mt-3 text-3xl font-bold tracking-tight text-neutral-900 md:text-4xl">Последние созданные UNQ</h2>');
     expect(html).toContain('class="mt-3 text-3xl font-bold tracking-tight text-neutral-900 md:text-4xl">Рейтинг по просмотрам</h2>');
-    expect(html).toContain("unqx.uz/AKL444");
+    expect(html).toContain("@suxrob");
+    expect(html).toContain("@scxr1337s");
+    expect(html).toContain("@mukhammadazizbek");
+    expect(html).toContain("@eldorshomurodov");
+    expect(html).toContain("@batman");
+    expect(html).not.toContain("unqx.uz/AKL444");
     expect(html).toContain("unqx.uz/KHK007");
     expect(html).toContain(">1 289<");
   });
@@ -319,6 +353,9 @@ describe("home page", () => {
 
     expect(styles).toContain("[data-page=\"public-home\"] .home-showcase-heading");
     expect(styles).toContain("background-image: none;");
+    expect(styles).toContain("[data-page=\"public-home\"] .home-latest-unq-list");
+    expect(styles).toContain("grid-template-columns: repeat(5, minmax(0, 1fr));");
+    expect(styles).toContain("[data-page=\"public-home\"] .home-latest-unq-card");
     expect(styles).toContain("[data-page=\"public-home\"] .home-showcase-rank");
     expect(styles).toContain("[data-page=\"public-home\"] .home-showcase-card");
     expect(styles).toContain("border-radius: 26px;");

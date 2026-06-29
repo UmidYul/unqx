@@ -7373,7 +7373,111 @@ body[data-card-theme] main.private-card-screen {
   color: #ffffff;
 }
 
+[data-page="public-home"] .home-latest-unq-list {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  margin-top: 22px;
+  overflow: visible;
+  background: transparent;
+}
+
+[data-page="public-home"] .home-latest-unq-card {
+  display: flex;
+  min-width: 0;
+  min-height: 74px;
+  align-items: center;
+  gap: 12px;
+  overflow: hidden;
+  border: 1px solid #e0e0e0;
+  border-radius: 28px;
+  background: #ffffff;
+  padding: 11px 15px;
+  color: inherit;
+  text-decoration: none;
+  box-shadow: none;
+  transition:
+    border-color 0.16s ease,
+    transform 0.16s ease,
+    box-shadow 0.16s ease;
+}
+
+[data-page="public-home"] .home-latest-unq-card:hover {
+  border-color: #d4d4d4;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.045);
+  transform: translateY(-1px);
+}
+
+[data-page="public-home"] .home-latest-unq-avatar {
+  display: inline-flex;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 1px solid rgba(17, 17, 17, 0.08);
+  background: #a3a3a3;
+  object-fit: cover;
+}
+
+[data-page="public-home"] .home-latest-unq-avatar-fallback {
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+[data-page="public-home"] .home-latest-unq-copy {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+[data-page="public-home"] .home-latest-unq-name-row {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 4px;
+}
+
+[data-page="public-home"] .home-latest-unq-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.92rem;
+  font-weight: 800;
+  line-height: 1.08;
+  letter-spacing: 0;
+  color: #111111;
+}
+
+[data-page="public-home"] .home-latest-unq-verified {
+  width: 13px;
+  height: 13px;
+  flex: 0 0 auto;
+  color: #050505;
+}
+
+[data-page="public-home"] .home-latest-unq-username {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.82rem;
+  font-weight: 500;
+  line-height: 1.12;
+  letter-spacing: 0;
+  color: #8a8a8a;
+}
+
 @media (max-width: 1024px) {
+  [data-page="public-home"] .home-latest-unq-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    max-width: 620px;
+  }
+
   [data-page="public-home"] .home-showcase-list {
     grid-template-columns: 1fr;
     gap: 18px;
@@ -7387,6 +7491,31 @@ body[data-card-theme] main.private-card-screen {
 }
 
 @media (max-width: 520px) {
+  [data-page="public-home"] .home-latest-unq-list {
+    grid-template-columns: 1fr;
+    max-width: 100%;
+    margin-top: 20px;
+  }
+
+  [data-page="public-home"] .home-latest-unq-card {
+    min-height: 68px;
+    border-radius: 26px;
+    padding: 10px 13px;
+  }
+
+  [data-page="public-home"] .home-latest-unq-avatar {
+    width: 40px;
+    height: 40px;
+  }
+
+  [data-page="public-home"] .home-latest-unq-name {
+    font-size: 0.9rem;
+  }
+
+  [data-page="public-home"] .home-latest-unq-username {
+    font-size: 0.8rem;
+  }
+
   [data-page="public-home"] .home-showcase-heading {
     padding: 22px 18px 24px;
     background-size: 36px 36px;
