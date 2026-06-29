@@ -85,7 +85,7 @@ describe("public posts page", () => {
     expect(styles).toContain("grid-template-columns: repeat(2, minmax(0, 1fr));");
     expect(styles).toContain("grid-template-columns: 1fr;");
     expect(styles).toContain(".public-posts-pagination");
-    expect(styles).toContain(".public-posts-summary-panel");
+    expect(styles).not.toContain(".public-posts-summary-panel");
     expect(styles).toContain(".home-latest-post-action-value");
     expect(styles).toContain("justify-content: space-between;");
   });

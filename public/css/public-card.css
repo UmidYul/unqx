@@ -1148,16 +1148,6 @@
   align-items: stretch;
 }
 
-.public-posts-summary-panel {
-  width: 100%;
-  margin-top: 18px;
-  margin-bottom: 34px;
-  border: 1px solid #e0e0e0;
-  border-radius: 28px;
-  background: #ffffff;
-  padding: 24px 26px;
-}
-
 .public-posts-page .home-latest-post-card {
   min-height: 198px;
   border: 1px solid #e0e0e0;

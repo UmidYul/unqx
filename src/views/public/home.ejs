@@ -799,8 +799,8 @@
                         <div class="home-latest-unq-list">
                           <% latestSlackCards.forEach((card, index)=> {
                             const latestInitials = (card.name || "UN").split(" ").map((p) => p[0]).join("").slice(0, 2).toUpperCase();
-                            const latestUsernameRaw = String(card.username || card.handle || card.slug || "unqx").trim().replace(/^@+/, "");
-                            const latestUsername = latestUsernameRaw ? `@${latestUsernameRaw}` : "@unqx";
+                            const latestProfileSlug = String(card.slug || card.username || card.handle || "UNQ").trim().replace(/^@+/, "").toUpperCase();
+                            const latestProfileLink = `unqx.uz/${latestProfileSlug || "UNQ"}`;
                           %>
                             <a href="/<%= encodeURIComponent(card.slug) %>"
                               class="home-latest-unq-card interactive-card"
@@ -821,7 +821,7 @@
                                     </svg>
                                   <% } %>
                                 </span>
-                                <span class="home-latest-unq-username"><%= latestUsername %></span>
+                                <span class="home-latest-unq-username"><%= latestProfileLink %></span>
                               </span>
                             </a>
                             <% }) %>

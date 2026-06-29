@@ -292,12 +292,12 @@ describe("home page", () => {
     expect(html).toContain("home-showcase-score");
     expect(html).toContain('class="mt-3 text-3xl font-bold tracking-tight text-neutral-900 md:text-4xl">Последние созданные UNQ</h2>');
     expect(html).toContain('class="mt-3 text-3xl font-bold tracking-tight text-neutral-900 md:text-4xl">Рейтинг по просмотрам</h2>');
-    expect(html).toContain("@suxrob");
-    expect(html).toContain("@scxr1337s");
-    expect(html).toContain("@mukhammadazizbek");
-    expect(html).toContain("@eldorshomurodov");
-    expect(html).toContain("@batman");
-    expect(html).not.toContain("unqx.uz/AKL444");
+    expect(html).toContain("unqx.uz/AKL444");
+    expect(html).toContain("unqx.uz/ZZZ777");
+    expect(html).toContain("unqx.uz/MUK111");
+    expect(html).toContain("unqx.uz/ELD222");
+    expect(html).toContain("unqx.uz/BAT333");
+    expect(html).not.toContain("@suxrob");
     expect(html).toContain("unqx.uz/KHK007");
     expect(html).toContain(">1 289<");
   });
