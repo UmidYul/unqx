@@ -70,7 +70,7 @@
   : latestCreatedCard && typeof latestCreatedCard === "object"
   ? [latestCreatedCard]
   : [];
-  const latestSlackCards = latestSlackCardsSource.filter((item) => item && typeof item === "object").slice(0, 3);
+  const latestSlackCards = latestSlackCardsSource.filter((item) => item && typeof item === "object").slice(0, 5);
   const latestPublishedPostsList = Array.isArray(latestPublishedPosts) ? latestPublishedPosts.slice(0, 3) : [];
   const trimMetricDecimal = (value) => String(value).replace(/\.0$/, "");
   const formatHomePostMetric = (value) => {
@@ -158,12 +158,12 @@
   </head>
 
   <body class="antialiased">
-    <main class="relative min-h-screen overflow-hidden bg-neutral-50" data-page="public-home">
-      <div class="pointer-events-none fixed inset-0 opacity-[0.3]" style="
+    <main class="relative min-h-screen overflow-hidden" data-page="public-home">
+      <div class="pointer-events-none fixed inset-0 opacity-[0.18]" style="
         background-image:
-          linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(0,0,0,0.03) 1px, transparent 1px);
-        background-size: 40px 40px;
+          linear-gradient(rgba(0,0,0,0.025) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(0,0,0,0.025) 1px, transparent 1px);
+        background-size: 48px 48px;
       "></div>
 
       <div class="relative z-10">
@@ -579,9 +579,9 @@
 
 
                 <section id="home-profile-feed" class="px-6 py-16" data-observe-reveal>
-                  <div class="mx-auto max-w-6xl">
-                    <p class="font-mono text-xs uppercase tracking-[0.18em] text-neutral-400">UNQ FEED</p>
-                    <h2 class="mt-3 text-3xl font-bold tracking-tight text-neutral-900 md:text-4xl">Live profiles</h2>
+                  <div class="home-feed-shell mx-auto max-w-6xl">
+                    <p class="home-feed-kicker">UNQ FEED</p>
+                    <h2 class="home-feed-title">Live profiles</h2>
 
                     <% if (!homeProfileFeedList.length) { %>
                       <div class="mt-8 rounded-2xl border border-neutral-200 bg-white p-6 text-sm text-neutral-500">
@@ -668,9 +668,9 @@
                 </section>
 
                 <section id="latest-posts" class="px-6 py-16" data-observe-reveal>
-                  <div class="mx-auto max-w-6xl">
-                    <p class="font-mono text-xs uppercase tracking-[0.18em] text-neutral-400">POSTS</p>
-                    <h2 class="mt-3 text-3xl font-bold tracking-tight text-neutral-900 md:text-4xl">Последние посты</h2>
+                  <div class="home-feed-shell mx-auto max-w-6xl">
+                    <p class="home-feed-kicker">LIVE</p>
+                    <h2 class="home-feed-title">Последние опубликованные Посты</h2>
 
                     <% if (!latestPublishedPostsList.length) { %>
                       <div
@@ -678,10 +678,10 @@
                         Пока нет опубликованных постов для отображения.
                       </div>
                     <% } else { %>
-                      <div class="home-latest-post-stack mt-10">
+                      <div class="home-latest-post-stack">
                         <% latestPublishedPostsList.forEach((post)=> { const author=post && post.author && typeof post.author==="object" ? post.author : {}; const followState=post && post.viewerFollowState && typeof post.viewerFollowState==="object" ? post.viewerFollowState : {}; const postHref=String(post && post.postHref || author.profileHref || "/").trim() || "/"; const commentsHref=buildHomeCommentsHref(postHref, post && post.id); const postSlug=String(author.primarySlug || "").trim(); const loginNext=postHref || author.profileHref || "/"; const likedNow=Boolean(post && post.viewerHasLiked); %>
                           <article
-                            class="home-latest-post-card rounded-[1.7rem] border border-neutral-200 bg-white p-5"
+                            class="home-latest-post-card"
                             data-home-post-card
                             data-post-href="<%= postHref %>"
                             tabindex="0"
@@ -721,8 +721,10 @@
                                   aria-label="<%= followState.isFollowing ? 'Отписаться' : 'Подписаться' %>"
                                   title="<%= followState.isFollowing ? 'Отписаться' : 'Подписаться' %>"
                                   class="interactive-btn home-post-follow-btn <%= followState.isFollowing ? 'is-following' : '' %>">
-                                  <span class="home-post-follow-btn-symbol" aria-hidden="true">+</span>
+                                  <span class="home-post-follow-btn-symbol" aria-hidden="true">IN</span>
                                 </button>
+                              <% } else { %>
+                                <span class="home-post-mark" aria-hidden="true">IN</span>
                               <% } %>
                             </div>
 
@@ -732,7 +734,7 @@
                               <div class="home-latest-post-actions" aria-label="Статистика поста">
                                 <button
                                   type="button"
-                                  class="home-latest-post-action-group home-latest-post-action-button <%= likedNow ? 'is-liked' : '' %>"
+                                  class="home-latest-post-action-group home-latest-post-action-button home-latest-post-action-button--icon <%= likedNow ? 'is-liked' : '' %>"
                                   data-home-post-like
                                   data-post-id="<%= post.id || '' %>"
                                   data-post-slug="<%= postSlug %>"
@@ -750,18 +752,17 @@
                                 </button>
                                 <button
                                   type="button"
-                                  class="home-latest-post-action-group home-latest-post-action-button"
+                                  class="home-latest-post-action-group home-latest-post-action-button home-latest-post-action-button--icon"
                                   data-home-post-comment
                                   data-post-comments-href="<%= commentsHref %>"
                                   aria-label="Открыть комментарии">
                                   <svg class="home-latest-post-action-icon" viewBox="0 0 24 24" aria-hidden="true">
                                     <path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5A8.7 8.7 0 0 1 8 18.7L3 20.5l1.8-4.8A8.7 8.7 0 0 1 4 11.5a8.5 8.5 0 1 1 17 0Z"></path>
                                   </svg>
-                                  <span class="home-latest-post-action-value"><%= formatHomePostMetric(post.commentsCount) %></span>
                                 </button>
                                 <button
                                   type="button"
-                                  class="home-latest-post-action-group home-latest-post-action-group--link home-latest-post-action-button"
+                                  class="home-latest-post-action-group home-latest-post-action-group--link home-latest-post-action-button home-latest-post-action-button--icon"
                                   data-home-post-share
                                   data-post-href="<%= postHref %>"
                                   aria-label="Поделиться постом">
@@ -770,6 +771,10 @@
                                     <path d="M22 2 15 22l-4-9-9-4 20-7Z"></path>
                                   </svg>
                                 </button>
+                              </div>
+                              <div class="home-latest-post-metrics">
+                                <span><%= formatHomePostMetric(post.commentsCount) %> comments</span>
+                                <span><%= formatHomePostMetric(post.likesCount) %> likes</span>
                               </div>
                               <span class="home-latest-post-date"><%= formatHomePostDateTime(post.createdAt) %></span>
                             </div>
@@ -781,11 +786,9 @@
                 </section>
 
                 <section id="latest-slack" class="px-6 py-16" data-observe-reveal>
-                  <div class="mx-auto max-w-6xl">
-                    <div class="home-showcase-heading">
-                      <p class="home-showcase-kicker">LIVE</p>
-                      <h2 class="home-showcase-title">Последние созданные UNQ</h2>
-                    </div>
+                  <div class="home-feed-shell mx-auto max-w-6xl">
+                    <p class="home-feed-kicker">LIVE</p>
+                    <h2 class="home-feed-title">Последние созданные UNQ</h2>
 
                     <% if (!latestSlackCards.length) { %>
                       <div
@@ -793,27 +796,31 @@
                         Пока нет созданных визиток для отображения.
                       </div>
                       <% } else { %>
-                        <div class="home-showcase-list">
+                        <div class="home-mini-profile-list home-mini-profile-list--created">
                           <% latestSlackCards.forEach((card, index)=> {
-                            const latestRankNumber = index + 1;
                             const latestInitials = (card.name || "UN").split(" ").map((p) => p[0]).join("").slice(0, 2).toUpperCase();
+                            const latestHandle = String(card.handle || card.slug || "unq").trim().toLowerCase();
                           %>
                             <a href="/<%= encodeURIComponent(card.slug) %>"
-                              class="home-showcase-item interactive-card"
+                              class="home-mini-profile-pill interactive-card"
                               aria-label="Открыть профиль <%= card.name %>">
-                              <span class="home-showcase-rank"><%= latestRankNumber %></span>
-                              <span class="home-showcase-card">
-                                <% if (card.avatarUrl) { %>
-                                  <img src="<%= card.avatarUrl %>" alt="<%= card.name %>"
-                                    class="home-showcase-avatar"
-                                    loading="lazy" />
-                                <% } else { %>
-                                  <span class="home-showcase-avatar home-showcase-avatar-fallback"><%= latestInitials %></span>
-                                <% } %>
-                                <span class="home-showcase-copy">
-                                  <span class="home-showcase-name"><%= card.name %></span>
-                                  <span class="home-showcase-slug">unqx.uz/<%= card.slug %></span>
+                              <% if (card.avatarUrl) { %>
+                                <img src="<%= card.avatarUrl %>" alt="<%= card.name %>"
+                                  class="home-mini-profile-avatar"
+                                  loading="lazy" />
+                              <% } else { %>
+                                <span class="home-mini-profile-avatar home-mini-profile-avatar--fallback"><%= latestInitials %></span>
+                              <% } %>
+                              <span class="home-mini-profile-copy">
+                                <span class="home-mini-profile-name-row">
+                                  <span class="home-mini-profile-name"><%= card.name %></span>
+                                  <% if (card.isVerified) { %>
+                                    <svg class="home-mini-profile-verified" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor">
+                                      <path d="M12 2.5l2.2 1.8 2.8-.3 1.2 2.5 2.5 1.2-.3 2.8L21.5 12l-1.8 2.2.3 2.8-2.5 1.2-1.2 2.5-2.8-.3L12 21.5l-2.2-1.8-2.8.3-1.2-2.5-2.5-1.2.3-2.8L2.5 12l1.8-2.2-.3-2.8 2.5-1.2 1.2-2.5 2.8.3L12 2.5Zm-1.1 13.1 5-5-1.1-1.1-3.9 3.9-1.8-1.8-1.1 1.1 2.9 2.9Z"></path>
+                                    </svg>
+                                  <% } %>
                                 </span>
+                                <span class="home-mini-profile-handle">@<%= latestHandle %></span>
                               </span>
                             </a>
                             <% }) %>
@@ -823,48 +830,39 @@
                 </section>
 
                 <section id="weekly-top-views" class="px-6 py-16" data-observe-reveal>
-                  <div class="mx-auto max-w-6xl">
-                    <div class="home-showcase-heading">
-                      <p class="home-showcase-kicker">Топ 3 дня</p>
-                      <h2 class="home-showcase-title">Рейтинг по просмотрам</h2>
-                    </div>
+                  <div class="home-feed-shell mx-auto max-w-6xl">
+                    <p class="home-feed-kicker">ТОП 3 / ДНЯ</p>
+                    <h2 class="home-feed-title">Рейтинг по просмотрам</h2>
 
                     <% if (!weeklyViewsTopList.length) { %>
                       <div class="mt-8 rounded-2xl border border-neutral-200 bg-white p-6 text-sm text-neutral-500">
                         За эту неделю пока нет данных по просмотрам.
                       </div>
                       <% } else { %>
-                        <div class="home-showcase-list">
+                        <div class="home-mini-profile-list home-mini-profile-list--ranking">
                           <% weeklyViewsTopList.forEach((item, index)=> {
-                            const rankNumber = index + 1;
                             const slugs = (Array.isArray(item.slugs) ? item.slugs : []).filter(Boolean);
                             const primaryWeeklySlug = String(item.primarySlug || slugs[0] || "").trim();
                             const weeklyViewsCount = Number(item.views || 0).toLocaleString('ru-RU');
                           %>
                             <a href="/<%= encodeURIComponent(item.primarySlug || (Array.isArray(item.slugs) ? item.slugs[0] : '')) %>"
                               aria-label="Открыть профиль <%= item.name %>"
-                              class="home-showcase-item home-showcase-item--views interactive-card">
-                              <span class="home-showcase-rank"><%= rankNumber %></span>
-                              <span class="home-showcase-card">
-                                <img src="<%= item.avatarUrl || '/brand/logo.PNG' %>" alt="<%= item.name %>"
-                                  onerror="this.onerror=null;this.src='/brand/logo.PNG';"
-                                  class="home-showcase-avatar" />
-                                <span class="home-showcase-copy">
-                                  <span class="home-showcase-name-row">
-                                    <span class="home-showcase-name"><%= item.name %></span>
-                                    <% if (item.isVerified) { %>
-                                      <svg class="home-showcase-verified" viewBox="0 0 24 24" aria-hidden="true"
-                                        fill="currentColor" title="Верифицированный аккаунт">
-                                        <path
-                                          d="M12 2.5l2.2 1.8 2.8-.3 1.2 2.5 2.5 1.2-.3 2.8L21.5 12l-1.8 2.2.3 2.8-2.5 1.2-1.2 2.5-2.8-.3L12 21.5l-2.2-1.8-2.8.3-1.2-2.5-2.5-1.2.3-2.8L2.5 12l1.8-2.2-.3-2.8 2.5-1.2 1.2-2.5 2.8.3L12 2.5Zm-1.1 13.1 5-5-1.1-1.1-3.9 3.9-1.8-1.8-1.1 1.1 2.9 2.9Z">
-                                        </path>
-                                      </svg>
-                                    <% } %>
-                                  </span>
-                                  <span class="home-showcase-slug">unqx.uz/<%= primaryWeeklySlug || "UNQ" %></span>
+                              class="home-mini-profile-pill home-mini-profile-pill--score interactive-card">
+                              <img src="<%= item.avatarUrl || '/brand/logo.PNG' %>" alt="<%= item.name %>"
+                                onerror="this.onerror=null;this.src='/brand/logo.PNG';"
+                                class="home-mini-profile-avatar" />
+                              <span class="home-mini-profile-copy">
+                                <span class="home-mini-profile-name-row">
+                                  <span class="home-mini-profile-name"><%= item.name %></span>
+                                  <% if (item.isVerified) { %>
+                                    <svg class="home-mini-profile-verified" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor">
+                                      <path d="M12 2.5l2.2 1.8 2.8-.3 1.2 2.5 2.5 1.2-.3 2.8L21.5 12l-1.8 2.2.3 2.8-2.5 1.2-1.2 2.5-2.8-.3L12 21.5l-2.2-1.8-2.8.3-1.2-2.5-2.5-1.2.3-2.8L2.5 12l1.8-2.2-.3-2.8 2.5-1.2 1.2-2.5 2.8.3L12 2.5Zm-1.1 13.1 5-5-1.1-1.1-3.9 3.9-1.8-1.8-1.1 1.1 2.9 2.9Z"></path>
+                                    </svg>
+                                  <% } %>
                                 </span>
-                                <span class="home-showcase-score"><%= weeklyViewsCount %></span>
+                                <span class="home-mini-profile-handle">@<%= (primaryWeeklySlug || "unq").toLowerCase() %></span>
                               </span>
+                              <span class="home-mini-profile-score"><%= weeklyViewsCount %></span>
                             </a>
                             <% }) %>
                         </div>

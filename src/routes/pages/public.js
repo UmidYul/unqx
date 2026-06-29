@@ -1214,12 +1214,14 @@ router.get(
             slug,
             createdAt: candidate.createdAt,
             name: String(card.name || owner.displayName || owner.firstName || "UNQX User").trim() || "UNQX User",
+            handle: String(owner.login || owner.username || slug).trim(),
             role: String(card.role || "").trim(),
             bio: String(card.bio || "").trim(),
             avatarUrl: String(card.avatarUrl || "").trim(),
+            isVerified: Boolean(owner.isVerified),
           });
 
-          if (cards.length >= 3) {
+          if (cards.length >= 5) {
             break;
           }
         }
