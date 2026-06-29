@@ -130,11 +130,11 @@ async function renderHomeTemplateWithShowcaseCards() {
     userSession: null,
     latestPublishedPosts: [],
     latestCreatedCards: [
-      { name: "Suxrob Akmalov", slug: "AKL444", handle: "suxrob", avatarUrl: "https://example.com/avatar.jpg" },
-      { name: "Shuhrat", slug: "ZZZ777", handle: "scxr1337s", avatarUrl: "" },
-      { name: "Mukhamadaziz", slug: "MKA111", handle: "mukhamadazizbek", avatarUrl: "" },
-      { name: "Eldor", slug: "ELD777", handle: "eldorshomurodov", avatarUrl: "" },
-      { name: "Batman", slug: "BATMAN", handle: "batman", avatarUrl: "" },
+      {
+        name: "Suxrob Akmalov",
+        slug: "AKL444",
+        avatarUrl: "https://example.com/avatar.jpg",
+      },
     ],
     topWeeklyViews: [
       {
@@ -232,7 +232,7 @@ describe("home page", () => {
 
   test("renders latest posts section with follow CTA and deep link", async () => {
     const html = await renderHomeTemplateWithPosts();
-    expect(html).toContain("Последние опубликованные Посты");
+    expect(html).toContain("Последние посты");
     expect(html).toContain("Первый пост для главной");
     expect(html).toContain('data-home-follow-button');
     expect(html).toContain('data-home-post-like');
@@ -244,17 +244,16 @@ describe("home page", () => {
     expect(html).toContain('id="latest-posts"');
   });
 
-  test("renders latest UNQ and views ranking with compact feed pills", async () => {
+  test("renders latest UNQ and views ranking with shared showcase UI", async () => {
     const html = await renderHomeTemplateWithShowcaseCards();
 
     expect(html).toContain('id="latest-slack"');
     expect(html).toContain('id="weekly-top-views"');
-    expect(html).toContain("home-feed-title");
-    expect(html).toContain("home-mini-profile-list--created");
-    expect(html).toContain("home-mini-profile-list--ranking");
-    expect((html.match(/home-mini-profile-pill interactive-card/g) || []).length).toBe(5);
-    expect(html).toContain("@suxrob");
-    expect(html).toContain("@khk007");
+    expect(html).toContain("home-showcase-heading");
+    expect(html).toContain("home-showcase-card");
+    expect(html).toContain("home-showcase-score");
+    expect(html).toContain("unqx.uz/AKL444");
+    expect(html).toContain("unqx.uz/KHK007");
     expect(html).toContain(">1 289<");
   });
 
@@ -298,15 +297,15 @@ describe("home page", () => {
     expect(styles).toContain(".home-latest-post-action-button[data-home-post-like]:hover,");
   });
 
-  test("home feed sections use screenshot-style compact cards", () => {
+  test("home showcase ranking sections use compact reference cards", () => {
     const styles = fs.readFileSync(path.join(process.cwd(), "public", "css", "public-card.css"), "utf-8");
 
-    expect(styles).toContain("[data-page=\"public-home\"] .home-feed-title");
-    expect(styles).toContain("[data-page=\"public-home\"] .home-mini-profile-pill");
-    expect(styles).toContain("[data-page=\"public-home\"] .home-mini-profile-list--created .home-mini-profile-pill");
-    expect(styles).toContain("[data-page=\"public-home\"] .home-latest-post-card");
-    expect(styles).toContain("border-radius: 22px;");
-    expect(styles).toContain("grid-template-columns: repeat(3, minmax(0, 1fr));");
+    expect(styles).toContain("[data-page=\"public-home\"] .home-showcase-heading");
+    expect(styles).toContain("[data-page=\"public-home\"] .home-showcase-rank");
+    expect(styles).toContain("[data-page=\"public-home\"] .home-showcase-card");
+    expect(styles).toContain("border-radius: 26px;");
+    expect(styles).toContain("[data-page=\"public-home\"] .home-showcase-score");
+    expect(styles).toContain("background: #050505;");
   });
 
   test("flash sale client source shares countdown wiring, flash modal tone, and hero pricing follow-up", () => {
