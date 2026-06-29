@@ -63,7 +63,26 @@ describe("public posts page", () => {
     expect(html).toContain('data-home-post-share');
     expect(html).toContain('data-home-follow-button');
     expect(html).toContain("/ABC123#wall-post-post_1");
+    expect(html).toContain('src="/brand/unqlogo.png"');
+    expect(html).toContain("home-latest-post-meta-row");
+    expect(html).toContain("2 comments&nbsp; 5 likes");
+    expect(html).toContain("28.06.2026");
     expect(html).toContain("/posts?page=1");
     expect(html).toContain("/posts?page=3");
+    expect(html).toContain("public-posts-pagination");
+    expect(html).toContain("Найдено: 25");
+    expect(html).toContain("2/3");
+  });
+
+  test("posts page styles use responsive grid and wide pagination", () => {
+    const fs = require("node:fs");
+    const styles = fs.readFileSync(path.join(process.cwd(), "public", "css", "public-card.css"), "utf-8");
+
+    expect(styles).toContain(".public-posts-page .public-posts-grid");
+    expect(styles).toContain("grid-template-columns: repeat(3, minmax(0, 1fr));");
+    expect(styles).toContain("grid-template-columns: repeat(2, minmax(0, 1fr));");
+    expect(styles).toContain("grid-template-columns: 1fr;");
+    expect(styles).toContain(".public-posts-pagination");
+    expect(styles).toContain("justify-content: space-between;");
   });
 });
