@@ -849,7 +849,7 @@
                           %>
                             <a href="/<%= encodeURIComponent(item.primarySlug || (Array.isArray(item.slugs) ? item.slugs[0] : '')) %>"
                               aria-label="Открыть профиль <%= item.name %>"
-                              class="home-showcase-item home-showcase-item--views interactive-card">
+                              class="home-showcase-item home-showcase-item--views home-showcase-item--rank-<%= rankNumber %> interactive-card">
                               <span class="home-showcase-rank"><%= rankNumber %></span>
                               <span class="home-showcase-card">
                                 <img src="<%= item.avatarUrl || '/brand/logo.PNG' %>" alt="<%= item.name %>"
@@ -867,7 +867,7 @@
                                       </svg>
                                     <% } %>
                                   </span>
-                                  <span class="home-showcase-slug">unqx.uz/<%= primaryWeeklySlug || "UNQ" %></span>
+                                  <span class="home-showcase-slug">@<%= primaryWeeklySlug || "UNQ" %></span>
                                 </span>
                                 <span class="home-showcase-score"><%= weeklyViewsCount %></span>
                               </span>

@@ -81,6 +81,7 @@ describe("public posts page", () => {
     const styles = fs.readFileSync(path.join(process.cwd(), "public", "css", "public-card.css"), "utf-8");
 
     expect(styles).toContain(".public-posts-page .public-posts-grid");
+    expect(styles).toContain("margin-top: 44px;");
     expect(styles).toContain("grid-template-columns: repeat(3, minmax(0, 1fr));");
     expect(styles).toContain("grid-template-columns: repeat(2, minmax(0, 1fr));");
     expect(styles).toContain("grid-template-columns: 1fr;");

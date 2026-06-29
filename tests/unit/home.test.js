@@ -298,7 +298,8 @@ describe("home page", () => {
     expect(html).toContain("unqx.uz/ELD222");
     expect(html).toContain("unqx.uz/BAT333");
     expect(html).not.toContain("@suxrob");
-    expect(html).toContain("unqx.uz/KHK007");
+    expect(html).toContain("@KHK007");
+    expect(html).toContain("home-showcase-item--rank-1");
     expect(html).toContain(">1 289<");
   });
 
@@ -354,13 +355,15 @@ describe("home page", () => {
     expect(styles).toContain("[data-page=\"public-home\"] .home-showcase-heading");
     expect(styles).toContain("background-image: none;");
     expect(styles).toContain("[data-page=\"public-home\"] .home-latest-unq-list");
-    expect(styles).toContain("grid-template-columns: repeat(5, minmax(0, 1fr));");
+    expect(styles).toContain("flex-wrap: nowrap;");
     expect(styles).toContain("[data-page=\"public-home\"] .home-latest-unq-card");
+    expect(styles).toContain("[data-page=\"public-home\"] .home-showcase-item--rank-1 .home-showcase-rank");
+    expect(styles).toContain("background: #f2c94c;");
     expect(styles).toContain("[data-page=\"public-home\"] .home-showcase-rank");
     expect(styles).toContain("[data-page=\"public-home\"] .home-showcase-card");
-    expect(styles).toContain("border-radius: 26px;");
+    expect(styles).toContain("border-radius: 30px;");
     expect(styles).toContain("[data-page=\"public-home\"] .home-showcase-score");
-    expect(styles).toContain("background: #050505;");
+    expect(styles).toContain("background: transparent;");
   });
 
   test("flash sale client source shares countdown wiring, flash modal tone, and hero pricing follow-up", () => {

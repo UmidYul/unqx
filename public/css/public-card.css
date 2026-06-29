@@ -1143,6 +1143,7 @@
   display: grid;
   width: 100%;
   max-width: none;
+  margin-top: 44px;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 22px;
   align-items: stretch;
@@ -7232,60 +7233,83 @@ body[data-card-theme] main.private-card-screen {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   align-items: center;
-  gap: 42px 72px;
-  margin-top: 10px;
+  gap: 24px;
+  margin-top: 24px;
+  overflow: visible;
+  background: transparent;
 }
 
 [data-page="public-home"] .home-showcase-item {
   position: relative;
   display: block;
   min-width: 0;
-  padding-left: 34px;
+  padding: 16px 0 0;
   color: inherit;
   text-decoration: none;
 }
 
 [data-page="public-home"] .home-showcase-item:hover .home-showcase-card {
   border-color: #cfcfcf;
-  box-shadow: 0 16px 34px rgba(15, 23, 42, 0.08);
-  transform: translateY(-2px);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.045);
+  transform: translateY(-1px);
 }
 
 [data-page="public-home"] .home-showcase-rank {
   position: absolute;
-  z-index: 2;
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%) skewX(-9deg);
-  font-size: clamp(3.35rem, 5.5vw, 4.6rem);
-  font-style: italic;
-  font-weight: 950;
-  line-height: 0.8;
+  z-index: 3;
+  top: 0;
+  right: 22px;
+  display: inline-flex;
+  width: 30px;
+  height: 30px;
+  align-items: center;
+  justify-content: center;
+  transform: none;
+  border: 2px solid transparent;
+  border-radius: 999px;
+  font-size: 0.98rem;
+  font-style: normal;
+  font-weight: 900;
+  line-height: 1;
   letter-spacing: 0;
-  color: #050505;
+  color: #ffffff;
   pointer-events: none;
+}
+
+[data-page="public-home"] .home-showcase-item--rank-1 .home-showcase-rank {
+  border-color: #050505;
+  background: #f2c94c;
+  color: #050505;
+}
+
+[data-page="public-home"] .home-showcase-item--rank-2 .home-showcase-rank {
+  background: #6f254f;
+}
+
+[data-page="public-home"] .home-showcase-item--rank-3 .home-showcase-rank {
+  background: #2f6fe4;
 }
 
 [data-page="public-home"] .home-showcase-card {
   position: relative;
   display: flex;
   min-width: 0;
-  min-height: 86px;
+  min-height: 72px;
   align-items: center;
-  gap: 14px;
-  overflow: hidden;
-  border: 1px solid #d6d6d6;
-  border-radius: 26px;
+  gap: 12px;
+  overflow: visible;
+  border: 1px solid #e0e0e0;
+  border-radius: 30px;
   background: #ffffff;
-  padding: 12px 16px 12px 34px;
-  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.04);
+  padding: 11px 16px 11px 12px;
+  box-shadow: none;
   transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
 }
 
 [data-page="public-home"] .home-showcase-avatar {
   display: inline-flex;
-  width: 56px;
-  height: 56px;
+  width: 44px;
+  height: 44px;
   flex: 0 0 auto;
   align-items: center;
   justify-content: center;
@@ -7304,7 +7328,7 @@ body[data-card-theme] main.private-card-screen {
 [data-page="public-home"] .home-showcase-copy {
   display: grid;
   min-width: 0;
-  gap: 2px;
+  gap: 3px;
 }
 
 [data-page="public-home"] .home-showcase-name-row {
@@ -7318,54 +7342,54 @@ body[data-card-theme] main.private-card-screen {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 1.18rem;
-  font-weight: 900;
-  line-height: 1.02;
+  font-size: 0.92rem;
+  font-weight: 850;
+  line-height: 1.08;
   letter-spacing: 0;
   color: #050505;
 }
 
 [data-page="public-home"] .home-showcase-verified {
-  width: 16px;
-  height: 16px;
+  width: 13px;
+  height: 13px;
   flex: 0 0 auto;
-  color: #6b7280;
+  color: #050505;
 }
 
 [data-page="public-home"] .home-showcase-slug {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 0.92rem;
+  font-size: 0.82rem;
   font-weight: 500;
-  line-height: 1.1;
+  line-height: 1.12;
   letter-spacing: 0;
   color: #7a7a7a;
 }
 
 [data-page="public-home"] .home-showcase-score {
   display: inline-flex;
-  min-height: 26px;
+  min-height: auto;
   min-width: 52px;
   flex: 0 0 auto;
   align-items: center;
   justify-content: center;
-  align-self: flex-end;
+  align-self: center;
   margin-left: auto;
-  margin-bottom: -1px;
-  border-radius: 999px;
-  background: #050505;
-  padding: 2px 9px 3px;
-  font-size: 1.08rem;
-  font-style: italic;
-  font-weight: 950;
+  margin-bottom: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
+  font-size: 1.12rem;
+  font-style: normal;
+  font-weight: 850;
   line-height: 1;
-  color: #ffffff;
+  color: #111111;
 }
 
 [data-page="public-home"] .home-latest-unq-list {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  display: flex;
+  flex-wrap: nowrap;
   align-items: center;
   gap: 14px;
   width: 100%;
@@ -7378,6 +7402,7 @@ body[data-card-theme] main.private-card-screen {
   display: flex;
   min-width: 0;
   min-height: 74px;
+  flex: 1 1 0;
   align-items: center;
   gap: 12px;
   overflow: hidden;
@@ -7463,9 +7488,13 @@ body[data-card-theme] main.private-card-screen {
 
 @media (max-width: 1024px) {
   [data-page="public-home"] .home-latest-unq-list {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    flex-wrap: wrap;
     gap: 12px;
     max-width: 620px;
+  }
+
+  [data-page="public-home"] .home-latest-unq-card {
+    flex-basis: calc(50% - 6px);
   }
 
   [data-page="public-home"] .home-showcase-list {
@@ -7482,13 +7511,13 @@ body[data-card-theme] main.private-card-screen {
 
 @media (max-width: 520px) {
   [data-page="public-home"] .home-latest-unq-list {
-    grid-template-columns: 1fr;
     max-width: 100%;
     margin-top: 20px;
   }
 
   [data-page="public-home"] .home-latest-unq-card {
     min-height: 68px;
+    flex-basis: 100%;
     border-radius: 26px;
     padding: 10px 13px;
   }
@@ -7517,23 +7546,26 @@ body[data-card-theme] main.private-card-screen {
   }
 
   [data-page="public-home"] .home-showcase-item {
-    padding-left: 24px;
+    padding: 16px 0 0;
   }
 
   [data-page="public-home"] .home-showcase-rank {
-    font-size: 3.1rem;
+    right: 18px;
+    width: 28px;
+    height: 28px;
+    font-size: 0.9rem;
   }
 
   [data-page="public-home"] .home-showcase-card {
-    min-height: 76px;
+    min-height: 68px;
     gap: 10px;
-    border-radius: 23px;
-    padding: 10px 12px 10px 28px;
+    border-radius: 28px;
+    padding: 10px 13px;
   }
 
   [data-page="public-home"] .home-showcase-avatar {
-    width: 46px;
-    height: 46px;
+    width: 40px;
+    height: 40px;
   }
 
   [data-page="public-home"] .home-showcase-name {
@@ -7546,9 +7578,7 @@ body[data-card-theme] main.private-card-screen {
 
   [data-page="public-home"] .home-showcase-score {
     min-width: 42px;
-    min-height: 22px;
-    padding: 2px 7px 3px;
-    font-size: 0.9rem;
+    font-size: 1rem;
   }
 }
 
