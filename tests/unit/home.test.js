@@ -355,6 +355,11 @@ describe("home page", () => {
     expect(styles).toContain("justify-content: space-between;");
     expect(styles).toContain("[data-page=\"public-home\"] #latest-posts");
     expect(styles).toContain("background: #FAFAFA;");
+    expect(styles).toContain("[data-page=\"public-home\"] #home-live-stats,");
+    expect(styles).toContain("[data-page=\"public-home\"] #hero-check > div,");
+    expect(styles).toContain("[data-page=\"public-home\"] #calc-result,");
+    expect(styles).toContain("[data-page=\"public-home\"] .faq-item {");
+    expect(styles).toContain("border: 2px solid #000000 !important;");
   });
 
   test("home showcase ranking sections use compact reference cards", () => {

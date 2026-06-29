@@ -800,6 +800,63 @@
   letter-spacing: 0;
 }
 
+[data-page="public-home"] #home-live-stats,
+[data-page="public-home"] #hero-check > div,
+[data-page="public-home"] #home-slug-check,
+[data-page="public-home"] #home-slug-primary-action,
+[data-page="public-home"] #home-slug-calculator-action,
+[data-page="public-home"] #calc-letters,
+[data-page="public-home"] #calc-digits,
+[data-page="public-home"] #calc-generate-button,
+[data-page="public-home"] #calc-result,
+[data-page="public-home"] #calc-empty-state,
+[data-page="public-home"] #calc-reserve-link,
+[data-page="public-home"] .faq-item {
+  border: 2px solid #000000 !important;
+}
+
+[data-page="public-home"] #home-live-stats {
+  border-radius: 18px !important;
+  background: #ffffff !important;
+  box-shadow: none !important;
+}
+
+[data-page="public-home"] #hero-check > div,
+[data-page="public-home"] #home-slug-check,
+[data-page="public-home"] #home-slug-primary-action,
+[data-page="public-home"] #home-slug-calculator-action,
+[data-page="public-home"] #calc-letters,
+[data-page="public-home"] #calc-digits,
+[data-page="public-home"] #calc-generate-button,
+[data-page="public-home"] #calc-reserve-link {
+  border-radius: 16px !important;
+}
+
+[data-page="public-home"] #hero-check > div:focus-within,
+[data-page="public-home"] #calc-letters:focus,
+[data-page="public-home"] #calc-digits:focus {
+  border-color: #000000 !important;
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.08) !important;
+}
+
+[data-page="public-home"] #calc-result,
+[data-page="public-home"] #calc-empty-state,
+[data-page="public-home"] .faq-item {
+  border-radius: 32px !important;
+  box-shadow: none !important;
+}
+
+[data-page="public-home"] #calc-result {
+  background: #ffffff !important;
+}
+
+[data-page="public-home"] #calc-reserve-link,
+[data-page="public-home"] #home-slug-check,
+[data-page="public-home"] #home-slug-primary-action {
+  background: #111111 !important;
+  color: #ffffff !important;
+}
+
 .calc-example-btn:focus-visible,
 [data-share-card]:focus-visible {
   outline: 2px solid #111111;
