@@ -1619,7 +1619,6 @@ function initSlugCalculator(orderApi) {
   let resultSeq = 0;
   let lastAnimatedPrice = 0;
   let isApplyingDefaultSlug = false;
-  let isGeneratingSlug = false;
   const unavailableSlugCache = new Set();
 
   function updatePreview(letters, digits) {
@@ -1778,20 +1777,6 @@ function initSlugCalculator(orderApi) {
   }
 
   function buildRandomDigits() {
-    const mode = randomFrom(["random", "random", "palindrome", "round", "sequential"]);
-    if (mode === "round") {
-      const first = Math.floor(Math.random() * 9) + 1;
-      return `${first}00`;
-    }
-    if (mode === "sequential") {
-      const start = Math.floor(Math.random() * 8);
-      return `${start}${start + 1}${start + 2}`;
-    }
-    if (mode === "palindrome") {
-      const a = Math.floor(Math.random() * 10);
-      const b = Math.floor(Math.random() * 10);
-      return `${a}${b}${a}`;
-    }
     return `${Math.floor(Math.random() * 10)}${Math.floor(Math.random() * 10)}${Math.floor(Math.random() * 10)}`;
   }
 
@@ -1887,42 +1872,24 @@ function initSlugCalculator(orderApi) {
   }
 
   async function handleGenerateSlug() {
-    if (isGeneratingSlug) {
-      return;
-    }
-    isGeneratingSlug = true;
-    if (generateButton instanceof HTMLButtonElement) {
-      generateButton.disabled = true;
-    }
     const icon = generateButton instanceof HTMLElement ? generateButton.querySelector("svg") : null;
     if (icon instanceof SVGElement) {
       icon.classList.add("animate-spin");
     }
 
-    try {
-      let slug = await requestServerGeneratedSlug();
-      if (!slug) {
-        const candidates = buildAffordableCandidates();
-        slug = await findFirstAvailableCandidate(candidates);
-      }
-      if (slug) {
-        const parsed = splitSlug(slug);
-        if (parsed) {
-          lettersInput.value = parsed.letters;
-          digitsInput.value = parsed.digits;
-          void updateResult();
-          return;
-        }
-      }
-    } finally {
-      isGeneratingSlug = false;
+    const letters = buildRandomLetters();
+    const digits = buildRandomDigits();
+    lettersInput.value = letters;
+    digitsInput.value = digits;
+    lettersInput.dispatchEvent(new Event("input", { bubbles: true }));
+    digitsInput.dispatchEvent(new Event("input", { bubbles: true }));
+    void updateResult();
+
+    window.setTimeout(() => {
       if (icon instanceof SVGElement) {
         icon.classList.remove("animate-spin");
       }
-      if (generateButton instanceof HTMLButtonElement) {
-        generateButton.disabled = false;
-      }
-    }
+    }, 260);
   }
 
   function renderSimilarAvailable(items) {
@@ -1980,6 +1947,15 @@ function initSlugCalculator(orderApi) {
       resultWrap.classList.add("animate-fade-up");
     }
     showResultState();
+
+    resultSlug.textContent = pricing.slug;
+    animateNumberText(resultPrice, lastAnimatedPrice, pricing.total);
+    resultFormula.textContent = `${formatPrice(slugPricingConfig.basePrice || DEFAULT_HOME_SLUG_PRICING.basePrice)} x ${pricing.letterData.multiplier} x ${pricing.digitData.multiplier} = ${formatPrice(pricing.total)} сум`;
+    letterMeta.textContent = `${pricing.letterData.label} x${pricing.letterData.multiplier}`;
+    digitMeta.textContent = `${pricing.digitData.label} x${pricing.digitData.multiplier}`;
+    reserveLink.href = "#";
+    reserveLink.setAttribute("data-order-prefill", pricing.slug);
+    reserveLink.innerHTML = `Занять ${pricing.slug}${RESERVE_ICON}`;
 
     const serverPricing = await applyServerPrice(pricing.slug, pricing.total);
     if (seq !== resultSeq || !serverPricing) {

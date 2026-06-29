@@ -847,7 +847,20 @@
 }
 
 [data-page="public-home"] #calc-result {
+  position: relative;
   background: #ffffff !important;
+  padding-right: 92px !important;
+}
+
+[data-page="public-home"] .calc-result-logo {
+  position: absolute;
+  top: 28px;
+  right: 28px;
+  width: 34px;
+  height: 34px;
+  object-fit: cover;
+  border-radius: 10px;
+  pointer-events: none;
 }
 
 [data-page="public-home"] #calc-reserve-link,

@@ -232,6 +232,7 @@ describe("home page", () => {
     expect(html).toContain('id="hero-check"');
     expect(html).toContain('id="home-slug-input"');
     expect(html).toContain('id="calc-result"');
+    expect(html).toContain('class="calc-result-logo"');
     expect(html).toContain('id="order-modal-root"');
     expect(html).toContain('id="order-modal-close-top"');
     expect(html).toContain('<body class="antialiased" style="background-color: #FAFAFA;">');
@@ -342,6 +343,9 @@ describe("home page", () => {
     expect(source).toContain('commentButton.getAttribute("data-post-comments-href")');
     expect(source).toContain('const shareButton = target.closest("[data-home-post-share]");');
     expect(source).toContain('const STORY_TEMPLATE_URL = "/images/instagram-story-template.png";');
+    expect(source).toContain("const letters = buildRandomLetters();");
+    expect(source).toContain("const digits = buildRandomDigits();");
+    expect(source).toContain('lettersInput.dispatchEvent(new Event("input", { bubbles: true }));');
     expect(source).toContain('window.html2canvas(root, {');
     expect(source).toContain("scale: 2,");
     expect(source).toContain("Картинка для сторис сохранена в галерею, а ссылка на пост скопирована!");
@@ -358,6 +362,7 @@ describe("home page", () => {
     expect(styles).toContain("[data-page=\"public-home\"] #home-live-stats,");
     expect(styles).toContain("[data-page=\"public-home\"] #hero-check > div,");
     expect(styles).toContain("[data-page=\"public-home\"] #calc-result,");
+    expect(styles).toContain("[data-page=\"public-home\"] .calc-result-logo");
     expect(styles).toContain("[data-page=\"public-home\"] .faq-item {");
     expect(styles).toContain("border: 2px solid #000000 !important;");
   });
