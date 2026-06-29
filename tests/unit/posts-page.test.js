@@ -63,7 +63,7 @@ describe("public posts page", () => {
     expect(html).toContain('data-home-post-share');
     expect(html).toContain('data-home-follow-button');
     expect(html).toContain("/ABC123#wall-post-post_1");
-    expect(html).toContain('src="/brand/unq-logo.svg"');
+    expect(html).toContain('src="/brand/unqlogo.png"');
     expect(html).not.toContain("home-latest-post-meta-row");
     expect(html).not.toContain("comments&nbsp;");
     expect(html).toContain('data-home-post-like-count>5</span>');
@@ -74,6 +74,44 @@ describe("public posts page", () => {
     expect(html).toContain("public-posts-pagination");
     expect(html).toContain("Найдено: 25");
     expect(html).toContain("2/3");
+  });
+
+  test("hides zero post action counters", async () => {
+    const html = await renderPostsTemplate({
+      posts: [
+        {
+          id: "post_zero",
+          content: "Пост без реакций",
+          createdAt: new Date(Date.now() - 60 * 1000),
+          likesCount: 0,
+          commentsCount: 0,
+          viewerHasLiked: false,
+          postHref: "/ZERO00#wall-post-post_zero",
+          author: {
+            name: "Zero",
+            handle: "zero",
+            primarySlug: "ZERO00",
+            profileHref: "/ZERO00",
+          },
+          viewerFollowState: {
+            canFollow: false,
+            isFollowing: false,
+          },
+        },
+      ],
+      pagination: {
+        page: 1,
+        pageSize: 12,
+        total: 1,
+        totalPages: 1,
+        hasMore: false,
+      },
+    });
+
+    expect(html).toContain('data-home-post-like-count></span>');
+    expect(html).toContain('<span class="home-latest-post-action-value"></span>');
+    expect(html).not.toContain('data-home-post-like-count>0</span>');
+    expect(html).not.toContain('<span class="home-latest-post-action-value">0</span>');
   });
 
   test("posts page styles use responsive grid and wide pagination", () => {

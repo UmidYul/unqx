@@ -702,8 +702,8 @@
   gap: 10px;
   min-width: 220px;
   max-width: 300px;
-  border-radius: 14px;
-  border: 1px solid #e5e5e5;
+  border-radius: 22px;
+  border: 2px solid #000000 !important;
   background: #ffffff;
   padding: 10px 12px;
   text-decoration: none;
@@ -712,7 +712,7 @@
 
 .home-profile-marquee-item:hover,
 .home-profile-marquee-item:focus-visible {
-  border-color: #cfcfcf;
+  border-color: #000000;
   background: #fcfcfc;
 }
 
@@ -1268,13 +1268,13 @@
 }
 
 .home-latest-post-brand {
-  position: absolute;
-  top: 20px;
-  right: 20px;
+  position: static;
   z-index: 2;
-  width: 42px;
-  height: 15px;
-  object-fit: contain;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+  border-radius: 9px;
+  object-fit: cover;
   pointer-events: none;
 }
 
@@ -1284,7 +1284,7 @@
   justify-content: space-between;
   gap: 12px;
   min-height: 44px;
-  padding-right: 50px;
+  padding-right: 0;
 }
 
 .home-latest-post-author {
@@ -7371,7 +7371,7 @@ body[data-card-theme] main.private-card-screen {
 [data-page="public-home"] .home-showcase-rank {
   position: absolute;
   z-index: 3;
-  top: 0;
+  top: 16px;
   right: 22px;
   display: inline-flex;
   min-width: 30px;
@@ -7530,7 +7530,7 @@ body[data-card-theme] main.private-card-screen {
   align-items: center;
   gap: 12px;
   overflow: hidden;
-  border: 1px solid #e0e0e0;
+  border: 2px solid #000000 !important;
   border-radius: 28px;
   background: #ffffff;
   padding: 11px 15px;
@@ -7544,7 +7544,7 @@ body[data-card-theme] main.private-card-screen {
 }
 
 [data-page="public-home"] .home-latest-unq-card:hover {
-  border-color: #d4d4d4;
+  border-color: #000000;
   box-shadow: 0 8px 18px rgba(15, 23, 42, 0.045);
   transform: translateY(-1px);
 }

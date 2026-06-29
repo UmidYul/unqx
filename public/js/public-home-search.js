@@ -257,7 +257,7 @@ function initHomeLatestPostButtons(pageNode, requestJson) {
     button.setAttribute("title", label);
     const countNode = button.querySelector("[data-home-post-like-count]");
     if (countNode instanceof HTMLElement) {
-      countNode.textContent = formatMetric(likesCount);
+      countNode.textContent = likesCount > 0 ? formatMetric(likesCount) : "";
     }
   }
 

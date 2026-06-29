@@ -691,8 +691,8 @@
                             tabindex="0"
                             role="link"
                             aria-label="Открыть пост <%= formatHomePostHandle(author) %>">
-                            <img src="/brand/unq-logo.svg" alt="" class="home-latest-post-brand" aria-hidden="true" loading="lazy" />
                             <div class="home-latest-post-head">
+                              <img src="/brand/unqlogo.png" alt="" class="home-latest-post-brand" aria-hidden="true" loading="lazy" />
                               <a href="<%= author.profileHref || postHref || '#' %>" class="home-latest-post-author">
                                 <% if (author.avatarUrl) { %>
                                   <img src="<%= author.avatarUrl %>" alt="<%= author.name || 'UNQX User' %>"
@@ -751,7 +751,7 @@
                                   <svg class="home-latest-post-action-icon" viewBox="0 0 24 24" aria-hidden="true">
                                     <path d="M12 20.75 4.9 13.86a5.56 5.56 0 0 1 0-7.94 5.39 5.39 0 0 1 7.67 0L12 6.49l.57-.57a5.39 5.39 0 0 1 7.67 0 5.56 5.56 0 0 1 0 7.94L12 20.75Z"></path>
                                   </svg>
-                                  <span class="home-latest-post-action-value" data-home-post-like-count><%= formatHomePostMetric(post.likesCount) %></span>
+                                  <span class="home-latest-post-action-value" data-home-post-like-count><%= Number(post.likesCount || 0) > 0 ? formatHomePostMetric(post.likesCount) : '' %></span>
                                 </button>
                                 <button
                                   type="button"
@@ -762,7 +762,7 @@
                                   <svg class="home-latest-post-action-icon" viewBox="0 0 24 24" aria-hidden="true">
                                     <path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5A8.7 8.7 0 0 1 8 18.7L3 20.5l1.8-4.8A8.7 8.7 0 0 1 4 11.5a8.5 8.5 0 1 1 17 0Z"></path>
                                   </svg>
-                                  <span class="home-latest-post-action-value"><%= formatHomePostMetric(post.commentsCount) %></span>
+                                  <span class="home-latest-post-action-value"><%= Number(post.commentsCount || 0) > 0 ? formatHomePostMetric(post.commentsCount) : '' %></span>
                                 </button>
                                 <button
                                   type="button"

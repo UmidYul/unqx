@@ -273,7 +273,7 @@ describe("home page", () => {
     expect(html).toContain("/ABC123#wall-post-post_1");
     expect(html).toContain('data-post-comments-href="/ABC123?comments=1#wall-post-post_1"');
     expect(html).toContain('id="latest-posts"');
-    expect(html).toContain('src="/brand/unq-logo.svg"');
+    expect(html).toContain('src="/brand/unqlogo.png"');
     expect(html).not.toContain("home-latest-post-meta-row");
     expect(html).not.toContain("comments&nbsp;");
     expect(html).toContain('data-home-post-like-count>4</span>');
