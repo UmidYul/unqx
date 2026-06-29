@@ -691,8 +691,8 @@
                             tabindex="0"
                             role="link"
                             aria-label="Открыть пост <%= formatHomePostHandle(author) %>">
+                            <img src="/brand/unqlogo.png" alt="" class="home-latest-post-brand" aria-hidden="true" loading="lazy" />
                             <div class="home-latest-post-head">
-                              <img src="/brand/unqlogo.png" alt="" class="home-latest-post-brand" aria-hidden="true" loading="lazy" />
                               <a href="<%= author.profileHref || postHref || '#' %>" class="home-latest-post-author">
                                 <% if (author.avatarUrl) { %>
                                   <img src="<%= author.avatarUrl %>" alt="<%= author.name || 'UNQX User' %>"

@@ -1268,11 +1268,12 @@
 }
 
 .home-latest-post-brand {
-  position: static;
+  position: absolute;
+  top: 20px;
+  right: 20px;
   z-index: 2;
   width: 28px;
   height: 28px;
-  flex: 0 0 28px;
   border-radius: 9px;
   object-fit: cover;
   pointer-events: none;
@@ -1284,7 +1285,7 @@
   justify-content: space-between;
   gap: 12px;
   min-height: 44px;
-  padding-right: 0;
+  padding-right: 44px;
 }
 
 .home-latest-post-author {
