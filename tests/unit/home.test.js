@@ -242,6 +242,9 @@ describe("home page", () => {
     expect(html).toContain("/ABC123#wall-post-post_1");
     expect(html).toContain('data-post-comments-href="/ABC123?comments=1#wall-post-post_1"');
     expect(html).toContain('id="latest-posts"');
+    expect(html).toContain('src="/brand/unqlogo.png"');
+    expect(html).toContain("home-latest-post-meta-row");
+    expect(html).toContain("2 comments&nbsp; 4 likes");
   });
 
   test("renders latest UNQ and views ranking with shared showcase UI", async () => {
@@ -295,6 +298,9 @@ describe("home page", () => {
     expect(source).toContain('const shareButton = target.closest("[data-home-post-share]");');
     expect(styles).toContain("--home-post-like-accent: #c45766;");
     expect(styles).toContain(".home-latest-post-action-button[data-home-post-like]:hover,");
+    expect(styles).toContain(".home-latest-post-brand");
+    expect(styles).toContain("border-radius: 34px;");
+    expect(styles).toContain(".home-latest-post-meta-row");
   });
 
   test("home showcase ranking sections use compact reference cards", () => {

@@ -96,13 +96,7 @@
   month: "2-digit",
   year: "numeric",
   }).format(date);
-  const timePart = new Intl.DateTimeFormat("ru-RU", {
-  hour: "2-digit",
-  minute: "2-digit",
-  second: "2-digit",
-  hour12: false,
-  }).format(date);
-  return `${datePart} / ${timePart}`;
+  return datePart;
   };
   const formatHomePostHandle = (author) => {
   const raw = String(author && typeof author === "object" ? (author.handle || author.name || author.primarySlug || "unqx") : "unqx").trim();
@@ -687,6 +681,7 @@
                             tabindex="0"
                             role="link"
                             aria-label="Открыть пост <%= formatHomePostHandle(author) %>">
+                            <img src="/brand/unqlogo.png" alt="" class="home-latest-post-brand" aria-hidden="true" loading="lazy" />
                             <div class="home-latest-post-head">
                               <a href="<%= author.profileHref || postHref || '#' %>" class="home-latest-post-author">
                                 <% if (author.avatarUrl) { %>
@@ -771,6 +766,11 @@
                                   </svg>
                                 </button>
                               </div>
+                            </div>
+                            <div class="home-latest-post-meta-row">
+                              <span class="home-latest-post-stats">
+                                <%= formatHomePostMetric(post.commentsCount) %> comments&nbsp; <%= formatHomePostMetric(post.likesCount) %> likes
+                              </span>
                               <span class="home-latest-post-date"><%= formatHomePostDateTime(post.createdAt) %></span>
                             </div>
                           </article>
