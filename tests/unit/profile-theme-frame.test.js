@@ -66,6 +66,8 @@ describe("profile theme and avatar frame normalization", () => {
     expect(styles).toContain("@keyframes unqLiquidGlassGradient");
     expect(styles).toContain("@keyframes unqLiquidGlassIslands");
     expect(styles).toContain("background-size: 400% 400%;");
+    expect(styles).toContain("animation: unqLiquidGlassGradient 10s ease-in-out infinite;");
+    expect(styles).toContain("animation: unqLiquidGlassIslands 11s ease-in-out infinite;");
     expect(styles).toContain("backdrop-filter: blur(25px)");
     expect(styles).toContain("will-change: background-position;");
   });
