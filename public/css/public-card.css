@@ -120,6 +120,110 @@
   border-color: #cfcfcf;
 }
 
+/* ---- Global public UI: Cel-Shaded / Neo-Brutalist controls ---- */
+body:not([data-card-theme]) .site-header {
+  border-bottom: 2px solid #000000 !important;
+  background: rgba(255, 255, 255, 0.94) !important;
+  box-shadow: 0 4px 0 #000000 !important;
+}
+
+body:not([data-card-theme]) .site-logo-mark,
+body:not([data-card-theme]) [data-auth-avatar],
+body:not([data-card-theme]) .site-header-profile {
+  border: 2px solid #000000 !important;
+  box-shadow: 2px 2px 0 #000000 !important;
+}
+
+body:not([data-card-theme]) .site-mobile-menu,
+body:not([data-card-theme]) .unqx-dialog-panel,
+body:not([data-card-theme]) .order-modal-panel,
+body:not([data-card-theme]) [role="menu"],
+body:not([data-card-theme]) details[open] {
+  border: 2px solid #000000 !important;
+  border-radius: 16px !important;
+  box-shadow: 4px 4px 0 #000000 !important;
+  background: #ffffff !important;
+}
+
+body:not([data-card-theme]) .site-header-link,
+body:not([data-card-theme]) .site-mobile-link {
+  color: #111111 !important;
+  text-shadow: 0.6px 0 #000000;
+}
+
+body:not([data-card-theme]) .interactive-btn,
+body:not([data-card-theme]) .btn-shimmer,
+body:not([data-card-theme]) .site-header-login,
+body:not([data-card-theme]) .site-header-cta,
+body:not([data-card-theme]) .site-header-mobile-toggle,
+body:not([data-card-theme]) .public-posts-pagination-button,
+body:not([data-card-theme]) [data-order-link],
+body:not([data-card-theme]) button[type="button"],
+body:not([data-card-theme]) button[type="submit"],
+body:not([data-card-theme]) a[role="button"] {
+  border: 2px solid #000000 !important;
+  border-radius: 14px !important;
+  box-shadow: 4px 4px 0 #000000 !important;
+  transform: translate(0, 0);
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease,
+    background-color 0.16s ease,
+    color 0.16s ease !important;
+}
+
+body:not([data-card-theme]) .interactive-btn:hover,
+body:not([data-card-theme]) .interactive-btn:active,
+body:not([data-card-theme]) .btn-shimmer:hover,
+body:not([data-card-theme]) .btn-shimmer:active,
+body:not([data-card-theme]) .site-header-login:hover,
+body:not([data-card-theme]) .site-header-login:active,
+body:not([data-card-theme]) .site-header-cta:hover,
+body:not([data-card-theme]) .site-header-cta:active,
+body:not([data-card-theme]) .site-header-mobile-toggle:hover,
+body:not([data-card-theme]) .site-header-mobile-toggle:active,
+body:not([data-card-theme]) .public-posts-pagination-button:hover,
+body:not([data-card-theme]) .public-posts-pagination-button:active,
+body:not([data-card-theme]) [data-order-link]:hover,
+body:not([data-card-theme]) [data-order-link]:active,
+body:not([data-card-theme]) button[type="button"]:hover,
+body:not([data-card-theme]) button[type="button"]:active,
+body:not([data-card-theme]) button[type="submit"]:hover,
+body:not([data-card-theme]) button[type="submit"]:active,
+body:not([data-card-theme]) a[role="button"]:hover,
+body:not([data-card-theme]) a[role="button"]:active {
+  box-shadow: 2px 2px 0 #000000 !important;
+  transform: translate(2px, 2px) !important;
+}
+
+body:not([data-card-theme]) input:not(#home-slug-input),
+body:not([data-card-theme]) textarea,
+body:not([data-card-theme]) select,
+body:not([data-card-theme]) #hero-check > div,
+body:not([data-card-theme]) #card-slug-search-form > div,
+body:not([data-card-theme]) .unqx-dialog-input,
+body:not([data-card-theme]) .admin-alert-input {
+  border: 2px solid #000000 !important;
+  border-radius: 14px !important;
+  background: #ffffff !important;
+  box-shadow: 3px 3px 0 #000000 !important;
+}
+
+body:not([data-card-theme]) input:not(#home-slug-input):focus,
+body:not([data-card-theme]) textarea:focus,
+body:not([data-card-theme]) select:focus,
+body:not([data-card-theme]) #hero-check > div:focus-within,
+body:not([data-card-theme]) #card-slug-search-form > div:focus-within {
+  outline: 0 !important;
+  box-shadow: 2px 2px 0 #000000, 0 0 0 3px rgba(255, 211, 80, 0.6) !important;
+}
+
+body:not([data-card-theme]) .icon-stroke,
+body:not([data-card-theme]) svg.icon-stroke {
+  stroke-width: 2.6;
+  filter: drop-shadow(0.8px 0.8px 0 #000000);
+}
+
 @media (min-width: 768px) {
   [data-page="public-home"] .site-header-mobile-toggle {
     display: none;
