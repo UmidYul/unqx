@@ -1763,16 +1763,6 @@ function initSlugCalculator(orderApi) {
 
   function buildRandomLetters() {
     const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
-    const mode = randomFrom(["random", "random", "random", "sequential", "palindrome"]);
-    if (mode === "sequential") {
-      const startIndex = Math.floor(Math.random() * 24);
-      return `${alphabet[startIndex]}${alphabet[startIndex + 1]}${alphabet[startIndex + 2]}`;
-    }
-    if (mode === "palindrome") {
-      const a = randomFrom(alphabet);
-      const b = randomFrom(alphabet.filter((char) => char !== a));
-      return `${a}${b}${a}`;
-    }
     return `${randomFrom(alphabet)}${randomFrom(alphabet)}${randomFrom(alphabet)}`;
   }
 
