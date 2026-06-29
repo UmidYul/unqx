@@ -207,6 +207,10 @@ describe("home page", () => {
     expect(html).toContain('id="calc-result"');
     expect(html).toContain('id="order-modal-root"');
     expect(html).toContain('id="order-modal-close-top"');
+    expect(html).toContain('<body class="antialiased" style="background-color: #FAFAFA;">');
+    expect(html).toContain('data-page="public-home" style="background-color: #FAFAFA;"');
+    expect(html).not.toContain("pointer-events-none fixed inset-0");
+    expect(html).not.toContain("background-size: 40px 40px");
   });
 
   test("has one primary page heading", async () => {
@@ -252,9 +256,10 @@ describe("home page", () => {
 
     expect(html).toContain('id="latest-slack"');
     expect(html).toContain('id="weekly-top-views"');
-    expect(html).toContain("home-showcase-heading");
     expect(html).toContain("home-showcase-card");
     expect(html).toContain("home-showcase-score");
+    expect(html).toContain('class="mt-3 text-3xl font-bold tracking-tight text-neutral-900 md:text-4xl">Последние созданные UNQ</h2>');
+    expect(html).toContain('class="mt-3 text-3xl font-bold tracking-tight text-neutral-900 md:text-4xl">Рейтинг по просмотрам</h2>');
     expect(html).toContain("unqx.uz/AKL444");
     expect(html).toContain("unqx.uz/KHK007");
     expect(html).toContain(">1 289<");
@@ -301,12 +306,15 @@ describe("home page", () => {
     expect(styles).toContain(".home-latest-post-brand");
     expect(styles).toContain("border-radius: 34px;");
     expect(styles).toContain(".home-latest-post-meta-row");
+    expect(styles).toContain("[data-page=\"public-home\"] #latest-posts");
+    expect(styles).toContain("background: #FAFAFA;");
   });
 
   test("home showcase ranking sections use compact reference cards", () => {
     const styles = fs.readFileSync(path.join(process.cwd(), "public", "css", "public-card.css"), "utf-8");
 
     expect(styles).toContain("[data-page=\"public-home\"] .home-showcase-heading");
+    expect(styles).toContain("background-image: none;");
     expect(styles).toContain("[data-page=\"public-home\"] .home-showcase-rank");
     expect(styles).toContain("[data-page=\"public-home\"] .home-showcase-card");
     expect(styles).toContain("border-radius: 26px;");
