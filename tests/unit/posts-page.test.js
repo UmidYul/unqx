@@ -19,7 +19,7 @@ async function renderPostsTemplate(locals = {}) {
       {
         id: "post_1",
         content: "Первый публичный пост",
-        createdAt: new Date("2026-06-28T10:00:00.000Z"),
+        createdAt: new Date(Date.now() - 5 * 60 * 1000),
         likesCount: 5,
         commentsCount: 2,
         viewerHasLiked: true,
@@ -64,9 +64,11 @@ describe("public posts page", () => {
     expect(html).toContain('data-home-follow-button');
     expect(html).toContain("/ABC123#wall-post-post_1");
     expect(html).toContain('src="/brand/unqlogo.png"');
-    expect(html).toContain("home-latest-post-meta-row");
-    expect(html).toContain("2 comments&nbsp; 5 likes");
-    expect(html).toContain("28.06.2026");
+    expect(html).not.toContain("home-latest-post-meta-row");
+    expect(html).not.toContain("comments&nbsp;");
+    expect(html).toContain('data-home-post-like-count>5</span>');
+    expect(html).toContain('<span class="home-latest-post-action-value">2</span>');
+    expect(html).toMatch(/5 минут[ау]? назад/);
     expect(html).toContain("/posts?page=1");
     expect(html).toContain("/posts?page=3");
     expect(html).toContain("public-posts-pagination");
@@ -83,6 +85,8 @@ describe("public posts page", () => {
     expect(styles).toContain("grid-template-columns: repeat(2, minmax(0, 1fr));");
     expect(styles).toContain("grid-template-columns: 1fr;");
     expect(styles).toContain(".public-posts-pagination");
+    expect(styles).toContain(".public-posts-summary-panel");
+    expect(styles).toContain(".home-latest-post-action-value");
     expect(styles).toContain("justify-content: space-between;");
   });
 });

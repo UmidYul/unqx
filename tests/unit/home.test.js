@@ -87,7 +87,7 @@ async function renderHomeTemplateWithPosts() {
       {
         id: "post_1",
         content: "Первый пост для главной",
-        createdAt: new Date("2026-05-09T10:00:00.000Z"),
+        createdAt: new Date(Date.now() - 5 * 60 * 1000),
         likesCount: 4,
         commentsCount: 2,
         viewerHasLiked: true,
@@ -247,8 +247,11 @@ describe("home page", () => {
     expect(html).toContain('data-post-comments-href="/ABC123?comments=1#wall-post-post_1"');
     expect(html).toContain('id="latest-posts"');
     expect(html).toContain('src="/brand/unqlogo.png"');
-    expect(html).toContain("home-latest-post-meta-row");
-    expect(html).toContain("2 comments&nbsp; 4 likes");
+    expect(html).not.toContain("home-latest-post-meta-row");
+    expect(html).not.toContain("comments&nbsp;");
+    expect(html).toContain('data-home-post-like-count>4</span>');
+    expect(html).toContain('<span class="home-latest-post-action-value">2</span>');
+    expect(html).toMatch(/5 минут[ау]? назад/);
   });
 
   test("renders latest UNQ and views ranking with shared showcase UI", async () => {
@@ -305,7 +308,8 @@ describe("home page", () => {
     expect(styles).toContain(".home-latest-post-action-button[data-home-post-like]:hover,");
     expect(styles).toContain(".home-latest-post-brand");
     expect(styles).toContain("border-radius: 34px;");
-    expect(styles).toContain(".home-latest-post-meta-row");
+    expect(styles).toContain(".home-latest-post-action-value");
+    expect(styles).toContain("justify-content: space-between;");
     expect(styles).toContain("[data-page=\"public-home\"] #latest-posts");
     expect(styles).toContain("background: #FAFAFA;");
   });

@@ -1148,6 +1148,16 @@
   align-items: stretch;
 }
 
+.public-posts-summary-panel {
+  width: 100%;
+  margin-top: 18px;
+  margin-bottom: 34px;
+  border: 1px solid #e0e0e0;
+  border-radius: 28px;
+  background: #ffffff;
+  padding: 24px 26px;
+}
+
 .public-posts-page .home-latest-post-card {
   min-height: 198px;
   border: 1px solid #e0e0e0;
@@ -1166,9 +1176,12 @@
   align-items: center;
   justify-content: space-between;
   gap: 18px;
-  margin-top: 36px;
-  border-top: 1px solid #e0e0e0;
-  padding-top: 22px;
+  margin-top: 44px;
+  margin-bottom: 34px;
+  border: 1px solid #e0e0e0;
+  border-radius: 24px;
+  background: #ffffff;
+  padding: 18px 20px;
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
@@ -1400,24 +1413,24 @@
 }
 
 .home-latest-post-foot {
-  margin-top: 14px;
+  margin-top: auto;
   display: flex;
   align-items: center;
-  justify-content: flex-start;
-  gap: 13px;
-  padding-top: 0;
+  justify-content: space-between;
+  gap: 14px;
+  padding-top: 16px;
 }
 
 .home-latest-post-actions {
   display: flex;
   align-items: center;
-  gap: 13px;
+  gap: 14px;
 }
 
 .home-latest-post-action-group {
   display: inline-flex;
   align-items: center;
-  gap: 0;
+  gap: 5px;
   padding: 0;
   border: 0;
   background: transparent;
@@ -1487,15 +1500,16 @@
 }
 
 .home-latest-post-action-value {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
+  position: static;
+  width: auto;
+  height: auto;
+  overflow: visible;
+  clip: auto;
   white-space: nowrap;
-  font-size: 0.96rem;
-  font-weight: 500;
-  color: #171717;
+  font-size: 0.88rem;
+  font-weight: 600;
+  line-height: 1;
+  color: #5f6368;
 }
 
 .home-latest-post-meta-row {
@@ -1524,7 +1538,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 0.92rem;
+  font-size: 0.84rem;
   font-weight: 400;
   line-height: 1.2;
   color: #a0a0a0;
@@ -1576,7 +1590,7 @@
 
   .home-latest-post-foot {
     gap: 13px;
-    padding-top: 0;
+    padding-top: 16px;
   }
 
   .home-latest-post-actions {
@@ -1597,7 +1611,7 @@
   }
 
   .home-latest-post-date {
-    font-size: 0.92rem;
+    font-size: 0.84rem;
   }
 }
 
@@ -1617,7 +1631,7 @@
   }
 
   .home-latest-post-foot {
-    align-items: flex-start;
+    align-items: center;
   }
 
   .home-latest-post-meta-row {
@@ -1676,11 +1690,6 @@
 
   .home-latest-post-date {
     font-size: 0.84rem;
-  }
-
-  .home-latest-post-meta-row {
-    flex-direction: column;
-    gap: 6px;
   }
 }
 
