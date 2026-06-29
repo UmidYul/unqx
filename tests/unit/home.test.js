@@ -298,8 +298,9 @@ describe("home page", () => {
     expect(html).toContain("unqx.uz/ELD222");
     expect(html).toContain("unqx.uz/BAT333");
     expect(html).not.toContain("@suxrob");
-    expect(html).toContain("@KHK007");
+    expect(html).toContain("unqx.uz/KHK007");
     expect(html).toContain("home-showcase-item--rank-1");
+    expect(html).toContain("home-showcase-rank-crown");
     expect(html).toContain(">1 289<");
   });
 
@@ -356,9 +357,13 @@ describe("home page", () => {
     expect(styles).toContain("background-image: none;");
     expect(styles).toContain("[data-page=\"public-home\"] .home-latest-unq-list");
     expect(styles).toContain("flex-wrap: nowrap;");
+    expect(styles).toContain("box-shadow: none;");
     expect(styles).toContain("[data-page=\"public-home\"] .home-latest-unq-card");
     expect(styles).toContain("[data-page=\"public-home\"] .home-showcase-item--rank-1 .home-showcase-rank");
     expect(styles).toContain("background: #f2c94c;");
+    expect(styles).toContain("border: 2px solid #000000;");
+    expect(styles).toContain("transform: translateY(-50%);");
+    expect(styles).toContain("[data-page=\"public-home\"] .home-showcase-rank-crown");
     expect(styles).toContain("[data-page=\"public-home\"] .home-showcase-rank");
     expect(styles).toContain("[data-page=\"public-home\"] .home-showcase-card");
     expect(styles).toContain("border-radius: 30px;");

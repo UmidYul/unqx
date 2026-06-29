@@ -7249,7 +7249,7 @@ body[data-card-theme] main.private-card-screen {
 }
 
 [data-page="public-home"] .home-showcase-item:hover .home-showcase-card {
-  border-color: #cfcfcf;
+  border-color: #000000;
   box-shadow: 0 8px 18px rgba(15, 23, 42, 0.045);
   transform: translateY(-1px);
 }
@@ -7260,13 +7260,15 @@ body[data-card-theme] main.private-card-screen {
   top: 0;
   right: 22px;
   display: inline-flex;
-  width: 30px;
+  min-width: 30px;
   height: 30px;
   align-items: center;
   justify-content: center;
-  transform: none;
-  border: 2px solid transparent;
+  gap: 3px;
+  transform: translateY(-50%);
+  border: 2px solid #000000;
   border-radius: 999px;
+  padding: 0 9px;
   font-size: 0.98rem;
   font-style: normal;
   font-weight: 900;
@@ -7277,7 +7279,6 @@ body[data-card-theme] main.private-card-screen {
 }
 
 [data-page="public-home"] .home-showcase-item--rank-1 .home-showcase-rank {
-  border-color: #050505;
   background: #f2c94c;
   color: #050505;
 }
@@ -7290,6 +7291,12 @@ body[data-card-theme] main.private-card-screen {
   background: #2f6fe4;
 }
 
+[data-page="public-home"] .home-showcase-rank-crown {
+  font-size: 0.92rem;
+  line-height: 1;
+  color: #050505;
+}
+
 [data-page="public-home"] .home-showcase-card {
   position: relative;
   display: flex;
@@ -7298,7 +7305,7 @@ body[data-card-theme] main.private-card-screen {
   align-items: center;
   gap: 12px;
   overflow: visible;
-  border: 1px solid #e0e0e0;
+  border: 2px solid #000000;
   border-radius: 30px;
   background: #ffffff;
   padding: 11px 16px 11px 12px;
@@ -7395,7 +7402,10 @@ body[data-card-theme] main.private-card-screen {
   width: 100%;
   margin-top: 22px;
   overflow: visible;
+  border: 0;
   background: transparent;
+  box-shadow: none;
+  padding: 0;
 }
 
 [data-page="public-home"] .home-latest-unq-card {
@@ -7551,9 +7561,10 @@ body[data-card-theme] main.private-card-screen {
 
   [data-page="public-home"] .home-showcase-rank {
     right: 18px;
-    width: 28px;
+    min-width: 28px;
     height: 28px;
     font-size: 0.9rem;
+    padding: 0 8px;
   }
 
   [data-page="public-home"] .home-showcase-card {
