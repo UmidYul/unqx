@@ -1538,6 +1538,47 @@
   color: #a0a0a0;
 }
 
+.unqx-story-render-root {
+  position: fixed;
+  left: -12000px;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  width: 1080px;
+  height: 1920px;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: #ffffff url("/images/instagram-story-template.png") center / cover no-repeat;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  pointer-events: none;
+}
+
+.unqx-story-card-slot {
+  display: flex;
+  width: 760px;
+  min-height: 390px;
+  align-items: center;
+  justify-content: center;
+}
+
+.unqx-story-render-root .home-latest-post-card {
+  width: 440px !important;
+  max-width: 440px !important;
+  min-height: 210px;
+  height: auto !important;
+  flex: 0 0 auto;
+  cursor: default;
+  transform: scale(1.72);
+  transform-origin: center;
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.08);
+}
+
+.unqx-story-render-root .home-latest-post-card:hover {
+  transform: scale(1.72);
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.08);
+}
+
 @media (min-width: 1024px) {
   .home-latest-post-stack {
     max-width: 1120px;

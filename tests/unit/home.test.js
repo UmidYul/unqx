@@ -269,6 +269,7 @@ describe("home page", () => {
     expect(html).toContain('data-home-post-like');
     expect(html).toContain('data-home-post-comment');
     expect(html).toContain('data-home-post-share');
+    expect(html).toContain('/vendor/html2canvas/html2canvas.min.js');
     expect(html).toContain('aria-pressed="true"');
     expect(html).toContain("/ABC123#wall-post-post_1");
     expect(html).toContain('data-post-comments-href="/ABC123?comments=1#wall-post-post_1"');
@@ -340,7 +341,13 @@ describe("home page", () => {
     expect(source).toContain("const target = event.target instanceof Element ? event.target : null;");
     expect(source).toContain('commentButton.getAttribute("data-post-comments-href")');
     expect(source).toContain('const shareButton = target.closest("[data-home-post-share]");');
+    expect(source).toContain('const STORY_TEMPLATE_URL = "/images/instagram-story-template.png";');
+    expect(source).toContain('window.html2canvas(root, {');
+    expect(source).toContain("scale: 2,");
+    expect(source).toContain("Картинка для сторис сохранена в галерею, а ссылка на пост скопирована!");
     expect(styles).toContain("--home-post-like-accent: #111111;");
+    expect(styles).toContain(".unqx-story-render-root");
+    expect(styles).toContain('background: #ffffff url("/images/instagram-story-template.png") center / cover no-repeat;');
     expect(styles).toContain(".home-latest-post-action-button[data-home-post-like]:hover,");
     expect(styles).toContain(".home-latest-post-brand");
     expect(styles).toContain("border-radius: 32px !important;");

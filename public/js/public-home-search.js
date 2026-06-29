@@ -165,6 +165,9 @@ function initHomeFollowButtons(pageNode, authApi, requestJson) {
 }
 
 function initHomeLatestPostButtons(pageNode, requestJson) {
+  const STORY_TEMPLATE_URL = "/images/instagram-story-template.png";
+  const STORY_DOWNLOAD_FILENAME = "unqx-story.png";
+
   function trimMetricDecimal(value) {
     return String(value).replace(/\.0$/, "");
   }
@@ -231,6 +234,123 @@ function initHomeLatestPostButtons(pageNode, requestJson) {
       return;
     }
     window.location.assign(postHref);
+  }
+
+  function waitForImage(url) {
+    return new Promise((resolve, reject) => {
+      const image = new Image();
+      image.onload = () => resolve(image);
+      image.onerror = reject;
+      image.src = url;
+    });
+  }
+
+  async function waitForRenderAssets(root) {
+    if (document.fonts && typeof document.fonts.ready?.then === "function") {
+      try {
+        await document.fonts.ready;
+      } catch { }
+    }
+
+    const images = Array.from(root.querySelectorAll("img"));
+    await Promise.all(
+      images.map((image) => {
+        if (!(image instanceof HTMLImageElement)) {
+          return Promise.resolve();
+        }
+        if (image.complete && image.naturalWidth > 0) {
+          return Promise.resolve();
+        }
+        if (typeof image.decode === "function") {
+          return image.decode().catch(() => undefined);
+        }
+        return new Promise((resolve) => {
+          image.addEventListener("load", resolve, { once: true });
+          image.addEventListener("error", resolve, { once: true });
+        });
+      }),
+    );
+  }
+
+  function createStoryRenderRoot(postCard) {
+    const root = document.createElement("div");
+    root.className = "unqx-story-render-root";
+    root.setAttribute("aria-hidden", "true");
+
+    const slot = document.createElement("div");
+    slot.className = "unqx-story-card-slot";
+
+    const clonedCard = postCard.cloneNode(true);
+    if (clonedCard instanceof HTMLElement) {
+      clonedCard.removeAttribute("data-home-post-card");
+      clonedCard.removeAttribute("data-post-href");
+      clonedCard.removeAttribute("tabindex");
+      clonedCard.removeAttribute("role");
+      clonedCard.removeAttribute("aria-label");
+      clonedCard.querySelectorAll("a, button").forEach((node) => {
+        node.setAttribute("tabindex", "-1");
+        node.removeAttribute("disabled");
+        node.removeAttribute("aria-busy");
+        node.classList.remove("is-busy");
+      });
+    }
+
+    slot.appendChild(clonedCard);
+    root.appendChild(slot);
+    return root;
+  }
+
+  function downloadCanvas(canvas, filename) {
+    return new Promise((resolve, reject) => {
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          reject(new Error("Canvas export failed"));
+          return;
+        }
+
+        const objectUrl = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = objectUrl;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.setTimeout(() => {
+          URL.revokeObjectURL(objectUrl);
+        }, 1000);
+        resolve();
+      }, "image/png");
+    });
+  }
+
+  async function generateAndDownloadStory(postCard) {
+    if (typeof window.html2canvas !== "function") {
+      throw new Error("html2canvas is unavailable");
+    }
+
+    await waitForImage(STORY_TEMPLATE_URL);
+
+    const root = createStoryRenderRoot(postCard);
+    document.body.appendChild(root);
+
+    try {
+      await waitForRenderAssets(root);
+      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      const canvas = await window.html2canvas(root, {
+        width: 1080,
+        height: 1920,
+        windowWidth: 1080,
+        windowHeight: 1920,
+        scale: 2,
+        useCORS: true,
+        allowTaint: false,
+        backgroundColor: null,
+        logging: false,
+      });
+      await downloadCanvas(canvas, STORY_DOWNLOAD_FILENAME);
+    } finally {
+      root.remove();
+    }
   }
 
   function updateLikeButton(button, options = {}) {
@@ -342,27 +462,39 @@ function initHomeLatestPostButtons(pageNode, requestJson) {
 
   async function handleShare(button) {
     const shareUrl = resolvePostUrl(button.getAttribute("data-post-href"));
-    let shared = false;
+    const postCard = button.closest("[data-home-post-card]");
+    const originalBusy = button.classList.contains("is-busy");
 
     try {
-      if (navigator.share) {
-        await navigator.share({
-          title: document.title,
-          url: shareUrl,
-        });
-        shared = true;
-        showToast("Ссылка на пост отправлена", "success");
+      button.classList.add("is-busy");
+      button.disabled = true;
+      button.setAttribute("aria-busy", "true");
+
+      if (!(postCard instanceof HTMLElement)) {
+        throw new Error("Post card is unavailable");
       }
+
+      const copied = await copyText(shareUrl);
+      await generateAndDownloadStory(postCard);
+      showToast(
+        copied
+          ? "Картинка для сторис сохранена в галерею, а ссылка на пост скопирована!"
+          : "Картинка для сторис сохранена в галерею, но ссылку скопировать не удалось.",
+        copied ? "success" : "neutral",
+      );
     } catch {
-      shared = false;
+      const copied = await copyText(shareUrl);
+      showToast(
+        copied ? "Не удалось сохранить картинку, но ссылка на пост скопирована" : "Не удалось сохранить картинку для сторис",
+        copied ? "error" : "error",
+      );
+    } finally {
+      if (!originalBusy) {
+        button.classList.remove("is-busy");
+      }
+      button.disabled = false;
+      button.removeAttribute("aria-busy");
     }
-
-    if (shared) {
-      return;
-    }
-
-    const copied = await copyText(shareUrl);
-    showToast(copied ? "Ссылка на пост скопирована" : "Не удалось скопировать ссылку", copied ? "success" : "error");
   }
 
   pageNode.addEventListener("click", async (event) => {

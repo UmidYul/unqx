@@ -61,6 +61,7 @@ describe("public posts page", () => {
     expect(html).toContain('data-home-post-like');
     expect(html).toContain('data-home-post-comment');
     expect(html).toContain('data-home-post-share');
+    expect(html).toContain('/vendor/html2canvas/html2canvas.min.js');
     expect(html).toContain('data-home-follow-button');
     expect(html).toContain("/ABC123#wall-post-post_1");
     expect(html).toContain('src="/brand/unqlogo.png"');
