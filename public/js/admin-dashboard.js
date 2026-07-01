@@ -235,7 +235,7 @@
     golden_noir: { label: "Noir Aureate", fill: "#161b28", border: "#c9ad6a", text: "#dfc98e" },
     aurora_codex: { label: "Aurora Scriptum", fill: "#f5ecd8", border: "#8a2a26", text: "#2b1f15" },
     nebula_glass: { label: "Apple Liquid Glass", fill: "#0a0f24", border: "#a9c7ff", text: "#f1f6ff" },
-    galaxy: { label: "Galaxy", fill: "#2A085C", border: "#000000", text: "#00e5ff", bg: "#12072B" },
+    galaxy: { label: "Galaxy", fill: "#2A085C", border: "#00e5ff", text: "#00e5ff", bg: "#12072B" },
     velours: { label: "Velours Luxe", fill: "#2d0a12", border: "#5a1828", text: "#c9a55a", bg: "#2d0a12" },
     graffiti_neon: { label: "Graffiti Neon", fill: "#19142a", border: "#5ef7ff", text: "#9bff62", bg: "#19142a" },
     heritage_crest: { label: "Sweet Ribbon", fill: "#ffc6dd", border: "#ff9fca", text: "#7a2446", bg: "#ffc6dd" },

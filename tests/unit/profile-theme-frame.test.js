@@ -85,7 +85,7 @@ describe("profile theme and avatar frame normalization", () => {
       premiumRequired: true,
     });
     expect(styles).toContain('body[data-card-theme="galaxy"]');
-    expect(styles).toContain("/images/galaxy-theme-bg.png");
+    expect(styles).not.toContain("/images/galaxy-theme-bg.png");
     expect(styles).toContain("linear-gradient(135deg, #12072B 0%, #2A085C 50%, #5E179B 100%)");
     expect(styles).toContain("box-shadow: 0 0 10px rgba(0, 229, 255, 0.5)");
   });

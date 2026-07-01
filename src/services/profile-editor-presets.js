@@ -75,7 +75,7 @@ const SIGNATURE_THEMES = [
     id: "galaxy",
     label: "Galaxy",
     description: "Neon cosmic portals",
-    swatchStyle: "border-color:#000000;background:linear-gradient(135deg,#12072B 0%,#2A085C 50%,#5E179B 100%);box-shadow:0 0 10px rgba(0,229,255,0.5);",
+    swatchStyle: "border-color:#00e5ff;background:radial-gradient(circle at 18% 18%,rgba(0,229,255,0.28),transparent 34%),linear-gradient(135deg,#12072B 0%,#2A085C 50%,#5E179B 100%);box-shadow:0 0 10px rgba(0,229,255,0.5);",
     premiumRequired: true,
   },
   {
