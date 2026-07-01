@@ -4412,14 +4412,14 @@ body[data-card-theme] #card-view-root>[data-card-view] {
 }
 
 .unq-ref-social-stats {
-  margin-top: 18px;
+  margin-top: 12px;
   display: flex;
   width: fit-content;
   max-width: 100%;
   margin-inline: auto;
   align-items: center;
   justify-content: center;
-  gap: clamp(34px, 9vw, 72px);
+  gap: clamp(18px, 5vw, 36px);
 }
 
 .unq-ref-social-stat {
@@ -4428,7 +4428,7 @@ body[data-card-theme] #card-view-root>[data-card-view] {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 7px;
+  gap: 4px;
   min-height: auto;
   border: 0 !important;
   border-radius: 0;
@@ -4468,7 +4468,7 @@ body[data-card-theme] #card-view-root>[data-card-view] {
 }
 
 .unq-ref-social-value {
-  font-size: clamp(38px, 9vw, 48px);
+  font-size: clamp(20px, 4.5vw, 24px);
   font-weight: 900;
   line-height: 1;
   letter-spacing: 0;
@@ -4476,7 +4476,7 @@ body[data-card-theme] #card-view-root>[data-card-view] {
 }
 
 .unq-ref-social-label {
-  font-size: 16px;
+  font-size: 12px;
   line-height: 1.2;
   letter-spacing: 0.02em;
   text-transform: none;
@@ -7404,15 +7404,15 @@ body[data-card-theme] main.private-card-screen {
 
 @media (max-width: 640px) {
   .unq-ref-social-stats {
-    gap: 30px;
+    gap: 18px;
   }
 
   .unq-ref-social-value {
-    font-size: 36px;
+    font-size: 24px;
   }
 
   .unq-ref-social-label {
-    font-size: 14px;
+    font-size: 12px;
   }
 
   .unq-ref-top {
