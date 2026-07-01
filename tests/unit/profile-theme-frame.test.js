@@ -20,6 +20,7 @@ describe("profile theme and avatar frame normalization", () => {
     expect(PROFILE_THEME_KEYS).toContain("cheetah_spots");
     expect(PROFILE_THEME_KEYS).toContain("serpent_scale");
     expect(PROFILE_THEME_KEYS).toContain("nebula_glass");
+    expect(PROFILE_THEME_KEYS).toContain("galaxy");
     expect(PROFILE_AVATAR_FRAME_KEYS).toContain("chrome_ring");
     expect(PROFILE_AVATAR_FRAME_KEYS).toContain("orbit_dots");
     expect(PROFILE_AVATAR_FRAME_KEYS).toContain("laurel_wreath");
@@ -32,6 +33,7 @@ describe("profile theme and avatar frame normalization", () => {
   test("keeps premium theme, frame, and emoji background for premium plan", () => {
     expect(normalizeThemeByPlan("graffiti_neon", "premium")).toBe("graffiti_neon");
     expect(normalizeThemeByPlan("nebula_glass", "premium")).toBe("nebula_glass");
+    expect(normalizeThemeByPlan("galaxy", "premium")).toBe("galaxy");
     expect(normalizeThemeByPlan("heritage_crest", "premium")).toBe("heritage_crest");
     expect(normalizeThemeByPlan("anime_blush", "premium")).toBe("anime_blush");
     expect(normalizeAvatarFrameByPlan("orbit_dots", "premium")).toBe("orbit_dots");
@@ -70,5 +72,21 @@ describe("profile theme and avatar frame normalization", () => {
     expect(styles).toContain("animation: unqLiquidGlassIslands 11s ease-in-out infinite;");
     expect(styles).toContain("backdrop-filter: blur(25px)");
     expect(styles).toContain("will-change: background-position;");
+  });
+
+  test("exposes Galaxy preset and neon cosmic CSS", () => {
+    const presets = getProfileEditorPresets();
+    const galaxy = presets.signatureThemes.find((theme) => theme.id === "galaxy");
+    const styles = fs.readFileSync(path.join(process.cwd(), "public", "css", "public-card.css"), "utf-8");
+
+    expect(galaxy).toMatchObject({
+      label: "Galaxy",
+      description: "Neon cosmic portals",
+      premiumRequired: true,
+    });
+    expect(styles).toContain('body[data-card-theme="galaxy"]');
+    expect(styles).toContain("/images/galaxy-theme-bg.png");
+    expect(styles).toContain("linear-gradient(135deg, #12072B 0%, #2A085C 50%, #5E179B 100%)");
+    expect(styles).toContain("box-shadow: 0 0 10px rgba(0, 229, 255, 0.5)");
   });
 });

@@ -94,6 +94,7 @@
       "golden_noir",
       "aurora_codex",
       "nebula_glass",
+      "galaxy",
       "velours",
       "graffiti_neon",
       "heritage_crest",

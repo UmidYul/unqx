@@ -20,6 +20,7 @@
     "golden_noir",
     "aurora_codex",
     "nebula_glass",
+    "galaxy",
     "velours",
     "graffiti_neon",
     "heritage_crest",
@@ -598,6 +599,45 @@
       scorePercentileColor: "rgba(255, 255, 255, 0.6)",
       cardShadow: "0 28px 70px rgba(0, 0, 0, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.1)",
       buttonShineGradient: "none",
+    },
+    galaxy: {
+      cardBg: "rgba(26, 11, 54, 0.75)",
+      cardBgOverlay: "none",
+      surfaceBg: "rgba(26, 11, 54, 0.75)",
+      cardBorder: "2px solid #000000",
+      surfaceBorder: "2px solid #000000",
+      dividerColor: "rgba(0, 229, 255, 0.38)",
+      nameColor: "#ffffff",
+      roleColor: "#f1eaff",
+      mutedColor: "rgba(241, 234, 255, 0.72)",
+      accentColor: "#00e5ff",
+      emailColor: "#f1eaff",
+      buttonPrimaryBg: "linear-gradient(135deg, #00e5ff, #00a3ff)",
+      buttonPrimaryText: "#061123",
+      buttonPrimaryBorder: "#000000",
+      buttonSecondaryBg: "rgba(26, 11, 54, 0.75)",
+      buttonSecondaryText: "#f1eaff",
+      buttonSecondaryBorder: "#000000",
+      badgeText: "#061123",
+      badgeBg: "linear-gradient(135deg, #00e5ff, #00a3ff)",
+      badgeBorder: "2px solid #000000",
+      topLineGradient: "linear-gradient(90deg, transparent, #00e5ff, transparent)",
+      avatarBg: "linear-gradient(135deg, #12072b, #2a085c 56%, #00a3ff)",
+      avatarText: "#ffffff",
+      avatarBorder: "2px solid #000000",
+      cardBorderRadius: "32px",
+      fontFamily: "'Sora', 'Inter', 'Segoe UI', sans-serif",
+      nameFontStyle: "normal",
+      nameFontWeight: "700",
+      roleLetterSpacing: "0.08em",
+      scoreLabelColor: "rgba(241, 234, 255, 0.72)",
+      scoreValueColor: "#ffffff",
+      scoreBarFill: "#00e5ff",
+      scoreBarTrack: "rgba(241, 234, 255, 0.16)",
+      scorePercentileColor: "#00e5ff",
+      cardShadow: "0 0 10px rgba(0, 229, 255, 0.5), 0 28px 70px rgba(6, 2, 20, 0.55)",
+      buttonShineGradient:
+        "linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.38) 50%, rgba(255,255,255,0) 100%)",
     },
     velours: {
       cardBg: "linear-gradient(165deg, #2d0a12 0%, #2a0911 52%, #380d18 100%)",
@@ -1495,7 +1535,7 @@
         <path d="M0 526C80 510 154 518 226 540C288 558 326 560 360 550" stroke="url(#ac-ink-line)" stroke-width="0.62" fill="none"></path>
       </svg>`;
     }
-    if (themeKey === "nebula_glass") {
+    if (themeKey === "nebula_glass" || themeKey === "galaxy") {
       return "";
     }
     if (themeKey === "graffiti_neon") {
