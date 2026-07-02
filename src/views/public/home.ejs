@@ -436,85 +436,6 @@
               </div>
             </section>
 
-            <% const homeAuction = activeAuction && typeof activeAuction === "object" ? activeAuction : null; %>
-            <% if (homeAuction) { %>
-              <% const auctionSlug = String(homeAuction.slug || "").toUpperCase(); %>
-              <% const auctionSlugDisplay = auctionSlug.length > 3 ? `${auctionSlug.slice(0, 3)} ${auctionSlug.slice(3)}` : auctionSlug; %>
-              <% const auctionStartingPrice = Number(homeAuction.startingPrice || 0); %>
-              <% const auctionCurrentBid = Number(homeAuction.currentBid || 0); %>
-              <% const auctionMinStep = Number(homeAuction.minStep || 0); %>
-              <% const auctionNextBid = Math.max(auctionStartingPrice, auctionCurrentBid > 0 ? auctionCurrentBid + auctionMinStep : auctionStartingPrice); %>
-              <% const auctionIsDemo = String(homeAuction.id || "") === "demo"; %>
-              <% const auctionStatus = String(homeAuction.status || "active"); %>
-              <section id="auction" class="home-auction-section px-6 pb-12" data-observe-reveal>
-                <div class="home-auction-card" data-auction-widget data-auction-id="<%= homeAuction.id %>"
-                  data-auction-status="<%= auctionStatus %>"
-                  data-auction-ends-at="<%= homeAuction.endsAt ? new Date(homeAuction.endsAt).toISOString() : '' %>"
-                  data-auction-starting-price="<%= auctionStartingPrice %>" data-auction-current-bid="<%= auctionCurrentBid %>"
-                  data-auction-min-step="<%= auctionMinStep %>" data-auction-demo="<%= auctionIsDemo ? '1' : '0' %>">
-                  <div class="home-auction-head">
-                    <div>
-                      <p class="home-auction-kicker">Текущий лот</p>
-                      <div class="home-auction-lot" data-auction-slug><%= auctionSlugDisplay %></div>
-                    </div>
-                    <div class="home-auction-status-wrap">
-                      <span class="home-auction-status" data-auction-status-label><%= auctionStatus === 'finished' ? 'ЗАВЕРШЕН' : 'АКТИВЕН' %></span>
-                      <span class="home-auction-deadline">до конца</span>
-                    </div>
-                  </div>
-
-                  <div class="home-auction-countdown" aria-label="Таймер аукциона">
-                    <div class="home-auction-timebox"><strong data-auction-count="days">00</strong><span>д</span></div>
-                    <div class="home-auction-timebox"><strong data-auction-count="hours">00</strong><span>ч</span></div>
-                    <div class="home-auction-timebox"><strong data-auction-count="minutes">00</strong><span>м</span></div>
-                    <div class="home-auction-timebox"><strong data-auction-count="seconds">00</strong><span>с</span></div>
-                  </div>
-
-                  <div class="home-auction-grid">
-                    <div class="home-auction-bid-panel">
-                      <span>Текущая ставка</span>
-                      <strong data-auction-current-bid><%= auctionCurrentBid.toLocaleString('ru-RU') %> сум</strong>
-                      <small data-auction-leader>Лидирует: <%= homeAuction.leader && homeAuction.leader.username ? '@' + homeAuction.leader.username : 'пока никто' %></small>
-                    </div>
-                    <form class="home-auction-form" data-auction-form>
-                      <label>
-                        <span>Новая ставка</span>
-                        <input class="home-auction-input" data-auction-bid-input type="number" min="<%= auctionNextBid %>"
-                          step="<%= auctionMinStep || 1000 %>" value="<%= auctionNextBid %>" <%= auctionStatus === 'finished' || auctionIsDemo ? 'disabled' : '' %> />
-                      </label>
-                      <button class="home-auction-submit" data-auction-bid-submit type="submit" <%= auctionStatus === 'finished' || auctionIsDemo ? 'disabled' : '' %>>
-                        Сделать ставку
-                      </button>
-                      <p class="home-auction-feedback" data-auction-feedback><%= auctionIsDemo ? 'Демо-лот: создайте реальный лот в админке.' : '' %></p>
-                    </form>
-                  </div>
-
-                  <div class="home-auction-history">
-                    <div class="home-auction-history-head">
-                      <span>История ставок</span>
-                      <span>последние 5</span>
-                    </div>
-                    <div class="home-auction-history-list" data-auction-history>
-                      <% const auctionBids = Array.isArray(homeAuction.bids) ? homeAuction.bids.slice(0, 5) : []; %>
-                      <% if (auctionBids.length) { %>
-                        <% auctionBids.forEach((bid) => { %>
-                          <% const bidName = String(bid.username || bid.bidderUsername || bid.name || bid.bidderName || 'user').replace(/^@+/, ''); %>
-                          <div class="home-auction-history-row">
-                            <span class="home-auction-avatar"><%= bidName.slice(0, 1).toUpperCase() || 'U' %></span>
-                            <span class="home-auction-bidder">@<%= bidName %></span>
-                            <strong><%= Number(bid.amount || 0).toLocaleString('ru-RU') %> сум</strong>
-                            <time data-auction-bid-time datetime="<%= bid.createdAt ? new Date(bid.createdAt).toISOString() : '' %>">только что</time>
-                          </div>
-                        <% }) %>
-                      <% } else { %>
-                        <div class="home-auction-empty">Стань первым участником этого лота.</div>
-                      <% } %>
-                    </div>
-                  </div>
-                </div>
-              </section>
-            <% } %>
-
             <% if (nextDrop) { %>
               <section class="px-6 pb-6" data-observe-reveal>
                 <div
@@ -957,6 +878,84 @@
                         <% } %>
                   </div>
                 </section>
+                <% const homeAuction = activeAuction && typeof activeAuction === "object" ? activeAuction : null; %>
+                <% if (homeAuction) { %>
+                  <% const auctionSlug = String(homeAuction.slug || "").toUpperCase(); %>
+                  <% const auctionSlugDisplay = auctionSlug.length > 3 ? `${auctionSlug.slice(0, 3)} ${auctionSlug.slice(3)}` : auctionSlug; %>
+                  <% const auctionStartingPrice = Number(homeAuction.startingPrice || 0); %>
+                  <% const auctionCurrentBid = Number(homeAuction.currentBid || 0); %>
+                  <% const auctionMinStep = Number(homeAuction.minStep || 0); %>
+                  <% const auctionNextBid = Math.max(auctionStartingPrice, auctionCurrentBid > 0 ? auctionCurrentBid + auctionMinStep : auctionStartingPrice); %>
+                  <% const auctionIsDemo = String(homeAuction.id || "") === "demo"; %>
+                  <% const auctionStatus = String(homeAuction.status || "active"); %>
+                  <section id="auction" class="home-auction-section px-6 py-16" data-observe-reveal>
+                    <div class="home-auction-card" data-auction-widget data-auction-id="<%= homeAuction.id %>"
+                      data-auction-status="<%= auctionStatus %>"
+                      data-auction-ends-at="<%= homeAuction.endsAt ? new Date(homeAuction.endsAt).toISOString() : '' %>"
+                      data-auction-starting-price="<%= auctionStartingPrice %>" data-auction-current-bid="<%= auctionCurrentBid %>"
+                      data-auction-min-step="<%= auctionMinStep %>" data-auction-demo="<%= auctionIsDemo ? '1' : '0' %>">
+                      <div class="home-auction-head">
+                        <div>
+                          <p class="home-auction-kicker">Текущий лот</p>
+                          <div class="home-auction-lot" data-auction-slug><%= auctionSlugDisplay %></div>
+                        </div>
+                        <div class="home-auction-status-wrap">
+                          <span class="home-auction-status" data-auction-status-label><%= auctionStatus === 'finished' ? 'ЗАВЕРШЕН' : 'АКТИВЕН' %></span>
+                          <span class="home-auction-deadline">до конца</span>
+                        </div>
+                      </div>
+
+                      <div class="home-auction-countdown" aria-label="Таймер аукциона">
+                        <div class="home-auction-timebox"><strong data-auction-count="days">00</strong><span>д</span></div>
+                        <div class="home-auction-timebox"><strong data-auction-count="hours">00</strong><span>ч</span></div>
+                        <div class="home-auction-timebox"><strong data-auction-count="minutes">00</strong><span>м</span></div>
+                        <div class="home-auction-timebox"><strong data-auction-count="seconds">00</strong><span>с</span></div>
+                      </div>
+
+                      <div class="home-auction-grid">
+                        <div class="home-auction-bid-panel">
+                          <span>Текущая ставка</span>
+                          <strong data-auction-current-bid><%= auctionCurrentBid.toLocaleString('ru-RU') %> сум</strong>
+                          <small data-auction-leader>Лидирует: <%= homeAuction.leader && homeAuction.leader.username ? '@' + homeAuction.leader.username : 'пока никто' %></small>
+                        </div>
+                        <form class="home-auction-form" data-auction-form>
+                          <label>
+                            <span>Новая ставка</span>
+                            <input class="home-auction-input" data-auction-bid-input type="number" min="<%= auctionNextBid %>"
+                              step="<%= auctionMinStep || 1000 %>" value="<%= auctionNextBid %>" <%= auctionStatus === 'finished' || auctionIsDemo ? 'disabled' : '' %> />
+                          </label>
+                          <button class="home-auction-submit" data-auction-bid-submit type="submit" <%= auctionStatus === 'finished' || auctionIsDemo ? 'disabled' : '' %>>
+                            Сделать ставку
+                          </button>
+                          <p class="home-auction-feedback" data-auction-feedback><%= auctionIsDemo ? 'Демо-лот: создайте реальный лот в админке.' : '' %></p>
+                        </form>
+                      </div>
+
+                      <div class="home-auction-history">
+                        <div class="home-auction-history-head">
+                          <span>История ставок</span>
+                          <span>последние 5</span>
+                        </div>
+                        <div class="home-auction-history-list" data-auction-history>
+                          <% const auctionBids = Array.isArray(homeAuction.bids) ? homeAuction.bids.slice(0, 5) : []; %>
+                          <% if (auctionBids.length) { %>
+                            <% auctionBids.forEach((bid) => { %>
+                              <% const bidName = String(bid.username || bid.bidderUsername || bid.name || bid.bidderName || 'user').replace(/^@+/, ''); %>
+                              <div class="home-auction-history-row">
+                                <span class="home-auction-avatar"><%= bidName.slice(0, 1).toUpperCase() || 'U' %></span>
+                                <span class="home-auction-bidder">@<%= bidName %></span>
+                                <strong><%= Number(bid.amount || 0).toLocaleString('ru-RU') %> сум</strong>
+                                <time data-auction-bid-time datetime="<%= bid.createdAt ? new Date(bid.createdAt).toISOString() : '' %>">только что</time>
+                              </div>
+                            <% }) %>
+                          <% } else { %>
+                            <div class="home-auction-empty">Стань первым участником этого лота.</div>
+                          <% } %>
+                        </div>
+                      </div>
+                    </div>
+                  </section>
+                <% } %>
                 <section id="faq" class="px-6 py-24" data-observe-reveal>
                   <div class="mx-auto max-w-4xl">
                     <p class="font-mono text-xs uppercase tracking-[0.18em] text-neutral-400">ВОПРОСЫ</p>
