@@ -4,6 +4,7 @@
   baseUrl==="string" && baseUrl ? baseUrl : "" ; const pageCanonicalUrl=typeof canonicalUrl==="string" && canonicalUrl ?
   canonicalUrl : `${pageBaseUrl}/`; const pagePublicSettings=typeof publicSettings==="object" && publicSettings ?
   publicSettings : {}; const platformName=String(pagePublicSettings.platform_name || "UNQX" ); const
+  homeBlockVisible=(key, fallback=true)=> pagePublicSettings[key] === undefined ? fallback : Boolean(pagePublicSettings[key]); const
   platformTagline=String(pagePublicSettings.platform_tagline || "Твой UNQ. Твой бренд. Каждый месяц в эфире." ); const
   platformHeroSubtitle=String(pagePublicSettings.platform_hero_subtitle
   || "Цифровая визитка за 1 минуту - одна ссылка вместо тысячи слов." ); const
@@ -281,7 +282,7 @@
             ].filter(Boolean)
             : [];
         %>
-        <% if (activeFlashSale) { %>
+        <% if (activeFlashSale && homeBlockVisible("homepage_flash_sale_visible")) { %>
           <section
             class="site-flash-sale sticky z-40"
             data-flash-sale-banner
@@ -333,6 +334,7 @@
           </section>
           <% } %>
 
+            <% if (homeBlockVisible("homepage_hero_visible")) { %>
             <section class="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 pt-20">
               <div
                 class="pointer-events-none absolute -left-40 -top-40 h-[500px] w-[500px] rounded-full bg-neutral-200/40 blur-3xl">
@@ -435,8 +437,9 @@
 
               </div>
             </section>
+            <% } %>
 
-            <% if (nextDrop) { %>
+            <% if (nextDrop && homeBlockVisible("homepage_next_drop_visible")) { %>
               <section class="px-6 pb-6" data-observe-reveal>
                 <div
                   class="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-4 rounded-2xl border border-red-200 bg-red-50 px-5 py-4"
@@ -463,6 +466,7 @@
               </section>
               <% } %>
 
+                <% if (homeBlockVisible("homepage_calculator_visible")) { %>
                 <section id="calculator" class="px-6 py-24" data-observe-reveal>
                   <div class="mx-auto max-w-3xl">
                     <p class="mb-3 font-mono text-xs uppercase tracking-widest text-neutral-400">UNQ Pricing Engine</p>
@@ -578,11 +582,13 @@
                         </div>
                   </div>
                 </section>
+                <% } %>
 
 
 
 
 
+                <% if (homeBlockVisible("homepage_live_profiles_visible")) { %>
                 <section id="home-profile-feed" class="px-6 py-16" data-observe-reveal>
                   <div class="mx-auto max-w-6xl">
                     <p class="font-mono text-xs uppercase tracking-[0.18em] text-neutral-400">UNQ FEED</p>
@@ -627,8 +633,10 @@
                         <% } %>
                   </div>
                 </section>
+                <% } %>
 
-                <section id="testimonials" class="hidden px-6 py-16" data-observe-reveal>
+                <% if (homeBlockVisible("homepage_testimonials_visible", false)) { %>
+                <section id="testimonials" class="px-6 py-16" data-observe-reveal>
                   <div class="mx-auto max-w-6xl">
                     <p class="font-mono text-xs uppercase tracking-[0.18em] text-neutral-400">ОТЗЫВЫ</p>
                     <h2 class="mt-3 text-3xl font-bold tracking-tight text-neutral-900 md:text-4xl">Что говорят первые
@@ -671,7 +679,9 @@
                     </div>
                   </div>
                 </section>
+                <% } %>
 
+                <% if (homeBlockVisible("homepage_latest_posts_visible")) { %>
                 <section id="latest-posts" class="px-6 py-16" data-observe-reveal>
                   <div class="mx-auto max-w-6xl">
                     <p class="font-mono text-xs uppercase tracking-[0.18em] text-neutral-400">POSTS</p>
@@ -785,7 +795,9 @@
                     <% } %>
                   </div>
                 </section>
+                <% } %>
 
+                <% if (homeBlockVisible("homepage_latest_unq_visible")) { %>
                 <section id="latest-slack" class="px-6 py-16" data-observe-reveal>
                   <div class="mx-auto max-w-6xl">
                     <p class="font-mono text-xs uppercase tracking-[0.18em] text-neutral-400">LIVE</p>
@@ -830,7 +842,9 @@
                         <% } %>
                   </div>
                 </section>
+                <% } %>
 
+                <% if (homeBlockVisible("homepage_views_ranking_visible")) { %>
                 <section id="weekly-top-views" class="px-6 py-16" data-observe-reveal>
                   <div class="mx-auto max-w-6xl">
                     <p class="font-mono text-xs uppercase tracking-[0.18em] text-neutral-400">Топ 3 дня</p>
@@ -878,8 +892,9 @@
                         <% } %>
                   </div>
                 </section>
+                <% } %>
                 <% const homeAuction = activeAuction && typeof activeAuction === "object" ? activeAuction : null; %>
-                <% if (homeAuction) { %>
+                <% if (homeAuction && homeBlockVisible("homepage_auction_visible")) { %>
                   <% const auctionSlug = String(homeAuction.slug || "").toUpperCase(); %>
                   <% const auctionSlugDisplay = auctionSlug.length > 3 ? `${auctionSlug.slice(0, 3)} ${auctionSlug.slice(3)}` : auctionSlug; %>
                   <% const auctionStartingPrice = Number(homeAuction.startingPrice || 0); %>
@@ -956,6 +971,7 @@
                     </div>
                   </section>
                 <% } %>
+                <% if (homeBlockVisible("homepage_faq_visible")) { %>
                 <section id="faq" class="px-6 py-24" data-observe-reveal>
                   <div class="mx-auto max-w-4xl">
                     <p class="font-mono text-xs uppercase tracking-[0.18em] text-neutral-400">ВОПРОСЫ</p>
@@ -980,6 +996,7 @@
                     </div>
                   </div>
                 </section>
+                <% } %>
 
                 <%- include('../partials/order-modal') %>
 

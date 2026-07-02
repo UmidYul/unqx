@@ -5,7 +5,7 @@
   if (activeTab !== "settings") return;
 
   const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "";
-  const groups = ["pricing", "algorithm", "contacts", "platform", "official_unq"];
+  const groups = ["pricing", "algorithm", "contacts", "platform", "homepage", "official_unq"];
   const uiConfig = {
     hiddenByGroup: {
       pricing: new Set([
@@ -42,6 +42,17 @@
       contact_telegram_chat_id: "Telegram Chat ID (служебный)",
       platform_hero_subtitle: "Подзаголовок hero-блока",
       platform_total_slugs: "Общее количество slug",
+      homepage_flash_sale_visible: "Показывать Flash Sale баннер",
+      homepage_hero_visible: "Показывать Hero и проверку UNQ",
+      homepage_next_drop_visible: "Показывать блок следующего дропа",
+      homepage_calculator_visible: "Показывать калькулятор стоимости UNQ",
+      homepage_live_profiles_visible: "Показывать Live Profiles",
+      homepage_testimonials_visible: "Показывать отзывы",
+      homepage_latest_posts_visible: "Показывать последние посты",
+      homepage_latest_unq_visible: "Показывать последние созданные UNQ",
+      homepage_views_ranking_visible: "Показывать рейтинг по просмотрам",
+      homepage_auction_visible: "Показывать аукцион",
+      homepage_faq_visible: "Показывать FAQ",
       pending_expiry_hours: "Срок pending-заказа (часы)",
       score_recalc_interval_hours: "Пересчет Score (часы)",
       referral_v1_referrer_reward: "Награда рефереру (сум)",
@@ -70,6 +81,17 @@
       maintenance_mode: "Отключает сайт для пользователей и показывает страницу обслуживания.",
       maintenance_release_report_mode: "Показывает публичную страницу отчета до релиза.",
       maintenance_release_open_at: "Дата и время, когда сайт автоматически откроется.",
+      homepage_flash_sale_visible: "Верхний промо-баннер активной Flash Sale акции.",
+      homepage_hero_visible: "Первый экран с заголовком, live-статистикой и проверкой свободного UNQ.",
+      homepage_next_drop_visible: "Красная плашка с ближайшим дропом и кнопкой уведомления.",
+      homepage_calculator_visible: "Блок расчёта цены и бронирования комбинации.",
+      homepage_live_profiles_visible: "Горизонтальная лента live profiles.",
+      homepage_testimonials_visible: "Секция отзывов. Сейчас по умолчанию скрыта.",
+      homepage_latest_posts_visible: "Карточки последних публичных постов.",
+      homepage_latest_unq_visible: "Последние созданные аккаунты/UNQ.",
+      homepage_views_ranking_visible: "Топ профилей по просмотрам.",
+      homepage_auction_visible: "Виджет активного аукциона под рейтингом.",
+      homepage_faq_visible: "Блок часто задаваемых вопросов.",
     },
     orderByGroup: {
       pricing: [
@@ -158,6 +180,19 @@
         "maintenance_release_report_message",
         "maintenance_release_open_at",
       ],
+      homepage: [
+        "homepage_flash_sale_visible",
+        "homepage_hero_visible",
+        "homepage_next_drop_visible",
+        "homepage_calculator_visible",
+        "homepage_live_profiles_visible",
+        "homepage_latest_posts_visible",
+        "homepage_latest_unq_visible",
+        "homepage_views_ranking_visible",
+        "homepage_auction_visible",
+        "homepage_faq_visible",
+        "homepage_testimonials_visible",
+      ],
       official_unq: [
         "official_unq_letter_prefixes",
         "official_unq_calculator_hint",
@@ -195,6 +230,9 @@
         pending_expiry_hours: "Лимиты и расчеты",
         maintenance_mode: "Обслуживание",
       },
+      homepage: {
+        homepage_flash_sale_visible: "Показ блоков",
+      },
       official_unq: {
         official_unq_letter_prefixes: "Префиксы и тексты",
         official_unq_calculator_hint: "Публичные тексты",
@@ -230,7 +268,7 @@
   }
 
   const panelByGroup = Object.fromEntries(
-    ["pricing", "algorithm", "contacts", "platform", "official_unq", "changes"].map((group) => [group, resolveSettingsPanel(group)]),
+    ["pricing", "algorithm", "contacts", "platform", "homepage", "official_unq", "changes"].map((group) => [group, resolveSettingsPanel(group)]),
   );
 
   function esc(value) {

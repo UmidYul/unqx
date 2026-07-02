@@ -1846,6 +1846,10 @@
                       class="settings-subtab-btn flex shrink-0 items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-semibold">Платформа
                       <span data-settings-unsaved-dot="platform"
                         class="hidden h-2 w-2 rounded-full bg-amber-500"></span></button>
+                    <button type="button" data-settings-subtab="homepage"
+                      class="settings-subtab-btn flex shrink-0 items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-semibold">Главная
+                      <span data-settings-unsaved-dot="homepage"
+                        class="hidden h-2 w-2 rounded-full bg-amber-500"></span></button>
                     <button type="button" data-settings-subtab="official_unq"
                       class="settings-subtab-btn flex shrink-0 items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-semibold">Офиц.
                       UNQ / гос
@@ -1892,6 +1896,15 @@
                         class="interactive-btn min-h-11 rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800">Сохранить
                         платформу</button></div>
                   </article>
+                  <article data-settings-panel="homepage"
+                    class="hidden rounded-2xl border border-neutral-200 bg-white p-4">
+                    <h2 class="text-base font-bold text-neutral-900">Блоки главной страницы</h2>
+                    <p class="mt-1 text-sm text-neutral-600">Включайте и скрывайте секции главной без правки кода.</p>
+                    <form id="settings-form-homepage" class="mt-4 grid gap-3 md:grid-cols-2"></form>
+                    <div class="mt-3"><button type="button" data-settings-save="homepage"
+                        class="interactive-btn min-h-11 rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-800">Сохранить
+                        главную</button></div>
+                  </article>
                   <article id="admin-settings-panel-official-unq" data-settings-panel="official_unq"
                     class="hidden rounded-2xl border border-neutral-200 bg-white p-4">
                     <h2 class="text-base font-bold text-neutral-900">Официальные префиксы UNQ</h2>
@@ -1915,6 +1928,7 @@
 
                         <option value="contacts">Контакты</option>
                         <option value="platform">Платформа</option>
+                        <option value="homepage">Главная</option>
                         <option value="official_unq">Офиц. UNQ</option>
                       </select>
                       <input type="date" name="dateFrom"

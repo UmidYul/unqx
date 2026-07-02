@@ -237,6 +237,17 @@ const DEFAULT_SETTINGS = [
     label: "Дата и время открытия сайта",
     value: "",
   },
+  { key: "homepage_flash_sale_visible", group: "homepage", type: "boolean", label: "Flash Sale баннер", value: true },
+  { key: "homepage_hero_visible", group: "homepage", type: "boolean", label: "Hero и проверка UNQ", value: true },
+  { key: "homepage_next_drop_visible", group: "homepage", type: "boolean", label: "Следующий дроп", value: true },
+  { key: "homepage_calculator_visible", group: "homepage", type: "boolean", label: "Калькулятор стоимости UNQ", value: true },
+  { key: "homepage_live_profiles_visible", group: "homepage", type: "boolean", label: "Live Profiles", value: true },
+  { key: "homepage_testimonials_visible", group: "homepage", type: "boolean", label: "Отзывы", value: false },
+  { key: "homepage_latest_posts_visible", group: "homepage", type: "boolean", label: "Последние посты", value: true },
+  { key: "homepage_latest_unq_visible", group: "homepage", type: "boolean", label: "Последние созданные UNQ", value: true },
+  { key: "homepage_views_ranking_visible", group: "homepage", type: "boolean", label: "Рейтинг по просмотрам", value: true },
+  { key: "homepage_auction_visible", group: "homepage", type: "boolean", label: "Аукцион", value: true },
+  { key: "homepage_faq_visible", group: "homepage", type: "boolean", label: "FAQ", value: true },
   {
     key: "official_unq_letter_prefixes",
     group: "official_unq",
@@ -670,4 +681,3 @@ module.exports = {
   getSettingsChanges,
   invalidateSettingsCache,
 };
-

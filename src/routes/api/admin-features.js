@@ -32,7 +32,7 @@ const router = express.Router();
 router.use(adminApiRateLimit);
 router.use(requireAdminApi);
 
-const SETTINGS_GROUPS = new Set(["pricing", "algorithm", "contacts", "platform", "official_unq"]);
+const SETTINGS_GROUPS = new Set(["pricing", "algorithm", "contacts", "platform", "homepage", "official_unq"]);
 const FLASH_CONDITION_TYPES = new Set(["all", "pattern_000", "pattern_aaa", "sequential_digits", "custom"]);
 const FLASH_SLUG_RE = /^[A-Z]{3}[0-9]{3}$/;
 const FLASH_FULL_MASK_RE = /^[A-Z0-9*?]{6}$/;
@@ -43,6 +43,7 @@ const GROUP_KEY_PREFIX = {
   algorithm: ["slug_"],
   contacts: ["contact_"],
   platform: ["platform_", "feature_", "pending_", "score_", "leaderboard_", "referral_", "promo_", "maintenance_"],
+  homepage: ["homepage_"],
   official_unq: ["official_unq_"],
 };
 
@@ -1735,4 +1736,3 @@ router.post(
 module.exports = {
   adminFeaturesApiRouter: router,
 };
-
