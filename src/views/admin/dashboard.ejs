@@ -16,6 +16,7 @@
     slugs:           { title: "Slug-идентификаторы",   desc: "Редактирование, переименование и мониторинг slug.",                          action: null },
     score:           { title: "UNQ Score",             desc: "Рейтинги пользователей и система начисления баллов.",                        action: null },
     "flash-sales":   { title: "Flash Sale",            desc: "Акции с ограниченным временем, скидки и настройки распродаж.",               action: null },
+    auctions:        { title: "Аукционы",              desc: "Лоты UNQX, живые ставки, модерация участников и фиксация победителей.",       action: null },
     drops:           { title: "Дропы",                 desc: "Эксклюзивные выпуски slug и управление доступом к ним.",                     action: null },
     leaderboard:     { title: "Лидерборд",             desc: "Рейтинг пользователей и соревновательная механика платформы.",               action: null },
     referrals:       { title: "Рефералы",              desc: "Отслеживание реферальных ссылок и партнёрских вознаграждений.",              action: null },
@@ -1334,6 +1335,50 @@
                     <tbody id="flash-sales-table"></tbody>
                   </table>
                 </div>
+              </section>
+            </section>
+
+            <section id="tab-auctions" class="<%= pageActiveTab === 'auctions' ? '' : 'hidden' %> space-y-4">
+              <section class="admin-auction-builder">
+                <div>
+                  <p class="admin-auction-kicker">UNQX Auction Control</p>
+                  <h3 class="admin-auction-title">Создать новый лот</h3>
+                  <p class="admin-auction-text">Лот сразу станет активным на главной странице. По окончании таймера система зафиксирует максимальную ставку.</p>
+                </div>
+                <form id="auction-create-form" class="admin-auction-form">
+                  <label class="admin-auction-field">
+                    <span>Разыгрываемый UNQX</span>
+                    <input name="slug" type="text" maxlength="20" placeholder="NBO001" required />
+                  </label>
+                  <label class="admin-auction-field">
+                    <span>Начальная цена</span>
+                    <input name="startingPrice" type="number" min="0" step="10000" placeholder="500000" required />
+                  </label>
+                  <label class="admin-auction-field">
+                    <span>Минимальный шаг</span>
+                    <input name="minStep" type="number" min="1000" step="1000" placeholder="50000" required />
+                  </label>
+                  <label class="admin-auction-field">
+                    <span>Дней</span>
+                    <input name="durationDays" type="number" min="0" max="60" value="1" required />
+                  </label>
+                  <label class="admin-auction-field">
+                    <span>Часов</span>
+                    <input name="durationHours" type="number" min="0" max="23" value="0" required />
+                  </label>
+                  <button type="submit" class="admin-auction-submit">Запустить аукцион</button>
+                </form>
+              </section>
+
+              <section class="admin-auction-board">
+                <div class="admin-auction-board-head">
+                  <div>
+                    <p class="admin-auction-kicker">Live Moderation</p>
+                    <h3 class="admin-auction-title">Активные и завершённые лоты</h3>
+                  </div>
+                  <button type="button" class="admin-auction-refresh" data-act="auction-refresh">Обновить</button>
+                </div>
+                <div id="auction-admin-list" class="admin-auction-list"></div>
               </section>
             </section>
 

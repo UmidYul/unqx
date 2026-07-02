@@ -54,6 +54,7 @@ let slugPricingConfig = { ...DEFAULT_HOME_SLUG_PRICING };
   initNextDropOneClick();
   initOrderLinks(orderApi);
   const requestJson = createHomeJsonRequester();
+  initHomeAuctionWidget(pageNode, requestJson);
   initHomeFollowButtons(pageNode, authApi, requestJson);
   initHomeLatestPostButtons(pageNode, requestJson);
   initHomeMotion();
@@ -91,6 +92,198 @@ function createHomeJsonRequester() {
     }
     return { response, data: data && typeof data === "object" ? data : {} };
   };
+}
+
+function formatHomeAuctionPrice(value) {
+  return `${Number(value || 0).toLocaleString("ru-RU")} сум`;
+}
+
+function formatHomeAuctionRelativeTime(value) {
+  const date = value ? new Date(value) : null;
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) return "только что";
+  const diffSeconds = Math.max(0, Math.floor((Date.now() - date.getTime()) / 1000));
+  if (diffSeconds < 45) return "только что";
+  const minutes = Math.floor(diffSeconds / 60);
+  if (minutes < 60) return `${minutes} мин назад`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} ч назад`;
+  const days = Math.floor(hours / 24);
+  return `${days} д назад`;
+}
+
+function initHomeAuctionWidget(pageNode, requestJson) {
+  const widget = pageNode.querySelector("[data-auction-widget]");
+  if (!(widget instanceof HTMLElement)) return;
+
+  const statusNode = widget.querySelector("[data-auction-status-label]");
+  const slugNode = widget.querySelector("[data-auction-slug]");
+  const currentBidNode = widget.querySelector("[data-auction-current-bid]");
+  const leaderNode = widget.querySelector("[data-auction-leader]");
+  const historyNode = widget.querySelector("[data-auction-history]");
+  const feedbackNode = widget.querySelector("[data-auction-feedback]");
+  const input = widget.querySelector("[data-auction-bid-input]");
+  const submit = widget.querySelector("[data-auction-bid-submit]");
+  const form = widget.querySelector("[data-auction-form]");
+  const countdownNodes = {
+    days: widget.querySelector('[data-auction-count="days"]'),
+    hours: widget.querySelector('[data-auction-count="hours"]'),
+    minutes: widget.querySelector('[data-auction-count="minutes"]'),
+    seconds: widget.querySelector('[data-auction-count="seconds"]'),
+  };
+
+  function setFeedback(message, tone = "neutral") {
+    if (!(feedbackNode instanceof HTMLElement)) return;
+    feedbackNode.textContent = String(message || "");
+    feedbackNode.dataset.tone = tone;
+  }
+
+  function setEnded() {
+    widget.dataset.auctionStatus = "finished";
+    if (statusNode instanceof HTMLElement) {
+      statusNode.textContent = "ЗАВЕРШЕН";
+      statusNode.classList.add("is-finished");
+    }
+    if (input instanceof HTMLInputElement) input.disabled = true;
+    if (submit instanceof HTMLButtonElement) {
+      submit.disabled = true;
+      submit.textContent = "Аукцион завершён";
+    }
+  }
+
+  function tickCountdown() {
+    const endsAt = String(widget.getAttribute("data-auction-ends-at") || "");
+    const endDate = endsAt ? new Date(endsAt) : null;
+    const diff = endDate instanceof Date && !Number.isNaN(endDate.getTime())
+      ? Math.max(0, endDate.getTime() - Date.now())
+      : 0;
+    const totalSeconds = Math.floor(diff / 1000);
+    const days = Math.floor(totalSeconds / 86400);
+    const hours = Math.floor((totalSeconds % 86400) / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    const pad = (value) => String(value).padStart(2, "0");
+    if (countdownNodes.days instanceof HTMLElement) countdownNodes.days.textContent = pad(days);
+    if (countdownNodes.hours instanceof HTMLElement) countdownNodes.hours.textContent = pad(hours);
+    if (countdownNodes.minutes instanceof HTMLElement) countdownNodes.minutes.textContent = pad(minutes);
+    if (countdownNodes.seconds instanceof HTMLElement) countdownNodes.seconds.textContent = pad(seconds);
+    if (diff <= 0 && String(widget.dataset.auctionStatus || "") !== "finished") {
+      setEnded();
+    }
+  }
+
+  function refreshRelativeTimes() {
+    widget.querySelectorAll("[data-auction-bid-time]").forEach((node) => {
+      if (!(node instanceof HTMLElement)) return;
+      node.textContent = formatHomeAuctionRelativeTime(node.getAttribute("datetime"));
+    });
+  }
+
+  function renderHistory(bids) {
+    if (!(historyNode instanceof HTMLElement)) return;
+    const items = Array.isArray(bids) ? bids.slice(0, 5) : [];
+    if (!items.length) {
+      historyNode.innerHTML = '<div class="home-auction-empty">Стань первым участником этого лота.</div>';
+      return;
+    }
+    historyNode.innerHTML = items.map((bid) => {
+      const rawName = String(bid?.username || bid?.bidderUsername || bid?.name || bid?.bidderName || "user").replace(/^@+/, "");
+      const safeName = rawName.replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char]));
+      const amount = formatHomeAuctionPrice(bid?.amount || 0);
+      const createdAt = bid?.createdAt ? new Date(bid.createdAt).toISOString() : "";
+      return `
+        <div class="home-auction-history-row">
+          <span class="home-auction-avatar">${safeName.slice(0, 1).toUpperCase() || "U"}</span>
+          <span class="home-auction-bidder">@${safeName}</span>
+          <strong>${amount}</strong>
+          <time data-auction-bid-time datetime="${createdAt}">${formatHomeAuctionRelativeTime(createdAt)}</time>
+        </div>`;
+    }).join("");
+  }
+
+  function renderAuction(auction) {
+    if (!auction || typeof auction !== "object") return;
+    const slug = String(auction.slug || "").toUpperCase();
+    const displaySlug = slug.length > 3 ? `${slug.slice(0, 3)} ${slug.slice(3)}` : slug;
+    const currentBid = Number(auction.currentBid || 0);
+    const startingPrice = Number(auction.startingPrice || 0);
+    const minStep = Number(auction.minStep || 0);
+    const nextBid = Math.max(startingPrice, currentBid > 0 ? currentBid + minStep : startingPrice);
+    widget.setAttribute("data-auction-current-bid", String(currentBid));
+    widget.setAttribute("data-auction-starting-price", String(startingPrice));
+    widget.setAttribute("data-auction-min-step", String(minStep));
+    if (auction.endsAt) widget.setAttribute("data-auction-ends-at", new Date(auction.endsAt).toISOString());
+    widget.dataset.auctionStatus = String(auction.status || "active");
+    if (slugNode instanceof HTMLElement) slugNode.textContent = displaySlug;
+    if (currentBidNode instanceof HTMLElement) currentBidNode.textContent = formatHomeAuctionPrice(currentBid);
+    if (leaderNode instanceof HTMLElement) {
+      const username = auction.leader && auction.leader.username ? `@${auction.leader.username}` : "пока никто";
+      leaderNode.textContent = `Лидирует: ${username}`;
+    }
+    if (input instanceof HTMLInputElement) {
+      input.min = String(nextBid);
+      input.step = String(minStep || 1000);
+      input.value = String(nextBid);
+    }
+    if (statusNode instanceof HTMLElement) {
+      const finished = String(auction.status || "") === "finished";
+      statusNode.textContent = finished ? "ЗАВЕРШЕН" : "АКТИВЕН";
+      statusNode.classList.toggle("is-finished", finished);
+    }
+    renderHistory(auction.bids);
+    if (String(auction.status || "") === "finished") setEnded();
+    refreshRelativeTimes();
+    tickCountdown();
+  }
+
+  tickCountdown();
+  refreshRelativeTimes();
+  const countdownTimer = window.setInterval(tickCountdown, 1000);
+  const relativeTimer = window.setInterval(refreshRelativeTimes, 60000);
+  window.addEventListener("beforeunload", () => {
+    window.clearInterval(countdownTimer);
+    window.clearInterval(relativeTimer);
+  }, { once: true });
+
+  if (form instanceof HTMLFormElement) {
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const auctionId = String(widget.getAttribute("data-auction-id") || "").trim();
+      if (widget.getAttribute("data-auction-demo") === "1") {
+        setFeedback("Демо-лот: создайте реальный аукцион в админке.", "neutral");
+        return;
+      }
+      if (!auctionId || !(input instanceof HTMLInputElement)) return;
+      const amount = Number(input.value || 0);
+      const minimum = Number(input.min || 0);
+      if (!Number.isFinite(amount) || amount < minimum) {
+        setFeedback(`Минимальная ставка: ${formatHomeAuctionPrice(minimum)}.`, "error");
+        return;
+      }
+      if (submit instanceof HTMLButtonElement) submit.disabled = true;
+      setFeedback("Отправляем ставку...", "neutral");
+      const { response, data } = await requestJson(`/api/cards/auctions/${encodeURIComponent(auctionId)}/bids`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount }),
+      });
+      if (submit instanceof HTMLButtonElement) submit.disabled = false;
+      if (response.status === 401) {
+        window.location.assign(`/login?next=${encodeURIComponent("/")}`);
+        return;
+      }
+      if (!response.ok) {
+        setFeedback(String(data?.error || "Не удалось сделать ставку."), "error");
+        return;
+      }
+      renderAuction(data.auction);
+      setFeedback("Ставка принята. Ты теперь в игре.", "success");
+    });
+  }
+
+  window.setInterval(async () => {
+    const { response, data } = await requestJson("/api/cards/auctions/active");
+    if (response.ok && data.auction) renderAuction(data.auction);
+  }, 30000);
 }
 
 function initHomeFollowButtons(pageNode, authApi, requestJson) {

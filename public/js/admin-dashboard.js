@@ -3177,6 +3177,76 @@
       visibilityToggle.checked = Boolean(settings.settings?.enabledOnCards);
     }
   }
+
+  function auctionStatusLabel(status) {
+    const value = String(status || "").toLowerCase();
+    if (value === "active") return "Активен";
+    if (value === "finished") return "Завершен";
+    if (value === "cancelled") return "Отменен";
+    return "Черновик";
+  }
+
+  function renderAdminAuctionBidRow(bid) {
+    const status = String(bid?.status || "active");
+    const user = String(bid?.username || bid?.bidderUsername || bid?.name || bid?.bidderName || "user").replace(/^@+/, "");
+    const canBan = status === "active";
+    return `
+      <div class="admin-auction-bid-row ${status === "banned" ? "is-banned" : ""}">
+        <span class="admin-auction-avatar">${X(user.slice(0, 1).toUpperCase() || "U")}</span>
+        <span class="admin-auction-bid-user">@${X(user)}</span>
+        <strong>${P(bid?.amount || 0)}</strong>
+        <time>${D(bid?.createdAt)}</time>
+        <button type="button" data-act="auction-ban-bid" data-id="${X(bid?.id || "")}" ${canBan ? "" : "disabled"}
+          class="admin-auction-danger">${canBan ? "Забанить ставку" : "Забанено"}</button>
+      </div>`;
+  }
+
+  function renderAdminAuctionCard(auction) {
+    const bids = Array.isArray(auction?.bids) ? auction.bids : [];
+    const slug = String(auction?.slug || "").toUpperCase();
+    const displaySlug = slug.length > 3 ? `${slug.slice(0, 3)} ${slug.slice(3)}` : slug;
+    const leader = auction?.leader?.username ? `@${auction.leader.username}` : "пока никто";
+    const status = String(auction?.status || "");
+    return `
+      <article class="admin-auction-card">
+        <div class="admin-auction-card-head">
+          <div>
+            <span class="admin-auction-status ${status === "finished" ? "is-finished" : ""}">${auctionStatusLabel(status)}</span>
+            <h4>${X(displaySlug)}</h4>
+          </div>
+          <div class="admin-auction-card-actions">
+            <button type="button" data-act="auction-finish" data-id="${X(auction?.id || "")}" ${status === "active" ? "" : "disabled"}
+              class="admin-auction-finish">Завершить</button>
+          </div>
+        </div>
+        <div class="admin-auction-metrics">
+          <div><span>Текущая ставка</span><strong>${P(auction?.currentBid || 0)}</strong></div>
+          <div><span>Старт</span><strong>${P(auction?.startingPrice || 0)}</strong></div>
+          <div><span>Шаг</span><strong>${P(auction?.minStep || 0)}</strong></div>
+          <div><span>Лидер</span><strong>${X(leader)}</strong></div>
+        </div>
+        <p class="admin-auction-dates">Старт: ${D(auction?.startsAt)} · Конец: ${D(auction?.endsAt)}</p>
+        <div class="admin-auction-bids">
+          ${bids.length ? bids.map(renderAdminAuctionBidRow).join("") : '<div class="admin-auction-empty">Ставок пока нет.</div>'}
+        </div>
+      </article>`;
+  }
+
+  async function loadAuctions() {
+    const list = document.getElementById("auction-admin-list");
+    if (!(list instanceof HTMLElement)) return;
+    list.innerHTML = '<div class="admin-auction-empty">Загружаем аукционы...</div>';
+    const r = await fetch("/api/admin/auctions", { headers: H() });
+    if (!r.ok) {
+      list.innerHTML = `<div class="admin-auction-empty">${X(await E(r))}</div>`;
+      return;
+    }
+    const payload = await r.json().catch(() => ({}));
+    const auctions = Array.isArray(payload.auctions) ? payload.auctions : [];
+    list.innerHTML = auctions.length
+      ? auctions.map(renderAdminAuctionCard).join("")
+      : '<div class="admin-auction-empty">Лотов пока нет. Создайте первый аукцион выше.</div>';
+  }
   const am = document.getElementById("activation-modal");
   const af = document.getElementById("activation-form");
   const at = af instanceof HTMLFormElement ? af.elements.namedItem("tariff") : null;
@@ -3512,6 +3582,34 @@
       const url = n.getAttribute("data-url");
       if (url) window.location.assign(url);
       closeAllRowMenus();
+      return;
+    }
+    if (a === "auction-refresh") {
+      await loadAuctions();
+      return;
+    }
+    if (a === "auction-finish") {
+      const id = n.getAttribute("data-id");
+      if (!id || !await showConfirm("Завершить этот аукцион и зафиксировать победителя?")) return;
+      const r = await fetch(`/api/admin/auctions/${encodeURIComponent(id)}/finish`, {
+        method: "POST",
+        headers: H({ "Content-Type": "application/json" }),
+        body: JSON.stringify({}),
+      });
+      if (!r.ok) await showAlert(await E(r));
+      await loadAuctions();
+      return;
+    }
+    if (a === "auction-ban-bid") {
+      const id = n.getAttribute("data-id");
+      if (!id || !await showConfirm("Забанить эту ставку и пересчитать лидера?")) return;
+      const r = await fetch(`/api/admin/auction-bids/${encodeURIComponent(id)}/ban`, {
+        method: "POST",
+        headers: H({ "Content-Type": "application/json" }),
+        body: JSON.stringify({}),
+      });
+      if (!r.ok) await showAlert(await E(r));
+      await loadAuctions();
       return;
     }
     if (a === "pc-select-user") {
@@ -4425,6 +4523,38 @@
     const r = await fetch("/api/admin/testimonials", { method: "POST", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify(p) });
     if (!r.ok) showAlert(await E(r)); else { f.reset(); initialQuery.t_page = "1"; void loadTestimonials(); }
   });
+  document.getElementById("auction-create-form")?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const form = e.currentTarget;
+    if (!(form instanceof HTMLFormElement)) return;
+    const days = Number(getFormValue(form, "durationDays", "0")) || 0;
+    const hours = Number(getFormValue(form, "durationHours", "0")) || 0;
+    const durationHours = Math.max(1, Math.round(days * 24 + hours));
+    const payload = {
+      slug: getFormValue(form, "slug", "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 20),
+      startingPrice: Number(getFormValue(form, "startingPrice", "0")) || 0,
+      minStep: Number(getFormValue(form, "minStep", "50000")) || 50000,
+      durationHours,
+    };
+    if (!payload.slug) {
+      await showAlert("Укажите UNQX для лота.");
+      return;
+    }
+    const r = await fetch("/api/admin/auctions", {
+      method: "POST",
+      headers: H({ "Content-Type": "application/json" }),
+      body: JSON.stringify(payload),
+    });
+    if (!r.ok) {
+      await showAlert(await E(r));
+      return;
+    }
+    form.reset();
+    setFormValue(form, "durationDays", "1");
+    setFormValue(form, "durationHours", "0");
+    await loadAuctions();
+    await showAlert("Аукцион запущен.");
+  });
   document.getElementById("cleanup-logs-btn")?.addEventListener("click", async () => {
     const r = await fetch("/api/admin/logs/cleanup", { method: "POST", headers: H() });
     if (!r.ok) showAlert(await E(r)); else void loadLogs();
@@ -4812,6 +4942,10 @@
   if (tab === "posts") {
     dbg("load", "posts");
     void loadPosts();
+  }
+  if (tab === "auctions") {
+    dbg("load", "auctions");
+    void loadAuctions();
   }
 
   if (tab === "testimonials") {

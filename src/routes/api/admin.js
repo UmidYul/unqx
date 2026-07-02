@@ -91,6 +91,12 @@ const {
   mapPetPurchaseRequest,
 } = require("../../services/pets");
 const { buildPublicHandleUserSelect } = require("../../services/public-handle");
+const {
+  listAdminAuctions,
+  createAuction,
+  banBid,
+  finishAuction,
+} = require("../../services/auctions");
 
 const router = express.Router();
 const ONLINE_WINDOW_SECONDS = 90;
@@ -2344,6 +2350,45 @@ router.use((req, res, next) => {
   }
   next();
 });
+
+router.get(
+  "/auctions",
+  asyncHandler(async (_req, res) => {
+    const items = await listAdminAuctions();
+    res.json({ items, auctions: items });
+  }),
+);
+
+router.post(
+  "/auctions",
+  asyncHandler(async (req, res) => {
+    try {
+      const item = await createAuction(req.body || {}, req.session?.admin || null);
+      res.status(201).json({ ok: true, item });
+    } catch (error) {
+      const status = Number(error?.status || 500);
+      res.status(status >= 400 && status < 600 ? status : 500).json({
+        error: error?.message || "Не удалось создать аукцион.",
+      });
+    }
+  }),
+);
+
+router.post(
+  "/auctions/:auctionId/finish",
+  asyncHandler(async (req, res) => {
+    const item = await finishAuction(req.params.auctionId);
+    res.json({ ok: true, item });
+  }),
+);
+
+router.post(
+  "/auction-bids/:bidId/ban",
+  asyncHandler(async (req, res) => {
+    const item = await banBid(req.params.bidId, req.body?.note || "Banned from admin");
+    res.json({ ok: true, item });
+  }),
+);
 
 router.get(
   "/navigation-summary",

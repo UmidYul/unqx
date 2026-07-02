@@ -260,6 +260,7 @@ router.get(
       "referrals",
       "promocodes",
       "flash-sales",
+      "auctions",
       "drops",
       "directory",
       "verification",

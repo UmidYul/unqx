@@ -106,6 +106,10 @@ const {
   resolveFollowPageSize: resolveFollowListPageSize,
 } = require("../../services/follows");
 const { findPublicHandleByValue, normalizePublicHandleValue } = require("../../services/public-handle");
+const {
+  getActiveAuction,
+  placeBid,
+} = require("../../services/auctions");
 
 const router = express.Router();
 const SLUG_REGEX = /^[A-Z]{3}[0-9]{3}$/;
@@ -135,6 +139,34 @@ const affordablePickCache = {
   estimatedPrice: 0,
 };
 const affordableLoadWindow = [];
+
+router.get(
+  "/auctions/active",
+  asyncHandler(async (_req, res) => {
+    const auction = await getActiveAuction({ fallbackDemo: true });
+    res.json({ auction });
+  }),
+);
+
+router.post(
+  "/auctions/:auctionId/bids",
+  requireUserApi,
+  requireSameOrigin,
+  requireCsrfToken,
+  asyncHandler(async (req, res) => {
+    try {
+      const auction = await placeBid(req.params.auctionId, req.body?.amount, getUserSession(req));
+      res.json({ ok: true, auction });
+    } catch (error) {
+      const status = Number(error?.status || 500);
+      res.status(status >= 400 && status < 600 ? status : 500).json({
+        error: error?.message || "Не удалось сделать ставку.",
+        code: status === 401 ? "AUTH_REQUIRED" : "AUCTION_BID_FAILED",
+        minNextBid: error?.minNextBid || null,
+      });
+    }
+  }),
+);
 
 function isMissingModelTable(error, modelName) {
   return (
@@ -3291,7 +3323,6 @@ router.get(
 module.exports = {
   publicApiRouter: router,
 };
-
 
 
 

@@ -22,6 +22,7 @@ const {
   resolveFlashSalePresentation,
 } = require("../../services/flash-sales");
 const { normalizeRefCode } = require("../../services/referrals");
+const { getActiveAuction } = require("../../services/auctions");
 const { getPricingSettings } = require("../../services/pricing-settings");
 const { getManySettings } = require("../../services/platform-settings");
 const { recordView } = require("../../services/tap-tracker");
@@ -1046,6 +1047,7 @@ router.get(
       topWeeklyViews,
       latestCreatedCards,
       latestHomeWallPosts,
+      activeAuction,
       authPhotoUrl,
     ] = await Promise.all([
       getFeatureSetting("leaderboard"),
@@ -1240,6 +1242,7 @@ router.get(
         }
         throw error;
       }),
+      getActiveAuction({ fallbackDemo: true }),
       userId
         ? findProfileCardByOwnerId(userId)
           .then((card) => String(card?.avatarUrl || "").trim())
@@ -1349,6 +1352,7 @@ router.get(
           presentation: resolveFlashSalePresentation(activeFlashSale),
         }
         : null,
+      activeAuction,
       nextDrop: nextDrop
         ? {
           id: nextDrop.id,

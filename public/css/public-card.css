@@ -8426,3 +8426,290 @@ body[data-card-theme] main.private-card-screen {
     white-space: normal;
   }
 }
+
+[data-page="public-home"] .home-auction-section {
+  position: relative;
+  z-index: 1;
+}
+
+[data-page="public-home"] .home-auction-card {
+  width: min(100%, 920px);
+  margin: 0 auto;
+  border: 2px solid #000000 !important;
+  border-radius: 32px !important;
+  background: #ffffff;
+  box-shadow: 4px 4px 0 #000000;
+  padding: clamp(20px, 4vw, 34px);
+  color: #0b0b0b;
+}
+
+[data-page="public-home"] .home-auction-head,
+[data-page="public-home"] .home-auction-grid,
+[data-page="public-home"] .home-auction-history-head,
+[data-page="public-home"] .home-auction-history-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+[data-page="public-home"] .home-auction-kicker {
+  margin: 0 0 6px;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #6b7280;
+}
+
+[data-page="public-home"] .home-auction-lot {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: clamp(2.4rem, 8vw, 5.8rem);
+  font-weight: 1000;
+  line-height: 0.95;
+  letter-spacing: 0;
+}
+
+[data-page="public-home"] .home-auction-status-wrap {
+  display: grid;
+  justify-items: end;
+  gap: 8px;
+}
+
+[data-page="public-home"] .home-auction-status {
+  display: inline-flex;
+  align-items: center;
+  border: 2px solid #000000 !important;
+  border-radius: 999px;
+  background: #86efac;
+  padding: 8px 14px;
+  font-size: 0.78rem;
+  font-weight: 1000;
+  color: #000000;
+  box-shadow: 3px 3px 0 #000000;
+}
+
+[data-page="public-home"] .home-auction-status.is-finished {
+  background: #e5e7eb;
+}
+
+[data-page="public-home"] .home-auction-deadline {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #9ca3af;
+  text-transform: uppercase;
+}
+
+[data-page="public-home"] .home-auction-countdown {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin: 24px 0;
+}
+
+[data-page="public-home"] .home-auction-timebox {
+  min-height: 86px;
+  border: 2px solid #000000 !important;
+  border-radius: 18px;
+  background: #f8fafc;
+  display: grid;
+  place-items: center;
+  padding: 10px;
+}
+
+[data-page="public-home"] .home-auction-timebox strong {
+  font-size: clamp(1.8rem, 5vw, 3rem);
+  font-weight: 1000;
+  line-height: 1;
+}
+
+[data-page="public-home"] .home-auction-timebox span {
+  font-size: 0.74rem;
+  font-weight: 900;
+  color: #6b7280;
+  text-transform: uppercase;
+}
+
+[data-page="public-home"] .home-auction-grid {
+  align-items: stretch;
+}
+
+[data-page="public-home"] .home-auction-bid-panel,
+[data-page="public-home"] .home-auction-form {
+  flex: 1 1 0;
+  border: 2px solid #000000 !important;
+  border-radius: 24px;
+  background: #fef3c7;
+  padding: 18px;
+}
+
+[data-page="public-home"] .home-auction-bid-panel {
+  display: grid;
+  gap: 6px;
+}
+
+[data-page="public-home"] .home-auction-bid-panel span,
+[data-page="public-home"] .home-auction-form label span {
+  font-size: 0.78rem;
+  font-weight: 900;
+  color: #6b7280;
+  text-transform: uppercase;
+}
+
+[data-page="public-home"] .home-auction-bid-panel strong {
+  font-size: clamp(1.8rem, 4vw, 3rem);
+  font-weight: 1000;
+  line-height: 1;
+}
+
+[data-page="public-home"] .home-auction-bid-panel small {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #111827;
+}
+
+[data-page="public-home"] .home-auction-form {
+  display: grid;
+  gap: 12px;
+  background: #ecfeff;
+}
+
+[data-page="public-home"] .home-auction-input {
+  width: 100%;
+  margin-top: 6px;
+  border: 2px solid #000000 !important;
+  border-radius: 16px;
+  background: #ffffff;
+  padding: 13px 14px;
+  font-size: 1.15rem;
+  font-weight: 900;
+  outline: none;
+}
+
+[data-page="public-home"] .home-auction-submit {
+  min-height: 52px;
+  border: 2px solid #000000 !important;
+  border-radius: 16px;
+  background: #00e5ff;
+  color: #000000;
+  font-size: 1rem;
+  font-weight: 1000;
+  box-shadow: 4px 4px 0 #000000;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, opacity 0.12s ease;
+}
+
+[data-page="public-home"] .home-auction-submit:active {
+  transform: translate(2px, 2px);
+  box-shadow: 0 0 0 #000000;
+}
+
+[data-page="public-home"] .home-auction-submit:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+[data-page="public-home"] .home-auction-feedback {
+  min-height: 20px;
+  font-size: 0.84rem;
+  font-weight: 800;
+  color: #6b7280;
+}
+
+[data-page="public-home"] .home-auction-feedback[data-tone="error"] {
+  color: #dc2626;
+}
+
+[data-page="public-home"] .home-auction-feedback[data-tone="success"] {
+  color: #047857;
+}
+
+[data-page="public-home"] .home-auction-history {
+  margin-top: 22px;
+  border: 2px solid #000000 !important;
+  border-radius: 24px;
+  overflow: hidden;
+  background: #ffffff;
+}
+
+[data-page="public-home"] .home-auction-history-head {
+  background: #111827;
+  color: #ffffff;
+  padding: 12px 16px;
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+[data-page="public-home"] .home-auction-history-row {
+  padding: 12px 16px;
+  border-top: 1px solid #000000;
+  font-size: 0.92rem;
+}
+
+[data-page="public-home"] .home-auction-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  border: 2px solid #000000 !important;
+  border-radius: 50%;
+  background: #111827;
+  color: #ffffff;
+  font-weight: 1000;
+}
+
+[data-page="public-home"] .home-auction-bidder {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 900;
+}
+
+[data-page="public-home"] .home-auction-history-row strong {
+  font-weight: 1000;
+  white-space: nowrap;
+}
+
+[data-page="public-home"] .home-auction-history-row time {
+  color: #9ca3af;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+[data-page="public-home"] .home-auction-empty {
+  padding: 18px;
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: #6b7280;
+}
+
+@media (max-width: 760px) {
+  [data-page="public-home"] .home-auction-head,
+  [data-page="public-home"] .home-auction-grid {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  [data-page="public-home"] .home-auction-status-wrap {
+    justify-items: start;
+  }
+
+  [data-page="public-home"] .home-auction-countdown {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  [data-page="public-home"] .home-auction-history-row {
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr);
+    align-items: center;
+  }
+
+  [data-page="public-home"] .home-auction-history-row strong,
+  [data-page="public-home"] .home-auction-history-row time {
+    grid-column: 2;
+  }
+}
