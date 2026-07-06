@@ -41,6 +41,13 @@
   letter-spacing: -0.02em;
 }
 
+[data-page="public-home"] .site-header-brand-row {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  min-width: 0;
+}
+
 [data-page="public-home"] .site-logo-mark {
   box-shadow: 0 4px 16px rgba(17, 17, 17, 0.08);
 }
@@ -130,6 +137,12 @@
   }
 }
 
+@media (max-width: 1024px) {
+  [data-page="public-home"] .site-header .home-ad-grid--header {
+    display: none;
+  }
+}
+
 [data-page="public-home"] .home-pricing-grid {
   gap: clamp(16px, 2vw, 24px);
 }
@@ -168,6 +181,16 @@
   object-fit: contain;
   background: transparent !important;
   border: none !important;
+}
+
+[data-page="public-home"] .site-header .home-ad-grid--header {
+  gap: 18px;
+  flex-wrap: nowrap;
+}
+
+[data-page="public-home"] .site-header .home-ad-grid--header .home-ad-logo {
+  max-width: 150px;
+  max-height: 34px;
 }
 
 [data-page="public-home"] .home-pricing-card {
