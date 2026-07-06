@@ -163,8 +163,8 @@
 [data-page="public-home"] .home-ad-logo {
   display: block;
   width: auto;
-  max-width: 240px;
-  max-height: 56px;
+  max-width: 360px;
+  max-height: 84px;
   object-fit: contain;
   background: transparent !important;
   border: none !important;
