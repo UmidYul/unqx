@@ -449,29 +449,6 @@
             </section>
             <% } %>
 
-            <% if (advertisementList.length) { %>
-              <section id="partners" class="px-6 py-12" data-observe-reveal>
-                <div class="mx-auto max-w-6xl">
-                  <div class="home-ad-grid" aria-label="Партнёры UNQX">
-                    <% advertisementList.forEach((banner)=> { %>
-                      <a
-                        href="<%= banner.targetUrl %>"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        class="home-ad-card interactive-card"
-                        aria-label="Открыть сайт партнёра">
-                        <img
-                          src="<%= banner.imageUrl %>"
-                          alt="Партнёр UNQX"
-                          loading="lazy"
-                          class="home-ad-logo" />
-                      </a>
-                    <% }) %>
-                  </div>
-                </div>
-              </section>
-            <% } %>
-
             <% if (nextDrop && homeBlockVisible("homepage_next_drop_visible")) { %>
               <section class="px-6 pb-6" data-observe-reveal>
                 <div
@@ -1037,13 +1014,33 @@
                     <div class="mx-auto max-w-6xl">
                       <div class="flex flex-col items-start justify-between gap-10 md:flex-row md:items-end">
                         <div>
-                          <a href="/" class="inline-flex items-center gap-2 text-xl font-black text-neutral-900">
-                            <img src="/brand/logo.PNG" alt="<%= platformName %>"
-                              class="h-8 w-8 rounded-md border border-neutral-200 object-cover" />
-                            <span>
-                              <%= platformName %>
-                            </span>
-                          </a>
+                          <div class="home-footer-brand-row">
+                            <a href="/" class="inline-flex items-center gap-2 text-xl font-black text-neutral-900">
+                              <img src="/brand/logo.PNG" alt="<%= platformName %>"
+                                class="h-8 w-8 rounded-md border border-neutral-200 object-cover" />
+                              <span>
+                                <%= platformName %>
+                              </span>
+                            </a>
+                            <% if (advertisementList.length) { %>
+                              <div class="home-ad-grid" aria-label="Партнёры UNQX">
+                                <% advertisementList.forEach((banner)=> { %>
+                                  <a
+                                    href="<%= banner.targetUrl %>"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    class="home-ad-card"
+                                    aria-label="Открыть сайт партнёра">
+                                    <img
+                                      src="<%= banner.imageUrl %>"
+                                      alt="Партнёр UNQX"
+                                      loading="lazy"
+                                      class="home-ad-logo" />
+                                  </a>
+                                <% }) %>
+                              </div>
+                            <% } %>
+                          </div>
                           <p class="mt-2 text-sm text-neutral-400">Цифровая визитка нового поколения</p>
                         </div>
 

@@ -134,41 +134,40 @@
   gap: clamp(16px, 2vw, 24px);
 }
 
+[data-page="public-home"] .home-footer-brand-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
 [data-page="public-home"] .home-ad-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  display: inline-flex;
+  align-items: center;
   gap: 14px;
+  flex-wrap: wrap;
+  min-width: 0;
 }
 
 [data-page="public-home"] .home-ad-card {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  aspect-ratio: 1 / 1;
-  border: 2px solid #000000 !important;
-  border-radius: 24px;
-  background: transparent;
-  padding: 18px;
-  overflow: hidden;
-  box-shadow: 4px 4px 0 #000000;
-  transition: transform 160ms ease, box-shadow 160ms ease;
-}
-
-[data-page="public-home"] .home-ad-card:hover {
-  transform: translate(-1px, -1px);
-  box-shadow: 5px 5px 0 #000000;
-}
-
-[data-page="public-home"] .home-ad-card:active {
-  transform: translate(2px, 2px);
-  box-shadow: 0 0 0 #000000;
+  display: inline-block;
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+  line-height: 0;
+  text-decoration: none;
 }
 
 [data-page="public-home"] .home-ad-logo {
-  width: 100%;
-  height: 100%;
+  display: block;
+  width: auto;
+  max-width: 120px;
+  max-height: 28px;
   object-fit: contain;
-  background: transparent;
+  background: transparent !important;
+  border: none !important;
 }
 
 [data-page="public-home"] .home-pricing-card {
