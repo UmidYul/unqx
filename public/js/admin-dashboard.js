@@ -3250,6 +3250,41 @@
       ? auctions.map(renderAdminAuctionCard).join("")
       : '<div class="admin-auction-empty">Лотов пока нет. Создайте первый аукцион выше.</div>';
   }
+
+  function renderAdvertisementCard(item) {
+    const id = Number(item?.id || 0);
+    const imageUrl = String(item?.imageUrl || "").trim();
+    const targetUrl = String(item?.targetUrl || "").trim();
+    const positionIndex = Number(item?.positionIndex || 0);
+    return `<article class="rounded-2xl border-2 border-black bg-white p-4 shadow-[4px_4px_0_#000]">
+      <a href="${X(targetUrl)}" target="_blank" rel="noopener noreferrer" class="flex aspect-square items-center justify-center rounded-xl border-2 border-black bg-transparent p-4">
+        <img src="${X(imageUrl)}" alt="Партнёр" class="h-full w-full object-contain" loading="lazy" />
+      </a>
+      <div class="mt-3 flex items-start justify-between gap-3">
+        <div class="min-w-0">
+          <p class="text-xs font-black uppercase tracking-wide text-neutral-500">Позиция ${Number.isFinite(positionIndex) ? positionIndex : 0}</p>
+          <p class="mt-1 truncate text-sm font-semibold text-neutral-900">${X(targetUrl)}</p>
+        </div>
+        <button type="button" data-act="ad-delete" data-id="${id}" class="interactive-btn min-h-11 rounded-xl border-2 border-black bg-white px-3 py-2 text-xs font-black text-red-700 shadow-[2px_2px_0_#000]">Удалить</button>
+      </div>
+    </article>`;
+  }
+
+  async function loadAdvertisements() {
+    const list = document.getElementById("advertisements-list");
+    if (!(list instanceof HTMLElement)) return;
+    list.innerHTML = '<div class="rounded-2xl border-2 border-black bg-white p-4 text-sm font-semibold text-neutral-600">Загружаем баннеры...</div>';
+    const r = await fetch("/api/admin/advertisements", { headers: H() });
+    if (!r.ok) {
+      list.innerHTML = `<div class="rounded-2xl border-2 border-black bg-white p-4 text-sm text-red-700">${X(await E(r))}</div>`;
+      return;
+    }
+    const payload = await r.json().catch(() => ({}));
+    const items = Array.isArray(payload.items) ? payload.items : [];
+    list.innerHTML = items.length
+      ? items.map(renderAdvertisementCard).join("")
+      : '<div class="rounded-2xl border-2 border-black bg-white p-4 text-sm font-semibold text-neutral-600">Баннеров пока нет.</div>';
+  }
   const am = document.getElementById("activation-modal");
   const af = document.getElementById("activation-form");
   const at = af instanceof HTMLFormElement ? af.elements.namedItem("tariff") : null;
@@ -4250,6 +4285,22 @@
       closeAllRowMenus();
       return;
     }
+    if (a === "ad-delete") {
+      const id = n.getAttribute("data-id");
+      if (!id) return;
+      if (!await showConfirm("Удалить рекламный баннер?")) return;
+      const r = await fetch(`/api/admin/advertisements/${encodeURIComponent(id)}`, {
+        method: "DELETE",
+        headers: H(),
+      });
+      if (!r.ok) {
+        await showAlert(await E(r));
+      } else {
+        await loadAdvertisements();
+      }
+      closeAllRowMenus();
+      return;
+    }
   });
 
   document.getElementById("orders-filters")?.addEventListener("submit", (e) => { e.preventDefault(); const f = e.currentTarget; if (f instanceof HTMLFormElement) setFormValue(f, "page", "1"); void loadOrders(); });
@@ -4268,6 +4319,31 @@
     }, 0);
   });
   document.getElementById("purchases-filters")?.addEventListener("submit", (e) => { e.preventDefault(); const f = e.currentTarget; if (f instanceof HTMLFormElement) setFormValue(f, "page", "1"); void loadPurchases(); });
+  document.getElementById("advertisements-form")?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const form = e.currentTarget;
+    if (!(form instanceof HTMLFormElement)) return;
+    const fileInput = form.elements.namedItem("file");
+    const file = fileInput instanceof HTMLInputElement && fileInput.files ? fileInput.files[0] : null;
+    if (!file || file.type !== "image/png") {
+      await showAlert("Загрузите PNG-файл.");
+      return;
+    }
+    const data = new FormData(form);
+    const r = await fetch("/api/admin/advertisements", {
+      method: "POST",
+      headers: H(),
+      body: data,
+    });
+    if (!r.ok) {
+      await showAlert(await E(r));
+      return;
+    }
+    form.reset();
+    setFormValue(form, "positionIndex", "1");
+    await loadAdvertisements();
+    await showAlert("Баннер добавлен.");
+  });
   document.getElementById("pricing-settings-form")?.addEventListener("submit", async (e) => {
     e.preventDefault();
     const form = e.currentTarget;
@@ -4949,6 +5025,10 @@
   if (tab === "auctions") {
     dbg("load", "auctions");
     void loadAuctions();
+  }
+  if (tab === "advertisements") {
+    dbg("load", "advertisements");
+    void loadAdvertisements();
   }
 
   if (tab === "testimonials") {

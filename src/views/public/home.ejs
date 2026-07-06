@@ -73,6 +73,16 @@
   : [];
   const latestSlackCards = latestSlackCardsSource.filter((item) => item && typeof item === "object").slice(0, 5);
   const latestPublishedPostsList = Array.isArray(latestPublishedPosts) ? latestPublishedPosts.slice(0, 3) : [];
+  const advertisementList = Array.isArray(advertisements)
+  ? advertisements
+  .map((item) => ({
+  imageUrl: String(item && (item.imageUrl || item.image_url) || "").trim(),
+  targetUrl: String(item && (item.targetUrl || item.target_url) || "").trim(),
+  positionIndex: Number(item && (item.positionIndex || item.position_index) || 0),
+  }))
+  .filter((item) => item.imageUrl && /^https?:\/\//i.test(item.targetUrl))
+  .sort((a, b) => a.positionIndex - b.positionIndex)
+  : [];
   const trimMetricDecimal = (value) => String(value).replace(/\.0$/, "");
   const formatHomePostMetric = (value) => {
   const amount = Math.max(0, Number(value || 0));
@@ -437,6 +447,29 @@
 
               </div>
             </section>
+            <% } %>
+
+            <% if (advertisementList.length) { %>
+              <section id="partners" class="px-6 py-12" data-observe-reveal>
+                <div class="mx-auto max-w-6xl">
+                  <div class="home-ad-grid" aria-label="Партнёры UNQX">
+                    <% advertisementList.forEach((banner)=> { %>
+                      <a
+                        href="<%= banner.targetUrl %>"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="home-ad-card interactive-card"
+                        aria-label="Открыть сайт партнёра">
+                        <img
+                          src="<%= banner.imageUrl %>"
+                          alt="Партнёр UNQX"
+                          loading="lazy"
+                          class="home-ad-logo" />
+                      </a>
+                    <% }) %>
+                  </div>
+                </div>
+              </section>
             <% } %>
 
             <% if (nextDrop && homeBlockVisible("homepage_next_drop_visible")) { %>

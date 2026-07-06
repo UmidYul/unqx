@@ -25,6 +25,7 @@ const { normalizeRefCode } = require("../../services/referrals");
 const { getActiveAuction } = require("../../services/auctions");
 const { getPricingSettings } = require("../../services/pricing-settings");
 const { getManySettings } = require("../../services/platform-settings");
+const { listAdvertisements } = require("../../services/advertisements");
 const { recordView } = require("../../services/tap-tracker");
 const { isPublicProfileVisible } = require("../../services/subscription");
 const {
@@ -1062,6 +1063,7 @@ router.get(
       latestCreatedCards,
       latestHomeWallPosts,
       activeAuction,
+      advertisements,
       authPhotoUrl,
     ] = await Promise.all([
       getFeatureSetting("leaderboard"),
@@ -1268,6 +1270,7 @@ router.get(
         throw error;
       }),
       getActiveAuction({ fallbackDemo: true }),
+      listAdvertisements({ limit: 12 }),
       userId
         ? findProfileCardByOwnerId(userId)
           .then((card) => String(card?.avatarUrl || "").trim())
@@ -1389,6 +1392,7 @@ router.get(
       topWeeklyViews,
       latestCreatedCards,
       latestPublishedPosts,
+      advertisements,
       latestCreatedCard: Array.isArray(latestCreatedCards) && latestCreatedCards.length ? latestCreatedCards[0] : null,
       pricing,
       authPhotoUrl,

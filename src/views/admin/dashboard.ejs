@@ -17,6 +17,7 @@
     score:           { title: "UNQ Score",             desc: "Рейтинги пользователей и система начисления баллов.",                        action: null },
     "flash-sales":   { title: "Flash Sale",            desc: "Акции с ограниченным временем, скидки и настройки распродаж.",               action: null },
     auctions:        { title: "Аукционы",              desc: "Лоты UNQX, живые ставки, модерация участников и фиксация победителей.",       action: null },
+    advertisements:  { title: "Реклама / партнёры",    desc: "Загрузка партнёрских PNG-логотипов и управление рекламными местами.",         action: null },
     drops:           { title: "Дропы",                 desc: "Эксклюзивные выпуски slug и управление доступом к ним.",                     action: null },
     leaderboard:     { title: "Лидерборд",             desc: "Рейтинг пользователей и соревновательная механика платформы.",               action: null },
     referrals:       { title: "Рефералы",              desc: "Отслеживание реферальных ссылок и партнёрских вознаграждений.",              action: null },
@@ -1380,6 +1381,37 @@
                 </div>
                 <div id="auction-admin-list" class="admin-auction-list"></div>
               </section>
+            </section>
+
+            <section id="tab-advertisements" class="<%= pageActiveTab === 'advertisements' ? '' : 'hidden' %> space-y-4">
+              <header class="rounded-2xl border-2 border-black bg-white p-4 shadow-[4px_4px_0_#000]">
+                <h2 class="text-base font-black text-neutral-900">Управление рекламой / Партнёры</h2>
+                <p class="mt-1 text-sm text-neutral-600">Загружайте PNG-логотипы 1000×1000 с прозрачным фоном. Баннеры появятся на главной по позиции.</p>
+              </header>
+              <form id="advertisements-form" class="grid gap-3 rounded-2xl border-2 border-black bg-white p-4 shadow-[4px_4px_0_#000] md:grid-cols-[1fr_1fr_130px_auto]" enctype="multipart/form-data">
+                <label class="block text-sm font-semibold text-neutral-800">
+                  PNG-логотип
+                  <input name="file" type="file" accept="image/png" required
+                    class="mt-1 w-full rounded-xl border-2 border-black bg-white px-3 py-2 text-sm" />
+                </label>
+                <label class="block text-sm font-semibold text-neutral-800">
+                  Ссылка
+                  <input name="targetUrl" type="url" placeholder="https://partner-site.com" required
+                    class="mt-1 w-full rounded-xl border-2 border-black bg-white px-3 py-2 text-sm" />
+                </label>
+                <label class="block text-sm font-semibold text-neutral-800">
+                  Позиция
+                  <input name="positionIndex" type="number" min="1" step="1" value="1" required
+                    class="mt-1 w-full rounded-xl border-2 border-black bg-white px-3 py-2 text-sm" />
+                </label>
+                <div class="flex items-end">
+                  <button type="submit"
+                    class="interactive-btn min-h-11 w-full rounded-xl border-2 border-black bg-cyan-300 px-4 py-2 text-sm font-black text-black shadow-[3px_3px_0_#000] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none">
+                    Добавить
+                  </button>
+                </div>
+              </form>
+              <div id="advertisements-list" class="grid gap-3 md:grid-cols-2 xl:grid-cols-3"></div>
             </section>
 
             <section id="tab-drops" class="<%= pageActiveTab === 'drops' ? '' : 'hidden' %> space-y-4">

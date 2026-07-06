@@ -97,6 +97,13 @@ const {
   banBid,
   finishAuction,
 } = require("../../services/auctions");
+const {
+  createAdvertisement,
+  deleteAdvertisement,
+  deleteAdvertisementImage,
+  listAdvertisements,
+  saveAdvertisementPng,
+} = require("../../services/advertisements");
 
 const router = express.Router();
 const ONLINE_WINDOW_SECONDS = 90;
@@ -2386,6 +2393,55 @@ router.post(
   "/auction-bids/:bidId/ban",
   asyncHandler(async (req, res) => {
     const item = await banBid(req.params.bidId, req.body?.note || "Banned from admin");
+    res.json({ ok: true, item });
+  }),
+);
+
+router.get(
+  "/advertisements",
+  asyncHandler(async (_req, res) => {
+    const items = await listAdvertisements({ limit: 100 });
+    res.json({ items, advertisements: items });
+  }),
+);
+
+router.post(
+  "/advertisements",
+  upload.single("file"),
+  asyncHandler(async (req, res) => {
+    if (!req.file || req.file.mimetype !== "image/png") {
+      res.status(400).json({ error: "Загрузите PNG-файл.", code: "PNG_REQUIRED" });
+      return;
+    }
+    let imageUrl = "";
+    try {
+      imageUrl = await saveAdvertisementPng(req.file.buffer);
+      const item = await createAdvertisement({
+        imageUrl,
+        targetUrl: req.body?.targetUrl,
+        positionIndex: req.body?.positionIndex,
+      });
+      res.status(201).json({ ok: true, item });
+    } catch (error) {
+      if (imageUrl) {
+        await deleteAdvertisementImage(imageUrl);
+      }
+      const status = Number(error?.status || 500);
+      res.status(status >= 400 && status < 600 ? status : 500).json({
+        error: error?.message || "Не удалось создать баннер.",
+      });
+    }
+  }),
+);
+
+router.delete(
+  "/advertisements/:id",
+  asyncHandler(async (req, res) => {
+    const item = await deleteAdvertisement(req.params.id);
+    if (!item) {
+      res.status(404).json({ error: "Баннер не найден." });
+      return;
+    }
     res.json({ ok: true, item });
   }),
 );
