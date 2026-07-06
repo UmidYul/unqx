@@ -2275,6 +2275,18 @@
         })
         .filter(Boolean)
       : [];
+    const slugSaleListingsRaw = card.slugSaleListings && typeof card.slugSaleListings === "object"
+      ? card.slugSaleListings
+      : {};
+    const slugSaleListings = Object.fromEntries(
+      Object.entries(slugSaleListingsRaw)
+        .map(([key, value]) => {
+          const slugKey = String(key || "").trim().toUpperCase();
+          const salePrice = Number(value && typeof value === "object" ? value.salePrice : value);
+          return slugKey && Number.isFinite(salePrice) && salePrice > 0 ? [slugKey, { salePrice }] : null;
+        })
+        .filter(Boolean),
+    );
     const initials = name
       .split(/\s+/)
       .filter(Boolean)
@@ -2288,6 +2300,7 @@
           .map((value) => String(value || "").trim().toUpperCase())
           .filter(Boolean)
         : [],
+      slugSaleListings,
       slugPrice: Number.isFinite(Number(card.slugPrice)) ? Number(card.slugPrice) : null,
       tariff: plan,
       theme: (() => {
