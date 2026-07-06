@@ -190,12 +190,9 @@
           <div class="site-header-inner mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-4">
             <div class="site-header-brand-row">
               <a href="/"
-                class="site-logo inline-flex items-center gap-2 text-xl font-black tracking-tight text-neutral-900">
-                <img src="/brand/logo.PNG" alt="<%= platformName %>"
-                  class="site-logo-mark h-8 w-8 rounded-md border border-neutral-200 object-cover" />
-                <span class="site-logo-name">
-                  <%= platformName %>
-                </span>
+                class="site-logo inline-flex items-center text-xl font-black tracking-tight text-neutral-900"
+                aria-label="<%= platformName %>">
+                <img src="/brand/header-logo.svg" alt="<%= platformName %>" class="site-logo-mark" />
               </a>
               <% if (headerCollaborationList.length) { %>
                 <div class="home-ad-grid home-ad-grid--header" aria-label="Сезонные коллаборации UNQX">

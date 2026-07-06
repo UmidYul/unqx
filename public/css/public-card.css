@@ -227,6 +227,7 @@
 
 [data-page="public-home"] .site-logo {
   letter-spacing: -0.02em;
+  gap: 0;
 }
 
 [data-page="public-home"] .site-header-brand-row {
@@ -237,13 +238,14 @@
 }
 
 [data-page="public-home"] .site-logo-mark {
-  box-shadow: 0 4px 16px rgba(17, 17, 17, 0.08);
-}
-
-[data-page="public-home"] .site-logo-name {
-  font-size: 32px;
-  line-height: 1;
-  font-weight: 900;
+  width: auto !important;
+  height: 34px !important;
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  padding: 0 !important;
+  object-fit: contain;
+  box-shadow: none !important;
 }
 
 [data-page="public-home"] .site-header-links {
@@ -2666,10 +2668,6 @@ body[data-page="profile-page"] {
     padding-right: 16px;
   }
 
-  [data-page="public-home"] .site-logo-name {
-    font-size: 24px;
-  }
-
   [data-page="public-home"] .site-header-brand-row {
     gap: 10px;
     max-width: calc(100% - 56px);
@@ -2687,9 +2685,9 @@ body[data-page="profile-page"] {
   }
 
   [data-page="public-home"] .site-logo-mark {
-    width: 34px;
-    height: 34px;
-    border-radius: 10px;
+    width: auto !important;
+    height: 30px !important;
+    border-radius: 0 !important;
   }
 
   [data-page="public-home"] .site-header-mobile-toggle {
