@@ -3256,8 +3256,8 @@
     const imageUrl = String(item?.imageUrl || "").trim();
     const targetUrl = String(item?.targetUrl || "").trim();
     const positionIndex = Number(item?.positionIndex || 0);
-    return `<article class="rounded-2xl border-2 border-black bg-white p-4 shadow-[4px_4px_0_#000]">
-      <a href="${X(targetUrl)}" target="_blank" rel="noopener noreferrer" class="flex aspect-square items-center justify-center rounded-xl border-2 border-black bg-transparent p-4">
+    return `<article class="admin-ads-card p-3">
+      <a href="${X(targetUrl)}" target="_blank" rel="noopener noreferrer" class="flex aspect-square max-h-40 items-center justify-center rounded-xl border-2 border-black bg-transparent p-3">
         <img src="${X(imageUrl)}" alt="Партнёр" class="h-full w-full object-contain" loading="lazy" />
       </a>
       <div class="mt-3 flex items-start justify-between gap-3">
@@ -3265,7 +3265,7 @@
           <p class="text-xs font-black uppercase tracking-wide text-neutral-500">Позиция ${Number.isFinite(positionIndex) ? positionIndex : 0}</p>
           <p class="mt-1 truncate text-sm font-semibold text-neutral-900">${X(targetUrl)}</p>
         </div>
-        <button type="button" data-act="ad-delete" data-id="${id}" class="interactive-btn min-h-11 rounded-xl border-2 border-black bg-white px-3 py-2 text-xs font-black text-red-700 shadow-[2px_2px_0_#000]">Удалить</button>
+        <button type="button" data-act="ad-delete" data-id="${id}" class="interactive-btn min-h-10 rounded-xl border-2 border-black bg-white px-3 py-1.5 text-xs font-black text-red-700 shadow-[2px_2px_0_#000]">Удалить</button>
       </div>
     </article>`;
   }
@@ -3273,17 +3273,17 @@
   async function loadAdvertisements() {
     const list = document.getElementById("advertisements-list");
     if (!(list instanceof HTMLElement)) return;
-    list.innerHTML = '<div class="rounded-2xl border-2 border-black bg-white p-4 text-sm font-semibold text-neutral-600">Загружаем баннеры...</div>';
+    list.innerHTML = '<div class="admin-ads-card p-3 text-sm font-semibold text-neutral-600">Загружаем баннеры...</div>';
     const r = await fetch("/api/admin/advertisements", { headers: H() });
     if (!r.ok) {
-      list.innerHTML = `<div class="rounded-2xl border-2 border-black bg-white p-4 text-sm text-red-700">${X(await E(r))}</div>`;
+      list.innerHTML = `<div class="admin-ads-card p-3 text-sm text-red-700">${X(await E(r))}</div>`;
       return;
     }
     const payload = await r.json().catch(() => ({}));
     const items = Array.isArray(payload.items) ? payload.items : [];
     list.innerHTML = items.length
       ? items.map(renderAdvertisementCard).join("")
-      : '<div class="rounded-2xl border-2 border-black bg-white p-4 text-sm font-semibold text-neutral-600">Баннеров пока нет.</div>';
+      : '<div class="admin-ads-card p-3 text-sm font-semibold text-neutral-600">Баннеров пока нет.</div>';
   }
   const am = document.getElementById("activation-modal");
   const af = document.getElementById("activation-form");
