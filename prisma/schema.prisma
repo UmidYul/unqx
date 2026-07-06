@@ -421,6 +421,8 @@ model Slug {
   status             SlugStatus  @default(free)
   isPrimary          Boolean     @default(false) @map("is_primary")
   price              Int?
+  onSale             Boolean     @default(false) @map("on_sale")
+  salePrice          BigInt?     @map("sale_price")
   pauseMessage       String?     @map("pause_message") @db.VarChar(220)
   requestedAt        DateTime?   @map("requested_at")
   pendingExpiresAt   DateTime?   @map("pending_expires_at")

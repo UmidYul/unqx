@@ -2831,6 +2831,7 @@ body[data-card-theme] #card-view-root>[data-card-view] {
 .unq-ref-slug-wrap {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
   min-width: 0;
   flex: 1;
@@ -2873,6 +2874,23 @@ body[data-card-theme] #card-view-root>[data-card-view] {
   font-weight: 600;
   color: var(--theme-email-color, #5f6368);
   letter-spacing: normal;
+}
+
+.unq-ref-sale-bubble {
+  flex: 1 0 100%;
+  width: fit-content;
+  max-width: 100%;
+  margin-top: 4px;
+  border: 1px solid color-mix(in srgb, var(--theme-email-color, #ffffff) 58%, transparent);
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--theme-surface-bg, rgba(255, 255, 255, 0.16)) 72%, transparent);
+  padding: 7px 14px;
+  color: var(--theme-email-color, #ffffff);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.35;
+  text-align: center;
+  backdrop-filter: blur(10px);
 }
 
 .unq-ref-share {
@@ -5650,7 +5668,7 @@ body[data-card-theme] #card-view-root>[data-card-view] {
 
   .unq-ref-slug-wrap {
     align-items: center;
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
     gap: 6px;
   }
 

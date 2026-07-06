@@ -28,6 +28,18 @@
       return date ? date.toLocaleString("ru-RU") : "—";
     };
     const fp = (value) => `${Number(value || 0).toLocaleString("ru-RU")} сум`;
+    const parseMoneyInput = (value) => {
+      const digits = String(value || "").replace(/[^\d]/g, "");
+      return digits ? Number(digits) : 0;
+    };
+    const formatMoneyInput = (value) => {
+      const amount = parseMoneyInput(value);
+      return amount > 0 ? amount.toLocaleString("ru-RU") : "";
+    };
+    const cssEscape = (value) =>
+      typeof CSS !== "undefined" && typeof CSS.escape === "function"
+        ? CSS.escape(String(value || ""))
+        : String(value || "").replace(/["\\]/g, "\\$&");
     const fh = (value) => {
       const date = toDate(value);
       return date
@@ -1999,6 +2011,9 @@ Email: ${userEmail}
         const slugCards = s.slugs
           .map((slugItem) => {
             const isPaused = normalizeCardVisibilityStatus(slugItem.status) === "paused";
+            const canSellSlug = slugItem.type !== "free";
+            const isOnSale = Boolean(slugItem.onSale);
+            const salePriceValue = formatMoneyInput(slugItem.salePrice || "");
 
             return `<article class="interactive-card rounded-xl border border-neutral-200 p-4">
             <div class="flex flex-wrap items-center justify-between gap-2">
@@ -2012,6 +2027,25 @@ Email: ${userEmail}
             </div>
             ${isPaused && slugItem.pauseMessage
                 ? `<p class="mt-3 text-xs text-neutral-500">Сообщение паузы: ${esc(slugItem.pauseMessage)}</p>`
+                : ""
+              }
+            ${canSellSlug
+                ? `<div class="mt-4 rounded-2xl border border-neutral-200 bg-neutral-50 p-3">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                  <label class="inline-flex min-h-11 cursor-pointer items-center gap-2 text-sm font-semibold text-neutral-900">
+                    <input type="checkbox" data-sale-toggle data-slug="${esc(slugItem.fullSlug)}" class="h-5 w-5 rounded border-neutral-300" ${isOnSale ? "checked" : ""}>
+                    <span>Выставить на продажу</span>
+                  </label>
+                  <span class="text-xs font-medium text-neutral-500">${isOnSale ? "Показывается в профиле" : "Баббл скрыт"}</span>
+                </div>
+                <div class="mt-3 flex flex-wrap gap-2">
+                  <label class="min-w-[180px] flex-1">
+                    <span class="sr-only">Цена продажи в UZS</span>
+                    <input data-sale-price data-slug="${esc(slugItem.fullSlug)}" inputmode="numeric" value="${esc(salePriceValue)}" placeholder="120 000 000" class="w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm font-semibold text-neutral-900" ${isOnSale ? "" : "disabled"}>
+                  </label>
+                  <button type="button" data-a="save-slug-sale" data-slug="${esc(slugItem.fullSlug)}" class="interactive-btn min-h-11 rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm font-semibold">Сохранить</button>
+                </div>
+              </div>`
                 : ""
               }
             <div class="mt-3 flex flex-wrap gap-3 text-xs text-neutral-500">
@@ -5083,6 +5117,30 @@ Email: ${userEmail}
       openOrderModal({});
     });
 
+    document.addEventListener("change", (event) => {
+      const target = event.target instanceof HTMLElement ? event.target : null;
+      const toggle = target?.closest("[data-sale-toggle]");
+      if (!(toggle instanceof HTMLInputElement)) return;
+      const slug = String(toggle.getAttribute("data-slug") || "").trim();
+      if (!slug) return;
+      const input = document.querySelector(`[data-sale-price][data-slug="${cssEscape(slug)}"]`);
+      if (input instanceof HTMLInputElement) {
+        input.disabled = !toggle.checked;
+        if (!toggle.checked) {
+          input.value = "";
+        } else {
+          input.focus();
+        }
+      }
+    });
+
+    document.addEventListener("input", (event) => {
+      const target = event.target instanceof HTMLElement ? event.target : null;
+      const input = target?.closest("[data-sale-price]");
+      if (!(input instanceof HTMLInputElement)) return;
+      input.value = formatMoneyInput(input.value);
+    });
+
     document.addEventListener("click", async (event) => {
       const target = event.target instanceof HTMLElement ? event.target : null;
       if (!target) return;
@@ -5183,6 +5241,39 @@ Email: ${userEmail}
           showSaveAlert(PROFILE_SAVE_SUCCESS_MESSAGE);
         } catch (error) {
           showModal("Ошибка", error.message || "Не удалось сохранить сообщение паузы");
+        }
+        return;
+      }
+
+      if (action === "save-slug-sale") {
+        const slug = String(actionNode.getAttribute("data-slug") || "").trim();
+        if (!slug) return;
+        const checkbox = document.querySelector(`[data-sale-toggle][data-slug="${cssEscape(slug)}"]`);
+        const priceInput = document.querySelector(`[data-sale-price][data-slug="${cssEscape(slug)}"]`);
+        const onSale = checkbox instanceof HTMLInputElement ? checkbox.checked : false;
+        const salePrice = priceInput instanceof HTMLInputElement ? parseMoneyInput(priceInput.value) : 0;
+        if (onSale && salePrice <= 0) {
+          showModal("Цена продажи", "Укажите сумму в UZS, чтобы выставить UNQ на продажу.");
+          return;
+        }
+
+        try {
+          const payload = await api(`/api/profile/slugs/${encodeURIComponent(slug)}/sale`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ onSale, salePrice }),
+          });
+          const slugs = Array.isArray(s.slugs) ? s.slugs : [];
+          const targetSlug = slugs.find((item) => String(item.fullSlug) === slug);
+          if (targetSlug) {
+            targetSlug.onSale = Boolean(payload.onSale);
+            targetSlug.salePrice = payload.salePrice || null;
+          }
+          renderSlugs();
+          renderPreview();
+          showSaveAlert(onSale ? "UNQ выставлен на продажу" : "UNQ снят с продажи");
+        } catch (error) {
+          showModal("Ошибка", error.message || "Не удалось сохранить продажу");
         }
         return;
       }

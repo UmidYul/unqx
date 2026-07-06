@@ -2732,6 +2732,14 @@
         ? `${Number(card.slugPrice).toLocaleString("ru-RU")} сум`
         : "";
     const slugItems = card.slugs.length > 0 ? card.slugs : [card.slug];
+    const slugSaleListings = card.slugSaleListings && typeof card.slugSaleListings === "object"
+      ? card.slugSaleListings
+      : {};
+    const activeSaleListing = slugSaleListings[String(card.slug || "").trim().toUpperCase()];
+    const activeSalePrice = Number(activeSaleListing?.salePrice || 0);
+    const slugSaleBubbleHtml = Number.isFinite(activeSalePrice) && activeSalePrice > 0
+      ? `<div class="unq-ref-sale-bubble">Владелец выставил на продажу за ${esc(activeSalePrice.toLocaleString("ru-RU"))} сум</div>`
+      : "";
     const score = options.score && typeof options.score === "object" ? options.score : null;
     const topBadge = options.topBadge && typeof options.topBadge === "object" ? options.topBadge : null;
     const officialUnqBadge = options.officialUnqBadge && typeof options.officialUnqBadge === "object" ? options.officialUnqBadge : null;
@@ -3119,6 +3127,7 @@
         .join("")}
             </div>
             ${slugPriceLabel ? `<span class="unq-ref-slug-price">${esc(slugPriceLabel)}</span>` : ""}
+            ${slugSaleBubbleHtml}
           </div>
           <div class="unq-ref-top-actions">
             <button type="button" data-share-card class="unq-ref-share" aria-label="Поделиться">

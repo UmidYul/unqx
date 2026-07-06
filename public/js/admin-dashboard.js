@@ -1893,7 +1893,7 @@
           const primaryBadgeType = getPrimaryBadgeType(badgeTypes);
           const badgeTypesCsv = badgeTypes.join(",");
           const userSlugsCsv = allSlugs.join(",");
-          const userCell = X(x.name);
+          const userNameText = X(x.name);
           const emailCell = x.email
             ? `<span class="block break-all text-xs text-neutral-700">${X(x.email)}</span>`
             : "—";
@@ -1948,6 +1948,9 @@
             ? `<span class="inline-flex rounded-full border border-amber-300 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-800 whitespace-nowrap">Премиум</span>`
             : `<span class="inline-flex rounded-full border border-neutral-200 bg-white px-2.5 py-1 text-xs font-medium text-neutral-600 whitespace-nowrap">Бесплатный</span>`;
           const rowProfileUrl = profileLink ? X(profileLink) : "";
+          const userCell = rowProfileUrl
+            ? `<a href="${rowProfileUrl}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" class="font-semibold text-neutral-900 underline-offset-4 hover:underline">${userNameText}</a>`
+            : userNameText;
           return `<tr class="admin-table-row border-t border-neutral-100 cursor-pointer hover:bg-neutral-50" data-user-profile-url="${rowProfileUrl}"><td class="px-4 py-3">${userCell}</td><td class="px-4 py-3">${emailCell}</td><td class="px-4 py-3">${planChipHtml}</td><td class="admin-col-slugs px-4 py-3 text-xs" title="${X(slugTitle)}">${X(slugText)}</td><td class="px-4 py-3">${statusChip(x.status === "blocked" ? "rejected" : "approved")}</td><td class="px-4 py-3">${DATE_ONLY(x.createdAt)}</td><td class="px-4 py-3 text-center" onclick="event.stopPropagation()"><div class="admin-row-actions justify-center">${menu}</div></td></tr>`;
         })
         .join("")
@@ -4290,7 +4293,7 @@
     const row = e.target instanceof Element ? e.target.closest("tr[data-user-profile-url]") : null;
     if (!row) return;
     const url = row.getAttribute("data-user-profile-url");
-    if (url) window.open(url, "_blank");
+    if (url) window.open(url, "_blank", "noopener,noreferrer");
   });
   document.getElementById("accounts-filters")?.addEventListener("submit", (e) => { e.preventDefault(); const f = e.currentTarget; if (f instanceof HTMLFormElement) setFormValue(f, "page", "1"); void loadAccounts(); });
   document.getElementById("payment-cards-filters")?.addEventListener("submit", (e) => {

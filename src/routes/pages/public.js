@@ -887,14 +887,28 @@ function buildPublicCardFromProfile({ slug, user, profileCard, verifiedIdentity,
   const verifiedRole =
     String(isCurrentlyVerified ? (verifiedIdentity?.role || "") : "")
       .trim();
+  const slugSaleListings = {};
   const normalizedSlugs = Array.isArray(allSlugs)
     ? allSlugs
-      .map((value) => String(value || "").trim().toUpperCase())
+      .map((value) => {
+        if (value && typeof value === "object") {
+          const fullSlug = String(value.fullSlug || value.full_slug || "").trim().toUpperCase();
+          const salePrice = value.salePrice == null && value.sale_price == null
+            ? null
+            : Number(value.salePrice ?? value.sale_price);
+          if (fullSlug && Boolean(value.onSale ?? value.on_sale) && Number.isFinite(salePrice) && salePrice > 0) {
+            slugSaleListings[fullSlug] = { salePrice };
+          }
+          return fullSlug;
+        }
+        return String(value || "").trim().toUpperCase();
+      })
       .filter(Boolean)
     : [];
   return {
     slug,
     slugs: normalizedSlugs.length ? normalizedSlugs : [slug],
+    slugSaleListings,
     slugPrice: Number.isFinite(Number(effectiveProfileCard.slugPrice)) ? Number(effectiveProfileCard.slugPrice) : null,
     avatarUrl: effectiveProfileCard.avatarUrl || null,
     name: effectiveProfileCard.name,
@@ -2666,7 +2680,7 @@ router.get(
               status: { not: "free" },
             },
             orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
-            select: { fullSlug: true },
+            select: { fullSlug: true, onSale: true, salePrice: true },
               }),
           findLatestApprovedVerificationByUserId(slugRow.ownerId),
           slugRow.status === "active"
@@ -2703,7 +2717,7 @@ router.get(
           pets: ownedPets,
           verifiedIdentity,
           viewsCount: views,
-          allSlugs: ownerSlugs.map((item) => item.fullSlug),
+          allSlugs: ownerSlugs,
         });
         const image = card.avatarUrl ? absoluteUrl(card.avatarUrl) : absoluteUrl("/brand/logo.PNG");
         const score = null;

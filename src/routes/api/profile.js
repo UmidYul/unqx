@@ -748,6 +748,8 @@ async function getCurrentUser(req) {
           status: true,
           pauseMessage: true,
           isPrimary: true,
+          onSale: true,
+          salePrice: true,
           createdAt: true,
           approvedAt: true,
           activatedAt: true,
@@ -939,6 +941,8 @@ async function getUserSlugsWithStats(userId) {
       status: item.status,
       statusLabel: toSlugStatusLabel(item.status),
       isPrimary: item.isPrimary,
+      onSale: Boolean(item.onSale),
+      salePrice: item.salePrice == null ? null : Number(item.salePrice),
       pauseMessage: item.pauseMessage || "",
       requestedAt: item.requestedAt,
       approvedAt: item.approvedAt,
@@ -961,6 +965,8 @@ async function getUserSlugsWithStats(userId) {
       status: freeHandle.status,
       statusLabel: toSlugStatusLabel(freeHandle.status),
       isPrimary: !slugs.some((item) => PUBLIC_HANDLE_SLUG_STATUSES.includes(String(item.status || "").trim().toLowerCase())),
+      onSale: false,
+      salePrice: null,
       pauseMessage: freeHandle.pauseMessage || "",
       requestedAt: null,
       approvedAt: user?.createdAt || null,
@@ -1709,6 +1715,54 @@ router.patch(
     }
 
     res.json({ ok: true, slug: fullSlug, pauseMessage: message || "" });
+  }),
+);
+
+router.patch(
+  "/slugs/:slug/sale",
+  asyncHandler(async (req, res) => {
+    const user = await getCurrentUser(req);
+    if (!assertUserActive(user, res)) {
+      return;
+    }
+    if (!assertPlanAllowsSlugManagement(user, res)) {
+      return;
+    }
+
+    const fullSlug = sanitizeSlug(req.params.slug);
+    const existingSlug = findOwnedSlugRecord(user, fullSlug);
+    if (!existingSlug) {
+      res.status(404).json({ error: "UNQ not found" });
+      return;
+    }
+
+    const onSaleRaw = req.body?.onSale;
+    const onSale = onSaleRaw === true || onSaleRaw === 1 || String(onSaleRaw || "").trim().toLowerCase() === "true";
+    const salePriceRaw = String(req.body?.salePrice || "").replace(/[^\d]/g, "");
+    const salePrice = Number(salePriceRaw);
+    if (onSale && (!Number.isFinite(salePrice) || salePrice <= 0)) {
+      res.status(400).json({ error: "Укажите цену продажи" });
+      return;
+    }
+    if (onSale && salePrice > 9_000_000_000_000) {
+      res.status(400).json({ error: "Цена слишком большая" });
+      return;
+    }
+
+    await prisma.slug.update({
+      where: { fullSlug },
+      data: {
+        onSale,
+        salePrice: onSale ? BigInt(Math.round(salePrice)) : null,
+      },
+    });
+
+    res.json({
+      ok: true,
+      slug: fullSlug,
+      onSale,
+      salePrice: onSale ? Math.round(salePrice) : null,
+    });
   }),
 );
 
@@ -3271,5 +3325,3 @@ module.exports = {
     saveSession,
   },
 };
-
-
