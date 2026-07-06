@@ -2,10 +2,8 @@ module.exports = {
   id: "055_add_unqx_auctions",
   async up(client) {
     await client.query(`
-      CREATE EXTENSION IF NOT EXISTS pgcrypto;
-
       CREATE TABLE IF NOT EXISTS unqx_auctions (
-        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        id SERIAL PRIMARY KEY,
         slug varchar(20) NOT NULL,
         unqx_number varchar(20) NOT NULL DEFAULT '',
         status varchar(20) NOT NULL DEFAULT 'active',
@@ -18,7 +16,7 @@ module.exports = {
         leader_username varchar(120),
         previous_leader_username varchar(120),
         winner_user_id text,
-        winning_bid_id uuid,
+        winning_bid_id integer,
         starts_at timestamptz NOT NULL DEFAULT now(),
         start_date timestamptz NOT NULL DEFAULT now(),
         ends_at timestamptz NOT NULL,
@@ -56,8 +54,8 @@ module.exports = {
       CREATE INDEX IF NOT EXISTS unqx_auctions_created_at_idx ON unqx_auctions (created_at DESC);
 
       CREATE TABLE IF NOT EXISTS unqx_auction_bids (
-        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-        auction_id uuid NOT NULL REFERENCES unqx_auctions(id) ON DELETE CASCADE,
+        id SERIAL PRIMARY KEY,
+        auction_id integer NOT NULL REFERENCES unqx_auctions(id) ON DELETE CASCADE,
         user_id text,
         bidder_name varchar(120) NOT NULL DEFAULT 'UNQX User',
         bidder_username varchar(80),

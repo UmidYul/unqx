@@ -1,7 +1,7 @@
 const { prisma } = require("../db/prisma");
 
 const DEMO_AUCTION = {
-  id: "demo",
+  id: 0,
   slug: "VIP777",
   status: "active",
   startingPrice: 1_000_000,
@@ -15,9 +15,9 @@ const DEMO_AUCTION = {
   createdAt: new Date().toISOString(),
   leader: { name: "scxr1337", username: "scxr1337" },
   bids: [
-    { id: "demo-1", amount: 1_500_000, status: "active", bidderName: "scxr1337", bidderUsername: "scxr1337", createdAt: new Date(Date.now() - 5 * 60 * 1000).toISOString() },
-    { id: "demo-2", amount: 1_400_000, status: "active", bidderName: "classic", bidderUsername: "classic", createdAt: new Date(Date.now() - 18 * 60 * 1000).toISOString() },
-    { id: "demo-3", amount: 1_250_000, status: "active", bidderName: "UNQX User", bidderUsername: "unqx", createdAt: new Date(Date.now() - 42 * 60 * 1000).toISOString() },
+    { id: 0, amount: 1_500_000, status: "active", bidderName: "scxr1337", bidderUsername: "scxr1337", createdAt: new Date(Date.now() - 5 * 60 * 1000).toISOString() },
+    { id: 0, amount: 1_400_000, status: "active", bidderName: "classic", bidderUsername: "classic", createdAt: new Date(Date.now() - 18 * 60 * 1000).toISOString() },
+    { id: 0, amount: 1_250_000, status: "active", bidderName: "UNQX User", bidderUsername: "unqx", createdAt: new Date(Date.now() - 42 * 60 * 1000).toISOString() },
   ],
 };
 
@@ -38,6 +38,11 @@ function toNonNegativeInt(value, fallback = 0) {
   return Number.isFinite(next) && next >= 0 ? next : fallback;
 }
 
+function normalizeRecordId(value) {
+  const next = Math.trunc(Number(value));
+  return Number.isSafeInteger(next) && next > 0 ? next : null;
+}
+
 function isMissingAuctionStorage(error) {
   const message = String(error?.message || "");
   return (
@@ -50,8 +55,8 @@ function isMissingAuctionStorage(error) {
 function mapBid(row) {
   if (!row) return null;
   return {
-    id: String(row.id || ""),
-    auctionId: String(row.auctionId || row.auction_id || ""),
+    id: Number(row.id || 0),
+    auctionId: Number(row.auctionId || row.auction_id || 0),
     userId: row.userId || row.user_id || null,
     amount: Number(row.amount || 0),
     status: String(row.status || "active"),
@@ -67,7 +72,7 @@ function mapAuction(row, bids = []) {
   const mappedBids = bids.map(mapBid).filter(Boolean);
   const leaderBid = mappedBids.find((bid) => bid.status === "active") || null;
   return {
-    id: String(row.id || ""),
+    id: Number(row.id || 0),
     slug: normalizeAuctionSlug(row.slug || row.unqxNumber || row.unqx_number),
     status: String(row.status || "active") === "completed" ? "finished" : String(row.status || "active"),
     startingPrice: Number(row.startingPrice || row.starting_price || row.startPrice || row.start_price || 0),
@@ -123,13 +128,15 @@ async function syncExpiredAuctions(tx = prisma) {
 }
 
 async function fetchBids(auctionId, limit = 5, includeBanned = false, tx = prisma) {
+  const id = normalizeRecordId(auctionId);
+  if (!id) return [];
   const take = Math.max(1, Math.min(100, Number(limit || 5)));
   const rows = includeBanned
     ? await tx.$queryRaw`
         SELECT id, auction_id AS "auctionId", user_id AS "userId", bidder_name AS "bidderName",
                bidder_username AS "bidderUsername", amount, status, admin_note AS "adminNote", created_at AS "createdAt"
         FROM unqx_auction_bids
-        WHERE auction_id = ${auctionId}::uuid
+        WHERE auction_id = ${id}
         ORDER BY created_at DESC
         LIMIT ${take}
       `
@@ -137,7 +144,7 @@ async function fetchBids(auctionId, limit = 5, includeBanned = false, tx = prism
         SELECT id, auction_id AS "auctionId", user_id AS "userId", bidder_name AS "bidderName",
                bidder_username AS "bidderUsername", amount, status, admin_note AS "adminNote", created_at AS "createdAt"
         FROM unqx_auction_bids
-        WHERE auction_id = ${auctionId}::uuid AND status = 'active'
+        WHERE auction_id = ${id} AND status = 'active'
         ORDER BY created_at DESC
         LIMIT ${take}
       `;
@@ -216,6 +223,12 @@ async function createAuction(input, adminSession) {
 }
 
 async function placeBid(auctionId, amount, userSession) {
+  const id = normalizeRecordId(auctionId);
+  if (!id) {
+    const error = new Error("Аукцион не найден.");
+    error.status = 404;
+    throw error;
+  }
   const userId = String(userSession?.userId || "").trim();
   if (!userId) {
     const error = new Error("Нужно войти, чтобы сделать ставку.");
@@ -236,7 +249,7 @@ async function placeBid(auctionId, amount, userSession) {
              current_bid AS "currentBid", current_price AS "currentPrice", leader_user_id AS "leaderUserId", leader_username AS "leaderUsername", winner_user_id AS "winnerUserId",
              starts_at AS "startsAt", ends_at AS "endsAt", finished_at AS "finishedAt", created_at AS "createdAt"
       FROM unqx_auctions
-      WHERE id = ${auctionId}::uuid
+      WHERE id = ${id}
       FOR UPDATE
       LIMIT 1
     `;
@@ -272,7 +285,7 @@ async function placeBid(auctionId, amount, userSession) {
 
     await tx.$queryRaw`
       INSERT INTO unqx_auction_bids (auction_id, user_id, bidder_name, bidder_username, amount)
-      VALUES (${auctionId}::uuid, ${userId}, ${bidderName}, ${bidderUsername}, ${bidAmount})
+      VALUES (${id}, ${userId}, ${bidderName}, ${bidderUsername}, ${bidAmount})
     `;
     await tx.$executeRaw`
       UPDATE unqx_auctions
@@ -282,7 +295,7 @@ async function placeBid(auctionId, amount, userSession) {
           previous_leader_username = leader_username,
           leader_username = ${bidderUsername || bidderName},
           updated_at = now()
-      WHERE id = ${auctionId}::uuid
+      WHERE id = ${id}
     `;
 
     const freshRows = await tx.$queryRaw`
@@ -290,20 +303,22 @@ async function placeBid(auctionId, amount, userSession) {
              current_bid AS "currentBid", leader_user_id AS "leaderUserId", winner_user_id AS "winnerUserId",
              current_price AS "currentPrice", starts_at AS "startsAt", ends_at AS "endsAt", finished_at AS "finishedAt", created_at AS "createdAt"
       FROM unqx_auctions
-      WHERE id = ${auctionId}::uuid
+      WHERE id = ${id}
       LIMIT 1
     `;
-    const bids = await fetchBids(auctionId, 5, false, tx);
+    const bids = await fetchBids(id, 5, false, tx);
     return mapAuction(Array.isArray(freshRows) ? freshRows[0] : null, bids);
   });
 }
 
 async function banBid(bidId, adminNote = "") {
+  const id = normalizeRecordId(bidId);
+  if (!id) return null;
   return prisma.$transaction(async (tx) => {
     const bidRows = await tx.$queryRaw`
       UPDATE unqx_auction_bids
       SET status = 'banned', admin_note = ${String(adminNote || "").slice(0, 300)}
-      WHERE id = ${bidId}::uuid
+      WHERE id = ${id}
       RETURNING auction_id AS "auctionId"
     `;
     const auctionId = Array.isArray(bidRows) ? bidRows[0]?.auctionId : null;
@@ -312,7 +327,7 @@ async function banBid(bidId, adminNote = "") {
     const leaderRows = await tx.$queryRaw`
       SELECT id, user_id AS "userId", bidder_username AS "bidderUsername", amount
       FROM unqx_auction_bids
-      WHERE auction_id = ${auctionId}::uuid AND status = 'active'
+      WHERE auction_id = ${auctionId} AND status = 'active'
       ORDER BY amount DESC, created_at ASC
       LIMIT 1
     `;
@@ -324,15 +339,15 @@ async function banBid(bidId, adminNote = "") {
           leader_user_id = ${leader ? leader.userId : null},
           leader_username = ${leader ? leader.bidderUsername : null},
           winner_user_id = CASE WHEN status IN ('finished', 'completed') THEN ${leader ? leader.userId : null} ELSE winner_user_id END,
-          winning_bid_id = CASE WHEN status IN ('finished', 'completed') THEN ${leader ? leader.id : null}::uuid ELSE winning_bid_id END,
+          winning_bid_id = CASE WHEN status IN ('finished', 'completed') THEN ${leader ? leader.id : null} ELSE winning_bid_id END,
           updated_at = now()
-      WHERE id = ${auctionId}::uuid
+      WHERE id = ${auctionId}
     `;
     const rows = await tx.$queryRaw`
       SELECT id, slug, unqx_number AS "unqxNumber", status, starting_price AS "startingPrice", start_price AS "startPrice", min_step AS "minStep",
              current_bid AS "currentBid", current_price AS "currentPrice", leader_user_id AS "leaderUserId", winner_user_id AS "winnerUserId",
              starts_at AS "startsAt", ends_at AS "endsAt", finished_at AS "finishedAt", created_at AS "createdAt"
-      FROM unqx_auctions WHERE id = ${auctionId}::uuid LIMIT 1
+      FROM unqx_auctions WHERE id = ${auctionId} LIMIT 1
     `;
     const bids = await fetchBids(auctionId, 50, true, tx);
     return mapAuction(Array.isArray(rows) ? rows[0] : null, bids);
@@ -340,19 +355,21 @@ async function banBid(bidId, adminNote = "") {
 }
 
 async function finishAuction(auctionId) {
+  const id = normalizeRecordId(auctionId);
+  if (!id) return null;
   await prisma.$executeRaw`
     UPDATE unqx_auctions
     SET ends_at = LEAST(ends_at, now()), end_date = LEAST(COALESCE(end_date, ends_at), now()), updated_at = now()
-    WHERE id = ${auctionId}::uuid
+    WHERE id = ${id}
   `;
   await syncExpiredAuctions();
   const rows = await prisma.$queryRaw`
     SELECT id, slug, unqx_number AS "unqxNumber", status, starting_price AS "startingPrice", start_price AS "startPrice", min_step AS "minStep",
            current_bid AS "currentBid", current_price AS "currentPrice", leader_user_id AS "leaderUserId", winner_user_id AS "winnerUserId",
            starts_at AS "startsAt", ends_at AS "endsAt", finished_at AS "finishedAt", created_at AS "createdAt"
-    FROM unqx_auctions WHERE id = ${auctionId}::uuid LIMIT 1
+    FROM unqx_auctions WHERE id = ${id} LIMIT 1
   `;
-  const bids = await fetchBids(auctionId, 50, true);
+  const bids = await fetchBids(id, 50, true);
   return mapAuction(Array.isArray(rows) ? rows[0] : null, bids);
 }
 
