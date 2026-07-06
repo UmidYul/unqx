@@ -3255,6 +3255,8 @@
     const id = Number(item?.id || 0);
     const imageUrl = String(item?.imageUrl || "").trim();
     const targetUrl = String(item?.targetUrl || "").trim();
+    const placement = String(item?.placement || "footer_partner");
+    const placementLabel = placement === "header_collab" ? "Шапка: коллаборация" : "Футер: партнёр";
     const positionIndex = Number(item?.positionIndex || 0);
     return `<article class="admin-ads-card p-3">
       <a href="${X(targetUrl)}" target="_blank" rel="noopener noreferrer" class="flex aspect-square max-h-40 items-center justify-center rounded-xl border-2 border-black bg-transparent p-3">
@@ -3262,6 +3264,7 @@
       </a>
       <div class="mt-3 flex items-start justify-between gap-3">
         <div class="min-w-0">
+          <p class="text-xs font-black uppercase tracking-wide text-neutral-900">${X(placementLabel)}</p>
           <p class="text-xs font-black uppercase tracking-wide text-neutral-500">Позиция ${Number.isFinite(positionIndex) ? positionIndex : 0}</p>
           <p class="mt-1 truncate text-sm font-semibold text-neutral-900">${X(targetUrl)}</p>
         </div>
@@ -4340,6 +4343,7 @@
       return;
     }
     form.reset();
+    setFormValue(form, "placement", "footer_partner");
     setFormValue(form, "positionIndex", "1");
     await loadAdvertisements();
     await showAlert("Баннер добавлен.");

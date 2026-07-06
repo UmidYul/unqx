@@ -78,11 +78,14 @@
   .map((item) => ({
   imageUrl: String(item && (item.imageUrl || item.image_url) || "").trim(),
   targetUrl: String(item && (item.targetUrl || item.target_url) || "").trim(),
+  placement: String(item && item.placement || "footer_partner").trim(),
   positionIndex: Number(item && (item.positionIndex || item.position_index) || 0),
   }))
   .filter((item) => item.imageUrl && /^https?:\/\//i.test(item.targetUrl))
   .sort((a, b) => a.positionIndex - b.positionIndex)
   : [];
+  const headerCollaborationList = advertisementList.filter((item) => item.placement === "header_collab");
+  const footerPartnerList = advertisementList.filter((item) => item.placement !== "header_collab");
   const trimMetricDecimal = (value) => String(value).replace(/\.0$/, "");
   const formatHomePostMetric = (value) => {
   const amount = Math.max(0, Number(value || 0));
@@ -194,9 +197,9 @@
                   <%= platformName %>
                 </span>
               </a>
-              <% if (advertisementList.length) { %>
-                <div class="home-ad-grid home-ad-grid--header" aria-label="Партнёры UNQX">
-                  <% advertisementList.forEach((banner)=> { %>
+              <% if (headerCollaborationList.length) { %>
+                <div class="home-ad-grid home-ad-grid--header" aria-label="Сезонные коллаборации UNQX">
+                  <% headerCollaborationList.forEach((banner)=> { %>
                     <a
                       href="<%= banner.targetUrl %>"
                       target="_blank"
@@ -1042,9 +1045,9 @@
                                 <%= platformName %>
                               </span>
                             </a>
-                            <% if (advertisementList.length) { %>
+                            <% if (footerPartnerList.length) { %>
                               <div class="home-ad-grid" aria-label="Партнёры UNQX">
-                                <% advertisementList.forEach((banner)=> { %>
+                                <% footerPartnerList.forEach((banner)=> { %>
                                   <a
                                     href="<%= banner.targetUrl %>"
                                     target="_blank"

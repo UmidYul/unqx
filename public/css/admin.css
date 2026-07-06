@@ -81,7 +81,8 @@
   font-weight: 750;
 }
 
-.admin-ads-form input {
+.admin-ads-form input,
+.admin-ads-form select {
   min-height: 38px;
   width: 100%;
   border: 2px solid #000000 !important;

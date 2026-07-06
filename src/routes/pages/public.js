@@ -1270,7 +1270,7 @@ router.get(
         throw error;
       }),
       getActiveAuction({ fallbackDemo: true }),
-      listAdvertisements({ limit: 12 }),
+      listAdvertisements({ limit: 100 }),
       userId
         ? findProfileCardByOwnerId(userId)
           .then((card) => String(card?.avatarUrl || "").trim())

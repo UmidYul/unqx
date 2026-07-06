@@ -2399,8 +2399,8 @@ router.post(
 
 router.get(
   "/advertisements",
-  asyncHandler(async (_req, res) => {
-    const items = await listAdvertisements({ limit: 100 });
+  asyncHandler(async (req, res) => {
+    const items = await listAdvertisements({ limit: 100, placement: req.query?.placement });
     res.json({ items, advertisements: items });
   }),
 );
@@ -2420,6 +2420,7 @@ router.post(
         imageUrl,
         targetUrl: req.body?.targetUrl,
         positionIndex: req.body?.positionIndex,
+        placement: req.body?.placement,
       });
       res.status(201).json({ ok: true, item });
     } catch (error) {
