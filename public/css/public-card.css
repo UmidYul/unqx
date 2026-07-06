@@ -137,12 +137,6 @@
   }
 }
 
-@media (max-width: 1024px) {
-  [data-page="public-home"] .site-header .home-ad-grid--header {
-    display: none;
-  }
-}
-
 [data-page="public-home"] .home-pricing-grid {
   gap: clamp(16px, 2vw, 24px);
 }
@@ -2486,6 +2480,22 @@ body[data-page="profile-page"] {
 
   [data-page="public-home"] .site-logo-name {
     font-size: 24px;
+  }
+
+  [data-page="public-home"] .site-header-brand-row {
+    gap: 10px;
+    max-width: calc(100% - 56px);
+  }
+
+  [data-page="public-home"] .site-header .home-ad-grid--header {
+    gap: 0;
+    flex: 0 1 auto;
+    min-width: 0;
+  }
+
+  [data-page="public-home"] .site-header .home-ad-grid--header .home-ad-logo {
+    max-width: 76px;
+    max-height: 24px;
   }
 
   [data-page="public-home"] .site-logo-mark {

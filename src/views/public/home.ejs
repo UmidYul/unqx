@@ -84,7 +84,7 @@
   .filter((item) => item.imageUrl && /^https?:\/\//i.test(item.targetUrl))
   .sort((a, b) => a.positionIndex - b.positionIndex)
   : [];
-  const headerCollaborationList = advertisementList.filter((item) => item.placement === "header_collab");
+  const headerCollaborationList = advertisementList.filter((item) => item.placement === "header_collab").slice(0, 1);
   const footerPartnerList = advertisementList.filter((item) => item.placement !== "header_collab");
   const trimMetricDecimal = (value) => String(value).replace(/\.0$/, "");
   const formatHomePostMetric = (value) => {
