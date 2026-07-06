@@ -183,8 +183,8 @@
 }
 
 [data-page="public-home"] .site-header .home-ad-grid--header .home-ad-logo {
-  max-width: 150px;
-  max-height: 34px;
+  max-width: 300px;
+  max-height: 68px;
 }
 
 [data-page="public-home"] .home-pricing-card {
@@ -2494,8 +2494,8 @@ body[data-page="profile-page"] {
   }
 
   [data-page="public-home"] .site-header .home-ad-grid--header .home-ad-logo {
-    max-width: 76px;
-    max-height: 24px;
+    max-width: 152px;
+    max-height: 48px;
   }
 
   [data-page="public-home"] .site-logo-mark {
