@@ -261,6 +261,7 @@ router.get(
       "promocodes",
       "flash-sales",
       "auctions",
+      "event-cards",
       "drops",
       "directory",
       "verification",

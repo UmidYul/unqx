@@ -1,0 +1,82 @@
+<% const pageTitle = typeof title === "string" && title ? title : "Карты | UNQX";
+const pageDescription = typeof description === "string" && description ? description : "Эксклюзивные ивентовые дизайны карт UNQX.";
+const pageBaseUrl = typeof baseUrl === "string" && baseUrl ? baseUrl : "";
+const pageCanonicalUrl = typeof canonicalUrl === "string" && canonicalUrl ? canonicalUrl : `${pageBaseUrl}/cards`;
+const pageUserSession = typeof userSession !== "undefined" ? userSession : null;
+const hasAuthSession = Boolean(pageUserSession && pageUserSession.userId);
+const authPhotoUrlFromServer = typeof authPhotoUrl === "string" && authPhotoUrl.trim() ? authPhotoUrl.trim() : "";
+const authNavPhotoUrl = authPhotoUrlFromServer || (hasAuthSession && pageUserSession.avatarUrl ? pageUserSession.avatarUrl : "/brand/profile-user.svg");
+const cardsList = Array.isArray(eventCards) ? eventCards : [];
+const formatReleaseDate = (value) => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" });
+}; %>
+<!doctype html>
+<html lang="ru">
+
+<head>
+  <%- include('../partials/head', {
+    title: pageTitle,
+    description: pageDescription,
+    image: typeof image === 'string' ? image : undefined,
+    styles: ['/css/public-card.css'],
+    canonicalUrl: pageCanonicalUrl
+  }) %>
+</head>
+
+<body class="bg-[#f5f5f7] antialiased">
+  <main data-page="event-cards-page" class="min-h-screen bg-[#f5f5f7] text-neutral-950">
+    <header class="event-cards-nav">
+      <a href="/" class="event-cards-brand">
+        <img src="/brand/logo.PNG" alt="UNQX" />
+        <span>UNQX</span>
+      </a>
+      <nav class="event-cards-links" aria-label="Навигация">
+        <a href="/directory">Резиденты</a>
+        <% if (leaderboardEnabled) { %><a href="/leaderboard">UNQ ELITE</a><% } %>
+        <a href="/posts">Посты</a>
+        <a href="/cards" aria-current="page">Карты</a>
+      </nav>
+      <a href="<%= hasAuthSession ? '/profile' : '/login' %>" class="event-cards-login">
+        <% if (hasAuthSession) { %>
+          <img src="<%= authNavPhotoUrl %>" alt="Профиль" />
+        <% } else { %>
+          Войти
+        <% } %>
+      </a>
+    </header>
+
+    <section class="event-cards-hero">
+      <p class="event-cards-eyebrow">UNQX Cards</p>
+      <h1>Карты</h1>
+      <p>Эксклюзивные ивентовые дизайны, сезонные релизы и коллаборации UNQX.</p>
+    </section>
+
+    <section class="event-cards-feed" aria-label="Публикации карт">
+      <% if (cardsList.length) { %>
+        <% cardsList.forEach((item) => { %>
+          <article class="event-card-release">
+            <div class="event-card-release-copy">
+              <% const releaseDate = formatReleaseDate(item.createdAt); %>
+              <% if (releaseDate) { %><time datetime="<%= new Date(item.createdAt).toISOString() %>"><%= releaseDate %></time><% } %>
+              <h2><%= item.title %></h2>
+              <% if (item.description) { %><p><%= item.description %></p><% } %>
+            </div>
+            <div class="event-card-images">
+              <img src="<%= item.imageFrontUrl %>" alt="<%= item.title %> — лицевая сторона" loading="lazy" />
+              <img src="<%= item.imageBackUrl %>" alt="<%= item.title %> — оборотная сторона" loading="lazy" />
+            </div>
+          </article>
+        <% }) %>
+      <% } else { %>
+        <div class="event-cards-empty">
+          <h2>Скоро здесь появятся релизы</h2>
+          <p>Администратор ещё не опубликовал ивентовые дизайны карт.</p>
+        </div>
+      <% } %>
+    </section>
+  </main>
+</body>
+
+</html>

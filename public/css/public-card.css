@@ -10,6 +10,194 @@
   stroke-linejoin: round;
 }
 
+[data-page="event-cards-page"] .event-cards-nav {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  min-height: 76px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  background: rgba(245, 245, 247, 0.82);
+  padding: 14px clamp(18px, 5vw, 64px);
+  backdrop-filter: blur(18px);
+}
+
+[data-page="event-cards-page"] .event-cards-brand,
+[data-page="event-cards-page"] .event-cards-links,
+[data-page="event-cards-page"] .event-cards-login {
+  display: inline-flex;
+  align-items: center;
+}
+
+[data-page="event-cards-page"] .event-cards-brand {
+  gap: 10px;
+  color: #111111;
+  font-size: 24px;
+  font-weight: 900;
+  letter-spacing: 0;
+  text-decoration: none;
+}
+
+[data-page="event-cards-page"] .event-cards-brand img {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  object-fit: cover;
+}
+
+[data-page="event-cards-page"] .event-cards-links {
+  gap: 28px;
+}
+
+[data-page="event-cards-page"] .event-cards-links a,
+[data-page="event-cards-page"] .event-cards-login {
+  color: #666666;
+  font-size: 15px;
+  font-weight: 650;
+  text-decoration: none;
+}
+
+[data-page="event-cards-page"] .event-cards-links a:hover,
+[data-page="event-cards-page"] .event-cards-links a[aria-current="page"] {
+  color: #111111;
+}
+
+[data-page="event-cards-page"] .event-cards-login {
+  min-height: 42px;
+  border: 1px solid #d2d2d7;
+  border-radius: 13px;
+  background: rgba(255, 255, 255, 0.7);
+  padding: 0 18px;
+  color: #111111;
+}
+
+[data-page="event-cards-page"] .event-cards-login img {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+[data-page="event-cards-page"] .event-cards-hero,
+[data-page="event-cards-page"] .event-cards-feed {
+  width: min(100% - 32px, 1160px);
+  margin: 0 auto;
+}
+
+[data-page="event-cards-page"] .event-cards-hero {
+  padding: clamp(58px, 9vw, 110px) 0 34px;
+  text-align: center;
+}
+
+[data-page="event-cards-page"] .event-cards-eyebrow {
+  margin: 0 0 12px;
+  color: #6e6e73;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+[data-page="event-cards-page"] .event-cards-hero h1 {
+  margin: 0;
+  color: #111111;
+  font-size: clamp(52px, 10vw, 96px);
+  font-weight: 900;
+  line-height: 0.95;
+  letter-spacing: 0;
+}
+
+[data-page="event-cards-page"] .event-cards-hero p:not(.event-cards-eyebrow) {
+  max-width: 680px;
+  margin: 18px auto 0;
+  color: #6e6e73;
+  font-size: clamp(18px, 2vw, 24px);
+  line-height: 1.35;
+}
+
+[data-page="event-cards-page"] .event-cards-feed {
+  display: grid;
+  gap: clamp(36px, 6vw, 70px);
+  padding: 32px 0 96px;
+}
+
+[data-page="event-cards-page"] .event-card-release {
+  display: grid;
+  gap: 24px;
+}
+
+[data-page="event-cards-page"] .event-card-release-copy {
+  max-width: 780px;
+}
+
+[data-page="event-cards-page"] .event-card-release-copy time {
+  color: #86868b;
+  font-size: 14px;
+  font-weight: 650;
+}
+
+[data-page="event-cards-page"] .event-card-release h2,
+[data-page="event-cards-page"] .event-cards-empty h2 {
+  margin: 8px 0 0;
+  color: #111111;
+  font-size: clamp(30px, 5vw, 54px);
+  font-weight: 900;
+  line-height: 1.02;
+  letter-spacing: 0;
+}
+
+[data-page="event-cards-page"] .event-card-release p,
+[data-page="event-cards-page"] .event-cards-empty p {
+  max-width: 760px;
+  margin: 12px 0 0;
+  color: #6e6e73;
+  font-size: clamp(17px, 1.8vw, 21px);
+  line-height: 1.45;
+}
+
+[data-page="event-cards-page"] .event-card-images {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(14px, 2vw, 24px);
+}
+
+[data-page="event-cards-page"] .event-card-images img {
+  width: 100%;
+  aspect-ratio: 4444 / 2793;
+  border-radius: clamp(22px, 3vw, 34px);
+  object-fit: cover;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.12);
+}
+
+[data-page="event-cards-page"] .event-cards-empty {
+  border-radius: 34px;
+  background: #ffffff;
+  padding: clamp(28px, 5vw, 54px);
+  text-align: center;
+}
+
+[data-page="event-cards-page"] .event-cards-empty p {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media (max-width: 760px) {
+  [data-page="event-cards-page"] .event-cards-nav {
+    gap: 14px;
+    min-height: 68px;
+  }
+
+  [data-page="event-cards-page"] .event-cards-links {
+    display: none;
+  }
+
+  [data-page="event-cards-page"] .event-card-images {
+    grid-template-columns: 1fr;
+  }
+}
+
 [data-page="public-home"] {
   --site-header-height: 78px;
   --site-header-bg: rgba(247, 247, 247, 0.92);

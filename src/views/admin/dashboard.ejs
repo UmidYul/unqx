@@ -17,6 +17,7 @@
     score:           { title: "UNQ Score",             desc: "Рейтинги пользователей и система начисления баллов.",                        action: null },
     "flash-sales":   { title: "Flash Sale",            desc: "Акции с ограниченным временем, скидки и настройки распродаж.",               action: null },
     auctions:        { title: "Аукционы",              desc: "Лоты UNQX, живые ставки, модерация участников и фиксация победителей.",       action: null },
+    "event-cards":   { title: "Карты",                 desc: "Публикации эксклюзивных ивентовых дизайнов от имени администратора.",         action: null },
     advertisements:  { title: "Реклама / партнёры",    desc: "Загрузка партнёрских PNG-логотипов и управление рекламными местами.",         action: null },
     drops:           { title: "Дропы",                 desc: "Эксклюзивные выпуски slug и управление доступом к ним.",                     action: null },
     leaderboard:     { title: "Лидерборд",             desc: "Рейтинг пользователей и соревновательная механика платформы.",               action: null },
@@ -1411,6 +1412,36 @@
                 <button type="submit" class="interactive-btn admin-ads-submit">Добавить</button>
               </form>
               <div id="advertisements-list" class="admin-ads-list"></div>
+            </section>
+
+            <section id="tab-event-cards" class="<%= pageActiveTab === 'event-cards' ? '' : 'hidden' %> admin-event-cards-panel">
+              <header class="admin-event-card-shell">
+                <p class="admin-event-card-kicker">UNQX Cards</p>
+                <h2>Опубликовать ивентовую карту</h2>
+                <p>Загружайте лицевую и оборотную стороны дизайна. Рекомендуемый размер: 4444×2793 px, PNG/JPG/WebP.</p>
+              </header>
+              <form id="event-card-create-form" class="admin-event-card-shell admin-event-card-form" enctype="multipart/form-data">
+                <label>
+                  Заголовок
+                  <input name="title" type="text" maxlength="220" placeholder="Porsche design" required />
+                </label>
+                <label>
+                  Описание
+                  <textarea name="description" rows="4" placeholder="Описание релиза или ивента"></textarea>
+                </label>
+                <div class="admin-event-card-upload-grid">
+                  <label>
+                    Первое фото · лицевая сторона
+                    <input name="frontImage" type="file" accept="image/png,image/jpeg,image/webp" required />
+                  </label>
+                  <label>
+                    Второе фото · оборотная сторона
+                    <input name="backImage" type="file" accept="image/png,image/jpeg,image/webp" required />
+                  </label>
+                </div>
+                <button type="submit" class="interactive-btn admin-event-card-submit">Опубликовать карту</button>
+              </form>
+              <div id="event-cards-admin-list" class="admin-event-cards-list"></div>
             </section>
 
             <section id="tab-drops" class="<%= pageActiveTab === 'drops' ? '' : 'hidden' %> space-y-4">

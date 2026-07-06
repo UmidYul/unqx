@@ -3288,6 +3288,45 @@
       ? items.map(renderAdvertisementCard).join("")
       : '<div class="admin-ads-card p-3 text-sm font-semibold text-neutral-600">Баннеров пока нет.</div>';
   }
+
+  function renderEventCardRelease(item) {
+    const id = String(item?.id || "");
+    const title = String(item?.title || "Untitled");
+    const description = String(item?.description || "");
+    const front = String(item?.imageFrontUrl || "").trim();
+    const back = String(item?.imageBackUrl || "").trim();
+    const createdAt = item?.createdAt ? D(item.createdAt) : "";
+    return `<article class="admin-event-card-shell">
+      <div class="flex flex-wrap items-start justify-between gap-3">
+        <div class="min-w-0">
+          <p class="admin-event-card-kicker">${X(createdAt || "Опубликовано")}</p>
+          <h2>${X(title)}</h2>
+          ${description ? `<p>${X(description)}</p>` : ""}
+        </div>
+        <button type="button" data-act="event-card-delete" data-id="${X(id)}" class="interactive-btn min-h-10 rounded-xl border-2 border-black bg-white px-3 py-1.5 text-xs font-black text-red-700 shadow-[2px_2px_0_#000]">Удалить</button>
+      </div>
+      <div class="admin-event-card-preview-grid">
+        <img src="${X(front)}" alt="${X(title)} лицевая сторона" loading="lazy" />
+        <img src="${X(back)}" alt="${X(title)} оборотная сторона" loading="lazy" />
+      </div>
+    </article>`;
+  }
+
+  async function loadEventCards() {
+    const list = document.getElementById("event-cards-admin-list");
+    if (!(list instanceof HTMLElement)) return;
+    list.innerHTML = '<div class="admin-event-card-shell text-sm font-semibold text-neutral-600">Загружаем карты...</div>';
+    const r = await fetch("/api/admin/event-cards", { headers: H() });
+    if (!r.ok) {
+      list.innerHTML = `<div class="admin-event-card-shell text-sm text-red-700">${X(await E(r))}</div>`;
+      return;
+    }
+    const payload = await r.json().catch(() => ({}));
+    const items = Array.isArray(payload.items) ? payload.items : [];
+    list.innerHTML = items.length
+      ? items.map(renderEventCardRelease).join("")
+      : '<div class="admin-event-card-shell text-sm font-semibold text-neutral-600">Публикаций карт пока нет.</div>';
+  }
   const am = document.getElementById("activation-modal");
   const af = document.getElementById("activation-form");
   const at = af instanceof HTMLFormElement ? af.elements.namedItem("tariff") : null;
@@ -4304,6 +4343,22 @@
       closeAllRowMenus();
       return;
     }
+    if (a === "event-card-delete") {
+      const id = n.getAttribute("data-id");
+      if (!id) return;
+      if (!await showConfirm("Удалить публикацию карты?")) return;
+      const r = await fetch(`/api/admin/event-cards/${encodeURIComponent(id)}`, {
+        method: "DELETE",
+        headers: H(),
+      });
+      if (!r.ok) {
+        await showAlert(await E(r));
+      } else {
+        await loadEventCards();
+      }
+      closeAllRowMenus();
+      return;
+    }
   });
 
   document.getElementById("orders-filters")?.addEventListener("submit", (e) => { e.preventDefault(); const f = e.currentTarget; if (f instanceof HTMLFormElement) setFormValue(f, "page", "1"); void loadOrders(); });
@@ -4347,6 +4402,38 @@
     setFormValue(form, "positionIndex", "1");
     await loadAdvertisements();
     await showAlert("Баннер добавлен.");
+  });
+  document.getElementById("event-card-create-form")?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const form = e.currentTarget;
+    if (!(form instanceof HTMLFormElement)) return;
+    const title = getFormValue(form, "title", "").trim();
+    const frontInput = form.elements.namedItem("frontImage");
+    const backInput = form.elements.namedItem("backImage");
+    const allowedTypes = new Set(["image/png", "image/jpeg", "image/webp"]);
+    const frontFile = frontInput instanceof HTMLInputElement && frontInput.files ? frontInput.files[0] : null;
+    const backFile = backInput instanceof HTMLInputElement && backInput.files ? backInput.files[0] : null;
+    if (!title) {
+      await showAlert("Укажите заголовок карты.");
+      return;
+    }
+    if (!frontFile || !backFile || !allowedTypes.has(frontFile.type) || !allowedTypes.has(backFile.type)) {
+      await showAlert("Загрузите две картинки PNG, JPG или WebP.");
+      return;
+    }
+    const data = new FormData(form);
+    const r = await fetch("/api/admin/event-cards", {
+      method: "POST",
+      headers: H(),
+      body: data,
+    });
+    if (!r.ok) {
+      await showAlert(await E(r));
+      return;
+    }
+    form.reset();
+    await loadEventCards();
+    await showAlert("Карта опубликована.");
   });
   document.getElementById("pricing-settings-form")?.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -5033,6 +5120,10 @@
   if (tab === "advertisements") {
     dbg("load", "advertisements");
     void loadAdvertisements();
+  }
+  if (tab === "event-cards") {
+    dbg("load", "event-cards");
+    void loadEventCards();
   }
 
   if (tab === "testimonials") {

@@ -104,6 +104,13 @@ const {
   listAdvertisements,
   saveAdvertisementPng,
 } = require("../../services/advertisements");
+const {
+  createEventCardRelease,
+  deleteEventCardImage,
+  deleteEventCardRelease,
+  listEventCardReleases,
+  saveEventCardImage,
+} = require("../../services/event-card-releases");
 
 const router = express.Router();
 const ONLINE_WINDOW_SECONDS = 90;
@@ -111,6 +118,10 @@ const SYNTHETIC_FINGERPRINT_PREFIX = "synthetic:";
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 },
+});
+const eventCardUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 20 * 1024 * 1024 },
 });
 const ALLOWED_MIME = new Set(["image/jpeg", "image/png", "image/webp"]);
 async function safeDeleteAvatarByPublicPath(publicPath) {
@@ -2441,6 +2452,65 @@ router.delete(
     const item = await deleteAdvertisement(req.params.id);
     if (!item) {
       res.status(404).json({ error: "Баннер не найден." });
+      return;
+    }
+    res.json({ ok: true, item });
+  }),
+);
+
+router.get(
+  "/event-cards",
+  asyncHandler(async (_req, res) => {
+    const items = await listEventCardReleases({ limit: 100 });
+    res.json({ items, eventCards: items });
+  }),
+);
+
+router.post(
+  "/event-cards",
+  eventCardUpload.fields([
+    { name: "frontImage", maxCount: 1 },
+    { name: "backImage", maxCount: 1 },
+  ]),
+  asyncHandler(async (req, res) => {
+    const frontFile = Array.isArray(req.files?.frontImage) ? req.files.frontImage[0] : null;
+    const backFile = Array.isArray(req.files?.backImage) ? req.files.backImage[0] : null;
+    if (!frontFile || !backFile || !ALLOWED_MIME.has(frontFile.mimetype) || !ALLOWED_MIME.has(backFile.mimetype)) {
+      res.status(400).json({ error: "Загрузите две картинки PNG, JPG или WebP.", code: "EVENT_CARD_IMAGES_REQUIRED" });
+      return;
+    }
+
+    let imageFrontUrl = "";
+    let imageBackUrl = "";
+    try {
+      imageFrontUrl = await saveEventCardImage(frontFile.buffer, "front");
+      imageBackUrl = await saveEventCardImage(backFile.buffer, "back");
+      const item = await createEventCardRelease({
+        title: req.body?.title,
+        description: req.body?.description,
+        imageFrontUrl,
+        imageBackUrl,
+      });
+      res.status(201).json({ ok: true, item });
+    } catch (error) {
+      await Promise.all([
+        imageFrontUrl ? deleteEventCardImage(imageFrontUrl) : Promise.resolve(),
+        imageBackUrl ? deleteEventCardImage(imageBackUrl) : Promise.resolve(),
+      ]);
+      const status = Number(error?.status || 500);
+      res.status(status >= 400 && status < 600 ? status : 500).json({
+        error: error?.message || "Не удалось опубликовать карту.",
+      });
+    }
+  }),
+);
+
+router.delete(
+  "/event-cards/:id",
+  asyncHandler(async (req, res) => {
+    const item = await deleteEventCardRelease(req.params.id);
+    if (!item) {
+      res.status(404).json({ error: "Публикация не найдена." });
       return;
     }
     res.json({ ok: true, item });

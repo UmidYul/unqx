@@ -26,6 +26,7 @@ const { getActiveAuction } = require("../../services/auctions");
 const { getPricingSettings } = require("../../services/pricing-settings");
 const { getManySettings } = require("../../services/platform-settings");
 const { listAdvertisements } = require("../../services/advertisements");
+const { listEventCardReleases } = require("../../services/event-card-releases");
 const { recordView } = require("../../services/tap-tracker");
 const { isPublicProfileVisible } = require("../../services/subscription");
 const {
@@ -1471,6 +1472,36 @@ router.get(
       leaderboardEnabled: Boolean(leaderboardSettings.enabled),
       posts,
       pagination: postsPayload.pagination,
+      authPhotoUrl,
+      userSession,
+      adminSession: getAdminSession(req),
+    });
+  }),
+);
+
+router.get(
+  "/cards",
+  asyncHandler(async (req, res) => {
+    const userSession = getUserSession(req);
+    const userId = String(userSession?.userId || "").trim();
+    const [leaderboardSettings, eventCards, authPhotoUrl] = await Promise.all([
+      getFeatureSetting("leaderboard"),
+      listEventCardReleases({ limit: 100 }),
+      userId
+        ? findProfileCardByOwnerId(userId)
+          .then((card) => String(card?.avatarUrl || "").trim())
+          .catch(() => "")
+        : Promise.resolve(""),
+    ]);
+
+    res.render("public/event-cards", {
+      title: "Карты | UNQX",
+      description: "Эксклюзивные ивентовые дизайны карт UNQX.",
+      image: defaultSocialImage,
+      baseUrl: absoluteUrl(""),
+      canonicalUrl: absoluteUrl("/cards"),
+      leaderboardEnabled: Boolean(leaderboardSettings.enabled),
+      eventCards,
       authPhotoUrl,
       userSession,
       adminSession: getAdminSession(req),
