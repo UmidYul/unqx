@@ -2735,11 +2735,13 @@
     const slugSaleListings = card.slugSaleListings && typeof card.slugSaleListings === "object"
       ? card.slugSaleListings
       : {};
-    const activeSaleListing = slugSaleListings[String(card.slug || "").trim().toUpperCase()];
+    const activeSlugKey = String(card.slug || "").trim().toUpperCase();
+    const activeSaleListing = slugSaleListings[activeSlugKey];
     const activeSalePrice = Number(activeSaleListing?.salePrice || 0);
-    const slugSaleBubbleHtml = Number.isFinite(activeSalePrice) && activeSalePrice > 0
-      ? `<div class="unq-ref-sale-bubble">Владелец выставил на продажу за ${esc(activeSalePrice.toLocaleString("ru-RU"))} сум</div>`
+    const slugSaleBubbleText = Number.isFinite(activeSalePrice) && activeSalePrice > 0
+      ? `Владелец выставил на продажу за ${activeSalePrice.toLocaleString("ru-RU")} сум`
       : "";
+    const slugSaleBubbleHtml = `<div class="unq-ref-sale-bubble" data-slug-sale-bubble${slugSaleBubbleText ? "" : " hidden"}>${esc(slugSaleBubbleText)}</div>`;
     const score = options.score && typeof options.score === "object" ? options.score : null;
     const topBadge = options.topBadge && typeof options.topBadge === "object" ? options.topBadge : null;
     const officialUnqBadge = options.officialUnqBadge && typeof options.officialUnqBadge === "object" ? options.officialUnqBadge : null;
@@ -3121,8 +3123,11 @@
                 <div class="unq-ref-slugs">
               ${slugItems
         .map((value) => {
-          const active = value === card.slug;
-          return `<a href="/${encodeURIComponent(value)}" class="unq-ref-slug-chip${active ? " is-active" : ""}"># ${esc(value)}</a>`;
+          const normalizedValue = String(value || "").trim().toUpperCase();
+          const active = normalizedValue === activeSlugKey;
+          const saleListing = slugSaleListings[normalizedValue];
+          const salePrice = Number(saleListing?.salePrice || 0);
+          return `<a href="/${encodeURIComponent(normalizedValue)}" class="unq-ref-slug-chip${active ? " is-active" : ""}" data-profile-slug-chip data-slug="${esc(normalizedValue)}" data-sale-price="${Number.isFinite(salePrice) && salePrice > 0 ? esc(String(salePrice)) : ""}"># ${esc(normalizedValue)}</a>`;
         })
         .join("")}
             </div>
@@ -3245,6 +3250,51 @@
     container.innerHTML = renderCardView(input, options);
     return container.querySelector("[data-card-view]");
   }
+
+  function updateSaleBubbleForSlug(root, slug, salePrice) {
+    if (!(root instanceof HTMLElement)) return;
+    const normalizedSlug = String(slug || "").trim().toUpperCase();
+    const price = Number(salePrice || 0);
+    const bubble = root.querySelector("[data-slug-sale-bubble]");
+    if (bubble instanceof HTMLElement) {
+      if (normalizedSlug && Number.isFinite(price) && price > 0) {
+        bubble.textContent = `Владелец выставил на продажу за ${price.toLocaleString("ru-RU")} сум`;
+        bubble.hidden = false;
+      } else {
+        bubble.textContent = "";
+        bubble.hidden = true;
+      }
+    }
+    if (normalizedSlug) {
+      root.setAttribute("data-slug", normalizedSlug);
+      const nextShareUrl = `${window.location.origin}/${encodeURIComponent(normalizedSlug)}`;
+      root.setAttribute("data-share-url", nextShareUrl);
+    }
+  }
+
+  document.addEventListener("click", (event) => {
+    const target = event.target instanceof Element ? event.target : null;
+    const chip = target?.closest("[data-profile-slug-chip]");
+    if (!(chip instanceof HTMLElement)) return;
+    const root = chip.closest("[data-card-view]");
+    if (!(root instanceof HTMLElement)) return;
+
+    event.preventDefault();
+    const slug = String(chip.getAttribute("data-slug") || "").trim().toUpperCase();
+    const salePrice = Number(chip.getAttribute("data-sale-price") || 0);
+    root.querySelectorAll("[data-profile-slug-chip]").forEach((node) => {
+      node.classList.toggle("is-active", node === chip);
+    });
+    updateSaleBubbleForSlug(root, slug, salePrice);
+
+    const href = chip.getAttribute("href");
+    if (href && typeof window !== "undefined" && window.history?.pushState) {
+      const nextUrl = new URL(href, window.location.origin);
+      if (nextUrl.origin === window.location.origin && nextUrl.pathname !== window.location.pathname) {
+        window.history.pushState({ slug }, "", nextUrl.pathname);
+      }
+    }
+  });
 
   window.CardView = {
     renderCardView,
