@@ -119,6 +119,9 @@
   let searchTimer = null;
   let lastQuery = "";
   let lastItems = [];
+  let profileAudio = null;
+  let profileAudioUrl = "";
+  let profileMusicButton = null;
   const liveRegion = document.createElement("div");
   liveRegion.setAttribute("aria-live", "polite");
   liveRegion.style.position = "absolute";
@@ -479,8 +482,75 @@
     syncFollowDialogPortal(root);
     syncFollowDialogBodyLock();
     syncAvatarFallback(root);
+    initProfileMusic(root);
     scrollToWallHashTarget();
     return root;
+  }
+
+  function setProfileMusicPlaying(playing) {
+    if (!(profileMusicButton instanceof HTMLButtonElement)) return;
+    profileMusicButton.classList.toggle("is-playing", Boolean(playing));
+    profileMusicButton.setAttribute("aria-label", playing ? "Поставить музыку на паузу" : "Включить музыку");
+    const label = profileMusicButton.querySelector("[data-profile-music-label]");
+    if (label instanceof HTMLElement) {
+      label.textContent = playing ? "Поставить музыку на паузу" : "Включить музыку";
+    }
+  }
+
+  async function playProfileMusic() {
+    if (!profileAudio) return;
+    try {
+      await profileAudio.play();
+      setProfileMusicPlaying(true);
+    } catch {
+      setProfileMusicPlaying(false);
+    }
+  }
+
+  function toggleProfileMusic() {
+    if (!profileAudio) return;
+    if (profileAudio.paused) {
+      void playProfileMusic();
+      return;
+    }
+    profileAudio.pause();
+    setProfileMusicPlaying(false);
+  }
+
+  function initProfileMusic(root) {
+    profileMusicButton = root instanceof HTMLElement ? root.querySelector("[data-profile-music-player]") : null;
+    if (!(profileMusicButton instanceof HTMLButtonElement)) {
+      if (profileAudio) profileAudio.pause();
+      profileAudio = null;
+      profileAudioUrl = "";
+      return;
+    }
+    const audioUrl = String(profileMusicButton.getAttribute("data-audio-url") || "").trim();
+    if (!audioUrl) return;
+    if (!profileAudio || profileAudioUrl !== audioUrl) {
+      if (profileAudio) profileAudio.pause();
+      profileAudio = new Audio(audioUrl);
+      profileAudio.loop = true;
+      profileAudio.preload = "none";
+      profileAudioUrl = audioUrl;
+      profileAudio.addEventListener("pause", () => setProfileMusicPlaying(false));
+      profileAudio.addEventListener("play", () => setProfileMusicPlaying(true));
+      profileAudio.addEventListener("ended", () => setProfileMusicPlaying(false));
+    }
+    profileMusicButton.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      toggleProfileMusic();
+    });
+    root.addEventListener("click", (event) => {
+      const target = event.target;
+      if (target instanceof Element && target.closest("a, button, input, textarea, select, [role='button']")) {
+        return;
+      }
+      if (profileAudio && profileAudio.paused) {
+        void playProfileMusic();
+      }
+    }, { once: true });
   }
 
   function scrollToWallHashTarget() {

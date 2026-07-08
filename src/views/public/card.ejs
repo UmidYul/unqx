@@ -168,6 +168,13 @@
     extraPhone: pageCardRaw.extraPhone || "",
     viewsCount: Number(pageCardRaw.viewsCount) || 0,
     showBranding: typeof pageCardRaw.showBranding === "boolean" ? pageCardRaw.showBranding : true,
+    selectedTrack: (() => {
+    const track = pageCardRaw.selectedTrack && typeof pageCardRaw.selectedTrack === "object" ? pageCardRaw.selectedTrack : null;
+    if (!track) return null;
+    const title = String(track.title || "").trim();
+    const audioUrl = String(track.audioUrl || track.audio_url || "").trim();
+    return title && audioUrl ? { title, audioUrl } : null;
+    })(),
     pets: Array.isArray(pageCardRaw.pets)
     ? pageCardRaw.pets
     .map((pet) => {

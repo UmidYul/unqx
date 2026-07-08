@@ -18,6 +18,7 @@
     "flash-sales":   { title: "Flash Sale",            desc: "Акции с ограниченным временем, скидки и настройки распродаж.",               action: null },
     auctions:        { title: "Аукционы",              desc: "Лоты UNQX, живые ставки, модерация участников и фиксация победителей.",       action: null },
     "event-cards":   { title: "Карты",                 desc: "Публикации эксклюзивных ивентовых дизайнов от имени администратора.",         action: null },
+    music:           { title: "Управление музыкой",    desc: "Библиотека MP3-треков, которые пользователи Premium могут выбрать для профиля.", action: null },
     advertisements:  { title: "Реклама / партнёры",    desc: "Загрузка партнёрских PNG-логотипов и управление рекламными местами.",         action: null },
     drops:           { title: "Дропы",                 desc: "Эксклюзивные выпуски slug и управление доступом к ним.",                     action: null },
     leaderboard:     { title: "Лидерборд",             desc: "Рейтинг пользователей и соревновательная механика платформы.",               action: null },
@@ -1442,6 +1443,26 @@
                 <button type="submit" class="interactive-btn admin-event-card-submit">Опубликовать карту</button>
               </form>
               <div id="event-cards-admin-list" class="admin-event-cards-list"></div>
+            </section>
+
+            <section id="tab-music" class="<%= pageActiveTab === 'music' ? '' : 'hidden' %> admin-music-panel">
+              <header class="admin-music-shell">
+                <p class="admin-music-kicker">Profile Music</p>
+                <h2>Управление музыкой</h2>
+                <p>Загружайте MP3-треки для премиум-профилей. Пользователи смогут выбрать один трек в настройках карточки.</p>
+              </header>
+              <form id="music-track-form" class="admin-music-shell admin-music-form" enctype="multipart/form-data">
+                <label>
+                  Название и исполнитель
+                  <input name="title" type="text" maxlength="255" placeholder="Artist — Track name" required />
+                </label>
+                <label>
+                  MP3-файл
+                  <input name="file" type="file" accept="audio/mpeg,.mp3" required />
+                </label>
+                <button type="submit" class="interactive-btn admin-music-submit">Добавить трек</button>
+              </form>
+              <div id="music-tracks-list" class="admin-music-list"></div>
             </section>
 
             <section id="tab-drops" class="<%= pageActiveTab === 'drops' ? '' : 'hidden' %> space-y-4">

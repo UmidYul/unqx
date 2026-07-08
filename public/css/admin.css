@@ -237,6 +237,99 @@
   }
 }
 
+.admin-music-panel {
+  display: grid;
+  gap: 16px;
+}
+
+.admin-music-shell {
+  border: 2px solid #000000 !important;
+  border-radius: 22px;
+  background: #ffffff;
+  padding: 18px;
+  box-shadow: 3px 3px 0 #000000;
+}
+
+.admin-music-kicker {
+  margin: 0 0 6px;
+  color: #6b7280;
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.admin-music-shell h2 {
+  margin: 0;
+  color: #111827;
+  font-size: 22px;
+  font-weight: 950;
+  line-height: 1.15;
+}
+
+.admin-music-shell p {
+  margin: 8px 0 0;
+  color: #525252;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.admin-music-form,
+.admin-music-list {
+  display: grid;
+  gap: 14px;
+}
+
+.admin-music-form label {
+  display: grid;
+  gap: 6px;
+  color: #1f2937;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.admin-music-form input {
+  width: 100%;
+  border: 2px solid #000000 !important;
+  border-radius: 14px;
+  background: #ffffff;
+  padding: 11px 14px;
+  color: #111827;
+  font-size: 14px;
+}
+
+.admin-music-form input[type="file"] {
+  padding: 10px;
+  font-size: 13px;
+}
+
+.admin-music-submit {
+  min-height: 44px;
+  border: 2px solid #000000 !important;
+  border-radius: 14px;
+  background: #00e5ff;
+  padding: 10px 16px;
+  color: #000000;
+  font-size: 14px;
+  font-weight: 950;
+  box-shadow: 3px 3px 0 #000000;
+}
+
+.admin-music-row {
+  display: grid;
+  gap: 12px;
+}
+
+.admin-music-row audio {
+  width: 100%;
+}
+
+@media (min-width: 760px) {
+  .admin-music-row {
+    grid-template-columns: minmax(0, 1fr) minmax(220px, 320px) auto;
+    align-items: center;
+  }
+}
+
 .admin-shell {
   min-height: 100vh;
   background: #f5f5f5;

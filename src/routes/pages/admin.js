@@ -262,6 +262,7 @@ router.get(
       "flash-sales",
       "auctions",
       "event-cards",
+      "music",
       "drops",
       "directory",
       "verification",

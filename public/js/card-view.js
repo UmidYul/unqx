@@ -2334,6 +2334,13 @@
       email: String(card.email || "").trim(),
       extraPhone: String(card.extraPhone || "").trim(),
       showBranding: card.showBranding !== false,
+      selectedTrack: (() => {
+        const track = card.selectedTrack && typeof card.selectedTrack === "object" ? card.selectedTrack : null;
+        if (!track) return null;
+        const title = String(track.title || "").trim();
+        const audioUrl = String(track.audioUrl || track.audio_url || "").trim();
+        return title && audioUrl ? { title, audioUrl } : null;
+      })(),
       viewsLabel: String(card.viewsLabel || "").trim(),
       pets,
     };
@@ -3127,9 +3134,13 @@
 
     const overlayHtml = renderThemeOverlay(theme.key);
     const visiblePetCount = getVisibleCardPets(card).length;
+    const musicPlayerHtml = card.selectedTrack
+      ? `<button type="button" class="unq-profile-music-player" data-profile-music-player data-audio-url="${esc(card.selectedTrack.audioUrl)}" data-track-title="${esc(card.selectedTrack.title)}" aria-label="Включить музыку: ${esc(card.selectedTrack.title)}" title="${esc(card.selectedTrack.title)}"><span class="unq-profile-music-icon" aria-hidden="true">♪</span><span class="sr-only" data-profile-music-label>Включить музыку</span></button>`
+      : "";
 
     return `
       <div data-card-view data-card-theme="${esc(theme.key)}" data-emoji-background-pack="${esc(card.emojiBackgroundPack)}" data-slug="${esc(card.slug)}" data-share-url="${esc(shareUrl)}"${rootStyle}>
+        ${musicPlayerHtml}
         ${showPausedBanner ? `<div class="mb-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">${esc(pausedText)}</div>` : ""}
         <div class="unq-ref-top">
           <div class="unq-ref-slug-wrap">

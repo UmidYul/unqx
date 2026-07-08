@@ -27,6 +27,7 @@ const { getPricingSettings } = require("../../services/pricing-settings");
 const { getManySettings } = require("../../services/platform-settings");
 const { listAdvertisements } = require("../../services/advertisements");
 const { listEventCardReleases } = require("../../services/event-card-releases");
+const { findTrackById, normalizeTrackId } = require("../../services/profile-music");
 const { recordView } = require("../../services/tap-tracker");
 const { isPublicProfileVisible } = require("../../services/subscription");
 const {
@@ -555,8 +556,7 @@ async function findSlugByFullSlugWithLegacyFallback(fullSlug) {
 
 async function findProfileCardByOwnerId(ownerId) {
   if (!ownerId) return null;
-  const rows = await prisma.$queryRaw`
-    SELECT
+  const selectBase = `
       id,
       owner_id AS "ownerId",
       name,
@@ -577,10 +577,27 @@ async function findProfileCardByOwnerId(ownerId) {
       show_branding AS "showBranding",
       created_at AS "createdAt",
       updated_at AS "updatedAt"
-    FROM profile_cards
-    WHERE owner_id = ${ownerId}
-    LIMIT 1
   `;
+  let rows = [];
+  try {
+    rows = await prisma.$queryRawUnsafe(`
+      SELECT ${selectBase}, selected_track_id AS "selectedTrackId"
+      FROM profile_cards
+      WHERE owner_id = $1
+      LIMIT 1
+    `, ownerId);
+  } catch (error) {
+    const message = String(error?.message || "");
+    if (!/selected_track_id|column .* does not exist/i.test(message)) {
+      throw error;
+    }
+    rows = await prisma.$queryRawUnsafe(`
+      SELECT ${selectBase}
+      FROM profile_cards
+      WHERE owner_id = $1
+      LIMIT 1
+    `, ownerId);
+  }
   return Array.isArray(rows) ? rows[0] || null : null;
 }
 
@@ -873,6 +890,8 @@ function buildImmediatePublicProfileCard(user, profileCard) {
     customColor: String(safeProfileCard.customColor || "").trim(),
     avatarFrame: String(safeProfileCard.avatarFrame || "none").trim().toLowerCase() || "none",
     emojiBackgroundPack: String(safeProfileCard.emojiBackgroundPack || "none").trim().toLowerCase() || "none",
+    selectedTrackId: normalizeTrackId(safeProfileCard.selectedTrackId || safeProfileCard.selected_track_id),
+    selectedTrack: safeProfileCard.selectedTrack || null,
     showBranding: typeof safeProfileCard.showBranding === "boolean" ? safeProfileCard.showBranding : true,
   };
 }
@@ -930,6 +949,8 @@ function buildPublicCardFromProfile({ slug, user, profileCard, verifiedIdentity,
       const nextPack = String(effectiveProfileCard.emojiBackgroundPack || "").trim().toLowerCase();
       return PROFILE_EMOJI_BACKGROUNDS.has(nextPack) ? nextPack : "none";
     })(),
+    selectedTrackId: normalizeTrackId(effectiveProfileCard.selectedTrackId),
+    selectedTrack: effectiveProfileCard.selectedTrack || null,
     phone: "",
     tags: mapProfileTags(effectiveProfileCard.tags),
     buttons: mapProfileButtons(effectiveProfileCard.buttons),
@@ -2700,7 +2721,7 @@ router.get(
 
         const viewerSession = getUserSession(req);
         const viewerUserId = String(viewerSession?.userId || "").trim();
-        const [views, ownerSlugs, verifiedIdentity, wall, viewerProfileCard, followSummary] = await Promise.all([
+        const [views, ownerSlugs, verifiedIdentity, wall, viewerProfileCard, followSummary, selectedTrack] = await Promise.all([
           prisma.analyticsView
             ? prisma.analyticsView
               .findMany({
@@ -2740,6 +2761,9 @@ router.get(
             viewerUserId,
             scope: "public",
           }),
+          effectiveProfileCard.selectedTrackId
+            ? findTrackById(effectiveProfileCard.selectedTrackId)
+            : Promise.resolve(null),
         ]);
 
         const card = buildPublicCardFromProfile({
@@ -2748,6 +2772,9 @@ router.get(
           profileCard: {
             ...effectiveProfileCard,
             slugPrice: typeof slugRow.price === "number" ? slugRow.price : null,
+            selectedTrack: selectedTrack
+              ? { title: selectedTrack.title, audioUrl: selectedTrack.audioUrl }
+              : null,
           },
           pets: ownedPets,
           verifiedIdentity,

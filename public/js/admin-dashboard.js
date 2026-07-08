@@ -3327,6 +3327,37 @@
       ? items.map(renderEventCardRelease).join("")
       : '<div class="admin-event-card-shell text-sm font-semibold text-neutral-600">Публикаций карт пока нет.</div>';
   }
+
+  function renderMusicTrack(item) {
+    const id = Number(item?.id || 0);
+    const title = String(item?.title || "Без названия");
+    const audioUrl = String(item?.audioUrl || "").trim();
+    const createdAt = item?.createdAt ? D(item.createdAt) : "";
+    return `<article class="admin-music-shell admin-music-row">
+      <div class="min-w-0">
+        <p class="admin-music-kicker">${X(createdAt || "Трек")}</p>
+        <h2>${X(title)}</h2>
+      </div>
+      <audio controls preload="none" src="${X(audioUrl)}"></audio>
+      <button type="button" data-act="music-track-delete" data-id="${id}" class="interactive-btn min-h-10 rounded-xl border-2 border-black bg-white px-3 py-1.5 text-xs font-black text-red-700 shadow-[2px_2px_0_#000]">Удалить</button>
+    </article>`;
+  }
+
+  async function loadMusicTracks() {
+    const list = document.getElementById("music-tracks-list");
+    if (!(list instanceof HTMLElement)) return;
+    list.innerHTML = '<div class="admin-music-shell text-sm font-semibold text-neutral-600">Загружаем треки...</div>';
+    const r = await fetch("/api/admin/tracks", { headers: H() });
+    if (!r.ok) {
+      list.innerHTML = `<div class="admin-music-shell text-sm text-red-700">${X(await E(r))}</div>`;
+      return;
+    }
+    const payload = await r.json().catch(() => ({}));
+    const items = Array.isArray(payload.items) ? payload.items : [];
+    list.innerHTML = items.length
+      ? items.map(renderMusicTrack).join("")
+      : '<div class="admin-music-shell text-sm font-semibold text-neutral-600">Треков пока нет.</div>';
+  }
   const am = document.getElementById("activation-modal");
   const af = document.getElementById("activation-form");
   const at = af instanceof HTMLFormElement ? af.elements.namedItem("tariff") : null;
@@ -4359,6 +4390,22 @@
       closeAllRowMenus();
       return;
     }
+    if (a === "music-track-delete") {
+      const id = n.getAttribute("data-id");
+      if (!id) return;
+      if (!await showConfirm("Удалить этот трек из библиотеки?")) return;
+      const r = await fetch(`/api/admin/tracks/${encodeURIComponent(id)}`, {
+        method: "DELETE",
+        headers: H(),
+      });
+      if (!r.ok) {
+        await showAlert(await E(r));
+      } else {
+        await loadMusicTracks();
+      }
+      closeAllRowMenus();
+      return;
+    }
   });
 
   document.getElementById("orders-filters")?.addEventListener("submit", (e) => { e.preventDefault(); const f = e.currentTarget; if (f instanceof HTMLFormElement) setFormValue(f, "page", "1"); void loadOrders(); });
@@ -4434,6 +4481,37 @@
     form.reset();
     await loadEventCards();
     await showAlert("Карта опубликована.");
+  });
+  document.getElementById("music-track-form")?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const form = e.currentTarget;
+    if (!(form instanceof HTMLFormElement)) return;
+    const title = getFormValue(form, "title", "").trim();
+    const fileInput = form.elements.namedItem("file");
+    const file = fileInput instanceof HTMLInputElement && fileInput.files ? fileInput.files[0] : null;
+    if (!title) {
+      await showAlert("Укажите название трека.");
+      return;
+    }
+    const fileName = String(file?.name || "").toLowerCase();
+    const fileType = String(file?.type || "").toLowerCase();
+    if (!file || (!fileName.endsWith(".mp3") && fileType !== "audio/mpeg" && fileType !== "audio/mp3")) {
+      await showAlert("Загрузите MP3-файл.");
+      return;
+    }
+    const data = new FormData(form);
+    const r = await fetch("/api/admin/tracks", {
+      method: "POST",
+      headers: H(),
+      body: data,
+    });
+    if (!r.ok) {
+      await showAlert(await E(r));
+      return;
+    }
+    form.reset();
+    await loadMusicTracks();
+    await showAlert("Трек добавлен.");
   });
   document.getElementById("pricing-settings-form")?.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -5124,6 +5202,10 @@
   if (tab === "event-cards") {
     dbg("load", "event-cards");
     void loadEventCards();
+  }
+  if (tab === "music") {
+    dbg("load", "music");
+    void loadMusicTracks();
   }
 
   if (tab === "testimonials") {

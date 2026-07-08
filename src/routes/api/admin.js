@@ -111,6 +111,13 @@ const {
   listEventCardReleases,
   saveEventCardImage,
 } = require("../../services/event-card-releases");
+const {
+  createTrack,
+  deleteTrack,
+  deleteTrackFile,
+  listTracks,
+  saveTrackMp3,
+} = require("../../services/profile-music");
 
 const router = express.Router();
 const ONLINE_WINDOW_SECONDS = 90;
@@ -122,6 +129,10 @@ const upload = multer({
 const eventCardUpload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 20 * 1024 * 1024 },
+});
+const trackUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 25 * 1024 * 1024 },
 });
 const ALLOWED_MIME = new Set(["image/jpeg", "image/png", "image/webp"]);
 async function safeDeleteAvatarByPublicPath(publicPath) {
@@ -2511,6 +2522,57 @@ router.delete(
     const item = await deleteEventCardRelease(req.params.id);
     if (!item) {
       res.status(404).json({ error: "Публикация не найдена." });
+      return;
+    }
+    res.json({ ok: true, item });
+  }),
+);
+
+router.get(
+  "/tracks",
+  asyncHandler(async (_req, res) => {
+    const items = await listTracks({ limit: 500 });
+    res.json({ items, tracks: items });
+  }),
+);
+
+router.post(
+  "/tracks",
+  trackUpload.single("file"),
+  asyncHandler(async (req, res) => {
+    const fileName = String(req.file?.originalname || "").toLowerCase();
+    const mimeType = String(req.file?.mimetype || "").toLowerCase();
+    const isMp3 = Boolean(req.file) && (fileName.endsWith(".mp3") || mimeType === "audio/mpeg" || mimeType === "audio/mp3");
+    if (!isMp3) {
+      res.status(400).json({ error: "Загрузите MP3-файл.", code: "MP3_REQUIRED" });
+      return;
+    }
+    let audioUrl = "";
+    try {
+      audioUrl = await saveTrackMp3(req.file.buffer);
+      const item = await createTrack({
+        title: req.body?.title,
+        audioUrl,
+      });
+      res.status(201).json({ ok: true, item });
+    } catch (error) {
+      if (audioUrl) {
+        await deleteTrackFile(audioUrl);
+      }
+      const status = Number(error?.status || 500);
+      res.status(status >= 400 && status < 600 ? status : 500).json({
+        error: error?.message || "Не удалось добавить трек.",
+      });
+    }
+  }),
+);
+
+router.delete(
+  "/tracks/:id",
+  asyncHandler(async (req, res) => {
+    const item = await deleteTrack(req.params.id);
+    if (!item) {
+      res.status(404).json({ error: "Трек не найден." });
       return;
     }
     res.json({ ok: true, item });

@@ -94,6 +94,11 @@ const {
   resolveProfileSettingsLoginUpdate,
 } = require("../../services/profile-account-settings");
 const {
+  findTrackById,
+  listTracks,
+  normalizeTrackId,
+} = require("../../services/profile-music");
+const {
   PUBLIC_HANDLE_SLUG_STATUSES,
   getActivePublicHandle,
   getFreeProfileHandle,
@@ -143,6 +148,7 @@ const PROFILE_CARD_BASE_COLUMNS = [
   "avatar_frame",
   "emoji_background_pack",
   "show_branding",
+  "selected_track_id",
 ];
 const CARD_THEME_ENUM_CACHE_TTL_MS = 5 * 60 * 1000;
 let cardThemeEnumCache = {
@@ -326,6 +332,7 @@ function mapProfileCardRow(row) {
   const createdAt = row.createdAt ?? row.created_at ?? null;
   const updatedAt = row.updatedAt ?? row.updated_at ?? null;
   const showBrandingRaw = row.showBranding ?? row.show_branding;
+  const selectedTrackId = normalizeTrackId(row.selectedTrackId ?? row.selected_track_id);
   return {
     id: row.id,
     ownerId,
@@ -354,6 +361,8 @@ function mapProfileCardRow(row) {
       return PROFILE_EMOJI_BACKGROUNDS.has(nextPack) ? nextPack : "none";
     })(),
     showBranding: toBool(showBrandingRaw, true),
+    selectedTrackId,
+    selectedTrack: row.selectedTrack || row.selected_track || null,
     pets: sortProfileCardPets(row.pets),
     createdAt,
     updatedAt,
@@ -447,6 +456,7 @@ function buildProfileCardColumnValues(input) {
     avatar_frame: input.avatarFrame,
     emoji_background_pack: input.emojiBackgroundPack,
     show_branding: Boolean(input.showBranding),
+    selected_track_id: input.selectedTrackId,
   };
 }
 
@@ -995,7 +1005,7 @@ router.get(
       return;
     }
 
-    const [slugs, card, slugRequests, petRequests, pets, petCatalog, score, pricing, supportTelegramRaw, privatePasswords, followSummary] = await Promise.all([
+    const [slugs, card, slugRequests, petRequests, pets, petCatalog, score, pricing, supportTelegramRaw, privatePasswords, followSummary, tracks] = await Promise.all([
       getUserSlugsWithStats(user.id),
       findProfileCardByOwnerId(user.id),
       prisma.slugRequest.findMany({
@@ -1013,6 +1023,7 @@ router.get(
         ownerId: user.id,
         viewerUserId: user.id,
       }),
+      listTracks({ limit: 200 }),
     ]);
     const supportTelegram = normalizeTelegramUsername(supportTelegramRaw);
 
@@ -1088,6 +1099,7 @@ router.get(
       card: cardPayload,
       pets,
       petCatalog,
+      tracks,
       requests: requestItems,
       score,
       pricing,
@@ -2053,6 +2065,10 @@ router.put(
     const customColor = effective.plan === "premium" ? normalizeColor(body.customColor) : null;
     const avatarFrame = normalizeAvatarFrameByPlan(body.avatarFrame, effective.plan);
     const emojiBackgroundPack = normalizeEmojiBackgroundByPlan(body.emojiBackgroundPack, effective.plan);
+    const requestedTrackId = Object.prototype.hasOwnProperty.call(body, "selectedTrackId")
+      ? normalizeTrackId(body.selectedTrackId)
+      : normalizeTrackId(body.selected_track_id);
+    const selectedTrackId = effective.plan === "premium" ? requestedTrackId : null;
     const showBranding =
       effective.plan === "premium"
         ? (typeof body.showBranding === "boolean" ? body.showBranding : true)
@@ -2083,6 +2099,18 @@ router.put(
         res.status(403).json({ error: "Upgrade required", code: "UPGRADE_REQUIRED" });
         return;
       }
+      if (requestedTrackId) {
+        res.status(403).json({ error: "Upgrade required", code: "UPGRADE_REQUIRED" });
+        return;
+      }
+    }
+
+    if (selectedTrackId) {
+      const track = await findTrackById(selectedTrackId);
+      if (!track) {
+        res.status(400).json({ error: "Выбранный трек недоступен.", code: "TRACK_NOT_FOUND" });
+        return;
+      }
     }
 
     const saved = await prisma.$transaction(async (tx) => {
@@ -2102,6 +2130,7 @@ router.put(
         customColor,
         avatarFrame,
         emojiBackgroundPack,
+        selectedTrackId,
         showBranding,
       });
       await patchOptionalProfileCardFields(tx, user.id, {

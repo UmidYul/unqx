@@ -183,6 +183,61 @@
   margin-right: auto;
 }
 
+.unq-profile-music-player {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 12;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 2px solid #000000 !important;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.92);
+  color: #000000;
+  box-shadow: 3px 3px 0 #000000;
+  backdrop-filter: blur(10px);
+  transition: transform 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
+}
+
+.unq-profile-music-player:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 #000000;
+}
+
+.unq-profile-music-player:active {
+  transform: translate(2px, 2px);
+  box-shadow: 0 0 0 #000000;
+}
+
+.unq-profile-music-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  font-size: 24px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.unq-profile-music-player.is-playing {
+  background: #00e5ff;
+}
+
+.unq-profile-music-player.is-playing .unq-profile-music-icon {
+  animation: unqxMusicSpin 1.25s linear infinite;
+}
+
+@keyframes unqxMusicSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 @media (max-width: 760px) {
   [data-page="event-cards-page"] .event-cards-nav {
     gap: 14px;
@@ -3029,6 +3084,7 @@ body[data-card-theme] #card-view-root {
 }
 
 body[data-card-theme] #card-view-root>[data-card-view] {
+  position: relative;
   width: 100%;
   max-width: 460px;
 }

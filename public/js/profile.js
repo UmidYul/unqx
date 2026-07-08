@@ -254,6 +254,20 @@
         ? tags.map((tag) => String(tag || "").trim()).filter(Boolean)
         : [];
 
+    const normalizeTrackId = (value) => {
+      const id = Math.trunc(Number(value || 0));
+      return Number.isSafeInteger(id) && id > 0 ? id : null;
+    };
+
+    const normalizeTracks = (items) =>
+      (Array.isArray(items) ? items : [])
+        .map((item) => ({
+          id: normalizeTrackId(item?.id),
+          title: String(item?.title || "").trim(),
+          audioUrl: String(item?.audioUrl || item?.audio_url || "").trim(),
+        }))
+        .filter((item) => item.id && item.title && item.audioUrl);
+
     const normalizeCardButtonState = (button) => {
       const type = String(button?.type || "other")
         .trim()
@@ -413,6 +427,7 @@
         theme: resolveEditableTheme(card.theme),
         avatarFrame: resolveEditableAvatarFrame(card.avatarFrame),
         emojiBackgroundPack: resolveEditableEmojiBackgroundPack(card.emojiBackgroundPack),
+        selectedTrackId: getCurrentPlan() === "premium" ? normalizeTrackId(card.selectedTrackId) : null,
         showBranding: card.showBranding !== false,
       };
     };
@@ -433,6 +448,7 @@
         theme: resolveEditableTheme(s.theme),
         avatarFrame: resolveEditableAvatarFrame(s.avatarFrame),
         emojiBackgroundPack: resolveEditableEmojiBackgroundPack(s.emojiBackgroundPack),
+        selectedTrackId: getCurrentPlan() === "premium" ? normalizeTrackId(s.selectedTrackId) : null,
         showBranding: el.cBranding ? !el.cBranding.checked : true,
       };
     };
@@ -664,6 +680,9 @@ Email: ${userEmail}
       cFrames: $$(".profile-avatar-frame-btn"),
       cFrameLock: $("#profile-card-frame-lock-note"),
       cFrameWrap: $("#profile-card-frame-wrap"),
+      cTrack: $("#profile-card-track"),
+      cMusicWrap: $("#profile-card-music-wrap"),
+      cMusicNote: $("#profile-card-music-note"),
       cBranding: $("#profile-card-show-branding"),
       cSave: $("#profile-card-save"),
       cContent: $("#profile-card-content"),
@@ -2288,6 +2307,27 @@ Email: ${userEmail}
       });
     };
 
+    const renderMusicTracks = () => {
+      const premium = getCurrentPlan() === "premium";
+      const tracks = normalizeTracks(s.tracks);
+      if (el.cMusicWrap) el.cMusicWrap.classList.toggle("opacity-60", !premium);
+      if (el.cMusicNote) {
+        el.cMusicNote.textContent = premium
+          ? (tracks.length ? "Трек будет доступен в публичном профиле." : "Администратор ещё не добавил треки.")
+          : "Музыка профиля доступна на Премиум.";
+      }
+      if (!(el.cTrack instanceof HTMLSelectElement)) return;
+      const current = premium ? normalizeTrackId(s.selectedTrackId) : null;
+      el.cTrack.disabled = !premium || !tracks.length;
+      el.cTrack.innerHTML = [
+        '<option value="">Без музыки</option>',
+        ...tracks.map((track) =>
+          `<option value="${esc(String(track.id))}" ${track.id === current ? "selected" : ""}>${esc(track.title)}</option>`,
+        ),
+      ].join("");
+      el.cTrack.value = current ? String(current) : "";
+    };
+
     const renderEmojiBackgroundPack = () => {
       const premium = getCurrentPlan() === "premium";
       if (el.cEmojiPackLock) el.cEmojiPackLock.classList.toggle("hidden", premium);
@@ -2473,6 +2513,7 @@ Email: ${userEmail}
       renderTheme();
       renderEmojiBackgroundPack();
       renderFrame();
+      renderMusicTracks();
       renderPreview();
       syncCardDraftState();
 
@@ -4479,6 +4520,8 @@ Email: ${userEmail}
         s.limits = payload.limits || {};
         s.slugs = payload.slugs || [];
         s.card = payload.card || null;
+        s.tracks = normalizeTracks(payload.tracks);
+        s.selectedTrackId = getCurrentPlan() === "premium" ? normalizeTrackId(s.card?.selectedTrackId) : null;
         const nextAvatarUrl = s.card?.avatarUrl || "";
         if (nextAvatarUrl !== prevAvatarUrl) {
           s.avatarVersion = Date.now();
@@ -4598,6 +4641,7 @@ Email: ${userEmail}
             theme: s.theme,
             avatarFrame: s.avatarFrame || "none",
             emojiBackgroundPack: s.emojiBackgroundPack || "none",
+            selectedTrackId: getCurrentPlan() === "premium" ? normalizeTrackId(s.selectedTrackId) : null,
             showBranding: el.cBranding ? !el.cBranding.checked : true,
             pets: normalizeOwnedPets(s.pets).map((pet) => ({
               id: pet.id,
@@ -5767,6 +5811,14 @@ Email: ${userEmail}
         saveDraft();
       }),
     );
+
+    el.cTrack?.addEventListener("change", () => {
+      if (!(el.cTrack instanceof HTMLSelectElement)) return;
+      s.selectedTrackId = getCurrentPlan() === "premium" ? normalizeTrackId(el.cTrack.value) : null;
+      renderMusicTracks();
+      renderPreview();
+      saveDraft();
+    });
 
     el.cAvFile?.addEventListener("change", async () => {
       const file = el.cAvFile?.files && el.cAvFile.files[0];
