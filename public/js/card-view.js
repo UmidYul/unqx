@@ -21,6 +21,7 @@
     "aurora_codex",
     "nebula_glass",
     "galaxy",
+    "volt_sport",
     "velours",
     "graffiti_neon",
     "heritage_crest",
@@ -638,6 +639,45 @@
       cardShadow: "0 0 10px rgba(0, 229, 255, 0.5), 0 28px 70px rgba(6, 2, 20, 0.55)",
       buttonShineGradient:
         "linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.38) 50%, rgba(255,255,255,0) 100%)",
+    },
+    volt_sport: {
+      cardBg: "linear-gradient(165deg, #B6FF00 0%, #9DFF00 56%, #E8FF5B 100%)",
+      cardBgOverlay: "volt_sport",
+      surfaceBg: "rgba(10, 18, 0, 0.78)",
+      cardBorder: "2px solid #000000",
+      surfaceBorder: "1px solid rgba(0, 0, 0, 0.28)",
+      dividerColor: "rgba(0, 0, 0, 0.24)",
+      nameColor: "#071000",
+      roleColor: "#1c2d00",
+      mutedColor: "#334600",
+      accentColor: "#000000",
+      emailColor: "#071000",
+      buttonPrimaryBg: "linear-gradient(135deg, #000000 0%, #263500 100%)",
+      buttonPrimaryText: "#B6FF00",
+      buttonPrimaryBorder: "#000000",
+      buttonSecondaryBg: "rgba(255, 255, 255, 0.34)",
+      buttonSecondaryText: "#071000",
+      buttonSecondaryBorder: "rgba(0, 0, 0, 0.34)",
+      badgeText: "#B6FF00",
+      badgeBg: "#000000",
+      badgeBorder: "1px solid #000000",
+      topLineGradient: "linear-gradient(90deg, transparent, #000000, transparent)",
+      avatarBg: "linear-gradient(135deg, #071000, #263500)",
+      avatarText: "#B6FF00",
+      avatarBorder: "2px solid #000000",
+      cardBorderRadius: "28px",
+      fontFamily: "'Sora', 'Inter', 'Segoe UI', sans-serif",
+      nameFontStyle: "normal",
+      nameFontWeight: "900",
+      roleLetterSpacing: "0.12em",
+      scoreLabelColor: "#1c2d00",
+      scoreValueColor: "#071000",
+      scoreBarFill: "#000000",
+      scoreBarTrack: "rgba(0, 0, 0, 0.18)",
+      scorePercentileColor: "#1c2d00",
+      cardShadow: "0 22px 54px rgba(87, 125, 0, 0.34)",
+      buttonShineGradient:
+        "linear-gradient(90deg, rgba(182,255,0,0) 0%, rgba(182,255,0,0.3) 48%, rgba(255,255,255,0.42) 50%, rgba(182,255,0,0.3) 52%, rgba(182,255,0,0) 100%)",
     },
     velours: {
       cardBg: "linear-gradient(165deg, #2d0a12 0%, #2a0911 52%, #380d18 100%)",
@@ -1721,6 +1761,40 @@
         <circle cx="286" cy="138" r="44" fill="none" stroke="#61f7ff" stroke-width="2" opacity="0.2"></circle>
         <circle cx="76" cy="344" r="36" fill="none" stroke="#ff9be5" stroke-width="2" opacity="0.18"></circle>
         <path d="M180 104l8 22 24 1-19 14 7 23-20-13-20 13 7-23-19-14 24-1 8-22Z" fill="#61f7ff" opacity="0.16"></path>
+      </svg>`;
+    }
+    if (themeKey === "volt_sport") {
+      return `<svg class="unq-ref-overlay-svg" viewBox="0 0 360 600" preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <pattern id="vs-grid" width="42" height="42" patternUnits="userSpaceOnUse">
+            <path d="M42 0H0v42" fill="none" stroke="#000000" stroke-width="0.8" opacity="0.08"></path>
+          </pattern>
+          <linearGradient id="vs-stripe" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#000000" stop-opacity="0"></stop>
+            <stop offset="50%" stop-color="#000000" stop-opacity="0.24"></stop>
+            <stop offset="100%" stop-color="#000000" stop-opacity="0"></stop>
+          </linearGradient>
+        </defs>
+        <rect width="360" height="600" fill="url(#vs-grid)"></rect>
+        <path d="M-36 122h432M-52 160h432M-68 198h432" stroke="#000000" stroke-width="16" opacity="0.08" transform="rotate(-18 180 160)"></path>
+        <path d="M34 520C98 474 164 468 236 502C280 524 320 526 360 510" stroke="#000000" stroke-width="2" fill="none" opacity="0.18"></path>
+        <path d="M0 116C74 84 152 92 234 142C286 174 328 176 360 158" stroke="#000000" stroke-width="2" fill="none" opacity="0.16"></path>
+        <g opacity="0.14" fill="none" stroke="#000000" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M252 72c30 9 53 31 62 60 11 38-9 78-45 92-34 13-72-2-91-34-18-31-12-70 15-95 16-15 37-24 59-23Z"></path>
+          <path d="M202 96c26 42 66 74 110 90M184 148c48-14 88-38 116-74M226 70c-8 50-1 96 20 138"></path>
+        </g>
+        <g opacity="0.16" fill="#000000">
+          <path d="M58 392c34 6 76 4 126-8 18-4 28 18 13 29-46 34-96 48-150 42-16-2-24-20-14-33l25-30Z"></path>
+          <path d="M82 360l36 7 38 42-50 12-42-16 18-45Z"></path>
+          <path d="M108 372l16 18M132 368l16 18M156 363l15 18" stroke="#B6FF00" stroke-width="4" fill="none" stroke-linecap="round"></path>
+        </g>
+        <g opacity="0.13" fill="none" stroke="#000000" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M72 98h54l22 22-22 22H72z"></path>
+          <path d="M148 120h34"></path>
+          <circle cx="82" cy="120" r="10"></circle>
+        </g>
+        <path d="M292 420l20 26 32 5-23 22 6 32-28-15-29 15 6-32-23-22 32-5 7-26Z" fill="#000000" opacity="0.12"></path>
+        <path d="M34 266h116" stroke="url(#vs-stripe)" stroke-width="8" stroke-linecap="round" opacity="0.65"></path>
       </svg>`;
     }
     if (themeKey === "football_pitch") {

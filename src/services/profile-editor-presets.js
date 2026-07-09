@@ -79,6 +79,13 @@ const SIGNATURE_THEMES = [
     premiumRequired: true,
   },
   {
+    id: "volt_sport",
+    label: "Volt Sport",
+    description: "Acid athletic accessories",
+    swatchStyle: "border-color:#000000;background:radial-gradient(circle at 72% 28%,rgba(0,0,0,0.2),transparent 20%),linear-gradient(145deg,#B6FF00 0%,#9DFF00 54%,#E8FF5B 100%);box-shadow:inset 0 0 0 2px rgba(0,0,0,0.14);",
+    premiumRequired: true,
+  },
+  {
     id: "velours",
     label: "Velours Luxe",
     description: "Burgundy velvet luxe",
