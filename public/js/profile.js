@@ -684,6 +684,7 @@ Email: ${userEmail}
       cTrack: $("#profile-card-track"),
       cMusicWrap: $("#profile-card-music-wrap"),
       cMusicNote: $("#profile-card-music-note"),
+      cMusicCurrent: $("#profile-card-music-current"),
       cBranding: $("#profile-card-show-branding"),
       cSave: $("#profile-card-save"),
       cContent: $("#profile-card-content"),
@@ -2319,6 +2320,18 @@ Email: ${userEmail}
       }
       if (!(el.cTrack instanceof HTMLSelectElement)) return;
       const current = premium ? normalizeTrackId(s.selectedTrackId) : null;
+      const currentTrack = current ? tracks.find((track) => track.id === current) : null;
+      if (el.cMusicCurrent) {
+        el.cMusicCurrent.textContent = !premium
+          ? "Доступно на Премиум"
+          : currentTrack
+            ? currentTrack.title
+            : (tracks.length ? "Без музыки" : "Треки не добавлены");
+      }
+      if (el.cMusicWrap) {
+        el.cMusicWrap.classList.toggle("is-active", Boolean(currentTrack));
+        el.cMusicWrap.classList.toggle("is-locked", !premium);
+      }
       el.cTrack.disabled = !premium || !tracks.length;
       el.cTrack.innerHTML = [
         '<option value="">Без музыки</option>',

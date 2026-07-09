@@ -613,30 +613,47 @@
                               class="mt-1 hidden text-xs text-neutral-500">Премиум нужен для фоновых pack-эффектов</p>
                           </div>
 
-                          <div id="profile-card-frame-wrap">
-                            <label
-                              class="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Рамка
-                              аватара</label>
-                            <div id="profile-card-frame-options"
-                              class="profile-style-choice-grid profile-style-choice-grid--compact">
-                              <% avatarFrames.forEach((item)=> { %>
-                                <%- renderFrameButton(item) %>
-                                  <% }) %>
+                          <div class="profile-design-side-grid">
+                            <div id="profile-card-frame-wrap">
+                              <label
+                                class="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Рамка
+                                аватара</label>
+                              <div id="profile-card-frame-options"
+                                class="profile-style-choice-grid profile-style-choice-grid--compact">
+                                <% avatarFrames.forEach((item)=> { %>
+                                  <%- renderFrameButton(item) %>
+                                    <% }) %>
+                              </div>
+                              <p id="profile-card-frame-lock-note" class="mt-1 hidden text-xs text-neutral-500">Премиум
+                                нужен для декоративных рамок</p>
                             </div>
-                            <p id="profile-card-frame-lock-note" class="mt-1 hidden text-xs text-neutral-500">Премиум
-                              нужен для декоративных рамок</p>
-                          </div>
 
-                          <div id="profile-card-music-wrap">
-                            <label for="profile-card-track"
-                              class="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Музыка
-                              профиля</label>
-                            <select id="profile-card-track"
-                              class="w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900">
-                              <option value="">Без музыки</option>
-                            </select>
-                            <p id="profile-card-music-note" class="mt-1 text-xs text-neutral-500">Премиум: выбери трек,
-                              который будет доступен в публичном профиле.</p>
+                            <div id="profile-card-music-wrap" class="profile-music-choice-card">
+                              <div class="profile-music-choice-head">
+                                <span class="profile-music-choice-icon" aria-hidden="true">
+                                  <svg class="icon-stroke" viewBox="0 0 24 24">
+                                    <path d="M9 18V5l10-2v13"></path>
+                                    <circle cx="6" cy="18" r="3"></circle>
+                                    <circle cx="16" cy="16" r="3"></circle>
+                                  </svg>
+                                </span>
+                                <div class="min-w-0">
+                                  <label for="profile-card-track"
+                                    class="block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Музыка
+                                    профиля</label>
+                                  <p id="profile-card-music-note" class="mt-1 text-xs text-neutral-500">Премиум: выбери
+                                    трек, который будет доступен в публичном профиле.</p>
+                                </div>
+                              </div>
+                              <div class="profile-music-current">
+                                <span>Сейчас</span>
+                                <strong id="profile-card-music-current">Без музыки</strong>
+                              </div>
+                              <select id="profile-card-track"
+                                class="w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900">
+                                <option value="">Без музыки</option>
+                              </select>
+                            </div>
                           </div>
 
                           <label class="inline-flex cursor-pointer items-center justify-between gap-3 text-sm">

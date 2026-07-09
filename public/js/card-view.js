@@ -643,7 +643,7 @@
     volt_sport: {
       cardBg: "linear-gradient(165deg, #B6FF00 0%, #9DFF00 56%, #E8FF5B 100%)",
       cardBgOverlay: "volt_sport",
-      surfaceBg: "rgba(10, 18, 0, 0.78)",
+      surfaceBg: "rgba(137, 243, 8, 0.78)",
       cardBorder: "2px solid #000000",
       surfaceBorder: "1px solid rgba(0, 0, 0, 0.28)",
       dividerColor: "rgba(0, 0, 0, 0.24)",
@@ -1370,6 +1370,7 @@
     </span>`;
   }
 
+  
   function resolveTheme(themeKey) {
     const resolvedKey = themeKey === "royal_ivory" ? "sage_luxe" : themeKey;
     const key = typeof resolvedKey === "string" && THEME_KEYS.includes(resolvedKey) ? resolvedKey : "default_dark";
