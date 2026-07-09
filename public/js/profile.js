@@ -681,7 +681,7 @@ Email: ${userEmail}
       cFrames: $$(".profile-avatar-frame-btn"),
       cFrameLock: $("#profile-card-frame-lock-note"),
       cFrameWrap: $("#profile-card-frame-wrap"),
-      cTrack: $("#profile-card-track"),
+      cTrackOptions: $("#profile-card-track-options"),
       cMusicWrap: $("#profile-card-music-wrap"),
       cMusicNote: $("#profile-card-music-note"),
       cMusicCurrent: $("#profile-card-music-current"),
@@ -2318,7 +2318,6 @@ Email: ${userEmail}
           ? (tracks.length ? "Трек будет доступен в публичном профиле." : "Администратор ещё не добавил треки.")
           : "Музыка профиля доступна на Премиум.";
       }
-      if (!(el.cTrack instanceof HTMLSelectElement)) return;
       const current = premium ? normalizeTrackId(s.selectedTrackId) : null;
       const currentTrack = current ? tracks.find((track) => track.id === current) : null;
       if (el.cMusicCurrent) {
@@ -2332,14 +2331,56 @@ Email: ${userEmail}
         el.cMusicWrap.classList.toggle("is-active", Boolean(currentTrack));
         el.cMusicWrap.classList.toggle("is-locked", !premium);
       }
-      el.cTrack.disabled = !premium || !tracks.length;
-      el.cTrack.innerHTML = [
-        '<option value="">Без музыки</option>',
-        ...tracks.map((track) =>
-          `<option value="${esc(String(track.id))}" ${track.id === current ? "selected" : ""}>${esc(track.title)}</option>`,
-        ),
+      if (!el.cTrackOptions) return;
+      const locked = !premium;
+      const emptySelected = !current;
+      const emptyLockedAttr = locked ? ' aria-disabled="true"' : "";
+      const emptyClasses = [
+        "profile-music-track-btn",
+        "profile-style-choice-btn",
+        emptySelected ? "selected bg-neutral-900 text-white" : "",
+      ].filter(Boolean).join(" ");
+      const trackButtons = tracks.map((track) => {
+        const selected = track.id === current;
+        const disabledAttr = locked ? ' aria-disabled="true"' : "";
+        const classes = [
+          "profile-music-track-btn",
+          "profile-style-choice-btn",
+          selected ? "selected bg-neutral-900 text-white" : "",
+        ].filter(Boolean).join(" ");
+        return `<button type="button" class="${classes}" data-profile-track-id="${esc(String(track.id))}" aria-pressed="${selected ? "true" : "false"}"${disabledAttr}>
+          <span class="profile-music-track-swatch" aria-hidden="true">
+            <svg class="icon-stroke" viewBox="0 0 24 24">
+              <path d="M9 18V5l10-2v13"></path>
+              <circle cx="6" cy="18" r="3"></circle>
+              <circle cx="16" cy="16" r="3"></circle>
+            </svg>
+          </span>
+          <span class="min-w-0 flex-1 text-left">
+            <span class="block font-semibold leading-tight">${esc(track.title)}</span>
+            <span class="block truncate text-[10px] text-neutral-500">Трек профиля</span>
+          </span>
+        </button>`;
+      });
+      el.cTrackOptions.innerHTML = [
+        `<button type="button" class="${emptyClasses}" data-profile-track-id="" aria-pressed="${emptySelected ? "true" : "false"}"${emptyLockedAttr}>
+          <span class="profile-music-track-swatch" aria-hidden="true">
+            <svg class="icon-stroke" viewBox="0 0 24 24">
+              <path d="M4 4l16 16"></path>
+              <path d="M9 15V5l10-2v13"></path>
+              <circle cx="6" cy="18" r="3"></circle>
+            </svg>
+          </span>
+          <span class="min-w-0 flex-1 text-left">
+            <span class="block font-semibold leading-tight">Без музыки</span>
+            <span class="block truncate text-[10px] text-neutral-500">Отключить плеер</span>
+          </span>
+        </button>`,
+        ...trackButtons,
+        !tracks.length
+          ? `<p class="profile-music-empty-note">Администратор ещё не добавил треки.</p>`
+          : "",
       ].join("");
-      el.cTrack.value = current ? String(current) : "";
     };
 
     const renderEmojiBackgroundPack = () => {
@@ -5826,9 +5867,16 @@ Email: ${userEmail}
       }),
     );
 
-    el.cTrack?.addEventListener("change", () => {
-      if (!(el.cTrack instanceof HTMLSelectElement)) return;
-      s.selectedTrackId = getCurrentPlan() === "premium" ? normalizeTrackId(el.cTrack.value) : null;
+    el.cTrackOptions?.addEventListener("click", (event) => {
+      const target = event.target instanceof HTMLElement ? event.target : null;
+      const button = target?.closest("[data-profile-track-id]");
+      if (!(button instanceof HTMLButtonElement)) return;
+      event.preventDefault();
+      if (getCurrentPlan() !== "premium") {
+        showModal("Доступно на Премиум", "Музыка профиля доступна только для Премиум тарифа.");
+        return;
+      }
+      s.selectedTrackId = normalizeTrackId(button.getAttribute("data-profile-track-id"));
       renderMusicTracks();
       renderPreview();
       saveDraft();

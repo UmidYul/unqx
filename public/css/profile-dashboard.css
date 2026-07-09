@@ -130,24 +130,58 @@
   white-space: nowrap;
 }
 
-.profile-dashboard #profile-card-track {
-  min-height: 42px;
+.profile-dashboard .profile-music-choice-grid {
+  grid-template-columns: 1fr;
+  gap: 0.55rem;
+}
+
+.profile-dashboard .profile-music-track-btn {
   border: 2px solid #000000 !important;
-  border-radius: 12px !important;
-  background-color: #ffffff;
+  border-radius: 14px !important;
+  background: rgba(255, 255, 255, 0.84) !important;
+  padding: 0.65rem 0.75rem !important;
+}
+
+.profile-dashboard .profile-music-track-btn[aria-pressed="true"],
+.profile-dashboard .profile-music-track-btn.selected {
+  background: #111111 !important;
+  color: #ffffff !important;
+  box-shadow: 2px 2px 0 #000000 !important;
+}
+
+.profile-dashboard .profile-music-track-swatch {
+  display: inline-flex;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid currentColor;
+  border-radius: 10px;
+  background: #b6ff00;
   color: #111111;
-  font-weight: 700;
-  outline: none;
 }
 
-.profile-dashboard #profile-card-track:focus {
-  box-shadow: 0 0 0 3px rgba(182, 255, 0, 0.45);
+.profile-dashboard .profile-music-track-swatch svg {
+  width: 19px;
+  height: 19px;
 }
 
-.profile-dashboard #profile-card-track:disabled {
-  border-color: #d4d4d4 !important;
+.profile-dashboard .profile-music-track-btn[aria-pressed="true"] .profile-music-track-swatch,
+.profile-dashboard .profile-music-track-btn.selected .profile-music-track-swatch {
+  border-color: #b6ff00;
+  background: #b6ff00;
+  color: #111111;
+}
+
+.profile-dashboard .profile-music-empty-note {
+  margin: 0;
+  border: 1px dashed #cfcfcf;
+  border-radius: 12px;
+  padding: 0.65rem 0.75rem;
   color: #777777;
-  cursor: not-allowed;
+  font-size: 12px;
+  line-height: 1.35;
 }
 
 .profile-dashboard .profile-style-choice-btn .min-w-0.flex-1,
