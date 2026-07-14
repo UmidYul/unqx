@@ -1391,7 +1391,7 @@
                 <div>
                   <p class="admin-theme-kicker">Theme Creator</p>
                   <h2>Конструктор тем</h2>
-                  <p>Создавайте JSON-конфиги визуальных стилей с live-preview карточки. Структура результата совпадает с темами вроде <code>volt_sport</code>.</p>
+                  <p>Собирайте визуальные стили карточек без кода: выбирайте цвета, двигайте ползунки и сразу смотрите результат справа.</p>
                 </div>
                 <button type="button" id="theme-create-open" class="admin-theme-primary-btn">Создать тему</button>
               </header>
@@ -1411,185 +1411,154 @@
                 <form id="theme-builder-form" class="admin-theme-controls">
                   <div class="admin-theme-builder-head">
                     <div>
-                      <p class="admin-theme-kicker">Builder</p>
-                      <h3>Настройка темы</h3>
+                      <p class="admin-theme-kicker">No-Code Builder</p>
+                      <h3>Собери тему кликами</h3>
                     </div>
                     <div class="admin-theme-builder-actions">
                       <button type="button" id="theme-builder-reset" class="admin-theme-ghost-btn">Сбросить</button>
-                      <button type="submit" class="admin-theme-primary-btn">Сохранить тему</button>
+                      <button type="submit" class="admin-theme-primary-btn">Опубликовать тему</button>
                     </div>
                   </div>
 
+                  <input name="themeKey" type="hidden" value="custom_theme" data-theme-field="themeKey" />
+                  <input name="cardBgOverlay" type="hidden" value="custom_theme" data-theme-field="cardBgOverlay" />
+                  <input name="cardBg" type="hidden" data-theme-field="cardBg" />
+                  <input name="surfaceBg" type="hidden" value="rgba(255, 255, 255, 0.72)" data-theme-field="surfaceBg" />
+                  <input name="cardBorder" type="hidden" value="2px solid #000000" data-theme-field="cardBorder" />
+                  <input name="surfaceBorder" type="hidden" value="1px solid rgba(0, 0, 0, 0.24)" data-theme-field="surfaceBorder" />
+                  <input name="dividerColor" type="hidden" value="rgba(0, 0, 0, 0.18)" data-theme-field="dividerColor" />
+                  <input name="cardBorderRadius" type="hidden" value="28px" data-theme-field="cardBorderRadius" />
+                  <input name="cardShadow" type="hidden" value="0 18px 44px rgba(0, 0, 0, 0.22)" data-theme-field="cardShadow" />
+                  <input name="fontFamily" type="hidden" value="'Sora', 'Inter', 'Segoe UI', sans-serif" data-theme-field="fontFamily" />
+                  <input name="nameFontStyle" type="hidden" value="normal" data-theme-field="nameFontStyle" />
+                  <input name="nameFontWeight" type="hidden" value="800" data-theme-field="nameFontWeight" />
+                  <input name="roleLetterSpacing" type="hidden" value="0.08em" data-theme-field="roleLetterSpacing" />
+                  <input name="nameColor" type="hidden" value="#111111" data-theme-field="nameColor" />
+                  <input name="roleColor" type="hidden" value="#374151" data-theme-field="roleColor" />
+                  <input name="mutedColor" type="hidden" value="#4b5563" data-theme-field="mutedColor" />
+                  <input name="accentColor" type="hidden" value="#111111" data-theme-field="accentColor" />
+                  <input name="emailColor" type="hidden" value="#4b5563" data-theme-field="emailColor" />
+                  <input name="buttonPrimaryBg" type="hidden" value="#111111" data-theme-field="buttonPrimaryBg" />
+                  <input name="buttonPrimaryText" type="hidden" value="#ffffff" data-theme-field="buttonPrimaryText" />
+                  <input name="buttonPrimaryBorder" type="hidden" value="#000000" data-theme-field="buttonPrimaryBorder" />
+                  <input name="buttonSecondaryBg" type="hidden" value="rgba(255, 255, 255, 0.42)" data-theme-field="buttonSecondaryBg" />
+                  <input name="buttonSecondaryText" type="hidden" value="#111111" data-theme-field="buttonSecondaryText" />
+                  <input name="buttonSecondaryBorder" type="hidden" value="rgba(0, 0, 0, 0.32)" data-theme-field="buttonSecondaryBorder" />
+                  <input name="badgeText" type="hidden" value="#ffffff" data-theme-field="badgeText" />
+                  <input name="badgeBg" type="hidden" value="#111111" data-theme-field="badgeBg" />
+                  <input name="badgeBorder" type="hidden" value="1px solid #000000" data-theme-field="badgeBorder" />
+                  <input name="topLineGradient" type="hidden" value="linear-gradient(90deg, transparent, #111111, transparent)" data-theme-field="topLineGradient" />
+                  <input name="avatarBg" type="hidden" value="linear-gradient(135deg, #111111, #374151)" data-theme-field="avatarBg" />
+                  <input name="avatarText" type="hidden" value="#ffffff" data-theme-field="avatarText" />
+                  <input name="avatarBorder" type="hidden" value="2px solid #000000" data-theme-field="avatarBorder" />
+                  <input name="scoreLabelColor" type="hidden" value="#4b5563" data-theme-field="scoreLabelColor" />
+                  <input name="scoreValueColor" type="hidden" value="#111111" data-theme-field="scoreValueColor" />
+                  <input name="scoreBarFill" type="hidden" value="#111111" data-theme-field="scoreBarFill" />
+                  <input name="scoreBarTrack" type="hidden" value="rgba(0, 0, 0, 0.16)" data-theme-field="scoreBarTrack" />
+                  <input name="scorePercentileColor" type="hidden" value="#4b5563" data-theme-field="scorePercentileColor" />
+                  <input name="buttonShineGradient" type="hidden" value="linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.35) 50%, rgba(255,255,255,0) 100%)" data-theme-field="buttonShineGradient" />
+                  <input name="cardBgType" type="hidden" value="linear" data-theme-bg-type />
+                  <input name="cardBgAngle" type="hidden" value="135" data-theme-bg-angle />
+                  <input name="shadowPreset" type="hidden" value="soft" data-shadow-preset />
+                  <textarea name="overlaySvg" class="hidden" data-svg-text="overlay"></textarea>
+                  <textarea name="primaryIconSvgText" class="hidden" data-svg-text="primary"></textarea>
+                  <textarea name="secondaryIconSvgText" class="hidden" data-svg-text="secondary"></textarea>
+                  <textarea id="theme-json-output" class="hidden" readonly></textarea>
+
                   <details class="admin-theme-accordion" open>
-                    <summary>Основная информация</summary>
-                    <div class="admin-theme-fields two">
-                      <label>Название темы / key
-                        <input name="themeKey" type="text" value="custom_theme" maxlength="80" data-theme-field="themeKey" />
+                    <summary><span>1</span> Название темы</summary>
+                    <div class="admin-theme-step">
+                      <label class="admin-theme-big-field">Как назвать тему?
+                        <input name="themeTitle" type="text" value="Моя новая тема" maxlength="80" data-theme-title />
                       </label>
-                      <label>Идентификатор оверлея
-                        <input name="cardBgOverlay" type="text" value="custom_theme" maxlength="120" data-theme-field="cardBgOverlay" />
-                      </label>
+                      <p class="admin-theme-helper">ID создаётся автоматически: <strong id="theme-auto-key">moya_novaya_tema</strong></p>
                     </div>
                   </details>
 
                   <details class="admin-theme-accordion" open>
-                    <summary>Фоновые настройки и границы</summary>
-                    <div class="admin-theme-fields three">
-                      <label>Тип фона
-                        <select name="cardBgType" data-theme-bg-type>
-                          <option value="linear">Линейный градиент</option>
-                          <option value="radial">Радиальный градиент</option>
-                          <option value="solid">Сплошной цвет</option>
-                        </select>
-                      </label>
-                      <label>Угол
-                        <input name="cardBgAngle" type="number" min="0" max="360" value="165" data-theme-bg-angle />
-                      </label>
-                      <label>Фон карты CSS
-                        <input name="cardBg" type="text" data-theme-field="cardBg" />
-                      </label>
-                      <label>Цвет 1
-                        <input name="cardBgStart" type="color" value="#B6FF00" data-theme-bg-start />
-                      </label>
-                      <label>Цвет 2
-                        <input name="cardBgEnd" type="color" value="#E8FF5B" data-theme-bg-end />
-                      </label>
-                      <label>Цвет подложки
-                        <input name="surfaceBg" type="text" value="rgba(10, 18, 0, 0.78)" data-theme-field="surfaceBg" />
-                      </label>
-                      <label>Толщина border
-                        <input name="cardBorderWidth" type="number" min="0" max="12" value="2" data-border-width />
-                      </label>
-                      <label>Стиль border
-                        <select name="cardBorderStyle" data-border-style>
-                          <option value="solid">solid</option>
-                          <option value="dashed">dashed</option>
-                          <option value="double">double</option>
-                        </select>
-                      </label>
-                      <label>Цвет border
-                        <input name="cardBorderColor" type="color" value="#000000" data-border-color />
-                      </label>
-                      <label>Граница карты CSS
-                        <input name="cardBorder" type="text" data-theme-field="cardBorder" />
-                      </label>
-                      <label>Граница подложки
-                        <input name="surfaceBorder" type="text" value="1px solid rgba(0, 0, 0, 0.28)" data-theme-field="surfaceBorder" />
-                      </label>
-                      <label>Разделитель
-                        <input name="dividerColor" type="text" value="rgba(0, 0, 0, 0.24)" data-theme-field="dividerColor" />
-                      </label>
-                      <label>Радиус скругления <span data-radius-label>28px</span>
+                    <summary><span>2</span> Фон карты</summary>
+                    <div class="admin-theme-step">
+                      <div class="admin-theme-segmented" data-bg-type-group>
+                        <button type="button" class="is-active" data-bg-type-btn="linear">Градиент</button>
+                        <button type="button" data-bg-type-btn="solid">Однотонный</button>
+                      </div>
+                      <div class="admin-theme-color-pair">
+                        <label>Начальный цвет <input name="cardBgStart" type="color" value="#B6FF00" data-theme-bg-start /></label>
+                        <label>Конечный цвет <input name="cardBgEnd" type="color" value="#E8FF5B" data-theme-bg-end /></label>
+                      </div>
+                      <div class="admin-theme-palette" data-palette-for="cardBgStart">
+                        <button type="button" style="--c:#B6FF00" data-color="#B6FF00"></button>
+                        <button type="button" style="--c:#FFD42A" data-color="#FFD42A"></button>
+                        <button type="button" style="--c:#00E5FF" data-color="#00E5FF"></button>
+                        <button type="button" style="--c:#8B5CF6" data-color="#8B5CF6"></button>
+                        <button type="button" style="--c:#111111" data-color="#111111"></button>
+                        <button type="button" style="--c:#FFFFFF" data-color="#FFFFFF"></button>
+                      </div>
+                      <div class="admin-theme-direction-pad" aria-label="Направление градиента">
+                        <button type="button" data-gradient-angle="0">↑</button>
+                        <button type="button" data-gradient-angle="45">↗</button>
+                        <button type="button" data-gradient-angle="90">→</button>
+                        <button type="button" data-gradient-angle="135" class="is-active">↘</button>
+                        <button type="button" data-gradient-angle="180">↓</button>
+                        <button type="button" data-gradient-angle="225">↙</button>
+                        <button type="button" data-gradient-angle="270">←</button>
+                        <button type="button" data-gradient-angle="315">↖</button>
+                      </div>
+                      <label class="admin-theme-slider">Скругление углов <span data-radius-label>28px</span>
                         <input name="cardBorderRadiusSlider" type="range" min="0" max="50" value="28" data-radius-slider />
-                        <input name="cardBorderRadius" type="text" value="28px" data-theme-field="cardBorderRadius" />
                       </label>
-                      <label>Тень карты CSS
-                        <input name="cardShadow" type="text" value="0 22px 54px rgba(87, 125, 0, 0.34)" data-theme-field="cardShadow" />
-                      </label>
-                      <label>Цвет тени
-                        <input name="shadowColor" type="text" value="rgba(87, 125, 0, 0.34)" data-shadow-color />
-                      </label>
-                      <label>X / Y / Blur / Spread
-                        <span class="admin-theme-inline-inputs">
-                          <input name="shadowX" type="number" value="0" data-shadow-x />
-                          <input name="shadowY" type="number" value="22" data-shadow-y />
-                          <input name="shadowBlur" type="number" value="54" data-shadow-blur />
-                          <input name="shadowSpread" type="number" value="0" data-shadow-spread />
-                        </span>
-                      </label>
-                    </div>
-                  </details>
-
-                  <details class="admin-theme-accordion">
-                    <summary>Типографика</summary>
-                    <div class="admin-theme-fields three">
-                      <label>Шрифт
-                        <select name="fontFamily" data-theme-field="fontFamily">
-                          <option value="'Sora', 'Inter', 'Segoe UI', sans-serif">Sora</option>
-                          <option value="'Inter', 'Segoe UI', sans-serif">Inter</option>
-                          <option value="'Manrope', 'Inter', sans-serif">Manrope</option>
-                          <option value="'Nunito', 'Inter', sans-serif">Nunito</option>
-                          <option value="'Segoe UI', sans-serif">Segoe UI</option>
-                        </select>
-                      </label>
-                      <label>Цвет имени <input name="nameColor" type="text" value="#071000" data-theme-field="nameColor" /></label>
-                      <label>Стиль имени
-                        <select name="nameFontStyle" data-theme-field="nameFontStyle">
-                          <option value="normal">normal</option>
-                          <option value="italic">italic</option>
-                        </select>
-                      </label>
-                      <label>Насыщенность имени
-                        <input name="nameFontWeight" type="range" min="100" max="900" step="100" value="900" data-theme-field="nameFontWeight" />
-                      </label>
-                      <label>Цвет роли <input name="roleColor" type="text" value="#1c2d00" data-theme-field="roleColor" /></label>
-                      <label>Letter spacing роли <input name="roleLetterSpacing" type="text" value="0.12em" data-theme-field="roleLetterSpacing" /></label>
-                      <label>Muted <input name="mutedColor" type="text" value="#334600" data-theme-field="mutedColor" /></label>
-                      <label>Accent <input name="accentColor" type="text" value="#000000" data-theme-field="accentColor" /></label>
-                      <label>Email <input name="emailColor" type="text" value="#071000" data-theme-field="emailColor" /></label>
-                    </div>
-                  </details>
-
-                  <details class="admin-theme-accordion">
-                    <summary>Кнопки и SVG-иконки</summary>
-                    <div class="admin-theme-fields two">
-                      <label>Primary фон <input name="buttonPrimaryBg" type="text" value="linear-gradient(135deg, #000000 0%, #263500 100%)" data-theme-field="buttonPrimaryBg" /></label>
-                      <label>Primary текст/иконка <input name="buttonPrimaryText" type="text" value="#B6FF00" data-theme-field="buttonPrimaryText" /></label>
-                      <label>Primary border <input name="buttonPrimaryBorder" type="text" value="#000000" data-theme-field="buttonPrimaryBorder" /></label>
-                      <label>Secondary фон <input name="buttonSecondaryBg" type="text" value="rgba(255, 255, 255, 0.34)" data-theme-field="buttonSecondaryBg" /></label>
-                      <label>Secondary текст/иконка <input name="buttonSecondaryText" type="text" value="#071000" data-theme-field="buttonSecondaryText" /></label>
-                      <label>Secondary border <input name="buttonSecondaryBorder" type="text" value="rgba(0, 0, 0, 0.34)" data-theme-field="buttonSecondaryBorder" /></label>
-                      <label class="admin-theme-dropzone">Primary SVG
-                        <input name="primaryIconSvg" type="file" accept=".svg,image/svg+xml" data-svg-upload="primary" />
-                        <textarea name="primaryIconSvgText" rows="4" placeholder="<svg ...>" data-svg-text="primary"></textarea>
-                      </label>
-                      <label class="admin-theme-dropzone">Secondary SVG
-                        <input name="secondaryIconSvg" type="file" accept=".svg,image/svg+xml" data-svg-upload="secondary" />
-                        <textarea name="secondaryIconSvgText" rows="4" placeholder="<svg ...>" data-svg-text="secondary"></textarea>
-                      </label>
-                      <label class="wide">Эффект блика
-                        <input name="buttonShineGradient" type="text" value="linear-gradient(90deg, rgba(182,255,0,0) 0%, rgba(182,255,0,0.3) 48%, rgba(255,255,255,0.42) 50%, rgba(182,255,0,0.3) 52%, rgba(182,255,0,0) 100%)" data-theme-field="buttonShineGradient" />
-                      </label>
-                    </div>
-                  </details>
-
-                  <details class="admin-theme-accordion">
-                    <summary>Бейджи и аватар</summary>
-                    <div class="admin-theme-fields three">
-                      <label>Badge text <input name="badgeText" type="text" value="#B6FF00" data-theme-field="badgeText" /></label>
-                      <label>Badge bg <input name="badgeBg" type="text" value="#000000" data-theme-field="badgeBg" /></label>
-                      <label>Badge border <input name="badgeBorder" type="text" value="1px solid #000000" data-theme-field="badgeBorder" /></label>
-                      <label>Avatar bg <input name="avatarBg" type="text" value="linear-gradient(135deg, #071000, #263500)" data-theme-field="avatarBg" /></label>
-                      <label>Avatar text <input name="avatarText" type="text" value="#B6FF00" data-theme-field="avatarText" /></label>
-                      <label>Avatar border <input name="avatarBorder" type="text" value="2px solid #000000" data-theme-field="avatarBorder" /></label>
-                      <label class="wide">Top line gradient <input name="topLineGradient" type="text" value="linear-gradient(90deg, transparent, #000000, transparent)" data-theme-field="topLineGradient" /></label>
-                    </div>
-                  </details>
-
-                  <details class="admin-theme-accordion">
-                    <summary>Геймификация и шкалы</summary>
-                    <div class="admin-theme-fields three">
-                      <label>Score label <input name="scoreLabelColor" type="text" value="#1c2d00" data-theme-field="scoreLabelColor" /></label>
-                      <label>Score value <input name="scoreValueColor" type="text" value="#071000" data-theme-field="scoreValueColor" /></label>
-                      <label>Score fill <input name="scoreBarFill" type="text" value="#000000" data-theme-field="scoreBarFill" /></label>
-                      <label>Score track <input name="scoreBarTrack" type="text" value="rgba(0, 0, 0, 0.18)" data-theme-field="scoreBarTrack" /></label>
-                      <label>Score percentile <input name="scorePercentileColor" type="text" value="#1c2d00" data-theme-field="scorePercentileColor" /></label>
-                    </div>
-                  </details>
-
-                  <details class="admin-theme-accordion">
-                    <summary>SVG overlay</summary>
-                    <div class="admin-theme-fields">
-                      <label class="admin-theme-dropzone wide">SVG фон/оверлей
-                        <input name="overlaySvgFile" type="file" accept=".svg,image/svg+xml" data-svg-upload="overlay" />
-                        <textarea name="overlaySvg" rows="7" placeholder="<svg ...>" data-svg-text="overlay"></textarea>
-                      </label>
+                      <div class="admin-theme-choice-row" data-shadow-choice>
+                        <button type="button" data-shadow-choice-btn="soft" class="is-active">Мягкая тень</button>
+                        <button type="button" data-shadow-choice-btn="deep">Глубокая</button>
+                        <button type="button" data-shadow-choice-btn="none">Без тени</button>
+                      </div>
                     </div>
                   </details>
 
                   <details class="admin-theme-accordion" open>
-                    <summary>JSON результата</summary>
-                    <textarea id="theme-json-output" class="admin-theme-json-output" rows="12" readonly></textarea>
+                    <summary><span>3</span> Цвета текстов</summary>
+                    <div class="admin-theme-step">
+                      <label class="admin-theme-color-line">Цвет имени <input type="color" value="#111111" data-simple-color="nameColor" /></label>
+                      <label class="admin-theme-slider">Жирность имени <span data-weight-label>800</span>
+                        <input name="nameWeightSlider" type="range" min="100" max="900" step="100" value="800" data-name-weight-slider />
+                      </label>
+                      <label class="admin-theme-color-line">Цвет должности/роли <input type="color" value="#374151" data-simple-color="roleColor" /></label>
+                      <label class="admin-theme-color-line">Цвет остальных текстов <input type="color" value="#4B5563" data-simple-color="mutedColor" /></label>
+                      <label class="admin-theme-font-select">Шрифт
+                        <select name="fontPreset" data-font-preset>
+                          <option style="font-family:Sora, Inter, sans-serif" value="'Sora', 'Inter', 'Segoe UI', sans-serif">Sora</option>
+                          <option style="font-family:Inter, sans-serif" value="'Inter', 'Segoe UI', sans-serif">Inter</option>
+                          <option style="font-family:Manrope, Inter, sans-serif" value="'Manrope', 'Inter', sans-serif">Manrope</option>
+                          <option style="font-family:Nunito, Inter, sans-serif" value="'Nunito', 'Inter', sans-serif">Nunito</option>
+                        </select>
+                      </label>
+                    </div>
+                  </details>
+
+                  <details class="admin-theme-accordion">
+                    <summary><span>4</span> Кнопки и иконки</summary>
+                    <div class="admin-theme-step">
+                      <div class="admin-theme-color-pair">
+                        <label>Главная кнопка <input type="color" value="#111111" data-simple-color="buttonPrimaryBg" /></label>
+                        <label>Текст внутри <input type="color" value="#FFFFFF" data-simple-color="buttonPrimaryText" /></label>
+                        <label>Второстепенная кнопка <input type="color" value="#FFFFFF" data-simple-color="buttonSecondaryBg" /></label>
+                        <label>Текст внутри <input type="color" value="#111111" data-simple-color="buttonSecondaryText" /></label>
+                      </div>
+                      <label class="admin-theme-upload-card">Перетащите главную SVG-иконку сюда или нажмите для выбора
+                        <input name="primaryIconSvg" type="file" accept=".svg,image/svg+xml" data-svg-upload="primary" />
+                      </label>
+                      <label class="admin-theme-upload-card">Перетащите второстепенную SVG-иконку сюда или нажмите для выбора
+                        <input name="secondaryIconSvg" type="file" accept=".svg,image/svg+xml" data-svg-upload="secondary" />
+                      </label>
+                    </div>
+                  </details>
+
+                  <details class="admin-theme-accordion">
+                    <summary><span>5</span> Прогресс-бары</summary>
+                    <div class="admin-theme-step">
+                      <label class="admin-theme-color-line">Цвет заполнения <input type="color" value="#111111" data-simple-color="scoreBarFill" /></label>
+                      <label class="admin-theme-color-line">Цвет дорожки <input type="color" value="#D1D5DB" data-simple-color="scoreBarTrack" /></label>
+                    </div>
                   </details>
                 </form>
 

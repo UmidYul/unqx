@@ -3442,6 +3442,21 @@
       .slice(0, 80) || "custom_theme";
   }
 
+  function transliterateThemeTitle(value) {
+    const map = {
+      а: "a", б: "b", в: "v", г: "g", д: "d", е: "e", ё: "e", ж: "zh", з: "z", и: "i", й: "y",
+      к: "k", л: "l", м: "m", н: "n", о: "o", п: "p", р: "r", с: "s", т: "t", у: "u", ф: "f",
+      х: "h", ц: "ts", ч: "ch", ш: "sh", щ: "sch", ъ: "", ы: "y", ь: "", э: "e", ю: "yu", я: "ya",
+    };
+    return normalizeThemeCreatorKey(
+      String(value || "")
+        .toLowerCase()
+        .split("")
+        .map((char) => map[char] ?? char)
+        .join(""),
+    );
+  }
+
   function getThemeBuilderForm() {
     const form = document.getElementById("theme-builder-form");
     return form instanceof HTMLFormElement ? form : null;
@@ -3480,6 +3495,25 @@
   }
 
   function syncThemeGenerators() {
+    document.querySelectorAll("[data-simple-color]").forEach((input) => {
+      if (!(input instanceof HTMLInputElement)) return;
+      const key = input.getAttribute("data-simple-color") || "";
+      if (key) setThemeBuilderValue(key, input.value);
+    });
+    const fontPreset = getThemeBuilderValue("fontPreset", "'Sora', 'Inter', 'Segoe UI', sans-serif");
+    setThemeBuilderValue("fontFamily", fontPreset);
+    const nameWeight = getThemeBuilderValue("nameWeightSlider", "800");
+    setThemeBuilderValue("nameFontWeight", nameWeight);
+    const weightLabel = document.querySelector("[data-weight-label]");
+    if (weightLabel instanceof HTMLElement) weightLabel.textContent = nameWeight;
+
+    const title = getThemeBuilderValue("themeTitle", "Моя новая тема");
+    const generatedKey = transliterateThemeTitle(title);
+    setThemeBuilderValue("themeKey", generatedKey);
+    setThemeBuilderValue("cardBgOverlay", generatedKey);
+    const autoKey = document.getElementById("theme-auto-key");
+    if (autoKey instanceof HTMLElement) autoKey.textContent = generatedKey;
+
     const bgType = getThemeBuilderValue("cardBgType", "linear");
     const angle = Math.max(0, Math.min(360, Number(getThemeBuilderValue("cardBgAngle", "165")) || 165));
     const start = getThemeBuilderValue("cardBgStart", "#B6FF00");
@@ -3502,12 +3536,35 @@
     const radiusLabel = document.querySelector("[data-radius-label]");
     if (radiusLabel instanceof HTMLElement) radiusLabel.textContent = `${radius}px`;
 
-    const sx = Number(getThemeBuilderValue("shadowX", "0")) || 0;
-    const sy = Number(getThemeBuilderValue("shadowY", "22")) || 0;
-    const blur = Math.max(0, Number(getThemeBuilderValue("shadowBlur", "54")) || 0);
-    const spread = Number(getThemeBuilderValue("shadowSpread", "0")) || 0;
-    const color = getThemeBuilderValue("shadowColor", "rgba(0,0,0,0.24)");
-    setThemeBuilderValue("cardShadow", `${sx}px ${sy}px ${blur}px ${spread}px ${color}`);
+    const shadowPreset = getThemeBuilderValue("shadowPreset", "soft");
+    const shadowValue =
+      shadowPreset === "none"
+        ? "none"
+        : shadowPreset === "deep"
+          ? "0 28px 70px rgba(0, 0, 0, 0.34)"
+          : "0 18px 44px rgba(0, 0, 0, 0.22)";
+    setThemeBuilderValue("cardShadow", shadowValue);
+
+    const nameColor = getThemeBuilderValue("nameColor", "#111111");
+    const mutedColor = getThemeBuilderValue("mutedColor", "#4b5563");
+    const primaryBg = getThemeBuilderValue("buttonPrimaryBg", "#111111");
+    const primaryText = getThemeBuilderValue("buttonPrimaryText", "#ffffff");
+    const secondaryText = getThemeBuilderValue("buttonSecondaryText", "#111111");
+    setThemeBuilderValue("accentColor", primaryBg);
+    setThemeBuilderValue("emailColor", mutedColor);
+    setThemeBuilderValue("buttonPrimaryBorder", "#000000");
+    setThemeBuilderValue("buttonSecondaryBorder", "rgba(0, 0, 0, 0.32)");
+    setThemeBuilderValue("badgeText", primaryText);
+    setThemeBuilderValue("badgeBg", primaryBg);
+    setThemeBuilderValue("badgeBorder", "1px solid #000000");
+    setThemeBuilderValue("avatarBg", `linear-gradient(135deg, ${primaryBg}, ${nameColor})`);
+    setThemeBuilderValue("avatarText", primaryText);
+    setThemeBuilderValue("avatarBorder", "2px solid #000000");
+    setThemeBuilderValue("topLineGradient", `linear-gradient(90deg, transparent, ${primaryBg}, transparent)`);
+    setThemeBuilderValue("scoreLabelColor", mutedColor);
+    setThemeBuilderValue("scoreValueColor", nameColor);
+    setThemeBuilderValue("scorePercentileColor", mutedColor);
+    setThemeBuilderValue("buttonShineGradient", `linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.35) 50%, rgba(255,255,255,0) 100%)`);
   }
 
   function collectThemeConfig() {
@@ -3553,9 +3610,20 @@
     if (!config && form) {
       form.reset();
     }
-    setThemeBuilderValue("themeKey", normalizeThemeCreatorKey(item?.key || "custom_theme"));
+    setThemeBuilderValue("themeTitle", item?.title || "Моя новая тема");
+    setThemeBuilderValue("themeKey", normalizeThemeCreatorKey(item?.key || transliterateThemeTitle("Моя новая тема")));
     if (config) {
       themeConfigKeys.forEach((key) => setThemeBuilderValue(key, config[key] || ""));
+      const radiusMatch = String(config.cardBorderRadius || "").match(/(\d+)/);
+      if (radiusMatch) setThemeBuilderValue("cardBorderRadiusSlider", radiusMatch[1]);
+      setThemeBuilderValue("fontPreset", config.fontFamily || "'Sora', 'Inter', 'Segoe UI', sans-serif");
+      setThemeBuilderValue("nameWeightSlider", config.nameFontWeight || "800");
+      document.querySelectorAll("[data-simple-color]").forEach((input) => {
+        if (!(input instanceof HTMLInputElement)) return;
+        const key = input.getAttribute("data-simple-color") || "";
+        const value = String(config[key] || "").trim();
+        if (/^#[0-9a-f]{6}$/i.test(value)) input.value = value;
+      });
       setThemeBuilderValue("overlaySvg", item?.overlaySvg || "");
       setThemeBuilderValue("primaryIconSvgText", item?.primaryIconSvg || "");
       setThemeBuilderValue("secondaryIconSvgText", item?.secondaryIconSvg || "");
@@ -4792,6 +4860,47 @@
     renderThemeBuilderPreview();
   });
 
+  document.getElementById("theme-builder-form")?.addEventListener("click", (event) => {
+    const target = event.target instanceof HTMLElement ? event.target : null;
+    const bgTypeBtn = target?.closest("[data-bg-type-btn]");
+    if (bgTypeBtn instanceof HTMLButtonElement) {
+      setThemeBuilderValue("cardBgType", bgTypeBtn.getAttribute("data-bg-type-btn") || "linear");
+      bgTypeBtn.parentElement?.querySelectorAll("[data-bg-type-btn]").forEach((node) => {
+        node.classList.toggle("is-active", node === bgTypeBtn);
+      });
+      renderThemeBuilderPreview();
+      return;
+    }
+    const angleBtn = target?.closest("[data-gradient-angle]");
+    if (angleBtn instanceof HTMLButtonElement) {
+      setThemeBuilderValue("cardBgAngle", angleBtn.getAttribute("data-gradient-angle") || "135");
+      angleBtn.parentElement?.querySelectorAll("[data-gradient-angle]").forEach((node) => {
+        node.classList.toggle("is-active", node === angleBtn);
+      });
+      renderThemeBuilderPreview();
+      return;
+    }
+    const shadowBtn = target?.closest("[data-shadow-choice-btn]");
+    if (shadowBtn instanceof HTMLButtonElement) {
+      setThemeBuilderValue("shadowPreset", shadowBtn.getAttribute("data-shadow-choice-btn") || "soft");
+      shadowBtn.parentElement?.querySelectorAll("[data-shadow-choice-btn]").forEach((node) => {
+        node.classList.toggle("is-active", node === shadowBtn);
+      });
+      renderThemeBuilderPreview();
+      return;
+    }
+    const colorBtn = target?.closest("[data-color]");
+    if (colorBtn instanceof HTMLButtonElement) {
+      const palette = colorBtn.closest("[data-palette-for]");
+      const fieldName = palette instanceof HTMLElement ? palette.getAttribute("data-palette-for") : "";
+      const field = fieldName ? getThemeBuilderForm()?.elements.namedItem(fieldName) : null;
+      if (field instanceof HTMLInputElement) {
+        field.value = colorBtn.getAttribute("data-color") || field.value;
+        renderThemeBuilderPreview();
+      }
+    }
+  });
+
   document.getElementById("theme-builder-form")?.addEventListener("change", async (event) => {
     const target = event.target instanceof HTMLElement ? event.target : null;
     const upload = target?.closest("[data-svg-upload]");
@@ -4837,7 +4946,7 @@
       headers: H({ "Content-Type": "application/json" }),
       body: JSON.stringify({
         key,
-        title: key,
+        title: getThemeBuilderValue("themeTitle", key).trim() || key,
         config,
         overlaySvg,
         primaryIconSvg,
