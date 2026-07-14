@@ -29,6 +29,7 @@ const { listAdvertisements } = require("../../services/advertisements");
 const { listEventCardReleases } = require("../../services/event-card-releases");
 const { findTrackById, normalizeTrackId } = require("../../services/profile-music");
 const { findPublicThemeConfigByKey } = require("../../services/theme-configs");
+const { getProfileEditorPresetsWithDisplayNames } = require("../../services/profile-editor-presets");
 const { recordView } = require("../../services/tap-tracker");
 const { isPublicProfileVisible } = require("../../services/subscription");
 const {
@@ -1693,6 +1694,7 @@ router.get(
       image: defaultSocialImage,
       telegramBotUsername: String(env.TELEGRAM_BOT_USERNAME || "").replace(/^@+/, "").trim(),
       reactivationWindowDays: Number(env.ACCOUNT_REACTIVATION_WINDOW_DAYS || 30),
+      themePresets: await getProfileEditorPresetsWithDisplayNames(),
       adminSession: getAdminSession(req),
     });
   }),

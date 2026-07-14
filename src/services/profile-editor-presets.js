@@ -1,4 +1,6 @@
 const { PET_PRESETS } = require("./pets");
+const { listThemeConfigs } = require("./theme-configs");
+const { getVisualStyleLabelMap } = require("./visual-style-labels");
 
 const SIGNATURE_THEMES = [
   {
@@ -350,6 +352,72 @@ function getProfileEditorPresets() {
   };
 }
 
+function applyStyleLabel(item, kind, labels) {
+  const key = String(item?.id || "").trim();
+  const displayName = labels instanceof Map ? labels.get(`${kind}:${key}`) : "";
+  return displayName ? { ...item, label: displayName } : { ...item };
+}
+
+async function getProfileEditorPresetsWithDisplayNames() {
+  const labels = await getVisualStyleLabelMap();
+  const customThemes = await listThemeConfigs({ limit: 500, publicOnly: true });
+  const existingThemeKeys = new Set([...SIGNATURE_THEMES, ...COLOR_THEMES].map((item) => item.id));
+  const customThemePresets = customThemes
+    .filter((item) => item?.key && !existingThemeKeys.has(item.key))
+    .map((item) => ({
+      id: item.key,
+      label: labels.get(`theme:${item.key}`) || item.title || item.key,
+      description: "Кастомная тема",
+      swatchStyle: `border-color:#000000;background:${String(item.config?.cardBg || "#111111")};`,
+      premiumRequired: true,
+      custom: true,
+    }));
+
+  return {
+    signatureThemes: [
+      ...SIGNATURE_THEMES.map((item) => applyStyleLabel(item, "theme", labels)),
+      ...customThemePresets,
+    ],
+    colorThemes: COLOR_THEMES.map((item) => applyStyleLabel(item, "theme", labels)),
+    avatarFrames: AVATAR_FRAMES.map((item) => applyStyleLabel(item, "frame", labels)),
+    emojiBackgroundPacks: EMOJI_BACKGROUND_PACKS,
+    petPresets: PET_PRESETS,
+  };
+}
+
+async function listAdminVisualStyles() {
+  const presets = await getProfileEditorPresetsWithDisplayNames();
+  return {
+    themes: [...presets.signatureThemes, ...presets.colorThemes].map((item) => ({
+      kind: "theme",
+      id: item.id,
+      key: item.id,
+      displayName: item.label,
+      description: item.description || "",
+      custom: Boolean(item.custom),
+      premiumRequired: Boolean(item.premiumRequired),
+    })),
+    frames: presets.avatarFrames.map((item) => ({
+      kind: "frame",
+      id: item.id,
+      key: item.id,
+      displayName: item.label,
+      description: item.description || "",
+      premiumRequired: Boolean(item.premiumRequired),
+    })),
+  };
+}
+
+function findStaticThemePreset(themeKey) {
+  const key = String(themeKey || "").trim();
+  return [...SIGNATURE_THEMES, ...COLOR_THEMES].find((item) => item.id === key) || null;
+}
+
+function findStaticFramePreset(frameKey) {
+  const key = String(frameKey || "").trim();
+  return AVATAR_FRAMES.find((item) => item.id === key) || null;
+}
+
 module.exports = {
   SIGNATURE_THEMES,
   COLOR_THEMES,
@@ -357,4 +425,8 @@ module.exports = {
   EMOJI_BACKGROUND_PACKS,
   PET_PRESETS,
   getProfileEditorPresets,
+  getProfileEditorPresetsWithDisplayNames,
+  findStaticFramePreset,
+  findStaticThemePreset,
+  listAdminVisualStyles,
 };

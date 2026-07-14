@@ -461,6 +461,82 @@
   gap: 8px;
 }
 
+.admin-visual-style-heading {
+  margin: 12px 0 0;
+  color: #93c5fd;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.admin-style-name-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(2, 6, 23, 0.72);
+  padding: 20px;
+}
+
+.admin-style-name-modal.hidden {
+  display: none;
+}
+
+.admin-style-name-dialog {
+  width: min(100%, 460px);
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 24px;
+  background: #0b1220;
+  padding: 18px;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+}
+
+.admin-style-name-head,
+.admin-style-name-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.admin-style-name-dialog h3 {
+  margin: 0;
+  color: #ffffff;
+  font-size: 20px;
+  font-weight: 900;
+}
+
+.admin-style-name-dialog label {
+  display: grid;
+  gap: 7px;
+  margin-top: 14px;
+  color: #cbd5e1;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.admin-style-name-dialog input {
+  width: 100%;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.72);
+  padding: 12px 13px;
+  color: #ffffff;
+  outline: none;
+}
+
+.admin-style-name-dialog input[readonly] {
+  color: #94a3b8;
+}
+
+.admin-style-name-actions {
+  justify-content: flex-end;
+  margin-top: 18px;
+}
+
 .admin-theme-builder {
   display: grid;
   grid-template-columns: minmax(0, 60fr) minmax(320px, 40fr);

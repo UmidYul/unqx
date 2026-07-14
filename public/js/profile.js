@@ -155,6 +155,24 @@
       "stopwatch_ring",
       "medal_ribbon",
     ];
+    try {
+      const presetNode = document.getElementById("profile-style-presets-data");
+      const presetPayload = presetNode instanceof HTMLScriptElement ? JSON.parse(presetNode.textContent || "{}") : {};
+      if (Array.isArray(presetPayload.themes)) {
+        presetPayload.themes.forEach((theme) => {
+          const key = String(theme || "").trim();
+          if (key && !PROFILE_THEMES.includes(key)) PROFILE_THEMES.push(key);
+        });
+      }
+      if (Array.isArray(presetPayload.frames)) {
+        presetPayload.frames.forEach((frame) => {
+          const key = String(frame || "").trim();
+          if (key && !PROFILE_AVATAR_FRAMES.includes(key)) PROFILE_AVATAR_FRAMES.push(key);
+        });
+      }
+    } catch {
+      // Keep static presets if server preset payload is unavailable.
+    }
     const PROFILE_EMOJI_BACKGROUND_PACKS = [
       "none",
       "ghosts",

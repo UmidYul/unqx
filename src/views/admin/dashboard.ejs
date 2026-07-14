@@ -1407,6 +1407,18 @@
                 <div id="theme-configs-list" class="admin-theme-list"></div>
               </section>
 
+              <section class="admin-theme-shell">
+                <div class="admin-theme-list-head">
+                  <div>
+                    <p class="admin-theme-kicker">Theme & Frame Names</p>
+                    <h3>Темы и рамки</h3>
+                    <p>Переименовывайте названия, которые видят пользователи. Технический ID остается неизменным.</p>
+                  </div>
+                  <button type="button" id="visual-style-list-refresh" class="admin-theme-ghost-btn">Обновить</button>
+                </div>
+                <div id="visual-style-labels-list" class="admin-theme-list"></div>
+              </section>
+
               <section id="theme-builder" class="admin-theme-builder hidden" aria-live="polite">
                 <form id="theme-builder-form" class="admin-theme-controls">
                   <div class="admin-theme-builder-head">
@@ -1641,6 +1653,31 @@
                 </aside>
               </section>
             </section>
+
+            <div id="visual-style-name-modal" class="admin-style-name-modal hidden" aria-hidden="true">
+              <form id="visual-style-name-form" class="admin-style-name-dialog">
+                <div class="admin-style-name-head">
+                  <div>
+                    <p class="admin-theme-kicker">Display Name</p>
+                    <h3>Редактировать имя</h3>
+                  </div>
+                  <button type="button" class="admin-theme-ghost-btn" data-style-name-close>Закрыть</button>
+                </div>
+                <input type="hidden" name="kind" />
+                <label>
+                  Технический ID
+                  <input name="key" type="text" readonly />
+                </label>
+                <label>
+                  Отображаемое имя
+                  <input name="displayName" type="text" maxlength="160" required />
+                </label>
+                <div class="admin-style-name-actions">
+                  <button type="button" class="admin-theme-ghost-btn" data-style-name-close>Отмена</button>
+                  <button type="submit" class="admin-theme-primary-btn">Сохранить</button>
+                </div>
+              </form>
+            </div>
 
             <section id="tab-advertisements" class="<%= pageActiveTab === 'advertisements' ? '' : 'hidden' %> admin-ads-panel">
               <header class="admin-ads-card admin-ads-header">

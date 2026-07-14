@@ -3366,6 +3366,12 @@
     activeId: null,
   };
 
+  const visualStyleState = {
+    themes: [],
+    frames: [],
+    editing: null,
+  };
+
   const themePreviewCard = {
     slug: "UNQ777",
     slugs: ["UNQ777", "VIP001"],
@@ -3731,9 +3737,72 @@
       </div>
       <div class="admin-theme-row-actions">
         <button type="button" class="admin-theme-ghost-btn" data-act="theme-edit" data-id="${id}">Редактировать</button>
+        <button type="button" class="admin-theme-ghost-btn" data-act="visual-style-edit" data-kind="theme" data-key="${X(key)}" data-name="${X(title)}" data-theme-id="${id}">Имя</button>
         <button type="button" class="admin-theme-ghost-btn" data-act="theme-delete" data-id="${id}">Удалить</button>
       </div>
     </article>`;
+  }
+
+  function renderVisualStyleRow(item) {
+    const kind = String(item?.kind || "");
+    const key = String(item?.key || item?.id || "");
+    const displayName = String(item?.displayName || key || "");
+    const description = String(item?.description || "");
+    return `<article class="admin-theme-row">
+      <span class="admin-theme-row-swatch">${kind === "frame" ? "FR" : "TH"}</span>
+      <div class="min-w-0">
+        <p class="admin-theme-row-title">${X(displayName)}</p>
+        <p class="admin-theme-row-meta">${X(key)}${description ? ` · ${X(description)}` : ""}</p>
+      </div>
+      <div class="admin-theme-row-actions">
+        <button type="button" class="admin-theme-ghost-btn" data-act="visual-style-edit" data-kind="${X(kind)}" data-key="${X(key)}" data-name="${X(displayName)}">Редактировать</button>
+      </div>
+    </article>`;
+  }
+
+  async function loadVisualStyles() {
+    const list = document.getElementById("visual-style-labels-list");
+    if (!(list instanceof HTMLElement)) return;
+    list.innerHTML = '<div class="admin-theme-row"><p class="admin-theme-row-title">Загружаем темы и рамки...</p></div>';
+    const r = await fetch("/api/admin/visual-styles", { headers: H() });
+    if (!r.ok) {
+      list.innerHTML = `<div class="admin-theme-row"><p class="admin-theme-row-title text-red-300">${X(await E(r))}</p></div>`;
+      return;
+    }
+    const payload = await r.json().catch(() => ({}));
+    visualStyleState.themes = Array.isArray(payload.themes) ? payload.themes : [];
+    visualStyleState.frames = Array.isArray(payload.frames) ? payload.frames : [];
+    list.innerHTML = `
+      <p class="admin-visual-style-heading">Темы</p>
+      ${visualStyleState.themes.length ? visualStyleState.themes.map(renderVisualStyleRow).join("") : '<div class="admin-theme-row"><p class="admin-theme-row-title">Тем нет.</p></div>'}
+      <p class="admin-visual-style-heading">Рамки</p>
+      ${visualStyleState.frames.length ? visualStyleState.frames.map(renderVisualStyleRow).join("") : '<div class="admin-theme-row"><p class="admin-theme-row-title">Рамок нет.</p></div>'}
+    `;
+  }
+
+  function openVisualStyleModal({ kind, key, displayName, themeId = "" }) {
+    const modal = document.getElementById("visual-style-name-modal");
+    const form = document.getElementById("visual-style-name-form");
+    if (!(modal instanceof HTMLElement) || !(form instanceof HTMLFormElement)) return;
+    visualStyleState.editing = { kind, key, themeId };
+    setFormValue(form, "kind", kind);
+    setFormValue(form, "key", key);
+    setFormValue(form, "displayName", displayName || key);
+    modal.classList.remove("hidden");
+    modal.setAttribute("aria-hidden", "false");
+    const input = form.elements.namedItem("displayName");
+    if (input instanceof HTMLInputElement) {
+      input.focus();
+      input.select();
+    }
+  }
+
+  function closeVisualStyleModal() {
+    const modal = document.getElementById("visual-style-name-modal");
+    if (!(modal instanceof HTMLElement)) return;
+    visualStyleState.editing = null;
+    modal.classList.add("hidden");
+    modal.setAttribute("aria-hidden", "true");
   }
 
   async function loadThemeConfigs() {
@@ -4799,6 +4868,15 @@
       closeAllRowMenus();
       return;
     }
+    if (a === "visual-style-edit") {
+      const kind = n.getAttribute("data-kind") || "";
+      const key = n.getAttribute("data-key") || "";
+      const displayName = n.getAttribute("data-name") || key;
+      const themeId = n.getAttribute("data-theme-id") || "";
+      openVisualStyleModal({ kind, key, displayName, themeId });
+      closeAllRowMenus();
+      return;
+    }
     if (a === "theme-edit") {
       const id = Number(n.getAttribute("data-id") || 0);
       const item = themeBuilderState.items.find((entry) => Number(entry.id) === id);
@@ -4932,7 +5010,40 @@
 
   document.getElementById("theme-create-open")?.addEventListener("click", () => openThemeBuilder());
   document.getElementById("theme-list-refresh")?.addEventListener("click", () => void loadThemeConfigs());
+  document.getElementById("visual-style-list-refresh")?.addEventListener("click", () => void loadVisualStyles());
   document.getElementById("theme-builder-reset")?.addEventListener("click", () => openThemeBuilder());
+  document.querySelectorAll("[data-style-name-close]").forEach((button) => {
+    button.addEventListener("click", () => closeVisualStyleModal());
+  });
+  document.getElementById("visual-style-name-modal")?.addEventListener("click", (event) => {
+    if (event.target === event.currentTarget) closeVisualStyleModal();
+  });
+  document.getElementById("visual-style-name-form")?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    if (!(form instanceof HTMLFormElement)) return;
+    const editing = visualStyleState.editing || {};
+    const kind = String(editing.kind || getFormValue(form, "kind", "")).trim();
+    const key = String(editing.key || getFormValue(form, "key", "")).trim();
+    const displayName = getFormValue(form, "displayName", "").trim();
+    const themeId = String(editing.themeId || "").trim();
+    const targetId = kind === "theme" && themeId ? themeId : key;
+    const endpoint = kind === "frame"
+      ? `/api/admin/frames/${encodeURIComponent(key)}`
+      : `/api/admin/themes/${encodeURIComponent(targetId)}`;
+    const r = await fetch(endpoint, {
+      method: "PUT",
+      headers: H({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ displayName }),
+    });
+    if (!r.ok) {
+      await showAlert(await E(r));
+      return;
+    }
+    closeVisualStyleModal();
+    await Promise.all([loadVisualStyles(), loadThemeConfigs()]);
+    await showAlert("Имя обновлено.");
+  });
 
   document.getElementById("theme-builder-form")?.addEventListener("input", () => {
     renderThemeBuilderPreview();
@@ -5729,6 +5840,7 @@
   if (tab === "themes") {
     dbg("load", "themes");
     void loadThemeConfigs();
+    void loadVisualStyles();
     renderThemeBuilderPreview();
   }
   if (tab === "event-cards") {

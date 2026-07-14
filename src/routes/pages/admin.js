@@ -15,7 +15,7 @@ const { loginRateLimit } = require("../../middleware/rate-limit");
 const { requireCsrfToken } = require("../../middleware/csrf");
 const { getBaseUrl } = require("../../utils/url");
 const { SESSION_COOKIE_NAME, LEGACY_SESSION_COOKIE_NAMES, buildCookieOptions } = require("../../utils/cookies");
-const { getProfileEditorPresets } = require("../../services/profile-editor-presets");
+const { getProfileEditorPresetsWithDisplayNames } = require("../../services/profile-editor-presets");
 const { ensureProfileCardExists } = require("../../services/public-handle");
 
 const router = express.Router();
@@ -401,7 +401,7 @@ router.get(
           ownerSearchQuery: String(req.query.q || "").trim(),
           ownerSearchResults: await searchAdminCardOwners(req.query.q),
           ownerPickerError: "Пользователь не найден",
-          themePresets: getProfileEditorPresets(),
+          themePresets: await getProfileEditorPresetsWithDisplayNames(),
         });
         return;
       }
@@ -428,7 +428,7 @@ router.get(
       ownerSearchQuery: String(req.query.q || "").trim(),
       ownerSearchResults: await searchAdminCardOwners(req.query.q),
       ownerPickerError: "",
-      themePresets: getProfileEditorPresets(),
+      themePresets: await getProfileEditorPresetsWithDisplayNames(),
     });
   }),
 );
@@ -459,7 +459,7 @@ router.get(
         ownerSearchQuery: "",
         ownerSearchResults: [],
         ownerPickerError: "",
-        themePresets: getProfileEditorPresets(),
+        themePresets: await getProfileEditorPresetsWithDisplayNames(),
       });
       return;
     }
@@ -473,7 +473,7 @@ router.get(
       ownerSearchQuery: "",
       ownerSearchResults: [],
       ownerPickerError: "",
-      themePresets: getProfileEditorPresets(),
+      themePresets: await getProfileEditorPresetsWithDisplayNames(),
     });
   }),
 );

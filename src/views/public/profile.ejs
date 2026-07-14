@@ -105,7 +105,14 @@
   swatchStyle: "border-color:#bcbec6;background:linear-gradient(145deg,#17181d 0%,#2d3038 100%);" , glyphLabel: "WB" ,
   premiumRequired: true, }, { id: "hearts" , label: "Hearts" , description: "Ритм и soft luxe" ,
   swatchStyle: "border-color:#d4b0ba;background:linear-gradient(145deg,#24161b 0%,#4a2932 100%);" , glyphLabel: "HT" ,
-  premiumRequired: true, }, ]; const frameClassName=(value)=> String(value || "").replace(/_/g, "-");
+  premiumRequired: true, }, ]; const serverThemePresets=typeof themePresets==="object" && themePresets ? themePresets : null;
+  if (serverThemePresets) {
+  if (Array.isArray(serverThemePresets.signatureThemes)) signatureThemes.splice(0, signatureThemes.length, ...serverThemePresets.signatureThemes);
+  if (Array.isArray(serverThemePresets.colorThemes)) colorThemes.splice(0, colorThemes.length, ...serverThemePresets.colorThemes);
+  if (Array.isArray(serverThemePresets.avatarFrames)) avatarFrames.splice(0, avatarFrames.length, ...serverThemePresets.avatarFrames);
+  if (Array.isArray(serverThemePresets.emojiBackgroundPacks)) emojiBackgroundPacks.splice(0, emojiBackgroundPacks.length, ...serverThemePresets.emojiBackgroundPacks);
+  }
+  const frameClassName=(value)=> String(value || "").replace(/_/g, "-");
   const emojiPackClassName = (value) => String(value || "").replace(/_/g, "-");
   const renderEmojiPackIcon = (id, className) => {
   switch (String(id || "").trim().toLowerCase()) {
@@ -1737,6 +1744,10 @@
       <script nonce="<%= cspNonce %>" src="/js/official-unq-letters.js"></script>
       <script nonce="<%= cspNonce %>" src="/js/order-modal.js?v=<%= encodeURIComponent(assetVersion || '') %>"></script>
       <script nonce="<%= cspNonce %>" src="/js/card-view.js?v=<%= encodeURIComponent(assetVersion || '') %>"></script>
+      <script nonce="<%= cspNonce %>" id="profile-style-presets-data" type="application/json"><%- JSON.stringify({
+        themes: [...signatureThemes, ...colorThemes].map((item) => item.id),
+        frames: avatarFrames.map((item) => item.id),
+      }) %></script>
       <script nonce="<%= cspNonce %>" src="/js/profile.js?v=<%= encodeURIComponent(assetVersion || '') %>"></script>
   </body>
 

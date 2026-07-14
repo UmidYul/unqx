@@ -122,8 +122,18 @@ const {
   deleteThemeConfig,
   findPublicThemeConfigByKey,
   listThemeConfigs,
+  updateThemeConfigTitle,
   upsertThemeConfig,
 } = require("../../services/theme-configs");
+const {
+  findStaticFramePreset,
+  findStaticThemePreset,
+  listAdminVisualStyles,
+} = require("../../services/profile-editor-presets");
+const {
+  normalizeDisplayName: normalizeVisualStyleDisplayName,
+  upsertVisualStyleLabel,
+} = require("../../services/visual-style-labels");
 
 const router = express.Router();
 const ONLINE_WINDOW_SECONDS = 90;
@@ -2484,6 +2494,14 @@ router.get(
   }),
 );
 
+router.get(
+  "/visual-styles",
+  asyncHandler(async (_req, res) => {
+    const styles = await listAdminVisualStyles();
+    res.json(styles);
+  }),
+);
+
 router.post(
   "/themes",
   asyncHandler(async (req, res) => {
@@ -2494,6 +2512,59 @@ router.post(
       const status = Number(error?.status || 500);
       res.status(status >= 400 && status < 600 ? status : 500).json({
         error: error?.message || "Не удалось сохранить тему.",
+      });
+    }
+  }),
+);
+
+router.put(
+  "/themes/:id",
+  asyncHandler(async (req, res) => {
+    try {
+      const displayName = normalizeVisualStyleDisplayName(req.body?.displayName || req.body?.title || req.body?.name);
+      const rawId = String(req.params.id || "").trim();
+      if (/^\d+$/.test(rawId)) {
+        const item = await updateThemeConfigTitle(rawId, displayName);
+        if (!item) {
+          res.status(404).json({ error: "Тема не найдена." });
+          return;
+        }
+        res.json({ ok: true, item });
+        return;
+      }
+      const staticPreset = findStaticThemePreset(rawId);
+      if (!staticPreset) {
+        res.status(404).json({ error: "Тема не найдена." });
+        return;
+      }
+      const item = await upsertVisualStyleLabel({ kind: "theme", key: rawId, displayName });
+      res.json({ ok: true, item });
+    } catch (error) {
+      const status = Number(error?.status || 500);
+      res.status(status >= 400 && status < 600 ? status : 500).json({
+        error: error?.message || "Не удалось обновить имя темы.",
+      });
+    }
+  }),
+);
+
+router.put(
+  "/frames/:id",
+  asyncHandler(async (req, res) => {
+    try {
+      const displayName = normalizeVisualStyleDisplayName(req.body?.displayName || req.body?.title || req.body?.name);
+      const frameKey = String(req.params.id || "").trim().toLowerCase();
+      const staticPreset = findStaticFramePreset(frameKey);
+      if (!staticPreset) {
+        res.status(404).json({ error: "Рамка не найдена." });
+        return;
+      }
+      const item = await upsertVisualStyleLabel({ kind: "frame", key: frameKey, displayName });
+      res.json({ ok: true, item });
+    } catch (error) {
+      const status = Number(error?.status || 500);
+      res.status(status >= 400 && status < 600 ? status : 500).json({
+        error: error?.message || "Не удалось обновить имя рамки.",
       });
     }
   }),

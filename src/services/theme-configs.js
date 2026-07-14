@@ -280,6 +280,25 @@ async function deleteThemeConfig(id) {
   return mapThemeRow(Array.isArray(rows) ? rows[0] : null);
 }
 
+async function updateThemeConfigTitle(id, displayName) {
+  const numericId = Math.trunc(Number(id || 0));
+  if (!Number.isSafeInteger(numericId) || numericId <= 0) return null;
+  const title = normalizeTitle(displayName, "");
+  const rows = await prisma.$queryRaw`
+    UPDATE unqx_theme_configs
+    SET title = ${title},
+        cache_version = cache_version + 1,
+        updated_at = now()
+    WHERE id = ${numericId}
+    RETURNING id, theme_key AS "themeKey", title, card_bg_overlay AS "cardBgOverlay",
+              config_json AS "configJson", overlay_svg AS "overlaySvg",
+              primary_icon_svg AS "primaryIconSvg", secondary_icon_svg AS "secondaryIconSvg",
+              status, cache_version AS "cacheVersion",
+              created_at AS "createdAt", updated_at AS "updatedAt"
+  `;
+  return mapThemeRow(Array.isArray(rows) ? rows[0] : null);
+}
+
 module.exports = {
   REQUIRED_CONFIG_KEYS,
   deleteThemeConfig,
@@ -287,5 +306,6 @@ module.exports = {
   listThemeConfigs,
   normalizeThemeConfig,
   sanitizeSvg,
+  updateThemeConfigTitle,
   upsertThemeConfig,
 };
