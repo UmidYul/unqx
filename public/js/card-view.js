@@ -22,6 +22,7 @@
     "nebula_glass",
     "galaxy",
     "volt_sport",
+    "minion_yellow",
     "velours",
     "graffiti_neon",
     "heritage_crest",
@@ -678,6 +679,45 @@
       cardShadow: "0 22px 54px rgba(87, 125, 0, 0.34)",
       buttonShineGradient:
         "linear-gradient(90deg, rgba(182,255,0,0) 0%, rgba(182,255,0,0.3) 48%, rgba(255,255,255,0.42) 50%, rgba(182,255,0,0.3) 52%, rgba(182,255,0,0) 100%)",
+    },
+    minion_yellow: {
+      cardBg: "linear-gradient(165deg, #FFE45C 0%, #FFD42A 52%, #F6B900 100%)",
+      cardBgOverlay: "minion_yellow",
+      surfaceBg: "rgba(255, 247, 172, 0.78)",
+      cardBorder: "2px solid #000000",
+      surfaceBorder: "1px solid rgba(0, 0, 0, 0.28)",
+      dividerColor: "rgba(0, 0, 0, 0.22)",
+      nameColor: "#181818",
+      roleColor: "#3c3210",
+      mutedColor: "#5a4a12",
+      accentColor: "#1f4ea8",
+      emailColor: "#181818",
+      buttonPrimaryBg: "linear-gradient(135deg, #1f4ea8 0%, #12326f 100%)",
+      buttonPrimaryText: "#fff4a6",
+      buttonPrimaryBorder: "#000000",
+      buttonSecondaryBg: "rgba(255, 255, 255, 0.42)",
+      buttonSecondaryText: "#181818",
+      buttonSecondaryBorder: "rgba(0, 0, 0, 0.38)",
+      badgeText: "#fff4a6",
+      badgeBg: "#1f4ea8",
+      badgeBorder: "1px solid #000000",
+      topLineGradient: "linear-gradient(90deg, transparent, #1f4ea8, transparent)",
+      avatarBg: "linear-gradient(135deg, #1f4ea8, #12326f)",
+      avatarText: "#FFE45C",
+      avatarBorder: "2px solid #000000",
+      cardBorderRadius: "30px",
+      fontFamily: "'Nunito', 'Inter', 'Segoe UI', sans-serif",
+      nameFontStyle: "normal",
+      nameFontWeight: "900",
+      roleLetterSpacing: "0.1em",
+      scoreLabelColor: "#3c3210",
+      scoreValueColor: "#181818",
+      scoreBarFill: "#1f4ea8",
+      scoreBarTrack: "rgba(0, 0, 0, 0.18)",
+      scorePercentileColor: "#3c3210",
+      cardShadow: "0 20px 48px rgba(124, 88, 0, 0.32)",
+      buttonShineGradient:
+        "linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.3) 48%, rgba(255,255,255,0.55) 50%, rgba(255,255,255,0.3) 52%, rgba(255,255,255,0) 100%)",
     },
     velours: {
       cardBg: "linear-gradient(165deg, #2d0a12 0%, #2a0911 52%, #380d18 100%)",
@@ -1796,6 +1836,54 @@
         </g>
         <path d="M292 420l20 26 32 5-23 22 6 32-28-15-29 15 6-32-23-22 32-5 7-26Z" fill="#000000" opacity="0.12"></path>
         <path d="M34 266h116" stroke="url(#vs-stripe)" stroke-width="8" stroke-linecap="round" opacity="0.65"></path>
+      </svg>`;
+    }
+    if (themeKey === "minion_yellow") {
+      return `<svg class="unq-ref-overlay-svg" viewBox="0 0 360 600" preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <pattern id="my-dots" width="34" height="34" patternUnits="userSpaceOnUse">
+            <circle cx="7" cy="8" r="2.2" fill="#000000" opacity="0.08"></circle>
+            <circle cx="25" cy="24" r="1.8" fill="#ffffff" opacity="0.28"></circle>
+          </pattern>
+          <radialGradient id="my-glow" cx="50%" cy="22%" r="72%">
+            <stop offset="0%" stop-color="#fffbd1" stop-opacity="0.72"></stop>
+            <stop offset="100%" stop-color="#ffd42a" stop-opacity="0"></stop>
+          </radialGradient>
+          <linearGradient id="my-denim" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#2f6bd2" stop-opacity="0.34"></stop>
+            <stop offset="100%" stop-color="#0e347c" stop-opacity="0.18"></stop>
+          </linearGradient>
+        </defs>
+        <rect width="360" height="600" fill="url(#my-dots)"></rect>
+        <circle cx="268" cy="116" r="168" fill="url(#my-glow)"></circle>
+        <path d="M0 420h360v180H0z" fill="url(#my-denim)"></path>
+        <path d="M70 420v86c0 34 28 62 62 62h96c34 0 62-28 62-62v-86" fill="#1f4ea8" opacity="0.2"></path>
+        <path d="M98 420l-42 148M262 420l42 148" stroke="#000000" stroke-width="18" opacity="0.08" stroke-linecap="round"></path>
+        <path d="M74 456h212M94 506h172" stroke="#ffffff" stroke-width="1.4" opacity="0.22" stroke-dasharray="7 8" stroke-linecap="round"></path>
+        <g opacity="0.16" fill="none" stroke="#000000" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M86 128h188"></path>
+          <circle cx="136" cy="128" r="34"></circle>
+          <circle cx="224" cy="128" r="34"></circle>
+        </g>
+        <g opacity="0.18">
+          <circle cx="136" cy="128" r="22" fill="#ffffff"></circle>
+          <circle cx="224" cy="128" r="22" fill="#ffffff"></circle>
+          <circle cx="144" cy="132" r="8" fill="#2a2a2a"></circle>
+          <circle cx="216" cy="132" r="8" fill="#2a2a2a"></circle>
+        </g>
+        <g opacity="0.16" fill="none" stroke="#000000" stroke-width="5" stroke-linecap="round">
+          <path d="M58 270c34 20 74 11 92-22"></path>
+          <path d="M210 286c36 12 70-2 86-34"></path>
+          <path d="M78 246c14 14 40 18 58 2"></path>
+          <path d="M226 260c18 12 42 8 56-8"></path>
+        </g>
+        <g opacity="0.15" fill="#000000">
+          <path d="M54 198c28-24 72-21 96 6-40-10-72-8-96-6Z"></path>
+          <path d="M214 198c26-24 68-22 92 4-38-8-68-7-92-4Z"></path>
+          <path d="M126 342l13 26 29 4-21 20 5 29-26-14-26 14 5-29-21-20 29-4 13-26Z"></path>
+        </g>
+        <path d="M0 84C72 58 144 66 216 92C280 116 324 118 360 106" stroke="#000000" stroke-width="2" fill="none" opacity="0.12"></path>
+        <path d="M0 336C72 310 144 318 216 344C280 368 324 370 360 358" stroke="#000000" stroke-width="2" fill="none" opacity="0.12"></path>
       </svg>`;
     }
     if (themeKey === "football_pitch") {

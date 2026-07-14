@@ -237,6 +237,7 @@
     nebula_glass: { label: "Apple Liquid Glass", fill: "#0a0f24", border: "#a9c7ff", text: "#f1f6ff" },
     galaxy: { label: "Galaxy", fill: "#2A085C", border: "#00e5ff", text: "#00e5ff", bg: "#12072B" },
     volt_sport: { label: "Volt Sport", fill: "#B6FF00", border: "#000000", text: "#071000", bg: "#9DFF00" },
+    minion_yellow: { label: "Yellow Crew", fill: "#FFD42A", border: "#1b1b1b", text: "#1b1b1b", bg: "#FFE45C" },
     velours: { label: "Velours Luxe", fill: "#2d0a12", border: "#5a1828", text: "#c9a55a", bg: "#2d0a12" },
     graffiti_neon: { label: "Graffiti Neon", fill: "#19142a", border: "#5ef7ff", text: "#9bff62", bg: "#19142a" },
     heritage_crest: { label: "Sweet Ribbon", fill: "#ffc6dd", border: "#ff9fca", text: "#7a2446", bg: "#ffc6dd" },
@@ -1952,7 +1953,7 @@
           const userCell = rowProfileUrl
             ? `<a href="${rowProfileUrl}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" class="font-semibold text-neutral-900 underline-offset-4 hover:underline">${userNameText}</a>`
             : userNameText;
-          return `<tr class="admin-table-row border-t border-neutral-100 cursor-pointer hover:bg-neutral-50" data-user-profile-url="${rowProfileUrl}"><td class="px-4 py-3">${userCell}</td><td class="px-4 py-3">${emailCell}</td><td class="px-4 py-3">${planChipHtml}</td><td class="admin-col-slugs px-4 py-3 text-xs" title="${X(slugTitle)}">${X(slugText)}</td><td class="px-4 py-3">${statusChip(x.status === "blocked" ? "rejected" : "approved")}</td><td class="px-4 py-3">${DATE_ONLY(x.createdAt)}</td><td class="px-4 py-3 text-center" onclick="event.stopPropagation()"><div class="admin-row-actions justify-center">${menu}</div></td></tr>`;
+          return `<tr class="admin-table-row border-t border-neutral-100 hover:bg-neutral-50"><td class="px-4 py-3">${userCell}</td><td class="px-4 py-3">${emailCell}</td><td class="px-4 py-3">${planChipHtml}</td><td class="admin-col-slugs px-4 py-3 text-xs" title="${X(slugTitle)}">${X(slugText)}</td><td class="px-4 py-3">${statusChip(x.status === "blocked" ? "rejected" : "approved")}</td><td class="px-4 py-3">${DATE_ONLY(x.createdAt)}</td><td class="px-4 py-3 text-center" onclick="event.stopPropagation()"><div class="admin-row-actions justify-center">${menu}</div></td></tr>`;
         })
         .join("")
       : `<tr><td colspan="7" class="px-3 py-10 text-center text-neutral-500"><div class="inline-flex flex-col items-center gap-2">${I("userCheck", 48)}<span>No users found</span></div></td></tr>`;
@@ -4535,12 +4536,6 @@
     }
   });
   document.getElementById("users-filters")?.addEventListener("submit", (e) => { e.preventDefault(); const f = e.currentTarget; if (f instanceof HTMLFormElement) setFormValue(f, "page", "1"); void loadUsers(); });
-  document.getElementById("users-table")?.addEventListener("click", (e) => {
-    const row = e.target instanceof Element ? e.target.closest("tr[data-user-profile-url]") : null;
-    if (!row) return;
-    const url = row.getAttribute("data-user-profile-url");
-    if (url) window.open(url, "_blank", "noopener,noreferrer");
-  });
   document.getElementById("accounts-filters")?.addEventListener("submit", (e) => { e.preventDefault(); const f = e.currentTarget; if (f instanceof HTMLFormElement) setFormValue(f, "page", "1"); void loadAccounts(); });
   document.getElementById("payment-cards-filters")?.addEventListener("submit", (e) => {
     e.preventDefault();

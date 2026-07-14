@@ -18,6 +18,7 @@ const PROFILE_THEME_KEYS = [
   "nebula_glass",
   "galaxy",
   "volt_sport",
+  "minion_yellow",
   "velours",
   "graffiti_neon",
   "heritage_crest",

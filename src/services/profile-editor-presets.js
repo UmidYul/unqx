@@ -86,6 +86,13 @@ const SIGNATURE_THEMES = [
     premiumRequired: true,
   },
   {
+    id: "minion_yellow",
+    label: "Yellow Crew",
+    description: "Playful yellow goggles",
+    swatchStyle: "border-color:#1b1b1b;background:radial-gradient(circle at 28% 32%,#ffffff 0 9%,#1b1b1b 10% 13%,transparent 14%),radial-gradient(circle at 58% 32%,#ffffff 0 9%,#1b1b1b 10% 13%,transparent 14%),linear-gradient(145deg,#FFE45C 0%,#FFD42A 54%,#F6B900 100%);box-shadow:inset 0 -12px 0 rgba(37,82,176,0.32);",
+    premiumRequired: true,
+  },
+  {
     id: "velours",
     label: "Velours Luxe",
     description: "Burgundy velvet luxe",
