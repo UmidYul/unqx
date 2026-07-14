@@ -17,6 +17,7 @@
     score:           { title: "UNQ Score",             desc: "Рейтинги пользователей и система начисления баллов.",                        action: null },
     "flash-sales":   { title: "Flash Sale",            desc: "Акции с ограниченным временем, скидки и настройки распродаж.",               action: null },
     auctions:        { title: "Аукционы",              desc: "Лоты UNQX, живые ставки, модерация участников и фиксация победителей.",       action: null },
+    themes:          { title: "Темы",                  desc: "Конструктор визуальных стилей для цифровых NFC-визиток.",                     action: null },
     "event-cards":   { title: "Карты",                 desc: "Публикации эксклюзивных ивентовых дизайнов от имени администратора.",         action: null },
     music:           { title: "Управление музыкой",    desc: "Библиотека MP3-треков, которые пользователи Premium могут выбрать для профиля.", action: null },
     advertisements:  { title: "Реклама / партнёры",    desc: "Загрузка партнёрских PNG-логотипов и управление рекламными местами.",         action: null },
@@ -43,7 +44,7 @@
   <html lang="ru">
 
   <head>
-    <%- include('../partials/head', { title: pageTitle, styles: ['/css/admin.css'] }) %>
+    <%- include('../partials/head', { title: pageTitle, styles: ['/css/admin.css', '/css/public-card.css'] }) %>
   </head>
 
   <body class="antialiased" data-admin-layout="1" data-page="admin-dashboard"
@@ -1385,6 +1386,228 @@
               </section>
             </section>
 
+            <section id="tab-themes" class="<%= pageActiveTab === 'themes' ? '' : 'hidden' %> admin-theme-creator-panel">
+              <header class="admin-theme-shell admin-theme-hero">
+                <div>
+                  <p class="admin-theme-kicker">Theme Creator</p>
+                  <h2>Конструктор тем</h2>
+                  <p>Создавайте JSON-конфиги визуальных стилей с live-preview карточки. Структура результата совпадает с темами вроде <code>volt_sport</code>.</p>
+                </div>
+                <button type="button" id="theme-create-open" class="admin-theme-primary-btn">Создать тему</button>
+              </header>
+
+              <section class="admin-theme-shell">
+                <div class="admin-theme-list-head">
+                  <div>
+                    <p class="admin-theme-kicker">Saved Themes</p>
+                    <h3>Существующие темы</h3>
+                  </div>
+                  <button type="button" id="theme-list-refresh" class="admin-theme-ghost-btn">Обновить</button>
+                </div>
+                <div id="theme-configs-list" class="admin-theme-list"></div>
+              </section>
+
+              <section id="theme-builder" class="admin-theme-builder hidden" aria-live="polite">
+                <form id="theme-builder-form" class="admin-theme-controls">
+                  <div class="admin-theme-builder-head">
+                    <div>
+                      <p class="admin-theme-kicker">Builder</p>
+                      <h3>Настройка темы</h3>
+                    </div>
+                    <div class="admin-theme-builder-actions">
+                      <button type="button" id="theme-builder-reset" class="admin-theme-ghost-btn">Сбросить</button>
+                      <button type="submit" class="admin-theme-primary-btn">Сохранить тему</button>
+                    </div>
+                  </div>
+
+                  <details class="admin-theme-accordion" open>
+                    <summary>Основная информация</summary>
+                    <div class="admin-theme-fields two">
+                      <label>Название темы / key
+                        <input name="themeKey" type="text" value="custom_theme" maxlength="80" data-theme-field="themeKey" />
+                      </label>
+                      <label>Идентификатор оверлея
+                        <input name="cardBgOverlay" type="text" value="custom_theme" maxlength="120" data-theme-field="cardBgOverlay" />
+                      </label>
+                    </div>
+                  </details>
+
+                  <details class="admin-theme-accordion" open>
+                    <summary>Фоновые настройки и границы</summary>
+                    <div class="admin-theme-fields three">
+                      <label>Тип фона
+                        <select name="cardBgType" data-theme-bg-type>
+                          <option value="linear">Линейный градиент</option>
+                          <option value="radial">Радиальный градиент</option>
+                          <option value="solid">Сплошной цвет</option>
+                        </select>
+                      </label>
+                      <label>Угол
+                        <input name="cardBgAngle" type="number" min="0" max="360" value="165" data-theme-bg-angle />
+                      </label>
+                      <label>Фон карты CSS
+                        <input name="cardBg" type="text" data-theme-field="cardBg" />
+                      </label>
+                      <label>Цвет 1
+                        <input name="cardBgStart" type="color" value="#B6FF00" data-theme-bg-start />
+                      </label>
+                      <label>Цвет 2
+                        <input name="cardBgEnd" type="color" value="#E8FF5B" data-theme-bg-end />
+                      </label>
+                      <label>Цвет подложки
+                        <input name="surfaceBg" type="text" value="rgba(10, 18, 0, 0.78)" data-theme-field="surfaceBg" />
+                      </label>
+                      <label>Толщина border
+                        <input name="cardBorderWidth" type="number" min="0" max="12" value="2" data-border-width />
+                      </label>
+                      <label>Стиль border
+                        <select name="cardBorderStyle" data-border-style>
+                          <option value="solid">solid</option>
+                          <option value="dashed">dashed</option>
+                          <option value="double">double</option>
+                        </select>
+                      </label>
+                      <label>Цвет border
+                        <input name="cardBorderColor" type="color" value="#000000" data-border-color />
+                      </label>
+                      <label>Граница карты CSS
+                        <input name="cardBorder" type="text" data-theme-field="cardBorder" />
+                      </label>
+                      <label>Граница подложки
+                        <input name="surfaceBorder" type="text" value="1px solid rgba(0, 0, 0, 0.28)" data-theme-field="surfaceBorder" />
+                      </label>
+                      <label>Разделитель
+                        <input name="dividerColor" type="text" value="rgba(0, 0, 0, 0.24)" data-theme-field="dividerColor" />
+                      </label>
+                      <label>Радиус скругления <span data-radius-label>28px</span>
+                        <input name="cardBorderRadiusSlider" type="range" min="0" max="50" value="28" data-radius-slider />
+                        <input name="cardBorderRadius" type="text" value="28px" data-theme-field="cardBorderRadius" />
+                      </label>
+                      <label>Тень карты CSS
+                        <input name="cardShadow" type="text" value="0 22px 54px rgba(87, 125, 0, 0.34)" data-theme-field="cardShadow" />
+                      </label>
+                      <label>Цвет тени
+                        <input name="shadowColor" type="text" value="rgba(87, 125, 0, 0.34)" data-shadow-color />
+                      </label>
+                      <label>X / Y / Blur / Spread
+                        <span class="admin-theme-inline-inputs">
+                          <input name="shadowX" type="number" value="0" data-shadow-x />
+                          <input name="shadowY" type="number" value="22" data-shadow-y />
+                          <input name="shadowBlur" type="number" value="54" data-shadow-blur />
+                          <input name="shadowSpread" type="number" value="0" data-shadow-spread />
+                        </span>
+                      </label>
+                    </div>
+                  </details>
+
+                  <details class="admin-theme-accordion">
+                    <summary>Типографика</summary>
+                    <div class="admin-theme-fields three">
+                      <label>Шрифт
+                        <select name="fontFamily" data-theme-field="fontFamily">
+                          <option value="'Sora', 'Inter', 'Segoe UI', sans-serif">Sora</option>
+                          <option value="'Inter', 'Segoe UI', sans-serif">Inter</option>
+                          <option value="'Manrope', 'Inter', sans-serif">Manrope</option>
+                          <option value="'Nunito', 'Inter', sans-serif">Nunito</option>
+                          <option value="'Segoe UI', sans-serif">Segoe UI</option>
+                        </select>
+                      </label>
+                      <label>Цвет имени <input name="nameColor" type="text" value="#071000" data-theme-field="nameColor" /></label>
+                      <label>Стиль имени
+                        <select name="nameFontStyle" data-theme-field="nameFontStyle">
+                          <option value="normal">normal</option>
+                          <option value="italic">italic</option>
+                        </select>
+                      </label>
+                      <label>Насыщенность имени
+                        <input name="nameFontWeight" type="range" min="100" max="900" step="100" value="900" data-theme-field="nameFontWeight" />
+                      </label>
+                      <label>Цвет роли <input name="roleColor" type="text" value="#1c2d00" data-theme-field="roleColor" /></label>
+                      <label>Letter spacing роли <input name="roleLetterSpacing" type="text" value="0.12em" data-theme-field="roleLetterSpacing" /></label>
+                      <label>Muted <input name="mutedColor" type="text" value="#334600" data-theme-field="mutedColor" /></label>
+                      <label>Accent <input name="accentColor" type="text" value="#000000" data-theme-field="accentColor" /></label>
+                      <label>Email <input name="emailColor" type="text" value="#071000" data-theme-field="emailColor" /></label>
+                    </div>
+                  </details>
+
+                  <details class="admin-theme-accordion">
+                    <summary>Кнопки и SVG-иконки</summary>
+                    <div class="admin-theme-fields two">
+                      <label>Primary фон <input name="buttonPrimaryBg" type="text" value="linear-gradient(135deg, #000000 0%, #263500 100%)" data-theme-field="buttonPrimaryBg" /></label>
+                      <label>Primary текст/иконка <input name="buttonPrimaryText" type="text" value="#B6FF00" data-theme-field="buttonPrimaryText" /></label>
+                      <label>Primary border <input name="buttonPrimaryBorder" type="text" value="#000000" data-theme-field="buttonPrimaryBorder" /></label>
+                      <label>Secondary фон <input name="buttonSecondaryBg" type="text" value="rgba(255, 255, 255, 0.34)" data-theme-field="buttonSecondaryBg" /></label>
+                      <label>Secondary текст/иконка <input name="buttonSecondaryText" type="text" value="#071000" data-theme-field="buttonSecondaryText" /></label>
+                      <label>Secondary border <input name="buttonSecondaryBorder" type="text" value="rgba(0, 0, 0, 0.34)" data-theme-field="buttonSecondaryBorder" /></label>
+                      <label class="admin-theme-dropzone">Primary SVG
+                        <input name="primaryIconSvg" type="file" accept=".svg,image/svg+xml" data-svg-upload="primary" />
+                        <textarea name="primaryIconSvgText" rows="4" placeholder="<svg ...>" data-svg-text="primary"></textarea>
+                      </label>
+                      <label class="admin-theme-dropzone">Secondary SVG
+                        <input name="secondaryIconSvg" type="file" accept=".svg,image/svg+xml" data-svg-upload="secondary" />
+                        <textarea name="secondaryIconSvgText" rows="4" placeholder="<svg ...>" data-svg-text="secondary"></textarea>
+                      </label>
+                      <label class="wide">Эффект блика
+                        <input name="buttonShineGradient" type="text" value="linear-gradient(90deg, rgba(182,255,0,0) 0%, rgba(182,255,0,0.3) 48%, rgba(255,255,255,0.42) 50%, rgba(182,255,0,0.3) 52%, rgba(182,255,0,0) 100%)" data-theme-field="buttonShineGradient" />
+                      </label>
+                    </div>
+                  </details>
+
+                  <details class="admin-theme-accordion">
+                    <summary>Бейджи и аватар</summary>
+                    <div class="admin-theme-fields three">
+                      <label>Badge text <input name="badgeText" type="text" value="#B6FF00" data-theme-field="badgeText" /></label>
+                      <label>Badge bg <input name="badgeBg" type="text" value="#000000" data-theme-field="badgeBg" /></label>
+                      <label>Badge border <input name="badgeBorder" type="text" value="1px solid #000000" data-theme-field="badgeBorder" /></label>
+                      <label>Avatar bg <input name="avatarBg" type="text" value="linear-gradient(135deg, #071000, #263500)" data-theme-field="avatarBg" /></label>
+                      <label>Avatar text <input name="avatarText" type="text" value="#B6FF00" data-theme-field="avatarText" /></label>
+                      <label>Avatar border <input name="avatarBorder" type="text" value="2px solid #000000" data-theme-field="avatarBorder" /></label>
+                      <label class="wide">Top line gradient <input name="topLineGradient" type="text" value="linear-gradient(90deg, transparent, #000000, transparent)" data-theme-field="topLineGradient" /></label>
+                    </div>
+                  </details>
+
+                  <details class="admin-theme-accordion">
+                    <summary>Геймификация и шкалы</summary>
+                    <div class="admin-theme-fields three">
+                      <label>Score label <input name="scoreLabelColor" type="text" value="#1c2d00" data-theme-field="scoreLabelColor" /></label>
+                      <label>Score value <input name="scoreValueColor" type="text" value="#071000" data-theme-field="scoreValueColor" /></label>
+                      <label>Score fill <input name="scoreBarFill" type="text" value="#000000" data-theme-field="scoreBarFill" /></label>
+                      <label>Score track <input name="scoreBarTrack" type="text" value="rgba(0, 0, 0, 0.18)" data-theme-field="scoreBarTrack" /></label>
+                      <label>Score percentile <input name="scorePercentileColor" type="text" value="#1c2d00" data-theme-field="scorePercentileColor" /></label>
+                    </div>
+                  </details>
+
+                  <details class="admin-theme-accordion">
+                    <summary>SVG overlay</summary>
+                    <div class="admin-theme-fields">
+                      <label class="admin-theme-dropzone wide">SVG фон/оверлей
+                        <input name="overlaySvgFile" type="file" accept=".svg,image/svg+xml" data-svg-upload="overlay" />
+                        <textarea name="overlaySvg" rows="7" placeholder="<svg ...>" data-svg-text="overlay"></textarea>
+                      </label>
+                    </div>
+                  </details>
+
+                  <details class="admin-theme-accordion" open>
+                    <summary>JSON результата</summary>
+                    <textarea id="theme-json-output" class="admin-theme-json-output" rows="12" readonly></textarea>
+                  </details>
+                </form>
+
+                <aside class="admin-theme-preview">
+                  <div class="admin-theme-preview-sticky">
+                    <div class="admin-theme-preview-head">
+                      <div>
+                        <p class="admin-theme-kicker">Live Preview</p>
+                        <h3>Цифровая карта</h3>
+                      </div>
+                      <span id="theme-preview-key">custom_theme</span>
+                    </div>
+                    <div id="theme-live-preview" class="admin-theme-preview-card"></div>
+                  </div>
+                </aside>
+              </section>
+            </section>
+
             <section id="tab-advertisements" class="<%= pageActiveTab === 'advertisements' ? '' : 'hidden' %> admin-ads-panel">
               <header class="admin-ads-card admin-ads-header">
                 <h2>Реклама / Партнёры / Коллаборации</h2>
@@ -2520,6 +2743,7 @@
         <script nonce="<%= cspNonce %>" src="<%= withPageAssetVersion('/vendor/sortablejs/Sortable.min.js') %>"></script>
         <script nonce="<%= cspNonce %>" src="<%= withPageAssetVersion('/vendor/qrcode/qrcode.min.js') %>"></script>
         <script nonce="<%= cspNonce %>" src="<%= withPageAssetVersion('/vendor/chartjs/chart.umd.min.js') %>"></script>
+        <script nonce="<%= cspNonce %>" src="<%= withPageAssetVersion('/js/card-view.js') %>"></script>
         <script nonce="<%= cspNonce %>" src="<%= withPageAssetVersion('/js/admin-dashboard.js') %>"></script>
         <% if (adminSession?.role !=='manager' ) { %>
           <script nonce="<%= cspNonce %>" src="<%= withPageAssetVersion('/js/admin-features.js') %>"></script>

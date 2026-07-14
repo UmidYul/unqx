@@ -118,6 +118,11 @@ const {
   listTracks,
   saveTrackMp3,
 } = require("../../services/profile-music");
+const {
+  deleteThemeConfig,
+  listThemeConfigs,
+  upsertThemeConfig,
+} = require("../../services/theme-configs");
 
 const router = express.Router();
 const ONLINE_WINDOW_SECONDS = 90;
@@ -2463,6 +2468,41 @@ router.delete(
     const item = await deleteAdvertisement(req.params.id);
     if (!item) {
       res.status(404).json({ error: "Баннер не найден." });
+      return;
+    }
+    res.json({ ok: true, item });
+  }),
+);
+
+router.get(
+  "/themes",
+  asyncHandler(async (_req, res) => {
+    const items = await listThemeConfigs({ limit: 500 });
+    res.json({ items, themes: items });
+  }),
+);
+
+router.post(
+  "/themes",
+  asyncHandler(async (req, res) => {
+    try {
+      const item = await upsertThemeConfig(req.body || {});
+      res.status(201).json({ ok: true, item });
+    } catch (error) {
+      const status = Number(error?.status || 500);
+      res.status(status >= 400 && status < 600 ? status : 500).json({
+        error: error?.message || "Не удалось сохранить тему.",
+      });
+    }
+  }),
+);
+
+router.delete(
+  "/themes/:id",
+  asyncHandler(async (req, res) => {
+    const item = await deleteThemeConfig(req.params.id);
+    if (!item) {
+      res.status(404).json({ error: "Тема не найдена." });
       return;
     }
     res.json({ ok: true, item });

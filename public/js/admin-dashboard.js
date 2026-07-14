@@ -3360,6 +3360,251 @@
       ? items.map(renderMusicTrack).join("")
       : '<div class="admin-music-shell text-sm font-semibold text-neutral-600">Треков пока нет.</div>';
   }
+
+  const themeBuilderState = {
+    items: [],
+    activeId: null,
+  };
+
+  const themePreviewCard = {
+    slug: "UNQ777",
+    slugs: ["UNQ777", "VIP001"],
+    name: "UNQX Premium",
+    role: "Digital identity",
+    bio: "Live-preview новой темы карточки.",
+    email: "hello@unqx.uz",
+    initials: "UN",
+    avatarUrl: "",
+    tags: ["Premium", "Creator"],
+    buttons: [
+      { type: "telegram", label: "Telegram", href: "https://t.me/unqx_uz" },
+      { type: "website", label: "Website", href: "https://unqx.uz" },
+    ],
+    theme: "default_dark",
+    showBranding: true,
+    verified: true,
+    verifiedCompany: "UNQX",
+    score: {
+      total: 92,
+      percentile: 4,
+      breakdown: [
+        { label: "Style", value: 94 },
+        { label: "Reach", value: 82 },
+      ],
+    },
+  };
+
+  const themeConfigKeys = [
+    "cardBg",
+    "cardBgOverlay",
+    "surfaceBg",
+    "cardBorder",
+    "surfaceBorder",
+    "dividerColor",
+    "nameColor",
+    "roleColor",
+    "mutedColor",
+    "accentColor",
+    "emailColor",
+    "buttonPrimaryBg",
+    "buttonPrimaryText",
+    "buttonPrimaryBorder",
+    "buttonSecondaryBg",
+    "buttonSecondaryText",
+    "buttonSecondaryBorder",
+    "badgeText",
+    "badgeBg",
+    "badgeBorder",
+    "topLineGradient",
+    "avatarBg",
+    "avatarText",
+    "avatarBorder",
+    "cardBorderRadius",
+    "fontFamily",
+    "nameFontStyle",
+    "nameFontWeight",
+    "roleLetterSpacing",
+    "scoreLabelColor",
+    "scoreValueColor",
+    "scoreBarFill",
+    "scoreBarTrack",
+    "scorePercentileColor",
+    "cardShadow",
+    "buttonShineGradient",
+  ];
+
+  function normalizeThemeCreatorKey(value) {
+    return String(value || "")
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9_]+/g, "_")
+      .replace(/^_+|_+$/g, "")
+      .slice(0, 80) || "custom_theme";
+  }
+
+  function getThemeBuilderForm() {
+    const form = document.getElementById("theme-builder-form");
+    return form instanceof HTMLFormElement ? form : null;
+  }
+
+  function setThemeBuilderValue(name, value) {
+    const form = getThemeBuilderForm();
+    const field = form?.elements.namedItem(name);
+    if (field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement || field instanceof HTMLSelectElement) {
+      field.value = String(value ?? "");
+    }
+  }
+
+  function getThemeBuilderValue(name, fallback = "") {
+    const form = getThemeBuilderForm();
+    const field = form?.elements.namedItem(name);
+    if (field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement || field instanceof HTMLSelectElement) {
+      return String(field.value || fallback);
+    }
+    return String(fallback);
+  }
+
+  function sanitizeThemeSvgClient(raw) {
+    const source = String(raw || "").trim();
+    if (!source) return "";
+    if (!/^<svg[\s>]/i.test(source) || !/<\/svg>$/i.test(source)) {
+      throw new Error("SVG должен начинаться с <svg> и заканчиваться </svg>.");
+    }
+    if (/<script[\s>]/i.test(source) || /<foreignObject[\s>]/i.test(source) || /\son[a-z]+\s*=/i.test(source)) {
+      throw new Error("SVG содержит небезопасный код.");
+    }
+    return source
+      .replace(/\s(?:fill|stroke|style)=(".*?"|'.*?'|[^\s>]+)/gi, "")
+      .replace(/<svg\b([^>]*)>/i, '<svg$1 fill="currentColor" stroke="currentColor">')
+      .slice(0, 20000);
+  }
+
+  function syncThemeGenerators() {
+    const bgType = getThemeBuilderValue("cardBgType", "linear");
+    const angle = Math.max(0, Math.min(360, Number(getThemeBuilderValue("cardBgAngle", "165")) || 165));
+    const start = getThemeBuilderValue("cardBgStart", "#B6FF00");
+    const end = getThemeBuilderValue("cardBgEnd", "#E8FF5B");
+    const bg =
+      bgType === "solid"
+        ? start
+        : bgType === "radial"
+          ? `radial-gradient(circle at 50% 30%, ${start} 0%, ${end} 100%)`
+          : `linear-gradient(${angle}deg, ${start} 0%, ${end} 100%)`;
+    setThemeBuilderValue("cardBg", bg);
+
+    const borderWidth = Math.max(0, Number(getThemeBuilderValue("cardBorderWidth", "2")) || 0);
+    const borderStyle = getThemeBuilderValue("cardBorderStyle", "solid") || "solid";
+    const borderColor = getThemeBuilderValue("cardBorderColor", "#000000") || "#000000";
+    setThemeBuilderValue("cardBorder", `${borderWidth}px ${borderStyle} ${borderColor}`);
+
+    const radius = Math.max(0, Math.min(50, Number(getThemeBuilderValue("cardBorderRadiusSlider", "28")) || 0));
+    setThemeBuilderValue("cardBorderRadius", `${radius}px`);
+    const radiusLabel = document.querySelector("[data-radius-label]");
+    if (radiusLabel instanceof HTMLElement) radiusLabel.textContent = `${radius}px`;
+
+    const sx = Number(getThemeBuilderValue("shadowX", "0")) || 0;
+    const sy = Number(getThemeBuilderValue("shadowY", "22")) || 0;
+    const blur = Math.max(0, Number(getThemeBuilderValue("shadowBlur", "54")) || 0);
+    const spread = Number(getThemeBuilderValue("shadowSpread", "0")) || 0;
+    const color = getThemeBuilderValue("shadowColor", "rgba(0,0,0,0.24)");
+    setThemeBuilderValue("cardShadow", `${sx}px ${sy}px ${blur}px ${spread}px ${color}`);
+  }
+
+  function collectThemeConfig() {
+    syncThemeGenerators();
+    const config = {};
+    themeConfigKeys.forEach((key) => {
+      config[key] = getThemeBuilderValue(key, "").trim();
+    });
+    config.cardBgOverlay = config.cardBgOverlay || normalizeThemeCreatorKey(getThemeBuilderValue("themeKey"));
+    return config;
+  }
+
+  function renderThemeBuilderPreview() {
+    const form = getThemeBuilderForm();
+    const preview = document.getElementById("theme-live-preview");
+    const output = document.getElementById("theme-json-output");
+    const keyNode = document.getElementById("theme-preview-key");
+    if (!form || !(preview instanceof HTMLElement)) return;
+    const key = normalizeThemeCreatorKey(getThemeBuilderValue("themeKey"));
+    setThemeBuilderValue("themeKey", key);
+    const config = collectThemeConfig();
+    const overlaySvg = getThemeBuilderValue("overlaySvg");
+    if (keyNode instanceof HTMLElement) keyNode.textContent = key;
+    if (output instanceof HTMLTextAreaElement) {
+      output.value = JSON.stringify(config, null, 2);
+    }
+    if (window.CardView?.mountCardView) {
+      window.CardView.mountCardView(preview, { ...themePreviewCard, theme: key }, {
+        customThemeTokens: config,
+        customThemeOverlaySvg: overlaySvg,
+        shareUrl: `${window.location.origin}/${key}`,
+        viewsLabel: "777 просмотров",
+      });
+    }
+  }
+
+  function openThemeBuilder(item = null) {
+    const builder = document.getElementById("theme-builder");
+    if (!(builder instanceof HTMLElement)) return;
+    const form = getThemeBuilderForm();
+    const config = item?.config && typeof item.config === "object" ? item.config : null;
+    themeBuilderState.activeId = item?.id || null;
+    if (!config && form) {
+      form.reset();
+    }
+    setThemeBuilderValue("themeKey", normalizeThemeCreatorKey(item?.key || "custom_theme"));
+    if (config) {
+      themeConfigKeys.forEach((key) => setThemeBuilderValue(key, config[key] || ""));
+      setThemeBuilderValue("overlaySvg", item?.overlaySvg || "");
+      setThemeBuilderValue("primaryIconSvgText", item?.primaryIconSvg || "");
+      setThemeBuilderValue("secondaryIconSvgText", item?.secondaryIconSvg || "");
+    } else {
+      setThemeBuilderValue("cardBgOverlay", "custom_theme");
+      setThemeBuilderValue("overlaySvg", "");
+      setThemeBuilderValue("primaryIconSvgText", "");
+      setThemeBuilderValue("secondaryIconSvgText", "");
+    }
+    builder.classList.remove("hidden");
+    renderThemeBuilderPreview();
+    builder.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function renderThemeConfigRow(item) {
+    const id = Number(item?.id || 0);
+    const key = String(item?.key || "");
+    const title = String(item?.title || key || "Theme");
+    const config = item?.config && typeof item.config === "object" ? item.config : {};
+    const bg = String(config.cardBg || "#111827");
+    const updatedAt = item?.updatedAt ? D(item.updatedAt) : "";
+    return `<article class="admin-theme-row">
+      <span class="admin-theme-row-swatch" style="background:${X(bg)}"></span>
+      <div class="min-w-0">
+        <p class="admin-theme-row-title">${X(title)}</p>
+        <p class="admin-theme-row-meta">${X(key)}${updatedAt ? ` · ${X(updatedAt)}` : ""}</p>
+      </div>
+      <div class="admin-theme-row-actions">
+        <button type="button" class="admin-theme-ghost-btn" data-act="theme-edit" data-id="${id}">Редактировать</button>
+        <button type="button" class="admin-theme-ghost-btn" data-act="theme-delete" data-id="${id}">Удалить</button>
+      </div>
+    </article>`;
+  }
+
+  async function loadThemeConfigs() {
+    const list = document.getElementById("theme-configs-list");
+    if (!(list instanceof HTMLElement)) return;
+    list.innerHTML = '<div class="admin-theme-row"><p class="admin-theme-row-title">Загружаем темы...</p></div>';
+    const r = await fetch("/api/admin/themes", { headers: H() });
+    if (!r.ok) {
+      list.innerHTML = `<div class="admin-theme-row"><p class="admin-theme-row-title text-red-300">${X(await E(r))}</p></div>`;
+      return;
+    }
+    const payload = await r.json().catch(() => ({}));
+    themeBuilderState.items = Array.isArray(payload.items) ? payload.items : [];
+    list.innerHTML = themeBuilderState.items.length
+      ? themeBuilderState.items.map(renderThemeConfigRow).join("")
+      : '<div class="admin-theme-row"><p class="admin-theme-row-title">Тем пока нет. Создайте первую.</p></div>';
+  }
   const am = document.getElementById("activation-modal");
   const af = document.getElementById("activation-form");
   const at = af instanceof HTMLFormElement ? af.elements.namedItem("tariff") : null;
@@ -4408,6 +4653,29 @@
       closeAllRowMenus();
       return;
     }
+    if (a === "theme-edit") {
+      const id = Number(n.getAttribute("data-id") || 0);
+      const item = themeBuilderState.items.find((entry) => Number(entry.id) === id);
+      if (item) openThemeBuilder(item);
+      closeAllRowMenus();
+      return;
+    }
+    if (a === "theme-delete") {
+      const id = n.getAttribute("data-id");
+      if (!id) return;
+      if (!await showConfirm("Удалить эту тему из конструктора?")) return;
+      const r = await fetch(`/api/admin/themes/${encodeURIComponent(id)}`, {
+        method: "DELETE",
+        headers: H(),
+      });
+      if (!r.ok) {
+        await showAlert(await E(r));
+      } else {
+        await loadThemeConfigs();
+      }
+      closeAllRowMenus();
+      return;
+    }
   });
 
   document.getElementById("orders-filters")?.addEventListener("submit", (e) => { e.preventDefault(); const f = e.currentTarget; if (f instanceof HTMLFormElement) setFormValue(f, "page", "1"); void loadOrders(); });
@@ -4514,6 +4782,74 @@
     form.reset();
     await loadMusicTracks();
     await showAlert("Трек добавлен.");
+  });
+
+  document.getElementById("theme-create-open")?.addEventListener("click", () => openThemeBuilder());
+  document.getElementById("theme-list-refresh")?.addEventListener("click", () => void loadThemeConfigs());
+  document.getElementById("theme-builder-reset")?.addEventListener("click", () => openThemeBuilder());
+
+  document.getElementById("theme-builder-form")?.addEventListener("input", () => {
+    renderThemeBuilderPreview();
+  });
+
+  document.getElementById("theme-builder-form")?.addEventListener("change", async (event) => {
+    const target = event.target instanceof HTMLElement ? event.target : null;
+    const upload = target?.closest("[data-svg-upload]");
+    if (!(upload instanceof HTMLInputElement) || !upload.files || !upload.files[0]) {
+      renderThemeBuilderPreview();
+      return;
+    }
+    const kind = upload.getAttribute("data-svg-upload") || "";
+    const file = upload.files[0];
+    if (!String(file.name || "").toLowerCase().endsWith(".svg") && file.type !== "image/svg+xml") {
+      await showAlert("Загрузите SVG-файл.");
+      upload.value = "";
+      return;
+    }
+    try {
+      const text = sanitizeThemeSvgClient(await file.text());
+      const textarea = document.querySelector(`[data-svg-text="${kind}"]`);
+      if (textarea instanceof HTMLTextAreaElement) textarea.value = text;
+      renderThemeBuilderPreview();
+    } catch (error) {
+      await showAlert(error?.message || "SVG не прошёл проверку.");
+      upload.value = "";
+    }
+  });
+
+  document.getElementById("theme-builder-form")?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const key = normalizeThemeCreatorKey(getThemeBuilderValue("themeKey"));
+    let overlaySvg = "";
+    let primaryIconSvg = "";
+    let secondaryIconSvg = "";
+    try {
+      overlaySvg = sanitizeThemeSvgClient(getThemeBuilderValue("overlaySvg"));
+      primaryIconSvg = sanitizeThemeSvgClient(getThemeBuilderValue("primaryIconSvgText"));
+      secondaryIconSvg = sanitizeThemeSvgClient(getThemeBuilderValue("secondaryIconSvgText"));
+    } catch (error) {
+      await showAlert(error?.message || "SVG не прошёл проверку.");
+      return;
+    }
+    const config = collectThemeConfig();
+    const r = await fetch("/api/admin/themes", {
+      method: "POST",
+      headers: H({ "Content-Type": "application/json" }),
+      body: JSON.stringify({
+        key,
+        title: key,
+        config,
+        overlaySvg,
+        primaryIconSvg,
+        secondaryIconSvg,
+      }),
+    });
+    if (!r.ok) {
+      await showAlert(await E(r));
+      return;
+    }
+    await loadThemeConfigs();
+    await showAlert("Тема сохранена.");
   });
   document.getElementById("pricing-settings-form")?.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -5194,6 +5530,11 @@
   if (tab === "advertisements") {
     dbg("load", "advertisements");
     void loadAdvertisements();
+  }
+  if (tab === "themes") {
+    dbg("load", "themes");
+    void loadThemeConfigs();
+    renderThemeBuilderPreview();
   }
   if (tab === "event-cards") {
     dbg("load", "event-cards");

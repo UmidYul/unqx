@@ -1417,6 +1417,27 @@
     return { key, tokens: THEME_CONFIG[key] || THEME_CONFIG.default_dark };
   }
 
+  function resolveCustomTheme(themeKey, customTokens) {
+    const base = resolveTheme(themeKey);
+    if (!customTokens || typeof customTokens !== "object") {
+      return base;
+    }
+    const safeKey = String(themeKey || customTokens.key || "custom_theme")
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9_]+/g, "_")
+      .replace(/^_+|_+$/g, "")
+      .slice(0, 64) || "custom_theme";
+    return {
+      key: safeKey,
+      tokens: {
+        ...THEME_CONFIG.default_dark,
+        ...base.tokens,
+        ...customTokens,
+      },
+    };
+  }
+
   function renderThemeOverlay(themeKey) {
     if (themeKey === "default_dark") {
       return `<svg class="unq-ref-overlay-svg" viewBox="0 0 360 600" preserveAspectRatio="none" aria-hidden="true">
@@ -2896,7 +2917,7 @@
 
   function renderCardView(input, options = {}) {
     const card = normalizeCard(input);
-    const theme = resolveTheme(card.theme);
+    const theme = resolveCustomTheme(card.theme, options.customThemeTokens);
     const shareUrl = String(options.shareUrl || "").trim() || window.location.href;
     const showPausedBanner = Boolean(options.showPausedBanner);
     const pausedText = String(options.pausedText || "Визитка на паузе - посетители видят заглушку");
@@ -3295,7 +3316,11 @@
         `
       : cardDetailsHtml;
 
-    const overlayHtml = renderThemeOverlay(theme.key);
+    const customOverlaySvg = String(options.customThemeOverlaySvg || "").trim();
+    const normalizedCustomOverlaySvg = customOverlaySvg
+      ? customOverlaySvg.replace(/<svg\b(?![^>]*\bclass=)/i, '<svg class="unq-ref-overlay-svg"')
+      : "";
+    const overlayHtml = normalizedCustomOverlaySvg || renderThemeOverlay(theme.key);
     const visiblePetCount = getVisibleCardPets(card).length;
     const musicPlayerHtml = card.selectedTrack
       ? `<button type="button" class="unq-profile-music-player" data-profile-music-player data-audio-url="${esc(card.selectedTrack.audioUrl)}" data-track-title="${esc(card.selectedTrack.title)}" aria-label="Включить музыку: ${esc(card.selectedTrack.title)}" title="${esc(card.selectedTrack.title)}"><span class="unq-profile-music-icon" aria-hidden="true">♪</span><span class="sr-only" data-profile-music-label>Включить музыку</span></button>`
