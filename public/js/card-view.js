@@ -3425,37 +3425,38 @@
                       ${followDialog.items
                         .map((item) => `
                           <article class="unq-follow-dialog-item">
-                            <div class="unq-follow-dialog-user">
-                              <span class="unq-follow-dialog-avatar">
-                                ${item.avatarUrl
-                                  ? `<img src="${esc(item.avatarUrl)}" alt="${esc(item.name)}" class="unq-follow-dialog-avatar-img" />`
-                                  : `<span>${esc(item.initials)}</span>`}
-                              </span>
-                              <span class="unq-follow-dialog-text">
+                            <span class="unq-follow-dialog-avatar">
+                              ${item.avatarUrl
+                                ? `<img src="${esc(item.avatarUrl)}" alt="${esc(item.name)}" class="unq-follow-dialog-avatar-img" />`
+                                : `<span>${esc(item.initials)}</span>`}
+                            </span>
+                            <span class="unq-follow-dialog-text">
+                              <span class="unq-follow-dialog-name-row">
                                 ${item.profileHref
                                   ? `<a href="${esc(item.profileHref)}" class="unq-follow-dialog-name">${esc(item.name)}</a>`
                                   : `<span class="unq-follow-dialog-name">${esc(item.name)}</span>`}
-                                <span class="unq-follow-dialog-meta">
-                                  ${esc(item.primarySlug ? `unqx.uz/${item.primarySlug}` : "Визитка недоступна")}
-                                  ${item.role ? ` · ${esc(item.role)}` : ""}
-                                </span>
-                                ${!item.isPubliclyReachable ? '<span class="unq-follow-dialog-badge">Визитка недоступна</span>' : ""}
+                                ${item.canFollow
+                                  ? `<button
+                                      type="button"
+                                      class="unq-follow-dialog-action${(busyFollowSlugs.has(String(item.primarySlug || "").trim().toUpperCase()) ? !item.isFollowing : item.isFollowing) ? " is-active" : ""}"
+                                      data-follow-toggle
+                                      data-follow-slug="${esc(item.primarySlug || "")}"
+                                      data-following="${item.isFollowing ? "true" : "false"}"
+                                      data-login-next="${esc(item.profileHref || ownerProfileHref || "/")}"
+                                      aria-label="${(busyFollowSlugs.has(String(item.primarySlug || "").trim().toUpperCase()) ? !item.isFollowing : item.isFollowing) ? "Отписаться" : "Подписаться"}"
+                                      aria-pressed="${(busyFollowSlugs.has(String(item.primarySlug || "").trim().toUpperCase()) ? !item.isFollowing : item.isFollowing) ? "true" : "false"}"
+                                      ${busyFollowSlugs.has(String(item.primarySlug || "").trim().toUpperCase()) ? "disabled" : ""}
+                                    >
+                                      <span aria-hidden="true">${(busyFollowSlugs.has(String(item.primarySlug || "").trim().toUpperCase()) ? !item.isFollowing : item.isFollowing) ? "×" : "+"}</span>
+                                    </button>`
+                                  : ""}
                               </span>
-                            </div>
-                            ${item.canFollow
-                              ? `<button
-                                  type="button"
-                                  class="unq-follow-dialog-action${item.isFollowing ? " is-active" : ""}"
-                                  data-follow-toggle
-                                  data-follow-slug="${esc(item.primarySlug || "")}"
-                                  data-following="${item.isFollowing ? "true" : "false"}"
-                                  data-login-next="${esc(item.profileHref || ownerProfileHref || "/")}"
-                                  aria-pressed="${item.isFollowing ? "true" : "false"}"
-                                  ${busyFollowSlugs.has(String(item.primarySlug || "").trim().toUpperCase()) ? "disabled" : ""}
-                                >
-                                  ${busyFollowSlugs.has(String(item.primarySlug || "").trim().toUpperCase()) ? "..." : item.isFollowing ? "Отписаться" : "Подписаться"}
-                                </button>`
-                              : ""}
+                              <span class="unq-follow-dialog-meta">
+                                ${esc(item.primarySlug ? `unqx.uz/${item.primarySlug}` : "Визитка недоступна")}
+                                ${item.role ? ` · ${esc(item.role)}` : ""}
+                              </span>
+                              ${!item.isPubliclyReachable ? '<span class="unq-follow-dialog-badge">Визитка недоступна</span>' : ""}
+                            </span>
                           </article>
                         `)
                         .join("")}
