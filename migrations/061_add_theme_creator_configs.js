@@ -11,12 +11,17 @@ module.exports = {
         overlay_svg text NULL,
         primary_icon_svg text NULL,
         secondary_icon_svg text NULL,
+        status varchar(20) NOT NULL DEFAULT 'active',
+        cache_version bigint NOT NULL DEFAULT 1,
         created_at timestamp NOT NULL DEFAULT now(),
         updated_at timestamp NOT NULL DEFAULT now()
       );
 
       CREATE INDEX IF NOT EXISTS unqx_theme_configs_created_at_idx
         ON unqx_theme_configs (created_at DESC, id DESC);
+
+      CREATE INDEX IF NOT EXISTS unqx_theme_configs_status_idx
+        ON unqx_theme_configs (status, updated_at DESC, id DESC);
     `);
   },
 };

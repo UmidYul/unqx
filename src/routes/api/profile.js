@@ -98,6 +98,7 @@ const {
   listTracks,
   normalizeTrackId,
 } = require("../../services/profile-music");
+const { findPublicThemeConfigByKey } = require("../../services/theme-configs");
 const {
   PUBLIC_HANDLE_SLUG_STATUSES,
   getActivePublicHandle,
@@ -349,7 +350,7 @@ function mapProfileCardRow(row) {
     buttons: parseJsonArray(row.buttons),
     theme: (() => {
       const nextTheme = normalizeCardThemeKey(row.theme);
-      return CARD_THEMES.has(nextTheme) ? nextTheme : "default_dark";
+      return nextTheme || "default_dark";
     })(),
     customColor: customColor || "",
     avatarFrame: (() => {
@@ -525,7 +526,8 @@ async function normalizeCardThemeForDatabase(theme) {
     return requested;
   }
   if (!PROFILE_THEMES.has(requested)) {
-    return "default_dark";
+    const customTheme = await findPublicThemeConfigByKey(requested);
+    if (!customTheme) return "default_dark";
   }
   const supported = await getSupportedCardThemeEnumValues();
   if (!supported || supported.size === 0) {
@@ -548,7 +550,7 @@ async function normalizeCardThemeForDatabase(theme) {
 
 async function ensureCardThemeEnumValue(theme) {
   const requested = String(theme || "").trim();
-  if (!PROFILE_THEMES.has(requested) || !/^[a-z0-9_]+$/.test(requested)) {
+  if (!/^[a-z][a-z0-9_]{1,79}$/.test(requested)) {
     return false;
   }
   const escapedValue = requested.replace(/'/g, "''");

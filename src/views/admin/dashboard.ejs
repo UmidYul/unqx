@@ -1429,6 +1429,27 @@
                   <input name="dividerColor" type="hidden" value="rgba(0, 0, 0, 0.18)" data-theme-field="dividerColor" />
                   <input name="cardBorderRadius" type="hidden" value="28px" data-theme-field="cardBorderRadius" />
                   <input name="cardShadow" type="hidden" value="0 18px 44px rgba(0, 0, 0, 0.22)" data-theme-field="cardShadow" />
+                  <input name="pageBg" type="hidden" value="linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%)" data-theme-field="pageBg" />
+                  <input name="pageBgMode" type="hidden" value="gradient" data-theme-field="pageBgMode" />
+                  <input name="cardBgOpacity" type="hidden" value="100" data-theme-field="cardBgOpacity" />
+                  <input name="cardBgOverlayOpacity" type="hidden" value="14" data-theme-field="cardBgOverlayOpacity" />
+                  <input name="surfaceBorderRadius" type="hidden" value="16px" data-theme-field="surfaceBorderRadius" />
+                  <input name="buttonBorderRadius" type="hidden" value="999px" data-theme-field="buttonBorderRadius" />
+                  <input name="avatarBorderRadius" type="hidden" value="999px" data-theme-field="avatarBorderRadius" />
+                  <input name="badgeBorderRadius" type="hidden" value="999px" data-theme-field="badgeBorderRadius" />
+                  <input name="nameFontSize" type="hidden" value="35px" data-theme-field="nameFontSize" />
+                  <input name="roleFontSize" type="hidden" value="11px" data-theme-field="roleFontSize" />
+                  <input name="bioFontSize" type="hidden" value="13px" data-theme-field="bioFontSize" />
+                  <input name="emailFontSize" type="hidden" value="20px" data-theme-field="emailFontSize" />
+                  <input name="nameLetterSpacing" type="hidden" value="-0.03em" data-theme-field="nameLetterSpacing" />
+                  <input name="roleFontWeight" type="hidden" value="500" data-theme-field="roleFontWeight" />
+                  <input name="bioFontWeight" type="hidden" value="500" data-theme-field="bioFontWeight" />
+                  <input name="nameTextTransform" type="hidden" value="none" data-theme-field="nameTextTransform" />
+                  <input name="roleTextTransform" type="hidden" value="none" data-theme-field="roleTextTransform" />
+                  <input name="bioTextTransform" type="hidden" value="none" data-theme-field="bioTextTransform" />
+                  <input name="primaryIconRecolor" type="hidden" value="true" data-theme-field="primaryIconRecolor" />
+                  <input name="secondaryIconRecolor" type="hidden" value="true" data-theme-field="secondaryIconRecolor" />
+                  <input name="overlaySvgRecolor" type="hidden" value="true" data-theme-field="overlaySvgRecolor" />
                   <input name="fontFamily" type="hidden" value="'Sora', 'Inter', 'Segoe UI', sans-serif" data-theme-field="fontFamily" />
                   <input name="nameFontStyle" type="hidden" value="normal" data-theme-field="nameFontStyle" />
                   <input name="nameFontWeight" type="hidden" value="800" data-theme-field="nameFontWeight" />
@@ -1460,6 +1481,8 @@
                   <input name="cardBgType" type="hidden" value="linear" data-theme-bg-type />
                   <input name="cardBgAngle" type="hidden" value="135" data-theme-bg-angle />
                   <input name="shadowPreset" type="hidden" value="soft" data-shadow-preset />
+                  <input name="pageBgStart" type="hidden" value="#f8fafc" />
+                  <input name="pageBgEnd" type="hidden" value="#eef2ff" />
                   <textarea name="overlaySvg" class="hidden" data-svg-text="overlay"></textarea>
                   <textarea name="primaryIconSvgText" class="hidden" data-svg-text="primary"></textarea>
                   <textarea name="secondaryIconSvgText" class="hidden" data-svg-text="secondary"></textarea>
@@ -1507,6 +1530,12 @@
                       <label class="admin-theme-slider">Скругление углов <span data-radius-label>28px</span>
                         <input name="cardBorderRadiusSlider" type="range" min="0" max="50" value="28" data-radius-slider />
                       </label>
+                      <label class="admin-theme-slider">Прозрачность карты <span data-card-opacity-label>100%</span>
+                        <input name="cardBgOpacitySlider" type="range" min="15" max="100" value="100" data-card-opacity-slider />
+                      </label>
+                      <label class="admin-theme-slider">Оверлей SVG <span data-overlay-opacity-label>14%</span>
+                        <input name="cardOverlayOpacitySlider" type="range" min="0" max="100" value="14" data-overlay-opacity-slider />
+                      </label>
                       <div class="admin-theme-choice-row" data-shadow-choice>
                         <button type="button" data-shadow-choice-btn="soft" class="is-active">Мягкая тень</button>
                         <button type="button" data-shadow-choice-btn="deep">Глубокая</button>
@@ -1522,7 +1551,16 @@
                       <label class="admin-theme-slider">Жирность имени <span data-weight-label>800</span>
                         <input name="nameWeightSlider" type="range" min="100" max="900" step="100" value="800" data-name-weight-slider />
                       </label>
+                      <label class="admin-theme-slider">Размер имени <span data-name-size-label>35px</span>
+                        <input name="nameFontSizeSlider" type="range" min="18" max="54" value="35" data-name-size-slider />
+                      </label>
                       <label class="admin-theme-color-line">Цвет должности/роли <input type="color" value="#374151" data-simple-color="roleColor" /></label>
+                      <label class="admin-theme-slider">Размер должности <span data-role-size-label>11px</span>
+                        <input name="roleFontSizeSlider" type="range" min="9" max="24" value="11" data-role-size-slider />
+                      </label>
+                      <label class="admin-theme-slider">Размер описания <span data-bio-size-label>13px</span>
+                        <input name="bioFontSizeSlider" type="range" min="10" max="26" value="13" data-bio-size-slider />
+                      </label>
                       <label class="admin-theme-color-line">Цвет остальных текстов <input type="color" value="#4B5563" data-simple-color="mutedColor" /></label>
                       <label class="admin-theme-font-select">Шрифт
                         <select name="fontPreset" data-font-preset>
@@ -1547,9 +1585,36 @@
                       <label class="admin-theme-upload-card">Перетащите главную SVG-иконку сюда или нажмите для выбора
                         <input name="primaryIconSvg" type="file" accept=".svg,image/svg+xml" data-svg-upload="primary" />
                       </label>
+                      <label class="admin-theme-check"><input type="checkbox" checked data-svg-recolor="primary" /> Перекрасить главную SVG под тему</label>
                       <label class="admin-theme-upload-card">Перетащите второстепенную SVG-иконку сюда или нажмите для выбора
                         <input name="secondaryIconSvg" type="file" accept=".svg,image/svg+xml" data-svg-upload="secondary" />
                       </label>
+                      <label class="admin-theme-check"><input type="checkbox" checked data-svg-recolor="secondary" /> Перекрасить второстепенную SVG под тему</label>
+                    </div>
+                  </details>
+
+                  <details class="admin-theme-accordion">
+                    <summary><span>6</span> Фон и границы</summary>
+                    <div class="admin-theme-step">
+                      <div class="admin-theme-color-pair">
+                        <label>Внешний фон 1 <input name="pageBgStartPicker" type="color" value="#F8FAFC" data-page-bg-start /></label>
+                        <label>Внешний фон 2 <input name="pageBgEndPicker" type="color" value="#EEF2FF" data-page-bg-end /></label>
+                      </div>
+                      <div class="admin-theme-fields three">
+                        <label>Толщина карты<input name="cardBorderWidth" type="range" min="0" max="10" value="2" /></label>
+                        <label>Стиль карты<select name="cardBorderStyle"><option value="solid">Сплошная</option><option value="dashed">Пунктир</option><option value="dotted">Точки</option></select></label>
+                        <label>Цвет карты<input name="cardBorderColor" type="color" value="#000000" /></label>
+                      </div>
+                      <label class="admin-theme-slider">Скругление внутренних плашек <span data-surface-radius-label>16px</span>
+                        <input name="surfaceBorderRadiusSlider" type="range" min="0" max="50" value="16" data-surface-radius-slider />
+                      </label>
+                      <label class="admin-theme-slider">Скругление кнопок <span data-button-radius-label>50px</span>
+                        <input name="buttonBorderRadiusSlider" type="range" min="0" max="50" value="50" data-button-radius-slider />
+                      </label>
+                      <label class="admin-theme-upload-card">Загрузить SVG-оверлей карты
+                        <input name="overlaySvgFile" type="file" accept=".svg,image/svg+xml" data-svg-upload="overlay" />
+                      </label>
+                      <label class="admin-theme-check"><input type="checkbox" checked data-svg-recolor="overlay" /> Перекрасить SVG-оверлей под тему</label>
                     </div>
                   </details>
 

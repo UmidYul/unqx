@@ -3431,6 +3431,27 @@
     "scorePercentileColor",
     "cardShadow",
     "buttonShineGradient",
+    "pageBg",
+    "pageBgMode",
+    "cardBgOpacity",
+    "cardBgOverlayOpacity",
+    "surfaceBorderRadius",
+    "buttonBorderRadius",
+    "avatarBorderRadius",
+    "badgeBorderRadius",
+    "nameFontSize",
+    "roleFontSize",
+    "bioFontSize",
+    "emailFontSize",
+    "nameLetterSpacing",
+    "roleFontWeight",
+    "bioFontWeight",
+    "nameTextTransform",
+    "roleTextTransform",
+    "bioTextTransform",
+    "primaryIconRecolor",
+    "secondaryIconRecolor",
+    "overlaySvgRecolor",
   ];
 
   function normalizeThemeCreatorKey(value) {
@@ -3479,7 +3500,8 @@
     return String(fallback);
   }
 
-  function sanitizeThemeSvgClient(raw) {
+  function sanitizeThemeSvgClient(raw, options = {}) {
+    const recolor = options.recolor !== false;
     const source = String(raw || "").trim();
     if (!source) return "";
     if (!/^<svg[\s>]/i.test(source) || !/<\/svg>$/i.test(source)) {
@@ -3488,10 +3510,13 @@
     if (/<script[\s>]/i.test(source) || /<foreignObject[\s>]/i.test(source) || /\son[a-z]+\s*=/i.test(source)) {
       throw new Error("SVG содержит небезопасный код.");
     }
-    return source
-      .replace(/\s(?:fill|stroke|style)=(".*?"|'.*?'|[^\s>]+)/gi, "")
-      .replace(/<svg\b([^>]*)>/i, '<svg$1 fill="currentColor" stroke="currentColor">')
-      .slice(0, 20000);
+    const withoutStyle = source.replace(/\sstyle=(".*?"|'.*?'|[^\s>]+)/gi, "");
+    return (recolor
+      ? withoutStyle
+        .replace(/\s(?:fill|stroke)=(".*?"|'.*?'|[^\s>]+)/gi, "")
+        .replace(/<svg\b([^>]*)>/i, '<svg$1 fill="currentColor" stroke="currentColor">')
+      : withoutStyle
+    ).slice(0, 20000);
   }
 
   function syncThemeGenerators() {
@@ -3518,13 +3543,26 @@
     const angle = Math.max(0, Math.min(360, Number(getThemeBuilderValue("cardBgAngle", "165")) || 165));
     const start = getThemeBuilderValue("cardBgStart", "#B6FF00");
     const end = getThemeBuilderValue("cardBgEnd", "#E8FF5B");
+    const cardOpacity = Math.max(15, Math.min(100, Number(getThemeBuilderValue("cardBgOpacitySlider", "100")) || 100));
+    setThemeBuilderValue("cardBgOpacity", String(cardOpacity));
+    const cardOpacityLabel = document.querySelector("[data-card-opacity-label]");
+    if (cardOpacityLabel instanceof HTMLElement) cardOpacityLabel.textContent = `${cardOpacity}%`;
+    const overlayOpacity = Math.max(0, Math.min(100, Number(getThemeBuilderValue("cardOverlayOpacitySlider", "14")) || 0));
+    setThemeBuilderValue("cardBgOverlayOpacity", String(overlayOpacity));
+    const overlayOpacityLabel = document.querySelector("[data-overlay-opacity-label]");
+    if (overlayOpacityLabel instanceof HTMLElement) overlayOpacityLabel.textContent = `${overlayOpacity}%`;
     const bg =
       bgType === "solid"
-        ? start
+        ? `${start}${Math.round((cardOpacity / 100) * 255).toString(16).padStart(2, "0")}`
         : bgType === "radial"
-          ? `radial-gradient(circle at 50% 30%, ${start} 0%, ${end} 100%)`
-          : `linear-gradient(${angle}deg, ${start} 0%, ${end} 100%)`;
+          ? `radial-gradient(circle at 50% 30%, ${start}${Math.round((cardOpacity / 100) * 255).toString(16).padStart(2, "0")} 0%, ${end}${Math.round((cardOpacity / 100) * 255).toString(16).padStart(2, "0")} 100%)`
+          : `linear-gradient(${angle}deg, ${start}${Math.round((cardOpacity / 100) * 255).toString(16).padStart(2, "0")} 0%, ${end}${Math.round((cardOpacity / 100) * 255).toString(16).padStart(2, "0")} 100%)`;
     setThemeBuilderValue("cardBg", bg);
+    const pageStart = getThemeBuilderValue("pageBgStartPicker", getThemeBuilderValue("pageBgStart", "#f8fafc"));
+    const pageEnd = getThemeBuilderValue("pageBgEndPicker", getThemeBuilderValue("pageBgEnd", "#eef2ff"));
+    setThemeBuilderValue("pageBgStart", pageStart);
+    setThemeBuilderValue("pageBgEnd", pageEnd);
+    setThemeBuilderValue("pageBg", `linear-gradient(180deg, ${pageStart} 0%, ${pageEnd} 100%)`);
 
     const borderWidth = Math.max(0, Number(getThemeBuilderValue("cardBorderWidth", "2")) || 0);
     const borderStyle = getThemeBuilderValue("cardBorderStyle", "solid") || "solid";
@@ -3535,6 +3573,26 @@
     setThemeBuilderValue("cardBorderRadius", `${radius}px`);
     const radiusLabel = document.querySelector("[data-radius-label]");
     if (radiusLabel instanceof HTMLElement) radiusLabel.textContent = `${radius}px`;
+    const surfaceRadius = Math.max(0, Math.min(50, Number(getThemeBuilderValue("surfaceBorderRadiusSlider", "16")) || 0));
+    setThemeBuilderValue("surfaceBorderRadius", `${surfaceRadius}px`);
+    const surfaceRadiusLabel = document.querySelector("[data-surface-radius-label]");
+    if (surfaceRadiusLabel instanceof HTMLElement) surfaceRadiusLabel.textContent = `${surfaceRadius}px`;
+    const buttonRadius = Math.max(0, Math.min(50, Number(getThemeBuilderValue("buttonBorderRadiusSlider", "50")) || 0));
+    setThemeBuilderValue("buttonBorderRadius", buttonRadius >= 50 ? "999px" : `${buttonRadius}px`);
+    const buttonRadiusLabel = document.querySelector("[data-button-radius-label]");
+    if (buttonRadiusLabel instanceof HTMLElement) buttonRadiusLabel.textContent = buttonRadius >= 50 ? "макс" : `${buttonRadius}px`;
+    const nameSize = Math.max(18, Math.min(54, Number(getThemeBuilderValue("nameFontSizeSlider", "35")) || 35));
+    setThemeBuilderValue("nameFontSize", `${nameSize}px`);
+    const nameSizeLabel = document.querySelector("[data-name-size-label]");
+    if (nameSizeLabel instanceof HTMLElement) nameSizeLabel.textContent = `${nameSize}px`;
+    const roleSize = Math.max(9, Math.min(24, Number(getThemeBuilderValue("roleFontSizeSlider", "11")) || 11));
+    setThemeBuilderValue("roleFontSize", `${roleSize}px`);
+    const roleSizeLabel = document.querySelector("[data-role-size-label]");
+    if (roleSizeLabel instanceof HTMLElement) roleSizeLabel.textContent = `${roleSize}px`;
+    const bioSize = Math.max(10, Math.min(26, Number(getThemeBuilderValue("bioFontSizeSlider", "13")) || 13));
+    setThemeBuilderValue("bioFontSize", `${bioSize}px`);
+    const bioSizeLabel = document.querySelector("[data-bio-size-label]");
+    if (bioSizeLabel instanceof HTMLElement) bioSizeLabel.textContent = `${bioSize}px`;
 
     const shadowPreset = getThemeBuilderValue("shadowPreset", "soft");
     const shadowValue =
@@ -3565,6 +3623,12 @@
     setThemeBuilderValue("scoreValueColor", nameColor);
     setThemeBuilderValue("scorePercentileColor", mutedColor);
     setThemeBuilderValue("buttonShineGradient", `linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.35) 50%, rgba(255,255,255,0) 100%)`);
+    document.querySelectorAll("[data-svg-recolor]").forEach((input) => {
+      if (!(input instanceof HTMLInputElement)) return;
+      const kind = input.getAttribute("data-svg-recolor") || "";
+      if (kind) setThemeBuilderValue(`${kind}IconRecolor`, input.checked ? "true" : "false");
+      if (kind === "overlay") setThemeBuilderValue("overlaySvgRecolor", input.checked ? "true" : "false");
+    });
   }
 
   function collectThemeConfig() {
@@ -3616,6 +3680,20 @@
       themeConfigKeys.forEach((key) => setThemeBuilderValue(key, config[key] || ""));
       const radiusMatch = String(config.cardBorderRadius || "").match(/(\d+)/);
       if (radiusMatch) setThemeBuilderValue("cardBorderRadiusSlider", radiusMatch[1]);
+      const opacity = String(config.cardBgOpacity || "100").match(/(\d+)/);
+      if (opacity) setThemeBuilderValue("cardBgOpacitySlider", opacity[1]);
+      const overlayOpacity = String(config.cardBgOverlayOpacity || "14").match(/(\d+)/);
+      if (overlayOpacity) setThemeBuilderValue("cardOverlayOpacitySlider", overlayOpacity[1]);
+      const surfaceRadius = String(config.surfaceBorderRadius || "16px").match(/(\d+)/);
+      if (surfaceRadius) setThemeBuilderValue("surfaceBorderRadiusSlider", surfaceRadius[1]);
+      const buttonRadius = String(config.buttonBorderRadius || "999px").match(/(\d+)/);
+      if (buttonRadius) setThemeBuilderValue("buttonBorderRadiusSlider", String(Math.min(50, Number(buttonRadius[1]) || 50)));
+      const nameSize = String(config.nameFontSize || "35px").match(/(\d+)/);
+      if (nameSize) setThemeBuilderValue("nameFontSizeSlider", nameSize[1]);
+      const roleSize = String(config.roleFontSize || "11px").match(/(\d+)/);
+      if (roleSize) setThemeBuilderValue("roleFontSizeSlider", roleSize[1]);
+      const bioSize = String(config.bioFontSize || "13px").match(/(\d+)/);
+      if (bioSize) setThemeBuilderValue("bioFontSizeSlider", bioSize[1]);
       setThemeBuilderValue("fontPreset", config.fontFamily || "'Sora', 'Inter', 'Segoe UI', sans-serif");
       setThemeBuilderValue("nameWeightSlider", config.nameFontWeight || "800");
       document.querySelectorAll("[data-simple-color]").forEach((input) => {
@@ -4916,7 +4994,9 @@
       return;
     }
     try {
-      const text = sanitizeThemeSvgClient(await file.text());
+      const recolorBox = document.querySelector(`[data-svg-recolor="${kind}"]`);
+      const recolor = recolorBox instanceof HTMLInputElement ? recolorBox.checked : true;
+      const text = sanitizeThemeSvgClient(await file.text(), { recolor });
       const textarea = document.querySelector(`[data-svg-text="${kind}"]`);
       if (textarea instanceof HTMLTextAreaElement) textarea.value = text;
       renderThemeBuilderPreview();
@@ -4933,9 +5013,12 @@
     let primaryIconSvg = "";
     let secondaryIconSvg = "";
     try {
-      overlaySvg = sanitizeThemeSvgClient(getThemeBuilderValue("overlaySvg"));
-      primaryIconSvg = sanitizeThemeSvgClient(getThemeBuilderValue("primaryIconSvgText"));
-      secondaryIconSvg = sanitizeThemeSvgClient(getThemeBuilderValue("secondaryIconSvgText"));
+      const overlayRecolor = getThemeBuilderValue("overlaySvgRecolor", "true") !== "false";
+      const primaryRecolor = getThemeBuilderValue("primaryIconRecolor", "true") !== "false";
+      const secondaryRecolor = getThemeBuilderValue("secondaryIconRecolor", "true") !== "false";
+      overlaySvg = sanitizeThemeSvgClient(getThemeBuilderValue("overlaySvg"), { recolor: overlayRecolor });
+      primaryIconSvg = sanitizeThemeSvgClient(getThemeBuilderValue("primaryIconSvgText"), { recolor: primaryRecolor });
+      secondaryIconSvg = sanitizeThemeSvgClient(getThemeBuilderValue("secondaryIconSvgText"), { recolor: secondaryRecolor });
     } catch (error) {
       await showAlert(error?.message || "SVG не прошёл проверку.");
       return;
@@ -4951,6 +5034,9 @@
         overlaySvg,
         primaryIconSvg,
         secondaryIconSvg,
+        overlaySvgRecolor: getThemeBuilderValue("overlaySvgRecolor", "true") !== "false",
+        primaryIconRecolor: getThemeBuilderValue("primaryIconRecolor", "true") !== "false",
+        secondaryIconRecolor: getThemeBuilderValue("secondaryIconRecolor", "true") !== "false",
       }),
     });
     if (!r.ok) {

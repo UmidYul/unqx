@@ -65,6 +65,10 @@
     shareUrl: String(payload.shareUrl || window.location.href),
     viewsLabel: String(payload.viewsLabel || ""),
     score: payload.score || null,
+    customTheme:
+      payload.customTheme && typeof payload.customTheme === "object"
+        ? payload.customTheme
+        : null,
     topBadge: payload.topBadge || null,
     officialUnqBadge: payload.officialUnqBadge && typeof payload.officialUnqBadge === "object" ? payload.officialUnqBadge : null,
     staffBadge: payload.staffBadge && typeof payload.staffBadge === "object" ? payload.staffBadge : null,
@@ -102,6 +106,19 @@
     wallExpandedCommentPostIds: new Set(),
     wallHasUnreadPosts: false,
   };
+
+  function syncCustomThemePageBackground() {
+    const pageBg = String(state.customTheme?.config?.pageBg || "").trim();
+    if (pageBg) {
+      document.documentElement.style.setProperty("--unqx-public-page-bg", pageBg);
+      document.body?.classList.add("has-custom-theme-page-bg");
+    } else {
+      document.documentElement.style.removeProperty("--unqx-public-page-bg");
+      document.body?.classList.remove("has-custom-theme-page-bg");
+    }
+  }
+
+  syncCustomThemePageBackground();
 
   function isPostsHash(hashValue) {
     const normalized = String(hashValue || "").trim().toLowerCase();
@@ -470,6 +487,9 @@
       shareUrl: state.shareUrl,
       viewsLabel: state.viewsLabel,
       score: state.score,
+      customThemeTokens: state.customTheme && typeof state.customTheme.config === "object" ? state.customTheme.config : null,
+      customThemeOverlaySvg: state.customTheme ? String(state.customTheme.overlaySvg || "") : "",
+      customThemeCacheVersion: state.customTheme ? Number(state.customTheme.cacheVersion || 1) : 1,
       topBadge: state.topBadge,
       officialUnqBadge: state.officialUnqBadge,
       staffBadge: state.staffBadge,

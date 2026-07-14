@@ -40,6 +40,47 @@ const REQUIRED_CONFIG_KEYS = [
   "buttonShineGradient",
 ];
 
+const OPTIONAL_CONFIG_KEYS = [
+  "pageBg",
+  "pageBgMode",
+  "pageBgAsset",
+  "cardBgOpacity",
+  "cardBgOverlayOpacity",
+  "surfaceBorderRadius",
+  "surfaceBorderWidth",
+  "surfaceBorderStyle",
+  "surfaceBorderColor",
+  "buttonBorderRadius",
+  "buttonBorderWidth",
+  "buttonBorderStyle",
+  "avatarBorderRadius",
+  "avatarBorderWidth",
+  "avatarBorderStyle",
+  "badgeBorderRadius",
+  "badgeBorderWidth",
+  "badgeBorderStyle",
+  "nameFontSize",
+  "roleFontSize",
+  "bioFontSize",
+  "emailFontSize",
+  "mutedFontSize",
+  "roleFontWeight",
+  "bioFontWeight",
+  "emailFontWeight",
+  "nameTextTransform",
+  "roleTextTransform",
+  "bioTextTransform",
+  "emailTextTransform",
+  "nameLetterSpacing",
+  "bioLetterSpacing",
+  "emailLetterSpacing",
+  "primaryIconRecolor",
+  "secondaryIconRecolor",
+  "overlaySvgRecolor",
+];
+
+const PUBLIC_THEME_STATUSES = new Set(["active", "public"]);
+
 function isThemeConfigStorageMissing(error) {
   const message = String(error?.message || "");
   return error?.code === "P2021" || error?.code === "P2022" || /unqx_theme_configs/i.test(message);
@@ -59,7 +100,8 @@ function normalizeTitle(value, fallback) {
   return (title || fallback || "Custom Theme").slice(0, 160);
 }
 
-function sanitizeSvg(input) {
+function sanitizeSvg(input, options = {}) {
+  const recolor = options.recolor !== false;
   const raw = String(input || "").trim();
   if (!raw) return "";
   if (!/^<svg[\s>]/i.test(raw) || !/<\/svg>$/i.test(raw)) {
@@ -72,10 +114,13 @@ function sanitizeSvg(input) {
     error.status = 400;
     throw error;
   }
-  return raw
-    .replace(/\s(?:fill|stroke|style)=(".*?"|'.*?'|[^\s>]+)/gi, "")
-    .replace(/<svg\b([^>]*)>/i, '<svg$1 fill="currentColor" stroke="currentColor">')
-    .slice(0, 20000);
+  const withoutUnsafeStyles = raw.replace(/\sstyle=(".*?"|'.*?'|[^\s>]+)/gi, "");
+  const normalized = recolor
+    ? withoutUnsafeStyles
+      .replace(/\s(?:fill|stroke)=(".*?"|'.*?'|[^\s>]+)/gi, "")
+      .replace(/<svg\b([^>]*)>/i, '<svg$1 fill="currentColor" stroke="currentColor">')
+    : withoutUnsafeStyles;
+  return normalized.slice(0, 20000);
 }
 
 function normalizeThemeConfig(config, themeKey) {
@@ -90,6 +135,10 @@ function normalizeThemeConfig(config, themeKey) {
   output.nameFontWeight = String(Math.max(100, Math.min(900, Math.round(Number(output.nameFontWeight || 700) / 100) * 100)));
   output.cardBorderRadius = output.cardBorderRadius || "24px";
   output.fontFamily = output.fontFamily || "'Sora', 'Inter', 'Segoe UI', sans-serif";
+  for (const key of OPTIONAL_CONFIG_KEYS) {
+    if (source[key] === undefined || source[key] === null) continue;
+    output[key] = String(source[key]).trim();
+  }
   const missing = REQUIRED_CONFIG_KEYS.filter((key) => !output[key]);
   if (missing.length) {
     const error = new Error(`Заполните поля темы: ${missing.join(", ")}`);
@@ -110,26 +159,68 @@ function mapThemeRow(row) {
     overlaySvg: String(row.overlaySvg || row.overlay_svg || ""),
     primaryIconSvg: String(row.primaryIconSvg || row.primary_icon_svg || ""),
     secondaryIconSvg: String(row.secondaryIconSvg || row.secondary_icon_svg || ""),
+    status: String(row.status || "active"),
+    cacheVersion: Number(row.cacheVersion || row.cache_version || 1) || 1,
     createdAt: row.createdAt || row.created_at || null,
     updatedAt: row.updatedAt || row.updated_at || null,
   };
 }
 
-async function listThemeConfigs({ limit = 100 } = {}) {
+function normalizeThemeStatus(value) {
+  const status = String(value || "active").trim().toLowerCase();
+  return PUBLIC_THEME_STATUSES.has(status) ? status : "active";
+}
+
+async function listThemeConfigs({ limit = 100, publicOnly = false } = {}) {
   const take = Math.max(1, Math.min(500, Number(limit || 100)));
+  try {
+    const rows = publicOnly
+      ? await prisma.$queryRaw`
+        SELECT id, theme_key AS "themeKey", title, card_bg_overlay AS "cardBgOverlay",
+               config_json AS "configJson", overlay_svg AS "overlaySvg",
+               primary_icon_svg AS "primaryIconSvg", secondary_icon_svg AS "secondaryIconSvg",
+               status, cache_version AS "cacheVersion",
+               created_at AS "createdAt", updated_at AS "updatedAt"
+        FROM unqx_theme_configs
+        WHERE status IN ('active', 'public')
+        ORDER BY updated_at DESC, id DESC
+        LIMIT ${take}
+      `
+      : await prisma.$queryRaw`
+        SELECT id, theme_key AS "themeKey", title, card_bg_overlay AS "cardBgOverlay",
+               config_json AS "configJson", overlay_svg AS "overlaySvg",
+               primary_icon_svg AS "primaryIconSvg", secondary_icon_svg AS "secondaryIconSvg",
+               status, cache_version AS "cacheVersion",
+               created_at AS "createdAt", updated_at AS "updatedAt"
+        FROM unqx_theme_configs
+        ORDER BY updated_at DESC, id DESC
+        LIMIT ${take}
+      `;
+    return (Array.isArray(rows) ? rows : []).map(mapThemeRow).filter(Boolean);
+  } catch (error) {
+    if (isThemeConfigStorageMissing(error)) return [];
+    throw error;
+  }
+}
+
+async function findPublicThemeConfigByKey(themeKey) {
+  const key = normalizeThemeKey(themeKey);
+  if (!THEME_KEY_RE.test(key)) return null;
   try {
     const rows = await prisma.$queryRaw`
       SELECT id, theme_key AS "themeKey", title, card_bg_overlay AS "cardBgOverlay",
              config_json AS "configJson", overlay_svg AS "overlaySvg",
              primary_icon_svg AS "primaryIconSvg", secondary_icon_svg AS "secondaryIconSvg",
+             status, cache_version AS "cacheVersion",
              created_at AS "createdAt", updated_at AS "updatedAt"
       FROM unqx_theme_configs
-      ORDER BY updated_at DESC, id DESC
-      LIMIT ${take}
+      WHERE theme_key = ${key}
+        AND status IN ('active', 'public')
+      LIMIT 1
     `;
-    return (Array.isArray(rows) ? rows : []).map(mapThemeRow).filter(Boolean);
+    return mapThemeRow(Array.isArray(rows) ? rows[0] : null);
   } catch (error) {
-    if (isThemeConfigStorageMissing(error)) return [];
+    if (isThemeConfigStorageMissing(error)) return null;
     throw error;
   }
 }
@@ -143,16 +234,17 @@ async function upsertThemeConfig(input) {
   }
   const config = normalizeThemeConfig(input?.config, key);
   const title = normalizeTitle(input?.title, key);
+  const status = normalizeThemeStatus(input?.status);
   const cardBgOverlay = String(config.cardBgOverlay || key).trim().slice(0, 120);
-  const overlaySvg = sanitizeSvg(input?.overlaySvg);
-  const primaryIconSvg = sanitizeSvg(input?.primaryIconSvg);
-  const secondaryIconSvg = sanitizeSvg(input?.secondaryIconSvg);
+  const overlaySvg = sanitizeSvg(input?.overlaySvg, { recolor: input?.overlaySvgRecolor !== false });
+  const primaryIconSvg = sanitizeSvg(input?.primaryIconSvg, { recolor: input?.primaryIconRecolor !== false });
+  const secondaryIconSvg = sanitizeSvg(input?.secondaryIconSvg, { recolor: input?.secondaryIconRecolor !== false });
   const configJson = JSON.stringify(config);
   const rows = await prisma.$queryRaw`
     INSERT INTO unqx_theme_configs
-      (theme_key, title, card_bg_overlay, config_json, overlay_svg, primary_icon_svg, secondary_icon_svg)
+      (theme_key, title, card_bg_overlay, config_json, overlay_svg, primary_icon_svg, secondary_icon_svg, status, cache_version)
     VALUES
-      (${key}, ${title}, ${cardBgOverlay}, ${configJson}::jsonb, ${overlaySvg || null}, ${primaryIconSvg || null}, ${secondaryIconSvg || null})
+      (${key}, ${title}, ${cardBgOverlay}, ${configJson}::jsonb, ${overlaySvg || null}, ${primaryIconSvg || null}, ${secondaryIconSvg || null}, ${status}, 1)
     ON CONFLICT (theme_key)
     DO UPDATE SET
       title = EXCLUDED.title,
@@ -161,10 +253,13 @@ async function upsertThemeConfig(input) {
       overlay_svg = EXCLUDED.overlay_svg,
       primary_icon_svg = EXCLUDED.primary_icon_svg,
       secondary_icon_svg = EXCLUDED.secondary_icon_svg,
+      status = EXCLUDED.status,
+      cache_version = unqx_theme_configs.cache_version + 1,
       updated_at = now()
     RETURNING id, theme_key AS "themeKey", title, card_bg_overlay AS "cardBgOverlay",
               config_json AS "configJson", overlay_svg AS "overlaySvg",
               primary_icon_svg AS "primaryIconSvg", secondary_icon_svg AS "secondaryIconSvg",
+              status, cache_version AS "cacheVersion",
               created_at AS "createdAt", updated_at AS "updatedAt"
   `;
   return mapThemeRow(Array.isArray(rows) ? rows[0] : null);
@@ -179,6 +274,7 @@ async function deleteThemeConfig(id) {
     RETURNING id, theme_key AS "themeKey", title, card_bg_overlay AS "cardBgOverlay",
               config_json AS "configJson", overlay_svg AS "overlaySvg",
               primary_icon_svg AS "primaryIconSvg", secondary_icon_svg AS "secondaryIconSvg",
+              status, cache_version AS "cacheVersion",
               created_at AS "createdAt", updated_at AS "updatedAt"
   `;
   return mapThemeRow(Array.isArray(rows) ? rows[0] : null);
@@ -187,6 +283,7 @@ async function deleteThemeConfig(id) {
 module.exports = {
   REQUIRED_CONFIG_KEYS,
   deleteThemeConfig,
+  findPublicThemeConfigByKey,
   listThemeConfigs,
   normalizeThemeConfig,
   sanitizeSvg,

@@ -28,6 +28,7 @@ const { getManySettings } = require("../../services/platform-settings");
 const { listAdvertisements } = require("../../services/advertisements");
 const { listEventCardReleases } = require("../../services/event-card-releases");
 const { findTrackById, normalizeTrackId } = require("../../services/profile-music");
+const { findPublicThemeConfigByKey } = require("../../services/theme-configs");
 const { recordView } = require("../../services/tap-tracker");
 const { isPublicProfileVisible } = require("../../services/subscription");
 const {
@@ -62,6 +63,18 @@ const router = express.Router();
 const defaultSocialImage = absoluteUrl("/brand/logo.PNG");
 const CARD_THEMES = PROFILE_THEMES;
 const LEGAL_DOCS_DIR = path.join(env.EXPRESS_APP_DIR, "docs");
+
+function normalizePublicThemeKey(value) {
+  const theme = String(value || "").trim();
+  return theme === "royal_ivory" ? "sage_luxe" : theme;
+}
+
+async function resolvePublicCustomTheme(card) {
+  const theme = normalizePublicThemeKey(card?.theme);
+  if (!theme || CARD_THEMES.has(theme)) return null;
+  if (card?.tariff !== "premium") return null;
+  return findPublicThemeConfigByKey(theme);
+}
 
 function normalizeSafeNextPath(value, fallback = "/profile") {
   const raw = String(value || "").trim();
@@ -901,7 +914,7 @@ function buildPublicCardFromProfile({ slug, user, profileCard, verifiedIdentity,
   const plan = getEffectivePlan(user).plan;
   const isCurrentlyVerified = Boolean(user?.isVerified);
   const rawCardTheme = String(effectiveProfileCard.theme || "").trim();
-  const normalizedCardTheme = rawCardTheme === "royal_ivory" ? "sage_luxe" : rawCardTheme;
+  const normalizedCardTheme = normalizePublicThemeKey(rawCardTheme);
   const verifiedCompany =
     String(isCurrentlyVerified ? (verifiedIdentity?.companyName || user?.verifiedCompany || "") : "")
       .trim();
@@ -939,7 +952,7 @@ function buildPublicCardFromProfile({ slug, user, profileCard, verifiedIdentity,
     verified: isCurrentlyVerified,
     verifiedCompany,
     tariff: plan,
-    theme: CARD_THEMES.has(normalizedCardTheme) ? normalizedCardTheme : "default_dark",
+    theme: normalizedCardTheme || "default_dark",
     customColor: effectiveProfileCard.customColor || "",
     avatarFrame: (() => {
       const nextFrame = String(effectiveProfileCard.avatarFrame || "").trim().toLowerCase();
@@ -2461,12 +2474,17 @@ router.get(
       ? { title: officialCfg.staffProfileBadgeTitle, line: officialCfg.staffProfileBadgeLine }
       : null;
     const image = card.avatarUrl ? absoluteUrl(card.avatarUrl) : absoluteUrl("/brand/logo.PNG");
+    const customTheme = await resolvePublicCustomTheme(card);
+    if (customTheme) {
+      res.set("Cache-Control", "no-cache, must-revalidate");
+    }
 
     res.render("public/card", {
       title: `${card.name} | UNQX`,
       description: `${card.name} on UNQX: digital business card, contacts, links, QR and analytics.`,
       image,
       card,
+      customTheme,
       topBadge,
       score: null,
       officialUnqBadge,
@@ -2819,11 +2837,16 @@ router.get(
           ),
           placeholder: "Добавьте ответ...",
         };
+        const customTheme = await resolvePublicCustomTheme(card);
+        if (customTheme) {
+          res.set("Cache-Control", "no-cache, must-revalidate");
+        }
         res.render("public/card", {
           title: `${card.name} | UNQX`,
           description: `${card.name} on UNQX: digital business card, contacts, links, QR and analytics.`,
           image,
           card,
+          customTheme,
           wall: wall
             ? {
               enabled: true,

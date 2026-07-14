@@ -595,6 +595,25 @@
   padding: 12px;
 }
 
+.admin-theme-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.52);
+  padding: 10px 12px;
+  color: #dbeafe;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.admin-theme-check input {
+  width: 16px;
+  height: 16px;
+  accent-color: #00e5ff;
+}
+
 .admin-theme-color-pair input[type="color"],
 .admin-theme-color-line input[type="color"] {
   width: 100%;

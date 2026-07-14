@@ -1,7 +1,7 @@
 <% const pageTitle=typeof title==="string" && title ? title : "UNQX" ; const pageDescription=typeof
   description==="string" && description ? description : "UNQX platform for digital business cards" ; const
   pageImage=typeof image==="string" && image ? image : null; const pageCardRaw=typeof card==="object" && card ? card :
-  {}; const pageBaseUrl=typeof baseUrl==="string" && baseUrl ? baseUrl : "" ; const pageCanonicalUrl=typeof
+  {}; const pageCustomThemeRaw=typeof customTheme==="object" && customTheme ? customTheme : null; const pageBaseUrl=typeof baseUrl==="string" && baseUrl ? baseUrl : "" ; const pageCanonicalUrl=typeof
   canonicalUrl==="string" && canonicalUrl ? canonicalUrl : `${pageBaseUrl}/${pageCardRaw.slug || "unknown" }`; const
   pageShareUrl=pageCanonicalUrl.includes("?") ? `${pageCanonicalUrl}&src=share` : `${pageCanonicalUrl}?src=share`; const
   pageCardThemes = [
@@ -122,7 +122,8 @@
     theme:
     (() => {
     const normalizedTheme = pageCardRaw.theme === "royal_ivory" ? "sage_luxe" : pageCardRaw.theme;
-    return typeof normalizedTheme === "string" && pageCardThemes.includes(normalizedTheme) ? normalizedTheme : "default_dark";
+    const customThemeKey = pageCustomThemeRaw && typeof pageCustomThemeRaw.key === "string" ? pageCustomThemeRaw.key : "";
+    return typeof normalizedTheme === "string" && (pageCardThemes.includes(normalizedTheme) || normalizedTheme === customThemeKey) ? normalizedTheme : "default_dark";
     })(),
     avatarFrame:
     pageCardRaw.tariff === "premium" &&
@@ -266,6 +267,14 @@
     const documentDir = /[\u0600-\u06FF]/.test(pageCard.name || "") ? "rtl" : "ltr";
     const formattedViews = new Intl.NumberFormat("ru-RU").format(Math.max(0, pageCard.viewsCount));
     const pageCardTheme = pageCard.tariff === "premium" ? pageCard.theme : "default_dark";
+    const pageCustomTheme = pageCustomThemeRaw && pageCustomThemeRaw.key === pageCardTheme
+    ? {
+      key: pageCustomThemeRaw.key,
+      config: pageCustomThemeRaw.config && typeof pageCustomThemeRaw.config === "object" ? pageCustomThemeRaw.config : null,
+      overlaySvg: typeof pageCustomThemeRaw.overlaySvg === "string" ? pageCustomThemeRaw.overlaySvg : "",
+      cacheVersion: Number(pageCustomThemeRaw.cacheVersion || 1) || 1,
+    }
+    : null;
     const pageTopBadge = typeof topBadge === "object" && topBadge ? topBadge : null;
     const pageScore = typeof score === "object" && score ? score : null;
     %>
@@ -326,8 +335,9 @@
     slug: pageCard.slug,
   score: pageScore,
   wall: typeof wall === "object" && wall ? wall : null,
-  followSummary: typeof followSummary === "object" && followSummary ? followSummary : null,
-  topBadge: pageTopBadge,
+    followSummary: typeof followSummary === "object" && followSummary ? followSummary : null,
+    customTheme: pageCustomTheme,
+    topBadge: pageTopBadge,
     officialUnqBadge: typeof officialUnqBadge === "object" && officialUnqBadge !== null ? officialUnqBadge : null,
     staffBadge: typeof staffBadge === "object" && staffBadge !== null ? staffBadge : null,
     viewerCommentComposer: typeof viewerCommentComposer === "object" && viewerCommentComposer ? viewerCommentComposer : null,

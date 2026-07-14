@@ -3050,6 +3050,10 @@ body[data-card-theme] {
     repeating-linear-gradient(132deg, transparent 0 34px, rgba(20, 28, 42, 0.035) 34px 36px);
 }
 
+body[data-card-theme].has-custom-theme-page-bg {
+  background: var(--unqx-public-page-bg, var(--theme-page-bg, #f6f6f6)) !important;
+}
+
 body[data-card-theme] main {
   position: relative;
   isolation: isolate;
@@ -3290,7 +3294,7 @@ body[data-card-theme] #card-view-root>[data-card-view] {
   width: 100%;
   height: 100%;
   display: block;
-  opacity: 0.14;
+  opacity: var(--theme-card-overlay-opacity, 0.14);
   mix-blend-mode: normal;
 }
 
@@ -3946,7 +3950,7 @@ body[data-card-theme] #card-view-root>[data-card-view] {
   width: fit-content;
   margin: 0 auto 12px;
   border: var(--theme-badge-border, 1px solid #d6d6d6);
-  border-radius: 9999px;
+  border-radius: var(--theme-badge-radius, 9999px);
   background: var(--theme-badge-bg, #fafafa);
   padding: 4px 12px;
   color: var(--theme-badge-text, #5f6368);
@@ -3983,7 +3987,7 @@ body[data-card-theme] #card-view-root>[data-card-view] {
   max-width: 420px;
   margin: 0 auto 14px;
   border: var(--theme-surface-border, 1px solid #e5e5e5);
-  border-radius: 16px;
+  border-radius: var(--theme-surface-radius, 16px);
   background: var(--theme-surface-bg, #f5f5f5);
   padding: 12px 16px;
   text-align: center;
@@ -4016,7 +4020,7 @@ body[data-card-theme] #card-view-root>[data-card-view] {
   max-width: 420px;
   margin: 0 auto 14px;
   border: var(--theme-surface-border, 1px solid #e5e5e5);
-  border-radius: 16px;
+  border-radius: var(--theme-surface-radius, 16px);
   background: var(--theme-surface-bg, #f5f5f5);
   padding: 12px 16px;
   text-align: center;
@@ -4181,7 +4185,7 @@ body[data-card-theme] #card-view-root>[data-card-view] {
   --avatar-size: 104px;
   width: var(--avatar-size);
   height: var(--avatar-size);
-  border-radius: 9999px;
+  border-radius: var(--theme-avatar-radius, 9999px);
   overflow: visible;
 }
 
@@ -4192,7 +4196,7 @@ body[data-card-theme] #card-view-root>[data-card-view] {
   z-index: 1;
   width: 100%;
   height: 100%;
-  border-radius: 9999px;
+  border-radius: var(--theme-avatar-radius, 9999px);
 }
 
 .unq-ref-avatar-img {
@@ -4473,12 +4477,13 @@ body[data-card-theme] #card-view-root>[data-card-view] {
   display: block;
   align-items: center;
   gap: 6px;
-  font-size: 35px;
+  font-size: var(--theme-name-font-size, 35px);
   line-height: 1.08;
-  letter-spacing: -0.03em;
+  letter-spacing: var(--theme-name-letter-spacing, -0.03em);
   color: var(--theme-name-color, #242424);
   font-style: var(--theme-name-font-style, normal);
   font-weight: var(--theme-name-font-weight, 400);
+  text-transform: var(--theme-name-text-transform, none);
 }
 
 .unq-ref-phone {
@@ -4487,7 +4492,7 @@ body[data-card-theme] #card-view-root>[data-card-view] {
   align-items: center;
   gap: 6px;
   color: var(--theme-email-color, #7d7d7d);
-  font-size: 20px;
+  font-size: var(--theme-email-font-size, 20px);
   text-decoration: none;
 }
 
@@ -4509,8 +4514,10 @@ body[data-card-theme] #card-view-root>[data-card-view] {
   margin: 3px 0 0;
   color: var(--theme-role-color, #737373);
   letter-spacing: var(--theme-role-letter-spacing, normal);
-  font-size: 11px;
+  font-size: var(--theme-role-font-size, 11px);
   line-height: 1.3;
+  font-weight: var(--theme-role-font-weight, 500);
+  text-transform: var(--theme-role-text-transform, none);
   text-align: center;
   width: 100%;
   max-width: min(100%, 420px);
@@ -4523,9 +4530,11 @@ body[data-card-theme] #card-view-root>[data-card-view] {
 .unq-ref-bio {
   margin: 8px 0 0;
   color: var(--theme-name-color, #242424);
-  font-size: 13px;
+  font-size: var(--theme-bio-font-size, 13px);
   line-height: 1.45;
-  font-weight: 500;
+  font-weight: var(--theme-bio-font-weight, 500);
+  letter-spacing: var(--theme-bio-letter-spacing, 0);
+  text-transform: var(--theme-bio-text-transform, none);
   text-align: center;
   width: 100%;
   max-width: min(100%, 420px);
@@ -5121,7 +5130,7 @@ body[data-card-theme] #card-view-root>[data-card-view] {
   justify-content: center;
   gap: 10px;
   min-height: 44px;
-  border-radius: 9999px;
+  border-radius: var(--theme-button-radius, 9999px);
   border: 1px solid var(--theme-button-primary-border, #151515);
   background: var(--theme-button-primary-bg, #151515) !important;
   color: var(--theme-button-primary-text, #fff) !important;

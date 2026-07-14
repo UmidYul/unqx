@@ -120,6 +120,7 @@ const {
 } = require("../../services/profile-music");
 const {
   deleteThemeConfig,
+  findPublicThemeConfigByKey,
   listThemeConfigs,
   upsertThemeConfig,
 } = require("../../services/theme-configs");
@@ -334,7 +335,7 @@ function mapProfileCardRow(row) {
     avatarUrl: avatarUrl || "",
     tags: parseJsonArray(row.tags),
     buttons: parseJsonArray(row.buttons),
-    theme: PROFILE_THEMES.has(normalizedTheme) ? normalizedTheme : "default_dark",
+    theme: normalizedTheme || "default_dark",
     customColor: customColor || "",
     avatarFrame: (() => {
       const nextFrame = String(avatarFrameRaw || "").trim().toLowerCase();
@@ -528,7 +529,8 @@ async function normalizeCardThemeForDatabase(theme) {
     return requested;
   }
   if (!PROFILE_THEMES.has(requested)) {
-    return "default_dark";
+    const customTheme = await findPublicThemeConfigByKey(requested);
+    if (!customTheme) return "default_dark";
   }
   const supported = await getSupportedCardThemeEnumValues();
   if (!supported || supported.size === 0) {
@@ -551,7 +553,7 @@ async function normalizeCardThemeForDatabase(theme) {
 
 async function ensureCardThemeEnumValue(theme) {
   const requested = String(theme || "").trim();
-  if (!PROFILE_THEMES.has(requested) || !/^[a-z0-9_]+$/.test(requested)) {
+  if (!/^[a-z][a-z0-9_]{1,79}$/.test(requested)) {
     return false;
   }
   const escapedValue = requested.replace(/'/g, "''");
