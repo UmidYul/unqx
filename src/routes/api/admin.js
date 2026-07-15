@@ -2804,6 +2804,7 @@ router.post(
       imageUrl = await savePetAsset(req.file.buffer, isSvg ? "svg" : "png");
       const item = await createLibraryPet({
         name: req.body?.name,
+        description: req.body?.description,
         eventName: req.body?.eventName || req.body?.event_name,
         price: req.body?.price,
         imageUrl,
@@ -2845,6 +2846,7 @@ router.put(
         }
         const created = await createLibraryPet({
           name: req.body?.name,
+          description: req.body?.description,
           eventName: req.body?.eventName || req.body?.event_name,
           price: req.body?.price,
           imageUrl,
@@ -2854,6 +2856,7 @@ router.put(
       }
       const item = await updateLibraryPet(req.params.id, {
         name: req.body?.name,
+        description: req.body?.description,
         eventName: req.body?.eventName || req.body?.event_name,
         price: req.body?.price,
         imageUrl,

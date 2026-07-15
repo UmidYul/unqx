@@ -430,6 +430,11 @@
                     <span class="profile-card-category-label">Оформление</span>
                     <span class="profile-card-category-note">Тема, рамка и сохранение</span>
                   </button>
+                  <button type="button" data-a="card-editor-category" data-card-editor-category="music"
+                    class="interactive-btn profile-card-category-btn" aria-pressed="false">
+                    <span class="profile-card-category-label">Музыка</span>
+                    <span class="profile-card-category-note">Трек публичного профиля</span>
+                  </button>
                   <button type="button" data-a="card-editor-category" data-card-editor-category="pets"
                     class="interactive-btn profile-card-category-btn" aria-pressed="false">
                     <span class="profile-card-category-label">Животные</span>
@@ -641,58 +646,6 @@
                                 нужен для декоративных рамок</p>
                             </div>
 
-                            <div id="profile-card-music-wrap" class="profile-music-choice-card">
-                              <div class="profile-music-choice-head">
-                                <span class="profile-music-choice-icon" aria-hidden="true">
-                                  <svg class="icon-stroke" viewBox="0 0 24 24">
-                                    <path d="M9 18V5l10-2v13"></path>
-                                    <circle cx="6" cy="18" r="3"></circle>
-                                    <circle cx="16" cy="16" r="3"></circle>
-                                  </svg>
-                                </span>
-                                <div class="min-w-0">
-                                  <span
-                                    class="block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Музыка
-                                    профиля</span>
-                                  <p id="profile-card-music-note" class="mt-1 text-xs text-neutral-500">Премиум: выбери
-                                    трек, который будет доступен в публичном профиле.</p>
-                                </div>
-                              </div>
-                              <div class="profile-music-current">
-                                <span>Сейчас</span>
-                                <strong id="profile-card-music-current">Без музыки</strong>
-                              </div>
-                              <div id="profile-card-track-options"
-                                class="profile-style-choice-grid profile-style-choice-grid--compact profile-music-choice-grid">
-                              </div>
-                            </div>
-
-                            <div id="profile-card-pet-library-wrap" class="profile-music-choice-card">
-                              <div class="profile-music-choice-head">
-                                <span class="profile-music-choice-icon" aria-hidden="true">
-                                  <svg class="icon-stroke" viewBox="0 0 24 24">
-                                    <path d="M12 3c1.7 0 3 1.3 3 3 0 .8-.3 1.5-.8 2"></path>
-                                    <path d="M8.5 9.5c-1.6.8-2.5 2.3-2.5 4.1 0 3.1 2.7 5.4 6 5.4s6-2.3 6-5.4c0-1.8-.9-3.3-2.5-4.1"></path>
-                                    <path d="M9 13h.01"></path>
-                                    <path d="M15 13h.01"></path>
-                                    <path d="M10.5 16c.9.6 2.1.6 3 0"></path>
-                                  </svg>
-                                </span>
-                                <div class="min-w-0">
-                                  <span class="block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Питомец
-                                    профиля</span>
-                                  <p id="profile-card-pet-library-note" class="mt-1 text-xs text-neutral-500">Питомец
-                                    появится в правом нижнем углу визитки.</p>
-                                </div>
-                              </div>
-                              <div class="profile-music-current">
-                                <span>Сейчас</span>
-                                <strong id="profile-card-pet-library-current">Без питомца</strong>
-                              </div>
-                              <div id="profile-card-pet-library-options"
-                                class="profile-style-choice-grid profile-style-choice-grid--compact profile-music-choice-grid">
-                              </div>
-                            </div>
                           </div>
 
                           <label class="inline-flex cursor-pointer items-center justify-between gap-3 text-sm">
@@ -706,6 +659,39 @@
                             </span>
                           </label>
 
+                        </div>
+                      </section>
+
+                      <section class="profile-card-editor-panel hidden" data-card-editor-panel="music">
+                        <div class="profile-card-editor-panel-head">
+                          <h3 class="profile-card-editor-panel-title">Музыка</h3>
+                          <p class="profile-card-editor-panel-text">Выбери трек, который будет доступен в публичном
+                            профиле.</p>
+                        </div>
+
+                        <div id="profile-card-music-wrap" class="profile-music-choice-card">
+                          <div class="profile-music-choice-head">
+                            <span class="profile-music-choice-icon" aria-hidden="true">
+                              <svg class="icon-stroke" viewBox="0 0 24 24">
+                                <path d="M9 18V5l10-2v13"></path>
+                                <circle cx="6" cy="18" r="3"></circle>
+                                <circle cx="16" cy="16" r="3"></circle>
+                              </svg>
+                            </span>
+                            <div class="min-w-0">
+                              <span class="block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Музыка
+                                профиля</span>
+                              <p id="profile-card-music-note" class="mt-1 text-xs text-neutral-500">Премиум: выбери
+                                трек, который будет доступен в публичном профиле.</p>
+                            </div>
+                          </div>
+                          <div class="profile-music-current">
+                            <span>Сейчас</span>
+                            <strong id="profile-card-music-current">Без музыки</strong>
+                          </div>
+                          <div id="profile-card-track-options"
+                            class="profile-style-choice-grid profile-style-choice-grid--compact profile-music-choice-grid">
+                          </div>
                         </div>
                       </section>
 

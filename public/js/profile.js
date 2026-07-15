@@ -295,11 +295,14 @@
         .map((item) => ({
           id: normalizeTrackId(item?.id),
           name: String(item?.name || "").trim(),
+          description: String(item?.description || "").trim(),
           imageUrl: String(item?.imageUrl || item?.image_url || "").trim(),
           price: Math.max(0, Math.trunc(Number(item?.price || 0))),
           eventName: String(item?.eventName || item?.event_name || "").trim(),
           isActive: item?.isActive !== false && item?.is_active !== false,
           isOwned: Boolean(item?.isOwned || item?.is_owned),
+          displayName: String(item?.displayName || item?.display_name || "").trim(),
+          isVisible: Boolean(item?.isVisible || item?.is_visible),
         }))
         .filter((item) => item.id && item.name && item.imageUrl);
 
@@ -2205,21 +2208,7 @@ Email: ${userEmail}
 
     const renderPetsEditor = () => {
       if (!(el.cPetsList instanceof HTMLElement)) return;
-      const catalog = normalizePetCatalog(s.petCatalog);
-      const ownedPets = normalizeOwnedPets(s.pets);
-      const ownedByType = new Map(ownedPets.map((pet) => [pet.petType, pet]));
-      const pendingByType = new Map(
-        (Array.isArray(s.requests) ? s.requests : [])
-          .filter((item) => item?.type === "pet" && String(item?.status || "").toLowerCase() === "pending")
-          .map((item) => [String(item.petType || "").trim().toLowerCase(), item]),
-      );
-      s.petDrafts = buildPetDraftMap({
-        catalog,
-        pets: ownedPets,
-        requests: s.requests,
-        previous: s.petDrafts,
-      });
-
+      const catalog = normalizePetLibrary(s.petLibrary);
       if (!catalog.length) {
         el.cPetsList.innerHTML = '<div class="rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-6 text-sm text-neutral-500">Каталог животных пока недоступен.</div>';
         return;
@@ -2227,48 +2216,43 @@ Email: ${userEmail}
 
       el.cPetsList.innerHTML = catalog
         .map((item) => {
-          const owned = ownedByType.get(item.petType) || null;
-          const pending = pendingByType.get(item.petType) || null;
-          const draftName = String(s.petDrafts?.[item.petType] || "").trim();
-          const inputValue = owned
-            ? String(owned.displayName || "").trim()
-            : pending
-              ? String(pending.displayName || "").trim()
-              : draftName;
+          const owned = Boolean(item.isOwned);
+          const selected = normalizeTrackId(s.selectedPetId) === item.id;
+          const inputValue = String(item.displayName || item.name || "").trim();
+          const paid = Number(item.price || 0) > 0;
+          const priceLabel = paid ? `${Number(item.price).toLocaleString("ru-RU")} сум` : "Бесплатно";
           const stateBadge = owned
-            ? '<span class="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-1 text-[11px] font-semibold text-emerald-700">Уже на визитке</span>'
-            : pending
-              ? '<span class="rounded-full border border-amber-200 bg-amber-50 px-2 py-1 text-[11px] font-semibold text-amber-700">Ожидает оплату</span>'
-              : '<span class="rounded-full border border-neutral-200 bg-white px-2 py-1 text-[11px] font-semibold text-neutral-500">Доступен к покупке</span>';
-          return `<article class="rounded-2xl border border-neutral-200 bg-neutral-50 p-4" data-pet-card="${esc(item.petType)}">
+            ? '<span class="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-1 text-[11px] font-semibold text-emerald-700">Добавлен</span>'
+            : '<span class="rounded-full border border-neutral-200 bg-white px-2 py-1 text-[11px] font-semibold text-neutral-500">Не добавлен</span>';
+          return `<article class="rounded-2xl border border-neutral-200 bg-neutral-50 p-4" data-library-pet-card="${esc(String(item.id))}">
             <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
               <div class="flex items-start gap-3">
-                <img src="${esc(item.assetUrl)}" alt="${esc(item.label)}" class="h-20 w-20 shrink-0 object-contain" />
+                <img src="${esc(item.imageUrl)}" alt="${esc(item.name)}" class="h-20 w-20 shrink-0 object-contain" />
                 <div class="min-w-0">
                   <div class="flex flex-wrap items-center gap-2">
-                    <h4 class="text-base font-bold text-neutral-900">${esc(item.label)}</h4>
+                    <h4 class="text-base font-bold text-neutral-900">${esc(item.name)}</h4>
                     ${stateBadge}
                   </div>
                   <p class="mt-1 text-sm text-neutral-500">${esc(item.description || "Декоративный питомец для профиля.")}</p>
+                  <p class="mt-1 text-xs font-semibold text-neutral-500">${esc(item.eventName ? `Ивент: ${item.eventName}` : priceLabel)}</p>
                 </div>
               </div>
               <div class="flex w-full flex-col gap-3 md:max-w-[320px]">
-                <label class="block">
-                  <span class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Имя животного</span>
-                  <input type="text" value="${esc(inputValue)}" maxlength="120" data-a="pet-name-input" data-pet-type="${esc(item.petType)}" class="w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm" placeholder="Например, Барсик" />
-                </label>
                 ${owned
-                  ? `<label class="inline-flex items-center justify-between gap-3 rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm">
+                  ? `<label class="block">
+                      <span class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Имя животного</span>
+                      <input type="text" value="${esc(inputValue)}" maxlength="120" data-a="library-pet-name-input" data-pet-id="${esc(String(item.id))}" class="w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm" placeholder="Например, Барсик" />
+                    </label>
+                    <label class="inline-flex items-center justify-between gap-3 rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm">
                       <span>Показывать на визитке</span>
-                      <input type="checkbox" data-a="pet-visible-toggle" data-pet-id="${esc(owned.id)}" ${owned.isVisible ? "checked" : ""} />
-                    </label>`
-                  : ""
+                      <input type="checkbox" data-a="library-pet-visible-toggle" data-pet-id="${esc(String(item.id))}" ${selected ? "checked" : ""} />
+                    </label>
+                    <p class="text-xs text-neutral-500">Имя и видимость сохранятся вместе с визиткой.</p>`
+                  : `<button type="button" data-a="buy-library-pet" data-pet-id="${esc(String(item.id))}" class="interactive-btn min-h-11 rounded-xl bg-neutral-900 px-3 py-2 text-sm font-semibold text-white">${paid ? `Купить за ${esc(priceLabel)}` : "Добавить бесплатно"}</button>`
                 }
-                ${owned
-                  ? '<p class="text-xs text-neutral-500">Имя и видимость сохранятся вместе с визиткой.</p>'
-                  : pending
-                    ? `<button type="button" data-a="pay-request" data-order-id="${esc(pending.id)}" class="interactive-btn min-h-11 rounded-xl bg-neutral-900 px-3 py-2 text-sm font-semibold text-white">Продолжить оплату</button>`
-                    : `<button type="button" data-a="buy-pet" data-pet-type="${esc(item.petType)}" class="interactive-btn min-h-11 rounded-xl bg-neutral-900 px-3 py-2 text-sm font-semibold text-white">Купить</button>`
+                ${!item.isActive && !owned
+                  ? '<p class="text-xs text-amber-600">Питомец на паузе и недоступен новым пользователям.</p>'
+                  : ""
                 }
               </div>
             </div>
@@ -2550,7 +2534,10 @@ Email: ${userEmail}
           : "none";
       const selectedPetId = effectivePlan === "premium" ? normalizeTrackId(s.selectedPetId) : null;
       const selectedPet = selectedPetId
-        ? normalizePetLibrary(s.petLibrary).find((pet) => pet.id === selectedPetId) || null
+        ? (() => {
+          const pet = normalizePetLibrary(s.petLibrary).find((item) => item.id === selectedPetId) || null;
+          return pet ? { ...pet, name: pet.displayName || pet.name } : null;
+        })()
         : null;
       return {
         card: {
@@ -2584,8 +2571,8 @@ Email: ${userEmail}
           emojiBackgroundPack: effectiveEmojiBackgroundPack,
           showBranding: el.cBranding ? !el.cBranding.checked : true,
           bio: String(el.cBio?.value || "").trim(),
-          pets: normalizeOwnedPets(s.pets),
-          selectedPet,
+            pets: [],
+            selectedPet,
         },
         primarySlug,
       };
@@ -4816,10 +4803,11 @@ Email: ${userEmail}
             selectedTrackId: getCurrentPlan() === "premium" ? normalizeTrackId(s.selectedTrackId) : null,
             selectedPetId: getCurrentPlan() === "premium" ? normalizeTrackId(s.selectedPetId) : null,
             showBranding: el.cBranding ? !el.cBranding.checked : true,
-            pets: normalizeOwnedPets(s.pets).map((pet) => ({
+            pets: [],
+            libraryPets: normalizePetLibrary(s.petLibrary).filter((pet) => pet.isOwned).map((pet) => ({
               id: pet.id,
               displayName: pet.displayName,
-              isVisible: pet.isVisible,
+              isVisible: normalizeTrackId(s.selectedPetId) === pet.id,
             })),
           }),
         });
@@ -5689,6 +5677,34 @@ Email: ${userEmail}
         return;
       }
 
+      const buyLibraryPetNode = target.closest('[data-a="buy-library-pet"]');
+      if (buyLibraryPetNode instanceof HTMLElement) {
+        const petId = normalizeTrackId(buyLibraryPetNode.getAttribute("data-pet-id"));
+        const pet = normalizePetLibrary(s.petLibrary).find((item) => item.id === petId);
+        if (!pet) {
+          showModal("Ошибка", "Не удалось определить питомца");
+          return;
+        }
+        if (Number(pet.price || 0) > 0 && !window.confirm(`Купить питомца за ${Number(pet.price).toLocaleString("ru-RU")} сум?`)) {
+          return;
+        }
+        try {
+          const payload = await api(`/api/profile/pets/library/${encodeURIComponent(String(pet.id))}/purchase`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ displayName: pet.displayName || pet.name }),
+          });
+          s.petLibrary = normalizePetLibrary(payload.petLibrary);
+          renderPetsEditor();
+          renderPreview();
+          saveDraft();
+          showSaveAlert(Number(pet.price || 0) > 0 ? "Питомец куплен" : "Питомец добавлен");
+        } catch (error) {
+          showModal("Не удалось добавить питомца", error.message || "Попробуйте позже");
+        }
+        return;
+      }
+
       const payNode = target.closest('[data-a="pay-request"]');
       if (payNode instanceof HTMLElement) {
         const orderId = String(payNode.getAttribute("data-order-id") || "").trim();
@@ -5792,42 +5808,28 @@ Email: ${userEmail}
     el.cSave?.addEventListener("click", saveCard);
     el.cPetsList?.addEventListener("input", (event) => {
       const target = event.target instanceof HTMLInputElement ? event.target : null;
-      if (!target || target.getAttribute("data-a") !== "pet-name-input") return;
-      const petType = String(target.getAttribute("data-pet-type") || "").trim().toLowerCase();
+      if (!target || target.getAttribute("data-a") !== "library-pet-name-input") return;
+      const petId = normalizeTrackId(target.getAttribute("data-pet-id"));
       const value = String(target.value || "").trim().slice(0, 120);
-      if (!PET_TYPES.includes(petType)) return;
-      const ownedPets = normalizeOwnedPets(s.pets);
-      if (ownedPets.some((pet) => pet.petType === petType)) {
-        s.pets = ownedPets.map((pet) =>
-          pet.petType === petType
-            ? {
-              ...pet,
-              displayName: value || (PET_TYPE_LABELS[petType] || ""),
-            }
-            : pet,
-        );
-      } else {
-        s.petDrafts = {
-          ...(s.petDrafts || {}),
-          [petType]: value,
-        };
-      }
+      if (!petId) return;
+      s.petLibrary = normalizePetLibrary(s.petLibrary).map((pet) =>
+        pet.id === petId ? { ...pet, displayName: value || pet.name } : pet,
+      );
       renderPreview();
       saveDraft();
     });
     el.cPetsList?.addEventListener("change", (event) => {
       const target = event.target instanceof HTMLInputElement ? event.target : null;
-      if (!target || target.getAttribute("data-a") !== "pet-visible-toggle") return;
-      const petId = String(target.getAttribute("data-pet-id") || "").trim();
-      const nextPets = normalizeOwnedPets(s.pets).map((pet) =>
+      if (!target || target.getAttribute("data-a") !== "library-pet-visible-toggle") return;
+      const petId = normalizeTrackId(target.getAttribute("data-pet-id"));
+      if (!petId) return;
+      s.selectedPetId = target.checked ? petId : null;
+      s.petLibrary = normalizePetLibrary(s.petLibrary).map((pet) =>
         pet.id === petId
-          ? {
-            ...pet,
-            isVisible: target.checked,
-          }
-          : pet,
+          ? { ...pet, isVisible: target.checked }
+          : { ...pet, isVisible: false },
       );
-      s.pets = nextPets;
+      renderPetsEditor();
       renderPreview();
       saveDraft();
     });

@@ -9,7 +9,7 @@ const PETS_DIR = path.join(env.PUBLIC_DIR, "uploads", "profile-pets");
 
 function isPetsLibraryStorageMissing(error) {
   const message = String(error?.message || "");
-  return error?.code === "P2021" || error?.code === "P2022" || /unqx_pets|unqx_user_pets|selected_pet_id|price|event_name/i.test(message);
+  return error?.code === "P2021" || error?.code === "P2022" || /unqx_pets|unqx_user_pets|selected_pet_id|price|event_name|description|legacy_type|display_name|is_visible/i.test(message);
 }
 
 function normalizeLibraryPetId(value) {
@@ -23,11 +23,15 @@ function mapLibraryPetRow(row) {
   return {
     id: Number(row.id || 0),
     name: String(row.name || ""),
+    description: String(row.description || "").trim(),
     imageUrl: String(row.imageUrl || row.image_url || ""),
     price: Math.max(0, Math.trunc(Number(row.price || 0))),
     eventName: String(row.eventName || row.event_name || "").trim(),
+    legacyType: String(row.legacyType || row.legacy_type || "").trim(),
     isActive: row.isActive ?? row.is_active ?? true,
     isOwned: Boolean(row.isOwned ?? row.is_owned ?? false),
+    displayName: String(row.displayName || row.display_name || "").trim(),
+    isVisible: Boolean(row.isVisible ?? row.is_visible ?? false),
     createdAt: row.createdAt || row.created_at || null,
   };
 }
@@ -124,12 +128,16 @@ async function listLibraryPets({ limit = 200, activeOnly = false, includeIds = [
         SELECT
           p.id,
           p.name,
+          p.description,
           p.image_url AS "imageUrl",
           p.price,
           p.event_name AS "eventName",
+          p.legacy_type AS "legacyType",
           p.is_active AS "isActive",
           p.created_at AS "createdAt",
-          (up.user_id IS NOT NULL) AS "isOwned"
+          (up.user_id IS NOT NULL) AS "isOwned",
+          up.display_name AS "displayName",
+          up.is_visible AS "isVisible"
         FROM unqx_pets p
         LEFT JOIN unqx_user_pets up
           ON up.pet_id = p.id
@@ -144,12 +152,16 @@ async function listLibraryPets({ limit = 200, activeOnly = false, includeIds = [
         SELECT
           p.id,
           p.name,
+          p.description,
           p.image_url AS "imageUrl",
           p.price,
           p.event_name AS "eventName",
+          p.legacy_type AS "legacyType",
           p.is_active AS "isActive",
           p.created_at AS "createdAt",
-          (up.user_id IS NOT NULL) AS "isOwned"
+          (up.user_id IS NOT NULL) AS "isOwned",
+          up.display_name AS "displayName",
+          up.is_visible AS "isVisible"
         FROM unqx_pets p
         LEFT JOIN unqx_user_pets up
           ON up.pet_id = p.id
@@ -160,7 +172,7 @@ async function listLibraryPets({ limit = 200, activeOnly = false, includeIds = [
     return (Array.isArray(rows) ? rows : []).map(mapLibraryPetRow).filter(Boolean);
   } catch (error) {
     const message = String(error?.message || "");
-    if (/unqx_user_pets|price|event_name|column .* does not exist|relation .* does not exist/i.test(message)) {
+    if (/unqx_user_pets|price|event_name|description|legacy_type|display_name|is_visible|column .* does not exist|relation .* does not exist/i.test(message)) {
       const legacyItems = await listLibraryPetsLegacy({ limit: take });
       if (!activeOnly) return legacyItems;
       const includeSet = new Set(normalizedIncludeIds.map(String));
@@ -176,7 +188,7 @@ async function findLibraryPetById(id) {
   if (!normalizedId) return null;
   try {
     const rows = await prisma.$queryRaw`
-      SELECT id, name, image_url AS "imageUrl", price, event_name AS "eventName", is_active AS "isActive", created_at AS "createdAt"
+      SELECT id, name, description, image_url AS "imageUrl", price, event_name AS "eventName", legacy_type AS "legacyType", is_active AS "isActive", created_at AS "createdAt"
       FROM unqx_pets
       WHERE id = ${normalizedId}
       LIMIT 1
@@ -188,7 +200,7 @@ async function findLibraryPetById(id) {
   }
 }
 
-async function createLibraryPet({ name, imageUrl, price = 0, eventName = null }) {
+async function createLibraryPet({ name, imageUrl, price = 0, eventName = null, description = null }) {
   const normalizedName = String(name || "").trim().replace(/\s+/g, " ").slice(0, 255);
   if (!normalizedName || !imageUrl) {
     const error = new Error("Укажите имя питомца и загрузите SVG или PNG.");
@@ -196,14 +208,14 @@ async function createLibraryPet({ name, imageUrl, price = 0, eventName = null })
     throw error;
   }
   const rows = await prisma.$queryRaw`
-    INSERT INTO unqx_pets (name, image_url, price, event_name)
-    VALUES (${normalizedName}, ${imageUrl}, ${normalizePetPrice(price)}, ${normalizePetEventName(eventName)})
-    RETURNING id, name, image_url AS "imageUrl", price, event_name AS "eventName", is_active AS "isActive", created_at AS "createdAt"
+    INSERT INTO unqx_pets (name, image_url, price, event_name, description)
+    VALUES (${normalizedName}, ${imageUrl}, ${normalizePetPrice(price)}, ${normalizePetEventName(eventName)}, ${normalizePetEventName(description)})
+    RETURNING id, name, description, image_url AS "imageUrl", price, event_name AS "eventName", legacy_type AS "legacyType", is_active AS "isActive", created_at AS "createdAt"
   `;
   return mapLibraryPetRow(Array.isArray(rows) ? rows[0] : null);
 }
 
-async function updateLibraryPet(id, { name, imageUrl, price = 0, eventName = null }) {
+async function updateLibraryPet(id, { name, imageUrl, price = 0, eventName = null, description = null }) {
   const normalizedId = normalizeLibraryPetId(id);
   const normalizedName = String(name || "").trim().replace(/\s+/g, " ").slice(0, 255);
   if (!normalizedId || !normalizedName) return null;
@@ -215,9 +227,10 @@ async function updateLibraryPet(id, { name, imageUrl, price = 0, eventName = nul
     SET name = ${normalizedName},
         image_url = ${nextImageUrl},
         price = ${normalizePetPrice(price)},
-        event_name = ${normalizePetEventName(eventName)}
+        event_name = ${normalizePetEventName(eventName)},
+        description = ${normalizePetEventName(description)}
     WHERE id = ${normalizedId}
-    RETURNING id, name, image_url AS "imageUrl", price, event_name AS "eventName", is_active AS "isActive", created_at AS "createdAt"
+    RETURNING id, name, description, image_url AS "imageUrl", price, event_name AS "eventName", legacy_type AS "legacyType", is_active AS "isActive", created_at AS "createdAt"
   `;
   const item = mapLibraryPetRow(Array.isArray(rows) ? rows[0] : null);
   if (imageUrl && existing.imageUrl && existing.imageUrl !== imageUrl) {
@@ -233,7 +246,7 @@ async function setLibraryPetActive(id, isActive) {
     UPDATE unqx_pets
     SET is_active = ${Boolean(isActive)}
     WHERE id = ${normalizedId}
-    RETURNING id, name, image_url AS "imageUrl", price, event_name AS "eventName", is_active AS "isActive", created_at AS "createdAt"
+    RETURNING id, name, description, image_url AS "imageUrl", price, event_name AS "eventName", legacy_type AS "legacyType", is_active AS "isActive", created_at AS "createdAt"
   `;
   return mapLibraryPetRow(Array.isArray(rows) ? rows[0] : null);
 }
@@ -253,7 +266,7 @@ async function deleteLibraryPet(id) {
   const rows = await prisma.$queryRaw`
     DELETE FROM unqx_pets
     WHERE id = ${normalizedId}
-    RETURNING id, name, image_url AS "imageUrl", price, event_name AS "eventName", is_active AS "isActive", created_at AS "createdAt"
+    RETURNING id, name, description, image_url AS "imageUrl", price, event_name AS "eventName", legacy_type AS "legacyType", is_active AS "isActive", created_at AS "createdAt"
   `;
   const item = mapLibraryPetRow(Array.isArray(rows) ? rows[0] : null);
   if (item?.imageUrl) await deletePetAsset(item.imageUrl);
@@ -279,7 +292,7 @@ async function isLibraryPetOwnedByUser({ userId, petId }) {
   }
 }
 
-async function purchaseLibraryPetForUser({ userId, petId }) {
+async function purchaseLibraryPetForUser({ userId, petId, displayName = "" }) {
   const normalizedPetId = normalizeLibraryPetId(petId);
   const normalizedUserId = String(userId || "").trim();
   if (!normalizedUserId || !normalizedPetId) return null;
@@ -287,12 +300,43 @@ async function purchaseLibraryPetForUser({ userId, petId }) {
   if (!pet || (!pet.isActive && !await isLibraryPetOwnedByUser({ userId: normalizedUserId, petId: normalizedPetId }))) {
     return null;
   }
-  await prisma.$executeRaw`
-    INSERT INTO unqx_user_pets (user_id, pet_id)
-    VALUES (${normalizedUserId}::uuid, ${normalizedPetId})
-    ON CONFLICT (user_id, pet_id) DO NOTHING
-  `;
+  try {
+    await prisma.$executeRaw`
+      INSERT INTO unqx_user_pets (user_id, pet_id, display_name, is_visible)
+      VALUES (${normalizedUserId}::uuid, ${normalizedPetId}, ${String(displayName || pet.name || "").trim().slice(0, 120) || null}, false)
+      ON CONFLICT (user_id, pet_id) DO NOTHING
+    `;
+  } catch (error) {
+    if (!isPetsLibraryStorageMissing(error)) throw error;
+    await prisma.$executeRaw`
+      INSERT INTO unqx_user_pets (user_id, pet_id)
+      VALUES (${normalizedUserId}::uuid, ${normalizedPetId})
+      ON CONFLICT (user_id, pet_id) DO NOTHING
+    `;
+  }
   return { ...pet, isOwned: true };
+}
+
+async function updateUserLibraryPetPreferences({ userId, pets = [] }) {
+  const normalizedUserId = String(userId || "").trim();
+  if (!normalizedUserId || !Array.isArray(pets) || !pets.length) return;
+  try {
+    for (const patch of pets) {
+      const petId = normalizeLibraryPetId(patch?.id ?? patch?.petId ?? patch?.pet_id);
+      if (!petId) continue;
+      const displayName = String(patch?.displayName || patch?.display_name || "").trim().slice(0, 120) || null;
+      const isVisible = Boolean(patch?.isVisible ?? patch?.is_visible);
+      await prisma.$executeRaw`
+        UPDATE unqx_user_pets
+        SET display_name = ${displayName},
+            is_visible = ${isVisible}
+        WHERE user_id = ${normalizedUserId}::uuid
+          AND pet_id = ${petId}
+      `;
+    }
+  } catch (error) {
+    if (!isPetsLibraryStorageMissing(error)) throw error;
+  }
 }
 
 module.exports = {
@@ -308,4 +352,5 @@ module.exports = {
   savePetAsset,
   setLibraryPetActive,
   updateLibraryPet,
+  updateUserLibraryPetPreferences,
 };

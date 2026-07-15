@@ -28,7 +28,7 @@ const { getManySettings } = require("../../services/platform-settings");
 const { listAdvertisements } = require("../../services/advertisements");
 const { listEventCardReleases } = require("../../services/event-card-releases");
 const { findTrackById, normalizeTrackId } = require("../../services/profile-music");
-const { findLibraryPetById, normalizeLibraryPetId } = require("../../services/profile-pets-library");
+const { findLibraryPetById, listLibraryPets, normalizeLibraryPetId } = require("../../services/profile-pets-library");
 const { findPublicThemeConfigByKey } = require("../../services/theme-configs");
 const { getProfileEditorPresetsWithDisplayNames } = require("../../services/profile-editor-presets");
 const { recordView } = require("../../services/tap-tracker");
@@ -993,7 +993,7 @@ function buildPublicCardFromProfile({ slug, user, profileCard, verifiedIdentity,
     extraPhone: effectiveProfileCard.extraPhone || "",
     viewsCount: Number(viewsCount || 0),
     showBranding: Boolean(effectiveProfileCard.showBranding),
-    pets: sortProfileCardPets(pets),
+    pets: [],
   };
 }
 
@@ -2808,7 +2808,12 @@ router.get(
             ? findTrackById(effectiveProfileCard.selectedTrackId)
             : Promise.resolve(null),
           effectiveProfileCard.selectedPetId
-            ? findLibraryPetById(effectiveProfileCard.selectedPetId)
+            ? listLibraryPets({
+              limit: 20,
+              activeOnly: true,
+              userId: owner.id,
+              includeIds: [effectiveProfileCard.selectedPetId],
+            }).then((items) => items.find((item) => item.id === effectiveProfileCard.selectedPetId) || null)
             : Promise.resolve(null),
         ]);
 
@@ -2824,7 +2829,7 @@ router.get(
             selectedPet: selectedPet
               ? {
                 id: selectedPet.id,
-                name: selectedPet.name,
+                name: selectedPet.displayName || selectedPet.name,
                 imageUrl: selectedPet.imageUrl,
                 eventName: selectedPet.eventName || "",
                 price: selectedPet.price || 0,

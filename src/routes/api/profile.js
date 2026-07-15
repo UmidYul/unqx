@@ -104,6 +104,7 @@ const {
   listLibraryPets,
   normalizeLibraryPetId,
   purchaseLibraryPetForUser,
+  updateUserLibraryPetPreferences,
 } = require("../../services/profile-pets-library");
 const { findPublicThemeConfigByKey } = require("../../services/theme-configs");
 const {
@@ -2126,6 +2127,15 @@ router.put(
         }))
         .filter((item) => item.id)
       : [];
+    const libraryPetPatches = Array.isArray(body.libraryPets)
+      ? body.libraryPets
+        .map((item) => ({
+          id: normalizeLibraryPetId(item?.id ?? item?.petId ?? item?.pet_id),
+          displayName: normalizePetDisplayName(item?.displayName),
+          isVisible: Boolean(item?.isVisible),
+        }))
+        .filter((item) => item.id)
+      : [];
 
     if (effective.plan !== "premium") {
       const requestedTheme = String(body.theme || "").trim();
@@ -2241,6 +2251,13 @@ router.put(
         }
       }
 
+      if (libraryPetPatches.length) {
+        await updateUserLibraryPetPreferences({
+          userId: user.id,
+          pets: libraryPetPatches,
+        });
+      }
+
       const freshPets = tx.profileCardPet
         ? await tx.profileCardPet.findMany({
           where: { userId: user.id },
@@ -2276,7 +2293,11 @@ router.post(
     if (!assertPlanAllowsCard(user, res)) {
       return;
     }
-    const item = await purchaseLibraryPetForUser({ userId: user.id, petId: req.params.id });
+    const item = await purchaseLibraryPetForUser({
+      userId: user.id,
+      petId: req.params.id,
+      displayName: req.body?.displayName,
+    });
     if (!item) {
       res.status(404).json({ error: "Питомец недоступен.", code: "PET_NOT_FOUND" });
       return;

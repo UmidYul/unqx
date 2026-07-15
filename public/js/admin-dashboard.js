@@ -3078,17 +3078,19 @@
   function renderProfilePetLibraryItem(item) {
     const id = Number(item?.id || 0);
     const name = String(item?.name || "Без имени");
+    const description = String(item?.description || "").trim();
     const imageUrl = String(item?.imageUrl || "").trim();
     const eventName = String(item?.eventName || item?.event_name || "").trim();
     const price = Math.max(0, Math.trunc(Number(item?.price || 0)));
     const isActive = item?.isActive !== false;
     return `<article class="flex flex-wrap items-center gap-3 rounded-2xl border border-neutral-200 bg-neutral-50 p-3 ${isActive ? "" : "opacity-55 grayscale"}"
-      data-pet-json="${X(JSON.stringify({ id, name, imageUrl, eventName, price, isActive }))}">
+      data-pet-json="${X(JSON.stringify({ id, name, description, imageUrl, eventName, price, isActive }))}">
       <span class="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-neutral-200 bg-white">
         ${imageUrl ? `<img src="${X(imageUrl)}" alt="${X(name)}" class="h-full w-full object-contain" />` : ""}
       </span>
       <div class="min-w-0 flex-1">
         <p class="font-semibold text-neutral-900">${X(name)}</p>
+        <p class="mt-1 text-xs text-neutral-500">${X(description || "Без описания")}</p>
         <p class="mt-1 text-xs text-neutral-500">${X(eventName || "Без ивента")} · ${price ? `${price.toLocaleString("ru-RU")} сум` : "Бесплатно"} · ${isActive ? "Активен" : "На паузе"}</p>
         <p class="mt-1 truncate text-[11px] text-neutral-400">${X(imageUrl)}</p>
       </div>
@@ -4893,10 +4895,12 @@
       const idInput = form.elements.namedItem("id");
       const nameInput = form.elements.namedItem("name");
       const eventInput = form.elements.namedItem("eventName");
+      const descriptionInput = form.elements.namedItem("description");
       const priceInput = form.elements.namedItem("price");
       if (idInput instanceof HTMLInputElement) idInput.value = String(item.id || "");
       if (nameInput instanceof HTMLInputElement) nameInput.value = String(item.name || "");
       if (eventInput instanceof HTMLInputElement) eventInput.value = String(item.eventName || "");
+      if (descriptionInput instanceof HTMLInputElement) descriptionInput.value = String(item.description || "");
       if (priceInput instanceof HTMLInputElement) priceInput.value = String(item.price || 0);
       const submit = form.querySelector("[data-pet-form-submit]");
       if (submit instanceof HTMLButtonElement) submit.textContent = "Сохранить";
