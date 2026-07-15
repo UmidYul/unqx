@@ -28,7 +28,7 @@ const { getManySettings } = require("../../services/platform-settings");
 const { listAdvertisements } = require("../../services/advertisements");
 const { listEventCardReleases } = require("../../services/event-card-releases");
 const { findTrackById, normalizeTrackId } = require("../../services/profile-music");
-const { findLibraryPetById, listLibraryPets, normalizeLibraryPetId } = require("../../services/profile-pets-library");
+const { findVisibleUserLibraryPet, listLibraryPets, normalizeLibraryPetId } = require("../../services/profile-pets-library");
 const { findPublicThemeConfigByKey } = require("../../services/theme-configs");
 const { getProfileEditorPresetsWithDisplayNames } = require("../../services/profile-editor-presets");
 const { recordView } = require("../../services/tap-tracker");
@@ -2808,12 +2808,10 @@ router.get(
             ? findTrackById(effectiveProfileCard.selectedTrackId)
             : Promise.resolve(null),
           effectiveProfileCard.selectedPetId
-            ? listLibraryPets({
-              limit: 20,
-              activeOnly: true,
+            ? findVisibleUserLibraryPet({
               userId: owner.id,
-              includeIds: [effectiveProfileCard.selectedPetId],
-            }).then((items) => items.find((item) => item.id === effectiveProfileCard.selectedPetId) || null)
+              petId: effectiveProfileCard.selectedPetId,
+            })
             : Promise.resolve(null),
         ]);
 

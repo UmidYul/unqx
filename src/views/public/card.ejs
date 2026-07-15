@@ -176,6 +176,15 @@
     const audioUrl = String(track.audioUrl || track.audio_url || "").trim();
     return title && audioUrl ? { title, audioUrl } : null;
     })(),
+    selectedPet: (() => {
+    const pet = pageCardRaw.selectedPet && typeof pageCardRaw.selectedPet === "object" ? pageCardRaw.selectedPet : null;
+    if (!pet) return null;
+    const name = String(pet.name || pet.displayName || pet.title || "").trim();
+    const imageUrl = String(pet.imageUrl || pet.image_url || pet.url || "").trim();
+    const eventName = String(pet.eventName || pet.event_name || "").trim();
+    const id = Number(pet.id || 0);
+    return name && imageUrl ? { id: Number.isFinite(id) ? id : 0, name, imageUrl, eventName } : null;
+    })(),
     pets: Array.isArray(pageCardRaw.pets)
     ? pageCardRaw.pets
     .map((pet) => {
