@@ -86,6 +86,13 @@
   : [];
   const headerCollaborationList = advertisementList.filter((item) => item.placement === "header_collab").slice(0, 1);
   const footerPartnerList = advertisementList.filter((item) => item.placement !== "header_collab");
+  const homePromoBanner = (() => {
+  const imageUrl = String(pagePublicSettings.homepage_promo_banner_image_url || "/images/card.png").trim();
+  const targetUrlRaw = String(pagePublicSettings.homepage_promo_banner_target_url || "#calculator").trim();
+  const targetUrl = /^(https?:\/\/|\/|#)/i.test(targetUrlRaw) ? targetUrlRaw : "#calculator";
+  const alt = String(pagePublicSettings.homepage_promo_banner_alt || "UNQX Promo Banner").trim();
+  return { imageUrl, targetUrl, alt };
+  })();
   const trimMetricDecimal = (value) => String(value).replace(/\.0$/, "");
   const formatHomePostMetric = (value) => {
   const amount = Math.max(0, Number(value || 0));
@@ -471,6 +478,20 @@
               </div>
             </section>
             <% } %>
+
+            <% if (homeBlockVisible("homepage_promo_banner_visible") && homePromoBanner.imageUrl) { %>
+              <section class="px-4 py-8 sm:px-6 sm:py-10" data-observe-reveal>
+                <div class="mx-auto max-w-6xl">
+                  <a href="<%= homePromoBanner.targetUrl %>"
+                    class="block overflow-hidden rounded-3xl transition-all duration-300 hover:scale-[1.01] hover:shadow-lg"
+                    <%= /^https?:\/\//i.test(homePromoBanner.targetUrl) ? 'target="_blank" rel="noopener noreferrer"' : '' %>>
+                    <img src="<%= homePromoBanner.imageUrl %>" alt="<%= homePromoBanner.alt %>"
+                      class="h-auto w-full aspect-[7/3] object-cover"
+                      style="aspect-ratio: 7 / 3;" loading="lazy" />
+                  </a>
+                </div>
+              </section>
+              <% } %>
 
             <% if (nextDrop && homeBlockVisible("homepage_next_drop_visible")) { %>
               <section class="px-6 pb-6" data-observe-reveal>
