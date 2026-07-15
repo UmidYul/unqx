@@ -20,6 +20,7 @@
     themes:          { title: "Темы",                  desc: "Конструктор визуальных стилей для цифровых NFC-визиток.",                     action: null },
     "event-cards":   { title: "Карты",                 desc: "Публикации эксклюзивных ивентовых дизайнов от имени администратора.",         action: null },
     music:           { title: "Управление музыкой",    desc: "Библиотека MP3-треков, которые пользователи Premium могут выбрать для профиля.", action: null },
+    banner:          { title: "Баннер на главной",     desc: "Управление промо-баннером между статистикой UNQ и калькулятором цены.",        action: null },
     advertisements:  { title: "Реклама / партнёры",    desc: "Загрузка партнёрских PNG-логотипов и управление рекламными местами.",         action: null },
     drops:           { title: "Дропы",                 desc: "Эксклюзивные выпуски slug и управление доступом к ним.",                     action: null },
     leaderboard:     { title: "Лидерборд",             desc: "Рейтинг пользователей и соревновательная механика платформы.",               action: null },
@@ -1678,6 +1679,48 @@
                 </div>
               </form>
             </div>
+
+            <section id="tab-banner" class="<%= pageActiveTab === 'banner' ? '' : 'hidden' %> space-y-4">
+              <header class="rounded-2xl border border-neutral-200 bg-white p-4">
+                <h2 class="text-base font-bold text-neutral-900">Баннер на главной</h2>
+                <p class="mt-1 text-sm text-neutral-600">Картинка и ссылка для длинного промо-баннера между статистикой UNQ и калькулятором цены.</p>
+              </header>
+              <form id="homepage-banner-form" class="rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm" enctype="multipart/form-data">
+                <div class="grid gap-4 md:grid-cols-2">
+                  <label class="block text-sm">
+                    <span class="mb-1 block text-xs font-semibold uppercase tracking-wide text-neutral-500">Загрузить картинку</span>
+                    <input name="file" type="file" accept="image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+                    <span class="mt-1 block text-xs text-neutral-500">Рекомендуемый формат: широкий баннер 7:3, PNG/JPG/WebP.</span>
+                  </label>
+                  <label class="block text-sm">
+                    <span class="mb-1 block text-xs font-semibold uppercase tracking-wide text-neutral-500">Текущий путь картинки</span>
+                    <input name="imageUrl" type="text" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" placeholder="/uploads/homepage-banners/banner.png" />
+                  </label>
+                  <label class="block text-sm">
+                    <span class="mb-1 block text-xs font-semibold uppercase tracking-wide text-neutral-500">Ссылка при клике</span>
+                    <input name="targetUrl" type="text" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" placeholder="#calculator или /customization или https://..." />
+                  </label>
+                  <label class="block text-sm">
+                    <span class="mb-1 block text-xs font-semibold uppercase tracking-wide text-neutral-500">Alt текст</span>
+                    <input name="alt" type="text" maxlength="160" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" placeholder="UNQX Promo Banner" />
+                  </label>
+                  <label class="inline-flex items-center gap-3 text-sm font-semibold text-neutral-700">
+                    <input name="visible" type="checkbox" class="h-5 w-5 rounded border-neutral-300" />
+                    Показывать баннер на главной
+                  </label>
+                </div>
+                <div class="mt-4 flex flex-wrap items-center gap-3">
+                  <button type="submit" class="interactive-btn min-h-11 rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white">Сохранить баннер</button>
+                  <a href="/" target="_blank" rel="noopener noreferrer" class="interactive-btn inline-flex min-h-11 items-center rounded-xl border border-neutral-300 bg-white px-4 py-2 text-sm font-semibold text-neutral-700">Открыть главную</a>
+                </div>
+              </form>
+              <div class="rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm">
+                <p class="mb-3 text-xs font-semibold uppercase tracking-wide text-neutral-500">Предпросмотр</p>
+                <a id="homepage-banner-preview-link" href="#calculator" target="_blank" rel="noopener noreferrer" class="block overflow-hidden rounded-3xl transition-all duration-300 hover:scale-[1.01] hover:shadow-lg">
+                  <img id="homepage-banner-preview-image" src="/images/card.png" alt="UNQX Promo Banner" class="h-auto w-full object-cover" style="aspect-ratio: 7 / 3;" />
+                </a>
+              </div>
+            </section>
 
             <section id="tab-advertisements" class="<%= pageActiveTab === 'advertisements' ? '' : 'hidden' %> admin-ads-panel">
               <header class="admin-ads-card admin-ads-header">

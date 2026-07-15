@@ -1,3 +1,5 @@
+const fs = require("node:fs/promises");
+const path = require("node:path");
 const { randomUUID } = require("node:crypto");
 const express = require("express");
 const multer = require("multer");
@@ -146,6 +148,7 @@ const {
   setVisualStyleActive,
   upsertVisualStyleLabel,
 } = require("../../services/visual-style-labels");
+const { getManySettings, setSettingsBatch } = require("../../services/platform-settings");
 
 const router = express.Router();
 const ONLINE_WINDOW_SECONDS = 90;
@@ -167,12 +170,32 @@ const profilePetUpload = multer({
   limits: { fileSize: 5 * 1024 * 1024 },
 });
 const ALLOWED_MIME = new Set(["image/jpeg", "image/png", "image/webp"]);
+const HOMEPAGE_BANNER_DIR = path.join(env.PUBLIC_DIR, "uploads", "homepage-banners");
+const HOMEPAGE_BANNER_MIME_TO_EXT = new Map([
+  ["image/png", "png"],
+  ["image/jpeg", "jpg"],
+  ["image/webp", "webp"],
+]);
 
 function resolveActiveFlag(body) {
   if (Object.prototype.hasOwnProperty.call(body || {}, "isActive")) return Boolean(body.isActive);
   if (Object.prototype.hasOwnProperty.call(body || {}, "is_active")) return Boolean(body.is_active);
   if (Object.prototype.hasOwnProperty.call(body || {}, "active")) return Boolean(body.active);
   return true;
+}
+
+async function saveHomepageBannerImage(file) {
+  const mime = String(file?.mimetype || "").toLowerCase();
+  const ext = HOMEPAGE_BANNER_MIME_TO_EXT.get(mime);
+  if (!file || !ext) {
+    const error = new Error("Загрузите PNG, JPG или WEBP баннер.");
+    error.status = 400;
+    throw error;
+  }
+  await fs.mkdir(HOMEPAGE_BANNER_DIR, { recursive: true });
+  const fileName = `promo-${Date.now()}-${randomUUID()}.${ext}`;
+  await fs.writeFile(path.join(HOMEPAGE_BANNER_DIR, fileName), file.buffer);
+  return `/uploads/homepage-banners/${fileName}`;
 }
 
 async function safeDeleteAvatarByPublicPath(publicPath) {
@@ -2543,6 +2566,66 @@ router.delete(
       return;
     }
     res.json({ ok: true, item });
+  }),
+);
+
+router.get(
+  "/homepage-banner",
+  asyncHandler(async (_req, res) => {
+    const settings = await getManySettings([
+      "homepage_promo_banner_visible",
+      "homepage_promo_banner_image_url",
+      "homepage_promo_banner_target_url",
+      "homepage_promo_banner_alt",
+    ]);
+    res.json({
+      settings: {
+        visible: settings.homepage_promo_banner_visible !== false,
+        imageUrl: String(settings.homepage_promo_banner_image_url || "/images/card.png"),
+        targetUrl: String(settings.homepage_promo_banner_target_url || "#calculator"),
+        alt: String(settings.homepage_promo_banner_alt || "UNQX Promo Banner"),
+      },
+    });
+  }),
+);
+
+router.patch(
+  "/homepage-banner",
+  asyncHandler(async (req, res) => {
+    const imageUrl = String(req.body?.imageUrl || req.body?.image_url || "").trim();
+    const targetUrl = String(req.body?.targetUrl || req.body?.target_url || "").trim();
+    const alt = String(req.body?.alt || "").trim();
+    const visible = Object.prototype.hasOwnProperty.call(req.body || {}, "visible")
+      ? Boolean(req.body.visible)
+      : true;
+    if (!imageUrl) {
+      res.status(400).json({ error: "Укажите картинку баннера.", code: "BANNER_IMAGE_REQUIRED" });
+      return;
+    }
+    if (targetUrl && !/^(https?:\/\/|\/|#)/i.test(targetUrl)) {
+      res.status(400).json({ error: "Ссылка должна начинаться с https://, / или #.", code: "BANNER_TARGET_INVALID" });
+      return;
+    }
+    await setSettingsBatch("homepage", {
+      homepage_promo_banner_visible: visible,
+      homepage_promo_banner_image_url: imageUrl,
+      homepage_promo_banner_target_url: targetUrl || "#calculator",
+      homepage_promo_banner_alt: alt || "UNQX Promo Banner",
+    }, req.session?.admin?.login || "admin");
+    res.json({ ok: true });
+  }),
+);
+
+router.post(
+  "/homepage-banner/upload",
+  upload.single("file"),
+  asyncHandler(async (req, res) => {
+    const imageUrl = await saveHomepageBannerImage(req.file);
+    await setSettingsBatch("homepage", {
+      homepage_promo_banner_image_url: imageUrl,
+      homepage_promo_banner_visible: true,
+    }, req.session?.admin?.login || "admin");
+    res.status(201).json({ ok: true, imageUrl });
   }),
 );
 

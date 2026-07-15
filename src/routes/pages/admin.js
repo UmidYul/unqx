@@ -263,6 +263,7 @@ router.get(
       "auctions",
       "event-cards",
       "music",
+      "banner",
       "drops",
       "directory",
       "verification",

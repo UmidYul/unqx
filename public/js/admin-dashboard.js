@@ -3349,6 +3349,40 @@
       : '<div class="admin-ads-card p-3 text-sm font-semibold text-neutral-600">Баннеров пока нет.</div>';
   }
 
+  function renderHomepageBannerPreview(settings = {}) {
+    const form = document.getElementById("homepage-banner-form");
+    const image = document.getElementById("homepage-banner-preview-image");
+    const link = document.getElementById("homepage-banner-preview-link");
+    const imageUrl = String(settings.imageUrl || getFormValue(form, "imageUrl", "/images/card.png") || "/images/card.png").trim();
+    const targetUrl = String(settings.targetUrl || getFormValue(form, "targetUrl", "#calculator") || "#calculator").trim();
+    const alt = String(settings.alt || getFormValue(form, "alt", "UNQX Promo Banner") || "UNQX Promo Banner").trim();
+    if (image instanceof HTMLImageElement) {
+      image.src = imageUrl;
+      image.alt = alt;
+    }
+    if (link instanceof HTMLAnchorElement) {
+      link.href = targetUrl || "#calculator";
+    }
+  }
+
+  async function loadHomepageBanner() {
+    const form = document.getElementById("homepage-banner-form");
+    if (!(form instanceof HTMLFormElement)) return;
+    const response = await fetch("/api/admin/homepage-banner", { headers: H() });
+    if (!response.ok) {
+      await showAlert(await E(response));
+      return;
+    }
+    const payload = await response.json().catch(() => ({}));
+    const settings = payload.settings || {};
+    setFormValue(form, "imageUrl", String(settings.imageUrl || "/images/card.png"));
+    setFormValue(form, "targetUrl", String(settings.targetUrl || "#calculator"));
+    setFormValue(form, "alt", String(settings.alt || "UNQX Promo Banner"));
+    const visible = form.elements.namedItem("visible");
+    if (visible instanceof HTMLInputElement) visible.checked = settings.visible !== false;
+    renderHomepageBannerPreview(settings);
+  }
+
   function renderEventCardRelease(item) {
     const id = String(item?.id || "");
     const title = String(item?.title || "Untitled");
@@ -5105,6 +5139,55 @@
     await loadAdvertisements();
     await showAlert("Баннер добавлен.");
   });
+  document.getElementById("homepage-banner-form")?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const form = e.currentTarget;
+    if (!(form instanceof HTMLFormElement)) return;
+    const fileInput = form.elements.namedItem("file");
+    const file = fileInput instanceof HTMLInputElement && fileInput.files ? fileInput.files[0] : null;
+    let imageUrl = getFormValue(form, "imageUrl", "");
+    if (file) {
+      const data = new FormData();
+      data.set("file", file);
+      const uploadResponse = await fetch("/api/admin/homepage-banner/upload", {
+        method: "POST",
+        headers: H(),
+        body: data,
+      });
+      if (!uploadResponse.ok) {
+        await showAlert(await E(uploadResponse));
+        return;
+      }
+      const uploadPayload = await uploadResponse.json().catch(() => ({}));
+      imageUrl = String(uploadPayload.imageUrl || imageUrl || "").trim();
+      setFormValue(form, "imageUrl", imageUrl);
+      if (fileInput instanceof HTMLInputElement) fileInput.value = "";
+    }
+    const visible = form.elements.namedItem("visible");
+    const payload = {
+      visible: visible instanceof HTMLInputElement ? visible.checked : true,
+      imageUrl,
+      targetUrl: getFormValue(form, "targetUrl", "#calculator"),
+      alt: getFormValue(form, "alt", "UNQX Promo Banner"),
+    };
+    const response = await fetch("/api/admin/homepage-banner", {
+      method: "PATCH",
+      headers: H({ "Content-Type": "application/json" }),
+      body: JSON.stringify(payload),
+    });
+    if (!response.ok) {
+      await showAlert(await E(response));
+      return;
+    }
+    renderHomepageBannerPreview(payload);
+    await showAlert("Баннер сохранён.");
+  });
+  document.getElementById("homepage-banner-form")?.addEventListener("input", () => {
+    renderHomepageBannerPreview();
+  });
+  document.getElementById("homepage-banner-form")?.addEventListener("change", () => {
+    renderHomepageBannerPreview();
+  });
   document.getElementById("event-card-create-form")?.addEventListener("submit", async (e) => {
     e.preventDefault();
     const form = e.currentTarget;
@@ -6034,6 +6117,10 @@
   if (tab === "advertisements") {
     dbg("load", "advertisements");
     void loadAdvertisements();
+  }
+  if (tab === "banner") {
+    dbg("load", "banner");
+    void loadHomepageBanner();
   }
   if (tab === "themes") {
     dbg("load", "themes");
