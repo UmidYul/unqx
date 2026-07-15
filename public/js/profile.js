@@ -296,7 +296,10 @@
           id: normalizeTrackId(item?.id),
           name: String(item?.name || "").trim(),
           imageUrl: String(item?.imageUrl || item?.image_url || "").trim(),
+          price: Math.max(0, Math.trunc(Number(item?.price || 0))),
+          eventName: String(item?.eventName || item?.event_name || "").trim(),
           isActive: item?.isActive !== false && item?.is_active !== false,
+          isOwned: Boolean(item?.isOwned || item?.is_owned),
         }))
         .filter((item) => item.id && item.name && item.imageUrl);
 
@@ -2453,18 +2456,23 @@ Email: ${userEmail}
       ].filter(Boolean).join(" ");
       const petButtons = pets.map((pet) => {
         const selected = pet.id === current;
+        const paid = Number(pet.price || 0) > 0;
+        const canSelect = !paid || pet.isOwned || selected;
+        const priceLabel = paid ? `${Number(pet.price).toLocaleString("ru-RU")} сум` : "Бесплатно";
+        const actionLabel = canSelect ? "Выбрать" : "Купить";
         const classes = [
           "profile-pet-library-btn",
           "profile-style-choice-btn",
           selected ? "selected bg-neutral-900 text-white" : "",
         ].filter(Boolean).join(" ");
-        return `<button type="button" class="${classes}" data-profile-pet-id="${esc(String(pet.id))}" aria-pressed="${selected ? "true" : "false"}"${disabledAttr}>
+        return `<button type="button" class="${classes}" data-profile-pet-id="${esc(String(pet.id))}" data-profile-pet-action="${canSelect ? "select" : "purchase"}" aria-pressed="${selected ? "true" : "false"}"${disabledAttr}>
           <span class="profile-pet-library-swatch" aria-hidden="true">
             <img src="${esc(pet.imageUrl)}" alt="" loading="lazy" />
           </span>
           <span class="min-w-0 flex-1 text-left">
             <span class="block font-semibold leading-tight">${esc(pet.name)}</span>
-            <span class="block truncate text-[10px] text-neutral-500">Питомец профиля</span>
+            <span class="block truncate text-[10px] text-neutral-500">${esc(pet.eventName ? `Ивент: ${pet.eventName}` : "Питомец профиля")}</span>
+            <span class="profile-pet-price">${esc(priceLabel)} · ${esc(actionLabel)}</span>
           </span>
         </button>`;
       });
@@ -5992,7 +6000,7 @@ Email: ${userEmail}
       saveDraft();
     });
 
-    el.cPetLibraryOptions?.addEventListener("click", (event) => {
+    el.cPetLibraryOptions?.addEventListener("click", async (event) => {
       const target = event.target instanceof HTMLElement ? event.target : null;
       const button = target?.closest("[data-profile-pet-id]");
       if (!(button instanceof HTMLButtonElement)) return;
@@ -6001,7 +6009,21 @@ Email: ${userEmail}
         showModal("Доступно на Премиум", "Питомцы профиля доступны только для Премиум тарифа.");
         return;
       }
-      s.selectedPetId = normalizeTrackId(button.getAttribute("data-profile-pet-id"));
+      const petId = normalizeTrackId(button.getAttribute("data-profile-pet-id"));
+      if (button.getAttribute("data-profile-pet-action") === "purchase" && petId) {
+        const pet = normalizePetLibrary(s.petLibrary).find((item) => item.id === petId);
+        const priceLabel = Number(pet?.price || 0).toLocaleString("ru-RU");
+        if (!window.confirm(`Купить питомца за ${priceLabel} сум?`)) {
+          return;
+        }
+        const payload = await api(`/api/profile/pets/library/${encodeURIComponent(String(petId))}/purchase`, {
+          method: "POST",
+        });
+        s.petLibrary = normalizePetLibrary(payload.petLibrary);
+        s.selectedPetId = petId;
+      } else {
+        s.selectedPetId = petId;
+      }
       renderPetLibraryChoices();
       renderPreview();
       saveDraft();

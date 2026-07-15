@@ -2822,7 +2822,13 @@ router.get(
               ? { title: selectedTrack.title, audioUrl: selectedTrack.audioUrl }
               : null,
             selectedPet: selectedPet
-              ? { id: selectedPet.id, name: selectedPet.name, imageUrl: selectedPet.imageUrl }
+              ? {
+                id: selectedPet.id,
+                name: selectedPet.name,
+                imageUrl: selectedPet.imageUrl,
+                eventName: selectedPet.eventName || "",
+                price: selectedPet.price || 0,
+              }
               : null,
           },
           pets: ownedPets,

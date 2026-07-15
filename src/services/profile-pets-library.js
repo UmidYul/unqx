@@ -9,7 +9,7 @@ const PETS_DIR = path.join(env.PUBLIC_DIR, "uploads", "profile-pets");
 
 function isPetsLibraryStorageMissing(error) {
   const message = String(error?.message || "");
-  return error?.code === "P2021" || error?.code === "P2022" || /unqx_pets|selected_pet_id/i.test(message);
+  return error?.code === "P2021" || error?.code === "P2022" || /unqx_pets|unqx_user_pets|selected_pet_id|price|event_name/i.test(message);
 }
 
 function normalizeLibraryPetId(value) {
@@ -24,9 +24,21 @@ function mapLibraryPetRow(row) {
     id: Number(row.id || 0),
     name: String(row.name || ""),
     imageUrl: String(row.imageUrl || row.image_url || ""),
+    price: Math.max(0, Math.trunc(Number(row.price || 0))),
+    eventName: String(row.eventName || row.event_name || "").trim(),
     isActive: row.isActive ?? row.is_active ?? true,
+    isOwned: Boolean(row.isOwned ?? row.is_owned ?? false),
     createdAt: row.createdAt || row.created_at || null,
   };
+}
+
+function normalizePetPrice(value) {
+  const price = Math.trunc(Number(String(value ?? "").replace(/[^\d.-]/g, "")));
+  return Number.isFinite(price) && price > 0 ? Math.min(price, 2_000_000_000) : 0;
+}
+
+function normalizePetEventName(value) {
+  return String(value || "").trim().replace(/\s+/g, " ").slice(0, 255) || null;
 }
 
 async function ensurePetsDir() {
@@ -69,34 +81,51 @@ async function deletePetAsset(publicPath) {
   }
 }
 
-async function listLibraryPets({ limit = 200, activeOnly = false, includeIds = [] } = {}) {
+async function listLibraryPets({ limit = 200, activeOnly = false, includeIds = [], userId = null } = {}) {
   const take = Math.max(1, Math.min(500, Number(limit || 200)));
+  const normalizedUserId = String(userId || "").trim() || null;
   const normalizedIncludeIds = [...new Set((Array.isArray(includeIds) ? includeIds : [includeIds])
     .map(normalizeLibraryPetId)
     .filter(Boolean))];
   try {
-    const rows = activeOnly && normalizedIncludeIds.length
+    const rows = activeOnly
       ? await prisma.$queryRaw`
-        SELECT id, name, image_url AS "imageUrl", is_active AS "isActive", created_at AS "createdAt"
-        FROM unqx_pets
-        WHERE is_active = true OR id = ANY(${normalizedIncludeIds}::int[])
-        ORDER BY created_at DESC, id DESC
+        SELECT
+          p.id,
+          p.name,
+          p.image_url AS "imageUrl",
+          p.price,
+          p.event_name AS "eventName",
+          p.is_active AS "isActive",
+          p.created_at AS "createdAt",
+          (up.user_id IS NOT NULL) AS "isOwned"
+        FROM unqx_pets p
+        LEFT JOIN unqx_user_pets up
+          ON up.pet_id = p.id
+         AND up.user_id = ${normalizedUserId}::uuid
+        WHERE p.is_active = true
+           OR p.id = ANY(${normalizedIncludeIds}::int[])
+           OR up.user_id IS NOT NULL
+        ORDER BY p.created_at DESC, p.id DESC
         LIMIT ${take}
       `
-      : activeOnly
-        ? await prisma.$queryRaw`
-          SELECT id, name, image_url AS "imageUrl", is_active AS "isActive", created_at AS "createdAt"
-          FROM unqx_pets
-          WHERE is_active = true
-          ORDER BY created_at DESC, id DESC
-          LIMIT ${take}
-        `
-        : await prisma.$queryRaw`
-          SELECT id, name, image_url AS "imageUrl", is_active AS "isActive", created_at AS "createdAt"
-          FROM unqx_pets
-          ORDER BY created_at DESC, id DESC
-          LIMIT ${take}
-        `;
+      : await prisma.$queryRaw`
+        SELECT
+          p.id,
+          p.name,
+          p.image_url AS "imageUrl",
+          p.price,
+          p.event_name AS "eventName",
+          p.is_active AS "isActive",
+          p.created_at AS "createdAt",
+          (up.user_id IS NOT NULL) AS "isOwned"
+        FROM unqx_pets p
+        LEFT JOIN unqx_user_pets up
+          ON up.pet_id = p.id
+         AND up.user_id = ${normalizedUserId}::uuid
+        ORDER BY p.created_at DESC, p.id DESC
+        LIMIT ${take}
+      `;
     return (Array.isArray(rows) ? rows : []).map(mapLibraryPetRow).filter(Boolean);
   } catch (error) {
     if (isPetsLibraryStorageMissing(error)) return [];
@@ -109,7 +138,7 @@ async function findLibraryPetById(id) {
   if (!normalizedId) return null;
   try {
     const rows = await prisma.$queryRaw`
-      SELECT id, name, image_url AS "imageUrl", is_active AS "isActive", created_at AS "createdAt"
+      SELECT id, name, image_url AS "imageUrl", price, event_name AS "eventName", is_active AS "isActive", created_at AS "createdAt"
       FROM unqx_pets
       WHERE id = ${normalizedId}
       LIMIT 1
@@ -121,7 +150,7 @@ async function findLibraryPetById(id) {
   }
 }
 
-async function createLibraryPet({ name, imageUrl }) {
+async function createLibraryPet({ name, imageUrl, price = 0, eventName = null }) {
   const normalizedName = String(name || "").trim().replace(/\s+/g, " ").slice(0, 255);
   if (!normalizedName || !imageUrl) {
     const error = new Error("Укажите имя питомца и загрузите SVG или PNG.");
@@ -129,11 +158,34 @@ async function createLibraryPet({ name, imageUrl }) {
     throw error;
   }
   const rows = await prisma.$queryRaw`
-    INSERT INTO unqx_pets (name, image_url)
-    VALUES (${normalizedName}, ${imageUrl})
-    RETURNING id, name, image_url AS "imageUrl", is_active AS "isActive", created_at AS "createdAt"
+    INSERT INTO unqx_pets (name, image_url, price, event_name)
+    VALUES (${normalizedName}, ${imageUrl}, ${normalizePetPrice(price)}, ${normalizePetEventName(eventName)})
+    RETURNING id, name, image_url AS "imageUrl", price, event_name AS "eventName", is_active AS "isActive", created_at AS "createdAt"
   `;
   return mapLibraryPetRow(Array.isArray(rows) ? rows[0] : null);
+}
+
+async function updateLibraryPet(id, { name, imageUrl, price = 0, eventName = null }) {
+  const normalizedId = normalizeLibraryPetId(id);
+  const normalizedName = String(name || "").trim().replace(/\s+/g, " ").slice(0, 255);
+  if (!normalizedId || !normalizedName) return null;
+  const existing = await findLibraryPetById(normalizedId);
+  if (!existing) return null;
+  const nextImageUrl = String(imageUrl || existing.imageUrl || "").trim();
+  const rows = await prisma.$queryRaw`
+    UPDATE unqx_pets
+    SET name = ${normalizedName},
+        image_url = ${nextImageUrl},
+        price = ${normalizePetPrice(price)},
+        event_name = ${normalizePetEventName(eventName)}
+    WHERE id = ${normalizedId}
+    RETURNING id, name, image_url AS "imageUrl", price, event_name AS "eventName", is_active AS "isActive", created_at AS "createdAt"
+  `;
+  const item = mapLibraryPetRow(Array.isArray(rows) ? rows[0] : null);
+  if (imageUrl && existing.imageUrl && existing.imageUrl !== imageUrl) {
+    await deletePetAsset(existing.imageUrl);
+  }
+  return item;
 }
 
 async function setLibraryPetActive(id, isActive) {
@@ -143,7 +195,7 @@ async function setLibraryPetActive(id, isActive) {
     UPDATE unqx_pets
     SET is_active = ${Boolean(isActive)}
     WHERE id = ${normalizedId}
-    RETURNING id, name, image_url AS "imageUrl", is_active AS "isActive", created_at AS "createdAt"
+    RETURNING id, name, image_url AS "imageUrl", price, event_name AS "eventName", is_active AS "isActive", created_at AS "createdAt"
   `;
   return mapLibraryPetRow(Array.isArray(rows) ? rows[0] : null);
 }
@@ -154,11 +206,46 @@ async function deleteLibraryPet(id) {
   const rows = await prisma.$queryRaw`
     DELETE FROM unqx_pets
     WHERE id = ${normalizedId}
-    RETURNING id, name, image_url AS "imageUrl", is_active AS "isActive", created_at AS "createdAt"
+    RETURNING id, name, image_url AS "imageUrl", price, event_name AS "eventName", is_active AS "isActive", created_at AS "createdAt"
   `;
   const item = mapLibraryPetRow(Array.isArray(rows) ? rows[0] : null);
   if (item?.imageUrl) await deletePetAsset(item.imageUrl);
   return item;
+}
+
+async function isLibraryPetOwnedByUser({ userId, petId }) {
+  const normalizedPetId = normalizeLibraryPetId(petId);
+  const normalizedUserId = String(userId || "").trim();
+  if (!normalizedUserId || !normalizedPetId) return false;
+  try {
+    const rows = await prisma.$queryRaw`
+      SELECT 1
+      FROM unqx_user_pets
+      WHERE user_id = ${normalizedUserId}::uuid
+        AND pet_id = ${normalizedPetId}
+      LIMIT 1
+    `;
+    return Array.isArray(rows) && rows.length > 0;
+  } catch (error) {
+    if (isPetsLibraryStorageMissing(error)) return false;
+    throw error;
+  }
+}
+
+async function purchaseLibraryPetForUser({ userId, petId }) {
+  const normalizedPetId = normalizeLibraryPetId(petId);
+  const normalizedUserId = String(userId || "").trim();
+  if (!normalizedUserId || !normalizedPetId) return null;
+  const pet = await findLibraryPetById(normalizedPetId);
+  if (!pet || (!pet.isActive && !await isLibraryPetOwnedByUser({ userId: normalizedUserId, petId: normalizedPetId }))) {
+    return null;
+  }
+  await prisma.$executeRaw`
+    INSERT INTO unqx_user_pets (user_id, pet_id)
+    VALUES (${normalizedUserId}::uuid, ${normalizedPetId})
+    ON CONFLICT (user_id, pet_id) DO NOTHING
+  `;
+  return { ...pet, isOwned: true };
 }
 
 module.exports = {
@@ -167,8 +254,11 @@ module.exports = {
   deletePetAsset,
   findLibraryPetById,
   isPetsLibraryStorageMissing,
+  isLibraryPetOwnedByUser,
   listLibraryPets,
   normalizeLibraryPetId,
+  purchaseLibraryPetForUser,
   savePetAsset,
   setLibraryPetActive,
+  updateLibraryPet,
 };

@@ -242,7 +242,11 @@
   justify-content: flex-end;
   width: clamp(58px, 18vw, 92px);
   height: clamp(58px, 18vw, 92px);
-  pointer-events: none;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  pointer-events: auto;
 }
 
 .unq-selected-profile-pet-img {
@@ -251,6 +255,41 @@
   height: 100%;
   object-fit: contain;
   filter: drop-shadow(0 10px 16px rgba(0, 0, 0, 0.22));
+}
+
+.unq-selected-profile-pet-tooltip {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 8px);
+  z-index: 5;
+  display: grid;
+  min-width: 126px;
+  max-width: 190px;
+  gap: 2px;
+  border-radius: 12px;
+  background: rgba(17, 17, 17, 0.94);
+  padding: 8px 10px;
+  color: #ffffff;
+  font-size: 10px;
+  line-height: 1.25;
+  text-align: left;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
+  opacity: 0;
+  transform: translateY(4px) scale(0.98);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  pointer-events: none;
+}
+
+.unq-selected-profile-pet-tooltip strong {
+  font-size: 11px;
+  line-height: 1.2;
+}
+
+.unq-selected-profile-pet:hover .unq-selected-profile-pet-tooltip,
+.unq-selected-profile-pet:focus-visible .unq-selected-profile-pet-tooltip,
+.unq-selected-profile-pet:active .unq-selected-profile-pet-tooltip {
+  opacity: 1;
+  transform: translateY(0) scale(1);
 }
 
 @keyframes unqxMusicSpin {
@@ -1272,10 +1311,15 @@
 }
 
 [data-card-theme="vintage_mickey"] .public-card-shell {
+  display: block !important;
   position: relative;
+  width: 100% !important;
+  max-width: 430px !important;
+  margin: 0 auto !important;
   overflow: hidden;
   height: auto !important;
   min-height: 0 !important;
+  max-height: none !important;
   border: 3px solid #D35252 !important;
   background: #FFFFFF !important;
   color: #2B2B2B;
@@ -1298,13 +1342,26 @@
 }
 
 [data-card-theme="vintage_mickey"] .unq-ref-card-overlay {
+  position: absolute !important;
+  inset: 0 !important;
+  height: auto !important;
+  min-height: 0 !important;
   z-index: 0;
 }
 
+[data-card-theme="vintage_mickey"] .unq-ref-overlay-svg {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
 [data-card-theme="vintage_mickey"] .unq-ref-shell {
+  display: block !important;
   height: auto !important;
   min-height: 0 !important;
-  padding: 20px 20px 22px;
+  max-height: none !important;
+  padding: 18px 18px 20px;
 }
 
 [data-card-theme="vintage_mickey"] .unq-ref-shell-meta {
@@ -1321,10 +1378,12 @@
 [data-card-theme="vintage_mickey"] .unq-ref-profile.has-pets,
 [data-card-theme="vintage_mickey"] .unq-ref-profile.has-emoji-pack,
 [data-card-theme="vintage_mickey"] .unq-ref-profile.has-emoji-pack.has-pets {
+  display: flex !important;
   min-height: 0 !important;
   height: auto !important;
   margin-top: 14px;
   padding-top: 0 !important;
+  justify-content: flex-start !important;
 }
 
 [data-card-theme="vintage_mickey"] .unq-ref-profile.has-pets .unq-ref-avatar-wrap {
@@ -9352,4 +9411,27 @@ body[data-card-theme] main.private-card-screen {
 .unq-ref-shell > .unq-selected-profile-pet {
   position: absolute !important;
   z-index: 4 !important;
+}
+
+/* Retro Mickey compact card: never stretch the white card into a poster. */
+[data-card-theme="vintage_mickey"] .public-card-shell,
+[data-card-theme="vintage_mickey"] .unq-ref-shell {
+  display: block !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  aspect-ratio: auto !important;
+  align-self: flex-start !important;
+}
+
+[data-card-theme="vintage_mickey"] .unq-ref-card-overlay,
+[data-card-theme="vintage_mickey"] .unq-ref-overlay-svg {
+  position: absolute !important;
+  inset: 0 !important;
+  height: 100% !important;
+  min-height: 0 !important;
+}
+
+[data-card-theme="vintage_mickey"] .unq-ref-brand {
+  margin: 8px 0 0 !important;
 }

@@ -196,6 +196,17 @@
   padding: 4px;
 }
 
+.profile-dashboard .profile-pet-price {
+  display: inline-flex;
+  margin-top: 4px;
+  border-radius: 999px;
+  background: rgba(17, 17, 17, 0.08);
+  padding: 2px 7px;
+  font-size: 10px;
+  font-weight: 800;
+  color: #111111;
+}
+
 .profile-dashboard .profile-music-track-btn[aria-pressed="true"] .profile-music-track-swatch,
 .profile-dashboard .profile-music-track-btn.selected .profile-music-track-swatch,
 .profile-dashboard .profile-pet-library-btn[aria-pressed="true"] .profile-pet-library-swatch,
@@ -203,6 +214,11 @@
   border-color: #b6ff00;
   background: #b6ff00;
   color: #111111;
+}
+
+.profile-dashboard .profile-pet-library-btn[aria-pressed="true"] .profile-pet-price,
+.profile-dashboard .profile-pet-library-btn.selected .profile-pet-price {
+  background: #b6ff00;
 }
 
 .profile-dashboard .profile-music-empty-note {

@@ -3079,20 +3079,37 @@
     const id = Number(item?.id || 0);
     const name = String(item?.name || "Без имени");
     const imageUrl = String(item?.imageUrl || "").trim();
+    const eventName = String(item?.eventName || item?.event_name || "").trim();
+    const price = Math.max(0, Math.trunc(Number(item?.price || 0)));
     const isActive = item?.isActive !== false;
-    return `<article class="flex flex-wrap items-center gap-3 rounded-2xl border border-neutral-200 bg-neutral-50 p-3 ${isActive ? "" : "opacity-55 grayscale"}">
+    return `<article class="flex flex-wrap items-center gap-3 rounded-2xl border border-neutral-200 bg-neutral-50 p-3 ${isActive ? "" : "opacity-55 grayscale"}"
+      data-pet-json="${X(JSON.stringify({ id, name, imageUrl, eventName, price, isActive }))}">
       <span class="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-neutral-200 bg-white">
         ${imageUrl ? `<img src="${X(imageUrl)}" alt="${X(name)}" class="h-full w-full object-contain" />` : ""}
       </span>
       <div class="min-w-0 flex-1">
         <p class="font-semibold text-neutral-900">${X(name)}</p>
-        <p class="mt-1 text-xs text-neutral-500">${isActive ? "Активен" : "На паузе"} · ${X(imageUrl)}</p>
+        <p class="mt-1 text-xs text-neutral-500">${X(eventName || "Без ивента")} · ${price ? `${price.toLocaleString("ru-RU")} сум` : "Бесплатно"} · ${isActive ? "Активен" : "На паузе"}</p>
+        <p class="mt-1 truncate text-[11px] text-neutral-400">${X(imageUrl)}</p>
       </div>
       <div class="flex flex-wrap gap-2">
+        <button type="button" data-act="profile-pet-edit" data-id="${id}" class="interactive-btn min-h-10 rounded-xl border border-neutral-300 bg-white px-3 py-1.5 text-xs font-semibold">Редактировать</button>
         <button type="button" data-act="profile-pet-toggle-active" data-id="${id}" data-active="${isActive ? "0" : "1"}" class="interactive-btn min-h-10 rounded-xl border border-neutral-300 bg-white px-3 py-1.5 text-xs font-semibold">${isActive ? "На стоп" : "Включить"}</button>
         <button type="button" data-act="profile-pet-delete" data-id="${id}" class="interactive-btn min-h-10 rounded-xl border border-red-200 bg-white px-3 py-1.5 text-xs font-semibold text-red-700">Удалить</button>
       </div>
     </article>`;
+  }
+
+  function resetProfilePetLibraryForm() {
+    const form = document.getElementById("profile-pet-library-form");
+    if (!(form instanceof HTMLFormElement)) return;
+    form.reset();
+    const idInput = form.elements.namedItem("id");
+    if (idInput instanceof HTMLInputElement) idInput.value = "";
+    const submit = form.querySelector("[data-pet-form-submit]");
+    if (submit instanceof HTMLButtonElement) submit.textContent = "Добавить";
+    const cancel = form.querySelector('[data-act="profile-pet-form-reset"]');
+    if (cancel instanceof HTMLElement) cancel.classList.add("hidden");
   }
 
   async function loadProfilePetLibrary() {
@@ -4868,6 +4885,32 @@
       closeAllRowMenus();
       return;
     }
+    if (a === "profile-pet-edit") {
+      const row = n.closest("[data-pet-json]");
+      const form = document.getElementById("profile-pet-library-form");
+      if (!(row instanceof HTMLElement) || !(form instanceof HTMLFormElement)) return;
+      const item = JSON.parse(row.getAttribute("data-pet-json") || "{}");
+      const idInput = form.elements.namedItem("id");
+      const nameInput = form.elements.namedItem("name");
+      const eventInput = form.elements.namedItem("eventName");
+      const priceInput = form.elements.namedItem("price");
+      if (idInput instanceof HTMLInputElement) idInput.value = String(item.id || "");
+      if (nameInput instanceof HTMLInputElement) nameInput.value = String(item.name || "");
+      if (eventInput instanceof HTMLInputElement) eventInput.value = String(item.eventName || "");
+      if (priceInput instanceof HTMLInputElement) priceInput.value = String(item.price || 0);
+      const submit = form.querySelector("[data-pet-form-submit]");
+      if (submit instanceof HTMLButtonElement) submit.textContent = "Сохранить";
+      const cancel = form.querySelector('[data-act="profile-pet-form-reset"]');
+      if (cancel instanceof HTMLElement) cancel.classList.remove("hidden");
+      form.scrollIntoView({ behavior: "smooth", block: "center" });
+      closeAllRowMenus();
+      return;
+    }
+    if (a === "profile-pet-form-reset") {
+      resetProfilePetLibraryForm();
+      closeAllRowMenus();
+      return;
+    }
     if (a === "profile-pet-toggle-active") {
       const id = n.getAttribute("data-id");
       const isActive = n.getAttribute("data-active") === "1";
@@ -5503,6 +5546,7 @@
     event.preventDefault();
     const form = event.currentTarget;
     if (!(form instanceof HTMLFormElement)) return;
+    const id = getFormValue(form, "id", "").trim();
     const name = getFormValue(form, "name", "").trim();
     const fileInput = form.elements.namedItem("file");
     const file = fileInput instanceof HTMLInputElement && fileInput.files ? fileInput.files[0] : null;
@@ -5512,13 +5556,17 @@
       await showAlert("Укажите имя питомца.");
       return;
     }
-    if (!file || (!fileName.endsWith(".svg") && !fileName.endsWith(".png") && fileType !== "image/svg+xml" && fileType !== "image/png")) {
+    if (!id && !file) {
+      await showAlert("Загрузите SVG или PNG.");
+      return;
+    }
+    if (file && (!fileName.endsWith(".svg") && !fileName.endsWith(".png") && fileType !== "image/svg+xml" && fileType !== "image/png")) {
       await showAlert("Загрузите SVG или PNG.");
       return;
     }
     const data = new FormData(form);
-    const r = await fetch("/api/admin/pets/library", {
-      method: "POST",
+    const r = await fetch(id ? `/api/admin/pets/library/${encodeURIComponent(id)}` : "/api/admin/pets/library", {
+      method: id ? "PUT" : "POST",
       headers: H(),
       body: data,
     });
@@ -5526,9 +5574,9 @@
       await showAlert(await E(r));
       return;
     }
-    form.reset();
+    resetProfilePetLibraryForm();
     await loadProfilePetLibrary();
-    await showAlert("Питомец добавлен.");
+    await showAlert(id ? "Питомец обновлен." : "Питомец добавлен.");
   });
   document.getElementById("pets-filters")?.elements?.namedItem?.("status")?.addEventListener?.("change", (e) => {
     const target = e.currentTarget;

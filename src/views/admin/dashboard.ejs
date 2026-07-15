@@ -1933,16 +1933,28 @@
                     <p class="mt-1 text-xs text-neutral-500">Загружайте SVG/PNG питомцев, ставьте их на паузу или удаляйте.</p>
                   </div>
                 </div>
-                <form id="profile-pet-library-form" class="mt-4 grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]" enctype="multipart/form-data">
+                <form id="profile-pet-library-form" class="mt-4 grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_160px_auto]" enctype="multipart/form-data">
+                  <input type="hidden" name="id" value="" />
                   <label class="block text-sm">
                     <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Имя питомца</span>
                     <input name="name" type="text" maxlength="255" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" placeholder="Пиксельный кот" />
                   </label>
                   <label class="block text-sm">
+                    <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Ивент</span>
+                    <input name="eventName" type="text" maxlength="255" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" placeholder="Halloween 2026" />
+                  </label>
+                  <label class="block text-sm">
+                    <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Цена</span>
+                    <input name="price" type="number" min="0" step="1000" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" placeholder="0" />
+                  </label>
+                  <label class="block text-sm">
                     <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Файл SVG / PNG</span>
                     <input name="file" type="file" accept="image/svg+xml,image/png,.svg,.png" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
                   </label>
-                  <button type="submit" class="interactive-btn min-h-11 self-end rounded-xl border border-neutral-300 bg-neutral-900 px-4 py-2 text-sm font-semibold text-white">Добавить</button>
+                  <div class="flex gap-2 self-end">
+                    <button type="submit" class="interactive-btn min-h-11 rounded-xl border border-neutral-300 bg-neutral-900 px-4 py-2 text-sm font-semibold text-white" data-pet-form-submit>Добавить</button>
+                    <button type="button" class="interactive-btn hidden min-h-11 rounded-xl border border-neutral-300 bg-white px-4 py-2 text-sm font-semibold text-neutral-900" data-act="profile-pet-form-reset">Отмена</button>
+                  </div>
                 </form>
                 <div id="profile-pet-library-list" class="mt-4 grid gap-3"></div>
               </section>

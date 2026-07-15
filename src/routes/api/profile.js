@@ -100,8 +100,10 @@ const {
 } = require("../../services/profile-music");
 const {
   findLibraryPetById,
+  isLibraryPetOwnedByUser,
   listLibraryPets,
   normalizeLibraryPetId,
+  purchaseLibraryPetForUser,
 } = require("../../services/profile-pets-library");
 const { findPublicThemeConfigByKey } = require("../../services/theme-configs");
 const {
@@ -1066,6 +1068,7 @@ router.get(
       listLibraryPets({
         limit: 200,
         activeOnly: true,
+        userId: user.id,
         includeIds: cardPayload?.selectedPetId ? [cardPayload.selectedPetId] : [],
       }),
     ]);
@@ -2042,6 +2045,7 @@ router.get(
     const petLibrary = await listLibraryPets({
       limit: 200,
       activeOnly: true,
+      userId: user.id,
       includeIds: cardPayload?.selectedPetId ? [cardPayload.selectedPetId] : [],
     });
     if (cardPayload?.selectedPetId && !cardPayload.selectedPet) {
@@ -2162,6 +2166,13 @@ router.put(
         res.status(400).json({ error: "Выбранный питомец недоступен.", code: "PET_NOT_FOUND" });
         return;
       }
+      if (Number(pet.price || 0) > 0) {
+        const owned = await isLibraryPetOwnedByUser({ userId: user.id, petId: selectedPetId });
+        if (!owned) {
+          res.status(402).json({ error: "Сначала купите этого питомца.", code: "PET_PURCHASE_REQUIRED" });
+          return;
+        }
+      }
     }
 
     const saved = await prisma.$transaction(async (tx) => {
@@ -2246,6 +2257,32 @@ router.put(
       }),
       pets: saved.pets,
     });
+  }),
+);
+
+router.post(
+  "/pets/library/:id/purchase",
+  asyncHandler(async (req, res) => {
+    const user = await getCurrentUser(req);
+    if (!assertUserActive(user, res)) {
+      return;
+    }
+    if (!assertPlanAllowsCard(user, res)) {
+      return;
+    }
+    const item = await purchaseLibraryPetForUser({ userId: user.id, petId: req.params.id });
+    if (!item) {
+      res.status(404).json({ error: "Питомец недоступен.", code: "PET_NOT_FOUND" });
+      return;
+    }
+    const card = await findProfileCardByOwnerId(user.id);
+    const petLibrary = await listLibraryPets({
+      limit: 200,
+      activeOnly: true,
+      userId: user.id,
+      includeIds: card?.selectedPetId ? [card.selectedPetId] : [],
+    });
+    res.json({ ok: true, item, petLibrary });
   }),
 );
 

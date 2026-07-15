@@ -126,6 +126,7 @@ const {
   listLibraryPets,
   savePetAsset,
   setLibraryPetActive,
+  updateLibraryPet,
 } = require("../../services/profile-pets-library");
 const {
   deleteThemeConfig,
@@ -2803,6 +2804,8 @@ router.post(
       imageUrl = await savePetAsset(req.file.buffer, isSvg ? "svg" : "png");
       const item = await createLibraryPet({
         name: req.body?.name,
+        eventName: req.body?.eventName || req.body?.event_name,
+        price: req.body?.price,
         imageUrl,
       });
       res.status(201).json({ ok: true, item });
@@ -2811,6 +2814,46 @@ router.post(
       const status = Number(error?.status || 500);
       res.status(status >= 400 && status < 600 ? status : 500).json({
         error: error?.message || "Не удалось добавить питомца.",
+      });
+    }
+  }),
+);
+
+router.put(
+  "/pets/library/:id",
+  profilePetUpload.single("file"),
+  asyncHandler(async (req, res) => {
+    const fileName = String(req.file?.originalname || "").toLowerCase();
+    const mimeType = String(req.file?.mimetype || "").toLowerCase();
+    const hasFile = Boolean(req.file);
+    const isSvg = hasFile && (fileName.endsWith(".svg") || mimeType === "image/svg+xml");
+    const isPng = hasFile && (fileName.endsWith(".png") || mimeType === "image/png");
+    if (hasFile && !isSvg && !isPng) {
+      res.status(400).json({ error: "Загрузите SVG или PNG-файл.", code: "PET_ASSET_INVALID" });
+      return;
+    }
+    let imageUrl = "";
+    try {
+      if (hasFile) {
+        imageUrl = await savePetAsset(req.file.buffer, isSvg ? "svg" : "png");
+      }
+      const item = await updateLibraryPet(req.params.id, {
+        name: req.body?.name,
+        eventName: req.body?.eventName || req.body?.event_name,
+        price: req.body?.price,
+        imageUrl,
+      });
+      if (!item) {
+        if (imageUrl) await deletePetAsset(imageUrl);
+        res.status(404).json({ error: "Питомец не найден." });
+        return;
+      }
+      res.json({ ok: true, item });
+    } catch (error) {
+      if (imageUrl) await deletePetAsset(imageUrl);
+      const status = Number(error?.status || 500);
+      res.status(status >= 400 && status < 600 ? status : 500).json({
+        error: error?.message || "Не удалось обновить питомца.",
       });
     }
   }),

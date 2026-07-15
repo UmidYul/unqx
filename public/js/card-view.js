@@ -2659,7 +2659,9 @@
         const id = String(pet.id || "").trim();
         const name = String(pet.name || pet.title || "").trim();
         const imageUrl = String(pet.imageUrl || pet.image_url || pet.url || "").trim();
-        return imageUrl ? { id, name, imageUrl } : null;
+        const eventName = String(pet.eventName || pet.event_name || "").trim();
+        const price = Math.max(0, Math.trunc(Number(pet.price || 0)));
+        return imageUrl ? { id, name, imageUrl, eventName, price } : null;
       })(),
       viewsLabel: String(card.viewsLabel || "").trim(),
       pets,
@@ -3481,9 +3483,13 @@
       ? `<button type="button" class="unq-profile-music-player" data-profile-music-player data-audio-url="${esc(card.selectedTrack.audioUrl)}" data-track-title="${esc(card.selectedTrack.title)}" aria-label="Включить музыку: ${esc(card.selectedTrack.title)}" title="${esc(card.selectedTrack.title)}"><span class="unq-profile-music-icon" aria-hidden="true">♪</span><span class="sr-only" data-profile-music-label>Включить музыку</span></button>`
       : "";
     const selectedPetHtml = card.selectedPet
-      ? `<div class="unq-selected-profile-pet" title="${esc(card.selectedPet.name || "Питомец")}" aria-label="${esc(card.selectedPet.name || "Питомец профиля")}">
+      ? `<button type="button" class="unq-selected-profile-pet" aria-label="${esc(card.selectedPet.name || "Питомец профиля")}">
           <img src="${esc(card.selectedPet.imageUrl)}" alt="${esc(card.selectedPet.name || "Питомец")}" class="unq-selected-profile-pet-img" loading="lazy" />
-        </div>`
+          <span class="unq-selected-profile-pet-tooltip" role="tooltip">
+            <strong>${esc(card.selectedPet.name || "Питомец")}</strong>
+            ${card.selectedPet.eventName ? `<span>Ивент: ${esc(card.selectedPet.eventName)}</span>` : ""}
+          </span>
+        </button>`
       : "";
     const vintageSparklesHtml = theme.key === "vintage_mickey"
       ? `<div class="vintage-mickey-sparkles" aria-hidden="true">
