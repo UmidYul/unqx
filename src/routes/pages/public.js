@@ -28,7 +28,7 @@ const { getManySettings } = require("../../services/platform-settings");
 const { listAdvertisements } = require("../../services/advertisements");
 const { listEventCardReleases } = require("../../services/event-card-releases");
 const { findTrackById, normalizeTrackId } = require("../../services/profile-music");
-const { findVisibleUserLibraryPet, listLibraryPets, normalizeLibraryPetId } = require("../../services/profile-pets-library");
+const { listLibraryPets, listVisibleUserLibraryPets, normalizeLibraryPetId } = require("../../services/profile-pets-library");
 const { findPublicThemeConfigByKey } = require("../../services/theme-configs");
 const { getProfileEditorPresetsWithDisplayNames } = require("../../services/profile-editor-presets");
 const { recordView } = require("../../services/tap-tracker");
@@ -922,6 +922,7 @@ function buildImmediatePublicProfileCard(user, profileCard) {
     selectedTrack: safeProfileCard.selectedTrack || null,
     selectedPetId: normalizeLibraryPetId(safeProfileCard.selectedPetId || safeProfileCard.selected_pet_id),
     selectedPet: safeProfileCard.selectedPet || null,
+    selectedPets: Array.isArray(safeProfileCard.selectedPets) ? safeProfileCard.selectedPets : [],
     showBranding: typeof safeProfileCard.showBranding === "boolean" ? safeProfileCard.showBranding : true,
   };
 }
@@ -983,6 +984,7 @@ function buildPublicCardFromProfile({ slug, user, profileCard, verifiedIdentity,
     selectedTrack: effectiveProfileCard.selectedTrack || null,
     selectedPetId: normalizeLibraryPetId(effectiveProfileCard.selectedPetId),
     selectedPet: effectiveProfileCard.selectedPet || null,
+    selectedPets: Array.isArray(effectiveProfileCard.selectedPets) ? effectiveProfileCard.selectedPets : [],
     phone: "",
     tags: mapProfileTags(effectiveProfileCard.tags),
     buttons: mapProfileButtons(effectiveProfileCard.buttons),
@@ -2764,7 +2766,7 @@ router.get(
 
         const viewerSession = getUserSession(req);
         const viewerUserId = String(viewerSession?.userId || "").trim();
-        const [views, ownerSlugs, verifiedIdentity, wall, viewerProfileCard, followSummary, selectedTrack, selectedPet] = await Promise.all([
+        const [views, ownerSlugs, verifiedIdentity, wall, viewerProfileCard, followSummary, selectedTrack, selectedPets] = await Promise.all([
           prisma.analyticsView
             ? prisma.analyticsView
               .findMany({
@@ -2807,13 +2809,21 @@ router.get(
           effectiveProfileCard.selectedTrackId
             ? findTrackById(effectiveProfileCard.selectedTrackId)
             : Promise.resolve(null),
-          effectiveProfileCard.selectedPetId
-            ? findVisibleUserLibraryPet({
-              userId: owner.id,
-              petId: effectiveProfileCard.selectedPetId,
-            })
-            : Promise.resolve(null),
+          listVisibleUserLibraryPets({
+            userId: owner.id,
+            limit: 3,
+          }),
         ]);
+        const selectedPet = Array.isArray(selectedPets) && selectedPets.length ? selectedPets[0] : null;
+        const selectedPetsPayload = (Array.isArray(selectedPets) ? selectedPets : [])
+          .slice(0, 3)
+          .map((pet) => ({
+            id: pet.id,
+            name: pet.displayName || pet.name,
+            imageUrl: pet.imageUrl,
+            eventName: pet.eventName || "",
+            price: pet.price || 0,
+          }));
 
         const card = buildPublicCardFromProfile({
           slug,
@@ -2833,6 +2843,7 @@ router.get(
                 price: selectedPet.price || 0,
               }
               : null,
+            selectedPets: selectedPetsPayload,
           },
           pets: ownedPets,
           verifiedIdentity,

@@ -2663,6 +2663,22 @@
         const price = Math.max(0, Math.trunc(Number(pet.price || 0)));
         return imageUrl ? { id, name, imageUrl, eventName, price } : null;
       })(),
+      selectedPets: (() => {
+        const source = Array.isArray(card.selectedPets)
+          ? card.selectedPets
+          : (card.selectedPet ? [card.selectedPet] : []);
+        return source
+          .map((pet) => {
+            const id = String(pet?.id || "").trim();
+            const name = String(pet?.name || pet?.displayName || pet?.title || "").trim();
+            const imageUrl = String(pet?.imageUrl || pet?.image_url || pet?.url || "").trim();
+            const eventName = String(pet?.eventName || pet?.event_name || "").trim();
+            const price = Math.max(0, Math.trunc(Number(pet?.price || 0)));
+            return imageUrl ? { id, name, imageUrl, eventName, price } : null;
+          })
+          .filter(Boolean)
+          .slice(0, 3);
+      })(),
       viewsLabel: String(card.viewsLabel || "").trim(),
       pets,
     };
@@ -3479,17 +3495,24 @@
       : "";
     const overlayHtml = normalizedCustomOverlaySvg || renderThemeOverlay(theme.key);
     const visiblePetCount = getVisibleCardPets(card).length;
+    const selectedProfilePets = Array.isArray(card.selectedPets) && card.selectedPets.length
+      ? card.selectedPets
+      : (card.selectedPet ? [card.selectedPet] : []);
     const musicPlayerHtml = card.selectedTrack
       ? `<button type="button" class="unq-profile-music-player" data-profile-music-player data-audio-url="${esc(card.selectedTrack.audioUrl)}" data-track-title="${esc(card.selectedTrack.title)}" aria-label="Включить музыку: ${esc(card.selectedTrack.title)}" title="${esc(card.selectedTrack.title)}"><span class="unq-profile-music-icon" aria-hidden="true">♪</span><span class="sr-only" data-profile-music-label>Включить музыку</span></button>`
       : "";
-    const selectedPetHtml = card.selectedPet
-      ? `<button type="button" class="unq-selected-profile-pet" aria-label="${esc(card.selectedPet.name || "Питомец профиля")}">
-          <img src="${esc(card.selectedPet.imageUrl)}" alt="${esc(card.selectedPet.name || "Питомец")}" class="unq-selected-profile-pet-img" loading="lazy" />
-          <span class="unq-selected-profile-pet-tooltip" role="tooltip">
-            <strong>${esc(card.selectedPet.name || "Питомец")}</strong>
-            ${card.selectedPet.eventName ? `<span>Ивент: ${esc(card.selectedPet.eventName)}</span>` : ""}
-          </span>
-        </button>`
+    const selectedPetsHtml = selectedProfilePets.length
+      ? `<span class="unq-profile-pet-chain" aria-label="Питомцы профиля">
+          ${selectedProfilePets.slice(0, 3).map((pet) => `
+            <button type="button" class="unq-profile-name-pet" aria-label="${esc(pet.name || "Питомец профиля")}">
+              <img src="${esc(pet.imageUrl)}" alt="${esc(pet.name || "Питомец")}" class="unq-profile-name-pet-img" loading="lazy" />
+              <span class="unq-selected-profile-pet-tooltip" role="tooltip">
+                <strong>${esc(pet.name || "Питомец")}</strong>
+                ${pet.eventName ? `<span>Ивент: ${esc(pet.eventName)}</span>` : ""}
+              </span>
+            </button>
+          `).join("")}
+        </span>`
       : "";
     const vintageSparklesHtml = theme.key === "vintage_mickey"
       ? `<div class="vintage-mickey-sparkles" aria-hidden="true">
@@ -3538,7 +3561,6 @@
         </div>
         <div class="public-card-shell unq-ref-shell">
           <div class="unq-ref-card-overlay">${overlayHtml}</div>
-          ${selectedPetHtml}
           ${shellMetaHtml}
           ${officialUnqHtml}
           ${staffBadgeHtml}
@@ -3557,8 +3579,11 @@
               <div class="unq-ref-avatar-fallback ${card.avatarUrl ? "hidden" : ""}" data-avatar-fallback aria-hidden="${card.avatarUrl ? "true" : "false"}" ${card.avatarUrl ? "hidden" : ""} style="${card.avatarUrl ? "display:none;" : ""}">${esc(card.initials)}</div>
               ${renderAvatarFrame(card.avatarFrame, theme.key)}
             </div>
-            <div class="unq-ref-name-wrap">
-              <h1 class="unq-ref-name">${esc(card.name)}</h1>
+            <div class="unq-ref-name-wrap${selectedPetsHtml ? " has-profile-pets" : ""}">
+              <div class="unq-ref-name-row">
+                <h1 class="unq-ref-name">${esc(card.name)}</h1>
+                ${selectedPetsHtml}
+              </div>
               ${companyHtml}
               ${roleHtml}
               ${card.bio ? `<p class="unq-ref-bio">${esc(card.bio)}</p>` : ""}

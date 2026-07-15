@@ -2217,7 +2217,7 @@ Email: ${userEmail}
       el.cPetsList.innerHTML = catalog
         .map((item) => {
           const owned = Boolean(item.isOwned);
-          const selected = normalizeTrackId(s.selectedPetId) === item.id;
+          const selected = Boolean(item.isVisible);
           const inputValue = String(item.displayName || item.name || "").trim();
           const paid = Number(item.price || 0) > 0;
           const priceLabel = paid ? `${Number(item.price).toLocaleString("ru-RU")} сум` : "Бесплатно";
@@ -2258,7 +2258,7 @@ Email: ${userEmail}
             </div>
           </article>`;
         })
-        .join("");
+        .join("") + '<p class="text-xs text-neutral-500">Можно показать на визитке максимум 3 животных одновременно.</p>';
     };
 
     const renderTheme = () => {
@@ -2532,13 +2532,12 @@ Email: ${userEmail}
         effectivePlan === "premium" && PROFILE_EMOJI_BACKGROUND_PACKS.includes(s.emojiBackgroundPack)
           ? s.emojiBackgroundPack
           : "none";
-      const selectedPetId = effectivePlan === "premium" ? normalizeTrackId(s.selectedPetId) : null;
-      const selectedPet = selectedPetId
-        ? (() => {
-          const pet = normalizePetLibrary(s.petLibrary).find((item) => item.id === selectedPetId) || null;
-          return pet ? { ...pet, name: pet.displayName || pet.name } : null;
-        })()
-        : null;
+      const selectedPets = effectivePlan === "premium"
+        ? normalizePetLibrary(s.petLibrary)
+          .filter((pet) => pet.isOwned && pet.isVisible)
+          .slice(0, 3)
+          .map((pet) => ({ ...pet, name: pet.displayName || pet.name }))
+        : [];
       return {
         card: {
           slug: primarySlug?.fullSlug || "UNQ",
@@ -2572,7 +2571,8 @@ Email: ${userEmail}
           showBranding: el.cBranding ? !el.cBranding.checked : true,
           bio: String(el.cBio?.value || "").trim(),
             pets: [],
-            selectedPet,
+            selectedPet: selectedPets[0] || null,
+            selectedPets,
         },
         primarySlug,
       };
@@ -4801,13 +4801,15 @@ Email: ${userEmail}
             avatarFrame: s.avatarFrame || "none",
             emojiBackgroundPack: s.emojiBackgroundPack || "none",
             selectedTrackId: getCurrentPlan() === "premium" ? normalizeTrackId(s.selectedTrackId) : null,
-            selectedPetId: getCurrentPlan() === "premium" ? normalizeTrackId(s.selectedPetId) : null,
+            selectedPetId: getCurrentPlan() === "premium"
+              ? (normalizePetLibrary(s.petLibrary).find((pet) => pet.isOwned && pet.isVisible)?.id || null)
+              : null,
             showBranding: el.cBranding ? !el.cBranding.checked : true,
             pets: [],
             libraryPets: normalizePetLibrary(s.petLibrary).filter((pet) => pet.isOwned).map((pet) => ({
               id: pet.id,
               displayName: pet.displayName,
-              isVisible: normalizeTrackId(s.selectedPetId) === pet.id,
+              isVisible: Boolean(pet.isVisible),
             })),
           }),
         });
@@ -5823,12 +5825,19 @@ Email: ${userEmail}
       if (!target || target.getAttribute("data-a") !== "library-pet-visible-toggle") return;
       const petId = normalizeTrackId(target.getAttribute("data-pet-id"));
       if (!petId) return;
-      s.selectedPetId = target.checked ? petId : null;
+      const currentVisibleCount = normalizePetLibrary(s.petLibrary)
+        .filter((pet) => pet.isOwned && pet.isVisible && pet.id !== petId)
+        .length;
+      if (target.checked && currentVisibleCount >= 3) {
+        target.checked = false;
+        showModal("Лимит животных", "Вы можете показать на визитке не более 3-х животных одновременно.");
+        return;
+      }
       s.petLibrary = normalizePetLibrary(s.petLibrary).map((pet) =>
-        pet.id === petId
-          ? { ...pet, isVisible: target.checked }
-          : { ...pet, isVisible: false },
+        pet.id === petId ? { ...pet, isVisible: target.checked } : pet,
       );
+      const firstVisiblePet = normalizePetLibrary(s.petLibrary).find((pet) => pet.isOwned && pet.isVisible);
+      s.selectedPetId = firstVisiblePet ? firstVisiblePet.id : null;
       renderPetsEditor();
       renderPreview();
       saveDraft();

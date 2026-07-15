@@ -185,6 +185,18 @@
     const id = Number(pet.id || 0);
     return name && imageUrl ? { id: Number.isFinite(id) ? id : 0, name, imageUrl, eventName } : null;
     })(),
+    selectedPets: Array.isArray(pageCardRaw.selectedPets)
+    ? pageCardRaw.selectedPets
+    .map((pet) => {
+    const name = String(pet?.name || pet?.displayName || pet?.title || "").trim();
+    const imageUrl = String(pet?.imageUrl || pet?.image_url || pet?.url || "").trim();
+    const eventName = String(pet?.eventName || pet?.event_name || "").trim();
+    const id = Number(pet?.id || 0);
+    return name && imageUrl ? { id: Number.isFinite(id) ? id : 0, name, imageUrl, eventName } : null;
+    })
+    .filter(Boolean)
+    .slice(0, 3)
+    : [],
     pets: Array.isArray(pageCardRaw.pets)
     ? pageCardRaw.pets
     .map((pet) => {

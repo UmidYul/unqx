@@ -292,6 +292,58 @@
   transform: translateY(0) scale(1);
 }
 
+.unq-ref-name-row {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-width: 100%;
+}
+
+.unq-profile-pet-chain {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  flex: 0 0 auto;
+}
+
+.unq-profile-name-pet {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: clamp(24px, 7vw, 34px);
+  height: clamp(24px, 7vw, 34px);
+  border: 0;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+}
+
+.unq-profile-name-pet-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 5px 8px rgba(0, 0, 0, 0.22));
+}
+
+.unq-profile-name-pet .unq-selected-profile-pet-tooltip {
+  right: auto;
+  left: 50%;
+  bottom: calc(100% + 7px);
+  transform: translate(-50%, 4px) scale(0.98);
+}
+
+.unq-profile-name-pet:hover .unq-selected-profile-pet-tooltip,
+.unq-profile-name-pet:focus-visible .unq-selected-profile-pet-tooltip,
+.unq-profile-name-pet:active .unq-selected-profile-pet-tooltip {
+  opacity: 1;
+  transform: translate(-50%, 0) scale(1);
+}
+
 @keyframes unqxMusicSpin {
   to {
     transform: rotate(360deg);

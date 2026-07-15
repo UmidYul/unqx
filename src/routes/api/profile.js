@@ -2113,7 +2113,6 @@ router.put(
     const requestedPetId = Object.prototype.hasOwnProperty.call(body, "selectedPetId")
       ? normalizeLibraryPetId(body.selectedPetId)
       : normalizeLibraryPetId(body.selected_pet_id);
-    const selectedPetId = effective.plan === "premium" ? requestedPetId : null;
     const showBranding =
       effective.plan === "premium"
         ? (typeof body.showBranding === "boolean" ? body.showBranding : true)
@@ -2136,6 +2135,19 @@ router.put(
         }))
         .filter((item) => item.id)
       : [];
+    const visibleLibraryPetIds = libraryPetPatches
+      .filter((item) => item.isVisible)
+      .map((item) => item.id);
+    if (visibleLibraryPetIds.length > 3) {
+      res.status(400).json({
+        error: "Вы можете показать на визитке не более 3-х животных одновременно.",
+        code: "PET_EQUIP_LIMIT",
+      });
+      return;
+    }
+    const selectedPetId = effective.plan === "premium"
+      ? (visibleLibraryPetIds[0] || requestedPetId || null)
+      : null;
 
     if (effective.plan !== "premium") {
       const requestedTheme = String(body.theme || "").trim();
@@ -2158,6 +2170,10 @@ router.put(
         return;
       }
       if (requestedPetId) {
+        res.status(403).json({ error: "Upgrade required", code: "UPGRADE_REQUIRED" });
+        return;
+      }
+      if (visibleLibraryPetIds.length) {
         res.status(403).json({ error: "Upgrade required", code: "UPGRADE_REQUIRED" });
         return;
       }
@@ -2188,6 +2204,18 @@ router.put(
             return;
           }
         }
+      }
+    }
+    for (const petId of visibleLibraryPetIds) {
+      const pet = await findLibraryPetById(petId);
+      if (!pet) {
+        res.status(400).json({ error: "Выбранный питомец недоступен.", code: "PET_NOT_FOUND" });
+        return;
+      }
+      const owned = await isLibraryPetOwnedByUser({ userId: user.id, petId });
+      if (!owned) {
+        res.status(402).json({ error: "Сначала купите этого питомца.", code: "PET_PURCHASE_REQUIRED" });
+        return;
       }
     }
 

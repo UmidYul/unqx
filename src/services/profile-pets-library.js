@@ -234,6 +234,40 @@ async function findVisibleUserLibraryPet({ userId, petId }) {
   }
 }
 
+async function listVisibleUserLibraryPets({ userId, limit = 3 } = {}) {
+  const normalizedUserId = String(userId || "").trim();
+  const take = Math.max(1, Math.min(3, Number(limit || 3)));
+  if (!normalizedUserId) return [];
+  try {
+    const rows = await prisma.$queryRaw`
+      SELECT
+        p.id,
+        p.name,
+        p.description,
+        p.image_url AS "imageUrl",
+        p.price,
+        p.event_name AS "eventName",
+        p.legacy_type AS "legacyType",
+        p.is_active AS "isActive",
+        p.created_at AS "createdAt",
+        true AS "isOwned",
+        up.display_name AS "displayName",
+        up.is_visible AS "isVisible"
+      FROM unqx_user_pets up
+      JOIN unqx_pets p
+        ON p.id = up.pet_id
+      WHERE up.user_id = ${normalizedUserId}::uuid
+        AND up.is_visible = true
+      ORDER BY up.purchased_at ASC, up.id ASC
+      LIMIT ${take}
+    `;
+    return (Array.isArray(rows) ? rows : []).map(mapLibraryPetRow).filter(Boolean);
+  } catch (error) {
+    if (isPetsLibraryStorageMissing(error)) return [];
+    throw error;
+  }
+}
+
 async function createLibraryPet({ name, imageUrl, price = 0, eventName = null, description = null }) {
   const normalizedName = String(name || "").trim().replace(/\s+/g, " ").slice(0, 255);
   if (!normalizedName || !imageUrl) {
@@ -382,6 +416,7 @@ module.exports = {
   isPetsLibraryStorageMissing,
   isLibraryPetOwnedByUser,
   listLibraryPets,
+  listVisibleUserLibraryPets,
   normalizeLibraryPetId,
   purchaseLibraryPetForUser,
   savePetAsset,
