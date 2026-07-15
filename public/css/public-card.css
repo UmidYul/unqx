@@ -232,6 +232,27 @@
   animation: unqxMusicSpin 1.25s linear infinite;
 }
 
+.unq-selected-profile-pet {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  z-index: 4;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  width: clamp(58px, 18vw, 92px);
+  height: clamp(58px, 18vw, 92px);
+  pointer-events: none;
+}
+
+.unq-selected-profile-pet-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 16px rgba(0, 0, 0, 0.22));
+}
+
 @keyframes unqxMusicSpin {
   to {
     transform: rotate(360deg);
@@ -9301,4 +9322,34 @@ body[data-card-theme] main.private-card-screen {
   [data-page="public-home"] .home-auction-history-row time {
     grid-column: 2;
   }
+}
+
+/* Hard profile-card height fix: pets must not reserve giant empty vertical space. */
+.unq-ref-shell {
+  height: auto !important;
+  min-height: 0 !important;
+}
+
+.unq-ref-profile,
+.unq-ref-profile.has-pets,
+.unq-ref-profile.has-emoji-pack,
+.unq-ref-profile.has-emoji-pack.has-pets,
+.unq-ref-profile.has-pets.has-pets-1,
+.unq-ref-profile.has-pets.has-pets-3 {
+  height: auto !important;
+  min-height: 0 !important;
+  justify-content: flex-start !important;
+}
+
+.unq-ref-profile.has-pets .unq-ref-avatar-wrap {
+  margin-top: 0 !important;
+}
+
+.unq-ref-profile.has-pets .unq-ref-name-wrap {
+  margin-top: 14px !important;
+}
+
+.unq-ref-shell > .unq-selected-profile-pet {
+  position: absolute !important;
+  z-index: 4 !important;
 }

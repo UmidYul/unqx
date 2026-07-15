@@ -98,6 +98,11 @@ const {
   listTracks,
   normalizeTrackId,
 } = require("../../services/profile-music");
+const {
+  findLibraryPetById,
+  listLibraryPets,
+  normalizeLibraryPetId,
+} = require("../../services/profile-pets-library");
 const { findPublicThemeConfigByKey } = require("../../services/theme-configs");
 const {
   PUBLIC_HANDLE_SLUG_STATUSES,
@@ -150,6 +155,7 @@ const PROFILE_CARD_BASE_COLUMNS = [
   "emoji_background_pack",
   "show_branding",
   "selected_track_id",
+  "selected_pet_id",
 ];
 const CARD_THEME_ENUM_CACHE_TTL_MS = 5 * 60 * 1000;
 let cardThemeEnumCache = {
@@ -334,6 +340,7 @@ function mapProfileCardRow(row) {
   const updatedAt = row.updatedAt ?? row.updated_at ?? null;
   const showBrandingRaw = row.showBranding ?? row.show_branding;
   const selectedTrackId = normalizeTrackId(row.selectedTrackId ?? row.selected_track_id);
+  const selectedPetId = normalizeLibraryPetId(row.selectedPetId ?? row.selected_pet_id);
   return {
     id: row.id,
     ownerId,
@@ -364,6 +371,8 @@ function mapProfileCardRow(row) {
     showBranding: toBool(showBrandingRaw, true),
     selectedTrackId,
     selectedTrack: row.selectedTrack || row.selected_track || null,
+    selectedPetId,
+    selectedPet: row.selectedPet || row.selected_pet || null,
     pets: sortProfileCardPets(row.pets),
     createdAt,
     updatedAt,
@@ -458,6 +467,7 @@ function buildProfileCardColumnValues(input) {
     emoji_background_pack: input.emojiBackgroundPack,
     show_branding: Boolean(input.showBranding),
     selected_track_id: input.selectedTrackId,
+    selected_pet_id: input.selectedPetId,
   };
 }
 
@@ -1047,11 +1057,21 @@ router.get(
         ...card,
         pets,
       });
-    const tracks = await listTracks({
-      limit: 200,
-      activeOnly: true,
-      includeIds: cardPayload?.selectedTrackId ? [cardPayload.selectedTrackId] : [],
-    });
+    const [tracks, petLibrary] = await Promise.all([
+      listTracks({
+        limit: 200,
+        activeOnly: true,
+        includeIds: cardPayload?.selectedTrackId ? [cardPayload.selectedTrackId] : [],
+      }),
+      listLibraryPets({
+        limit: 200,
+        activeOnly: true,
+        includeIds: cardPayload?.selectedPetId ? [cardPayload.selectedPetId] : [],
+      }),
+    ]);
+    if (cardPayload?.selectedPetId && !cardPayload.selectedPet) {
+      cardPayload.selectedPet = petLibrary.find((item) => item.id === cardPayload.selectedPetId) || null;
+    }
 
     res.json({
       user: {
@@ -1105,6 +1125,7 @@ router.get(
       card: cardPayload,
       pets,
       petCatalog,
+      petLibrary,
       tracks,
       requests: requestItems,
       score,
@@ -2017,7 +2038,16 @@ router.get(
       findProfileCardByOwnerId(user.id),
       listOwnedPetsByUserId(user.id),
     ]);
-    res.json({ card: row ? parseProfileCardRow({ ...row, pets }) : null, pets });
+    const cardPayload = row ? parseProfileCardRow({ ...row, pets }) : null;
+    const petLibrary = await listLibraryPets({
+      limit: 200,
+      activeOnly: true,
+      includeIds: cardPayload?.selectedPetId ? [cardPayload.selectedPetId] : [],
+    });
+    if (cardPayload?.selectedPetId && !cardPayload.selectedPet) {
+      cardPayload.selectedPet = petLibrary.find((item) => item.id === cardPayload.selectedPetId) || null;
+    }
+    res.json({ card: cardPayload, pets, petLibrary });
   }),
 );
 
@@ -2075,6 +2105,10 @@ router.put(
       ? normalizeTrackId(body.selectedTrackId)
       : normalizeTrackId(body.selected_track_id);
     const selectedTrackId = effective.plan === "premium" ? requestedTrackId : null;
+    const requestedPetId = Object.prototype.hasOwnProperty.call(body, "selectedPetId")
+      ? normalizeLibraryPetId(body.selectedPetId)
+      : normalizeLibraryPetId(body.selected_pet_id);
+    const selectedPetId = effective.plan === "premium" ? requestedPetId : null;
     const showBranding =
       effective.plan === "premium"
         ? (typeof body.showBranding === "boolean" ? body.showBranding : true)
@@ -2109,12 +2143,23 @@ router.put(
         res.status(403).json({ error: "Upgrade required", code: "UPGRADE_REQUIRED" });
         return;
       }
+      if (requestedPetId) {
+        res.status(403).json({ error: "Upgrade required", code: "UPGRADE_REQUIRED" });
+        return;
+      }
     }
 
     if (selectedTrackId) {
       const track = await findTrackById(selectedTrackId);
       if (!track) {
         res.status(400).json({ error: "Выбранный трек недоступен.", code: "TRACK_NOT_FOUND" });
+        return;
+      }
+    }
+    if (selectedPetId) {
+      const pet = await findLibraryPetById(selectedPetId);
+      if (!pet) {
+        res.status(400).json({ error: "Выбранный питомец недоступен.", code: "PET_NOT_FOUND" });
         return;
       }
     }
@@ -2137,6 +2182,7 @@ router.put(
         avatarFrame,
         emojiBackgroundPack,
         selectedTrackId,
+        selectedPetId,
         showBranding,
       });
       await patchOptionalProfileCardFields(tx, user.id, {

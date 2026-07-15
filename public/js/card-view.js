@@ -2653,6 +2653,14 @@
         const audioUrl = String(track.audioUrl || track.audio_url || "").trim();
         return title && audioUrl ? { title, audioUrl } : null;
       })(),
+      selectedPet: (() => {
+        const pet = card.selectedPet && typeof card.selectedPet === "object" ? card.selectedPet : null;
+        if (!pet) return null;
+        const id = String(pet.id || "").trim();
+        const name = String(pet.name || pet.title || "").trim();
+        const imageUrl = String(pet.imageUrl || pet.image_url || pet.url || "").trim();
+        return imageUrl ? { id, name, imageUrl } : null;
+      })(),
       viewsLabel: String(card.viewsLabel || "").trim(),
       pets,
     };
@@ -3472,6 +3480,11 @@
     const musicPlayerHtml = card.selectedTrack
       ? `<button type="button" class="unq-profile-music-player" data-profile-music-player data-audio-url="${esc(card.selectedTrack.audioUrl)}" data-track-title="${esc(card.selectedTrack.title)}" aria-label="Включить музыку: ${esc(card.selectedTrack.title)}" title="${esc(card.selectedTrack.title)}"><span class="unq-profile-music-icon" aria-hidden="true">♪</span><span class="sr-only" data-profile-music-label>Включить музыку</span></button>`
       : "";
+    const selectedPetHtml = card.selectedPet
+      ? `<div class="unq-selected-profile-pet" title="${esc(card.selectedPet.name || "Питомец")}" aria-label="${esc(card.selectedPet.name || "Питомец профиля")}">
+          <img src="${esc(card.selectedPet.imageUrl)}" alt="${esc(card.selectedPet.name || "Питомец")}" class="unq-selected-profile-pet-img" loading="lazy" />
+        </div>`
+      : "";
     const vintageSparklesHtml = theme.key === "vintage_mickey"
       ? `<div class="vintage-mickey-sparkles" aria-hidden="true">
           ${[
@@ -3519,6 +3532,7 @@
         </div>
         <div class="public-card-shell unq-ref-shell">
           <div class="unq-ref-card-overlay">${overlayHtml}</div>
+          ${selectedPetHtml}
           ${shellMetaHtml}
           ${officialUnqHtml}
           ${staffBadgeHtml}

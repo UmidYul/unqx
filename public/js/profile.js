@@ -290,6 +290,16 @@
         }))
         .filter((item) => item.id && item.title && item.audioUrl);
 
+    const normalizePetLibrary = (items) =>
+      (Array.isArray(items) ? items : [])
+        .map((item) => ({
+          id: normalizeTrackId(item?.id),
+          name: String(item?.name || "").trim(),
+          imageUrl: String(item?.imageUrl || item?.image_url || "").trim(),
+          isActive: item?.isActive !== false && item?.is_active !== false,
+        }))
+        .filter((item) => item.id && item.name && item.imageUrl);
+
     const normalizeCardButtonState = (button) => {
       const type = String(button?.type || "other")
         .trim()
@@ -450,6 +460,7 @@
         avatarFrame: resolveEditableAvatarFrame(card.avatarFrame),
         emojiBackgroundPack: resolveEditableEmojiBackgroundPack(card.emojiBackgroundPack),
         selectedTrackId: getCurrentPlan() === "premium" ? normalizeTrackId(card.selectedTrackId) : null,
+        selectedPetId: getCurrentPlan() === "premium" ? normalizeTrackId(card.selectedPetId) : null,
         showBranding: card.showBranding !== false,
       };
     };
@@ -471,6 +482,7 @@
         avatarFrame: resolveEditableAvatarFrame(s.avatarFrame),
         emojiBackgroundPack: resolveEditableEmojiBackgroundPack(s.emojiBackgroundPack),
         selectedTrackId: getCurrentPlan() === "premium" ? normalizeTrackId(s.selectedTrackId) : null,
+        selectedPetId: getCurrentPlan() === "premium" ? normalizeTrackId(s.selectedPetId) : null,
         showBranding: el.cBranding ? !el.cBranding.checked : true,
       };
     };
@@ -706,6 +718,10 @@ Email: ${userEmail}
       cMusicWrap: $("#profile-card-music-wrap"),
       cMusicNote: $("#profile-card-music-note"),
       cMusicCurrent: $("#profile-card-music-current"),
+      cPetLibraryWrap: $("#profile-card-pet-library-wrap"),
+      cPetLibraryOptions: $("#profile-card-pet-library-options"),
+      cPetLibraryCurrent: $("#profile-card-pet-library-current"),
+      cPetLibraryNote: $("#profile-card-pet-library-note"),
       cBranding: $("#profile-card-show-branding"),
       cSave: $("#profile-card-save"),
       cContent: $("#profile-card-content"),
@@ -2404,6 +2420,69 @@ Email: ${userEmail}
       ].join("");
     };
 
+    const renderPetLibraryChoices = () => {
+      const premium = getCurrentPlan() === "premium";
+      const pets = normalizePetLibrary(s.petLibrary);
+      const current = premium ? normalizeTrackId(s.selectedPetId) : null;
+      const currentPet = current ? pets.find((pet) => pet.id === current) : null;
+      if (el.cPetLibraryWrap) {
+        el.cPetLibraryWrap.classList.toggle("opacity-60", !premium);
+        el.cPetLibraryWrap.classList.toggle("is-active", Boolean(currentPet));
+        el.cPetLibraryWrap.classList.toggle("is-locked", !premium);
+      }
+      if (el.cPetLibraryNote) {
+        el.cPetLibraryNote.textContent = premium
+          ? (pets.length ? "Питомец появится в правом нижнем углу визитки." : "Администратор ещё не добавил питомцев.")
+          : "Питомцы профиля доступны на Премиум.";
+      }
+      if (el.cPetLibraryCurrent) {
+        el.cPetLibraryCurrent.textContent = !premium
+          ? "Доступно на Премиум"
+          : currentPet
+            ? currentPet.name
+            : (pets.length ? "Без питомца" : "Питомцы не добавлены");
+      }
+      if (!el.cPetLibraryOptions) return;
+      const locked = !premium;
+      const disabledAttr = locked ? ' aria-disabled="true"' : "";
+      const emptySelected = !current;
+      const emptyClasses = [
+        "profile-pet-library-btn",
+        "profile-style-choice-btn",
+        emptySelected ? "selected bg-neutral-900 text-white" : "",
+      ].filter(Boolean).join(" ");
+      const petButtons = pets.map((pet) => {
+        const selected = pet.id === current;
+        const classes = [
+          "profile-pet-library-btn",
+          "profile-style-choice-btn",
+          selected ? "selected bg-neutral-900 text-white" : "",
+        ].filter(Boolean).join(" ");
+        return `<button type="button" class="${classes}" data-profile-pet-id="${esc(String(pet.id))}" aria-pressed="${selected ? "true" : "false"}"${disabledAttr}>
+          <span class="profile-pet-library-swatch" aria-hidden="true">
+            <img src="${esc(pet.imageUrl)}" alt="" loading="lazy" />
+          </span>
+          <span class="min-w-0 flex-1 text-left">
+            <span class="block font-semibold leading-tight">${esc(pet.name)}</span>
+            <span class="block truncate text-[10px] text-neutral-500">Питомец профиля</span>
+          </span>
+        </button>`;
+      });
+      el.cPetLibraryOptions.innerHTML = [
+        `<button type="button" class="${emptyClasses}" data-profile-pet-id="" aria-pressed="${emptySelected ? "true" : "false"}"${disabledAttr}>
+          <span class="profile-pet-library-swatch" aria-hidden="true">Ø</span>
+          <span class="min-w-0 flex-1 text-left">
+            <span class="block font-semibold leading-tight">Без питомца</span>
+            <span class="block truncate text-[10px] text-neutral-500">Скрыть питомца</span>
+          </span>
+        </button>`,
+        ...petButtons,
+        !pets.length
+          ? `<p class="profile-music-empty-note">Администратор ещё не добавил питомцев.</p>`
+          : "",
+      ].join("");
+    };
+
     const renderEmojiBackgroundPack = () => {
       const premium = getCurrentPlan() === "premium";
       if (el.cEmojiPackLock) el.cEmojiPackLock.classList.toggle("hidden", premium);
@@ -2461,6 +2540,10 @@ Email: ${userEmail}
         effectivePlan === "premium" && PROFILE_EMOJI_BACKGROUND_PACKS.includes(s.emojiBackgroundPack)
           ? s.emojiBackgroundPack
           : "none";
+      const selectedPetId = effectivePlan === "premium" ? normalizeTrackId(s.selectedPetId) : null;
+      const selectedPet = selectedPetId
+        ? normalizePetLibrary(s.petLibrary).find((pet) => pet.id === selectedPetId) || null
+        : null;
       return {
         card: {
           slug: primarySlug?.fullSlug || "UNQ",
@@ -2494,6 +2577,7 @@ Email: ${userEmail}
           showBranding: el.cBranding ? !el.cBranding.checked : true,
           bio: String(el.cBio?.value || "").trim(),
           pets: normalizeOwnedPets(s.pets),
+          selectedPet,
         },
         primarySlug,
       };
@@ -2557,6 +2641,7 @@ Email: ${userEmail}
       s.tags = Array.isArray(card.tags) ? card.tags.slice(0) : [];
       s.buttons = normalizeEditorButtons(card.buttons);
       s.pets = normalizeOwnedPets(card.pets || s.pets);
+      s.selectedPetId = getCurrentPlan() === "premium" ? normalizeTrackId(card.selectedPetId) : null;
       s.petDrafts = buildPetDraftMap({
         catalog: s.petCatalog,
         pets: s.pets,
@@ -2590,6 +2675,7 @@ Email: ${userEmail}
       renderEmojiBackgroundPack();
       renderFrame();
       renderMusicTracks();
+      renderPetLibraryChoices();
       renderPreview();
       syncCardDraftState();
 
@@ -4598,6 +4684,8 @@ Email: ${userEmail}
         s.card = payload.card || null;
         s.tracks = normalizeTracks(payload.tracks);
         s.selectedTrackId = getCurrentPlan() === "premium" ? normalizeTrackId(s.card?.selectedTrackId) : null;
+        s.petLibrary = normalizePetLibrary(payload.petLibrary);
+        s.selectedPetId = getCurrentPlan() === "premium" ? normalizeTrackId(s.card?.selectedPetId) : null;
         const nextAvatarUrl = s.card?.avatarUrl || "";
         if (nextAvatarUrl !== prevAvatarUrl) {
           s.avatarVersion = Date.now();
@@ -4718,6 +4806,7 @@ Email: ${userEmail}
             avatarFrame: s.avatarFrame || "none",
             emojiBackgroundPack: s.emojiBackgroundPack || "none",
             selectedTrackId: getCurrentPlan() === "premium" ? normalizeTrackId(s.selectedTrackId) : null,
+            selectedPetId: getCurrentPlan() === "premium" ? normalizeTrackId(s.selectedPetId) : null,
             showBranding: el.cBranding ? !el.cBranding.checked : true,
             pets: normalizeOwnedPets(s.pets).map((pet) => ({
               id: pet.id,
@@ -5899,6 +5988,21 @@ Email: ${userEmail}
       }
       s.selectedTrackId = normalizeTrackId(button.getAttribute("data-profile-track-id"));
       renderMusicTracks();
+      renderPreview();
+      saveDraft();
+    });
+
+    el.cPetLibraryOptions?.addEventListener("click", (event) => {
+      const target = event.target instanceof HTMLElement ? event.target : null;
+      const button = target?.closest("[data-profile-pet-id]");
+      if (!(button instanceof HTMLButtonElement)) return;
+      event.preventDefault();
+      if (getCurrentPlan() !== "premium") {
+        showModal("Доступно на Премиум", "Питомцы профиля доступны только для Премиум тарифа.");
+        return;
+      }
+      s.selectedPetId = normalizeTrackId(button.getAttribute("data-profile-pet-id"));
+      renderPetLibraryChoices();
       renderPreview();
       saveDraft();
     });

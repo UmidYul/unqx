@@ -28,6 +28,7 @@ const { getManySettings } = require("../../services/platform-settings");
 const { listAdvertisements } = require("../../services/advertisements");
 const { listEventCardReleases } = require("../../services/event-card-releases");
 const { findTrackById, normalizeTrackId } = require("../../services/profile-music");
+const { findLibraryPetById, normalizeLibraryPetId } = require("../../services/profile-pets-library");
 const { findPublicThemeConfigByKey } = require("../../services/theme-configs");
 const { getProfileEditorPresetsWithDisplayNames } = require("../../services/profile-editor-presets");
 const { recordView } = require("../../services/tap-tracker");
@@ -595,22 +596,35 @@ async function findProfileCardByOwnerId(ownerId) {
   let rows = [];
   try {
     rows = await prisma.$queryRawUnsafe(`
-      SELECT ${selectBase}, selected_track_id AS "selectedTrackId"
+      SELECT ${selectBase}, selected_track_id AS "selectedTrackId", selected_pet_id AS "selectedPetId"
       FROM profile_cards
       WHERE owner_id = $1
       LIMIT 1
     `, ownerId);
   } catch (error) {
     const message = String(error?.message || "");
-    if (!/selected_track_id|column .* does not exist/i.test(message)) {
+    if (!/selected_track_id|selected_pet_id|column .* does not exist/i.test(message)) {
       throw error;
     }
-    rows = await prisma.$queryRawUnsafe(`
-      SELECT ${selectBase}
-      FROM profile_cards
-      WHERE owner_id = $1
-      LIMIT 1
-    `, ownerId);
+    try {
+      rows = await prisma.$queryRawUnsafe(`
+        SELECT ${selectBase}, selected_track_id AS "selectedTrackId"
+        FROM profile_cards
+        WHERE owner_id = $1
+        LIMIT 1
+      `, ownerId);
+    } catch (fallbackError) {
+      const fallbackMessage = String(fallbackError?.message || "");
+      if (!/selected_track_id|column .* does not exist/i.test(fallbackMessage)) {
+        throw fallbackError;
+      }
+      rows = await prisma.$queryRawUnsafe(`
+        SELECT ${selectBase}
+        FROM profile_cards
+        WHERE owner_id = $1
+        LIMIT 1
+      `, ownerId);
+    }
   }
   return Array.isArray(rows) ? rows[0] || null : null;
 }
@@ -906,6 +920,8 @@ function buildImmediatePublicProfileCard(user, profileCard) {
     emojiBackgroundPack: String(safeProfileCard.emojiBackgroundPack || "none").trim().toLowerCase() || "none",
     selectedTrackId: normalizeTrackId(safeProfileCard.selectedTrackId || safeProfileCard.selected_track_id),
     selectedTrack: safeProfileCard.selectedTrack || null,
+    selectedPetId: normalizeLibraryPetId(safeProfileCard.selectedPetId || safeProfileCard.selected_pet_id),
+    selectedPet: safeProfileCard.selectedPet || null,
     showBranding: typeof safeProfileCard.showBranding === "boolean" ? safeProfileCard.showBranding : true,
   };
 }
@@ -965,6 +981,8 @@ function buildPublicCardFromProfile({ slug, user, profileCard, verifiedIdentity,
     })(),
     selectedTrackId: normalizeTrackId(effectiveProfileCard.selectedTrackId),
     selectedTrack: effectiveProfileCard.selectedTrack || null,
+    selectedPetId: normalizeLibraryPetId(effectiveProfileCard.selectedPetId),
+    selectedPet: effectiveProfileCard.selectedPet || null,
     phone: "",
     tags: mapProfileTags(effectiveProfileCard.tags),
     buttons: mapProfileButtons(effectiveProfileCard.buttons),
@@ -2746,7 +2764,7 @@ router.get(
 
         const viewerSession = getUserSession(req);
         const viewerUserId = String(viewerSession?.userId || "").trim();
-        const [views, ownerSlugs, verifiedIdentity, wall, viewerProfileCard, followSummary, selectedTrack] = await Promise.all([
+        const [views, ownerSlugs, verifiedIdentity, wall, viewerProfileCard, followSummary, selectedTrack, selectedPet] = await Promise.all([
           prisma.analyticsView
             ? prisma.analyticsView
               .findMany({
@@ -2789,6 +2807,9 @@ router.get(
           effectiveProfileCard.selectedTrackId
             ? findTrackById(effectiveProfileCard.selectedTrackId)
             : Promise.resolve(null),
+          effectiveProfileCard.selectedPetId
+            ? findLibraryPetById(effectiveProfileCard.selectedPetId)
+            : Promise.resolve(null),
         ]);
 
         const card = buildPublicCardFromProfile({
@@ -2799,6 +2820,9 @@ router.get(
             slugPrice: typeof slugRow.price === "number" ? slugRow.price : null,
             selectedTrack: selectedTrack
               ? { title: selectedTrack.title, audioUrl: selectedTrack.audioUrl }
+              : null,
+            selectedPet: selectedPet
+              ? { id: selectedPet.id, name: selectedPet.name, imageUrl: selectedPet.imageUrl }
               : null,
           },
           pets: ownedPets,

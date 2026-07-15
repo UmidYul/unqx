@@ -120,6 +120,14 @@ const {
   setTrackActive,
 } = require("../../services/profile-music");
 const {
+  createLibraryPet,
+  deleteLibraryPet,
+  deletePetAsset,
+  listLibraryPets,
+  savePetAsset,
+  setLibraryPetActive,
+} = require("../../services/profile-pets-library");
+const {
   deleteThemeConfig,
   findPublicThemeConfigByKey,
   listThemeConfigs,
@@ -152,6 +160,10 @@ const eventCardUpload = multer({
 const trackUpload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 25 * 1024 * 1024 },
+});
+const profilePetUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
 });
 const ALLOWED_MIME = new Set(["image/jpeg", "image/png", "image/webp"]);
 
@@ -2760,6 +2772,68 @@ router.delete(
     const item = await deleteTrack(req.params.id);
     if (!item) {
       res.status(404).json({ error: "Трек не найден." });
+      return;
+    }
+    res.json({ ok: true, item });
+  }),
+);
+
+router.get(
+  "/pets/library",
+  asyncHandler(async (_req, res) => {
+    const items = await listLibraryPets({ limit: 500 });
+    res.json({ items, pets: items });
+  }),
+);
+
+router.post(
+  "/pets/library",
+  profilePetUpload.single("file"),
+  asyncHandler(async (req, res) => {
+    const fileName = String(req.file?.originalname || "").toLowerCase();
+    const mimeType = String(req.file?.mimetype || "").toLowerCase();
+    const isSvg = Boolean(req.file) && (fileName.endsWith(".svg") || mimeType === "image/svg+xml");
+    const isPng = Boolean(req.file) && (fileName.endsWith(".png") || mimeType === "image/png");
+    if (!isSvg && !isPng) {
+      res.status(400).json({ error: "Загрузите SVG или PNG-файл.", code: "PET_ASSET_REQUIRED" });
+      return;
+    }
+    let imageUrl = "";
+    try {
+      imageUrl = await savePetAsset(req.file.buffer, isSvg ? "svg" : "png");
+      const item = await createLibraryPet({
+        name: req.body?.name,
+        imageUrl,
+      });
+      res.status(201).json({ ok: true, item });
+    } catch (error) {
+      if (imageUrl) await deletePetAsset(imageUrl);
+      const status = Number(error?.status || 500);
+      res.status(status >= 400 && status < 600 ? status : 500).json({
+        error: error?.message || "Не удалось добавить питомца.",
+      });
+    }
+  }),
+);
+
+router.patch(
+  "/pets/library/:id/active",
+  asyncHandler(async (req, res) => {
+    const item = await setLibraryPetActive(req.params.id, resolveActiveFlag(req.body || {}));
+    if (!item) {
+      res.status(404).json({ error: "Питомец не найден." });
+      return;
+    }
+    res.json({ ok: true, item });
+  }),
+);
+
+router.delete(
+  "/pets/library/:id",
+  asyncHandler(async (req, res) => {
+    const item = await deleteLibraryPet(req.params.id);
+    if (!item) {
+      res.status(404).json({ error: "Питомец не найден." });
       return;
     }
     res.json({ ok: true, item });

@@ -3075,6 +3075,42 @@
     }
   }
 
+  function renderProfilePetLibraryItem(item) {
+    const id = Number(item?.id || 0);
+    const name = String(item?.name || "Без имени");
+    const imageUrl = String(item?.imageUrl || "").trim();
+    const isActive = item?.isActive !== false;
+    return `<article class="flex flex-wrap items-center gap-3 rounded-2xl border border-neutral-200 bg-neutral-50 p-3 ${isActive ? "" : "opacity-55 grayscale"}">
+      <span class="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-neutral-200 bg-white">
+        ${imageUrl ? `<img src="${X(imageUrl)}" alt="${X(name)}" class="h-full w-full object-contain" />` : ""}
+      </span>
+      <div class="min-w-0 flex-1">
+        <p class="font-semibold text-neutral-900">${X(name)}</p>
+        <p class="mt-1 text-xs text-neutral-500">${isActive ? "Активен" : "На паузе"} · ${X(imageUrl)}</p>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <button type="button" data-act="profile-pet-toggle-active" data-id="${id}" data-active="${isActive ? "0" : "1"}" class="interactive-btn min-h-10 rounded-xl border border-neutral-300 bg-white px-3 py-1.5 text-xs font-semibold">${isActive ? "На стоп" : "Включить"}</button>
+        <button type="button" data-act="profile-pet-delete" data-id="${id}" class="interactive-btn min-h-10 rounded-xl border border-red-200 bg-white px-3 py-1.5 text-xs font-semibold text-red-700">Удалить</button>
+      </div>
+    </article>`;
+  }
+
+  async function loadProfilePetLibrary() {
+    const list = document.getElementById("profile-pet-library-list");
+    if (!(list instanceof HTMLElement)) return;
+    list.innerHTML = '<div class="rounded-xl border border-neutral-200 bg-neutral-50 p-4 text-sm text-neutral-500">Загружаем питомцев...</div>';
+    const response = await fetch("/api/admin/pets/library", { headers: H() });
+    if (!response.ok) {
+      list.innerHTML = `<div class="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">${X(await E(response))}</div>`;
+      return;
+    }
+    const payload = await response.json().catch(() => ({}));
+    const items = Array.isArray(payload.items) ? payload.items : [];
+    list.innerHTML = items.length
+      ? items.map(renderProfilePetLibraryItem).join("")
+      : '<div class="rounded-xl border border-neutral-200 bg-neutral-50 p-4 text-sm text-neutral-500">Питомцев пока нет.</div>';
+  }
+
   async function loadLogs() {
     const form = document.getElementById("logs-filters");
     const table = document.getElementById("logs-table");
@@ -4832,6 +4868,33 @@
       closeAllRowMenus();
       return;
     }
+    if (a === "profile-pet-toggle-active") {
+      const id = n.getAttribute("data-id");
+      const isActive = n.getAttribute("data-active") === "1";
+      if (!id) return;
+      const r = await fetch(`/api/admin/pets/library/${encodeURIComponent(id)}/active`, {
+        method: "PATCH",
+        headers: H({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ isActive }),
+      });
+      if (!r.ok) await showAlert(await E(r));
+      else await loadProfilePetLibrary();
+      closeAllRowMenus();
+      return;
+    }
+    if (a === "profile-pet-delete") {
+      const id = n.getAttribute("data-id");
+      if (!id) return;
+      if (!await showConfirm("Удалить этого питомца?")) return;
+      const r = await fetch(`/api/admin/pets/library/${encodeURIComponent(id)}`, {
+        method: "DELETE",
+        headers: H(),
+      });
+      if (!r.ok) await showAlert(await E(r));
+      else await loadProfilePetLibrary();
+      closeAllRowMenus();
+      return;
+    }
     if (a === "ad-delete") {
       const id = n.getAttribute("data-id");
       if (!id) return;
@@ -5436,6 +5499,37 @@
     void loadBadgeApplications();
   });
   document.getElementById("pets-filters")?.addEventListener("submit", (e) => { e.preventDefault(); const f = e.currentTarget; if (f instanceof HTMLFormElement) setFormValue(f, "page", "1"); void loadPetRequests(); });
+  document.getElementById("profile-pet-library-form")?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    if (!(form instanceof HTMLFormElement)) return;
+    const name = getFormValue(form, "name", "").trim();
+    const fileInput = form.elements.namedItem("file");
+    const file = fileInput instanceof HTMLInputElement && fileInput.files ? fileInput.files[0] : null;
+    const fileName = String(file?.name || "").toLowerCase();
+    const fileType = String(file?.type || "").toLowerCase();
+    if (!name) {
+      await showAlert("Укажите имя питомца.");
+      return;
+    }
+    if (!file || (!fileName.endsWith(".svg") && !fileName.endsWith(".png") && fileType !== "image/svg+xml" && fileType !== "image/png")) {
+      await showAlert("Загрузите SVG или PNG.");
+      return;
+    }
+    const data = new FormData(form);
+    const r = await fetch("/api/admin/pets/library", {
+      method: "POST",
+      headers: H(),
+      body: data,
+    });
+    if (!r.ok) {
+      await showAlert(await E(r));
+      return;
+    }
+    form.reset();
+    await loadProfilePetLibrary();
+    await showAlert("Питомец добавлен.");
+  });
   document.getElementById("pets-filters")?.elements?.namedItem?.("status")?.addEventListener?.("change", (e) => {
     const target = e.currentTarget;
     const form = document.getElementById("pets-filters");
@@ -5936,6 +6030,7 @@
   const petsSection = document.getElementById("tab-pets");
   if (tab === "pets" || (petsSection instanceof HTMLElement && !petsSection.classList.contains("hidden"))) {
     dbg("load", "pets");
+    void loadProfilePetLibrary();
     void loadPetRequests();
   }
   if (tab === "score") {
