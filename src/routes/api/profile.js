@@ -2167,10 +2167,16 @@ router.put(
         return;
       }
       if (Number(pet.price || 0) > 0) {
-        const owned = await isLibraryPetOwnedByUser({ userId: user.id, petId: selectedPetId });
+        const [owned, existingCard] = await Promise.all([
+          isLibraryPetOwnedByUser({ userId: user.id, petId: selectedPetId }),
+          findProfileCardByOwnerId(user.id),
+        ]);
+        const alreadySelected = normalizeLibraryPetId(existingCard?.selectedPetId ?? existingCard?.selected_pet_id) === selectedPetId;
         if (!owned) {
-          res.status(402).json({ error: "Сначала купите этого питомца.", code: "PET_PURCHASE_REQUIRED" });
-          return;
+          if (!alreadySelected) {
+            res.status(402).json({ error: "Сначала купите этого питомца.", code: "PET_PURCHASE_REQUIRED" });
+            return;
+          }
         }
       }
     }

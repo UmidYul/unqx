@@ -81,6 +81,37 @@ async function deletePetAsset(publicPath) {
   }
 }
 
+async function listLibraryPetsLegacy({ limit = 200 } = {}) {
+  const take = Math.max(1, Math.min(500, Number(limit || 200)));
+  try {
+    const rows = await prisma.$queryRaw`
+      SELECT
+        id,
+        name,
+        image_url AS "imageUrl",
+        is_active AS "isActive",
+        created_at AS "createdAt"
+      FROM unqx_pets
+      ORDER BY created_at DESC, id DESC
+      LIMIT ${take}
+    `;
+    return (Array.isArray(rows) ? rows : []).map(mapLibraryPetRow).filter(Boolean);
+  } catch (error) {
+    const message = String(error?.message || "");
+    if (!/is_active|created_at|column .* does not exist/i.test(message)) {
+      if (isPetsLibraryStorageMissing(error)) return [];
+      throw error;
+    }
+    const rows = await prisma.$queryRaw`
+      SELECT id, name, image_url AS "imageUrl"
+      FROM unqx_pets
+      ORDER BY id DESC
+      LIMIT ${take}
+    `;
+    return (Array.isArray(rows) ? rows : []).map(mapLibraryPetRow).filter(Boolean);
+  }
+}
+
 async function listLibraryPets({ limit = 200, activeOnly = false, includeIds = [], userId = null } = {}) {
   const take = Math.max(1, Math.min(500, Number(limit || 200)));
   const normalizedUserId = String(userId || "").trim() || null;
@@ -128,6 +159,13 @@ async function listLibraryPets({ limit = 200, activeOnly = false, includeIds = [
       `;
     return (Array.isArray(rows) ? rows : []).map(mapLibraryPetRow).filter(Boolean);
   } catch (error) {
+    const message = String(error?.message || "");
+    if (/unqx_user_pets|price|event_name|column .* does not exist|relation .* does not exist/i.test(message)) {
+      const legacyItems = await listLibraryPetsLegacy({ limit: take });
+      if (!activeOnly) return legacyItems;
+      const includeSet = new Set(normalizedIncludeIds.map(String));
+      return legacyItems.filter((item) => item.isActive || includeSet.has(String(item.id)));
+    }
     if (isPetsLibraryStorageMissing(error)) return [];
     throw error;
   }
@@ -203,6 +241,15 @@ async function setLibraryPetActive(id, isActive) {
 async function deleteLibraryPet(id) {
   const normalizedId = normalizeLibraryPetId(id);
   if (!normalizedId) return null;
+  try {
+    await prisma.$executeRaw`
+      UPDATE profile_cards
+      SET selected_pet_id = NULL
+      WHERE selected_pet_id = ${normalizedId}
+    `;
+  } catch (error) {
+    if (!isPetsLibraryStorageMissing(error)) throw error;
+  }
   const rows = await prisma.$queryRaw`
     DELETE FROM unqx_pets
     WHERE id = ${normalizedId}

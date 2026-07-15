@@ -2823,6 +2823,7 @@ router.put(
   "/pets/library/:id",
   profilePetUpload.single("file"),
   asyncHandler(async (req, res) => {
+    const rawId = String(req.params.id || "").trim();
     const fileName = String(req.file?.originalname || "").toLowerCase();
     const mimeType = String(req.file?.mimetype || "").toLowerCase();
     const hasFile = Boolean(req.file);
@@ -2836,6 +2837,20 @@ router.put(
     try {
       if (hasFile) {
         imageUrl = await savePetAsset(req.file.buffer, isSvg ? "svg" : "png");
+      }
+      if (!/^\d+$/.test(rawId) || Number(rawId) <= 0) {
+        if (!imageUrl) {
+          res.status(400).json({ error: "Загрузите SVG или PNG-файл.", code: "PET_ASSET_REQUIRED" });
+          return;
+        }
+        const created = await createLibraryPet({
+          name: req.body?.name,
+          eventName: req.body?.eventName || req.body?.event_name,
+          price: req.body?.price,
+          imageUrl,
+        });
+        res.status(201).json({ ok: true, item: created });
+        return;
       }
       const item = await updateLibraryPet(req.params.id, {
         name: req.body?.name,

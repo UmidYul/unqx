@@ -5546,7 +5546,8 @@
     event.preventDefault();
     const form = event.currentTarget;
     if (!(form instanceof HTMLFormElement)) return;
-    const id = getFormValue(form, "id", "").trim();
+    const rawId = getFormValue(form, "id", "").trim();
+    const id = /^\d+$/.test(rawId) && Number(rawId) > 0 ? rawId : "";
     const name = getFormValue(form, "name", "").trim();
     const fileInput = form.elements.namedItem("file");
     const file = fileInput instanceof HTMLInputElement && fileInput.files ? fileInput.files[0] : null;
