@@ -468,6 +468,42 @@ function mapAdminPetRequestRow(row) {
   };
 }
 
+function mapAdminLibraryPetApplicationRow(row) {
+  if (!row) return null;
+  const userName = String(row.userDisplayName || row.user_display_name || row.userFirstName || row.user_first_name || "").trim();
+  const login = String(row.userLogin || row.user_login || row.userUsername || row.user_username || "").trim();
+  return {
+    id: `library-${Number(row.id || 0)}`,
+    source: "library",
+    status: String(row.status || "pending").trim().toLowerCase(),
+    petType: "library",
+    petLabel: String(row.petName || row.pet_name || "Питомец").trim(),
+    displayName: String(row.petName || row.pet_name || "Питомец").trim(),
+    priceSnapshot: Math.max(0, Math.trunc(Number(row.petPrice || row.pet_price || 0))),
+    requestedAt: row.createdAt || row.created_at || null,
+    reviewedAt: row.reviewedAt || row.reviewed_at || null,
+    user: {
+      id: String(row.userId || row.user_id || "").trim(),
+      firstName: String(row.userFirstName || row.user_first_name || "").trim(),
+      displayName: userName,
+      username: String(row.userUsername || row.user_username || login || "").trim(),
+      telegramUsername: String(row.userTelegramUsername || row.user_telegram_username || "").trim(),
+      email: String(row.userEmail || row.user_email || "").trim(),
+    },
+    slug: String(row.fullSlug || row.full_slug || "").trim(),
+    profileCardId: null,
+    profileCardName: "",
+  };
+}
+
+function parseLibraryPetApplicationId(value) {
+  const raw = String(value || "").trim();
+  const match = raw.match(/^library-(\d+)$/i);
+  if (!match) return null;
+  const id = Math.trunc(Number(match[1]));
+  return Number.isSafeInteger(id) && id > 0 ? id : null;
+}
+
 async function findProfileCardByOwnerId(ownerId) {
   if (!ownerId) return null;
   const rows = await prisma.$queryRaw`
@@ -8997,10 +9033,6 @@ router.get(
 router.get(
   "/pet-requests",
   asyncHandler(async (req, res) => {
-    if (!prisma.petPurchaseRequest) {
-      res.json({ items: [], pagination: { page: 1, totalPages: 1, total: 0 } });
-      return;
-    }
     const managerScope = await getManagerScope(req);
     if (isManagerScopeBlocked(managerScope)) {
       res.json({ items: [], pagination: { page: 1, totalPages: 1, total: 0 } });
@@ -9008,7 +9040,8 @@ router.get(
     }
 
     const status = String(req.query.status || "all").trim().toLowerCase();
-    const petType = normalizePetType(req.query.petType);
+    const rawPetType = String(req.query.petType || "").trim().toLowerCase();
+    const petType = rawPetType === "library" ? "library" : normalizePetType(rawPetType);
     const page = Math.max(1, Number(req.query.page || 1) || 1);
     const pageSize = 20;
 
@@ -9016,7 +9049,7 @@ router.get(
     if (["pending", "approved", "rejected"].includes(status)) {
       baseWhere.status = status;
     }
-    if (petType) {
+    if (petType && petType !== "library") {
       baseWhere.petType = petType;
     }
 
@@ -9024,9 +9057,8 @@ router.get(
       ? andWhere(baseWhere, { user: { createdByStaffId: managerScope.managerId } })
       : baseWhere;
 
-    const [total, rows] = await Promise.all([
-      prisma.petPurchaseRequest.count({ where }),
-      prisma.petPurchaseRequest.findMany({
+    const legacyPromise = prisma.petPurchaseRequest
+      ? prisma.petPurchaseRequest.findMany({
         where,
         include: {
           user: {
@@ -9056,13 +9088,69 @@ router.get(
           },
         },
         orderBy: [{ requestedAt: "desc" }, { id: "desc" }],
-        skip: (page - 1) * pageSize,
-        take: pageSize,
-      }),
-    ]);
+        take: 500,
+      })
+      : Promise.resolve([]);
+    const statusSql = ["pending", "approved", "rejected"].includes(status)
+      ? Prisma.sql`AND app.status = ${status}`
+      : Prisma.empty;
+    const managerSql = managerScope.isManager
+      ? Prisma.sql`AND u.created_by_staff_id = ${managerScope.managerId}::uuid`
+      : Prisma.empty;
+    const librarySql = !petType || petType === "library"
+      ? prisma.$queryRaw`
+        SELECT
+          app.id,
+          app.status,
+          app.created_at AS "createdAt",
+          app.reviewed_at AS "reviewedAt",
+          app.user_id AS "userId",
+          p.name AS "petName",
+          p.price AS "petPrice",
+          u.first_name AS "userFirstName",
+          u.display_name AS "userDisplayName",
+          u.username AS "userUsername",
+          u.telegram_username AS "userTelegramUsername",
+          u.email AS "userEmail",
+          u.login AS "userLogin",
+          slug.full_slug AS "fullSlug"
+        FROM unqx_pet_applications app
+        JOIN unqx_pets p ON p.id = app.pet_id
+        JOIN users u ON u.id = app.user_id
+        LEFT JOIN LATERAL (
+          SELECT s.full_slug
+          FROM slugs s
+          WHERE s.owner_id = app.user_id
+            AND s.status <> 'free'
+          ORDER BY s.is_primary DESC, s.created_at ASC
+          LIMIT 1
+        ) slug ON true
+        WHERE true
+          ${statusSql}
+          ${managerSql}
+        ORDER BY app.created_at DESC, app.id DESC
+        LIMIT 500
+      `.catch((error) => {
+        if (/unqx_pet_applications|column .* does not exist|relation .* does not exist/i.test(String(error?.message || ""))) {
+          return [];
+        }
+        throw error;
+      })
+      : Promise.resolve([]);
+    const [legacyRows, libraryRows] = await Promise.all([legacyPromise, librarySql]);
+    const legacyItems = petType === "library" ? [] : (Array.isArray(legacyRows) ? legacyRows : []).map((row) => mapAdminPetRequestRow(row)).filter(Boolean);
+    const libraryItems = (Array.isArray(libraryRows) ? libraryRows : []).map(mapAdminLibraryPetApplicationRow).filter(Boolean);
+    const allItems = [...legacyItems, ...libraryItems].sort((left, right) => {
+      const timeA = new Date(left.requestedAt || 0).getTime();
+      const timeB = new Date(right.requestedAt || 0).getTime();
+      if (timeA !== timeB) return timeB - timeA;
+      return String(right.id || "").localeCompare(String(left.id || ""));
+    });
+    const total = allItems.length;
+    const rows = allItems.slice((page - 1) * pageSize, page * pageSize);
 
     res.json({
-      items: rows.map((row) => mapAdminPetRequestRow(row)).filter(Boolean),
+      items: rows,
       pagination: {
         page,
         total,
@@ -9075,6 +9163,57 @@ router.get(
 router.post(
   "/pet-requests/:id/approve",
   asyncHandler(async (req, res) => {
+    const libraryApplicationId = parseLibraryPetApplicationId(req.params.id);
+    if (libraryApplicationId) {
+      const managerScope = await getManagerScope(req);
+      if (isManagerScopeBlocked(managerScope)) {
+        res.status(404).json({ error: "Request not found", code: "PET_REQUEST_NOT_FOUND" });
+        return;
+      }
+      const managerSql = managerScope.isManager
+        ? Prisma.sql`AND u.created_by_staff_id = ${managerScope.managerId}::uuid`
+        : Prisma.empty;
+      const rows = await prisma.$queryRaw`
+        SELECT app.id, app.user_id AS "userId", app.pet_id AS "petId", app.status, p.name AS "petName"
+        FROM unqx_pet_applications app
+        JOIN users u ON u.id = app.user_id
+        JOIN unqx_pets p ON p.id = app.pet_id
+        WHERE app.id = ${libraryApplicationId}
+          ${managerSql}
+        LIMIT 1
+      `.catch((error) => {
+        if (/unqx_pet_applications|column .* does not exist|relation .* does not exist/i.test(String(error?.message || ""))) {
+          return [];
+        }
+        throw error;
+      });
+      const target = Array.isArray(rows) ? rows[0] : null;
+      if (!target) {
+        res.status(404).json({ error: "Request not found", code: "PET_REQUEST_NOT_FOUND" });
+        return;
+      }
+      if (String(target.status || "").trim().toLowerCase() === "approved") {
+        res.status(409).json({ error: "Request already approved", code: "PET_REQUEST_ALREADY_APPROVED" });
+        return;
+      }
+      await prisma.$transaction(async (tx) => {
+        await tx.$executeRaw`
+          INSERT INTO unqx_user_pets (user_id, pet_id, display_name, is_visible)
+          VALUES (${target.userId}::uuid, ${Number(target.petId)}, ${String(target.petName || "").trim() || null}, false)
+          ON CONFLICT (user_id, pet_id) DO UPDATE
+            SET display_name = COALESCE(unqx_user_pets.display_name, EXCLUDED.display_name)
+        `;
+        await tx.$executeRaw`
+          UPDATE unqx_pet_applications
+          SET status = 'approved',
+              reviewed_at = now(),
+              admin_note = NULL
+          WHERE id = ${libraryApplicationId}
+        `;
+      });
+      res.json({ ok: true });
+      return;
+    }
     if (!prisma.petPurchaseRequest || !prisma.profileCardPet) {
       res.status(503).json({ error: "Pets storage unavailable", code: "PETS_STORAGE_UNAVAILABLE" });
       return;
@@ -9152,6 +9291,49 @@ router.post(
 router.post(
   "/pet-requests/:id/reject",
   asyncHandler(async (req, res) => {
+    const libraryApplicationId = parseLibraryPetApplicationId(req.params.id);
+    if (libraryApplicationId) {
+      const managerScope = await getManagerScope(req);
+      if (isManagerScopeBlocked(managerScope)) {
+        res.status(404).json({ error: "Request not found", code: "PET_REQUEST_NOT_FOUND" });
+        return;
+      }
+      const managerSql = managerScope.isManager
+        ? Prisma.sql`AND u.created_by_staff_id = ${managerScope.managerId}::uuid`
+        : Prisma.empty;
+      const rows = await prisma.$queryRaw`
+        SELECT app.id, app.status
+        FROM unqx_pet_applications app
+        JOIN users u ON u.id = app.user_id
+        WHERE app.id = ${libraryApplicationId}
+          ${managerSql}
+        LIMIT 1
+      `.catch((error) => {
+        if (/unqx_pet_applications|column .* does not exist|relation .* does not exist/i.test(String(error?.message || ""))) {
+          return [];
+        }
+        throw error;
+      });
+      const target = Array.isArray(rows) ? rows[0] : null;
+      if (!target) {
+        res.status(404).json({ error: "Request not found", code: "PET_REQUEST_NOT_FOUND" });
+        return;
+      }
+      if (String(target.status || "").trim().toLowerCase() === "approved") {
+        res.status(409).json({ error: "Approved request cannot be rejected", code: "PET_REQUEST_ALREADY_APPROVED" });
+        return;
+      }
+      const adminNote = String(req.body?.adminNote || "").trim().slice(0, 1000);
+      await prisma.$executeRaw`
+        UPDATE unqx_pet_applications
+        SET status = 'rejected',
+            reviewed_at = now(),
+            admin_note = ${adminNote || null}
+        WHERE id = ${libraryApplicationId}
+      `;
+      res.json({ ok: true });
+      return;
+    }
     if (!prisma.petPurchaseRequest) {
       res.status(503).json({ error: "Pets storage unavailable", code: "PETS_STORAGE_UNAVAILABLE" });
       return;

@@ -9,7 +9,7 @@ const PETS_DIR = path.join(env.PUBLIC_DIR, "uploads", "profile-pets");
 
 function isPetsLibraryStorageMissing(error) {
   const message = String(error?.message || "");
-  return error?.code === "P2021" || error?.code === "P2022" || /unqx_pets|unqx_user_pets|selected_pet_id|price|event_name|description|legacy_type|display_name|is_visible/i.test(message);
+  return error?.code === "P2021" || error?.code === "P2022" || /unqx_pets|unqx_user_pets|unqx_pet_applications|selected_pet_id|price|event_name|description|legacy_type|display_name|is_visible|application_status/i.test(message);
 }
 
 function normalizeLibraryPetId(value) {
@@ -32,6 +32,8 @@ function mapLibraryPetRow(row) {
     isOwned: Boolean(row.isOwned ?? row.is_owned ?? false),
     displayName: String(row.displayName || row.display_name || "").trim(),
     isVisible: Boolean(row.isVisible ?? row.is_visible ?? false),
+    applicationStatus: String(row.applicationStatus || row.application_status || "").trim().toLowerCase(),
+    applicationId: row.applicationId || row.application_id || null,
     createdAt: row.createdAt || row.created_at || null,
   };
 }
@@ -137,11 +139,21 @@ async function listLibraryPets({ limit = 200, activeOnly = false, includeIds = [
           p.created_at AS "createdAt",
           (up.user_id IS NOT NULL) AS "isOwned",
           up.display_name AS "displayName",
-          up.is_visible AS "isVisible"
+          up.is_visible AS "isVisible",
+          latest_app.id AS "applicationId",
+          latest_app.status AS "applicationStatus"
         FROM unqx_pets p
         LEFT JOIN unqx_user_pets up
           ON up.pet_id = p.id
          AND up.user_id = ${normalizedUserId}::uuid
+        LEFT JOIN LATERAL (
+          SELECT app.id, app.status
+          FROM unqx_pet_applications app
+          WHERE app.pet_id = p.id
+            AND app.user_id = ${normalizedUserId}::uuid
+          ORDER BY app.created_at DESC, app.id DESC
+          LIMIT 1
+        ) latest_app ON true
         WHERE p.is_active = true
            OR p.id = ANY(${normalizedIncludeIds}::int[])
            OR up.user_id IS NOT NULL
@@ -161,24 +173,60 @@ async function listLibraryPets({ limit = 200, activeOnly = false, includeIds = [
           p.created_at AS "createdAt",
           (up.user_id IS NOT NULL) AS "isOwned",
           up.display_name AS "displayName",
-          up.is_visible AS "isVisible"
+          up.is_visible AS "isVisible",
+          latest_app.id AS "applicationId",
+          latest_app.status AS "applicationStatus"
         FROM unqx_pets p
         LEFT JOIN unqx_user_pets up
           ON up.pet_id = p.id
          AND up.user_id = ${normalizedUserId}::uuid
+        LEFT JOIN LATERAL (
+          SELECT app.id, app.status
+          FROM unqx_pet_applications app
+          WHERE app.pet_id = p.id
+            AND app.user_id = ${normalizedUserId}::uuid
+          ORDER BY app.created_at DESC, app.id DESC
+          LIMIT 1
+        ) latest_app ON true
         ORDER BY p.created_at DESC, p.id DESC
         LIMIT ${take}
       `;
     return (Array.isArray(rows) ? rows : []).map(mapLibraryPetRow).filter(Boolean);
   } catch (error) {
     const message = String(error?.message || "");
-    if (/unqx_user_pets|price|event_name|description|legacy_type|display_name|is_visible|column .* does not exist|relation .* does not exist/i.test(message)) {
+    if (/unqx_user_pets|unqx_pet_applications|price|event_name|description|legacy_type|display_name|is_visible|application_status|column .* does not exist|relation .* does not exist/i.test(message)) {
       const legacyItems = await listLibraryPetsLegacy({ limit: take });
       if (!activeOnly) return legacyItems;
       const includeSet = new Set(normalizedIncludeIds.map(String));
       return legacyItems.filter((item) => item.isActive || includeSet.has(String(item.id)));
     }
     if (isPetsLibraryStorageMissing(error)) return [];
+    throw error;
+  }
+}
+
+async function createLibraryPetApplication({ userId, petId }) {
+  const normalizedPetId = normalizeLibraryPetId(petId);
+  const normalizedUserId = String(userId || "").trim();
+  if (!normalizedUserId || !normalizedPetId) return null;
+  const pet = await findLibraryPetById(normalizedPetId);
+  if (!pet) return null;
+  const owned = await isLibraryPetOwnedByUser({ userId: normalizedUserId, petId: normalizedPetId });
+  if (owned) {
+    return { status: "approved", pet, alreadyOwned: true };
+  }
+  try {
+    const rows = await prisma.$queryRaw`
+      INSERT INTO unqx_pet_applications (user_id, pet_id, status)
+      VALUES (${normalizedUserId}::uuid, ${normalizedPetId}, 'pending')
+      ON CONFLICT (user_id, pet_id) WHERE status = 'pending'
+      DO UPDATE SET status = EXCLUDED.status
+      RETURNING id, user_id AS "userId", pet_id AS "petId", status, created_at AS "createdAt"
+    `;
+    const item = Array.isArray(rows) ? rows[0] : null;
+    return item ? { ...item, pet } : null;
+  } catch (error) {
+    if (isPetsLibraryStorageMissing(error)) return null;
     throw error;
   }
 }
@@ -409,6 +457,7 @@ async function updateUserLibraryPetPreferences({ userId, pets = [] }) {
 
 module.exports = {
   createLibraryPet,
+  createLibraryPetApplication,
   deleteLibraryPet,
   deletePetAsset,
   findLibraryPetById,

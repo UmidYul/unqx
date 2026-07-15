@@ -303,6 +303,8 @@
           isOwned: Boolean(item?.isOwned || item?.is_owned),
           displayName: String(item?.displayName || item?.display_name || "").trim(),
           isVisible: Boolean(item?.isVisible || item?.is_visible),
+          applicationStatus: String(item?.applicationStatus || item?.application_status || "").trim().toLowerCase(),
+          applicationId: item?.applicationId || item?.application_id || null,
         }))
         .filter((item) => item.id && item.name && item.imageUrl);
 
@@ -2221,8 +2223,13 @@ Email: ${userEmail}
           const inputValue = String(item.displayName || item.name || "").trim();
           const paid = Number(item.price || 0) > 0;
           const priceLabel = paid ? `${Number(item.price).toLocaleString("ru-RU")} сум` : "Бесплатно";
+          const applicationStatus = String(item.applicationStatus || "").trim().toLowerCase();
+          const hasPendingApplication = applicationStatus === "pending";
+          const actionLabel = paid ? `Подать заявку · ${priceLabel}` : "Подать заявку";
           const stateBadge = owned
             ? '<span class="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-1 text-[11px] font-semibold text-emerald-700">Добавлен</span>'
+            : hasPendingApplication
+              ? '<span class="rounded-full border border-amber-200 bg-amber-50 px-2 py-1 text-[11px] font-semibold text-amber-700">На рассмотрении</span>'
             : '<span class="rounded-full border border-neutral-200 bg-white px-2 py-1 text-[11px] font-semibold text-neutral-500">Не добавлен</span>';
           return `<article class="rounded-2xl border border-neutral-200 bg-neutral-50 p-4" data-library-pet-card="${esc(String(item.id))}">
             <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
@@ -2248,7 +2255,7 @@ Email: ${userEmail}
                       <input type="checkbox" data-a="library-pet-visible-toggle" data-pet-id="${esc(String(item.id))}" ${selected ? "checked" : ""} />
                     </label>
                     <p class="text-xs text-neutral-500">Имя и видимость сохранятся вместе с визиткой.</p>`
-                  : `<button type="button" data-a="buy-library-pet" data-pet-id="${esc(String(item.id))}" class="interactive-btn min-h-11 rounded-xl bg-neutral-900 px-3 py-2 text-sm font-semibold text-white">${paid ? `Купить за ${esc(priceLabel)}` : "Добавить бесплатно"}</button>`
+                  : `<button type="button" data-a="buy-library-pet" data-pet-id="${esc(String(item.id))}" class="interactive-btn min-h-11 rounded-xl bg-neutral-900 px-3 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60" ${hasPendingApplication ? "disabled" : ""}>${hasPendingApplication ? "Заявка на рассмотрении ⏳" : esc(actionLabel)}</button>`
                 }
                 ${!item.isActive && !owned
                   ? '<p class="text-xs text-amber-600">Питомец на паузе и недоступен новым пользователям.</p>'
@@ -5687,22 +5694,23 @@ Email: ${userEmail}
           showModal("Ошибка", "Не удалось определить питомца");
           return;
         }
-        if (Number(pet.price || 0) > 0 && !window.confirm(`Купить питомца за ${Number(pet.price).toLocaleString("ru-RU")} сум?`)) {
+        const priceLabel = Number(pet.price || 0) > 0 ? ` за ${Number(pet.price).toLocaleString("ru-RU")} сум` : "";
+        if (!window.confirm(`Подать заявку на питомца${priceLabel}?`)) {
           return;
         }
         try {
-          const payload = await api(`/api/profile/pets/library/${encodeURIComponent(String(pet.id))}/purchase`, {
+          const payload = await api("/api/profile/pets/apply", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ displayName: pet.displayName || pet.name }),
+            body: JSON.stringify({ petId: pet.id }),
           });
           s.petLibrary = normalizePetLibrary(payload.petLibrary);
           renderPetsEditor();
           renderPreview();
           saveDraft();
-          showSaveAlert(Number(pet.price || 0) > 0 ? "Питомец куплен" : "Питомец добавлен");
+          showSaveAlert("Заявка на питомца отправлена");
         } catch (error) {
-          showModal("Не удалось добавить питомца", error.message || "Попробуйте позже");
+          showModal("Не удалось отправить заявку", error.message || "Попробуйте позже");
         }
         return;
       }
@@ -6024,14 +6032,15 @@ Email: ${userEmail}
       if (button.getAttribute("data-profile-pet-action") === "purchase" && petId) {
         const pet = normalizePetLibrary(s.petLibrary).find((item) => item.id === petId);
         const priceLabel = Number(pet?.price || 0).toLocaleString("ru-RU");
-        if (!window.confirm(`Купить питомца за ${priceLabel} сум?`)) {
+        if (!window.confirm(`Подать заявку на питомца${Number(pet?.price || 0) > 0 ? ` за ${priceLabel} сум` : ""}?`)) {
           return;
         }
-        const payload = await api(`/api/profile/pets/library/${encodeURIComponent(String(petId))}/purchase`, {
+        const payload = await api("/api/profile/pets/apply", {
           method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ petId }),
         });
         s.petLibrary = normalizePetLibrary(payload.petLibrary);
-        s.selectedPetId = petId;
       } else {
         s.selectedPetId = petId;
       }

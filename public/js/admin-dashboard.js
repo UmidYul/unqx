@@ -307,6 +307,7 @@
   }
   function petTypeLabel(value) {
     const key = String(value || "").trim().toLowerCase();
+    if (key === "library") return "Питомец библиотеки";
     return PET_TYPE_LABELS[key] || "Питомец";
   }
   function kebabButton() {

@@ -99,11 +99,11 @@ const {
   normalizeTrackId,
 } = require("../../services/profile-music");
 const {
+  createLibraryPetApplication,
   findLibraryPetById,
   isLibraryPetOwnedByUser,
   listLibraryPets,
   normalizeLibraryPetId,
-  purchaseLibraryPetForUser,
   updateUserLibraryPetPreferences,
 } = require("../../services/profile-pets-library");
 const { findPublicThemeConfigByKey } = require("../../services/theme-configs");
@@ -2321,12 +2321,11 @@ router.post(
     if (!assertPlanAllowsCard(user, res)) {
       return;
     }
-    const item = await purchaseLibraryPetForUser({
+    const application = await createLibraryPetApplication({
       userId: user.id,
       petId: req.params.id,
-      displayName: req.body?.displayName,
     });
-    if (!item) {
+    if (!application) {
       res.status(404).json({ error: "Питомец недоступен.", code: "PET_NOT_FOUND" });
       return;
     }
@@ -2337,7 +2336,36 @@ router.post(
       userId: user.id,
       includeIds: card?.selectedPetId ? [card.selectedPetId] : [],
     });
-    res.json({ ok: true, item, petLibrary });
+    res.status(application.alreadyOwned ? 200 : 201).json({ ok: true, application, item: application.pet, petLibrary });
+  }),
+);
+
+router.post(
+  "/pets/apply",
+  asyncHandler(async (req, res) => {
+    const user = await getCurrentUser(req);
+    if (!assertUserActive(user, res)) {
+      return;
+    }
+    if (!assertPlanAllowsCard(user, res)) {
+      return;
+    }
+    const application = await createLibraryPetApplication({
+      userId: user.id,
+      petId: req.body?.petId ?? req.body?.pet_id,
+    });
+    if (!application) {
+      res.status(404).json({ error: "Питомец недоступен.", code: "PET_NOT_FOUND" });
+      return;
+    }
+    const card = await findProfileCardByOwnerId(user.id);
+    const petLibrary = await listLibraryPets({
+      limit: 200,
+      activeOnly: true,
+      userId: user.id,
+      includeIds: card?.selectedPetId ? [card.selectedPetId] : [],
+    });
+    res.status(application.alreadyOwned ? 200 : 201).json({ ok: true, application, item: application.pet, petLibrary });
   }),
 );
 
