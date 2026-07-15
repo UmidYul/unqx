@@ -23,26 +23,6 @@ module.exports = {
 
       CREATE INDEX IF NOT EXISTS unqx_user_pets_pet_idx
         ON unqx_user_pets (pet_id);
-
-      DO $$
-      BEGIN
-        IF EXISTS (
-          SELECT 1
-          FROM information_schema.table_constraints
-          WHERE table_schema = current_schema()
-            AND table_name = 'profile_cards'
-            AND constraint_name = 'profile_cards_selected_pet_id_fkey'
-        ) THEN
-          ALTER TABLE profile_cards
-            DROP CONSTRAINT profile_cards_selected_pet_id_fkey;
-        END IF;
-
-        ALTER TABLE profile_cards
-          ADD CONSTRAINT profile_cards_selected_pet_id_fkey
-          FOREIGN KEY (selected_pet_id)
-          REFERENCES unqx_pets(id)
-          ON DELETE SET NULL;
-      END $$;
     `);
   },
 };
