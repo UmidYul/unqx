@@ -2198,14 +2198,6 @@
         </defs>
         <rect width="360" height="600" fill="url(#vm-dots)"></rect>
         <path d="M-70 104h500M-80 158h500M-88 500h500" stroke="url(#vm-stripe)" stroke-width="28" opacity="0.55" transform="rotate(-28 180 300)"></path>
-        <g opacity="0.18" fill="none" stroke="#2B2B2B" stroke-width="4" stroke-linecap="round">
-          <circle cx="268" cy="116" r="28"></circle>
-          <circle cx="236" cy="88" r="17"></circle>
-          <circle cx="300" cy="88" r="17"></circle>
-          <circle cx="78" cy="438" r="24"></circle>
-          <circle cx="52" cy="414" r="15"></circle>
-          <circle cx="104" cy="414" r="15"></circle>
-        </g>
         <g fill="#D35252" opacity="0.22">
           <path d="M82 100l8 22 22 8-22 8-8 22-8-22-22-8 22-8 8-22Z"></path>
           <path d="M286 396l7 18 18 7-18 7-7 18-7-18-18-7 18-7 7-18Z"></path>
@@ -3480,9 +3472,26 @@
     const musicPlayerHtml = card.selectedTrack
       ? `<button type="button" class="unq-profile-music-player" data-profile-music-player data-audio-url="${esc(card.selectedTrack.audioUrl)}" data-track-title="${esc(card.selectedTrack.title)}" aria-label="Включить музыку: ${esc(card.selectedTrack.title)}" title="${esc(card.selectedTrack.title)}"><span class="unq-profile-music-icon" aria-hidden="true">♪</span><span class="sr-only" data-profile-music-label>Включить музыку</span></button>`
       : "";
+    const vintageSparklesHtml = theme.key === "vintage_mickey"
+      ? `<div class="vintage-mickey-sparkles" aria-hidden="true">
+          ${[
+        ["8%", "12%", 26, "#ffffff", "0s"],
+        ["84%", "14%", 18, "#D35252", "0.9s"],
+        ["16%", "58%", 20, "#F4D068", "1.7s"],
+        ["76%", "66%", 28, "#ffffff", "2.4s"],
+        ["44%", "22%", 16, "#D35252", "3.1s"],
+        ["30%", "84%", 22, "#ffffff", "3.8s"],
+        ["90%", "46%", 17, "#F4D068", "4.5s"],
+      ].map(([left, top, size, color, delay], index) => `
+            <svg class="sparkle vintage-mickey-sparkle vintage-mickey-sparkle-${index + 1}" style="left:${left};top:${top};width:${size}px;height:${size}px;color:${color};animation-delay:${delay}" viewBox="0 0 32 32" focusable="false">
+              <path d="M16 1.5l3.6 10.9L30.5 16l-10.9 3.6L16 30.5l-3.6-10.9L1.5 16l10.9-3.6L16 1.5Z" fill="currentColor"></path>
+            </svg>`).join("")}
+        </div>`
+      : "";
 
     return `
       <div data-card-view data-card-theme="${esc(theme.key)}" data-emoji-background-pack="${esc(card.emojiBackgroundPack)}" data-slug="${esc(card.slug)}" data-share-url="${esc(shareUrl)}"${rootStyle}>
+        ${vintageSparklesHtml}
         ${musicPlayerHtml}
         ${showPausedBanner ? `<div class="mb-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">${esc(pausedText)}</div>` : ""}
         <div class="unq-ref-top">

@@ -1253,6 +1253,8 @@
 [data-card-theme="vintage_mickey"] .public-card-shell {
   position: relative;
   overflow: hidden;
+  height: auto !important;
+  min-height: 0 !important;
   border: 3px solid #D35252 !important;
   background: #FFFFFF !important;
   color: #2B2B2B;
@@ -1272,6 +1274,49 @@
 [data-card-theme="vintage_mickey"] .public-card-shell > * {
   position: relative;
   z-index: 1;
+}
+
+[data-card-theme="vintage_mickey"] .unq-ref-card-overlay {
+  z-index: 0;
+}
+
+[data-card-theme="vintage_mickey"] .unq-ref-shell {
+  height: auto !important;
+  min-height: 0 !important;
+  padding: 20px 20px 22px;
+}
+
+[data-card-theme="vintage_mickey"] .unq-ref-shell-meta {
+  margin-bottom: 10px;
+}
+
+[data-card-theme="vintage_mickey"] .unq-ref-official-unq,
+[data-card-theme="vintage_mickey"] .unq-ref-staff-badge {
+  margin-bottom: 12px;
+  padding: 10px 14px;
+}
+
+[data-card-theme="vintage_mickey"] .unq-ref-profile,
+[data-card-theme="vintage_mickey"] .unq-ref-profile.has-pets,
+[data-card-theme="vintage_mickey"] .unq-ref-profile.has-emoji-pack,
+[data-card-theme="vintage_mickey"] .unq-ref-profile.has-emoji-pack.has-pets {
+  min-height: 0 !important;
+  height: auto !important;
+  margin-top: 14px;
+  padding-top: 0 !important;
+}
+
+[data-card-theme="vintage_mickey"] .unq-ref-profile.has-pets .unq-ref-avatar-wrap {
+  margin-top: 0;
+}
+
+[data-card-theme="vintage_mickey"] .unq-ref-profile.has-pets .unq-ref-name-wrap {
+  margin-top: 14px;
+}
+
+[data-card-theme="vintage_mickey"] .unq-ref-profile-emoji-pack {
+  height: 180px;
+  opacity: 0.42;
 }
 
 [data-card-theme] .public-card-button {
@@ -3240,15 +3285,10 @@ body[data-card-theme="soviet_carpet"] {
 
 body[data-card-theme="vintage_mickey"] {
   --theme-page-bg: #F5E6CA;
-  --theme-screen-opacity: 0.48;
+  --theme-screen-opacity: 0.34;
   --theme-screen-pattern:
-    radial-gradient(circle at 18% 24%, rgba(43, 43, 43, 0.15) 0 20px, transparent 21px),
-    radial-gradient(circle at 11% 13%, rgba(43, 43, 43, 0.15) 0 13px, transparent 14px),
-    radial-gradient(circle at 25% 13%, rgba(43, 43, 43, 0.15) 0 13px, transparent 14px),
-    radial-gradient(circle at 82% 58%, rgba(211, 82, 82, 0.2) 0 8px, transparent 9px),
-    radial-gradient(circle at 82% 58%, rgba(255, 255, 255, 0.46) 0 4px, transparent 5px),
-    radial-gradient(circle at 34% 82%, rgba(255, 255, 255, 0.38) 0 6px, transparent 7px),
-    radial-gradient(circle at 34% 82%, rgba(211, 82, 82, 0.2) 0 12px, transparent 13px);
+    repeating-linear-gradient(-45deg, rgba(255, 255, 255, 0.12) 0 2px, transparent 2px 32px),
+    repeating-linear-gradient(45deg, rgba(43, 43, 43, 0.06) 0 2px, transparent 2px 44px);
   background-color: #F5E6CA !important;
   background-image:
     repeating-linear-gradient(45deg,
@@ -3260,31 +3300,42 @@ body[data-card-theme="vintage_mickey"] {
 }
 
 body[data-card-theme="vintage_mickey"]::before {
-  content: "";
+  content: none;
+}
+
+@keyframes float-and-twinkle {
+  0% {
+    transform: translateY(0px) rotate(0deg) scale(0.9);
+    opacity: 0.4;
+  }
+
+  50% {
+    transform: translateY(-15px) rotate(45deg) scale(1.1);
+    opacity: 0.9;
+  }
+
+  100% {
+    transform: translateY(0px) rotate(90deg) scale(0.9);
+    opacity: 0.4;
+  }
+}
+
+.vintage-mickey-sparkles {
   position: fixed;
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  opacity: 0.15;
-  background-image:
-    radial-gradient(circle at 72% 18%, #2B2B2B 0 30px, transparent 31px),
-    radial-gradient(circle at 66% 10%, #2B2B2B 0 18px, transparent 19px),
-    radial-gradient(circle at 78% 10%, #2B2B2B 0 18px, transparent 19px),
-    radial-gradient(circle at 22% 68%, #2B2B2B 0 24px, transparent 25px),
-    radial-gradient(circle at 16% 60%, #2B2B2B 0 14px, transparent 15px),
-    radial-gradient(circle at 28% 60%, #2B2B2B 0 14px, transparent 15px),
-    conic-gradient(from 45deg at 42% 28%, transparent 0 12.5%, #FFFFFF 12.5% 25%, transparent 25% 37.5%, #FFFFFF 37.5% 50%, transparent 50% 62.5%, #FFFFFF 62.5% 75%, transparent 75% 87.5%, #FFFFFF 87.5% 100%),
-    conic-gradient(from 45deg at 84% 78%, transparent 0 12.5%, #D35252 12.5% 25%, transparent 25% 37.5%, #D35252 37.5% 50%, transparent 50% 62.5%, #D35252 62.5% 75%, transparent 75% 87.5%, #D35252 87.5% 100%);
-  background-size:
-    auto,
-    auto,
-    auto,
-    auto,
-    auto,
-    auto,
-    90px 90px,
-    72px 72px;
-  background-repeat: no-repeat;
+  overflow: hidden;
+}
+
+.sparkle,
+.vintage-mickey-sparkle {
+  position: absolute;
+  display: block;
+  filter: drop-shadow(0 2px 0 rgba(43, 43, 43, 0.12));
+  transform-origin: 50% 50%;
+  animation: float-and-twinkle 6s ease-in-out infinite;
+  will-change: transform, opacity;
 }
 
 body[data-card-theme] #card-view-root {
