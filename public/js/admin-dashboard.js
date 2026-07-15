@@ -239,6 +239,7 @@
     volt_sport: { label: "Volt Sport", fill: "#B6FF00", border: "#000000", text: "#071000", bg: "#9DFF00" },
     minion_yellow: { label: "Yellow Crew", fill: "#FFD42A", border: "#1b1b1b", text: "#1b1b1b", bg: "#FFE45C" },
     soviet_carpet: { label: "Бабушкин ковер", fill: "#800000", border: "#D4AF37", text: "#FDF5E6", bg: "#4b0909" },
+    vintage_mickey: { label: "Ретро Микки", fill: "#F5E6CA", border: "#D35252", text: "#2B2B2B", bg: "#8ECAA5" },
     velours: { label: "Velours Luxe", fill: "#2d0a12", border: "#5a1828", text: "#c9a55a", bg: "#2d0a12" },
     graffiti_neon: { label: "Graffiti Neon", fill: "#19142a", border: "#5ef7ff", text: "#9bff62", bg: "#19142a" },
     heritage_crest: { label: "Sweet Ribbon", fill: "#ffc6dd", border: "#ff9fca", text: "#7a2446", bg: "#ffc6dd" },

@@ -110,6 +110,7 @@
       "volt_sport",
       "minion_yellow",
       "soviet_carpet",
+      "vintage_mickey",
       "velours",
       "graffiti_neon",
       "heritage_crest",

@@ -24,6 +24,7 @@
     "volt_sport",
     "minion_yellow",
     "soviet_carpet",
+    "vintage_mickey",
     "velours",
     "graffiti_neon",
     "heritage_crest",
@@ -725,6 +726,7 @@
       cardBgOverlay: "soviet_carpet",
       surfaceBg: "rgba(71, 18, 18, 0.72)",
       cardBorder: "3px solid #D4AF37",
+      borderColor: "#D4AF37",
       surfaceBorder: "1px solid rgba(212, 175, 55, 0.36)",
       dividerColor: "rgba(212, 175, 55, 0.34)",
       nameColor: "#FDF5E6",
@@ -758,6 +760,46 @@
       cardShadow: "0 24px 56px rgba(40, 0, 0, 0.55)",
       buttonShineGradient:
         "linear-gradient(90deg, rgba(253,245,230,0) 0%, rgba(253,245,230,0.26) 50%, rgba(253,245,230,0) 100%)",
+    },
+    vintage_mickey: {
+      cardBg: "#FFFFFF",
+      cardBgOverlay: "vintage_mickey",
+      surfaceBg: "rgba(245, 230, 202, 0.82)",
+      cardBorder: "3px solid #D35252",
+      borderColor: "#D35252",
+      surfaceBorder: "2px solid rgba(211, 82, 82, 0.44)",
+      dividerColor: "rgba(211, 82, 82, 0.28)",
+      nameColor: "#2B2B2B",
+      roleColor: "#7D7461",
+      mutedColor: "#7D7461",
+      accentColor: "#4A9F89",
+      emailColor: "#2B2B2B",
+      buttonPrimaryBg: "linear-gradient(135deg, #4A9F89 0%, #8ECAA5 100%)",
+      buttonPrimaryText: "#FFFFFF",
+      buttonPrimaryBorder: "#2B2B2B",
+      buttonSecondaryBg: "#F5E6CA",
+      buttonSecondaryText: "#2B2B2B",
+      buttonSecondaryBorder: "#D35252",
+      badgeText: "#FFFFFF",
+      badgeBg: "#D35252",
+      badgeBorder: "2px solid #2B2B2B",
+      topLineGradient: "linear-gradient(90deg, transparent, #D35252, #F4D068, #4A9F89, transparent)",
+      avatarBg: "linear-gradient(135deg, #2B2B2B 0%, #D35252 100%)",
+      avatarText: "#F5E6CA",
+      avatarBorder: "3px solid #2B2B2B",
+      cardBorderRadius: "30px",
+      fontFamily: "'Cooper Black', 'Baloo 2', 'Nunito', 'Inter', sans-serif",
+      nameFontStyle: "normal",
+      nameFontWeight: "900",
+      roleLetterSpacing: "0.1em",
+      scoreLabelColor: "#7D7461",
+      scoreValueColor: "#2B2B2B",
+      scoreBarFill: "#4A9F89",
+      scoreBarTrack: "rgba(211, 82, 82, 0.18)",
+      scorePercentileColor: "#D35252",
+      cardShadow: "0 24px 46px rgba(43, 43, 43, 0.18)",
+      buttonShineGradient:
+        "linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.48) 50%, rgba(255,255,255,0) 100%)",
     },
     velours: {
       cardBg: "linear-gradient(165deg, #2d0a12 0%, #2a0911 52%, #380d18 100%)",
@@ -2141,6 +2183,39 @@
         <path d="M72 166l26 18 31-6-12 29 16 27-32-2-21 24-8-31-29-13 27-17 2-29ZM268 364l22 16 27-5-10 25 14 24-28-2-18 21-7-27-25-12 23-14 2-26Z" fill="none" stroke="#FDF5E6" stroke-width="1.1" opacity="0.22"></path>
       </svg>`;
     }
+    if (themeKey === "vintage_mickey") {
+      return `<svg class="unq-ref-overlay-svg" viewBox="0 0 360 600" preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <pattern id="vm-dots" width="46" height="46" patternUnits="userSpaceOnUse">
+            <circle cx="8" cy="8" r="3" fill="#D35252" opacity="0.14"></circle>
+            <circle cx="31" cy="29" r="2.4" fill="#4A9F89" opacity="0.14"></circle>
+          </pattern>
+          <linearGradient id="vm-stripe" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#8ECAA5" stop-opacity="0.18"></stop>
+            <stop offset="52%" stop-color="#F4D068" stop-opacity="0.2"></stop>
+            <stop offset="100%" stop-color="#D35252" stop-opacity="0.16"></stop>
+          </linearGradient>
+        </defs>
+        <rect width="360" height="600" fill="url(#vm-dots)"></rect>
+        <path d="M-70 104h500M-80 158h500M-88 500h500" stroke="url(#vm-stripe)" stroke-width="28" opacity="0.55" transform="rotate(-28 180 300)"></path>
+        <g opacity="0.18" fill="none" stroke="#2B2B2B" stroke-width="4" stroke-linecap="round">
+          <circle cx="268" cy="116" r="28"></circle>
+          <circle cx="236" cy="88" r="17"></circle>
+          <circle cx="300" cy="88" r="17"></circle>
+          <circle cx="78" cy="438" r="24"></circle>
+          <circle cx="52" cy="414" r="15"></circle>
+          <circle cx="104" cy="414" r="15"></circle>
+        </g>
+        <g fill="#D35252" opacity="0.22">
+          <path d="M82 100l8 22 22 8-22 8-8 22-8-22-22-8 22-8 8-22Z"></path>
+          <path d="M286 396l7 18 18 7-18 7-7 18-7-18-18-7 18-7 7-18Z"></path>
+        </g>
+        <g fill="#FFFFFF" opacity="0.46">
+          <path d="M306 188l6 16 16 6-16 6-6 16-6-16-16-6 16-6 6-16Z"></path>
+          <path d="M52 298l5 14 14 5-14 5-5 14-5-14-14-5 14-5 5-14Z"></path>
+        </g>
+      </svg>`;
+    }
     return "";
   }
 
@@ -3170,6 +3245,9 @@
       `--theme-card-bg:${esc(theme.tokens.cardBg)}`,
       `--theme-surface-bg:${esc(theme.tokens.surfaceBg)}`,
       `--theme-card-border:${esc(theme.tokens.cardBorder)}`,
+      `--theme-border:${esc(theme.tokens.borderColor || theme.tokens.accentColor)}`,
+      `--theme-text-primary:${esc(theme.tokens.nameColor)}`,
+      `--theme-text-secondary:${esc(theme.tokens.roleColor || theme.tokens.mutedColor)}`,
       `--theme-surface-border:${esc(theme.tokens.surfaceBorder)}`,
       `--theme-divider-color:${esc(theme.tokens.dividerColor)}`,
       `--theme-name-color:${esc(theme.tokens.nameColor)}`,

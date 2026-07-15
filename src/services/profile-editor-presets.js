@@ -102,6 +102,13 @@ const SIGNATURE_THEMES = [
     premiumRequired: true,
   },
   {
+    id: "vintage_mickey",
+    label: "Ретро Микки 🐭",
+    description: "Vintage stripes and toon stars",
+    swatchStyle: "border-color:#D35252;background:repeating-linear-gradient(45deg,#8ECAA5 0 12px,#D35252 12px 24px,#F4D068 24px 36px,#F5E6CA 36px 48px);box-shadow:inset 0 0 0 2px rgba(43,43,43,0.18);",
+    premiumRequired: true,
+  },
+  {
     id: "velours",
     label: "Velours Luxe",
     description: "Burgundy velvet luxe",
