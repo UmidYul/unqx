@@ -95,6 +95,13 @@ const SIGNATURE_THEMES = [
     premiumRequired: true,
   },
   {
+    id: "soviet_carpet",
+    label: "Бабушкин ковёр 🧶",
+    description: "Deep red vintage carpet",
+    swatchStyle: "border-color:#D4AF37;background:radial-gradient(circle at 50% 50%,rgba(212,175,55,0.36) 0 9%,transparent 10%),radial-gradient(circle at 20% 20%,rgba(253,245,230,0.22) 0 6%,transparent 7%),linear-gradient(145deg,#800000 0%,#4b0909 58%,#250a0a 100%);box-shadow:inset 0 0 0 2px rgba(212,175,55,0.2);",
+    premiumRequired: true,
+  },
+  {
     id: "velours",
     label: "Velours Luxe",
     description: "Burgundy velvet luxe",

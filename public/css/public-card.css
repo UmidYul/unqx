@@ -1214,6 +1214,42 @@
   box-shadow: 0 0 10px rgba(0, 229, 255, 0.5), 0 28px 70px rgba(6, 2, 20, 0.55);
 }
 
+[data-card-theme="soviet_carpet"] .public-card-shell {
+  position: relative;
+  overflow: visible;
+  border: 3px solid #D4AF37 !important;
+  background: rgba(25, 10, 10, 0.92) !important;
+  color: #FDF5E6;
+  box-shadow: 0 24px 56px rgba(40, 0, 0, 0.55);
+}
+
+[data-card-theme="soviet_carpet"] .public-card-shell::before,
+[data-card-theme="soviet_carpet"] .public-card-shell::after {
+  content: "||||||||||||||||||||||||||||";
+  position: absolute;
+  left: 28px;
+  right: 28px;
+  z-index: 4;
+  overflow: hidden;
+  color: rgba(253, 245, 230, 0.76);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 5px;
+  line-height: 1;
+  text-align: center;
+  pointer-events: none;
+  text-shadow: 0 1px 0 rgba(128, 0, 0, 0.35);
+}
+
+[data-card-theme="soviet_carpet"] .public-card-shell::before {
+  top: -13px;
+}
+
+[data-card-theme="soviet_carpet"] .public-card-shell::after {
+  bottom: -13px;
+}
+
 [data-card-theme] .public-card-button {
   background: var(--theme-button-primary-bg, #171717) !important;
   color: var(--theme-button-primary-text, #ffffff) !important;
@@ -2389,6 +2425,20 @@ body[data-page="profile-page"] {
   background-position: center;
 }
 
+#profile-card-live-preview[data-preview-theme="soviet_carpet"] {
+  --preview-border-color: #D4AF37;
+  --preview-page-bg:
+    radial-gradient(circle at 50% 50%, rgba(212, 175, 55, 0.28) 0 9px, transparent 10px),
+    radial-gradient(circle at 20% 20%, rgba(253, 245, 230, 0.17) 0 6px, transparent 7px),
+    linear-gradient(135deg, #800000 0%, #4b0909 54%, #250a0a 100%);
+  --preview-screen-opacity: 0.54;
+  --preview-screen-pattern:
+    radial-gradient(circle at 50% 50%, rgba(212, 175, 55, 0.26) 0 6px, transparent 7px),
+    repeating-linear-gradient(45deg, rgba(212, 175, 55, 0.14) 0 2px, transparent 2px 34px),
+    repeating-linear-gradient(-45deg, rgba(25, 10, 10, 0.28) 0 2px, transparent 2px 34px);
+  background-size: 350px 350px;
+}
+
 #profile-card-live-preview[data-preview-theme="velours"] {
   --preview-border-color: #5a1828;
   --preview-page-bg: radial-gradient(circle at 18% 18%, rgba(196, 53, 74, 0.12) 0%, transparent 40%),
@@ -3111,6 +3161,27 @@ body[data-card-theme] #public-card-layout {
   position: relative;
   z-index: 1;
   margin-inline: auto;
+}
+
+body[data-card-theme="soviet_carpet"] {
+  --theme-page-bg: #800000;
+  --theme-screen-opacity: 0.42;
+  --theme-screen-pattern:
+    radial-gradient(circle at 50% 50%, rgba(212, 175, 55, 0.34) 0 6px, transparent 7px),
+    radial-gradient(circle at 0 0, rgba(253, 245, 230, 0.18) 0 5px, transparent 6px),
+    radial-gradient(circle at 100% 100%, rgba(255, 51, 51, 0.18) 0 7px, transparent 8px),
+    repeating-linear-gradient(45deg, rgba(212, 175, 55, 0.14) 0 2px, transparent 2px 34px),
+    repeating-linear-gradient(-45deg, rgba(25, 10, 10, 0.28) 0 2px, transparent 2px 34px);
+  background-color: #800000 !important;
+  background-image:
+    url("/assets/themes/carpet_pattern.png"),
+    radial-gradient(ellipse at center, rgba(25, 10, 10, 0.22) 0%, transparent 58%),
+    radial-gradient(circle at 50% 50%, rgba(212, 175, 55, 0.28) 0 9px, transparent 10px),
+    radial-gradient(circle at 20% 20%, rgba(253, 245, 230, 0.17) 0 6px, transparent 7px),
+    radial-gradient(circle at 80% 80%, rgba(255, 51, 51, 0.16) 0 7px, transparent 8px),
+    linear-gradient(135deg, #800000 0%, #4b0909 54%, #250a0a 100%) !important;
+  background-repeat: repeat !important;
+  background-size: 350px 350px !important;
 }
 
 body[data-card-theme] #card-view-root {

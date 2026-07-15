@@ -23,6 +23,7 @@
     "galaxy",
     "volt_sport",
     "minion_yellow",
+    "soviet_carpet",
     "velours",
     "graffiti_neon",
     "heritage_crest",
@@ -718,6 +719,45 @@
       cardShadow: "0 20px 48px rgba(124, 88, 0, 0.32)",
       buttonShineGradient:
         "linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.3) 48%, rgba(255,255,255,0.55) 50%, rgba(255,255,255,0.3) 52%, rgba(255,255,255,0) 100%)",
+    },
+    soviet_carpet: {
+      cardBg: "rgba(25, 10, 10, 0.92)",
+      cardBgOverlay: "soviet_carpet",
+      surfaceBg: "rgba(71, 18, 18, 0.72)",
+      cardBorder: "3px solid #D4AF37",
+      surfaceBorder: "1px solid rgba(212, 175, 55, 0.36)",
+      dividerColor: "rgba(212, 175, 55, 0.34)",
+      nameColor: "#FDF5E6",
+      roleColor: "#C8A2C8",
+      mutedColor: "rgba(253, 245, 230, 0.74)",
+      accentColor: "#FF3333",
+      emailColor: "#FDF5E6",
+      buttonPrimaryBg: "linear-gradient(135deg, #FF3333 0%, #800000 100%)",
+      buttonPrimaryText: "#FDF5E6",
+      buttonPrimaryBorder: "#D4AF37",
+      buttonSecondaryBg: "rgba(253, 245, 230, 0.08)",
+      buttonSecondaryText: "#FDF5E6",
+      buttonSecondaryBorder: "rgba(212, 175, 55, 0.48)",
+      badgeText: "#FDF5E6",
+      badgeBg: "rgba(128, 0, 0, 0.72)",
+      badgeBorder: "1px solid rgba(212, 175, 55, 0.56)",
+      topLineGradient: "linear-gradient(90deg, transparent, #D4AF37, #FF3333, #D4AF37, transparent)",
+      avatarBg: "linear-gradient(135deg, #800000 0%, #250a0a 100%)",
+      avatarText: "#FDF5E6",
+      avatarBorder: "2px solid #D4AF37",
+      cardBorderRadius: "28px",
+      fontFamily: "'Cormorant Garamond', 'Iowan Old Style', 'Times New Roman', serif",
+      nameFontStyle: "normal",
+      nameFontWeight: "700",
+      roleLetterSpacing: "0.12em",
+      scoreLabelColor: "rgba(253, 245, 230, 0.72)",
+      scoreValueColor: "#FDF5E6",
+      scoreBarFill: "#D4AF37",
+      scoreBarTrack: "rgba(253, 245, 230, 0.16)",
+      scorePercentileColor: "#C8A2C8",
+      cardShadow: "0 24px 56px rgba(40, 0, 0, 0.55)",
+      buttonShineGradient:
+        "linear-gradient(90deg, rgba(253,245,230,0) 0%, rgba(253,245,230,0.26) 50%, rgba(253,245,230,0) 100%)",
     },
     velours: {
       cardBg: "linear-gradient(165deg, #2d0a12 0%, #2a0911 52%, #380d18 100%)",
@@ -2078,6 +2118,27 @@
           <rect x="128" y="154" width="104" height="104" fill="url(#vl-avatar-fiber-light)" opacity="0.26"></rect>
           <rect x="128" y="154" width="104" height="104" fill="url(#vl-avatar-fiber-dark)" opacity="0.22"></rect>
         </g>
+      </svg>`;
+    }
+    if (themeKey === "soviet_carpet") {
+      return `<svg class="unq-ref-overlay-svg" viewBox="0 0 360 600" preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <pattern id="sc-rosettes" width="92" height="92" patternUnits="userSpaceOnUse">
+            <rect width="92" height="92" fill="#800000" opacity="0.12"></rect>
+            <path d="M46 10l11 24 25 12-25 12-11 24-12-24-24-12 24-12 12-24Z" fill="none" stroke="#D4AF37" stroke-width="1.2" opacity="0.42"></path>
+            <path d="M46 24c12 10 12 34 0 44-12-10-12-34 0-44ZM24 46c10-12 34-12 44 0-10 12-34 12-44 0Z" fill="none" stroke="#FDF5E6" stroke-width="0.8" opacity="0.22"></path>
+            <circle cx="46" cy="46" r="10" fill="none" stroke="#FF3333" stroke-width="1.1" opacity="0.36"></circle>
+          </pattern>
+          <linearGradient id="sc-gold-line" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#D4AF37" stop-opacity="0"></stop>
+            <stop offset="50%" stop-color="#D4AF37" stop-opacity="0.55"></stop>
+            <stop offset="100%" stop-color="#D4AF37" stop-opacity="0"></stop>
+          </linearGradient>
+        </defs>
+        <rect width="360" height="600" fill="url(#sc-rosettes)" opacity="0.82"></rect>
+        <path d="M18 72h324M18 528h324" stroke="url(#sc-gold-line)" stroke-width="2.2" fill="none"></path>
+        <path d="M30 104C88 78 148 86 206 118c60 34 108 36 146 12M8 338c80-34 154-26 224 18 46 28 84 32 120 18" stroke="#D4AF37" stroke-width="1" fill="none" opacity="0.26"></path>
+        <path d="M72 166l26 18 31-6-12 29 16 27-32-2-21 24-8-31-29-13 27-17 2-29ZM268 364l22 16 27-5-10 25 14 24-28-2-18 21-7-27-25-12 23-14 2-26Z" fill="none" stroke="#FDF5E6" stroke-width="1.1" opacity="0.22"></path>
       </svg>`;
     }
     return "";
