@@ -1007,7 +1007,7 @@ router.get(
       return;
     }
 
-    const [slugs, card, slugRequests, petRequests, pets, petCatalog, score, pricing, supportTelegramRaw, privatePasswords, followSummary, tracks] = await Promise.all([
+    const [slugs, card, slugRequests, petRequests, pets, petCatalog, score, pricing, supportTelegramRaw, privatePasswords, followSummary] = await Promise.all([
       getUserSlugsWithStats(user.id),
       findProfileCardByOwnerId(user.id),
       prisma.slugRequest.findMany({
@@ -1025,7 +1025,6 @@ router.get(
         ownerId: user.id,
         viewerUserId: user.id,
       }),
-      listTracks({ limit: 200 }),
     ]);
     const supportTelegram = normalizeTelegramUsername(supportTelegramRaw);
 
@@ -1048,6 +1047,11 @@ router.get(
         ...card,
         pets,
       });
+    const tracks = await listTracks({
+      limit: 200,
+      activeOnly: true,
+      includeIds: cardPayload?.selectedTrackId ? [cardPayload.selectedTrackId] : [],
+    });
 
     res.json({
       user: {

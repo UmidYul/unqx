@@ -3335,13 +3335,18 @@
     const title = String(item?.title || "Без названия");
     const audioUrl = String(item?.audioUrl || "").trim();
     const createdAt = item?.createdAt ? D(item.createdAt) : "";
-    return `<article class="admin-music-shell admin-music-row">
+    const isActive = item?.isActive !== false;
+    return `<article class="admin-music-shell admin-music-row ${isActive ? "" : "is-paused"}">
       <div class="min-w-0">
         <p class="admin-music-kicker">${X(createdAt || "Трек")}</p>
         <h2>${X(title)}</h2>
+        <span class="admin-status-pill ${isActive ? "is-active" : "is-paused"}">${isActive ? "Активен" : "На паузе"}</span>
       </div>
       <audio controls preload="none" src="${X(audioUrl)}"></audio>
-      <button type="button" data-act="music-track-delete" data-id="${id}" class="interactive-btn min-h-10 rounded-xl border-2 border-black bg-white px-3 py-1.5 text-xs font-black text-red-700 shadow-[2px_2px_0_#000]">Удалить</button>
+      <div class="admin-row-actions-stack">
+        <button type="button" data-act="music-track-toggle-active" data-id="${id}" data-active="${isActive ? "0" : "1"}" class="interactive-btn min-h-10 rounded-xl border-2 border-black bg-white px-3 py-1.5 text-xs font-black shadow-[2px_2px_0_#000]">${isActive ? "На паузу" : "Включить"}</button>
+        <button type="button" data-act="music-track-delete" data-id="${id}" class="interactive-btn min-h-10 rounded-xl border-2 border-black bg-white px-3 py-1.5 text-xs font-black text-red-700 shadow-[2px_2px_0_#000]">Удалить</button>
+      </div>
     </article>`;
   }
 
@@ -3748,14 +3753,19 @@
     const key = String(item?.key || item?.id || "");
     const displayName = String(item?.displayName || key || "");
     const description = String(item?.description || "");
-    return `<article class="admin-theme-row">
+    const isActive = item?.isActive !== false;
+    const themeId = String(item?.themeId || "");
+    const targetId = kind === "theme" && themeId ? themeId : key;
+    return `<article class="admin-theme-row ${isActive ? "" : "is-paused"}">
       <span class="admin-theme-row-swatch">${kind === "frame" ? "FR" : "TH"}</span>
       <div class="min-w-0">
         <p class="admin-theme-row-title">${X(displayName)}</p>
         <p class="admin-theme-row-meta">${X(key)}${description ? ` · ${X(description)}` : ""}</p>
+        <span class="admin-status-pill ${isActive ? "is-active" : "is-paused"}">${isActive ? "Активен" : "На паузе"}</span>
       </div>
       <div class="admin-theme-row-actions">
         <button type="button" class="admin-theme-ghost-btn" data-act="visual-style-edit" data-kind="${X(kind)}" data-key="${X(key)}" data-name="${X(displayName)}">Редактировать</button>
+        <button type="button" class="admin-theme-ghost-btn" data-act="visual-style-toggle-active" data-kind="${X(kind)}" data-key="${X(key)}" data-target-id="${X(targetId)}" data-active="${isActive ? "0" : "1"}">${isActive ? "На паузу" : "Включить"}</button>
       </div>
     </article>`;
   }
@@ -4868,12 +4878,50 @@
       closeAllRowMenus();
       return;
     }
+    if (a === "music-track-toggle-active") {
+      const id = n.getAttribute("data-id");
+      const isActive = n.getAttribute("data-active") === "1";
+      if (!id) return;
+      const r = await fetch(`/api/admin/tracks/${encodeURIComponent(id)}/active`, {
+        method: "PATCH",
+        headers: H({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ isActive }),
+      });
+      if (!r.ok) {
+        await showAlert(await E(r));
+      } else {
+        await loadMusicTracks();
+      }
+      closeAllRowMenus();
+      return;
+    }
     if (a === "visual-style-edit") {
       const kind = n.getAttribute("data-kind") || "";
       const key = n.getAttribute("data-key") || "";
       const displayName = n.getAttribute("data-name") || key;
       const themeId = n.getAttribute("data-theme-id") || "";
       openVisualStyleModal({ kind, key, displayName, themeId });
+      closeAllRowMenus();
+      return;
+    }
+    if (a === "visual-style-toggle-active") {
+      const kind = n.getAttribute("data-kind") || "";
+      const key = n.getAttribute("data-key") || "";
+      const targetId = n.getAttribute("data-target-id") || key;
+      const isActive = n.getAttribute("data-active") === "1";
+      const endpoint = kind === "frame"
+        ? `/api/admin/frames/${encodeURIComponent(key)}/active`
+        : `/api/admin/themes/${encodeURIComponent(targetId)}/active`;
+      const r = await fetch(endpoint, {
+        method: "PATCH",
+        headers: H({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ isActive }),
+      });
+      if (!r.ok) {
+        await showAlert(await E(r));
+      } else {
+        await Promise.all([loadVisualStyles(), loadThemeConfigs()]);
+      }
       closeAllRowMenus();
       return;
     }

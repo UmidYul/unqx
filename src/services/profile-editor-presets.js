@@ -354,56 +354,99 @@ function getProfileEditorPresets() {
 
 function applyStyleLabel(item, kind, labels) {
   const key = String(item?.id || "").trim();
-  const displayName = labels instanceof Map ? labels.get(`${kind}:${key}`) : "";
-  return displayName ? { ...item, label: displayName } : { ...item };
+  const metadata = labels instanceof Map ? labels.get(`${kind}:${key}`) : null;
+  const displayName = metadata?.displayName || "";
+  return {
+    ...item,
+    ...(displayName ? { label: displayName } : {}),
+    isActive: metadata?.isActive ?? item?.isActive ?? true,
+  };
 }
 
-async function getProfileEditorPresetsWithDisplayNames() {
+function styleIsSelectable(item, selectedKey) {
+  const key = String(item?.id || "").trim();
+  return item?.isActive !== false || (selectedKey && key === selectedKey);
+}
+
+async function getProfileEditorPresetsWithDisplayNames(options = {}) {
+  const selectedTheme = String(options.selectedTheme || "").trim();
+  const selectedFrame = String(options.selectedFrame || "").trim();
   const labels = await getVisualStyleLabelMap();
-  const customThemes = await listThemeConfigs({ limit: 500, publicOnly: true });
+  const customThemes = await listThemeConfigs({ limit: 500 });
   const existingThemeKeys = new Set([...SIGNATURE_THEMES, ...COLOR_THEMES].map((item) => item.id));
   const customThemePresets = customThemes
-    .filter((item) => item?.key && !existingThemeKeys.has(item.key))
+    .filter((item) => item?.key && !existingThemeKeys.has(item.key) && ["active", "public"].includes(String(item.status || "active")))
     .map((item) => ({
       id: item.key,
-      label: labels.get(`theme:${item.key}`) || item.title || item.key,
+      label: labels.get(`theme:${item.key}`)?.displayName || item.title || item.key,
       description: "Кастомная тема",
       swatchStyle: `border-color:#000000;background:${String(item.config?.cardBg || "#111111")};`,
       premiumRequired: true,
       custom: true,
+      isActive: item.isActive !== false,
     }));
 
+  const signatureThemes = [
+    ...SIGNATURE_THEMES.map((item) => applyStyleLabel(item, "theme", labels)),
+    ...customThemePresets,
+  ].filter((item) => styleIsSelectable(item, selectedTheme));
+  const colorThemes = COLOR_THEMES
+    .map((item) => applyStyleLabel(item, "theme", labels))
+    .filter((item) => styleIsSelectable(item, selectedTheme));
+  const avatarFrames = AVATAR_FRAMES
+    .map((item) => applyStyleLabel(item, "frame", labels))
+    .filter((item) => styleIsSelectable(item, selectedFrame));
+
   return {
-    signatureThemes: [
-      ...SIGNATURE_THEMES.map((item) => applyStyleLabel(item, "theme", labels)),
-      ...customThemePresets,
-    ],
-    colorThemes: COLOR_THEMES.map((item) => applyStyleLabel(item, "theme", labels)),
-    avatarFrames: AVATAR_FRAMES.map((item) => applyStyleLabel(item, "frame", labels)),
+    signatureThemes,
+    colorThemes,
+    avatarFrames,
     emojiBackgroundPacks: EMOJI_BACKGROUND_PACKS,
     petPresets: PET_PRESETS,
   };
 }
 
 async function listAdminVisualStyles() {
-  const presets = await getProfileEditorPresetsWithDisplayNames();
-  return {
-    themes: [...presets.signatureThemes, ...presets.colorThemes].map((item) => ({
+  const labels = await getVisualStyleLabelMap();
+  const customThemes = await listThemeConfigs({ limit: 500 });
+  const existingThemeKeys = new Set([...SIGNATURE_THEMES, ...COLOR_THEMES].map((item) => item.id));
+  const customThemePresets = customThemes
+    .filter((item) => item?.key && !existingThemeKeys.has(item.key) && ["active", "public"].includes(String(item.status || "active")))
+    .map((item) => ({
       kind: "theme",
-      id: item.id,
-      key: item.id,
-      displayName: item.label,
-      description: item.description || "",
-      custom: Boolean(item.custom),
-      premiumRequired: Boolean(item.premiumRequired),
-    })),
-    frames: presets.avatarFrames.map((item) => ({
+      id: item.key,
+      key: item.key,
+      displayName: labels.get(`theme:${item.key}`)?.displayName || item.title || item.key,
+      description: "Кастомная тема",
+      custom: true,
+      premiumRequired: true,
+      isActive: item.isActive !== false,
+      themeId: item.id,
+    }));
+  const staticThemePresets = [...SIGNATURE_THEMES, ...COLOR_THEMES].map((item) => applyStyleLabel(item, "theme", labels));
+  return {
+    themes: [
+      ...staticThemePresets.map((item) => ({
+        kind: "theme",
+        id: item.id,
+        key: item.id,
+        displayName: item.label,
+        description: item.description || "",
+        custom: Boolean(item.custom),
+        premiumRequired: Boolean(item.premiumRequired),
+        isActive: item.isActive !== false,
+        themeId: "",
+      })),
+      ...customThemePresets,
+    ],
+    frames: AVATAR_FRAMES.map((item) => applyStyleLabel(item, "frame", labels)).map((item) => ({
       kind: "frame",
       id: item.id,
       key: item.id,
       displayName: item.label,
       description: item.description || "",
       premiumRequired: Boolean(item.premiumRequired),
+      isActive: item.isActive !== false,
     })),
   };
 }

@@ -1688,13 +1688,18 @@ router.get(
       return;
     }
 
+    const profileCard = await findProfileCardByOwnerId(user.id);
+
     res.render("public/profile", {
       title: "Profile | UNQX",
       description: "UNQX personal dashboard: card settings, UNQ, analytics, requests and profile settings.",
       image: defaultSocialImage,
       telegramBotUsername: String(env.TELEGRAM_BOT_USERNAME || "").replace(/^@+/, "").trim(),
       reactivationWindowDays: Number(env.ACCOUNT_REACTIVATION_WINDOW_DAYS || 30),
-      themePresets: await getProfileEditorPresetsWithDisplayNames(),
+      themePresets: await getProfileEditorPresetsWithDisplayNames({
+        selectedTheme: profileCard?.theme,
+        selectedFrame: profileCard?.avatarFrame,
+      }),
       adminSession: getAdminSession(req),
     });
   }),

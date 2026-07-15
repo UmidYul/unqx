@@ -160,6 +160,7 @@ function mapThemeRow(row) {
     primaryIconSvg: String(row.primaryIconSvg || row.primary_icon_svg || ""),
     secondaryIconSvg: String(row.secondaryIconSvg || row.secondary_icon_svg || ""),
     status: String(row.status || "active"),
+    isActive: row.isActive ?? row.is_active ?? true,
     cacheVersion: Number(row.cacheVersion || row.cache_version || 1) || 1,
     createdAt: row.createdAt || row.created_at || null,
     updatedAt: row.updatedAt || row.updated_at || null,
@@ -179,10 +180,11 @@ async function listThemeConfigs({ limit = 100, publicOnly = false } = {}) {
         SELECT id, theme_key AS "themeKey", title, card_bg_overlay AS "cardBgOverlay",
                config_json AS "configJson", overlay_svg AS "overlaySvg",
                primary_icon_svg AS "primaryIconSvg", secondary_icon_svg AS "secondaryIconSvg",
-               status, cache_version AS "cacheVersion",
+               status, is_active AS "isActive", cache_version AS "cacheVersion",
                created_at AS "createdAt", updated_at AS "updatedAt"
         FROM unqx_theme_configs
         WHERE status IN ('active', 'public')
+          AND is_active = true
         ORDER BY updated_at DESC, id DESC
         LIMIT ${take}
       `
@@ -190,7 +192,7 @@ async function listThemeConfigs({ limit = 100, publicOnly = false } = {}) {
         SELECT id, theme_key AS "themeKey", title, card_bg_overlay AS "cardBgOverlay",
                config_json AS "configJson", overlay_svg AS "overlaySvg",
                primary_icon_svg AS "primaryIconSvg", secondary_icon_svg AS "secondaryIconSvg",
-               status, cache_version AS "cacheVersion",
+               status, is_active AS "isActive", cache_version AS "cacheVersion",
                created_at AS "createdAt", updated_at AS "updatedAt"
         FROM unqx_theme_configs
         ORDER BY updated_at DESC, id DESC
@@ -211,7 +213,7 @@ async function findPublicThemeConfigByKey(themeKey) {
       SELECT id, theme_key AS "themeKey", title, card_bg_overlay AS "cardBgOverlay",
              config_json AS "configJson", overlay_svg AS "overlaySvg",
              primary_icon_svg AS "primaryIconSvg", secondary_icon_svg AS "secondaryIconSvg",
-             status, cache_version AS "cacheVersion",
+             status, is_active AS "isActive", cache_version AS "cacheVersion",
              created_at AS "createdAt", updated_at AS "updatedAt"
       FROM unqx_theme_configs
       WHERE theme_key = ${key}
@@ -259,7 +261,7 @@ async function upsertThemeConfig(input) {
     RETURNING id, theme_key AS "themeKey", title, card_bg_overlay AS "cardBgOverlay",
               config_json AS "configJson", overlay_svg AS "overlaySvg",
               primary_icon_svg AS "primaryIconSvg", secondary_icon_svg AS "secondaryIconSvg",
-              status, cache_version AS "cacheVersion",
+              status, is_active AS "isActive", cache_version AS "cacheVersion",
               created_at AS "createdAt", updated_at AS "updatedAt"
   `;
   return mapThemeRow(Array.isArray(rows) ? rows[0] : null);
@@ -274,7 +276,7 @@ async function deleteThemeConfig(id) {
     RETURNING id, theme_key AS "themeKey", title, card_bg_overlay AS "cardBgOverlay",
               config_json AS "configJson", overlay_svg AS "overlaySvg",
               primary_icon_svg AS "primaryIconSvg", secondary_icon_svg AS "secondaryIconSvg",
-              status, cache_version AS "cacheVersion",
+              status, is_active AS "isActive", cache_version AS "cacheVersion",
               created_at AS "createdAt", updated_at AS "updatedAt"
   `;
   return mapThemeRow(Array.isArray(rows) ? rows[0] : null);
@@ -293,7 +295,25 @@ async function updateThemeConfigTitle(id, displayName) {
     RETURNING id, theme_key AS "themeKey", title, card_bg_overlay AS "cardBgOverlay",
               config_json AS "configJson", overlay_svg AS "overlaySvg",
               primary_icon_svg AS "primaryIconSvg", secondary_icon_svg AS "secondaryIconSvg",
-              status, cache_version AS "cacheVersion",
+              status, is_active AS "isActive", cache_version AS "cacheVersion",
+              created_at AS "createdAt", updated_at AS "updatedAt"
+  `;
+  return mapThemeRow(Array.isArray(rows) ? rows[0] : null);
+}
+
+async function setThemeConfigActive(id, isActive) {
+  const numericId = Math.trunc(Number(id || 0));
+  if (!Number.isSafeInteger(numericId) || numericId <= 0) return null;
+  const rows = await prisma.$queryRaw`
+    UPDATE unqx_theme_configs
+    SET is_active = ${Boolean(isActive)},
+        cache_version = cache_version + 1,
+        updated_at = now()
+    WHERE id = ${numericId}
+    RETURNING id, theme_key AS "themeKey", title, card_bg_overlay AS "cardBgOverlay",
+              config_json AS "configJson", overlay_svg AS "overlaySvg",
+              primary_icon_svg AS "primaryIconSvg", secondary_icon_svg AS "secondaryIconSvg",
+              status, is_active AS "isActive", cache_version AS "cacheVersion",
               created_at AS "createdAt", updated_at AS "updatedAt"
   `;
   return mapThemeRow(Array.isArray(rows) ? rows[0] : null);
@@ -306,6 +326,7 @@ module.exports = {
   listThemeConfigs,
   normalizeThemeConfig,
   sanitizeSvg,
+  setThemeConfigActive,
   updateThemeConfigTitle,
   upsertThemeConfig,
 };

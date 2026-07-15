@@ -319,6 +319,13 @@
   gap: 12px;
 }
 
+.admin-row-actions-stack {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-start;
+}
+
 .admin-music-row audio {
   width: 100%;
 }
@@ -327,6 +334,10 @@
   .admin-music-row {
     grid-template-columns: minmax(0, 1fr) minmax(220px, 320px) auto;
     align-items: center;
+  }
+
+  .admin-row-actions-stack {
+    justify-content: flex-end;
   }
 }
 
@@ -435,6 +446,12 @@
   padding: 12px;
 }
 
+.admin-theme-row.is-paused,
+.admin-music-shell.is-paused {
+  opacity: 0.58;
+  filter: grayscale(0.35);
+}
+
 .admin-theme-row-swatch {
   width: 42px;
   height: 42px;
@@ -458,7 +475,32 @@
 
 .admin-theme-row-actions {
   display: inline-flex;
+  flex-wrap: wrap;
   gap: 8px;
+}
+
+.admin-status-pill {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  margin-top: 7px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  padding: 3px 8px;
+  font-size: 10px;
+  font-weight: 950;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.admin-status-pill.is-active {
+  color: #047857;
+  background: rgba(16, 185, 129, 0.14);
+}
+
+.admin-status-pill.is-paused {
+  color: #64748b;
+  background: rgba(148, 163, 184, 0.14);
 }
 
 .admin-visual-style-heading {

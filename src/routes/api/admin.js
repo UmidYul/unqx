@@ -117,11 +117,13 @@ const {
   deleteTrackFile,
   listTracks,
   saveTrackMp3,
+  setTrackActive,
 } = require("../../services/profile-music");
 const {
   deleteThemeConfig,
   findPublicThemeConfigByKey,
   listThemeConfigs,
+  setThemeConfigActive,
   updateThemeConfigTitle,
   upsertThemeConfig,
 } = require("../../services/theme-configs");
@@ -132,6 +134,7 @@ const {
 } = require("../../services/profile-editor-presets");
 const {
   normalizeDisplayName: normalizeVisualStyleDisplayName,
+  setVisualStyleActive,
   upsertVisualStyleLabel,
 } = require("../../services/visual-style-labels");
 
@@ -151,6 +154,14 @@ const trackUpload = multer({
   limits: { fileSize: 25 * 1024 * 1024 },
 });
 const ALLOWED_MIME = new Set(["image/jpeg", "image/png", "image/webp"]);
+
+function resolveActiveFlag(body) {
+  if (Object.prototype.hasOwnProperty.call(body || {}, "isActive")) return Boolean(body.isActive);
+  if (Object.prototype.hasOwnProperty.call(body || {}, "is_active")) return Boolean(body.is_active);
+  if (Object.prototype.hasOwnProperty.call(body || {}, "active")) return Boolean(body.active);
+  return true;
+}
+
 async function safeDeleteAvatarByPublicPath(publicPath) {
   if (!publicPath) return;
   try {
@@ -2570,6 +2581,69 @@ router.put(
   }),
 );
 
+router.patch(
+  "/themes/:id/active",
+  asyncHandler(async (req, res) => {
+    try {
+      const isActive = resolveActiveFlag(req.body || {});
+      const rawId = String(req.params.id || "").trim();
+      if (/^\d+$/.test(rawId)) {
+        const item = await setThemeConfigActive(rawId, isActive);
+        if (!item) {
+          res.status(404).json({ error: "Тема не найдена." });
+          return;
+        }
+        res.json({ ok: true, item });
+        return;
+      }
+      const staticPreset = findStaticThemePreset(rawId);
+      if (!staticPreset) {
+        res.status(404).json({ error: "Тема не найдена." });
+        return;
+      }
+      const item = await setVisualStyleActive({
+        kind: "theme",
+        key: rawId,
+        isActive,
+        displayName: staticPreset.label,
+      });
+      res.json({ ok: true, item });
+    } catch (error) {
+      const status = Number(error?.status || 500);
+      res.status(status >= 400 && status < 600 ? status : 500).json({
+        error: error?.message || "Не удалось обновить статус темы.",
+      });
+    }
+  }),
+);
+
+router.patch(
+  "/frames/:id/active",
+  asyncHandler(async (req, res) => {
+    try {
+      const isActive = resolveActiveFlag(req.body || {});
+      const frameKey = String(req.params.id || "").trim().toLowerCase();
+      const staticPreset = findStaticFramePreset(frameKey);
+      if (!staticPreset) {
+        res.status(404).json({ error: "Рамка не найдена." });
+        return;
+      }
+      const item = await setVisualStyleActive({
+        kind: "frame",
+        key: frameKey,
+        isActive,
+        displayName: staticPreset.label,
+      });
+      res.json({ ok: true, item });
+    } catch (error) {
+      const status = Number(error?.status || 500);
+      res.status(status >= 400 && status < 600 ? status : 500).json({
+        error: error?.message || "Не удалось обновить статус рамки.",
+      });
+    }
+  }),
+);
+
 router.delete(
   "/themes/:id",
   asyncHandler(async (req, res) => {
@@ -2684,6 +2758,18 @@ router.delete(
   "/tracks/:id",
   asyncHandler(async (req, res) => {
     const item = await deleteTrack(req.params.id);
+    if (!item) {
+      res.status(404).json({ error: "Трек не найден." });
+      return;
+    }
+    res.json({ ok: true, item });
+  }),
+);
+
+router.patch(
+  "/tracks/:id/active",
+  asyncHandler(async (req, res) => {
+    const item = await setTrackActive(req.params.id, resolveActiveFlag(req.body || {}));
     if (!item) {
       res.status(404).json({ error: "Трек не найден." });
       return;

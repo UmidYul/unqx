@@ -22,6 +22,7 @@ function mapTrackRow(row) {
     id: Number(row.id || 0),
     title: String(row.title || ""),
     audioUrl: String(row.audioUrl || row.audio_url || ""),
+    isActive: row.isActive ?? row.is_active ?? true,
     createdAt: row.createdAt || row.created_at || null,
   };
 }
@@ -72,15 +73,34 @@ async function deleteTrackFile(publicPath) {
   }
 }
 
-async function listTracks({ limit = 200 } = {}) {
+async function listTracks({ limit = 200, activeOnly = false, includeIds = [] } = {}) {
   const take = Math.max(1, Math.min(500, Number(limit || 200)));
+  const normalizedIncludeIds = [...new Set((Array.isArray(includeIds) ? includeIds : [includeIds])
+    .map(normalizeTrackId)
+    .filter(Boolean))];
   try {
-    const rows = await prisma.$queryRaw`
-      SELECT id, title, audio_url AS "audioUrl", created_at AS "createdAt"
-      FROM unqx_tracks
-      ORDER BY created_at DESC, id DESC
-      LIMIT ${take}
-    `;
+    const rows = activeOnly && normalizedIncludeIds.length
+      ? await prisma.$queryRaw`
+        SELECT id, title, audio_url AS "audioUrl", is_active AS "isActive", created_at AS "createdAt"
+        FROM unqx_tracks
+        WHERE is_active = true OR id = ANY(${normalizedIncludeIds}::int[])
+        ORDER BY created_at DESC, id DESC
+        LIMIT ${take}
+      `
+      : activeOnly
+        ? await prisma.$queryRaw`
+          SELECT id, title, audio_url AS "audioUrl", is_active AS "isActive", created_at AS "createdAt"
+          FROM unqx_tracks
+          WHERE is_active = true
+          ORDER BY created_at DESC, id DESC
+          LIMIT ${take}
+        `
+      : await prisma.$queryRaw`
+        SELECT id, title, audio_url AS "audioUrl", is_active AS "isActive", created_at AS "createdAt"
+        FROM unqx_tracks
+        ORDER BY created_at DESC, id DESC
+        LIMIT ${take}
+      `;
     return (Array.isArray(rows) ? rows : []).map(mapTrackRow).filter(Boolean);
   } catch (error) {
     if (isTrackStorageMissing(error)) return [];
@@ -93,7 +113,7 @@ async function findTrackById(id) {
   if (!normalizedId) return null;
   try {
     const rows = await prisma.$queryRaw`
-      SELECT id, title, audio_url AS "audioUrl", created_at AS "createdAt"
+      SELECT id, title, audio_url AS "audioUrl", is_active AS "isActive", created_at AS "createdAt"
       FROM unqx_tracks
       WHERE id = ${normalizedId}
       LIMIT 1
@@ -115,7 +135,7 @@ async function createTrack({ title, audioUrl }) {
   const rows = await prisma.$queryRaw`
     INSERT INTO unqx_tracks (title, audio_url)
     VALUES (${normalizedTitle.slice(0, 255)}, ${audioUrl})
-    RETURNING id, title, audio_url AS "audioUrl", created_at AS "createdAt"
+    RETURNING id, title, audio_url AS "audioUrl", is_active AS "isActive", created_at AS "createdAt"
   `;
   return mapTrackRow(Array.isArray(rows) ? rows[0] : null);
 }
@@ -126,13 +146,25 @@ async function deleteTrack(id) {
   const rows = await prisma.$queryRaw`
     DELETE FROM unqx_tracks
     WHERE id = ${normalizedId}
-    RETURNING id, title, audio_url AS "audioUrl", created_at AS "createdAt"
+    RETURNING id, title, audio_url AS "audioUrl", is_active AS "isActive", created_at AS "createdAt"
   `;
   const item = mapTrackRow(Array.isArray(rows) ? rows[0] : null);
   if (item?.audioUrl) {
     await deleteTrackFile(item.audioUrl);
   }
   return item;
+}
+
+async function setTrackActive(id, isActive) {
+  const normalizedId = normalizeTrackId(id);
+  if (!normalizedId) return null;
+  const rows = await prisma.$queryRaw`
+    UPDATE unqx_tracks
+    SET is_active = ${Boolean(isActive)}
+    WHERE id = ${normalizedId}
+    RETURNING id, title, audio_url AS "audioUrl", is_active AS "isActive", created_at AS "createdAt"
+  `;
+  return mapTrackRow(Array.isArray(rows) ? rows[0] : null);
 }
 
 module.exports = {
@@ -144,4 +176,5 @@ module.exports = {
   listTracks,
   normalizeTrackId,
   saveTrackMp3,
+  setTrackActive,
 };

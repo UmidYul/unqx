@@ -45,6 +45,7 @@ function mapLabelRow(row) {
     kind: String(row.styleKind || row.style_kind || ""),
     key: String(row.styleKey || row.style_key || ""),
     displayName: String(row.displayName || row.display_name || ""),
+    isActive: row.isActive ?? row.is_active ?? true,
     updatedAt: row.updatedAt || row.updated_at || null,
   };
 }
@@ -53,7 +54,7 @@ async function listVisualStyleLabels() {
   try {
     const rows = await prisma.$queryRaw`
       SELECT id, style_kind AS "styleKind", style_key AS "styleKey",
-             display_name AS "displayName", updated_at AS "updatedAt"
+             display_name AS "displayName", is_active AS "isActive", updated_at AS "updatedAt"
       FROM unqx_visual_style_labels
       ORDER BY style_kind ASC, style_key ASC
     `;
@@ -68,7 +69,7 @@ async function getVisualStyleLabelMap() {
   const labels = await listVisualStyleLabels();
   const map = new Map();
   labels.forEach((item) => {
-    map.set(`${item.kind}:${item.key}`, item.displayName);
+    map.set(`${item.kind}:${item.key}`, item);
   });
   return map;
 }
@@ -85,7 +86,24 @@ async function upsertVisualStyleLabel({ kind, key, displayName }) {
       display_name = EXCLUDED.display_name,
       updated_at = now()
     RETURNING id, style_kind AS "styleKind", style_key AS "styleKey",
-              display_name AS "displayName", updated_at AS "updatedAt"
+              display_name AS "displayName", is_active AS "isActive", updated_at AS "updatedAt"
+  `;
+  return mapLabelRow(Array.isArray(rows) ? rows[0] : null);
+}
+
+async function setVisualStyleActive({ kind, key, isActive, displayName }) {
+  const normalizedKind = normalizeStyleKind(kind);
+  const normalizedKey = normalizeStyleKey(key);
+  const fallbackName = String(displayName || normalizedKey).trim().replace(/\s+/g, " ").slice(0, 160) || normalizedKey;
+  const rows = await prisma.$queryRaw`
+    INSERT INTO unqx_visual_style_labels (style_kind, style_key, display_name, is_active)
+    VALUES (${normalizedKind}, ${normalizedKey}, ${fallbackName}, ${Boolean(isActive)})
+    ON CONFLICT (style_kind, style_key)
+    DO UPDATE SET
+      is_active = EXCLUDED.is_active,
+      updated_at = now()
+    RETURNING id, style_kind AS "styleKind", style_key AS "styleKey",
+              display_name AS "displayName", is_active AS "isActive", updated_at AS "updatedAt"
   `;
   return mapLabelRow(Array.isArray(rows) ? rows[0] : null);
 }
@@ -95,5 +113,6 @@ module.exports = {
   listVisualStyleLabels,
   normalizeDisplayName,
   normalizeStyleKey,
+  setVisualStyleActive,
   upsertVisualStyleLabel,
 };
