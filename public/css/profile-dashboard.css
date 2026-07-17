@@ -530,6 +530,37 @@
   border-radius: 9999px;
 }
 
+.profile-dashboard .profile-frame-swatch--dragon-orbit {
+  background: radial-gradient(circle, #16120a 0%, #2a1a10 100%);
+}
+
+.profile-dashboard .profile-frame-swatch--dragon-orbit .profile-frame-swatch-deco {
+  inset: 1px;
+  border: 2px dashed #ffd500;
+  border-radius: 9999px;
+  box-shadow: 0 0 9px rgba(255, 213, 0, 0.4);
+  animation: profile-dragon-swatch-spin 4.5s linear infinite;
+}
+
+.profile-dashboard .profile-frame-swatch--dragon-orbit .profile-frame-swatch-deco::after {
+  content: "";
+  position: absolute;
+  right: -2px;
+  top: 3px;
+  width: 8px;
+  height: 8px;
+  clip-path: polygon(50% 0, 100% 42%, 72% 100%, 50% 72%, 28% 100%, 0 42%);
+  background: #ffd500;
+  border: 1px solid #111111;
+  border-radius: 2px;
+}
+
+@keyframes profile-dragon-swatch-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .profile-dashboard .profile-frame-swatch--chrome-ring {
   border-color: #d4dae7;
   background: linear-gradient(145deg, #f8fbff 0%, #d7e0ee 100%);

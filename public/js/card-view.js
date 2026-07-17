@@ -69,36 +69,7 @@
     "football_stitch",
     "stopwatch_ring",
     "medal_ribbon",
-    "symbiote",
-    "lightning",
-    "zen_bamboo",
-    "sakura_aura",
-    "gogh_strokes",
-    "lunar_gold",
-    "chakra",
-    "konoha_scroll",
-    "mystery_journal",
-    "cipher_glitch",
-    "crystal_anomal",
-    "venom_organic",
-    "sensei_scroll",
-    "konoha_arc",
-    "lunar_crescent",
-    "gogh_waves",
-    "cyber_tech",
-    "sakura_petal",
-    "portal_dome",
-    "ancient_totem",
-    "zen_organic",
-    "temple_arch",
-    "hex_portal",
-    "leaf_scroll",
-    "gogh_wave",
-    "diamond_shield",
-    "symbiote_morph",
-    "crescent_contour",
-    "taiji_curves",
-    "tech_segmented",
+  "dragon_orbit",
   ];
   const EMOJI_BACKGROUND_PACK_KEYS = [
     "none",
@@ -2838,41 +2809,25 @@
         </svg>
       ${end}`;
     }
-    if (
-      [
-        "symbiote",
-        "lightning",
-        "zen_bamboo",
-        "sakura_aura",
-        "gogh_strokes",
-        "lunar_gold",
-        "chakra",
-        "konoha_scroll",
-        "mystery_journal",
-        "cipher_glitch",
-        "crystal_anomal",
-        "venom_organic",
-        "sensei_scroll",
-        "konoha_arc",
-        "lunar_crescent",
-        "gogh_waves",
-        "cyber_tech",
-        "sakura_petal",
-        "portal_dome",
-        "ancient_totem",
-        "zen_organic",
-        "temple_arch",
-        "hex_portal",
-        "leaf_scroll",
-        "gogh_wave",
-        "diamond_shield",
-        "symbiote_morph",
-        "crescent_contour",
-        "taiji_curves",
-        "tech_segmented",
-      ].includes(key)
-    ) {
-      return `${start}<span class="unq-ref-avatar-frame-css"></span>${end}`;
+    if (key === "dragon_orbit") {
+      return `${start}
+        <svg class="unq-ref-avatar-frame-svg unq-ref-dragon-frame-svg" viewBox="0 0 140 140" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="dragon-orbit-gold" x1="18" y1="18" x2="122" y2="122" gradientUnits="userSpaceOnUse">
+              <stop offset="0" stop-color="#FFF4D0"></stop>
+              <stop offset="0.42" stop-color="#FFD500"></stop>
+              <stop offset="1" stop-color="#E53E6D"></stop>
+            </linearGradient>
+          </defs>
+          <g class="unq-ref-dragon-frame-spin">
+            <circle cx="70" cy="70" r="57" fill="none" stroke="url(#dragon-orbit-gold)" stroke-width="2.2" stroke-dasharray="5 7" opacity="0.72"></circle>
+            <path d="M105 31c-18-13-44-13-62 1-19 15-25 42-13 63 11 20 35 31 58 23 18-6 31-22 34-40" fill="none" stroke="url(#dragon-orbit-gold)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"></path>
+            <path d="M105 31l13-10-4 17 15 7-18 4-5 17-7-15-18 1 13-12-6-16 17 7Z" fill="#FFD500" stroke="#111111" stroke-width="1.8" stroke-linejoin="round"></path>
+            <path d="M58 22l8 10-13 1M36 47l14 4-10 10M31 82l14-4-2 14M69 121l6-13 8 11M101 103l-13-2 8-10" fill="none" stroke="#FFF4D0" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.9"></path>
+            <circle cx="113" cy="34" r="2" fill="#111111"></circle>
+          </g>
+        </svg>
+      ${end}`;
     }
 
     return "";
