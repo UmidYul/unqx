@@ -811,6 +811,93 @@
   box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.5);
 }
 
+.profile-dashboard .profile-frame-swatch--zen-organic .profile-frame-swatch-deco {
+  border-radius: 40% 60% 45% 55% / 55% 45% 60% 40%;
+  border: 3px solid #1f1412;
+  box-shadow: 3px 4px 0 rgba(31, 20, 18, 0.14);
+}
+
+.profile-dashboard .profile-frame-swatch--temple-arch .profile-frame-swatch-deco {
+  border-radius: 42px 42px 7px 7px;
+  border: 2px solid #d2a298;
+  border-top-width: 4px;
+}
+
+.profile-dashboard .profile-frame-swatch--hex-portal {
+  background: #0a1611;
+}
+
+.profile-dashboard .profile-frame-swatch--hex-portal .profile-frame-swatch-deco {
+  clip-path: polygon(12px 0%, calc(100% - 12px) 0%, 100% 12px, 100% calc(100% - 12px), calc(100% - 12px) 100%, 12px 100%, 0% calc(100% - 12px), 0% 12px);
+  border: 2px solid #39ff14;
+  box-shadow: 0 0 9px rgba(57, 255, 20, 0.52);
+}
+
+.profile-dashboard .profile-frame-swatch--leaf-scroll .profile-frame-swatch-deco {
+  border-radius: 22px 3px 22px 3px;
+  border: 3px solid #ff8397;
+  outline: 1px solid #1f1412;
+  outline-offset: 2px;
+}
+
+.profile-dashboard .profile-frame-swatch--gogh-wave {
+  background: #0c1a30;
+}
+
+.profile-dashboard .profile-frame-swatch--gogh-wave .profile-frame-swatch-deco {
+  border-radius: 28px 8px 44px 10px / 10px 44px 8px 28px;
+  border: 3px solid #ffd500;
+  box-shadow: 0 0 9px rgba(236, 193, 40, 0.42);
+}
+
+.profile-dashboard .profile-frame-swatch--diamond-shield {
+  background: #08121c;
+}
+
+.profile-dashboard .profile-frame-swatch--diamond-shield .profile-frame-swatch-deco {
+  clip-path: polygon(10% 0%, 100% 0%, 90% 100%, 0% 100%);
+  border: 2px solid #00f0ff;
+  box-shadow: 0 0 9px rgba(0, 240, 255, 0.42);
+}
+
+.profile-dashboard .profile-frame-swatch--symbiote-morph {
+  background: #08080c;
+}
+
+.profile-dashboard .profile-frame-swatch--symbiote-morph .profile-frame-swatch-deco {
+  border-radius: 50% 50% 30% 70% / 50% 60% 40% 50%;
+  border: 3px solid #e53e6d;
+  box-shadow: inset 0 0 10px rgba(229, 62, 109, 0.48);
+}
+
+.profile-dashboard .profile-frame-swatch--crescent-contour {
+  background: #0c1a30;
+}
+
+.profile-dashboard .profile-frame-swatch--crescent-contour .profile-frame-swatch-deco {
+  border-radius: 50% 10px 10px 50% / 50% 10px 10px 50%;
+  border: 2px solid #fff4d0;
+  border-left-width: 5px;
+  box-shadow: -4px 0 10px rgba(255, 244, 208, 0.28);
+}
+
+.profile-dashboard .profile-frame-swatch--taiji-curves .profile-frame-swatch-deco {
+  border-radius: 38px 5px 38px 5px;
+  border: 2px solid #1f1412;
+}
+
+.profile-dashboard .profile-frame-swatch--tech-segmented {
+  background: #08121c;
+}
+
+.profile-dashboard .profile-frame-swatch--tech-segmented .profile-frame-swatch-deco {
+  clip-path: polygon(0 0, 100% 0, 100% 75%, 85% 100%, 0 100%);
+  border-left: 4px solid #39ff14;
+  border-bottom: 4px solid #39ff14;
+  border-right: 1px dashed rgba(57, 255, 20, 0.5);
+  border-top: 1px dashed rgba(57, 255, 20, 0.5);
+}
+
 .profile-dashboard .profile-card-editor-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(420px, 520px);

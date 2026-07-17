@@ -140,14 +140,14 @@ const SIGNATURE_THEMES = [
     id: "sakura_blossom",
     label: "Цветущая Сакура 🌸",
     description: "Watercolor silk petals",
-    swatchStyle: "border-color:#D3A297;background:radial-gradient(circle at 30% 40%,rgba(160,168,148,0.18),transparent 48%),radial-gradient(circle at 70% 35%,rgba(255,142,158,0.24),transparent 42%),linear-gradient(145deg,#EADBC8 0%,#FDF6F4 72%);box-shadow:0 0 12px rgba(200,92,92,0.18);",
+    swatchStyle: "border-color:#D2A298;background:radial-gradient(ellipse at 20% 40%,rgba(162,172,147,0.22),transparent 48%),radial-gradient(circle at 50% 10%,rgba(255,131,151,0.22),transparent 48%),linear-gradient(145deg,#F3EAD8 0%,#FDFAF2 72%);box-shadow:0 0 12px rgba(176,75,75,0.18);",
     premiumRequired: true,
   },
   {
     id: "starry_night",
     label: "Звездная Ночь 🌌",
     description: "Impressionist night swirls",
-    swatchStyle: "border-color:#F5C71A;background:radial-gradient(circle at 18% 18%,#FFF5D1 0 8%,#F5C71A 9% 16%,transparent 17%),radial-gradient(ellipse at 64% 42%,rgba(59,82,122,0.54),transparent 48%),linear-gradient(145deg,#0F1626 0%,#0B192C 62%,#050914 100%);box-shadow:0 0 14px rgba(245,199,26,0.36);",
+    swatchStyle: "border-color:#FFD500;background:radial-gradient(circle at 18% 18%,#FFF4D0 0 8%,#ECC128 9% 16%,transparent 17%),radial-gradient(ellipse at 64% 42%,rgba(33,61,104,0.62),transparent 48%),linear-gradient(145deg,#0B1528 0%,#0C1A30 62%,#040817 100%);box-shadow:0 0 14px rgba(255,213,0,0.36);",
     premiumRequired: true,
   },
   {
@@ -357,6 +357,16 @@ const AVATAR_FRAMES = [
   { id: "sakura_petal", label: "Нежная Сакура", description: "Форма лепестка", premiumRequired: true },
   { id: "portal_dome", label: "Портальный Околыш", description: "Купольная портальная арка", premiumRequired: true },
   { id: "ancient_totem", label: "Древний Тотем", description: "Угловатые зигзаги", premiumRequired: true },
+  { id: "zen_organic", label: "Дзен-Овал", description: "Живая форма рисового свитка", premiumRequired: true },
+  { id: "temple_arch", label: "Арка Пагоды", description: "Силуэт восточных ворот", premiumRequired: true },
+  { id: "hex_portal", label: "Портальный Гексагон", description: "Sci-Fi hex cut barrier", premiumRequired: true },
+  { id: "leaf_scroll", label: "Двойной Свиток Конохи", description: "Закрученные углы свитка", premiumRequired: true },
+  { id: "gogh_wave", label: "Кипарисовый Изгиб", description: "Волнообразный контур Ван Гога", premiumRequired: true },
+  { id: "diamond_shield", label: "Кристалл Пустоты", description: "Асимметричный diamond shield", premiumRequired: true },
+  { id: "symbiote_morph", label: "Жидкий Симбиот", description: "Морфирующая амеба", premiumRequired: true },
+  { id: "crescent_contour", label: "Лунный Серп", description: "Полукруглый moon contour", premiumRequired: true },
+  { id: "taiji_curves", label: "Древняя Инь-Янь", description: "Перекрестные плавные углы", premiumRequired: true },
+  { id: "tech_segmented", label: "Глитч-Барьер", description: "Segmented tech contour", premiumRequired: true },
 ];
 
 const EMOJI_BACKGROUND_PACKS = [

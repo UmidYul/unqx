@@ -93,6 +93,16 @@ const PROFILE_AVATAR_FRAME_KEYS = [
   "sakura_petal",
   "portal_dome",
   "ancient_totem",
+  "zen_organic",
+  "temple_arch",
+  "hex_portal",
+  "leaf_scroll",
+  "gogh_wave",
+  "diamond_shield",
+  "symbiote_morph",
+  "crescent_contour",
+  "taiji_curves",
+  "tech_segmented",
 ];
 const PROFILE_AVATAR_FRAMES = new Set(PROFILE_AVATAR_FRAME_KEYS);
 const PROFILE_EMOJI_BACKGROUND_KEYS = [

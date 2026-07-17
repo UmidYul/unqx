@@ -182,6 +182,16 @@
       "sakura_petal",
       "portal_dome",
       "ancient_totem",
+      "zen_organic",
+      "temple_arch",
+      "hex_portal",
+      "leaf_scroll",
+      "gogh_wave",
+      "diamond_shield",
+      "symbiote_morph",
+      "crescent_contour",
+      "taiji_curves",
+      "tech_segmented",
     ];
     try {
       const presetNode = document.getElementById("profile-style-presets-data");

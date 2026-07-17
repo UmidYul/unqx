@@ -48,6 +48,16 @@
     "sakura_petal",
     "portal_dome",
     "ancient_totem",
+    "zen_organic",
+    "temple_arch",
+    "hex_portal",
+    "leaf_scroll",
+    "gogh_wave",
+    "diamond_shield",
+    "symbiote_morph",
+    "crescent_contour",
+    "taiji_curves",
+    "tech_segmented",
   ];
   const rawAvatarFrame = typeof avatarFrame === "string" ? avatarFrame : "";
   const pageAvatarFrame = privateAvatarFrameKeys.includes(String(rawAvatarFrame || "").trim().toLowerCase())
@@ -143,7 +153,7 @@
     if (frame === "football_stitch") return `${start}<svg class="unq-ref-avatar-frame-svg" viewBox="0 0 140 140" preserveAspectRatio="none"><ellipse cx="70" cy="70" rx="58" ry="44" class="frame-stroke-thick frame-stroke-primary"></ellipse><path d="M48 70h44M56 60v20M64 58v24M72 58v24M80 58v24M88 60v20" class="frame-stroke-thin frame-stroke-white"></path></svg>${end}`;
     if (frame === "stopwatch_ring") return `${start}<svg class="unq-ref-avatar-frame-svg" viewBox="0 0 140 140" preserveAspectRatio="none"><circle cx="70" cy="76" r="52" class="frame-stroke-thick frame-stroke-primary"></circle><path d="M58 14h24M70 14v12M98 30l10-10M70 76V46M70 76l20 14" class="frame-stroke-thin frame-stroke-secondary"></path></svg>${end}`;
     if (frame === "medal_ribbon") return `${start}<svg class="unq-ref-avatar-frame-svg" viewBox="0 0 140 140" preserveAspectRatio="none"><path d="M48 8h44l-12 42H60L48 8Z" class="frame-fill-secondary"></path><circle cx="70" cy="76" r="54" class="frame-stroke-thick frame-stroke-primary"></circle><circle cx="70" cy="76" r="45" class="frame-stroke-thin frame-stroke-white"></circle></svg>${end}`;
-    if (["symbiote", "lightning", "zen_bamboo", "sakura_aura", "gogh_strokes", "lunar_gold", "chakra", "konoha_scroll", "mystery_journal", "cipher_glitch", "crystal_anomal", "venom_organic", "sensei_scroll", "konoha_arc", "lunar_crescent", "gogh_waves", "cyber_tech", "sakura_petal", "portal_dome", "ancient_totem"].includes(frame)) {
+    if (["symbiote", "lightning", "zen_bamboo", "sakura_aura", "gogh_strokes", "lunar_gold", "chakra", "konoha_scroll", "mystery_journal", "cipher_glitch", "crystal_anomal", "venom_organic", "sensei_scroll", "konoha_arc", "lunar_crescent", "gogh_waves", "cyber_tech", "sakura_petal", "portal_dome", "ancient_totem", "zen_organic", "temple_arch", "hex_portal", "leaf_scroll", "gogh_wave", "diamond_shield", "symbiote_morph", "crescent_contour", "taiji_curves", "tech_segmented"].includes(frame)) {
       return `${start}<span class="unq-ref-avatar-frame-css"></span>${end}`;
     }
     return "";
@@ -378,27 +388,27 @@
       radius: "28px",
     },
     sakura_blossom: {
-      cardBg: "rgba(253, 246, 244, 0.92)",
-      cardBorder: "#D3A297",
-      buttonPrimaryBg: "linear-gradient(135deg, #FFB7B2, #FF8E9E)",
-      buttonPrimaryText: "#2C1E1A",
-      buttonSecondaryBg: "rgba(253, 246, 244, 0.72)",
-      nameColor: "#2C1E1A",
-      mutedColor: "#C85C5C",
-      avatarBg: "linear-gradient(135deg, #2C1E1A, #C85C5C 58%, #FFB7B2)",
-      avatarText: "#FDF6F4",
+      cardBg: "rgba(253, 250, 242, 0.93)",
+      cardBorder: "#D2A298",
+      buttonPrimaryBg: "linear-gradient(135deg, #FFB5C2, #FF8397)",
+      buttonPrimaryText: "#1F1412",
+      buttonSecondaryBg: "rgba(253, 250, 242, 0.72)",
+      nameColor: "#1F1412",
+      mutedColor: "#B04B4B",
+      avatarBg: "linear-gradient(135deg, #1F1412, #B04B4B 58%, #FFB5C2)",
+      avatarText: "#FDFAF2",
       radius: "30px",
     },
     starry_night: {
-      cardBg: "rgba(11, 25, 44, 0.93)",
-      cardBorder: "#F5C71A",
-      buttonPrimaryBg: "linear-gradient(135deg, #F5C71A, #FFD700)",
-      buttonPrimaryText: "#0B192C",
-      buttonSecondaryBg: "rgba(11, 25, 44, 0.72)",
-      nameColor: "#FFF5D1",
-      mutedColor: "#F5C71A",
-      avatarBg: "radial-gradient(circle at 38% 26%, #FFF5D1, #F5C71A 34%, #0B192C)",
-      avatarText: "#0B192C",
+      cardBg: "rgba(12, 26, 48, 0.94)",
+      cardBorder: "#FFD500",
+      buttonPrimaryBg: "linear-gradient(135deg, #ECC128, #FFD500)",
+      buttonPrimaryText: "#0C1A30",
+      buttonSecondaryBg: "rgba(12, 26, 48, 0.72)",
+      nameColor: "#FFF4D0",
+      mutedColor: "#ECC128",
+      avatarBg: "radial-gradient(circle at 38% 26%, #FFF4D0, #ECC128 34%, #0C1A30)",
+      avatarText: "#0C1A30",
       radius: "30px",
     },
     velours: {
