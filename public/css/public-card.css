@@ -14557,6 +14557,7 @@ body[data-card-theme="graffiti"] .unq-ref-card-overlay,
 }
 
 body[data-card-theme="rick_morty_portal"] .unq-ref-brand,
+body[data-card-theme="casino_royale"] .unq-ref-brand,
 body[data-card-theme="gravity_falls"] .unq-ref-brand,
 body[data-card-theme="venom_symbiote"] .unq-ref-brand,
 body[data-card-theme="snow_leopard"] .unq-ref-brand,
@@ -14569,6 +14570,7 @@ body[data-card-theme="sakura_blossom"] .unq-ref-brand,
 body[data-card-theme="starry_night"] .unq-ref-brand,
 body[data-card-theme="graffiti"] .unq-ref-brand,
 #profile-card-live-preview[data-preview-theme="rick_morty_portal"] .unq-ref-brand,
+#profile-card-live-preview[data-preview-theme="casino_royale"] .unq-ref-brand,
 #profile-card-live-preview[data-preview-theme="gravity_falls"] .unq-ref-brand,
 #profile-card-live-preview[data-preview-theme="venom_symbiote"] .unq-ref-brand,
 #profile-card-live-preview[data-preview-theme="snow_leopard"] .unq-ref-brand,
@@ -14584,6 +14586,7 @@ body[data-card-theme="graffiti"] .unq-ref-brand,
 }
 
 #profile-card-live-preview[data-preview-theme="rick_morty_portal"] .unq-ref-profile,
+#profile-card-live-preview[data-preview-theme="casino_royale"] .unq-ref-profile,
 #profile-card-live-preview[data-preview-theme="gravity_falls"] .unq-ref-profile,
 #profile-card-live-preview[data-preview-theme="venom_symbiote"] .unq-ref-profile,
 #profile-card-live-preview[data-preview-theme="snow_leopard"] .unq-ref-profile,
@@ -15416,4 +15419,72 @@ body[data-card-theme="casino_royale"] #card-view-root > [data-card-view] {
   height: auto !important;
   padding: 0 !important;
   margin: 0 auto !important;
+}
+
+body[data-card-theme="casino_royale"] .public-card-shell,
+body[data-card-theme="casino_royale"] .unq-ref-shell,
+#profile-card-live-preview[data-preview-theme="casino_royale"] .public-card-shell,
+#profile-card-live-preview[data-preview-theme="casino_royale"] .unq-ref-shell {
+  display: block !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  aspect-ratio: auto !important;
+  align-self: flex-start !important;
+  padding: 16px 14px !important;
+  margin: 8px auto !important;
+}
+
+body[data-card-theme="casino_royale"] .unq-ref-shell-meta,
+body[data-card-theme="casino_royale"] .unq-ref-official-unq,
+body[data-card-theme="casino_royale"] .unq-ref-staff-badge,
+body[data-card-theme="casino_royale"] .unq-ref-brand,
+body[data-card-theme="casino_royale"] .unq-ref-profile,
+body[data-card-theme="casino_royale"] .unq-ref-profile.has-pets,
+body[data-card-theme="casino_royale"] .unq-ref-profile.has-emoji-pack,
+body[data-card-theme="casino_royale"] .unq-ref-profile.has-emoji-pack.has-pets,
+#profile-card-live-preview[data-preview-theme="casino_royale"] .unq-ref-shell-meta,
+#profile-card-live-preview[data-preview-theme="casino_royale"] .unq-ref-official-unq,
+#profile-card-live-preview[data-preview-theme="casino_royale"] .unq-ref-staff-badge,
+#profile-card-live-preview[data-preview-theme="casino_royale"] .unq-ref-brand,
+#profile-card-live-preview[data-preview-theme="casino_royale"] .unq-ref-profile,
+#profile-card-live-preview[data-preview-theme="casino_royale"] .unq-ref-profile.has-pets,
+#profile-card-live-preview[data-preview-theme="casino_royale"] .unq-ref-profile.has-emoji-pack,
+#profile-card-live-preview[data-preview-theme="casino_royale"] .unq-ref-profile.has-emoji-pack.has-pets {
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  margin-bottom: 0 !important;
+  justify-content: flex-start !important;
+}
+
+body[data-card-theme="casino_royale"] .unq-ref-brand,
+#profile-card-live-preview[data-preview-theme="casino_royale"] .unq-ref-brand {
+  margin-top: 0 !important;
+  margin-bottom: 18px !important;
+}
+
+body[data-card-theme="casino_royale"] .unq-ref-profile,
+#profile-card-live-preview[data-preview-theme="casino_royale"] .unq-ref-profile {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+
+body[data-card-theme="casino_royale"] .unq-ref-card-overlay,
+body[data-card-theme="casino_royale"] .unq-ref-overlay-svg,
+#profile-card-live-preview[data-preview-theme="casino_royale"] .unq-ref-card-overlay,
+#profile-card-live-preview[data-preview-theme="casino_royale"] .unq-ref-overlay-svg {
+  position: absolute !important;
+  inset: 0 !important;
+  width: auto !important;
+  height: auto !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+body[data-card-theme="casino_royale"] .unq-ref-brand h2,
+#profile-card-live-preview[data-preview-theme="casino_royale"] .unq-ref-brand h2 {
+  font-size: clamp(34px, 11vw, 48px) !important;
+  line-height: 0.94 !important;
 }
