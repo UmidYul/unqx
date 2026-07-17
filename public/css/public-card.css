@@ -1461,14 +1461,22 @@
 [data-card-theme="venom_symbiote"] .public-card-shell {
   position: relative;
   overflow: hidden;
-  border: 2px solid transparent !important;
+  border: 3px solid transparent !important;
+  background-color: #08080d !important;
   background-image:
-    linear-gradient(rgba(8, 8, 12, 0.95), rgba(8, 8, 12, 0.95)),
-    linear-gradient(135deg, #00F0FF 0%, #E53E6D 100%) !important;
+    linear-gradient(115deg, transparent 30%, rgba(255, 255, 255, 0.03) 48%, rgba(255, 255, 255, 0.08) 50%, rgba(255, 255, 255, 0.03) 52%, transparent 70%),
+    radial-gradient(circle at bottom, rgba(229, 62, 109, 0.15) 0%, transparent 70%),
+    radial-gradient(circle at top right, rgba(0, 240, 255, 0.12) 0%, transparent 60%),
+    linear-gradient(rgba(8, 8, 13, 0.96), rgba(8, 8, 13, 0.96)),
+    linear-gradient(135deg, #E53E6D 0%, #08080d 30%, #00F0FF 50%, #08080d 70%, #E53E6D 100%) !important;
   background-origin: border-box;
-  background-clip: padding-box, border-box;
+  background-clip: padding-box, padding-box, padding-box, padding-box, border-box;
   color: #FFFFFF;
-  box-shadow: 0 0 25px rgba(0, 240, 255, 0.15), 0 0 40px rgba(229, 62, 109, 0.1), 0 28px 70px rgba(0, 0, 0, 0.62);
+  box-shadow:
+    0 20px 40px rgba(0, 0, 0, 0.9),
+    0 0 25px rgba(229, 62, 109, 0.15),
+    0 0 40px rgba(0, 240, 255, 0.1) !important;
+  transition: box-shadow 0.5s ease, filter 0.5s ease;
 }
 
 [data-card-theme="venom_symbiote"] .public-card-shell::before {
@@ -1509,16 +1517,28 @@
 
 [data-card-theme="venom_symbiote"] .unq-ref-name,
 [data-card-theme="venom_symbiote"] .unq-ref-name-text {
-  text-shadow: 0 0 8px rgba(0, 240, 255, 0.82);
+  color: #FFFFFF !important;
+  text-shadow: 0 0 8px rgba(0, 240, 255, 0.6), 0 0 15px rgba(0, 240, 255, 0.3) !important;
+}
+
+[data-card-theme="venom_symbiote"] .unq-ref-action-btn,
+[data-card-theme="venom_symbiote"] .unq-ref-follow-toggle,
+[data-card-theme="venom_symbiote"] .unq-follow-action-btn {
+  background: rgba(8, 8, 13, 0.9) !important;
+  border: 2px solid #00F0FF !important;
+  color: #FFFFFF !important;
+  box-shadow: inset 0 0 8px rgba(0, 240, 255, 0.1) !important;
+  transition: background-color 0.3s ease-in-out, border-color 0.3s ease-in-out, color 0.3s ease-in-out, box-shadow 0.3s ease-in-out, transform 0.3s ease-in-out !important;
 }
 
 [data-card-theme="venom_symbiote"] .unq-ref-action-btn:hover,
 [data-card-theme="venom_symbiote"] .unq-ref-follow-toggle:hover,
 [data-card-theme="venom_symbiote"] .unq-follow-action-btn:hover {
-  background: #E53E6D !important;
+  background: #00F0FF !important;
   border-color: #E53E6D !important;
-  color: #FFFFFF !important;
-  box-shadow: 0 0 16px rgba(229, 62, 109, 0.42), 0 0 12px rgba(0, 240, 255, 0.18);
+  color: #050508 !important;
+  box-shadow: 0 0 18px rgba(0, 240, 255, 0.7) !important;
+  transform: scale(1.03);
 }
 
 [data-card-theme="venom_symbiote"] .unq-follow-dialog,
@@ -1599,13 +1619,18 @@
 [data-card-theme="sakura_blossom"] .public-card-shell {
   position: relative;
   overflow: hidden;
-  border: 1px solid rgba(211, 162, 151, 0.5) !important;
-  background:
-    radial-gradient(circle at 18% 14%, rgba(255, 181, 194, 0.16) 0%, transparent 34%),
-    repeating-linear-gradient(88deg, rgba(31, 20, 18, 0.026) 0 1px, transparent 1px 8px),
-    rgba(253, 250, 242, 0.93) !important;
+  border: 3px solid transparent !important;
+  background-color: #F4EAD4 !important;
+  background-image:
+    linear-gradient(rgba(253, 250, 242, 0.96), rgba(244, 234, 212, 0.96)),
+    linear-gradient(135deg, #1F1412 0%, #D2A298 40%, #1F1412 70%, #B04B4B 100%) !important;
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
   color: #1F1412;
-  box-shadow: 0 22px 54px rgba(91, 61, 51, 0.16);
+  box-shadow:
+    0 12px 30px rgba(31, 20, 18, 0.18),
+    0 0 15px rgba(255, 131, 151, 0.08),
+    inset 0 0 20px rgba(244, 234, 212, 0.5) !important;
 }
 
 [data-card-theme="sakura_blossom"] .public-card-shell::before {
@@ -1615,9 +1640,10 @@
   z-index: 0;
   pointer-events: none;
   background:
-    radial-gradient(circle at 20% 30%, rgba(162, 172, 147, 0.1) 0%, transparent 36%),
-    radial-gradient(circle at 82% 22%, rgba(255, 131, 151, 0.12) 0%, transparent 30%),
-    repeating-linear-gradient(12deg, rgba(211, 162, 151, 0.045) 0 1px, transparent 1px 14px);
+    repeating-linear-gradient(0deg, rgba(31, 20, 18, 0.015) 0 1px, transparent 1px 4px),
+    repeating-linear-gradient(90deg, rgba(31, 20, 18, 0.015) 0 1px, transparent 1px 4px),
+    radial-gradient(circle at bottom right, rgba(255, 131, 151, 0.15) 0%, transparent 60%),
+    radial-gradient(circle at top left, rgba(162, 172, 147, 0.12) 0%, transparent 55%);
   mix-blend-mode: multiply;
 }
 
@@ -1628,11 +1654,11 @@
   z-index: 1;
   pointer-events: none;
   background:
-    linear-gradient(90deg, transparent 0%, rgba(44, 30, 26, 0.045) 8%, transparent 18%),
-    repeating-linear-gradient(0deg, rgba(44, 30, 26, 0.025) 0 1px, transparent 1px 6px),
-    radial-gradient(circle at 78% 18%, rgba(255, 131, 151, 0.13) 0 10px, transparent 11px),
-    radial-gradient(circle at 22% 82%, rgba(210, 162, 151, 0.14) 0 14px, transparent 15px);
-  opacity: 0.88;
+    linear-gradient(90deg, transparent 0%, rgba(44, 30, 26, 0.04) 8%, transparent 18%),
+    repeating-linear-gradient(0deg, rgba(44, 30, 26, 0.018) 0 1px, transparent 1px 6px),
+    radial-gradient(circle at 78% 18%, rgba(255, 131, 151, 0.12) 0 10px, transparent 11px),
+    radial-gradient(circle at 22% 82%, rgba(210, 162, 151, 0.12) 0 14px, transparent 15px);
+  opacity: 0.86;
   mix-blend-mode: multiply;
 }
 
@@ -1649,15 +1675,26 @@
 [data-card-theme="sakura_blossom"] .unq-ref-name,
 [data-card-theme="sakura_blossom"] .unq-ref-name-text {
   color: #1F1412 !important;
+  text-shadow: 0 1px 0 rgba(253, 250, 242, 0.5), 0 0 1px rgba(31, 20, 18, 0.2);
+}
+
+[data-card-theme="sakura_blossom"] .unq-ref-action-btn,
+[data-card-theme="sakura_blossom"] .unq-ref-follow-toggle,
+[data-card-theme="sakura_blossom"] .unq-follow-action-btn {
+  background: rgba(253, 250, 242, 0.85) !important;
+  border: 2px solid #D2A298 !important;
+  color: #1F1412 !important;
+  transition: background-color 0.35s ease-in-out, border-color 0.35s ease-in-out, color 0.35s ease-in-out, box-shadow 0.35s ease-in-out, transform 0.35s ease-in-out !important;
 }
 
 [data-card-theme="sakura_blossom"] .unq-ref-action-btn:hover,
 [data-card-theme="sakura_blossom"] .unq-ref-follow-toggle:hover,
 [data-card-theme="sakura_blossom"] .unq-follow-action-btn:hover {
   background: #FF8397 !important;
-  border-color: rgba(211, 162, 151, 0.72) !important;
-  color: #1F1412 !important;
-  box-shadow: 0 12px 26px rgba(200, 92, 92, 0.18);
+  border-color: #FF8397 !important;
+  color: #FFFFFF !important;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(255, 131, 151, 0.4) !important;
 }
 
 [data-card-theme="starry_night"] .public-card-shell {
@@ -3182,18 +3219,20 @@ body[data-page="profile-page"] {
 #profile-card-live-preview[data-preview-theme="sakura_blossom"] {
   --preview-border-color: #D2A298;
   --preview-page-bg:
-    radial-gradient(ellipse at 20% 40%, rgba(162, 172, 147, 0.22) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 45%, rgba(162, 172, 147, 0.18) 0%, transparent 45%),
-    radial-gradient(circle at 50% 10%, rgba(255, 131, 151, 0.08) 0%, transparent 60%),
-    linear-gradient(135deg, #F3EAD8 0%, #FDFAF2 100%);
-  --preview-screen-opacity: 0.38;
+    radial-gradient(ellipse at 22% 42%, rgba(111, 130, 104, 0.22) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 38%, rgba(119, 139, 112, 0.16) 0%, transparent 48%),
+    radial-gradient(ellipse at 52% 76%, rgba(255, 131, 151, 0.1) 0%, transparent 58%),
+    linear-gradient(135deg, #EADBC8 0%, #FDFAF2 58%, #F4EAD4 100%);
+  --preview-screen-opacity: 0.3;
   --preview-screen-pattern:
-    radial-gradient(circle at 20% 24%, rgba(255, 131, 151, 0.18) 0 5px, transparent 6px),
-    repeating-linear-gradient(12deg, rgba(31, 20, 18, 0.035) 0 1px, transparent 1px 18px);
-  --preview-overlay-opacity: 0.58;
+    radial-gradient(circle at 20% 24%, rgba(255, 131, 151, 0.14) 0 5px, transparent 6px),
+    repeating-linear-gradient(0deg, rgba(31, 20, 18, 0.018) 0 1px, transparent 1px 4px),
+    repeating-linear-gradient(90deg, rgba(31, 20, 18, 0.014) 0 1px, transparent 1px 5px);
+  --preview-overlay-opacity: 0.62;
   --preview-overlay-pattern:
     radial-gradient(ellipse at 26% 40%, rgba(162, 172, 147, 0.16) 0%, transparent 46%),
-    radial-gradient(circle at 76% 30%, rgba(255, 131, 151, 0.16) 0%, transparent 36%);
+    radial-gradient(circle at 76% 30%, rgba(255, 131, 151, 0.16) 0%, transparent 36%),
+    repeating-linear-gradient(12deg, rgba(31, 20, 18, 0.025) 0 1px, transparent 1px 18px);
 }
 
 #profile-card-live-preview[data-preview-theme="starry_night"] {
@@ -4018,18 +4057,21 @@ body[data-card-theme="gravity_falls"]::before {
 }
 
 body[data-card-theme="venom_symbiote"] {
-  --theme-page-bg: #15040A;
+  --theme-page-bg: #050508;
   --theme-screen-opacity: 0.46;
   --theme-screen-pattern:
     radial-gradient(circle at 80% 20%, rgba(0, 240, 255, 0.16) 0%, transparent 42%),
     radial-gradient(circle at 18% 74%, rgba(229, 62, 109, 0.16) 0%, transparent 36%),
     repeating-linear-gradient(115deg, rgba(229, 62, 109, 0.08) 0 2px, transparent 2px 28px);
-  background-color: #15040A !important;
+  background-color: #050508 !important;
   background-image:
     radial-gradient(circle at 82% 18%, rgba(0, 240, 255, 0.16) 0%, transparent 38%),
     radial-gradient(circle at 18% 82%, rgba(229, 62, 109, 0.18) 0%, transparent 36%),
     radial-gradient(ellipse at center, rgba(8, 8, 12, 0.72) 0%, transparent 68%),
-    linear-gradient(135deg, #15040A 0%, #08080C 56%, #020205 100%) !important;
+    linear-gradient(135deg, #050508 0%, #08080C 56%, #020205 100%) !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow-x: hidden !important;
 }
 
 body[data-card-theme="venom_symbiote"]::before {
@@ -4061,18 +4103,21 @@ body[data-card-theme="shinobi_path"]::before {
 }
 
 body[data-card-theme="sakura_blossom"] {
-  --theme-page-bg: #F3EAD8;
-  --theme-screen-opacity: 0.34;
+  --theme-page-bg: #EADBC8;
+  --theme-screen-opacity: 0.28;
   --theme-screen-pattern:
-    radial-gradient(circle at 20% 24%, rgba(255, 131, 151, 0.18) 0 5px, transparent 6px),
-    repeating-linear-gradient(12deg, rgba(31, 20, 18, 0.035) 0 1px, transparent 1px 18px);
-  background-color: #F3EAD8 !important;
+    radial-gradient(circle at 20% 24%, rgba(255, 131, 151, 0.14) 0 5px, transparent 6px),
+    repeating-linear-gradient(12deg, rgba(31, 20, 18, 0.026) 0 1px, transparent 1px 18px);
+  background-color: #EADBC8 !important;
   background-image:
-    radial-gradient(ellipse at 20% 40%, rgba(162, 172, 147, 0.22) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 45%, rgba(162, 172, 147, 0.18) 0%, transparent 45%),
-    radial-gradient(circle at 50% 10%, rgba(255, 131, 151, 0.08) 0%, transparent 60%),
-    linear-gradient(135deg, #F3EAD8 0%, #FDFAF2 100%) !important;
+    radial-gradient(ellipse at 22% 42%, rgba(111, 130, 104, 0.22) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 38%, rgba(119, 139, 112, 0.16) 0%, transparent 48%),
+    radial-gradient(ellipse at 52% 76%, rgba(255, 131, 151, 0.1) 0%, transparent 58%),
+    linear-gradient(135deg, #EADBC8 0%, #FDFAF2 58%, #F4EAD4 100%) !important;
   background-attachment: fixed !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow-x: hidden !important;
 }
 
 body[data-card-theme="sakura_blossom"]::before {
@@ -4258,9 +4303,23 @@ body[data-card-theme="starry_night"]::before {
 .venom-symbiote-effects {
   position: fixed;
   inset: 0;
-  z-index: 0;
+  z-index: 2;
   pointer-events: none;
   overflow: hidden;
+}
+
+.neon-lightning {
+  position: absolute;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(circle at 70% 20%, rgba(0, 240, 255, 0.15) 0%, transparent 60%),
+    radial-gradient(circle at 12% 86%, rgba(229, 62, 109, 0.12) 0%, transparent 54%);
+  opacity: 0;
+  animation: neon-sparkle 6s infinite;
 }
 
 .venom-lightning {
@@ -4284,26 +4343,116 @@ body[data-card-theme="starry_night"]::before {
 
 .symbiote-tendril {
   position: absolute;
-  width: 150px;
-  height: 300px;
-  filter: blur(10px);
+  width: 15px;
+  height: 40px;
+  background: linear-gradient(to top, #000000, #12050b);
+  border-radius: 50% 50% 30% 30%;
+  filter: blur(2px);
   pointer-events: none;
-  animation: tendril-pulse 7s ease-in-out infinite;
+  z-index: 1;
+  animation: symbiote-float 10s infinite ease-in-out;
 }
 
 .symbiote-tendril-left {
   left: -50px;
   top: 30%;
+  width: 150px;
+  height: 300px;
   background: radial-gradient(ellipse at left, rgba(21, 4, 10, 0.94) 0%, rgba(8, 8, 12, 0.54) 48%, transparent 80%);
   border-radius: 50% 0 0 50%;
+  filter: blur(10px);
+  animation: tendril-pulse 7s ease-in-out infinite;
 }
 
 .symbiote-tendril-right {
   right: -54px;
   top: 18%;
+  width: 150px;
+  height: 300px;
   background: radial-gradient(ellipse at right, rgba(229, 62, 109, 0.28) 0%, rgba(8, 8, 12, 0.6) 46%, transparent 82%);
   border-radius: 0 50% 50% 0;
+  filter: blur(10px);
+  animation: tendril-pulse 7s ease-in-out infinite;
   animation-delay: 1.8s;
+}
+
+.tendril-1 {
+  left: 8%;
+  animation-duration: 9s;
+  animation-delay: 0s;
+}
+
+.tendril-2 {
+  left: 23%;
+  width: 25px;
+  height: 60px;
+  animation-duration: 13s;
+  animation-delay: -3s;
+}
+
+.tendril-3 {
+  left: 45%;
+  width: 10px;
+  height: 30px;
+  animation-duration: 11s;
+  animation-delay: -6s;
+}
+
+.tendril-4 {
+  left: 68%;
+  width: 30px;
+  height: 70px;
+  filter: blur(3px);
+  animation-duration: 15s;
+  animation-delay: -2s;
+}
+
+.tendril-5 {
+  left: 85%;
+  width: 12px;
+  height: 35px;
+  animation-duration: 8s;
+  animation-delay: -5s;
+}
+
+@keyframes symbiote-float {
+  0% {
+    transform: translateY(110vh) scaleX(1) scaleY(1);
+    opacity: 0;
+  }
+
+  30% {
+    opacity: 0.7;
+    transform: translateY(70vh) scaleX(0.8) scaleY(1.2);
+  }
+
+  60% {
+    transform: translateY(30vh) scaleX(1.1) scaleY(0.9);
+  }
+
+  100% {
+    transform: translateY(-10vh) scaleX(1) scaleY(1);
+    opacity: 0;
+  }
+}
+
+@keyframes neon-sparkle {
+  0%,
+  94%,
+  98%,
+  100% {
+    opacity: 0;
+  }
+
+  95%,
+  97% {
+    opacity: 0.6;
+    filter: drop-shadow(0 0 15px #00F0FF);
+  }
+
+  96% {
+    opacity: 0.2;
+  }
 }
 
 @keyframes electric-flash {
@@ -4472,9 +4621,10 @@ body[data-card-theme="starry_night"]::before {
 .sakura-blossom-effects {
   position: fixed;
   inset: 0;
-  z-index: 0;
+  z-index: 12;
   pointer-events: none;
   overflow: hidden;
+  perspective: 900px;
 }
 
 .sakura-calligraphy {
@@ -4492,35 +4642,97 @@ body[data-card-theme="starry_night"]::before {
 }
 
 .sakura-petal {
-  position: absolute;
-  top: -24px;
-  background: linear-gradient(135deg, #FFB5C2 0%, #FF8397 100%);
+  position: fixed;
+  top: -36px;
+  width: 12px;
+  height: 10px;
+  background: linear-gradient(135deg, #FFB5C2 0%, #FF8397 48%, #B04B4B 100%);
   border-radius: 50% 0% 50% 50%;
   opacity: 0;
   pointer-events: none;
-  z-index: 0;
-  box-shadow: 0 2px 5px rgba(200, 92, 92, 0.15);
+  z-index: 4;
+  box-shadow: 0 2px 5px rgba(176, 75, 75, 0.2);
   transform-origin: bottom left;
-  animation: sakura-drift 14s linear infinite;
+  animation: sakura-fall-3d 12s linear infinite;
   will-change: transform, opacity;
 }
 
-@keyframes sakura-drift {
+.sakura-petal--foreground {
+  width: 18px;
+  height: 14px;
+  z-index: 10;
+  filter: blur(0.8px);
+}
+
+.sakura-petal--midground {
+  width: 12px;
+  height: 10px;
+  z-index: 5;
+}
+
+.sakura-petal--background {
+  width: 8px;
+  height: 6px;
+  z-index: 1;
+  filter: blur(0.25px);
+}
+
+.petal-1 {
+  --petal-drift: 120px;
+}
+
+.petal-2 {
+  --petal-drift: -88px;
+}
+
+.petal-3 {
+  --petal-drift: 64px;
+}
+
+.petal-4 {
+  --petal-drift: -118px;
+}
+
+.petal-5 {
+  --petal-drift: 96px;
+}
+
+.petal-6 {
+  --petal-drift: -58px;
+}
+
+.petal-7 {
+  --petal-drift: 142px;
+}
+
+.petal-8 {
+  --petal-drift: -134px;
+}
+
+@keyframes sakura-fall-3d {
   0% {
-    transform: translateY(-10px) translateX(0) rotate(0deg);
+    transform: translate3d(0, -8vh, 0) rotate(var(--petal-start-rotate, 0deg)) rotateY(0deg) scale(0.72);
     opacity: 0;
   }
 
   10% {
-    opacity: 0.85;
+    opacity: 0.92;
+  }
+
+  38% {
+    transform: translate3d(calc(var(--petal-drift, 80px) * 0.42), 36vh, 34px) rotate(180deg) rotateY(150deg) scale(1);
+  }
+
+  66% {
+    transform: translate3d(calc(var(--petal-drift, 80px) * -0.24), 68vh, -26px) rotate(360deg) rotateY(270deg) scale(0.86);
   }
 
   90% {
-    opacity: 0.85;
+    opacity: 0.86;
   }
 
   100% {
-    transform: translateY(105vh) translateX(80px) rotate(420deg);
+    transform: translate3d(var(--petal-drift, 120px), 108vh, 0) rotate(540deg) rotateY(360deg) scale(1.08);
     opacity: 0;
   }
 }
@@ -9511,6 +9723,320 @@ body[data-card-theme="color_pink"] {
   backdrop-filter: blur(8px);
 }
 
+/* Theme-aware public card navigation/search controls */
+body[data-card-theme="starry_night"] {
+  --unqx-nav-bg: rgba(12, 26, 48, 0.86);
+  --unqx-nav-border: #ecc128;
+  --unqx-nav-border-width: 1.5px;
+  --unqx-nav-text: #fff4d0;
+  --unqx-nav-icon: #ecc128;
+  --unqx-nav-input: #fff4d0;
+  --unqx-nav-placeholder: rgba(255, 244, 208, 0.46);
+  --unqx-nav-chip: rgba(236, 193, 40, 0.72);
+  --unqx-nav-hover-bg: #ecc128;
+  --unqx-nav-hover-text: #0c1a30;
+  --unqx-nav-shadow: 0 4px 15px rgba(11, 21, 40, 0.6), inset 0 0 10px rgba(236, 193, 40, 0.15);
+  --unqx-nav-hover-shadow: 0 0 18px rgba(236, 193, 40, 0.36), 0 8px 24px rgba(11, 21, 40, 0.44);
+  --unqx-search-result-text: #fff4d0;
+  --unqx-search-result-strong: #fff9df;
+  --unqx-search-result-muted: rgba(255, 244, 208, 0.66);
+  --unqx-search-result-hover: rgba(236, 193, 40, 0.14);
+}
+
+body[data-card-theme="sakura_blossom"] {
+  --unqx-nav-bg: rgba(253, 250, 242, 0.92);
+  --unqx-nav-border: #d2a298;
+  --unqx-nav-border-width: 1.5px;
+  --unqx-nav-blur: 5px;
+  --unqx-nav-text: #1f1412;
+  --unqx-nav-icon: #c85c5c;
+  --unqx-nav-input: #1f1412;
+  --unqx-nav-placeholder: rgba(31, 20, 18, 0.4);
+  --unqx-nav-chip: rgba(200, 92, 92, 0.68);
+  --unqx-nav-hover-bg: #ff8397;
+  --unqx-nav-hover-text: #ffffff;
+  --unqx-nav-shadow: 0 4px 10px rgba(31, 20, 18, 0.05);
+  --unqx-nav-hover-shadow: 0 10px 24px rgba(200, 92, 92, 0.16);
+  --unqx-search-result-text: #1f1412;
+  --unqx-search-result-strong: #1f1412;
+  --unqx-search-result-muted: rgba(31, 20, 18, 0.58);
+  --unqx-search-result-hover: rgba(255, 131, 151, 0.14);
+}
+
+body[data-card-theme="rick_morty_portal"] {
+  --unqx-nav-bg: rgba(10, 22, 17, 0.9);
+  --unqx-nav-border: #39ff14;
+  --unqx-nav-border-width: 1.5px;
+  --unqx-nav-blur: 6px;
+  --unqx-nav-text: #39ff14;
+  --unqx-nav-icon: #a6ff96;
+  --unqx-nav-input: #a6ff96;
+  --unqx-nav-placeholder: rgba(57, 255, 20, 0.42);
+  --unqx-nav-chip: rgba(166, 255, 150, 0.75);
+  --unqx-nav-hover-bg: #39ff14;
+  --unqx-nav-hover-text: #05080c;
+  --unqx-nav-shadow: 0 0 10px rgba(57, 255, 20, 0.25), inset 0 0 6px rgba(57, 255, 20, 0.1);
+  --unqx-nav-hover-shadow: 0 0 18px rgba(57, 255, 20, 0.52);
+  --unqx-search-result-text: #a6ff96;
+  --unqx-search-result-strong: #39ff14;
+  --unqx-search-result-muted: rgba(166, 255, 150, 0.65);
+  --unqx-search-result-hover: rgba(57, 255, 20, 0.12);
+}
+
+body[data-card-theme="venom_symbiote"] {
+  --unqx-nav-bg: rgba(5, 5, 8, 0.93);
+  --unqx-nav-border: #e53e6d;
+  --unqx-nav-border-width: 1.5px;
+  --unqx-nav-text: #ffffff;
+  --unqx-nav-icon: #00f0ff;
+  --unqx-nav-input: #ffffff;
+  --unqx-nav-placeholder: rgba(255, 255, 255, 0.3);
+  --unqx-nav-chip: rgba(0, 240, 255, 0.75);
+  --unqx-nav-hover-bg: #e53e6d;
+  --unqx-nav-hover-text: #ffffff;
+  --unqx-nav-hover-border: #00f0ff;
+  --unqx-nav-shadow: 0 4px 15px rgba(0, 0, 0, 0.8), 0 0 10px rgba(229, 62, 109, 0.2);
+  --unqx-nav-hover-shadow: 0 0 15px rgba(0, 240, 255, 0.6);
+  --unqx-search-result-text: #ffffff;
+  --unqx-search-result-strong: #ffffff;
+  --unqx-search-result-muted: rgba(255, 255, 255, 0.58);
+  --unqx-search-result-hover: rgba(229, 62, 109, 0.16);
+}
+
+body[data-card-theme="shinobi_path"] {
+  --unqx-nav-bg: rgba(20, 27, 38, 0.95);
+  --unqx-nav-border: #ff8c00;
+  --unqx-nav-border-width: 2px;
+  --unqx-nav-text: #ffffff;
+  --unqx-nav-icon: #00f0ff;
+  --unqx-nav-input: #ffffff;
+  --unqx-nav-placeholder: rgba(255, 255, 255, 0.45);
+  --unqx-nav-chip: rgba(255, 140, 0, 0.74);
+  --unqx-nav-hover-bg: #ff8c00;
+  --unqx-nav-hover-text: #141b26;
+  --unqx-nav-shadow: 0 0 14px rgba(255, 140, 0, 0.2), inset 0 0 8px rgba(0, 240, 255, 0.08);
+  --unqx-nav-hover-shadow: 0 0 18px rgba(255, 140, 0, 0.36);
+  --unqx-search-result-text: #ffffff;
+  --unqx-search-result-strong: #ff8c00;
+  --unqx-search-result-muted: rgba(255, 255, 255, 0.62);
+  --unqx-search-result-hover: rgba(255, 140, 0, 0.14);
+}
+
+body[data-card-theme="starry_night"] .interactive-btn,
+body[data-card-theme="starry_night"] #card-slug-search-form > div,
+body[data-card-theme="starry_night"] #card-slug-search-results,
+body[data-card-theme="starry_night"] .nav-back-button,
+body[data-card-theme="starry_night"] .nav-input-wrapper,
+body[data-card-theme="starry_night"] .nav-search-button,
+body[data-card-theme="starry_night"] .info-badge,
+body[data-card-theme="starry_night"] .unq-ref-slug-chip,
+body[data-card-theme="starry_night"] .unq-ref-slug-price,
+body[data-card-theme="starry_night"] .unq-ref-share,
+body[data-card-theme="starry_night"] .unq-ref-top-badge,
+body[data-card-theme="sakura_blossom"] .interactive-btn,
+body[data-card-theme="sakura_blossom"] #card-slug-search-form > div,
+body[data-card-theme="sakura_blossom"] #card-slug-search-results,
+body[data-card-theme="sakura_blossom"] .nav-back-button,
+body[data-card-theme="sakura_blossom"] .nav-input-wrapper,
+body[data-card-theme="sakura_blossom"] .nav-search-button,
+body[data-card-theme="sakura_blossom"] .info-badge,
+body[data-card-theme="sakura_blossom"] .unq-ref-slug-chip,
+body[data-card-theme="sakura_blossom"] .unq-ref-slug-price,
+body[data-card-theme="sakura_blossom"] .unq-ref-share,
+body[data-card-theme="sakura_blossom"] .unq-ref-top-badge,
+body[data-card-theme="rick_morty_portal"] .interactive-btn,
+body[data-card-theme="rick_morty_portal"] #card-slug-search-form > div,
+body[data-card-theme="rick_morty_portal"] #card-slug-search-results,
+body[data-card-theme="rick_morty_portal"] .nav-back-button,
+body[data-card-theme="rick_morty_portal"] .nav-input-wrapper,
+body[data-card-theme="rick_morty_portal"] .nav-search-button,
+body[data-card-theme="rick_morty_portal"] .info-badge,
+body[data-card-theme="rick_morty_portal"] .unq-ref-slug-chip,
+body[data-card-theme="rick_morty_portal"] .unq-ref-slug-price,
+body[data-card-theme="rick_morty_portal"] .unq-ref-share,
+body[data-card-theme="rick_morty_portal"] .unq-ref-top-badge,
+body[data-card-theme="venom_symbiote"] .interactive-btn,
+body[data-card-theme="venom_symbiote"] #card-slug-search-form > div,
+body[data-card-theme="venom_symbiote"] #card-slug-search-results,
+body[data-card-theme="venom_symbiote"] .nav-back-button,
+body[data-card-theme="venom_symbiote"] .nav-input-wrapper,
+body[data-card-theme="venom_symbiote"] .nav-search-button,
+body[data-card-theme="venom_symbiote"] .info-badge,
+body[data-card-theme="venom_symbiote"] .unq-ref-slug-chip,
+body[data-card-theme="venom_symbiote"] .unq-ref-slug-price,
+body[data-card-theme="venom_symbiote"] .unq-ref-share,
+body[data-card-theme="venom_symbiote"] .unq-ref-top-badge,
+body[data-card-theme="shinobi_path"] .interactive-btn,
+body[data-card-theme="shinobi_path"] #card-slug-search-form > div,
+body[data-card-theme="shinobi_path"] #card-slug-search-results,
+body[data-card-theme="shinobi_path"] .nav-back-button,
+body[data-card-theme="shinobi_path"] .nav-input-wrapper,
+body[data-card-theme="shinobi_path"] .nav-search-button,
+body[data-card-theme="shinobi_path"] .info-badge,
+body[data-card-theme="shinobi_path"] .unq-ref-slug-chip,
+body[data-card-theme="shinobi_path"] .unq-ref-slug-price,
+body[data-card-theme="shinobi_path"] .unq-ref-share,
+body[data-card-theme="shinobi_path"] .unq-ref-top-badge {
+  background: var(--unqx-nav-bg) !important;
+  border: var(--unqx-nav-border-width, 1.5px) solid var(--unqx-nav-border) !important;
+  color: var(--unqx-nav-text) !important;
+  box-shadow: var(--unqx-nav-shadow) !important;
+  -webkit-backdrop-filter: blur(var(--unqx-nav-blur, 8px));
+  backdrop-filter: blur(var(--unqx-nav-blur, 8px));
+}
+
+body[data-card-theme="starry_night"] #card-slug-search-results,
+body[data-card-theme="sakura_blossom"] #card-slug-search-results,
+body[data-card-theme="rick_morty_portal"] #card-slug-search-results,
+body[data-card-theme="venom_symbiote"] #card-slug-search-results,
+body[data-card-theme="shinobi_path"] #card-slug-search-results {
+  --card-search-result-text: var(--unqx-search-result-text);
+  --card-search-result-strong: var(--unqx-search-result-strong);
+  --card-search-result-muted: var(--unqx-search-result-muted);
+  --card-search-result-hover: var(--unqx-search-result-hover);
+}
+
+body[data-card-theme="starry_night"] #card-slug-search-form input,
+body[data-card-theme="starry_night"] .nav-input-wrapper input,
+body[data-card-theme="sakura_blossom"] #card-slug-search-form input,
+body[data-card-theme="sakura_blossom"] .nav-input-wrapper input,
+body[data-card-theme="rick_morty_portal"] #card-slug-search-form input,
+body[data-card-theme="rick_morty_portal"] .nav-input-wrapper input,
+body[data-card-theme="venom_symbiote"] #card-slug-search-form input,
+body[data-card-theme="venom_symbiote"] .nav-input-wrapper input,
+body[data-card-theme="shinobi_path"] #card-slug-search-form input,
+body[data-card-theme="shinobi_path"] .nav-input-wrapper input {
+  color: var(--unqx-nav-input) !important;
+}
+
+body[data-card-theme="starry_night"] #card-slug-search-form input::placeholder,
+body[data-card-theme="starry_night"] .nav-input-wrapper input::placeholder,
+body[data-card-theme="sakura_blossom"] #card-slug-search-form input::placeholder,
+body[data-card-theme="sakura_blossom"] .nav-input-wrapper input::placeholder,
+body[data-card-theme="rick_morty_portal"] #card-slug-search-form input::placeholder,
+body[data-card-theme="rick_morty_portal"] .nav-input-wrapper input::placeholder,
+body[data-card-theme="venom_symbiote"] #card-slug-search-form input::placeholder,
+body[data-card-theme="venom_symbiote"] .nav-input-wrapper input::placeholder,
+body[data-card-theme="shinobi_path"] #card-slug-search-form input::placeholder,
+body[data-card-theme="shinobi_path"] .nav-input-wrapper input::placeholder {
+  color: var(--unqx-nav-placeholder) !important;
+}
+
+body[data-card-theme="starry_night"] #card-slug-search-form span,
+body[data-card-theme="sakura_blossom"] #card-slug-search-form span,
+body[data-card-theme="rick_morty_portal"] #card-slug-search-form span,
+body[data-card-theme="venom_symbiote"] #card-slug-search-form span,
+body[data-card-theme="shinobi_path"] #card-slug-search-form span {
+  color: var(--unqx-nav-chip) !important;
+}
+
+body[data-card-theme="starry_night"] #public-card-layout > div:first-child > .interactive-btn svg,
+body[data-card-theme="starry_night"] #card-slug-search-form button svg,
+body[data-card-theme="starry_night"] .nav-back-button svg,
+body[data-card-theme="starry_night"] .nav-search-button svg,
+body[data-card-theme="starry_night"] .info-badge svg,
+body[data-card-theme="starry_night"] .unq-ref-share svg,
+body[data-card-theme="sakura_blossom"] #public-card-layout > div:first-child > .interactive-btn svg,
+body[data-card-theme="sakura_blossom"] #card-slug-search-form button svg,
+body[data-card-theme="sakura_blossom"] .nav-back-button svg,
+body[data-card-theme="sakura_blossom"] .nav-search-button svg,
+body[data-card-theme="sakura_blossom"] .info-badge svg,
+body[data-card-theme="sakura_blossom"] .unq-ref-share svg,
+body[data-card-theme="rick_morty_portal"] #public-card-layout > div:first-child > .interactive-btn svg,
+body[data-card-theme="rick_morty_portal"] #card-slug-search-form button svg,
+body[data-card-theme="rick_morty_portal"] .nav-back-button svg,
+body[data-card-theme="rick_morty_portal"] .nav-search-button svg,
+body[data-card-theme="rick_morty_portal"] .info-badge svg,
+body[data-card-theme="rick_morty_portal"] .unq-ref-share svg,
+body[data-card-theme="venom_symbiote"] #public-card-layout > div:first-child > .interactive-btn svg,
+body[data-card-theme="venom_symbiote"] #card-slug-search-form button svg,
+body[data-card-theme="venom_symbiote"] .nav-back-button svg,
+body[data-card-theme="venom_symbiote"] .nav-search-button svg,
+body[data-card-theme="venom_symbiote"] .info-badge svg,
+body[data-card-theme="venom_symbiote"] .unq-ref-share svg,
+body[data-card-theme="shinobi_path"] #public-card-layout > div:first-child > .interactive-btn svg,
+body[data-card-theme="shinobi_path"] #card-slug-search-form button svg,
+body[data-card-theme="shinobi_path"] .nav-back-button svg,
+body[data-card-theme="shinobi_path"] .nav-search-button svg,
+body[data-card-theme="shinobi_path"] .info-badge svg,
+body[data-card-theme="shinobi_path"] .unq-ref-share svg {
+  color: var(--unqx-nav-icon) !important;
+}
+
+body[data-card-theme="starry_night"] .interactive-btn:hover,
+body[data-card-theme="starry_night"] .nav-back-button:hover,
+body[data-card-theme="starry_night"] .nav-search-button:hover,
+body[data-card-theme="starry_night"] .unq-ref-slug-chip:hover,
+body[data-card-theme="starry_night"] .unq-ref-share:hover,
+body[data-card-theme="sakura_blossom"] .interactive-btn:hover,
+body[data-card-theme="sakura_blossom"] .nav-back-button:hover,
+body[data-card-theme="sakura_blossom"] .nav-search-button:hover,
+body[data-card-theme="sakura_blossom"] .unq-ref-slug-chip:hover,
+body[data-card-theme="sakura_blossom"] .unq-ref-share:hover,
+body[data-card-theme="rick_morty_portal"] .interactive-btn:hover,
+body[data-card-theme="rick_morty_portal"] .nav-back-button:hover,
+body[data-card-theme="rick_morty_portal"] .nav-search-button:hover,
+body[data-card-theme="rick_morty_portal"] .unq-ref-slug-chip:hover,
+body[data-card-theme="rick_morty_portal"] .unq-ref-share:hover,
+body[data-card-theme="venom_symbiote"] .interactive-btn:hover,
+body[data-card-theme="venom_symbiote"] .nav-back-button:hover,
+body[data-card-theme="venom_symbiote"] .nav-search-button:hover,
+body[data-card-theme="venom_symbiote"] .unq-ref-slug-chip:hover,
+body[data-card-theme="venom_symbiote"] .unq-ref-share:hover,
+body[data-card-theme="shinobi_path"] .interactive-btn:hover,
+body[data-card-theme="shinobi_path"] .nav-back-button:hover,
+body[data-card-theme="shinobi_path"] .nav-search-button:hover,
+body[data-card-theme="shinobi_path"] .unq-ref-slug-chip:hover,
+body[data-card-theme="shinobi_path"] .unq-ref-share:hover {
+  background: var(--unqx-nav-hover-bg) !important;
+  border-color: var(--unqx-nav-hover-border, var(--unqx-nav-border)) !important;
+  color: var(--unqx-nav-hover-text) !important;
+  box-shadow: var(--unqx-nav-hover-shadow) !important;
+}
+
+body[data-card-theme="starry_night"] .interactive-btn:hover svg,
+body[data-card-theme="starry_night"] .nav-back-button:hover svg,
+body[data-card-theme="starry_night"] .nav-search-button:hover svg,
+body[data-card-theme="starry_night"] .unq-ref-share:hover svg,
+body[data-card-theme="sakura_blossom"] .interactive-btn:hover svg,
+body[data-card-theme="sakura_blossom"] .nav-back-button:hover svg,
+body[data-card-theme="sakura_blossom"] .nav-search-button:hover svg,
+body[data-card-theme="sakura_blossom"] .unq-ref-share:hover svg,
+body[data-card-theme="rick_morty_portal"] .interactive-btn:hover svg,
+body[data-card-theme="rick_morty_portal"] .nav-back-button:hover svg,
+body[data-card-theme="rick_morty_portal"] .nav-search-button:hover svg,
+body[data-card-theme="rick_morty_portal"] .unq-ref-share:hover svg,
+body[data-card-theme="venom_symbiote"] .interactive-btn:hover svg,
+body[data-card-theme="venom_symbiote"] .nav-back-button:hover svg,
+body[data-card-theme="venom_symbiote"] .nav-search-button:hover svg,
+body[data-card-theme="venom_symbiote"] .unq-ref-share:hover svg,
+body[data-card-theme="shinobi_path"] .interactive-btn:hover svg,
+body[data-card-theme="shinobi_path"] .nav-back-button:hover svg,
+body[data-card-theme="shinobi_path"] .nav-search-button:hover svg,
+body[data-card-theme="shinobi_path"] .unq-ref-share:hover svg {
+  color: var(--unqx-nav-hover-text) !important;
+}
+
+[data-card-theme] .unq-ref-save,
+[data-card-theme] .unq-ref-save:hover,
+[data-card-theme] .unq-ref-save:focus,
+[data-card-theme] .unq-ref-save:active {
+  background: transparent !important;
+  border-color: transparent !important;
+  color: inherit !important;
+  box-shadow: none !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  transform: none !important;
+}
+
+[data-card-theme] .unq-ref-save svg,
+[data-card-theme] .unq-ref-save:hover svg,
+[data-card-theme] .unq-ref-save:focus svg,
+[data-card-theme] .unq-ref-save:active svg {
+  color: currentColor !important;
+}
+
 .private-card-screen {
   background: transparent;
 }
@@ -11304,6 +11830,106 @@ body[data-card-theme="starry_night"] .unq-ref-top,
   padding-bottom: 0 !important;
 }
 
+/* Sakura Blossom zero-gap reset: compact scroll layout with no system spacer. */
+body[data-card-theme="sakura_blossom"] main {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-height: 100vh !important;
+  min-height: 100svh !important;
+  min-height: 100dvh !important;
+  margin: 0 !important;
+  padding: max(10px, env(safe-area-inset-top, 0px)) 0 max(10px, env(safe-area-inset-bottom, 0px)) !important;
+  overflow-x: hidden !important;
+}
+
+body[data-card-theme="sakura_blossom"] #public-card-layout,
+body[data-card-theme="sakura_blossom"] #card-view-root,
+body[data-card-theme="sakura_blossom"] #card-view-root > [data-card-view],
+#profile-card-live-preview[data-preview-theme="sakura_blossom"] [data-card-view] {
+  width: 100% !important;
+  max-width: 430px !important;
+  margin: 0 auto !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
+}
+
+body[data-card-theme="sakura_blossom"] #public-card-layout > div:first-child {
+  margin-bottom: 8px !important;
+}
+
+body[data-card-theme="sakura_blossom"] .public-card-shell,
+#profile-card-live-preview[data-preview-theme="sakura_blossom"] .public-card-shell {
+  width: 92% !important;
+  max-width: 430px !important;
+  margin: 10px auto !important;
+  padding: 16px 14px !important;
+  box-sizing: border-box !important;
+}
+
+body[data-card-theme="sakura_blossom"] .unq-ref-shell,
+#profile-card-live-preview[data-preview-theme="sakura_blossom"] .unq-ref-shell {
+  gap: 14px !important;
+}
+
+body[data-card-theme="sakura_blossom"] .unq-ref-top,
+#profile-card-live-preview[data-preview-theme="sakura_blossom"] .unq-ref-top {
+  margin-bottom: 10px !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+/* Venom Symbiote zero-gap reset: compact glossy organism layout. */
+body[data-card-theme="venom_symbiote"] main {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-height: 100vh !important;
+  min-height: 100svh !important;
+  min-height: 100dvh !important;
+  margin: 0 !important;
+  padding: max(10px, env(safe-area-inset-top, 0px)) 0 max(10px, env(safe-area-inset-bottom, 0px)) !important;
+  overflow-x: hidden !important;
+}
+
+body[data-card-theme="venom_symbiote"] #public-card-layout,
+body[data-card-theme="venom_symbiote"] #card-view-root,
+body[data-card-theme="venom_symbiote"] #card-view-root > [data-card-view],
+#profile-card-live-preview[data-preview-theme="venom_symbiote"] [data-card-view] {
+  width: 100% !important;
+  max-width: 430px !important;
+  margin: 0 auto !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
+}
+
+body[data-card-theme="venom_symbiote"] #public-card-layout > div:first-child {
+  margin-bottom: 8px !important;
+}
+
+body[data-card-theme="venom_symbiote"] .public-card-shell,
+#profile-card-live-preview[data-preview-theme="venom_symbiote"] .public-card-shell {
+  width: 92% !important;
+  max-width: 430px !important;
+  margin: 10px auto !important;
+  padding: 16px 14px !important;
+  box-sizing: border-box !important;
+}
+
+body[data-card-theme="venom_symbiote"] .unq-ref-shell,
+#profile-card-live-preview[data-preview-theme="venom_symbiote"] .unq-ref-shell {
+  gap: 14px !important;
+}
+
+body[data-card-theme="venom_symbiote"] .unq-ref-top,
+#profile-card-live-preview[data-preview-theme="venom_symbiote"] .unq-ref-top {
+  margin-bottom: 10px !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
 @media (max-width: 480px) {
   body[data-card-theme="starry_night"] main {
     justify-content: flex-start !important;
@@ -11320,6 +11946,44 @@ body[data-card-theme="starry_night"] .unq-ref-top,
 
   body[data-card-theme="starry_night"] .public-card-shell,
   #profile-card-live-preview[data-preview-theme="starry_night"] .public-card-shell {
+    padding: 12px 10px !important;
+    margin: 6px auto !important;
+  }
+
+  body[data-card-theme="sakura_blossom"] main {
+    justify-content: flex-start !important;
+    padding-top: max(6px, env(safe-area-inset-top, 0px)) !important;
+    padding-bottom: max(6px, env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  body[data-card-theme="sakura_blossom"] #public-card-layout,
+  body[data-card-theme="sakura_blossom"] #card-view-root,
+  body[data-card-theme="sakura_blossom"] #card-view-root > [data-card-view],
+  #profile-card-live-preview[data-preview-theme="sakura_blossom"] [data-card-view] {
+    max-width: min(430px, 100vw) !important;
+  }
+
+  body[data-card-theme="sakura_blossom"] .public-card-shell,
+  #profile-card-live-preview[data-preview-theme="sakura_blossom"] .public-card-shell {
+    padding: 12px 10px !important;
+    margin: 6px auto !important;
+  }
+
+  body[data-card-theme="venom_symbiote"] main {
+    justify-content: flex-start !important;
+    padding-top: max(6px, env(safe-area-inset-top, 0px)) !important;
+    padding-bottom: max(6px, env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  body[data-card-theme="venom_symbiote"] #public-card-layout,
+  body[data-card-theme="venom_symbiote"] #card-view-root,
+  body[data-card-theme="venom_symbiote"] #card-view-root > [data-card-view],
+  #profile-card-live-preview[data-preview-theme="venom_symbiote"] [data-card-view] {
+    max-width: min(430px, 100vw) !important;
+  }
+
+  body[data-card-theme="venom_symbiote"] .public-card-shell,
+  #profile-card-live-preview[data-preview-theme="venom_symbiote"] .public-card-shell {
     padding: 12px 10px !important;
     margin: 6px auto !important;
   }

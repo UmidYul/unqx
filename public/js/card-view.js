@@ -3993,9 +3993,15 @@
       : "";
     const venomEffectsHtml = theme.key === "venom_symbiote"
       ? `<div class="venom-symbiote-effects" aria-hidden="true">
+          <span class="neon-lightning"></span>
           <span class="venom-lightning"></span>
           <span class="symbiote-tendril symbiote-tendril-left"></span>
           <span class="symbiote-tendril symbiote-tendril-right"></span>
+          <span class="symbiote-tendril tendril-1"></span>
+          <span class="symbiote-tendril tendril-2"></span>
+          <span class="symbiote-tendril tendril-3"></span>
+          <span class="symbiote-tendril tendril-4"></span>
+          <span class="symbiote-tendril tendril-5"></span>
           <svg class="venom-electric-arcs" viewBox="0 0 1000 1000" preserveAspectRatio="none" focusable="false">
             <path d="M40 180C160 120 220 210 318 156c78-43 132-30 186 40M812 90c-82 96-34 162-126 216-70 41-116 90-132 166M120 746c112-82 204-30 282-94 62-51 118-50 176 4M690 714c80-52 142-48 218 12" fill="none" stroke="#00F0FF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"></path>
           </svg>
@@ -4014,16 +4020,24 @@
       ? `<div class="sakura-blossom-effects" aria-hidden="true">
           <div class="sakura-calligraphy">春<br>花<br>風<br>月</div>
           ${[
-        ["15%", "12px", "10px", "10s", "0s"],
-        ["45%", "14px", "11px", "14s", "-3s"],
-        ["80%", "10px", "8px", "11s", "-6s"],
-        ["62%", "16px", "12px", "16s", "-9s"],
-        ["28%", "9px", "8px", "13s", "-5s"],
-        ["72%", "13px", "10px", "15s", "-11s"],
-        ["8%", "15px", "12px", "17s", "-7s"],
-        ["90%", "11px", "9px", "12s", "-2s"],
-      ].map(([left, width, height, duration, delay], index) => `
-            <span class="sakura-petal petal-${index + 1}" style="left:${left};width:${width};height:${height};animation-duration:${duration};animation-delay:${delay}"></span>`).join("")}
+        ["5%", "foreground", "9s", "0s", "14deg"],
+        ["12%", "background", "18s", "-9s", "-16deg"],
+        ["18%", "midground", "13s", "-3s", "28deg"],
+        ["25%", "foreground", "8s", "-6s", "-24deg"],
+        ["32%", "midground", "12s", "-6.5s", "8deg"],
+        ["39%", "background", "20s", "-14s", "32deg"],
+        ["45%", "midground", "14s", "-1.5s", "-12deg"],
+        ["52%", "foreground", "10s", "-7.5s", "20deg"],
+        ["60%", "midground", "12.5s", "-4.5s", "-28deg"],
+        ["67%", "background", "19s", "-11s", "12deg"],
+        ["73%", "midground", "15s", "-8s", "36deg"],
+        ["80%", "background", "17s", "-5.5s", "-20deg"],
+        ["88%", "foreground", "8.5s", "-2.5s", "24deg"],
+        ["95%", "midground", "13s", "-7s", "-8deg"],
+        ["2%", "background", "21s", "-16s", "40deg"],
+        ["70%", "foreground", "9.5s", "-12s", "-32deg"],
+      ].map(([left, layer, duration, delay, rotate], index) => `
+            <span class="sakura-petal sakura-petal--${layer} petal-${(index % 8) + 1}" style="left:${left};animation-duration:${duration};animation-delay:${delay};--petal-start-rotate:${rotate}"></span>`).join("")}
         </div>`
       : "";
     const starryEffectsHtml = theme.key === "starry_night"
