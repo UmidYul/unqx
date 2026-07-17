@@ -25,6 +25,12 @@
     "minion_yellow",
     "soviet_carpet",
     "vintage_mickey",
+    "rick_morty_portal",
+    "gravity_falls",
+    "venom_symbiote",
+    "shinobi_path",
+    "sakura_blossom",
+    "starry_night",
     "velours",
     "graffiti_neon",
     "heritage_crest",
@@ -63,6 +69,16 @@
     "football_stitch",
     "stopwatch_ring",
     "medal_ribbon",
+    "symbiote",
+    "lightning",
+    "zen_bamboo",
+    "sakura_aura",
+    "gogh_strokes",
+    "lunar_gold",
+    "chakra",
+    "konoha_scroll",
+    "mystery_journal",
+    "cipher_glitch",
   ];
   const EMOJI_BACKGROUND_PACK_KEYS = [
     "none",
@@ -800,6 +816,246 @@
       cardShadow: "0 24px 46px rgba(43, 43, 43, 0.18)",
       buttonShineGradient:
         "linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.48) 50%, rgba(255,255,255,0) 100%)",
+    },
+    rick_morty_portal: {
+      cardBg: "rgba(18, 5, 36, 0.9)",
+      cardBgOverlay: "rick_morty_portal",
+      surfaceBg: "rgba(10, 30, 18, 0.54)",
+      cardBorder: "2px solid #39FF14",
+      borderColor: "#39FF14",
+      surfaceBorder: "1px solid rgba(57, 255, 20, 0.34)",
+      dividerColor: "rgba(166, 255, 150, 0.26)",
+      nameColor: "#A6FF96",
+      roleColor: "#39FF14",
+      mutedColor: "rgba(166, 255, 150, 0.72)",
+      accentColor: "#FFE400",
+      emailColor: "#A6FF96",
+      buttonPrimaryBg: "linear-gradient(135deg, #39FF14 0%, #A6FF96 100%)",
+      buttonPrimaryText: "#0B001A",
+      buttonPrimaryBorder: "#39FF14",
+      buttonSecondaryBg: "rgba(11, 0, 26, 0.72)",
+      buttonSecondaryText: "#A6FF96",
+      buttonSecondaryBorder: "rgba(57, 255, 20, 0.82)",
+      badgeText: "#0B001A",
+      badgeBg: "#FFE400",
+      badgeBorder: "2px solid #39FF14",
+      topLineGradient: "linear-gradient(90deg, transparent, #39FF14, #FFE400, #39FF14, transparent)",
+      avatarBg: "radial-gradient(circle at 35% 28%, #A6FF96, #39FF14 44%, #0B001A 100%)",
+      avatarText: "#0B001A",
+      avatarBorder: "2px solid #39FF14",
+      cardBorderRadius: "30px",
+      fontFamily: "'Sora', 'Inter', 'Segoe UI', sans-serif",
+      nameFontStyle: "normal",
+      nameFontWeight: "900",
+      roleLetterSpacing: "0.12em",
+      scoreLabelColor: "rgba(166, 255, 150, 0.75)",
+      scoreValueColor: "#FFE400",
+      scoreBarFill: "linear-gradient(90deg, #39FF14, #FFE400)",
+      scoreBarTrack: "rgba(57, 255, 20, 0.16)",
+      scorePercentileColor: "#A6FF96",
+      cardShadow: "0 0 20px rgba(57, 255, 20, 0.25), 0 26px 70px rgba(0, 0, 0, 0.55)",
+      buttonShineGradient:
+        "linear-gradient(90deg, rgba(255,228,0,0) 0%, rgba(255,228,0,0.4) 50%, rgba(255,228,0,0) 100%)",
+    },
+    gravity_falls: {
+      cardBg: "rgba(43, 31, 25, 0.93)",
+      cardBgOverlay: "gravity_falls",
+      surfaceBg: "rgba(26, 46, 34, 0.62)",
+      cardBorder: "3px solid #E5A93C",
+      borderColor: "#E5A93C",
+      surfaceBorder: "1px solid rgba(229, 169, 60, 0.42)",
+      dividerColor: "rgba(229, 169, 60, 0.3)",
+      nameColor: "#F2E3C6",
+      roleColor: "#E5A93C",
+      mutedColor: "rgba(242, 227, 198, 0.74)",
+      accentColor: "#FF6B8B",
+      emailColor: "#F2E3C6",
+      buttonPrimaryBg: "linear-gradient(135deg, #FF6B8B 0%, #E5A93C 100%)",
+      buttonPrimaryText: "#2B1F19",
+      buttonPrimaryBorder: "#E5A93C",
+      buttonSecondaryBg: "rgba(26, 46, 34, 0.74)",
+      buttonSecondaryText: "#F2E3C6",
+      buttonSecondaryBorder: "rgba(229, 169, 60, 0.72)",
+      badgeText: "#2B1F19",
+      badgeBg: "#E5A93C",
+      badgeBorder: "2px solid rgba(242, 227, 198, 0.45)",
+      topLineGradient: "linear-gradient(90deg, transparent, #E5A93C, #FF6B8B, #E5A93C, transparent)",
+      avatarBg: "linear-gradient(135deg, #1A2E22 0%, #2B1F19 58%, #E5A93C 100%)",
+      avatarText: "#F2E3C6",
+      avatarBorder: "2px solid #E5A93C",
+      cardBorderRadius: "28px",
+      fontFamily: "'Courier New', 'Sora', 'Inter', monospace",
+      nameFontStyle: "normal",
+      nameFontWeight: "900",
+      roleLetterSpacing: "0.12em",
+      scoreLabelColor: "rgba(242, 227, 198, 0.72)",
+      scoreValueColor: "#E5A93C",
+      scoreBarFill: "linear-gradient(90deg, #E5A93C, #FF6B8B)",
+      scoreBarTrack: "rgba(242, 227, 198, 0.16)",
+      scorePercentileColor: "#FF6B8B",
+      cardShadow: "0 24px 58px rgba(8, 16, 11, 0.58), 0 0 18px rgba(229, 169, 60, 0.2)",
+      buttonShineGradient:
+        "linear-gradient(90deg, rgba(255,107,139,0) 0%, rgba(255,107,139,0.42) 50%, rgba(255,107,139,0) 100%)",
+    },
+    venom_symbiote: {
+      cardBg: "rgba(8, 8, 12, 0.95)",
+      cardBgOverlay: "venom_symbiote",
+      surfaceBg: "rgba(16, 8, 14, 0.7)",
+      cardBorder: "2px solid #E53E6D",
+      borderColor: "#E53E6D",
+      surfaceBorder: "1px solid rgba(0, 240, 255, 0.36)",
+      dividerColor: "rgba(0, 240, 255, 0.32)",
+      nameColor: "#FFFFFF",
+      roleColor: "#00F0FF",
+      mutedColor: "rgba(255, 255, 255, 0.72)",
+      accentColor: "#00F0FF",
+      emailColor: "#FFFFFF",
+      buttonPrimaryBg: "linear-gradient(135deg, #00F0FF 0%, #E53E6D 100%)",
+      buttonPrimaryText: "#FFFFFF",
+      buttonPrimaryBorder: "#E53E6D",
+      buttonSecondaryBg: "rgba(8, 8, 12, 0.76)",
+      buttonSecondaryText: "#00F0FF",
+      buttonSecondaryBorder: "rgba(229, 62, 109, 0.82)",
+      badgeText: "#FFFFFF",
+      badgeBg: "linear-gradient(135deg, #E53E6D 0%, #15040A 100%)",
+      badgeBorder: "2px solid #00F0FF",
+      topLineGradient: "linear-gradient(90deg, transparent, #00F0FF, #E53E6D, #00F0FF, transparent)",
+      avatarBg: "radial-gradient(circle at 30% 24%, #00F0FF, #E53E6D 48%, #08080C 100%)",
+      avatarText: "#FFFFFF",
+      avatarBorder: "2px solid #E53E6D",
+      cardBorderRadius: "30px",
+      fontFamily: "'Sora', 'Inter', 'Segoe UI', sans-serif",
+      nameFontStyle: "normal",
+      nameFontWeight: "900",
+      roleLetterSpacing: "0.12em",
+      scoreLabelColor: "rgba(255, 255, 255, 0.68)",
+      scoreValueColor: "#00F0FF",
+      scoreBarFill: "linear-gradient(90deg, #00F0FF, #E53E6D)",
+      scoreBarTrack: "rgba(0, 240, 255, 0.14)",
+      scorePercentileColor: "#E53E6D",
+      cardShadow: "0 0 25px rgba(0, 240, 255, 0.15), 0 0 40px rgba(229, 62, 109, 0.1), 0 28px 70px rgba(0, 0, 0, 0.62)",
+      buttonShineGradient:
+        "linear-gradient(90deg, rgba(0,240,255,0) 0%, rgba(0,240,255,0.36) 46%, rgba(229,62,109,0.42) 54%, rgba(0,240,255,0) 100%)",
+    },
+    shinobi_path: {
+      cardBg: "rgba(29, 38, 55, 0.94)",
+      cardBgOverlay: "shinobi_path",
+      surfaceBg: "rgba(18, 27, 42, 0.72)",
+      cardBorder: "2px solid #FF8c00",
+      borderColor: "#00F0FF",
+      surfaceBorder: "1px solid rgba(0, 240, 255, 0.38)",
+      dividerColor: "rgba(255, 140, 0, 0.32)",
+      nameColor: "#00F0FF",
+      roleColor: "#FF8c00",
+      mutedColor: "rgba(255, 255, 255, 0.72)",
+      accentColor: "#00F0FF",
+      emailColor: "#FFFFFF",
+      buttonPrimaryBg: "linear-gradient(135deg, #FF8c00 0%, #F2552C 100%)",
+      buttonPrimaryText: "#111a29",
+      buttonPrimaryBorder: "#00F0FF",
+      buttonSecondaryBg: "rgba(29, 38, 55, 0.74)",
+      buttonSecondaryText: "#00F0FF",
+      buttonSecondaryBorder: "rgba(255, 140, 0, 0.76)",
+      badgeText: "#111a29",
+      badgeBg: "#00F0FF",
+      badgeBorder: "2px solid #FF8c00",
+      topLineGradient: "linear-gradient(90deg, transparent, #00F0FF, #FF8c00, #00F0FF, transparent)",
+      avatarBg: "linear-gradient(135deg, #1D2637 0%, #2D4263 48%, #FF8c00 100%)",
+      avatarText: "#FFFFFF",
+      avatarBorder: "2px solid #00F0FF",
+      cardBorderRadius: "28px",
+      fontFamily: "'Sora', 'Inter', 'Segoe UI', sans-serif",
+      nameFontStyle: "normal",
+      nameFontWeight: "900",
+      roleLetterSpacing: "0.12em",
+      scoreLabelColor: "rgba(255, 255, 255, 0.72)",
+      scoreValueColor: "#00F0FF",
+      scoreBarFill: "linear-gradient(90deg, #00F0FF, #FF8c00)",
+      scoreBarTrack: "rgba(0, 240, 255, 0.15)",
+      scorePercentileColor: "#FF8c00",
+      cardShadow: "0 0 15px rgba(255, 140, 0, 0.2), inset 0 0 10px rgba(0, 240, 255, 0.1), 0 28px 68px rgba(14, 20, 30, 0.54)",
+      buttonShineGradient:
+        "linear-gradient(90deg, rgba(0,240,255,0) 0%, rgba(0,240,255,0.34) 48%, rgba(255,140,0,0.38) 52%, rgba(0,240,255,0) 100%)",
+    },
+    sakura_blossom: {
+      cardBg: "rgba(253, 246, 244, 0.92)",
+      cardBgOverlay: "sakura_blossom",
+      surfaceBg: "rgba(255, 255, 255, 0.48)",
+      cardBorder: "1px solid rgba(211, 162, 151, 0.5)",
+      borderColor: "#D3A297",
+      surfaceBorder: "1px solid rgba(211, 162, 151, 0.38)",
+      dividerColor: "rgba(200, 92, 92, 0.2)",
+      nameColor: "#2C1E1A",
+      roleColor: "#C85C5C",
+      mutedColor: "rgba(44, 30, 26, 0.66)",
+      accentColor: "#FF8E9E",
+      emailColor: "#2C1E1A",
+      buttonPrimaryBg: "linear-gradient(135deg, #FFB7B2 0%, #FF8E9E 100%)",
+      buttonPrimaryText: "#2C1E1A",
+      buttonPrimaryBorder: "rgba(211, 162, 151, 0.72)",
+      buttonSecondaryBg: "rgba(253, 246, 244, 0.72)",
+      buttonSecondaryText: "#2C1E1A",
+      buttonSecondaryBorder: "rgba(211, 162, 151, 0.58)",
+      badgeText: "#2C1E1A",
+      badgeBg: "rgba(255, 183, 178, 0.76)",
+      badgeBorder: "1px solid rgba(211, 162, 151, 0.68)",
+      topLineGradient: "linear-gradient(90deg, transparent, #D3A297, #FF8E9E, #D3A297, transparent)",
+      avatarBg: "linear-gradient(135deg, #2C1E1A 0%, #C85C5C 58%, #FFB7B2 100%)",
+      avatarText: "#FDF6F4",
+      avatarBorder: "1px solid rgba(211, 162, 151, 0.78)",
+      cardBorderRadius: "30px",
+      fontFamily: "'Cormorant Garamond', 'Iowan Old Style', 'Times New Roman', serif",
+      nameFontStyle: "normal",
+      nameFontWeight: "700",
+      roleLetterSpacing: "0.12em",
+      scoreLabelColor: "rgba(44, 30, 26, 0.62)",
+      scoreValueColor: "#C85C5C",
+      scoreBarFill: "linear-gradient(90deg, #D3A297, #FF8E9E)",
+      scoreBarTrack: "rgba(211, 162, 151, 0.18)",
+      scorePercentileColor: "#C85C5C",
+      cardShadow: "0 22px 54px rgba(91, 61, 51, 0.16)",
+      buttonShineGradient:
+        "linear-gradient(90deg, rgba(255,142,158,0) 0%, rgba(255,255,255,0.45) 50%, rgba(255,142,158,0) 100%)",
+    },
+    starry_night: {
+      cardBg: "rgba(11, 25, 44, 0.93)",
+      cardBgOverlay: "starry_night",
+      surfaceBg: "rgba(15, 22, 38, 0.72)",
+      cardBorder: "1px solid rgba(245, 199, 26, 0.25)",
+      borderColor: "#3B527A",
+      surfaceBorder: "1px solid rgba(245, 199, 26, 0.28)",
+      dividerColor: "rgba(245, 199, 26, 0.24)",
+      nameColor: "#FFF5D1",
+      roleColor: "#F5C71A",
+      mutedColor: "rgba(255, 245, 209, 0.68)",
+      accentColor: "#FFD700",
+      emailColor: "#FFF5D1",
+      buttonPrimaryBg: "linear-gradient(135deg, #F5C71A 0%, #FFD700 100%)",
+      buttonPrimaryText: "#0B192C",
+      buttonPrimaryBorder: "rgba(245, 199, 26, 0.62)",
+      buttonSecondaryBg: "rgba(11, 25, 44, 0.72)",
+      buttonSecondaryText: "#FFF5D1",
+      buttonSecondaryBorder: "rgba(245, 199, 26, 0.42)",
+      badgeText: "#0B192C",
+      badgeBg: "#FFD700",
+      badgeBorder: "1px solid rgba(255, 245, 209, 0.48)",
+      topLineGradient: "linear-gradient(90deg, transparent, #3B527A, #F5C71A, #FFD700, transparent)",
+      avatarBg: "radial-gradient(circle at 38% 26%, #FFF5D1, #F5C71A 34%, #0B192C 100%)",
+      avatarText: "#0B192C",
+      avatarBorder: "1px solid rgba(245, 199, 26, 0.52)",
+      cardBorderRadius: "30px",
+      fontFamily: "'Cormorant Garamond', 'Iowan Old Style', 'Times New Roman', serif",
+      nameFontStyle: "normal",
+      nameFontWeight: "800",
+      roleLetterSpacing: "0.12em",
+      scoreLabelColor: "rgba(255, 245, 209, 0.66)",
+      scoreValueColor: "#FFD700",
+      scoreBarFill: "linear-gradient(90deg, #3B527A, #F5C71A, #FFD700)",
+      scoreBarTrack: "rgba(255, 245, 209, 0.12)",
+      scorePercentileColor: "#F5C71A",
+      cardShadow: "0 0 30px rgba(15, 22, 38, 0.8), inset 0 0 15px rgba(245, 199, 26, 0.05)",
+      buttonShineGradient:
+        "linear-gradient(90deg, rgba(255,215,0,0) 0%, rgba(255,245,209,0.42) 50%, rgba(255,215,0,0) 100%)",
     },
     velours: {
       cardBg: "linear-gradient(165deg, #2d0a12 0%, #2a0911 52%, #380d18 100%)",
@@ -2183,6 +2439,161 @@
         <path d="M72 166l26 18 31-6-12 29 16 27-32-2-21 24-8-31-29-13 27-17 2-29ZM268 364l22 16 27-5-10 25 14 24-28-2-18 21-7-27-25-12 23-14 2-26Z" fill="none" stroke="#FDF5E6" stroke-width="1.1" opacity="0.22"></path>
       </svg>`;
     }
+    if (themeKey === "rick_morty_portal") {
+      return `<svg class="unq-ref-overlay-svg" viewBox="0 0 360 600" preserveAspectRatio="none" aria-hidden="true">
+        <rect width="360" height="600" fill="none"></rect>
+        <g opacity="0.16" stroke="#39FF14" stroke-width="0.7">
+          <path d="M0 80H360M0 136H360M0 192H360M0 248H360M0 304H360M0 360H360M0 416H360M0 472H360M0 528H360"></path>
+          <path d="M32 0V600M88 0V600M144 0V600M200 0V600M256 0V600M312 0V600"></path>
+        </g>
+        <g opacity="0.22" fill="#39FF14">
+          <circle cx="34" cy="54" r="2"></circle>
+          <circle cx="118" cy="114" r="1.6"></circle>
+          <circle cx="306" cy="94" r="2.4"></circle>
+          <circle cx="68" cy="248" r="1.8"></circle>
+          <circle cx="286" cy="278" r="1.5"></circle>
+          <circle cx="126" cy="438" r="2.2"></circle>
+          <circle cx="322" cy="512" r="1.9"></circle>
+        </g>
+        <g opacity="0.28" fill="none" stroke-linecap="round">
+          <path d="M-18 122C60 82 134 92 208 132C270 166 320 168 378 128" stroke="#39FF14" stroke-width="1.3"></path>
+          <path d="M-20 404C72 358 152 370 232 416C294 452 334 452 382 414" stroke="#A6FF96" stroke-width="1"></path>
+          <path d="M54 170c22-58 78-92 142-80 68 13 112 72 104 138" stroke="#FFE400" stroke-width="1.2" opacity="0.46"></path>
+        </g>
+        <g opacity="0.2">
+          <circle cx="282" cy="132" r="74" fill="none" stroke="#39FF14" stroke-width="8"></circle>
+          <circle cx="282" cy="132" r="48" fill="none" stroke="#A6FF96" stroke-width="3"></circle>
+          <circle cx="282" cy="132" r="23" fill="#39FF14" opacity="0.22"></circle>
+        </g>
+      </svg>`;
+    }
+    if (themeKey === "gravity_falls") {
+      return `<svg class="unq-ref-overlay-svg" viewBox="0 0 360 600" preserveAspectRatio="none" aria-hidden="true">
+        <rect width="360" height="600" fill="#2B1F19" opacity="0.1"></rect>
+        <g opacity="0.12" stroke="#F2E3C6" stroke-width="0.55">
+          <path d="M0 76H360M0 132H360M0 188H360M0 244H360M0 300H360M0 356H360M0 412H360M0 468H360M0 524H360"></path>
+          <path d="M38 0V600M96 0V600M154 0V600M212 0V600M270 0V600M328 0V600"></path>
+        </g>
+        <g opacity="0.22" fill="none" stroke="#E5A93C" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 22h58v8H30v50h-8zM338 22h-58v8h50v50h8zM22 578h58v-8H30v-50h-8zM338 578h-58v-8h50v-50h8z" fill="#E5A93C" stroke="none" opacity="0.46"></path>
+          <path d="M0 118C72 92 146 100 220 132C282 158 322 160 360 146" stroke-width="1.05"></path>
+          <path d="M0 398C78 368 154 378 228 414C288 444 326 446 360 432" stroke-width="0.92"></path>
+          <circle cx="180" cy="184" r="52" stroke-width="1"></circle>
+          <path d="M180 132l45 78h-90l45-78Z" stroke-width="1.5"></path>
+          <path d="M162 184c9-11 27-11 36 0-9 11-27 11-36 0Z" stroke-width="1.1"></path>
+          <circle cx="180" cy="184" r="5" fill="#E5A93C" stroke="none"></circle>
+        </g>
+        <g opacity="0.18" fill="#FF6B8B">
+          <path d="M72 302l8 22 22 8-22 8-8 22-8-22-22-8 22-8 8-22Z"></path>
+          <path d="M292 112l6 17 17 6-17 6-6 17-6-17-17-6 17-6 6-17Z"></path>
+        </g>
+        <g opacity="0.18" fill="#E5A93C" font-family="Courier New, monospace" font-size="24" font-weight="700">
+          <text x="48" y="472" transform="rotate(-10 48 472)">?</text>
+          <text x="284" y="342" transform="rotate(12 284 342)">△</text>
+          <text x="112" y="86" transform="rotate(8 112 86)">✦</text>
+        </g>
+      </svg>`;
+    }
+    if (themeKey === "venom_symbiote") {
+      return `<svg class="unq-ref-overlay-svg" viewBox="0 0 360 600" preserveAspectRatio="none" aria-hidden="true">
+        <rect width="360" height="600" fill="#08080C" opacity="0.12"></rect>
+        <g opacity="0.18" fill="none" stroke="#00F0FF" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M-10 96C48 70 92 82 128 126c38 48 86 58 146 22 42-25 72-24 96 4" stroke-width="1.4"></path>
+          <path d="M18 322c56-34 108-26 154 24 43 48 94 54 154 16" stroke-width="1.1"></path>
+          <path d="M70 122l28 18-34 12 40 18-52 20" stroke-width="1"></path>
+          <path d="M270 382l-34 22 42 12-48 28 62 10" stroke-width="1"></path>
+        </g>
+        <g opacity="0.2" fill="#E53E6D">
+          <path d="M36 64c34 20 56 54 54 102-32-10-52-34-60-72-5-22-4-28 6-30Z"></path>
+          <path d="M312 128c-38 18-60 50-62 96 34-8 58-30 70-68 7-22 5-30-8-28Z"></path>
+          <path d="M24 462c42-14 74-2 100 38-36 10-70 4-98-18-18-14-20-18-2-20Z"></path>
+        </g>
+        <g opacity="0.16" fill="#00F0FF">
+          <circle cx="64" cy="228" r="4"></circle>
+          <circle cx="282" cy="262" r="3"></circle>
+          <circle cx="118" cy="506" r="3.6"></circle>
+          <circle cx="316" cy="506" r="2.8"></circle>
+        </g>
+        <path d="M0 118C82 90 154 98 222 132C282 162 326 164 360 146M0 452c76-30 148-22 218 16 58 32 104 34 142 16" stroke="#E53E6D" stroke-width="1.2" fill="none" opacity="0.18"></path>
+      </svg>`;
+    }
+    if (themeKey === "shinobi_path") {
+      return `<svg class="unq-ref-overlay-svg" viewBox="0 0 360 600" preserveAspectRatio="none" aria-hidden="true">
+        <rect width="360" height="600" fill="#1D2637" opacity="0.1"></rect>
+        <g opacity="0.14" fill="none" stroke="#00F0FF" stroke-width="1">
+          <path d="M-20 118c52-52 106-52 158 0 52-52 106-52 158 0 52-52 106-52 158 0"></path>
+          <path d="M-20 168c52-52 106-52 158 0 52-52 106-52 158 0 52-52 106-52 158 0"></path>
+          <path d="M-20 430c52-52 106-52 158 0 52-52 106-52 158 0 52-52 106-52 158 0"></path>
+          <path d="M-20 480c52-52 106-52 158 0 52-52 106-52 158 0 52-52 106-52 158 0"></path>
+        </g>
+        <g opacity="0.24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M0 96C76 70 146 82 210 118c58 32 106 34 150 12" stroke="#FF8c00" stroke-width="1.2"></path>
+          <path d="M34 326c74-52 146-44 216 26 38 38 76 42 110 12" stroke="#00F0FF" stroke-width="1"></path>
+          <circle cx="180" cy="192" r="58" stroke="#00F0FF" stroke-width="1.2"></circle>
+          <path d="M126 192h108M180 138v108M144 156l72 72M216 156l-72 72" stroke="#FF8c00" stroke-width="0.8"></path>
+        </g>
+        <g opacity="0.2" fill="#FF8c00">
+          <path d="M72 80l10 24 24 10-24 10-10 24-10-24-24-10 24-10 10-24Z"></path>
+          <path d="M292 388l8 20 20 8-20 8-8 20-8-20-20-8 20-8 8-20Z"></path>
+        </g>
+        <g opacity="0.2" fill="#00F0FF" font-family="Sora, Arial, sans-serif" font-size="22" font-weight="900">
+          <text x="268" y="112" transform="rotate(10 268 112)">忍</text>
+          <text x="52" y="512" transform="rotate(-12 52 512)">風</text>
+        </g>
+      </svg>`;
+    }
+    if (themeKey === "sakura_blossom") {
+      return `<svg class="unq-ref-overlay-svg" viewBox="0 0 360 600" preserveAspectRatio="none" aria-hidden="true">
+        <rect width="360" height="600" fill="#FDF6F4" opacity="0.08"></rect>
+        <g opacity="0.18" fill="none" stroke="#A0A894" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M-12 174c64-50 106-74 154-24 34-42 76-50 126-10 34 28 62 36 104 20" stroke-width="1.1"></path>
+          <path d="M-8 220c62-32 116-36 164-8 44-28 94-30 150-6 28 12 48 14 66 8" stroke-width="0.82"></path>
+          <path d="M0 468c72-34 140-34 204 0 48 25 96 26 156 2" stroke-width="0.74"></path>
+        </g>
+        <g opacity="0.28" fill="none" stroke="#2C1E1A" stroke-linecap="round">
+          <path d="M34 92c58 20 96 4 134-44" stroke-width="2.4"></path>
+          <path d="M72 82c-2 34-24 58-58 76M112 70c14 30 44 48 90 54" stroke-width="1.2"></path>
+        </g>
+        <g opacity="0.34" fill="#FF8E9E">
+          <path d="M78 90c12-6 24 5 18 18-12 5-24-6-18-18Z"></path>
+          <path d="M118 66c10-5 20 4 15 15-10 5-20-4-15-15Z"></path>
+          <path d="M166 52c11-5 22 5 16 16-11 5-22-5-16-16Z"></path>
+          <path d="M42 150c10-5 20 4 15 15-10 5-20-4-15-15Z"></path>
+          <path d="M286 392c12-6 24 5 18 18-12 5-24-6-18-18Z"></path>
+        </g>
+        <g opacity="0.1" fill="#2C1E1A" font-family="serif" font-size="28" font-weight="700">
+          <text x="304" y="90">春</text>
+          <text x="304" y="126">花</text>
+          <text x="304" y="162">風</text>
+          <text x="304" y="198">月</text>
+        </g>
+        <path d="M0 328C78 304 154 312 226 340C286 362 326 364 360 352" stroke="#D3A297" stroke-width="0.9" fill="none" opacity="0.22"></path>
+      </svg>`;
+    }
+    if (themeKey === "starry_night") {
+      return `<svg class="unq-ref-overlay-svg" viewBox="0 0 360 600" preserveAspectRatio="none" aria-hidden="true">
+        <rect width="360" height="600" fill="#0B192C" opacity="0.12"></rect>
+        <g opacity="0.24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M-18 106C58 66 132 76 206 118C270 154 316 156 378 118" stroke="#3B527A" stroke-width="3.2"></path>
+          <path d="M-12 148C70 102 146 116 218 158C278 192 324 194 372 166" stroke="#F5C71A" stroke-width="1.2"></path>
+          <path d="M12 390c62-38 122-30 180 22 46 42 98 46 156 10" stroke="#3B527A" stroke-width="2.4"></path>
+          <path d="M28 426c72-30 132-18 182 28 42 38 86 42 136 14" stroke="#FFF5D1" stroke-width="0.86"></path>
+        </g>
+        <g opacity="0.34">
+          <circle cx="72" cy="86" r="18" fill="#F5C71A"></circle>
+          <circle cx="72" cy="86" r="7" fill="#FFF5D1"></circle>
+          <circle cx="286" cy="144" r="24" fill="#FFD700"></circle>
+          <circle cx="286" cy="144" r="9" fill="#FFF5D1"></circle>
+          <circle cx="112" cy="470" r="13" fill="#F5C71A"></circle>
+          <circle cx="112" cy="470" r="5" fill="#FFF5D1"></circle>
+        </g>
+        <g opacity="0.22" fill="none" stroke="#FFF5D1" stroke-width="1.2">
+          <path d="M170 214c34-36 96-22 108 24 13 52-48 92-94 62-34-22-32-72 4-88 28-12 62 8 58 36-3 22-30 34-48 20"></path>
+          <path d="M48 246c24-26 68-18 78 14 10 36-34 64-64 42-22-16-20-50 6-60 20-8 42 6 38 26"></path>
+        </g>
+        <path d="M0 522C82 488 158 498 230 534C286 562 326 564 360 546" stroke="#F5C71A" stroke-width="1" fill="none" opacity="0.22"></path>
+      </svg>`;
+    }
     if (themeKey === "vintage_mickey") {
       return `<svg class="unq-ref-overlay-svg" viewBox="0 0 360 600" preserveAspectRatio="none" aria-hidden="true">
         <defs>
@@ -2406,6 +2817,22 @@
           <circle cx="70" cy="76" r="45" class="frame-stroke-thin frame-stroke-white"></circle>
         </svg>
       ${end}`;
+    }
+    if (
+      [
+        "symbiote",
+        "lightning",
+        "zen_bamboo",
+        "sakura_aura",
+        "gogh_strokes",
+        "lunar_gold",
+        "chakra",
+        "konoha_scroll",
+        "mystery_journal",
+        "cipher_glitch",
+      ].includes(key)
+    ) {
+      return `${start}<span class="unq-ref-avatar-frame-css"></span>${end}`;
     }
 
     return "";
@@ -3530,9 +3957,109 @@
             </svg>`).join("")}
         </div>`
       : "";
+    const portalEffectsHtml = theme.key === "rick_morty_portal"
+      ? `<div class="rick-morty-portal-effects" aria-hidden="true">
+          <span class="portal-bg"></span>
+          ${[
+        ["12%", "12px", "0s", "12px", "green"],
+        ["24%", "18px", "1.1s", "20px", "yellow"],
+        ["38%", "10px", "2.2s", "14px", "green"],
+        ["52%", "22px", "3.4s", "24px", "green"],
+        ["66%", "13px", "4.1s", "16px", "yellow"],
+        ["78%", "19px", "5.2s", "18px", "green"],
+        ["88%", "9px", "6.1s", "11px", "yellow"],
+        ["18%", "24px", "7s", "22px", "green"],
+      ].map(([left, size, delay, drift, tone], index) => `
+            <span class="portal-bubble portal-bubble-${tone}" style="left:${left};width:${size};height:${size};--bubble-delay:${delay};--bubble-drift:${drift};animation-delay:${delay}"></span>`).join("")}
+        </div>`
+      : "";
+    const gravityEffectsHtml = theme.key === "gravity_falls"
+      ? `<div class="gravity-falls-effects" aria-hidden="true">
+          <svg class="gravity-bill" viewBox="0 0 120 120" focusable="false">
+            <path d="M60 10l44 86H16L60 10Z" fill="#E5A93C"></path>
+            <path d="M42 58c9-12 27-12 36 0-9 12-27 12-36 0Z" fill="none" stroke="#1A2E22" stroke-width="5" stroke-linecap="round"></path>
+            <circle cx="60" cy="58" r="6" fill="#1A2E22"></circle>
+            <path d="M44 82h32M39 96h42M60 10v-8M28 48H12M92 48h16" stroke="#E5A93C" stroke-width="5" stroke-linecap="round"></path>
+          </svg>
+          ${[
+        ["8%", "22%", "0s", "#E5A93C"],
+        ["18%", "68%", "0.7s", "#96FFB4"],
+        ["28%", "38%", "1.4s", "#E5A93C"],
+        ["42%", "76%", "2.1s", "#FF6B8B"],
+        ["54%", "18%", "2.8s", "#E5A93C"],
+        ["66%", "54%", "3.5s", "#96FFB4"],
+        ["76%", "28%", "4.2s", "#E5A93C"],
+        ["86%", "70%", "4.9s", "#FF6B8B"],
+        ["34%", "12%", "5.6s", "#96FFB4"],
+        ["92%", "42%", "6.3s", "#E5A93C"],
+      ].map(([left, top, delay, color], index) => `
+            <span class="firefly firefly-${index + 1}" style="left:${left};top:${top};background:${color};box-shadow:0 0 10px ${color},0 0 20px rgba(57,255,20,0.42);animation-delay:${delay}"></span>`).join("")}
+        </div>`
+      : "";
+    const venomEffectsHtml = theme.key === "venom_symbiote"
+      ? `<div class="venom-symbiote-effects" aria-hidden="true">
+          <span class="venom-lightning"></span>
+          <span class="symbiote-tendril symbiote-tendril-left"></span>
+          <span class="symbiote-tendril symbiote-tendril-right"></span>
+          <svg class="venom-electric-arcs" viewBox="0 0 1000 1000" preserveAspectRatio="none" focusable="false">
+            <path d="M40 180C160 120 220 210 318 156c78-43 132-30 186 40M812 90c-82 96-34 162-126 216-70 41-116 90-132 166M120 746c112-82 204-30 282-94 62-51 118-50 176 4M690 714c80-52 142-48 218 12" fill="none" stroke="#00F0FF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"></path>
+          </svg>
+        </div>`
+      : "";
+    const shinobiEffectsHtml = theme.key === "shinobi_path"
+      ? `<div class="shinobi-path-effects" aria-hidden="true">
+          <span class="chakra-glow"></span>
+          <span class="shinobi-cloud cloud-1"><span></span></span>
+          <span class="shinobi-cloud cloud-2"><span></span></span>
+          <span class="shinobi-cloud cloud-3"><span></span></span>
+          <span class="shinobi-cloud cloud-4"><span></span></span>
+        </div>`
+      : "";
+    const sakuraEffectsHtml = theme.key === "sakura_blossom"
+      ? `<div class="sakura-blossom-effects" aria-hidden="true">
+          <div class="sakura-calligraphy">春<br>花<br>風<br>月</div>
+          ${[
+        ["15%", "12px", "10px", "10s", "0s"],
+        ["45%", "14px", "11px", "14s", "-3s"],
+        ["80%", "10px", "8px", "11s", "-6s"],
+        ["62%", "16px", "12px", "16s", "-9s"],
+        ["28%", "9px", "8px", "13s", "-5s"],
+        ["72%", "13px", "10px", "15s", "-11s"],
+        ["8%", "15px", "12px", "17s", "-7s"],
+        ["90%", "11px", "9px", "12s", "-2s"],
+      ].map(([left, width, height, duration, delay], index) => `
+            <span class="sakura-petal petal-${index + 1}" style="left:${left};width:${width};height:${height};animation-duration:${duration};animation-delay:${delay}"></span>`).join("")}
+        </div>`
+      : "";
+    const starryEffectsHtml = theme.key === "starry_night"
+      ? `<div class="starry-night-effects" aria-hidden="true">
+          <span class="gogh-swirl"></span>
+          <svg class="gogh-cypress" viewBox="0 0 160 360" focusable="false">
+            <path d="M82 350c-28-72-30-128-10-168-22-30-18-70 10-98-8-28 0-56 24-78 16 36 14 68-4 96 28 30 30 72 8 110 20 42 18 88-28 138Z" fill="#0A111F"></path>
+            <path d="M86 346c-5-88 4-176 26-264" stroke="#6F7D52" stroke-width="6" opacity="0.28" fill="none"></path>
+          </svg>
+          ${[
+        ["10%", "15%", "40px", "0s"],
+        ["22%", "78%", "30px", "-4s"],
+        ["42%", "20%", "34px", "-1s"],
+        ["62%", "36%", "46px", "-5s"],
+        ["78%", "18%", "55px", "-2s"],
+        ["84%", "68%", "32px", "-6s"],
+        ["34%", "58%", "24px", "-3s"],
+        ["56%", "84%", "28px", "-7s"],
+      ].map(([left, top, size, delay], index) => `
+            <span class="gogh-star gogh-star-${index + 1}" style="left:${left};top:${top};width:${size};height:${size};animation-delay:${delay}"></span>`).join("")}
+        </div>`
+      : "";
 
     return `
       <div data-card-view data-card-theme="${esc(theme.key)}" data-emoji-background-pack="${esc(card.emojiBackgroundPack)}" data-slug="${esc(card.slug)}" data-share-url="${esc(shareUrl)}"${rootStyle}>
+        ${portalEffectsHtml}
+        ${gravityEffectsHtml}
+        ${venomEffectsHtml}
+        ${shinobiEffectsHtml}
+        ${sakuraEffectsHtml}
+        ${starryEffectsHtml}
         ${vintageSparklesHtml}
         ${musicPlayerHtml}
         ${showPausedBanner ? `<div class="mb-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">${esc(pausedText)}</div>` : ""}

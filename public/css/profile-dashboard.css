@@ -606,6 +606,117 @@
     -9px 0 0 -5px rgba(94, 115, 145, 0.76);
 }
 
+.profile-dashboard .profile-frame-swatch--symbiote {
+  border-color: #e53e6d;
+  background: linear-gradient(145deg, #08080c, #15040a);
+}
+
+.profile-dashboard .profile-frame-swatch--symbiote .profile-frame-swatch-deco {
+  border: 2px solid transparent;
+  background: linear-gradient(#08080c, #08080c) padding-box, linear-gradient(135deg, #00f0ff, #e53e6d, #000) border-box;
+}
+
+.profile-dashboard .profile-frame-swatch--lightning {
+  background: #071522;
+  border-color: #00f0ff;
+}
+
+.profile-dashboard .profile-frame-swatch--lightning .profile-frame-swatch-deco {
+  border: 2px dashed #00f0ff;
+  box-shadow: 0 0 9px rgba(0, 240, 255, 0.7);
+}
+
+.profile-dashboard .profile-frame-swatch--zen-bamboo {
+  background: #fdf6f4;
+  border-color: #2c1e1a;
+}
+
+.profile-dashboard .profile-frame-swatch--zen-bamboo .profile-frame-swatch-deco {
+  border: 3px double #2c1e1a;
+  outline: 1px solid rgba(211, 162, 151, 0.6);
+  outline-offset: -5px;
+}
+
+.profile-dashboard .profile-frame-swatch--sakura-aura {
+  background: #fdf3f4;
+  border-color: #ff8e9e;
+}
+
+.profile-dashboard .profile-frame-swatch--sakura-aura .profile-frame-swatch-deco {
+  border: 2px solid #ff8e9e;
+  box-shadow: 0 0 10px rgba(255, 142, 158, 0.62);
+}
+
+.profile-dashboard .profile-frame-swatch--gogh-strokes {
+  background: #0b192c;
+  border-color: #f5c71a;
+}
+
+.profile-dashboard .profile-frame-swatch--gogh-strokes .profile-frame-swatch-deco {
+  border: 3px solid transparent;
+  background: linear-gradient(#0b192c, #0b192c) padding-box, linear-gradient(45deg, #3b527a, #f5c71a, #0f1626, #ffd700) border-box;
+}
+
+.profile-dashboard .profile-frame-swatch--lunar-gold {
+  background: #0b192c;
+  border-color: #ffd700;
+}
+
+.profile-dashboard .profile-frame-swatch--lunar-gold .profile-frame-swatch-deco {
+  border: 3px solid #f5c71a;
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.62);
+}
+
+.profile-dashboard .profile-frame-swatch--chakra {
+  background: #1d2637;
+  border-color: #00f0ff;
+}
+
+.profile-dashboard .profile-frame-swatch--chakra .profile-frame-swatch-deco {
+  border: 3px double #00f0ff;
+  background: conic-gradient(from 0deg, rgba(0, 240, 255, 0.1), rgba(255, 140, 0, 0.25), rgba(0, 240, 255, 0.1));
+}
+
+.profile-dashboard .profile-frame-swatch--konoha-scroll {
+  background: #1d2637;
+  border-color: #ff8c00;
+}
+
+.profile-dashboard .profile-frame-swatch--konoha-scroll .profile-frame-swatch-deco {
+  border: 3px outset #ff8c00;
+  outline: 1px solid #2d4263;
+  outline-offset: 1px;
+}
+
+.profile-dashboard .profile-frame-swatch--mystery-journal {
+  background: #2b1f19;
+  border-color: #e5a93c;
+}
+
+.profile-dashboard .profile-frame-swatch--mystery-journal .profile-frame-swatch-deco {
+  border: 3px solid #e5a93c;
+  box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.7);
+}
+
+.profile-dashboard .profile-frame-swatch--mystery-journal .profile-frame-swatch-deco::after {
+  content: "★";
+  position: absolute;
+  right: 3px;
+  top: 0;
+  color: #e5a93c;
+  font-size: 8px;
+}
+
+.profile-dashboard .profile-frame-swatch--cipher-glitch {
+  background: #1a2e22;
+  border-color: #e5a93c;
+}
+
+.profile-dashboard .profile-frame-swatch--cipher-glitch .profile-frame-swatch-deco {
+  border: 3px solid #e5a93c;
+  box-shadow: 0 0 9px rgba(229, 169, 60, 0.48);
+}
+
 .profile-dashboard .profile-card-editor-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(420px, 520px);

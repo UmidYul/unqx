@@ -28,6 +28,16 @@
     "football_stitch",
     "stopwatch_ring",
     "medal_ribbon",
+    "symbiote",
+    "lightning",
+    "zen_bamboo",
+    "sakura_aura",
+    "gogh_strokes",
+    "lunar_gold",
+    "chakra",
+    "konoha_scroll",
+    "mystery_journal",
+    "cipher_glitch",
   ];
   const rawAvatarFrame = typeof avatarFrame === "string" ? avatarFrame : "";
   const pageAvatarFrame = privateAvatarFrameKeys.includes(String(rawAvatarFrame || "").trim().toLowerCase())
@@ -123,6 +133,9 @@
     if (frame === "football_stitch") return `${start}<svg class="unq-ref-avatar-frame-svg" viewBox="0 0 140 140" preserveAspectRatio="none"><ellipse cx="70" cy="70" rx="58" ry="44" class="frame-stroke-thick frame-stroke-primary"></ellipse><path d="M48 70h44M56 60v20M64 58v24M72 58v24M80 58v24M88 60v20" class="frame-stroke-thin frame-stroke-white"></path></svg>${end}`;
     if (frame === "stopwatch_ring") return `${start}<svg class="unq-ref-avatar-frame-svg" viewBox="0 0 140 140" preserveAspectRatio="none"><circle cx="70" cy="76" r="52" class="frame-stroke-thick frame-stroke-primary"></circle><path d="M58 14h24M70 14v12M98 30l10-10M70 76V46M70 76l20 14" class="frame-stroke-thin frame-stroke-secondary"></path></svg>${end}`;
     if (frame === "medal_ribbon") return `${start}<svg class="unq-ref-avatar-frame-svg" viewBox="0 0 140 140" preserveAspectRatio="none"><path d="M48 8h44l-12 42H60L48 8Z" class="frame-fill-secondary"></path><circle cx="70" cy="76" r="54" class="frame-stroke-thick frame-stroke-primary"></circle><circle cx="70" cy="76" r="45" class="frame-stroke-thin frame-stroke-white"></circle></svg>${end}`;
+    if (["symbiote", "lightning", "zen_bamboo", "sakura_aura", "gogh_strokes", "lunar_gold", "chakra", "konoha_scroll", "mystery_journal", "cipher_glitch"].includes(frame)) {
+      return `${start}<span class="unq-ref-avatar-frame-css"></span>${end}`;
+    }
     return "";
   };
   const privateThemeTokens = {
@@ -304,6 +317,78 @@
       mutedColor: "#7D7461",
       avatarBg: "linear-gradient(135deg, #2B2B2B, #D35252)",
       avatarText: "#F5E6CA",
+      radius: "30px",
+    },
+    rick_morty_portal: {
+      cardBg: "rgba(18, 5, 36, 0.9)",
+      cardBorder: "#39FF14",
+      buttonPrimaryBg: "linear-gradient(135deg, #39FF14, #A6FF96)",
+      buttonPrimaryText: "#0B001A",
+      buttonSecondaryBg: "rgba(11, 0, 26, 0.72)",
+      nameColor: "#A6FF96",
+      mutedColor: "#39FF14",
+      avatarBg: "radial-gradient(circle at 35% 28%, #A6FF96, #39FF14 44%, #0B001A 100%)",
+      avatarText: "#0B001A",
+      radius: "30px",
+    },
+    gravity_falls: {
+      cardBg: "rgba(43, 31, 25, 0.93)",
+      cardBorder: "#E5A93C",
+      buttonPrimaryBg: "linear-gradient(135deg, #FF6B8B, #E5A93C)",
+      buttonPrimaryText: "#2B1F19",
+      buttonSecondaryBg: "rgba(26, 46, 34, 0.74)",
+      nameColor: "#F2E3C6",
+      mutedColor: "#E5A93C",
+      avatarBg: "linear-gradient(135deg, #1A2E22, #2B1F19 58%, #E5A93C)",
+      avatarText: "#F2E3C6",
+      radius: "28px",
+    },
+    venom_symbiote: {
+      cardBg: "rgba(8, 8, 12, 0.95)",
+      cardBorder: "#E53E6D",
+      buttonPrimaryBg: "linear-gradient(135deg, #00F0FF, #E53E6D)",
+      buttonPrimaryText: "#FFFFFF",
+      buttonSecondaryBg: "rgba(8, 8, 12, 0.76)",
+      nameColor: "#FFFFFF",
+      mutedColor: "#00F0FF",
+      avatarBg: "radial-gradient(circle at 30% 24%, #00F0FF, #E53E6D 48%, #08080C)",
+      avatarText: "#FFFFFF",
+      radius: "30px",
+    },
+    shinobi_path: {
+      cardBg: "rgba(29, 38, 55, 0.94)",
+      cardBorder: "#00F0FF",
+      buttonPrimaryBg: "linear-gradient(135deg, #FF8c00, #F2552C)",
+      buttonPrimaryText: "#111a29",
+      buttonSecondaryBg: "rgba(29, 38, 55, 0.74)",
+      nameColor: "#00F0FF",
+      mutedColor: "#FF8c00",
+      avatarBg: "linear-gradient(135deg, #1D2637, #2D4263 48%, #FF8c00)",
+      avatarText: "#FFFFFF",
+      radius: "28px",
+    },
+    sakura_blossom: {
+      cardBg: "rgba(253, 246, 244, 0.92)",
+      cardBorder: "#D3A297",
+      buttonPrimaryBg: "linear-gradient(135deg, #FFB7B2, #FF8E9E)",
+      buttonPrimaryText: "#2C1E1A",
+      buttonSecondaryBg: "rgba(253, 246, 244, 0.72)",
+      nameColor: "#2C1E1A",
+      mutedColor: "#C85C5C",
+      avatarBg: "linear-gradient(135deg, #2C1E1A, #C85C5C 58%, #FFB7B2)",
+      avatarText: "#FDF6F4",
+      radius: "30px",
+    },
+    starry_night: {
+      cardBg: "rgba(11, 25, 44, 0.93)",
+      cardBorder: "#F5C71A",
+      buttonPrimaryBg: "linear-gradient(135deg, #F5C71A, #FFD700)",
+      buttonPrimaryText: "#0B192C",
+      buttonSecondaryBg: "rgba(11, 25, 44, 0.72)",
+      nameColor: "#FFF5D1",
+      mutedColor: "#F5C71A",
+      avatarBg: "radial-gradient(circle at 38% 26%, #FFF5D1, #F5C71A 34%, #0B192C)",
+      avatarText: "#0B192C",
       radius: "30px",
     },
     velours: {
