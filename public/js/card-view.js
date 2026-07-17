@@ -1054,44 +1054,44 @@
         "linear-gradient(90deg, rgba(32,138,133,0) 0%, rgba(230,193,122,0.45) 48%, rgba(255,255,255,0.42) 52%, rgba(32,138,133,0) 100%)",
     },
     turtle_power: {
-      cardBg: "#95AFBA",
+      cardBg: "repeating-linear-gradient(45deg, #4A7836, #4A7836 10px, #3f672e 10px, #3f672e 20px)",
       cardBgOverlay: "turtle_power",
-      surfaceBg: "rgba(30, 41, 59, 0.74)",
+      surfaceBg: "rgba(21, 29, 36, 0.76)",
       cardBorder: "4px solid #1E293B",
       borderColor: "#4A7836",
-      surfaceBorder: "2px solid rgba(172, 112, 56, 0.68)",
+      surfaceBorder: "3px solid #1E293B",
       dividerColor: "rgba(30, 41, 59, 0.36)",
-      nameColor: "#FFFFFF",
-      roleColor: "#1E293B",
-      mutedColor: "rgba(30, 41, 59, 0.78)",
+      nameColor: "#FFE600",
+      roleColor: "#FFFFFF",
+      mutedColor: "rgba(255, 255, 255, 0.78)",
       accentColor: "#C81D25",
       emailColor: "#FFFFFF",
-      buttonPrimaryBg: "#1E293B",
-      buttonPrimaryText: "#95AFBA",
-      buttonPrimaryBorder: "#AC7038",
-      buttonSecondaryBg: "#4A7836",
+      buttonPrimaryBg: "#C81D25",
+      buttonPrimaryText: "#FFFFFF",
+      buttonPrimaryBorder: "#1E293B",
+      buttonSecondaryBg: "#1E293B",
       buttonSecondaryText: "#FFFFFF",
-      buttonSecondaryBorder: "#C81D25",
-      badgeText: "#FFFFFF",
-      badgeBg: "#C81D25",
+      buttonSecondaryBorder: "#FFE600",
+      badgeText: "#1E293B",
+      badgeBg: "#FFE600",
       badgeBorder: "2px solid #1E293B",
-      topLineGradient: "linear-gradient(90deg, transparent, #C81D25, #4A7836, #AC7038, transparent)",
-      avatarBg: "linear-gradient(135deg, #4A7836 0%, #AC7038 56%, #1E293B 100%)",
+      topLineGradient: "linear-gradient(90deg, transparent, #FFE600, #C81D25, #4A7836, transparent)",
+      avatarBg: "radial-gradient(circle at 34% 28%, #FFE600, #C81D25 34%, #4A7836 66%, #1E293B)",
       avatarText: "#FFFFFF",
       avatarBorder: "3px solid #1E293B",
-      cardBorderRadius: "20px",
-      fontFamily: "'Impact', 'Arial Black', 'Sora', sans-serif",
+      cardBorderRadius: "24px",
+      fontFamily: "'Permanent Marker', 'Impact', 'Arial Black', cursive",
       nameFontStyle: "normal",
       nameFontWeight: "900",
       roleLetterSpacing: "0.12em",
-      scoreLabelColor: "#1E293B",
-      scoreValueColor: "#4A7836",
-      scoreBarFill: "linear-gradient(90deg, #4A7836, #AC7038, #C81D25)",
+      scoreLabelColor: "#FFFFFF",
+      scoreValueColor: "#FFE600",
+      scoreBarFill: "linear-gradient(90deg, #FFE600, #C81D25, #4A7836)",
       scoreBarTrack: "rgba(30, 41, 59, 0.16)",
       scorePercentileColor: "#C81D25",
-      cardShadow: "0 20px 40px rgba(15, 23, 42, 0.6), 0 0 25px rgba(74, 120, 54, 0.3)",
+      cardShadow: "12px 12px 0px #1E293B, 0 0 30px rgba(74, 120, 54, 0.6)",
       buttonShineGradient:
-        "linear-gradient(90deg, rgba(30,41,59,0) 0%, rgba(149,175,186,0.42) 48%, rgba(74,120,54,0.38) 52%, rgba(30,41,59,0) 100%)",
+        "linear-gradient(90deg, rgba(200,29,37,0) 0%, rgba(255,230,0,0.55) 48%, rgba(255,255,255,0.45) 52%, rgba(200,29,37,0) 100%)",
     },
     snow_leopard: {
       cardBg: "rgba(248, 250, 252, 0.85)",
@@ -1253,42 +1253,42 @@
     },
     graffiti_neon: createGraffitiTheme(),
     graffiti: {
-      cardBg: "#000000",
+      cardBg: "#0c0c0e",
       cardBgOverlay: "graffiti",
       surfaceBg: "rgba(0, 0, 0, 0.72)",
-      cardBorder: "4px solid #0F52BA",
-      borderColor: "#0F52BA",
-      surfaceBorder: "2px solid rgba(255, 230, 0, 0.72)",
+      cardBorder: "4px solid #EC4899",
+      borderColor: "#EC4899",
+      surfaceBorder: "3px dashed #FFE600",
       dividerColor: "rgba(236, 72, 153, 0.42)",
-      nameColor: "#FFFFFF",
+      nameColor: "#FFE600",
       roleColor: "#FFE600",
       mutedColor: "rgba(255, 255, 255, 0.72)",
       accentColor: "#EC4899",
       emailColor: "#FFFFFF",
-      buttonPrimaryBg: "#FFE600",
-      buttonPrimaryText: "#000000",
-      buttonPrimaryBorder: "#000000",
-      buttonSecondaryBg: "#0F52BA",
-      buttonSecondaryText: "#FFFFFF",
-      buttonSecondaryBorder: "#000000",
+      buttonPrimaryBg: "transparent",
+      buttonPrimaryText: "#EC4899",
+      buttonPrimaryBorder: "#FFE600",
+      buttonSecondaryBg: "transparent",
+      buttonSecondaryText: "#EC4899",
+      buttonSecondaryBorder: "#FFE600",
       badgeText: "#000000",
       badgeBg: "#FFE600",
-      badgeBorder: "3px solid #000000",
-      topLineGradient: "linear-gradient(90deg, transparent, #0F52BA, #FFE600, #EC4899, #FF4500, transparent)",
-      avatarBg: "linear-gradient(135deg, #0F52BA 0%, #EC4899 55%, #FFE600 100%)",
+      badgeBorder: "3px solid #EC4899",
+      topLineGradient: "linear-gradient(90deg, transparent, #FFE600, #EC4899, #FFE600, transparent)",
+      avatarBg: "linear-gradient(135deg, #0c0c0e 0%, #EC4899 55%, #FFE600 100%)",
       avatarText: "#FFFFFF",
       avatarBorder: "3px solid #000000",
-      cardBorderRadius: "20px",
-      fontFamily: "'Impact', 'Arial Black', 'Sora', sans-serif",
+      cardBorderRadius: "12px",
+      fontFamily: "'Sedgwick Ave Display', 'Impact', 'Arial Black', cursive",
       nameFontStyle: "normal",
       nameFontWeight: "900",
       roleLetterSpacing: "0.14em",
       scoreLabelColor: "#FFE600",
       scoreValueColor: "#FFFFFF",
-      scoreBarFill: "linear-gradient(90deg, #0F52BA, #FFE600, #EC4899)",
+      scoreBarFill: "linear-gradient(90deg, #FFE600, #EC4899)",
       scoreBarTrack: "rgba(255, 255, 255, 0.14)",
       scorePercentileColor: "#EC4899",
-      cardShadow: "0 10px 30px rgba(0, 0, 0, 0.8), 0 0 20px rgba(236, 72, 153, 0.4), inset 0 0 15px rgba(254, 230, 0, 0.2)",
+      cardShadow: "0 0 30px rgba(236, 72, 153, 0.6), inset 0 0 20px rgba(254, 230, 0, 0.2)",
       buttonShineGradient:
         "linear-gradient(90deg, rgba(255,230,0,0) 0%, rgba(255,255,255,0.58) 48%, rgba(236,72,153,0.38) 52%, rgba(255,230,0,0) 100%)",
     },
@@ -4361,9 +4361,10 @@
       : "";
     const turtlePowerEffectsHtml = theme.key === "turtle_power"
       ? `<div class="turtle-power-effects" aria-hidden="true">
-          <span class="mouser-bg mouser-1"></span>
-          <span class="mouser-bg mouser-2"></span>
-          <div class="patrolling-turtle">
+          <span class="mutagen-splat splat-1"></span>
+          <span class="mutagen-splat splat-2"></span>
+          <span class="mutagen-splat splat-3"></span>
+          <div class="patrolling-turtle-1">
             <svg viewBox="0 0 100 100" width="100%" height="100%" focusable="false">
               <path class="t-leg-l" d="M 25,65 C 15,75 10,85 20,90 C 30,95 35,80 30,70 Z" fill="#4A7836" stroke="#1E293B" stroke-width="3"></path>
               <path class="t-leg-r" d="M 75,65 C 85,75 90,85 80,90 C 70,95 65,80 70,70 Z" fill="#4A7836" stroke="#1E293B" stroke-width="3"></path>
@@ -4374,6 +4375,21 @@
               <circle cx="50" cy="50" r="20" fill="none" stroke="#4A7836" stroke-width="3" stroke-dasharray="10,5"></circle>
               <ellipse cx="50" cy="18" rx="12" ry="15" fill="#4A7836" stroke="#1E293B" stroke-width="3"></ellipse>
               <rect x="40" y="12" width="20" height="4" fill="#C81D25" rx="1"></rect>
+              <circle cx="45" cy="14" r="2" fill="#FFFFFF"></circle>
+              <circle cx="55" cy="14" r="2" fill="#FFFFFF"></circle>
+            </svg>
+          </div>
+          <div class="patrolling-turtle-2">
+            <svg viewBox="0 0 100 100" width="100%" height="100%" focusable="false">
+              <path class="t-leg-r" d="M 25,65 C 15,75 10,85 20,90 C 30,95 35,80 30,70 Z" fill="#4A7836" stroke="#1E293B" stroke-width="3"></path>
+              <path class="t-leg-l" d="M 75,65 C 85,75 90,85 80,90 C 70,95 65,80 70,70 Z" fill="#4A7836" stroke="#1E293B" stroke-width="3"></path>
+              <path class="t-leg-l" d="M 20,35 C 10,25 5,15 15,10 C 25,5 30,20 25,30 Z" fill="#4A7836" stroke="#1E293B" stroke-width="3"></path>
+              <path class="t-leg-r" d="M 80,35 C 90,25 95,15 85,10 C 75,5 70,20 75,30 Z" fill="#4A7836" stroke="#1E293B" stroke-width="3"></path>
+              <path d="M 50,75 L 50,92 L 47,75 Z" fill="#4A7836" stroke="#1E293B" stroke-width="2"></path>
+              <circle cx="50" cy="50" r="28" fill="#AC7038" stroke="#1E293B" stroke-width="4"></circle>
+              <circle cx="50" cy="50" r="20" fill="none" stroke="#FFE600" stroke-width="3" stroke-dasharray="8,6"></circle>
+              <ellipse cx="50" cy="18" rx="12" ry="15" fill="#4A7836" stroke="#1E293B" stroke-width="3"></ellipse>
+              <rect x="40" y="12" width="20" height="4" fill="#2563EB" rx="1"></rect>
               <circle cx="45" cy="14" r="2" fill="#FFFFFF"></circle>
               <circle cx="55" cy="14" r="2" fill="#FFFFFF"></circle>
             </svg>

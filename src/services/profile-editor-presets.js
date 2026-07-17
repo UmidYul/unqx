@@ -160,8 +160,8 @@ const SIGNATURE_THEMES = [
   {
     id: "turtle_power",
     label: "Сила Черепах 🐢",
-    description: "Comic shell patrol turtle",
-    swatchStyle: "border-color:#1E293B;background:radial-gradient(circle at 12% 16%,rgba(200,29,37,0.34),transparent 36%),radial-gradient(circle at 88% 84%,rgba(74,120,54,0.34),transparent 42%),repeating-radial-gradient(circle,#4A7836 0 2px,transparent 3px 18px),linear-gradient(145deg,#61869B 0%,#95AFBA 58%,#3A5564 100%);box-shadow:0 0 14px rgba(74,120,54,0.42);",
+    description: "Mutagen comic turtle patrol",
+    swatchStyle: "border-color:#1E293B;background:radial-gradient(circle at 18% 24%,rgba(255,230,0,0.28) 0 12px,transparent 13px),radial-gradient(circle at 82% 18%,rgba(200,29,37,0.28) 0 16px,transparent 17px),repeating-linear-gradient(45deg,#4A7836,#4A7836 10px,#3f672e 10px,#3f672e 20px);box-shadow:5px 5px 0 #1E293B,0 0 14px rgba(74,120,54,0.42);",
     premiumRequired: true,
   },
   {
@@ -188,8 +188,8 @@ const SIGNATURE_THEMES = [
   {
     id: "graffiti",
     label: "Граффити 🎨",
-    description: "YES MONEY street spray",
-    swatchStyle: "border-color:#0F52BA;background:radial-gradient(circle at 20% 30%,rgba(15,82,186,0.35),transparent 40%),radial-gradient(circle at 80% 70%,rgba(255,69,0,0.3),transparent 44%),linear-gradient(135deg,rgba(236,72,153,0.28),rgba(254,230,0,0.24)),#000000;box-shadow:0 0 16px rgba(236,72,153,0.45),inset 0 0 0 2px rgba(254,230,0,0.22);",
+    description: "Pink wall, yellow tags",
+    swatchStyle: "border-color:#EC4899;background:radial-gradient(circle at 20% 30%,rgba(236,72,153,0.48),transparent 28%),radial-gradient(circle at 80% 10%,rgba(255,230,0,0.42),transparent 24%),linear-gradient(145deg,#0c0c0e 0%,#050506 100%);box-shadow:4px 4px 0 #FFE600,0 0 12px rgba(236,72,153,0.42);",
     premiumRequired: true,
   },
   {

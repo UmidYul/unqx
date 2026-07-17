@@ -1,3 +1,5 @@
+@import url("https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Sedgwick+Ave+Display&display=swap");
+
 :root {
   --unqx-neon-accent: #00E5FF;
 }
@@ -1616,37 +1618,35 @@
 [data-card-theme="graffiti"] .public-card-shell {
   position: relative;
   overflow: hidden;
-  border: 4px solid #0F52BA !important;
-  border-radius: 20px !important;
-  background-color: #000000 !important;
+  border: 4px solid #EC4899 !important;
+  border-radius: 12px !important;
+  background-color: #0c0c0e !important;
   background-image:
-    radial-gradient(circle at 14% 18%, rgba(236, 72, 153, 0.5) 0 4px, transparent 5px),
-    radial-gradient(circle at 84% 12%, rgba(255, 230, 0, 0.48) 0 5px, transparent 6px),
-    radial-gradient(circle at 72% 80%, rgba(255, 69, 0, 0.42) 0 6px, transparent 7px),
-    radial-gradient(circle at 22% 72%, rgba(15, 82, 186, 0.56) 0 7px, transparent 8px),
-    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.04) 0 1px, transparent 1px 18px),
-    repeating-linear-gradient(90deg, rgba(15, 82, 186, 0.18) 0 2px, transparent 2px 26px),
-    linear-gradient(145deg, #050505 0%, #000000 58%, #101010 100%) !important;
+    radial-gradient(circle at 20% 30%, rgba(236, 72, 153, 0.35) 0%, transparent 25%),
+    radial-gradient(circle at 80% 10%, rgba(255, 230, 0, 0.3) 0%, transparent 20%),
+    radial-gradient(circle at 70% 80%, rgba(236, 72, 153, 0.2) 0%, transparent 30%),
+    repeating-linear-gradient(90deg, rgba(255, 230, 0, 0.08) 0 2px, transparent 2px 18px),
+    linear-gradient(145deg, #0c0c0e 0%, #050506 58%, #151015 100%) !important;
   color: #FFFFFF;
   box-shadow:
-    0 0 26px rgba(236, 72, 153, 0.55),
-    inset 0 0 0 2px rgba(255, 230, 0, 0.32),
-    0 18px 42px rgba(0, 0, 0, 0.7) !important;
+    0 0 30px rgba(236, 72, 153, 0.6),
+    inset 0 0 20px rgba(255, 230, 0, 0.2),
+    8px 8px 0 rgba(255, 230, 0, 0.9) !important;
 }
 
 [data-card-theme="graffiti"] .public-card-shell::before {
-  content: "YES MONEY";
+  content: "UNQX";
   position: absolute;
-  top: 10%;
-  left: -12%;
+  top: 8%;
+  left: -10%;
   z-index: 0;
-  color: rgba(255, 230, 0, 0.08);
-  font-family: Impact, "Arial Black", sans-serif;
-  font-size: clamp(42px, 18vw, 96px);
+  color: rgba(255, 230, 0, 0.1);
+  font-family: "Sedgwick Ave Display", Impact, "Arial Black", cursive;
+  font-size: clamp(56px, 20vw, 120px);
   line-height: 0.9;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.02em;
   text-transform: uppercase;
-  transform: rotate(-14deg);
+  transform: rotate(-16deg);
   pointer-events: none;
   text-shadow: 3px 3px 0 rgba(236, 72, 153, 0.14);
 }
@@ -1658,12 +1658,12 @@
   z-index: 1;
   pointer-events: none;
   background:
-    radial-gradient(circle at 18% 26%, rgba(236, 72, 153, 0.28) 0 2px, transparent 3px),
-    radial-gradient(circle at 42% 18%, rgba(255, 230, 0, 0.2) 0 1px, transparent 2px),
-    radial-gradient(circle at 78% 34%, rgba(255, 69, 0, 0.22) 0 3px, transparent 4px),
-    radial-gradient(circle at 66% 70%, rgba(15, 82, 186, 0.28) 0 2px, transparent 3px),
-    linear-gradient(110deg, transparent 0 46%, rgba(255, 255, 255, 0.08) 47%, transparent 49% 100%);
-  background-size: 54px 54px, 42px 42px, 66px 66px, 48px 48px, 100% 100%;
+    radial-gradient(circle at 18% 26%, rgba(236, 72, 153, 0.32) 0 3px, transparent 4px),
+    radial-gradient(circle at 42% 18%, rgba(255, 230, 0, 0.3) 0 2px, transparent 3px),
+    radial-gradient(circle at 78% 34%, rgba(236, 72, 153, 0.24) 0 4px, transparent 5px),
+    radial-gradient(circle at 66% 70%, rgba(255, 230, 0, 0.2) 0 2px, transparent 3px),
+    linear-gradient(110deg, transparent 0 46%, rgba(255, 255, 255, 0.09) 47%, transparent 49% 100%);
+  background-size: 46px 46px, 34px 34px, 58px 58px, 42px 42px, 100% 100%;
   mix-blend-mode: screen;
 }
 
@@ -1679,17 +1679,19 @@
 
 [data-card-theme="graffiti"] .unq-ref-name,
 [data-card-theme="graffiti"] .unq-ref-name-text {
-  color: #FFFFFF !important;
-  font-family: Impact, "Arial Black", "Sora", sans-serif !important;
-  letter-spacing: 0.03em !important;
+  display: inline-block;
+  color: #FFE600 !important;
+  font-family: "Sedgwick Ave Display", Impact, "Arial Black", cursive !important;
+  letter-spacing: 0.04em !important;
   text-transform: uppercase !important;
+  transform: rotate(-3deg);
   text-shadow:
     2px 0 #000000,
     -2px 0 #000000,
     0 2px #000000,
     0 -2px #000000,
-    0 0 14px rgba(236, 72, 153, 0.9),
-    3px 3px 0 rgba(15, 82, 186, 0.9) !important;
+    0 0 16px rgba(255, 230, 0, 0.55),
+    4px 4px 0 rgba(236, 72, 153, 0.95) !important;
 }
 
 [data-card-theme="graffiti"] .unq-ref-role,
@@ -1702,14 +1704,14 @@
 [data-card-theme="graffiti"] .unq-ref-action-btn,
 [data-card-theme="graffiti"] .unq-ref-follow-toggle,
 [data-card-theme="graffiti"] .unq-follow-action-btn {
-  background: #FFE600 !important;
-  border: 3px solid #000000 !important;
-  color: #000000 !important;
-  border-radius: 14px !important;
-  font-family: Impact, "Arial Black", "Sora", sans-serif !important;
+  background: transparent !important;
+  border: 3px dashed #FFE600 !important;
+  color: #EC4899 !important;
+  border-radius: 10px !important;
+  font-family: "Sedgwick Ave Display", Impact, "Arial Black", cursive !important;
   letter-spacing: 0.04em !important;
   text-transform: uppercase !important;
-  box-shadow: 4px 4px 0 #0F52BA, 0 0 14px rgba(255, 230, 0, 0.3) !important;
+  box-shadow: 4px 4px 0 #EC4899, 0 0 14px rgba(255, 230, 0, 0.22) !important;
   transition: transform 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease, color 0.18s ease !important;
 }
 
@@ -1717,15 +1719,16 @@
 [data-card-theme="graffiti"] .unq-ref-follow-toggle:hover,
 [data-card-theme="graffiti"] .unq-follow-action-btn:hover {
   background: #EC4899 !important;
-  color: #FFFFFF !important;
-  box-shadow: 4px 4px 0 #FFE600, 0 0 18px rgba(236, 72, 153, 0.72) !important;
+  border-color: #FFE600 !important;
+  color: #000000 !important;
+  box-shadow: 4px 4px 0 #FFE600, 0 0 18px rgba(236, 72, 153, 0.8) !important;
   transform: translate(-1px, -1px) rotate(-1deg);
 }
 
 [data-card-theme="graffiti"] .unq-follow-dialog,
 [data-card-theme="graffiti"] .unq-follow-row {
   background: rgba(0, 0, 0, 0.84) !important;
-  border-color: #0F52BA !important;
+  border-color: #EC4899 !important;
   color: #FFFFFF !important;
 }
 
@@ -1998,31 +2001,33 @@
   position: relative;
   overflow: hidden;
   border: 4px solid #1E293B !important;
-  border-radius: 20px !important;
-  background-color: #95AFBA !important;
+  border-radius: 24px !important;
+  background-color: #4A7836 !important;
   background-image:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, transparent 60%),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Cpath d='M40 0 L80 20 L80 60 L40 80 L0 60 L0 20 Z' fill='none' stroke='%234A7836' stroke-width='2' opacity='0.25'/%3E%3Cpath d='M40 10 L70 25 L70 55 L40 70 L10 55 L10 25 Z' fill='none' stroke='%23AC7038' stroke-width='1.5' opacity='0.2'/%3E%3C/svg%3E"),
-    radial-gradient(circle at 80% 18%, rgba(200, 29, 37, 0.12) 0%, transparent 40%),
-    linear-gradient(160deg, #95AFBA 0%, #7897A5 58%, #6E8794 100%) !important;
-  background-size: 100% 100%, 40px 40px, 100% 100%, 100% 100% !important;
-  color: #1E293B;
+    radial-gradient(circle at 18% 24%, rgba(255, 230, 0, 0.18) 0 14px, transparent 15px),
+    radial-gradient(circle at 82% 18%, rgba(200, 29, 37, 0.2) 0 18px, transparent 19px),
+    radial-gradient(circle at 74% 78%, rgba(149, 175, 186, 0.18) 0 22px, transparent 23px),
+    repeating-linear-gradient(45deg, #4A7836, #4A7836 10px, #3f672e 10px, #3f672e 20px) !important;
+  background-size: 100% 100%, 100% 100%, 100% 100%, auto !important;
+  color: #FFFFFF;
+  font-family: "Permanent Marker", Impact, "Arial Black", cursive;
   box-shadow:
-    0 20px 40px rgba(15, 23, 42, 0.6),
-    0 0 25px rgba(74, 120, 54, 0.3) !important;
+    12px 12px 0 #1E293B,
+    0 0 30px rgba(74, 120, 54, 0.6) !important;
 }
 
 [data-card-theme="turtle_power"] .public-card-shell::before {
   content: "";
   position: absolute;
-  inset: 10px;
+  inset: 12px;
   z-index: 0;
   pointer-events: none;
-  border: 2px dashed rgba(30, 41, 59, 0.34);
-  border-radius: 16px;
+  border: 3px dashed rgba(30, 41, 59, 0.45);
+  border-radius: 18px;
   background:
-    radial-gradient(circle at 20% 20%, rgba(74, 120, 54, 0.18) 0 10px, transparent 11px),
-    radial-gradient(circle at 82% 74%, rgba(172, 112, 56, 0.16) 0 14px, transparent 15px);
+    radial-gradient(circle at 20% 20%, rgba(255, 230, 0, 0.16) 0 10px, transparent 11px),
+    radial-gradient(circle at 82% 74%, rgba(200, 29, 37, 0.18) 0 14px, transparent 15px),
+    linear-gradient(110deg, transparent 0 48%, rgba(255, 255, 255, 0.08) 49%, transparent 50% 100%);
 }
 
 [data-card-theme="turtle_power"] .public-card-shell::after {
@@ -2051,35 +2056,39 @@
 
 [data-card-theme="turtle_power"] .unq-ref-name,
 [data-card-theme="turtle_power"] .unq-ref-name-text {
-  color: #FFFFFF !important;
-  font-family: Impact, "Arial Black", "Sora", sans-serif !important;
-  letter-spacing: 0.03em !important;
+  color: #FFE600 !important;
+  font-family: "Permanent Marker", Impact, "Arial Black", cursive !important;
+  letter-spacing: 0.08em !important;
   text-shadow:
     -2px -2px 0 #1E293B,
     2px -2px 0 #1E293B,
     -2px 2px 0 #1E293B,
     2px 2px 0 #1E293B,
-    0 0 12px rgba(74, 120, 54, 0.8) !important;
+    4px 4px 0 #C81D25,
+    0 0 14px rgba(255, 230, 0, 0.45) !important;
 }
 
 [data-card-theme="turtle_power"] .unq-ref-action-btn,
 [data-card-theme="turtle_power"] .unq-ref-follow-toggle,
 [data-card-theme="turtle_power"] .unq-follow-action-btn {
-  background: #1E293B !important;
-  border: 3px solid #AC7038 !important;
-  color: #95AFBA !important;
+  background: #C81D25 !important;
+  border: 3px solid #1E293B !important;
+  color: #FFFFFF !important;
+  font-family: "Permanent Marker", Impact, "Arial Black", cursive !important;
   font-weight: 800 !important;
+  box-shadow: 5px 5px 0 #1E293B !important;
+  transform: rotate(-1deg);
   transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275), background-color 0.25s ease, box-shadow 0.25s ease !important;
 }
 
 [data-card-theme="turtle_power"] .unq-ref-action-btn:hover,
 [data-card-theme="turtle_power"] .unq-ref-follow-toggle:hover,
 [data-card-theme="turtle_power"] .unq-follow-action-btn:hover {
-  background: #4A7836 !important;
-  border-color: #C81D25 !important;
-  color: #FFFFFF !important;
-  transform: scale(1.04) rotate(1deg);
-  box-shadow: 0 5px 15px rgba(74, 120, 54, 0.6) !important;
+  background: #FFE600 !important;
+  border-color: #1E293B !important;
+  color: #1E293B !important;
+  transform: translate(-2px, -2px) scale(1.04) rotate(1deg);
+  box-shadow: 7px 7px 0 #1E293B, 0 0 18px rgba(255, 230, 0, 0.55) !important;
 }
 
 [data-card-theme="sakura_blossom"] .public-card-shell {
@@ -3739,18 +3748,19 @@ body[data-page="profile-page"] {
 #profile-card-live-preview[data-preview-theme="turtle_power"] {
   --preview-border-color: #1E293B;
   --preview-page-bg:
-    radial-gradient(circle at 10% 10%, rgba(200, 29, 37, 0.18) 0%, transparent 50%),
-    radial-gradient(circle at 90% 90%, rgba(74, 120, 54, 0.22) 0%, transparent 50%),
-    linear-gradient(185deg, #61869B 0%, #3A5564 100%);
-  --preview-screen-opacity: 0.46;
+    radial-gradient(circle at 15% 20%, rgba(74, 120, 54, 0.4) 0%, transparent 50%),
+    radial-gradient(circle at 85% 80%, rgba(74, 120, 54, 0.34) 0%, transparent 45%),
+    radial-gradient(circle at 78% 18%, rgba(200, 29, 37, 0.14) 0%, transparent 34%),
+    linear-gradient(135deg, #2c3e4b 0%, #151d24 100%);
+  --preview-screen-opacity: 0.52;
   --preview-screen-pattern:
-    repeating-linear-gradient(115deg, rgba(30, 41, 59, 0.13) 0 2px, transparent 2px 28px),
-    radial-gradient(circle at 20% 26%, rgba(200, 29, 37, 0.16) 0 7px, transparent 8px),
-    radial-gradient(circle at 78% 70%, rgba(74, 120, 54, 0.18) 0 8px, transparent 9px);
-  --preview-overlay-opacity: 0.68;
+    repeating-linear-gradient(45deg, rgba(255, 230, 0, 0.12) 0 2px, transparent 2px 20px),
+    radial-gradient(circle at 20% 26%, rgba(255, 230, 0, 0.16) 0 7px, transparent 8px),
+    radial-gradient(circle at 78% 70%, rgba(200, 29, 37, 0.16) 0 8px, transparent 9px);
+  --preview-overlay-opacity: 0.74;
   --preview-overlay-pattern:
-    radial-gradient(circle at 80% 18%, rgba(200, 29, 37, 0.14) 0%, transparent 40%),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Cpath d='M40 0 80 20 80 60 40 80 0 60 0 20Z' fill='none' stroke='%234A7836' stroke-width='2' opacity='.25'/%3E%3Cpath d='M40 10 70 25 70 55 40 70 10 55 10 25Z' fill='none' stroke='%23AC7038' stroke-width='1.5' opacity='.22'/%3E%3C/svg%3E");
+    radial-gradient(circle at 80% 18%, rgba(200, 29, 37, 0.18) 0%, transparent 40%),
+    repeating-linear-gradient(45deg, #4A7836, #4A7836 10px, #3f672e 10px, #3f672e 20px);
 }
 
 #profile-card-live-preview[data-preview-theme="sakura_blossom"] {
@@ -3801,17 +3811,17 @@ body[data-page="profile-page"] {
 }
 
 #profile-card-live-preview[data-preview-theme="graffiti"] {
-  --preview-border-color: #0F52BA;
+  --preview-border-color: #EC4899;
   --preview-page-bg:
     radial-gradient(circle at 12% 20%, rgba(236, 72, 153, 0.32) 0%, transparent 32%),
     radial-gradient(circle at 86% 16%, rgba(255, 230, 0, 0.24) 0%, transparent 30%),
-    radial-gradient(circle at 70% 82%, rgba(15, 82, 186, 0.28) 0%, transparent 38%),
-    linear-gradient(135deg, #000000 0%, #070707 58%, #020202 100%);
-  --preview-screen-opacity: 0.58;
+    radial-gradient(circle at 70% 82%, rgba(236, 72, 153, 0.22) 0%, transparent 38%),
+    linear-gradient(135deg, #050506 0%, #0c0c0e 58%, #020202 100%);
+  --preview-screen-opacity: 0.62;
   --preview-screen-pattern:
     radial-gradient(circle at 18% 22%, rgba(236, 72, 153, 0.22) 0 8px, transparent 9px),
     radial-gradient(circle at 78% 18%, rgba(255, 230, 0, 0.22) 0 7px, transparent 8px),
-    repeating-linear-gradient(90deg, rgba(15, 82, 186, 0.16) 0 2px, transparent 2px 24px);
+    repeating-linear-gradient(90deg, rgba(255, 230, 0, 0.14) 0 2px, transparent 2px 24px);
   --preview-overlay-opacity: 0.72;
   --preview-overlay-pattern:
     radial-gradient(circle at 20% 28%, rgba(236, 72, 153, 0.24) 0 3px, transparent 4px),
@@ -4656,20 +4666,21 @@ body[data-card-theme="snow_leopard"]::before {
 }
 
 body[data-card-theme="graffiti"] {
-  --theme-page-bg: #000000;
-  --theme-screen-opacity: 0.58;
+  --theme-page-bg: #050506;
+  --theme-screen-opacity: 0.62;
   --theme-screen-pattern:
-    radial-gradient(circle at 18% 22%, rgba(236, 72, 153, 0.2) 0 10px, transparent 11px),
-    radial-gradient(circle at 78% 18%, rgba(255, 230, 0, 0.2) 0 8px, transparent 9px),
-    radial-gradient(circle at 64% 78%, rgba(255, 69, 0, 0.16) 0 11px, transparent 12px),
-    repeating-linear-gradient(90deg, rgba(15, 82, 186, 0.14) 0 2px, transparent 2px 24px),
-    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.035) 0 1px, transparent 1px 18px);
-  background-color: #000000 !important;
+    radial-gradient(circle at 18% 22%, rgba(236, 72, 153, 0.24) 0 10px, transparent 11px),
+    radial-gradient(circle at 78% 18%, rgba(255, 230, 0, 0.24) 0 8px, transparent 9px),
+    radial-gradient(circle at 64% 78%, rgba(236, 72, 153, 0.18) 0 11px, transparent 12px),
+    repeating-linear-gradient(90deg, rgba(255, 230, 0, 0.12) 0 2px, transparent 2px 24px),
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.04) 0 1px, transparent 1px 18px);
+  background-color: #050506 !important;
   background-image:
     radial-gradient(circle at 10% 20%, rgba(236, 72, 153, 0.28) 0%, transparent 32%),
-    radial-gradient(circle at 86% 16%, rgba(255, 230, 0, 0.2) 0%, transparent 30%),
-    radial-gradient(circle at 72% 84%, rgba(15, 82, 186, 0.24) 0%, transparent 38%),
-    linear-gradient(135deg, #000000 0%, #070707 58%, #020202 100%) !important;
+    radial-gradient(circle at 86% 16%, rgba(255, 230, 0, 0.24) 0%, transparent 30%),
+    radial-gradient(circle at 72% 84%, rgba(236, 72, 153, 0.2) 0%, transparent 38%),
+    linear-gradient(135deg, #050506 0%, #0c0c0e 58%, #020202 100%) !important;
+  font-family: "Sedgwick Ave Display", Impact, "Arial Black", cursive;
 }
 
 body[data-card-theme="graffiti"]::before {
@@ -4741,17 +4752,19 @@ body[data-card-theme="samarkand_heritage"]::before {
 }
 
 body[data-card-theme="turtle_power"] {
-  --theme-page-bg: #61869B;
-  --theme-screen-opacity: 0.42;
+  --theme-page-bg: #151d24;
+  --theme-screen-opacity: 0.52;
   --theme-screen-pattern:
-    radial-gradient(circle at 10% 10%, rgba(200, 29, 37, 0.15) 0%, transparent 50%),
-    radial-gradient(circle at 90% 90%, rgba(74, 120, 54, 0.2) 0%, transparent 50%),
-    repeating-linear-gradient(115deg, rgba(30, 41, 59, 0.12) 0 2px, transparent 2px 28px);
-  background-color: #61869B !important;
+    radial-gradient(circle at 14% 18%, rgba(74, 120, 54, 0.34) 0%, transparent 42%),
+    radial-gradient(circle at 88% 82%, rgba(200, 29, 37, 0.18) 0%, transparent 36%),
+    repeating-linear-gradient(115deg, rgba(149, 175, 186, 0.12) 0 2px, transparent 2px 28px);
+  background-color: #151d24 !important;
   background-image:
-    radial-gradient(circle at 10% 10%, rgba(200, 29, 37, 0.15) 0%, transparent 50%),
-    radial-gradient(circle at 90% 90%, rgba(74, 120, 54, 0.2) 0%, transparent 50%),
-    linear-gradient(185deg, #61869B 0%, #3a5564 100%) !important;
+    radial-gradient(circle at 15% 20%, rgba(74, 120, 54, 0.4) 0%, transparent 50%),
+    radial-gradient(circle at 85% 80%, rgba(74, 120, 54, 0.34) 0%, transparent 45%),
+    radial-gradient(circle at 78% 18%, rgba(200, 29, 37, 0.14) 0%, transparent 34%),
+    linear-gradient(135deg, #2c3e4b 0%, #151d24 100%) !important;
+  font-family: "Permanent Marker", Impact, "Arial Black", cursive;
 }
 
 body[data-card-theme="turtle_power"]::before {
@@ -5189,7 +5202,7 @@ body[data-card-theme="starry_night"]::before {
   bottom: 15%;
   width: 140px;
   height: 140px;
-  background: #0F52BA;
+  background: #EC4899;
   animation-delay: -4s;
 }
 
@@ -5724,143 +5737,171 @@ body[data-card-theme="starry_night"]::before {
   overflow: hidden;
 }
 
-.patrolling-turtle {
+.patrolling-turtle-1,
+.patrolling-turtle-2 {
   position: fixed;
-  width: 45px;
-  height: 45px;
+  width: 58px;
+  height: 58px;
   z-index: 99;
   pointer-events: none;
-  filter: drop-shadow(0 4px 0 rgba(30, 41, 59, 0.28)) drop-shadow(0 0 10px rgba(74, 120, 54, 0.3));
-  animation: turtle-patrol 40s infinite linear;
+  filter: drop-shadow(0 5px 0 rgba(30, 41, 59, 0.34)) drop-shadow(0 0 12px rgba(74, 120, 54, 0.42));
   will-change: left, top, transform;
 }
 
+.patrolling-turtle-1 {
+  animation: route-fast 25s infinite linear;
+}
+
+.patrolling-turtle-2 {
+  width: 48px;
+  height: 48px;
+  animation: route-slow 38s infinite linear;
+}
+
 .t-leg-l {
-  animation: leg-left 1s infinite ease-in-out;
+  animation: crawl-left 0.6s infinite ease-in-out;
   transform-origin: top right;
 }
 
 .t-leg-r {
-  animation: leg-right 1s infinite ease-in-out;
+  animation: crawl-right 0.6s infinite ease-in-out;
   transform-origin: top left;
 }
 
-.mouser-bg {
+.mutagen-splat {
   position: fixed;
-  width: 80px;
-  height: 44px;
-  border: 2px solid rgba(30, 41, 59, 0.18);
-  border-radius: 50% 50% 40% 40%;
-  opacity: 0.18;
-  transform: rotate(-12deg);
+  width: 120px;
+  height: 120px;
+  border-radius: 42% 58% 48% 52%;
+  background:
+    radial-gradient(circle at 38% 36%, rgba(255, 230, 0, 0.42) 0 8px, transparent 9px),
+    radial-gradient(circle, rgba(74, 120, 54, 0.34), rgba(74, 120, 54, 0.02) 68%);
+  filter: blur(1px);
+  opacity: 0.4;
+  animation: splat-pulse 5s ease-in-out infinite;
 }
 
-.mouser-bg::before,
-.mouser-bg::after {
-  content: "";
-  position: absolute;
-  top: -16px;
-  width: 18px;
-  height: 22px;
-  border: 2px solid rgba(30, 41, 59, 0.18);
-  border-bottom: 0;
-  border-radius: 14px 14px 0 0;
+.splat-1 {
+  left: 6%;
+  top: 14%;
 }
 
-.mouser-bg::before {
-  left: 14px;
+.splat-2 {
+  right: 9%;
+  top: 60%;
+  animation-delay: -2s;
+  transform: scale(1.25) rotate(18deg);
 }
 
-.mouser-bg::after {
-  right: 14px;
+.splat-3 {
+  left: 42%;
+  bottom: 8%;
+  animation-delay: -3.5s;
+  transform: scale(0.8) rotate(-22deg);
 }
 
-.mouser-1 {
-  left: 7%;
-  top: 18%;
-}
-
-.mouser-2 {
-  right: 8%;
-  bottom: 18%;
-  transform: rotate(14deg) scale(1.2);
-}
-
-@keyframes leg-left {
+@keyframes crawl-left {
   0%,
   100% {
-    transform: rotate(-10deg);
+    transform: rotate(-16deg) translateY(0);
   }
 
   50% {
-    transform: rotate(15deg);
+    transform: rotate(18deg) translateY(2px);
   }
 }
 
-@keyframes leg-right {
+@keyframes crawl-right {
   0%,
   100% {
-    transform: rotate(15deg);
+    transform: rotate(18deg) translateY(0);
   }
 
   50% {
-    transform: rotate(-10deg);
+    transform: rotate(-16deg) translateY(2px);
   }
 }
 
-@keyframes turtle-patrol {
+@keyframes route-fast {
   0% {
-    left: 5%;
-    top: 85%;
-    transform: rotate(0deg);
+    left: -8%;
+    top: 78%;
+    transform: rotate(78deg);
   }
 
-  22% {
-    left: 5%;
-    top: 15%;
-    transform: rotate(0deg);
+  30% {
+    left: 34%;
+    top: 52%;
+    transform: rotate(58deg);
   }
 
-  25% {
-    left: 5%;
-    top: 15%;
-    transform: rotate(90deg);
+  55% {
+    left: 84%;
+    top: 20%;
+    transform: rotate(74deg);
   }
 
-  47% {
-    left: 85%;
-    top: 15%;
-    transform: rotate(90deg);
+  56% {
+    left: 84%;
+    top: 20%;
+    transform: rotate(250deg) scaleX(-1);
   }
 
-  50% {
-    left: 85%;
-    top: 15%;
-    transform: rotate(180deg);
-  }
-
-  72% {
-    left: 85%;
-    top: 85%;
-    transform: rotate(180deg);
-  }
-
-  75% {
-    left: 85%;
-    top: 85%;
-    transform: rotate(270deg);
-  }
-
-  97% {
-    left: 5%;
-    top: 85%;
-    transform: rotate(270deg);
+  80% {
+    left: 38%;
+    top: 42%;
+    transform: rotate(238deg) scaleX(-1);
   }
 
   100% {
-    left: 5%;
-    top: 85%;
-    transform: rotate(360deg);
+    left: -8%;
+    top: 78%;
+    transform: rotate(250deg) scaleX(-1);
+  }
+}
+
+@keyframes route-slow {
+  0% {
+    left: 96%;
+    top: 16%;
+    transform: rotate(250deg) scaleX(-1);
+  }
+
+  34% {
+    left: 58%;
+    top: 36%;
+    transform: rotate(240deg) scaleX(-1);
+  }
+
+  68% {
+    left: 10%;
+    top: 66%;
+    transform: rotate(246deg) scaleX(-1);
+  }
+
+  69% {
+    left: 10%;
+    top: 66%;
+    transform: rotate(70deg);
+  }
+
+  100% {
+    left: 96%;
+    top: 16%;
+    transform: rotate(70deg);
+  }
+}
+
+@keyframes splat-pulse {
+  0%,
+  100% {
+    opacity: 0.25;
+    filter: blur(1px) saturate(1);
+  }
+
+  50% {
+    opacity: 0.52;
+    filter: blur(2px) saturate(1.25);
   }
 }
 
@@ -10947,7 +10988,7 @@ body[data-card-theme="color_pink"] {
 
 [data-card-theme="graffiti"] #card-slug-search-results {
   background: rgba(0, 0, 0, 0.92) !important;
-  border: 2px solid #0F52BA !important;
+  border: 2px solid #EC4899 !important;
   color: #FFFFFF !important;
   --card-search-result-text: #FFFFFF;
   --card-search-result-strong: #FFE600;
@@ -11082,18 +11123,18 @@ body[data-card-theme="snow_leopard"] {
 }
 
 body[data-card-theme="graffiti"] {
-  --unqx-nav-bg: #000000;
+  --unqx-nav-bg: #0c0c0e;
   --unqx-nav-border: #FFE600;
   --unqx-nav-border-width: 2px;
-  --unqx-nav-text: #FFFFFF;
-  --unqx-nav-icon: #0F52BA;
+  --unqx-nav-text: #EC4899;
+  --unqx-nav-icon: #FFE600;
   --unqx-nav-input: #FFFFFF;
   --unqx-nav-placeholder: rgba(255, 255, 255, 0.42);
   --unqx-nav-chip: rgba(255, 230, 0, 0.82);
   --unqx-nav-hover-bg: #EC4899;
-  --unqx-nav-hover-text: #FFFFFF;
+  --unqx-nav-hover-text: #000000;
   --unqx-nav-hover-border: #FFFFFF;
-  --unqx-nav-shadow: 4px 4px 0 #0F52BA, 0 0 16px rgba(236, 72, 153, 0.34);
+  --unqx-nav-shadow: 4px 4px 0 #EC4899, 0 0 16px rgba(236, 72, 153, 0.34);
   --unqx-nav-hover-shadow: 4px 4px 0 #FFE600, 0 0 18px rgba(236, 72, 153, 0.58);
   --unqx-search-result-text: #FFFFFF;
   --unqx-search-result-strong: #FFE600;
@@ -11164,19 +11205,19 @@ body[data-card-theme="turtle_power"] {
   --unqx-nav-bg: #1E293B;
   --unqx-nav-border: #4A7836;
   --unqx-nav-border-width: 2px;
-  --unqx-nav-text: #95AFBA;
+  --unqx-nav-text: #FFE600;
   --unqx-nav-icon: #C81D25;
   --unqx-nav-input: #FFFFFF;
-  --unqx-nav-placeholder: rgba(149, 175, 186, 0.5);
-  --unqx-nav-chip: rgba(149, 175, 186, 0.72);
-  --unqx-nav-hover-bg: #4A7836;
+  --unqx-nav-placeholder: rgba(255, 230, 0, 0.5);
+  --unqx-nav-chip: rgba(255, 230, 0, 0.74);
+  --unqx-nav-hover-bg: #C81D25;
   --unqx-nav-hover-text: #FFFFFF;
-  --unqx-nav-hover-border: #C81D25;
+  --unqx-nav-hover-border: #FFE600;
   --unqx-nav-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
-  --unqx-nav-hover-shadow: 0 0 15px rgba(74, 120, 54, 0.8);
+  --unqx-nav-hover-shadow: 0 0 15px rgba(200, 29, 37, 0.8);
   --unqx-search-result-text: #FFFFFF;
-  --unqx-search-result-strong: #95AFBA;
-  --unqx-search-result-muted: rgba(149, 175, 186, 0.68);
+  --unqx-search-result-strong: #FFE600;
+  --unqx-search-result-muted: rgba(255, 255, 255, 0.68);
   --unqx-search-result-hover: rgba(74, 120, 54, 0.2);
 }
 
@@ -13848,7 +13889,7 @@ body[data-card-theme="turtle_power"] #card-view-root,
 body[data-card-theme="turtle_power"] #card-view-root > [data-card-view],
 #profile-card-live-preview[data-preview-theme="turtle_power"] [data-card-view] {
   width: 100% !important;
-  max-width: 430px !important;
+  max-width: 420px !important;
   margin: 0 auto !important;
   padding: 0 !important;
   box-sizing: border-box !important;
@@ -13861,9 +13902,9 @@ body[data-card-theme="turtle_power"] #public-card-layout > div:first-child {
 body[data-card-theme="turtle_power"] .public-card-shell,
 #profile-card-live-preview[data-preview-theme="turtle_power"] .public-card-shell {
   width: 92% !important;
-  max-width: 430px !important;
-  margin: 10px auto !important;
-  padding: 16px 14px !important;
+  max-width: 420px !important;
+  margin: 12px auto !important;
+  padding: 20px 16px !important;
   box-sizing: border-box !important;
 }
 
@@ -13898,7 +13939,7 @@ body[data-card-theme="graffiti"] #card-view-root,
 body[data-card-theme="graffiti"] #card-view-root > [data-card-view],
 #profile-card-live-preview[data-preview-theme="graffiti"] [data-card-view] {
   width: 100% !important;
-  max-width: 430px !important;
+  max-width: 420px !important;
   margin: 0 auto !important;
   padding: 0 !important;
   box-sizing: border-box !important;
@@ -13911,9 +13952,9 @@ body[data-card-theme="graffiti"] #public-card-layout > div:first-child {
 body[data-card-theme="graffiti"] .public-card-shell,
 #profile-card-live-preview[data-preview-theme="graffiti"] .public-card-shell {
   width: 92% !important;
-  max-width: 430px !important;
-  margin: 10px auto !important;
-  padding: 16px 14px !important;
+  max-width: 420px !important;
+  margin: 12px auto !important;
+  padding: 24px 18px !important;
   box-sizing: border-box !important;
 }
 
@@ -14054,7 +14095,7 @@ body[data-card-theme="graffiti"] .unq-ref-top,
   body[data-card-theme="turtle_power"] #card-view-root,
   body[data-card-theme="turtle_power"] #card-view-root > [data-card-view],
   #profile-card-live-preview[data-preview-theme="turtle_power"] [data-card-view] {
-    max-width: min(430px, 100vw) !important;
+    max-width: min(420px, 100vw) !important;
   }
 
   body[data-card-theme="turtle_power"] .public-card-shell,
@@ -14073,7 +14114,7 @@ body[data-card-theme="graffiti"] .unq-ref-top,
   body[data-card-theme="graffiti"] #card-view-root,
   body[data-card-theme="graffiti"] #card-view-root > [data-card-view],
   #profile-card-live-preview[data-preview-theme="graffiti"] [data-card-view] {
-    max-width: min(430px, 100vw) !important;
+    max-width: min(420px, 100vw) !important;
   }
 
   body[data-card-theme="graffiti"] .public-card-shell,
