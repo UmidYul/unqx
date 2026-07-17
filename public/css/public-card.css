@@ -11106,22 +11106,90 @@ body[data-card-theme] main.private-card-screen {
 
 /* Compact height fix for cinematic themes without changing the old theme layout rhythm. */
 body[data-card-theme="rick_morty_portal"] .public-card-shell,
+body[data-card-theme="gravity_falls"] .public-card-shell,
 body[data-card-theme="venom_symbiote"] .public-card-shell,
 body[data-card-theme="shinobi_path"] .public-card-shell,
 body[data-card-theme="sakura_blossom"] .public-card-shell,
 body[data-card-theme="starry_night"] .public-card-shell,
 #profile-card-live-preview[data-preview-theme="rick_morty_portal"] .public-card-shell,
+#profile-card-live-preview[data-preview-theme="gravity_falls"] .public-card-shell,
 #profile-card-live-preview[data-preview-theme="venom_symbiote"] .public-card-shell,
 #profile-card-live-preview[data-preview-theme="shinobi_path"] .public-card-shell,
 #profile-card-live-preview[data-preview-theme="sakura_blossom"] .public-card-shell,
 #profile-card-live-preview[data-preview-theme="starry_night"] .public-card-shell {
+  display: block !important;
   height: auto !important;
   min-height: 0 !important;
   max-height: none !important;
   aspect-ratio: auto !important;
+  align-self: auto !important;
+  justify-self: auto !important;
+}
+
+body[data-card-theme="rick_morty_portal"] .unq-ref-shell,
+body[data-card-theme="gravity_falls"] .unq-ref-shell,
+body[data-card-theme="venom_symbiote"] .unq-ref-shell,
+body[data-card-theme="shinobi_path"] .unq-ref-shell,
+body[data-card-theme="sakura_blossom"] .unq-ref-shell,
+body[data-card-theme="starry_night"] .unq-ref-shell,
+#profile-card-live-preview[data-preview-theme="rick_morty_portal"] .unq-ref-shell,
+#profile-card-live-preview[data-preview-theme="gravity_falls"] .unq-ref-shell,
+#profile-card-live-preview[data-preview-theme="venom_symbiote"] .unq-ref-shell,
+#profile-card-live-preview[data-preview-theme="shinobi_path"] .unq-ref-shell,
+#profile-card-live-preview[data-preview-theme="sakura_blossom"] .unq-ref-shell,
+#profile-card-live-preview[data-preview-theme="starry_night"] .unq-ref-shell {
+  padding: 26px 24px 24px !important;
+}
+
+body[data-card-theme="rick_morty_portal"] .unq-ref-card-overlay,
+body[data-card-theme="gravity_falls"] .unq-ref-card-overlay,
+body[data-card-theme="venom_symbiote"] .unq-ref-card-overlay,
+body[data-card-theme="shinobi_path"] .unq-ref-card-overlay,
+body[data-card-theme="sakura_blossom"] .unq-ref-card-overlay,
+body[data-card-theme="starry_night"] .unq-ref-card-overlay,
+#profile-card-live-preview[data-preview-theme="rick_morty_portal"] .unq-ref-card-overlay,
+#profile-card-live-preview[data-preview-theme="gravity_falls"] .unq-ref-card-overlay,
+#profile-card-live-preview[data-preview-theme="venom_symbiote"] .unq-ref-card-overlay,
+#profile-card-live-preview[data-preview-theme="shinobi_path"] .unq-ref-card-overlay,
+#profile-card-live-preview[data-preview-theme="sakura_blossom"] .unq-ref-card-overlay,
+#profile-card-live-preview[data-preview-theme="starry_night"] .unq-ref-card-overlay {
+  position: absolute !important;
+  inset: 0 !important;
+  width: auto !important;
+  height: auto !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+body[data-card-theme="rick_morty_portal"] .unq-ref-brand,
+body[data-card-theme="gravity_falls"] .unq-ref-brand,
+body[data-card-theme="venom_symbiote"] .unq-ref-brand,
+body[data-card-theme="shinobi_path"] .unq-ref-brand,
+body[data-card-theme="sakura_blossom"] .unq-ref-brand,
+body[data-card-theme="starry_night"] .unq-ref-brand,
+#profile-card-live-preview[data-preview-theme="rick_morty_portal"] .unq-ref-brand,
+#profile-card-live-preview[data-preview-theme="gravity_falls"] .unq-ref-brand,
+#profile-card-live-preview[data-preview-theme="venom_symbiote"] .unq-ref-brand,
+#profile-card-live-preview[data-preview-theme="shinobi_path"] .unq-ref-brand,
+#profile-card-live-preview[data-preview-theme="sakura_blossom"] .unq-ref-brand,
+#profile-card-live-preview[data-preview-theme="starry_night"] .unq-ref-brand {
+  margin-top: 0 !important;
+}
+
+#profile-card-live-preview[data-preview-theme="rick_morty_portal"] .unq-ref-profile,
+#profile-card-live-preview[data-preview-theme="gravity_falls"] .unq-ref-profile,
+#profile-card-live-preview[data-preview-theme="venom_symbiote"] .unq-ref-profile,
+#profile-card-live-preview[data-preview-theme="shinobi_path"] .unq-ref-profile,
+#profile-card-live-preview[data-preview-theme="sakura_blossom"] .unq-ref-profile,
+#profile-card-live-preview[data-preview-theme="starry_night"] .unq-ref-profile {
+  margin-top: 22px !important;
+  height: auto !important;
+  min-height: 0 !important;
 }
 
 #profile-card-live-preview[data-preview-theme="rick_morty_portal"] [data-card-view],
+#profile-card-live-preview[data-preview-theme="gravity_falls"] [data-card-view],
 #profile-card-live-preview[data-preview-theme="venom_symbiote"] [data-card-view],
 #profile-card-live-preview[data-preview-theme="shinobi_path"] [data-card-view],
 #profile-card-live-preview[data-preview-theme="sakura_blossom"] [data-card-view],
