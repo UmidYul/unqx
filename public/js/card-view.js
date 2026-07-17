@@ -33,6 +33,7 @@
     "shinobi_way",
     "samarkand_heritage",
     "turtle_power",
+    "egypt_nile",
     "sakura_blossom",
     "starry_night",
     "velours",
@@ -1092,6 +1093,46 @@
       cardShadow: "12px 12px 0px #1E293B, 0 0 30px rgba(74, 120, 54, 0.6)",
       buttonShineGradient:
         "linear-gradient(90deg, rgba(200,29,37,0) 0%, rgba(255,230,0,0.55) 48%, rgba(255,255,255,0.45) 52%, rgba(200,29,37,0) 100%)",
+    },
+    egypt_nile: {
+      cardBg: "linear-gradient(rgba(26, 54, 93, 0.88), rgba(26, 54, 93, 0.96))",
+      cardBgOverlay: "egypt_nile",
+      surfaceBg: "rgba(15, 36, 66, 0.72)",
+      cardBorder: "4px solid #E6A141",
+      borderColor: "#E6A141",
+      surfaceBorder: "2px solid rgba(230, 161, 65, 0.54)",
+      dividerColor: "rgba(230, 161, 65, 0.4)",
+      nameColor: "#E6A141",
+      roleColor: "#F5D18B",
+      mutedColor: "rgba(245, 209, 139, 0.76)",
+      accentColor: "#1E5E4A",
+      emailColor: "#FFFFFF",
+      buttonPrimaryBg: "linear-gradient(135deg, #E6A141 0%, #b3741b 100%)",
+      buttonPrimaryText: "#1A365D",
+      buttonPrimaryBorder: "#1A365D",
+      buttonSecondaryBg: "rgba(26, 54, 93, 0.78)",
+      buttonSecondaryText: "#E6A141",
+      buttonSecondaryBorder: "#E6A141",
+      badgeText: "#1A365D",
+      badgeBg: "#E6A141",
+      badgeBorder: "2px solid #1A365D",
+      topLineGradient: "linear-gradient(90deg, transparent, #E6A141, #8FA5C7, #E6A141, transparent)",
+      avatarBg: "radial-gradient(circle at 35% 25%, #E6A141, #1E5E4A 42%, #1A365D 72%)",
+      avatarText: "#F5D18B",
+      avatarBorder: "3px solid #E6A141",
+      cardBorderRadius: "18px",
+      fontFamily: "'Comfortaa', 'Sora', 'Inter', sans-serif",
+      nameFontStyle: "normal",
+      nameFontWeight: "900",
+      roleLetterSpacing: "0.14em",
+      scoreLabelColor: "rgba(245, 209, 139, 0.78)",
+      scoreValueColor: "#E6A141",
+      scoreBarFill: "linear-gradient(90deg, #E6A141, #8FA5C7, #1E5E4A)",
+      scoreBarTrack: "rgba(230, 161, 65, 0.18)",
+      scorePercentileColor: "#8FA5C7",
+      cardShadow: "0 25px 50px rgba(0, 0, 0, 0.5), 0 0 22px rgba(230, 161, 65, 0.22)",
+      buttonShineGradient:
+        "linear-gradient(90deg, rgba(230,161,65,0) 0%, rgba(255,255,255,0.45) 50%, rgba(230,161,65,0) 100%)",
     },
     snow_leopard: {
       cardBg: "rgba(248, 250, 252, 0.85)",
@@ -4396,6 +4437,26 @@
           </div>
         </div>`
       : "";
+    const egyptNileEffectsHtml = theme.key === "egypt_nile"
+      ? `<div class="egypt-nile-effects" aria-hidden="true">
+          <span class="egypt-spark spark-1"></span>
+          <span class="egypt-spark spark-2"></span>
+          <span class="egypt-spark spark-3"></span>
+          <span class="egypt-spark spark-4"></span>
+          <span class="egypt-scarab scarab-1"></span>
+          <span class="egypt-scarab scarab-2"></span>
+        </div>`
+      : "";
+    const egyptNileWaterHtml = theme.key === "egypt_nile"
+      ? `<div class="nile-wave-wrapper" aria-hidden="true">
+          <svg class="nile-wave-svg" viewBox="0 0 1200 120" preserveAspectRatio="none" focusable="false">
+            <path d="M0,60 C150,100 350,20 500,60 C650,100 850,20 1000,60 C1150,100 1350,20 1500,60 L1500,120 L0,120 Z"></path>
+          </svg>
+          <svg class="nile-wave-svg nile-wave-svg-secondary" viewBox="0 0 1200 120" preserveAspectRatio="none" focusable="false">
+            <path d="M0,76 C180,38 330,102 520,66 C700,28 840,94 1020,58 C1180,28 1320,90 1500,60 L1500,120 L0,120 Z"></path>
+          </svg>
+        </div>`
+      : "";
     const sakuraEffectsHtml = theme.key === "sakura_blossom"
       ? `<div class="sakura-blossom-effects" aria-hidden="true">
           <div class="sakura-calligraphy">春<br>花<br>風<br>月</div>
@@ -4452,6 +4513,7 @@
         ${shinobiWayEffectsHtml}
         ${samarkandEffectsHtml}
         ${turtlePowerEffectsHtml}
+        ${egyptNileEffectsHtml}
         ${sakuraEffectsHtml}
         ${starryEffectsHtml}
         ${vintageSparklesHtml}
@@ -4516,6 +4578,7 @@
             </div>
           </div>
           ${wallTabsHtml}
+          ${egyptNileWaterHtml}
         </div>
         <div class="unq-ref-footline">
           <div>© ${esc(viewsLabel)}</div>

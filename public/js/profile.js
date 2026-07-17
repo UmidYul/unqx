@@ -119,6 +119,7 @@
       "shinobi_way",
       "samarkand_heritage",
       "turtle_power",
+      "egypt_nile",
       "sakura_blossom",
       "starry_night",
       "velours",

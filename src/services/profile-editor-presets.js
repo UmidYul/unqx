@@ -165,6 +165,13 @@ const SIGNATURE_THEMES = [
     premiumRequired: true,
   },
   {
+    id: "egypt_nile",
+    label: "Тайны Нила 𓂀",
+    description: "Ancient stone, gold and Nile water",
+    swatchStyle: "border-color:#E6A141;background:radial-gradient(circle at 50% 30%,rgba(230,161,65,0.34),transparent 42%),repeating-linear-gradient(90deg,rgba(230,161,65,0.18) 0 2px,transparent 2px 22px),linear-gradient(145deg,#C17A44 0%,#1A365D 68%);box-shadow:0 0 14px rgba(230,161,65,0.35),inset 0 -10px 0 rgba(143,165,199,0.55);",
+    premiumRequired: true,
+  },
+  {
     id: "sakura_blossom",
     label: "Цветущая Сакура 🌸",
     description: "Watercolor silk petals",
