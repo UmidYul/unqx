@@ -30,6 +30,7 @@ const PROFILE_THEME_KEYS = [
   "samarkand_heritage",
   "turtle_power",
   "egypt_nile",
+  "kawaii_kitty",
   "sakura_blossom",
   "starry_night",
   "velours",

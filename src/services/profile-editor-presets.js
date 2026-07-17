@@ -172,6 +172,13 @@ const SIGNATURE_THEMES = [
     premiumRequired: true,
   },
   {
+    id: "kawaii_kitty",
+    label: "Кавайный Мир 🎀",
+    description: "Soft kitty hearts and bow",
+    swatchStyle: "border-color:#1E1E1E;background:radial-gradient(circle at 24% 24%,#FF6B8B 0 8%,transparent 9%),radial-gradient(circle at 70% 70%,#FFB2BF 0 12%,transparent 13%),linear-gradient(145deg,#FFFFFF 0%,#FFF0F2 55%,#FFC0CB 100%);box-shadow:4px 4px 0 #1E1E1E,0 0 14px rgba(255,107,139,0.32);",
+    premiumRequired: true,
+  },
+  {
     id: "sakura_blossom",
     label: "Цветущая Сакура 🌸",
     description: "Watercolor silk petals",

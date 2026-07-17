@@ -34,6 +34,7 @@
     "samarkand_heritage",
     "turtle_power",
     "egypt_nile",
+    "kawaii_kitty",
     "sakura_blossom",
     "starry_night",
     "velours",
@@ -1133,6 +1134,46 @@
       cardShadow: "0 25px 50px rgba(0, 0, 0, 0.5), 0 0 22px rgba(230, 161, 65, 0.22)",
       buttonShineGradient:
         "linear-gradient(90deg, rgba(230,161,65,0) 0%, rgba(255,255,255,0.45) 50%, rgba(230,161,65,0) 100%)",
+    },
+    kawaii_kitty: {
+      cardBg: "#FFFFFF",
+      cardBgOverlay: "kawaii_kitty",
+      surfaceBg: "#FFF0F2",
+      cardBorder: "4px solid #1E1E1E",
+      borderColor: "#FF6B8B",
+      surfaceBorder: "3px solid #1E1E1E",
+      dividerColor: "rgba(255, 107, 139, 0.34)",
+      nameColor: "#FF6B8B",
+      roleColor: "#1E1E1E",
+      mutedColor: "rgba(30, 30, 30, 0.72)",
+      accentColor: "#FF6B8B",
+      emailColor: "#1E1E1E",
+      buttonPrimaryBg: "#FFF0F2",
+      buttonPrimaryText: "#FF6B8B",
+      buttonPrimaryBorder: "#1E1E1E",
+      buttonSecondaryBg: "#FFFFFF",
+      buttonSecondaryText: "#FF6B8B",
+      buttonSecondaryBorder: "#1E1E1E",
+      badgeText: "#1E1E1E",
+      badgeBg: "#FFB2BF",
+      badgeBorder: "3px solid #1E1E1E",
+      topLineGradient: "linear-gradient(90deg, transparent, #FFB2BF, #FF6B8B, #FFB2BF, transparent)",
+      avatarBg: "radial-gradient(circle at 35% 25%, #FFFFFF, #FFB2BF 42%, #FF6B8B 72%)",
+      avatarText: "#1E1E1E",
+      avatarBorder: "4px solid #1E1E1E",
+      cardBorderRadius: "32px",
+      fontFamily: "'Fredoka', 'Sora', 'Inter', sans-serif",
+      nameFontStyle: "normal",
+      nameFontWeight: "900",
+      roleLetterSpacing: "0.08em",
+      scoreLabelColor: "rgba(30, 30, 30, 0.72)",
+      scoreValueColor: "#FF6B8B",
+      scoreBarFill: "linear-gradient(90deg, #FFB2BF, #FF6B8B)",
+      scoreBarTrack: "rgba(255, 178, 191, 0.32)",
+      scorePercentileColor: "#FF6B8B",
+      cardShadow: "0 12px 0px #FF8CA3, 0 20px 30px rgba(255, 140, 163, 0.4)",
+      buttonShineGradient:
+        "linear-gradient(90deg, rgba(255,240,242,0) 0%, rgba(255,255,255,0.72) 50%, rgba(255,240,242,0) 100%)",
     },
     snow_leopard: {
       cardBg: "rgba(248, 250, 252, 0.85)",
@@ -4457,6 +4498,14 @@
           </svg>
         </div>`
       : "";
+    const kawaiiKittyEffectsHtml = theme.key === "kawaii_kitty"
+      ? `<div class="kawaii-kitty-effects" aria-hidden="true">
+          ${[1, 2, 3, 4, 5, 6, 7].map((index) => `
+            <svg class="falling-heart heart-${index}" viewBox="0 0 32 29.6" focusable="false">
+              <path d="M23.6,0c-3.4,0-6.3,2.7-7.6,5.6C14.7,2.7,11.8,0,8.4,0C3.8,0,0,3.8,0,8.4c0,9.4,9.5,11.9,16,21.2c6.1-9.3,16-12.1,16-21.2C32,3.8,28.2,0,23.6,0z"></path>
+            </svg>`).join("")}
+        </div>`
+      : "";
     const sakuraEffectsHtml = theme.key === "sakura_blossom"
       ? `<div class="sakura-blossom-effects" aria-hidden="true">
           <div class="sakura-calligraphy">春<br>花<br>風<br>月</div>
@@ -4514,6 +4563,7 @@
         ${samarkandEffectsHtml}
         ${turtlePowerEffectsHtml}
         ${egyptNileEffectsHtml}
+        ${kawaiiKittyEffectsHtml}
         ${sakuraEffectsHtml}
         ${starryEffectsHtml}
         ${vintageSparklesHtml}
