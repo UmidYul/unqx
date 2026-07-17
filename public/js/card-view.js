@@ -23,6 +23,7 @@
     "galaxy",
     "volt_sport",
     "minion_yellow",
+    "casino_royale",
     "soviet_carpet",
     "vintage_mickey",
     "rick_morty_portal",
@@ -734,6 +735,46 @@
       cardShadow: "0 20px 48px rgba(124, 88, 0, 0.32)",
       buttonShineGradient:
         "linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.3) 48%, rgba(255,255,255,0.55) 50%, rgba(255,255,255,0.3) 52%, rgba(255,255,255,0) 100%)",
+    },
+    casino_royale: {
+      cardBg: "rgba(17, 17, 17, 0.86)",
+      cardBgOverlay: "casino_royale",
+      surfaceBg: "rgba(7, 59, 46, 0.54)",
+      cardBorder: "3px solid #D4AF37",
+      borderColor: "#D4AF37",
+      surfaceBorder: "1px solid rgba(212, 175, 55, 0.44)",
+      dividerColor: "rgba(212, 175, 55, 0.32)",
+      nameColor: "#D4AF37",
+      roleColor: "#F8E8A4",
+      mutedColor: "rgba(248, 232, 164, 0.76)",
+      accentColor: "#C8102E",
+      emailColor: "#F8E8A4",
+      buttonPrimaryBg: "linear-gradient(135deg, #C8102E 0%, #8B0000 100%)",
+      buttonPrimaryText: "#FFFFFF",
+      buttonPrimaryBorder: "#FFFFFF",
+      buttonSecondaryBg: "rgba(7, 59, 46, 0.74)",
+      buttonSecondaryText: "#D4AF37",
+      buttonSecondaryBorder: "rgba(212, 175, 55, 0.68)",
+      badgeText: "#111111",
+      badgeBg: "linear-gradient(135deg, #D4AF37 0%, #F8E8A4 100%)",
+      badgeBorder: "2px solid rgba(17, 17, 17, 0.82)",
+      topLineGradient: "linear-gradient(90deg, transparent, #D4AF37, #C8102E, #D4AF37, transparent)",
+      avatarBg: "radial-gradient(circle at 35% 30%, #F8E8A4 0%, #D4AF37 42%, #5C2C16 100%)",
+      avatarText: "#111111",
+      avatarBorder: "3px solid #D4AF37",
+      cardBorderRadius: "24px",
+      fontFamily: "'Montserrat', 'Inter', 'Segoe UI', sans-serif",
+      nameFontStyle: "normal",
+      nameFontWeight: "900",
+      roleLetterSpacing: "0.14em",
+      scoreLabelColor: "rgba(248, 232, 164, 0.72)",
+      scoreValueColor: "#D4AF37",
+      scoreBarFill: "linear-gradient(90deg, #C8102E, #D4AF37)",
+      scoreBarTrack: "rgba(212, 175, 55, 0.14)",
+      scorePercentileColor: "#F8E8A4",
+      cardShadow: "0 0 15px rgba(212, 175, 55, 0.3), inset 0 0 15px rgba(212, 175, 55, 0.2), 0 20px 40px rgba(0, 0, 0, 0.6)",
+      buttonShineGradient:
+        "linear-gradient(90deg, rgba(212,175,55,0) 0%, rgba(248,232,164,0.52) 50%, rgba(212,175,55,0) 100%)",
     },
     soviet_carpet: {
       cardBg: "rgba(25, 10, 10, 0.92)",
@@ -2521,6 +2562,56 @@
         </g>
         <path d="M0 84C72 58 144 66 216 92C280 116 324 118 360 106" stroke="#000000" stroke-width="2" fill="none" opacity="0.12"></path>
         <path d="M0 336C72 310 144 318 216 344C280 368 324 370 360 358" stroke="#000000" stroke-width="2" fill="none" opacity="0.12"></path>
+      </svg>`;
+    }
+    if (themeKey === "casino_royale") {
+      return `<svg class="unq-ref-overlay-svg casino-roulette-bg" viewBox="0 0 360 600" preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <radialGradient id="cr-felt-glow" cx="50%" cy="18%" r="76%">
+            <stop offset="0%" stop-color="#D4AF37" stop-opacity="0.18"></stop>
+            <stop offset="45%" stop-color="#073B2E" stop-opacity="0.16"></stop>
+            <stop offset="100%" stop-color="#111111" stop-opacity="0"></stop>
+          </radialGradient>
+          <pattern id="cr-suits" width="68" height="68" patternUnits="userSpaceOnUse">
+            <text x="10" y="28" fill="#D4AF37" opacity="0.18" font-size="18" font-family="serif">♠</text>
+            <text x="40" y="28" fill="#C8102E" opacity="0.16" font-size="18" font-family="serif">♥</text>
+            <text x="10" y="58" fill="#C8102E" opacity="0.14" font-size="18" font-family="serif">♦</text>
+            <text x="40" y="58" fill="#D4AF37" opacity="0.16" font-size="18" font-family="serif">♣</text>
+          </pattern>
+          <filter id="cr-soft-glow">
+            <feGaussianBlur stdDeviation="3" result="blur"></feGaussianBlur>
+            <feMerge>
+              <feMergeNode in="blur"></feMergeNode>
+              <feMergeNode in="SourceGraphic"></feMergeNode>
+            </feMerge>
+          </filter>
+        </defs>
+        <rect width="360" height="600" fill="url(#cr-felt-glow)"></rect>
+        <rect width="360" height="600" fill="url(#cr-suits)" opacity="0.55"></rect>
+        <g class="casino-wheel-svg" transform="translate(180 164)" filter="url(#cr-soft-glow)" opacity="0.62">
+          <circle r="128" fill="#D4AF37" opacity="0.34"></circle>
+          <circle r="116" fill="#5C2C16" opacity="0.72"></circle>
+          <path d="M0 0L0 -106A106 106 0 0 1 52 -92Z" fill="#111111"></path>
+          <path d="M0 0L52 -92A106 106 0 0 1 92 -52Z" fill="#C8102E"></path>
+          <path d="M0 0L92 -52A106 106 0 0 1 106 0Z" fill="#111111"></path>
+          <path d="M0 0L106 0A106 106 0 0 1 92 52Z" fill="#C8102E"></path>
+          <path d="M0 0L92 52A106 106 0 0 1 52 92Z" fill="#111111"></path>
+          <path d="M0 0L52 92A106 106 0 0 1 0 106Z" fill="#008751"></path>
+          <path d="M0 0L0 106A106 106 0 0 1 -52 92Z" fill="#111111"></path>
+          <path d="M0 0L-52 92A106 106 0 0 1 -92 52Z" fill="#C8102E"></path>
+          <path d="M0 0L-92 52A106 106 0 0 1 -106 0Z" fill="#111111"></path>
+          <path d="M0 0L-106 0A106 106 0 0 1 -92 -52Z" fill="#C8102E"></path>
+          <path d="M0 0L-92 -52A106 106 0 0 1 -52 -92Z" fill="#111111"></path>
+          <path d="M0 0L-52 -92A106 106 0 0 1 0 -106Z" fill="#008751"></path>
+          <circle r="66" fill="#073B2E" stroke="#D4AF37" stroke-width="4"></circle>
+          <circle r="32" fill="#111111" stroke="#F8E8A4" stroke-width="2"></circle>
+          <circle r="9" fill="#D4AF37"></circle>
+          <circle r="126" fill="none" stroke="#F8E8A4" stroke-width="3" opacity="0.75"></circle>
+          <circle r="92" fill="none" stroke="#F8E8A4" stroke-width="1.5" opacity="0.38" stroke-dasharray="3 7"></circle>
+        </g>
+        <path d="M12 506C80 468 150 474 222 512C278 542 322 540 360 516" stroke="#D4AF37" stroke-width="1.2" fill="none" opacity="0.24"></path>
+        <path d="M36 400l16 34 37 4-27 25 7 37-33-18-33 18 7-37-27-25 37-4 16-34Z" fill="#D4AF37" opacity="0.11"></path>
+        <path d="M290 398c18-30 52-26 60 1-30 1-50 15-60 41-10-26-30-40-60-41 8-27 42-31 60-1Z" fill="#C8102E" opacity="0.12"></path>
       </svg>`;
     }
     if (themeKey === "football_pitch") {

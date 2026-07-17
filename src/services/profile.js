@@ -19,6 +19,7 @@ const PROFILE_THEME_KEYS = [
   "galaxy",
   "volt_sport",
   "minion_yellow",
+  "casino_royale",
   "soviet_carpet",
   "vintage_mickey",
   "rick_morty_portal",

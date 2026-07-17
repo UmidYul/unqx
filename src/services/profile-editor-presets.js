@@ -95,6 +95,13 @@ const SIGNATURE_THEMES = [
     premiumRequired: true,
   },
   {
+    id: "casino_royale",
+    label: "Рояль-Казино 🎰",
+    description: "Golden roulette VIP card",
+    swatchStyle: "border-color:#D4AF37;background:radial-gradient(circle at 50% 42%,rgba(212,175,55,0.34) 0 12%,transparent 13%),conic-gradient(from 0deg,#111 0 10deg,#C8102E 10deg 20deg,#111 20deg 30deg,#008751 30deg 40deg,#C8102E 40deg 50deg,#111 50deg 60deg),linear-gradient(145deg,#073B2E 0%,#041C17 72%);box-shadow:0 0 14px rgba(212,175,55,0.45);",
+    premiumRequired: true,
+  },
+  {
     id: "soviet_carpet",
     label: "Бабушкин ковёр 🧶",
     description: "Deep red vintage carpet",
