@@ -34,6 +34,10 @@
   --admin-topbar-height: 64px;
 }
 
+section[id^="tab-"].hidden {
+  display: none !important;
+}
+
 .admin-ads-panel {
   width: min(100%, 520px);
   margin: 20px auto;
@@ -346,6 +350,9 @@
   gap: 18px;
 }
 
+.admin-ads-panel.hidden,
+.admin-event-cards-panel.hidden,
+.admin-music-panel.hidden,
 .admin-theme-creator-panel.hidden {
   display: none !important;
 }

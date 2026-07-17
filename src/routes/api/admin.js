@@ -4455,25 +4455,25 @@ router.get(
           or.push({ id: { equals: q } });
         }
         if (hasUserColumn(userColumns, "firstName")) {
-          or.push({ firstName: { contains: q, mode: "insensitive" } });
+          or.push({ firstName: { contains: q } });
         }
         if (hasUserColumn(userColumns, "city")) {
-          or.push({ city: { contains: q, mode: "insensitive" } });
+          or.push({ city: { contains: q } });
         }
         if (hasUserColumn(userColumns, "username")) {
-          or.push({ username: { contains: q, mode: "insensitive" } });
+          or.push({ username: { contains: q } });
         }
         if (hasUserColumn(userColumns, "email")) {
-          or.push({ email: { contains: q, mode: "insensitive" } });
+          or.push({ email: { contains: q } });
         }
         if (hasUserColumn(userColumns, "telegramUsername")) {
-          or.push({ telegramUsername: { contains: q, mode: "insensitive" } });
+          or.push({ telegramUsername: { contains: q } });
         }
         if (hasUserColumn(userColumns, "login")) {
-          or.push({ login: { contains: q, mode: "insensitive" } });
+          or.push({ login: { contains: q } });
         }
         if (hasUserColumn(userColumns, "displayName")) {
-          or.push({ displayName: { contains: q, mode: "insensitive" } });
+          or.push({ displayName: { contains: q } });
         }
         if (or.length) {
           where.OR = or;
