@@ -1667,6 +1667,33 @@
   box-shadow: 0 0 18px rgba(245, 199, 26, 0.36);
 }
 
+[data-card-theme="rick_morty_portal"] .public-card-shell,
+[data-card-theme="venom_symbiote"] .public-card-shell,
+[data-card-theme="shinobi_path"] .public-card-shell,
+[data-card-theme="sakura_blossom"] .public-card-shell,
+[data-card-theme="starry_night"] .public-card-shell {
+  margin: 10px auto !important;
+  max-width: 92% !important;
+}
+
+[data-card-theme="rick_morty_portal"] .unq-ref-shell,
+[data-card-theme="venom_symbiote"] .unq-ref-shell,
+[data-card-theme="shinobi_path"] .unq-ref-shell,
+[data-card-theme="sakura_blossom"] .unq-ref-shell,
+[data-card-theme="starry_night"] .unq-ref-shell {
+  padding: 16px 12px !important;
+}
+
+@media (max-width: 480px) {
+  [data-card-theme="rick_morty_portal"] .unq-ref-shell,
+  [data-card-theme="venom_symbiote"] .unq-ref-shell,
+  [data-card-theme="shinobi_path"] .unq-ref-shell,
+  [data-card-theme="sakura_blossom"] .unq-ref-shell,
+  [data-card-theme="starry_night"] .unq-ref-shell {
+    padding: 12px 8px !important;
+  }
+}
+
 [data-card-theme="soviet_carpet"] .public-card-shell {
   position: relative;
   overflow: visible;
@@ -5821,7 +5848,17 @@ body[data-card-theme] #card-view-root>[data-card-view] {
 .unq-ref-avatar-frame--chakra,
 .unq-ref-avatar-frame--konoha-scroll,
 .unq-ref-avatar-frame--mystery-journal,
-.unq-ref-avatar-frame--cipher-glitch {
+.unq-ref-avatar-frame--cipher-glitch,
+.unq-ref-avatar-frame--crystal-anomal,
+.unq-ref-avatar-frame--venom-organic,
+.unq-ref-avatar-frame--sensei-scroll,
+.unq-ref-avatar-frame--konoha-arc,
+.unq-ref-avatar-frame--lunar-crescent,
+.unq-ref-avatar-frame--gogh-waves,
+.unq-ref-avatar-frame--cyber-tech,
+.unq-ref-avatar-frame--sakura-petal,
+.unq-ref-avatar-frame--portal-dome,
+.unq-ref-avatar-frame--ancient-totem {
   inset: -13px;
   border-radius: 26px;
 }
@@ -5973,6 +6010,127 @@ body[data-card-theme] #card-view-root>[data-card-view] {
   inset: 5px;
   border: 1px solid rgba(255, 107, 139, 0.34);
   clip-path: polygon(0 0, 100% 0, 100% 18%, 86% 18%, 86% 30%, 100% 30%, 100% 100%, 0 100%, 0 72%, 12% 72%, 12% 60%, 0 60%);
+}
+
+.unq-ref-avatar-frame--crystal-anomal .unq-ref-avatar-frame-css {
+  clip-path: polygon(15px 0%, 100% 0%, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0% 100%, 0% 15px);
+  border: 2px solid #39FF14;
+  background: rgba(10, 22, 17, 0.18);
+  box-shadow: 0 0 15px rgba(57, 255, 20, 0.4);
+}
+
+.unq-ref-avatar-frame--crystal-anomal .unq-ref-avatar-frame-css::after {
+  inset: 5px;
+  border: 1px solid rgba(0, 229, 255, 0.42);
+  clip-path: inherit;
+  animation: cipher-glitch 5s ease-in-out infinite;
+}
+
+.unq-ref-avatar-frame--venom-organic .unq-ref-avatar-frame-css {
+  border-radius: 60% 40% 70% 30% / 40% 60% 30% 70%;
+  border: 3px solid #E53E6D;
+  background: rgba(8, 8, 12, 0.2);
+  box-shadow: 0 0 20px rgba(0, 240, 255, 0.5), inset 0 0 10px rgba(229, 62, 109, 0.3);
+  animation: organic-morph 6s ease-in-out infinite alternate;
+}
+
+.unq-ref-avatar-frame--venom-organic .unq-ref-avatar-frame-css::after {
+  inset: -5px 8px 8px -5px;
+  border-radius: inherit;
+  background: radial-gradient(ellipse at 0% 40%, rgba(229, 62, 109, 0.34), transparent 58%);
+  filter: blur(7px);
+}
+
+.unq-ref-avatar-frame--sensei-scroll .unq-ref-avatar-frame-css {
+  border-radius: 30px 4px 30px 4px;
+  border: 4px double #2C1E1A;
+  background: rgba(253, 250, 244, 0.22);
+  box-shadow: 5px 5px 0px rgba(44, 30, 26, 0.15);
+}
+
+.unq-ref-avatar-frame--sensei-scroll .unq-ref-avatar-frame-css::after {
+  inset: 7px;
+  border: 1px solid rgba(211, 162, 151, 0.48);
+  border-radius: 24px 3px 24px 3px;
+}
+
+.unq-ref-avatar-frame--konoha-arc .unq-ref-avatar-frame-css {
+  border-radius: 50px 0px 50px 0px;
+  border: 3px solid #FF8C00;
+  background: rgba(29, 38, 55, 0.18);
+  box-shadow: 0 0 15px rgba(255, 140, 0, 0.3);
+}
+
+.unq-ref-avatar-frame--lunar-crescent .unq-ref-avatar-frame-css {
+  border-radius: 24px 100px 24px 100px;
+  border: 2px solid #FFD700;
+  background: rgba(11, 25, 44, 0.18);
+  box-shadow: 0 0 25px rgba(245, 199, 26, 0.4);
+}
+
+.unq-ref-avatar-frame--gogh-waves .unq-ref-avatar-frame-css {
+  border: 3px solid #3B527A;
+  outline: 2px dashed #F5C71A;
+  outline-offset: 4px;
+  border-radius: 16px;
+  background: rgba(11, 25, 44, 0.18);
+}
+
+.unq-ref-avatar-frame--gogh-waves .unq-ref-avatar-frame-css::after {
+  inset: 7px;
+  border-radius: 12px;
+  background: repeating-linear-gradient(22deg, rgba(255, 245, 209, 0.12) 0 2px, transparent 2px 8px);
+}
+
+.unq-ref-avatar-frame--cyber-tech .unq-ref-avatar-frame-css {
+  clip-path: polygon(0 0, 85% 0, 100% 15%, 100% 100%, 15% 100%, 0 85%);
+  border: 2px solid #00F0FF;
+  background: rgba(8, 8, 12, 0.2);
+  box-shadow: 0 0 20px rgba(0, 240, 255, 0.5);
+}
+
+.unq-ref-avatar-frame--cyber-tech .unq-ref-avatar-frame-css::after {
+  inset: 6px;
+  border: 1px solid rgba(229, 62, 109, 0.4);
+  clip-path: inherit;
+}
+
+.unq-ref-avatar-frame--sakura-petal .unq-ref-avatar-frame-css {
+  border-radius: 50% 0% 50% 50%;
+  border: 2px solid #FF8E9E;
+  background: rgba(253, 243, 244, 0.2);
+  box-shadow: 0 4px 15px rgba(255, 142, 158, 0.2);
+}
+
+.unq-ref-avatar-frame--portal-dome .unq-ref-avatar-frame-css {
+  border-radius: 120px 120px 16px 16px;
+  border: 3px solid #39FF14;
+  background: rgba(10, 22, 17, 0.18);
+  box-shadow: 0 -10px 25px rgba(57, 255, 20, 0.3);
+}
+
+.unq-ref-avatar-frame--portal-dome .unq-ref-avatar-frame-css::after {
+  inset: 8px;
+  border-radius: 96px 96px 12px 12px;
+  border: 1px solid rgba(0, 229, 255, 0.36);
+}
+
+.unq-ref-avatar-frame--ancient-totem .unq-ref-avatar-frame-css {
+  border: 4px solid #E5A93C;
+  border-radius: 0;
+  clip-path: polygon(0% 15%, 15% 0%, 85% 0%, 100% 15%, 100% 85%, 85% 100%, 15% 100%, 0% 85%);
+  background: rgba(43, 31, 25, 0.22);
+  box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.6);
+}
+
+@keyframes organic-morph {
+  0% {
+    border-radius: 60% 40% 70% 30% / 40% 60% 30% 70%;
+  }
+
+  100% {
+    border-radius: 40% 60% 35% 65% / 60% 40% 65% 35%;
+  }
 }
 
 @keyframes symbiote-border-pulse {

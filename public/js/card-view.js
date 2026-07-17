@@ -79,6 +79,16 @@
     "konoha_scroll",
     "mystery_journal",
     "cipher_glitch",
+    "crystal_anomal",
+    "venom_organic",
+    "sensei_scroll",
+    "konoha_arc",
+    "lunar_crescent",
+    "gogh_waves",
+    "cyber_tech",
+    "sakura_petal",
+    "portal_dome",
+    "ancient_totem",
   ];
   const EMOJI_BACKGROUND_PACK_KEYS = [
     "none",
@@ -2830,6 +2840,16 @@
         "konoha_scroll",
         "mystery_journal",
         "cipher_glitch",
+        "crystal_anomal",
+        "venom_organic",
+        "sensei_scroll",
+        "konoha_arc",
+        "lunar_crescent",
+        "gogh_waves",
+        "cyber_tech",
+        "sakura_petal",
+        "portal_dome",
+        "ancient_totem",
       ].includes(key)
     ) {
       return `${start}<span class="unq-ref-avatar-frame-css"></span>${end}`;

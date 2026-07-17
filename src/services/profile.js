@@ -83,6 +83,16 @@ const PROFILE_AVATAR_FRAME_KEYS = [
   "konoha_scroll",
   "mystery_journal",
   "cipher_glitch",
+  "crystal_anomal",
+  "venom_organic",
+  "sensei_scroll",
+  "konoha_arc",
+  "lunar_crescent",
+  "gogh_waves",
+  "cyber_tech",
+  "sakura_petal",
+  "portal_dome",
+  "ancient_totem",
 ];
 const PROFILE_AVATAR_FRAMES = new Set(PROFILE_AVATAR_FRAME_KEYS);
 const PROFILE_EMOJI_BACKGROUND_KEYS = [

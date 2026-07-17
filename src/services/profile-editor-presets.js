@@ -347,6 +347,16 @@ const AVATAR_FRAMES = [
   { id: "konoha_scroll", label: "Печать Конохи", description: "Shinobi scroll outline", premiumRequired: true },
   { id: "mystery_journal", label: "Дневник Аномалий", description: "Journal brass corners", premiumRequired: true },
   { id: "cipher_glitch", label: "Билл Шифр Глитч", description: "Mystic glitch border", premiumRequired: true },
+  { id: "crystal_anomal", label: "Аномальный Кристалл", description: "Срезанные углы и glitch glow", premiumRequired: true },
+  { id: "venom_organic", label: "Органика Венома", description: "Живая асимметричная форма", premiumRequired: true },
+  { id: "sensei_scroll", label: "Свиток Сенсея", description: "Пергаментная фигурная рамка", premiumRequired: true },
+  { id: "konoha_arc", label: "Коноха Арк", description: "Оранжевые вырезанные углы", premiumRequired: true },
+  { id: "lunar_crescent", label: "Лунный Полумесяц", description: "Асимметричное золото ночи", premiumRequired: true },
+  { id: "gogh_waves", label: "Импрессионист", description: "Двойной волнистый контур", premiumRequired: true },
+  { id: "cyber_tech", label: "Кибер-Неон", description: "Технологичные срезы", premiumRequired: true },
+  { id: "sakura_petal", label: "Нежная Сакура", description: "Форма лепестка", premiumRequired: true },
+  { id: "portal_dome", label: "Портальный Околыш", description: "Купольная портальная арка", premiumRequired: true },
+  { id: "ancient_totem", label: "Древний Тотем", description: "Угловатые зигзаги", premiumRequired: true },
 ];
 
 const EMOJI_BACKGROUND_PACKS = [

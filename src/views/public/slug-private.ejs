@@ -38,6 +38,16 @@
     "konoha_scroll",
     "mystery_journal",
     "cipher_glitch",
+    "crystal_anomal",
+    "venom_organic",
+    "sensei_scroll",
+    "konoha_arc",
+    "lunar_crescent",
+    "gogh_waves",
+    "cyber_tech",
+    "sakura_petal",
+    "portal_dome",
+    "ancient_totem",
   ];
   const rawAvatarFrame = typeof avatarFrame === "string" ? avatarFrame : "";
   const pageAvatarFrame = privateAvatarFrameKeys.includes(String(rawAvatarFrame || "").trim().toLowerCase())
@@ -133,7 +143,7 @@
     if (frame === "football_stitch") return `${start}<svg class="unq-ref-avatar-frame-svg" viewBox="0 0 140 140" preserveAspectRatio="none"><ellipse cx="70" cy="70" rx="58" ry="44" class="frame-stroke-thick frame-stroke-primary"></ellipse><path d="M48 70h44M56 60v20M64 58v24M72 58v24M80 58v24M88 60v20" class="frame-stroke-thin frame-stroke-white"></path></svg>${end}`;
     if (frame === "stopwatch_ring") return `${start}<svg class="unq-ref-avatar-frame-svg" viewBox="0 0 140 140" preserveAspectRatio="none"><circle cx="70" cy="76" r="52" class="frame-stroke-thick frame-stroke-primary"></circle><path d="M58 14h24M70 14v12M98 30l10-10M70 76V46M70 76l20 14" class="frame-stroke-thin frame-stroke-secondary"></path></svg>${end}`;
     if (frame === "medal_ribbon") return `${start}<svg class="unq-ref-avatar-frame-svg" viewBox="0 0 140 140" preserveAspectRatio="none"><path d="M48 8h44l-12 42H60L48 8Z" class="frame-fill-secondary"></path><circle cx="70" cy="76" r="54" class="frame-stroke-thick frame-stroke-primary"></circle><circle cx="70" cy="76" r="45" class="frame-stroke-thin frame-stroke-white"></circle></svg>${end}`;
-    if (["symbiote", "lightning", "zen_bamboo", "sakura_aura", "gogh_strokes", "lunar_gold", "chakra", "konoha_scroll", "mystery_journal", "cipher_glitch"].includes(frame)) {
+    if (["symbiote", "lightning", "zen_bamboo", "sakura_aura", "gogh_strokes", "lunar_gold", "chakra", "konoha_scroll", "mystery_journal", "cipher_glitch", "crystal_anomal", "venom_organic", "sensei_scroll", "konoha_arc", "lunar_crescent", "gogh_waves", "cyber_tech", "sakura_petal", "portal_dome", "ancient_totem"].includes(frame)) {
       return `${start}<span class="unq-ref-avatar-frame-css"></span>${end}`;
     }
     return "";
