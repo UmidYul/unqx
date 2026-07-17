@@ -323,6 +323,18 @@ async function getUserColumns() {
   if (cachedUserColumns && now - cachedUserColumnsAt < 1000 * 60 * 5) {
     return cachedUserColumns;
   }
+  const runtimeUserFields = () => {
+    const fields = prisma?._runtimeDataModel?.models?.User?.fields;
+    if (!Array.isArray(fields)) return null;
+    const names = new Set();
+    for (const field of fields) {
+      const fieldName = String(field?.name || "").trim();
+      if (!fieldName) continue;
+      names.add(fieldName);
+      names.add(USER_COLUMN_MAP[fieldName] || fieldName);
+    }
+    return names.size ? names : null;
+  };
   try {
     const rows = await prisma.$queryRaw`
       SELECT column_name::text AS column_name
@@ -331,9 +343,23 @@ async function getUserColumns() {
         AND table_schema = current_schema()
     `;
     cachedUserColumns = new Set((Array.isArray(rows) ? rows : []).map((row) => String(row.column_name || "")));
+    if (!cachedUserColumns.size) {
+      cachedUserColumns = runtimeUserFields();
+    }
     cachedUserColumnsAt = now;
     return cachedUserColumns;
-  } catch {
+  } catch (error) {
+    const runtimeColumns = runtimeUserFields();
+    if (runtimeColumns) {
+      cachedUserColumns = runtimeColumns;
+      cachedUserColumnsAt = now;
+      return cachedUserColumns;
+    }
+    console.error("[admin-users] failed to inspect user columns", {
+      message: error?.message,
+      code: error?.code,
+      meta: error?.meta,
+    });
     return null;
   }
 }
@@ -4449,10 +4475,36 @@ router.get(
       if (profileTypeFilter !== "all" && hasUserColumn(userColumns, "profileType")) {
         where.profileType = profileTypeFilter;
       }
+      const safeSideLookup = async (label, fallback, task) => {
+        try {
+          return await task();
+        } catch (error) {
+          console.error(`[admin-users] ${label} lookup failed`, {
+            message: error?.message,
+            code: error?.code,
+            meta: error?.meta,
+          });
+          return fallback;
+        }
+      };
       if (q) {
         const or = [];
+        const slugMatches = modelDelegateExists("Slug")
+          ? await safeSideLookup("slug-search", [], () =>
+            prisma.slug.findMany({
+              where: { fullSlug: { contains: q.toUpperCase() } },
+              select: { ownerId: true },
+              take: 100,
+            }))
+          : [];
+        const slugOwnerIds = Array.from(
+          new Set(slugMatches.map((row) => row?.ownerId).filter(Boolean)),
+        );
         if (hasUserColumn(userColumns, "id") && isUuid(q)) {
           or.push({ id: { equals: q } });
+        }
+        if (hasUserColumn(userColumns, "id") && slugOwnerIds.length) {
+          or.push({ id: { in: slugOwnerIds } });
         }
         if (hasUserColumn(userColumns, "firstName")) {
           or.push({ firstName: { contains: q } });
@@ -4535,22 +4587,26 @@ router.get(
         ? Array.from(new Set(users.map((item) => item.createdByStaffId).filter(Boolean)))
         : [];
       const [slugs, cards, unqScores, creatorStaff, approvedVerificationRows, approvedBadges] = await Promise.all([
-        prisma.slug.findMany({
-          where: { ownerId: { in: userIds } },
-          select: {
-            ownerId: true,
-            fullSlug: true,
-            status: true,
-            isPrimary: true,
-            pauseMessage: true,
-          },
-        }),
-        prisma.profileCard.findMany({
-          where: { ownerId: { in: userIds } },
-          select: { ownerId: true, id: true, theme: true, role: true },
-        }),
-        modelDelegateExists("UnqScore")
-          ? prisma.unqScore.findMany({
+        userIds.length && modelDelegateExists("Slug")
+          ? safeSideLookup("slugs", [], () => prisma.slug.findMany({
+            where: { ownerId: { in: userIds } },
+            select: {
+              ownerId: true,
+              fullSlug: true,
+              status: true,
+              isPrimary: true,
+              pauseMessage: true,
+            },
+          }))
+          : Promise.resolve([]),
+        userIds.length && modelDelegateExists("ProfileCard")
+          ? safeSideLookup("profile-cards", [], () => prisma.profileCard.findMany({
+            where: { ownerId: { in: userIds } },
+            select: { ownerId: true, id: true, theme: true, role: true },
+          }))
+          : Promise.resolve([]),
+        userIds.length && modelDelegateExists("UnqScore")
+          ? safeSideLookup("unq-scores", [], () => prisma.unqScore.findMany({
             where: { userId: { in: userIds } },
             select: {
               userId: true,
@@ -4564,20 +4620,20 @@ router.get(
               scoreBracelet: true,
               scorePlan: true,
             },
-          })
+          }))
           : Promise.resolve([]),
         creatorIds.length
-          ? prisma.staffUser.findMany({
+          ? safeSideLookup("creator-staff", [], () => prisma.staffUser.findMany({
             where: { id: { in: creatorIds } },
             select: {
               id: true,
               login: true,
               name: true,
             },
-          })
+          }))
           : Promise.resolve([]),
-        modelDelegateExists("VerificationRequest")
-          ? prisma.verificationRequest.findMany({
+        userIds.length && modelDelegateExists("VerificationRequest")
+          ? safeSideLookup("verification-requests", [], () => prisma.verificationRequest.findMany({
             where: {
               userId: { in: userIds },
               status: "approved",
@@ -4590,10 +4646,10 @@ router.get(
               userId: true,
               role: true,
             },
-          })
+          }))
           : Promise.resolve([]),
-        prisma.badgeApplication
-          ? prisma.badgeApplication.findMany({
+        userIds.length && prisma.badgeApplication
+          ? safeSideLookup("badge-applications", [], () => prisma.badgeApplication.findMany({
             where: {
               userId: { in: userIds },
               status: "approved",
@@ -4604,7 +4660,7 @@ router.get(
               badgeType: true,
             },
             orderBy: [{ requestedAt: "desc" }],
-          })
+          }))
           : Promise.resolve([]),
       ]);
 
