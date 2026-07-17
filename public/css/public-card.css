@@ -1663,13 +1663,34 @@
 [data-card-theme="starry_night"] .public-card-shell {
   position: relative;
   overflow: hidden;
-  border: 1px solid rgba(245, 199, 26, 0.25) !important;
+  border: 3px solid transparent !important;
   background-image:
-    linear-gradient(rgba(12, 26, 48, 0.94), rgba(12, 26, 48, 0.94)),
-    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.03) 0px, rgba(255, 255, 255, 0.03) 1px, transparent 1px, transparent 3px),
-    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.03) 0px, rgba(255, 255, 255, 0.03) 1px, transparent 1px, transparent 3px) !important;
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.035) 0px, rgba(255, 255, 255, 0.035) 1px, transparent 1px, transparent 3px),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.028) 0px, rgba(255, 255, 255, 0.028) 1px, transparent 1px, transparent 3px),
+    repeating-linear-gradient(45deg, rgba(255, 244, 208, 0.028) 0px, rgba(255, 244, 208, 0.028) 2px, transparent 2px, transparent 10px),
+    radial-gradient(circle at top left, rgba(33, 61, 104, 0.9) 0%, rgba(12, 26, 48, 0.95) 100%),
+    linear-gradient(135deg, #ECC128 0%, #0F1626 25%, #FFD500 50%, #213D68 75%, #FFF4D0 100%) !important;
+  background-origin: border-box;
+  background-clip: padding-box, padding-box, padding-box, padding-box, border-box;
+  background-color: #0c1a30 !important;
   color: #FFF4D0;
-  box-shadow: 0 0 30px rgba(15, 22, 38, 0.8), inset 0 0 15px rgba(245, 199, 26, 0.05);
+  box-shadow:
+    0 15px 35px rgba(5, 10, 20, 0.8),
+    0 0 20px rgba(233, 193, 40, 0.12),
+    inset 0 0 15px rgba(255, 244, 208, 0.05) !important;
+}
+
+#profile-card-live-preview[data-preview-theme="starry_night"] .public-card-shell {
+  border: 3px solid transparent !important;
+  background-image:
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.03) 0px, rgba(255, 255, 255, 0.03) 1px, transparent 1px, transparent 3px),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.028) 0px, rgba(255, 255, 255, 0.028) 1px, transparent 1px, transparent 3px),
+    repeating-linear-gradient(45deg, rgba(255, 244, 208, 0.028) 0px, rgba(255, 244, 208, 0.028) 2px, transparent 2px, transparent 10px),
+    radial-gradient(circle at top left, rgba(33, 61, 104, 0.9) 0%, rgba(12, 26, 48, 0.95) 100%),
+    linear-gradient(135deg, #ECC128 0%, #0F1626 25%, #FFD500 50%, #213D68 75%, #FFF4D0 100%) !important;
+  background-origin: border-box;
+  background-clip: padding-box, padding-box, padding-box, padding-box, border-box;
+  background-color: #0c1a30 !important;
 }
 
 [data-card-theme="starry_night"] .public-card-shell::before {
@@ -1713,7 +1734,7 @@
 [data-card-theme="starry_night"] .unq-ref-name,
 [data-card-theme="starry_night"] .unq-ref-name-text {
   color: #FFF4D0 !important;
-  text-shadow: 0 0 10px rgba(236, 193, 40, 0.58);
+  text-shadow: 0 2px 0 rgba(12, 26, 48, 0.86), 0 0 14px rgba(236, 193, 40, 0.5);
 }
 
 [data-card-theme="starry_night"] .unq-profile-pet-chain {
@@ -1727,15 +1748,21 @@
 [data-card-theme="starry_night"] .unq-ref-action-btn,
 [data-card-theme="starry_night"] .unq-ref-follow-toggle,
 [data-card-theme="starry_night"] .unq-follow-action-btn {
-  border-color: rgba(245, 199, 26, 0.42) !important;
+  background: rgba(12, 26, 48, 0.8) !important;
+  border: 2px solid #ECC128 !important;
+  color: #FFF4D0 !important;
+  box-shadow: inset 0 0 8px rgba(236, 193, 40, 0.2) !important;
+  transition: transform 0.3s ease, background-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease !important;
 }
 
 [data-card-theme="starry_night"] .unq-ref-action-btn:hover,
 [data-card-theme="starry_night"] .unq-ref-follow-toggle:hover,
 [data-card-theme="starry_night"] .unq-follow-action-btn:hover {
-  background: #FFD700 !important;
-  color: #0B192C !important;
-  box-shadow: 0 0 18px rgba(245, 199, 26, 0.36);
+  background: #ECC128 !important;
+  border-color: #FFD500 !important;
+  color: #0c1a30 !important;
+  box-shadow: 0 0 15px rgba(255, 213, 0, 0.6) !important;
+  transform: scale(1.04);
 }
 
 [data-card-theme="soviet_carpet"] .public-card-shell {
@@ -4508,24 +4535,26 @@ body[data-card-theme="starry_night"]::before {
 
 .gogh-swirl {
   position: absolute;
-  top: 45%;
+  top: 40%;
   left: 50%;
-  width: min(550px, 112vw);
-  height: min(380px, 78vw);
+  width: min(650px, 128vw);
+  height: min(400px, 86vw);
   background:
-    conic-gradient(from 0deg, rgba(33, 61, 104, 0.06), rgba(236, 193, 40, 0.16), rgba(33, 61, 104, 0.3), rgba(255, 244, 208, 0.08), rgba(33, 61, 104, 0.06)),
-    radial-gradient(ellipse at center, rgba(33, 61, 104, 0.3) 0%, rgba(11, 21, 40, 0) 75%);
+    conic-gradient(from 0deg, rgba(33, 61, 104, 0.08), rgba(236, 193, 40, 0.18), rgba(33, 61, 104, 0.35), rgba(255, 244, 208, 0.1), rgba(33, 61, 104, 0.08)),
+    radial-gradient(ellipse at center, rgba(33, 61, 104, 0.35) 0%, rgba(236, 193, 40, 0.05) 40%, rgba(11, 21, 40, 0) 70%);
   border-radius: 50%;
-  filter: blur(30px);
+  filter: blur(25px);
   transform: translate(-50%, -50%);
-  animation: gogh-vortex 40s linear infinite;
+  animation: starry-wind 30s linear infinite;
 }
 
 .gogh-star {
   position: absolute;
   border-radius: 50%;
-  background: radial-gradient(circle, #FFF4D0 15%, #ECC128 45%, rgba(33, 61, 104, 0.8) 70%, transparent 100%);
-  animation: star-pulse 7s ease-in-out infinite;
+  background:
+    radial-gradient(circle, #FFF4D0 10%, #ECC128 40%, rgba(33, 61, 104, 0.6) 70%, transparent 100%),
+    repeating-radial-gradient(circle, rgba(255, 244, 208, 0.32) 0 2px, rgba(236, 193, 40, 0.12) 2px 5px, transparent 5px 9px);
+  animation: gogh-star-glow 8s ease-in-out infinite;
   pointer-events: none;
 }
 
@@ -4539,6 +4568,23 @@ body[data-card-theme="starry_night"]::before {
   filter: blur(0.2px);
 }
 
+@keyframes starry-wind {
+  0% {
+    transform: translate(-50%, -50%) rotate(0deg) scale(0.9);
+    opacity: 0.4;
+  }
+
+  50% {
+    transform: translate(-50%, -50%) rotate(180deg) scale(1.1);
+    opacity: 0.6;
+  }
+
+  100% {
+    transform: translate(-50%, -50%) rotate(360deg) scale(0.9);
+    opacity: 0.4;
+  }
+}
+
 @keyframes gogh-vortex {
   0% {
     transform: translate(-50%, -50%) rotate(0deg) scale(0.95);
@@ -4550,6 +4596,19 @@ body[data-card-theme="starry_night"]::before {
 
   100% {
     transform: translate(-50%, -50%) rotate(360deg) scale(0.95);
+  }
+}
+
+@keyframes gogh-star-glow {
+  0%,
+  100% {
+    transform: scale(0.9);
+    filter: drop-shadow(0 0 8px rgba(255, 213, 0, 0.6));
+  }
+
+  50% {
+    transform: scale(1.12);
+    filter: drop-shadow(0 0 25px rgba(255, 213, 0, 0.95));
   }
 }
 
@@ -11196,4 +11255,72 @@ body[data-card-theme="starry_night"] .unq-ref-brand,
 #profile-card-live-preview[data-preview-theme="starry_night"] [data-card-view] {
   align-content: start !important;
   gap: 12px !important;
+}
+
+/* Starry Night zero-gap reset: keep the profile compact like legacy themes. */
+body[data-card-theme="starry_night"] {
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow-x: hidden !important;
+}
+
+body[data-card-theme="starry_night"] main {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-height: 100vh !important;
+  min-height: 100svh !important;
+  min-height: 100dvh !important;
+  margin: 0 !important;
+  padding: max(10px, env(safe-area-inset-top, 0px)) 0 max(10px, env(safe-area-inset-bottom, 0px)) !important;
+  overflow-x: hidden !important;
+}
+
+body[data-card-theme="starry_night"] #public-card-layout,
+body[data-card-theme="starry_night"] #card-view-root,
+body[data-card-theme="starry_night"] #card-view-root > [data-card-view],
+#profile-card-live-preview[data-preview-theme="starry_night"] [data-card-view] {
+  width: 100% !important;
+  max-width: 430px !important;
+  margin: 0 auto !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
+}
+
+body[data-card-theme="starry_night"] .public-card-shell,
+#profile-card-live-preview[data-preview-theme="starry_night"] .public-card-shell {
+  width: 92% !important;
+  max-width: 430px !important;
+  margin: 10px auto !important;
+  padding: 16px 14px !important;
+  box-sizing: border-box !important;
+}
+
+body[data-card-theme="starry_night"] .unq-ref-top,
+#profile-card-live-preview[data-preview-theme="starry_night"] .unq-ref-top {
+  margin-bottom: 10px !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+@media (max-width: 480px) {
+  body[data-card-theme="starry_night"] main {
+    justify-content: flex-start !important;
+    padding-top: max(6px, env(safe-area-inset-top, 0px)) !important;
+    padding-bottom: max(6px, env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  body[data-card-theme="starry_night"] #public-card-layout,
+  body[data-card-theme="starry_night"] #card-view-root,
+  body[data-card-theme="starry_night"] #card-view-root > [data-card-view],
+  #profile-card-live-preview[data-preview-theme="starry_night"] [data-card-view] {
+    max-width: min(430px, 100vw) !important;
+  }
+
+  body[data-card-theme="starry_night"] .public-card-shell,
+  #profile-card-live-preview[data-preview-theme="starry_night"] .public-card-shell {
+    padding: 12px 10px !important;
+    margin: 6px auto !important;
+  }
 }
