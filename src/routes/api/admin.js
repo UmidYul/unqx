@@ -4387,328 +4387,354 @@ router.get(
       return;
     }
 
-    const userColumns = await getUserColumns();
-    const page = Math.max(1, Number(req.query.page || "1") || 1);
-    const pageSizeRaw = Number(req.query.pageSize || "20") || 20;
-    const pageSize = Math.max(1, Math.min(200, pageSizeRaw));
-    const q = typeof req.query.q === "string" ? req.query.q.trim() : "";
-    const sort = req.query.sort === "score_desc" ? "score_desc" : "created_desc";
-    const rawPlanFilter = typeof req.query.plan === "string" ? req.query.plan.trim() : "";
-    const planFilter = rawPlanFilter === "basic"
-      ? "premium"
-      : ["none", "premium"].includes(rawPlanFilter)
-        ? rawPlanFilter
-        : "all";
-    const rawProfileTypeFilter = typeof req.query.profileType === "string"
-      ? req.query.profileType
-      : req.query.type;
-    const profileTypeFilter = normalizeProfileType(rawProfileTypeFilter, { fallback: "all", allowAll: true });
-    const adminSession = req.session?.admin || null;
-    const requesterRole = String(adminSession?.role || "admin");
-    const requesterManagerId = requesterRole === "manager" ? await resolveManagerId(req) : "";
-    const hasCreatorColumn = hasUserColumn(userColumns, "createdByStaffId");
-    const managerScopeBlocked = requesterRole === "manager" && (!requesterManagerId || !hasCreatorColumn);
-
-    const where = {};
-    if (requesterRole === "manager") {
-      if (managerScopeBlocked) {
-        res.json({
-          items: [],
-          managerStats: {
-            createdAccountsCount: 0,
-            trackingEnabled: hasCreatorColumn,
-          },
-          pagination: {
-            page,
-            pageSize,
-            total: 0,
-            totalPages: 1,
-          },
+    try {
+      const userColumns = await getUserColumns();
+      const page = Math.max(1, Number(req.query.page || "1") || 1);
+      const pageSizeRaw = Number(req.query.pageSize || "20") || 20;
+      const pageSize = Math.max(1, Math.min(200, pageSizeRaw));
+      const rawSearch = typeof req.query.search === "string" ? req.query.search : req.query.q;
+      const q = typeof rawSearch === "string" ? rawSearch.trim().slice(0, 120) : "";
+      const sort = req.query.sort === "score_desc" ? "score_desc" : "created_desc";
+      const rawPlanParam = typeof req.query.tariff === "string" ? req.query.tariff : req.query.plan;
+      const rawPlanFilter = typeof rawPlanParam === "string" ? rawPlanParam.trim().toLowerCase() : "";
+      const allowedPlanFilters = new Set(["", "all", "none", "free", "legacy", "basic", "premium"]);
+      if (!allowedPlanFilters.has(rawPlanFilter)) {
+        res.status(400).json({
+          error: "Invalid tariff filter",
+          code: "INVALID_TARIFF_FILTER",
+          allowed: ["all", "none", "free", "legacy", "basic", "premium"],
         });
         return;
       }
-      where.createdByStaffId = requesterManagerId;
-    }
-    if (planFilter !== "all" && hasUserColumn(userColumns, "plan")) {
-      where.plan = planFilter === "premium" ? { in: ["premium", "basic"] } : planFilter;
-    }
-    if (profileTypeFilter !== "all" && hasUserColumn(userColumns, "profileType")) {
-      where.profileType = profileTypeFilter;
-    }
-    if (q) {
-      const or = [];
-      if (hasUserColumn(userColumns, "id") && isUuid(q)) {
-        or.push({ id: { equals: q } });
-      }
-      if (hasUserColumn(userColumns, "firstName")) {
-        or.push({ firstName: { contains: q, mode: "insensitive" } });
-      }
-      if (hasUserColumn(userColumns, "city")) {
-        or.push({ city: { contains: q, mode: "insensitive" } });
-      }
-      if (hasUserColumn(userColumns, "username")) {
-        or.push({ username: { contains: q, mode: "insensitive" } });
-      }
-      if (hasUserColumn(userColumns, "email")) {
-        or.push({ email: { contains: q, mode: "insensitive" } });
-      }
-      if (hasUserColumn(userColumns, "telegramUsername")) {
-        or.push({ telegramUsername: { contains: q, mode: "insensitive" } });
-      }
-      if (hasUserColumn(userColumns, "login")) {
-        or.push({ login: { contains: q, mode: "insensitive" } });
-      }
-      if (hasUserColumn(userColumns, "displayName")) {
-        or.push({ displayName: { contains: q, mode: "insensitive" } });
-      }
-      if (or.length) {
-        where.OR = or;
-      }
-    }
+      const planFilter = rawPlanFilter === "basic"
+        ? "premium"
+        : ["none", "free", "legacy"].includes(rawPlanFilter)
+          ? "none"
+          : rawPlanFilter === "premium"
+            ? "premium"
+            : "all";
+      const rawProfileTypeFilter = typeof req.query.profileType === "string"
+        ? req.query.profileType
+        : req.query.type;
+      const profileTypeFilter = normalizeProfileType(rawProfileTypeFilter, { fallback: "all", allowAll: true });
+      const adminSession = req.session?.admin || null;
+      const requesterRole = String(adminSession?.role || "admin");
+      const requesterManagerId = requesterRole === "manager" ? await resolveManagerId(req) : "";
+      const hasCreatorColumn = hasUserColumn(userColumns, "createdByStaffId");
+      const managerScopeBlocked = requesterRole === "manager" && (!requesterManagerId || !hasCreatorColumn);
 
-    let total;
-    let users;
-    let managerCreatedAccountsCount = null;
-    try {
-      const select = { id: true };
-      if (hasUserColumn(userColumns, "firstName")) select.firstName = true;
-      if (hasUserColumn(userColumns, "displayName")) select.displayName = true;
-      if (hasUserColumn(userColumns, "city")) select.city = true;
-      if (hasUserColumn(userColumns, "username")) select.username = true;
-      if (hasUserColumn(userColumns, "email")) select.email = true;
-      if (hasUserColumn(userColumns, "telegramUsername")) select.telegramUsername = true;
-      if (hasUserColumn(userColumns, "login")) select.login = true;
-      if (hasUserColumn(userColumns, "isVerified")) select.isVerified = true;
-      if (hasUserColumn(userColumns, "verifiedCompany")) select.verifiedCompany = true;
-      if (hasUserColumn(userColumns, "plan")) select.plan = true;
-      if (hasUserColumn(userColumns, "planPurchasedAt")) select.planPurchasedAt = true;
-      if (hasUserColumn(userColumns, "planUpgradedAt")) select.planUpgradedAt = true;
-      if (hasUserColumn(userColumns, "profileType")) select.profileType = true;
-      if (hasUserColumn(userColumns, "freeProfileCode")) select.freeProfileCode = true;
-      if (hasCreatorColumn) select.createdByStaffId = true;
-      if (hasUserColumn(userColumns, "status")) select.status = true;
-      if (hasUserColumn(userColumns, "createdAt")) select.createdAt = true;
-
-      [total, users, managerCreatedAccountsCount] = await Promise.all([
-        prisma.user.count({ where }),
-        prisma.user.findMany({
-          where,
-          orderBy: sort === "created_desc" ? { createdAt: "desc" } : { createdAt: "desc" },
-          skip: (page - 1) * pageSize,
-          take: pageSize,
-          select,
-        }),
-        requesterManagerId && hasCreatorColumn
-          ? prisma.user.count({
-            where: { createdByStaffId: requesterManagerId },
-          })
-          : Promise.resolve(null),
-      ]);
-    } catch (error) {
-      if (isMissingModelError(error, "User")) {
-        res.status(503).json({ error: "Users storage unavailable", code: "USERS_STORAGE_UNAVAILABLE" });
-        return;
-      }
-      if (isMissingStorageError(error)) {
-        res.status(503).json({ error: "Users storage unavailable", code: "USERS_STORAGE_UNAVAILABLE" });
-        return;
-      }
-      throw error;
-    }
-
-    const userIds = users.map((item) => item.id);
-    const creatorIds = hasCreatorColumn
-      ? Array.from(new Set(users.map((item) => item.createdByStaffId).filter(Boolean)))
-      : [];
-    const [slugs, cards, unqScores, creatorStaff, approvedVerificationRows, approvedBadges] = await Promise.all([
-      prisma.slug.findMany({
-        where: { ownerId: { in: userIds } },
-        select: {
-          ownerId: true,
-          fullSlug: true,
-          status: true,
-          isPrimary: true,
-          pauseMessage: true,
-        },
-      }),
-      prisma.profileCard.findMany({
-        where: { ownerId: { in: userIds } },
-        select: { ownerId: true, id: true, theme: true, role: true },
-      }),
-      modelDelegateExists("UnqScore")
-        ? prisma.unqScore.findMany({
-          where: { userId: { in: userIds } },
-          select: {
-            userId: true,
-            score: true,
-            percentile: true,
-            calculatedAt: true,
-            scoreViews: true,
-            scoreSlugRarity: true,
-            scoreTenure: true,
-            scoreCtr: true,
-            scoreBracelet: true,
-            scorePlan: true,
-          },
-        })
-        : Promise.resolve([]),
-      creatorIds.length
-        ? prisma.staffUser.findMany({
-          where: { id: { in: creatorIds } },
-          select: {
-            id: true,
-            login: true,
-            name: true,
-          },
-        })
-        : Promise.resolve([]),
-      modelDelegateExists("VerificationRequest")
-        ? prisma.verificationRequest.findMany({
-          where: {
-            userId: { in: userIds },
-            status: "approved",
-          },
-          orderBy: [
-            { reviewedAt: "desc" },
-            { requestedAt: "desc" },
-          ],
-          select: {
-            userId: true,
-            role: true,
-          },
-        })
-        : Promise.resolve([]),
-      prisma.badgeApplication
-        ? prisma.badgeApplication.findMany({
-          where: {
-            userId: { in: userIds },
-            status: "approved",
-            badgeType: { in: ["government", "unqx_staff"] },
-          },
-          select: {
-            userId: true,
-            badgeType: true,
-          },
-          orderBy: [{ requestedAt: "desc" }],
-        })
-        : Promise.resolve([]),
-    ]);
-
-    const slugsByUser = new Map();
-    for (const row of slugs) {
-      if (!slugsByUser.has(row.ownerId)) {
-        slugsByUser.set(row.ownerId, []);
-      }
-      slugsByUser.get(row.ownerId).push({
-        fullSlug: row.fullSlug,
-        status: row.status,
-        isPrimary: row.isPrimary,
-        pauseMessage: row.pauseMessage || null,
-      });
-    }
-    const cardsSet = new Set(cards.map((item) => item.ownerId));
-    const cardThemeByUser = new Map(
-      cards.map((item) => [item.ownerId, item.theme || "default_dark"]),
-    );
-    const cardRoleByUser = new Map(
-      cards.map((item) => [item.ownerId, String(item.role || "").trim()]),
-    );
-    const verificationRoleByUser = new Map();
-    for (const row of approvedVerificationRows) {
-      if (!verificationRoleByUser.has(row.userId)) {
-        verificationRoleByUser.set(row.userId, String(row.role || "").trim());
-      }
-    }
-    const scoreByUser = new Map(unqScores.map((row) => [row.userId, row]));
-    const staffById = new Map(creatorStaff.map((row) => [row.id, row]));
-    const badgeTypesByUser = new Map();
-    for (const row of approvedBadges) {
-      const userId = String(row?.userId || "").trim();
-      const nextType = String(row?.badgeType || "").trim();
-      if (!userId || !MANUAL_ASSIGNABLE_BADGE_TYPE_SET.has(nextType)) continue;
-      if (!badgeTypesByUser.has(userId)) {
-        badgeTypesByUser.set(userId, new Set());
-      }
-      badgeTypesByUser.get(userId).add(nextType);
-    }
-
-    const items = users.map((user) => {
-      const telegramUsername = user.telegramUsername || null;
-      const username = user.username || null;
-      const createdByStaffId = user.createdByStaffId || null;
-      const creator = createdByStaffId ? staffById.get(createdByStaffId) || null : null;
-      const badgeTypes = MANUAL_ASSIGNABLE_BADGE_TYPES.filter((type) =>
-        badgeTypesByUser.get(user.id)?.has(type),
-      );
-      return {
-        unqScore: scoreByUser.get(user.id)
-          ? {
-            score: scoreByUser.get(user.id).score,
-            percentile: scoreByUser.get(user.id).percentile,
-            calculatedAt: scoreByUser.get(user.id).calculatedAt,
-            breakdown: {
-              views: scoreByUser.get(user.id).scoreViews,
-              slugRarity: scoreByUser.get(user.id).scoreSlugRarity,
-              tenure: scoreByUser.get(user.id).scoreTenure,
-              ctr: scoreByUser.get(user.id).scoreCtr,
-              plan: scoreByUser.get(user.id).scorePlan,
+      const where = {};
+      if (requesterRole === "manager") {
+        if (managerScopeBlocked) {
+          res.json({
+            items: [],
+            managerStats: {
+              createdAccountsCount: 0,
+              trackingEnabled: hasCreatorColumn,
             },
-          }
-          : null,
-        telegramId: user.id,
-        name: user.displayName || user.firstName,
-        city: user.city || "",
-        email: user.email || "",
-        username,
-        telegramUsername,
-        login: user.login || null,
-        createdBy: createdByStaffId
-          ? {
-            id: createdByStaffId,
-            login: creator?.login || null,
-            name: creator?.name || null,
-          }
-          : null,
-        isVerified: Boolean(user.isVerified),
-        verifiedCompany: user.verifiedCompany || "",
-        verifiedRole: cardRoleByUser.get(user.id) || verificationRoleByUser.get(user.id) || "",
-        badgeType: getPrimaryManualBadgeType(badgeTypes),
-        badgeTypes,
-        plan: user.plan,
-        planPurchasedAt: user.planPurchasedAt,
-        planUpgradedAt: user.planUpgradedAt,
-        profileType: normalizeProfileType(user.profileType, { fallback: "person" }),
-        freeProfileCode: user.freeProfileCode || null,
-        slugs: slugsByUser.get(user.id) || [],
-        activeSlugCount: (slugsByUser.get(user.id) || []).filter((slug) =>
-          ["approved", "active", "paused", "private"].includes(slug.status),
-        ).length,
-        hasCard: cardsSet.has(user.id),
-        theme: cardThemeByUser.get(user.id) || "default_dark",
-        status: user.status,
-        createdAt: user.createdAt,
-      };
-    });
-
-    if (sort === "score_desc") {
-      items.sort((a, b) => (Number(b.unqScore?.score || 0) - Number(a.unqScore?.score || 0)));
-    }
-
-    res.json({
-      items,
-      managerStats: requesterRole === "manager"
-        ? {
-          createdAccountsCount: Number(managerCreatedAccountsCount || 0),
-          trackingEnabled: hasCreatorColumn,
+            pagination: {
+              page,
+              pageSize,
+              total: 0,
+              totalPages: 1,
+            },
+          });
+          return;
         }
-        : null,
-      pagination: {
-        page,
-        pageSize,
-        total,
-        totalPages: Math.max(1, Math.ceil(total / pageSize)),
-      },
-    });
+        where.createdByStaffId = requesterManagerId;
+      }
+      if (planFilter !== "all" && hasUserColumn(userColumns, "plan")) {
+        where.plan = planFilter === "premium" ? { in: ["premium", "basic"] } : planFilter;
+      }
+      if (profileTypeFilter !== "all" && hasUserColumn(userColumns, "profileType")) {
+        where.profileType = profileTypeFilter;
+      }
+      if (q) {
+        const or = [];
+        if (hasUserColumn(userColumns, "id") && isUuid(q)) {
+          or.push({ id: { equals: q } });
+        }
+        if (hasUserColumn(userColumns, "firstName")) {
+          or.push({ firstName: { contains: q, mode: "insensitive" } });
+        }
+        if (hasUserColumn(userColumns, "city")) {
+          or.push({ city: { contains: q, mode: "insensitive" } });
+        }
+        if (hasUserColumn(userColumns, "username")) {
+          or.push({ username: { contains: q, mode: "insensitive" } });
+        }
+        if (hasUserColumn(userColumns, "email")) {
+          or.push({ email: { contains: q, mode: "insensitive" } });
+        }
+        if (hasUserColumn(userColumns, "telegramUsername")) {
+          or.push({ telegramUsername: { contains: q, mode: "insensitive" } });
+        }
+        if (hasUserColumn(userColumns, "login")) {
+          or.push({ login: { contains: q, mode: "insensitive" } });
+        }
+        if (hasUserColumn(userColumns, "displayName")) {
+          or.push({ displayName: { contains: q, mode: "insensitive" } });
+        }
+        if (or.length) {
+          where.OR = or;
+        }
+      }
+
+      let total;
+      let users;
+      let managerCreatedAccountsCount = null;
+      try {
+        const select = { id: true };
+        if (hasUserColumn(userColumns, "firstName")) select.firstName = true;
+        if (hasUserColumn(userColumns, "displayName")) select.displayName = true;
+        if (hasUserColumn(userColumns, "city")) select.city = true;
+        if (hasUserColumn(userColumns, "username")) select.username = true;
+        if (hasUserColumn(userColumns, "email")) select.email = true;
+        if (hasUserColumn(userColumns, "telegramUsername")) select.telegramUsername = true;
+        if (hasUserColumn(userColumns, "login")) select.login = true;
+        if (hasUserColumn(userColumns, "isVerified")) select.isVerified = true;
+        if (hasUserColumn(userColumns, "verifiedCompany")) select.verifiedCompany = true;
+        if (hasUserColumn(userColumns, "plan")) select.plan = true;
+        if (hasUserColumn(userColumns, "planPurchasedAt")) select.planPurchasedAt = true;
+        if (hasUserColumn(userColumns, "planUpgradedAt")) select.planUpgradedAt = true;
+        if (hasUserColumn(userColumns, "profileType")) select.profileType = true;
+        if (hasUserColumn(userColumns, "freeProfileCode")) select.freeProfileCode = true;
+        if (hasCreatorColumn) select.createdByStaffId = true;
+        if (hasUserColumn(userColumns, "status")) select.status = true;
+        if (hasUserColumn(userColumns, "createdAt")) select.createdAt = true;
+
+        [total, users, managerCreatedAccountsCount] = await Promise.all([
+          prisma.user.count({ where }),
+          prisma.user.findMany({
+            where,
+            orderBy: sort === "created_desc" ? { createdAt: "desc" } : { createdAt: "desc" },
+            skip: (page - 1) * pageSize,
+            take: pageSize,
+            select,
+          }),
+          requesterManagerId && hasCreatorColumn
+            ? prisma.user.count({
+              where: { createdByStaffId: requesterManagerId },
+            })
+            : Promise.resolve(null),
+        ]);
+      } catch (error) {
+        if (isMissingModelError(error, "User")) {
+          res.status(503).json({ error: "Users storage unavailable", code: "USERS_STORAGE_UNAVAILABLE" });
+          return;
+        }
+        if (isMissingStorageError(error)) {
+          res.status(503).json({ error: "Users storage unavailable", code: "USERS_STORAGE_UNAVAILABLE" });
+          return;
+        }
+        throw error;
+      }
+
+      const userIds = users.map((item) => item.id);
+      const creatorIds = hasCreatorColumn
+        ? Array.from(new Set(users.map((item) => item.createdByStaffId).filter(Boolean)))
+        : [];
+      const [slugs, cards, unqScores, creatorStaff, approvedVerificationRows, approvedBadges] = await Promise.all([
+        prisma.slug.findMany({
+          where: { ownerId: { in: userIds } },
+          select: {
+            ownerId: true,
+            fullSlug: true,
+            status: true,
+            isPrimary: true,
+            pauseMessage: true,
+          },
+        }),
+        prisma.profileCard.findMany({
+          where: { ownerId: { in: userIds } },
+          select: { ownerId: true, id: true, theme: true, role: true },
+        }),
+        modelDelegateExists("UnqScore")
+          ? prisma.unqScore.findMany({
+            where: { userId: { in: userIds } },
+            select: {
+              userId: true,
+              score: true,
+              percentile: true,
+              calculatedAt: true,
+              scoreViews: true,
+              scoreSlugRarity: true,
+              scoreTenure: true,
+              scoreCtr: true,
+              scoreBracelet: true,
+              scorePlan: true,
+            },
+          })
+          : Promise.resolve([]),
+        creatorIds.length
+          ? prisma.staffUser.findMany({
+            where: { id: { in: creatorIds } },
+            select: {
+              id: true,
+              login: true,
+              name: true,
+            },
+          })
+          : Promise.resolve([]),
+        modelDelegateExists("VerificationRequest")
+          ? prisma.verificationRequest.findMany({
+            where: {
+              userId: { in: userIds },
+              status: "approved",
+            },
+            orderBy: [
+              { reviewedAt: "desc" },
+              { requestedAt: "desc" },
+            ],
+            select: {
+              userId: true,
+              role: true,
+            },
+          })
+          : Promise.resolve([]),
+        prisma.badgeApplication
+          ? prisma.badgeApplication.findMany({
+            where: {
+              userId: { in: userIds },
+              status: "approved",
+              badgeType: { in: ["government", "unqx_staff"] },
+            },
+            select: {
+              userId: true,
+              badgeType: true,
+            },
+            orderBy: [{ requestedAt: "desc" }],
+          })
+          : Promise.resolve([]),
+      ]);
+
+      const slugsByUser = new Map();
+      for (const row of slugs) {
+        if (!slugsByUser.has(row.ownerId)) {
+          slugsByUser.set(row.ownerId, []);
+        }
+        slugsByUser.get(row.ownerId).push({
+          fullSlug: row.fullSlug,
+          status: row.status,
+          isPrimary: row.isPrimary,
+          pauseMessage: row.pauseMessage || null,
+        });
+      }
+      const cardsSet = new Set(cards.map((item) => item.ownerId));
+      const cardThemeByUser = new Map(
+        cards.map((item) => [item.ownerId, item.theme || "default_dark"]),
+      );
+      const cardRoleByUser = new Map(
+        cards.map((item) => [item.ownerId, String(item.role || "").trim()]),
+      );
+      const verificationRoleByUser = new Map();
+      for (const row of approvedVerificationRows) {
+        if (!verificationRoleByUser.has(row.userId)) {
+          verificationRoleByUser.set(row.userId, String(row.role || "").trim());
+        }
+      }
+      const scoreByUser = new Map(unqScores.map((row) => [row.userId, row]));
+      const staffById = new Map(creatorStaff.map((row) => [row.id, row]));
+      const badgeTypesByUser = new Map();
+      for (const row of approvedBadges) {
+        const userId = String(row?.userId || "").trim();
+        const nextType = String(row?.badgeType || "").trim();
+        if (!userId || !MANUAL_ASSIGNABLE_BADGE_TYPE_SET.has(nextType)) continue;
+        if (!badgeTypesByUser.has(userId)) {
+          badgeTypesByUser.set(userId, new Set());
+        }
+        badgeTypesByUser.get(userId).add(nextType);
+      }
+
+      const items = users.map((user) => {
+        const telegramUsername = user.telegramUsername || null;
+        const username = user.username || null;
+        const createdByStaffId = user.createdByStaffId || null;
+        const creator = createdByStaffId ? staffById.get(createdByStaffId) || null : null;
+        const badgeTypes = MANUAL_ASSIGNABLE_BADGE_TYPES.filter((type) =>
+          badgeTypesByUser.get(user.id)?.has(type),
+        );
+        return {
+          unqScore: scoreByUser.get(user.id)
+            ? {
+              score: scoreByUser.get(user.id).score,
+              percentile: scoreByUser.get(user.id).percentile,
+              calculatedAt: scoreByUser.get(user.id).calculatedAt,
+              breakdown: {
+                views: scoreByUser.get(user.id).scoreViews,
+                slugRarity: scoreByUser.get(user.id).scoreSlugRarity,
+                tenure: scoreByUser.get(user.id).scoreTenure,
+                ctr: scoreByUser.get(user.id).scoreCtr,
+                plan: scoreByUser.get(user.id).scorePlan,
+              },
+            }
+            : null,
+          telegramId: user.id,
+          name: user.displayName || user.firstName,
+          city: user.city || "",
+          email: user.email || "",
+          username,
+          telegramUsername,
+          login: user.login || null,
+          createdBy: createdByStaffId
+            ? {
+              id: createdByStaffId,
+              login: creator?.login || null,
+              name: creator?.name || null,
+            }
+            : null,
+          isVerified: Boolean(user.isVerified),
+          verifiedCompany: user.verifiedCompany || "",
+          verifiedRole: cardRoleByUser.get(user.id) || verificationRoleByUser.get(user.id) || "",
+          badgeType: getPrimaryManualBadgeType(badgeTypes),
+          badgeTypes,
+          plan: user.plan,
+          planPurchasedAt: user.planPurchasedAt,
+          planUpgradedAt: user.planUpgradedAt,
+          profileType: normalizeProfileType(user.profileType, { fallback: "person" }),
+          freeProfileCode: user.freeProfileCode || null,
+          slugs: slugsByUser.get(user.id) || [],
+          activeSlugCount: (slugsByUser.get(user.id) || []).filter((slug) =>
+            ["approved", "active", "paused", "private"].includes(slug.status),
+          ).length,
+          hasCard: cardsSet.has(user.id),
+          theme: cardThemeByUser.get(user.id) || "default_dark",
+          status: user.status,
+          createdAt: user.createdAt,
+        };
+      });
+
+      if (sort === "score_desc") {
+        items.sort((a, b) => (Number(b.unqScore?.score || 0) - Number(a.unqScore?.score || 0)));
+      }
+
+      res.json({
+        items,
+        managerStats: requesterRole === "manager"
+          ? {
+            createdAccountsCount: Number(managerCreatedAccountsCount || 0),
+            trackingEnabled: hasCreatorColumn,
+          }
+          : null,
+        pagination: {
+          page,
+          pageSize,
+          total,
+          totalPages: Math.max(1, Math.ceil(total / pageSize)),
+        },
+      });
+    } catch (error) {
+      console.error("[admin-users] failed to list users", {
+        message: error?.message,
+        code: error?.code,
+        meta: error?.meta,
+      });
+      if (isMissingModelError(error, "User") || isMissingStorageError(error)) {
+        res.status(503).json({ error: "Users storage unavailable", code: "USERS_STORAGE_UNAVAILABLE" });
+        return;
+      }
+      res.status(500).json({ error: "Failed to load users", code: "ADMIN_USERS_LIST_FAILED" });
+    }
   }),
 );
 
