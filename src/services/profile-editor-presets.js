@@ -130,10 +130,31 @@ const SIGNATURE_THEMES = [
     premiumRequired: true,
   },
   {
+    id: "snow_leopard",
+    label: "Снежный Барс 🐆",
+    description: "Frosted wild snow rosettes",
+    swatchStyle: "border-color:#CBD5E1;background:radial-gradient(circle at 28% 30%,rgba(15,23,42,0.22) 0 8%,transparent 9%),radial-gradient(circle at 72% 62%,rgba(30,41,59,0.18) 0 10%,transparent 11%),linear-gradient(145deg,#F8FAFC 0%,#E2E8F0 54%,#CBD5E1 100%);box-shadow:0 0 12px rgba(148,163,184,0.3),inset 0 0 0 2px rgba(255,255,255,0.45);",
+    premiumRequired: true,
+  },
+  {
     id: "shinobi_path",
     label: "Путь Шиноби 🦊",
     description: "Seigaiha clouds and chakra",
     swatchStyle: "border-color:#00F0FF;background:radial-gradient(circle at 50% 46%,rgba(20,255,236,0.32),transparent 34%),repeating-radial-gradient(circle at 50% 100%,transparent 0 8px,rgba(176,62,39,0.58) 9px 12px,transparent 13px 24px),linear-gradient(145deg,#C84B31 0%,#1D2637 68%);box-shadow:0 0 12px rgba(20,255,236,0.42);",
+    premiumRequired: true,
+  },
+  {
+    id: "shinobi_way",
+    label: "Путь Ниндзя 🍃",
+    description: "Denim scroll, Konoha leaves",
+    swatchStyle: "border-color:#009793;background:radial-gradient(circle at 18% 20%,rgba(0,151,147,0.32),transparent 38%),repeating-radial-gradient(circle at 100% 150%,transparent 0 24px,rgba(238,137,59,0.72) 24px 28px,transparent 29px 60px),linear-gradient(145deg,#D15F47 0%,#2C364D 68%);box-shadow:0 0 12px rgba(238,137,59,0.4);",
+    premiumRequired: true,
+  },
+  {
+    id: "samarkand_heritage",
+    label: "Величие Самарканда 🕌",
+    description: "Majolica gold and lapis",
+    swatchStyle: "border-color:#A87E43;background:radial-gradient(circle at 50% 18%,rgba(32,138,133,0.34),transparent 38%),url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='36' height='36' viewBox='0 0 36 36'%3E%3Cpath d='M18 0 36 18 18 36 0 18Z' fill='none' stroke='%23208A85' stroke-width='1' opacity='.55'/%3E%3C/svg%3E\"),linear-gradient(145deg,#C5A07A 0%,#1E4D9C 68%);box-shadow:0 0 14px rgba(168,126,67,0.38);",
     premiumRequired: true,
   },
   {
@@ -155,6 +176,13 @@ const SIGNATURE_THEMES = [
     label: "Velours Luxe",
     description: "Burgundy velvet luxe",
     swatchStyle: "border-width:1.5px;border-color:#c9a55a;background:linear-gradient(145deg,#3b0f1a 0%,#2d0a12 100%);",
+    premiumRequired: true,
+  },
+  {
+    id: "graffiti",
+    label: "Граффити 🎨",
+    description: "YES MONEY street spray",
+    swatchStyle: "border-color:#0F52BA;background:radial-gradient(circle at 20% 30%,rgba(15,82,186,0.35),transparent 40%),radial-gradient(circle at 80% 70%,rgba(255,69,0,0.3),transparent 44%),linear-gradient(135deg,rgba(236,72,153,0.28),rgba(254,230,0,0.24)),#000000;box-shadow:0 0 16px rgba(236,72,153,0.45),inset 0 0 0 2px rgba(254,230,0,0.22);",
     premiumRequired: true,
   },
   {

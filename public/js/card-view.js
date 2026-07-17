@@ -28,10 +28,14 @@
     "rick_morty_portal",
     "gravity_falls",
     "venom_symbiote",
+    "snow_leopard",
     "shinobi_path",
+    "shinobi_way",
+    "samarkand_heritage",
     "sakura_blossom",
     "starry_night",
     "velours",
+    "graffiti",
     "graffiti_neon",
     "heritage_crest",
     "ivory_tennis",
@@ -968,6 +972,126 @@
       buttonShineGradient:
         "linear-gradient(90deg, rgba(0,240,255,0) 0%, rgba(0,240,255,0.34) 48%, rgba(255,140,0,0.38) 52%, rgba(0,240,255,0) 100%)",
     },
+    shinobi_way: {
+      cardBg: "#2C364D",
+      cardBgOverlay: "shinobi_way",
+      surfaceBg: "rgba(31, 40, 58, 0.78)",
+      cardBorder: "3px solid #EE893B",
+      borderColor: "#009793",
+      surfaceBorder: "1px solid rgba(0, 151, 147, 0.42)",
+      dividerColor: "rgba(238, 137, 59, 0.34)",
+      nameColor: "#FFC355",
+      roleColor: "#EE893B",
+      mutedColor: "rgba(255, 255, 255, 0.76)",
+      accentColor: "#009793",
+      emailColor: "#FFFFFF",
+      buttonPrimaryBg: "#EE893B",
+      buttonPrimaryText: "#2C364D",
+      buttonPrimaryBorder: "#2C364D",
+      buttonSecondaryBg: "rgba(44, 54, 77, 0.86)",
+      buttonSecondaryText: "#FFC355",
+      buttonSecondaryBorder: "#009793",
+      badgeText: "#2C364D",
+      badgeBg: "#FFC355",
+      badgeBorder: "2px solid #009793",
+      topLineGradient: "linear-gradient(90deg, transparent, #009793, #FFC355, #EE893B, transparent)",
+      avatarBg: "linear-gradient(135deg, #2C364D 0%, #009793 48%, #EE893B 100%)",
+      avatarText: "#FFFFFF",
+      avatarBorder: "2px solid #FFC355",
+      cardBorderRadius: "24px",
+      fontFamily: "'Sora', 'Inter', 'Segoe UI', sans-serif",
+      nameFontStyle: "normal",
+      nameFontWeight: "900",
+      roleLetterSpacing: "0.12em",
+      scoreLabelColor: "rgba(255, 255, 255, 0.72)",
+      scoreValueColor: "#FFC355",
+      scoreBarFill: "linear-gradient(90deg, #009793, #FFC355, #EE893B)",
+      scoreBarTrack: "rgba(0, 151, 147, 0.16)",
+      scorePercentileColor: "#EE893B",
+      cardShadow: "0 15px 35px rgba(44, 54, 77, 0.4), 0 0 20px rgba(238, 137, 59, 0.3)",
+      buttonShineGradient:
+        "linear-gradient(90deg, rgba(238,137,59,0) 0%, rgba(255,195,85,0.48) 48%, rgba(0,151,147,0.38) 52%, rgba(238,137,59,0) 100%)",
+    },
+    samarkand_heritage: {
+      cardBg: "rgba(30, 77, 156, 0.92)",
+      cardBgOverlay: "samarkand_heritage",
+      surfaceBg: "rgba(20, 56, 116, 0.72)",
+      cardBorder: "3px solid #A87E43",
+      borderColor: "#A87E43",
+      surfaceBorder: "1px solid rgba(168, 126, 67, 0.54)",
+      dividerColor: "rgba(197, 160, 122, 0.44)",
+      nameColor: "#FFFFFF",
+      roleColor: "#E6C17A",
+      mutedColor: "rgba(255, 255, 255, 0.72)",
+      accentColor: "#208A85",
+      emailColor: "#FFFFFF",
+      buttonPrimaryBg: "rgba(32, 138, 133, 0.9)",
+      buttonPrimaryText: "#FFFFFF",
+      buttonPrimaryBorder: "#A87E43",
+      buttonSecondaryBg: "rgba(197, 160, 122, 0.18)",
+      buttonSecondaryText: "#FFFFFF",
+      buttonSecondaryBorder: "#208A85",
+      badgeText: "#1E4D9C",
+      badgeBg: "#E6C17A",
+      badgeBorder: "1.5px solid #208A85",
+      topLineGradient: "linear-gradient(90deg, transparent, #208A85, #A87E43, #E6C17A, #208A85, transparent)",
+      avatarBg: "linear-gradient(135deg, #1E4D9C 0%, #208A85 48%, #A87E43 100%)",
+      avatarText: "#FFFFFF",
+      avatarBorder: "2px solid #E6C17A",
+      cardBorderRadius: "16px",
+      fontFamily: "'Sora', 'Inter', 'Segoe UI', sans-serif",
+      nameFontStyle: "normal",
+      nameFontWeight: "700",
+      roleLetterSpacing: "0.11em",
+      scoreLabelColor: "rgba(255, 255, 255, 0.68)",
+      scoreValueColor: "#E6C17A",
+      scoreBarFill: "linear-gradient(90deg, #208A85, #A87E43, #E6C17A)",
+      scoreBarTrack: "rgba(197, 160, 122, 0.18)",
+      scorePercentileColor: "#C5A07A",
+      cardShadow: "0 20px 45px rgba(29, 41, 57, 0.5), 0 0 25px rgba(168, 126, 67, 0.25)",
+      buttonShineGradient:
+        "linear-gradient(90deg, rgba(32,138,133,0) 0%, rgba(230,193,122,0.45) 48%, rgba(255,255,255,0.42) 52%, rgba(32,138,133,0) 100%)",
+    },
+    snow_leopard: {
+      cardBg: "rgba(248, 250, 252, 0.85)",
+      cardBgOverlay: "snow_leopard",
+      surfaceBg: "rgba(226, 232, 240, 0.78)",
+      cardBorder: "2px solid rgba(255, 255, 255, 0.72)",
+      borderColor: "#CBD5E1",
+      surfaceBorder: "1px solid rgba(203, 213, 225, 0.74)",
+      dividerColor: "rgba(148, 163, 184, 0.32)",
+      nameColor: "#0F172A",
+      roleColor: "#475569",
+      mutedColor: "rgba(30, 41, 59, 0.66)",
+      accentColor: "#94A3B8",
+      emailColor: "#1E293B",
+      buttonPrimaryBg: "linear-gradient(135deg, #FFFFFF 0%, #E2E8F0 100%)",
+      buttonPrimaryText: "#0F172A",
+      buttonPrimaryBorder: "#CBD5E1",
+      buttonSecondaryBg: "rgba(226, 232, 240, 0.8)",
+      buttonSecondaryText: "#1E293B",
+      buttonSecondaryBorder: "#CBD5E1",
+      badgeText: "#0F172A",
+      badgeBg: "rgba(255, 255, 255, 0.84)",
+      badgeBorder: "1px solid rgba(148, 163, 184, 0.52)",
+      topLineGradient: "linear-gradient(90deg, transparent, #CBD5E1, #FFFFFF, #94A3B8, transparent)",
+      avatarBg: "radial-gradient(circle at 34% 28%, #FFFFFF 0%, #CBD5E1 42%, #64748B 100%)",
+      avatarText: "#0F172A",
+      avatarBorder: "2px solid rgba(255, 255, 255, 0.78)",
+      cardBorderRadius: "24px",
+      fontFamily: "'Sora', 'Inter', 'Segoe UI', sans-serif",
+      nameFontStyle: "normal",
+      nameFontWeight: "900",
+      roleLetterSpacing: "0.1em",
+      scoreLabelColor: "rgba(30, 41, 59, 0.62)",
+      scoreValueColor: "#0F172A",
+      scoreBarFill: "linear-gradient(90deg, #94A3B8, #FFFFFF, #CBD5E1)",
+      scoreBarTrack: "rgba(148, 163, 184, 0.2)",
+      scorePercentileColor: "#475569",
+      cardShadow: "0 15px 35px rgba(15, 23, 42, 0.1), inset 0 0 15px rgba(255, 255, 255, 0.6)",
+      buttonShineGradient:
+        "linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.76) 50%, rgba(255,255,255,0) 100%)",
+    },
     sakura_blossom: {
       cardBg: "rgba(253, 250, 242, 0.93)",
       cardBgOverlay: "sakura_blossom",
@@ -1087,6 +1211,46 @@
       buttonShineGradient: "none",
     },
     graffiti_neon: createGraffitiTheme(),
+    graffiti: {
+      cardBg: "#000000",
+      cardBgOverlay: "graffiti",
+      surfaceBg: "rgba(0, 0, 0, 0.72)",
+      cardBorder: "4px solid #0F52BA",
+      borderColor: "#0F52BA",
+      surfaceBorder: "2px solid rgba(255, 230, 0, 0.72)",
+      dividerColor: "rgba(236, 72, 153, 0.42)",
+      nameColor: "#FFFFFF",
+      roleColor: "#FFE600",
+      mutedColor: "rgba(255, 255, 255, 0.72)",
+      accentColor: "#EC4899",
+      emailColor: "#FFFFFF",
+      buttonPrimaryBg: "#FFE600",
+      buttonPrimaryText: "#000000",
+      buttonPrimaryBorder: "#000000",
+      buttonSecondaryBg: "#0F52BA",
+      buttonSecondaryText: "#FFFFFF",
+      buttonSecondaryBorder: "#000000",
+      badgeText: "#000000",
+      badgeBg: "#FFE600",
+      badgeBorder: "3px solid #000000",
+      topLineGradient: "linear-gradient(90deg, transparent, #0F52BA, #FFE600, #EC4899, #FF4500, transparent)",
+      avatarBg: "linear-gradient(135deg, #0F52BA 0%, #EC4899 55%, #FFE600 100%)",
+      avatarText: "#FFFFFF",
+      avatarBorder: "3px solid #000000",
+      cardBorderRadius: "20px",
+      fontFamily: "'Impact', 'Arial Black', 'Sora', sans-serif",
+      nameFontStyle: "normal",
+      nameFontWeight: "900",
+      roleLetterSpacing: "0.14em",
+      scoreLabelColor: "#FFE600",
+      scoreValueColor: "#FFFFFF",
+      scoreBarFill: "linear-gradient(90deg, #0F52BA, #FFE600, #EC4899)",
+      scoreBarTrack: "rgba(255, 255, 255, 0.14)",
+      scorePercentileColor: "#EC4899",
+      cardShadow: "0 10px 30px rgba(0, 0, 0, 0.8), 0 0 20px rgba(236, 72, 153, 0.4), inset 0 0 15px rgba(254, 230, 0, 0.2)",
+      buttonShineGradient:
+        "linear-gradient(90deg, rgba(255,230,0,0) 0%, rgba(255,255,255,0.58) 48%, rgba(236,72,153,0.38) 52%, rgba(255,230,0,0) 100%)",
+    },
     heritage_crest: createMonochromeTheme({
       surfaceBg: "#ffe6f0",
       base: "#ffc6dd",
@@ -2530,6 +2694,60 @@
         <g opacity="0.2" fill="#00F0FF" font-family="Sora, Arial, sans-serif" font-size="22" font-weight="900">
           <text x="268" y="112" transform="rotate(10 268 112)">忍</text>
           <text x="52" y="512" transform="rotate(-12 52 512)">風</text>
+        </g>
+      </svg>`;
+    }
+    if (themeKey === "shinobi_way") {
+      return `<svg class="unq-ref-overlay-svg" viewBox="0 0 360 600" preserveAspectRatio="none" aria-hidden="true">
+        <rect width="360" height="600" fill="#2C364D" opacity="0.12"></rect>
+        <g opacity="0.14" fill="none" stroke="#FFC355" stroke-width="1">
+          <path d="M-20 112c52-46 104-46 156 0 52-46 104-46 156 0 52-46 104-46 156 0"></path>
+          <path d="M-20 156c52-46 104-46 156 0 52-46 104-46 156 0 52-46 104-46 156 0"></path>
+          <path d="M-20 444c52-46 104-46 156 0 52-46 104-46 156 0 52-46 104-46 156 0"></path>
+          <path d="M-20 488c52-46 104-46 156 0 52-46 104-46 156 0 52-46 104-46 156 0"></path>
+        </g>
+        <g opacity="0.22" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M0 82C72 54 142 66 208 106c58 34 106 36 152 12" stroke="#EE893B" stroke-width="1.2"></path>
+          <path d="M28 322c76-50 150-42 222 24 38 34 74 38 110 10" stroke="#009793" stroke-width="1.1"></path>
+          <circle cx="180" cy="198" r="58" stroke="#009793" stroke-width="1.2"></circle>
+          <circle cx="180" cy="198" r="34" stroke="#FFC355" stroke-width="0.8"></circle>
+          <path d="M126 198h108M180 144v108M144 162l72 72M216 162l-72 72" stroke="#EE893B" stroke-width="0.8"></path>
+        </g>
+        <g opacity="0.24" fill="#EE893B">
+          <path d="M74 76c18 16 20 36 4 58-18-16-20-36-4-58Z"></path>
+          <path d="M292 396c16 14 18 32 4 52-16-14-18-32-4-52Z"></path>
+        </g>
+        <g opacity="0.2" fill="#FFC355" font-family="Sora, Arial, sans-serif" font-size="22" font-weight="900">
+          <text x="268" y="112" transform="rotate(10 268 112)">忍</text>
+          <text x="52" y="512" transform="rotate(-12 52 512)">道</text>
+        </g>
+      </svg>`;
+    }
+    if (themeKey === "samarkand_heritage") {
+      return `<svg class="unq-ref-overlay-svg" viewBox="0 0 360 600" preserveAspectRatio="none" aria-hidden="true">
+        <rect width="360" height="600" fill="#1E4D9C" opacity="0.1"></rect>
+        <defs>
+          <pattern id="samarkandGirih" width="60" height="60" patternUnits="userSpaceOnUse">
+            <path d="M30 0 60 30 30 60 0 30Z" fill="none" stroke="#208A85" stroke-width="1.5" opacity="0.42"></path>
+            <path d="M30 10 50 30 30 50 10 30Z" fill="none" stroke="#A87E43" stroke-width="1" opacity="0.5"></path>
+            <circle cx="30" cy="30" r="5" fill="#319064" opacity="0.3"></circle>
+          </pattern>
+        </defs>
+        <rect width="360" height="600" fill="url(#samarkandGirih)" opacity="0.58"></rect>
+        <g opacity="0.24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M0 92C72 58 142 68 210 112c58 38 106 42 150 14" stroke="#E6C17A" stroke-width="1.2"></path>
+          <path d="M22 328c72-46 144-42 216 18 44 36 84 38 122 8" stroke="#208A85" stroke-width="1"></path>
+          <circle cx="180" cy="204" r="62" stroke="#A87E43" stroke-width="1.1"></circle>
+          <path d="M180 142 236 204 180 266 124 204Z" stroke="#208A85" stroke-width="1.1"></path>
+          <path d="M148 204h64M180 172v64" stroke="#E6C17A" stroke-width="0.9"></path>
+        </g>
+        <g opacity="0.22" fill="#A87E43">
+          <path d="M74 74l11 26 26 11-26 11-11 26-11-26-26-11 26-11 11-26Z"></path>
+          <path d="M288 390l9 22 22 9-22 9-9 22-9-22-22-9 22-9 9-22Z"></path>
+        </g>
+        <g opacity="0.18" fill="#E6C17A" font-family="Georgia, serif" font-size="24" font-weight="700">
+          <text x="268" y="116" transform="rotate(10 268 116)">✦</text>
+          <text x="54" y="514" transform="rotate(-12 54 514)">✧</text>
         </g>
       </svg>`;
     }
@@ -4007,6 +4225,40 @@
           </svg>
         </div>`
       : "";
+    const snowLeopardEffectsHtml = theme.key === "snow_leopard"
+      ? `<div class="snow-leopard-effects" aria-hidden="true">
+          ${[
+        ["10%", "foreground", "7s", "0s"],
+        ["18%", "background", "14s", "-7s"],
+        ["25%", "midground", "10s", "-2s"],
+        ["34%", "foreground", "6s", "-4s"],
+        ["40%", "midground", "9s", "-5s"],
+        ["48%", "background", "16s", "-11s"],
+        ["55%", "midground", "12s", "-1s"],
+        ["62%", "foreground", "8s", "-6s"],
+        ["70%", "midground", "8s", "-3s"],
+        ["78%", "background", "15s", "-9s"],
+        ["85%", "midground", "11s", "-5s"],
+        ["92%", "foreground", "9s", "-2.5s"],
+        ["5%", "background", "17s", "-13s"],
+        ["96%", "midground", "13s", "-8s"],
+      ].map(([left, layer, duration, delay], index) => `
+            <span class="snow-flake snow-${layer} snow-${(index % 7) + 1}" style="left:${left};animation-duration:${duration};animation-delay:${delay}"></span>`).join("")}
+        </div>`
+      : "";
+    const graffitiEffectsHtml = theme.key === "graffiti"
+      ? `<div class="graffiti-effects" aria-hidden="true">
+          <span class="spray-cloud spray-pink"></span>
+          <span class="spray-cloud spray-yellow"></span>
+          <span class="spray-cloud spray-blue"></span>
+          <span class="spray-cloud spray-orange"></span>
+        </div>`
+      : "";
+    const graffitiCardDripsHtml = theme.key === "graffiti"
+      ? `<span class="paint-drip drip-1" aria-hidden="true"></span>
+          <span class="paint-drip drip-2" aria-hidden="true"></span>
+          <span class="paint-drip drip-3" aria-hidden="true"></span>`
+      : "";
     const shinobiEffectsHtml = theme.key === "shinobi_path"
       ? `<div class="shinobi-path-effects" aria-hidden="true">
           <span class="chakra-glow"></span>
@@ -4015,6 +4267,34 @@
           <span class="shinobi-cloud cloud-3"><span></span></span>
           <span class="shinobi-cloud cloud-4"><span></span></span>
         </div>`
+      : "";
+    const shinobiWayEffectsHtml = theme.key === "shinobi_way"
+      ? `<div class="shinobi-way-effects" aria-hidden="true">
+          <span class="konoha-leaf leaf-teal leaf-1"></span>
+          <span class="konoha-leaf leaf-orange leaf-2"></span>
+          <span class="konoha-leaf leaf-teal leaf-3"></span>
+          <span class="konoha-leaf leaf-orange leaf-4"></span>
+          <span class="konoha-leaf leaf-teal leaf-5"></span>
+          <span class="konoha-leaf leaf-orange leaf-6"></span>
+          <span class="konoha-leaf leaf-teal leaf-7"></span>
+        </div>`
+      : "";
+    const shinobiWayCardGlowHtml = theme.key === "shinobi_way"
+      ? `<span class="chakra-glow" aria-hidden="true"></span>`
+      : "";
+    const samarkandEffectsHtml = theme.key === "samarkand_heritage"
+      ? `<div class="samarkand-heritage-effects" aria-hidden="true">
+          <span class="gold-dust dust-gold dust-1"></span>
+          <span class="gold-dust dust-teal dust-2"></span>
+          <span class="gold-dust dust-gold dust-3"></span>
+          <span class="gold-dust dust-teal dust-4"></span>
+          <span class="gold-dust dust-gold dust-5"></span>
+          <span class="gold-dust dust-teal dust-6"></span>
+          <span class="gold-dust dust-gold dust-7"></span>
+        </div>`
+      : "";
+    const samarkandCardGlowHtml = theme.key === "samarkand_heritage"
+      ? `<span class="majolica-glow" aria-hidden="true"></span>`
       : "";
     const sakuraEffectsHtml = theme.key === "sakura_blossom"
       ? `<div class="sakura-blossom-effects" aria-hidden="true">
@@ -4066,7 +4346,11 @@
         ${portalEffectsHtml}
         ${gravityEffectsHtml}
         ${venomEffectsHtml}
+        ${snowLeopardEffectsHtml}
+        ${graffitiEffectsHtml}
         ${shinobiEffectsHtml}
+        ${shinobiWayEffectsHtml}
+        ${samarkandEffectsHtml}
         ${sakuraEffectsHtml}
         ${starryEffectsHtml}
         ${vintageSparklesHtml}
@@ -4097,6 +4381,9 @@
         </div>
         <div class="public-card-shell unq-ref-shell">
           <div class="unq-ref-card-overlay">${overlayHtml}</div>
+          ${graffitiCardDripsHtml}
+          ${shinobiWayCardGlowHtml}
+          ${samarkandCardGlowHtml}
           ${shellMetaHtml}
           ${officialUnqHtml}
           ${staffBadgeHtml}
