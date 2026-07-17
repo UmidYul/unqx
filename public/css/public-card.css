@@ -1994,6 +1994,94 @@
   box-shadow: 0 8px 20px rgba(32, 138, 133, 0.4) !important;
 }
 
+[data-card-theme="turtle_power"] .public-card-shell {
+  position: relative;
+  overflow: hidden;
+  border: 4px solid #1E293B !important;
+  border-radius: 20px !important;
+  background-color: #95AFBA !important;
+  background-image:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, transparent 60%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Cpath d='M40 0 L80 20 L80 60 L40 80 L0 60 L0 20 Z' fill='none' stroke='%234A7836' stroke-width='2' opacity='0.25'/%3E%3Cpath d='M40 10 L70 25 L70 55 L40 70 L10 55 L10 25 Z' fill='none' stroke='%23AC7038' stroke-width='1.5' opacity='0.2'/%3E%3C/svg%3E"),
+    radial-gradient(circle at 80% 18%, rgba(200, 29, 37, 0.12) 0%, transparent 40%),
+    linear-gradient(160deg, #95AFBA 0%, #7897A5 58%, #6E8794 100%) !important;
+  background-size: 100% 100%, 40px 40px, 100% 100%, 100% 100% !important;
+  color: #1E293B;
+  box-shadow:
+    0 20px 40px rgba(15, 23, 42, 0.6),
+    0 0 25px rgba(74, 120, 54, 0.3) !important;
+}
+
+[data-card-theme="turtle_power"] .public-card-shell::before {
+  content: "";
+  position: absolute;
+  inset: 10px;
+  z-index: 0;
+  pointer-events: none;
+  border: 2px dashed rgba(30, 41, 59, 0.34);
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(74, 120, 54, 0.18) 0 10px, transparent 11px),
+    radial-gradient(circle at 82% 74%, rgba(172, 112, 56, 0.16) 0 14px, transparent 15px);
+}
+
+[data-card-theme="turtle_power"] .public-card-shell::after {
+  content: "TURTLE POWER";
+  position: absolute;
+  right: -18px;
+  bottom: 12%;
+  z-index: 1;
+  color: rgba(30, 41, 59, 0.08);
+  font-family: Impact, "Arial Black", sans-serif;
+  font-size: clamp(34px, 12vw, 74px);
+  letter-spacing: 0.04em;
+  transform: rotate(-12deg);
+  pointer-events: none;
+}
+
+[data-card-theme="turtle_power"] .public-card-shell > * {
+  position: relative;
+  z-index: 2;
+}
+
+[data-card-theme="turtle_power"] .unq-ref-card-overlay {
+  z-index: 1;
+  opacity: 0.62;
+}
+
+[data-card-theme="turtle_power"] .unq-ref-name,
+[data-card-theme="turtle_power"] .unq-ref-name-text {
+  color: #FFFFFF !important;
+  font-family: Impact, "Arial Black", "Sora", sans-serif !important;
+  letter-spacing: 0.03em !important;
+  text-shadow:
+    -2px -2px 0 #1E293B,
+    2px -2px 0 #1E293B,
+    -2px 2px 0 #1E293B,
+    2px 2px 0 #1E293B,
+    0 0 12px rgba(74, 120, 54, 0.8) !important;
+}
+
+[data-card-theme="turtle_power"] .unq-ref-action-btn,
+[data-card-theme="turtle_power"] .unq-ref-follow-toggle,
+[data-card-theme="turtle_power"] .unq-follow-action-btn {
+  background: #1E293B !important;
+  border: 3px solid #AC7038 !important;
+  color: #95AFBA !important;
+  font-weight: 800 !important;
+  transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275), background-color 0.25s ease, box-shadow 0.25s ease !important;
+}
+
+[data-card-theme="turtle_power"] .unq-ref-action-btn:hover,
+[data-card-theme="turtle_power"] .unq-ref-follow-toggle:hover,
+[data-card-theme="turtle_power"] .unq-follow-action-btn:hover {
+  background: #4A7836 !important;
+  border-color: #C81D25 !important;
+  color: #FFFFFF !important;
+  transform: scale(1.04) rotate(1deg);
+  box-shadow: 0 5px 15px rgba(74, 120, 54, 0.6) !important;
+}
+
 [data-card-theme="sakura_blossom"] .public-card-shell {
   position: relative;
   overflow: hidden;
@@ -3648,6 +3736,23 @@ body[data-page="profile-page"] {
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Cpath d='M30 0 60 30 30 60 0 30Z' fill='none' stroke='%23208A85' stroke-width='1.5' opacity='.42'/%3E%3Cpath d='M30 10 50 30 30 50 10 30Z' fill='none' stroke='%23A87E43' stroke-width='1' opacity='.5'/%3E%3C/svg%3E");
 }
 
+#profile-card-live-preview[data-preview-theme="turtle_power"] {
+  --preview-border-color: #1E293B;
+  --preview-page-bg:
+    radial-gradient(circle at 10% 10%, rgba(200, 29, 37, 0.18) 0%, transparent 50%),
+    radial-gradient(circle at 90% 90%, rgba(74, 120, 54, 0.22) 0%, transparent 50%),
+    linear-gradient(185deg, #61869B 0%, #3A5564 100%);
+  --preview-screen-opacity: 0.46;
+  --preview-screen-pattern:
+    repeating-linear-gradient(115deg, rgba(30, 41, 59, 0.13) 0 2px, transparent 2px 28px),
+    radial-gradient(circle at 20% 26%, rgba(200, 29, 37, 0.16) 0 7px, transparent 8px),
+    radial-gradient(circle at 78% 70%, rgba(74, 120, 54, 0.18) 0 8px, transparent 9px);
+  --preview-overlay-opacity: 0.68;
+  --preview-overlay-pattern:
+    radial-gradient(circle at 80% 18%, rgba(200, 29, 37, 0.14) 0%, transparent 40%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Cpath d='M40 0 80 20 80 60 40 80 0 60 0 20Z' fill='none' stroke='%234A7836' stroke-width='2' opacity='.25'/%3E%3Cpath d='M40 10 70 25 70 55 40 70 10 55 10 25Z' fill='none' stroke='%23AC7038' stroke-width='1.5' opacity='.22'/%3E%3C/svg%3E");
+}
+
 #profile-card-live-preview[data-preview-theme="sakura_blossom"] {
   --preview-border-color: #D2A298;
   --preview-page-bg:
@@ -4635,6 +4740,24 @@ body[data-card-theme="samarkand_heritage"]::before {
   content: none;
 }
 
+body[data-card-theme="turtle_power"] {
+  --theme-page-bg: #61869B;
+  --theme-screen-opacity: 0.42;
+  --theme-screen-pattern:
+    radial-gradient(circle at 10% 10%, rgba(200, 29, 37, 0.15) 0%, transparent 50%),
+    radial-gradient(circle at 90% 90%, rgba(74, 120, 54, 0.2) 0%, transparent 50%),
+    repeating-linear-gradient(115deg, rgba(30, 41, 59, 0.12) 0 2px, transparent 2px 28px);
+  background-color: #61869B !important;
+  background-image:
+    radial-gradient(circle at 10% 10%, rgba(200, 29, 37, 0.15) 0%, transparent 50%),
+    radial-gradient(circle at 90% 90%, rgba(74, 120, 54, 0.2) 0%, transparent 50%),
+    linear-gradient(185deg, #61869B 0%, #3a5564 100%) !important;
+}
+
+body[data-card-theme="turtle_power"]::before {
+  content: none;
+}
+
 body[data-card-theme="sakura_blossom"] {
   --theme-page-bg: #EADBC8;
   --theme-screen-opacity: 0.28;
@@ -5590,6 +5713,154 @@ body[data-card-theme="starry_night"]::before {
   50% {
     opacity: 0.5;
     filter: blur(25px);
+  }
+}
+
+.turtle-power-effects {
+  position: fixed;
+  inset: 0;
+  z-index: 12;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.patrolling-turtle {
+  position: fixed;
+  width: 45px;
+  height: 45px;
+  z-index: 99;
+  pointer-events: none;
+  filter: drop-shadow(0 4px 0 rgba(30, 41, 59, 0.28)) drop-shadow(0 0 10px rgba(74, 120, 54, 0.3));
+  animation: turtle-patrol 40s infinite linear;
+  will-change: left, top, transform;
+}
+
+.t-leg-l {
+  animation: leg-left 1s infinite ease-in-out;
+  transform-origin: top right;
+}
+
+.t-leg-r {
+  animation: leg-right 1s infinite ease-in-out;
+  transform-origin: top left;
+}
+
+.mouser-bg {
+  position: fixed;
+  width: 80px;
+  height: 44px;
+  border: 2px solid rgba(30, 41, 59, 0.18);
+  border-radius: 50% 50% 40% 40%;
+  opacity: 0.18;
+  transform: rotate(-12deg);
+}
+
+.mouser-bg::before,
+.mouser-bg::after {
+  content: "";
+  position: absolute;
+  top: -16px;
+  width: 18px;
+  height: 22px;
+  border: 2px solid rgba(30, 41, 59, 0.18);
+  border-bottom: 0;
+  border-radius: 14px 14px 0 0;
+}
+
+.mouser-bg::before {
+  left: 14px;
+}
+
+.mouser-bg::after {
+  right: 14px;
+}
+
+.mouser-1 {
+  left: 7%;
+  top: 18%;
+}
+
+.mouser-2 {
+  right: 8%;
+  bottom: 18%;
+  transform: rotate(14deg) scale(1.2);
+}
+
+@keyframes leg-left {
+  0%,
+  100% {
+    transform: rotate(-10deg);
+  }
+
+  50% {
+    transform: rotate(15deg);
+  }
+}
+
+@keyframes leg-right {
+  0%,
+  100% {
+    transform: rotate(15deg);
+  }
+
+  50% {
+    transform: rotate(-10deg);
+  }
+}
+
+@keyframes turtle-patrol {
+  0% {
+    left: 5%;
+    top: 85%;
+    transform: rotate(0deg);
+  }
+
+  22% {
+    left: 5%;
+    top: 15%;
+    transform: rotate(0deg);
+  }
+
+  25% {
+    left: 5%;
+    top: 15%;
+    transform: rotate(90deg);
+  }
+
+  47% {
+    left: 85%;
+    top: 15%;
+    transform: rotate(90deg);
+  }
+
+  50% {
+    left: 85%;
+    top: 15%;
+    transform: rotate(180deg);
+  }
+
+  72% {
+    left: 85%;
+    top: 85%;
+    transform: rotate(180deg);
+  }
+
+  75% {
+    left: 85%;
+    top: 85%;
+    transform: rotate(270deg);
+  }
+
+  97% {
+    left: 5%;
+    top: 85%;
+    transform: rotate(270deg);
+  }
+
+  100% {
+    left: 5%;
+    top: 85%;
+    transform: rotate(360deg);
   }
 }
 
@@ -10889,6 +11160,26 @@ body[data-card-theme="samarkand_heritage"] {
   --unqx-search-result-hover: rgba(32, 138, 133, 0.13);
 }
 
+body[data-card-theme="turtle_power"] {
+  --unqx-nav-bg: #1E293B;
+  --unqx-nav-border: #4A7836;
+  --unqx-nav-border-width: 2px;
+  --unqx-nav-text: #95AFBA;
+  --unqx-nav-icon: #C81D25;
+  --unqx-nav-input: #FFFFFF;
+  --unqx-nav-placeholder: rgba(149, 175, 186, 0.5);
+  --unqx-nav-chip: rgba(149, 175, 186, 0.72);
+  --unqx-nav-hover-bg: #4A7836;
+  --unqx-nav-hover-text: #FFFFFF;
+  --unqx-nav-hover-border: #C81D25;
+  --unqx-nav-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+  --unqx-nav-hover-shadow: 0 0 15px rgba(74, 120, 54, 0.8);
+  --unqx-search-result-text: #FFFFFF;
+  --unqx-search-result-strong: #95AFBA;
+  --unqx-search-result-muted: rgba(149, 175, 186, 0.68);
+  --unqx-search-result-hover: rgba(74, 120, 54, 0.2);
+}
+
 body[data-card-theme="starry_night"] .interactive-btn,
 body[data-card-theme="starry_night"] #card-slug-search-form > div,
 body[data-card-theme="starry_night"] #card-slug-search-results,
@@ -11007,6 +11298,32 @@ body[data-card-theme="samarkand_heritage"] .unq-ref-top-badge {
   box-shadow: var(--unqx-nav-shadow) !important;
   -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
+}
+
+body[data-card-theme="turtle_power"] .interactive-btn,
+body[data-card-theme="turtle_power"] #card-slug-search-form > div,
+body[data-card-theme="turtle_power"] #card-slug-search-results,
+body[data-card-theme="turtle_power"] .nav-back-button,
+body[data-card-theme="turtle_power"] .nav-input-wrapper,
+body[data-card-theme="turtle_power"] .nav-search-button,
+body[data-card-theme="turtle_power"] .info-badge,
+body[data-card-theme="turtle_power"] .unq-ref-slug-chip,
+body[data-card-theme="turtle_power"] .unq-ref-slug-price,
+body[data-card-theme="turtle_power"] .unq-ref-share,
+body[data-card-theme="turtle_power"] .unq-ref-top-badge {
+  background: var(--unqx-nav-bg) !important;
+  border: var(--unqx-nav-border-width, 2px) solid var(--unqx-nav-border) !important;
+  color: var(--unqx-nav-text) !important;
+  box-shadow: var(--unqx-nav-shadow) !important;
+  -webkit-backdrop-filter: blur(5px);
+  backdrop-filter: blur(5px);
+}
+
+body[data-card-theme="turtle_power"] #card-slug-search-results {
+  --card-search-result-text: var(--unqx-search-result-text);
+  --card-search-result-strong: var(--unqx-search-result-strong);
+  --card-search-result-muted: var(--unqx-search-result-muted);
+  --card-search-result-hover: var(--unqx-search-result-hover);
 }
 
 body[data-card-theme="samarkand_heritage"] #card-slug-search-results {
@@ -11159,6 +11476,48 @@ body[data-card-theme="shinobi_path"] .interactive-btn:hover svg,
 body[data-card-theme="shinobi_path"] .nav-back-button:hover svg,
 body[data-card-theme="shinobi_path"] .nav-search-button:hover svg,
 body[data-card-theme="shinobi_path"] .unq-ref-share:hover svg {
+  color: var(--unqx-nav-hover-text) !important;
+}
+
+body[data-card-theme="turtle_power"] #card-slug-search-form input,
+body[data-card-theme="turtle_power"] .nav-input-wrapper input {
+  color: var(--unqx-nav-input) !important;
+}
+
+body[data-card-theme="turtle_power"] #card-slug-search-form input::placeholder,
+body[data-card-theme="turtle_power"] .nav-input-wrapper input::placeholder {
+  color: var(--unqx-nav-placeholder) !important;
+}
+
+body[data-card-theme="turtle_power"] #card-slug-search-form span {
+  color: var(--unqx-nav-chip) !important;
+}
+
+body[data-card-theme="turtle_power"] #public-card-layout > div:first-child > .interactive-btn svg,
+body[data-card-theme="turtle_power"] #card-slug-search-form button svg,
+body[data-card-theme="turtle_power"] .nav-back-button svg,
+body[data-card-theme="turtle_power"] .nav-search-button svg,
+body[data-card-theme="turtle_power"] .info-badge svg,
+body[data-card-theme="turtle_power"] .unq-ref-share svg {
+  color: var(--unqx-nav-icon) !important;
+}
+
+body[data-card-theme="turtle_power"] .interactive-btn:hover,
+body[data-card-theme="turtle_power"] .nav-back-button:hover,
+body[data-card-theme="turtle_power"] .nav-search-button:hover,
+body[data-card-theme="turtle_power"] .unq-ref-slug-chip:hover,
+body[data-card-theme="turtle_power"] .unq-ref-share:hover {
+  background: var(--unqx-nav-hover-bg) !important;
+  border-color: var(--unqx-nav-hover-border, var(--unqx-nav-border)) !important;
+  color: var(--unqx-nav-hover-text) !important;
+  box-shadow: var(--unqx-nav-hover-shadow) !important;
+  transform: scale(1.02);
+}
+
+body[data-card-theme="turtle_power"] .interactive-btn:hover svg,
+body[data-card-theme="turtle_power"] .nav-back-button:hover svg,
+body[data-card-theme="turtle_power"] .nav-search-button:hover svg,
+body[data-card-theme="turtle_power"] .unq-ref-share:hover svg {
   color: var(--unqx-nav-hover-text) !important;
 }
 
@@ -13037,6 +13396,7 @@ body[data-card-theme="snow_leopard"] .public-card-shell,
 body[data-card-theme="shinobi_path"] .public-card-shell,
 body[data-card-theme="shinobi_way"] .public-card-shell,
 body[data-card-theme="samarkand_heritage"] .public-card-shell,
+body[data-card-theme="turtle_power"] .public-card-shell,
 body[data-card-theme="sakura_blossom"] .public-card-shell,
 body[data-card-theme="starry_night"] .public-card-shell,
 body[data-card-theme="graffiti"] .public-card-shell,
@@ -13047,6 +13407,7 @@ body[data-card-theme="graffiti"] .public-card-shell,
 #profile-card-live-preview[data-preview-theme="shinobi_path"] .public-card-shell,
 #profile-card-live-preview[data-preview-theme="shinobi_way"] .public-card-shell,
 #profile-card-live-preview[data-preview-theme="samarkand_heritage"] .public-card-shell,
+#profile-card-live-preview[data-preview-theme="turtle_power"] .public-card-shell,
 #profile-card-live-preview[data-preview-theme="sakura_blossom"] .public-card-shell,
 #profile-card-live-preview[data-preview-theme="starry_night"] .public-card-shell,
 #profile-card-live-preview[data-preview-theme="graffiti"] .public-card-shell {
@@ -13066,6 +13427,7 @@ body[data-card-theme="snow_leopard"] .unq-ref-shell,
 body[data-card-theme="shinobi_path"] .unq-ref-shell,
 body[data-card-theme="shinobi_way"] .unq-ref-shell,
 body[data-card-theme="samarkand_heritage"] .unq-ref-shell,
+body[data-card-theme="turtle_power"] .unq-ref-shell,
 body[data-card-theme="sakura_blossom"] .unq-ref-shell,
 body[data-card-theme="starry_night"] .unq-ref-shell,
 body[data-card-theme="graffiti"] .unq-ref-shell,
@@ -13076,6 +13438,7 @@ body[data-card-theme="graffiti"] .unq-ref-shell,
 #profile-card-live-preview[data-preview-theme="shinobi_path"] .unq-ref-shell,
 #profile-card-live-preview[data-preview-theme="shinobi_way"] .unq-ref-shell,
 #profile-card-live-preview[data-preview-theme="samarkand_heritage"] .unq-ref-shell,
+#profile-card-live-preview[data-preview-theme="turtle_power"] .unq-ref-shell,
 #profile-card-live-preview[data-preview-theme="sakura_blossom"] .unq-ref-shell,
 #profile-card-live-preview[data-preview-theme="starry_night"] .unq-ref-shell,
 #profile-card-live-preview[data-preview-theme="graffiti"] .unq-ref-shell {
@@ -13089,6 +13452,7 @@ body[data-card-theme="snow_leopard"] .unq-ref-card-overlay,
 body[data-card-theme="shinobi_path"] .unq-ref-card-overlay,
 body[data-card-theme="shinobi_way"] .unq-ref-card-overlay,
 body[data-card-theme="samarkand_heritage"] .unq-ref-card-overlay,
+body[data-card-theme="turtle_power"] .unq-ref-card-overlay,
 body[data-card-theme="sakura_blossom"] .unq-ref-card-overlay,
 body[data-card-theme="starry_night"] .unq-ref-card-overlay,
 body[data-card-theme="graffiti"] .unq-ref-card-overlay,
@@ -13099,6 +13463,7 @@ body[data-card-theme="graffiti"] .unq-ref-card-overlay,
 #profile-card-live-preview[data-preview-theme="shinobi_path"] .unq-ref-card-overlay,
 #profile-card-live-preview[data-preview-theme="shinobi_way"] .unq-ref-card-overlay,
 #profile-card-live-preview[data-preview-theme="samarkand_heritage"] .unq-ref-card-overlay,
+#profile-card-live-preview[data-preview-theme="turtle_power"] .unq-ref-card-overlay,
 #profile-card-live-preview[data-preview-theme="sakura_blossom"] .unq-ref-card-overlay,
 #profile-card-live-preview[data-preview-theme="starry_night"] .unq-ref-card-overlay,
 #profile-card-live-preview[data-preview-theme="graffiti"] .unq-ref-card-overlay {
@@ -13118,6 +13483,7 @@ body[data-card-theme="snow_leopard"] .unq-ref-brand,
 body[data-card-theme="shinobi_path"] .unq-ref-brand,
 body[data-card-theme="shinobi_way"] .unq-ref-brand,
 body[data-card-theme="samarkand_heritage"] .unq-ref-brand,
+body[data-card-theme="turtle_power"] .unq-ref-brand,
 body[data-card-theme="sakura_blossom"] .unq-ref-brand,
 body[data-card-theme="starry_night"] .unq-ref-brand,
 body[data-card-theme="graffiti"] .unq-ref-brand,
@@ -13128,6 +13494,7 @@ body[data-card-theme="graffiti"] .unq-ref-brand,
 #profile-card-live-preview[data-preview-theme="shinobi_path"] .unq-ref-brand,
 #profile-card-live-preview[data-preview-theme="shinobi_way"] .unq-ref-brand,
 #profile-card-live-preview[data-preview-theme="samarkand_heritage"] .unq-ref-brand,
+#profile-card-live-preview[data-preview-theme="turtle_power"] .unq-ref-brand,
 #profile-card-live-preview[data-preview-theme="sakura_blossom"] .unq-ref-brand,
 #profile-card-live-preview[data-preview-theme="starry_night"] .unq-ref-brand,
 #profile-card-live-preview[data-preview-theme="graffiti"] .unq-ref-brand {
@@ -13141,6 +13508,7 @@ body[data-card-theme="graffiti"] .unq-ref-brand,
 #profile-card-live-preview[data-preview-theme="shinobi_path"] .unq-ref-profile,
 #profile-card-live-preview[data-preview-theme="shinobi_way"] .unq-ref-profile,
 #profile-card-live-preview[data-preview-theme="samarkand_heritage"] .unq-ref-profile,
+#profile-card-live-preview[data-preview-theme="turtle_power"] .unq-ref-profile,
 #profile-card-live-preview[data-preview-theme="sakura_blossom"] .unq-ref-profile,
 #profile-card-live-preview[data-preview-theme="starry_night"] .unq-ref-profile,
 #profile-card-live-preview[data-preview-theme="graffiti"] .unq-ref-profile {
@@ -13156,6 +13524,7 @@ body[data-card-theme="graffiti"] .unq-ref-brand,
 #profile-card-live-preview[data-preview-theme="shinobi_path"] [data-card-view],
 #profile-card-live-preview[data-preview-theme="shinobi_way"] [data-card-view],
 #profile-card-live-preview[data-preview-theme="samarkand_heritage"] [data-card-view],
+#profile-card-live-preview[data-preview-theme="turtle_power"] [data-card-view],
 #profile-card-live-preview[data-preview-theme="sakura_blossom"] [data-card-view],
 #profile-card-live-preview[data-preview-theme="starry_night"] [data-card-view],
 #profile-card-live-preview[data-preview-theme="graffiti"] [data-card-view] {
@@ -13460,6 +13829,56 @@ body[data-card-theme="samarkand_heritage"] .unq-ref-top,
   padding-bottom: 0 !important;
 }
 
+/* Turtle Power zero-gap reset: comic shell card without layout spacer. */
+body[data-card-theme="turtle_power"] main {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-height: 100vh !important;
+  min-height: 100svh !important;
+  min-height: 100dvh !important;
+  margin: 0 !important;
+  padding: max(10px, env(safe-area-inset-top, 0px)) 0 max(10px, env(safe-area-inset-bottom, 0px)) !important;
+  overflow-x: hidden !important;
+}
+
+body[data-card-theme="turtle_power"] #public-card-layout,
+body[data-card-theme="turtle_power"] #card-view-root,
+body[data-card-theme="turtle_power"] #card-view-root > [data-card-view],
+#profile-card-live-preview[data-preview-theme="turtle_power"] [data-card-view] {
+  width: 100% !important;
+  max-width: 430px !important;
+  margin: 0 auto !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
+}
+
+body[data-card-theme="turtle_power"] #public-card-layout > div:first-child {
+  margin-bottom: 8px !important;
+}
+
+body[data-card-theme="turtle_power"] .public-card-shell,
+#profile-card-live-preview[data-preview-theme="turtle_power"] .public-card-shell {
+  width: 92% !important;
+  max-width: 430px !important;
+  margin: 10px auto !important;
+  padding: 16px 14px !important;
+  box-sizing: border-box !important;
+}
+
+body[data-card-theme="turtle_power"] .unq-ref-shell,
+#profile-card-live-preview[data-preview-theme="turtle_power"] .unq-ref-shell {
+  gap: 14px !important;
+}
+
+body[data-card-theme="turtle_power"] .unq-ref-top,
+#profile-card-live-preview[data-preview-theme="turtle_power"] .unq-ref-top {
+  margin-bottom: 10px !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
 /* Graffiti zero-gap reset: street art theme uses the same compact rhythm as legacy themes. */
 body[data-card-theme="graffiti"] main {
   display: flex !important;
@@ -13621,6 +14040,25 @@ body[data-card-theme="graffiti"] .unq-ref-top,
 
   body[data-card-theme="samarkand_heritage"] .public-card-shell,
   #profile-card-live-preview[data-preview-theme="samarkand_heritage"] .public-card-shell {
+    padding: 12px 10px !important;
+    margin: 6px auto !important;
+  }
+
+  body[data-card-theme="turtle_power"] main {
+    justify-content: flex-start !important;
+    padding-top: max(6px, env(safe-area-inset-top, 0px)) !important;
+    padding-bottom: max(6px, env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  body[data-card-theme="turtle_power"] #public-card-layout,
+  body[data-card-theme="turtle_power"] #card-view-root,
+  body[data-card-theme="turtle_power"] #card-view-root > [data-card-view],
+  #profile-card-live-preview[data-preview-theme="turtle_power"] [data-card-view] {
+    max-width: min(430px, 100vw) !important;
+  }
+
+  body[data-card-theme="turtle_power"] .public-card-shell,
+  #profile-card-live-preview[data-preview-theme="turtle_power"] .public-card-shell {
     padding: 12px 10px !important;
     margin: 6px auto !important;
   }

@@ -28,6 +28,7 @@ const PROFILE_THEME_KEYS = [
   "shinobi_path",
   "shinobi_way",
   "samarkand_heritage",
+  "turtle_power",
   "sakura_blossom",
   "starry_night",
   "velours",

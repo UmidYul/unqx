@@ -158,6 +158,13 @@ const SIGNATURE_THEMES = [
     premiumRequired: true,
   },
   {
+    id: "turtle_power",
+    label: "Сила Черепах 🐢",
+    description: "Comic shell patrol turtle",
+    swatchStyle: "border-color:#1E293B;background:radial-gradient(circle at 12% 16%,rgba(200,29,37,0.34),transparent 36%),radial-gradient(circle at 88% 84%,rgba(74,120,54,0.34),transparent 42%),repeating-radial-gradient(circle,#4A7836 0 2px,transparent 3px 18px),linear-gradient(145deg,#61869B 0%,#95AFBA 58%,#3A5564 100%);box-shadow:0 0 14px rgba(74,120,54,0.42);",
+    premiumRequired: true,
+  },
+  {
     id: "sakura_blossom",
     label: "Цветущая Сакура 🌸",
     description: "Watercolor silk petals",

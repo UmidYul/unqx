@@ -32,6 +32,7 @@
     "shinobi_path",
     "shinobi_way",
     "samarkand_heritage",
+    "turtle_power",
     "sakura_blossom",
     "starry_night",
     "velours",
@@ -1051,6 +1052,46 @@
       cardShadow: "0 20px 45px rgba(29, 41, 57, 0.5), 0 0 25px rgba(168, 126, 67, 0.25)",
       buttonShineGradient:
         "linear-gradient(90deg, rgba(32,138,133,0) 0%, rgba(230,193,122,0.45) 48%, rgba(255,255,255,0.42) 52%, rgba(32,138,133,0) 100%)",
+    },
+    turtle_power: {
+      cardBg: "#95AFBA",
+      cardBgOverlay: "turtle_power",
+      surfaceBg: "rgba(30, 41, 59, 0.74)",
+      cardBorder: "4px solid #1E293B",
+      borderColor: "#4A7836",
+      surfaceBorder: "2px solid rgba(172, 112, 56, 0.68)",
+      dividerColor: "rgba(30, 41, 59, 0.36)",
+      nameColor: "#FFFFFF",
+      roleColor: "#1E293B",
+      mutedColor: "rgba(30, 41, 59, 0.78)",
+      accentColor: "#C81D25",
+      emailColor: "#FFFFFF",
+      buttonPrimaryBg: "#1E293B",
+      buttonPrimaryText: "#95AFBA",
+      buttonPrimaryBorder: "#AC7038",
+      buttonSecondaryBg: "#4A7836",
+      buttonSecondaryText: "#FFFFFF",
+      buttonSecondaryBorder: "#C81D25",
+      badgeText: "#FFFFFF",
+      badgeBg: "#C81D25",
+      badgeBorder: "2px solid #1E293B",
+      topLineGradient: "linear-gradient(90deg, transparent, #C81D25, #4A7836, #AC7038, transparent)",
+      avatarBg: "linear-gradient(135deg, #4A7836 0%, #AC7038 56%, #1E293B 100%)",
+      avatarText: "#FFFFFF",
+      avatarBorder: "3px solid #1E293B",
+      cardBorderRadius: "20px",
+      fontFamily: "'Impact', 'Arial Black', 'Sora', sans-serif",
+      nameFontStyle: "normal",
+      nameFontWeight: "900",
+      roleLetterSpacing: "0.12em",
+      scoreLabelColor: "#1E293B",
+      scoreValueColor: "#4A7836",
+      scoreBarFill: "linear-gradient(90deg, #4A7836, #AC7038, #C81D25)",
+      scoreBarTrack: "rgba(30, 41, 59, 0.16)",
+      scorePercentileColor: "#C81D25",
+      cardShadow: "0 20px 40px rgba(15, 23, 42, 0.6), 0 0 25px rgba(74, 120, 54, 0.3)",
+      buttonShineGradient:
+        "linear-gradient(90deg, rgba(30,41,59,0) 0%, rgba(149,175,186,0.42) 48%, rgba(74,120,54,0.38) 52%, rgba(30,41,59,0) 100%)",
     },
     snow_leopard: {
       cardBg: "rgba(248, 250, 252, 0.85)",
@@ -2751,6 +2792,28 @@
         </g>
       </svg>`;
     }
+    if (themeKey === "turtle_power") {
+      return `<svg class="unq-ref-overlay-svg" viewBox="0 0 360 600" preserveAspectRatio="none" aria-hidden="true">
+        <rect width="360" height="600" fill="#95AFBA" opacity="0.1"></rect>
+        <defs>
+          <pattern id="turtleShellPattern" width="80" height="80" patternUnits="userSpaceOnUse">
+            <path d="M40 0 L80 20 L80 60 L40 80 L0 60 L0 20 Z" fill="none" stroke="#4A7836" stroke-width="2" opacity="0.25"></path>
+            <path d="M40 10 L70 25 L70 55 L40 70 L10 55 L10 25 Z" fill="none" stroke="#AC7038" stroke-width="1.5" opacity="0.2"></path>
+          </pattern>
+        </defs>
+        <rect width="360" height="600" fill="url(#turtleShellPattern)" opacity="0.72"></rect>
+        <g opacity="0.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M0 96C70 62 142 70 216 118c52 34 100 36 144 12" stroke="#C81D25" stroke-width="1.4"></path>
+          <path d="M22 332c70-44 146-38 228 22 42 31 78 33 110 8" stroke="#4A7836" stroke-width="1.2"></path>
+          <circle cx="180" cy="210" r="60" stroke="#1E293B" stroke-width="1.4"></circle>
+          <path d="M180 150 232 180 232 240 180 270 128 240 128 180Z" stroke="#AC7038" stroke-width="1.2"></path>
+        </g>
+        <g opacity="0.18" fill="#C81D25">
+          <path d="M70 82l12 26 28 8-24 16 2 30-22-20-28 10 12-28-18-24 30 2 8-20Z"></path>
+          <path d="M286 392l10 22 24 6-20 14 2 26-19-18-25 8 11-24-15-20 24 2 8-16Z"></path>
+        </g>
+      </svg>`;
+    }
     if (themeKey === "sakura_blossom") {
       return `<svg class="unq-ref-overlay-svg" viewBox="0 0 360 600" preserveAspectRatio="none" aria-hidden="true">
         <rect width="360" height="600" fill="#FDF6F4" opacity="0.08"></rect>
@@ -4296,6 +4359,27 @@
     const samarkandCardGlowHtml = theme.key === "samarkand_heritage"
       ? `<span class="majolica-glow" aria-hidden="true"></span>`
       : "";
+    const turtlePowerEffectsHtml = theme.key === "turtle_power"
+      ? `<div class="turtle-power-effects" aria-hidden="true">
+          <span class="mouser-bg mouser-1"></span>
+          <span class="mouser-bg mouser-2"></span>
+          <div class="patrolling-turtle">
+            <svg viewBox="0 0 100 100" width="100%" height="100%" focusable="false">
+              <path class="t-leg-l" d="M 25,65 C 15,75 10,85 20,90 C 30,95 35,80 30,70 Z" fill="#4A7836" stroke="#1E293B" stroke-width="3"></path>
+              <path class="t-leg-r" d="M 75,65 C 85,75 90,85 80,90 C 70,95 65,80 70,70 Z" fill="#4A7836" stroke="#1E293B" stroke-width="3"></path>
+              <path class="t-leg-r" d="M 20,35 C 10,25 5,15 15,10 C 25,5 30,20 25,30 Z" fill="#4A7836" stroke="#1E293B" stroke-width="3"></path>
+              <path class="t-leg-l" d="M 80,35 C 90,25 95,15 85,10 C 75,5 70,20 75,30 Z" fill="#4A7836" stroke="#1E293B" stroke-width="3"></path>
+              <path d="M 50,75 L 50,92 L 47,75 Z" fill="#4A7836" stroke="#1E293B" stroke-width="2"></path>
+              <circle cx="50" cy="50" r="28" fill="#AC7038" stroke="#1E293B" stroke-width="4"></circle>
+              <circle cx="50" cy="50" r="20" fill="none" stroke="#4A7836" stroke-width="3" stroke-dasharray="10,5"></circle>
+              <ellipse cx="50" cy="18" rx="12" ry="15" fill="#4A7836" stroke="#1E293B" stroke-width="3"></ellipse>
+              <rect x="40" y="12" width="20" height="4" fill="#C81D25" rx="1"></rect>
+              <circle cx="45" cy="14" r="2" fill="#FFFFFF"></circle>
+              <circle cx="55" cy="14" r="2" fill="#FFFFFF"></circle>
+            </svg>
+          </div>
+        </div>`
+      : "";
     const sakuraEffectsHtml = theme.key === "sakura_blossom"
       ? `<div class="sakura-blossom-effects" aria-hidden="true">
           <div class="sakura-calligraphy">春<br>花<br>風<br>月</div>
@@ -4351,6 +4435,7 @@
         ${shinobiEffectsHtml}
         ${shinobiWayEffectsHtml}
         ${samarkandEffectsHtml}
+        ${turtlePowerEffectsHtml}
         ${sakuraEffectsHtml}
         ${starryEffectsHtml}
         ${vintageSparklesHtml}
