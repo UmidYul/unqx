@@ -2797,37 +2797,33 @@ Email: ${userEmail}
       const commentsHtml = visibleComments.length
         ? visibleComments
           .map((comment) => `
-            <article class="profile-wall-comment rounded-xl border border-neutral-200 bg-neutral-50 p-3" data-wall-comment-id="${esc(comment.id)}">
-              <div class="flex items-start justify-between gap-3">
-                <div class="flex min-w-0 items-start gap-3">
-                  <div class="profile-wall-comment-avatar">
-                    ${comment.author?.avatarUrl
+            <article class="profile-wall-comment post-comment-premium" data-wall-comment-id="${esc(comment.id)}">
+              <div class="profile-wall-comment-avatar">
+                ${comment.author?.avatarUrl
                 ? `<img src="${esc(comment.author.avatarUrl)}" alt="${esc(comment.author.name || "UNQX User")}" class="profile-wall-comment-avatar-img" />`
                 : `<span>${esc(comment.author?.initials || "UN")}</span>`}
-                  </div>
-                  <div class="min-w-0">
-                    <div class="flex flex-wrap items-center gap-2">
-                      <p class="text-sm font-semibold text-neutral-900">${esc(comment.author?.name || "UNQX User")}</p>
-                      <p class="text-xs text-neutral-500">${esc(fht(comment.createdAt))}</p>
-                    </div>
-                    <div class="mt-1 whitespace-pre-line text-sm leading-6 text-neutral-700">${esc(comment.content)}</div>
-                  </div>
-                </div>
-                ${comment.viewerCanDelete
-              ? `<button type="button" data-wall-comment-action="delete" data-wall-post-id="${esc(post.id)}" data-wall-comment-id="${esc(comment.id)}" class="interactive-btn rounded-lg border border-neutral-300 px-3 py-2 text-xs font-semibold text-neutral-700" ${(s.wallBusyCommentIds instanceof Set && s.wallBusyCommentIds.has(comment.id)) ? "disabled" : ""}>${(s.wallBusyCommentIds instanceof Set && s.wallBusyCommentIds.has(comment.id)) ? "Удаление..." : "Удалить"}</button>`
-              : ""}
               </div>
+              <div class="post-comment-content-premium">
+                <div class="post-comment-meta-premium">
+                  <p>${esc(comment.author?.name || "UNQX User")}</p>
+                  <span>${esc(fht(comment.createdAt))}</span>
+                </div>
+                <div class="post-comment-text-premium">${esc(comment.content)}</div>
+              </div>
+              ${comment.viewerCanDelete
+              ? `<button type="button" data-wall-comment-action="delete" data-wall-post-id="${esc(post.id)}" data-wall-comment-id="${esc(comment.id)}" class="post-comment-delete-premium" ${(s.wallBusyCommentIds instanceof Set && s.wallBusyCommentIds.has(comment.id)) ? "disabled" : ""}>${(s.wallBusyCommentIds instanceof Set && s.wallBusyCommentIds.has(comment.id)) ? "..." : "Удалить"}</button>`
+              : ""}
             </article>
           `)
           .join("")
-        : `<div class="rounded-xl border border-dashed border-neutral-200 px-3 py-4 text-sm text-neutral-500">${commentsEnabled ? "Комментариев пока нет." : "Комментарии отключены автором."}</div>`;
+        : `<div class="post-comments-empty-premium">${commentsEnabled ? "Комментариев пока нет." : "Комментарии отключены автором."}</div>`;
       const commentsToggleHtml = hasHiddenComments
         ? `
           <button
             type="button"
             data-wall-comments-toggle
             data-wall-post-id="${esc(post.id)}"
-            class="interactive-btn mt-3 inline-flex min-h-9 items-center rounded-full border border-neutral-300 px-3 py-2 text-xs font-semibold text-neutral-700"
+            class="post-comments-toggle-premium"
             aria-expanded="${isExpanded ? "true" : "false"}"
           >${isExpanded ? "Свернуть комментарии" : `Показать ещё ${comments.length - visibleComments.length}`}</button>
         `
@@ -2835,25 +2831,23 @@ Email: ${userEmail}
       const formHtml =
         post.status === "published" && commentsEnabled
           ? `
-            <div class="profile-wall-comment-form mt-3 rounded-xl border border-neutral-200 bg-neutral-50 p-3">
+            <div class="profile-wall-comment-form comment-input-wrapper-premium">
               <label class="sr-only" for="profile-wall-comment-${esc(post.id)}">Комментарий</label>
-              <textarea id="profile-wall-comment-${esc(post.id)}" data-wall-comment-input data-wall-post-id="${esc(post.id)}" rows="3" maxlength="${WALL_COMMENT_CONTENT_MAX}" placeholder="Напиши комментарий..." class="w-full rounded-xl border border-neutral-200 bg-white px-3 py-3 text-sm text-neutral-900 outline-none placeholder:text-neutral-400">${esc(draftValue)}</textarea>
-              <div class="mt-3 flex flex-wrap items-center justify-between gap-2">
-                <p data-wall-comment-counter class="text-xs font-semibold text-neutral-500">${draftValue.length}/${WALL_COMMENT_CONTENT_MAX}</p>
-                <button type="button" data-wall-comment-submit data-wall-post-id="${esc(post.id)}" class="interactive-btn min-h-11 rounded-lg bg-neutral-900 px-4 py-2 text-sm font-semibold text-white" ${isCommentBusy ? "disabled" : ""}>${isCommentBusy ? "Отправка..." : "Отправить"}</button>
-              </div>
+              <textarea id="profile-wall-comment-${esc(post.id)}" data-wall-comment-input data-wall-post-id="${esc(post.id)}" rows="1" maxlength="${WALL_COMMENT_CONTENT_MAX}" placeholder="Комментарий..." class="comment-input-premium">${esc(draftValue)}</textarea>
+              <span data-wall-comment-counter class="comment-counter-premium">${draftValue.length}/${WALL_COMMENT_CONTENT_MAX}</span>
+              <button type="button" data-wall-comment-submit data-wall-post-id="${esc(post.id)}" class="comment-submit-btn-premium" ${isCommentBusy ? "disabled" : ""}>${isCommentBusy ? "..." : "Отправить"}</button>
             </div>
           `
           : post.status !== "published"
             ? '<p class="mt-3 text-xs text-neutral-500">Новые комментарии доступны только для опубликованных постов.</p>'
             : '<p class="mt-3 text-xs text-neutral-500">Комментарии отключены автором для этого поста.</p>';
       return `
-        <section class="mt-4 border-t border-neutral-100 pt-4">
-          <div class="flex flex-wrap items-center justify-between gap-2">
-            <p class="text-xs uppercase tracking-[0.12em] text-neutral-500">Комментарии</p>
-            <p class="text-xs text-neutral-500">${Number(post.commentsCount || comments.length).toLocaleString("ru-RU")} всего</p>
+        <section class="post-comments-premium">
+          <div class="post-comments-head-premium">
+            <p>Комментарии</p>
+            <span>${Number(post.commentsCount || comments.length).toLocaleString("ru-RU")} всего</span>
           </div>
-          <div class="mt-3 space-y-3${isExpanded && hasHiddenComments ? " overflow-y-auto pr-1" : ""}"${isExpanded && hasHiddenComments ? ' style="max-height:420px;"' : ""}>${commentsHtml}</div>
+          <div class="post-comments-list-premium${isExpanded && hasHiddenComments ? " post-comments-list-premium--scroll" : ""}">${commentsHtml}</div>
           ${commentsToggleHtml}
           ${formHtml}
         </section>
@@ -2883,32 +2877,44 @@ Email: ${userEmail}
       } else {
         el.wallList.innerHTML = items
           .map((item) => {
-            const statusTone = item.status === "hidden" ? "text-amber-700 bg-amber-50 border-amber-200" : "text-emerald-700 bg-emerald-50 border-emerald-200";
+            const statusClass = item.status === "hidden" ? "post-status-badge--hidden" : "post-status-badge--published";
             const commentsStatusHtml = item.commentsEnabled === false
-              ? '<span class="inline-flex rounded-full border border-neutral-200 bg-neutral-50 px-2 py-0.5 text-[11px] font-semibold text-neutral-600">Комментарии отключены</span>'
+              ? '<span class="post-status-badge post-status-badge--muted">Комментарии отключены</span>'
               : "";
+            const authorName = s.user?.displayName || s.user?.firstName || s.user?.username || "UNQX User";
+            const likesCount = Number(item.likesCount || 0).toLocaleString("ru-RU");
+            const commentsCount = Number(item.commentsCount || 0).toLocaleString("ru-RU");
             return `
-              <article class="profile-wall-post rounded-xl border border-neutral-200 bg-white p-4" data-wall-post-id="${esc(item.id)}">
-                <div class="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <div class="flex flex-wrap items-center gap-2">
-                      <p class="text-sm font-semibold text-neutral-900">${esc(s.user?.displayName || s.user?.firstName || s.user?.username || "UNQX User")}</p>
-                      <span class="inline-flex rounded-full border px-2 py-0.5 text-[11px] font-semibold ${statusTone}">${esc(item.statusLabel || (item.status === "hidden" ? "Скрыт" : "Опубликован"))}</span>
-                      ${commentsStatusHtml}
+              <article class="profile-wall-post post-card-premium" data-wall-post-id="${esc(item.id)}">
+                <header class="post-header-premium">
+                  <div class="post-meta-left">
+                    <p class="post-author-name">${esc(authorName)}</p>
+                    <span class="post-status-badge ${statusClass}">${esc(item.statusLabel || (item.status === "hidden" ? "Скрыт" : "Опубликован"))}</span>
+                    ${commentsStatusHtml}
+                    <time class="post-date" datetime="${esc(item.createdAt || "")}">${esc(fht(item.createdAt))}${item.isEdited ? " · изменено" : ""}</time>
+                  </div>
+                  <div class="post-actions-dropdown-premium">
+                    <button type="button" class="post-actions-menu-trigger" aria-label="Действия поста" aria-haspopup="menu">
+                      <span></span><span></span><span></span>
+                    </button>
+                    <div class="post-actions-menu-premium" role="menu">
+                      <button type="button" data-wall-action="edit" data-wall-post-id="${esc(item.id)}" role="menuitem">Редактировать</button>
+                      <button type="button" data-wall-action="delete" data-wall-post-id="${esc(item.id)}" role="menuitem" class="post-actions-menu-danger">Удалить</button>
                     </div>
-                    <p class="mt-1 text-xs text-neutral-500">${esc(fht(item.createdAt))}${item.isEdited ? " • изменено" : ""}</p>
                   </div>
-                  <div class="text-right text-xs text-neutral-500">
-                    <p>${Number(item.likesCount || 0).toLocaleString("ru-RU")} лайков</p>
-                    <p class="mt-1">${Number(item.commentsCount || 0).toLocaleString("ru-RU")} комментариев</p>
+                </header>
+                <div class="post-body-premium">${esc(item.content)}</div>
+                <footer class="post-footer-premium">
+                  <div class="post-stat-item" aria-label="${esc(likesCount)} лайков">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-4.4-9.3-8.6C.7 8.8 2.8 5 6.5 5c2 0 3.4 1 4.2 2.1C11.5 6 13 5 15.1 5c3.7 0 5.8 3.8 3.8 7.4C16.6 16.6 12 21 12 21Z"/></svg>
+                    <span>${likesCount}</span>
                   </div>
-                </div>
-                <div class="mt-3 whitespace-pre-line text-sm leading-6 text-neutral-800">${esc(item.content)}</div>
+                  <div class="post-stat-item" aria-label="${esc(commentsCount)} комментариев">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 18.2A8 8 0 1 1 8.1 21L4 21.7l1-3.5Z"/></svg>
+                    <span>${commentsCount}</span>
+                  </div>
+                </footer>
                 ${renderWallComments(item)}
-                <div class="mt-4 flex flex-wrap gap-2">
-                  <button type="button" data-wall-action="edit" data-wall-post-id="${esc(item.id)}" class="interactive-btn min-h-11 rounded-lg border border-neutral-300 px-3 py-2 text-sm font-semibold text-neutral-700">Редактировать</button>
-                  <button type="button" data-wall-action="delete" data-wall-post-id="${esc(item.id)}" class="interactive-btn min-h-11 rounded-lg border border-red-200 px-3 py-2 text-sm font-semibold text-red-700">Удалить</button>
-                </div>
               </article>
             `;
           })
