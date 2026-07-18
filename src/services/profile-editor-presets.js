@@ -116,6 +116,13 @@ const SIGNATURE_THEMES = [
     premiumRequired: true,
   },
   {
+    id: "looney_tunes",
+    label: "Лунные Мелодии 🥕",
+    description: "Vintage cartoon circles",
+    swatchStyle: "border-color:#111111;background:radial-gradient(circle,#FCD116 0 22%,#FF6600 23% 48%,#CC0000 49% 66%,transparent 67%),linear-gradient(145deg,#98D4E7 0%,#FFFFFF 100%);box-shadow:4px 4px 0 #111111;",
+    premiumRequired: true,
+  },
+  {
     id: "rick_morty_portal",
     label: "Портал Рика 🧪",
     description: "Neon sci-fi portal bubbles",

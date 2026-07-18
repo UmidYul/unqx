@@ -111,6 +111,7 @@
       "minion_yellow",
       "soviet_carpet",
       "vintage_mickey",
+      "looney_tunes",
       "rick_morty_portal",
       "gravity_falls",
       "venom_symbiote",

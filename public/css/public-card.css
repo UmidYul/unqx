@@ -1,7 +1,347 @@
-@import url("https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=Comfortaa:wght@500;700&family=Fredoka:wght@500;700&family=Montserrat:wght@500;700;900&family=Permanent+Marker&family=Sedgwick+Ave+Display&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Boogaloo&family=Cinzel+Decorative:wght@700&family=Comfortaa:wght@500;700&family=Fredoka:wght@500;700&family=Fredoka+One&family=Montserrat:wght@500;700;900&family=Permanent+Marker&family=Sedgwick+Ave+Display&display=swap");
 
 :root {
   --unqx-neon-accent: #00E5FF;
+}
+
+/* Looney Tunes / Bugs Bunny premium cartoon theme. */
+body[data-card-theme="looney_tunes"],
+.theme-looney_tunes {
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow-x: hidden !important;
+  background-color: #98d4e7 !important;
+  font-family: "Fredoka One", "Fredoka", "Boogaloo", "Comic Sans MS", cursive !important;
+}
+
+body[data-card-theme="looney_tunes"] main {
+  display: flex !important;
+  min-height: 100vh !important;
+  min-height: 100svh !important;
+  min-height: 100dvh !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin: 0 !important;
+  padding: max(10px, env(safe-area-inset-top, 0px)) 0 max(10px, env(safe-area-inset-bottom, 0px)) !important;
+  overflow-x: hidden !important;
+}
+
+body[data-card-theme="looney_tunes"] #public-card-layout,
+body[data-card-theme="looney_tunes"] #card-view-root,
+body[data-card-theme="looney_tunes"] #card-view-root > [data-card-view],
+#profile-card-live-preview[data-preview-theme="looney_tunes"] [data-card-view] {
+  width: 100% !important;
+  max-width: min(430px, 100vw) !important;
+  min-height: 0 !important;
+  align-content: start !important;
+  gap: 12px !important;
+  padding: 0 !important;
+  overflow: visible !important;
+}
+
+body[data-card-theme="looney_tunes"] #public-card-layout > div:first-child {
+  width: 100%;
+}
+
+[data-card-theme="looney_tunes"] {
+  position: relative;
+  isolation: isolate;
+}
+
+[data-card-theme="looney_tunes"] .looney-tunes-effects,
+#profile-card-live-preview[data-preview-theme="looney_tunes"] .looney-tunes-effects {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+#profile-card-live-preview[data-preview-theme="looney_tunes"] .looney-tunes-effects {
+  position: absolute;
+}
+
+[data-card-theme="looney_tunes"] .looney-circles-bg {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: min(680px, 150vw);
+  height: min(680px, 150vw);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, #fcd116 0 21%, #ff6600 22% 49%, #cc0000 50% 68%, rgba(255, 255, 255, 0.78) 69% 76%, transparent 77%),
+    radial-gradient(circle, rgba(255, 255, 255, 0.48), transparent 62%);
+  opacity: 0.9;
+  transform: translate(-50%, -50%);
+  animation: looney-bg-pulse 6s ease-in-out infinite;
+}
+
+[data-card-theme="looney_tunes"] .bugs-bunny-container {
+  position: absolute;
+  right: max(-18px, calc((100vw - 430px) / 2 - 34px));
+  bottom: max(18px, env(safe-area-inset-bottom, 0px));
+  width: clamp(112px, 25vw, 180px);
+  height: auto;
+  z-index: 12;
+  filter: drop-shadow(4px 5px 0 rgba(17, 17, 17, 0.35));
+}
+
+[data-card-theme="looney_tunes"] .bugs-bunny-container svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+[data-card-theme="looney_tunes"] .bugs-jaw {
+  animation: bugs-chewing 0.6s ease-in-out infinite;
+  transform-origin: 90px 130px;
+}
+
+[data-card-theme="looney_tunes"] .bugs-hand-carrot {
+  animation: bugs-eating 1.2s ease-in-out infinite;
+  transform-origin: 130px 160px;
+}
+
+[data-card-theme="looney_tunes"] .public-card-shell,
+[data-card-theme="looney_tunes"] .unq-ref-shell,
+#profile-card-live-preview[data-preview-theme="looney_tunes"] .public-card-shell,
+#profile-card-live-preview[data-preview-theme="looney_tunes"] .unq-ref-shell {
+  position: relative !important;
+  display: block !important;
+  width: 90% !important;
+  max-width: 400px !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  aspect-ratio: auto !important;
+  box-sizing: border-box !important;
+  margin: 20px auto !important;
+  padding: 30px 24px !important;
+  overflow: visible !important;
+  border: 4px solid #111111 !important;
+  border-radius: 30px !important;
+  background:
+    radial-gradient(circle at 12% 12%, rgba(252, 209, 22, 0.18) 0 6%, transparent 7%),
+    radial-gradient(circle at 86% 20%, rgba(204, 0, 0, 0.12) 0 8%, transparent 9%),
+    #ffffff !important;
+  box-shadow: 8px 8px 0 #111111, 0 18px 44px rgba(17, 17, 17, 0.18) !important;
+  z-index: 10 !important;
+}
+
+[data-card-theme="looney_tunes"] .unq-ref-card-overlay,
+[data-card-theme="looney_tunes"] .unq-ref-overlay-svg,
+#profile-card-live-preview[data-preview-theme="looney_tunes"] .unq-ref-card-overlay,
+#profile-card-live-preview[data-preview-theme="looney_tunes"] .unq-ref-overlay-svg {
+  position: absolute !important;
+  inset: 0 !important;
+  width: auto !important;
+  height: auto !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border-radius: inherit !important;
+  opacity: 0.18 !important;
+}
+
+[data-card-theme="looney_tunes"] .unq-ref-top,
+#profile-card-live-preview[data-preview-theme="looney_tunes"] .unq-ref-top {
+  position: relative;
+  z-index: 10;
+  margin-bottom: 10px !important;
+  padding: 0 !important;
+}
+
+[data-card-theme="looney_tunes"] .unq-ref-slug-chip,
+[data-card-theme="looney_tunes"] .unq-ref-slug-price,
+[data-card-theme="looney_tunes"] .unq-ref-share,
+[data-card-theme="looney_tunes"] .unq-ref-top-badge,
+body[data-card-theme="looney_tunes"] .interactive-btn,
+body[data-card-theme="looney_tunes"] #card-slug-search-form > div,
+body[data-card-theme="looney_tunes"] #card-slug-search-results,
+body[data-card-theme="looney_tunes"] .nav-back-button,
+body[data-card-theme="looney_tunes"] .nav-input-wrapper,
+body[data-card-theme="looney_tunes"] .nav-search-button,
+body[data-card-theme="looney_tunes"] .info-badge {
+  border: 3px solid #111111 !important;
+  border-radius: 14px !important;
+  background: #ffffff !important;
+  color: #111111 !important;
+  box-shadow: 4px 4px 0 #111111 !important;
+  font-family: "Fredoka One", "Fredoka", "Boogaloo", cursive !important;
+}
+
+body[data-card-theme="looney_tunes"] #card-slug-search-form input,
+body[data-card-theme="looney_tunes"] .nav-input-wrapper input {
+  color: #111111 !important;
+  font-family: "Fredoka One", "Fredoka", "Boogaloo", cursive !important;
+}
+
+body[data-card-theme="looney_tunes"] #card-slug-search-form input::placeholder,
+body[data-card-theme="looney_tunes"] .nav-input-wrapper input::placeholder {
+  color: rgba(17, 17, 17, 0.48) !important;
+}
+
+[data-card-theme="looney_tunes"] .unq-ref-share svg,
+body[data-card-theme="looney_tunes"] .nav-back-button svg,
+body[data-card-theme="looney_tunes"] .nav-search-button svg,
+body[data-card-theme="looney_tunes"] .info-badge svg,
+body[data-card-theme="looney_tunes"] #card-slug-search-form button svg {
+  stroke: #111111 !important;
+}
+
+[data-card-theme="looney_tunes"] .unq-ref-profile,
+#profile-card-live-preview[data-preview-theme="looney_tunes"] .unq-ref-profile {
+  margin-top: 18px !important;
+  gap: 12px !important;
+  height: auto !important;
+  min-height: 0 !important;
+}
+
+[data-card-theme="looney_tunes"] .unq-ref-avatar-wrap {
+  filter: drop-shadow(4px 4px 0 #111111);
+}
+
+[data-card-theme="looney_tunes"] .unq-ref-avatar-img,
+[data-card-theme="looney_tunes"] .unq-ref-avatar-fallback {
+  border: 4px solid #111111 !important;
+  background: radial-gradient(circle at 35% 28%, #ffffff 0%, #98d4e7 46%, #cc0000 100%) !important;
+  color: #111111 !important;
+}
+
+[data-card-theme="looney_tunes"] .unq-ref-name,
+[data-card-theme="looney_tunes"] .unq-ref-name-text {
+  color: #fcd116 !important;
+  font-family: "Boogaloo", "Fredoka One", "Fredoka", cursive !important;
+  font-size: clamp(2rem, 9vw, 2.55rem) !important;
+  line-height: 0.95 !important;
+  text-transform: uppercase !important;
+  -webkit-text-stroke: 2px #111111 !important;
+  text-shadow: 4px 4px 0 #cc0000 !important;
+}
+
+[data-card-theme="looney_tunes"] .unq-ref-company,
+[data-card-theme="looney_tunes"] .unq-ref-role,
+[data-card-theme="looney_tunes"] .unq-ref-bio,
+[data-card-theme="looney_tunes"] .unq-ref-phone,
+[data-card-theme="looney_tunes"] .unq-ref-footline {
+  color: #343434 !important;
+  font-family: "Fredoka", "Fredoka One", "Boogaloo", cursive !important;
+}
+
+[data-card-theme="looney_tunes"] .unq-ref-action-btn,
+[data-card-theme="looney_tunes"] .unq-ref-follow-toggle,
+[data-card-theme="looney_tunes"] .unq-follow-action-btn,
+[data-card-theme="looney_tunes"] .social-button {
+  border: 3px solid #111111 !important;
+  border-radius: 16px !important;
+  background: #ff6600 !important;
+  color: #ffffff !important;
+  box-shadow: 0 5px 0 #111111 !important;
+  font-family: "Fredoka One", "Fredoka", "Boogaloo", cursive !important;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease, color 0.15s ease !important;
+}
+
+[data-card-theme="looney_tunes"] .unq-ref-action-btn:hover,
+[data-card-theme="looney_tunes"] .unq-ref-follow-toggle:hover,
+[data-card-theme="looney_tunes"] .unq-follow-action-btn:hover,
+[data-card-theme="looney_tunes"] .social-button:hover,
+body[data-card-theme="looney_tunes"] .interactive-btn:hover,
+body[data-card-theme="looney_tunes"] .nav-back-button:hover,
+body[data-card-theme="looney_tunes"] .nav-search-button:hover {
+  background: #fcd116 !important;
+  color: #111111 !important;
+  transform: translateY(3px) !important;
+  box-shadow: 0 2px 0 #111111 !important;
+}
+
+[data-card-theme="looney_tunes"] .unq-ref-brand {
+  margin-top: 0 !important;
+}
+
+[data-card-theme="looney_tunes"] .unq-ref-brand h2 {
+  color: #cc0000 !important;
+  font-family: "Boogaloo", "Fredoka One", cursive !important;
+  -webkit-text-stroke: 1px #111111;
+  text-shadow: 2px 2px 0 #fcd116;
+}
+
+[data-card-theme="looney_tunes"] .unq-ref-brand p {
+  color: #111111 !important;
+}
+
+[data-card-theme="looney_tunes"] .unq-follow-dialog-card,
+[data-card-theme="looney_tunes"] .unq-follow-dialog-item {
+  border: 3px solid #111111 !important;
+  background: #ffffff !important;
+  color: #111111 !important;
+  box-shadow: 5px 5px 0 #111111 !important;
+}
+
+[data-card-theme="looney_tunes"] .unq-follow-dialog-action {
+  border-color: #111111 !important;
+  background: #fcd116 !important;
+  color: #111111 !important;
+}
+
+@keyframes looney-bg-pulse {
+  0%, 100% {
+    transform: translate(-50%, -50%) scale(1) rotate(0deg);
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.05) rotate(4deg);
+  }
+}
+
+@keyframes bugs-chewing {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(3px) scaleY(0.95);
+  }
+}
+
+@keyframes bugs-eating {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(-8deg) translateX(-2px);
+  }
+}
+
+@media (max-width: 480px) {
+  body[data-card-theme="looney_tunes"] main {
+    justify-content: flex-start !important;
+    padding-top: max(6px, env(safe-area-inset-top, 0px)) !important;
+    padding-bottom: max(6px, env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  [data-card-theme="looney_tunes"] .public-card-shell,
+  [data-card-theme="looney_tunes"] .unq-ref-shell,
+  #profile-card-live-preview[data-preview-theme="looney_tunes"] .public-card-shell,
+  #profile-card-live-preview[data-preview-theme="looney_tunes"] .unq-ref-shell {
+    width: 92% !important;
+    padding: 14px 12px !important;
+    margin: 6px auto !important;
+    border-width: 3px !important;
+    border-radius: 24px !important;
+    box-shadow: 5px 5px 0 #111111 !important;
+  }
+
+  [data-card-theme="looney_tunes"] .bugs-bunny-container {
+    right: -18px;
+    bottom: 8px;
+    width: 108px;
+    opacity: 0.92;
+  }
+
+  [data-card-theme="looney_tunes"] .unq-ref-name,
+  [data-card-theme="looney_tunes"] .unq-ref-name-text {
+    -webkit-text-stroke-width: 1.5px !important;
+    text-shadow: 3px 3px 0 #cc0000 !important;
+  }
 }
 
 /* Casino Royale premium theme */

@@ -240,6 +240,7 @@
     minion_yellow: { label: "Yellow Crew", fill: "#FFD42A", border: "#1b1b1b", text: "#1b1b1b", bg: "#FFE45C" },
     soviet_carpet: { label: "Бабушкин ковер", fill: "#800000", border: "#D4AF37", text: "#FDF5E6", bg: "#4b0909" },
     vintage_mickey: { label: "Ретро Микки", fill: "#F5E6CA", border: "#D35252", text: "#2B2B2B", bg: "#8ECAA5" },
+    looney_tunes: { label: "Лунные Мелодии", fill: "#98D4E7", border: "#111111", text: "#CC0000", bg: "#FCD116" },
     rick_morty_portal: { label: "Портал Рика", fill: "#0B001A", border: "#39FF14", text: "#A6FF96", bg: "#120524" },
     gravity_falls: { label: "Гравити Фолз", fill: "#2B1F19", border: "#E5A93C", text: "#F2E3C6", bg: "#1A2E22" },
     venom_symbiote: { label: "Симбиот Веном", fill: "#08080C", border: "#E53E6D", text: "#00F0FF", bg: "#15040A" },

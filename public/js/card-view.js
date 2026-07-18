@@ -26,6 +26,7 @@
     "casino_royale",
     "soviet_carpet",
     "vintage_mickey",
+    "looney_tunes",
     "rick_morty_portal",
     "gravity_falls",
     "venom_symbiote",
@@ -855,6 +856,46 @@
       cardShadow: "0 24px 46px rgba(43, 43, 43, 0.18)",
       buttonShineGradient:
         "linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.48) 50%, rgba(255,255,255,0) 100%)",
+    },
+    looney_tunes: {
+      cardBg: "#FFFFFF",
+      cardBgOverlay: "looney_tunes",
+      surfaceBg: "#FFF7D6",
+      cardBorder: "4px solid #111111",
+      borderColor: "#111111",
+      surfaceBorder: "3px solid #111111",
+      dividerColor: "rgba(17, 17, 17, 0.16)",
+      nameColor: "#FCD116",
+      roleColor: "#CC0000",
+      mutedColor: "#343434",
+      accentColor: "#FF6600",
+      emailColor: "#111111",
+      buttonPrimaryBg: "#FF6600",
+      buttonPrimaryText: "#FFFFFF",
+      buttonPrimaryBorder: "#111111",
+      buttonSecondaryBg: "#FCD116",
+      buttonSecondaryText: "#111111",
+      buttonSecondaryBorder: "#111111",
+      badgeText: "#111111",
+      badgeBg: "#FCD116",
+      badgeBorder: "3px solid #111111",
+      topLineGradient: "linear-gradient(90deg, #CC0000, #FF6600, #FCD116, #98D4E7)",
+      avatarBg: "radial-gradient(circle at 35% 28%, #FFFFFF 0%, #98D4E7 46%, #CC0000 100%)",
+      avatarText: "#111111",
+      avatarBorder: "4px solid #111111",
+      cardBorderRadius: "30px",
+      fontFamily: "'Fredoka One', 'Fredoka', 'Boogaloo', 'Comic Sans MS', cursive",
+      nameFontStyle: "normal",
+      nameFontWeight: "900",
+      roleLetterSpacing: "0.08em",
+      scoreLabelColor: "#343434",
+      scoreValueColor: "#CC0000",
+      scoreBarFill: "linear-gradient(90deg, #CC0000, #FF6600, #FCD116)",
+      scoreBarTrack: "rgba(17, 17, 17, 0.14)",
+      scorePercentileColor: "#FF6600",
+      cardShadow: "8px 8px 0 #111111, 0 20px 40px rgba(17, 17, 17, 0.2)",
+      buttonShineGradient:
+        "linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.68) 50%, rgba(255,255,255,0) 100%)",
     },
     rick_morty_portal: {
       cardBg: "rgba(18, 5, 36, 0.9)",
@@ -2612,6 +2653,27 @@
         <path d="M12 506C80 468 150 474 222 512C278 542 322 540 360 516" stroke="#D4AF37" stroke-width="1.2" fill="none" opacity="0.24"></path>
         <path d="M36 400l16 34 37 4-27 25 7 37-33-18-33 18 7-37-27-25 37-4 16-34Z" fill="#D4AF37" opacity="0.11"></path>
         <path d="M290 398c18-30 52-26 60 1-30 1-50 15-60 41-10-26-30-40-60-41 8-27 42-31 60-1Z" fill="#C8102E" opacity="0.12"></path>
+      </svg>`;
+    }
+    if (themeKey === "looney_tunes") {
+      return `<svg class="unq-ref-overlay-svg" viewBox="0 0 360 600" preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <pattern id="lt-halftone" width="36" height="36" patternUnits="userSpaceOnUse">
+            <circle cx="8" cy="8" r="3" fill="#CC0000" opacity="0.18"></circle>
+            <circle cx="26" cy="24" r="2.4" fill="#FF6600" opacity="0.18"></circle>
+          </pattern>
+        </defs>
+        <rect width="360" height="600" fill="url(#lt-halftone)"></rect>
+        <path d="M56 104c30-24 78-24 108 0-48-7-84-7-108 0Z" fill="#FCD116" opacity="0.2"></path>
+        <path d="M246 420c28-28 70-26 92 2-38-8-66-7-92-2Z" fill="#98D4E7" opacity="0.26"></path>
+        <g fill="none" stroke="#111111" stroke-width="2" opacity="0.12">
+          <path d="M38 170h84M72 136v72M264 94h62M295 64v62"></path>
+          <path d="M62 430c46-20 92-18 138 6 48 26 92 26 132 0"></path>
+        </g>
+        <g fill="#FCD116" stroke="#111111" stroke-width="2" opacity="0.16">
+          <path d="M94 286l12 24 27 4-20 19 5 27-24-13-24 13 5-27-20-19 27-4 12-24Z"></path>
+          <path d="M270 188l9 18 20 3-14 14 3 20-18-10-18 10 3-20-14-14 20-3 9-18Z"></path>
+        </g>
       </svg>`;
     }
     if (themeKey === "football_pitch") {
@@ -4406,6 +4468,38 @@
             </svg>`).join("")}
         </div>`
       : "";
+    const looneyTunesEffectsHtml = theme.key === "looney_tunes"
+      ? `<div class="looney-tunes-effects" aria-hidden="true">
+          <span class="looney-circles-bg"></span>
+          <div class="bugs-bunny-container">
+            <svg viewBox="0 0 200 250" xmlns="http://www.w3.org/2000/svg" focusable="false">
+              <path d="M70,80 Q50,10 65,5 Q80,10 80,80 Z" fill="#9e9e9e" stroke="#111" stroke-width="3"/>
+              <path d="M73,75 Q58,20 67,15 Q75,20 75,75 Z" fill="#ffb7c5"/>
+              <path d="M95,80 Q115,10 100,5 Q85,10 85,80 Z" fill="#9e9e9e" stroke="#111" stroke-width="3"/>
+              <path d="M92,75 Q107,20 98,15 Q90,20 90,75 Z" fill="#ffb7c5"/>
+              <ellipse cx="85" cy="110" rx="25" ry="30" fill="#9e9e9e" stroke="#111" stroke-width="3"/>
+              <ellipse cx="77" cy="100" rx="6" ry="12" fill="#fff" stroke="#111" stroke-width="1.5"/>
+              <ellipse cx="93" cy="100" rx="6" ry="12" fill="#fff" stroke="#111" stroke-width="1.5"/>
+              <circle cx="77" cy="102" r="2.5" fill="#111"/>
+              <circle cx="93" cy="102" r="2.5" fill="#111"/>
+              <path d="M70,115 Q85,125 100,115" fill="#fff" stroke="#111" stroke-width="2"/>
+              <polygon points="81,112 89,112 85,117" fill="#ff8da1" stroke="#111" stroke-width="1"/>
+              <g class="bugs-jaw">
+                <path d="M73,123 Q85,135 97,123 Z" fill="#fff" stroke="#111" stroke-width="3"/>
+                <rect x="81" y="123" width="8" height="5" fill="#fff" stroke="#111" stroke-width="1.5"/>
+              </g>
+              <path d="M65,140 Q85,150 105,140 L110,210 L60,210 Z" fill="#9e9e9e" stroke="#111" stroke-width="3"/>
+              <ellipse cx="85" cy="180" rx="18" ry="25" fill="#fff"/>
+              <g class="bugs-hand-carrot">
+                <path d="M110,140 L135,125 L125,115 Z" fill="#ff6600" stroke="#111" stroke-width="2"/>
+                <path d="M135,125 Q145,120 140,110" stroke="#00cc44" stroke-width="3" fill="none"/>
+                <circle cx="115" cy="135" r="8" fill="#fff" stroke="#111" stroke-width="2"/>
+                <path d="M100,150 L115,138" stroke="#111" stroke-width="3"/>
+              </g>
+            </svg>
+          </div>
+        </div>`
+      : "";
     const portalEffectsHtml = theme.key === "rick_morty_portal"
       ? `<div class="rick-morty-portal-effects" aria-hidden="true">
           <span class="portal-bg"></span>
@@ -4658,6 +4752,7 @@
         ${sakuraEffectsHtml}
         ${starryEffectsHtml}
         ${vintageSparklesHtml}
+        ${looneyTunesEffectsHtml}
         ${musicPlayerHtml}
         ${showPausedBanner ? `<div class="mb-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">${esc(pausedText)}</div>` : ""}
         <div class="unq-ref-top">

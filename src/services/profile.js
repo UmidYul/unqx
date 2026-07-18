@@ -22,6 +22,7 @@ const PROFILE_THEME_KEYS = [
   "casino_royale",
   "soviet_carpet",
   "vintage_mickey",
+  "looney_tunes",
   "rick_morty_portal",
   "gravity_falls",
   "venom_symbiote",
