@@ -3678,7 +3678,7 @@ Email: ${userEmail}
 
     const normalizeCardEditorCategory = (value) => {
       const normalized = String(value || "").trim().toLowerCase();
-      return ["main", "links", "contacts", "design", "pets"].includes(normalized) ? normalized : "main";
+      return ["main", "links", "contacts", "design", "music", "pets"].includes(normalized) ? normalized : "main";
     };
 
     const normalizeProfileLoginValue = (value) => String(value || "").trim().toLowerCase();
