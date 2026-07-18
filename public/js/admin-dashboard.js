@@ -1425,6 +1425,16 @@
   let openRowMenu = null;
   let openRowToggle = null;
 
+  function mountFloatingRowMenu(menu) {
+    if (!(menu instanceof HTMLElement)) return;
+    if (!menu.__adminRowMenuPlaceholder) {
+      const placeholder = document.createComment("admin-row-menu-placeholder");
+      menu.after(placeholder);
+      menu.__adminRowMenuPlaceholder = placeholder;
+    }
+    document.body.appendChild(menu);
+  }
+
   function resetRowMenuPosition(menu) {
     if (!(menu instanceof HTMLElement)) return;
     menu.classList.remove("is-floating");
@@ -1434,6 +1444,14 @@
     menu.style.top = "";
     menu.style.right = "";
     menu.style.bottom = "";
+    menu.style.transform = "";
+
+    const placeholder = menu.__adminRowMenuPlaceholder;
+    if (placeholder && placeholder.parentNode) {
+      placeholder.parentNode.insertBefore(menu, placeholder);
+      placeholder.remove();
+    }
+    delete menu.__adminRowMenuPlaceholder;
   }
 
   function positionRowMenu(menu, toggle) {
@@ -4163,6 +4181,7 @@
       const isOpen = !menu.classList.contains("is-hidden");
       closeAllRowMenus();
       if (!isOpen) {
+        mountFloatingRowMenu(menu);
         menu.classList.remove("is-hidden");
         menu.classList.add("is-floating");
         positionRowMenu(menu, toggle);
