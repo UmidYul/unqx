@@ -19,6 +19,7 @@
     "midnight_obsidian",
     "golden_noir",
     "aurora_codex",
+    "codex_da_vinci",
     "nebula_glass",
     "galaxy",
     "volt_sport",
@@ -581,6 +582,46 @@
       cardShadow: "0 18px 34px rgba(86, 59, 33, 0.18)",
       buttonShineGradient:
         "linear-gradient(90deg, rgba(255,248,232,0) 0%, rgba(255,248,232,0.2) 45%, rgba(255,248,232,0.36) 50%, rgba(255,248,232,0.2) 55%, rgba(255,248,232,0) 100%)",
+    },
+    codex_da_vinci: {
+      cardBg: "linear-gradient(180deg, rgba(30,30,36,0.94), rgba(30,30,36,0.99))",
+      cardBgOverlay: "codex_da_vinci",
+      surfaceBg: "rgba(223, 208, 184, 0.08)",
+      cardBorder: "1px solid rgba(197, 168, 128, 0.3)",
+      borderColor: "#C5A880",
+      surfaceBorder: "1px solid rgba(197, 168, 128, 0.26)",
+      dividerColor: "rgba(197, 168, 128, 0.24)",
+      nameColor: "#DFD0B8",
+      roleColor: "#C5A880",
+      mutedColor: "rgba(223, 208, 184, 0.72)",
+      accentColor: "#C5A880",
+      emailColor: "#DFD0B8",
+      buttonPrimaryBg: "linear-gradient(135deg, #C5A880 0%, #A3845B 100%)",
+      buttonPrimaryText: "#1E1E24",
+      buttonPrimaryBorder: "#1E1E24",
+      buttonSecondaryBg: "rgba(30, 30, 36, 0.78)",
+      buttonSecondaryText: "#C5A880",
+      buttonSecondaryBorder: "rgba(197, 168, 128, 0.48)",
+      badgeText: "#1E1E24",
+      badgeBg: "#C5A880",
+      badgeBorder: "1px solid rgba(223, 208, 184, 0.38)",
+      topLineGradient: "linear-gradient(90deg, transparent, #C5A880, #DFD0B8, #C5A880, transparent)",
+      avatarBg: "radial-gradient(circle at 35% 28%, #DFD0B8 0%, #C5A880 42%, #1E1E24 100%)",
+      avatarText: "#1E1E24",
+      avatarBorder: "1px solid rgba(197, 168, 128, 0.64)",
+      cardBorderRadius: "4px",
+      fontFamily: "'Montserrat', 'Inter', 'Segoe UI', sans-serif",
+      nameFontStyle: "italic",
+      nameFontWeight: "600",
+      roleLetterSpacing: "0.16em",
+      scoreLabelColor: "rgba(223, 208, 184, 0.7)",
+      scoreValueColor: "#C5A880",
+      scoreBarFill: "linear-gradient(90deg, #A3845B, #C5A880, #DFD0B8)",
+      scoreBarTrack: "rgba(197, 168, 128, 0.14)",
+      scorePercentileColor: "#C5A880",
+      cardShadow: "0 30px 60px rgba(0,0,0,0.5), 0 0 40px rgba(197,168,128,0.1)",
+      buttonShineGradient:
+        "linear-gradient(90deg, rgba(197,168,128,0) 0%, rgba(223,208,184,0.28) 50%, rgba(197,168,128,0) 100%)",
     },
     nebula_glass: {
       cardBg: "rgba(10, 15, 30, 0.55)",
@@ -2676,6 +2717,30 @@
         </g>
       </svg>`;
     }
+    if (themeKey === "codex_da_vinci") {
+      return `<svg class="unq-ref-overlay-svg" viewBox="0 0 360 600" preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <pattern id="cdv-manuscript" width="120" height="120" patternUnits="userSpaceOnUse">
+            <text x="5" y="25" fill="#C5A880" font-size="10" font-family="serif" font-style="italic" opacity="0.13">Leonardo da Vinci Codex</text>
+            <path d="M10 50Q50 20 110 50M14 80C42 64 84 66 112 86" fill="none" stroke="#C5A880" stroke-width="0.5" opacity="0.12"></path>
+          </pattern>
+        </defs>
+        <rect width="360" height="600" fill="url(#cdv-manuscript)"></rect>
+        <g fill="none" stroke="#C5A880" opacity="0.16">
+          <circle cx="180" cy="164" r="102" stroke-width="0.9"></circle>
+          <circle cx="180" cy="164" r="74" stroke-width="0.5" stroke-dasharray="4 5"></circle>
+          <circle cx="180" cy="164" r="38" stroke-width="0.8"></circle>
+          <path d="M78 164h204M180 62v204M108 92l144 144M252 92L108 236" stroke-width="0.45"></path>
+          <path d="M42 440C96 394 160 396 218 434C266 466 312 462 348 424" stroke-width="0.65"></path>
+        </g>
+        <g fill="#C5A880" opacity="0.11">
+          <path d="M48 46h44v8H56v36h-8V46Z"></path>
+          <path d="M312 46h-44v8h36v36h8V46Z"></path>
+          <path d="M48 554h44v-8H56v-36h-8v44Z"></path>
+          <path d="M312 554h-44v-8h36v-36h8v44Z"></path>
+        </g>
+      </svg>`;
+    }
     if (themeKey === "football_pitch") {
       return `<svg class="unq-ref-overlay-svg" viewBox="0 0 360 600" preserveAspectRatio="none" aria-hidden="true">
         <defs>
@@ -4500,6 +4565,34 @@
           </div>
         </div>`
       : "";
+    const codexDaVinciEffectsHtml = theme.key === "codex_da_vinci"
+      ? `<div class="codex-da-vinci-effects" aria-hidden="true">
+          <div class="vinci-gear vinci-gear-main">
+            <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" focusable="false">
+              <circle cx="100" cy="100" r="90" fill="none" stroke="#3C3633" stroke-width="0.8"/>
+              <circle cx="100" cy="100" r="75" fill="none" stroke="#3C3633" stroke-width="0.5" stroke-dasharray="4,4"/>
+              <circle cx="100" cy="100" r="45" fill="none" stroke="#3C3633" stroke-width="0.8"/>
+              <line x1="10" y1="100" x2="190" y2="100" stroke="#3C3633" stroke-width="0.5"/>
+              <line x1="100" y1="10" x2="100" y2="190" stroke="#3C3633" stroke-width="0.5"/>
+              <line x1="36.36" y1="36.36" x2="163.64" y2="163.64" stroke="#3C3633" stroke-width="0.3"/>
+              <line x1="163.64" y1="36.36" x2="36.36" y2="163.64" stroke="#3C3633" stroke-width="0.3"/>
+              <circle cx="100" cy="100" r="60" fill="none" stroke="#3C3633" stroke-width="3" stroke-dasharray="6,8"/>
+            </svg>
+          </div>
+          <div class="vinci-gear vinci-gear-ghost">
+            <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" focusable="false">
+              <circle cx="100" cy="100" r="86" fill="none" stroke="#C5A880" stroke-width="0.9"/>
+              <circle cx="100" cy="100" r="56" fill="none" stroke="#C5A880" stroke-width="0.5" stroke-dasharray="3,6"/>
+              <path d="M100 14v172M14 100h172M38 38l124 124M162 38 38 162" stroke="#C5A880" stroke-width="0.4"/>
+            </svg>
+          </div>
+          <span class="vinci-dust dust-1"></span>
+          <span class="vinci-dust dust-2"></span>
+          <span class="vinci-dust dust-3"></span>
+          <span class="vinci-dust dust-4"></span>
+          <span class="vinci-dust dust-5"></span>
+        </div>`
+      : "";
     const portalEffectsHtml = theme.key === "rick_morty_portal"
       ? `<div class="rick-morty-portal-effects" aria-hidden="true">
           <span class="portal-bg"></span>
@@ -4753,6 +4846,7 @@
         ${starryEffectsHtml}
         ${vintageSparklesHtml}
         ${looneyTunesEffectsHtml}
+        ${codexDaVinciEffectsHtml}
         ${musicPlayerHtml}
         ${showPausedBanner ? `<div class="mb-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">${esc(pausedText)}</div>` : ""}
         <div class="unq-ref-top">

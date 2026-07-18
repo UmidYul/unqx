@@ -67,6 +67,13 @@ const SIGNATURE_THEMES = [
     premiumRequired: true,
   },
   {
+    id: "codex_da_vinci",
+    label: "Кодекс Да Винчи",
+    description: "Renaissance mechanics and brass",
+    swatchStyle: "border-color:#C5A880;background:radial-gradient(circle at 50% 42%,rgba(197,168,128,0.32),transparent 38%),repeating-linear-gradient(45deg,rgba(60,54,51,0.08) 0 1px,transparent 1px 14px),linear-gradient(145deg,#DFD0B8 0%,#1E1E24 74%);box-shadow:0 0 14px rgba(197,168,128,0.28);",
+    premiumRequired: true,
+  },
+  {
     id: "nebula_glass",
     label: "Apple Liquid Glass",
     description: "Animated frosted glass",

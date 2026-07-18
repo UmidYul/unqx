@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Boogaloo&family=Cinzel+Decorative:wght@700&family=Comfortaa:wght@500;700&family=Fredoka:wght@500;700&family=Fredoka+One&family=Montserrat:wght@500;700;900&family=Permanent+Marker&family=Sedgwick+Ave+Display&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Boogaloo&family=Cinzel:wght@500;700&family=Cinzel+Decorative:wght@700&family=Comfortaa:wght@500;700&family=Fredoka:wght@500;700&family=Fredoka+One&family=Montserrat:wght@300;500;700;900&family=Permanent+Marker&family=Playfair+Display:ital,wght@0,600;1,400&family=Sedgwick+Ave+Display&display=swap");
 
 :root {
   --unqx-neon-accent: #00E5FF;
@@ -15827,4 +15827,358 @@ body[data-card-theme="casino_royale"] .unq-ref-brand h2,
 #profile-card-live-preview[data-preview-theme="casino_royale"] .unq-ref-brand h2 {
   font-size: clamp(34px, 11vw, 48px) !important;
   line-height: 0.94 !important;
+}
+
+/* Codex Da Vinci: Renaissance manuscript and dark Italian marble UI. */
+body[data-card-theme="codex_da_vinci"],
+.theme-codex_da_vinci {
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow-x: hidden !important;
+  background-color: #dfd0b8 !important;
+  background-image:
+    radial-gradient(circle at 50% 30%, rgba(223, 208, 184, 0.42) 0%, rgba(60, 54, 51, 0.16) 100%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cpath d='M0 0 L100 100 M100 0 L0 100' stroke='%233C3633' stroke-width='0.5' opacity='0.12'/%3E%3C/svg%3E") !important;
+  font-family: "Montserrat", "Inter", sans-serif !important;
+}
+
+body[data-card-theme="codex_da_vinci"] main {
+  display: flex !important;
+  min-height: 100vh !important;
+  min-height: 100svh !important;
+  min-height: 100dvh !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin: 0 !important;
+  padding: max(10px, env(safe-area-inset-top, 0px)) 0 max(10px, env(safe-area-inset-bottom, 0px)) !important;
+  overflow-x: hidden !important;
+}
+
+body[data-card-theme="codex_da_vinci"] #public-card-layout,
+body[data-card-theme="codex_da_vinci"] #card-view-root,
+body[data-card-theme="codex_da_vinci"] #card-view-root > [data-card-view],
+#profile-card-live-preview[data-preview-theme="codex_da_vinci"] [data-card-view] {
+  width: 100% !important;
+  max-width: min(430px, 100vw) !important;
+  min-height: 0 !important;
+  align-content: start !important;
+  gap: 12px !important;
+  padding: 0 !important;
+  overflow: visible !important;
+}
+
+body[data-card-theme="codex_da_vinci"] #public-card-layout > div:first-child {
+  width: 100%;
+}
+
+[data-card-theme="codex_da_vinci"] {
+  position: relative;
+  isolation: isolate;
+}
+
+[data-card-theme="codex_da_vinci"] .codex-da-vinci-effects,
+#profile-card-live-preview[data-preview-theme="codex_da_vinci"] .codex-da-vinci-effects {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+#profile-card-live-preview[data-preview-theme="codex_da_vinci"] .codex-da-vinci-effects {
+  position: absolute;
+}
+
+[data-card-theme="codex_da_vinci"] .vinci-gear {
+  position: absolute;
+  top: 45%;
+  left: 50%;
+  width: min(580px, 138vw);
+  height: min(580px, 138vw);
+  opacity: 0.13;
+  transform: translate(-50%, -50%);
+  animation: vinci-gear-rotate 60s linear infinite;
+}
+
+[data-card-theme="codex_da_vinci"] .vinci-gear-ghost {
+  top: 22%;
+  left: 78%;
+  width: min(340px, 78vw);
+  height: min(340px, 78vw);
+  opacity: 0.1;
+  animation-duration: 84s;
+  animation-direction: reverse;
+}
+
+[data-card-theme="codex_da_vinci"] .vinci-gear svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+[data-card-theme="codex_da_vinci"] .vinci-dust {
+  position: absolute;
+  bottom: -12vh;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #c5a880;
+  box-shadow: 0 0 6px #c5a880;
+  opacity: 0;
+  animation: vinci-dust-float linear infinite;
+}
+
+[data-card-theme="codex_da_vinci"] .dust-1 { left: 18%; animation-duration: 22s; }
+[data-card-theme="codex_da_vinci"] .dust-2 { left: 36%; animation-duration: 28s; animation-delay: -5s; }
+[data-card-theme="codex_da_vinci"] .dust-3 { left: 54%; animation-duration: 25s; animation-delay: -10s; }
+[data-card-theme="codex_da_vinci"] .dust-4 { left: 72%; animation-duration: 31s; animation-delay: -14s; }
+[data-card-theme="codex_da_vinci"] .dust-5 { left: 86%; animation-duration: 24s; animation-delay: -8s; }
+
+[data-card-theme="codex_da_vinci"] .public-card-shell,
+[data-card-theme="codex_da_vinci"] .unq-ref-shell,
+#profile-card-live-preview[data-preview-theme="codex_da_vinci"] .public-card-shell,
+#profile-card-live-preview[data-preview-theme="codex_da_vinci"] .unq-ref-shell {
+  position: relative !important;
+  display: block !important;
+  width: 92% !important;
+  max-width: 410px !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  aspect-ratio: auto !important;
+  box-sizing: border-box !important;
+  margin: 15px auto !important;
+  padding: 28px 24px !important;
+  overflow: visible !important;
+  border: 1px solid rgba(197, 168, 128, 0.3) !important;
+  border-radius: 4px !important;
+  outline: 6px solid #1e1e24 !important;
+  background-color: #1e1e24 !important;
+  background-image:
+    linear-gradient(to bottom, rgba(30, 30, 36, 0.92), rgba(30, 30, 36, 0.98)),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Ctext x='5' y='25' fill='%23C5A880' font-size='10' font-family='serif' font-style='italic' opacity='0.08'%3ELeonardo da Vinci Codex%3C/text%3E%3Cpath d='M10 50 Q 50 20 110 50' fill='none' stroke='%23C5A880' stroke-width='0.5' opacity='0.05'/%3E%3C/svg%3E") !important;
+  background-size: 100% 100%, 120px 120px !important;
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5), 0 0 40px rgba(197, 168, 128, 0.1) !important;
+  z-index: 10 !important;
+}
+
+[data-card-theme="codex_da_vinci"] .public-card-shell::before,
+[data-card-theme="codex_da_vinci"] .unq-ref-shell::before,
+#profile-card-live-preview[data-preview-theme="codex_da_vinci"] .public-card-shell::before,
+#profile-card-live-preview[data-preview-theme="codex_da_vinci"] .unq-ref-shell::before {
+  content: "";
+  position: absolute;
+  inset: 10px;
+  border: 1px solid rgba(197, 168, 128, 0.15);
+  pointer-events: none;
+  z-index: 1;
+}
+
+[data-card-theme="codex_da_vinci"] .unq-ref-shell > *,
+#profile-card-live-preview[data-preview-theme="codex_da_vinci"] .unq-ref-shell > * {
+  position: relative;
+  z-index: 2;
+}
+
+[data-card-theme="codex_da_vinci"] .unq-ref-card-overlay,
+[data-card-theme="codex_da_vinci"] .unq-ref-overlay-svg,
+#profile-card-live-preview[data-preview-theme="codex_da_vinci"] .unq-ref-card-overlay,
+#profile-card-live-preview[data-preview-theme="codex_da_vinci"] .unq-ref-overlay-svg {
+  position: absolute !important;
+  inset: 0 !important;
+  width: auto !important;
+  height: auto !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  opacity: 0.72 !important;
+}
+
+[data-card-theme="codex_da_vinci"] .unq-ref-top,
+#profile-card-live-preview[data-preview-theme="codex_da_vinci"] .unq-ref-top {
+  position: relative;
+  z-index: 10;
+  margin-bottom: 12px !important;
+  padding: 0 !important;
+}
+
+body[data-card-theme="codex_da_vinci"] .nav-back-button,
+body[data-card-theme="codex_da_vinci"] .nav-input-wrapper,
+body[data-card-theme="codex_da_vinci"] .nav-search-button,
+body[data-card-theme="codex_da_vinci"] .info-badge,
+body[data-card-theme="codex_da_vinci"] #card-slug-search-form > div,
+body[data-card-theme="codex_da_vinci"] #card-slug-search-results,
+[data-card-theme="codex_da_vinci"] .unq-ref-slug-chip,
+[data-card-theme="codex_da_vinci"] .unq-ref-slug-price,
+[data-card-theme="codex_da_vinci"] .unq-ref-share,
+[data-card-theme="codex_da_vinci"] .unq-ref-top-badge {
+  border: 1px solid rgba(197, 168, 128, 0.4) !important;
+  border-radius: 4px !important;
+  background: #1e1e24 !important;
+  color: #dfd0b8 !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25) !important;
+  backdrop-filter: blur(10px) !important;
+  font-family: "Montserrat", "Inter", sans-serif !important;
+}
+
+body[data-card-theme="codex_da_vinci"] #card-slug-search-form input,
+body[data-card-theme="codex_da_vinci"] .nav-input-wrapper input {
+  color: #ffffff !important;
+  font-family: "Montserrat", "Inter", sans-serif !important;
+}
+
+body[data-card-theme="codex_da_vinci"] #card-slug-search-form input::placeholder,
+body[data-card-theme="codex_da_vinci"] .nav-input-wrapper input::placeholder {
+  color: rgba(223, 208, 184, 0.48) !important;
+}
+
+[data-card-theme="codex_da_vinci"] .unq-ref-share svg,
+body[data-card-theme="codex_da_vinci"] .nav-back-button svg,
+body[data-card-theme="codex_da_vinci"] .nav-search-button svg,
+body[data-card-theme="codex_da_vinci"] .info-badge svg,
+body[data-card-theme="codex_da_vinci"] #card-slug-search-form button svg {
+  stroke: #c5a880 !important;
+}
+
+[data-card-theme="codex_da_vinci"] .unq-ref-profile,
+#profile-card-live-preview[data-preview-theme="codex_da_vinci"] .unq-ref-profile {
+  margin-top: 18px !important;
+  gap: 12px !important;
+  height: auto !important;
+  min-height: 0 !important;
+}
+
+[data-card-theme="codex_da_vinci"] .unq-ref-avatar-img,
+[data-card-theme="codex_da_vinci"] .unq-ref-avatar-fallback {
+  border: 1px solid rgba(197, 168, 128, 0.66) !important;
+  background: radial-gradient(circle at 35% 28%, #dfd0b8 0%, #c5a880 42%, #1e1e24 100%) !important;
+  color: #1e1e24 !important;
+}
+
+[data-card-theme="codex_da_vinci"] .unq-ref-name,
+[data-card-theme="codex_da_vinci"] .unq-ref-name-text {
+  color: #dfd0b8 !important;
+  font-family: "Playfair Display", Georgia, serif !important;
+  font-size: clamp(2rem, 8vw, 2.25rem) !important;
+  font-style: italic !important;
+  font-weight: 400 !important;
+  line-height: 1.05 !important;
+  letter-spacing: 1.5px !important;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8) !important;
+}
+
+[data-card-theme="codex_da_vinci"] .unq-ref-company,
+[data-card-theme="codex_da_vinci"] .unq-ref-role,
+[data-card-theme="codex_da_vinci"] .unq-ref-bio,
+[data-card-theme="codex_da_vinci"] .unq-ref-phone,
+[data-card-theme="codex_da_vinci"] .unq-ref-footline {
+  color: rgba(223, 208, 184, 0.78) !important;
+  font-family: "Montserrat", "Inter", sans-serif !important;
+}
+
+[data-card-theme="codex_da_vinci"] .unq-ref-action-btn,
+[data-card-theme="codex_da_vinci"] .unq-ref-follow-toggle,
+[data-card-theme="codex_da_vinci"] .unq-follow-action-btn,
+[data-card-theme="codex_da_vinci"] .social-button {
+  border: 1px solid #1e1e24 !important;
+  border-radius: 2px !important;
+  background: linear-gradient(135deg, #c5a880 0%, #a3845b 100%) !important;
+  color: #1e1e24 !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+  font-family: "Cinzel", Georgia, serif !important;
+  font-weight: 700 !important;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+}
+
+[data-card-theme="codex_da_vinci"] .unq-ref-action-btn:hover,
+[data-card-theme="codex_da_vinci"] .unq-ref-follow-toggle:hover,
+[data-card-theme="codex_da_vinci"] .unq-follow-action-btn:hover,
+[data-card-theme="codex_da_vinci"] .social-button:hover,
+body[data-card-theme="codex_da_vinci"] .nav-back-button:hover,
+body[data-card-theme="codex_da_vinci"] .nav-search-button:hover {
+  border-color: #c5a880 !important;
+  background: #1e1e24 !important;
+  color: #c5a880 !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 20px rgba(197, 168, 128, 0.3) !important;
+}
+
+[data-card-theme="codex_da_vinci"] .unq-ref-brand {
+  margin-top: 0 !important;
+}
+
+[data-card-theme="codex_da_vinci"] .unq-ref-brand h2 {
+  color: #c5a880 !important;
+  font-family: "Cinzel", Georgia, serif !important;
+  letter-spacing: 0.08em !important;
+}
+
+[data-card-theme="codex_da_vinci"] .unq-ref-brand p {
+  color: rgba(223, 208, 184, 0.68) !important;
+}
+
+[data-card-theme="codex_da_vinci"] .unq-follow-dialog-card,
+[data-card-theme="codex_da_vinci"] .unq-follow-dialog-item {
+  border: 1px solid rgba(197, 168, 128, 0.42) !important;
+  background: #1e1e24 !important;
+  color: #dfd0b8 !important;
+}
+
+[data-card-theme="codex_da_vinci"] .unq-follow-dialog-action {
+  border-color: #c5a880 !important;
+  background: #c5a880 !important;
+  color: #1e1e24 !important;
+}
+
+@keyframes vinci-gear-rotate {
+  from {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+@keyframes vinci-dust-float {
+  0% {
+    transform: translateY(100vh) scale(0.6) rotate(0deg);
+    opacity: 0;
+  }
+  50% {
+    opacity: 0.42;
+  }
+  100% {
+    transform: translateY(-10vh) scale(1.1) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  body[data-card-theme="codex_da_vinci"] main {
+    justify-content: flex-start !important;
+    padding-top: max(6px, env(safe-area-inset-top, 0px)) !important;
+    padding-bottom: max(6px, env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  [data-card-theme="codex_da_vinci"] .public-card-shell,
+  [data-card-theme="codex_da_vinci"] .unq-ref-shell,
+  #profile-card-live-preview[data-preview-theme="codex_da_vinci"] .public-card-shell,
+  #profile-card-live-preview[data-preview-theme="codex_da_vinci"] .unq-ref-shell {
+    width: 92% !important;
+    padding: 14px 12px !important;
+    margin: 6px auto !important;
+    outline-width: 4px !important;
+  }
+
+  [data-card-theme="codex_da_vinci"] .vinci-gear-main {
+    width: 440px;
+    height: 440px;
+  }
+
+  [data-card-theme="codex_da_vinci"] .unq-ref-name,
+  [data-card-theme="codex_da_vinci"] .unq-ref-name-text {
+    font-size: clamp(1.85rem, 10vw, 2.1rem) !important;
+    letter-spacing: 1px !important;
+  }
 }
