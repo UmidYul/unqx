@@ -1467,6 +1467,8 @@ section[id^="tab-"].hidden {
   bottom: calc(100% + 6px);
   z-index: 80;
   min-width: 200px;
+  max-width: calc(100vw - 16px);
+  box-sizing: border-box;
   border: 1px solid #e5e7eb;
   border-radius: 10px;
   background: #fff;
@@ -1482,6 +1484,7 @@ section[id^="tab-"].hidden {
   bottom: auto;
   transform: none;
   z-index: 120;
+  max-width: calc(100vw - 16px);
 }
 
 .admin-row-menu.is-hidden {
@@ -1490,6 +1493,7 @@ section[id^="tab-"].hidden {
 
 .admin-menu-item {
   width: 100%;
+  min-width: 0;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -1501,6 +1505,13 @@ section[id^="tab-"].hidden {
   padding: 7px 8px;
   font-size: 12px;
   font-weight: 600;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.admin-menu-item span {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .admin-menu-item:hover {

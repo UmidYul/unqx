@@ -1428,6 +1428,8 @@
   function resetRowMenuPosition(menu) {
     if (!(menu instanceof HTMLElement)) return;
     menu.classList.remove("is-floating");
+    menu.style.width = "";
+    menu.style.maxWidth = "";
     menu.style.left = "";
     menu.style.top = "";
     menu.style.right = "";
@@ -1441,8 +1443,19 @@
     const toggleRect = toggle.getBoundingClientRect();
     const viewportWidth = document.documentElement.clientWidth;
     const viewportHeight = document.documentElement.clientHeight;
+    const maxMenuWidth = Math.max(180, viewportWidth - padding * 2);
+
+    menu.style.right = "auto";
+    menu.style.bottom = "auto";
+    menu.style.transform = "none";
+    menu.style.maxWidth = `${maxMenuWidth}px`;
+    menu.style.width = "max-content";
+
+    const naturalWidth = Math.max(220, Math.ceil(menu.getBoundingClientRect().width), Math.ceil(menu.scrollWidth || 0));
+    const menuWidth = Math.min(naturalWidth, maxMenuWidth);
+    menu.style.width = `${menuWidth}px`;
+
     const menuRect = menu.getBoundingClientRect();
-    const menuWidth = Math.max(200, Math.ceil(menuRect.width));
     const menuHeight = Math.ceil(menuRect.height);
 
     let left = toggleRect.right - menuWidth;
