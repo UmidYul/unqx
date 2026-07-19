@@ -65,10 +65,68 @@ const router = express.Router();
 const defaultSocialImage = absoluteUrl("/brand/logo.PNG");
 const CARD_THEMES = PROFILE_THEMES;
 const LEGAL_DOCS_DIR = path.join(env.EXPRESS_APP_DIR, "docs");
+const PUBLIC_ONLINE_WINDOW_MS = 5 * 60 * 1000;
+const PUBLIC_LAST_SEEN_TIME_ZONE = "Asia/Tashkent";
+const PUBLIC_LAST_SEEN_DATE_FORMATTER = new Intl.DateTimeFormat("ru-RU", {
+  timeZone: PUBLIC_LAST_SEEN_TIME_ZONE,
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+const PUBLIC_LAST_SEEN_TIME_FORMATTER = new Intl.DateTimeFormat("ru-RU", {
+  timeZone: PUBLIC_LAST_SEEN_TIME_ZONE,
+  hour: "2-digit",
+  minute: "2-digit",
+});
 
 function normalizePublicThemeKey(value) {
   const theme = String(value || "").trim();
   return theme === "royal_ivory" ? "sage_luxe" : theme;
+}
+
+function getPublicLastSeenDateKey(value) {
+  const parts = PUBLIC_LAST_SEEN_DATE_FORMATTER
+    .formatToParts(value)
+    .reduce((acc, part) => {
+      if (part.type !== "literal") {
+        acc[part.type] = part.value;
+      }
+      return acc;
+    }, {});
+  return `${parts.year || ""}-${parts.month || ""}-${parts.day || ""}`;
+}
+
+function formatPublicOnlineStatus(lastSeenAt, now = new Date()) {
+  const lastSeenDate = lastSeenAt instanceof Date ? lastSeenAt : new Date(lastSeenAt || "");
+  if (Number.isNaN(lastSeenDate.getTime())) {
+    return null;
+  }
+
+  const ageMs = now.getTime() - lastSeenDate.getTime();
+  if (ageMs <= PUBLIC_ONLINE_WINDOW_MS) {
+    return {
+      isOnline: true,
+      label: "В сети",
+      lastSeenAt: lastSeenDate.toISOString(),
+    };
+  }
+
+  const timeLabel = PUBLIC_LAST_SEEN_TIME_FORMATTER.format(lastSeenDate);
+  const todayKey = getPublicLastSeenDateKey(now);
+  const yesterdayKey = getPublicLastSeenDateKey(new Date(now.getTime() - 24 * 60 * 60 * 1000));
+  const lastSeenKey = getPublicLastSeenDateKey(lastSeenDate);
+  const dateLabel =
+    lastSeenKey === todayKey
+      ? "сегодня"
+      : lastSeenKey === yesterdayKey
+        ? "вчера"
+        : PUBLIC_LAST_SEEN_DATE_FORMATTER.format(lastSeenDate);
+
+  return {
+    isOnline: false,
+    label: `Был в сети ${dateLabel} в ${timeLabel}`,
+    lastSeenAt: lastSeenDate.toISOString(),
+  };
 }
 
 async function resolvePublicCustomTheme(card) {
@@ -459,6 +517,7 @@ async function findUserByTelegramIdWithLegacyFallback(userId) {
         plan: true,
         subscriptionStartedAt: true,
         subscriptionExpiresAt: true,
+        lastLoginAt: true,
         isVerified: true,
         verifiedCompany: true,
         createdByStaffId: true,
@@ -475,7 +534,8 @@ async function findUserByTelegramIdWithLegacyFallback(userId) {
         first_name AS "firstName",
         username,
         telegram_username AS "telegramUsername",
-        login
+        login,
+        last_login_at AS "lastLoginAt"
       FROM users
       WHERE id = ${userId}
       LIMIT 1
@@ -489,6 +549,7 @@ async function findUserByTelegramIdWithLegacyFallback(userId) {
       plan: "none",
       subscriptionStartedAt: null,
       subscriptionExpiresAt: null,
+      lastLoginAt: row.lastLoginAt || null,
       isVerified: false,
       verifiedCompany: null,
       createdByStaffId: null,
@@ -939,6 +1000,7 @@ function buildPublicCardFromProfile({ slug, user, profileCard, verifiedIdentity,
   const verifiedRole =
     String(isCurrentlyVerified ? (verifiedIdentity?.role || "") : "")
       .trim();
+  const onlineStatus = formatPublicOnlineStatus(user?.lastLoginAt || user?.last_login_at || null);
   const slugSaleListings = {};
   const normalizedSlugs = Array.isArray(allSlugs)
     ? allSlugs
@@ -966,6 +1028,7 @@ function buildPublicCardFromProfile({ slug, user, profileCard, verifiedIdentity,
     name: effectiveProfileCard.name,
     wallAuthorLabel: getPublicWallAuthorLabel(user, effectiveProfileCard.name),
     role: verifiedRole,
+    onlineStatus,
     bio: effectiveProfileCard.bio || "",
     verified: isCurrentlyVerified,
     verifiedCompany,

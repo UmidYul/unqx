@@ -32,12 +32,41 @@ const { startPendingExpiryJob } = require("./services/pending-expiry");
 const { startLiveJobs } = require("./services/live-jobs");
 const { getManySettings } = require("./services/platform-settings");
 const { randomFreeSlugApiRouter } = require("./routes/api/random-free-slug-router");
+const { prisma } = require("./db/prisma");
+
+const USER_ACTIVITY_TOUCH_INTERVAL_MS = 60 * 1000;
 
 function getFirstHeaderValue(value) {
   if (!value || typeof value !== "string") {
     return "";
   }
   return value.split(",")[0].trim();
+}
+
+function touchUserActivity(req, userSession) {
+  const userId = userSession?.userId ? String(userSession.userId).trim() : "";
+  if (!userId || req.method === "OPTIONS") {
+    return;
+  }
+
+  const now = Date.now();
+  const lastTouch = Number(req.session?.lastSeenTouchedAt || 0);
+  if (Number.isFinite(lastTouch) && now - lastTouch < USER_ACTIVITY_TOUCH_INTERVAL_MS) {
+    return;
+  }
+
+  if (req.session) {
+    req.session.lastSeenTouchedAt = now;
+  }
+
+  prisma.user
+    .update({
+      where: { id: userId },
+      data: { lastLoginAt: new Date(now) },
+    })
+    .catch((error) => {
+      console.error("[express-app] failed to update user activity", error);
+    });
 }
 
 function truncateForLog(value, max = 160) {
@@ -399,6 +428,7 @@ function createApp() {
 
     res.locals.adminSession = getAdminSession(req);
     res.locals.userSession = getUserSession(req);
+    touchUserActivity(req, res.locals.userSession);
     res.locals.telegramBotUsername = env.TELEGRAM_BOT_USERNAME || "";
     res.locals.currentPath = req.path;
     res.locals.baseUrl = baseUrl;

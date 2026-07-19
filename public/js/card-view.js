@@ -3540,6 +3540,22 @@
     return input;
   }
 
+  function normalizeOnlineStatus(value) {
+    const status = value && typeof value === "object" ? value : null;
+    if (!status) {
+      return null;
+    }
+    const label = String(status.label || status.text || "").trim();
+    if (!label) {
+      return null;
+    }
+    return {
+      label,
+      isOnline: Boolean(status.isOnline || status.is_online),
+      lastSeenAt: String(status.lastSeenAt || status.last_seen_at || "").trim(),
+    };
+  }
+
   function normalizeCard(input) {
     const card = input && typeof input === "object" ? input : {};
     const plan = card.tariff === "premium" ? "premium" : "none";
@@ -3635,6 +3651,7 @@
       name,
       wallAuthorLabel: String(card.wallAuthorLabel || name).trim() || name,
       role: String(card.role || "").trim(),
+      onlineStatus: normalizeOnlineStatus(card.onlineStatus || card.online_status),
       bio: String(card.bio || "").trim(),
       phone: String(card.phone || "").trim(),
       avatarUrl: avatarUrl || null,
@@ -4323,7 +4340,10 @@
       card.verifiedCompany || card.verified
         ? `<p class="unq-ref-verified-company"><span class="unq-ref-verified-text">${esc(card.verifiedCompany)}</span>${card.verified ? `<span class="unq-ref-verified-icon">${iconSvg("verified")}</span>` : ""}</p>`
         : "";
-    const roleHtml = card.role ? `<p class="unq-ref-role">${esc(card.role)}</p>` : "";
+    const onlineStatusHtml = card.onlineStatus?.label
+      ? `<p class="unq-ref-online-status${card.onlineStatus.isOnline ? " is-online" : ""}">${esc(card.onlineStatus.label)}</p>`
+      : "";
+    const roleHtml = onlineStatusHtml || (card.role ? `<p class="unq-ref-role">${esc(card.role)}</p>` : "");
     const footBrandingLabel = card.showBranding ? (theme.key === "velours" ? "◆ UNQX" : "• UNQX") : "";
     const detailSections = [
       tagsHtml,
