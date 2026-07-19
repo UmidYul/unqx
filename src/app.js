@@ -60,12 +60,22 @@ async function touchUserActivity(req, userSession) {
   }
 
   try {
-    await prisma.user.update({
-      where: { id: userId },
-      data: { lastLoginAt: new Date(now) },
-    });
+    await prisma.$executeRaw`
+      UPDATE users
+      SET
+        last_seen_at = ${new Date(now)},
+        last_login_at = COALESCE(last_login_at, ${new Date(now)})
+      WHERE id = ${userId}
+    `;
   } catch (error) {
-    console.error("[express-app] failed to update user activity", error);
+    try {
+      await prisma.user.update({
+        where: { id: userId },
+        data: { lastLoginAt: new Date(now) },
+      });
+    } catch (fallbackError) {
+      console.error("[express-app] failed to update user activity", fallbackError);
+    }
   }
 }
 

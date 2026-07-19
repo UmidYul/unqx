@@ -494,6 +494,36 @@ function mapLegacyCompatiblePublicUser(user) {
   };
 }
 
+function isMissingLastSeenColumnError(error) {
+  if (!error || typeof error !== "object") return false;
+  return (
+    error.code === "42703" ||
+    error?.meta?.code === "42703" ||
+    String(error.message || "").includes("last_seen_at")
+  );
+}
+
+async function findUserLastSeenAt(userId, fallbackValue = null) {
+  if (!userId) {
+    return fallbackValue || null;
+  }
+  try {
+    const rows = await prisma.$queryRaw`
+      SELECT COALESCE(last_seen_at, last_login_at) AS "lastSeenAt"
+      FROM users
+      WHERE id = ${userId}
+      LIMIT 1
+    `;
+    const row = Array.isArray(rows) ? rows[0] : null;
+    return row?.lastSeenAt || fallbackValue || null;
+  } catch (error) {
+    if (isMissingLastSeenColumnError(error)) {
+      return fallbackValue || null;
+    }
+    throw error;
+  }
+}
+
 function getPublicUserHandle(user) {
   return String(user?.login || user?.username || "")
     .trim()
@@ -527,7 +557,13 @@ async function findUserByTelegramIdWithLegacyFallback(userId) {
         createdByStaffId: true,
       },
     });
-    return mapLegacyCompatiblePublicUser(user);
+    if (!user) {
+      return null;
+    }
+    return mapLegacyCompatiblePublicUser({
+      ...user,
+      lastSeenAt: await findUserLastSeenAt(userId, user.lastLoginAt),
+    });
   } catch (error) {
     if (!isUserMissingColumnError(error)) {
       throw error;
@@ -554,6 +590,7 @@ async function findUserByTelegramIdWithLegacyFallback(userId) {
       subscriptionStartedAt: null,
       subscriptionExpiresAt: null,
       lastLoginAt: row.lastLoginAt || null,
+      lastSeenAt: await findUserLastSeenAt(userId, row.lastLoginAt),
       isVerified: false,
       verifiedCompany: null,
       createdByStaffId: null,
@@ -1004,7 +1041,7 @@ function buildPublicCardFromProfile({ slug, user, profileCard, verifiedIdentity,
   const verifiedRole =
     String(isCurrentlyVerified ? (verifiedIdentity?.role || "") : "")
       .trim();
-  const onlineStatus = formatPublicOnlineStatus(user?.lastLoginAt || user?.last_login_at || null);
+  const onlineStatus = formatPublicOnlineStatus(user?.lastSeenAt || user?.last_seen_at || user?.lastLoginAt || user?.last_login_at || null);
   const slugSaleListings = {};
   const normalizedSlugs = Array.isArray(allSlugs)
     ? allSlugs
@@ -2520,7 +2557,7 @@ router.get(
       avatarUrl: paymentCard.avatarUrl || profileCard?.avatarUrl || owner.photoUrl || null,
       name: paymentCard.name,
       role: paymentCard.role || verifiedRole,
-      onlineStatus: formatPublicOnlineStatus(owner.lastLoginAt || owner.last_login_at || null),
+      onlineStatus: formatPublicOnlineStatus(owner.lastSeenAt || owner.last_seen_at || owner.lastLoginAt || owner.last_login_at || null),
       bio: paymentCard.bio || "",
       verified: isCurrentlyVerified,
       verifiedCompany,

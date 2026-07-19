@@ -316,6 +316,7 @@ model User {
   resetPasswordToken     String?               @map("reset_password_token")
   resetPasswordExpiresAt DateTime?             @map("reset_password_expires_at")
   lastLoginAt            DateTime?             @map("last_login_at")
+  lastSeenAt             DateTime?             @map("last_seen_at")
   loginAttempts          Int                   @default(0) @map("login_attempts")
   lockedUntil            DateTime?             @map("locked_until")
   firstName              String                @map("first_name") @db.VarChar(120)
