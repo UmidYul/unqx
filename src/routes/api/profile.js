@@ -166,6 +166,32 @@ let cardThemeEnumCache = {
   values: null,
 };
 
+async function touchProfileUserLastSeen(userId) {
+  const normalizedUserId = String(userId || "").trim();
+  if (!normalizedUserId) {
+    return;
+  }
+  const now = new Date();
+  try {
+    await prisma.$executeRaw`
+      UPDATE users
+      SET
+        last_seen_at = ${now},
+        last_login_at = COALESCE(last_login_at, ${now})
+      WHERE id = ${normalizedUserId}
+    `;
+  } catch (error) {
+    try {
+      await prisma.user.update({
+        where: { id: normalizedUserId },
+        data: { lastLoginAt: now },
+      });
+    } catch (fallbackError) {
+      console.error("[profile-api] failed to update user last seen", fallbackError);
+    }
+  }
+}
+
 function toSlugStatusLabel(status) {
   switch (status) {
     case "active":
@@ -1019,6 +1045,7 @@ router.get(
     if (!assertUserActive(user, res)) {
       return;
     }
+    await touchProfileUserLastSeen(user.id);
 
     const [slugs, card, slugRequests, petRequests, pets, petCatalog, score, pricing, supportTelegramRaw, privatePasswords, followSummary] = await Promise.all([
       getUserSlugsWithStats(user.id),
@@ -2034,6 +2061,7 @@ router.get(
     if (!assertUserActive(user, res)) {
       return;
     }
+    await touchProfileUserLastSeen(user.id);
     if (!canCreateCard(user)) {
       res.json({ card: null });
       return;
@@ -2063,6 +2091,7 @@ router.put(
     if (!assertUserActive(user, res)) {
       return;
     }
+    await touchProfileUserLastSeen(user.id);
     if (!assertPlanAllowsCard(user, res)) {
       return;
     }

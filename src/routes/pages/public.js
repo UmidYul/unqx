@@ -133,6 +133,20 @@ function formatPublicOnlineStatus(lastSeenAt, now = new Date()) {
   };
 }
 
+function getLatestPublicActivityAt(...values) {
+  let latest = null;
+  for (const value of values) {
+    const date = value instanceof Date ? value : new Date(value || "");
+    if (Number.isNaN(date.getTime())) {
+      continue;
+    }
+    if (!latest || date.getTime() > latest.getTime()) {
+      latest = date;
+    }
+  }
+  return latest;
+}
+
 async function resolvePublicCustomTheme(card) {
   const theme = normalizePublicThemeKey(card?.theme);
   if (!theme || CARD_THEMES.has(theme)) return null;
@@ -1041,7 +1055,11 @@ function buildPublicCardFromProfile({ slug, user, profileCard, verifiedIdentity,
   const verifiedRole =
     String(isCurrentlyVerified ? (verifiedIdentity?.role || "") : "")
       .trim();
-  const onlineStatus = formatPublicOnlineStatus(user?.lastSeenAt || user?.last_seen_at || user?.lastLoginAt || user?.last_login_at || null);
+  const onlineStatus = formatPublicOnlineStatus(getLatestPublicActivityAt(
+    user?.lastSeenAt || user?.last_seen_at,
+    user?.lastLoginAt || user?.last_login_at,
+    effectiveProfileCard.updatedAt || effectiveProfileCard.updated_at,
+  ));
   const slugSaleListings = {};
   const normalizedSlugs = Array.isArray(allSlugs)
     ? allSlugs
@@ -2557,7 +2575,12 @@ router.get(
       avatarUrl: paymentCard.avatarUrl || profileCard?.avatarUrl || owner.photoUrl || null,
       name: paymentCard.name,
       role: paymentCard.role || verifiedRole,
-      onlineStatus: formatPublicOnlineStatus(owner.lastSeenAt || owner.last_seen_at || owner.lastLoginAt || owner.last_login_at || null),
+      onlineStatus: formatPublicOnlineStatus(getLatestPublicActivityAt(
+        owner.lastSeenAt || owner.last_seen_at,
+        owner.lastLoginAt || owner.last_login_at,
+        profileCard?.updatedAt || profileCard?.updated_at,
+        paymentCard.updatedAt || paymentCard.updated_at,
+      )),
       bio: paymentCard.bio || "",
       verified: isCurrentlyVerified,
       verifiedCompany,

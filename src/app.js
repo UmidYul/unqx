@@ -44,7 +44,7 @@ function getFirstHeaderValue(value) {
 }
 
 async function touchUserActivity(req, userSession) {
-  const userId = userSession?.userId ? String(userSession.userId).trim() : "";
+  const userId = String(userSession?.userId || userSession?.id || userSession?.sub || "").trim();
   if (!userId || req.method === "OPTIONS") {
     return;
   }
