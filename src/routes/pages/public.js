@@ -99,7 +99,11 @@ function getPublicLastSeenDateKey(value) {
 function formatPublicOnlineStatus(lastSeenAt, now = new Date()) {
   const lastSeenDate = lastSeenAt instanceof Date ? lastSeenAt : new Date(lastSeenAt || "");
   if (Number.isNaN(lastSeenDate.getTime())) {
-    return null;
+    return {
+      isOnline: false,
+      label: "Был в сети давно",
+      lastSeenAt: null,
+    };
   }
 
   const ageMs = now.getTime() - lastSeenDate.getTime();
@@ -2516,6 +2520,7 @@ router.get(
       avatarUrl: paymentCard.avatarUrl || profileCard?.avatarUrl || owner.photoUrl || null,
       name: paymentCard.name,
       role: paymentCard.role || verifiedRole,
+      onlineStatus: formatPublicOnlineStatus(owner.lastLoginAt || owner.last_login_at || null),
       bio: paymentCard.bio || "",
       verified: isCurrentlyVerified,
       verifiedCompany,

@@ -43,7 +43,7 @@ function getFirstHeaderValue(value) {
   return value.split(",")[0].trim();
 }
 
-function touchUserActivity(req, userSession) {
+async function touchUserActivity(req, userSession) {
   const userId = userSession?.userId ? String(userSession.userId).trim() : "";
   if (!userId || req.method === "OPTIONS") {
     return;
@@ -59,14 +59,14 @@ function touchUserActivity(req, userSession) {
     req.session.lastSeenTouchedAt = now;
   }
 
-  prisma.user
-    .update({
+  try {
+    await prisma.user.update({
       where: { id: userId },
       data: { lastLoginAt: new Date(now) },
-    })
-    .catch((error) => {
-      console.error("[express-app] failed to update user activity", error);
     });
+  } catch (error) {
+    console.error("[express-app] failed to update user activity", error);
+  }
 }
 
 function truncateForLog(value, max = 160) {
@@ -428,7 +428,6 @@ function createApp() {
 
     res.locals.adminSession = getAdminSession(req);
     res.locals.userSession = getUserSession(req);
-    touchUserActivity(req, res.locals.userSession);
     res.locals.telegramBotUsername = env.TELEGRAM_BOT_USERNAME || "";
     res.locals.currentPath = req.path;
     res.locals.baseUrl = baseUrl;
@@ -457,7 +456,9 @@ function createApp() {
       res.vary("Cookie");
     }
 
-    next();
+    touchUserActivity(req, res.locals.userSession).finally(() => {
+      next();
+    });
   });
 
   app.use("/api", (req, res, next) => {
