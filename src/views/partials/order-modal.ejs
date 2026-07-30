@@ -249,6 +249,42 @@
                   placeholder="Имя для визитки" />
               </div>
 
+              <div id="order-modal-payment-section">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">Оплата UNQ</p>
+                <div class="grid gap-3 sm:grid-cols-2">
+                  <label class="cursor-pointer">
+                    <input id="order-modal-payment-cash" type="radio" name="order-modal-payment-mode" value="cash"
+                      class="peer sr-only" checked />
+                    <span
+                      class="block rounded-xl border border-neutral-200 bg-white p-4 text-sm transition peer-checked:border-neutral-900 peer-checked:bg-neutral-900 peer-checked:text-white">
+                      <span class="block font-semibold">Сразу</span>
+                      <span class="mt-1 block text-xs opacity-75">Полная сумма за UNQ сейчас</span>
+                    </span>
+                  </label>
+                  <label class="cursor-pointer">
+                    <input id="order-modal-payment-credit" type="radio" name="order-modal-payment-mode" value="credit"
+                      class="peer sr-only" />
+                    <span
+                      class="block rounded-xl border border-neutral-200 bg-white p-4 text-sm transition peer-checked:border-neutral-900 peer-checked:bg-neutral-900 peer-checked:text-white">
+                      <span class="block font-semibold">Кредит 0%</span>
+                      <span class="mt-1 block text-xs opacity-75">50% сейчас, остаток до 6 месяцев</span>
+                    </span>
+                  </label>
+                </div>
+                <label id="order-modal-credit-months-wrap" class="mt-3 hidden text-sm">
+                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Срок кредита</span>
+                  <select id="order-modal-credit-months"
+                    class="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-900">
+                    <option value="1">1 месяц</option>
+                    <option value="2">2 месяца</option>
+                    <option value="3">3 месяца</option>
+                    <option value="4">4 месяца</option>
+                    <option value="5">5 месяцев</option>
+                    <option value="6" selected>6 месяцев</option>
+                  </select>
+                </label>
+              </div>
+
               <div id="order-modal-summary-card"
                 class="order-modal-summary-card rounded-xl border border-neutral-200 bg-neutral-50 p-4 text-sm">
                 <div id="order-modal-total-slug-row" class="flex items-center justify-between gap-3">

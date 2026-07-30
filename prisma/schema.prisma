@@ -159,6 +159,20 @@ enum OrderKind {
   subscription_renewal
 }
 
+enum CreditStatus {
+  active
+  completed
+  cancelled
+  overdue
+}
+
+enum CreditPaymentStatus {
+  pending
+  paid
+  overdue
+  cancelled
+}
+
 enum PurchaseType {
   slug
   basic_plan
@@ -360,6 +374,7 @@ model User {
   profileCard            ProfileCard?
   paymentCards           PaymentCard[]
   slugRequests           SlugRequest[]
+  credits                Credit[]
   profileCardPets        ProfileCardPet[]
   petPurchaseRequests    PetPurchaseRequest[]
   slugWaitlistEntries    SlugWaitlist[]
@@ -674,6 +689,7 @@ model SlugRequest {
   bonusSpent         Int               @default(0) @map("bonus_spent")
   discountCapApplied Int               @default(0) @map("discount_cap_applied")
   conversion         ReferralConversion?
+  credit             Credit?
   bonusLedger        BonusLedger[]
   campaignUsage      ReferralCampaignUsage[]
   fraudChecks        ReferralFraudCheck[]
@@ -688,6 +704,52 @@ model SlugRequest {
   @@index([fraudVerdict, createdAt(sort: Desc)])
   @@index([promoCode])
   @@map("slug_requests")
+}
+
+model Credit {
+  id                 String              @id @default(uuid())
+  userId             String              @map("user_id")
+  user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orderId            String              @unique @map("order_id")
+  order              SlugRequest         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  slug               String              @db.VarChar(20)
+  principalAmount    Int                 @map("principal_amount")
+  downPaymentAmount  Int                 @map("down_payment_amount")
+  financedAmount     Int                 @map("financed_amount")
+  termMonths         Int                 @map("term_months")
+  monthlyAmount      Int                 @map("monthly_amount")
+  status             CreditStatus        @default(active)
+  startedAt          DateTime            @default(now()) @map("started_at")
+  completedAt        DateTime?           @map("completed_at")
+  cancelledAt        DateTime?           @map("cancelled_at")
+  note               String?
+  payments           CreditPayment[]
+  createdAt          DateTime            @default(now()) @map("created_at")
+  updatedAt          DateTime            @updatedAt @map("updated_at")
+
+  @@index([userId, status, createdAt(sort: Desc)])
+  @@index([status, createdAt(sort: Desc)])
+  @@index([slug])
+  @@map("credits")
+}
+
+model CreditPayment {
+  id           String              @id @default(uuid())
+  creditId     String              @map("credit_id")
+  credit       Credit              @relation(fields: [creditId], references: [id], onDelete: Cascade)
+  installment  Int
+  amount       Int
+  dueDate      DateTime            @map("due_date")
+  paidAt       DateTime?           @map("paid_at")
+  status       CreditPaymentStatus @default(pending)
+  adminNote    String?             @map("admin_note")
+  createdAt    DateTime            @default(now()) @map("created_at")
+  updatedAt    DateTime            @updatedAt @map("updated_at")
+
+  @@unique([creditId, installment])
+  @@index([status, dueDate])
+  @@index([dueDate])
+  @@map("credit_payments")
 }
 
 model Purchase {

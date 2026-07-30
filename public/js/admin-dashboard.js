@@ -289,6 +289,10 @@
     contacted: { label: "Связались", tone: "muted" },
     paid: { label: "Оплачено", tone: "warning" },
     approved: { label: "Активировано", tone: "success" },
+    active: { label: "Активен", tone: "info" },
+    completed: { label: "Закрыт", tone: "success" },
+    overdue: { label: "Просрочен", tone: "danger" },
+    cancelled: { label: "Отменён", tone: "muted" },
     rejected: { label: "Отклонено", tone: "danger" },
     expired: { label: "Отклонено", tone: "muted" },
     muted: { label: "Скрыт", tone: "muted" },
@@ -1806,6 +1810,72 @@
     renderPager("orders-pagination", payload.pagination, (nextPage) => {
       setFormValue(form, "page", String(nextPage));
       void loadOrders();
+    });
+  }
+
+  async function loadCredits() {
+    const form = document.getElementById("credits-filters");
+    const list = document.getElementById("credits-list");
+    if (!(form instanceof HTMLFormElement) || !(list instanceof HTMLElement)) return;
+    const q = {
+      q: getFormValue(form, "q", ""),
+      status: getFormValue(form, "status", "all"),
+      page: getFormValue(form, "page", "1"),
+    };
+    setDashboardQuery({ cr_q: q.q, cr_status: q.status, cr_page: q.page });
+    const r = await fetch(`/api/admin/credits?${Q(q)}`);
+    if (!r.ok) return;
+    const payload = await r.json();
+    const rows = Array.isArray(payload.items) ? payload.items : [];
+    list.innerHTML = rows.length
+      ? rows.map((credit) => {
+        const next = credit.nextPayment;
+        const overdue = Number(credit.overdueCount || 0);
+        const username = String(credit.user?.username || "").replace(/^@/, "");
+        const payments = Array.isArray(credit.payments) ? credit.payments : [];
+        const paymentRows = payments.map((payment) => {
+          const paid = String(payment.status || "").toLowerCase() === "paid";
+          const dueMs = payment.dueDate ? new Date(payment.dueDate).getTime() : 0;
+          const isOverdue = !paid && Number.isFinite(dueMs) && dueMs < Date.now();
+          const tone = paid ? "text-emerald-700" : isOverdue ? "text-red-700 font-semibold" : "text-neutral-700";
+          const action = paid
+            ? `<span class="text-xs text-emerald-700">Оплачено ${D(payment.paidAt)}</span>`
+            : `<button type="button" data-act="credit-pay" data-id="${X(payment.id)}" class="interactive-btn rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold text-neutral-700">Отметить оплату</button>`;
+          return `<div class="grid gap-2 rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm md:grid-cols-[1fr_150px_auto] md:items-center">
+            <span class="${tone}">${X(String(payment.installment || ""))}/${X(String(credit.termMonths || ""))} · ${D(payment.dueDate)}</span>
+            <span class="font-semibold">${P(payment.amount || 0)}</span>
+            <span class="md:text-right">${action}</span>
+          </div>`;
+        }).join("");
+        const menu = menuWrap([
+          username ? menuItem({ label: "Написать в Telegram", icon: "send", attrs: `data-act="open-url" data-url="https://t.me/${encodeURIComponent(username)}"` }) : "",
+          credit.slug ? menuItem({ label: "Открыть профиль", icon: "external", attrs: `data-act="open-url" data-url="/${encodeURIComponent(credit.slug)}"` }) : "",
+        ].join(""));
+        return `<article class="rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm">
+          <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="font-mono text-base font-bold">${X(credit.slug || "-")}</span>
+                ${statusChip(overdue > 0 ? "rejected" : String(credit.status || "active"))}
+              </div>
+              <p class="mt-1 text-sm text-neutral-600">${X(credit.user?.name || "UNQX User")} · ${X(credit.user?.contact || "")}</p>
+              <p class="mt-2 text-sm text-neutral-700">Первый взнос: <strong>${P(credit.downPaymentAmount || 0)}</strong> · Остаток: <strong>${P(credit.remainingAmount || 0)}</strong> · ${X(String(credit.termMonths || 0))} мес.</p>
+            </div>
+            <div class="flex items-start gap-2 lg:text-right">
+              <div>
+                <p class="text-xs text-neutral-500">Ближайшая оплата</p>
+                <p class="font-semibold">${next ? `${D(next.dueDate)} · ${P(next.amount || 0)}` : "Нет"}</p>
+              </div>
+              ${menu}
+            </div>
+          </div>
+          <div class="mt-4 grid gap-2">${paymentRows}</div>
+        </article>`;
+      }).join("")
+      : `<div class="rounded-2xl border border-neutral-200 bg-white px-4 py-10 text-center text-neutral-500">${I("creditCard", 48)}<div class="mt-2">Кредитов пока нет</div></div>`;
+    renderPager("credits-pagination", payload.pagination, (nextPage) => {
+      setFormValue(form, "page", String(nextPage));
+      void loadCredits();
     });
   }
 
@@ -4779,6 +4849,20 @@
     if (a === "oa") openA(n.getAttribute("data-id") || "", n.getAttribute("data-t") || "premium", n.getAttribute("data-th") || "default_dark");
     if (a === "od") { if (isManager) return; const id = n.getAttribute("data-id"); if (!id || !await showConfirm("Удалить заявку?")) return; const r = await fetch(`/api/admin/orders/${id}`, { method: "DELETE", headers: H() }); if (!r.ok) showAlert(await E(r)); else void loadOrders(); }
     if (a === "ope") { const id = n.getAttribute("data-id"); if (!id) return; const r = await fetch(`/api/admin/orders/${id}/extend-pending`, { method: "POST", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({}) }); if (!r.ok) showAlert(await E(r)); else void loadOrders(); }
+    if (a === "credit-pay") {
+      const id = n.getAttribute("data-id");
+      if (!id) return;
+      const adminNote = await showPrompt("Комментарий к оплате", "Оплата получена");
+      if (adminNote === null) return;
+      const r = await fetch(`/api/admin/credit-payments/${encodeURIComponent(id)}/pay`, {
+        method: "POST",
+        headers: H({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ adminNote }),
+      });
+      if (!r.ok) await showAlert(await E(r));
+      else void loadCredits();
+      return;
+    }
     if (a === "ub") { const telegramId = n.getAttribute("data-id"); const status = n.getAttribute("data-status"); if (!telegramId) return; const isBlocked = status === "blocked"; if (!isBlocked && !await showConfirm("Заблокировать пользователя и деактивировать его slug?")) return; if (isBlocked && !await showConfirm("Разблокировать пользователя и восстановить статусы slug?")) return; const r = await fetch(`/api/admin/users/${encodeURIComponent(telegramId)}/${isBlocked ? "unblock" : "block"}`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({}) }); if (!r.ok) showAlert(await E(r)); else void loadUsers(); }
     if (a === "ud") {
       const userId = n.getAttribute("data-id");
@@ -5150,6 +5234,17 @@
       setFormValue(form, "dateTo", "");
       setFormValue(form, "page", "1");
       void loadOrders();
+    }, 0);
+  });
+  document.getElementById("credits-filters")?.addEventListener("submit", (e) => { e.preventDefault(); const f = e.currentTarget; if (f instanceof HTMLFormElement) setFormValue(f, "page", "1"); void loadCredits(); });
+  document.getElementById("credits-filters")?.addEventListener("reset", () => {
+    const form = document.getElementById("credits-filters");
+    if (!(form instanceof HTMLFormElement)) return;
+    setTimeout(() => {
+      setFormValue(form, "q", "");
+      setFormValue(form, "status", "all");
+      setFormValue(form, "page", "1");
+      void loadCredits();
     }, 0);
   });
   document.getElementById("purchases-filters")?.addEventListener("submit", (e) => { e.preventDefault(); const f = e.currentTarget; if (f instanceof HTMLFormElement) setFormValue(f, "page", "1"); void loadPurchases(); });
@@ -6008,6 +6103,14 @@
       setFormValue(form, "page", getInitial("o_page", "page") || "1");
     }
   }
+  if (tab === "credits") {
+    const form = document.getElementById("credits-filters");
+    if (form instanceof HTMLFormElement) {
+      setFormValue(form, "q", getInitial("cr_q", "q") || "");
+      setFormValue(form, "status", getInitial("cr_status", "status") || "all");
+      setFormValue(form, "page", getInitial("cr_page", "page") || "1");
+    }
+  }
   if (tab === "purchases") {
     const form = document.getElementById("purchases-filters");
     if (form instanceof HTMLFormElement) {
@@ -6119,6 +6222,10 @@
   if (tab === "orders") {
     dbg("load", "orders");
     void loadOrders();
+  }
+  if (tab === "credits") {
+    dbg("load", "credits");
+    void loadCredits();
   }
   if (tab === "purchases") {
     dbg("load", "purchases");

@@ -803,6 +803,8 @@ Email: ${userEmail}
       reqMobileList: $("#profile-requests-mobile-list"),
       reqEmpty: $("#profile-requests-empty-state"),
       reqNewBtn: $("#profile-new-request-btn"),
+      creditList: $("#profile-credit-list"),
+      creditNewRequest: $("#profile-credit-new-request"),
       refLink: $("#profile-ref-link"),
       refCopy: $("#profile-ref-copy"),
       refTg: $("#profile-ref-tg"),
@@ -1822,7 +1824,7 @@ Email: ${userEmail}
 
     const currentTab = () => {
       const raw = (location.hash || "#slugs").replace("#", "");
-      return ["slugs", "card", "posts", "community", "analytics", "requests", "referrals", "settings", "payment-cards"].includes(raw) ? raw : "slugs";
+      return ["slugs", "card", "posts", "community", "analytics", "requests", "credit", "referrals", "settings", "payment-cards"].includes(raw) ? raw : "slugs";
     };
 
     const setTab = () => {
@@ -3633,6 +3635,75 @@ Email: ${userEmail}
       }
     };
 
+    const renderCredits = () => {
+      if (!(el.creditList instanceof HTMLElement)) return;
+      const credits = Array.isArray(s.credits) ? s.credits : [];
+      if (!credits.length) {
+        el.creditList.innerHTML = renderStateCard({
+          icon: "credit-card",
+          title: "Кредитов пока нет",
+          text: "Можно оформить UNQ в кредит 0%: 50% сразу, остаток равными платежами до 6 месяцев.",
+          buttonId: "profile-credit-order-btn",
+          buttonLabel: "Купить UNQ в кредит",
+        });
+        return;
+      }
+
+      const statusLabel = (status) => {
+        const normalized = String(status || "").toLowerCase();
+        if (normalized === "paid" || normalized === "completed") return "Оплачено";
+        if (normalized === "overdue") return "Просрочено";
+        if (normalized === "cancelled") return "Отменено";
+        return "Ожидает";
+      };
+      const paymentClass = (status) => {
+        const normalized = String(status || "").toLowerCase();
+        if (normalized === "paid") return "border-emerald-200 bg-emerald-50 text-emerald-800";
+        if (normalized === "overdue") return "border-red-200 bg-red-50 text-red-800";
+        return "border-neutral-200 bg-white text-neutral-700";
+      };
+
+      el.creditList.innerHTML = credits
+        .map((credit) => {
+          const next = credit.nextPayment;
+          const overdue = Number(credit.overdueCount || 0);
+          const payments = Array.isArray(credit.payments) ? credit.payments : [];
+          return `<article class="rounded-xl border border-neutral-200 bg-neutral-50 p-4">
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <p class="text-xs font-semibold uppercase tracking-[0.14em] text-neutral-500">UNQ ${esc(credit.slug || "—")}</p>
+                <h3 class="mt-1 text-lg font-bold text-neutral-900">${fp(credit.principalAmount || 0)}</h3>
+                <p class="mt-1 text-sm text-neutral-600">Первый взнос ${fp(credit.downPaymentAmount || 0)} · остаток ${fp(credit.financedAmount || 0)} на ${esc(String(credit.termMonths || 0))} мес.</p>
+              </div>
+              <div class="rounded-lg border ${overdue > 0 ? "border-red-200 bg-red-50 text-red-800" : "border-emerald-200 bg-emerald-50 text-emerald-800"} px-3 py-2 text-sm font-semibold">
+                ${overdue > 0 ? `${overdue} просрочено` : statusLabel(credit.status)}
+              </div>
+            </div>
+            <div class="mt-4 grid gap-3 md:grid-cols-3">
+              <div class="rounded-lg border border-neutral-200 bg-white p-3">
+                <p class="text-xs text-neutral-500">Ближайшая оплата</p>
+                <p class="mt-1 font-semibold">${next ? fdt(next.dueDate) : "Все платежи закрыты"}</p>
+              </div>
+              <div class="rounded-lg border border-neutral-200 bg-white p-3">
+                <p class="text-xs text-neutral-500">Сумма платежа</p>
+                <p class="mt-1 font-semibold">${next ? fp(next.amount || 0) : "0 сум"}</p>
+              </div>
+              <div class="rounded-lg border border-neutral-200 bg-white p-3">
+                <p class="text-xs text-neutral-500">Остаток</p>
+                <p class="mt-1 font-semibold">${fp(credit.remainingAmount || 0)}</p>
+              </div>
+            </div>
+            <div class="mt-4 grid gap-2">
+              ${payments.map((payment) => `<div class="flex flex-col gap-1 rounded-lg border px-3 py-2 text-sm sm:flex-row sm:items-center sm:justify-between ${paymentClass(payment.status)}">
+                <span>${esc(String(payment.installment || ""))}/${esc(String(credit.termMonths || ""))} · ${fdt(payment.dueDate)}</span>
+                <span class="font-semibold">${fp(payment.amount || 0)} · ${statusLabel(payment.status)}</span>
+              </div>`).join("")}
+            </div>
+          </article>`;
+        })
+        .join("");
+    };
+
     const renderPrivateAccessSettings = () => {
       const passwords = Array.isArray(s.privatePasswords) ? s.privatePasswords : [];
       const limit = Number.isFinite(Number(s.privatePasswordLimit)) ? Number(s.privatePasswordLimit) : 10;
@@ -4663,6 +4734,7 @@ Email: ${userEmail}
       renderCommunity();
       renderAnalytics();
       renderRequests();
+      renderCredits();
       renderSettings();
       renderReferrals();
       renderScore();
@@ -4715,6 +4787,7 @@ Email: ${userEmail}
           s.avatarVersion = Date.now();
         }
         s.requests = payload.requests || [];
+        s.credits = Array.isArray(payload.credits) ? payload.credits : [];
         s.petCatalog = normalizePetCatalog(payload.petCatalog);
         s.pets = normalizeOwnedPets(payload.pets || payload.card?.pets);
         s.petDrafts = buildPetDraftMap({
@@ -5353,6 +5426,10 @@ Email: ${userEmail}
       openOrderModal({});
     });
 
+    el.creditNewRequest?.addEventListener("click", () => {
+      openOrderModal({});
+    });
+
     document.addEventListener("change", (event) => {
       const target = event.target instanceof HTMLElement ? event.target : null;
       const toggle = target?.closest("[data-sale-toggle]");
@@ -5796,6 +5873,7 @@ Email: ${userEmail}
       }
       if (
         target.id === "profile-requests-order-btn" ||
+        target.id === "profile-credit-order-btn" ||
         target.id === "profile-analytics-order-btn"
       ) {
         openOrderModal({});

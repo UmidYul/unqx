@@ -7,6 +7,7 @@
   const TAB_META = {
     analytics:       { title: "Аналитика",             desc: "Ключевые метрики, динамика продаж и показатели активности платформы.",      action: { label: "Управлять slug", href: pageDashboardBase + "?tab=slugs" } },
     orders:          { title: "Заявки",                desc: "Входящие заявки на slug, статусы платежей и история обработки.",             action: null },
+    credits:         { title: "Кредиты",               desc: "Кредитные UNQ, графики платежей, просрочки и напоминания клиентам.",          action: null },
     purchases:       { title: "Покупки",               desc: "Все успешные покупки slug-идентификаторов и подписок.",                       action: null },
     "payment-cards": { title: "Платёжные карты",       desc: "Привязанные карты пользователей и история транзакций.",                      action: null },
     cards:           { title: "Визитки",               desc: "Управление профилями и цифровыми карточками пользователей.",                 action: null },
@@ -243,6 +244,43 @@
               </div>
             </div>
             <div id="orders-pagination" class="flex items-center justify-end gap-2 text-sm text-neutral-600"></div>
+          </section>
+        </section>
+
+        <section id="tab-credits" class="<%= pageActiveTab === 'credits' ? '' : 'hidden' %> space-y-4">
+          <header class="rounded-2xl border border-neutral-200 bg-white p-4">
+            <h2 class="text-base font-bold text-neutral-900">Кредиты</h2>
+            <p class="mt-1 text-sm text-neutral-600">Смотрите ближайшие платежи, просрочки и отмечайте оплату.</p>
+          </header>
+          <section class="rounded-2xl border border-neutral-200 bg-white p-4">
+            <form id="credits-filters" class="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+              <label class="block text-sm">
+                <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Поиск</span>
+                <input name="q" type="text" placeholder="Имя, slug, контакт"
+                  class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+              </label>
+              <label class="block text-sm">
+                <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Статус</span>
+                <select name="status" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm">
+                  <option value="all">Все</option>
+                  <option value="active">Активные</option>
+                  <option value="overdue">С просрочкой</option>
+                  <option value="completed">Закрытые</option>
+                </select>
+              </label>
+              <input type="hidden" name="page" value="1" />
+              <div class="flex items-end gap-2">
+                <button type="submit"
+                  class="inline-flex min-h-11 items-center justify-center rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">Применить</button>
+                <button type="reset"
+                  class="inline-flex min-h-11 items-center justify-center rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100">Сбросить</button>
+              </div>
+            </form>
+          </section>
+          <section class="space-y-2">
+            <h3 class="text-sm font-semibold text-neutral-900">Список кредитов</h3>
+            <div id="credits-list" class="grid gap-3"></div>
+            <div id="credits-pagination" class="flex items-center justify-end gap-2 text-sm text-neutral-600"></div>
           </section>
         </section>
 

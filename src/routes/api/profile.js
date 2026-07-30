@@ -114,6 +114,7 @@ const {
   getFreeProfileUserSelect,
   hasActivePublicProfile,
 } = require("../../services/public-handle");
+const { mapCreditForClient } = require("../../services/credits");
 
 const router = express.Router();
 const upload = multer({
@@ -1047,13 +1048,24 @@ router.get(
     }
     await touchProfileUserLastSeen(user.id);
 
-    const [slugs, card, slugRequests, petRequests, pets, petCatalog, score, pricing, supportTelegramRaw, privatePasswords, followSummary] = await Promise.all([
+    const [slugs, card, slugRequests, credits, petRequests, pets, petCatalog, score, pricing, supportTelegramRaw, privatePasswords, followSummary] = await Promise.all([
       getUserSlugsWithStats(user.id),
       findProfileCardByOwnerId(user.id),
       prisma.slugRequest.findMany({
         where: { userId: user.id },
         orderBy: { createdAt: "desc" },
       }),
+      prisma.credit && typeof prisma.credit.findMany === "function"
+        ? prisma.credit.findMany({
+          where: { userId: user.id },
+          orderBy: { createdAt: "desc" },
+          include: {
+            payments: {
+              orderBy: { installment: "asc" },
+            },
+          },
+        })
+        : [],
       listPetPurchaseRequestsByUserId(user.id),
       listOwnedPetsByUserId(user.id),
       getPetCatalog(),
@@ -1159,6 +1171,7 @@ router.get(
       petLibrary,
       tracks,
       requests: requestItems,
+      credits: credits.map((credit) => mapCreditForClient(credit)),
       score,
       pricing,
       access: {

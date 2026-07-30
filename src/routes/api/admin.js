@@ -40,6 +40,7 @@ const {
   normalizePlan,
 } = require("../../services/pricing-settings");
 const { buildOrderPaymentDraft } = require("../../services/payment-flow");
+const { mapCreditForClient } = require("../../services/credits");
 const {
   PROFILE_THEMES,
   PROFILE_AVATAR_FRAMES,
@@ -2471,6 +2472,8 @@ const MANAGER_ALLOWED_ROUTES = [
   { method: "PATCH", re: /^\/orders\/[^/]+\/status\/?$/ },
   { method: "POST", re: /^\/orders\/[^/]+\/extend-pending\/?$/ },
   { method: "GET", re: /^\/orders\/export\.csv\/?$/ },
+  { method: "GET", re: /^\/credits\/?$/ },
+  { method: "POST", re: /^\/credit-payments\/[^/]+\/pay\/?$/ },
   { method: "GET", re: /^\/verification-requests\/?$/ },
   { method: "POST", re: /^\/verification-requests\/[^/]+\/approve\/?$/ },
   { method: "POST", re: /^\/verification-requests\/[^/]+\/reject\/?$/ },
@@ -4165,6 +4168,171 @@ async function queryPaymentEvents({ query, page, pageSize }) {
   const totalAmount = Number(totalAmountRows?.[0]?.total_amount || 0);
   return { rows: Array.isArray(rows) ? rows : [], total, totalAmount, filters };
 }
+
+router.get(
+  "/credits",
+  asyncHandler(async (req, res) => {
+    if (!prisma.credit || typeof prisma.credit.findMany !== "function") {
+      res.json({ items: [], pagination: { page: 1, pageSize: 20, total: 0, totalPages: 1 } });
+      return;
+    }
+
+    const page = Math.max(1, Number(req.query.page || "1") || 1);
+    const pageSizeRaw = Number(req.query.pageSize || "20") || 20;
+    const pageSize = Math.max(1, Math.min(100, pageSizeRaw));
+    const q = String(req.query.q || "").trim();
+    const status = String(req.query.status || "all").trim().toLowerCase();
+    const managerScope = await getManagerScope(req);
+    if (isManagerScopeBlocked(managerScope)) {
+      res.json({ items: [], pagination: { page, pageSize, total: 0, totalPages: 1 } });
+      return;
+    }
+
+    const clauses = [];
+    if (status === "overdue") {
+      clauses.push({
+        payments: {
+          some: {
+            status: { not: "paid" },
+            dueDate: { lt: new Date() },
+          },
+        },
+      });
+    } else if (status !== "all" && ["active", "completed", "cancelled"].includes(status)) {
+      clauses.push({ status });
+    }
+    if (q) {
+      clauses.push({
+        OR: [
+          { slug: { contains: q.toUpperCase(), mode: "insensitive" } },
+          { user: { displayName: { contains: q, mode: "insensitive" } } },
+          { user: { firstName: { contains: q, mode: "insensitive" } } },
+          { user: { username: { contains: q.replace(/^@/, ""), mode: "insensitive" } } },
+          { user: { login: { contains: q.replace(/^@/, ""), mode: "insensitive" } } },
+        ],
+      });
+    }
+    if (managerScope.isManager) {
+      clauses.push({ user: { createdByStaffId: managerScope.managerId } });
+    }
+    const where = clauses.length ? { AND: clauses } : {};
+
+    const [total, rows] = await Promise.all([
+      prisma.credit.count({ where }),
+      prisma.credit.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+        include: {
+          user: {
+            select: {
+              id: true,
+              firstName: true,
+              displayName: true,
+              username: true,
+              login: true,
+              telegramChatId: true,
+            },
+          },
+          order: {
+            select: { id: true, status: true },
+          },
+          payments: {
+            orderBy: { installment: "asc" },
+          },
+        },
+      }),
+    ]);
+
+    res.json({
+      items: rows.map((row) => ({
+        ...mapCreditForClient(row),
+        user: {
+          id: row.userId,
+          name: row.user?.displayName || row.user?.firstName || "UNQX User",
+          username: row.user?.username || row.user?.login || "",
+          contact: row.user?.username || row.user?.login ? `@${row.user?.username || row.user?.login}` : row.user?.telegramChatId || row.userId,
+        },
+        orderStatus: row.order?.status || "",
+      })),
+      pagination: {
+        page,
+        pageSize,
+        total,
+        totalPages: Math.max(1, Math.ceil(total / pageSize)),
+      },
+    });
+  }),
+);
+
+router.post(
+  "/credit-payments/:id/pay",
+  asyncHandler(async (req, res) => {
+    if (!prisma.creditPayment || typeof prisma.creditPayment.findUnique !== "function") {
+      res.status(404).json({ error: "Credit payments are not available" });
+      return;
+    }
+
+    const payment = await prisma.creditPayment.findUnique({
+      where: { id: String(req.params.id || "") },
+      include: {
+        credit: {
+          select: {
+            id: true,
+            userId: true,
+            status: true,
+            user: { select: { createdByStaffId: true } },
+          },
+        },
+      },
+    });
+    if (!payment) {
+      res.status(404).json({ error: "Payment not found" });
+      return;
+    }
+    if (isManagerSession(req)) {
+      const managerScope = await getManagerScope(req);
+      if (payment.credit?.user?.createdByStaffId !== managerScope.managerId) {
+        res.status(404).json({ error: "Payment not found" });
+        return;
+      }
+    }
+
+    const adminNote = String(req.body?.adminNote || "").trim();
+    const updatedCredit = await prisma.$transaction(async (tx) => {
+      await tx.creditPayment.update({
+        where: { id: payment.id },
+        data: {
+          status: "paid",
+          paidAt: new Date(),
+          adminNote: adminNote || null,
+        },
+      });
+      const remaining = await tx.creditPayment.count({
+        where: {
+          creditId: payment.creditId,
+          status: { not: "paid" },
+        },
+      });
+      return tx.credit.update({
+        where: { id: payment.creditId },
+        data: remaining === 0
+          ? { status: "completed", completedAt: new Date() }
+          : { status: "active" },
+        include: {
+          user: {
+            select: { id: true, firstName: true, displayName: true, username: true, login: true, telegramChatId: true },
+          },
+          order: { select: { id: true, status: true } },
+          payments: { orderBy: { installment: "asc" } },
+        },
+      });
+    });
+
+    res.json({ ok: true, credit: mapCreditForClient(updatedCredit) });
+  }),
+);
 
 router.get(
   "/orders",

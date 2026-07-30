@@ -82,6 +82,11 @@ const {
   extractPrivateAccessToken,
 } = require("../../services/private-access");
 const {
+  buildCreditSchedule,
+  isCreditCheckout,
+  normalizeCreditMonths,
+} = require("../../services/credits");
+const {
   verifyPrivatePasswordForOwner,
 } = require("../../services/private-access-store");
 const {
@@ -2361,9 +2366,22 @@ router.post(
       user,
     });
     const tariffPriceLabelValue = subscription.isActive ? 0 : planPrice;
-    const totalOneTime = finalSlugPriceWithLucky + planPrice;
-    const theme = normalizeTheme(payload.theme);
     const requestedAt = new Date();
+    const creditRequested = isCreditCheckout(payload.paymentMode);
+    const creditMonths = normalizeCreditMonths(payload.creditMonths);
+    const creditSchedule = creditRequested
+      ? buildCreditSchedule({
+        principalAmount: finalSlugPriceWithLucky,
+        termMonths: creditMonths,
+        startDate: requestedAt,
+      })
+      : null;
+    if (creditRequested && !creditSchedule) {
+      res.status(400).json({ error: "Выберите срок кредита от 1 до 6 месяцев", code: "INVALID_CREDIT_TERM" });
+      return;
+    }
+    const totalOneTime = (creditSchedule ? creditSchedule.downPaymentAmount : finalSlugPriceWithLucky) + planPrice;
+    const theme = normalizeTheme(payload.theme);
     const requestedOrderKind = "slug_purchase";
     const subscriptionMonths = planPrice > 0 ? 1 : 0;
     const pendingExpiryHours = Math.max(1, Math.min(168, Number(await getSetting("pending_expiry_hours", 24)) || 24));
@@ -2440,6 +2458,31 @@ router.post(
           },
           select: { id: true, status: true, slug: true },
         });
+
+        if (creditSchedule && tx.credit && typeof tx.credit.create === "function") {
+          await tx.credit.create({
+            data: {
+              userId: user.id,
+              orderId: slugRequest.id,
+              slug,
+              principalAmount: creditSchedule.principalAmount,
+              downPaymentAmount: creditSchedule.downPaymentAmount,
+              financedAmount: creditSchedule.financedAmount,
+              termMonths: creditSchedule.termMonths,
+              monthlyAmount: creditSchedule.monthlyAmount,
+              status: "active",
+              startedAt: requestedAt,
+              payments: {
+                create: creditSchedule.payments.map((payment) => ({
+                  installment: payment.installment,
+                  amount: payment.amount,
+                  dueDate: payment.dueDate,
+                  status: "pending",
+                })),
+              },
+            },
+          });
+        }
 
         if (tx.referralFraudCheck) {
           await tx.referralFraudCheck.create({
@@ -2539,6 +2582,14 @@ router.post(
         statusLabel: toOrderStatusLabel("NEW"),
         themeLabel: theme || "default_dark",
         payment,
+        credit: creditSchedule
+          ? {
+            downPaymentAmount: creditSchedule.downPaymentAmount,
+            financedAmount: creditSchedule.financedAmount,
+            termMonths: creditSchedule.termMonths,
+            monthlyAmount: creditSchedule.monthlyAmount,
+          }
+          : null,
       });
     } catch (error) {
       if (error instanceof TelegramConfigError) {
@@ -2592,6 +2643,20 @@ router.post(
         fraudVerdict: fraudCheck.verdict || "allow",
         fraudHint: fraudCheck.reason || "",
         slugPrice: finalSlugPriceWithLucky,
+        paymentMode: creditSchedule ? "credit" : "cash",
+        credit: creditSchedule
+          ? {
+            downPaymentAmount: creditSchedule.downPaymentAmount,
+            financedAmount: creditSchedule.financedAmount,
+            termMonths: creditSchedule.termMonths,
+            monthlyAmount: creditSchedule.monthlyAmount,
+            payments: creditSchedule.payments.map((payment) => ({
+              installment: payment.installment,
+              amount: payment.amount,
+              dueDate: payment.dueDate,
+            })),
+          }
+          : null,
         planPrice,
         totalOneTime,
       },
@@ -3323,8 +3388,6 @@ router.get(
 module.exports = {
   publicApiRouter: router,
 };
-
-
 
 
 

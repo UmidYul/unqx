@@ -102,6 +102,11 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     fraudHint: document.getElementById("order-modal-fraud-hint"),
     nameSection: document.getElementById("order-modal-name-section"),
     name: document.getElementById("order-modal-name"),
+    paymentSection: document.getElementById("order-modal-payment-section"),
+    paymentCash: document.getElementById("order-modal-payment-cash"),
+    paymentCredit: document.getElementById("order-modal-payment-credit"),
+    creditMonthsWrap: document.getElementById("order-modal-credit-months-wrap"),
+    creditMonths: document.getElementById("order-modal-credit-months"),
     totalSlugRow: document.getElementById("order-modal-total-slug-row"),
     totalSlugTitle: document.getElementById("order-modal-total-slug-title"),
     totalSlugValue: document.getElementById("order-modal-total-slug-value"),
@@ -725,6 +730,25 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
 
   function formatPrice(number) {
     return Number(number || 0).toLocaleString("ru-RU").replace(/,/g, " ");
+  }
+
+  function selectedPaymentMode() {
+    return dom.paymentCredit instanceof HTMLInputElement && dom.paymentCredit.checked ? "credit" : "cash";
+  }
+
+  function selectedCreditMonths() {
+    const raw = dom.creditMonths instanceof HTMLSelectElement ? dom.creditMonths.value : "6";
+    const parsed = Number.parseInt(String(raw || ""), 10);
+    return Number.isFinite(parsed) ? Math.max(1, Math.min(6, parsed)) : 6;
+  }
+
+  function buildClientCreditPlan(slugAmount) {
+    const principal = Math.max(0, Math.round(Number(slugAmount || 0)));
+    const months = selectedCreditMonths();
+    const downPayment = Math.floor(principal * 0.5);
+    const financed = Math.max(0, principal - downPayment);
+    const monthly = months > 0 ? Math.ceil(financed / months) : 0;
+    return { downPayment, financed, months, monthly };
   }
 
   function formatPremiumMonthlyUsdLabel(value = state.pricing?.planPremiumMonthlyPriceUsd || DEFAULT_PRICING.planPremiumMonthlyPriceUsd) {
@@ -1683,6 +1707,13 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     dom.digits.value = normalizeDigits(dom.digits.value);
     const renewalMode = isSubscriptionRenewalMode();
     applyCheckoutModeUi();
+    const creditMode = !renewalMode && selectedPaymentMode() === "credit";
+    if (dom.paymentSection instanceof HTMLElement) {
+      dom.paymentSection.classList.toggle("hidden", renewalMode);
+    }
+    if (dom.creditMonthsWrap instanceof HTMLElement) {
+      dom.creditMonthsWrap.classList.toggle("hidden", !creditMode);
+    }
     const pricing = renewalMode ? null : calculateSlugPricing(dom.letters.value, dom.digits.value);
     const requestedPlan = selectedPlan();
     const pricingSettings = getPricing();
@@ -1756,7 +1787,8 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     const luckyTargetSlug = String(lucky?.targetSlug || "").trim().toUpperCase();
     const luckyDiscountApplied = luckyApplied ? Math.min(slugPayable, Math.round((slugPayable * luckyPercent) / 100)) : 0;
     const slugAfterLucky = Math.max(0, slugPayable - luckyDiscountApplied);
-    const oneTime = slugAfterLucky + planCharge;
+    const creditPlan = creditMode ? buildClientCreditPlan(slugAfterLucky) : null;
+    const oneTime = (creditPlan ? creditPlan.downPayment : slugAfterLucky) + planCharge;
     const slugLabel = pricing ? pricing.slug : "___ ___";
     const rarity = getRarity(slugPrice);
     const hasExistingPlan = !renewalMode && userPlan === "premium" && planCharge <= 0;
@@ -1863,7 +1895,9 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
       dom.totalSlugTitle.textContent = `UNQ ${pricing ? pricing.slug : "AAA000"}`;
     }
     if (!renewalMode && dom.totalSlugValue instanceof HTMLElement) {
-      dom.totalSlugValue.textContent = `${formatPrice(slugAfterLucky)} сум`;
+      dom.totalSlugValue.textContent = creditPlan
+        ? `${formatPrice(creditPlan.downPayment)} сум сейчас`
+        : `${formatPrice(slugAfterLucky)} сум`;
     }
     if (dom.totalPlanTitle instanceof HTMLElement) {
       dom.totalPlanTitle.textContent = "Подписка Premium";
@@ -1925,7 +1959,9 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     if (dom.totalMonthly instanceof HTMLElement) {
       dom.totalMonthly.textContent = renewalMode
         ? "Продление Premium · 30 дней после оплаты"
-        : "Premium подписка · $2/мес · продление вручную";
+        : creditPlan
+          ? `Кредит 0% · остаток ${formatPrice(creditPlan.financed)} сум · ${formatPrice(creditPlan.monthly)} сум/мес на ${creditPlan.months} мес.`
+          : "Premium подписка · $2/мес · продление вручную";
     }
     if (renewalMode) {
       setCampaignHint("");
@@ -2443,6 +2479,8 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
         products: {
           digitalCard: true,
         },
+        paymentMode: selectedPaymentMode(),
+        creditMonths: selectedCreditMonths(),
         ...(state.dropId ? { dropId: state.dropId } : {}),
       });
       const expiresAtIso = payload.pendingExpiresAt || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
@@ -2682,6 +2720,9 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
   dom.digits.addEventListener("input", () => void updateTotals());
   dom.planBasic.addEventListener("change", () => void updateTotals());
   dom.planPremium.addEventListener("change", () => void updateTotals());
+  dom.paymentCash?.addEventListener("change", () => void updateTotals());
+  dom.paymentCredit?.addEventListener("change", () => void updateTotals());
+  dom.creditMonths?.addEventListener("change", () => void updateTotals());
   dom.promoCode?.addEventListener("input", () => {
     if (!(dom.promoCode instanceof HTMLInputElement)) return;
     dom.promoCode.value = String(dom.promoCode.value || "")
@@ -2845,8 +2886,4 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     bindCtas();
   });
 })();
-
-
-
-
 

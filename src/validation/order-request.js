@@ -25,6 +25,8 @@ const OrderRequestSchema = z.object({
   refSource: z.string().trim().max(40).optional(),
   refOffer: z.string().trim().max(80).optional(),
   promoCode: z.string().trim().max(32).optional(),
+  paymentMode: z.enum(["cash", "credit"]).default("cash"),
+  creditMonths: z.coerce.number().int().min(1).max(6).optional(),
 });
 
 module.exports = {
