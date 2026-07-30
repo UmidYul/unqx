@@ -360,6 +360,41 @@ async function getActiveFlashSale() {
   });
 }
 
+async function getActiveFlashSaleForSlug(slug) {
+  if (!prisma.flashSale || typeof prisma.flashSale.findMany !== "function") {
+    return null;
+  }
+  const normalized = normalizeSlug(slug);
+  if (!SLUG_PATTERN.test(normalized)) {
+    return null;
+  }
+  const now = new Date();
+  const sales = await prisma.flashSale.findMany({
+    where: {
+      isActive: true,
+      startsAt: { lte: now },
+      endsAt: { gt: now },
+    },
+    orderBy: [{ discountPercent: "desc" }, { startsAt: "desc" }],
+    take: 50,
+  });
+  return selectBestFlashSaleForSlug(sales, normalized);
+}
+
+function selectBestFlashSaleForSlug(sales, slug) {
+  const normalized = normalizeSlug(slug);
+  if (!SLUG_PATTERN.test(normalized) || !Array.isArray(sales)) {
+    return null;
+  }
+  return sales
+    .filter((sale) => isSlugMatchedByFlashSale({ slug: normalized, sale }))
+    .sort((a, b) => {
+      const discountDelta = Number(b?.discountPercent || 0) - Number(a?.discountPercent || 0);
+      if (discountDelta) return discountDelta;
+      return new Date(b?.startsAt || 0).getTime() - new Date(a?.startsAt || 0).getTime();
+    })[0] || null;
+}
+
 function applyFlashSaleToPrice({ slug, basePrice, sale }) {
   if (!sale || !isSlugMatchedByFlashSale({ slug, sale })) {
     return {
@@ -458,6 +493,8 @@ async function getFlashSaleSlotsLeft(sale) {
 module.exports = {
   normalizeSlug,
   getActiveFlashSale,
+  getActiveFlashSaleForSlug,
+  selectBestFlashSaleForSlug,
   getFlashSaleSlotsLeft,
   isSlugMatchedByFlashSale,
   applyFlashSaleToPrice,

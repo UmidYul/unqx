@@ -19,6 +19,7 @@ const {
 } = require("../../services/payment-flow");
 const {
   getActiveFlashSale,
+  getActiveFlashSaleForSlug,
   applyFlashSaleToPrice,
   resolveConditionLabel,
   resolveFlashSalePresentation,
@@ -593,7 +594,7 @@ async function buildSlugPricePayload(slug) {
   ]);
   const hasPriceOverride = typeof slugRow?.price === "number";
   const basePrice = hasPriceOverride ? Number(slugRow.price) : Number(pricing.total);
-  const activeSale = await getActiveFlashSale();
+  const activeSale = await getActiveFlashSaleForSlug(slug);
   const flash = applyFlashSaleToPrice({
     slug,
     basePrice,
@@ -2299,7 +2300,7 @@ router.post(
           total: state.priceOverride,
         }
         : calculateSlugPrice({ letters: payload.letters, digits: payload.digits, config: slugPricingConfig });
-    const activeFlashSale = await getActiveFlashSale();
+    const activeFlashSale = await getActiveFlashSaleForSlug(slug);
     const flashApplied = applyFlashSaleToPrice({
       slug,
       basePrice: basePricing.total,
@@ -3390,7 +3391,6 @@ router.get(
 module.exports = {
   publicApiRouter: router,
 };
-
 
 
 

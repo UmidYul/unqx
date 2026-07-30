@@ -5,6 +5,7 @@ const {
   isSlugMatchedByFlashSale,
   resolveConditionLabel,
   resolveFlashSalePresentation,
+  selectBestFlashSaleForSlug,
 } = require("../../src/services/flash-sales");
 
 describe("flash sale custom patterns", () => {
@@ -103,5 +104,26 @@ describe("flash sale custom patterns", () => {
     expect(presentation.examples).toContain("ABC000");
     expect(presentation.examples).toContain("AAA111");
   });
-});
 
+  test("keeps all-UNQ discount visible when another active custom sale does not match", () => {
+    const selected = selectBestFlashSaleForSlug([
+      {
+        title: "Only AAA",
+        conditionType: "custom",
+        discountPercent: 80,
+        startsAt: new Date("2026-07-30T10:00:00Z"),
+        conditionValue: {
+          slugPatterns: ["AAA***"],
+        },
+      },
+      {
+        title: "All numbers",
+        conditionType: "all",
+        discountPercent: 50,
+        startsAt: new Date("2026-07-30T09:00:00Z"),
+      },
+    ], "BBB123");
+
+    expect(selected?.title).toBe("All numbers");
+  });
+});
