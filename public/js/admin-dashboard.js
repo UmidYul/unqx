@@ -1879,6 +1879,98 @@
     });
   }
 
+  function toDateTimeLocalValue(date) {
+    const value = date instanceof Date ? date : new Date(date || "");
+    if (Number.isNaN(value.getTime())) return "";
+    const pad = (number) => String(number).padStart(2, "0");
+    return `${value.getFullYear()}-${pad(value.getMonth() + 1)}-${pad(value.getDate())}T${pad(value.getHours())}:${pad(value.getMinutes())}`;
+  }
+
+  function readFlashSaleForm(form) {
+    const conditionType = getFormValue(form, "conditionType", "all");
+    const isActiveField = form.elements.namedItem("isActive");
+    const notifyTelegramField = form.elements.namedItem("notifyTelegram");
+    const body = {
+      title: getFormValue(form, "title", "Скидка на UNQ"),
+      description: getFormValue(form, "description", ""),
+      discountPercent: Number(getFormValue(form, "discountPercent", "50") || 50),
+      conditionType,
+      startsAt: getFormValue(form, "startsAt", ""),
+      endsAt: getFormValue(form, "endsAt", ""),
+      isActive: isActiveField instanceof HTMLInputElement ? isActiveField.checked : true,
+      notifyTelegram: notifyTelegramField instanceof HTMLInputElement ? notifyTelegramField.checked : false,
+      telegramTarget: getFormValue(form, "telegramTarget", ""),
+    };
+    if (conditionType === "custom") {
+      const includeInput = getFormValue(form, "conditionIncludeInput", "");
+      const excludeInput = getFormValue(form, "conditionExcludeInput", "")
+        .split(/[\s,;]+/g)
+        .map((item) => String(item || "").trim())
+        .filter(Boolean)
+        .map((item) => `!${item}`)
+        .join("\n");
+      body.conditionValue = {
+        matchMode: getFormValue(form, "conditionMatchMode", "any"),
+        patternsInput: [includeInput, excludeInput].filter(Boolean).join("\n"),
+      };
+    }
+    return body;
+  }
+
+  function setFlashSaleTomorrow50() {
+    const form = document.getElementById("flash-sales-create-form");
+    if (!(form instanceof HTMLFormElement)) return;
+    const now = new Date();
+    const start = new Date(now);
+    start.setDate(start.getDate() + 1);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(start);
+    end.setHours(23, 59, 0, 0);
+    setFormValue(form, "title", "Завтра -50% на все UNQ");
+    setFormValue(form, "discountPercent", "50");
+    setFormValue(form, "conditionType", "all");
+    setFormValue(form, "description", "Только завтра скидка 50% на все свободные UNQ. Цена со скидкой появится сразу в калькуляторе.");
+    setFormValue(form, "startsAt", toDateTimeLocalValue(start));
+    setFormValue(form, "endsAt", toDateTimeLocalValue(end));
+    const active = form.elements.namedItem("isActive");
+    if (active instanceof HTMLInputElement) active.checked = true;
+  }
+
+  async function loadFlashSales() {
+    const table = document.getElementById("flash-sales-table");
+    if (!(table instanceof HTMLElement)) return;
+    const response = await fetch("/api/admin/flash-sales", { headers: H() });
+    if (!response.ok) {
+      table.innerHTML = `<tr><td colspan="6" class="px-4 py-8 text-center text-red-700">${X(await E(response))}</td></tr>`;
+      return;
+    }
+    const payload = await response.json().catch(() => ({}));
+    const items = Array.isArray(payload.items) ? payload.items : [];
+    table.innerHTML = items.length
+      ? items.map((item) => {
+        const now = Date.now();
+        const startsAt = item.startsAt ? new Date(item.startsAt).getTime() : 0;
+        const endsAt = item.endsAt ? new Date(item.endsAt).getTime() : 0;
+        const isRunning = item.isActive && startsAt <= now && endsAt > now;
+        const isScheduled = item.isActive && startsAt > now;
+        const statusCode = isRunning ? "active" : isScheduled ? "pending" : item.isActive ? "completed" : "cancelled";
+        const condition = String(item.conditionType || "all") === "all" ? "Все UNQ" : X(item.conditionType || "");
+        const menu = menuWrap([
+          item.isActive ? menuItem({ label: "Остановить", icon: "xCircle", attrs: `data-act="flash-stop" data-id="${X(item.id)}"`, danger: true }) : "",
+          menuItem({ label: "Удалить", icon: "trash", attrs: `data-act="flash-delete" data-id="${X(item.id)}"`, danger: true }),
+        ].join(""));
+        return `<tr class="admin-table-row border-t border-neutral-100">
+          <td class="px-4 py-3"><div class="font-semibold">${X(item.title || "Акция")}</div><div class="text-xs text-neutral-500">${condition}</div></td>
+          <td class="px-4 py-3 font-semibold text-emerald-700">-${X(String(item.discountPercent || 0))}%</td>
+          <td class="px-4 py-3 text-xs">${D(item.startsAt)}<br>${D(item.endsAt)}</td>
+          <td class="px-4 py-3">${statusChip(statusCode)}</td>
+          <td class="px-4 py-3 text-xs text-neutral-600">${X(item.description || "Калькулятор покажет старую и новую цену автоматически.")}</td>
+          <td class="px-4 py-3 text-right">${menu}</td>
+        </tr>`;
+      }).join("")
+      : `<tr><td colspan="6" class="px-4 py-10 text-center text-neutral-500">${I("creditCard", 48)}<div class="mt-2">Акций пока нет</div></td></tr>`;
+  }
+
   async function loadPurchases() {
     const form = document.getElementById("purchases-filters");
     const table = document.getElementById("purchases-table");
@@ -4863,6 +4955,24 @@
       else void loadCredits();
       return;
     }
+    if (a === "flash-stop") {
+      const id = n.getAttribute("data-id");
+      if (!id) return;
+      if (!await showConfirm("Остановить эту скидку прямо сейчас?")) return;
+      const r = await fetch(`/api/admin/flash-sales/${encodeURIComponent(id)}/stop`, { method: "POST", headers: H() });
+      if (!r.ok) await showAlert(await E(r));
+      else void loadFlashSales();
+      return;
+    }
+    if (a === "flash-delete") {
+      const id = n.getAttribute("data-id");
+      if (!id) return;
+      if (!await showConfirm("Удалить эту скидку?")) return;
+      const r = await fetch(`/api/admin/flash-sales/${encodeURIComponent(id)}`, { method: "DELETE", headers: H() });
+      if (!r.ok) await showAlert(await E(r));
+      else void loadFlashSales();
+      return;
+    }
     if (a === "ub") { const telegramId = n.getAttribute("data-id"); const status = n.getAttribute("data-status"); if (!telegramId) return; const isBlocked = status === "blocked"; if (!isBlocked && !await showConfirm("Заблокировать пользователя и деактивировать его slug?")) return; if (isBlocked && !await showConfirm("Разблокировать пользователя и восстановить статусы slug?")) return; const r = await fetch(`/api/admin/users/${encodeURIComponent(telegramId)}/${isBlocked ? "unblock" : "block"}`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({}) }); if (!r.ok) showAlert(await E(r)); else void loadUsers(); }
     if (a === "ud") {
       const userId = n.getAttribute("data-id");
@@ -5246,6 +5356,25 @@
       setFormValue(form, "page", "1");
       void loadCredits();
     }, 0);
+  });
+  document.getElementById("flash-sales-tomorrow-50")?.addEventListener("click", setFlashSaleTomorrow50);
+  document.getElementById("flash-sales-create-form")?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    if (!(form instanceof HTMLFormElement)) return;
+    const response = await fetch("/api/admin/flash-sales", {
+      method: "POST",
+      headers: H({ "Content-Type": "application/json" }),
+      body: JSON.stringify(readFlashSaleForm(form)),
+    });
+    if (!response.ok) {
+      await showAlert(await E(response));
+      return;
+    }
+    await showAlert("Акция создана. Калькулятор начнёт показывать скидку в заданный период.");
+    form.reset();
+    setFlashSaleTomorrow50();
+    void loadFlashSales();
   });
   document.getElementById("purchases-filters")?.addEventListener("submit", (e) => { e.preventDefault(); const f = e.currentTarget; if (f instanceof HTMLFormElement) setFormValue(f, "page", "1"); void loadPurchases(); });
   document.getElementById("advertisements-form")?.addEventListener("submit", async (e) => {
@@ -6231,6 +6360,11 @@
     dbg("load", "purchases");
     void loadPurchases();
     void loadPricingSettings();
+  }
+  if (tab === "flash-sales") {
+    dbg("load", "flash-sales");
+    setFlashSaleTomorrow50();
+    void loadFlashSales();
   }
   if (normalizedTab === "payment-cards") {
     dbg("load", "payment-cards");

@@ -1567,7 +1567,7 @@ function initSlugAvailability(orderApi) {
       statusIcon.innerHTML = ICON_OK;
       statusText.textContent = `Такой UNQ свободен: ${slug}`;
       statusNote.textContent = priceInfo?.hasFlashSale
-        ? `Flash Sale: вместо ${formatPrice(priceInfo.basePrice)} сум теперь ${formatPrice(priceInfo.price)} сум (-${priceInfo.discountPercent}%).`
+        ? `Акция: вместо ${formatPrice(priceInfo.basePrice)} сум теперь ${formatPrice(priceInfo.price)} сум (-${priceInfo.discountPercent}%).`
         : "Можешь сразу купить и занять его.";
       renderSuggestions([]);
       setTakenOwner(null);
@@ -2165,9 +2165,10 @@ function initSlugCalculator(orderApi) {
         animateNumberText(flashFinalNode, lastAnimatedPrice, finalPrice);
       }
       const flashRuleLabel = String(serverPricing?.flashSale?.conditionLabel || "").trim();
+      const flashTitle = String(serverPricing?.flashSale?.title || "Акция").trim();
       resultFormula.textContent = flashRuleLabel
-        ? `Скидка Flash Sale применена: -${serverPricing.flash.discountPercent}% по условию «${flashRuleLabel}».`
-        : `Скидка Flash Sale применена: -${serverPricing.flash.discountPercent}%.`;
+        ? `${flashTitle}: -${serverPricing.flash.discountPercent}% · ${flashRuleLabel} · цена со скидкой ${formatPrice(finalPrice)} сум.`
+        : `${flashTitle}: -${serverPricing.flash.discountPercent}% · цена со скидкой ${formatPrice(finalPrice)} сум.`;
     } else if (serverPricing.source === "override") {
       animateNumberText(resultPrice, lastAnimatedPrice, finalPrice);
       resultFormula.textContent = `Персональная цена: ${formatPrice(finalPrice)} сум`;

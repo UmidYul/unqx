@@ -1850,9 +1850,10 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     if (!renewalMode && dom.formula instanceof HTMLElement) {
       if (server?.flash) {
         const flashRuleLabel = String(server?.flashSale?.conditionLabel || state.flashSaleMeta?.conditionLabel || "").trim();
+        const flashTitle = String(server?.flashSale?.title || state.flashSaleMeta?.title || "Акция").trim();
         dom.formula.textContent = flashRuleLabel
-          ? `Скидка Flash Sale применена: -${server.flash.discountPercent}% по условию «${flashRuleLabel}».`
-          : `Скидка Flash Sale применена: -${server.flash.discountPercent}%.`;
+          ? `${flashTitle}: -${server.flash.discountPercent}% · ${flashRuleLabel} · цена со скидкой ${formatPrice(slugPrice)} сум.`
+          : `${flashTitle}: -${server.flash.discountPercent}% · цена со скидкой ${formatPrice(slugPrice)} сум.`;
       } else if (server?.source === "override") {
         dom.formula.textContent = `Персональная цена: ${formatPrice(slugPrice)} сум`;
       } else {
@@ -2886,4 +2887,3 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     bindCtas();
   });
 })();
-

@@ -621,6 +621,8 @@ async function buildSlugPricePayload(slug) {
     flashSale: activeSale
       ? {
         saleId: activeSale.id,
+        title: activeSale.title || "",
+        description: activeSale.description || "",
         matchesCurrentSlug: flash.hasDiscount,
         discountPercent: Number(activeSale.discountPercent || 0),
         conditionLabel: resolveConditionLabel(activeSale),
@@ -3388,7 +3390,6 @@ router.get(
 module.exports = {
   publicApiRouter: router,
 };
-
 
 
 
