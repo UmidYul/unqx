@@ -2030,6 +2030,18 @@
     setFormValue(form, "pricingFootnote", String(settings.pricingFootnote || ""));
     setFormValue(form, "slugPriceMarkupPercent", String(Number(settings.slugPriceMarkupPercent || 0)));
     setFormValue(form, "slugPriceMarkupComment", String(settings.slugPriceMarkupComment || ""));
+    setPricingMarkupCommentsVisible(Boolean(String(settings.slugPriceMarkupComment || "").trim()));
+  }
+
+  function setPricingMarkupCommentsVisible(open) {
+    const panel = document.getElementById("pricing-markup-comments-panel");
+    const toggle = document.getElementById("pricing-markup-comments-toggle");
+    if (panel instanceof HTMLElement) {
+      panel.classList.toggle("hidden", !open);
+    }
+    if (toggle instanceof HTMLButtonElement) {
+      toggle.setAttribute("aria-expanded", open ? "true" : "false");
+    }
   }
 
   async function loadUsers() {
@@ -5687,6 +5699,15 @@
     else {
       await loadPricingSettings();
       showAlert("Тарифы обновлены");
+    }
+  });
+  document.getElementById("pricing-markup-comments-toggle")?.addEventListener("click", () => {
+    const panel = document.getElementById("pricing-markup-comments-panel");
+    const nextOpen = panel instanceof HTMLElement ? panel.classList.contains("hidden") : true;
+    setPricingMarkupCommentsVisible(nextOpen);
+    if (nextOpen) {
+      const input = document.querySelector('[name="slugPriceMarkupComment"]');
+      if (input instanceof HTMLTextAreaElement) input.focus();
     }
   });
   document.getElementById("users-filters")?.addEventListener("submit", (e) => { e.preventDefault(); const f = e.currentTarget; if (f instanceof HTMLFormElement) setFormValue(f, "page", "1"); void loadUsers(); });
