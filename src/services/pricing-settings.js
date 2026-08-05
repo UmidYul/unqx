@@ -16,6 +16,14 @@ function toPrice(value, fallback) {
   return Math.max(0, Math.round(parsed));
 }
 
+function toMarkupPercent(value, fallback = 0) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) {
+    return fallback;
+  }
+  return Math.max(0, Math.min(500, Math.round(parsed * 100) / 100));
+}
+
 function normalizePricingSettings(raw) {
   const defaults = DEFAULTS.pricing || {};
   const legacyPremiumPrice = toPrice(raw?.planPremiumPrice, defaults.planPremiumPrice || 130_000);
@@ -34,6 +42,15 @@ function normalizePricingSettings(raw) {
         defaults.pricingFootnote ??
         "",
     ).trim(),
+    slugPriceMarkupPercent: toMarkupPercent(
+      raw?.slugPriceMarkupPercent,
+      defaults.slugPriceMarkupPercent || 0,
+    ),
+    slugPriceMarkupComment: String(
+      raw?.slugPriceMarkupComment ??
+        defaults.slugPriceMarkupComment ??
+        "",
+    ).trim(),
   };
 }
 
@@ -43,12 +60,16 @@ async function getPricingSettings() {
     "plan_premium_monthly_price_uzs",
     "plan_premium_price",
     "pricing_footnote",
+    "pricing_slug_markup_percent",
+    "pricing_slug_markup_comment",
   ]);
   const raw = {
     planPremiumMonthlyPriceUsd: values.plan_premium_monthly_price_usd,
     planPremiumMonthlyPriceUzs: values.plan_premium_monthly_price_uzs,
     planPremiumPrice: values.plan_premium_price,
     pricingFootnote: values.pricing_footnote,
+    slugPriceMarkupPercent: values.pricing_slug_markup_percent,
+    slugPriceMarkupComment: values.pricing_slug_markup_comment,
   };
   return normalizePricingSettings(raw);
 }
@@ -65,9 +86,34 @@ async function setPricingSettings(nextPatch) {
     // Keep legacy key in sync to avoid breaking old dashboard widgets
     plan_premium_price: next.planPremiumMonthlyPriceUzs,
     pricing_footnote: next.pricingFootnote,
+    pricing_slug_markup_percent: next.slugPriceMarkupPercent,
+    pricing_slug_markup_comment: next.slugPriceMarkupComment,
   });
   await setFeatureSetting("pricing", next);
   return next;
+}
+
+function applySlugPriceMarkup(basePrice, pricing) {
+  const normalizedBase = Math.max(0, Math.round(Number(basePrice || 0)));
+  const settings = normalizePricingSettings(pricing || {});
+  const percent = settings.slugPriceMarkupPercent;
+  if (!percent) {
+    return {
+      basePrice: normalizedBase,
+      finalPrice: normalizedBase,
+      markupPercent: 0,
+      markupAmount: 0,
+      comment: settings.slugPriceMarkupComment,
+    };
+  }
+  const markupAmount = Math.max(0, Math.round((normalizedBase * percent) / 100));
+  return {
+    basePrice: normalizedBase,
+    finalPrice: normalizedBase + markupAmount,
+    markupPercent: percent,
+    markupAmount,
+    comment: settings.slugPriceMarkupComment,
+  };
 }
 
 async function getBraceletPrice() {
@@ -112,6 +158,7 @@ module.exports = {
   normalizePricingSettings,
   getPricingSettings,
   setPricingSettings,
+  applySlugPriceMarkup,
   getBraceletPrice,
   resolveRequestedPlanForOrder,
   getPlanCharge,

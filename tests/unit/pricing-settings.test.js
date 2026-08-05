@@ -1,4 +1,4 @@
-const { getPlanCharge, resolveRequestedPlanForOrder } = require("../../src/services/pricing-settings");
+const { applySlugPriceMarkup, getPlanCharge, resolveRequestedPlanForOrder } = require("../../src/services/pricing-settings");
 
 describe("pricing charge logic", () => {
   const pricing = {
@@ -7,14 +7,14 @@ describe("pricing charge logic", () => {
     premiumUpgradePrice: 80_000,
   };
 
-  test("none -> basic charges basic", () => {
+  test("none -> basic resolves to premium monthly charge", () => {
     expect(
       getPlanCharge({
         currentPlan: "none",
         requestedPlan: "basic",
         pricing,
       }),
-    ).toBe(50_000);
+    ).toBe(130_000);
   });
 
   test("none -> premium charges premium", () => {
@@ -27,14 +27,14 @@ describe("pricing charge logic", () => {
     ).toBe(130_000);
   });
 
-  test("basic -> premium charges upgrade", () => {
+  test("basic -> premium has no extra charge when subscription snapshot is active", () => {
     expect(
       getPlanCharge({
         currentPlan: "basic",
         requestedPlan: "premium",
         pricing,
       }),
-    ).toBe(80_000);
+    ).toBe(0);
   });
 
   test("premium stays premium with zero charge", () => {
@@ -49,6 +49,19 @@ describe("pricing charge logic", () => {
 
   test("requested plan normalized against current", () => {
     expect(resolveRequestedPlanForOrder({ currentPlan: "premium", requestedPlan: "basic" })).toBe("premium");
-    expect(resolveRequestedPlanForOrder({ currentPlan: "none", requestedPlan: "basic" })).toBe("basic");
+    expect(resolveRequestedPlanForOrder({ currentPlan: "none", requestedPlan: "basic" })).toBe("premium");
+  });
+
+  test("applies global slug markup percent to base prices", () => {
+    expect(
+      applySlugPriceMarkup(1_000_000, {
+        slugPriceMarkupPercent: 10,
+      }),
+    ).toMatchObject({
+      basePrice: 1_000_000,
+      finalPrice: 1_100_000,
+      markupPercent: 10,
+      markupAmount: 100_000,
+    });
   });
 });

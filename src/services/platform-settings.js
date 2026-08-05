@@ -83,6 +83,22 @@ const DEFAULT_SETTINGS = [
     value: "Premium-подписка оплачивается ежемесячно. Без автосписаний.",
   },
   {
+    key: "pricing_slug_markup_percent",
+    group: "pricing",
+    type: "number",
+    label: "Глобальная наценка на номера (%)",
+    description: "Процент добавляется ко всем итоговым ценам UNQ-номеров до акций, промокодов и реферальных скидок.",
+    value: 0,
+  },
+  {
+    key: "pricing_slug_markup_comment",
+    group: "pricing",
+    type: "textarea",
+    label: "Комментарий к наценке номеров",
+    description: "Внутренний комментарий для админки: причина или дата изменения наценки.",
+    value: "",
+  },
+  {
     key: "payment_provider",
     group: "pricing",
     type: "text",

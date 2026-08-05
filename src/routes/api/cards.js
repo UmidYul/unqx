@@ -31,6 +31,7 @@ const {
   getBraceletPrice,
   resolveRequestedPlanForOrder,
   getPlanCharge,
+  applySlugPriceMarkup,
 } = require("../../services/pricing-settings");
 const {
   PROFILE_THEMES,
@@ -580,7 +581,7 @@ async function buildSlugPricePayload(slug) {
     return null;
   }
 
-  const [pricing, slugRow] = await Promise.all([
+  const [pricing, slugRow, globalPricing] = await Promise.all([
     calculateSlugPriceFromSettings({
       letters: parsed.letters,
       digits: parsed.digits,
@@ -591,9 +592,12 @@ async function buildSlugPricePayload(slug) {
         select: { price: true },
       }),
     ),
+    getPricingSettings(),
   ]);
   const hasPriceOverride = typeof slugRow?.price === "number";
-  const basePrice = hasPriceOverride ? Number(slugRow.price) : Number(pricing.total);
+  const rawBasePrice = hasPriceOverride ? Number(slugRow.price) : Number(pricing.total);
+  const markup = applySlugPriceMarkup(rawBasePrice, globalPricing);
+  const basePrice = markup.finalPrice;
   const activeSale = await getActiveFlashSaleForSlug(slug);
   const flash = applyFlashSaleToPrice({
     slug,
@@ -614,7 +618,18 @@ async function buildSlugPricePayload(slug) {
       multipliedBase: Number(pricing.multipliedBase || 0),
       customDeltaTotal: Number(pricing.customDeltaTotal || 0),
       customBreakdown: Array.isArray(pricing.customBreakdown) ? pricing.customBreakdown : [],
+      rawTotal: markup.basePrice,
+      markupPercent: markup.markupPercent,
+      markupAmount: markup.markupAmount,
+      markupComment: markup.comment,
     },
+    markup: markup.markupPercent > 0
+      ? {
+        percent: markup.markupPercent,
+        amount: markup.markupAmount,
+        comment: markup.comment,
+      }
+      : null,
     hasFlashSale: flash.hasDiscount,
     discountAmount: flash.discountAmount,
     discountPercent: flash.discountPercent,
@@ -875,10 +890,13 @@ function buildRandomDigitsAffordable() {
 
 async function generateAffordableCandidates({ limit = 120 }) {
   const targetLimit = Math.max(20, Math.min(300, Number(limit) || 120));
-  const config = await getSlugPricingConfig();
+  const [config, globalPricing] = await Promise.all([
+    getSlugPricingConfig(),
+    getPricingSettings(),
+  ]);
   const basePrice = Math.max(1, Number(config?.basePrice || 100_000));
   const minTotal = Math.round(basePrice);
-  const maxTotal = Math.round(basePrice * 8);
+  const maxTotal = applySlugPriceMarkup(basePrice * 8, globalPricing).finalPrice;
   const out = [];
   const seen = new Set();
   const attempts = 650;
@@ -889,13 +907,14 @@ async function generateAffordableCandidates({ limit = 120 }) {
     seen.add(slug);
     const parsed = splitSlug(slug);
     if (!parsed) continue;
-    const price = Number(
+    const rawPrice = Number(
       calculateSlugPrice({
         letters: parsed.letters,
         digits: parsed.digits,
         config,
       }).total,
     );
+    const price = applySlugPriceMarkup(rawPrice, globalPricing).finalPrice;
     if (price < minTotal || price > maxTotal) continue;
     out.push({ slug, price });
     if (out.length >= targetLimit) break;
@@ -1031,7 +1050,10 @@ router.get(
       }),
     );
 
-    const slugPricingConfig = await getSlugPricingConfig();
+    const [slugPricingConfig, globalPricing] = await Promise.all([
+      getSlugPricingConfig(),
+      getPricingSettings(),
+    ]);
 
     const itemsMap = new Map();
     for (const row of newItems) {
@@ -1048,7 +1070,10 @@ router.get(
           }).total,
         )
         : 0;
-      const resolvedPrice = typeof row.price === "number" ? Number(row.price) : calculatedPrice;
+      const resolvedPrice = applySlugPriceMarkup(
+        typeof row.price === "number" ? Number(row.price) : calculatedPrice,
+        globalPricing,
+      ).finalPrice;
 
       itemsMap.set(row.fullSlug, {
         slug: row.fullSlug,
@@ -2300,10 +2325,19 @@ router.post(
           total: state.priceOverride,
         }
         : calculateSlugPrice({ letters: payload.letters, digits: payload.digits, config: slugPricingConfig });
+    const slugMarkup = applySlugPriceMarkup(basePricing.total, pricing);
+    const markedBasePricing = {
+      ...basePricing,
+      total: slugMarkup.finalPrice,
+      rawTotal: slugMarkup.basePrice,
+      markupPercent: slugMarkup.markupPercent,
+      markupAmount: slugMarkup.markupAmount,
+      markupComment: slugMarkup.comment,
+    };
     const activeFlashSale = await getActiveFlashSaleForSlug(slug);
     const flashApplied = applyFlashSaleToPrice({
       slug,
-      basePrice: basePricing.total,
+      basePrice: markedBasePricing.total,
       sale: activeFlashSale,
     });
     const slugPriceAfterProductDiscount = flashApplied.finalPrice;
@@ -2352,7 +2386,7 @@ router.post(
         finalSlugPayable: slugPriceAfterPromo,
       }
       : computeDiscountAllocation({
-        slugBasePrice: basePricing.total,
+        slugBasePrice: markedBasePricing.total,
         slugPriceAfterProductDiscount,
         inviteeDiscountCandidate,
         walletBalance: walletBalanceForPricing,
@@ -3391,6 +3425,3 @@ router.get(
 module.exports = {
   publicApiRouter: router,
 };
-
-
-

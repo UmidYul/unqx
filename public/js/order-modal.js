@@ -1880,11 +1880,16 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
           .join(" ");
         const customDeltaTotal = Number(calc?.customDeltaTotal ?? (pricing?.customDeltaTotal || 0));
         const tail = customParts ? ` ${customParts}` : "";
+        const markupPercent = Number(calc?.markupPercent || 0);
+        const markupAmount = Number(calc?.markupAmount || 0);
+        const markupTail = markupPercent > 0 && markupAmount > 0
+          ? ` + ${formatPrice(markupAmount)} (${markupPercent}% наценка)`
+          : "";
         if (!customParts && customDeltaTotal) {
           const sign = customDeltaTotal > 0 ? "+" : "-";
-          dom.formula.textContent = `${formatPrice(base)} × ${lettersMultiplier} × ${digitsMultiplier} ${sign} ${formatPrice(Math.abs(customDeltaTotal))} = ${formatPrice(slugPrice)} сум`;
+          dom.formula.textContent = `${formatPrice(base)} × ${lettersMultiplier} × ${digitsMultiplier} ${sign} ${formatPrice(Math.abs(customDeltaTotal))}${markupTail} = ${formatPrice(slugPrice)} сум`;
         } else {
-          dom.formula.textContent = `${formatPrice(base)} × ${lettersMultiplier} × ${digitsMultiplier}${tail} = ${formatPrice(slugPrice)} сум`;
+          dom.formula.textContent = `${formatPrice(base)} × ${lettersMultiplier} × ${digitsMultiplier}${tail}${markupTail} = ${formatPrice(slugPrice)} сум`;
         }
       }
     }

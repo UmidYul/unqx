@@ -62,6 +62,10 @@ function validateSettingValue(key, value) {
     const n = Number(value);
     if (!Number.isFinite(n) || n < 0) return "Цена не может быть отрицательной";
   }
+  if (k === "pricing_slug_markup_percent") {
+    const n = Number(value);
+    if (!Number.isFinite(n) || n < 0 || n > 500) return "Наценка должна быть от 0 до 500%";
+  }
   if (k === "pending_expiry_hours") {
     const n = Number(value);
     if (!Number.isFinite(n) || n < 1 || n > 168) return "pending_expiry_hours должен быть от 1 до 168";
@@ -1330,6 +1334,8 @@ router.patch(
       ...(req.body.planPremiumPrice !== undefined ? { planPremiumPrice: Number(req.body.planPremiumPrice) } : {}),
       ...(req.body.premiumUpgradePrice !== undefined ? { premiumUpgradePrice: Number(req.body.premiumUpgradePrice) } : {}),
       ...(req.body.pricingFootnote !== undefined ? { pricingFootnote: String(req.body.pricingFootnote || "") } : {}),
+      ...(req.body.slugPriceMarkupPercent !== undefined ? { slugPriceMarkupPercent: Number(req.body.slugPriceMarkupPercent) } : {}),
+      ...(req.body.slugPriceMarkupComment !== undefined ? { slugPriceMarkupComment: String(req.body.slugPriceMarkupComment || "") } : {}),
     });
     res.json({ ok: true, settings: next });
   }),

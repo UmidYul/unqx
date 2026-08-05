@@ -37,6 +37,7 @@ const {
   getPlanCharge,
   getPlanPurchaseType,
   getPricingSettings,
+  applySlugPriceMarkup,
   normalizePlan,
 } = require("../../services/pricing-settings");
 const { buildOrderPaymentDraft } = require("../../services/payment-flow");
@@ -1785,13 +1786,16 @@ function sendAssignableSlugValidationError(res, value, options = {}) {
 
 async function getCalculatedShortSlugPrice(slug) {
   if (!isLegacySlug(slug)) return 0;
-  const slugPricingConfig = await getSlugPricingConfig();
+  const [slugPricingConfig, pricingSettings] = await Promise.all([
+    getSlugPricingConfig(),
+    getPricingSettings(),
+  ]);
   const quote = calculateSlugPrice({
     letters: slug.slice(0, 3),
     digits: slug.slice(3),
     config: slugPricingConfig,
   });
-  const numeric = Number(quote?.total || 0);
+  const numeric = applySlugPriceMarkup(quote?.total || 0, pricingSettings).finalPrice;
   if (!Number.isFinite(numeric)) return 0;
   return Math.max(0, Math.min(MAX_DB_INT, Math.round(numeric)));
 }
@@ -8618,15 +8622,23 @@ router.get(
         },
       }),
     ]);
-    const slugPricingConfig = await getSlugPricingConfig();
+    const [slugPricingConfig, pricingSettings] = await Promise.all([
+      getSlugPricingConfig(),
+      getPricingSettings(),
+    ]);
 
     const items = rows.map((row) => {
       const calcPrice =
         isLegacySlug(row.fullSlug) &&
           (row.price === null || row.price === undefined)
-          ? calculateSlugPrice({ letters: row.fullSlug.slice(0, 3), digits: row.fullSlug.slice(3), config: slugPricingConfig }).total
+          ? applySlugPriceMarkup(
+            calculateSlugPrice({ letters: row.fullSlug.slice(0, 3), digits: row.fullSlug.slice(3), config: slugPricingConfig }).total,
+            pricingSettings,
+          ).finalPrice
           : null;
-      const effectivePrice = typeof row.price === "number" ? row.price : calcPrice;
+      const effectivePrice = typeof row.price === "number"
+        ? applySlugPriceMarkup(row.price, pricingSettings).finalPrice
+        : calcPrice;
       return {
         slug: row.fullSlug,
         state: row.status.toUpperCase(),
@@ -8864,12 +8876,21 @@ router.patch(
 
     let resolvedPrice = effectiveSlugPrice;
     if (resolvedPrice === null && parsed) {
-      const slugPricingConfig = await getSlugPricingConfig();
-      resolvedPrice = calculateSlugPrice({
-        letters: parsed[1],
-        digits: parsed[2],
-        config: slugPricingConfig,
-      }).total;
+      const [slugPricingConfig, pricingSettings] = await Promise.all([
+        getSlugPricingConfig(),
+        getPricingSettings(),
+      ]);
+      resolvedPrice = applySlugPriceMarkup(
+        calculateSlugPrice({
+          letters: parsed[1],
+          digits: parsed[2],
+          config: slugPricingConfig,
+        }).total,
+        pricingSettings,
+      ).finalPrice;
+    } else if (typeof resolvedPrice === "number") {
+      const pricingSettings = await getPricingSettings();
+      resolvedPrice = applySlugPriceMarkup(resolvedPrice, pricingSettings).finalPrice;
     }
     if (typeof resolvedPrice === "number") {
       if (!Number.isFinite(resolvedPrice)) {

@@ -349,6 +349,20 @@
               <input type="text" name="pricingFootnote"
                 class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
             </label>
+            <label class="block">
+              <span class="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">Наценка на
+                номера (%)</span>
+              <input type="number" min="0" max="500" step="0.01" name="slugPriceMarkupPercent"
+                class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+              <span class="mt-1 block text-xs text-neutral-500">Например: 10 = цена 1 000 000 станет 1 100 000</span>
+            </label>
+            <label class="block md:col-span-2">
+              <span class="mb-1 block text-xs font-semibold uppercase tracking-[0.08em] text-neutral-500">Комментарий к
+                наценке</span>
+              <textarea name="slugPriceMarkupComment" rows="2"
+                class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm"></textarea>
+              <span class="mt-1 block text-xs text-neutral-500">Внутренний комментарий: причина, дата или заметка для команды.</span>
+            </label>
             <div class="md:col-span-2">
               <button type="submit"
                 class="interactive-btn min-h-11 rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-neutral-800">Сохранить

@@ -21,6 +21,8 @@ const DEFAULTS = {
     planPremiumPrice: 130_000,
     premiumUpgradePrice: 130_000,
     pricingFootnote: "Premium subscription is billed monthly.",
+    slugPriceMarkupPercent: 0,
+    slugPriceMarkupComment: "",
   },
   directory: {
     enabled: true,
