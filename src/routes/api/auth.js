@@ -776,10 +776,8 @@ router.post(
       req.session.pendingEmailVerificationUserId = user.id;
       req.session.pendingEmailVerificationEmail = user.email;
     }
-    if (!email) {
-      await loginUserSession(req, userToSessionPayload(user), { rememberMe: true });
-      await setOwnerSlugsCookie(req, res, user.id);
-    }
+    await loginUserSession(req, userToSessionPayload(user), { rememberMe: true });
+    await setOwnerSlugsCookie(req, res, user.id);
 
     sendNewAccountToAdmin({
       firstName: user.firstName,
@@ -921,8 +919,15 @@ router.post(
     const email = normalizeEmail(req.body?.email);
     const pendingUserId = String(req.session?.pendingEmailVerificationUserId || "").trim();
     const pendingEmail = normalizeEmail(req.session?.pendingEmailVerificationEmail);
+    const sessionUser = getUserSession(req);
+    const sessionEmail = normalizeEmail(sessionUser?.email);
+    const sessionUserId = String(sessionUser?.userId || "").trim();
 
-    if (!email || !pendingUserId || pendingEmail !== email) {
+    const canUsePendingRegistration = Boolean(email && pendingUserId && pendingEmail === email);
+    const canUseCurrentSession = Boolean(email && sessionUserId && sessionEmail === email);
+    const targetUserId = canUseCurrentSession ? sessionUserId : pendingUserId;
+
+    if (!email || (!canUsePendingRegistration && !canUseCurrentSession)) {
       res.status(403).json({
         error: "Эту регистрацию нельзя продолжить позже. Попробуй войти или зарегистрироваться заново.",
         code: "DEFER_NOT_ALLOWED",
@@ -932,7 +937,7 @@ router.post(
 
     const user = await prisma.user.findFirst({
       where: {
-        id: pendingUserId,
+        id: targetUserId,
         email,
         status: "active",
       },

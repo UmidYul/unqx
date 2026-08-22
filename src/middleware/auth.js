@@ -87,9 +87,6 @@ function requireUserApi(req, res, next) {
   if (!user) {
     return res.status(401).json({ error: "Unauthorized", code: "AUTH_REQUIRED" });
   }
-  if (user.email && user.emailVerified === false) {
-    return res.status(403).json({ error: "Сначала подтверди email.", code: "EMAIL_UNVERIFIED" });
-  }
 
   return next();
 }

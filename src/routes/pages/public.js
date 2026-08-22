@@ -5,7 +5,7 @@ const express = require("express");
 const { prisma } = require("../../db/prisma");
 const { env } = require("../../config/env");
 const { asyncHandler } = require("../../middleware/async");
-const { getAdminSession, requireVerifiedUserPage, getUserSession, logoutUserSession } = require("../../middleware/auth");
+const { getAdminSession, requireUserPage, requireVerifiedUserPage, getUserSession, logoutUserSession } = require("../../middleware/auth");
 const {
   getEffectivePlan,
   PROFILE_THEMES,
@@ -1822,7 +1822,7 @@ router.get(
 
 router.get(
   "/profile",
-  requireVerifiedUserPage,
+  requireUserPage,
   asyncHandler(async (req, res) => {
     const sessionUser = getUserSession(req);
     const user = sessionUser?.userId ? await findUserByTelegramIdWithLegacyFallback(sessionUser.userId) : null;
