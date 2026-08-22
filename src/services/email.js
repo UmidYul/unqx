@@ -22,10 +22,18 @@ async function sendEmail({ to, subject, html }) {
     throw new Error(`Email service is not configured: missing ${missing.join(", ")}`);
   }
 
+  const secure =
+    typeof env.SMTP_SECURE === "string"
+      ? ["1", "true", "yes", "on"].includes(env.SMTP_SECURE.trim().toLowerCase())
+      : Boolean(env.SMTP_SECURE);
+
   const transporter = nodemailer.createTransport({
     host: env.SMTP_HOST,
     port: Number(env.SMTP_PORT),
-    secure: Boolean(env.SMTP_SECURE),
+    secure,
+    connectionTimeout: 10_000,
+    greetingTimeout: 10_000,
+    socketTimeout: 20_000,
     auth: {
       user: env.SMTP_USER,
       pass: env.SMTP_PASS,

@@ -107,7 +107,9 @@
       const redirectTo = typeof payload.redirectTo === "string" && payload.redirectTo ? payload.redirectTo : "/profile";
       if (redirectTo.includes("verify-email")) {
         const nextEmail = String(payload.email || body.email || "").trim();
-        window.location.href = nextEmail ? `/verify-email?email=${encodeURIComponent(nextEmail)}` : redirectTo;
+        const deliveryFailed = payload.emailDelivery === "failed";
+        const suffix = deliveryFailed ? "&emailDelivery=failed" : "";
+        window.location.href = nextEmail ? `/verify-email?email=${encodeURIComponent(nextEmail)}${suffix}` : redirectTo;
         return;
       }
       window.location.href = redirectTo;

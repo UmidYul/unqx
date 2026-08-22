@@ -160,6 +160,25 @@ async function setVerificationOtp(userId) {
   return { code, expiresAt };
 }
 
+async function trySendEmailVerificationOtp({ email, firstName, code, context = "auth" }) {
+  try {
+    await sendEmailVerificationOtp({ email, firstName, code });
+    return { sent: true, error: "" };
+  } catch (error) {
+    console.error(`[auth] failed to send email verification OTP (${context})`, {
+      email,
+      message: error?.message || String(error),
+      code: error?.code || "",
+      command: error?.command || "",
+      responseCode: error?.responseCode || "",
+    });
+    return {
+      sent: false,
+      error: "EMAIL_DELIVERY_FAILED",
+    };
+  }
+}
+
 async function setPasswordResetOtp(userId) {
   const code = generateOtp();
   const codeHash = await bcrypt.hash(code, PASSWORD_ROUNDS);
@@ -673,10 +692,11 @@ router.post(
     if (existing) {
       if (canResumePendingRegistration(existing, email)) {
         const codePayload = await setVerificationOtp(existing.id);
-        await sendEmailVerificationOtp({
+        const emailDelivery = await trySendEmailVerificationOtp({
           email: existing.email,
           firstName: existing.firstName,
           code: codePayload.code,
+          context: "resume-registration",
         });
         req.session.pendingEmailVerificationUserId = existing.id;
         req.session.pendingEmailVerificationEmail = existing.email;
@@ -685,6 +705,8 @@ router.post(
           redirectTo: "/verify-email",
           email: existing.email,
           resumedPendingRegistration: true,
+          emailDelivery: emailDelivery.sent ? "sent" : "failed",
+          canConfirmLater: true,
         });
         return;
       }
@@ -737,6 +759,7 @@ router.post(
     }
 
     const codePayload = email ? await setVerificationOtp(user.id) : null;
+    let emailDelivery = { sent: false, error: "" };
     if (req.session?.pendingRefCode) {
       await linkReferralOnRegistration({
         referredUserId: user.id,
@@ -744,9 +767,18 @@ router.post(
       });
     }
     if (email && codePayload) {
-      await sendEmailVerificationOtp({ email: user.email, firstName: user.firstName, code: codePayload.code });
+      emailDelivery = await trySendEmailVerificationOtp({
+        email: user.email,
+        firstName: user.firstName,
+        code: codePayload.code,
+        context: "register",
+      });
       req.session.pendingEmailVerificationUserId = user.id;
       req.session.pendingEmailVerificationEmail = user.email;
+    }
+    if (!email) {
+      await loginUserSession(req, userToSessionPayload(user), { rememberMe: true });
+      await setOwnerSlugsCookie(req, res, user.id);
     }
 
     sendNewAccountToAdmin({
@@ -762,6 +794,10 @@ router.post(
       ok: true,
       redirectTo: email ? "/verify-email" : "/profile",
       email: user.email,
+      ...(email ? {
+        emailDelivery: emailDelivery.sent ? "sent" : "failed",
+        canConfirmLater: true,
+      } : {}),
     });
   }),
 );
@@ -791,8 +827,19 @@ router.post(
     }
 
     const { code } = await setVerificationOtp(user.id);
-    await sendEmailVerificationOtp({ email: user.email, firstName: user.firstName, code });
-    res.json({ ok: true });
+    const emailDelivery = await trySendEmailVerificationOtp({
+      email: user.email,
+      firstName: user.firstName,
+      code,
+      context: "send-otp",
+    });
+    req.session.pendingEmailVerificationUserId = user.id;
+    req.session.pendingEmailVerificationEmail = user.email;
+    res.json({
+      ok: true,
+      emailDelivery: emailDelivery.sent ? "sent" : "failed",
+      canConfirmLater: true,
+    });
   }),
 );
 
@@ -858,7 +905,8 @@ router.post(
     delete req.session.pendingEmailVerificationUserId;
     delete req.session.pendingEmailVerificationEmail;
     await setOwnerSlugsCookie(req, res, updated.id);
-    await sendWelcomeEmail({ email: updated.email, firstName: updated.firstName });
+    sendWelcomeEmail({ email: updated.email, firstName: updated.firstName })
+      .catch((error) => console.error("[auth] failed to send welcome email", error?.message || error));
 
     res.json(buildAuthSuccessPayload(updated, { rememberMe: true, redirectTo: "/profile" }));
   }),

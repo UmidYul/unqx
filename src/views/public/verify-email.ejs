@@ -12,6 +12,7 @@
       </a>
       <h1 class="mt-4 text-2xl font-bold text-neutral-900">Проверь почту</h1>
       <p class="mt-1 text-sm text-neutral-500">Мы отправили 6-значный код</p>
+      <p id="delivery-warning" class="mt-3 hidden rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">Письмо могло не отправиться из-за ошибки почтового сервера. Нажми «Подтвердить позже», чтобы зайти сейчас, или попробуй отправить код повторно.</p>
       <label class="mt-4 block text-sm font-medium text-neutral-700">Email
         <input id="email" type="email" class="mt-1 w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm" required />
       </label>
@@ -26,8 +27,12 @@
     </form>
   </main>
   <script nonce="<%= cspNonce %>">
-    const emailFromQuery = new URL(window.location.href).searchParams.get("email");
+    const params = new URL(window.location.href).searchParams;
+    const emailFromQuery = params.get("email");
     if (emailFromQuery) document.getElementById("email").value = emailFromQuery;
+    if (params.get("emailDelivery") === "failed") {
+      document.getElementById("delivery-warning")?.classList.remove("hidden");
+    }
     const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "";
     const errorNode = document.getElementById("verify-error");
     const codeInput = document.getElementById("code");
@@ -44,6 +49,12 @@
         return verifyErrorByCode[payload.code];
       }
       return payload?.error || "Ошибка подтверждения";
+    }
+
+    function showVerifyMessage(message, tone = "error") {
+      errorNode.textContent = message;
+      errorNode.classList.remove("hidden", "text-red-700", "text-emerald-700");
+      errorNode.classList.add(tone === "success" ? "text-emerald-700" : "text-red-700");
     }
 
     codeInput?.addEventListener("input", () => {
@@ -69,18 +80,24 @@
       });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) {
-        errorNode.textContent = resolveVerifyError(payload);
-        errorNode.classList.remove("hidden");
+        showVerifyMessage(resolveVerifyError(payload));
         return;
       }
       window.location.href = "/profile";
     });
     document.getElementById("resend").addEventListener("click", async () => {
-      await fetch("/api/auth/send-otp", {
+      errorNode.classList.add("hidden");
+      const response = await fetch("/api/auth/send-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-csrf-token": csrf },
         body: JSON.stringify({ email: document.getElementById("email").value }),
       });
+      const payload = await response.json().catch(() => ({}));
+      if (payload?.emailDelivery === "failed") {
+        showVerifyMessage("Письмо снова не отправилось. Можно нажать «Подтвердить позже» и зайти сейчас.");
+      } else if (response.ok) {
+        showVerifyMessage("Код отправлен повторно.", "success");
+      }
     });
     document.getElementById("defer").addEventListener("click", async () => {
       errorNode.classList.add("hidden");
@@ -91,8 +108,7 @@
       });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) {
-        errorNode.textContent = payload?.error || "Не удалось продолжить без кода. Попробуй войти или зарегистрироваться заново.";
-        errorNode.classList.remove("hidden");
+        showVerifyMessage(payload?.error || "Не удалось продолжить без кода. Попробуй войти или зарегистрироваться заново.");
         return;
       }
       window.location.href = payload?.redirectTo || "/profile";
