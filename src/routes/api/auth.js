@@ -430,11 +430,6 @@ async function handleLoginRequest(req, res) {
     return;
   }
 
-  if (user.email && !user.emailVerified) {
-    res.status(403).json({ error: "Сначала подтверди email.", code: "UNVERIFIED", email: user.email });
-    return;
-  }
-
   await loginUserSession(req, userToSessionPayload(user), { rememberMe });
   void logUserActivity({ userId: user.id, userLogin: user.login, action: "login", req });
   await setOwnerSlugsCookie(req, res, user.id);
@@ -683,6 +678,8 @@ router.post(
           firstName: existing.firstName,
           code: codePayload.code,
         });
+        req.session.pendingEmailVerificationUserId = existing.id;
+        req.session.pendingEmailVerificationEmail = existing.email;
         res.json({
           ok: true,
           redirectTo: "/verify-email",
@@ -748,6 +745,8 @@ router.post(
     }
     if (email && codePayload) {
       await sendEmailVerificationOtp({ email: user.email, firstName: user.firstName, code: codePayload.code });
+      req.session.pendingEmailVerificationUserId = user.id;
+      req.session.pendingEmailVerificationEmail = user.email;
     }
 
     sendNewAccountToAdmin({
@@ -856,10 +855,64 @@ router.post(
     });
 
     await loginUserSession(req, userToSessionPayload(updated), { rememberMe: true });
+    delete req.session.pendingEmailVerificationUserId;
+    delete req.session.pendingEmailVerificationEmail;
     await setOwnerSlugsCookie(req, res, updated.id);
     await sendWelcomeEmail({ email: updated.email, firstName: updated.firstName });
 
     res.json(buildAuthSuccessPayload(updated, { rememberMe: true, redirectTo: "/profile" }));
+  }),
+);
+
+router.post(
+  "/defer-email-verification",
+  authOtpVerifyRateLimit,
+  requireSameOrigin,
+  requireCsrfToken,
+  asyncHandler(async (req, res) => {
+    const email = normalizeEmail(req.body?.email);
+    const pendingUserId = String(req.session?.pendingEmailVerificationUserId || "").trim();
+    const pendingEmail = normalizeEmail(req.session?.pendingEmailVerificationEmail);
+
+    if (!email || !pendingUserId || pendingEmail !== email) {
+      res.status(403).json({
+        error: "Эту регистрацию нельзя продолжить позже. Попробуй войти или зарегистрироваться заново.",
+        code: "DEFER_NOT_ALLOWED",
+      });
+      return;
+    }
+
+    const user = await prisma.user.findFirst({
+      where: {
+        id: pendingUserId,
+        email,
+        status: "active",
+      },
+      select: USER_AUTH_SELECT,
+    });
+
+    if (!user) {
+      res.status(404).json({ error: "Аккаунт не найден", code: "USER_NOT_FOUND" });
+      return;
+    }
+
+    if (user.emailVerified) {
+      delete req.session.pendingEmailVerificationUserId;
+      delete req.session.pendingEmailVerificationEmail;
+      await loginUserSession(req, userToSessionPayload(user), { rememberMe: true });
+      await setOwnerSlugsCookie(req, res, user.id);
+      res.json(buildAuthSuccessPayload(user, { rememberMe: true, redirectTo: "/profile" }));
+      return;
+    }
+
+    await loginUserSession(req, userToSessionPayload(user), { rememberMe: true });
+    void logUserActivity({ userId: user.id, userLogin: user.login, action: "login", detail: "email verification deferred", req });
+    await setOwnerSlugsCookie(req, res, user.id);
+
+    res.json({
+      ...buildAuthSuccessPayload(user, { rememberMe: true, redirectTo: "/profile" }),
+      emailVerificationDeferred: true,
+    });
   }),
 );
 

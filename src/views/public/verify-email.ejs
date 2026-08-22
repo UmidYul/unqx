@@ -21,6 +21,8 @@
       <p id="verify-error" class="mt-3 hidden text-sm text-red-700"></p>
       <button type="submit" class="interactive-btn mt-4 min-h-11 w-full rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white">Подтвердить</button>
       <button id="resend" type="button" class="interactive-btn mt-2 min-h-11 w-full rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold">Отправить код повторно</button>
+      <button id="defer" type="button" class="interactive-btn mt-2 min-h-11 w-full rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-2 text-sm font-semibold text-neutral-700">Подтвердить позже</button>
+      <p class="mt-2 text-xs leading-5 text-neutral-500">Если код не пришёл, можно зайти сейчас. Email останется неподтверждённым, и админ сможет подтвердить его вручную.</p>
     </form>
   </main>
   <script nonce="<%= cspNonce %>">
@@ -79,6 +81,21 @@
         headers: { "Content-Type": "application/json", "x-csrf-token": csrf },
         body: JSON.stringify({ email: document.getElementById("email").value }),
       });
+    });
+    document.getElementById("defer").addEventListener("click", async () => {
+      errorNode.classList.add("hidden");
+      const response = await fetch("/api/auth/defer-email-verification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-csrf-token": csrf },
+        body: JSON.stringify({ email: document.getElementById("email").value }),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        errorNode.textContent = payload?.error || "Не удалось продолжить без кода. Попробуй войти или зарегистрироваться заново.";
+        errorNode.classList.remove("hidden");
+        return;
+      }
+      window.location.href = payload?.redirectTo || "/profile";
     });
   </script>
 </body>
