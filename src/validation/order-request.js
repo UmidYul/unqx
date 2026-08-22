@@ -19,6 +19,7 @@ const OrderRequestSchema = z.object({
   theme: z.enum(PROFILE_THEME_KEYS).optional(),
   products: z.object({
     digitalCard: z.boolean(),
+    bracelet: z.boolean().optional().default(false),
   }),
   dropId: z.string().uuid().optional(),
   refCode: z.string().trim().max(40).optional(),

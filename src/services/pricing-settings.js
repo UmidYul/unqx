@@ -2,7 +2,7 @@ const { setFeatureSetting, DEFAULTS } = require("./feature-settings");
 const { getManySettings, setSettingsBatch, getSetting } = require("./platform-settings");
 const { getSubscriptionSnapshot, normalizeSubscriptionPlan } = require("./subscription");
 
-const BRACELET_PRICE = 250_000;
+const BRACELET_PRICE = 200_000;
 
 function normalizePlan(value) {
   return normalizeSubscriptionPlan(value);

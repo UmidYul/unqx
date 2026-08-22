@@ -17,6 +17,7 @@ const { requireSameOrigin } = require("../../middleware/same-origin");
 const { requireCsrfToken } = require("../../middleware/csrf");
 const { parsePositiveInt } = require("../../utils/http");
 const { normalizeLogin, isValidLogin } = require("../../utils/login");
+const { logUserActivity } = require("../../utils/user-activity");
 const { generateNextSlug } = require("../../services/cards");
 const {
   getAssignableSlugType,
@@ -259,6 +260,8 @@ const USER_COLUMN_MAP = {
   displayName: "display_name",
   city: "city",
   username: "username",
+  email: "email",
+  emailVerified: "email_verified",
   telegramUsername: "telegram_username",
   login: "login",
   isVerified: "is_verified",
@@ -4714,6 +4717,7 @@ router.get(
         if (hasUserColumn(userColumns, "city")) select.city = true;
         if (hasUserColumn(userColumns, "username")) select.username = true;
         if (hasUserColumn(userColumns, "email")) select.email = true;
+        if (hasUserColumn(userColumns, "emailVerified")) select.emailVerified = true;
         if (hasUserColumn(userColumns, "telegramUsername")) select.telegramUsername = true;
         if (hasUserColumn(userColumns, "login")) select.login = true;
         if (hasUserColumn(userColumns, "isVerified")) select.isVerified = true;
@@ -4901,6 +4905,7 @@ router.get(
           name: user.displayName || user.firstName,
           city: user.city || "",
           email: user.email || "",
+          emailVerified: Boolean(user.emailVerified),
           username,
           telegramUsername,
           login: user.login || null,
@@ -4963,6 +4968,86 @@ router.get(
       }
       res.status(500).json({ error: "Failed to load users", code: "ADMIN_USERS_LIST_FAILED" });
     }
+  }),
+);
+
+router.patch(
+  "/users/:userId/verify-email",
+  asyncHandler(async (req, res) => {
+    if (!ensureUsersStorageReady(res)) {
+      return;
+    }
+    const userId = String(req.params.userId || "").trim();
+    if (!userId) {
+      res.status(400).json({ error: "User id is required", code: "USER_ID_REQUIRED" });
+      return;
+    }
+
+    const userColumns = await getUserColumns();
+    if (!hasUserColumn(userColumns, "emailVerified")) {
+      res.status(503).json({ error: "Email verification column is unavailable", code: "EMAIL_VERIFICATION_STORAGE_UNAVAILABLE" });
+      return;
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        emailVerified: true,
+        firstName: true,
+        displayName: true,
+        login: true,
+        status: true,
+      },
+    });
+    if (!user) {
+      res.status(404).json({ error: "User not found", code: "USER_NOT_FOUND" });
+      return;
+    }
+    if (!user.email) {
+      res.status(400).json({ error: "У пользователя нет email для подтверждения", code: "USER_EMAIL_MISSING" });
+      return;
+    }
+
+    const updated = await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        emailVerified: true,
+        pendingEmail: null,
+        otpCode: null,
+        otpExpiresAt: null,
+        otpAttempts: 0,
+      },
+      select: {
+        id: true,
+        email: true,
+        emailVerified: true,
+        firstName: true,
+        displayName: true,
+        login: true,
+        status: true,
+      },
+    });
+
+    void logUserActivity({
+      userId: updated.id,
+      userLogin: updated.login || "",
+      action: "email_verify",
+      req,
+      detail: `admin=${req.session?.admin?.login || "admin"}`,
+    });
+
+    res.json({
+      ok: true,
+      user: {
+        id: updated.id,
+        name: updated.displayName || updated.firstName || "",
+        email: updated.email || "",
+        emailVerified: Boolean(updated.emailVerified),
+        status: updated.status,
+      },
+    });
   }),
 );
 

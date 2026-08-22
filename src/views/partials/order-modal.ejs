@@ -285,6 +285,19 @@
                 </label>
               </div>
 
+              <label id="order-modal-physical-card-option"
+                class="block cursor-pointer rounded-xl border border-neutral-200 bg-white p-4 text-sm transition hover:border-neutral-300">
+                <span class="flex items-start gap-3">
+                  <input id="order-modal-physical-card" type="checkbox"
+                    class="mt-1 h-4 w-4 rounded border-neutral-300 text-neutral-900 focus:ring-neutral-900" />
+                  <span class="min-w-0">
+                    <span class="block font-semibold text-neutral-900">Выпустить карту</span>
+                    <span class="mt-1 block text-xs text-neutral-600">Добавить физическую карту к заказу за 200 000 сум.</span>
+                  </span>
+                  <span class="ml-auto shrink-0 font-semibold text-neutral-900">+200 000 сум</span>
+                </span>
+              </label>
+
               <div id="order-modal-summary-card"
                 class="order-modal-summary-card rounded-xl border border-neutral-200 bg-neutral-50 p-4 text-sm">
                 <div id="order-modal-total-slug-row" class="flex items-center justify-between gap-3">
@@ -319,6 +332,10 @@
                   class="mt-1 hidden items-center justify-between gap-3 text-amber-700">
                   <span>Ограничение скидки</span>
                   <span id="order-modal-total-cap-value">+0 сум</span>
+                </div>
+                <div id="order-modal-total-physical-card-row" class="mt-1 hidden items-center justify-between gap-3">
+                  <span>Выпуск карты</span>
+                  <span id="order-modal-total-physical-card-value">+200 000 сум</span>
                 </div>
 
                 <div class="my-3 h-px bg-neutral-200"></div>

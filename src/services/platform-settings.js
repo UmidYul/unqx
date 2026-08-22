@@ -140,7 +140,7 @@ const DEFAULT_SETTINGS = [
   { key: "slug_mult_digits_random", group: "algorithm", type: "number", label: "Случайные цифры", value: 1 },
   { key: "bracelet_name", group: "bracelet", type: "text", label: "Название NFC-стикера", value: "NFC-стикер" },
   { key: "bracelet_old_price", group: "bracelet", type: "number", label: "Старая цена (до скидки)", value: 400_000 },
-  { key: "bracelet_price", group: "bracelet", type: "number", label: "Цена со скидкой", value: 250_000 },
+  { key: "bracelet_price", group: "bracelet", type: "number", label: "Цена со скидкой", value: 200_000 },
   { key: "bracelet_in_stock", group: "bracelet", type: "boolean", label: "Наличие стикера", value: true },
   { key: "bracelet_cta_text", group: "bracelet", type: "text", label: "Кнопка стикера", value: "Заказать стикер" },
   {

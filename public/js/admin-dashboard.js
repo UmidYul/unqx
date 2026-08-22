@@ -2115,7 +2115,7 @@
           const userSlugsCsv = allSlugs.join(",");
           const userNameText = X(x.name);
           const emailCell = x.email
-            ? `<span class="block break-all text-xs text-neutral-700">${X(x.email)}</span>`
+            ? `<span class="block break-all text-xs text-neutral-700">${X(x.email)}</span><span class="mt-1 inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold ${x.emailVerified ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-amber-200 bg-amber-50 text-amber-700"}">${x.emailVerified ? "email подтвержден" : "email не подтвержден"}</span>`
             : "—";
           const editSlugAttrs = allSlugs.length
             ? `data-act="us-edit" data-id="${X(x.telegramId)}" data-name="${X(x.name)}" data-slugs="${X(userSlugsCsv)}"`
@@ -2124,6 +2124,9 @@
           if (!isManager) {
             menuItems.push(menuItem({ label: "Change login", icon: "at", attrs: `data-act="ul" data-id="${X(x.telegramId)}" data-login="${X(x.login || "")}" data-name="${X(x.name)}"` }));
             menuItems.push(menuItem({ label: "Change password", icon: "lock", attrs: `data-act="upwd" data-id="${X(x.telegramId)}" data-name="${X(x.name)}"` }));
+            if (x.email && !x.emailVerified) {
+              menuItems.push(menuItem({ label: "Подтвердить почту", icon: "checkCircle", attrs: `data-act="uve" data-id="${X(x.telegramId)}" data-name="${X(x.name)}" data-email="${X(x.email || "")}"` }));
+            }
             menuItems.push(menuItem({ label: "Change plan", icon: "crown", attrs: `data-act="up" data-id="${X(x.telegramId)}" data-current-plan="${X(x.plan)}" data-active-slugs="${Number(x.activeSlugCount || 0)}"` }));
             menuItems.push(menuSeparator());
           }
@@ -4988,6 +4991,27 @@
       return;
     }
     if (a === "ub") { const telegramId = n.getAttribute("data-id"); const status = n.getAttribute("data-status"); if (!telegramId) return; const isBlocked = status === "blocked"; if (!isBlocked && !await showConfirm("Заблокировать пользователя и деактивировать его slug?")) return; if (isBlocked && !await showConfirm("Разблокировать пользователя и восстановить статусы slug?")) return; const r = await fetch(`/api/admin/users/${encodeURIComponent(telegramId)}/${isBlocked ? "unblock" : "block"}`, { method: "PATCH", headers: H({ "Content-Type": "application/json" }), body: JSON.stringify({}) }); if (!r.ok) showAlert(await E(r)); else void loadUsers(); }
+    if (a === "uve") {
+      const userId = n.getAttribute("data-id");
+      const userName = n.getAttribute("data-name") || "пользователя";
+      const email = n.getAttribute("data-email") || "";
+      if (!userId) return;
+      const ok = await showConfirm(`Подтвердить почту для ${userName}?\n\nEmail: ${email}\n\nПосле этого пользователь сможет войти по своему логину и паролю без кода.`);
+      if (!ok) return;
+      const r = await fetch(`/api/admin/users/${encodeURIComponent(userId)}/verify-email`, {
+        method: "PATCH",
+        headers: H({ "Content-Type": "application/json" }),
+        body: JSON.stringify({}),
+      });
+      if (!r.ok) {
+        await showAlert(await E(r));
+        return;
+      }
+      await showAlert("Почта подтверждена. Пользователь теперь может войти по своему логину и паролю.");
+      void loadUsers();
+      closeAllRowMenus();
+      return;
+    }
     if (a === "ud") {
       const userId = n.getAttribute("data-id");
       const userName = n.getAttribute("data-name") || "пользователя";
