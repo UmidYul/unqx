@@ -168,7 +168,10 @@ function invalidateDonationLeadersCache() {
 function isDonationRequestsStorageError(error) {
   const code = String(error?.code || "");
   const message = String(error?.message || "").toLowerCase();
-  return code === "42P01" || code === "P2021" || message.includes("donation_requests");
+  return code === "42P01" ||
+    code === "P2021" ||
+    message.includes("donation_requests") ||
+    (message.includes("relation") && message.includes("does not exist"));
 }
 
 async function ensureDonationRequestsStorage() {
@@ -580,7 +583,14 @@ function mapDonationRequestRow(row) {
 }
 
 async function createDonationRequest({ userId, amount }) {
-  await ensureDonationRequestsStorage();
+  try {
+    await ensureDonationRequestsStorage();
+  } catch (error) {
+    const storageError = new Error("DONATION_REQUESTS_STORAGE_UNAVAILABLE");
+    storageError.status = 503;
+    storageError.cause = error;
+    throw storageError;
+  }
   const parsed = DonationRequestSchema.parse({ amount });
   const donationAmount = parseDonationAmount(parsed.amount);
   if (donationAmount < MIN_PUBLIC_DONATION_AMOUNT) {

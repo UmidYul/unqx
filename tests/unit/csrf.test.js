@@ -57,7 +57,8 @@ describe("csrf middleware", () => {
 
     expect(next).not.toHaveBeenCalled();
     expect(res.statusCode).toBe(403);
-    expect(res.jsonBody).toEqual({ error: "Invalid CSRF token" });
+    expect(res.jsonBody).toMatchObject({ error: "Invalid CSRF token", code: "CSRF_INVALID" });
+    expect(typeof res.jsonBody.csrfToken).toBe("string");
   });
 
   test("passes POST request with matching token", () => {

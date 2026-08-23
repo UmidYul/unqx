@@ -117,11 +117,19 @@ router.post(
     } catch (error) {
       const code = String(error?.message || "DONATION_REQUEST_FAILED");
       const status = Number(error?.status || 400);
+      console.error("[leaders-donate] failed to create donation request", {
+        code,
+        status,
+        userId: userSession.userId,
+        cause: error?.cause?.message || "",
+      });
       const message =
         code === "DONATION_AMOUNT_TOO_SMALL"
           ? "Минимальная сумма доната: 10 000 сум"
           : code === "USER_NOT_FOUND"
             ? "Пользователь не найден"
+            : code === "DONATION_REQUESTS_STORAGE_UNAVAILABLE"
+              ? "Заявки на донат временно недоступны. Откройте вкладку Донаты в админке или запустите миграции базы данных."
             : "Не удалось создать заявку на донат";
       res.status(status >= 400 && status < 600 ? status : 400).json({ error: message, code });
     }

@@ -184,7 +184,8 @@
       const checkBox = document.getElementById("leaders-donation-check");
       const paymentModal = document.getElementById("leaders-payment-modal");
       const paymentLink = document.getElementById("leaders-payment-link");
-      const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "";
+      const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+      const getCsrf = () => csrfMeta?.getAttribute("content") || "";
       const amountInput = form?.querySelector('input[name="amount"]');
       const money = (value) => String(value || "").replace(/[^\d]/g, "");
       const setPaymentText = (selector, value) => {
@@ -231,6 +232,35 @@
         showQuote(`После доната ${quote.amountLabel || ""} ваш итог будет ${quote.projectedTotalLabel || ""}. Предварительное место: #${quote.estimatedRank || 1}.`);
         return quote;
       }
+      async function refreshCsrfToken() {
+        const response = await fetch("/api/auth/status", {
+          headers: { "Accept": "application/json" },
+          credentials: "same-origin",
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (payload.csrfToken && csrfMeta) {
+          csrfMeta.setAttribute("content", payload.csrfToken);
+        }
+        return payload.csrfToken || getCsrf();
+      }
+      async function createDonation(amount, retryOnCsrf = true) {
+        const token = getCsrf();
+        const response = await fetch("/api/leaders/donate", {
+          method: "POST",
+          headers: token ? { "Content-Type": "application/json", "X-CSRF-Token": token } : { "Content-Type": "application/json" },
+          credentials: "same-origin",
+          body: JSON.stringify({ amount }),
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (response.status === 403 && payload.code === "CSRF_INVALID" && retryOnCsrf) {
+          const nextToken = payload.csrfToken || await refreshCsrfToken();
+          if (nextToken && csrfMeta) {
+            csrfMeta.setAttribute("content", nextToken);
+          }
+          return createDonation(amount, false);
+        }
+        return { response, payload };
+      }
       quoteButton?.addEventListener("click", () => void loadQuote());
       amountInput?.addEventListener("input", () => {
         if (checkBox) checkBox.classList.add("hidden");
@@ -252,12 +282,7 @@
         }
         const quote = await loadQuote();
         if (!quote) return;
-        const response = await fetch("/api/leaders/donate", {
-          method: "POST",
-          headers: csrf ? { "Content-Type": "application/json", "X-CSRF-Token": csrf } : { "Content-Type": "application/json" },
-          body: JSON.stringify({ amount: money(amountInput?.value || "") }),
-        });
-        const payload = await response.json().catch(() => ({}));
+        const { response, payload } = await createDonation(money(amountInput?.value || ""));
         if (!response.ok) {
           showQuote(payload.error || "Не удалось сформировать чек.", "error");
           return;
