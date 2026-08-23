@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="ru">
+
+<head>
+  <% const safeItems=Array.isArray(items) ? items : []; const pageBaseUrl=typeof baseUrl==="string" ? baseUrl : "" ; const isAuthenticated=Boolean(typeof userSession !== "undefined" && userSession && userSession.userId); const leadersJsonLd={ "@context": "https://schema.org", "@type": "ItemList", name: "UNQX Leaders", itemListOrder: "https://schema.org/ItemListOrderDescending", itemListElement: safeItems.slice(0, 10).map((item, index)=> ({ "@type": "ListItem", position: index + 1, url: item.profileUrl ? `${pageBaseUrl}${item.profileUrl}` : pageBaseUrl, name: item.name })) }; %>
+  <%- include('../partials/head', { title: title || 'UNQX Leaders | UNQX', description: description || 'Top 100 донатеров UNQX', image: typeof image === 'string' ? image : undefined, jsonLd: leadersJsonLd }) %>
+</head>
+
+<body class="antialiased bg-neutral-50" data-page="unqx-leaders">
+  <main class="mx-auto w-full max-w-6xl px-4 py-6">
+    <section class="mb-4 rounded-xl border border-neutral-200 bg-white/90 p-2 shadow-sm backdrop-blur">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <a href="/" class="interactive-btn inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-neutral-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-neutral-600 hover:text-neutral-900">
+          <span aria-hidden="true">←</span>
+          <span>Главная</span>
+        </a>
+        <a href="/leaderboard" class="interactive-btn inline-flex min-h-9 items-center rounded-lg border border-neutral-200 bg-neutral-50 px-2.5 py-1.5 text-xs font-semibold text-neutral-600 hover:text-neutral-900">UNQ Elite</a>
+      </div>
+    </section>
+
+    <header class="mb-6 overflow-hidden rounded-2xl border border-neutral-200 bg-white p-6">
+      <p class="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">UNQX Leaders</p>
+      <h1 class="mt-2 text-3xl font-black tracking-tight text-neutral-900">UNQX Leaders</h1>
+      <p class="mt-2 max-w-2xl text-sm leading-6 text-neutral-600">Top 100 пользователей по сумме донатов. При равной сумме выше тот, кто достиг её раньше.</p>
+      <p class="mt-3 text-xs text-neutral-400">Обновлено: <%= generatedAt ? new Date(generatedAt).toLocaleString("ru-RU") : "сейчас" %></p>
+    </header>
+
+    <section class="mb-6 grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+      <article class="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
+        <h2 class="text-base font-black text-neutral-900">Занять своё место</h2>
+        <ol class="mt-3 grid gap-2 text-sm text-neutral-600">
+          <li class="rounded-xl border border-neutral-100 bg-neutral-50 px-3 py-2">1. Введите сумму доната и посмотрите предварительное место.</li>
+          <li class="rounded-xl border border-neutral-100 bg-neutral-50 px-3 py-2">2. Нажмите “Сформировать чек”.</li>
+          <li class="rounded-xl border border-neutral-100 bg-neutral-50 px-3 py-2">3. Оплатите через Telegram, как при покупке UNQ-номера.</li>
+        </ol>
+      </article>
+
+      <article class="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
+        <form id="leaders-donation-form" class="space-y-3" data-authenticated="<%= isAuthenticated ? '1' : '0' %>">
+          <label class="block">
+            <span class="mb-1 block text-xs font-bold uppercase tracking-wide text-neutral-500">Сумма доната</span>
+            <input name="amount" inputmode="numeric" autocomplete="off" placeholder="100 000"
+              class="w-full rounded-xl border border-neutral-300 px-3 py-3 text-sm font-semibold outline-none focus:border-neutral-900" />
+          </label>
+          <div id="leaders-donation-quote" class="rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-3 text-sm text-neutral-600">
+            Введите сумму, чтобы увидеть место.
+          </div>
+          <div class="grid gap-2 sm:grid-cols-2">
+            <button type="button" id="leaders-quote-button" class="interactive-btn min-h-11 rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-800 hover:bg-neutral-100">Проверить место</button>
+            <button type="submit" class="interactive-btn min-h-11 rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-700">Сформировать чек</button>
+          </div>
+          <% if (!isAuthenticated) { %>
+            <p class="text-xs text-amber-700">Чтобы донат попал в профиль, сначала войдите в аккаунт.</p>
+          <% } %>
+        </form>
+        <div id="leaders-donation-check" class="mt-4 hidden rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900"></div>
+      </article>
+    </section>
+
+    <% const topThree=safeItems.slice(0, 3); const rest=safeItems.slice(3); const medalMeta={ 1: { label: "Золото", cls: "border-yellow-300 bg-yellow-50 text-yellow-900", ring: "ring-yellow-300" }, 2: { label: "Серебро", cls: "border-neutral-300 bg-neutral-100 text-neutral-900", ring: "ring-neutral-300" }, 3: { label: "Бронза", cls: "border-orange-300 bg-orange-50 text-orange-900", ring: "ring-orange-300" } }; const avatar=(item)=> String(item.avatarUrl || "/brand/profile-user.svg"); %>
+
+    <section class="grid gap-4 md:grid-cols-3">
+      <% if (!topThree.length) { %>
+        <article class="col-span-full rounded-2xl border border-neutral-200 bg-white p-8 text-center">
+          <p class="text-sm text-neutral-600">Рейтинг пока пуст. Данные появятся после первых донатов.</p>
+        </article>
+      <% } %>
+      <% topThree.forEach((item)=> { const meta=medalMeta[item.rank] || medalMeta[3]; %>
+        <article class="rounded-2xl border <%= meta.cls %> p-5 shadow-sm">
+          <div class="flex items-start justify-between gap-3">
+            <span class="inline-flex rounded-full border border-current/20 px-3 py-1 text-xs font-black">#<%= item.rank %> · <%= meta.label %></span>
+            <span class="text-right text-sm font-black"><%= item.totalDonationsLabel %></span>
+          </div>
+          <div class="mt-5 flex items-center gap-4">
+            <img src="<%= avatar(item) %>" alt="" class="h-16 w-16 rounded-full border border-white object-cover shadow-sm ring-4 <%= meta.ring %>" />
+            <div class="min-w-0">
+              <% if (item.profileUrl) { %>
+                <a href="<%= item.profileUrl %>" class="block truncate text-lg font-black text-current underline-offset-4 hover:underline"><%= item.name %></a>
+              <% } else { %>
+                <span class="block truncate text-lg font-black"><%= item.name %></span>
+              <% } %>
+              <% if (item.login) { %><p class="mt-1 truncate text-xs opacity-70">@<%= item.login %></p><% } %>
+            </div>
+          </div>
+        </article>
+      <% }) %>
+    </section>
+
+    <section class="mt-6 overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
+      <div class="overflow-x-auto">
+        <table class="w-full min-w-[720px] text-left text-sm">
+          <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
+            <tr>
+              <th class="px-4 py-3">Позиция</th>
+              <th class="px-4 py-3">Пользователь</th>
+              <th class="px-4 py-3 text-right">Сумма донатов</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% rest.forEach((item)=> { %>
+              <tr class="border-t border-neutral-100 hover:bg-neutral-50">
+                <td class="px-4 py-3 font-mono text-xs font-bold text-neutral-500">#<%= item.rank %></td>
+                <td class="px-4 py-3">
+                  <div class="flex items-center gap-3">
+                    <img src="<%= avatar(item) %>" alt="" class="h-10 w-10 rounded-full border border-neutral-200 object-cover" />
+                    <div class="min-w-0">
+                      <% if (item.profileUrl) { %>
+                        <a href="<%= item.profileUrl %>" class="block truncate font-semibold text-neutral-900 underline-offset-4 hover:underline"><%= item.name %></a>
+                      <% } else { %>
+                        <span class="block truncate font-semibold text-neutral-900"><%= item.name %></span>
+                      <% } %>
+                      <% if (item.login) { %><p class="truncate text-xs text-neutral-500">@<%= item.login %></p><% } %>
+                    </div>
+                  </div>
+                </td>
+                <td class="px-4 py-3 text-right font-semibold text-neutral-900"><%= item.totalDonationsLabel %></td>
+              </tr>
+            <% }) %>
+            <% if (!rest.length && topThree.length) { %>
+              <tr><td colspan="3" class="px-4 py-8 text-center text-sm text-neutral-500">Пока есть только TOP-3.</td></tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script nonce="<%= typeof cspNonce === 'string' ? cspNonce : '' %>">
+    (() => {
+      const form = document.getElementById("leaders-donation-form");
+      const quoteButton = document.getElementById("leaders-quote-button");
+      const quoteBox = document.getElementById("leaders-donation-quote");
+      const checkBox = document.getElementById("leaders-donation-check");
+      const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "";
+      const amountInput = form?.querySelector('input[name="amount"]');
+      const money = (value) => String(value || "").replace(/[^\d]/g, "");
+      const showQuote = (text, tone = "neutral") => {
+        if (!quoteBox) return;
+        quoteBox.className = `rounded-xl border px-3 py-3 text-sm ${tone === "error" ? "border-red-200 bg-red-50 text-red-700" : "border-neutral-200 bg-neutral-50 text-neutral-600"}`;
+        quoteBox.textContent = text;
+      };
+      async function loadQuote() {
+        const amount = money(amountInput?.value || "");
+        if (!amount) {
+          showQuote("Введите сумму, чтобы увидеть место.");
+          return null;
+        }
+        const response = await fetch(`/api/leaders/quote?amount=${encodeURIComponent(amount)}`);
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          showQuote(payload.error || "Не удалось рассчитать место.", "error");
+          return null;
+        }
+        const quote = payload.quote || {};
+        showQuote(`После доната ${quote.amountLabel || ""} ваш итог будет ${quote.projectedTotalLabel || ""}. Предварительное место: #${quote.estimatedRank || 1}.`);
+        return quote;
+      }
+      quoteButton?.addEventListener("click", () => void loadQuote());
+      amountInput?.addEventListener("input", () => {
+        if (checkBox) checkBox.classList.add("hidden");
+      });
+      form?.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        if (form.getAttribute("data-authenticated") !== "1") {
+          window.location.href = `/login?next=${encodeURIComponent("/unqx-leaders")}`;
+          return;
+        }
+        const quote = await loadQuote();
+        if (!quote) return;
+        const response = await fetch("/api/leaders/donate", {
+          method: "POST",
+          headers: csrf ? { "Content-Type": "application/json", "X-CSRF-Token": csrf } : { "Content-Type": "application/json" },
+          body: JSON.stringify({ amount: money(amountInput?.value || "") }),
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          showQuote(payload.error || "Не удалось сформировать чек.", "error");
+          return;
+        }
+        const request = payload.request || {};
+        if (checkBox) {
+          checkBox.classList.remove("hidden");
+          checkBox.innerHTML = `<div class="font-bold">Чек ${request.paymentReference || ""}</div><div class="mt-1">Сумма: ${request.amountLabel || ""} · место: #${request.rankPreview || quote.estimatedRank || 1}</div><a class="interactive-btn mt-3 inline-flex min-h-11 items-center justify-center rounded-xl bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800" href="${request.paymentUrl || "#"}" target="_blank" rel="noopener noreferrer">Оплатить в Telegram</a>`;
+        }
+        if (request.paymentUrl) {
+          window.open(request.paymentUrl, "_blank", "noopener,noreferrer");
+        }
+      });
+    })();
+  </script>
+</body>
+
+</html>

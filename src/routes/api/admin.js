@@ -29,7 +29,13 @@ const {
 } = require("../../services/slug");
 const { getGlobalStats } = require("../../services/stats");
 const { calculateSlugPrice, getSlugPricingConfig } = require("../../services/slug-pricing");
-const { getDonationLeaderForUser, updateDonationLeader } = require("../../services/donation-leaders");
+const {
+  getDonationLeaderForUser,
+  listDonationLeaders,
+  listDonationRequests,
+  updateDonationLeader,
+  updateDonationRequestStatus,
+} = require("../../services/donation-leaders");
 const { sendTelegramMessage, sendPaymentAlertsToAdmin } = require("../../services/telegram");
 const { recalculateAndRefreshPercentiles } = require("../../services/unq-score");
 const { sendExpoPushToUser, sendExpoPushToUsers } = require("../../services/push");
@@ -5128,6 +5134,59 @@ router.get(
     }
     const donations = await getDonationLeaderForUser(userId);
     res.json({ donations });
+  }),
+);
+
+router.get(
+  "/donations",
+  asyncHandler(async (req, res) => {
+    const payload = await listDonationRequests({
+      status: req.query.status || "all",
+      q: req.query.q || "",
+      page: req.query.page || 1,
+      pageSize: req.query.pageSize || 20,
+    });
+    res.json(payload);
+  }),
+);
+
+router.get(
+  "/donations/leaders",
+  asyncHandler(async (_req, res) => {
+    const payload = await listDonationLeaders({ limit: 100, useCache: false });
+    res.json(payload);
+  }),
+);
+
+router.patch(
+  "/donations/:id/status",
+  asyncHandler(async (req, res) => {
+    try {
+      const donation = await updateDonationRequestStatus({
+        requestId: req.params.id,
+        status: req.body?.status,
+        adminNote: req.body?.adminNote,
+        adminLogin: req.session?.admin?.login || "admin",
+      });
+      void logUserActivity({
+        userId: donation?.userId || "",
+        userLogin: donation?.login || "",
+        action: "donations_update",
+        detail: `request=${donation?.id || req.params.id};status=${donation?.status || req.body?.status};admin=${req.session?.admin?.login || "admin"}`,
+        req,
+      });
+      res.json({ ok: true, donation });
+    } catch (error) {
+      const status = Number(error?.status || 400);
+      const code = String(error?.message || "DONATION_STATUS_UPDATE_FAILED");
+      const message =
+        code === "DONATION_REQUEST_NOT_FOUND"
+          ? "Заявка не найдена"
+          : code === "DONATION_REQUEST_ALREADY_APPROVED" || code === "DONATION_REQUEST_ALREADY_REJECTED"
+            ? "Статус этой заявки уже нельзя изменить"
+            : "Не удалось обновить статус доната";
+      res.status(status >= 400 && status < 600 ? status : 400).json({ error: message, code });
+    }
   }),
 );
 

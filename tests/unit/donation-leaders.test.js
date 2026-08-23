@@ -7,10 +7,10 @@ const {
   parseDonationAmount,
 } = require("../../src/services/donation-leaders");
 
-async function renderUnixLeadersTemplate(locals = {}) {
-  const file = path.join(process.cwd(), "src", "views", "public", "unix-leaders.ejs");
+async function renderUnqxLeadersTemplate(locals = {}) {
+  const file = path.join(process.cwd(), "src", "views", "public", "unqx-leaders.ejs");
   return ejs.renderFile(file, {
-    title: "Unix Leaders | UNQX",
+    title: "UNQX Leaders | UNQX",
     description: "Top 100 донатеров UNQX.",
     image: "/brand/logo.PNG",
     baseUrl: "https://unqx.uz",
@@ -38,8 +38,8 @@ describe("donation leaders", () => {
     expect(formatDonationLabel(110000000n)).toBe("110 000 000 сум");
   });
 
-  test("renders Unix Leaders with top three and compact rows", async () => {
-    const html = await renderUnixLeadersTemplate({
+  test("renders UNQX Leaders with top three and compact rows", async () => {
+    const html = await renderUnqxLeadersTemplate({
       items: [
         {
           rank: 1,
@@ -76,7 +76,9 @@ describe("donation leaders", () => {
       ],
     });
 
-    expect(html).toContain("Unix Leaders");
+    expect(html).toContain("UNQX Leaders");
+    expect(html).toContain("Занять своё место");
+    expect(html).toContain("/api/leaders/donate");
     expect(html).toContain("#1 · Золото");
     expect(html).toContain("#2 · Серебро");
     expect(html).toContain("#3 · Бронза");

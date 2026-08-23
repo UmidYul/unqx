@@ -2018,6 +2018,66 @@
     });
   }
 
+  async function loadDonations() {
+    const form = document.getElementById("donations-filters");
+    const table = document.getElementById("donations-table");
+    const leadersTable = document.getElementById("donation-leaders-table");
+    if (!(form instanceof HTMLFormElement) || !(table instanceof HTMLElement) || !(leadersTable instanceof HTMLElement)) return;
+
+    const q = {
+      status: getFormValue(form, "status", "all"),
+      q: getFormValue(form, "q", ""),
+      page: getFormValue(form, "page", "1"),
+    };
+    setDashboardQuery({ d_status: q.status, d_q: q.q, d_page: q.page });
+    const r = await fetch(`/api/admin/donations?${Q(q)}`, { headers: H() });
+    if (!r.ok) {
+      table.innerHTML = `<tr><td colspan="7" class="px-4 py-8 text-center text-red-700">${X(await E(r))}</td></tr>`;
+      return;
+    }
+    const payload = await r.json().catch(() => ({}));
+    const rows = Array.isArray(payload.items) ? payload.items : [];
+    table.innerHTML = rows.length
+      ? rows.map((x) => {
+        const profile = x.profileUrl ? `<a href="${X(x.profileUrl)}" target="_blank" rel="noopener noreferrer" class="font-semibold underline-offset-4 hover:underline">${X(x.userName || "UNQX User")}</a>` : `<span class="font-semibold">${X(x.userName || "UNQX User")}</span>`;
+        const menu = menuWrap([
+          x.paymentUrl ? menuItem({ label: "Открыть чек", icon: "send", attrs: `data-act="don-open" data-url="${X(x.paymentUrl)}"` }) : "",
+          menuSeparator(),
+          String(x.status || "") !== "approved" ? menuItem({ label: "Отметить оплачено", icon: "creditCard", attrs: `data-act="don-status" data-id="${X(x.id)}" data-status="paid"` }) : "",
+          String(x.status || "") !== "approved" ? menuItem({ label: "Подтвердить и начислить", icon: "checkCircle", attrs: `data-act="don-status" data-id="${X(x.id)}" data-status="approved"` }) : "",
+          !["approved", "rejected"].includes(String(x.status || "")) ? menuItem({ label: "Отклонить", icon: "xCircle", attrs: `data-act="don-status" data-id="${X(x.id)}" data-status="rejected"`, danger: true }) : "",
+        ].join(""));
+        return `<tr class="admin-table-row border-t border-neutral-100">
+          <td class="px-4 py-3">${D(x.createdAt)}</td>
+          <td class="px-4 py-3">${profile}<div class="text-xs text-neutral-500">${X(x.login ? `@${x.login}` : x.email || "")}</div><div class="text-xs text-emerald-700">${X(x.totalDonationsLabel || "0 сум")}</div></td>
+          <td class="px-4 py-3 font-mono text-xs">${X(x.paymentReference || "")}</td>
+          <td class="px-4 py-3 text-right font-semibold">${X(x.amountLabel || "0 сум")}</td>
+          <td class="px-4 py-3">${x.rankPreview ? `#${X(String(x.rankPreview))}` : "-"}</td>
+          <td class="px-4 py-3">${statusChip(x.status || "new")}</td>
+          <td class="px-4 py-3 text-right">${menu}</td>
+        </tr>`;
+      }).join("")
+      : `<tr><td colspan="7" class="px-4 py-10 text-center text-neutral-500">${I("creditCard", 48)}<div class="mt-2">Заявок на донат пока нет</div></td></tr>`;
+    renderPager("donations-pagination", payload.pagination, (nextPage) => {
+      setFormValue(form, "page", String(nextPage));
+      void loadDonations();
+    });
+
+    const leadersResponse = await fetch("/api/admin/donations/leaders", { headers: H() });
+    const leadersPayload = leadersResponse.ok ? await leadersResponse.json().catch(() => ({})) : {};
+    const leaders = Array.isArray(leadersPayload.items) ? leadersPayload.items : [];
+    leadersTable.innerHTML = leaders.length
+      ? leaders.map((x) => {
+        const profile = x.profileUrl ? `<a href="${X(x.profileUrl)}" target="_blank" rel="noopener noreferrer" class="font-semibold underline-offset-4 hover:underline">${X(x.name || "UNQX User")}</a>` : `<span class="font-semibold">${X(x.name || "UNQX User")}</span>`;
+        const menu = menuWrap([
+          menuItem({ label: "Изменить баланс", icon: "creditCard", attrs: `data-act="don-user" data-id="${X(x.userId)}" data-name="${X(x.name || "UNQX User")}" data-donations="${X(x.totalDonations || "0")}"` }),
+          x.profileUrl ? menuItem({ label: "Открыть профиль", icon: "external", attrs: `data-act="open-url" data-url="${X(x.profileUrl)}"` }) : "",
+        ].join(""));
+        return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3 font-mono text-xs">#${X(String(x.rank || ""))}</td><td class="px-4 py-3">${profile}<div class="text-xs text-neutral-500">${X(x.login ? `@${x.login}` : "")}</div></td><td class="px-4 py-3 text-right font-semibold">${X(x.totalDonationsLabel || "0 сум")}</td><td class="px-4 py-3 text-right">${menu}</td></tr>`;
+      }).join("")
+      : `<tr><td colspan="4" class="px-4 py-10 text-center text-neutral-500">Top 100 пока пуст</td></tr>`;
+  }
+
   async function loadPricingSettings() {
     const form = document.getElementById("pricing-settings-form");
     if (!(form instanceof HTMLFormElement)) return;
@@ -5014,6 +5074,64 @@
       closeAllRowMenus();
       return;
     }
+    if (a === "don-open") {
+      const url = n.getAttribute("data-url") || "";
+      if (url) window.open(url, "_blank", "noopener,noreferrer");
+      closeAllRowMenus();
+      return;
+    }
+    if (a === "don-status") {
+      const id = n.getAttribute("data-id");
+      const status = n.getAttribute("data-status") || "";
+      if (!id || !status) return;
+      const note = await showPrompt(
+        status === "approved" ? "Комментарий к подтверждению" : status === "rejected" ? "Причина отклонения" : "Комментарий",
+        "",
+      );
+      if (note === null) return;
+      const r = await fetch(`/api/admin/donations/${encodeURIComponent(id)}/status`, {
+        method: "PATCH",
+        headers: H({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ status, adminNote: note }),
+      });
+      if (!r.ok) {
+        await showAlert(await E(r));
+        return;
+      }
+      await showAlert(status === "approved" ? "Донат подтверждён и начислен." : "Статус доната обновлён.");
+      void loadDonations();
+      closeAllRowMenus();
+      return;
+    }
+    if (a === "don-user") {
+      const userId = n.getAttribute("data-id");
+      const userName = n.getAttribute("data-name") || "пользователя";
+      const currentDonations = n.getAttribute("data-donations") || "0";
+      if (!userId) return;
+      const mode = String(await showPrompt(`Донаты для ${userName}\n\nРежим: set, add или subtract`, "add") || "").trim().toLowerCase();
+      if (!["set", "add", "subtract"].includes(mode)) {
+        await showAlert("Режим должен быть set, add или subtract.");
+        return;
+      }
+      const amount = String(await showPrompt(mode === "set" ? "Итоговая сумма донатов" : "Сумма изменения", mode === "set" ? currentDonations : "50000") || "").trim();
+      if (!amount) return;
+      const note = await showPrompt("Комментарий к операции", "Ручная правка из вкладки Донаты");
+      if (note === null) return;
+      const r = await fetch(`/api/admin/users/${encodeURIComponent(userId)}/donations`, {
+        method: "PATCH",
+        headers: H({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ mode, amount, isPublicLeader: true, note }),
+      });
+      if (!r.ok) {
+        await showAlert(await E(r));
+        return;
+      }
+      const payload = await r.json().catch(() => ({}));
+      await showAlert(`Баланс обновлён: ${payload?.donations?.totalDonationsLabel || "готово"}.`);
+      void loadDonations();
+      closeAllRowMenus();
+      return;
+    }
     if (a === "udon") {
       const userId = n.getAttribute("data-id");
       const userName = n.getAttribute("data-name") || "пользователя";
@@ -5030,7 +5148,7 @@
         mode === "set" ? currentDonations : "50000",
       ) || "").trim();
       if (!amount) return;
-      const publicAnswer = String(await showPrompt("Показывать в Unix Leaders? yes/no", currentPublic ? "yes" : "no") || "").trim().toLowerCase();
+      const publicAnswer = String(await showPrompt("Показывать в UNQX Leaders? yes/no", currentPublic ? "yes" : "no") || "").trim().toLowerCase();
       if (!["yes", "y", "да", "true", "1", "no", "n", "нет", "false", "0"].includes(publicAnswer)) {
         await showAlert("Введите yes или no для публичного отображения.");
         return;
@@ -5461,6 +5579,7 @@
     void loadFlashSales();
   });
   document.getElementById("purchases-filters")?.addEventListener("submit", (e) => { e.preventDefault(); const f = e.currentTarget; if (f instanceof HTMLFormElement) setFormValue(f, "page", "1"); void loadPurchases(); });
+  document.getElementById("donations-filters")?.addEventListener("submit", (e) => { e.preventDefault(); const f = e.currentTarget; if (f instanceof HTMLFormElement) setFormValue(f, "page", "1"); void loadDonations(); });
   document.getElementById("advertisements-form")?.addEventListener("submit", async (e) => {
     e.preventDefault();
     const form = e.currentTarget;
@@ -6345,6 +6464,14 @@
       setFormValue(form, "page", getInitial("p_page", "page") || "1");
     }
   }
+  if (tab === "donations") {
+    const form = document.getElementById("donations-filters");
+    if (form instanceof HTMLFormElement) {
+      setFormValue(form, "status", getInitial("d_status", "status") || "all");
+      setFormValue(form, "q", getInitial("d_q", "q") || "");
+      setFormValue(form, "page", getInitial("d_page", "page") || "1");
+    }
+  }
   if (normalizedTab === "payment-cards") {
     const form = document.getElementById("payment-cards-filters");
     let initialPaymentUserId = "";
@@ -6455,6 +6582,10 @@
     dbg("load", "purchases");
     void loadPurchases();
     void loadPricingSettings();
+  }
+  if (tab === "donations") {
+    dbg("load", "donations");
+    void loadDonations();
   }
   if (tab === "flash-sales") {
     dbg("load", "flash-sales");

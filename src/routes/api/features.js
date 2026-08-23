@@ -7,7 +7,7 @@ const { requireSameOrigin } = require("../../middleware/same-origin");
 const { requireCsrfToken } = require("../../middleware/csrf");
 const { getUserSession } = require("../../middleware/auth");
 const { buildLeaderboard, getUserLeaderboardSummary, normalizePeriod, normalizeLeaderboardType } = require("../../services/leaderboard");
-const { listDonationLeaders } = require("../../services/donation-leaders");
+const { createDonationRequest, listDonationLeaders, resolveDonationRank } = require("../../services/donation-leaders");
 const { getFeatureSetting } = require("../../services/feature-settings");
 const { getActiveFlashSale, resolveConditionLabel, resolveFlashSalePresentation } = require("../../services/flash-sales");
 const { getDropLiveStats } = require("../../services/drops");
@@ -81,6 +81,50 @@ router.get(
   asyncHandler(async (_req, res) => {
     const payload = await listDonationLeaders({ limit: 100, useCache: true });
     res.json(payload);
+  }),
+);
+
+router.get(
+  "/leaders/quote",
+  asyncHandler(async (req, res) => {
+    try {
+      const userSession = getUserSession(req);
+      const quote = await resolveDonationRank({
+        userId: userSession?.userId || "",
+        amount: req.query.amount,
+        includeCurrentUserTotal: Boolean(userSession?.userId),
+      });
+      res.json({ quote });
+    } catch (error) {
+      res.status(400).json({ error: "Некорректная сумма доната", code: error?.message || "DONATION_QUOTE_FAILED" });
+    }
+  }),
+);
+
+router.post(
+  "/leaders/donate",
+  requireSameOrigin,
+  requireCsrfToken,
+  asyncHandler(async (req, res) => {
+    const userSession = requireUser(req, res);
+    if (!userSession) return;
+    try {
+      const payload = await createDonationRequest({
+        userId: userSession.userId,
+        amount: req.body?.amount,
+      });
+      res.status(201).json(payload);
+    } catch (error) {
+      const code = String(error?.message || "DONATION_REQUEST_FAILED");
+      const status = Number(error?.status || 400);
+      const message =
+        code === "DONATION_AMOUNT_TOO_SMALL"
+          ? "Минимальная сумма доната: 10 000 сум"
+          : code === "USER_NOT_FOUND"
+            ? "Пользователь не найден"
+            : "Не удалось создать заявку на донат";
+      res.status(status >= 400 && status < 600 ? status : 400).json({ error: message, code });
+    }
   }),
 );
 

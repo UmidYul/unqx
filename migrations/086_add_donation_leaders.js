@@ -55,6 +55,28 @@ module.exports = {
           operation_id_default,
           users_id_type
         );
+
+        EXECUTE format(
+          'CREATE TABLE IF NOT EXISTS donation_requests (
+            id %1$s PRIMARY KEY %2$s,
+            user_id %3$s NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            amount bigint NOT NULL,
+            status varchar(20) NOT NULL DEFAULT ''new'',
+            payment_reference varchar(40) NOT NULL UNIQUE,
+            payment_url text NOT NULL,
+            rank_preview integer NULL,
+            admin_login varchar(190) NULL,
+            admin_note varchar(500) NULL,
+            paid_at timestamptz NULL,
+            approved_at timestamptz NULL,
+            rejected_at timestamptz NULL,
+            created_at timestamptz NOT NULL DEFAULT now(),
+            updated_at timestamptz NOT NULL DEFAULT now()
+          )',
+          operation_id_type,
+          operation_id_default,
+          users_id_type
+        );
       END $$;
     `);
 
@@ -78,6 +100,14 @@ module.exports = {
       CREATE UNIQUE INDEX IF NOT EXISTS donation_operations_source_key_unique_idx
         ON donation_operations (source_key)
         WHERE source_key IS NOT NULL
+    `);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS donation_requests_status_created_idx
+        ON donation_requests (status, created_at DESC)
+    `);
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS donation_requests_user_created_idx
+        ON donation_requests (user_id, created_at DESC)
     `);
   },
 };

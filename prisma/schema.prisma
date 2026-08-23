@@ -391,6 +391,7 @@ model User {
   unqScore               UnqScore?
   donationLeader         DonationLeader?
   donationOperations     DonationOperation[]
+  donationRequests       DonationRequest[]
   scoreHistory           ScoreHistory[]
   purchases              Purchase[]
   verificationRequests   VerificationRequest[]
@@ -440,6 +441,28 @@ model DonationOperation {
   @@index([userId, createdAt(sort: Desc)])
   @@index([createdAt(sort: Desc)])
   @@map("donation_operations")
+}
+
+model DonationRequest {
+  id               String   @id @default(uuid())
+  userId           String   @map("user_id")
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amount           BigInt
+  status           String   @default("new") @db.VarChar(20)
+  paymentReference String   @unique @map("payment_reference") @db.VarChar(40)
+  paymentUrl       String   @map("payment_url")
+  rankPreview      Int?     @map("rank_preview")
+  adminLogin       String?  @map("admin_login") @db.VarChar(190)
+  adminNote        String?  @map("admin_note") @db.VarChar(500)
+  paidAt           DateTime? @map("paid_at")
+  approvedAt       DateTime? @map("approved_at")
+  rejectedAt       DateTime? @map("rejected_at")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  @@index([status, createdAt(sort: Desc)])
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("donation_requests")
 }
 
 model StaffUser {

@@ -247,6 +247,7 @@ router.get(
       "orders",
       "credits",
       "purchases",
+      "donations",
       "payment-cards",
       "cards",
       "posts",

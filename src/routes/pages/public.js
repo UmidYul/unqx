@@ -1853,15 +1853,16 @@ router.get(
 );
 
 router.get(
-  "/unix-leaders",
+  "/unqx-leaders",
   asyncHandler(async (req, res) => {
     const leaders = await listDonationLeaders({ limit: 100, useCache: true });
-    res.render("public/unix-leaders", {
-      title: "Unix Leaders | UNQX",
+    res.render("public/unqx-leaders", {
+      title: "UNQX Leaders | UNQX",
       description: "Top 100 донатеров UNQX.",
       image: defaultSocialImage,
       items: leaders.items,
       generatedAt: leaders.generatedAt,
+      userSession: getUserSession(req),
       adminSession: getAdminSession(req),
     });
   }),

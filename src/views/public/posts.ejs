@@ -18,7 +18,7 @@
           <div class="site-header-links hidden items-center gap-8 md:flex">
             <a href="/directory" class="site-header-link text-sm text-neutral-500 transition-colors hover:text-neutral-900">Резиденты</a>
             <% if (leaderboardEnabled) { %><a href="/leaderboard" class="site-header-link whitespace-nowrap text-sm text-neutral-500 transition-colors hover:text-neutral-900">UNQ&nbsp;ELITE</a><% } %>
-            <a href="/unix-leaders" class="site-header-link whitespace-nowrap text-sm text-neutral-500 transition-colors hover:text-neutral-900">Unix&nbsp;Leaders</a>
+            <a href="/unqx-leaders" class="site-header-link whitespace-nowrap text-sm text-neutral-500 transition-colors hover:text-neutral-900">UNQX&nbsp;Leaders</a>
             <a href="/posts" class="site-header-link text-sm font-semibold text-neutral-900">Посты</a>
             <div id="home-auth-nav-desktop" class="flex items-center gap-2">
               <a href="/login" data-auth-login class="site-header-login interactive-btn inline-flex min-h-11 items-center justify-center rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100 <%= hasAuthSession ? 'hidden' : '' %>">Войти</a>
@@ -36,7 +36,7 @@
           <div class="flex flex-col gap-4">
             <a href="/directory" class="site-mobile-link text-sm text-neutral-500">Резиденты</a>
             <% if (leaderboardEnabled) { %><a href="/leaderboard" class="site-mobile-link whitespace-nowrap text-sm text-neutral-500">UNQ&nbsp;ELITE</a><% } %>
-            <a href="/unix-leaders" class="site-mobile-link whitespace-nowrap text-sm text-neutral-500">Unix&nbsp;Leaders</a>
+            <a href="/unqx-leaders" class="site-mobile-link whitespace-nowrap text-sm text-neutral-500">UNQX&nbsp;Leaders</a>
             <a href="/posts" class="site-mobile-link text-sm font-semibold text-neutral-900">Посты</a>
             <div id="home-auth-nav-mobile" class="flex w-full items-center justify-center gap-2">
               <a href="/login" data-auth-login class="site-header-login inline-flex min-h-11 items-center justify-center rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100 <%= hasAuthSession ? 'hidden' : '' %>">Войти</a>
