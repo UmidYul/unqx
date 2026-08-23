@@ -637,15 +637,156 @@ function mapDonationRequestRow(row) {
   };
 }
 
-async function createDonationRequest({ userId, amount }) {
-  try {
-    await ensureDonationRequestsStorage();
-  } catch (error) {
-    const storageError = new Error("DONATION_REQUESTS_STORAGE_UNAVAILABLE");
-    storageError.status = 503;
-    storageError.cause = error;
-    throw storageError;
+const DONATION_REQUEST_NOTE_PREFIX = "DONATION_REQUEST ";
+
+function encodeDonationRequestNote(payload) {
+  return `${DONATION_REQUEST_NOTE_PREFIX}${JSON.stringify(payload)}`.slice(0, 500);
+}
+
+function decodeDonationRequestNote(note) {
+  const raw = String(note || "");
+  if (!raw.startsWith(DONATION_REQUEST_NOTE_PREFIX)) {
+    return null;
   }
+  try {
+    return JSON.parse(raw.slice(DONATION_REQUEST_NOTE_PREFIX.length));
+  } catch {
+    return null;
+  }
+}
+
+function mapFallbackDonationRequestRow(row) {
+  if (!row) return null;
+  const meta = decodeDonationRequestNote(row.note) || {};
+  const amount = typeof row.amount === "bigint" ? row.amount : BigInt(String(row.amount || "0"));
+  const total = typeof row.total_donations === "bigint" ? row.total_donations : BigInt(String(row.total_donations || "0"));
+  const profileSlug = String(row.profile_slug || "").trim();
+  return {
+    id: `op:${String(row.id || "")}`,
+    userId: String(row.user_id || ""),
+    userName: String(row.display_name || row.first_name || row.login || "UNQX User").trim() || "UNQX User",
+    login: row.login ? String(row.login) : null,
+    email: row.email ? String(row.email) : "",
+    profileUrl: profileSlug ? `/${encodeURIComponent(profileSlug)}` : null,
+    amount: amount.toString(),
+    amountLabel: formatDonationLabel(amount),
+    status: String(meta.status || "new"),
+    paymentReference: String(meta.reference || row.source_key || ""),
+    paymentUrl: String(meta.paymentUrl || ""),
+    rankPreview: meta.rankPreview == null ? null : Number(meta.rankPreview),
+    adminLogin: row.admin_login ? String(row.admin_login) : null,
+    adminNote: String(meta.adminNote || ""),
+    totalDonations: total.toString(),
+    totalDonationsLabel: formatDonationLabel(total),
+    createdAt: row.created_at instanceof Date ? row.created_at.toISOString() : null,
+    updatedAt: row.created_at instanceof Date ? row.created_at.toISOString() : null,
+    paidAt: meta.paidAt || null,
+    approvedAt: meta.approvedAt || null,
+    rejectedAt: meta.rejectedAt || null,
+    fallback: true,
+  };
+}
+
+async function createFallbackDonationRequest({ userId, amount, reference, rankPreview }) {
+  const note = encodeDonationRequestNote({
+    status: "new",
+    reference,
+    rankPreview: Number(rankPreview || 1),
+    adminNote: "",
+  });
+  const rows = await prisma.$queryRawUnsafe(
+    `
+      INSERT INTO donation_operations (
+        user_id,
+        admin_login,
+        mode,
+        amount,
+        previous_total,
+        next_total,
+        note,
+        source_key,
+        created_at
+      )
+      VALUES (
+        $1::uuid,
+        'system',
+        'request',
+        $2::bigint,
+        0,
+        0,
+        $3,
+        $4,
+        now()
+      )
+      RETURNING *
+    `,
+    String(userId),
+    String(amount),
+    note,
+    `donation_request:${reference}`,
+  );
+  return rows?.[0] || null;
+}
+
+async function listFallbackDonationRequests({ status = "all", q = "", page = 1, pageSize = 20 } = {}) {
+  const currentPage = Math.max(1, Number(page || 1));
+  const take = Math.max(1, Math.min(100, Number(pageSize || 20)));
+  const offset = (currentPage - 1) * take;
+  const normalizedStatus = String(status || "all").trim().toLowerCase();
+  const statusFilter = ["new", "paid", "approved", "rejected"].includes(normalizedStatus) ? normalizedStatus : "";
+  const search = String(q || "").trim();
+  const searchLike = search ? `%${search}%` : "";
+  const rows = await prisma.$queryRaw`
+    SELECT
+      op.*,
+      u.first_name,
+      u.display_name,
+      u.login,
+      u.email,
+      COALESCE(dl.total_donations, 0) AS total_donations,
+      COALESCE(primary_slug.full_slug, u.free_profile_code, '') AS profile_slug,
+      COUNT(*) OVER()::int AS total_count
+    FROM donation_operations op
+    JOIN users u ON u.id = op.user_id
+    LEFT JOIN donation_leaders dl ON dl.user_id = op.user_id
+    LEFT JOIN LATERAL (
+      SELECT s.full_slug
+      FROM slugs s
+      WHERE s.owner_id = u.id
+        AND s.status IN ('active', 'approved', 'paused', 'private')
+      ORDER BY s.is_primary DESC, s.created_at ASC
+      LIMIT 1
+    ) primary_slug ON true
+    WHERE op.mode = 'request'
+      AND op.note LIKE ${`${DONATION_REQUEST_NOTE_PREFIX}%`}
+      AND (${statusFilter || null} IS NULL OR op.note ILIKE ${`%"status":"${statusFilter}"%`})
+      AND (
+        ${searchLike || null} IS NULL
+        OR u.display_name ILIKE ${searchLike || null}
+        OR u.first_name ILIKE ${searchLike || null}
+        OR u.login ILIKE ${searchLike || null}
+        OR u.email ILIKE ${searchLike || null}
+        OR op.source_key ILIKE ${searchLike || null}
+        OR op.note ILIKE ${searchLike || null}
+      )
+    ORDER BY op.created_at DESC
+    LIMIT ${take}
+    OFFSET ${offset}
+  `;
+  const items = (Array.isArray(rows) ? rows : []).map(mapFallbackDonationRequestRow).filter(Boolean);
+  const total = Number(rows?.[0]?.total_count || 0);
+  return {
+    items,
+    pagination: {
+      page: currentPage,
+      pageSize: take,
+      total,
+      totalPages: Math.max(1, Math.ceil(total / take)),
+    },
+  };
+}
+
+async function createDonationRequest({ userId, amount }) {
   const parsed = DonationRequestSchema.parse({ amount });
   const donationAmount = parseDonationAmount(parsed.amount);
   if (donationAmount < MIN_PUBLIC_DONATION_AMOUNT) {
@@ -684,6 +825,8 @@ async function createDonationRequest({ userId, amount }) {
   const supportTelegram = normalizeTelegramUsername(await getSetting("contact_support_telegram", "@unqx_uz"));
 
   let request = null;
+  let fallbackRequest = null;
+  let fallbackPaymentUrl = "";
   for (let attempt = 0; attempt < 3 && !request; attempt += 1) {
     const reference = buildNewDonationReference();
     const paymentUrl = buildDonationPaymentUrl({
@@ -730,13 +873,42 @@ async function createDonationRequest({ userId, amount }) {
       if (String(error?.code || "") === "23505" && attempt < 2) {
         continue;
       }
-      throw error;
+      console.error("[donation-leaders] primary donation_requests insert failed, using fallback", {
+        code: error?.code || "",
+        message: error?.message || "",
+      });
+      fallbackRequest = await createFallbackDonationRequest({
+        userId: normalizedUserId,
+        amount: donationAmount,
+        reference,
+        rankPreview: rank.estimatedRank,
+      });
+      fallbackPaymentUrl = paymentUrl;
+      break;
     }
   }
-  if (!request) {
+  if (!request && !fallbackRequest) {
     const error = new Error("DONATION_REQUEST_CREATE_EMPTY");
     error.status = 500;
     throw error;
+  }
+  if (fallbackRequest) {
+    const meta = decodeDonationRequestNote(fallbackRequest.note) || {};
+    return {
+      ok: true,
+      request: {
+        id: `op:${String(fallbackRequest.id || "")}`,
+        amount: donationAmount.toString(),
+        amountLabel: formatDonationLabel(donationAmount),
+        status: String(meta.status || "new"),
+        paymentReference: String(meta.reference || ""),
+        paymentUrl: String(meta.paymentUrl || fallbackPaymentUrl || ""),
+        rankPreview: rank.estimatedRank,
+        projectedTotal: rank.projectedTotal,
+        projectedTotalLabel: rank.projectedTotalLabel,
+        fallback: true,
+      },
+    };
   }
   return {
     ok: true,
@@ -759,16 +931,11 @@ async function listDonationRequests({ status = "all", q = "", page = 1, pageSize
     await ensureDonationRequestsStorage();
   } catch (error) {
     if (isDonationRequestsStorageError(error)) {
+      const fallback = await listFallbackDonationRequests({ status, q, page, pageSize });
       return {
-        items: [],
+        ...fallback,
         storageUnavailable: true,
-        message: "Таблица заявок на донат ещё не создана. Запустите миграции.",
-        pagination: {
-          page: Math.max(1, Number(page || 1)),
-          pageSize: Math.max(1, Math.min(100, Number(pageSize || 20))),
-          total: 0,
-          totalPages: 1,
-        },
+        message: fallback.items.length ? "" : "Заявок на донат пока нет",
       };
     }
     throw error;
@@ -780,7 +947,9 @@ async function listDonationRequests({ status = "all", q = "", page = 1, pageSize
   const search = String(q || "").trim();
   const statusFilter = ["new", "paid", "approved", "rejected"].includes(normalizedStatus) ? normalizedStatus : "";
   const searchLike = search ? `%${search}%` : "";
-  const rows = await prisma.$queryRaw`
+  let rows = [];
+  try {
+    rows = await prisma.$queryRaw`
     SELECT
       dr.*,
       u.first_name,
@@ -814,20 +983,139 @@ async function listDonationRequests({ status = "all", q = "", page = 1, pageSize
     LIMIT ${take}
     OFFSET ${offset}
   `;
+  } catch (error) {
+    if (isDonationRequestsStorageError(error)) {
+      const fallback = await listFallbackDonationRequests({ status, q, page, pageSize });
+      return {
+        ...fallback,
+        storageUnavailable: true,
+        message: fallback.items.length ? "" : "Заявок на донат пока нет",
+      };
+    }
+    throw error;
+  }
+  const fallback = await listFallbackDonationRequests({ status, q, page: 1, pageSize: take });
+  const primaryItems = (Array.isArray(rows) ? rows : []).map(mapDonationRequestRow).filter(Boolean);
+  const fallbackItems = Array.isArray(fallback.items) ? fallback.items : [];
+  const mergedItems = [...primaryItems, ...fallbackItems]
+    .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
+    .slice(0, take);
   const total = Number(rows?.[0]?.total_count || 0);
   return {
-    items: (Array.isArray(rows) ? rows : []).map(mapDonationRequestRow),
+    items: mergedItems,
     pagination: {
       page: currentPage,
       pageSize: take,
-      total,
-      totalPages: Math.max(1, Math.ceil(total / take)),
+      total: total + Number(fallback.pagination?.total || 0),
+      totalPages: Math.max(1, Math.ceil((total + Number(fallback.pagination?.total || 0)) / take)),
     },
   };
 }
 
+async function updateFallbackDonationRequestStatus({ operationId, status, adminLogin = "admin", adminNote = "" }) {
+  const normalizedStatus = String(status || "").trim().toLowerCase();
+  const normalizedOperationId = String(operationId || "").trim();
+  if (!isUuid(normalizedOperationId)) {
+    const error = new Error("DONATION_REQUEST_ID_INVALID");
+    error.status = 400;
+    throw error;
+  }
+  const result = await prisma.$transaction(async (tx) => {
+    const rows = await tx.$queryRawUnsafe(
+      `
+        SELECT *
+        FROM donation_operations
+        WHERE id = $1::uuid
+          AND mode = 'request'
+        FOR UPDATE
+      `,
+      normalizedOperationId,
+    );
+    const request = rows?.[0];
+    if (!request) {
+      const error = new Error("DONATION_REQUEST_NOT_FOUND");
+      error.status = 404;
+      throw error;
+    }
+    const meta = decodeDonationRequestNote(request.note) || {};
+    const currentStatus = String(meta.status || "new").toLowerCase();
+    if (currentStatus === "approved" && normalizedStatus === "approved") {
+      return request;
+    }
+    if (currentStatus === "approved" && normalizedStatus !== "approved") {
+      const error = new Error("DONATION_REQUEST_ALREADY_APPROVED");
+      error.status = 409;
+      throw error;
+    }
+    if (currentStatus === "rejected" && normalizedStatus !== "rejected") {
+      const error = new Error("DONATION_REQUEST_ALREADY_REJECTED");
+      error.status = 409;
+      throw error;
+    }
+    const nowIso = new Date().toISOString();
+    const nextMeta = {
+      ...meta,
+      status: normalizedStatus,
+      adminNote: String(adminNote || "").trim().slice(0, 500),
+      ...(normalizedStatus === "paid" ? { paidAt: meta.paidAt || nowIso } : {}),
+      ...(normalizedStatus === "approved" ? { approvedAt: meta.approvedAt || nowIso } : {}),
+      ...(normalizedStatus === "rejected" ? { rejectedAt: meta.rejectedAt || nowIso } : {}),
+    };
+    const updatedRows = await tx.$queryRawUnsafe(
+      `
+        UPDATE donation_operations
+        SET admin_login = $2,
+            note = $3
+        WHERE id = $1::uuid
+        RETURNING *
+      `,
+      normalizedOperationId,
+      String(adminLogin || "admin").slice(0, 190),
+      encodeDonationRequestNote(nextMeta),
+    );
+    const updated = updatedRows?.[0] || request;
+    if (normalizedStatus === "approved") {
+      await addDonationToLeaderWithClient(tx, {
+        userId: request.user_id,
+        amount: request.amount,
+        sourceKey: `donation_request:op:${request.id}`,
+        note: `UNQX Leaders donation ${meta.reference || request.source_key || request.id}`,
+        adminLogin,
+      });
+    }
+    return updated;
+  });
+
+  const detailsRows = await prisma.$queryRawUnsafe(
+    `
+      SELECT
+        op.*,
+        u.first_name,
+        u.display_name,
+        u.login,
+        u.email,
+        COALESCE(dl.total_donations, 0) AS total_donations,
+        COALESCE(primary_slug.full_slug, u.free_profile_code, '') AS profile_slug
+      FROM donation_operations op
+      JOIN users u ON u.id = op.user_id
+      LEFT JOIN donation_leaders dl ON dl.user_id = op.user_id
+      LEFT JOIN LATERAL (
+        SELECT s.full_slug
+        FROM slugs s
+        WHERE s.owner_id = u.id
+          AND s.status IN ('active', 'approved', 'paused', 'private')
+        ORDER BY s.is_primary DESC, s.created_at ASC
+        LIMIT 1
+      ) primary_slug ON true
+      WHERE op.id = $1::uuid
+      LIMIT 1
+    `,
+    String(result.id || normalizedOperationId),
+  );
+  return mapFallbackDonationRequestRow(detailsRows?.[0] || result);
+}
+
 async function updateDonationRequestStatus({ requestId, status, adminLogin = "admin", adminNote = "" }) {
-  await ensureDonationRequestsStorage();
   const normalizedStatus = String(status || "").trim().toLowerCase();
   if (!["paid", "approved", "rejected"].includes(normalizedStatus)) {
     const error = new Error("DONATION_STATUS_INVALID");
@@ -840,6 +1128,15 @@ async function updateDonationRequestStatus({ requestId, status, adminLogin = "ad
     error.status = 400;
     throw error;
   }
+  if (normalizedRequestId.startsWith("op:")) {
+    return updateFallbackDonationRequestStatus({
+      operationId: normalizedRequestId.slice(3),
+      status: normalizedStatus,
+      adminLogin,
+      adminNote,
+    });
+  }
+  await ensureDonationRequestsStorage();
   if (!isUuid(normalizedRequestId)) {
     const error = new Error("DONATION_REQUEST_ID_INVALID");
     error.status = 400;
