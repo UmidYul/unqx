@@ -1,3 +1,5 @@
+const { randomUUID } = require("node:crypto");
+
 const { z } = require("zod");
 
 const { prisma } = require("../db/prisma");
@@ -80,6 +82,10 @@ function buildDonationReference(requestId) {
     .slice(0, 10)
     .toUpperCase();
   return `UNQX-DON-${compact || "LEADER"}`;
+}
+
+function buildNewDonationReference() {
+  return buildDonationReference(randomUUID());
 }
 
 async function resolveDonationRank({ userId = "", amount, includeCurrentUserTotal = true }) {
@@ -622,8 +628,19 @@ async function createDonationRequest({ userId, amount }) {
   const rank = await resolveDonationRank({ userId: normalizedUserId, amount: donationAmount });
   const supportTelegram = normalizeTelegramUsername(await getSetting("contact_support_telegram", "@unqx_uz"));
 
-  const rows = await prisma.$transaction(async (tx) => {
-    const inserted = await tx.$queryRaw`
+  let request = null;
+  for (let attempt = 0; attempt < 3 && !request; attempt += 1) {
+    const reference = buildNewDonationReference();
+    const paymentUrl = buildDonationPaymentUrl({
+      reference,
+      amount: donationAmount,
+      rankPreview: rank.estimatedRank,
+      telegramUsername: supportTelegram,
+      userName: user.display_name || user.first_name || user.login || "UNQX User",
+      email: user.email || "",
+    });
+    try {
+      const inserted = await prisma.$queryRaw`
       INSERT INTO donation_requests (
         user_id,
         amount,
@@ -638,32 +655,27 @@ async function createDonationRequest({ userId, amount }) {
         ${normalizedUserId},
         ${donationAmount},
         'new',
-        'pending-' || substr(md5(random()::text || clock_timestamp()::text), 1, 24),
-        '',
+        ${reference},
+        ${paymentUrl},
         ${rank.estimatedRank},
         now(),
         now()
       )
-      RETURNING id
-    `;
-    const requestId = String(inserted?.[0]?.id || "");
-    const reference = buildDonationReference(requestId);
-    const paymentUrl = buildDonationPaymentUrl({
-      reference,
-      amount: donationAmount,
-      rankPreview: rank.estimatedRank,
-      telegramUsername: supportTelegram,
-      userName: user.display_name || user.first_name || user.login || "UNQX User",
-      email: user.email || "",
-    });
-    return tx.$queryRaw`
-      UPDATE donation_requests
-      SET payment_reference = ${reference}, payment_url = ${paymentUrl}, updated_at = now()
-      WHERE id = ${requestId}
       RETURNING *
     `;
-  });
-  const request = rows?.[0] || null;
+      request = inserted?.[0] || null;
+    } catch (error) {
+      if (String(error?.code || "") === "23505" && attempt < 2) {
+        continue;
+      }
+      throw error;
+    }
+  }
+  if (!request) {
+    const error = new Error("DONATION_REQUEST_CREATE_EMPTY");
+    error.status = 500;
+    throw error;
+  }
   return {
     ok: true,
     request: {
