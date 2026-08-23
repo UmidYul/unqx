@@ -2,7 +2,7 @@
 <html lang="ru">
 
 <head>
-  <% const safeItems=Array.isArray(items) ? items : []; const pageBaseUrl=typeof baseUrl==="string" ? baseUrl : "" ; const isAuthenticated=Boolean(typeof userSession !== "undefined" && userSession && userSession.userId); const leadersJsonLd={ "@context": "https://schema.org", "@type": "ItemList", name: "UNQX Leaders", itemListOrder: "https://schema.org/ItemListOrderDescending", itemListElement: safeItems.slice(0, 10).map((item, index)=> ({ "@type": "ListItem", position: index + 1, url: item.profileUrl ? `${pageBaseUrl}${item.profileUrl}` : pageBaseUrl, name: item.name })) }; %>
+  <% const safeItems=Array.isArray(items) ? items : []; const pageBaseUrl=typeof baseUrl==="string" ? baseUrl : "" ; const leaderSession=typeof userSession !== "undefined" && userSession ? userSession : null; const isAuthenticated=Boolean(leaderSession && leaderSession.userId); const viewerName=isAuthenticated ? String(leaderSession.displayName || leaderSession.firstName || leaderSession.login || "UNQX User").trim() : "UNQX User"; const viewerLogin=isAuthenticated ? String(leaderSession.login || leaderSession.username || leaderSession.telegramUsername || "").replace(/^@+/, "").trim() : ""; const viewerAvatar=isAuthenticated ? String(leaderSession.avatarUrl || leaderSession.photoUrl || "/brand/profile-user.svg").trim() : "/brand/profile-user.svg"; const leadersJsonLd={ "@context": "https://schema.org", "@type": "ItemList", name: "UNQX Leaders", itemListOrder: "https://schema.org/ItemListOrderDescending", itemListElement: safeItems.slice(0, 10).map((item, index)=> ({ "@type": "ListItem", position: index + 1, url: item.profileUrl ? `${pageBaseUrl}${item.profileUrl}` : pageBaseUrl, name: item.name })) }; %>
   <%- include('../partials/head', { title: title || 'UNQX Leaders | UNQX', description: description || 'Top 100 донатеров UNQX', image: typeof image === 'string' ? image : undefined, jsonLd: leadersJsonLd }) %>
 </head>
 
@@ -125,15 +125,91 @@
     </section>
   </main>
 
+  <div id="leaders-payment-modal" class="fixed inset-0 z-[70] hidden items-start justify-center overflow-y-auto bg-neutral-950/55 px-3 py-6 backdrop-blur-sm sm:px-6" aria-hidden="true">
+    <section class="relative w-full max-w-4xl rounded-[22px] border-2 border-blue-500 bg-white shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="leaders-payment-title">
+      <div class="border-b border-neutral-200 px-5 py-4 sm:px-8">
+        <div class="flex items-start justify-between gap-4">
+          <div class="min-w-0 flex-1">
+            <div class="h-1.5 w-full overflow-hidden rounded-full bg-neutral-200">
+              <div class="h-full w-full rounded-full bg-neutral-900"></div>
+            </div>
+            <div class="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm font-bold text-neutral-500">
+              <span>① Подтверждение</span>
+              <span>Шаг 1 из 1</span>
+            </div>
+          </div>
+          <button type="button" class="interactive-btn grid h-12 w-12 shrink-0 place-items-center rounded-xl border border-neutral-300 text-2xl leading-none text-neutral-600 hover:bg-neutral-50" data-leaders-payment-close aria-label="Закрыть">×</button>
+        </div>
+      </div>
+
+      <div class="grid gap-5 px-5 py-5 sm:px-8 sm:py-7">
+        <div class="flex items-center justify-between gap-3 rounded-xl border border-neutral-200 px-4 py-3">
+          <div class="flex min-w-0 items-center gap-3">
+            <img src="<%= viewerAvatar || '/brand/profile-user.svg' %>" alt="" class="h-9 w-9 shrink-0 rounded-full border border-neutral-200 object-cover" />
+            <div class="min-w-0 text-sm">
+              <p class="truncate font-semibold text-neutral-900"><%= viewerName %><% if (viewerLogin) { %> · @<%= viewerLogin %><% } %></p>
+            </div>
+          </div>
+          <a href="/logout" class="shrink-0 text-sm font-semibold text-neutral-600 underline underline-offset-4">Не ты? Выйти</a>
+        </div>
+
+        <div class="rounded-xl border border-neutral-200 px-6 py-6">
+          <p id="leaders-payment-title" class="text-4xl font-black tracking-tight text-neutral-900">UNQX Leaders</p>
+          <p class="mt-2 text-sm text-neutral-500">unqx.uz/unqx-leaders</p>
+        </div>
+
+        <div class="rounded-xl border border-neutral-200 px-5 py-5">
+          <div class="flex flex-wrap items-start justify-between gap-3">
+            <span class="rounded-full border border-violet-200 bg-violet-50 px-3 py-1 text-xs font-black uppercase text-violet-700">Leaders</span>
+            <span class="text-sm text-neutral-500">оплата сейчас</span>
+          </div>
+          <div class="mt-4 grid gap-2">
+            <p class="text-xl font-black text-neutral-900">Донат: <span data-leaders-payment-amount>0 сум</span></p>
+            <p class="text-sm text-neutral-500">Итог после доната: <span data-leaders-payment-total>0 сум</span></p>
+            <p class="text-sm text-neutral-500">Предварительное место: <span class="font-semibold text-neutral-900" data-leaders-payment-rank>#1</span></p>
+            <p class="text-sm text-neutral-500">Код оплаты: <span class="font-mono font-semibold text-neutral-900" data-leaders-payment-code>UNQX-DON</span></p>
+          </div>
+        </div>
+
+        <a id="leaders-payment-link" class="interactive-btn inline-flex min-h-12 items-center justify-center rounded-xl bg-neutral-900 px-5 py-3 text-sm font-bold text-white hover:bg-neutral-700" href="#" target="_blank" rel="noopener noreferrer">Оплатить в Telegram</a>
+      </div>
+    </section>
+  </div>
+
   <script nonce="<%= typeof cspNonce === 'string' ? cspNonce : '' %>">
     (() => {
       const form = document.getElementById("leaders-donation-form");
       const quoteButton = document.getElementById("leaders-quote-button");
       const quoteBox = document.getElementById("leaders-donation-quote");
       const checkBox = document.getElementById("leaders-donation-check");
+      const paymentModal = document.getElementById("leaders-payment-modal");
+      const paymentLink = document.getElementById("leaders-payment-link");
       const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "";
       const amountInput = form?.querySelector('input[name="amount"]');
       const money = (value) => String(value || "").replace(/[^\d]/g, "");
+      const setPaymentText = (selector, value) => {
+        const node = paymentModal?.querySelector(selector);
+        if (node) node.textContent = String(value || "");
+      };
+      const showPaymentModal = (request, quote) => {
+        if (!paymentModal || !(paymentLink instanceof HTMLAnchorElement)) return;
+        setPaymentText("[data-leaders-payment-amount]", request.amountLabel || quote.amountLabel || "");
+        setPaymentText("[data-leaders-payment-total]", request.projectedTotalLabel || quote.projectedTotalLabel || "");
+        setPaymentText("[data-leaders-payment-rank]", `#${request.rankPreview || quote.estimatedRank || 1}`);
+        setPaymentText("[data-leaders-payment-code]", request.paymentReference || "");
+        paymentLink.href = request.paymentUrl || "#";
+        paymentModal.classList.remove("hidden");
+        paymentModal.classList.add("flex");
+        paymentModal.setAttribute("aria-hidden", "false");
+        document.body.classList.add("overflow-hidden");
+      };
+      const hidePaymentModal = () => {
+        if (!paymentModal) return;
+        paymentModal.classList.add("hidden");
+        paymentModal.classList.remove("flex");
+        paymentModal.setAttribute("aria-hidden", "true");
+        document.body.classList.remove("overflow-hidden");
+      };
       const showQuote = (text, tone = "neutral") => {
         if (!quoteBox) return;
         quoteBox.className = `rounded-xl border px-3 py-3 text-sm ${tone === "error" ? "border-red-200 bg-red-50 text-red-700" : "border-neutral-200 bg-neutral-50 text-neutral-600"}`;
@@ -159,6 +235,15 @@
       amountInput?.addEventListener("input", () => {
         if (checkBox) checkBox.classList.add("hidden");
       });
+      paymentModal?.addEventListener("click", (event) => {
+        const target = event.target;
+        if (target === paymentModal || (target instanceof Element && target.closest("[data-leaders-payment-close]"))) {
+          hidePaymentModal();
+        }
+      });
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") hidePaymentModal();
+      });
       form?.addEventListener("submit", async (event) => {
         event.preventDefault();
         if (form.getAttribute("data-authenticated") !== "1") {
@@ -182,9 +267,7 @@
           checkBox.classList.remove("hidden");
           checkBox.innerHTML = `<div class="font-bold">Чек ${request.paymentReference || ""}</div><div class="mt-1">Сумма: ${request.amountLabel || ""} · место: #${request.rankPreview || quote.estimatedRank || 1}</div><a class="interactive-btn mt-3 inline-flex min-h-11 items-center justify-center rounded-xl bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800" href="${request.paymentUrl || "#"}" target="_blank" rel="noopener noreferrer">Оплатить в Telegram</a>`;
         }
-        if (request.paymentUrl) {
-          window.open(request.paymentUrl, "_blank", "noopener,noreferrer");
-        }
+        showPaymentModal(request, quote);
       });
     })();
   </script>

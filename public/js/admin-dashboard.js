@@ -2041,13 +2041,14 @@
     if (r.ok) table.innerHTML = rows.length
       ? rows.map((x) => {
         const profile = x.profileUrl ? `<a href="${X(x.profileUrl)}" target="_blank" rel="noopener noreferrer" class="font-semibold underline-offset-4 hover:underline">${X(x.userName || "UNQX User")}</a>` : `<span class="font-semibold">${X(x.userName || "UNQX User")}</span>`;
-        const menu = menuWrap([
-          x.paymentUrl ? menuItem({ label: "Открыть чек", icon: "send", attrs: `data-act="don-open" data-url="${X(x.paymentUrl)}"` }) : "",
-          menuSeparator(),
-          String(x.status || "") !== "approved" ? menuItem({ label: "Отметить оплачено", icon: "creditCard", attrs: `data-act="don-status" data-id="${X(x.id)}" data-status="paid"` }) : "",
-          String(x.status || "") !== "approved" ? menuItem({ label: "Подтвердить и начислить", icon: "checkCircle", attrs: `data-act="don-status" data-id="${X(x.id)}" data-status="approved"` }) : "",
-          !["approved", "rejected"].includes(String(x.status || "")) ? menuItem({ label: "Отклонить", icon: "xCircle", attrs: `data-act="don-status" data-id="${X(x.id)}" data-status="rejected"`, danger: true }) : "",
-        ].join(""));
+        const isFinal = ["approved", "rejected"].includes(String(x.status || ""));
+        const isApproved = String(x.status || "") === "approved";
+        const actions = [
+          x.paymentUrl ? `<button type="button" class="interactive-btn rounded-lg border border-neutral-300 px-2.5 py-1.5 text-xs font-semibold text-neutral-700 hover:bg-neutral-100" data-act="don-open" data-url="${X(x.paymentUrl)}">Чек</button>` : "",
+          !isApproved ? `<button type="button" class="interactive-btn rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100" data-act="don-status" data-id="${X(x.id)}" data-status="paid">Оплачено</button>` : "",
+          !isApproved ? `<button type="button" class="interactive-btn rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-100" data-act="don-status" data-id="${X(x.id)}" data-status="approved">Подтвердить</button>` : "",
+          !isFinal ? `<button type="button" class="interactive-btn rounded-lg border border-red-200 bg-red-50 px-2.5 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-100" data-act="don-status" data-id="${X(x.id)}" data-status="rejected">Отклонить</button>` : "",
+        ].filter(Boolean).join("");
         return `<tr class="admin-table-row border-t border-neutral-100">
           <td class="px-4 py-3">${D(x.createdAt)}</td>
           <td class="px-4 py-3">${profile}<div class="text-xs text-neutral-500">${X(x.login ? `@${x.login}` : x.email || "")}</div><div class="text-xs text-emerald-700">${X(x.totalDonationsLabel || "0 сум")}</div></td>
@@ -2055,10 +2056,10 @@
           <td class="px-4 py-3 text-right font-semibold">${X(x.amountLabel || "0 сум")}</td>
           <td class="px-4 py-3">${x.rankPreview ? `#${X(String(x.rankPreview))}` : "-"}</td>
           <td class="px-4 py-3">${statusChip(x.status || "new")}</td>
-          <td class="px-4 py-3 text-right">${menu}</td>
+          <td class="px-4 py-3 text-right"><div class="admin-row-actions justify-end">${actions || "<span class=\"text-xs text-neutral-400\">Готово</span>"}</div></td>
         </tr>`;
       }).join("")
-      : `<tr><td colspan="7" class="px-4 py-10 text-center text-neutral-500">${I("creditCard", 48)}<div class="mt-2">Заявок на донат пока нет</div></td></tr>`;
+      : `<tr><td colspan="7" class="px-4 py-10 text-center text-neutral-500">${I("creditCard", 48)}<div class="mt-2">${X(payload.message || "Заявок на донат пока нет")}</div><div class="mt-1 text-xs text-neutral-400">Новые заявки появятся после формирования чека на странице UNQX Leaders.</div></td></tr>`;
     renderPager("donations-pagination", payload.pagination || { page: 1, totalPages: 1, total: 0 }, (nextPage) => {
       setFormValue(form, "page", String(nextPage));
       void loadDonations();
@@ -2070,13 +2071,16 @@
     leadersTable.innerHTML = leaders.length
       ? leaders.map((x) => {
         const profile = x.profileUrl ? `<a href="${X(x.profileUrl)}" target="_blank" rel="noopener noreferrer" class="font-semibold underline-offset-4 hover:underline">${X(x.name || "UNQX User")}</a>` : `<span class="font-semibold">${X(x.name || "UNQX User")}</span>`;
-        const menu = menuWrap([
-          menuItem({ label: "Изменить баланс", icon: "creditCard", attrs: `data-act="don-user" data-id="${X(x.userId)}" data-name="${X(x.name || "UNQX User")}" data-donations="${X(x.totalDonations || "0")}"` }),
-          menuItem({ label: "Скрыть из Top", icon: "xCircle", attrs: `data-act="don-hide" data-id="${X(x.userId)}" data-name="${X(x.name || "UNQX User")}"` }),
-          menuItem({ label: "Обнулить и скрыть", icon: "trash", attrs: `data-act="don-reset" data-id="${X(x.userId)}" data-name="${X(x.name || "UNQX User")}"`, danger: true }),
-          x.profileUrl ? menuItem({ label: "Открыть профиль", icon: "external", attrs: `data-act="open-url" data-url="${X(x.profileUrl)}"` }) : "",
-        ].join(""));
-        return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3 font-mono text-xs">#${X(String(x.rank || ""))}</td><td class="px-4 py-3">${profile}<div class="text-xs text-neutral-500">${X(x.login ? `@${x.login}` : "")}</div></td><td class="px-4 py-3 text-right font-semibold">${X(x.totalDonationsLabel || "0 сум")}</td><td class="px-4 py-3 text-right">${menu}</td></tr>`;
+        const userId = X(x.userId);
+        const nameAttr = X(x.name || "UNQX User");
+        const totalAttr = X(x.totalDonations || "0");
+        const actions = [
+          `<button type="button" class="interactive-btn rounded-lg border border-neutral-300 px-2.5 py-1.5 text-xs font-semibold text-neutral-700 hover:bg-neutral-100" data-act="don-user" data-id="${userId}" data-name="${nameAttr}" data-donations="${totalAttr}">Изменить</button>`,
+          `<button type="button" class="interactive-btn rounded-lg border border-orange-200 bg-orange-50 px-2.5 py-1.5 text-xs font-semibold text-orange-700 hover:bg-orange-100" data-act="don-hide" data-id="${userId}" data-name="${nameAttr}">Скрыть</button>`,
+          `<button type="button" class="interactive-btn rounded-lg border border-red-200 bg-red-50 px-2.5 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-100" data-act="don-reset" data-id="${userId}" data-name="${nameAttr}">Обнулить</button>`,
+          x.profileUrl ? `<button type="button" class="interactive-btn rounded-lg border border-neutral-300 px-2.5 py-1.5 text-xs font-semibold text-neutral-700 hover:bg-neutral-100" data-act="open-url" data-url="${X(x.profileUrl)}">Профиль</button>` : "",
+        ].filter(Boolean).join("");
+        return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3 font-mono text-xs">#${X(String(x.rank || ""))}</td><td class="px-4 py-3">${profile}<div class="text-xs text-neutral-500">${X(x.login ? `@${x.login}` : "")}</div></td><td class="px-4 py-3 text-right font-semibold">${X(x.totalDonationsLabel || "0 сум")}</td><td class="px-4 py-3 text-right"><div class="admin-row-actions justify-end">${actions}</div></td></tr>`;
       }).join("")
       : `<tr><td colspan="4" class="px-4 py-10 text-center text-neutral-500">Top 100 пока пуст</td></tr>`;
   }

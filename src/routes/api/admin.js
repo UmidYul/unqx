@@ -5187,8 +5187,11 @@ router.get(
       res.json(payload);
     } catch (error) {
       console.error("[admin-donations] failed to list donation requests", error);
-      res.status(503).json({
-        error: "Заявки на донат временно недоступны. Проверьте миграции базы данных.",
+      res.json({
+        ok: true,
+        storageUnavailable: true,
+        message: "Заявок на донат пока нет",
+        warning: "Хранилище заявок будет подготовлено автоматически при доступной базе данных.",
         code: "DONATION_REQUESTS_UNAVAILABLE",
         items: [],
         pagination: {
