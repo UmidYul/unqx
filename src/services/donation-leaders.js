@@ -88,6 +88,10 @@ function buildNewDonationReference() {
   return buildDonationReference(randomUUID());
 }
 
+function isUuid(value) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value || ""));
+}
+
 async function resolveDonationRank({ userId = "", amount, includeCurrentUserTotal = true }) {
   const donationAmount = parseDonationAmount(amount);
   const normalizedUserId = String(userId || "").trim();
@@ -327,31 +331,40 @@ async function updateDonationLeader({ userId, mode, amount, note = "", adminLogi
     error.status = 400;
     throw error;
   }
+  if (!isUuid(normalizedUserId)) {
+    const error = new Error("USER_ID_INVALID");
+    error.status = 400;
+    throw error;
+  }
   const donationAmount = parseDonationAmount(parsed.amount);
   const signedAmount = parsed.mode === "subtract" ? -donationAmount : donationAmount;
 
   const result = await prisma.$transaction(async (tx) => {
-    const users = await tx.$queryRaw`
-      SELECT id FROM users WHERE id = ${normalizedUserId} LIMIT 1
-    `;
+    const users = await tx.$queryRawUnsafe("SELECT id FROM users WHERE id = $1::uuid LIMIT 1", normalizedUserId);
     if (!Array.isArray(users) || !users.length) {
       const error = new Error("USER_NOT_FOUND");
       error.status = 404;
       throw error;
     }
 
-    await tx.$executeRaw`
+    await tx.$executeRawUnsafe(
+      `
       INSERT INTO donation_leaders (user_id, total_donations, is_public_leader, updated_at)
-      VALUES (${normalizedUserId}, 0, true, now())
+      VALUES ($1::uuid, 0, true, now())
       ON CONFLICT (user_id) DO NOTHING
-    `;
+    `,
+      normalizedUserId,
+    );
 
-    const beforeRows = await tx.$queryRaw`
+    const beforeRows = await tx.$queryRawUnsafe(
+      `
       SELECT total_donations, is_public_leader
       FROM donation_leaders
-      WHERE user_id = ${normalizedUserId}
+      WHERE user_id = $1::uuid
       FOR UPDATE
-    `;
+    `,
+      normalizedUserId,
+    );
     const before = beforeRows[0];
     const previousTotal = typeof before.total_donations === "bigint"
       ? before.total_donations
@@ -374,22 +387,28 @@ async function updateDonationLeader({ userId, mode, amount, note = "", adminLogi
       ? parsed.isPublicLeader
       : before.is_public_leader !== false;
 
-    const updatedRows = await tx.$queryRaw`
+    const updatedRows = await tx.$queryRawUnsafe(
+      `
       UPDATE donation_leaders
       SET
-        total_donations = ${nextTotal},
-        is_public_leader = ${nextPublic},
+        total_donations = $2::bigint,
+        is_public_leader = $3::boolean,
         updated_at = CASE
-          WHEN total_donations IS DISTINCT FROM ${nextTotal}
-            OR is_public_leader IS DISTINCT FROM ${nextPublic}
+          WHEN total_donations IS DISTINCT FROM $2::bigint
+            OR is_public_leader IS DISTINCT FROM $3::boolean
           THEN now()
           ELSE updated_at
         END
-      WHERE user_id = ${normalizedUserId}
+      WHERE user_id = $1::uuid
       RETURNING user_id, total_donations, is_public_leader, updated_at
-    `;
+    `,
+      normalizedUserId,
+      nextTotal.toString(),
+      nextPublic,
+    );
 
-    await tx.$executeRaw`
+    await tx.$executeRawUnsafe(
+      `
       INSERT INTO donation_operations (
         user_id,
         admin_login,
@@ -402,17 +421,25 @@ async function updateDonationLeader({ userId, mode, amount, note = "", adminLogi
         created_at
       )
       VALUES (
-        ${normalizedUserId},
-        ${String(adminLogin || "admin").slice(0, 190)},
-        ${parsed.mode},
-        ${signedAmount},
-        ${previousTotal},
-        ${nextTotal},
-        ${String(parsed.note || "").trim().slice(0, 500) || null},
-        ${null},
+        $1::uuid,
+        $2,
+        $3,
+        $4::bigint,
+        $5::bigint,
+        $6::bigint,
+        $7,
+        NULL,
         now()
       )
-    `;
+    `,
+      normalizedUserId,
+      String(adminLogin || "admin").slice(0, 190),
+      parsed.mode,
+      signedAmount.toString(),
+      previousTotal.toString(),
+      nextTotal.toString(),
+      String(parsed.note || "").trim().slice(0, 500) || null,
+    );
 
     const updated = updatedRows[0];
     const total = typeof updated.total_donations === "bigint" ? updated.total_donations : BigInt(String(updated.total_donations || "0"));
@@ -436,6 +463,11 @@ async function addDonationToLeaderWithClient(tx, { userId, amount, note = "", so
   const normalizedUserId = String(userId || "").trim();
   if (!normalizedUserId) {
     const error = new Error("USER_ID_REQUIRED");
+    error.status = 400;
+    throw error;
+  }
+  if (!isUuid(normalizedUserId)) {
+    const error = new Error("USER_ID_INVALID");
     error.status = 400;
     throw error;
   }
@@ -479,27 +511,31 @@ async function addDonationToLeaderWithClient(tx, { userId, amount, note = "", so
     }
   }
 
-  const users = await tx.$queryRaw`
-    SELECT id FROM users WHERE id = ${normalizedUserId} LIMIT 1
-  `;
+  const users = await tx.$queryRawUnsafe("SELECT id FROM users WHERE id = $1::uuid LIMIT 1", normalizedUserId);
   if (!Array.isArray(users) || !users.length) {
     const error = new Error("USER_NOT_FOUND");
     error.status = 404;
     throw error;
   }
 
-  await tx.$executeRaw`
+  await tx.$executeRawUnsafe(
+    `
     INSERT INTO donation_leaders (user_id, total_donations, is_public_leader, updated_at)
-    VALUES (${normalizedUserId}, 0, true, now())
+    VALUES ($1::uuid, 0, true, now())
     ON CONFLICT (user_id) DO NOTHING
-  `;
+  `,
+    normalizedUserId,
+  );
 
-  const beforeRows = await tx.$queryRaw`
+  const beforeRows = await tx.$queryRawUnsafe(
+    `
     SELECT total_donations, is_public_leader
     FROM donation_leaders
-    WHERE user_id = ${normalizedUserId}
+    WHERE user_id = $1::uuid
     FOR UPDATE
-  `;
+  `,
+    normalizedUserId,
+  );
   const before = beforeRows[0];
   const previousTotal = typeof before.total_donations === "bigint"
     ? before.total_donations
@@ -511,14 +547,19 @@ async function addDonationToLeaderWithClient(tx, { userId, amount, note = "", so
     throw error;
   }
 
-  const updatedRows = await tx.$queryRaw`
+  const updatedRows = await tx.$queryRawUnsafe(
+    `
     UPDATE donation_leaders
-    SET total_donations = ${nextTotal}, updated_at = now()
-    WHERE user_id = ${normalizedUserId}
+    SET total_donations = $2::bigint, updated_at = now()
+    WHERE user_id = $1::uuid
     RETURNING user_id, total_donations, is_public_leader, updated_at
-  `;
+  `,
+    normalizedUserId,
+    nextTotal.toString(),
+  );
 
-  await tx.$executeRaw`
+  await tx.$executeRawUnsafe(
+    `
     INSERT INTO donation_operations (
       user_id,
       admin_login,
@@ -531,17 +572,25 @@ async function addDonationToLeaderWithClient(tx, { userId, amount, note = "", so
       created_at
     )
     VALUES (
-      ${normalizedUserId},
-      ${String(adminLogin || "system").slice(0, 190)},
-      ${"add"},
-      ${donationAmount},
-      ${previousTotal},
-      ${nextTotal},
-      ${String(note || "").trim().slice(0, 500) || null},
-      ${normalizedSourceKey || null},
+      $1::uuid,
+      $2,
+      'add',
+      $3::bigint,
+      $4::bigint,
+      $5::bigint,
+      $6,
+      $7,
       now()
     )
-  `;
+  `,
+    normalizedUserId,
+    String(adminLogin || "system").slice(0, 190),
+    donationAmount.toString(),
+    previousTotal.toString(),
+    nextTotal.toString(),
+    String(note || "").trim().slice(0, 500) || null,
+    normalizedSourceKey || null,
+  );
 
   const updated = updatedRows[0];
   const total = typeof updated.total_donations === "bigint" ? updated.total_donations : BigInt(String(updated.total_donations || "0"));
@@ -610,14 +659,20 @@ async function createDonationRequest({ userId, amount }) {
     error.status = 401;
     throw error;
   }
+  if (!isUuid(normalizedUserId)) {
+    const error = new Error("USER_ID_INVALID");
+    error.status = 401;
+    throw error;
+  }
 
-  const userRows = await prisma.$queryRaw`
-    SELECT id, first_name, display_name, email, login
+  const userRows = await prisma.$queryRawUnsafe(
+    `SELECT id, first_name, display_name, email, login
     FROM users
-    WHERE id = ${normalizedUserId}
+    WHERE id = $1::uuid
       AND status = 'active'
-    LIMIT 1
-  `;
+    LIMIT 1`,
+    normalizedUserId,
+  );
   const user = Array.isArray(userRows) ? userRows[0] : null;
   if (!user) {
     const error = new Error("USER_NOT_FOUND");
@@ -640,7 +695,8 @@ async function createDonationRequest({ userId, amount }) {
       email: user.email || "",
     });
     try {
-      const inserted = await prisma.$queryRaw`
+      const inserted = await prisma.$queryRawUnsafe(
+        `
       INSERT INTO donation_requests (
         user_id,
         amount,
@@ -652,17 +708,23 @@ async function createDonationRequest({ userId, amount }) {
         updated_at
       )
       VALUES (
-        ${normalizedUserId},
-        ${donationAmount},
+        $1::uuid,
+        $2::bigint,
         'new',
-        ${reference},
-        ${paymentUrl},
-        ${rank.estimatedRank},
+        $3,
+        $4,
+        $5::integer,
         now(),
         now()
       )
       RETURNING *
-    `;
+    `,
+        normalizedUserId,
+        donationAmount.toString(),
+        reference,
+        paymentUrl,
+        Number(rank.estimatedRank || 1),
+      );
       request = inserted?.[0] || null;
     } catch (error) {
       if (String(error?.code || "") === "23505" && attempt < 2) {
@@ -778,13 +840,21 @@ async function updateDonationRequestStatus({ requestId, status, adminLogin = "ad
     error.status = 400;
     throw error;
   }
+  if (!isUuid(normalizedRequestId)) {
+    const error = new Error("DONATION_REQUEST_ID_INVALID");
+    error.status = 400;
+    throw error;
+  }
   const result = await prisma.$transaction(async (tx) => {
-    const lockedRows = await tx.$queryRaw`
+    const lockedRows = await tx.$queryRawUnsafe(
+      `
       SELECT *
       FROM donation_requests
-      WHERE id = ${normalizedRequestId}
+      WHERE id = $1::uuid
       FOR UPDATE
-    `;
+    `,
+      normalizedRequestId,
+    );
     const request = lockedRows?.[0];
     if (!request) {
       const error = new Error("DONATION_REQUEST_NOT_FOUND");
@@ -819,7 +889,7 @@ async function updateDonationRequestStatus({ requestId, status, adminLogin = "ad
            admin_note = $3,
            ${nowColumn} = COALESCE(${nowColumn}, now()),
            updated_at = now()
-       WHERE id = $4
+       WHERE id = $4::uuid
        RETURNING *`,
       normalizedStatus,
       String(adminLogin || "admin").slice(0, 190),
@@ -854,8 +924,65 @@ async function addDonationToLeader({ userId, amount, note = "", sourceKey = "", 
   return result;
 }
 
+async function clearDonationLeaders({ reset = true, adminLogin = "admin", note = "" } = {}) {
+  const normalizedNote = String(note || (reset ? "Массовая очистка Top 100" : "Массовое скрытие Top 100")).trim().slice(0, 500);
+  const result = await prisma.$transaction(async (tx) => {
+    const rows = await tx.$queryRaw`
+      SELECT user_id, total_donations
+      FROM donation_leaders
+      WHERE is_public_leader = true OR total_donations > 0
+      FOR UPDATE
+    `;
+    if (!Array.isArray(rows) || !rows.length) {
+      return { affected: 0 };
+    }
+
+    if (reset) {
+      await tx.$executeRaw`
+        INSERT INTO donation_operations (
+          user_id,
+          admin_login,
+          mode,
+          amount,
+          previous_total,
+          next_total,
+          note,
+          source_key,
+          created_at
+        )
+        SELECT
+          user_id,
+          ${String(adminLogin || "admin").slice(0, 190)},
+          'set',
+          -total_donations,
+          total_donations,
+          0,
+          ${normalizedNote || null},
+          NULL,
+          now()
+        FROM donation_leaders
+        WHERE total_donations > 0
+      `;
+    }
+
+    await tx.$executeRaw`
+      UPDATE donation_leaders
+      SET
+        total_donations = CASE WHEN ${Boolean(reset)} THEN 0 ELSE total_donations END,
+        is_public_leader = false,
+        updated_at = now()
+      WHERE is_public_leader = true OR total_donations > 0
+    `;
+    return { affected: rows.length };
+  });
+
+  invalidateDonationLeadersCache();
+  return result;
+}
+
 module.exports = {
   addDonationToLeader,
+  clearDonationLeaders,
   createDonationRequest,
   DonationUpdateSchema,
   DonationRequestSchema,

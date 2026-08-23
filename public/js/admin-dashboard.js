@@ -2022,6 +2022,9 @@
     const form = document.getElementById("donations-filters");
     const table = document.getElementById("donations-table");
     const leadersTable = document.getElementById("donation-leaders-table");
+    const requestsStat = document.getElementById("donations-stat-requests");
+    const leadersStat = document.getElementById("donations-stat-leaders");
+    const totalStat = document.getElementById("donations-stat-total");
     if (!(form instanceof HTMLFormElement) || !(table instanceof HTMLElement) || !(leadersTable instanceof HTMLElement)) return;
 
     const q = {
@@ -2038,6 +2041,9 @@
       payload = await r.json().catch(() => ({}));
     }
     const rows = Array.isArray(payload.items) ? payload.items : [];
+    if (requestsStat instanceof HTMLElement) {
+      requestsStat.textContent = Number(payload.pagination?.total || rows.length || 0).toLocaleString("ru-RU");
+    }
     if (r.ok) table.innerHTML = rows.length
       ? rows.map((x) => {
         const profile = x.profileUrl ? `<a href="${X(x.profileUrl)}" target="_blank" rel="noopener noreferrer" class="font-semibold underline-offset-4 hover:underline">${X(x.userName || "UNQX User")}</a>` : `<span class="font-semibold">${X(x.userName || "UNQX User")}</span>`;
@@ -2068,6 +2074,13 @@
     const leadersResponse = await fetch("/api/admin/donations/leaders", { headers: H() });
     const leadersPayload = leadersResponse.ok ? await leadersResponse.json().catch(() => ({})) : {};
     const leaders = Array.isArray(leadersPayload.items) ? leadersPayload.items : [];
+    const leadersTotal = leaders.reduce((sum, item) => sum + Number(item.totalDonations || 0), 0);
+    if (leadersStat instanceof HTMLElement) {
+      leadersStat.textContent = Number(leaders.length || 0).toLocaleString("ru-RU");
+    }
+    if (totalStat instanceof HTMLElement) {
+      totalStat.textContent = P(leadersTotal);
+    }
     leadersTable.innerHTML = leaders.length
       ? leaders.map((x) => {
         const profile = x.profileUrl ? `<a href="${X(x.profileUrl)}" target="_blank" rel="noopener noreferrer" class="font-semibold underline-offset-4 hover:underline">${X(x.name || "UNQX User")}</a>` : `<span class="font-semibold">${X(x.name || "UNQX User")}</span>`;
@@ -5162,6 +5175,23 @@
       await showAlert(reset ? "Пользователь обнулён и скрыт." : "Пользователь скрыт из Top.");
       void loadDonations();
       closeAllRowMenus();
+      return;
+    }
+    if (a === "don-clear-leaders") {
+      const ok = await showConfirm("Очистить весь текущий Top 100 донатеров?\n\nВсе текущие балансы в рейтинге будут обнулены и скрыты. Новые заявки после этого будут появляться отдельно в таблице заявок.");
+      if (!ok) return;
+      const r = await fetch("/api/admin/donations/leaders?reset=1", {
+        method: "DELETE",
+        headers: H({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ reset: true }),
+      });
+      if (!r.ok) {
+        await showAlert(await E(r));
+        return;
+      }
+      const payload = await r.json().catch(() => ({}));
+      await showAlert(`Top 100 очищен. Затронуто записей: ${Number(payload.affected || 0).toLocaleString("ru-RU")}.`);
+      void loadDonations();
       return;
     }
     if (a === "udon") {

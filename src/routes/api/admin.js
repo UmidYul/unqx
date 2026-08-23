@@ -30,6 +30,7 @@ const {
 const { getGlobalStats } = require("../../services/stats");
 const { calculateSlugPrice, getSlugPricingConfig } = require("../../services/slug-pricing");
 const {
+  clearDonationLeaders,
   getDonationLeaderForUser,
   listDonationLeaders,
   listDonationRequests,
@@ -5210,6 +5211,31 @@ router.get(
   asyncHandler(async (_req, res) => {
     const payload = await listDonationLeaders({ limit: 100, useCache: false });
     res.json(payload);
+  }),
+);
+
+router.delete(
+  "/donations/leaders",
+  asyncHandler(async (req, res) => {
+    try {
+      const reset = req.query.reset !== "0" && req.body?.reset !== false;
+      const result = await clearDonationLeaders({
+        reset,
+        adminLogin: req.session?.admin?.login || "admin",
+        note: reset ? "Админ очистил Top 100 донатеров" : "Админ скрыл Top 100 донатеров",
+      });
+      void logUserActivity({
+        userId: "",
+        userLogin: "",
+        action: "donations_update",
+        detail: `${reset ? "clear_top_reset" : "clear_top_hide"} affected=${result.affected || 0};admin=${req.session?.admin?.login || "admin"}`,
+        req,
+      });
+      res.json({ ok: true, affected: result.affected || 0 });
+    } catch (error) {
+      console.error("[admin-donations] failed to clear leaders", error);
+      res.status(500).json({ error: "Не удалось очистить Top 100", code: String(error?.message || "DONATION_LEADERS_CLEAR_FAILED") });
+    }
   }),
 );
 
