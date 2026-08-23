@@ -389,6 +389,8 @@ model User {
   dropWaitlistEntries    DropWaitlist[]
   unqxGameSpins          UnqxGameSpin[]
   unqScore               UnqScore?
+  donationLeader         DonationLeader?
+  donationOperations     DonationOperation[]
   scoreHistory           ScoreHistory[]
   purchases              Purchase[]
   verificationRequests   VerificationRequest[]
@@ -409,6 +411,35 @@ model User {
   @@index([status, reactivationDeadlineAt])
   @@index([freeProfileStatus, freeProfileDisabledAt])
   @@map("users")
+}
+
+model DonationLeader {
+  userId         String   @id @map("user_id")
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  totalDonations BigInt   @default(0) @map("total_donations")
+  isPublicLeader Boolean  @default(true) @map("is_public_leader")
+  updatedAt      DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@index([isPublicLeader, totalDonations(sort: Desc), updatedAt])
+  @@map("donation_leaders")
+}
+
+model DonationOperation {
+  id            String   @id @default(uuid())
+  userId        String   @map("user_id")
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  adminLogin    String?  @map("admin_login") @db.VarChar(190)
+  mode          String   @db.VarChar(20)
+  amount        BigInt
+  previousTotal BigInt   @map("previous_total")
+  nextTotal     BigInt   @map("next_total")
+  note          String?  @db.VarChar(500)
+  sourceKey     String?  @unique @map("source_key") @db.VarChar(190)
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([createdAt(sort: Desc)])
+  @@map("donation_operations")
 }
 
 model StaffUser {

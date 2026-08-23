@@ -73,8 +73,9 @@
   : [];
   const latestSlackCards = latestSlackCardsSource.filter((item) => item && typeof item === "object").slice(0, 5);
   const latestPublishedPostsList = Array.isArray(latestPublishedPosts) ? latestPublishedPosts.slice(0, 3) : [];
-  const advertisementList = Array.isArray(advertisements)
-  ? advertisements
+  const advertisementSource = typeof advertisements !== "undefined" ? advertisements : [];
+  const advertisementList = Array.isArray(advertisementSource)
+  ? advertisementSource
   .map((item) => ({
   imageUrl: String(item && (item.imageUrl || item.image_url) || "").trim(),
   targetUrl: String(item && (item.targetUrl || item.target_url) || "").trim(),
@@ -227,6 +228,8 @@
               <% if (leaderboardEnabled) { %><a href="/leaderboard"
                   class="site-header-link whitespace-nowrap text-sm text-neutral-500 transition-colors hover:text-neutral-900">UNQ&nbsp;ELITE</a>
                 <% } %>
+                  <a href="/unix-leaders"
+                    class="site-header-link whitespace-nowrap text-sm text-neutral-500 transition-colors hover:text-neutral-900">Unix&nbsp;Leaders</a>
                   <a href="/posts"
                     class="site-header-link text-sm text-neutral-500 transition-colors hover:text-neutral-900">Посты</a>
                   <a href="/cards"
@@ -270,6 +273,7 @@
               <% if (leaderboardEnabled) { %><a href="/leaderboard"
                   class="site-mobile-link whitespace-nowrap text-sm text-neutral-500">UNQ&nbsp;ELITE</a>
                 <% } %>
+                  <a href="/unix-leaders" class="site-mobile-link whitespace-nowrap text-sm text-neutral-500">Unix&nbsp;Leaders</a>
                   <a href="/posts" class="site-mobile-link text-sm text-neutral-500">Посты</a>
                   <a href="/cards" class="site-mobile-link text-sm text-neutral-500">Карты</a>
                   <div id="home-auth-nav-mobile" class="flex w-full items-center justify-center gap-2">
@@ -947,7 +951,7 @@
                   </div>
                 </section>
                 <% } %>
-                <% const homeAuction = activeAuction && typeof activeAuction === "object" ? activeAuction : null; %>
+                <% const homeAuction = typeof activeAuction !== "undefined" && activeAuction && typeof activeAuction === "object" ? activeAuction : null; %>
                 <% if (homeAuction && homeBlockVisible("homepage_auction_visible")) { %>
                   <% const auctionSlug = String(homeAuction.slug || "").toUpperCase(); %>
                   <% const auctionSlugDisplay = auctionSlug.length > 3 ? `${auctionSlug.slice(0, 3)} ${auctionSlug.slice(3)}` : auctionSlug; %>

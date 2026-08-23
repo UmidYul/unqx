@@ -29,6 +29,7 @@ const {
 } = require("../../services/slug");
 const { getGlobalStats } = require("../../services/stats");
 const { calculateSlugPrice, getSlugPricingConfig } = require("../../services/slug-pricing");
+const { getDonationLeaderForUser, updateDonationLeader } = require("../../services/donation-leaders");
 const { sendTelegramMessage, sendPaymentAlertsToAdmin } = require("../../services/telegram");
 const { recalculateAndRefreshPercentiles } = require("../../services/unq-score");
 const { sendExpoPushToUser, sendExpoPushToUsers } = require("../../services/push");
@@ -4762,7 +4763,7 @@ router.get(
       const creatorIds = hasCreatorColumn
         ? Array.from(new Set(users.map((item) => item.createdByStaffId).filter(Boolean)))
         : [];
-      const [slugs, cards, unqScores, creatorStaff, approvedVerificationRows, approvedBadges] = await Promise.all([
+      const [slugs, cards, unqScores, donationRows, creatorStaff, approvedVerificationRows, approvedBadges] = await Promise.all([
         userIds.length && modelDelegateExists("Slug")
           ? safeSideLookup("slugs", [], () => prisma.slug.findMany({
             where: { ownerId: { in: userIds } },
@@ -4797,6 +4798,13 @@ router.get(
               scorePlan: true,
             },
           }))
+          : Promise.resolve([]),
+        userIds.length
+          ? safeSideLookup("donation-leaders", [], () => prisma.$queryRaw`
+            SELECT user_id, total_donations, is_public_leader, updated_at
+            FROM donation_leaders
+            WHERE user_id IN (${Prisma.join(userIds)})
+          `)
           : Promise.resolve([]),
         creatorIds.length
           ? safeSideLookup("creator-staff", [], () => prisma.staffUser.findMany({
@@ -4866,6 +4874,20 @@ router.get(
         }
       }
       const scoreByUser = new Map(unqScores.map((row) => [row.userId, row]));
+      const donationsByUser = new Map((Array.isArray(donationRows) ? donationRows : []).map((row) => {
+        const total = typeof row.total_donations === "bigint"
+          ? row.total_donations
+          : BigInt(String(row.total_donations || "0"));
+        return [
+          String(row.user_id || ""),
+          {
+            totalDonations: total.toString(),
+            totalDonationsLabel: `${total.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ")} сум`,
+            isPublicLeader: row.is_public_leader !== false,
+            updatedAt: row.updated_at,
+          },
+        ];
+      }));
       const staffById = new Map(creatorStaff.map((row) => [row.id, row]));
       const badgeTypesByUser = new Map();
       for (const row of approvedBadges) {
@@ -4901,6 +4923,12 @@ router.get(
               },
             }
             : null,
+          donations: donationsByUser.get(user.id) || {
+            totalDonations: "0",
+            totalDonationsLabel: "0 сум",
+            isPublicLeader: true,
+            updatedAt: null,
+          },
           telegramId: user.id,
           name: user.displayName || user.firstName,
           city: user.city || "",
@@ -5048,6 +5076,58 @@ router.patch(
         status: updated.status,
       },
     });
+  }),
+);
+
+router.patch(
+  "/users/:userId/donations",
+  asyncHandler(async (req, res) => {
+    const userId = String(req.params.userId || "").trim();
+    if (!userId) {
+      res.status(400).json({ error: "User id is required", code: "USER_ID_REQUIRED" });
+      return;
+    }
+    try {
+      const result = await updateDonationLeader({
+        userId,
+        mode: req.body?.mode,
+        amount: req.body?.amount,
+        note: req.body?.note,
+        isPublicLeader: typeof req.body?.isPublicLeader === "boolean" ? req.body.isPublicLeader : undefined,
+        adminLogin: req.session?.admin?.login || "admin",
+      });
+      void logUserActivity({
+        userId,
+        userLogin: "",
+        action: "donations_update",
+        detail: `${req.body?.mode || ""} ${result.amount} => ${result.totalDonations} admin=${req.session?.admin?.login || "admin"}`,
+        req,
+      });
+      res.json({ ok: true, donations: result });
+    } catch (error) {
+      const status = Number(error?.status || 400);
+      const code = String(error?.message || "DONATION_UPDATE_FAILED");
+      const message =
+        code === "USER_NOT_FOUND"
+          ? "Пользователь не найден"
+          : code === "DONATION_AMOUNT_TOO_LARGE" || code === "DONATION_AMOUNT_INVALID"
+            ? "Некорректная сумма доната"
+            : "Не удалось обновить донаты";
+      res.status(status >= 400 && status < 600 ? status : 400).json({ error: message, code });
+    }
+  }),
+);
+
+router.get(
+  "/users/:userId/donations",
+  asyncHandler(async (req, res) => {
+    const userId = String(req.params.userId || "").trim();
+    if (!userId) {
+      res.status(400).json({ error: "User id is required", code: "USER_ID_REQUIRED" });
+      return;
+    }
+    const donations = await getDonationLeaderForUser(userId);
+    res.json({ donations });
   }),
 );
 

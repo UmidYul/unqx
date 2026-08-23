@@ -7,6 +7,7 @@ const { requireSameOrigin } = require("../../middleware/same-origin");
 const { requireCsrfToken } = require("../../middleware/csrf");
 const { getUserSession } = require("../../middleware/auth");
 const { buildLeaderboard, getUserLeaderboardSummary, normalizePeriod, normalizeLeaderboardType } = require("../../services/leaderboard");
+const { listDonationLeaders } = require("../../services/donation-leaders");
 const { getFeatureSetting } = require("../../services/feature-settings");
 const { getActiveFlashSale, resolveConditionLabel, resolveFlashSalePresentation } = require("../../services/flash-sales");
 const { getDropLiveStats } = require("../../services/drops");
@@ -72,6 +73,14 @@ router.get(
       todayTotal,
       todayVisitors: todayVisitorsStats.total,
     });
+  }),
+);
+
+router.get(
+  "/leaders",
+  asyncHandler(async (_req, res) => {
+    const payload = await listDonationLeaders({ limit: 100, useCache: true });
+    res.json(payload);
   }),
 );
 

@@ -15,6 +15,7 @@ const ACTION_LABELS = {
   slug_purchase:   "Покупка slug",
   plan_upgrade:    "Смена тарифа",
   email_verify:    "Подтверждение email",
+  donations_update:"Обновление донатов",
   link_add:        "Добавление ссылки",
   link_remove:     "Удаление ссылки",
   qr_download:     "Скачивание QR",

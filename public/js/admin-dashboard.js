@@ -2117,6 +2117,7 @@
           const emailCell = x.email
             ? `<span class="block break-all text-xs text-neutral-700">${X(x.email)}</span><span class="mt-1 inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold ${x.emailVerified ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-amber-200 bg-amber-50 text-amber-700"}">${x.emailVerified ? "email подтвержден" : "email не подтвержден"}</span>`
             : "—";
+          const donationLabel = String(x.donations?.totalDonationsLabel || "0 сум");
           const editSlugAttrs = allSlugs.length
             ? `data-act="us-edit" data-id="${X(x.telegramId)}" data-name="${X(x.name)}" data-slugs="${X(userSlugsCsv)}"`
             : 'disabled="disabled"';
@@ -2127,6 +2128,7 @@
             if (x.email && !x.emailVerified) {
               menuItems.push(menuItem({ label: "Подтвердить почту", icon: "checkCircle", attrs: `data-act="uve" data-id="${X(x.telegramId)}" data-name="${X(x.name)}" data-email="${X(x.email || "")}"` }));
             }
+            menuItems.push(menuItem({ label: "Донаты", icon: "creditCard", attrs: `data-act="udon" data-id="${X(x.telegramId)}" data-name="${X(x.name)}" data-donations="${X(x.donations?.totalDonations || "0")}" data-public-leader="${x.donations?.isPublicLeader === false ? "0" : "1"}"` }));
             menuItems.push(menuItem({ label: "Change plan", icon: "crown", attrs: `data-act="up" data-id="${X(x.telegramId)}" data-current-plan="${X(x.plan)}" data-active-slugs="${Number(x.activeSlugCount || 0)}"` }));
             menuItems.push(menuSeparator());
           }
@@ -2174,7 +2176,7 @@
           const userCell = rowProfileUrl
             ? `<a href="${rowProfileUrl}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" class="font-semibold text-neutral-900 underline-offset-4 hover:underline">${userNameText}</a>`
             : userNameText;
-          return `<tr class="admin-table-row border-t border-neutral-100 hover:bg-neutral-50"><td class="px-4 py-3">${userCell}</td><td class="px-4 py-3">${emailCell}</td><td class="px-4 py-3">${planChipHtml}</td><td class="admin-col-slugs px-4 py-3 text-xs" title="${X(slugTitle)}">${X(slugText)}</td><td class="px-4 py-3">${statusChip(x.status === "blocked" ? "rejected" : "approved")}</td><td class="px-4 py-3">${DATE_ONLY(x.createdAt)}</td><td class="px-4 py-3 text-center" onclick="event.stopPropagation()"><div class="admin-row-actions justify-center">${menu}</div></td></tr>`;
+          return `<tr class="admin-table-row border-t border-neutral-100 hover:bg-neutral-50"><td class="px-4 py-3">${userCell}<span class="mt-1 block text-[11px] font-semibold text-emerald-700">${X(donationLabel)}</span></td><td class="px-4 py-3">${emailCell}</td><td class="px-4 py-3">${planChipHtml}</td><td class="admin-col-slugs px-4 py-3 text-xs" title="${X(slugTitle)}">${X(slugText)}</td><td class="px-4 py-3">${statusChip(x.status === "blocked" ? "rejected" : "approved")}</td><td class="px-4 py-3">${DATE_ONLY(x.createdAt)}</td><td class="px-4 py-3 text-center" onclick="event.stopPropagation()"><div class="admin-row-actions justify-center">${menu}</div></td></tr>`;
         })
         .join("")
       : `<tr><td colspan="7" class="px-3 py-10 text-center text-neutral-500"><div class="inline-flex flex-col items-center gap-2">${I("userCheck", 48)}<span>No users found</span></div></td></tr>`;
@@ -5008,6 +5010,50 @@
         return;
       }
       await showAlert("Почта подтверждена. Пользователь теперь может войти по своему логину и паролю.");
+      void loadUsers();
+      closeAllRowMenus();
+      return;
+    }
+    if (a === "udon") {
+      const userId = n.getAttribute("data-id");
+      const userName = n.getAttribute("data-name") || "пользователя";
+      const currentDonations = n.getAttribute("data-donations") || "0";
+      const currentPublic = n.getAttribute("data-public-leader") !== "0";
+      if (!userId) return;
+      const mode = String(await showPrompt(`Донаты для ${userName}\n\nРежим: set, add или subtract`, "add") || "").trim().toLowerCase();
+      if (!["set", "add", "subtract"].includes(mode)) {
+        await showAlert("Режим должен быть set, add или subtract.");
+        return;
+      }
+      const amount = String(await showPrompt(
+        mode === "set" ? "Итоговая сумма донатов" : "Сумма изменения",
+        mode === "set" ? currentDonations : "50000",
+      ) || "").trim();
+      if (!amount) return;
+      const publicAnswer = String(await showPrompt("Показывать в Unix Leaders? yes/no", currentPublic ? "yes" : "no") || "").trim().toLowerCase();
+      if (!["yes", "y", "да", "true", "1", "no", "n", "нет", "false", "0"].includes(publicAnswer)) {
+        await showAlert("Введите yes или no для публичного отображения.");
+        return;
+      }
+      const note = await showPrompt("Комментарий к операции", "");
+      if (note === null) return;
+      const isPublicLeader = ["yes", "y", "да", "true", "1"].includes(publicAnswer);
+      const r = await fetch(`/api/admin/users/${encodeURIComponent(userId)}/donations`, {
+        method: "PATCH",
+        headers: H({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          mode,
+          amount,
+          isPublicLeader,
+          note,
+        }),
+      });
+      if (!r.ok) {
+        await showAlert(await E(r));
+        return;
+      }
+      const payload = await r.json().catch(() => ({}));
+      await showAlert(`Донаты обновлены: ${payload?.donations?.totalDonationsLabel || "готово"}.`);
       void loadUsers();
       closeAllRowMenus();
       return;

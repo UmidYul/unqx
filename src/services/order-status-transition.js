@@ -8,6 +8,7 @@ const { buildOrderPaymentDraft } = require("./payment-flow");
 const { logPaymentEvent } = require("./payment-events");
 const { sendSlugApprovedToUser, sendSlugAwaitingPaymentToUser, sendSlugRejectedToUser } = require("./telegram");
 const { recalculateAndRefreshPercentiles } = require("./unq-score");
+const { addDonationToLeader } = require("./donation-leaders");
 const {
     getReferralV1Settings,
     resolveReferrerForUser,
@@ -404,6 +405,18 @@ async function applyOrderStatusTransition({
     });
 
     if (nextStatus === "approved") {
+        try {
+            await addDonationToLeader({
+                userId: order.userId,
+                amount: paymentDraft.amount,
+                sourceKey: `order:${order.id}:approved`,
+                note: `Approved order ${order.id}`,
+                adminLogin: actor,
+            });
+        } catch (error) {
+            console.error("[express-app] failed to add order amount to donation leaders", error);
+        }
+
         try {
             await sendSlugApprovedToUser({
                 telegramId: order.user?.telegramChatId || "",

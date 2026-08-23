@@ -14,6 +14,7 @@ const {
 } = require("../../services/profile");
 const { absoluteUrl } = require("../../utils/url");
 const { buildLeaderboard, normalizePeriod, normalizeLeaderboardType, getSlugTopBadge, getUserLeaderboardSummary } = require("../../services/leaderboard");
+const { listDonationLeaders } = require("../../services/donation-leaders");
 const { getFeatureSetting } = require("../../services/feature-settings");
 const {
   getActiveFlashSale,
@@ -1846,6 +1847,21 @@ router.get(
         selectedTheme: profileCard?.theme,
         selectedFrame: profileCard?.avatarFrame,
       }),
+      adminSession: getAdminSession(req),
+    });
+  }),
+);
+
+router.get(
+  "/unix-leaders",
+  asyncHandler(async (req, res) => {
+    const leaders = await listDonationLeaders({ limit: 100, useCache: true });
+    res.render("public/unix-leaders", {
+      title: "Unix Leaders | UNQX",
+      description: "Top 100 донатеров UNQX.",
+      image: defaultSocialImage,
+      items: leaders.items,
+      generatedAt: leaders.generatedAt,
       adminSession: getAdminSession(req),
     });
   }),
