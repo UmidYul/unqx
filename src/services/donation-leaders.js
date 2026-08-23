@@ -13,6 +13,7 @@ let leadersCache = {
   expiresAt: 0,
   payload: null,
 };
+let donationRequestsStorageReady = false;
 
 const DonationUpdateSchema = z.object({
   mode: z.enum(["set", "add", "subtract"]),
@@ -162,6 +163,76 @@ function invalidateDonationLeadersCache() {
     expiresAt: 0,
     payload: null,
   };
+}
+
+function isDonationRequestsStorageError(error) {
+  const code = String(error?.code || "");
+  const message = String(error?.message || "").toLowerCase();
+  return code === "42P01" || code === "P2021" || message.includes("donation_requests");
+}
+
+async function ensureDonationRequestsStorage() {
+  if (donationRequestsStorageReady) {
+    return true;
+  }
+  await prisma.$executeRawUnsafe(`
+    DO $$
+    DECLARE
+      users_id_type text;
+      request_id_type text;
+      request_id_default text;
+    BEGIN
+      SELECT format_type(attribute.atttypid, attribute.atttypmod)
+        INTO users_id_type
+      FROM pg_attribute attribute
+      WHERE attribute.attrelid = 'users'::regclass
+        AND attribute.attname = 'id'
+        AND NOT attribute.attisdropped;
+
+      IF users_id_type IS NULL THEN
+        RAISE EXCEPTION 'Cannot determine users.id type';
+      END IF;
+
+      request_id_type := users_id_type;
+      request_id_default := CASE
+        WHEN request_id_type = 'uuid' AND to_regprocedure('app_uuid_v4()') IS NOT NULL THEN 'DEFAULT app_uuid_v4()'
+        WHEN request_id_type = 'uuid' THEN 'DEFAULT gen_random_uuid()'
+        ELSE 'DEFAULT gen_random_uuid()::text'
+      END;
+
+      EXECUTE format(
+        'CREATE TABLE IF NOT EXISTS donation_requests (
+          id %1$s PRIMARY KEY %2$s,
+          user_id %3$s NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          amount bigint NOT NULL,
+          status varchar(20) NOT NULL DEFAULT ''new'',
+          payment_reference varchar(40) NOT NULL UNIQUE,
+          payment_url text NOT NULL,
+          rank_preview integer NULL,
+          admin_login varchar(190) NULL,
+          admin_note varchar(500) NULL,
+          paid_at timestamptz NULL,
+          approved_at timestamptz NULL,
+          rejected_at timestamptz NULL,
+          created_at timestamptz NOT NULL DEFAULT now(),
+          updated_at timestamptz NOT NULL DEFAULT now()
+        )',
+        request_id_type,
+        request_id_default,
+        users_id_type
+      );
+    END $$;
+  `);
+  await prisma.$executeRawUnsafe(`
+    CREATE INDEX IF NOT EXISTS donation_requests_status_created_idx
+      ON donation_requests (status, created_at DESC)
+  `);
+  await prisma.$executeRawUnsafe(`
+    CREATE INDEX IF NOT EXISTS donation_requests_user_created_idx
+      ON donation_requests (user_id, created_at DESC)
+  `);
+  donationRequestsStorageReady = true;
+  return true;
 }
 
 async function listDonationLeaders({ limit = LEADERS_LIMIT, useCache = true } = {}) {
@@ -509,6 +580,7 @@ function mapDonationRequestRow(row) {
 }
 
 async function createDonationRequest({ userId, amount }) {
+  await ensureDonationRequestsStorage();
   const parsed = DonationRequestSchema.parse({ amount });
   const donationAmount = parseDonationAmount(parsed.amount);
   if (donationAmount < MIN_PUBLIC_DONATION_AMOUNT) {
@@ -599,6 +671,24 @@ async function createDonationRequest({ userId, amount }) {
 }
 
 async function listDonationRequests({ status = "all", q = "", page = 1, pageSize = 20 } = {}) {
+  try {
+    await ensureDonationRequestsStorage();
+  } catch (error) {
+    if (isDonationRequestsStorageError(error)) {
+      return {
+        items: [],
+        storageUnavailable: true,
+        message: "Таблица заявок на донат ещё не создана. Запустите миграции.",
+        pagination: {
+          page: Math.max(1, Number(page || 1)),
+          pageSize: Math.max(1, Math.min(100, Number(pageSize || 20))),
+          total: 0,
+          totalPages: 1,
+        },
+      };
+    }
+    throw error;
+  }
   const currentPage = Math.max(1, Number(page || 1));
   const take = Math.max(1, Math.min(100, Number(pageSize || 20)));
   const offset = (currentPage - 1) * take;
@@ -653,6 +743,7 @@ async function listDonationRequests({ status = "all", q = "", page = 1, pageSize
 }
 
 async function updateDonationRequestStatus({ requestId, status, adminLogin = "admin", adminNote = "" }) {
+  await ensureDonationRequestsStorage();
   const normalizedStatus = String(status || "").trim().toLowerCase();
   if (!["paid", "approved", "rejected"].includes(normalizedStatus)) {
     const error = new Error("DONATION_STATUS_INVALID");

@@ -5137,16 +5137,68 @@ router.get(
   }),
 );
 
+router.delete(
+  "/users/:userId/donations",
+  asyncHandler(async (req, res) => {
+    const userId = String(req.params.userId || "").trim();
+    if (!userId) {
+      res.status(400).json({ error: "User id is required", code: "USER_ID_REQUIRED" });
+      return;
+    }
+    const resetAmount = req.query.reset === "1" || req.body?.reset === true;
+    try {
+      const result = await updateDonationLeader({
+        userId,
+        mode: resetAmount ? "set" : "add",
+        amount: 0,
+        note: resetAmount ? "Удалён из UNQX Leaders: баланс обнулён" : "Скрыт из UNQX Leaders",
+        isPublicLeader: false,
+        adminLogin: req.session?.admin?.login || "admin",
+      });
+      void logUserActivity({
+        userId,
+        userLogin: "",
+        action: "donations_update",
+        detail: `${resetAmount ? "reset_hide" : "hide"} => ${result.totalDonations} admin=${req.session?.admin?.login || "admin"}`,
+        req,
+      });
+      res.json({ ok: true, donations: result });
+    } catch (error) {
+      const status = Number(error?.status || 400);
+      const code = String(error?.message || "DONATION_DELETE_FAILED");
+      res.status(status >= 400 && status < 600 ? status : 400).json({
+        error: code === "USER_NOT_FOUND" ? "Пользователь не найден" : "Не удалось убрать пользователя из донатов",
+        code,
+      });
+    }
+  }),
+);
+
 router.get(
   "/donations",
   asyncHandler(async (req, res) => {
-    const payload = await listDonationRequests({
-      status: req.query.status || "all",
-      q: req.query.q || "",
-      page: req.query.page || 1,
-      pageSize: req.query.pageSize || 20,
-    });
-    res.json(payload);
+    try {
+      const payload = await listDonationRequests({
+        status: req.query.status || "all",
+        q: req.query.q || "",
+        page: req.query.page || 1,
+        pageSize: req.query.pageSize || 20,
+      });
+      res.json(payload);
+    } catch (error) {
+      console.error("[admin-donations] failed to list donation requests", error);
+      res.status(503).json({
+        error: "Заявки на донат временно недоступны. Проверьте миграции базы данных.",
+        code: "DONATION_REQUESTS_UNAVAILABLE",
+        items: [],
+        pagination: {
+          page: 1,
+          pageSize: 20,
+          total: 0,
+          totalPages: 1,
+        },
+      });
+    }
   }),
 );
 

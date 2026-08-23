@@ -2031,13 +2031,14 @@
     };
     setDashboardQuery({ d_status: q.status, d_q: q.q, d_page: q.page });
     const r = await fetch(`/api/admin/donations?${Q(q)}`, { headers: H() });
+    let payload = {};
     if (!r.ok) {
       table.innerHTML = `<tr><td colspan="7" class="px-4 py-8 text-center text-red-700">${X(await E(r))}</td></tr>`;
-      return;
+    } else {
+      payload = await r.json().catch(() => ({}));
     }
-    const payload = await r.json().catch(() => ({}));
     const rows = Array.isArray(payload.items) ? payload.items : [];
-    table.innerHTML = rows.length
+    if (r.ok) table.innerHTML = rows.length
       ? rows.map((x) => {
         const profile = x.profileUrl ? `<a href="${X(x.profileUrl)}" target="_blank" rel="noopener noreferrer" class="font-semibold underline-offset-4 hover:underline">${X(x.userName || "UNQX User")}</a>` : `<span class="font-semibold">${X(x.userName || "UNQX User")}</span>`;
         const menu = menuWrap([
@@ -2058,7 +2059,7 @@
         </tr>`;
       }).join("")
       : `<tr><td colspan="7" class="px-4 py-10 text-center text-neutral-500">${I("creditCard", 48)}<div class="mt-2">Заявок на донат пока нет</div></td></tr>`;
-    renderPager("donations-pagination", payload.pagination, (nextPage) => {
+    renderPager("donations-pagination", payload.pagination || { page: 1, totalPages: 1, total: 0 }, (nextPage) => {
       setFormValue(form, "page", String(nextPage));
       void loadDonations();
     });
@@ -2071,6 +2072,8 @@
         const profile = x.profileUrl ? `<a href="${X(x.profileUrl)}" target="_blank" rel="noopener noreferrer" class="font-semibold underline-offset-4 hover:underline">${X(x.name || "UNQX User")}</a>` : `<span class="font-semibold">${X(x.name || "UNQX User")}</span>`;
         const menu = menuWrap([
           menuItem({ label: "Изменить баланс", icon: "creditCard", attrs: `data-act="don-user" data-id="${X(x.userId)}" data-name="${X(x.name || "UNQX User")}" data-donations="${X(x.totalDonations || "0")}"` }),
+          menuItem({ label: "Скрыть из Top", icon: "xCircle", attrs: `data-act="don-hide" data-id="${X(x.userId)}" data-name="${X(x.name || "UNQX User")}"` }),
+          menuItem({ label: "Обнулить и скрыть", icon: "trash", attrs: `data-act="don-reset" data-id="${X(x.userId)}" data-name="${X(x.name || "UNQX User")}"`, danger: true }),
           x.profileUrl ? menuItem({ label: "Открыть профиль", icon: "external", attrs: `data-act="open-url" data-url="${X(x.profileUrl)}"` }) : "",
         ].join(""));
         return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3 font-mono text-xs">#${X(String(x.rank || ""))}</td><td class="px-4 py-3">${profile}<div class="text-xs text-neutral-500">${X(x.login ? `@${x.login}` : "")}</div></td><td class="px-4 py-3 text-right font-semibold">${X(x.totalDonationsLabel || "0 сум")}</td><td class="px-4 py-3 text-right">${menu}</td></tr>`;
@@ -5128,6 +5131,31 @@
       }
       const payload = await r.json().catch(() => ({}));
       await showAlert(`Баланс обновлён: ${payload?.donations?.totalDonationsLabel || "готово"}.`);
+      void loadDonations();
+      closeAllRowMenus();
+      return;
+    }
+    if (a === "don-hide" || a === "don-reset") {
+      const userId = n.getAttribute("data-id");
+      const userName = n.getAttribute("data-name") || "пользователя";
+      const reset = a === "don-reset";
+      if (!userId) return;
+      const ok = await showConfirm(
+        reset
+          ? `Обнулить донаты и убрать ${userName} из UNQX Leaders?`
+          : `Скрыть ${userName} из UNQX Leaders без обнуления баланса?`,
+      );
+      if (!ok) return;
+      const r = await fetch(`/api/admin/users/${encodeURIComponent(userId)}/donations?reset=${reset ? "1" : "0"}`, {
+        method: "DELETE",
+        headers: H({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ reset }),
+      });
+      if (!r.ok) {
+        await showAlert(await E(r));
+        return;
+      }
+      await showAlert(reset ? "Пользователь обнулён и скрыт." : "Пользователь скрыт из Top.");
       void loadDonations();
       closeAllRowMenus();
       return;
