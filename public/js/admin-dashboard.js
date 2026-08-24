@@ -2065,7 +2065,7 @@
           <td class="px-4 py-3 text-right"><div class="admin-row-actions justify-end">${actions || "<span class=\"text-xs text-neutral-400\">Готово</span>"}</div></td>
         </tr>`;
       }).join("")
-      : `<tr><td colspan="7" class="px-4 py-10 text-center text-neutral-500">${I("creditCard", 48)}<div class="mt-2">${X(payload.message || "Заявок на донат пока нет")}</div><div class="mt-1 text-xs text-neutral-400">Новые заявки появятся после формирования чека на странице UNQX Leaders.</div></td></tr>`;
+      : `<tr><td colspan="7" class="px-4 py-10 text-center text-neutral-500">${I("creditCard", 48)}<div class="mt-2">${X(payload.message || "Заявок в таблице пока нет")}</div><div class="mt-1 text-xs text-neutral-400">Новые донаты приходят админу в Telegram. Добавляйте пользователя вручную выше по slug/login и сумме.</div></td></tr>`;
     renderPager("donations-pagination", payload.pagination || { page: 1, totalPages: 1, total: 0 }, (nextPage) => {
       setFormValue(form, "page", String(nextPage));
       void loadDonations();
@@ -2096,6 +2096,65 @@
         return `<tr class="admin-table-row border-t border-neutral-100"><td class="px-4 py-3 font-mono text-xs">#${X(String(x.rank || ""))}</td><td class="px-4 py-3">${profile}<div class="text-xs text-neutral-500">${X(x.login ? `@${x.login}` : "")}</div></td><td class="px-4 py-3 text-right font-semibold">${X(x.totalDonationsLabel || "0 сум")}</td><td class="px-4 py-3 text-right"><div class="admin-row-actions justify-end">${actions}</div></td></tr>`;
       }).join("")
       : `<tr><td colspan="4" class="px-4 py-10 text-center text-neutral-500">Top 100 пока пуст</td></tr>`;
+  }
+
+  async function resolveManualDonationUser() {
+    const form = document.getElementById("donations-manual-add-form");
+    const preview = document.getElementById("donations-manual-user-preview");
+    if (!(form instanceof HTMLFormElement) || !(preview instanceof HTMLElement)) return null;
+    const lookup = getFormValue(form, "lookup", "").trim();
+    if (!lookup) {
+      preview.textContent = "Введите slug/login/email";
+      preview.className = "rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700";
+      return null;
+    }
+    const r = await fetch(`/api/admin/donations/resolve-user?${Q({ lookup })}`, { headers: H() });
+    const payload = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      preview.textContent = payload.error || "Пользователь не найден";
+      preview.className = "rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700";
+      return null;
+    }
+    const user = payload.user || {};
+    preview.textContent = `${user.name || "UNQX User"}${user.login ? ` · @${user.login}` : ""}${user.profileSlug ? ` · ${user.profileSlug}` : ""} · ${user.totalDonationsLabel || "0 сум"}`;
+    preview.className = "rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700";
+    form.dataset.resolvedUserId = user.userId || "";
+    return user;
+  }
+
+  async function submitManualDonationAdd() {
+    const form = document.getElementById("donations-manual-add-form");
+    const preview = document.getElementById("donations-manual-user-preview");
+    if (!(form instanceof HTMLFormElement)) return;
+    const lookup = getFormValue(form, "lookup", "").trim();
+    const amount = getFormValue(form, "amount", "").trim();
+    const note = getFormValue(form, "note", "").trim() || "Ручное добавление из вкладки Донаты";
+    if (!lookup || !amount) {
+      await showAlert("Введите пользователя и сумму.");
+      return;
+    }
+    const user = await resolveManualDonationUser();
+    if (!user?.userId) return;
+    const ok = await showConfirm(`Добавить донат ${amount} для ${user.name || lookup}?`);
+    if (!ok) return;
+    const r = await fetch("/api/admin/donations/manual-add", {
+      method: "POST",
+      headers: H({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ lookup, amount, note }),
+    });
+    if (!r.ok) {
+      await showAlert(await E(r));
+      return;
+    }
+    const payload = await r.json().catch(() => ({}));
+    await showAlert(`Добавлено: ${payload.donations?.totalDonationsLabel || "готово"}.`);
+    form.reset();
+    delete form.dataset.resolvedUserId;
+    if (preview instanceof HTMLElement) {
+      preview.textContent = "Пользователь не выбран";
+      preview.className = "rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-xs font-semibold text-neutral-600";
+    }
+    void loadDonations();
   }
 
   async function loadPricingSettings() {
@@ -5194,6 +5253,10 @@
       void loadDonations();
       return;
     }
+    if (a === "don-resolve-manual") {
+      await resolveManualDonationUser();
+      return;
+    }
     if (a === "udon") {
       const userId = n.getAttribute("data-id");
       const userName = n.getAttribute("data-name") || "пользователя";
@@ -5642,6 +5705,7 @@
   });
   document.getElementById("purchases-filters")?.addEventListener("submit", (e) => { e.preventDefault(); const f = e.currentTarget; if (f instanceof HTMLFormElement) setFormValue(f, "page", "1"); void loadPurchases(); });
   document.getElementById("donations-filters")?.addEventListener("submit", (e) => { e.preventDefault(); const f = e.currentTarget; if (f instanceof HTMLFormElement) setFormValue(f, "page", "1"); void loadDonations(); });
+  document.getElementById("donations-manual-add-form")?.addEventListener("submit", (e) => { e.preventDefault(); void submitManualDonationAdd(); });
   document.getElementById("advertisements-form")?.addEventListener("submit", async (e) => {
     e.preventDefault();
     const form = e.currentTarget;

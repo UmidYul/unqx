@@ -3,8 +3,10 @@ const { randomUUID } = require("node:crypto");
 const { z } = require("zod");
 
 const { prisma } = require("../db/prisma");
+const { env } = require("../config/env");
 const { getSetting } = require("./platform-settings");
 const { normalizeTelegramUsername } = require("./payment-flow");
+const { sendTelegramMessage } = require("./telegram");
 
 const LEADERS_CACHE_TTL_MS = 45_000;
 const LEADERS_LIMIT = 100;
@@ -166,6 +168,47 @@ function buildDonationPaymentUrl({
     `Предварительное место: #${Number(rankPreview || 1)}\n\n` +
     `После подтверждения оплаты администратором сумма добавится к моему профилю.`;
   return `https://t.me/${safeUsername}?text=${encodeURIComponent(message)}`;
+}
+
+function buildDonationAdminTelegramText({ reference, amount, rankPreview, user }) {
+  const name = String(user?.display_name || user?.first_name || user?.login || "UNQX User").trim() || "UNQX User";
+  const login = String(user?.login || "").trim();
+  const email = String(user?.email || "").trim();
+  const profile = String(user?.profile_slug || "").trim();
+  return [
+    "<b>НОВАЯ ЗАЯВКА НА ДОНАТ</b>",
+    "",
+    `<b>Код:</b> ${reference}`,
+    `<b>Пользователь:</b> ${name}${login ? ` · @${login}` : ""}`,
+    email ? `<b>Email:</b> ${email}` : "",
+    profile ? `<b>UNQ:</b> unqx.uz/${profile}` : "",
+    `<b>Сумма:</b> ${formatDonationLabel(amount)}`,
+    `<b>Предварительное место:</b> #${Number(rankPreview || 1)}`,
+    "",
+    "Добавь его вручную в админке: Донаты → Добавить пользователя.",
+  ].filter(Boolean).join("\n");
+}
+
+async function sendDonationRequestToAdminTelegram({ reference, amount, rankPreview, user }) {
+  const chatId = String(await getSetting("contact_telegram_chat_id", env.TELEGRAM_CHAT_ID || "") || "").trim();
+  if (!chatId) {
+    const error = new Error("TELEGRAM_CHAT_ID_MISSING");
+    error.status = 503;
+    throw error;
+  }
+  return sendTelegramMessage({
+    chatId,
+    text: buildDonationAdminTelegramText({ reference, amount, rankPreview, user }),
+    parseMode: "HTML",
+    inlineKeyboard: [
+      [
+        {
+          text: "Открыть донаты",
+          url: `${String(env.APP_URL || "").replace(/\/$/, "")}/admin/dashboard?tab=donations`,
+        },
+      ],
+    ],
+  });
 }
 
 function invalidateDonationLeadersCache() {
@@ -807,8 +850,22 @@ async function createDonationRequest({ userId, amount }) {
   }
 
   const userRows = await prisma.$queryRawUnsafe(
-    `SELECT id, first_name, display_name, email, login
+    `SELECT
+      u.id,
+      u.first_name,
+      u.display_name,
+      u.email,
+      u.login,
+      COALESCE(primary_slug.full_slug, u.free_profile_code, '') AS profile_slug
     FROM users
+    LEFT JOIN LATERAL (
+      SELECT s.full_slug
+      FROM slugs s
+      WHERE s.owner_id = u.id
+        AND s.status IN ('active', 'approved', 'paused', 'private')
+      ORDER BY s.is_primary DESC, s.created_at ASC
+      LIMIT 1
+    ) primary_slug ON true
     WHERE id = $1::uuid
       AND status = 'active'
     LIMIT 1`,
@@ -823,105 +880,43 @@ async function createDonationRequest({ userId, amount }) {
 
   const rank = await resolveDonationRank({ userId: normalizedUserId, amount: donationAmount });
   const supportTelegram = normalizeTelegramUsername(await getSetting("contact_support_telegram", "@unqx_uz"));
-
-  let request = null;
-  let fallbackRequest = null;
-  let fallbackPaymentUrl = "";
-  for (let attempt = 0; attempt < 3 && !request; attempt += 1) {
-    const reference = buildNewDonationReference();
-    const paymentUrl = buildDonationPaymentUrl({
+  const reference = buildNewDonationReference();
+  const paymentUrl = buildDonationPaymentUrl({
+    reference,
+    amount: donationAmount,
+    rankPreview: rank.estimatedRank,
+    telegramUsername: supportTelegram,
+    userName: user.display_name || user.first_name || user.login || "UNQX User",
+    email: user.email || "",
+  });
+  let telegramSent = false;
+  try {
+    await sendDonationRequestToAdminTelegram({
       reference,
       amount: donationAmount,
       rankPreview: rank.estimatedRank,
-      telegramUsername: supportTelegram,
-      userName: user.display_name || user.first_name || user.login || "UNQX User",
-      email: user.email || "",
+      user,
     });
-    try {
-      const inserted = await prisma.$queryRawUnsafe(
-        `
-      INSERT INTO donation_requests (
-        user_id,
-        amount,
-        status,
-        payment_reference,
-        payment_url,
-        rank_preview,
-        created_at,
-        updated_at
-      )
-      VALUES (
-        $1::uuid,
-        $2::bigint,
-        'new',
-        $3,
-        $4,
-        $5::integer,
-        now(),
-        now()
-      )
-      RETURNING *
-    `,
-        normalizedUserId,
-        donationAmount.toString(),
-        reference,
-        paymentUrl,
-        Number(rank.estimatedRank || 1),
-      );
-      request = inserted?.[0] || null;
-    } catch (error) {
-      if (String(error?.code || "") === "23505" && attempt < 2) {
-        continue;
-      }
-      console.error("[donation-leaders] primary donation_requests insert failed, using fallback", {
-        code: error?.code || "",
-        message: error?.message || "",
-      });
-      fallbackRequest = await createFallbackDonationRequest({
-        userId: normalizedUserId,
-        amount: donationAmount,
-        reference,
-        rankPreview: rank.estimatedRank,
-      });
-      fallbackPaymentUrl = paymentUrl;
-      break;
-    }
-  }
-  if (!request && !fallbackRequest) {
-    const error = new Error("DONATION_REQUEST_CREATE_EMPTY");
-    error.status = 500;
-    throw error;
-  }
-  if (fallbackRequest) {
-    const meta = decodeDonationRequestNote(fallbackRequest.note) || {};
-    return {
-      ok: true,
-      request: {
-        id: `op:${String(fallbackRequest.id || "")}`,
-        amount: donationAmount.toString(),
-        amountLabel: formatDonationLabel(donationAmount),
-        status: String(meta.status || "new"),
-        paymentReference: String(meta.reference || ""),
-        paymentUrl: String(meta.paymentUrl || fallbackPaymentUrl || ""),
-        rankPreview: rank.estimatedRank,
-        projectedTotal: rank.projectedTotal,
-        projectedTotalLabel: rank.projectedTotalLabel,
-        fallback: true,
-      },
-    };
+    telegramSent = true;
+  } catch (error) {
+    console.error("[donation-leaders] failed to send donation request to Telegram", {
+      code: error?.message || "",
+      status: error?.status || "",
+    });
   }
   return {
     ok: true,
     request: {
-      id: String(request?.id || ""),
+      id: `tg:${reference}`,
       amount: donationAmount.toString(),
       amountLabel: formatDonationLabel(donationAmount),
-      status: String(request?.status || "new"),
-      paymentReference: String(request?.payment_reference || ""),
-      paymentUrl: String(request?.payment_url || ""),
+      status: telegramSent ? "sent" : "new",
+      paymentReference: reference,
+      paymentUrl,
       rankPreview: rank.estimatedRank,
       projectedTotal: rank.projectedTotal,
       projectedTotalLabel: rank.projectedTotalLabel,
+      telegramSent,
     },
   };
 }
@@ -1221,6 +1216,111 @@ async function addDonationToLeader({ userId, amount, note = "", sourceKey = "", 
   return result;
 }
 
+async function resolveDonationUserByLookup(lookup) {
+  const raw = String(lookup || "").trim();
+  const normalized = raw.replace(/^@+/, "").replace(/^https?:\/\/[^/]+\//i, "").replace(/^unqx\.uz\//i, "").trim();
+  if (!normalized) {
+    const error = new Error("DONATION_USER_LOOKUP_REQUIRED");
+    error.status = 400;
+    throw error;
+  }
+  const upper = normalized.toUpperCase();
+  const like = `%${normalized}%`;
+  const rows = await prisma.$queryRaw`
+    SELECT
+      u.id,
+      u.first_name,
+      u.display_name,
+      u.email,
+      u.login,
+      u.telegram_username,
+      COALESCE(primary_slug.full_slug, u.free_profile_code, '') AS profile_slug,
+      COALESCE(dl.total_donations, 0) AS total_donations,
+      COALESCE(dl.is_public_leader, true) AS is_public_leader
+    FROM users u
+    LEFT JOIN donation_leaders dl ON dl.user_id = u.id
+    LEFT JOIN LATERAL (
+      SELECT s.full_slug
+      FROM slugs s
+      WHERE s.owner_id = u.id
+        AND s.status IN ('active', 'approved', 'paused', 'private')
+      ORDER BY
+        CASE WHEN upper(s.full_slug) = ${upper} THEN 0 ELSE 1 END,
+        s.is_primary DESC,
+        s.created_at ASC
+      LIMIT 1
+    ) primary_slug ON true
+    WHERE u.status = 'active'
+      AND (
+        (${isUuid(normalized)} = true AND u.id = ${isUuid(normalized) ? normalized : "00000000-0000-0000-0000-000000000000"}::uuid)
+        OR upper(COALESCE(u.free_profile_code, '')) = ${upper}
+        OR lower(COALESCE(u.login, '')) = lower(${normalized})
+        OR lower(COALESCE(u.telegram_username, '')) = lower(${normalized})
+        OR lower(COALESCE(u.email, '')) = lower(${normalized})
+        OR EXISTS (
+          SELECT 1
+          FROM slugs s2
+          WHERE s2.owner_id = u.id
+            AND upper(s2.full_slug) = ${upper}
+        )
+        OR COALESCE(u.display_name, '') ILIKE ${like}
+        OR COALESCE(u.first_name, '') ILIKE ${like}
+      )
+    ORDER BY
+      CASE
+        WHEN upper(COALESCE(primary_slug.full_slug, '')) = ${upper} THEN 0
+        WHEN upper(COALESCE(u.free_profile_code, '')) = ${upper} THEN 1
+        WHEN lower(COALESCE(u.login, '')) = lower(${normalized}) THEN 2
+        WHEN lower(COALESCE(u.telegram_username, '')) = lower(${normalized}) THEN 3
+        WHEN lower(COALESCE(u.email, '')) = lower(${normalized}) THEN 4
+        ELSE 9
+      END,
+      u.created_at DESC
+    LIMIT 1
+  `;
+  const row = Array.isArray(rows) ? rows[0] : null;
+  if (!row) {
+    const error = new Error("DONATION_USER_NOT_FOUND");
+    error.status = 404;
+    throw error;
+  }
+  const total = typeof row.total_donations === "bigint" ? row.total_donations : BigInt(String(row.total_donations || "0"));
+  const profileSlug = String(row.profile_slug || "").trim();
+  return {
+    userId: String(row.id || ""),
+    name: String(row.display_name || row.first_name || row.login || "UNQX User").trim() || "UNQX User",
+    login: row.login ? String(row.login) : null,
+    email: row.email ? String(row.email) : "",
+    telegramUsername: row.telegram_username ? String(row.telegram_username) : "",
+    profileSlug: profileSlug || null,
+    profileUrl: profileSlug ? `/${encodeURIComponent(profileSlug)}` : null,
+    totalDonations: total.toString(),
+    totalDonationsLabel: formatDonationLabel(total),
+    isPublicLeader: row.is_public_leader !== false,
+  };
+}
+
+async function addDonationByLookup({ lookup, amount, note = "", adminLogin = "admin" }) {
+  const user = await resolveDonationUserByLookup(lookup);
+  const donations = await updateDonationLeader({
+    userId: user.userId,
+    mode: "add",
+    amount,
+    note: String(note || `Ручное добавление доната: ${lookup}`).trim().slice(0, 500),
+    adminLogin,
+    isPublicLeader: true,
+  });
+  return {
+    user: {
+      ...user,
+      totalDonations: donations.totalDonations,
+      totalDonationsLabel: donations.totalDonationsLabel,
+      isPublicLeader: donations.isPublicLeader,
+    },
+    donations,
+  };
+}
+
 async function clearDonationLeaders({ reset = true, adminLogin = "admin", note = "" } = {}) {
   const normalizedNote = String(note || (reset ? "Массовая очистка Top 100" : "Массовое скрытие Top 100")).trim().slice(0, 500);
   const result = await prisma.$transaction(async (tx) => {
@@ -1279,6 +1379,7 @@ async function clearDonationLeaders({ reset = true, adminLogin = "admin", note =
 
 module.exports = {
   addDonationToLeader,
+  addDonationByLookup,
   clearDonationLeaders,
   createDonationRequest,
   DonationUpdateSchema,
@@ -1289,6 +1390,7 @@ module.exports = {
   listDonationLeaders,
   listDonationRequests,
   parseDonationAmount,
+  resolveDonationUserByLookup,
   resolveDonationRank,
   updateDonationRequestStatus,
   updateDonationLeader,

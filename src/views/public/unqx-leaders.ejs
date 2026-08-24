@@ -30,8 +30,8 @@
         <h2 class="text-base font-black text-neutral-900">Занять своё место</h2>
         <ol class="mt-3 grid gap-2 text-sm text-neutral-600">
           <li class="rounded-xl border border-neutral-100 bg-neutral-50 px-3 py-2">1. Введите сумму доната и посмотрите предварительное место.</li>
-          <li class="rounded-xl border border-neutral-100 bg-neutral-50 px-3 py-2">2. Нажмите “Сформировать чек”.</li>
-          <li class="rounded-xl border border-neutral-100 bg-neutral-50 px-3 py-2">3. Оплатите через Telegram, как при покупке UNQ-номера.</li>
+          <li class="rounded-xl border border-neutral-100 bg-neutral-50 px-3 py-2">2. Нажмите “Отправить заявку”.</li>
+          <li class="rounded-xl border border-neutral-100 bg-neutral-50 px-3 py-2">3. Заявка уйдёт админу в Telegram, после оплаты сумма добавится вручную.</li>
         </ol>
       </article>
 
@@ -47,7 +47,7 @@
           </div>
           <div class="grid gap-2 sm:grid-cols-2">
             <button type="button" id="leaders-quote-button" class="interactive-btn min-h-11 rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-800 hover:bg-neutral-100">Проверить место</button>
-            <button type="submit" class="interactive-btn min-h-11 rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-700">Сформировать чек</button>
+            <button type="submit" class="interactive-btn min-h-11 rounded-xl bg-neutral-900 px-4 py-2 text-sm font-semibold text-white hover:bg-neutral-700">Отправить заявку</button>
           </div>
           <% if (!isAuthenticated) { %>
             <p class="text-xs text-amber-700">Чтобы донат попал в профиль, сначала войдите в аккаунт.</p>
@@ -178,14 +178,14 @@
             <span class="text-sm text-neutral-500">оплата сейчас</span>
           </div>
           <div class="mt-4 grid gap-2">
-            <p class="text-xl font-black text-neutral-900">Донат: <span data-leaders-payment-amount>0 сум</span></p>
+            <p class="text-xl font-black text-neutral-900">Заявка на донат: <span data-leaders-payment-amount>0 сум</span></p>
             <p class="text-sm text-neutral-500">Итог после доната: <span data-leaders-payment-total>0 сум</span></p>
             <p class="text-sm text-neutral-500">Предварительное место: <span class="font-semibold text-neutral-900" data-leaders-payment-rank>#1</span></p>
             <p class="text-sm text-neutral-500">Код оплаты: <span class="font-mono font-semibold text-neutral-900" data-leaders-payment-code>UNQX-DON</span></p>
           </div>
         </div>
 
-        <a id="leaders-payment-link" class="interactive-btn inline-flex min-h-12 items-center justify-center rounded-xl bg-neutral-900 px-5 py-3 text-sm font-bold text-white hover:bg-neutral-700" href="#" target="_blank" rel="noopener noreferrer">Оплатить в Telegram</a>
+        <a id="leaders-payment-link" class="interactive-btn inline-flex min-h-12 items-center justify-center rounded-xl bg-neutral-900 px-5 py-3 text-sm font-bold text-white hover:bg-neutral-700" href="#" target="_blank" rel="noopener noreferrer">Написать в Telegram</a>
       </div>
     </section>
   </div>
@@ -298,13 +298,13 @@
         if (!quote) return;
         const { response, payload } = await createDonation(money(amountInput?.value || ""));
         if (!response.ok) {
-          showQuote(payload.error || "Не удалось сформировать чек.", "error");
+          showQuote(payload.error || "Не удалось отправить заявку.", "error");
           return;
         }
         const request = payload.request || {};
         if (checkBox) {
           checkBox.classList.remove("hidden");
-          checkBox.innerHTML = `<div class="font-bold">Чек ${request.paymentReference || ""}</div><div class="mt-1">Сумма: ${request.amountLabel || ""} · место: #${request.rankPreview || quote.estimatedRank || 1}</div><a class="interactive-btn mt-3 inline-flex min-h-11 items-center justify-center rounded-xl bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800" href="${request.paymentUrl || "#"}" target="_blank" rel="noopener noreferrer">Оплатить в Telegram</a>`;
+          checkBox.innerHTML = `<div class="font-bold">Заявка ${request.paymentReference || ""}</div><div class="mt-1">Сумма: ${request.amountLabel || ""} · место: #${request.rankPreview || quote.estimatedRank || 1}</div><div class="mt-1 text-xs">${request.telegramSent ? "Заявка отправлена админу в Telegram." : "Заявка подготовлена, напишите админу в Telegram."}</div><a class="interactive-btn mt-3 inline-flex min-h-11 items-center justify-center rounded-xl bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800" href="${request.paymentUrl || "#"}" target="_blank" rel="noopener noreferrer">Написать в Telegram</a>`;
         }
         showPaymentModal(request, quote);
       });

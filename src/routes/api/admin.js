@@ -30,10 +30,12 @@ const {
 const { getGlobalStats } = require("../../services/stats");
 const { calculateSlugPrice, getSlugPricingConfig } = require("../../services/slug-pricing");
 const {
+  addDonationByLookup,
   clearDonationLeaders,
   getDonationLeaderForUser,
   listDonationLeaders,
   listDonationRequests,
+  resolveDonationUserByLookup,
   updateDonationLeader,
   updateDonationRequestStatus,
 } = require("../../services/donation-leaders");
@@ -5211,6 +5213,55 @@ router.get(
   asyncHandler(async (_req, res) => {
     const payload = await listDonationLeaders({ limit: 100, useCache: false });
     res.json(payload);
+  }),
+);
+
+router.get(
+  "/donations/resolve-user",
+  asyncHandler(async (req, res) => {
+    try {
+      const user = await resolveDonationUserByLookup(req.query.lookup || req.query.q || "");
+      res.json({ user });
+    } catch (error) {
+      const code = String(error?.message || "DONATION_USER_LOOKUP_FAILED");
+      const status = Number(error?.status || 400);
+      res.status(status >= 400 && status < 600 ? status : 400).json({
+        error: code === "DONATION_USER_NOT_FOUND" ? "Пользователь не найден" : "Не удалось найти пользователя",
+        code,
+      });
+    }
+  }),
+);
+
+router.post(
+  "/donations/manual-add",
+  asyncHandler(async (req, res) => {
+    try {
+      const result = await addDonationByLookup({
+        lookup: req.body?.lookup,
+        amount: req.body?.amount,
+        note: req.body?.note || "Ручное добавление из вкладки Донаты",
+        adminLogin: req.session?.admin?.login || "admin",
+      });
+      void logUserActivity({
+        userId: result.user?.userId || "",
+        userLogin: result.user?.login || "",
+        action: "donations_update",
+        detail: `manual_add amount=${result.donations?.amount || req.body?.amount};admin=${req.session?.admin?.login || "admin"}`,
+        req,
+      });
+      res.json({ ok: true, ...result });
+    } catch (error) {
+      const code = String(error?.message || "DONATION_MANUAL_ADD_FAILED");
+      const status = Number(error?.status || 400);
+      const message =
+        code === "DONATION_USER_NOT_FOUND"
+          ? "Пользователь не найден по slug/login/email"
+          : code === "DONATION_AMOUNT_INVALID"
+            ? "Некорректная сумма доната"
+            : "Не удалось добавить донат";
+      res.status(status >= 400 && status < 600 ? status : 400).json({ error: message, code });
+    }
   }),
 );
 
