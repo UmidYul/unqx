@@ -866,8 +866,8 @@ async function createDonationRequest({ userId, amount }) {
       ORDER BY s.is_primary DESC, s.created_at ASC
       LIMIT 1
     ) primary_slug ON true
-    WHERE id = $1::uuid
-      AND status = 'active'
+    WHERE u.id = $1::uuid
+      AND u.status = 'active'
     LIMIT 1`,
     normalizedUserId,
   );
@@ -878,8 +878,29 @@ async function createDonationRequest({ userId, amount }) {
     throw error;
   }
 
-  const rank = await resolveDonationRank({ userId: normalizedUserId, amount: donationAmount });
-  const supportTelegram = normalizeTelegramUsername(await getSetting("contact_support_telegram", "@unqx_uz"));
+  let rank;
+  try {
+    rank = await resolveDonationRank({ userId: normalizedUserId, amount: donationAmount });
+  } catch (error) {
+    console.error("[donation-leaders] failed to resolve donation rank, using fallback", {
+      code: error?.code || error?.message || "",
+    });
+    rank = {
+      amount: donationAmount.toString(),
+      amountLabel: formatDonationLabel(donationAmount),
+      currentTotal: "0",
+      currentTotalLabel: formatDonationLabel(0n),
+      projectedTotal: donationAmount.toString(),
+      projectedTotalLabel: formatDonationLabel(donationAmount),
+      estimatedRank: 1,
+    };
+  }
+  let supportTelegram = "unqx_uz";
+  try {
+    supportTelegram = normalizeTelegramUsername(await getSetting("contact_support_telegram", "@unqx_uz"));
+  } catch {
+    supportTelegram = "unqx_uz";
+  }
   const reference = buildNewDonationReference();
   const paymentUrl = buildDonationPaymentUrl({
     reference,

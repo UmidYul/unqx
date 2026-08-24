@@ -7,7 +7,15 @@ const { requireSameOrigin } = require("../../middleware/same-origin");
 const { requireCsrfToken } = require("../../middleware/csrf");
 const { getUserSession } = require("../../middleware/auth");
 const { buildLeaderboard, getUserLeaderboardSummary, normalizePeriod, normalizeLeaderboardType } = require("../../services/leaderboard");
-const { createDonationRequest, listDonationLeaders, resolveDonationRank } = require("../../services/donation-leaders");
+const {
+  createDonationRequest,
+  formatDonationLabel,
+  listDonationLeaders,
+  parseDonationAmount,
+  resolveDonationRank,
+} = require("../../services/donation-leaders");
+const { getSetting } = require("../../services/platform-settings");
+const { normalizeTelegramUsername } = require("../../services/payment-flow");
 const { getFeatureSetting } = require("../../services/feature-settings");
 const { getActiveFlashSale, resolveConditionLabel, resolveFlashSalePresentation } = require("../../services/flash-sales");
 const { getDropLiveStats } = require("../../services/drops");
@@ -131,6 +139,34 @@ router.post(
             : code === "DONATION_REQUESTS_STORAGE_UNAVAILABLE"
               ? "Заявки на донат временно недоступны. Откройте вкладку Донаты в админке или запустите миграции базы данных."
             : "Не удалось создать заявку на донат";
+      if (!["DONATION_AMOUNT_TOO_SMALL", "DONATION_AMOUNT_INVALID", "USER_ID_REQUIRED"].includes(code)) {
+        try {
+          const amount = parseDonationAmount(req.body?.amount);
+          const reference = `UNQX-DON-${Date.now().toString(36).toUpperCase()}`;
+          const supportTelegram = normalizeTelegramUsername(await getSetting("contact_support_telegram", "@unqx_uz"));
+          const amountLabel = formatDonationLabel(amount);
+          const paymentUrl = `https://t.me/${supportTelegram}?text=${encodeURIComponent(`Здравствуйте! Хочу сделать донат в UNQX Leaders\n\nКод оплаты: ${reference}\nСумма: ${amountLabel}`)}`;
+          res.status(201).json({
+            ok: true,
+            fallback: true,
+            request: {
+              id: `local:${reference}`,
+              amount: amount.toString(),
+              amountLabel,
+              status: "new",
+              paymentReference: reference,
+              paymentUrl,
+              rankPreview: 1,
+              projectedTotal: amount.toString(),
+              projectedTotalLabel: amountLabel,
+              telegramSent: false,
+            },
+          });
+          return;
+        } catch {
+          // Fall through to the validation error response below.
+        }
+      }
       res.status(status >= 400 && status < 600 ? status : 400).json({ error: message, code });
     }
   }),
