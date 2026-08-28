@@ -16457,3 +16457,100 @@ body[data-card-theme="codex_da_vinci"] .nav-search-button:hover {
     letter-spacing: 1px !important;
   }
 }
+
+/* Final compact layout for Uzbekistan 35: size the theme by real card content, not a poster canvas. */
+body[data-card-theme="uzbekistan_35"] #public-card-layout,
+body[data-card-theme="uzbekistan_35"] #card-view-root,
+body[data-card-theme="uzbekistan_35"] #card-view-root > [data-card-view],
+#profile-card-live-preview[data-preview-theme="uzbekistan_35"] [data-card-view] {
+  display: block !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  padding: 0 !important;
+}
+
+body[data-card-theme="uzbekistan_35"] .public-card-shell,
+body[data-card-theme="uzbekistan_35"] .unq-ref-shell,
+#profile-card-live-preview[data-preview-theme="uzbekistan_35"] .public-card-shell,
+#profile-card-live-preview[data-preview-theme="uzbekistan_35"] .unq-ref-shell {
+  display: block !important;
+  width: calc(100% - 18px) !important;
+  max-width: 430px !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  aspect-ratio: auto !important;
+  margin: 6px auto !important;
+  padding: 14px 12px 18px !important;
+  overflow: hidden !important;
+}
+
+body[data-card-theme="uzbekistan_35"] .unq-ref-brand,
+#profile-card-live-preview[data-preview-theme="uzbekistan_35"] .unq-ref-brand {
+  position: relative !important;
+  inset: auto !important;
+  z-index: 4 !important;
+  margin: 48px 0 18px !important;
+  padding: 0 !important;
+  transform: none !important;
+}
+
+body[data-card-theme="uzbekistan_35"] .unq-ref-brand h2,
+#profile-card-live-preview[data-preview-theme="uzbekistan_35"] .unq-ref-brand h2 {
+  font-size: 43px !important;
+  line-height: 0.95 !important;
+}
+
+body[data-card-theme="uzbekistan_35"] .unq-ref-brand p,
+#profile-card-live-preview[data-preview-theme="uzbekistan_35"] .unq-ref-brand p {
+  margin-top: 8px !important;
+}
+
+body[data-card-theme="uzbekistan_35"] .unq-ref-profile,
+body[data-card-theme="uzbekistan_35"] .unq-ref-profile.has-pets,
+body[data-card-theme="uzbekistan_35"] .unq-ref-profile.has-emoji-pack,
+body[data-card-theme="uzbekistan_35"] .unq-ref-profile.has-emoji-pack.has-pets,
+body[data-card-theme="uzbekistan_35"] .unq-ref-profile.has-pets.has-pets-1,
+body[data-card-theme="uzbekistan_35"] .unq-ref-profile.has-pets.has-pets-3,
+#profile-card-live-preview[data-preview-theme="uzbekistan_35"] .unq-ref-profile,
+#profile-card-live-preview[data-preview-theme="uzbekistan_35"] .unq-ref-profile.has-pets,
+#profile-card-live-preview[data-preview-theme="uzbekistan_35"] .unq-ref-profile.has-emoji-pack,
+#profile-card-live-preview[data-preview-theme="uzbekistan_35"] .unq-ref-profile.has-emoji-pack.has-pets,
+#profile-card-live-preview[data-preview-theme="uzbekistan_35"] .unq-ref-profile.has-pets.has-pets-1,
+#profile-card-live-preview[data-preview-theme="uzbekistan_35"] .unq-ref-profile.has-pets.has-pets-3 {
+  position: relative !important;
+  display: flex !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  transform: none !important;
+}
+
+body[data-card-theme="uzbekistan_35"] .unq-ref-avatar-wrap,
+body[data-card-theme="uzbekistan_35"] .unq-ref-profile.has-pets .unq-ref-avatar-wrap,
+#profile-card-live-preview[data-preview-theme="uzbekistan_35"] .unq-ref-avatar-wrap,
+#profile-card-live-preview[data-preview-theme="uzbekistan_35"] .unq-ref-profile.has-pets .unq-ref-avatar-wrap {
+  margin-top: 0 !important;
+}
+
+body[data-card-theme="uzbekistan_35"] .unq-ref-name-wrap,
+body[data-card-theme="uzbekistan_35"] .unq-ref-profile.has-pets .unq-ref-name-wrap,
+#profile-card-live-preview[data-preview-theme="uzbekistan_35"] .unq-ref-name-wrap,
+#profile-card-live-preview[data-preview-theme="uzbekistan_35"] .unq-ref-profile.has-pets .unq-ref-name-wrap {
+  margin-top: 14px !important;
+}
+
+body[data-card-theme="uzbekistan_35"] .unq-ref-social-stats,
+body[data-card-theme="uzbekistan_35"] .unq-ref-about,
+body[data-card-theme="uzbekistan_35"] .unq-ref-social,
+body[data-card-theme="uzbekistan_35"] .unq-ref-divider,
+#profile-card-live-preview[data-preview-theme="uzbekistan_35"] .unq-ref-social-stats,
+#profile-card-live-preview[data-preview-theme="uzbekistan_35"] .unq-ref-about,
+#profile-card-live-preview[data-preview-theme="uzbekistan_35"] .unq-ref-social,
+#profile-card-live-preview[data-preview-theme="uzbekistan_35"] .unq-ref-divider {
+  margin-top: 18px !important;
+  margin-bottom: 0 !important;
+}
