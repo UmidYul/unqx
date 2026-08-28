@@ -2715,6 +2715,27 @@ body[data-card-theme="casino_royale"] #public-card-layout > div:first-child > .i
   opacity: 0.76;
 }
 
+[data-card-theme="uzbekistan_35"] .unq-ref-brand,
+#profile-card-live-preview[data-preview-theme="uzbekistan_35"] .unq-ref-brand {
+  position: absolute !important;
+  top: 58px !important;
+  left: 12px !important;
+  right: 12px !important;
+  z-index: 4 !important;
+  margin: 0 !important;
+}
+
+[data-card-theme="uzbekistan_35"] .unq-ref-brand h2,
+#profile-card-live-preview[data-preview-theme="uzbekistan_35"] .unq-ref-brand h2 {
+  color: #D4AF37 !important;
+  text-shadow: 0 0 18px rgba(212, 175, 55, 0.2) !important;
+}
+
+[data-card-theme="uzbekistan_35"] .unq-ref-brand p,
+#profile-card-live-preview[data-preview-theme="uzbekistan_35"] .unq-ref-brand p {
+  color: rgba(255, 255, 255, 0.78) !important;
+}
+
 [data-card-theme="uzbekistan_35"] .unq-ref-name,
 [data-card-theme="uzbekistan_35"] .unq-ref-name-text {
   color: #FFFFFF !important;
@@ -15473,7 +15494,7 @@ body[data-card-theme="uzbekistan_35"] .public-card-shell::before,
 
 body[data-card-theme="uzbekistan_35"] .unq-ref-profile,
 #profile-card-live-preview[data-preview-theme="uzbekistan_35"] .unq-ref-profile {
-  margin-top: 14px !important;
+  margin-top: 122px !important;
 }
 
 /* Turtle Power zero-gap reset: comic shell card without layout spacer. */
