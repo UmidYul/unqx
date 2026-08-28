@@ -21,6 +21,7 @@ describe("profile theme and avatar frame normalization", () => {
     expect(PROFILE_THEME_KEYS).toContain("serpent_scale");
     expect(PROFILE_THEME_KEYS).toContain("nebula_glass");
     expect(PROFILE_THEME_KEYS).toContain("galaxy");
+    expect(PROFILE_THEME_KEYS).toContain("uzbekistan_35");
     expect(PROFILE_AVATAR_FRAME_KEYS).toContain("chrome_ring");
     expect(PROFILE_AVATAR_FRAME_KEYS).toContain("orbit_dots");
     expect(PROFILE_AVATAR_FRAME_KEYS).toContain("laurel_wreath");
@@ -34,6 +35,7 @@ describe("profile theme and avatar frame normalization", () => {
     expect(normalizeThemeByPlan("graffiti_neon", "premium")).toBe("graffiti_neon");
     expect(normalizeThemeByPlan("nebula_glass", "premium")).toBe("nebula_glass");
     expect(normalizeThemeByPlan("galaxy", "premium")).toBe("galaxy");
+    expect(normalizeThemeByPlan("uzbekistan_35", "premium")).toBe("uzbekistan_35");
     expect(normalizeThemeByPlan("heritage_crest", "premium")).toBe("heritage_crest");
     expect(normalizeThemeByPlan("anime_blush", "premium")).toBe("anime_blush");
     expect(normalizeAvatarFrameByPlan("orbit_dots", "premium")).toBe("orbit_dots");

@@ -120,6 +120,7 @@
       "shinobi_path",
       "shinobi_way",
       "samarkand_heritage",
+      "uzbekistan_35",
       "turtle_power",
       "egypt_nile",
       "kawaii_kitty",

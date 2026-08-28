@@ -35,6 +35,7 @@
     "shinobi_path",
     "shinobi_way",
     "samarkand_heritage",
+    "uzbekistan_35",
     "turtle_power",
     "egypt_nile",
     "kawaii_kitty",
@@ -1177,6 +1178,46 @@
       cardShadow: "0 20px 45px rgba(29, 41, 57, 0.5), 0 0 25px rgba(168, 126, 67, 0.25)",
       buttonShineGradient:
         "linear-gradient(90deg, rgba(32,138,133,0) 0%, rgba(230,193,122,0.45) 48%, rgba(255,255,255,0.42) 52%, rgba(32,138,133,0) 100%)",
+    },
+    uzbekistan_35: {
+      cardBg: "rgba(10, 25, 47, 0.84)",
+      cardBgOverlay: "uzbekistan_35",
+      surfaceBg: "rgba(10, 25, 47, 0.62)",
+      cardBorder: "1px solid rgba(212, 175, 55, 0.62)",
+      borderColor: "#D4AF37",
+      surfaceBorder: "1px solid rgba(212, 175, 55, 0.48)",
+      dividerColor: "rgba(212, 175, 55, 0.24)",
+      nameColor: "#FFFFFF",
+      roleColor: "#D4AF37",
+      mutedColor: "rgba(255, 255, 255, 0.72)",
+      accentColor: "#D4AF37",
+      emailColor: "rgba(255, 255, 255, 0.84)",
+      buttonPrimaryBg: "linear-gradient(135deg, rgba(212,175,55,0.22) 0%, rgba(212,175,55,0.08) 100%)",
+      buttonPrimaryText: "#FFFFFF",
+      buttonPrimaryBorder: "rgba(212,175,55,0.74)",
+      buttonSecondaryBg: "rgba(10, 25, 47, 0.62)",
+      buttonSecondaryText: "#FFFFFF",
+      buttonSecondaryBorder: "rgba(212,175,55,0.5)",
+      badgeText: "#0A192F",
+      badgeBg: "linear-gradient(90deg, #D4AF37 0%, #FFF3A8 50%, #D4AF37 100%)",
+      badgeBorder: "1px solid rgba(255, 255, 255, 0.35)",
+      topLineGradient: "linear-gradient(90deg, transparent, #0092B3, #D4AF37, #1EB53A, transparent)",
+      avatarBg: "radial-gradient(circle at 34% 28%, #FFFFFF 0%, #0092B3 42%, #0A192F 100%)",
+      avatarText: "#FFFFFF",
+      avatarBorder: "2px solid rgba(212,175,55,0.72)",
+      cardBorderRadius: "16px",
+      fontFamily: "'Montserrat', 'Inter', 'Segoe UI', sans-serif",
+      nameFontStyle: "normal",
+      nameFontWeight: "800",
+      roleLetterSpacing: "0.16em",
+      scoreLabelColor: "rgba(255,255,255,0.72)",
+      scoreValueColor: "#D4AF37",
+      scoreBarFill: "linear-gradient(90deg, #0092B3, #D4AF37, #1EB53A)",
+      scoreBarTrack: "rgba(255,255,255,0.16)",
+      scorePercentileColor: "#D4AF37",
+      cardShadow: "0 25px 50px rgba(0,0,0,0.6), 0 0 30px rgba(212,175,55,0.16), inset 0 0 15px rgba(212,175,55,0.1)",
+      buttonShineGradient:
+        "linear-gradient(90deg, rgba(212,175,55,0) 0%, rgba(255,243,168,0.42) 50%, rgba(212,175,55,0) 100%)",
     },
     turtle_power: {
       cardBg: "repeating-linear-gradient(45deg, #4A7836, #4A7836 10px, #3f672e 10px, #3f672e 20px)",
@@ -3090,6 +3131,37 @@
           <text x="268" y="116" transform="rotate(10 268 116)">✦</text>
           <text x="54" y="514" transform="rotate(-12 54 514)">✧</text>
         </g>
+      </svg>`;
+    }
+    if (themeKey === "uzbekistan_35") {
+      return `<svg class="unq-ref-overlay-svg uzbekistan35-overlay" viewBox="0 0 360 600" preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <linearGradient id="uz35Gold" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#D4AF37"></stop>
+            <stop offset="52%" stop-color="#FFF3A8"></stop>
+            <stop offset="100%" stop-color="#D4AF37"></stop>
+          </linearGradient>
+          <radialGradient id="uz35Glow" cx="50%" cy="42%" r="58%">
+            <stop offset="0%" stop-color="#D4AF37" stop-opacity="0.38"></stop>
+            <stop offset="62%" stop-color="#D4AF37" stop-opacity="0.08"></stop>
+            <stop offset="100%" stop-color="#D4AF37" stop-opacity="0"></stop>
+          </radialGradient>
+        </defs>
+        <rect width="360" height="600" fill="url(#uz35Glow)"></rect>
+        <path d="M0 112C78 84 151 92 226 124c52 22 94 24 134 4" fill="none" stroke="#0092B3" stroke-width="26" opacity="0.24"></path>
+        <path d="M0 150C82 126 148 132 226 162c54 20 92 22 134 2" fill="none" stroke="#FFFFFF" stroke-width="22" opacity="0.18"></path>
+        <path d="M0 184C82 158 150 166 226 194c54 20 92 22 134 2" fill="none" stroke="#1EB53A" stroke-width="24" opacity="0.22"></path>
+        <path d="M0 139C88 112 150 121 226 150c54 21 92 22 134 3" fill="none" stroke="#CE1126" stroke-width="4" opacity="0.35"></path>
+        <path d="M0 171C88 144 150 153 226 182c54 21 92 22 134 3" fill="none" stroke="#CE1126" stroke-width="4" opacity="0.35"></path>
+        <circle cx="180" cy="288" r="142" fill="none" stroke="url(#uz35Gold)" stroke-width="1.4" opacity="0.28"></circle>
+        <circle cx="180" cy="288" r="118" fill="none" stroke="#D4AF37" stroke-width="1" stroke-dasharray="4 8" opacity="0.24"></circle>
+        <path d="M180 86v404M44 288h272" fill="none" stroke="#D4AF37" stroke-width="0.8" opacity="0.16"></path>
+        <path d="M152 240A42 42 0 1 0 208 336A34 34 0 1 1 152 240" fill="url(#uz35Gold)" opacity="0.24"></path>
+        <g fill="#D4AF37" opacity="0.26">
+          <path d="M88 82l8 18 18 8-18 8-8 18-8-18-18-8 18-8 8-18Z"></path>
+          <path d="M282 408l7 16 16 7-16 7-7 16-7-16-16-7 16-7 7-16Z"></path>
+        </g>
+        <text x="180" y="392" text-anchor="middle" fill="url(#uz35Gold)" opacity="0.34" font-family="Montserrat, Inter, Arial, sans-serif" font-size="24" font-weight="900" letter-spacing="3">35 YEARS</text>
       </svg>`;
     }
     if (themeKey === "turtle_power") {

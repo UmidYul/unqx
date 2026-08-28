@@ -179,6 +179,13 @@ const SIGNATURE_THEMES = [
     premiumRequired: true,
   },
   {
+    id: "uzbekistan_35",
+    label: "Узбекистан 35 лет",
+    description: "Silk flag glow and golden independence emblem",
+    swatchStyle: "border-color:#D4AF37;background:radial-gradient(circle at 50% 42%,rgba(212,175,55,.36),transparent 34%),linear-gradient(135deg,#0092B3 0%,#0092B3 30%,#CE1126 31%,#fff 35%,#fff 66%,#CE1126 67%,#1EB53A 70%,#1EB53A 100%);box-shadow:0 0 14px rgba(212,175,55,.38);",
+    premiumRequired: true,
+  },
+  {
     id: "turtle_power",
     label: "Сила Черепах 🐢",
     description: "Mutagen comic turtle patrol",
