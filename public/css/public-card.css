@@ -16554,3 +16554,72 @@ body[data-card-theme="uzbekistan_35"] .unq-ref-divider,
   margin-top: 18px !important;
   margin-bottom: 0 !important;
 }
+
+/* Uzbekistan 35 centered stack: group the visible elements in the middle instead of stretching them. */
+body[data-card-theme="uzbekistan_35"] .public-card-shell,
+body[data-card-theme="uzbekistan_35"] .unq-ref-shell,
+#profile-card-live-preview[data-preview-theme="uzbekistan_35"] .public-card-shell,
+#profile-card-live-preview[data-preview-theme="uzbekistan_35"] .unq-ref-shell {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 14px !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+}
+
+body[data-card-theme="uzbekistan_35"] .public-card-shell::before,
+body[data-card-theme="uzbekistan_35"] .unq-ref-shell::before,
+#profile-card-live-preview[data-preview-theme="uzbekistan_35"] .public-card-shell::before,
+#profile-card-live-preview[data-preview-theme="uzbekistan_35"] .unq-ref-shell::before {
+  position: relative !important;
+  top: auto !important;
+  left: auto !important;
+  right: auto !important;
+  transform: none !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: fit-content !important;
+  max-width: calc(100% - 20px) !important;
+  margin: 0 !important;
+  order: 1 !important;
+}
+
+body[data-card-theme="uzbekistan_35"] .unq-ref-card-overlay,
+#profile-card-live-preview[data-preview-theme="uzbekistan_35"] .unq-ref-card-overlay {
+  order: 0 !important;
+}
+
+body[data-card-theme="uzbekistan_35"] .unq-ref-brand,
+#profile-card-live-preview[data-preview-theme="uzbekistan_35"] .unq-ref-brand {
+  order: 2 !important;
+  margin: 0 !important;
+}
+
+body[data-card-theme="uzbekistan_35"] .unq-ref-profile,
+body[data-card-theme="uzbekistan_35"] .unq-ref-profile.has-pets,
+body[data-card-theme="uzbekistan_35"] .unq-ref-profile.has-emoji-pack,
+body[data-card-theme="uzbekistan_35"] .unq-ref-profile.has-emoji-pack.has-pets,
+#profile-card-live-preview[data-preview-theme="uzbekistan_35"] .unq-ref-profile,
+#profile-card-live-preview[data-preview-theme="uzbekistan_35"] .unq-ref-profile.has-pets,
+#profile-card-live-preview[data-preview-theme="uzbekistan_35"] .unq-ref-profile.has-emoji-pack,
+#profile-card-live-preview[data-preview-theme="uzbekistan_35"] .unq-ref-profile.has-emoji-pack.has-pets {
+  order: 3 !important;
+  width: 100% !important;
+  margin: 0 !important;
+}
+
+body[data-card-theme="uzbekistan_35"] .unq-ref-shell-meta,
+body[data-card-theme="uzbekistan_35"] .unq-ref-official-unq,
+body[data-card-theme="uzbekistan_35"] .unq-ref-staff-badge,
+body[data-card-theme="uzbekistan_35"] .unq-ref-wall-tabs,
+#profile-card-live-preview[data-preview-theme="uzbekistan_35"] .unq-ref-shell-meta,
+#profile-card-live-preview[data-preview-theme="uzbekistan_35"] .unq-ref-official-unq,
+#profile-card-live-preview[data-preview-theme="uzbekistan_35"] .unq-ref-staff-badge,
+#profile-card-live-preview[data-preview-theme="uzbekistan_35"] .unq-ref-wall-tabs {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
