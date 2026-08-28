@@ -186,6 +186,13 @@ const SIGNATURE_THEMES = [
     premiumRequired: true,
   },
   {
+    id: "uzbekistan_2d",
+    label: "Узбекистан 2D",
+    description: "Flat flag stripes and state emblem",
+    swatchStyle: "border-color:#1E1E24;background:radial-gradient(circle at 50% 42%,rgba(255,209,59,.45),transparent 30%),linear-gradient(to bottom,#0099B5 0%,#0099B5 33%,#D7263D 33%,#D7263D 36%,#fff 36%,#fff 66%,#D7263D 66%,#D7263D 69%,#1EB53A 69%,#1EB53A 100%);box-shadow:5px 5px 0 #1E1E24;",
+    premiumRequired: true,
+  },
+  {
     id: "turtle_power",
     label: "Сила Черепах 🐢",
     description: "Mutagen comic turtle patrol",

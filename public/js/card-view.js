@@ -36,6 +36,7 @@
     "shinobi_way",
     "samarkand_heritage",
     "uzbekistan_35",
+    "uzbekistan_2d",
     "turtle_power",
     "egypt_nile",
     "kawaii_kitty",
@@ -1218,6 +1219,46 @@
       cardShadow: "0 25px 50px rgba(0,0,0,0.6), 0 0 30px rgba(212,175,55,0.16), inset 0 0 15px rgba(212,175,55,0.1)",
       buttonShineGradient:
         "linear-gradient(90deg, rgba(212,175,55,0) 0%, rgba(255,243,168,0.42) 50%, rgba(212,175,55,0) 100%)",
+    },
+    uzbekistan_2d: {
+      cardBg: "#FFFFFF",
+      cardBgOverlay: "uzbekistan_2d",
+      surfaceBg: "#FFFFFF",
+      cardBorder: "4px solid #1E1E24",
+      borderColor: "#1E1E24",
+      surfaceBorder: "3px solid #1E1E24",
+      dividerColor: "#1E1E24",
+      nameColor: "#1E1E24",
+      roleColor: "#D7263D",
+      mutedColor: "rgba(30, 30, 36, 0.72)",
+      accentColor: "#0099B5",
+      emailColor: "#1E1E24",
+      buttonPrimaryBg: "#0099B5",
+      buttonPrimaryText: "#FFFFFF",
+      buttonPrimaryBorder: "#1E1E24",
+      buttonSecondaryBg: "#FFD13B",
+      buttonSecondaryText: "#1E1E24",
+      buttonSecondaryBorder: "#1E1E24",
+      badgeText: "#1E1E24",
+      badgeBg: "#FFD13B",
+      badgeBorder: "3px solid #1E1E24",
+      topLineGradient: "linear-gradient(90deg, #0099B5, #D7263D, #FFFFFF, #1EB53A)",
+      avatarBg: "linear-gradient(135deg, #0099B5 0%, #FFFFFF 52%, #1EB53A 100%)",
+      avatarText: "#1E1E24",
+      avatarBorder: "4px solid #1E1E24",
+      cardBorderRadius: "20px",
+      fontFamily: "'Montserrat', 'Inter', 'Segoe UI', sans-serif",
+      nameFontStyle: "normal",
+      nameFontWeight: "800",
+      roleLetterSpacing: "0.1em",
+      scoreLabelColor: "rgba(30, 30, 36, 0.72)",
+      scoreValueColor: "#D7263D",
+      scoreBarFill: "linear-gradient(90deg, #0099B5, #FFD13B, #1EB53A)",
+      scoreBarTrack: "rgba(30, 30, 36, 0.16)",
+      scorePercentileColor: "#0099B5",
+      cardShadow: "8px 8px 0 #1E1E24",
+      buttonShineGradient:
+        "linear-gradient(90deg, rgba(255,209,59,0) 0%, rgba(255,209,59,0.5) 50%, rgba(255,209,59,0) 100%)",
     },
     turtle_power: {
       cardBg: "repeating-linear-gradient(45deg, #4A7836, #4A7836 10px, #3f672e 10px, #3f672e 20px)",
@@ -3162,6 +3203,34 @@
           <path d="M282 408l7 16 16 7-16 7-7 16-7-16-16-7 16-7 7-16Z"></path>
         </g>
         <text x="180" y="392" text-anchor="middle" fill="url(#uz35Gold)" opacity="0.34" font-family="Montserrat, Inter, Arial, sans-serif" font-size="24" font-weight="900" letter-spacing="3">35 YEARS</text>
+      </svg>`;
+    }
+    if (themeKey === "uzbekistan_2d") {
+      return `<svg class="unq-ref-overlay-svg uzbekistan2d-overlay" viewBox="0 0 360 600" preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <pattern id="uz2dGrid" width="28" height="28" patternUnits="userSpaceOnUse">
+            <path d="M28 0H0v28" fill="none" stroke="#1E1E24" stroke-width="1" opacity="0.12"></path>
+          </pattern>
+        </defs>
+        <rect width="360" height="600" fill="url(#uz2dGrid)" opacity="0.8"></rect>
+        <circle cx="180" cy="260" r="92" fill="#0099B5" stroke="#1E1E24" stroke-width="4" opacity="0.18"></circle>
+        <circle cx="180" cy="260" r="82" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-dasharray="8 6" opacity="0.24"></circle>
+        <g stroke="#FFD13B" stroke-width="3" opacity="0.22">
+          <path d="M180 178v164"></path>
+          <path d="M98 260h164"></path>
+          <path d="M122 202l116 116"></path>
+          <path d="M238 202 122 318"></path>
+        </g>
+        <path d="M104 298l36-42 40 30 44-52 44 64Z" fill="#1EB53A" stroke="#1E1E24" stroke-width="3" opacity="0.2"></path>
+        <path d="M104 298q76 28 152 0q-76 44-152 0Z" fill="#0099B5" stroke="#1E1E24" stroke-width="3" opacity="0.2"></path>
+        <path d="M180 216q-24 26-58 18q34 34 58 50q24-16 58-50q-34 8-58-18Z" fill="#FFFFFF" stroke="#1E1E24" stroke-width="3" opacity="0.22"></path>
+        <circle cx="180" cy="208" r="8" fill="#FFD13B" stroke="#1E1E24" stroke-width="2" opacity="0.32"></circle>
+        <path d="M150 84A14 14 0 1 0 174 102A12 12 0 1 1 150 84" fill="#FFFFFF" stroke="#1E1E24" stroke-width="2" opacity="0.28"></path>
+        <g fill="#FFFFFF" opacity="0.34">
+          <circle cx="192" cy="86" r="3"></circle>
+          <circle cx="204" cy="92" r="3"></circle>
+          <circle cx="212" cy="104" r="3"></circle>
+        </g>
       </svg>`;
     }
     if (themeKey === "turtle_power") {

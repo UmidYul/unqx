@@ -121,6 +121,7 @@
       "shinobi_way",
       "samarkand_heritage",
       "uzbekistan_35",
+      "uzbekistan_2d",
       "turtle_power",
       "egypt_nile",
       "kawaii_kitty",

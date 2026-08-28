@@ -247,6 +247,7 @@
     venom_symbiote: { label: "Симбиот Веном", fill: "#08080C", border: "#E53E6D", text: "#00F0FF", bg: "#15040A" },
     shinobi_path: { label: "Путь Шиноби", fill: "#1D2637", border: "#00F0FF", text: "#FF8c00", bg: "#C84B31" },
     uzbekistan_35: { label: "Узбекистан 35 лет", fill: "#0A192F", border: "#D4AF37", text: "#D4AF37", bg: "linear-gradient(135deg,#0092B3 0%,#0092B3 30%,#CE1126 31%,#ffffff 35%,#ffffff 66%,#CE1126 67%,#1EB53A 70%,#1EB53A 100%)" },
+    uzbekistan_2d: { label: "Узбекистан 2D", fill: "#FFFFFF", border: "#1E1E24", text: "#1E1E24", bg: "linear-gradient(to bottom,#0099B5 0%,#0099B5 33%,#D7263D 33%,#D7263D 36%,#ffffff 36%,#ffffff 66%,#D7263D 66%,#D7263D 69%,#1EB53A 69%,#1EB53A 100%)" },
     sakura_blossom: { label: "Цветущая Сакура", fill: "#FDFAF2", border: "#D2A298", text: "#1F1412", bg: "#F3EAD8" },
     starry_night: { label: "Звездная Ночь", fill: "#0C1A30", border: "#FFD500", text: "#FFF4D0", bg: "#0B1528" },
     velours: { label: "Velours Luxe", fill: "#2d0a12", border: "#5a1828", text: "#c9a55a", bg: "#2d0a12" },

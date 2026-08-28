@@ -42,6 +42,7 @@ enum CardTheme {
   cheetah_spots
   serpent_scale
   uzbekistan_35
+  uzbekistan_2d
   color_red
   color_orange
   color_yellow
