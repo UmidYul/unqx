@@ -15457,6 +15457,25 @@ body[data-card-theme="samarkand_heritage"] .unq-ref-top,
   padding-bottom: 0 !important;
 }
 
+/* Uzbekistan 35: keep the flag frame slim, not poster-sized. */
+body[data-card-theme="uzbekistan_35"] .public-card-shell,
+#profile-card-live-preview[data-preview-theme="uzbekistan_35"] .public-card-shell {
+  width: calc(100% - 18px) !important;
+  max-width: 430px !important;
+  margin: 6px auto !important;
+  padding: 14px 12px !important;
+}
+
+body[data-card-theme="uzbekistan_35"] .public-card-shell::before,
+#profile-card-live-preview[data-preview-theme="uzbekistan_35"] .public-card-shell::before {
+  top: 8px;
+}
+
+body[data-card-theme="uzbekistan_35"] .unq-ref-profile,
+#profile-card-live-preview[data-preview-theme="uzbekistan_35"] .unq-ref-profile {
+  margin-top: 14px !important;
+}
+
 /* Turtle Power zero-gap reset: comic shell card without layout spacer. */
 body[data-card-theme="turtle_power"] main {
   display: flex !important;
@@ -15814,6 +15833,12 @@ body[data-card-theme="graffiti"] .unq-ref-top,
   #profile-card-live-preview[data-preview-theme="samarkand_heritage"] .public-card-shell {
     padding: 12px 10px !important;
     margin: 6px auto !important;
+  }
+
+  body[data-card-theme="uzbekistan_35"] .public-card-shell,
+  #profile-card-live-preview[data-preview-theme="uzbekistan_35"] .public-card-shell {
+    width: calc(100% - 12px) !important;
+    padding: 12px 10px !important;
   }
 
   body[data-card-theme="turtle_power"] main {
