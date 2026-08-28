@@ -187,9 +187,9 @@ const SIGNATURE_THEMES = [
   },
   {
     id: "uzbekistan_2d",
-    label: "Узбекистан 2D",
-    description: "Flat flag stripes and state emblem",
-    swatchStyle: "border-color:#1E1E24;background:radial-gradient(circle at 50% 42%,rgba(255,209,59,.45),transparent 30%),linear-gradient(to bottom,#0099B5 0%,#0099B5 33%,#D7263D 33%,#D7263D 36%,#fff 36%,#fff 66%,#D7263D 66%,#D7263D 69%,#1EB53A 69%,#1EB53A 100%);box-shadow:5px 5px 0 #1E1E24;",
+    label: "Узбекистан Diplomatic",
+    description: "Deep diplomatic glass with matte gold state symbolism",
+    swatchStyle: "border-color:#D4AF37;background:radial-gradient(circle at 34% 24%,rgba(0,153,181,.26),transparent 36%),radial-gradient(circle at 76% 72%,rgba(30,181,58,.18),transparent 34%),linear-gradient(145deg,#08121E 0%,#0A192F 68%,#050B13 100%);box-shadow:0 0 18px rgba(212,175,55,.28);",
     premiumRequired: true,
   },
   {

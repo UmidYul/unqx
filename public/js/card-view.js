@@ -1221,44 +1221,44 @@
         "linear-gradient(90deg, rgba(212,175,55,0) 0%, rgba(255,243,168,0.42) 50%, rgba(212,175,55,0) 100%)",
     },
     uzbekistan_2d: {
-      cardBg: "#FFFFFF",
+      cardBg: "rgba(8, 18, 30, 0.78)",
       cardBgOverlay: "uzbekistan_2d",
-      surfaceBg: "#FFFFFF",
-      cardBorder: "4px solid #1E1E24",
-      borderColor: "#1E1E24",
-      surfaceBorder: "3px solid #1E1E24",
-      dividerColor: "#1E1E24",
-      nameColor: "#1E1E24",
-      roleColor: "#D7263D",
-      mutedColor: "rgba(30, 30, 36, 0.72)",
-      accentColor: "#0099B5",
-      emailColor: "#1E1E24",
-      buttonPrimaryBg: "#0099B5",
-      buttonPrimaryText: "#FFFFFF",
-      buttonPrimaryBorder: "#1E1E24",
-      buttonSecondaryBg: "#FFD13B",
-      buttonSecondaryText: "#1E1E24",
-      buttonSecondaryBorder: "#1E1E24",
-      badgeText: "#1E1E24",
-      badgeBg: "#FFD13B",
-      badgeBorder: "3px solid #1E1E24",
-      topLineGradient: "linear-gradient(90deg, #0099B5, #D7263D, #FFFFFF, #1EB53A)",
-      avatarBg: "linear-gradient(135deg, #0099B5 0%, #FFFFFF 52%, #1EB53A 100%)",
-      avatarText: "#1E1E24",
-      avatarBorder: "4px solid #1E1E24",
-      cardBorderRadius: "20px",
-      fontFamily: "'Montserrat', 'Inter', 'Segoe UI', sans-serif",
+      surfaceBg: "rgba(8, 18, 30, 0.5)",
+      cardBorder: "1px solid rgba(212, 175, 55, 0.58)",
+      borderColor: "#D4AF37",
+      surfaceBorder: "1px solid rgba(212, 175, 55, 0.32)",
+      dividerColor: "rgba(212, 175, 55, 0.22)",
+      nameColor: "#F8FAFC",
+      roleColor: "#D4AF37",
+      mutedColor: "rgba(248, 250, 252, 0.7)",
+      accentColor: "#D4AF37",
+      emailColor: "rgba(248, 250, 252, 0.86)",
+      buttonPrimaryBg: "linear-gradient(135deg, rgba(212,175,55,0.2), rgba(8,18,30,0.72))",
+      buttonPrimaryText: "#F8FAFC",
+      buttonPrimaryBorder: "rgba(212,175,55,0.58)",
+      buttonSecondaryBg: "rgba(8, 18, 30, 0.54)",
+      buttonSecondaryText: "#D4AF37",
+      buttonSecondaryBorder: "rgba(212,175,55,0.42)",
+      badgeText: "#D4AF37",
+      badgeBg: "rgba(212, 175, 55, 0.1)",
+      badgeBorder: "1px solid rgba(212, 175, 55, 0.45)",
+      topLineGradient: "linear-gradient(90deg, transparent, rgba(0,153,181,0.5), rgba(212,175,55,0.9), rgba(30,181,58,0.5), transparent)",
+      avatarBg: "linear-gradient(135deg, #08121E 0%, #0A192F 55%, #D4AF37 100%)",
+      avatarText: "#D4AF37",
+      avatarBorder: "1px solid rgba(212,175,55,0.72)",
+      cardBorderRadius: "18px",
+      fontFamily: "'Cinzel', 'Montserrat', 'Inter', 'Segoe UI', sans-serif",
       nameFontStyle: "normal",
       nameFontWeight: "800",
-      roleLetterSpacing: "0.1em",
-      scoreLabelColor: "rgba(30, 30, 36, 0.72)",
-      scoreValueColor: "#D7263D",
-      scoreBarFill: "linear-gradient(90deg, #0099B5, #FFD13B, #1EB53A)",
-      scoreBarTrack: "rgba(30, 30, 36, 0.16)",
-      scorePercentileColor: "#0099B5",
-      cardShadow: "8px 8px 0 #1E1E24",
+      roleLetterSpacing: "0.18em",
+      scoreLabelColor: "rgba(248,250,252,0.62)",
+      scoreValueColor: "#D4AF37",
+      scoreBarFill: "linear-gradient(90deg, rgba(0,153,181,0.6), #D4AF37, rgba(30,181,58,0.6))",
+      scoreBarTrack: "rgba(248,250,252,0.1)",
+      scorePercentileColor: "#D4AF37",
+      cardShadow: "0 28px 70px rgba(0,0,0,0.58), 0 0 36px rgba(212,175,55,0.12), inset 0 1px 0 rgba(255,255,255,0.08)",
       buttonShineGradient:
-        "linear-gradient(90deg, rgba(255,209,59,0) 0%, rgba(255,209,59,0.5) 50%, rgba(255,209,59,0) 100%)",
+        "linear-gradient(90deg, rgba(212,175,55,0) 0%, rgba(255,243,168,0.26) 50%, rgba(212,175,55,0) 100%)",
     },
     turtle_power: {
       cardBg: "repeating-linear-gradient(45deg, #4A7836, #4A7836 10px, #3f672e 10px, #3f672e 20px)",
@@ -3208,28 +3208,34 @@
     if (themeKey === "uzbekistan_2d") {
       return `<svg class="unq-ref-overlay-svg uzbekistan2d-overlay" viewBox="0 0 360 600" preserveAspectRatio="none" aria-hidden="true">
         <defs>
-          <pattern id="uz2dGrid" width="28" height="28" patternUnits="userSpaceOnUse">
-            <path d="M28 0H0v28" fill="none" stroke="#1E1E24" stroke-width="1" opacity="0.12"></path>
-          </pattern>
+          <radialGradient id="uzDiplomaticGlow" cx="50%" cy="42%" r="62%">
+            <stop offset="0%" stop-color="#D4AF37" stop-opacity="0.16"></stop>
+            <stop offset="62%" stop-color="#D4AF37" stop-opacity="0.05"></stop>
+            <stop offset="100%" stop-color="#D4AF37" stop-opacity="0"></stop>
+          </radialGradient>
+          <linearGradient id="uzDiplomaticGold" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#8C6D2E"></stop>
+            <stop offset="48%" stop-color="#D4AF37"></stop>
+            <stop offset="100%" stop-color="#F3D98A"></stop>
+          </linearGradient>
         </defs>
-        <rect width="360" height="600" fill="url(#uz2dGrid)" opacity="0.8"></rect>
-        <circle cx="180" cy="260" r="92" fill="#0099B5" stroke="#1E1E24" stroke-width="4" opacity="0.18"></circle>
-        <circle cx="180" cy="260" r="82" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-dasharray="8 6" opacity="0.24"></circle>
-        <g stroke="#FFD13B" stroke-width="3" opacity="0.22">
-          <path d="M180 178v164"></path>
-          <path d="M98 260h164"></path>
-          <path d="M122 202l116 116"></path>
-          <path d="M238 202 122 318"></path>
+        <rect width="360" height="600" fill="url(#uzDiplomaticGlow)"></rect>
+        <g opacity="0.22" fill="none" stroke="url(#uzDiplomaticGold)" stroke-linecap="round">
+          <circle cx="180" cy="280" r="138" stroke-width="1.1"></circle>
+          <circle cx="180" cy="280" r="112" stroke-width="0.8" stroke-dasharray="2 10"></circle>
+          <path d="M180 118v324M70 280h220" stroke-width="0.6" opacity="0.46"></path>
+          <path d="M94 164c54 48 118 48 172 0M94 396c54-48 118-48 172 0" stroke-width="0.8" opacity="0.36"></path>
         </g>
-        <path d="M104 298l36-42 40 30 44-52 44 64Z" fill="#1EB53A" stroke="#1E1E24" stroke-width="3" opacity="0.2"></path>
-        <path d="M104 298q76 28 152 0q-76 44-152 0Z" fill="#0099B5" stroke="#1E1E24" stroke-width="3" opacity="0.2"></path>
-        <path d="M180 216q-24 26-58 18q34 34 58 50q24-16 58-50q-34 8-58-18Z" fill="#FFFFFF" stroke="#1E1E24" stroke-width="3" opacity="0.22"></path>
-        <circle cx="180" cy="208" r="8" fill="#FFD13B" stroke="#1E1E24" stroke-width="2" opacity="0.32"></circle>
-        <path d="M150 84A14 14 0 1 0 174 102A12 12 0 1 1 150 84" fill="#FFFFFF" stroke="#1E1E24" stroke-width="2" opacity="0.28"></path>
-        <g fill="#FFFFFF" opacity="0.34">
-          <circle cx="192" cy="86" r="3"></circle>
-          <circle cx="204" cy="92" r="3"></circle>
-          <circle cx="212" cy="104" r="3"></circle>
+        <g class="uzbekistan-diplomatic-emblem" fill="url(#uzDiplomaticGold)" opacity="0.2">
+          <path d="M144 184A36 36 0 1 0 194 226A30 30 0 1 1 144 184Z"></path>
+          <g>
+            <circle cx="214" cy="184" r="2.6"></circle><circle cx="230" cy="188" r="2.6"></circle><circle cx="246" cy="192" r="2.6"></circle>
+            <circle cx="206" cy="202" r="2.6"></circle><circle cx="222" cy="206" r="2.6"></circle><circle cx="238" cy="210" r="2.6"></circle>
+            <circle cx="198" cy="220" r="2.6"></circle><circle cx="214" cy="224" r="2.6"></circle><circle cx="230" cy="228" r="2.6"></circle>
+            <circle cx="206" cy="242" r="2.6"></circle><circle cx="222" cy="246" r="2.6"></circle><circle cx="238" cy="250" r="2.6"></circle>
+          </g>
+          <path d="M104 376c44-26 108-26 152 0l-14 12c-36-18-88-18-124 0l-14-12Z" opacity="0.36"></path>
+          <path d="M126 398c32-18 76-18 108 0l-12 10c-26-10-58-10-84 0l-12-10Z" opacity="0.32"></path>
         </g>
       </svg>`;
     }

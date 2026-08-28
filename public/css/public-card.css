@@ -293,6 +293,255 @@ body[data-card-theme="looney_tunes"] .nav-search-button:hover {
   }
 }
 
+/* Uzbekistan Diplomatic: official premium redesign replacing the previous flat/cartoon execution. */
+body[data-card-theme="uzbekistan_2d"] {
+  --theme-page-bg: #08121E;
+  --theme-screen-opacity: 0.46;
+  --theme-screen-pattern:
+    radial-gradient(circle at 30% 18%, rgba(0, 153, 181, 0.2) 0%, transparent 34%),
+    radial-gradient(circle at 74% 76%, rgba(30, 181, 58, 0.14) 0%, transparent 34%),
+    radial-gradient(circle at 54% 44%, rgba(212, 175, 55, 0.12) 0%, transparent 42%);
+  --unqx-nav-bg: rgba(8, 18, 30, 0.82);
+  --unqx-nav-border: rgba(212, 175, 55, 0.44);
+  --unqx-nav-border-width: 1px;
+  --unqx-nav-blur: 18px;
+  --unqx-nav-text: #F8FAFC;
+  --unqx-nav-icon: #D4AF37;
+  --unqx-nav-input: #F8FAFC;
+  --unqx-nav-placeholder: rgba(248, 250, 252, 0.46);
+  --unqx-nav-chip: rgba(212, 175, 55, 0.82);
+  --unqx-nav-hover-bg: rgba(212, 175, 55, 0.14);
+  --unqx-nav-hover-text: #F8FAFC;
+  --unqx-nav-hover-border: rgba(212, 175, 55, 0.72);
+  --unqx-nav-shadow: 0 16px 34px rgba(0, 0, 0, 0.34), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  --unqx-nav-hover-shadow: 0 18px 42px rgba(0, 0, 0, 0.38), 0 0 24px rgba(212, 175, 55, 0.14);
+  --unqx-search-result-text: #F8FAFC;
+  --unqx-search-result-strong: #D4AF37;
+  --unqx-search-result-muted: rgba(248, 250, 252, 0.62);
+  --unqx-search-result-hover: rgba(212, 175, 55, 0.1);
+  background-color: #08121E !important;
+  background-image:
+    radial-gradient(circle at 16% 18%, rgba(0, 153, 181, 0.24) 0%, transparent 32%),
+    radial-gradient(circle at 84% 78%, rgba(30, 181, 58, 0.16) 0%, transparent 34%),
+    radial-gradient(circle at 78% 20%, rgba(255, 255, 255, 0.08) 0%, transparent 28%),
+    linear-gradient(120deg, transparent 0%, transparent 48%, rgba(206, 17, 38, 0.05) 49%, transparent 51%),
+    linear-gradient(145deg, #08121E 0%, #0A192F 58%, #050B13 100%) !important;
+  font-family: "Cinzel", "Montserrat", "Inter", "Segoe UI", sans-serif !important;
+}
+
+body[data-card-theme="uzbekistan_2d"] main {
+  justify-content: center !important;
+}
+
+body[data-card-theme="uzbekistan_2d"] .public-card-shell,
+body[data-card-theme="uzbekistan_2d"] .unq-ref-shell,
+#profile-card-live-preview[data-preview-theme="uzbekistan_2d"] .public-card-shell,
+#profile-card-live-preview[data-preview-theme="uzbekistan_2d"] .unq-ref-shell {
+  display: block !important;
+  width: 92% !important;
+  max-width: 420px !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  margin: 12px auto !important;
+  padding: 32px 24px 26px !important;
+  border: 1px solid rgba(212, 175, 55, 0.52) !important;
+  border-radius: 18px !important;
+  outline: 1px solid rgba(255, 255, 255, 0.05) !important;
+  background-color: rgba(8, 18, 30, 0.76) !important;
+  background-image:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.08), transparent 42%),
+    radial-gradient(circle at 50% 0%, rgba(212, 175, 55, 0.12) 0%, transparent 42%) !important;
+  box-shadow:
+    0 30px 80px rgba(0, 0, 0, 0.56),
+    0 0 42px rgba(212, 175, 55, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 0 28px rgba(212, 175, 55, 0.04) !important;
+  backdrop-filter: blur(25px) saturate(130%);
+}
+
+body[data-card-theme="uzbekistan_2d"] .public-card-shell::before,
+body[data-card-theme="uzbekistan_2d"] .unq-ref-shell::before,
+#profile-card-live-preview[data-preview-theme="uzbekistan_2d"] .public-card-shell::before,
+#profile-card-live-preview[data-preview-theme="uzbekistan_2d"] .unq-ref-shell::before {
+  content: "O'ZBEKISTON";
+  position: relative !important;
+  top: auto !important;
+  left: auto !important;
+  right: auto !important;
+  transform: none !important;
+  display: flex !important;
+  width: fit-content !important;
+  max-width: 100% !important;
+  margin: 0 auto 22px !important;
+  padding: 6px 18px !important;
+  border: 1px solid rgba(212, 175, 55, 0.48) !important;
+  border-radius: 999px !important;
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.16), rgba(212, 175, 55, 0.06)) !important;
+  color: #D4AF37 !important;
+  font-family: "Cinzel", "Montserrat", "Inter", sans-serif !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.22em !important;
+  text-transform: uppercase !important;
+  white-space: nowrap !important;
+  box-shadow: 0 0 18px rgba(212, 175, 55, 0.1) !important;
+}
+
+body[data-card-theme="uzbekistan_2d"] .public-card-shell::after,
+body[data-card-theme="uzbekistan_2d"] .unq-ref-shell::after,
+#profile-card-live-preview[data-preview-theme="uzbekistan_2d"] .public-card-shell::after,
+#profile-card-live-preview[data-preview-theme="uzbekistan_2d"] .unq-ref-shell::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 22% 24%, rgba(0, 153, 181, 0.12), transparent 32%),
+    radial-gradient(circle at 86% 72%, rgba(30, 181, 58, 0.1), transparent 34%),
+    linear-gradient(110deg, transparent 0%, transparent 48%, rgba(206, 17, 38, 0.05) 49%, transparent 51%);
+  opacity: 1;
+}
+
+body[data-card-theme="uzbekistan_2d"] .unq-ref-card-overlay,
+#profile-card-live-preview[data-preview-theme="uzbekistan_2d"] .unq-ref-card-overlay {
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 1 !important;
+  opacity: 0.82 !important;
+  animation: uzbekistan-diplomatic-breathe 18s ease-in-out infinite;
+}
+
+body[data-card-theme="uzbekistan_2d"] .unq-ref-brand,
+#profile-card-live-preview[data-preview-theme="uzbekistan_2d"] .unq-ref-brand {
+  margin: 0 0 20px !important;
+}
+
+body[data-card-theme="uzbekistan_2d"] .unq-ref-brand h2,
+#profile-card-live-preview[data-preview-theme="uzbekistan_2d"] .unq-ref-brand h2 {
+  color: #D4AF37 !important;
+  font-family: "Cinzel", "Montserrat", "Inter", sans-serif !important;
+  font-size: 40px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.08em !important;
+  line-height: 1 !important;
+  text-shadow: 0 0 20px rgba(212, 175, 55, 0.16) !important;
+}
+
+body[data-card-theme="uzbekistan_2d"] .unq-ref-brand p,
+#profile-card-live-preview[data-preview-theme="uzbekistan_2d"] .unq-ref-brand p {
+  color: rgba(248, 250, 252, 0.68) !important;
+  font-family: "Montserrat", "Inter", sans-serif !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.2em !important;
+}
+
+body[data-card-theme="uzbekistan_2d"] .unq-ref-profile,
+body[data-card-theme="uzbekistan_2d"] .unq-ref-profile.has-pets,
+body[data-card-theme="uzbekistan_2d"] .unq-ref-profile.has-emoji-pack,
+body[data-card-theme="uzbekistan_2d"] .unq-ref-profile.has-emoji-pack.has-pets,
+#profile-card-live-preview[data-preview-theme="uzbekistan_2d"] .unq-ref-profile,
+#profile-card-live-preview[data-preview-theme="uzbekistan_2d"] .unq-ref-profile.has-pets,
+#profile-card-live-preview[data-preview-theme="uzbekistan_2d"] .unq-ref-profile.has-emoji-pack,
+#profile-card-live-preview[data-preview-theme="uzbekistan_2d"] .unq-ref-profile.has-emoji-pack.has-pets {
+  height: auto !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+body[data-card-theme="uzbekistan_2d"] .unq-ref-avatar-wrap,
+#profile-card-live-preview[data-preview-theme="uzbekistan_2d"] .unq-ref-avatar-wrap {
+  margin-top: 0 !important;
+}
+
+body[data-card-theme="uzbekistan_2d"] .unq-ref-name,
+body[data-card-theme="uzbekistan_2d"] .unq-ref-name-text,
+#profile-card-live-preview[data-preview-theme="uzbekistan_2d"] .unq-ref-name,
+#profile-card-live-preview[data-preview-theme="uzbekistan_2d"] .unq-ref-name-text {
+  color: #F8FAFC !important;
+  font-family: "Cinzel", "Montserrat", "Inter", sans-serif !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+  text-shadow: 0 0 20px rgba(212, 175, 55, 0.12) !important;
+}
+
+body[data-card-theme="uzbekistan_2d"] .unq-ref-role,
+body[data-card-theme="uzbekistan_2d"] .unq-ref-bio,
+#profile-card-live-preview[data-preview-theme="uzbekistan_2d"] .unq-ref-role,
+#profile-card-live-preview[data-preview-theme="uzbekistan_2d"] .unq-ref-bio {
+  color: rgba(248, 250, 252, 0.72) !important;
+  font-family: "Montserrat", "Inter", sans-serif !important;
+}
+
+body[data-card-theme="uzbekistan_2d"] .unq-ref-action-btn,
+body[data-card-theme="uzbekistan_2d"] .unq-ref-follow-toggle,
+body[data-card-theme="uzbekistan_2d"] .unq-follow-action-btn,
+body[data-card-theme="uzbekistan_2d"] .unq-ref-phone,
+#profile-card-live-preview[data-preview-theme="uzbekistan_2d"] .unq-ref-action-btn,
+#profile-card-live-preview[data-preview-theme="uzbekistan_2d"] .unq-ref-follow-toggle,
+#profile-card-live-preview[data-preview-theme="uzbekistan_2d"] .unq-follow-action-btn,
+#profile-card-live-preview[data-preview-theme="uzbekistan_2d"] .unq-ref-phone {
+  border: 1px solid rgba(212, 175, 55, 0.48) !important;
+  border-radius: 12px !important;
+  background: linear-gradient(135deg, rgba(8, 18, 30, 0.82), rgba(212, 175, 55, 0.08)) !important;
+  color: #F8FAFC !important;
+  font-family: "Montserrat", "Inter", sans-serif !important;
+  font-weight: 700 !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 12px 28px rgba(0, 0, 0, 0.24) !important;
+}
+
+body[data-card-theme="uzbekistan_2d"] .unq-ref-action-btn:hover,
+body[data-card-theme="uzbekistan_2d"] .unq-ref-follow-toggle:hover,
+body[data-card-theme="uzbekistan_2d"] .unq-follow-action-btn:hover,
+body[data-card-theme="uzbekistan_2d"] .unq-ref-phone:hover,
+#profile-card-live-preview[data-preview-theme="uzbekistan_2d"] .unq-ref-action-btn:hover,
+#profile-card-live-preview[data-preview-theme="uzbekistan_2d"] .unq-ref-follow-toggle:hover,
+#profile-card-live-preview[data-preview-theme="uzbekistan_2d"] .unq-follow-action-btn:hover,
+#profile-card-live-preview[data-preview-theme="uzbekistan_2d"] .unq-ref-phone:hover {
+  border-color: rgba(212, 175, 55, 0.78) !important;
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.18), rgba(8, 18, 30, 0.78)) !important;
+  color: #F3D98A !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 0 24px rgba(212, 175, 55, 0.12), 0 16px 32px rgba(0, 0, 0, 0.28) !important;
+}
+
+#profile-card-live-preview[data-preview-theme="uzbekistan_2d"] {
+  --preview-border-color: #D4AF37;
+  --preview-page-bg:
+    radial-gradient(circle at 28% 20%, rgba(0, 153, 181, 0.26), transparent 34%),
+    radial-gradient(circle at 78% 76%, rgba(30, 181, 58, 0.18), transparent 36%),
+    linear-gradient(145deg, #08121E 0%, #0A192F 62%, #050B13 100%);
+  --preview-screen-opacity: 0.48;
+  --preview-screen-pattern:
+    radial-gradient(circle at 52% 42%, rgba(212, 175, 55, 0.16) 0%, transparent 45%),
+    linear-gradient(120deg, transparent 0%, transparent 48%, rgba(206, 17, 38, 0.08) 49%, transparent 51%);
+  --preview-overlay-opacity: 0.62;
+  --preview-overlay-pattern:
+    radial-gradient(circle at 50% 44%, rgba(212, 175, 55, 0.14) 0%, transparent 44%);
+}
+
+@keyframes uzbekistan-diplomatic-breathe {
+  0%, 100% {
+    opacity: 0.66;
+    transform: scale(1) rotate(0deg);
+  }
+  50% {
+    opacity: 0.88;
+    transform: scale(1.015) rotate(0.45deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body[data-card-theme="uzbekistan_2d"] .unq-ref-card-overlay,
+  #profile-card-live-preview[data-preview-theme="uzbekistan_2d"] .unq-ref-card-overlay {
+    animation: none !important;
+  }
+}
+
 @keyframes bugs-chewing {
   0%, 100% {
     transform: translateY(0);
@@ -16871,5 +17120,281 @@ body[data-card-theme="uzbekistan_2d"] .unq-ref-phone:hover,
     margin: 8px auto !important;
     padding: 24px 14px 18px !important;
     box-shadow: 5px 5px 0 #1E1E24 !important;
+  }
+}
+
+/* Final Uzbekistan Diplomatic override: official premium redesign replacing the previous flat/cartoon execution. */
+body[data-card-theme="uzbekistan_2d"] {
+  --theme-page-bg: #08121E;
+  --theme-screen-opacity: 0.46;
+  --theme-screen-pattern:
+    radial-gradient(circle at 30% 18%, rgba(0, 153, 181, 0.2) 0%, transparent 34%),
+    radial-gradient(circle at 74% 76%, rgba(30, 181, 58, 0.14) 0%, transparent 34%),
+    radial-gradient(circle at 54% 44%, rgba(212, 175, 55, 0.12) 0%, transparent 42%);
+  --unqx-nav-bg: rgba(8, 18, 30, 0.82);
+  --unqx-nav-border: rgba(212, 175, 55, 0.44);
+  --unqx-nav-border-width: 1px;
+  --unqx-nav-blur: 18px;
+  --unqx-nav-text: #F8FAFC;
+  --unqx-nav-icon: #D4AF37;
+  --unqx-nav-input: #F8FAFC;
+  --unqx-nav-placeholder: rgba(248, 250, 252, 0.46);
+  --unqx-nav-chip: rgba(212, 175, 55, 0.82);
+  --unqx-nav-hover-bg: rgba(212, 175, 55, 0.14);
+  --unqx-nav-hover-text: #F8FAFC;
+  --unqx-nav-hover-border: rgba(212, 175, 55, 0.72);
+  --unqx-nav-shadow: 0 16px 34px rgba(0, 0, 0, 0.34), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  --unqx-nav-hover-shadow: 0 18px 42px rgba(0, 0, 0, 0.38), 0 0 24px rgba(212, 175, 55, 0.14);
+  --unqx-search-result-text: #F8FAFC;
+  --unqx-search-result-strong: #D4AF37;
+  --unqx-search-result-muted: rgba(248, 250, 252, 0.62);
+  --unqx-search-result-hover: rgba(212, 175, 55, 0.1);
+  background-color: #08121E !important;
+  background-image:
+    radial-gradient(circle at 16% 18%, rgba(0, 153, 181, 0.24) 0%, transparent 32%),
+    radial-gradient(circle at 84% 78%, rgba(30, 181, 58, 0.16) 0%, transparent 34%),
+    radial-gradient(circle at 78% 20%, rgba(255, 255, 255, 0.08) 0%, transparent 28%),
+    linear-gradient(120deg, transparent 0%, transparent 48%, rgba(206, 17, 38, 0.05) 49%, transparent 51%),
+    linear-gradient(145deg, #08121E 0%, #0A192F 58%, #050B13 100%) !important;
+  font-family: "Cinzel", "Montserrat", "Inter", "Segoe UI", sans-serif !important;
+}
+
+body[data-card-theme="uzbekistan_2d"] main {
+  justify-content: center !important;
+}
+
+body[data-card-theme="uzbekistan_2d"] .public-card-shell,
+body[data-card-theme="uzbekistan_2d"] .unq-ref-shell,
+#profile-card-live-preview[data-preview-theme="uzbekistan_2d"] .public-card-shell,
+#profile-card-live-preview[data-preview-theme="uzbekistan_2d"] .unq-ref-shell {
+  display: block !important;
+  width: 92% !important;
+  max-width: 420px !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  margin: 12px auto !important;
+  padding: 32px 24px 26px !important;
+  border: 1px solid rgba(212, 175, 55, 0.52) !important;
+  border-radius: 18px !important;
+  outline: 1px solid rgba(255, 255, 255, 0.05) !important;
+  background-color: rgba(8, 18, 30, 0.76) !important;
+  background-image:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.08), transparent 42%),
+    radial-gradient(circle at 50% 0%, rgba(212, 175, 55, 0.12) 0%, transparent 42%) !important;
+  box-shadow:
+    0 30px 80px rgba(0, 0, 0, 0.56),
+    0 0 42px rgba(212, 175, 55, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 0 28px rgba(212, 175, 55, 0.04) !important;
+  backdrop-filter: blur(25px) saturate(130%);
+}
+
+body[data-card-theme="uzbekistan_2d"] .public-card-shell::before,
+body[data-card-theme="uzbekistan_2d"] .unq-ref-shell::before,
+#profile-card-live-preview[data-preview-theme="uzbekistan_2d"] .public-card-shell::before,
+#profile-card-live-preview[data-preview-theme="uzbekistan_2d"] .unq-ref-shell::before {
+  content: "O'ZBEKISTON";
+  position: relative !important;
+  top: auto !important;
+  left: auto !important;
+  right: auto !important;
+  transform: none !important;
+  display: flex !important;
+  width: fit-content !important;
+  max-width: 100% !important;
+  margin: 0 auto 22px !important;
+  padding: 6px 18px !important;
+  border: 1px solid rgba(212, 175, 55, 0.48) !important;
+  border-radius: 999px !important;
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.16), rgba(212, 175, 55, 0.06)) !important;
+  color: #D4AF37 !important;
+  font-family: "Cinzel", "Montserrat", "Inter", sans-serif !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.22em !important;
+  text-transform: uppercase !important;
+  white-space: nowrap !important;
+  box-shadow: 0 0 18px rgba(212, 175, 55, 0.1) !important;
+}
+
+body[data-card-theme="uzbekistan_2d"] .public-card-shell::after,
+body[data-card-theme="uzbekistan_2d"] .unq-ref-shell::after,
+#profile-card-live-preview[data-preview-theme="uzbekistan_2d"] .public-card-shell::after,
+#profile-card-live-preview[data-preview-theme="uzbekistan_2d"] .unq-ref-shell::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 22% 24%, rgba(0, 153, 181, 0.12), transparent 32%),
+    radial-gradient(circle at 86% 72%, rgba(30, 181, 58, 0.1), transparent 34%),
+    linear-gradient(110deg, transparent 0%, transparent 48%, rgba(206, 17, 38, 0.05) 49%, transparent 51%);
+  opacity: 1;
+}
+
+body[data-card-theme="uzbekistan_2d"] .unq-ref-shell > *,
+#profile-card-live-preview[data-preview-theme="uzbekistan_2d"] .unq-ref-shell > * {
+  position: relative;
+  z-index: 2;
+}
+
+body[data-card-theme="uzbekistan_2d"] .unq-ref-card-overlay,
+#profile-card-live-preview[data-preview-theme="uzbekistan_2d"] .unq-ref-card-overlay {
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 1 !important;
+  opacity: 0.82 !important;
+  animation: uzbekistan-diplomatic-breathe 18s ease-in-out infinite;
+}
+
+body[data-card-theme="uzbekistan_2d"] .unq-ref-brand,
+#profile-card-live-preview[data-preview-theme="uzbekistan_2d"] .unq-ref-brand {
+  margin: 0 0 20px !important;
+}
+
+body[data-card-theme="uzbekistan_2d"] .unq-ref-brand h2,
+#profile-card-live-preview[data-preview-theme="uzbekistan_2d"] .unq-ref-brand h2 {
+  color: #D4AF37 !important;
+  font-family: "Cinzel", "Montserrat", "Inter", sans-serif !important;
+  font-size: 40px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.08em !important;
+  line-height: 1 !important;
+  text-shadow: 0 0 20px rgba(212, 175, 55, 0.16) !important;
+}
+
+body[data-card-theme="uzbekistan_2d"] .unq-ref-brand p,
+#profile-card-live-preview[data-preview-theme="uzbekistan_2d"] .unq-ref-brand p {
+  color: rgba(248, 250, 252, 0.68) !important;
+  font-family: "Montserrat", "Inter", sans-serif !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.2em !important;
+}
+
+body[data-card-theme="uzbekistan_2d"] .unq-ref-profile,
+body[data-card-theme="uzbekistan_2d"] .unq-ref-profile.has-pets,
+body[data-card-theme="uzbekistan_2d"] .unq-ref-profile.has-emoji-pack,
+body[data-card-theme="uzbekistan_2d"] .unq-ref-profile.has-emoji-pack.has-pets,
+#profile-card-live-preview[data-preview-theme="uzbekistan_2d"] .unq-ref-profile,
+#profile-card-live-preview[data-preview-theme="uzbekistan_2d"] .unq-ref-profile.has-pets,
+#profile-card-live-preview[data-preview-theme="uzbekistan_2d"] .unq-ref-profile.has-emoji-pack,
+#profile-card-live-preview[data-preview-theme="uzbekistan_2d"] .unq-ref-profile.has-emoji-pack.has-pets {
+  height: auto !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+body[data-card-theme="uzbekistan_2d"] .unq-ref-avatar-wrap,
+#profile-card-live-preview[data-preview-theme="uzbekistan_2d"] .unq-ref-avatar-wrap {
+  margin-top: 0 !important;
+}
+
+body[data-card-theme="uzbekistan_2d"] .unq-ref-name,
+body[data-card-theme="uzbekistan_2d"] .unq-ref-name-text,
+#profile-card-live-preview[data-preview-theme="uzbekistan_2d"] .unq-ref-name,
+#profile-card-live-preview[data-preview-theme="uzbekistan_2d"] .unq-ref-name-text {
+  color: #F8FAFC !important;
+  font-family: "Cinzel", "Montserrat", "Inter", sans-serif !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+  text-shadow: 0 0 20px rgba(212, 175, 55, 0.12) !important;
+}
+
+body[data-card-theme="uzbekistan_2d"] .unq-ref-role,
+body[data-card-theme="uzbekistan_2d"] .unq-ref-bio,
+#profile-card-live-preview[data-preview-theme="uzbekistan_2d"] .unq-ref-role,
+#profile-card-live-preview[data-preview-theme="uzbekistan_2d"] .unq-ref-bio {
+  color: rgba(248, 250, 252, 0.72) !important;
+  font-family: "Montserrat", "Inter", sans-serif !important;
+}
+
+body[data-card-theme="uzbekistan_2d"] .unq-ref-action-btn,
+body[data-card-theme="uzbekistan_2d"] .unq-ref-follow-toggle,
+body[data-card-theme="uzbekistan_2d"] .unq-follow-action-btn,
+body[data-card-theme="uzbekistan_2d"] .unq-ref-phone,
+#profile-card-live-preview[data-preview-theme="uzbekistan_2d"] .unq-ref-action-btn,
+#profile-card-live-preview[data-preview-theme="uzbekistan_2d"] .unq-ref-follow-toggle,
+#profile-card-live-preview[data-preview-theme="uzbekistan_2d"] .unq-follow-action-btn,
+#profile-card-live-preview[data-preview-theme="uzbekistan_2d"] .unq-ref-phone {
+  border: 1px solid rgba(212, 175, 55, 0.48) !important;
+  border-radius: 12px !important;
+  background: linear-gradient(135deg, rgba(8, 18, 30, 0.82), rgba(212, 175, 55, 0.08)) !important;
+  color: #F8FAFC !important;
+  font-family: "Montserrat", "Inter", sans-serif !important;
+  font-weight: 700 !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 12px 28px rgba(0, 0, 0, 0.24) !important;
+}
+
+body[data-card-theme="uzbekistan_2d"] .unq-ref-action-btn:hover,
+body[data-card-theme="uzbekistan_2d"] .unq-ref-follow-toggle:hover,
+body[data-card-theme="uzbekistan_2d"] .unq-follow-action-btn:hover,
+body[data-card-theme="uzbekistan_2d"] .unq-ref-phone:hover,
+#profile-card-live-preview[data-preview-theme="uzbekistan_2d"] .unq-ref-action-btn:hover,
+#profile-card-live-preview[data-preview-theme="uzbekistan_2d"] .unq-ref-follow-toggle:hover,
+#profile-card-live-preview[data-preview-theme="uzbekistan_2d"] .unq-follow-action-btn:hover,
+#profile-card-live-preview[data-preview-theme="uzbekistan_2d"] .unq-ref-phone:hover {
+  border-color: rgba(212, 175, 55, 0.78) !important;
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.18), rgba(8, 18, 30, 0.78)) !important;
+  color: #F3D98A !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 0 24px rgba(212, 175, 55, 0.12), 0 16px 32px rgba(0, 0, 0, 0.28) !important;
+}
+
+#profile-card-live-preview[data-preview-theme="uzbekistan_2d"] {
+  --preview-border-color: #D4AF37;
+  --preview-page-bg:
+    radial-gradient(circle at 28% 20%, rgba(0, 153, 181, 0.26), transparent 34%),
+    radial-gradient(circle at 78% 76%, rgba(30, 181, 58, 0.18), transparent 36%),
+    linear-gradient(145deg, #08121E 0%, #0A192F 62%, #050B13 100%);
+  --preview-screen-opacity: 0.48;
+  --preview-screen-pattern:
+    radial-gradient(circle at 52% 42%, rgba(212, 175, 55, 0.16) 0%, transparent 45%),
+    linear-gradient(120deg, transparent 0%, transparent 48%, rgba(206, 17, 38, 0.08) 49%, transparent 51%);
+  --preview-overlay-opacity: 0.62;
+  --preview-overlay-pattern:
+    radial-gradient(circle at 50% 44%, rgba(212, 175, 55, 0.14) 0%, transparent 44%);
+}
+
+@keyframes uzbekistan-diplomatic-breathe {
+  0%, 100% {
+    opacity: 0.66;
+    transform: scale(1) rotate(0deg);
+  }
+  50% {
+    opacity: 0.88;
+    transform: scale(1.015) rotate(0.45deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body[data-card-theme="uzbekistan_2d"] .unq-ref-card-overlay,
+  #profile-card-live-preview[data-preview-theme="uzbekistan_2d"] .unq-ref-card-overlay {
+    animation: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  body[data-card-theme="uzbekistan_2d"] main {
+    justify-content: flex-start !important;
+    padding-top: max(6px, env(safe-area-inset-top, 0px)) !important;
+    padding-bottom: max(6px, env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  body[data-card-theme="uzbekistan_2d"] .public-card-shell,
+  body[data-card-theme="uzbekistan_2d"] .unq-ref-shell,
+  #profile-card-live-preview[data-preview-theme="uzbekistan_2d"] .public-card-shell,
+  #profile-card-live-preview[data-preview-theme="uzbekistan_2d"] .unq-ref-shell {
+    width: calc(100% - 22px) !important;
+    margin: 8px auto !important;
+    padding: 28px 16px 22px !important;
+    box-shadow:
+      0 22px 54px rgba(0, 0, 0, 0.52),
+      0 0 28px rgba(212, 175, 55, 0.1),
+      inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
   }
 }
