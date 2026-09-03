@@ -39,6 +39,11 @@ const {
   updateDonationLeader,
   updateDonationRequestStatus,
 } = require("../../services/donation-leaders");
+const {
+  issueLimitedCardBadge,
+  listLimitedCardBadges,
+  revokeLimitedCardBadge,
+} = require("../../services/limited-card-badges");
 const { sendTelegramMessage, sendPaymentAlertsToAdmin } = require("../../services/telegram");
 const { recalculateAndRefreshPercentiles } = require("../../services/unq-score");
 const { sendExpoPushToUser, sendExpoPushToUsers } = require("../../services/push");
@@ -5229,6 +5234,86 @@ router.get(
         error: code === "DONATION_USER_NOT_FOUND" ? "Пользователь не найден" : "Не удалось найти пользователя",
         code,
       });
+    }
+  }),
+);
+
+router.get(
+  "/limited-cards",
+  asyncHandler(async (req, res) => {
+    const payload = await listLimitedCardBadges({
+      status: req.query.status || "all",
+      q: req.query.q || "",
+      page: req.query.page || 1,
+      pageSize: req.query.pageSize || 25,
+    });
+    res.json(payload);
+  }),
+);
+
+router.post(
+  "/limited-cards",
+  asyncHandler(async (req, res) => {
+    try {
+      const result = await issueLimitedCardBadge({
+        lookup: req.body?.lookup,
+        eventName: req.body?.eventName,
+        cardName: req.body?.cardName,
+        editionNumber: req.body?.editionNumber,
+        editionTotal: req.body?.editionTotal,
+        comment: req.body?.comment,
+        adminLogin: req.session?.admin?.login || "admin",
+      });
+      void logUserActivity({
+        userId: result.badge?.userId || "",
+        userLogin: result.badge?.user?.login || "",
+        action: "limited_card_badge",
+        detail: `issue badge=${result.badge?.id || ""};event=${result.badge?.eventName || ""};card=${result.badge?.cardName || ""};admin=${req.session?.admin?.login || "admin"}`,
+        req,
+      });
+      res.json({ ok: true, ...result });
+    } catch (error) {
+      const status = Number(error?.status || 400);
+      const code = String(error?.message || "LIMITED_CARD_BADGE_CREATE_FAILED");
+      const message =
+        code === "DONATION_USER_NOT_FOUND"
+          ? "Пользователь не найден по slug/login/email"
+          : code === "DONATION_USER_LOOKUP_REQUIRED"
+            ? "Введите пользователя"
+            : code === "LIMITED_CARDS_STORAGE_UNAVAILABLE"
+              ? "Таблица лимитированных карт пока не создана. Запустите миграции."
+              : "Не удалось выдать лимитированную карту";
+      res.status(status >= 400 && status < 600 ? status : 400).json({ error: message, code });
+    }
+  }),
+);
+
+router.patch(
+  "/limited-cards/:id/revoke",
+  asyncHandler(async (req, res) => {
+    try {
+      const badge = await revokeLimitedCardBadge({
+        id: req.params.id,
+        adminLogin: req.session?.admin?.login || "admin",
+      });
+      void logUserActivity({
+        userId: badge?.userId || "",
+        userLogin: badge?.user?.login || "",
+        action: "limited_card_badge",
+        detail: `revoke badge=${badge?.id || req.params.id};admin=${req.session?.admin?.login || "admin"}`,
+        req,
+      });
+      res.json({ ok: true, badge });
+    } catch (error) {
+      const status = Number(error?.status || 400);
+      const code = String(error?.message || "LIMITED_CARD_BADGE_REVOKE_FAILED");
+      const message =
+        code === "LIMITED_CARD_BADGE_NOT_FOUND"
+          ? "Активный бейдж не найден или уже отозван"
+          : code === "LIMITED_CARDS_STORAGE_UNAVAILABLE"
+            ? "Таблица лимитированных карт пока не создана. Запустите миграции."
+            : "Не удалось отобрать лимитированный бейдж";
+      res.status(status >= 400 && status < 600 ? status : 400).json({ error: message, code });
     }
   }),
 );

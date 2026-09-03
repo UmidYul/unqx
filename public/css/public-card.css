@@ -8700,6 +8700,78 @@ body[data-card-theme] #card-view-root>[data-card-view] {
   color: var(--theme-email-color, #4b5563);
 }
 
+.unq-ref-limited-card-badge {
+  box-sizing: border-box;
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto 14px;
+  border: 1px solid rgba(212, 175, 55, 0.58);
+  border-radius: var(--theme-surface-radius, 16px);
+  background:
+    linear-gradient(135deg, rgba(212, 175, 55, 0.18), rgba(255, 255, 255, 0.06) 42%, rgba(10, 15, 26, 0.7)),
+    rgba(15, 18, 28, 0.78);
+  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.16);
+  padding: 13px 16px;
+  text-align: center;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  word-wrap: break-word;
+}
+
+.unq-ref-limited-card-badge::before {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(255, 236, 167, 0.16), transparent);
+  opacity: 0.72;
+}
+
+.unq-ref-limited-card-badge-kicker,
+.unq-ref-limited-card-badge-line,
+.unq-ref-limited-card-badge-edition {
+  position: relative;
+  z-index: 1;
+}
+
+.unq-ref-limited-card-badge-kicker {
+  margin: 0;
+  max-width: 100%;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #f2d779;
+}
+
+.unq-ref-limited-card-badge-line {
+  margin: 8px 0 0;
+  max-width: 100%;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.94);
+}
+
+.unq-ref-limited-card-badge-edition {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 24px;
+  margin: 10px auto 0;
+  border: 1px solid rgba(242, 215, 121, 0.44);
+  border-radius: 999px;
+  padding: 3px 11px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #f8e6a6;
+  background: rgba(255, 255, 255, 0.08);
+}
+
 .unq-ref-brand {
   text-align: center;
 }

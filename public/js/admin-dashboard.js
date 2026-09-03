@@ -1380,6 +1380,18 @@
     setFormValue(form, "page", /^\d+$/.test(pageFromUrl) ? pageFromUrl : "1");
   }
 
+  function syncLimitedCardsFiltersFromLocation(form) {
+    if (!(form instanceof HTMLFormElement)) return;
+    const params = new URLSearchParams(location.search);
+    const statusFromUrl = String(params.get("lc_status") || params.get("status") || "all").trim().toLowerCase();
+    const qFromUrl = String(params.get("lc_q") || params.get("q") || "").trim();
+    const pageFromUrl = String(params.get("lc_page") || params.get("page") || "1").trim();
+    const allowedStatuses = new Set(["all", "active", "revoked"]);
+    setFormValue(form, "status", allowedStatuses.has(statusFromUrl) ? statusFromUrl : "all");
+    setFormValue(form, "q", qFromUrl);
+    setFormValue(form, "page", /^\d+$/.test(pageFromUrl) ? pageFromUrl : "1");
+  }
+
   function syncPetFiltersFromLocation(form) {
     if (!(form instanceof HTMLFormElement)) return;
     const params = new URLSearchParams(location.search);
@@ -3369,6 +3381,100 @@
     } catch {
       table.innerHTML = '<tr><td colspan="9" class="px-3 py-8 text-center text-rose-600">Не удалось загрузить заявки на бейджи</td></tr>';
     }
+  }
+
+  async function loadLimitedCards() {
+    const form = document.getElementById("limited-cards-filters");
+    const table = document.getElementById("limited-cards-table");
+    if (!(form instanceof HTMLFormElement) || !(table instanceof HTMLElement)) return;
+    syncLimitedCardsFiltersFromLocation(form);
+    table.innerHTML = '<tr><td colspan="8" class="px-3 py-8 text-center text-neutral-500">Загрузка...</td></tr>';
+    try {
+      const q = {
+        status: getFormValue(form, "status", "all"),
+        q: getFormValue(form, "q", ""),
+        page: getFormValue(form, "page", "1"),
+      };
+      setDashboardQuery({ lc_status: q.status, lc_q: q.q, lc_page: q.page });
+      const r = await fetch(`/api/admin/limited-cards?${Q(q)}`);
+      if (!r.ok) {
+        table.innerHTML = '<tr><td colspan="8" class="px-3 py-8 text-center text-rose-600">Не удалось загрузить лимитированные карты</td></tr>';
+        return;
+      }
+      const payload = await r.json();
+      if (payload.storageReady === false) {
+        table.innerHTML = '<tr><td colspan="8" class="px-3 py-8 text-center text-neutral-500">Таблица лимитированных карт пока не создана. Запустите миграции.</td></tr>';
+        return;
+      }
+      const rows = Array.isArray(payload.items) ? payload.items : [];
+      table.innerHTML = rows.length
+        ? rows.map((x) => {
+          const userName = String(x.user?.name || "UNQX User");
+          const userLogin = String(x.user?.login || x.user?.telegramUsername || "").trim();
+          const profileUrl = String(x.user?.profileUrl || "").trim();
+          const userCell = `${profileUrl ? `<a href="${X(profileUrl)}" target="_blank" rel="noopener noreferrer" class="font-semibold text-neutral-900 underline">${X(userName)}</a>` : `<span class="font-semibold text-neutral-900">${X(userName)}</span>`}${userLogin ? `<div class="text-xs text-neutral-500">@${X(userLogin)}</div>` : ""}${x.user?.email ? `<div class="text-xs text-neutral-400">${X(x.user.email)}</div>` : ""}`;
+          const statusCode = x.status === "active" ? "verification_approved" : "verification_rejected";
+          const actions = [];
+          if (x.status === "active") {
+            actions.push(menuItem({ label: "Отобрать бейдж", icon: "xCircle", attrs: `data-act="limited-revoke" data-id="${X(x.id)}" data-name="${X(userName)}"`, danger: true }));
+          }
+          if (profileUrl) {
+            actions.push(menuItem({ label: "Открыть профиль", icon: "external", attrs: `data-act="open-url" data-url="${X(profileUrl)}"` }));
+          }
+          const menu = actions.length ? menuWrap(actions.join("")) : "—";
+          return `<tr class="admin-table-row border-t border-neutral-100">
+            <td class="px-4 py-3">${userCell}</td>
+            <td class="px-4 py-3 font-semibold text-neutral-900">${X(x.eventName || "—")}</td>
+            <td class="px-4 py-3">${X(x.cardName || "—")}</td>
+            <td class="px-4 py-3">${X(x.editionLabel || "—")}</td>
+            <td class="px-4 py-3">${statusChip(statusCode)}</td>
+            <td class="px-4 py-3 text-xs">${D(x.issuedAt)}</td>
+            <td class="px-4 py-3 max-w-[260px] text-xs text-neutral-600">${X(x.comment || "—")}</td>
+            <td class="px-4 py-3"><div class="admin-row-actions">${menu}</div></td>
+          </tr>`;
+        }).join("")
+        : '<tr><td colspan="8" class="px-3 py-8 text-center text-neutral-500">Лимитированных карт пока нет</td></tr>';
+      renderPager("limited-cards-pagination", payload.pagination, (nextPage) => {
+        setFormValue(form, "page", String(nextPage));
+        void loadLimitedCards();
+      });
+    } catch {
+      table.innerHTML = '<tr><td colspan="8" class="px-3 py-8 text-center text-rose-600">Не удалось загрузить лимитированные карты</td></tr>';
+    }
+  }
+
+  async function submitLimitedCardBadge(form) {
+    if (!(form instanceof HTMLFormElement)) return;
+    const payload = {
+      lookup: getFormValue(form, "lookup", "").trim(),
+      eventName: getFormValue(form, "eventName", "").trim(),
+      cardName: getFormValue(form, "cardName", "").trim(),
+      editionNumber: Number(getFormValue(form, "editionNumber", "0")),
+      editionTotal: Number(getFormValue(form, "editionTotal", "0")),
+      comment: getFormValue(form, "comment", "").trim(),
+    };
+    if (!payload.lookup || !payload.eventName || !payload.cardName || !payload.editionNumber || !payload.editionTotal) {
+      await showAlert("Заполните пользователя, ивент, карту и тираж.");
+      return;
+    }
+    if (payload.editionNumber < 1 || payload.editionTotal < 1 || payload.editionNumber > payload.editionTotal) {
+      await showAlert("Номер карты должен быть от 1 до общего количества.");
+      return;
+    }
+    const ok = await showConfirm(`Выдать лимитированную карту ${payload.cardName} (${payload.editionNumber} из ${payload.editionTotal}) пользователю ${payload.lookup}?`);
+    if (!ok) return;
+    const r = await fetch("/api/admin/limited-cards", {
+      method: "POST",
+      headers: H({ "Content-Type": "application/json" }),
+      body: JSON.stringify(payload),
+    });
+    if (!r.ok) {
+      await showAlert(await E(r));
+      return;
+    }
+    form.reset();
+    await showAlert("Лимитированный бейдж выдан.");
+    void loadLimitedCards();
   }
 
   async function loadPetRequests() {
@@ -5455,6 +5561,26 @@
       closeAllRowMenus();
       return;
     }
+    if (a === "limited-revoke") {
+      const id = n.getAttribute("data-id");
+      const userName = n.getAttribute("data-name") || "пользователя";
+      if (!id) return;
+      const ok = await showConfirm(`Отобрать лимитированный бейдж у ${userName}?`);
+      if (!ok) return;
+      const r = await fetch(`/api/admin/limited-cards/${encodeURIComponent(id)}/revoke`, {
+        method: "PATCH",
+        headers: H({ "Content-Type": "application/json" }),
+        body: JSON.stringify({}),
+      });
+      if (!r.ok) {
+        await showAlert(await E(r));
+        return;
+      }
+      await showAlert("Лимитированный бейдж отозван.");
+      void loadLimitedCards();
+      closeAllRowMenus();
+      return;
+    }
     if (a === "pr-approve") {
       const id = n.getAttribute("data-id");
       if (!id) return;
@@ -6235,6 +6361,23 @@
     setFormValue(form, "page", "1");
     void loadBadgeApplications();
   });
+  document.getElementById("limited-card-form")?.addEventListener("submit", (e) => {
+    e.preventDefault();
+    void submitLimitedCardBadge(e.currentTarget);
+  });
+  document.getElementById("limited-cards-filters")?.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const f = e.currentTarget;
+    if (f instanceof HTMLFormElement) setFormValue(f, "page", "1");
+    void loadLimitedCards();
+  });
+  document.getElementById("limited-cards-filters")?.elements?.namedItem?.("status")?.addEventListener?.("change", (e) => {
+    const target = e.currentTarget;
+    const form = document.getElementById("limited-cards-filters");
+    if (!(target instanceof HTMLSelectElement) || !(form instanceof HTMLFormElement)) return;
+    setFormValue(form, "page", "1");
+    void loadLimitedCards();
+  });
   document.getElementById("pets-filters")?.addEventListener("submit", (e) => { e.preventDefault(); const f = e.currentTarget; if (f instanceof HTMLFormElement) setFormValue(f, "page", "1"); void loadPetRequests(); });
   document.getElementById("profile-pet-library-form")?.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -6680,6 +6823,15 @@
       syncBadgesFiltersFromLocation(form);
     }
   }
+  if (tab === "limited") {
+    const form = document.getElementById("limited-cards-filters");
+    if (form instanceof HTMLFormElement) {
+      setFormValue(form, "status", getInitial("lc_status", "status") || "all");
+      setFormValue(form, "q", getInitial("lc_q", "q") || "");
+      setFormValue(form, "page", getInitial("lc_page", "page") || "1");
+      syncLimitedCardsFiltersFromLocation(form);
+    }
+  }
   if (tab === "pets") {
     const form = document.getElementById("pets-filters");
     if (form instanceof HTMLFormElement) {
@@ -6802,6 +6954,11 @@
   if (tab === "badges" || (badgesSection instanceof HTMLElement && !badgesSection.classList.contains("hidden"))) {
     dbg("load", "badges");
     void loadBadgeApplications();
+  }
+  const limitedSection = document.getElementById("tab-limited");
+  if (tab === "limited" || (limitedSection instanceof HTMLElement && !limitedSection.classList.contains("hidden"))) {
+    dbg("load", "limited");
+    void loadLimitedCards();
   }
   const petsSection = document.getElementById("tab-pets");
   if (tab === "pets" || (petsSection instanceof HTMLElement && !petsSection.classList.contains("hidden"))) {

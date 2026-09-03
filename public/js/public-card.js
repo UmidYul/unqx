@@ -72,6 +72,7 @@
     topBadge: payload.topBadge || null,
     officialUnqBadge: payload.officialUnqBadge && typeof payload.officialUnqBadge === "object" ? payload.officialUnqBadge : null,
     staffBadge: payload.staffBadge && typeof payload.staffBadge === "object" ? payload.staffBadge : null,
+    limitedCardBadge: payload.limitedCardBadge && typeof payload.limitedCardBadge === "object" ? payload.limitedCardBadge : null,
     viewerCommentComposer:
       payload.viewerCommentComposer && typeof payload.viewerCommentComposer === "object"
         ? {
@@ -493,6 +494,7 @@
       topBadge: state.topBadge,
       officialUnqBadge: state.officialUnqBadge,
       staffBadge: state.staffBadge,
+      limitedCardBadge: state.limitedCardBadge,
       viewerCommentComposer: state.viewerCommentComposer,
       followSummary: state.followSummary,
       followDialog: state.followDialog,

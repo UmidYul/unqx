@@ -30,6 +30,7 @@
     promocodes:      { title: "Промокоды",             desc: "Создание и управление акционными кодами для пользователей.",                 action: null },
     verification:    { title: "Верификация",           desc: "Проверка и подтверждение личности пользователей.",                           action: null },
     badges:          { title: "Бейджи",                desc: "Управление наградами и значками пользователей.",                             action: null },
+    limited:         { title: "Лимитед",               desc: "Выдача и отзыв бейджа обладателя лимитированной карты.",                     action: null },
     pets:            { title: "Животные",              desc: "Питомцы пользователей и заявки на добавление новых.",                        action: null },
     reports:         { title: "Репорты",               desc: "Жалобы, модерация контента и действия по нарушениям.",                      action: null },
     settings:        { title: "Настройки платформы",   desc: "Конфигурация системы, цены и параметры сервиса.",                            action: null },
@@ -2136,6 +2137,82 @@
                 </div>
               </div>
               <div id="badges-pagination" class="flex items-center justify-end gap-2 text-sm text-neutral-600"></div>
+            </section>
+
+            <section id="tab-limited" class="<%= pageActiveTab === 'limited' ? '' : 'hidden' %> space-y-4">
+              <form id="limited-card-form" class="rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm">
+                <div class="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <h2 class="text-base font-bold text-neutral-900">Выдать лимитированную карту</h2>
+                    <p class="mt-1 text-sm text-neutral-600">Введите slug, login, email или @username пользователя и данные карты.</p>
+                  </div>
+                </div>
+                <div class="mt-4 grid gap-3 lg:grid-cols-[minmax(180px,1.2fr)_minmax(160px,1fr)_minmax(160px,1fr)_120px_120px_auto]">
+                  <label class="block text-sm">
+                    <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Пользователь</span>
+                    <input name="lookup" type="text" placeholder="@login, email или slug" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" required />
+                  </label>
+                  <label class="block text-sm">
+                    <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Ивент</span>
+                    <input name="eventName" type="text" maxlength="160" placeholder="UNQX Elite 2026" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" required />
+                  </label>
+                  <label class="block text-sm">
+                    <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Карта</span>
+                    <input name="cardName" type="text" maxlength="160" placeholder="Gold Limited" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" required />
+                  </label>
+                  <label class="block text-sm">
+                    <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Номер</span>
+                    <input name="editionNumber" type="number" min="1" step="1" placeholder="7" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" required />
+                  </label>
+                  <label class="block text-sm">
+                    <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Из</span>
+                    <input name="editionTotal" type="number" min="1" step="1" placeholder="100" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" required />
+                  </label>
+                  <button type="submit" class="mt-5 inline-flex min-h-11 items-center justify-center rounded-xl bg-neutral-900 px-5 py-2 text-sm font-semibold text-white transition hover:bg-neutral-700">
+                    Выдать
+                  </button>
+                </div>
+                <label class="mt-3 block text-sm">
+                  <span class="mb-1 block text-xs uppercase tracking-wide text-neutral-500">Комментарий</span>
+                  <textarea name="comment" rows="2" maxlength="1000" placeholder="Внутренний комментарий или детали выдачи" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm"></textarea>
+                </label>
+              </form>
+
+              <form id="limited-cards-filters" action="<%= pageDashboardBase %>" method="get"
+                class="grid gap-3 rounded-2xl border border-neutral-200 bg-white p-4 md:grid-cols-[220px_minmax(220px,1fr)_auto]">
+                <input type="hidden" name="tab" value="limited" />
+                <select name="status" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm">
+                  <option value="all">Все статусы</option>
+                  <option value="active">Активные</option>
+                  <option value="revoked">Отозванные</option>
+                </select>
+                <input name="q" type="search" placeholder="Поиск: имя, login, email, ивент, карта" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+                <input type="hidden" name="page" value="1" />
+                <button type="submit"
+                  class="inline-flex min-h-11 w-full items-center justify-center justify-self-start rounded-xl border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-100 md:w-auto">
+                  Применить
+                </button>
+              </form>
+              <div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
+                <div class="overflow-x-auto">
+                  <table class="min-w-[1100px] w-full text-left text-sm">
+                    <thead class="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500">
+                      <tr>
+                        <th class="px-4 py-3">Пользователь</th>
+                        <th class="px-4 py-3">Ивент</th>
+                        <th class="px-4 py-3">Карта</th>
+                        <th class="px-4 py-3">Тираж</th>
+                        <th class="px-4 py-3">Статус</th>
+                        <th class="px-4 py-3">Выдано</th>
+                        <th class="px-4 py-3">Комментарий</th>
+                        <th class="px-4 py-3">Действия</th>
+                      </tr>
+                    </thead>
+                    <tbody id="limited-cards-table"></tbody>
+                  </table>
+                </div>
+              </div>
+              <div id="limited-cards-pagination" class="flex items-center justify-end gap-2 text-sm text-neutral-600"></div>
             </section>
 
             <section id="tab-pets" class="<%= pageActiveTab === 'pets' ? '' : 'hidden' %> space-y-4">

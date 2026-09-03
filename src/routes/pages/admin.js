@@ -270,6 +270,7 @@ router.get(
       "directory",
       "verification",
       "badges",
+      "limited",
       "pets",
       "reports",
       "settings",

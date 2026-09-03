@@ -15,6 +15,7 @@ const {
 const { absoluteUrl } = require("../../utils/url");
 const { buildLeaderboard, normalizePeriod, normalizeLeaderboardType, getSlugTopBadge, getUserLeaderboardSummary } = require("../../services/leaderboard");
 const { listDonationLeaders } = require("../../services/donation-leaders");
+const { getActiveLimitedCardBadgeForUser } = require("../../services/limited-card-badges");
 const { getFeatureSetting } = require("../../services/feature-settings");
 const {
   getActiveFlashSale,
@@ -2649,6 +2650,7 @@ router.get(
     const staffBadge = showStaffBadge
       ? { title: officialCfg.staffProfileBadgeTitle, line: officialCfg.staffProfileBadgeLine }
       : null;
+    const limitedCardBadge = await getActiveLimitedCardBadgeForUser(paymentCard.ownerId);
     const image = card.avatarUrl ? absoluteUrl(card.avatarUrl) : absoluteUrl("/brand/logo.PNG");
     const customTheme = await resolvePublicCustomTheme(card);
     if (customTheme) {
@@ -2665,6 +2667,7 @@ router.get(
       score: null,
       officialUnqBadge,
       staffBadge,
+      limitedCardBadge,
       noindex: true,
       privateAccess: null,
       adminSession: getAdminSession(req),
@@ -3027,6 +3030,7 @@ router.get(
         const staffBadge = showStaffBadge
           ? { title: officialCfg.staffProfileBadgeTitle, line: officialCfg.staffProfileBadgeLine }
           : null;
+        const limitedCardBadge = await getActiveLimitedCardBadgeForUser(slugRow.ownerId);
         const viewerCommentComposer = {
           avatarUrl: String(viewerProfileCard?.avatarUrl || "").trim() || "/brand/profile-user.svg",
           initials: getNameInitials(
@@ -3057,6 +3061,7 @@ router.get(
           score,
           officialUnqBadge,
           staffBadge,
+          limitedCardBadge,
           viewerCommentComposer,
           followSummary,
           noindex: slugRow.status === "private",

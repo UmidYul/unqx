@@ -401,6 +401,7 @@ model User {
   privatePasswords       CardPrivatePassword[] @relation("CardPrivatePasswords")
   privateAccessLogs      CardPrivateAccessLog[] @relation("CardPrivateAccessLogs")
   badgeApplications      BadgeApplication[]
+  limitedCardBadges      LimitedCardBadge[]
   profileWallPosts       ProfileWallPost[]
   profileWallPostLikes   ProfileWallPostLike[]
   profileWallPostComments ProfileWallPostComment[]
@@ -1077,6 +1078,27 @@ model BadgeApplication {
   @@index([userId, badgeType, status])
   @@index([status, requestedAt(sort: Desc)])
   @@map("badge_applications")
+}
+
+model LimitedCardBadge {
+  id              String   @id @default(uuid())
+  userId          String   @map("user_id")
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  eventName       String   @map("event_name") @db.VarChar(160)
+  cardName        String   @map("card_name") @db.VarChar(160)
+  editionNumber   Int      @map("edition_number")
+  editionTotal    Int      @map("edition_total")
+  comment         String?
+  status          String   @default("active") @db.VarChar(20)
+  issuedByAdmin   String?  @map("issued_by_admin") @db.VarChar(190)
+  revokedByAdmin  String?  @map("revoked_by_admin") @db.VarChar(190)
+  issuedAt        DateTime @default(now()) @map("issued_at")
+  revokedAt       DateTime? @map("revoked_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@index([userId, status])
+  @@index([status, issuedAt(sort: Desc)])
+  @@map("limited_card_badges")
 }
 
 model ViolationReport {

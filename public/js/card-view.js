@@ -4271,6 +4271,7 @@
     const topBadge = options.topBadge && typeof options.topBadge === "object" ? options.topBadge : null;
     const officialUnqBadge = options.officialUnqBadge && typeof options.officialUnqBadge === "object" ? options.officialUnqBadge : null;
     const staffBadge = options.staffBadge && typeof options.staffBadge === "object" ? options.staffBadge : null;
+    const limitedCardBadge = options.limitedCardBadge && typeof options.limitedCardBadge === "object" ? options.limitedCardBadge : null;
     const wall = normalizeWallForRender(options.wall);
     const followSummary = normalizeFollowSummaryForRender(options.followSummary);
     const followDialog = normalizeFollowDialogForRender(options.followDialog);
@@ -4419,6 +4420,18 @@
         ? `<div class="unq-ref-staff-badge" role="status">
             ${staffBadgeTitle ? `<p class="unq-ref-staff-badge-kicker">${esc(staffBadgeTitle)}</p>` : ""}
             ${staffBadgeLine ? `<p class="unq-ref-staff-badge-line">${esc(staffBadgeLine)}</p>` : ""}
+          </div>`
+        : "";
+    const limitedCardTitle = limitedCardBadge ? String(limitedCardBadge.title || "Обладатель лимитированной карты").trim() : "";
+    const limitedCardEvent = limitedCardBadge ? String(limitedCardBadge.eventName || "").trim() : "";
+    const limitedCardName = limitedCardBadge ? String(limitedCardBadge.cardName || "").trim() : "";
+    const limitedCardEdition = limitedCardBadge ? String(limitedCardBadge.editionLabel || "").trim() : "";
+    const limitedCardBadgeHtml =
+      limitedCardBadge && (limitedCardEvent || limitedCardName || limitedCardEdition)
+        ? `<div class="unq-ref-limited-card-badge" role="status">
+            <p class="unq-ref-limited-card-badge-kicker">${esc(limitedCardTitle || "Обладатель лимитированной карты")}</p>
+            <p class="unq-ref-limited-card-badge-line">${esc([limitedCardEvent, limitedCardName].filter(Boolean).join(" · "))}</p>
+            ${limitedCardEdition ? `<p class="unq-ref-limited-card-badge-edition">${esc(limitedCardEdition)}</p>` : ""}
           </div>`
         : "";
     const useCustomColor = Boolean(card.customColor);
@@ -5047,6 +5060,7 @@
           ${shellMetaHtml}
           ${officialUnqHtml}
           ${staffBadgeHtml}
+          ${limitedCardBadgeHtml}
           ${card.showBranding
         ? `<div class="unq-ref-brand">
             <h2>UNQX</h2>
