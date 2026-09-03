@@ -16,7 +16,7 @@ module.exports = {
 
     await client.query(`
       INSERT INTO unqx_visual_style_labels (style_kind, style_key, display_name, is_active)
-      VALUES ('theme', 'uzbekistan_2d', 'Узбекистан Diplomatic', true)
+      VALUES ('theme', 'uzbekistan_2d', 'Узбекистан 2D', true)
       ON CONFLICT (style_kind, style_key) DO UPDATE SET
         display_name = EXCLUDED.display_name,
         is_active = true,
