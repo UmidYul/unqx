@@ -4430,8 +4430,12 @@
       limitedCardBadge && (limitedCardEvent || limitedCardName || limitedCardEdition)
         ? `<div class="unq-ref-limited-card-badge" role="status">
             <p class="unq-ref-limited-card-badge-kicker">${esc(limitedCardTitle || "Обладатель лимитированной карты")}</p>
-            <p class="unq-ref-limited-card-badge-line">${esc([limitedCardEvent, limitedCardName].filter(Boolean).join(" · "))}</p>
-            ${limitedCardEdition ? `<p class="unq-ref-limited-card-badge-edition">${esc(limitedCardEdition)}</p>` : ""}
+            <p class="unq-ref-limited-card-badge-line">
+              ${limitedCardEvent ? `<span>${esc(limitedCardEvent)}</span>` : ""}
+              ${limitedCardEvent && limitedCardName ? `<span class="unq-ref-limited-card-badge-dot">·</span>` : ""}
+              ${limitedCardName ? `<span class="unq-ref-limited-card-badge-card-name">${esc(limitedCardName)}</span>` : ""}
+            </p>
+            ${limitedCardEdition ? `<p class="unq-ref-limited-card-badge-edition"><span>${esc(limitedCardEdition)}</span></p>` : ""}
           </div>`
         : "";
     const useCustomColor = Boolean(card.customColor);
