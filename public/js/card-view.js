@@ -18,6 +18,7 @@
     "sage_luxe",
     "midnight_obsidian",
     "golden_noir",
+    "black_gold_leaf",
     "aurora_codex",
     "codex_da_vinci",
     "nebula_glass",
@@ -545,6 +546,48 @@
       cardShadow: "0 18px 42px rgba(6, 8, 13, 0.62)",
       buttonShineGradient:
         "linear-gradient(90deg, rgba(234,214,161,0) 0%, rgba(234,214,161,0.18) 45%, rgba(234,214,161,0.3) 50%, rgba(234,214,161,0.18) 55%, rgba(234,214,161,0) 100%)",
+    },
+    black_gold_leaf: {
+      cardBg: "radial-gradient(circle at 72% 8%, rgba(183, 144, 63, 0.22), transparent 34%), linear-gradient(155deg, #050505 0%, #0b0a08 42%, #12100b 100%)",
+      cardBgOverlay: "black_gold_leaf",
+      surfaceBg: "rgba(16, 14, 11, 0.78)",
+      cardBorder: "1px solid rgba(205, 169, 89, 0.42)",
+      surfaceBorder: "1px solid rgba(205, 169, 89, 0.24)",
+      dividerColor: "rgba(205, 169, 89, 0.22)",
+      nameColor: "#f0dfad",
+      roleColor: "#c7ad70",
+      mutedColor: "#8d7a52",
+      accentColor: "#d4af37",
+      emailColor: "#d8c28b",
+      buttonPrimaryBg: "linear-gradient(135deg, #b9923a, #f0d58a 48%, #9a762a)",
+      buttonPrimaryText: "#090806",
+      buttonPrimaryBorder: "rgba(240, 213, 138, 0.68)",
+      buttonSecondaryBg: "rgba(255, 255, 255, 0.035)",
+      buttonSecondaryText: "#e2c987",
+      buttonSecondaryBorder: "rgba(205, 169, 89, 0.38)",
+      badgeText: "#e5ca84",
+      badgeBg: "rgba(45, 35, 16, 0.32)",
+      badgeBorder: "1px solid rgba(212, 175, 55, 0.34)",
+      topLineGradient: "linear-gradient(90deg, transparent, rgba(212,175,55,0.88), transparent)",
+      avatarBg: "linear-gradient(135deg, #1a1711, #080706)",
+      avatarText: "#e7ca80",
+      avatarBorder: "2px solid rgba(212, 175, 55, 0.34)",
+      cardBorderRadius: "22px",
+      surfaceBorderRadius: "18px",
+      buttonBorderRadius: "16px",
+      fontFamily: "'Montserrat', 'Avenir Next', 'Segoe UI', sans-serif",
+      nameFontStyle: "normal",
+      nameFontWeight: "800",
+      nameLetterSpacing: "0",
+      roleLetterSpacing: "1.3px",
+      scoreLabelColor: "#b89a55",
+      scoreValueColor: "#f0dfad",
+      scoreBarFill: "#d4af37",
+      scoreBarTrack: "rgba(205, 169, 89, 0.16)",
+      scorePercentileColor: "#9b8452",
+      cardShadow: "0 22px 52px rgba(0, 0, 0, 0.72), 0 0 36px rgba(212, 175, 55, 0.08)",
+      buttonShineGradient:
+        "linear-gradient(90deg, rgba(255,225,150,0) 0%, rgba(255,225,150,0.15) 45%, rgba(255,246,194,0.34) 50%, rgba(255,225,150,0.15) 55%, rgba(255,225,150,0) 100%)",
     },
     aurora_codex: {
       cardBg: "linear-gradient(166deg, #fbf4e6 0%, #f4ead3 50%, #fcf7ea 100%)",
@@ -2429,6 +2472,33 @@
         <path d="M0 110C74 88 148 94 220 116C284 136 324 136 360 124" stroke="url(#gn-line)" stroke-width="0.78" fill="none"></path>
         <path d="M0 322C72 300 146 308 216 330C280 350 322 350 360 338" stroke="url(#gn-line)" stroke-width="0.7" fill="none"></path>
         <path d="M0 536C74 514 148 522 218 544C282 562 324 566 360 552" stroke="url(#gn-line)" stroke-width="0.64" fill="none"></path>
+      </svg>`;
+    }
+    if (themeKey === "black_gold_leaf") {
+      return `<svg class="unq-ref-overlay-svg" viewBox="0 0 360 600" preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <filter id="bgl-grain">
+            <feTurbulence type="fractalNoise" baseFrequency="0.72" numOctaves="3" stitchTiles="stitch"></feTurbulence>
+            <feColorMatrix type="saturate" values="0.22"></feColorMatrix>
+          </filter>
+          <radialGradient id="bgl-warm-glow" cx="72%" cy="14%" r="62%">
+            <stop offset="0%" stop-color="#d4af37"></stop>
+            <stop offset="48%" stop-color="#5b4318"></stop>
+            <stop offset="100%" stop-color="#050505"></stop>
+          </radialGradient>
+          <linearGradient id="bgl-gold-line" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#7d6124" stop-opacity="0.1"></stop>
+            <stop offset="44%" stop-color="#e4c978" stop-opacity="0.72"></stop>
+            <stop offset="100%" stop-color="#8a6a25" stop-opacity="0.12"></stop>
+          </linearGradient>
+        </defs>
+        <rect width="100%" height="100%" filter="url(#bgl-grain)" opacity="0.12"></rect>
+        <circle cx="292" cy="86" r="178" fill="url(#bgl-warm-glow)" opacity="0.17"></circle>
+        <circle cx="56" cy="490" r="142" fill="#d4af37" opacity="0.035"></circle>
+        <path d="M0 96C70 78 148 86 220 108C286 128 326 128 360 116" stroke="url(#bgl-gold-line)" stroke-width="0.72" fill="none"></path>
+        <path d="M0 302C74 282 146 290 220 314C286 336 326 334 360 322" stroke="url(#bgl-gold-line)" stroke-width="0.62" fill="none"></path>
+        <path d="M0 510C70 492 150 500 222 522C286 542 326 542 360 530" stroke="url(#bgl-gold-line)" stroke-width="0.56" fill="none"></path>
+        <path d="M302 18c-18 42-8 78 30 108" stroke="#d4af37" stroke-width="0.48" opacity="0.22" fill="none"></path>
       </svg>`;
     }
     if (themeKey === "aurora_codex") {
@@ -5012,6 +5082,21 @@
             <span class="gogh-star gogh-star-${index + 1}" style="left:${left};top:${top};width:${size};height:${size};animation-delay:${delay}"></span>`).join("")}
         </div>`
       : "";
+    const blackGoldLeafEffectsHtml = theme.key === "black_gold_leaf"
+      ? `<div class="black-gold-leaf-effects" aria-hidden="true">
+          ${[
+        ["8%", "18px", "18s", "-1s", "-24deg", "0.42"],
+        ["18%", "12px", "22s", "-8s", "16deg", "0.28"],
+        ["28%", "16px", "20s", "-4s", "34deg", "0.36"],
+        ["42%", "10px", "26s", "-14s", "-12deg", "0.24"],
+        ["55%", "17px", "19s", "-10s", "22deg", "0.38"],
+        ["68%", "13px", "24s", "-6s", "-32deg", "0.3"],
+        ["82%", "19px", "21s", "-16s", "10deg", "0.4"],
+        ["92%", "11px", "27s", "-3s", "28deg", "0.24"],
+      ].map(([left, size, duration, delay, rotate, opacity], index) => `
+            <span class="black-gold-leaf black-gold-leaf-${index + 1}" style="left:${left};width:${size};height:${size};animation-duration:${duration};animation-delay:${delay};--leaf-rotate:${rotate};--leaf-opacity:${opacity}"></span>`).join("")}
+        </div>`
+      : "";
 
     return `
       <div data-card-view data-card-theme="${esc(theme.key)}" data-emoji-background-pack="${esc(card.emojiBackgroundPack)}" data-slug="${esc(card.slug)}" data-share-url="${esc(shareUrl)}"${rootStyle}>
@@ -5028,6 +5113,7 @@
         ${kawaiiKittyEffectsHtml}
         ${sakuraEffectsHtml}
         ${starryEffectsHtml}
+        ${blackGoldLeafEffectsHtml}
         ${vintageSparklesHtml}
         ${looneyTunesEffectsHtml}
         ${codexDaVinciEffectsHtml}

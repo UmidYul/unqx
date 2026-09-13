@@ -60,6 +60,13 @@ const SIGNATURE_THEMES = [
     premiumRequired: true,
   },
   {
+    id: "black_gold_leaf",
+    label: "Золотой Лист",
+    description: "Matte black with falling gold leaves",
+    swatchStyle: "border-color:#D4AF37;background:radial-gradient(circle at 72% 12%,rgba(212,175,55,.34),transparent 34%),linear-gradient(145deg,#050505 0%,#12100b 100%);box-shadow:inset 0 0 18px rgba(212,175,55,.18);",
+    premiumRequired: true,
+  },
+  {
     id: "aurora_codex",
     label: "Aurora Scriptum",
     description: "Renaissance parchment",

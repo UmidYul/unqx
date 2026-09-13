@@ -14,6 +14,7 @@ const PROFILE_THEME_KEYS = [
   "sage_luxe",
   "midnight_obsidian",
   "golden_noir",
+  "black_gold_leaf",
   "aurora_codex",
   "codex_da_vinci",
   "nebula_glass",

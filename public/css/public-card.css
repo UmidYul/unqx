@@ -537,8 +537,13 @@ body[data-card-theme="uzbekistan_2d"] .unq-ref-phone:hover,
 
 @media (prefers-reduced-motion: reduce) {
   body[data-card-theme="uzbekistan_2d"] .unq-ref-card-overlay,
-  #profile-card-live-preview[data-preview-theme="uzbekistan_2d"] .unq-ref-card-overlay {
+  #profile-card-live-preview[data-preview-theme="uzbekistan_2d"] .unq-ref-card-overlay,
+  .black-gold-leaf {
     animation: none !important;
+  }
+
+  .black-gold-leaf-effects {
+    display: none !important;
   }
 }
 
@@ -7732,6 +7737,98 @@ body[data-card-theme="starry_night"]::before {
     transform: scale(1.15);
     opacity: 1;
     filter: drop-shadow(0 0 20px rgba(255, 213, 0, 0.9));
+  }
+}
+
+.black-gold-leaf-effects {
+  position: fixed;
+  inset: 0;
+  z-index: 8;
+  pointer-events: none;
+  overflow: hidden;
+  perspective: 900px;
+}
+
+.black-gold-leaf {
+  position: fixed;
+  top: -44px;
+  display: block;
+  border-radius: 70% 12% 70% 18%;
+  background:
+    linear-gradient(135deg, rgba(255, 241, 174, 0.92), rgba(212, 175, 55, 0.78) 46%, rgba(92, 66, 18, 0.72)),
+    radial-gradient(circle at 22% 18%, rgba(255, 255, 255, 0.42), transparent 34%);
+  box-shadow: 0 0 16px rgba(212, 175, 55, 0.18);
+  opacity: 0;
+  transform-origin: 50% 100%;
+  animation: black-gold-leaf-fall 22s linear infinite;
+  will-change: transform, opacity;
+}
+
+.black-gold-leaf::before {
+  content: "";
+  position: absolute;
+  left: 47%;
+  top: 8%;
+  width: 1px;
+  height: 88%;
+  border-radius: 999px;
+  background: rgba(88, 61, 14, 0.38);
+  transform: rotate(-16deg);
+}
+
+.black-gold-leaf::after {
+  content: "";
+  position: absolute;
+  inset: 18% 20% auto auto;
+  width: 34%;
+  height: 1px;
+  border-radius: 999px;
+  background: rgba(255, 243, 190, 0.26);
+  transform: rotate(26deg);
+}
+
+.black-gold-leaf-1,
+.black-gold-leaf-5,
+.black-gold-leaf-7 {
+  filter: blur(0.15px);
+}
+
+.black-gold-leaf-2,
+.black-gold-leaf-4,
+.black-gold-leaf-8 {
+  filter: blur(0.55px);
+}
+
+.black-gold-leaf-3,
+.black-gold-leaf-6 {
+  filter: blur(0.3px);
+}
+
+@keyframes black-gold-leaf-fall {
+  0% {
+    transform: translate3d(0, -10vh, 0) rotate(var(--leaf-rotate, 0deg)) rotateY(0deg) scale(0.74);
+    opacity: 0;
+  }
+
+  12% {
+    opacity: var(--leaf-opacity, 0.34);
+  }
+
+  38% {
+    transform: translate3d(34px, 36vh, 28px) rotate(calc(var(--leaf-rotate, 0deg) + 120deg)) rotateY(135deg) scale(0.96);
+  }
+
+  68% {
+    transform: translate3d(-22px, 70vh, -18px) rotate(calc(var(--leaf-rotate, 0deg) + 255deg)) rotateY(246deg) scale(0.84);
+  }
+
+  92% {
+    opacity: calc(var(--leaf-opacity, 0.34) * 0.8);
+  }
+
+  100% {
+    transform: translate3d(52px, 112vh, 0) rotate(calc(var(--leaf-rotate, 0deg) + 390deg)) rotateY(360deg) scale(1.02);
+    opacity: 0;
   }
 }
 
