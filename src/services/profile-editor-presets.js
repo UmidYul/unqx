@@ -67,6 +67,13 @@ const SIGNATURE_THEMES = [
     premiumRequired: true,
   },
   {
+    id: "ocean_2d",
+    label: "Океан 2D",
+    description: "Soft cartoon ocean with animated waves",
+    swatchStyle: "border-color:#22A8DB;background:linear-gradient(180deg,#E9FBFF 0%,#B8EBFF 46%,#68C8EE 100%);box-shadow:inset 0 -12px 0 rgba(255,255,255,.34);",
+    premiumRequired: true,
+  },
+  {
     id: "aurora_codex",
     label: "Aurora Scriptum",
     description: "Renaissance parchment",

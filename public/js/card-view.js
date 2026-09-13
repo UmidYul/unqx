@@ -19,6 +19,7 @@
     "midnight_obsidian",
     "golden_noir",
     "black_gold_leaf",
+    "ocean_2d",
     "aurora_codex",
     "codex_da_vinci",
     "nebula_glass",
@@ -589,6 +590,49 @@
       cardShadow: "0 22px 52px rgba(0, 0, 0, 0.72), 0 0 36px rgba(212, 175, 55, 0.08)",
       buttonShineGradient:
         "linear-gradient(90deg, rgba(255,225,150,0) 0%, rgba(255,225,150,0.15) 45%, rgba(255,246,194,0.34) 50%, rgba(255,225,150,0.15) 55%, rgba(255,225,150,0) 100%)",
+    },
+    ocean_2d: {
+      pageBg: "linear-gradient(180deg, #dff7ff 0%, #bcecff 48%, #eafcff 100%)",
+      cardBg: "linear-gradient(180deg, #e9fbff 0%, #b8ebff 46%, #68c8ee 100%)",
+      cardBgOverlay: "ocean_2d",
+      surfaceBg: "rgba(255, 255, 255, 0.72)",
+      cardBorder: "2px solid rgba(34, 150, 205, 0.34)",
+      surfaceBorder: "1px solid rgba(44, 142, 190, 0.22)",
+      dividerColor: "rgba(44, 142, 190, 0.2)",
+      nameColor: "#075985",
+      roleColor: "#0f7ea8",
+      mutedColor: "#3f8ba8",
+      accentColor: "#22a8db",
+      emailColor: "#075985",
+      buttonPrimaryBg: "linear-gradient(135deg, #ffffff, #dff8ff)",
+      buttonPrimaryText: "#075985",
+      buttonPrimaryBorder: "rgba(7, 89, 133, 0.2)",
+      buttonSecondaryBg: "rgba(255, 255, 255, 0.58)",
+      buttonSecondaryText: "#075985",
+      buttonSecondaryBorder: "rgba(7, 89, 133, 0.18)",
+      badgeText: "#0878a6",
+      badgeBg: "rgba(255, 255, 255, 0.62)",
+      badgeBorder: "1px solid rgba(34, 168, 219, 0.22)",
+      topLineGradient: "linear-gradient(90deg, transparent, rgba(34,168,219,0.72), transparent)",
+      avatarBg: "linear-gradient(135deg, #ffffff, #bdefff)",
+      avatarText: "#075985",
+      avatarBorder: "3px solid rgba(255, 255, 255, 0.78)",
+      cardBorderRadius: "30px",
+      surfaceBorderRadius: "22px",
+      buttonBorderRadius: "20px",
+      fontFamily: "'Comfortaa', 'Montserrat', system-ui, sans-serif",
+      nameFontStyle: "normal",
+      nameFontWeight: "800",
+      nameLetterSpacing: "0",
+      roleLetterSpacing: "0.6px",
+      scoreLabelColor: "#0f7ea8",
+      scoreValueColor: "#075985",
+      scoreBarFill: "#22a8db",
+      scoreBarTrack: "rgba(255, 255, 255, 0.72)",
+      scorePercentileColor: "#3f8ba8",
+      cardShadow: "0 18px 42px rgba(34, 150, 205, 0.22)",
+      buttonShineGradient:
+        "linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.28) 45%, rgba(255,255,255,0.62) 50%, rgba(255,255,255,0.28) 55%, rgba(255,255,255,0) 100%)",
     },
     aurora_codex: {
       cardBg: "linear-gradient(166deg, #fbf4e6 0%, #f4ead3 50%, #fcf7ea 100%)",
@@ -2500,6 +2544,29 @@
         <path d="M0 302C74 282 146 290 220 314C286 336 326 334 360 322" stroke="url(#bgl-gold-line)" stroke-width="0.62" fill="none"></path>
         <path d="M0 510C70 492 150 500 222 522C286 542 326 542 360 530" stroke="url(#bgl-gold-line)" stroke-width="0.56" fill="none"></path>
         <path d="M302 18c-18 42-8 78 30 108" stroke="#d4af37" stroke-width="0.48" opacity="0.22" fill="none"></path>
+      </svg>`;
+    }
+    if (themeKey === "ocean_2d") {
+      return `<svg class="unq-ref-overlay-svg" viewBox="0 0 360 600" preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <linearGradient id="ocean-2d-soft" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#ffffff" stop-opacity="0.55"></stop>
+            <stop offset="48%" stop-color="#9ee8ff" stop-opacity="0.26"></stop>
+            <stop offset="100%" stop-color="#0ea5d8" stop-opacity="0.2"></stop>
+          </linearGradient>
+          <radialGradient id="ocean-2d-bubble" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#ffffff" stop-opacity="0.9"></stop>
+            <stop offset="100%" stop-color="#ffffff" stop-opacity="0.12"></stop>
+          </radialGradient>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#ocean-2d-soft)" opacity="0.62"></rect>
+        <path d="M-20 110C42 76 102 82 164 112C226 142 282 148 380 96" stroke="#ffffff" stroke-width="14" stroke-linecap="round" opacity="0.22" fill="none"></path>
+        <path d="M-24 220C46 186 112 196 174 224C242 254 302 248 382 206" stroke="#075985" stroke-width="3" stroke-linecap="round" opacity="0.12" fill="none"></path>
+        <path d="M-20 426C42 392 116 402 184 430C248 456 304 454 382 414" stroke="#ffffff" stroke-width="12" stroke-linecap="round" opacity="0.2" fill="none"></path>
+        <circle cx="54" cy="92" r="10" fill="url(#ocean-2d-bubble)" opacity="0.44"></circle>
+        <circle cx="292" cy="138" r="15" fill="url(#ocean-2d-bubble)" opacity="0.36"></circle>
+        <circle cx="78" cy="336" r="13" fill="url(#ocean-2d-bubble)" opacity="0.34"></circle>
+        <circle cx="282" cy="486" r="9" fill="url(#ocean-2d-bubble)" opacity="0.4"></circle>
       </svg>`;
     }
     if (themeKey === "aurora_codex") {
@@ -5113,6 +5180,19 @@
             </svg>`).join("")}
         </div>`
       : "";
+    const ocean2dEffectsHtml = theme.key === "ocean_2d"
+      ? `<div class="ocean-2d-effects" aria-hidden="true">
+          <span class="ocean-2d-sun-glow"></span>
+          <span class="ocean-2d-wave ocean-2d-wave-1"></span>
+          <span class="ocean-2d-wave ocean-2d-wave-2"></span>
+          <span class="ocean-2d-wave ocean-2d-wave-3"></span>
+          <span class="ocean-2d-foam ocean-2d-foam-1"></span>
+          <span class="ocean-2d-foam ocean-2d-foam-2"></span>
+          <span class="ocean-2d-bubble ocean-2d-bubble-1"></span>
+          <span class="ocean-2d-bubble ocean-2d-bubble-2"></span>
+          <span class="ocean-2d-bubble ocean-2d-bubble-3"></span>
+        </div>`
+      : "";
 
     return `
       <div data-card-view data-card-theme="${esc(theme.key)}" data-emoji-background-pack="${esc(card.emojiBackgroundPack)}" data-slug="${esc(card.slug)}" data-share-url="${esc(shareUrl)}"${rootStyle}>
@@ -5130,6 +5210,7 @@
         ${sakuraEffectsHtml}
         ${starryEffectsHtml}
         ${blackGoldLeafEffectsHtml}
+        ${ocean2dEffectsHtml}
         ${vintageSparklesHtml}
         ${looneyTunesEffectsHtml}
         ${codexDaVinciEffectsHtml}

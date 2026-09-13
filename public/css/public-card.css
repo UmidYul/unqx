@@ -538,7 +538,10 @@ body[data-card-theme="uzbekistan_2d"] .unq-ref-phone:hover,
 @media (prefers-reduced-motion: reduce) {
   body[data-card-theme="uzbekistan_2d"] .unq-ref-card-overlay,
   #profile-card-live-preview[data-preview-theme="uzbekistan_2d"] .unq-ref-card-overlay,
-  .black-gold-leaf {
+  .black-gold-leaf,
+  .ocean-2d-wave,
+  .ocean-2d-foam,
+  .ocean-2d-bubble {
     animation: none !important;
   }
 
@@ -7830,6 +7833,172 @@ body[data-card-theme="black_gold_leaf"] main,
   100% {
     transform: translate3d(52px, 112vh, 0) rotate(calc(var(--leaf-rotate, 0deg) + 390deg)) rotateY(360deg) scale(1.02);
     opacity: 0;
+  }
+}
+
+.ocean-2d-effects {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  background: linear-gradient(180deg, #dff7ff 0%, #bcecff 46%, #eafcff 100%);
+}
+
+body[data-card-theme="ocean_2d"] {
+  background: #dff7ff !important;
+}
+
+body[data-card-theme="ocean_2d"] main,
+#profile-card-live-preview[data-preview-theme="ocean_2d"] {
+  background: linear-gradient(180deg, #dff7ff 0%, #bcecff 48%, #eafcff 100%) !important;
+}
+
+.ocean-2d-sun-glow {
+  position: absolute;
+  top: 7%;
+  right: 10%;
+  width: min(220px, 44vw);
+  height: min(220px, 44vw);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.72) 0 28%, rgba(255, 255, 255, 0.22) 44%, transparent 70%);
+  filter: blur(2px);
+  opacity: 0.72;
+}
+
+.ocean-2d-wave {
+  position: absolute;
+  left: -12%;
+  right: -12%;
+  height: 170px;
+  border-radius: 50% 50% 0 0 / 44% 44% 0 0;
+  background:
+    radial-gradient(ellipse at 18% 0%, rgba(255, 255, 255, 0.82) 0 12%, transparent 13%),
+    radial-gradient(ellipse at 48% 4%, rgba(255, 255, 255, 0.72) 0 10%, transparent 11%),
+    radial-gradient(ellipse at 78% 0%, rgba(255, 255, 255, 0.78) 0 11%, transparent 12%),
+    linear-gradient(180deg, #ffffff 0 12px, #7fdcff 13px, #1fa8d5 100%);
+  box-shadow: inset 0 12px 0 rgba(255, 255, 255, 0.28);
+  opacity: 0.88;
+  transform: translateX(0);
+  animation: ocean-2d-wave-sway 9s ease-in-out infinite;
+}
+
+.ocean-2d-wave-1 {
+  bottom: -44px;
+  z-index: 3;
+  animation-duration: 8.5s;
+}
+
+.ocean-2d-wave-2 {
+  bottom: 34px;
+  z-index: 2;
+  height: 150px;
+  opacity: 0.54;
+  background:
+    radial-gradient(ellipse at 26% 0%, rgba(255, 255, 255, 0.66) 0 10%, transparent 11%),
+    radial-gradient(ellipse at 70% 4%, rgba(255, 255, 255, 0.6) 0 9%, transparent 10%),
+    linear-gradient(180deg, rgba(255,255,255,0.82) 0 10px, #9ee8ff 11px, #48bde6 100%);
+  animation-duration: 12s;
+  animation-delay: -3s;
+}
+
+.ocean-2d-wave-3 {
+  bottom: 112px;
+  z-index: 1;
+  height: 125px;
+  opacity: 0.34;
+  background:
+    radial-gradient(ellipse at 42% 0%, rgba(255, 255, 255, 0.52) 0 10%, transparent 11%),
+    linear-gradient(180deg, rgba(255,255,255,0.62) 0 8px, #bdefff 9px, #78d6f8 100%);
+  animation-duration: 15s;
+  animation-delay: -5s;
+}
+
+.ocean-2d-foam {
+  position: absolute;
+  width: 180px;
+  height: 28px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.62);
+  filter: blur(0.2px);
+  animation: ocean-2d-foam-drift 10s ease-in-out infinite;
+}
+
+.ocean-2d-foam-1 {
+  left: 8%;
+  bottom: 170px;
+}
+
+.ocean-2d-foam-2 {
+  right: 6%;
+  bottom: 244px;
+  width: 132px;
+  opacity: 0.72;
+  animation-delay: -4s;
+}
+
+.ocean-2d-bubble {
+  position: absolute;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.72);
+  background: rgba(255, 255, 255, 0.16);
+  animation: ocean-2d-bubble-float 8s ease-in-out infinite;
+}
+
+.ocean-2d-bubble-1 {
+  left: 14%;
+  top: 22%;
+  width: 18px;
+  height: 18px;
+}
+
+.ocean-2d-bubble-2 {
+  right: 18%;
+  top: 34%;
+  width: 28px;
+  height: 28px;
+  animation-delay: -2.5s;
+}
+
+.ocean-2d-bubble-3 {
+  left: 72%;
+  top: 16%;
+  width: 12px;
+  height: 12px;
+  animation-delay: -5s;
+}
+
+@keyframes ocean-2d-wave-sway {
+  0%, 100% {
+    transform: translateX(-2%) translateY(0);
+  }
+
+  50% {
+    transform: translateX(2.5%) translateY(8px);
+  }
+}
+
+@keyframes ocean-2d-foam-drift {
+  0%, 100% {
+    transform: translateX(-12px) scaleX(0.92);
+    opacity: 0.46;
+  }
+
+  50% {
+    transform: translateX(24px) scaleX(1.08);
+    opacity: 0.78;
+  }
+}
+
+@keyframes ocean-2d-bubble-float {
+  0%, 100% {
+    transform: translate3d(0, 0, 0) scale(0.92);
+    opacity: 0.36;
+  }
+
+  50% {
+    transform: translate3d(10px, -22px, 0) scale(1.12);
+    opacity: 0.76;
   }
 }
 
