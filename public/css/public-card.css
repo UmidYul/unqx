@@ -7749,15 +7749,24 @@ body[data-card-theme="starry_night"]::before {
   perspective: 900px;
 }
 
+body[data-card-theme="black_gold_leaf"] {
+  background: #000000 !important;
+}
+
+body[data-card-theme="black_gold_leaf"] main,
+#profile-card-live-preview[data-preview-theme="black_gold_leaf"] {
+  background: #000000 !important;
+}
+
 .black-gold-leaf {
   position: fixed;
   top: -44px;
   display: block;
   border-radius: 70% 12% 70% 18%;
   background:
-    linear-gradient(135deg, rgba(255, 241, 174, 0.92), rgba(212, 175, 55, 0.78) 46%, rgba(92, 66, 18, 0.72)),
+    linear-gradient(135deg, rgba(255, 246, 186, 0.96), rgba(246, 213, 107, 0.92) 42%, rgba(212, 175, 55, 0.88) 100%),
     radial-gradient(circle at 22% 18%, rgba(255, 255, 255, 0.42), transparent 34%);
-  box-shadow: 0 0 16px rgba(212, 175, 55, 0.18);
+  box-shadow: 0 0 18px rgba(246, 213, 107, 0.24);
   opacity: 0;
   transform-origin: 50% 100%;
   animation: black-gold-leaf-fall 22s linear infinite;
@@ -7772,7 +7781,7 @@ body[data-card-theme="starry_night"]::before {
   width: 1px;
   height: 88%;
   border-radius: 999px;
-  background: rgba(88, 61, 14, 0.38);
+  background: rgba(255, 246, 186, 0.42);
   transform: rotate(-16deg);
 }
 
@@ -7783,7 +7792,7 @@ body[data-card-theme="starry_night"]::before {
   width: 34%;
   height: 1px;
   border-radius: 999px;
-  background: rgba(255, 243, 190, 0.26);
+  background: rgba(255, 246, 186, 0.34);
   transform: rotate(26deg);
 }
 

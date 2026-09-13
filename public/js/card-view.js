@@ -548,30 +548,31 @@
         "linear-gradient(90deg, rgba(234,214,161,0) 0%, rgba(234,214,161,0.18) 45%, rgba(234,214,161,0.3) 50%, rgba(234,214,161,0.18) 55%, rgba(234,214,161,0) 100%)",
     },
     black_gold_leaf: {
-      cardBg: "radial-gradient(circle at 72% 8%, rgba(183, 144, 63, 0.22), transparent 34%), linear-gradient(155deg, #050505 0%, #0b0a08 42%, #12100b 100%)",
+      pageBg: "#000000",
+      cardBg: "radial-gradient(circle at 72% 8%, rgba(212, 175, 55, 0.14), transparent 32%), linear-gradient(155deg, #000000 0%, #050505 48%, #000000 100%)",
       cardBgOverlay: "black_gold_leaf",
-      surfaceBg: "rgba(16, 14, 11, 0.78)",
-      cardBorder: "1px solid rgba(205, 169, 89, 0.42)",
-      surfaceBorder: "1px solid rgba(205, 169, 89, 0.24)",
-      dividerColor: "rgba(205, 169, 89, 0.22)",
+      surfaceBg: "rgba(5, 5, 5, 0.82)",
+      cardBorder: "1px solid rgba(246, 213, 107, 0.46)",
+      surfaceBorder: "1px solid rgba(246, 213, 107, 0.24)",
+      dividerColor: "rgba(246, 213, 107, 0.18)",
       nameColor: "#f0dfad",
-      roleColor: "#c7ad70",
-      mutedColor: "#8d7a52",
+      roleColor: "#f6d56b",
+      mutedColor: "#a8904a",
       accentColor: "#d4af37",
-      emailColor: "#d8c28b",
-      buttonPrimaryBg: "linear-gradient(135deg, #b9923a, #f0d58a 48%, #9a762a)",
-      buttonPrimaryText: "#090806",
-      buttonPrimaryBorder: "rgba(240, 213, 138, 0.68)",
+      emailColor: "#ead184",
+      buttonPrimaryBg: "linear-gradient(135deg, #d4af37, #ffe38a 48%, #d4af37)",
+      buttonPrimaryText: "#000000",
+      buttonPrimaryBorder: "rgba(255, 227, 138, 0.72)",
       buttonSecondaryBg: "rgba(255, 255, 255, 0.035)",
-      buttonSecondaryText: "#e2c987",
-      buttonSecondaryBorder: "rgba(205, 169, 89, 0.38)",
-      badgeText: "#e5ca84",
-      badgeBg: "rgba(45, 35, 16, 0.32)",
-      badgeBorder: "1px solid rgba(212, 175, 55, 0.34)",
+      buttonSecondaryText: "#f6d56b",
+      buttonSecondaryBorder: "rgba(246, 213, 107, 0.38)",
+      badgeText: "#f6d56b",
+      badgeBg: "rgba(0, 0, 0, 0.38)",
+      badgeBorder: "1px solid rgba(246, 213, 107, 0.34)",
       topLineGradient: "linear-gradient(90deg, transparent, rgba(212,175,55,0.88), transparent)",
-      avatarBg: "linear-gradient(135deg, #1a1711, #080706)",
+      avatarBg: "linear-gradient(135deg, #0a0a0a, #000000)",
       avatarText: "#e7ca80",
-      avatarBorder: "2px solid rgba(212, 175, 55, 0.34)",
+      avatarBorder: "2px solid rgba(246, 213, 107, 0.36)",
       cardBorderRadius: "22px",
       surfaceBorderRadius: "18px",
       buttonBorderRadius: "16px",
@@ -580,11 +581,11 @@
       nameFontWeight: "800",
       nameLetterSpacing: "0",
       roleLetterSpacing: "1.3px",
-      scoreLabelColor: "#b89a55",
+      scoreLabelColor: "#d4af37",
       scoreValueColor: "#f0dfad",
       scoreBarFill: "#d4af37",
-      scoreBarTrack: "rgba(205, 169, 89, 0.16)",
-      scorePercentileColor: "#9b8452",
+      scoreBarTrack: "rgba(246, 213, 107, 0.14)",
+      scorePercentileColor: "#a8904a",
       cardShadow: "0 22px 52px rgba(0, 0, 0, 0.72), 0 0 36px rgba(212, 175, 55, 0.08)",
       buttonShineGradient:
         "linear-gradient(90deg, rgba(255,225,150,0) 0%, rgba(255,225,150,0.15) 45%, rgba(255,246,194,0.34) 50%, rgba(255,225,150,0.15) 55%, rgba(255,225,150,0) 100%)",
@@ -2483,13 +2484,13 @@
           </filter>
           <radialGradient id="bgl-warm-glow" cx="72%" cy="14%" r="62%">
             <stop offset="0%" stop-color="#d4af37"></stop>
-            <stop offset="48%" stop-color="#5b4318"></stop>
-            <stop offset="100%" stop-color="#050505"></stop>
+            <stop offset="42%" stop-color="#d4af37" stop-opacity="0.3"></stop>
+            <stop offset="100%" stop-color="#000000"></stop>
           </radialGradient>
           <linearGradient id="bgl-gold-line" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="#7d6124" stop-opacity="0.1"></stop>
-            <stop offset="44%" stop-color="#e4c978" stop-opacity="0.72"></stop>
-            <stop offset="100%" stop-color="#8a6a25" stop-opacity="0.12"></stop>
+            <stop offset="0%" stop-color="#d4af37" stop-opacity="0.06"></stop>
+            <stop offset="44%" stop-color="#ffe38a" stop-opacity="0.74"></stop>
+            <stop offset="100%" stop-color="#d4af37" stop-opacity="0.08"></stop>
           </linearGradient>
         </defs>
         <rect width="100%" height="100%" filter="url(#bgl-grain)" opacity="0.12"></rect>
