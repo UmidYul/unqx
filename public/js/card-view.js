@@ -592,31 +592,31 @@
         "linear-gradient(90deg, rgba(255,225,150,0) 0%, rgba(255,225,150,0.15) 45%, rgba(255,246,194,0.34) 50%, rgba(255,225,150,0.15) 55%, rgba(255,225,150,0) 100%)",
     },
     ocean_2d: {
-      pageBg: "linear-gradient(180deg, #dff7ff 0%, #bcecff 48%, #eafcff 100%)",
-      cardBg: "linear-gradient(180deg, #e9fbff 0%, #b8ebff 46%, #68c8ee 100%)",
+      pageBg: "linear-gradient(180deg, #dff7ff 0%, #aee7fb 44%, #d8f8ff 100%)",
+      cardBg: "linear-gradient(180deg, #effdff 0%, #b9efff 34%, #45badf 66%, #0b6f95 100%)",
       cardBgOverlay: "ocean_2d",
-      surfaceBg: "rgba(255, 255, 255, 0.72)",
-      cardBorder: "2px solid rgba(34, 150, 205, 0.34)",
-      surfaceBorder: "1px solid rgba(44, 142, 190, 0.22)",
-      dividerColor: "rgba(44, 142, 190, 0.2)",
-      nameColor: "#075985",
-      roleColor: "#0f7ea8",
-      mutedColor: "#3f8ba8",
-      accentColor: "#22a8db",
-      emailColor: "#075985",
-      buttonPrimaryBg: "linear-gradient(135deg, #ffffff, #dff8ff)",
+      surfaceBg: "rgba(238, 252, 255, 0.82)",
+      cardBorder: "3px solid rgba(255, 255, 255, 0.86)",
+      surfaceBorder: "1px solid rgba(255, 255, 255, 0.68)",
+      dividerColor: "rgba(255, 255, 255, 0.5)",
+      nameColor: "#ffffff",
+      roleColor: "#d6f8ff",
+      mutedColor: "#bcefff",
+      accentColor: "#ffffff",
+      emailColor: "#ffffff",
+      buttonPrimaryBg: "linear-gradient(135deg, rgba(255,255,255,0.96), rgba(205,245,255,0.9))",
       buttonPrimaryText: "#075985",
-      buttonPrimaryBorder: "rgba(7, 89, 133, 0.2)",
-      buttonSecondaryBg: "rgba(255, 255, 255, 0.58)",
-      buttonSecondaryText: "#075985",
-      buttonSecondaryBorder: "rgba(7, 89, 133, 0.18)",
-      badgeText: "#0878a6",
-      badgeBg: "rgba(255, 255, 255, 0.62)",
-      badgeBorder: "1px solid rgba(34, 168, 219, 0.22)",
-      topLineGradient: "linear-gradient(90deg, transparent, rgba(34,168,219,0.72), transparent)",
-      avatarBg: "linear-gradient(135deg, #ffffff, #bdefff)",
+      buttonPrimaryBorder: "rgba(255, 255, 255, 0.72)",
+      buttonSecondaryBg: "rgba(255, 255, 255, 0.2)",
+      buttonSecondaryText: "#ffffff",
+      buttonSecondaryBorder: "rgba(255, 255, 255, 0.42)",
+      badgeText: "#075985",
+      badgeBg: "rgba(255, 255, 255, 0.88)",
+      badgeBorder: "1px solid rgba(255, 255, 255, 0.72)",
+      topLineGradient: "linear-gradient(90deg, transparent, rgba(255,255,255,0.86), transparent)",
+      avatarBg: "linear-gradient(135deg, #ffffff, #bdefff 52%, #5ccff0)",
       avatarText: "#075985",
-      avatarBorder: "3px solid rgba(255, 255, 255, 0.78)",
+      avatarBorder: "4px solid rgba(255, 255, 255, 0.9)",
       cardBorderRadius: "30px",
       surfaceBorderRadius: "22px",
       buttonBorderRadius: "20px",
@@ -625,12 +625,12 @@
       nameFontWeight: "800",
       nameLetterSpacing: "0",
       roleLetterSpacing: "0.6px",
-      scoreLabelColor: "#0f7ea8",
-      scoreValueColor: "#075985",
-      scoreBarFill: "#22a8db",
-      scoreBarTrack: "rgba(255, 255, 255, 0.72)",
-      scorePercentileColor: "#3f8ba8",
-      cardShadow: "0 18px 42px rgba(34, 150, 205, 0.22)",
+      scoreLabelColor: "#d6f8ff",
+      scoreValueColor: "#ffffff",
+      scoreBarFill: "#ffffff",
+      scoreBarTrack: "rgba(255, 255, 255, 0.28)",
+      scorePercentileColor: "#bcefff",
+      cardShadow: "0 24px 58px rgba(6, 95, 126, 0.28), inset 0 0 0 1px rgba(255, 255, 255, 0.28)",
       buttonShineGradient:
         "linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.28) 45%, rgba(255,255,255,0.62) 50%, rgba(255,255,255,0.28) 55%, rgba(255,255,255,0) 100%)",
     },
@@ -2549,32 +2549,65 @@
     if (themeKey === "ocean_2d") {
       return `<svg class="unq-ref-overlay-svg" viewBox="0 0 360 600" preserveAspectRatio="none" aria-hidden="true">
         <defs>
-          <linearGradient id="ocean-2d-soft" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="#ffffff" stop-opacity="0.55"></stop>
-            <stop offset="48%" stop-color="#9ee8ff" stop-opacity="0.26"></stop>
-            <stop offset="100%" stop-color="#0ea5d8" stop-opacity="0.2"></stop>
+          <linearGradient id="ocean-2d-sky" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#f4fdff" stop-opacity="0.92"></stop>
+            <stop offset="42%" stop-color="#98e4fb" stop-opacity="0.62"></stop>
+            <stop offset="100%" stop-color="#0c89b2" stop-opacity="0.18"></stop>
+          </linearGradient>
+          <linearGradient id="ocean-2d-deep-wave" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#075985" stop-opacity="0.66"></stop>
+            <stop offset="52%" stop-color="#0e9ac0" stop-opacity="0.38"></stop>
+            <stop offset="100%" stop-color="#083344" stop-opacity="0.52"></stop>
+          </linearGradient>
+          <linearGradient id="ocean-2d-foam-line" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#ffffff" stop-opacity="0.08"></stop>
+            <stop offset="28%" stop-color="#ffffff" stop-opacity="0.78"></stop>
+            <stop offset="52%" stop-color="#ffffff" stop-opacity="0.44"></stop>
+            <stop offset="86%" stop-color="#ffffff" stop-opacity="0.86"></stop>
+            <stop offset="100%" stop-color="#ffffff" stop-opacity="0.14"></stop>
           </linearGradient>
           <radialGradient id="ocean-2d-bubble" cx="50%" cy="50%" r="50%">
             <stop offset="0%" stop-color="#ffffff" stop-opacity="0.9"></stop>
             <stop offset="100%" stop-color="#ffffff" stop-opacity="0.12"></stop>
           </radialGradient>
         </defs>
-        <rect width="100%" height="100%" fill="url(#ocean-2d-soft)" opacity="0.62"></rect>
-        <path d="M-28 84C18 44 62 46 100 84C126 54 162 58 184 92C224 64 276 70 306 108C326 94 348 94 382 116V0H-28Z" fill="#ffffff" opacity="0.38"></path>
-        <path d="M-18 108C34 78 78 82 118 108C150 86 184 92 214 118C250 94 306 100 380 126" stroke="#ffffff" stroke-width="18" stroke-linecap="round" opacity="0.42" fill="none"></path>
-        <path d="M-20 182C42 148 102 154 164 184C226 214 282 220 380 168" stroke="#ffffff" stroke-width="14" stroke-linecap="round" opacity="0.24" fill="none"></path>
-        <path d="M-24 238C46 204 112 214 174 242C242 272 302 266 382 224" stroke="#075985" stroke-width="4" stroke-linecap="round" opacity="0.13" fill="none"></path>
-        <path d="M-22 312C34 286 88 292 142 316C200 342 270 340 382 292" stroke="#0e7490" stroke-width="30" stroke-linecap="round" opacity="0.1" fill="none"></path>
-        <path d="M-20 426C42 392 116 402 184 430C248 456 304 454 382 414" stroke="#ffffff" stroke-width="12" stroke-linecap="round" opacity="0.2" fill="none"></path>
-        <path d="M-14 484C46 452 108 464 168 494C232 526 302 518 382 474" stroke="#075985" stroke-width="34" stroke-linecap="round" opacity="0.12" fill="none"></path>
-        <circle cx="54" cy="92" r="10" fill="url(#ocean-2d-bubble)" opacity="0.44"></circle>
-        <circle cx="292" cy="138" r="15" fill="url(#ocean-2d-bubble)" opacity="0.36"></circle>
-        <circle cx="78" cy="336" r="13" fill="url(#ocean-2d-bubble)" opacity="0.34"></circle>
+        <rect width="100%" height="100%" fill="url(#ocean-2d-sky)" opacity="0.94"></rect>
+        <path d="M-30 58C10 24 48 26 82 58C104 34 134 36 154 64C190 34 238 42 266 76C292 54 332 60 390 92V0H-30Z" fill="#ffffff" opacity="0.42"></path>
+        <path d="M-22 104C30 72 72 78 114 106C146 82 188 92 218 122C254 94 310 100 382 128" stroke="#ffffff" stroke-width="18" stroke-linecap="round" opacity="0.48" fill="none"></path>
+        <path d="M24 146C54 130 86 130 116 148C96 154 70 154 24 146Z" fill="#ffffff" opacity="0.64"></path>
+        <path d="M236 124C258 110 286 112 310 128C292 132 264 132 236 124Z" fill="#ffffff" opacity="0.46"></path>
+        <path d="M-32 198C26 160 86 164 150 202C210 238 272 238 392 174V600H-32Z" fill="url(#ocean-2d-deep-wave)" opacity="0.28"></path>
+        <path d="M-28 236C34 198 102 206 166 238C232 270 292 270 390 218" stroke="url(#ocean-2d-foam-line)" stroke-width="12" stroke-linecap="round" opacity="0.72" fill="none"></path>
+        <path d="M-26 282C38 248 104 254 166 286C232 320 292 314 388 260" stroke="#083344" stroke-width="34" stroke-linecap="round" opacity="0.14" fill="none"></path>
+        <path d="M-18 324C40 294 98 300 152 328C212 360 278 358 382 308" stroke="#ffffff" stroke-width="10" stroke-linecap="round" opacity="0.34" fill="none"></path>
+        <path d="M-28 382C38 340 112 354 180 390C246 424 306 414 390 368" stroke="#075985" stroke-width="44" stroke-linecap="round" opacity="0.2" fill="none"></path>
+        <path d="M-20 422C36 392 92 402 148 430C210 462 284 458 382 410" stroke="url(#ocean-2d-foam-line)" stroke-width="12" stroke-linecap="round" opacity="0.52" fill="none"></path>
+        <path d="M-28 502C36 454 116 470 190 506C254 538 312 534 388 492" stroke="#052f42" stroke-width="58" stroke-linecap="round" opacity="0.2" fill="none"></path>
+        <path d="M-18 536C40 500 104 512 164 544C228 578 300 572 382 526" stroke="#ffffff" stroke-width="13" stroke-linecap="round" opacity="0.34" fill="none"></path>
+        <circle cx="56" cy="86" r="8" fill="url(#ocean-2d-bubble)" opacity="0.44"></circle>
+        <circle cx="292" cy="142" r="15" fill="url(#ocean-2d-bubble)" opacity="0.36"></circle>
+        <circle cx="80" cy="336" r="13" fill="url(#ocean-2d-bubble)" opacity="0.34"></circle>
         <circle cx="282" cy="486" r="9" fill="url(#ocean-2d-bubble)" opacity="0.4"></circle>
+        <path d="M36 190l18-26 20 24 18-12 18 18" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.28" fill="none"></path>
+        <path d="M252 214l18-28 26 30 20-16 26 26" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.22" fill="none"></path>
+        <g opacity="0.34" fill="#ffffff">
+          <path d="M58 312c16-12 34-12 50 0-16 12-34 12-50 0Z"></path>
+          <path d="M108 312l18-11v22Z"></path>
+          <circle cx="74" cy="309" r="2" fill="#075985" opacity="0.46"></circle>
+          <path d="M246 348c12-9 27-9 40 0-13 10-28 10-40 0Z"></path>
+          <path d="M286 348l14-9v18Z"></path>
+          <circle cx="258" cy="346" r="1.6" fill="#075985" opacity="0.46"></circle>
+        </g>
+        <g opacity="0.24" stroke="#ffffff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none">
+          <path d="M66 470c10-18 23-18 32 0-10 10-22 10-32 0Z"></path>
+          <path d="M82 456v22"></path>
+          <path d="M286 444l7 13 15 2-11 10 3 15-14-8-13 8 3-15-11-10 15-2Z"></path>
+        </g>
         ${[
-          [24, 248], [42, 266], [62, 244], [96, 274], [128, 254], [152, 282], [202, 250], [236, 276], [266, 246], [312, 270],
-          [18, 376], [46, 394], [74, 366], [118, 388], [166, 370], [218, 398], [258, 366], [306, 388], [334, 410],
-        ].map(([cx, cy]) => `<circle cx="${cx}" cy="${cy}" r="2.2" fill="#ffffff" opacity="0.62"></circle>`).join("")}
+          [24, 248, 2.2], [42, 266, 1.7], [62, 244, 2.4], [96, 274, 1.9], [128, 254, 2.3], [152, 282, 1.8], [202, 250, 2.2], [236, 276, 1.7], [266, 246, 2.6], [312, 270, 1.9],
+          [18, 376, 2.4], [46, 394, 1.8], [74, 366, 2.1], [118, 388, 1.7], [166, 370, 2.5], [218, 398, 1.8], [258, 366, 2.2], [306, 388, 1.7], [334, 410, 2.4],
+          [30, 474, 1.8], [74, 504, 2.6], [122, 482, 1.9], [180, 520, 2.3], [236, 492, 1.8], [318, 514, 2.4],
+        ].map(([cx, cy, r]) => `<circle cx="${cx}" cy="${cy}" r="${r}" fill="#ffffff" opacity="0.66"></circle>`).join("")}
       </svg>`;
     }
     if (themeKey === "aurora_codex") {
