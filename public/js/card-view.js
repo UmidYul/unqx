@@ -5086,16 +5086,31 @@
     const blackGoldLeafEffectsHtml = theme.key === "black_gold_leaf"
       ? `<div class="black-gold-leaf-effects" aria-hidden="true">
           ${[
-        ["8%", "18px", "18s", "-1s", "-24deg", "0.42"],
-        ["18%", "12px", "22s", "-8s", "16deg", "0.28"],
-        ["28%", "16px", "20s", "-4s", "34deg", "0.36"],
-        ["42%", "10px", "26s", "-14s", "-12deg", "0.24"],
-        ["55%", "17px", "19s", "-10s", "22deg", "0.38"],
-        ["68%", "13px", "24s", "-6s", "-32deg", "0.3"],
-        ["82%", "19px", "21s", "-16s", "10deg", "0.4"],
-        ["92%", "11px", "27s", "-3s", "28deg", "0.24"],
+        ["8%", "24px", "18s", "-1s", "-24deg", "0.76"],
+        ["18%", "18px", "22s", "-8s", "16deg", "0.58"],
+        ["28%", "22px", "20s", "-4s", "34deg", "0.68"],
+        ["42%", "16px", "26s", "-14s", "-12deg", "0.48"],
+        ["55%", "25px", "19s", "-10s", "22deg", "0.72"],
+        ["68%", "19px", "24s", "-6s", "-32deg", "0.56"],
+        ["82%", "26px", "21s", "-16s", "10deg", "0.74"],
+        ["92%", "17px", "27s", "-3s", "28deg", "0.5"],
       ].map(([left, size, duration, delay, rotate, opacity], index) => `
-            <span class="black-gold-leaf black-gold-leaf-${index + 1}" style="left:${left};width:${size};height:${size};animation-duration:${duration};animation-delay:${delay};--leaf-rotate:${rotate};--leaf-opacity:${opacity}"></span>`).join("")}
+            <svg class="black-gold-leaf black-gold-leaf-${index + 1}" style="left:${left};width:${size};height:${size};animation-duration:${duration};animation-delay:${delay};--leaf-rotate:${rotate};--leaf-opacity:${opacity}" viewBox="0 0 64 82" focusable="false">
+              <defs>
+                <linearGradient id="black-gold-leaf-gradient-${index + 1}" x1="12%" y1="8%" x2="86%" y2="92%">
+                  <stop offset="0%" stop-color="#fff9c8"></stop>
+                  <stop offset="38%" stop-color="#ffe98f"></stop>
+                  <stop offset="70%" stop-color="#f6d56b"></stop>
+                  <stop offset="100%" stop-color="#d4af37"></stop>
+                </linearGradient>
+              </defs>
+              <path class="black-gold-leaf-shape" fill="url(#black-gold-leaf-gradient-${index + 1})" d="M31.7 2.5C22.4 12.8 13.9 21.7 7.4 34.3C1.5 45.8 4.7 58.4 14.9 64.9C21.9 69.4 27.5 72.2 31.7 79.5C35.9 72.2 41.5 69.4 48.5 64.9C58.7 58.4 61.9 45.8 56 34.3C49.5 21.7 41 12.8 31.7 2.5Z"></path>
+              <path class="black-gold-leaf-vein" d="M31.7 9.5C31.1 25.8 31.2 48.1 31.7 75"></path>
+              <path class="black-gold-leaf-vein" d="M31.4 25.5C24.4 29.8 18.2 34.9 12.7 41.1"></path>
+              <path class="black-gold-leaf-vein" d="M31.8 25.5C39 29.8 45.2 34.9 50.8 41.1"></path>
+              <path class="black-gold-leaf-vein" d="M31.4 42.2C24 46.6 18.6 51.3 15.3 58"></path>
+              <path class="black-gold-leaf-vein" d="M31.8 42.2C39.4 46.7 44.7 51.5 48.1 58"></path>
+            </svg>`).join("")}
         </div>`
       : "";
 
