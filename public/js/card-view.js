@@ -5086,14 +5086,14 @@
     const blackGoldLeafEffectsHtml = theme.key === "black_gold_leaf"
       ? `<div class="black-gold-leaf-effects" aria-hidden="true">
           ${[
-        ["8%", "24px", "18s", "-1s", "-24deg", "0.76"],
-        ["18%", "18px", "22s", "-8s", "16deg", "0.58"],
-        ["28%", "22px", "20s", "-4s", "34deg", "0.68"],
-        ["42%", "16px", "26s", "-14s", "-12deg", "0.48"],
-        ["55%", "25px", "19s", "-10s", "22deg", "0.72"],
-        ["68%", "19px", "24s", "-6s", "-32deg", "0.56"],
-        ["82%", "26px", "21s", "-16s", "10deg", "0.74"],
-        ["92%", "17px", "27s", "-3s", "28deg", "0.5"],
+        ["8%", "30px", "18s", "-1s", "-24deg", "0.88"],
+        ["18%", "22px", "22s", "-8s", "16deg", "0.7"],
+        ["28%", "28px", "20s", "-4s", "34deg", "0.82"],
+        ["42%", "20px", "26s", "-14s", "-12deg", "0.62"],
+        ["55%", "31px", "19s", "-10s", "22deg", "0.86"],
+        ["68%", "23px", "24s", "-6s", "-32deg", "0.7"],
+        ["82%", "32px", "21s", "-16s", "10deg", "0.88"],
+        ["92%", "21px", "27s", "-3s", "28deg", "0.64"],
       ].map(([left, size, duration, delay, rotate, opacity], index) => `
             <svg class="black-gold-leaf black-gold-leaf-${index + 1}" style="left:${left};width:${size};height:${size};animation-duration:${duration};animation-delay:${delay};--leaf-rotate:${rotate};--leaf-opacity:${opacity}" viewBox="0 0 64 82" focusable="false">
               <defs>
@@ -5104,12 +5104,12 @@
                   <stop offset="100%" stop-color="#d4af37"></stop>
                 </linearGradient>
               </defs>
-              <path class="black-gold-leaf-shape" fill="url(#black-gold-leaf-gradient-${index + 1})" d="M31.7 2.5C22.4 12.8 13.9 21.7 7.4 34.3C1.5 45.8 4.7 58.4 14.9 64.9C21.9 69.4 27.5 72.2 31.7 79.5C35.9 72.2 41.5 69.4 48.5 64.9C58.7 58.4 61.9 45.8 56 34.3C49.5 21.7 41 12.8 31.7 2.5Z"></path>
-              <path class="black-gold-leaf-vein" d="M31.7 9.5C31.1 25.8 31.2 48.1 31.7 75"></path>
-              <path class="black-gold-leaf-vein" d="M31.4 25.5C24.4 29.8 18.2 34.9 12.7 41.1"></path>
-              <path class="black-gold-leaf-vein" d="M31.8 25.5C39 29.8 45.2 34.9 50.8 41.1"></path>
-              <path class="black-gold-leaf-vein" d="M31.4 42.2C24 46.6 18.6 51.3 15.3 58"></path>
-              <path class="black-gold-leaf-vein" d="M31.8 42.2C39.4 46.7 44.7 51.5 48.1 58"></path>
+              <path class="black-gold-leaf-shape" fill="url(#black-gold-leaf-gradient-${index + 1})" d="M32 2.5L37.4 19.3L49 9.1L46.2 27.1L61.2 24.2L51.3 38.2L63 45.6L46.5 49.4L52.4 64.7L37.8 58.3L34.7 79.5H29.3L26.2 58.3L11.6 64.7L17.5 49.4L1 45.6L12.7 38.2L2.8 24.2L17.8 27.1L15 9.1L26.6 19.3L32 2.5Z"></path>
+              <path class="black-gold-leaf-vein" d="M32 9.5C31.5 26.6 31.5 50.8 32 77"></path>
+              <path class="black-gold-leaf-vein" d="M31.8 28.2C24.2 29.8 18.8 33.5 12.7 38.2"></path>
+              <path class="black-gold-leaf-vein" d="M32.2 28.2C39.8 29.8 45.2 33.5 51.3 38.2"></path>
+              <path class="black-gold-leaf-vein" d="M31.8 43.4C23.4 45.2 17.7 49.5 11.6 64.7"></path>
+              <path class="black-gold-leaf-vein" d="M32.2 43.4C40.6 45.2 46.3 49.5 52.4 64.7"></path>
             </svg>`).join("")}
         </div>`
       : "";
