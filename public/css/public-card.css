@@ -541,7 +541,9 @@ body[data-card-theme="uzbekistan_2d"] .unq-ref-phone:hover,
   .black-gold-leaf,
   .ocean-2d-wave,
   .ocean-2d-foam,
-  .ocean-2d-bubble {
+  .ocean-2d-bubble,
+  .ocean-2d-seagull,
+  .ocean-2d-seagull-wing {
     animation: none !important;
   }
 
@@ -7866,6 +7868,82 @@ body[data-card-theme="ocean_2d"] main,
   opacity: 0.72;
 }
 
+.ocean-2d-cloud {
+  position: absolute;
+  display: block;
+  height: 72px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow:
+    22px -18px 0 rgba(255, 255, 255, 0.66),
+    54px -30px 0 rgba(255, 255, 255, 0.58),
+    92px -14px 0 rgba(255, 255, 255, 0.68),
+    124px 6px 0 rgba(255, 255, 255, 0.62),
+    38px 14px 0 rgba(210, 232, 238, 0.72);
+  opacity: 0.74;
+}
+
+.ocean-2d-cloud-1 {
+  top: 8%;
+  left: -28px;
+  width: 154px;
+}
+
+.ocean-2d-cloud-2 {
+  top: 11%;
+  right: -34px;
+  width: 170px;
+  transform: scale(0.82);
+  opacity: 0.7;
+}
+
+.ocean-2d-cloud-3 {
+  top: 20%;
+  left: 18%;
+  width: 112px;
+  transform: scale(0.52);
+  opacity: 0.45;
+}
+
+.ocean-2d-seagull {
+  position: absolute;
+  left: -110px;
+  width: 86px;
+  height: 32px;
+  overflow: visible;
+  opacity: 0;
+  transform: scale(var(--seagull-scale, 1));
+  animation: ocean-2d-seagull-flight 14s linear infinite;
+  will-change: transform, opacity;
+}
+
+.ocean-2d-seagull-wing,
+.ocean-2d-seagull-body {
+  fill: #ffffff;
+  stroke: rgba(7, 89, 133, 0.16);
+  stroke-width: 1.6;
+  stroke-linejoin: round;
+}
+
+.ocean-2d-seagull-wing-left {
+  transform-origin: 43px 18px;
+  animation: ocean-2d-wing-left 2.8s ease-in-out infinite;
+}
+
+.ocean-2d-seagull-wing-right {
+  transform-origin: 43px 18px;
+  animation: ocean-2d-wing-right 2.8s ease-in-out infinite;
+}
+
+.ocean-2d-seagull-2 {
+  opacity: 0;
+}
+
+.ocean-2d-seagull-3 .ocean-2d-seagull-wing,
+.ocean-2d-seagull-3 .ocean-2d-seagull-body {
+  fill: rgba(255, 255, 255, 0.82);
+}
+
 .ocean-2d-wave {
   position: absolute;
   left: -12%;
@@ -7914,6 +7992,19 @@ body[data-card-theme="ocean_2d"] main,
   animation-delay: -5s;
 }
 
+.ocean-2d-wave-4 {
+  bottom: 214px;
+  z-index: 1;
+  height: 82px;
+  opacity: 0.24;
+  background:
+    radial-gradient(ellipse at 18% 0%, rgba(255, 255, 255, 0.58) 0 11%, transparent 12%),
+    radial-gradient(ellipse at 58% 0%, rgba(255, 255, 255, 0.48) 0 9%, transparent 10%),
+    linear-gradient(180deg, rgba(255,255,255,0.58) 0 7px, #a9e9ff 8px, #46b6df 100%);
+  animation-duration: 18s;
+  animation-delay: -8s;
+}
+
 .ocean-2d-foam {
   position: absolute;
   width: 180px;
@@ -7935,6 +8026,15 @@ body[data-card-theme="ocean_2d"] main,
   width: 132px;
   opacity: 0.72;
   animation-delay: -4s;
+}
+
+.ocean-2d-foam-3 {
+  left: 38%;
+  bottom: 306px;
+  width: 104px;
+  height: 18px;
+  opacity: 0.52;
+  animation-delay: -7s;
 }
 
 .ocean-2d-bubble {
@@ -7999,6 +8099,50 @@ body[data-card-theme="ocean_2d"] main,
   50% {
     transform: translate3d(10px, -22px, 0) scale(1.12);
     opacity: 0.76;
+  }
+}
+
+@keyframes ocean-2d-seagull-flight {
+  0% {
+    transform: translate3d(-120px, 0, 0) scale(var(--seagull-scale, 1));
+    opacity: 0;
+  }
+
+  10% {
+    opacity: 0.92;
+  }
+
+  50% {
+    transform: translate3d(52vw, -18px, 0) scale(var(--seagull-scale, 1));
+  }
+
+  90% {
+    opacity: 0.9;
+  }
+
+  100% {
+    transform: translate3d(calc(100vw + 150px), 10px, 0) scale(var(--seagull-scale, 1));
+    opacity: 0;
+  }
+}
+
+@keyframes ocean-2d-wing-left {
+  0%, 100% {
+    transform: rotate(0deg) translateY(0);
+  }
+
+  50% {
+    transform: rotate(-10deg) translateY(-2px);
+  }
+}
+
+@keyframes ocean-2d-wing-right {
+  0%, 100% {
+    transform: rotate(0deg) translateY(0);
+  }
+
+  50% {
+    transform: rotate(10deg) translateY(-2px);
   }
 }
 

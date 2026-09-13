@@ -2560,13 +2560,21 @@
           </radialGradient>
         </defs>
         <rect width="100%" height="100%" fill="url(#ocean-2d-soft)" opacity="0.62"></rect>
-        <path d="M-20 110C42 76 102 82 164 112C226 142 282 148 380 96" stroke="#ffffff" stroke-width="14" stroke-linecap="round" opacity="0.22" fill="none"></path>
-        <path d="M-24 220C46 186 112 196 174 224C242 254 302 248 382 206" stroke="#075985" stroke-width="3" stroke-linecap="round" opacity="0.12" fill="none"></path>
+        <path d="M-28 84C18 44 62 46 100 84C126 54 162 58 184 92C224 64 276 70 306 108C326 94 348 94 382 116V0H-28Z" fill="#ffffff" opacity="0.38"></path>
+        <path d="M-18 108C34 78 78 82 118 108C150 86 184 92 214 118C250 94 306 100 380 126" stroke="#ffffff" stroke-width="18" stroke-linecap="round" opacity="0.42" fill="none"></path>
+        <path d="M-20 182C42 148 102 154 164 184C226 214 282 220 380 168" stroke="#ffffff" stroke-width="14" stroke-linecap="round" opacity="0.24" fill="none"></path>
+        <path d="M-24 238C46 204 112 214 174 242C242 272 302 266 382 224" stroke="#075985" stroke-width="4" stroke-linecap="round" opacity="0.13" fill="none"></path>
+        <path d="M-22 312C34 286 88 292 142 316C200 342 270 340 382 292" stroke="#0e7490" stroke-width="30" stroke-linecap="round" opacity="0.1" fill="none"></path>
         <path d="M-20 426C42 392 116 402 184 430C248 456 304 454 382 414" stroke="#ffffff" stroke-width="12" stroke-linecap="round" opacity="0.2" fill="none"></path>
+        <path d="M-14 484C46 452 108 464 168 494C232 526 302 518 382 474" stroke="#075985" stroke-width="34" stroke-linecap="round" opacity="0.12" fill="none"></path>
         <circle cx="54" cy="92" r="10" fill="url(#ocean-2d-bubble)" opacity="0.44"></circle>
         <circle cx="292" cy="138" r="15" fill="url(#ocean-2d-bubble)" opacity="0.36"></circle>
         <circle cx="78" cy="336" r="13" fill="url(#ocean-2d-bubble)" opacity="0.34"></circle>
         <circle cx="282" cy="486" r="9" fill="url(#ocean-2d-bubble)" opacity="0.4"></circle>
+        ${[
+          [24, 248], [42, 266], [62, 244], [96, 274], [128, 254], [152, 282], [202, 250], [236, 276], [266, 246], [312, 270],
+          [18, 376], [46, 394], [74, 366], [118, 388], [166, 370], [218, 398], [258, 366], [306, 388], [334, 410],
+        ].map(([cx, cy]) => `<circle cx="${cx}" cy="${cy}" r="2.2" fill="#ffffff" opacity="0.62"></circle>`).join("")}
       </svg>`;
     }
     if (themeKey === "aurora_codex") {
@@ -5183,11 +5191,27 @@
     const ocean2dEffectsHtml = theme.key === "ocean_2d"
       ? `<div class="ocean-2d-effects" aria-hidden="true">
           <span class="ocean-2d-sun-glow"></span>
+          <span class="ocean-2d-cloud ocean-2d-cloud-1"></span>
+          <span class="ocean-2d-cloud ocean-2d-cloud-2"></span>
+          <span class="ocean-2d-cloud ocean-2d-cloud-3"></span>
+          ${[
+        ["ocean-2d-seagull-1", "12%", "12s", "0s", "1"],
+        ["ocean-2d-seagull-2", "22%", "16s", "-6s", "0.72"],
+        ["ocean-2d-seagull-3", "16%", "20s", "-12s", "0.52"],
+        ["ocean-2d-seagull-4", "29%", "18s", "-3s", "0.62"],
+      ].map(([className, top, duration, delay, scale]) => `
+            <svg class="ocean-2d-seagull ${className}" style="top:${top};animation-duration:${duration};animation-delay:${delay};--seagull-scale:${scale}" viewBox="0 0 86 32" focusable="false">
+              <path class="ocean-2d-seagull-wing ocean-2d-seagull-wing-left" d="M43 17C31 5 17 3 5 8C20 10 31 16 43 23Z"></path>
+              <path class="ocean-2d-seagull-wing ocean-2d-seagull-wing-right" d="M43 17C55 5 69 3 81 8C66 10 55 16 43 23Z"></path>
+              <path class="ocean-2d-seagull-body" d="M36 18C39 15 47 15 50 18C47 21 39 21 36 18Z"></path>
+            </svg>`).join("")}
           <span class="ocean-2d-wave ocean-2d-wave-1"></span>
           <span class="ocean-2d-wave ocean-2d-wave-2"></span>
           <span class="ocean-2d-wave ocean-2d-wave-3"></span>
+          <span class="ocean-2d-wave ocean-2d-wave-4"></span>
           <span class="ocean-2d-foam ocean-2d-foam-1"></span>
           <span class="ocean-2d-foam ocean-2d-foam-2"></span>
+          <span class="ocean-2d-foam ocean-2d-foam-3"></span>
           <span class="ocean-2d-bubble ocean-2d-bubble-1"></span>
           <span class="ocean-2d-bubble ocean-2d-bubble-2"></span>
           <span class="ocean-2d-bubble ocean-2d-bubble-3"></span>
