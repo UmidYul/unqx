@@ -14,7 +14,7 @@ const PROFILE_THEME_KEYS = [
   "golden_noir",
   "black_gold_leaf",
   "ocean_2d",
-  "olympus_2d",
+  "greek_olympus_2d",
   "aurora_codex",
   "codex_da_vinci",
   "nebula_glass",

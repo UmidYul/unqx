@@ -1,22 +1,22 @@
 module.exports = {
-  id: "095_register_olympus_2d_theme",
+  id: "095_register_greek_olympus_2d_theme",
   async up(client) {
     await client.query(`
       DO $$
       BEGIN
         IF EXISTS (SELECT 1 FROM pg_type WHERE typname = 'CardTheme') THEN
-          ALTER TYPE "CardTheme" ADD VALUE IF NOT EXISTS 'olympus_2d';
+          ALTER TYPE "CardTheme" ADD VALUE IF NOT EXISTS 'greek_olympus_2d';
         END IF;
 
         IF EXISTS (SELECT 1 FROM pg_type WHERE typname = 'cardtheme') THEN
-          ALTER TYPE cardtheme ADD VALUE IF NOT EXISTS 'olympus_2d';
+          ALTER TYPE cardtheme ADD VALUE IF NOT EXISTS 'greek_olympus_2d';
         END IF;
       END $$;
     `);
 
     await client.query(`
       INSERT INTO unqx_visual_style_labels (style_kind, style_key, display_name, is_active)
-      VALUES ('theme', 'olympus_2d', 'Crystal-Like Drops', true)
+      VALUES ('theme', 'greek_olympus_2d', 'Greek Olympus 2D', true)
       ON CONFLICT (style_kind, style_key) DO UPDATE SET
         display_name = EXCLUDED.display_name,
         is_active = true,

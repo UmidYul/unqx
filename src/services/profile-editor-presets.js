@@ -74,10 +74,10 @@ const SIGNATURE_THEMES = [
     premiumRequired: true,
   },
   {
-    id: "olympus_2d",
-    label: "Crystal-Like Drops",
-    description: "Greek cartoon gold and Zeus lightning",
-    swatchStyle: "border-color:#D4AF37;background:radial-gradient(circle at 50% 0%,rgba(255,215,0,.26),transparent 58%),linear-gradient(135deg,#0A0A0C 0%,#14151B 100%);box-shadow:6px 6px 0 #000000,inset 0 0 0 2px rgba(212,175,55,.5);",
+    id: "greek_olympus_2d",
+    label: "Greek Olympus 2D",
+    description: "Antique marble, olive wreath and Zeus lightning",
+    swatchStyle: "border-color:#131B15;background:radial-gradient(circle at 50% 48%,rgba(212,175,55,.24),transparent 38%),linear-gradient(135deg,#0F1A14 0%,#1B2A21 100%);box-shadow:5px 5px 0 #131B15,inset 0 0 0 2px #D4AF37;",
     premiumRequired: true,
   },
   {

@@ -18090,58 +18090,86 @@ body[data-card-theme="uzbekistan_2d"] .unq-ref-phone:hover,
   }
 }
 
-/* Olympus 2D Flat Mythic theme. */
-body[data-card-theme="olympus_2d"] {
-  --theme-page-bg: #0A0A0C;
+/* theme-greek_olympus_2d: premium antique 2D Olympus card. */
+body[data-card-theme="greek_olympus_2d"] {
+  --theme-page-bg: #0F1A14;
   --theme-screen-opacity: 0.42;
   --theme-screen-pattern:
-    radial-gradient(circle at 50% 0%, rgba(255, 215, 0, 0.16) 0%, transparent 58%),
-    linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0 1px, transparent 1px 16px);
-  --unqx-nav-bg: #0A0A0C;
-  --unqx-nav-border: #D4AF37;
-  --unqx-nav-border-width: 2px;
-  --unqx-nav-text: #F3E5AB;
-  --unqx-nav-icon: #FFD700;
-  --unqx-nav-input: #FFFFFF;
-  --unqx-nav-placeholder: rgba(243, 229, 171, 0.54);
-  --unqx-nav-chip: #FFD700;
-  --unqx-nav-hover-bg: #14151B;
-  --unqx-nav-hover-text: #FFD700;
-  --unqx-nav-hover-border: #FFD700;
-  --unqx-nav-shadow: 4px 4px 0 #000000, 0 0 20px rgba(212, 175, 55, 0.18);
-  --unqx-nav-hover-shadow: 6px 6px 0 #000000, 0 0 26px rgba(255, 215, 0, 0.22);
-  --unqx-search-result-text: #FFFFFF;
-  --unqx-search-result-strong: #FFD700;
-  --unqx-search-result-muted: rgba(243, 229, 171, 0.72);
-  --unqx-search-result-hover: rgba(255, 215, 0, 0.1);
-  background-color: #0A0A0C !important;
+    radial-gradient(circle at 50% 48%, rgba(212, 175, 55, 0.12) 0%, transparent 42%),
+    repeating-linear-gradient(90deg, rgba(243, 229, 171, 0.08) 0 4px, transparent 4px 26px);
+  --unqx-nav-bg: #F7F4EA;
+  --unqx-nav-border: #131B15;
+  --unqx-nav-border-width: 3px;
+  --unqx-nav-text: #131B15;
+  --unqx-nav-icon: #D4AF37;
+  --unqx-nav-input: #131B15;
+  --unqx-nav-placeholder: rgba(19, 27, 21, 0.56);
+  --unqx-nav-chip: #D4AF37;
+  --unqx-nav-hover-bg: #F3E5AB;
+  --unqx-nav-hover-text: #131B15;
+  --unqx-nav-hover-border: #131B15;
+  --unqx-nav-shadow: 5px 5px 0 #131B15;
+  --unqx-nav-hover-shadow: 7px 7px 0 #131B15;
+  --unqx-search-result-text: #131B15;
+  --unqx-search-result-strong: #131B15;
+  --unqx-search-result-muted: rgba(19, 27, 21, 0.64);
+  --unqx-search-result-hover: rgba(212, 175, 55, 0.16);
+  background-color: #0F1A14 !important;
   background-image:
-    radial-gradient(circle at 50% 0%, rgba(255, 215, 0, 0.14) 0%, transparent 52%),
-    radial-gradient(circle at 16% 84%, rgba(0, 229, 255, 0.08) 0%, transparent 34%),
-    linear-gradient(135deg, #0A0A0C 0%, #14151B 100%) !important;
-  font-family: "Montserrat", "Inter", "Segoe UI", sans-serif !important;
+    radial-gradient(circle at 50% 45%, rgba(74, 107, 83, 0.42) 0%, transparent 42%),
+    radial-gradient(circle at 18% 18%, rgba(255, 209, 59, 0.12) 0%, transparent 32%),
+    radial-gradient(circle at 82% 74%, rgba(243, 229, 171, 0.1) 0%, transparent 34%),
+    linear-gradient(135deg, #0F1A14 0%, #1B2A21 100%) !important;
+  font-family: "Cinzel", "Playfair Display", "Montserrat", "Inter", serif !important;
 }
 
-body[data-card-theme="olympus_2d"]::before {
+body[data-card-theme="greek_olympus_2d"]::before,
+body[data-card-theme="greek_olympus_2d"]::after {
   content: "";
   position: fixed;
-  inset: 0;
+  left: 50%;
+  top: 50%;
   z-index: 0;
   pointer-events: none;
-  background:
-    linear-gradient(115deg, transparent 0 42%, rgba(255, 215, 0, 0.08) 42% 45%, transparent 45% 100%),
-    linear-gradient(115deg, transparent 0 50%, rgba(255, 215, 0, 0.05) 50% 53%, transparent 53% 100%);
-  animation: olympus-lightning-pulse 4s ease-in-out infinite;
+  transform: translate(-50%, -50%);
 }
 
-body[data-card-theme="olympus_2d"] main {
+body[data-card-theme="greek_olympus_2d"]::before {
+  width: min(88vw, 620px);
+  aspect-ratio: 1;
+  border: 18px solid rgba(212, 175, 55, 0.18);
+  border-radius: 999px;
+  box-shadow:
+    0 0 0 3px rgba(19, 27, 21, 0.72),
+    5px 5px 0 rgba(19, 27, 21, 0.9);
+  background:
+    radial-gradient(ellipse at 28% 50%, transparent 0 44%, rgba(74, 107, 83, 0.84) 45% 47%, transparent 48%),
+    radial-gradient(ellipse at 72% 50%, transparent 0 44%, rgba(74, 107, 83, 0.84) 45% 47%, transparent 48%),
+    repeating-conic-gradient(from 12deg, rgba(243, 229, 171, 0) 0 8deg, rgba(243, 229, 171, 0.16) 8deg 12deg);
+  opacity: 0.88;
+  animation: greek-olympus-wreath-pulse 7s ease-in-out infinite;
+}
+
+body[data-card-theme="greek_olympus_2d"]::after {
+  width: min(76vw, 520px);
+  height: min(82vh, 720px);
+  background:
+    linear-gradient(112deg, transparent 0 40%, rgba(255, 209, 59, 0.32) 40% 44%, transparent 44% 100%),
+    linear-gradient(112deg, transparent 0 54%, rgba(255, 209, 59, 0.2) 54% 58%, transparent 58% 100%);
+  clip-path: polygon(45% 0, 32% 42%, 49% 42%, 37% 100%, 71% 49%, 53% 49%, 65% 0);
+  filter: drop-shadow(5px 5px 0 #131B15);
+  opacity: 0.34;
+  animation: greek-olympus-lightning-pulse 4s ease-in-out infinite;
+}
+
+body[data-card-theme="greek_olympus_2d"] main {
   justify-content: center !important;
 }
 
-body[data-card-theme="olympus_2d"] .public-card-shell,
-body[data-card-theme="olympus_2d"] .unq-ref-shell,
-#profile-card-live-preview[data-preview-theme="olympus_2d"] .public-card-shell,
-#profile-card-live-preview[data-preview-theme="olympus_2d"] .unq-ref-shell {
+body[data-card-theme="greek_olympus_2d"] .public-card-shell,
+body[data-card-theme="greek_olympus_2d"] .unq-ref-shell,
+#profile-card-live-preview[data-preview-theme="greek_olympus_2d"] .public-card-shell,
+#profile-card-live-preview[data-preview-theme="greek_olympus_2d"] .unq-ref-shell {
   position: relative !important;
   display: block !important;
   width: 92% !important;
@@ -18150,212 +18178,262 @@ body[data-card-theme="olympus_2d"] .unq-ref-shell,
   min-height: 0 !important;
   max-height: none !important;
   margin: 18px auto !important;
-  padding: 34px 22px 28px !important;
+  padding: 38px 22px 28px !important;
   overflow: hidden !important;
-  border: 3px solid #1E1E24 !important;
-  border-radius: 16px !important;
+  border: 3px solid #131B15 !important;
+  border-radius: 18px !important;
   outline: 2px solid #D4AF37 !important;
-  outline-offset: -6px !important;
-  background-color: #0A0A0C !important;
+  outline-offset: -8px !important;
+  background-color: #F7F4EA !important;
   background-image:
-    radial-gradient(circle at 50% 0%, rgba(255, 215, 0, 0.12) 0%, transparent 70%),
-    linear-gradient(135deg, #0A0A0C 0%, #14151B 100%) !important;
-  box-shadow: 6px 6px 0 #000000, 0 0 20px rgba(212, 175, 55, 0.2) !important;
+    radial-gradient(circle at 18% 22%, rgba(212, 175, 55, 0.16) 0%, transparent 26%),
+    radial-gradient(circle at 74% 72%, rgba(74, 107, 83, 0.12) 0%, transparent 34%),
+    linear-gradient(115deg, transparent 0 46%, rgba(19, 27, 21, 0.04) 46% 48%, transparent 48% 100%),
+    linear-gradient(135deg, #F7F4EA 0%, #F3E5AB 100%) !important;
+  box-shadow: 8px 8px 0 #131B15 !important;
 }
 
-body[data-card-theme="olympus_2d"] .public-card-shell::before,
-body[data-card-theme="olympus_2d"] .unq-ref-shell::before,
-#profile-card-live-preview[data-preview-theme="olympus_2d"] .public-card-shell::before,
-#profile-card-live-preview[data-preview-theme="olympus_2d"] .unq-ref-shell::before {
-  content: "ОБЛАДАТЕЛЬ ЛИМИТИРОВАННОЙ КАРТЫ";
+body[data-card-theme="greek_olympus_2d"] .public-card-shell::before,
+body[data-card-theme="greek_olympus_2d"] .unq-ref-shell::before,
+#profile-card-live-preview[data-preview-theme="greek_olympus_2d"] .public-card-shell::before,
+#profile-card-live-preview[data-preview-theme="greek_olympus_2d"] .unq-ref-shell::before {
+  content: "O L Y M P U S";
   position: relative !important;
-  z-index: 3 !important;
-  display: block !important;
+  z-index: 4 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
   width: fit-content !important;
-  max-width: 100% !important;
-  margin: 0 auto 14px !important;
-  color: #F3E5AB !important;
-  font-family: "Cinzel", "Montserrat", "Inter", serif !important;
+  max-width: calc(100% - 18px) !important;
+  margin: 0 auto 18px !important;
+  padding: 6px 18px !important;
+  border: 3px solid #131B15 !important;
+  border-radius: 999px !important;
+  background:
+    linear-gradient(90deg, #D4AF37 0 10px, transparent 10px 14px, #D4AF37 14px 24px, transparent 24px calc(100% - 24px), #D4AF37 calc(100% - 24px) calc(100% - 14px), transparent calc(100% - 14px) calc(100% - 10px), #D4AF37 calc(100% - 10px) 100%),
+    #F7F4EA !important;
+  color: #131B15 !important;
+  font-family: "Cinzel", "Playfair Display", "Montserrat", serif !important;
   font-size: 11px !important;
   font-weight: 900 !important;
-  letter-spacing: 2px !important;
-  line-height: 1.35 !important;
+  letter-spacing: 0.22em !important;
+  line-height: 1.25 !important;
   text-align: center !important;
   text-transform: uppercase !important;
-  text-shadow: 2px 2px 0 #000000 !important;
+  box-shadow: 5px 5px 0 #131B15 !important;
+  animation: greek-olympus-gold-pulse 5s ease-in-out infinite;
 }
 
-body[data-card-theme="olympus_2d"] .public-card-shell::after,
-body[data-card-theme="olympus_2d"] .unq-ref-shell::after,
-#profile-card-live-preview[data-preview-theme="olympus_2d"] .public-card-shell::after,
-#profile-card-live-preview[data-preview-theme="olympus_2d"] .unq-ref-shell::after {
+body[data-card-theme="greek_olympus_2d"] .public-card-shell::after,
+body[data-card-theme="greek_olympus_2d"] .unq-ref-shell::after,
+#profile-card-live-preview[data-preview-theme="greek_olympus_2d"] .public-card-shell::after,
+#profile-card-live-preview[data-preview-theme="greek_olympus_2d"] .unq-ref-shell::after {
   content: "";
   position: absolute;
-  inset: 0;
+  inset: 10px;
   z-index: 0;
   pointer-events: none;
+  border-radius: 12px;
   background:
-    linear-gradient(114deg, transparent 0 42%, rgba(255, 215, 0, 0.08) 42% 47%, transparent 47% 100%),
-    linear-gradient(90deg, #D4AF37 0 12px, transparent 12px calc(100% - 12px), #D4AF37 calc(100% - 12px) 100%),
-    linear-gradient(0deg, #D4AF37 0 12px, transparent 12px calc(100% - 12px), #D4AF37 calc(100% - 12px) 100%);
-  opacity: 0.9;
-  animation: olympus-lightning-pulse 4s ease-in-out infinite;
+    repeating-linear-gradient(90deg, #D4AF37 0 10px, transparent 10px 16px, #D4AF37 16px 26px, transparent 26px 34px),
+    linear-gradient(112deg, transparent 0 42%, rgba(255, 209, 59, 0.16) 42% 45%, transparent 45% 100%);
+  background-size: 100% 8px, 100% 100%;
+  background-repeat: no-repeat;
+  opacity: 0.78;
+  animation: greek-olympus-gold-pulse 5s ease-in-out infinite;
 }
 
-body[data-card-theme="olympus_2d"] .unq-ref-shell > *,
-#profile-card-live-preview[data-preview-theme="olympus_2d"] .unq-ref-shell > * {
+body[data-card-theme="greek_olympus_2d"] .unq-ref-shell > *,
+#profile-card-live-preview[data-preview-theme="greek_olympus_2d"] .unq-ref-shell > * {
   position: relative;
   z-index: 2;
 }
 
-body[data-card-theme="olympus_2d"] .unq-ref-card-overlay,
-#profile-card-live-preview[data-preview-theme="olympus_2d"] .unq-ref-card-overlay {
+body[data-card-theme="greek_olympus_2d"] .unq-ref-card-overlay,
+#profile-card-live-preview[data-preview-theme="greek_olympus_2d"] .unq-ref-card-overlay {
   position: absolute !important;
   inset: 0 !important;
   z-index: 1 !important;
-  opacity: 0.72 !important;
-  animation: olympus-lightning-pulse 5s ease-in-out infinite;
+  opacity: 0.42 !important;
+  animation: greek-olympus-lightning-pulse 5s ease-in-out infinite;
 }
 
-body[data-card-theme="olympus_2d"] .unq-ref-brand,
-#profile-card-live-preview[data-preview-theme="olympus_2d"] .unq-ref-brand {
+body[data-card-theme="greek_olympus_2d"] .unq-ref-brand,
+#profile-card-live-preview[data-preview-theme="greek_olympus_2d"] .unq-ref-brand {
   margin: 0 0 18px !important;
 }
 
-body[data-card-theme="olympus_2d"] .unq-ref-brand h2,
-#profile-card-live-preview[data-preview-theme="olympus_2d"] .unq-ref-brand h2 {
-  color: #FFD700 !important;
-  font-family: "Cinzel", "Montserrat", "Inter", serif !important;
-  font-size: 34px !important;
+body[data-card-theme="greek_olympus_2d"] .unq-ref-brand h2,
+#profile-card-live-preview[data-preview-theme="greek_olympus_2d"] .unq-ref-brand h2 {
+  color: #131B15 !important;
+  font-family: "Cinzel", "Playfair Display", "Montserrat", serif !important;
+  font-size: 36px !important;
   font-weight: 900 !important;
-  letter-spacing: 0 !important;
+  letter-spacing: 0.03em !important;
   line-height: 1 !important;
-  text-shadow: 2px 2px 0 #000000 !important;
+  text-shadow: 3px 3px 0 rgba(212, 175, 55, 0.36) !important;
 }
 
-body[data-card-theme="olympus_2d"] .unq-ref-brand p,
-#profile-card-live-preview[data-preview-theme="olympus_2d"] .unq-ref-brand p {
-  color: #F3E5AB !important;
+body[data-card-theme="greek_olympus_2d"] .unq-ref-brand p,
+#profile-card-live-preview[data-preview-theme="greek_olympus_2d"] .unq-ref-brand p {
+  color: #4A6B53 !important;
   font-family: "Montserrat", "Inter", sans-serif !important;
-  font-weight: 800 !important;
-  text-shadow: 1px 1px 0 #000000 !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
 }
 
-body[data-card-theme="olympus_2d"] .unq-ref-profile,
-body[data-card-theme="olympus_2d"] .unq-ref-profile.has-pets,
-body[data-card-theme="olympus_2d"] .unq-ref-profile.has-emoji-pack,
-body[data-card-theme="olympus_2d"] .unq-ref-profile.has-emoji-pack.has-pets,
-#profile-card-live-preview[data-preview-theme="olympus_2d"] .unq-ref-profile,
-#profile-card-live-preview[data-preview-theme="olympus_2d"] .unq-ref-profile.has-pets,
-#profile-card-live-preview[data-preview-theme="olympus_2d"] .unq-ref-profile.has-emoji-pack,
-#profile-card-live-preview[data-preview-theme="olympus_2d"] .unq-ref-profile.has-emoji-pack.has-pets {
+body[data-card-theme="greek_olympus_2d"] .unq-ref-profile,
+body[data-card-theme="greek_olympus_2d"] .unq-ref-profile.has-pets,
+body[data-card-theme="greek_olympus_2d"] .unq-ref-profile.has-emoji-pack,
+body[data-card-theme="greek_olympus_2d"] .unq-ref-profile.has-emoji-pack.has-pets,
+#profile-card-live-preview[data-preview-theme="greek_olympus_2d"] .unq-ref-profile,
+#profile-card-live-preview[data-preview-theme="greek_olympus_2d"] .unq-ref-profile.has-pets,
+#profile-card-live-preview[data-preview-theme="greek_olympus_2d"] .unq-ref-profile.has-emoji-pack,
+#profile-card-live-preview[data-preview-theme="greek_olympus_2d"] .unq-ref-profile.has-emoji-pack.has-pets {
   height: auto !important;
   min-height: 0 !important;
   margin: 0 !important;
   padding: 0 !important;
 }
 
-body[data-card-theme="olympus_2d"] .unq-ref-name,
-body[data-card-theme="olympus_2d"] .unq-ref-name-text,
-#profile-card-live-preview[data-preview-theme="olympus_2d"] .unq-ref-name,
-#profile-card-live-preview[data-preview-theme="olympus_2d"] .unq-ref-name-text {
-  color: #FFFFFF !important;
-  font-family: "Montserrat", "Inter", sans-serif !important;
+body[data-card-theme="greek_olympus_2d"] .unq-ref-avatar-wrap,
+#profile-card-live-preview[data-preview-theme="greek_olympus_2d"] .unq-ref-avatar-wrap {
+  border: 3px solid #131B15 !important;
+  box-shadow: 5px 5px 0 #131B15, 0 0 0 3px #D4AF37 !important;
+}
+
+body[data-card-theme="greek_olympus_2d"] .unq-ref-name,
+body[data-card-theme="greek_olympus_2d"] .unq-ref-name-text,
+#profile-card-live-preview[data-preview-theme="greek_olympus_2d"] .unq-ref-name,
+#profile-card-live-preview[data-preview-theme="greek_olympus_2d"] .unq-ref-name-text {
+  color: #131B15 !important;
+  font-family: "Cinzel", "Playfair Display", "Montserrat", serif !important;
   font-weight: 900 !important;
-  letter-spacing: 0 !important;
-  text-shadow: 2px 2px 0 #000000 !important;
+  letter-spacing: 0.04em !important;
+  text-shadow: 2px 2px 0 rgba(212, 175, 55, 0.34) !important;
 }
 
-body[data-card-theme="olympus_2d"] .unq-ref-role,
-body[data-card-theme="olympus_2d"] .unq-ref-bio,
-#profile-card-live-preview[data-preview-theme="olympus_2d"] .unq-ref-role,
-#profile-card-live-preview[data-preview-theme="olympus_2d"] .unq-ref-bio {
-  color: #F3E5AB !important;
-  font-family: "Montserrat", "Inter", sans-serif !important;
-  font-weight: 700 !important;
-}
-
-body[data-card-theme="olympus_2d"] .unq-ref-action-btn,
-body[data-card-theme="olympus_2d"] .unq-ref-follow-toggle,
-body[data-card-theme="olympus_2d"] .unq-follow-action-btn,
-body[data-card-theme="olympus_2d"] .unq-ref-phone,
-#profile-card-live-preview[data-preview-theme="olympus_2d"] .unq-ref-action-btn,
-#profile-card-live-preview[data-preview-theme="olympus_2d"] .unq-ref-follow-toggle,
-#profile-card-live-preview[data-preview-theme="olympus_2d"] .unq-follow-action-btn,
-#profile-card-live-preview[data-preview-theme="olympus_2d"] .unq-ref-phone {
-  border: 2px solid #D4AF37 !important;
-  border-radius: 14px !important;
-  background: #14151B !important;
-  color: #FFFFFF !important;
+body[data-card-theme="greek_olympus_2d"] .unq-ref-role,
+body[data-card-theme="greek_olympus_2d"] .unq-ref-bio,
+#profile-card-live-preview[data-preview-theme="greek_olympus_2d"] .unq-ref-role,
+#profile-card-live-preview[data-preview-theme="greek_olympus_2d"] .unq-ref-bio {
+  color: #4A6B53 !important;
   font-family: "Montserrat", "Inter", sans-serif !important;
   font-weight: 800 !important;
-  box-shadow: 3px 3px 0 #000000 !important;
 }
 
-body[data-card-theme="olympus_2d"] .unq-ref-action-btn:hover,
-body[data-card-theme="olympus_2d"] .unq-ref-follow-toggle:hover,
-body[data-card-theme="olympus_2d"] .unq-follow-action-btn:hover,
-body[data-card-theme="olympus_2d"] .unq-ref-phone:hover,
-#profile-card-live-preview[data-preview-theme="olympus_2d"] .unq-ref-action-btn:hover,
-#profile-card-live-preview[data-preview-theme="olympus_2d"] .unq-ref-follow-toggle:hover,
-#profile-card-live-preview[data-preview-theme="olympus_2d"] .unq-follow-action-btn:hover,
-#profile-card-live-preview[data-preview-theme="olympus_2d"] .unq-ref-phone:hover {
-  background: #1E1E24 !important;
-  color: #FFD700 !important;
-  transform: translate(-1px, -1px) !important;
-  box-shadow: 5px 5px 0 #000000, 0 0 18px rgba(255, 215, 0, 0.18) !important;
+body[data-card-theme="greek_olympus_2d"] .unq-ref-action-btn,
+body[data-card-theme="greek_olympus_2d"] .unq-ref-follow-toggle,
+body[data-card-theme="greek_olympus_2d"] .unq-follow-action-btn,
+body[data-card-theme="greek_olympus_2d"] .unq-ref-phone,
+#profile-card-live-preview[data-preview-theme="greek_olympus_2d"] .unq-ref-action-btn,
+#profile-card-live-preview[data-preview-theme="greek_olympus_2d"] .unq-ref-follow-toggle,
+#profile-card-live-preview[data-preview-theme="greek_olympus_2d"] .unq-follow-action-btn,
+#profile-card-live-preview[data-preview-theme="greek_olympus_2d"] .unq-ref-phone {
+  border: 3px solid #131B15 !important;
+  border-radius: 14px !important;
+  background: linear-gradient(135deg, #FFD13B 0%, #D4AF37 100%) !important;
+  color: #131B15 !important;
+  font-family: "Montserrat", "Inter", sans-serif !important;
+  font-weight: 900 !important;
+  box-shadow: 5px 5px 0 #131B15 !important;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease !important;
 }
 
-#profile-card-live-preview[data-preview-theme="olympus_2d"] {
-  --preview-border-color: #D4AF37;
+body[data-card-theme="greek_olympus_2d"] .unq-ref-action-btn:hover,
+body[data-card-theme="greek_olympus_2d"] .unq-ref-follow-toggle:hover,
+body[data-card-theme="greek_olympus_2d"] .unq-follow-action-btn:hover,
+body[data-card-theme="greek_olympus_2d"] .unq-ref-phone:hover,
+#profile-card-live-preview[data-preview-theme="greek_olympus_2d"] .unq-ref-action-btn:hover,
+#profile-card-live-preview[data-preview-theme="greek_olympus_2d"] .unq-ref-follow-toggle:hover,
+#profile-card-live-preview[data-preview-theme="greek_olympus_2d"] .unq-follow-action-btn:hover,
+#profile-card-live-preview[data-preview-theme="greek_olympus_2d"] .unq-ref-phone:hover {
+  background: linear-gradient(135deg, #F3E5AB 0%, #FFD13B 100%) !important;
+  transform: translate(-2px, -2px) !important;
+  box-shadow: 7px 7px 0 #131B15 !important;
+}
+
+#profile-card-live-preview[data-preview-theme="greek_olympus_2d"] {
+  --preview-border-color: #131B15;
   --preview-page-bg:
-    radial-gradient(circle at 50% 0%, rgba(255, 215, 0, 0.22) 0%, transparent 58%),
-    linear-gradient(135deg, #0A0A0C 0%, #14151B 100%);
-  --preview-screen-opacity: 0.46;
+    radial-gradient(circle at 50% 45%, rgba(74, 107, 83, 0.42) 0%, transparent 42%),
+    linear-gradient(135deg, #0F1A14 0%, #1B2A21 100%);
+  --preview-screen-opacity: 0.44;
   --preview-screen-pattern:
-    linear-gradient(114deg, transparent 0 42%, rgba(255, 215, 0, 0.14) 42% 47%, transparent 47% 100%);
-  --preview-overlay-opacity: 0.64;
+    radial-gradient(circle at 50% 50%, rgba(212, 175, 55, 0.2) 0 34%, transparent 35%),
+    repeating-linear-gradient(90deg, rgba(243, 229, 171, 0.1) 0 3px, transparent 3px 24px);
+  --preview-overlay-opacity: 0.5;
   --preview-overlay-pattern:
-    radial-gradient(circle at 50% 0%, rgba(255, 215, 0, 0.18) 0%, transparent 64%);
+    linear-gradient(112deg, transparent 0 42%, rgba(255, 209, 59, 0.2) 42% 45%, transparent 45% 100%);
 }
 
-@keyframes olympus-lightning-pulse {
+@keyframes greek-olympus-wreath-pulse {
   0%, 100% {
-    opacity: 0.32;
-    transform: scale(1);
+    opacity: 0.72;
+    transform: translate(-50%, -50%) scale(0.98);
   }
   50% {
-    opacity: 0.82;
-    transform: scale(1.03);
+    opacity: 0.98;
+    transform: translate(-50%, -50%) scale(1.03);
+  }
+}
+
+@keyframes greek-olympus-lightning-pulse {
+  0%, 100% {
+    opacity: 0.28;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    opacity: 0.78;
+    transform: translate(-50%, -50%) scale(1.04);
+  }
+}
+
+@keyframes greek-olympus-gold-pulse {
+  0%, 100% {
+    filter: saturate(0.96);
+  }
+  50% {
+    filter: saturate(1.18) brightness(1.05);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  body[data-card-theme="olympus_2d"]::before,
-  body[data-card-theme="olympus_2d"] .public-card-shell::after,
-  body[data-card-theme="olympus_2d"] .unq-ref-shell::after,
-  body[data-card-theme="olympus_2d"] .unq-ref-card-overlay,
-  #profile-card-live-preview[data-preview-theme="olympus_2d"] .public-card-shell::after,
-  #profile-card-live-preview[data-preview-theme="olympus_2d"] .unq-ref-shell::after,
-  #profile-card-live-preview[data-preview-theme="olympus_2d"] .unq-ref-card-overlay {
+  body[data-card-theme="greek_olympus_2d"]::before,
+  body[data-card-theme="greek_olympus_2d"]::after,
+  body[data-card-theme="greek_olympus_2d"] .public-card-shell::before,
+  body[data-card-theme="greek_olympus_2d"] .public-card-shell::after,
+  body[data-card-theme="greek_olympus_2d"] .unq-ref-shell::before,
+  body[data-card-theme="greek_olympus_2d"] .unq-ref-shell::after,
+  body[data-card-theme="greek_olympus_2d"] .unq-ref-card-overlay,
+  #profile-card-live-preview[data-preview-theme="greek_olympus_2d"] .public-card-shell::before,
+  #profile-card-live-preview[data-preview-theme="greek_olympus_2d"] .public-card-shell::after,
+  #profile-card-live-preview[data-preview-theme="greek_olympus_2d"] .unq-ref-shell::before,
+  #profile-card-live-preview[data-preview-theme="greek_olympus_2d"] .unq-ref-shell::after,
+  #profile-card-live-preview[data-preview-theme="greek_olympus_2d"] .unq-ref-card-overlay {
     animation: none !important;
   }
 }
 
 @media (max-width: 480px) {
-  body[data-card-theme="olympus_2d"] main {
+  body[data-card-theme="greek_olympus_2d"] main {
     justify-content: flex-start !important;
     padding-top: max(8px, env(safe-area-inset-top, 0px)) !important;
     padding-bottom: max(8px, env(safe-area-inset-bottom, 0px)) !important;
   }
 
-  body[data-card-theme="olympus_2d"] .public-card-shell,
-  body[data-card-theme="olympus_2d"] .unq-ref-shell,
-  #profile-card-live-preview[data-preview-theme="olympus_2d"] .public-card-shell,
-  #profile-card-live-preview[data-preview-theme="olympus_2d"] .unq-ref-shell {
+  body[data-card-theme="greek_olympus_2d"] .public-card-shell,
+  body[data-card-theme="greek_olympus_2d"] .unq-ref-shell,
+  #profile-card-live-preview[data-preview-theme="greek_olympus_2d"] .public-card-shell,
+  #profile-card-live-preview[data-preview-theme="greek_olympus_2d"] .unq-ref-shell {
     width: calc(100% - 22px) !important;
     margin: 8px auto !important;
-    padding: 30px 15px 20px !important;
-    box-shadow: 5px 5px 0 #000000, 0 0 16px rgba(212, 175, 55, 0.16) !important;
+    padding: 34px 14px 20px !important;
+    box-shadow: 6px 6px 0 #131B15 !important;
+  }
+
+  body[data-card-theme="greek_olympus_2d"]::before {
+    width: 112vw;
   }
 }
