@@ -48,6 +48,7 @@ const { publicOrderRateLimit, publicGameSpinRateLimit } = require("../../middlew
 const { getUserSession, requireUserApi } = require("../../middleware/auth");
 const { OrderRequestSchema } = require("../../validation/order-request");
 const { getSetting, getManySettings } = require("../../services/platform-settings");
+const { resolveSlugTotalLimit } = require("../../services/slug-capacity");
 const { getOfficialUnqClientConfig } = require("../../services/official-unq-config");
 const { normalizeButtonType, getAnalyticsSessionId, recordView } = require("../../services/tap-tracker");
 const { resolveClientIp, buildViewerFingerprint } = require("../../services/request-ip");
@@ -1257,9 +1258,11 @@ router.get(
   "/slug-counter",
   asyncHandler(async (_req, res) => {
     const taken = await getTakenSlugsSet();
+    const configuredTotal = await getSetting("platform_total_slugs", env.SLUG_TOTAL_LIMIT);
+    const total = resolveSlugTotalLimit(configuredTotal, env.SLUG_TOTAL_LIMIT);
     res.json({
       taken: taken.size,
-      total: env.SLUG_TOTAL_LIMIT,
+      total,
     });
   }),
 );

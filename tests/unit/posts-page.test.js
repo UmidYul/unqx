@@ -57,6 +57,7 @@ describe("public posts page", () => {
     expect(html).toContain("<h1");
     expect(html).toContain("Посты");
     expect(html).toContain('href="/posts"');
+    expect(html).not.toContain("UNQX&nbsp;Leaders");
     expect(html).toContain("Первый публичный пост");
     expect(html).toContain('data-home-post-like');
     expect(html).toContain('data-home-post-comment');

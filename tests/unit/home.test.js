@@ -7,6 +7,7 @@ process.env.ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD_HASH || "test-admin
 const { BASE_PRICE, calculateSlugPrice } = require("../../src/services/slug-pricing");
 const { applyFlashSaleToPrice } = require("../../src/services/flash-sales");
 const { getEffectivePlan, getSlugLimit } = require("../../src/services/profile");
+const { resolveSlugTotalLimit } = require("../../src/services/slug-capacity");
 
 async function renderHomeTemplate() {
   const file = path.join(process.cwd(), "src", "views", "public", "home.ejs");
@@ -237,8 +238,15 @@ describe("home page", () => {
     expect(html).toContain('id="order-modal-close-top"');
     expect(html).toContain('<body class="antialiased" style="background-color: #FAFAFA;">');
     expect(html).toContain('data-page="public-home" style="background-color: #FAFAFA;"');
+    expect(html).not.toContain("UNQX&nbsp;Leaders");
     expect(html).not.toContain("pointer-events-none fixed inset-0");
     expect(html).not.toContain("background-size: 40px 40px");
+  });
+
+  test("normalizes legacy slug capacity to the current platform limit", () => {
+    expect(resolveSlugTotalLimit(17576)).toBe(17_576_000);
+    expect(resolveSlugTotalLimit("17576")).toBe(17_576_000);
+    expect(resolveSlugTotalLimit(17_576_000)).toBe(17_576_000);
   });
 
   test("has one primary page heading", async () => {

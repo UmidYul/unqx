@@ -27,6 +27,7 @@ const { normalizeRefCode } = require("../../services/referrals");
 const { getActiveAuction } = require("../../services/auctions");
 const { getPricingSettings } = require("../../services/pricing-settings");
 const { getManySettings } = require("../../services/platform-settings");
+const { resolveSlugTotalLimit } = require("../../services/slug-capacity");
 const { listAdvertisements } = require("../../services/advertisements");
 const { listEventCardReleases } = require("../../services/event-card-releases");
 const { findTrackById, normalizeTrackId } = require("../../services/profile-music");
@@ -1548,7 +1549,7 @@ router.get(
       description: "UNQX personal dashboard: card settings, UNQ, analytics, requests and profile settings.",
       image: defaultSocialImage,
       testimonials,
-      slugTotalLimit: Number(publicSettingsRaw.platform_total_slugs || env.SLUG_TOTAL_LIMIT),
+      slugTotalLimit: resolveSlugTotalLimit(publicSettingsRaw.platform_total_slugs, env.SLUG_TOTAL_LIMIT),
       leaderboardEnabled: Boolean(leaderboardSettings.enabled),
       activeFlashSale: activeFlashSale
         ? {

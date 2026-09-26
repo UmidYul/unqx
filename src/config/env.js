@@ -1,6 +1,7 @@
 const path = require("node:path");
 const dotenv = require("dotenv");
 const { z } = require("zod");
+const { CURRENT_SLUG_TOTAL_LIMIT } = require("../services/slug-capacity");
 const bcrypt = require("bcryptjs");
 
 function parseBoolean(value) {
@@ -168,7 +169,7 @@ const schema = z.object({
   FCM_PUSH_ENABLED: z.string().optional(),
   FIREBASE_SERVICE_ACCOUNT_JSON: z.string().min(1).optional(),
   FIREBASE_SERVICE_ACCOUNT_B64: z.string().min(1).optional(),
-  SLUG_TOTAL_LIMIT: z.coerce.number().int().positive().default(17_576_000),
+  SLUG_TOTAL_LIMIT: z.coerce.number().int().positive().default(CURRENT_SLUG_TOTAL_LIMIT),
   TIMEZONE: z.string().min(1).default("Asia/Tashkent"),
   ROOT_DIR: z.string().optional(),
   TRUST_PROXY: z.string().optional(),

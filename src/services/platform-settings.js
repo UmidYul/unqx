@@ -1,5 +1,6 @@
 const { prisma } = require("../db/prisma");
 const { env } = require("../config/env");
+const { CURRENT_SLUG_TOTAL_LIMIT } = require("./slug-capacity");
 
 const CACHE_TTL_MS = 60 * 1000;
 
@@ -181,7 +182,7 @@ const DEFAULT_SETTINGS = [
   { key: "platform_name", group: "platform", type: "text", label: "Название платформы", value: "UNQX" },
   { key: "platform_tagline", group: "platform", type: "text", label: "Слоган", value: "Твой UNQ. Твой бренд. Навсегда." },
   { key: "platform_hero_subtitle", group: "platform", type: "textarea", label: "Подзаголовок hero", value: "Цифровая визитка за 1 минуту - одна ссылка вместо тысячи слов." },
-  { key: "platform_total_slugs", group: "platform", type: "number", label: "Всего slug", value: 17_576_000 },
+  { key: "platform_total_slugs", group: "platform", type: "number", label: "Всего slug", value: CURRENT_SLUG_TOTAL_LIMIT },
   {
     key: "platform_today_visitors_adjustment",
     group: "platform",
