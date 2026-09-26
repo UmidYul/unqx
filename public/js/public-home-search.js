@@ -1343,7 +1343,7 @@ function initHeroSlugOccupancy() {
     return;
   }
 
-  const TOTAL_LIMIT = 17_576;
+  const TOTAL_LIMIT = 17_576_000;
   const format = (value) => Number(value || 0).toLocaleString("ru-RU");
 
   async function loadOccupancy() {
@@ -1359,13 +1359,15 @@ function initHeroSlugOccupancy() {
 
       const payload = await response.json();
       const taken = Number(payload?.taken);
+      const total = Number(payload?.total);
       if (!Number.isFinite(taken)) {
         throw new Error("invalid_payload");
       }
 
-      const safeTaken = Math.max(0, Math.min(TOTAL_LIMIT, taken));
-      const left = Math.max(0, TOTAL_LIMIT - safeTaken);
-      lineNode.textContent = `Занято ${format(safeTaken)} из ${format(TOTAL_LIMIT)} · осталось ${format(left)}`;
+      const limit = Number.isFinite(total) && total > 0 ? total : TOTAL_LIMIT;
+      const safeTaken = Math.max(0, Math.min(limit, taken));
+      const left = Math.max(0, limit - safeTaken);
+      lineNode.textContent = `Занято ${format(safeTaken)} из ${format(limit)} · осталось ${format(left)}`;
       lineNode.classList.remove("hidden");
     } catch {
       lineNode.classList.add("hidden");

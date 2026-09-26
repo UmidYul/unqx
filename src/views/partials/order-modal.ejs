@@ -7,12 +7,12 @@
   plan: userSession.plan || "none" , photoUrl: userSession.avatarUrl || "" , } : null; const
   modalSessionUserJson=JSON.stringify(modalSessionUser).replace(/</g, "\\u003c" ); %>
   <script nonce="<%= cspNonce %>">
-    window.UNQOrderModalSessionUser = <% - modalSessionUserJson %>;
+    window.UNQOrderModalSessionUser = <%- modalSessionUserJson %>;
   </script>
   <% const officialUnqClientJson=JSON.stringify(typeof officialUnqClientConfig==='object' && officialUnqClientConfig
     !==null ? officialUnqClientConfig : null).replace(/</g, "\\u003c" ); %>
     <script nonce="<%= cspNonce %>">
-      window.__UNQ_OFFICIAL_CLIENT_CONFIG = <% - officialUnqClientJson %>;
+      window.__UNQ_OFFICIAL_CLIENT_CONFIG = <%- officialUnqClientJson %>;
     </script>
     <div id="order-modal-root" class="fixed inset-0 z-[70] hidden">
       <div id="order-modal-backdrop" class="absolute inset-0 bg-black/75"></div>

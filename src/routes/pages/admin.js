@@ -193,7 +193,9 @@ router.post(
     }
 
     res.clearCookie(SESSION_COOKIE_NAME, buildCookieOptions(req, { httpOnly: true }));
+    res.clearCookie("unqx.sid", buildCookieOptions(req, { httpOnly: true }));
     for (const legacyName of LEGACY_SESSION_COOKIE_NAMES) {
+      if (legacyName === "unqx.sid") continue;
       res.clearCookie(legacyName, buildCookieOptions(req, { httpOnly: true }));
       res.clearCookie(legacyName, {
         path: "/",
@@ -214,7 +216,9 @@ router.post(
       await logoutAdmin(req);
     }
     res.clearCookie(SESSION_COOKIE_NAME, buildCookieOptions(req, { httpOnly: true }));
+    res.clearCookie("unqx.sid", buildCookieOptions(req, { httpOnly: true }));
     for (const legacyName of LEGACY_SESSION_COOKIE_NAMES) {
+      if (legacyName === "unqx.sid") continue;
       res.clearCookie(legacyName, buildCookieOptions(req, { httpOnly: true }));
       res.clearCookie(legacyName, {
         path: "/",

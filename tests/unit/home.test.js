@@ -13,7 +13,7 @@ async function renderHomeTemplate() {
   return ejs.renderFile(file, {
     title: "UNQX | Цифровая визитка за 1 минуту",
     description: "Одна ссылка вместо тысячи слов",
-    slugTotalLimit: 17576,
+    slugTotalLimit: 17576000,
     leaderboardEnabled: true,
     activeFlashSale: null,
     nextDrop: null,
@@ -38,7 +38,7 @@ async function renderHomeTemplateAuthenticated() {
   return ejs.renderFile(file, {
     title: "UNQX | Цифровая визитка за 1 минуту",
     description: "Одна ссылка вместо тысячи слов",
-    slugTotalLimit: 17576,
+    slugTotalLimit: 17576000,
     leaderboardEnabled: true,
     activeFlashSale: null,
     nextDrop: null,
@@ -67,7 +67,7 @@ async function renderHomeTemplateWithPosts() {
   return ejs.renderFile(file, {
     title: "UNQX | Цифровая визитка за 1 минуту",
     description: "Одна ссылка вместо тысячи слов",
-    slugTotalLimit: 17576,
+    slugTotalLimit: 17576000,
     leaderboardEnabled: true,
     activeFlashSale: null,
     nextDrop: null,
@@ -114,7 +114,7 @@ async function renderHomeTemplateWithShowcaseCards() {
   return ejs.renderFile(file, {
     title: "UNQX | Цифровая визитка за 1 минуту",
     description: "Одна ссылка вместо тысячи слов",
-    slugTotalLimit: 17576,
+    slugTotalLimit: 17576000,
     leaderboardEnabled: true,
     activeFlashSale: null,
     nextDrop: null,
@@ -181,7 +181,7 @@ async function renderHomeTemplateWithFlashSale() {
   return ejs.renderFile(file, {
     title: "UNQX | Цифровая визитка за 1 минуту",
     description: "Одна ссылка вместо тысячи слов",
-    slugTotalLimit: 17576,
+    slugTotalLimit: 17576000,
     leaderboardEnabled: true,
     activeFlashSale: {
       id: "flash_1",
@@ -345,6 +345,8 @@ describe("home page", () => {
     expect(source).toContain('const STORY_TEMPLATE_URL = "/images/instagram-story-template.png";');
     expect(source).toContain("const letters = buildRandomLetters();");
     expect(source).toContain("const digits = buildRandomDigits();");
+    expect(source).toContain("const TOTAL_LIMIT = 17_576_000;");
+    expect(source).toContain("const limit = Number.isFinite(total) && total > 0 ? total : TOTAL_LIMIT;");
     expect(source).toContain('lettersInput.dispatchEvent(new Event("input", { bubbles: true }));');
     expect(source).toContain('window.html2canvas(root, {');
     expect(source).toContain("scale: 2,");

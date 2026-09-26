@@ -11,11 +11,11 @@
 </head>
 
 <body class="antialiased bg-neutral-50" data-page="drops-page"
-  data-telegram-bot-username="<%= telegramBotUsername || '' %>" data-authenticated="<%= viewerUserId ? '1' : '0' %>">
+  data-telegram-bot-username="<%= telegramBotUsername || '' %>" data-authenticated="<%= typeof viewerUserId !== 'undefined' && viewerUserId ? '1' : '0' %>">
   <%
     const dropsList = Array.isArray(drops) ? drops : [];
     const hasDrops = dropsList.length > 0;
-    const joinedSet = new Set((Array.isArray(joinedDropIds) ? joinedDropIds : []).map((item) => String(item || "")));
+    const joinedSet = new Set((typeof joinedDropIds !== "undefined" && Array.isArray(joinedDropIds) ? joinedDropIds : []).map((item) => String(item || "")));
     const summaryRaw = typeof dropsSummary === "object" && dropsSummary ? dropsSummary : {};
     const summary = {
       live: Number(summaryRaw.live || 0),
@@ -47,8 +47,8 @@
         <section class="box-border flex min-h-[calc(100dvh-12rem)] items-center justify-center">
           <article class="w-full max-w-lg rounded-2xl border border-neutral-200 bg-white p-8 text-center">
             <p class="text-xs uppercase tracking-[0.18em] text-neutral-500">Релизы</p>
-            <h1 class="mt-3 text-2xl font-bold text-neutral-900">Пока нет активных релизов</h1>
-            <p class="mt-2 text-sm text-neutral-600">Следующие запуски появятся здесь после публикации дропа.</p>
+            <h1 class="mt-3 text-2xl font-bold text-neutral-900">Пока нет активных дропов</h1>
+            <p class="mt-2 text-sm text-neutral-600">Следующие запуски появятся здесь совсем скоро.</p>
           </article>
         </section>
         <% } else { %>
@@ -175,12 +175,16 @@
     <div id="drops-toast-region" aria-live="polite"
       class="pointer-events-none fixed bottom-4 right-4 z-50 hidden max-w-sm rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-700 shadow-lg">
     </div>
-    <%- include('../partials/order-modal') %>
+    <%- include('../partials/order-modal', {
+      userSession: typeof userSession !== "undefined" ? userSession : null,
+      publicSettings: typeof publicSettings !== "undefined" ? publicSettings : {},
+      officialUnqClientConfig: typeof officialUnqClientConfig !== "undefined" ? officialUnqClientConfig : null,
+      cspNonce,
+    }) %>
       <script nonce="<%= cspNonce %>" src="/js/site-dialogs.js"></script>
       <script nonce="<%= cspNonce %>" src="/js/official-unq-letters.js"></script>
-      <script nonce="<%= cspNonce %>" src="/js/order-modal.js?v=<%= encodeURIComponent(assetVersion || '') %>"></script>
+      <script nonce="<%= cspNonce %>" src="/js/order-modal.js?v=<%= encodeURIComponent(typeof assetVersion !== 'undefined' ? assetVersion || '' : '') %>"></script>
       <script nonce="<%= cspNonce %>" src="/js/drops.js"></script>
 </body>
 
 </html>
-

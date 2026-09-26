@@ -1,9 +1,7 @@
 const { getSubscriptionSnapshot, normalizeSubscriptionPlan } = require("./subscription");
 const { hasActivePublicProfile } = require("./public-handle");
 
-// Временный флаг: все пользователи получают премиум функционал.
-// Чтобы вернуть обратно — поменяй на false.
-const PREMIUM_FOR_ALL = true;
+const PREMIUM_FOR_ALL = false;
 
 const PROFILE_THEME_KEYS = [
   "default_dark",
