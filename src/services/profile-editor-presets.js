@@ -74,6 +74,13 @@ const SIGNATURE_THEMES = [
     premiumRequired: true,
   },
   {
+    id: "olympus_2d",
+    label: "Crystal-Like Drops",
+    description: "Greek cartoon gold and Zeus lightning",
+    swatchStyle: "border-color:#D4AF37;background:radial-gradient(circle at 50% 0%,rgba(255,215,0,.26),transparent 58%),linear-gradient(135deg,#0A0A0C 0%,#14151B 100%);box-shadow:6px 6px 0 #000000,inset 0 0 0 2px rgba(212,175,55,.5);",
+    premiumRequired: true,
+  },
+  {
     id: "aurora_codex",
     label: "Aurora Scriptum",
     description: "Renaissance parchment",

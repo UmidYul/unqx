@@ -18089,3 +18089,273 @@ body[data-card-theme="uzbekistan_2d"] .unq-ref-phone:hover,
       inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
   }
 }
+
+/* Olympus 2D Flat Mythic theme. */
+body[data-card-theme="olympus_2d"] {
+  --theme-page-bg: #0A0A0C;
+  --theme-screen-opacity: 0.42;
+  --theme-screen-pattern:
+    radial-gradient(circle at 50% 0%, rgba(255, 215, 0, 0.16) 0%, transparent 58%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0 1px, transparent 1px 16px);
+  --unqx-nav-bg: #0A0A0C;
+  --unqx-nav-border: #D4AF37;
+  --unqx-nav-border-width: 2px;
+  --unqx-nav-text: #F3E5AB;
+  --unqx-nav-icon: #FFD700;
+  --unqx-nav-input: #FFFFFF;
+  --unqx-nav-placeholder: rgba(243, 229, 171, 0.54);
+  --unqx-nav-chip: #FFD700;
+  --unqx-nav-hover-bg: #14151B;
+  --unqx-nav-hover-text: #FFD700;
+  --unqx-nav-hover-border: #FFD700;
+  --unqx-nav-shadow: 4px 4px 0 #000000, 0 0 20px rgba(212, 175, 55, 0.18);
+  --unqx-nav-hover-shadow: 6px 6px 0 #000000, 0 0 26px rgba(255, 215, 0, 0.22);
+  --unqx-search-result-text: #FFFFFF;
+  --unqx-search-result-strong: #FFD700;
+  --unqx-search-result-muted: rgba(243, 229, 171, 0.72);
+  --unqx-search-result-hover: rgba(255, 215, 0, 0.1);
+  background-color: #0A0A0C !important;
+  background-image:
+    radial-gradient(circle at 50% 0%, rgba(255, 215, 0, 0.14) 0%, transparent 52%),
+    radial-gradient(circle at 16% 84%, rgba(0, 229, 255, 0.08) 0%, transparent 34%),
+    linear-gradient(135deg, #0A0A0C 0%, #14151B 100%) !important;
+  font-family: "Montserrat", "Inter", "Segoe UI", sans-serif !important;
+}
+
+body[data-card-theme="olympus_2d"]::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(115deg, transparent 0 42%, rgba(255, 215, 0, 0.08) 42% 45%, transparent 45% 100%),
+    linear-gradient(115deg, transparent 0 50%, rgba(255, 215, 0, 0.05) 50% 53%, transparent 53% 100%);
+  animation: olympus-lightning-pulse 4s ease-in-out infinite;
+}
+
+body[data-card-theme="olympus_2d"] main {
+  justify-content: center !important;
+}
+
+body[data-card-theme="olympus_2d"] .public-card-shell,
+body[data-card-theme="olympus_2d"] .unq-ref-shell,
+#profile-card-live-preview[data-preview-theme="olympus_2d"] .public-card-shell,
+#profile-card-live-preview[data-preview-theme="olympus_2d"] .unq-ref-shell {
+  position: relative !important;
+  display: block !important;
+  width: 92% !important;
+  max-width: 440px !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  margin: 18px auto !important;
+  padding: 34px 22px 28px !important;
+  overflow: hidden !important;
+  border: 3px solid #1E1E24 !important;
+  border-radius: 16px !important;
+  outline: 2px solid #D4AF37 !important;
+  outline-offset: -6px !important;
+  background-color: #0A0A0C !important;
+  background-image:
+    radial-gradient(circle at 50% 0%, rgba(255, 215, 0, 0.12) 0%, transparent 70%),
+    linear-gradient(135deg, #0A0A0C 0%, #14151B 100%) !important;
+  box-shadow: 6px 6px 0 #000000, 0 0 20px rgba(212, 175, 55, 0.2) !important;
+}
+
+body[data-card-theme="olympus_2d"] .public-card-shell::before,
+body[data-card-theme="olympus_2d"] .unq-ref-shell::before,
+#profile-card-live-preview[data-preview-theme="olympus_2d"] .public-card-shell::before,
+#profile-card-live-preview[data-preview-theme="olympus_2d"] .unq-ref-shell::before {
+  content: "ОБЛАДАТЕЛЬ ЛИМИТИРОВАННОЙ КАРТЫ";
+  position: relative !important;
+  z-index: 3 !important;
+  display: block !important;
+  width: fit-content !important;
+  max-width: 100% !important;
+  margin: 0 auto 14px !important;
+  color: #F3E5AB !important;
+  font-family: "Cinzel", "Montserrat", "Inter", serif !important;
+  font-size: 11px !important;
+  font-weight: 900 !important;
+  letter-spacing: 2px !important;
+  line-height: 1.35 !important;
+  text-align: center !important;
+  text-transform: uppercase !important;
+  text-shadow: 2px 2px 0 #000000 !important;
+}
+
+body[data-card-theme="olympus_2d"] .public-card-shell::after,
+body[data-card-theme="olympus_2d"] .unq-ref-shell::after,
+#profile-card-live-preview[data-preview-theme="olympus_2d"] .public-card-shell::after,
+#profile-card-live-preview[data-preview-theme="olympus_2d"] .unq-ref-shell::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(114deg, transparent 0 42%, rgba(255, 215, 0, 0.08) 42% 47%, transparent 47% 100%),
+    linear-gradient(90deg, #D4AF37 0 12px, transparent 12px calc(100% - 12px), #D4AF37 calc(100% - 12px) 100%),
+    linear-gradient(0deg, #D4AF37 0 12px, transparent 12px calc(100% - 12px), #D4AF37 calc(100% - 12px) 100%);
+  opacity: 0.9;
+  animation: olympus-lightning-pulse 4s ease-in-out infinite;
+}
+
+body[data-card-theme="olympus_2d"] .unq-ref-shell > *,
+#profile-card-live-preview[data-preview-theme="olympus_2d"] .unq-ref-shell > * {
+  position: relative;
+  z-index: 2;
+}
+
+body[data-card-theme="olympus_2d"] .unq-ref-card-overlay,
+#profile-card-live-preview[data-preview-theme="olympus_2d"] .unq-ref-card-overlay {
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 1 !important;
+  opacity: 0.72 !important;
+  animation: olympus-lightning-pulse 5s ease-in-out infinite;
+}
+
+body[data-card-theme="olympus_2d"] .unq-ref-brand,
+#profile-card-live-preview[data-preview-theme="olympus_2d"] .unq-ref-brand {
+  margin: 0 0 18px !important;
+}
+
+body[data-card-theme="olympus_2d"] .unq-ref-brand h2,
+#profile-card-live-preview[data-preview-theme="olympus_2d"] .unq-ref-brand h2 {
+  color: #FFD700 !important;
+  font-family: "Cinzel", "Montserrat", "Inter", serif !important;
+  font-size: 34px !important;
+  font-weight: 900 !important;
+  letter-spacing: 0 !important;
+  line-height: 1 !important;
+  text-shadow: 2px 2px 0 #000000 !important;
+}
+
+body[data-card-theme="olympus_2d"] .unq-ref-brand p,
+#profile-card-live-preview[data-preview-theme="olympus_2d"] .unq-ref-brand p {
+  color: #F3E5AB !important;
+  font-family: "Montserrat", "Inter", sans-serif !important;
+  font-weight: 800 !important;
+  text-shadow: 1px 1px 0 #000000 !important;
+}
+
+body[data-card-theme="olympus_2d"] .unq-ref-profile,
+body[data-card-theme="olympus_2d"] .unq-ref-profile.has-pets,
+body[data-card-theme="olympus_2d"] .unq-ref-profile.has-emoji-pack,
+body[data-card-theme="olympus_2d"] .unq-ref-profile.has-emoji-pack.has-pets,
+#profile-card-live-preview[data-preview-theme="olympus_2d"] .unq-ref-profile,
+#profile-card-live-preview[data-preview-theme="olympus_2d"] .unq-ref-profile.has-pets,
+#profile-card-live-preview[data-preview-theme="olympus_2d"] .unq-ref-profile.has-emoji-pack,
+#profile-card-live-preview[data-preview-theme="olympus_2d"] .unq-ref-profile.has-emoji-pack.has-pets {
+  height: auto !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+body[data-card-theme="olympus_2d"] .unq-ref-name,
+body[data-card-theme="olympus_2d"] .unq-ref-name-text,
+#profile-card-live-preview[data-preview-theme="olympus_2d"] .unq-ref-name,
+#profile-card-live-preview[data-preview-theme="olympus_2d"] .unq-ref-name-text {
+  color: #FFFFFF !important;
+  font-family: "Montserrat", "Inter", sans-serif !important;
+  font-weight: 900 !important;
+  letter-spacing: 0 !important;
+  text-shadow: 2px 2px 0 #000000 !important;
+}
+
+body[data-card-theme="olympus_2d"] .unq-ref-role,
+body[data-card-theme="olympus_2d"] .unq-ref-bio,
+#profile-card-live-preview[data-preview-theme="olympus_2d"] .unq-ref-role,
+#profile-card-live-preview[data-preview-theme="olympus_2d"] .unq-ref-bio {
+  color: #F3E5AB !important;
+  font-family: "Montserrat", "Inter", sans-serif !important;
+  font-weight: 700 !important;
+}
+
+body[data-card-theme="olympus_2d"] .unq-ref-action-btn,
+body[data-card-theme="olympus_2d"] .unq-ref-follow-toggle,
+body[data-card-theme="olympus_2d"] .unq-follow-action-btn,
+body[data-card-theme="olympus_2d"] .unq-ref-phone,
+#profile-card-live-preview[data-preview-theme="olympus_2d"] .unq-ref-action-btn,
+#profile-card-live-preview[data-preview-theme="olympus_2d"] .unq-ref-follow-toggle,
+#profile-card-live-preview[data-preview-theme="olympus_2d"] .unq-follow-action-btn,
+#profile-card-live-preview[data-preview-theme="olympus_2d"] .unq-ref-phone {
+  border: 2px solid #D4AF37 !important;
+  border-radius: 14px !important;
+  background: #14151B !important;
+  color: #FFFFFF !important;
+  font-family: "Montserrat", "Inter", sans-serif !important;
+  font-weight: 800 !important;
+  box-shadow: 3px 3px 0 #000000 !important;
+}
+
+body[data-card-theme="olympus_2d"] .unq-ref-action-btn:hover,
+body[data-card-theme="olympus_2d"] .unq-ref-follow-toggle:hover,
+body[data-card-theme="olympus_2d"] .unq-follow-action-btn:hover,
+body[data-card-theme="olympus_2d"] .unq-ref-phone:hover,
+#profile-card-live-preview[data-preview-theme="olympus_2d"] .unq-ref-action-btn:hover,
+#profile-card-live-preview[data-preview-theme="olympus_2d"] .unq-ref-follow-toggle:hover,
+#profile-card-live-preview[data-preview-theme="olympus_2d"] .unq-follow-action-btn:hover,
+#profile-card-live-preview[data-preview-theme="olympus_2d"] .unq-ref-phone:hover {
+  background: #1E1E24 !important;
+  color: #FFD700 !important;
+  transform: translate(-1px, -1px) !important;
+  box-shadow: 5px 5px 0 #000000, 0 0 18px rgba(255, 215, 0, 0.18) !important;
+}
+
+#profile-card-live-preview[data-preview-theme="olympus_2d"] {
+  --preview-border-color: #D4AF37;
+  --preview-page-bg:
+    radial-gradient(circle at 50% 0%, rgba(255, 215, 0, 0.22) 0%, transparent 58%),
+    linear-gradient(135deg, #0A0A0C 0%, #14151B 100%);
+  --preview-screen-opacity: 0.46;
+  --preview-screen-pattern:
+    linear-gradient(114deg, transparent 0 42%, rgba(255, 215, 0, 0.14) 42% 47%, transparent 47% 100%);
+  --preview-overlay-opacity: 0.64;
+  --preview-overlay-pattern:
+    radial-gradient(circle at 50% 0%, rgba(255, 215, 0, 0.18) 0%, transparent 64%);
+}
+
+@keyframes olympus-lightning-pulse {
+  0%, 100% {
+    opacity: 0.32;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.82;
+    transform: scale(1.03);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body[data-card-theme="olympus_2d"]::before,
+  body[data-card-theme="olympus_2d"] .public-card-shell::after,
+  body[data-card-theme="olympus_2d"] .unq-ref-shell::after,
+  body[data-card-theme="olympus_2d"] .unq-ref-card-overlay,
+  #profile-card-live-preview[data-preview-theme="olympus_2d"] .public-card-shell::after,
+  #profile-card-live-preview[data-preview-theme="olympus_2d"] .unq-ref-shell::after,
+  #profile-card-live-preview[data-preview-theme="olympus_2d"] .unq-ref-card-overlay {
+    animation: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  body[data-card-theme="olympus_2d"] main {
+    justify-content: flex-start !important;
+    padding-top: max(8px, env(safe-area-inset-top, 0px)) !important;
+    padding-bottom: max(8px, env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  body[data-card-theme="olympus_2d"] .public-card-shell,
+  body[data-card-theme="olympus_2d"] .unq-ref-shell,
+  #profile-card-live-preview[data-preview-theme="olympus_2d"] .public-card-shell,
+  #profile-card-live-preview[data-preview-theme="olympus_2d"] .unq-ref-shell {
+    width: calc(100% - 22px) !important;
+    margin: 8px auto !important;
+    padding: 30px 15px 20px !important;
+    box-shadow: 5px 5px 0 #000000, 0 0 16px rgba(212, 175, 55, 0.16) !important;
+  }
+}

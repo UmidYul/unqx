@@ -23,6 +23,7 @@ describe("profile theme and avatar frame normalization", () => {
     expect(PROFILE_THEME_KEYS).toContain("galaxy");
     expect(PROFILE_THEME_KEYS).toContain("uzbekistan_35");
     expect(PROFILE_THEME_KEYS).toContain("uzbekistan_2d");
+    expect(PROFILE_THEME_KEYS).toContain("olympus_2d");
     expect(PROFILE_AVATAR_FRAME_KEYS).toContain("chrome_ring");
     expect(PROFILE_AVATAR_FRAME_KEYS).toContain("orbit_dots");
     expect(PROFILE_AVATAR_FRAME_KEYS).toContain("laurel_wreath");
@@ -38,6 +39,7 @@ describe("profile theme and avatar frame normalization", () => {
     expect(normalizeThemeByPlan("galaxy", "premium")).toBe("galaxy");
     expect(normalizeThemeByPlan("uzbekistan_35", "premium")).toBe("uzbekistan_35");
     expect(normalizeThemeByPlan("uzbekistan_2d", "premium")).toBe("uzbekistan_2d");
+    expect(normalizeThemeByPlan("olympus_2d", "premium")).toBe("olympus_2d");
     expect(normalizeThemeByPlan("heritage_crest", "premium")).toBe("heritage_crest");
     expect(normalizeThemeByPlan("anime_blush", "premium")).toBe("anime_blush");
     expect(normalizeAvatarFrameByPlan("orbit_dots", "premium")).toBe("orbit_dots");
@@ -92,5 +94,20 @@ describe("profile theme and avatar frame normalization", () => {
     expect(styles).not.toContain("/images/galaxy-theme-bg.png");
     expect(styles).toContain("linear-gradient(135deg, #12072B 0%, #2A085C 50%, #5E179B 100%)");
     expect(styles).toContain("box-shadow: 0 0 10px rgba(0, 229, 255, 0.5)");
+  });
+
+  test("exposes Olympus 2D preset and Greek cartoon CSS", () => {
+    const presets = getProfileEditorPresets();
+    const olympus = presets.signatureThemes.find((theme) => theme.id === "olympus_2d");
+    const styles = fs.readFileSync(path.join(process.cwd(), "public", "css", "public-card.css"), "utf-8");
+
+    expect(olympus).toMatchObject({
+      label: "Crystal-Like Drops",
+      description: "Greek cartoon gold and Zeus lightning",
+      premiumRequired: true,
+    });
+    expect(styles).toContain('body[data-card-theme="olympus_2d"]');
+    expect(styles).toContain("olympus-lightning-pulse");
+    expect(styles).toContain("ОБЛАДАТЕЛЬ ЛИМИТИРОВАННОЙ КАРТЫ");
   });
 });
