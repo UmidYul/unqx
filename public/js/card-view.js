@@ -2610,6 +2610,13 @@
         <g fill="#e73823" opacity="0.24">
           ${Array.from({ length: 36 }, (_, i) => `<circle cx="${270 + i % 6 * 17}" cy="${12 + Math.floor(i / 6) * 17}" r="2"/>`).join("")}
         </g>
+        <g fill="none" stroke="#9a2917" opacity="0.24" stroke-width=".7">
+          ${Array.from({ length: 16 }, (_, i) => `<path d="M${i * 5} 138L0 ${160 + i * 7}M360 ${343 + i * 6}L${355 - i * 4} 414"/>`).join("")}
+          <path d="M9 174V366M13 189V298M351 424V554M347 472V542" stroke-width="1.2"/>
+        </g>
+        <g fill="#d45222" opacity=".08">
+          ${Array.from({ length: 70 }, (_, i) => `<circle cx="${8 + i % 7 * 5}" cy="${386 + Math.floor(i / 7) * 6}" r="${.65 + (i % 7) * .1}"/>`).join("")}
+        </g>
         <path d="M0 0H170L0 100Z" fill="#ffe04b"/>
         <path d="M0 72 122 0M0 91 155 0" stroke="#25110d" stroke-width="2" fill="none"/>
         <path d="M360 520 264 600H360Z" fill="#ff851b" opacity="0.3"/>
@@ -5313,7 +5320,39 @@
             <span class="gogh-star gogh-star-${index + 1}" style="left:${left};top:${top};width:${size};height:${size};animation-delay:${delay}"></span>`).join("")}
         </div>`
       : "";
-    const comicFlamePath = "M-80 310V242C-40 215-30 169-43 124C12 159 22 194 18 229C58 196 68 143 46 84C102 111 122 165 112 211C156 181 163 119 147 37C211 89 223 145 210 204C251 181 271 134 254 91C307 124 321 163 312 216C354 183 374 114 353 5C421 61 440 144 416 201C460 187 481 135 468 95C518 122 543 166 532 220C572 193 587 138 572 58C635 104 657 160 641 208C685 175 707 121 694 26C754 70 779 149 759 204C802 181 818 143 804 101C852 119 884 169 870 222C911 188 932 126 908 49C971 88 989 147 977 205C1023 184 1048 130 1036 73C1092 115 1110 172 1098 226C1143 204 1170 152 1155 109C1210 151 1246 214 1280 243V330H-80Z";
+    // Different silhouettes per colour band; deterministic geometry avoids
+    // random jumps when the editor rerenders the same card.
+    const comicFlamePaths = [0, 1, 2].map((layer) => {
+      let path = "M-100 350L-100 280";
+      for (let i = 0; i < 17; i += 1) {
+        const x = -100 + i * 84;
+        const height = 100 + (i * 67 + layer * 43) % 180;
+        const lean = (i % 3 - 1) * 17;
+        const tip = x + 20 + lean;
+        path += `C${x + 35} 250 ${tip + 27} ${310 - height + 65} ${tip} ${310 - height}`;
+        path += `C${tip + 69} ${310 - height + 37} ${x + 49} 253 ${x + 84} 280`;
+      }
+      return `${path}L1328 350Z`;
+    });
+    const comicFireTonguesHtml = (front) => Array.from({ length: front ? 11 : 15 }, (_, i) => {
+      const shapes = [
+        "M4 280C-8 208 70 190 30 48C106 104 78 181 95 212C126 182 119 144 107 124C158 186 132 252 118 280Z",
+        "M2 280C35 248-2 224 24 184C42 158 77 138 61 8C148 88 86 172 103 214C114 192 130 185 122 162C166 224 132 264 133 280Z",
+        "M8 280C-10 245 35 201 18 158C61 186 57 206 66 217C103 168 58 116 86 48C87 134 159 154 132 222C170 209 158 185 165 174C188 233 158 263 149 280Z",
+        "M0 280C44 242 3 218 43 179C94 135 55 90 28 66C110 98 101 157 105 195C145 171 119 111 126 91C179 153 147 207 155 237C170 219 173 204 173 193C199 246 165 265 167 280Z",
+        "M5 280C39 235-9 220 32 161C54 130 61 108 48 83C120 142 69 178 90 218C129 171 108 108 123 20C180 113 152 164 145 219C170 202 180 180 169 156C215 219 171 266 173 280Z",
+      ];
+      const width = 70 + (i * 29 + (front ? 17 : 0)) % 64;
+      const height = 125 + (i * 47 + (front ? 36 : 0)) % 163;
+      const x = -50 + i * (front ? 125 : 92);
+      return `<g transform="translate(${x} ${330 - height}) scale(${width / 180} ${height / 280})">
+        <g class="comic-fire-tongue" style="--tongue-duration:${1.05 + i % 5 * .21}s;--tongue-delay:-${i * .37}s;--tongue-lean:${i % 2 ? -7 : 8}deg">
+          <path class="comic-tongue-outer" d="${shapes[i % shapes.length]}"/>
+          <path class="comic-tongue-inner" d="${shapes[(i + 2) % shapes.length]}" transform="translate(18 84) scale(.7)"/>
+          <path class="comic-tongue-core" d="M52 280Q108 240 84 199Q137 238 104 280Z"/>
+        </g>
+      </g>`;
+    }).join("");
     const comicFireDetailHtml = `<g class="comic-fire-flame-detail" fill="none" stroke-linecap="round" stroke-linejoin="round">
       <path class="comic-fire-hot-core" d="M72 324C114 289 91 257 78 239C121 253 145 286 125 324M270 324C304 288 285 256 276 241C319 267 328 295 315 324M482 324C509 292 487 256 479 233C524 261 549 294 530 324M699 324C737 279 716 254 705 231C756 264 769 300 749 324M919 324C947 292 931 268 920 247C963 267 982 297 968 324M1100 324C1134 288 1112 262 1104 243C1148 269 1167 299 1149 324"/>
       <path class="comic-fire-ink-detail" d="M67 157Q91 184 87 205M169 100Q188 132 183 153M374 81Q399 118 391 159M594 124Q613 152 606 177M717 93Q743 134 733 165M933 116Q956 151 950 178M1059 144Q1080 175 1070 197"/>
@@ -5323,17 +5362,19 @@
       ? `<div class="comic-fire-effects" aria-hidden="true">
           <div class="comic-fire-halftone"></div>
           <svg class="comic-fire-background" viewBox="0 0 1200 330" preserveAspectRatio="none" focusable="false">
-            <path class="comic-flame comic-flame--red" d="${comicFlamePath}"/>
-            <path class="comic-flame comic-flame--orange" d="${comicFlamePath}"/>
-            <path class="comic-flame comic-flame--yellow" d="${comicFlamePath}"/>
+            <path class="comic-flame comic-flame--red" d="${comicFlamePaths[0]}"/>
+            <path class="comic-flame comic-flame--orange" d="${comicFlamePaths[1]}"/>
+            <path class="comic-flame comic-flame--yellow" d="${comicFlamePaths[2]}"/>
+            ${comicFireTonguesHtml(false)}
             ${comicFireDetailHtml}
           </svg>
           ${Array.from({ length: 7 }, (_, i) => `<span class="comic-fire-ember" style="--ember-x:${9 + i * 14}%;--ember-delay:-${i * 1.3}s;--ember-duration:${7 + i % 3}s"></span>`).join("")}
         </div>
         <svg class="comic-fire-foreground" viewBox="0 0 1200 330" preserveAspectRatio="none" aria-hidden="true" focusable="false">
-          <path class="comic-flame comic-flame--red" d="${comicFlamePath}"/>
-          <path class="comic-flame comic-flame--orange" d="${comicFlamePath}"/>
-          <path class="comic-flame comic-flame--yellow" d="${comicFlamePath}"/>
+          <path class="comic-flame comic-flame--red" d="${comicFlamePaths[0]}"/>
+          <path class="comic-flame comic-flame--orange" d="${comicFlamePaths[1]}"/>
+          <path class="comic-flame comic-flame--yellow" d="${comicFlamePaths[2]}"/>
+          ${comicFireTonguesHtml(true)}
           ${comicFireDetailHtml}
         </svg>
         <div class="comic-fire-ashfall" aria-hidden="true">

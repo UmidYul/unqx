@@ -18646,7 +18646,7 @@ body[data-card-theme="comic_fire"],
 }
 body[data-card-theme="comic_fire"] main {
   background: transparent;
-  padding-bottom: max(240px, env(safe-area-inset-bottom, 0px)) !important;
+  padding-bottom: max(16px, env(safe-area-inset-bottom, 0px)) !important;
 }
 body[data-card-theme="comic_fire"] #public-card-layout,
 body[data-card-theme="comic_fire"] #card-view-root {
@@ -18802,21 +18802,21 @@ body[data-card-theme="comic_fire"] #card-view-root {
 }
 .comic-flame--red {
   fill: #e73823;
-  --burn-duration: 4.7s;
+  --burn-duration: 1.7s;
   --flame-height: 1;
   --flame-shift: -1%;
   animation-delay: -2.5s;
 }
 .comic-flame--orange {
   fill: #ff851b;
-  --burn-duration: 3.6s;
+  --burn-duration: 1.35s;
   --flame-height: .77;
   --flame-shift: 3%;
   animation-delay: -1.8s;
 }
 .comic-flame--yellow {
   fill: #ffe04b;
-  --burn-duration: 2.8s;
+  --burn-duration: 1.05s;
   --flame-height: .47;
   --flame-shift: -3%;
   animation-delay: -3.7s;
@@ -18850,7 +18850,7 @@ body[data-card-theme="comic_fire"] #card-view-root {
   position: relative;
   isolation: isolate;
   overflow: hidden;
-  padding-bottom: 200px;
+  padding-bottom: 0;
 }
 #profile-card-live-preview[data-preview-theme="comic_fire"] .comic-fire-effects,
 #profile-card-live-preview[data-preview-theme="comic_fire"] .comic-fire-foreground,
@@ -18886,7 +18886,7 @@ body[data-card-theme="comic_fire"] #card-view-root {
 .comic-fire-flame-detail {
   transform-box: view-box;
   transform-origin: 50% 100%;
-  animation: comic-fire-detail-flow 4.1s ease-in-out -2s infinite alternate;
+  animation: comic-fire-detail-flow 1.8s ease-in-out -2s infinite alternate;
 }
 .comic-fire-hot-core { stroke: #fff8e9; stroke-width: 3.5; opacity: .65; }
 .comic-fire-ink-detail { stroke: #8e2c12; stroke-width: 1.4; opacity: .7; }
@@ -18934,4 +18934,46 @@ body[data-card-theme="comic_fire"] #card-view-root {
 @media (prefers-reduced-motion: reduce) {
   .comic-fire-flame-detail { animation: none; }
   .comic-fire-ashfall { display: none; }
+}
+
+/* A transform retained by the shared entry animation traps fixed fire inside
+   the card. Use an opacity-only entrance so flames stay at the viewport edge. */
+body[data-card-theme="comic_fire"] #card-view-root {
+  transform: none !important;
+  animation: comic-fire-card-enter .45s ease-out both;
+}
+@keyframes comic-fire-card-enter { from { opacity: 0; } to { opacity: 1; } }
+.comic-fire-tongue {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: comic-fire-tongue-dance var(--tongue-duration) ease-in-out var(--tongue-delay) infinite;
+}
+.comic-tongue-outer { fill: #f04a20; stroke: #6b2010; stroke-width: 1.8; stroke-linejoin: round; }
+.comic-tongue-inner { fill: #ffac23; stroke: #d85513; stroke-width: 1; }
+.comic-tongue-core { fill: #fff3af; }
+@keyframes comic-fire-tongue-dance {
+  0%, 100% { transform: skewX(-3deg) scaleY(.84); }
+  28% { transform: skewX(var(--tongue-lean)) scaleY(1.08); }
+  62% { transform: skewX(calc(var(--tongue-lean) * -.55)) scaleY(.92); }
+  82% { transform: skewX(2deg) scaleY(1.02); }
+}
+.comic-fire-motion-paused .comic-fire-tongue { animation-play-state: paused; }
+/* Screen-print layers stay at the panel edges; the reading area remains calm. */
+[data-card-theme="comic_fire"] .unq-ref-shell {
+  background:
+    radial-gradient(ellipse at 0 35%, rgba(231, 56, 35, .045), transparent 38%),
+    repeating-linear-gradient(0deg, rgba(116, 80, 64, .025) 0 1px, transparent 1px 4px),
+    linear-gradient(125deg, #fffdf4, #fff8e9 60%, #f9e8cd) !important;
+  outline: 1px solid rgba(255, 248, 233, .5);
+  outline-offset: -7px;
+}
+[data-card-theme="comic_fire"] .unq-ref-about {
+  background:
+    radial-gradient(circle, rgba(154, 41, 23, .08) .65px, transparent 1px) right top / 5px 5px no-repeat,
+    linear-gradient(120deg, #fff4d9, #ffedc9);
+  box-shadow: inset 0 0 0 3px rgba(255, 253, 244, .65), 3px 3px 0 rgba(154, 41, 23, .14);
+}
+@media (prefers-reduced-motion: reduce) {
+  .comic-fire-tongue { animation: none; }
+  body[data-card-theme="comic_fire"] #card-view-root { animation: none; }
 }
