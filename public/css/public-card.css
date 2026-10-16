@@ -18977,3 +18977,76 @@ body[data-card-theme="comic_fire"] #card-view-root {
   .comic-fire-tongue { animation: none; }
   body[data-card-theme="comic_fire"] #card-view-root { animation: none; }
 }
+
+/* Extend FIRE's canvas into Safari safe areas. Dynamic viewport units keep
+   the flame anchor stable as the browser's own controls expand or collapse. */
+html[data-page-theme="comic_fire"] {
+  min-height: 100%;
+  background-color: #3b160e;
+}
+body[data-card-theme="comic_fire"] {
+  background-color: #3b160e !important;
+}
+body[data-card-theme="comic_fire"] main {
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.comic-fire-foreground {
+  bottom: calc(-3px - env(safe-area-inset-bottom, 0px));
+  height: calc(clamp(150px, 24vh, 240px) + env(safe-area-inset-bottom, 0px));
+  height: calc(clamp(150px, 24dvh, 240px) + env(safe-area-inset-bottom, 0px));
+}
+.comic-fire-background {
+  height: clamp(300px, 58dvh, 620px);
+}
+@media (max-width: 640px) {
+  .comic-fire-foreground {
+    height: calc(clamp(175px, 26vh, 235px) + env(safe-area-inset-bottom, 0px));
+    height: calc(clamp(175px, 26dvh, 235px) + env(safe-area-inset-bottom, 0px));
+  }
+  .comic-fire-background { height: max(330px, 58dvh); }
+}
+/* Editor previews have no browser chrome or device safe-area of their own. */
+#profile-card-live-preview[data-preview-theme="comic_fire"] .comic-fire-foreground {
+  bottom: -3px;
+  height: 200px;
+}
+/* Engraved sunburst around the masthead, with a clear centre for the logo. */
+[data-card-theme="comic_fire"] .unq-ref-brand {
+  position: relative;
+  isolation: isolate;
+}
+[data-card-theme="comic_fire"] .unq-ref-brand::before {
+  content: "";
+  position: absolute;
+  inset: -18px -20px -22px;
+  z-index: -1;
+  pointer-events: none;
+  background: repeating-conic-gradient(from -6deg at 50% 58%, rgba(172, 48, 23, .2) 0deg .7deg, transparent .7deg 10deg);
+  mask-image: radial-gradient(ellipse, transparent 35%, #000 68%, transparent 76%);
+  opacity: .55;
+}
+[data-card-theme="comic_fire"] .unq-ref-brand::after {
+  content: "";
+  position: absolute;
+  width: 96px;
+  height: 5px;
+  bottom: -12px;
+  left: calc(50% - 48px);
+  background: linear-gradient(90deg, transparent, #d78c35 30% 45%, #9a2917 45% 55%, #d78c35 55% 70%, transparent);
+  clip-path: polygon(0 40%, 44% 40%, 50% 0, 56% 40%, 100% 40%, 100% 60%, 56% 60%, 50% 100%, 44% 60%, 0 60%);
+  pointer-events: none;
+}
+[data-card-theme="comic_fire"] .unq-ref-save {
+  position: relative;
+  isolation: isolate;
+  border: 1px solid rgba(154, 41, 23, .18);
+  border-radius: 8px;
+  background:
+    repeating-linear-gradient(135deg, rgba(154, 41, 23, .035) 0 1px, transparent 1px 7px),
+    linear-gradient(100deg, rgba(255, 224, 75, .12), rgba(255, 253, 244, .65), rgba(255, 133, 27, .09));
+  box-shadow: inset 0 0 0 3px rgba(255, 253, 244, .6);
+}
+[data-card-theme="comic_fire"] .unq-ref-hashtag {
+  background: linear-gradient(90deg, transparent, rgba(255, 224, 75, .13), transparent);
+}
