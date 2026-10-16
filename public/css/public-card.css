@@ -19082,7 +19082,7 @@ body[data-card-theme="forged_carbon"] #card-view-root {
   border: 1px solid transparent !important;
   background:
     linear-gradient(145deg, rgba(32, 32, 32, .83), rgba(12, 12, 12, .92)) padding-box,
-    url('/assets/themes/forged-carbon-weave-a.svg') center / 280px padding-box,
+    url('/assets/themes/forged-carbon-texture-v3.webp') center / 500px padding-box,
     linear-gradient(145deg, #858585, #333333 38%, #626262 75%, #292929) border-box !important;
   box-shadow: 0 28px 70px rgba(0, 0, 0, .8), inset 0 1px 0 rgba(160, 160, 160, .08);
 }
@@ -19157,12 +19157,12 @@ body[data-card-theme="forged_carbon"] #card-view-root {
   animation: forged-carbon-drift 42s ease-in-out infinite alternate;
 }
 .forged-carbon-texture--a {
-  background-image: url('/assets/themes/forged-carbon-weave-a.svg');
+  background-image: url('/assets/themes/forged-carbon-texture-v3.webp');
   opacity: .82;
 }
 .forged-carbon-texture--b {
-  background-image: url('/assets/themes/forged-carbon-weave-b.svg');
-  animation: forged-carbon-exchange 34s ease-in-out -12s infinite;
+  background-image: url('/assets/themes/forged-carbon-texture-v3.webp');
+  animation: forged-carbon-drift 42s ease-in-out infinite alternate, forged-carbon-exchange 16s ease-in-out -4s infinite;
 }
 .forged-carbon-vignette {
   position: absolute;
@@ -19196,8 +19196,8 @@ body[data-card-theme="forged_carbon"] #card-view-root {
   to { transform: translate3d(9px, 8px, 0) scale(1.055); }
 }
 @keyframes forged-carbon-exchange {
-  0%, 100% { opacity: .05; transform: translate3d(4px, 0, 0) scale(1.025); }
-  50% { opacity: .88; transform: translate3d(-7px, 9px, 0) scale(1.045); }
+  0%, 100% { opacity: .04; }
+  50% { opacity: .88; }
 }
 @keyframes forged-carbon-fall {
   0% { opacity: 0; transform: translate3d(0, -30px, 0) rotate(var(--fragment-angle)) rotateY(0deg); }
@@ -19258,9 +19258,34 @@ body[data-card-theme="forged_carbon"] #card-slug-search-input::placeholder { col
   color: #e4e4e4;
   background: linear-gradient(145deg, #303030, #191919);
 }
-.forged-carbon-texture--a { background-size: 340px 340px; }
-.forged-carbon-texture--b { background-size: 500px 500px; }
+.forged-carbon-texture--a { background-size: 700px 700px; }
+.forged-carbon-texture--b { background-size: 700px 700px; }
 @media (max-width: 640px) {
-  .forged-carbon-texture--a { background-size: 240px 240px; }
-  .forged-carbon-texture--b { background-size: 370px 370px; }
+  .forged-carbon-texture--a { background-size: 500px 500px; }
+  .forged-carbon-texture--b { background-size: 500px 500px; }
+}
+
+/* A broad reflection travels across the fixed, randomly oriented material.
+   Lighting changes; the pressed fibre geometry does not turn into a grid. */
+.forged-carbon-vignette::after {
+  content: "";
+  position: absolute;
+  inset: -25% -60%;
+  background: linear-gradient(115deg, transparent 35%, rgba(180, 180, 180, .09) 48%, rgba(220, 220, 220, .035) 55%, transparent 67%);
+  animation: forged-carbon-reflection 19s ease-in-out -6s infinite alternate;
+  pointer-events: none;
+}
+@keyframes forged-carbon-reflection {
+  from { transform: translate3d(-16%, -3%, 0) rotate(-5deg); }
+  to { transform: translate3d(18%, 4%, 0) rotate(5deg); }
+}
+.forged-carbon-motion-paused .forged-carbon-vignette::after { animation-play-state: paused; }
+@media (prefers-reduced-motion: reduce) {
+  .forged-carbon-vignette::after { animation: none; }
+}
+
+.forged-carbon-texture { filter: grayscale(1); }
+.forged-carbon-texture--b {
+  mix-blend-mode: screen;
+  filter: grayscale(1) contrast(1.35) brightness(.7);
 }

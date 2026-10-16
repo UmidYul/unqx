@@ -62,8 +62,8 @@ const SIGNATURE_THEMES = [
   {
     id: "forged_carbon",
     label: "FORGED · Кованый карбон",
-    description: "Графитовый карбон, объёмное плетение и плавные фрагменты",
-    swatchStyle: "border-color:#747474;background:linear-gradient(135deg,rgba(0,0,0,.05),rgba(0,0,0,.25)),url('/assets/themes/forged-carbon-weave-a.svg') center/140px;box-shadow:inset 0 1px 0 #505050;",
+    description: "Кованый карбон: хаотичные волокна и переливающиеся грани",
+    swatchStyle: "border-color:#747474;background:linear-gradient(135deg,rgba(0,0,0,.05),rgba(0,0,0,.25)),url('/assets/themes/forged-carbon-texture-v3.webp') center/140px;box-shadow:inset 0 1px 0 #505050;",
     premiumRequired: true,
   },
   {
