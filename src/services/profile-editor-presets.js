@@ -62,8 +62,8 @@ const SIGNATURE_THEMES = [
   {
     id: "jade_luxe",
     label: "JADE · Нефрит",
-    description: "Матовый чёрный, нефритовое стекло и падающие листья",
-    swatchStyle: "border-color:#2E8B57;background:radial-gradient(ellipse at 75% 20%,rgba(0,168,107,.32),transparent 55%),linear-gradient(145deg,#0A0C0A,#14271D);box-shadow:inset 0 0 18px rgba(72,209,204,.1);",
+    description: "Глубокий чёрный, сияющий нефрит и молнии",
+    swatchStyle: "border-color:#24FFA3;background:radial-gradient(ellipse at 75% 20%,rgba(0,238,145,.18),transparent 45%),linear-gradient(145deg,#030705,#000000);box-shadow:0 0 12px rgba(0,238,145,.28),inset 0 0 18px rgba(0,238,145,.12);",
     premiumRequired: true,
   },
   {

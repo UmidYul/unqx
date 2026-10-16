@@ -550,31 +550,31 @@
         "linear-gradient(90deg, rgba(234,214,161,0) 0%, rgba(234,214,161,0.18) 45%, rgba(234,214,161,0.3) 50%, rgba(234,214,161,0.18) 55%, rgba(234,214,161,0) 100%)",
     },
     jade_luxe: {
-      pageBg: "radial-gradient(ellipse at 80% 15%, #15291d 0%, #0a0c0a 65%)",
-      cardBg: "radial-gradient(ellipse at 90% 0%, rgba(0,168,107,.13), transparent 60%), linear-gradient(155deg, #101a13, #0a0c0a)",
+      pageBg: "radial-gradient(ellipse at 80% 15%, #07130d 0%, #020403 58%, #000000 100%)",
+      cardBg: "radial-gradient(ellipse at 90% 0%, rgba(0,168,107,.08), transparent 45%), linear-gradient(155deg, #050a07, #010201)",
       cardBgOverlay: "jade_luxe",
-      surfaceBg: "rgba(16, 28, 21, 0.72)",
-      cardBorder: "1px solid rgba(119, 190, 146, 0.3)",
-      surfaceBorder: "1px solid rgba(119, 190, 146, 0.19)",
+      surfaceBg: "rgba(3, 9, 6, 0.88)",
+      cardBorder: "1px solid rgba(35, 239, 155, 0.55)",
+      surfaceBorder: "1px solid rgba(35, 239, 155, 0.28)",
       dividerColor: "rgba(119, 190, 146, 0.16)",
       nameColor: "#e9ede4",
-      roleColor: "#b0dfc2",
+      roleColor: "#7dffc1",
       mutedColor: "#a2b0a7",
       accentColor: "#00a86b",
-      emailColor: "#b0dfc2",
-      buttonPrimaryBg: "linear-gradient(125deg, #527b60 0%, #285c43 28%, #123e2b 70%, #306949)",
+      emailColor: "#7dffc1",
+      buttonPrimaryBg: "linear-gradient(125deg, #2bd998 0%, #08774c 28%, #023822 70%, #0bab6c)",
       buttonPrimaryText: "#f0fff3",
-      buttonPrimaryBorder: "rgba(121,197,153,.5)",
-      buttonSecondaryBg: "rgba(27,77,62,.2)",
-      buttonSecondaryText: "#c7e7d0",
-      buttonSecondaryBorder: "rgba(119,190,146,.28)",
-      badgeText: "#b0dfc2",
+      buttonPrimaryBorder: "rgba(78,255,173,.7)",
+      buttonSecondaryBg: "rgba(0,30,18,.5)",
+      buttonSecondaryText: "#8affc7",
+      buttonSecondaryBorder: "rgba(35,239,155,.4)",
+      badgeText: "#7dffc1",
       badgeBg: "rgba(27,77,62,.28)",
       badgeBorder: "1px solid rgba(119,190,146,.26)",
       topLineGradient: "linear-gradient(90deg, transparent, #2e8b57, #48d1cc, transparent)",
-      avatarBg: "linear-gradient(145deg, #1b4d3e, #0d1f16)",
-      avatarText: "#b0dfc2",
-      avatarBorder: "2px solid rgba(119,190,146,.42)",
+      avatarBg: "linear-gradient(145deg, #075335, #010c07)",
+      avatarText: "#7dffc1",
+      avatarBorder: "2px solid rgba(35,239,155,.7)",
       cardBorderRadius: "24px",
       surfaceBorderRadius: "18px",
       buttonBorderRadius: "14px",
@@ -584,11 +584,11 @@
       nameLetterSpacing: "-.025em",
       roleLetterSpacing: "1.2px",
       scoreLabelColor: "#a2b0a7",
-      scoreValueColor: "#b0dfc2",
+      scoreValueColor: "#7dffc1",
       scoreBarFill: "linear-gradient(90deg, #1b4d3e, #00a86b, #48d1cc)",
       scoreBarTrack: "rgba(119,190,146,.13)",
       scorePercentileColor: "#a2b0a7",
-      cardShadow: "0 24px 64px rgba(0,0,0,.55), 0 0 48px rgba(0,168,107,.06)",
+      cardShadow: "0 24px 64px rgba(0,0,0,.8), 0 0 40px rgba(0,238,145,.14)",
       buttonShineGradient: "linear-gradient(100deg, transparent, rgba(176,223,194,.24), transparent)",
     },
     black_gold_leaf: {
@@ -5258,7 +5258,24 @@
     const jadeEffectsHtml = theme.key === "jade_luxe"
       ? `<div class="jade-effects" aria-hidden="true">${Array.from({ length: 8 }, (_, index) =>
           `<span class="jade-leaf" style="--jade-x:${7 + index * 12}%;--jade-duration:${22 + index * 2}s;--jade-delay:-${index * 5 + 2}s;--jade-angle:${index * 37}deg;--jade-size:${9 + index % 3 * 3}px"></span>`
-        ).join("")}</div>`
+        ).join("")}
+          <svg class="jade-lightning jade-lightning--left" viewBox="0 0 400 900" preserveAspectRatio="none" focusable="false">
+            <g fill="none" stroke-linecap="butt" stroke-linejoin="miter">
+              <path class="jade-lightning-aura" d="M230-20 213 41 223 35 188 104 197 98 167 138 210 119 181 180 189 176 150 240 159 235 113 310 165 278 129 351 137 346 99 410 108 405 69 470 126 429 95 507 106 500 64 583 76 573 42 634 89 603 67 684 76 676 49 750 57 743 35 819 43 812 20 900"/>
+              <path class="jade-lightning-channel" d="M230-20 213 41 223 35 188 104 197 98 167 138 210 119 181 180 189 176 150 240 159 235 113 310 165 278 129 351 137 346 99 410 108 405 69 470 126 429 95 507 106 500 64 583 76 573 42 634 89 603 67 684 76 676 49 750 57 743 35 819 43 812 20 900"/>
+              <path class="jade-lightning-core" d="M230-20 213 41 223 35 188 104 197 98 167 138 210 119 181 180 189 176 150 240 159 235 113 310 165 278 129 351 137 346 99 410 108 405 69 470 126 429 95 507 106 500 64 583 76 573 42 634 89 603 67 684 76 676 49 750 57 743 35 819 43 812 20 900"/>
+              <path class="jade-lightning-branch" d="m113 310 117 66-25-42 93 118-12-37 70 109M69 470 15 532 34 521 3 612M167 138 280 191 260 173 351 266"/>
+            </g>
+          </svg>
+          <svg class="jade-lightning jade-lightning--right" viewBox="0 0 400 900" preserveAspectRatio="none" focusable="false">
+            <g fill="none" stroke-linecap="butt" stroke-linejoin="miter">
+              <path class="jade-lightning-aura" d="M165-20 183 46 175 39 207 101 197 94 225 155 183 132 214 204 205 195 251 264 240 256 282 328 234 300 270 369 260 362 294 428 284 421 323 496 274 462 301 541 290 533 333 614 322 605 361 690 319 664 344 739 334 731 365 801 356 792 387 900"/>
+              <path class="jade-lightning-channel" d="M165-20 183 46 175 39 207 101 197 94 225 155 183 132 214 204 205 195 251 264 240 256 282 328 234 300 270 369 260 362 294 428 284 421 323 496 274 462 301 541 290 533 333 614 322 605 361 690 319 664 344 739 334 731 365 801 356 792 387 900"/>
+              <path class="jade-lightning-core" d="M165-20 183 46 175 39 207 101 197 94 225 155 183 132 214 204 205 195 251 264 240 256 282 328 234 300 270 369 260 362 294 428 284 421 323 496 274 462 301 541 290 533 333 614 322 605 361 690 319 664 344 739 334 731 365 801 356 792 387 900"/>
+              <path class="jade-lightning-branch" d="m282 328-106 65 26-41-118 135 18-43-64 95M323 496l66 91-28-14 34 92M225 155 116 205 139 181 43 287"/>
+            </g>
+          </svg>
+        </div>`
       : "";
     const blackGoldLeafEffectsHtml = theme.key === "black_gold_leaf"
       ? `<div class="black-gold-leaf-effects" aria-hidden="true">

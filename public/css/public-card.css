@@ -18441,16 +18441,19 @@ body[data-card-theme="greek_olympus_2d"] .unq-ref-phone:hover,
 /* JADE — matte depth, translucent nephrite and restrained brushwork. */
 body[data-card-theme="jade_luxe"],
 #profile-card-live-preview[data-preview-theme="jade_luxe"] {
-  --jade-bg: #0a0c0a;
+  --jade-bg: #000000;
+  --theme-screen-opacity: .18;
+  --theme-screen-pattern: radial-gradient(ellipse at 85% 15%, rgba(0, 168, 107, .08), transparent 50%);
+  --preview-screen-pattern: none;
   --jade-accent: #00a86b;
   --jade-deep: #1b4d3e;
-  --jade-light: #b0dfc2;
-  --jade-glow: #48d1cc;
-  --unqx-nav-bg: rgba(10, 18, 13, .82);
-  --unqx-nav-border: rgba(119, 190, 146, .24);
+  --jade-light: #7dffc1;
+  --jade-glow: #49ffc4;
+  --unqx-nav-bg: rgba(0, 4, 2, .9);
+  --unqx-nav-border: rgba(35, 239, 155, .35);
   --unqx-nav-text: #c7e7d0;
   color: #e9ede4;
-  background: radial-gradient(ellipse at 80% 15%, #15291d, var(--jade-bg) 65%) !important;
+  background: radial-gradient(ellipse at 80% 15%, #06100a 0%, #010302 50%, var(--jade-bg) 80%) !important;
 }
 body[data-card-theme="jade_luxe"] main {
   background: transparent;
@@ -18459,10 +18462,10 @@ body[data-card-theme="jade_luxe"] main {
 [data-card-theme="jade_luxe"] .public-card-shell {
   border: 1px solid transparent !important;
   background:
-    radial-gradient(ellipse at 90% 0%, rgba(0, 168, 107, .13), transparent 60%) padding-box,
-    linear-gradient(155deg, #101a13, #0a0c0a) padding-box,
-    linear-gradient(135deg, rgba(176, 223, 194, .48), rgba(27, 77, 62, .12), rgba(72, 209, 204, .22)) border-box !important;
-  box-shadow: 0 24px 64px rgba(0, 0, 0, .55), 0 0 48px rgba(0, 168, 107, .06);
+    radial-gradient(ellipse at 90% 0%, rgba(0, 168, 107, .08), transparent 45%) padding-box,
+    linear-gradient(155deg, #050a07, #010201) padding-box,
+    linear-gradient(135deg, rgba(74, 255, 172, .8), rgba(0, 168, 107, .2), rgba(72, 255, 204, .55)) border-box !important;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, .8), 0 0 40px rgba(0, 238, 145, .14), inset 0 0 28px rgba(0, 168, 107, .035);
 }
 [data-card-theme="jade_luxe"] .unq-ref-card-overlay {
   opacity: .24;
@@ -18473,17 +18476,17 @@ body[data-card-theme="jade_luxe"] main {
 [data-card-theme="jade_luxe"] .unq-ref-brand h2 {
   font-family: "Cormorant Garamond", "Baskerville", "Times New Roman", serif;
   font-weight: 500;
-  background: linear-gradient(115deg, #e9ede4, #b0dfc2 55%, #66ad83);
+  background: linear-gradient(115deg, #e5fff0, #7dffc1 55%, #17d88a);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  text-shadow: 0 0 32px rgba(0, 168, 107, .12);
+  text-shadow: 0 0 16px rgba(0, 255, 153, .35), 0 0 40px rgba(0, 238, 145, .18);
 }
 [data-card-theme="jade_luxe"] .unq-ref-surface,
 [data-card-theme="jade_luxe"] .unq-ref-contact,
 [data-card-theme="jade_luxe"] .unq-ref-phone {
-  border-color: rgba(119, 190, 146, .19);
-  background: rgba(16, 28, 21, .72);
+  border-color: rgba(35, 239, 155, .28);
+  background: rgba(3, 9, 6, .88);
   -webkit-backdrop-filter: blur(14px);
   backdrop-filter: blur(14px);
 }
@@ -18491,7 +18494,7 @@ body[data-card-theme="jade_luxe"] main {
 [data-card-theme="jade_luxe"] .unq-ref-follow-toggle,
 [data-card-theme="jade_luxe"] .unq-follow-action-btn {
   border-radius: 14px;
-  box-shadow: inset 0 1px 1px rgba(194, 255, 210, .16), 0 5px 24px rgba(0, 168, 107, .06);
+  box-shadow: inset 0 1px 1px rgba(194, 255, 210, .16), 0 0 14px rgba(0, 238, 145, .18), 0 0 35px rgba(0, 168, 107, .1);
   transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
 }
 @media (hover: hover) {
@@ -18499,8 +18502,8 @@ body[data-card-theme="jade_luxe"] main {
   [data-card-theme="jade_luxe"] .unq-ref-follow-toggle:hover,
   [data-card-theme="jade_luxe"] .unq-follow-action-btn:hover {
     transform: translateY(-2px);
-    border-color: #87c69c;
-    box-shadow: inset 0 1px 1px rgba(194, 255, 210, .2), 0 8px 28px rgba(0, 168, 107, .18);
+    border-color: #64ffb6;
+    box-shadow: inset 0 1px 1px rgba(194, 255, 210, .2), 0 0 20px rgba(0, 255, 153, .32), 0 8px 38px rgba(0, 168, 107, .18);
   }
 }
 [data-card-theme="jade_luxe"] a:focus-visible,
@@ -18524,9 +18527,12 @@ body[data-card-theme="jade_luxe"] main {
   height: calc(var(--jade-size) * 1.7);
   border: 1px solid rgba(176, 223, 194, .25);
   border-radius: 3% 85% 4% 85%;
-  background: linear-gradient(135deg, rgba(176, 223, 194, .65), rgba(0, 168, 107, .65) 45%, rgba(27, 77, 62, .35));
+  background: linear-gradient(135deg, rgba(160, 255, 206, .85), rgba(0, 222, 141, .8) 45%, rgba(0, 95, 57, .5));
   opacity: 0;
   animation: jade-leaf-fall var(--jade-duration) linear var(--jade-delay) infinite;
+}
+.jade-leaf {
+  box-shadow: 0 0 9px rgba(0, 255, 153, .28);
 }
 .jade-leaf::after {
   content: "";
@@ -18544,7 +18550,8 @@ body[data-card-theme="jade_luxe"] main {
 #profile-card-live-preview[data-preview-theme="jade_luxe"] .jade-effects {
   position: absolute;
 }
-.jade-motion-paused .jade-leaf {
+.jade-motion-paused .jade-leaf,
+.jade-motion-paused .jade-lightning {
   animation-play-state: paused;
 }
 @keyframes jade-leaf-fall {
@@ -18563,4 +18570,50 @@ body[data-card-theme="jade_luxe"] main {
   [data-card-theme="jade_luxe"] .unq-ref-action-btn,
   [data-card-theme="jade_luxe"] .unq-ref-follow-toggle,
   [data-card-theme="jade_luxe"] .unq-follow-action-btn { transition: none; transform: none; }
+}
+
+/* Two distinct channels alternate every three seconds. Animate only opacity:
+   a rapid return stroke, a softer restrike, then a smooth fading afterglow. */
+.jade-lightning {
+  position: absolute;
+  top: 0;
+  width: clamp(150px, 27vw, 420px);
+  height: 100%;
+  overflow: visible;
+  opacity: 0;
+  animation: jade-lightning-strike 6s linear infinite;
+  pointer-events: none;
+}
+.jade-lightning--left { left: 1%; animation-delay: 1.2s; }
+.jade-lightning--right { right: 1%; animation-delay: 4.2s; }
+.jade-lightning path { vector-effect: non-scaling-stroke; }
+.jade-lightning-aura {
+  stroke: #00ef98;
+  stroke-width: 12;
+  opacity: .6;
+  filter: blur(9px);
+}
+.jade-lightning-channel {
+  stroke: #24ffa3;
+  stroke-width: 3.2;
+  filter: drop-shadow(0 0 5px #00e890);
+}
+.jade-lightning-core { stroke: #e3fff3; stroke-width: 1.2; }
+.jade-lightning-branch { stroke: #81ffbd; stroke-width: .85; opacity: .75; }
+@keyframes jade-lightning-strike {
+  0%, 16%, 100% { opacity: 0; }
+  .6% { opacity: .3; animation-timing-function: ease-out; }
+  1.4% { opacity: 1; animation-timing-function: ease-in-out; }
+  3.2% { opacity: .24; animation-timing-function: ease-out; }
+  4.5% { opacity: .85; animation-timing-function: ease-out; }
+  7% { opacity: .38; animation-timing-function: ease-out; }
+  11% { opacity: .1; animation-timing-function: ease-out; }
+}
+@media (max-width: 640px) {
+  .jade-lightning { width: 36%; }
+  .jade-lightning--left { left: -6%; }
+  .jade-lightning--right { right: -6%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .jade-lightning { display: none; animation: none; }
 }
