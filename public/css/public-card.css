@@ -19058,19 +19058,19 @@ body[data-card-theme="forged_carbon"],
   --theme-screen-opacity: 0;
   --theme-screen-pattern: none;
   --preview-screen-pattern: none;
-  --unqx-nav-bg: rgba(8, 8, 8, .94);
-  --unqx-nav-border: #383838;
-  --unqx-nav-text: #c1c1c1;
+  --unqx-nav-bg: rgba(39, 39, 39, .97);
+  --unqx-nav-border: #717171;
+  --unqx-nav-text: #eeeeee;
   --unqx-nav-icon: #aaaaaa;
-  --unqx-nav-input: #c1c1c1;
-  --unqx-nav-placeholder: #939393;
+  --unqx-nav-input: #eeeeee;
+  --unqx-nav-placeholder: #b0b0b0;
   --unqx-nav-chip: #aaaaaa;
   --unqx-nav-hover-bg: #202020;
   --unqx-nav-hover-text: #d0d0d0;
   --unqx-nav-hover-border: #555555;
   --unqx-nav-shadow: 0 12px 32px rgba(0, 0, 0, .6);
   background: #050505 !important;
-  color: #c1c1c1;
+  color: #dedede;
 }
 body[data-card-theme="forged_carbon"] main { background: transparent; }
 body[data-card-theme="forged_carbon"] #card-view-root {
@@ -19081,9 +19081,9 @@ body[data-card-theme="forged_carbon"] #card-view-root {
 [data-card-theme="forged_carbon"] .public-card-shell {
   border: 1px solid transparent !important;
   background:
-    linear-gradient(145deg, rgba(15, 15, 15, .94), rgba(3, 3, 3, .98)) padding-box,
-    url('/assets/themes/forged-carbon-a.svg') center / 620px padding-box,
-    linear-gradient(145deg, #555555, #161616 38%, #303030 75%, #151515) border-box !important;
+    linear-gradient(145deg, rgba(32, 32, 32, .83), rgba(12, 12, 12, .92)) padding-box,
+    url('/assets/themes/forged-carbon-weave-a.svg') center / 280px padding-box,
+    linear-gradient(145deg, #858585, #333333 38%, #626262 75%, #292929) border-box !important;
   box-shadow: 0 28px 70px rgba(0, 0, 0, .8), inset 0 1px 0 rgba(160, 160, 160, .08);
 }
 [data-card-theme="forged_carbon"] .unq-ref-card-overlay { opacity: .5; }
@@ -19093,17 +19093,17 @@ body[data-card-theme="forged_carbon"] #card-view-root {
   font-size: 30px;
   font-weight: 500;
   letter-spacing: .14em;
-  color: #c1c1c1;
+  color: #dedede;
   text-shadow: 0 1px 0 #050505;
 }
 [data-card-theme="forged_carbon"] .unq-ref-brand p {
-  color: #929292;
+  color: #aaaaaa;
   font-size: 9px;
   letter-spacing: .22em;
 }
 [data-card-theme="forged_carbon"] .unq-ref-name,
 [data-card-theme="forged_carbon"] .unq-ref-name-text {
-  color: #d0d0d0;
+  color: #eeeeee;
   font-style: normal;
   font-weight: 600;
   letter-spacing: -.035em;
@@ -19115,8 +19115,8 @@ body[data-card-theme="forged_carbon"] #card-view-root {
 [data-card-theme="forged_carbon"] .unq-ref-surface,
 [data-card-theme="forged_carbon"] .unq-ref-contact,
 [data-card-theme="forged_carbon"] .unq-ref-about {
-  background: linear-gradient(145deg, #141414, #090909);
-  border: 1px solid #2c2c2c;
+  background: linear-gradient(145deg, #2a2a2a, #181818);
+  border: 1px solid #4a4a4a;
   box-shadow: inset 0 1px 0 rgba(140, 140, 140, .04);
 }
 [data-card-theme="forged_carbon"] .unq-ref-action-btn,
@@ -19153,21 +19153,21 @@ body[data-card-theme="forged_carbon"] #card-view-root {
 .forged-carbon-texture {
   position: absolute;
   inset: -7%;
-  background-size: 700px 700px;
-  animation: forged-carbon-drift 28s ease-in-out infinite alternate;
+  background-size: 340px 340px;
+  animation: forged-carbon-drift 42s ease-in-out infinite alternate;
 }
 .forged-carbon-texture--a {
-  background-image: url('/assets/themes/forged-carbon-a.svg');
+  background-image: url('/assets/themes/forged-carbon-weave-a.svg');
   opacity: .82;
 }
 .forged-carbon-texture--b {
-  background-image: url('/assets/themes/forged-carbon-b.svg');
-  animation: forged-carbon-exchange 20s ease-in-out -7s infinite;
+  background-image: url('/assets/themes/forged-carbon-weave-b.svg');
+  animation: forged-carbon-exchange 34s ease-in-out -12s infinite;
 }
 .forged-carbon-vignette {
   position: absolute;
   inset: 0;
-  background: radial-gradient(ellipse at 50% 42%, rgba(0, 0, 0, .55), transparent 72%), linear-gradient(180deg, rgba(0, 0, 0, .2), transparent 50%, #020202);
+  background: radial-gradient(ellipse at 50% 42%, rgba(0, 0, 0, .24), transparent 72%), linear-gradient(180deg, rgba(0, 0, 0, .2), transparent 50%, #080808);
 }
 .forged-carbon-fragment {
   position: absolute;
@@ -19175,7 +19175,7 @@ body[data-card-theme="forged_carbon"] #card-view-root {
   left: var(--fragment-x);
   width: var(--fragment-size);
   height: calc(var(--fragment-size) * .62);
-  background: repeating-linear-gradient(13deg, transparent 0 2px, rgba(90, 90, 90, .18) 2px 2.5px), linear-gradient(135deg, #303030, #080808 45%, #232323 70%, #050505);
+  background: repeating-linear-gradient(13deg, transparent 0 2px, rgba(90, 90, 90, .18) 2px 2.5px), linear-gradient(135deg, #747474, #222222 45%, #515151 70%, #151515);
   clip-path: polygon(0 30%, 27% 0, 85% 12%, 100% 63%, 66% 100%, 12% 79%);
   opacity: 0;
   animation: forged-carbon-fall var(--fragment-duration) linear var(--fragment-delay) infinite;
@@ -19207,7 +19207,7 @@ body[data-card-theme="forged_carbon"] #card-view-root {
   100% { opacity: 0; transform: translate3d(calc(var(--fragment-drift) * -.6), var(--carbon-fall-distance, 110vh), 0) rotate(calc(var(--fragment-angle) + 190deg)) rotateY(280deg); }
 }
 @media (max-width: 640px) {
-  .forged-carbon-texture { background-size: 520px 520px; }
+  .forged-carbon-texture { background-size: 240px 240px; }
   .forged-carbon-fragment:nth-of-type(n + 9) { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -19218,7 +19218,49 @@ body[data-card-theme="forged_carbon"] #card-view-root {
   [data-card-theme="forged_carbon"] .unq-ref-action-btn { transition: none; }
 }
 body[data-card-theme="forged_carbon"] #public-card-layout > div:first-child :is(a, input, button) {
-  background: #0b0b0b;
-  color: #c1c1c1;
-  border-color: #383838;
+  background: #303030;
+  color: #dedede;
+  border-color: #747474;
+}
+/* Keep navigation above the fixed material layer, including during entry. */
+body[data-card-theme="forged_carbon"] #public-card-layout > div:first-child {
+  position: relative;
+  z-index: 4;
+}
+[data-card-theme="forged_carbon"] .unq-ref-top,
+[data-card-theme="forged_carbon"] .unq-ref-footline {
+  position: relative;
+  z-index: 1;
+}
+body[data-card-theme="forged_carbon"] #card-slug-search-form > div,
+body[data-card-theme="forged_carbon"] #card-slug-search-results {
+  background: #2d2d2d;
+  border-color: #747474;
+  color: #eeeeee;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08), 0 6px 16px rgba(0, 0, 0, .25);
+}
+body[data-card-theme="forged_carbon"] #card-slug-search-form span { color: #c0c0c0; }
+body[data-card-theme="forged_carbon"] #card-slug-search-input {
+  background: transparent;
+  color: #eeeeee;
+}
+body[data-card-theme="forged_carbon"] #card-slug-search-input::placeholder { color: #a8a8a8; opacity: 1; }
+[data-card-theme="forged_carbon"] .unq-ref-action-btn,
+[data-card-theme="forged_carbon"] .unq-ref-follow-toggle,
+[data-card-theme="forged_carbon"] .unq-follow-action-btn {
+  border-width: 1px;
+  border-color: #727272;
+  box-shadow: inset 0 1px 0 rgba(220, 220, 220, .14), 0 5px 14px rgba(0, 0, 0, .4);
+}
+[data-card-theme="forged_carbon"] .unq-ref-save {
+  border: 1px solid #545454;
+  border-radius: 9px;
+  color: #e4e4e4;
+  background: linear-gradient(145deg, #303030, #191919);
+}
+.forged-carbon-texture--a { background-size: 340px 340px; }
+.forged-carbon-texture--b { background-size: 500px 500px; }
+@media (max-width: 640px) {
+  .forged-carbon-texture--a { background-size: 240px 240px; }
+  .forged-carbon-texture--b { background-size: 370px 370px; }
 }
