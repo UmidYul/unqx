@@ -60,6 +60,13 @@ const SIGNATURE_THEMES = [
     premiumRequired: true,
   },
   {
+    id: "forged_carbon",
+    label: "FORGED · Кованый карбон",
+    description: "Чёрный композит, живая фактура и падающие фрагменты",
+    swatchStyle: "border-color:#414141;background:linear-gradient(135deg,rgba(0,0,0,.1),rgba(0,0,0,.65)),url('/assets/themes/forged-carbon-a.svg') center/140px;box-shadow:inset 0 1px 0 #505050;",
+    premiumRequired: true,
+  },
+  {
     id: "comic_fire",
     label: "FIRE · Огненный комикс",
     description: "2D-комикс, тёплая палитра и живое пламя в двух слоях",

@@ -19050,3 +19050,175 @@ body[data-card-theme="comic_fire"] main {
 [data-card-theme="comic_fire"] .unq-ref-hashtag {
   background: linear-gradient(90deg, transparent, rgba(255, 224, 75, .13), transparent);
 }
+
+/* FORGED: black resin, fractured fibre and restrained achromatic light. */
+html[data-page-theme="forged_carbon"] { background: #050505; }
+body[data-card-theme="forged_carbon"],
+#profile-card-live-preview[data-preview-theme="forged_carbon"] {
+  --theme-screen-opacity: 0;
+  --theme-screen-pattern: none;
+  --preview-screen-pattern: none;
+  --unqx-nav-bg: rgba(8, 8, 8, .94);
+  --unqx-nav-border: #383838;
+  --unqx-nav-text: #c1c1c1;
+  --unqx-nav-icon: #aaaaaa;
+  --unqx-nav-input: #c1c1c1;
+  --unqx-nav-placeholder: #939393;
+  --unqx-nav-chip: #aaaaaa;
+  --unqx-nav-hover-bg: #202020;
+  --unqx-nav-hover-text: #d0d0d0;
+  --unqx-nav-hover-border: #555555;
+  --unqx-nav-shadow: 0 12px 32px rgba(0, 0, 0, .6);
+  background: #050505 !important;
+  color: #c1c1c1;
+}
+body[data-card-theme="forged_carbon"] main { background: transparent; }
+body[data-card-theme="forged_carbon"] #card-view-root {
+  transform: none !important;
+  animation: forged-carbon-enter .65s ease-out both;
+}
+[data-card-theme="forged_carbon"] .unq-ref-shell,
+[data-card-theme="forged_carbon"] .public-card-shell {
+  border: 1px solid transparent !important;
+  background:
+    linear-gradient(145deg, rgba(15, 15, 15, .94), rgba(3, 3, 3, .98)) padding-box,
+    url('/assets/themes/forged-carbon-a.svg') center / 620px padding-box,
+    linear-gradient(145deg, #555555, #161616 38%, #303030 75%, #151515) border-box !important;
+  box-shadow: 0 28px 70px rgba(0, 0, 0, .8), inset 0 1px 0 rgba(160, 160, 160, .08);
+}
+[data-card-theme="forged_carbon"] .unq-ref-card-overlay { opacity: .5; }
+[data-card-theme="forged_carbon"] .forged-carbon-engraving { opacity: .55; }
+[data-card-theme="forged_carbon"] .unq-ref-brand h2 {
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+  font-size: 30px;
+  font-weight: 500;
+  letter-spacing: .14em;
+  color: #c1c1c1;
+  text-shadow: 0 1px 0 #050505;
+}
+[data-card-theme="forged_carbon"] .unq-ref-brand p {
+  color: #929292;
+  font-size: 9px;
+  letter-spacing: .22em;
+}
+[data-card-theme="forged_carbon"] .unq-ref-name,
+[data-card-theme="forged_carbon"] .unq-ref-name-text {
+  color: #d0d0d0;
+  font-style: normal;
+  font-weight: 600;
+  letter-spacing: -.035em;
+}
+[data-card-theme="forged_carbon"] .unq-ref-avatar-wrap {
+  filter: grayscale(1);
+  box-shadow: 0 0 0 5px #080808, 0 0 0 6px #303030, 0 14px 28px rgba(0, 0, 0, .5);
+}
+[data-card-theme="forged_carbon"] .unq-ref-surface,
+[data-card-theme="forged_carbon"] .unq-ref-contact,
+[data-card-theme="forged_carbon"] .unq-ref-about {
+  background: linear-gradient(145deg, #141414, #090909);
+  border: 1px solid #2c2c2c;
+  box-shadow: inset 0 1px 0 rgba(140, 140, 140, .04);
+}
+[data-card-theme="forged_carbon"] .unq-ref-action-btn,
+[data-card-theme="forged_carbon"] .unq-ref-follow-toggle,
+[data-card-theme="forged_carbon"] .unq-follow-action-btn {
+  box-shadow: inset 0 1px 0 rgba(160, 160, 160, .1), 0 6px 18px rgba(0, 0, 0, .35);
+  transition: transform .3s ease, border-color .3s ease, box-shadow .3s ease;
+}
+[data-card-theme="forged_carbon"] .unq-ref-action-btn img,
+[data-card-theme="forged_carbon"] .unq-ref-social img { filter: grayscale(1); }
+[data-card-theme="forged_carbon"] .unq-ref-save,
+[data-card-theme="forged_carbon"] .unq-ref-share,
+[data-card-theme="forged_carbon"] .unq-ref-footline { color: #aaaaaa; }
+[data-card-theme="forged_carbon"] :is(a, button):focus-visible {
+  outline: 2px solid #b5b5b5;
+  outline-offset: 4px;
+}
+@media (hover: hover) {
+  [data-card-theme="forged_carbon"] .unq-ref-action-btn:hover {
+    transform: translateY(-2px);
+    border-color: #666666;
+    box-shadow: inset 0 1px 0 rgba(180, 180, 180, .16), 0 8px 24px rgba(0, 0, 0, .5);
+  }
+}
+.forged-carbon-effects {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  contain: strict;
+  background: #050505;
+}
+.forged-carbon-texture {
+  position: absolute;
+  inset: -7%;
+  background-size: 700px 700px;
+  animation: forged-carbon-drift 28s ease-in-out infinite alternate;
+}
+.forged-carbon-texture--a {
+  background-image: url('/assets/themes/forged-carbon-a.svg');
+  opacity: .82;
+}
+.forged-carbon-texture--b {
+  background-image: url('/assets/themes/forged-carbon-b.svg');
+  animation: forged-carbon-exchange 20s ease-in-out -7s infinite;
+}
+.forged-carbon-vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 42%, rgba(0, 0, 0, .55), transparent 72%), linear-gradient(180deg, rgba(0, 0, 0, .2), transparent 50%, #020202);
+}
+.forged-carbon-fragment {
+  position: absolute;
+  top: -40px;
+  left: var(--fragment-x);
+  width: var(--fragment-size);
+  height: calc(var(--fragment-size) * .62);
+  background: repeating-linear-gradient(13deg, transparent 0 2px, rgba(90, 90, 90, .18) 2px 2.5px), linear-gradient(135deg, #303030, #080808 45%, #232323 70%, #050505);
+  clip-path: polygon(0 30%, 27% 0, 85% 12%, 100% 63%, 66% 100%, 12% 79%);
+  opacity: 0;
+  animation: forged-carbon-fall var(--fragment-duration) linear var(--fragment-delay) infinite;
+}
+.forged-carbon-fragment:nth-of-type(3n) { clip-path: polygon(0 0, 88% 14%, 100% 66%, 18% 100%, 9% 60%); }
+.forged-carbon-fragment:nth-of-type(4n) { clip-path: polygon(20% 0, 100% 38%, 65% 100%, 0 73%); }
+#profile-card-live-preview[data-preview-theme="forged_carbon"] {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  --carbon-fall-distance: 1200px;
+}
+#profile-card-live-preview[data-preview-theme="forged_carbon"] .forged-carbon-effects { position: absolute; }
+.forged-carbon-motion-paused :is(.forged-carbon-texture, .forged-carbon-fragment) { animation-play-state: paused; }
+@keyframes forged-carbon-enter { from { opacity: 0; } to { opacity: 1; } }
+@keyframes forged-carbon-drift {
+  from { transform: translate3d(-7px, -5px, 0) scale(1.02); }
+  to { transform: translate3d(9px, 8px, 0) scale(1.055); }
+}
+@keyframes forged-carbon-exchange {
+  0%, 100% { opacity: .05; transform: translate3d(4px, 0, 0) scale(1.025); }
+  50% { opacity: .88; transform: translate3d(-7px, 9px, 0) scale(1.045); }
+}
+@keyframes forged-carbon-fall {
+  0% { opacity: 0; transform: translate3d(0, -30px, 0) rotate(var(--fragment-angle)) rotateY(0deg); }
+  12% { opacity: .6; }
+  45% { transform: translate3d(var(--fragment-drift), calc(var(--carbon-fall-distance, 110vh) * .45), 0) rotate(calc(var(--fragment-angle) + 90deg)) rotateY(130deg); }
+  85% { opacity: .4; }
+  100% { opacity: 0; transform: translate3d(calc(var(--fragment-drift) * -.6), var(--carbon-fall-distance, 110vh), 0) rotate(calc(var(--fragment-angle) + 190deg)) rotateY(280deg); }
+}
+@media (max-width: 640px) {
+  .forged-carbon-texture { background-size: 520px 520px; }
+  .forged-carbon-fragment:nth-of-type(n + 9) { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .forged-carbon-texture { animation: none; }
+  .forged-carbon-texture--b { opacity: .25; }
+  .forged-carbon-fragment { display: none; animation: none; }
+  body[data-card-theme="forged_carbon"] #card-view-root { animation: none; }
+  [data-card-theme="forged_carbon"] .unq-ref-action-btn { transition: none; }
+}
+body[data-card-theme="forged_carbon"] #public-card-layout > div:first-child :is(a, input, button) {
+  background: #0b0b0b;
+  color: #c1c1c1;
+  border-color: #383838;
+}

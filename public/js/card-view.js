@@ -21,6 +21,7 @@
     "black_gold_leaf",
     "jade_luxe",
     "comic_fire",
+    "forged_carbon",
     "ocean_2d",
     "aurora_codex",
     "codex_da_vinci",
@@ -549,6 +550,48 @@
       cardShadow: "0 18px 42px rgba(6, 8, 13, 0.62)",
       buttonShineGradient:
         "linear-gradient(90deg, rgba(234,214,161,0) 0%, rgba(234,214,161,0.18) 45%, rgba(234,214,161,0.3) 50%, rgba(234,214,161,0.18) 55%, rgba(234,214,161,0) 100%)",
+    },
+    forged_carbon: {
+      pageBg: "#050505",
+      cardBg: "linear-gradient(145deg, rgba(15,15,15,.96), rgba(3,3,3,.98))",
+      cardBgOverlay: "forged_carbon",
+      surfaceBg: "rgba(15,15,15,.88)",
+      cardBorder: "1px solid #343434",
+      surfaceBorder: "1px solid #2e2e2e",
+      dividerColor: "#292929",
+      nameColor: "#d0d0d0",
+      roleColor: "#b3b3b3",
+      mutedColor: "#999999",
+      accentColor: "#aaaaaa",
+      emailColor: "#c1c1c1",
+      buttonPrimaryBg: "linear-gradient(145deg, #252525, #090909)",
+      buttonPrimaryText: "#d0d0d0",
+      buttonPrimaryBorder: "#454545",
+      buttonSecondaryBg: "linear-gradient(145deg, #181818, #080808)",
+      buttonSecondaryText: "#bfbfbf",
+      buttonSecondaryBorder: "#353535",
+      badgeText: "#bfbfbf",
+      badgeBg: "#111111",
+      badgeBorder: "1px solid #383838",
+      topLineGradient: "linear-gradient(90deg, transparent, #242424, #777777, #242424, transparent)",
+      avatarBg: "linear-gradient(145deg, #262626, #070707)",
+      avatarText: "#c1c1c1",
+      avatarBorder: "2px solid #4a4a4a",
+      cardBorderRadius: "20px",
+      surfaceBorderRadius: "12px",
+      buttonBorderRadius: "9px",
+      fontFamily: "'Inter', 'Segoe UI', sans-serif",
+      nameFontStyle: "normal",
+      nameFontWeight: "600",
+      nameLetterSpacing: "-.03em",
+      roleLetterSpacing: "1.6px",
+      scoreLabelColor: "#999999",
+      scoreValueColor: "#c1c1c1",
+      scoreBarFill: "linear-gradient(90deg, #333333, #999999)",
+      scoreBarTrack: "#202020",
+      scorePercentileColor: "#999999",
+      cardShadow: "0 28px 70px rgba(0,0,0,.8), inset 0 1px 0 rgba(160,160,160,.08)",
+      buttonShineGradient: "linear-gradient(100deg, transparent, rgba(150,150,150,.15), transparent)",
     },
     comic_fire: {
       pageBg: "radial-gradient(ellipse at 50% 100%, #d63d17, #5b100b 60%, #290b09)",
@@ -2603,6 +2646,15 @@
         <path d="M0 110C74 88 148 94 220 116C284 136 324 136 360 124" stroke="url(#gn-line)" stroke-width="0.78" fill="none"></path>
         <path d="M0 322C72 300 146 308 216 330C280 350 322 350 360 338" stroke="url(#gn-line)" stroke-width="0.7" fill="none"></path>
         <path d="M0 536C74 514 148 522 218 544C282 562 324 566 360 552" stroke="url(#gn-line)" stroke-width="0.64" fill="none"></path>
+      </svg>`;
+    }
+    if (themeKey === "forged_carbon") {
+      return `<svg class="unq-ref-overlay-svg forged-carbon-engraving" viewBox="0 0 360 600" preserveAspectRatio="none" aria-hidden="true">
+        <g fill="none" stroke="#707070" stroke-width=".6" opacity=".38">
+          <path d="M16 78V16H88M272 16H344V78M16 522V584H88M272 584H344V522"/>
+          <path d="m0 125 48-19 24 31 34-12M360 470l-51-26-26 19-46-15" opacity=".4"/>
+          <path d="M21 26H65M21 30H46M295 575H339M314 571H339"/>
+        </g>
       </svg>`;
     }
     if (themeKey === "comic_fire") {
@@ -5320,8 +5372,15 @@
             <span class="gogh-star gogh-star-${index + 1}" style="left:${left};top:${top};width:${size};height:${size};animation-delay:${delay}"></span>`).join("")}
         </div>`
       : "";
-    // Different silhouettes per colour band; deterministic geometry avoids
-    // random jumps when the editor rerenders the same card.
+    const carbonEffectsHtml = theme.key === "forged_carbon"
+      ? `<div class="forged-carbon-effects" aria-hidden="true">
+          <div class="forged-carbon-texture forged-carbon-texture--a"></div>
+          <div class="forged-carbon-texture forged-carbon-texture--b"></div>
+          <div class="forged-carbon-vignette"></div>
+          ${Array.from({ length: 14 }, (_, i) => `<span class="forged-carbon-fragment" style="--fragment-x:${3 + i * 7}%;--fragment-size:${11 + i % 5 * 4}px;--fragment-duration:${19 + i % 6 * 3}s;--fragment-delay:-${i * 4.1}s;--fragment-angle:${i * 29}deg;--fragment-drift:${i % 2 ? -36 : 42}px"></span>`).join("")}
+        </div>`
+      : "";
+    // Deterministic silhouettes avoid jumps when the editor rerenders.
     const comicFlamePaths = [0, 1, 2].map((layer) => {
       let path = "M-100 350L-100 280";
       for (let i = 0; i < 17; i += 1) {
@@ -5479,6 +5538,7 @@
         ${kawaiiKittyEffectsHtml}
         ${sakuraEffectsHtml}
         ${starryEffectsHtml}
+        ${carbonEffectsHtml}
         ${comicFireEffectsHtml}
         ${jadeEffectsHtml}
         ${blackGoldLeafEffectsHtml}
@@ -5676,6 +5736,7 @@
   });
 
   function syncThemeMotionVisibility() {
+    document.documentElement.classList.toggle("forged-carbon-motion-paused", document.hidden);
     document.documentElement.classList.toggle("comic-fire-motion-paused", document.hidden);
     document.documentElement.classList.toggle("jade-motion-paused", document.hidden);
   }

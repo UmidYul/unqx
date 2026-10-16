@@ -15,6 +15,7 @@ const PROFILE_THEME_KEYS = [
   "black_gold_leaf",
   "jade_luxe",
   "comic_fire",
+  "forged_carbon",
   "ocean_2d",
   "greek_olympus_2d",
   "aurora_codex",
