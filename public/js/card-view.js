@@ -2613,6 +2613,12 @@
         <path d="M0 0H170L0 100Z" fill="#ffe04b"/>
         <path d="M0 72 122 0M0 91 155 0" stroke="#25110d" stroke-width="2" fill="none"/>
         <path d="M360 520 264 600H360Z" fill="#ff851b" opacity="0.3"/>
+        <g fill="none" stroke="#9a2917" stroke-width="0.6" opacity="0.5">
+          <path d="M16 126V16H230M344 472V584H130M18 118H31M23 113V123M329 480H342M336 475V485"/>
+          <path d="m0 35 48-35m-48 48 65-48m-65 61 82-61m-82 74 99-74m-99 87 116-87" opacity="0.45"/>
+          <path d="m296 600 64-53m-49 53 49-40m-33 40 33-27m-16 27 16-14"/>
+          <path d="M18 567H77M18 571H51M18 575H65M283 22H340M311 26H340"/>
+        </g>
       </svg>`;
     }
     if (themeKey === "jade_luxe") {
@@ -5308,6 +5314,11 @@
         </div>`
       : "";
     const comicFlamePath = "M-80 310V242C-40 215-30 169-43 124C12 159 22 194 18 229C58 196 68 143 46 84C102 111 122 165 112 211C156 181 163 119 147 37C211 89 223 145 210 204C251 181 271 134 254 91C307 124 321 163 312 216C354 183 374 114 353 5C421 61 440 144 416 201C460 187 481 135 468 95C518 122 543 166 532 220C572 193 587 138 572 58C635 104 657 160 641 208C685 175 707 121 694 26C754 70 779 149 759 204C802 181 818 143 804 101C852 119 884 169 870 222C911 188 932 126 908 49C971 88 989 147 977 205C1023 184 1048 130 1036 73C1092 115 1110 172 1098 226C1143 204 1170 152 1155 109C1210 151 1246 214 1280 243V330H-80Z";
+    const comicFireDetailHtml = `<g class="comic-fire-flame-detail" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path class="comic-fire-hot-core" d="M72 324C114 289 91 257 78 239C121 253 145 286 125 324M270 324C304 288 285 256 276 241C319 267 328 295 315 324M482 324C509 292 487 256 479 233C524 261 549 294 530 324M699 324C737 279 716 254 705 231C756 264 769 300 749 324M919 324C947 292 931 268 920 247C963 267 982 297 968 324M1100 324C1134 288 1112 262 1104 243C1148 269 1167 299 1149 324"/>
+      <path class="comic-fire-ink-detail" d="M67 157Q91 184 87 205M169 100Q188 132 183 153M374 81Q399 118 391 159M594 124Q613 152 606 177M717 93Q743 134 733 165M933 116Q956 151 950 178M1059 144Q1080 175 1070 197"/>
+      <path class="comic-fire-hot-edge" d="M163 91Q181 115 184 132M369 65Q389 94 393 114M710 79Q731 106 735 126M928 96Q947 122 951 142M59 138Q77 153 82 171"/>
+    </g>`;
     const comicFireEffectsHtml = theme.key === "comic_fire"
       ? `<div class="comic-fire-effects" aria-hidden="true">
           <div class="comic-fire-halftone"></div>
@@ -5315,6 +5326,7 @@
             <path class="comic-flame comic-flame--red" d="${comicFlamePath}"/>
             <path class="comic-flame comic-flame--orange" d="${comicFlamePath}"/>
             <path class="comic-flame comic-flame--yellow" d="${comicFlamePath}"/>
+            ${comicFireDetailHtml}
           </svg>
           ${Array.from({ length: 7 }, (_, i) => `<span class="comic-fire-ember" style="--ember-x:${9 + i * 14}%;--ember-delay:-${i * 1.3}s;--ember-duration:${7 + i % 3}s"></span>`).join("")}
         </div>
@@ -5322,7 +5334,11 @@
           <path class="comic-flame comic-flame--red" d="${comicFlamePath}"/>
           <path class="comic-flame comic-flame--orange" d="${comicFlamePath}"/>
           <path class="comic-flame comic-flame--yellow" d="${comicFlamePath}"/>
-        </svg>`
+          ${comicFireDetailHtml}
+        </svg>
+        <div class="comic-fire-ashfall" aria-hidden="true">
+          ${Array.from({ length: 20 }, (_, i) => `<span class="comic-fire-ash" style="--ash-x:${3 + i * 4.9}%;--ash-size:${2 + i % 4 * .65}px;--ash-duration:${13 + i % 7 * 2}s;--ash-delay:-${i * 2.7}s;--ash-drift:${i % 2 ? -38 : 42}px;--ash-angle:${i * 31}deg"></span>`).join("")}
+        </div>`
       : "";
     // Eight compositor-animated leaves; no frame loop or particle allocation.
     const jadeEffectsHtml = theme.key === "jade_luxe"
