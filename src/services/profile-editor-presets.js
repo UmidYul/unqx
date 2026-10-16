@@ -60,6 +60,13 @@ const SIGNATURE_THEMES = [
     premiumRequired: true,
   },
   {
+    id: "comic_fire",
+    label: "FIRE · Огненный комикс",
+    description: "2D-комикс, тёплая палитра и живое пламя в двух слоях",
+    swatchStyle: "border:2px solid #25110D;background:radial-gradient(circle at 70% 25%,#FFF8E9 0 12%,transparent 13%),linear-gradient(135deg,#FFE04B 0 36%,#FF851B 37% 65%,#E73823 66%);box-shadow:3px 3px 0 #25110D;",
+    premiumRequired: true,
+  },
+  {
     id: "jade_luxe",
     label: "JADE · Нефрит",
     description: "Глубокий чёрный, сияющий нефрит и молнии",

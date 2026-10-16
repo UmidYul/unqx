@@ -20,6 +20,7 @@
     "golden_noir",
     "black_gold_leaf",
     "jade_luxe",
+    "comic_fire",
     "ocean_2d",
     "aurora_codex",
     "codex_da_vinci",
@@ -548,6 +549,48 @@
       cardShadow: "0 18px 42px rgba(6, 8, 13, 0.62)",
       buttonShineGradient:
         "linear-gradient(90deg, rgba(234,214,161,0) 0%, rgba(234,214,161,0.18) 45%, rgba(234,214,161,0.3) 50%, rgba(234,214,161,0.18) 55%, rgba(234,214,161,0) 100%)",
+    },
+    comic_fire: {
+      pageBg: "radial-gradient(ellipse at 50% 100%, #d63d17, #5b100b 60%, #290b09)",
+      cardBg: "#fff8e9",
+      cardBgOverlay: "comic_fire",
+      surfaceBg: "#fffdf5",
+      cardBorder: "3px solid #25110d",
+      surfaceBorder: "2px solid #25110d",
+      dividerColor: "rgba(100, 45, 22, .2)",
+      nameColor: "#25110d",
+      roleColor: "#ac3017",
+      mutedColor: "#745040",
+      accentColor: "#e73823",
+      emailColor: "#9a2917",
+      buttonPrimaryBg: "#ff851b",
+      buttonPrimaryText: "#25110d",
+      buttonPrimaryBorder: "#25110d",
+      buttonSecondaryBg: "#ffe04b",
+      buttonSecondaryText: "#25110d",
+      buttonSecondaryBorder: "#25110d",
+      badgeText: "#25110d",
+      badgeBg: "#ffe04b",
+      badgeBorder: "2px solid #25110d",
+      topLineGradient: "linear-gradient(90deg, #e73823 0% 33%, #ff851b 33% 66%, #ffe04b 66%)",
+      avatarBg: "#ffca35",
+      avatarText: "#25110d",
+      avatarBorder: "3px solid #25110d",
+      cardBorderRadius: "22px",
+      surfaceBorderRadius: "12px",
+      buttonBorderRadius: "10px",
+      fontFamily: "'Inter', 'Segoe UI', sans-serif",
+      nameFontStyle: "italic",
+      nameFontWeight: "900",
+      nameLetterSpacing: "-.04em",
+      roleLetterSpacing: "1px",
+      scoreLabelColor: "#745040",
+      scoreValueColor: "#ac3017",
+      scoreBarFill: "linear-gradient(90deg, #e73823, #ff851b, #ffe04b)",
+      scoreBarTrack: "#f3d8b6",
+      scorePercentileColor: "#745040",
+      cardShadow: "8px 8px 0 #25110d, 0 24px 60px rgba(30,0,0,.3)",
+      buttonShineGradient: "linear-gradient(100deg, transparent, rgba(255,255,255,.4), transparent)",
     },
     jade_luxe: {
       pageBg: "radial-gradient(ellipse at 80% 15%, #07130d 0%, #020403 58%, #000000 100%)",
@@ -2560,6 +2603,16 @@
         <path d="M0 110C74 88 148 94 220 116C284 136 324 136 360 124" stroke="url(#gn-line)" stroke-width="0.78" fill="none"></path>
         <path d="M0 322C72 300 146 308 216 330C280 350 322 350 360 338" stroke="url(#gn-line)" stroke-width="0.7" fill="none"></path>
         <path d="M0 536C74 514 148 522 218 544C282 562 324 566 360 552" stroke="url(#gn-line)" stroke-width="0.64" fill="none"></path>
+      </svg>`;
+    }
+    if (themeKey === "comic_fire") {
+      return `<svg class="unq-ref-overlay-svg comic-fire-print" viewBox="0 0 360 600" preserveAspectRatio="none" aria-hidden="true">
+        <g fill="#e73823" opacity="0.24">
+          ${Array.from({ length: 36 }, (_, i) => `<circle cx="${270 + i % 6 * 17}" cy="${12 + Math.floor(i / 6) * 17}" r="2"/>`).join("")}
+        </g>
+        <path d="M0 0H170L0 100Z" fill="#ffe04b"/>
+        <path d="M0 72 122 0M0 91 155 0" stroke="#25110d" stroke-width="2" fill="none"/>
+        <path d="M360 520 264 600H360Z" fill="#ff851b" opacity="0.3"/>
       </svg>`;
     }
     if (themeKey === "jade_luxe") {
@@ -5254,6 +5307,23 @@
             <span class="gogh-star gogh-star-${index + 1}" style="left:${left};top:${top};width:${size};height:${size};animation-delay:${delay}"></span>`).join("")}
         </div>`
       : "";
+    const comicFlamePath = "M-80 310V242C-40 215-30 169-43 124C12 159 22 194 18 229C58 196 68 143 46 84C102 111 122 165 112 211C156 181 163 119 147 37C211 89 223 145 210 204C251 181 271 134 254 91C307 124 321 163 312 216C354 183 374 114 353 5C421 61 440 144 416 201C460 187 481 135 468 95C518 122 543 166 532 220C572 193 587 138 572 58C635 104 657 160 641 208C685 175 707 121 694 26C754 70 779 149 759 204C802 181 818 143 804 101C852 119 884 169 870 222C911 188 932 126 908 49C971 88 989 147 977 205C1023 184 1048 130 1036 73C1092 115 1110 172 1098 226C1143 204 1170 152 1155 109C1210 151 1246 214 1280 243V330H-80Z";
+    const comicFireEffectsHtml = theme.key === "comic_fire"
+      ? `<div class="comic-fire-effects" aria-hidden="true">
+          <div class="comic-fire-halftone"></div>
+          <svg class="comic-fire-background" viewBox="0 0 1200 330" preserveAspectRatio="none" focusable="false">
+            <path class="comic-flame comic-flame--red" d="${comicFlamePath}"/>
+            <path class="comic-flame comic-flame--orange" d="${comicFlamePath}"/>
+            <path class="comic-flame comic-flame--yellow" d="${comicFlamePath}"/>
+          </svg>
+          ${Array.from({ length: 7 }, (_, i) => `<span class="comic-fire-ember" style="--ember-x:${9 + i * 14}%;--ember-delay:-${i * 1.3}s;--ember-duration:${7 + i % 3}s"></span>`).join("")}
+        </div>
+        <svg class="comic-fire-foreground" viewBox="0 0 1200 330" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+          <path class="comic-flame comic-flame--red" d="${comicFlamePath}"/>
+          <path class="comic-flame comic-flame--orange" d="${comicFlamePath}"/>
+          <path class="comic-flame comic-flame--yellow" d="${comicFlamePath}"/>
+        </svg>`
+      : "";
     // Eight compositor-animated leaves; no frame loop or particle allocation.
     const jadeEffectsHtml = theme.key === "jade_luxe"
       ? `<div class="jade-effects" aria-hidden="true">${Array.from({ length: 8 }, (_, index) =>
@@ -5352,6 +5422,7 @@
         ${kawaiiKittyEffectsHtml}
         ${sakuraEffectsHtml}
         ${starryEffectsHtml}
+        ${comicFireEffectsHtml}
         ${jadeEffectsHtml}
         ${blackGoldLeafEffectsHtml}
         ${ocean2dEffectsHtml}
@@ -5547,11 +5618,12 @@
     }
   });
 
-  function syncJadeMotionVisibility() {
+  function syncThemeMotionVisibility() {
+    document.documentElement.classList.toggle("comic-fire-motion-paused", document.hidden);
     document.documentElement.classList.toggle("jade-motion-paused", document.hidden);
   }
-  document.addEventListener("visibilitychange", syncJadeMotionVisibility);
-  syncJadeMotionVisibility();
+  document.addEventListener("visibilitychange", syncThemeMotionVisibility);
+  syncThemeMotionVisibility();
 
   window.CardView = {
     renderCardView,

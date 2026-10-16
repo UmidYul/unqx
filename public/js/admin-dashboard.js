@@ -233,6 +233,7 @@
     sage_luxe: { label: "Verdant Luxe", fill: "#f7faf7", border: "#8ca18f", text: "#2f4034" },
     midnight_obsidian: { label: "Midnight Obsidian", fill: "#111927", border: "#5374a6", text: "#d6e6ff" },
     golden_noir: { label: "Noir Aureate", fill: "#161b28", border: "#c9ad6a", text: "#dfc98e" },
+    comic_fire: { label: "FIRE · Огненный комикс", fill: "#FF851B", border: "#25110D", text: "#25110D", bg: "linear-gradient(135deg,#FFE04B 0 36%,#FF851B 37% 65%,#E73823 66%)" },
     jade_luxe: { label: "JADE · Нефрит", fill: "#010302", border: "#24FFA3", text: "#7DFFC1", bg: "radial-gradient(ellipse at 75% 20%,rgba(0,238,145,.18),transparent 45%),linear-gradient(145deg,#030705,#000000)" },
     black_gold_leaf: { label: "Золотой Лист", fill: "#000000", border: "#D4AF37", text: "#f0dfad", bg: "radial-gradient(circle at 72% 12%,rgba(212,175,55,.24),transparent 34%),linear-gradient(145deg,#000000 0%,#050505 52%,#000000 100%)" },
     ocean_2d: { label: "Океан 2D", fill: "#B8EBFF", border: "#22A8DB", text: "#075985", bg: "linear-gradient(180deg,#E9FBFF 0%,#B8EBFF 46%,#68C8EE 100%)" },

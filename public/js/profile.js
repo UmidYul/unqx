@@ -106,6 +106,7 @@
       "golden_noir",
       "black_gold_leaf",
       "jade_luxe",
+      "comic_fire",
       "ocean_2d",
       "aurora_codex",
       "codex_da_vinci",
