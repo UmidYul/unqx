@@ -13,6 +13,7 @@ const PROFILE_THEME_KEYS = [
   "midnight_obsidian",
   "golden_noir",
   "black_gold_leaf",
+  "jade_luxe",
   "ocean_2d",
   "greek_olympus_2d",
   "aurora_codex",

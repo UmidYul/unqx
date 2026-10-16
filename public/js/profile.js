@@ -105,6 +105,7 @@
       "midnight_obsidian",
       "golden_noir",
       "black_gold_leaf",
+      "jade_luxe",
       "ocean_2d",
       "aurora_codex",
       "codex_da_vinci",

@@ -19,6 +19,7 @@
     "midnight_obsidian",
     "golden_noir",
     "black_gold_leaf",
+    "jade_luxe",
     "ocean_2d",
     "aurora_codex",
     "codex_da_vinci",
@@ -547,6 +548,48 @@
       cardShadow: "0 18px 42px rgba(6, 8, 13, 0.62)",
       buttonShineGradient:
         "linear-gradient(90deg, rgba(234,214,161,0) 0%, rgba(234,214,161,0.18) 45%, rgba(234,214,161,0.3) 50%, rgba(234,214,161,0.18) 55%, rgba(234,214,161,0) 100%)",
+    },
+    jade_luxe: {
+      pageBg: "radial-gradient(ellipse at 80% 15%, #15291d 0%, #0a0c0a 65%)",
+      cardBg: "radial-gradient(ellipse at 90% 0%, rgba(0,168,107,.13), transparent 60%), linear-gradient(155deg, #101a13, #0a0c0a)",
+      cardBgOverlay: "jade_luxe",
+      surfaceBg: "rgba(16, 28, 21, 0.72)",
+      cardBorder: "1px solid rgba(119, 190, 146, 0.3)",
+      surfaceBorder: "1px solid rgba(119, 190, 146, 0.19)",
+      dividerColor: "rgba(119, 190, 146, 0.16)",
+      nameColor: "#e9ede4",
+      roleColor: "#b0dfc2",
+      mutedColor: "#a2b0a7",
+      accentColor: "#00a86b",
+      emailColor: "#b0dfc2",
+      buttonPrimaryBg: "linear-gradient(125deg, #527b60 0%, #285c43 28%, #123e2b 70%, #306949)",
+      buttonPrimaryText: "#f0fff3",
+      buttonPrimaryBorder: "rgba(121,197,153,.5)",
+      buttonSecondaryBg: "rgba(27,77,62,.2)",
+      buttonSecondaryText: "#c7e7d0",
+      buttonSecondaryBorder: "rgba(119,190,146,.28)",
+      badgeText: "#b0dfc2",
+      badgeBg: "rgba(27,77,62,.28)",
+      badgeBorder: "1px solid rgba(119,190,146,.26)",
+      topLineGradient: "linear-gradient(90deg, transparent, #2e8b57, #48d1cc, transparent)",
+      avatarBg: "linear-gradient(145deg, #1b4d3e, #0d1f16)",
+      avatarText: "#b0dfc2",
+      avatarBorder: "2px solid rgba(119,190,146,.42)",
+      cardBorderRadius: "24px",
+      surfaceBorderRadius: "18px",
+      buttonBorderRadius: "14px",
+      fontFamily: "'Inter', 'Segoe UI', sans-serif",
+      nameFontStyle: "normal",
+      nameFontWeight: "500",
+      nameLetterSpacing: "-.025em",
+      roleLetterSpacing: "1.2px",
+      scoreLabelColor: "#a2b0a7",
+      scoreValueColor: "#b0dfc2",
+      scoreBarFill: "linear-gradient(90deg, #1b4d3e, #00a86b, #48d1cc)",
+      scoreBarTrack: "rgba(119,190,146,.13)",
+      scorePercentileColor: "#a2b0a7",
+      cardShadow: "0 24px 64px rgba(0,0,0,.55), 0 0 48px rgba(0,168,107,.06)",
+      buttonShineGradient: "linear-gradient(100deg, transparent, rgba(176,223,194,.24), transparent)",
     },
     black_gold_leaf: {
       pageBg: "#000000",
@@ -2517,6 +2560,26 @@
         <path d="M0 110C74 88 148 94 220 116C284 136 324 136 360 124" stroke="url(#gn-line)" stroke-width="0.78" fill="none"></path>
         <path d="M0 322C72 300 146 308 216 330C280 350 322 350 360 338" stroke="url(#gn-line)" stroke-width="0.7" fill="none"></path>
         <path d="M0 536C74 514 148 522 218 544C282 562 324 566 360 552" stroke="url(#gn-line)" stroke-width="0.64" fill="none"></path>
+      </svg>`;
+    }
+    if (themeKey === "jade_luxe") {
+      return `<svg class="unq-ref-overlay-svg jade-brushwork" viewBox="0 0 360 600" preserveAspectRatio="none" aria-hidden="true">
+        <g fill="none" stroke="#80c397" stroke-width="0.8" opacity="0.45">
+          <path d="M-90 220C80-50 180 330 340 100S510 0 540-40"/>
+          <path d="M-90 230C80-40 190 340 350 110S520 10 550-30"/>
+          <path d="M-90 243C80-30 200 350 360 120S530 20 560-20"/>
+          <path d="M-90 259C80-20 210 360 370 130S540 30 570-10"/>
+          <path d="M-90 279C80-10 220 370 380 140S550 40 580 0"/>
+          <path d="M-80 530C90 320 230 660 420 420"/>
+          <path d="M-80 542C90 332 240 672 430 432"/>
+          <path d="M-80 558C90 348 250 688 440 448"/>
+        </g>
+        <g fill="#2e8b57" fill-opacity="0.18" stroke="#b0dfc2" stroke-opacity="0.3" stroke-width="0.6">
+          <path d="M298 550Q311 485 338 447" fill="none"/>
+          <path d="M313 503Q280 502 285 474Q309 476 313 503Z"/>
+          <path d="M322 480Q325 449 349 453Q350 477 322 480Z"/>
+          <path d="M304 527Q320 499 343 510Q335 533 304 527Z"/>
+        </g>
       </svg>`;
     }
     if (themeKey === "black_gold_leaf") {
@@ -5191,6 +5254,12 @@
             <span class="gogh-star gogh-star-${index + 1}" style="left:${left};top:${top};width:${size};height:${size};animation-delay:${delay}"></span>`).join("")}
         </div>`
       : "";
+    // Eight compositor-animated leaves; no frame loop or particle allocation.
+    const jadeEffectsHtml = theme.key === "jade_luxe"
+      ? `<div class="jade-effects" aria-hidden="true">${Array.from({ length: 8 }, (_, index) =>
+          `<span class="jade-leaf" style="--jade-x:${7 + index * 12}%;--jade-duration:${22 + index * 2}s;--jade-delay:-${index * 5 + 2}s;--jade-angle:${index * 37}deg;--jade-size:${9 + index % 3 * 3}px"></span>`
+        ).join("")}</div>`
+      : "";
     const blackGoldLeafEffectsHtml = theme.key === "black_gold_leaf"
       ? `<div class="black-gold-leaf-effects" aria-hidden="true">
           ${[
@@ -5266,6 +5335,7 @@
         ${kawaiiKittyEffectsHtml}
         ${sakuraEffectsHtml}
         ${starryEffectsHtml}
+        ${jadeEffectsHtml}
         ${blackGoldLeafEffectsHtml}
         ${ocean2dEffectsHtml}
         ${vintageSparklesHtml}
@@ -5459,6 +5529,12 @@
       }
     }
   });
+
+  function syncJadeMotionVisibility() {
+    document.documentElement.classList.toggle("jade-motion-paused", document.hidden);
+  }
+  document.addEventListener("visibilitychange", syncJadeMotionVisibility);
+  syncJadeMotionVisibility();
 
   window.CardView = {
     renderCardView,

@@ -60,6 +60,13 @@ const SIGNATURE_THEMES = [
     premiumRequired: true,
   },
   {
+    id: "jade_luxe",
+    label: "JADE · Нефрит",
+    description: "Матовый чёрный, нефритовое стекло и падающие листья",
+    swatchStyle: "border-color:#2E8B57;background:radial-gradient(ellipse at 75% 20%,rgba(0,168,107,.32),transparent 55%),linear-gradient(145deg,#0A0C0A,#14271D);box-shadow:inset 0 0 18px rgba(72,209,204,.1);",
+    premiumRequired: true,
+  },
+  {
     id: "black_gold_leaf",
     label: "Золотой Лист",
     description: "Matte black with falling gold leaves",
