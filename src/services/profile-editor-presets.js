@@ -60,6 +60,13 @@ const SIGNATURE_THEMES = [
     premiumRequired: true,
   },
   {
+    id: "arcadia_painted",
+    label: "АРКАДИЯ · Живописный сад",
+    description: "Рисованный сад, лазурь, олива и кружащиеся листья",
+    swatchStyle: "border-color:#a58a58;background:linear-gradient(135deg,rgba(242,230,202,.1),rgba(35,54,32,.25)),url('/assets/themes/arcadia-garden.webp') center/cover;box-shadow:inset 0 0 0 2px rgba(239,219,168,.35);",
+    premiumRequired: true,
+  },
+  {
     id: "forged_carbon",
     label: "FORGED · Кованый карбон",
     description: "Кованый карбон: хаотичные волокна и переливающиеся грани",

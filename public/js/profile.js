@@ -108,6 +108,7 @@
       "jade_luxe",
       "comic_fire",
       "forged_carbon",
+      "arcadia_painted",
       "ocean_2d",
       "aurora_codex",
       "codex_da_vinci",

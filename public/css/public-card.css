@@ -19289,3 +19289,200 @@ body[data-card-theme="forged_carbon"] #card-slug-search-input::placeholder { col
   mix-blend-mode: screen;
   filter: grayscale(1) contrast(1.35) brightness(.7);
 }
+
+/* ARCADIA — a painted woodland, warm canvas and botanical marginalia. */
+html[data-page-theme="arcadia_painted"] { background: #34402a; }
+body[data-card-theme="arcadia_painted"],
+#profile-card-live-preview[data-preview-theme="arcadia_painted"] {
+  --theme-screen-opacity: 0;
+  --theme-screen-pattern: none;
+  --preview-screen-pattern: none;
+  --unqx-nav-bg: rgba(40, 58, 34, .95);
+  --unqx-nav-border: #b0a071;
+  --unqx-nav-text: #f3e8ca;
+  --unqx-nav-icon: #e5d5ab;
+  --unqx-nav-input: #f3e8ca;
+  --unqx-nav-placeholder: #d3c9ae;
+  --unqx-nav-chip: #e5d5ab;
+  --unqx-nav-hover-bg: #435a37;
+  --unqx-nav-hover-text: #fff4d8;
+  --unqx-nav-hover-border: #c5b37b;
+  --unqx-nav-shadow: 0 10px 26px rgba(21, 35, 18, .3);
+  color: #2f402a;
+  background: #34402a !important;
+}
+body[data-card-theme="arcadia_painted"] main {
+  background: transparent;
+  padding-bottom: max(18px, env(safe-area-inset-bottom, 0px)) !important;
+}
+body[data-card-theme="arcadia_painted"] #public-card-layout > div:first-child {
+  position: relative;
+  z-index: 4;
+}
+body[data-card-theme="arcadia_painted"] #public-card-layout > div:first-child :is(a, button),
+body[data-card-theme="arcadia_painted"] #card-slug-search-form > div,
+body[data-card-theme="arcadia_painted"] #card-slug-search-results {
+  background: rgba(40, 58, 34, .95);
+  color: #f3e8ca;
+  border-color: #b0a071;
+  box-shadow: inset 0 1px 0 rgba(240, 223, 177, .13), 0 4px 15px rgba(19, 31, 17, .2);
+}
+body[data-card-theme="arcadia_painted"] #card-slug-search-form span { color: #ddd0aa; }
+body[data-card-theme="arcadia_painted"] #card-slug-search-input { color: #f3e8ca; }
+body[data-card-theme="arcadia_painted"] #card-slug-search-input::placeholder { color: #c6bea6; opacity: 1; }
+body[data-card-theme="arcadia_painted"] #card-view-root {
+  transform: none !important;
+  animation: arcadia-card-enter .6s ease-out both;
+}
+[data-card-theme="arcadia_painted"] .unq-ref-top,
+[data-card-theme="arcadia_painted"] .unq-ref-footline {
+  position: relative;
+  z-index: 1;
+}
+[data-card-theme="arcadia_painted"] .unq-ref-shell,
+[data-card-theme="arcadia_painted"] .public-card-shell {
+  border: 1px solid #ac9361 !important;
+  background:
+    repeating-linear-gradient(0deg, rgba(106, 81, 44, .025) 0 1px, transparent 1px 4px),
+    repeating-linear-gradient(90deg, rgba(106, 81, 44, .018) 0 1px, transparent 1px 5px),
+    radial-gradient(ellipse at 0 35%, rgba(154, 169, 104, .13), transparent 60%),
+    linear-gradient(145deg, #f7efdc, #e7d9b8) !important;
+  box-shadow: 0 25px 65px rgba(18, 29, 18, .45), inset 0 0 0 5px rgba(251, 243, 221, .5);
+}
+[data-card-theme="arcadia_painted"] .unq-ref-shell::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 190px;
+  background: url('/assets/themes/arcadia-garden.webp') center 28% / cover;
+  opacity: .2;
+  mask-image: linear-gradient(#000, transparent);
+  pointer-events: none;
+}
+[data-card-theme="arcadia_painted"] .unq-ref-card-overlay { opacity: .65; }
+[data-card-theme="arcadia_painted"] .arcadia-botanical-print { opacity: .7; }
+[data-card-theme="arcadia_painted"] .unq-ref-brand h2 {
+  font-family: 'Playfair Display', 'Baskerville', 'Times New Roman', serif;
+  font-size: 36px;
+  font-weight: 500;
+  letter-spacing: .12em;
+  color: #3b5134;
+  text-shadow: 0 1px 0 #fff5df;
+}
+[data-card-theme="arcadia_painted"] .unq-ref-brand p {
+  color: #79613e;
+  font-size: 9px;
+  letter-spacing: .2em;
+}
+[data-card-theme="arcadia_painted"] .unq-ref-name,
+[data-card-theme="arcadia_painted"] .unq-ref-name-text {
+  font-family: 'Playfair Display', 'Baskerville', 'Times New Roman', serif;
+  color: #2f402a;
+  font-weight: 500;
+  letter-spacing: -.025em;
+}
+[data-card-theme="arcadia_painted"] .unq-ref-avatar-wrap {
+  box-shadow: 0 0 0 5px #eee2c4, 0 0 0 6px #b39b67, 0 8px 20px rgba(73, 69, 39, .2);
+}
+[data-card-theme="arcadia_painted"] .unq-ref-surface,
+[data-card-theme="arcadia_painted"] .unq-ref-contact,
+[data-card-theme="arcadia_painted"] .unq-ref-about {
+  border: 1px solid rgba(140, 119, 75, .45);
+  background: linear-gradient(135deg, rgba(251, 245, 226, .92), rgba(232, 219, 185, .92));
+  box-shadow: inset 0 0 0 3px rgba(251, 243, 221, .55), 0 4px 14px rgba(78, 69, 39, .045);
+}
+[data-card-theme="arcadia_painted"] .unq-ref-action-btn,
+[data-card-theme="arcadia_painted"] .unq-ref-follow-toggle,
+[data-card-theme="arcadia_painted"] .unq-follow-action-btn {
+  color: #f6edd4 !important;
+  background: linear-gradient(135deg, #536d45, #2d432c) !important;
+  border: 1px solid #7b895a;
+  border-radius: 10px;
+  box-shadow: inset 0 1px 0 rgba(235, 221, 174, .26), 0 5px 14px rgba(42, 58, 31, .18);
+  transition: transform .3s ease, box-shadow .3s ease, border-color .3s ease;
+}
+[data-card-theme="arcadia_painted"] .unq-ref-save {
+  color: #3c5133;
+  border: 1px solid rgba(140, 119, 75, .4);
+  border-radius: 8px;
+  background: linear-gradient(100deg, rgba(243, 234, 208, .65), rgba(251, 245, 226, .9), rgba(226, 209, 170, .6));
+}
+[data-card-theme="arcadia_painted"] .unq-ref-share,
+[data-card-theme="arcadia_painted"] .unq-ref-footline { color: #f0e4c3; text-shadow: 0 1px 5px #24351e; }
+[data-card-theme="arcadia_painted"] :is(a, button):focus-visible { outline: 2px solid #52683e; outline-offset: 4px; }
+@media (hover: hover) {
+  [data-card-theme="arcadia_painted"] .unq-ref-action-btn:hover {
+    transform: translateY(-2px);
+    border-color: #c3ae75;
+    box-shadow: inset 0 1px 0 rgba(235, 221, 174, .32), 0 8px 20px rgba(42, 58, 31, .25);
+  }
+}
+.arcadia-effects,
+.arcadia-leaf-field {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  contain: strict;
+}
+.arcadia-effects { z-index: 0; background: #34402a; }
+.arcadia-leaf-field { z-index: 2; }
+.arcadia-landscape {
+  position: absolute;
+  inset: 0;
+  background: url('/assets/themes/arcadia-garden.webp') center / cover;
+}
+.arcadia-daylight {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(27, 43, 29, .16), transparent 45%, rgba(27, 43, 29, .2));
+}
+.arcadia-daylight::after {
+  content: "";
+  position: absolute;
+  inset: -15%;
+  background: radial-gradient(ellipse at 55% 10%, rgba(244, 215, 145, .15), transparent 55%);
+  animation: arcadia-dappled-light 18s ease-in-out infinite alternate;
+}
+.arcadia-leaf {
+  position: absolute;
+  top: -45px;
+  left: var(--arcadia-x);
+  width: var(--arcadia-size);
+  height: calc(var(--arcadia-size) * 1.6);
+  color: #667443;
+  opacity: 0;
+  animation: arcadia-leaf-fall var(--arcadia-duration) linear var(--arcadia-delay) infinite;
+}
+.arcadia-leaf:nth-child(3n) { color: #ab8346; }
+.arcadia-leaf:nth-child(4n) { color: #8b5237; }
+.arcadia-leaf:nth-child(5n) { color: #8d955a; }
+#profile-card-live-preview[data-preview-theme="arcadia_painted"] {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  --arcadia-fall-distance: 1200px;
+}
+#profile-card-live-preview[data-preview-theme="arcadia_painted"] :is(.arcadia-effects, .arcadia-leaf-field) { position: absolute; }
+.arcadia-motion-paused .arcadia-leaf,
+.arcadia-motion-paused .arcadia-daylight::after { animation-play-state: paused; }
+@keyframes arcadia-card-enter { from { opacity: 0; } to { opacity: 1; } }
+@keyframes arcadia-dappled-light { from { transform: translate3d(-3%, 0, 0); opacity: .5; } to { transform: translate3d(4%, 3%, 0); opacity: 1; } }
+@keyframes arcadia-leaf-fall {
+  0% { opacity: 0; transform: translate3d(0, -35px, 0) rotate(var(--arcadia-angle)) rotateY(0deg); }
+  12% { opacity: .38; }
+  38% { transform: translate3d(var(--arcadia-drift), calc(var(--arcadia-fall-distance, 112vh) * .38), 0) rotate(calc(var(--arcadia-angle) + 90deg)) rotateY(100deg); }
+  69% { transform: translate3d(calc(var(--arcadia-drift) * -.5), calc(var(--arcadia-fall-distance, 112vh) * .69), 0) rotate(calc(var(--arcadia-angle) + 190deg)) rotateY(230deg); }
+  87% { opacity: .32; }
+  100% { opacity: 0; transform: translate3d(var(--arcadia-drift), var(--arcadia-fall-distance, 112vh), 0) rotate(calc(var(--arcadia-angle) + 290deg)) rotateY(330deg); }
+}
+@media (max-width: 640px) {
+  .arcadia-landscape { background-position: 56% center; }
+  .arcadia-leaf:nth-child(n + 11) { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .arcadia-leaf-field { display: none; }
+  .arcadia-leaf, .arcadia-daylight::after { animation: none; }
+  body[data-card-theme="arcadia_painted"] #card-view-root { animation: none; }
+  [data-card-theme="arcadia_painted"] .unq-ref-action-btn { transition: none; }
+}

@@ -22,6 +22,7 @@
     "jade_luxe",
     "comic_fire",
     "forged_carbon",
+    "arcadia_painted",
     "ocean_2d",
     "aurora_codex",
     "codex_da_vinci",
@@ -550,6 +551,48 @@
       cardShadow: "0 18px 42px rgba(6, 8, 13, 0.62)",
       buttonShineGradient:
         "linear-gradient(90deg, rgba(234,214,161,0) 0%, rgba(234,214,161,0.18) 45%, rgba(234,214,161,0.3) 50%, rgba(234,214,161,0.18) 55%, rgba(234,214,161,0) 100%)",
+    },
+    arcadia_painted: {
+      pageBg: "#34402a",
+      cardBg: "linear-gradient(145deg, #f5edda, #e7d9b8)",
+      cardBgOverlay: "arcadia_painted",
+      surfaceBg: "rgba(248,241,222,.92)",
+      cardBorder: "1px solid #ac9361",
+      surfaceBorder: "1px solid rgba(140,119,75,.45)",
+      dividerColor: "rgba(140,119,75,.32)",
+      nameColor: "#2f402a",
+      roleColor: "#79613e",
+      mutedColor: "#6d654e",
+      accentColor: "#476748",
+      emailColor: "#355c70",
+      buttonPrimaryBg: "linear-gradient(135deg, #536d45, #2d432c)",
+      buttonPrimaryText: "#f6edd4",
+      buttonPrimaryBorder: "#7b895a",
+      buttonSecondaryBg: "linear-gradient(135deg, #f0e4c7, #dfcea7)",
+      buttonSecondaryText: "#3c5133",
+      buttonSecondaryBorder: "#ae996b",
+      badgeText: "#f3e7c9",
+      badgeBg: "#3f5336",
+      badgeBorder: "1px solid #b3a277",
+      topLineGradient: "linear-gradient(90deg, transparent, #8f793c, #bfa467, #8f793c, transparent)",
+      avatarBg: "linear-gradient(145deg, #638093, #344f59)",
+      avatarText: "#f5ecd9",
+      avatarBorder: "2px solid #ac9361",
+      cardBorderRadius: "22px",
+      surfaceBorderRadius: "13px",
+      buttonBorderRadius: "10px",
+      fontFamily: "'Inter', 'Segoe UI', sans-serif",
+      nameFontStyle: "normal",
+      nameFontWeight: "500",
+      nameLetterSpacing: "-.025em",
+      roleLetterSpacing: "1.4px",
+      scoreLabelColor: "#6d654e",
+      scoreValueColor: "#3f5336",
+      scoreBarFill: "linear-gradient(90deg, #475b35, #7d8b51, #bc9d57)",
+      scoreBarTrack: "#dbcfad",
+      scorePercentileColor: "#6d654e",
+      cardShadow: "0 25px 65px rgba(18,29,18,.45), inset 0 0 0 5px rgba(251,243,221,.5)",
+      buttonShineGradient: "linear-gradient(100deg, transparent, rgba(243,227,182,.25), transparent)",
     },
     forged_carbon: {
       pageBg: "#121212",
@@ -2646,6 +2689,35 @@
         <path d="M0 110C74 88 148 94 220 116C284 136 324 136 360 124" stroke="url(#gn-line)" stroke-width="0.78" fill="none"></path>
         <path d="M0 322C72 300 146 308 216 330C280 350 322 350 360 338" stroke="url(#gn-line)" stroke-width="0.7" fill="none"></path>
         <path d="M0 536C74 514 148 522 218 544C282 562 324 566 360 552" stroke="url(#gn-line)" stroke-width="0.64" fill="none"></path>
+      </svg>`;
+    }
+    if (themeKey === "arcadia_painted") {
+      return `<svg class="unq-ref-overlay-svg arcadia-botanical-print" viewBox="0 0 360 900" preserveAspectRatio="none" aria-hidden="true">
+        <g fill="none" stroke="#997a42" stroke-width=".7" opacity=".6">
+          <path d="M18 104V18H112M248 18H342V104M18 796V882H112M248 882H342V796"/>
+          <path d="M24 89V24H94M266 24H336V89M24 811V876H94M266 876H336V811" stroke-width=".35"/>
+          <path d="M120 20H164L180 12 196 20H240M120 880H164L180 888 196 880H240"/>
+          <path d="M25 270C53 238 15 212 40 174M335 305C306 263 348 241 321 209M26 760C50 728 15 705 36 671M334 789C306 752 344 727 323 686" stroke="#5f7044"/>
+        </g>
+        <g fill="#617147" fill-opacity=".38" stroke="#455d38" stroke-opacity=".45" stroke-width=".4">
+          ${Array.from({ length: 22 }, (_, i) => {
+            const side = i % 2; const x = side ? 328 : 32; const y = 178 + Math.floor(i / 2) * 62;
+            const length = 16 + i % 4 * 2;
+            return `<g transform="translate(${x} ${y}) rotate(${(side ? -35 : 145) + (i % 3 - 1) * 12})">
+              <path d="M0 0Q-9-${length * .6} 1-${length}Q11-${length * .55} 0 0Z"/>
+              <path d="M0 0 1-${length - 2}M1-${length * .3} 5-${length * .55}M1-${length * .6}-4-${length * .76}" fill="none" stroke="#c5b37b" stroke-opacity=".7"/>
+              <path d="M0 4Q8-4 13-3Q11 6 0 4Z" fill-opacity=".5"/>
+            </g>`;
+          }).join("")}
+        </g>
+        <g fill="none" stroke="#9c6548" stroke-width=".65" opacity=".5">
+          <path d="M34 842Q19 829 27 805L32 796V788H44V796L49 805Q57 830 42 842ZM29 801Q11 795 18 816L26 822M47 800Q65 794 58 816L51 822"/>
+          <path d="M34 790H42M29 830H48M31 834H46M304 840Q291 817 300 804Q310 791 305 783Q326 796 317 810Q336 820 322 840"/>
+        </g>
+        <g transform="translate(180 106)" fill="none" stroke="#a78b4e" stroke-width=".65" opacity=".65">
+          <path d="M-74 0H-16L0-5 16 0H74M-6 0 0 5 6 0"/>
+          <circle r="9"/><circle r="3"/>
+        </g>
       </svg>`;
     }
     if (themeKey === "forged_carbon") {
@@ -5372,6 +5444,15 @@
             <span class="gogh-star gogh-star-${index + 1}" style="left:${left};top:${top};width:${size};height:${size};animation-delay:${delay}"></span>`).join("")}
         </div>`
       : "";
+    const arcadiaEffectsHtml = theme.key === "arcadia_painted"
+      ? `<div class="arcadia-effects" aria-hidden="true"><div class="arcadia-landscape"></div><div class="arcadia-daylight"></div></div>
+         <div class="arcadia-leaf-field" aria-hidden="true">${Array.from({ length: 18 }, (_, i) =>
+           `<svg class="arcadia-leaf" viewBox="0 0 30 48" focusable="false" style="--arcadia-x:${2 + i * 5.5}%;--arcadia-size:${11 + i % 4 * 3}px;--arcadia-duration:${19 + i % 6 * 3}s;--arcadia-delay:-${i * 3.4}s;--arcadia-angle:${i * 41}deg;--arcadia-drift:${i % 2 ? -42 : 38}px">
+              <path d="M15 2C3 10 0 27 14 42C29 31 29 12 15 2Z" fill="currentColor"/>
+              <path d="M15 5 14 46M15 17 7 13M15 25 23 18M14 32 6 26" fill="none" stroke="#d6bd83" stroke-width=".7" stroke-opacity=".7"/>
+            </svg>`
+         ).join("")}</div>`
+      : "";
     const carbonEffectsHtml = theme.key === "forged_carbon"
       ? `<div class="forged-carbon-effects" aria-hidden="true">
           <div class="forged-carbon-texture forged-carbon-texture--a"></div>
@@ -5538,6 +5619,7 @@
         ${kawaiiKittyEffectsHtml}
         ${sakuraEffectsHtml}
         ${starryEffectsHtml}
+        ${arcadiaEffectsHtml}
         ${carbonEffectsHtml}
         ${comicFireEffectsHtml}
         ${jadeEffectsHtml}
@@ -5736,6 +5818,7 @@
   });
 
   function syncThemeMotionVisibility() {
+    document.documentElement.classList.toggle("arcadia-motion-paused", document.hidden);
     document.documentElement.classList.toggle("forged-carbon-motion-paused", document.hidden);
     document.documentElement.classList.toggle("comic-fire-motion-paused", document.hidden);
     document.documentElement.classList.toggle("jade-motion-paused", document.hidden);
