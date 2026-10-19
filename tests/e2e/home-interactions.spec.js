@@ -100,6 +100,35 @@ test("settles an interrupted formation before waiting for another quote", async 
   await expect(page.locator("#calc-result-slug")).toHaveText("XYZ111");
 });
 
+test("combination glyphs keep their baseline when the reels settle", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const gate = priceGate();
+  await openHome(page, { price: gate.handler, query: "?calcSlug=DYP534" });
+  await gate.pending.get("DYP534")({ price: 650000 });
+  await expect(page.locator(".calc-slug-reel-track")).toHaveCount(6);
+  const rolled = await page.locator("#calc-result-slug").evaluate((node) => {
+    node.getAnimations({ subtree: true }).forEach((animation) => animation.finish());
+    const range = document.createRange();
+    range.selectNodeContents(node.querySelector(".calc-slug-reel-track > span:last-child"));
+    const { x, y, height } = range.getBoundingClientRect();
+    const block = node.getBoundingClientRect();
+    return { x: x - block.x, y: y - block.y, height, blockHeight: block.height };
+  });
+  await expect(page.locator("#calc-result-slug")).toHaveText("DYP534");
+  const settled = await page.locator("#calc-result-slug").evaluate((node) => {
+    const range = document.createRange();
+    range.setStart(node.firstChild, 0);
+    range.setEnd(node.firstChild, 1);
+    const { x, y, height } = range.getBoundingClientRect();
+    const block = node.getBoundingClientRect();
+    return { x: x - block.x, y: y - block.y, height, blockHeight: block.height };
+  });
+  expect(settled.x).toBeCloseTo(rolled.x, 1);
+  expect(settled.y).toBeCloseTo(rolled.y, 1);
+  expect(settled.height).toBeCloseTo(rolled.height, 1);
+  expect(settled.blockHeight).toBeCloseTo(rolled.blockHeight, 1);
+});
+
 test("respects reduced motion and preserves the crossed-out flash price", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await openHome(page, { price: (route) => route.fulfill({ json: {

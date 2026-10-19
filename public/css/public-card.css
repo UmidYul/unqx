@@ -2194,10 +2194,18 @@ body[data-card-theme="casino_royale"] #public-card-layout > div:first-child > .i
 }
 
 [data-page="public-home"] .calc-slug-reel {
+  position: relative;
   display: inline-block;
-  height: 1.2em;
+}
+
+[data-page="public-home"] .calc-slug-reel-anchor {
+  visibility: hidden;
+}
+
+[data-page="public-home"] .calc-slug-reel-window {
+  position: absolute;
+  inset: 0;
   overflow: hidden;
-  vertical-align: top;
 }
 
 [data-page="public-home"] .calc-slug-reel-track {
@@ -2207,8 +2215,7 @@ body[data-card-theme="casino_royale"] #public-card-layout > div:first-child > .i
 }
 
 [data-page="public-home"] .calc-slug-reel-track > span {
-  height: 1.2em;
-  line-height: 1.2;
+  line-height: inherit;
 }
 
 [data-page="public-home"] #calc-result-formula {

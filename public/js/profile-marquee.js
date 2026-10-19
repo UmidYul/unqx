@@ -1,7 +1,7 @@
 (function initProfileMarquees() {
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
   const hoverPointer = window.matchMedia("(hover: hover) and (pointer: fine)");
-  const pixelsPerSecond = 20;
+  const pixelsPerSecond = 24;
 
   document.querySelectorAll(".home-profile-marquee").forEach((viewport) => {
     const track = viewport.querySelector(".home-profile-marquee-track");

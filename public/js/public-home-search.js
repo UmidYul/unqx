@@ -1882,6 +1882,12 @@ function initSlugCalculator(orderApi) {
       const slot = document.createElement("span");
       slot.className = "calc-slug-reel";
       slot.setAttribute("aria-hidden", "true");
+      // Keep the final glyph in normal flow so rolling and plain text share a baseline.
+      const anchor = document.createElement("span");
+      anchor.className = "calc-slug-reel-anchor";
+      anchor.textContent = character;
+      const reelWindow = document.createElement("span");
+      reelWindow.className = "calc-slug-reel-window";
       const track = document.createElement("span");
       track.className = "calc-slug-reel-track";
       for (const value of [previous, character]) {
@@ -1889,7 +1895,8 @@ function initSlugCalculator(orderApi) {
         glyph.textContent = value;
         track.appendChild(glyph);
       }
-      slot.appendChild(track);
+      reelWindow.appendChild(track);
+      slot.append(anchor, reelWindow);
       resultSlug.appendChild(slot);
       reels.push(track.animate([
         { transform: "translate3d(0, 0, 0)" },
