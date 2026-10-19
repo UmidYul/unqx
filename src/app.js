@@ -1,5 +1,6 @@
 const path = require("node:path");
 const { randomBytes } = require("node:crypto");
+const { resolveBrowserTheme } = require("../public/js/browser-theme");
 
 const express = require("express");
 const compression = require("compression");
@@ -178,6 +179,7 @@ function createApp() {
 
   app.set("trust proxy", env.TRUST_PROXY);
   app.set("view engine", "ejs");
+  app.locals.resolveBrowserTheme = resolveBrowserTheme;
   app.set("views", path.join(__dirname, "views"));
   app.set("etag", false);
 

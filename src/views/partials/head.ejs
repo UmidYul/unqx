@@ -18,7 +18,13 @@
   const pageCspNonce = typeof cspNonce === "string" ? cspNonce : "";
   const pageAssetVersion = typeof assetVersion === "string" && assetVersion ? assetVersion : "";
   const pageViewportFitCover = typeof viewportFitCover === "boolean" ? viewportFitCover : false;
-  const pageBrowserThemeColor = typeof browserThemeColor === "string" && /^#[0-9a-f]{6}$/i.test(browserThemeColor) ? browserThemeColor : "#111111";
+  const fallbackBrowserColor = typeof browserThemeColor === "string" && /^#[0-9a-f]{6}$/i.test(browserThemeColor) ? browserThemeColor : "#111111";
+  const pageBrowserTheme = typeof browserThemeKey === "string"
+    ? (typeof resolveBrowserTheme === "function"
+      ? resolveBrowserTheme(browserThemeKey, typeof browserThemeBackground === "string" ? browserThemeBackground : "")
+      : { color: fallbackBrowserColor, scheme: "dark" })
+    : null;
+  const pageBrowserThemeColor = pageBrowserTheme ? pageBrowserTheme.color : fallbackBrowserColor;
   const withAssetVersion = (href) => {
     const src = String(href || "");
     if (!src || !pageAssetVersion || !src.startsWith("/")) return src;
@@ -52,6 +58,22 @@
 <% pageStyles.forEach((styleHref) => { %>
 <link rel="stylesheet" href="<%= withAssetVersion(styleHref) %>" />
 <% }); %>
+<% if (pageBrowserTheme) { %>
+<meta name="color-scheme" content="<%= pageBrowserTheme.scheme %>" />
+<style nonce="<%= pageCspNonce %>">
+  html {
+    --unqx-browser-initial-bg: <%= pageBrowserTheme.color %>;
+    --unqx-browser-canvas: <%= pageBrowserTheme.color %>;
+    min-height: 100%;
+    background-color: var(--unqx-browser-canvas) !important;
+    color-scheme: <%= pageBrowserTheme.scheme %>;
+  }
+  html body[data-card-theme] {
+    background-color: var(--unqx-browser-canvas) !important;
+  }
+</style>
+<script nonce="<%= pageCspNonce %>" src="<%= withAssetVersion('/js/browser-theme.js') %>" defer></script>
+<% } %>
 <% if (pageImage) { %>
 <meta property="og:image" content="<%= pageImage %>" />
 <meta property="og:image:alt" content="<%= pageTitle %>" />
