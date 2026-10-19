@@ -2023,6 +2023,16 @@ body[data-card-theme="casino_royale"] #public-card-layout > div:first-child > .i
   display: none;
 }
 
+.home-profile-marquee.is-animated {
+  overflow-x: hidden;
+  touch-action: pan-y;
+}
+
+.home-profile-marquee.is-animated .home-profile-marquee-item {
+  will-change: transform;
+  backface-visibility: hidden;
+}
+
 .home-profile-marquee-track {
   display: flex;
   width: max-content;

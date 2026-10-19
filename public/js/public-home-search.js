@@ -26,6 +26,12 @@ let slugPricingConfig = { ...DEFAULT_HOME_SLUG_PRICING };
     const lettersInput = document.getElementById("calc-letters");
     const digitsInput = document.getElementById("calc-digits");
     if (!(lettersInput instanceof HTMLInputElement) || !(digitsInput instanceof HTMLInputElement)) return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.has("calcSlug") || params.has("buySlug")) return;
+    let edited = false;
+    const markEdited = () => { edited = true; };
+    lettersInput.addEventListener("input", markEdited);
+    digitsInput.addEventListener("input", markEdited);
     try {
       const response = await fetch("/api/random-free-slug", {
         method: "GET",
@@ -35,13 +41,17 @@ let slugPricingConfig = { ...DEFAULT_HOME_SLUG_PRICING };
       if (!response.ok) return;
       const payload = await response.json().catch(() => ({}));
       const slug = typeof payload.slug === "string" ? payload.slug.toUpperCase() : "";
-      if (/^[A-Z]{3}[0-9]{3}$/.test(slug)) {
+      if (!edited && lettersInput.value === "AAA" && digitsInput.value === "000" && /^[A-Z]{3}[0-9]{3}$/.test(slug)) {
         lettersInput.value = slug.slice(0, 3);
         digitsInput.value = slug.slice(3);
         lettersInput.dispatchEvent(new Event("input", { bubbles: true }));
         digitsInput.dispatchEvent(new Event("input", { bubbles: true }));
       }
     } catch { }
+    finally {
+      lettersInput.removeEventListener("input", markEdited);
+      digitsInput.removeEventListener("input", markEdited);
+    }
   })();
 
   const authApi = initTelegramAuth(pageNode);
@@ -1787,6 +1797,16 @@ function initSlugCalculator(orderApi) {
   const similarWrap = document.getElementById("calc-similar-wrap");
   const similarItems = document.getElementById("calc-similar-items");
   const calcOfficialNotice = document.getElementById("calc-official-notice");
+  const status = document.getElementById("calc-status");
+  const statusText = document.getElementById("calc-status-text");
+  const retryButton = document.getElementById("calc-retry");
+
+  function setStatus(message = "", isError = false) {
+    if (status instanceof HTMLElement) status.classList.toggle("hidden", !message);
+    if (statusText instanceof HTMLElement) statusText.textContent = message;
+    if (retryButton instanceof HTMLButtonElement) retryButton.classList.toggle("hidden", !isError);
+    resultWrap?.setAttribute("aria-busy", message && !isError ? "true" : "false");
+  }
 
   if (
     !(lettersInput instanceof HTMLInputElement) ||
@@ -1811,9 +1831,9 @@ function initSlugCalculator(orderApi) {
   const RESERVE_ICON =
     '<svg class="icon-stroke h-3.5 w-3.5" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"></path></svg>';
   let hasRevealed = false;
-  let requestSeq = 0;
   let resultSeq = 0;
-  let lastAnimatedPrice = 0;
+  let priceController = null;
+  let activeSlug = "";
   let isApplyingDefaultSlug = false;
   const unavailableSlugCache = new Set();
 
@@ -1822,6 +1842,7 @@ function initSlugCalculator(orderApi) {
   }
 
   function showEmptyState() {
+    setStatus();
     emptyState.classList.remove("hidden");
     resultWrap.classList.add("hidden");
     if (calcOfficialNotice instanceof HTMLElement) {
@@ -1835,36 +1856,28 @@ function initSlugCalculator(orderApi) {
     resultWrap.classList.remove("hidden");
   }
 
-  async function applyServerPrice(slug, fallbackTotal) {
-    const seq = ++requestSeq;
-    try {
-      const response = await fetch(`/api/cards/slug-price?slug=${encodeURIComponent(slug)}`);
-      if (!response.ok) {
-        return { total: fallbackTotal, flash: null };
-      }
-      const payload = await response.json();
-      if (seq !== requestSeq) {
-        return null;
-      }
-      const total = Number(payload.price || fallbackTotal);
-      const flash =
-        payload.hasFlashSale && Number(payload.basePrice || 0) > total
-          ? {
-            basePrice: Number(payload.basePrice || total),
-            finalPrice: total,
-            discountPercent: Number(payload.discountPercent || 0),
-          }
-          : null;
-      return {
-        total,
-        flash,
-        flashSale: payload?.flashSale && typeof payload.flashSale === "object" ? payload.flashSale : null,
-        source: String(payload?.source || "calculator"),
-        calculation: payload?.calculation && typeof payload.calculation === "object" ? payload.calculation : null,
-      };
-    } catch {
-      return { total: fallbackTotal, flash: null, source: "calculator", calculation: null };
+  async function applyServerPrice(slug, signal) {
+    const response = await fetch(`/api/cards/slug-price?slug=${encodeURIComponent(slug)}`, {
+      signal,
+      cache: "no-store",
+      headers: { Accept: "application/json" },
+    });
+    if (!response.ok) throw new Error("price_unavailable");
+    const payload = await response.json();
+    const total = payload.price;
+    if (payload.validFormat === false || typeof total !== "number" || !Number.isFinite(total) || total < 0) {
+      throw new Error("invalid_price");
     }
+    const flash = payload.hasFlashSale && Number(payload.basePrice || 0) > total
+      ? { basePrice: Number(payload.basePrice), finalPrice: total, discountPercent: Number(payload.discountPercent || 0) }
+      : null;
+    return {
+      total,
+      flash,
+      flashSale: payload?.flashSale && typeof payload.flashSale === "object" ? payload.flashSale : null,
+      source: String(payload?.source || "calculator"),
+      calculation: payload?.calculation && typeof payload.calculation === "object" ? payload.calculation : null,
+    };
   }
 
   async function loadSimilarAvailable(slug) {
@@ -2108,12 +2121,15 @@ function initSlugCalculator(orderApi) {
   }
 
   async function updateResult() {
-    const seq = ++resultSeq;
     lettersInput.value = normalizeLetters(lettersInput.value);
     digitsInput.value = normalizeDigits(digitsInput.value);
 
     const pricing = calculateSlugPricing(lettersInput.value, digitsInput.value);
     updatePreview(lettersInput.value, digitsInput.value);
+    if (pricing && pricing.slug === activeSlug) return;
+    const seq = ++resultSeq;
+    priceController?.abort();
+    activeSlug = pricing?.slug || "";
 
     if (!pricing) {
       if (!isApplyingDefaultSlug && !lettersInput.value && !digitsInput.value) {
@@ -2128,59 +2144,43 @@ function initSlugCalculator(orderApi) {
       return;
     }
 
-    if (!hasRevealed) {
-      hasRevealed = true;
-      resultWrap.classList.add("animate-fade-up");
-    }
-    showResultState();
-
-    resultSlug.textContent = pricing.slug;
-    animateNumberText(resultPrice, lastAnimatedPrice, pricing.total);
-    resultFormula.textContent = `${formatPrice(slugPricingConfig.basePrice || DEFAULT_HOME_SLUG_PRICING.basePrice)} x ${pricing.letterData.multiplier} x ${pricing.digitData.multiplier} = ${formatPrice(pricing.total)} сум`;
-    letterMeta.textContent = `${pricing.letterData.label} x${pricing.letterData.multiplier}`;
-    digitMeta.textContent = `${pricing.digitData.label} x${pricing.digitData.multiplier}`;
-    reserveLink.href = "#";
-    reserveLink.setAttribute("data-order-prefill", pricing.slug);
-    reserveLink.innerHTML = `Занять ${pricing.slug}${RESERVE_ICON}`;
-
-    const serverPricing = await applyServerPrice(pricing.slug, pricing.total);
-    if (seq !== resultSeq || !serverPricing) {
+    resultWrap.classList.add("hidden");
+    emptyState.classList.add("hidden");
+    similarWrap.classList.add("hidden");
+    setStatus("Уточняем цену…");
+    priceController = new AbortController();
+    let serverPricing;
+    try {
+      serverPricing = await applyServerPrice(pricing.slug, priceController.signal);
+    } catch (error) {
+      if (seq !== resultSeq || error.name === "AbortError") return;
+      activeSlug = "";
+      setStatus("Не удалось получить точную цену. Попробуйте ещё раз.", true);
       return;
     }
-    const similarSuggestions = await loadSimilarAvailable(pricing.slug);
-    if (seq !== resultSeq) {
-      return;
-    }
+    if (seq !== resultSeq) return;
     const finalPrice = serverPricing.total;
     const rarity = getRarityBadge(finalPrice);
-
-    if (seq !== resultSeq) {
-      return;
-    }
+    const calc = serverPricing.calculation;
+    const lettersMultiplier = Number(calc?.lettersMultiplier ?? pricing.letterData.multiplier);
+    const digitsMultiplier = Number(calc?.digitsMultiplier ?? pricing.digitData.multiplier);
 
     rarityBadge.className = `inline-flex items-center gap-1 rounded-full border px-3 py-1 font-mono text-[11px] font-medium tracking-wider ${rarity.color}`;
     rarityText.textContent = rarity.label;
     resultSlug.textContent = pricing.slug;
     if (serverPricing.flash) {
-      resultPrice.innerHTML = `<span class=\"text-neutral-400 line-through\">${formatPrice(serverPricing.flash.basePrice)}</span> <span class=\"text-emerald-700\" id=\"calc-flash-final-price\">${formatPrice(lastAnimatedPrice)}</span>`;
-      const flashFinalNode = resultPrice.querySelector("#calc-flash-final-price");
-      if (flashFinalNode instanceof HTMLElement) {
-        animateNumberText(flashFinalNode, lastAnimatedPrice, finalPrice);
-      }
+      resultPrice.innerHTML = `<span class="text-neutral-400 line-through">${formatPrice(serverPricing.flash.basePrice)}</span> <span class="text-emerald-700" id="calc-flash-final-price">${formatPrice(finalPrice)}</span>`;
       const flashRuleLabel = String(serverPricing?.flashSale?.conditionLabel || "").trim();
       const flashTitle = String(serverPricing?.flashSale?.title || "Акция").trim();
       resultFormula.textContent = flashRuleLabel
         ? `${flashTitle}: -${serverPricing.flash.discountPercent}% · ${flashRuleLabel} · цена со скидкой ${formatPrice(finalPrice)} сум.`
         : `${flashTitle}: -${serverPricing.flash.discountPercent}% · цена со скидкой ${formatPrice(finalPrice)} сум.`;
     } else if (serverPricing.source === "override") {
-      animateNumberText(resultPrice, lastAnimatedPrice, finalPrice);
+      resultPrice.textContent = formatPrice(finalPrice);
       resultFormula.textContent = `Персональная цена: ${formatPrice(finalPrice)} сум`;
     } else {
-      animateNumberText(resultPrice, lastAnimatedPrice, finalPrice);
-      const calc = serverPricing.calculation;
+      resultPrice.textContent = formatPrice(finalPrice);
       const base = Number(calc?.basePrice || slugPricingConfig.basePrice || DEFAULT_HOME_SLUG_PRICING.basePrice);
-      const lettersMultiplier = Number(calc?.lettersMultiplier || pricing.letterData.multiplier || 1);
-      const digitsMultiplier = Number(calc?.digitsMultiplier || pricing.digitData.multiplier || 1);
       const customParts = Array.isArray(calc?.customBreakdown)
         ? calc.customBreakdown
           .map((item) => {
@@ -2194,16 +2194,26 @@ function initSlugCalculator(orderApi) {
           .filter(Boolean)
           .join(" ")
         : "";
-      const tail = customParts ? ` ${customParts}` : "";
+      const markupAmount = Number(calc?.markupAmount || 0);
+      const markupPart = markupAmount > 0 ? ` + ${formatPrice(markupAmount)} (наценка ${Number(calc?.markupPercent || 0)}%)` : "";
+      const tail = (customParts ? ` ${customParts}` : "") + markupPart;
       resultFormula.textContent = `${formatPrice(base)} x ${lettersMultiplier} x ${digitsMultiplier}${tail} = ${formatPrice(finalPrice)} сум`;
     }
-    lastAnimatedPrice = finalPrice;
-    letterMeta.textContent = `${pricing.letterData.label} x${pricing.letterData.multiplier}`;
-    digitMeta.textContent = `${pricing.digitData.label} x${pricing.digitData.multiplier}`;
+    letterMeta.textContent = `${pricing.letterData.label} x${lettersMultiplier}`;
+    digitMeta.textContent = `${pricing.digitData.label} x${digitsMultiplier}`;
     reserveLink.href = "#";
     reserveLink.setAttribute("data-order-prefill", pricing.slug);
     reserveLink.innerHTML = `Занять ${pricing.slug}${RESERVE_ICON}`;
-    renderSimilarAvailable(similarSuggestions);
+    setStatus();
+    if (!hasRevealed) {
+      hasRevealed = true;
+      resultWrap.classList.add("animate-fade-up");
+    }
+    showResultState();
+    // Recommendations must not delay or change the confirmed price.
+    void loadSimilarAvailable(pricing.slug).then((suggestions) => {
+      if (seq === resultSeq) renderSimilarAvailable(suggestions);
+    });
 
     if (calcOfficialNotice instanceof HTMLElement) {
       const api = window.UNQOfficialLetters;
@@ -2221,6 +2231,8 @@ function initSlugCalculator(orderApi) {
       }
     }
   }
+
+  retryButton?.addEventListener("click", () => void updateResult());
 
   lettersInput.addEventListener("input", () => {
     updateResult();
@@ -2366,29 +2378,6 @@ function initNextDropOneClick() {
       showToast("Не удалось подписаться на дроп", "error");
     }
   });
-}
-
-function animateNumberText(node, from, to) {
-  if (!(node instanceof HTMLElement)) {
-    return;
-  }
-  const start = Number.isFinite(from) ? from : 0;
-  const end = Number.isFinite(to) ? to : 0;
-  const duration = 450;
-  const startedAt = performance.now();
-  const distance = end - start;
-
-  const step = (now) => {
-    const progress = Math.min((now - startedAt) / duration, 1);
-    const eased = 1 - (1 - progress) ** 3;
-    const value = Math.round(start + distance * eased);
-    node.textContent = formatPrice(value);
-    if (progress < 1) {
-      requestAnimationFrame(step);
-    }
-  };
-
-  requestAnimationFrame(step);
 }
 
 function initOrderModalBridge() {
