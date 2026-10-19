@@ -376,7 +376,7 @@
           <% } %>
 
             <% if (homeBlockVisible("homepage_hero_visible")) { %>
-            <section class="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 pt-20">
+            <section class="home-hero-section relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 pt-20">
               <div
                 class="pointer-events-none absolute -left-40 -top-40 h-[500px] w-[500px] rounded-full bg-neutral-200/40 blur-3xl">
               </div>
@@ -481,7 +481,7 @@
             <% } %>
 
             <% if (homeBlockVisible("homepage_promo_banner_visible") && homePromoBanner.imageUrl) { %>
-              <section class="px-4 py-8 sm:px-6 sm:py-10" data-observe-reveal>
+              <section class="home-promo-section px-4 py-8 sm:px-6 sm:py-10" data-observe-reveal>
                 <div class="mx-auto max-w-6xl">
                   <a href="<%= homePromoBanner.targetUrl %>"
                     class="block overflow-hidden rounded-3xl transition-all duration-300 hover:scale-[1.01] hover:shadow-lg"
@@ -522,7 +522,7 @@
               <% } %>
 
                 <% if (homeBlockVisible("homepage_calculator_visible")) { %>
-                <section id="calculator" class="px-6 py-24" data-observe-reveal>
+                <section id="calculator" class="home-content-section px-6 py-24" data-observe-reveal>
                   <div class="mx-auto max-w-3xl">
                     <p class="mb-3 font-mono text-xs uppercase tracking-widest text-neutral-400">UNQ Pricing Engine</p>
                     <h2 class="text-3xl font-bold tracking-tight text-neutral-900 md:text-4xl">Узнай цену своего UNQ
@@ -644,7 +644,7 @@
 
 
                 <% if (homeBlockVisible("homepage_live_profiles_visible")) { %>
-                <section id="home-profile-feed" class="px-6 py-16" data-observe-reveal>
+                <section id="home-profile-feed" class="home-content-section px-6 py-16" data-observe-reveal>
                   <div class="mx-auto max-w-6xl">
                     <p class="font-mono text-xs uppercase tracking-[0.18em] text-neutral-400">UNQ FEED</p>
                     <h2 class="mt-3 text-3xl font-bold tracking-tight text-neutral-900 md:text-4xl">Live profiles</h2>
@@ -657,10 +657,10 @@
                         <div class="home-profile-marquee mt-8" aria-label="UNQ profile feed">
                           <div class="home-profile-marquee-track">
                             <% [0, 1].forEach((dupIndex)=> { %>
-                              <div class="home-profile-marquee-group" <%=dupIndex===1 ? 'aria-hidden="true"' : '' %>>
+                              <div class="home-profile-marquee-group" aria-hidden="<%= dupIndex === 1 ? 'true' : 'false' %>">
                                 <% homeProfileFeedList.forEach((item)=> { %>
                                   <a href="/<%= encodeURIComponent(item.primarySlug) %>"
-                                    class="home-profile-marquee-item">
+                                    class="home-profile-marquee-item" tabindex="<%= dupIndex === 1 ? -1 : 0 %>">
                                     <div class="home-profile-marquee-avatar-wrap">
                                       <% if (item.avatarUrl) { %>
                                         <img src="<%= item.avatarUrl %>" alt="<%= item.name %>"
@@ -691,7 +691,7 @@
                 <% } %>
 
                 <% if (homeBlockVisible("homepage_testimonials_visible", false)) { %>
-                <section id="testimonials" class="px-6 py-16" data-observe-reveal>
+                <section id="testimonials" class="home-content-section px-6 py-16" data-observe-reveal>
                   <div class="mx-auto max-w-6xl">
                     <p class="font-mono text-xs uppercase tracking-[0.18em] text-neutral-400">ОТЗЫВЫ</p>
                     <h2 class="mt-3 text-3xl font-bold tracking-tight text-neutral-900 md:text-4xl">Что говорят первые
@@ -737,7 +737,7 @@
                 <% } %>
 
                 <% if (homeBlockVisible("homepage_latest_posts_visible")) { %>
-                <section id="latest-posts" class="px-6 py-16" data-observe-reveal>
+                <section id="latest-posts" class="home-content-section px-6 py-16" data-observe-reveal>
                   <div class="mx-auto max-w-6xl">
                     <p class="font-mono text-xs uppercase tracking-[0.18em] text-neutral-400">POSTS</p>
                     <h2 class="mt-3 text-3xl font-bold tracking-tight text-neutral-900 md:text-4xl">Последние посты</h2>
@@ -853,7 +853,7 @@
                 <% } %>
 
                 <% if (homeBlockVisible("homepage_latest_unq_visible")) { %>
-                <section id="latest-slack" class="px-6 py-16" data-observe-reveal>
+                <section id="latest-slack" class="home-content-section px-6 py-16" data-observe-reveal>
                   <div class="mx-auto max-w-6xl">
                     <p class="font-mono text-xs uppercase tracking-[0.18em] text-neutral-400">LIVE</p>
                     <h2 class="mt-3 text-3xl font-bold tracking-tight text-neutral-900 md:text-4xl">Последние созданные UNQ</h2>
@@ -900,7 +900,7 @@
                 <% } %>
 
                 <% if (homeBlockVisible("homepage_views_ranking_visible")) { %>
-                <section id="weekly-top-views" class="px-6 py-16" data-observe-reveal>
+                <section id="weekly-top-views" class="home-content-section px-6 py-16" data-observe-reveal>
                   <div class="mx-auto max-w-6xl">
                     <p class="font-mono text-xs uppercase tracking-[0.18em] text-neutral-400">Топ 3 дня</p>
                     <h2 class="mt-3 text-3xl font-bold tracking-tight text-neutral-900 md:text-4xl">Рейтинг по просмотрам</h2>
@@ -958,7 +958,7 @@
                   <% const auctionNextBid = Math.max(auctionStartingPrice, auctionCurrentBid > 0 ? auctionCurrentBid + auctionMinStep : auctionStartingPrice); %>
                   <% const auctionIsDemo = String(homeAuction.id || "") === "demo"; %>
                   <% const auctionStatus = String(homeAuction.status || "active"); %>
-                  <section id="auction" class="home-auction-section px-6 py-16" data-observe-reveal>
+                  <section id="auction" class="home-auction-section home-content-section px-6 py-16" data-observe-reveal>
                     <div class="home-auction-card" data-auction-widget data-auction-id="<%= homeAuction.id %>"
                       data-auction-status="<%= auctionStatus %>"
                       data-auction-ends-at="<%= homeAuction.endsAt ? new Date(homeAuction.endsAt).toISOString() : '' %>"
@@ -1027,7 +1027,7 @@
                   </section>
                 <% } %>
                 <% if (homeBlockVisible("homepage_faq_visible")) { %>
-                <section id="faq" class="px-6 py-24" data-observe-reveal>
+                <section id="faq" class="home-content-section px-6 py-24" data-observe-reveal>
                   <div class="mx-auto max-w-4xl">
                     <p class="font-mono text-xs uppercase tracking-[0.18em] text-neutral-400">ВОПРОСЫ</p>
                     <h2 class="mt-3 text-3xl font-bold tracking-tight text-neutral-900 md:text-4xl">Часто спрашивают
@@ -1125,6 +1125,7 @@
     <script nonce="<%= cspNonce %>" src="/vendor/html2canvas/html2canvas.min.js"></script>
     <script nonce="<%= cspNonce %>" src="/js/public-home-search.js?v=<%= encodeURIComponent(assetVersion || '') %>"></script>
     <script nonce="<%= cspNonce %>" src="/js/public-realtime.js"></script>
+    <script nonce="<%= cspNonce %>" src="/js/profile-marquee.js?v=<%= encodeURIComponent(assetVersion || '') %>"></script>
   </body>
 
   </html>

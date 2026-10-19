@@ -1384,21 +1384,26 @@ body[data-card-theme="casino_royale"] #public-card-layout > div:first-child > .i
 [data-page="public-home"] .site-header-mobile-toggle {
   width: 42px;
   height: 42px;
-  border-radius: 9999px;
-  border: 1px solid #d8d8d8;
-  background: #f3f3f3;
+  border-radius: 8px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   transition:
     transform 0.18s ease,
-    background-color 0.18s ease,
-    border-color 0.18s ease;
+    color 0.18s ease;
 }
 
 [data-page="public-home"] .site-header-mobile-toggle:hover {
-  background: #ececec;
-  border-color: #cfcfcf;
+  background: transparent;
+  color: #737373;
+}
+
+[data-page="public-home"] .site-header-mobile-toggle:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
 }
 
 @media (min-width: 768px) {
@@ -2002,18 +2007,25 @@ body[data-card-theme="casino_royale"] #public-card-layout > div:first-child > .i
 
 .home-profile-marquee {
   position: relative;
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
+  isolation: isolate;
+  scrollbar-width: none;
+  overscroll-behavior-x: contain;
+  scroll-behavior: auto;
   border-radius: 20px;
   border: 1px solid #e5e5e5;
-  background: linear-gradient(180deg, #ffffff 0%, #fafafa 100%);
+  background: transparent;
   padding: 14px;
+}
+
+.home-profile-marquee::-webkit-scrollbar {
+  display: none;
 }
 
 .home-profile-marquee-track {
   display: flex;
   width: max-content;
-  animation: homeProfileMarqueeScroll 28s linear infinite;
-  will-change: transform;
 }
 
 .home-profile-marquee-group {
@@ -2025,6 +2037,7 @@ body[data-card-theme="casino_royale"] #public-card-layout > div:first-child > .i
 
 .home-profile-marquee-item {
   display: inline-flex;
+  flex: 0 0 auto;
   align-items: center;
   gap: 10px;
   min-width: 220px;
@@ -2071,21 +2084,6 @@ body[data-card-theme="casino_royale"] #public-card-layout > div:first-child > .i
   font-weight: 700;
 }
 
-.home-profile-marquee:hover .home-profile-marquee-track,
-.home-profile-marquee:focus-within .home-profile-marquee-track {
-  animation-play-state: paused;
-}
-
-@keyframes homeProfileMarqueeScroll {
-  0% {
-    transform: translateX(0);
-  }
-
-  100% {
-    transform: translateX(-50%);
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   [data-page="public-home"] .site-flash-sale-marquee {
     overflow-x: auto;
@@ -2101,8 +2099,9 @@ body[data-card-theme="casino_royale"] #public-card-layout > div:first-child > .i
     padding-bottom: 8px;
   }
 
-  .home-profile-marquee-track {
-    animation: none;
+  .home-profile-marquee-group[aria-hidden="true"],
+  .home-profile-marquee-item[data-marquee-fill] {
+    display: none;
   }
 }
 
@@ -5441,6 +5440,25 @@ body[data-page="profile-page"] {
   border: 0;
 }
 
+/* Compact mobile rhythm: adjacent section padding must not stack into large gaps. */
+@media (max-width: 767px) {
+  [data-page="public-home"] .home-hero-section {
+    min-height: 0;
+    padding-top: calc(var(--site-header-height) + 40px);
+    padding-bottom: 12px;
+  }
+
+  [data-page="public-home"] .home-promo-section {
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+
+  [data-page="public-home"] .home-content-section {
+    padding-top: 24px;
+    padding-bottom: 24px;
+  }
+}
+
 @media (max-width: 1024px) {
   [data-page="public-home"] .home-pricing-section {
     padding-top: 80px;
@@ -5723,8 +5741,8 @@ body[data-page="profile-page"] {
   }
 
   [data-page="public-home"] #calculator {
-    padding-top: 56px;
-    padding-bottom: 56px;
+    padding-top: 24px;
+    padding-bottom: 24px;
   }
 
   #profile-card-live-preview [data-card-view] {
