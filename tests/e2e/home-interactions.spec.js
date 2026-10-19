@@ -53,8 +53,8 @@ async function setCombination(page, letters, digits) {
 test("shows only the final server price and does not wait for recommendations", async ({ page }) => {
   const gate = priceGate();
   await openHome(page, { price: gate.handler, availability: () => new Promise(() => {}) });
-  await expect(page.locator("#calc-status")).toContainText("Уточняем цену");
-  await expect(page.locator("#calc-result")).toBeHidden();
+  await expect(page.locator("#calc-status")).toContainText("Обновляем цену");
+  await expect(page.locator("#calc-result")).toBeVisible();
   await page.evaluate(() => {
     window.priceValues = [];
     const node = document.getElementById("calc-result-price");
@@ -84,8 +84,10 @@ test("ignores stale requests after a new or incomplete combination", async ({ pa
   await setCombination(page, "ABC", "456");
   await page.locator("#calc-digits").fill("4");
   if (gate.pending.has("ABC456")) await gate.pending.get("ABC456")({ price: 700000 });
-  await expect(page.locator("#calc-result")).toBeHidden();
-  await expect(page.locator("#calc-empty-state")).toBeVisible();
+  await expect(page.locator("#calc-result")).toBeVisible();
+  await expect(page.locator("#calc-status")).toContainText("Введите 3 буквы");
+  await expect(page.locator("#calc-result-price")).toHaveText(/900\s000/);
+  await expect(page.locator("#calc-reserve-link")).toHaveAttribute("aria-disabled", "true");
 });
 
 test("does not substitute an estimated price on failure and supports retry", async ({ page }) => {
@@ -93,7 +95,7 @@ test("does not substitute an estimated price on failure and supports retry", asy
   await openHome(page, { price: (route) => route.fulfill(++calls === 1
     ? { status: 503, json: {} }
     : { json: { price: 650000, source: "override" } }) });
-  await expect(page.locator("#calc-result")).toBeHidden();
+  await expect(page.locator("#calc-result")).toBeVisible();
   await expect(page.locator("#calc-retry")).toBeVisible();
   await page.locator("#calc-retry").click();
   await expect(page.locator("#calc-result-price")).toHaveText(/650\s000/);
@@ -151,4 +153,34 @@ test("a delayed initial random slug never replaces user input", async ({ page })
   await expect(page.locator("#calc-letters")).toHaveValue("JCH");
   await expect(page.locator("#calc-digits")).toHaveValue("843");
   await expect(page.locator("#calc-result-slug")).toHaveText("JCH843");
+});
+
+
+test("keeps the quote card and previous amount in place until the next price arrives", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const gate = priceGate();
+  await openHome(page, { price: gate.handler });
+  await expect.poll(() => gate.pending.has("JCH843")).toBe(true);
+  await gate.pending.get("JCH843")({ price: 1170000, source: "override" });
+  const card = page.locator("#calc-result");
+  await expect(page.locator("#calc-result-price")).toHaveText(/1\s170\s000/);
+  const before = await card.boundingBox();
+  await setCombination(page, "XYZ", "111");
+  await expect.poll(() => gate.pending.has("XYZ111")).toBe(true);
+  await expect(card).toBeVisible();
+  await expect(card).toHaveAttribute("aria-busy", "true");
+  await expect(page.locator("#calc-result-price")).toHaveText(/1\s170\s000/);
+  await expect(page.locator("#calc-result-slug")).toHaveText("JCH843");
+  const pending = await card.boundingBox();
+  expect(pending.height).toBeCloseTo(before.height, 0);
+  expect(pending.width).toBeCloseTo(before.width, 0);
+  await expect(page.locator("#calc-reserve-link")).toHaveAttribute("aria-disabled", "true");
+  await page.evaluate(() => document.getElementById("calc-reserve-link").click());
+  await expect(page.locator("#order-modal-root")).toBeHidden();
+  await gate.pending.get("XYZ111")({ price: 900000, source: "override" });
+  await expect(page.locator("#calc-result-price")).toHaveText(/900\s000/);
+  await expect(card).toHaveAttribute("aria-busy", "false");
+  await expect(page.locator("#calc-reserve-link")).toHaveAttribute("aria-disabled", "false");
+  await expect.poll(() => page.locator("#calc-result-price").evaluate((node) => node.getAnimations().length)).toBe(0);
+  await expect(page.locator("#calc-result-slug")).toHaveText("XYZ111");
 });

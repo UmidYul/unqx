@@ -2188,6 +2188,35 @@ body[data-card-theme="casino_royale"] #public-card-layout > div:first-child > .i
   padding-right: 92px !important;
 }
 
+[data-page="public-home"] #calc-result-price {
+  display: inline-block;
+  font-variant-numeric: tabular-nums;
+}
+
+[data-page="public-home"] #calc-result-formula {
+  min-height: 3em;
+}
+
+[data-page="public-home"] .calc-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+}
+
+[data-page="public-home"] .calc-status.is-idle {
+  visibility: hidden;
+}
+
+[data-page="public-home"] #calc-retry {
+  flex-shrink: 0;
+}
+
+[data-page="public-home"] #calc-reserve-link[aria-disabled="true"] {
+  opacity: 0.55;
+  cursor: wait;
+}
+
 [data-page="public-home"] .calc-result-logo {
   position: absolute;
   top: 28px;

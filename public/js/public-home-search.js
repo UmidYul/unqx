@@ -1784,7 +1784,6 @@ function initSlugCalculator(orderApi) {
   const digitsInput = document.getElementById("calc-digits");
   const generateButton = document.getElementById("calc-generate-button");
   const preview = document.getElementById("calc-preview");
-  const emptyState = document.getElementById("calc-empty-state");
   const resultWrap = document.getElementById("calc-result");
   const rarityBadge = document.getElementById("calc-rarity-badge");
   const rarityText = document.getElementById("calc-rarity-text");
@@ -1801,18 +1800,19 @@ function initSlugCalculator(orderApi) {
   const statusText = document.getElementById("calc-status-text");
   const retryButton = document.getElementById("calc-retry");
 
-  function setStatus(message = "", isError = false) {
-    if (status instanceof HTMLElement) status.classList.toggle("hidden", !message);
+  function setStatus(message = "", isError = false, pending = false) {
+    if (status instanceof HTMLElement) status.classList.toggle("is-idle", !message);
     if (statusText instanceof HTMLElement) statusText.textContent = message;
     if (retryButton instanceof HTMLButtonElement) retryButton.classList.toggle("hidden", !isError);
-    resultWrap?.setAttribute("aria-busy", message && !isError ? "true" : "false");
+    resultWrap?.setAttribute("aria-busy", pending ? "true" : "false");
+    reserveLink?.setAttribute("aria-disabled", message ? "true" : "false");
+    if (reserveLink) reserveLink.tabIndex = message ? -1 : 0;
   }
 
   if (
     !(lettersInput instanceof HTMLInputElement) ||
     !(digitsInput instanceof HTMLInputElement) ||
     !(preview instanceof HTMLElement) ||
-    !(emptyState instanceof HTMLElement) ||
     !(resultWrap instanceof HTMLElement) ||
     !(rarityBadge instanceof HTMLElement) ||
     !(rarityText instanceof HTMLElement) ||
@@ -1830,7 +1830,7 @@ function initSlugCalculator(orderApi) {
 
   const RESERVE_ICON =
     '<svg class="icon-stroke h-3.5 w-3.5" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"></path></svg>';
-  let hasRevealed = false;
+  let priceTransition = null;
   let resultSeq = 0;
   let priceController = null;
   let activeSlug = "";
@@ -1841,10 +1841,9 @@ function initSlugCalculator(orderApi) {
     preview.textContent = `unqx.uz/${letters || "___"}${digits || "___"}`;
   }
 
-  function showEmptyState() {
-    setStatus();
-    emptyState.classList.remove("hidden");
-    resultWrap.classList.add("hidden");
+  function showIncompleteState() {
+    showResultState();
+    setStatus("Введите 3 буквы и 3 цифры.");
     if (calcOfficialNotice instanceof HTMLElement) {
       calcOfficialNotice.innerHTML = "";
       calcOfficialNotice.classList.add("hidden");
@@ -1852,7 +1851,6 @@ function initSlugCalculator(orderApi) {
   }
 
   function showResultState() {
-    emptyState.classList.add("hidden");
     resultWrap.classList.remove("hidden");
   }
 
@@ -2140,14 +2138,12 @@ function initSlugCalculator(orderApi) {
         isApplyingDefaultSlug = false;
         return;
       }
-      showEmptyState();
+      showIncompleteState();
       return;
     }
 
-    resultWrap.classList.add("hidden");
-    emptyState.classList.add("hidden");
-    similarWrap.classList.add("hidden");
-    setStatus("Уточняем цену…");
+    showResultState();
+    setStatus("Обновляем цену…", false, true);
     priceController = new AbortController();
     let serverPricing;
     try {
@@ -2155,7 +2151,7 @@ function initSlugCalculator(orderApi) {
     } catch (error) {
       if (seq !== resultSeq || error.name === "AbortError") return;
       activeSlug = "";
-      setStatus("Не удалось получить точную цену. Попробуйте ещё раз.", true);
+      setStatus("Не удалось получить цену.", true);
       return;
     }
     if (seq !== resultSeq) return;
@@ -2205,11 +2201,14 @@ function initSlugCalculator(orderApi) {
     reserveLink.setAttribute("data-order-prefill", pricing.slug);
     reserveLink.innerHTML = `Занять ${pricing.slug}${RESERVE_ICON}`;
     setStatus();
-    if (!hasRevealed) {
-      hasRevealed = true;
-      resultWrap.classList.add("animate-fade-up");
-    }
     showResultState();
+    priceTransition?.cancel();
+    if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      priceTransition = resultPrice.animate([
+        { opacity: 0.4, transform: "translateY(4px)" },
+        { opacity: 1, transform: "translateY(0)" },
+      ], { duration: 260, easing: "cubic-bezier(0.2, 0.7, 0.3, 1)" });
+    }
     // Recommendations must not delay or change the confirmed price.
     void loadSimilarAvailable(pricing.slug).then((suggestions) => {
       if (seq === resultSeq) renderSimilarAvailable(suggestions);
@@ -2232,6 +2231,12 @@ function initSlugCalculator(orderApi) {
     }
   }
 
+  reserveLink.addEventListener("click", (event) => {
+    if (reserveLink.getAttribute("aria-disabled") === "true") {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+    }
+  }, true);
   retryButton?.addEventListener("click", () => void updateResult());
 
   lettersInput.addEventListener("input", () => {
