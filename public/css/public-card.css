@@ -2183,10 +2183,10 @@ body[data-card-theme="casino_royale"] #public-card-layout > div:first-child > .i
   position: absolute;
   top: 28px;
   right: 28px;
-  width: 34px;
-  height: 34px;
-  object-fit: cover;
-  border-radius: 10px;
+  width: 80px;
+  height: 32px;
+  object-fit: contain;
+  border-radius: 0;
   pointer-events: none;
 }
 
@@ -4197,13 +4197,13 @@ body[data-card-theme="cheetah_spots"] {
 
 .home-latest-post-brand {
   position: absolute;
-  top: 20px;
+  top: 24px;
   right: 20px;
   z-index: 2;
-  width: 28px;
-  height: 28px;
-  border-radius: 9px;
-  object-fit: cover;
+  width: 80px;
+  height: 32px;
+  border-radius: 0;
+  object-fit: contain;
   pointer-events: none;
 }
 
@@ -4213,7 +4213,7 @@ body[data-card-theme="cheetah_spots"] {
   justify-content: space-between;
   gap: 12px;
   min-height: 44px;
-  padding-right: 44px;
+  padding-right: 92px;
 }
 
 .home-latest-post-author {

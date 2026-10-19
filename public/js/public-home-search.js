@@ -584,10 +584,11 @@ function initHomeLatestPostButtons(pageNode, requestJson) {
     ctx.strokeStyle = "#000000";
     ctx.stroke();
 
-    const logoSize = 34;
+    const logoWidth = 96;
+    const logoHeight = logoWidth * 180 / 447;
     try {
-      const logo = await waitForImage("/brand/unqlogo.png");
-      ctx.drawImage(logo, cardX + cardWidth - 88, cardY + 58, logoSize, logoSize);
+      const logo = await waitForImage("/brand/logojjs.svg");
+      ctx.drawImage(logo, cardX + cardWidth - 44 - logoWidth, cardY + 64, logoWidth, logoHeight);
     } catch {
       ctx.fillStyle = "#111111";
       ctx.font = "700 28px Inter, Arial, sans-serif";
@@ -617,7 +618,7 @@ function initHomeLatestPostButtons(pageNode, requestJson) {
 
     ctx.fillStyle = "#050505";
     ctx.font = "900 30px Inter, Arial, sans-serif";
-    const authorMaxWidth = cardWidth - 240;
+    const authorMaxWidth = cardWidth - 290;
     let author = data.author;
     while (author.length > 4 && ctx.measureText(author).width > authorMaxWidth) {
       author = `${author.slice(0, -4)}...`;
@@ -625,7 +626,7 @@ function initHomeLatestPostButtons(pageNode, requestJson) {
     ctx.fillText(author, avatarX + avatarSize + 24, cardY + 94);
 
     if (data.verified) {
-      const checkX = Math.min(cardX + cardWidth - 150, avatarX + avatarSize + 34 + ctx.measureText(author).width);
+      const checkX = Math.min(cardX + cardWidth - 44 - logoWidth - 30, avatarX + avatarSize + 34 + ctx.measureText(author).width);
       const checkY = cardY + 76;
       ctx.fillStyle = "#050505";
       ctx.beginPath();
