@@ -2,7 +2,7 @@
 <html lang="ru">
 
 <head>
-  <% const safeItems=Array.isArray(items) ? items : []; const pageBaseUrl=typeof baseUrl==="string" ? baseUrl : "" ; const leaderSession=typeof userSession !== "undefined" && userSession ? userSession : null; const isAuthenticated=Boolean(leaderSession && leaderSession.userId); const viewerName=isAuthenticated ? String(leaderSession.displayName || leaderSession.firstName || leaderSession.login || "UNQX User").trim() : "UNQX User"; const viewerLogin=isAuthenticated ? String(leaderSession.login || leaderSession.username || leaderSession.telegramUsername || "").replace(/^@+/, "").trim() : ""; const viewerAvatar=isAuthenticated ? String(leaderSession.avatarUrl || leaderSession.photoUrl || "/brand/profile-user.svg").trim() : "/brand/profile-user.svg"; const leadersJsonLd={ "@context": "https://schema.org", "@type": "ItemList", name: "UNQX Leaders", itemListOrder: "https://schema.org/ItemListOrderDescending", itemListElement: safeItems.slice(0, 10).map((item, index)=> ({ "@type": "ListItem", position: index + 1, url: item.profileUrl ? `${pageBaseUrl}${item.profileUrl}` : pageBaseUrl, name: item.name })) }; %>
+  <% const safeItems=Array.isArray(items) ? items : []; const pageBaseUrl=typeof baseUrl==="string" ? baseUrl : "" ; const leaderSession=typeof userSession !== "undefined" && userSession ? userSession : null; const isAuthenticated=Boolean(leaderSession && leaderSession.userId); const viewerName=isAuthenticated ? String(leaderSession.displayName || leaderSession.firstName || leaderSession.login || "UNQX User").trim() : "UNQX User"; const viewerLogin=isAuthenticated ? String(leaderSession.login || leaderSession.username || leaderSession.telegramUsername || "").replace(/^@+/, "").trim() : ""; const viewerAvatar=isAuthenticated ? String(leaderSession.avatarUrl || leaderSession.photoUrl || "/brand/default-avatar.svg").trim() : "/brand/default-avatar.svg"; const leadersJsonLd={ "@context": "https://schema.org", "@type": "ItemList", name: "UNQX Leaders", itemListOrder: "https://schema.org/ItemListOrderDescending", itemListElement: safeItems.slice(0, 10).map((item, index)=> ({ "@type": "ListItem", position: index + 1, url: item.profileUrl ? `${pageBaseUrl}${item.profileUrl}` : pageBaseUrl, name: item.name })) }; %>
   <%- include('../partials/head', { title: title || 'UNQX Leaders | UNQX', description: description || 'Top 100 донатеров UNQX', image: typeof image === 'string' ? image : undefined, jsonLd: leadersJsonLd }) %>
 </head>
 
@@ -57,7 +57,7 @@
       </article>
     </section>
 
-    <% const topThree=safeItems.slice(0, 3); const rest=safeItems.slice(3); const medalMeta={ 1: { label: "Золото", cls: "border-yellow-300 bg-yellow-50 text-yellow-900", ring: "ring-yellow-300" }, 2: { label: "Серебро", cls: "border-neutral-300 bg-neutral-100 text-neutral-900", ring: "ring-neutral-300" }, 3: { label: "Бронза", cls: "border-orange-300 bg-orange-50 text-orange-900", ring: "ring-orange-300" } }; const avatar=(item)=> String(item.avatarUrl || "/brand/profile-user.svg"); %>
+    <% const topThree=safeItems.slice(0, 3); const rest=safeItems.slice(3); const medalMeta={ 1: { label: "Золото", cls: "border-yellow-300 bg-yellow-50 text-yellow-900", ring: "ring-yellow-300" }, 2: { label: "Серебро", cls: "border-neutral-300 bg-neutral-100 text-neutral-900", ring: "ring-neutral-300" }, 3: { label: "Бронза", cls: "border-orange-300 bg-orange-50 text-orange-900", ring: "ring-orange-300" } }; const avatar=(item)=> String(item.avatarUrl || "/brand/default-avatar.svg"); %>
 
     <section class="grid gap-4 md:grid-cols-3">
       <% if (!topThree.length) { %>
@@ -145,7 +145,7 @@
       <div class="grid gap-5 px-5 py-5 sm:px-8 sm:py-7">
         <div class="flex items-center justify-between gap-3 rounded-xl border border-neutral-200 px-4 py-3">
           <div class="flex min-w-0 items-center gap-3">
-            <img src="<%= viewerAvatar || '/brand/profile-user.svg' %>" alt="" class="h-9 w-9 shrink-0 rounded-full border border-neutral-200 object-cover" />
+            <img src="<%= viewerAvatar || '/brand/default-avatar.svg' %>" alt="" class="h-9 w-9 shrink-0 rounded-full border border-neutral-200 object-cover" />
             <div class="min-w-0 text-sm">
               <p class="truncate font-semibold text-neutral-900"><%= viewerName %><% if (viewerLogin) { %> · @<%= viewerLogin %><% } %></p>
             </div>

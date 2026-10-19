@@ -3033,7 +3033,7 @@ router.get(
           : null;
         const limitedCardBadge = await getActiveLimitedCardBadgeForUser(slugRow.ownerId);
         const viewerCommentComposer = {
-          avatarUrl: String(viewerProfileCard?.avatarUrl || "").trim() || "/brand/profile-user.svg",
+          avatarUrl: String(viewerProfileCard?.avatarUrl || "").trim() || "/brand/default-avatar.svg",
           initials: getNameInitials(
             viewerSession?.displayName ||
               [viewerSession?.firstName, viewerSession?.lastName].filter(Boolean).join(" ") ||

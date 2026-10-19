@@ -227,7 +227,7 @@
     const TELEGRAM_PAYMENT_USERNAME = String(root.getAttribute("data-telegram-bot-username") || "")
       .replace(/^@+/, "")
       .trim();
-    const DEFAULT_PROFILE_AVATAR = "/brand/profile-thin.svg";
+    const DEFAULT_PROFILE_AVATAR = "/brand/default-avatar.svg";
     const PREMIUM_REQUIRED_TITLE = "Нужен Премиум";
     const PREMIUM_CTA_LABEL = "Подключить Премиум →";
     const PREMIUM_UPSELL_NOTE = "Подключить Премиум · $2/мес";
@@ -4497,7 +4497,7 @@ Email: ${userEmail}
           (c) =>
             `<div class="flex items-center justify-between gap-3 rounded-xl border border-neutral-200 bg-neutral-50 p-3">
               <div class="flex items-center gap-3 min-w-0">
-                <img src="${esc(c.avatarUrl || "/brand/profile-thin.svg")}" alt="" class="h-10 w-10 shrink-0 rounded-full border border-neutral-200 object-cover" />
+                <img src="${esc(c.avatarUrl || "/brand/default-avatar.svg")}" alt="" class="h-10 w-10 shrink-0 rounded-full border border-neutral-200 object-cover" />
                 <div class="min-w-0">
                   <p class="truncate text-sm font-semibold">${esc(c.name || "Без имени")}</p>
                   <p class="truncate text-xs text-neutral-500">/payment/${esc(c.number)}</p>
@@ -4523,7 +4523,7 @@ Email: ${userEmail}
         : [];
 
       if (el.pcNumber) el.pcNumber.value = card.number;
-      if (el.pcAvPreview) el.pcAvPreview.src = card.avatarUrl || "/brand/profile-thin.svg";
+      if (el.pcAvPreview) el.pcAvPreview.src = card.avatarUrl || "/brand/default-avatar.svg";
       if (el.pcName) el.pcName.value = card.name || "";
       if (el.pcRole) el.pcRole.value = card.role || "";
       if (el.pcBio) el.pcBio.value = card.bio || "";
@@ -4631,7 +4631,7 @@ Email: ${userEmail}
       fd.append("file", file);
       try {
         const payload = await api(`/api/profile/payment-cards/${s.pcEditing}/avatar`, { method: "POST", body: fd });
-        if (el.pcAvPreview) el.pcAvPreview.src = payload.avatarUrl || "/brand/profile-thin.svg";
+        if (el.pcAvPreview) el.pcAvPreview.src = payload.avatarUrl || "/brand/default-avatar.svg";
         await loadPaymentCards();
       } catch (error) {
         showModal("Ошибка", error.message || "Не удалось загрузить аватар");
@@ -4642,7 +4642,7 @@ Email: ${userEmail}
       if (!s.pcEditing) return;
       try {
         await api(`/api/profile/payment-cards/${s.pcEditing}/avatar`, { method: "DELETE" });
-        if (el.pcAvPreview) el.pcAvPreview.src = "/brand/profile-thin.svg";
+        if (el.pcAvPreview) el.pcAvPreview.src = "/brand/default-avatar.svg";
         await loadPaymentCards();
       } catch (error) {
         showModal("Ошибка", error.message || "Не удалось удалить аватар");

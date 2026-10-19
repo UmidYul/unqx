@@ -1222,7 +1222,7 @@ function initTelegramAuth(pageNode) {
       }
       for (const node of profileAvatars) {
         if (node instanceof HTMLImageElement) {
-          node.src = currentUser.photoUrl || "/brand/profile-user.svg";
+          node.src = currentUser.photoUrl || "/brand/default-avatar.svg";
         }
       }
     }
@@ -1510,13 +1510,13 @@ function initSlugAvailability(orderApi) {
       if (!owner || typeof owner !== "object") {
         takenOwnerWrap.classList.add("hidden");
         takenOwnerName.textContent = "UNQX User";
-        takenOwnerPhoto.src = "/brand/logo.PNG";
+        takenOwnerPhoto.src = "/brand/default-avatar.svg";
         takenOwnerView.href = `/${slug}`;
         return;
       }
 
       const ownerName = String(owner.name || "").trim() || "UNQX User";
-      const ownerPhoto = String(owner.avatarUrl || owner.photoUrl || "").trim() || "/brand/logo.PNG";
+      const ownerPhoto = String(owner.avatarUrl || owner.photoUrl || "").trim() || "/brand/default-avatar.svg";
       const ownerHref = String(owner.href || "").trim() || `/${slug}`;
       takenOwnerName.textContent = ownerName;
       takenOwnerPhoto.src = ownerPhoto;

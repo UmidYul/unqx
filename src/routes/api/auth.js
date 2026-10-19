@@ -490,7 +490,7 @@ async function handleAuthStatusRequest(req, res) {
     : "";
 
   const userPayload = userToClientPayload(user);
-  userPayload.photoUrl = avatarUrl || sessionUser.avatarUrl || "/brand/profile-user.svg";
+  userPayload.photoUrl = avatarUrl || sessionUser.avatarUrl || "/brand/default-avatar.svg";
 
   res.json({
     authenticated: true,

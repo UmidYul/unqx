@@ -21,7 +21,7 @@
   `${(pageUserSession.firstName || pageUserSession.displayName || "Мой профиль" )} · Мой профиль` : "Мой профиль" ;
   const authPhotoUrlFromServer=typeof authPhotoUrl==="string" && authPhotoUrl.trim() ? authPhotoUrl.trim() : "" ; const
   authNavPhotoUrl=authPhotoUrlFromServer || (hasAuthSession && pageUserSession.avatarUrl ? pageUserSession.avatarUrl
-  : "/brand/profile-user.svg" ) ; const demos=[ { name: "Alex Karimov" , role: "Product Designer" , slug: "alex" }, {
+  : "/brand/default-avatar.svg" ) ; const demos=[ { name: "Alex Karimov" , role: "Product Designer" , slug: "alex" }, {
   name: "Dilnoza R." , role: "Marketing Lead" , slug: "dilnoza" }, { name: "Sardor M." , role: "Full-Stack Dev" ,
   slug: "sardor" }, { name: "Nodira K." , role: "Brand Strategist" , slug: "nodira" }, { name: "Temur A." ,
   role: "Founder, CEO" , slug: "temur" }, ]; const testimonialsList=Array.isArray(testimonials) && testimonials.length>
@@ -430,7 +430,7 @@
                     <div
                       class="mx-auto flex w-full max-w-md items-center justify-between gap-3 rounded-xl border border-neutral-200 bg-white px-3 py-2">
                       <div class="flex min-w-0 items-center gap-3">
-                        <img id="home-slug-taken-owner-photo" src="/brand/logo.PNG" alt="Фото владельца"
+                        <img id="home-slug-taken-owner-photo" src="/brand/default-avatar.svg" alt="Фото владельца"
                           class="h-9 w-9 rounded-full border border-neutral-200 object-cover" />
                         <p id="home-slug-taken-owner-name" class="truncate text-sm font-semibold text-neutral-900">UNQX
                           User</p>
@@ -922,8 +922,8 @@
                               class="home-showcase-item home-showcase-item--views home-showcase-item--rank-<%= rankNumber %> interactive-card">
                               <span class="home-showcase-rank"><%= rankNumber %><% if (rankNumber === 1) { %><span class="home-showcase-rank-crown" aria-hidden="true">♛</span><% } %></span>
                               <span class="home-showcase-card">
-                                <img src="<%= item.avatarUrl || '/brand/logo.PNG' %>" alt="<%= item.name %>"
-                                  onerror="this.onerror=null;this.src='/brand/logo.PNG';"
+                                <img src="<%= item.avatarUrl || '/brand/default-avatar.svg' %>" alt="<%= item.name %>"
+                                  onerror="this.onerror=null;this.src='/brand/default-avatar.svg';"
                                   class="home-showcase-avatar" />
                                 <span class="home-showcase-copy">
                                   <span class="home-showcase-name-row">

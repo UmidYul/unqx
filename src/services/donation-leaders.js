@@ -69,7 +69,7 @@ function toSafeDonationItem(row, rank) {
     userId: String(row.user_id || ""),
     name: String(row.display_name || row.first_name || row.login || "UNQX User").trim() || "UNQX User",
     login: row.login ? String(row.login) : null,
-    avatarUrl: String(row.avatar_url || "/brand/profile-user.svg"),
+    avatarUrl: String(row.avatar_url || "/brand/default-avatar.svg"),
     profileSlug: profileSlug || null,
     profileUrl: profileSlug ? `/${encodeURIComponent(profileSlug)}` : null,
     totalDonations: total.toString(),

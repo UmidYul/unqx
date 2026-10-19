@@ -76,12 +76,12 @@
     viewerCommentComposer:
       payload.viewerCommentComposer && typeof payload.viewerCommentComposer === "object"
         ? {
-          avatarUrl: String(payload.viewerCommentComposer.avatarUrl || "").trim() || "/brand/profile-user.svg",
+          avatarUrl: String(payload.viewerCommentComposer.avatarUrl || "").trim() || "/brand/default-avatar.svg",
           initials: String(payload.viewerCommentComposer.initials || "").trim() || "UN",
           placeholder: String(payload.viewerCommentComposer.placeholder || "").trim() || "Добавьте ответ...",
         }
         : {
-          avatarUrl: "/brand/profile-user.svg",
+          avatarUrl: "/brand/default-avatar.svg",
           initials: "UN",
           placeholder: "Добавьте ответ...",
         },

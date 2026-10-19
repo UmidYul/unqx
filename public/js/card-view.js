@@ -4680,7 +4680,7 @@
         ? options.viewerCommentComposer
         : null;
     const viewerCommentComposer = {
-      avatarUrl: String(viewerCommentComposerRaw?.avatarUrl || "").trim() || "/brand/profile-user.svg",
+      avatarUrl: String(viewerCommentComposerRaw?.avatarUrl || "").trim() || "/brand/default-avatar.svg",
       initials: String(viewerCommentComposerRaw?.initials || "").trim() || "UN",
       placeholder: String(viewerCommentComposerRaw?.placeholder || "").trim() || "Добавьте ответ...",
     };

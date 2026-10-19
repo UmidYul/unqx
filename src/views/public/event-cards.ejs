@@ -5,7 +5,7 @@ const pageCanonicalUrl = typeof canonicalUrl === "string" && canonicalUrl ? cano
 const pageUserSession = typeof userSession !== "undefined" ? userSession : null;
 const hasAuthSession = Boolean(pageUserSession && pageUserSession.userId);
 const authPhotoUrlFromServer = typeof authPhotoUrl === "string" && authPhotoUrl.trim() ? authPhotoUrl.trim() : "";
-const authNavPhotoUrl = authPhotoUrlFromServer || (hasAuthSession && pageUserSession.avatarUrl ? pageUserSession.avatarUrl : "/brand/profile-user.svg");
+const authNavPhotoUrl = authPhotoUrlFromServer || (hasAuthSession && pageUserSession.avatarUrl ? pageUserSession.avatarUrl : "/brand/default-avatar.svg");
 const cardsList = Array.isArray(eventCards) ? eventCards : [];
 const formatReleaseDate = (value) => {
   const date = new Date(value);
