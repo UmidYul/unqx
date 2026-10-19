@@ -18,11 +18,12 @@ const DEFAULT_SLUG_PRICING = {
   digitsRandom: 1,
 };
 const DEFAULT_PRICING = {
-  planBasicPrice: 130_000,
-  planPremiumPrice: 130_000,
-  premiumUpgradePrice: 130_000,
+  planBasicPrice: 26_000,
+  planPremiumPrice: 26_000,
+  premiumUpgradePrice: 26_000,
   planPremiumMonthlyPriceUsd: 2,
-  planPremiumMonthlyPriceUzs: 130_000,
+  planPremiumMonthlyPriceUzs: 26_000,
+  planPremiumYearlyPriceUzs: 160_000,
 };
 const PENDING_PURCHASE_INTENT_KEY = "unqx.pendingPurchaseIntent.v1";
 const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
@@ -94,6 +95,8 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     planPremiumPrice: document.getElementById("order-modal-plan-premium-price"),
     planPremiumNote: document.getElementById("order-modal-plan-premium-note"),
     planSection: document.getElementById("order-modal-plan-section"),
+    subscriptionTerm: document.getElementById("order-modal-subscription-term"),
+    subscriptionTermWrap: document.getElementById("order-modal-subscription-term-wrap"),
     planActivationNote: document.getElementById("order-modal-plan-activation-note"),
     promoSection: document.getElementById("order-modal-promo-section"),
     promoCode: document.getElementById("order-modal-promo-code"),
@@ -751,38 +754,19 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     return { downPayment, financed, months, monthly };
   }
 
-  function formatPremiumMonthlyUsdLabel(value = state.pricing?.planPremiumMonthlyPriceUsd || DEFAULT_PRICING.planPremiumMonthlyPriceUsd) {
-    const normalized = Number(value || 0);
-    if (!Number.isFinite(normalized) || normalized <= 0) {
-      return "$2";
-    }
-    const amount = Number.isInteger(normalized)
-      ? String(normalized)
-      : normalized.toLocaleString("en-US", {
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 2,
-      });
-    return `$${amount}`;
+  function selectedSubscriptionMonths() {
+    return dom.subscriptionTerm?.value === "12" ? 12 : 1;
   }
 
-  function shouldUseTelegramPremiumUsdLabel(requestedPlan, planPrice) {
-    return normalizePlan(requestedPlan) === "premium" && Number(planPrice || 0) > 0;
+  function subscriptionPeriodLabel() {
+    return selectedSubscriptionMonths() === 12 ? "365 дней" : "30 дней";
   }
 
-  function formatTelegramPlanPriceLabel(planPrice, requestedPlan) {
-    if (shouldUseTelegramPremiumUsdLabel(requestedPlan, planPrice)) {
-      return formatPremiumMonthlyUsdLabel();
-    }
+  function formatTelegramPlanPriceLabel(planPrice) {
     return `${formatPrice(planPrice)} сум`;
   }
 
-  function formatTelegramTotalPriceLabel({ requestedPlan, slugPrice = 0, planPrice = 0, totalAmount = 0 }) {
-    if (
-      shouldUseTelegramPremiumUsdLabel(requestedPlan, planPrice) &&
-      Number(slugPrice || 0) <= 0
-    ) {
-      return formatPremiumMonthlyUsdLabel();
-    }
+  function formatTelegramTotalPriceLabel({ totalAmount = 0 }) {
     return `${formatPrice(totalAmount)} сум`;
   }
 
@@ -1082,6 +1066,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
       premiumUpgradePrice: premiumMonthlyPriceUzs,
       planPremiumMonthlyPriceUsd: Number(raw.planPremiumMonthlyPriceUsd || DEFAULT_PRICING.planPremiumMonthlyPriceUsd),
       planPremiumMonthlyPriceUzs: premiumMonthlyPriceUzs,
+      planPremiumYearlyPriceUzs: Number(raw.planPremiumYearlyPriceUzs ?? DEFAULT_PRICING.planPremiumYearlyPriceUzs),
       userPlan: normalizePlan(raw.userPlan || "none"),
     };
   }
@@ -1090,13 +1075,16 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     if (selected !== "premium") {
       return 0;
     }
+    const charge = selectedSubscriptionMonths() === 12
+      ? Number(pricing.planPremiumYearlyPriceUzs)
+      : Number(pricing.planPremiumMonthlyPriceUzs || pricing.planPremiumPrice || 0);
     if (isSubscriptionRenewalMode(orderKind)) {
-      return Number(pricing.planPremiumMonthlyPriceUzs || pricing.planPremiumPrice || 0);
+      return charge;
     }
     if (userPlan === "premium") {
       return 0;
     }
-    return Number(pricing.planPremiumMonthlyPriceUzs || pricing.planPremiumPrice || 0);
+    return charge;
   }
 
   function syncPlanVisibilityByUserPlan(userPlan, orderKind = state.orderKind) {
@@ -1360,7 +1348,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     }
     if (dom.successNote instanceof HTMLElement) {
       dom.successNote.textContent = renewalMode
-        ? "После оплаты мы продлим Premium на 30 дней."
+        ? `После оплаты мы продлим Premium на ${subscriptionPeriodLabel()}.`
         : flashMode
           ? "Если выбранный UNQ участвует в акции, скидка уже учтена в итоговой цене."
           : DEFAULT_SUCCESS_NOTE;
@@ -1612,7 +1600,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
       precheck.message =
         precheck.canPurchase === false
           ? String(precheck.message || "Покупка сейчас недоступна.")
-          : "Продление Premium на 30 дней без покупки нового UNQ.";
+          : "Продление Premium на месяц или год без покупки нового UNQ.";
     }
     if (action === "resume_pending" && precheck.pendingOrder) {
       setSubmitBlockedMessage("");
@@ -1720,7 +1708,16 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     const userPlan = currentUserPlan();
     const planCharge = resolvePlanCharge(requestedPlan, userPlan, pricingSettings, state.orderKind);
     const planCardBasic = pricingSettings.planBasicPrice;
-    const planCardPremium = Number(pricingSettings.planPremiumMonthlyPriceUzs || pricingSettings.planPremiumPrice || 0);
+    const planCardPremium = selectedSubscriptionMonths() === 12
+      ? pricingSettings.planPremiumYearlyPriceUzs
+      : pricingSettings.planPremiumMonthlyPriceUzs;
+    if (dom.subscriptionTermWrap instanceof HTMLElement) {
+      dom.subscriptionTermWrap.classList.toggle("hidden", !renewalMode && userPlan === "premium");
+    }
+    if (dom.subscriptionTerm instanceof HTMLSelectElement) {
+      dom.subscriptionTerm.options[0].textContent = `Месяц · ${formatPrice(pricingSettings.planPremiumMonthlyPriceUzs)} сум`;
+      dom.subscriptionTerm.options[1].textContent = `Год · ${formatPrice(pricingSettings.planPremiumYearlyPriceUzs)} сум`;
+    }
     const slugBasePrice = Number(state.slugPricing?.basePrice || DEFAULT_SLUG_PRICING.basePrice);
     const fallbackSlugPrice = pricing ? pricing.total : 0;
     const server = renewalMode
@@ -1828,12 +1825,12 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
       dom.planPremiumPrice.textContent = `${formatPrice(planCardPremium)} сум`;
     }
     if (dom.planPremiumNote instanceof HTMLElement) {
-      dom.planPremiumNote.textContent = renewalMode ? "продление на 30 дней" : (userPlan === "premium" ? "подписка активна ✓" : "$2/мес");
+      dom.planPremiumNote.textContent = renewalMode ? `продление на ${subscriptionPeriodLabel()}` : (userPlan === "premium" ? "подписка активна ✓" : `за ${subscriptionPeriodLabel()}`);
     }
     if (dom.planActivationNote instanceof HTMLElement) {
       dom.planActivationNote.textContent = renewalMode
-        ? "После оплаты продлим Premium на 30 дней."
-        : "После оплаты активируем Premium на 30 дней.";
+        ? `После оплаты продлим Premium на ${subscriptionPeriodLabel()}.`
+        : `После оплаты активируем Premium на ${subscriptionPeriodLabel()}.`;
     }
     syncPlanVisibilityByUserPlan(userPlan, state.orderKind);
 
@@ -1964,10 +1961,10 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
     }
     if (dom.totalMonthly instanceof HTMLElement) {
       dom.totalMonthly.textContent = renewalMode
-        ? "Продление Premium · 30 дней после оплаты"
+        ? `Продление Premium · ${subscriptionPeriodLabel()} после оплаты`
         : creditPlan
           ? `Кредит 0% · остаток ${formatPrice(creditPlan.financed)} сум · ${formatPrice(creditPlan.monthly)} сум/мес на ${creditPlan.months} мес.`
-          : "Premium подписка · $2/мес · продление вручную";
+          : `Premium · ${formatPrice(pricingSettings.planPremiumMonthlyPriceUzs)} сум/мес. или ${formatPrice(pricingSettings.planPremiumYearlyPriceUzs)} сум/год · продление вручную`;
     }
     if (renewalMode) {
       setCampaignHint("");
@@ -2427,7 +2424,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
 
     try {
       if (renewalMode) {
-        const payload = await postJson("/api/profile/subscription/renew", {});
+        const payload = await postJson("/api/profile/subscription/renew", { subscriptionMonths: selectedSubscriptionMonths() });
         const paymentUrl = String(payload?.paymentUrl || "").trim();
         const orderId = String(payload?.order?.id || "").trim();
         const renewalEndAt = payload?.renewalWindow?.endAt ? new Date(payload.renewalWindow.endAt) : null;
@@ -2472,6 +2469,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
         letters: pricing.letters,
         digits: pricing.digits,
         tariff: plan,
+        subscriptionMonths: selectedSubscriptionMonths(),
         theme: state.theme || "default_dark",
         refSource: state.refSource || "",
         refOffer: state.refOffer || "",
@@ -2726,6 +2724,7 @@ const PENDING_PURCHASE_INTENT_TTL_MS = 2 * 60 * 60 * 1000;
   dom.digits.addEventListener("input", () => void updateTotals());
   dom.planBasic.addEventListener("change", () => void updateTotals());
   dom.planPremium.addEventListener("change", () => void updateTotals());
+  dom.subscriptionTerm?.addEventListener("change", () => void updateTotals());
   dom.paymentCash?.addEventListener("change", () => void updateTotals());
   dom.paymentCredit?.addEventListener("change", () => void updateTotals());
   dom.creditMonths?.addEventListener("change", () => void updateTotals());

@@ -2185,7 +2185,8 @@
     const payload = await r.json();
     const settings = payload.settings || {};
     setFormValue(form, "planPremiumMonthlyPriceUsd", String(Number(settings.planPremiumMonthlyPriceUsd || 2)));
-    setFormValue(form, "planPremiumMonthlyPriceUzs", String(Number(settings.planPremiumMonthlyPriceUzs || settings.planPremiumPrice || 130000)));
+    setFormValue(form, "planPremiumMonthlyPriceUzs", String(Number(settings.planPremiumMonthlyPriceUzs || settings.planPremiumPrice || 26000)));
+    setFormValue(form, "planPremiumYearlyPriceUzs", String(Number(settings.planPremiumYearlyPriceUzs ?? 160000)));
     setFormValue(form, "pricingFootnote", String(settings.pricingFootnote || ""));
     setFormValue(form, "slugPriceMarkupPercent", String(Number(settings.slugPriceMarkupPercent || 0)));
     setFormValue(form, "slugPriceMarkupComment", String(settings.slugPriceMarkupComment || ""));
@@ -6134,7 +6135,8 @@
     if (!(form instanceof HTMLFormElement)) return;
     const body = {
       planPremiumMonthlyPriceUsd: Number(getFormValue(form, "planPremiumMonthlyPriceUsd", "2")),
-      planPremiumMonthlyPriceUzs: Number(getFormValue(form, "planPremiumMonthlyPriceUzs", "130000")),
+      planPremiumMonthlyPriceUzs: Number(getFormValue(form, "planPremiumMonthlyPriceUzs", "26000")),
+      planPremiumYearlyPriceUzs: Number(getFormValue(form, "planPremiumYearlyPriceUzs", "160000")),
       pricingFootnote: getFormValue(form, "pricingFootnote", ""),
       slugPriceMarkupPercent: Number(getFormValue(form, "slugPriceMarkupPercent", "0")),
       slugPriceMarkupComment: getFormValue(form, "slugPriceMarkupComment", ""),

@@ -142,10 +142,8 @@ function getTagLimit(plan) {
   return 5;
 }
 
-function getButtonLimit(plan) {
-  if (normalizeSubscriptionPlan(plan) !== "premium") {
-    return 0;
-  }
+function getButtonLimit() {
+  // Personal links are available with a free public profile too.
   return 6;
 }
 

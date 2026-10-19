@@ -252,6 +252,8 @@ function mapProfileRequest(item, options = {}) {
     id: item.id,
     slug: item.slug,
     requestedPlan: item.requestedPlan,
+    orderKind: item.orderKind || "slug_purchase",
+    subscriptionMonths: Number(item.subscriptionMonths || 0),
     planPrice: item.planPrice,
     status: item.status,
     statusBadge: toRequestStatusBadge(item.status),
@@ -1082,7 +1084,7 @@ router.get(
 
     const effective = getEffectivePlan(user);
     const publicHandle = getActivePublicHandle(user);
-    const capabilityPlan = canCreateCard(user) ? "premium" : effective.plan;
+    const capabilityPlan = effective.plan;
     const wallSummary = await getWallSummary(user);
     const requestItems = mergeProfileRequests({
       slugRequests,
@@ -1239,14 +1241,20 @@ router.post(
       return;
     }
 
+    const subscriptionMonths = Number(req.body?.subscriptionMonths ?? 1);
+    if (![1, 12].includes(subscriptionMonths)) {
+      res.status(400).json({ error: "Выберите подписку на месяц или год", code: "INVALID_SUBSCRIPTION_TERM" });
+      return;
+    }
     const pricing = await getPricingSettings();
-    const monthlyCharge = getPlanCharge({
+    const planCharge = getPlanCharge({
       currentPlan: user.plan,
       pricing,
       user,
       forceSubscriptionCharge: true,
+      subscriptionMonths,
     });
-    if (!Number.isFinite(monthlyCharge) || monthlyCharge <= 0) {
+    if (!Number.isFinite(planCharge) || planCharge <= 0) {
       res.status(409).json({
         error: "Subscription renewal is unavailable",
         code: "SUBSCRIPTION_RENEWAL_UNAVAILABLE",
@@ -1268,8 +1276,10 @@ router.post(
         createdAt: true,
         updatedAt: true,
         requestedPlan: true,
+        orderKind: true,
         slugPrice: true,
         planPrice: true,
+        subscriptionMonths: true,
         bracelet: true,
         adminNote: true,
         promoCode: true,
@@ -1298,8 +1308,8 @@ router.post(
         promoDiscountApplied: 0,
         promoCode: "",
         bonusSpent: 0,
-        planPrice: Number(existingOpenOrder.planPrice || monthlyCharge),
-        totalAmount: Number(existingOpenOrder.planPrice || monthlyCharge),
+        planPrice: Number(existingOpenOrder.planPrice || planCharge),
+        totalAmount: Number(existingOpenOrder.planPrice || planCharge),
       });
       res.status(409).json({
         error: "You already have an open renewal order",
@@ -1325,8 +1335,8 @@ router.post(
         slugPrice: 0,
         requestedPlan: "premium",
         orderKind: "subscription_renewal",
-        subscriptionMonths: 1,
-        planPrice: monthlyCharge,
+        subscriptionMonths,
+        planPrice: planCharge,
         status: "new",
       },
       select: {
@@ -1336,8 +1346,10 @@ router.post(
         createdAt: true,
         updatedAt: true,
         requestedPlan: true,
+        orderKind: true,
         slugPrice: true,
         planPrice: true,
+        subscriptionMonths: true,
         bracelet: true,
         adminNote: true,
         promoCode: true,
@@ -1362,8 +1374,8 @@ router.post(
       promoDiscountApplied: 0,
       promoCode: "",
       bonusSpent: 0,
-      planPrice: monthlyCharge,
-      totalAmount: monthlyCharge,
+      planPrice: planCharge,
+      totalAmount: planCharge,
     });
 
     void logUserActivity({ userId: user.id, userLogin: user.login, action: "slug_purchase", detail: `plan=premium order=${order.id}`, req });
@@ -1375,9 +1387,11 @@ router.post(
         email: user.email || "",
       }),
       paymentUrl,
-      monthlyCharge,
+      planCharge,
+      monthlyCharge: pricing.planPremiumMonthlyPriceUzs,
+      subscriptionMonths,
       renewalWindow: (() => {
-        const nextWindow = getSubscriptionRenewalWindow(user, { months: 1 });
+        const nextWindow = getSubscriptionRenewalWindow(user, { months: subscriptionMonths });
         return {
           startAt: nextWindow.startAt,
           endAt: nextWindow.endAt,

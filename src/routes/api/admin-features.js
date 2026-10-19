@@ -1330,6 +1330,7 @@ router.patch(
       ...current,
       ...(req.body.planPremiumMonthlyPriceUsd !== undefined ? { planPremiumMonthlyPriceUsd: Number(req.body.planPremiumMonthlyPriceUsd) } : {}),
       ...(req.body.planPremiumMonthlyPriceUzs !== undefined ? { planPremiumMonthlyPriceUzs: Number(req.body.planPremiumMonthlyPriceUzs) } : {}),
+      ...(req.body.planPremiumYearlyPriceUzs !== undefined ? { planPremiumYearlyPriceUzs: Number(req.body.planPremiumYearlyPriceUzs) } : {}),
       ...(req.body.planBasicPrice !== undefined ? { planBasicPrice: Number(req.body.planBasicPrice) } : {}),
       ...(req.body.planPremiumPrice !== undefined ? { planPremiumPrice: Number(req.body.planPremiumPrice) } : {}),
       ...(req.body.premiumUpgradePrice !== undefined ? { premiumUpgradePrice: Number(req.body.premiumUpgradePrice) } : {}),

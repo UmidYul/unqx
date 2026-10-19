@@ -4,7 +4,7 @@ const { PROFILE_THEME_KEYS } = require("../services/profile");
 
 const OrderRequestSchema = z.object({
   orderKind: z.enum(["slug_purchase", "subscription_renewal"]).optional(),
-  subscriptionMonths: z.coerce.number().int().min(1).max(12).optional(),
+  subscriptionMonths: z.coerce.number().refine((value) => value === 1 || value === 12, "Choose a monthly or yearly subscription").optional(),
   name: z.string().trim().min(1, "Name is required").max(100, "Name is too long"),
   letters: z
     .string()

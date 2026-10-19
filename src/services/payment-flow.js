@@ -42,50 +42,14 @@ function toMoneyLabel(value) {
   return `${Number(value || 0).toLocaleString("ru-RU")} сум`;
 }
 
-function toUsdLabel(value) {
-  const normalized = Number(value || 0);
-  if (!Number.isFinite(normalized) || normalized <= 0) {
-    return "$2";
-  }
-  const amount = Number.isInteger(normalized)
-    ? String(normalized)
-    : normalized.toLocaleString("en-US", {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 2,
-    });
-  return `$${amount}`;
-}
-
-function shouldUsePremiumUsdLabel(requestedPlan, planPrice) {
-  return String(requestedPlan || "").toLowerCase() === "premium" && Number(planPrice || 0) > 0;
-}
-
-function toTelegramPlanPriceLabel({
-  requestedPlan,
-  planPrice = 0,
-  planMonthlyPriceUsd = 2,
-}) {
-  if (shouldUsePremiumUsdLabel(requestedPlan, planPrice)) {
-    return toUsdLabel(planMonthlyPriceUsd);
-  }
+function toTelegramPlanPriceLabel({ planPrice = 0 }) {
   return toMoneyLabel(planPrice);
 }
 
-function toTelegramTotalPriceLabel({
-  requestedPlan,
-  slugPrice = 0,
-  planPrice = 0,
-  totalAmount = null,
-  planMonthlyPriceUsd = 2,
-}) {
-  const slugPart = Math.max(0, Number(slugPrice || 0));
-  const planPart = Math.max(0, Number(planPrice || 0));
-  const resolvedTotal =
-    totalAmount == null ? slugPart + planPart : Math.max(0, Number(totalAmount || 0));
-
-  if (shouldUsePremiumUsdLabel(requestedPlan, planPart) && slugPart <= 0) {
-    return toUsdLabel(planMonthlyPriceUsd);
-  }
+function toTelegramTotalPriceLabel({ slugPrice = 0, planPrice = 0, totalAmount = null }) {
+  const resolvedTotal = totalAmount == null
+    ? Math.max(0, Number(slugPrice || 0)) + Math.max(0, Number(planPrice || 0))
+    : Math.max(0, Number(totalAmount || 0));
   return toMoneyLabel(resolvedTotal);
 }
 

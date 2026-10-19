@@ -57,4 +57,13 @@ describe("order request validation", () => {
 
     expect(result.success).toBe(false);
   });
+  it("allows only the published monthly and annual terms", () => {
+    for (const subscriptionMonths of [1, 12]) {
+      expect(OrderRequestSchema.safeParse({ ...validPayload, subscriptionMonths }).success).toBe(true);
+    }
+    for (const subscriptionMonths of [0, 2, 6, 13]) {
+      expect(OrderRequestSchema.safeParse({ ...validPayload, subscriptionMonths }).success).toBe(false);
+    }
+  });
+
 });

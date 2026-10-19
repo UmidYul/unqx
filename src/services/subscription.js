@@ -167,7 +167,7 @@ function getSubscriptionRenewalWindow(user, options = {}) {
     snapshot.expiresAt && snapshot.expiresAt.getTime() > now.getTime()
       ? snapshot.expiresAt
       : now;
-  const endAt = addDays(startAt, months * SUBSCRIPTION_TERM_DAYS);
+  const endAt = addDays(startAt, months === 12 ? 365 : months * SUBSCRIPTION_TERM_DAYS);
   return { startAt, endAt, months };
 }
 

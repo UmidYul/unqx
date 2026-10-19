@@ -1,4 +1,4 @@
-const { applySlugPriceMarkup, getPlanCharge, resolveRequestedPlanForOrder } = require("../../src/services/pricing-settings");
+const { applySlugPriceMarkup, normalizePricingSettings, getPlanCharge, resolveRequestedPlanForOrder } = require("../../src/services/pricing-settings");
 
 describe("pricing charge logic", () => {
   const pricing = {
@@ -63,5 +63,25 @@ describe("pricing charge logic", () => {
       markupPercent: 10,
       markupAmount: 100_000,
     });
+  });
+});
+
+
+describe("monthly and annual Premium pricing", () => {
+  test("uses the published UZS prices when settings are missing", () => {
+    expect(normalizePricingSettings({ planPremiumMonthlyPriceUzs: null })).toMatchObject({
+      planPremiumMonthlyPriceUzs: 26_000,
+      planPremiumYearlyPriceUzs: 160_000,
+    });
+    expect(getPlanCharge({ currentPlan: "none" })).toBe(26_000);
+    expect(getPlanCharge({ currentPlan: "none", subscriptionMonths: 12 })).toBe(160_000);
+  });
+
+  test("annual renewal uses the configured annual price even with active Premium", () => {
+    expect(getPlanCharge({
+      currentPlan: "premium", subscriptionMonths: 12, forceSubscriptionCharge: true,
+      pricing: { planPremiumMonthlyPriceUzs: 30_000, planPremiumYearlyPriceUzs: 170_000 },
+    })).toBe(170_000);
+    expect(getPlanCharge({ currentPlan: "premium", subscriptionMonths: 12 })).toBe(0);
   });
 });

@@ -230,7 +230,7 @@
     const DEFAULT_PROFILE_AVATAR = "/brand/default-avatar.svg";
     const PREMIUM_REQUIRED_TITLE = "Нужен Премиум";
     const PREMIUM_CTA_LABEL = "Подключить Премиум →";
-    const PREMIUM_UPSELL_NOTE = "Подключить Премиум · $2/мес";
+    const PREMIUM_UPSELL_NOTE = "Премиум · 26 000 сум/мес. или 160 000 сум/год";
     const PREMIUM_ACTIVATION_TITLE = "Сначала подключите Премиум";
     const PREMIUM_ACTIVATION_TEXT = "Чтобы зарезервировать UNQ и опубликовать визитку, подключите Премиум.";
     const SUBSCRIPTION_ACTIVE_LABEL = "Подписка активна";
@@ -475,7 +475,7 @@
     };
 
     const getSavedCardDraftState = () => {
-      if (!s.user || getCurrentPlan() === "none") return null;
+      if (!s.user || (getCurrentPlan() === "none" && !hasPublicProfileAccess())) return null;
       const card = s.card || {};
       return {
         name: String(card.name || s.user?.displayName || s.user?.firstName || ""),
@@ -498,7 +498,7 @@
     };
 
     const getCurrentCardDraftState = () => {
-      if (!(el.cName instanceof HTMLInputElement) || getCurrentPlan() === "none") return null;
+      if (!(el.cName instanceof HTMLInputElement) || (getCurrentPlan() === "none" && !hasPublicProfileAccess())) return null;
       return {
         name: String(el.cName?.value || ""),
         bio: String(el.cBio?.value || ""),
@@ -584,21 +584,11 @@
       return plan === "premium" || plan === "basic" ? "Премиум" : "Без тарифа";
     };
 
-    const formatTelegramPremiumUsdLabel = () => "$2";
-
-    const shouldUseTelegramPremiumUsdLabel = (requestedPlan, planPrice) =>
-      String(requestedPlan || "").toLowerCase() === "premium" && Number(planPrice || 0) > 0;
-
     const formatTelegramPlanPriceLabel = (requestedPlan, planPrice) =>
-      shouldUseTelegramPremiumUsdLabel(requestedPlan, planPrice)
-        ? formatTelegramPremiumUsdLabel()
-        : `${Number(planPrice || 0).toLocaleString("ru-RU")} сум`;
+      `${Number(planPrice || 0).toLocaleString("ru-RU")} сум`;
 
-    const formatTelegramTotalPriceLabel = ({ requestedPlan, slugPrice = 0, planPrice = 0, total = 0 }) =>
-      shouldUseTelegramPremiumUsdLabel(requestedPlan, planPrice) &&
-        Number(slugPrice || 0) <= 0
-        ? formatTelegramPremiumUsdLabel()
-        : `${Number(total || 0).toLocaleString("ru-RU")} сум`;
+    const formatTelegramTotalPriceLabel = ({ total = 0 }) =>
+      `${Number(total || 0).toLocaleString("ru-RU")} сум`;
 
     const buildTelegramPaymentUrl = (requestItem) => {
       const serverUrl = String(requestItem?.paymentUrl || "").trim();
@@ -1876,14 +1866,14 @@ Email: ${userEmail}
     };
 
     const getCurrentPlan = () => {
-      const raw = String(s.user?.capabilityPlan || s.user?.effectivePlan || s.user?.plan || "none")
+      const raw = String(s.user?.effectivePlan || s.user?.plan || "none")
         .trim()
         .toLowerCase();
       return raw === "premium" ? "premium" : "none";
     };
 
     const getActualPlan = () => {
-      const raw = String(s.user?.plan || "none").trim().toLowerCase();
+      const raw = String(s.user?.effectivePlan || s.user?.plan || "none").trim().toLowerCase();
       return raw === "premium" || raw === "basic" ? "premium" : "none";
     };
 
@@ -2637,7 +2627,7 @@ Email: ${userEmail}
 
     const renderCard = () => {
       const plan = getCurrentPlan();
-      if (plan === "none") {
+      if (plan === "none" && !hasPublicProfileAccess()) {
         if (el.cContent instanceof HTMLElement) el.cContent.classList.add("hidden");
         if (el.cEmpty instanceof HTMLElement) {
           el.cEmpty.classList.remove("hidden");
@@ -2666,7 +2656,7 @@ Email: ${userEmail}
       if (el.cExtraPhone) el.cExtraPhone.value = card.extraPhone || "";
       if (el.cBranding) el.cBranding.checked = card.showBranding === false;
 
-      s.tags = Array.isArray(card.tags) ? card.tags.slice(0) : [];
+      s.tags = Array.isArray(card.tags) ? card.tags.slice(0, getTagLimit()) : [];
       s.buttons = normalizeEditorButtons(card.buttons);
       s.pets = normalizeOwnedPets(card.pets || s.pets);
       s.selectedPetId = getCurrentPlan() === "premium" ? normalizeTrackId(card.selectedPetId) : null;

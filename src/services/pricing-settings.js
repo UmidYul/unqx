@@ -10,7 +10,7 @@ function normalizePlan(value) {
 
 function toPrice(value, fallback) {
   const parsed = Number(value);
-  if (!Number.isFinite(parsed)) {
+  if (value == null || value === "" || !Number.isFinite(parsed)) {
     return fallback;
   }
   return Math.max(0, Math.round(parsed));
@@ -26,13 +26,14 @@ function toMarkupPercent(value, fallback = 0) {
 
 function normalizePricingSettings(raw) {
   const defaults = DEFAULTS.pricing || {};
-  const legacyPremiumPrice = toPrice(raw?.planPremiumPrice, defaults.planPremiumPrice || 130_000);
+  const legacyPremiumPrice = toPrice(raw?.planPremiumPrice, defaults.planPremiumPrice || 26_000);
   const monthlyUzs = toPrice(raw?.planPremiumMonthlyPriceUzs, legacyPremiumPrice);
   const monthlyUsd = Math.max(0, Number(raw?.planPremiumMonthlyPriceUsd ?? 2) || 2);
   return {
-    // New monthly model
+    // Published monthly and annual offers
     planPremiumMonthlyPriceUsd: monthlyUsd,
     planPremiumMonthlyPriceUzs: monthlyUzs,
+    planPremiumYearlyPriceUzs: toPrice(raw?.planPremiumYearlyPriceUzs, defaults.planPremiumYearlyPriceUzs || 160_000),
     // Backward-compatible aliases for old consumers
     planBasicPrice: monthlyUzs,
     planPremiumPrice: monthlyUzs,
@@ -58,6 +59,7 @@ async function getPricingSettings() {
   const values = await getManySettings([
     "plan_premium_monthly_price_usd",
     "plan_premium_monthly_price_uzs",
+    "plan_premium_yearly_price_uzs",
     "plan_premium_price",
     "pricing_footnote",
     "pricing_slug_markup_percent",
@@ -66,6 +68,7 @@ async function getPricingSettings() {
   const raw = {
     planPremiumMonthlyPriceUsd: values.plan_premium_monthly_price_usd,
     planPremiumMonthlyPriceUzs: values.plan_premium_monthly_price_uzs,
+    planPremiumYearlyPriceUzs: values.plan_premium_yearly_price_uzs,
     planPremiumPrice: values.plan_premium_price,
     pricingFootnote: values.pricing_footnote,
     slugPriceMarkupPercent: values.pricing_slug_markup_percent,
@@ -83,6 +86,7 @@ async function setPricingSettings(nextPatch) {
   await setSettingsBatch("pricing", {
     plan_premium_monthly_price_usd: next.planPremiumMonthlyPriceUsd,
     plan_premium_monthly_price_uzs: next.planPremiumMonthlyPriceUzs,
+    plan_premium_yearly_price_uzs: next.planPremiumYearlyPriceUzs,
     // Keep legacy key in sync to avoid breaking old dashboard widgets
     plan_premium_price: next.planPremiumMonthlyPriceUzs,
     pricing_footnote: next.pricingFootnote,
@@ -131,10 +135,14 @@ function getPlanCharge({
   pricing,
   user = null,
   forceSubscriptionCharge = false,
+  subscriptionMonths = 1,
 }) {
   const settings = normalizePricingSettings(pricing || {});
+  const charge = Number(subscriptionMonths) === 12
+    ? settings.planPremiumYearlyPriceUzs
+    : settings.planPremiumMonthlyPriceUzs;
   if (forceSubscriptionCharge) {
-    return settings.planPremiumMonthlyPriceUzs;
+    return charge;
   }
   const snapshot = getSubscriptionSnapshot(
     user || {
@@ -144,7 +152,7 @@ function getPlanCharge({
   if (snapshot.isActive) {
     return 0;
   }
-  return settings.planPremiumMonthlyPriceUzs;
+  return charge;
 }
 
 function getPlanPurchaseType({ forceSubscriptionCharge = false } = {}) {

@@ -1,5 +1,6 @@
 const {
   buildSubscriptionAutoRenewPatch,
+  buildSubscriptionRenewalPatch,
   getSubscriptionSnapshot,
   isPublicProfileVisible,
 } = require("../../src/services/subscription");
@@ -71,4 +72,14 @@ describe("subscription visibility", () => {
     });
     expect(visible).toBe(false);
   });
+});
+
+
+test("monthly and annual purchases activate the paid duration", () => {
+  const now = new Date("2026-10-19T00:00:00Z");
+  const user = { plan: "none" };
+  expect(buildSubscriptionRenewalPatch(user, { now, months: 1 }).subscriptionExpiresAt.getTime()).toBe(now.getTime() + 30 * DAY_MS);
+  expect(buildSubscriptionRenewalPatch(user, { now, months: 12 }).subscriptionExpiresAt.getTime()).toBe(now.getTime() + 365 * DAY_MS);
+  const expiresAt = new Date("2026-11-01T00:00:00Z");
+  expect(buildSubscriptionRenewalPatch({ plan: "premium", subscriptionExpiresAt: expiresAt }, { now, months: 12 }).subscriptionExpiresAt.getTime()).toBe(expiresAt.getTime() + 365 * DAY_MS);
 });

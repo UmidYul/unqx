@@ -1605,12 +1605,13 @@ router.get(
         nextAction: sessionUser?.userId ? "retry" : "login",
         message,
         pricing: {
-          planBasicPrice: 130_000,
-          planPremiumPrice: 130_000,
-          premiumUpgradePrice: 130_000,
+          planBasicPrice: 26_000,
+          planPremiumPrice: 26_000,
+          premiumUpgradePrice: 26_000,
           planPremiumMonthlyPriceUsd: 2,
-          planPremiumMonthlyPriceUzs: 130_000,
-          planChargePreview: 130_000,
+          planPremiumMonthlyPriceUzs: 26_000,
+          planPremiumYearlyPriceUzs: 160_000,
+          planChargePreview: 26_000,
         },
         limits: {
           activeOrdersLimit,
@@ -2030,8 +2031,8 @@ router.get(
       nextAction = "checkout";
       canPurchase = true;
       message = subscription.isActive
-        ? "Продление Premium добавит ещё 30 дней после текущего периода."
-        : "После оплаты Premium будет продлён на 30 дней.";
+        ? "Выберите продление Premium на месяц или год. Новый срок начнётся после текущего периода."
+        : "После оплаты Premium будет продлён на выбранный срок.";
     } else if (subscription.isActive) {
       nextAction = "checkout";
       canPurchase = true;
@@ -2039,7 +2040,7 @@ router.get(
     } else {
       nextAction = "renew_required";
       canPurchase = true;
-      message = "Подписка Premium неактивна. В заказ будет добавлен 1 месяц подписки.";
+      message = "Подписка Premium неактивна. Выберите подписку на месяц или год.";
     }
     const discountCandidate = resolveInviteeDiscountCandidate({
       referralEnabled: referralSettings.enabled,
@@ -2400,6 +2401,7 @@ router.post(
     const luckyDiscountApplied = luckyPricing.discountApplied;
     const finalSlugPriceWithLucky = luckyPricing.finalPrice;
     const planPrice = getPlanCharge({
+      subscriptionMonths: payload.subscriptionMonths || 1,
       currentPlan: user.plan,
       requestedPlan,
       pricing,
@@ -2423,7 +2425,7 @@ router.post(
     const totalOneTime = (creditSchedule ? creditSchedule.downPaymentAmount : finalSlugPriceWithLucky) + planPrice;
     const theme = normalizeTheme(payload.theme);
     const requestedOrderKind = "slug_purchase";
-    const subscriptionMonths = planPrice > 0 ? 1 : 0;
+    const subscriptionMonths = planPrice > 0 ? (payload.subscriptionMonths || 1) : 0;
     const pendingExpiryHours = Math.max(1, Math.min(168, Number(await getSetting("pending_expiry_hours", 24)) || 24));
     const pendingExpiresAt = new Date(Date.now() + pendingExpiryHours * 60 * 60 * 1000);
     const canUseSlugTable = await withMissingTableFallback("Slug", false, async () => {

@@ -1,4 +1,4 @@
-const { getEffectivePlan, getSlugLimit, getTagLimit, getButtonLimit, canCreateCard } = require("../../src/services/profile");
+const { getEffectivePlan, getSlugLimit, getTagLimit, getButtonLimit, canCreateCard, normalizeButtons, normalizeThemeByPlan } = require("../../src/services/profile");
 
 describe("profile plan helpers", () => {
   test("keeps premium forever", () => {
@@ -55,3 +55,16 @@ describe("profile plan helpers", () => {
   });
 });
 
+
+
+test("free profiles keep personal links while Premium themes remain locked", () => {
+  const links = [
+    { type: "telegram", label: "Telegram", value: "https://t.me/testuser" },
+    { type: "other", label: "Сайт", href: "https://example.com" },
+  ];
+  expect(getButtonLimit("none")).toBe(6);
+  expect(normalizeButtons(links, "none")).toHaveLength(2);
+  expect(normalizeButtons(links, "none")[1].href).toBe("https://example.com");
+  expect(normalizeThemeByPlan("arcadia_painted", "none")).toBe("default_dark");
+  expect(normalizeThemeByPlan("arcadia_painted", "premium")).toBe("arcadia_painted");
+});
