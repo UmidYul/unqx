@@ -50,7 +50,7 @@ async function setCombination(page, letters, digits) {
   await page.locator("#calc-digits").fill(digits);
 }
 
-test("shows only the final server price and does not wait for recommendations", async ({ page }) => {
+test("smoothly forms the server price and combination without waiting for recommendations", async ({ page }) => {
   const gate = priceGate();
   await openHome(page, { price: gate.handler, availability: () => new Promise(() => {}) });
   await expect(page.locator("#calc-status")).toContainText("Обновляем цену");
@@ -61,14 +61,55 @@ test("shows only the final server price and does not wait for recommendations", 
     new MutationObserver(() => window.priceValues.push(node.textContent.replace(/\s/g, "")))
       .observe(node, { childList: true, subtree: true, characterData: true });
   });
+  await page.waitForTimeout(100);
+  await expect(page.locator("#calc-result-price")).toHaveText("—");
+  expect(await page.evaluate(() => window.priceValues)).toEqual([]);
   await gate.pending.get("JCH843")({ price: 1170000, calculation: {
     basePrice: 100000, lettersMultiplier: 3, digitsMultiplier: 3, markupPercent: 30, markupAmount: 270000,
   } });
+  await expect(page.locator("#calc-result")).toHaveAttribute("data-animating", "true");
+  const reels = page.locator(".calc-slug-reel-track");
+  await expect(reels).toHaveCount(6);
+  const firstTransform = await reels.first().evaluate((node) => getComputedStyle(node).transform);
+  await page.waitForTimeout(100);
+  expect(await reels.first().evaluate((node) => getComputedStyle(node).transform)).not.toBe(firstTransform);
   await expect(page.locator("#calc-result")).toBeVisible();
   await expect(page.locator("#calc-result-price")).toHaveText(/1\s170\s000/);
   await expect(page.locator("#calc-result-formula")).toContainText("наценка 30%");
-  await page.waitForTimeout(600); // Catch the former 450 ms number animation and second price update.
-  expect(await page.evaluate(() => window.priceValues)).toEqual(["1170000"]);
+  await expect(page.locator("#calc-result")).not.toHaveAttribute("data-animating", "true");
+  await expect(page.locator("#calc-result-slug")).toHaveText("JCH843");
+  const values = await page.evaluate(() => window.priceValues.map(Number));
+  expect(values.length).toBeGreaterThan(10);
+  expect(values.at(-1)).toBe(1170000);
+  expect(values.every((value, index) => value >= 0 && value <= 1170000
+    && (index === 0 || value >= values[index - 1]))).toBe(true);
+});
+
+test("settles an interrupted formation before waiting for another quote", async ({ page }) => {
+  const gate = priceGate();
+  await openHome(page, { price: gate.handler });
+  await gate.pending.get("JCH843")({ price: 1170000 });
+  await expect(page.locator("#calc-result")).toHaveAttribute("data-animating", "true");
+  await setCombination(page, "XYZ", "111");
+  await expect(page.locator("#calc-result-price")).toHaveText(/1\s170\s000/);
+  await expect(page.locator("#calc-result-slug")).toHaveText("JCH843");
+  await page.waitForTimeout(900);
+  await expect(page.locator("#calc-result-price")).toHaveText(/1\s170\s000/);
+  await gate.pending.get("XYZ111")({ price: 650000, source: "override" });
+  await expect(page.locator("#calc-result-price")).toHaveText(/650\s000/);
+  await expect(page.locator("#calc-result-slug")).toHaveText("XYZ111");
+});
+
+test("respects reduced motion and preserves the crossed-out flash price", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await openHome(page, { price: (route) => route.fulfill({ json: {
+    price: 650000, hasFlashSale: true, basePrice: 1000000, discountPercent: 35,
+  } }) });
+  await expect(page.locator("#calc-flash-final-price")).toHaveText(/650\s000/);
+  await expect(page.locator("#calc-result-price .line-through")).toHaveText(/1\s000\s000/);
+  await expect(page.locator("#calc-result-slug")).toHaveText("JCH843");
+  await expect(page.locator(".calc-slug-reel")).toHaveCount(0);
+  await expect(page.locator("#calc-result")).not.toHaveAttribute("data-animating", "true");
 });
 
 test("ignores stale requests after a new or incomplete combination", async ({ page }) => {

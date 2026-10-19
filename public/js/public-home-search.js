@@ -1830,12 +1830,84 @@ function initSlugCalculator(orderApi) {
 
   const RESERVE_ICON =
     '<svg class="icon-stroke h-3.5 w-3.5" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7"></path></svg>';
-  let priceTransition = null;
+  let quoteAnimation = null;
+  let confirmedPrice = 0;
+  let confirmedSlug = resultSlug.textContent.trim();
   let resultSeq = 0;
   let priceController = null;
   let activeSlug = "";
   let isApplyingDefaultSlug = false;
   const unavailableSlugCache = new Set();
+
+  function animateQuote(slug, price, priceNode) {
+    const fromPrice = confirmedPrice;
+    const fromSlug = confirmedSlug;
+    confirmedPrice = price;
+    confirmedSlug = slug;
+    const motionPreference = window.matchMedia("(prefers-reduced-motion: reduce)");
+    if (motionPreference.matches) {
+      resultSlug.textContent = slug;
+      priceNode.textContent = formatPrice(price);
+      return;
+    }
+
+    const duration = 820;
+    const startedAt = performance.now();
+    const reels = [];
+    let frame = 0;
+    let finished = false;
+    const finish = () => {
+      if (finished) return;
+      finished = true;
+      cancelAnimationFrame(frame);
+      reels.forEach((animation) => animation.cancel());
+      resultSlug.textContent = slug;
+      resultSlug.removeAttribute("aria-label");
+      priceNode.textContent = formatPrice(price);
+      resultPrice.removeAttribute("aria-label");
+      delete resultWrap.dataset.animating;
+      motionPreference.removeEventListener("change", finish);
+      quoteAnimation = null;
+    };
+    quoteAnimation = { finish };
+    resultWrap.dataset.animating = "true";
+    resultSlug.setAttribute("aria-label", slug);
+    resultPrice.setAttribute("aria-label", formatPrice(price));
+    priceNode.textContent = formatPrice(fromPrice);
+
+    // Each character rolls once into place, without random flashing glyphs.
+    resultSlug.replaceChildren();
+    Array.from(slug).forEach((character, index) => {
+      const previous = fromSlug[index] || character;
+      const slot = document.createElement("span");
+      slot.className = "calc-slug-reel";
+      slot.setAttribute("aria-hidden", "true");
+      const track = document.createElement("span");
+      track.className = "calc-slug-reel-track";
+      for (const value of [previous, character]) {
+        const glyph = document.createElement("span");
+        glyph.textContent = value;
+        track.appendChild(glyph);
+      }
+      slot.appendChild(track);
+      resultSlug.appendChild(slot);
+      reels.push(track.animate([
+        { transform: "translate3d(0, 0, 0)" },
+        { transform: "translate3d(0, -50%, 0)" },
+      ], { duration: 620, delay: index * 32, easing: "cubic-bezier(0.22, 1, 0.36, 1)", fill: "both" }));
+    });
+
+    function tick(now) {
+      const progress = Math.min(1, Math.max(0, (now - startedAt) / duration));
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const value = formatPrice(Math.round(fromPrice + (price - fromPrice) * eased));
+      if (priceNode.textContent !== value) priceNode.textContent = value;
+      if (progress < 1) frame = requestAnimationFrame(tick);
+      else finish();
+    }
+    motionPreference.addEventListener("change", finish);
+    frame = requestAnimationFrame(tick);
+  }
 
   function updatePreview(letters, digits) {
     preview.textContent = `unqx.uz/${letters || "___"}${digits || "___"}`;
@@ -2125,6 +2197,8 @@ function initSlugCalculator(orderApi) {
     const pricing = calculateSlugPricing(lettersInput.value, digitsInput.value);
     updatePreview(lettersInput.value, digitsInput.value);
     if (pricing && pricing.slug === activeSlug) return;
+    // Settle the last confirmed quote before waiting for a different request.
+    quoteAnimation?.finish();
     const seq = ++resultSeq;
     priceController?.abort();
     activeSlug = pricing?.slug || "";
@@ -2202,13 +2276,7 @@ function initSlugCalculator(orderApi) {
     reserveLink.innerHTML = `Занять ${pricing.slug}${RESERVE_ICON}`;
     setStatus();
     showResultState();
-    priceTransition?.cancel();
-    if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      priceTransition = resultPrice.animate([
-        { opacity: 0.4, transform: "translateY(4px)" },
-        { opacity: 1, transform: "translateY(0)" },
-      ], { duration: 260, easing: "cubic-bezier(0.2, 0.7, 0.3, 1)" });
-    }
+    animateQuote(pricing.slug, finalPrice, resultPrice.querySelector("#calc-flash-final-price") || resultPrice);
     // Recommendations must not delay or change the confirmed price.
     void loadSimilarAvailable(pricing.slug).then((suggestions) => {
       if (seq === resultSeq) renderSimilarAvailable(suggestions);

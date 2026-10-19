@@ -2193,6 +2193,24 @@ body[data-card-theme="casino_royale"] #public-card-layout > div:first-child > .i
   font-variant-numeric: tabular-nums;
 }
 
+[data-page="public-home"] .calc-slug-reel {
+  display: inline-block;
+  height: 1.2em;
+  overflow: hidden;
+  vertical-align: top;
+}
+
+[data-page="public-home"] .calc-slug-reel-track {
+  display: flex;
+  flex-direction: column;
+  will-change: transform;
+}
+
+[data-page="public-home"] .calc-slug-reel-track > span {
+  height: 1.2em;
+  line-height: 1.2;
+}
+
 [data-page="public-home"] #calc-result-formula {
   min-height: 3em;
 }
