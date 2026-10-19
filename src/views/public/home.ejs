@@ -407,7 +407,7 @@
                     class="flex flex-1 items-center rounded-xl border border-neutral-200 bg-white px-4 py-3 focus-within:border-neutral-400">
                     <span class="mr-2 text-sm text-neutral-400">unqx.uz/</span>
                     <input id="home-slug-input" type="text" placeholder="AAA001"
-                      class="w-full bg-transparent text-sm uppercase text-neutral-900 outline-none placeholder:text-neutral-300"
+                      class="w-full bg-transparent text-base uppercase text-neutral-900 outline-none placeholder:text-neutral-300"
                       autocomplete="off" spellcheck="false" maxlength="6" pattern="[A-Za-z]{3}[0-9]{3}"
                       title="Формат: 3 латинские буквы и 3 цифры (например AAA001)" />
                   </div>
@@ -592,17 +592,17 @@
                             </div>
                           </div>
 
+                          <div id="calc-status" class="calc-status is-idle text-xs text-neutral-500" role="status" aria-live="polite">
+                            <span id="calc-status-text"></span>
+                            <button id="calc-retry" type="button" class="hidden font-semibold text-neutral-900 underline">Повторить</button>
+                          </div>
                           <a id="calc-reserve-link" href="#" data-order-link aria-disabled="true" tabindex="-1"
-                            class="interactive-btn btn-shimmer mt-8 inline-flex min-h-11 items-center gap-2 rounded-xl bg-neutral-900 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-neutral-800">
+                            class="interactive-btn btn-shimmer inline-flex min-h-11 items-center gap-2 rounded-xl bg-neutral-900 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-neutral-800">
                             Занять AAA000
                             <svg class="icon-stroke h-3.5 w-3.5" viewBox="0 0 24 24" aria-hidden="true">
                               <path d="M5 12h14M13 5l7 7-7 7"></path>
                             </svg>
                           </a>
-                          <div id="calc-status" class="calc-status is-idle mt-3 text-xs text-neutral-500" role="status" aria-live="polite">
-                            <span id="calc-status-text"></span>
-                            <button id="calc-retry" type="button" class="hidden font-semibold text-neutral-900 underline">Повторить</button>
-                          </div>
                         </div>
                           <div id="calc-similar-wrap"
                             class="mt-4 hidden rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2.5">

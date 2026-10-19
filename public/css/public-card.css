@@ -2226,7 +2226,7 @@ body[data-card-theme="casino_royale"] #public-card-layout > div:first-child > .i
   display: flex;
   align-items: center;
   gap: 8px;
-  min-height: 36px;
+  min-height: 32px;
 }
 
 [data-page="public-home"] .calc-status.is-idle {
