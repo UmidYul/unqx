@@ -273,7 +273,7 @@
                 <% } %>
                   <a href="/posts" class="site-mobile-link text-sm text-neutral-500">Посты</a>
                   <a href="/cards" class="site-mobile-link text-sm text-neutral-500">Карты</a>
-                  <div id="home-auth-nav-mobile" class="flex w-full items-center justify-center gap-2">
+                  <div id="home-auth-nav-mobile" class="site-mobile-actions">
                     <a href="/login" data-auth-login
                       class="site-header-login inline-flex min-h-11 items-center justify-center rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-100 <%= hasAuthSession ? 'hidden' : '' %>">Войти</a>
                     <a href="/profile" data-auth-profile
@@ -282,14 +282,14 @@
                       <img data-auth-avatar src="<%= authNavPhotoUrl %>" alt="avatar"
                         class="h-7 w-7 rounded-full border border-neutral-200 bg-white object-cover" />
                     </a>
+                    <a href="#" data-order-link
+                      class="site-header-cta flex items-center justify-center gap-2 rounded-xl bg-neutral-900 px-4 py-2.5 text-sm font-medium text-white">
+                      Занять UNQ
+                      <svg class="icon-stroke h-3.5 w-3.5" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M5 12h14M13 5l7 7-7 7"></path>
+                      </svg>
+                    </a>
                   </div>
-                  <a href="#" data-order-link
-                    class="site-header-cta mt-2 flex items-center justify-center gap-2 rounded-xl bg-neutral-900 px-4 py-2.5 text-sm font-medium text-white">
-                    Занять UNQ
-                    <svg class="icon-stroke h-3.5 w-3.5" viewBox="0 0 24 24" aria-hidden="true">
-                      <path d="M5 12h14M13 5l7 7-7 7"></path>
-                    </svg>
-                  </a>
             </div>
           </div>
         </nav>

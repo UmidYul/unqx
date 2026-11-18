@@ -1376,6 +1376,24 @@ body[data-card-theme="casino_royale"] #public-card-layout > div:first-child > .i
   background: #f7f7f7;
 }
 
+[data-page="public-home"] .site-mobile-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+[data-page="public-home"] .site-mobile-actions:has(.site-header-login.hidden) {
+  grid-template-columns: auto minmax(0, 1fr);
+}
+
+[data-page="public-home"] .site-mobile-actions .site-header-profile {
+  align-self: center;
+}
+
+[data-page="public-home"] .site-mobile-actions .site-header-cta {
+  padding-inline: 8px;
+}
+
 [data-page="public-home"] .site-mobile-link {
   color: #4d4d4d;
   font-weight: 500;
