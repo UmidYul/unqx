@@ -19966,9 +19966,68 @@ body[data-card-theme="scarlet_portrait"] #card-slug-search-results {
 }
 
 [data-card-theme="scarlet_portrait"] .scarlet-portrait-wreath {
-  --scarlet-wreath-image: url('/assets/themes/scarlet-gold-laurel.webp?v=2d');
+  --scarlet-wreath-image: url('/assets/themes/scarlet-gold-laurel.webp?v=sparse');
   inset: -18%;
   background: var(--scarlet-wreath-image) center / contain no-repeat;
+}
+
+.scarlet-wreath-leaf {
+  display: none;
+}
+
+.scarlet-wreath-extra {
+  --wreath-sway: -2.8deg;
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 97%;
+}
+
+.scarlet-wreath-extra--right {
+  --wreath-sway: 2.8deg;
+}
+
+.scarlet-wreath-extra::before,
+.scarlet-wreath-extra::after {
+  --leaf-inset: 8%;
+  --leaf-angle: -40deg;
+  content: "";
+  position: absolute;
+  top: 36%;
+  left: var(--leaf-inset);
+  width: 7.5%;
+  aspect-ratio: 2.4;
+  border-radius: 85% 0 85% 0;
+  background: linear-gradient(155deg, transparent 46%, #610717 49% 52%, transparent 55%), #F6B43C;
+  transform-origin: left center;
+  transform: rotate(var(--leaf-angle));
+}
+
+.scarlet-wreath-extra::after {
+  --leaf-inset: 15%;
+  --leaf-angle: -48deg;
+  top: 65%;
+}
+
+.scarlet-wreath-extra--outer::before {
+  --leaf-inset: 15%;
+  --leaf-angle: -30deg;
+  top: 21%;
+}
+
+.scarlet-wreath-extra--outer::after {
+  --leaf-inset: 24%;
+  --leaf-angle: -56deg;
+  top: 79%;
+}
+
+.scarlet-wreath-extra--right::before,
+.scarlet-wreath-extra--right::after {
+  right: var(--leaf-inset);
+  left: auto;
+  border-radius: 0 85% 0 85%;
+  background-image: linear-gradient(25deg, transparent 46%, #610717 49% 52%, transparent 55%);
+  transform-origin: right center;
+  transform: rotate(calc(-1 * var(--leaf-angle)));
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -19987,19 +20046,63 @@ body[data-card-theme="scarlet_portrait"] #card-slug-search-results {
   }
 
   [data-card-theme="scarlet_portrait"] .scarlet-portrait-wreath::before {
-    --wreath-sway: -1.8deg;
+    --wreath-sway: -2.8deg;
     clip-path: inset(0 49.5% 0 0);
   }
 
   [data-card-theme="scarlet_portrait"] .scarlet-portrait-wreath::after {
-    --wreath-sway: 1.8deg;
+    --wreath-sway: 2.8deg;
     clip-path: inset(0 0 0 49.5%);
+  }
+
+  .scarlet-wreath-leaf {
+    --leaf-direction: -1;
+    position: absolute;
+    top: 22%;
+    left: 15%;
+    z-index: 1;
+    display: block;
+    width: 9%;
+    aspect-ratio: 2;
+    border-radius: 85% 0 85% 0;
+    background: linear-gradient(155deg, transparent 46%, #610717 49% 52%, transparent 55%), #F6B43C;
+    animation: scarlet-wreath-leaf-drift 6s linear -.65s infinite;
+  }
+
+  .scarlet-wreath-leaf--right {
+    --leaf-direction: 1;
+    top: 29%;
+    right: 12%;
+    left: auto;
+    animation-delay: -3.65s;
+  }
+
+  .scarlet-wreath-extra {
+    animation: scarlet-wreath-sway 7s ease-in-out infinite;
   }
 }
 
 @keyframes scarlet-wreath-sway {
   0%, 100% { transform: rotate(0deg); }
   50% { transform: rotate(var(--wreath-sway)); }
+}
+
+@keyframes scarlet-wreath-leaf-drift {
+  0% {
+    opacity: 0;
+    transform: rotate(calc(var(--leaf-direction) * 26deg));
+  }
+  10% { opacity: 1; }
+  30% {
+    opacity: 1;
+    transform: translate(calc(var(--leaf-direction) * 195%), 410%)
+      rotate(calc(var(--leaf-direction) * 110deg)) scaleX(.78);
+  }
+  52%, 100% {
+    opacity: 0;
+    transform: translate(calc(var(--leaf-direction) * 150%), 1050%)
+      rotate(calc(var(--leaf-direction) * 205deg));
+  }
 }
 
 [data-card-view][data-card-theme="scarlet_portrait"] .unq-ref-actions {

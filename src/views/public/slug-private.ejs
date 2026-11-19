@@ -84,7 +84,11 @@
   const renderPrivateAvatarFrame = (frameKey) => {
     const frame = privateAvatarFrameKeys.includes(frameKey) ? frameKey : "none";
     if (pageTheme === "scarlet_portrait" && (frame === "none" || frame === "laurel_wreath")) {
-      return '<span class="unq-ref-avatar-frame scarlet-portrait-wreath" aria-hidden="true"></span>';
+      return `<span class="unq-ref-avatar-frame scarlet-portrait-wreath" aria-hidden="true">
+        <span class="scarlet-wreath-extra"></span><span class="scarlet-wreath-extra scarlet-wreath-extra--right"></span>
+        <span class="scarlet-wreath-extra scarlet-wreath-extra--outer"></span><span class="scarlet-wreath-extra scarlet-wreath-extra--outer scarlet-wreath-extra--right"></span>
+        <span class="scarlet-wreath-leaf"></span><span class="scarlet-wreath-leaf scarlet-wreath-leaf--right"></span>
+      </span>`;
     }
     if (frame === "none") return "";
     const frameLabel = String(frame).replace(/_/g, "-");
