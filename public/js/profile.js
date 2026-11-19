@@ -109,6 +109,7 @@
       "comic_fire",
       "forged_carbon",
       "maftun",
+      "scarlet_portrait",
       "crimson_crown_2d",
       "arcadia_painted",
       "ocean_2d",

@@ -19866,3 +19866,111 @@ body[data-card-theme="maftun"] #card-slug-search-results {
 .maftun-leaf--button {
   opacity: .92;
 }
+
+/* Алый портрет */
+html[data-page-theme="scarlet_portrait"] {
+  background: #610717;
+}
+
+body[data-card-theme="scarlet_portrait"],
+#profile-card-live-preview[data-preview-theme="scarlet_portrait"] {
+  --theme-page-bg: #610717;
+  --theme-screen-pattern: none;
+  --preview-screen-pattern: none;
+  background: radial-gradient(ellipse at 62% 4%, #610717 12%, #35101b 59%, #200e15) #610717;
+}
+
+body[data-card-theme="scarlet_portrait"] main {
+  background: transparent;
+}
+
+body[data-card-theme="scarlet_portrait"] #public-card-layout > div:first-child > a,
+body[data-card-theme="scarlet_portrait"] #card-slug-search-form > :is(div, button),
+body[data-card-theme="scarlet_portrait"] #card-slug-search-results {
+  border-color: #a477418c;
+  background: #33121d;
+  color: #F6B43C;
+}
+
+body[data-card-theme="scarlet_portrait"] #public-card-layout > div:first-child > a:hover,
+body[data-card-theme="scarlet_portrait"] #card-slug-search-form > button:hover {
+  border-color: #F6B43C;
+  background: #501623;
+}
+
+body[data-card-theme="scarlet_portrait"] #card-slug-search-input,
+body[data-card-theme="scarlet_portrait"] #card-slug-search-form svg,
+[data-card-theme="scarlet_portrait"] .unq-ref-share {
+  color: #F6B43C;
+}
+
+body[data-card-theme="scarlet_portrait"] #card-slug-search-form span,
+body[data-card-theme="scarlet_portrait"] #card-slug-search-input::placeholder,
+[data-card-theme="scarlet_portrait"] .private-card-field-wrap input::placeholder {
+  color: #dfbbb4;
+}
+
+body[data-card-theme="scarlet_portrait"] #card-slug-search-results {
+  --card-search-result-text: #f4d2a6;
+  --card-search-result-strong: #F6B43C;
+  --card-search-result-muted: #dfbbb4;
+  --card-search-result-hover: #501623;
+}
+
+[data-card-view][data-card-theme="scarlet_portrait"] .unq-ref-shell {
+  isolation: isolate;
+  padding: clamp(16px, 4vw, 26px);
+}
+
+[data-card-view][data-card-theme="scarlet_portrait"] .unq-ref-card-overlay::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: min(100%, 580px);
+  background:
+    linear-gradient(125deg, #190d1540, transparent 50%, #61071730),
+    url('/assets/themes/scarlet-portrait.webp') 54% 28% / cover no-repeat;
+  mask-image: linear-gradient(#000 56%, transparent);
+}
+
+[data-card-theme="scarlet_portrait"] :is(.unq-ref-brand h2, .unq-ref-name, .private-card-shell h1) {
+  font-family: Georgia, 'Times New Roman', serif;
+}
+
+[data-card-theme="scarlet_portrait"] .unq-ref-brand h2 {
+  font-size: clamp(28px, 6vw, 38px);
+  font-weight: 500;
+  letter-spacing: .1em;
+  padding-inline-start: .1em;
+}
+
+[data-card-theme="scarlet_portrait"] .unq-ref-brand p {
+  font-size: 9px;
+  letter-spacing: .2em;
+}
+
+[data-card-theme="scarlet_portrait"] .unq-ref-name {
+  overflow-wrap: anywhere;
+}
+
+[data-card-theme="scarlet_portrait"] .unq-ref-avatar-wrap {
+  box-shadow: 0 0 0 4px #34111a, 0 0 0 5px #F6B43C80;
+}
+
+[data-card-view][data-card-theme="scarlet_portrait"] .unq-ref-actions {
+  margin-top: 14px;
+}
+
+[data-card-view][data-card-theme="scarlet_portrait"] :is(.unq-ref-action-btn, .unq-ref-follow-toggle) {
+  border-radius: var(--theme-button-radius);
+}
+
+[data-card-theme="scarlet_portrait"] :is(a, button, input):focus-visible {
+  outline: 2px solid #F6B43C;
+  outline-offset: 3px;
+}
+
+[data-card-theme="scarlet_portrait"] .private-card-field-wrap input {
+  background: #33121d;
+  color: #f4d2a6;
+}

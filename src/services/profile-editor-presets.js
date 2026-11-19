@@ -67,6 +67,13 @@ const SIGNATURE_THEMES = [
     premiumRequired: true,
   },
   {
+    id: "scarlet_portrait",
+    label: "Алый портрет",
+    description: "Граффити-портрет в бордовом свете с золотым контуром",
+    swatchStyle: "border-color:#F6B43C;background:#610717 url(/assets/themes/scarlet-portrait.webp) center 34%/cover;",
+    premiumRequired: true,
+  },
+  {
     id: "crimson_crown_2d",
     label: "Багряная корона · 2D",
     description: "Золотая корона и лавры на бордовом орнаменте",

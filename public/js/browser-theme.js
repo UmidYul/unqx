@@ -21,6 +21,7 @@
     comic_fire: "#3b160e",
     forged_carbon: "#050505",
     maftun: "#301d17",
+    scarlet_portrait: "#610717",
     crimson_crown_2d: "#231e20",
     arcadia_painted: "#34402a",
     ocean_2d: "#dff7ff",
