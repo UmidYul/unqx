@@ -22,6 +22,7 @@
     "jade_luxe",
     "comic_fire",
     "forged_carbon",
+    "maftun",
     "crimson_crown_2d",
     "arcadia_painted",
     "ocean_2d",
@@ -552,6 +553,45 @@
       cardShadow: "0 18px 42px rgba(6, 8, 13, 0.62)",
       buttonShineGradient:
         "linear-gradient(90deg, rgba(234,214,161,0) 0%, rgba(234,214,161,0.18) 45%, rgba(234,214,161,0.3) 50%, rgba(234,214,161,0.18) 55%, rgba(234,214,161,0) 100%)",
+    },
+    maftun: {
+      pageBg: "#301d17",
+      cardBg: "linear-gradient(158deg, #593421, #301d17 48%, #3d2018)",
+      surfaceBg: "#41271d",
+      cardBorder: "1px solid #a7663d",
+      surfaceBorder: "1px solid #83563c",
+      dividerColor: "#7d5038",
+      nameColor: "#fff0d9",
+      roleColor: "#f3cda4",
+      mutedColor: "#e0bfa9",
+      accentColor: "#ffcd83",
+      emailColor: "#ffdb9d",
+      buttonPrimaryBg: "#efb360",
+      buttonPrimaryText: "#311b13",
+      buttonPrimaryBorder: "#ffcf88",
+      buttonSecondaryBg: "#4b291e",
+      buttonSecondaryText: "#ffe4bc",
+      buttonSecondaryBorder: "#b77c4d",
+      badgeText: "#ffe3b2",
+      badgeBg: "#5b3021",
+      badgeBorder: "1px solid #b77c4d",
+      topLineGradient: "linear-gradient(90deg, transparent, #eba95a, transparent)",
+      avatarBg: "#693822",
+      avatarText: "#ffdb9d",
+      avatarBorder: "2px solid #d49457",
+      cardBorderRadius: "22px",
+      surfaceBorderRadius: "12px",
+      buttonBorderRadius: "11px",
+      nameFontWeight: "600",
+      nameLetterSpacing: "-.025em",
+      roleLetterSpacing: ".07em",
+      scoreLabelColor: "#f3cda4",
+      scoreValueColor: "#ffdb9d",
+      scoreBarFill: "linear-gradient(90deg, #b4512c, #ffcd83)",
+      scoreBarTrack: "#6f402c",
+      scorePercentileColor: "#f3cda4",
+      cardShadow: "0 24px 60px rgba(28, 13, 8, .45)",
+      buttonShineGradient: "none",
     },
     crimson_crown_2d: {
       pageBg: "#231e20",
@@ -5695,6 +5735,7 @@
         </div>
         <div class="public-card-shell unq-ref-shell">
           <div class="unq-ref-card-overlay">${overlayHtml}</div>
+          ${theme.key === "maftun" ? '<div class="maftun-canopy" aria-hidden="true"></div>' : ""}
           ${theme.key === "crimson_crown_2d" ? '<div class="crimson-crown-crest" aria-hidden="true"></div>' : ""}
           ${graffitiCardDripsHtml}
           ${shinobiWayCardGlowHtml}
@@ -5732,6 +5773,7 @@
           </div>
           ${wallTabsHtml}
           ${egyptNileWaterHtml}
+          ${theme.key === "maftun" ? '<div class="maftun-leaves" data-maftun-leaves aria-hidden="true"></div>' : ""}
         </div>
         <div class="unq-ref-footline">
           <div>© ${esc(viewsLabel)}</div>
@@ -5805,12 +5847,148 @@
     `;
   }
 
+  const maftunMotion = new WeakMap();
+  const maftunLeafPaths = [
+    "M16 2l3 7 6-3-1 7 6 2-6 4 2 5-8-1-2 7-2-7-8 1 2-5-6-4 6-2-1-7 6 3z",
+    "M16 2C23 5 30 12 25 21c-2 4-6 5-9 7C9 25 5 20 6 14 7 8 12 5 16 2Z",
+    "M25 3C30 16 22 26 8 27 4 17 8 7 25 3Z",
+  ];
+
+  function startMaftunLeaves(root, layer) {
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const flights = new Set();
+    const buttonLandings = new WeakMap();
+    const ground = Array.from(layer.children);
+    const colors = ["#df903e", "#f4ba57", "#bb542f", "#cb732f", "#bd9b46"];
+    let sequence = Number(layer.dataset.maftunSequence) || 0;
+    let timer;
+
+    function dropLeaf() {
+      if (!layer.clientWidth || !layer.clientHeight) return;
+      const index = sequence++;
+      layer.dataset.maftunSequence = String(sequence);
+      const buttonCandidates = index % 3 === 1
+        ? Array.from(root.querySelectorAll(".unq-ref-action-btn")).filter((button) => button.offsetHeight > 0)
+        : [];
+      const landingRound = Math.floor(index / 3);
+      const button = buttonCandidates.length ? buttonCandidates[landingRound % buttonCandidates.length] : null;
+      const size = button ? 13 + index % 4 : 15 + index % 9;
+      const angle = index * 53 % 180 - 90;
+      const leaf = document.createElement("span");
+      leaf.className = "maftun-leaf";
+      leaf.setAttribute("aria-hidden", "true");
+      leaf.style.width = `${size}px`;
+      leaf.style.color = colors[index % colors.length];
+      leaf.innerHTML = `<svg viewBox="0 0 32 32" focusable="false"><path fill="currentColor" stroke="#713418" stroke-width=".7" d="${maftunLeafPaths[index % maftunLeafPaths.length]}"/><path fill="none" stroke="#713418" stroke-opacity=".65" stroke-width=".8" d="M16 7q1 9-1 23m1-12-5-4m5 8 5-6"/></svg>`;
+
+      const width = layer.clientWidth;
+      const height = layer.clientHeight;
+      const buttonLeft = Math.floor(landingRound / Math.max(1, buttonCandidates.length)) % 2 === 0;
+      let x = width * (6 + index * 37 % 88) / 100;
+      let y = height - 10 - index * 7 % 21;
+      if (button) {
+        const area = layer.getBoundingClientRect();
+        const target = button.getBoundingClientRect();
+        x = (target.left - area.left + (buttonLeft ? 17 : button.clientWidth - 17) * area.width / width)
+          * width / area.width;
+        y = (target.top - area.top) * height / area.height + 10;
+      }
+      layer.append(leaf);
+      const startX = Math.max(14, Math.min(width - 14, x + (index % 2 ? -1 : 1) * (28 + index % 5 * 19)));
+      const drift = index % 2 ? -1 : 1;
+      const position = (left, top, rotation, fold = 1) =>
+        `translate(${left - size / 2}px,${top - size / 2}px) rotate(${rotation}deg) scaleX(${fold})`;
+      const animation = leaf.animate([
+        { opacity: 0, transform: position(startX, -size, angle - 90) },
+        { offset: .10, opacity: .9, transform: position(startX + drift * 14, y * .08, angle - 62, .8) },
+        { offset: .35, opacity: .9, transform: position(startX + (x - startX) * .35 - drift * 24, y * .33, angle + 65, .56) },
+        { offset: .64, opacity: .95, transform: position(startX + (x - startX) * .64 + drift * 25, y * .64, angle - 38, .88) },
+        { offset: .88, opacity: .96, transform: position(x - drift * 13, y * .91, angle + 20, .8) },
+        { opacity: 1, transform: position(x, y, angle) },
+      ], {
+        duration: Math.min(12500, 2200 + y * 6 + index % 5 * 450),
+        easing: "cubic-bezier(.32,.18,.57,.92)",
+        fill: "forwards",
+      });
+      flights.add(animation);
+      animation.finished.then(() => {
+        flights.delete(animation);
+        if (!layer.isConnected) {
+          leaf.remove();
+          return;
+        }
+        leaf.style.transform = `translate(-50%, -50%) rotate(${angle}deg)`;
+        if (button) {
+          const landings = buttonLandings.get(button) || [];
+          leaf.classList.add("maftun-leaf--button");
+          leaf.style.left = buttonLeft ? "17px" : "calc(100% - 17px)";
+          leaf.style.top = "10px";
+          button.append(leaf);
+          landings.push(leaf);
+          if (landings.length > 2) landings.shift().remove();
+          buttonLandings.set(button, landings);
+        } else {
+          leaf.classList.add("maftun-leaf--ground");
+          leaf.style.left = `${x / width * 100}%`;
+          leaf.style.top = `calc(100% - ${height - y}px)`;
+          ground.push(leaf);
+          if (ground.length > 22) ground.shift().remove();
+        }
+        animation.cancel();
+      }, () => {
+        flights.delete(animation);
+        leaf.remove();
+      });
+    }
+
+    function syncMotion() {
+      clearInterval(timer);
+      if (reduceMotion.matches) {
+        flights.forEach((flight) => flight.cancel());
+      } else if (document.hidden) {
+        flights.forEach((flight) => flight.pause());
+      } else {
+        flights.forEach((flight) => flight.play());
+        dropLeaf();
+        timer = setInterval(() => {
+          if (layer.isConnected) dropLeaf();
+          else stop();
+        }, 930);
+      }
+    }
+
+    function stop() {
+      clearInterval(timer);
+      flights.forEach((flight) => flight.cancel());
+      reduceMotion.removeEventListener("change", syncMotion);
+      document.removeEventListener("visibilitychange", syncMotion);
+    }
+
+    reduceMotion.addEventListener("change", syncMotion);
+    document.addEventListener("visibilitychange", syncMotion);
+    syncMotion();
+    return stop;
+  }
+
   function mountCardView(container, input, options = {}) {
     if (!(container instanceof HTMLElement)) {
       return null;
     }
+    const previousRoot = container.querySelector("[data-card-view]");
+    const previousLayer = previousRoot?.querySelector("[data-maftun-leaves]");
+    maftunMotion.get(container)?.();
+    maftunMotion.delete(container);
     container.innerHTML = renderCardView(input, options);
-    return container.querySelector("[data-card-view]");
+    const root = container.querySelector("[data-card-view]");
+    const layer = root?.querySelector("[data-maftun-leaves]");
+    if (layer && typeof layer.animate === "function") {
+      if (previousLayer && previousRoot.dataset.slug === root.dataset.slug) {
+        layer.dataset.maftunSequence = previousLayer.dataset.maftunSequence || "0";
+        layer.append(...previousLayer.querySelectorAll(".maftun-leaf--ground"));
+      }
+      maftunMotion.set(container, startMaftunLeaves(root, layer));
+    }
+    return root;
   }
 
   function updateSaleBubbleForSlug(root, slug, salePrice) {

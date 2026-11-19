@@ -60,6 +60,13 @@ const SIGNATURE_THEMES = [
     premiumRequired: true,
   },
   {
+    id: "maftun",
+    label: "maftūn",
+    description: "Осенняя тропа и плавный листопад",
+    swatchStyle: "border-color:#b87340;background:#301d17 url(/assets/themes/maftun-autumn.webp) center/cover;",
+    premiumRequired: true,
+  },
+  {
     id: "crimson_crown_2d",
     label: "Багряная корона · 2D",
     description: "Золотая корона и лавры на бордовом орнаменте",

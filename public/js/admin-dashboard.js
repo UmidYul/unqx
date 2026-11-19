@@ -233,6 +233,7 @@
     sage_luxe: { label: "Verdant Luxe", fill: "#f7faf7", border: "#8ca18f", text: "#2f4034" },
     midnight_obsidian: { label: "Midnight Obsidian", fill: "#111927", border: "#5374a6", text: "#d6e6ff" },
     golden_noir: { label: "Noir Aureate", fill: "#161b28", border: "#c9ad6a", text: "#dfc98e" },
+    maftun: { label: "maftūn", fill: "#301d17", border: "#b87340", text: "#ffdb9d", bg: "url(/assets/themes/maftun-autumn.webp) center / cover" },
     crimson_crown_2d: { label: "Багряная корона · 2D", fill: "#231e20", border: "#b38446", text: "#f6d699", bg: "url(/assets/themes/crimson-crown.webp) center top / cover" },
     arcadia_painted: { label: "АРКАДИЯ · Живописный сад", fill: "#e9ddbf", border: "#a58a58", text: "#31422c", bg: "url(/assets/themes/arcadia-garden.webp) center/cover" },
     forged_carbon: { label: "FORGED · Кованый карбон", fill: "#252525", border: "#747474", text: "#eeeeee", bg: "url(/assets/themes/forged-carbon-texture-v3.webp) center/180px #050505" },
