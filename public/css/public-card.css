@@ -19967,8 +19967,7 @@ body[data-card-theme="scarlet_portrait"] #card-slug-search-results {
 
 [data-card-theme="scarlet_portrait"] .scarlet-portrait-wreath {
   inset: -18%;
-  background: url('/assets/themes/scarlet-gold-laurel.webp') center / contain no-repeat;
-  filter: drop-shadow(0 2px 3px #240e15b0);
+  background: url('/assets/themes/scarlet-gold-laurel.webp?v=2d') center / contain no-repeat;
 }
 
 [data-card-view][data-card-theme="scarlet_portrait"] .unq-ref-actions {
