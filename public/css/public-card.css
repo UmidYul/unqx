@@ -19966,8 +19966,40 @@ body[data-card-theme="scarlet_portrait"] #card-slug-search-results {
 }
 
 [data-card-theme="scarlet_portrait"] .scarlet-portrait-wreath {
+  --scarlet-wreath-image: url('/assets/themes/scarlet-gold-laurel.webp?v=2d');
   inset: -18%;
-  background: url('/assets/themes/scarlet-gold-laurel.webp?v=2d') center / contain no-repeat;
+  background: var(--scarlet-wreath-image) center / contain no-repeat;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  [data-card-theme="scarlet_portrait"] .scarlet-portrait-wreath {
+    background: none;
+  }
+
+  [data-card-theme="scarlet_portrait"] .scarlet-portrait-wreath::before,
+  [data-card-theme="scarlet_portrait"] .scarlet-portrait-wreath::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: var(--scarlet-wreath-image) center / contain no-repeat;
+    transform-origin: 50% 97%;
+    animation: scarlet-wreath-sway 7s ease-in-out infinite;
+  }
+
+  [data-card-theme="scarlet_portrait"] .scarlet-portrait-wreath::before {
+    --wreath-sway: -1.8deg;
+    clip-path: inset(0 49.5% 0 0);
+  }
+
+  [data-card-theme="scarlet_portrait"] .scarlet-portrait-wreath::after {
+    --wreath-sway: 1.8deg;
+    clip-path: inset(0 0 0 49.5%);
+  }
+}
+
+@keyframes scarlet-wreath-sway {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(var(--wreath-sway)); }
 }
 
 [data-card-view][data-card-theme="scarlet_portrait"] .unq-ref-actions {
