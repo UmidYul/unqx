@@ -19586,3 +19586,149 @@ body[data-card-theme="arcadia_painted"] #card-view-root {
   body[data-card-theme="arcadia_painted"] #card-view-root { animation: none; }
   [data-card-theme="arcadia_painted"] .unq-ref-action-btn { transition: none; }
 }
+
+/* Багряная корона · 2D */
+html[data-page-theme="crimson_crown_2d"] {
+  background: #231e20;
+}
+
+body[data-card-theme="crimson_crown_2d"],
+#profile-card-live-preview[data-preview-theme="crimson_crown_2d"] {
+  --theme-page-bg: #231e20;
+  --theme-screen-pattern: none;
+  --preview-screen-pattern: none;
+  --unqx-nav-bg: #2d2024;
+  --unqx-nav-border: #704a39;
+  --unqx-nav-text: #fff0d7;
+  --unqx-nav-icon: #efcc98;
+  --unqx-nav-input: #fff0d7;
+  --unqx-nav-placeholder: #d3b6a7;
+  --unqx-nav-chip: #ffd086;
+  --unqx-nav-hover-bg: #481825;
+  --unqx-nav-hover-text: #fff0d7;
+  --unqx-nav-hover-border: #b38446;
+  background: radial-gradient(ellipse at center top, #4e1523, #231e20 72%) #231e20;
+}
+
+body[data-card-theme="crimson_crown_2d"] main {
+  background: transparent;
+}
+
+body[data-card-theme="crimson_crown_2d"] #public-card-layout > div:first-child > a,
+body[data-card-theme="crimson_crown_2d"] #card-slug-search-form > :is(div, button),
+body[data-card-theme="crimson_crown_2d"] #card-slug-search-results {
+  background: var(--unqx-nav-bg);
+  border-color: var(--unqx-nav-border);
+  color: var(--unqx-nav-text);
+}
+
+body[data-card-theme="crimson_crown_2d"] #public-card-layout > div:first-child > a:hover,
+body[data-card-theme="crimson_crown_2d"] #card-slug-search-form > button:hover {
+  background: var(--unqx-nav-hover-bg);
+  border-color: var(--unqx-nav-hover-border);
+  color: var(--unqx-nav-hover-text);
+}
+
+body[data-card-theme="crimson_crown_2d"] #card-slug-search-form svg {
+  color: var(--unqx-nav-icon);
+}
+
+body[data-card-theme="crimson_crown_2d"] #card-slug-search-form span {
+  color: var(--unqx-nav-chip);
+}
+
+body[data-card-theme="crimson_crown_2d"] #card-slug-search-input {
+  color: var(--unqx-nav-input);
+}
+
+body[data-card-theme="crimson_crown_2d"] #card-slug-search-input::placeholder {
+  color: var(--unqx-nav-placeholder);
+}
+
+body[data-card-theme="crimson_crown_2d"] #card-slug-search-results {
+  --card-search-result-text: var(--unqx-nav-text);
+  --card-search-result-strong: var(--unqx-nav-chip);
+  --card-search-result-muted: var(--unqx-nav-placeholder);
+  --card-search-result-hover: var(--unqx-nav-hover-bg);
+}
+
+[data-card-view][data-card-theme="crimson_crown_2d"] .unq-ref-shell {
+  --crown-inset: clamp(16px, 4vw, 26px);
+  --crown-art: url('/assets/themes/crimson-crown.webp');
+  isolation: isolate;
+  padding: var(--crown-inset);
+}
+
+[data-card-view][data-card-theme="crimson_crown_2d"] .unq-ref-shell::before {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  inset: 6px;
+  border: 1px solid #d69a4f55;
+  border-radius: calc(var(--theme-card-radius) - 6px);
+  pointer-events: none;
+}
+
+[data-card-view][data-card-theme="crimson_crown_2d"] .unq-ref-card-overlay::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  height: 132px;
+  background: var(--crown-art) center bottom / 100% auto no-repeat;
+  mask-image: linear-gradient(transparent, #000 95%);
+  opacity: .68;
+}
+
+[data-card-view][data-card-theme="crimson_crown_2d"] .crimson-crown-crest {
+  aspect-ratio: 2.65;
+  margin: calc(-1 * var(--crown-inset)) calc(-1 * var(--crown-inset)) 0;
+  background: var(--crown-art) center top / 100% auto no-repeat;
+  mask-image: linear-gradient(#000 76%, transparent);
+  pointer-events: none;
+}
+
+[data-card-theme="crimson_crown_2d"] :is(.unq-ref-brand h2, .unq-ref-name, .private-card-shell h1) {
+  font-family: Georgia, 'Times New Roman', serif;
+}
+
+[data-card-theme="crimson_crown_2d"] .unq-ref-brand h2 {
+  font-size: clamp(26px, 6vw, 36px);
+  font-weight: 500;
+  letter-spacing: .14em;
+  padding-inline-start: .14em;
+}
+
+[data-card-theme="crimson_crown_2d"] .unq-ref-brand p {
+  font-size: 9px;
+  letter-spacing: .19em;
+}
+
+[data-card-theme="crimson_crown_2d"] .unq-ref-avatar-wrap {
+  box-shadow: 0 0 0 4px #2b141b, 0 0 0 5px #a77542;
+}
+
+[data-card-theme="crimson_crown_2d"] .unq-ref-name {
+  overflow-wrap: anywhere;
+}
+
+[data-card-view][data-card-theme="crimson_crown_2d"] :is(.unq-ref-action-btn, .unq-ref-follow-toggle) {
+  border-radius: var(--theme-button-radius);
+}
+
+[data-card-theme="crimson_crown_2d"] .unq-ref-share {
+  color: #ffd086;
+}
+
+[data-card-theme="crimson_crown_2d"] :is(a, button, input):focus-visible {
+  outline: 2px solid #ffd086;
+  outline-offset: 3px;
+}
+
+[data-card-theme="crimson_crown_2d"] .private-card-field-wrap input {
+  background: #2d2024;
+  color: #fff0d7;
+}
+
+[data-card-theme="crimson_crown_2d"] .private-card-field-wrap input::placeholder {
+  color: #d3b6a7;
+}

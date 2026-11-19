@@ -22,6 +22,7 @@
     "jade_luxe",
     "comic_fire",
     "forged_carbon",
+    "crimson_crown_2d",
     "arcadia_painted",
     "ocean_2d",
     "aurora_codex",
@@ -551,6 +552,45 @@
       cardShadow: "0 18px 42px rgba(6, 8, 13, 0.62)",
       buttonShineGradient:
         "linear-gradient(90deg, rgba(234,214,161,0) 0%, rgba(234,214,161,0.18) 45%, rgba(234,214,161,0.3) 50%, rgba(234,214,161,0.18) 55%, rgba(234,214,161,0) 100%)",
+    },
+    crimson_crown_2d: {
+      pageBg: "#231e20",
+      cardBg: "linear-gradient(160deg, #38101b, #231e20 50%, #291219)",
+      surfaceBg: "#2d2024",
+      cardBorder: "1px solid #a77542",
+      surfaceBorder: "1px solid #704a39",
+      dividerColor: "#674437",
+      nameColor: "#fff0d7",
+      roleColor: "#efcc98",
+      mutedColor: "#d3b6a7",
+      accentColor: "#f3b342",
+      emailColor: "#ffd086",
+      buttonPrimaryBg: "#f3b342",
+      buttonPrimaryText: "#2b1219",
+      buttonPrimaryBorder: "#f8c775",
+      buttonSecondaryBg: "#38151f",
+      buttonSecondaryText: "#ffe4b4",
+      buttonSecondaryBorder: "#9b6746",
+      badgeText: "#ffdf9e",
+      badgeBg: "#471522",
+      badgeBorder: "1px solid #9b6746",
+      topLineGradient: "linear-gradient(90deg, transparent, #f3b342, transparent)",
+      avatarBg: "#481825",
+      avatarText: "#ffd086",
+      avatarBorder: "2px solid #dba653",
+      cardBorderRadius: "20px",
+      surfaceBorderRadius: "12px",
+      buttonBorderRadius: "9px",
+      nameFontWeight: "600",
+      nameLetterSpacing: "-.025em",
+      roleLetterSpacing: ".08em",
+      scoreLabelColor: "#efcc98",
+      scoreValueColor: "#ffd086",
+      scoreBarFill: "linear-gradient(90deg, #a25436, #f3b342)",
+      scoreBarTrack: "#563039",
+      scorePercentileColor: "#efcc98",
+      cardShadow: "0 22px 56px rgba(12, 5, 8, .48)",
+      buttonShineGradient: "none",
     },
     arcadia_painted: {
       pageBg: "#34402a",
@@ -5655,6 +5695,7 @@
         </div>
         <div class="public-card-shell unq-ref-shell">
           <div class="unq-ref-card-overlay">${overlayHtml}</div>
+          ${theme.key === "crimson_crown_2d" ? '<div class="crimson-crown-crest" aria-hidden="true"></div>' : ""}
           ${graffitiCardDripsHtml}
           ${shinobiWayCardGlowHtml}
           ${samarkandCardGlowHtml}

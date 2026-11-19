@@ -60,6 +60,13 @@ const SIGNATURE_THEMES = [
     premiumRequired: true,
   },
   {
+    id: "crimson_crown_2d",
+    label: "Багряная корона · 2D",
+    description: "Золотая корона и лавры на бордовом орнаменте",
+    swatchStyle: "border-color:#b38446;background:#231e20 url(/assets/themes/crimson-crown.webp) center top/cover;",
+    premiumRequired: true,
+  },
+  {
     id: "arcadia_painted",
     label: "АРКАДИЯ · Живописный сад",
     description: "Рисованный сад, лазурь, олива и кружащиеся листья",

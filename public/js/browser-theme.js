@@ -20,6 +20,7 @@
     jade_luxe: "#020403",
     comic_fire: "#3b160e",
     forged_carbon: "#050505",
+    crimson_crown_2d: "#231e20",
     arcadia_painted: "#34402a",
     ocean_2d: "#dff7ff",
     greek_olympus_2d: "#0f1a14",
