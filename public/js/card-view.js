@@ -5735,8 +5735,6 @@
         </div>
         <div class="public-card-shell unq-ref-shell">
           <div class="unq-ref-card-overlay">${overlayHtml}</div>
-          ${theme.key === "maftun" ? '<div class="maftun-canopy" aria-hidden="true"></div>' : ""}
-          ${theme.key === "crimson_crown_2d" ? '<div class="crimson-crown-crest" aria-hidden="true"></div>' : ""}
           ${graffitiCardDripsHtml}
           ${shinobiWayCardGlowHtml}
           ${samarkandCardGlowHtml}
@@ -5885,7 +5883,7 @@
       const height = layer.clientHeight;
       const buttonLeft = Math.floor(landingRound / Math.max(1, buttonCandidates.length)) % 2 === 0;
       let x = width * (6 + index * 37 % 88) / 100;
-      let y = height - 10 - index * 7 % 21;
+      let y = height - 7 - index * 7 % 10;
       if (button) {
         const area = layer.getBoundingClientRect();
         const target = button.getBoundingClientRect();

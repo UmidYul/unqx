@@ -19653,10 +19653,9 @@ body[data-card-theme="crimson_crown_2d"] #card-slug-search-results {
 }
 
 [data-card-view][data-card-theme="crimson_crown_2d"] .unq-ref-shell {
-  --crown-inset: clamp(16px, 4vw, 26px);
   --crown-art: url('/assets/themes/crimson-crown.webp');
   isolation: isolate;
-  padding: var(--crown-inset);
+  padding: clamp(16px, 4vw, 26px);
 }
 
 [data-card-view][data-card-theme="crimson_crown_2d"] .unq-ref-shell::before {
@@ -19679,12 +19678,17 @@ body[data-card-theme="crimson_crown_2d"] #card-slug-search-results {
   opacity: .68;
 }
 
-[data-card-view][data-card-theme="crimson_crown_2d"] .crimson-crown-crest {
+[data-card-view]:is([data-card-theme="crimson_crown_2d"], [data-card-theme="maftun"]) .unq-ref-card-overlay::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
   aspect-ratio: 2.65;
-  margin: calc(-1 * var(--crown-inset)) calc(-1 * var(--crown-inset)) 0;
+}
+
+[data-card-view][data-card-theme="crimson_crown_2d"] .unq-ref-card-overlay::before {
   background: var(--crown-art) center top / 100% auto no-repeat;
   mask-image: linear-gradient(#000 76%, transparent);
-  pointer-events: none;
+  opacity: .38;
 }
 
 [data-card-theme="crimson_crown_2d"] :is(.unq-ref-brand h2, .unq-ref-name, .private-card-shell h1) {
@@ -19792,16 +19796,16 @@ body[data-card-theme="maftun"] #card-slug-search-results {
 }
 
 [data-card-view][data-card-theme="maftun"] .unq-ref-shell {
-  --maftun-inset: clamp(16px, 4vw, 26px);
   isolation: isolate;
-  padding: var(--maftun-inset) var(--maftun-inset) calc(var(--maftun-inset) + 22px);
+  padding: clamp(16px, 4vw, 26px);
 }
 
-[data-card-view][data-card-theme="maftun"] .maftun-canopy {
-  aspect-ratio: 2.65;
-  margin: calc(-1 * var(--maftun-inset)) calc(-1 * var(--maftun-inset)) 0;
-  background: #694121 url('/assets/themes/maftun-autumn.webp') center 54% / cover no-repeat;
-  mask-image: linear-gradient(#000 64%, transparent);
+[data-card-view][data-card-theme="maftun"] .unq-ref-card-overlay::before {
+  background:
+    linear-gradient(90deg, #301d1740, #301d17b8 50%, #301d1740),
+    url('/assets/themes/maftun-autumn.webp') center 54% / cover no-repeat;
+  mask-image: linear-gradient(#000 45%, transparent);
+  opacity: .65;
 }
 
 [data-card-theme="maftun"] :is(.unq-ref-brand h2, .unq-ref-name, .private-card-shell h1) {
