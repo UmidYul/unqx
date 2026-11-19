@@ -1097,6 +1097,8 @@ body[data-card-theme="casino_royale"] #public-card-layout > div:first-child > .i
 }
 
 .unq-profile-music-player {
+  --music-accent: var(--theme-accent-color, #151515);
+  --music-shadow: color-mix(in srgb, var(--music-accent) 25%, #151117);
   position: absolute;
   top: 12px;
   right: 12px;
@@ -1106,23 +1108,28 @@ body[data-card-theme="casino_royale"] #public-card-layout > div:first-child > .i
   justify-content: center;
   width: 44px;
   height: 44px;
-  border: 2px solid #000000 !important;
+  border: 2px solid var(--music-accent) !important;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.92);
-  color: #000000;
-  box-shadow: 3px 3px 0 #000000;
+  background: var(--theme-button-primary-bg, #151515);
+  color: var(--theme-button-primary-text, #ffffff);
+  box-shadow: 3px 3px 0 var(--music-shadow);
   backdrop-filter: blur(10px);
   transition: transform 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
 }
 
 .unq-profile-music-player:hover {
   transform: translate(-1px, -1px);
-  box-shadow: 4px 4px 0 #000000;
+  box-shadow: 4px 4px 0 var(--music-shadow);
 }
 
 .unq-profile-music-player:active {
   transform: translate(2px, 2px);
-  box-shadow: 0 0 0 #000000;
+  box-shadow: none;
+}
+
+.unq-profile-music-player:focus-visible {
+  outline: 2px solid var(--music-accent);
+  outline-offset: 4px;
 }
 
 .unq-profile-music-icon {
@@ -1137,8 +1144,9 @@ body[data-card-theme="casino_royale"] #public-card-layout > div:first-child > .i
   line-height: 1;
 }
 
-.unq-profile-music-player.is-playing {
-  background: #00e5ff;
+.unq-profile-music-player.is-playing:not(:active) {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--music-accent) 40%, transparent),
+    3px 3px 0 var(--music-shadow);
 }
 
 .unq-profile-music-player.is-playing .unq-profile-music-icon {
@@ -19955,6 +19963,12 @@ body[data-card-theme="scarlet_portrait"] #card-slug-search-results {
 
 [data-card-theme="scarlet_portrait"] .unq-ref-avatar-wrap {
   box-shadow: 0 0 0 4px #34111a, 0 0 0 5px #F6B43C80;
+}
+
+[data-card-theme="scarlet_portrait"] .scarlet-portrait-wreath {
+  inset: -18%;
+  background: url('/assets/themes/scarlet-gold-laurel.webp') center / contain no-repeat;
+  filter: drop-shadow(0 2px 3px #240e15b0);
 }
 
 [data-card-view][data-card-theme="scarlet_portrait"] .unq-ref-actions {

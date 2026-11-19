@@ -3894,6 +3894,9 @@
 
   function renderAvatarFrame(frameKey, themeKey) {
     const key = AVATAR_FRAME_KEYS.includes(frameKey) ? frameKey : "none";
+    if (themeKey === "scarlet_portrait" && (key === "none" || key === "laurel_wreath")) {
+      return '<span class="unq-ref-avatar-frame scarlet-portrait-wreath" aria-hidden="true"></span>';
+    }
     if (key === "none") {
       return "";
     }
